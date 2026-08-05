@@ -95,11 +95,16 @@ async def authenticate(session: AsyncSession, *, email: str, password: str) -> U
     user = await get_user_by_email(session, email)
 
     # Le hachage est effectué même sans compte correspondant : sinon le temps de
-    # réponse dit si l'adresse existe.
-    if not verify_password(password, user.password_hash if user else None):
-        raise InvalidCredentials(email)
+    # réponse dit si l'adresse existe. Le résultat est calculé avant le test,
+    # pour que les deux branches coûtent la même chose.
+    password_matches = verify_password(password, user.password_hash if user else None)
 
-    assert user is not None  # noqa: S101 — garanti par verify_password ci-dessus
+    # Test explicite sur `user`, et non un `assert` s'appuyant sur le fait que
+    # `verify_password` renvoie faux quand l'empreinte est absente : un `assert`
+    # disparaît sous `python -O`, et transformerait un refus d'authentification
+    # en erreur 500 le jour où cette fonction changerait.
+    if user is None or not password_matches:
+        raise InvalidCredentials(email)
 
     if user.status is not UserStatus.ACTIVE:
         raise AccountNotActive(user.status)

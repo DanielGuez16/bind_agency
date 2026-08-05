@@ -81,7 +81,9 @@ def create_token(
         "iat": int(issued.timestamp()),
         "exp": int((issued + lifetime).timestamp()),
     }
-    return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
+    return jwt.encode(
+        payload, settings.jwt_secret_key.get_secret_value(), algorithm=settings.jwt_algorithm
+    )
 
 
 def decode_token(token: str, *, expected_type: TokenType) -> TokenClaims:
@@ -90,7 +92,7 @@ def decode_token(token: str, *, expected_type: TokenType) -> TokenClaims:
     try:
         payload = jwt.decode(
             token,
-            settings.jwt_secret_key,
+            settings.jwt_secret_key.get_secret_value(),
             algorithms=[settings.jwt_algorithm],
             options={"require": ["sub", "exp", "jti", "typ"]},
         )

@@ -439,6 +439,37 @@ async def test_l_anonymisation_peut_effacer_l_email(conn: AsyncConnection) -> No
     assert row.status == UserStatus.ANONYMIZED
 
 
+async def test_anonymisation_complete_est_acceptee(conn: AsyncConnection) -> None:
+    """Cas positif des deux CHECK : ils doivent laisser passer l'anonymisation.
+
+    Une contrainte éprouvée dans un seul sens ne prouve pas qu'elle autorise le
+    cas légitime — et c'est ce cas-là qu'il faudra pouvoir exécuter le jour où
+    un créateur demande l'effacement de ses données.
+    """
+    user_id = await new_user(conn)
+
+    await conn.execute(
+        sa.update(User)
+        .where(User.id == user_id)
+        .values(
+            status=UserStatus.ANONYMIZED,
+            email=None,
+            phone=None,
+            password_hash=None,
+        )
+    )
+
+    row = (
+        await conn.execute(
+            sa.select(User.email, User.phone, User.password_hash, User.status).where(
+                User.id == user_id
+            )
+        )
+    ).one()
+    assert (row.email, row.phone, row.password_hash) == (None, None, None)
+    assert row.status == UserStatus.ANONYMIZED
+
+
 # --------------------------------------------------------------------------
 # capacity_rule
 # --------------------------------------------------------------------------
