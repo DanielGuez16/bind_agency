@@ -171,3 +171,26 @@ Sinon le temps de réponse de la connexion révèle si une adresse est enregistr
 protégées. Elles sont montées par la fixture de test à partir des dépendances
 réelles, jamais par `create_app` : le code de production ne porte pas
 d'endpoints factices.
+
+**La rotation avec détection de rejeu est un ajout délibéré au brief.**
+La consigne demandait une table de jetons révocables. La rotation n'y figurait
+pas : elle a été ajoutée sciemment, parce que sans elle une révocation ne
+protège que du vol futur — un jeton déjà dérobé reste valable jusqu'à son
+expiration, et la table ne sert qu'à fermer la porte après coup. Validé après
+signalement.
+
+**`jwt_secret_key` en `SecretStr`, URL de base masquées du `repr`.**
+La clé de signature ne sort qu'avec `.get_secret_value()` : une clé qui
+apparaît dans un `repr` ou une trace de mise au point est une clé perdue.
+`database_url` et `test_database_url` gardent leur type `PostgresDsn` —
+SQLAlchemy et Alembic en ont besoin tel quel — mais passent en `repr=False`,
+car elles contiennent le mot de passe.
+Limite connue : une `ValidationError` de pydantic-settings au démarrage affiche
+le dictionnaire d'entrée, donc les valeurs présentes. En CI, GitHub les masque.
+En production, ne pas recopier cette trace dans un ticket.
+
+**Pas d'`assert` sur une invariante garantie ailleurs.**
+`authenticate` teste explicitement `user is None` au lieu de s'appuyer sur le
+fait que `verify_password` renvoie faux quand l'empreinte est absente. Un
+`assert` disparaît sous `python -O`, et aurait transformé un refus
+d'authentification en erreur 500 le jour où cette fonction changerait.

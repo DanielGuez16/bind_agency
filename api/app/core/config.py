@@ -9,7 +9,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Annotated
 
-from pydantic import BeforeValidator, PostgresDsn
+from pydantic import BeforeValidator, Field, PostgresDsn, SecretStr
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 # Ancré sur `api/` et non sur le répertoire courant : le `.env` doit être trouvé
@@ -42,11 +42,16 @@ class Settings(BaseSettings):
     cors_origins: CommaSeparated = ["http://localhost:8081", "http://localhost:19006"]
 
     # Sans valeur par défaut : porte un secret et désigne une base réelle.
-    database_url: PostgresDsn
+    # `repr=False` : l'URL contient le mot de passe, elle n'a rien à faire dans
+    # un `repr(settings)` recopié dans un ticket ou un log de mise au point.
+    # Le type reste `PostgresDsn`, SQLAlchemy et Alembic en ont besoin tel quel.
+    database_url: PostgresDsn = Field(repr=False)
 
-    # Sans valeur par défaut non plus : une clé de signature de repli serait une
-    # clé connue, donc pas une clé.
-    jwt_secret_key: str
+    # `SecretStr` : la valeur ne sort qu'avec `.get_secret_value()`. Une clé de
+    # signature qui apparaît dans un repr ou une trace est une clé perdue.
+    # Sans valeur par défaut non plus : une clé de repli serait une clé connue,
+    # donc pas une clé.
+    jwt_secret_key: SecretStr
     jwt_algorithm: str = "HS256"
 
     # Durées de vie des jetons, en configuration comme tout délai.
@@ -56,7 +61,7 @@ class Settings(BaseSettings):
 
     # Lue uniquement par la session pytest, jamais par l'application.
     # Sa présence est vérifiée dans tests/conftest.py, qui refuse de tourner sans.
-    test_database_url: PostgresDsn | None = None
+    test_database_url: PostgresDsn | None = Field(default=None, repr=False)
 
 
 @lru_cache

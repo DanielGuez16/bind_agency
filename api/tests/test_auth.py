@@ -18,6 +18,7 @@ from app.core.config import get_settings
 from app.core.security import TokenType, create_token
 from app.models import BusinessMember, RefreshToken, User
 from app.models.enums import BusinessMemberRole, UserRole, UserStatus
+from app.schemas.auth import PASSWORD_MAX_LENGTH
 from tests.factories import PASSWORD, new_business, new_user
 
 PREFIX = get_settings().api_v1_prefix
@@ -92,6 +93,30 @@ async def test_inscription_refuse_un_mot_de_passe_trop_court(client: AsyncClient
     response = await client.post(
         f"{PREFIX}/auth/register",
         json={"email": "court@example.com", "password": "court", "role": UserRole.CREATOR.value},
+    )
+    assert response.status_code == 422
+
+
+async def test_inscription_refuse_un_mot_de_passe_demesure(client: AsyncClient) -> None:
+    """La borne haute protège du déni de service par hachage d'une entrée énorme."""
+    response = await client.post(
+        f"{PREFIX}/auth/register",
+        json={
+            "email": "enorme@example.com",
+            "password": "a" * (PASSWORD_MAX_LENGTH + 1),
+            "role": UserRole.CREATOR.value,
+        },
+    )
+    assert response.status_code == 422
+
+
+async def test_connexion_refuse_un_mot_de_passe_demesure(client: AsyncClient) -> None:
+    """La même borne doit exister à la connexion : c'est la route non authentifiée."""
+    tokens = await register_and_login(client)
+
+    response = await client.post(
+        f"{PREFIX}/auth/login",
+        json={"email": tokens["email"], "password": "a" * (PASSWORD_MAX_LENGTH + 1)},
     )
     assert response.status_code == 422
 
@@ -210,6 +235,28 @@ async def test_jeton_signe_avec_une_autre_cle_est_refuse(client: AsyncClient) ->
     response = await client.get(
         f"{PREFIX}/probe/any-authenticated", headers=auth_header(contrefait)
     )
+    assert response.status_code == 401
+
+
+async def test_jeton_sans_claim_de_type_est_refuse(client: AsyncClient) -> None:
+    """Complément du contrôle de type : un jeton correctement signé mais muet
+    sur `typ` ne doit pas être accepté par défaut."""
+    tokens = await register_and_login(client)
+    settings = get_settings()
+    now = datetime.now(UTC)
+
+    sans_type = jwt.encode(
+        {
+            "sub": tokens["user_id"],
+            "jti": str(uuid.uuid4()),
+            "iat": int(now.timestamp()),
+            "exp": int((now + timedelta(hours=1)).timestamp()),
+        },
+        settings.jwt_secret_key.get_secret_value(),
+        algorithm=settings.jwt_algorithm,
+    )
+
+    response = await client.get(f"{PREFIX}/probe/any-authenticated", headers=auth_header(sans_type))
     assert response.status_code == 401
 
 
@@ -448,6 +495,31 @@ async def test_rafraichissement_refuse_pour_un_jeton_inconnu(client: AsyncClient
 
     response = await client.post(f"{PREFIX}/auth/refresh", json={"refresh_token": inconnu})
     assert response.status_code == 401
+
+
+async def test_rafraichissement_refuse_quand_la_ligne_est_expiree_en_base(
+    client: AsyncClient, conn: AsyncConnection
+) -> None:
+    """Le vrai chemin de révocation côté serveur.
+
+    Le JWT reste parfaitement valide et non expiré : c'est `expires_at` en base
+    qui tranche. Sans ce test, rien ne prouve que la liste d'autorisation fait
+    autre chose que redire ce que le jeton dit déjà de lui-même.
+    """
+    tokens = await register_and_login(client)
+
+    await conn.execute(
+        sa.update(RefreshToken)
+        .where(RefreshToken.user_id == uuid.UUID(tokens["user_id"]))
+        .values(expires_at=datetime.now(UTC) - timedelta(seconds=1))
+    )
+
+    response = await client.post(
+        f"{PREFIX}/auth/refresh", json={"refresh_token": tokens["refresh_token"]}
+    )
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "invalid_refresh_token"
 
 
 async def test_rafraichissement_refuse_apres_suspension(
