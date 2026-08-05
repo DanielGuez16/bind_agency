@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+
+    services:
+      db:
+        # Même image qu'en local : ce qui passe ici passe sur la machine du dev.
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: bind
+          POSTGRES_PASSWORD: bind
+          POSTGRES_DB: bind
+          TZ: UTC
+          PGTZ: UTC
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd "pg_isready -U bind -d bind"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      ENVIRONMENT: ci
+      DATABASE_URL: postgresql+psycopg://bind:bind@localhost:5434/bind
+      TEST_DATABASE_URL: postgresql+psycopg://bind:bind@localhost:5434/bind_test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Installer les dépendances
+        working-directory: api
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Ruff
+        working-directory: api
+        run: |
+          ruff check .
+          ruff format --check .
+
+      - name: Pytest
+        working-directory: api
+        run: pytest -q

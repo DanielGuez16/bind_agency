@@ -1,0 +1,35 @@
+services:
+  db:
+    # PostGIS plutôt que postgres nu : l'extension n'est pas activée aujourd'hui,
+    # mais le jour où le modèle de données tranche le géo en faveur de `geography`,
+    # on ne recrée ni le conteneur ni le volume.
+    image: postgis/postgis:16-3.4
+    container_name: bind_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: bind
+      POSTGRES_PASSWORD: bind
+      POSTGRES_DB: bind
+      # SPEC.md §7 : tout est stocké en UTC. L'environnement local ne doit pas mentir.
+      TZ: UTC
+      PGTZ: UTC
+    command:
+      - postgres
+      - -c
+      - timezone=UTC
+      - -c
+      - log_timezone=UTC
+    ports:
+      # 5434 côté hôte : 5432 et 5433 sont déjà occupés sur cette machine par
+      # d'autres projets. Le conteneur reste sur 5432 en interne.
+      - "5434:5432"
+    volumes:
+      - bind_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bind -d bind"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  bind_pgdata:
