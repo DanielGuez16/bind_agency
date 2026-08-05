@@ -103,12 +103,28 @@ async def new_catalog_item(
 
 
 async def new_tier(conn: AsyncConnection, **overrides: Any) -> uuid.UUID:
+    """Crée un palier, ou renvoie celui qui existe déjà sur ce couple.
+
+    Un palier est une configuration globale de la plateforme, unique sur
+    (platform, content_format) : deux graphes de test coexistant dans la même
+    transaction doivent le partager, pas se le disputer.
+    """
     values: dict[str, Any] = {
         "platform": Platform.INSTAGRAM,
         "content_format": ContentFormat.STORY,
         "min_followers": 1000,
         "display_order": 1,
     } | overrides
+
+    existing = await conn.scalar(
+        sa.select(Tier.id).where(
+            Tier.platform == values["platform"],
+            Tier.content_format == values["content_format"],
+        )
+    )
+    if existing is not None:
+        return existing
+
     result = await conn.execute(sa.insert(Tier).values(**values).returning(Tier.id))
     return result.scalar_one()
 
