@@ -44,6 +44,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
 
+      # Générée par run plutôt que fixée dans le fichier : le dépôt est public,
+      # et une clé de signature commitée finit toujours par être réutilisée
+      # ailleurs. Elle ne sert qu'à la durée de ce job.
+      - name: Clé de signature éphémère
+        run: echo "JWT_SECRET_KEY=$(openssl rand -base64 48)" >> "$GITHUB_ENV"
+
       - name: Ruff
         working-directory: api
         run: |
