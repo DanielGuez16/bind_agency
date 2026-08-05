@@ -23,7 +23,14 @@ from app.core.security import (
     verify_password,
 )
 from app.models import RefreshToken, User
-from app.models.enums import Locale, UserRole, UserStatus
+from app.models.enums import Locale, RefreshTokenState, UserRole, UserStatus
+from app.services.audit import Actor, AuditedEntity, record_transition
+
+# Motifs de transition, en dur ici et nulle part ailleurs : ils apparaissent
+# tels quels dans le journal et doivent rester stables pour être cherchables.
+REASON_ROTATION = "refresh_token_rotated"
+REASON_LOGOUT = "user_logout"
+REASON_REUSE_DETECTED = "refresh_token_reuse_detected"
 
 
 class AuthError(Exception):
@@ -83,6 +90,15 @@ async def register(
         # deux inscriptions simultanées passeraient à travers une pré-vérification.
         raise EmailAlreadyUsed(email) from error
 
+    await record_transition(
+        session,
+        entity=AuditedEntity.APP_USER,
+        entity_id=user.id,
+        from_status=None,
+        to_status=user.status.value,
+        actor=Actor.from_user(user),
+    )
+
     return user
 
 
@@ -126,6 +142,15 @@ async def issue_tokens(session: AsyncSession, user: User) -> IssuedTokens:
     refresh_row = RefreshToken(user_id=user.id, expires_at=now + refresh_lifetime)
     session.add(refresh_row)
     await session.flush()
+
+    await record_transition(
+        session,
+        entity=AuditedEntity.REFRESH_TOKEN,
+        entity_id=refresh_row.id,
+        from_status=None,
+        to_status=RefreshTokenState.ISSUED.value,
+        actor=Actor.from_user(user),
+    )
 
     return IssuedTokens(
         access_token=create_token(
@@ -178,22 +203,63 @@ async def rotate(session: AsyncSession, raw_token: str) -> IssuedTokens:
     if user is None or user.status is not UserStatus.ACTIVE:
         raise InvalidRefreshToken("compte inactif")
 
-    row.revoked_at = datetime.now(UTC)
-    await session.flush()
+    await _mark_revoked(session, row, actor=Actor.from_user(user), reason=REASON_ROTATION)
 
     return await issue_tokens(session, user)
 
 
 async def revoke(session: AsyncSession, raw_token: str) -> None:
     row = await _load_active_refresh_row(session, raw_token)
-    row.revoked_at = datetime.now(UTC)
-    await session.flush()
+
+    user = await session.get(User, row.user_id)
+    actor = Actor.from_user(user) if user is not None else Actor.system()
+    reason = REASON_LOGOUT if user is not None else "orphaned_refresh_token"
+
+    await _mark_revoked(session, row, actor=actor, reason=reason)
 
 
 async def revoke_all_for_user(session: AsyncSession, user_id: uuid.UUID) -> None:
-    await session.execute(
-        sa.update(RefreshToken)
-        .where(RefreshToken.user_id == user_id, RefreshToken.revoked_at.is_(None))
-        .values(revoked_at=datetime.now(UTC))
-    )
+    """Révocation en masse, déclenchée par le système et jamais par un humain.
+
+    Le `RETURNING` sert le journal : une ligne par jeton coupé, plutôt qu'une
+    seule ligne disant « des jetons ont été révoqués ».
+    """
+    revoked_ids = (
+        await session.scalars(
+            sa.update(RefreshToken)
+            .where(RefreshToken.user_id == user_id, RefreshToken.revoked_at.is_(None))
+            .values(revoked_at=datetime.now(UTC))
+            .returning(RefreshToken.id)
+            .execution_options(synchronize_session=False)
+        )
+    ).all()
+
+    for token_id in revoked_ids:
+        await record_transition(
+            session,
+            entity=AuditedEntity.REFRESH_TOKEN,
+            entity_id=token_id,
+            from_status=RefreshTokenState.ISSUED.value,
+            to_status=RefreshTokenState.REVOKED.value,
+            actor=Actor.system(),
+            reason=REASON_REUSE_DETECTED,
+        )
+
     await session.flush()
+
+
+async def _mark_revoked(
+    session: AsyncSession, row: RefreshToken, *, actor: Actor, reason: str
+) -> None:
+    row.revoked_at = datetime.now(UTC)
+    await session.flush()
+
+    await record_transition(
+        session,
+        entity=AuditedEntity.REFRESH_TOKEN,
+        entity_id=row.id,
+        from_status=RefreshTokenState.ISSUED.value,
+        to_status=RefreshTokenState.REVOKED.value,
+        actor=actor,
+        reason=reason,
+    )

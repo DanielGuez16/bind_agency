@@ -22,8 +22,15 @@ from app.models.enums import ActorKind
 class AuditLog(UUIDPrimaryKey, Base):
     __tablename__ = "audit_log"
 
+    # `clock_timestamp()` et non `now()` : ce dernier renvoie l'heure de début de
+    # transaction, identique pour toutes les lignes écrites dans la même. Le
+    # journal serait alors incapable d'ordonner deux transitions atomiques — de
+    # dire qu'un jeton a été révoqué *puis* un autre émis. L'horloge réelle,
+    # elle, avance.
     occurred_at: Mapped[datetime] = mapped_column(
-        sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
+        sa.DateTime(timezone=True),
+        nullable=False,
+        server_default=sa.text("clock_timestamp()"),
     )
     entity_type: Mapped[str] = mapped_column(sa.Text, nullable=False)
     entity_id: Mapped[uuid.UUID] = mapped_column(sa.Uuid, nullable=False)
@@ -43,6 +50,14 @@ class AuditLog(UUIDPrimaryKey, Base):
     extra: Mapped[dict | None] = mapped_column("metadata", JSONB, nullable=True)
 
     __table_args__ = (
+        # Une transition automatique n'a pas d'acteur utilisateur, et une
+        # transition humaine en a forcément un. L'équivalence interdit les deux
+        # incohérences : un « système » attribué à quelqu'un, et un acteur
+        # humain anonyme dont on ne saura jamais qui il était.
+        sa.CheckConstraint(
+            "(actor_kind = 'system') = (actor_user_id IS NULL)",
+            name="system_actor_has_no_user",
+        ),
         sa.Index(
             "ix_audit_log_entity_type_entity_id_occurred_at",
             "entity_type",

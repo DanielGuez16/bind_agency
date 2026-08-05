@@ -114,6 +114,22 @@ async def conn(engine: AsyncEngine) -> AsyncIterator[AsyncConnection]:
 
 
 @pytest.fixture
+async def session(conn: AsyncConnection) -> AsyncIterator[AsyncSession]:
+    """Session ORM greffée sur la transaction du test.
+
+    Permet d'appeler un service directement, et de vérifier ce qu'un `rollback`
+    laisse — ou ne laisse pas — derrière lui.
+    """
+    factory = async_sessionmaker(
+        bind=conn,
+        expire_on_commit=False,
+        join_transaction_mode="create_savepoint",
+    )
+    async with factory() as orm_session:
+        yield orm_session
+
+
+@pytest.fixture
 async def client(engine: AsyncEngine, conn: AsyncConnection) -> AsyncIterator[AsyncClient]:
     """Client HTTP dont les sessions partagent la transaction du test.
 
