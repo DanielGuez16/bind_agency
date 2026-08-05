@@ -7,6 +7,7 @@ dependencies = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.32",
     "sqlalchemy[asyncio]>=2.0.36",
+    "geoalchemy2>=0.15",
     "alembic>=1.14",
     "pydantic>=2.9",
     "pydantic-settings>=2.6",
@@ -34,6 +35,11 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "ASYNC"]
+
+[tool.ruff.lint.per-file-ignores]
+# Fichiers produits par l'autogénération Alembic : on relit leur contenu, pas
+# leur mise en forme. Les règles de fond (imports inutilisés, bugs) restent.
+"alembic/versions/*.py" = ["E501", "I001", "UP007", "UP035"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

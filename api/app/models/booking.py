@@ -1,0 +1,172 @@
+"""Capacité, réservations et codes de retrait."""
+
+import uuid
+from datetime import datetime, time
+
+import sqlalchemy as sa
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.models.base import Base, CreatedAt, UUIDPrimaryKey, enum_column, money_column
+from app.models.enums import BookingStatus
+
+
+class CapacityRule(UUIDPrimaryKey, Base):
+    """Horaires hebdomadaires et nombre de postes en parallèle."""
+
+    __tablename__ = "capacity_rule"
+
+    business_id: Mapped[uuid.UUID] = mapped_column(
+        sa.ForeignKey("business.id", ondelete="CASCADE"), nullable=False
+    )
+    weekday: Mapped[int] = mapped_column(sa.SmallInteger, nullable=False)
+    start_time: Mapped[time] = mapped_column(sa.Time, nullable=False)
+    end_time: Mapped[time] = mapped_column(sa.Time, nullable=False)
+    concurrent_slots: Mapped[int] = mapped_column(sa.Integer, nullable=False)
+
+    __table_args__ = (
+        sa.CheckConstraint("weekday BETWEEN 0 AND 6", name="weekday_range"),
+        sa.CheckConstraint("start_time < end_time", name="start_before_end"),
+        sa.CheckConstraint("concurrent_slots > 0", name="concurrent_slots_positive"),
+        sa.Index("ix_capacity_rule_business_id_weekday", "business_id", "weekday"),
+    )
+
+
+class CapacityException(UUIDPrimaryKey, Base):
+    """Fermetures exceptionnelles et ajustements ponctuels."""
+
+    __tablename__ = "capacity_exception"
+
+    business_id: Mapped[uuid.UUID] = mapped_column(
+        sa.ForeignKey("business.id", ondelete="CASCADE"), nullable=False
+    )
+    date: Mapped[datetime] = mapped_column(sa.Date, nullable=False)
+    is_closed: Mapped[bool] = mapped_column(
+        sa.Boolean, nullable=False, server_default=sa.text("false")
+    )
+    start_time: Mapped[time | None] = mapped_column(sa.Time, nullable=True)
+    end_time: Mapped[time | None] = mapped_column(sa.Time, nullable=True)
+    concurrent_slots: Mapped[int | None] = mapped_column(sa.Integer, nullable=True)
+
+    __table_args__ = (
+        sa.UniqueConstraint("business_id", "date"),
+        sa.CheckConstraint(
+            "(start_time IS NULL) = (end_time IS NULL)", name="time_window_both_or_neither"
+        ),
+        sa.CheckConstraint("start_time IS NULL OR start_time < end_time", name="start_before_end"),
+        sa.CheckConstraint(
+            "concurrent_slots IS NULL OR concurrent_slots > 0", name="concurrent_slots_positive"
+        ),
+    )
+
+
+class Booking(UUIDPrimaryKey, CreatedAt, Base):
+    """Réservation, ou droit de consommer sur une fenêtre pour un item sans créneau.
+
+    `requires_booking` est une copie figée de la valeur portée par l'item. La
+    clé étrangère composite vers `catalog_item` garantit qu'elle ne peut pas
+    diverger : elle interdit aussi, de fait, qu'un commerce bascule
+    `requires_booking` sur un item déjà réservé. C'est voulu, on ne réécrit pas
+    la nature d'une réservation passée. Le service doit intercepter le cas et
+    demander la création d'un nouvel item, pas laisser remonter la violation.
+    """
+
+    __tablename__ = "booking"
+
+    creator_id: Mapped[uuid.UUID] = mapped_column(
+        sa.ForeignKey("creator_profile.user_id", ondelete="RESTRICT"), nullable=False
+    )
+    business_id: Mapped[uuid.UUID] = mapped_column(
+        sa.ForeignKey("business.id", ondelete="RESTRICT"), nullable=False
+    )
+    tier_offer_id: Mapped[uuid.UUID] = mapped_column(sa.Uuid, nullable=False)
+    catalog_item_id: Mapped[uuid.UUID] = mapped_column(sa.Uuid, nullable=False)
+    social_account_id: Mapped[uuid.UUID] = mapped_column(
+        sa.ForeignKey("social_account.id", ondelete="RESTRICT"), nullable=False
+    )
+
+    requires_booking: Mapped[bool] = mapped_column(sa.Boolean, nullable=False)
+
+    starts_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
+    ends_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
+    valid_until: Mapped[datetime] = mapped_column(sa.DateTime(timezone=True), nullable=False)
+
+    status: Mapped[BookingStatus] = mapped_column(
+        enum_column(BookingStatus, "booking_status"),
+        nullable=False,
+        server_default=BookingStatus.HELD.value,
+    )
+    hold_expires_at: Mapped[datetime | None] = mapped_column(
+        sa.DateTime(timezone=True), nullable=True
+    )
+
+    # Prix figé à la réservation : le commerce peut changer sa carte ensuite,
+    # l'historique ne bouge pas. Devise = celle du commerce.
+    value_cents_snapshot: Mapped[int] = money_column(nullable=False)
+
+    cancelled_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
+    consumed_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        sa.CheckConstraint(
+            "(requires_booking AND starts_at IS NOT NULL AND ends_at IS NOT NULL)"
+            " OR (NOT requires_booking AND starts_at IS NULL AND ends_at IS NULL)",
+            name="slot_matches_requires_booking",
+        ),
+        sa.CheckConstraint("starts_at IS NULL OR ends_at > starts_at", name="ends_after_starts"),
+        sa.CheckConstraint(
+            "status <> 'held' OR hold_expires_at IS NOT NULL", name="held_has_hold_expiry"
+        ),
+        sa.CheckConstraint("value_cents_snapshot >= 0", name="value_cents_snapshot_positive"),
+        # Nommée à la main : la convention produirait 67 caractères, au-delà de
+        # la limite de 63 de Postgres, et le nom serait tronqué en silence.
+        sa.ForeignKeyConstraint(
+            ["catalog_item_id", "business_id", "requires_booking"],
+            [
+                "catalog_item.id",
+                "catalog_item.business_id",
+                "catalog_item.requires_booking",
+            ],
+            name="fk_booking_item_business_requires_booking",
+            ondelete="RESTRICT",
+        ),
+        sa.ForeignKeyConstraint(
+            ["tier_offer_id", "business_id"],
+            ["tier_offer.id", "tier_offer.business_id"],
+            name="fk_booking_offer_business",
+            ondelete="RESTRICT",
+        ),
+        # Calcul de disponibilité.
+        sa.Index("ix_booking_business_id_starts_at", "business_id", "starts_at"),
+        # Job d'expiration des gardes.
+        sa.Index("ix_booking_status_hold_expires_at", "status", "hold_expires_at"),
+        # Historique côté créateur.
+        sa.Index("ix_booking_creator_id_created_at", "creator_id", sa.desc("created_at")),
+    )
+
+
+class RedemptionCode(UUIDPrimaryKey, Base):
+    """Le code affiché est dérivé côté serveur, jamais stocké tel quel.
+
+    `secret` est la clé HMAC : bytea, même traitement que les jetons OAuth.
+    """
+
+    __tablename__ = "redemption_code"
+
+    booking_id: Mapped[uuid.UUID] = mapped_column(
+        sa.ForeignKey("booking.id", ondelete="RESTRICT"), nullable=False
+    )
+    secret: Mapped[bytes] = mapped_column(sa.LargeBinary, nullable=False)
+    manual_code: Mapped[str] = mapped_column(sa.Text, nullable=False)
+    rotation_seconds: Mapped[int] = mapped_column(
+        sa.Integer, nullable=False, server_default=sa.text("30")
+    )
+    consumed_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
+    consumed_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        sa.ForeignKey("app_user.id", ondelete="SET NULL"), nullable=True
+    )
+
+    __table_args__ = (
+        sa.UniqueConstraint("booking_id"),
+        sa.UniqueConstraint("manual_code"),
+        sa.CheckConstraint("rotation_seconds > 0", name="rotation_seconds_positive"),
+    )

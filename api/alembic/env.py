@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 from app.core.config import get_settings
+from app.core.schema import APPLICATION_SCHEMA, make_include_object
 from app.models import Base
 
 # this is the Alembic Config object, which provides
@@ -20,10 +21,17 @@ if config.config_file_name is not None:
 
 # L'URL vient de la configuration applicative, jamais de alembic.ini : une seule
 # source de vérité, et aucun identifiant de connexion commité.
-config.set_main_option("sqlalchemy.url", str(get_settings().database_url))
+# `config.attributes["db_url"]` est le point d'entrée programmatique : la suite
+# de tests s'en sert pour viser sa propre base sans toucher à l'environnement.
+config.set_main_option(
+    "sqlalchemy.url",
+    config.attributes.get("db_url") or str(get_settings().database_url),
+)
 
 # Tout modèle doit être importé par `app.models` pour être vu à l'autogénération.
 target_metadata = Base.metadata
+
+include_object = make_include_object(target_metadata)
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -51,6 +59,7 @@ def run_migrations_offline() -> None:
         dialect_opts={"paramstyle": "named"},
         compare_type=True,
         compare_server_default=True,
+        include_object=include_object,
     )
 
     with context.begin_transaction():
@@ -63,6 +72,7 @@ def do_run_migrations(connection: Connection) -> None:
         target_metadata=target_metadata,
         compare_type=True,
         compare_server_default=True,
+        include_object=include_object,
     )
 
     with context.begin_transaction():
@@ -79,6 +89,13 @@ async def run_async_migrations() -> None:
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        # Le search_path est posé à l'établissement de la connexion, et surtout
+        # pas par un SET après coup : un SET ouvre une transaction implicite,
+        # Alembic considère alors qu'il ne gère pas la transaction, ne committe
+        # jamais, et la migration est annulée en silence avec un code de sortie
+        # nul. Cadrer sur `public` évite aussi de réfléchir les schémas `tiger`
+        # et `topology` que l'image postgis ajoute au search_path.
+        connect_args={"options": f"-csearch_path={APPLICATION_SCHEMA}"},
     )
 
     async with connectable.connect() as connection:

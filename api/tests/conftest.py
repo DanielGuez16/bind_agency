@@ -1,22 +1,27 @@
 """Fixtures de test.
 
-La session pytest crée sa propre base et la détruit à la fin. Elle refuse de
-démarrer sans `TEST_DATABASE_URL`, et refuse de tourner sur la base de
-développement : aucune commande de test ne doit pouvoir effacer des données de
-travail.
+La session pytest crée sa propre base, y applique les migrations, et la détruit
+à la fin. Elle refuse de démarrer sans `TEST_DATABASE_URL`, et refuse de tourner
+sur la base de développement : aucune commande de test ne doit pouvoir effacer
+des données de travail.
+
+Le schéma est posé par `alembic upgrade head`, jamais par `create_all` : c'est
+la migration réelle qui est testée, pas les modèles.
 """
 
 from collections.abc import AsyncIterator, Iterator
 
 import psycopg
 import pytest
+from alembic.config import Config
 from httpx import ASGITransport, AsyncClient
 from psycopg import sql
 from sqlalchemy import URL, make_url
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_engine
 from sqlalchemy.pool import NullPool
 
-from app.core.config import get_settings
+from alembic import command
+from app.core.config import API_ROOT, get_settings
 from app.core.db import get_engine
 from app.main import create_app
 
@@ -26,6 +31,13 @@ def _maintenance_dsn(url: URL) -> str:
     return url.set(drivername="postgresql", database="postgres").render_as_string(
         hide_password=False
     )
+
+
+def _alembic_config(database_url: str) -> Config:
+    config = Config(str(API_ROOT / "alembic.ini"))
+    config.set_main_option("script_location", str(API_ROOT / "alembic"))
+    config.attributes["db_url"] = database_url
+    return config
 
 
 @pytest.fixture(scope="session")
@@ -62,6 +74,13 @@ def _managed_test_database(test_database_url: str) -> Iterator[None]:
         connection.execute(drop)
         connection.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(name)))
 
+    # Aller-retour complet avant le premier test : si le downgrade est cassé,
+    # toute la suite tombe immédiatement plutôt qu'au moment du déploiement.
+    config = _alembic_config(test_database_url)
+    command.upgrade(config, "head")
+    command.downgrade(config, "base")
+    command.upgrade(config, "head")
+
     yield
 
     with psycopg.connect(dsn, autocommit=True) as connection:
@@ -74,6 +93,17 @@ async def engine(test_database_url: str) -> AsyncIterator[AsyncEngine]:
     test_engine = create_async_engine(test_database_url, poolclass=NullPool)
     yield test_engine
     await test_engine.dispose()
+
+
+@pytest.fixture
+async def conn(engine: AsyncEngine) -> AsyncIterator[AsyncConnection]:
+    """Connexion dans une transaction annulée en fin de test : aucune fuite entre tests."""
+    async with engine.connect() as connection:
+        transaction = await connection.begin()
+        try:
+            yield connection
+        finally:
+            await transaction.rollback()
 
 
 @pytest.fixture
