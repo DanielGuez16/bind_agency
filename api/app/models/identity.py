@@ -32,6 +32,9 @@ class User(UUIDPrimaryKey, CreatedAt, Base):
     role: Mapped[UserRole] = mapped_column(enum_column(UserRole, "user_role"), nullable=False)
     email: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     phone: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    # Empreinte argon2id complète, paramètres compris. Nullable pour la même
+    # raison que l'email : l'anonymisation doit pouvoir l'effacer.
+    password_hash: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     locale: Mapped[Locale] = mapped_column(
         enum_column(Locale, "locale"), nullable=False, server_default=Locale.EN.value
     )
@@ -49,6 +52,10 @@ class User(UUIDPrimaryKey, CreatedAt, Base):
         # cas, un compte sans adresse serait un compte sans moyen de connexion.
         sa.CheckConstraint(
             "status = 'anonymized' OR email IS NOT NULL", name="email_unless_anonymized"
+        ),
+        sa.CheckConstraint(
+            "status = 'anonymized' OR password_hash IS NOT NULL",
+            name="password_unless_anonymized",
         ),
         # Unicité insensible à la casse : deux comptes ne peuvent pas différer
         # par la seule casse de leur adresse.

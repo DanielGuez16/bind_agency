@@ -35,6 +35,7 @@ from app.models.enums import (
     UserStatus,
 )
 from tests.factories import (
+    PASSWORD_HASH,
     booking_insert,
     new_booking_graph,
     new_business,
@@ -337,8 +338,25 @@ async def test_email_differant_par_la_casse_est_refuse(conn: AsyncConnection) ->
 
     await assert_rejected(
         conn,
-        sa.insert(User).values(role=UserRole.ADMIN, email="rebecca@example.com"),
+        sa.insert(User).values(
+            role=UserRole.ADMIN,
+            email="rebecca@example.com",
+            password_hash=PASSWORD_HASH,
+        ),
         constraint="uq_app_user_email_lower",
+    )
+
+
+async def test_compte_sans_empreinte_est_refuse_hors_anonymisation(
+    conn: AsyncConnection,
+) -> None:
+    """Un compte sans mot de passe est un compte auquel personne ne peut se connecter."""
+    await assert_rejected(
+        conn,
+        sa.insert(User).values(
+            role=UserRole.CREATOR, email="sans-mdp@example.com", password_hash=None
+        ),
+        constraint="ck_app_user_password_unless_anonymized",
     )
 
 

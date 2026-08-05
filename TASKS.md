@@ -36,7 +36,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Fin : les deux projets démarrent en local avec une commande documentée*
 - [x] Modèle de données complet et migrations
       *Fin : toutes les tables de la spec créées, migration réversible*
-- [ ] Authentification et rôles créateur, membre commerce, admin
+- [x] Authentification et rôles créateur, membre commerce, admin
       *Fin : un utilisateur de chaque rôle peut se connecter, les routes protégées répondent 403 au mauvais rôle*
 - [ ] Journal d'audit des transitions d'état
       *Fin : toute transition écrit une ligne immuable*

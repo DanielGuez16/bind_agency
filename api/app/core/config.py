@@ -44,6 +44,16 @@ class Settings(BaseSettings):
     # Sans valeur par défaut : porte un secret et désigne une base réelle.
     database_url: PostgresDsn
 
+    # Sans valeur par défaut non plus : une clé de signature de repli serait une
+    # clé connue, donc pas une clé.
+    jwt_secret_key: str
+    jwt_algorithm: str = "HS256"
+
+    # Durées de vie des jetons, en configuration comme tout délai.
+    # Accès court, rafraîchissement long et révocable côté serveur.
+    access_token_ttl_seconds: int = 900
+    refresh_token_ttl_seconds: int = 2_592_000
+
     # Lue uniquement par la session pytest, jamais par l'application.
     # Sa présence est vérifiée dans tests/conftest.py, qui refuse de tourner sans.
     test_database_url: PostgresDsn | None = None

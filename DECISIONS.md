@@ -127,3 +127,47 @@ bloque pas l'inscription, et un commerce n'apparaît dans le fil que localisable
 Même logique sur `app_user.email`, nullable pour l'anonymisation seulement :
 `CHECK (status = 'anonymized' OR email IS NOT NULL)` interdit un compte sans
 moyen de connexion. Le statut porte la garantie, pas la colonne.
+
+---
+
+## 2026-08-05 — Phase 1, authentification et rôles
+
+**Liste d'autorisation des jetons de rafraîchissement, pas liste de refus.**
+Chaque jeton émis a sa ligne dans `refresh_token`, et l'identifiant de la ligne
+sert de `jti`. Un jeton n'est accepté que si sa ligne existe, n'est pas révoquée
+et n'est pas expirée : une signature valide ne suffit pas. Le jeton lui-même
+n'est pas stocké, la signature prouve déjà son authenticité.
+
+**Rotation à chaque rafraîchissement, avec détection de rejeu.**
+L'ancien jeton est révoqué au moment où le nouveau est émis. Si un jeton déjà
+révoqué se présente, la session est considérée comme compromise et **toutes** les
+sessions du compte sont coupées. C'est ce qui donne sa valeur à la table : sans
+rotation, une révocation ne protège que du vol futur.
+
+**Le type de jeton est vérifié à la décodification.**
+Sans le contrôle `typ`, un jeton de rafraîchissement — trente jours — serait
+accepté comme jeton d'accès sur toute route protégée.
+
+**Le statut du compte est relu à chaque requête.**
+`current_user` recharge l'utilisateur et refuse tout statut autre qu'`active`.
+Un jeton émis avant une suspension cesse d'ouvrir des portes immédiatement, sans
+attendre son expiration.
+
+**Aucune dérogation administrateur sur `require_business_member`.**
+Un administrateur n'est pas membre d'un commerce. Une route d'administration
+déclare `require_role(UserRole.ADMIN)` ; elle ne se déguise pas en route
+commerce. Une dérogation implicite est exactement ce qui rend les fuites entre
+locataires invisibles à la relecture.
+
+**403 et non 404 quand le commerce n'existe pas.**
+Répondre 404 dans un cas et 403 dans l'autre dirait à un membre du commerce A
+quels identifiants existent ailleurs. Les deux cas répondent `not_a_member`.
+
+**Le hachage est effectué même sans compte correspondant.**
+Sinon le temps de réponse de la connexion révèle si une adresse est enregistrée.
+
+**Les routes de sonde vivent dans la suite de tests.**
+Éprouver `require_role` et `require_business_member` demande des routes
+protégées. Elles sont montées par la fixture de test à partir des dépendances
+réelles, jamais par `create_app` : le code de production ne porte pas
+d'endpoints factices.
