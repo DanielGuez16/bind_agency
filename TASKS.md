@@ -34,7 +34,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
 
 - [x] Initialiser le dépôt : `api/` FastAPI, `app/` Expo, `SPEC.md`, `TASKS.md`, `DECISIONS.md`, `CLAUDE.md`
       *Fin : les deux projets démarrent en local avec une commande documentée*
-- [ ] Modèle de données complet et migrations
+- [x] Modèle de données complet et migrations
       *Fin : toutes les tables de la spec créées, migration réversible*
 - [ ] Authentification et rôles créateur, membre commerce, admin
       *Fin : un utilisateur de chaque rôle peut se connecter, les routes protégées répondent 403 au mauvais rôle*
