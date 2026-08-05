@@ -36,6 +36,12 @@ class TokenPair(BaseModel):
     expires_in: int
 
 
+class UpdateMeRequest(BaseModel):
+    """Seule la langue est modifiable ici : le reste du profil relève des phases suivantes."""
+
+    locale: Locale
+
+
 class UserRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

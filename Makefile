@@ -7,7 +7,7 @@ PY       := $(VENV)/bin/python
 PYTHON   ?= python3.12
 COMPOSE  := docker compose
 
-.PHONY: help install db-up db-down db-logs dev app test lint fmt migrate clean
+.PHONY: help install db-up db-down db-logs dev app test test-api test-app lint fmt migrate clean
 
 help: ## Liste les cibles disponibles
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -36,12 +36,18 @@ dev: db-up ## Lance l'API sur http://localhost:8010
 app: ## Lance l'app Expo (appuyer sur `w` pour le build web)
 	cd $(APP) && npx expo start
 
-test: db-up ## Lance la suite pytest sur une base de test dédiée
+test: test-api test-app ## Lance les deux suites
+
+test-api: db-up ## Lance pytest sur une base de test dédiée
 	cd $(API) && .venv/bin/pytest -q
 
-lint: ## Vérifie le style Python
+test-app: ## Lance jest sur l'app
+	cd $(APP) && npx jest
+
+lint: ## Vérifie le style Python et les types de l'app
 	$(PY) -m ruff check $(API)
 	$(PY) -m ruff format --check $(API)
+	cd $(APP) && npx tsc --noEmit
 
 fmt: ## Reformate le code Python
 	$(PY) -m ruff format $(API)

@@ -59,3 +59,29 @@ jobs:
       - name: Pytest
         working-directory: api
         run: pytest -q
+
+  app:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Installer les dépendances
+        working-directory: app
+        run: npm ci
+
+      - name: Types
+        working-directory: app
+        run: npx tsc --noEmit
+
+      # Le test des catalogues lit api/app/core/errors.py : il a besoin du
+      # dépôt entier, pas seulement du dossier app.
+      - name: Jest
+        working-directory: app
+        run: npx jest --ci
