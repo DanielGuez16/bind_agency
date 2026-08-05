@@ -235,3 +235,12 @@ test le vérifie explicitement.
 **Seules les transitions existantes sont câblées.**
 Comptes et jetons. Les états de réservation et de contrepartie arriveront avec
 leurs phases, avec les entrées correspondantes dans `AuditedEntity`.
+
+**Une erreur de configuration nomme les champs, jamais les valeurs.**
+`get_settings` enveloppe la `ValidationError` de pydantic-settings dans une
+`ConfigurationError` qui ne cite que `loc` et `type` — ni `input`, qui porte la
+valeur reçue, ni `msg`, qui peut la citer selon le validateur. Le `raise ... from
+None` est le cœur du masquage : sans lui l'exception d'origine reste chaînée et
+son affichage recrache le dictionnaire d'entrée en entier. Un test vérifie
+l'absence de la clé et de l'URL dans la trace formatée complète, pas seulement
+dans le message.

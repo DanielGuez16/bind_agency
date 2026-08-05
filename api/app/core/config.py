@@ -9,7 +9,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Annotated
 
-from pydantic import BeforeValidator, Field, PostgresDsn, SecretStr
+from pydantic import BeforeValidator, Field, PostgresDsn, SecretStr, ValidationError
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 # Ancré sur `api/` et non sur le répertoire courant : le `.env` doit être trouvé
@@ -64,6 +64,41 @@ class Settings(BaseSettings):
     test_database_url: PostgresDsn | None = Field(default=None, repr=False)
 
 
+class ConfigurationError(RuntimeError):
+    """Configuration invalide.
+
+    Ne cite jamais les valeurs reçues, seulement les champs en cause. Une trace
+    de démarrage finit toujours collée dans un ticket ou une conversation.
+    """
+
+
+def _describe(error: ValidationError) -> str:
+    """Nomme les champs fautifs et la nature du défaut, sans leur contenu.
+
+    On lit `loc` et `type`, jamais `input` ni `msg` : le premier porte la valeur
+    reçue, le second peut la citer selon le validateur.
+    """
+    problems = sorted(
+        f"{'.'.join(str(part) for part in item['loc'])} ({item['type']})" for item in error.errors()
+    )
+    return (
+        "Configuration invalide. Champs en cause : "
+        + ", ".join(problems)
+        + ". Voir api/.env.example. Les valeurs reçues ne sont pas affichées, "
+        "volontairement."
+    )
+
+
+def build_settings(**overrides: object) -> Settings:
+    try:
+        return Settings(**overrides)  # type: ignore[arg-type]
+    except ValidationError as error:
+        # `from None` est le cœur du masquage : sans lui, la ValidationError
+        # d'origine reste chaînée et son affichage recrache le dictionnaire
+        # d'entrée, valeurs comprises.
+        raise ConfigurationError(_describe(error)) from None
+
+
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()
+    return build_settings()
