@@ -38,7 +38,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Fin : toutes les tables de la spec créées, migration réversible*
 - [x] Authentification et rôles créateur, membre commerce, admin
       *Fin : un utilisateur de chaque rôle peut se connecter, les routes protégées répondent 403 au mauvais rôle*
-- [ ] Journal d'audit des transitions d'état
+- [x] Journal d'audit des transitions d'état
       *Fin : toute transition écrit une ligne immuable*
 - [ ] Internationalisation anglais et espagnol côté API (messages) et app (interface)
       *Fin : basculer la locale change l'intégralité des libellés*

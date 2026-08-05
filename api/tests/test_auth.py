@@ -12,6 +12,7 @@ import jwt
 import pytest
 import sqlalchemy as sa
 from httpx import AsyncClient
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from app.core.config import get_settings
@@ -553,14 +554,35 @@ async def test_me_renvoie_le_compte_courant_sans_empreinte(client: AsyncClient) 
     assert "password_hash" not in body
 
 
-async def test_me_refuse_un_compte_supprime_entre_temps(
+async def test_me_refuse_un_jeton_designant_un_compte_inexistant(client: AsyncClient) -> None:
+    """Le jeton est parfaitement signé, mais son sujet n'existe pas.
+
+    Il n'est plus possible de supprimer un compte inscrit pour éprouver ce cas :
+    sa ligne de journal d'inscription le retient. C'est la politique
+    d'anonymisation qui s'applique, la suppression n'existe pas.
+    """
+    forge = create_token(
+        subject=uuid.uuid4(),
+        token_type=TokenType.ACCESS,
+        token_id=uuid.uuid4(),
+        lifetime=timedelta(hours=1),
+    )
+
+    response = await client.get(f"{PREFIX}/me", headers=auth_header(forge))
+    assert response.status_code == 401
+
+
+async def test_un_compte_inscrit_ne_peut_plus_etre_supprime(
     client: AsyncClient, conn: AsyncConnection
 ) -> None:
+    """Sa ligne de journal d'inscription le retient : effacer, c'est anonymiser."""
     tokens = await register_and_login(client)
-    await conn.execute(sa.delete(User).where(User.email == tokens["email"]))
 
-    response = await client.get(f"{PREFIX}/me", headers=auth_header(tokens["access_token"]))
-    assert response.status_code == 401
+    with pytest.raises(IntegrityError) as excinfo:
+        async with conn.begin_nested():
+            await conn.execute(sa.delete(User).where(User.email == tokens["email"]))
+
+    assert excinfo.value.orig.diag.constraint_name == "fk_audit_log_actor_user_id_app_user"
 
 
 async def test_un_compte_de_fabrique_peut_se_connecter(

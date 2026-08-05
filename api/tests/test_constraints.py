@@ -619,7 +619,13 @@ async def test_supprimer_un_acteur_du_journal_est_refuse(conn: AsyncConnection) 
     `SET NULL` était impossible : ce serait un UPDATE sur une table immuable.
     """
     user_id = await new_user(conn, role=UserRole.ADMIN)
-    await conn.execute(sa.insert(AuditLog).values(**_audit_row(), actor_user_id=user_id))
+    # Acteur humain : `system` avec un utilisateur est désormais refusé par
+    # `ck_audit_log_system_actor_has_no_user`.
+    await conn.execute(
+        sa.insert(AuditLog).values(
+            **_audit_row() | {"actor_kind": ActorKind.ADMIN}, actor_user_id=user_id
+        )
+    )
 
     await assert_rejected(
         conn,

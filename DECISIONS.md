@@ -194,3 +194,44 @@ En production, ne pas recopier cette trace dans un ticket.
 fait que `verify_password` renvoie faux quand l'empreinte est absente. Un
 `assert` disparaît sous `python -O`, et aurait transformé un refus
 d'authentification en erreur 500 le jour où cette fonction changerait.
+
+---
+
+## 2026-08-05 — Phase 1, journal d'audit
+
+**Point de passage unique, sans transaction propre.**
+`app/services/audit.py` est le seul endroit qui écrit dans `audit_log`. La
+fonction n'ouvre ni ne committe de transaction : elle écrit dans la session que
+l'appelant lui donne, et c'est l'appelant qui committe, une fois, avec la
+transition décrite. C'est ce qui rend impossible une transition committée sans
+sa trace — le contraire serait un bug, pas un cas dégradé.
+
+**`clock_timestamp()` et non `now()` sur `occurred_at`.**
+Découvert par un test en échec. `now()` renvoie l'heure de **début de
+transaction** : toutes les lignes écrites dans la même transaction portaient un
+horodatage identique, et le journal était incapable de dire qu'un jeton avait
+été révoqué *puis* un autre émis. Sur une rotation, les deux lignes sont
+séparées d'une milliseconde — indistinguables avec `now()`. Les autres tables
+gardent `now()` sur `created_at`, l'ordre intra-transaction n'y a pas de sens.
+
+**L'absence d'acteur utilisateur est une information, pas un trou.**
+`CHECK ((actor_kind = 'system') = (actor_user_id IS NULL))`. L'équivalence
+interdit les deux incohérences : un « système » attribué à quelqu'un, et un
+acteur humain anonyme dont on ne saura jamais qui il était. Le service refuse en
+plus une transition système sans `reason` : une décision automatique muette est
+indéfendable trois mois plus tard.
+
+**Une ligne par entité touchée, jamais une ligne pour un lot.**
+La révocation en masse déclenchée par un rejeu utilise `RETURNING` pour
+journaliser chaque jeton coupé séparément. « Des jetons ont été révoqués » n'est
+pas une trace exploitable.
+
+**Un compte inscrit n'est plus supprimable.**
+Sa ligne de journal d'inscription le retient, par la clé étrangère `RESTRICT`
+posée à la tâche précédente. Ce n'est pas une régression : c'est la politique
+d'anonymisation qui devient effective dès la première écriture du journal. Un
+test le vérifie explicitement.
+
+**Seules les transitions existantes sont câblées.**
+Comptes et jetons. Les états de réservation et de contrepartie arriveront avec
+leurs phases, avec les entrées correspondantes dans `AuditedEntity`.

@@ -138,3 +138,14 @@ class ActorKind(StrEnum):
     CREATOR = "creator"
     BUSINESS_MEMBER = "business_member"
     ADMIN = "admin"
+
+
+class RefreshTokenState(StrEnum):
+    """État logique d'un jeton de rafraîchissement.
+
+    Aucune colonne ne le porte : il se déduit de `revoked_at`. Il n'existe que
+    comme vocabulaire du journal d'audit, qui doit nommer les états qu'il décrit.
+    """
+
+    ISSUED = "issued"
+    REVOKED = "revoked"
