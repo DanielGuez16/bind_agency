@@ -27,6 +27,11 @@ class ErrorCode(StrEnum):
     INSUFFICIENT_ROLE = "insufficient_role"
     NOT_A_MEMBER = "not_a_member"
 
+    # Commerce
+    BUSINESS_ALREADY_ACTIVE = "business_already_active"
+    BUSINESS_MISSING_ADDRESS = "business_missing_address"
+    BUSINESS_MISSING_COORDINATES = "business_missing_coordinates"
+
     # Transverses
     VALIDATION_FAILED = "validation_failed"
     NOT_FOUND = "not_found"

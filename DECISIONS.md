@@ -352,3 +352,56 @@ coordonnées n'aurait pas de sens. Écart signalé.
 Une détection de rejeu est une décision du système, une anonymisation est un
 droit exercé par quelqu'un. La même opération technique, deux acteurs
 différents : c'est à l'appelant de le dire, pas à la fonction de le supposer.
+
+---
+
+## 2026-08-05 — Phase 2, profil commerce
+
+**Le géocodage est une interface avant d'être un service.**
+Une seule opération, adresse vers coordonnées. `ManualGeocoder` ne résout rien :
+il rend les coordonnées telles qu'on les lui donne. Aucun appel réseau, aucune
+clé, aucune dépendance ajoutée. La phase 2 existe donc sans attendre le choix
+d'un fournisseur, et la règle « un commerce n'est actif que géocodé » reste
+vraie sans dépendre de personne. L'implémentation réelle arrive en phase 5,
+quand le fil géolocalisé en a besoin, et remplacera `ManualGeocoder` sans que le
+service de commerce change d'une ligne.
+
+Le manque était réel, pas une erreur de rédaction : la phase 0 listait les
+dépendances externes connues à l'écriture, et celle-ci n'était apparue nulle
+part. Elle y figure désormais, avec la même nature que les autres — compte, clé,
+coût à l'appel.
+
+**Le créateur devient `owner` dans la même transaction.**
+Un commerce sans membre est un commerce auquel personne ne peut accéder. Les
+deux écritures ne sont pas deux étapes dont la seconde pourrait manquer.
+
+**L'activation est une transition explicite, pas un effet de bord.**
+Une route dédiée, un passage par le point d'entrée du journal, et un refus qui
+nomme la condition manquante — `business_missing_address` ou
+`business_missing_coordinates`. « Ça n'a pas marché » n'aide personne à
+compléter son inscription.
+
+**Le fuseau est déclaré, jamais déduit.**
+Ni des coordonnées, ni de l'adresse. Validé contre la base de fuseaux du
+système plutôt que contre une liste recopiée qui prendrait du retard au
+prochain changement politique. `tzdata` est ajouté aux dépendances : une image
+Docker sans données de fuseau rendrait `available_timezones()` vide, donc toute
+validation impossible.
+
+**La devise est immuable, garanti par trigger.**
+Le schéma de mise à jour ne la contient pas et refuse les champs inconnus —
+l'envoyer donne un 422 plutôt qu'un succès silencieux. Mais un schéma protège
+une route, pas une table : un trigger refuse tout changement de `currency` en
+base. Tous les montants du commerce, prix de catalogue comme
+`value_cents_snapshot` figés sur des réservations passées, sont libellés dans
+cette devise sans la porter eux-mêmes. La changer ne convertirait rien, elle
+réinterpréterait l'historique.
+
+**`/business/...` pour le commerçant, `/businesses/...` réservé à la découverte.**
+Les deux n'auront pas les mêmes règles d'accès en phase 5. Les séparer
+maintenant évite d'avoir à démêler un chemin partagé plus tard.
+
+**`current_business` plutôt qu'un `assert` dans le routeur.**
+L'appartenance prouve l'existence du commerce par clé étrangère, mais un
+`assert` disparaîtrait sous `python -O` et transformerait l'impossible en 500.
+La dépendance le charge et répond 403 dans le cas qui ne devrait pas arriver.

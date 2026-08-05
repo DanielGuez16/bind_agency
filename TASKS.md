@@ -25,6 +25,8 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Fin : `.env.example` documenté*
 - [ ] Poser un premier jeu de seuils de paliers provisoire en configuration
       *Fin : valeurs modifiables sans redéploiement, à faire valider par Rebecca plus tard*
+- [ ] Choisir le fournisseur de géocodage d'adresse, ouvrir le compte et la clé
+      *Fin : clé en configuration, coût à l'appel connu. N'est apparu qu'à la phase 2 : la contrainte « un commerce n'est actif que géocodé » suppose un service de résolution, qu'aucune ligne de cette liste ne prévoyait. Contourné en phase 2 par saisie manuelle des coordonnées, réellement nécessaire en phase 5*
 - [ ] Comptes Apple et Google au nom de l'entité
       *Fin : à faire avant la distribution seulement, un build de développement Expo n'en a pas besoin*
 
@@ -49,7 +51,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
 
 ## Phase 2 — Commerce
 
-- [ ] Profil commerce : création, catégorie, adresse, géolocalisation, fuseau
+- [x] Profil commerce : création, catégorie, adresse, géolocalisation, fuseau
       *Fin : un commerce peut être créé et relu avec ses coordonnées géographiques*
 - [ ] Catalogue en saisie manuelle, items et variantes, réservable ou non
       *Fin : contrainte en base imposant une durée dès que l'item est réservable, une variante est réservable et pas son parent*
@@ -98,6 +100,8 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Fin : test de concurrence, deux réservations simultanées sur la dernière place, une seule passe*
 - [ ] Machine à états de la réservation, annulation, absence, expiration
       *Fin : toutes les transitions de la spec testées, aucune transition illégale possible*
+- [ ] Implémentation réelle du géocodage d'adresse
+      *Fin : une adresse saisie librement produit des coordonnées, et l'échec de résolution laisse le commerce en `onboarding` sans bloquer son inscription*
 - [ ] Résolveur d'appartenance pour les ressources sans `business_id` dans l'URL
       *Fin : un test par type de ressource — réservation, contrepartie, preuve, code de retrait — vérifiant qu'un membre du commerce A reçoit 403 sur une ressource du commerce B. `require_business_member` ne sait aujourd'hui lire l'identifiant que dans le chemin ; c'est le point de fuite entre commerces le plus probable du projet*
 

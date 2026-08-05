@@ -20,7 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.db import get_session
 from app.core.errors import ErrorCode, api_error
 from app.core.security import InvalidToken, TokenType, decode_token
-from app.models import BusinessMember, User
+from app.models import Business, BusinessMember, User
 from app.models.enums import UserRole, UserStatus
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
@@ -103,3 +103,19 @@ async def require_business_member(
 
 
 BusinessMembership = Annotated[BusinessMember, Depends(require_business_member)]
+
+
+async def current_business(membership: BusinessMembership, session: SessionDep) -> Business:
+    """Le commerce désigné par le chemin, une fois l'appartenance établie.
+
+    La clé étrangère de `business_member` garantit qu'il existe. On ne s'appuie
+    pas sur un `assert` pour autant : il disparaîtrait sous `python -O` et
+    transformerait l'impossible en 500.
+    """
+    business = await session.get(Business, membership.business_id)
+    if business is None:
+        raise api_error(status.HTTP_403_FORBIDDEN, ErrorCode.NOT_A_MEMBER)
+    return business
+
+
+CurrentBusiness = Annotated[Business, Depends(current_business)]
