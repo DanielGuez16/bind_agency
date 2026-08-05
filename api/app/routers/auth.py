@@ -4,14 +4,16 @@ Elles valident, appellent un service, traduisent ses erreurs en codes HTTP.
 Aucune requête base, aucune règle d'accès écrite ici.
 """
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, status
 
 from app.core.dependencies import CurrentUser, SessionDep
+from app.core.errors import ErrorCode, api_error
 from app.schemas.auth import (
     LoginRequest,
     RefreshRequest,
     RegisterRequest,
     TokenPair,
+    UpdateMeRequest,
     UserRead,
 )
 from app.services import auth as auth_service
@@ -38,9 +40,7 @@ async def register(payload: RegisterRequest, session: SessionDep) -> UserRead:
             locale=payload.locale,
         )
     except auth_service.EmailAlreadyUsed as error:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail="email_already_used"
-        ) from error
+        raise api_error(status.HTTP_409_CONFLICT, ErrorCode.EMAIL_ALREADY_USED) from error
 
     await session.commit()
     return UserRead.model_validate(user)
@@ -53,15 +53,11 @@ async def login(payload: LoginRequest, session: SessionDep) -> TokenPair:
             session, email=payload.email, password=payload.password
         )
     except auth_service.InvalidCredentials as error:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_credentials"
-        ) from error
+        raise api_error(status.HTTP_401_UNAUTHORIZED, ErrorCode.INVALID_CREDENTIALS) from error
     except auth_service.AccountNotActive as error:
         # 403 et non 401 : les identifiants sont bons, c'est le compte qui est
         # fermé. Réessayer n'y changera rien.
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="account_not_active"
-        ) from error
+        raise api_error(status.HTTP_403_FORBIDDEN, ErrorCode.ACCOUNT_NOT_ACTIVE) from error
 
     issued = await auth_service.issue_tokens(session, user)
     await session.commit()
@@ -76,9 +72,7 @@ async def refresh(payload: RefreshRequest, session: SessionDep) -> TokenPair:
         # Le commit est nécessaire : un rejeu détecté révoque toutes les
         # sessions du compte, et cette révocation doit survivre au refus.
         await session.commit()
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_refresh_token"
-        ) from error
+        raise api_error(status.HTTP_401_UNAUTHORIZED, ErrorCode.INVALID_REFRESH_TOKEN) from error
 
     await session.commit()
     return _token_pair(issued)
@@ -89,13 +83,19 @@ async def logout(payload: RefreshRequest, session: SessionDep) -> None:
     try:
         await auth_service.revoke(session, payload.refresh_token)
     except auth_service.InvalidRefreshToken as error:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_refresh_token"
-        ) from error
+        raise api_error(status.HTTP_401_UNAUTHORIZED, ErrorCode.INVALID_REFRESH_TOKEN) from error
 
     await session.commit()
 
 
 @router.get("/me", response_model=UserRead)
 async def read_me(user: CurrentUser) -> UserRead:
+    return UserRead.model_validate(user)
+
+
+@router.patch("/me", response_model=UserRead)
+async def update_me(payload: UpdateMeRequest, user: CurrentUser, session: SessionDep) -> UserRead:
+    """La langue du compte : celle dans laquelle le serveur s'adressera à lui."""
+    user.locale = payload.locale
+    await session.commit()
     return UserRead.model_validate(user)

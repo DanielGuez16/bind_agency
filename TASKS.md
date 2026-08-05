@@ -40,7 +40,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Fin : un utilisateur de chaque rôle peut se connecter, les routes protégées répondent 403 au mauvais rôle*
 - [x] Journal d'audit des transitions d'état
       *Fin : toute transition écrit une ligne immuable*
-- [ ] Internationalisation anglais et espagnol côté API (messages) et app (interface)
+- [x] Internationalisation anglais et espagnol côté API (messages) et app (interface)
       *Fin : basculer la locale change l'intégralité des libellés*
 - [ ] Procédure d'anonymisation de compte
       *Fin : un compte anonymisé perd email, téléphone, nom, prénom et empreinte, ses jetons sont révoqués, ses snapshots supprimés, son statut passe à `anonymized`, et toutes ses lignes de journal, réservations et contreparties restent intactes et rattachées*

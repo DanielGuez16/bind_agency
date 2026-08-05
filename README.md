@@ -30,8 +30,10 @@ make app         # app Expo, touche `w` pour le web
 | `make db-down` | arrête Postgres, conserve le volume |
 | `make dev` | API sur `http://localhost:8010` |
 | `make app` | serveur Expo |
-| `make test` | suite pytest sur une base de test dédiée |
-| `make lint` | ruff, style et format |
+| `make test` | les deux suites |
+| `make test-api` | pytest sur une base de test dédiée |
+| `make test-app` | jest sur l'app |
+| `make lint` | ruff sur l'API, types TypeScript sur l'app |
 | `make fmt` | reformate |
 | `make migrate` | applique les migrations Alembic |
 | `make clean` | supprime conteneur, volume et venv |
@@ -57,6 +59,26 @@ ports standards sur la machine de développement (voir `DECISIONS.md`).
 | Postgres | 5434 |
 | API | 8010 |
 | Expo web | 8081 |
+
+---
+
+## Langues
+
+L'API **ne renvoie jamais de texte destiné à l'affichage**. Elle renvoie un code
+stable — `email_already_used`, `not_a_member` — et c'est l'application qui le
+traduit. Corriger une formulation ne demande donc pas de redéployer le backend.
+
+- Catalogue des codes : [api/app/core/errors.py](api/app/core/errors.py), source de vérité
+- Messages émis par le serveur lui-même (emails à venir) : [api/app/locales/](api/app/locales/)
+- Catalogues de l'app : [app/src/i18n/](app/src/i18n/)
+
+Ajouter un code d'erreur demande de le poser dans `ErrorCode` **et** dans les
+deux catalogues de l'app. Trois tests tiennent la chaîne : un refus de tout code
+renvoyé hors catalogue, une comparaison des clés anglaises et espagnoles, et le
+typage TypeScript qui rejette une clé manquante à la compilation.
+
+Le contenu saisi par les commerces — noms et descriptions d'items — n'est jamais
+traduit. La devise vient du commerce, jamais de la langue.
 
 ---
 

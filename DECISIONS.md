@@ -244,3 +244,52 @@ None` est le cœur du masquage : sans lui l'exception d'origine reste chaînée 
 son affichage recrache le dictionnaire d'entrée en entier. Un test vérifie
 l'absence de la clé et de l'URL dans la trace formatée complète, pas seulement
 dans le message.
+
+---
+
+## 2026-08-05 — Phase 1, internationalisation
+
+**L'API renvoie des codes, l'application traduit.**
+Aucun texte destiné à l'affichage ne sort du backend. Une API qui renvoie des
+phrases localisées oblige à redéployer le serveur pour corriger une virgule, et
+impose de connaître la langue de l'appelant à chaque endpoint. `ErrorCode` dans
+`api/app/core/errors.py` est la source de vérité, et `api_error()` en est la
+seule fabrique — le type du paramètre interdit qu'un code hors catalogue parte
+vers l'app.
+
+**Trois garde-fous contre la dérive entre backend et app.**
+Un test d'analyse statique refuse tout `detail="..."` littéral absent de
+`ErrorCode`. Un test côté app lit `errors.py` directement — plutôt que d'en
+recopier la liste, ce qui dériverait — et vérifie que chaque code a son message.
+Et le type `Catalogue` fait échouer la compilation TypeScript si une clé manque
+en espagnol. Vérifié en retirant une clé : la compilation et le test tombent
+tous les deux.
+
+**Un catalogue serveur malgré tout, pour ce qui ne passe pas par l'app.**
+`api/app/locales/*.json`, lu avec la locale de `app_user.locale` — celle du
+destinataire, jamais celle de l'appelant. Un seul message aujourd'hui, la
+structure existe pour les emails transactionnels de la phase 7.
+
+**Le 422 ne renvoie plus la valeur rejetée.**
+Découvert en écrivant le catalogue : la réponse de validation par défaut de
+FastAPI contient `input`, c'est-à-dire la valeur refusée. Un mot de passe trop
+court repartait tel quel vers l'appelant. Le gestionnaire ne conserve que le
+chemin du champ et la nature du défaut, même discipline que pour les erreurs de
+configuration, et normalise le corps sur le code `validation_failed`.
+
+**La locale décide du format, le commerce décide de la devise.**
+`formatMoney(centimes, devise, locale)` prend la devise en paramètre
+obligatoire. La déduire de la langue afficherait des euros à un créateur
+hispanophone de Miami. Même logique sur les fuseaux : `timeZone` est obligatoire,
+c'est celui du commerce.
+
+**Le harnais de test de l'app étend le preset au lieu de le remplacer.**
+`jest-expo` définit deux `setupFiles` indispensables. Les déclarer dans
+`package.json` les remplace au lieu de s'y ajouter et casse l'environnement en
+silence — les tests continuent de passer. La configuration vit donc dans
+`jest.config.js`, qui étale le preset explicitement.
+
+**`EXPO_PUBLIC_*` est inliné à la compilation.**
+Ces variables n'existent pas hors bundler, donc pas sous jest. L'URL de l'API est
+une propriété de composant avec l'environnement pour valeur par défaut, ce qui la
+rend injectable en test sans contourner le bundler.

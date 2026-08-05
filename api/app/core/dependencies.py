@@ -13,11 +13,12 @@ from collections.abc import Callable, Coroutine
 from typing import Annotated, Any
 
 import sqlalchemy as sa
-from fastapi import Depends, HTTPException, Path, status
+from fastapi import Depends, Path, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_session
+from app.core.errors import ErrorCode, api_error
 from app.core.security import InvalidToken, TokenType, decode_token
 from app.models import BusinessMember, User
 from app.models.enums import UserRole, UserStatus
@@ -28,9 +29,9 @@ SessionDep = Annotated[AsyncSession, Depends(get_session)]
 _bearer_scheme = HTTPBearer(auto_error=False)
 CredentialsDep = Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer_scheme)]
 
-_UNAUTHENTICATED = HTTPException(
-    status_code=status.HTTP_401_UNAUTHORIZED,
-    detail="authentication_required",
+_UNAUTHENTICATED = api_error(
+    status.HTTP_401_UNAUTHORIZED,
+    ErrorCode.AUTHENTICATION_REQUIRED,
     headers={"WWW-Authenticate": "Bearer"},
 )
 
@@ -63,7 +64,7 @@ def require_role(*roles: UserRole) -> Callable[..., Coroutine[Any, Any, User]]:
 
     async def dependency(user: CurrentUser) -> User:
         if user.role not in allowed:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="insufficient_role")
+            raise api_error(status.HTTP_403_FORBIDDEN, ErrorCode.INSUFFICIENT_ROLE)
         return user
 
     return dependency
@@ -84,7 +85,7 @@ async def require_business_member(
     commerce.
     """
     if user.role is not UserRole.BUSINESS_MEMBER:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="insufficient_role")
+        raise api_error(status.HTTP_403_FORBIDDEN, ErrorCode.INSUFFICIENT_ROLE)
 
     membership = await session.scalar(
         sa.select(BusinessMember).where(
@@ -96,7 +97,7 @@ async def require_business_member(
     # Commerce inexistant ou non rattaché : même réponse. Distinguer les deux
     # cas dirait à un membre du commerce A quels identifiants existent ailleurs.
     if membership is None:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not_a_member")
+        raise api_error(status.HTTP_403_FORBIDDEN, ErrorCode.NOT_A_MEMBER)
 
     return membership
 
