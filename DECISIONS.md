@@ -293,3 +293,62 @@ silence — les tests continuent de passer. La configuration vit donc dans
 Ces variables n'existent pas hors bundler, donc pas sous jest. L'URL de l'API est
 une propriété de composant avec l'environnement pour valeur par défaut, ce qui la
 rend injectable en test sans contourner le bundler.
+
+**Bruit `act(...)` dans les tests de l'app : connu, laissé tel quel.**
+Les tests de rendu émettent des `console.error` « The current testing
+environment is not configured to support act(...) ». Appariement de versions en
+amont entre `@testing-library/react-native` 14 et React 19 ; le bon moteur de
+rendu (`test-renderer`) est bien installé, le drapeau `IS_REACT_ACT_ENVIRONMENT`
+est bien posé, et une garde de démontage a été ajoutée — sans effet. Aucun
+impact sur le déterminisme : les 24 tests passent. `console.error` n'est
+volontairement pas muselé, ça masquerait de vraies erreurs. À revoir quand la
+bibliothèque rattrape React 19, pas avant.
+
+---
+
+## 2026-08-05 — Phase 1, anonymisation de compte
+
+**Effacement sur place, jamais suppression.**
+Ce qui identifie disparaît, ce qui engage reste. Réservations, contreparties,
+preuves, événements de fiabilité et lignes de journal restent intacts et
+toujours rattachés : un commerce ne perd pas son historique parce qu'un créateur
+exerce un droit. Les `RESTRICT` posés à la tâche du modèle rendaient déjà la
+suppression impossible ; cette procédure est ce qui rend l'effacement possible
+malgré eux.
+
+**L'acteur est toujours quelqu'un, jamais le système.**
+Le créateur qui exerce son droit, ou l'administrateur qui le fait pour lui. La
+fonction refuse `ActorKind.SYSTEM` : une anonymisation n'arrive pas toute seule,
+et le journal doit pouvoir dire qui l'a demandée.
+
+**`external_id` et `handle` sont des données personnelles, pas des clés.**
+Un handle Instagram nomme quelqu'un. Ils sont effacés avec les jetons, le compte
+social passe en `revoked`, et la ligne reste comme coquille porteuse de la
+référence des réservations passées. Postgres acceptant plusieurs `NULL` dans un
+index unique, plusieurs comptes anonymisés cohabitent sur la même plateforme —
+vérifié par un test, c'est la propriété qui rend tout le mécanisme viable.
+
+Deux CHECK encadrent la nullabilité ainsi ouverte : les deux identifiants
+s'effacent ensemble (`identity_erased_together`), et un compte encore utilisable
+garde forcément son identité (`identity_unless_revoked`).
+
+**Un trigger gèle le compte anonymisé.**
+Une anonymisation qu'un simple `UPDATE` peut défaire n'en est pas une. Le
+trigger refuse les deux façons de la défaire : remettre le compte en service, et
+y réinjecter email, téléphone ou empreinte. C'est pour ça que la mise à jour de
+`app_user` est la dernière opération de la procédure.
+
+**Idempotente par retour anticipé.**
+Rejouée sur un compte déjà anonymisé, elle ne fait rien, n'écrit aucune seconde
+ligne de journal et ne lève pas. C'est ce qui permet de la relancer après un
+incident sans savoir jusqu'où la précédente était allée.
+
+**`city` effacée en plus de la liste demandée.**
+Le périmètre citait nom, prénom, bio et geo. `city` est une donnée de
+localisation personnelle au même titre que `geo` — la laisser en effaçant les
+coordonnées n'aurait pas de sens. Écart signalé.
+
+**`revoke_all_for_user` prend désormais son acteur et son motif.**
+Une détection de rejeu est une décision du système, une anonymisation est un
+droit exercé par quelqu'un. La même opération technique, deux acteurs
+différents : c'est à l'appelant de le dire, pas à la fonction de le supposer.

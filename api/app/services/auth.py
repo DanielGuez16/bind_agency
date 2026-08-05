@@ -187,7 +187,9 @@ async def _load_active_refresh_row(session: AsyncSession, raw_token: str) -> Ref
     if row.revoked_at is not None:
         # Rejeu d'un jeton déjà consommé ou révoqué : la session entière est
         # suspecte, on coupe toutes celles du compte.
-        await revoke_all_for_user(session, row.user_id)
+        await revoke_all_for_user(
+            session, row.user_id, actor=Actor.system(), reason=REASON_REUSE_DETECTED
+        )
         raise InvalidRefreshToken("jeton révoqué")
 
     if row.expires_at <= datetime.now(UTC):
@@ -218,8 +220,13 @@ async def revoke(session: AsyncSession, raw_token: str) -> None:
     await _mark_revoked(session, row, actor=actor, reason=reason)
 
 
-async def revoke_all_for_user(session: AsyncSession, user_id: uuid.UUID) -> None:
-    """Révocation en masse, déclenchée par le système et jamais par un humain.
+async def revoke_all_for_user(
+    session: AsyncSession, user_id: uuid.UUID, *, actor: Actor, reason: str
+) -> None:
+    """Révocation en masse de toutes les sessions d'un compte.
+
+    L'acteur est passé par l'appelant : une détection de rejeu est une décision
+    du système, une anonymisation est un droit exercé par quelqu'un.
 
     Le `RETURNING` sert le journal : une ligne par jeton coupé, plutôt qu'une
     seule ligne disant « des jetons ont été révoqués ».
@@ -241,8 +248,8 @@ async def revoke_all_for_user(session: AsyncSession, user_id: uuid.UUID) -> None
             entity_id=token_id,
             from_status=RefreshTokenState.ISSUED.value,
             to_status=RefreshTokenState.REVOKED.value,
-            actor=Actor.system(),
-            reason=REASON_REUSE_DETECTED,
+            actor=actor,
+            reason=reason,
         )
 
     await session.flush()

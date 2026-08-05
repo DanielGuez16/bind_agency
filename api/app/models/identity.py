@@ -117,8 +117,11 @@ class SocialAccount(UUIDPrimaryKey, Base):
         sa.ForeignKey("creator_profile.user_id", ondelete="CASCADE"), nullable=False
     )
     platform: Mapped[Platform] = mapped_column(enum_column(Platform, "platform"), nullable=False)
-    external_id: Mapped[str] = mapped_column(sa.Text, nullable=False)
-    handle: Mapped[str] = mapped_column(sa.Text, nullable=False)
+    # Identifiants personnels, pas des clés techniques : un handle Instagram
+    # nomme quelqu'un. Nullables pour que l'anonymisation puisse les effacer en
+    # laissant la ligne en place — les réservations passées la référencent.
+    external_id: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    handle: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
 
     # bytea dès maintenant : le chiffrement au repos arrive en phase 4, le type
     # ne doit pas changer à ce moment-là.
@@ -153,7 +156,17 @@ class SocialAccount(UUIDPrimaryKey, Base):
     )
 
     __table_args__ = (
+        # Postgres accepte plusieurs NULL dans un index unique : deux comptes
+        # anonymisés sur la même plateforme cohabitent sans conflit.
         sa.UniqueConstraint("platform", "external_id"),
+        # Les deux identifiants s'effacent ensemble ou pas du tout.
+        sa.CheckConstraint(
+            "(external_id IS NULL) = (handle IS NULL)", name="identity_erased_together"
+        ),
+        # Un compte encore utilisable garde forcément son identité.
+        sa.CheckConstraint(
+            "external_id IS NOT NULL OR status = 'revoked'", name="identity_unless_revoked"
+        ),
         sa.Index("ix_social_account_creator_id", "creator_id"),
     )
 

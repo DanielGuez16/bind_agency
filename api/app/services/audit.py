@@ -35,6 +35,7 @@ class AuditedEntity(StrEnum):
 
     APP_USER = "app_user"
     REFRESH_TOKEN = "refresh_token"
+    SOCIAL_ACCOUNT = "social_account"
 
 
 @dataclass(frozen=True, slots=True)
