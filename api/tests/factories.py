@@ -11,6 +11,7 @@ from typing import Any
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncConnection
 
+from app.core.security import hash_password
 from app.models import (
     Booking,
     Business,
@@ -45,10 +46,18 @@ async def new_business(conn: AsyncConnection, **overrides: Any) -> uuid.UUID:
     return result.scalar_one()
 
 
+PASSWORD = "mot-de-passe-de-test-1234"
+
+# Haché une seule fois : argon2id est volontairement lent, le refaire à chaque
+# insertion de test coûterait plusieurs secondes sur la suite.
+PASSWORD_HASH = hash_password(PASSWORD)
+
+
 async def new_user(conn: AsyncConnection, **overrides: Any) -> uuid.UUID:
     values: dict[str, Any] = {
         "role": UserRole.CREATOR,
         "email": f"{uuid.uuid4()}@example.com",
+        "password_hash": PASSWORD_HASH,
     } | overrides
     result = await conn.execute(sa.insert(User).values(**values).returning(User.id))
     return result.scalar_one()

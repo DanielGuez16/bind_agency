@@ -17,13 +17,20 @@ from alembic.config import Config
 from httpx import ASGITransport, AsyncClient
 from psycopg import sql
 from sqlalchemy import URL, make_url
-from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncConnection,
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 from sqlalchemy.pool import NullPool
 
 from alembic import command
 from app.core.config import API_ROOT, get_settings
-from app.core.db import get_engine
+from app.core.db import get_engine, get_session
 from app.main import create_app
+from tests.protected_routes import router as probe_router
 
 
 def _maintenance_dsn(url: URL) -> str:
@@ -107,9 +114,29 @@ async def conn(engine: AsyncEngine) -> AsyncIterator[AsyncConnection]:
 
 
 @pytest.fixture
-async def client(engine: AsyncEngine) -> AsyncIterator[AsyncClient]:
+async def client(engine: AsyncEngine, conn: AsyncConnection) -> AsyncIterator[AsyncClient]:
+    """Client HTTP dont les sessions partagent la transaction du test.
+
+    `join_transaction_mode="create_savepoint"` fait qu'un `commit()` dans une
+    route relâche un point de sauvegarde au lieu de valider : les écritures de
+    l'API sont visibles du test, et tout disparaît à la fin. Les routes de
+    sonde ne sont montées qu'ici, jamais dans l'application réelle.
+    """
+    session_factory = async_sessionmaker(
+        bind=conn,
+        expire_on_commit=False,
+        join_transaction_mode="create_savepoint",
+    )
+
+    async def override_get_session() -> AsyncIterator[AsyncSession]:
+        async with session_factory() as session:
+            yield session
+
     application = create_app()
+    application.include_router(probe_router, prefix=get_settings().api_v1_prefix)
     application.dependency_overrides[get_engine] = lambda: engine
+    application.dependency_overrides[get_session] = override_get_session
+
     transport = ASGITransport(app=application)
     async with AsyncClient(transport=transport, base_url="http://test") as http_client:
         yield http_client

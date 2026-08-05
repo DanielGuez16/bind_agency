@@ -5,6 +5,7 @@ l'autogénération. Un modèle absent de ce fichier est invisible aux migrations
 """
 
 from app.models.audit import AuditLog
+from app.models.auth import RefreshToken
 from app.models.base import Base
 from app.models.booking import Booking, CapacityException, CapacityRule, RedemptionCode
 from app.models.business import Business, BusinessMember, Subscription, SubscriptionPlan
@@ -28,6 +29,7 @@ __all__ = [
     "MenuImport",
     "Proof",
     "RedemptionCode",
+    "RefreshToken",
     "ReliabilityEvent",
     "SocialAccount",
     "SocialMetricsSnapshot",
