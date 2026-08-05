@@ -95,6 +95,10 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
+        sa.CheckConstraint(
+            "status = 'anonymized' OR email IS NOT NULL",
+            name=op.f("ck_app_user_email_unless_anonymized"),
+        ),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_app_user")),
     )
     op.create_index(
@@ -119,7 +123,7 @@ def upgrade() -> None:
             ),
             nullable=False,
         ),
-        sa.Column("address", sa.Text(), nullable=False),
+        sa.Column("address", sa.Text(), nullable=True),
         sa.Column(
             "geo",
             geoalchemy2.types.Geography(
@@ -129,9 +133,8 @@ def upgrade() -> None:
                 spatial_index=False,
                 from_text="ST_GeogFromText",
                 name="geography",
-                nullable=False,
             ),
-            nullable=False,
+            nullable=True,
         ),
         sa.Column(
             "timezone", sa.Text(), server_default=sa.text("'America/New_York'"), nullable=False
@@ -162,6 +165,14 @@ def upgrade() -> None:
             sa.DateTime(timezone=True),
             server_default=sa.text("now()"),
             nullable=False,
+        ),
+        sa.CheckConstraint(
+            "status <> 'active' OR geo IS NOT NULL",
+            name=op.f("ck_business_active_requires_geo"),
+        ),
+        sa.CheckConstraint(
+            "status <> 'active' OR address IS NOT NULL",
+            name=op.f("ck_business_active_requires_address"),
         ),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_business")),
     )

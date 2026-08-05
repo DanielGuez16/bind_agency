@@ -26,9 +26,12 @@ class Business(UUIDPrimaryKey, CreatedAt, Base):
     category: Mapped[BusinessCategory] = mapped_column(
         enum_column(BusinessCategory, "business_category"), nullable=False
     )
-    address: Mapped[str] = mapped_column(sa.Text, nullable=False)
-    geo: Mapped[object] = mapped_column(
-        Geography(geometry_type="POINT", srid=4326, spatial_index=False), nullable=False
+    # Nullables pendant l'onboarding : un géocodage peut échouer, adresse mal
+    # saisie ou service indisponible, et l'inscription ne doit pas se bloquer
+    # là-dessus. La garantie est reportée au passage en `active`, ci-dessous.
+    address: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    geo: Mapped[object | None] = mapped_column(
+        Geography(geometry_type="POINT", srid=4326, spatial_index=False), nullable=True
     )
     timezone: Mapped[str] = mapped_column(
         sa.Text, nullable=False, server_default=sa.text("'America/New_York'")
@@ -49,6 +52,12 @@ class Business(UUIDPrimaryKey, CreatedAt, Base):
     )
 
     __table_args__ = (
+        # Un commerce ne devient actif, donc visible dans le fil créateur, que
+        # localisable. Tant qu'il est en onboarding, il peut rester incomplet.
+        sa.CheckConstraint("status <> 'active' OR geo IS NOT NULL", name="active_requires_geo"),
+        sa.CheckConstraint(
+            "status <> 'active' OR address IS NOT NULL", name="active_requires_address"
+        ),
         sa.Index("ix_business_geo", "geo", postgresql_using="gist"),
         sa.Index("ix_business_category_status", "category", "status"),
     )

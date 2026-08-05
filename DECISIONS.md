@@ -119,3 +119,11 @@ peut pas diverger de sa source, et qui reste filtrable en SQL.
 Exception sur `UPDATE`, `DELETE` et `TRUNCATE` — ce dernier explicitement, il ne
 déclenche pas les triggers de ligne. Sans ces quinze lignes, « immuable » ne
 serait qu'une intention.
+
+**Complétude conditionnelle plutôt que `NOT NULL` inconditionnel.**
+`business.geo` et `business.address` sont nullables, mais
+`CHECK (status <> 'active' OR ... IS NOT NULL)` : un géocodage qui échoue ne
+bloque pas l'inscription, et un commerce n'apparaît dans le fil que localisable.
+Même logique sur `app_user.email`, nullable pour l'anonymisation seulement :
+`CHECK (status = 'anonymized' OR email IS NOT NULL)` interdit un compte sans
+moyen de connexion. Le statut porte la garantie, pas la colonne.

@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 
 from app.models import (
     AuditLog,
+    Business,
     CapacityRule,
     CatalogItem,
     CreatorProfile,
@@ -24,7 +25,15 @@ from app.models import (
     TierOffer,
     User,
 )
-from app.models.enums import ActorKind, CaptureMethod, ContentFormat, Platform, UserRole
+from app.models.enums import (
+    ActorKind,
+    BusinessStatus,
+    CaptureMethod,
+    ContentFormat,
+    Platform,
+    UserRole,
+    UserStatus,
+)
 from tests.factories import (
     booking_insert,
     new_booking_graph,
@@ -331,6 +340,85 @@ async def test_email_differant_par_la_casse_est_refuse(conn: AsyncConnection) ->
         sa.insert(User).values(role=UserRole.ADMIN, email="rebecca@example.com"),
         constraint="uq_app_user_email_lower",
     )
+
+
+# --------------------------------------------------------------------------
+# complétude conditionnelle : incomplet en onboarding, jamais en actif
+# --------------------------------------------------------------------------
+
+
+async def test_commerce_en_onboarding_peut_rester_sans_geo_ni_adresse(
+    conn: AsyncConnection,
+) -> None:
+    """Un géocodage qui échoue ne doit pas bloquer l'inscription."""
+    business_id = await new_business(conn, geo=None, address=None)
+
+    row = (
+        await conn.execute(
+            sa.select(Business.geo, Business.address, Business.status).where(
+                Business.id == business_id
+            )
+        )
+    ).one()
+    assert row.geo is None
+    assert row.address is None
+    assert row.status == BusinessStatus.ONBOARDING
+
+
+@pytest.mark.parametrize(
+    ("champ_absent", "constraint"),
+    [
+        ("geo", "ck_business_active_requires_geo"),
+        ("address", "ck_business_active_requires_address"),
+    ],
+)
+async def test_commerce_actif_sans_localisation_est_refuse(
+    conn: AsyncConnection, champ_absent: str, constraint: str
+) -> None:
+    """Un commerce n'apparaît dans le fil que localisable."""
+    business_id = await new_business(conn)
+
+    await assert_rejected(
+        conn,
+        sa.update(Business)
+        .where(Business.id == business_id)
+        .values(status=BusinessStatus.ACTIVE, **{champ_absent: None}),
+        constraint=constraint,
+    )
+
+
+async def test_commerce_complet_peut_devenir_actif(conn: AsyncConnection) -> None:
+    business_id = await new_business(conn)
+
+    await conn.execute(
+        sa.update(Business).where(Business.id == business_id).values(status=BusinessStatus.ACTIVE)
+    )
+
+    status = await conn.scalar(sa.select(Business.status).where(Business.id == business_id))
+    assert status == BusinessStatus.ACTIVE
+
+
+async def test_compte_sans_email_est_refuse_hors_anonymisation(conn: AsyncConnection) -> None:
+    """Sans adresse, le compte n'a plus aucun moyen de connexion."""
+    await assert_rejected(
+        conn,
+        sa.insert(User).values(role=UserRole.CREATOR, email=None),
+        constraint="ck_app_user_email_unless_anonymized",
+    )
+
+
+async def test_l_anonymisation_peut_effacer_l_email(conn: AsyncConnection) -> None:
+    user_id = await new_user(conn)
+
+    await conn.execute(
+        sa.update(User)
+        .where(User.id == user_id)
+        .values(status=UserStatus.ANONYMIZED, email=None, phone=None)
+    )
+
+    row = (await conn.execute(sa.select(User.email, User.status).where(User.id == user_id))).one()
+    assert row.email is None
+    assert row.status == UserStatus.ANONYMIZED
 
 
 # --------------------------------------------------------------------------

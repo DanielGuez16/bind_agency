@@ -45,6 +45,11 @@ class User(UUIDPrimaryKey, CreatedAt, Base):
     )
 
     __table_args__ = (
+        # `email` n'est nullable que pour permettre l'anonymisation : hors ce
+        # cas, un compte sans adresse serait un compte sans moyen de connexion.
+        sa.CheckConstraint(
+            "status = 'anonymized' OR email IS NOT NULL", name="email_unless_anonymized"
+        ),
         # Unicité insensible à la casse : deux comptes ne peuvent pas différer
         # par la seule casse de leur adresse.
         sa.Index("uq_app_user_email_lower", sa.text("lower(email)"), unique=True),
