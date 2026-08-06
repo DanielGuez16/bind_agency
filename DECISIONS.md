@@ -537,3 +537,47 @@ en 1.7, un type `timerange` sur `time` se crée en une ligne, et une contrainte
 end_time) WITH &&)` refuse exactement les recouvrements visés en laissant passer
 les plages accolées. Cinq lignes de migration. Non posée dans cette tâche, elle
 n'était pas demandée.
+
+---
+
+## 2026-08-05 — Phase 2, non-chevauchement en base et jeu de données de départ
+
+**Le non-chevauchement passe en base, sans quitter le service.**
+Contrainte d'exclusion `ex_capacity_rule_no_overlap`, via `btree_gist` et un type
+`timerange` créé pour l'occasion — Postgres n'en a pas sur `time` en standard.
+`&&` est strict aux bornes : deux plages accolées passent, ce qui est
+exactement la sémantique du service et le cas d'usage même de la coupure du
+midi. Le service continue de vérifier et de renvoyer `capacity_rule_overlap` : la
+contrainte est le filet, pas le message.
+
+`btree_gist` rejoint `postgis` sur la liste des extensions qui demanderont un
+rôle privilégié sur du Postgres managé, et que le `downgrade` ne supprime pas —
+une extension peut être partagée avec d'autres schémas de la même base. Le type
+`timerange`, lui, est à nous : le `downgrade` le supprime.
+
+**`ex_` rejoint les préfixes de nommage.** SQLAlchemy ne modélise pas les
+contraintes d'exclusion, elles sont donc nommées à la main dans leur migration,
+et le test de convention les accepte désormais.
+
+**`SPEC.md` dit maintenant que 0 vaut lundi.** L'ambiguïté était réelle : Python
+compte lundi à 0, Postgres dimanche à 0.
+
+**Le jeu de données passe par les services, pas par des insertions directes.**
+Il produit donc exactement ce que l'API aurait produit, lignes de journal
+comprises — six transitions de commerce, sept de compte — et il éprouve les
+règles dans les deux couches. Une insertion directe aurait fabriqué des données
+qu'aucun parcours réel ne peut atteindre.
+
+**Elle repart d'une base propre plutôt que de tenter une mise à jour.**
+`downgrade base` puis `upgrade head`, puis écriture. C'est ce qui la rend
+rejouable sans avoir à raisonner sur ce qu'une exécution précédente avait
+laissé. Elle refuse de tourner hors des environnements jetables : elle efface
+avant d'écrire.
+
+**Aucune donnée de test dans une migration.** Une migration décrit un schéma,
+pas son contenu. La commande est séparée et n'est jamais lancée automatiquement.
+
+**Les trois commerces diffèrent sur ce qui comptera en phase 5.** Variantes et
+journées coupées à midi pour le premier, items sans réservation pour le
+deuxième, cinq postes en parallèle avec fermeture et journée aménagée pour le
+troisième. Un jeu uniforme ne révélerait rien.

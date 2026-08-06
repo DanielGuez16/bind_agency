@@ -15,7 +15,9 @@ from app.core.schema import make_include_object
 from app.models import Base
 from app.models.base import POSTGRES_IDENTIFIER_MAX_LENGTH
 
-CONVENTION_PREFIXES = ("pk_", "uq_", "ck_", "fk_", "ix_")
+# `ex_` : contraintes d'exclusion, que SQLAlchemy ne modélise pas et qui sont
+# donc nommées à la main dans leur migration.
+CONVENTION_PREFIXES = ("pk_", "uq_", "ck_", "fk_", "ix_", "ex_")
 
 # Seules tables autorisées à porter une devise : le commerce, et le plan
 # d'abonnement qui est au niveau plateforme. Un montant ailleurs est libellé
