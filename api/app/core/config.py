@@ -59,6 +59,13 @@ class Settings(BaseSettings):
     access_token_ttl_seconds: int = 900
     refresh_token_ttl_seconds: int = 2_592_000
 
+    # Au-delà de cet âge, un relevé de métriques ne donne plus accès à rien.
+    # Le rafraîchissement est quotidien : sept jours veut dire que plusieurs
+    # passages ont échoué, et une éligibilité calculée sur de vieux chiffres
+    # n'est pas une éligibilité. Valeur unique, la même sur toutes les
+    # plateformes — le job est le même partout.
+    metrics_max_age_seconds: int = 604_800
+
     # Lue uniquement par la session pytest, jamais par l'application.
     # Sa présence est vérifiée dans tests/conftest.py, qui refuse de tourner sans.
     test_database_url: PostgresDsn | None = Field(default=None, repr=False)
