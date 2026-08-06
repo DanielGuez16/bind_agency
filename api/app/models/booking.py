@@ -52,6 +52,13 @@ class CapacityException(UUIDPrimaryKey, Base):
         sa.CheckConstraint(
             "(start_time IS NULL) = (end_time IS NULL)", name="time_window_both_or_neither"
         ),
+        # Une exception sans horaires est une fermeture, et une fermeture n'a
+        # pas d'horaires : les deux façons de le dire ne peuvent pas diverger.
+        sa.CheckConstraint("is_closed = (start_time IS NULL)", name="closed_has_no_hours"),
+        # Un jour fermé n'a pas de postes. Ajuster le nombre de postes d'une
+        # journée suppose donc d'en redonner les horaires — l'exception remplace
+        # la règle du jour, elle ne s'y ajoute pas.
+        sa.CheckConstraint("NOT is_closed OR concurrent_slots IS NULL", name="closed_has_no_slots"),
         sa.CheckConstraint("start_time IS NULL OR start_time < end_time", name="start_before_end"),
         sa.CheckConstraint(
             "concurrent_slots IS NULL OR concurrent_slots > 0", name="concurrent_slots_positive"

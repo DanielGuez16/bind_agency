@@ -55,7 +55,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Fin : un commerce peut être créé et relu avec ses coordonnées géographiques*
 - [x] Catalogue en saisie manuelle, items et variantes, réservable ou non
       *Fin : contrainte en base imposant une durée dès que l'item est réservable, une variante est réservable et pas son parent*
-- [ ] Règles de capacité et disponibilité temps réel
+- [x] Règles de capacité et disponibilité temps réel
       *Fin : horaires hebdomadaires et fermetures ponctuelles paramétrables, plusieurs plages par jour sans chevauchement ; le commerce active et désactive un item ou un parent, la lecture de son catalogue reflète l'état effectif, et la transition est journalisée*
 - [ ] Jeu de données de départ : trois commerces fictifs avec catalogue, capacités et créneaux
       *Fin : une commande recrée l'environnement de test à zéro*

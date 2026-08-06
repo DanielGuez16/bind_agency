@@ -224,7 +224,6 @@ async def update_item(
         "price_cents",
         "duration_minutes",
         "requires_booking",
-        "is_available",
     ):
         if name in fields:
             setattr(item, name, fields[name])
