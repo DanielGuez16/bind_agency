@@ -19,6 +19,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import AuditLog, User
 from app.models.enums import ActorKind, UserRole
 
+__all__ = ["Actor", "ActorKind", "AuditedEntity", "record_transition"]
+
 _ACTOR_KIND_BY_ROLE = {
     UserRole.CREATOR: ActorKind.CREATOR,
     UserRole.BUSINESS_MEMBER: ActorKind.BUSINESS_MEMBER,
@@ -40,6 +42,7 @@ class AuditedEntity(StrEnum):
     CATALOG_ITEM = "catalog_item"
     TIER = "tier"
     TIER_OFFER = "tier_offer"
+    BOOKING = "booking"
 
 
 @dataclass(frozen=True, slots=True)

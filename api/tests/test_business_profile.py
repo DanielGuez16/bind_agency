@@ -103,8 +103,13 @@ async def test_creation_journalise_sa_transition(
 
     cree = await commerce(client, membre)
 
+    # Filtré sur l'entité créée, pas sur le seul type : `audit_log` est
+    # immuable, donc tout test qui valide sa transaction y laisse des lignes
+    # pour de bon. Une assertion globale se casserait au premier d'entre eux.
     ligne = (
-        await conn.execute(sa.select(AuditLog.__table__).where(AuditLog.entity_type == "business"))
+        await conn.execute(
+            sa.select(AuditLog.__table__).where(AuditLog.entity_id == uuid.UUID(cree["id"]))
+        )
     ).one()
     assert ligne.entity_id == uuid.UUID(cree["id"])
     assert ligne.from_status is None
@@ -350,7 +355,7 @@ async def test_l_activation_reussie_journalise_sa_transition(
     ligne = (
         await conn.execute(
             sa.select(AuditLog.__table__).where(
-                AuditLog.entity_type == "business",
+                AuditLog.entity_id == uuid.UUID(cree["id"]),
                 AuditLog.to_status == BusinessStatus.ACTIVE.value,
             )
         )
