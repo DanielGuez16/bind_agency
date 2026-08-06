@@ -626,3 +626,43 @@ dans le rapport de tâche)* Un seuil ne s'applique qu'à l'entrée. `collaborati
 fige `required_format`, `required_mention`, `required_geotag` et `deadline_at` ;
 `booking` fige `value_cents_snapshot`. Rien en aval ne relit le palier. Deux
 tests le démontrent plutôt que de l'affirmer.
+
+---
+
+## 2026-08-05 — Phase 3, composition des offres par palier
+
+**Un item à plusieurs paliers n'est pas un doublon.**
+L'unicité porte sur le triplet commerce, palier, item. Un créateur éligible à
+deux paliers verra donc le même item deux fois, et c'est au fil de la phase 5 de
+présenter le meilleur palier accessible. Rien ici ne l'empêche, et le jeu de
+données de départ pose délibérément le cas.
+
+**Refus à la création sur un palier inactif, tolérance après coup.**
+On ne compose pas sur un palier fermé, mais fermer un palier ensuite laisse les
+offres en place. Ce sont deux règles différentes et elles ne se contredisent
+pas : la première protège une saisie, la seconde protège un historique.
+
+**« Effectivement proposée » se calcule à partir de trois interrupteurs.**
+Celui de l'offre, celui du palier, celui de l'item corrigé par son parent. Aucun
+n'est recopié sur l'offre — trois valeurs dupliquées, ce seraient trois façons
+de diverger. Une offre dont le palier ou l'item est désactivé reste en base et
+cesse simplement d'être proposée.
+
+**`add()` doit être à l'intérieur du `begin_nested()`.**
+Découvert par un test en échec, et corrigé dans trois services. `begin_nested()`
+vide les objets en attente **avant** d'ouvrir le point de sauvegarde : un `add()`
+placé au-dessus voit son `INSERT` partir hors de la protection du savepoint, et
+la violation laisse la session inutilisable au lieu d'être rattrapée. Le symptôme
+n'est pas l'erreur attendue mais un `PendingRollbackError` opaque, plus loin.
+
+**La remise à zéro du jeu de données ne passe plus par `downgrade base`.**
+Découvert au même moment. Le retour de la migration des paliers de référence
+refuse d'effacer un palier encore référencé par une offre — protection légitime,
+mais qui bloquait une remise à zéro alors que les tables allaient de toute façon
+disparaître. La commande vide désormais `public` de tout ce qui n'appartient pas
+à une extension, puis applique les migrations. On ne demande pas à des migrations
+de défaire des données qu'on veut jeter.
+
+**Deux règles que le service tient seul.**
+Un parent ne se place pas dans une offre, et une offre ne se crée pas sur un
+palier inactif. Voir le rapport de tâche pour ce que la base pourrait porter.

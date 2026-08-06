@@ -183,10 +183,10 @@ async def create_exception(
         end_time=payload.end_time,
         concurrent_slots=payload.concurrent_slots,
     )
-    session.add(exception)
-
     try:
+        # `add` à l'intérieur du bloc : voir la note dans `tier_offers`.
         async with session.begin_nested():
+            session.add(exception)
             await session.flush()
     except IntegrityError as error:
         raise DuplicateExceptionDate(payload.date) from error

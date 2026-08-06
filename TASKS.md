@@ -66,8 +66,10 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
 
 - [x] Table de configuration des paliers et interface admin
       *Fin : créer et modifier un palier sans toucher au code*
-- [ ] Composition des offres par palier côté commerce
+- [x] Composition des offres par palier côté commerce
       *Fin : un item peut être placé à plusieurs paliers*
+- [ ] Journal des modifications de configuration
+      *Fin : toute modification d'un palier ou d'un plan d'abonnement laisse une trace nommant le champ, l'ancienne et la nouvelle valeur, et l'administrateur. Le journal actuel ne sait décrire qu'une bascule d'état — `from_status` vers `to_status` — il faudra une autre forme d'enregistrement. À faire quand un deuxième besoin du même type apparaîtra*
 - [ ] Fonction d'éligibilité
       *Fin : tests unitaires couvrant score nul (neutre), score bas (plafonné), volume insuffisant, mauvaise plateforme*
 

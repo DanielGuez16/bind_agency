@@ -52,6 +52,13 @@ class ErrorCode(StrEnum):
     TIER_ALREADY_EXISTS = "tier_already_exists"
     TIER_IN_USE = "tier_in_use"
 
+    # Offres par palier
+    TIER_OFFER_NOT_FOUND = "tier_offer_not_found"
+    TIER_OFFER_ALREADY_EXISTS = "tier_offer_already_exists"
+    TIER_OFFER_PARENT_NOT_ALLOWED = "tier_offer_parent_not_allowed"
+    TIER_OFFER_TIER_INACTIVE = "tier_offer_tier_inactive"
+    TIER_OFFER_HAS_BOOKINGS = "tier_offer_has_bookings"
+
     # Transverses
     VALIDATION_FAILED = "validation_failed"
     NOT_FOUND = "not_found"
