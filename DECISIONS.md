@@ -493,3 +493,47 @@ durée à protéger. Coût : `booking` porterait la durée réservée.
 
 Différée parce qu'elle change `booking`, et qu'on ne veut pas migrer cette table
 deux fois.
+
+---
+
+## 2026-08-05 — Phase 2, capacité et disponibilité temps réel
+
+**Les horaires sont des heures locales, pas des instants.**
+Saisis et stockés tels quels, sans conversion. Une ouverture à neuf heures reste
+neuf heures après un changement d'heure. La conversion vers le fuseau du
+commerce n'a lieu qu'au calcul de disponibilité, en phase 5.
+
+**Lundi vaut 0.** `SPEC.md` dit « 0-6 » sans préciser l'origine, et Postgres
+compte dimanche à 0 là où Python compte lundi. Le choix suit `date.weekday()`,
+et il est écrit dans le schéma plutôt que déduit à la lecture.
+
+**Deux plages qui se touchent ne se chevauchent pas.**
+Un commerce qui ferme à midi et rouvre à midi reste cohérent. Le recouvrement
+est strict des deux côtés.
+
+**`is_closed` est déduit, jamais saisi.**
+Une exception sans horaires est une fermeture ; une fermeture n'a pas
+d'horaires. Les deux façons de le dire ne peuvent pas diverger, et deux `CHECK`
+le garantissent en base. Conséquence à connaître : ajuster le seul nombre de
+postes d'une journée suppose d'en redonner les horaires — l'exception remplace
+la règle du jour, elle ne s'y ajoute pas.
+
+**La disponibilité a sa propre route.**
+`PUT .../availability` plutôt qu'un champ de la mise à jour générale, d'où
+`is_available` a été retiré. C'est une transition d'état : elle laisse une trace
+au journal, et deux chemins pour la même transition finiraient par diverger sur
+ce point précis. Rebasculer sur la même valeur n'écrit rien — une transition qui
+n'en est pas une ne laisse pas de trace.
+
+**Modifier la capacité ne touche aucune réservation.**
+Ni déplacement, ni annulation. Ce que le commerce doit voir quand une
+réservation tombe hors de ses nouveaux horaires se décidera en phase 5, quand la
+disponibilité existera vraiment.
+
+**Le non-chevauchement tient dans le service, et la base pourrait le porter.**
+Vérifié sur une base sonde plutôt que supposé : `btree_gist` est disponible
+en 1.7, un type `timerange` sur `time` se crée en une ligne, et une contrainte
+`EXCLUDE USING gist (business_id WITH =, weekday WITH =, timerange(start_time,
+end_time) WITH &&)` refuse exactement les recouvrements visés en laissant passer
+les plages accolées. Cinq lignes de migration. Non posée dans cette tâche, elle
+n'était pas demandée.

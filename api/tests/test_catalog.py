@@ -229,7 +229,7 @@ async def test_le_prix_reste_modifiable_et_la_reservation_garde_sa_valeur(
     assert fige == 8000, "l'historique ne bouge pas quand la carte change"
 
 
-async def test_le_nom_et_la_disponibilite_restent_modifiables(
+async def test_le_nom_reste_modifiable_sur_un_item_reserve(
     client: AsyncClient, conn: AsyncConnection
 ) -> None:
     membre = await compte(client)
@@ -239,13 +239,12 @@ async def test_le_nom_et_la_disponibilite_restent_modifiables(
 
     response = await client.patch(
         f"{PREFIX}/business/{business_id}/catalog-items/{cree['id']}",
-        json={"name": "Soin visage premium", "is_available": False},
+        json={"name": "Soin visage premium"},
         headers=membre["headers"],
     )
 
     assert response.status_code == 200
     assert response.json()["name"] == "Soin visage premium"
-    assert response.json()["is_available"] is False
 
 
 # --------------------------------------------------------------------------
@@ -277,14 +276,18 @@ async def test_un_item_reserve_se_desactive(client: AsyncClient, conn: AsyncConn
     cree = await item(client, membre, business_id)
     await reserve(conn, business_id, cree["id"])
 
-    response = await client.patch(
-        f"{PREFIX}/business/{business_id}/catalog-items/{cree['id']}",
+    response = await client.put(
+        f"{PREFIX}/business/{business_id}/catalog-items/{cree['id']}/availability",
         json={"is_available": False},
         headers=membre["headers"],
     )
+    assert response.status_code == 204
 
-    assert response.status_code == 200
-    assert response.json()["is_effectively_available"] is False
+    relu = await client.get(
+        f"{PREFIX}/business/{business_id}/catalog-items/{cree['id']}",
+        headers=membre["headers"],
+    )
+    assert relu.json()["is_effectively_available"] is False
 
 
 async def test_un_item_sans_reservation_se_supprime(
@@ -457,8 +460,8 @@ async def test_un_parent_desactive_rend_ses_variantes_indisponibles(
     variante = await item(client, membre, business_id, name="Longue", parent_item_id=parent["id"])
     assert variante["is_effectively_available"] is True
 
-    await client.patch(
-        f"{PREFIX}/business/{business_id}/catalog-items/{parent['id']}",
+    await client.put(
+        f"{PREFIX}/business/{business_id}/catalog-items/{parent['id']}/availability",
         json={"is_available": False},
         headers=membre["headers"],
     )

@@ -30,6 +30,10 @@ class CatalogItemUpdate(BaseModel):
     Une variante rattachée ailleurs changerait de commerce ou de niveau, et
     l'item reste réservé sous son ancien parent dans les réservations passées.
     Créer un nouvel item est la bonne réponse.
+
+    `is_available` n'y figure pas non plus : c'est une transition d'état, elle
+    passe par sa propre route et laisse une trace au journal. Deux chemins pour
+    la même transition finiraient par diverger sur ce point.
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -39,7 +43,6 @@ class CatalogItemUpdate(BaseModel):
     price_cents: int | None = Field(default=None, ge=0)
     duration_minutes: int | None = Field(default=None, gt=0)
     requires_booking: bool | None = None
-    is_available: bool | None = None
 
 
 class CatalogItemRead(BaseModel):

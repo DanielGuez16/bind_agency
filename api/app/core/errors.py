@@ -41,6 +41,12 @@ class ErrorCode(StrEnum):
     CATALOG_PARENT_MUST_NOT_BE_BOOKABLE = "catalog_parent_must_not_be_bookable"
     CATALOG_VARIANT_DEPTH_EXCEEDED = "catalog_variant_depth_exceeded"
 
+    # Capacité
+    CAPACITY_RULE_NOT_FOUND = "capacity_rule_not_found"
+    CAPACITY_RULE_OVERLAP = "capacity_rule_overlap"
+    CAPACITY_EXCEPTION_NOT_FOUND = "capacity_exception_not_found"
+    CAPACITY_EXCEPTION_DUPLICATE_DATE = "capacity_exception_duplicate_date"
+
     # Transverses
     VALIDATION_FAILED = "validation_failed"
     NOT_FOUND = "not_found"

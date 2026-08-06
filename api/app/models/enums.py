@@ -140,6 +140,17 @@ class ActorKind(StrEnum):
     ADMIN = "admin"
 
 
+class CatalogItemAvailability(StrEnum):
+    """État logique d'un item, déduit de `is_available`.
+
+    Aucune colonne ne le porte : il n'existe que comme vocabulaire du journal
+    d'audit, qui doit nommer les états qu'il décrit.
+    """
+
+    AVAILABLE = "available"
+    UNAVAILABLE = "unavailable"
+
+
 class RefreshTokenState(StrEnum):
     """État logique d'un jeton de rafraîchissement.
 
