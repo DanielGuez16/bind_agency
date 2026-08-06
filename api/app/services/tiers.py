@@ -60,10 +60,10 @@ async def create_tier(session: AsyncSession, *, payload: TierCreate) -> Tier:
         display_order=payload.display_order,
         is_active=payload.is_active,
     )
-    session.add(tier)
-
     try:
+        # `add` à l'intérieur du bloc : voir la note dans `tier_offers`.
         async with session.begin_nested():
+            session.add(tier)
             await session.flush()
     except IntegrityError as error:
         # L'unicité est vérifiée par la base, pas par un SELECT préalable : deux

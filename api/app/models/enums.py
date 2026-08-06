@@ -151,6 +151,13 @@ class CatalogItemAvailability(StrEnum):
     UNAVAILABLE = "unavailable"
 
 
+class TierOfferState(StrEnum):
+    """État logique d'une offre, déduit de `is_active`. Vocabulaire du journal."""
+
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+
+
 class TierState(StrEnum):
     """État logique d'un palier, déduit de `is_active`.
 

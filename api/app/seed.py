@@ -17,24 +17,37 @@ les contraintes et triggers en dessous.
 
 import asyncio
 import sys
+import uuid
 from dataclasses import dataclass
 from datetime import date
 
+import psycopg
+import sqlalchemy as sa
 from alembic.config import Config
+from sqlalchemy import make_url
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from alembic import command
 from app.core.config import API_ROOT, get_settings
 from app.integrations.geocoding import ManualGeocoder
-from app.models import CreatorProfile, SocialAccount, SocialMetricsSnapshot, User
-from app.models.enums import Locale, Platform, SocialAccountStatus, UserRole, VerificationStatus
+from app.models import CatalogItem, CreatorProfile, SocialAccount, SocialMetricsSnapshot, Tier, User
+from app.models.enums import (
+    ContentFormat,
+    Locale,
+    Platform,
+    SocialAccountStatus,
+    UserRole,
+    VerificationStatus,
+)
 from app.schemas.business import BusinessCreate, CoordinatesPayload
 from app.schemas.capacity import CapacityExceptionCreate, CapacityRuleCreate
 from app.schemas.catalog import CatalogItemCreate
+from app.schemas.tier_offers import TierOfferCreate
 from app.services import auth as auth_service
 from app.services import business as business_service
 from app.services import capacity as capacity_service
 from app.services import catalog as catalog_service
+from app.services import tier_offers as tier_offer_service
 from app.services.audit import Actor
 
 #: Environnements où l'effacement de la base est acceptable. Ailleurs, la
@@ -54,6 +67,7 @@ class Resume:
     items: int
     plages: int
     exceptions: int
+    offres: int
     createurs: int
 
 
@@ -61,12 +75,38 @@ class SeedRefused(RuntimeError):
     """La commande refuse de tourner là où elle effacerait des données réelles."""
 
 
+async def _tier(session: AsyncSession, platform: Platform, format_: ContentFormat) -> Tier:
+    """Les paliers viennent de la migration de référence, pas d'ici."""
+    tier = await session.scalar(
+        sa.select(Tier).where(Tier.platform == platform, Tier.content_format == format_)
+    )
+    if tier is None:  # pragma: no cover - la migration les pose toujours
+        raise RuntimeError(f"palier absent : {platform} {format_}")
+    return tier
+
+
+async def _offrir(
+    session: AsyncSession,
+    business_id: uuid.UUID,
+    couples: list[tuple[Platform, ContentFormat, CatalogItem]],
+) -> int:
+    """Compose les offres d'un commerce. Jamais un parent, seulement des variantes."""
+    for platform, format_, item in couples:
+        tier = await _tier(session, platform, format_)
+        await tier_offer_service.create_offer(
+            session,
+            business_id=business_id,
+            payload=TierOfferCreate(tier_id=tier.id, catalog_item_id=item.id),
+        )
+    return len(couples)
+
+
 # --------------------------------------------------------------------------
 # les trois commerces
 # --------------------------------------------------------------------------
 
 
-async def _ocean_beauty(session: AsyncSession, owner: User) -> tuple[int, int, int]:
+async def _ocean_beauty(session: AsyncSession, owner: User) -> tuple[int, int, int, int]:
     """Variantes profondes et journée coupée à midi."""
     business = await business_service.create_business(
         session,
@@ -96,30 +136,30 @@ async def _ocean_beauty(session: AsyncSession, owner: User) -> tuple[int, int, i
         ),
     )
     items = [coloration]
+    variantes: dict[str, CatalogItem] = {}
     for nom, prix, duree in (
         ("Coloration racines", 9000, 60),
         ("Coloration longueurs", 14000, 120),
         ("Coloration + balayage", 19000, 180),
     ):
-        items.append(
-            await catalog_service.create_item(
-                session,
-                business=business,
-                payload=CatalogItemCreate(
-                    name=nom,
-                    price_cents=prix,
-                    duration_minutes=duree,
-                    parent_item_id=coloration.id,
-                ),
-            )
-        )
-    items.append(
-        await catalog_service.create_item(
+        variantes[nom] = await catalog_service.create_item(
             session,
             business=business,
-            payload=CatalogItemCreate(name="Brushing", price_cents=5000, duration_minutes=45),
+            payload=CatalogItemCreate(
+                name=nom,
+                price_cents=prix,
+                duration_minutes=duree,
+                parent_item_id=coloration.id,
+            ),
         )
+        items.append(variantes[nom])
+
+    brushing = await catalog_service.create_item(
+        session,
+        business=business,
+        payload=CatalogItemCreate(name="Brushing", price_cents=5000, duration_minutes=45),
     )
+    items.append(brushing)
 
     plages = 0
     for jour in (MARDI, MERCREDI, JEUDI, VENDREDI, SAMEDI):
@@ -133,13 +173,25 @@ async def _ocean_beauty(session: AsyncSession, owner: User) -> tuple[int, int, i
             )
             plages += 1
 
+    # Les trois formats Instagram, uniquement des variantes : le parent
+    # « Coloration » ne se propose pas, c'est la variante qui se réserve.
+    offres = await _offrir(
+        session,
+        business.id,
+        [
+            (Platform.INSTAGRAM, ContentFormat.STORY, brushing),
+            (Platform.INSTAGRAM, ContentFormat.POST, variantes["Coloration racines"]),
+            (Platform.INSTAGRAM, ContentFormat.REEL, variantes["Coloration + balayage"]),
+        ],
+    )
+
     await business_service.activate_business(
         session, business=business, actor=Actor.from_user(owner)
     )
-    return len(items), plages, 0
+    return len(items), plages, 0, offres
 
 
-async def _wynwood_nails(session: AsyncSession, owner: User) -> tuple[int, int, int]:
+async def _wynwood_nails(session: AsyncSession, owner: User) -> tuple[int, int, int, int]:
     """Items sans réservation : on se présente quand on veut."""
     business = await business_service.create_business(
         session,
@@ -158,24 +210,25 @@ async def _wynwood_nails(session: AsyncSession, owner: User) -> tuple[int, int, 
     )
 
     items = []
+    sans_reservation: dict[str, CatalogItem] = {}
     for nom, prix in (("Vernis semi-permanent à emporter", 2500), ("Diagnostic ongles", 0)):
-        items.append(
-            await catalog_service.create_item(
-                session,
-                business=business,
-                payload=CatalogItemCreate(
-                    name=nom, price_cents=prix, requires_booking=False, duration_minutes=None
-                ),
-            )
+        sans_reservation[nom] = await catalog_service.create_item(
+            session,
+            business=business,
+            payload=CatalogItemCreate(
+                name=nom, price_cents=prix, requires_booking=False, duration_minutes=None
+            ),
         )
+        items.append(sans_reservation[nom])
+
+    reservables: dict[str, CatalogItem] = {}
     for nom, prix, duree in (("Manucure classique", 4500, 50), ("Pose gel", 7000, 90)):
-        items.append(
-            await catalog_service.create_item(
-                session,
-                business=business,
-                payload=CatalogItemCreate(name=nom, price_cents=prix, duration_minutes=duree),
-            )
+        reservables[nom] = await catalog_service.create_item(
+            session,
+            business=business,
+            payload=CatalogItemCreate(name=nom, price_cents=prix, duration_minutes=duree),
         )
+        items.append(reservables[nom])
 
     plages = 0
     for jour in (MARDI, MERCREDI, JEUDI, VENDREDI, SAMEDI):
@@ -188,13 +241,31 @@ async def _wynwood_nails(session: AsyncSession, owner: User) -> tuple[int, int, 
         )
         plages += 1
 
+    # Aucune offre au palier story : un créateur qui n'a accès qu'à celui-ci ne
+    # doit rien voir chez ce commerce. C'est le cas que le fil de la phase 5
+    # doit traiter sans tomber sur une liste vide mal gérée.
+    # Et un item sans réservation se propose comme un autre.
+    offres = await _offrir(
+        session,
+        business.id,
+        [
+            (Platform.INSTAGRAM, ContentFormat.POST, reservables["Manucure classique"]),
+            (Platform.INSTAGRAM, ContentFormat.REEL, reservables["Pose gel"]),
+            (
+                Platform.TIKTOK,
+                ContentFormat.POST,
+                sans_reservation["Vernis semi-permanent à emporter"],
+            ),
+        ],
+    )
+
     await business_service.activate_business(
         session, business=business, actor=Actor.from_user(owner)
     )
-    return len(items), plages, 0
+    return len(items), plages, 0, offres
 
 
-async def _brickell_spa(session: AsyncSession, owner: User) -> tuple[int, int, int]:
+async def _brickell_spa(session: AsyncSession, owner: User) -> tuple[int, int, int, int]:
     """Plusieurs postes en parallèle, une fermeture et une journée aménagée."""
     business = await business_service.create_business(
         session,
@@ -212,19 +283,17 @@ async def _brickell_spa(session: AsyncSession, owner: User) -> tuple[int, int, i
         geocoder=ManualGeocoder(),
     )
 
-    items = []
+    items: dict[str, CatalogItem] = {}
     for nom, prix, duree in (
         ("Massage relaxant 60 min", 12000, 60),
         ("Massage profond 90 min", 17000, 90),
         ("Soin visage hydratant", 11000, 75),
         ("Rituel duo", 26000, 120),
     ):
-        items.append(
-            await catalog_service.create_item(
-                session,
-                business=business,
-                payload=CatalogItemCreate(name=nom, price_cents=prix, duration_minutes=duree),
-            )
+        items[nom] = await catalog_service.create_item(
+            session,
+            business=business,
+            payload=CatalogItemCreate(name=nom, price_cents=prix, duration_minutes=duree),
         )
 
     plages = 0
@@ -256,10 +325,24 @@ async def _brickell_spa(session: AsyncSession, owner: User) -> tuple[int, int, i
         ),
     )
 
+    # « Soin visage » est placé à deux paliers : un créateur éligible aux deux
+    # le verra deux fois. Ce n'est pas un doublon à écraser, c'est au fil de la
+    # phase 5 de présenter le meilleur palier accessible.
+    offres = await _offrir(
+        session,
+        business.id,
+        [
+            (Platform.INSTAGRAM, ContentFormat.STORY, items["Massage relaxant 60 min"]),
+            (Platform.INSTAGRAM, ContentFormat.POST, items["Soin visage hydratant"]),
+            (Platform.INSTAGRAM, ContentFormat.REEL, items["Massage profond 90 min"]),
+            (Platform.TIKTOK, ContentFormat.STORY, items["Soin visage hydratant"]),
+        ],
+    )
+
     await business_service.activate_business(
         session, business=business, actor=Actor.from_user(owner)
     )
-    return len(items), plages, 2
+    return len(items), plages, 2, offres
 
 
 # --------------------------------------------------------------------------
@@ -331,11 +414,43 @@ async def _creator(
 # --------------------------------------------------------------------------
 
 
+#: Vide `public` de tout ce qui n'appartient pas à une extension — nos tables et
+#: `alembic_version`. `spatial_ref_sys`, posée par PostGIS, est donc épargnée.
+TABLE_RASE = """
+DO $$
+DECLARE cible record;
+BEGIN
+    FOR cible IN
+        SELECT c.relname
+          FROM pg_class c
+          JOIN pg_namespace n ON n.oid = c.relnamespace
+          LEFT JOIN pg_depend d ON d.objid = c.oid AND d.deptype = 'e'
+         WHERE n.nspname = 'public' AND c.relkind = 'r' AND d.objid IS NULL
+    LOOP
+        EXECUTE format('DROP TABLE IF EXISTS public.%I CASCADE', cible.relname);
+    END LOOP;
+END $$;
+"""
+
+
 def reset_schema() -> None:
-    """Repart d'une base propre plutôt que de tenter une mise à jour."""
+    """Table rase, puis migrations. Jamais un `downgrade base`.
+
+    Un `downgrade` remonte la chaîne dans l'ordre inverse, et le retour de la
+    migration des paliers de référence refuse d'effacer un palier encore
+    référencé par une offre — protection légitime, mais qui bloque une remise à
+    zéro alors que les tables allaient de toute façon disparaître.
+
+    Supprimer les tables directement est l'opération honnête : on ne demande pas
+    à des migrations de défaire des données qu'on veut jeter.
+    """
+    url = make_url(str(get_settings().database_url)).set(drivername="postgresql")
+
+    with psycopg.connect(url.render_as_string(hide_password=False), autocommit=True) as connexion:
+        connexion.execute(TABLE_RASE)
+
     config = Config(str(API_ROOT / "alembic.ini"))
     config.set_main_option("script_location", str(API_ROOT / "alembic"))
-    command.downgrade(config, "base")
     command.upgrade(config, "head")
 
 
@@ -415,9 +530,10 @@ async def populate() -> Resume:
 
         return Resume(
             commerces=len(totaux),
-            items=sum(items for items, _, _ in totaux),
-            plages=sum(plages for _, plages, _ in totaux),
-            exceptions=sum(exceptions for _, _, exceptions in totaux),
+            items=sum(items for items, _, _, _ in totaux),
+            plages=sum(plages for _, plages, _, _ in totaux),
+            exceptions=sum(exceptions for _, _, exceptions, _ in totaux),
+            offres=sum(offres for _, _, _, offres in totaux),
             createurs=len(createurs),
         )
     finally:
@@ -438,7 +554,8 @@ def main() -> int:
 
     print(
         f"{resume.commerces} commerces, {resume.items} items, {resume.plages} plages, "
-        f"{resume.exceptions} exceptions, {resume.createurs} créateurs."
+        f"{resume.exceptions} exceptions, {resume.offres} offres, "
+        f"{resume.createurs} créateurs."
     )
     print(f"Mot de passe de tous les comptes : {MOT_DE_PASSE}")
     return 0

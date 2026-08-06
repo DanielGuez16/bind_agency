@@ -30,6 +30,8 @@ from app.models import (
     CapacityRule,
     CatalogItem,
     CreatorProfile,
+    Tier,
+    TierOffer,
     User,
 )
 from app.models.enums import BusinessMemberRole, BusinessStatus, UserRole
@@ -113,6 +115,7 @@ def test_elle_annonce_ce_qu_elle_a_pose(base_jetable: str) -> None:
     resultat = _lancer(base_jetable)
 
     assert "3 commerces" in resultat.stdout
+    assert "10 offres" in resultat.stdout
     assert MOT_DE_PASSE in resultat.stdout
 
 
@@ -332,3 +335,77 @@ async def test_aucun_identifiant_n_est_devinable(seed_conn: AsyncConnection) -> 
     for identifiant in identifiants:
         assert isinstance(identifiant, uuid.UUID)
         assert identifiant.version == 4
+
+
+# --------------------------------------------------------------------------
+# les offres composées
+# --------------------------------------------------------------------------
+
+
+async def test_chaque_commerce_compose_ses_offres(seed_conn: AsyncConnection) -> None:
+    par_commerce = dict(
+        (
+            await seed_conn.execute(
+                sa.select(TierOffer.business_id, sa.func.count()).group_by(TierOffer.business_id)
+            )
+        ).all()
+    )
+
+    assert len(par_commerce) == 3
+    assert sum(par_commerce.values()) == 10
+    assert len(set(par_commerce.values())) > 1, "des offres identiques ne révèlent rien"
+
+
+async def test_un_commerce_ne_propose_rien_au_palier_story(seed_conn: AsyncConnection) -> None:
+    """Un créateur limité à ce palier ne doit rien voir chez lui."""
+    story = sa.select(Tier.id).where(Tier.content_format == "story")
+    avec_story = set(
+        await seed_conn.scalars(
+            sa.select(TierOffer.business_id).where(TierOffer.tier_id.in_(story))
+        )
+    )
+    tous = set(await seed_conn.scalars(sa.select(TierOffer.business_id)))
+
+    assert len(tous - avec_story) >= 1
+
+
+async def test_un_item_est_propose_a_deux_paliers(seed_conn: AsyncConnection) -> None:
+    """Le fil de la phase 5 devra présenter le meilleur palier accessible."""
+    doublons = (
+        await seed_conn.execute(
+            sa.select(TierOffer.catalog_item_id, sa.func.count())
+            .group_by(TierOffer.catalog_item_id)
+            .having(sa.func.count() > 1)
+        )
+    ).all()
+
+    assert doublons, "aucun item n'est proposé à plusieurs paliers"
+
+
+async def test_un_item_sans_reservation_est_propose(seed_conn: AsyncConnection) -> None:
+    combien = await seed_conn.scalar(
+        sa.select(sa.func.count())
+        .select_from(TierOffer)
+        .join(CatalogItem, CatalogItem.id == TierOffer.catalog_item_id)
+        .where(CatalogItem.requires_booking.is_(False))
+    )
+    assert combien >= 1
+
+
+async def test_aucune_offre_ne_porte_un_parent(seed_conn: AsyncConnection) -> None:
+    """L'invariant du catalogue se prolonge dans la composition."""
+    parents = sa.select(CatalogItem.parent_item_id).where(CatalogItem.parent_item_id.is_not(None))
+    combien = await seed_conn.scalar(
+        sa.select(sa.func.count())
+        .select_from(TierOffer)
+        .where(TierOffer.catalog_item_id.in_(parents))
+    )
+    assert combien == 0
+
+
+async def test_aucune_offre_sur_un_palier_inactif(seed_conn: AsyncConnection) -> None:
+    inactifs = sa.select(Tier.id).where(Tier.is_active.is_(False))
+    combien = await seed_conn.scalar(
+        sa.select(sa.func.count()).select_from(TierOffer).where(TierOffer.tier_id.in_(inactifs))
+    )
+    assert combien == 0
