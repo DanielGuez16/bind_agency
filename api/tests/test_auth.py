@@ -89,6 +89,13 @@ async def test_inscription_refuse_une_adresse_deja_prise_meme_casse_differente(
     assert second.status_code == 409
     assert second.json()["detail"] == "email_already_used"
 
+    # `register` fait un `rollback` explicite sur violation : la session doit
+    # rester utilisable pour l'inscription suivante.
+    troisieme = await client.post(
+        f"{PREFIX}/auth/register", json={**payload, "email": "autre@example.com"}
+    )
+    assert troisieme.status_code == 201
+
 
 async def test_inscription_refuse_un_mot_de_passe_trop_court(client: AsyncClient) -> None:
     response = await client.post(

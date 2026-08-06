@@ -191,6 +191,13 @@ async def test_le_meme_item_au_meme_palier_deux_fois_est_refuse(
     assert doublon.json()["detail"] == "tier_offer_already_exists"
     assert "violates" not in doublon.text
 
+    # C'est ce refus-là qui avait révélé le défaut du `begin_nested` : le code
+    # était bon, la session ne l'était plus.
+    ailleurs = await offrir(
+        client, membre, business_id, await palier(conn, format_=ContentFormat.POST), cree["id"]
+    )
+    assert ailleurs.status_code == 201
+
 
 async def test_un_palier_inactif_est_refuse_a_la_creation(
     client: AsyncClient, conn: AsyncConnection
@@ -365,6 +372,12 @@ async def test_une_offre_reservee_ne_se_supprime_pas(
     assert response.json()["detail"] == "tier_offer_has_bookings"
     assert "violates" not in response.text
     assert "constraint" not in response.text
+
+    apres = await client.get(
+        f"{PREFIX}/business/{business_id}/tier-offers", headers=membre["headers"]
+    )
+    assert apres.status_code == 200
+    assert len(apres.json()) == 1
 
 
 async def test_une_offre_reservee_se_retire_par_desactivation(

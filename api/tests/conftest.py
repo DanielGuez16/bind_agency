@@ -13,6 +13,7 @@ from collections.abc import AsyncIterator, Iterator
 
 import psycopg
 import pytest
+import sqlalchemy as sa
 from alembic.config import Config
 from httpx import ASGITransport, AsyncClient
 from psycopg import sql
@@ -104,11 +105,21 @@ async def engine(test_database_url: str) -> AsyncIterator[AsyncEngine]:
 
 @pytest.fixture
 async def conn(engine: AsyncEngine) -> AsyncIterator[AsyncConnection]:
-    """Connexion dans une transaction annulée en fin de test : aucune fuite entre tests."""
+    """Connexion dans une transaction annulée en fin de test : aucune fuite entre tests.
+
+    En sortie, la connexion doit encore répondre. C'est le garde-fou universel
+    contre la classe de défaut où un refus rend le code d'erreur attendu tout en
+    laissant la transaction avortée : la requête fautive passe le test, et c'est
+    la suivante qui tombe, ailleurs, sous une erreur qui ne dit rien.
+
+    Il ne remplace pas la vérification explicite dans les tests de refus — il la
+    rend seulement impossible à oublier.
+    """
     async with engine.connect() as connection:
         transaction = await connection.begin()
         try:
             yield connection
+            await connection.execute(sa.text("SELECT 1"))
         finally:
             await transaction.rollback()
 

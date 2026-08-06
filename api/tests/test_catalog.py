@@ -133,6 +133,13 @@ async def test_un_item_reserve_ne_change_ni_de_nature_ni_de_duree(
     assert "violates" not in response.text, "aucune violation brute ne doit remonter"
     assert "constraint" not in response.text
 
+    relu = await client.get(
+        f"{PREFIX}/business/{business_id}/catalog-items/{cree['id']}",
+        headers=membre["headers"],
+    )
+    assert relu.status_code == 200
+    assert relu.json()["duration_minutes"] == 60
+
 
 async def test_la_bascule_inverse_est_refusee_aussi(
     client: AsyncClient, conn: AsyncConnection
@@ -268,6 +275,12 @@ async def test_un_item_reserve_ne_se_supprime_pas(
     assert response.status_code == 409
     assert response.json()["detail"] == "catalog_item_has_bookings"
     assert "violates" not in response.text
+
+    relu = await client.get(
+        f"{PREFIX}/business/{business_id}/catalog-items/{cree['id']}",
+        headers=membre["headers"],
+    )
+    assert relu.status_code == 200
 
 
 async def test_un_item_reserve_se_desactive(client: AsyncClient, conn: AsyncConnection) -> None:

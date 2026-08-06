@@ -666,3 +666,35 @@ de défaire des données qu'on veut jeter.
 **Deux règles que le service tient seul.**
 Un parent ne se place pas dans une offre, et une offre ne se crée pas sur un
 palier inactif. Voir le rapport de tâche pour ce que la base pourrait porter.
+
+**Le palier inactif reste au service, et c'est un choix, pas un renoncement.**
+Un `BEFORE INSERT` sur `tier_offer` porterait bien le refus de composer sur un
+palier fermé. Mais il ne peut pas s'étendre à l'`UPDATE`, puisque désactiver un
+palier ensuite doit justement laisser les offres en place. La base garantirait
+donc la moitié de la règle.
+
+Une demi-garantie en base est pire qu'aucune : on cesse de vérifier ailleurs
+parce qu'« on a la contrainte », et le trou restant devient d'autant plus
+invisible qu'on croit la règle tenue. La règle vit donc entièrement dans le
+service, où elle est visible et complète.
+
+**Un parent ne se place pas dans une offre : passé en base.**
+Deux triggers, une fonction, parce que la règle a deux sens — offrir un item qui
+a des variantes, et donner une variante à un item déjà offert. Sans le second,
+elle se contourne en inversant l'ordre des opérations. Testé en SQL direct, les
+deux sens et les cas légitimes.
+
+**Un test de refus ne s'arrête pas au code d'erreur.**
+Règle ajoutée à `CLAUDE.md`. La classe de défaut qu'elle vise : le refus renvoie
+le bon code, mais laisse la session inutilisable ; la requête fautive passe le
+test, et c'est la suivante qui tombe, ailleurs, sous une erreur qui ne dit rien.
+
+La fixture de connexion vérifie désormais en sortie que la connexion répond
+encore — garde-fou universel, impossible à oublier — et les tests de refus dont
+le chemin exécute du SQL enchaînent explicitement une opération qui doit réussir.
+
+**Correction d'un diagnostic trop large.** J'avais annoncé le défaut du
+`begin_nested` dans trois services. Vérification faite en le réintroduisant : il
+n'est reproductible que dans celui des offres, où la session avait déjà validé
+une écriture sur la même connexion. Les deux autres ont été alignés par
+cohérence, pas parce qu'ils étaient cassés.

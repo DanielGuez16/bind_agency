@@ -371,6 +371,13 @@ async def test_deux_exceptions_le_meme_jour_sont_refusees(client: AsyncClient) -
     assert doublon.status_code == 409
     assert doublon.json()["detail"] == "capacity_exception_duplicate_date"
 
+    autre_date = await client.post(
+        f"{PREFIX}/business/{business_id}/capacity-exceptions",
+        json={"date": str(date(2026, 12, 26))},
+        headers=membre["headers"],
+    )
+    assert autre_date.status_code == 201
+
 
 # --------------------------------------------------------------------------
 # disponibilité temps réel

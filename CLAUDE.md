@@ -95,6 +95,11 @@ npx expo start
 - Jetons OAuth chiffrés au repos
 - Anglais et espagnol dès le premier écran, aucune chaîne d'interface écrite en dur
 
+**Tests**
+- Un test qui éprouve un refus ne s'arrête jamais au code d'erreur. Il continue d'utiliser la session ensuite. S'arrêter là ne prouve pas que la session est restée saine : une violation attrapée hors d'un point de sauvegarde la laisse inutilisable, et le défaut n'apparaît qu'à l'appel suivant, ailleurs, sous une erreur qui ne dit rien
+- Un trigger ou une contrainte se teste en SQL direct, sans passer par le service qu'il double. Vérifié au travers de ce code, il ne prouve rien
+- Une contrainte se teste dans les deux sens. Celle qui refuse tout passe le test de refus sans rien garantir
+
 ---
 
 ## Méthode de travail

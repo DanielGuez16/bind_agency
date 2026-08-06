@@ -176,6 +176,14 @@ async def test_le_couple_plateforme_format_est_unique(client: AsyncClient) -> No
     assert response.json()["detail"] == "tier_already_exists"
     assert "violates" not in response.text
 
+    # La session doit avoir survécu au refus : une violation attrapée hors d'un
+    # point de sauvegarde la laisserait inutilisable, et c'est l'appel suivant
+    # qui tomberait, sous une erreur qui ne dirait rien.
+    suivant = await client.post(
+        f"{PREFIX}/admin/tiers", json=palier_payload(), headers=admin["headers"]
+    )
+    assert suivant.status_code == 201
+
 
 async def test_un_nouveau_couple_est_accepte(client: AsyncClient) -> None:
     admin = await compte(client, UserRole.ADMIN)
@@ -241,6 +249,9 @@ async def test_un_palier_reference_ne_se_supprime_pas(
     assert response.json()["detail"] == "tier_in_use"
     assert "violates" not in response.text
     assert "constraint" not in response.text
+
+    apres = await client.get(f"{PREFIX}/admin/tiers", headers=admin["headers"])
+    assert apres.status_code == 200
 
 
 async def test_un_palier_reference_par_une_contrepartie_ne_se_supprime_pas(
