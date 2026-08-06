@@ -1408,3 +1408,40 @@ convention six mois plus tard.
 **Un item non réservable est un refus, pas une liste vide.** Rendre zéro créneau
 laisserait croire qu'il est complet, alors qu'il n'a pas de créneaux du tout —
 il a une fenêtre de validité.
+
+---
+
+## 2026-08-06 — Fil géolocalisé
+
+**Le fil liste des commerces, pas des offres.** Un créateur se déplace vers un
+lieu ; lui présenter quinze lignes du même salon parce qu'il propose quinze
+soins ferait disparaître les autres commerces du quartier.
+
+**Rien d'inaccessible n'apparaît.** Palier fermé, item désactivé — directement
+ou par son parent — offre retirée, commerce en onboarding, et surtout : aucun
+créneau libre dans l'horizon. Ce dernier filtre est le plus coûteux, donc le
+dernier appliqué ; tout ce qui pouvait être écarté par une requête l'a été
+avant. Le parcours de disponibilité s'arrête au premier créneau trouvé — le fil
+n'a besoin que de savoir s'il en reste **un**.
+
+**Les obstacles sont renvoyés à part, même quand le fil n'est pas vide.** Un
+créateur qui accède au palier story mais pas au reel doit savoir ce qui lui
+manque, sinon il croit avoir tout vu. Dédoublonnés par raison : bloqué trois
+fois pour la même raison, il n'a pas besoin de la lire trois fois, et on garde
+le plus petit écart — la marche la plus courte.
+
+C'est la différence exacte avec l'écran des paliers, où **tous** les paliers
+sont montrés : là-bas un palier fermé oriente, ici il encombre.
+
+**Les coordonnées viennent de l'appelant, pas du profil.** Un créateur consulte
+le fil là où il se trouve, qui n'est pas toujours la ville qu'il a déclarée.
+Prendre `creator_profile.geo` lui montrerait Miami depuis un aéroport.
+
+**Le ratio de valeur est rendu, jamais utilisé pour masquer.** `SPEC.md` §3.3
+demande de *signaler* une offre nettement en dessous de la référence du palier,
+pas de la bloquer : le commerce reste libre de composer ce qu'il veut, le
+créateur sait ce qu'il accepte.
+
+**Chaque item porte le compte social qui ouvre son palier.** La réservation se
+fait au nom d'un compte précis, pas du créateur en général : le renvoyer ici
+évite à l'app de le redemander et au créateur de choisir à l'aveugle.

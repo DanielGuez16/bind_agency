@@ -97,7 +97,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
 
 - [x] Calcul de disponibilité à la volée
       *Fin : tests couvrant chevauchement, postes multiples, exception de fermeture*
-- [ ] Fil géolocalisé, seuls les items réellement réservables apparaissent
+- [x] Fil géolocalisé, seuls les items réellement réservables apparaissent
       *Fin : un item indisponible ou sans créneau n'apparaît jamais, et un item désactivé — directement ou par son parent — n'apparaît jamais dans le fil*
 - [ ] Création de réservation avec verrou et garde de dix minutes
       *Y compris : prénom et nom obligatoires avant la première réservation. Ils sont facultatifs à l'inscription, et rien ne les exige aujourd'hui — il n'existe aucun chemin de réservation où poser la condition*

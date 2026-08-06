@@ -18,6 +18,7 @@ from app.routers import (
     catalog,
     creator_profile,
     creator_tiers,
+    feed,
     health,
     jobs,
     social_accounts,
@@ -84,6 +85,7 @@ def create_app() -> FastAPI:
     application.include_router(availability.router, prefix=settings.api_v1_prefix)
     application.include_router(creator_profile.router, prefix=settings.api_v1_prefix)
     application.include_router(creator_tiers.router, prefix=settings.api_v1_prefix)
+    application.include_router(feed.router, prefix=settings.api_v1_prefix)
     application.include_router(social_accounts.router, prefix=settings.api_v1_prefix)
     application.include_router(account_verification.router, prefix=settings.api_v1_prefix)
     application.include_router(jobs.router, prefix=settings.api_v1_prefix)
