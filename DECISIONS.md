@@ -765,3 +765,20 @@ finira dans une boucle. Un test vérifie qu'aucun symbole exposé ne parle d'off
 moment : le mettre en cache ressusciterait exactement les chiffres périmés que la
 fraîcheur écarte. Les paliers non plus — un décalage entre une bascule
 d'administrateur et le fil coûterait plus que les sept lignes économisées.
+
+**Seuils de collaborations neutralisés, et la leçon du jeu de données.**
+`completed_collabs_count` n'est alimenté par aucun code — les événements de
+fiabilité sont la phase 8. Les paliers exigeant une ou deux collaborations
+étaient donc inatteignables : personne n'aurait jamais dépassé `story`, et le
+blocage n'aurait rien eu à voir avec le mérite du créateur. Les seuils passent à
+zéro par migration. La condition existe toujours dans le moteur d'éligibilité,
+elle est simplement satisfaite par tout le monde tant que rien ne la mesure, et
+se rallume d'un changement de configuration. Tâche de rétablissement inscrite en
+phase 8.
+
+**La leçon vaut plus que la correction : le jeu de données de départ masquait le
+défaut** en posant `completed_collabs_count` et `reliability_score` à la main.
+Il produisait des créateurs avec sept collaborations là où aucun mécanisme
+n'était capable d'en compter une seule. Une donnée de test qui court-circuite un
+mécanisme empêche de voir que le mécanisme n'existe pas — et le jeu est
+précisément ce sur quoi on s'appuie pour croire que le système fonctionne.
