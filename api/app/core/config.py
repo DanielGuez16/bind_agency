@@ -143,6 +143,9 @@ class Settings(BaseSettings):
     #: catalogue et les horaires d'un commerce bougent, proposer un créneau dans
     #: six mois reviendrait à promettre ce qu'on ne peut pas tenir.
     booking_horizon_days: int = 30
+    #: Rayon du fil, en mètres. Dix kilomètres : au-delà, un créateur de Miami
+    #: ne se déplace pas pour un soin, et le fil se remplit de bruit.
+    feed_radius_metres: int = 10_000
 
     # Lue uniquement par la session pytest, jamais par l'application.
     # Sa présence est vérifiée dans tests/conftest.py, qui refuse de tourner sans.

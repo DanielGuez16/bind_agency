@@ -123,8 +123,14 @@ async def creneaux_libres(
     catalog_item_id: uuid.UUID,
     depuis: datetime | None = None,
     horizon: timedelta | None = None,
+    limite: int | None = None,
 ) -> list[Creneau]:
-    """Les débuts possibles pour cet item, dans l'horizon de réservation."""
+    """Les débuts possibles pour cet item, dans l'horizon de réservation.
+
+    `limite` arrête le parcours dès qu'assez de créneaux ont été trouvés. Le fil
+    n'a besoin que de savoir s'il en reste **un** : parcourir trente jours pour
+    répondre « oui » multiplierait ce coût par le nombre d'items du fil.
+    """
     settings = get_settings()
     depuis = depuis or datetime.now(UTC)
     horizon = horizon or timedelta(days=settings.booking_horizon_days)
@@ -181,6 +187,8 @@ async def creneaux_libres(
             creneaux.extend(
                 _creneaux_de_la_fenetre(jour, fenetre, fuseau, duree, occupations, depuis, jusqu_a)
             )
+            if limite is not None and len(creneaux) >= limite:
+                return creneaux[:limite]
         jour += timedelta(days=1)
 
     return creneaux
