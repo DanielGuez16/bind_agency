@@ -5,6 +5,7 @@ variable d'environnement est une erreur de démarrage, jamais un défaut silenci
 Aucun seuil de palier, aucun prix, aucun délai métier ne vit ici en dur non plus.
 """
 
+from decimal import Decimal
 from functools import lru_cache
 from pathlib import Path
 from typing import Annotated
@@ -89,6 +90,21 @@ class Settings(BaseSettings):
     #: Deux relevés d'un même compte ne peuvent pas être plus rapprochés. Le
     #: quota de la plateforme se compte par compte, la limite aussi.
     metrics_min_refresh_interval_seconds: int = 3_600
+
+    # Seuils de la vérification de cohérence, SPEC.md §3.2. Aucun n'est en dur
+    # dans le code : ce sont eux qu'on ajustera en voyant la file se remplir.
+    #: En dessous, le compte n'a pas encore montré grand-chose.
+    verification_min_media_count: int = 12
+    #: Beaucoup d'abonnés pour très peu de publications : signature du compte acheté.
+    verification_max_followers_per_media: int = 2_000
+    #: Fenêtre sur laquelle se juge la régularité de publication.
+    verification_regularity_window_days: int = 21
+    #: Publications attendues sur cette fenêtre.
+    verification_min_media_in_window: int = 1
+    #: Engagement aberrant dans un sens comme dans l'autre : abonnés achetés en
+    #: dessous, pod d'engagement au-dessus.
+    verification_min_engagement_rate: Decimal = Decimal("0.005")
+    verification_max_engagement_rate: Decimal = Decimal("0.25")
 
     # Lue uniquement par la session pytest, jamais par l'application.
     # Sa présence est vérifiée dans tests/conftest.py, qui refuse de tourner sans.

@@ -26,8 +26,11 @@ class RefreshToken(UUIDPrimaryKey, Base):
     user_id: Mapped[uuid.UUID] = mapped_column(
         sa.ForeignKey("app_user.id", ondelete="CASCADE"), nullable=False
     )
+    # La rotation révoque l'ancien jeton et en émet un nouveau dans la même
+    # transaction : `now()` leur donnait le même instant, et le journal ne
+    # savait plus lequel des deux précédait l'autre.
     issued_at: Mapped[datetime] = mapped_column(
-        sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
+        sa.DateTime(timezone=True), nullable=False, server_default=sa.text("clock_timestamp()")
     )
     expires_at: Mapped[datetime] = mapped_column(sa.DateTime(timezone=True), nullable=False)
     revoked_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)

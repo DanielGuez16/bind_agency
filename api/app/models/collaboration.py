@@ -71,7 +71,7 @@ class Proof(UUIDPrimaryKey, Base):
         sa.ForeignKey("collaboration.id", ondelete="RESTRICT"), nullable=False
     )
     submitted_at: Mapped[datetime] = mapped_column(
-        sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
+        sa.DateTime(timezone=True), nullable=False, server_default=sa.text("clock_timestamp()")
     )
     source_url: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     capture_method: Mapped[CaptureMethod] = mapped_column(

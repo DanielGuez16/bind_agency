@@ -81,6 +81,7 @@ npx expo start
 **Temps**
 - Tout est stocké en UTC, la conversion se fait à l'affichage sur le fuseau du commerce
 - Un horodatage fourni par le client n'est jamais utilisé comme preuve, seul le temps serveur fait foi
+- `now()` renvoie l'heure d'ouverture de la transaction. Toute colonne qui doit ordonner des événements à l'intérieur d'une même transaction utilise `clock_timestamp()`. Deux cas déjà corrigés : `audit_log.occurred_at`, où « révoqué puis émis » devenait illisible, et `social_metrics_snapshot.captured_at`, où « le dernier relevé » n'avait plus de réponse
 
 **Métier**
 - `duration_minutes` est obligatoire sur un item de catalogue, sans elle aucun calcul de capacité n'est possible

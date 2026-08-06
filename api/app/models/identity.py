@@ -150,8 +150,10 @@ class SocialAccount(UUIDPrimaryKey, Base):
         sa.DateTime(timezone=True), nullable=True
     )
 
+    # `list_accounts` trie dessus : à égalité, l'ordre rendu à l'app dépendait
+    # du plan d'exécution.
     connected_at: Mapped[datetime] = mapped_column(
-        sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
+        sa.DateTime(timezone=True), nullable=False, server_default=sa.text("clock_timestamp()")
     )
     last_synced_at: Mapped[datetime | None] = mapped_column(
         sa.DateTime(timezone=True), nullable=True

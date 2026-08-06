@@ -33,6 +33,7 @@ from app.core.config import get_settings
 from app.integrations.social import SocialAuthError, SocialProvider, SocialProviderError
 from app.models import SocialAccount, SocialMetricsSnapshot
 from app.models.enums import SocialAccountStatus
+from app.services import account_verification
 
 
 class MetricsError(Exception):
@@ -115,6 +116,12 @@ async def refresh_profile_metrics(
     account.last_synced_at = datetime.now(UTC)
     await session.flush()
     await session.refresh(snapshot)
+
+    # Le contrôle de cohérence s'exécute ici, et pas au rattachement du compte :
+    # sans relevé il n'aurait rien à regarder. Ici plutôt que dans la route,
+    # parce que le job planifié devra le déclencher aussi et qu'un enchaînement
+    # posé dans une route ne vaut que pour cette route.
+    await account_verification.verifier(session, account=account)
     return snapshot
 
 

@@ -9,6 +9,7 @@ from app.core.config import get_settings
 from app.core.encryption import build_keyring
 from app.core.errors import ErrorCode
 from app.routers import (
+    account_verification,
     auth,
     business,
     capacity,
@@ -72,6 +73,7 @@ def create_app() -> FastAPI:
     application.include_router(tiers.router, prefix=settings.api_v1_prefix)
     application.include_router(tier_offers.router, prefix=settings.api_v1_prefix)
     application.include_router(social_accounts.router, prefix=settings.api_v1_prefix)
+    application.include_router(account_verification.router, prefix=settings.api_v1_prefix)
 
     return application
 

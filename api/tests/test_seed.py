@@ -37,6 +37,7 @@ from app.models import (
     User,
 )
 from app.models.enums import (
+    ActorKind,
     BusinessMemberRole,
     BusinessStatus,
     SocialAccountStatus,
@@ -247,18 +248,34 @@ async def test_tous_les_createurs_sont_en_cold_start(seed_conn: AsyncConnection)
         assert profil.is_new_creator is True
 
 
-async def test_aucun_createur_n_accede_a_un_palier(seed_conn: AsyncConnection) -> None:
-    """Le trou le plus coûteux du produit, rendu visible par le jeu de données.
+async def test_chaque_compte_est_verifie_par_le_mecanisme(seed_conn: AsyncConnection) -> None:
+    """Ce test disait l'inverse à la tâche précédente, et c'était le bon constat
+    à ce moment-là : rien ne faisait passer un compte en `verified`, donc aucun
+    créateur n'accédait à rien.
 
-    Le parcours OAuth ne sait poser qu'un `needs_review`, et rien ne fait passer
-    un compte en `verified`. Tout créateur réel est donc bloqué, aujourd'hui,
-    sur `account_under_review`. Le jeu de données le masquait en posant le
-    statut à la main ; il ne le masque plus, et ce test l'énonce.
-
-    À supprimer avec la tâche « Vérification de cohérence du profil ».
+    Le contrôle de cohérence existe maintenant, et il s'enchaîne au relevé de
+    métriques. Le statut n'est toujours pas posé par le jeu de données — il est
+    obtenu — et la preuve est la ligne de journal : acteur `system`, avec son
+    motif.
     """
     statuts = set(await seed_conn.scalars(sa.select(SocialAccount.verification_status).distinct()))
-    assert statuts == {VerificationStatus.NEEDS_REVIEW.value}
+    assert statuts == {VerificationStatus.VERIFIED.value}
+
+    transitions = (
+        await seed_conn.execute(
+            sa.select(
+                AuditLog.from_status, AuditLog.to_status, AuditLog.actor_kind, AuditLog.reason
+            ).where(AuditLog.entity_type == "social_account")
+        )
+    ).all()
+
+    assert len(transitions) == 3
+    for transition in transitions:
+        assert transition.from_status == VerificationStatus.NEEDS_REVIEW.value
+        assert transition.to_status == VerificationStatus.VERIFIED.value
+        # Personne ne l'a demandé, le système l'a décidé — et il dit pourquoi.
+        assert transition.actor_kind == ActorKind.SYSTEM.value
+        assert transition.reason
 
 
 async def test_un_compte_administrateur_existe(seed_conn: AsyncConnection) -> None:

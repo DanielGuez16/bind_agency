@@ -83,9 +83,11 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Fin : un snapshot est créé, l'éligibilité lit le dernier snapshot sans appel réseau*
 - [ ] Renouvellement des jetons en tâche de fond
       *Fin : un jeton proche de l'expiration est renouvelé automatiquement*
-- [ ] Vérification de cohérence du profil à la connexion d'un compte social
-      *Bloquant : rien ne fait aujourd'hui passer un compte en `verified`, donc aucun créateur n'accède à aucun palier*
+- [x] Vérification de cohérence du profil à la connexion d'un compte social
       *Fin : un compte trop récent ou incohérent passe en revue et ne peut pas réserver*
+- [ ] Profil créateur en écriture
+      *Prérequis de la vérification de cohérence : sans nom renseigné, le signal du nom déclaré reste neutre*
+      *Fin : un créateur renseigne et modifie son prénom, son nom et sa ville, la ville n'est pas dérivée de `geo`, et les champs sont bien ceux que la procédure d'anonymisation efface*
 - [ ] Écran des paliers accessibles et badge nouveau créateur
       *Fin : un créateur sans historique voit le badge et ses paliers selon son volume seul*
 

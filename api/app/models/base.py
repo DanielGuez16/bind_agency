@@ -73,9 +73,18 @@ class UUIDPrimaryKey:
 
 
 class CreatedAt:
+    """Instant de création, à la précision de l'instruction.
+
+    `clock_timestamp()` et non `now()` : ce dernier est figé pour toute la
+    transaction, si bien que dix lignes créées à la suite prétendraient l'avoir
+    été au même instant. Le mixin étant partagé par neuf tables, corriger ici
+    ferme la question pour toutes — y compris celles dont personne n'ordonne
+    encore les lignes, mais dont quelqu'un le fera.
+    """
+
     created_at: Mapped[datetime] = mapped_column(
         sa.DateTime(timezone=True),
         nullable=False,
-        server_default=sa.func.now(),
+        server_default=sa.text("clock_timestamp()"),
         sort_order=100,
     )

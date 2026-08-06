@@ -67,6 +67,7 @@ class ErrorCode(StrEnum):
     SOCIAL_ACCOUNT_NOT_ACTIVE = "social_account_not_active"
     SOCIAL_TOKEN_EXPIRED = "social_token_expired"
     METRICS_REFRESH_TOO_SOON = "metrics_refresh_too_soon"
+    VERIFICATION_TRANSITION_NOT_ALLOWED = "verification_transition_not_allowed"
 
     # Transverses
     VALIDATION_FAILED = "validation_failed"
