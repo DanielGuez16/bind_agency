@@ -782,3 +782,63 @@ Il produisait des créateurs avec sept collaborations là où aucun mécanisme
 n'était capable d'en compter une seule. Une donnée de test qui court-circuite un
 mécanisme empêche de voir que le mécanisme n'existe pas — et le jeu est
 précisément ce sur quoi on s'appuie pour croire que le système fonctionne.
+
+---
+
+## 2026-08-06 — Phase 4, connexion OAuth Instagram
+
+**Le chiffrement est porté par le type de colonne, pas par le service.**
+`EncryptedText` chiffre au `bind` et déchiffre au `result`. C'est la différence
+entre « on chiffre les jetons » et « on ne peut pas écrire un jeton en clair » :
+le second se tient sans discipline, et tout nouveau chemin d'écriture en hérite
+gratuitement. Le `bytea` sous-jacent n'a pas changé, la migration ne voit donc
+aucune dérive.
+
+**Chaque valeur chiffrée porte l'identifiant de sa clé.**
+Sans lui, changer de clé imposerait de tout redéchiffrer d'un coup — transaction
+géante et fenêtre d'indisponibilité. Avec lui, on ajoute une clé, on la rend
+active, et les anciennes valeurs restent lisibles pendant qu'un travail de fond
+les réécrit à son rythme. `TOKEN_ENCRYPTION_PREVIOUS_KEYS` garde les clés
+retirées de l'écriture mais encore nécessaires à la lecture.
+
+AES-GCM, nonce tiré à chaque chiffrement : deux jetons identiques ne se
+reconnaissent pas en base. Pas de données associées — au moment de chiffrer un
+`INSERT`, la ligne n'a pas encore d'identifiant à lier.
+
+**L'état OAuth est signé *et* à usage unique, et il faut les deux.**
+Le jeton signé écarte les états fabriqués sans toucher la base. La ligne
+`oauth_state` les rend consommables une seule fois. Le jeton seul resterait
+rejouable jusqu'à son expiration : quiconque intercepterait l'état d'un créateur
+pourrait finir le parcours avec son propre compte Instagram, et le rattacher au
+compte BIND de ce créateur.
+
+Les cinq refus — inconnu, mauvaise plateforme, autre utilisateur, déjà consommé,
+expiré — partagent un seul code d'erreur. Distinguer « inconnu » de « déjà
+utilisé » renseignerait qui tâtonne.
+
+**Le retour du fournisseur n'est pas authentifié, et c'est structurel.**
+Meta exige une URI de redirection HTTPS enregistrée : c'est une redirection de
+navigateur, sans en-tête d'autorisation. L'état est donc la seule chose qui dit
+de qui il s'agit — d'où son traitement. La route est hors du préfixe `/me`, qui
+signifie « authentifié » partout ailleurs.
+
+**Reconnecter met à jour, ne duplique pas, et n'est pas un conflit.**
+C'est le geste normal quand un jeton a expiré. Reprendre un compte lié à un autre
+créateur est refusé avec un code explicite : l'unicité `(platform, external_id)`
+l'interdirait de toute façon, mais une violation brute ne dirait pas pourquoi.
+
+**Un compte arrive en `needs_review`.** La vérification de cohérence du profil
+est une tâche à part ; d'ici là le compte est rattaché mais ne réserve rien, et
+le moteur d'éligibilité le dit avec sa propre raison.
+
+**L'identité n'est pas de la métrique.** Lire `id` et `username` est le minimum
+sans lequel il n'y a rien à enregistrer. Les abonnés et les vues sont la tâche
+suivante, et le jeton de longue durée obtenu ici est ce qu'elle utilisera.
+
+**Trouvé en route : l'inscription d'un créateur ne créait pas son profil.**
+`social_account.creator_id` et `booking.creator_id` référencent
+`creator_profile.user_id`, pas `app_user.id`. Un créateur inscrit ne pouvait donc
+rattacher aucun compte social — et le moteur d'éligibilité, qui renvoie un
+ensemble vide quand le profil manque, le déclarait inéligible à tout sans que
+rien ne le signale. `register` crée désormais la ligne. Le jeu de données, qui
+l'insérait lui-même, la complète maintenant.

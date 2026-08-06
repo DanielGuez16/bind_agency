@@ -77,7 +77,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
 
 ## Phase 4 — Créateur
 
-- [ ] Connexion OAuth Instagram et stockage chiffré des jetons
+- [x] Connexion OAuth Instagram et stockage chiffré des jetons
       *Fin : un compte réel se connecte, les jetons sont illisibles en base*
 - [ ] Récupération et historisation des métriques
       *Fin : un snapshot est créé, l'éligibilité lit le dernier snapshot sans appel réseau*

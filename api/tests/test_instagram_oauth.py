@@ -1,0 +1,505 @@
+"""Connexion OAuth Instagram.
+
+Deux propriétés portent tout le reste. Un jeton n'est jamais lisible en base —
+vérifié par lecture SQL directe, pas au travers de l'ORM qui déchiffrerait. Et
+un état ne sert qu'une fois, à celui qui l'a demandé : un état devinable ou
+rejouable, c'est le rattachement du compte social d'un inconnu au compte BIND
+d'un créateur.
+
+Aucun appel réseau. Le fournisseur réel est éprouvé sur un transport simulé, le
+service sur un faux fournisseur.
+"""
+
+import uuid
+from datetime import UTC, datetime, timedelta
+
+import httpx
+import pytest
+import sqlalchemy as sa
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncConnection
+
+from app.core import encryption
+from app.core.config import ConfigurationError, get_settings
+from app.core.security import TokenType, create_token
+from app.integrations.instagram import InstagramProvider
+from app.integrations.social import (
+    IdentiteSociale,
+    JetonEchange,
+    SocialProviderError,
+)
+from app.models import OAuthState, SocialAccount
+from app.models.enums import Platform, SocialAccountStatus, UserRole, VerificationStatus
+from app.routers.social_accounts import get_instagram_provider
+from tests.factories import new_creator
+
+PREFIX = get_settings().api_v1_prefix
+
+JETON = "IGQVJXY-un-jeton-de-longue-duree-tres-secret"
+
+
+# --------------------------------------------------------------------------
+# faux fournisseur
+# --------------------------------------------------------------------------
+
+
+class FauxInstagram:
+    platform = Platform.INSTAGRAM
+
+    def __init__(self, *, external_id: str = "17841400000000001", handle: str = "rebecca.miami"):
+        self.external_id = external_id
+        self.handle = handle
+        self.codes: list[str] = []
+
+    def authorization_url(self, *, state: str) -> str:
+        return f"https://instagram.example/authorize?state={state}"
+
+    async def exchange_code(self, code: str) -> JetonEchange:
+        self.codes.append(code)
+        return JetonEchange(access_token=JETON, expires_at=datetime.now(UTC) + timedelta(days=60))
+
+    async def fetch_identity(self, access_token: str) -> IdentiteSociale:
+        return IdentiteSociale(external_id=self.external_id, handle=self.handle)
+
+
+@pytest.fixture
+def instagram() -> FauxInstagram:
+    return FauxInstagram()
+
+
+@pytest.fixture
+async def client_ig(client: AsyncClient, instagram: FauxInstagram) -> AsyncClient:
+    """Le même client, avec le fournisseur remplacé."""
+    application = client._transport.app  # noqa: SLF001 - accès assumé au harnais
+    application.dependency_overrides[get_instagram_provider] = lambda: instagram
+    async with AsyncClient(
+        transport=ASGITransport(app=application), base_url="http://test"
+    ) as http:
+        yield http
+
+
+async def createur(client: AsyncClient) -> dict:
+    email = f"{uuid.uuid4()}@example.com"
+    password = "un-mot-de-passe-solide-42"
+    created = await client.post(
+        f"{PREFIX}/auth/register",
+        json={"email": email, "password": password, "role": UserRole.CREATOR.value},
+    )
+    assert created.status_code == 201, created.text
+    tokens = (
+        await client.post(f"{PREFIX}/auth/login", json={"email": email, "password": password})
+    ).json()
+    return {
+        "user_id": uuid.UUID(created.json()["id"]),
+        "headers": {"Authorization": f"Bearer {tokens['access_token']}"},
+    }
+
+
+async def demarrer(client: AsyncClient, compte: dict) -> str:
+    """Démarre un parcours et rend l'état contenu dans l'URL."""
+    response = await client.post(
+        f"{PREFIX}/me/social-accounts/instagram/connect", headers=compte["headers"]
+    )
+    assert response.status_code == 200, response.text
+    return httpx.URL(response.json()["authorization_url"]).params["state"]
+
+
+async def revenir(client: AsyncClient, state: str, code: str = "un-code-meta"):
+    return await client.get(
+        f"{PREFIX}/social-accounts/instagram/callback", params={"code": code, "state": state}
+    )
+
+
+# --------------------------------------------------------------------------
+# le chiffrement
+# --------------------------------------------------------------------------
+
+
+def test_un_aller_retour_de_chiffrement_rend_le_texte() -> None:
+    assert encryption.decrypt(encryption.encrypt(JETON)) == JETON
+
+
+def test_deux_chiffrements_du_meme_texte_different() -> None:
+    """Nonce tiré à chaque fois : deux jetons identiques ne se reconnaissent pas en base."""
+    assert encryption.encrypt(JETON) != encryption.encrypt(JETON)
+
+
+def test_le_binaire_porte_l_identifiant_de_cle() -> None:
+    """Sans lui, changer de clé obligerait à tout redéchiffrer d'un coup."""
+    blob = encryption.encrypt(JETON)
+    longueur = blob[0]
+
+    assert blob[1 : 1 + longueur].decode() == get_settings().token_encryption_key_id
+
+
+def test_une_cle_inconnue_est_signalee_pas_devinee(monkeypatch: pytest.MonkeyPatch) -> None:
+    blob = encryption.encrypt(JETON)
+    altere = bytes([2]) + b"v9" + blob[1 + blob[0] :]
+
+    with pytest.raises(encryption.DecryptionError, match="v9"):
+        encryption.decrypt(altere)
+
+
+def test_un_binaire_altere_est_refuse() -> None:
+    """AES-GCM authentifie : une modification ne passe pas pour du texte valide."""
+    blob = bytearray(encryption.encrypt(JETON))
+    blob[-1] ^= 0xFF
+
+    with pytest.raises(encryption.DecryptionError):
+        encryption.decrypt(bytes(blob))
+
+
+# --------------------------------------------------------------------------
+# le parcours
+# --------------------------------------------------------------------------
+
+
+async def test_le_parcours_complet_rattache_le_compte(
+    client_ig: AsyncClient, instagram: FauxInstagram, conn: AsyncConnection
+) -> None:
+    compte = await createur(client_ig)
+    state = await demarrer(client_ig, compte)
+
+    response = await revenir(client_ig, state)
+
+    assert response.status_code == 200, response.text
+    corps = response.json()
+    assert corps["handle"] == instagram.handle
+    assert corps["platform"] == Platform.INSTAGRAM.value
+    assert corps["status"] == SocialAccountStatus.ACTIVE.value
+    # La vérification de cohérence est une tâche à part : le compte arrive en
+    # revue et ne réserve rien tant qu'elle n'a pas tranché.
+    assert corps["verification_status"] == VerificationStatus.NEEDS_REVIEW.value
+
+
+async def test_aucun_jeton_ne_sort_par_l_api(client_ig: AsyncClient) -> None:
+    compte = await createur(client_ig)
+    state = await demarrer(client_ig, compte)
+    await revenir(client_ig, state)
+
+    liste = await client_ig.get(f"{PREFIX}/me/social-accounts", headers=compte["headers"])
+
+    assert liste.status_code == 200
+    assert JETON not in liste.text
+    assert "token" not in liste.text.replace("token_expires_at", "")
+
+
+async def test_le_jeton_n_est_jamais_lisible_en_base(
+    client_ig: AsyncClient, conn: AsyncConnection
+) -> None:
+    """Lecture SQL directe, sans l'ORM : c'est lui qui déchiffrerait."""
+    compte = await createur(client_ig)
+    state = await demarrer(client_ig, compte)
+    await revenir(client_ig, state)
+
+    brut = await conn.scalar(sa.text("SELECT access_token_encrypted FROM social_account LIMIT 1"))
+
+    assert brut is not None
+    assert isinstance(brut, bytes | memoryview)
+    assert JETON.encode() not in bytes(brut)
+    assert b"IGQVJ" not in bytes(brut)
+
+
+async def test_l_orm_rend_le_jeton_en_clair(client_ig: AsyncClient, conn: AsyncConnection) -> None:
+    """Le chiffrement est porté par le type : aucun code métier ne le voit."""
+    compte = await createur(client_ig)
+    state = await demarrer(client_ig, compte)
+    await revenir(client_ig, state)
+
+    lu = await conn.scalar(sa.select(SocialAccount.access_token_encrypted))
+
+    assert lu == JETON
+
+
+# --------------------------------------------------------------------------
+# l'état
+# --------------------------------------------------------------------------
+
+
+async def test_un_etat_fabrique_est_refuse(client_ig: AsyncClient) -> None:
+    await createur(client_ig)
+
+    response = await revenir(client_ig, "pas-un-etat")
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "oauth_state_invalid"
+
+
+async def test_un_etat_deja_consomme_est_refuse(client_ig: AsyncClient) -> None:
+    """Le rejeu est la prise de compte : rattacher son propre Instagram au BIND d'un autre."""
+    compte = await createur(client_ig)
+    state = await demarrer(client_ig, compte)
+    premier = await revenir(client_ig, state)
+    assert premier.status_code == 200
+
+    rejeu = await revenir(client_ig, state)
+
+    assert rejeu.status_code == 400
+    assert rejeu.json()["detail"] == "oauth_state_invalid"
+
+
+async def test_un_etat_expire_est_refuse(client_ig: AsyncClient, conn: AsyncConnection) -> None:
+    compte = await createur(client_ig)
+    state = await demarrer(client_ig, compte)
+    await conn.execute(
+        sa.update(OAuthState).values(expires_at=datetime.now(UTC) - timedelta(seconds=1))
+    )
+
+    response = await revenir(client_ig, state)
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "oauth_state_invalid"
+
+
+async def test_un_etat_signe_pour_un_autre_utilisateur_est_refuse(
+    client_ig: AsyncClient, conn: AsyncConnection
+) -> None:
+    """La ligne dit qui a démarré, le jeton dit qui prétend revenir. Les deux doivent coïncider."""
+    compte = await createur(client_ig)
+    await demarrer(client_ig, compte)
+    etat_id = await conn.scalar(sa.select(OAuthState.id))
+
+    contrefait = create_token(
+        subject=uuid.uuid4(),
+        token_type=TokenType.OAUTH_STATE,
+        token_id=etat_id,
+        lifetime=timedelta(minutes=10),
+    )
+    response = await revenir(client_ig, contrefait)
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "oauth_state_invalid"
+
+
+async def test_un_jeton_d_acces_ne_sert_pas_d_etat(client_ig: AsyncClient) -> None:
+    """Le contrôle de type empêche de réutiliser un jeton de session comme état."""
+    compte = await createur(client_ig)
+    jeton = compte["headers"]["Authorization"].removeprefix("Bearer ")
+
+    response = await revenir(client_ig, jeton)
+
+    assert response.status_code == 400
+
+
+async def test_un_etat_inexistant_en_base_est_refuse(client_ig: AsyncClient) -> None:
+    """Signature valide, ligne absente : le jeton seul ne suffit pas."""
+    compte = await createur(client_ig)
+    orphelin = create_token(
+        subject=compte["user_id"],
+        token_type=TokenType.OAUTH_STATE,
+        token_id=uuid.uuid4(),
+        lifetime=timedelta(minutes=10),
+    )
+
+    response = await revenir(client_ig, orphelin)
+
+    assert response.status_code == 400
+
+
+# --------------------------------------------------------------------------
+# reconnexion et reprise
+# --------------------------------------------------------------------------
+
+
+async def test_une_reconnexion_met_a_jour_sans_dupliquer(
+    client_ig: AsyncClient, instagram: FauxInstagram, conn: AsyncConnection
+) -> None:
+    """Un jeton qui a expiré se reconnecte : c'est le geste normal, pas un conflit."""
+    compte = await createur(client_ig)
+    await revenir(client_ig, await demarrer(client_ig, compte))
+
+    instagram.handle = "rebecca.miami.officiel"
+    seconde = await revenir(client_ig, await demarrer(client_ig, compte))
+
+    assert seconde.status_code == 200
+    assert seconde.json()["handle"] == "rebecca.miami.officiel"
+
+    combien = await conn.scalar(sa.select(sa.func.count()).select_from(SocialAccount))
+    assert combien == 1
+
+
+async def test_une_reconnexion_remet_le_compte_en_actif(
+    client_ig: AsyncClient, conn: AsyncConnection
+) -> None:
+    compte = await createur(client_ig)
+    await revenir(client_ig, await demarrer(client_ig, compte))
+    await conn.execute(sa.update(SocialAccount).values(status=SocialAccountStatus.EXPIRED))
+
+    seconde = await revenir(client_ig, await demarrer(client_ig, compte))
+
+    assert seconde.json()["status"] == SocialAccountStatus.ACTIVE.value
+
+
+async def test_un_compte_lie_a_un_autre_createur_ne_se_reprend_pas(
+    client_ig: AsyncClient, conn: AsyncConnection
+) -> None:
+    premier = await createur(client_ig)
+    await revenir(client_ig, await demarrer(client_ig, premier))
+
+    second = await createur(client_ig)
+    response = await revenir(client_ig, await demarrer(client_ig, second))
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "social_account_taken"
+    assert "violates" not in response.text
+
+    # La session doit avoir survécu au refus.
+    liste = await client_ig.get(f"{PREFIX}/me/social-accounts", headers=second["headers"])
+    assert liste.status_code == 200
+    assert liste.json() == []
+
+
+# --------------------------------------------------------------------------
+# accès
+# --------------------------------------------------------------------------
+
+
+async def test_seul_un_createur_demarre_un_parcours(client_ig: AsyncClient) -> None:
+    email = f"{uuid.uuid4()}@example.com"
+    password = "un-mot-de-passe-solide-42"
+    await client_ig.post(
+        f"{PREFIX}/auth/register",
+        json={"email": email, "password": password, "role": UserRole.BUSINESS_MEMBER.value},
+    )
+    tokens = (
+        await client_ig.post(f"{PREFIX}/auth/login", json={"email": email, "password": password})
+    ).json()
+
+    response = await client_ig.post(
+        f"{PREFIX}/me/social-accounts/instagram/connect",
+        headers={"Authorization": f"Bearer {tokens['access_token']}"},
+    )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "insufficient_role"
+
+
+async def test_un_createur_ne_voit_que_ses_comptes(
+    client_ig: AsyncClient, conn: AsyncConnection
+) -> None:
+    voisin = await new_creator(conn)
+    await conn.execute(
+        sa.insert(SocialAccount).values(
+            creator_id=voisin, platform=Platform.INSTAGRAM, external_id="autre", handle="voisin"
+        )
+    )
+    compte = await createur(client_ig)
+    await revenir(client_ig, await demarrer(client_ig, compte))
+
+    liste = await client_ig.get(f"{PREFIX}/me/social-accounts", headers=compte["headers"])
+
+    assert [ligne["handle"] for ligne in liste.json()] == ["rebecca.miami"]
+
+
+# --------------------------------------------------------------------------
+# le fournisseur réel, sur transport simulé
+# --------------------------------------------------------------------------
+
+
+@pytest.fixture
+def instagram_configure(monkeypatch: pytest.MonkeyPatch):
+    """Le fournisseur réel a besoin d'une application Meta déclarée."""
+    from app.core import config as module_config
+    from app.integrations import instagram as module_instagram
+
+    reglages = module_config.build_settings(
+        _env_file=None,
+        database_url=str(get_settings().database_url),
+        jwt_secret_key="peu-importe-ici-mais-assez-longue-pour-hmac",
+        token_encryption_key=encryption.generate_key(),
+        instagram_app_id="1234567890",
+        instagram_app_secret="un-secret-meta",
+        instagram_redirect_uri="https://api.bind.test/api/v1/social-accounts/instagram/callback",
+    )
+    monkeypatch.setattr(module_instagram, "get_settings", lambda: reglages)
+    return reglages
+
+
+def _transport(reponses: dict[str, httpx.Response]) -> httpx.MockTransport:
+    appels: list[httpx.Request] = []
+
+    def repondre(request: httpx.Request) -> httpx.Response:
+        appels.append(request)
+        for fragment, reponse in reponses.items():
+            if fragment in str(request.url):
+                return reponse
+        return httpx.Response(404, json={"error": "url inattendue"})
+
+    transport = httpx.MockTransport(repondre)
+    transport.appels = appels  # type: ignore[attr-defined]
+    return transport
+
+
+def test_l_url_d_autorisation_porte_l_etat_et_les_droits(instagram_configure) -> None:
+    provider = InstagramProvider(httpx.AsyncClient(transport=httpx.MockTransport(lambda r: None)))
+
+    url = httpx.URL(provider.authorization_url(state="un-etat"))
+
+    assert url.params["state"] == "un-etat"
+    assert url.params["client_id"] == "1234567890"
+    assert url.params["response_type"] == "code"
+    assert "instagram_business_basic" in url.params["scope"]
+
+
+async def test_l_echange_passe_par_le_jeton_de_longue_duree(instagram_configure) -> None:
+    """Sans la seconde étape, la connexion expirerait dans l'heure."""
+    transport = _transport(
+        {
+            "api.instagram.com/oauth/access_token": httpx.Response(
+                200, json={"access_token": "court", "user_id": 1}
+            ),
+            "graph.instagram.com/access_token": httpx.Response(
+                200, json={"access_token": "long", "expires_in": 5_184_000}
+            ),
+        }
+    )
+
+    async with httpx.AsyncClient(transport=transport) as http:
+        jeton = await InstagramProvider(http).exchange_code("un-code#_")
+
+    assert jeton.access_token == "long"
+    assert jeton.expires_at is not None
+    assert (jeton.expires_at - datetime.now(UTC)).days > 55
+    # Le suffixe que Meta accole parfois au code ne fait pas partie du code.
+    envoye = transport.appels[0].content
+    assert b"code=un-code" in envoye
+    assert b"%23_" not in envoye
+
+
+async def test_l_identite_est_lue_mais_aucune_metrique(instagram_configure) -> None:
+    transport = _transport(
+        {
+            "graph.instagram.com/me": httpx.Response(
+                200, json={"id": "178414", "username": "rebecca"}
+            )
+        }
+    )
+
+    async with httpx.AsyncClient(transport=transport) as http:
+        identite = await InstagramProvider(http).fetch_identity("un-jeton")
+
+    assert identite == IdentiteSociale(external_id="178414", handle="rebecca")
+    assert transport.appels[0].url.params["fields"] == "id,username"
+
+
+async def test_une_erreur_de_meta_ne_remonte_pas_telle_quelle(instagram_configure) -> None:
+    """Leur message parle de leur API, pas de ce que le créateur doit faire."""
+    transport = _transport(
+        {
+            "api.instagram.com": httpx.Response(
+                400, json={"error_message": "Invalid platform app", "error_type": "OAuthException"}
+            )
+        }
+    )
+
+    async with httpx.AsyncClient(transport=transport) as http:
+        with pytest.raises(SocialProviderError) as excinfo:
+            await InstagramProvider(http).exchange_code("un-code")
+
+    assert "Invalid platform app" not in str(excinfo.value)
+
+
+def test_sans_application_declaree_le_fournisseur_refuse_d_exister() -> None:
+    """L'absence de configuration n'est pas un repli : elle est signalée ici, pas chez Meta."""
+    with pytest.raises(ConfigurationError, match="INSTAGRAM_APP_ID"):
+        InstagramProvider(httpx.AsyncClient())

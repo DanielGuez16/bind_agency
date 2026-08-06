@@ -12,6 +12,7 @@ from app.models.business import Business, BusinessMember, Subscription, Subscrip
 from app.models.catalog import CatalogItem, MenuImport
 from app.models.collaboration import Collaboration, Proof
 from app.models.identity import CreatorProfile, SocialAccount, SocialMetricsSnapshot, User
+from app.models.oauth import OAuthState
 from app.models.reliability import ReliabilityEvent
 from app.models.tiers import Tier, TierOffer
 
@@ -27,6 +28,7 @@ __all__ = [
     "Collaboration",
     "CreatorProfile",
     "MenuImport",
+    "OAuthState",
     "Proof",
     "RedemptionCode",
     "RefreshToken",

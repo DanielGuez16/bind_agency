@@ -22,7 +22,7 @@ from app.core.security import (
     needs_rehash,
     verify_password,
 )
-from app.models import RefreshToken, User
+from app.models import CreatorProfile, RefreshToken, User
 from app.models.enums import Locale, RefreshTokenState, UserRole, UserStatus
 from app.services.audit import Actor, AuditedEntity, record_transition
 
@@ -89,6 +89,14 @@ async def register(
         # L'unicité est vérifiée par la base, pas par un SELECT préalable :
         # deux inscriptions simultanées passeraient à travers une pré-vérification.
         raise EmailAlreadyUsed(email) from error
+
+    if role is UserRole.CREATOR:
+        # Le profil créateur n'est pas une étape ultérieure : `social_account`
+        # et `booking` référencent `creator_profile.user_id`, pas `app_user.id`.
+        # Sans cette ligne, un créateur inscrit ne peut rattacher aucun compte
+        # social et reste inéligible à tout, sans que rien ne le signale.
+        session.add(CreatorProfile(user_id=user.id))
+        await session.flush()
 
     await record_transition(
         session,

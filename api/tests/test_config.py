@@ -10,12 +10,16 @@ import traceback
 import pytest
 
 from app.core.config import ConfigurationError, build_settings
+from app.core.encryption import generate_key
 
 VARIABLES = (
     "ENVIRONMENT",
     "DATABASE_URL",
     "TEST_DATABASE_URL",
     "JWT_SECRET_KEY",
+    "TOKEN_ENCRYPTION_KEY",
+    "TOKEN_ENCRYPTION_KEY_ID",
+    "TOKEN_ENCRYPTION_PREVIOUS_KEYS",
     "JWT_ALGORITHM",
     "CORS_ORIGINS",
     "ACCESS_TOKEN_TTL_SECONDS",
@@ -40,6 +44,7 @@ def test_une_variable_manquante_est_nommee(environnement_nu: None) -> None:
     message = str(excinfo.value)
     assert "database_url" in message
     assert "jwt_secret_key" in message
+    assert "token_encryption_key" in message
     assert "missing" in message
     assert "api/.env.example" in message
 
@@ -84,6 +89,7 @@ def test_une_configuration_complete_se_charge(
 ) -> None:
     monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://u:p@localhost:5432/db")
     monkeypatch.setenv("JWT_SECRET_KEY", SECRET)
+    monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", generate_key())
 
     settings = build_settings(_env_file=None)
 

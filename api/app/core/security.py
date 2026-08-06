@@ -24,6 +24,8 @@ _hasher = PasswordHasher()
 class TokenType(StrEnum):
     ACCESS = "access"
     REFRESH = "refresh"
+    #: État d'un parcours OAuth. Court, signé, et lié à celui qui l'a démarré.
+    OAUTH_STATE = "oauth_state"
 
 
 class InvalidToken(Exception):

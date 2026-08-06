@@ -59,6 +59,27 @@ class Settings(BaseSettings):
     access_token_ttl_seconds: int = 900
     refresh_token_ttl_seconds: int = 2_592_000
 
+    # `SecretStr` et sans valeur de repli, même traitement que la clé de
+    # signature : une clé de chiffrement de repli serait une clé connue.
+    token_encryption_key: SecretStr
+    # Écrit dans chaque valeur chiffrée. Changer de clé revient à ajouter la
+    # nouvelle, déplacer cet identifiant, et laisser l'ancienne au trousseau le
+    # temps qu'un travail de fond réécrive les valeurs.
+    token_encryption_key_id: str = "v1"
+    # Clés encore acceptées en déchiffrement, format « identifiant:clé ».
+    token_encryption_previous_keys: CommaSeparated = []
+
+    # Durée de vie de l'état OAuth. Court : c'est le temps d'aller autoriser et
+    # de revenir, pas celui d'une session.
+    oauth_state_ttl_seconds: int = 600
+
+    # Application Meta. Facultatives : l'API doit pouvoir démarrer sans elles —
+    # l'absence n'est pas un repli, le fournisseur refuse simplement de servir.
+    instagram_app_id: str | None = None
+    instagram_app_secret: SecretStr | None = Field(default=None, repr=False)
+    instagram_redirect_uri: str | None = None
+    instagram_scopes: CommaSeparated = ["instagram_business_basic"]
+
     # Au-delà de cet âge, un relevé de métriques ne donne plus accès à rien.
     # Le rafraîchissement est quotidien : sept jours veut dire que plusieurs
     # passages ont échoué, et une éligibilité calculée sur de vieux chiffres
