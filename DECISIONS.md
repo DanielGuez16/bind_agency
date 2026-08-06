@@ -1189,3 +1189,84 @@ et n'en gardait aucune trace. C'est maintenant un échec reportable comme un
 autre — la configuration peut arriver entre deux passages — et le job porte la
 raison. Le défaut ne se voyait dans aucun test : tous injectaient un fournisseur
 déjà construit.
+
+---
+
+## 2026-08-06 — Profil créateur en écriture
+
+**La ville est déclarée, jamais dérivée de `geo`, et le champ est libre.** Miami
+compte assez de quartiers nommés — Wynwood, Brickell, Little Havana, Little
+Haiti, Coconut Grove — pour qu'une liste fermée soit fausse dès le premier jour.
+Et un créateur qui ne s'y retrouve pas écrit n'importe quoi plutôt que rien, ce
+qui est pire qu'un champ libre. `geo` n'est pas alimenté ici : il servira au fil
+de la phase 5, et viendra du même contournement manuel que pour les commerces
+tant que le géocodage réel n'existe pas.
+
+**Une chaîne vide vaut « pas renseigné ».** Elle est ramenée à `NULL` plutôt que
+refusée : effacer un champ en envoyant `""` est un geste naturel. Sans cette
+normalisation, un prénom à `""` serait « renseigné » pour la base et vide pour
+tout le monde — et le signal du nom, dans la vérification de cohérence, se
+croirait jugeable avec rien à comparer.
+
+**Ce qui n'est pas envoyé n'est pas touché ; ce qui est envoyé à `null` est
+effacé.** Une mise à jour partielle ne doit pas effacer par omission, mais
+retirer sa bio doit rester possible sans écrire un espace.
+
+**Un champ non modifiable est refusé, pas ignoré.** Une charge utile portant
+`reliability_score` reçoit un 422. Un champ silencieusement écarté ferait croire
+à l'appelant qu'il a été pris en compte.
+
+**Aucun identifiant dans l'URL.** Le titulaire vient du jeton, donc il n'existe
+aucune forme de requête permettant de viser le profil d'un autre. La protection
+est dans la forme de l'API, pas dans un contrôle qu'on pourrait oublier
+d'écrire — et un test vérifie qu'aucune route de profil ne prend d'identifiant.
+
+**L'anonymisation devient irréversible en base, pas seulement en service.**
+`app_user` avait son trigger ; `creator_profile` n'en avait aucun, ses champs
+personnels étaient simplement mis à `NULL` et rien n'empêchait de les remplir à
+nouveau. Cela n'avait pas d'occasion de se produire tant qu'aucune route
+n'écrivait ces champs — cette tâche en crée une. Le trigger refuse de repasser
+un champ personnel effacé à une valeur non nulle, et refuse de retirer
+`anonymized_at`. Il laisse `reliability_score` et `completed_collabs_count`
+modifiables : ce sont des faits sur des collaborations qui ont eu lieu, et ils
+doivent pouvoir être recalculés.
+
+**Le test d'anonymisation compare, il n'énumère pas.** Il dérive les colonnes
+personnelles de `CreatorProfile.__table__`, moins une courte liste de colonnes
+explicitement non personnelles, chacune avec sa raison. Ajouter un champ
+personnel au profil sans l'ajouter à l'effacement fait tomber le test — au
+moment précis où personne ne pensera à le vérifier. Une liste recopiée à côté de
+celle du service aurait le défaut inverse : elle serait toujours d'accord avec
+ce qu'on vient d'écrire.
+
+Le test exige aussi que **toutes** les colonnes personnelles soient renseignées
+avant l'anonymisation, sinon leur effacement ne prouverait rien. Cette assertion
+a immédiatement rapporté un trou dans le jeu de départ du test : `geo` n'était
+pas posé, donc son effacement portait sur une colonne déjà nulle.
+
+**Le signal du nom cesse d'être neutre, sans qu'une ligne change dans la
+vérification.** La comparaison avait été écrite avant la route qui l'alimente,
+et elle compte à partir d'aujourd'hui. Sa permissivité est inchangée. Un compte
+en `needs_review` gagne un signal jugé de plus à sa prochaine réexécution ; un
+compte déjà `verified` n'est pas redescendu par un nom devenu comparable — le
+contrôle ne descend jamais.
+
+**Renseigner son nom ne déclenche aucune réexécution.** Le contrôle reste
+accroché au relevé de métriques, et à lui seul : sans cela, une frappe dans un
+champ de formulaire appellerait Meta.
+
+**Prénom et nom obligatoires avant la première réservation : rien ne le
+garantit, et rien ne peut le garantir ici.** Aucun service ni aucune route de
+réservation n'existe — la seule lecture de `first_name` dans tout le code est
+celle de l'anonymisation et celle du signal du nom. Il n'y a donc aucun endroit
+où poser la condition. Elle rejoint la tâche « Création de réservation » en
+phase 5, où le chemin existera.
+
+**Trouvé en route : une échéance de job posée par la mauvaise horloge.**
+`run_after` était calculé avec `datetime.now(UTC)`, celle du processus, puis
+comparé par la réclamation à `clock_timestamp()`, celle de la base. Quelques
+millisecondes d'avance suffisaient pour qu'un job réarmé « maintenant » ne soit
+pas encore dû. Le test l'a montré une fois sur une suite complète, puis a repassé
+seul — c'est-à-dire la pire forme de défaut. Toutes les échéances sont
+désormais calculées par la base. Même règle que pour les preuves : seul le temps
+serveur fait foi, et l'application est un client de la base comme un autre.

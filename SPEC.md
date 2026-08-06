@@ -176,6 +176,8 @@ Signaux disponibles et exploitables :
 
 Les seuils sont en configuration, comme le reste. C'est ce contrôle, et pas le moteur de paliers, qui protège du compte acheté ou fraîchement créé.
 
+Le profil créateur est déclaratif : prénom, nom, ville et bio sont saisis par le créateur, jamais dérivés. La ville est un champ libre — Miami compte assez de quartiers nommés pour qu'une liste fermée soit fausse dès le premier jour — et elle n'est jamais déduite des coordonnées. Prénom et nom sont facultatifs à l'inscription et obligatoires avant la première réservation.
+
 ### 3.3 Ce que voit le créateur
 
 Le fil ne liste pas des offres mais des commerces. Pour chaque commerce, on affiche les items accessibles, c'est à dire les `tier_offer` dont le palier est éligible, dont l'item est `is_available`, et pour lesquels il reste au moins un créneau libre dans l'horizon de réservation.

@@ -53,6 +53,8 @@ export const es: Catalogue = {
     tier_offer_parent_not_allowed: 'Un artículo con variantes no se puede ofrecer. Ofrece la variante.',
     tier_offer_tier_inactive: 'Este nivel no está abierto ahora mismo.',
     tier_offer_has_bookings: 'Esta oferta tiene reservas y no se puede quitar. Desactívala en su lugar.',
+    creator_profile_not_found: 'No encontramos tu perfil de creador.',
+    creator_profile_anonymized: 'Este perfil fue anonimizado y ya no se puede editar.',
     oauth_state_invalid: 'Este enlace de conexión ya no es válido. Vuelve a empezar desde tu cuenta.',
     social_account_taken: 'Esta cuenta social ya está vinculada a otra cuenta de BIND.',
     social_provider_unavailable: 'No hemos podido contactar con la red social. Inténtalo de nuevo.',

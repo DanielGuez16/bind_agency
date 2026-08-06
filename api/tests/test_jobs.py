@@ -272,7 +272,13 @@ async def test_le_job_s_arrete_apres_le_nombre_de_tentatives(
 
 
 async def test_un_job_epuise_se_rearme(session: AsyncSession) -> None:
-    """Sans ce geste, s'arrêter reviendrait à abandonner."""
+    """Sans ce geste, s'arrêter reviendrait à abandonner.
+
+    Ce test a été intermittent une fois : `run_after` était posé depuis
+    l'horloge du processus et comparé à `clock_timestamp()` par la réclamation.
+    Quelques millisecondes d'avance suffisaient pour que le job réarmé ne soit
+    pas encore dû. Toutes les échéances sont désormais calculées par la base.
+    """
     compte = await creer_compte(session)
     job = await job_de(session, compte, JobType.TOKEN_REFRESH)
     job.status = JobStatus.EXHAUSTED
@@ -283,6 +289,8 @@ async def test_un_job_epuise_se_rearme(session: AsyncSession) -> None:
 
     assert job.status is JobStatus.PENDING
     assert job.attempts == 0
+    # Immédiatement dû, à l'horloge de la base et non à celle du processus.
+    assert job.run_after <= await session.scalar(sa.select(sa.func.clock_timestamp()))
     assert job.id in {j.id for j in await service.reclamer(session, limite=10)}
 
 

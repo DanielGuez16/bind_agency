@@ -24,10 +24,18 @@ coincés qu'il aurait fallu ramasser.
 **Reporter** applique un délai croissant plafonné. Croissant parce qu'une panne
 d'en face dure rarement une seconde ; plafonné parce qu'un délai qui double
 indéfiniment finit par ne plus jamais réessayer.
+
+**Toute date d'échéance est calculée par la base, jamais en Python.** La
+réclamation compare `run_after` à `clock_timestamp()` : une échéance posée
+depuis l'horloge du processus se compare à une horloge qui n'est pas la sienne.
+Quelques millisecondes d'écart suffisent pour qu'un job réarmé « maintenant » ne
+soit pas encore dû, et l'erreur est intermittente — donc invisible jusqu'au jour
+où elle ne l'est plus. C'est la même règle que pour les preuves : seul le temps
+serveur fait foi.
 """
 
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -67,7 +75,7 @@ async def planifier(
         .values(
             job_type=job_type,
             target_id=target_id,
-            run_after=run_after or datetime.now(UTC),
+            run_after=run_after or sa.func.clock_timestamp(),
         )
         .on_conflict_do_nothing(index_elements=["job_type", "target_id"])
     )
@@ -112,9 +120,10 @@ async def reussir(session: AsyncSession, job: Job, *, prochain: timedelta | None
     """
     job.attempts = 0
     job.last_error = None
-    job.last_run_at = datetime.now(UTC)
-    job.run_after = datetime.now(UTC) + (prochain or timedelta(0))
+    job.last_run_at = sa.func.clock_timestamp()
+    job.run_after = sa.func.clock_timestamp() + (prochain or timedelta(0))
     await session.flush()
+    await session.refresh(job)
 
 
 async def echouer(session: AsyncSession, job: Job, *, erreur: str) -> JobStatus:
@@ -127,7 +136,7 @@ async def echouer(session: AsyncSession, job: Job, *, erreur: str) -> JobStatus:
 
     job.attempts += 1
     job.last_error = erreur[: settings.job_error_max_length]
-    job.last_run_at = datetime.now(UTC)
+    job.last_run_at = sa.func.clock_timestamp()
 
     if job.attempts >= settings.job_max_attempts:
         # On s'arrête, et on le dit. Un job qui échoue en silence pour toujours
@@ -135,9 +144,10 @@ async def echouer(session: AsyncSession, job: Job, *, erreur: str) -> JobStatus:
         # personne ne sait qu'il manque.
         job.status = JobStatus.EXHAUSTED
     else:
-        job.run_after = datetime.now(UTC) + delai_de_report(job.attempts, settings)
+        job.run_after = sa.func.clock_timestamp() + delai_de_report(job.attempts, settings)
 
     await session.flush()
+    await session.refresh(job)
     return job.status
 
 
@@ -175,6 +185,11 @@ async def rearmer(session: AsyncSession, job_id: uuid.UUID) -> Job:
 
     job.status = JobStatus.PENDING
     job.attempts = 0
-    job.run_after = datetime.now(UTC)
+    # Immédiatement dû, à l'horloge qui en jugera. `datetime.now()` posait une
+    # échéance depuis l'horloge du processus, comparée ensuite à
+    # `clock_timestamp()` : quelques millisecondes d'avance suffisaient pour que
+    # le job réarmé ne soit pas encore dû, une fois sur vingt.
+    job.run_after = sa.func.clock_timestamp()
     await session.flush()
+    await session.refresh(job)
     return job

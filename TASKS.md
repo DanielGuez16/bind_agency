@@ -85,7 +85,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Fin : un jeton proche de l'expiration est renouvelé automatiquement*
 - [x] Vérification de cohérence du profil à la connexion d'un compte social
       *Fin : un compte trop récent ou incohérent passe en revue et ne peut pas réserver*
-- [ ] Profil créateur en écriture
+- [x] Profil créateur en écriture
       *Prérequis de la vérification de cohérence : sans nom renseigné, le signal du nom déclaré reste neutre*
       *Fin : un créateur renseigne et modifie son prénom, son nom et sa ville, la ville n'est pas dérivée de `geo`, et les champs sont bien ceux que la procédure d'anonymisation efface*
 - [ ] Écran des paliers accessibles et badge nouveau créateur
@@ -100,6 +100,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
 - [ ] Fil géolocalisé, seuls les items réellement réservables apparaissent
       *Fin : un item indisponible ou sans créneau n'apparaît jamais, et un item désactivé — directement ou par son parent — n'apparaît jamais dans le fil*
 - [ ] Création de réservation avec verrou et garde de dix minutes
+      *Y compris : prénom et nom obligatoires avant la première réservation. Ils sont facultatifs à l'inscription, et rien ne les exige aujourd'hui — il n'existe aucun chemin de réservation où poser la condition*
       *Fin : test de concurrence, deux réservations simultanées sur la dernière place, une seule passe*
 - [ ] Machine à états de la réservation, annulation, absence, expiration
       *Fin : toutes les transitions de la spec testées, aucune transition illégale possible*
