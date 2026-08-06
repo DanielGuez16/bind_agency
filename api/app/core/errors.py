@@ -90,6 +90,11 @@ class ErrorCode(StrEnum):
     BOOKING_HOLD_EXPIRED = "booking_hold_expired"
     BOOKING_NO_SHOW_NOT_APPLICABLE = "booking_no_show_not_applicable"
 
+    # Retrait
+    REDEMPTION_CODE_UNKNOWN = "redemption_code_unknown"
+    REDEMPTION_CODE_ALREADY_CONSUMED = "redemption_code_already_consumed"
+    REDEMPTION_BOOKING_NOT_REDEEMABLE = "redemption_booking_not_redeemable"
+
     # Transverses
     VALIDATION_FAILED = "validation_failed"
     NOT_FOUND = "not_found"

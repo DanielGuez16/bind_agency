@@ -113,9 +113,9 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
 
 ## Phase 6 — Caisse
 
-- [ ] Génération du code tournant et de la saisie de secours
+- [x] Génération du code tournant et de la saisie de secours
       *Fin : le code change toutes les trente secondes, l'ancien reste accepté une fenêtre*
-- [ ] Vérification et consommation côté commerce
+- [x] Vérification et consommation côté commerce
       *Fin : un code déjà consommé est refusé, la réservation passe en consommée et crée la contrepartie*
 - [ ] Scanner caméra et saisie manuelle dans l'app commerce
       *Fin : les deux chemins fonctionnent sur un appareil réel*

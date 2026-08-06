@@ -159,6 +159,10 @@ class Settings(BaseSettings):
     #: disponibilité les ignore déjà à l'échéance, ce balayage ne fait que
     #: mettre l'état en accord avec ce qui est vrai.
     booking_sweep_interval_seconds: int = 120
+    #: Rotation du code de retrait. Trente secondes, avec tolérance d'une
+    #: fenêtre : le temps qu'un créateur montre son écran et qu'un commerce
+    #: scanne, on franchit parfois une frontière.
+    redemption_rotation_seconds: int = 30
 
     # Lue uniquement par la session pytest, jamais par l'application.
     # Sa présence est vérifiée dans tests/conftest.py, qui refuse de tourner sans.
