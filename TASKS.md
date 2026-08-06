@@ -106,7 +106,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Fin : toutes les transitions de la spec testées, aucune transition illégale possible*
 - [ ] Implémentation réelle du géocodage d'adresse
       *Fin : une adresse saisie librement produit des coordonnées, et l'échec de résolution laisse le commerce en `onboarding` sans bloquer son inscription*
-- [ ] Résolveur d'appartenance pour les ressources sans `business_id` dans l'URL
+- [x] Résolveur d'appartenance pour les ressources sans `business_id` dans l'URL
       *Fin : un test par type de ressource — réservation, contrepartie, preuve, code de retrait — vérifiant qu'un membre du commerce A reçoit 403 sur une ressource du commerce B. `require_business_member` ne sait aujourd'hui lire l'identifiant que dans le chemin ; c'est le point de fuite entre commerces le plus probable du projet*
 
 ---
