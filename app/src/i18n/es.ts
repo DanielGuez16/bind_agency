@@ -49,6 +49,22 @@ export const es: Catalogue = {
     creator: 'Creador',
     validUntil: 'Válido hasta',
   },
+  menuImport: {
+    title: 'Revisa tu carta',
+    intro:
+      'Nada se añade a tu catálogo hasta que valides. Corrige lo que la lectura haya equivocado.',
+    lowConfidence: 'Revisa esta línea con atención',
+    keep: 'Conservar',
+    drop: 'Descartar',
+    nameLabel: 'Nombre',
+    priceLabel: 'Precio en céntimos',
+    durationLabel: 'Minutos bloqueados',
+    durationHint: 'El tiempo que bloqueas, no el que anuncias. La lectura no puede saberlo.',
+    bookable: 'Necesita franja horaria',
+    validate: 'Añadir a mi catálogo',
+    validated: '{{count}} artículos añadidos',
+    empty: 'No se leyó nada de este archivo. Añade tus artículos a mano.',
+  },
   errors: {
     generic: 'Algo ha salido mal. Inténtalo de nuevo.',
     authentication_required: 'Inicia sesión para continuar.',
@@ -138,6 +154,10 @@ export const es: Catalogue = {
     collaboration_not_open: 'Esta colaboración no está esperando una prueba ahora mismo.',
     proof_nothing_archived: 'No pudimos archivar el contenido. Inténtalo o envía una captura.',
     proof_already_submitted: 'Ya enviaste exactamente este archivo. Envía el corregido.',
+    menu_import_not_found: 'No encontramos esta importación de carta.',
+    menu_import_transition_not_allowed: 'Esta importación no está en esa etapa.',
+    menu_import_duration_required:
+      'Los artículos reservables necesitan una duración. Añádela a cada línea que conserves.',
     not_found: 'No hemos encontrado lo que buscabas.',
     internal_error: 'Algo ha salido mal por nuestra parte.',
   },

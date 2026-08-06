@@ -52,6 +52,22 @@ export const en = {
     creator: 'Creator',
     validUntil: 'Valid until',
   },
+  menuImport: {
+    title: 'Review your menu',
+    intro:
+      'Nothing is added to your catalogue until you validate. Correct anything the reader got wrong.',
+    lowConfidence: 'Check this line carefully',
+    keep: 'Keep',
+    drop: 'Skip',
+    nameLabel: 'Name',
+    priceLabel: 'Price in cents',
+    durationLabel: 'Minutes blocked',
+    durationHint: 'The time you block, not the time you advertise. The reader cannot know it.',
+    bookable: 'Needs a time slot',
+    validate: 'Add to my catalogue',
+    validated: '{{count}} items added',
+    empty: 'Nothing was read from this file. Add your items by hand.',
+  },
   errors: {
     generic: 'Something went wrong. Please try again.',
     authentication_required: 'Please sign in to continue.',
@@ -134,6 +150,10 @@ export const en = {
     collaboration_not_open: 'This collaboration is not waiting for a proof right now.',
     proof_nothing_archived: 'We could not archive the content. Try again or send a screenshot.',
     proof_already_submitted: 'You already sent this exact file. Send the corrected one.',
+    menu_import_not_found: 'We could not find this menu import.',
+    menu_import_transition_not_allowed: 'This import is not at that stage.',
+    menu_import_duration_required:
+      'Bookable items need a duration. Add one to every line you keep.',
     not_found: 'We could not find what you were looking for.',
     internal_error: 'Something went wrong on our side.',
   },

@@ -1798,3 +1798,58 @@ pas les abonnés qui bloquent, ce sont les collaborations.
 **Le plafonnement n'est pas une exclusion.** Un score dégradé ferme les paliers
 hauts et laisse le palier d'entrée ouvert : quelqu'un qui a mal fait doit
 pouvoir remonter.
+
+---
+
+## 2026-08-06 — Import de carte
+
+**Le modèle vision est un fournisseur derrière une interface**, comme le
+géocodage, les plateformes sociales et l'envoi d'emails. Ni le service, ni la
+route, ni l'écran ne savent lequel a lu la carte. Le mode est déclaré par
+`MENU_EXTRACTION_PROVIDER` ; demander `vision` sans clé empêche de démarrer.
+
+Le mode `manual` n'extrait rien et rend une charge vide. Ce n'est pas un repli
+silencieux : c'est le chemin de la phase 2, la saisie à la main, qui fonctionne
+parfaitement.
+
+**Aucun item n'est créé sans validation explicite du commerce.** Quatre gestes —
+téléverser, extraire, relire, valider — et seul le dernier touche au catalogue.
+Un test le vérifie sur une extraction **réussie, avec des lignes** : c'est là
+que la règle pourrait céder, pas sur une extraction vide.
+
+Les items viennent des lignes **révisées**, jamais de la charge extraite. Valider
+en relisant la charge annulerait la relecture, et personne ne s'en apercevrait
+avant de voir des prix faux dans un fil.
+
+**La durée n'est jamais extraite.** Une carte affiche des prix, pas des temps de
+poste — et quand elle affiche une durée, c'est celle annoncée au client, pas
+celle que le commerce bloque : les deux diffèrent souvent d'un quart d'heure de
+remise en état. L'interdiction est double : le type de retour de l'extraction ne
+porte pas de champ de durée, et la consigne au modèle lui interdit d'en deviner
+une. Une durée inventée fausserait tout le calcul de capacité sans que personne
+ne le voie.
+
+À l'écran, le champ reste **vide**. Le préremplir ferait valider une durée que
+personne n'a choisie.
+
+**Une ligne réservable sans durée est refusée en bloc.** Créer la moitié des
+items laisserait le commerce devant un catalogue à moitié importé qu'il faudrait
+démêler.
+
+**Une ligne à moitié lue est écartée, pas rendue avec des trous.** Elle coûte
+plus de temps à corriger qu'à ressaisir, et elle passe plus facilement la
+relecture qu'une absence.
+
+**Une réponse inexploitable lève, elle ne rend pas une extraction vide.** Le vide
+veut dire « rien trouvé sur cette carte » ; le confondre avec un échec ferait
+valider une carte blanche.
+
+**La confiance est rendue et sert à ordonner la relecture.** Une extraction sans
+confiance obligerait à tout relire avec la même attention, ce qui revient à ne
+rien relire. L'écran ne signale que les lignes sous le seuil — tout signaler
+reviendrait à ne rien signaler.
+
+**Les deux charges sont conservées côte à côte**, extraite et révisée. Comparer
+les deux dit ce que le modèle rate, et si le changer a servi à quelque chose.
+Ce qu'un commerce a écarté est conservé aussi : le savoir vaut autant que savoir
+ce qu'il a gardé.
