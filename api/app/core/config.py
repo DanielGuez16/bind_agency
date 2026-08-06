@@ -146,6 +146,12 @@ class Settings(BaseSettings):
     #: Rayon du fil, en mètres. Dix kilomètres : au-delà, un créateur de Miami
     #: ne se déplace pas pour un soin, et le fil se remplit de bruit.
     feed_radius_metres: int = 10_000
+    #: Durée du garde posé à la création. Dix minutes : assez pour confirmer,
+    #: assez court pour qu'une place abandonnée revienne vite.
+    booking_hold_seconds: int = 600
+    #: Fenêtre de validité d'un droit sans créneau. Le créateur se présente
+    #: quand il veut avant l'échéance.
+    booking_open_validity_days: int = 30
 
     # Lue uniquement par la session pytest, jamais par l'application.
     # Sa présence est vérifiée dans tests/conftest.py, qui refuse de tourner sans.

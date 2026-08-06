@@ -78,6 +78,14 @@ class ErrorCode(StrEnum):
     JOB_NOT_FOUND = "job_not_found"
     JOB_NOT_EXHAUSTED = "job_not_exhausted"
 
+    # Réservation
+    BOOKING_OFFER_NOT_BOOKABLE = "booking_offer_not_bookable"
+    BOOKING_TIER_NOT_ACCESSIBLE = "booking_tier_not_accessible"
+    BOOKING_NAME_REQUIRED = "booking_name_required"
+    BOOKING_SLOT_REQUIRED = "booking_slot_required"
+    BOOKING_SLOT_NOT_ALLOWED = "booking_slot_not_allowed"
+    BOOKING_SLOT_UNAVAILABLE = "booking_slot_unavailable"
+
     # Transverses
     VALIDATION_FAILED = "validation_failed"
     NOT_FOUND = "not_found"

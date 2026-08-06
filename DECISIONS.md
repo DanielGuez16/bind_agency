@@ -1445,3 +1445,48 @@ créateur sait ce qu'il accepte.
 **Chaque item porte le compte social qui ouvre son palier.** La réservation se
 fait au nom d'un compte précis, pas du créateur en général : le renvoyer ici
 évite à l'app de le redemander et au créateur de choisir à l'aveugle.
+
+---
+
+## 2026-08-06 — Création de réservation
+
+**La clé du verrou est `(business_id, jour)`, et le choix compte.** Verrouiller
+le commerce entier sérialiserait toutes ses réservations, y compris celles de
+mardi prochain qui ne se disputent rien. Verrouiller le créneau seul laisserait
+passer deux réservations de durées différentes qui se chevauchent : 9h30-10h30
+et 10h00-11h00 ne partagent aucun créneau candidat et se disputent pourtant la
+place de 10h00.
+
+**`pg_advisory_xact_lock` et non `pg_advisory_lock`.** Le second devrait être
+relâché à la main, et un chemin d'erreur qui l'oublie garde le verrou pour toute
+la vie de la connexion. Le premier tombe avec la transaction, qu'elle réussisse
+ou non.
+
+**Le recompte a lieu après le verrou, et c'est tout ce qui compte.** Une
+vérification faite avant ne prouve rien : entre elle et l'écriture, quelqu'un
+d'autre a eu le temps d'écrire. Le recompte repasse par le calcul de
+disponibilité plutôt que d'écrire son propre comptage — deux façons de compter
+la même chose finiraient par diverger, et la seconde serait celle qu'on
+oublierait de corriger.
+
+**Vérifié en retirant le verrou :** le test de concurrence échoue, la seconde
+transaction n'est plus sérialisée et les deux réservations passent. Le test ne
+constate donc pas une propriété qui tiendrait sans lui.
+
+**Le nom est exigé ici, pas dans le profil.** Les champs restent facultatifs
+tant que le créateur ne s'engage auprès de personne ; ils deviennent
+obligatoires au moment où un commerce va le recevoir. Code d'erreur dédié.
+
+**Un item sans créneau ne prend pas de verrou.** Il ne dispute aucune capacité :
+verrouiller sérialiserait des réservations qui n'ont aucune raison de l'être.
+
+**Offre inconnue, retirée, palier désactivé, item indisponible, commerce fermé :
+un seul refus.** Les distinguer renseignerait sur ce qui existe chez un commerce
+dont le fil ne montre rien.
+
+**Trouvé en route : trois tests supposaient `audit_log` globalement vide.** Ils
+comptaient sur toute la table ou filtraient sur le seul `entity_type`. Or le
+journal est immuable : tout test qui valide sa transaction y laisse des lignes
+définitivement, et le test de concurrence en écrit forcément. Ces assertions
+sont maintenant filtrées sur l'entité concernée. C'était un piège latent, pas
+une conséquence de cette tâche — le premier test à committer l'aurait déclenché.

@@ -607,9 +607,17 @@ async def test_le_journal_d_audit_refuse_toute_mutation(
 
 
 async def test_le_journal_d_audit_accepte_les_insertions(conn: AsyncConnection) -> None:
-    await conn.execute(sa.insert(AuditLog).values(**_audit_row()))
+    ligne = _audit_row()
+    await conn.execute(sa.insert(AuditLog).values(**ligne))
 
-    count = await conn.scalar(sa.select(sa.func.count()).select_from(AuditLog))
+    # Compté sur l'entité insérée, pas sur toute la table : `audit_log` est
+    # immuable, donc tout test qui valide sa transaction y laisse des lignes
+    # définitivement. Un compte global serait un piège pour le test suivant.
+    count = await conn.scalar(
+        sa.select(sa.func.count())
+        .select_from(AuditLog)
+        .where(AuditLog.entity_id == ligne["entity_id"])
+    )
     assert count == 1
 
 
