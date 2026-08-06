@@ -458,3 +458,38 @@ item est la bonne réponse, comme pour la nature et la durée.
 `updated_at` a un `onupdate` côté serveur : l'attribut est expiré après l'UPDATE,
 et le relire déclencherait une IO implicite — interdite en SQLAlchemy async, elle
 lève `MissingGreenlet`. Le service rafraîchit avant de rendre l'objet.
+
+**Deux invariants de forme passent du service à la base.**
+Un parent n'est jamais réservable, et il n'y a pas de variante de variante. Les
+deux demandent de regarder les lignes voisines, ce qu'un `CHECK` ne peut pas
+faire : d'où un trigger. Motif du déplacement : le premier import en masse de la
+phase 9 écrira des items sans passer par le service, et c'est précisément le
+moment où personne ne relira.
+
+Le trigger borne sa recherche du parent au même commerce. Sans ce filtre il
+répondait à la place de `fk_catalog_item_parent_business` sur un parent
+d'ailleurs, avec un message qui n'était pas le bon. Et il teste la profondeur
+avant la réservabilité : sur une variante réservable les deux règles
+s'appliquent, la profondeur est le diagnostic utile.
+
+Les tests écrivent en SQL direct, sans le service. Un trigger vérifié au travers
+du code qu'il double ne prouve rien.
+
+**DÉCISION DIFFÉRÉE — durée d'un item déjà réservé.**
+*Prise le 2026-08-05. Réexamen : à la première tâche de la phase 5 qui écrit
+dans `booking`, soit « Création de réservation avec verrou et garde de dix
+minutes ».*
+
+Aujourd'hui, seul le service empêche de modifier `duration_minutes` sur un item
+qui a des réservations. Contrairement à `requires_booking`, qui appartient à
+`fk_booking_item_business_requires_booking` et que la base refuse donc
+elle-même, `duration_minutes` n'apparaît dans aucune contrainte référentielle.
+
+La fermeture possible : étendre l'unique de `catalog_item` et la clé étrangère
+de `booking` à `duration_minutes`. Postgres n'applique pas une clé étrangère
+composite dont une colonne est nulle, donc les items non réservables — durée
+nulle — ne seraient pas concernés, et ce sont exactement ceux qui n'ont pas de
+durée à protéger. Coût : `booking` porterait la durée réservée.
+
+Différée parce qu'elle change `booking`, et qu'on ne veut pas migrer cette table
+deux fois.
