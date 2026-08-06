@@ -64,6 +64,8 @@ export const en = {
     social_token_expired: 'Instagram no longer accepts our access to this account. Reconnect it to keep collaborating.',
     metrics_refresh_too_soon: 'Your stats were refreshed recently. Try again a bit later.',
     verification_transition_not_allowed: 'This account is already in that state.',
+    job_not_found: 'We could not find this scheduled task.',
+    job_not_exhausted: 'This task has not stopped, there is nothing to restart.',
     not_found: 'We could not find what you were looking for.',
     internal_error: 'Something went wrong on our side.',
   },

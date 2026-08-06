@@ -15,6 +15,7 @@ from app.routers import (
     capacity,
     catalog,
     health,
+    jobs,
     social_accounts,
     tier_offers,
     tiers,
@@ -74,6 +75,7 @@ def create_app() -> FastAPI:
     application.include_router(tier_offers.router, prefix=settings.api_v1_prefix)
     application.include_router(social_accounts.router, prefix=settings.api_v1_prefix)
     application.include_router(account_verification.router, prefix=settings.api_v1_prefix)
+    application.include_router(jobs.router, prefix=settings.api_v1_prefix)
 
     return application
 

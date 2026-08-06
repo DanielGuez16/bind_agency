@@ -69,6 +69,10 @@ class ErrorCode(StrEnum):
     METRICS_REFRESH_TOO_SOON = "metrics_refresh_too_soon"
     VERIFICATION_TRANSITION_NOT_ALLOWED = "verification_transition_not_allowed"
 
+    # Travail planifié
+    JOB_NOT_FOUND = "job_not_found"
+    JOB_NOT_EXHAUSTED = "job_not_exhausted"
+
     # Transverses
     VALIDATION_FAILED = "validation_failed"
     NOT_FOUND = "not_found"

@@ -81,7 +81,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Fin : un compte réel se connecte, les jetons sont illisibles en base*
 - [x] Récupération et historisation des métriques
       *Fin : un snapshot est créé, l'éligibilité lit le dernier snapshot sans appel réseau*
-- [ ] Renouvellement des jetons en tâche de fond
+- [x] Renouvellement des jetons en tâche de fond
       *Fin : un jeton proche de l'expiration est renouvelé automatiquement*
 - [x] Vérification de cohérence du profil à la connexion d'un compte social
       *Fin : un compte trop récent ou incohérent passe en revue et ne peut pas réserver*

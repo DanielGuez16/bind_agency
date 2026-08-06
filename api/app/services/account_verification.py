@@ -208,10 +208,27 @@ def _regularite(
 ) -> Constat:
     """Mesurée sur la progression du nombre de publications entre deux relevés.
 
-    C'est une approximation assumée : la vraie régularité se lit sur les dates
-    des publications, que seul le relevé des publications rapportera. Mais elle
-    se calcule avec ce que nous avons, et c'est elle qui donne son sens à la
-    réexécution — un compte examiné trop tôt n'est pas condamné, il est ajourné.
+    **Ce signal ne peut jamais manquer.** Il est neutre, ou tenu ; jamais
+    bloquant. Ce n'est pas une prudence de plus, c'est ce qui empêche la
+    réexécution de condamner exactement le profil qu'on cherche à recruter — et
+    la restriction se lèvera par inadvertance, en croyant durcir, si sa raison
+    n'est pas écrite ici.
+
+    `media_count` chez Instagram **ne compte pas les stories**. Un créateur qui
+    publie exclusivement en story a donc une progression nulle, indéfiniment.
+    Or c'est précisément le profil du palier d'entrée, celui qui est le plus
+    nombreux au lancement. Un `MANQUE` le laisserait ajourné pour toujours, sans
+    que rien ne le signale : chaque relevé le recondamnerait au lieu de le
+    sauver, et la file d'administration se remplirait de vrais créateurs sans
+    que personne ne comprenne pourquoi.
+
+    Une progression nulle veut donc dire « je n'ai rien vu », pas « il n'a rien
+    fait ». La mesure ne sait pas distinguer les deux — c'est une propriété de
+    la donnée, pas du créateur.
+
+    Le jour où les publications seront relevées, avec leurs dates et leurs
+    formats, le signal retrouvera son sens plein et pourra redevenir bloquant.
+    Pas avant.
     """
     fenetre = timedelta(days=settings.verification_regularity_window_days)
 
@@ -223,9 +240,18 @@ def _regularite(
 
     minimum = settings.verification_min_media_in_window
     publiees = dernier.media_count - premier.media_count
+
+    if publiees < minimum:
+        return Constat(
+            signal=Signal.REGULARITE_DE_PUBLICATION,
+            verdict=VerdictSignal.IGNORE_HISTORIQUE_INSUFFISANT,
+            requis=minimum,
+            constate=publiees,
+        )
+
     return Constat(
         signal=Signal.REGULARITE_DE_PUBLICATION,
-        verdict=VerdictSignal.TENU if publiees >= minimum else VerdictSignal.MANQUE,
+        verdict=VerdictSignal.TENU,
         requis=minimum,
         constate=publiees,
     )

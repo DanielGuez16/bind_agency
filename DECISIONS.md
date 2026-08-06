@@ -1071,3 +1071,121 @@ est obtenu. Le test du jeu de données qui affirmait l'inverse à la tâche
 précédente — « aucun créateur n'accède à un palier » — était le bon constat à ce
 moment-là, et affirme maintenant le contraire pour la même raison : il décrit ce
 que le produit sait faire.
+
+---
+
+## 2026-08-06 — Régularité de publication : un signal qui ne bloque jamais
+
+Restriction ajoutée après coup, et **c'est le genre de restriction qu'on lève
+par inadvertance en croyant durcir** : le raisonnement compte donc plus que la
+règle.
+
+`media_count` chez Instagram **ne compte pas les stories**. Un créateur qui
+publie exclusivement en story a une progression de compteur nulle,
+indéfiniment. Or c'est exactement le profil du palier d'entrée — mille abonnés,
+format story — donc notre cible la plus nombreuse au lancement.
+
+Si ce signal pouvait manquer, un tel créateur resterait ajourné pour toujours
+sans que rien ne le signale : chaque réexécution le recondamnerait au lieu de le
+sauver, et la file d'administration se remplirait de vrais créateurs sans que
+personne ne comprenne pourquoi. Le mécanisme censé rattraper le temps
+travaillerait contre eux.
+
+Une progression nulle veut donc dire « je n'ai rien vu », pas « il n'a rien
+fait ». La mesure ne sait pas distinguer les deux : c'est une propriété de la
+donnée, pas du créateur.
+
+**Le signal est neutre, ou tenu. Jamais manqué.** Le constat mesuré est quand
+même rendu — la file voit la progression — mais il ne retient personne. Le jour
+où les publications seront relevées, avec leurs dates et leurs formats, le
+signal retrouvera son sens plein et pourra redevenir bloquant. Pas avant.
+
+---
+
+## 2026-08-06 — Travail planifié : ossature, report, concurrence
+
+**Une table de jobs en base, pas de courtier de messages.** Postgres tient déjà
+les deux choses qu'un ordonnanceur demande, une transaction et un verrou de
+ligne. Un système distinct ajouterait surtout un second endroit où l'état peut
+diverger du nôtre. Les traitements des phases 6 et 7 — expiration des `held`,
+échéances de collaboration — s'y brancheront sans rien changer à l'ossature.
+
+**Une ligne par travail, pour toujours.** `UNIQUE (job_type, target_id)` : il ne
+peut pas exister deux relevés quotidiens du même compte. Un job récurrent n'est
+pas consommé quand il réussit, il est reprogrammé — la ligne *est* le travail,
+pas son occurrence. C'est ce qui rend la planification idempotente : on peut la
+relancer autant qu'on veut.
+
+**Pas d'état « en cours », et c'est délibéré.** Un job réclamé l'est par un
+verrou de ligne tenu jusqu'au commit. Une colonne `running` survivrait à la mort
+du processus et il faudrait un ramasse-miettes pour distinguer un job vraiment
+en cours d'un job orphelin. Le verrou, lui, disparaît tout seul. Contrepartie
+assumée : la transaction dure le temps du traitement, donc d'un appel réseau.
+
+**`FOR UPDATE SKIP LOCKED`, et c'est un verrou, pas une convention.** Deux
+exécutions concurrentes ne se voient pas attribuer le même job, sans qu'aucune
+discipline d'appel soit requise. `SKIP LOCKED` et non `NOWAIT` : la seconde
+continue avec les jobs suivants au lieu d'échouer, donc ajouter un processus
+ajoute du débit.
+
+Vérifié en retirant `SKIP LOCKED` : le test se **bloque** au lieu d'échouer — la
+seconde exécution attend le verrou de la première, qui attend que la seconde ait
+fini. Les deux tests de concurrence sont donc bornés par un délai, sans quoi une
+régression produirait un blocage en intégration continue, c'est-à-dire un
+silence.
+
+**Une transaction par job.** L'échec d'un job n'annule pas le report d'un autre.
+Un `commit` global les ferait tomber ensemble, ce qui est exactement ce qu'on ne
+veut pas d'une file.
+
+**Report croissant, plafonné, puis arrêt.** Croissant parce qu'une panne d'en
+face dure rarement une seconde ; plafonné parce qu'un délai qui double
+indéfiniment finit par ne plus jamais réessayer, et un compte se réparerait
+après que le créateur a renoncé. Après `JOB_MAX_ATTEMPTS`, le job s'arrête et
+devient visible dans la file d'administration, avec sa dernière erreur — un job
+qui échoue en silence pour toujours est pire qu'un job qui n'existe pas. Une
+route d'administration le réarme : sans elle, s'arrêter reviendrait à
+abandonner.
+
+**Trois issues pour un traitement, pas deux.** Réussi, échec passager, ou
+*retiré* — le travail n'a plus d'objet. Sans la troisième, un compte dont le
+jeton est définitivement refusé serait reporté, réessayé, épuisé, puis
+remonterait dans la file comme s'il y avait quelque chose à réparer, alors que
+la seule suite possible est une reconnexion par le créateur.
+
+**Renouvellement anticipé, marge de sept jours.** Les jetons Meta durent soixante
+jours et ne se renouvellent **que tant qu'ils sont valides** : passé l'échéance
+il n'y a plus de renouvellement du tout. La marge n'est donc pas une prudence,
+c'est ce qui laisse une seconde chance si Meta est indisponible le jour dit.
+
+**Même distinction d'échecs que pour les métriques.** Un refus
+d'authentification bascule le compte en `expired` et retire le job ; une erreur
+transitoire ne touche à rien et reporte. Ne jamais déconnecter un compte sain
+sur une panne d'en face.
+
+**Un compte `expired` ou `revoked` n'est plus planifié**, ni renouvellement ni
+relevé. Marteler une porte fermée n'accumulerait que des échecs qui finiraient
+par épuiser des jobs et remplir la file de bruit. Le balayage retire ces jobs, et
+les recrée d'eux-mêmes quand le créateur reconnecte : personne n'a à se souvenir
+de le faire.
+
+**La borne de fréquence des relevés à la demande est refermée.** Elle se lisait
+sur `last_synced_at`, qui ne retient que les succès : un relevé qui échoue ne
+consommait rien, donc il suffisait d'échouer pour pouvoir recommencer aussitôt,
+en boucle. `last_sync_attempt_at` retient désormais la tentative, posée avant
+l'appel, et la route valide cette écriture quelle que soit l'issue. Règle
+générale qui en découle : **un appel réellement passé est toujours enregistré**.
+
+**Le déclenchement reste manuel**, deux verbes séparés — `make jobs-plan` aligne
+la file et se relance sans conséquence, `make jobs-run` parle au réseau. Les
+fondre ferait hésiter à lancer le premier. L'ordonnanceur réel est une affaire
+de déploiement.
+
+**Trouvé en lançant la commande pour de vrai.** Le fournisseur refuse d'exister
+quand l'application Meta n'est pas déclarée, et cette erreur remontait jusqu'à
+la boucle : elle arrêtait le passage au premier compte concerné **et** annulait
+sa transaction. Sur un environnement sans clés, la commande ne faisait donc rien
+et n'en gardait aucune trace. C'est maintenant un échec reportable comme un
+autre — la configuration peut arriver entre deux passages — et le job porte la
+raison. Le défaut ne se voyait dans aucun test : tous injectaient un fournisseur
+déjà construit.

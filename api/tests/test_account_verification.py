@@ -78,7 +78,7 @@ async def relever(session: AsyncSession, compte: SocialAccount, **chiffres) -> N
     seul. Le déclencher à la main dans les tests laisserait l'enchaînement lui
     même hors couverture.
     """
-    compte.last_synced_at = None
+    compte.last_synced_at = compte.last_sync_attempt_at = None
     await metrics_service.refresh_profile_metrics(
         session, account=compte, provider=FauxFournisseur(rend=metriques(**chiffres))
     )
@@ -396,24 +396,60 @@ async def test_la_regularite_devient_jugeable_avec_le_temps(session: AsyncSessio
     )
 
 
-async def test_un_compte_dormant_est_retenu_sans_etre_rejete(session: AsyncSession) -> None:
-    """Le pendant du test précédent : la régularité doit aussi savoir manquer,
-    sans quoi elle passerait le test positif sans rien garantir."""
+async def test_une_progression_nulle_ne_bloque_jamais(session: AsyncSession) -> None:
+    """La restriction qui protège notre cible principale.
+
+    `media_count` ne compte pas les stories. Un créateur qui publie exclusivement
+    en story — le profil même du palier d'entrée — a une progression nulle pour
+    toujours. Si ce signal pouvait manquer, chaque réexécution le recondamnerait
+    au lieu de le sauver.
+    """
     compte = await creer_compte(session)
     await relever(session, compte, **SAIN)
 
     fenetre = get_settings().verification_regularity_window_days
     await vieillir_les_releves(session, compte, fenetre + 1)
-    # Statut remis en attente : le premier relevé l'avait déjà fait passer.
     compte.verification_status = VerificationStatus.NEEDS_REVIEW
+    # Mêmes chiffres qu'il y a trois semaines : rien n'a bougé côté `media_count`.
     await relever(session, compte, **SAIN)
 
     coherence = service.evaluer(await service.charger(session, compte), get_settings())
-    assert (
-        verdict_de(coherence, service.Signal.REGULARITE_DE_PUBLICATION)
-        is service.VerdictSignal.MANQUE
+    constat = next(
+        c for c in coherence.constats if c.signal is service.Signal.REGULARITE_DE_PUBLICATION
     )
-    assert compte.verification_status is VerificationStatus.NEEDS_REVIEW
+
+    # Neutre, jamais manqué — et le constat dit quand même ce qui a été mesuré.
+    assert constat.verdict is service.VerdictSignal.IGNORE_HISTORIQUE_INSUFFISANT
+    assert constat.constate == 0
+    assert coherence.manques == ()
+    # Conséquence directe : le compte n'est pas retenu par ce signal-là.
+    assert compte.verification_status is VerificationStatus.VERIFIED
+
+
+def test_la_regularite_ne_manque_jamais_quelle_que_soit_la_progression() -> None:
+    """Éprouvé sur toute la plage, y compris une régression du compteur.
+
+    Un test qui ne montrerait que la progression nulle laisserait croire que
+    seul ce cas est protégé.
+    """
+    settings = get_settings()
+    ancien = datetime.now(UTC) - timedelta(days=settings.verification_regularity_window_days + 1)
+
+    for depart, arrivee in ((208, 208), (208, 150), (208, 209), (0, 0)):
+        premier = service.ReleveEvalue(
+            followers_count=12_400, media_count=depart, engagement_rate=None, captured_at=ancien
+        )
+        dernier = service.ReleveEvalue(
+            followers_count=12_400,
+            media_count=arrivee,
+            engagement_rate=None,
+            captured_at=datetime.now(UTC),
+        )
+        coherence = service.evaluer(compte_evalue(premier=premier, dernier=dernier), settings)
+        assert (
+            verdict_de(coherence, service.Signal.REGULARITE_DE_PUBLICATION)
+            is not service.VerdictSignal.MANQUE
+        ), f"{depart} → {arrivee}"
 
 
 async def test_un_relevé_echoue_ne_declenche_aucune_verification(session: AsyncSession) -> None:

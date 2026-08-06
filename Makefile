@@ -7,7 +7,7 @@ PY       := $(VENV)/bin/python
 PYTHON   ?= python3.12
 COMPOSE  := docker compose
 
-.PHONY: help install db-up db-down db-logs dev app test test-api test-app lint fmt seed migrate clean
+.PHONY: help install db-up db-down db-logs dev app test test-api test-app lint fmt seed migrate jobs-plan jobs-run clean
 
 help: ## Liste les cibles disponibles
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -56,6 +56,12 @@ fmt: ## Reformate le code Python
 seed: db-up ## Recree la base de developpement avec le jeu de donnees de depart
 	@echo "Cette commande EFFACE la base de developpement avant d'ecrire."
 	cd $(API) && .venv/bin/python -m app.seed
+
+jobs-plan: db-up ## Aligne la file de travail planifie sur l'etat des comptes
+	cd $(API) && .venv/bin/python -m app.workers plan
+
+jobs-run: db-up ## Execute le travail planifie qui est du
+	cd $(API) && .venv/bin/python -m app.workers run
 
 migrate: db-up ## Applique les migrations Alembic
 	cd $(API) && .venv/bin/alembic upgrade head

@@ -120,13 +120,17 @@ async def refresh_metrics(
             status.HTTP_429_TOO_MANY_REQUESTS, ErrorCode.METRICS_REFRESH_TOO_SOON
         ) from error
     except metrics_service.SocialTokenExpired as error:
-        # La seule erreur qui valide sa transaction. Le service a fait basculer
-        # le compte en `expired` ; annuler ici renverrait bien l'erreur au
-        # créateur mais laisserait le compte affiché comme actif, et le
-        # prochain relevé irait redécouvrir la même chose chez Meta.
+        # Un appel réellement passé est toujours enregistré, quelle qu'en soit
+        # l'issue : la tentative a consommé le quota, et ici le compte a en plus
+        # basculé en `expired`. Annuler renverrait bien l'erreur au créateur
+        # mais laisserait le compte affiché comme actif, et le relevé suivant
+        # irait redécouvrir la même chose chez Meta.
         await session.commit()
         raise api_error(status.HTTP_409_CONFLICT, ErrorCode.SOCIAL_TOKEN_EXPIRED) from error
     except SocialProviderError as error:
+        # Même raison, en plus discret : seule la trace de la tentative est
+        # validée. Aucun snapshot n'a été écrit, le service s'en est assuré.
+        await session.commit()
         raise api_error(
             status.HTTP_502_BAD_GATEWAY, ErrorCode.SOCIAL_PROVIDER_UNAVAILABLE
         ) from error
