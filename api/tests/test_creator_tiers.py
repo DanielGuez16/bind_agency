@@ -83,13 +83,30 @@ async def test_un_palier_n_apparait_qu_une_fois_par_createur(session: AsyncSessi
 async def test_un_palier_est_ouvert_des_qu_un_compte_l_ouvre(session: AsyncSession) -> None:
     user = await createur(session)
     await compte(session, user, followers=800)  # sous le seuil story
-    await compte(session, user, followers=24_000)  # au-dessus de tout
+    await compte(session, user, followers=24_000)  # au-dessus en abonnés
 
     vue = await service.vue_des_paliers(session, user.id)
 
     assert palier(vue, STORY).accessible is True
-    assert palier(vue, REEL).accessible is True
     assert palier(vue, STORY).obstacles == ()
+
+
+async def test_les_abonnes_ne_suffisent_pas_aux_paliers_hauts(session: AsyncSession) -> None:
+    """Depuis le rétablissement des seuils de collaborations, le palier reel en
+    exige deux. Un créateur sans historique reste dehors quel que soit son
+    volume — c'est exactement ce que la condition doit produire, et ce qu'elle
+    ne produisait pas tant que le compteur n'était alimenté par rien.
+    """
+    user = await createur(session)
+    await compte(session, user, followers=24_000)
+
+    reel = palier(await service.vue_des_paliers(session, user.id), REEL)
+
+    assert reel.accessible is False
+    manque = next(o for o in reel.obstacles if o.raison is RaisonRefus.NOT_ENOUGH_COMPLETED_COLLABS)
+    assert (manque.requis, manque.constate) == (2, 0)
+    # Et ce n'est pas le nombre d'abonnés qui bloque.
+    assert RaisonRefus.NOT_ENOUGH_FOLLOWERS not in {o.raison for o in reel.obstacles}
 
 
 async def test_les_obstacles_sont_ceux_du_compte_le_plus_proche(session: AsyncSession) -> None:

@@ -32,8 +32,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.models import Booking
-from app.models.enums import BookingStatus
-from app.services import audit, collaboration, redemption
+from app.models.enums import BookingStatus, ReliabilityEventType
+from app.services import audit, collaboration, redemption, reliability
 
 #: Le diagramme, écrit une fois. Toute transition absente d'ici est refusée.
 TRANSITIONS: dict[BookingStatus, frozenset[BookingStatus]] = {
@@ -111,6 +111,17 @@ async def transitionner(
         actor=actor,
         reason=reason,
     )
+
+    # L'événement naît de la transition, pas d'un appel que quelqu'un pourrait
+    # oublier. Une absence non enregistrée serait une absence gratuite.
+    if vers is BookingStatus.NO_SHOW:
+        await reliability.enregistrer(
+            session,
+            creator_id=booking.creator_id,
+            type_=ReliabilityEventType.NO_SHOW,
+            booking_id=booking.id,
+        )
+
     return booking
 
 

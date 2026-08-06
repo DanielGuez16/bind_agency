@@ -29,8 +29,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.models import Booking, Collaboration, Tier, TierOffer
-from app.models.enums import CollaborationStatus
-from app.services import audit
+from app.models.enums import CollaborationStatus, ReliabilityEventType
+from app.services import audit, reliability
 
 #: Depuis ces états, une échéance dépassée fait tomber le dossier. `submitted`
 #: n'en fait pas partie : le créateur a répondu, c'est à nous de contrôler.
@@ -161,7 +161,54 @@ async def transitionner(
         actor=actor,
         reason=reason,
     )
+    await _emettre_les_evenements(session, collaboration=collaboration, vers=vers)
     return collaboration
+
+
+#: Ce que chaque issue produit comme événements de fiabilité. Déclaré plutôt que
+#: dispersé dans les branches : une issue ajoutée sans son événement se verrait
+#: ici, pas au troisième mois d'exploitation.
+EVENEMENTS_PAR_ISSUE: dict[CollaborationStatus, tuple[ReliabilityEventType, ...]] = {
+    CollaborationStatus.APPROVED: (
+        ReliabilityEventType.COLLAB_COMPLETED,
+        ReliabilityEventType.PUBLISHED_ON_TIME,
+    ),
+    CollaborationStatus.RESUBMIT_REQUESTED: (ReliabilityEventType.RESUBMIT_REQUIRED,),
+    CollaborationStatus.UNFULFILLED: (ReliabilityEventType.UNFULFILLED,),
+}
+
+
+async def _emettre_les_evenements(
+    session: AsyncSession, *, collaboration: Collaboration, vers: CollaborationStatus
+) -> None:
+    """Les événements naissent de la transition, jamais d'un appel séparé.
+
+    Un appel séparé finit par être oublié sur une branche, et c'est exactement
+    la branche qui pénalise quelqu'un qu'on oublie.
+    """
+    types = list(EVENEMENTS_PAR_ISSUE.get(vers, ()))
+    if not types:
+        return
+
+    # Approuvée du premier coup : le créateur a fait ce qu'il fallait sans
+    # qu'on ait à le lui redemander. Cela se distingue d'une approbation
+    # obtenue au troisième essai.
+    if vers is CollaborationStatus.APPROVED and collaboration.attempts_count == 0:
+        types.append(ReliabilityEventType.FIRST_PASS_COMPLIANT)
+
+    creator_id = await session.scalar(
+        sa.select(Booking.creator_id).where(Booking.id == collaboration.booking_id)
+    )
+    if creator_id is None:
+        return
+
+    for type_ in types:
+        await reliability.enregistrer(
+            session,
+            creator_id=creator_id,
+            type_=type_,
+            booking_id=collaboration.booking_id,
+        )
 
 
 async def demander_une_nouvelle_soumission(
