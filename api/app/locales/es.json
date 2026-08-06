@@ -1,3 +1,13 @@
 {
-  "account.welcome.subject": "Te damos la bienvenida a BIND"
+  "account.welcome.subject": "Te damos la bienvenida a BIND",
+  "collaboration.opened.subject": "Tu colaboración con {business} ha empezado",
+  "collaboration.opened.body": "Hola {creator}:\n\nHas canjeado {item} en {business}. Ahora publica un {format} y envíanos la prueba antes del {deadline}.\n\n{requirements}\nAbre la app para enviar tu prueba.\n",
+  "collaboration.reminder.subject": "Tu prueba para {business} vence pronto",
+  "collaboration.reminder.body": "Hola {creator}:\n\nTu prueba de {item} en {business} vence el {deadline}. Las stories desaparecen a las 24 horas, así que envíala mientras tu publicación siga en línea.\n",
+  "collaboration.resubmit.subject": "Un paso más para {business}",
+  "collaboration.resubmit.body": "Hola {creator}:\n\n{business} no ha podido aceptar tu prueba de {item}:\n\n{reason}\n\nTienes hasta el {deadline} para enviar una corregida.\n",
+  "collaboration.unfulfilled.subject": "Tu colaboración con {business} no se ha cumplido",
+  "collaboration.unfulfilled.body": "Hola {creator}:\n\nEl plazo de {item} en {business} venció sin una prueba aceptada. Esto afecta a tu puntuación de fiabilidad.\n",
+  "collaboration.requirements.mention": "Menciona a {mention} en tu publicación.",
+  "collaboration.requirements.geotag": "Añade la ubicación del negocio a tu publicación."
 }

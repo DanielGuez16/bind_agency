@@ -146,7 +146,27 @@ def test_la_langue_est_celle_du_destinataire_pas_celle_de_l_appelant() -> None:
 
 
 def test_toutes_les_cles_du_catalogue_sont_exposees() -> None:
-    assert available_keys() == {"account.welcome.subject"}
+    """La liste vient des catalogues, pas d'une copie dans le test.
+
+    Elle en portait une, figée à la seule clé d'origine : chaque gabarit ajouté
+    faisait tomber le test sans qu'aucune propriété soit en cause. Ce qui
+    compte est que les clés exposées soient exactement celles des catalogues,
+    dans les deux langues.
+    """
+    import json
+    import pathlib as _pathlib
+
+    from app.core.config import API_ROOT
+
+    catalogues = [
+        set(json.loads(chemin.read_text(encoding="utf-8")))
+        for chemin in _pathlib.Path(API_ROOT / "app" / "locales").glob("*.json")
+    ]
+
+    assert catalogues, "aucun catalogue trouvé : le test ne vérifierait rien"
+    assert available_keys() == set.intersection(*catalogues)
+    assert available_keys() == set.union(*catalogues), "les langues divergent"
+    assert "account.welcome.subject" in available_keys()
 
 
 # --------------------------------------------------------------------------

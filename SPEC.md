@@ -87,7 +87,9 @@ L'extraction ne crée jamais directement des `catalog_item`. Elle remplit `extra
 Table de configuration globale gérée par la plateforme, pas par les commerces. Le palier est défini par le couple plateforme + format, ce qui permet de traiter le fait qu'un reel n'existe pas sur Snapchat et qu'un compte à 50k sur TikTok ne donne aucun droit sur Instagram.
 
 **tier_offer**
-`id, business_id, tier_id, catalog_item_id, is_active, created_at`
+`id, business_id, tier_id, catalog_item_id, required_mention (nullable), required_geotag (bool), is_active, created_at`
+
+Les critères de publication appartiennent au commerce, qui exprime ce qu'il attend d'une publication. Ni au palier — qui ne définit que le couple plateforme × format — ni au créateur. Ils sont **recopiés sur la contrepartie à sa création et figés là** : un commerce qui change ses exigences ne modifie pas les obligations d'une contrepartie en cours.
 
 C'est la composition du commerce : quels items de sa carte il place à quel palier. Un item peut apparaître à plusieurs paliers.
 
@@ -236,12 +238,16 @@ held ──confirmation créateur──> confirmed ──scan du code──> con
 ### 4.2 Contrepartie
 
 ```
-pending ──soumission──> submitted ──contrôle──> approved
-                            │                      
-                            └──non conforme──> resubmit_requested ──> submitted
-                            
+pending ──soumission──> submitted ──┬──contrôle automatique──> approved
+                                    │
+                                    └──mise en revue──> under_review ──> approved
+                                    
+submitted ou under_review ──non conforme──> resubmit_requested ──> submitted
+
 pending ou resubmit_requested ──deadline dépassée──> unfulfilled
 ```
+
+`under_review` est l'étape de contrôle quand un humain s'y arrête. Le contrôle automatique la saute et va directement de `submitted` à son issue. Aucune de ces deux voies ne mène à `approved` par écoulement du temps : une deadline dépassée produit toujours `unfulfilled`, jamais une acceptation par défaut.
 
 Chaque passage par `resubmit_requested` incrémente `attempts_count`. À trois, `needs_human_review` passe à vrai et le dossier sort de la boucle automatique.
 

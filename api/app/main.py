@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 from app.core.config import get_settings
 from app.core.encryption import build_keyring
 from app.core.errors import ErrorCode
+from app.integrations.email import check_email_configuration
 from app.integrations.geocoding import check_geocoder_configuration
 from app.routers import (
     account_verification,
@@ -60,6 +61,7 @@ def create_app() -> FastAPI:
     # Même raison : découvrir au premier commerce créé que la clé de géocodage
     # manque signifierait un commerce placé nulle part, et personne pour le voir.
     check_geocoder_configuration()
+    check_email_configuration()
 
     application = FastAPI(
         title="BIND API",

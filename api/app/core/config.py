@@ -182,6 +182,23 @@ class Settings(BaseSettings):
     #: à temps ne doit pas tomber pour un balayage trop paresseux.
     collaboration_sweep_interval_seconds: int = 300
 
+    # Emails transactionnels. `log` n'envoie rien et trace : c'est le mode du
+    # développement et des tests. `resend` exige clé et expéditeur, vérifiés au
+    # démarrage — pas de repli silencieux.
+    email_provider: Literal["log", "resend"] = "log"
+    email_api_key: SecretStr | None = Field(default=None, repr=False)
+    #: L'expéditeur doit relever d'un domaine vérifié : un transactionnel envoyé
+    #: depuis un domaine non authentifié finit en indésirable, et un rappel qui
+    #: n'arrive pas vaut un rappel qui n'existe pas.
+    email_from: str | None = None
+    email_timeout_seconds: float = 10.0
+    #: Avance du rappel d'échéance. Six heures : assez tôt pour agir, assez tard
+    #: pour que la publication soit encore en ligne.
+    collaboration_reminder_lead_seconds: int = 21_600
+    #: Période du balayage des rappels. Une heure : un rappel envoyé deux
+    #: fois est moins grave qu'un rappel jamais envoyé, mais pas de beaucoup.
+    collaboration_reminder_interval_seconds: int = 3_600
+
     # Lue uniquement par la session pytest, jamais par l'application.
     # Sa présence est vérifiée dans tests/conftest.py, qui refuse de tourner sans.
     test_database_url: PostgresDsn | None = Field(default=None, repr=False)

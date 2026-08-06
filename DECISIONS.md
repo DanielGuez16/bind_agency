@@ -1703,3 +1703,50 @@ S3, ainsi que les niveaux 1 et 2 de capture. Le niveau 1 attend `fetch_media` ;
 le niveau 2 demande des garde-fous — taille, types, refus des adresses internes
 — dont l'absence ouvrirait une porte de requête côté serveur. Les brancher à
 moitié serait pire que pas du tout.
+
+---
+
+## 2026-08-06 — Emails transactionnels
+
+**Fournisseur : Resend.** Facturation à l'usage, pas d'abonnement, domaine à
+vérifier. Mêmes critères que pour le géocodage, et même traitement : le mode est
+déclaré par `EMAIL_PROVIDER`, et demander `resend` sans clé ni expéditeur
+empêche de démarrer. Découvrir la clé manquante au premier rappel signifierait
+des créateurs sans avertissement et des dossiers qui tombent en non honoré sans
+que personne n'ait rien dit.
+
+Le domaine vérifié n'est pas une formalité : un transactionnel envoyé depuis un
+domaine non authentifié finit en indésirable, et un rappel qui n'arrive pas vaut
+un rappel qui n'existe pas.
+
+**Aucun envoi ne fait échouer ce qui l'a déclenché.** Les rappels passent par la
+file de jobs, avec son report et son épuisement. Un service injoignable ne doit
+pas annuler la contrepartie qu'il devait annoncer — le créateur préfère une
+contrepartie correctement ouverte sans email à un email parfait sur une
+contrepartie qui n'existe pas.
+
+En revanche, l'erreur **remonte** depuis le module de notification : l'avaler
+ferait croire à un envoi. C'est au job de la reporter, pas au module.
+
+**La langue est celle du destinataire, jamais celle du déclencheur.** Un
+commerce hispanophone qui refuse une preuve écrit son motif en espagnol ; le
+créateur reçoit le cadre du message dans sa langue à lui. Le motif reste tel
+quel — c'est du contenu saisi, et on ne traduit pas ce qu'un commerce a écrit.
+
+**L'échéance est rendue dans le fuseau du commerce.** Affichée en UTC à
+quelqu'un qui vit à Miami, elle se lit à quatre heures près.
+
+**Trouvé en route : j'avais écrit un second lecteur de catalogue.**
+`app/core/i18n.py` existait déjà et servait exactement à ça. Deux façons de lire
+le même fichier auraient divergé, et c'est la seconde qu'on aurait oublié de
+corriger. `notifications` passe désormais par le module existant.
+
+**Un test qui figeait une liste est tombé, et il avait tort.** Il affirmait
+`available_keys() == {"account.welcome.subject"}` — la seule clé du jour où il a
+été écrit. Chaque gabarit ajouté le faisait tomber sans qu'aucune propriété soit
+en cause. Il compare maintenant les clés exposées à celles des catalogues, dans
+les deux langues.
+
+Un troisième test vérifie que les deux langues attendent les **mêmes variables**
+de substitution : une variable présente d'un seul côté produirait un email
+amputé dans une langue et correct dans l'autre, le pire des deux.

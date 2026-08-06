@@ -194,6 +194,8 @@ class JobType(StrEnum):
     BOOKING_HOLD_SWEEP = "booking_hold_sweep"
     #: Échéances de publication dépassées. Balayage global lui aussi.
     COLLABORATION_DEADLINE_SWEEP = "collaboration_deadline_sweep"
+    #: Rappels d'échéance de publication. Balayage global.
+    COLLABORATION_REMINDER_SWEEP = "collaboration_reminder_sweep"
 
 
 class JobStatus(StrEnum):
