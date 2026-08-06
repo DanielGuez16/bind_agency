@@ -139,6 +139,8 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Fin : absence, retard, non conformité produisent chacun leur événement*
 - [ ] Calcul du score et mise en cache
       *Fin : changer une pondération recalcule tout l'historique sans migration*
+- [ ] Rétablir les seuils de collaborations sur les paliers de référence
+      *Fin : `completed_collabs_count` est alimenté par les événements de fiabilité, et les seuils des paliers de référence sont remis aux valeurs voulues. Ils ont été mis à zéro en phase 3 parce que le compteur n'était alimenté par rien, ce qui rendait les paliers `post` et `reel` inatteignables*
 - [ ] Effet du score sur les paliers accessibles
       *Fin : un score dégradé plafonne effectivement le créateur*
 
