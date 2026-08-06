@@ -72,6 +72,8 @@ La tarification est une donnée, jamais une constante dans le code. Plusieurs pl
 
 `is_available` est le toggle temps réel du commerce, indépendant des quotas de créneaux.
 
+`photo_key` sur un item, `cover_photo_key` sur un commerce : des **clés de stockage objet, jamais des URL**. Une URL signée expire, une URL publique fuit, et les deux se figeraient en base au changement de fournisseur. Nullables toutes les deux — un commerce fraîchement inscrit n'a pas de photo, et un item sans photo reste réservable.
+
 **menu_import**
 `id, business_id, file_key, mime_type, status (uploaded | extracted | under_review | validated | failed), extracted_payload (jsonb), reviewed_by, reviewed_at, created_at`
 

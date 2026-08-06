@@ -45,6 +45,17 @@ class Business(UUIDPrimaryKey, CreatedAt, Base):
     # ses réservations ne porte la sienne : c'est celle-ci qui fait foi.
     currency: Mapped[str] = mapped_column(sa.String(3), nullable=False)
 
+    # Clé dans le stockage objet, jamais une URL. Une URL signée expire, une URL
+    # publique fuit, et les deux se retrouveraient figées dans la base le jour
+    # où l'on change de fournisseur. La clé, elle, ne dépend de personne : c'est
+    # au moment de servir qu'on en fabrique un accès. Mêmes règles que les
+    # preuves de publication.
+    #
+    # Nullable : un commerce fraîchement inscrit n'a pas encore de photo, et
+    # exiger une image avant de pouvoir s'inscrire perdrait des commerces sur
+    # une étape qui n'engage rien.
+    cover_photo_key: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+
     status: Mapped[BusinessStatus] = mapped_column(
         enum_column(BusinessStatus, "business_status"),
         nullable=False,

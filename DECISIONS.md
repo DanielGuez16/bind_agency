@@ -1535,3 +1535,22 @@ plus longue valeur connue à ce moment-là. Ajouter `booking_hold_sweep`, plus
 long, exigeait d'élargir la colonne en plus de réécrire la contrainte —
 réécrire la seule contrainte n'aurait rien changé. C'est la base qui l'a
 signalé, par une troncature refusée.
+
+---
+
+## 2026-08-06 — Photos de couverture et d'article
+
+**Une clé de stockage objet, jamais une URL.** Une URL signée expire, une URL
+publique fuit, et les deux se figeraient en base le jour d'un changement de
+fournisseur. La clé ne dépend de personne : c'est au moment de servir qu'on
+fabrique un accès. Mêmes règles que les preuves de publication.
+
+**Nullables toutes les deux.** Exiger une image avant de pouvoir s'inscrire
+perdrait des commerces sur une étape qui n'engage rien, et un article sans
+photo reste parfaitement réservable — c'est l'affichage qui s'en arrange.
+
+**Trouvé en écrivant le test : les champs étaient acceptés puis jetés.** Les
+schémas les déclaraient, les services de création ne les écrivaient pas. Un
+champ silencieusement ignoré est pire qu'un champ refusé : l'appelant croit
+avoir enregistré. C'est précisément ce que le test de bout en bout — écriture,
+lecture, fil — était écrit pour attraper, et il l'a attrapé du premier coup.

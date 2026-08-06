@@ -34,6 +34,7 @@ class ItemDuFilRead(BaseModel):
     currency: str
     duration_minutes: int | None
     requires_booking: bool
+    photo_key: str | None
     platform: Platform
     content_format: ContentFormat
     value_ratio: Decimal | None
@@ -46,6 +47,7 @@ class CommerceDuFilRead(BaseModel):
     name: str
     category: BusinessCategory
     address: str | None
+    cover_photo_key: str | None
     distance_metres: float
     items: list[ItemDuFilRead]
 
