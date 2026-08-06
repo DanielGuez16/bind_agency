@@ -371,9 +371,11 @@ async def _creator(
         session, email=email, password=MOT_DE_PASSE, role=UserRole.CREATOR, locale=locale
     )
 
-    session.add(
-        CreatorProfile(
-            user_id=user.id,
+    # `register` a déjà posé le profil : on le complète, on ne le recrée pas.
+    await session.execute(
+        sa.update(CreatorProfile)
+        .where(CreatorProfile.user_id == user.id)
+        .values(
             first_name=prenom,
             last_name=nom,
             city="Miami",

@@ -18,6 +18,7 @@ from app.models.enums import (
     UserStatus,
     VerificationStatus,
 )
+from app.models.types import EncryptedText
 
 
 class User(UUIDPrimaryKey, CreatedAt, Base):
@@ -123,10 +124,11 @@ class SocialAccount(UUIDPrimaryKey, Base):
     external_id: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     handle: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
 
-    # bytea dès maintenant : le chiffrement au repos arrive en phase 4, le type
-    # ne doit pas changer à ce moment-là.
-    access_token_encrypted: Mapped[bytes | None] = mapped_column(sa.LargeBinary, nullable=True)
-    refresh_token_encrypted: Mapped[bytes | None] = mapped_column(sa.LargeBinary, nullable=True)
+    # Chiffrés par le type de colonne, pas par un appel du service : il n'existe
+    # aucun chemin qui écrirait un jeton en clair. Le `bytea` sous-jacent n'a pas
+    # changé, seule la traversée l'a fait.
+    access_token_encrypted: Mapped[str | None] = mapped_column(EncryptedText, nullable=True)
+    refresh_token_encrypted: Mapped[str | None] = mapped_column(EncryptedText, nullable=True)
     token_expires_at: Mapped[datetime | None] = mapped_column(
         sa.DateTime(timezone=True), nullable=True
     )

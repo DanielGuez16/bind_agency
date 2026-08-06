@@ -59,6 +59,11 @@ class ErrorCode(StrEnum):
     TIER_OFFER_TIER_INACTIVE = "tier_offer_tier_inactive"
     TIER_OFFER_HAS_BOOKINGS = "tier_offer_has_bookings"
 
+    # Comptes sociaux
+    OAUTH_STATE_INVALID = "oauth_state_invalid"
+    SOCIAL_ACCOUNT_TAKEN = "social_account_taken"
+    SOCIAL_PROVIDER_UNAVAILABLE = "social_provider_unavailable"
+
     # Transverses
     VALIDATION_FAILED = "validation_failed"
     NOT_FOUND = "not_found"
