@@ -183,6 +183,7 @@ async def create_item(
         price_cents=payload.price_cents,
         duration_minutes=payload.duration_minutes,
         requires_booking=payload.requires_booking,
+        photo_key=payload.photo_key,
         is_available=payload.is_available,
     )
     session.add(item)
@@ -224,6 +225,7 @@ async def update_item(
         "price_cents",
         "duration_minutes",
         "requires_booking",
+        "photo_key",
     ):
         if name in fields:
             setattr(item, name, fields[name])

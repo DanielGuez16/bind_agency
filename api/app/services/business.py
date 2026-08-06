@@ -85,6 +85,7 @@ async def create_business(
         default_locale=payload.default_locale,
         phone=payload.phone,
         currency=payload.currency,
+        cover_photo_key=payload.cover_photo_key,
         status=BusinessStatus.ONBOARDING,
     )
     session.add(business)
@@ -135,7 +136,15 @@ async def update_business(
         resolved = await geocoder.locate(address, declared=declared)
         business.geo = _point(resolved) if resolved else None
 
-    for name in ("name", "category", "address", "timezone", "default_locale", "phone"):
+    for name in (
+        "name",
+        "category",
+        "address",
+        "timezone",
+        "default_locale",
+        "phone",
+        "cover_photo_key",
+    ):
         if name in fields:
             setattr(business, name, fields[name])
 

@@ -47,6 +47,10 @@ class BusinessCreate(BaseModel):
     timezone: str = DEFAULT_TIMEZONE
     default_locale: Locale = Locale.EN
     phone: str | None = Field(default=None, max_length=40)
+    #: Clé de stockage objet, jamais une URL : une URL signée expire, une URL
+    #: publique fuit, et les deux se figeraient en base au changement de
+    #: fournisseur. Envoyer `null` la retire.
+    cover_photo_key: str | None = Field(default=None, max_length=500)
 
     @field_validator("currency")
     @classmethod
@@ -77,6 +81,10 @@ class BusinessUpdate(BaseModel):
     timezone: str | None = None
     default_locale: Locale | None = None
     phone: str | None = Field(default=None, max_length=40)
+    #: Clé de stockage objet, jamais une URL : une URL signée expire, une URL
+    #: publique fuit, et les deux se figeraient en base au changement de
+    #: fournisseur. Envoyer `null` la retire.
+    cover_photo_key: str | None = Field(default=None, max_length=500)
 
     @field_validator("timezone")
     @classmethod
@@ -94,5 +102,6 @@ class BusinessRead(BaseModel):
     default_locale: Locale
     phone: str | None
     currency: str
+    cover_photo_key: str | None
     status: BusinessStatus
     created_at: datetime
