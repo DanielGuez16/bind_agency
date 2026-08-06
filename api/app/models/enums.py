@@ -192,6 +192,8 @@ class JobType(StrEnum):
     #: Balayage global, sans cible propre : sa `target_id` est un identifiant
     #: fixe. Un job par réservation coûterait une ligne par place tenue.
     BOOKING_HOLD_SWEEP = "booking_hold_sweep"
+    #: Échéances de publication dépassées. Balayage global lui aussi.
+    COLLABORATION_DEADLINE_SWEEP = "collaboration_deadline_sweep"
 
 
 class JobStatus(StrEnum):

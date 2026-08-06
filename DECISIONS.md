@@ -1647,3 +1647,59 @@ Le premier avait coûté huit exécutions rouges ; le second faisait que les
 requêtes ne trouvaient plus le champ qu'elles venaient de remplir.
 `ecran.test.tsx` portait le défaut lui aussi. Le garde-fou couvre désormais les
 deux, et s'étend en ajoutant un nom à une liste.
+
+---
+
+## 2026-08-06 — Contrepartie, preuve, boucle de relance
+
+**Aucune validation automatique à l'expiration d'un délai.** Une échéance
+dépassée produit un `unfulfilled`, jamais un `approved` par défaut. Accepter par
+lassitude ferait de l'échéance une récompense pour qui ne répond pas, alors que
+le commerce a donné une prestation contre une publication qui n'existe pas. Un
+test essaie de provoquer l'inverse par tous les états expirables.
+
+`submitted` n'est **pas** expirable : le créateur a répondu, la balle est de
+notre côté. Le faire tomber punirait quelqu'un de notre propre lenteur.
+
+**Le refus de conformité rouvre, il ne clôt pas.** `resubmit_requested` avec une
+**nouvelle échéance** — sans elle, le créateur tomberait en non honoré pour un
+délai déjà écoulé, ce qui reviendrait à refuser en faisant semblant de laisser
+une chance. Le délai de reprise est plus court : le créateur sait déjà quoi
+faire, il lui reste à le refaire.
+
+`needs_human_review` se lève à la troisième tentative et sort le dossier de la
+boucle **sans le trancher**. Il n'existe pas de statut de litige, et l'API du
+commerce n'offre pas de bouton « rejeter » : approuver, ou redemander avec un
+motif obligatoire. Un créateur à qui l'on dit « non conforme » sans dire
+pourquoi refera la même chose.
+
+**Les critères sont figés à la création**, recopiés depuis l'offre. Un commerce
+qui les durcit ensuite changerait rétroactivement ce qu'on reproche au créateur
+de ne pas avoir fait.
+
+*Écart relevé :* `collaboration` portait `required_mention` et `required_geotag`
+depuis la phase 1 mais **rien ne les alimentait**. Les critères affichés auraient
+toujours été vides. Ils vivent désormais sur `tier_offer`.
+
+*Contradiction signalée :* `under_review` figure dans les statuts de `SPEC.md`
+§2.6 mais pas dans le diagramme §4.2. Traité comme l'étape « contrôle » du
+diagramme, parce qu'une table de transitions partielle lèverait un `KeyError`.
+
+**L'ordre de préférence de capture est appliqué au serveur, pas choisi par
+l'appelant.** Sinon tout le monde enverrait une capture d'écran. Le niveau
+employé est conservé dans `capture_method` : c'est lui qui permettra
+**d'automatiser uniquement les cas de niveau 1**, où la plateforme atteste
+elle-même que le contenu était sur le compte connecté. L'ordre est une constante
+déclarée et non l'ordre de l'énumération — un membre ajouté au mauvais endroit
+changerait sinon la hiérarchie de confiance sans que personne ne le voie.
+
+**Les soumissions s'empilent, elles ne s'écrasent pas.** L'historique d'un
+dossier refusé trois fois est ce qu'un commerce contestera. Renvoyer le même
+fichier après un refus est reconnu par son empreinte : ce n'est pas une
+correction.
+
+*Non branché, et dit comme tel :* le dépôt réel chez un fournisseur compatible
+S3, ainsi que les niveaux 1 et 2 de capture. Le niveau 1 attend `fetch_media` ;
+le niveau 2 demande des garde-fous — taille, types, refus des adresses internes
+— dont l'absence ouvrirait une porte de requête côté serveur. Les brancher à
+moitié serait pire que pas du tout.

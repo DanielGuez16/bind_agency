@@ -30,7 +30,7 @@ TRAVAUX_PAR_COMPTE = (JobType.TOKEN_REFRESH, JobType.METRICS_REFRESH)
 SENTINELLE = uuid.UUID("00000000-0000-0000-0000-000000000001")
 
 #: Balayages qui existent une fois pour toute la plateforme.
-BALAYAGES = (JobType.BOOKING_HOLD_SWEEP,)
+BALAYAGES = (JobType.BOOKING_HOLD_SWEEP, JobType.COLLABORATION_DEADLINE_SWEEP)
 
 
 async def planifier_le_travail(session: AsyncSession) -> dict[str, int]:

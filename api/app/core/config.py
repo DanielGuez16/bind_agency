@@ -167,6 +167,21 @@ class Settings(BaseSettings):
     #: limite qui protège le code de secours, pas sa longueur.
     redemption_max_failed_attempts: int = 5
 
+    # Contrepartie.
+    #: Délai de publication après consommation. Vingt-quatre heures : les
+    #: stories disparaissent en vingt-quatre heures, et une preuve demandée
+    #: après leur mort n'existe plus.
+    collaboration_publication_seconds: int = 86_400
+    #: Nouveau délai accordé après un refus de conformité. Plus court : le
+    #: créateur sait déjà quoi faire, il lui reste à le refaire.
+    collaboration_resubmit_seconds: int = 43_200
+    #: Tentatives avant que `needs_human_review` se lève.
+    collaboration_max_attempts: int = 3
+    #: Période du balayage des échéances. Cinq minutes : une échéance dépassée
+    #: n'a pas besoin d'être vue à la seconde, mais un créateur qui publie juste
+    #: à temps ne doit pas tomber pour un balayage trop paresseux.
+    collaboration_sweep_interval_seconds: int = 300
+
     # Lue uniquement par la session pytest, jamais par l'application.
     # Sa présence est vérifiée dans tests/conftest.py, qui refuse de tourner sans.
     test_database_url: PostgresDsn | None = Field(default=None, repr=False)

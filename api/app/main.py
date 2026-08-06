@@ -18,6 +18,7 @@ from app.routers import (
     business,
     capacity,
     catalog,
+    collaboration,
     creator_profile,
     creator_tiers,
     feed,
@@ -95,6 +96,7 @@ def create_app() -> FastAPI:
     application.include_router(account_verification.router, prefix=settings.api_v1_prefix)
     application.include_router(jobs.router, prefix=settings.api_v1_prefix)
     application.include_router(redemption.router, prefix=settings.api_v1_prefix)
+    application.include_router(collaboration.router, prefix=settings.api_v1_prefix)
 
     return application
 

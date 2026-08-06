@@ -23,7 +23,7 @@ from app.core.config import get_settings
 from app.integrations.social import SocialAuthError, SocialProvider, SocialProviderError
 from app.models import Job, SocialAccount
 from app.models.enums import JobType, Platform, SocialAccountStatus
-from app.services import booking_states
+from app.services import booking_states, collaboration
 from app.services import metrics as metrics_service
 
 
@@ -146,17 +146,29 @@ async def expirer_les_gardes(session: AsyncSession, *, account, provider) -> Iss
     return Fait(prochain=timedelta(seconds=get_settings().booking_sweep_interval_seconds))
 
 
+async def expirer_les_echeances(session: AsyncSession, *, account, provider) -> Issue:
+    """Balayage global des échéances de publication.
+
+    Fait tomber en `unfulfilled`, jamais en `approved` : une échéance dépassée
+    signifie qu'aucune publication n'a été apportée, et le commerce a donné une
+    prestation contre elle.
+    """
+    await collaboration.expirer_les_echeances(session)
+    return Fait(prochain=timedelta(seconds=get_settings().collaboration_sweep_interval_seconds))
+
+
 #: Ce que chaque type de job sait faire. Un type absent d'ici est un job qui ne
 #: tournera jamais — l'exécuteur le dit plutôt que de l'ignorer.
 TRAITEMENTS = {
     JobType.TOKEN_REFRESH: renouveler_le_jeton,
     JobType.METRICS_REFRESH: relever_les_metriques,
     JobType.BOOKING_HOLD_SWEEP: expirer_les_gardes,
+    JobType.COLLABORATION_DEADLINE_SWEEP: expirer_les_echeances,
 }
 
 
 #: Types dont la cible n'est pas une ligne : ce sont des balayages globaux.
-SANS_CIBLE = frozenset({JobType.BOOKING_HOLD_SWEEP})
+SANS_CIBLE = frozenset({JobType.BOOKING_HOLD_SWEEP, JobType.COLLABORATION_DEADLINE_SWEEP})
 
 
 async def cible(session: AsyncSession, job: Job) -> SocialAccount | None:

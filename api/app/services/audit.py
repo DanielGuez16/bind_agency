@@ -43,6 +43,7 @@ class AuditedEntity(StrEnum):
     TIER = "tier"
     TIER_OFFER = "tier_offer"
     BOOKING = "booking"
+    COLLABORATION = "collaboration"
 
 
 @dataclass(frozen=True, slots=True)
