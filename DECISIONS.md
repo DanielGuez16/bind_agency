@@ -1270,3 +1270,33 @@ pas encore dû. Le test l'a montré une fois sur une suite complète, puis a rep
 seul — c'est-à-dire la pire forme de défaut. Toutes les échéances sont
 désormais calculées par la base. Même règle que pour les preuves : seul le temps
 serveur fait foi, et l'application est un client de la base comme un autre.
+
+---
+
+## 2026-08-06 — Écran des paliers accessibles
+
+**L'écran montre tous les paliers actifs, le fil n'en montrera aucun
+d'inaccessible.** Ce n'est pas une incohérence : ici un palier fermé oriente, là
+il encombrerait. Un créateur qui débute verrait sinon un écran vide, sans rien
+savoir de ce qui l'attend.
+
+**Regroupé par palier, pas par couple (compte, palier).** Le moteur répond par
+couple — la bonne forme pour filtrer un fil, pas pour peupler un écran. Un
+créateur à trois comptes verrait le même palier trois fois. Accessible dès qu'un
+compte l'ouvre ; sinon, les obstacles du compte qui s'en approche le plus, parce
+que lui montrer ceux de son compte le plus faible le ferait viser la mauvaise
+cible. « Le plus proche » se lit d'abord au nombre d'obstacles, puis à l'écart
+d'abonnés : celui qui n'a qu'un relevé à attendre est plus proche que celui à
+qui il manque dix mille abonnés.
+
+**Un créateur sans compte social n'a aucun obstacle**, au sens du moteur : il n'y
+a pas de couple à évaluer. Le piège de l'ensemble vide, encore — l'écran aurait
+affiché des paliers tous fermés sans dire pourquoi, à la personne qui vient
+justement de s'inscrire. Nouvelle raison nommée, `no_social_account`.
+
+**Trouvé en écrivant l'écran : aucune raison de refus n'était traduite.** Les
+`RaisonRefus` ne sont pas des `ErrorCode` — énumération distincte — donc le test
+de parité des catalogues, qui ne lisait que `errors.py`, ne les voyait pas.
+L'écran affichait `undefined` à chaque obstacle. Les huit raisons sont entrées
+aux deux catalogues, et le test de parité lit désormais aussi `eligibility.py`.
+Sans cet ajout, le trou se serait rouvert au premier motif suivant.

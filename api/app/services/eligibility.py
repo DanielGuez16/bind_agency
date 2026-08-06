@@ -59,6 +59,10 @@ class RaisonRefus(StrEnum):
     ACCOUNT_UNDER_REVIEW = "account_under_review"
     #: Nous écrire. Définitif, contrairement au précédent.
     ACCOUNT_REJECTED = "account_rejected"
+    #: Connecter un compte. Aucun couple à évaluer, donc aucun obstacle au sens
+    #: du moteur — d'où la nécessité de nommer le cas plutôt que de le laisser
+    #: apparaître comme une absence de raison.
+    NO_SOCIAL_ACCOUNT = "no_social_account"
 
 
 class VerdictScore(StrEnum):

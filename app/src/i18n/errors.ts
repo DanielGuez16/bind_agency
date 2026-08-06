@@ -17,9 +17,7 @@ export function errorCodeFromResponse(body: unknown): string | null {
 }
 
 export function errorMessageKey(code: string | null | undefined): string {
-  return code && CODES_CONNUS.has(code) && code !== 'generic'
-    ? `errors.${code}`
-    : 'errors.generic';
+  return code && CODES_CONNUS.has(code) && code !== 'generic' ? `errors.${code}` : 'errors.generic';
 }
 
 export function translateErrorCode(
