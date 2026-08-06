@@ -405,3 +405,56 @@ maintenant évite d'avoir à démêler un chemin partagé plus tard.
 L'appartenance prouve l'existence du commerce par clé étrangère, mais un
 `assert` disparaîtrait sous `python -O` et transformerait l'impossible en 500.
 La dépendance le charge et répond 403 dans le cas qui ne devrait pas arriver.
+
+---
+
+## 2026-08-05 — Phase 2, catalogue en saisie manuelle
+
+**Ce qu'une réservation fige, et ce qu'elle laisse libre.**
+Le prix reste modifiable sans aucune vérification : `value_cents_snapshot` fige
+la valeur au moment de la réservation, c'est précisément à ça qu'il sert. La
+nature et la durée, elles, ne bougent plus — rien ne les fige côté réservation,
+et les changer sous des réservations à venir décalerait la capacité sans que
+personne ne l'ait décidé. Même code d'erreur pour les deux, dont le message dit
+de créer un nouvel item.
+
+**Une contrainte brute n'atteint jamais l'appelant.**
+Le service vérifie avant d'écrire, et rattrape la violation si elle survient
+quand même. Une violation de clé étrangère ne dit pas quoi faire ; un code de
+catalogue, si. Les tests vérifient explicitement que ni « violates » ni
+« constraint » n'apparaissent dans une réponse.
+
+**Trois invariantes que seul le service tient.** *(voir le point suivant)*
+Un parent n'est jamais réservable, il n'y a pas de variante de variante, et la
+durée d'un item réservé ne change plus. Aucune n'est portée par le schéma. Elles
+sont donc contournables par tout chemin d'écriture qui n'emprunte pas le
+service — un script d'import, une correction manuelle en base, un futur job.
+
+**La cohérence durée / réservabilité se vérifie sur l'état résultant.**
+Découvert par un test en échec : un `CHECK` existait en base et remontait en 500.
+Un schéma ne peut pas trancher, parce qu'une mise à jour partielle qui ne change
+que `requires_booking` produit un état incohérent sans qu'aucun champ envoyé ne
+soit invalide. Seul le service connaît l'état après fusion — d'où
+`catalog_duration_mismatch`, et le `CHECK` qui redevient un filet.
+
+**Disponibilité calculée, jamais recopiée.**
+Un parent désactivé rend ses variantes indisponibles en lecture, sans que leur
+propre interrupteur ne bouge. Le lu expose les deux : `is_available`, celui que
+le commerce manipule, et `is_effectively_available`, calculé. Une valeur
+dupliquée est une valeur qui divergera, il suffit d'un chemin d'écriture qui
+oublie de la propager.
+
+**404 sur un item d'un autre commerce, et non 403.**
+Différent du profil commerce, où le 404 aurait révélé quels identifiants
+existent. Ici l'appelant a déjà prouvé son appartenance au commerce du chemin,
+et la réponse ne parle que de son propre catalogue : elle ne dit rien d'ailleurs.
+
+**`parent_item_id` n'est pas modifiable.**
+Reparenter un item changerait son niveau ou son commerce, alors qu'il reste
+réservé sous son ancien parent dans les réservations passées. Créer un nouvel
+item est la bonne réponse, comme pour la nature et la durée.
+
+**Un `refresh` après mise à jour.**
+`updated_at` a un `onupdate` côté serveur : l'attribut est expiré après l'UPDATE,
+et le relire déclencherait une IO implicite — interdite en SQLAlchemy async, elle
+lève `MissingGreenlet`. Le service rafraîchit avant de rendre l'objet.

@@ -53,7 +53,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
 
 - [x] Profil commerce : création, catégorie, adresse, géolocalisation, fuseau
       *Fin : un commerce peut être créé et relu avec ses coordonnées géographiques*
-- [ ] Catalogue en saisie manuelle, items et variantes, réservable ou non
+- [x] Catalogue en saisie manuelle, items et variantes, réservable ou non
       *Fin : contrainte en base imposant une durée dès que l'item est réservable, une variante est réservable et pas son parent*
 - [ ] Règles de capacité et exceptions
       *Fin : horaires hebdomadaires et fermetures ponctuelles paramétrables*
