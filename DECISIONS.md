@@ -581,3 +581,48 @@ pas son contenu. La commande est séparée et n'est jamais lancée automatiqueme
 journées coupées à midi pour le premier, items sans réservation pour le
 deuxième, cinq postes en parallèle avec fermeture et journée aménagée pour le
 troisième. Un jeu uniforme ne révélerait rien.
+
+---
+
+## 2026-08-05 — Phase 3, paliers de référence et administration
+
+**Les paliers entrent par migration, pas par la commande de jeu de données.**
+Ce sont des données de référence : elles doivent exister en production, où la
+commande de jeu de données ne tourne jamais. Sept paliers — story, post, reel
+sur Instagram et TikTok, story seule sur Snapchat, ce format n'existant pas
+ailleurs chez eux.
+
+Les identifiants sont **fixés en dur** plutôt que générés à l'exécution :
+développement, CI, préproduction et production portent les mêmes, ce qui rend un
+`tier_id` lisible d'un environnement à l'autre. Un test le verrouille.
+
+Snapchat est posé mais `is_active` faux : l'accès partenaire n'est pas obtenu, et
+la bascule ne demandera qu'un changement de drapeau, pas une migration.
+
+Les seuils sont **provisoires et restent à valider**. Ils sont modifiables par
+l'interface d'administration sans redéploiement, conformément à la règle de
+configuration ; ils ne sont dans la migration que comme point de départ.
+
+**`platform` et `content_format` ne se modifient pas.**
+Ce couple identifie le palier. Le changer ferait qu'une offre composée pour
+« story Instagram » se retrouverait sur « reel TikTok » sans que le commerce ait
+rien demandé. Absents du schéma de mise à jour, qui refuse les champs inconnus.
+
+**Un palier référencé se désactive, il ne se supprime pas.**
+Vérification dans le service, interception de la violation en filet, code
+`tier_in_use`. La désactivation ne touche aucune offre : elles restent en base
+et cessent simplement d'être proposées. Rien n'est supprimé en cascade.
+
+**Seule la bascule d'activité est journalisée.**
+Un changement de seuil n'est pas une transition d'état : le journal, dont la
+forme est `from_status` vers `to_status`, ne sait pas le décrire. C'est un manque
+assumé et non un oubli — un administrateur qui abaisse un seuil global pose un
+acte de portée produit, et il ne laisse aujourd'hui aucune trace. Le corriger
+demanderait une autre forme d'enregistrement, à décider si le besoin se
+confirme.
+
+**Aucun effet rétroactif : constaté, pas ajouté.** *(voir la réponse détaillée
+dans le rapport de tâche)* Un seuil ne s'applique qu'à l'entrée. `collaboration`
+fige `required_format`, `required_mention`, `required_geotag` et `deadline_at` ;
+`booking` fige `value_cents_snapshot`. Rien en aval ne relit le palier. Deux
+tests le démontrent plutôt que de l'affirmer.
