@@ -88,7 +88,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
 - [x] Profil créateur en écriture
       *Prérequis de la vérification de cohérence : sans nom renseigné, le signal du nom déclaré reste neutre*
       *Fin : un créateur renseigne et modifie son prénom, son nom et sa ville, la ville n'est pas dérivée de `geo`, et les champs sont bien ceux que la procédure d'anonymisation efface*
-- [ ] Écran des paliers accessibles et badge nouveau créateur
+- [x] Écran des paliers accessibles et badge nouveau créateur
       *Fin : un créateur sans historique voit le badge et ses paliers selon son volume seul*
 
 ---

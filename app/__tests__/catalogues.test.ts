@@ -40,6 +40,26 @@ describe('catalogues de traduction', () => {
     }
   });
 
+  it('couvre toutes les raisons de refus d’éligibilité', () => {
+    // Trouvé en écrivant l'écran des paliers : aucune raison de refus n'était
+    // au catalogue, et l'écran affichait « undefined » à chaque obstacle. Les
+    // raisons ne sont pas des `ErrorCode` — elles vivent dans leur propre
+    // énumération — donc le test des codes d'erreur ne les voyait pas.
+    const source = readFileSync(
+      join(__dirname, '..', '..', 'api', 'app', 'services', 'eligibility.py'),
+      { encoding: 'utf-8' },
+    );
+    const bloc = source.slice(source.indexOf('class RaisonRefus'));
+    const raisons = [...bloc.slice(0, bloc.indexOf('\n\n\n')).matchAll(/= "([a-z_]+)"/g)].map(
+      (m) => m[1],
+    );
+
+    expect(raisons.length).toBeGreaterThan(5);
+    for (const raison of raisons) {
+      expect(Object.keys(en.errors)).toContain(raison);
+    }
+  });
+
   it('couvre tous les codes d’erreur déclarés par l’API', () => {
     // Source de vérité : api/app/core/errors.py. Lu tel quel plutôt que
     // recopié, sinon la copie dérive sans que personne ne s'en aperçoive.

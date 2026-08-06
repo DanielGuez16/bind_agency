@@ -21,6 +21,17 @@ export const es: Catalogue = {
     dependencyOk: 'disponible',
     dependencyDown: 'no disponible',
   },
+  tiers: {
+    title: 'Tus niveles',
+    newCreatorBadge: 'Creador nuevo',
+    newCreatorHelp: 'Aún no tienes historial, así que tus niveles se basan solo en tu audiencia.',
+    unlocked: 'Desbloqueado',
+    locked: 'Bloqueado',
+    minFollowers: '{{count}} seguidores',
+    valueHint: 'Hasta {{ratio}}x el valor de tu audiencia',
+    empty: 'No hay ningún nivel disponible por ahora.',
+    missingFollowers: 'Te faltan {{count}} seguidores',
+  },
   errors: {
     generic: 'Algo ha salido mal. Inténtalo de nuevo.',
     authentication_required: 'Inicia sesión para continuar.',
@@ -34,12 +45,16 @@ export const es: Catalogue = {
     business_already_active: 'Este negocio ya está activo.',
     business_missing_address: 'Añade la dirección del negocio antes de activarlo.',
     business_missing_coordinates: 'Añade la ubicación del negocio antes de activarlo.',
-    catalog_duration_mismatch: 'Un artículo reservable necesita una duración, y uno que no se reserva no debe tenerla.',
+    catalog_duration_mismatch:
+      'Un artículo reservable necesita una duración, y uno que no se reserva no debe tenerla.',
     catalog_item_not_found: 'Este artículo no está en tu catálogo.',
-    catalog_item_has_bookings: 'Este artículo tiene reservas y no se puede eliminar. Desactívalo en su lugar.',
-    catalog_item_locked_by_bookings: 'Este artículo ya tiene reservas, por lo que su tipo y duración no pueden cambiar. Crea un artículo nuevo.',
+    catalog_item_has_bookings:
+      'Este artículo tiene reservas y no se puede eliminar. Desactívalo en su lugar.',
+    catalog_item_locked_by_bookings:
+      'Este artículo ya tiene reservas, por lo que su tipo y duración no pueden cambiar. Crea un artículo nuevo.',
     catalog_parent_not_found: 'El artículo principal no existe en tu catálogo.',
-    catalog_parent_must_not_be_bookable: 'Un artículo con variantes no se reserva directamente. Se reserva la variante.',
+    catalog_parent_must_not_be_bookable:
+      'Un artículo con variantes no se reserva directamente. Se reserva la variante.',
     catalog_variant_depth_exceeded: 'Una variante no puede tener variantes propias.',
     capacity_rule_not_found: 'Esta regla de horario ya no existe.',
     capacity_rule_overlap: 'Estas horas se solapan con otro tramo del mismo día.',
@@ -47,21 +62,39 @@ export const es: Catalogue = {
     capacity_exception_duplicate_date: 'Ya existe una excepción para esa fecha.',
     tier_not_found: 'Este nivel ya no existe.',
     tier_already_exists: 'Ya existe un nivel para esa plataforma y ese formato.',
-    tier_in_use: 'Este nivel se usa en ofertas o colaboraciones existentes. Desactívalo en lugar de eliminarlo.',
+    tier_in_use:
+      'Este nivel se usa en ofertas o colaboraciones existentes. Desactívalo en lugar de eliminarlo.',
     tier_offer_not_found: 'Esta oferta ya no existe.',
     tier_offer_already_exists: 'Este artículo ya se ofrece en ese nivel.',
-    tier_offer_parent_not_allowed: 'Un artículo con variantes no se puede ofrecer. Ofrece la variante.',
+    tier_offer_parent_not_allowed:
+      'Un artículo con variantes no se puede ofrecer. Ofrece la variante.',
     tier_offer_tier_inactive: 'Este nivel no está abierto ahora mismo.',
-    tier_offer_has_bookings: 'Esta oferta tiene reservas y no se puede quitar. Desactívala en su lugar.',
+    tier_offer_has_bookings:
+      'Esta oferta tiene reservas y no se puede quitar. Desactívala en su lugar.',
     creator_profile_not_found: 'No encontramos tu perfil de creador.',
     creator_profile_anonymized: 'Este perfil fue anonimizado y ya no se puede editar.',
-    oauth_state_invalid: 'Este enlace de conexión ya no es válido. Vuelve a empezar desde tu cuenta.',
+    no_social_account: 'Conecta una cuenta de Instagram para desbloquear tus niveles.',
+    not_enough_followers: 'Necesitas una audiencia más grande para este nivel.',
+    not_enough_completed_collabs: 'Completa algunas colaboraciones más para alcanzar este nivel.',
+    reliability_score_too_low:
+      'Tu puntuación de fiabilidad está por debajo de lo que exige este nivel.',
+    no_metrics: 'Todavía no hemos medido esta cuenta. Vuelve dentro de un rato.',
+    metrics_stale:
+      'Estas cifras son demasiado antiguas. Vuelve a conectar la cuenta para actualizarlas.',
+    account_token_invalid: 'Vuelve a conectar esta cuenta, nuestro acceso ha caducado.',
+    account_under_review: 'Esta cuenta está en revisión. No tienes que hacer nada.',
+    account_rejected: 'Esta cuenta no puede usarse en BIND. Escríbenos si no estás de acuerdo.',
+    oauth_state_invalid:
+      'Este enlace de conexión ya no es válido. Vuelve a empezar desde tu cuenta.',
     social_account_taken: 'Esta cuenta social ya está vinculada a otra cuenta de BIND.',
     social_provider_unavailable: 'No hemos podido contactar con la red social. Inténtalo de nuevo.',
     social_account_not_found: 'No encontramos esta cuenta social en tu perfil.',
-    social_account_not_active: 'Esta cuenta social debe volver a conectarse antes de poder actualizarla.',
-    social_token_expired: 'Instagram ya no acepta nuestro acceso a esta cuenta. Vuelve a conectarla para seguir colaborando.',
-    metrics_refresh_too_soon: 'Tus estadísticas se actualizaron hace poco. Inténtalo de nuevo más tarde.',
+    social_account_not_active:
+      'Esta cuenta social debe volver a conectarse antes de poder actualizarla.',
+    social_token_expired:
+      'Instagram ya no acepta nuestro acceso a esta cuenta. Vuelve a conectarla para seguir colaborando.',
+    metrics_refresh_too_soon:
+      'Tus estadísticas se actualizaron hace poco. Inténtalo de nuevo más tarde.',
     verification_transition_not_allowed: 'Esta cuenta ya se encuentra en ese estado.',
     job_not_found: 'No encontramos esta tarea programada.',
     job_not_exhausted: 'Esta tarea no se ha detenido, no hay nada que reiniciar.',
