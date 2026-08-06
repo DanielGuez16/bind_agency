@@ -87,6 +87,13 @@ async def refresh_profile_metrics(
 
     _refuser_si_trop_tot(account, settings.metrics_min_refresh_interval_seconds)
 
+    # Posé **avant** l'appel, pas après : c'est la tentative qui consomme le
+    # quota de la plateforme, pas son succès. L'appelant valide cette écriture
+    # quelle que soit l'issue, sans quoi il suffirait d'échouer pour pouvoir
+    # recommencer aussitôt.
+    account.last_sync_attempt_at = datetime.now(UTC)
+    await session.flush()
+
     try:
         metriques = await provider.fetch_profile_metrics(
             account.access_token_encrypted, external_id=account.external_id
@@ -131,12 +138,21 @@ def _refuser_si_trop_tot(account: SocialAccount, intervalle_secondes: int) -> No
     Le quota que cela protège est celui de la plateforme, qui le compte par
     compte. Une limite par créateur punirait celui qui en a trois ; une limite
     globale ferait qu'un créateur actif empêche les autres de se relever.
+
+    La borne se lit sur la dernière **tentative**, pas sur le dernier succès.
+    S'appuyer sur le succès seul laissait une porte ouverte : un relevé qui
+    échoue ne consommait rien, donc échouer permettait de recommencer aussitôt,
+    en boucle, ce qui est exactement le comportement contre lequel la borne
+    existe.
     """
-    if account.last_synced_at is None:
+    dernier = max(
+        (d for d in (account.last_synced_at, account.last_sync_attempt_at) if d is not None),
+        default=None,
+    )
+    if dernier is None:
         return
 
-    prochain = account.last_synced_at + timedelta(seconds=intervalle_secondes)
-    if datetime.now(UTC) < prochain:
+    if datetime.now(UTC) < dernier + timedelta(seconds=intervalle_secondes):
         raise RefreshTooSoon(str(account.id))
 
 

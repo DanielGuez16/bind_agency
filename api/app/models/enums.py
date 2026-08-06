@@ -177,3 +177,30 @@ class RefreshTokenState(StrEnum):
 
     ISSUED = "issued"
     REVOKED = "revoked"
+
+
+class JobType(StrEnum):
+    """Chaque type nomme un traitement, jamais une cible.
+
+    « Renouveler le jeton d'un compte », pas « compte social » : c'est le
+    traitement qui décide quoi lire, et deux traitements peuvent viser la même
+    ligne sans se gêner.
+    """
+
+    TOKEN_REFRESH = "token_refresh"
+    METRICS_REFRESH = "metrics_refresh"
+
+
+class JobStatus(StrEnum):
+    """Deux états, pas trois.
+
+    Il n'y a pas d'état « en cours » : un job réclamé l'est par un verrou de
+    ligne, qui disparaît si le processus meurt. Un état stocké, lui, resterait
+    coincé.
+    """
+
+    PENDING = "pending"
+    #: Abandonné après le nombre de tentatives autorisé. Ne repartira pas seul :
+    #: il attend un administrateur. Un job qui échoue en silence pour toujours
+    #: est pire qu'un job qui n'existe pas.
+    EXHAUSTED = "exhausted"

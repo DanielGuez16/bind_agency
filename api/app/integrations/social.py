@@ -99,6 +99,21 @@ class SocialProvider(Protocol):
         """Qui est ce compte. Rien de plus."""
         ...
 
+    async def refresh_token(
+        self, *, access_token: str, refresh_token: str | None = None
+    ) -> JetonEchange:
+        """Repousse l'échéance du jeton, avant qu'elle n'arrive.
+
+        Les deux paramètres parce que les plateformes ne s'accordent pas :
+        Meta renouvelle le jeton d'accès avec lui-même, d'autres exigent un
+        jeton de renouvellement distinct. Un seul paramètre obligerait la
+        moitié des implémentations à mentir sur ce qu'elles reçoivent.
+
+        Lève `SocialAuthError` si la plateforme refuse le jeton — il n'y a plus
+        rien à renouveler — et `SocialProviderError` pour tout le reste.
+        """
+        ...
+
     async def fetch_profile_metrics(
         self, access_token: str, *, external_id: str
     ) -> MetriquesProfil:

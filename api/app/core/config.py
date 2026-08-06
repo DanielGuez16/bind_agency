@@ -106,6 +106,27 @@ class Settings(BaseSettings):
     verification_min_engagement_rate: Decimal = Decimal("0.005")
     verification_max_engagement_rate: Decimal = Decimal("0.25")
 
+    # Travail planifié. Le report croissant plafonné et l'arrêt après un nombre
+    # de tentatives sont la seule chose qui empêche un job cassé de marteler la
+    # plateforme d'en face jusqu'à ce qu'elle nous bannisse.
+    job_max_attempts: int = 5
+    job_retry_base_seconds: int = 300
+    job_retry_factor: int = 4
+    #: Six heures. Un délai qui double indéfiniment finit par ne plus jamais
+    #: réessayer, et un compte se réparerait après que le créateur a renoncé.
+    job_retry_max_seconds: int = 21_600
+    #: Le message d'erreur est tronqué : il sert à comprendre, pas à archiver.
+    job_error_max_length: int = 500
+    #: Période du relevé de métriques planifié.
+    metrics_refresh_interval_seconds: int = 86_400
+    #: Marge avant expiration en deçà de laquelle on renouvelle un jeton. Sept
+    #: jours : les jetons Meta durent soixante jours, et un renouvellement au
+    #: dernier moment ne laisse aucune marge si Meta est indisponible ce jour-là.
+    token_refresh_margin_seconds: int = 604_800
+    #: Fréquence de repassage du job de renouvellement quand il n'y a rien à
+    #: faire — le jeton est encore loin de son échéance.
+    token_refresh_interval_seconds: int = 86_400
+
     # Lue uniquement par la session pytest, jamais par l'application.
     # Sa présence est vérifiée dans tests/conftest.py, qui refuse de tourner sans.
     test_database_url: PostgresDsn | None = Field(default=None, repr=False)

@@ -158,6 +158,13 @@ class SocialAccount(UUIDPrimaryKey, Base):
     last_synced_at: Mapped[datetime | None] = mapped_column(
         sa.DateTime(timezone=True), nullable=True
     )
+    #: Dernière **tentative** de relevé, réussie ou non — à distinguer de
+    #: `last_synced_at`, qui ne retient que les succès. Sans elle, un relevé qui
+    #: échoue ne consommait rien et la borne de fréquence ne bornait plus rien :
+    #: il suffisait d'échouer pour pouvoir recommencer aussitôt.
+    last_sync_attempt_at: Mapped[datetime | None] = mapped_column(
+        sa.DateTime(timezone=True), nullable=True
+    )
 
     __table_args__ = (
         # Postgres accepte plusieurs NULL dans un index unique : deux comptes

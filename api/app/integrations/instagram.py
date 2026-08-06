@@ -29,6 +29,7 @@ from app.models.enums import Platform
 AUTORISATION = "https://www.instagram.com/oauth/authorize"
 JETON_COURT = "https://api.instagram.com/oauth/access_token"
 JETON_LONG = "https://graph.instagram.com/access_token"
+JETON_RENOUVELLE = "https://graph.instagram.com/refresh_access_token"
 PROFIL = "https://graph.instagram.com/me"
 INSIGHTS = "https://graph.instagram.com/{identifiant}/insights"
 
@@ -118,6 +119,32 @@ class InstagramProvider:
         duree = long.get("expires_in")
         return JetonEchange(
             access_token=jeton_long,
+            expires_at=(datetime.now(UTC) + timedelta(seconds=int(duree)) if duree else None),
+        )
+
+    async def refresh_token(
+        self, *, access_token: str, refresh_token: str | None = None
+    ) -> JetonEchange:
+        """Meta renouvelle le jeton de longue durée avec lui-même.
+
+        Il n'y a pas de jeton de renouvellement séparé chez Instagram, d'où le
+        paramètre ignoré. Le jeton doit avoir plus de vingt-quatre heures et ne
+        pas être déjà expiré — c'est ce qui rend le renouvellement *anticipé*
+        obligatoire et non simplement prudent : passé l'échéance, il n'y a plus
+        de renouvellement du tout, seulement une reconnexion par le créateur.
+        """
+        corps = await self._lire(
+            JETON_RENOUVELLE,
+            {"grant_type": "ig_refresh_token", "access_token": access_token},
+        )
+
+        jeton = corps.get("access_token")
+        if not jeton:
+            raise SocialProviderError("aucun jeton dans la réponse de renouvellement")
+
+        duree = corps.get("expires_in")
+        return JetonEchange(
+            access_token=jeton,
             expires_at=(datetime.now(UTC) + timedelta(seconds=int(duree)) if duree else None),
         )
 

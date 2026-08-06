@@ -251,8 +251,9 @@ async def test_deux_appels_font_deux_lignes(session: AsyncSession) -> None:
 
     premier = await service.refresh_profile_metrics(session, account=compte, provider=provider)
     # Sans quoi le second appel serait refusé pour cause de fréquence : c'est
-    # l'objet du test suivant, pas de celui-ci.
-    compte.last_synced_at = None
+    # l'objet du test suivant, pas de celui-ci. Les deux dates comptent — la
+    # borne se lit sur la dernière tentative autant que sur le dernier succès.
+    compte.last_synced_at = compte.last_sync_attempt_at = None
     second = await service.refresh_profile_metrics(session, account=compte, provider=provider)
 
     assert premier.id != second.id
@@ -293,7 +294,8 @@ async def test_releve_repris_une_fois_le_delai_ecoule(session: AsyncSession) -> 
     await service.refresh_profile_metrics(session, account=compte, provider=provider)
 
     intervalle = get_settings().metrics_min_refresh_interval_seconds
-    compte.last_synced_at = datetime.now(UTC) - timedelta(seconds=intervalle + 1)
+    passe = datetime.now(UTC) - timedelta(seconds=intervalle + 1)
+    compte.last_synced_at = compte.last_sync_attempt_at = passe
 
     await service.refresh_profile_metrics(session, account=compte, provider=provider)
     assert await compter_snapshots(session, compte.id) == 2
@@ -349,7 +351,7 @@ async def test_l_eligibilite_lit_le_dernier_releve(session: AsyncSession) -> Non
     verdict = await eligibility.evaluer_createur(session, compte.creator_id)
     assert STORY_INSTAGRAM in verdict.paliers_accessibles
 
-    compte.last_synced_at = None
+    compte.last_synced_at = compte.last_sync_attempt_at = None
     await service.refresh_profile_metrics(
         session, account=compte, provider=FauxFournisseur(rend=metriques(followers_count=800))
     )
@@ -608,3 +610,46 @@ async def test_la_route_ignore_le_compte_d_un_autre(
     assert reponse.status_code == 404
     assert reponse.json()["detail"] == "social_account_not_found"
     assert provider.appels == 0
+
+
+async def test_le_renouvellement_repousse_l_echeance(instagram_configure, transport_meta) -> None:
+    """Meta renouvelle le jeton de longue durée avec lui-même : il n'y a pas de
+    jeton de renouvellement séparé chez Instagram."""
+    transport = transport_meta(
+        {
+            "refresh_access_token": httpx.Response(
+                200, json={"access_token": "jeton-neuf", "expires_in": 5_184_000}
+            )
+        }
+    )
+
+    async with httpx.AsyncClient(transport=transport) as http:
+        jeton = await InstagramProvider(http).refresh_token(access_token="jeton-ancien")
+
+    assert jeton.access_token == "jeton-neuf"
+    assert (jeton.expires_at - datetime.now(UTC)).days > 55
+    assert transport.appels[0].url.params["grant_type"] == "ig_refresh_token"
+
+
+async def test_un_renouvellement_sur_jeton_mort_se_distingue_d_une_panne(
+    instagram_configure, transport_meta
+) -> None:
+    """C'est cette distinction qui décide si le compte bascule en `expired`."""
+    mort = transport_meta(
+        {
+            "refresh_access_token": httpx.Response(
+                400, json={"error": {"type": "OAuthException", "code": 190}}
+            )
+        }
+    )
+    panne = transport_meta({"refresh_access_token": httpx.Response(500, text="oops")})
+
+    async with httpx.AsyncClient(transport=mort) as http:
+        with pytest.raises(SocialAuthError):
+            await InstagramProvider(http).refresh_token(access_token="jeton-mort")
+
+    async with httpx.AsyncClient(transport=panne) as http:
+        with pytest.raises(SocialProviderError) as excinfo:
+            await InstagramProvider(http).refresh_token(access_token="jeton-bon")
+
+    assert not isinstance(excinfo.value, SocialAuthError)
