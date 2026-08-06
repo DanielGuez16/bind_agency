@@ -79,11 +79,12 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
 
 - [x] Connexion OAuth Instagram et stockage chiffré des jetons
       *Fin : un compte réel se connecte, les jetons sont illisibles en base*
-- [ ] Récupération et historisation des métriques
+- [x] Récupération et historisation des métriques
       *Fin : un snapshot est créé, l'éligibilité lit le dernier snapshot sans appel réseau*
 - [ ] Renouvellement des jetons en tâche de fond
       *Fin : un jeton proche de l'expiration est renouvelé automatiquement*
 - [ ] Vérification de cohérence du profil à la connexion d'un compte social
+      *Bloquant : rien ne fait aujourd'hui passer un compte en `verified`, donc aucun créateur n'accède à aucun palier*
       *Fin : un compte trop récent ou incohérent passe en revue et ne peut pas réserver*
 - [ ] Écran des paliers accessibles et badge nouveau créateur
       *Fin : un créateur sans historique voit le badge et ses paliers selon son volume seul*

@@ -257,6 +257,8 @@ Cela permet de démarrer sans Snapchat, dont l'accès partenaire est un délai c
 - Tokens : job de renouvellement anticipé, les jetons longue durée Meta expirant au bout de 60 jours
 - Un compte en `expired` ou `revoked` ne rend pas le créateur inéligible rétroactivement, mais bloque toute nouvelle réservation sur ce compte, avec relance explicite
 
+Un relevé est atomique : il écrit un snapshot complet ou n'écrit rien. Les compteurs obligatoires manquants sont un échec ; la démographie manquante ne l'est pas, la plateforme la refusant aux petits comptes. Un refus d'authentification bascule le compte en `expired`, une erreur transitoire ne change aucun état.
+
 ### 5.3 Capture de preuve
 
 Par ordre de préférence, selon ce que la plateforme autorise :

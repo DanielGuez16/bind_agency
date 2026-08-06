@@ -52,7 +52,7 @@ def _decode_key(material: str, *, origine: str) -> bytes:
 
 
 @lru_cache
-def _keyring() -> dict[str, bytes]:
+def build_keyring() -> dict[str, bytes]:
     """Toutes les clés utilisables en déchiffrement, l'active comprise."""
     settings = get_settings()
 
@@ -82,7 +82,7 @@ def generate_key() -> str:
 def encrypt(clear: str) -> bytes:
     settings = get_settings()
     identifiant = settings.token_encryption_key_id
-    key = _keyring()[identifiant]
+    key = build_keyring()[identifiant]
 
     nonce = os.urandom(NONCE_LENGTH)
     chiffre = AESGCM(key).encrypt(nonce, clear.encode(), None)
@@ -99,7 +99,7 @@ def decrypt(blob: bytes) -> str:
     nonce = blob[1 + longueur : 1 + longueur + NONCE_LENGTH]
     chiffre = blob[1 + longueur + NONCE_LENGTH :]
 
-    key = _keyring().get(identifiant)
+    key = build_keyring().get(identifiant)
     if key is None:
         raise DecryptionError(
             f"aucune clé « {identifiant} » au trousseau — la clé précédente "

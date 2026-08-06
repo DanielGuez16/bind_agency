@@ -6,10 +6,11 @@ s'agit — d'où son traitement, signé, à usage unique, et lié à celui qui a
 démarré le parcours.
 """
 
+import uuid
 from typing import Annotated
 
 import httpx
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Path, Query, status
 
 from app.core.config import ConfigurationError
 from app.core.dependencies import CurrentUser, SessionDep, require_role
@@ -17,7 +18,12 @@ from app.core.errors import ErrorCode, api_error
 from app.integrations.instagram import InstagramProvider
 from app.integrations.social import SocialProvider, SocialProviderError
 from app.models.enums import UserRole
-from app.schemas.social_accounts import AutorisationDemarree, SocialAccountRead
+from app.schemas.social_accounts import (
+    AutorisationDemarree,
+    SocialAccountRead,
+    SocialMetricsRead,
+)
+from app.services import metrics as metrics_service
 from app.services import social_accounts as service
 
 router = APIRouter(tags=["social-accounts"])
@@ -80,3 +86,50 @@ async def instagram_callback(
 
     await session.commit()
     return SocialAccountRead.model_validate(compte, from_attributes=True)
+
+
+@router.post(
+    "/me/social-accounts/{account_id}/metrics/refresh",
+    response_model=SocialMetricsRead,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_role(UserRole.CREATOR))],
+)
+async def refresh_metrics(
+    user: CurrentUser,
+    session: SessionDep,
+    provider: InstagramDep,
+    account_id: Annotated[uuid.UUID, Path()],
+) -> SocialMetricsRead:
+    """Relevé à la demande. 201 parce qu'il crée une ligne : deux appels
+    réussis créent deux snapshots, jamais un seul mis à jour."""
+    try:
+        compte = await metrics_service.get_owned_account(
+            session, account_id=account_id, creator_id=user.id
+        )
+    except metrics_service.SocialAccountNotFound as error:
+        raise api_error(status.HTTP_404_NOT_FOUND, ErrorCode.SOCIAL_ACCOUNT_NOT_FOUND) from error
+
+    try:
+        snapshot = await metrics_service.refresh_profile_metrics(
+            session, account=compte, provider=provider
+        )
+    except metrics_service.SocialAccountNotActive as error:
+        raise api_error(status.HTTP_409_CONFLICT, ErrorCode.SOCIAL_ACCOUNT_NOT_ACTIVE) from error
+    except metrics_service.RefreshTooSoon as error:
+        raise api_error(
+            status.HTTP_429_TOO_MANY_REQUESTS, ErrorCode.METRICS_REFRESH_TOO_SOON
+        ) from error
+    except metrics_service.SocialTokenExpired as error:
+        # La seule erreur qui valide sa transaction. Le service a fait basculer
+        # le compte en `expired` ; annuler ici renverrait bien l'erreur au
+        # créateur mais laisserait le compte affiché comme actif, et le
+        # prochain relevé irait redécouvrir la même chose chez Meta.
+        await session.commit()
+        raise api_error(status.HTTP_409_CONFLICT, ErrorCode.SOCIAL_TOKEN_EXPIRED) from error
+    except SocialProviderError as error:
+        raise api_error(
+            status.HTTP_502_BAD_GATEWAY, ErrorCode.SOCIAL_PROVIDER_UNAVAILABLE
+        ) from error
+
+    await session.commit()
+    return SocialMetricsRead.model_validate(snapshot, from_attributes=True)
