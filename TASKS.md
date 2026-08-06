@@ -55,10 +55,8 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Fin : un commerce peut être créé et relu avec ses coordonnées géographiques*
 - [x] Catalogue en saisie manuelle, items et variantes, réservable ou non
       *Fin : contrainte en base imposant une durée dès que l'item est réservable, une variante est réservable et pas son parent*
-- [ ] Règles de capacité et exceptions
-      *Fin : horaires hebdomadaires et fermetures ponctuelles paramétrables*
-- [ ] Toggle de disponibilité temps réel par item
-      *Fin : désactiver un item le retire immédiatement du fil créateur*
+- [ ] Règles de capacité et disponibilité temps réel
+      *Fin : horaires hebdomadaires et fermetures ponctuelles paramétrables, plusieurs plages par jour sans chevauchement ; le commerce active et désactive un item ou un parent, la lecture de son catalogue reflète l'état effectif, et la transition est journalisée*
 - [ ] Jeu de données de départ : trois commerces fictifs avec catalogue, capacités et créneaux
       *Fin : une commande recrée l'environnement de test à zéro*
 
@@ -95,7 +93,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
 - [ ] Calcul de disponibilité à la volée
       *Fin : tests couvrant chevauchement, postes multiples, exception de fermeture*
 - [ ] Fil géolocalisé, seuls les items réellement réservables apparaissent
-      *Fin : un item indisponible ou sans créneau n'apparaît jamais*
+      *Fin : un item indisponible ou sans créneau n'apparaît jamais, et un item désactivé — directement ou par son parent — n'apparaît jamais dans le fil*
 - [ ] Création de réservation avec verrou et garde de dix minutes
       *Fin : test de concurrence, deux réservations simultanées sur la dernière place, une seule passe*
 - [ ] Machine à états de la réservation, annulation, absence, expiration
