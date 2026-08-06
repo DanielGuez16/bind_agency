@@ -8,7 +8,7 @@ Aucun seuil de palier, aucun prix, aucun délai métier ne vit ici en dur non pl
 from decimal import Decimal
 from functools import lru_cache
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BeforeValidator, Field, PostgresDsn, SecretStr, ValidationError
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
@@ -126,6 +126,17 @@ class Settings(BaseSettings):
     #: Fréquence de repassage du job de renouvellement quand il n'y a rien à
     #: faire — le jeton est encore loin de son échéance.
     token_refresh_interval_seconds: int = 86_400
+
+    # Géocodage. `manual` ne résout rien et rend les coordonnées déclarées :
+    # c'est le mode du développement, des tests et du jeu de données, qui n'ont
+    # ni clé ni réseau. `geocodio` exige une clé, vérifiée au démarrage.
+    geocoding_provider: Literal["manual", "geocodio"] = "manual"
+    geocoding_api_key: SecretStr | None = Field(default=None, repr=False)
+    #: En deçà, la résolution est refusée comme si elle n'avait rien rendu. Un
+    #: commerce placé à quarante kilomètres apparaîtrait dans le mauvais fil, et
+    #: l'erreur ne se verrait pas — contrairement à l'absence.
+    geocoding_min_accuracy: float = 0.8
+    geocoding_timeout_seconds: float = 5.0
 
     # Lue uniquement par la session pytest, jamais par l'application.
     # Sa présence est vérifiée dans tests/conftest.py, qui refuse de tourner sans.

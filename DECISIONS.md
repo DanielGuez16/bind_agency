@@ -1325,3 +1325,39 @@ suite de tests, avec la dépendance réelle.
 **Un test par type, et un test qui compare la liste des types à celle des
 sondes.** Une chaîne fausse sur un seul type passerait inaperçue sous un test
 générique ; un type ajouté sans sonde serait couvert en apparence.
+
+---
+
+## 2026-08-06 — Géocodage réel : Geocodio
+
+**Fournisseur retenu : Geocodio.** Les trois critères étaient : pas
+d'abonnement, facturation à l'appel, pas de carte bancaire pour le quota
+d'essai. Geocodio les tient tous les trois, ce qui est rare — la plupart des
+concurrents facturent au mois, ou demandent une carte dès l'inscription.
+
+*Limite à connaître :* Geocodio ne couvre que les États-Unis et le Canada. Cela
+convient à un lancement à Miami, et devra être revu le jour d'une ouverture
+ailleurs. Le changement tiendra dans `app/integrations/geocoding.py` et nulle
+part ailleurs — c'est ce que l'interface à une seule opération achetait.
+
+**Pas de repli silencieux sur le fournisseur.** `GEOCODING_PROVIDER` vaut
+`manual` ou `geocodio` ; demander `geocodio` sans clé empêche de démarrer, comme
+pour la clé de chiffrement. Un repli sur le mode manuel aurait laissé la
+production placer les commerces nulle part sans que rien ne le dise.
+
+**Des coordonnées déclarées l'emportent toujours sur la résolution.** Un
+commerce qui s'est placé lui-même sur une carte sait mieux que nous où il est :
+un géocodeur place à la rue, pas à la porte, et une adresse de centre commercial
+tombe régulièrement sur le mauvais bâtiment. Sans cette priorité, corriger une
+résolution fausse serait impossible. Conséquence utile : l'appel n'a pas lieu du
+tout, on ne paie pas pour une réponse qu'on ignore.
+
+**Une résolution imprécise est refusée comme une absence.** Seuil en
+configuration. Un commerce placé à quarante kilomètres apparaîtrait dans le
+mauvais fil, et personne ne saurait pourquoi — alors qu'un commerce resté en
+onboarding se voit.
+
+**Aucun échec ne bloque l'inscription.** Clé refusée, quota dépassé, panne,
+réseau coupé, réponse illisible, adresse introuvable : tous rendent `None`. Le
+commerce reste en `onboarding`. Perdre un commerce parce que Geocodio est en
+panne serait le perdre pour une raison qui ne le regarde pas.
