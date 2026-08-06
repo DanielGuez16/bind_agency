@@ -38,6 +38,7 @@ class AuditedEntity(StrEnum):
     SOCIAL_ACCOUNT = "social_account"
     BUSINESS = "business"
     CATALOG_ITEM = "catalog_item"
+    TIER = "tier"
 
 
 @dataclass(frozen=True, slots=True)

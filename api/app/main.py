@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 
 from app.core.config import get_settings
 from app.core.errors import ErrorCode
-from app.routers import auth, business, capacity, catalog, health
+from app.routers import auth, business, capacity, catalog, health, tiers
 
 
 async def _validation_error_handler(_: Request, error: RequestValidationError) -> JSONResponse:
@@ -54,6 +54,7 @@ def create_app() -> FastAPI:
     application.include_router(business.router, prefix=settings.api_v1_prefix)
     application.include_router(catalog.router, prefix=settings.api_v1_prefix)
     application.include_router(capacity.router, prefix=settings.api_v1_prefix)
+    application.include_router(tiers.router, prefix=settings.api_v1_prefix)
 
     return application
 

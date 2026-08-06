@@ -47,6 +47,11 @@ class ErrorCode(StrEnum):
     CAPACITY_EXCEPTION_NOT_FOUND = "capacity_exception_not_found"
     CAPACITY_EXCEPTION_DUPLICATE_DATE = "capacity_exception_duplicate_date"
 
+    # Paliers
+    TIER_NOT_FOUND = "tier_not_found"
+    TIER_ALREADY_EXISTS = "tier_already_exists"
+    TIER_IN_USE = "tier_in_use"
+
     # Transverses
     VALIDATION_FAILED = "validation_failed"
     NOT_FOUND = "not_found"

@@ -64,7 +64,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
 
 ## Phase 3 — Moteur de paliers
 
-- [ ] Table de configuration des paliers et interface admin
+- [x] Table de configuration des paliers et interface admin
       *Fin : créer et modifier un palier sans toucher au code*
 - [ ] Composition des offres par palier côté commerce
       *Fin : un item peut être placé à plusieurs paliers*

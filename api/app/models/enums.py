@@ -151,6 +151,16 @@ class CatalogItemAvailability(StrEnum):
     UNAVAILABLE = "unavailable"
 
 
+class TierState(StrEnum):
+    """État logique d'un palier, déduit de `is_active`.
+
+    Aucune colonne ne le porte : vocabulaire du journal d'audit uniquement.
+    """
+
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+
+
 class RefreshTokenState(StrEnum):
     """État logique d'un jeton de rafraîchissement.
 
