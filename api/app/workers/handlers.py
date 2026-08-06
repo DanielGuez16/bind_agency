@@ -22,7 +22,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.integrations.social import SocialAuthError, SocialProvider, SocialProviderError
 from app.models import Job, SocialAccount
-from app.models.enums import JobType, SocialAccountStatus
+from app.models.enums import JobType, Platform, SocialAccountStatus
+from app.services import booking_states
 from app.services import metrics as metrics_service
 
 
@@ -133,14 +134,43 @@ async def relever_les_metriques(
     return Fait(prochain=periode)
 
 
+async def expirer_les_gardes(session: AsyncSession, *, account, provider) -> Issue:
+    """Balayage global des gardes dépassés.
+
+    Ne vise aucun compte : sa cible est une sentinelle. Un job par réservation
+    coûterait une ligne par place tenue, pour un travail qui se fait en une
+    requête.
+    """
+    combien = await booking_states.expirer_les_gardes_depasses(session)
+    _ = combien  # le compte n'intéresse que les journaux d'exploitation
+    return Fait(prochain=timedelta(seconds=get_settings().booking_sweep_interval_seconds))
+
+
 #: Ce que chaque type de job sait faire. Un type absent d'ici est un job qui ne
 #: tournera jamais — l'exécuteur le dit plutôt que de l'ignorer.
 TRAITEMENTS = {
     JobType.TOKEN_REFRESH: renouveler_le_jeton,
     JobType.METRICS_REFRESH: relever_les_metriques,
+    JobType.BOOKING_HOLD_SWEEP: expirer_les_gardes,
 }
 
 
+#: Types dont la cible n'est pas une ligne : ce sont des balayages globaux.
+SANS_CIBLE = frozenset({JobType.BOOKING_HOLD_SWEEP})
+
+
 async def cible(session: AsyncSession, job: Job) -> SocialAccount | None:
-    """La ligne visée par le job. Les deux types de cette phase visent un compte."""
+    """La ligne visée par le job, quand il en vise une.
+
+    Un balayage global n'a pas de cible : rendre `None` le ferait supprimer par
+    l'exécuteur, qui prend l'absence de cible pour une cible disparue.
+    """
+    if job.job_type in SANS_CIBLE:
+        return SENTINELLE
     return await session.get(SocialAccount, job.target_id)
+
+
+#: Objet-témoin pour les balayages. Il n'est jamais lu : seul le fait qu'il ne
+#: soit pas `None` compte, et son `platform` sert à choisir un fournisseur qui
+#: ne servira pas non plus.
+SENTINELLE = SocialAccount(platform=Platform.INSTAGRAM)

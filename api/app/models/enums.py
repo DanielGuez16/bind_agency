@@ -189,6 +189,9 @@ class JobType(StrEnum):
 
     TOKEN_REFRESH = "token_refresh"
     METRICS_REFRESH = "metrics_refresh"
+    #: Balayage global, sans cible propre : sa `target_id` est un identifiant
+    #: fixe. Un job par réservation coûterait une ligne par place tenue.
+    BOOKING_HOLD_SWEEP = "booking_hold_sweep"
 
 
 class JobStatus(StrEnum):

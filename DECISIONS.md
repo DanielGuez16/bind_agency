@@ -1490,3 +1490,48 @@ journal est immuable : tout test qui valide sa transaction y laisse des lignes
 définitivement, et le test de concurrence en écrit forcément. Ces assertions
 sont maintenant filtrées sur l'entité concernée. C'était un piège latent, pas
 une conséquence de cette tâche — le premier test à committer l'aurait déclenché.
+
+---
+
+## 2026-08-06 — Machine à états de la réservation
+
+**Les transitions sont déclarées dans une table, pas déduites d'une suite de
+`if`.** Une table se relit et se compare au diagramme de `SPEC.md` §4.1 ; du
+code réparti ne se compare à rien, et la transition qu'on a oublié d'interdire
+ne se voit qu'au moment où quelqu'un l'emprunte.
+
+Le test l'éprouve sur **toutes** les paires d'états — trente combinaisons
+interdites sur trente-six — avec un diagramme recopié à la main comme oracle.
+Le dériver de la table qu'il vérifie n'aurait aucun sens : il serait toujours
+d'accord avec elle, y compris le jour où quelqu'un y ajoute une flèche par
+erreur.
+
+**Les états terminaux sont déclarés vides, pas absents.** Un `get` sur une clé
+manquante et un ensemble vide se ressemblent trop, et la différence entre
+« terminal » et « oublié » doit se voir.
+
+**C'est le délai qui décide de l'issue d'une annulation, pas l'appelant.**
+Au-delà de la fenêtre de vingt-quatre heures, une annulation est un `no_show` :
+le commerce a bloqué un poste qu'il ne remplira plus. Laisser choisir
+reviendrait à laisser échapper à la pénalité. Un `held` s'annule toujours sans
+pénalité — rien n'a encore été promis, et le garde serait tombé tout seul.
+
+**`no_show` est refusé sur un item sans créneau.** Il n'y a pas d'heure à
+laquelle ne pas se présenter. Le refuser explicitement évite qu'un commerce
+pénalise un créateur pour une absence qui n'a pas de sens.
+
+**Le garde est relu à la confirmation, pas seulement au balayage.** Entre
+l'échéance et le passage du job, la place est déjà rendue — le calcul de
+disponibilité la propose à quelqu'un d'autre. Confirmer dans cet intervalle
+vendrait deux fois la même place.
+
+**Le balayage est un job global, pas un job par réservation.** Sa cible est une
+sentinelle fixe ; une ligne par place tenue coûterait cher pour un travail qui
+se fait en une requête.
+
+**Trouvé en route : la colonne d'un enum non natif est dimensionnée à la
+création.** `sa.Enum(native_enum=False)` produit un `VARCHAR(n)` calé sur la
+plus longue valeur connue à ce moment-là. Ajouter `booking_hold_sweep`, plus
+long, exigeait d'élargir la colonne en plus de réécrire la contrainte —
+réécrire la seule contrainte n'aurait rien changé. C'est la base qui l'a
+signalé, par une troncature refusée.

@@ -14,6 +14,7 @@ from app.routers import (
     auth,
     availability,
     booking,
+    booking_states,
     business,
     capacity,
     catalog,
@@ -85,6 +86,7 @@ def create_app() -> FastAPI:
     application.include_router(tier_offers.router, prefix=settings.api_v1_prefix)
     application.include_router(availability.router, prefix=settings.api_v1_prefix)
     application.include_router(booking.router, prefix=settings.api_v1_prefix)
+    application.include_router(booking_states.router, prefix=settings.api_v1_prefix)
     application.include_router(creator_profile.router, prefix=settings.api_v1_prefix)
     application.include_router(creator_tiers.router, prefix=settings.api_v1_prefix)
     application.include_router(feed.router, prefix=settings.api_v1_prefix)

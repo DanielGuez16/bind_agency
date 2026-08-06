@@ -12,6 +12,8 @@ reconnectant son compte — et le balayage suivant replanifie tout seul, parce q
 la planification ne demande à personne de se souvenir de la faire.
 """
 
+import uuid
+
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,6 +25,14 @@ from app.services import jobs as job_service
 TRAVAUX_PAR_COMPTE = (JobType.TOKEN_REFRESH, JobType.METRICS_REFRESH)
 
 
+#: Cible fixe des balayages globaux. Une valeur constante et non aléatoire :
+#: c'est elle qui rend la planification idempotente pour ces jobs-là.
+SENTINELLE = uuid.UUID("00000000-0000-0000-0000-000000000001")
+
+#: Balayages qui existent une fois pour toute la plateforme.
+BALAYAGES = (JobType.BOOKING_HOLD_SWEEP,)
+
+
 async def planifier_le_travail(session: AsyncSession) -> dict[str, int]:
     """Aligne la file sur l'état des comptes. Rend ce qui a bougé."""
     actifs = set(
@@ -32,6 +42,9 @@ async def planifier_le_travail(session: AsyncSession) -> dict[str, int]:
     )
 
     crees = 0
+    for balayage in BALAYAGES:
+        crees += await _creer_si_absent(session, job_type=balayage, target_id=SENTINELLE)
+
     for compte_id in actifs:
         for travail in TRAVAUX_PAR_COMPTE:
             crees += await _creer_si_absent(session, job_type=travail, target_id=compte_id)
@@ -49,6 +62,8 @@ async def planifier_le_travail(session: AsyncSession) -> dict[str, int]:
 
     retires = 0
     for compte_id in orphelins:
+        # `deplanifier` retire tous les jobs d'une cible : la sentinelle n'en
+        # fait jamais partie, elle n'est pas un compte social.
         retires += await job_service.deplanifier(session, target_id=compte_id)
 
     await session.flush()

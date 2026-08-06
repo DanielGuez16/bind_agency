@@ -85,6 +85,10 @@ class ErrorCode(StrEnum):
     BOOKING_SLOT_REQUIRED = "booking_slot_required"
     BOOKING_SLOT_NOT_ALLOWED = "booking_slot_not_allowed"
     BOOKING_SLOT_UNAVAILABLE = "booking_slot_unavailable"
+    BOOKING_NOT_FOUND = "booking_not_found"
+    BOOKING_TRANSITION_NOT_ALLOWED = "booking_transition_not_allowed"
+    BOOKING_HOLD_EXPIRED = "booking_hold_expired"
+    BOOKING_NO_SHOW_NOT_APPLICABLE = "booking_no_show_not_applicable"
 
     # Transverses
     VALIDATION_FAILED = "validation_failed"
