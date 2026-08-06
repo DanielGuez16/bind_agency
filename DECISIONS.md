@@ -698,3 +698,70 @@ le chemin exécute du SQL enchaînent explicitement une opération qui doit réu
 n'est reproductible que dans celui des offres, où la session avait déjà validé
 une écriture sur la même connexion. Les deux autres ont été alignés par
 cohérence, pas parce qu'ils étaient cassés.
+
+---
+
+## 2026-08-05 — Phase 3, fonction d'éligibilité
+
+**L'unité est le couple (compte social, palier), jamais le créateur seul.**
+`SPEC.md` §3.1 le pose, et la structure des tables l'impose : les abonnés sont
+une propriété du compte, et `booking.social_account_id` fige celui sur lequel la
+contrepartie sera publiée. Une réservation engage un compte, l'éligibilité se
+prononce donc sur un compte. Deux comptes de la même plateforme peuvent différer,
+et c'est le créateur qui choisit avec lequel il réserve.
+
+À noter parce que ce n'est pas évident : les conditions d'un palier mélangent
+deux niveaux. Les abonnés viennent du compte, le nombre de collaborations et le
+score viennent du créateur. Un score dégradé plafonne donc tous ses comptes.
+
+**Le refus est expliqué, et tous les obstacles sont renvoyés.**
+Pas le premier. Un créateur à qui l'on dit « pas assez d'abonnés », qui en gagne,
+et à qui l'on dit ensuite « pas assez de collaborations », a été mal traité deux
+fois. Chaque raison correspond à une action différente : c'est le critère qui
+décide s'il faut une raison de plus ou non.
+
+**Deux situations ne sont pas des refus et ne sont pas renvoyées.**
+Une autre plateforme est hors de portée. Un palier inactif n'existe pas du point
+de vue du créateur — le lui montrer lui apprendrait une décision interne qui ne
+le concerne pas.
+
+**Fraîcheur : sept jours, valeur unique, en configuration.**
+Ajoutée à `SPEC.md` §9, qui ne la prévoyait pas. Pas de réglage par plateforme :
+le job de rafraîchissement est le même partout, et une différence qu'on ne
+saurait pas justifier est un réglage de trop. Trois situations voisines, trois
+raisons distinctes — aucun relevé, relevé périmé, jeton invalide — parce que dire
+de grandir à quelqu'un dont le jeton a expiré est un contresens.
+
+**`verification_status` bloque à deux endroits, et l'ordre compte.**
+L'inéligibilité d'abord, parce que le fil interroge cette fonction et que
+`SPEC.md` §3.3 interdit d'afficher ce qui n'est pas réservable. Le refus à la
+réservation ensuite, pour que la garantie ne dépende pas du fil. S'il ne fallait
+en garder qu'un, ce serait l'inéligibilité : elle sert le créateur, l'autre ne
+sert que nous. Le second niveau arrive avec la création de réservation, phase 5.
+
+**Le cold start est verrouillé par une paire de tests, pas par une intention.**
+Un score nul face à un palier exigeant 60 doit passer ; un score de 0,00 face au
+même palier doit échouer. Tant que ces deux-là passent ensemble, aucun
+`score or 0` n'a pu se glisser. Le premier est en outre paramétré sur tous les
+paliers de référence, donc ajouter un palier n'y échappe pas.
+
+La forme du code y contribue : `evaluer_score` traite les deux cas nuls dans des
+branches nommées séparément — le palier n'exige rien, le créateur n'a pas
+d'historique — avant toute comparaison. Deux nuls de nature différente, même
+issue, jamais le même nom.
+
+**Trois requêtes, quel que soit le nombre de comptes.**
+`DISTINCT ON (social_account_id)` fait tenir les derniers relevés en une seule
+requête. Le test du compteur tourne sur un compte **et** sur trois pour le même
+total : la propriété tenue est l'indépendance, un seul cas ne la démontrerait
+pas.
+
+**Aucune fonction ne prend une offre, et c'est structurel.**
+La fonction rend un ensemble de couples accessibles ; qui veut savoir pour une
+offre interroge cet ensemble. Une fonction qu'on peut appeler dans une boucle
+finira dans une boucle. Un test vérifie qu'aucun symbole exposé ne parle d'offre.
+
+**Rien en cache, délibérément.** Le résultat dépend de l'âge des relevés, donc du
+moment : le mettre en cache ressusciterait exactement les chiffres périmés que la
+fraîcheur écarte. Les paliers non plus — un décalage entre une bascule
+d'administrateur et le fil coûterait plus que les sept lignes économisées.

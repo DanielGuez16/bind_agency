@@ -335,5 +335,6 @@ Chaque étape est testable seule. Les étapes 1 à 8 forment le produit minimum 
 - Durée de garde d'une réservation (10 minutes)
 - Fenêtre d'annulation sans pénalité (24 heures)
 - Délai de publication après consommation
+- Fraîcheur maximale d'un relevé de métriques, au-delà de laquelle il ne donne accès à rien (7 jours)
 - Nombre de tentatives avant revue humaine (3)
 - Prix des abonnements par catégorie
