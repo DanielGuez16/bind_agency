@@ -78,6 +78,7 @@ export const en = {
     insufficient_role: 'Your account cannot access this.',
     not_a_member: 'You do not belong to this business.',
     validation_failed: 'Some information is missing or incorrect.',
+    business_not_found: 'This business is not available.',
     business_already_active: 'This business is already active.',
     business_missing_address: 'Add the business address before going live.',
     business_missing_coordinates: 'Add the business location before going live.',

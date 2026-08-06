@@ -20,7 +20,13 @@ from app.core.errors import ErrorCode, api_error
 from app.integrations.geocoding import Geocoder, get_geocoder
 from app.models import Business
 from app.models.enums import UserRole
-from app.schemas.business import BusinessCreate, BusinessRead, BusinessUpdate, CoordinatesPayload
+from app.schemas.activation import EtapeRead
+from app.schemas.business import (
+    BusinessCreate,
+    BusinessRead,
+    BusinessUpdate,
+    CoordinatesPayload,
+)
 from app.services import business as business_service
 from app.services.audit import Actor
 
@@ -87,6 +93,19 @@ async def update(
     )
     await session.commit()
     return await _to_read(session, business)
+
+
+@router.get("/{business_id}/activation", response_model=list[EtapeRead])
+async def activation_steps(business: CurrentBusiness, session: SessionDep) -> list[EtapeRead]:
+    """Ce qui reste à faire, et ce qui bloque vraiment.
+
+    Le service connaissait déjà ces conditions et ne les exposait pas : le
+    commerçant les apprenait en essayant, une à la fois. `activate_business`
+    consomme la même liste, ce qui garantit que l'écran et le refus disent la
+    même chose.
+    """
+    etapes = await business_service.etapes_activation(session, business=business)
+    return [EtapeRead.model_validate(etape) for etape in etapes]
 
 
 @router.post("/{business_id}/activate", response_model=BusinessRead)

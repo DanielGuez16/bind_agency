@@ -21,16 +21,36 @@ appelle un regard.
 """
 
 import uuid
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from enum import StrEnum
 
 import sqlalchemy as sa
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.models import Booking, Collaboration, Tier, TierOffer
-from app.models.enums import CollaborationStatus, ReliabilityEventType
+from app.models import (
+    AuditLog,
+    Booking,
+    Business,
+    CatalogItem,
+    Collaboration,
+    CreatorProfile,
+    Proof,
+    SocialAccount,
+    Tier,
+    TierOffer,
+)
+from app.models.enums import (
+    CaptureMethod,
+    CollaborationStatus,
+    ContentFormat,
+    Platform,
+    ReliabilityEventType,
+)
 from app.services import audit, reliability
+from app.services.audit import AuditedEntity
 
 #: Depuis ces états, une échéance dépassée fait tomber le dossier. `submitted`
 #: n'en fait pas partie : le créateur a répondu, c'est à nous de contrôler.
@@ -301,3 +321,256 @@ async def du_booking(session: AsyncSession, booking_id: uuid.UUID) -> Collaborat
     return await session.scalar(
         sa.select(Collaboration).where(Collaboration.booking_id == booking_id)
     )
+
+
+# ---------------------------------------------------------------------------
+# Listes
+#
+# Deux files, deux publics, un seul chargement de colonnes. Le commerce voit
+# les contreparties de **son** commerce et rien d'autre : l'isolation ne repose
+# pas sur un filtre écrit dans le routeur mais sur le `business_id` reçu du
+# résolveur d'appartenance, qui l'a déjà vérifié.
+# ---------------------------------------------------------------------------
+
+
+class FiltreDeContrepartie(StrEnum):
+    """Les trois onglets du commerce.
+
+    Ce ne sont pas des statuts mais des attentes : ce qui attend le commerce,
+    ce qui attend la créatrice, ce qui est réglé. Exposer les six statuts
+    aurait demandé au commerçant de savoir ce que veut dire `under_review`.
+
+    Le filtre reste facultatif. Sans lui, la liste rend tout — sinon
+    `unfulfilled` ne serait joignable par aucun onglet et disparaîtrait de
+    l'interface sans disparaître de la base.
+    """
+
+    #: Une preuve est arrivée, le commerce doit la contrôler.
+    A_CONTROLER = "to_review"
+    #: La créatrice doit publier, ou republier. Rien à faire ici.
+    ATTENDUE = "expected"
+    #: Réglé.
+    APPROUVEE = "approved"
+
+
+_STATUTS_DU_FILTRE: dict[FiltreDeContrepartie, frozenset[CollaborationStatus]] = {
+    FiltreDeContrepartie.A_CONTROLER: frozenset(
+        {CollaborationStatus.SUBMITTED, CollaborationStatus.UNDER_REVIEW}
+    ),
+    FiltreDeContrepartie.ATTENDUE: frozenset(
+        {CollaborationStatus.PENDING, CollaborationStatus.RESUBMIT_REQUESTED}
+    ),
+    FiltreDeContrepartie.APPROUVEE: frozenset({CollaborationStatus.APPROVED}),
+}
+
+
+@dataclass(frozen=True, slots=True)
+class DerniereSoumission:
+    """La preuve la plus récente. Ce que le commerce ouvre pour décider."""
+
+    proof_id: uuid.UUID
+    submitted_at: datetime
+    capture_method: CaptureMethod
+    source_url: str | None
+    media_key: str | None
+    screenshot_key: str | None
+    platform_published_at: datetime | None
+
+
+@dataclass(frozen=True, slots=True)
+class LigneDeFile:
+    collaboration_id: uuid.UUID
+    booking_id: uuid.UUID
+    status: CollaborationStatus
+    required_format: ContentFormat
+    required_mention: str | None
+    required_geotag: bool
+    deadline_at: datetime
+    attempts_count: int
+    needs_human_review: bool
+    created_at: datetime
+    business_id: uuid.UUID
+    business_name: str
+    creator_id: uuid.UUID
+    creator_first_name: str | None
+    creator_last_name: str | None
+    creator_handle: str | None
+    platform: Platform
+    item_name: str
+    #: Le motif de la dernière demande de nouvelle soumission, relu dans le
+    #: journal d'audit. Il n'est stocké nulle part ailleurs, et le dupliquer sur
+    #: la contrepartie créerait une seconde vérité qu'un UPDATE pourrait faire
+    #: diverger du journal — lequel, lui, est immuable.
+    dernier_motif: str | None
+    derniere_soumission: DerniereSoumission | None
+
+
+def _requete_de_file():
+    return (
+        sa.select(
+            Collaboration.id.label("collaboration_id"),
+            Collaboration.booking_id,
+            Collaboration.status,
+            Collaboration.required_format,
+            Collaboration.required_mention,
+            Collaboration.required_geotag,
+            Collaboration.deadline_at,
+            Collaboration.attempts_count,
+            Collaboration.needs_human_review,
+            Collaboration.created_at,
+            Business.id.label("business_id"),
+            Business.name.label("business_name"),
+            CreatorProfile.user_id.label("creator_id"),
+            CreatorProfile.first_name,
+            CreatorProfile.last_name,
+            SocialAccount.handle,
+            Tier.platform,
+            CatalogItem.name.label("item_name"),
+        )
+        .join(Booking, Booking.id == Collaboration.booking_id)
+        .join(Business, Business.id == Booking.business_id)
+        .join(CreatorProfile, CreatorProfile.user_id == Booking.creator_id)
+        .join(SocialAccount, SocialAccount.id == Booking.social_account_id)
+        .join(CatalogItem, CatalogItem.id == Booking.catalog_item_id)
+        .join(Tier, Tier.id == Collaboration.tier_id)
+    )
+
+
+async def _completer(session: AsyncSession, lignes) -> tuple[LigneDeFile, ...]:
+    """Motifs et dernières preuves, en deux requêtes et non en 2N.
+
+    Les charger dans la boucle ferait N+1 sur une file qui peut compter des
+    centaines de lignes, et le coût n'apparaîtrait qu'en production.
+    """
+    ids = [ligne.collaboration_id for ligne in lignes]
+    if not ids:
+        return ()
+
+    dernier = (
+        sa.select(
+            Proof.collaboration_id,
+            sa.func.max(Proof.submitted_at).label("submitted_at"),
+        )
+        .where(Proof.collaboration_id.in_(ids))
+        .group_by(Proof.collaboration_id)
+        .subquery()
+    )
+    preuves = {
+        p.collaboration_id: DerniereSoumission(
+            proof_id=p.id,
+            submitted_at=p.submitted_at,
+            capture_method=p.capture_method,
+            source_url=p.source_url,
+            media_key=p.media_key,
+            screenshot_key=p.screenshot_key,
+            platform_published_at=p.platform_published_at,
+        )
+        for p in await session.scalars(
+            sa.select(Proof).join(
+                dernier,
+                sa.and_(
+                    dernier.c.collaboration_id == Proof.collaboration_id,
+                    dernier.c.submitted_at == Proof.submitted_at,
+                ),
+            )
+        )
+    }
+
+    # Le motif le plus récent parmi les demandes de nouvelle soumission. Une
+    # approbation n'en porte pas et ne doit pas effacer celui d'avant.
+    rangee = (
+        sa.select(
+            AuditLog.entity_id,
+            AuditLog.reason,
+            sa.func.row_number()
+            .over(partition_by=AuditLog.entity_id, order_by=AuditLog.occurred_at.desc())
+            .label("rang"),
+        )
+        .where(
+            AuditLog.entity_type == AuditedEntity.COLLABORATION.value,
+            AuditLog.entity_id.in_(ids),
+            AuditLog.to_status == CollaborationStatus.RESUBMIT_REQUESTED.value,
+            AuditLog.reason.is_not(None),
+        )
+        .subquery()
+    )
+    motifs = {
+        entity_id: reason
+        for entity_id, reason in await session.execute(
+            sa.select(rangee.c.entity_id, rangee.c.reason).where(rangee.c.rang == 1)
+        )
+    }
+
+    return tuple(
+        LigneDeFile(
+            collaboration_id=ligne.collaboration_id,
+            booking_id=ligne.booking_id,
+            status=ligne.status,
+            required_format=ligne.required_format,
+            required_mention=ligne.required_mention,
+            required_geotag=ligne.required_geotag,
+            deadline_at=ligne.deadline_at,
+            attempts_count=ligne.attempts_count,
+            needs_human_review=ligne.needs_human_review,
+            created_at=ligne.created_at,
+            business_id=ligne.business_id,
+            business_name=ligne.business_name,
+            creator_id=ligne.creator_id,
+            creator_first_name=ligne.first_name,
+            creator_last_name=ligne.last_name,
+            creator_handle=ligne.handle,
+            platform=ligne.platform,
+            item_name=ligne.item_name,
+            dernier_motif=motifs.get(ligne.collaboration_id),
+            derniere_soumission=preuves.get(ligne.collaboration_id),
+        )
+        for ligne in lignes
+    )
+
+
+async def lister_pour_le_commerce(
+    session: AsyncSession,
+    *,
+    business_id: uuid.UUID,
+    filtre: FiltreDeContrepartie | None = None,
+    limite: int = 100,
+) -> tuple[LigneDeFile, ...]:
+    """Triées par échéance : ce qui va tomber en premier se lit en premier."""
+    requete = _requete_de_file().where(
+        Booking.business_id == business_id,
+        *([Collaboration.status.in_(_STATUTS_DU_FILTRE[filtre])] if filtre else []),
+    )
+    lignes = (
+        await session.execute(
+            requete.order_by(Collaboration.deadline_at.asc(), Collaboration.id.asc()).limit(
+                max(1, min(limite, 500))
+            )
+        )
+    ).all()
+    return await _completer(session, lignes)
+
+
+async def file_de_revue_humaine(
+    session: AsyncSession, *, limite: int = 100
+) -> tuple[LigneDeFile, ...]:
+    """Les dossiers sortis de la boucle automatique, en attente d'arbitrage.
+
+    Une contrepartie déjà approuvée n'y figure plus : le drapeau reste levé sur
+    la ligne — c'est une trace, elle ne s'efface pas — mais un dossier tranché
+    n'est plus à trancher, et le laisser en file ferait grossir une pile qui ne
+    descend jamais.
+    """
+    requete = _requete_de_file().where(
+        Collaboration.needs_human_review.is_(True),
+        Collaboration.status.not_in(
+            (CollaborationStatus.APPROVED, CollaborationStatus.UNFULFILLED)
+        ),
+    )
+    lignes = (
+        await session.execute(
+            requete.order_by(Collaboration.deadline_at.asc(), Collaboration.id.asc()).limit(
+                max(1, min(limite, 500))
+            )
+        )
+    ).all()
+    return await _completer(session, lignes)

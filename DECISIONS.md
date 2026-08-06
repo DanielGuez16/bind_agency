@@ -1853,3 +1853,89 @@ reviendrait à ne rien signaler.
 les deux dit ce que le modèle rate, et si le changer a servi à quelque chose.
 Ce qu'un commerce a écarté est conservé aussi : le savoir vaut autant que savoir
 ce qu'il a gardé.
+
+---
+
+## 2026-08-06 — Les dix routes manquantes de l'intégration
+
+**La fiche publique d'un commerce montre les paliers fermés, le fil les masque.**
+C'est le seul endroit où les deux vues divergent, et c'est délibéré. Le fil
+masque parce qu'un fil encombré de prestations inaccessibles détruit la
+confiance en deux jours. Une fiche est déjà ouverte : le créateur a choisi ce
+commerce, et masquer la moitié de sa carte lui ferait croire que le salon
+propose trois soins quand il en propose huit. Chaque offre porte donc son
+`accessible` et, quand elle est fermée, les obstacles qui la ferment. Ce qui
+reste masqué des deux côtés, c'est ce que le commerce a retiré — un item
+désactivé est une absence, pas une invitation.
+
+**Un commerce non publié répond 404, pas 403.** Il n'y a pas de droit à refuser,
+la ressource n'est pas publiée. Le commerce absent et le commerce en cours
+d'inscription se répondent pareil, ce qui ne divulgue aucun identifiant.
+
+**Les compteurs d'onglets de l'historique se comptent sur tout l'historique.**
+Un onglet qui annonce « 3 » parce que la première page en contient trois ment
+dès la seconde. Ils ignorent aussi le filtre en cours : un onglet ne se compte
+pas depuis le filtre d'un autre.
+
+**Le palier d'une réservation vient de l'offre, jamais de la contrepartie.** La
+contrepartie naît à la consommation ; passer par elle rendrait le palier nul sur
+exactement les lignes que le créateur regarde le plus, celles qui sont à venir.
+
+**La journée du commerce se découpe dans son fuseau, y compris le jour par
+défaut.** Un serveur en UTC est déjà demain quand il est 20 h à Miami : sans
+conversion, la journée par défaut sauterait chaque soir. Les bornes réellement
+utilisées sont rendues, pour que le commerce puisse vérifier ce qui a été compté
+comme « sa » journée.
+
+**Le filtre des contreparties reste facultatif.** Les trois onglets du design —
+à contrôler, attendue, approuvée — ne couvrent pas `unfulfilled`. Lier la
+lecture aux onglets ferait disparaître de l'interface un statut qui existe en
+base. Sans filtre, la liste rend tout.
+
+**Le motif de la dernière demande de nouvelle soumission est relu dans le
+journal d'audit**, pas recopié sur la contrepartie. Le journal est immuable ;
+une copie ne l'est pas et finirait par en diverger sous un UPDATE.
+
+**Un dossier tranché sort de la file d'arbitrage sans perdre son drapeau.**
+`needs_human_review` reste levé — c'est une trace — mais un dossier réglé n'est
+plus à trancher, et le garder ferait grossir une pile qui ne descend jamais.
+
+**La mensualisation d'un plan annuel est une règle de facturation, pas une mise
+en page.** Elle est faite dans le service, arrondie et non tronquée : douze mois
+de troncature perdent jusqu'à onze centimes par plan, et le total cesse d'être
+vérifiable à la main. `past_due` compte comme du revenu récurrent — la facture
+n'est pas encaissée mais l'abonnement court, et l'exclure ferait apparaître une
+chute là où il n'y a qu'un prélèvement en retard.
+
+**`activate_business` consomme la liste que la route expose.** Écrire les
+conditions deux fois les ferait diverger au premier ajout, et l'écran
+annoncerait « prêt » sur une activation que le service refuse. Un test retire
+une étape bloquante et vérifie que l'activation tombe sur celle-là précisément.
+Les étapes non bloquantes — photo, catalogue, offre, horaires — sont rendues
+parce qu'elles décident de la **visibilité** : un commerce actif sans offre
+n'apparaît dans aucun fil, et le taire produirait un commerce « activé » que
+personne ne voit et dont personne ne comprend pourquoi.
+
+**Les abonnés du créateur sont sa donnée et lui sont rendus datés.**
+L'éligibilité s'en servait pour trancher et ne les rendait qu'en creux : qui
+avait 1 800 abonnés lisait « il t'en manque 200 » sans jamais lire 1 800. Un
+chiffre sans date serait pris pour celui du jour, alors qu'il peut avoir une
+semaine. Sans relevé, la valeur est **nulle et non zéro** — « pas encore
+mesuré » n'est pas « zéro abonné ».
+
+**Le statut de vérification ne promet aucun délai.** Ni objectif, ni estimation,
+ni « sous 72 heures ». Une promesse tenue par une file d'attente humaine se
+brise le premier jour de charge, auprès de gens qui n'ont rien fait de mal. On
+rend la date de démarrage — le compteur de jours se calcule côté app — et les
+signaux jugés, recalculés à la lecture plutôt que relus d'un cache qui aurait
+vieilli pendant que les relevés bougent.
+
+**Les obstacles portent une date quand ils en ont une.** `metrics_stale` porte
+la date du relevé, `account_token_invalid` l'échéance du jeton,
+`account_under_review` la date de rattachement. L'écart en secondes reste
+disponible pour qui veut calculer, mais il ne s'affiche pas : « il vous manque
+431 200 secondes » ne veut rien dire, « relevé du 3 août » se lit. Les
+obstacles qui n'ont rien à dater gardent `depuis` nul.
+
+**Non comblé, volontairement** : quartiers, événements temps réel, versionnement
+des paliers. Le rafraîchissement se fait à l'ouverture d'écran et sur geste.

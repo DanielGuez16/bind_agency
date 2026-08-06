@@ -105,6 +105,13 @@ class Obstacle:
     requis: Decimal | int | None = None
     constate: Decimal | int | None = None
     ecart: Decimal | int | None = None
+    #: La date qui explique l'obstacle, quand il en a une : dernier relevé pour
+    #: `metrics_stale`, échéance du jeton pour `account_token_invalid`, début du
+    #: contrôle pour `account_under_review`.
+    #:
+    #: Un écart en secondes ne s'affiche pas — « il vous manque 431 200
+    #: secondes » ne veut rien dire. Une date, si.
+    depuis: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -115,6 +122,10 @@ class CompteEvalue:
     verification_status: VerificationStatus
     followers: int | None
     captured_at: datetime | None
+    #: Quand le rattachement a eu lieu, et quand le jeton meurt. Deux dates qui
+    #: n'entrent dans aucune règle : elles servent uniquement à expliquer.
+    connected_at: datetime | None = None
+    token_expires_at: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -192,10 +203,16 @@ def _obstacles_du_compte(
     if compte.verification_status is VerificationStatus.REJECTED:
         obstacles.append(Obstacle(raison=RaisonRefus.ACCOUNT_REJECTED))
     elif compte.verification_status is VerificationStatus.NEEDS_REVIEW:
-        obstacles.append(Obstacle(raison=RaisonRefus.ACCOUNT_UNDER_REVIEW))
+        # Le contrôle a commencé au rattachement du compte : c'est la date que
+        # le créateur voit, avec son compteur de jours.
+        obstacles.append(
+            Obstacle(raison=RaisonRefus.ACCOUNT_UNDER_REVIEW, depuis=compte.connected_at)
+        )
 
     if compte.status is not SocialAccountStatus.ACTIVE:
-        obstacles.append(Obstacle(raison=RaisonRefus.ACCOUNT_TOKEN_INVALID))
+        obstacles.append(
+            Obstacle(raison=RaisonRefus.ACCOUNT_TOKEN_INVALID, depuis=compte.token_expires_at)
+        )
 
     if compte.captured_at is None or compte.followers is None:
         obstacles.append(Obstacle(raison=RaisonRefus.NO_METRICS))
@@ -208,6 +225,7 @@ def _obstacles_du_compte(
                     requis=int(age_max.total_seconds()),
                     constate=int(age.total_seconds()),
                     ecart=int((age - age_max).total_seconds()),
+                    depuis=compte.captured_at,
                 )
             )
 
@@ -367,6 +385,8 @@ async def evaluer_createur(
             verification_status=ligne.verification_status,
             followers=ligne.followers_count,
             captured_at=ligne.captured_at,
+            connected_at=ligne.connected_at,
+            token_expires_at=ligne.token_expires_at,
         )
         for ligne in (
             await session.execute(
@@ -375,6 +395,8 @@ async def evaluer_createur(
                     SocialAccount.platform,
                     SocialAccount.status,
                     SocialAccount.verification_status,
+                    SocialAccount.connected_at,
+                    SocialAccount.token_expires_at,
                     releve.c.followers_count,
                     releve.c.captured_at,
                 )
@@ -414,3 +436,30 @@ async def evaluer_createur(
         maintenant=maintenant,
         age_max=timedelta(seconds=settings.metrics_max_age_seconds),
     )
+
+
+def dedoublonner(obstacles: Iterable[Obstacle]) -> tuple[Obstacle, ...]:
+    """Un obstacle par raison, celui qui dit la marche la plus courte.
+
+    Un créateur bloqué sur trois paliers pour la même raison n'a pas besoin de
+    la lire trois fois : ce qu'il doit faire est le même. On garde le plus
+    petit écart de chaque raison. Un obstacle sans écart — `no_metrics`,
+    `account_under_review` — ne se compare pas et ne remplace jamais un
+    obstacle chiffré de la même raison.
+    """
+    par_raison: dict[RaisonRefus, Obstacle] = {}
+
+    for obstacle in obstacles:
+        garde = par_raison.get(obstacle.raison)
+        if garde is None or _plus_petit(obstacle, garde):
+            par_raison[obstacle.raison] = obstacle
+
+    return tuple(par_raison.values())
+
+
+def _plus_petit(candidat: Obstacle, garde: Obstacle) -> bool:
+    if candidat.ecart is None:
+        return False
+    if garde.ecart is None:
+        return True
+    return candidat.ecart < garde.ecart

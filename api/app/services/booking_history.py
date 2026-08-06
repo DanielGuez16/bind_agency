@@ -1,0 +1,330 @@
+"""Les deux lectures d'une liste de réservations : celle du créateur, celle du comptoir.
+
+Deux points de vue sur la même table, et volontairement deux fonctions. Ce ne
+sont pas les mêmes colonnes, pas le même tri, pas la même unité de temps : le
+créateur regarde son histoire du plus récent au plus ancien, le commerce
+regarde une journée dans l'ordre du planning. Une fonction paramétrée aurait
+mêlé les deux et forcé chaque appelant à savoir lequel il est.
+
+**Aucun montant n'en sort.** `value_cents_snapshot` existe sur la réservation
+et n'est rendu à aucun des deux : ni au créateur, pour qui la valeur s'exprime
+en prestation, ni au commerce, dont l'application n'affiche pas davantage de
+prix. C'est du reporting, pas un écran de journée.
+
+**Le palier vient de l'offre, pas de la contrepartie.** Une réservation encore
+en attente n'a pas de contrepartie — elle naît à la consommation. Passer par
+elle rendrait le palier nul sur exactement les lignes que le créateur regarde
+le plus, celles qui sont à venir.
+
+**La journée du commerce se découpe dans son fuseau.** Une date arrive sans
+heure ; la convertir en UTC depuis le serveur ferait commencer la journée d'un
+salon de Miami à 20 h la veille pendant l'heure d'été et à 19 h le reste de
+l'année. Le fuseau du commerce fait foi, comme partout ailleurs.
+"""
+
+import uuid
+from dataclasses import dataclass
+from datetime import date, datetime, time, timedelta
+from zoneinfo import ZoneInfo
+
+import sqlalchemy as sa
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models import (
+    Booking,
+    Business,
+    CatalogItem,
+    Collaboration,
+    CreatorProfile,
+    SocialAccount,
+    Tier,
+    TierOffer,
+)
+from app.models.enums import (
+    BookingStatus,
+    BusinessCategory,
+    CollaborationStatus,
+    ContentFormat,
+    Platform,
+)
+
+#: Une page d'historique. Au-delà, l'app pagine par `avant`.
+PAGE_PAR_DEFAUT = 50
+PAGE_MAXIMUM = 200
+
+
+@dataclass(frozen=True, slots=True)
+class LigneDeContrepartie:
+    """Ce que la réservation a produit, une fois consommée."""
+
+    collaboration_id: uuid.UUID
+    status: CollaborationStatus
+    deadline_at: datetime
+    attempts_count: int
+    needs_human_review: bool
+
+
+@dataclass(frozen=True, slots=True)
+class ReservationDuCreateur:
+    booking_id: uuid.UUID
+    status: BookingStatus
+    starts_at: datetime | None
+    ends_at: datetime | None
+    valid_until: datetime
+    created_at: datetime
+    business_id: uuid.UUID
+    business_name: str
+    business_category: BusinessCategory
+    business_address: str | None
+    business_timezone: str
+    business_cover_photo_key: str | None
+    item_name: str
+    item_photo_key: str | None
+    duration_minutes: int | None
+    platform: Platform
+    content_format: ContentFormat
+    #: Nulle tant que la réservation n'a pas été consommée : c'est la
+    #: contrepartie qui porte l'échéance de publication, pas la réservation.
+    contrepartie: LigneDeContrepartie | None
+
+
+@dataclass(frozen=True, slots=True)
+class HistoriqueDuCreateur:
+    items: tuple[ReservationDuCreateur, ...]
+    #: Un compteur par statut, calculé sur **tout** l'historique et non sur la
+    #: page. Un onglet qui annonce « 3 » parce que la première page en contient
+    #: trois ment dès la seconde. Les statuts sans réservation valent zéro et
+    #: sont présents dans la clé : l'app n'a pas à connaître la liste.
+    compteurs: dict[BookingStatus, int]
+
+
+@dataclass(frozen=True, slots=True)
+class ReservationDuCommerce:
+    booking_id: uuid.UUID
+    status: BookingStatus
+    starts_at: datetime | None
+    ends_at: datetime | None
+    valid_until: datetime
+    creator_id: uuid.UUID
+    creator_first_name: str | None
+    creator_last_name: str | None
+    creator_handle: str | None
+    item_name: str
+    duration_minutes: int | None
+    platform: Platform
+    content_format: ContentFormat
+    contrepartie: LigneDeContrepartie | None
+
+
+@dataclass(frozen=True, slots=True)
+class JourneeDuCommerce:
+    #: La date demandée, telle qu'elle a été lue dans le fuseau du commerce.
+    jour: date
+    timezone: str
+    debut: datetime
+    fin: datetime
+    items: tuple[ReservationDuCommerce, ...]
+
+
+def _colonnes_communes() -> tuple:
+    return (
+        Booking.id.label("booking_id"),
+        Booking.status,
+        Booking.starts_at,
+        Booking.ends_at,
+        Booking.valid_until,
+        Booking.created_at,
+        CatalogItem.name.label("item_name"),
+        CatalogItem.photo_key.label("item_photo_key"),
+        Booking.duration_minutes,
+        Tier.platform,
+        Tier.content_format,
+        Collaboration.id.label("collaboration_id"),
+        Collaboration.status.label("collaboration_status"),
+        Collaboration.deadline_at,
+        Collaboration.attempts_count,
+        Collaboration.needs_human_review,
+    )
+
+
+def _jointures_communes(requete):
+    """Item, palier et contrepartie, accrochés de la même façon des deux côtés.
+
+    Le palier passe par `tier_offer` : c'est le seul chemin qui existe dès la
+    réservation. La contrepartie est en jointure externe, elle n'existe qu'après
+    la consommation.
+    """
+    return (
+        requete.join(CatalogItem, CatalogItem.id == Booking.catalog_item_id)
+        .join(TierOffer, TierOffer.id == Booking.tier_offer_id)
+        .join(Tier, Tier.id == TierOffer.tier_id)
+        .outerjoin(Collaboration, Collaboration.booking_id == Booking.id)
+    )
+
+
+def _contrepartie(ligne) -> LigneDeContrepartie | None:
+    if ligne.collaboration_id is None:
+        return None
+    return LigneDeContrepartie(
+        collaboration_id=ligne.collaboration_id,
+        status=ligne.collaboration_status,
+        deadline_at=ligne.deadline_at,
+        attempts_count=ligne.attempts_count,
+        needs_human_review=ligne.needs_human_review,
+    )
+
+
+async def historique_du_createur(
+    session: AsyncSession,
+    *,
+    creator_id: uuid.UUID,
+    statuts: frozenset[BookingStatus] | None = None,
+    avant: datetime | None = None,
+    limite: int = PAGE_PAR_DEFAUT,
+) -> HistoriqueDuCreateur:
+    """Du plus récent au plus ancien, avec les compteurs de tous les onglets.
+
+    Le tri est sur `created_at` et non sur `starts_at` : ce dernier est nul sur
+    un item sans réservation, et trier sur une colonne nullable reléguerait
+    silencieusement ces droits-là à un bout ou à l'autre de la liste.
+    """
+    limite = max(1, min(limite, PAGE_MAXIMUM))
+
+    requete = _jointures_communes(
+        sa.select(
+            *_colonnes_communes(),
+            Business.id.label("business_id"),
+            Business.name.label("business_name"),
+            Business.category.label("business_category"),
+            Business.address.label("business_address"),
+            Business.timezone.label("business_timezone"),
+            Business.cover_photo_key.label("business_cover_photo_key"),
+        ).join(Business, Business.id == Booking.business_id)
+    ).where(
+        Booking.creator_id == creator_id,
+        *([Booking.status.in_(statuts)] if statuts else []),
+        *([Booking.created_at < avant] if avant else []),
+    )
+
+    lignes = (
+        await session.execute(
+            requete.order_by(Booking.created_at.desc(), Booking.id.desc()).limit(limite)
+        )
+    ).all()
+
+    # Les compteurs ignorent `statuts` et `avant` : ce sont ceux des onglets,
+    # et un onglet ne se compte pas depuis le filtre d'un autre.
+    compteurs = dict.fromkeys(BookingStatus, 0)
+    for status, nombre in await session.execute(
+        sa.select(Booking.status, sa.func.count())
+        .where(Booking.creator_id == creator_id)
+        .group_by(Booking.status)
+    ):
+        compteurs[status] = nombre
+
+    return HistoriqueDuCreateur(
+        items=tuple(
+            ReservationDuCreateur(
+                booking_id=ligne.booking_id,
+                status=ligne.status,
+                starts_at=ligne.starts_at,
+                ends_at=ligne.ends_at,
+                valid_until=ligne.valid_until,
+                created_at=ligne.created_at,
+                business_id=ligne.business_id,
+                business_name=ligne.business_name,
+                business_category=ligne.business_category,
+                business_address=ligne.business_address,
+                business_timezone=ligne.business_timezone,
+                business_cover_photo_key=ligne.business_cover_photo_key,
+                item_name=ligne.item_name,
+                item_photo_key=ligne.item_photo_key,
+                duration_minutes=ligne.duration_minutes,
+                platform=ligne.platform,
+                content_format=ligne.content_format,
+                contrepartie=_contrepartie(ligne),
+            )
+            for ligne in lignes
+        ),
+        compteurs=compteurs,
+    )
+
+
+def aujourd_hui(business: Business) -> date:
+    """La date du jour chez le commerce, pas chez le serveur.
+
+    Un serveur en UTC est déjà demain quand il est 20 h à Miami : sans cette
+    conversion, la journée par défaut sauterait chaque soir.
+    """
+    return datetime.now(ZoneInfo(business.timezone)).date()
+
+
+async def journee_du_commerce(
+    session: AsyncSession, *, business: Business, jour: date
+) -> JourneeDuCommerce:
+    """Les réservations d'une journée, dans l'ordre du planning.
+
+    Les réservations sans créneau — les items à fenêtre de validité — sont
+    incluses quand la journée tombe dans leur fenêtre : elles se présentent au
+    comptoir ce jour-là comme les autres, et les omettre ferait arriver
+    quelqu'un qui n'est sur aucune liste.
+    """
+    fuseau = ZoneInfo(business.timezone)
+    debut = datetime.combine(jour, time.min, tzinfo=fuseau)
+    fin = debut + timedelta(days=1)
+
+    requete = _jointures_communes(
+        sa.select(
+            *_colonnes_communes(),
+            CreatorProfile.user_id.label("creator_id"),
+            CreatorProfile.first_name,
+            CreatorProfile.last_name,
+            SocialAccount.handle,
+        )
+        .join(CreatorProfile, CreatorProfile.user_id == Booking.creator_id)
+        .join(SocialAccount, SocialAccount.id == Booking.social_account_id)
+    ).where(
+        Booking.business_id == business.id,
+        sa.or_(
+            sa.and_(Booking.starts_at >= debut, Booking.starts_at < fin),
+            sa.and_(
+                Booking.starts_at.is_(None),
+                Booking.created_at < fin,
+                Booking.valid_until >= debut,
+            ),
+        ),
+    )
+
+    lignes = (
+        await session.execute(
+            # `nullslast` : les droits sans créneau se lisent après le planning,
+            # pas avant l'ouverture.
+            requete.order_by(sa.nullslast(Booking.starts_at.asc()), Booking.created_at.asc())
+        )
+    ).all()
+
+    return JourneeDuCommerce(
+        jour=jour,
+        timezone=business.timezone,
+        debut=debut,
+        fin=fin,
+        items=tuple(
+            ReservationDuCommerce(
+                booking_id=ligne.booking_id,
+                status=ligne.status,
+                starts_at=ligne.starts_at,
+                ends_at=ligne.ends_at,
+                valid_until=ligne.valid_until,
+                creator_id=ligne.creator_id,
+                creator_first_name=ligne.first_name,
+                creator_last_name=ligne.last_name,
+                creator_handle=ligne.handle,
+                item_name=ligne.item_name,
+                duration_minutes=ligne.duration_minutes,
+                platform=ligne.platform,
+                content_format=ligne.content_format,
+                contrepartie=_contrepartie(ligne),
+            )
+            for ligne in lignes
+        ),
+    )

@@ -160,6 +160,22 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
 
 ---
 
+## Intégration — brancher l'interface sur l'API réelle
+
+- [x] Bloc 1 · Thème et jetons
+      *Fin : `tokens.json` est copié tel quel de la passation et un test compare les deux fichiers ; aucun littéral de couleur hors de `app/src/theme/` ; le thème suit le rôle et se laisse forcer ; l'écran de code exporte ses deux couleurs à part*
+- [x] Corrections de la passation
+      *Fin : code de retrait à six chiffres tournants sans bouton de renouvellement, codes d'obstacle du serveur consommés tels quels, écran admin des paliers réduit à la modification, badge de vague retiré. `tokens.json` en v0.3.0*
+- [x] Routes manquantes, avant les écrans
+      *Fin : les dix manques listés sont comblés et testés — fiche publique d'un commerce, historique créateur, journée commerce, contreparties du commerce et file d'arbitrage, plans d'abonnement, étapes d'activation, audience du créateur, dates sur les obstacles, statut de vérification*
+- [ ] Bloc 2 · Bibliothèque de composants
+- [ ] Bloc 3 · Client d'API typé
+- [ ] Bloc 4 · Écrans créateur
+- [ ] Bloc 5 · Écrans commerce
+- [ ] Bloc 6 · Back office
+
+---
+
 ## Phase 10 — Reste
 
 - [ ] Capture de preuve niveaux 1 et 2

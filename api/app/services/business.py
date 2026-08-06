@@ -5,13 +5,23 @@ Comme partout, il n'ouvre ni ne committe de transaction.
 """
 
 import uuid
+from dataclasses import dataclass
+from enum import StrEnum
 
 import sqlalchemy as sa
 from geoalchemy2 import Geometry, WKTElement
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.integrations.geocoding import Coordinates, Geocoder
-from app.models import Business, BusinessMember, User
+from app.models import (
+    Business,
+    BusinessMember,
+    CapacityRule,
+    CatalogItem,
+    Tier,
+    TierOffer,
+    User,
+)
 from app.models.enums import BusinessMemberRole, BusinessStatus
 from app.schemas.business import BusinessCreate, BusinessUpdate
 from app.services.audit import Actor, AuditedEntity, record_transition
@@ -161,11 +171,12 @@ async def activate_business(session: AsyncSession, *, business: Business, actor:
     if business.status is BusinessStatus.ACTIVE:
         raise AlreadyActive(business.id)
 
-    if business.address is None:
-        raise MissingAddress(business.id)
-
-    if business.geo is None:
-        raise MissingCoordinates(business.id)
+    # La même liste que celle rendue par `etapes_activation`. Réécrire les
+    # conditions ici en ferait deux, et l'écran finirait par annoncer « prêt »
+    # sur une activation que le service refuse.
+    for etape in await etapes_activation(session, business=business):
+        if etape.blocking and not etape.done:
+            raise _REFUS_PAR_ETAPE[etape.cle](business.id)
 
     previous = business.status
     business.status = BusinessStatus.ACTIVE
@@ -182,3 +193,87 @@ async def activate_business(session: AsyncSession, *, business: Business, actor:
     )
 
     return business
+
+
+# ---------------------------------------------------------------------------
+# Étapes d'activation
+#
+# Le service connaissait déjà ces conditions, il ne les exposait pas : le
+# commerçant apprenait ce qui lui manquait en essayant, une condition à la
+# fois, sans jamais voir la liste. Elles sont maintenant lisibles avant
+# l'essai, et `activate_business` les consomme — c'est ce qui garantit que
+# l'écran et le refus disent la même chose.
+# ---------------------------------------------------------------------------
+
+
+class EtapeActivation(StrEnum):
+    ADRESSE = "address"
+    COORDONNEES = "coordinates"
+    PHOTO_DE_COUVERTURE = "cover_photo"
+    CATALOGUE = "catalog_item"
+    OFFRE_DE_PALIER = "tier_offer"
+    HORAIRES = "capacity_rule"
+
+
+@dataclass(frozen=True, slots=True)
+class Etape:
+    cle: EtapeActivation
+    done: bool
+    #: Bloquante : l'activation est refusée tant qu'elle n'est pas faite.
+    #: Non bloquante : l'activation passe, mais le commerce reste invisible ou
+    #: incomplet. La distinction est rendue plutôt que devinée — une étape
+    #: présentée comme obligatoire alors qu'elle ne l'est pas fait renoncer des
+    #: commerces qui pouvaient déjà ouvrir.
+    blocking: bool
+
+
+#: Une étape bloquante non faite lève l'erreur que le routeur sait traduire.
+#: La table est ici et non dans le routeur : c'est la même décision que la
+#: liste, elle ne se sépare pas d'elle.
+_REFUS_PAR_ETAPE = {
+    EtapeActivation.ADRESSE: MissingAddress,
+    EtapeActivation.COORDONNEES: MissingCoordinates,
+}
+
+
+async def etapes_activation(session: AsyncSession, *, business: Business) -> tuple[Etape, ...]:
+    """Ce qui reste à faire, dans l'ordre où on le fait.
+
+    Les trois dernières ne bloquent pas l'activation mais décident de la
+    visibilité : un commerce actif sans offre de palier, sans item disponible
+    ou sans règle de capacité n'apparaît dans aucun fil. Le taire produirait
+    un commerce « activé » que personne ne voit et dont personne ne comprend
+    pourquoi.
+    """
+    a_un_item = await session.scalar(
+        sa.select(sa.literal(True))
+        .where(CatalogItem.business_id == business.id, CatalogItem.is_available.is_(True))
+        .limit(1)
+    )
+    a_une_offre = await session.scalar(
+        sa.select(sa.literal(True))
+        .select_from(TierOffer)
+        .join(Tier, Tier.id == TierOffer.tier_id)
+        .where(
+            TierOffer.business_id == business.id,
+            TierOffer.is_active.is_(True),
+            Tier.is_active.is_(True),
+        )
+        .limit(1)
+    )
+    a_des_horaires = await session.scalar(
+        sa.select(sa.literal(True)).where(CapacityRule.business_id == business.id).limit(1)
+    )
+
+    return (
+        Etape(EtapeActivation.ADRESSE, business.address is not None, blocking=True),
+        Etape(EtapeActivation.COORDONNEES, business.geo is not None, blocking=True),
+        Etape(
+            EtapeActivation.PHOTO_DE_COUVERTURE,
+            business.cover_photo_key is not None,
+            blocking=False,
+        ),
+        Etape(EtapeActivation.CATALOGUE, bool(a_un_item), blocking=False),
+        Etape(EtapeActivation.OFFRE_DE_PALIER, bool(a_une_offre), blocking=False),
+        Etape(EtapeActivation.HORAIRES, bool(a_des_horaires), blocking=False),
+    )

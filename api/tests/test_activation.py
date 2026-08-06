@@ -1,0 +1,241 @@
+"""Étapes d'activation du commerce.
+
+Le service connaissait déjà ces conditions et ne les exposait pas : le
+commerçant les apprenait en essayant, une à la fois.
+
+Le test qui compte est celui du couplage. Une liste rendue par une route et des
+conditions écrites une seconde fois dans `activate_business` diveraient au
+premier ajout, et l'écran annoncerait « prêt » sur une activation que le service
+refuse. Ici, on retire une étape bloquante et on vérifie que l'activation tombe
+sur **cette** étape-là — pas sur une autre, pas sur un message générique.
+"""
+
+import uuid
+from datetime import time
+
+import pytest
+import sqlalchemy as sa
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.config import get_settings
+from app.integrations.geocoding import ManualGeocoder
+from app.models import Business, CatalogItem, TierOffer
+from app.models.enums import BusinessCategory, BusinessStatus, UserRole
+from app.schemas.business import BusinessCreate, CoordinatesPayload
+from app.schemas.capacity import CapacityRuleCreate
+from app.schemas.catalog import CatalogItemCreate
+from app.schemas.tier_offers import TierOfferCreate
+from app.services import auth as auth_service
+from app.services import business as service
+from app.services import capacity as capacity_service
+from app.services import catalog as catalog_service
+from app.services import tier_offers as tier_offer_service
+from app.services.audit import Actor
+from tests.test_feed import STORY
+
+PREFIX = get_settings().api_v1_prefix
+MOT_DE_PASSE = "un-mot-de-passe-solide-42"
+
+
+async def commerce_en_cours(session: AsyncSession, **overrides):
+    """Un commerce créé mais pas activé, sans catalogue ni horaires."""
+    proprietaire = await auth_service.register(
+        session,
+        email=f"{uuid.uuid4()}@example.com",
+        password=MOT_DE_PASSE,
+        role=UserRole.BUSINESS_MEMBER,
+    )
+    business = await service.create_business(
+        session,
+        payload=BusinessCreate(
+            name="Salon d'essai",
+            category=BusinessCategory.BEAUTY,
+            currency="USD",
+            address=overrides.pop("address", "1234 Ocean Dr"),
+            coordinates=CoordinatesPayload(longitude=-80.1918, latitude=25.7617),
+            timezone="America/New_York",
+        ),
+        creator=proprietaire,
+        geocoder=ManualGeocoder(),
+    )
+    return business, proprietaire
+
+
+def par_cle(etapes) -> dict:
+    return {etape.cle: etape for etape in etapes}
+
+
+async def test_les_etapes_disent_ce_qui_est_fait_et_ce_qui_bloque(
+    session: AsyncSession,
+) -> None:
+    business, _ = await commerce_en_cours(session)
+
+    etapes = par_cle(await service.etapes_activation(session, business=business))
+
+    assert set(etapes) == set(service.EtapeActivation)
+    assert etapes[service.EtapeActivation.ADRESSE].done is True
+    assert etapes[service.EtapeActivation.ADRESSE].blocking is True
+    assert etapes[service.EtapeActivation.COORDONNEES].done is True
+    # Rien de tout cela n'existe encore, et rien de tout cela ne bloque.
+    for cle in (
+        service.EtapeActivation.PHOTO_DE_COUVERTURE,
+        service.EtapeActivation.CATALOGUE,
+        service.EtapeActivation.OFFRE_DE_PALIER,
+        service.EtapeActivation.HORAIRES,
+    ):
+        assert etapes[cle].done is False, cle
+        assert etapes[cle].blocking is False, cle
+
+
+async def test_une_etape_non_bloquante_n_empeche_pas_l_activation(
+    session: AsyncSession,
+) -> None:
+    """La distinction n'est pas décorative.
+
+    Présenter comme obligatoire une étape qui ne l'est pas ferait renoncer des
+    commerces qui pouvaient déjà ouvrir.
+    """
+    business, proprietaire = await commerce_en_cours(session)
+
+    await service.activate_business(session, business=business, actor=Actor.from_user(proprietaire))
+
+    assert business.status is BusinessStatus.ACTIVE
+
+
+async def test_l_activation_refuse_exactement_ce_que_les_etapes_marquent_bloquant(
+    session: AsyncSession,
+) -> None:
+    """Le test de couplage.
+
+    On retire l'adresse, on lit la liste, on vérifie qu'elle marque
+    précisément cette étape non faite, puis que l'activation tombe sur elle.
+    Si les deux se mettaient à diverger, l'écran dirait « prêt » et le service
+    refuserait.
+    """
+    business, proprietaire = await commerce_en_cours(session)
+    await session.execute(
+        sa.update(Business).where(Business.id == business.id).values(address=None)
+    )
+    await session.refresh(business)
+
+    etapes = par_cle(await service.etapes_activation(session, business=business))
+    manquantes = {cle for cle, etape in etapes.items() if etape.blocking and not etape.done}
+    assert manquantes == {service.EtapeActivation.ADRESSE}
+
+    with pytest.raises(service.MissingAddress):
+        await service.activate_business(
+            session, business=business, actor=Actor.from_user(proprietaire)
+        )
+
+
+async def test_le_refus_nomme_la_seconde_condition_bloquante(session: AsyncSession) -> None:
+    """Le pendant du test précédent.
+
+    Sans lui, un `activate_business` qui lèverait toujours `MissingAddress`
+    passerait le premier sans rien garantir.
+    """
+    business, proprietaire = await commerce_en_cours(session)
+    await session.execute(sa.update(Business).where(Business.id == business.id).values(geo=None))
+    await session.refresh(business)
+
+    etapes = par_cle(await service.etapes_activation(session, business=business))
+    assert etapes[service.EtapeActivation.COORDONNEES].done is False
+    assert etapes[service.EtapeActivation.ADRESSE].done is True
+
+    with pytest.raises(service.MissingCoordinates):
+        await service.activate_business(
+            session, business=business, actor=Actor.from_user(proprietaire)
+        )
+
+
+async def test_les_etapes_de_visibilite_se_cochent_quand_elles_sont_faites(
+    session: AsyncSession,
+) -> None:
+    """Un commerce actif sans offre n'apparaît dans aucun fil.
+
+    Le taire produirait un commerce « activé » que personne ne voit et dont
+    personne ne comprend pourquoi.
+    """
+    business, _ = await commerce_en_cours(session)
+    item = await catalog_service.create_item(
+        session,
+        business=business,
+        payload=CatalogItemCreate(name="Soin visage", price_cents=8000, duration_minutes=60),
+    )
+    await tier_offer_service.create_offer(
+        session,
+        business_id=business.id,
+        payload=TierOfferCreate(tier_id=STORY, catalog_item_id=item.id),
+    )
+    await capacity_service.create_rule(
+        session,
+        business_id=business.id,
+        payload=CapacityRuleCreate(
+            weekday=0, start_time=time(8, 0), end_time=time(20, 0), concurrent_slots=2
+        ),
+    )
+
+    etapes = par_cle(await service.etapes_activation(session, business=business))
+
+    assert etapes[service.EtapeActivation.CATALOGUE].done is True
+    assert etapes[service.EtapeActivation.OFFRE_DE_PALIER].done is True
+    assert etapes[service.EtapeActivation.HORAIRES].done is True
+    assert etapes[service.EtapeActivation.PHOTO_DE_COUVERTURE].done is False
+
+
+async def test_une_offre_retiree_decoche_l_etape(session: AsyncSession) -> None:
+    """Le pendant : une étape qui se coche et ne se décoche jamais ne prouve rien."""
+    business, _ = await commerce_en_cours(session)
+    item = await catalog_service.create_item(
+        session,
+        business=business,
+        payload=CatalogItemCreate(name="Soin visage", price_cents=8000, duration_minutes=60),
+    )
+    offre = await tier_offer_service.create_offer(
+        session,
+        business_id=business.id,
+        payload=TierOfferCreate(tier_id=STORY, catalog_item_id=item.id),
+    )
+    assert par_cle(await service.etapes_activation(session, business=business))[
+        service.EtapeActivation.OFFRE_DE_PALIER
+    ].done
+
+    await session.execute(
+        sa.update(TierOffer).where(TierOffer.id == offre.id).values(is_active=False)
+    )
+    await session.flush()
+
+    etapes = par_cle(await service.etapes_activation(session, business=business))
+    assert etapes[service.EtapeActivation.OFFRE_DE_PALIER].done is False
+    # Et l'item, lui, est toujours là : les deux étapes ne se confondent pas.
+    assert etapes[service.EtapeActivation.CATALOGUE].done is True
+    assert await session.scalar(sa.select(sa.func.count()).select_from(CatalogItem)) >= 1
+
+
+async def test_la_route_exige_l_appartenance(client: AsyncClient, session: AsyncSession) -> None:
+    a, _ = await commerce_en_cours(session)
+    # `create_business` rattache déjà son créateur : l'ajouter à la main
+    # violerait l'unicité, et c'est bien ce que le commerce veut dire.
+    b, proprietaire_de_b = await commerce_en_cours(session)
+    await session.commit()
+
+    jetons = (
+        await client.post(
+            f"{PREFIX}/auth/login",
+            json={"email": proprietaire_de_b.email, "password": MOT_DE_PASSE},
+        )
+    ).json()
+    entetes = {"Authorization": f"Bearer {jetons['access_token']}"}
+
+    refuse = await client.get(f"{PREFIX}/business/{a.id}/activation", headers=entetes)
+    assert refuse.status_code == 403
+    assert refuse.json()["detail"] == "not_a_member"
+
+    accepte = await client.get(f"{PREFIX}/business/{b.id}/activation", headers=entetes)
+    assert accepte.status_code == 200, accepte.text
+    corps = accepte.json()
+    assert {e["cle"] for e in corps} == {e.value for e in service.EtapeActivation}
+    # Pas de pourcentage : « 2 étapes sur 4 » se comprend, « 50 % » ne dit pas
+    # laquelle manque.
+    assert all(set(e) == {"cle", "done", "blocking"} for e in corps)

@@ -28,6 +28,7 @@ class ErrorCode(StrEnum):
     NOT_A_MEMBER = "not_a_member"
 
     # Commerce
+    BUSINESS_NOT_FOUND = "business_not_found"
     BUSINESS_ALREADY_ACTIVE = "business_already_active"
     BUSINESS_MISSING_ADDRESS = "business_missing_address"
     BUSINESS_MISSING_COORDINATES = "business_missing_coordinates"
