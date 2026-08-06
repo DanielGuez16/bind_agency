@@ -34,7 +34,7 @@ async def scene(session: AsyncSession, **kwargs) -> dict:
     )
     booking = await reserver(session, decor, starts_at=creneau)
     await booking_states.confirmer(session, booking=booking, creator_id=decor["createur"].id)
-    code = await service.creer_code(session, booking=booking)
+    code = await service.code_du_booking(session, booking=booking)
 
     caissier = await auth_service.register(
         session,

@@ -1599,3 +1599,51 @@ connexions réelles.
 dans le corps et non dans le chemin : la dépendance de résolution ne peut pas le
 lire. Sans ce contrôle, une caisse lirait ce que le commerce voisin s'apprête à
 servir en scannant un écran par-dessus une épaule.
+
+---
+
+## 2026-08-06 — Code de secours, création déterministe, écran de caisse
+
+**Le code de secours passe à six caractères, groupés trois par trois.** Huit se
+dictaient mal au téléphone et se saisissaient mal sur un comptoir. Ce n'est pas
+la longueur qui protège : c'est que le code est **lié à une réservation**, à
+**usage unique**, à **durée courte** — il meurt avec le droit de consommer — et
+désormais **limité en tentatives**. Six caractères sur trente-deux symboles font
+un milliard de combinaisons ; quelques essais ratés ferment la porte bien avant
+qu'on en approche.
+
+Le compteur d'essais est écrit en base au moment du refus, et la route valide
+cette écriture avant de lever : sans cela il partirait avec la transaction
+annulée et ne compterait rien. Un essai qui aboutit le remet à zéro — sinon un
+code sain se fermerait après quelques scans ratés étalés sur plusieurs visites.
+
+**Le code naît à la confirmation, pas au premier affichage.** Une réservation
+confirmée sans ligne de code serait un cas particulier qui ressortirait partout :
+en reporting, en support, et le jour où le téléphone du créateur est vide de
+batterie et qu'il faut lui dicter son code au comptoir. Déterministe vaut mieux
+que paresseux.
+
+Conséquence relevée : `creer_code` réessayait cinq fois sur n'importe quelle
+violation d'unicité. Or un doublon de `booking_id` n'est pas une collision de
+code de secours — l'une se réessaie, l'autre signale qu'on appelle deux fois ce
+qui n'arrive qu'une. Les deux sont maintenant distinctes.
+
+**La saisie manuelle est le chemin de premier rang de l'écran de caisse**, pas un
+secours dégradé. Dans un salon, une caméra sale, un écran fissuré ou une lumière
+rasante arrivent tous les jours ; mettre le scanner au centre ferait perdre du
+temps à la caisse précisément les jours où elle en a le moins. Le champ est donc
+visible d'emblée, le scanner est l'autre onglet, et un onglet scanner sans
+caméra retombe sur la saisie en disant pourquoi.
+
+**Le scanner réel est injecté, et reste non vérifié.** Ni test ni simulateur ne
+fournissent de caméra. Tout ce qui pouvait l'être — saisie, vérification,
+service, enchaînement, refus traduits — est éprouvé derrière l'interface. Reste
+à valider à la main : autorisation refusée puis accordée, QR lu à contre-jour, et
+le fait qu'une seule lecture parte par présentation.
+
+**Trouvé en écrivant l'écran : `fireEvent` aussi est asynchrone.**
+@testing-library/react-native 14 a rendu `render` **et** `fireEvent` promissifs.
+Le premier avait coûté huit exécutions rouges ; le second faisait que les
+requêtes ne trouvaient plus le champ qu'elles venaient de remplir.
+`ecran.test.tsx` portait le défaut lui aussi. Le garde-fou couvre désormais les
+deux, et s'étend en ajoutant un nom à une liste.

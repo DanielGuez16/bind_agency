@@ -35,7 +35,10 @@ async def reservation_confirmee(session: AsyncSession, **kwargs):
 
 
 async def code_de(session: AsyncSession, booking: Booking) -> RedemptionCode:
-    return await service.creer_code(session, booking=booking)
+    """Le code existe depuis la confirmation : on le lit, on ne le recrée pas."""
+    code = await service.code_du_booking(session, booking=booking)
+    assert code is not None, "la confirmation aurait dû créer le code"
+    return code
 
 
 # --------------------------------------------------------------------------
@@ -323,3 +326,133 @@ async def test_une_reservation_confirmee_et_valide_est_consommable(
     await session.flush()
 
     service.etat_reservation_consommable(ligne)
+
+
+# --------------------------------------------------------------------------
+# ce qui protège vraiment le code de secours
+# --------------------------------------------------------------------------
+
+
+def test_le_code_de_secours_tient_en_six_caracteres_groupes() -> None:
+    """Il se dicte au téléphone et se tape sur un comptoir. Huit se perdaient
+    au milieu."""
+    assert service.LONGUEUR_SECOURS == 6
+    assert service.secours_lisible("4H29KX") == "4H2 9KX"
+
+
+async def test_le_code_de_secours_se_saisit_avec_ou_sans_groupement(
+    session: AsyncSession,
+) -> None:
+    """Il arrive écrit de toutes les façons : groupé, collé, en minuscules."""
+    ligne, _ = await reservation_confirmee(session)
+    code = await code_de(session, ligne)
+
+    for forme in (
+        code.manual_code,
+        service.secours_lisible(code.manual_code),
+        code.manual_code.lower(),
+        f"  {service.secours_lisible(code.manual_code).lower()}  ",
+        "-".join([code.manual_code[:3], code.manual_code[3:]]),
+    ):
+        verifie = await service.verifier(session, saisi=forme)
+        assert verifie.booking_id == ligne.id, forme
+
+
+async def test_les_essais_rates_ferment_le_code(session: AsyncSession) -> None:
+    """Ce n'est pas la longueur qui protège, c'est cette limite. Six caractères
+    sur trente-deux symboles font un milliard de combinaisons ; on n'en approche
+    jamais."""
+    ligne, _ = await reservation_confirmee(session)
+    code = await code_de(session, ligne)
+    maximum = get_settings().redemption_max_failed_attempts
+
+    for _ in range(maximum):
+        with pytest.raises(service.CodeUnknown):
+            await service.verifier(session, saisi=f"{code.id}:000000")
+
+    # Le bon code lui-même ne passe plus : la porte est fermée, pas seulement
+    # les mauvais essais.
+    with pytest.raises(service.TooManyAttempts):
+        await service.verifier(session, saisi=f"{code.id}:{service.code_affiche(code)}")
+    with pytest.raises(service.TooManyAttempts):
+        await service.verifier(session, saisi=code.manual_code)
+
+
+async def test_le_compteur_survit_a_l_annulation_du_refus(session: AsyncSession) -> None:
+    """L'appelant lève, donc sa transaction peut être annulée. Si le compteur
+    partait avec, la limite ne limiterait rien."""
+    ligne, _ = await reservation_confirmee(session)
+    code = await code_de(session, ligne)
+
+    with pytest.raises(service.CodeUnknown):
+        await service.verifier(session, saisi=f"{code.id}:000000")
+
+    compte = await session.scalar(
+        sa.select(RedemptionCode.failed_attempts).where(RedemptionCode.id == code.id)
+    )
+    assert compte == 1
+
+
+async def test_un_essai_qui_aboutit_remet_le_compteur_a_zero(session: AsyncSession) -> None:
+    """Sans cela, un code parfaitement sain se fermerait après quelques scans
+    ratés étalés sur plusieurs visites."""
+    ligne, _ = await reservation_confirmee(session)
+    code = await code_de(session, ligne)
+    maximum = get_settings().redemption_max_failed_attempts
+
+    for _ in range(maximum - 1):
+        with pytest.raises(service.CodeUnknown):
+            await service.verifier(session, saisi=f"{code.id}:000000")
+
+    await service.verifier(session, saisi=f"{code.id}:{service.code_affiche(code)}")
+
+    await session.refresh(code)
+    assert code.failed_attempts == 0
+    # Et la porte est bien rouverte pour de bon.
+    for _ in range(maximum - 1):
+        with pytest.raises(service.CodeUnknown):
+            await service.verifier(session, saisi=f"{code.id}:000000")
+    assert (await service.verifier(session, saisi=code.manual_code)).booking_id == ligne.id
+
+
+# --------------------------------------------------------------------------
+# le code naît à la confirmation
+# --------------------------------------------------------------------------
+
+
+async def test_le_code_existe_des_la_confirmation(session: AsyncSession) -> None:
+    """Déterministe vaut mieux que paresseux : une réservation confirmée sans
+    ligne de code serait un cas particulier qui ressortirait partout — en
+    reporting, en support, et le jour où le téléphone du créateur est vide."""
+    ligne, _ = await reservation_confirmee(session)
+
+    code = await service.code_du_booking(session, booking=ligne)
+    assert code is not None
+    assert len(code.manual_code) == service.LONGUEUR_SECOURS
+
+
+async def test_un_held_n_a_pas_encore_de_code(session: AsyncSession) -> None:
+    """Le pendant : une réservation abandonnée avant confirmation n'a jamais eu
+    besoin de code, et son secret n'a pas de raison d'exister."""
+    from tests.test_booking_create import monter_le_decor, premier_creneau, reserver
+
+    decor = await monter_le_decor(session)
+    creneau = await premier_creneau(session, decor)
+    ligne = await reserver(session, decor, starts_at=creneau)
+
+    assert ligne.status is BookingStatus.HELD
+    assert await service.code_du_booking(session, booking=ligne) is None
+
+
+async def test_confirmer_deux_fois_ne_crée_pas_deux_codes(session: AsyncSession) -> None:
+    ligne, decor = await reservation_confirmee(session)
+
+    with pytest.raises(booking_states.TransitionNotAllowed):
+        await booking_states.confirmer(session, booking=ligne, creator_id=decor["createur"].id)
+
+    combien = await session.scalar(
+        sa.select(sa.func.count())
+        .select_from(RedemptionCode)
+        .where(RedemptionCode.booking_id == ligne.id)
+    )
+    assert combien == 1

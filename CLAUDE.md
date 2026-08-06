@@ -102,6 +102,7 @@ npx expo start
 - Une contrainte se teste dans les deux sens. Celle qui refuse tout passe le test de refus sans rien garantir
 - Le jeu de données de départ ne pose jamais à la main une valeur qu'un mécanisme du produit doit produire. Un profil, un compteur, un score s'obtiennent en appelant le service qui les crée. Une valeur posée directement masque l'absence du mécanisme et rend le jeu de données inutile comme test
 - Quand un test vérifie un ensemble vide, se demander si le vide est le bon résultat ou le symptôme
+- Un champ accepté par un schéma et ignoré par le service est un défaut, pas une omission : l'appelant reçoit un 200 et croit avoir enregistré. Refuser explicitement vaut mieux qu'ignorer en silence
 
 ---
 

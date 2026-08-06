@@ -11,10 +11,16 @@ pour franchir une frontière de fenêtre. Accepter la fenêtre précédente évi
 refus incompréhensible. Accepter la suivante ne servirait à rien — personne ne
 scanne un code du futur — et doublerait la surface.
 
-**`manual_code` est un secours, pas un raccourci.** La caméra tombe en panne,
-l'écran du créateur est cassé, la lumière est mauvaise : sans lui le commerce
-renvoie quelqu'un. Il est à usage unique et beaucoup plus long à deviner que six
-chiffres, parce qu'il ne tourne pas.
+**`manual_code` est un chemin de premier rang, pas un secours dégradé.** Dans
+un salon, une caméra sale ou un écran fissuré arrive tous les jours. Il se dicte
+au téléphone et se tape sur un comptoir : six caractères, groupés trois par
+trois.
+
+Ce qui le protège n'est pas sa longueur. C'est qu'il est **lié à une
+réservation**, à **usage unique**, à **durée courte** — il meurt avec le droit
+de consommer — et **limité en tentatives**. Six caractères sur un alphabet de
+trente-deux font un milliard de combinaisons ; quelques essais ratés ferment la
+porte bien avant qu'on en approche.
 
 **La comparaison est à temps constant.** Comparer deux codes avec `==` fuit leur
 préfixe commun par le temps de retour ; sur un code à six chiffres qu'on peut
@@ -45,10 +51,18 @@ LONGUEUR_CODE = 6
 #: haute et se saisit à la main, deux situations où ces caractères se
 #: confondent. Le retirer coûte quatre symboles et évite des refus absurdes.
 ALPHABET_SECOURS = "".join(c for c in string.ascii_uppercase + string.digits if c not in "IO01")
-LONGUEUR_SECOURS = 8
+
+#: Six caractères, groupés trois par trois à l'affichage. Huit se dictaient mal
+#: au téléphone et se saisissaient mal sur un comptoir — et la longueur n'est
+#: pas ce qui protège ici.
+LONGUEUR_SECOURS = 6
+TAILLE_GROUPE = 3
 
 #: Nombre d'octets du secret. Trente-deux : la clé d'un HMAC-SHA256.
 OCTETS_SECRET = 32
+
+#: Tirages avant d'abandonner sur collision de code de secours.
+ESSAIS_DE_TIRAGE = 5
 
 
 class RedemptionError(Exception):
@@ -70,6 +84,15 @@ class CodeAlreadyConsumed(RedemptionError):
 
 class BookingNotRedeemable(RedemptionError):
     """La réservation n'est pas dans un état qui permette de consommer."""
+
+
+class TooManyAttempts(RedemptionError):
+    """Trop d'essais infructueux sur cette réservation.
+
+    C'est cette limite, et non la longueur du code, qui rend le devinage
+    impossible : quelques essais ratés ferment la porte longtemps avant qu'on
+    approche du milliard de combinaisons.
+    """
 
 
 @dataclass(frozen=True, slots=True)
@@ -104,15 +127,31 @@ def deriver(secret: bytes, booking_id: uuid.UUID, fenetre: int) -> str:
     return str(tronque % (10**LONGUEUR_CODE)).zfill(LONGUEUR_CODE)
 
 
-async def creer_code(session: AsyncSession, *, booking: Booking) -> RedemptionCode:
-    """Un code par réservation, créé une fois.
+class CodeAlreadyExists(RedemptionError):
+    """Cette réservation a déjà son code.
 
-    Le code de secours est retiré au hasard et réessayé en cas de collision :
-    l'unicité est en base, pas dans un pari sur l'entropie.
+    Distingué d'une collision de code de secours : l'une se réessaie, l'autre
+    signale qu'on appelle deux fois ce qui n'arrive qu'une. Les confondre ferait
+    tirer cinq codes au hasard pour finir par un message qui ne dit rien.
+    """
+
+
+async def creer_code(session: AsyncSession, *, booking: Booking) -> RedemptionCode:
+    """Le code d'une réservation, créé à sa confirmation.
+
+    Le code de secours est tiré au hasard et retiré en cas de collision :
+    l'unicité est en base, pas dans un pari sur l'entropie. Six caractères sur
+    trente-deux symboles rendent la collision rare, pas impossible.
     """
     settings = get_settings()
 
-    for _ in range(5):
+    deja = await session.scalar(
+        sa.select(RedemptionCode.id).where(RedemptionCode.booking_id == booking.id)
+    )
+    if deja is not None:
+        raise CodeAlreadyExists(str(booking.id))
+
+    for _ in range(ESSAIS_DE_TIRAGE):
         code = RedemptionCode(
             booking_id=booking.id,
             secret=secrets.token_bytes(OCTETS_SECRET),
@@ -127,20 +166,22 @@ async def creer_code(session: AsyncSession, *, booking: Booking) -> RedemptionCo
             continue
         return code
 
-    raise RuntimeError("impossible de tirer un code de secours libre en cinq essais")
+    raise RuntimeError(
+        f"aucun code de secours libre en {ESSAIS_DE_TIRAGE} tirages — "
+        "l'espace de codes est-il saturé ?"
+    )
 
 
-async def code_du_booking(session: AsyncSession, *, booking: Booking) -> RedemptionCode:
-    """Le code de cette réservation, créé au premier appel.
+async def code_du_booking(session: AsyncSession, *, booking: Booking) -> RedemptionCode | None:
+    """Le code de cette réservation. Il existe depuis la confirmation.
 
-    Créé à la demande plutôt qu'à la réservation : une réservation annulée avant
-    confirmation n'a jamais besoin de code, et le secret d'un code que personne
-    n'a montré n'a pas de raison d'exister.
+    Rien n'est créé ici : une réservation confirmée sans ligne de code serait un
+    cas particulier qui ressortirait partout — en reporting, en support, et le
+    jour où le téléphone du créateur est vide de batterie.
     """
-    existant = await session.scalar(
+    return await session.scalar(
         sa.select(RedemptionCode).where(RedemptionCode.booking_id == booking.id)
     )
-    return existant if existant is not None else await creer_code(session, booking=booking)
 
 
 async def booking_du_code(
@@ -161,6 +202,17 @@ def code_affiche(code: RedemptionCode, *, maintenant: datetime | None = None) ->
     """Ce que le créateur voit à l'instant présent."""
     maintenant = maintenant or datetime.now(UTC)
     return deriver(code.secret, code.booking_id, _fenetre(maintenant, code.rotation_seconds))
+
+
+def secours_lisible(manual_code: str) -> str:
+    """Le code de secours, groupé pour être lu à voix haute et recopié.
+
+    `4H2 9KX` se dicte ; `4H29KX` se perd au milieu. Le groupement est un
+    artefact d'affichage : la saisie l'accepte avec ou sans espace.
+    """
+    return " ".join(
+        manual_code[i : i + TAILLE_GROUPE] for i in range(0, len(manual_code), TAILLE_GROUPE)
+    )
 
 
 def secondes_restantes(code: RedemptionCode, *, maintenant: datetime | None = None) -> int:
@@ -204,6 +256,13 @@ async def verifier(
     if code.consumed_at is not None:
         raise CodeAlreadyConsumed(str(code.id))
 
+    # Le compteur est remis à zéro : cet essai a abouti. Le laisser courir
+    # fermerait un code parfaitement sain après quelques scans ratés étalés sur
+    # plusieurs visites.
+    if code.failed_attempts:
+        code.failed_attempts = 0
+        await session.flush()
+
     booking = await session.get(Booking, code.booking_id)
     if booking is None:
         raise CodeUnknown(saisi)
@@ -226,16 +285,46 @@ async def _reconnaitre(
         except ValueError as error:
             raise CodeUnknown(saisi) from error
 
-        if code is None or not _correspond(code, chiffres, maintenant):
+        if code is None:
+            raise CodeUnknown(saisi)
+
+        _refuser_si_epuise(code)
+        if not _correspond(code, chiffres, maintenant):
+            await _compter_un_echec(session, code)
             raise CodeUnknown(saisi)
         return code, False
 
+    # Espaces et casse ignorés : le code est groupé à l'affichage et dicté à
+    # voix haute, il arrive écrit de toutes les façons.
+    normalise = saisi.replace(" ", "").replace("-", "").upper()
     code = await session.scalar(
-        sa.select(RedemptionCode).where(RedemptionCode.manual_code == saisi.upper())
+        sa.select(RedemptionCode).where(RedemptionCode.manual_code == normalise)
     )
     if code is None:
         raise CodeUnknown(saisi)
+
+    _refuser_si_epuise(code)
     return code, True
+
+
+def _refuser_si_epuise(code: RedemptionCode) -> None:
+    if code.failed_attempts >= get_settings().redemption_max_failed_attempts:
+        raise TooManyAttempts(str(code.id))
+
+
+async def _compter_un_echec(session: AsyncSession, code: RedemptionCode) -> None:
+    """Incrémente en base, pas en mémoire.
+
+    L'appelant va lever, donc sa transaction sera peut-être annulée : le
+    compteur doit survivre au refus, sinon il ne compte rien. C'est à la route
+    de valider cette écriture, comme pour la bascule d'un compte social expiré.
+    """
+    await session.execute(
+        sa.update(RedemptionCode)
+        .where(RedemptionCode.id == code.id)
+        .values(failed_attempts=RedemptionCode.failed_attempts + 1)
+    )
+    await session.flush()
 
 
 async def marquer_consomme(

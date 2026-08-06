@@ -94,6 +94,7 @@ class ErrorCode(StrEnum):
     REDEMPTION_CODE_UNKNOWN = "redemption_code_unknown"
     REDEMPTION_CODE_ALREADY_CONSUMED = "redemption_code_already_consumed"
     REDEMPTION_BOOKING_NOT_REDEEMABLE = "redemption_booking_not_redeemable"
+    REDEMPTION_TOO_MANY_ATTEMPTS = "redemption_too_many_attempts"
 
     # Transverses
     VALIDATION_FAILED = "validation_failed"

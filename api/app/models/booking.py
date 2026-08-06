@@ -215,8 +215,17 @@ class RedemptionCode(UUIDPrimaryKey, Base):
         sa.ForeignKey("app_user.id", ondelete="SET NULL"), nullable=True
     )
 
+    # Essais infructueux sur ce code. C'est cette limite, et non la longueur du
+    # code de secours, qui rend le devinage impossible : quelques essais ratés
+    # ferment la porte longtemps avant qu'on approche du milliard de
+    # combinaisons. Remis à zéro dès qu'un essai aboutit.
+    failed_attempts: Mapped[int] = mapped_column(
+        sa.Integer, nullable=False, server_default=sa.text("0")
+    )
+
     __table_args__ = (
         sa.UniqueConstraint("booking_id"),
         sa.UniqueConstraint("manual_code"),
         sa.CheckConstraint("rotation_seconds > 0", name="rotation_seconds_positive"),
+        sa.CheckConstraint("failed_attempts >= 0", name="failed_attempts_positive"),
     )

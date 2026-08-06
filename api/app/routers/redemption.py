@@ -46,6 +46,10 @@ _CODES = {
         status.HTTP_409_CONFLICT,
         ErrorCode.REDEMPTION_BOOKING_NOT_REDEEMABLE,
     ),
+    service.TooManyAttempts: (
+        status.HTTP_429_TOO_MANY_REQUESTS,
+        ErrorCode.REDEMPTION_TOO_MANY_ATTEMPTS,
+    ),
 }
 
 
@@ -90,14 +94,18 @@ async def read_code(
         raise _traduire(error) from error
 
     code = await service.code_du_booking(session, booking=booking)
-    await session.commit()
+    if code is None:
+        # Ne devrait pas arriver : le code naît à la confirmation, et cette
+        # route exige une réservation confirmée. Le dire vaut mieux que rendre
+        # une réponse à moitié vide.
+        raise api_error(status.HTTP_404_NOT_FOUND, ErrorCode.REDEMPTION_CODE_UNKNOWN)
 
     affiche = service.code_affiche(code)
     return CodeAffiche(
         booking_id=booking.id,
         payload=f"{code.id}:{affiche}",
         code=affiche,
-        manual_code=code.manual_code,
+        manual_code=service.secours_lisible(code.manual_code),
         seconds_remaining=service.secondes_restantes(code),
         rotation_seconds=code.rotation_seconds,
     )
@@ -115,6 +123,10 @@ async def verify(
     try:
         verifie = await service.verifier(session, saisi=payload.code)
     except service.RedemptionError as error:
+        # L'essai raté est compté, et le compte doit survivre au refus : sans
+        # cette validation, la limite ne limiterait rien. Même règle que pour la
+        # bascule d'un compte social dont le jeton est refusé.
+        await session.commit()
         raise _traduire(error) from error
 
     await _exiger_appartenance(session, user, verifie.business_id)

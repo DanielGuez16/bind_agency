@@ -163,6 +163,9 @@ class Settings(BaseSettings):
     #: fenêtre : le temps qu'un créateur montre son écran et qu'un commerce
     #: scanne, on franchit parfois une frontière.
     redemption_rotation_seconds: int = 30
+    #: Essais infructueux tolérés sur un même code avant fermeture. C'est cette
+    #: limite qui protège le code de secours, pas sa longueur.
+    redemption_max_failed_attempts: int = 5
 
     # Lue uniquement par la session pytest, jamais par l'application.
     # Sa présence est vérifiée dans tests/conftest.py, qui refuse de tourner sans.

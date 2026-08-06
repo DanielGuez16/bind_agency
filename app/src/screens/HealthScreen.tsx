@@ -90,8 +90,7 @@ export function HealthScreen({ apiUrl = DEFAULT_API_URL }: { apiUrl?: string }) 
           {Object.entries(probe.body.dependencies).map(([name, state]) => (
             <Text key={name} style={styles.dependency}>
               {/* `name` vient du serveur et n'est pas un libellé d'interface. */}
-              {name} ·{' '}
-              {state === 'ok' ? t('health.dependencyOk') : t('health.dependencyDown')}
+              {name} · {state === 'ok' ? t('health.dependencyOk') : t('health.dependencyDown')}
             </Text>
           ))}
         </View>
