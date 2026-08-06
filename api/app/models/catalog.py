@@ -44,11 +44,15 @@ class CatalogItem(UUIDPrimaryKey, CreatedAt, Base):
         nullable=False,
         server_default=CatalogItemSource.MANUAL.value,
     )
+    # `clock_timestamp()` des deux côtés. Avec `now()`, une ligne créée puis
+    # modifiée dans la même transaction se retrouvait avec `updated_at`
+    # antérieur à son `created_at` : l'heure d'ouverture de la transaction est
+    # forcément avant celle de l'instruction qui a créé la ligne.
     updated_at: Mapped[datetime] = mapped_column(
         sa.DateTime(timezone=True),
         nullable=False,
-        server_default=sa.func.now(),
-        onupdate=sa.func.now(),
+        server_default=sa.text("clock_timestamp()"),
+        onupdate=sa.text("clock_timestamp()"),
     )
 
     __table_args__ = (

@@ -30,8 +30,10 @@ class ReliabilityEvent(UUIDPrimaryKey, Base):
     )
     # Numeric et non flottant : le recalcul du score doit être reproductible.
     weight: Mapped[Decimal] = mapped_column(sa.Numeric(6, 3), nullable=False)
+    # Journal d'événements : le score se calcule dessus, dans l'ordre. Une
+    # collaboration qui se termine en émettra plusieurs d'un coup.
     occurred_at: Mapped[datetime] = mapped_column(
-        sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
+        sa.DateTime(timezone=True), nullable=False, server_default=sa.text("clock_timestamp()")
     )
 
     __table_args__ = (

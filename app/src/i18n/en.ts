@@ -63,6 +63,7 @@ export const en = {
     social_account_not_active: 'This social account needs to be reconnected before we can refresh it.',
     social_token_expired: 'Instagram no longer accepts our access to this account. Reconnect it to keep collaborating.',
     metrics_refresh_too_soon: 'Your stats were refreshed recently. Try again a bit later.',
+    verification_transition_not_allowed: 'This account is already in that state.',
     not_found: 'We could not find what you were looking for.',
     internal_error: 'Something went wrong on our side.',
   },

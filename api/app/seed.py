@@ -408,9 +408,11 @@ async def _creator(
 
     Rien n'est posé à la main. Le profil est celui que `register` crée, le
     compte social celui que le parcours OAuth produit, le relevé celui que le
-    service de métriques écrit. Ce que le produit ne sait pas encore fabriquer
-    n'apparaît donc pas — notamment le score de fiabilité, le compteur de
-    collaborations, et la vérification de cohérence du compte : voir la liste
+    service de métriques écrit — et c'est ce relevé qui déclenche le contrôle
+    de cohérence, d'où le `verified` obtenu sans intervention.
+
+    Ce que le produit ne sait pas encore fabriquer n'apparaît toujours pas :
+    ni score de fiabilité, ni compteur de collaborations, ni nom. Voir la liste
     des trous dans `DECISIONS.md`.
     """
     user = await auth_service.register(
@@ -583,13 +585,13 @@ def main() -> int:
     print(f"Mot de passe de tous les comptes : {MOT_DE_PASSE}")
 
     if resume.paliers_accessibles == 0:
-        # Volontairement affiché, et pas seulement consigné : le jeu de données
-        # dit ce que le produit sait faire, et aujourd'hui il ne sait pas rendre
-        # un créateur éligible. Tant que rien ne fait passer un compte social en
-        # `verified`, tout créateur reste bloqué sur `account_under_review`.
+        # Garde-fou, pas constat : depuis que le contrôle de cohérence existe,
+        # les trois créateurs accèdent à des paliers. Zéro voudrait dire qu'une
+        # régression a refermé le côté créateur, et c'est le genre de chose qui
+        # se découvre trois semaines plus tard si personne ne la crie.
         print(
-            "Aucun créateur n'accède à un palier : rien ne vérifie encore la "
-            "cohérence des comptes sociaux. Voir DECISIONS.md."
+            "Aucun créateur n'accède à un palier : le contrôle de cohérence ne "
+            "prononce plus rien. Voir DECISIONS.md."
         )
     return 0
 

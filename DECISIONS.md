@@ -968,3 +968,106 @@ start, et il échouera quand la phase 8 arrivera — c'est voulu, ce jour-là le
 de données doit changer. L'autre est neuf et énonce le trou n° 1 : aucun compte
 social du jeu n'est `verified`. La commande le dit aussi à voix haute en fin
 d'exécution, parce qu'un trou consigné dans un fichier ne se voit pas.
+
+---
+
+## 2026-08-06 — `clock_timestamp()` partout
+
+Deuxième fois que `now()` mord — après `audit_log.occurred_at` puis
+`social_metrics_snapshot.captured_at` — donc revue de toutes les colonnes
+plutôt qu'une correction de plus. La règle est entrée dans `CLAUDE.md`.
+
+Quatorze colonnes passent de `now()` à `clock_timestamp()`, dont neuf par le
+mixin `CreatedAt` qu'elles partagent. **Deux défauts étaient présents en base**,
+tous deux sur des colonnes qu'un service trie :
+
+- les dix `tier_offer` du jeu de données portaient un seul `created_at`, et
+  `list_offers` ordonne dessus ;
+- les trois `social_account` du jeu portaient un seul `connected_at`, et
+  `list_accounts` ordonne dessus.
+
+Dans les deux cas l'ordre rendu à l'application dépendait du plan d'exécution.
+
+`catalog_item.updated_at` avait un troisième défaut, plus discret : une ligne
+créée puis modifiée dans la même transaction se retrouvait avec un `updated_at`
+antérieur à son `created_at`, l'heure d'ouverture de la transaction étant
+forcément avant celle de l'instruction qui a créé la ligne.
+
+Aucune donnée existante n'est réécrite : seule la valeur par défaut change.
+
+---
+
+## 2026-08-06 — Vérification de cohérence du profil
+
+**Le contrôle s'exécute après un relevé de métriques réussi**, et il est appelé
+depuis le service de métriques, pas depuis la route. Sans snapshot il n'aurait
+rien à regarder ; et un enchaînement posé dans une route ne vaudrait que pour
+cette route, alors que le job planifié devra le déclencher aussi.
+
+**Trois issues, et une seule s'obtient sans humain.** `verified` est prononcé
+automatiquement, `rejected` ne l'est jamais. Un rejet définitif prononcé par une
+heuristique sur un vrai créateur est une perte sèche que personne ne rattrape :
+il ne réessaiera pas. Tout ce qui n'est pas net reste en `needs_review` et
+remonte dans la file d'administration, qui seule prononce le rejet.
+
+**Chaque signal produit un verdict nommé, pas un score agrégé**, pour la même
+raison que les obstacles d'éligibilité : un score dirait « 0,62 » et personne ne
+saurait quoi en faire, cinq verdicts nommés disent lequel a bloqué.
+
+**Deux façons distinctes de ne pas se prononcer**, nommées séparément :
+`ignore_mecanisme_absent` — le produit ne sait pas encore mesurer ce signal,
+c'est un trou chez nous — et `ignore_historique_insuffisant` — le produit sait
+le mesurer, ce compte n'a pas encore de quoi, c'est au temps de faire son
+travail. Les confondre ferait chercher un bug là où il n'y a que de la patience
+à avoir. Même découpage que les deux branches nulles de `VerdictScore`.
+
+**`verified` demande deux conditions, pas une** : aucun signal manqué, **et au
+moins un signal jugé**. Sans la seconde, un compte dont rien n'est mesurable
+passerait par vacuité — « aucun signal n'a échoué » serait vrai précisément
+parce qu'aucun n'a été examiné. C'est le réflexe sur l'ensemble vide : ici le
+vide est le symptôme, pas le résultat.
+
+**État des cinq signaux de `SPEC.md` §3.2 aujourd'hui.** Un seul est pleinement
+mesurable, et c'est dit plutôt que masqué :
+
+| Signal | État | Ce qui manque |
+|---|---|---|
+| Ancienneté / première publication | `ignore_mecanisme_absent` | `/me` ne les donne pas ; relevé des publications |
+| Volume de publication | **jugé** | — |
+| Régularité de publication | jugé dès deux relevés espacés | approximation par différence de compteurs |
+| Engagement | `ignore_mecanisme_absent` | `engagement_rate` nul tant que les publications ne sont pas relevées |
+| Nom déclaré | `ignore_mecanisme_absent` | tâche « Profil créateur en écriture » |
+
+La régularité est mesurée sur la progression du nombre de publications entre le
+premier et le dernier relevé. C'est une approximation assumée — la vraie
+régularité se lit sur les dates des publications — mais elle se calcule avec ce
+que nous avons, et c'est elle qui donne son sens à la réexécution : un compte
+examiné trop tôt n'est pas condamné, il est ajourné.
+
+**La comparaison du nom est écrite avant la route qui l'alimentera**, et
+éprouvée directement. Le jour où le profil s'écrit, le signal compte sans qu'une
+ligne change. Elle est volontairement permissive — un fragment du nom présent
+dans le pseudonyme suffit — parce qu'elle vise l'usurpation grossière et non
+l'état civil : la plupart des créateurs ont un pseudonyme de scène, et les faire
+tous passer en revue rendrait la file inutilisable. Conséquence acceptée : un
+fragment court peut se reconnaître par hasard dans un mot plus long. Le signal
+penchant du côté permissif, une reconnaissance de trop coûte moins cher qu'un
+vrai créateur envoyé en revue.
+
+**Le contrôle ne descend jamais.** Un compte `verified` garde son statut même si
+un relevé ultérieur le ferait échouer ; un compte `rejected` n'est pas relevé
+par une réexécution, sans quoi la machine défairait la décision d'un
+administrateur. La file d'administration est le seul chemin descendant.
+
+**Les constats partent au journal avec la transition.** Les seuils bougeront ;
+sans cette trace, une décision passée deviendrait inexplicable — on relirait la
+règle d'aujourd'hui en croyant relire celle qui a tranché.
+
+**Le jeu de données atteint `verified` par le mécanisme.** Les trois créateurs y
+arrivent sans intervention, chacun avec sa ligne de journal `needs_review →
+verified`, acteur `system`, motif renseigné. Ils accèdent respectivement à 3, 2
+et 1 paliers, selon leurs abonnés seuls. Le statut n'est toujours pas posé : il
+est obtenu. Le test du jeu de données qui affirmait l'inverse à la tâche
+précédente — « aucun créateur n'accède à un palier » — était le bon constat à ce
+moment-là, et affirme maintenant le contraire pour la même raison : il décrit ce
+que le produit sait faire.

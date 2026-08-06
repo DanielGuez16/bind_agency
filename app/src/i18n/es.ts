@@ -60,6 +60,7 @@ export const es: Catalogue = {
     social_account_not_active: 'Esta cuenta social debe volver a conectarse antes de poder actualizarla.',
     social_token_expired: 'Instagram ya no acepta nuestro acceso a esta cuenta. Vuelve a conectarla para seguir colaborando.',
     metrics_refresh_too_soon: 'Tus estadísticas se actualizaron hace poco. Inténtalo de nuevo más tarde.',
+    verification_transition_not_allowed: 'Esta cuenta ya se encuentra en ese estado.',
     not_found: 'No hemos encontrado lo que buscabas.',
     internal_error: 'Algo ha salido mal por nuestra parte.',
   },
