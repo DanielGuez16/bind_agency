@@ -373,6 +373,10 @@ async def test_activer_deux_fois_est_refuse(client: AsyncClient) -> None:
     assert response.status_code == 409
     assert response.json()["detail"] == "business_already_active"
 
+    relu = await client.get(f"{PREFIX}/business/{cree['id']}", headers=membre["headers"])
+    assert relu.status_code == 200
+    assert relu.json()["status"] == BusinessStatus.ACTIVE.value
+
 
 async def test_un_commerce_actif_ne_peut_pas_perdre_ses_coordonnees(
     client: AsyncClient, conn: AsyncConnection
