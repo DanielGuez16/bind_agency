@@ -1,8 +1,22 @@
 name: CI
 
 on:
+  # `push` limité à `main` : sur une branche de travail ouverte en PR, l'événement
+  # `pull_request` valide déjà exactement le même code. Sans cette restriction,
+  # chaque poussée déclenchait **deux** exécutions, donc quatre jobs concurrents
+  # dont deux redondants — et sur un compte à concurrence limitée, les jobs qui
+  # attendent un runner plus de quinze minutes sont abandonnés sans avoir
+  # exécuté la moindre étape. C'est ce qui s'est produit.
   push:
+    branches: [main]
   pull_request:
+
+# Une seule exécution vivante par référence. Une poussée qui en suit une autre
+# annule la précédente au lieu de se mettre en file derrière elle : la file
+# était la cause de l'abandon, pas la lenteur des tests.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   api:
