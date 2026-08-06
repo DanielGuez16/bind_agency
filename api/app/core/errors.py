@@ -32,6 +32,15 @@ class ErrorCode(StrEnum):
     BUSINESS_MISSING_ADDRESS = "business_missing_address"
     BUSINESS_MISSING_COORDINATES = "business_missing_coordinates"
 
+    # Catalogue
+    CATALOG_ITEM_NOT_FOUND = "catalog_item_not_found"
+    CATALOG_DURATION_MISMATCH = "catalog_duration_mismatch"
+    CATALOG_ITEM_HAS_BOOKINGS = "catalog_item_has_bookings"
+    CATALOG_ITEM_LOCKED_BY_BOOKINGS = "catalog_item_locked_by_bookings"
+    CATALOG_PARENT_NOT_FOUND = "catalog_parent_not_found"
+    CATALOG_PARENT_MUST_NOT_BE_BOOKABLE = "catalog_parent_must_not_be_bookable"
+    CATALOG_VARIANT_DEPTH_EXCEEDED = "catalog_variant_depth_exceeded"
+
     # Transverses
     VALIDATION_FAILED = "validation_failed"
     NOT_FOUND = "not_found"
