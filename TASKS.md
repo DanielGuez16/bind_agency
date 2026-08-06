@@ -95,7 +95,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
 
 ## Phase 5 — Découverte et réservation
 
-- [ ] Calcul de disponibilité à la volée
+- [x] Calcul de disponibilité à la volée
       *Fin : tests couvrant chevauchement, postes multiples, exception de fermeture*
 - [ ] Fil géolocalisé, seuls les items réellement réservables apparaissent
       *Fin : un item indisponible ou sans créneau n'apparaît jamais, et un item désactivé — directement ou par son parent — n'apparaît jamais dans le fil*

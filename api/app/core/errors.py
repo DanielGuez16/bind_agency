@@ -38,6 +38,7 @@ class ErrorCode(StrEnum):
     CATALOG_ITEM_HAS_BOOKINGS = "catalog_item_has_bookings"
     CATALOG_ITEM_LOCKED_BY_BOOKINGS = "catalog_item_locked_by_bookings"
     CATALOG_PARENT_NOT_FOUND = "catalog_parent_not_found"
+    CATALOG_ITEM_NOT_BOOKABLE = "catalog_item_not_bookable"
     CATALOG_PARENT_MUST_NOT_BE_BOOKABLE = "catalog_parent_must_not_be_bookable"
     CATALOG_VARIANT_DEPTH_EXCEEDED = "catalog_variant_depth_exceeded"
 

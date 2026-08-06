@@ -50,6 +50,8 @@ export const en = {
     business_missing_coordinates: 'Add the business location before going live.',
     catalog_duration_mismatch:
       'A bookable item needs a duration, and an item that is not bookable must not have one.',
+    catalog_item_not_bookable:
+      'This item does not use time slots. It is valid for a period instead.',
     catalog_item_not_found: 'This item is not in your catalogue.',
     catalog_item_has_bookings: 'This item has bookings and cannot be deleted. Turn it off instead.',
     catalog_item_locked_by_bookings:

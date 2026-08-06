@@ -96,7 +96,7 @@ async def new_catalog_item(
         "name": "Soin visage",
         "price_cents": 8000,
         "requires_booking": requires_booking,
-        "duration_minutes": 60 if requires_booking else None,
+        "duration_minutes": DUREE_PAR_DEFAUT if requires_booking else None,
     } | overrides
     result = await conn.execute(sa.insert(CatalogItem).values(**values).returning(CatalogItem.id))
     return result.scalar_one()
@@ -145,13 +145,22 @@ async def new_tier_offer(
     return result.scalar_one()
 
 
+#: Durée par défaut d'un item réservable dans les fabriques. La réservation
+#: porte la sienne, et la clé étrangère composite exige qu'elles coïncident.
+DUREE_PAR_DEFAUT = 60
+
+
 def booking_values(*, requires_booking: bool = True, **overrides: Any) -> dict[str, Any]:
     """Valeurs valides pour une réservation. Les tests n'écrasent que ce qu'ils visent."""
     now = datetime.now(UTC)
+    duree = DUREE_PAR_DEFAUT if requires_booking else None
+    debut = now + timedelta(days=1) if requires_booking else None
     values: dict[str, Any] = {
         "requires_booking": requires_booking,
-        "starts_at": now + timedelta(days=1) if requires_booking else None,
-        "ends_at": now + timedelta(days=1, hours=1) if requires_booking else None,
+        "duration_minutes": duree,
+        "starts_at": debut,
+        # `ends_at` se déduit de la durée : la base vérifie qu'ils coïncident.
+        "ends_at": debut + timedelta(minutes=duree) if debut else None,
         "valid_until": now + timedelta(days=7),
         "status": BookingStatus.CONFIRMED,
         "value_cents_snapshot": 8000,

@@ -78,6 +78,16 @@ class CatalogItem(UUIDPrimaryKey, CreatedAt, Base):
             name="fk_catalog_item_parent_business",
             ondelete="CASCADE",
         ),
+        # Cible de la clé étrangère composite de `booking`. `duration_minutes`
+        # y figure pour que la durée réservée ne puisse pas être réécrite
+        # après coup — même mécanisme que pour `requires_booking`.
+        sa.UniqueConstraint(
+            "id",
+            "business_id",
+            "requires_booking",
+            "duration_minutes",
+            name="uq_catalog_item_bookable_shape",
+        ),
         sa.Index("ix_catalog_item_business_id_is_available", "business_id", "is_available"),
     )
 
