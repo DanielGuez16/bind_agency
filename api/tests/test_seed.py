@@ -30,11 +30,19 @@ from app.models import (
     CapacityRule,
     CatalogItem,
     CreatorProfile,
+    SocialAccount,
+    SocialMetricsSnapshot,
     Tier,
     TierOffer,
     User,
 )
-from app.models.enums import BusinessMemberRole, BusinessStatus, UserRole
+from app.models.enums import (
+    BusinessMemberRole,
+    BusinessStatus,
+    SocialAccountStatus,
+    UserRole,
+    VerificationStatus,
+)
 from app.seed import MOT_DE_PASSE, SeedRefused
 from tests.conftest import _maintenance_dsn
 
@@ -208,28 +216,49 @@ async def test_une_fermeture_et_une_journee_amenagee(seed_conn: AsyncConnection)
     assert amenagee.concurrent_slots is not None
 
 
-async def test_un_createur_sans_historique_pour_le_cold_start(
-    seed_conn: AsyncConnection,
-) -> None:
-    """`reliability_score` nul veut dire neutre, pas zéro."""
-    sans_historique = (
+async def test_tous_les_createurs_sont_en_cold_start(seed_conn: AsyncConnection) -> None:
+    """Et ce n'est pas un choix de mise en scène : c'est le seul état que le
+    produit sache produire aujourd'hui.
+
+    Ce test affirmait auparavant l'inverse — « au moins un créateur a un
+    historique » — et il passait, parce que le jeu de données posait les scores
+    à la main. Il validait une fiction. Rien n'écrit encore `reliability_score`
+    ni `completed_collabs_count` : c'est la phase 8.
+
+    Il échouera le jour où le mécanisme arrivera, et c'est voulu : ce jour-là,
+    le jeu de données doit changer.
+    """
+    profils = (
         await seed_conn.execute(
-            sa.select(CreatorProfile.completed_collabs_count, CreatorProfile.is_new_creator).where(
-                CreatorProfile.reliability_score.is_(None)
+            sa.select(
+                CreatorProfile.reliability_score,
+                CreatorProfile.completed_collabs_count,
+                CreatorProfile.is_new_creator,
             )
         )
     ).all()
 
-    assert len(sans_historique) == 1
-    assert sans_historique[0].completed_collabs_count == 0
-    assert sans_historique[0].is_new_creator is True
+    assert len(profils) == 3
+    for profil in profils:
+        # Nul veut dire neutre, jamais zéro : le moteur de paliers l'ignore au
+        # lieu de le comparer à un seuil.
+        assert profil.reliability_score is None
+        assert profil.completed_collabs_count == 0
+        assert profil.is_new_creator is True
 
-    avec_historique = await seed_conn.scalar(
-        sa.select(sa.func.count())
-        .select_from(CreatorProfile)
-        .where(CreatorProfile.reliability_score.is_not(None))
-    )
-    assert avec_historique >= 1
+
+async def test_aucun_createur_n_accede_a_un_palier(seed_conn: AsyncConnection) -> None:
+    """Le trou le plus coûteux du produit, rendu visible par le jeu de données.
+
+    Le parcours OAuth ne sait poser qu'un `needs_review`, et rien ne fait passer
+    un compte en `verified`. Tout créateur réel est donc bloqué, aujourd'hui,
+    sur `account_under_review`. Le jeu de données le masquait en posant le
+    statut à la main ; il ne le masque plus, et ce test l'énonce.
+
+    À supprimer avec la tâche « Vérification de cohérence du profil ».
+    """
+    statuts = set(await seed_conn.scalars(sa.select(SocialAccount.verification_status).distinct()))
+    assert statuts == {VerificationStatus.NEEDS_REVIEW.value}
 
 
 async def test_un_compte_administrateur_existe(seed_conn: AsyncConnection) -> None:
@@ -409,3 +438,54 @@ async def test_aucune_offre_sur_un_palier_inactif(seed_conn: AsyncConnection) ->
         sa.select(sa.func.count()).select_from(TierOffer).where(TierOffer.tier_id.in_(inactifs))
     )
     assert combien == 0
+
+
+async def test_chaque_createur_a_un_compte_social_et_un_releve(
+    seed_conn: AsyncConnection,
+) -> None:
+    """Obtenus par le parcours OAuth et le service de métriques, pas posés.
+
+    C'est ce qui donne sa valeur au test précédent : si le compte social était
+    inséré directement, son `verification_status` ne dirait rien du produit.
+    """
+    lignes = (
+        await seed_conn.execute(
+            sa.select(
+                SocialAccount.handle,
+                SocialAccount.status,
+                SocialMetricsSnapshot.followers_count,
+                SocialMetricsSnapshot.audience_demographics,
+            ).join(
+                SocialMetricsSnapshot,
+                SocialMetricsSnapshot.social_account_id == SocialAccount.id,
+            )
+        )
+    ).all()
+
+    assert len(lignes) == 3
+    for ligne in lignes:
+        assert ligne.status == SocialAccountStatus.ACTIVE.value
+        assert ligne.followers_count > 0
+        assert ligne.audience_demographics is not None
+
+    # Le jeton, lui, se lit en SQL nu : passer par la colonne de l'ORM la ferait
+    # déchiffrer au vol, et le test ne prouverait plus rien.
+    jetons = list(
+        await seed_conn.scalars(sa.text("SELECT access_token_encrypted FROM social_account"))
+    )
+    assert len(jetons) == 3
+    for jeton in jetons:
+        assert b"jeton-local" not in bytes(jeton)
+
+
+async def test_les_etats_oauth_du_jeu_sont_tous_consommes(seed_conn: AsyncConnection) -> None:
+    """Le montage emprunte le vrai parcours, il en laisse donc les traces : un
+    état par créateur, chacun consommé une fois."""
+    restants = await seed_conn.scalar(
+        sa.select(sa.func.count()).select_from(sa.table("oauth_state"))
+    )
+    consommes = await seed_conn.scalar(
+        sa.text("SELECT count(*) FROM oauth_state WHERE consumed_at IS NOT NULL")
+    )
+    assert restants == 3
+    assert consommes == 3

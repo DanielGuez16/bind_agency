@@ -11,6 +11,7 @@ la migration réelle qui est testée, pas les modèles.
 
 from collections.abc import AsyncIterator, Iterator
 
+import httpx
 import psycopg
 import pytest
 import sqlalchemy as sa
@@ -167,3 +168,49 @@ async def client(engine: AsyncEngine, conn: AsyncConnection) -> AsyncIterator[As
     transport = ASGITransport(app=application)
     async with AsyncClient(transport=transport, base_url="http://test") as http_client:
         yield http_client
+
+
+@pytest.fixture
+def instagram_configure(monkeypatch: pytest.MonkeyPatch):
+    """Le fournisseur réel a besoin d'une application Meta déclarée."""
+    from app.core import config as module_config
+    from app.core import encryption
+    from app.integrations import instagram as module_instagram
+
+    reglages = module_config.build_settings(
+        _env_file=None,
+        database_url=str(get_settings().database_url),
+        jwt_secret_key="peu-importe-ici-mais-assez-longue-pour-hmac",
+        token_encryption_key=encryption.generate_key(),
+        instagram_app_id="1234567890",
+        instagram_app_secret="un-secret-meta",
+        instagram_redirect_uri="https://api.bind.test/api/v1/social-accounts/instagram/callback",
+    )
+    monkeypatch.setattr(module_instagram, "get_settings", lambda: reglages)
+    return reglages
+
+
+@pytest.fixture
+def transport_meta():
+    """Fabrique de transports simulés, indexés par fragment d'URL.
+
+    Les appels sont conservés : plusieurs tests portent sur ce qui a été
+    *demandé* à Meta — les champs, le suffixe du code — autant que sur ce qui en
+    revient.
+    """
+
+    def fabriquer(reponses: dict[str, httpx.Response]) -> httpx.MockTransport:
+        appels: list[httpx.Request] = []
+
+        def repondre(request: httpx.Request) -> httpx.Response:
+            appels.append(request)
+            for fragment, reponse in reponses.items():
+                if fragment in str(request.url):
+                    return reponse
+            return httpx.Response(404, json={"error": "url inattendue"})
+
+        transport = httpx.MockTransport(repondre)
+        transport.appels = appels  # type: ignore[attr-defined]
+        return transport
+
+    return fabriquer

@@ -181,8 +181,13 @@ class SocialMetricsSnapshot(UUIDPrimaryKey, Base):
     social_account_id: Mapped[uuid.UUID] = mapped_column(
         sa.ForeignKey("social_account.id", ondelete="CASCADE"), nullable=False
     )
+    # `clock_timestamp()` et non `now()` : deux relevés d'une même transaction
+    # porteraient sinon la même heure, et « le dernier snapshot » n'aurait plus
+    # de réponse. La table est en ajout seul, son ordre est sa seule structure.
     captured_at: Mapped[datetime] = mapped_column(
-        sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
+        sa.DateTime(timezone=True),
+        nullable=False,
+        server_default=sa.text("clock_timestamp()"),
     )
     followers_count: Mapped[int] = mapped_column(sa.Integer, nullable=False)
     following_count: Mapped[int] = mapped_column(sa.Integer, nullable=False)

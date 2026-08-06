@@ -20,6 +20,8 @@ from app.core.config import ConfigurationError, get_settings
 from app.integrations.social import (
     IdentiteSociale,
     JetonEchange,
+    MetriquesProfil,
+    SocialAuthError,
     SocialProviderError,
 )
 from app.models.enums import Platform
@@ -28,8 +30,21 @@ AUTORISATION = "https://www.instagram.com/oauth/authorize"
 JETON_COURT = "https://api.instagram.com/oauth/access_token"
 JETON_LONG = "https://graph.instagram.com/access_token"
 PROFIL = "https://graph.instagram.com/me"
+INSIGHTS = "https://graph.instagram.com/{identifiant}/insights"
 
 DELAI = httpx.Timeout(10.0)
+
+#: Champs de profil demandés pour un relevé de métriques. `follows_count` est
+#: le nom Instagram de ce que nous appelons `following_count`.
+CHAMPS_METRIQUES = "followers_count,follows_count,media_count"
+
+#: Meta décline l'audience sur plusieurs axes, un appel par axe étant la seule
+#: façon de les obtenir tous. On se limite à ceux que l'éligibilité regardera.
+AXES_AUDIENCE = ("country", "city", "age", "gender")
+
+#: Codes par lesquels Meta dit « ce jeton ne vaut plus rien ». 190 couvre le
+#: jeton invalide, expiré ou révoqué par l'utilisateur ; 102 la session perdue.
+CODES_AUTHENTIFICATION = {102, 190}
 
 
 class InstagramProvider:
@@ -115,22 +130,107 @@ class InstagramProvider:
 
         return IdentiteSociale(external_id=str(identifiant), handle=str(pseudonyme))
 
+    async def fetch_profile_metrics(
+        self, access_token: str, *, external_id: str
+    ) -> MetriquesProfil:
+        profil = await self._lire(
+            PROFIL, {"fields": CHAMPS_METRIQUES, "access_token": access_token}
+        )
+
+        # Une clé absente et une clé à zéro ne se ressemblent pas : `get` seul
+        # les confondrait, et un compte à zéro abonné est une donnée valide.
+        manquants = [champ for champ in ("followers_count", "follows_count") if champ not in profil]
+        if manquants:
+            raise SocialProviderError(f"profil sans {', '.join(manquants)}")
+
+        return MetriquesProfil(
+            followers_count=int(profil["followers_count"]),
+            following_count=int(profil["follows_count"]),
+            # Un compte peut n'avoir jamais publié sans que Meta renvoie la clé.
+            media_count=int(profil.get("media_count", 0)),
+            audience_demographics=await self._audience(access_token, external_id),
+            raw_payload=profil,
+        )
+
+    async def _audience(self, access_token: str, external_id: str) -> dict | None:
+        """L'audience est un supplément, jamais une condition.
+
+        Meta la refuse pour un compte trop petit, pour un type de compte qui n'y
+        a pas droit, ou pour une permission non accordée — trois situations
+        normales. Faire échouer le relevé pour ça reviendrait à ne jamais rien
+        enregistrer des comptes les plus nombreux.
+        """
+        repartitions: dict[str, dict[str, int]] = {}
+
+        for axe in AXES_AUDIENCE:
+            try:
+                corps = await self._lire(
+                    INSIGHTS.format(identifiant=external_id),
+                    {
+                        "metric": "follower_demographics",
+                        "period": "lifetime",
+                        "metric_type": "total_value",
+                        "breakdown": axe,
+                        "access_token": access_token,
+                    },
+                )
+            except SocialProviderError:
+                continue
+
+            valeurs = self._depiler(corps)
+            if valeurs:
+                repartitions[axe] = valeurs
+
+        return repartitions or None
+
+    @staticmethod
+    def _depiler(corps: dict) -> dict[str, int]:
+        """Aplatit la réponse d'insights en « valeur → effectif ».
+
+        Meta l'imbrique sur quatre niveaux pour permettre les croisements
+        d'axes ; nous n'en demandons qu'un, donc chaque ligne n'a qu'une
+        dimension.
+        """
+        resultat: dict[str, int] = {}
+
+        for mesure in corps.get("data") or []:
+            for repartition in (mesure.get("total_value") or {}).get("breakdowns") or []:
+                for ligne in repartition.get("results") or []:
+                    dimensions = ligne.get("dimension_values") or []
+                    if len(dimensions) == 1 and isinstance(ligne.get("value"), int):
+                        resultat[str(dimensions[0])] = ligne["value"]
+
+        return resultat
+
     # ----------------------------------------------------------------------
 
     async def _poster(self, url: str, data: dict) -> dict:
-        return self._corps(await self._client.post(url, data=data, timeout=DELAI))
+        return self._corps(await self._appeler(self._client.post, url, data=data))
 
     async def _lire(self, url: str, params: dict) -> dict:
-        return self._corps(await self._client.get(url, params=params, timeout=DELAI))
+        return self._corps(await self._appeler(self._client.get, url, params=params))
+
+    @staticmethod
+    async def _appeler(methode, url: str, **kwargs) -> httpx.Response:
+        """Une panne de réseau est un échec de la plateforme, pas une exception
+        technique qui traverse le service jusqu'à la route."""
+        try:
+            return await methode(url, timeout=DELAI, **kwargs)
+        except httpx.HTTPError as error:
+            raise SocialProviderError(f"Instagram injoignable : {type(error).__name__}") from error
 
     @staticmethod
     def _corps(reponse: httpx.Response) -> dict:
         """Le message d'erreur de Meta n'est jamais renvoyé à l'appelant.
 
         Il parle de leur API, pas de ce que le créateur doit faire, et peut
-        contenir des éléments de la requête.
+        contenir des éléments de la requête. En revanche sa *nature* remonte,
+        parce qu'elle décide de la suite : un jeton refusé fait basculer le
+        compte, une panne ne fait rien.
         """
         if reponse.status_code >= 400:
+            if InstagramProvider._est_authentification(reponse):
+                raise SocialAuthError(f"Instagram a refusé le jeton ({reponse.status_code})")
             raise SocialProviderError(f"Instagram a répondu {reponse.status_code}")
 
         try:
@@ -141,3 +241,24 @@ class InstagramProvider:
         if not isinstance(corps, dict):
             raise SocialProviderError("réponse Instagram inattendue")
         return corps
+
+    @staticmethod
+    def _est_authentification(reponse: httpx.Response) -> bool:
+        """Meta répond « 400 » à peu près à tout, y compris à un jeton mort.
+
+        Le code HTTP seul ne suffit donc pas : c'est le corps qui distingue un
+        jeton révoqué d'un paramètre mal formé. Sans cette lecture, ou bien on
+        déconnecterait des comptes valides sur une faute de frappe, ou bien on
+        laisserait indéfiniment actif un compte dont l'accès est perdu.
+        """
+        if reponse.status_code in (401, 403):
+            return True
+
+        try:
+            erreur = reponse.json().get("error") or {}
+        except (ValueError, AttributeError):
+            return False
+
+        return (
+            erreur.get("type") == "OAuthException" or erreur.get("code") in CODES_AUTHENTIFICATION
+        )

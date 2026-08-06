@@ -86,6 +86,9 @@ class Settings(BaseSettings):
     # n'est pas une éligibilité. Valeur unique, la même sur toutes les
     # plateformes — le job est le même partout.
     metrics_max_age_seconds: int = 604_800
+    #: Deux relevés d'un même compte ne peuvent pas être plus rapprochés. Le
+    #: quota de la plateforme se compte par compte, la limite aussi.
+    metrics_min_refresh_interval_seconds: int = 3_600
 
     # Lue uniquement par la session pytest, jamais par l'application.
     # Sa présence est vérifiée dans tests/conftest.py, qui refuse de tourner sans.

@@ -842,3 +842,129 @@ rattacher aucun compte social — et le moteur d'éligibilité, qui renvoie un
 ensemble vide quand le profil manque, le déclarait inéligible à tout sans que
 rien ne le signale. `register` crée désormais la ligne. Le jeu de données, qui
 l'insérait lui-même, la complète maintenant.
+
+---
+
+## 2026-08-05 — Récupération et historisation des métriques
+
+**Les snapshots sont en ajout seul.** Jamais de mise à jour, jamais de
+suppression. Deux relevés successifs font deux lignes même à chiffres
+identiques : « rien n'a bougé entre lundi et mardi » est une information, et
+écraser la ligne de lundi la détruirait. C'est aussi ce qui rend l'éligibilité
+explicable — un créateur dont l'accès change doit pouvoir voir sur quoi elle
+s'est appuyée.
+
+Conséquence relevée en route : `captured_at` prenait `now()`, qui en Postgres
+est l'heure d'**ouverture de la transaction**. Deux relevés enregistrés sans
+validation intermédiaire portaient donc la même heure, et « le dernier
+snapshot » — la seule question que pose l'éligibilité — n'avait pas de réponse
+déterminée. Passé à `clock_timestamp()`, par migration. Même correction que pour
+`audit_log.occurred_at`, et pour la même raison : une table en ajout seul n'a
+que son ordre pour structure.
+
+**Un relevé qui échoue n'écrit rien.** Ni ligne partielle, ni zéro. Un zéro
+écrit est un zéro qui sera lu comme une mesure, et l'éligibilité le comparera au
+seuil sans savoir qu'il est faux. Un snapshot faux est pire qu'un snapshot
+absent : l'absence a une raison de refus qui lui est propre, `no_metrics`.
+
+**Ce que la table déclare obligatoire doit venir de la plateforme ; ce qu'elle
+déclare nullable a le droit de manquer.** C'est la règle qui tranche « réponse
+incomplète ». Sans abonnés, pas de snapshot. Sans démographie, snapshot avec
+démographie nulle — Meta la refuse aux comptes en dessous de cent abonnés et à
+certains types de compte, ce qui est la situation de la majorité des créateurs
+au lancement. Faire échouer le relevé pour ça ne mesurerait personne.
+
+**Deux familles d'échec, et c'est le fournisseur qui tranche.** Un refus
+d'authentification bascule le compte en `expired` : l'accès est perdu, seule une
+reconnexion le rétablira. Une erreur transitoire ne touche à rien. Meta répond
+400 dans les deux cas ; seul le corps les sépare — `error.type` valant
+`OAuthException`, ou un code 190/102, sous deux formes selon l'hôte. Confondre
+les deux ferait déconnecter des comptes sains à la première panne de Meta.
+
+La bascule en `expired` est la seule erreur dont la transaction est **validée**.
+L'annuler renverrait bien l'erreur au créateur mais laisserait le compte affiché
+comme actif, et le relevé suivant irait redécouvrir la même chose chez Meta.
+
+**`engagement_rate` et `avg_views` restent nuls.** Ils se calculent sur les
+publications, pas sur le profil, et n'entrent dans aucune condition
+d'éligibilité aujourd'hui. Nul veut dire « pas encore mesuré », jamais « zéro ».
+
+**La fréquence est bornée par compte.** Seuil en configuration
+(`METRICS_MIN_REFRESH_INTERVAL_SECONDS`, une heure). Le quota que cela protège
+est celui de la plateforme, qui se compte par compte : une limite par créateur
+punirait celui qui en a trois, une limite globale ferait qu'un créateur actif
+empêche les autres de se relever. Le refus est prononcé **avant** l'appel — une
+limite rendue après n'économiserait aucun quota.
+
+*Limite connue :* la borne s'appuie sur `last_synced_at`, qui n'est posé qu'en
+cas de succès. Un relevé qui échoue ne consomme donc pas le quota, ce qui est
+voulu — le créateur n'a rien obtenu — mais laisse une porte ouverte à une
+répétition d'échecs. La refermer demande un compteur de tentatives, qui a sa
+place avec le job planifié et sa politique de report.
+
+**Le trousseau de chiffrement se construit au démarrage.** `create_app()`
+l'appelle. Une clé absente ou mal formée empêche de lancer, au lieu de laisser
+l'API fonctionner à moitié jusqu'au premier rattachement d'un compte social.
+
+---
+
+## 2026-08-05 — Audit du jeu de données de départ
+
+La règle est entrée dans `CLAUDE.md` : *le jeu de données de départ ne pose
+jamais à la main une valeur qu'un mécanisme du produit doit produire.* Suit
+l'audit de chaque valeur qu'il écrit.
+
+**Ce qui passait déjà par un mécanisme, et continue.** Commerces, appartenance
+`owner`, passage en `active` et lignes de journal (`business`) ; items et
+variantes (`catalog`) ; plages et exceptions (`capacity`) ; offres par palier
+(`tier_offers`) ; comptes et mots de passe (`auth`).
+
+**Corrigé, parce que le mécanisme existe maintenant.**
+
+- *Le compte social* était inséré directement, avec son `external_id`, son
+  `handle`, son `status` et son `verification_status`. Il est désormais obtenu
+  par le parcours OAuth complet — `start_authorization` puis
+  `complete_authorization` — via un fournisseur local qui répond de mémoire au
+  lieu de répondre du réseau. L'état reste signé, à usage unique et vérifié ; le
+  jeton est chiffré par le type de colonne comme n'importe quel autre.
+- *Le premier relevé de métriques* était un `SocialMetricsSnapshot` posé à la
+  main. Il vient maintenant de `refresh_profile_metrics`, le service écrit dans
+  cette tâche.
+
+**Les trous restants — valeurs qu'aucun mécanisme ne sait produire.** Elles ne
+sont plus posées du tout : le jeu de données montre l'état réel du produit.
+
+1. **`social_account.verification_status`** — posé à `verified` pour les
+   créateurs « expérimentés ». *C'est le trou le plus coûteux.* Le seul écrivain
+   du champ est `complete_authorization`, qui pose `needs_review` ; **rien
+   n'existe qui fasse passer un compte en `verified`**. Tout créateur réel est
+   donc aujourd'hui bloqué sur `account_under_review` et n'accède à aucun
+   palier. Le jeu de données le masquait entièrement. Mécanisme attendu : tâche
+   « Vérification de cohérence du profil », phase 4.
+2. **`creator_profile.reliability_score`** — posé à 82.5 et 61.0. Aucun
+   mécanisme ne l'écrit. Phase 8 (`reliability_event`). Déjà rencontré : c'est
+   ce qui a conduit à neutraliser les seuils de collaborations.
+3. **`creator_profile.completed_collabs_count`** — posé à 7 et 2. Le compteur
+   n'est alimenté par rien. Phase 8, avec la finalisation d'une collaboration.
+4. **`creator_profile.first_name` / `last_name`** — posés en dur. Aucune route
+   ne permet à un créateur de renseigner son identité ; `PATCH /me` ne traite
+   que `locale`. Champs déclaratifs, pas dérivés, mais le constat est le même :
+   le produit ne sait pas les obtenir.
+5. **`creator_profile.city`** — posé à « Miami ». Même absence de route, et pas
+   de dérivation depuis `geo` non plus.
+
+Les points 4 et 5 ne relèvent d'aucune tâche existante : à créer si l'écran de
+profil créateur en a besoin.
+
+**Ce qui reste posé à la main et n'est pas un trou.** Les coordonnées des trois
+commerces, via `ManualGeocoder`. C'est le contournement décidé en phase 2, avec
+son service réel prévu en phase 5 : le mécanisme *est* la saisie manuelle
+aujourd'hui.
+
+**Deux tests changent de sens.** L'un affirmait « au moins un créateur a un
+historique » et passait parce que le jeu de données le fabriquait : il validait
+une fiction. Il affirme maintenant que **tous** les créateurs sont en cold
+start, et il échouera quand la phase 8 arrivera — c'est voulu, ce jour-là le jeu
+de données doit changer. L'autre est neuf et énonce le trou n° 1 : aucun compte
+social du jeu n'est `verified`. La commande le dit aussi à voix haute en fin
+d'exécution, parce qu'un trou consigné dans un fichier ne se voit pas.

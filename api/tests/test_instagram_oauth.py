@@ -396,40 +396,6 @@ async def test_un_createur_ne_voit_que_ses_comptes(
 # --------------------------------------------------------------------------
 
 
-@pytest.fixture
-def instagram_configure(monkeypatch: pytest.MonkeyPatch):
-    """Le fournisseur réel a besoin d'une application Meta déclarée."""
-    from app.core import config as module_config
-    from app.integrations import instagram as module_instagram
-
-    reglages = module_config.build_settings(
-        _env_file=None,
-        database_url=str(get_settings().database_url),
-        jwt_secret_key="peu-importe-ici-mais-assez-longue-pour-hmac",
-        token_encryption_key=encryption.generate_key(),
-        instagram_app_id="1234567890",
-        instagram_app_secret="un-secret-meta",
-        instagram_redirect_uri="https://api.bind.test/api/v1/social-accounts/instagram/callback",
-    )
-    monkeypatch.setattr(module_instagram, "get_settings", lambda: reglages)
-    return reglages
-
-
-def _transport(reponses: dict[str, httpx.Response]) -> httpx.MockTransport:
-    appels: list[httpx.Request] = []
-
-    def repondre(request: httpx.Request) -> httpx.Response:
-        appels.append(request)
-        for fragment, reponse in reponses.items():
-            if fragment in str(request.url):
-                return reponse
-        return httpx.Response(404, json={"error": "url inattendue"})
-
-    transport = httpx.MockTransport(repondre)
-    transport.appels = appels  # type: ignore[attr-defined]
-    return transport
-
-
 def test_l_url_d_autorisation_porte_l_etat_et_les_droits(instagram_configure) -> None:
     provider = InstagramProvider(httpx.AsyncClient(transport=httpx.MockTransport(lambda r: None)))
 
@@ -441,9 +407,11 @@ def test_l_url_d_autorisation_porte_l_etat_et_les_droits(instagram_configure) ->
     assert "instagram_business_basic" in url.params["scope"]
 
 
-async def test_l_echange_passe_par_le_jeton_de_longue_duree(instagram_configure) -> None:
+async def test_l_echange_passe_par_le_jeton_de_longue_duree(
+    instagram_configure, transport_meta
+) -> None:
     """Sans la seconde étape, la connexion expirerait dans l'heure."""
-    transport = _transport(
+    transport = transport_meta(
         {
             "api.instagram.com/oauth/access_token": httpx.Response(
                 200, json={"access_token": "court", "user_id": 1}
@@ -466,8 +434,8 @@ async def test_l_echange_passe_par_le_jeton_de_longue_duree(instagram_configure)
     assert b"%23_" not in envoye
 
 
-async def test_l_identite_est_lue_mais_aucune_metrique(instagram_configure) -> None:
-    transport = _transport(
+async def test_l_identite_est_lue_mais_aucune_metrique(instagram_configure, transport_meta) -> None:
+    transport = transport_meta(
         {
             "graph.instagram.com/me": httpx.Response(
                 200, json={"id": "178414", "username": "rebecca"}
@@ -482,9 +450,11 @@ async def test_l_identite_est_lue_mais_aucune_metrique(instagram_configure) -> N
     assert transport.appels[0].url.params["fields"] == "id,username"
 
 
-async def test_une_erreur_de_meta_ne_remonte_pas_telle_quelle(instagram_configure) -> None:
+async def test_une_erreur_de_meta_ne_remonte_pas_telle_quelle(
+    instagram_configure, transport_meta
+) -> None:
     """Leur message parle de leur API, pas de ce que le créateur doit faire."""
-    transport = _transport(
+    transport = transport_meta(
         {
             "api.instagram.com": httpx.Response(
                 400, json={"error_message": "Invalid platform app", "error_type": "OAuthException"}

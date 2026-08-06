@@ -19,8 +19,9 @@ import asyncio
 import sys
 import uuid
 from dataclasses import dataclass
-from datetime import date
+from datetime import UTC, date, datetime, timedelta
 
+import httpx
 import psycopg
 import sqlalchemy as sa
 from alembic.config import Config
@@ -30,15 +31,9 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from alembic import command
 from app.core.config import API_ROOT, get_settings
 from app.integrations.geocoding import ManualGeocoder
-from app.models import CatalogItem, CreatorProfile, SocialAccount, SocialMetricsSnapshot, Tier, User
-from app.models.enums import (
-    ContentFormat,
-    Locale,
-    Platform,
-    SocialAccountStatus,
-    UserRole,
-    VerificationStatus,
-)
+from app.integrations.social import IdentiteSociale, JetonEchange, MetriquesProfil
+from app.models import CatalogItem, Tier, User
+from app.models.enums import ContentFormat, Locale, Platform, UserRole
 from app.schemas.business import BusinessCreate, CoordinatesPayload
 from app.schemas.capacity import CapacityExceptionCreate, CapacityRuleCreate
 from app.schemas.catalog import CatalogItemCreate
@@ -47,6 +42,9 @@ from app.services import auth as auth_service
 from app.services import business as business_service
 from app.services import capacity as capacity_service
 from app.services import catalog as catalog_service
+from app.services import eligibility
+from app.services import metrics as metrics_service
+from app.services import social_accounts as social_account_service
 from app.services import tier_offers as tier_offer_service
 from app.services.audit import Actor
 
@@ -69,6 +67,10 @@ class Resume:
     exceptions: int
     offres: int
     createurs: int
+    #: Nombre de paliers auxquels au moins un créateur du jeu accède. À zéro,
+    #: le jeu ne permet de démontrer aucun parcours créateur — c'est une donnée
+    #: du résumé, pas un détail à découvrir en cherchant.
+    paliers_accessibles: int
 
 
 class SeedRefused(RuntimeError):
@@ -350,64 +352,82 @@ async def _brickell_spa(session: AsyncSession, owner: User) -> tuple[int, int, i
 # --------------------------------------------------------------------------
 
 
-async def _creator(
-    session: AsyncSession,
-    *,
-    email: str,
-    prenom: str,
-    nom: str,
-    locale: Locale,
-    handle: str,
-    followers: int,
-    score: float | None,
-    collabs: int,
-) -> User:
-    """Un créateur avec son profil, son compte social et un premier relevé.
+class FournisseurLocal:
+    """Instagram, sans Instagram.
 
-    `score` à `None` laisse `reliability_score` nul, donc `is_new_creator` vrai :
-    c'est le cold start que le moteur de paliers devra traiter comme neutre.
+    Le jeu de données ne peut pas appeler Meta : ni clé d'application, ni
+    créateur devant un navigateur pour autoriser. Ce qu'il peut faire, en
+    revanche, c'est emprunter **le même chemin** — démarrer un parcours,
+    consommer l'état, échanger un code, relever les métriques — avec un
+    fournisseur qui répond de mémoire au lieu de répondre du réseau.
+
+    C'est la différence entre poser une ligne `social_account` à la main et
+    obtenir celle que le produit aurait produite. La première dirait que tout
+    va bien ; la seconde révèle ce qui manque encore.
+    """
+
+    platform = Platform.INSTAGRAM
+
+    def __init__(self, *, handle: str, followers: int) -> None:
+        self.handle = handle
+        self.followers = followers
+        self.etat: str | None = None
+
+    def authorization_url(self, *, state: str) -> str:
+        # Le seul détour du montage : le parcours réel passe l'état par le
+        # navigateur du créateur, ici on le retient au vol pour le rendre au
+        # rappel. L'état reste signé, à usage unique, et vérifié par le service.
+        self.etat = state
+        return f"https://instagram.local/authorize?state={state}"
+
+    async def exchange_code(self, code: str) -> JetonEchange:
+        return JetonEchange(
+            access_token=f"jeton-local-{self.handle}",
+            expires_at=datetime.now(UTC) + timedelta(days=60),
+        )
+
+    async def fetch_identity(self, access_token: str) -> IdentiteSociale:
+        return IdentiteSociale(external_id=f"seed-{self.handle}", handle=self.handle)
+
+    async def fetch_profile_metrics(
+        self, access_token: str, *, external_id: str
+    ) -> MetriquesProfil:
+        return MetriquesProfil(
+            followers_count=self.followers,
+            following_count=max(self.followers // 10, 50),
+            media_count=max(self.followers // 40, 12),
+            audience_demographics={"country": {"US": self.followers}},
+            raw_payload={"followers_count": self.followers, "source": "seed"},
+        )
+
+
+async def _creator(
+    session: AsyncSession, *, email: str, locale: Locale, handle: str, followers: int
+) -> User:
+    """Un créateur, son compte social rattaché, et un premier relevé.
+
+    Rien n'est posé à la main. Le profil est celui que `register` crée, le
+    compte social celui que le parcours OAuth produit, le relevé celui que le
+    service de métriques écrit. Ce que le produit ne sait pas encore fabriquer
+    n'apparaît donc pas — notamment le score de fiabilité, le compteur de
+    collaborations, et la vérification de cohérence du compte : voir la liste
+    des trous dans `DECISIONS.md`.
     """
     user = await auth_service.register(
         session, email=email, password=MOT_DE_PASSE, role=UserRole.CREATOR, locale=locale
     )
 
-    # `register` a déjà posé le profil : on le complète, on ne le recrée pas.
-    await session.execute(
-        sa.update(CreatorProfile)
-        .where(CreatorProfile.user_id == user.id)
-        .values(
-            first_name=prenom,
-            last_name=nom,
-            city="Miami",
-            reliability_score=score,
-            completed_collabs_count=collabs,
-        )
-    )
-    await session.flush()
+    fournisseur = FournisseurLocal(handle=handle, followers=followers)
 
-    account = SocialAccount(
-        creator_id=user.id,
-        platform=Platform.INSTAGRAM,
-        external_id=f"seed-{handle}",
-        handle=handle,
-        status=SocialAccountStatus.ACTIVE,
-        verification_status=(
-            VerificationStatus.VERIFIED if collabs else VerificationStatus.NEEDS_REVIEW
-        ),
+    url = await social_account_service.start_authorization(session, user=user, provider=fournisseur)
+    compte = await social_account_service.complete_authorization(
+        session,
+        state=httpx.URL(url).params["state"],
+        code=f"code-local-{handle}",
+        provider=fournisseur,
     )
-    session.add(account)
-    await session.flush()
 
-    session.add(
-        SocialMetricsSnapshot(
-            social_account_id=account.id,
-            followers_count=followers,
-            following_count=max(followers // 10, 50),
-            media_count=max(followers // 40, 12),
-            raw_payload={"followers_count": followers, "source": "seed"},
-        )
-    )
-    await session.flush()
+    await metrics_service.refresh_profile_metrics(session, account=compte, provider=fournisseur)
     return user
 
 
@@ -491,44 +511,44 @@ async def populate() -> Resume:
                 await _brickell_spa(session, proprietaires[2]),
             ]
 
+            # Les trois se distinguent par leurs abonnés, seule dimension que
+            # le produit sait aujourd'hui mesurer. Le score de fiabilité et le
+            # compteur de collaborations restent nuls pour tous, faute de
+            # mécanisme : ils faisaient auparavant toute la différence entre ces
+            # profils, et cette différence était une fiction.
             createurs = [
                 await _creator(
                     session,
                     email="rebecca@bind.test",
-                    prenom="Rebecca",
-                    nom="Alvarez",
                     locale=Locale.EN,
                     handle="rebecca.miami",
-                    followers=24000,
-                    score=82.5,
-                    collabs=7,
+                    followers=24_000,
                 ),
                 await _creator(
                     session,
                     email="mateo@bind.test",
-                    prenom="Mateo",
-                    nom="Ferrer",
                     locale=Locale.ES,
                     handle="mateo.wynwood",
-                    followers=8600,
-                    score=61.0,
-                    collabs=2,
+                    followers=8_600,
                 ),
-                # Sans historique : reliability_score nul, is_new_creator vrai.
                 await _creator(
                     session,
                     email="nouvelle@bind.test",
-                    prenom="Camila",
-                    nom="Duarte",
                     locale=Locale.ES,
                     handle="camila.newcomer",
-                    followers=3100,
-                    score=None,
-                    collabs=0,
+                    followers=3_100,
                 ),
             ]
 
             await session.commit()
+
+            paliers = {
+                palier
+                for user in createurs
+                for palier in (
+                    await eligibility.evaluer_createur(session, user.id)
+                ).paliers_accessibles
+            }
 
         return Resume(
             commerces=len(totaux),
@@ -537,6 +557,7 @@ async def populate() -> Resume:
             exceptions=sum(exceptions for _, _, exceptions, _ in totaux),
             offres=sum(offres for _, _, _, offres in totaux),
             createurs=len(createurs),
+            paliers_accessibles=len(paliers),
         )
     finally:
         await engine.dispose()
@@ -560,6 +581,16 @@ def main() -> int:
         f"{resume.createurs} créateurs."
     )
     print(f"Mot de passe de tous les comptes : {MOT_DE_PASSE}")
+
+    if resume.paliers_accessibles == 0:
+        # Volontairement affiché, et pas seulement consigné : le jeu de données
+        # dit ce que le produit sait faire, et aujourd'hui il ne sait pas rendre
+        # un créateur éligible. Tant que rien ne fait passer un compte social en
+        # `verified`, tout créateur reste bloqué sur `account_under_review`.
+        print(
+            "Aucun créateur n'accède à un palier : rien ne vérifie encore la "
+            "cohérence des comptes sociaux. Voir DECISIONS.md."
+        )
     return 0
 
 

@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.core.config import get_settings
+from app.core.encryption import build_keyring
 from app.core.errors import ErrorCode
 from app.routers import (
     auth,
@@ -39,6 +40,11 @@ async def _validation_error_handler(_: Request, error: RequestValidationError) -
 
 def create_app() -> FastAPI:
     settings = get_settings()
+
+    # Le trousseau est construit ici, pas au premier chiffrement : une clé
+    # absente ou mal formée doit empêcher de démarrer, pas de fonctionner à
+    # moitié jusqu'à la première connexion d'un compte social.
+    build_keyring()
 
     application = FastAPI(
         title="BIND API",

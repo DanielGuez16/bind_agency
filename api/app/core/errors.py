@@ -63,6 +63,10 @@ class ErrorCode(StrEnum):
     OAUTH_STATE_INVALID = "oauth_state_invalid"
     SOCIAL_ACCOUNT_TAKEN = "social_account_taken"
     SOCIAL_PROVIDER_UNAVAILABLE = "social_provider_unavailable"
+    SOCIAL_ACCOUNT_NOT_FOUND = "social_account_not_found"
+    SOCIAL_ACCOUNT_NOT_ACTIVE = "social_account_not_active"
+    SOCIAL_TOKEN_EXPIRED = "social_token_expired"
+    METRICS_REFRESH_TOO_SOON = "metrics_refresh_too_soon"
 
     # Transverses
     VALIDATION_FAILED = "validation_failed"
