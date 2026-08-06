@@ -12,6 +12,7 @@ from app.integrations.geocoding import check_geocoder_configuration
 from app.routers import (
     account_verification,
     auth,
+    availability,
     business,
     capacity,
     catalog,
@@ -80,6 +81,7 @@ def create_app() -> FastAPI:
     application.include_router(capacity.router, prefix=settings.api_v1_prefix)
     application.include_router(tiers.router, prefix=settings.api_v1_prefix)
     application.include_router(tier_offers.router, prefix=settings.api_v1_prefix)
+    application.include_router(availability.router, prefix=settings.api_v1_prefix)
     application.include_router(creator_profile.router, prefix=settings.api_v1_prefix)
     application.include_router(creator_tiers.router, prefix=settings.api_v1_prefix)
     application.include_router(social_accounts.router, prefix=settings.api_v1_prefix)

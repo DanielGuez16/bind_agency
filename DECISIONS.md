@@ -1361,3 +1361,50 @@ onboarding se voit.
 réseau coupé, réponse illisible, adresse introuvable : tous rendent `None`. Le
 commerce reste en `onboarding`. Perdre un commerce parce que Geocodio est en
 panne serait le perdre pour une raison qui ne le regarde pas.
+
+---
+
+## 2026-08-06 — Durée réservée figée, et calcul de disponibilité
+
+**La décision différée en phase 2 est tranchée : `booking` porte sa propre
+`duration_minutes`.** Un commerce qui allonge un soin de trente à soixante
+minutes allongeait rétroactivement toutes les réservations déjà prises, et le
+calcul de disponibilité aurait vu des occupations qui n'avaient jamais été
+réservées ainsi. La clé étrangère composite l'inclut, ce qui interdit de fait la
+modification de la durée d'un item déjà réservé — même mécanisme que pour
+`requires_booking`, et meilleur qu'un trigger : elle tient sans qu'on décide
+*quand* la vérifier.
+
+**Trouvé en route : ajouter une colonne nullable à une clé composite l'a
+désactivée.** Postgres n'applique pas une clé étrangère composite dès qu'une de
+ses colonnes est nulle. `duration_minutes` est nulle pour un item sans créneau,
+donc la nouvelle clé à quatre colonnes ne garantissait plus rien sur ces
+lignes — exactement celles où la nature de l'item est la seule chose à
+vérifier. **L'ancienne clé à trois colonnes reste en place** : les deux se
+complètent, retirer l'une rouvre un trou que l'autre ne couvre pas. Un test
+existant l'a signalé en cessant de refuser ce qu'il refusait la veille.
+
+**Aucune ligne de créneau n'est matérialisée.** Des créneaux écrits à l'avance
+devraient être régénérés à chaque changement d'horaire, à chaque exception, à
+chaque durée modifiée — et le jour où la régénération échoue, le commerce vend
+des places qui n'existent pas. Calculer coûte une requête ; matérialiser coûte
+une classe entière de désynchronisations.
+
+**Un `held` occupe la place tant que son garde n'a pas expiré, et plus après.**
+La condition se lit sur `hold_expires_at`, pas sur le seul statut : s'appuyer
+sur le statut ferait tenir la place d'une réservation abandonnée jusqu'au
+prochain passage du job d'expiration. Inversement, ignorer les `held` vendrait
+deux fois la même place pendant les dix minutes du parcours.
+
+**Les horaires sont convertis ici, et nulle part ailleurs.** Ils restent stockés
+en heures locales du commerce ; la conversion vers le fuseau n'a lieu qu'au
+calcul. C'est ce qui fait qu'un commerce garde son ouverture à neuf heures des
+deux côtés du changement d'heure, au lieu de glisser à huit ou à dix.
+
+**Une exception remplace la règle du jour, elle ne s'y ajoute pas.** Sinon il
+faudrait décider ce qui de la règle survit, et personne ne se souviendrait de la
+convention six mois plus tard.
+
+**Un item non réservable est un refus, pas une liste vide.** Rendre zéro créneau
+laisserait croire qu'il est complet, alors qu'il n'a pas de créneaux du tout —
+il a une fenêtre de validité.

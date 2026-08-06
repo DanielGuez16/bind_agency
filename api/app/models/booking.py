@@ -93,6 +93,14 @@ class Booking(UUIDPrimaryKey, CreatedAt, Base):
 
     requires_booking: Mapped[bool] = mapped_column(sa.Boolean, nullable=False)
 
+    # Copie figée elle aussi, et pour la même raison que `requires_booking` :
+    # un commerce qui allonge un soin de 30 à 60 minutes ne doit pas allonger
+    # rétroactivement les réservations déjà prises. La clé étrangère composite
+    # l'étend à `duration_minutes`, ce qui interdit de fait la modification de
+    # la durée d'un item déjà réservé — le service intercepte le cas et demande
+    # la création d'un nouvel item, comme pour la réservabilité.
+    duration_minutes: Mapped[int | None] = mapped_column(sa.Integer, nullable=True)
+
     starts_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
     ends_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
     valid_until: Mapped[datetime] = mapped_column(sa.DateTime(timezone=True), nullable=False)
@@ -121,11 +129,35 @@ class Booking(UUIDPrimaryKey, CreatedAt, Base):
         ),
         sa.CheckConstraint("starts_at IS NULL OR ends_at > starts_at", name="ends_after_starts"),
         sa.CheckConstraint(
+            "(requires_booking AND duration_minutes IS NOT NULL)"
+            " OR (NOT requires_booking AND duration_minutes IS NULL)",
+            name="duration_matches_requires_booking",
+        ),
+        # Les trois façons de dire la même chose ne peuvent pas diverger : la
+        # durée réservée est exactement l'écart entre le début et la fin.
+        sa.CheckConstraint(
+            "starts_at IS NULL OR ends_at = starts_at + make_interval(mins => duration_minutes)",
+            name="ends_at_follows_duration",
+        ),
+        sa.CheckConstraint(
             "status <> 'held' OR hold_expires_at IS NOT NULL", name="held_has_hold_expiry"
         ),
         sa.CheckConstraint("value_cents_snapshot >= 0", name="value_cents_snapshot_positive"),
         # Nommée à la main : la convention produirait 67 caractères, au-delà de
         # la limite de 63 de Postgres, et le nom serait tronqué en silence.
+        # Deux clés composites, et les deux sont nécessaires.
+        #
+        # Postgres n'applique pas une clé étrangère composite dès qu'une de ses
+        # colonnes est nulle (MATCH SIMPLE). Or `duration_minutes` est nulle
+        # pour un item sans créneau. La clé à quatre colonnes ne garantit donc
+        # rien sur ces lignes-là — c'est-à-dire précisément celles où la nature
+        # de l'item est la seule chose à vérifier.
+        #
+        # La première, à trois colonnes, s'applique toujours : elle interdit
+        # qu'une réservation mente sur `requires_booking`. La seconde s'applique
+        # quand une durée existe, c'est-à-dire exactement quand il y a une durée
+        # à protéger. Retirer l'une des deux rouvre un trou que l'autre ne
+        # couvre pas.
         sa.ForeignKeyConstraint(
             ["catalog_item_id", "business_id", "requires_booking"],
             [
@@ -134,6 +166,17 @@ class Booking(UUIDPrimaryKey, CreatedAt, Base):
                 "catalog_item.requires_booking",
             ],
             name="fk_booking_item_business_requires_booking",
+            ondelete="RESTRICT",
+        ),
+        sa.ForeignKeyConstraint(
+            ["catalog_item_id", "business_id", "requires_booking", "duration_minutes"],
+            [
+                "catalog_item.id",
+                "catalog_item.business_id",
+                "catalog_item.requires_booking",
+                "catalog_item.duration_minutes",
+            ],
+            name="fk_booking_item_business_shape",
             ondelete="RESTRICT",
         ),
         sa.ForeignKeyConstraint(

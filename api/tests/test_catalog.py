@@ -90,6 +90,7 @@ async def reserve(conn: AsyncConnection, business_id: str, item_id: str) -> uuid
                 catalog_item_id=uuid.UUID(item_id),
                 social_account_id=social_account_id,
                 requires_booking=True,
+                duration_minutes=60,
                 starts_at=now + timedelta(days=1),
                 ends_at=now + timedelta(days=1, hours=1),
                 valid_until=now + timedelta(days=7),

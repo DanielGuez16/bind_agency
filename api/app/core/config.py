@@ -138,6 +138,12 @@ class Settings(BaseSettings):
     geocoding_min_accuracy: float = 0.8
     geocoding_timeout_seconds: float = 5.0
 
+    # Réservation.
+    #: Horizon au-delà duquel on ne propose plus de créneau. Trente jours : le
+    #: catalogue et les horaires d'un commerce bougent, proposer un créneau dans
+    #: six mois reviendrait à promettre ce qu'on ne peut pas tenir.
+    booking_horizon_days: int = 30
+
     # Lue uniquement par la session pytest, jamais par l'application.
     # Sa présence est vérifiée dans tests/conftest.py, qui refuse de tourner sans.
     test_database_url: PostgresDsn | None = Field(default=None, repr=False)

@@ -47,6 +47,8 @@ export const es: Catalogue = {
     business_missing_coordinates: 'Añade la ubicación del negocio antes de activarlo.',
     catalog_duration_mismatch:
       'Un artículo reservable necesita una duración, y uno que no se reserva no debe tenerla.',
+    catalog_item_not_bookable:
+      'Este artículo no usa franjas horarias. Es válido durante un periodo.',
     catalog_item_not_found: 'Este artículo no está en tu catálogo.',
     catalog_item_has_bookings:
       'Este artículo tiene reservas y no se puede eliminar. Desactívalo en su lugar.',
