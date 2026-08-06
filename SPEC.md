@@ -96,6 +96,10 @@ C'est la composition du commerce : quels items de sa carte il place à quel pali
 
 Horaires d'ouverture et nombre de postes en parallèle.
 
+`weekday` : **0 = lundi**, convention `date.weekday()` de Python. Postgres compte dimanche à 0 de son côté, d'où la précision — une ambiguïté laissée ici produirait deux lectures.
+
+Les horaires sont des **heures locales du commerce**, pas des instants. Ils sont stockés tels qu'ils sont saisis, sans conversion : la conversion vers le fuseau n'a lieu qu'au calcul de disponibilité. Plusieurs plages par jour sont permises — un commerce ferme le midi — et elles ne peuvent pas se chevaucher. Deux plages qui se touchent ne se chevauchent pas.
+
 **capacity_exception**
 `id, business_id, date, is_closed, start_time (nullable), end_time (nullable), concurrent_slots (nullable)`
 

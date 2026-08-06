@@ -57,7 +57,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Fin : contrainte en base imposant une durée dès que l'item est réservable, une variante est réservable et pas son parent*
 - [x] Règles de capacité et disponibilité temps réel
       *Fin : horaires hebdomadaires et fermetures ponctuelles paramétrables, plusieurs plages par jour sans chevauchement ; le commerce active et désactive un item ou un parent, la lecture de son catalogue reflète l'état effectif, et la transition est journalisée*
-- [ ] Jeu de données de départ : trois commerces fictifs avec catalogue, capacités et créneaux
+- [x] Jeu de données de départ : trois commerces fictifs avec catalogue, capacités et créneaux
       *Fin : une commande recrée l'environnement de test à zéro*
 
 ---
