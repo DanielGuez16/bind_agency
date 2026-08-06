@@ -1300,3 +1300,28 @@ de parité des catalogues, qui ne lisait que `errors.py`, ne les voyait pas.
 L'écran affichait `undefined` à chaque obstacle. Les huit raisons sont entrées
 aux deux catalogues, et le test de parité lit désormais aussi `eligibility.py`.
 Sans cet ajout, le trou se serait rouvert au premier motif suivant.
+
+---
+
+## 2026-08-06 — Résolveur d'appartenance
+
+**Un résolveur par type de ressource**, chacun disant comment remonter au
+commerce : `booking → business_id`, `collaboration → booking`, `proof →
+collaboration → booking`, `redemption_code → booking`. Les chaînes sont écrites
+une fois, dans un seul module ; une route qui recopierait la jointure pourrait
+en oublier un maillon sans que rien ne le dise.
+
+**403, jamais 404.** Une ressource inexistante et une ressource d'un autre
+commerce reçoivent la même réponse. Les distinguer ferait de la route un oracle
+d'existence : on lirait l'existence d'une réservation du commerce d'en face en
+observant lequel des deux codes revient.
+
+**Écrit avant les routes qu'il protège.** Aucune route métier de ces quatre
+ressources n'existe encore, et c'est exactement pourquoi le résolveur vient
+maintenant : la première écrirait sinon son contrôle en ligne, et les suivantes
+le recopieraient. Les tests passent par des routes de sonde montées par la seule
+suite de tests, avec la dépendance réelle.
+
+**Un test par type, et un test qui compare la liste des types à celle des
+sondes.** Une chaîne fausse sur un seul type passerait inaperçue sous un test
+générique ; un type ajouté sans sonde serait couvert en apparence.
