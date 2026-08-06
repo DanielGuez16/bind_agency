@@ -56,6 +56,8 @@ export const en = {
     tier_offer_parent_not_allowed: 'An item with variants cannot be offered. Offer the variant instead.',
     tier_offer_tier_inactive: 'This tier is not open right now.',
     tier_offer_has_bookings: 'This offer has bookings and cannot be removed. Turn it off instead.',
+    creator_profile_not_found: 'We could not find your creator profile.',
+    creator_profile_anonymized: 'This profile has been anonymized and can no longer be edited.',
     oauth_state_invalid: 'This connection link is no longer valid. Start again from your account.',
     social_account_taken: 'This social account is already linked to another BIND account.',
     social_provider_unavailable: 'We could not reach the social network. Please try again.',
