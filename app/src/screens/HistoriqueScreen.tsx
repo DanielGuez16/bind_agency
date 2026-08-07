@@ -15,7 +15,7 @@
  * rendez-vous à quiconque voyage.
  */
 import { useMemo, useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import {
   useApi,
@@ -92,29 +92,46 @@ export function HistoriqueScreen({
       {(vue) => (
         <View style={{ gap: 12 }}>
           <Onglets index={index} onChange={setIndex} compteurs={compteurs} />
-          {vue.items.map((reservation) => (
-            <View key={reservation.booking_id} testID={`reservation-${reservation.booking_id}`}>
-              <ServiceRow
-                name={reservation.business_name}
-                meta={heureLocaleDuCommerce(reservation)}
-                tier={reservation.content_format}
-                right={
-                  <Texte variante="type.caption" couleur="text.secondary">
-                    {reservation.item_name}
-                  </Texte>
-                }
-              />
-              {reservation.contrepartie ? (
-                <Texte
-                  variante="type.caption"
-                  couleur="text.secondary"
-                  testID={`contrepartie-${reservation.booking_id}`}
-                >
-                  {reservation.contrepartie.status}
+          {vue.items.map((reservation) => {
+            const ouvrable = destination(reservation) !== null;
+            return (
+              <Pressable
+                key={reservation.booking_id}
+                testID={`reservation-${reservation.booking_id}`}
+                accessibilityRole={ouvrable ? 'button' : undefined}
+                accessibilityLabel={ouvrable ? reservation.business_name : undefined}
+                // Pressable seulement quand il y a quelque chose derrière. Une
+                // ligne qui répond au doigt sans rien ouvrir apprend à ne plus
+                // essayer, et c'est tout l'écran qui devient inerte.
+                disabled={!ouvrable}
+                onPress={() => onOuvrir(reservation)}
+                style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+              >
+                <ServiceRow
+                  name={reservation.business_name}
+                  meta={heureLocaleDuCommerce(reservation)}
+                  tier={reservation.content_format}
+                  right={
+                    <Texte variante="type.caption" couleur="text.secondary">
+                      {ouvrable ? t(`parcours.ouvrir_${destination(reservation)}`) : ''}
+                    </Texte>
+                  }
+                />
+                <Texte variante="type.caption" couleur="text.secondary">
+                  {reservation.item_name}
                 </Texte>
-              ) : null}
-            </View>
-          ))}
+                {reservation.contrepartie ? (
+                  <Texte
+                    variante="type.caption"
+                    couleur="text.secondary"
+                    testID={`contrepartie-${reservation.booking_id}`}
+                  >
+                    {reservation.contrepartie.status}
+                  </Texte>
+                ) : null}
+              </Pressable>
+            );
+          })}
         </View>
       )}
     </Ecran>
@@ -142,6 +159,23 @@ function Onglets({
       }))}
     />
   );
+}
+
+/**
+ * Ce qu'une ligne ouvre, ou rien.
+ *
+ * **Une réservation confirmée mène à son code de retrait.** C'est le geste
+ * principal du produit, et il n'était atteignable qu'immédiatement après la
+ * confirmation : fermer l'application faisait perdre le code jusqu'au rendez-
+ * vous. Une prestation consommée mène à sa contrepartie, où l'on envoie la
+ * preuve. Le reste ne mène nulle part, et ne se prétend donc pas pressable.
+ */
+export function destination(
+  reservation: ReservationDuCreateur,
+): 'code' | 'preuve' | null {
+  if (reservation.status === 'confirmed' || reservation.status === 'held') return 'code';
+  if (reservation.contrepartie) return 'preuve';
+  return null;
 }
 
 /**

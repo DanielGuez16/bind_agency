@@ -16,6 +16,7 @@
  * de déjà connecté.
  */
 import { StatusBar } from 'expo-status-bar';
+import type { ReactNode } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -25,6 +26,7 @@ import { AuthScreen } from './src/screens/AuthScreen';
 import { SessionProvider, coffreSecurise, themeDuRole, useSession } from './src/session';
 import { FrontiereDErreur } from './src/shell/FrontiereDErreur';
 import { Navigation } from './src/shell/Navigation';
+import { ZoneSure } from './src/shell/ZoneSure';
 import { ThemeProvider, useColors } from './src/theme';
 
 /**
@@ -58,13 +60,21 @@ function Coquille() {
     <ThemeProvider role={themeDuRole(role)}>
       <ApiProvider client={session.client}>
         <StatusBar style="auto" />
-        <FrontiereDErreur>
-          {session.etat === 'connecte' ? (
-            <Navigation role={session.utilisateur.role} />
-          ) : (
-            <AuthScreen motif={session.motif} />
-          )}
-        </FrontiereDErreur>
+        {/* **La zone sûre est traitée ici, une fois.** Chaque écran qui s'en
+            occuperait produirait un oubli quelque part, et l'oubli se voit sur
+            un appareil à encoche : le titre passe dessous et se coupe.
+
+            `bottom` est exclu : la barre d'onglets pose son propre décalage, et
+            l'ajouter ici la ferait flotter au-dessus du bord. */}
+        <ZoneSure>
+          <FrontiereDErreur>
+            {session.etat === 'connecte' ? (
+              <Navigation role={session.utilisateur.role} />
+            ) : (
+              <AuthScreen motif={session.motif} />
+            )}
+          </FrontiereDErreur>
+        </ZoneSure>
       </ApiProvider>
     </ThemeProvider>
   );

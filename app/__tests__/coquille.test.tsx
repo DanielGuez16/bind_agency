@@ -23,7 +23,10 @@ import { ReglagesScreen } from '../src/screens/ReglagesScreen';
 import { SessionProvider, themeDuRole, useSession, type Utilisateur } from '../src/session';
 import { FrontiereDErreur } from '../src/shell/FrontiereDErreur';
 import { Navigation } from '../src/shell/Navigation';
-import { ThemeProvider } from '../src/theme';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+import { ThemeProvider, tokens } from '../src/theme';
+import { ZoneSure } from '../src/shell/ZoneSure';
 
 // --------------------------------------------------------------------------
 // plomberie
@@ -527,5 +530,75 @@ describe('aiguillage par rôle', () => {
       expect(screen.queryAllByText(en.onglets.reglages).length).toBeGreaterThan(0);
       void rendu;
     }
+  });
+});
+
+// --------------------------------------------------------------------------
+// zone sûre
+// --------------------------------------------------------------------------
+
+describe('zone sûre', () => {
+  /**
+   * Les marges d'un iPhone à encoche.
+   *
+   * `initialMetrics` est le seul moyen de les éprouver hors appareil : un
+   * navigateur ne rend pas `env(safe-area-inset-top)`, et un simulateur
+   * n'entre pas dans une suite de tests. Ces valeurs sont celles d'un
+   * iPhone 13.
+   */
+  const IPHONE_A_ENCOCHE = {
+    frame: { x: 0, y: 0, width: 390, height: 844 },
+    insets: { top: 47, left: 0, right: 0, bottom: 34 },
+  };
+
+  function styleAplati(element: { props: { style?: unknown } }): Record<string, unknown> {
+    const empile = (valeur: unknown): Record<string, unknown> =>
+      Array.isArray(valeur)
+        ? Object.assign({}, ...valeur.map(empile))
+        : ((valeur as Record<string, unknown>) ?? {});
+    return empile(element.props.style);
+  }
+
+  it('décale le contenu sous l’encoche, au niveau de la coquille', async () => {
+    // Le titre passait dessous et se coupait, sur **tous** les écrans. Traité
+    // ici plutôt qu'écran par écran : un écran qui l'oublierait rouvrirait le
+    // défaut, et l'oubli ne se voit que sur un appareil à encoche.
+    await render(
+      <SafeAreaProvider initialMetrics={IPHONE_A_ENCOCHE}>
+        <I18nProvider initialLocale="en">
+          <ThemeProvider role="creator">
+            <ZoneSure>
+              <Text testID="contenu">titre</Text>
+            </ZoneSure>
+          </ThemeProvider>
+        </I18nProvider>
+      </SafeAreaProvider>,
+    );
+
+    const zone = screen.getByTestId('zone-sure');
+    expect(styleAplati(zone).paddingTop).toBe(47);
+    // Le bas est laissé à la barre d'onglets, qui pose le sien : l'ajouter ici
+    // la ferait flotter au-dessus du bord.
+    expect(styleAplati(zone).paddingBottom ?? 0).toBe(0);
+  });
+
+  it('ne laisse pas la bande d’encoche transparente', async () => {
+    // Sans couleur, elle laisse voir la racine — blanche — et coupe l'écran
+    // d'une barre claire en haut d'un thème sombre.
+    await render(
+      <SafeAreaProvider initialMetrics={IPHONE_A_ENCOCHE}>
+        <I18nProvider initialLocale="en">
+          <ThemeProvider role="creator">
+            <ZoneSure>
+              <Text>titre</Text>
+            </ZoneSure>
+          </ThemeProvider>
+        </I18nProvider>
+      </SafeAreaProvider>,
+    );
+
+    expect(styleAplati(screen.getByTestId('zone-sure')).backgroundColor).toBe(
+      tokens.color.dark['bg.canvas'],
+    );
   });
 });

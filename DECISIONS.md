@@ -2326,3 +2326,72 @@ le signale. `android/` l'est aussi, par symétrie.
 **Ce que la rétrogradation coûte réellement** : React 19.1 au lieu de 19.2,
 React Native 0.81 au lieu de 0.86, TypeScript 5.9 au lieu de 6.0. Aucun de ces
 écarts ne touche ce qui est écrit.
+
+---
+
+## 2026-08-07 — Le premier passage sur iPhone
+
+Neuf défauts remontés, dont deux qui n'existaient pas là où on les cherchait.
+
+**La zone sûre est posée une fois, dans la coquille.** Le titre passait sous
+l'encoche sur tous les écrans. Les marges sont appliquées à la main plutôt que
+par `SafeAreaView` : ce dernier les pose côté natif, dans une vue que le style
+JavaScript ne montre pas — l'intention devient invisible en lecture et
+invérifiable en test. Un `View` avec `useSafeAreaInsets` dit ce qu'il fait, et
+un test le vérifie avec les marges d'un iPhone 13 injectées par
+`initialMetrics` — le seul moyen de l'éprouver hors appareil.
+
+**Les cinq flèches identiques étaient le caractère de repli de la barre
+d'onglets.** Aucune `tabBarIcon` n'était déclarée. Sept icônes ajoutées au jeu,
+posées dans la navigation et non dans les écrans : une icône d'onglet est une
+propriété de la navigation.
+
+**Les photos n'étaient pas mal adressées, elles n'étaient jamais demandées.**
+`BusinessCard` ne recevait aucune couverture, et son repli au monogramme passait
+pour un défaut de chargement. Deux choses manquaient derrière : l'URL rendue
+était **relative** — un composant `Image` ne connaît pas la base de l'API — et
+la route exigeait une authentification que `Image` ne sait pas porter, ni sur le
+web ni uniformément sur mobile.
+
+La route des photos est donc devenue **publique**. Une photo de couverture est
+montrée dans le fil à tout créateur : elle n'est pas confidentielle, et une
+route protégée dont personne ne peut se servir ne protège rien — elle casse. Ce
+qui reste protégé, ce sont les preuves, par le filtre de préfixe, quel que soit
+le porteur.
+
+**Le choix de créneau montrait l'horizon entier.** Trente jours, plusieurs
+centaines de départs, aucune date, et le bouton de confirmation hors de vue. Un
+jour d'abord, puis ses créneaux seulement, séparés à midi — la coupure que tout
+le monde a en tête — et le bouton fixé sous la liste. Le regroupement se fait
+dans le fuseau **du commerce** : un créneau de 23 h à Miami tombe le lendemain
+en UTC, et classer sur la date brute placerait des rendez-vous du soir au jour
+suivant.
+
+**Le code de retrait s'appelait en boucle.** La relecture était déclenchée
+depuis un *updater* d'état — que React exécute deux fois en développement — et
+le décompte repartait de la réponse à chaque tour. Le décompte est maintenant
+piloté par une **échéance** retenue en référence : un compteur se remet à zéro à
+chaque rendu, une échéance non. Et rien ne tourne quand l'écran n'est pas
+visible : un onglet quitté laisse l'écran monté, et le minuteur continuait.
+Mesuré : un appel en douze secondes à l'écran, zéro depuis un autre onglet.
+
+**Le code n'était atteignable qu'après la confirmation.** Fermer l'application
+le faisait perdre jusqu'au rendez-vous, alors que c'est la seule chose à montrer
+au comptoir. Une réservation confirmée y mène désormais depuis l'historique, une
+prestation consommée mène à sa contrepartie. Les lignes qui ne mènent nulle part
+ne sont pas pressables : une ligne qui répond au doigt sans rien ouvrir apprend
+à ne plus essayer, et c'est tout l'écran qui devient inerte.
+
+**L'écran des paliers affichait bien ses obstacles.** Ce qui manquait était la
+**plateforme** : six paliers portaient trois libellés répétés deux fois, et
+« story fermé » juste sous « story ouvert » se lisait comme une contradiction.
+Le message d'absence de compte disait par-dessus le marché « connectez un compte
+Instagram » sur un palier TikTok, à quelqu'un qui avait déjà connecté Instagram.
+Le code du serveur ne porte pas la plateforme — c'est le palier qui la porte,
+et il la passe maintenant au message.
+
+**Le rayon passe de 2 à 15 km, et devient réglable depuis le fil.** Miami est
+une ville de voiture ; deux kilomètres ne couvrent qu'un quartier et ne
+montraient qu'un salon. Le réglage vit dans le fil et non seulement dans son
+état vide : un fil maigre n'est pas un fil vide, et il faut pouvoir l'élargir
+sans avoir à le vider d'abord.

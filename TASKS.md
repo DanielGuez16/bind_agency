@@ -210,6 +210,8 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Fin : routeur par rôle, inscription et connexion sur l'API réelle, session dans le trousseau de l'appareil avec rafraîchissement automatique, thème appliqué au niveau de la coquille, sélecteur de langue en réglages, frontière d'erreur qui ne montre jamais de trace. Une session expirée ou un compte suspendu ramène à la connexion avec un message*
 - [x] Rétrograder l'app en Expo SDK 54
       *Fin : Expo Go de l'App Store ouvre le QR code. Aucune ligne de code applicatif n'a changé — seules les versions, alignées par `expo install --fix` plutôt que devinées*
+- [x] Défauts du premier passage sur iPhone
+      *Fin : zone sûre au niveau de la coquille, icônes d'onglets, photos réellement demandées, choix de créneau par jour avec bouton fixé, code de retrait appelé une fois par rotation et arrêté hors écran, réservation qui ouvre son code, plateforme affichée sur les paliers, rayon à 15 km réglable*
 - [ ] Écrans de composition du commerce
       *Catalogue, horaires, capacité. Les routes existent depuis la phase 2, aucun écran ne les pilote — le commerce compose aujourd'hui par l'API*
 - [ ] Sélection du média de preuve

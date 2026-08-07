@@ -22,7 +22,7 @@ import { useI18n } from '../i18n';
 import { en } from '../i18n/en';
 import { useTheme } from '../theme';
 import { Ecran } from './Ecran';
-import { messageDObstacle } from './obstacle';
+import { messageDObstacle, nomDePlateforme } from './obstacle';
 import { useRequete } from './useRequete';
 
 const CODES_CONNUS = new Set(Object.keys(en.errors));
@@ -78,8 +78,12 @@ function CartePalier({ palier }: { palier: PalierAccessible }) {
         backgroundColor: c['bg.surface'],
       }}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         <TierBadge tier={palier.content_format} />
+        {/* La plateforme, en clair. Sans elle, six paliers portent trois
+            libellés répétés deux fois, et « story fermé » juste sous « story
+            ouvert » se lit comme une contradiction. */}
+        <Chip label={nomDePlateforme(palier.platform)} />
         <Chip label={palier.accessible ? t('parcours.tiersOuvert') : t('parcours.tiersFerme')} />
       </View>
       <LigneDeContrepartie tier={palier.content_format} />
@@ -92,7 +96,7 @@ function CartePalier({ palier }: { palier: PalierAccessible }) {
           couleur="text.secondary"
           testID={`obstacle-${obstacle.raison}`}
         >
-          {messageDObstacle(t, obstacle, CODES_CONNUS)}
+          {messageDObstacle(t, obstacle, CODES_CONNUS, palier.platform)}
         </Texte>
       ))}
     </View>

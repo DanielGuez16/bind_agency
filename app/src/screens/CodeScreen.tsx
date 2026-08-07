@@ -1,19 +1,28 @@
 /**
  * 06 · Code de retrait. **Hors thème.**
  *
- * **Le code tourne tout seul toutes les 30 secondes.** Il n'existe donc ni
- * bouton de renouvellement — en proposer un donnerait à croire qu'il faut agir,
- * devant un écran qui se met déjà à jour — ni état « expiré » : un code périmé
- * est remplacé par le suivant. Ce qui expire est le droit de consommer, et cela
- * se dit sur l'écran de réservation.
+ * **Un seul appel par rotation.** Le serveur rend le code et le nombre de
+ * secondes qui restent ; le décompte se pilote ici, à partir de cet instant, et
+ * un nouvel appel n'a lieu qu'à l'expiration. La première version rappelait
+ * l'API à chaque seconde écoulée à zéro et depuis un *updater* d'état — que
+ * React exécute deux fois en développement — ce qui produisait une quinzaine
+ * d'appels et remettait le décompte à zéro sans arrêt.
+ *
+ * **Rien ne tourne quand l'écran n'est pas visible.** Un onglet quitté laisse
+ * l'écran monté ; sans cette garde, le minuteur continue et l'API reçoit des
+ * appels pour un écran que personne ne regarde.
+ *
+ * **Le code tourne tout seul.** Il n'existe donc ni bouton de renouvellement —
+ * en proposer un donnerait à croire qu'il faut agir, devant un écran qui se met
+ * déjà à jour — ni état « expiré » : un code périmé est remplacé par le
+ * suivant. Ce qui expire est le droit de consommer, et cela se dit ailleurs.
  *
  * **Hors ligne, le code reste affiché et valide.** La vérification se fait côté
  * salon. Effacer l'écran sur une perte de réseau laisserait quelqu'un devant
  * une caisse sans rien à montrer.
- *
- * **Luminosité au maximum, veille désactivée.** Restaurées à la sortie.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useIsFocused } from '@react-navigation/native';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 
 import { useApi, type CodeDeRetrait } from '../api';
@@ -31,7 +40,7 @@ import { codeColors } from '../theme';
 
 export function CodeScreen({
   bookingId,
-  /** Injectés pour les tests, et pour la plateforme web où ils n'existent pas. */
+  /** Injectés pour les tests, et pour le web où ils n'existent pas. */
   garderEveille,
 }: {
   bookingId: string;
@@ -39,51 +48,58 @@ export function CodeScreen({
 }) {
   const { api } = useApi();
   const { t } = useI18n();
+  const visible = useIsFocused();
+
   const [code, setCode] = useState<CodeDeRetrait | null>(null);
   const [restant, setRestant] = useState(0);
 
-  // Le dernier code obtenu reste affiché quoi qu'il arrive ensuite : une
-  // requête qui échoue ne doit pas vider l'écran, le code affiché est encore
-  // valide côté salon jusqu'à sa rotation.
-  const dernier = useRef<CodeDeRetrait | null>(null);
+  /**
+   * L'instant où le code affiché cesse d'être le bon, en horloge locale.
+   *
+   * C'est lui qui décide de rappeler, pas un compteur qui descend : un
+   * compteur se remet à zéro à chaque rendu, une échéance non.
+   */
+  const expireA = useRef<number>(0);
+  /** Empêche deux relectures concurrentes de se croiser. */
+  const enCours = useRef(false);
+
+  const relire = useCallback(async () => {
+    if (enCours.current) return;
+    enCours.current = true;
+    try {
+      const frais = await api.codeDeRetrait(bookingId);
+      expireA.current = Date.now() + frais.seconds_remaining * 1000;
+      setCode(frais);
+      setRestant(frais.seconds_remaining);
+    } catch {
+      // Hors ligne : on garde ce qui est à l'écran. Le code affiché reste
+      // valide côté salon jusqu'à sa rotation, et c'est le seul endroit du
+      // produit où avaler une erreur est le bon comportement.
+    } finally {
+      enCours.current = false;
+    }
+  }, [api, bookingId]);
 
   useEffect(() => {
+    if (!visible) return;
     garderEveille?.activer();
     return () => garderEveille?.desactiver();
-  }, [garderEveille]);
+  }, [garderEveille, visible]);
 
   useEffect(() => {
-    let vivant = true;
+    if (!visible) return;
 
-    async function relire() {
-      try {
-        const frais = await api.codeDeRetrait(bookingId);
-        if (!vivant) return;
-        dernier.current = frais;
-        setCode(frais);
-        setRestant(frais.seconds_remaining);
-      } catch {
-        // Hors ligne : on garde ce qui est à l'écran. Le silence est correct
-        // ici, et c'est le seul endroit du produit où il l'est.
-      }
-    }
+    // Un seul appel à l'ouverture, et à l'expiration seulement ensuite.
+    if (Date.now() >= expireA.current) void relire();
 
-    void relire();
     const battement = setInterval(() => {
-      setRestant((secondes) => {
-        if (secondes > 1) return secondes - 1;
-        // Le compte est à zéro : on demande le code suivant. Personne n'a rien
-        // à presser.
-        void relire();
-        return dernier.current?.rotation_seconds ?? 0;
-      });
+      const reste = Math.max(0, Math.ceil((expireA.current - Date.now()) / 1000));
+      setRestant(reste);
+      if (reste === 0) void relire();
     }, 1000);
 
-    return () => {
-      vivant = false;
-      clearInterval(battement);
-    };
-  }, [api, bookingId]);
+    return () => clearInterval(battement);
+  }, [relire, visible]);
 
   return (
     <PickupCodeSurface>

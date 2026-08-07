@@ -85,8 +85,21 @@ export function messageDObstacle(
   t: (cle: string, params?: Record<string, unknown>) => string,
   obstacle: Obstacle,
   codesConnus: ReadonlySet<string>,
+  /**
+   * La plateforme du palier concerné, quand elle change le sens du message.
+   *
+   * `no_social_account` disait « connectez un compte Instagram » sur un palier
+   * TikTok, à quelqu'un qui avait déjà connecté Instagram : le message était
+   * faux et l'écran paraissait ne rien dire. Le code du serveur ne porte pas
+   * la plateforme — c'est le palier qui la porte.
+   */
+  platform?: string,
 ): string {
   if (!codesConnus.has(obstacle.raison)) return t('etats.detailIndisponible');
+
+  if (obstacle.raison === 'no_social_account' && platform) {
+    return t('obstacles.compteAbsent', { plateforme: nomDePlateforme(platform) });
+  }
 
   const base = t(`errors.${obstacle.raison}`);
   const forme = formeDe(obstacle);
@@ -102,4 +115,15 @@ export function messageDObstacle(
     case 'simple':
       return base;
   }
+}
+
+
+/** Le nom d'usage d'une plateforme. Jamais traduit : c'est une marque. */
+export function nomDePlateforme(platform: string): string {
+  const noms: Record<string, string> = {
+    instagram: 'Instagram',
+    tiktok: 'TikTok',
+    snapchat: 'Snapchat',
+  };
+  return noms[platform] ?? platform;
 }

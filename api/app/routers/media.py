@@ -7,10 +7,17 @@ droit de la voir. Une route de média qui servirait tout laisserait n'importe
 quel porteur de jeton lire n'importe quelle preuve en devinant une clé — et les
 clés sont des empreintes, donc devinables par quiconque possède le fichier.
 
-**Authentifiée, mais sans appartenance.** Une photo de couverture est publique
-par nature : le fil la montre à tout créateur. Exiger l'appartenance
-empêcherait de la voir depuis la fiche d'un commerce dont on n'est pas membre,
-c'est-à-dire tout le temps.
+**Publique, et c'est ce qui la rend utilisable.** Une photo de couverture est
+montrée dans le fil à tout créateur : elle n'est pas confidentielle. L'exiger
+authentifiée obligeait le composant image à porter un en-tête `Authorization`,
+ce que `Image` ne sait faire ni sur le web ni uniformément sur mobile — et les
+photos ne s'affichaient nulle part. Une route protégée dont personne ne peut se
+servir ne protège rien, elle casse.
+
+Ce qui reste protégé, ce sont les **preuves**, par le filtre de préfixe :
+`proofs/api`, `proofs/url`, `proofs/upload` sont hors de portée de cette route
+quel que soit le porteur. Les clés sont des empreintes de contenu — donc
+devinables par quiconque possède déjà le fichier, jamais énumérables.
 
 **Une clé absente rend 404, jamais 500.** Un dépôt qui a perdu un fichier n'est
 pas une panne du produit : l'app affiche son repli d'image, qui existe pour
@@ -21,7 +28,6 @@ from typing import Annotated
 
 from fastapi import APIRouter, Path, Response, status
 
-from app.core.dependencies import CurrentUser, SessionDep
 from app.core.errors import ErrorCode, api_error
 from app.integrations.object_store import ObjectStoreError, get_object_store
 
@@ -42,11 +48,7 @@ SIGNATURES = (
 
 
 @router.get("/{cle:path}")
-async def read_media(
-    cle: Annotated[str, Path()], user: CurrentUser, session: SessionDep
-) -> Response:
-    _ = user, session
-
+async def read_media(cle: Annotated[str, Path()]) -> Response:
     if not cle.startswith(PREFIXES_PUBLICS):
         # 404 et non 403 : dire « existe mais interdit » apprendrait qu'une
         # preuve porte cette clé, ce qui est déjà trop.
