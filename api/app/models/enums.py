@@ -71,6 +71,12 @@ class BillingInterval(StrEnum):
 
 
 class SubscriptionStatus(StrEnum):
+    #: Créé chez le fournisseur, pas encore payé. C'est l'état par défaut d'un
+    #: abonnement Stripe ouvert en `default_incomplete`, et c'est aussi celui
+    #: qu'on retient quand le fournisseur rend un statut qu'on ne connaît pas :
+    #: dans le doute, on ne fait pas participer un commerce qui n'a peut-être
+    #: pas payé.
+    INCOMPLETE = "incomplete"
     TRIALING = "trialing"
     ACTIVE = "active"
     PAST_DUE = "past_due"

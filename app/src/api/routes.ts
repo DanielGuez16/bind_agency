@@ -70,6 +70,11 @@ export const routes = {
   offresDePalier: (businessId: string) => chemin(`/business/${businessId}/tier-offers`),
   activationDUneOffre: (businessId: string, offreId: string) =>
     chemin(`/business/${businessId}/tier-offers/${offreId}/activation`),
+  reporting: (businessId: string) => chemin(`/business/${businessId}/reporting`),
+  plansSouscriptibles: (businessId: string) => chemin(`/business/${businessId}/plans`),
+  abonnement: (businessId: string) => chemin(`/business/${businessId}/subscription`),
+  media: (cle: string) => chemin(`/media/${cle}`),
+  connecterTikTok: () => chemin('/me/social-accounts/tiktok/connect'),
   reglesDeCapacite: (businessId: string) => chemin(`/business/${businessId}/capacity-rules`),
   exceptionsDeCapacite: (businessId: string) =>
     chemin(`/business/${businessId}/capacity-exceptions`),
@@ -138,6 +143,11 @@ export const METHODES: Record<keyof typeof routes, ('GET' | 'POST' | 'PATCH' | '
     itemsDuCatalogue: ['POST'],
     offresDePalier: ['GET', 'POST'],
     activationDUneOffre: ['PUT'],
+    reporting: ['GET'],
+    plansSouscriptibles: ['GET'],
+    abonnement: ['GET', 'POST', 'DELETE'],
+    media: ['GET'],
+    connecterTikTok: ['POST'],
     reglesDeCapacite: ['GET', 'POST'],
     exceptionsDeCapacite: ['GET', 'POST'],
 

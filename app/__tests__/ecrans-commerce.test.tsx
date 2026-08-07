@@ -21,6 +21,7 @@ import { ArbitrageScreen } from '../src/screens/ArbitrageScreen';
 import { JourneeScreen } from '../src/screens/JourneeScreen';
 import { PlansScreen } from '../src/screens/PlansScreen';
 import { PublicationsScreen } from '../src/screens/PublicationsScreen';
+import { ReportingScreen } from '../src/screens/ReportingScreen';
 import { ECRANS_COMMERCE } from '../test-support/registre-ecrans';
 
 const coffre = { lire: async () => null, ecrire: async () => {} };
@@ -158,6 +159,43 @@ const PLAN = {
   mrr_cents: 99000,
 };
 
+const REPORTING = {
+  business_id: 'b1',
+  currency: 'USD',
+  debut: '2026-07-08T04:00:00Z',
+  fin: '2026-08-08T04:00:00Z',
+  timezone: 'America/New_York',
+  reservations: 12,
+  consommations: 9,
+  annulations: 2,
+  absences: 1,
+  publications: 7,
+  publications_attendues: 2,
+  non_honorees: 0,
+  valeur_offerte_cents: 72_000,
+  portee_approximative: 184_000,
+  taux_d_honoration: 0.7778,
+  par_palier: [
+    {
+      tier_id: 'p1',
+      platform: 'instagram',
+      content_format: 'story',
+      publications: 7,
+      valeur_offerte_cents: 72_000,
+    },
+  ],
+  par_item: [
+    {
+      catalog_item_id: 'i1',
+      name: 'Gel nails',
+      reservations: 12,
+      consommations: 9,
+      publications: 7,
+      valeur_offerte_cents: 72_000,
+    },
+  ],
+};
+
 const ECRANS = [
   {
     nom: 'journee',
@@ -180,6 +218,13 @@ const ECRANS = [
     plein: { '/activation': ETAPES },
     // Une liste d'étapes vide n'arrive pas : le serveur en rend toujours six.
     vide: null,
+  },
+  {
+    nom: 'reporting',
+    noeud: <ReportingScreen businessId="b1" />,
+    role: 'merchant' as Role,
+    plein: { '/reporting': REPORTING },
+    vide: { '/reporting': { ...REPORTING, reservations: 0 } },
   },
   {
     nom: 'arbitrage',
@@ -234,6 +279,7 @@ describe('quatre états', () => {
       activation: 'ActivationScreen.tsx',
       arbitrage: 'ArbitrageScreen.tsx',
       plans: 'PlansScreen.tsx',
+      reporting: 'ReportingScreen.tsx',
     };
     expect(ECRANS.map((e) => fichiers[e.nom]).sort()).toEqual([...ECRANS_COMMERCE].sort());
   });
@@ -444,5 +490,75 @@ describe('plans', () => {
     for (const mot of [/edit/i, /save/i, /change/i]) {
       expect(screen.queryByText(mot)).toBeNull();
     }
+  });
+});
+
+
+// --------------------------------------------------------------------------
+// reporting
+// --------------------------------------------------------------------------
+
+describe('reporting', () => {
+  it('dit ce que le commerce a donné, jamais ce qu’il a gagné', async () => {
+    await monter(<ReportingScreen businessId="b1" />, clientDe({ '/reporting': REPORTING }));
+    await waitFor(() => expect(screen.getByTestId('valeur-offerte')).toBeTruthy());
+
+    expect(screen.getByText('720.00 USD')).toBeTruthy();
+    // Aucun mot de revenu, de chiffre d'affaires ou de gain sur cet écran.
+    for (const mot of [/revenue/i, /earned/i, /income/i, /profit/i]) {
+      expect(screen.queryByText(mot)).toBeNull();
+    }
+  });
+
+  it('annonce la portée comme approximative, en toutes lettres', async () => {
+    // Le nombre d'abonnés n'est pas le nombre de personnes ayant vu une story.
+    // Le rendre sans le dire ferait prendre une approximation pour un résultat.
+    await monter(<ReportingScreen businessId="b1" />, clientDe({ '/reporting': REPORTING }));
+    await waitFor(() => expect(screen.getByTestId('note-portee')).toBeTruthy());
+    expect(screen.getByText(en.reporting.porteeNote)).toBeTruthy();
+  });
+
+  it('écrit le taux inconnu en mots, jamais en zéro pour cent', async () => {
+    // Zéro sur zéro n'est pas zéro. Afficher 0 % à un commerce qui n'a encore
+    // servi personne serait un reproche pour quelque chose qu'il n'a pas fait.
+    await monter(
+      <ReportingScreen businessId="b1" />,
+      clientDe({ '/reporting': { ...REPORTING, consommations: 0, taux_d_honoration: null } }),
+    );
+    await waitFor(() => expect(screen.getByTestId('taux')).toBeTruthy());
+
+    expect(screen.getByText(en.reporting.tauxInconnu)).toBeTruthy();
+    expect(screen.queryByText('0 %')).toBeNull();
+  });
+
+  it('affiche le taux en pourcentage quand il existe', async () => {
+    // Le pendant : sans lui, un écran qui écrirait toujours « rien servi »
+    // passerait le test précédent.
+    await monter(<ReportingScreen businessId="b1" />, clientDe({ '/reporting': REPORTING }));
+    await waitFor(() => expect(screen.getByTestId('taux')).toBeTruthy());
+    expect(screen.getByText('78 %')).toBeTruthy();
+  });
+});
+
+// --------------------------------------------------------------------------
+// Snapchat
+// --------------------------------------------------------------------------
+
+describe('absence de Snapchat', () => {
+  it('ne casse aucun écran qui reçoit la plateforme', async () => {
+    // Snapchat existe en base et dans les paliers ; aucune implémentation ne
+    // lui répond. Un écran qui recevrait la plateforme et planterait ferait
+    // tomber le produit sur une donnée parfaitement légitime.
+    await monter(
+      <ReportingScreen businessId="b1" />,
+      clientDe({
+        '/reporting': {
+          ...REPORTING,
+          par_palier: [{ ...REPORTING.par_palier[0], platform: 'snapchat' }],
+        },
+      }),
+    );
+    await waitFor(() => expect(screen.getByTestId('etat-nominal')).toBeTruthy());
+    expect(screen.getByTestId('palier-p1')).toBeTruthy();
   });
 });

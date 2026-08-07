@@ -29,6 +29,7 @@ from sqlalchemy import make_url
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from alembic import command
+from app import seed_demo
 from app.core.config import API_ROOT, get_settings
 from app.integrations.geocoding import ManualGeocoder
 from app.integrations.social import IdentiteSociale, JetonEchange, MetriquesProfil
@@ -67,6 +68,11 @@ class Resume:
     exceptions: int
     offres: int
     createurs: int
+    reservations: int
+    contreparties: int
+    jobs: int
+    photos: int
+    plans: int
     #: Nombre de paliers auxquels au moins un créateur du jeu accède. À zéro,
     #: le jeu ne permet de démontrer aucun parcours créateur — c'est une donnée
     #: du résumé, pas un détail à découvrir en cherchant.
@@ -347,6 +353,36 @@ async def _brickell_spa(session: AsyncSession, owner: User) -> tuple[int, int, i
     return len(items), plages, 2, offres
 
 
+async def _little_havana(session: AsyncSession, owner: User) -> tuple[int, int, int, int]:
+    """Un commerce inscrit qui n'a **rien** composé.
+
+    Il n'a ni catalogue, ni horaires, ni offre — seulement une adresse. C'est
+    l'état de tout commerce le jour de son inscription, et aucun jeu de données
+    ne le montrait : l'écran d'activation, l'état vide du catalogue et le
+    reporting à zéro n'avaient jamais de sujet.
+
+    Il reste en `onboarding` : deux de ses six étapes sont faites, les quatre
+    autres attendent, et le commerce n'apparaît dans aucun fil — ce qui est
+    exactement ce que l'écran d'activation doit lui expliquer.
+    """
+    await business_service.create_business(
+        session,
+        payload=BusinessCreate(
+            name="Havana Glow",
+            category="beauty",
+            currency="usd",
+            address="1500 SW 8th St, Miami, FL 33135",
+            coordinates=CoordinatesPayload(longitude=-80.2192, latitude=25.7650),
+            timezone="America/New_York",
+            default_locale=Locale.ES,
+            phone="+13055550444",
+        ),
+        creator=owner,
+        geocoder=ManualGeocoder(),
+    )
+    return 0, 0, 0, 0
+
+
 # --------------------------------------------------------------------------
 # créateurs
 # --------------------------------------------------------------------------
@@ -504,6 +540,7 @@ async def populate() -> Resume:
                     ("ocean@bind.test", Locale.EN),
                     ("wynwood@bind.test", Locale.ES),
                     ("brickell@bind.test", Locale.EN),
+                    ("havana@bind.test", Locale.ES),
                 )
             ]
 
@@ -511,44 +548,30 @@ async def populate() -> Resume:
                 await _ocean_beauty(session, proprietaires[0]),
                 await _wynwood_nails(session, proprietaires[1]),
                 await _brickell_spa(session, proprietaires[2]),
+                await _little_havana(session, proprietaires[3]),
             ]
 
-            # Les trois se distinguent par leurs abonnés, seule dimension que
-            # le produit sait aujourd'hui mesurer. Le score de fiabilité et le
-            # compteur de collaborations restent nuls pour tous, faute de
-            # mécanisme : ils faisaient auparavant toute la différence entre ces
-            # profils, et cette différence était une fiction.
-            createurs = [
-                await _creator(
-                    session,
-                    email="rebecca@bind.test",
-                    locale=Locale.EN,
-                    handle="rebecca.miami",
-                    followers=24_000,
-                ),
-                await _creator(
-                    session,
-                    email="mateo@bind.test",
-                    locale=Locale.ES,
-                    handle="mateo.wynwood",
-                    followers=8_600,
-                ),
-                await _creator(
-                    session,
-                    email="nouvelle@bind.test",
-                    locale=Locale.ES,
-                    handle="camila.newcomer",
-                    followers=3_100,
-                ),
-            ]
-
+            # Les créateurs, les parcours, les contreparties et les jobs sont
+            # posés par l'enrichissement de démonstration. Il vit à part parce
+            # qu'il répond à une autre question : celle-ci pose ce qu'il faut
+            # pour éprouver les invariants, celle-là ce qu'il faut pour
+            # parcourir le produit sans tomber sur un écran vide.
+            demo = await seed_demo.enrichir(session)
             await session.commit()
 
+            # Sur les créateurs réellement en base, pas sur une liste tenue à
+            # la main : c'est le seul moyen que le garde-fou porte sur ce que le
+            # jeu contient et non sur ce qu'on croit y avoir mis.
+            identifiants = list(
+                (
+                    await session.scalars(sa.select(User.id).where(User.role == UserRole.CREATOR))
+                ).all()
+            )
             paliers = {
                 palier
-                for user in createurs
+                for identifiant in identifiants
                 for palier in (
-                    await eligibility.evaluer_createur(session, user.id)
+                    await eligibility.evaluer_createur(session, identifiant)
                 ).paliers_accessibles
             }
 
@@ -558,7 +581,12 @@ async def populate() -> Resume:
             plages=sum(plages for _, plages, _, _ in totaux),
             exceptions=sum(exceptions for _, _, exceptions, _ in totaux),
             offres=sum(offres for _, _, _, offres in totaux),
-            createurs=len(createurs),
+            createurs=demo.createurs,
+            reservations=demo.reservations,
+            contreparties=demo.contreparties,
+            jobs=demo.jobs,
+            photos=demo.photos,
+            plans=demo.plans,
             paliers_accessibles=len(paliers),
         )
     finally:
@@ -580,7 +608,9 @@ def main() -> int:
     print(
         f"{resume.commerces} commerces, {resume.items} items, {resume.plages} plages, "
         f"{resume.exceptions} exceptions, {resume.offres} offres, "
-        f"{resume.createurs} créateurs."
+        f"{resume.createurs} créateurs, {resume.reservations} réservations, "
+        f"{resume.contreparties} contreparties, {resume.jobs} jobs, "
+        f"{resume.photos} photos, {resume.plans} plans."
     )
     print(f"Mot de passe de tous les comptes : {MOT_DE_PASSE}")
 

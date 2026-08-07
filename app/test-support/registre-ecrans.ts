@@ -24,6 +24,7 @@ export const ECRANS_COMMERCE = [
   'ArbitrageScreen.tsx',
   'JourneeScreen.tsx',
   'PlansScreen.tsx',
+  'ReportingScreen.tsx',
   'PublicationsScreen.tsx',
 ] as const;
 

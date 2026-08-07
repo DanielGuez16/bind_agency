@@ -8,35 +8,30 @@ enverrait une capture d'écran. On tente le meilleur, on retombe sur le suivant.
 2. récupération depuis l'URL publique fournie
 3. capture d'écran envoyée par le créateur
 
-**Le stockage objet réel n'est pas branché.** Cette phase pose l'ordre, la
-descente de niveau, l'empreinte et l'horodatage ; le dépôt du fichier chez un
-fournisseur compatible S3 est une tâche d'infrastructure qui viendra avec le
-déploiement. En attendant, `deposer` rend une clé déterministe sans écrire
-ailleurs qu'en base — et le jour où le fournisseur existe, cette fonction est la
-seule à changer.
+**Le dépôt d'objets est derrière une interface**, choisie par configuration :
+mémoire pour les tests, disque pour le développement et la démonstration, S3 le
+jour où les identifiants existent. Le service ne sait pas laquelle il tient, et
+il n'existe aucune branche conditionnelle sur le mode.
+
+**Le niveau 1 attend `fetch_media`** sur l'interface de plateforme. Il arrivera
+avec le relevé des publications ; rendre `None` fait descendre au niveau
+suivant, ce qui est le comportement correct et pas un contournement.
 """
 
-import hashlib
 import uuid
-from datetime import UTC, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.integrations import media_fetch
+from app.integrations.object_store import get_object_store
 from app.models import SocialAccount
 from app.models.enums import CaptureMethod
 from app.services.proof import MediaCapture
 
 
 async def deposer(contenu: bytes, *, prefixe: str) -> str:
-    """Dépose le fichier et rend sa clé.
-
-    Clé dérivée du contenu : deux dépôts du même fichier partagent la leur, et
-    le stockage ne double pas. Le préfixe range par nature, ce qui rend une
-    politique de rétention écrivable plus tard sans relire les lignes.
-    """
-    empreinte = hashlib.sha256(contenu).hexdigest()
-    jour = datetime.now(UTC).date().isoformat()
-    return f"{prefixe}/{jour}/{empreinte}"
+    """Range le fichier chez le fournisseur déclaré et rend sa clé."""
+    return await get_object_store().deposer(contenu, prefixe=prefixe)
 
 
 async def archiver_la_publication(
@@ -78,16 +73,32 @@ async def _par_api(session: AsyncSession, social_account_id: uuid.UUID) -> Media
 
 
 async def _par_url(source_url: str | None) -> MediaCapture | None:
-    """Niveau 2 : récupération depuis l'URL publique.
+    """Niveau 2 : récupération depuis l'URL publique fournie par le créateur.
 
-    Non branché non plus : télécharger un média depuis une URL fournie par un
-    tiers demande des garde-fous — taille maximale, types acceptés, refus des
-    adresses internes — qui appartiennent à la tâche d'infrastructure, pas à
-    celle-ci. Le brancher à moitié ouvrirait une porte de requête côté serveur.
+    **Un échec ne remonte pas.** Une URL morte, un type refusé, une adresse
+    interne : dans tous les cas on descend au niveau 3. Le créateur a peut-être
+    envoyé une capture, et le faire échouer parce que son lien a expiré le
+    punirait de la mécanique.
+
+    Une adresse refusée est journalisée comme tout le reste — c'est une
+    tentative, pas forcément une attaque, et la distinguer demanderait de la
+    voir se répéter.
     """
     if not source_url:
         return None
-    return None
+
+    try:
+        media = await media_fetch.recuperer(source_url)
+    except media_fetch.MediaFetchError:
+        return None
+
+    cle = await deposer(media.contenu, prefixe="proofs/url")
+    return MediaCapture(
+        capture_method=CaptureMethod.URL_FETCH,
+        contenu=media.contenu,
+        media_key=cle,
+        source_url=media.url_finale,
+    )
 
 
 async def _par_capture_ecran(screenshot_key: str | None) -> MediaCapture | None:
@@ -100,12 +111,14 @@ async def _par_capture_ecran(screenshot_key: str | None) -> MediaCapture | None:
     if not screenshot_key:
         return None
 
-    # Le contenu n'est pas relu depuis le stockage : la clé le désigne, et
-    # l'empreinte est calculée sur elle en attendant le fournisseur réel. C'est
-    # une empreinte de désignation, pas de contenu — la distinction disparaît
-    # dès que `deposer` écrit vraiment.
+    # Le contenu est relu depuis le dépôt : l'empreinte porte alors sur ce qui
+    # a réellement été envoyé, et non sur la clé qui le désigne. Quand la
+    # relecture échoue — clé inconnue, dépôt injoignable — on retombe sur la
+    # clé : une preuve archivée avec une empreinte de désignation vaut mieux
+    # qu'une soumission refusée pour une panne de stockage.
+    contenu = await get_object_store().lire(screenshot_key)
     return MediaCapture(
         capture_method=CaptureMethod.UPLOAD,
-        contenu=screenshot_key.encode(),
+        contenu=contenu if contenu is not None else screenshot_key.encode(),
         screenshot_key=screenshot_key,
     )

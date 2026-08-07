@@ -386,3 +386,67 @@ export type Jetons = {
   refresh_token: string;
   token_type: string;
 };
+
+// --------------------------------------------------------------------------
+// reporting commerce
+// --------------------------------------------------------------------------
+
+export type LigneDePalier = {
+  tier_id: string;
+  platform: Platform;
+  content_format: ContentFormat;
+  publications: number;
+  valeur_offerte_cents: number;
+};
+
+export type LigneDItem = {
+  catalog_item_id: string;
+  name: string;
+  reservations: number;
+  consommations: number;
+  publications: number;
+  valeur_offerte_cents: number;
+};
+
+export type Reporting = {
+  business_id: string;
+  currency: string;
+  debut: string;
+  fin: string;
+  timezone: string;
+  reservations: number;
+  consommations: number;
+  annulations: number;
+  absences: number;
+  publications: number;
+  publications_attendues: number;
+  non_honorees: number;
+  /**
+   * Ce que le commerce a **donné**, pas ce qu'il a gagné. C'est le seul montant
+   * qu'un commerce voit, et il ne s'affiche pas comme un revenu.
+   */
+  valeur_offerte_cents: number;
+  /** Ordre de grandeur, jamais une audience atteinte. */
+  portee_approximative: number;
+  /** Nul quand rien n'a été servi : zéro sur zéro n'est pas zéro. */
+  taux_d_honoration: number | null;
+  par_palier: LigneDePalier[];
+  par_item: LigneDItem[];
+};
+
+export type Abonnement = {
+  id: string;
+  plan_id: string;
+  status: 'incomplete' | 'trialing' | 'active' | 'past_due' | 'canceled';
+  current_period_end: string | null;
+  checkout_url: string | null;
+};
+
+export type PlanSouscriptible = {
+  id: string;
+  name: string;
+  price_cents: number;
+  currency: string;
+  billing_interval: 'monthly' | 'yearly';
+  features: Record<string, unknown>;
+};

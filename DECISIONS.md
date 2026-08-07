@@ -2070,3 +2070,110 @@ toujours par perdre un centime.
 a été refait sur les composants et le client. Le test la compte dans les deux
 sens — il tombe si quelqu'un l'agrandit, et si quelqu'un migre un écran sans
 retirer sa tolérance.
+
+---
+
+## 2026-08-07 — Mode démonstration et fin de la phase 10
+
+**Le mode démonstration n'existe pas dans le produit.** C'est une implémentation
+de plus derrière chaque interface, choisie par une ligne de configuration. Un
+test parcourt toutes les sources et refuse qu'un service interroge le mode :
+s'il le savait, il finirait par en tirer parti, et ce que la démonstration
+prouve ne serait plus ce que la production fait. Seules trois fabriques ont le
+droit de poser la question, et un second test vérifie qu'elles la posent — sans
+lui, un produit où le mode aurait disparu passerait le premier.
+
+**Deux trous d'abstraction ont été comblés pour cela.** Le fournisseur social
+était nommé en dur dans le routeur : ajouter TikTok y demandait une seconde
+branche, et faire une démonstration demandait de mentir sur des identifiants
+Meta. Le dépôt d'objets n'existait pas : `deposer` calculait une clé sans rien
+écrire, et une preuve archivée n'était consultable nulle part.
+
+**Les dépendances de fournisseur sont deux fonctions nommées, pas une fabrique
+de fermetures.** Une dépendance FastAPI se surcharge par identité ; une
+fermeture construite à chaque import n'est visable par aucun test. Vingt modules
+de test l'ont découvert d'un coup.
+
+**Les images sont générées, pas téléchargées.** Embarquer des photos libres de
+droits pèse des mégaoctets et pose une question de licence par fichier ; les
+télécharger au moment du jeu de données le rend dépendant du réseau, y compris
+en intégration continue. Trois couches — dégradé, deux sources de lumière,
+grain — et c'est le grain qui fait basculer la lecture : un aplat parfaitement
+lisse est immédiatement rangé dans « image manquante ».
+
+**Une route sert les photos, jamais les preuves.** Le préfixe est vérifié, pas
+seulement documenté : les clés sont des empreintes, donc devinables par
+quiconque possède le fichier, et une route qui servirait tout laisserait
+n'importe quel porteur de jeton lire n'importe quelle preuve.
+
+**Le jeu de données obtient ses états, il ne les pose pas.** Les seules
+exceptions sont nommées et portent leur raison : reculer un horodatage pour
+qu'une échéance soit dépassée, vieillir un relevé. Aucun service ne sait
+remonter le temps, et le seul autre moyen serait d'attendre.
+
+Deux choses se sont vues en vérifiant le jeu obtenu, et ni l'une ni l'autre
+n'était un défaut du produit. **Une annulation à moins de vingt-quatre heures
+devient une absence** : le jeu réservait pour aujourd'hui et n'obtenait jamais
+d'annulation. Il réserve maintenant à trois jours — la règle n'est pas
+contournée, on lui donne ses conditions. **Toutes les issues dégradées données à
+la même créatrice lui faisaient un score de quarante**, alors que le jeu doit
+montrer une créatrice vérifiée avec un bon score. Elles sont réparties, et un
+garde-fou vérifie l'ordre des deux scores plutôt que de faire confiance.
+
+**Le niveau 2 de la preuve suit ses redirections lui-même.** C'est le seul
+moyen de tenir la promesse : laisser le client HTTP les suivre ne contrôlerait
+que la première adresse, c'est-à-dire précisément celle qui est irréprochable.
+La taille est vérifiée **pendant la lecture** et non sur `Content-Length`, qui
+est déclaratif — un serveur hostile annonce mille octets puis en envoie dix
+gigaoctets. Les adresses IPv4 mappées en IPv6 sont déballées avant d'être
+jugées : `::ffff:127.0.0.1` n'est ni privée ni de bouclage tant qu'on ne le fait
+pas, et c'est exactement la forme qu'un contournement prendrait.
+
+**Un échec du niveau 2 ne remonte pas.** URL morte, type refusé, adresse
+interne : dans tous les cas on descend au niveau 3. Le créateur a peut-être
+envoyé une capture, et le faire échouer parce que son lien a expiré le
+punirait de la mécanique.
+
+**`SubscriptionStatus.INCOMPLETE` a été ajouté**, et c'est un changement de
+modèle. Stripe ouvre un abonnement en `incomplete` tant que le premier paiement
+n'a pas abouti, et c'est le comportement voulu : un commerce ne participe pas
+avant d'avoir payé. C'est aussi ce qu'on retient quand le fournisseur rend un
+statut inconnu — dans le doute, on ne fait pas participer.
+
+La migration a demandé **deux gestes, et l'autogénération n'en voyait qu'un** :
+l'énumération est rendue en `VARCHAR` + `CHECK`, et élargir la colonne sans
+réécrire la contrainte laisse un `CHECK` qui refuse toujours la nouvelle valeur.
+Le défaut ne serait apparu qu'au premier commerce tentant de s'abonner. Le nom
+passé à `op.drop_constraint` doit être le nom **court** : la convention de
+nommage préfixe déjà, et le nom complet aurait été préfixé une seconde fois.
+
+**Le prix envoyé à Stripe vient de `subscription_plan`.** Laisser le tableau de
+bord du fournisseur porter la tarification créerait une seconde source, et c'est
+celle qu'on oublierait de mettre à jour. Notre énumération n'est pas renommée
+pour lui plaire : `monthly` devient `month` à la frontière.
+
+**Le mode test de Stripe fonctionne sans entité juridique.** Ce qui attend
+l'entité est le passage en production : une clé à changer, pas un code à écrire.
+
+**Le bac à sable de TikTok n'est pas un mode de notre code.** Les appels sont
+les vrais ; ce qui change est la liste des comptes que la plateforme accepte de
+servir. Le drapeau ne change aucun appel : il permet de dire « compte non
+inscrit au bac à sable » plutôt que « échec », sans quoi chaque essai
+ressemblerait à un défaut du produit.
+
+**Snapchat n'a aucune implémentation, et la fabrique lève.** Rendre un
+fournisseur qui ne fait rien laisserait un créateur devant un parcours qui ne se
+termine jamais. Les routes de rattachement sont déclarées une par plateforme
+plutôt que génériques : une route `/{platform}/connect` accepterait `snapchat`
+et rendrait un 503, donnant le droit de croire que la plateforme existe et
+qu'elle est en panne.
+
+**Le taux d'honoration est nul et non zéro quand rien n'a été servi.** Zéro sur
+zéro n'est pas zéro, et afficher 0 % à un commerce qui n'a encore servi personne
+serait un reproche pour quelque chose qu'il n'a pas fait.
+
+**La portée du reporting s'appelle `portee_approximative`.** Le nombre d'abonnés
+d'un compte n'est pas le nombre de personnes ayant vu une story ; le nom du
+champ le rappelle à qui le lit sans avoir lu la documentation. Le relevé retenu
+est celui **antérieur à l'approbation** : un créateur qui a doublé son audience
+depuis ne rend pas rétroactivement la publication plus large qu'elle ne l'a été.

@@ -7,17 +7,17 @@ démarré le parcours.
 """
 
 import uuid
+from collections.abc import AsyncIterator
 from typing import Annotated
 
-import httpx
 from fastapi import APIRouter, Depends, Path, Query, status
 
 from app.core.config import ConfigurationError
 from app.core.dependencies import CurrentUser, SessionDep, require_role
 from app.core.errors import ErrorCode, api_error
-from app.integrations.instagram import InstagramProvider
+from app.integrations import providers
 from app.integrations.social import SocialProvider, SocialProviderError
-from app.models.enums import UserRole
+from app.models.enums import Platform, UserRole
 from app.schemas.social_accounts import (
     AutorisationDemarree,
     SocialAccountRead,
@@ -29,18 +29,41 @@ from app.services import social_accounts as service
 router = APIRouter(tags=["social-accounts"])
 
 
-async def get_instagram_provider() -> SocialProvider:
-    """Un client HTTP par requête : pas d'état partagé entre parcours."""
+async def _fournir(platform: Platform) -> AsyncIterator[SocialProvider]:
+    """Le fournisseur d'une plateforme, ou un 503 du catalogue.
+
+    Le routeur ne nomme aucune implémentation : la fabrique décide sur la
+    configuration. C'est ce qui permet d'ajouter une plateforme sans toucher
+    ici, et de faire une démonstration sans mentir sur des identifiants Meta.
+    """
     try:
-        async with httpx.AsyncClient() as client:
-            yield InstagramProvider(client)
+        async for provider in providers.fournisseur_de(platform):
+            yield provider
     except ConfigurationError as error:
+        # Plateforme non branchée, ou configuration incomplète : la même
+        # réponse. L'app affiche « réseau indisponible » dans les deux cas, et
+        # distinguer les deux n'apprendrait rien à qui lit l'écran.
         raise api_error(
             status.HTTP_503_SERVICE_UNAVAILABLE, ErrorCode.SOCIAL_PROVIDER_UNAVAILABLE
         ) from error
 
 
+# Deux fonctions nommées plutôt qu'une fabrique de closures : une dépendance
+# FastAPI se surcharge **par identité**, et une closure fabriquée à chaque
+# import ne peut pas être visée par un test. La duplication de deux lignes est
+# le prix d'un point de surcharge stable.
+async def get_instagram_provider() -> AsyncIterator[SocialProvider]:
+    async for provider in _fournir(Platform.INSTAGRAM):
+        yield provider
+
+
+async def get_tiktok_provider() -> AsyncIterator[SocialProvider]:
+    async for provider in _fournir(Platform.TIKTOK):
+        yield provider
+
+
 InstagramDep = Annotated[SocialProvider, Depends(get_instagram_provider)]
+TikTokDep = Annotated[SocialProvider, Depends(get_tiktok_provider)]
 
 
 @router.get("/me/social-accounts", response_model=list[SocialAccountRead])
@@ -62,6 +85,36 @@ async def start_instagram(
     return AutorisationDemarree(authorization_url=url)
 
 
+@router.post(
+    "/me/social-accounts/tiktok/connect",
+    response_model=AutorisationDemarree,
+    dependencies=[Depends(require_role(UserRole.CREATOR))],
+)
+async def start_tiktok(
+    user: CurrentUser, session: SessionDep, provider: TikTokDep
+) -> AutorisationDemarree:
+    """Jumelle de la route Instagram, et volontairement pas une route générique.
+
+    Une route `/{platform}/connect` accepterait `snapchat` et rendrait un 503
+    au lieu d'un 404 : le client aurait le droit de croire que la plateforme
+    existe et qu'elle est en panne. Deux routes déclarées disent exactement ce
+    qui est branché.
+    """
+    url = await service.start_authorization(session, user=user, provider=provider)
+    await session.commit()
+    return AutorisationDemarree(authorization_url=url)
+
+
+@router.get("/social-accounts/tiktok/callback", response_model=SocialAccountRead)
+async def tiktok_callback(
+    session: SessionDep,
+    provider: TikTokDep,
+    code: Annotated[str, Query()],
+    state: Annotated[str, Query()],
+) -> SocialAccountRead:
+    return await _terminer(session, provider=provider, code=code, state=state)
+
+
 @router.get("/social-accounts/instagram/callback", response_model=SocialAccountRead)
 async def instagram_callback(
     session: SessionDep,
@@ -71,6 +124,17 @@ async def instagram_callback(
 ) -> SocialAccountRead:
     """Retour du fournisseur. Volontairement hors du préfixe `/me` : personne
     n'est authentifié ici, c'est l'état qui identifie."""
+    return await _terminer(session, provider=provider, code=code, state=state)
+
+
+async def _terminer(
+    session, *, provider: SocialProvider, code: str, state: str
+) -> SocialAccountRead:
+    """Le retour, identique quelle que soit la plateforme.
+
+    Écrit une fois : deux copies divergeraient au premier code d'erreur ajouté,
+    et c'est la plateforme la moins utilisée qui garderait l'ancienne.
+    """
     try:
         compte = await service.complete_authorization(
             session, state=state, code=code, provider=provider

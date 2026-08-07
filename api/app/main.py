@@ -8,9 +8,11 @@ from fastapi.responses import JSONResponse
 from app.core.config import get_settings
 from app.core.encryption import build_keyring
 from app.core.errors import ErrorCode
+from app.integrations.billing import check_billing_configuration
 from app.integrations.email import check_email_configuration
 from app.integrations.geocoding import check_geocoder_configuration
 from app.integrations.menu_extraction import check_extraction_configuration
+from app.integrations.object_store import check_object_store_configuration
 from app.routers import (
     account_verification,
     audience,
@@ -30,10 +32,13 @@ from app.routers import (
     feed,
     health,
     jobs,
+    media,
     menu_import,
     plans,
     redemption,
+    reporting,
     social_accounts,
+    subscription,
     tier_offers,
     tiers,
 )
@@ -70,6 +75,8 @@ def create_app() -> FastAPI:
     check_geocoder_configuration()
     check_email_configuration()
     check_extraction_configuration()
+    check_object_store_configuration()
+    check_billing_configuration()
 
     application = FastAPI(
         title="BIND API",
@@ -115,6 +122,9 @@ def create_app() -> FastAPI:
     application.include_router(counterpart_queue.admin_router, prefix=settings.api_v1_prefix)
     application.include_router(plans.router, prefix=settings.api_v1_prefix)
     application.include_router(audience.router, prefix=settings.api_v1_prefix)
+    application.include_router(reporting.router, prefix=settings.api_v1_prefix)
+    application.include_router(subscription.router, prefix=settings.api_v1_prefix)
+    application.include_router(media.router, prefix=settings.api_v1_prefix)
 
     return application
 
