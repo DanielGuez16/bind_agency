@@ -102,7 +102,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
 - [x] Création de réservation avec verrou et garde de dix minutes
       *Y compris : prénom et nom obligatoires avant la première réservation. Ils sont facultatifs à l'inscription, et rien ne les exige aujourd'hui — il n'existe aucun chemin de réservation où poser la condition*
       *Fin : test de concurrence, deux réservations simultanées sur la dernière place, une seule passe*
-- [ ] Machine à états de la réservation, annulation, absence, expiration
+- [x] Machine à états de la réservation, annulation, absence, expiration
       *Fin : toutes les transitions de la spec testées, aucune transition illégale possible*
 - [x] Implémentation réelle du géocodage d'adresse
       *Fin : une adresse saisie librement produit des coordonnées, et l'échec de résolution laisse le commerce en `onboarding` sans bloquer son inscription*

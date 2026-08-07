@@ -129,7 +129,9 @@ async def test_la_planification_est_idempotente(session: AsyncSession) -> None:
     premier = await scheduler.planifier_le_travail(session)
     second = await scheduler.planifier_le_travail(session)
 
-    assert premier["crees"] == 2  # renouvellement et relevé
+    # Deux par compte — renouvellement et relevé — plus le balayage global des
+    # gardes de réservation, qui existe une fois pour toute la plateforme.
+    assert premier["crees"] == 3
     assert second["crees"] == 0
 
     combien = await session.scalar(

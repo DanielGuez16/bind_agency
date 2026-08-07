@@ -152,6 +152,13 @@ class Settings(BaseSettings):
     #: Fenêtre de validité d'un droit sans créneau. Le créateur se présente
     #: quand il veut avant l'échéance.
     booking_open_validity_days: int = 30
+    #: Fenêtre d'annulation sans pénalité avant le créneau. Vingt-quatre heures :
+    #: au-delà, le commerce a bloqué un poste qu'il ne remplira plus.
+    booking_free_cancellation_seconds: int = 86_400
+    #: Période du balayage des gardes dépassés. Deux minutes : le calcul de
+    #: disponibilité les ignore déjà à l'échéance, ce balayage ne fait que
+    #: mettre l'état en accord avec ce qui est vrai.
+    booking_sweep_interval_seconds: int = 120
 
     # Lue uniquement par la session pytest, jamais par l'application.
     # Sa présence est vérifiée dans tests/conftest.py, qui refuse de tourner sans.
