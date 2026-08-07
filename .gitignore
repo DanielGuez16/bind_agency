@@ -25,3 +25,9 @@ npm-debug.log*
 .DS_Store
 .idea/
 *.swp
+
+# Dossiers natifs produits par `expo prebuild`. Ils se regénèrent à la demande
+# et n'ont pas à être versionnés tant qu'aucun code natif n'est écrit à la
+# main : commités, ils divergeraient de `app.json` sans que rien ne le signale.
+app/ios/
+app/android/
