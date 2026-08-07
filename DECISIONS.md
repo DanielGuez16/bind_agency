@@ -2254,3 +2254,47 @@ permanent.
 **`app.tsx` et `App.tsx` étaient le même fichier.** Le système de fichiers de
 macOS est insensible à la casse ; le dépôt en portait deux, git en voyait deux,
 le disque un seul. Découvert en supprimant l'un et en perdant l'autre.
+
+---
+
+## 2026-08-07 — Le bug qui n'envoyait aucune requête
+
+**Cause.** `globalThis.fetch` était rangé nu dans un champ du client, puis
+appelé par `this.fetchImpl(...)`. L'appel lui donne l'instance comme `this` ;
+les navigateurs refusent — « Failed to execute 'fetch' on 'Window': Illegal
+invocation » — et **la requête ne part pas**. React Native, dont le `fetch` est
+une fonction ordinaire sans contrôle de `this`, l'acceptait : le défaut
+n'existait qu'en web, et le natif ne pouvait pas le révéler.
+
+**Pourquoi il était invisible.** La `TypeError` était levée à l'intérieur du
+`try` qui enveloppe l'appel, attrapée, et retransformée en `NetworkError`. Le
+symptôme devenait « vérifiez votre connexion » : aucune requête dans l'onglet
+réseau, rien dans la console, et un message qui désigne le réseau alors que le
+réseau n'a jamais été sollicité.
+
+Un bloc `catch` qui enveloppe **tout** ce qui a pu être levé transforme une
+erreur de programmation en panne d'infrastructure. On ne peut pas distinguer les
+deux par leur type — un navigateur rend aussi une `TypeError` pour une vraie
+panne réseau — mais on peut **journaliser la cause** avant de l'envelopper. C'est
+la ligne qui manquait, et son absence a coûté tout le temps de diagnostic.
+
+**Un second défaut dormait derrière.** `connecter`, `deconnecter` et la rotation
+écrivaient leurs chemins à la main — `/auth/login` — sans le préfixe `/api/v1`.
+Le test de contrat ne les voyait pas : il ne parcourt que le module `routes`.
+Une fois le `fetch` réparé, ils auraient rendu 404, et il aurait fallu un second
+tour de diagnostic pour le même symptôme. Les trois passent maintenant par
+`routes`, et un test refuse tout chemin littéral dans le client.
+
+**`EXPO_PUBLIC_API_URL` absente ne se rattrape plus.** Le repli sur `localhost`
+marchait sur la machine de développement et produisait ailleurs des erreurs de
+connexion que personne ne reliait à une variable manquante. L'application
+affiche désormais un écran qui nomme la variable, le fichier, et rappelle que
+les variables `EXPO_PUBLIC_` sont inlinées à la compilation — donc qu'il faut
+relancer le serveur. Cet écran est volontairement non traduit : il s'adresse à
+qui installe, pas à qui utilise, et doit rester lisible si le catalogue n'a pas
+chargé.
+
+**Ce que l'épisode dit des tests.** Les 240 tests passaient. Aucun n'appelait le
+client sans lui injecter `fetchImpl` — le chemin de production n'était jamais
+emprunté. Le test ajouté installe un `fetch` qui vérifie son `this`, comme le
+font les navigateurs, et construit le client **sans** injection.
