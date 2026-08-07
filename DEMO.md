@@ -5,13 +5,11 @@ Comment démarrer BIND depuis un dépôt vierge et le parcourir sur un iPhone.
 Chaque commande de ce fichier a été lancée. Les durées sont celles mesurées sur
 un MacBook, à titre indicatif.
 
-> **Ce que l'app affiche aujourd'hui.** `App.tsx` rend uniquement l'écran de
-> santé de l'API. Les écrans créateur, commerce et back office existent, sont
-> testés isolément, mais **aucune navigation ne les assemble** — il n'y a ni
-> écran de connexion ni routeur. Sur le téléphone, vous verrez donc l'écran de
-> santé, et rien d'autre. Le produit se parcourt aujourd'hui **par l'API**
-> (`http://localhost:8010/api/v1/docs`). Voir « Ce qui manque » en fin de
-> fichier.
+> **Ce que vous verrez en scannant le QR code.** L'écran de connexion. Après
+> connexion, l'app vous emmène dans la navigation de votre rôle — les onglets
+> ne sont pas les mêmes pour une créatrice, un commerce et un administrateur.
+> La session est gardée dans le trousseau de l'appareil : à la deuxième
+> ouverture, vous arrivez directement dans vos onglets.
 
 ---
 
@@ -112,6 +110,8 @@ Metro sert sur le port 8081. Scanner le QR code avec **l'appareil photo de
 l'iPhone** ; Expo Go s'ouvre. Le téléphone et le Mac doivent être sur le même
 réseau Wi-Fi.
 
+Le bundle iOS pèse ~7 Mo et se construit en quelques secondes.
+
 Si le réseau isole les appareils entre eux — Wi-Fi d'hôtel, réseau invité —
 passer par un tunnel :
 
@@ -121,6 +121,36 @@ cd app && npx expo start --tunnel
 
 Le tunnel ne concerne **que** le bundle Expo. L'API reste à joindre par son
 adresse IP : un tunnel Expo ne l'expose pas.
+
+### Ce que vous verrez, écran par écran
+
+**Au premier lancement : l'écran de connexion.** Deux champs, et un lien vers
+l'inscription. Le bouton n'apparaît qu'une fois l'adresse et un mot de passe de
+douze caractères saisis — l'aide sous le champ dit ce qui manque, le griser
+demanderait de le deviner.
+
+**Après connexion, la navigation de votre rôle** :
+
+| Compte | Onglets | Premier écran |
+|---|---|---|
+| `rebecca@bind.example` | Près de vous · Paliers · Réservations · Audience · Réglages | Le fil, qui demande d'abord votre position |
+| `ocean@bind.example` | Aujourd'hui · Publications · Rapports · Configuration · Réglages | La journée du comptoir, 8 lignes |
+| `admin@bind.example` | Revues · Plans · Réglages | La file d'arbitrage, 1 dossier |
+
+Le **thème suit le rôle** : sombre côté créateur, clair côté commerce et
+administration, avec le liseré ocre en haut des écrans commerce. Il se force
+depuis les réglages, sans changer la densité.
+
+**Onglet Près de vous** : l'app demande la position au premier affichage.
+Refuser n'est pas une panne — l'écran continue de proposer. Le jeu de données
+est à Miami ; depuis ailleurs, le fil sera vide et le dira.
+
+**Réglages** contient la langue, le thème, le diagnostic de connexion et la
+déconnexion. L'écran de santé y est relégué : il répond à « est-ce que ça
+marche », question qu'on se pose quand ça ne marche pas.
+
+**Une session expirée ou un compte suspendu** ramène à la connexion avec un
+message qui dit lequel des deux, jamais un écran blanc.
 
 ### Si vous ouvrez l'app dans un navigateur
 
@@ -215,7 +245,9 @@ disponibilité, le verrou de réservation, les codes de retrait, la machine à
 
 | Ce qui manque | Prérequis |
 |---|---|
-| **Une app assemblée** | Ni navigation ni écran de connexion. Les 17 écrans existent et sont testés ; il manque le routeur qui les relie et le formulaire qui ouvre une session. C'est du travail d'app, aucun prérequis extérieur |
+| Envoi d'une preuve | L'écran existe et montre son état ; le bouton d'envoi n'ouvre pas encore de sélecteur de média |
+| Écrans commerce de composition | Catalogue, horaires et capacité se pilotent par l'API. Les routes existent, les écrans non |
+| Choix entre deux commerces | La navigation prend le premier commerce de l'utilisateur. Personne n'en a deux dans le jeu ; le sélecteur viendra avec le cas |
 | Preuve niveau 1 | `fetch_media` sur l'interface de plateforme, qui arrive avec le relevé des publications |
 | Dépôt S3 | Des identifiants. `deposer` et `lire` sont les deux seules fonctions à compléter |
 | TikTok en vrai | Des identifiants d'application. Le code est écrit ; **non vérifié** |

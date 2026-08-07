@@ -99,6 +99,7 @@ def create_app() -> FastAPI:
     application.include_router(health.router, prefix=settings.api_v1_prefix)
     application.include_router(auth.router, prefix=settings.api_v1_prefix)
     application.include_router(business.router, prefix=settings.api_v1_prefix)
+    application.include_router(business.mes_commerces_router, prefix=settings.api_v1_prefix)
     application.include_router(catalog.router, prefix=settings.api_v1_prefix)
     application.include_router(capacity.router, prefix=settings.api_v1_prefix)
     application.include_router(tiers.router, prefix=settings.api_v1_prefix)

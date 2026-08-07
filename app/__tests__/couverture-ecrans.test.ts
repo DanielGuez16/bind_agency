@@ -26,9 +26,10 @@ describe('couverture des écrans', () => {
   });
 
   it('la liste hors registre ne grossit pas', () => {
-    // Quatre : l'écran de code, qui n'a pas quatre états par nature, et les
+    // Six : la connexion et les réglages, qui ne chargent rien à quatre états ;
+    // l'écran de code, qui garde son dernier code y compris hors ligne ; et les
     // trois écrans de la dette d'avant le système de design. Ce test tombe si
-    // quelqu'un y range un cinquième écran pour éviter d'écrire ses états.
-    expect(HORS_REGISTRE).toHaveLength(4);
+    // quelqu'un y range un septième écran pour éviter d'écrire ses états.
+    expect(HORS_REGISTRE).toHaveLength(6);
   });
 });

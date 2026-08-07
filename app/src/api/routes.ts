@@ -34,6 +34,7 @@ export const routes = {
   monAudience: () => chemin('/me/audience'),
   maVerification: () => chemin('/me/verification'),
   mesReservations: () => chemin('/me/bookings'),
+  mesCommerces: () => chemin('/me/businesses'),
 
   // ---- découverte ----
   fil: () => chemin('/businesses'),
@@ -116,6 +117,7 @@ export const METHODES: Record<keyof typeof routes, ('GET' | 'POST' | 'PATCH' | '
     monAudience: ['GET'],
     maVerification: ['GET'],
     mesReservations: ['GET'],
+    mesCommerces: ['GET'],
 
     fil: ['GET'],
     fichePublique: ['GET'],
