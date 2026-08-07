@@ -203,6 +203,14 @@ class Settings(BaseSettings):
     # ci-dessous, bornées à zéro et cent. Aucune valeur en dur dans le code :
     # c'est en observant les premières collaborations qu'on saura ce qu'une
     # absence doit coûter, et l'ajuster ne doit demander qu'un redémarrage.
+    # Extraction de carte. `manual` n'extrait rien : le commerce saisit sa
+    # carte, ce qui reste le chemin de la phase 2. `vision` exige une clé,
+    # vérifiée au démarrage.
+    menu_extraction_provider: Literal["manual", "vision"] = "manual"
+    menu_extraction_api_key: SecretStr | None = Field(default=None, repr=False)
+    menu_extraction_model: str = "claude-sonnet-5"
+    menu_extraction_timeout_seconds: float = 60.0
+
     reliability_base_score: int = 70
     #: Poids par type d'événement. Un ajustement est rétroactif : le recalcul
     #: relit l'historique avec la grille du jour.

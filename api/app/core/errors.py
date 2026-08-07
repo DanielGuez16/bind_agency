@@ -103,6 +103,11 @@ class ErrorCode(StrEnum):
     PROOF_NOTHING_ARCHIVED = "proof_nothing_archived"
     PROOF_ALREADY_SUBMITTED = "proof_already_submitted"
 
+    # Import de carte
+    MENU_IMPORT_NOT_FOUND = "menu_import_not_found"
+    MENU_IMPORT_TRANSITION_NOT_ALLOWED = "menu_import_transition_not_allowed"
+    MENU_IMPORT_DURATION_REQUIRED = "menu_import_duration_required"
+
     # Transverses
     VALIDATION_FAILED = "validation_failed"
     NOT_FOUND = "not_found"

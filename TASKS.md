@@ -153,9 +153,9 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
 
 ## Phase 9 — Import de carte
 
-- [ ] Téléversement et extraction structurée
+- [x] Téléversement et extraction structurée
       *Fin : un PDF de salon en anglais et un en espagnol produisent une charge exploitable*
-- [ ] Écran de relecture et correction, saisie des durées
+- [x] Écran de relecture et correction, saisie des durées
       *Fin : aucun item n'est créé sans validation explicite du commerce*
 
 ---
