@@ -1,0 +1,236 @@
+"""Reporting commerce.
+
+C'est la première chose qu'un commerçant regarde après une démonstration, et le
+produit ne savait pas y répondre.
+
+Ce qui est éprouvé ici tient en trois idées. **Ce qui est compté est ce qui a
+eu lieu** : une réservation annulée n'a rien coûté, une publication soumise
+n'est pas une publication acceptée. **Le taux d'honoration est nul et non zéro
+quand rien n'a été servi** : zéro sur zéro n'est pas zéro, et afficher 0 % à un
+commerce qui n'a encore servi personne serait un reproche pour quelque chose
+qu'il n'a pas fait. **La fenêtre est celle du commerce**, pas celle du serveur.
+"""
+
+import uuid
+from datetime import UTC, datetime, timedelta
+from zoneinfo import ZoneInfo
+
+import sqlalchemy as sa
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.config import get_settings
+from app.models import Booking, BusinessMember, Collaboration
+from app.models.enums import BookingStatus, BusinessMemberRole, CollaborationStatus, UserRole
+from app.services import auth as auth_service
+from app.services import booking_states
+from app.services import reporting as service
+from app.services.audit import Actor
+from tests.test_booking_create import monter_le_decor, premier_creneau, reserver
+
+PREFIX = get_settings().api_v1_prefix
+MOT_DE_PASSE = "un-mot-de-passe-solide-42"
+
+
+async def _membre(session: AsyncSession, business):
+    membre = await auth_service.register(
+        session,
+        email=f"{uuid.uuid4()}@example.com",
+        password=MOT_DE_PASSE,
+        role=UserRole.BUSINESS_MEMBER,
+    )
+    session.add(
+        BusinessMember(business_id=business.id, user_id=membre.id, role=BusinessMemberRole.STAFF)
+    )
+    await session.flush()
+    return membre
+
+
+async def _consommer(session: AsyncSession, decor: dict) -> Booking:
+    """Réserver, confirmer, servir au comptoir.
+
+    L'acteur est un membre du commerce, jamais le système : une transition
+    automatique doit dire pourquoi elle s'est déclenchée, et une consommation
+    n'est pas automatique — quelqu'un a servi quelqu'un.
+    """
+    booking = await reserver(session, decor, starts_at=await premier_creneau(session, decor))
+    await booking_states.confirmer(session, booking=booking, creator_id=decor["createur"].id)
+    await booking_states.consommer(
+        session, booking=booking, actor=Actor.from_user(await _membre(session, decor["business"]))
+    )
+    return booking
+
+
+# --------------------------------------------------------------------------
+
+
+async def test_rien_ne_s_est_passe_ne_produit_pas_un_reproche(session: AsyncSession) -> None:
+    """Le taux est **nul**, pas zéro. Zéro sur zéro n'est pas zéro."""
+    decor = await monter_le_decor(session)
+
+    vue = await service.pour_le_commerce(session, business=decor["business"])
+
+    assert vue.reservations == 0
+    assert vue.consommations == 0
+    assert vue.taux_d_honoration is None
+
+
+async def test_le_taux_est_zero_quand_on_a_servi_sans_rien_recevoir(
+    session: AsyncSession,
+) -> None:
+    """Le pendant : le nul ne doit pas masquer un vrai zéro, qui est une
+    information — le commerce a donné et n'a rien reçu."""
+    decor = await monter_le_decor(session, postes=3)
+    await _consommer(session, decor)
+
+    vue = await service.pour_le_commerce(session, business=decor["business"])
+
+    assert vue.consommations == 1
+    assert vue.taux_d_honoration == 0.0
+
+
+async def test_une_publication_approuvee_compte_une_soumise_non(
+    session: AsyncSession,
+) -> None:
+    """Une publication soumise n'est pas une publication acceptée."""
+    decor = await monter_le_decor(session, postes=3)
+    booking = await _consommer(session, decor)
+
+    contrepartie = await session.scalar(
+        sa.select(Collaboration).where(Collaboration.booking_id == booking.id)
+    )
+    assert contrepartie is not None
+
+    await session.execute(
+        sa.update(Collaboration)
+        .where(Collaboration.id == contrepartie.id)
+        .values(status=CollaborationStatus.SUBMITTED)
+    )
+    await session.flush()
+    soumise = await service.pour_le_commerce(session, business=decor["business"])
+    assert soumise.publications == 0
+    assert soumise.publications_attendues == 1
+
+    await session.execute(
+        sa.update(Collaboration)
+        .where(Collaboration.id == contrepartie.id)
+        .values(status=CollaborationStatus.APPROVED, approved_at=datetime.now(UTC))
+    )
+    await session.flush()
+    approuvee = await service.pour_le_commerce(session, business=decor["business"])
+    assert approuvee.publications == 1
+    assert approuvee.publications_attendues == 0
+    assert approuvee.taux_d_honoration == 1.0
+
+
+async def test_la_valeur_offerte_ne_compte_que_le_consomme(session: AsyncSession) -> None:
+    """Une réservation annulée n'a rien coûté au commerce.
+
+    La compter gonflerait ce qu'il croit avoir donné, et fausserait la seule
+    mise en regard qu'il a : tant de publications pour tant de prestations.
+    """
+    decor = await monter_le_decor(session, postes=5)
+    await _consommer(session, decor)
+
+    # Une seconde, annulée : elle existe, elle ne coûte rien.
+    annulee = await reserver(session, decor, starts_at=await premier_creneau(session, decor))
+    await session.execute(
+        sa.update(Booking).where(Booking.id == annulee.id).values(status=BookingStatus.CANCELLED)
+    )
+    await session.flush()
+
+    vue = await service.pour_le_commerce(session, business=decor["business"])
+
+    assert vue.reservations == 2
+    assert vue.annulations == 1
+    # 8000 centimes : le prix de l'item du décor, une seule fois.
+    assert vue.valeur_offerte_cents == 8000
+
+
+async def test_les_absences_se_comptent_a_part(session: AsyncSession) -> None:
+    """Une absence n'est pas une non-honoration : la prestation n'a pas été
+    donnée, rien n'a été perdu qu'un créneau."""
+    decor = await monter_le_decor(session, postes=3)
+    booking = await reserver(session, decor, starts_at=await premier_creneau(session, decor))
+    await session.execute(
+        sa.update(Booking).where(Booking.id == booking.id).values(status=BookingStatus.NO_SHOW)
+    )
+    await session.flush()
+
+    vue = await service.pour_le_commerce(session, business=decor["business"])
+
+    assert vue.absences == 1
+    assert vue.non_honorees == 0
+    assert vue.valeur_offerte_cents == 0
+
+
+async def test_la_fenetre_se_decoupe_dans_le_fuseau_du_commerce(
+    session: AsyncSession,
+) -> None:
+    decor = await monter_le_decor(session)
+    fuseau = ZoneInfo("America/New_York")
+    jour = datetime.now(fuseau).date()
+
+    vue = await service.pour_le_commerce(
+        session, business=decor["business"], depuis=jour, jusqu_a=jour
+    )
+
+    assert vue.timezone == "America/New_York"
+    assert vue.debut.astimezone(fuseau).hour == 0
+    # Bornes inclusives : « du 1er au 1er » couvre une journée entière.
+    assert vue.fin - vue.debut == timedelta(days=1)
+    # Le pendant : minuit UTC n'est pas minuit à Miami.
+    assert vue.debut != datetime(jour.year, jour.month, jour.day, tzinfo=UTC)
+
+
+async def test_la_fenetre_ecarte_ce_qui_est_hors_bornes(session: AsyncSession) -> None:
+    decor = await monter_le_decor(session, postes=3)
+    await _consommer(session, decor)
+
+    hier = datetime.now(ZoneInfo("America/New_York")).date() - timedelta(days=1)
+    vue = await service.pour_le_commerce(
+        session, business=decor["business"], depuis=hier - timedelta(days=5), jusqu_a=hier
+    )
+
+    assert vue.reservations == 0
+
+
+async def test_le_detail_par_item_dit_ce_qui_part(session: AsyncSession) -> None:
+    """La lecture qui change une décision : composer davantage de ce qui part."""
+    decor = await monter_le_decor(session, postes=3)
+    await _consommer(session, decor)
+
+    vue = await service.pour_le_commerce(session, business=decor["business"])
+
+    assert len(vue.par_item) == 1
+    ligne = vue.par_item[0]
+    assert ligne.name == "Soin visage"
+    assert (ligne.reservations, ligne.consommations) == (1, 1)
+
+
+async def test_le_reporting_est_isole_entre_commerces(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    a = await monter_le_decor(session, postes=3)
+    b = await monter_le_decor(session, postes=3)
+    await _consommer(session, a)
+    membre_de_b = await _membre(session, b["business"])
+    await session.commit()
+
+    jetons = (
+        await client.post(
+            f"{PREFIX}/auth/login",
+            json={"email": membre_de_b.email, "password": MOT_DE_PASSE},
+        )
+    ).json()
+    entetes = {"Authorization": f"Bearer {jetons['access_token']}"}
+
+    refuse = await client.get(f"{PREFIX}/business/{a['business'].id}/reporting", headers=entetes)
+    assert refuse.status_code == 403
+    assert refuse.json()["detail"] == "not_a_member"
+
+    # Le pendant : sur son propre commerce, la requête passe et ne voit rien du
+    # voisin.
+    accepte = await client.get(f"{PREFIX}/business/{b['business'].id}/reporting", headers=entetes)
+    assert accepte.status_code == 200, accepte.text
+    assert accepte.json()["reservations"] == 0

@@ -390,6 +390,47 @@
         ]
       }
     },
+    "/api/v1/business/{business_id}/plans": {
+      "get": {
+        "operationId": "list_plans_api_v1_business__business_id__plans_get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/business/{business_id}/reporting": {
+      "get": {
+        "operationId": "read_reporting_api_v1_business__business_id__reporting_get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/business/{business_id}/subscription": {
+      "delete": {
+        "operationId": "unsubscribe_api_v1_business__business_id__subscription_delete",
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "get": {
+        "operationId": "read_subscription_api_v1_business__business_id__subscription_get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "post": {
+        "operationId": "subscribe_api_v1_business__business_id__subscription_post",
+        "responses": [
+          "201",
+          "422"
+        ]
+      }
+    },
     "/api/v1/business/{business_id}/tier-offers": {
       "get": {
         "operationId": "list_offers_api_v1_business__business_id__tier_offers_get",
@@ -541,6 +582,14 @@
         ]
       }
     },
+    "/api/v1/me/social-accounts/tiktok/connect": {
+      "post": {
+        "operationId": "start_tiktok_api_v1_me_social_accounts_tiktok_connect_post",
+        "responses": [
+          "200"
+        ]
+      }
+    },
     "/api/v1/me/social-accounts/{account_id}/metrics/refresh": {
       "post": {
         "operationId": "refresh_metrics_api_v1_me_social_accounts__account_id__metrics_refresh_post",
@@ -566,6 +615,15 @@
         ]
       }
     },
+    "/api/v1/media/{cle}": {
+      "get": {
+        "operationId": "read_media_api_v1_media__cle__get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/api/v1/redemptions/consume": {
       "post": {
         "operationId": "consume_api_v1_redemptions_consume_post",
@@ -587,6 +645,15 @@
     "/api/v1/social-accounts/instagram/callback": {
       "get": {
         "operationId": "instagram_callback_api_v1_social_accounts_instagram_callback_get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/social-accounts/tiktok/callback": {
+      "get": {
+        "operationId": "tiktok_callback_api_v1_social_accounts_tiktok_callback_get",
         "responses": [
           "200",
           "422"

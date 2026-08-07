@@ -19,6 +19,7 @@ import { translateErrorCode } from '../i18n/errors';
 import { ApiClient, ApiError, NetworkError, type CoffreDeJetons, type Jetons } from './client';
 import { routes } from './routes';
 import type {
+  Abonnement,
   AudienceDuCompte,
   Booking,
   CodeDeRetrait,
@@ -33,6 +34,8 @@ import type {
   JourneeDuCommerce,
   LigneDeFile,
   PlanAdministrateur,
+  PlanSouscriptible,
+  Reporting,
   VerificationDuCompte,
   VueDesPaliers,
   BookingStatus,
@@ -201,6 +204,41 @@ export class Api {
       query: { filtre },
       signal,
     });
+  }
+
+  reporting(
+    businessId: string,
+    options: { depuis?: string; jusquA?: string } = {},
+    signal?: AbortSignal,
+  ) {
+    return this.client.request<Reporting>(routes.reporting(businessId), {
+      query: { depuis: options.depuis, jusqu_a: options.jusquA },
+      signal,
+    });
+  }
+
+  abonnement(businessId: string, signal?: AbortSignal) {
+    // `null` est une réponse valide : ne pas être abonné est un état normal du
+    // commerce, pas une ressource absente.
+    return this.client.request<Abonnement | null>(routes.abonnement(businessId), { signal });
+  }
+
+  plansSouscriptibles(businessId: string, signal?: AbortSignal) {
+    return this.client.request<PlanSouscriptible[]>(routes.plansSouscriptibles(businessId), {
+      signal,
+    });
+  }
+
+  souscrire(businessId: string, planId: string) {
+    return this.client.request<Abonnement>(routes.abonnement(businessId), {
+      methode: 'POST',
+      corps: { plan_id: planId },
+    });
+  }
+
+  /** L'adresse d'une photo déposée. Jamais celle d'une preuve : la route les refuse. */
+  urlDuMedia(cle: string): string {
+    return routes.media(cle);
   }
 
   etapesDActivation(businessId: string, signal?: AbortSignal) {

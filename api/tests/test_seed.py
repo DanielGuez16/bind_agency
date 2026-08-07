@@ -12,11 +12,13 @@ import os
 import subprocess
 import sys
 import uuid
+from datetime import UTC, datetime, timedelta
 
 import psycopg
 import pytest
 import sqlalchemy as sa
 from psycopg import sql
+from pydantic import EmailStr, TypeAdapter, ValidationError
 from sqlalchemy import make_url
 from sqlalchemy.ext.asyncio import AsyncConnection, create_async_engine
 from sqlalchemy.pool import NullPool
@@ -24,22 +26,30 @@ from sqlalchemy.pool import NullPool
 from app.core.config import API_ROOT, get_settings
 from app.models import (
     AuditLog,
+    Booking,
     Business,
     BusinessMember,
     CapacityException,
     CapacityRule,
     CatalogItem,
+    Collaboration,
     CreatorProfile,
+    Job,
     SocialAccount,
     SocialMetricsSnapshot,
+    SubscriptionPlan,
     Tier,
     TierOffer,
     User,
 )
 from app.models.enums import (
     ActorKind,
+    BillingInterval,
+    BookingStatus,
     BusinessMemberRole,
     BusinessStatus,
+    CollaborationStatus,
+    JobStatus,
     SocialAccountStatus,
     UserRole,
     VerificationStatus,
@@ -123,8 +133,12 @@ def test_la_commande_est_rejouable(jeu_pose: str) -> None:
 def test_elle_annonce_ce_qu_elle_a_pose(base_jetable: str) -> None:
     resultat = _lancer(base_jetable)
 
-    assert "3 commerces" in resultat.stdout
+    assert "4 commerces" in resultat.stdout
     assert "10 offres" in resultat.stdout
+    # Le résumé annonce aussi ce que la démonstration a produit : un jeu qui
+    # poserait zéro contrepartie se verrait ici, pas trois écrans plus loin.
+    assert "5 créateurs" in resultat.stdout
+    assert "contreparties" in resultat.stdout
     assert MOT_DE_PASSE in resultat.stdout
 
 
@@ -133,7 +147,15 @@ def test_elle_annonce_ce_qu_elle_a_pose(base_jetable: str) -> None:
 # --------------------------------------------------------------------------
 
 
-async def test_trois_commerces_actifs_et_geolocalises(seed_conn: AsyncConnection) -> None:
+async def test_les_commerces_sont_geolocalises_et_pas_tous_ouverts(
+    seed_conn: AsyncConnection,
+) -> None:
+    """Trois commerces ouverts, un encore en inscription.
+
+    Ce dernier est l'état de tout commerce le jour où il arrive : sans lui,
+    l'écran d'activation, l'état vide du catalogue et le reporting à zéro
+    n'avaient aucun sujet.
+    """
     lignes = (
         await seed_conn.execute(
             sa.select(Business.name, Business.status, Business.currency, Business.timezone)
@@ -142,9 +164,12 @@ async def test_trois_commerces_actifs_et_geolocalises(seed_conn: AsyncConnection
         )
     ).all()
 
-    assert len(lignes) == 3
+    assert len(lignes) == 4
+    par_statut = {ligne.status for ligne in lignes}
+    assert par_statut == {BusinessStatus.ACTIVE, BusinessStatus.ONBOARDING}
+    assert sum(1 for ligne in lignes if ligne.status == BusinessStatus.ACTIVE) == 3
+
     for ligne in lignes:
-        assert ligne.status == BusinessStatus.ACTIVE
         assert ligne.currency == "USD"
         assert ligne.timezone == "America/New_York"
 
@@ -154,7 +179,7 @@ async def test_chaque_commerce_a_son_owner(seed_conn: AsyncConnection) -> None:
         await seed_conn.execute(sa.select(BusinessMember.business_id, BusinessMember.role))
     ).all()
 
-    assert len(lignes) == 3
+    assert len(lignes) == 4
     assert {ligne.role for ligne in lignes} == {BusinessMemberRole.OWNER}
 
 
@@ -217,17 +242,20 @@ async def test_une_fermeture_et_une_journee_amenagee(seed_conn: AsyncConnection)
     assert amenagee.concurrent_slots is not None
 
 
-async def test_tous_les_createurs_sont_en_cold_start(seed_conn: AsyncConnection) -> None:
-    """Et ce n'est pas un choix de mise en scène : c'est le seul état que le
-    produit sache produire aujourd'hui.
+async def test_les_createurs_ne_sont_plus_tous_en_cold_start(
+    seed_conn: AsyncConnection,
+) -> None:
+    """Ce test affirmait l'inverse, et il avait raison à ce moment-là.
 
-    Ce test affirmait auparavant l'inverse — « au moins un créateur a un
-    historique » — et il passait, parce que le jeu de données posait les scores
-    à la main. Il validait une fiction. Rien n'écrit encore `reliability_score`
-    ni `completed_collabs_count` : c'est la phase 8.
+    Il disait « tous les créateurs sont en démarrage à froid », parce que rien
+    n'écrivait encore `reliability_score` ni `completed_collabs_count`. Le
+    moteur de fiabilité existe depuis la phase 8, et la démonstration produit
+    maintenant de vraies collaborations : le jeu doit changer, et ce test avec
+    lui. C'était annoncé.
 
-    Il échouera le jour où le mécanisme arrivera, et c'est voulu : ce jour-là,
-    le jeu de données doit changer.
+    Ce qui ne change pas : **un score nul veut dire neutre, jamais zéro**. Les
+    créateurs sans historique en gardent un, et le moteur de paliers l'ignore
+    au lieu de le comparer à un seuil.
     """
     profils = (
         await seed_conn.execute(
@@ -239,13 +267,21 @@ async def test_tous_les_createurs_sont_en_cold_start(seed_conn: AsyncConnection)
         )
     ).all()
 
-    assert len(profils) == 3
-    for profil in profils:
-        # Nul veut dire neutre, jamais zéro : le moteur de paliers l'ignore au
-        # lieu de le comparer à un seuil.
-        assert profil.reliability_score is None
-        assert profil.completed_collabs_count == 0
-        assert profil.is_new_creator is True
+    assert len(profils) == 5
+
+    avec_score = [p for p in profils if p.reliability_score is not None]
+    sans_score = [p for p in profils if p.reliability_score is None]
+
+    # Les deux populations existent : sans historique, et avec.
+    assert avec_score, "aucun créateur n'a de score : le moteur ne produit plus rien"
+    assert sans_score, "aucun créateur en démarrage à froid : l'écran du débutant est vide"
+
+    # Un bon et un dégradé, sinon l'effet du score ne se démontre pas.
+    scores = sorted(p.reliability_score for p in avec_score)
+    assert scores[-1] - scores[0] > 20
+
+    assert any(p.completed_collabs_count > 0 for p in profils)
+    assert all(p.completed_collabs_count == 0 for p in sans_score)
 
 
 async def test_chaque_compte_est_verifie_par_le_mecanisme(seed_conn: AsyncConnection) -> None:
@@ -259,7 +295,13 @@ async def test_chaque_compte_est_verifie_par_le_mecanisme(seed_conn: AsyncConnec
     motif.
     """
     statuts = set(await seed_conn.scalars(sa.select(SocialAccount.verification_status).distinct()))
-    assert statuts == {VerificationStatus.VERIFIED.value}
+
+    # Les deux issues du contrôle, obtenues et non posées : la plupart des
+    # comptes passent, un reste en revue parce qu'il lui manque un signal.
+    assert statuts == {
+        VerificationStatus.VERIFIED.value,
+        VerificationStatus.NEEDS_REVIEW.value,
+    }
 
     transitions = (
         await seed_conn.execute(
@@ -269,7 +311,7 @@ async def test_chaque_compte_est_verifie_par_le_mecanisme(seed_conn: AsyncConnec
         )
     ).all()
 
-    assert len(transitions) == 3
+    assert transitions, "aucune transition journalisée : le contrôle ne prononce plus rien"
     for transition in transitions:
         assert transition.from_status == VerificationStatus.NEEDS_REVIEW.value
         assert transition.to_status == VerificationStatus.VERIFIED.value
@@ -295,10 +337,16 @@ async def test_les_transitions_sont_journalisees(seed_conn: AsyncConnection) -> 
         ).all()
     )
 
-    # Trois créations plus trois activations.
-    assert par_entite["business"] == 6
-    # Un administrateur, trois propriétaires, trois créateurs.
-    assert par_entite["app_user"] == 7
+    # Quatre créations, trois activations — le commerce encore en inscription
+    # n'en a pas — et deux souscriptions d'abonnement, journalisées sous la
+    # même entité.
+    assert par_entite["business"] == 9
+    # Un administrateur, quatre propriétaires, cinq créateurs.
+    assert par_entite["app_user"] == 10
+    # Et les entités de la démonstration laissent aussi leurs traces : sans
+    # elles, le jeu aurait posé des états sans passer par les services.
+    assert par_entite["booking"] > 0
+    assert par_entite["collaboration"] > 0
 
 
 # --------------------------------------------------------------------------
@@ -365,6 +413,17 @@ async def test_toute_duree_suit_la_reservabilite(seed_conn: AsyncConnection) -> 
 
 
 async def test_tous_les_comptes_peuvent_se_connecter(seed_conn: AsyncConnection) -> None:
+    """Et « se connecter » veut dire par l'API, pas « avoir une empreinte ».
+
+    Ce test ne regardait que `password_hash` et concluait que les comptes
+    étaient utilisables. Ils ne l'étaient pas : le jeu employait un domaine en
+    `.test`, que la validation d'adresse refuse comme nom d'usage spécial, et
+    les comptes créés par le service ne passaient jamais par le schéma. Le
+    défaut ne s'est vu qu'en ouvrant le serveur à la main.
+
+    Il vérifie maintenant que chaque adresse **franchit la validation d'entrée**
+    — la seule porte par laquelle une connexion arrive.
+    """
     sans_empreinte = await seed_conn.scalar(
         sa.select(sa.func.count())
         .select_from(User)
@@ -372,12 +431,25 @@ async def test_tous_les_comptes_peuvent_se_connecter(seed_conn: AsyncConnection)
     )
     assert sans_empreinte == 0
 
+    adresses = list(await seed_conn.scalars(sa.select(User.email).where(User.email.is_not(None))))
+    assert adresses
+
+    validateur = TypeAdapter(EmailStr)
+    refusees = []
+    for adresse in adresses:
+        try:
+            validateur.validate_python(adresse)
+        except ValidationError:
+            refusees.append(adresse)
+
+    assert refusees == []
+
 
 async def test_aucun_identifiant_n_est_devinable(seed_conn: AsyncConnection) -> None:
     """Rien de séquentiel : les identifiants circulent dans des URL."""
     identifiants = list(await seed_conn.scalars(sa.select(Business.id)))
 
-    assert len(identifiants) == 3
+    assert len(identifiants) == 4
     for identifiant in identifiants:
         assert isinstance(identifiant, uuid.UUID)
         assert identifiant.version == 4
@@ -479,20 +551,26 @@ async def test_chaque_createur_a_un_compte_social_et_un_releve(
         )
     ).all()
 
-    assert len(lignes) == 3
+    assert len(lignes) == 5
     for ligne in lignes:
-        assert ligne.status == SocialAccountStatus.ACTIVE.value
+        # Un compte est expiré : c'est un état voulu, pas un défaut.
+        assert ligne.status in {
+            SocialAccountStatus.ACTIVE.value,
+            SocialAccountStatus.EXPIRED.value,
+        }
         assert ligne.followers_count > 0
         assert ligne.audience_demographics is not None
+
+    assert any(ligne.status == SocialAccountStatus.EXPIRED.value for ligne in lignes)
 
     # Le jeton, lui, se lit en SQL nu : passer par la colonne de l'ORM la ferait
     # déchiffrer au vol, et le test ne prouverait plus rien.
     jetons = list(
         await seed_conn.scalars(sa.text("SELECT access_token_encrypted FROM social_account"))
     )
-    assert len(jetons) == 3
+    assert len(jetons) == 5
     for jeton in jetons:
-        assert b"jeton-local" not in bytes(jeton)
+        assert b"demo-instagram" not in bytes(jeton)
 
 
 async def test_les_etats_oauth_du_jeu_sont_tous_consommes(seed_conn: AsyncConnection) -> None:
@@ -504,5 +582,184 @@ async def test_les_etats_oauth_du_jeu_sont_tous_consommes(seed_conn: AsyncConnec
     consommes = await seed_conn.scalar(
         sa.text("SELECT count(*) FROM oauth_state WHERE consumed_at IS NOT NULL")
     )
-    assert restants == 3
-    assert consommes == 3
+    assert restants == 5
+    assert consommes == 5
+
+
+# --------------------------------------------------------------------------
+# ce que la démonstration doit montrer
+#
+# Le jeu de départ éprouvait les invariants. Il doit maintenant permettre de
+# parcourir le produit **sans qu'aucune étape ne soit vide ou cassée** : chaque
+# test ci-dessous nomme un écran qui n'avait aucun sujet avant.
+# --------------------------------------------------------------------------
+
+
+async def test_les_createurs_couvrent_leurs_cinq_etats(seed_conn: AsyncConnection) -> None:
+    """Cinq états, cinq écrans d'accueil différents.
+
+    Sans eux, quatre de ces écrans ne se voient jamais — et ce sont ceux qu'on
+    a le moins l'occasion de vérifier.
+    """
+    lignes = (
+        await seed_conn.execute(
+            sa.select(
+                SocialAccount.status,
+                SocialAccount.verification_status,
+                CreatorProfile.reliability_score,
+                SocialAccount.token_expires_at,
+            ).join(CreatorProfile, CreatorProfile.user_id == SocialAccount.creator_id)
+        )
+    ).all()
+
+    assert len(lignes) >= 5
+
+    statuts = {ligne.status for ligne in lignes}
+    verifications = {ligne.verification_status for ligne in lignes}
+    scores = [ligne.reliability_score for ligne in lignes if ligne.reliability_score is not None]
+
+    # Une autorisation expirée, un compte en contrôle, des comptes actifs.
+    assert SocialAccountStatus.EXPIRED in statuts
+    assert SocialAccountStatus.ACTIVE in statuts
+    assert VerificationStatus.NEEDS_REVIEW in verifications
+    assert VerificationStatus.VERIFIED in verifications
+
+    # Un bon score et un score dégradé : les deux doivent exister, sinon
+    # l'effet du score sur les paliers ne se démontre pas.
+    assert len(scores) >= 2
+    assert max(scores) - min(scores) > 20
+
+
+async def test_les_reservations_couvrent_leurs_etats(seed_conn: AsyncConnection) -> None:
+    """Y compris une absence et une annulation, qui ne se produisent qu'en
+    remplissant leurs conditions — la règle des vingt-quatre heures transforme
+    une annulation tardive en absence."""
+    statuts = set((await seed_conn.execute(sa.select(Booking.status).distinct())).scalars().all())
+
+    for attendu in (
+        BookingStatus.HELD,
+        BookingStatus.CONFIRMED,
+        BookingStatus.CONSUMED,
+        BookingStatus.CANCELLED,
+        BookingStatus.NO_SHOW,
+    ):
+        assert attendu in statuts, attendu
+
+
+async def test_les_contreparties_couvrent_leurs_etats(seed_conn: AsyncConnection) -> None:
+    """Dont une en deuxième tentative et une en revue humaine.
+
+    Ce sont les deux que le back office sert à traiter : sans elles, la file
+    d'arbitrage est vide et l'écran ne se démontre pas.
+    """
+    lignes = (
+        await seed_conn.execute(
+            sa.select(
+                Collaboration.status, Collaboration.attempts_count, Collaboration.needs_human_review
+            )
+        )
+    ).all()
+
+    statuts = {ligne.status for ligne in lignes}
+    for attendu in (
+        CollaborationStatus.PENDING,
+        CollaborationStatus.SUBMITTED,
+        CollaborationStatus.APPROVED,
+        CollaborationStatus.RESUBMIT_REQUESTED,
+        CollaborationStatus.UNFULFILLED,
+    ):
+        assert attendu in statuts, attendu
+
+    assert any(ligne.attempts_count == 1 for ligne in lignes), "aucune deuxième tentative"
+    assert any(ligne.needs_human_review for ligne in lignes), "aucun dossier à arbitrer"
+
+
+async def test_un_job_epuise_attend_dans_le_back_office(seed_conn: AsyncConnection) -> None:
+    """Obtenu en faisant échouer le job autant de fois que la configuration
+    l'autorise, pas en posant son statut."""
+    lignes = (await seed_conn.execute(sa.select(Job.status, Job.attempts))).all()
+
+    epuises = [ligne for ligne in lignes if ligne.status == JobStatus.EXHAUSTED]
+    assert epuises, "le back office n'a aucun job à montrer"
+    assert epuises[0].attempts > 1, "un job épuisé sans tentative n'a pas été essayé"
+
+
+async def test_les_photos_sont_posees_et_relisibles(seed_conn: AsyncConnection) -> None:
+    """Une clé sans objet derrière laisserait un repli d'image partout."""
+    couvertures = (
+        (
+            await seed_conn.execute(
+                sa.select(Business.cover_photo_key).where(Business.cover_photo_key.is_not(None))
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+    assert couvertures, "aucun commerce n'a de couverture"
+    assert all(cle.startswith("photos/business/") for cle in couvertures)
+
+    items = (
+        (
+            await seed_conn.execute(
+                sa.select(CatalogItem.photo_key).where(CatalogItem.photo_key.is_not(None))
+            )
+        )
+        .scalars()
+        .all()
+    )
+    assert items, "aucune prestation n'a de photo"
+
+
+async def test_un_commerce_n_a_rien_compose(seed_conn: AsyncConnection) -> None:
+    """L'état de tout commerce le jour de son inscription.
+
+    Sans lui, l'écran d'activation, l'état vide du catalogue et le reporting à
+    zéro n'ont aucun sujet.
+    """
+    en_cours = (
+        (
+            await seed_conn.execute(
+                sa.select(Business.id).where(Business.status == BusinessStatus.ONBOARDING)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+    assert len(en_cours) == 1
+    sans_offre = await seed_conn.scalar(
+        sa.select(sa.func.count())
+        .select_from(TierOffer)
+        .where(TierOffer.business_id == en_cours[0])
+    )
+    assert sans_offre == 0
+
+
+async def test_les_dates_sont_proches_d_aujourd_hui(seed_conn: AsyncConnection) -> None:
+    """Un jeu figé montre des réservations passées trois mois plus tard, et la
+    démonstration commence par une explication."""
+    bornes = (
+        await seed_conn.execute(
+            sa.select(sa.func.min(Booking.created_at), sa.func.max(Booking.created_at))
+        )
+    ).one()
+
+    maintenant = datetime.now(UTC)
+    assert (maintenant - bornes[1]) < timedelta(days=2), "la plus récente n'est pas récente"
+    assert (maintenant - bornes[0]) < timedelta(days=45), "la plus ancienne est trop vieille"
+    # Et elles s'étalent : un jeu où tout tombe le même jour ne montre aucun
+    # reporting.
+    assert (bornes[1] - bornes[0]) > timedelta(days=5)
+
+
+async def test_des_plans_d_abonnement_existent(seed_conn: AsyncConnection) -> None:
+    """Le back office des plans est le seul écran à montrer des montants ; sans
+    plan, il est vide."""
+    intervalles = set(
+        (await seed_conn.execute(sa.select(SubscriptionPlan.billing_interval).distinct()))
+        .scalars()
+        .all()
+    )
+    # Les deux intervalles, pour que la mensualisation se voie à l'écran.
+    assert intervalles == {BillingInterval.MONTHLY, BillingInterval.YEARLY}

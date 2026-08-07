@@ -211,6 +211,53 @@ class Settings(BaseSettings):
     menu_extraction_model: str = "claude-sonnet-5"
     menu_extraction_timeout_seconds: float = 60.0
 
+    # Plateformes sociales. `demo` répond de mémoire et n'appelle personne : le
+    # mode du développement, des tests et de la démonstration. Il emprunte le
+    # même chemin que le vrai — état signé, échange de code, relevé — parce
+    # qu'un raccourci ferait croire que le parcours marche alors qu'on ne
+    # l'aurait pas parcouru.
+    social_provider: Literal["demo", "live"] = "demo"
+
+    # TikTok. En bac à sable tant que l'application n'est pas revue : les
+    # identifiants existent, l'audience est limitée aux comptes de test.
+    tiktok_client_key: str | None = None
+    tiktok_client_secret: SecretStr | None = Field(default=None, repr=False)
+    tiktok_redirect_uri: str | None = None
+    tiktok_scopes: CommaSeparated = ["user.info.basic", "user.info.stats"]
+    #: Le bac à sable de TikTok ne sert que des comptes explicitement inscrits.
+    #: Le drapeau ne change aucun appel — il sert à ce que l'écran d'erreur
+    #: puisse dire « compte non inscrit au bac à sable » plutôt que « échec ».
+    tiktok_sandbox: bool = True
+
+    # Dépôt d'objets. `memory` pour les tests, `local` pour le développement et
+    # la démonstration, `s3` non branché — il refuse de démarrer plutôt que de
+    # retomber en silence sur le disque.
+    object_store_provider: Literal["memory", "local", "s3"] = "memory"
+    object_store_local_root: str = "/tmp/bind-objets"
+    object_store_bucket: str | None = None
+
+    # Récupération d'un média depuis une URL publique — niveau 2 de la capture
+    # de preuve. Tous les garde-fous sont ici, aucun en dur dans le code : une
+    # limite écrite dans une fonction ne se règle pas sans redéploiement.
+    proof_fetch_enabled: bool = True
+    proof_fetch_timeout_seconds: float = 8.0
+    proof_fetch_max_bytes: int = 15 * 1024 * 1024
+    proof_fetch_max_redirects: int = 3
+    proof_fetch_allowed_types: CommaSeparated = [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "video/mp4",
+    ]
+
+    # Abonnement commerce. `log` n'appelle personne et trace : le mode du
+    # développement et de la démonstration. `stripe` exige une clé de test ou
+    # de production, vérifiée au démarrage.
+    billing_provider: Literal["log", "stripe"] = "log"
+    stripe_secret_key: SecretStr | None = Field(default=None, repr=False)
+    stripe_webhook_secret: SecretStr | None = Field(default=None, repr=False)
+    stripe_api_timeout_seconds: float = 20.0
+
     reliability_base_score: int = 70
     #: Poids par type d'événement. Un ajustement est rétroactif : le recalcul
     #: relit l'historique avec la grille du jour.

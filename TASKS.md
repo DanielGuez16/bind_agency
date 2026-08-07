@@ -181,15 +181,33 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
 
 ---
 
+## Mode démonstration
+
+- [x] Fournisseurs de démonstration derrière les interfaces existantes
+      *Fin : aucune branche conditionnelle sur le mode dans un service, vérifié par un test qui parcourt les sources. Le fournisseur social emprunte le vrai parcours OAuth et sait produire les états dégradés — jeton expiré, plateforme qui refuse*
+- [x] Jeu de données riche
+      *Fin : cinq créateurs à cinq états, quatre commerces dont un qui n'a rien composé, réservations et contreparties dans chaque état, un job épuisé, des plans d'abonnement, des dates relatives à aujourd'hui. Chaque état est obtenu par le service qui le produit ; les rares exceptions sont nommées et portent leur raison*
+- [x] Photos
+      *Fin : générées, sans réseau ni licence, dérivées du nom de façon stable. Servies par `GET /media/{cle}`, restreinte aux préfixes de photos — jamais aux preuves*
+
+---
+
 ## Phase 10 — Reste
 
-- [ ] Capture de preuve niveaux 1 et 2
-      *Le niveau 3 — capture d'écran envoyée — fonctionne depuis la phase 7. Les deux niveaux supérieurs ont été laissés débranchés faute de garde-fous : les poser à moitié ouvrirait une porte de requête côté serveur*
-      *Fin, pour le niveau 2 : taille maximale, types acceptés, refus des adresses internes **et des redirections vers elles**, délai maximal. Le niveau 1 attend `fetch_media`, qui arrive avec TikTok*
+- [x] Reporting commerce
+      *Fin : réservations, consommations, absences, publications par palier et par prestation, valeur offerte, portée approximative. Le taux d'honoration est nul et non zéro quand rien n'a été servi*
+- [x] Abonnement Stripe, mode test
+      *Fin : derrière une interface, `log` pour la démonstration et `stripe` pour le vrai. Le prix vient de `subscription_plan`, jamais du tableau de bord du fournisseur. Un statut inconnu ne fait pas participer*
+- [x] Capture de preuve niveau 2
+      *Fin : schémas limités, refus des adresses internes **et des redirections vers elles**, taille vérifiée pendant la lecture et non sur l'annonce, types en liste fermée, délai maximal. Toutes les limites en configuration*
+- [x] Intégration TikTok, en bac à sable
+      *Fin : le fournisseur est écrit et branché derrière la fabrique. Les appels sont les vrais ; seuls les comptes inscrits comme testeurs répondent tant que l'application n'est pas revue. Non vérifié faute d'identifiants*
+- [x] Dépôt objet, local
+      *Fin : une preuve archivée reste consultable après redémarrage, et la clé ne dépend d'aucun fournisseur. L'implémentation S3 refuse de démarrer plutôt que de retomber en silence sur le disque*
+- [x] Snapchat : vérifier que son absence ne casse rien
+      *Fin : la plateforme existe en base et dans les paliers, aucune implémentation ne lui répond, et la fabrique lève au lieu de rendre un fournisseur muet*
+- [ ] Capture de preuve niveau 1
+      *Attend `fetch_media` sur l'interface de plateforme, qui viendra avec le relevé des publications — une tâche à part, qui demande de savoir quelles publications appartiennent à quelle collaboration*
 - [ ] Dépôt objet réel, compatible S3
-      *Le stockage local suffit à la démo, et le passage se fait par la même interface — `deposer` est la seule fonction à changer*
-      *Fin : une preuve archivée reste consultable après redémarrage, et la clé rendue ne dépend d'aucun fournisseur*
-- [ ] Intégration TikTok
+      *La forme du contrat est écrite, il manque les identifiants. `deposer` et `lire` sont les deux seules fonctions à compléter*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire
-- [ ] Abonnement Stripe et plans par catégorie
-- [ ] Reporting commerce

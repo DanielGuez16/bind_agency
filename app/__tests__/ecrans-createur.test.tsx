@@ -57,8 +57,16 @@ const clientQuiNeRepondJamais = new ApiClient({
   baseUrl: 'https://api.test',
   coffre,
   // Le délai réel est de quinze secondes ; l'attendre laisserait des minuteurs
-  // vivants après la fin des tests et Jest le signalerait à chaque exécution.
-  delaiMs: 50,
+  // vivants après la fin des tests. Deux secondes suffisent, et **pas
+  // cinquante millisecondes** : l'assertion d'état de chargement suit
+  // immédiatement le rendu, mais sous charge — une suite d'API tournant en
+  // parallèle — cinquante millisecondes s'écoulaient parfois avant elle, et
+  // l'écran était déjà passé en erreur. Un échec sur trente exécutions, du
+  // genre qu'on met une semaine à relier à sa cause.
+  //
+  // Rien ne reste vivant après le test : le démontage annule le contrôleur,
+  // la requête est rejetée, et le minuteur est libéré dans le `finally`.
+  delaiMs: 2_000,
   fetchImpl: (_url, init) =>
     new Promise<Response>((_resolve, reject) => {
       init?.signal?.addEventListener('abort', () => reject(new Error('aborted')));

@@ -105,6 +105,13 @@ class ErrorCode(StrEnum):
     PROOF_NOTHING_ARCHIVED = "proof_nothing_archived"
     PROOF_ALREADY_SUBMITTED = "proof_already_submitted"
 
+    # Abonnement du commerce
+    SUBSCRIPTION_ALREADY_ACTIVE = "subscription_already_active"
+    SUBSCRIPTION_NOT_ACTIVE = "subscription_not_active"
+    SUBSCRIPTION_PLAN_NOT_FOUND = "subscription_plan_not_found"
+    SUBSCRIPTION_PLAN_INACTIVE = "subscription_plan_inactive"
+    BILLING_PROVIDER_UNAVAILABLE = "billing_provider_unavailable"
+
     # Import de carte
     MENU_IMPORT_NOT_FOUND = "menu_import_not_found"
     MENU_IMPORT_TRANSITION_NOT_ALLOWED = "menu_import_transition_not_allowed"
