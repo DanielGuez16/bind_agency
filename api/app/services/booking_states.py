@@ -33,7 +33,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.models import Booking
 from app.models.enums import BookingStatus
-from app.services import audit
+from app.services import audit, redemption
 
 #: Le diagramme, écrit une fois. Toute transition absente d'ici est refusée.
 TRANSITIONS: dict[BookingStatus, frozenset[BookingStatus]] = {
@@ -128,12 +128,20 @@ async def confirmer(session: AsyncSession, *, booking: Booking, creator_id: uuid
     if booking.hold_expires_at is not None and booking.hold_expires_at <= datetime.now(UTC):
         raise HoldExpired(str(booking.id))
 
-    return await transitionner(
+    confirme = await transitionner(
         session,
         booking=booking,
         vers=BookingStatus.CONFIRMED,
         actor=audit.Actor(kind=audit.ActorKind.CREATOR, user_id=creator_id),
     )
+
+    # Le code naît ici, à la confirmation, et pas au premier affichage. Une
+    # réservation confirmée sans ligne de code serait un cas particulier qui
+    # ressortirait partout — en reporting, en support, et le jour où le
+    # téléphone du créateur est vide de batterie et qu'il faut lui dicter son
+    # code au comptoir. Déterministe vaut mieux que paresseux.
+    await redemption.creer_code(session, booking=confirme)
+    return confirme
 
 
 async def annuler(session: AsyncSession, *, booking: Booking, creator_id: uuid.UUID) -> Booking:

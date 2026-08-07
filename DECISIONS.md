@@ -1554,3 +1554,96 @@ schémas les déclaraient, les services de création ne les écrivaient pas. Un
 champ silencieusement ignoré est pire qu'un champ refusé : l'appelant croit
 avoir enregistré. C'est précisément ce que le test de bout en bout — écriture,
 lecture, fil — était écrit pour attraper, et il l'a attrapé du premier coup.
+
+---
+
+## 2026-08-06 — Code de retrait et caisse
+
+**Le code affiché n'est jamais stocké.** Il est dérivé d'un secret et de la
+fenêtre courante — HMAC-SHA256, troncature dynamique comme TOTP. Un code stocké
+fuirait avec la base ; un code dérivé ne vaut que trente secondes, et la base ne
+contient que de quoi le recalculer. Vérifié par lecture SQL directe.
+
+**Le `booking_id` entre dans le message.** Deux réservations qui partageraient
+par accident le même secret n'afficheraient pas le même code, et un code observé
+chez l'un ne vaut rien chez l'autre.
+
+**Une fenêtre de tolérance, pas deux.** Entre le moment où le créateur montre
+son écran et celui où la caisse scanne, on franchit parfois une frontière :
+refuser là serait incompréhensible. Accepter la fenêtre *suivante* ne servirait à
+rien — personne ne scanne un code du futur — et doublerait la surface.
+
+**Comparaison à temps constant.** `==` fuit le préfixe commun par le temps de
+retour ; sur six chiffres qu'on peut soumettre en boucle, cela suffit à
+reconstruire le code chiffre par chiffre.
+
+**L'alphabet du code de secours exclut `I`, `O`, `0`, `1`.** Il se dicte à voix
+haute et se saisit à la main, deux situations où ces caractères se confondent.
+Quatre symboles en moins contre des refus absurdes en moins.
+
+**Le code est créé au premier affichage, pas à la réservation.** Une réservation
+annulée avant confirmation n'a jamais besoin de code, et le secret d'un code que
+personne n'a montré n'a pas de raison d'exister.
+
+**Vérifier et consommer sont deux routes.** La caisse voit ce qu'elle doit servir
+avant de le déclarer servi. Les fondre ferait consommer une réservation qu'on n'a
+pas encore honorée, et `consumed` est terminal.
+
+**L'ordre de la consommation compte.** Le code d'abord, la réservation ensuite :
+le `UPDATE … WHERE consumed_at IS NULL` est la barrière contre le double scan, et
+c'est lui qui doit échouer en premier. Basculer la réservation d'abord ferait
+passer les deux caisses avant que l'une ne s'aperçoive de rien. Éprouvé sur deux
+connexions réelles.
+
+**L'appartenance est vérifiée sur les deux routes, à la main.** Le code arrive
+dans le corps et non dans le chemin : la dépendance de résolution ne peut pas le
+lire. Sans ce contrôle, une caisse lirait ce que le commerce voisin s'apprête à
+servir en scannant un écran par-dessus une épaule.
+
+---
+
+## 2026-08-06 — Code de secours, création déterministe, écran de caisse
+
+**Le code de secours passe à six caractères, groupés trois par trois.** Huit se
+dictaient mal au téléphone et se saisissaient mal sur un comptoir. Ce n'est pas
+la longueur qui protège : c'est que le code est **lié à une réservation**, à
+**usage unique**, à **durée courte** — il meurt avec le droit de consommer — et
+désormais **limité en tentatives**. Six caractères sur trente-deux symboles font
+un milliard de combinaisons ; quelques essais ratés ferment la porte bien avant
+qu'on en approche.
+
+Le compteur d'essais est écrit en base au moment du refus, et la route valide
+cette écriture avant de lever : sans cela il partirait avec la transaction
+annulée et ne compterait rien. Un essai qui aboutit le remet à zéro — sinon un
+code sain se fermerait après quelques scans ratés étalés sur plusieurs visites.
+
+**Le code naît à la confirmation, pas au premier affichage.** Une réservation
+confirmée sans ligne de code serait un cas particulier qui ressortirait partout :
+en reporting, en support, et le jour où le téléphone du créateur est vide de
+batterie et qu'il faut lui dicter son code au comptoir. Déterministe vaut mieux
+que paresseux.
+
+Conséquence relevée : `creer_code` réessayait cinq fois sur n'importe quelle
+violation d'unicité. Or un doublon de `booking_id` n'est pas une collision de
+code de secours — l'une se réessaie, l'autre signale qu'on appelle deux fois ce
+qui n'arrive qu'une. Les deux sont maintenant distinctes.
+
+**La saisie manuelle est le chemin de premier rang de l'écran de caisse**, pas un
+secours dégradé. Dans un salon, une caméra sale, un écran fissuré ou une lumière
+rasante arrivent tous les jours ; mettre le scanner au centre ferait perdre du
+temps à la caisse précisément les jours où elle en a le moins. Le champ est donc
+visible d'emblée, le scanner est l'autre onglet, et un onglet scanner sans
+caméra retombe sur la saisie en disant pourquoi.
+
+**Le scanner réel est injecté, et reste non vérifié.** Ni test ni simulateur ne
+fournissent de caméra. Tout ce qui pouvait l'être — saisie, vérification,
+service, enchaînement, refus traduits — est éprouvé derrière l'interface. Reste
+à valider à la main : autorisation refusée puis accordée, QR lu à contre-jour, et
+le fait qu'une seule lecture parte par présentation.
+
+**Trouvé en écrivant l'écran : `fireEvent` aussi est asynchrone.**
+@testing-library/react-native 14 a rendu `render` **et** `fireEvent` promissifs.
+Le premier avait coûté huit exécutions rouges ; le second faisait que les
+requêtes ne trouvaient plus le champ qu'elles venaient de remplir.
+`ecran.test.tsx` portait le défaut lui aussi. Le garde-fou couvre désormais les
+deux, et s'étend en ajoutant un nom à une liste.

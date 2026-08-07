@@ -50,7 +50,7 @@ describe('écran d’amorçage', () => {
     );
     await waitFor(() => expect(screen.getByText(en.health.reachable)).toBeTruthy());
 
-    fireEvent.press(screen.getByText('ES'));
+    await fireEvent.press(screen.getByText('ES'));
 
     await waitFor(() => expect(screen.getByText(es.health.reachable)).toBeTruthy());
     expect(screen.getByText(es.common.retry)).toBeTruthy();
