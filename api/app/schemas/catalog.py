@@ -22,6 +22,9 @@ class CatalogItemCreate(BaseModel):
     requires_booking: bool = True
     is_available: bool = True
     parent_item_id: uuid.UUID | None = None
+    #: Clé de stockage objet, jamais une URL. Un article sans photo reste
+    #: parfaitement réservable : c'est l'affichage qui s'en arrange.
+    photo_key: str | None = Field(default=None, max_length=500)
 
 
 class CatalogItemUpdate(BaseModel):
@@ -43,6 +46,9 @@ class CatalogItemUpdate(BaseModel):
     price_cents: int | None = Field(default=None, ge=0)
     duration_minutes: int | None = Field(default=None, gt=0)
     requires_booking: bool | None = None
+    #: Envoyer `null` retire la photo. C'est le seul champ de ce schéma dont
+    #: l'effacement explicite a un sens — les autres décrivent l'article.
+    photo_key: str | None = Field(default=None, max_length=500)
 
 
 class CatalogItemRead(BaseModel):
@@ -54,6 +60,7 @@ class CatalogItemRead(BaseModel):
     price_cents: int
     duration_minutes: int | None
     requires_booking: bool
+    photo_key: str | None
     source: CatalogItemSource
 
     #: L'interrupteur propre à l'item, celui que le commerce manipule.

@@ -45,6 +45,7 @@ async def _to_read(session: AsyncSession, business: Business) -> BusinessRead:
         default_locale=business.default_locale,
         phone=business.phone,
         currency=business.currency,
+        cover_photo_key=business.cover_photo_key,
         status=business.status,
         created_at=business.created_at,
     )

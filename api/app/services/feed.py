@@ -47,6 +47,7 @@ class ItemDuFil:
     currency: str
     duration_minutes: int | None
     requires_booking: bool
+    photo_key: str | None
     platform: Platform
     content_format: ContentFormat
     #: Rapport entre la valeur de l'item et la référence du palier. En dessous
@@ -62,6 +63,7 @@ class CommerceDuFil:
     name: str
     category: BusinessCategory
     address: str | None
+    cover_photo_key: str | None
     distance_metres: float
     items: tuple[ItemDuFil, ...]
 
@@ -110,6 +112,7 @@ async def fil_du_createur(
                 Business.name,
                 Business.category,
                 Business.address,
+                Business.cover_photo_key,
                 Business.currency,
                 distance,
                 TierOffer.id.label("tier_offer_id"),
@@ -120,6 +123,7 @@ async def fil_du_createur(
                 CatalogItem.price_cents,
                 CatalogItem.duration_minutes,
                 CatalogItem.requires_booking,
+                CatalogItem.photo_key,
                 Tier.platform,
                 Tier.content_format,
                 Tier.value_ratio_hint,
@@ -158,7 +162,10 @@ async def fil_du_createur(
             # dernier — tout ce qui pouvait être écarté par une requête l'a été.
             continue
 
-        entetes.setdefault(ligne.id, (ligne.name, ligne.category, ligne.address, ligne.distance))
+        entetes.setdefault(
+            ligne.id,
+            (ligne.name, ligne.category, ligne.address, ligne.cover_photo_key, ligne.distance),
+        )
         par_commerce.setdefault(ligne.id, []).append(
             ItemDuFil(
                 tier_offer_id=ligne.tier_offer_id,
@@ -171,6 +178,7 @@ async def fil_du_createur(
                 currency=ligne.currency,
                 duration_minutes=ligne.duration_minutes,
                 requires_booking=ligne.requires_booking,
+                photo_key=ligne.photo_key,
                 platform=ligne.platform,
                 content_format=ligne.content_format,
                 value_ratio=_ratio(ligne.price_cents, ligne.value_ratio_hint),
@@ -183,7 +191,8 @@ async def fil_du_createur(
             name=entetes[business_id][0],
             category=entetes[business_id][1],
             address=entetes[business_id][2],
-            distance_metres=round(entetes[business_id][3], 1),
+            cover_photo_key=entetes[business_id][3],
+            distance_metres=round(entetes[business_id][4], 1),
             items=tuple(items),
         )
         for business_id, items in par_commerce.items()

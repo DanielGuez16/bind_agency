@@ -36,6 +36,11 @@ class CatalogItem(UUIDPrimaryKey, CreatedAt, Base):
     requires_booking: Mapped[bool] = mapped_column(
         sa.Boolean, nullable=False, server_default=sa.text("true")
     )
+    # Une photo par item, même stockage et mêmes règles que la couverture du
+    # commerce. Un item sans photo reste parfaitement réservable : l'affichage
+    # s'en arrange, pas la réservation.
+    photo_key: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+
     is_available: Mapped[bool] = mapped_column(
         sa.Boolean, nullable=False, server_default=sa.text("true")
     )
