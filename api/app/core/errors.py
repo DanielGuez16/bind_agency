@@ -101,6 +101,7 @@ class ErrorCode(StrEnum):
     COLLABORATION_NOT_FOUND = "collaboration_not_found"
     COLLABORATION_TRANSITION_NOT_ALLOWED = "collaboration_transition_not_allowed"
     COLLABORATION_NOT_OPEN = "collaboration_not_open"
+    COLLABORATION_NOT_IN_REVIEW = "collaboration_not_in_review"
     PROOF_NOTHING_ARCHIVED = "proof_nothing_archived"
     PROOF_ALREADY_SUBMITTED = "proof_already_submitted"
 

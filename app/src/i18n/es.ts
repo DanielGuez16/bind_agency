@@ -66,6 +66,7 @@ export const es: Catalogue = {
     empty: 'No se leyó nada de este archivo. Añade tus artículos a mano.',
   },
   errors: {
+    network: 'No pudimos conectar con BIND. Revisa tu conexión e inténtalo de nuevo.',
     generic: 'Algo ha salido mal. Inténtalo de nuevo.',
     authentication_required: 'Inicia sesión para continuar.',
     invalid_credentials: 'Correo electrónico o contraseña incorrectos.',
@@ -152,6 +153,8 @@ export const es: Catalogue = {
     redemption_booking_not_redeemable: 'Esta reserva no se puede canjear ahora mismo.',
     collaboration_not_found: 'No encontramos esta colaboración.',
     collaboration_transition_not_allowed: 'Esta colaboración no puede pasar a ese estado.',
+    collaboration_not_in_review:
+      'Esta contraparte no está en revisión, así que no se puede arbitrar.',
     collaboration_not_open: 'Esta colaboración no está esperando una prueba ahora mismo.',
     proof_nothing_archived: 'No pudimos archivar el contenido. Inténtalo o envía una captura.',
     proof_already_submitted: 'Ya enviaste exactamente este archivo. Envía el corregido.',

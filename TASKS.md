@@ -170,7 +170,8 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Fin : les dix manques listés sont comblés et testés — fiche publique d'un commerce, historique créateur, journée commerce, contreparties du commerce et file d'arbitrage, plans d'abonnement, étapes d'activation, audience du créateur, dates sur les obstacles, statut de vérification*
 - [x] Bloc 2 · Bibliothèque de composants
       *Fin : les 17 familles écrites et éprouvées isolément, avant tout écran. 44 tests portant sur les règles qui ne se voient pas sur une maquette — bouton jamais dimensionné sur son texte, trois marqueurs du badge de palier, action impossible retirée et non grisée, créneau pris visible mais non pressable, gouttière des colonnes numériques. Le badge de vague n'existe nulle part*
-- [ ] Bloc 3 · Client d'API typé
+- [x] Bloc 3 · Client d'API typé
+      *Fin : aucun chemin écrit dans un écran, un test compare chaque route appelée au contrat réel du serveur, et la CI refuse un contrat périmé. Un code d'erreur inconnu donne le message générique, jamais le code brut. Une seule rotation de jeton vit à la fois*
 - [ ] Bloc 4 · Écrans créateur
 - [ ] Bloc 5 · Écrans commerce
 - [ ] Bloc 6 · Back office

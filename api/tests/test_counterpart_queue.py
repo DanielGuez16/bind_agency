@@ -16,6 +16,7 @@ qui ne descend jamais.
 """
 
 import uuid
+from datetime import UTC, datetime, timedelta
 
 import sqlalchemy as sa
 from httpx import AsyncClient
@@ -23,7 +24,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.models import Collaboration
-from app.models.enums import CollaborationStatus, UserRole
+from app.models.enums import CollaborationStatus, ReliabilityEventType, UserRole
 from app.services import auth as auth_service
 from app.services import collaboration as service
 from app.services.audit import Actor
@@ -267,3 +268,205 @@ async def test_la_file_d_arbitrage_est_reservee_aux_administrateurs(
         f"{PREFIX}/admin/collaborations/review", headers=await entetes(admin)
     )
     assert accepte.status_code == 200, accepte.text
+
+
+# --------------------------------------------------------------------------
+# arbitrage
+# --------------------------------------------------------------------------
+
+
+async def _admin_connecte(client: AsyncClient, session: AsyncSession) -> dict:
+    admin = await auth_service.register(
+        session,
+        email=f"{uuid.uuid4()}@example.com",
+        password=MOT_DE_PASSE,
+        role=UserRole.ADMIN,
+    )
+    await session.commit()
+    jetons = (
+        await client.post(
+            f"{PREFIX}/auth/login", json={"email": admin.email, "password": MOT_DE_PASSE}
+        )
+    ).json()
+    return {"Authorization": f"Bearer {jetons['access_token']}"}
+
+
+async def _en_revue(
+    session: AsyncSession, statut: CollaborationStatus = CollaborationStatus.SUBMITTED
+):
+    ligne, s = await contrepartie(session)
+    await session.execute(
+        sa.update(Collaboration)
+        .where(Collaboration.id == ligne.id)
+        .values(needs_human_review=True, status=statut, attempts_count=3)
+    )
+    await session.flush()
+    await session.refresh(ligne)
+    return ligne, s
+
+
+async def test_l_arbitre_peut_clore_en_non_honoree(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """L'issue qui n'appartient qu'à lui.
+
+    Sans elle, un dossier sorti de la boucle à la troisième tentative y reste
+    pour toujours : le créateur attend, le commerce attend, et le drapeau
+    devient une impasse.
+    """
+    ligne, _ = await _en_revue(session)
+    entetes = await _admin_connecte(client, session)
+
+    reponse = await client.post(
+        f"{PREFIX}/admin/collaborations/{ligne.id}/decision",
+        json={"issue": "unfulfilled", "reason": "trois soumissions non conformes"},
+        headers=entetes,
+    )
+
+    assert reponse.status_code == 200, reponse.text
+    assert reponse.json()["status"] == CollaborationStatus.UNFULFILLED.value
+    # Le drapeau reste levé : c'est une trace, elle ne s'efface pas. Mais la
+    # file, elle, se vide.
+    assert reponse.json()["needs_human_review"] is True
+    assert await service.file_de_revue_humaine(session) == ()
+
+
+async def test_l_arbitre_tranche_dans_le_vocabulaire_du_commerce(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """Approuver et redemander disent la même chose des deux côtés.
+
+    Un second langage pour l'arbitre obligerait chacun à traduire, et
+    l'arbitrage cesserait d'être comparable à la décision qu'il révise.
+    """
+    ligne, _ = await _en_revue(session)
+    entetes = await _admin_connecte(client, session)
+
+    reponse = await client.post(
+        f"{PREFIX}/admin/collaborations/{ligne.id}/decision",
+        json={"issue": "approve"},
+        headers=entetes,
+    )
+    assert reponse.status_code == 200, reponse.text
+    assert reponse.json()["status"] == CollaborationStatus.APPROVED.value
+
+
+async def test_l_arbitre_qui_redemande_pose_une_nouvelle_echeance(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    ligne, _ = await _en_revue(session)
+    entetes = await _admin_connecte(client, session)
+
+    reponse = await client.post(
+        f"{PREFIX}/admin/collaborations/{ligne.id}/decision",
+        json={"issue": "resubmit", "reason": "mention absente"},
+        headers=entetes,
+    )
+
+    assert reponse.status_code == 200, reponse.text
+    corps = reponse.json()
+    assert corps["status"] == CollaborationStatus.RESUBMIT_REQUESTED.value
+
+    # Ce que la règle protège n'est pas « une échéance plus lointaine
+    # qu'avant » — la fenêtre de correction est volontairement plus courte que
+    # celle de la publication initiale, corriger une légende va plus vite que
+    # produire un contenu. C'est qu'une **fenêtre entière** rouvre : le
+    # créateur ne doit pas hériter du reliquat d'un délai déjà entamé, sinon on
+    # lui redemande quelque chose sans lui laisser le temps de le faire.
+    fenetre = timedelta(seconds=get_settings().collaboration_resubmit_seconds)
+    nouvelle = datetime.fromisoformat(corps["deadline_at"])
+    assert nouvelle > datetime.now(UTC)
+    assert nouvelle - datetime.now(UTC) > fenetre * 0.99
+
+
+async def test_toute_issue_autre_qu_une_approbation_exige_un_motif(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    ligne, _ = await _en_revue(session)
+    entetes = await _admin_connecte(client, session)
+
+    for issue in ("resubmit", "unfulfilled"):
+        refuse = await client.post(
+            f"{PREFIX}/admin/collaborations/{ligne.id}/decision",
+            json={"issue": issue, "reason": "   "},
+            headers=entetes,
+        )
+        assert refuse.status_code == 422, issue
+        assert refuse.json()["detail"] == "validation_failed"
+
+    # Le pendant : une approbation n'en demande pas, et passe.
+    accepte = await client.post(
+        f"{PREFIX}/admin/collaborations/{ligne.id}/decision",
+        json={"issue": "approve"},
+        headers=entetes,
+    )
+    assert accepte.status_code == 200, accepte.text
+
+
+async def test_un_dossier_hors_revue_ne_s_arbitre_pas(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """Sans cette borne, l'administrateur deviendrait un commerce fantôme.
+
+    Il déciderait à la place de celui qui a donné la prestation. Ce qu'on
+    arbitre est ce que la mécanique a refusé de trancher toute seule.
+    """
+    ligne, _ = await contrepartie(session)
+    assert ligne.needs_human_review is False
+    entetes = await _admin_connecte(client, session)
+
+    refuse = await client.post(
+        f"{PREFIX}/admin/collaborations/{ligne.id}/decision",
+        json={"issue": "approve"},
+        headers=entetes,
+    )
+
+    assert refuse.status_code == 409
+    assert refuse.json()["detail"] == "collaboration_not_in_review"
+
+
+async def test_le_commerce_ne_peut_pas_clore_en_non_honoree(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """C'est la seule décision du produit qui ne se rouvre pas.
+
+    Le commerce approuve ou redemande. Lui ouvrir la clôture ferait fermer des
+    dossiers qu'on ne saurait plus rouvrir, par lassitude ou par erreur.
+    """
+    ligne, s = await _en_revue(session)
+    await session.commit()
+
+    jetons = (
+        await client.post(
+            f"{PREFIX}/auth/login",
+            json={"email": s["caissier"].email, "password": MOT_DE_PASSE},
+        )
+    ).json()
+    entetes = {"Authorization": f"Bearer {jetons['access_token']}"}
+
+    # La route commerce n'accepte que `approuve` : il n'y a pas de champ par
+    # lequel demander une clôture.
+    refuse = await client.post(
+        f"{PREFIX}/business/collaborations/{ligne.id}/decision",
+        json={"issue": "unfulfilled", "reason": "peu importe"},
+        headers=entetes,
+    )
+    assert refuse.status_code == 422
+
+    # Et la route d'arbitrage lui est fermée par son rôle.
+    interdit = await client.post(
+        f"{PREFIX}/admin/collaborations/{ligne.id}/decision",
+        json={"issue": "unfulfilled", "reason": "peu importe"},
+        headers=entetes,
+    )
+    assert interdit.status_code == 403
+    assert interdit.json()["detail"] == "insufficient_role"
+
+
+async def test_la_cloture_produit_l_evenement_de_fiabilite(session: AsyncSession) -> None:
+    """Une issue sans son événement se verrait dans la table, pas au troisième
+    mois d'exploitation."""
+    assert (
+        ReliabilityEventType.UNFULFILLED
+        in service.EVENEMENTS_PAR_ISSUE[CollaborationStatus.UNFULFILLED]
+    )

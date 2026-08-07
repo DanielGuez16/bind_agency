@@ -1939,3 +1939,66 @@ obstacles qui n'ont rien à dater gardent `depuis` nul.
 
 **Non comblé, volontairement** : quartiers, événements temps réel, versionnement
 des paliers. Le rafraîchissement se fait à l'ouverture d'écran et sur geste.
+
+---
+
+## 2026-08-07 — Arbitrage administrateur, et le contrat d'API
+
+**L'administrateur tranche dans le vocabulaire du commerce, plus une issue qui
+n'est qu'à lui.** Approuver et redemander disent exactement la même chose des
+deux côtés : lui donner un second langage obligerait chacun à traduire, et
+l'arbitrage cesserait d'être comparable à la décision qu'il révise. Clore en non
+honoré n'appartient qu'à lui — c'est la seule décision du produit qui ne se
+rouvre pas, et le commerce ne doit jamais pouvoir la prendre par lassitude.
+
+Sans cette décision, le drapeau `needs_human_review` était une impasse : la
+mécanique s'arrête à la troisième tentative sans trancher, et personne ensuite
+ne pouvait le faire.
+
+**Deux flèches ont été ajoutées à la machine à états** — `submitted →
+unfulfilled` et `under_review → unfulfilled` — et elles n'existent que pour
+l'arbitrage. La table dit ce qui est *possible*, l'appelant dit qui en a le
+*droit* : la boucle d'échéances ne balaie que `pending` et
+`resubmit_requested`, le routeur commerce n'appelle jamais la clôture. Un test
+le vérifie sur le code, pas sur une intention — il compte les appels à
+`vers=UNFULFILLED` dans le service et refuse le nom de la fonction de clôture
+dans le routeur commerce.
+
+**L'arbitrage est borné aux dossiers marqués en revue.** Sans cette borne,
+l'administrateur deviendrait un commerce fantôme, décidant à la place de celui
+qui a donné la prestation. Ce qu'on arbitre est ce que la mécanique a refusé de
+trancher toute seule.
+
+**La fenêtre de nouvelle soumission est plus courte que celle de la publication
+initiale, et c'est voulu.** Corriger une légende va plus vite que produire un
+contenu. Ce que la règle protège n'est pas « une échéance plus lointaine
+qu'avant » mais « une fenêtre entière qui rouvre » : le créateur ne doit pas
+hériter du reliquat d'un délai déjà entamé. Un premier test avait fixé la
+mauvaise garantie et serait tombé le jour où la configuration bougeait.
+
+**Le contrat d'API est un fichier commité, et la CI refuse qu'il vieillisse.**
+`api/scripts/dump_openapi.py` écrit les chemins, méthodes et codes de réponse —
+ni schémas ni descriptions, qui changent à chaque montée de version de FastAPI
+et rendraient le fichier illisible en revue, donc invérifiable. Un test côté app
+compare chaque route appelée à ce fichier. Sans la vérification de fraîcheur, le
+test continuerait de passer contre une photographie périmée du serveur : il
+cesserait de prouver quoi que ce soit au moment précis où une route est
+renommée.
+
+**Une panne de transport n'est pas une erreur d'API.** La conduite à tenir
+diffère — une requête jamais partie se rejoue sans risque, une qui a reçu un 409
+non — et la phrase à dire n'est pas la même. `NetworkError` porte le premier
+cas, `ApiError` le second avec son code du catalogue fermé.
+
+**Une seule rotation de jeton vit à la fois.** Trois écrans qui chargent en
+parallèle prennent trois 401 simultanés ; sans partage de la promesse, deux
+rotations invalideraient le jeton que la troisième vient d'obtenir.
+
+**Une rotation refusée efface la session, une rotation en panne réseau ne
+l'efface pas.** Le premier cas prouve que le jeton est mort et le garder ferait
+retenter indéfiniment ; le second ne prouve rien, et effacer déconnecterait
+quelqu'un qui passe sous un tunnel.
+
+**La déconnexion ferme la session localement quoi qu'il arrive.** Un serveur
+injoignable ne doit pas laisser quelqu'un connecté sur un téléphone qu'il vient
+de rendre.

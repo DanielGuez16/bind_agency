@@ -70,6 +70,10 @@ export const en = {
   },
   errors: {
     generic: 'Something went wrong. Please try again.',
+    // Pas un code de l'API : une panne de transport, où rien n'est parti
+    // ou rien n'est revenu. La phrase à dire n'est pas la même, et
+    // « réessayez » n'a de sens que dans ce cas-là.
+    network: 'We could not reach BIND. Check your connection and try again.',
     authentication_required: 'Please sign in to continue.',
     invalid_credentials: 'Incorrect email address or password.',
     account_not_active: 'This account has been closed.',
@@ -148,6 +152,8 @@ export const en = {
     redemption_booking_not_redeemable: 'This booking cannot be redeemed right now.',
     collaboration_not_found: 'We could not find this collaboration.',
     collaboration_transition_not_allowed: 'This collaboration cannot move to that state.',
+    collaboration_not_in_review:
+      'This counterpart is not under review, so it cannot be arbitrated.',
     collaboration_not_open: 'This collaboration is not waiting for a proof right now.',
     proof_nothing_archived: 'We could not archive the content. Try again or send a screenshot.',
     proof_already_submitted: 'You already sent this exact file. Send the corrected one.',

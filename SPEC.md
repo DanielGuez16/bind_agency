@@ -59,6 +59,25 @@ La tarification est une donnée, jamais une constante dans le code. Plusieurs pl
 **subscription**
 `id, business_id, plan_id, status, current_period_end, stripe_customer_id, stripe_subscription_id`
 
+**Étapes d'activation**
+
+Le passage de `onboarding` à `active` est une transition explicite, jamais un effet de bord d'une mise à jour. Six conditions sont exposées au commerce avant qu'il essaie, chacune marquée bloquante ou non.
+
+| Étape | Bloquante | Ce qu'elle décide |
+|---|---|---|
+| `address` | oui | Sans adresse, aucun géocodage |
+| `coordinates` | oui | Sans point, le commerce n'est nulle part |
+| `cover_photo` | non | Une carte sans couverture se lit moins bien |
+| `catalog_item` | non | Au moins un item disponible |
+| `tier_offer` | non | Au moins une offre active sur un palier actif |
+| `capacity_rule` | non | Au moins une plage d'ouverture |
+
+Les deux premières refusent l'activation. **Les quatre suivantes ne la refusent pas mais décident de la visibilité** : un commerce actif sans offre de palier, sans item disponible ou sans règle de capacité n'apparaît dans aucun fil, et n'a aujourd'hui aucun moyen de le savoir. Les taire produirait un commerce « activé » que personne ne voit et dont personne ne comprend pourquoi.
+
+La liste est rendue par une route de lecture, et **la transition consomme la même liste**. Écrire les conditions deux fois les ferait diverger au premier ajout, et l'écran annoncerait « prêt » sur une activation que le service refuse.
+
+Aucun pourcentage n'est affiché : « 2 étapes sur 4 » se comprend, « 50 % » ne dit pas laquelle manque.
+
 ### 2.3 Catalogue
 
 **catalog_item**
@@ -245,11 +264,19 @@ pending ──soumission──> submitted ──┬──contrôle automatique�
 submitted ou under_review ──non conforme──> resubmit_requested ──> submitted
 
 pending ou resubmit_requested ──deadline dépassée──> unfulfilled
+
+needs_human_review ──arbitrage administrateur──> approved | resubmit_requested | unfulfilled
 ```
 
 `under_review` est l'étape de contrôle quand un humain s'y arrête. Le contrôle automatique la saute et va directement de `submitted` à son issue. Aucune de ces deux voies ne mène à `approved` par écoulement du temps : une deadline dépassée produit toujours `unfulfilled`, jamais une acceptation par défaut.
 
 Chaque passage par `resubmit_requested` incrémente `attempts_count`. À trois, `needs_human_review` passe à vrai et le dossier sort de la boucle automatique.
+
+**Un dossier marqué en revue humaine s'arbitre**, et lui seul. L'administrateur tranche dans le vocabulaire du commerce — approuver, ou redemander avec un motif — plus une issue qui n'appartient qu'à lui : clore en `unfulfilled`. Le commerce ne ferme jamais définitivement ; lui ouvrir la clôture ferait fermer des dossiers qu'on ne saurait plus rouvrir. Sans cette décision côté administrateur, en revanche, le drapeau devient une impasse : la mécanique s'arrête sans trancher, le créateur attend, le commerce attend.
+
+Deux flèches existent pour ce seul usage : `submitted → unfulfilled` et `under_review → unfulfilled`. Ni la boucle d'échéances — qui ne balaie que `pending` et `resubmit_requested` — ni le commerce ne peuvent les emprunter. La table des transitions dit ce qui est possible, l'appelant dit qui en a le droit.
+
+Le drapeau `needs_human_review` reste levé après l'arbitrage : c'est une trace, elle ne s'efface pas. C'est la **file** qui se vide, en écartant les dossiers dont le statut est devenu terminal.
 
 ---
 
@@ -307,8 +334,11 @@ Regroupée par domaine, toutes les routes sous `/api/v1`.
 **Commerce**
 `POST /business/menu-imports`, `GET|PATCH /business/menu-imports/{id}`, CRUD `catalog-items`, CRUD `tier-offers`, CRUD `capacity-rules` et `capacity-exceptions`, `GET /business/bookings`, `GET /business/collaborations`, `GET /business/reporting`
 
+**Commerce, activation**
+`GET /business/{id}/activation` (les six étapes et leur caractère bloquant), `POST /business/{id}/activate`
+
 **Admin**
-CRUD `tiers`, CRUD `subscription-plans`, file de `needs_human_review`
+CRUD `tiers`, `GET /admin/plans` (lecture seule tant que la facturation n'existe pas), `GET /admin/collaborations/review` puis `POST /admin/collaborations/{id}/decision`, `GET /admin/social-accounts/review`, `GET /admin/jobs/exhausted`
 
 ---
 

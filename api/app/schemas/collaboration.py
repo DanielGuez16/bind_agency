@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import datetime
+from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -57,6 +58,29 @@ class CollaborationRead(BaseModel):
     approved_at: datetime | None
     proofs: list[PreuveRead]
 
+    @classmethod
+    def assembler(cls, ligne, preuves) -> "CollaborationRead":
+        """La même lecture pour le commerce et pour l'arbitre.
+
+        Elle vit ici plutôt que dans un routeur : deux routeurs en ont besoin,
+        et la recopier ferait qu'un champ ajouté n'apparaîtrait que d'un côté —
+        celui qu'on aurait pensé à modifier.
+        """
+        return cls(
+            id=ligne.id,
+            booking_id=ligne.booking_id,
+            tier_id=ligne.tier_id,
+            required_format=ligne.required_format,
+            required_mention=ligne.required_mention,
+            required_geotag=ligne.required_geotag,
+            deadline_at=ligne.deadline_at,
+            status=ligne.status,
+            attempts_count=ligne.attempts_count,
+            needs_human_review=ligne.needs_human_review,
+            approved_at=ligne.approved_at,
+            proofs=[PreuveRead.model_validate(p) for p in preuves],
+        )
+
 
 class DecisionCommerce(BaseModel):
     """Approuver, ou redemander. Jamais « rejeter » : il n'existe pas de statut
@@ -66,4 +90,31 @@ class DecisionCommerce(BaseModel):
 
     approuve: bool
     #: Obligatoire quand on redemande : le créateur doit savoir quoi corriger.
+    reason: str | None = Field(default=None, max_length=500)
+
+
+class IssueDArbitrage(StrEnum):
+    """Le vocabulaire du commerce, plus une issue qui n'est qu'à l'arbitre.
+
+    `approve` et `resubmit` disent exactement la même chose des deux côtés :
+    l'arbitre ne dispose pas d'un second langage, il tranche dans le premier.
+    `unfulfilled` clôt, et c'est la seule décision du produit qui ne se rouvre
+    pas — raison pour laquelle elle n'appartient à personne d'autre.
+    """
+
+    APPROUVER = "approve"
+    REDEMANDER = "resubmit"
+    NON_HONOREE = "unfulfilled"
+
+
+class DecisionAdministrateur(BaseModel):
+    """L'arbitrage d'un dossier sorti de la boucle automatique.
+
+    Le motif est obligatoire sur tout ce qui n'est pas une approbation, comme
+    côté commerce : la note est lue par les deux parties.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    issue: IssueDArbitrage
     reason: str | None = Field(default=None, max_length=500)

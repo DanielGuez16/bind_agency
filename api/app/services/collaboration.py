@@ -66,6 +66,13 @@ TRANSITIONS: dict[CollaborationStatus, frozenset[CollaborationStatus]] = {
             CollaborationStatus.UNDER_REVIEW,
             CollaborationStatus.APPROVED,
             CollaborationStatus.RESUBMIT_REQUESTED,
+            # Ajoutée pour l'arbitrage. Elle n'est empruntable que par
+            # `constater_non_honoree`, réservée à l'administrateur : ni la
+            # boucle automatique — qui filtre sur `EXPIRABLES` — ni le commerce
+            # — qui n'appelle qu'`approuver` et
+            # `demander_une_nouvelle_soumission` — ne peuvent la prendre. La
+            # table dit ce qui est possible, l'appelant dit qui a le droit.
+            CollaborationStatus.UNFULFILLED,
         }
     ),
     # `under_review` figure dans les statuts de `SPEC.md` §2.6 mais pas dans le
@@ -75,7 +82,12 @@ TRANSITIONS: dict[CollaborationStatus, frozenset[CollaborationStatus]] = {
     # humain peut s'y arrêter. Le laisser hors de la table rendrait le
     # dictionnaire partiel et lèverait un `KeyError` en production.
     CollaborationStatus.UNDER_REVIEW: frozenset(
-        {CollaborationStatus.APPROVED, CollaborationStatus.RESUBMIT_REQUESTED}
+        {
+            CollaborationStatus.APPROVED,
+            CollaborationStatus.RESUBMIT_REQUESTED,
+            # Même arbitrage, même réserve.
+            CollaborationStatus.UNFULFILLED,
+        }
     ),
     CollaborationStatus.RESUBMIT_REQUESTED: frozenset(
         {CollaborationStatus.SUBMITTED, CollaborationStatus.UNFULFILLED}
@@ -279,6 +291,28 @@ async def approuver(
     """
     return await transitionner(
         session, collaboration=collaboration, vers=CollaborationStatus.APPROVED, actor=actor
+    )
+
+
+async def constater_non_honoree(
+    session: AsyncSession, *, collaboration: Collaboration, actor: audit.Actor, reason: str
+) -> Collaboration:
+    """Clore un dossier en non honoré. **Réservé à l'arbitrage administrateur.**
+
+    C'est la seule issue que le commerce n'a pas : il approuve ou il redemande,
+    et il ne ferme jamais définitivement. Un arbitre, lui, doit pouvoir clore —
+    sinon un dossier sorti de la boucle automatique à la troisième tentative y
+    reste indéfiniment, et personne ne sait plus qui doit agir.
+
+    Le motif est obligatoire. Une clôture sans motif est illisible pour les deux
+    parties, et c'est la seule décision du produit qui ne se rouvre pas.
+    """
+    return await transitionner(
+        session,
+        collaboration=collaboration,
+        vers=CollaborationStatus.UNFULFILLED,
+        actor=actor,
+        reason=reason,
     )
 
 
