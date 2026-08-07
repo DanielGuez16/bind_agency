@@ -4,6 +4,13 @@
  */
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
+// `render` est **asynchrone** depuis @testing-library/react-native 14 : elle
+// rend une promesse, et `screen` n'est peuplé qu'une fois celle-ci résolue.
+// L'oublier ne fait pas échouer le test tout de suite — `waitFor` réessaie —
+// mais la résolution dépend alors d'un ordonnancement qu'on ne contrôle pas.
+// C'est exactement ce qui a rendu la CI rouge en permanence tout en passant en
+// local.
+
 import { I18nProvider } from '../src/i18n';
 import { en } from '../src/i18n/en';
 import { es } from '../src/i18n/es';
@@ -24,7 +31,7 @@ describe('écran d’amorçage', () => {
   beforeEach(() => repondSante());
 
   it('s’affiche en anglais', async () => {
-    render(
+    await render(
       <I18nProvider initialLocale="en">
         <HealthScreen apiUrl="http://test/api/v1" />
       </I18nProvider>,
@@ -36,7 +43,7 @@ describe('écran d’amorçage', () => {
   });
 
   it('bascule tous les libellés en espagnol', async () => {
-    render(
+    await render(
       <I18nProvider initialLocale="en">
         <HealthScreen apiUrl="http://test/api/v1" />
       </I18nProvider>,
@@ -55,7 +62,7 @@ describe('écran d’amorçage', () => {
   it('affiche un message traduit quand l’API ne répond pas', async () => {
     global.fetch = jest.fn().mockRejectedValue(new Error('offline')) as unknown as typeof fetch;
 
-    render(
+    await render(
       <I18nProvider initialLocale="es">
         <HealthScreen apiUrl="http://test/api/v1" />
       </I18nProvider>,
@@ -66,7 +73,7 @@ describe('écran d’amorçage', () => {
   });
 
   it('signale une URL d’API absente sans planter', async () => {
-    render(
+    await render(
       <I18nProvider initialLocale="en">
         <HealthScreen apiUrl={undefined} />
       </I18nProvider>,
@@ -81,7 +88,7 @@ describe('écran d’amorçage', () => {
       json: async () => ({ detail: 'code_que_l_app_ne_connait_pas' }),
     }) as unknown as typeof fetch;
 
-    render(
+    await render(
       <I18nProvider initialLocale="en">
         <HealthScreen apiUrl="http://test/api/v1" />
       </I18nProvider>,

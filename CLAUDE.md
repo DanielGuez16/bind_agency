@@ -119,6 +119,19 @@ Une session, une tâche de `TASKS.md`. Pas deux.
 
 Une branche par tâche, nommée `phase-N/nom-court`.
 
+`main` est protégée : fusion par PR uniquement, `api` et `app` verts et à jour,
+sans contournement administrateur. La règle est dans le dépôt, pas dans la
+vigilance.
+
+L'état d'une exécution se lit sur **sa conclusion**, jamais sur un décompte de
+lignes. `gh pr checks` liste des vérifications sans les résumer : y compter les
+`pass` a laissé fusionner sept PR sur une CI rouge. Attendre et conclure :
+
+```
+gh run watch <id> --exit-status
+gh run view <id> --json conclusion -q .conclusion
+```
+
 Ne pas réécrire un fichier entier pour changer trois lignes. Modifications ciblées.
 
 Ne pas anticiper les phases suivantes. Si une tâche future rend l'implémentation actuelle plus simple, le signaler plutôt que de l'implémenter en avance.
