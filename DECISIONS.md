@@ -2395,3 +2395,18 @@ une ville de voiture ; deux kilomètres ne couvrent qu'un quartier et ne
 montraient qu'un salon. Le réglage vit dans le fil et non seulement dans son
 état vide : un fil maigre n'est pas un fil vide, et il faut pouvoir l'élargir
 sans avoir à le vider d'abord.
+
+## 2026-08-07 — L'adresse de l'API se déduit du serveur qui sert le bundle
+
+`EXPO_PUBLIC_API_URL` devient un contournement, plus la voie normale. L'adresse
+vient de `hostUri` sur l'appareil, de `location.hostname` sur le web.
+
+Raison : la demander à la main ouvrait deux façons de se tromper, et les deux se
+présentaient à l'identique sous « Network request failed » — `localhost`, qui
+désigne le téléphone, et une adresse d'hier après un changement de réseau. Les
+deux se sont produites. La machine qui vient de servir le bundle est joignable
+par construction et héberge l'API : elle n'a pas à être redemandée.
+
+Le port ne se déduit pas — rien dans 8081 ne dit 8010 — et l'absence d'adresse
+reste un écran explicite : un repli sur `localhost` marcherait en développement
+et reproduirait l'échec ailleurs.
