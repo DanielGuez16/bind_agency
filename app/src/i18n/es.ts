@@ -232,6 +232,8 @@ export const es: Catalogue = {
     seDeconnecter: 'Cerrar sesión',
     diagnostic: 'Estado de la conexión',
     diagnosticAide: 'Indica si este dispositivo puede conectar con BIND. Útil cuando una pantalla se queda vacía.',
+    adresse: 'Dirección de la API',
+    adresseOrigine: 'La dirección viene de',
     stockage: 'Almacenamiento de tokens',
     stockageSecurise: 'Llavero del dispositivo',
     stockageWeb: 'Almacenamiento del navegador — solo desarrollo',

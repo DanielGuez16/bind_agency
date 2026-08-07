@@ -88,18 +88,31 @@ make dev-lan
 Elle affiche l'adresse à recopier, par exemple `http://192.168.1.192:8010/api/v1`.
 Pour la retrouver à la main : `ipconfig getifaddr en0`.
 
-### La variable à changer
+### L'adresse de l'API : rien à renseigner
 
-Dans **`app/.env`**, une seule ligne :
+L'application la déduit du serveur Expo qui lui a servi son code. Ce serveur
+tourne sur le Mac, à côté de l'API, et le téléphone vient d'y accéder : son
+adresse est donc juste par construction, et elle suit un changement de réseau
+sans qu'on y touche. Sur le web, c'est l'adresse de la page.
+
+Seul le port est fixé — 8081 pour Expo, 8010 pour l'API — parce que rien dans
+l'un ne dit l'autre.
+
+L'adresse retenue et son origine s'affichent dans **Settings**, sous
+*API address*. C'est là qu'il faut regarder si une page reste vide.
+
+### La variable, pour les cas particuliers
+
+`EXPO_PUBLIC_API_URL` dans **`app/.env`** l'emporte sur la déduction. Elle ne
+sert qu'à viser une API ailleurs — autre machine, tunnel, environnement
+distant :
 
 ```
 EXPO_PUBLIC_API_URL=http://192.168.1.192:8010/api/v1
 ```
 
-Remplacer `192.168.1.192` par l'adresse affichée par `make dev-lan`.
-
-`localhost` fonctionne pour le web et le simulateur iOS ; sur un appareil
-physique il désigne le téléphone lui-même, et rien ne répond.
+Ne jamais y écrire `localhost` pour une démonstration sur téléphone : sur un
+appareil physique, il désigne le téléphone lui-même, et rien ne répond.
 
 Les variables `EXPO_PUBLIC_` sont **inlinées dans le bundle à la compilation** :
 après modification, arrêter et relancer `make app`. Un rechargement à chaud ne
@@ -124,8 +137,10 @@ passer par un tunnel :
 cd app && npx expo start --tunnel
 ```
 
-Le tunnel ne concerne **que** le bundle Expo. L'API reste à joindre par son
-adresse IP : un tunnel Expo ne l'expose pas.
+Le tunnel ne concerne **que** le bundle Expo, et c'est le seul cas où la
+variable devient nécessaire : l'adresse déduite serait alors celle du tunnel,
+qui n'expose pas l'API. Renseigner `EXPO_PUBLIC_API_URL` avec l'adresse IP du
+Mac, et relancer.
 
 ### Ce que vous verrez, écran par écran
 
@@ -168,11 +183,13 @@ contient `http://localhost:8081` et `http://localhost:19006`, ce qui couvre le
 cas courant. En natif, Expo Go n'envoie pas d'en-tête `Origin` : le CORS ne
 s'applique pas.
 
-### Si `EXPO_PUBLIC_API_URL` manque
+### Si aucune adresse n'est trouvée
 
-L'application affiche un écran qui le dit et nomme le fichier, plutôt qu'une
-erreur de connexion. Les variables `EXPO_PUBLIC_` étant inlinées à la
-compilation, il faut **relancer le serveur Expo** après l'avoir renseignée.
+Le cas ne survient que dans une application compilée, sans serveur Expo à
+interroger. L'application affiche alors un écran qui le dit et nomme la
+variable, plutôt qu'une erreur de connexion. Les variables `EXPO_PUBLIC_` étant
+inlinées à la compilation, il faut **relancer le serveur Expo** après l'avoir
+renseignée.
 
 ---
 

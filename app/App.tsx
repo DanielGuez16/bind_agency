@@ -26,22 +26,19 @@ import { AuthScreen } from './src/screens/AuthScreen';
 import { SessionProvider, coffreSecurise, themeDuRole, useSession } from './src/session';
 import { FrontiereDErreur } from './src/shell/FrontiereDErreur';
 import { Navigation } from './src/shell/Navigation';
+import { adresseDeLApi } from './src/shell/adresseDeLApi';
 import { ZoneSure } from './src/shell/ZoneSure';
 import { ThemeProvider, useColors } from './src/theme';
 
 /**
- * L'adresse de l'API.
+ * L'adresse de l'API, déduite du serveur qui a servi le bundle.
  *
- * Les variables `EXPO_PUBLIC_` sont **inlinées à la compilation** : celle-ci
- * vaut ce qu'elle valait au démarrage du bundler, et modifier `.env` sans le
- * relancer ne change rien.
- *
- * **Son absence est dite, pas rattrapée.** Un repli sur `localhost` marche sur
- * la machine de développement et produit ailleurs des erreurs de connexion que
- * personne ne relie à une variable manquante. Mieux vaut un écran qui nomme la
- * variable et le fichier.
+ * Voir `adresseDeLApi` : le téléphone vient de télécharger son code depuis la
+ * machine de développement, laquelle héberge aussi l'API. La redemander à la
+ * main ouvrait deux façons de se tromper — `localhost`, qui désigne le
+ * téléphone, et une adresse d'hier après un changement de réseau.
  */
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
+const API_URL = adresseDeLApi();
 
 /** Le client compose les chemins complets, préfixe compris. */
 const BASE_URL = (API_URL ?? '').replace(/\/api\/v1\/?$/, '');
@@ -120,13 +117,15 @@ function ConfigurationManquante() {
       testID="ecran-configuration-manquante"
       style={{ flex: 1, justifyContent: 'center', padding: 24, gap: 12 }}
     >
-      <Text style={{ fontSize: 18, fontWeight: '600' }}>Configuration incomplète</Text>
+      <Text style={{ fontSize: 18, fontWeight: '600' }}>Adresse de l'API introuvable</Text>
       <Text>
-        EXPO_PUBLIC_API_URL est absente. Renseignez-la dans app/.env, puis relancez le
-        serveur Expo — les variables EXPO_PUBLIC_ sont inlinées à la compilation.
+        Aucun serveur de développement Expo n'a été détecté, et EXPO_PUBLIC_API_URL n'est pas
+        renseignée. Dans une application compilée, cette variable est le seul chemin :
+        renseignez-la dans app/.env, puis relancez le serveur — les variables EXPO_PUBLIC_ sont
+        inlinées à la compilation.
       </Text>
       <Text style={{ fontFamily: 'monospace' }}>
-        EXPO_PUBLIC_API_URL=http://localhost:8010/api/v1
+        EXPO_PUBLIC_API_URL=http://192.168.1.20:8010/api/v1
       </Text>
     </View>
   );

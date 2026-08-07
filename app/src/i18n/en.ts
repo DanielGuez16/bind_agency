@@ -235,6 +235,8 @@ export const en = {
     seDeconnecter: 'Sign out',
     diagnostic: 'Connection check',
     diagnosticAide: 'Tells you whether this device can reach BIND. Useful when a screen stays empty.',
+    adresse: 'API address',
+    adresseOrigine: 'Address comes from',
     stockage: 'Token storage',
     stockageSecurise: 'Device keychain',
     stockageWeb: 'Browser storage — development only',
