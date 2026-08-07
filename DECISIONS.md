@@ -2298,3 +2298,31 @@ chargé.
 client sans lui injecter `fetchImpl` — le chemin de production n'était jamais
 emprunté. Le test ajouté installe un `fetch` qui vérifie son `this`, comme le
 font les navigateurs, et construit le client **sans** injection.
+
+---
+
+## 2026-08-07 — Retour à Expo SDK 54
+
+**Le SDK suit Expo Go, pas l'inverse.** Expo Go de l'App Store sert le SDK 54 ;
+un projet en 57 produit un QR code qu'il refuse d'ouvrir, et la seule autre voie
+— une compilation native — demandait une mise à jour de macOS. Le SDK le plus
+récent n'a d'intérêt que si quelqu'un peut ouvrir l'application.
+
+**Les versions viennent d'`expo install --check`, jamais d'une supposition.**
+Seize paquets à aligner, dont React, React Native, les typages et `jest-expo`.
+Deviner un numéro de React Native pour un SDK donné se paie en erreurs de
+compilation qui ne nomment pas leur cause.
+
+**Rien d'autre n'a changé.** Aucune ligne de code applicatif, aucun test. Les
+quatre API Expo employées — `CameraView` et `useCameraPermissions`,
+`requestForegroundPermissionsAsync`, `getItemAsync` et consorts, `getLocales` —
+existent toutes dans les versions du SDK 54, vérifié dans les typages installés.
+Rien de ce que le produit utilise n'était propre au SDK 57.
+
+**Le dossier `ios/` est retiré et ignoré.** Produit par un `prebuild`, il se
+regénère à la demande ; commité, il divergerait de `app.json` sans que rien ne
+le signale. `android/` l'est aussi, par symétrie.
+
+**Ce que la rétrogradation coûte réellement** : React 19.1 au lieu de 19.2,
+React Native 0.81 au lieu de 0.86, TypeScript 5.9 au lieu de 6.0. Aucun de ces
+écarts ne touche ce qui est écrit.

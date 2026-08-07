@@ -15,7 +15,12 @@ un MacBook, à titre indicatif.
 
 ## 1. Démarrer, depuis un dépôt vierge
 
-Prérequis : **Python 3.12**, **Node 24** (`nvm use`), **Docker**.
+Prérequis : **Python 3.12**, **Node 24** (`nvm use`), **Docker**, et **Expo Go**
+sur le téléphone.
+
+L'application est en **Expo SDK 54**. C'est la version qu'Expo Go sert
+aujourd'hui sur l'App Store ; un SDK plus récent produirait un QR code
+qu'Expo Go refuse d'ouvrir.
 
 ```
 make install
@@ -110,7 +115,7 @@ Metro sert sur le port 8081. Scanner le QR code avec **l'appareil photo de
 l'iPhone** ; Expo Go s'ouvre. Le téléphone et le Mac doivent être sur le même
 réseau Wi-Fi.
 
-Le bundle iOS pèse ~7 Mo et se construit en quelques secondes.
+Le bundle iOS pèse ~8 Mo et se construit en une dizaine de secondes la première fois, moins ensuite.
 
 Si le réseau isole les appareils entre eux — Wi-Fi d'hôtel, réseau invité —
 passer par un tunnel :
