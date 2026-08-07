@@ -8,6 +8,7 @@ un item précis chez un commerce précis, débloqué par paliers.
 - `SPEC.md` — source de vérité fonctionnelle
 - `TASKS.md` — liste de travail
 - `DECISIONS.md` — décisions techniques datées
+- `DEMO.md` — démarrer et parcourir le produit, comptes du jeu de données
 
 ---
 
@@ -29,6 +30,7 @@ make app         # app Expo, touche `w` pour le web
 | `make db-up` | démarre Postgres et attend qu'il réponde |
 | `make db-down` | arrête Postgres, conserve le volume |
 | `make dev` | API sur `http://localhost:8010` |
+| `make dev-lan` | API accessible depuis le réseau local, pour un appareil physique |
 | `make app` | serveur Expo |
 | `make test` | les deux suites |
 | `make test-api` | pytest sur une base de test dédiée |
