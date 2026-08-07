@@ -36,6 +36,11 @@ export const ECRANS_COMMERCE = [
  * trois autres sont la dette d'avant le système de design.
  */
 export const HORS_REGISTRE = [
+  // La connexion et les réglages ne chargent pas de données à quatre états :
+  // le premier attend une saisie, le second lit la session et le catalogue,
+  // tous deux déjà en mémoire. Ils sont éprouvés par les tests de la coquille.
+  'AuthScreen.tsx',
+  'ReglagesScreen.tsx',
   'CodeScreen.tsx',
   'HealthScreen.tsx',
   'MenuReviewScreen.tsx',

@@ -7,6 +7,7 @@ d'accès et n'ont rien à faire sur le même chemin.
 
 from typing import Annotated
 
+import sqlalchemy as sa
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,7 +19,7 @@ from app.core.dependencies import (
 )
 from app.core.errors import ErrorCode, api_error
 from app.integrations.geocoding import Geocoder, get_geocoder
-from app.models import Business
+from app.models import Business, BusinessMember
 from app.models.enums import UserRole
 from app.schemas.activation import EtapeRead
 from app.schemas.business import (
@@ -31,6 +32,13 @@ from app.services import business as business_service
 from app.services.audit import Actor
 
 router = APIRouter(prefix="/business", tags=["business"])
+
+#: Sur `/me`, pas sur `/business` : c'est une lecture de l'appelant, pas d'un
+#: commerce, et elle ne passe donc pas par le résolveur d'appartenance — elle
+#: le rendrait circulaire.
+mes_commerces_router = APIRouter(
+    tags=["business"], dependencies=[Depends(require_role(UserRole.BUSINESS_MEMBER))]
+)
 
 GeocoderDep = Annotated[Geocoder, Depends(get_geocoder)]
 
@@ -55,6 +63,31 @@ async def _to_read(session: AsyncSession, business: Business) -> BusinessRead:
         status=business.status,
         created_at=business.created_at,
     )
+
+
+@mes_commerces_router.get("/me/businesses", response_model=list[BusinessRead])
+async def list_my_businesses(user: CurrentUser, session: SessionDep) -> list[BusinessRead]:
+    """Les commerces dont l'appelant est membre.
+
+    Sans elle, une application commerce ne peut rien afficher : tous les écrans
+    prennent un `business_id`, et le résolveur d'appartenance ne sert qu'à
+    vérifier celui qu'on lui donne — il ne dit pas lequel demander.
+
+    Rend une liste et non un objet : rien n'interdit d'appartenir à deux
+    commerces, et rendre le premier obligerait à réécrire la route le jour où
+    quelqu'un en a deux. Une liste vide est une réponse valide — un membre sans
+    rattachement existe le temps de son inscription.
+
+    Aucune autre lecture n'est ouverte ici : c'est `/business/{id}` qui rend le
+    détail, derrière le résolveur.
+    """
+    commerces = await session.scalars(
+        sa.select(Business)
+        .join(BusinessMember, BusinessMember.business_id == Business.id)
+        .where(BusinessMember.user_id == user.id)
+        .order_by(Business.name)
+    )
+    return [await _to_read(session, commerce) for commerce in commerces]
 
 
 @router.post(

@@ -551,6 +551,14 @@
         ]
       }
     },
+    "/api/v1/me/businesses": {
+      "get": {
+        "operationId": "list_my_businesses_api_v1_me_businesses_get",
+        "responses": [
+          "200"
+        ]
+      }
+    },
     "/api/v1/me/profile": {
       "get": {
         "operationId": "read_profile_api_v1_me_profile_get",

@@ -2190,3 +2190,67 @@ sans jamais se connecter.** Il fait maintenant passer chaque adresse par la
 validation d'entrée, la seule porte par laquelle une connexion arrive. Le défaut
 ne s'est vu qu'en ouvrant le serveur à la main et en parcourant le produit —
 c'est précisément ce que le passage demandait de faire.
+
+---
+
+## 2026-08-07 — La coquille applicative
+
+**Le rôle vient du serveur, jamais d'un jeton décodé.** Après connexion on relit
+`/me` : le jeton porte un identifiant, pas des droits. Le déduire côté client
+reviendrait à laisser l'appareil se déclarer administrateur. La navigation qui
+en découle n'est qu'un confort ; c'est l'API qui refuse.
+
+**Deux vocabulaires de rôle, séparés.** L'API dit `business_member`, le design
+dit `merchant`. Les confondre obligerait à renommer l'un pour plaire à l'autre,
+et c'est toujours le mauvais qu'on renomme. `themeDuRole` fait la traduction, à
+un seul endroit.
+
+**Les jetons vivent dans le trousseau de l'appareil**, pas dans `AsyncStorage`,
+qui écrit en clair dans un fichier que toute sauvegarde emporte. Sur le web il
+n'existe pas d'équivalent : on retombe sur le stockage du navigateur et **on
+l'affiche dans les réglages**. Un repli silencieux aurait fait croire que le web
+est protégé comme le natif.
+
+**Le rétablissement au démarrage est un état à part.** Tant qu'on n'a pas lu le
+trousseau, on ne sait pas s'il y a une session : afficher l'écran de connexion
+pendant ce temps ferait clignoter l'app à chaque ouverture pour quelqu'un de
+déjà connecté.
+
+**Un jeton présent n'est pas une session valide.** On le vérifie contre `/me`
+plutôt que de faire confiance à sa présence. En revanche, **une panne réseau au
+démarrage n'efface rien** : on ne jette pas quelqu'un dehors parce qu'il ouvre
+l'app sous un tunnel.
+
+**Le compte suspendu se distingue de la session expirée.** L'API répond 401
+partout sans dire lequel des deux — elle relit le statut à chaque requête — mais
+la connexion, elle, rend `account_not_active`. C'est le seul endroit où on
+l'apprend, et c'est là qu'on le dit.
+
+**Le rôle administrateur ne se choisit pas à l'inscription.** L'API l'accepte ;
+l'offrir dans un formulaire public ferait de « administrateur » une case à
+cocher.
+
+**Chaque rôle n'a que ses onglets.** Ce n'est pas une garantie de sécurité, mais
+un onglet qui répondrait 403 est pire qu'un onglet absent : il promet quelque
+chose qu'il ne peut pas tenir.
+
+**La frontière d'erreur journalise la trace et n'en montre rien.**
+`TypeError: Cannot read properties of undefined` n'apprend rien à quelqu'un qui
+voulait réserver un soin, et lui fait croire que le produit est cassé partout.
+Elle offre toujours une issue : sans bouton, un plantage d'écran demande de tuer
+l'application.
+
+**`GET /me/businesses` a dû être ajoutée.** Tous les écrans commerce prennent un
+`business_id`, et le résolveur d'appartenance ne sert qu'à vérifier celui qu'on
+lui donne — il ne dit pas lequel demander. Sans cette route, une application
+commerce ne peut rien afficher. Elle rend une **liste** : rien n'interdit
+d'appartenir à deux commerces, et rendre le premier obligerait à la réécrire le
+jour où quelqu'un en a deux.
+
+**L'écran de santé est relégué en réglages.** Il répond à « est-ce que ça
+marche », question qu'on se pose quand ça ne marche pas — pas un onglet
+permanent.
+
+**`app.tsx` et `App.tsx` étaient le même fichier.** Le système de fichiers de
+macOS est insensible à la casse ; le dépôt en portait deux, git en voyait deux,
+le disque un seul. Découvert en supprimant l'un et en perdant l'autre.

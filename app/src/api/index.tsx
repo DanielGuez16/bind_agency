@@ -206,6 +206,13 @@ export class Api {
     });
   }
 
+  /** Les commerces dont l'appelant est membre. Une liste, jamais un objet. */
+  mesCommerces(signal?: AbortSignal) {
+    return this.client.request<{ id: string; name: string }[]>(routes.mesCommerces(), {
+      signal,
+    });
+  }
+
   reporting(
     businessId: string,
     options: { depuis?: string; jusquA?: string } = {},

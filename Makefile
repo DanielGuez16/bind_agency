@@ -7,7 +7,7 @@ PY       := $(VENV)/bin/python
 PYTHON   ?= python3.12
 COMPOSE  := docker compose
 
-.PHONY: help install db-up db-down db-logs dev app test test-api test-app lint fmt seed migrate jobs-plan jobs-run clean
+.PHONY: help install db-up db-down db-logs dev dev-lan app test test-api test-app lint fmt seed migrate jobs-plan jobs-run clean
 
 help: ## Liste les cibles disponibles
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -32,6 +32,10 @@ db-logs: ## Suit les logs de Postgres
 
 dev: db-up ## Lance l'API sur http://localhost:8010
 	cd $(API) && ../$(VENV)/bin/uvicorn app.main:app --reload --port 8010
+
+dev-lan: db-up ## Lance l'API accessible depuis le reseau local (appareil physique)
+	@echo "API sur http://$$(ipconfig getifaddr en0):8010/api/v1"
+	cd $(API) && ../$(VENV)/bin/uvicorn app.main:app --reload --host 0.0.0.0 --port 8010
 
 app: ## Lance l'app Expo (appuyer sur `w` pour le build web)
 	cd $(APP) && npx expo start

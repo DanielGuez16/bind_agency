@@ -206,6 +206,12 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Fin : une preuve archivée reste consultable après redémarrage, et la clé ne dépend d'aucun fournisseur. L'implémentation S3 refuse de démarrer plutôt que de retomber en silence sur le disque*
 - [x] Snapchat : vérifier que son absence ne casse rien
       *Fin : la plateforme existe en base et dans les paliers, aucune implémentation ne lui répond, et la fabrique lève au lieu de rendre un fournisseur muet*
+- [x] Coquille applicative et navigation
+      *Fin : routeur par rôle, inscription et connexion sur l'API réelle, session dans le trousseau de l'appareil avec rafraîchissement automatique, thème appliqué au niveau de la coquille, sélecteur de langue en réglages, frontière d'erreur qui ne montre jamais de trace. Une session expirée ou un compte suspendu ramène à la connexion avec un message*
+- [ ] Écrans de composition du commerce
+      *Catalogue, horaires, capacité. Les routes existent depuis la phase 2, aucun écran ne les pilote — le commerce compose aujourd'hui par l'API*
+- [ ] Sélection du média de preuve
+      *L'écran de preuve montre son état et propose l'envoi ; il manque le sélecteur qui produit le fichier*
 - [ ] Capture de preuve niveau 1
       *Attend `fetch_media` sur l'interface de plateforme, qui viendra avec le relevé des publications — une tâche à part, qui demande de savoir quelles publications appartiennent à quelle collaboration*
 - [ ] Dépôt objet réel, compatible S3
