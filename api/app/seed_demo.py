@@ -34,6 +34,7 @@ from app.integrations.social_demo import DemoSocialProvider
 from app.models import (
     Booking,
     Business,
+    BusinessMember,
     CatalogItem,
     Collaboration,
     Job,
@@ -47,6 +48,7 @@ from app.models import (
 from app.models.enums import (
     BillingInterval,
     BusinessCategory,
+    BusinessStatus,
     JobStatus,
     JobType,
     Locale,
@@ -80,6 +82,7 @@ class ResumeDemo:
     jobs: int
     photos: int
     plans: int
+    abonnements: int
 
 
 # --------------------------------------------------------------------------
@@ -172,7 +175,7 @@ async def creer_les_createurs(session: AsyncSession) -> dict[str, tuple[User, So
     #    paliers doit l'orienter, pas lui montrer une porte sans serrure.
     createurs["debutante"] = await _creer(
         session,
-        email="camila@bind.test",
+        email="camila@bind.example",
         handle="camila.newcomer",
         followers=640,
         locale=Locale.ES,
@@ -184,7 +187,7 @@ async def creer_les_createurs(session: AsyncSession) -> dict[str, tuple[User, So
     #    fil et réservera pendant la démonstration.
     createurs["confirmee"] = await _creer(
         session,
-        email="rebecca@bind.test",
+        email="rebecca@bind.example",
         handle="rebecca.miami",
         followers=64_000,
         prenom="Rebecca",
@@ -195,7 +198,7 @@ async def creer_les_createurs(session: AsyncSession) -> dict[str, tuple[User, So
     #    lui-même est produit plus bas, par des événements réels.
     createurs["plafonnee"] = await _creer(
         session,
-        email="mateo@bind.test",
+        email="mateo@bind.example",
         handle="mateo.wynwood",
         followers=22_000,
         locale=Locale.ES,
@@ -206,7 +209,7 @@ async def creer_les_createurs(session: AsyncSession) -> dict[str, tuple[User, So
     # 4. En vérification : l'écran persistant, daté, sans promesse de délai.
     createurs["en_controle"] = await _creer(
         session,
-        email="sofia@bind.test",
+        email="sofia@bind.example",
         handle="sofia.brickell",
         followers=11_500,
         prenom="Sofía",
@@ -222,7 +225,7 @@ async def creer_les_createurs(session: AsyncSession) -> dict[str, tuple[User, So
     #    trouvera périmé — sans qu'aucune ligne soit écrite à la main.
     createurs["expiree"] = await _creer(
         session,
-        email="nina@bind.test",
+        email="nina@bind.example",
         handle="nina.design",
         followers=31_000,
         prenom="Nina",
@@ -722,6 +725,65 @@ async def poser_les_plans(session: AsyncSession) -> int:
     return len(plans)
 
 
+async def abonner_les_commerces(session: AsyncSession) -> int:
+    """Deux commerces abonnés, un non. Par le service, avec le fournisseur du mode.
+
+    Sans abonnement, l'écran d'administration des plans affiche trois lignes à
+    zéro et un revenu nul : il existe, il ne montre rien. Deux abonnés sur trois
+    donnent un chiffre à lire **et** un plan que personne n'a pris, ce qui est
+    la vraie question qu'on se pose devant cet écran.
+
+    Le fournisseur est celui que la configuration déclare — `log` par défaut.
+    Aucune clé, aucun appel réseau, et le même chemin qu'en production.
+    """
+    from app.integrations.billing import get_billing_provider
+    from app.services import subscription as subscription_service
+
+    plans = list(
+        (
+            await session.scalars(
+                sa.select(SubscriptionPlan).order_by(SubscriptionPlan.price_cents)
+            )
+        ).all()
+    )
+    if not plans:
+        return 0
+
+    actifs = list(
+        (
+            await session.scalars(
+                sa.select(Business)
+                .where(Business.status == BusinessStatus.ACTIVE)
+                .order_by(Business.name)
+            )
+        ).all()
+    )
+
+    provider = get_billing_provider()
+    poses = 0
+    for rang, business in enumerate(actifs[:2]):
+        membre = await session.scalar(
+            sa.select(BusinessMember).where(BusinessMember.business_id == business.id).limit(1)
+        )
+        if membre is None:
+            continue
+        acteur = await session.get(User, membre.user_id)
+        if acteur is None:
+            continue
+
+        await subscription_service.souscrire(
+            session,
+            business=business,
+            plan_id=plans[rang % len(plans)].id,
+            actor=acteur,
+            provider=provider,
+        )
+        poses += 1
+
+    await session.flush()
+    return poses
+
+
 async def vieillir_un_releve(session: AsyncSession, createurs: dict) -> None:
     """Un relevé périmé, pour que l'obstacle daté se démontre.
 
@@ -748,6 +810,7 @@ async def enrichir(session: AsyncSession) -> ResumeDemo:
     await recalculer_les_scores(session, createurs)
     await vieillir_un_releve(session, createurs)
     jobs = await poser_les_jobs(session)
+    abonnements = await abonner_les_commerces(session)
 
     return ResumeDemo(
         createurs=len(createurs),
@@ -756,4 +819,5 @@ async def enrichir(session: AsyncSession) -> ResumeDemo:
         jobs=jobs,
         photos=photos,
         plans=plans,
+        abonnements=abonnements,
     )

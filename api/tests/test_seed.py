@@ -18,6 +18,7 @@ import psycopg
 import pytest
 import sqlalchemy as sa
 from psycopg import sql
+from pydantic import EmailStr, TypeAdapter, ValidationError
 from sqlalchemy import make_url
 from sqlalchemy.ext.asyncio import AsyncConnection, create_async_engine
 from sqlalchemy.pool import NullPool
@@ -336,9 +337,10 @@ async def test_les_transitions_sont_journalisees(seed_conn: AsyncConnection) -> 
         ).all()
     )
 
-    # Quatre créations plus trois activations : le commerce encore en
-    # inscription n'en a pas.
-    assert par_entite["business"] == 7
+    # Quatre créations, trois activations — le commerce encore en inscription
+    # n'en a pas — et deux souscriptions d'abonnement, journalisées sous la
+    # même entité.
+    assert par_entite["business"] == 9
     # Un administrateur, quatre propriétaires, cinq créateurs.
     assert par_entite["app_user"] == 10
     # Et les entités de la démonstration laissent aussi leurs traces : sans
@@ -411,12 +413,36 @@ async def test_toute_duree_suit_la_reservabilite(seed_conn: AsyncConnection) -> 
 
 
 async def test_tous_les_comptes_peuvent_se_connecter(seed_conn: AsyncConnection) -> None:
+    """Et « se connecter » veut dire par l'API, pas « avoir une empreinte ».
+
+    Ce test ne regardait que `password_hash` et concluait que les comptes
+    étaient utilisables. Ils ne l'étaient pas : le jeu employait un domaine en
+    `.test`, que la validation d'adresse refuse comme nom d'usage spécial, et
+    les comptes créés par le service ne passaient jamais par le schéma. Le
+    défaut ne s'est vu qu'en ouvrant le serveur à la main.
+
+    Il vérifie maintenant que chaque adresse **franchit la validation d'entrée**
+    — la seule porte par laquelle une connexion arrive.
+    """
     sans_empreinte = await seed_conn.scalar(
         sa.select(sa.func.count())
         .select_from(User)
         .where(User.password_hash.is_(None), User.email.is_not(None))
     )
     assert sans_empreinte == 0
+
+    adresses = list(await seed_conn.scalars(sa.select(User.email).where(User.email.is_not(None))))
+    assert adresses
+
+    validateur = TypeAdapter(EmailStr)
+    refusees = []
+    for adresse in adresses:
+        try:
+            validateur.validate_python(adresse)
+        except ValidationError:
+            refusees.append(adresse)
+
+    assert refusees == []
 
 
 async def test_aucun_identifiant_n_est_devinable(seed_conn: AsyncConnection) -> None:

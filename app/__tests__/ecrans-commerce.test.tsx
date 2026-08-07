@@ -48,7 +48,7 @@ const clientQuiEchoue = new ApiClient({
 const clientQuiNeRepondJamais = new ApiClient({
   baseUrl: 'https://api.test',
   coffre,
-  delaiMs: 50,
+  delaiMs: 2_000,
   fetchImpl: (_url, init) =>
     new Promise<Response>((_resolve, reject) => {
       init?.signal?.addEventListener('abort', () => reject(new Error('aborted')));

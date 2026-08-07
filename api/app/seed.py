@@ -57,6 +57,16 @@ ENVIRONNEMENTS_AUTORISES = frozenset({"local", "ci", "test"})
 #: sur une base jetable, ce que le garde-fou ci-dessus impose.
 MOT_DE_PASSE = "bind-donnees-de-depart-2026"
 
+#: Le domaine des comptes du jeu. `.example` est réservé par la RFC 2606 —
+#: personne ne le possédera jamais — et il passe la validation d'adresse.
+#:
+#: `.test` l'est aussi, mais `email-validator` le refuse comme « nom d'usage
+#: spécial ». Le jeu de données l'employait, et les comptes ne pouvaient donc
+#: pas se connecter par l'API : le service les créait sans passer par le
+#: schéma. Le test qui prétendait le vérifier ne regardait que les empreintes
+#: de mot de passe — il constatait un ensemble vide, sans jamais se connecter.
+DOMAINE = "bind.example"
+
 LUNDI, MARDI, MERCREDI, JEUDI, VENDREDI, SAMEDI, DIMANCHE = range(7)
 
 
@@ -73,6 +83,7 @@ class Resume:
     jobs: int
     photos: int
     plans: int
+    abonnements: int
     #: Nombre de paliers auxquels au moins un créateur du jeu accède. À zéro,
     #: le jeu ne permet de démontrer aucun parcours créateur — c'est une donnée
     #: du résumé, pas un détail à découvrir en cherchant.
@@ -522,7 +533,7 @@ async def populate() -> Resume:
         async with factory() as session:
             await auth_service.register(
                 session,
-                email="admin@bind.test",
+                email="admin@bind.example",
                 password=MOT_DE_PASSE,
                 role=UserRole.ADMIN,
                 locale=Locale.EN,
@@ -537,10 +548,10 @@ async def populate() -> Resume:
                     locale=locale,
                 )
                 for email, locale in (
-                    ("ocean@bind.test", Locale.EN),
-                    ("wynwood@bind.test", Locale.ES),
-                    ("brickell@bind.test", Locale.EN),
-                    ("havana@bind.test", Locale.ES),
+                    ("ocean@bind.example", Locale.EN),
+                    ("wynwood@bind.example", Locale.ES),
+                    ("brickell@bind.example", Locale.EN),
+                    ("havana@bind.example", Locale.ES),
                 )
             ]
 
@@ -587,6 +598,7 @@ async def populate() -> Resume:
             jobs=demo.jobs,
             photos=demo.photos,
             plans=demo.plans,
+            abonnements=demo.abonnements,
             paliers_accessibles=len(paliers),
         )
     finally:
@@ -610,7 +622,7 @@ def main() -> int:
         f"{resume.exceptions} exceptions, {resume.offres} offres, "
         f"{resume.createurs} créateurs, {resume.reservations} réservations, "
         f"{resume.contreparties} contreparties, {resume.jobs} jobs, "
-        f"{resume.photos} photos, {resume.plans} plans."
+        f"{resume.photos} photos, {resume.plans} plans, {resume.abonnements} abonnements."
     )
     print(f"Mot de passe de tous les comptes : {MOT_DE_PASSE}")
 

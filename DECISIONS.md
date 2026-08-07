@@ -2177,3 +2177,16 @@ d'un compte n'est pas le nombre de personnes ayant vu une story ; le nom du
 champ le rappelle à qui le lit sans avoir lu la documentation. Le relevé retenu
 est celui **antérieur à l'approbation** : un créateur qui a doublé son audience
 depuis ne rend pas rétroactivement la publication plus large qu'elle ne l'a été.
+
+**Les comptes du jeu de données ne pouvaient pas se connecter.** Ils employaient
+un domaine en `.test`, que la validation d'adresse refuse comme nom d'usage
+spécial ; le jeu les créait par le service, qui ne passe pas par le schéma
+d'entrée. Le domaine est maintenant `.example` — réservé par la RFC 2606,
+accepté par le validateur.
+
+Le test qui prétendait le vérifier ne regardait que `password_hash` et
+concluait que les comptes étaient utilisables. **Il constatait un ensemble vide
+sans jamais se connecter.** Il fait maintenant passer chaque adresse par la
+validation d'entrée, la seule porte par laquelle une connexion arrive. Le défaut
+ne s'est vu qu'en ouvrant le serveur à la main et en parcourant le produit —
+c'est précisément ce que le passage demandait de faire.
