@@ -20,10 +20,11 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
+from app.integrations.email import get_sender
 from app.integrations.social import SocialAuthError, SocialProvider, SocialProviderError
-from app.models import Job, SocialAccount
+from app.models import Collaboration, Job, SocialAccount
 from app.models.enums import JobType, Platform, SocialAccountStatus
-from app.services import booking_states
+from app.services import booking_states, collaboration, notifications
 from app.services import metrics as metrics_service
 
 
@@ -146,17 +147,63 @@ async def expirer_les_gardes(session: AsyncSession, *, account, provider) -> Iss
     return Fait(prochain=timedelta(seconds=get_settings().booking_sweep_interval_seconds))
 
 
+async def expirer_les_echeances(session: AsyncSession, *, account, provider) -> Issue:
+    """Balayage global des échéances de publication.
+
+    Fait tomber en `unfulfilled`, jamais en `approved` : une échéance dépassée
+    signifie qu'aucune publication n'a été apportée, et le commerce a donné une
+    prestation contre elle.
+    """
+    await collaboration.expirer_les_echeances(session)
+    return Fait(prochain=timedelta(seconds=get_settings().collaboration_sweep_interval_seconds))
+
+
+async def rappeler_les_echeances(session: AsyncSession, *, account, provider) -> Issue:
+    """Rappelle les échéances qui approchent.
+
+    Un envoi qui échoue fait échouer le job, donc le reporte : c'est
+    exactement ce qu'on veut d'un rappel. Le faire réussir en silence
+    laisserait des créateurs sans avertissement et des dossiers tomber en non
+    honoré sans que personne n'ait rien dit.
+    """
+    settings = get_settings()
+    sender = get_sender()
+
+    identifiants = await notifications.echeances_a_rappeler(
+        session, avance_secondes=settings.collaboration_reminder_lead_seconds
+    )
+    for identifiant in identifiants:
+        ligne = await session.get(Collaboration, identifiant)
+        if ligne is not None:
+            await notifications.envoyer_pour(
+                session,
+                collaboration=ligne,
+                cle="collaboration.reminder",
+                sender=sender,
+            )
+
+    return Fait(prochain=timedelta(seconds=settings.collaboration_reminder_interval_seconds))
+
+
 #: Ce que chaque type de job sait faire. Un type absent d'ici est un job qui ne
 #: tournera jamais — l'exécuteur le dit plutôt que de l'ignorer.
 TRAITEMENTS = {
     JobType.TOKEN_REFRESH: renouveler_le_jeton,
     JobType.METRICS_REFRESH: relever_les_metriques,
     JobType.BOOKING_HOLD_SWEEP: expirer_les_gardes,
+    JobType.COLLABORATION_DEADLINE_SWEEP: expirer_les_echeances,
+    JobType.COLLABORATION_REMINDER_SWEEP: rappeler_les_echeances,
 }
 
 
 #: Types dont la cible n'est pas une ligne : ce sont des balayages globaux.
-SANS_CIBLE = frozenset({JobType.BOOKING_HOLD_SWEEP})
+SANS_CIBLE = frozenset(
+    {
+        JobType.BOOKING_HOLD_SWEEP,
+        JobType.COLLABORATION_DEADLINE_SWEEP,
+        JobType.COLLABORATION_REMINDER_SWEEP,
+    }
+)
 
 
 async def cible(session: AsyncSession, job: Job) -> SocialAccount | None:

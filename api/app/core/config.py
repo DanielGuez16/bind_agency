@@ -167,6 +167,38 @@ class Settings(BaseSettings):
     #: limite qui protège le code de secours, pas sa longueur.
     redemption_max_failed_attempts: int = 5
 
+    # Contrepartie.
+    #: Délai de publication après consommation. Vingt-quatre heures : les
+    #: stories disparaissent en vingt-quatre heures, et une preuve demandée
+    #: après leur mort n'existe plus.
+    collaboration_publication_seconds: int = 86_400
+    #: Nouveau délai accordé après un refus de conformité. Plus court : le
+    #: créateur sait déjà quoi faire, il lui reste à le refaire.
+    collaboration_resubmit_seconds: int = 43_200
+    #: Tentatives avant que `needs_human_review` se lève.
+    collaboration_max_attempts: int = 3
+    #: Période du balayage des échéances. Cinq minutes : une échéance dépassée
+    #: n'a pas besoin d'être vue à la seconde, mais un créateur qui publie juste
+    #: à temps ne doit pas tomber pour un balayage trop paresseux.
+    collaboration_sweep_interval_seconds: int = 300
+
+    # Emails transactionnels. `log` n'envoie rien et trace : c'est le mode du
+    # développement et des tests. `resend` exige clé et expéditeur, vérifiés au
+    # démarrage — pas de repli silencieux.
+    email_provider: Literal["log", "resend"] = "log"
+    email_api_key: SecretStr | None = Field(default=None, repr=False)
+    #: L'expéditeur doit relever d'un domaine vérifié : un transactionnel envoyé
+    #: depuis un domaine non authentifié finit en indésirable, et un rappel qui
+    #: n'arrive pas vaut un rappel qui n'existe pas.
+    email_from: str | None = None
+    email_timeout_seconds: float = 10.0
+    #: Avance du rappel d'échéance. Six heures : assez tôt pour agir, assez tard
+    #: pour que la publication soit encore en ligne.
+    collaboration_reminder_lead_seconds: int = 21_600
+    #: Période du balayage des rappels. Une heure : un rappel envoyé deux
+    #: fois est moins grave qu'un rappel jamais envoyé, mais pas de beaucoup.
+    collaboration_reminder_interval_seconds: int = 3_600
+
     # Lue uniquement par la session pytest, jamais par l'application.
     # Sa présence est vérifiée dans tests/conftest.py, qui refuse de tourner sans.
     test_database_url: PostgresDsn | None = Field(default=None, repr=False)

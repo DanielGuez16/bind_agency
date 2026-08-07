@@ -33,7 +33,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.models import Booking
 from app.models.enums import BookingStatus
-from app.services import audit, redemption
+from app.services import audit, collaboration, redemption
 
 #: Le diagramme, écrit une fois. Toute transition absente d'ici est refusée.
 TRANSITIONS: dict[BookingStatus, frozenset[BookingStatus]] = {
@@ -187,8 +187,17 @@ async def marquer_absent(
 
 
 async def consommer(session: AsyncSession, *, booking: Booking, actor: audit.Actor) -> Booking:
-    """Le passage qui crée la contrepartie — celle-ci arrive en phase 6."""
-    return await transitionner(session, booking=booking, vers=BookingStatus.CONSUMED, actor=actor)
+    """Le seul passage qui crée la contrepartie et ouvre le délai de publication.
+
+    Les deux écritures appartiennent à la même transaction : une prestation
+    servie sans contrepartie ouverte serait une prestation offerte, et personne
+    ne s'en apercevrait avant le reporting.
+    """
+    consomme = await transitionner(
+        session, booking=booking, vers=BookingStatus.CONSUMED, actor=actor
+    )
+    await collaboration.creer(session, booking=consomme)
+    return consomme
 
 
 async def expirer_les_gardes_depasses(session: AsyncSession, *, limite: int = 500) -> int:

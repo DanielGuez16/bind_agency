@@ -125,15 +125,15 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
 
 ## Phase 7 — Contrepartie
 
-- [ ] Création de la contrepartie avec critères et échéance
+- [x] Création de la contrepartie avec critères et échéance
       *Fin : les critères affichés au créateur sont ceux figés à la candidature*
-- [ ] Soumission de preuve, archivage du média, empreinte et horodatage serveur
+- [x] Soumission de preuve, archivage du média, empreinte et horodatage serveur
       *Fin : le contenu reste consultable après suppression de la publication d'origine*
-- [ ] Boucle automatique de relance et de nouvelle soumission
+- [x] Boucle automatique de relance et de nouvelle soumission
       *Fin : trois tentatives lèvent le drapeau de revue humaine, aucune escalade avant*
-- [ ] Emails transactionnels : confirmation, rappel de deadline, relance
+- [x] Emails transactionnels : confirmation, rappel de deadline, relance
       *Fin : envoyés depuis un domaine vérifié, en anglais et en espagnol*
-- [ ] Passage automatique en non honoré à l'échéance
+- [x] Passage automatique en non honoré à l'échéance
       *Fin : job de fond testé sur une échéance dépassée*
 
 ---
@@ -162,6 +162,12 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
 
 ## Phase 10 — Reste
 
+- [ ] Capture de preuve niveaux 1 et 2
+      *Le niveau 3 — capture d'écran envoyée — fonctionne depuis la phase 7. Les deux niveaux supérieurs ont été laissés débranchés faute de garde-fous : les poser à moitié ouvrirait une porte de requête côté serveur*
+      *Fin, pour le niveau 2 : taille maximale, types acceptés, refus des adresses internes **et des redirections vers elles**, délai maximal. Le niveau 1 attend `fetch_media`, qui arrive avec TikTok*
+- [ ] Dépôt objet réel, compatible S3
+      *Le stockage local suffit à la démo, et le passage se fait par la même interface — `deposer` est la seule fonction à changer*
+      *Fin : une preuve archivée reste consultable après redémarrage, et la clé rendue ne dépend d'aucun fournisseur*
 - [ ] Intégration TikTok
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire
 - [ ] Abonnement Stripe et plans par catégorie

@@ -96,6 +96,13 @@ class ErrorCode(StrEnum):
     REDEMPTION_BOOKING_NOT_REDEEMABLE = "redemption_booking_not_redeemable"
     REDEMPTION_TOO_MANY_ATTEMPTS = "redemption_too_many_attempts"
 
+    # Contrepartie
+    COLLABORATION_NOT_FOUND = "collaboration_not_found"
+    COLLABORATION_TRANSITION_NOT_ALLOWED = "collaboration_transition_not_allowed"
+    COLLABORATION_NOT_OPEN = "collaboration_not_open"
+    PROOF_NOTHING_ARCHIVED = "proof_nothing_archived"
+    PROOF_ALREADY_SUBMITTED = "proof_already_submitted"
+
     # Transverses
     VALIDATION_FAILED = "validation_failed"
     NOT_FOUND = "not_found"

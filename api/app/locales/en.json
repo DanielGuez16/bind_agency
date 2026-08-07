@@ -1,3 +1,13 @@
 {
-  "account.welcome.subject": "Welcome to BIND"
+  "account.welcome.subject": "Welcome to BIND",
+  "collaboration.opened.subject": "Your collaboration with {business} has started",
+  "collaboration.opened.body": "Hi {creator},\n\nYou have redeemed {item} at {business}. Now publish a {format} and send us the proof before {deadline}.\n\n{requirements}\nOpen the app to submit your proof.\n",
+  "collaboration.reminder.subject": "Your proof for {business} is due soon",
+  "collaboration.reminder.body": "Hi {creator},\n\nYour proof for {item} at {business} is due on {deadline}. Stories disappear after 24 hours, so send it while your post is still online.\n",
+  "collaboration.resubmit.subject": "One more step for {business}",
+  "collaboration.resubmit.body": "Hi {creator},\n\n{business} could not accept your proof for {item}:\n\n{reason}\n\nYou have until {deadline} to send a corrected one.\n",
+  "collaboration.unfulfilled.subject": "Your collaboration with {business} was not honoured",
+  "collaboration.unfulfilled.body": "Hi {creator},\n\nThe deadline for {item} at {business} passed without an accepted proof. This affects your reliability score.\n",
+  "collaboration.requirements.mention": "Mention {mention} in your post.",
+  "collaboration.requirements.geotag": "Add the business location to your post."
 }

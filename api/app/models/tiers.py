@@ -59,6 +59,18 @@ class TierOffer(UUIDPrimaryKey, CreatedAt, Base):
         sa.Boolean, nullable=False, server_default=sa.text("true")
     )
 
+    # Ce que le commerce exige de la publication. Recopié sur la contrepartie à
+    # la consommation et figé là : sans source ici, les critères affichés au
+    # créateur seraient toujours vides, et « les critères sont ceux figés à la
+    # candidature » ne garantirait rien.
+    #
+    # Le format, lui, ne s'exprime pas ici : il vient du palier, qui est
+    # précisément défini par le couple plateforme × format.
+    required_mention: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    required_geotag: Mapped[bool] = mapped_column(
+        sa.Boolean, nullable=False, server_default=sa.text("false")
+    )
+
     __table_args__ = (
         sa.UniqueConstraint("business_id", "tier_id", "catalog_item_id"),
         # Cible de la clé étrangère composite de booking.

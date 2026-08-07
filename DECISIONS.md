@@ -1647,3 +1647,106 @@ Le premier avait coûté huit exécutions rouges ; le second faisait que les
 requêtes ne trouvaient plus le champ qu'elles venaient de remplir.
 `ecran.test.tsx` portait le défaut lui aussi. Le garde-fou couvre désormais les
 deux, et s'étend en ajoutant un nom à une liste.
+
+---
+
+## 2026-08-06 — Contrepartie, preuve, boucle de relance
+
+**Aucune validation automatique à l'expiration d'un délai.** Une échéance
+dépassée produit un `unfulfilled`, jamais un `approved` par défaut. Accepter par
+lassitude ferait de l'échéance une récompense pour qui ne répond pas, alors que
+le commerce a donné une prestation contre une publication qui n'existe pas. Un
+test essaie de provoquer l'inverse par tous les états expirables.
+
+`submitted` n'est **pas** expirable : le créateur a répondu, la balle est de
+notre côté. Le faire tomber punirait quelqu'un de notre propre lenteur.
+
+**Le refus de conformité rouvre, il ne clôt pas.** `resubmit_requested` avec une
+**nouvelle échéance** — sans elle, le créateur tomberait en non honoré pour un
+délai déjà écoulé, ce qui reviendrait à refuser en faisant semblant de laisser
+une chance. Le délai de reprise est plus court : le créateur sait déjà quoi
+faire, il lui reste à le refaire.
+
+`needs_human_review` se lève à la troisième tentative et sort le dossier de la
+boucle **sans le trancher**. Il n'existe pas de statut de litige, et l'API du
+commerce n'offre pas de bouton « rejeter » : approuver, ou redemander avec un
+motif obligatoire. Un créateur à qui l'on dit « non conforme » sans dire
+pourquoi refera la même chose.
+
+**Les critères sont figés à la création**, recopiés depuis l'offre. Un commerce
+qui les durcit ensuite changerait rétroactivement ce qu'on reproche au créateur
+de ne pas avoir fait.
+
+*Écart relevé :* `collaboration` portait `required_mention` et `required_geotag`
+depuis la phase 1 mais **rien ne les alimentait**. Les critères affichés auraient
+toujours été vides. Ils vivent désormais sur `tier_offer`.
+
+*Contradiction signalée :* `under_review` figure dans les statuts de `SPEC.md`
+§2.6 mais pas dans le diagramme §4.2. Traité comme l'étape « contrôle » du
+diagramme, parce qu'une table de transitions partielle lèverait un `KeyError`.
+
+**L'ordre de préférence de capture est appliqué au serveur, pas choisi par
+l'appelant.** Sinon tout le monde enverrait une capture d'écran. Le niveau
+employé est conservé dans `capture_method` : c'est lui qui permettra
+**d'automatiser uniquement les cas de niveau 1**, où la plateforme atteste
+elle-même que le contenu était sur le compte connecté. L'ordre est une constante
+déclarée et non l'ordre de l'énumération — un membre ajouté au mauvais endroit
+changerait sinon la hiérarchie de confiance sans que personne ne le voie.
+
+**Les soumissions s'empilent, elles ne s'écrasent pas.** L'historique d'un
+dossier refusé trois fois est ce qu'un commerce contestera. Renvoyer le même
+fichier après un refus est reconnu par son empreinte : ce n'est pas une
+correction.
+
+*Non branché, et dit comme tel :* le dépôt réel chez un fournisseur compatible
+S3, ainsi que les niveaux 1 et 2 de capture. Le niveau 1 attend `fetch_media` ;
+le niveau 2 demande des garde-fous — taille, types, refus des adresses internes
+— dont l'absence ouvrirait une porte de requête côté serveur. Les brancher à
+moitié serait pire que pas du tout.
+
+---
+
+## 2026-08-06 — Emails transactionnels
+
+**Fournisseur : Resend.** Facturation à l'usage, pas d'abonnement, domaine à
+vérifier. Mêmes critères que pour le géocodage, et même traitement : le mode est
+déclaré par `EMAIL_PROVIDER`, et demander `resend` sans clé ni expéditeur
+empêche de démarrer. Découvrir la clé manquante au premier rappel signifierait
+des créateurs sans avertissement et des dossiers qui tombent en non honoré sans
+que personne n'ait rien dit.
+
+Le domaine vérifié n'est pas une formalité : un transactionnel envoyé depuis un
+domaine non authentifié finit en indésirable, et un rappel qui n'arrive pas vaut
+un rappel qui n'existe pas.
+
+**Aucun envoi ne fait échouer ce qui l'a déclenché.** Les rappels passent par la
+file de jobs, avec son report et son épuisement. Un service injoignable ne doit
+pas annuler la contrepartie qu'il devait annoncer — le créateur préfère une
+contrepartie correctement ouverte sans email à un email parfait sur une
+contrepartie qui n'existe pas.
+
+En revanche, l'erreur **remonte** depuis le module de notification : l'avaler
+ferait croire à un envoi. C'est au job de la reporter, pas au module.
+
+**La langue est celle du destinataire, jamais celle du déclencheur.** Un
+commerce hispanophone qui refuse une preuve écrit son motif en espagnol ; le
+créateur reçoit le cadre du message dans sa langue à lui. Le motif reste tel
+quel — c'est du contenu saisi, et on ne traduit pas ce qu'un commerce a écrit.
+
+**L'échéance est rendue dans le fuseau du commerce.** Affichée en UTC à
+quelqu'un qui vit à Miami, elle se lit à quatre heures près.
+
+**Trouvé en route : j'avais écrit un second lecteur de catalogue.**
+`app/core/i18n.py` existait déjà et servait exactement à ça. Deux façons de lire
+le même fichier auraient divergé, et c'est la seconde qu'on aurait oublié de
+corriger. `notifications` passe désormais par le module existant.
+
+**Un test qui figeait une liste est tombé, et il avait tort.** Il affirmait
+`available_keys() == {"account.welcome.subject"}` — la seule clé du jour où il a
+été écrit. Chaque gabarit ajouté le faisait tomber sans qu'aucune propriété soit
+en cause. Il compare maintenant les clés exposées à celles des catalogues, dans
+les deux langues.
+
+Un troisième test vérifie que les deux langues attendent les **mêmes variables**
+de substitution : une variable présente d'un seul côté produirait un email
+amputé dans une langue et correct dans l'autre, le pire des deux.
