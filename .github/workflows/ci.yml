@@ -79,6 +79,18 @@ jobs:
         working-directory: api
         run: pytest -q
 
+      # Le contrat que l'app vérifie est un fichier commité. S'il n'est pas
+      # régénéré, le test de routes côté app continue de passer contre une
+      # photographie périmée du serveur : il cesse de prouver quoi que ce soit
+      # au moment précis où une route est renommée. On le régénère ici et on
+      # refuse la différence.
+      - name: Contrat d'API à jour
+        working-directory: api
+        run: |
+          python scripts/dump_openapi.py
+          git diff --exit-code -- ../app/src/api/openapi.json \
+            || { echo "::error::app/src/api/openapi.json est périmé — lancez api/scripts/dump_openapi.py"; exit 1; }
+
   app:
     runs-on: ubuntu-latest
 

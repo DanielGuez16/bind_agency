@@ -20,6 +20,7 @@ from app.core.config import get_settings
 from app.models import Business, CatalogItem
 from app.models.enums import BusinessStatus, UserRole
 from app.services import business_public as service
+from app.services import creator_tiers
 from app.services.eligibility import RaisonRefus
 from tests.test_feed import REEL, STORY, commerce, createur, offre
 
@@ -185,3 +186,56 @@ async def test_la_route_est_reservee_aux_createurs(client: AsyncClient) -> None:
     # et non un code brut.
     assert reponse.status_code == 404
     assert reponse.json()["detail"] == "business_not_found"
+
+
+async def test_l_obstacle_de_la_fiche_est_celui_de_l_ecran_des_paliers(
+    session: AsyncSession,
+) -> None:
+    """Le même code, sur les deux écrans.
+
+    C'est la condition qui empêche la fiche de redevenir un fil qui montre des
+    choses indisponibles : une offre fermée y est visible, mais elle dit
+    pourquoi, et elle le dit dans les mêmes termes qu'ailleurs. Deux
+    vocabulaires pour un même refus feraient croire à deux causes.
+    """
+    b = await commerce(session, longitude=-80.1305, latitude=25.7907)
+    await offre(session, b, tier_id=REEL, name="Hors d'atteinte")
+    user, _ = await createur(session, followers=1_200)
+
+    fermee = next(o for o in (await fiche(session, b, user)).offres if not o.accessible)
+    vue = await creator_tiers.vue_des_paliers(session, user.id)
+    palier = next(p for p in vue.paliers if p.tier_id == fermee.tier_id)
+
+    assert {o.raison for o in fermee.obstacles} == {o.raison for o in palier.obstacles}
+    assert fermee.obstacles, "une offre fermée sans obstacle serait une porte sans serrure"
+
+
+async def test_une_offre_fermee_est_structurellement_non_reservable(
+    session: AsyncSession,
+) -> None:
+    """Trois signaux concordants, pas un seul.
+
+    L'app ne doit pas avoir à déduire l'indisponibilité d'un champ isolé : le
+    compte qui ouvrirait le palier est nul, il n'y a aucun créneau, et
+    `accessible` est faux. Une réservation tentée sur cette offre serait de
+    toute façon refusée par le service — mais elle n'aurait jamais dû être
+    proposée.
+    """
+    b = await commerce(session, longitude=-80.1305, latitude=25.7907)
+    await offre(session, b, tier_id=STORY, name="Ouverte")
+    await offre(session, b, tier_id=REEL, name="Fermée")
+    user, _ = await createur(session, followers=1_200)
+
+    par_nom = {o.name: o for o in (await fiche(session, b, user)).offres}
+    fermee, ouverte = par_nom["Fermée"], par_nom["Ouverte"]
+
+    assert (fermee.accessible, fermee.social_account_id, fermee.prochains_creneaux) == (
+        False,
+        None,
+        (),
+    )
+    # Le pendant : l'offre ouverte porte bien les trois, sinon le test
+    # passerait sur une fiche qui ne rendrait jamais rien.
+    assert ouverte.accessible is True
+    assert ouverte.social_account_id is not None
+    assert ouverte.prochains_creneaux

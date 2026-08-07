@@ -10,7 +10,9 @@
  * C'est le pire profil de défaut : vert en local, rouge ailleurs, et rien dans
  * le message d'erreur qui pointe vers la cause. `render` a coûté huit
  * exécutions rouges ; `fireEvent` a été trouvé en écrivant l'écran de caisse,
- * où les requêtes ne trouvaient plus le champ qu'elles venaient de remplir.
+ * où les requêtes ne trouvaient plus le champ qu'elles venaient de remplir ;
+ * `renderHook` a été ajouté en écrivant le client d'API — même bibliothèque,
+ * même signature, même piège.
  *
  * Ce test rend les deux impossibles à réintroduire sans le voir.
  */
@@ -21,7 +23,7 @@ const DOSSIER = __dirname;
 
 //: Les appels asynchrones de la bibliothèque. Ajouter une entrée ici suffit à
 //: étendre le garde-fou.
-const ASYNCHRONES = ['render', 'fireEvent\\.\\w+'];
+const ASYNCHRONES = ['render', 'renderHook', 'fireEvent\\.\\w+'];
 
 /**
  * Repère les appels dont **personne ne retient la promesse**.

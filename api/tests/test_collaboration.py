@@ -12,6 +12,7 @@ ce qui reviendrait à refuser en faisant semblant de laisser une chance.
 """
 
 import itertools
+import re
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -19,7 +20,7 @@ import sqlalchemy as sa
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import get_settings
+from app.core.config import API_ROOT, get_settings
 from app.models import AuditLog, Collaboration, Proof, TierOffer
 from app.models.enums import ActorKind, CaptureMethod, CollaborationStatus
 from app.services import collaboration as service
@@ -43,7 +44,16 @@ DIAGRAMME = {
     ("under_review", "resubmit_requested"),
     ("resubmit_requested", "submitted"),
     ("resubmit_requested", "unfulfilled"),
+    # Les deux flèches de l'arbitrage administrateur. Elles existent dans la
+    # table parce qu'elles sont *possibles* ; qui a le droit de les prendre est
+    # une question d'appelant, pas de forme, et c'est le test suivant qui la
+    # tranche.
+    ("submitted", "unfulfilled"),
+    ("under_review", "unfulfilled"),
 }
+
+#: Les seules flèches qu'un arbitre peut emprunter et personne d'autre.
+ARBITRAGE_SEUL = {("submitted", "unfulfilled"), ("under_review", "unfulfilled")}
 
 
 async def contrepartie(session: AsyncSession, **critere) -> tuple[Collaboration, dict]:
@@ -153,6 +163,33 @@ def test_la_table_est_exactement_le_diagramme() -> None:
 
 def test_tous_les_etats_figurent_dans_la_table() -> None:
     assert set(service.TRANSITIONS) == set(CollaborationStatus)
+
+
+def test_les_cloture_d_arbitrage_ne_sont_atteignables_que_par_l_arbitre() -> None:
+    """La table dit ce qui est possible, l'appelant dit qui en a le droit.
+
+    Les deux flèches vers `unfulfilled` depuis `submitted` et `under_review`
+    ont été ouvertes pour l'arbitrage. Le risque est qu'un autre chemin s'y
+    engouffre : la boucle d'échéances, ou le commerce. Le test le vérifie sur
+    le code, pas sur une intention.
+    """
+    # La boucle d'échéances ne balaie que deux états, et ce ne sont pas ceux-là.
+    assert set(service.EXPIRABLES) == {
+        CollaborationStatus.PENDING,
+        CollaborationStatus.RESUBMIT_REQUESTED,
+    }
+    for depuis, _ in ARBITRAGE_SEUL:
+        assert CollaborationStatus(depuis) not in service.EXPIRABLES
+
+    # Une seule fonction du service mène à `unfulfilled` par décision humaine,
+    # et c'est celle que seule la route d'arbitrage appelle.
+    source = (API_ROOT / "app" / "services" / "collaboration.py").read_text()
+    appels = re.findall(r"vers=CollaborationStatus\.UNFULFILLED", source)
+    assert len(appels) == 2, "expiration automatique et clôture d'arbitrage, pas une de plus"
+
+    # Le routeur commerce n'appelle jamais la clôture.
+    commerce = (API_ROOT / "app" / "routers" / "collaboration.py").read_text()
+    assert "constater_non_honoree" not in commerce
 
 
 @pytest.mark.parametrize(

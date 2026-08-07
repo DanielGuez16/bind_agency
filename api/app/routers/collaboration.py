@@ -19,7 +19,6 @@ from app.models.enums import UserRole
 from app.schemas.collaboration import (
     CollaborationRead,
     DecisionCommerce,
-    PreuveRead,
     PreuveSoumise,
 )
 from app.services import collaboration as service
@@ -67,21 +66,7 @@ async def _sienne(session, collaboration_id: uuid.UUID, creator_id: uuid.UUID) -
 
 
 async def _lire(session, ligne: Collaboration) -> CollaborationRead:
-    preuves = await proof_service.preuves_de(session, ligne.id)
-    return CollaborationRead(
-        id=ligne.id,
-        booking_id=ligne.booking_id,
-        tier_id=ligne.tier_id,
-        required_format=ligne.required_format,
-        required_mention=ligne.required_mention,
-        required_geotag=ligne.required_geotag,
-        deadline_at=ligne.deadline_at,
-        status=ligne.status,
-        attempts_count=ligne.attempts_count,
-        needs_human_review=ligne.needs_human_review,
-        approved_at=ligne.approved_at,
-        proofs=[PreuveRead.model_validate(p) for p in preuves],
-    )
+    return CollaborationRead.assembler(ligne, await proof_service.preuves_de(session, ligne.id))
 
 
 @router.get("/collaborations/{collaboration_id}", response_model=CollaborationRead)

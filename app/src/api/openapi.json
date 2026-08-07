@@ -1,0 +1,597 @@
+{
+  "paths": {
+    "/api/v1/admin/collaborations/review": {
+      "get": {
+        "operationId": "list_human_review_api_v1_admin_collaborations_review_get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/admin/collaborations/{collaboration_id}/decision": {
+      "post": {
+        "operationId": "arbitrer_api_v1_admin_collaborations__collaboration_id__decision_post",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/admin/jobs/exhausted": {
+      "get": {
+        "operationId": "list_exhausted_api_v1_admin_jobs_exhausted_get",
+        "responses": [
+          "200"
+        ]
+      }
+    },
+    "/api/v1/admin/jobs/{job_id}/retry": {
+      "post": {
+        "operationId": "retry_api_v1_admin_jobs__job_id__retry_post",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/admin/plans": {
+      "get": {
+        "operationId": "list_plans_api_v1_admin_plans_get",
+        "responses": [
+          "200"
+        ]
+      }
+    },
+    "/api/v1/admin/social-accounts/review": {
+      "get": {
+        "operationId": "review_queue_api_v1_admin_social_accounts_review_get",
+        "responses": [
+          "200"
+        ]
+      }
+    },
+    "/api/v1/admin/social-accounts/{account_id}/verification": {
+      "post": {
+        "operationId": "prononcer_api_v1_admin_social_accounts__account_id__verification_post",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/admin/tiers": {
+      "get": {
+        "operationId": "list_tiers_api_v1_admin_tiers_get",
+        "responses": [
+          "200"
+        ]
+      },
+      "post": {
+        "operationId": "create_tier_api_v1_admin_tiers_post",
+        "responses": [
+          "201",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/admin/tiers/{tier_id}": {
+      "delete": {
+        "operationId": "delete_tier_api_v1_admin_tiers__tier_id__delete",
+        "responses": [
+          "204",
+          "422"
+        ]
+      },
+      "get": {
+        "operationId": "read_tier_api_v1_admin_tiers__tier_id__get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "patch": {
+        "operationId": "update_tier_api_v1_admin_tiers__tier_id__patch",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "operationId": "login_api_v1_auth_login_post",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "logout_api_v1_auth_logout_post",
+        "responses": [
+          "204",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "operationId": "refresh_api_v1_auth_refresh_post",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "operationId": "register_api_v1_auth_register_post",
+        "responses": [
+          "201",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/bookings": {
+      "post": {
+        "operationId": "create_booking_api_v1_bookings_post",
+        "responses": [
+          "201",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/bookings/{booking_id}/cancel": {
+      "post": {
+        "operationId": "cancel_api_v1_bookings__booking_id__cancel_post",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/bookings/{booking_id}/code": {
+      "get": {
+        "operationId": "read_code_api_v1_bookings__booking_id__code_get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/bookings/{booking_id}/confirm": {
+      "post": {
+        "operationId": "confirm_api_v1_bookings__booking_id__confirm_post",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/bookings/{booking_id}/no-show": {
+      "post": {
+        "operationId": "mark_no_show_api_v1_bookings__booking_id__no_show_post",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/business": {
+      "post": {
+        "operationId": "create_api_v1_business_post",
+        "responses": [
+          "201",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/business/collaborations/{collaboration_id}/decision": {
+      "post": {
+        "operationId": "decide_api_v1_business_collaborations__collaboration_id__decision_post",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/business/{business_id}": {
+      "get": {
+        "operationId": "read_api_v1_business__business_id__get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "patch": {
+        "operationId": "update_api_v1_business__business_id__patch",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/business/{business_id}/activate": {
+      "post": {
+        "operationId": "activate_api_v1_business__business_id__activate_post",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/business/{business_id}/activation": {
+      "get": {
+        "operationId": "activation_steps_api_v1_business__business_id__activation_get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/business/{business_id}/bookings": {
+      "get": {
+        "operationId": "read_day_api_v1_business__business_id__bookings_get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/business/{business_id}/capacity-exceptions": {
+      "get": {
+        "operationId": "list_exceptions_api_v1_business__business_id__capacity_exceptions_get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "post": {
+        "operationId": "create_exception_api_v1_business__business_id__capacity_exceptions_post",
+        "responses": [
+          "201",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/business/{business_id}/capacity-exceptions/{exception_id}": {
+      "delete": {
+        "operationId": "delete_exception_api_v1_business__business_id__capacity_exceptions__exception_id__delete",
+        "responses": [
+          "204",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/business/{business_id}/capacity-rules": {
+      "get": {
+        "operationId": "list_rules_api_v1_business__business_id__capacity_rules_get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "post": {
+        "operationId": "create_rule_api_v1_business__business_id__capacity_rules_post",
+        "responses": [
+          "201",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/business/{business_id}/capacity-rules/{rule_id}": {
+      "delete": {
+        "operationId": "delete_rule_api_v1_business__business_id__capacity_rules__rule_id__delete",
+        "responses": [
+          "204",
+          "422"
+        ]
+      },
+      "patch": {
+        "operationId": "update_rule_api_v1_business__business_id__capacity_rules__rule_id__patch",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/business/{business_id}/catalog-items": {
+      "get": {
+        "operationId": "list_items_api_v1_business__business_id__catalog_items_get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "post": {
+        "operationId": "create_item_api_v1_business__business_id__catalog_items_post",
+        "responses": [
+          "201",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/business/{business_id}/catalog-items/{item_id}": {
+      "delete": {
+        "operationId": "delete_item_api_v1_business__business_id__catalog_items__item_id__delete",
+        "responses": [
+          "204",
+          "422"
+        ]
+      },
+      "get": {
+        "operationId": "read_item_api_v1_business__business_id__catalog_items__item_id__get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "patch": {
+        "operationId": "update_item_api_v1_business__business_id__catalog_items__item_id__patch",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/business/{business_id}/catalog-items/{item_id}/availability": {
+      "put": {
+        "operationId": "set_availability_api_v1_business__business_id__catalog_items__item_id__availability_put",
+        "responses": [
+          "204",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/business/{business_id}/collaborations": {
+      "get": {
+        "operationId": "list_for_business_api_v1_business__business_id__collaborations_get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/business/{business_id}/menu-imports": {
+      "post": {
+        "operationId": "create_import_api_v1_business__business_id__menu_imports_post",
+        "responses": [
+          "201",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/business/{business_id}/menu-imports/{import_id}": {
+      "get": {
+        "operationId": "read_import_api_v1_business__business_id__menu_imports__import_id__get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/business/{business_id}/menu-imports/{import_id}/extract": {
+      "post": {
+        "operationId": "extract_api_v1_business__business_id__menu_imports__import_id__extract_post",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/business/{business_id}/menu-imports/{import_id}/validate": {
+      "post": {
+        "operationId": "validate_api_v1_business__business_id__menu_imports__import_id__validate_post",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/business/{business_id}/tier-offers": {
+      "get": {
+        "operationId": "list_offers_api_v1_business__business_id__tier_offers_get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "post": {
+        "operationId": "create_offer_api_v1_business__business_id__tier_offers_post",
+        "responses": [
+          "201",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/business/{business_id}/tier-offers/{offer_id}": {
+      "delete": {
+        "operationId": "delete_offer_api_v1_business__business_id__tier_offers__offer_id__delete",
+        "responses": [
+          "204",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/business/{business_id}/tier-offers/{offer_id}/activation": {
+      "put": {
+        "operationId": "set_activation_api_v1_business__business_id__tier_offers__offer_id__activation_put",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/businesses": {
+      "get": {
+        "operationId": "read_feed_api_v1_businesses_get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/businesses/{business_id}": {
+      "get": {
+        "operationId": "read_public_api_v1_businesses__business_id__get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/businesses/{business_id}/availability": {
+      "get": {
+        "operationId": "read_availability_api_v1_businesses__business_id__availability_get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/collaborations/{collaboration_id}": {
+      "get": {
+        "operationId": "read_collaboration_api_v1_collaborations__collaboration_id__get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/collaborations/{collaboration_id}/proof": {
+      "post": {
+        "operationId": "submit_proof_api_v1_collaborations__collaboration_id__proof_post",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "operationId": "health_api_v1_health_get",
+        "responses": [
+          "200",
+          "503"
+        ]
+      }
+    },
+    "/api/v1/me": {
+      "get": {
+        "operationId": "read_me_api_v1_me_get",
+        "responses": [
+          "200"
+        ]
+      },
+      "patch": {
+        "operationId": "update_me_api_v1_me_patch",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/me/audience": {
+      "get": {
+        "operationId": "read_audience_api_v1_me_audience_get",
+        "responses": [
+          "200"
+        ]
+      }
+    },
+    "/api/v1/me/bookings": {
+      "get": {
+        "operationId": "read_history_api_v1_me_bookings_get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/me/profile": {
+      "get": {
+        "operationId": "read_profile_api_v1_me_profile_get",
+        "responses": [
+          "200"
+        ]
+      },
+      "patch": {
+        "operationId": "update_profile_api_v1_me_profile_patch",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/me/social-accounts": {
+      "get": {
+        "operationId": "list_accounts_api_v1_me_social_accounts_get",
+        "responses": [
+          "200"
+        ]
+      }
+    },
+    "/api/v1/me/social-accounts/instagram/connect": {
+      "post": {
+        "operationId": "start_instagram_api_v1_me_social_accounts_instagram_connect_post",
+        "responses": [
+          "200"
+        ]
+      }
+    },
+    "/api/v1/me/social-accounts/{account_id}/metrics/refresh": {
+      "post": {
+        "operationId": "refresh_metrics_api_v1_me_social_accounts__account_id__metrics_refresh_post",
+        "responses": [
+          "201",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/me/tiers": {
+      "get": {
+        "operationId": "read_tiers_api_v1_me_tiers_get",
+        "responses": [
+          "200"
+        ]
+      }
+    },
+    "/api/v1/me/verification": {
+      "get": {
+        "operationId": "read_verification_api_v1_me_verification_get",
+        "responses": [
+          "200"
+        ]
+      }
+    },
+    "/api/v1/redemptions/consume": {
+      "post": {
+        "operationId": "consume_api_v1_redemptions_consume_post",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/redemptions/verify": {
+      "post": {
+        "operationId": "verify_api_v1_redemptions_verify_post",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/social-accounts/instagram/callback": {
+      "get": {
+        "operationId": "instagram_callback_api_v1_social_accounts_instagram_callback_get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    }
+  }
+}

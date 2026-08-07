@@ -1,0 +1,97 @@
+/**
+ * 07 · Contrepartie : soumission, contrôle, nouvelle demande, non honorée.
+ *
+ * Un seul écran pour les quatre situations, parce que c'est un seul objet dont
+ * l'état change. En faire quatre écrans obligerait à savoir lequel ouvrir avant
+ * d'avoir lu l'état.
+ *
+ * **Aucune validation automatique n'existe.** Une échéance dépassée produit
+ * « non honorée », jamais « approuvée » par défaut : le commerce a donné une
+ * prestation contre une publication qui n'existe pas.
+ *
+ * **Un refus de conformité rouvre avec une nouvelle échéance.** Il ne clôt
+ * pas ; le dire autrement ferait croire à un dossier perdu.
+ */
+import { useState } from 'react';
+import { View } from 'react-native';
+
+import { useApi, type Collaboration } from '../api';
+import { Button, StatusMessage, Texte, TierBadge } from '../components';
+import { useI18n } from '../i18n';
+import { Ecran } from './Ecran';
+import { useRequete } from './useRequete';
+
+export function PreuveScreen({
+  collaborationId,
+  onEnvoyer,
+}: {
+  collaborationId: string;
+  /** Ouvre la sélection de média. La soumission elle-même est en phase 7. */
+  onEnvoyer: () => void;
+}) {
+  const { api } = useApi();
+  const { t } = useI18n();
+  const [envoi] = useState(false);
+
+  const requete = useRequete<Collaboration>(
+    (signal) => api.contrepartie(collaborationId, signal),
+    { estVide: () => false, dependances: [collaborationId] },
+  );
+
+  return (
+    <Ecran requete={requete} titre={t('parcours.preuveTitre')} testID="ecran-preuve">
+      {(contrepartie) => (
+        <View style={{ gap: 12 }}>
+          <TierBadge tier={contrepartie.required_format} />
+
+          {/* Le délai qui court s'affiche en date d'échéance ; le temps restant
+              se calcule à l'affichage, il ne se stocke pas. */}
+          <Texte variante="type.mono" testID="echeance">
+            {t('parcours.preuveEcheance', {
+              date: new Date(contrepartie.deadline_at).toLocaleString(),
+            })}
+          </Texte>
+
+          {contrepartie.status === 'under_review' || contrepartie.status === 'submitted' ? (
+            // Aucune promesse de délai : on dit que c'est en cours, pas quand
+            // ce sera fini.
+            <StatusMessage
+              level="neutral"
+              body={t('parcours.preuveEnControle')}
+              testID="en-controle"
+            />
+          ) : null}
+
+          {contrepartie.status === 'resubmit_requested' ? (
+            <StatusMessage
+              level="warning"
+              body={t('parcours.preuveANouveau')}
+              testID="nouvelle-soumission"
+            />
+          ) : null}
+
+          {contrepartie.status === 'unfulfilled' ? (
+            // Annoncé une fois, sans badge ni marque permanente sur le profil.
+            <StatusMessage
+              level="danger"
+              body={t('parcours.preuveNonHonoree')}
+              testID="non-honoree"
+            />
+          ) : null}
+
+          {/* Le bouton n'existe que quand une soumission est attendue. Il est
+              retiré, pas grisé, dans tous les autres cas. */}
+          {contrepartie.status === 'pending' || contrepartie.status === 'resubmit_requested' ? (
+            <Button
+              label={t('parcours.preuveEnvoyer')}
+              size="lg"
+              loading={envoi}
+              onPress={onEnvoyer}
+              testID="envoyer"
+            />
+          ) : null}
+        </View>
+      )}
+    </Ecran>
+  );
+}

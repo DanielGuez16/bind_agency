@@ -1939,3 +1939,134 @@ obstacles qui n'ont rien à dater gardent `depuis` nul.
 
 **Non comblé, volontairement** : quartiers, événements temps réel, versionnement
 des paliers. Le rafraîchissement se fait à l'ouverture d'écran et sur geste.
+
+---
+
+## 2026-08-07 — Arbitrage administrateur, et le contrat d'API
+
+**L'administrateur tranche dans le vocabulaire du commerce, plus une issue qui
+n'est qu'à lui.** Approuver et redemander disent exactement la même chose des
+deux côtés : lui donner un second langage obligerait chacun à traduire, et
+l'arbitrage cesserait d'être comparable à la décision qu'il révise. Clore en non
+honoré n'appartient qu'à lui — c'est la seule décision du produit qui ne se
+rouvre pas, et le commerce ne doit jamais pouvoir la prendre par lassitude.
+
+Sans cette décision, le drapeau `needs_human_review` était une impasse : la
+mécanique s'arrête à la troisième tentative sans trancher, et personne ensuite
+ne pouvait le faire.
+
+**Deux flèches ont été ajoutées à la machine à états** — `submitted →
+unfulfilled` et `under_review → unfulfilled` — et elles n'existent que pour
+l'arbitrage. La table dit ce qui est *possible*, l'appelant dit qui en a le
+*droit* : la boucle d'échéances ne balaie que `pending` et
+`resubmit_requested`, le routeur commerce n'appelle jamais la clôture. Un test
+le vérifie sur le code, pas sur une intention — il compte les appels à
+`vers=UNFULFILLED` dans le service et refuse le nom de la fonction de clôture
+dans le routeur commerce.
+
+**L'arbitrage est borné aux dossiers marqués en revue.** Sans cette borne,
+l'administrateur deviendrait un commerce fantôme, décidant à la place de celui
+qui a donné la prestation. Ce qu'on arbitre est ce que la mécanique a refusé de
+trancher toute seule.
+
+**La fenêtre de nouvelle soumission est plus courte que celle de la publication
+initiale, et c'est voulu.** Corriger une légende va plus vite que produire un
+contenu. Ce que la règle protège n'est pas « une échéance plus lointaine
+qu'avant » mais « une fenêtre entière qui rouvre » : le créateur ne doit pas
+hériter du reliquat d'un délai déjà entamé. Un premier test avait fixé la
+mauvaise garantie et serait tombé le jour où la configuration bougeait.
+
+**Le contrat d'API est un fichier commité, et la CI refuse qu'il vieillisse.**
+`api/scripts/dump_openapi.py` écrit les chemins, méthodes et codes de réponse —
+ni schémas ni descriptions, qui changent à chaque montée de version de FastAPI
+et rendraient le fichier illisible en revue, donc invérifiable. Un test côté app
+compare chaque route appelée à ce fichier. Sans la vérification de fraîcheur, le
+test continuerait de passer contre une photographie périmée du serveur : il
+cesserait de prouver quoi que ce soit au moment précis où une route est
+renommée.
+
+**Une panne de transport n'est pas une erreur d'API.** La conduite à tenir
+diffère — une requête jamais partie se rejoue sans risque, une qui a reçu un 409
+non — et la phrase à dire n'est pas la même. `NetworkError` porte le premier
+cas, `ApiError` le second avec son code du catalogue fermé.
+
+**Une seule rotation de jeton vit à la fois.** Trois écrans qui chargent en
+parallèle prennent trois 401 simultanés ; sans partage de la promesse, deux
+rotations invalideraient le jeton que la troisième vient d'obtenir.
+
+**Une rotation refusée efface la session, une rotation en panne réseau ne
+l'efface pas.** Le premier cas prouve que le jeton est mort et le garder ferait
+retenter indéfiniment ; le second ne prouve rien, et effacer déconnecterait
+quelqu'un qui passe sous un tunnel.
+
+**La déconnexion ferme la session localement quoi qu'il arrive.** Un serveur
+injoignable ne doit pas laisser quelqu'un connecté sur un téléphone qu'il vient
+de rendre.
+
+---
+
+## 2026-08-07 — Les écrans, et ce qui les tient
+
+**Les quatre états ne sont pas écrits écran par écran.** `useRequete` les
+produit, `Ecran` les rend, et un test les force sur chaque écran d'un registre.
+Les écrire à la main garantissait qu'il en manquerait un quelque part, et que ce
+serait l'erreur — celle qu'on ne voit jamais en développant, parce que le
+serveur répond.
+
+**Le vide n'est pas l'erreur.** Une liste vide est une réponse valide qui
+demande une conduite — élargir le rayon, changer de jour — là où une erreur
+demande de réessayer. `estVide` est obligatoire et sans valeur par défaut :
+« vide » ne se devine pas, et le laisser deviner ferait afficher un état vide
+sur une réponse pleine.
+
+**Un rechargement ne repasse pas par l'état de chargement.** L'écran garde ce
+qu'il montrait ; le vider ferait clignoter une liste que quelqu'un était en
+train de lire. Une erreur de rechargement conserve les données précédentes et
+les affiche **datées** — les effacer punirait l'utilisateur d'une panne qui ne
+le concerne pas.
+
+**L'écart chiffré démarre à 60 % du seuil, et la bascule est testée aux deux
+bords.** En dessous, horizon : le seuil et rien d'autre. « Il te manque 8 800
+abonnés » n'aide pas à agir, cela apprend seulement que ce n'est pas pour soi.
+
+**Un obstacle sans mesure ne produit pas d'écart.** Annoncer « il te manque
+10 000 » à quelqu'un qu'on n'a jamais mesuré serait une invention : c'est un
+horizon.
+
+**Le même obstacle, dans les mêmes termes, sur la fiche et sur les paliers.**
+C'était la condition posée pour garder la divergence avec le fil. Une offre
+fermée est visible, sans bouton, avec son code serveur.
+
+**Le bouton est retiré, jamais grisé** — sur la fiche quand le palier est
+fermé, sur le contrôle tant qu'aucun motif n'est choisi, sur l'activation tant
+qu'une étape bloquante manque, sur l'arbitrage pour les deux issues qui
+exigent un motif.
+
+**Les compteurs d'onglets viennent de la réponse, pas de la page.** Et les
+onglets restent visibles quand l'onglet courant est vide : un historique dont
+seul « à venir » est vide n'est pas un historique vide, et masquer les onglets
+empêcherait d'aller voir les autres.
+
+**L'heure s'affiche dans le fuseau du commerce**, côté créateur comme côté
+comptoir. Un rendez-vous se prend là où il a lieu ; l'afficher dans le fuseau du
+téléphone ferait rater des rendez-vous à quiconque voyage. Sur un droit sans
+créneau, aucune heure n'est inventée.
+
+**L'écran de code n'a pas quatre états, et c'est sa règle.** Il garde son
+dernier code quoi qu'il arrive, y compris hors ligne : la vérification se fait
+côté salon, et effacer l'écran sur une perte de réseau laisserait quelqu'un
+devant une caisse sans rien à montrer. Il est nommé hors registre plutôt
+qu'exempté en silence.
+
+**Le vocabulaire de l'arbitre est celui du commerce**, et un test compare les
+deux libellés du catalogue. La clôture en non honoré n'apparaît que sur l'écran
+d'arbitrage ; un test vérifie qu'elle n'existe nulle part côté commerce.
+
+**La division des centimes se fait à l'affichage, sur un seul écran.** Les
+montants restent des entiers partout ailleurs, parce qu'un flottant finit
+toujours par perdre un centime.
+
+**La dette d'écrans non migrés décroît**, de cinq à quatre : l'écran des paliers
+a été refait sur les composants et le client. Le test la compte dans les deux
+sens — il tombe si quelqu'un l'agrandit, et si quelqu'un migre un écran sans
+retirer sa tolérance.
