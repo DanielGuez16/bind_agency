@@ -13,20 +13,25 @@ from app.integrations.geocoding import check_geocoder_configuration
 from app.integrations.menu_extraction import check_extraction_configuration
 from app.routers import (
     account_verification,
+    audience,
     auth,
     availability,
     booking,
+    booking_history,
     booking_states,
     business,
+    business_public,
     capacity,
     catalog,
     collaboration,
+    counterpart_queue,
     creator_profile,
     creator_tiers,
     feed,
     health,
     jobs,
     menu_import,
+    plans,
     redemption,
     social_accounts,
     tier_offers,
@@ -103,6 +108,13 @@ def create_app() -> FastAPI:
     application.include_router(redemption.router, prefix=settings.api_v1_prefix)
     application.include_router(collaboration.router, prefix=settings.api_v1_prefix)
     application.include_router(menu_import.router, prefix=settings.api_v1_prefix)
+    application.include_router(business_public.router, prefix=settings.api_v1_prefix)
+    application.include_router(booking_history.creator_router, prefix=settings.api_v1_prefix)
+    application.include_router(booking_history.business_router, prefix=settings.api_v1_prefix)
+    application.include_router(counterpart_queue.business_router, prefix=settings.api_v1_prefix)
+    application.include_router(counterpart_queue.admin_router, prefix=settings.api_v1_prefix)
+    application.include_router(plans.router, prefix=settings.api_v1_prefix)
+    application.include_router(audience.router, prefix=settings.api_v1_prefix)
 
     return application
 

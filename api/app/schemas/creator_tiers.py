@@ -6,23 +6,7 @@ from decimal import Decimal
 from pydantic import BaseModel, ConfigDict
 
 from app.models.enums import ContentFormat, Platform
-from app.services.eligibility import RaisonRefus
-
-
-class ObstacleRead(BaseModel):
-    """Une raison, et de quoi la chiffrer.
-
-    `requis` et `constate` sont rendus pour que l'app puisse écrire « il te
-    manque 1 400 abonnés » plutôt que « pas assez d'abonnés ». La phrase est
-    traduite côté app, les nombres viennent d'ici.
-    """
-
-    model_config = ConfigDict(from_attributes=True)
-
-    raison: RaisonRefus
-    requis: Decimal | int | None
-    constate: Decimal | int | None
-    ecart: Decimal | int | None
+from app.schemas.obstacle import ObstacleRead
 
 
 class PalierAccessibleRead(BaseModel):

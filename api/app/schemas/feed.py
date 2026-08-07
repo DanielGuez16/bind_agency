@@ -6,16 +6,9 @@ from decimal import Decimal
 from pydantic import BaseModel, ConfigDict
 
 from app.models.enums import BusinessCategory, ContentFormat, Platform
-from app.services.eligibility import RaisonRefus
+from app.schemas.obstacle import ObstacleRead
 
-
-class ObstacleRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    raison: RaisonRefus
-    requis: Decimal | int | None
-    constate: Decimal | int | None
-    ecart: Decimal | int | None
+__all__ = ["CommerceDuFilRead", "FilRead", "ItemDuFilRead", "ObstacleRead"]
 
 
 class ItemDuFilRead(BaseModel):

@@ -181,7 +181,7 @@ async def fil_du_createur(
                 photo_key=ligne.photo_key,
                 platform=ligne.platform,
                 content_format=ligne.content_format,
-                value_ratio=_ratio(ligne.price_cents, ligne.value_ratio_hint),
+                value_ratio=ratio_de_valeur(ligne.price_cents, ligne.value_ratio_hint),
             )
         )
 
@@ -218,7 +218,7 @@ async def _reste_un_creneau(session: AsyncSession, ligne) -> bool:
     return bool(creneaux)
 
 
-def _ratio(price_cents: int, value_ratio_hint: Decimal | None) -> Decimal | None:
+def ratio_de_valeur(price_cents: int, value_ratio_hint: Decimal | None) -> Decimal | None:
     """Situe la valeur de l'item par rapport à la référence du palier.
 
     Rendu tel quel, sans jugement : SPEC.md §3.3 demande de *signaler* une offre
@@ -231,29 +231,7 @@ def _ratio(price_cents: int, value_ratio_hint: Decimal | None) -> Decimal | None
 
 
 def _obstacles_les_plus_proches(verdict: eligibility.Eligibilite) -> tuple:
-    """Les obstacles des paliers hors d'atteinte, dédoublonnés par raison.
-
-    Dédoublonnés parce qu'un créateur bloqué sur trois paliers pour la même
-    raison n'a pas besoin de la lire trois fois : ce qu'il doit faire est le
-    même. On garde le plus petit écart de chaque raison, celui qui dit la
-    marche la plus courte.
-    """
-    par_raison: dict[eligibility.RaisonRefus, eligibility.Obstacle] = {}
-
-    for acces in verdict.acces:
-        if acces.accessible:
-            continue
-        for obstacle in acces.obstacles:
-            garde = par_raison.get(obstacle.raison)
-            if garde is None or _plus_petit(obstacle, garde):
-                par_raison[obstacle.raison] = obstacle
-
-    return tuple(par_raison.values())
-
-
-def _plus_petit(candidat: eligibility.Obstacle, garde: eligibility.Obstacle) -> bool:
-    if candidat.ecart is None:
-        return False
-    if garde.ecart is None:
-        return True
-    return candidat.ecart < garde.ecart
+    """Les obstacles de tous les paliers hors d'atteinte, dédoublonnés."""
+    return eligibility.dedoublonner(
+        obstacle for acces in verdict.acces if not acces.accessible for obstacle in acces.obstacles
+    )

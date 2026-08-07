@@ -75,6 +75,7 @@ export const es: Catalogue = {
     insufficient_role: 'Tu cuenta no puede acceder a esto.',
     not_a_member: 'No perteneces a este negocio.',
     validation_failed: 'Falta información o es incorrecta.',
+    business_not_found: 'Este negocio no está disponible.',
     business_already_active: 'Este negocio ya está activo.',
     business_missing_address: 'Añade la dirección del negocio antes de activarlo.',
     business_missing_coordinates: 'Añade la ubicación del negocio antes de activarlo.',
