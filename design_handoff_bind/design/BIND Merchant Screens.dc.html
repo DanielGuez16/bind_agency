@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #DEDBD5; }
+  a { color: #0A7364; text-decoration: none; }
+  a:hover { color: #9A5F04; }
+  @keyframes pulse { 0%, 100% { opacity: .45 } 50% { opacity: 1 } }
+  @keyframes spin { to { transform: rotate(360deg) } }
+</style>
+</helmet>
+<section style="display:flex;flex-direction:column;gap:36px;padding:44px 44px 80px;font-family:'IBM Plex Sans',sans-serif">
+  <div style="display:flex;flex-direction:column;gap:6px;max-width:920px">
+    <div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#7A756D">BIND · After Hours · écrans commerce</div>
+    <div style="font:600 30px/1.15 'Familjen Grotesk',sans-serif;color:#171410">Catalogue, horaires, caisse, journée, publications, activation</div>
+    <div style="font:400 14px/1.55 'IBM Plex Sans',sans-serif;color:#5C574F;text-wrap:pretty">Thème clair par défaut, liseré ocre en haut de chaque écran, densité 16/8 et lignes de 64. Chiffres en monospace, image après la donnée, aucune décoration : le téléphone est posé sur un comptoir et sert entre deux clientes.</div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+      <div style="font:600 15px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#171410">09 · Catalogue et composition par palier</div>
+      <div style="flex:1;height:1px;background:#C9C5BE"></div>
+    </div>
+    <div style="display:flex;flex-direction:row;gap:20px;flex-wrap:wrap;align-items:flex-start">
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div data-screen-label="09a" style="display:flex;flex-direction:column;width:390px;height:780px;border-radius:26px;overflow:hidden;background:#F4F5F4;border:1px solid #C3CBCB">
+          <div style="display:flex;flex-direction:column;background:#FFFFFF;border-top:3px solid #9A5F04;flex-shrink:0">
+            <div style="display:flex;flex-direction:row;justify-content:space-between;padding:10px 16px 0;font:500 11px/1 'IBM Plex Mono',monospace;color:#5A6463"><div>10:04</div><div>MODE COMMERCE</div></div>
+            <div style="display:flex;flex-direction:column;gap:8px;padding:8px 16px 12px">
+              <div style="display:flex;flex-direction:row;justify-content:space-between;align-items:center">
+                <div style="display:flex;flex-direction:column;gap:1px"><div style="font:600 18px/1.2 'IBM Plex Sans',sans-serif;color:#101416">Catalogue</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#9A5F04">Little Havana Nails · 6 prestations</div></div>
+                <div style="height:36px;padding:0 12px;border-radius:8px;background:#101416;display:flex;align-items:center;font:600 13px/1 'IBM Plex Sans',sans-serif;color:#FFFFFF">Ajouter</div>
+              </div>
+              <div style="display:flex;flex-direction:row;gap:1px;border-radius:8px;overflow:hidden;background:#E3E6E6">
+                <div style="flex:1;padding:7px 0;text-align:center;background:#101416;font:600 12px/1 'IBM Plex Sans',sans-serif;color:#FFFFFF">Toutes · 6</div>
+                <div style="flex:1;padding:7px 0;text-align:center;background:#FFFFFF;font:600 12px/1 'IBM Plex Sans',sans-serif;color:#4A5459">Ouvertes · 4</div>
+                <div style="flex:1;padding:7px 0;text-align:center;background:#FFFFFF;font:600 12px/1 'IBM Plex Sans',sans-serif;color:#4A5459">Fermées · 2</div>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;padding:12px 16px 16px;flex:1">
+            <div style="display:flex;flex-direction:row;justify-content:space-between;align-items:center"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#5A6463">PALIER STORY · 3</div><div style="font:500 11px/1 'IBM Plex Mono',monospace;color:#4A5459">1K+ abonnés</div></div>
+            <div style="display:flex;flex-direction:row;gap:10px;align-items:center;height:64px;padding:0 10px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6">
+              <div style="width:44px;height:44px;border-radius:6px;background:repeating-linear-gradient(135deg,#E4E7E7 0 6px,#DADEDE 6px 12px);flex-shrink:0"></div>
+              <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Pose gel, mains</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#4A5459">45 min · 3 / jour · 2 pris</div></div>
+              <div style="width:40px;height:22px;border-radius:999px;background:#0A7364;display:flex;flex-direction:row;align-items:center;justify-content:flex-end;padding:0 3px"><div style="width:16px;height:16px;border-radius:999px;background:#FFFFFF"></div></div>
+            </div>
+            <div style="display:flex;flex-direction:row;gap:10px;align-items:center;height:64px;padding:0 10px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6">
+              <div style="width:44px;height:44px;border-radius:6px;background:#E9ECEC;display:flex;align-items:center;justify-content:center;font:400 9px/1.2 'IBM Plex Mono',monospace;color:#5A6463;flex-shrink:0">no img</div>
+              <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Manucure express</div><div style="font:600 11px/1.3 'IBM Plex Sans',sans-serif;color:#9A5F04">Photo manquante · ajouter</div></div>
+              <div style="width:40px;height:22px;border-radius:999px;background:#0A7364;display:flex;flex-direction:row;align-items:center;justify-content:flex-end;padding:0 3px"><div style="width:16px;height:16px;border-radius:999px;background:#FFFFFF"></div></div>
+            </div>
+            <div style="display:flex;flex-direction:row;gap:10px;align-items:center;height:64px;padding:0 10px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6">
+              <div style="width:44px;height:44px;border-radius:6px;background:repeating-linear-gradient(135deg,#E4E7E7 0 6px,#DADEDE 6px 12px);flex-shrink:0"></div>
+              <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Dépose et soin</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#5A6463">20 min · fermée</div></div>
+              <div style="width:40px;height:22px;border-radius:999px;background:#E3E6E6;display:flex;flex-direction:row;align-items:center;padding:0 3px"><div style="width:16px;height:16px;border-radius:999px;background:#FFFFFF"></div></div>
+            </div>
+            <div style="display:flex;flex-direction:row;justify-content:space-between;align-items:center;margin-top:4px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#5A6463">PALIER POST · 2</div><div style="font:500 11px/1 'IBM Plex Mono',monospace;color:#4A5459">10K+ abonnés</div></div>
+            <div style="display:flex;flex-direction:row;gap:10px;align-items:center;height:64px;padding:0 10px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6">
+              <div style="width:44px;height:44px;border-radius:6px;background:repeating-linear-gradient(135deg,#E4E7E7 0 6px,#DADEDE 6px 12px);flex-shrink:0"></div>
+              <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Nail art, quatre doigts</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#4A5459">1 h 15 · 1 / jour · 0 pris</div></div>
+              <div style="width:40px;height:22px;border-radius:999px;background:#0A7364;display:flex;flex-direction:row;align-items:center;justify-content:flex-end;padding:0 3px"><div style="width:16px;height:16px;border-radius:999px;background:#FFFFFF"></div></div>
+            </div>
+            <div style="display:flex;flex-direction:row;justify-content:space-between;align-items:center;margin-top:4px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#5A6463">PALIER REEL · 1</div><div style="font:500 11px/1 'IBM Plex Mono',monospace;color:#4A5459">50K+ abonnés</div></div>
+            <div style="display:flex;flex-direction:row;gap:10px;align-items:center;height:64px;padding:0 10px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6">
+              <div style="width:44px;height:44px;border-radius:6px;background:repeating-linear-gradient(135deg,#E4E7E7 0 6px,#DADEDE 6px 12px);flex-shrink:0"></div>
+              <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Signature mains et pieds</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#4A5459">2 h · 1 / semaine · 0 pris</div></div>
+              <div style="width:40px;height:22px;border-radius:999px;background:#0A7364;display:flex;flex-direction:row;align-items:center;justify-content:flex-end;padding:0 3px"><div style="width:16px;height:16px;border-radius:999px;background:#FFFFFF"></div></div>
+            </div>
+            <div style="font:400 11px/1.5 'IBM Plex Sans',sans-serif;color:#5A6463">Regroupé par palier, jamais par photo. Le compteur « n pris » est la seule information que le comptoir regarde en journée.</div>
+          </div>
+        </div>
+        <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#5C574F;width:390px">09a · nominal · 6 lignes de 64, interrupteur d'ouverture à droite</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div data-screen-label="09b" style="display:flex;flex-direction:column;width:390px;height:980px;border-radius:26px;overflow:hidden;background:#F4F5F4;border:1px solid #C3CBCB">
+          <div style="display:flex;flex-direction:column;background:#FFFFFF;border-top:3px solid #9A5F04;flex-shrink:0">
+            <div style="display:flex;flex-direction:row;justify-content:space-between;padding:10px 16px 0;font:500 11px/1 'IBM Plex Mono',monospace;color:#5A6463"><div>10:06</div><div>MODE COMMERCE</div></div>
+            <div style="display:flex;flex-direction:row;justify-content:space-between;align-items:center;padding:8px 16px 12px">
+              <div style="font:600 18px/1.2 'IBM Plex Sans',sans-serif;color:#101416">Nouvelle prestation</div>
+              <div style="font:600 13px/1 'IBM Plex Sans',sans-serif;color:#4A5459">Annuler</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px;padding:12px 16px 16px;flex:1">
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <div style="font:600 12px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Nom · Nombre</div>
+              <div style="height:44px;border-radius:8px;border:1px solid #C3CBCB;background:#FFFFFF;display:flex;align-items:center;padding:0 12px;font:400 14px/1 'IBM Plex Sans',sans-serif;color:#101416">Soin hydratant visage</div>
+            </div>
+            <div style="display:flex;flex-direction:row;gap:10px">
+              <div style="display:flex;flex-direction:column;gap:5px;flex:1">
+                <div style="font:600 12px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Durée</div>
+                <div style="height:44px;border-radius:8px;border:1px solid #C3CBCB;background:#FFFFFF;display:flex;align-items:center;padding:0 12px;font:500 14px/1 'IBM Plex Mono',monospace;color:#101416">50 min</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:5px;flex:1">
+                <div style="font:600 12px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Places / jour</div>
+                <div style="height:44px;border-radius:8px;border:1px solid #C3CBCB;background:#FFFFFF;display:flex;flex-direction:row;align-items:center;justify-content:space-between;padding:0 8px 0 12px"><div style="font:500 14px/1 'IBM Plex Mono',monospace;color:#101416">2</div><div style="display:flex;flex-direction:row;gap:4px"><div style="width:28px;height:28px;border-radius:6px;background:#E9ECEC;display:flex;align-items:center;justify-content:center;font:600 15px/1 'IBM Plex Sans',sans-serif;color:#101416">−</div><div style="width:28px;height:28px;border-radius:6px;background:#E9ECEC;display:flex;align-items:center;justify-content:center;font:600 15px/1 'IBM Plex Sans',sans-serif;color:#101416">+</div></div></div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="font:600 12px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Palier demandé</div>
+              <div style="display:flex;flex-direction:row;gap:8px;align-items:center;padding:10px;border-radius:8px;background:#FFFFFF;border:1px solid #C3CBCB">
+                <div style="display:flex;flex-direction:row;gap:7px;align-items:center;padding:4px 10px 4px 8px;border-radius:999px;border:1px solid #3F4A4E"><div style="display:flex;flex-direction:row;gap:2px;align-items:flex-end"><div style="width:3px;height:6px;background:#3F4A4E"></div><div style="width:3px;height:9px;background:transparent"></div><div style="width:3px;height:12px;background:transparent"></div></div><div style="font:600 10px/1.4 'IBM Plex Mono',monospace;color:#3F4A4E;letter-spacing:.06em">STORY</div></div>
+                <div style="font:400 12px/1.4 'IBM Plex Sans',sans-serif;color:#4A5459;flex:1">1K+ · une story sous 48 h</div>
+                <div style="width:18px;height:18px;border-radius:999px;border:5px solid #0A7364;background:#FFFFFF"></div>
+              </div>
+              <div style="display:flex;flex-direction:row;gap:8px;align-items:center;padding:10px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6">
+                <div style="display:flex;flex-direction:row;gap:7px;align-items:center;padding:4px 10px 4px 8px;border-radius:999px;background:#DEF2EE"><div style="display:flex;flex-direction:row;gap:2px;align-items:flex-end"><div style="width:3px;height:6px;background:#0A5F52"></div><div style="width:3px;height:9px;background:#0A5F52"></div><div style="width:3px;height:12px;background:#9ED3C9"></div></div><div style="font:600 10px/1.4 'IBM Plex Mono',monospace;color:#0A5F52;letter-spacing:.06em">POST</div></div>
+                <div style="font:400 12px/1.4 'IBM Plex Sans',sans-serif;color:#4A5459;flex:1">10K+ · un post sous 48 h</div>
+                <div style="width:18px;height:18px;border-radius:999px;border:1px solid #C3CBCB"></div>
+              </div>
+              <div style="display:flex;flex-direction:row;gap:8px;align-items:center;padding:10px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6">
+                <div style="display:flex;flex-direction:row;gap:7px;align-items:center;padding:4px 10px 4px 8px;border-radius:999px;background:#101416"><div style="display:flex;flex-direction:row;gap:2px;align-items:flex-end"><div style="width:3px;height:6px;background:#FFFFFF"></div><div style="width:3px;height:9px;background:#FFFFFF"></div><div style="width:3px;height:12px;background:#FFFFFF"></div></div><div style="font:600 10px/1.4 'IBM Plex Mono',monospace;color:#FFFFFF;letter-spacing:.06em">REEL</div></div>
+                <div style="font:400 12px/1.4 'IBM Plex Sans',sans-serif;color:#4A5459;flex:1">50K+ · un reel sous 72 h</div>
+                <div style="width:18px;height:18px;border-radius:999px;border:1px solid #C3CBCB"></div>
+              </div>
+              <div style="font:400 11px/1.5 'IBM Plex Sans',sans-serif;color:#5A6463">Un palier haut réduit le nombre de créatrices éligibles. Story remplit les creux, Reel sert les prestations longues.</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="font:600 12px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Mention et lieu attendus</div>
+              <div style="height:44px;border-radius:8px;border:1px solid #C3CBCB;background:#FFFFFF;display:flex;align-items:center;padding:0 12px;font:500 14px/1 'IBM Plex Mono',monospace;color:#101416">@littlehavananails</div>
+              <div style="height:44px;border-radius:8px;border:1px solid #C3CBCB;background:#FFFFFF;display:flex;align-items:center;padding:0 12px;font:500 14px/1 'IBM Plex Mono',monospace;color:#101416">Little Havana, Miami</div>
+              <div style="font:400 11px/1.5 'IBM Plex Sans',sans-serif;color:#5A6463">Ce sont les deux éléments contrôlés sur la publication. Ils sont rappelés à la créatrice avant sa réservation, puis sur son écran de preuve.</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="font:600 12px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Photo</div>
+              <div style="display:flex;flex-direction:row;gap:10px;align-items:center;padding:10px;border-radius:8px;background:#FFFFFF;border:1px dashed #C3CBCB">
+                <div style="width:44px;height:44px;border-radius:6px;background:#E9ECEC;display:flex;align-items:center;justify-content:center;font:400 9px/1.2 'IBM Plex Mono',monospace;color:#5A6463;flex-shrink:0">1:1</div>
+                <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 13px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Ajouter une photo</div><div style="font:400 11px/1.35 'IBM Plex Sans',sans-serif;color:#4A5459">Facultatif. Sans photo, la prestation est publiée quand même.</div></div>
+              </div>
+            </div>
+            <div style="flex:1"></div>
+            <div style="height:52px;flex-shrink:0;border-radius:8px;background:#0A7364;display:flex;align-items:center;justify-content:center;font:600 15px/1 'IBM Plex Sans',sans-serif;color:#FFFFFF">Publier au catalogue</div>
+          </div>
+        </div>
+        <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#5C574F;width:390px">09b · composition · palier choisi avec sa conséquence écrite</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div data-screen-label="09c" style="display:flex;flex-direction:column;width:390px;height:780px;border-radius:26px;overflow:hidden;background:#F4F5F4;border:1px solid #C3CBCB">
+          <div style="display:flex;flex-direction:column;background:#FFFFFF;border-top:3px solid #9A5F04;flex-shrink:0">
+            <div style="display:flex;flex-direction:row;justify-content:space-between;padding:10px 16px 0;font:500 11px/1 'IBM Plex Mono',monospace;color:#5A6463"><div>9:12</div><div>MODE COMMERCE</div></div>
+            <div style="display:flex;flex-direction:column;gap:1px;padding:8px 16px 12px"><div style="font:600 18px/1.2 'IBM Plex Sans',sans-serif;color:#101416">Catalogue</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#9A5F04">Sunset Brow Bar · 0 prestation</div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px;padding:16px;flex:1">
+            <div style="display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:8px;background:#FFFFFF;border:1px solid #C3CBCB">
+              <div style="font:600 15px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Ton catalogue est vide</div>
+              <div style="font:400 13px/1.5 'IBM Plex Sans',sans-serif;color:#4A5459">Tant qu'aucune prestation n'est publiée, ton salon n'apparaît pas dans le fil des créatrices. Commence par une prestation courte au palier Story : c'est celle qui remplit les créneaux vides.</div>
+              <div style="height:48px;flex-shrink:0;border-radius:8px;background:#0A7364;display:flex;align-items:center;justify-content:center;font:600 15px/1 'IBM Plex Sans',sans-serif;color:#FFFFFF">Ajouter ma première prestation</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6">
+              <div style="font:600 12px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Ce que font les salons du quartier</div>
+              <div style="display:flex;flex-direction:row;justify-content:space-between;height:32px;align-items:center"><div style="font:400 13px/1.4 'IBM Plex Sans',sans-serif;color:#4A5459">Prestations publiées</div><div style="font:500 13px/1.4 'IBM Plex Mono',monospace;color:#101416">4 à 6</div></div>
+              <div style="display:flex;flex-direction:row;justify-content:space-between;height:32px;align-items:center"><div style="font:400 13px/1.4 'IBM Plex Sans',sans-serif;color:#4A5459">Places ouvertes par jour</div><div style="font:500 13px/1.4 'IBM Plex Mono',monospace;color:#101416">2 à 4</div></div>
+              <div style="display:flex;flex-direction:row;justify-content:space-between;height:32px;align-items:center"><div style="font:400 13px/1.4 'IBM Plex Sans',sans-serif;color:#4A5459">Palier le plus demandé</div><div style="font:500 13px/1.4 'IBM Plex Mono',monospace;color:#101416">Story</div></div>
+            </div>
+            <div style="font:400 11px/1.5 'IBM Plex Sans',sans-serif;color:#5A6463">L'état vide du commerce donne des repères chiffrés du quartier, pas un encouragement.</div>
+            <div style="flex:1"></div>
+            <div style="display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6">
+              <div style="font:600 12px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Chargement du catalogue</div>
+              <div style="display:flex;flex-direction:row;gap:10px;align-items:center;height:64px;padding:0 10px;border-radius:8px;background:#F4F5F4"><div style="width:44px;height:44px;border-radius:6px;background:#E3E6E6;animation:pulse 1.4s ease-in-out infinite;flex-shrink:0"></div><div style="display:flex;flex-direction:column;gap:6px;flex:1"><div style="width:58%;height:12px;border-radius:4px;background:#E3E6E6;animation:pulse 1.4s ease-in-out .1s infinite"></div><div style="width:38%;height:10px;border-radius:4px;background:#E3E6E6;animation:pulse 1.4s ease-in-out .2s infinite"></div></div></div>
+              <div style="font:400 11px/1.5 'IBM Plex Sans',sans-serif;color:#5A6463">Trois lignes de squelette, jamais plus : le commerce ne défile pas, il vérifie.</div>
+            </div>
+          </div>
+        </div>
+        <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#5C574F;width:390px">09c · vide et chargement · repères du quartier, pas d'encouragement</div>
+      </div>
+
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+      <div style="font:600 15px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#171410">10 · Horaires et capacité</div>
+      <div style="flex:1;height:1px;background:#C9C5BE"></div>
+    </div>
+    <div style="display:flex;flex-direction:row;gap:20px;flex-wrap:wrap;align-items:flex-start">
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div data-screen-label="10a" style="display:flex;flex-direction:column;width:390px;height:780px;border-radius:26px;overflow:hidden;background:#F4F5F4;border:1px solid #C3CBCB">
+          <div style="display:flex;flex-direction:column;background:#FFFFFF;border-top:3px solid #9A5F04;flex-shrink:0">
+            <div style="display:flex;flex-direction:row;justify-content:space-between;padding:10px 16px 0;font:500 11px/1 'IBM Plex Mono',monospace;color:#5A6463"><div>10:11</div><div>MODE COMMERCE</div></div>
+            <div style="display:flex;flex-direction:column;gap:1px;padding:8px 16px 12px"><div style="font:600 18px/1.2 'IBM Plex Sans',sans-serif;color:#101416">Horaires et capacité</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#9A5F04">Semaine du 3 au 9 août</div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;padding:12px 16px 16px;flex:1">
+            <div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#5A6463">OUVERTURE</div>
+            <div style="display:flex;flex-direction:row;align-items:center;height:44px;padding:0 10px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6"><div style="width:38px;font:600 13px/1 'IBM Plex Sans',sans-serif;color:#101416">Lun</div><div style="flex:1;font:500 13px/1 'IBM Plex Mono',monospace;color:#101416">10:00 – 20:00</div><div style="font:500 12px/1 'IBM Plex Mono',monospace;color:#4A5459">3 places</div></div>
+            <div style="display:flex;flex-direction:row;align-items:center;height:44px;padding:0 10px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6"><div style="width:38px;font:600 13px/1 'IBM Plex Sans',sans-serif;color:#101416">Mar</div><div style="flex:1;font:500 13px/1 'IBM Plex Mono',monospace;color:#101416">10:00 – 20:00</div><div style="font:500 12px/1 'IBM Plex Mono',monospace;color:#4A5459">3 places</div></div>
+            <div style="display:flex;flex-direction:row;align-items:center;height:44px;padding:0 10px;border-radius:8px;background:#FFFFFF;border:1px solid #0A7364"><div style="width:38px;font:600 13px/1 'IBM Plex Sans',sans-serif;color:#101416">Mer</div><div style="flex:1;font:500 13px/1 'IBM Plex Mono',monospace;color:#101416">10:00 – 20:00</div><div style="font:500 12px/1 'IBM Plex Mono',monospace;color:#0A7364">aujourd'hui · 2 pris</div></div>
+            <div style="display:flex;flex-direction:row;align-items:center;height:44px;padding:0 10px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6"><div style="width:38px;font:600 13px/1 'IBM Plex Sans',sans-serif;color:#101416">Jeu</div><div style="flex:1;font:500 13px/1 'IBM Plex Mono',monospace;color:#101416">10:00 – 21:00</div><div style="font:500 12px/1 'IBM Plex Mono',monospace;color:#4A5459">4 places</div></div>
+            <div style="display:flex;flex-direction:row;align-items:center;height:44px;padding:0 10px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6"><div style="width:38px;font:600 13px/1 'IBM Plex Sans',sans-serif;color:#101416">Ven</div><div style="flex:1;font:500 13px/1 'IBM Plex Mono',monospace;color:#101416">10:00 – 21:00</div><div style="font:500 12px/1 'IBM Plex Mono',monospace;color:#4A5459">4 places</div></div>
+            <div style="display:flex;flex-direction:row;align-items:center;height:44px;padding:0 10px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6"><div style="width:38px;font:600 13px/1 'IBM Plex Sans',sans-serif;color:#101416">Sam</div><div style="flex:1;font:500 13px/1 'IBM Plex Mono',monospace;color:#101416">09:00 – 18:00</div><div style="font:500 12px/1 'IBM Plex Mono',monospace;color:#4A5459">2 places</div></div>
+            <div style="display:flex;flex-direction:row;align-items:center;height:44px;padding:0 10px;border-radius:8px;background:#E9ECEC"><div style="width:38px;font:600 13px/1 'IBM Plex Sans',sans-serif;color:#5A6463">Dim</div><div style="flex:1;font:500 13px/1 'IBM Plex Mono',monospace;color:#5A6463">fermé</div></div>
+            <div style="display:flex;flex-direction:row;justify-content:space-between;align-items:center;margin-top:6px"><div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#5A6463">EXCEPTIONS</div><div style="font:600 12px/1 'IBM Plex Sans',sans-serif;color:#0A7364">Ajouter</div></div>
+            <div style="display:flex;flex-direction:row;align-items:center;height:44px;padding:0 10px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6"><div style="flex:1;font:600 13px/1 'IBM Plex Sans',sans-serif;color:#101416">15 août</div><div style="font:500 12px/1 'IBM Plex Mono',monospace;color:#4A5459">fermé · congés</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6;margin-top:6px">
+              <div style="font:600 12px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Capacité BIND par jour</div>
+              <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#4A5459">Nombre de créatrices que tu acceptes par jour, toutes prestations confondues. Indépendant de ton agenda client habituel.</div>
+              <div style="display:flex;flex-direction:row;align-items:center;justify-content:space-between;height:44px;padding:0 8px 0 12px;border-radius:8px;border:1px solid #C3CBCB"><div style="font:500 15px/1 'IBM Plex Mono',monospace;color:#101416">3 par jour</div><div style="display:flex;flex-direction:row;gap:4px"><div style="width:32px;height:32px;border-radius:6px;background:#E9ECEC;display:flex;align-items:center;justify-content:center;font:600 16px/1 'IBM Plex Sans',sans-serif;color:#101416">−</div><div style="width:32px;height:32px;border-radius:6px;background:#E9ECEC;display:flex;align-items:center;justify-content:center;font:600 16px/1 'IBM Plex Sans',sans-serif;color:#101416">+</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#5C574F;width:390px">10a · nominal · sept lignes de 44, capacité séparée de l'agenda</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div data-screen-label="10b" style="display:flex;flex-direction:column;width:390px;height:780px;border-radius:26px;overflow:hidden;background:#F4F5F4;border:1px solid #C3CBCB">
+          <div style="display:flex;flex-direction:column;background:#FFFFFF;border-top:3px solid #9A5F04;flex-shrink:0">
+            <div style="display:flex;flex-direction:row;justify-content:space-between;padding:10px 16px 0;font:500 11px/1 'IBM Plex Mono',monospace;color:#5A6463"><div>10:13</div><div>MODE COMMERCE</div></div>
+            <div style="display:flex;flex-direction:column;gap:1px;padding:8px 16px 12px"><div style="font:600 18px/1.2 'IBM Plex Sans',sans-serif;color:#101416">Capacité de mercredi</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#9A5F04">2 réservations déjà confirmées</div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px;padding:12px 16px 16px;flex:1">
+            <div style="display:flex;flex-direction:row;gap:10px;padding:12px;border-radius:8px;background:#FBEBE9;border:1px solid #E8C4C0">
+              <div style="width:16px;height:16px;border-radius:999px;background:#B3271E;flex-shrink:0;margin-top:2px"></div>
+              <div style="display:flex;flex-direction:column;gap:4px"><div style="font:600 13px/1.4 'IBM Plex Sans',sans-serif;color:#101416">Tu descends en dessous des réservations prises</div><div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#4A5459">2 créatrices sont attendues aujourd'hui à 14:30 et 16:00. Passer la capacité à 1 n'annule aucune réservation : elles sont honorées, la place suivante ne s'ouvrira pas.</div></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6">
+              <div style="display:flex;flex-direction:row;justify-content:space-between;align-items:center"><div style="font:600 13px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Nouvelle capacité</div><div style="font:500 15px/1 'IBM Plex Mono',monospace;color:#B3271E">1</div></div>
+              <div style="display:flex;flex-direction:row;gap:6px">
+                <div style="flex:1;height:40px;border-radius:8px;background:#FBEBE9;border:1px solid #B3271E;display:flex;align-items:center;justify-content:center;font:500 15px/1 'IBM Plex Mono',monospace;color:#B3271E">1</div>
+                <div style="flex:1;height:40px;border-radius:8px;background:#FFFFFF;border:1px solid #C3CBCB;display:flex;align-items:center;justify-content:center;font:500 15px/1 'IBM Plex Mono',monospace;color:#101416">2</div>
+                <div style="flex:1;height:40px;border-radius:8px;background:#FFFFFF;border:1px solid #C3CBCB;display:flex;align-items:center;justify-content:center;font:500 15px/1 'IBM Plex Mono',monospace;color:#101416">3</div>
+                <div style="flex:1;height:40px;border-radius:8px;background:#FFFFFF;border:1px solid #C3CBCB;display:flex;align-items:center;justify-content:center;font:500 15px/1 'IBM Plex Mono',monospace;color:#101416">4</div>
+                <div style="flex:1;height:40px;border-radius:8px;background:#FFFFFF;border:1px solid #C3CBCB;display:flex;align-items:center;justify-content:center;font:500 15px/1 'IBM Plex Mono',monospace;color:#101416">5</div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6">
+              <div style="font:600 12px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Effet immédiat</div>
+              <div style="display:flex;flex-direction:row;justify-content:space-between;height:30px;align-items:center"><div style="font:400 13px/1.4 'IBM Plex Sans',sans-serif;color:#4A5459">Réservations maintenues</div><div style="font:500 13px/1.4 'IBM Plex Mono',monospace;color:#137F55">2</div></div>
+              <div style="display:flex;flex-direction:row;justify-content:space-between;height:30px;align-items:center"><div style="font:400 13px/1.4 'IBM Plex Sans',sans-serif;color:#4A5459">Places encore ouvertes</div><div style="font:500 13px/1.4 'IBM Plex Mono',monospace;color:#101416">0</div></div>
+              <div style="display:flex;flex-direction:row;justify-content:space-between;height:30px;align-items:center"><div style="font:400 13px/1.4 'IBM Plex Sans',sans-serif;color:#4A5459">Retour à la normale</div><div style="font:500 13px/1.4 'IBM Plex Mono',monospace;color:#101416">demain, 3</div></div>
+            </div>
+            <div style="height:48px;flex-shrink:0;border-radius:8px;background:#0A7364;display:flex;align-items:center;justify-content:center;font:600 15px/1 'IBM Plex Sans',sans-serif;color:#FFFFFF">Enregistrer pour aujourd'hui</div>
+            <div style="height:44px;flex-shrink:0;border-radius:8px;background:#FFFFFF;border:1px solid #C3CBCB;display:flex;align-items:center;justify-content:center;font:600 14px/1 'IBM Plex Sans',sans-serif;color:#101416">Fermer BIND pour la journée</div>
+            <div style="font:400 11px/1.5 'IBM Plex Sans',sans-serif;color:#5A6463">Fermer pour la journée retire les places restantes et laisse les réservations déjà prises. Un commerce ne peut jamais annuler une réservation d'un seul geste : l'annulation individuelle passe par la ligne concernée, avec un motif.</div>
+            <div style="flex:1"></div>
+          </div>
+        </div>
+        <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#5C574F;width:390px">10b · conflit · conséquence chiffrée avant enregistrement</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div data-screen-label="10c" style="display:flex;flex-direction:column;width:390px;height:780px;border-radius:26px;overflow:hidden;background:#F4F5F4;border:1px solid #C3CBCB">
+          <div style="display:flex;flex-direction:column;background:#FFFFFF;border-top:3px solid #9A5F04;flex-shrink:0">
+            <div style="display:flex;flex-direction:row;justify-content:space-between;padding:10px 16px 0;font:500 11px/1 'IBM Plex Mono',monospace;color:#5A6463"><div>10:14</div><div>MODE COMMERCE</div></div>
+            <div style="display:flex;flex-direction:column;gap:1px;padding:8px 16px 12px"><div style="font:600 18px/1.2 'IBM Plex Sans',sans-serif;color:#101416">Horaires et capacité</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#9A5F04">Hors ligne · à jour il y a 8 min</div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px;padding:12px 16px 16px;flex:1">
+            <div style="display:flex;flex-direction:row;gap:10px;padding:12px;border-radius:8px;background:#FBF0DC;border:1px solid #E5CFA4">
+              <div style="width:16px;height:16px;border-radius:999px;background:#9A5F04;flex-shrink:0;margin-top:2px"></div>
+              <div style="display:flex;flex-direction:column;gap:4px"><div style="font:600 13px/1.4 'IBM Plex Sans',sans-serif;color:#101416">Modification en attente d'envoi</div><div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#4A5459">Ton passage de 3 à 2 places est enregistré sur ce téléphone. Il sera appliqué dès le retour du réseau, on ne t'en redemandera rien.</div></div>
+            </div>
+            <div style="display:flex;flex-direction:row;align-items:center;height:44px;padding:0 10px;border-radius:8px;background:#FFFFFF;border:1px solid #E5CFA4"><div style="width:38px;font:600 13px/1 'IBM Plex Sans',sans-serif;color:#101416">Mer</div><div style="flex:1;font:500 13px/1 'IBM Plex Mono',monospace;color:#101416">10:00 – 20:00</div><div style="font:500 12px/1 'IBM Plex Mono',monospace;color:#9A5F04">2 places · en attente</div></div>
+            <div style="display:flex;flex-direction:row;align-items:center;height:44px;padding:0 10px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6"><div style="width:38px;font:600 13px/1 'IBM Plex Sans',sans-serif;color:#101416">Jeu</div><div style="flex:1;font:500 13px/1 'IBM Plex Mono',monospace;color:#101416">10:00 – 21:00</div><div style="font:500 12px/1 'IBM Plex Mono',monospace;color:#4A5459">4 places</div></div>
+            <div style="display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6">
+              <div style="font:600 12px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Ce qui reste possible hors ligne</div>
+              <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#4A5459">Valider un code de retrait par saisie manuelle, consulter la journée, modifier horaires et capacité. Tout est mis en file et envoyé au retour, dans l'ordre.</div>
+              <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#4A5459">Impossible hors ligne : contrôler une preuve, ouvrir une nouvelle prestation au catalogue.</div>
+            </div>
+            <div style="font:400 11px/1.5 'IBM Plex Sans',sans-serif;color:#5A6463">Le comptoir garde la main même sans réseau. Une modification en attente est marquée sur sa ligne, pas dans une bannière qui disparaît.</div>
+            <div style="flex:1"></div>
+          </div>
+        </div>
+        <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#5C574F;width:390px">10c · hors ligne · file d'attente locale, marquage sur la ligne</div>
+      </div>
+
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+      <div style="font:600 15px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#171410">11 · Caisse · saisie manuelle en premier rang</div>
+      <div style="flex:1;height:1px;background:#C9C5BE"></div>
+    </div>
+    <div style="font:400 13px/1.6 'IBM Plex Sans',sans-serif;color:#5C574F;max-width:860px">Le scan est un raccourci, pas le chemin principal : au comptoir, la créatrice lit son code à voix haute et la personne à la caisse le tape. Le champ est donc en haut, le pavé numérique toujours ouvert, et le scanner relégué à un bouton secondaire.</div>
+    <div style="display:flex;flex-direction:row;gap:20px;flex-wrap:wrap;align-items:flex-start">
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div data-screen-label="11a" style="display:flex;flex-direction:column;width:390px;height:780px;border-radius:26px;overflow:hidden;background:#F4F5F4;border:1px solid #C3CBCB">
+          <div style="display:flex;flex-direction:column;background:#FFFFFF;border-top:3px solid #9A5F04;flex-shrink:0">
+            <div style="display:flex;flex-direction:row;justify-content:space-between;padding:10px 16px 0;font:500 11px/1 'IBM Plex Mono',monospace;color:#5A6463"><div>14:29</div><div>MODE COMMERCE</div></div>
+            <div style="display:flex;flex-direction:column;gap:1px;padding:8px 16px 12px"><div style="font:600 18px/1.2 'IBM Plex Sans',sans-serif;color:#101416">Valider un code</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#9A5F04">2 créatrices attendues aujourd'hui</div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px;padding:14px 16px 16px;flex:1">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="font:600 12px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Code à quatre caractères</div>
+              <div style="height:72px;border-radius:8px;border:2px solid #101416;background:#FFFFFF;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:14px">
+                <div style="font:600 40px/1 'IBM Plex Mono',monospace;color:#101416">8</div>
+                <div style="font:600 40px/1 'IBM Plex Mono',monospace;color:#101416">F</div>
+                <div style="font:600 40px/1 'IBM Plex Mono',monospace;color:#101416">4</div>
+                <div style="width:26px;height:3px;background:#C3CBCB;margin-top:22px"></div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;flex-direction:row;gap:6px">
+                <div style="flex:1;height:56px;border-radius:8px;background:#FFFFFF;border:1px solid #C3CBCB;display:flex;align-items:center;justify-content:center;font:500 22px/1 'IBM Plex Mono',monospace;color:#101416">1</div>
+                <div style="flex:1;height:56px;border-radius:8px;background:#FFFFFF;border:1px solid #C3CBCB;display:flex;align-items:center;justify-content:center;font:500 22px/1 'IBM Plex Mono',monospace;color:#101416">2</div>
+                <div style="flex:1;height:56px;border-radius:8px;background:#FFFFFF;border:1px solid #C3CBCB;display:flex;align-items:center;justify-content:center;font:500 22px/1 'IBM Plex Mono',monospace;color:#101416">3</div>
+                <div style="flex:1;height:56px;border-radius:8px;background:#FFFFFF;border:1px solid #C3CBCB;display:flex;align-items:center;justify-content:center;font:500 22px/1 'IBM Plex Mono',monospace;color:#101416">4</div>
+              </div>
+              <div style="display:flex;flex-direction:row;gap:6px">
+                <div style="flex:1;height:56px;border-radius:8px;background:#FFFFFF;border:1px solid #C3CBCB;display:flex;align-items:center;justify-content:center;font:500 22px/1 'IBM Plex Mono',monospace;color:#101416">5</div>
+                <div style="flex:1;height:56px;border-radius:8px;background:#FFFFFF;border:1px solid #C3CBCB;display:flex;align-items:center;justify-content:center;font:500 22px/1 'IBM Plex Mono',monospace;color:#101416">6</div>
+                <div style="flex:1;height:56px;border-radius:8px;background:#FFFFFF;border:1px solid #C3CBCB;display:flex;align-items:center;justify-content:center;font:500 22px/1 'IBM Plex Mono',monospace;color:#101416">7</div>
+                <div style="flex:1;height:56px;border-radius:8px;background:#FFFFFF;border:1px solid #C3CBCB;display:flex;align-items:center;justify-content:center;font:500 22px/1 'IBM Plex Mono',monospace;color:#101416">8</div>
+              </div>
+              <div style="display:flex;flex-direction:row;gap:6px">
+                <div style="flex:1;height:56px;border-radius:8px;background:#FFFFFF;border:1px solid #C3CBCB;display:flex;align-items:center;justify-content:center;font:500 22px/1 'IBM Plex Mono',monospace;color:#101416">9</div>
+                <div style="flex:1;height:56px;border-radius:8px;background:#FFFFFF;border:1px solid #C3CBCB;display:flex;align-items:center;justify-content:center;font:500 22px/1 'IBM Plex Mono',monospace;color:#101416">A</div>
+                <div style="flex:1;height:56px;border-radius:8px;background:#FFFFFF;border:1px solid #C3CBCB;display:flex;align-items:center;justify-content:center;font:500 22px/1 'IBM Plex Mono',monospace;color:#101416">B</div>
+                <div style="flex:1;height:56px;border-radius:8px;background:#E9ECEC;display:flex;align-items:center;justify-content:center;font:600 14px/1 'IBM Plex Sans',sans-serif;color:#101416">Effacer</div>
+              </div>
+              <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#5A6463">Alphabet réduit : ni O, ni 0, ni I, ni 1. Touches de 56, prises à une main.</div>
+            </div>
+            <div style="height:64px;flex-shrink:0;border-radius:8px;background:#0A7364;display:flex;align-items:center;justify-content:center;font:600 18px/1 'IBM Plex Sans',sans-serif;color:#FFFFFF">Valider</div>
+            <div style="height:44px;flex-shrink:0;border-radius:8px;background:#FFFFFF;border:1px solid #C3CBCB;display:flex;align-items:center;justify-content:center;font:600 14px/1 'IBM Plex Sans',sans-serif;color:#101416">Scanner le QR à la place</div>
+            <div style="flex:1"></div>
+            <div style="font:400 11px/1.5 'IBM Plex Sans',sans-serif;color:#5A6463">Hors ligne, la validation est acceptée localement et envoyée au retour du réseau : la cliente n'attend jamais devant le comptoir.</div>
+          </div>
+        </div>
+        <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#5C574F;width:390px">11a · saisie · champ en haut, pavé ouvert, scan secondaire</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div data-screen-label="11b" style="display:flex;flex-direction:column;width:390px;height:780px;border-radius:26px;overflow:hidden;background:#F4F5F4;border:1px solid #C3CBCB">
+          <div style="display:flex;flex-direction:column;background:#FFFFFF;border-top:3px solid #9A5F04;flex-shrink:0">
+            <div style="display:flex;flex-direction:row;justify-content:space-between;padding:10px 16px 0;font:500 11px/1 'IBM Plex Mono',monospace;color:#5A6463"><div>14:31</div><div>MODE COMMERCE</div></div>
+            <div style="display:flex;flex-direction:column;gap:1px;padding:8px 16px 12px"><div style="font:600 18px/1.2 'IBM Plex Sans',sans-serif;color:#101416">Code 8F42 · valide</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#137F55">Réservation de 14:30</div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px;padding:14px 16px 16px;flex:1">
+            <div style="display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:8px;background:#FFFFFF;border:1px solid #137F55">
+              <div style="display:flex;flex-direction:row;gap:12px;align-items:center">
+                <div style="width:48px;height:48px;border-radius:999px;background:#E9ECEC;display:flex;align-items:center;justify-content:center;font:600 16px/1 'IBM Plex Sans',sans-serif;color:#101416;flex-shrink:0">SM</div>
+                <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 16px/1.25 'IBM Plex Sans',sans-serif;color:#101416">Sofia M.</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#4A5459">@sofia.mia · 12 400 abonnés</div></div>
+                <div style="display:flex;flex-direction:row;gap:7px;align-items:center;padding:4px 10px 4px 8px;border-radius:999px;border:1px solid #3F4A4E"><div style="display:flex;flex-direction:row;gap:2px;align-items:flex-end"><div style="width:3px;height:6px;background:#3F4A4E"></div><div style="width:3px;height:9px;background:transparent"></div><div style="width:3px;height:12px;background:transparent"></div></div><div style="font:600 10px/1.4 'IBM Plex Mono',monospace;color:#3F4A4E;letter-spacing:.06em">STORY</div></div>
+              </div>
+              <div style="height:1px;background:#E3E6E6"></div>
+              <div style="display:flex;flex-direction:row;justify-content:space-between;height:30px;align-items:center"><div style="font:400 13px/1.4 'IBM Plex Sans',sans-serif;color:#4A5459">Prestation</div><div style="font:600 13px/1.4 'IBM Plex Sans',sans-serif;color:#101416">Pose gel, mains</div></div>
+              <div style="display:flex;flex-direction:row;justify-content:space-between;height:30px;align-items:center"><div style="font:400 13px/1.4 'IBM Plex Sans',sans-serif;color:#4A5459">Durée prévue</div><div style="font:500 13px/1.4 'IBM Plex Mono',monospace;color:#101416">45 min</div></div>
+              <div style="display:flex;flex-direction:row;justify-content:space-between;height:30px;align-items:center"><div style="font:400 13px/1.4 'IBM Plex Sans',sans-serif;color:#4A5459">Contrepartie attendue</div><div style="font:600 13px/1.4 'IBM Plex Sans',sans-serif;color:#101416">1 story sous 48 h</div></div>
+              <div style="display:flex;flex-direction:row;justify-content:space-between;height:30px;align-items:center"><div style="font:400 13px/1.4 'IBM Plex Sans',sans-serif;color:#4A5459">Déjà venue ici</div><div style="font:500 13px/1.4 'IBM Plex Mono',monospace;color:#101416">2 fois · 2 publiées</div></div>
+            </div>
+            <div style="height:64px;flex-shrink:0;border-radius:8px;background:#0A7364;display:flex;align-items:center;justify-content:center;font:600 18px/1 'IBM Plex Sans',sans-serif;color:#FFFFFF">Confirmer le retrait</div>
+            <div style="height:44px;flex-shrink:0;border-radius:8px;background:#FFFFFF;border:1px solid #C3CBCB;display:flex;align-items:center;justify-content:center;font:600 14px/1 'IBM Plex Sans',sans-serif;color:#101416">Ce n'est pas la bonne personne</div>
+            <div style="display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6">
+              <div style="font:600 12px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Après confirmation</div>
+              <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#4A5459">La ligne passe en « retirée » dans la journée, le délai de 48 h démarre côté créatrice, et la publication attendue apparaît dans Publications.</div>
+            </div>
+            <div style="font:400 11px/1.5 'IBM Plex Sans',sans-serif;color:#5A6463">Aucun montant n'est affiché ici, à aucun moment : ni valeur de la prestation, ni cumul mensuel. Ces chiffres vivent dans le back office.</div>
+            <div style="flex:1"></div>
+          </div>
+        </div>
+        <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#5C574F;width:390px">11b · code valide · identité, contrepartie, antécédents</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div data-screen-label="11c" style="display:flex;flex-direction:column;width:390px;height:780px;border-radius:26px;overflow:hidden;background:#F4F5F4;border:1px solid #C3CBCB">
+          <div style="display:flex;flex-direction:column;background:#FFFFFF;border-top:3px solid #9A5F04;flex-shrink:0">
+            <div style="display:flex;flex-direction:row;justify-content:space-between;padding:10px 16px 0;font:500 11px/1 'IBM Plex Mono',monospace;color:#5A6463"><div>14:33</div><div>MODE COMMERCE</div></div>
+            <div style="display:flex;flex-direction:column;gap:1px;padding:8px 16px 12px"><div style="font:600 18px/1.2 'IBM Plex Sans',sans-serif;color:#101416">Valider un code</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#9A5F04">3 cas de refus</div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;padding:14px 16px 16px;flex:1">
+            <div style="display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:8px;background:#FBEBE9;border:1px solid #E8C4C0">
+              <div style="display:flex;flex-direction:row;gap:10px;align-items:center"><div style="width:16px;height:16px;border-radius:999px;background:#B3271E;flex-shrink:0"></div><div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Code inconnu</div></div>
+              <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#4A5459">Vérifie les quatre caractères avec la personne en face. Le code ne contient ni O, ni 0, ni I, ni 1.</div>
+              <div style="height:44px;flex-shrink:0;border-radius:8px;background:#101416;display:flex;align-items:center;justify-content:center;font:600 14px/1 'IBM Plex Sans',sans-serif;color:#FFFFFF">Ressaisir</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:8px;background:#FBF0DC;border:1px solid #E5CFA4">
+              <div style="display:flex;flex-direction:row;gap:10px;align-items:center"><div style="width:16px;height:16px;border-radius:999px;background:#9A5F04;flex-shrink:0"></div><div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Code expiré · 8F42</div></div>
+              <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#4A5459">La réservation de 14:30 est toujours valable. Demande à la créatrice d'appuyer sur « Demander un nouveau code », c'est immédiat.</div>
+              <div style="height:44px;flex-shrink:0;border-radius:8px;background:#101416;display:flex;align-items:center;justify-content:center;font:600 14px/1 'IBM Plex Sans',sans-serif;color:#FFFFFF">Valider depuis la journée</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:8px;background:#FFFFFF;border:1px solid #C3CBCB">
+              <div style="display:flex;flex-direction:row;gap:10px;align-items:center"><div style="width:16px;height:16px;border-radius:999px;background:#4A5459;flex-shrink:0"></div><div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Déjà utilisé à 14:31</div></div>
+              <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#4A5459">Ce retrait est enregistré, la prestation peut commencer. Rien à refaire : c'est probablement une double validation au comptoir.</div>
+              <div style="height:44px;flex-shrink:0;border-radius:8px;background:#FFFFFF;border:1px solid #C3CBCB;display:flex;align-items:center;justify-content:center;font:600 14px/1 'IBM Plex Sans',sans-serif;color:#101416">Voir la ligne dans la journée</div>
+            </div>
+            <div style="font:400 11px/1.5 'IBM Plex Sans',sans-serif;color:#5A6463">Trois refus, trois issues distinctes, chacune avec une action. Aucun n'accuse la personne au comptoir ni la créatrice.</div>
+            <div style="flex:1"></div>
+          </div>
+        </div>
+        <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#5C574F;width:390px">11c · refus · inconnu, expiré, déjà utilisé</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+      <div style="font:600 15px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#171410">12 · Réservations du jour</div>
+      <div style="flex:1;height:1px;background:#C9C5BE"></div>
+    </div>
+    <div style="display:flex;flex-direction:row;gap:20px;flex-wrap:wrap;align-items:flex-start">
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div data-screen-label="12a" style="display:flex;flex-direction:column;width:390px;height:780px;border-radius:26px;overflow:hidden;background:#F4F5F4;border:1px solid #C3CBCB">
+          <div style="display:flex;flex-direction:column;background:#FFFFFF;border-top:3px solid #9A5F04;flex-shrink:0">
+            <div style="display:flex;flex-direction:row;justify-content:space-between;padding:10px 16px 0;font:500 11px/1 'IBM Plex Mono',monospace;color:#5A6463"><div>14:05</div><div>MODE COMMERCE</div></div>
+            <div style="display:flex;flex-direction:column;gap:8px;padding:8px 16px 12px">
+              <div style="display:flex;flex-direction:row;justify-content:space-between;align-items:center">
+                <div style="display:flex;flex-direction:column;gap:1px"><div style="font:600 18px/1.2 'IBM Plex Sans',sans-serif;color:#101416">Mercredi 6 août</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#9A5F04">3 retraits · 1 à venir</div></div>
+                <div style="height:36px;padding:0 12px;border-radius:8px;background:#101416;display:flex;align-items:center;font:600 13px/1 'IBM Plex Sans',sans-serif;color:#FFFFFF">Valider</div>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;padding:12px 16px 16px;flex:1">
+            <div style="display:flex;flex-direction:row;gap:10px;align-items:center;height:64px;padding:0 10px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6">
+              <div style="width:52px;font:500 14px/1 'IBM Plex Mono',monospace;color:#101416;flex-shrink:0">11:00</div>
+              <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Dani R. · Manucure express</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#137F55">retirée · preuve reçue</div></div>
+              <div style="padding:3px 8px;border-radius:999px;background:#DEF2EE;font:600 10px/1.5 'IBM Plex Mono',monospace;color:#0A5F52">POST</div>
+            </div>
+            <div style="display:flex;flex-direction:row;gap:10px;align-items:center;height:64px;padding:0 10px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6">
+              <div style="width:52px;font:500 14px/1 'IBM Plex Mono',monospace;color:#101416;flex-shrink:0">12:30</div>
+              <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Ana P. · Pose gel, mains</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#9A5F04">retirée · preuve attendue · 41 h</div></div>
+              <div style="padding:3px 8px;border-radius:999px;border:1px solid #3F4A4E;font:600 10px/1.5 'IBM Plex Mono',monospace;color:#3F4A4E">STORY</div>
+            </div>
+            <div style="display:flex;flex-direction:row;gap:10px;align-items:center;height:64px;padding:0 10px;border-radius:8px;background:#FFFFFF;border:1px solid #0A7364">
+              <div style="width:52px;font:600 14px/1 'IBM Plex Mono',monospace;color:#0A7364;flex-shrink:0">14:30</div>
+              <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Sofia M. · Pose gel, mains</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#4A5459">attendue dans 25 min</div></div>
+              <div style="padding:5px 10px;border-radius:6px;background:#0A7364;font:600 11px/1.3 'IBM Plex Sans',sans-serif;color:#FFFFFF">Valider</div>
+            </div>
+            <div style="display:flex;flex-direction:row;gap:10px;align-items:center;height:64px;padding:0 10px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6">
+              <div style="width:52px;font:500 14px/1 'IBM Plex Mono',monospace;color:#5A6463;flex-shrink:0">16:00</div>
+              <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Place ouverte</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#5A6463">personne pour l'instant</div></div>
+            </div>
+            <div style="display:flex;flex-direction:row;gap:10px;align-items:center;height:64px;padding:0 10px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6">
+              <div style="width:52px;font:500 14px/1 'IBM Plex Mono',monospace;color:#5A6463;flex-shrink:0">09:30</div>
+              <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Lea T. · Dépose et soin</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#B3271E">absente · signalée à 10:00</div></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6;margin-top:4px">
+              <div style="font:600 12px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Signaler une absence</div>
+              <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#4A5459">Disponible 20 min après l'heure prévue. La place se réouvre aussitôt pour la journée. Deux absences non prévenues suspendent la créatrice 30 jours, sans que tu aies à intervenir.</div>
+            </div>
+            <div style="flex:1"></div>
+          </div>
+        </div>
+        <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#5C574F;width:390px">12a · nominal · heure à gauche, état en mono, action seulement sur la ligne active</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div data-screen-label="12b" style="display:flex;flex-direction:column;width:390px;height:780px;border-radius:26px;overflow:hidden;background:#F4F5F4;border:1px solid #C3CBCB">
+          <div style="display:flex;flex-direction:column;background:#FFFFFF;border-top:3px solid #9A5F04;flex-shrink:0">
+            <div style="display:flex;flex-direction:row;justify-content:space-between;padding:10px 16px 0;font:500 11px/1 'IBM Plex Mono',monospace;color:#5A6463"><div>9:03</div><div>MODE COMMERCE</div></div>
+            <div style="display:flex;flex-direction:column;gap:1px;padding:8px 16px 12px"><div style="font:600 18px/1.2 'IBM Plex Sans',sans-serif;color:#101416">Jeudi 7 août</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#9A5F04">0 retrait · 4 places ouvertes</div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px;padding:12px 16px 16px;flex:1">
+            <div style="display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:8px;background:#FFFFFF;border:1px solid #C3CBCB">
+              <div style="font:600 15px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Aucune réservation aujourd'hui</div>
+              <div style="font:400 13px/1.5 'IBM Plex Sans',sans-serif;color:#4A5459">Tes 4 places sont ouvertes et visibles dans le fil. Deux prestations sur six sont au palier Reel : peu de créatrices y accèdent.</div>
+              <div style="height:48px;flex-shrink:0;border-radius:8px;background:#0A7364;display:flex;align-items:center;justify-content:center;font:600 15px/1 'IBM Plex Sans',sans-serif;color:#FFFFFF">Ouvrir une prestation au palier Story</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6">
+              <div style="font:600 12px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Sept derniers jours</div>
+              <div style="display:flex;flex-direction:row;justify-content:space-between;height:30px;align-items:center"><div style="font:400 13px/1.4 'IBM Plex Sans',sans-serif;color:#4A5459">Retraits</div><div style="font:500 13px/1.4 'IBM Plex Mono',monospace;color:#101416">6</div></div>
+              <div style="display:flex;flex-direction:row;justify-content:space-between;height:30px;align-items:center"><div style="font:400 13px/1.4 'IBM Plex Sans',sans-serif;color:#4A5459">Publications reçues</div><div style="font:500 13px/1.4 'IBM Plex Mono',monospace;color:#101416">5</div></div>
+              <div style="display:flex;flex-direction:row;justify-content:space-between;height:30px;align-items:center"><div style="font:400 13px/1.4 'IBM Plex Sans',sans-serif;color:#4A5459">Places restées vides</div><div style="font:500 13px/1.4 'IBM Plex Mono',monospace;color:#101416">9</div></div>
+              <div style="display:flex;flex-direction:row;justify-content:space-between;height:30px;align-items:center"><div style="font:400 13px/1.4 'IBM Plex Sans',sans-serif;color:#4A5459">Créneau le plus demandé</div><div style="font:500 13px/1.4 'IBM Plex Mono',monospace;color:#101416">14:00 – 16:00</div></div>
+            </div>
+            <div style="font:400 11px/1.5 'IBM Plex Sans',sans-serif;color:#5A6463">Le vide côté commerce est un diagnostic : ce qui n'a pas marché, chiffré, et l'action la plus probable en premier.</div>
+            <div style="flex:1"></div>
+          </div>
+        </div>
+        <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#5C574F;width:390px">12b · vide · diagnostic chiffré sur sept jours</div>
+      </div>
+
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+      <div style="font:600 15px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#171410">13 · Publications reçues</div>
+      <div style="flex:1;height:1px;background:#C9C5BE"></div>
+    </div>
+    <div style="display:flex;flex-direction:row;gap:20px;flex-wrap:wrap;align-items:flex-start">
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div data-screen-label="13a" style="display:flex;flex-direction:column;width:390px;height:780px;border-radius:26px;overflow:hidden;background:#F4F5F4;border:1px solid #C3CBCB">
+          <div style="display:flex;flex-direction:column;background:#FFFFFF;border-top:3px solid #9A5F04;flex-shrink:0">
+            <div style="display:flex;flex-direction:row;justify-content:space-between;padding:10px 16px 0;font:500 11px/1 'IBM Plex Mono',monospace;color:#5A6463"><div>18:22</div><div>MODE COMMERCE</div></div>
+            <div style="display:flex;flex-direction:column;gap:8px;padding:8px 16px 12px">
+              <div style="display:flex;flex-direction:column;gap:1px"><div style="font:600 18px/1.2 'IBM Plex Sans',sans-serif;color:#101416">Publications</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#9A5F04">2 à contrôler · 12 reçues au total</div></div>
+              <div style="display:flex;flex-direction:row;gap:1px;border-radius:8px;overflow:hidden;background:#E3E6E6">
+                <div style="flex:1;padding:7px 0;text-align:center;background:#101416;font:600 12px/1 'IBM Plex Sans',sans-serif;color:#FFFFFF">À contrôler · 2</div>
+                <div style="flex:1;padding:7px 0;text-align:center;background:#FFFFFF;font:600 12px/1 'IBM Plex Sans',sans-serif;color:#4A5459">Conformes · 10</div>
+                <div style="flex:1;padding:7px 0;text-align:center;background:#FFFFFF;font:600 12px/1 'IBM Plex Sans',sans-serif;color:#4A5459">Attendues · 1</div>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;padding:12px 16px 16px;flex:1">
+            <div style="display:flex;flex-direction:row;gap:10px;align-items:center;height:64px;padding:0 10px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6">
+              <div style="width:44px;height:56px;border-radius:6px;background:repeating-linear-gradient(135deg,#E4E7E7 0 6px,#DADEDE 6px 12px);flex-shrink:0"></div>
+              <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Ana P. · story</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#4A5459">reçue il y a 2 h · pose gel</div></div>
+              <div style="padding:5px 10px;border-radius:6px;background:#101416;font:600 11px/1.3 'IBM Plex Sans',sans-serif;color:#FFFFFF">Contrôler</div>
+            </div>
+            <div style="display:flex;flex-direction:row;gap:10px;align-items:center;height:64px;padding:0 10px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6">
+              <div style="width:44px;height:56px;border-radius:6px;background:repeating-linear-gradient(135deg,#E4E7E7 0 6px,#DADEDE 6px 12px);flex-shrink:0"></div>
+              <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Dani R. · post</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#4A5459">reçue hier · manucure express</div></div>
+              <div style="padding:5px 10px;border-radius:6px;background:#101416;font:600 11px/1.3 'IBM Plex Sans',sans-serif;color:#FFFFFF">Contrôler</div>
+            </div>
+            <div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#5A6463;margin-top:4px">ATTENDUES</div>
+            <div style="display:flex;flex-direction:row;gap:10px;align-items:center;height:64px;padding:0 10px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6">
+              <div style="width:44px;height:56px;border-radius:6px;background:#E9ECEC;display:flex;align-items:center;justify-content:center;font:400 9px/1.2 'IBM Plex Mono',monospace;color:#5A6463;flex-shrink:0">—</div>
+              <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Sofia M. · story</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#9A5F04">échéance dans 41 h</div></div>
+            </div>
+            <div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#5A6463;margin-top:4px">CONFORMES</div>
+            <div style="display:flex;flex-direction:row;gap:10px;align-items:center;height:64px;padding:0 10px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6">
+              <div style="width:44px;height:56px;border-radius:6px;background:repeating-linear-gradient(135deg,#E4E7E7 0 6px,#DADEDE 6px 12px);flex-shrink:0"></div>
+              <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Lea T. · reel</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#137F55">conforme · 2 août</div></div>
+              <div style="font:600 11px/1.3 'IBM Plex Sans',sans-serif;color:#0A7364">Ouvrir</div>
+            </div>
+            <div style="display:flex;flex-direction:row;gap:10px;align-items:center;height:64px;padding:0 10px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6">
+              <div style="width:44px;height:56px;border-radius:6px;background:repeating-linear-gradient(135deg,#E4E7E7 0 6px,#DADEDE 6px 12px);flex-shrink:0"></div>
+              <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Ana P. · story</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#137F55">conforme · 29 juillet</div></div>
+              <div style="font:600 11px/1.3 'IBM Plex Sans',sans-serif;color:#0A7364">Ouvrir</div>
+            </div>
+            <div style="font:400 11px/1.5 'IBM Plex Sans',sans-serif;color:#5A6463">Trois groupes, dans l'ordre du travail : ce qui demande une décision, ce qui court encore, ce qui est classé. Aucun compteur de valeur.</div>
+            <div style="flex:1"></div>
+          </div>
+        </div>
+        <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#5C574F;width:390px">13a · nominal · à contrôler en tête de liste</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div data-screen-label="13b" style="display:flex;flex-direction:column;width:390px;height:900px;border-radius:26px;overflow:hidden;background:#F4F5F4;border:1px solid #C3CBCB">
+          <div style="display:flex;flex-direction:column;background:#FFFFFF;border-top:3px solid #9A5F04;flex-shrink:0">
+            <div style="display:flex;flex-direction:row;justify-content:space-between;padding:10px 16px 0;font:500 11px/1 'IBM Plex Mono',monospace;color:#5A6463"><div>18:24</div><div>MODE COMMERCE</div></div>
+            <div style="display:flex;flex-direction:row;justify-content:space-between;align-items:center;padding:8px 16px 12px"><div style="font:600 18px/1.2 'IBM Plex Sans',sans-serif;color:#101416">Contrôle · Ana P.</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#9A5F04">1 sur 2</div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;padding:12px 16px 16px;flex:1">
+            <div style="display:flex;flex-direction:row;gap:12px;align-items:flex-start">
+              <div style="width:120px;height:200px;border-radius:8px;background:repeating-linear-gradient(135deg,#E4E7E7 0 8px,#DADEDE 8px 16px);flex-shrink:0;display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px"><div style="font:400 9px/1.2 'IBM Plex Mono',monospace;color:#5A6463">capture story</div></div>
+              <div style="display:flex;flex-direction:column;gap:8px;flex:1">
+                <div style="display:flex;flex-direction:row;justify-content:space-between;align-items:center"><div style="font:400 12px/1.4 'IBM Plex Sans',sans-serif;color:#4A5459">Prestation</div></div>
+                <div style="font:600 13px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Pose gel, mains · 6 août</div>
+                <div style="height:1px;background:#E3E6E6"></div>
+                <div style="display:flex;flex-direction:row;justify-content:space-between;height:26px;align-items:center"><div style="font:400 12px/1.4 'IBM Plex Sans',sans-serif;color:#4A5459">Attendu</div><div style="font:600 12px/1.4 'IBM Plex Sans',sans-serif;color:#101416">1 story</div></div>
+                <div style="display:flex;flex-direction:row;justify-content:space-between;height:26px;align-items:center"><div style="font:400 12px/1.4 'IBM Plex Sans',sans-serif;color:#4A5459">Publiée</div><div style="font:500 12px/1.4 'IBM Plex Mono',monospace;color:#101416">7 août, 21:14</div></div>
+                <div style="display:flex;flex-direction:row;justify-content:space-between;height:26px;align-items:center"><div style="font:400 12px/1.4 'IBM Plex Sans',sans-serif;color:#4A5459">Délai</div><div style="font:500 12px/1.4 'IBM Plex Mono',monospace;color:#137F55">dans les 48 h</div></div>
+                <div style="display:flex;flex-direction:row;justify-content:space-between;height:26px;align-items:center"><div style="font:400 12px/1.4 'IBM Plex Sans',sans-serif;color:#4A5459">Mention</div><div style="font:500 12px/1.4 'IBM Plex Mono',monospace;color:#137F55">détectée</div></div>
+                <div style="display:flex;flex-direction:row;justify-content:space-between;height:26px;align-items:center"><div style="font:400 12px/1.4 'IBM Plex Sans',sans-serif;color:#4A5459">Lieu tagué</div><div style="font:500 12px/1.4 'IBM Plex Mono',monospace;color:#137F55">Little Havana</div></div>
+              </div>
+            </div>
+            <div style="height:56px;flex-shrink:0;border-radius:8px;background:#0A7364;display:flex;align-items:center;justify-content:center;font:600 16px/1 'IBM Plex Sans',sans-serif;color:#FFFFFF">Conforme</div>
+            <div style="display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:8px;background:#FFFFFF;border:1px solid #C3CBCB">
+              <div style="font:600 13px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Demander une nouvelle soumission</div>
+              <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#4A5459">Choisis un motif. La créatrice reçoit une nouvelle date limite et peut soumettre à nouveau. Trois tentatives passent le dossier en revue par l'équipe BIND.</div>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <div style="display:flex;flex-direction:row;gap:8px;align-items:center;height:40px;padding:0 10px;border-radius:8px;background:#F4F5F4;border:1px solid #E3E6E6"><div style="width:16px;height:16px;border-radius:999px;border:1px solid #C3CBCB;flex-shrink:0"></div><div style="font:400 13px/1.4 'IBM Plex Sans',sans-serif;color:#101416">La mention @littlehavananails manque</div></div>
+                <div style="display:flex;flex-direction:row;gap:8px;align-items:center;height:40px;padding:0 10px;border-radius:8px;background:#F4F5F4;border:1px solid #E3E6E6"><div style="width:16px;height:16px;border-radius:999px;border:1px solid #C3CBCB;flex-shrink:0"></div><div style="font:400 13px/1.4 'IBM Plex Sans',sans-serif;color:#101416">Le lieu attendu n'est pas tagué</div></div>
+                <div style="display:flex;flex-direction:row;gap:8px;align-items:center;height:40px;padding:0 10px;border-radius:8px;background:#F4F5F4;border:1px solid #E3E6E6"><div style="width:16px;height:16px;border-radius:999px;border:1px solid #C3CBCB;flex-shrink:0"></div><div style="font:400 13px/1.4 'IBM Plex Sans',sans-serif;color:#101416">La prestation n'est pas visible</div></div>
+                <div style="display:flex;flex-direction:row;gap:8px;align-items:center;height:40px;padding:0 10px;border-radius:8px;background:#F4F5F4;border:1px solid #E3E6E6"><div style="width:16px;height:16px;border-radius:999px;border:1px solid #C3CBCB;flex-shrink:0"></div><div style="font:400 13px/1.4 'IBM Plex Sans',sans-serif;color:#101416">Format différent de celui attendu</div></div>
+              </div>
+              <div style="height:44px;flex-shrink:0;border-radius:8px;background:#FFFFFF;border:1px solid #101416;display:flex;align-items:center;justify-content:center;font:600 14px/1 'IBM Plex Sans',sans-serif;color:#101416">Envoyer la demande</div>
+            </div>
+            <div style="font:400 11px/1.5 'IBM Plex Sans',sans-serif;color:#5A6463">Deux actions, pas trois : approuver, ou redemander une soumission avec un motif obligatoire. Il n'existe aucun rejet définitif côté commerce. Le motif est le texte que la créatrice lira. Le contrôle demande une connexion, il ne se fait pas hors ligne.</div>
+            <div style="flex:1"></div>
+          </div>
+        </div>
+        <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#5C574F;width:390px">13b · contrôle · conforme d'abord, motif obligatoire sinon</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div data-screen-label="13c" style="display:flex;flex-direction:column;width:390px;height:780px;border-radius:26px;overflow:hidden;background:#F4F5F4;border:1px solid #C3CBCB">
+          <div style="display:flex;flex-direction:column;background:#FFFFFF;border-top:3px solid #9A5F04;flex-shrink:0">
+            <div style="display:flex;flex-direction:row;justify-content:space-between;padding:10px 16px 0;font:500 11px/1 'IBM Plex Mono',monospace;color:#5A6463"><div>9:05</div><div>MODE COMMERCE</div></div>
+            <div style="display:flex;flex-direction:column;gap:1px;padding:8px 16px 12px"><div style="font:600 18px/1.2 'IBM Plex Sans',sans-serif;color:#101416">Publications</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#9A5F04">rien à contrôler</div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px;padding:12px 16px 16px;flex:1">
+            <div style="display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:8px;background:#FFFFFF;border:1px solid #C3CBCB">
+              <div style="font:600 15px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Tout est à jour</div>
+              <div style="font:400 13px/1.5 'IBM Plex Sans',sans-serif;color:#4A5459">Dernier contrôle hier à 18:30. Une publication est encore attendue, échéance demain 16:31 : rien à faire d'ici là.</div>
+              <div style="height:44px;flex-shrink:0;border-radius:8px;background:#FFFFFF;border:1px solid #C3CBCB;display:flex;align-items:center;justify-content:center;font:600 14px/1 'IBM Plex Sans',sans-serif;color:#101416">Voir les 10 conformes</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:8px;background:#FBF0DC;border:1px solid #E5CFA4">
+              <div style="font:600 13px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Hors ligne</div>
+              <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#4A5459">La liste s'affiche depuis le cache, marquée « à jour il y a 12 min ». Le bouton Contrôler est retiré tant que le réseau manque, pas grisé : une décision engage la créatrice, elle ne part pas en file d'attente.</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6">
+              <div style="font:600 12px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Chargement</div>
+              <div style="display:flex;flex-direction:row;gap:10px;align-items:center;height:64px;padding:0 10px;border-radius:8px;background:#F4F5F4"><div style="width:44px;height:56px;border-radius:6px;background:#E3E6E6;animation:pulse 1.4s ease-in-out infinite;flex-shrink:0"></div><div style="display:flex;flex-direction:column;gap:6px;flex:1"><div style="width:52%;height:12px;border-radius:4px;background:#E3E6E6;animation:pulse 1.4s ease-in-out .1s infinite"></div><div style="width:40%;height:10px;border-radius:4px;background:#E3E6E6;animation:pulse 1.4s ease-in-out .2s infinite"></div></div></div>
+              <div style="font:400 11px/1.5 'IBM Plex Sans',sans-serif;color:#5A6463">Les onglets et leurs compteurs arrivent avant les vignettes.</div>
+            </div>
+            <div style="flex:1"></div>
+          </div>
+        </div>
+        <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#5C574F;width:390px">13c · vide, hors ligne, chargement</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+      <div style="font:600 15px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#171410">14 · Profil et activation</div>
+      <div style="flex:1;height:1px;background:#C9C5BE"></div>
+    </div>
+    <div style="display:flex;flex-direction:row;gap:20px;flex-wrap:wrap;align-items:flex-start">
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div data-screen-label="14a" style="display:flex;flex-direction:column;width:390px;height:780px;border-radius:26px;overflow:hidden;background:#F4F5F4;border:1px solid #C3CBCB">
+          <div style="display:flex;flex-direction:column;background:#FFFFFF;border-top:3px solid #9A5F04;flex-shrink:0">
+            <div style="display:flex;flex-direction:row;justify-content:space-between;padding:10px 16px 0;font:500 11px/1 'IBM Plex Mono',monospace;color:#5A6463"><div>9:41</div><div>MODE COMMERCE</div></div>
+            <div style="display:flex;flex-direction:column;gap:1px;padding:8px 16px 12px"><div style="font:600 18px/1.2 'IBM Plex Sans',sans-serif;color:#101416">Activation</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#9A5F04">Sunset Brow Bar · 2 étapes sur 4</div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;padding:12px 16px 16px;flex:1">
+            <div style="display:flex;flex-direction:row;gap:10px;padding:12px;border-radius:8px;background:#FBF0DC;border:1px solid #E5CFA4">
+              <div style="width:16px;height:16px;border-radius:999px;background:#9A5F04;flex-shrink:0;margin-top:2px"></div>
+              <div style="display:flex;flex-direction:column;gap:4px"><div style="font:600 13px/1.4 'IBM Plex Sans',sans-serif;color:#101416">Ton salon n'est pas encore visible</div><div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#4A5459">Il apparaîtra dans le fil dès que les deux étapes bloquantes seront faites. Les autres peuvent attendre.</div></div>
+            </div>
+            <div style="display:flex;flex-direction:row;gap:10px;align-items:center;height:64px;padding:0 10px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6">
+              <div style="width:22px;height:22px;border-radius:999px;background:#137F55;display:flex;align-items:center;justify-content:center;font:600 12px/1 'IBM Plex Sans',sans-serif;color:#FFFFFF;flex-shrink:0">✓</div>
+              <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Adresse et horaires</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#4A5459">1100 Brickell Ave · 6 jours sur 7</div></div>
+            </div>
+            <div style="display:flex;flex-direction:row;gap:10px;align-items:center;height:64px;padding:0 10px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6">
+              <div style="width:22px;height:22px;border-radius:999px;background:#137F55;display:flex;align-items:center;justify-content:center;font:600 12px/1 'IBM Plex Sans',sans-serif;color:#FFFFFF;flex-shrink:0">✓</div>
+              <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Personne responsable</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#4A5459">Carla · +1 305 ···· 88</div></div>
+            </div>
+            <div style="display:flex;flex-direction:row;gap:10px;align-items:center;height:64px;padding:0 10px;border-radius:8px;background:#FFFFFF;border:1px solid #9A5F04">
+              <div style="width:22px;height:22px;border-radius:999px;border:2px solid #9A5F04;flex-shrink:0"></div>
+              <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Une prestation au catalogue</div><div style="font:600 11px/1.3 'IBM Plex Sans',sans-serif;color:#9A5F04">bloquant · 2 min</div></div>
+              <div style="padding:5px 10px;border-radius:6px;background:#101416;font:600 11px/1.3 'IBM Plex Sans',sans-serif;color:#FFFFFF">Faire</div>
+            </div>
+            <div style="display:flex;flex-direction:row;gap:10px;align-items:center;height:64px;padding:0 10px;border-radius:8px;background:#FFFFFF;border:1px solid #9A5F04">
+              <div style="width:22px;height:22px;border-radius:999px;border:2px solid #9A5F04;flex-shrink:0"></div>
+              <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Vérification du commerce</div><div style="font:600 11px/1.3 'IBM Plex Sans',sans-serif;color:#9A5F04">bloquant · en cours, jour 1 sur 2</div></div>
+            </div>
+            <div style="display:flex;flex-direction:row;gap:10px;align-items:center;height:64px;padding:0 10px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6">
+              <div style="width:22px;height:22px;border-radius:999px;border:1px solid #C3CBCB;flex-shrink:0"></div>
+              <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Photo de couverture</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#5A6463">facultatif · monogramme en attendant</div></div>
+              <div style="padding:5px 10px;border-radius:6px;background:#FFFFFF;border:1px solid #C3CBCB;font:600 11px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Ajouter</div>
+            </div>
+            <div style="font:400 11px/1.5 'IBM Plex Sans',sans-serif;color:#5A6463">Bloquant et facultatif sont dits explicitement, avec une durée estimée. Aucune barre de progression en pourcentage : deux étapes restantes, c'est plus clair que 50 %.</div>
+            <div style="flex:1"></div>
+            <div style="height:52px;flex-shrink:0;border-radius:8px;background:#0A7364;display:flex;align-items:center;justify-content:center;font:600 15px/1 'IBM Plex Sans',sans-serif;color:#FFFFFF">Ajouter ma première prestation</div>
+          </div>
+        </div>
+        <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#5C574F;width:390px">14a · activation · bloquant vs facultatif, jamais de pourcentage</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div data-screen-label="14b" style="display:flex;flex-direction:column;width:390px;height:780px;border-radius:26px;overflow:hidden;background:#F4F5F4;border:1px solid #C3CBCB">
+          <div style="display:flex;flex-direction:column;background:#FFFFFF;border-top:3px solid #9A5F04;flex-shrink:0">
+            <div style="display:flex;flex-direction:row;justify-content:space-between;padding:10px 16px 0;font:500 11px/1 'IBM Plex Mono',monospace;color:#5A6463"><div>9:41</div><div>MODE COMMERCE</div></div>
+            <div style="display:flex;flex-direction:column;gap:1px;padding:8px 16px 12px"><div style="font:600 18px/1.2 'IBM Plex Sans',sans-serif;color:#101416">Little Havana Nails</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#9A5F04">visible dans le fil · 12 publications reçues</div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;padding:12px 16px 16px;flex:1">
+            <div style="display:flex;flex-direction:row;gap:10px;align-items:center;padding:10px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6">
+              <div style="width:76px;height:52px;border-radius:6px;background:repeating-linear-gradient(135deg,#E4E7E7 0 6px,#DADEDE 6px 12px);flex-shrink:0"></div>
+              <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 13px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Couverture · 1200×675</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#4A5459">mise à jour le 2 août</div></div>
+              <div style="font:600 12px/1.3 'IBM Plex Sans',sans-serif;color:#0A7364">Changer</div>
+            </div>
+            <div style="display:flex;flex-direction:row;align-items:center;height:52px;padding:0 10px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6"><div style="flex:1;font:400 13px/1.4 'IBM Plex Sans',sans-serif;color:#4A5459">Nom public</div><div style="font:600 13px/1.4 'IBM Plex Sans',sans-serif;color:#101416">Little Havana Nails</div></div>
+            <div style="display:flex;flex-direction:row;align-items:center;height:52px;padding:0 10px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6"><div style="flex:1;font:400 13px/1.4 'IBM Plex Sans',sans-serif;color:#4A5459">Catégorie</div><div style="font:600 13px/1.4 'IBM Plex Sans',sans-serif;color:#101416">Ongles</div></div>
+            <div style="display:flex;flex-direction:row;align-items:center;height:52px;padding:0 10px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6"><div style="flex:1;font:400 13px/1.4 'IBM Plex Sans',sans-serif;color:#4A5459">Langues au comptoir</div><div style="font:600 13px/1.4 'IBM Plex Sans',sans-serif;color:#101416">ES · EN</div></div>
+            <div style="display:flex;flex-direction:row;align-items:center;height:52px;padding:0 10px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6"><div style="flex:1;font:400 13px/1.4 'IBM Plex Sans',sans-serif;color:#4A5459">Compte Instagram</div><div style="font:500 13px/1.4 'IBM Plex Mono',monospace;color:#101416">@littlehavananails</div></div>
+            <div style="display:flex;flex-direction:row;align-items:center;height:52px;padding:0 10px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6"><div style="flex:1;font:400 13px/1.4 'IBM Plex Sans',sans-serif;color:#4A5459">Personnes à la caisse</div><div style="font:600 13px/1.4 'IBM Plex Sans',sans-serif;color:#101416">3 comptes</div></div>
+            <div style="display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:8px;background:#FFFFFF;border:1px solid #C3CBCB;margin-top:4px">
+              <div style="display:flex;flex-direction:row;justify-content:space-between;align-items:center"><div style="font:600 13px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Mettre BIND en pause</div><div style="width:40px;height:22px;border-radius:999px;background:#E3E6E6;display:flex;flex-direction:row;align-items:center;padding:0 3px"><div style="width:16px;height:16px;border-radius:999px;background:#FFFFFF"></div></div></div>
+              <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#4A5459">En pause, ton salon disparaît du fil et aucune nouvelle place ne s'ouvre. Les réservations déjà prises restent dues : elles s'affichent jusqu'à la dernière.</div>
+            </div>
+            <div style="font:400 11px/1.5 'IBM Plex Sans',sans-serif;color:#5A6463">Aucun chiffre d'argent sur cet écran non plus. Le suivi de coût vit dans le back office administrateur, hors de l'app de comptoir.</div>
+            <div style="flex:1"></div>
+          </div>
+        </div>
+        <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#5C574F;width:390px">14b · profil actif · lignes de 52, pause explicite</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div data-screen-label="14c" style="display:flex;flex-direction:column;width:390px;height:780px;border-radius:26px;overflow:hidden;background:#F4F5F4;border:1px solid #C3CBCB">
+          <div style="display:flex;flex-direction:column;background:#FFFFFF;border-top:3px solid #9A5F04;flex-shrink:0">
+            <div style="display:flex;flex-direction:row;justify-content:space-between;padding:10px 16px 0;font:500 11px/1 'IBM Plex Mono',monospace;color:#5A6463"><div>9:41</div><div>MODE COMMERCE</div></div>
+            <div style="display:flex;flex-direction:column;gap:1px;padding:8px 16px 12px"><div style="font:600 18px/1.2 'IBM Plex Sans',sans-serif;color:#101416">Compte suspendu</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#B3271E">depuis le 5 août</div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;padding:12px 16px 16px;flex:1">
+            <div style="display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:8px;background:#FBEBE9;border:1px solid #E8C4C0">
+              <div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Motif : trois retraits refusés au comptoir</div>
+              <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#4A5459">Trois créatrices se sont présentées avec un code valide et n'ont pas été reçues, les 28 juillet, 1er et 4 août. Ton salon est retiré du fil le temps d'en parler.</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:8px;background:#FFFFFF;border:1px solid #C3CBCB">
+              <div style="font:600 13px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Ce qui reste dû</div>
+              <div style="display:flex;flex-direction:row;justify-content:space-between;height:30px;align-items:center"><div style="font:400 13px/1.4 'IBM Plex Sans',sans-serif;color:#4A5459">Réservations à honorer</div><div style="font:500 13px/1.4 'IBM Plex Mono',monospace;color:#101416">1 · vendredi 14:00</div></div>
+              <div style="display:flex;flex-direction:row;justify-content:space-between;height:30px;align-items:center"><div style="font:400 13px/1.4 'IBM Plex Sans',sans-serif;color:#4A5459">Publications à contrôler</div><div style="font:500 13px/1.4 'IBM Plex Mono',monospace;color:#101416">2</div></div>
+              <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#4A5459">La caisse reste utilisable pour ces lignes : une suspension ne pénalise pas les créatrices déjà engagées.</div>
+            </div>
+            <div style="height:52px;flex-shrink:0;border-radius:8px;background:#101416;display:flex;align-items:center;justify-content:center;font:600 15px/1 'IBM Plex Sans',sans-serif;color:#FFFFFF">Parler à quelqu'un chez BIND</div>
+            <div style="height:44px;flex-shrink:0;border-radius:8px;background:#FFFFFF;border:1px solid #C3CBCB;display:flex;align-items:center;justify-content:center;font:600 14px/1 'IBM Plex Sans',sans-serif;color:#101416">Voir les trois cas en détail</div>
+            <div style="font:400 11px/1.5 'IBM Plex Sans',sans-serif;color:#5A6463">Une suspension est datée, motivée par des faits listés, et toujours accompagnée d'un contact humain. Elle n'est jamais automatique et jamais définitive à l'écran.</div>
+            <div style="flex:1"></div>
+          </div>
+        </div>
+        <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#5C574F;width:390px">14c · suspendu · faits datés, engagements honorés</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:8px;padding:18px;border-radius:12px;background:#FFFFFF;border:1px solid #C9C5BE;max-width:920px">
+    <div style="font:600 13px/1.4 'IBM Plex Sans',sans-serif;color:#171410">Règles propres au rôle commerce</div>
+    <div style="font:400 12px/1.7 'IBM Plex Sans',sans-serif;color:#5C574F">Thème clair par défaut, liseré ocre 3 px sur chaque écran, lignes de 44 à 64, chiffres en monospace, aucune illustration. La donnée passe avant l'image : une vignette manquante devient un libellé « photo manquante · ajouter », qui est une tâche et non un défaut. Chaque écran de liste tient sans défilement sur un téléphone posé : trois lignes de squelette maximum au chargement. Ce qui engage une créatrice (contrôle de preuve, ouverture de catalogue) exige le réseau et voit son bouton retiré hors ligne ; ce qui concerne le comptoir (validation de code, capacité, horaires) fonctionne hors ligne et part en file d'attente. Sur grand écran, la liste passe à 400 px avec un panneau détail à droite en flexDirection row au-delà de 900 px, jamais plus de deux colonnes. Aucun montant nulle part, y compris à la caisse.</div>
+  </div>
+</section>
+</x-dc>
+</body>
+</html>
