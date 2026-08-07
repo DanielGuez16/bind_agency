@@ -586,7 +586,8 @@
       "post": {
         "operationId": "start_instagram_api_v1_me_social_accounts_instagram_connect_post",
         "responses": [
-          "200"
+          "200",
+          "422"
         ]
       }
     },
@@ -594,7 +595,8 @@
       "post": {
         "operationId": "start_tiktok_api_v1_me_social_accounts_tiktok_connect_post",
         "responses": [
-          "200"
+          "200",
+          "422"
         ]
       }
     },

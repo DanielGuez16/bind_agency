@@ -17,10 +17,12 @@
  * entropie mais le fait qu'il soit lié à une réservation, à usage unique, à
  * durée courte et limité en tentatives.
  */
-import { View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Animated, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
 import { codeColors, tokens } from '../theme';
+import { useMouvementReduit } from './Mouvement';
 import { Texte } from './Texte';
 
 const { fg, bg } = codeColors;
@@ -64,6 +66,11 @@ export function CodeGlyphs({ code, testID }: { code: string; testID?: string }) 
  * Jamais en anneau de progression : un anneau ne se lit pas de loin, et c'est
  * de loin que cet écran est regardé. Sous 10 s, le bloc s'inverse — le seuil de
  * 60 s valait pour un code qui expirait, pas pour un code qui tourne.
+ *
+ * **Chaque seconde bat.** Un léger retrait puis retour d'échelle : de loin, on
+ * voit que le compte tourne sans avoir à lire le chiffre. C'est une
+ * transformation, la seule chose que React Native anime sans repasser par le
+ * pont ; une couleur qui pulserait saccaderait.
  */
 export function Countdown({
   secondes,
@@ -73,8 +80,30 @@ export function Countdown({
   testID?: string;
 }) {
   const urgent = secondes < CONFIG.countdownUrgentBelowSeconds;
+  const reduit = useMouvementReduit();
+  const battement = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (reduit) return;
+    const animation = Animated.sequence([
+      Animated.timing(battement, {
+        toValue: 0.92,
+        duration: tokens.motion.durationFast,
+        useNativeDriver: true,
+      }),
+      Animated.spring(battement, {
+        toValue: 1,
+        speed: 20,
+        bounciness: 8,
+        useNativeDriver: true,
+      }),
+    ]);
+    animation.start();
+    return () => animation.stop();
+  }, [battement, reduit, secondes]);
 
   return (
+    <Animated.View style={{ transform: [{ scale: battement }], alignSelf: 'center' }}>
     <View
       testID={testID}
       accessibilityLabel={String(secondes)}
@@ -96,6 +125,7 @@ export function Countdown({
         {secondes}
       </Texte>
     </View>
+    </Animated.View>
   );
 }
 

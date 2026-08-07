@@ -2430,3 +2430,37 @@ Au passage : une réservation seulement retenue n'a pas de code, la ligne ne le
 propose plus ; et quand le serveur refuse, l'écran le dit au lieu d'attendre
 sans fin — la règle « hors ligne, on garde ce qui est à l'écran » ne vaut que
 s'il y a quelque chose à garder.
+
+## 2026-08-07 — Direction visuelle : le sombre garde ses fonds, pas son noir
+
+Constat sur appareil : trop sombre, trop plat. Les fonds passent d'un gris
+neutre presque noir à une encre indigo-prune légèrement colorée, sur quatre
+niveaux qui se distinguent réellement. Un second accent chaud entre dans la
+palette, et les trois paliers reçoivent trois teintes franchement distinctes —
+ils étaient gris, aqua et blanc, indiscernables deux sur trois.
+
+La règle des trois marqueurs redondants ne bouge pas : la couleur ne porte
+aucune information seule, le mot et le glyphe restent obligatoires.
+
+Le mouvement entre dans le système, limité à l'opacité et à la transformation
+comme `motion.animatableProps` le demandait déjà, et **suspendu quand l'appareil
+demande de réduire les animations** : une cascade est un symptôme pour qui a des
+vertiges vestibulaires, pas une décoration.
+
+## 2026-08-07 — Le rappel OAuth ramène dans l'application
+
+Le rappel d'autorisation arrive sur le serveur ; l'application est ailleurs, sur
+un téléphone, à une autre adresse. Le parcours se terminait donc sur une réponse
+JSON affichée dans le navigateur : le compte était rattaché et l'application ne
+le savait jamais.
+
+L'application fournit son adresse de retour à l'ouverture, le serveur la garde
+avec l'état OAuth et redirige dessus. Elle est **contrôlée à l'ouverture** contre
+une liste fermée de schémas : suivre une adresse fournie par le client ferait de
+ce rappel une redirection ouverte, de quoi faire aboutir un parcours
+d'autorisation BIND sur un site tiers. Contrôlée à l'ouverture et non au rappel,
+parce qu'au rappel la personne a déjà autorisé chez Meta.
+
+La redirection ne porte qu'un statut, jamais le code ni le jeton : ils ont été
+échangés côté serveur, et une adresse se dépose dans l'historique du navigateur
+et dans les journaux du système.

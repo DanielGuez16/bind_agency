@@ -14,6 +14,14 @@ export { Toggle, type ToggleProps } from './Toggle';
 export { SegmentedTabs, type SegmentedTabsProps } from './SegmentedTabs';
 export { Chip, RangeeDeChips, type ChipProps } from './Chip';
 export { Icone, type NomIcone } from './Icone';
+export { Logo, Marque } from './Logo';
+export {
+  Apparition,
+  useEnfoncement,
+  useMouvementReduit,
+  vibration,
+} from './Mouvement';
+export { EnTeteDEcran, Filet, prenomDe, type Compteur } from './EnTete';
 export { LigneDeContrepartie, TierBadge, type Palier, type TierBadgeProps } from './TierBadge';
 export { BadgesDeProfil, chipDeComportement, type BadgeDeProfil } from './Badges';
 export {
@@ -21,6 +29,7 @@ export {
   DataRow,
   MediaFallback,
   ServiceRow,
+  VoileDeLisibilite,
   type BusinessCardProps,
   type DataRowProps,
   type MediaFallbackProps,

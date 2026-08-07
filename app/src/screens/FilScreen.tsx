@@ -13,12 +13,28 @@
  *
  * **Les coordonnées viennent de l'appelant, pas du profil.** On consulte le fil
  * là où l'on est, ce qui n'est pas toujours la ville déclarée.
+ *
+ * **Sans compte social rattaché, le fil ne parle pas de rayon.** Élargir à
+ * 50 km ne changera rien : ce n'est pas la distance qui bloque. L'écran dit
+ * d'où vient le vide et ramène là où l'on rattache un réseau — proposer
+ * d'élargir serait envoyer chercher plus loin quelque chose qui n'est pas là.
  */
 import { useState } from 'react';
 import { View } from 'react-native';
 
 import { useApi, type Fil } from '../api';
-import { BusinessCard, Chip, EmptyState, RangeeDeChips, StatusMessage, Texte } from '../components';
+import {
+  Apparition,
+  BusinessCard,
+  Button,
+  Chip,
+  EmptyState,
+  EnTeteDEcran,
+  Icone,
+  RangeeDeChips,
+  StatusMessage,
+  Texte,
+} from '../components';
 import { useI18n } from '../i18n';
 import { en } from '../i18n/en';
 import { Ecran } from './Ecran';
@@ -42,15 +58,23 @@ const RAYONS_KM = [15, 30, 50];
 
 export type Position = { longitude: number; latitude: number };
 
+/** L'obstacle qu'aucun élargissement ne lève : il n'y a pas de compte. */
+const AUCUN_COMPTE = 'no_social_account';
+
 export function FilScreen({
   position,
+  prenom = null,
   onDemanderLaPosition,
   onOuvrirLeCommerce,
+  onConnecterUnReseau,
 }: {
   /** Nulle tant que l'autorisation n'est pas donnée. */
   position: Position | null;
+  /** Résolu par la coquille : l'écran ne lit pas la session. */
+  prenom?: string | null;
   onDemanderLaPosition: () => void;
   onOuvrirLeCommerce: (businessId: string) => void;
+  onConnecterUnReseau?: () => void;
 }) {
   const { api } = useApi();
   const { t } = useI18n();
@@ -81,27 +105,42 @@ export function FilScreen({
     );
   }
 
+  const filPret = requete.etat === 'pret' ? requete.donnees : null;
+  const sansCompte = Boolean(
+    filPret?.obstacles.some((obstacle) => obstacle.raison === AUCUN_COMPTE),
+  );
+
   return (
     <Ecran
       requete={requete}
-      titre={t('parcours.filTitre')}
       testID="ecran-fil"
+      entete={
+        <EnTeteDEcran
+          titre={t('parcours.filTitre')}
+          surtitre={prenom ? t('tiers.greeting', { prenom }) : null}
+          testID="entete-fil"
+        />
+      }
       vide={
-        <View style={{ gap: 12 }}>
-          <EmptyState
-            title={t('parcours.filTitre')}
-            body={t('parcours.filVide', { rayon: rayonKm })}
-            // Chaque issue annonce son gain : « élargir à 30 km » plutôt
-            // qu'« élargir ». Le nombre de salons n'est connu qu'après l'appel,
-            // c'est donc la distance qui se dit.
-            actions={RAYONS_KM.filter((r) => r > rayonKm).map((rayon) => ({
-              label: t('parcours.filElargir', { rayon }),
-              onPress: () => setRayonKm(rayon),
-              variant: 'secondary' as const,
-            }))}
-          />
-          <Obstacles fil={requete.etat === 'pret' ? requete.donnees : null} />
-        </View>
+        sansCompte ? (
+          <CarteDeConnexion onConnecter={onConnecterUnReseau} />
+        ) : (
+          <View style={{ gap: 12 }}>
+            <EmptyState
+              title={t('parcours.filTitre')}
+              body={t('parcours.filVide', { rayon: rayonKm })}
+              // Chaque issue annonce son gain : « élargir à 30 km » plutôt
+              // qu'« élargir ». Le nombre de salons n'est connu qu'après
+              // l'appel, c'est donc la distance qui se dit.
+              actions={RAYONS_KM.filter((r) => r > rayonKm).map((rayon) => ({
+                label: t('parcours.filElargir', { rayon }),
+                onPress: () => setRayonKm(rayon),
+                variant: 'secondary' as const,
+              }))}
+            />
+            <Obstacles fil={filPret} />
+          </View>
+        )
       }
     >
       {(fil) => (
@@ -124,11 +163,11 @@ export function FilScreen({
               au palier story mais pas au reel doit savoir ce qui lui manque,
               sinon il croit avoir tout vu. */}
           <Obstacles fil={fil} />
-          {fil.commerces.map((commerce) => {
+          {fil.commerces.map((commerce, rang) => {
             const item = commerce.items[0];
             return (
+              <Apparition key={commerce.business_id} rang={rang}>
               <BusinessCard
-                key={commerce.business_id}
                 testID={`commerce-${commerce.business_id}`}
                 name={commerce.name}
                 // La couverture était simplement absente : la carte recevait
@@ -144,6 +183,7 @@ export function FilScreen({
                 distance={`${Math.round(commerce.distance_metres)} m`}
                 onPress={() => onOuvrirLeCommerce(commerce.business_id)}
               />
+              </Apparition>
             );
           })}
         </View>
@@ -168,6 +208,33 @@ function Obstacles({ fil }: { fil: Fil | null }) {
           {messageDObstacle(t, obstacle, CODES_CONNUS)}
         </Texte>
       ))}
+    </View>
+  );
+}
+
+/**
+ * Le fil vide parce qu'aucun réseau n'est rattaché.
+ *
+ * Distinct de « rien dans ton rayon » : la cause n'est pas la même, et l'issue
+ * non plus. Proposer d'élargir ici enverrait chercher plus loin quelque chose
+ * qui n'y est pas.
+ */
+function CarteDeConnexion({ onConnecter }: { onConnecter?: () => void }) {
+  const { t } = useI18n();
+  return (
+    <View style={{ gap: 12, alignItems: 'flex-start' }} testID="fil-sans-compte">
+      <Icone nom="etincelle" couleur="accent.default" taille={28} />
+      <Texte variante="type.heading">{t('tiers.connectTitle')}</Texte>
+      <Texte variante="type.body" couleur="text.secondary">
+        {t('tiers.connectBody')}
+      </Texte>
+      {onConnecter ? (
+        <Button
+          label={t('tiers.connectAction')}
+          onPress={onConnecter}
+          testID="aller-connecter-un-reseau"
+        />
+      ) : null}
     </View>
   );
 }

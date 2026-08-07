@@ -9,8 +9,10 @@ démarré le parcours.
 import uuid
 from collections.abc import AsyncIterator
 from typing import Annotated
+from urllib.parse import urlencode, urlsplit
 
 from fastapi import APIRouter, Depends, Path, Query, status
+from fastapi.responses import RedirectResponse
 
 from app.core.config import ConfigurationError
 from app.core.dependencies import CurrentUser, SessionDep, require_role
@@ -20,6 +22,7 @@ from app.integrations.social import SocialProvider, SocialProviderError
 from app.models.enums import Platform, UserRole
 from app.schemas.social_accounts import (
     AutorisationDemarree,
+    OuvertureDemandee,
     SocialAccountRead,
     SocialMetricsRead,
 )
@@ -78,11 +81,12 @@ async def list_accounts(user: CurrentUser, session: SessionDep) -> list[SocialAc
     dependencies=[Depends(require_role(UserRole.CREATOR))],
 )
 async def start_instagram(
-    user: CurrentUser, session: SessionDep, provider: InstagramDep
+    user: CurrentUser,
+    session: SessionDep,
+    provider: InstagramDep,
+    demande: OuvertureDemandee | None = None,
 ) -> AutorisationDemarree:
-    url = await service.start_authorization(session, user=user, provider=provider)
-    await session.commit()
-    return AutorisationDemarree(authorization_url=url)
+    return await _ouvrir(session, user=user, provider=provider, demande=demande)
 
 
 @router.post(
@@ -91,7 +95,10 @@ async def start_instagram(
     dependencies=[Depends(require_role(UserRole.CREATOR))],
 )
 async def start_tiktok(
-    user: CurrentUser, session: SessionDep, provider: TikTokDep
+    user: CurrentUser,
+    session: SessionDep,
+    provider: TikTokDep,
+    demande: OuvertureDemandee | None = None,
 ) -> AutorisationDemarree:
     """Jumelle de la route Instagram, et volontairement pas une route générique.
 
@@ -100,56 +107,122 @@ async def start_tiktok(
     existe et qu'elle est en panne. Deux routes déclarées disent exactement ce
     qui est branché.
     """
-    url = await service.start_authorization(session, user=user, provider=provider)
+    return await _ouvrir(session, user=user, provider=provider, demande=demande)
+
+
+async def _ouvrir(
+    session,
+    *,
+    user,
+    provider: SocialProvider,
+    demande: "OuvertureDemandee | None",
+) -> AutorisationDemarree:
+    """L'ouverture, identique pour les deux plateformes."""
+    try:
+        url = await service.start_authorization(
+            session, user=user, provider=provider, retour=demande.return_url if demande else None
+        )
+    except service.AdresseDeRetourRefusee as error:
+        # Refusé ici, avant d'envoyer qui que ce soit chez Meta : au retour, la
+        # personne aurait déjà autorisé, et il n'y aurait plus rien à faire de
+        # propre.
+        raise api_error(status.HTTP_400_BAD_REQUEST, ErrorCode.VALIDATION_FAILED) from error
+
     await session.commit()
     return AutorisationDemarree(authorization_url=url)
 
 
-@router.get("/social-accounts/tiktok/callback", response_model=SocialAccountRead)
+@router.get("/social-accounts/tiktok/callback", response_model=None)
 async def tiktok_callback(
     session: SessionDep,
     provider: TikTokDep,
     code: Annotated[str, Query()],
     state: Annotated[str, Query()],
-) -> SocialAccountRead:
+) -> SocialAccountRead | RedirectResponse:
     return await _terminer(session, provider=provider, code=code, state=state)
 
 
-@router.get("/social-accounts/instagram/callback", response_model=SocialAccountRead)
+@router.get("/social-accounts/instagram/callback", response_model=None)
 async def instagram_callback(
     session: SessionDep,
     provider: InstagramDep,
     code: Annotated[str, Query()],
     state: Annotated[str, Query()],
-) -> SocialAccountRead:
+) -> SocialAccountRead | RedirectResponse:
     """Retour du fournisseur. Volontairement hors du préfixe `/me` : personne
     n'est authentifié ici, c'est l'état qui identifie."""
     return await _terminer(session, provider=provider, code=code, state=state)
 
 
+def _retour_vers_l_app(retour: str, **parametres: str) -> RedirectResponse:
+    """Renvoie vers l'application, avec l'issue en paramètres.
+
+    **Jamais le jeton ni le code.** Ils ont été échangés côté serveur et le
+    compte est déjà rattaché ; l'application n'a besoin que de savoir que c'est
+    fait, elle relit ensuite ses comptes par une route authentifiée. Faire
+    voyager un secret dans une adresse le déposerait dans l'historique du
+    navigateur et dans les journaux du système.
+
+    303 et non 302 : la méthode devient un GET, ce qui est ce qu'on veut d'un
+    retour de navigateur.
+    """
+    separateur = "&" if urlsplit(retour).query else "?"
+    return RedirectResponse(
+        f"{retour}{separateur}{urlencode(parametres)}",
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
+
+
 async def _terminer(
     session, *, provider: SocialProvider, code: str, state: str
-) -> SocialAccountRead:
+) -> SocialAccountRead | RedirectResponse:
     """Le retour, identique quelle que soit la plateforme.
 
     Écrit une fois : deux copies divergeraient au premier code d'erreur ajouté,
     et c'est la plateforme la moins utilisée qui garderait l'ancienne.
+
+    **Deux façons de répondre, selon d'où l'on vient.** Ouvert depuis
+    l'application, le parcours doit y revenir : le rappel arrive ici, sur le
+    serveur, et l'application est ailleurs — sur un téléphone, à une autre
+    adresse. Sans redirection, l'autorisation se termine sur du JSON affiché
+    dans le navigateur, et l'app ne sait jamais que le compte est rattaché.
+    Sans adresse de retour — un navigateur, un essai en ligne de commande — le
+    JSON reste la bonne réponse.
+
+    **L'échec revient aussi.** Un rappel qui échouerait en silence laisserait
+    l'application attendre un retour qui n'arrive pas ; la redirection porte
+    alors le code d'erreur, que l'app sait déjà traduire.
     """
+    retour: str | None = None
     try:
-        compte = await service.complete_authorization(
+        rattachement = await service.complete_authorization(
             session, state=state, code=code, provider=provider
         )
+        retour = rattachement.retour
     except service.InvalidOAuthState as error:
         raise api_error(status.HTTP_400_BAD_REQUEST, ErrorCode.OAUTH_STATE_INVALID) from error
     except service.AccountTakenByAnotherCreator as error:
+        adresse = await service.adresse_de_retour(session, state=state)
+        if adresse:
+            return _retour_vers_l_app(adresse, statut="erreur", code=ErrorCode.SOCIAL_ACCOUNT_TAKEN)
         raise api_error(status.HTTP_409_CONFLICT, ErrorCode.SOCIAL_ACCOUNT_TAKEN) from error
     except SocialProviderError as error:
+        adresse = await service.adresse_de_retour(session, state=state)
+        if adresse:
+            return _retour_vers_l_app(
+                adresse, statut="erreur", code=ErrorCode.SOCIAL_PROVIDER_UNAVAILABLE
+            )
         raise api_error(
             status.HTTP_502_BAD_GATEWAY, ErrorCode.SOCIAL_PROVIDER_UNAVAILABLE
         ) from error
 
     await session.commit()
-    return SocialAccountRead.model_validate(compte, from_attributes=True)
+
+    if retour:
+        return _retour_vers_l_app(
+            retour, statut="rattache", handle=rattachement.compte.handle or ""
+        )
+    return SocialAccountRead.model_validate(rattachement.compte, from_attributes=True)
 
 
 @router.post(

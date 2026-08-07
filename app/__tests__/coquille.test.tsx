@@ -68,6 +68,20 @@ function serveur(table: Record<string, { status?: number; corps: unknown }>) {
   };
 }
 
+/** Un iPhone à encoche : 47 points en haut, 34 pour l'indicateur d'accueil. */
+const IPHONE_A_ENCOCHE = {
+  frame: { x: 0, y: 0, width: 390, height: 844 },
+  insets: { top: 47, left: 0, right: 0, bottom: 34 },
+};
+
+function styleAplati(element: { props: { style?: unknown } }): Record<string, unknown> {
+  const empile = (valeur: unknown): Record<string, unknown> =>
+    Array.isArray(valeur)
+      ? Object.assign({}, ...valeur.map(empile))
+      : ((valeur as Record<string, unknown>) ?? {});
+  return empile(element.props.style);
+}
+
 function Cadre({
   children,
   coffre,
@@ -78,11 +92,17 @@ function Cadre({
   fetchImpl: typeof fetch;
 }) {
   return (
-    <I18nProvider initialLocale="en">
-      <SessionProvider baseUrl="https://api.test" coffre={coffre} fetchImpl={fetchImpl}>
-        <Sous>{children}</Sous>
-      </SessionProvider>
-    </I18nProvider>
+    // Les marges système sont fournies ici comme dans `App` : la barre
+    // d'onglets les lit pour poser son décalage du bas, et sans fournisseur
+    // elle lève — ce qui est le bon comportement, une barre qui ignore
+    // l'indicateur d'accueil coupe ses libellés.
+    <SafeAreaProvider initialMetrics={IPHONE_A_ENCOCHE}>
+      <I18nProvider initialLocale="en">
+        <SessionProvider baseUrl="https://api.test" coffre={coffre} fetchImpl={fetchImpl}>
+          <Sous>{children}</Sous>
+        </SessionProvider>
+      </I18nProvider>
+    </SafeAreaProvider>
   );
 }
 
@@ -522,6 +542,32 @@ describe('aiguillage par rôle', () => {
     }
   });
 
+  it('la barre d’onglets laisse la place à l’indicateur d’accueil', async () => {
+    await monterPour('creator');
+
+    // Les libellés se lisaient « Nearbv », « Bookinas », « Settinas » : la
+    // barre s'arrêtait au bord de l'écran et l'indicateur d'accueil recouvrait
+    // leur dernière ligne de pixels. La marge du bas ne peut pas venir de
+    // `ZoneSure` — la barre est collée au bord, et l'y remonter laisserait une
+    // bande de fond dessous.
+    const barre = screen.getByText(en.onglets.fil);
+    const marges = IPHONE_A_ENCOCHE.insets;
+
+    // On remonte jusqu'au conteneur qui porte la hauteur : le libellé lui-même
+    // n'a que sa typographie.
+    type Noeud = { parent: Noeud | null; props: { style?: unknown } };
+    let noeud: Noeud | null = barre as unknown as Noeud;
+    let trouve: Record<string, unknown> | null = null;
+    while (noeud !== null && trouve === null) {
+      const style = styleAplati(noeud);
+      if (typeof style.paddingBottom === 'number') trouve = style;
+      noeud = noeud.parent;
+    }
+
+    expect(trouve).not.toBeNull();
+    expect(trouve!.paddingBottom as number).toBeGreaterThanOrEqual(marges.bottom);
+  });
+
   it('les réglages sont joignables depuis les trois rôles', async () => {
     // C'est le seul chemin vers la déconnexion : l'oublier dans un arbre
     // enfermerait quelqu'un dans une session qu'il ne peut pas quitter.
@@ -546,18 +592,6 @@ describe('zone sûre', () => {
    * n'entre pas dans une suite de tests. Ces valeurs sont celles d'un
    * iPhone 13.
    */
-  const IPHONE_A_ENCOCHE = {
-    frame: { x: 0, y: 0, width: 390, height: 844 },
-    insets: { top: 47, left: 0, right: 0, bottom: 34 },
-  };
-
-  function styleAplati(element: { props: { style?: unknown } }): Record<string, unknown> {
-    const empile = (valeur: unknown): Record<string, unknown> =>
-      Array.isArray(valeur)
-        ? Object.assign({}, ...valeur.map(empile))
-        : ((valeur as Record<string, unknown>) ?? {});
-    return empile(element.props.style);
-  }
 
   it('décale le contenu sous l’encoche, au niveau de la coquille', async () => {
     // Le titre passait dessous et se coupait, sur **tous** les écrans. Traité

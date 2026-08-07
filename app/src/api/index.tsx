@@ -21,6 +21,7 @@ import { routes } from './routes';
 import type {
   Abonnement,
   AudienceDuCompte,
+  AutorisationDemarree,
   Booking,
   CodeDeRetrait,
   Collaboration,
@@ -35,6 +36,7 @@ import type {
   LigneDeFile,
   PlanAdministrateur,
   PlanSouscriptible,
+  PlateformeConnectable,
   Reporting,
   VerificationDuCompte,
   VueDesPaliers,
@@ -94,6 +96,28 @@ export class Api {
 
   monAudience(signal?: AbortSignal) {
     return this.client.request<AudienceDuCompte[]>(routes.monAudience(), { signal });
+  }
+
+  /**
+   * Ouvre une autorisation et rend l'adresse où envoyer la personne.
+   *
+   * Deux routes déclarées côté serveur plutôt qu'une route générique : une
+   * route par plateforme dit exactement ce qui est branché, et Snapchat ne
+   * l'est pas. Le choix se fait donc ici, pas dans une chaîne de caractères.
+   */
+  /**
+   * `retour` est l'adresse à laquelle le serveur renverra une fois le compte
+   * rattaché. Sans elle, le parcours se termine sur la réponse du rappel, dans
+   * le navigateur — ce qui convient au web et à rien d'autre.
+   */
+  connecterUnReseau(plateforme: PlateformeConnectable, retour?: string, signal?: AbortSignal) {
+    const chemin =
+      plateforme === 'instagram' ? routes.connecterInstagram() : routes.connecterTikTok();
+    return this.client.request<AutorisationDemarree>(chemin, {
+      methode: 'POST',
+      corps: { return_url: retour ?? null },
+      signal,
+    });
   }
 
   maVerification(signal?: AbortSignal) {

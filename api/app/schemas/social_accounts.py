@@ -9,6 +9,17 @@ from pydantic import BaseModel
 from app.models.enums import Platform, SocialAccountStatus, VerificationStatus
 
 
+class OuvertureDemandee(BaseModel):
+    """Ce que l'application fournit en ouvrant un parcours d'autorisation.
+
+    L'adresse de retour est facultative : un navigateur n'en a pas besoin, il
+    reste sur la réponse du rappel. Un téléphone, si — le rappel arrive sur le
+    serveur, pas sur lui.
+    """
+
+    return_url: str | None = None
+
+
 class AutorisationDemarree(BaseModel):
     """L'URL vers laquelle envoyer le créateur. L'état y est déjà."""
 
