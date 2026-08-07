@@ -23,6 +23,9 @@ class PalierAccessibleRead(BaseModel):
     accessible: bool
     social_account_id: uuid.UUID | None
     obstacles: list[ObstacleRead]
+    #: Ce que le palier ouvre. Zéro est une réponse, pas une absence : un palier
+    #: qu'aucun commerce n'a encore composé se dit, il ne se masque pas.
+    offres_disponibles: int
 
 
 class VueDesPaliersRead(BaseModel):

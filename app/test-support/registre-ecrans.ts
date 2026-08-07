@@ -32,10 +32,12 @@ export const ECRANS_COMMERCE = [
  * Les écrans que le registre ne couvre pas, et pourquoi.
  *
  * `CodeScreen` n'a pas de requête à quatre états : il garde son dernier code
- * quoi qu'il arrive, y compris hors ligne — c'est sa règle, pas un oubli. Les
- * trois autres sont la dette d'avant le système de design.
+ * quoi qu'il arrive, y compris hors ligne — c'est sa règle, pas un oubli.
+ * `BienvenueScreen` ne charge rien : il explique et propose. Les trois derniers
+ * sont la dette d'avant le système de design.
  */
 export const HORS_REGISTRE = [
+  'BienvenueScreen.tsx',
   // La connexion et les réglages ne chargent pas de données à quatre états :
   // le premier attend une saisie, le second lit la session et le catalogue,
   // tous deux déjà en mémoire. Ils sont éprouvés par les tests de la coquille.

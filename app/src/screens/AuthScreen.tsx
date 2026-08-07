@@ -17,7 +17,16 @@ import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
 import { useApi } from '../api';
-import { Button, Chip, RangeeDeChips, StatusMessage, TextField, Texte } from '../components';
+import {
+  Apparition,
+  Button,
+  Chip,
+  Marque,
+  RangeeDeChips,
+  StatusMessage,
+  TextField,
+  Texte,
+} from '../components';
 import { useI18n } from '../i18n';
 import { useSession, type MotifDeSortie, type RoleInscriptible } from '../session';
 import { useTheme } from '../theme';
@@ -74,9 +83,16 @@ export function AuthScreen({ motif }: { motif: MotifDeSortie | null }) {
       }}
       keyboardShouldPersistTaps="handled"
     >
-      <Texte variante="type.display">
-        {inscription ? t('auth.titreInscription') : t('auth.titreConnexion')}
-      </Texte>
+      {/* La marque en grand : c'est le premier écran, et le seul endroit où
+          l'on a la place de la montrer. Ailleurs, le signe seul suffit. */}
+      <Apparition>
+        <View style={{ alignItems: 'flex-start', gap: 18, paddingBottom: 6 }}>
+          <Marque taille={44} />
+          <Texte variante="type.display">
+            {inscription ? t('auth.titreInscription') : t('auth.titreConnexion')}
+          </Texte>
+        </View>
+      </Apparition>
 
       {/* Pourquoi on est revenu ici. Effacé dès qu'on saisit quelque chose. */}
       {sortie && !echec && email === '' ? (

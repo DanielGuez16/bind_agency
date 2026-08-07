@@ -233,6 +233,93 @@ et il passe la validation d'adresse.
 
 ---
 
+## 3 bis. Rattacher un compte Instagram réel
+
+Le jeu de données pose des comptes sociaux **simulés**. Pour brancher un vrai
+compte Instagram, il faut d'abord que l'API soit en mode réel.
+
+### La variable qui bascule
+
+Dans `api/.env`, une seule ligne, et deux valeurs possibles :
+
+```
+SOCIAL_PROVIDER=demo   # fournisseur simulé, chiffres dérivés du pseudonyme
+SOCIAL_PROVIDER=live   # vraies requêtes chez Meta et TikTok
+```
+
+`instagram` n'est pas une valeur acceptée : l'API refuse de démarrer, en
+nommant le champ. Il faut aussi `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET` et
+`INSTAGRAM_REDIRECT_URI`, cette dernière **identique** à celle déclarée dans
+l'application Meta.
+
+En `live`, le jeu de données continue de fonctionner : il construit ses propres
+fournisseurs simulés et ne passe pas par ce réglage.
+
+### Les permissions demandées
+
+Une seule : `instagram_business_basic`. Elle suffit à lire l'identifiant, le
+pseudonyme, le nombre d'abonnés, d'abonnements et de publications — tout ce que
+le produit utilise. Aucune permission de messagerie, de commentaire ni de
+publication n'est demandée : celles-ci apparaissent dans les URL d'exemple
+générées par le tableau de bord Meta, pas dans celle que l'API compose.
+
+Pour vérifier ce qui part réellement :
+
+```
+curl -s -X POST http://<ip>:8010/api/v1/me/social-accounts/instagram/connect \
+  -H "authorization: Bearer <jeton>" -H 'content-type: application/json' \
+  -d '{"return_url":"exp://<ip>:8081/--/oauth"}'
+```
+
+Le paramètre `scope` de l'URL rendue doit valoir `instagram_business_basic`, et
+rien d'autre.
+
+### Où cliquer, et ce que vous devez voir
+
+1. **Onglet Audience**, en bas de l'écran. Sous la liste des comptes :
+   *Connect a network*, puis deux boutons, **Instagram** et **TikTok**.
+   À l'inscription, le même choix est proposé sur l'écran d'accueil.
+2. Toucher **Instagram**. Une vue navigateur s'ouvre **par-dessus l'app**, sur
+   `instagram.com` — ce n'est pas Safari, l'app reste dessous.
+3. Se connecter, autoriser. La page d'autorisation ne doit demander que
+   l'accès au profil et aux statistiques.
+4. Instagram renvoie sur le tunnel, l'API échange le jeton, rattache le compte
+   et **redirige vers l'app**. La vue navigateur **se referme toute seule**.
+5. L'écran Audience se recharge et montre le compte : pseudonyme, abonnés,
+   publications, et la date du relevé.
+
+Si la vue ne se referme pas, c'est que la redirection n'a pas abouti — voir
+plus bas.
+
+### Le retour dans l'app, et pourquoi il n'allait pas de soi
+
+Le rappel d'Instagram arrive sur le **tunnel**, côté serveur. L'app tourne sur
+le téléphone, à une autre adresse : rien ne la ramène toute seule, et la
+première version terminait le parcours sur une réponse JSON affichée dans le
+navigateur — le compte était rattaché, l'app ne le savait jamais.
+
+L'app dit donc au serveur où revenir. Elle envoie son adresse
+(`exp://<ip>:8081/--/oauth` sous Expo Go), le serveur la garde avec l'état
+OAuth et **redirige dessus** une fois le compte rattaché. La vue navigateur
+surveille cette adresse et se referme en la voyant.
+
+L'adresse de retour est contrôlée à l'ouverture, contre une liste fermée de
+schémas (`exp`, `bind`) : une adresse arbitraire suivie sans contrôle ferait de
+ce rappel une redirection ouverte.
+
+**Ce qui ne marche pas en Expo Go, et ce qu'il faut savoir :**
+
+- Le tunnel `cloudflared` change d'adresse à chaque redémarrage. Il faut alors
+  mettre à jour `INSTAGRAM_REDIRECT_URI` **et** l'URI déclarée chez Meta, puis
+  relancer l'API. Une seule des deux suffit à casser le parcours, avec un
+  message qui vient de Meta et ne dit pas laquelle.
+- Si vous lancez Expo **en mode tunnel** (`npx expo start --tunnel`), l'adresse
+  de retour devient celle du tunnel Expo, que le serveur refuse. Rester en
+  `--host lan` pour ce parcours.
+- Le compte Instagram doit être **professionnel ou créateur**, et inscrit comme
+  testeur de l'application Meta tant qu'elle est en développement. Un compte
+  personnel est refusé par Meta, avec un message à eux.
+
 ## 4. Remettre le jeu à zéro
 
 ```

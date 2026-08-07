@@ -74,6 +74,19 @@ class Settings(BaseSettings):
     # de revenir, pas celui d'une session.
     oauth_state_ttl_seconds: int = 600
 
+    #: Les schémas d'adresse vers lesquels le rappel OAuth accepte de renvoyer.
+    #:
+    #: Le rappel arrive sur le serveur ; c'est lui qui doit ramener la personne
+    #: dans l'application. L'adresse de retour est donc fournie par le client —
+    #: et une adresse fournie par le client, suivie sans contrôle, est une
+    #: redirection ouverte : de quoi faire aboutir un parcours d'autorisation
+    #: sur un site tiers. La liste est donc fermée.
+    #:
+    #: `exp` est Expo Go, `bind` le schéma de l'application compilée. `https`
+    #: n'y est pas : rien n'en a besoin aujourd'hui, et l'ajouter demanderait
+    #: une liste d'hôtes, pas seulement de schémas.
+    oauth_return_schemes: CommaSeparated = ["exp", "bind"]
+
     # Application Meta. Facultatives : l'API doit pouvoir démarrer sans elles —
     # l'absence n'est pas un repli, le fournisseur refuse simplement de servir.
     instagram_app_id: str | None = None

@@ -17,7 +17,13 @@
  * l'utilisateur — et tant qu'il n'y en a pas, l'onglet dit quoi faire plutôt
  * que d'afficher une erreur.
  */
-import { NavigationContainer, DefaultTheme, type Theme } from '@react-navigation/native';
+import {
+  NavigationContainer,
+  DefaultTheme,
+  useNavigationContainerRef,
+  type Theme,
+} from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
@@ -82,6 +88,68 @@ const PileCommerce = createNativeStackNavigator<PileCommerceParams>();
 const Onglets = createBottomTabNavigator();
 
 /**
+ * Les options communes à toutes les barres d'onglets.
+ *
+ * **La barre porte elle-même la marge du bas.** `ZoneSure` applique le haut et
+ * les côtés ; le bas ne peut pas venir de là, parce que la barre est collée au
+ * bord et que la remonter laisserait une bande de fond sous elle. Sans cette
+ * marge, l'indicateur d'accueil de l'iPhone recouvrait la moitié des libellés :
+ * « Nearby » se lisait « Nearbv ».
+ *
+ * **Une hauteur explicite.** La hauteur par défaut est calculée avant que les
+ * marges soient connues, et ne se met pas à jour ensuite.
+ */
+function useOptionsDOnglets() {
+  const marges = useSafeAreaInsets();
+  const { color: c } = useTheme();
+
+  return {
+    headerShown: false,
+    tabBarStyle: {
+      // La hauteur se compose : le contenu, puis la marge système. Fixer une
+      // hauteur *et* des marges intérieures écrase le libellé — la boîte tient
+      // dans la barre, mais le texte déborde sous sa ligne de base, ce qui ne
+      // se voit qu'à l'œil et jamais dans une mesure de mise en page.
+      height: HAUTEUR_BARRE + marges.bottom,
+      paddingTop: 6,
+      paddingBottom: marges.bottom + 6,
+      backgroundColor: c['bg.surface'],
+      borderTopColor: c['border.subtle'],
+      borderTopWidth: 1,
+    },
+    tabBarLabelStyle: { fontSize: 11, lineHeight: 15, marginTop: 4 },
+    tabBarActiveTintColor: c['accent.default'],
+    tabBarInactiveTintColor: c['text.muted'],
+  } as const;
+}
+
+/**
+ * La barre, hors marge système.
+ *
+ * Mesurée à l'écran, pas déduite : 24 points d'icône, l'écart, le libellé sur
+ * sa ligne, et les marges. Cinquante-huit rognait la dernière ligne de pixels
+ * des libellés — assez pour transformer « Nearby » en « Nearbv », pas assez
+ * pour que la cause saute aux yeux, et invisible dans une mesure de boîte : la
+ * boîte du libellé tenait, son texte non.
+ */
+const HAUTEUR_BARRE = 74;
+
+/**
+ * Les options communes aux piles.
+ *
+ * **Un glissement horizontal, et un retour au geste.** Les écrans
+ * apparaissaient sans transition : rien ne disait qu'on entrait dans un détail
+ * plutôt que de changer d'onglet, et le retour ne s'offrait que par le bouton
+ * système. `gestureEnabled` rend le glissement depuis le bord, qui est le
+ * retour que tout le monde essaie d'abord.
+ */
+const OPTIONS_DE_PILE = {
+  headerShown: false,
+  animation: 'slide_from_right',
+  gestureEnabled: true,
+} as const;
+
+/**
  * Les options d'un onglet : son libellé et son icône.
  *
  * Sans `tabBarIcon`, la barre affiche le caractère de repli de la
@@ -117,15 +185,25 @@ function IconeDOnglet({ nom, actif }: { nom: NomIcone; actif: string }) {
  * quelque chose. Les mettre côte à côte demanderait de choisir un commerce
  * avant d'avoir vu le fil.
  */
-function ParcoursCreateur({ onReserve }: { onReserve: (bookingId: string) => void }) {
+function ParcoursCreateur({
+  prenom,
+  onReserve,
+  onConnecterUnReseau,
+}: {
+  prenom: string | null;
+  onReserve: (bookingId: string) => void;
+  onConnecterUnReseau: () => void;
+}) {
   const { position, demander } = usePosition();
 
   return (
-    <PileCreateur.Navigator screenOptions={{ headerShown: false }}>
+    <PileCreateur.Navigator screenOptions={OPTIONS_DE_PILE}>
       <PileCreateur.Screen name="Fil">
         {({ navigation }) => (
           <FilScreen
             position={position}
+            prenom={prenom}
+            onConnecterUnReseau={onConnecterUnReseau}
             onDemanderLaPosition={demander}
             onOuvrirLeCommerce={(businessId) => navigation.navigate('Fiche', { businessId })}
           />
@@ -171,7 +249,7 @@ function ParcoursCreateur({ onReserve }: { onReserve: (bookingId: string) => voi
  */
 function PileDesReservations() {
   return (
-    <PileReservations.Navigator screenOptions={{ headerShown: false }}>
+    <PileReservations.Navigator screenOptions={OPTIONS_DE_PILE}>
       <PileReservations.Screen name="Historique">
         {({ navigation }) => (
           <HistoriqueScreen
@@ -212,13 +290,22 @@ function PileDesReservations() {
   );
 }
 
-function OngletsCreateur() {
+function OngletsCreateur({
+  prenom,
+  onConnecterUnReseau,
+}: {
+  prenom: string | null;
+  onConnecterUnReseau: () => void;
+}) {
   const { t } = useI18n();
+  const options = useOptionsDOnglets();
   return (
-    <Onglets.Navigator screenOptions={{ headerShown: false }}>
+    <Onglets.Navigator screenOptions={options}>
       <Onglets.Screen name="parcours" options={onglet(t('onglets.fil'), 'lieu')}>
         {({ navigation }) => (
           <ParcoursCreateur
+            prenom={prenom}
+            onConnecterUnReseau={onConnecterUnReseau}
             // **La confirmation change d'onglet.** Le code de retrait
             // appartient au parcours des réservations ; l'afficher dans
             // l'onglet « à proximité » le donnait à lire comme une étape de la
@@ -233,11 +320,11 @@ function OngletsCreateur() {
           />
         )}
       </Onglets.Screen>
-      <Onglets.Screen
-        name="paliers"
-        component={PaliersScreen}
-        options={onglet(t('onglets.paliers'), 'paliers')}
-      />
+      <Onglets.Screen name="paliers" options={onglet(t('onglets.paliers'), 'paliers')}>
+        {() => (
+          <PaliersScreen prenom={prenom} onConnecterUnReseau={onConnecterUnReseau} />
+        )}
+      </Onglets.Screen>
       <Onglets.Screen
         name="reservations"
         component={PileDesReservations}
@@ -272,7 +359,7 @@ function CaisseAvecJeton() {
 
 function ParcoursCommerce({ businessId }: { businessId: string }) {
   return (
-    <PileCommerce.Navigator screenOptions={{ headerShown: false }}>
+    <PileCommerce.Navigator screenOptions={OPTIONS_DE_PILE}>
       <PileCommerce.Screen name="Journee" initialParams={{ businessId }}>
         {() => <JourneeScreen businessId={businessId} />}
       </PileCommerce.Screen>
@@ -289,13 +376,14 @@ function ParcoursCommerce({ businessId }: { businessId: string }) {
 
 function OngletsCommerce() {
   const { t } = useI18n();
+  const options = useOptionsDOnglets();
   const { businessId, ecranDAttente } = useMonCommerce();
 
   // Pas de commerce rattaché : un onglet qui répondrait 403 partout ne dit
   // rien. On montre ce qu'il faut faire, et les réglages restent joignables.
   if (businessId === null) {
     return (
-      <Onglets.Navigator screenOptions={{ headerShown: false }}>
+      <Onglets.Navigator screenOptions={options}>
         <Onglets.Screen name="attente" options={onglet(t('onglets.journee'), 'calendrier')}>
           {() => ecranDAttente}
         </Onglets.Screen>
@@ -309,7 +397,7 @@ function OngletsCommerce() {
   }
 
   return (
-    <Onglets.Navigator screenOptions={{ headerShown: false }}>
+    <Onglets.Navigator screenOptions={options}>
       <Onglets.Screen name="journee" options={onglet(t('onglets.journee'), 'calendrier')}>
         {() => <ParcoursCommerce businessId={businessId} />}
       </Onglets.Screen>
@@ -337,8 +425,9 @@ function OngletsCommerce() {
 
 function OngletsAdmin() {
   const { t } = useI18n();
+  const options = useOptionsDOnglets();
   return (
-    <Onglets.Navigator screenOptions={{ headerShown: false }}>
+    <Onglets.Navigator screenOptions={options}>
       <Onglets.Screen
         name="arbitrage"
         component={ArbitrageScreen}
@@ -376,13 +465,28 @@ function themeDeNavigation(couleurs: ReturnType<typeof useTheme>['color']): Them
   };
 }
 
-export function Navigation({ role }: { role: 'creator' | 'business_member' | 'admin' }) {
+export function Navigation({
+  role,
+  prenom = null,
+}: {
+  role: 'creator' | 'business_member' | 'admin';
+  /** Résolu par `App`, à partir de la session. Les écrans ne la lisent pas. */
+  prenom?: string | null;
+}) {
   const { color } = useTheme();
+  // La référence sert à viser l'onglet du rattachement depuis un écran qui
+  // n'est pas dans le même arbre — le fil et les paliers y mènent tous les
+  // deux, et leur passer un objet de navigation les rendrait dépendants de
+  // l'arbre où ils sont montés.
+  const conteneur = useNavigationContainerRef();
 
   return (
-    <NavigationContainer theme={themeDeNavigation(color)}>
+    <NavigationContainer ref={conteneur} theme={themeDeNavigation(color)}>
       {role === 'creator' ? (
-        <OngletsCreateur />
+        <OngletsCreateur
+          prenom={prenom}
+          onConnecterUnReseau={() => conteneur.navigate('audience' as never)}
+        />
       ) : role === 'business_member' ? (
         <OngletsCommerce />
       ) : (

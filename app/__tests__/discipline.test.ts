@@ -69,3 +69,39 @@ describe('discipline des tests de rendu', () => {
     expect(lignesNonAttendues(source)).toEqual([]);
   });
 });
+
+/**
+ * Aucun émoji dans le produit.
+ *
+ * Ils vieillissent mal, se rendent différemment d'un appareil à l'autre, et
+ * remplacent un mot par une devinette. La règle porte sur les pictogrammes —
+ * les flèches typographiques d'un commentaire n'en sont pas.
+ */
+describe('aucun émoji', () => {
+  const PICTOGRAMMES =
+    /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{1F1E6}-\u{1F1FF}]/u;
+
+  function fichiers(dossier: string, trouves: string[] = []): string[] {
+    for (const entree of readdirSync(dossier, { withFileTypes: true })) {
+      const chemin = join(dossier, entree.name);
+      if (entree.isDirectory()) fichiers(chemin, trouves);
+      else if (/\.tsx?$/.test(entree.name)) trouves.push(chemin);
+    }
+    return trouves;
+  }
+
+  it('ni dans les catalogues de langue, ni dans les composants', () => {
+    const fautifs: string[] = [];
+    for (const chemin of fichiers(join(__dirname, '..', 'src'))) {
+      readFileSync(chemin, 'utf-8')
+        .split('\n')
+        .forEach((ligne, index) => {
+          const trouve = PICTOGRAMMES.exec(ligne);
+          if (trouve) {
+            fautifs.push(`${chemin.slice(chemin.indexOf('src/'))}:${index + 1} → ${trouve[0]}`);
+          }
+        });
+    }
+    expect(fautifs).toEqual([]);
+  });
+});

@@ -153,12 +153,13 @@ async def _creer(
         token_ttl=token_ttl,
     )
     url = await social_account_service.start_authorization(session, user=user, provider=fournisseur)
-    compte = await social_account_service.complete_authorization(
+    rattachement = await social_account_service.complete_authorization(
         session,
         state=httpx.URL(url).params["state"],
         code=f"demo-{handle}",
         provider=fournisseur,
     )
+    compte = rattachement.compte
     await metrics_service.refresh_profile_metrics(session, account=compte, provider=fournisseur)
     return user, compte
 

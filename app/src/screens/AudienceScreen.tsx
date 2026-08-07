@@ -13,20 +13,39 @@
  * démarrage — le compteur de jours se calcule ici — et les signaux jugés. Une
  * promesse tenue par une file d'attente humaine se brise le premier jour de
  * charge, auprès de gens qui n'ont rien fait de mal.
+ *
+ * **C'est ici qu'on rattache un réseau.** L'écran listait les comptes sans
+ * offrir d'en ajouter un : le fil et les paliers renvoyaient vers un écran qui
+ * disait « aucune mesure » et s'arrêtait là. L'action existe donc dans les deux
+ * états, avec des comptes et sans.
  */
+import { useState } from 'react';
 import { View } from 'react-native';
 
-import { useApi, type AudienceDuCompte, type VerificationDuCompte } from '../api';
-import { DataRow, StatusMessage, Texte } from '../components';
+import {
+  useApi,
+  type AudienceDuCompte,
+  type PlateformeConnectable,
+  type VerificationDuCompte,
+} from '../api';
+import { Apparition, Button, DataRow, StatusMessage, Texte, vibration } from '../components';
 import { useI18n } from '../i18n';
+import { translateErrorCode } from '../i18n/errors';
+import { rattacherUnReseau } from '../shell/rattacherUnReseau';
 import { Ecran } from './Ecran';
+import { nomDePlateforme } from './obstacle';
 import { useRequete } from './useRequete';
+
+/** Les réseaux branchés. Snapchat n'a pas d'accès partenaire. */
+const RESEAUX: PlateformeConnectable[] = ['instagram', 'tiktok'];
 
 type Vue = { audience: AudienceDuCompte[]; verification: VerificationDuCompte[] };
 
 export function AudienceScreen() {
-  const { api } = useApi();
+  const { api, messageDErreur } = useApi();
   const { t } = useI18n();
+  const [ouverture, setOuverture] = useState<PlateformeConnectable | null>(null);
+  const [echec, setEchec] = useState<string | null>(null);
 
   const requete = useRequete<Vue>(
     async (signal) => ({
@@ -42,7 +61,10 @@ export function AudienceScreen() {
       titre={t('parcours.audienceTitre')}
       testID="ecran-audience"
       vide={
-        <StatusMessage level="neutral" body={t('parcours.audienceVide')} testID="audience-vide" />
+        <View style={{ gap: 12 }}>
+          <StatusMessage level="neutral" body={t('parcours.audienceVide')} testID="audience-vide" />
+          <Rattacher />
+        </View>
       }
     >
       {({ audience, verification }) => (
@@ -119,8 +141,53 @@ export function AudienceScreen() {
               </View>
             );
           })}
+          <Rattacher />
         </View>
       )}
     </Ecran>
   );
+
+  /**
+   * Les boutons de rattachement.
+   *
+   * Déclarés ici et non au niveau du module : ils partagent l'état d'ouverture
+   * et le client d'API de l'écran, et les faire remonter demanderait de passer
+   * quatre propriétés pour deux boutons.
+   */
+  function Rattacher() {
+    async function connecter(plateforme: PlateformeConnectable) {
+      setOuverture(plateforme);
+      setEchec(null);
+      vibration.action();
+      try {
+  
+      } catch (erreur) {
+        vibration.echec();
+        setEchec(messageDErreur(erreur));
+      } finally {
+        setOuverture(null);
+      }
+    }
+
+    return (
+      <Apparition>
+        <View style={{ gap: 8 }} testID="rattacher-un-reseau">
+          <Texte variante="type.label" couleur="text.secondary">
+            {t('parcours.audienceConnecter')}
+          </Texte>
+          {echec ? <StatusMessage level="danger" body={echec} testID="echec-connexion" /> : null}
+          {RESEAUX.map((reseau) => (
+            <Button
+              key={reseau}
+              label={nomDePlateforme(reseau)}
+              variant="secondary"
+              loading={ouverture === reseau}
+              onPress={() => void connecter(reseau)}
+              testID={`connecter-${reseau}`}
+            />
+          ))}
+        </View>
+      </Apparition>
+    );
+  }
 }

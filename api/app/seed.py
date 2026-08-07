@@ -469,12 +469,13 @@ async def _creator(
     fournisseur = FournisseurLocal(handle=handle, followers=followers)
 
     url = await social_account_service.start_authorization(session, user=user, provider=fournisseur)
-    compte = await social_account_service.complete_authorization(
+    rattachement = await social_account_service.complete_authorization(
         session,
         state=httpx.URL(url).params["state"],
         code=f"code-local-{handle}",
         provider=fournisseur,
     )
+    compte = rattachement.compte
 
     await metrics_service.refresh_profile_metrics(session, account=compte, provider=fournisseur)
     return user

@@ -1,4 +1,8 @@
-# Passation — BIND · direction After Hours
+# Passation — BIND · direction Miami After Hours
+
+> **v0.4 — révision de direction visuelle (2026-08-07).** Le sombre est
+> conservé, ses fonds cessent d'être noirs. Ce qui a changé est listé en fin de
+> document, section « v0.4 ». `tokens.json` fait foi.
 
 ## Objet
 BIND met en relation des créateurs de contenu et des commerces de beauté et bien-être à Miami (ongles, instituts, coiffeurs, spas). Deux rôles dans une seule application React Native (Expo, build web) plus un back office administrateur web. Le créateur certifie son audience, obtient des paliers, réserve une prestation offerte, la consomme en présentant un code, publie et soumet sa preuve. Le commerce compose son catalogue par palier, règle horaires et capacité, valide les codes au comptoir et contrôle les publications reçues.
@@ -15,7 +19,7 @@ Le document de référence est ce dossier, pas les maquettes : en cas d'écart, 
 
 ## Contraintes techniques
 - React Native + Expo, build web. **Flexbox uniquement**, aucun grid CSS.
-- Pas de `backdrop-filter`, pas de flou d'arrière-plan, aucun dégradé porteur de sens (les fonds pleins sont des couleurs unies).
+- Pas de `backdrop-filter`, pas de flou d'arrière-plan. Les fonds pleins restent des couleurs unies ; **une seule exception depuis la v0.4**, le voile de lisibilité posé sur une photo (`scrim.top/mid/bottom`), qui ne porte aucun sens et sert uniquement à rendre un texte lisible sur une image quelconque.
 - Ombres déclarées en `shadowColor/shadowOffset/shadowOpacity/shadowRadius` (iOS) + `elevation` (Android). Une ombre est décorative : la profondeur passe par `bg.raised` et une bordure.
 - Animations limitées à `opacity` et `transform`. Pas de shimmer en dégradé animé, pas d'animation de layout sur les listes.
 - Bordures de 1 ou 2 px uniquement. Icônes en `react-native-svg`, 24 px, trait 1,75.
@@ -60,3 +64,58 @@ Chaque écran est fourni avec ses états : chargement, vide, erreur, et pour le 
 - `design/BIND Admin Back Office.dc.html` — cinq files et écrans de gestion.
 
 Ouvrir les `.dc.html` dans un navigateur pour voir les écrans à taille réelle.
+
+
+---
+
+## v0.4 · révision de direction visuelle
+
+Constat sur appareil : trop sombre, trop plat, sans vie. Un seul accent aqua sur
+du noir neutre, aucune marque, aucun mouvement, des icônes approximatives, et
+des écrans qui n'étaient que du texte empilé.
+
+**Les fonds ne sont plus noirs.** Ils sont une encre indigo-prune très sombre et
+légèrement colorée — `bg.canvas` #0E0B16, `bg.surface` #181327, `bg.raised`
+#221B36. Quatre niveaux qui se distinguent réellement l'un de l'autre, ce que
+trois gris neutres à deux points d'écart ne faisaient pas.
+
+**Un second accent, chaud.** `accent.warm` (#FF8A5C en sombre, #B0491A en
+clair) pour ce qui appelle sans être l'action principale. L'aqua reste l'accent
+premier et le seul à porter une action.
+
+**Trois teintes de palier franchement distinctes.** Story rose, post aqua, reel
+violet, chacune avec sa déclinaison `.subtle`, `.onTier` et ses deux couleurs de
+glyphe. Elles étaient gris, aqua et blanc : à l'écran, deux paliers sur trois se
+ressemblaient. La règle des trois marqueurs redondants ne bouge pas — la couleur
+ne porte toujours aucune information seule, le mot et le glyphe restent
+obligatoires.
+
+**Une marque.** Monogramme géométrique : un axe et deux arcs inégaux, lisible
+comme un « B » sans être la lettre d'une police. Trait d'épaisseur constante,
+aucun effet, tient de 20 à 96 points. `Logo` pour le signe, `Marque` pour le
+signe et le nom. Sa couleur vient du thème : elle suit l'accent du rôle.
+
+**Le mouvement entre dans le système.** `motion` existait sans emploi. Trois
+primitives : `Apparition` (opacité et dix points de montée, échelonnée en
+cascade, plafonnée à huit rangs), `useEnfoncement` (échelle 0,97 au doigt), et
+`vibration` (retour tactile des actions engagées). Toutes respectent le réglage
+système « réduire les animations » : pour qui a des vertiges vestibulaires, une
+cascade est un symptôme, pas une décoration. Les piles glissent horizontalement
+et rendent le retour au geste depuis le bord.
+
+**La photo mène la carte.** `BusinessCard` donne 208 points à sa couverture et
+pose le nom dessus, sur le voile de lisibilité. Les photos de salon étaient des
+vignettes de 150 points sous lesquelles s'empilait du texte.
+
+**Les icônes sont construites, plus suggérées.** Le glyphe des réglages était un
+rond entouré de huit rayons — un soleil, pas un réglage. Ce sont maintenant
+trois curseurs. Tête et épaules pour la personne, cadran et aiguilles pour
+l'horloge, et trois glyphes ajoutés : `cadenas`, `etincelle`, `fleche`.
+
+**Chaque écran commence par un point d'entrée visuel.** `EnTeteDEcran` : une
+salutation par le prénom, le titre, et une rangée de compteurs facultative. Le
+prénom se déduit de l'adresse quand il n'y a que ça, et **aucune salutation ne
+s'affiche** si le fragment obtenu n'a pas l'air d'un prénom — « Bonjour
+utilisateur » se remarque immédiatement.
+
+**Aucun émoji, nulle part.** Un test le vérifie sur toutes les sources.

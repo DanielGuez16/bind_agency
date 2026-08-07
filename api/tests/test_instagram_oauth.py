@@ -469,7 +469,146 @@ async def test_une_erreur_de_meta_ne_remonte_pas_telle_quelle(
     assert "Invalid platform app" not in str(excinfo.value)
 
 
-def test_sans_application_declaree_le_fournisseur_refuse_d_exister() -> None:
-    """L'absence de configuration n'est pas un repli : elle est signalée ici, pas chez Meta."""
+def test_sans_application_declaree_le_fournisseur_refuse_d_exister(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """L'absence de configuration n'est pas un repli : elle est signalée ici, pas chez Meta.
+
+    L'absence est **posée**, pas empruntée au `.env` du poste : le test passait
+    tant que personne n'avait déclaré d'application Meta en développement, et
+    tombait le jour où quelqu'un en déclarait une.
+    """
+    from app.core import config as module_config
+    from app.core import encryption
+    from app.integrations import instagram as module_instagram
+
+    sans_application = module_config.build_settings(
+        _env_file=None,
+        database_url=str(get_settings().database_url),
+        jwt_secret_key="peu-importe-ici-mais-assez-longue-pour-hmac",
+        token_encryption_key=encryption.generate_key(),
+        instagram_app_id=None,
+        instagram_app_secret=None,
+        instagram_redirect_uri=None,
+    )
+    monkeypatch.setattr(module_instagram, "get_settings", lambda: sans_application)
+
     with pytest.raises(ConfigurationError, match="INSTAGRAM_APP_ID"):
         InstagramProvider(httpx.AsyncClient())
+
+
+# --------------------------------------------------------------------------
+# Le retour dans l'application
+# --------------------------------------------------------------------------
+#
+# Le rappel arrive sur le serveur ; l'application est ailleurs — sur un
+# téléphone, à une autre adresse. Sans redirection, le parcours se termine sur
+# du JSON affiché dans un navigateur : le compte est rattaché, et l'application
+# ne le sait jamais.
+
+
+async def demarrer_avec_retour(client: AsyncClient, compte: dict, retour: str):
+    return await client.post(
+        f"{PREFIX}/me/social-accounts/instagram/connect",
+        headers=compte["headers"],
+        json={"return_url": retour},
+    )
+
+
+async def test_le_rappel_renvoie_dans_l_application(
+    client_ig: AsyncClient, instagram: FauxInstagram
+) -> None:
+    compte = await createur(client_ig)
+    retour = "exp://192.168.4.54:8081/--/oauth"
+
+    ouverture = await demarrer_avec_retour(client_ig, compte, retour)
+    assert ouverture.status_code == 200, ouverture.text
+    state = httpx.URL(ouverture.json()["authorization_url"]).params["state"]
+
+    reponse = await revenir(client_ig, state)
+
+    assert reponse.status_code == 303
+    destination = httpx.URL(reponse.headers["location"])
+    assert str(destination).startswith(retour)
+    assert destination.params["statut"] == "rattache"
+    # Ni jeton ni code dans l'adresse : ils ont été échangés côté serveur, et
+    # une adresse se dépose dans l'historique du navigateur et dans les
+    # journaux du système.
+    assert "access_token" not in str(destination)
+    assert "code=" not in str(destination)
+
+
+async def test_sans_adresse_de_retour_le_rappel_rend_le_compte(
+    client_ig: AsyncClient, instagram: FauxInstagram
+) -> None:
+    """Un navigateur n'a pas d'application à rejoindre : le JSON reste juste."""
+    compte = await createur(client_ig)
+    state = await demarrer(client_ig, compte)
+
+    reponse = await revenir(client_ig, state)
+
+    assert reponse.status_code == 200
+    assert reponse.json()["platform"] == Platform.INSTAGRAM.value
+
+
+@pytest.mark.parametrize(
+    "adresse",
+    ["https://exemple-hostile.test/vole", "javascript:alert(1)", "//exemple-hostile.test", ""],
+)
+async def test_une_adresse_de_retour_etrangere_est_refusee(
+    client_ig: AsyncClient, instagram: FauxInstagram, adresse: str
+) -> None:
+    """Une adresse fournie par le client et suivie sans contrôle est une
+
+    redirection ouverte : de quoi faire aboutir un parcours d'autorisation BIND
+    sur un site tiers. Refusée **à l'ouverture** — au rappel, la personne a
+    déjà autorisé chez Meta, et il est trop tard pour faire quelque chose de
+    propre.
+    """
+    compte = await createur(client_ig)
+
+    reponse = await demarrer_avec_retour(client_ig, compte, adresse)
+
+    assert reponse.status_code == 400
+    assert reponse.json()["detail"] == "validation_failed"
+
+
+@pytest.mark.parametrize(
+    "adresse", ["exp://10.0.0.7:8081/--/oauth", "exp+bind://oauth", "bind://oauth"]
+)
+async def test_les_schemas_de_l_application_sont_acceptes(
+    client_ig: AsyncClient, instagram: FauxInstagram, adresse: str
+) -> None:
+    """L'autre sens. Une liste qui refuserait tout passerait le test précédent
+
+    sans rien garantir, et le retour ne marcherait jamais.
+    """
+    compte = await createur(client_ig)
+
+    reponse = await demarrer_avec_retour(client_ig, compte, adresse)
+
+    assert reponse.status_code == 200, reponse.text
+
+
+async def test_un_echec_revient_aussi_dans_l_application(
+    client_ig: AsyncClient, instagram: FauxInstagram, conn: AsyncConnection
+) -> None:
+    """Un rappel qui échouerait en silence laisserait l'application attendre.
+
+    Le compte appartient déjà à quelqu'un d'autre : la redirection porte le
+    code d'erreur, que l'application sait traduire.
+    """
+    premier = await createur(client_ig)
+    await revenir(client_ig, await demarrer(client_ig, premier))
+
+    second = await createur(client_ig)
+    retour = "bind://oauth"
+    ouverture = await demarrer_avec_retour(client_ig, second, retour)
+    state = httpx.URL(ouverture.json()["authorization_url"]).params["state"]
+
+    reponse = await revenir(client_ig, state)
+
+    assert reponse.status_code == 303
+    destination = httpx.URL(reponse.headers["location"])
+    assert destination.params["statut"] == "erreur"
+    assert destination.params["code"] == "social_account_taken"

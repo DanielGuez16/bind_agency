@@ -92,6 +92,8 @@ export type PalierAccessible = {
   accessible: boolean;
   social_account_id: string | null;
   obstacles: Obstacle[];
+  /** Ce que le palier ouvre, tous commerces confondus. Zéro est une réponse. */
+  offres_disponibles: number;
 };
 
 export type VueDesPaliers = {
@@ -99,6 +101,12 @@ export type VueDesPaliers = {
   is_new_creator: boolean;
   paliers: PalierAccessible[];
 };
+
+/** Ce que rend l'ouverture d'une autorisation : où envoyer la personne. */
+export type AutorisationDemarree = { authorization_url: string };
+
+/** Les plateformes que le produit sait rattacher. Snapchat n'en est pas. */
+export type PlateformeConnectable = 'instagram' | 'tiktok';
 
 export type AudienceDuCompte = {
   social_account_id: string;

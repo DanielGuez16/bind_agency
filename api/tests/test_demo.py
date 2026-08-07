@@ -15,6 +15,7 @@ import re
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+import httpx
 import pytest
 
 from app.core.config import API_ROOT, ConfigurationError, get_settings
@@ -174,14 +175,60 @@ def test_le_fournisseur_de_demonstration_ne_rend_ni_vues_ni_engagement() -> None
 # --------------------------------------------------------------------------
 
 
-def test_la_fabrique_rend_le_fournisseur_du_mode() -> None:
-    settings = get_settings()
-    assert settings.social_provider == "demo", "les tests tournent en mode démonstration"
+def _en_mode(monkeypatch: pytest.MonkeyPatch, mode: str) -> None:
+    """Fixe le mode déclaré, au lieu de le lire dans le `.env` du poste.
+
+    Le test affirmait `settings.social_provider == "demo"` et prenait le fichier
+    de développement pour une donnée du test : il est tombé le jour où ce
+    fichier est passé en mode réel, en accusant la fabrique.
+    """
+    from app.core import config as module_config
+    from app.core import encryption
+    from app.integrations import instagram as module_instagram
+    from app.integrations import tiktok as module_tiktok
+
+    reglages = module_config.build_settings(
+        _env_file=None,
+        database_url=str(get_settings().database_url),
+        jwt_secret_key="peu-importe-ici-mais-assez-longue-pour-hmac",
+        token_encryption_key=encryption.generate_key(),
+        social_provider=mode,
+        instagram_app_id="1234567890",
+        instagram_app_secret="un-secret-meta",
+        instagram_redirect_uri="https://api.bind.test/callback",
+        tiktok_client_key="une-cle",
+        tiktok_client_secret="un-secret",
+        tiktok_redirect_uri="https://api.bind.test/callback",
+    )
+    # Les trois modules lisent la configuration chacun de leur côté : ne
+    # remplacer que celle de la fabrique laissait les fournisseurs réels
+    # chercher leurs identifiants dans le `.env` du poste, et refuser d'exister.
+    for module in (providers, module_instagram, module_tiktok):
+        monkeypatch.setattr(module, "get_settings", lambda: reglages)
+
+
+def test_la_fabrique_rend_le_fournisseur_du_mode(monkeypatch: pytest.MonkeyPatch) -> None:
+    _en_mode(monkeypatch, "demo")
 
     for platform in providers.PLATEFORMES_BRANCHEES:
         fournisseur = providers.creer(platform, client=None)  # type: ignore[arg-type]
         assert isinstance(fournisseur, DemoSocialProvider)
         assert fournisseur.platform is platform
+
+
+def test_le_mode_reel_ne_rend_jamais_le_fournisseur_de_demonstration(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """L'autre sens. Une fabrique qui rendrait toujours la démonstration
+
+    passerait le test précédent sans rien garantir — et servirait des chiffres
+    inventés à un vrai créateur.
+    """
+    _en_mode(monkeypatch, "live")
+
+    for platform in providers.PLATEFORMES_BRANCHEES:
+        fournisseur = providers.creer(platform, client=httpx.AsyncClient())  # type: ignore[arg-type]
+        assert not isinstance(fournisseur, DemoSocialProvider)
 
 
 def test_une_plateforme_non_branchee_refuse_plutot_que_de_se_taire() -> None:

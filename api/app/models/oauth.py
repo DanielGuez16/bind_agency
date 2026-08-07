@@ -28,6 +28,10 @@ class OAuthState(UUIDPrimaryKey, CreatedAt, Base):
     )
     platform: Mapped[Platform] = mapped_column(enum_column(Platform, "platform"), nullable=False)
     expires_at: Mapped[datetime] = mapped_column(sa.DateTime(timezone=True), nullable=False)
+    #: Où ramener la personne après l'autorisation. Nulle quand le parcours
+    #: n'a pas d'application à rejoindre — le rappel rend alors le compte en
+    #: JSON, ce qui suffit à un navigateur.
+    return_url: Mapped[str | None] = mapped_column(sa.Text(), nullable=True)
     consumed_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
 
     __table_args__ = (

@@ -26,8 +26,15 @@ import type { Requete } from './useRequete';
 
 export type EcranProps<T> = {
   requete: Requete<T>;
-  /** Le titre, déjà traduit par l'appelant. */
+  /** Le titre, déjà traduit par l'appelant. Ignoré si `entete` est fourni. */
   titre?: string;
+  /**
+   * L'en-tête complet, quand l'écran a mieux à offrir qu'un titre : une
+   * salutation, des compteurs, la marque. Il est rendu avant le corps et **hors
+   * des quatre états** — un écran en chargement garde son en-tête, sinon la
+   * page saute à chaque rafraîchissement.
+   */
+  entete?: ReactNode;
   /** Ce que l'écran montre quand tout va bien. */
   children: (donnees: T) => ReactNode;
   /** Le squelette. À défaut, trois cartes à la géométrie du contenu. */
@@ -40,6 +47,7 @@ export type EcranProps<T> = {
 export function Ecran<T>({
   requete,
   titre,
+  entete,
   children,
   squelette,
   vide,
@@ -128,7 +136,7 @@ export function Ecran<T>({
           />
         }
       >
-        {titre ? <Texte variante="type.display">{titre}</Texte> : null}
+        {entete ?? (titre ? <Texte variante="type.display">{titre}</Texte> : null)}
         {corps}
       </ScrollView>
     </View>

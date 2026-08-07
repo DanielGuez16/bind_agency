@@ -312,8 +312,10 @@ describe('cartes', () => {
     );
     const hauteurAvec = style(screen.getByTestId('couverture')).height;
 
-    expect(hauteurSans).toBe(150);
-    expect(hauteurAvec).toBe(150);
+    // La photo est le contenu : la couverture occupe la moitié de la carte.
+    // Ce qui compte reste qu'elle ne bouge pas selon la présence de l'image.
+    expect(hauteurSans).toBe(hauteurAvec);
+    expect(hauteurAvec).toBeGreaterThan(150);
   });
 
   it('accompagne toujours le badge de la phrase de contrepartie', async () => {
@@ -604,8 +606,9 @@ describe("ce que la bibliothèque n'a pas", () => {
   });
 
   it('compte exactement les familles prévues', async () => {
-    // La bibliothèque ne grossit pas sans qu'on le voie : une dix-huitième
-    // famille demande de toucher ce test.
+    // La bibliothèque ne grossit pas sans qu'on le voie : une famille de plus
+    // demande de toucher ce test. Trois ajoutées avec la direction visuelle —
+    // la marque, le mouvement, l'en-tête d'écran.
     const { readdirSync } = require('fs') as typeof import('fs');
     const { join } = require('path') as typeof import('path');
     const fichiers = readdirSync(join(__dirname, '..', 'src', 'components'))
@@ -620,7 +623,10 @@ describe("ce que la bibliothèque n'a pas", () => {
       'Chip.tsx',
       'CodeInput.tsx',
       'EmptyState.tsx',
+      'EnTete.tsx',
       'Icone.tsx',
+      'Logo.tsx',
+      'Mouvement.tsx',
       'PickupCode.tsx',
       'SegmentedTabs.tsx',
       'Skeleton.tsx',

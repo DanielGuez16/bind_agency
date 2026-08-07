@@ -4,11 +4,21 @@
  * Vingt-quatre points, trait 1,75, jamais de remplissage : les valeurs
  * viennent de `size.icon` et `size.iconStroke`, pas d'une constante locale.
  *
- * Le jeu est volontairement minuscule. Chaque icône ajoutée est une chose de
- * plus à traduire visuellement, et la plupart des écrans se passent d'icône —
- * un mot dit ce qu'une icône suggère.
+ * Le jeu est volontairement court. Chaque icône ajoutée est une chose de plus
+ * à traduire visuellement, et la plupart des écrans se passent d'icône — un mot
+ * dit ce qu'une icône suggère.
+ *
+ * **Chaque glyphe est construit, pas suggéré.** Les premiers étaient des traits
+ * approchants : `reglages` était un rond entouré de huit rayons, ce qui ne se
+ * lit pas comme un réglage mais comme un soleil, et `personne` un arc sans
+ * corps. Un glyphe dont on doit deviner le sujet ne vaut pas la place qu'il
+ * prend. Les réglages sont maintenant trois curseurs — le geste, pas l'astre.
+ *
+ * **Un tracé par icône, plus de cercles à part.** Les cercles vivaient dans une
+ * table parallèle, ce qui obligeait à lire deux endroits pour savoir à quoi
+ * ressemble un glyphe. Un arc s'écrit dans un chemin.
  */
-import Svg, { Circle, Path } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 
 import { size, useColors, type ColorName } from '../theme';
 
@@ -28,38 +38,43 @@ export type NomIcone =
   | 'reglages'
   | 'image'
   | 'rapport'
-  | 'liste';
+  | 'liste'
+  | 'cadenas'
+  | 'etincelle'
+  | 'fleche';
 
 const CHEMINS: Record<NomIcone, string> = {
-  chevron: 'M9 6l6 6-6 6',
+  chevron: 'M9.5 5.5L16 12l-6.5 6.5',
   croix: 'M6 6l12 12M18 6L6 18',
-  coche: 'M5 13l4 4L19 7',
-  horloge: 'M12 7v5l3 2',
-  lieu: 'M12 21s7-5.5 7-11a7 7 0 10-14 0c0 5.5 7 11 7 11z',
-  'appareil-photo': 'M4 8h3l2-2h6l2 2h3v11H4z',
+  coche: 'M4.5 12.5l5 5L19.5 7',
+  // Cadran et aiguilles, en un seul tracé fermé puis rouvert.
+  horloge: 'M12 21a9 9 0 100-18 9 9 0 000 18zM12 7.5V12l3.2 2',
+  lieu: 'M12 21.5c4.4-4.6 6.6-8.2 6.6-11a6.6 6.6 0 10-13.2 0c0 2.8 2.2 6.4 6.6 11zM12 12.6a2.6 2.6 0 100-5.2 2.6 2.6 0 000 5.2z',
+  'appareil-photo':
+    'M3.5 8.5h3.2l1.7-2.2h7.2l1.7 2.2h3.2v11h-17zM12 17a3.4 3.4 0 100-6.8 3.4 3.4 0 000 6.8z',
   // Trois barres croissantes : le même glyphe que le badge de palier, pour
   // que l'onglet et le badge se répondent.
-  paliers: 'M6 18v-4M12 18v-8M18 18V6',
-  calendrier: 'M4 7h16v13H4zM4 11h16M8 4v5M16 4v5',
-  personne: 'M5 20a7 7 0 0114 0',
-  reglages: 'M12 4v2M12 18v2M4 12h2M18 12h2M6.3 6.3l1.4 1.4M16.3 16.3l1.4 1.4M17.7 6.3l-1.4 1.4M7.7 16.3l-1.4 1.4',
-  image: 'M4 5h16v14H4zM4 16l4.5-4.5L13 16M14 13l2-2 4 4',
-  rapport: 'M4 20h16M7 20v-7M12 20V6M17 20v-4',
-  liste: 'M4 7h16M4 12h16M4 17h10',
-};
-
-//: Les icônes qui portent un cercle en plus de leur tracé.
-const CERCLES: Partial<Record<NomIcone, { cx: number; cy: number; r: number }>> = {
-  horloge: { cx: 12, cy: 12, r: 9 },
-  'appareil-photo': { cx: 12, cy: 13, r: 3.5 },
-  personne: { cx: 12, cy: 8, r: 3.5 },
-  reglages: { cx: 12, cy: 12, r: 3.5 },
+  paliers: 'M5.5 20v-5M12 20V9M18.5 20V4',
+  calendrier: 'M4 6.5h16v14H4zM4 11h16M8.5 3.5v4M15.5 3.5v4M8 15h2M14 15h2',
+  // Tête et épaules. L'arc seul se lisait comme un pont.
+  personne: 'M12 12.2a4 4 0 100-8 4 4 0 000 8zM4.8 20.5a7.2 7.2 0 0114.4 0',
+  // Trois curseurs. Ce qu'on règle se règle, ça ne rayonne pas.
+  reglages:
+    'M4 7h9M17 7h3M4 12h3M11 12h9M4 17h9M17 17h3M15 7a2 2 0 10-4 0 2 2 0 004 0M9 12a2 2 0 10-4 0 2 2 0 004 0M15 17a2 2 0 10-4 0 2 2 0 004 0',
+  image: 'M3.5 4.5h17v15h-17zM3.5 15.5l4.5-4.5 4 4M13 13l3-3 4.5 4.5M15.5 9.2a1.2 1.2 0 102.4 0 1.2 1.2 0 00-2.4 0',
+  rapport: 'M3.5 20.5h17M7 20.5v-6.5M12 20.5V7M17 20.5v-4',
+  liste: 'M8 6.5h12M8 12h12M8 17.5h8M4 6.5h.01M4 12h.01M4 17.5h.01',
+  // Deux flèches divergentes : ce qui s'ouvre, ce qui se débloque.
+  cadenas: 'M7 10.5V8a5 5 0 0110 0M5.5 10.5h13v10h-13zM12 14.5v2.5',
+  etincelle: 'M12 3.5l1.9 4.9 4.9 1.9-4.9 1.9L12 17.1l-1.9-4.9L5.2 10.3l4.9-1.9zM18.5 16.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z',
+  fleche: 'M4.5 12h15M13.5 6l6 6-6 6',
 };
 
 export function Icone({
   nom,
   couleur = 'text.primary',
   teinte,
+  taille = size.icon,
   testID,
 }: {
   nom: NomIcone;
@@ -71,6 +86,8 @@ export function Icone({
    * source, et c'est la seconde qui dérive.
    */
   teinte?: string;
+  /** Vingt-quatre par défaut. Plus grande sur un état vide, qui a de la place. */
+  taille?: number;
   testID?: string;
 }) {
   const c = useColors();
@@ -78,27 +95,18 @@ export function Icone({
   return (
     <Svg
       testID={testID}
-      width={size.icon}
-      height={size.icon}
+      width={taille}
+      height={taille}
       viewBox="0 0 24 24"
       fill="none"
       // Décorative par défaut : le sens est porté par le texte à côté. Une
       // icône annoncée deux fois double la lecture d'écran sans rien ajouter.
       accessibilityElementsHidden
     >
-      {CERCLES[nom] ? (
-        <Circle
-          cx={CERCLES[nom]!.cx}
-          cy={CERCLES[nom]!.cy}
-          r={CERCLES[nom]!.r}
-          stroke={trait}
-          strokeWidth={size.iconStroke}
-        />
-      ) : null}
       <Path
         d={CHEMINS[nom]}
         stroke={trait}
-        strokeWidth={size.iconStroke}
+        strokeWidth={(size.iconStroke * taille) / size.icon}
         strokeLinecap="round"
         strokeLinejoin="round"
       />

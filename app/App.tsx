@@ -25,6 +25,8 @@ import { I18nProvider } from './src/i18n';
 import { AuthScreen } from './src/screens/AuthScreen';
 import { SessionProvider, coffreSecurise, themeDuRole, useSession } from './src/session';
 import { FrontiereDErreur } from './src/shell/FrontiereDErreur';
+import { prenomDe } from './src/components';
+import { BienvenueScreen } from './src/screens/BienvenueScreen';
 import { Navigation } from './src/shell/Navigation';
 import { adresseDeLApi } from './src/shell/adresseDeLApi';
 import { ZoneSure } from './src/shell/ZoneSure';
@@ -65,10 +67,18 @@ function Coquille() {
             l'ajouter ici la ferait flotter au-dessus du bord. */}
         <ZoneSure>
           <FrontiereDErreur>
-            {session.etat === 'connecte' ? (
-              <Navigation role={session.utilisateur.role} />
-            ) : (
+            {session.etat !== 'connecte' ? (
               <AuthScreen motif={session.motif} />
+            ) : session.vientDeSInscrire ? (
+              // **Une fois, juste après l'inscription.** Le fil et les paliers
+              // portent le même message de façon durable ; celui-ci arrive
+              // avant qu'on ait pu croire le produit cassé.
+              <BienvenueScreen onPlusTard={session.accueilVu} onRattache={session.accueilVu} />
+            ) : (
+              <Navigation
+                role={session.utilisateur.role}
+                prenom={prenomDe(session.utilisateur.email)}
+              />
             )}
           </FrontiereDErreur>
         </ZoneSure>

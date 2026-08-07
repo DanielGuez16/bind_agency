@@ -118,3 +118,25 @@ Ni `ExpiredStrike` ni bouton de renouvellement : le code tourne de lui-même, il
 
 ## 17. Ce qui n'existe pas
 Pas de composant affichant un montant, un solde, un cumul de valeur ou un score public côté créateur ou commerce. Pas de badge négatif. Pas de barre de progression en pourcentage sur l'activation commerce (on énonce « 2 étapes sur 4 » et ce qui est bloquant). Pas de carrousel, pas de graphique décoratif, pas d'illustration.
+
+
+---
+
+## Ajouts v0.4
+
+| Composant | Rôle | Notes |
+| --- | --- | --- |
+| `Logo` | Le signe seul | Axe et deux arcs inégaux. Taille libre, couleur par jeton. |
+| `Marque` | Le signe et le nom | Écran de connexion et accueil uniquement. Dans une barre, le signe suffit. |
+| `Apparition` | Entrée d'un élément | Opacité et dix points de montée. `rang` échelonne une liste, plafonné à huit. |
+| `useEnfoncement` | Retour au doigt | Échelle 0,97, ressort. À brancher sur `onPressIn`/`onPressOut`. |
+| `vibration` | Retour tactile | `action`, `reussite`, `echec`. Silencieux sur le web. |
+| `useMouvementReduit` | Réglage système | Vrai si « réduire les animations » est actif. Les trois primitives le respectent déjà. |
+| `EnTeteDEcran` | En-tête d'écran | Surtitre, titre, compteurs facultatifs, contrôle à droite. |
+| `Filet` | Séparateur | Un point, `border.subtle`. Nommé pour ne plus être réécrit avec cinq couleurs choisies au jugé. |
+| `VoileDeLisibilite` | Dégradé sur photo | Trois arrêts en jetons. La seule exception à la règle « aucun dégradé ». |
+| `prenomDe` | Prénom depuis une adresse | Rend `null` plutôt qu'un fragment technique. |
+
+`BusinessCard` change de géométrie : couverture de 208 points, nom et adresse
+posés dessus sur le voile, prestation et contrepartie en dessous. Sa hauteur ne
+dépend toujours pas de la présence d'une photo.

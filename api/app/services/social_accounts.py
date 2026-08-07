@@ -6,7 +6,9 @@ qui est la seule chose qui relie le retour au départ.
 """
 
 import uuid
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from urllib.parse import urlsplit
 
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -30,17 +32,44 @@ class AccountTakenByAnotherCreator(SocialAccountError):
     """Ce compte social appartient déjà à quelqu'un d'autre."""
 
 
+class AdresseDeRetourRefusee(Exception):
+    """L'adresse de retour n'est pas d'un schéma autorisé.
+
+    Refusée **à l'ouverture** et non au rappel : au rappel, la personne a déjà
+    autorisé chez Meta, et lui dire à ce moment-là que son application ne
+    convient pas laisse un compte à moitié rattaché et personne pour le voir.
+    """
+
+
+def _verifier_l_adresse_de_retour(retour: str) -> None:
+    schema = urlsplit(retour).scheme.lower()
+    # Le schéma d'Expo Go porte parfois un suffixe : `exp+bind://`.
+    racine = schema.split("+", 1)[0]
+    if racine not in get_settings().oauth_return_schemes:
+        raise AdresseDeRetourRefusee(f"schéma non autorisé : {schema or 'aucun'}")
+
+
 async def start_authorization(
-    session: AsyncSession, *, user: User, provider: SocialProvider
+    session: AsyncSession, *, user: User, provider: SocialProvider, retour: str | None = None
 ) -> str:
-    """Ouvre un parcours et rend l'URL vers laquelle envoyer le créateur."""
+    """Ouvre un parcours et rend l'URL vers laquelle envoyer le créateur.
+
+    `retour` est l'adresse de l'application, quand elle en a une. Le rappel
+    d'autorisation arrive sur le serveur, pas sur le téléphone : sans elle, le
+    parcours se termine sur une réponse JSON dans le navigateur, et l'app ne
+    sait jamais que le compte a été rattaché.
+    """
     settings = get_settings()
     duree = timedelta(seconds=settings.oauth_state_ttl_seconds)
+
+    if retour is not None:
+        _verifier_l_adresse_de_retour(retour)
 
     etat = OAuthState(
         user_id=user.id,
         platform=provider.platform,
         expires_at=datetime.now(UTC) + duree,
+        return_url=retour,
     )
     session.add(etat)
     await session.flush()
@@ -81,11 +110,44 @@ async def _consommer_etat(session: AsyncSession, state: str, platform: Platform)
     return etat
 
 
+@dataclass(frozen=True, slots=True)
+class Rattachement:
+    """Le compte rattaché, et où ramener la personne.
+
+    L'adresse de retour voyage avec le résultat plutôt que d'être relue après
+    coup : l'état est consommé, et le relire demanderait de le garder vivant
+    plus longtemps que nécessaire.
+    """
+
+    compte: SocialAccount
+    retour: str | None
+
+
+async def adresse_de_retour(session: AsyncSession, *, state: str) -> str | None:
+    """L'adresse de retour d'un parcours, même une fois l'état consommé.
+
+    Sert aux échecs : l'état a déjà été consommé quand l'échange ou le
+    rattachement échoue, et sans cette relecture un échec ne reviendrait pas
+    dans l'application — elle attendrait un retour qui n'arrive jamais.
+
+    Ne valide rien : la validation a eu lieu, ou elle a échoué et le parcours
+    s'arrête de toute façon. Toute anomalie rend `None`, ce qui fait retomber
+    l'appelant sur une erreur HTTP ordinaire.
+    """
+    try:
+        claims = decode_token(state, expected_type=TokenType.OAUTH_STATE)
+    except InvalidToken:
+        return None
+    etat = await session.get(OAuthState, claims.token_id)
+    return etat.return_url if etat is not None else None
+
+
 async def complete_authorization(
     session: AsyncSession, *, state: str, code: str, provider: SocialProvider
-) -> SocialAccount:
+) -> Rattachement:
     """Termine le parcours : consomme l'état, échange le code, rattache le compte."""
     etat = await _consommer_etat(session, state, provider.platform)
+    retour = etat.return_url
 
     jeton = await provider.exchange_code(code)
     identite = await provider.fetch_identity(jeton.access_token)
@@ -112,7 +174,7 @@ async def complete_authorization(
         existant.status = SocialAccountStatus.ACTIVE
         existant.last_synced_at = None
         await session.flush()
-        return existant
+        return Rattachement(compte=existant, retour=retour)
 
     compte = SocialAccount(
         creator_id=etat.user_id,
@@ -130,7 +192,7 @@ async def complete_authorization(
     )
     session.add(compte)
     await session.flush()
-    return compte
+    return Rattachement(compte=compte, retour=retour)
 
 
 async def list_accounts(session: AsyncSession, creator_id: uuid.UUID) -> list[SocialAccount]:

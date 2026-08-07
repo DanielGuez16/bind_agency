@@ -10,6 +10,14 @@ quand aucun ne l'ouvre, les obstacles de celui qui s'en approche le plus. Lui
 montrer les obstacles de son compte le plus faible lui ferait viser la mauvaise
 cible.
 
+**Chaque palier annonce ce qu'il ouvre.** Le nombre de prestations proposées à
+ce palier vient d'ici et non de l'app : elle n'a pas de quoi le compter, et le
+déduire du fil donnerait un chiffre qui change avec le rayon de recherche.
+Le compte ne filtre **pas** par distance ni par disponibilité — l'écran des
+paliers n'a pas de position, et un créneau libre à cet instant ne dit rien de
+ce qu'un palier ouvre en général. Le libellé le dit comme tel : ce qui est
+proposé, pas ce qui est réservable tout de suite.
+
 **Un créateur sans aucun compte social n'a aucun obstacle**, au sens du moteur :
 il n'y a pas de couple à évaluer. C'est le piège de l'ensemble vide — l'écran
 afficherait des paliers tous inaccessibles sans dire pourquoi, ce qui est la
@@ -23,8 +31,8 @@ from decimal import Decimal
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import CreatorProfile, Tier
-from app.models.enums import ContentFormat, Platform
+from app.models import Business, CatalogItem, CreatorProfile, Tier, TierOffer
+from app.models.enums import BusinessStatus, ContentFormat, Platform
 from app.services import eligibility
 
 
@@ -43,6 +51,8 @@ class PalierVu:
     #: quand le créateur n'a aucun compte social.
     social_account_id: uuid.UUID | None
     obstacles: tuple[eligibility.Obstacle, ...]
+    #: Combien de prestations les commerces proposent à ce palier.
+    offres_disponibles: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,6 +84,31 @@ def _le_plus_proche(acces: list[eligibility.AccesPalier]) -> eligibility.AccesPa
     return min(acces, key=rang)
 
 
+async def _offres_par_palier(session: AsyncSession) -> dict[uuid.UUID, int]:
+    """Combien de prestations chaque palier ouvre, tous commerces confondus.
+
+    Une seule requête groupée : une par palier ferait six allers-retours pour
+    un écran qui en affiche six.
+    """
+    parent = sa.orm.aliased(CatalogItem)
+    lignes = await session.execute(
+        sa.select(TierOffer.tier_id, sa.func.count(TierOffer.id))
+        .join(Business, Business.id == TierOffer.business_id)
+        .join(CatalogItem, CatalogItem.id == TierOffer.catalog_item_id)
+        # Un item dont le parent est désactivé ne se propose pas : l'état n'est
+        # pas recopié sur l'enfant, il est joint. Même règle que le fil.
+        .outerjoin(parent, parent.id == CatalogItem.parent_item_id)
+        .where(
+            TierOffer.is_active.is_(True),
+            Business.status == BusinessStatus.ACTIVE,
+            CatalogItem.is_available.is_(True),
+            sa.or_(parent.id.is_(None), parent.is_available.is_(True)),
+        )
+        .group_by(TierOffer.tier_id)
+    )
+    return {tier_id: nombre for tier_id, nombre in lignes.all()}
+
+
 async def vue_des_paliers(session: AsyncSession, creator_id: uuid.UUID) -> VueDesPaliers:
     verdict = await eligibility.evaluer_createur(session, creator_id)
 
@@ -88,6 +123,8 @@ async def vue_des_paliers(session: AsyncSession, creator_id: uuid.UUID) -> VueDe
             .order_by(Tier.platform, Tier.display_order)
         )
     ).scalars()
+
+    offres = await _offres_par_palier(session)
 
     par_palier: dict[uuid.UUID, list[eligibility.AccesPalier]] = {}
     for acces in verdict.acces:
@@ -111,6 +148,7 @@ async def vue_des_paliers(session: AsyncSession, creator_id: uuid.UUID) -> VueDe
                 display_order=palier.display_order,
                 accessible=ouvert is not None,
                 social_account_id=proche.social_account_id if proche else None,
+                offres_disponibles=offres.get(palier.id, 0),
                 obstacles=(
                     proche.obstacles
                     if proche is not None

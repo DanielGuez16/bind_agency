@@ -91,6 +91,17 @@ type SessionValue = EtatDeSession & {
   jetonDAcces: string | null;
   connecter: (email: string, motDePasse: string) => Promise<void>;
   inscrire: (email: string, motDePasse: string, role: RoleInscriptible) => Promise<void>;
+  /**
+   * Vrai entre l'inscription et le premier geste.
+   *
+   * La coquille s'en sert pour montrer l'accueil une fois, à quelqu'un qui
+   * n'a encore rien. Un état de session et non un drapeau persistant : il
+   * s'agit de ce qui vient de se passer, pas d'une propriété du compte — le
+   * compte, lui, a des paliers et des comptes sociaux, et ce sont eux qui
+   * disent durablement où l'on en est.
+   */
+  vientDeSInscrire: boolean;
+  accueilVu: () => void;
   deconnecter: () => Promise<void>;
   /** Le client, déjà porteur du coffre. Les écrans passent par `useApi`. */
   client: ApiClient;
@@ -187,6 +198,8 @@ export function SessionProvider({
     [client, relireLUtilisateur],
   );
 
+  const [vientDeSInscrire, setVientDeSInscrire] = useState(false);
+
   const inscrire = useCallback(
     async (email: string, motDePasse: string, role: RoleInscriptible) => {
       await client.request('/api/v1/auth/register', {
@@ -198,9 +211,14 @@ export function SessionProvider({
       // parce que demander deux fois le mot de passe qu'on vient de saisir
       // n'apporte rien.
       await connecter(email, motDePasse);
+      // Après la connexion : `connecter` remet l'état à « connecté », et poser
+      // le drapeau avant le laisserait perdu au premier rendu.
+      setVientDeSInscrire(role === 'creator');
     },
     [client, connecter],
   );
+
+  const accueilVu = useCallback(() => setVientDeSInscrire(false), []);
 
   // Relu depuis le coffre plutôt que retenu à la connexion : le client le fait
   // tourner, et un jeton figé serait périmé au bout de quinze minutes.
@@ -221,8 +239,17 @@ export function SessionProvider({
   }, [client]);
 
   const value = useMemo<SessionValue>(
-    () => ({ ...etat, jetonDAcces, connecter, inscrire, deconnecter, client }),
-    [etat, jetonDAcces, connecter, inscrire, deconnecter, client],
+    () => ({
+      ...etat,
+      jetonDAcces,
+      connecter,
+      inscrire,
+      deconnecter,
+      client,
+      vientDeSInscrire,
+      accueilVu,
+    }),
+    [etat, jetonDAcces, connecter, inscrire, deconnecter, client, vientDeSInscrire, accueilVu],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
