@@ -123,6 +123,17 @@ export class ApiClient {
     this.fetchImpl = (...args) => global(...args);
   }
 
+  /**
+   * L'adresse complète d'une ressource.
+   *
+   * Nécessaire pour les images : un composant `Image` reçoit une URI, pas un
+   * chemin relatif à une base qu'il ne connaît pas. Les photos ne
+   * s'affichaient nulle part pour cette raison.
+   */
+  urlComplete(chemin: string): string {
+    return `${this.baseUrl}${chemin}`;
+  }
+
   async request<T>(chemin: string, options: OptionsDeRequete = {}): Promise<T> {
     const premiere = await this.envoyer(chemin, options);
 

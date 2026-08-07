@@ -92,6 +92,11 @@ export function ReglagesScreen() {
         <Texte variante="type.label" couleur="text.secondary">
           {t('reglages.diagnostic')}
         </Texte>
+        {/* Le titre seul ne disait pas à quoi il sert. Un bloc dont on ne
+            comprend pas l'usage vaut moins que pas de bloc du tout. */}
+        <Texte variante="type.caption" couleur="text.muted">
+          {t('reglages.diagnosticAide')}
+        </Texte>
         {/* L'écran de santé, relégué ici. Il n'a jamais eu sa place dans une
             navigation quotidienne. */}
         <View style={{ borderRadius: 12, overflow: 'hidden' }} testID="diagnostic">

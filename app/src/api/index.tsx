@@ -243,9 +243,16 @@ export class Api {
     });
   }
 
-  /** L'adresse d'une photo déposée. Jamais celle d'une preuve : la route les refuse. */
-  urlDuMedia(cle: string): string {
-    return routes.media(cle);
+  /**
+   * L'adresse complète d'une photo déposée.
+   *
+   * Absolue, parce qu'un composant `Image` ne connaît pas la base de l'API.
+   * Publique, parce qu'il ne sait pas non plus porter un en-tête
+   * d'autorisation. Jamais celle d'une preuve : la route refuse tout préfixe
+   * autre que `photos/`.
+   */
+  urlDuMedia(cle: string | null): string | undefined {
+    return cle ? this.client.urlComplete(routes.media(cle)) : undefined;
   }
 
   etapesDActivation(businessId: string, signal?: AbortSignal) {

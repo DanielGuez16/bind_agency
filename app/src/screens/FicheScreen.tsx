@@ -19,6 +19,7 @@ import { View } from 'react-native';
 import { useApi, type FichePublique, type OffreDeLaFiche } from '../api';
 import { Button, LigneDeContrepartie, ServiceRow, StatusMessage, Texte } from '../components';
 import { useI18n } from '../i18n';
+import { urlImage } from './FilScreen';
 import { en } from '../i18n/en';
 import { useTheme } from '../theme';
 import { Ecran } from './Ecran';
@@ -72,6 +73,7 @@ export function FicheScreen({
 function Offre({ offre, onReserver }: { offre: OffreDeLaFiche; onReserver: () => void }) {
   const { color: c } = useTheme();
   const { t } = useI18n();
+  const { api } = useApi();
 
   const attendu = [
     offre.required_mention ? t('parcours.ficheMention', { mention: offre.required_mention }) : null,
@@ -95,6 +97,7 @@ function Offre({ offre, onReserver }: { offre: OffreDeLaFiche; onReserver: () =>
         name={offre.name}
         meta={offre.duration_minutes === null ? '' : `${offre.duration_minutes} min`}
         tier={offre.content_format}
+        thumbnail={urlImage(api.urlDuMedia(offre.photo_key))}
       />
       <View style={{ padding: 12, gap: 6 }}>
         <LigneDeContrepartie tier={offre.content_format} />
@@ -133,7 +136,7 @@ function Offre({ offre, onReserver }: { offre: OffreDeLaFiche; onReserver: () =>
                 couleur="text.secondary"
                 testID={`obstacle-${obstacle.raison}`}
               >
-                {messageDObstacle(t, obstacle, CODES_CONNUS)}
+                {messageDObstacle(t, obstacle, CODES_CONNUS, offre.platform)}
               </Texte>
             ))}
           </View>

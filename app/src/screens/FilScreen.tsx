@@ -18,7 +18,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { useApi, type Fil } from '../api';
-import { BusinessCard, EmptyState, StatusMessage, Texte } from '../components';
+import { BusinessCard, Chip, EmptyState, RangeeDeChips, StatusMessage, Texte } from '../components';
 import { useI18n } from '../i18n';
 import { en } from '../i18n/en';
 import { Ecran } from './Ecran';
@@ -26,8 +26,19 @@ import { messageDObstacle } from './obstacle';
 import { useRequete } from './useRequete';
 
 const CODES_CONNUS = new Set(Object.keys(en.errors));
-const RAYON_INITIAL_KM = 2;
-const RAYON_ELARGI_KM = 5;
+
+/** Une source d'image, ou rien. `Image` refuse une URI vide. */
+export function urlImage(url: string | undefined) {
+  return url ? { uri: url } : undefined;
+}
+/**
+ * Le rayon de départ, et les élargissements proposés.
+ *
+ * Quinze kilomètres et non deux : Miami est une ville de voiture, où deux
+ * kilomètres ne couvrent qu'un quartier et ne montrent qu'un salon. Le fil
+ * paraissait vide alors qu'il était seulement myope.
+ */
+const RAYONS_KM = [15, 30, 50];
 
 export type Position = { longitude: number; latitude: number };
 
@@ -43,7 +54,7 @@ export function FilScreen({
 }) {
   const { api } = useApi();
   const { t } = useI18n();
-  const [rayonKm, setRayonKm] = useState(RAYON_INITIAL_KM);
+  const [rayonKm, setRayonKm] = useState(RAYONS_KM[0]);
 
   const requete = useRequete<Fil>(
     (signal) => api.fil(position!, { rayonMetres: rayonKm * 1000 }, signal),
@@ -80,16 +91,14 @@ export function FilScreen({
           <EmptyState
             title={t('parcours.filTitre')}
             body={t('parcours.filVide', { rayon: rayonKm })}
-            actions={
-              rayonKm < RAYON_ELARGI_KM
-                ? [
-                    {
-                      label: t('parcours.filElargir', { rayon: RAYON_ELARGI_KM }),
-                      onPress: () => setRayonKm(RAYON_ELARGI_KM),
-                    },
-                  ]
-                : []
-            }
+            // Chaque issue annonce son gain : « élargir à 30 km » plutôt
+            // qu'« élargir ». Le nombre de salons n'est connu qu'après l'appel,
+            // c'est donc la distance qui se dit.
+            actions={RAYONS_KM.filter((r) => r > rayonKm).map((rayon) => ({
+              label: t('parcours.filElargir', { rayon }),
+              onPress: () => setRayonKm(rayon),
+              variant: 'secondary' as const,
+            }))}
           />
           <Obstacles fil={requete.etat === 'pret' ? requete.donnees : null} />
         </View>
@@ -97,6 +106,20 @@ export function FilScreen({
     >
       {(fil) => (
         <View style={{ gap: 16 }}>
+          {/* Le rayon se règle depuis le fil lui-même, pas seulement depuis
+              l'état vide : un fil maigre n'est pas un fil vide, et il faut
+              pouvoir l'élargir sans avoir à le vider d'abord. */}
+          <RangeeDeChips>
+            {RAYONS_KM.map((rayon) => (
+              <Chip
+                key={rayon}
+                label={t('parcours.filRayon', { rayon })}
+                selected={rayon === rayonKm}
+                onPress={() => setRayonKm(rayon)}
+              />
+            ))}
+          </RangeeDeChips>
+
           {/* Rendus même quand le fil n'est pas vide : un créateur qui accède
               au palier story mais pas au reel doit savoir ce qui lui manque,
               sinon il croit avoir tout vu. */}
@@ -108,6 +131,10 @@ export function FilScreen({
                 key={commerce.business_id}
                 testID={`commerce-${commerce.business_id}`}
                 name={commerce.name}
+                // La couverture était simplement absente : la carte recevait
+                // toujours son repli, et le monogramme passait pour un défaut
+                // de chargement alors que rien n'était jamais demandé.
+                cover={urlImage(api.urlDuMedia(commerce.cover_photo_key))}
                 meta={commerce.address ?? ''}
                 serviceName={item.name}
                 serviceDuration={

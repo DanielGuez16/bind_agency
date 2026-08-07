@@ -22,6 +22,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import type { FichePublique, OffreDeLaFiche } from '../api';
+import { Icone, type NomIcone } from '../components';
 import { useI18n } from '../i18n';
 import { useSession } from '../session';
 import { useTheme } from '../theme';
@@ -32,7 +33,7 @@ import { CodeScreen } from '../screens/CodeScreen';
 import { CreneauxScreen } from '../screens/CreneauxScreen';
 import { FicheScreen } from '../screens/FicheScreen';
 import { FilScreen } from '../screens/FilScreen';
-import { HistoriqueScreen } from '../screens/HistoriqueScreen';
+import { HistoriqueScreen, destination } from '../screens/HistoriqueScreen';
 import { JourneeScreen } from '../screens/JourneeScreen';
 import { PaliersScreen } from '../screens/PaliersScreen';
 import { PlansScreen } from '../screens/PlansScreen';
@@ -64,6 +65,31 @@ export type PileCommerceParams = {
 const PileCreateur = createNativeStackNavigator<PileCreateurParams>();
 const PileCommerce = createNativeStackNavigator<PileCommerceParams>();
 const Onglets = createBottomTabNavigator();
+
+/**
+ * Les options d'un onglet : son libellé et son icône.
+ *
+ * Sans `tabBarIcon`, la barre affiche le caractère de repli de la
+ * bibliothèque — cinq flèches identiques, qui ne distinguent rien. L'icône est
+ * ici et pas dans l'écran : c'est une propriété de la navigation.
+ */
+function onglet(titre: string, icone: NomIcone) {
+  return {
+    title: titre,
+    tabBarIcon: ({ color }: { color: string }) => <IconeDOnglet nom={icone} actif={color} />,
+  };
+}
+
+/**
+ * L'icône, teintée par l'état de l'onglet.
+ *
+ * La bibliothèque donne la couleur ; on ne la traduit pas en jeton, parce
+ * qu'elle vient déjà du thème de navigation, lui-même construit sur nos
+ * jetons. La reprendre ici créerait une seconde source.
+ */
+function IconeDOnglet({ nom, actif }: { nom: NomIcone; actif: string }) {
+  return <Icone nom={nom} teinte={actif} />;
+}
 
 // --------------------------------------------------------------------------
 // créateur
@@ -139,25 +165,54 @@ function OngletsCreateur() {
       <Onglets.Screen
         name="parcours"
         component={ParcoursCreateur}
-        options={{ title: t('onglets.fil') }}
+        options={onglet(t('onglets.fil'), 'lieu')}
       />
       <Onglets.Screen
         name="paliers"
         component={PaliersScreen}
-        options={{ title: t('onglets.paliers') }}
+        options={onglet(t('onglets.paliers'), 'paliers')}
       />
-      <Onglets.Screen name="reservations" options={{ title: t('onglets.reservations') }}>
-        {() => <HistoriqueScreen onOuvrir={() => {}} />}
+      <Onglets.Screen
+        name="reservations"
+        options={onglet(t('onglets.reservations'), 'calendrier')}
+      >
+        {({ navigation }) => (
+          <HistoriqueScreen
+            // **Le code redevient atteignable.** Il ne l'était
+            // qu'immédiatement après la confirmation : fermer l'application le
+            // faisait perdre jusqu'au rendez-vous, alors que c'est la seule
+            // chose à montrer au comptoir.
+            //
+            // La navigation traverse les onglets : on vise le parcours, puis
+            // l'écran dedans. Empiler le code sur l'onglet des réservations
+            // donnerait deux chemins vers le même écran, et deux piles à
+            // dépiler.
+            onOuvrir={(reservation) => {
+              const cible = destination(reservation);
+              if (cible === 'code') {
+                navigation.navigate('parcours', {
+                  screen: 'Code',
+                  params: { bookingId: reservation.booking_id },
+                });
+              } else if (cible === 'preuve' && reservation.contrepartie) {
+                navigation.navigate('parcours', {
+                  screen: 'Preuve',
+                  params: { collaborationId: reservation.contrepartie.collaboration_id },
+                });
+              }
+            }}
+          />
+        )}
       </Onglets.Screen>
       <Onglets.Screen
         name="audience"
         component={AudienceScreen}
-        options={{ title: t('onglets.audience') }}
+        options={onglet(t('onglets.audience'), 'personne')}
       />
       <Onglets.Screen
         name="reglages"
         component={ReglagesScreen}
-        options={{ title: t('onglets.reglages') }}
+        options={onglet(t('onglets.reglages'), 'reglages')}
       />
     </Onglets.Navigator>
   );
@@ -202,13 +257,13 @@ function OngletsCommerce() {
   if (businessId === null) {
     return (
       <Onglets.Navigator screenOptions={{ headerShown: false }}>
-        <Onglets.Screen name="attente" options={{ title: t('onglets.journee') }}>
+        <Onglets.Screen name="attente" options={onglet(t('onglets.journee'), 'calendrier')}>
           {() => ecranDAttente}
         </Onglets.Screen>
         <Onglets.Screen
           name="reglages"
           component={ReglagesScreen}
-          options={{ title: t('onglets.reglages') }}
+          options={onglet(t('onglets.reglages'), 'reglages')}
         />
       </Onglets.Navigator>
     );
@@ -216,22 +271,22 @@ function OngletsCommerce() {
 
   return (
     <Onglets.Navigator screenOptions={{ headerShown: false }}>
-      <Onglets.Screen name="journee" options={{ title: t('onglets.journee') }}>
+      <Onglets.Screen name="journee" options={onglet(t('onglets.journee'), 'calendrier')}>
         {() => <ParcoursCommerce businessId={businessId} />}
       </Onglets.Screen>
-      <Onglets.Screen name="publications" options={{ title: t('onglets.publications') }}>
+      <Onglets.Screen name="publications" options={onglet(t('onglets.publications'), 'image')}>
         {() => <PublicationsScreen businessId={businessId} />}
       </Onglets.Screen>
-      <Onglets.Screen name="reporting" options={{ title: t('onglets.reporting') }}>
+      <Onglets.Screen name="reporting" options={onglet(t('onglets.reporting'), 'rapport')}>
         {() => <ReportingScreen businessId={businessId} />}
       </Onglets.Screen>
-      <Onglets.Screen name="activation" options={{ title: t('onglets.activation') }}>
+      <Onglets.Screen name="activation" options={onglet(t('onglets.activation'), 'coche')}>
         {() => <ActivationScreen businessId={businessId} onActive={() => {}} />}
       </Onglets.Screen>
       <Onglets.Screen
         name="reglages"
         component={ReglagesScreen}
-        options={{ title: t('onglets.reglages') }}
+        options={onglet(t('onglets.reglages'), 'reglages')}
       />
     </Onglets.Navigator>
   );
@@ -248,17 +303,17 @@ function OngletsAdmin() {
       <Onglets.Screen
         name="arbitrage"
         component={ArbitrageScreen}
-        options={{ title: t('onglets.arbitrage') }}
+        options={onglet(t('onglets.arbitrage'), 'liste')}
       />
       <Onglets.Screen
         name="plans"
         component={PlansScreen}
-        options={{ title: t('onglets.plans') }}
+        options={onglet(t('onglets.plans'), 'rapport')}
       />
       <Onglets.Screen
         name="reglages"
         component={ReglagesScreen}
-        options={{ title: t('onglets.reglages') }}
+        options={onglet(t('onglets.reglages'), 'reglages')}
       />
     </Onglets.Navigator>
   );
