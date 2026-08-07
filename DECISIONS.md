@@ -1750,3 +1750,51 @@ les deux langues.
 Un troisième test vérifie que les deux langues attendent les **mêmes variables**
 de substitution : une variable présente d'un seul côté produirait un email
 amputé dans une langue et correct dans l'autre, le pire des deux.
+
+---
+
+## 2026-08-06 — Fiabilité : événements, score, seuils rallumés
+
+**Le score et le compteur sont deux caches, tous deux entièrement
+recalculables.** Rien n'est écrit à la main. Un test recalcule depuis les
+événements et compare à ce qui est stocké ; un second désaccorde volontairement
+le cache et vérifie que le recalcul le détecte puis le répare — sans lui, le
+premier test pourrait passer en comparant le cache à lui-même. Un cache qu'on ne
+sait pas reconstruire finit par diverger sans qu'on le sache, et le jour où on
+s'en aperçoit il n'y a plus de référence pour trancher.
+
+**Les pondérations vivent en configuration, et sont rétroactives.** Le recalcul
+relit l'historique avec la grille du jour ; changer le poids d'une absence ne
+demande ni migration ni réécriture. Le poids reste **figé sur chaque ligne**
+malgré tout : il dit ce que l'événement valait au moment où il s'est produit,
+ce qu'un historique doit pouvoir raconter. Les deux lectures répondent à deux
+questions différentes.
+
+**Les événements naissent des transitions, jamais d'un appel séparé.** Un appel
+séparé finit par être oublié sur une branche, et c'est exactement la branche qui
+pénalise quelqu'un qu'on oublie. La correspondance issue → événements est
+déclarée dans une table plutôt que dispersée dans les branches : une issue
+ajoutée sans son événement se voit là, pas au troisième mois d'exploitation.
+
+**Une approbation du premier coup se distingue d'une approbation au troisième
+essai.** `first_pass_compliant` n'est émis que si `attempts_count` est resté à
+zéro. Une collaboration obtenue après relance compte quand même comme menée à
+son terme — elle l'a été.
+
+**Un créateur sans événement garde un score nul.** Nul veut dire neutre, jamais
+zéro : écrire zéro ferait d'un débutant quelqu'un de peu fiable, et aucun
+débutant n'accéderait à rien.
+
+**Les seuils de collaborations sont rétablis** aux valeurs d'origine, reprises
+de la migration qui les avait neutralisées et non réinventées. Ils étaient à
+zéro parce que le compteur n'était alimenté par rien — un seuil qui refuse tout
+le monde n'est pas un seuil, c'est une porte fermée.
+
+Conséquence immédiate, et c'est le signe que la condition mord : un test qui
+affirmait qu'un créateur à vingt-quatre mille abonnés accédait au palier reel
+est tombé. Il affirme maintenant le contraire, avec la bonne raison — ce ne sont
+pas les abonnés qui bloquent, ce sont les collaborations.
+
+**Le plafonnement n'est pas une exclusion.** Un score dégradé ferme les paliers
+hauts et laisse le palier d'entrée ouvert : quelqu'un qui a mal fait doit
+pouvoir remonter.

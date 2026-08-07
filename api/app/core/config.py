@@ -199,6 +199,26 @@ class Settings(BaseSettings):
     #: fois est moins grave qu'un rappel jamais envoyé, mais pas de beaucoup.
     collaboration_reminder_interval_seconds: int = 3_600
 
+    # Fiabilité. Le score part de cette base et bouge avec les pondérations
+    # ci-dessous, bornées à zéro et cent. Aucune valeur en dur dans le code :
+    # c'est en observant les premières collaborations qu'on saura ce qu'une
+    # absence doit coûter, et l'ajuster ne doit demander qu'un redémarrage.
+    reliability_base_score: int = 70
+    #: Poids par type d'événement. Un ajustement est rétroactif : le recalcul
+    #: relit l'historique avec la grille du jour.
+    reliability_weights: dict[str, Decimal] = Field(
+        default_factory=lambda: {
+            "collab_completed": Decimal("5"),
+            "published_on_time": Decimal("3"),
+            "published_late": Decimal("-2"),
+            "first_pass_compliant": Decimal("2"),
+            "resubmit_required": Decimal("-3"),
+            "no_show": Decimal("-25"),
+            "unfulfilled": Decimal("-30"),
+            "business_rating": Decimal("0"),
+        }
+    )
+
     # Lue uniquement par la session pytest, jamais par l'application.
     # Sa présence est vérifiée dans tests/conftest.py, qui refuse de tourner sans.
     test_database_url: PostgresDsn | None = Field(default=None, repr=False)
