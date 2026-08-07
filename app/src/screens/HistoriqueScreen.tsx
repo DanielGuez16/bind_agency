@@ -169,11 +169,15 @@ function Onglets({
  * confirmation : fermer l'application faisait perdre le code jusqu'au rendez-
  * vous. Une prestation consommée mène à sa contrepartie, où l'on envoie la
  * preuve. Le reste ne mène nulle part, et ne se prétend donc pas pressable.
+ *
+ * **Confirmée seulement, pas retenue.** Le code naît à la confirmation ; une
+ * réservation encore retenue n'en a pas, et le serveur refuse. La ligne
+ * proposait « voir le code » sur une réservation qui n'en avait aucun.
  */
 export function destination(
   reservation: ReservationDuCreateur,
 ): 'code' | 'preuve' | null {
-  if (reservation.status === 'confirmed' || reservation.status === 'held') return 'code';
+  if (reservation.status === 'confirmed') return 'code';
   if (reservation.contrepartie) return 'preuve';
   return null;
 }

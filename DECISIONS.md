@@ -2410,3 +2410,23 @@ par construction et héberge l'API : elle n'a pas à être redemandée.
 Le port ne se déduit pas — rien dans 8081 ne dit 8010 — et l'absence d'adresse
 reste un écran explicite : un repli sur `localhost` marcherait en développement
 et reproduirait l'échec ailleurs.
+
+## 2026-08-07 — Le code de retrait appartient à sa réservation, et à la pile des réservations
+
+Deux corrections liées, du deuxième passage sur iPhone.
+
+**Le code, son échéance et le numéro de réservation sont une seule valeur.**
+Ils vivaient dans trois emplacements séparés ; ouvrir une autre réservation
+réutilise l'écran sans le démonter, l'échéance précédente n'était pas passée,
+rien n'était redemandé — et toutes les réservations montraient le même code et
+le même QR. Les lier rend la faute impossible à réécrire.
+
+**Le code et la preuve passent de la pile de découverte à celle des
+réservations.** Ils y avaient été empilés parce que c'est du fil qu'on réserve,
+ce qui affichait le code à l'intérieur de l'onglet « à proximité ». La
+confirmation bascule d'onglet et laisse la découverte revenir à son fil.
+
+Au passage : une réservation seulement retenue n'a pas de code, la ligne ne le
+propose plus ; et quand le serveur refuse, l'écran le dit au lieu d'attendre
+sans fin — la règle « hors ligne, on garde ce qui est à l'écran » ne vaut que
+s'il y a quelque chose à garder.

@@ -1,17 +1,28 @@
 /**
- * Écran d'amorçage : il ne sert qu'à prouver que l'app parle à l'API.
- * Aucune chaîne d'interface n'y est écrite en dur.
+ * Le diagnostic de connexion, dans les réglages.
+ *
+ * **Il interroge l'adresse que l'application utilise vraiment**, pas une
+ * variable d'environnement. Il lisait `EXPO_PUBLIC_API_URL` directement ;
+ * depuis que l'adresse se déduit du serveur de développement, cette variable
+ * est vide, et le diagnostic annonçait « aucune adresse configurée » sur une
+ * application qui joignait l'API parfaitement. Un diagnostic qui ne regarde pas
+ * ce que fait le produit ne diagnostique rien.
+ *
+ * **Il dit ce qu'il cherche.** Il s'ouvre sur la question à laquelle il répond,
+ * puis sur l'adresse interrogée : sans elles, « API reachable » ne se relie à
+ * rien de ce que l'on voit à l'écran.
+ *
+ * **Le bouton se voit travailler.** Il repassait par un état d'échec immédiat
+ * quand l'adresse manquait, sans jamais rien afficher entre-temps : rien ne
+ * bougeait, et il paraissait mort. Il est désactivé pendant la sonde.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { View } from 'react-native';
 
-import { SUPPORTED_LOCALES, useI18n, type SupportedLocale } from '../i18n';
+import { Button, DataRow, StatusMessage, Texte } from '../components';
+import { useI18n } from '../i18n';
 import { errorCodeFromResponse, translateErrorCode } from '../i18n/errors';
-
-// Les variables EXPO_PUBLIC_ sont inlinées à la compilation : elles n'existent
-// pas hors bundler. L'URL est donc une propriété, avec l'environnement pour
-// valeur par défaut — ce qui la rend aussi injectable en test.
-const DEFAULT_API_URL = process.env.EXPO_PUBLIC_API_URL;
+import { adresseDeLApi, origineDeLAdresse } from '../shell/adresseDeLApi';
 
 type Health = {
   status: 'ok' | 'unavailable';
@@ -19,14 +30,17 @@ type Health = {
   failed: string[];
 };
 
-type Probe =
-  | { state: 'loading' }
-  | { state: 'answered'; httpStatus: number; body: Health }
-  | { state: 'failed'; code: string | null };
+type Sonde =
+  | { etat: 'encours' }
+  | { etat: 'repondu'; corps: Health }
+  | { etat: 'echec'; code: string | null };
 
-export function HealthScreen({ apiUrl = DEFAULT_API_URL }: { apiUrl?: string }) {
-  const { t, locale, setLocale } = useI18n();
-  const [probe, setProbe] = useState<Probe>({ state: 'loading' });
+export function HealthScreen({ apiUrl }: { apiUrl?: string | null }) {
+  const { t } = useI18n();
+  // Résolue au rendu et non en constante de module : une constante fige la
+  // valeur au chargement du bundle, avant que la déduction soit possible.
+  const adresse = apiUrl === undefined ? adresseDeLApi() : apiUrl;
+  const [sonde, setSonde] = useState<Sonde>({ etat: 'encours' });
 
   // La sonde est asynchrone : sans cette garde, une réponse qui arrive après
   // un démontage écrit dans un composant qui n'existe plus.
@@ -38,128 +52,81 @@ export function HealthScreen({ apiUrl = DEFAULT_API_URL }: { apiUrl?: string }) 
     };
   }, []);
 
-  const publie = useCallback((resultat: Probe) => {
-    if (monte.current) setProbe(resultat);
+  const publie = useCallback((resultat: Sonde) => {
+    if (monte.current) setSonde(resultat);
   }, []);
 
-  const check = useCallback(async () => {
-    publie({ state: 'loading' });
+  const sonder = useCallback(async () => {
+    publie({ etat: 'encours' });
 
-    if (!apiUrl) {
-      publie({ state: 'failed', code: null });
+    if (!adresse) {
+      publie({ etat: 'echec', code: null });
       return;
     }
 
     try {
-      const response = await fetch(`${apiUrl}/health`);
-      const body = await response.json();
-
-      if (response.status >= 400) {
+      const reponse = await fetch(`${adresse}/health`);
+      const corps = await reponse.json();
+      if (reponse.status >= 400) {
         // Le corps peut porter un code du catalogue, ou rien d'exploitable.
-        publie({ state: 'failed', code: errorCodeFromResponse(body) });
+        publie({ etat: 'echec', code: errorCodeFromResponse(corps) });
         return;
       }
-
-      publie({ state: 'answered', httpStatus: response.status, body });
+      publie({ etat: 'repondu', corps });
     } catch {
-      publie({ state: 'failed', code: null });
+      publie({ etat: 'echec', code: null });
     }
-  }, [apiUrl, publie]);
+  }, [adresse, publie]);
 
   useEffect(() => {
-    void check();
-  }, [check]);
+    void sonder();
+  }, [sonder]);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{t('common.appName')}</Text>
-      <Text style={styles.subtitle}>{t('health.title')}</Text>
+    <View style={{ gap: 12 }} testID="diagnostic-connexion">
+      <DataRow label={t('health.address')} value={adresse ?? '—'} />
+      <DataRow label={t('health.addressOrigin')} value={origineDeLAdresse()} />
 
-      {probe.state === 'loading' && (
-        <View style={styles.card}>
-          <ActivityIndicator />
-          <Text style={styles.dependency}>{t('common.loading')}</Text>
-        </View>
-      )}
+      {sonde.etat === 'encours' ? (
+        <StatusMessage level="neutral" body={t('common.loading')} testID="diagnostic-encours" />
+      ) : null}
 
-      {probe.state === 'answered' && (
-        <View style={styles.card}>
-          <Text style={probe.body.status === 'ok' ? styles.ok : styles.down}>
-            {probe.body.status === 'ok' ? t('health.reachable') : t('health.unreachable')}
-          </Text>
-          {Object.entries(probe.body.dependencies).map(([name, state]) => (
-            <Text key={name} style={styles.dependency}>
-              {/* `name` vient du serveur et n'est pas un libellé d'interface. */}
-              {name} · {state === 'ok' ? t('health.dependencyOk') : t('health.dependencyDown')}
-            </Text>
+      {sonde.etat === 'repondu' ? (
+        <View style={{ gap: 6 }} testID="diagnostic-repondu">
+          <StatusMessage
+            level={sonde.corps.status === 'ok' ? 'neutral' : 'danger'}
+            body={sonde.corps.status === 'ok' ? t('health.reachable') : t('health.unreachable')}
+          />
+          {Object.entries(sonde.corps.dependencies).map(([nom, etat]) => (
+            <DataRow
+              key={nom}
+              // `nom` vient du serveur et n'est pas un libellé d'interface.
+              label={nom}
+              value={etat === 'ok' ? t('health.dependencyOk') : t('health.dependencyDown')}
+            />
           ))}
         </View>
-      )}
+      ) : null}
 
-      {probe.state === 'failed' && (
-        <View style={styles.card}>
-          <Text style={styles.down}>
-            {apiUrl ? t('health.unreachable') : t('health.missingApiUrl')}
-          </Text>
-          <Text style={styles.dependency}>{translateErrorCode(t, probe.code)}</Text>
+      {sonde.etat === 'echec' ? (
+        <View style={{ gap: 6 }} testID="diagnostic-echec">
+          <StatusMessage
+            level="danger"
+            body={adresse ? t('health.unreachable') : t('health.missingApiUrl')}
+          />
+          <Texte variante="type.caption" couleur="text.secondary">
+            {adresse ? translateErrorCode(t, sonde.code) : t('health.missingApiUrlHelp')}
+          </Texte>
         </View>
-      )}
+      ) : null}
 
-      <Pressable style={styles.button} onPress={check} accessibilityRole="button">
-        <Text style={styles.buttonLabel}>{t('common.retry')}</Text>
-      </Pressable>
-
-      <View style={styles.languages}>
-        <Text style={styles.dependency}>{t('common.language')}</Text>
-        {SUPPORTED_LOCALES.map((code: SupportedLocale) => (
-          <Pressable
-            key={code}
-            onPress={() => setLocale(code)}
-            accessibilityRole="button"
-            style={[styles.chip, code === locale && styles.chipActive]}
-          >
-            <Text style={code === locale ? styles.chipLabelActive : styles.chipLabel}>
-              {code.toUpperCase()}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
+      <Button
+        label={t('common.retry')}
+        variant="secondary"
+        loading={sonde.etat === 'encours'}
+        onPress={() => void sonder()}
+        testID="diagnostic-refaire"
+      />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff',
-    gap: 12,
-    padding: 24,
-  },
-  title: { fontSize: 32, fontWeight: '700', letterSpacing: 4 },
-  subtitle: { fontSize: 13, color: '#666' },
-  card: { alignItems: 'center', gap: 4, paddingVertical: 8 },
-  ok: { fontSize: 18, fontWeight: '600', color: '#0a7d33' },
-  down: { fontSize: 18, fontWeight: '600', color: '#b00020' },
-  dependency: { fontSize: 13, color: '#444' },
-  button: {
-    marginTop: 8,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 999,
-    backgroundColor: '#111',
-  },
-  buttonLabel: { color: '#fff', fontWeight: '600' },
-  languages: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 16 },
-  chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: '#ccc',
-  },
-  chipActive: { backgroundColor: '#111', borderColor: '#111' },
-  chipLabel: { color: '#444', fontWeight: '600' },
-  chipLabelActive: { color: '#fff', fontWeight: '600' },
-});
