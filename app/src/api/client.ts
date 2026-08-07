@@ -22,6 +22,7 @@
  * une décision d'application, pas de transport.
  */
 import { errorCodeFromResponse } from '../i18n/errors';
+import { routes } from './routes';
 
 export const DELAI_MS = 15_000;
 
@@ -113,7 +114,13 @@ export class ApiClient {
     this.coffre = config.coffre;
     this.surSessionPerdue = config.surSessionPerdue;
     this.delaiMs = config.delaiMs ?? DELAI_MS;
-    this.fetchImpl = config.fetchImpl ?? globalThis.fetch;
+    // **Lié à `globalThis`, jamais retenu nu.** Un `fetch` rangé dans un
+    // champ puis appelé par `this.fetchImpl(...)` reçoit l'instance comme
+    // `this` ; les navigateurs le refusent — « Illegal invocation » — et la
+    // requête ne part jamais. React Native, lui, l'accepte : le défaut ne se
+    // voyait qu'en web, et se présentait comme une panne réseau.
+    const global = config.fetchImpl ?? globalThis.fetch;
+    this.fetchImpl = (...args) => global(...args);
   }
 
   async request<T>(chemin: string, options: OptionsDeRequete = {}): Promise<T> {
@@ -135,7 +142,7 @@ export class ApiClient {
 
   /** Ouvre une session et range les jetons. */
   async connecter(email: string, motDePasse: string): Promise<Jetons> {
-    const jetons = await this.request<Jetons>('/auth/login', {
+    const jetons = await this.request<Jetons>(routes.connexion(), {
       methode: 'POST',
       corps: { email, password: motDePasse },
       publique: true,
@@ -155,7 +162,7 @@ export class ApiClient {
     const jetons = await this.coffre.lire();
     try {
       if (jetons) {
-        await this.request('/auth/logout', {
+        await this.request(routes.deconnexion(), {
           methode: 'POST',
           corps: { refresh_token: jetons.refresh_token },
         });
@@ -195,6 +202,12 @@ export class ApiClient {
         signal: horloge.signal,
       });
     } catch (cause) {
+      // **Journalisé avant d'être enveloppé.** Sans cette ligne, un défaut de
+      // programmation — un `fetch` mal lié, un en-tête invalide — se présente
+      // à l'écran comme « vérifiez votre connexion », sans rien dans la
+      // console et sans requête dans l'onglet réseau. C'est exactement ce qui
+      // s'est produit, et ce qui a rendu la cause invisible.
+      console.error('requête non partie', chemin, cause);
       throw new NetworkError(cause);
     } finally {
       clearTimeout(echeance);
@@ -259,7 +272,7 @@ export class ApiClient {
     if (!jetons?.refresh_token) return null;
 
     try {
-      const reponse = await this.envoyer('/auth/refresh', {
+      const reponse = await this.envoyer(routes.rotation(), {
         methode: 'POST',
         corps: { refresh_token: jetons.refresh_token },
         publique: true,

@@ -154,9 +154,20 @@ message qui dit lequel des deux, jamais un écran blanc.
 
 ### Si vous ouvrez l'app dans un navigateur
 
-Il faut ajouter l'origine à `CORS_ORIGINS` dans `api/.env` — la liste ne
-contient que `http://localhost:8081` et `http://localhost:19006`. En natif,
-Expo Go n'envoie pas d'en-tête `Origin` : le CORS ne s'applique pas.
+```
+cd app && npx expo start --web
+```
+
+L'origine doit figurer dans `CORS_ORIGINS` (`api/.env`) — la liste par défaut
+contient `http://localhost:8081` et `http://localhost:19006`, ce qui couvre le
+cas courant. En natif, Expo Go n'envoie pas d'en-tête `Origin` : le CORS ne
+s'applique pas.
+
+### Si `EXPO_PUBLIC_API_URL` manque
+
+L'application affiche un écran qui le dit et nomme le fichier, plutôt qu'une
+erreur de connexion. Les variables `EXPO_PUBLIC_` étant inlinées à la
+compilation, il faut **relancer le serveur Expo** après l'avoir renseignée.
 
 ---
 

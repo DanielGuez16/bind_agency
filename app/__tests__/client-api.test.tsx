@@ -448,3 +448,83 @@ describe('messageDErreur', () => {
 });
 
 void GABARITS;
+
+// --------------------------------------------------------------------------
+// Ce qui a cassé le web
+// --------------------------------------------------------------------------
+
+describe('appel du fetch global', () => {
+  /**
+   * Un `fetch` qui vérifie son `this`, comme le font les navigateurs.
+   *
+   * `globalThis.fetch` rangé dans un champ puis appelé par `this.fetchImpl(...)`
+   * reçoit l'instance comme `this`. Chrome et Safari refusent — « Failed to
+   * execute 'fetch' on 'Window': Illegal invocation » — et **la requête ne part
+   * pas**. React Native l'accepte : le défaut ne se voyait qu'en web, et se
+   * présentait comme une panne réseau, sans requête dans l'onglet réseau et
+   * sans rien dans la console.
+   */
+  function fetchQuiVerifieSonThis() {
+    const appels: string[] = [];
+    const impl = function (this: unknown, url: RequestInfo | URL) {
+      if (this !== undefined && this !== globalThis) {
+        throw new TypeError("Failed to execute 'fetch' on 'Window': Illegal invocation");
+      }
+      appels.push(String(url));
+      return Promise.resolve(reponse(200, { ok: true }));
+    };
+    return { impl: impl as unknown as typeof fetch, appels };
+  }
+
+  it('appelle le fetch global sans lui imposer son propre `this`', async () => {
+    const { impl, appels } = fetchQuiVerifieSonThis();
+    const ancien = globalThis.fetch;
+    globalThis.fetch = impl;
+
+    try {
+      // Sans `fetchImpl` : c'est le chemin de production, celui qui prenait
+      // `globalThis.fetch` et le retenait nu.
+      const client = new ApiClient({ baseUrl: 'https://api.test', coffre: coffre() });
+      await client.request('/api/v1/me');
+      expect(appels).toEqual(['https://api.test/api/v1/me']);
+    } finally {
+      globalThis.fetch = ancien;
+    }
+  });
+
+  it('journalise la cause au lieu de la faire disparaître', async () => {
+    // Le second défaut, plus grave que le premier : une erreur de
+    // programmation devenait « vérifiez votre connexion », sans trace. C'est
+    // ce silence qui a rendu la cause invisible.
+    const bruit = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const client = new ApiClient({
+      baseUrl: 'https://api.test',
+      coffre: coffre(),
+      fetchImpl: (() => {
+        throw new TypeError('Illegal invocation');
+      }) as unknown as typeof fetch,
+    });
+
+    await expect(client.request('/api/v1/me')).rejects.toBeInstanceOf(NetworkError);
+    expect(bruit).toHaveBeenCalled();
+    bruit.mockRestore();
+  });
+});
+
+describe('chemins du client', () => {
+  it('n’écrit aucun chemin en dur : tout passe par `routes`', () => {
+    // La connexion, la déconnexion et la rotation étaient écrites à la main,
+    // sans le préfixe `/api/v1`. Le test de contrat ne les voyait pas : il ne
+    // parcourt que `routes`. Une fois le `fetch` réparé, elles auraient rendu
+    // 404 — un second tour de diagnostic pour le même symptôme.
+    const { readFileSync } = require('fs') as typeof import('fs');
+    const { join } = require('path') as typeof import('path');
+    const source = readFileSync(join(__dirname, '..', 'src', 'api', 'client.ts'), 'utf-8');
+
+    const enDur = [...source.matchAll(/\b(?:request|envoyer)\w*<?[^(]*\(\s*'(\/[^']*)'/g)].map(
+      (m) => m[1],
+    );
+
+    expect(enDur).toEqual([]);
+  });
+});

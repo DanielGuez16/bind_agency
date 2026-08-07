@@ -16,7 +16,7 @@
  * de déjà connecté.
  */
 import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ApiProvider } from './src/api';
@@ -30,15 +30,19 @@ import { ThemeProvider, useColors } from './src/theme';
 /**
  * L'adresse de l'API.
  *
- * Les variables `EXPO_PUBLIC_` sont inlinées à la compilation : celle-ci vaut
- * ce qu'elle valait au démarrage du bundler. Son absence garde la valeur de
- * développement plutôt que de laisser une chaîne vide produire des erreurs
- * réseau incompréhensibles.
+ * Les variables `EXPO_PUBLIC_` sont **inlinées à la compilation** : celle-ci
+ * vaut ce qu'elle valait au démarrage du bundler, et modifier `.env` sans le
+ * relancer ne change rien.
+ *
+ * **Son absence est dite, pas rattrapée.** Un repli sur `localhost` marche sur
+ * la machine de développement et produit ailleurs des erreurs de connexion que
+ * personne ne relie à une variable manquante. Mieux vaut un écran qui nomme la
+ * variable et le fichier.
  */
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8010/api/v1';
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 /** Le client compose les chemins complets, préfixe compris. */
-const BASE_URL = API_URL.replace(/\/api\/v1\/?$/, '');
+const BASE_URL = (API_URL ?? '').replace(/\/api\/v1\/?$/, '');
 
 function Coquille() {
   const session = useSession();
@@ -92,7 +96,44 @@ function Fond() {
   );
 }
 
+/**
+ * L'écran de configuration manquante.
+ *
+ * Volontairement **non traduit** : il s'adresse à qui installe l'application,
+ * pas à qui l'utilise, et il doit rester lisible même si le catalogue de
+ * traduction n'a pas chargé. Il nomme la variable et le fichier — c'est la
+ * seule chose utile à quelqu'un qui le voit.
+ */
+function ConfigurationManquante() {
+  return (
+    <View
+      testID="ecran-configuration-manquante"
+      style={{ flex: 1, justifyContent: 'center', padding: 24, gap: 12 }}
+    >
+      <Text style={{ fontSize: 18, fontWeight: '600' }}>Configuration incomplète</Text>
+      <Text>
+        EXPO_PUBLIC_API_URL est absente. Renseignez-la dans app/.env, puis relancez le
+        serveur Expo — les variables EXPO_PUBLIC_ sont inlinées à la compilation.
+      </Text>
+      <Text style={{ fontFamily: 'monospace' }}>
+        EXPO_PUBLIC_API_URL=http://localhost:8010/api/v1
+      </Text>
+    </View>
+  );
+}
+
 export default function App() {
+  // Avant tout fournisseur : sans adresse, la session ne peut rien tenter, et
+  // laisser la coquille démarrer produirait l'erreur de connexion qu'on
+  // cherche précisément à ne plus afficher.
+  if (!API_URL) {
+    return (
+      <SafeAreaProvider>
+        <ConfigurationManquante />
+      </SafeAreaProvider>
+    );
+  }
+
   return (
     <SafeAreaProvider>
       <I18nProvider>
