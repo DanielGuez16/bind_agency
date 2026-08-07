@@ -30,7 +30,6 @@ const TOLERES = ['src/theme/index.tsx', 'src/theme/tokens.json'];
  */
 const A_MIGRER = [
   'src/screens/CameraScanner.tsx',
-  'src/screens/HealthScreen.tsx',
   'src/screens/MenuReviewScreen.tsx',
   'src/screens/RedemptionScreen.tsx',
 ];
@@ -110,12 +109,13 @@ describe('couleurs en dur', () => {
     // Écrans écrits avant le système de design. Ils seront refaits sur les
     // jetons ; d'ici là, la dette est nommée et comptée plutôt que silencieuse.
     //
-    // Le nombre **décroît** : cinq au départ, quatre depuis que l'écran des
-    // paliers a été refait sur les composants et le client d'API. Ce test tombe
-    // dans les deux sens — si quelqu'un en ajoute un, et si quelqu'un en migre
-    // un sans mettre la liste à jour, ce qui laisserait une tolérance ouverte
-    // sur un fichier qui n'en a plus besoin.
-    expect(A_MIGRER).toHaveLength(4);
+    // Le nombre **décroît** : cinq au départ, quatre quand l'écran des paliers
+    // a été refait sur les composants et le client d'API, trois depuis que le
+    // diagnostic de connexion a quitté ses couleurs en dur. Ce test tombe dans
+    // les deux sens — si quelqu'un en ajoute un, et si quelqu'un en migre un
+    // sans mettre la liste à jour, ce qui laisserait une tolérance ouverte sur
+    // un fichier qui n'en a plus besoin.
+    expect(A_MIGRER).toHaveLength(3);
 
     // Et chacun existe encore : une entrée obsolète couvrirait un fichier
     // recréé plus tard sous le même nom.

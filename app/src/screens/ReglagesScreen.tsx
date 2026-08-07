@@ -19,7 +19,6 @@ import { Button, Chip, DataRow, RangeeDeChips, Texte } from '../components';
 import { useI18n, type SupportedLocale } from '../i18n';
 import { trousseauDisponible, useSession } from '../session';
 import { useTheme, type ThemeName } from '../theme';
-import { adresseDeLApi, origineDeLAdresse } from '../shell/adresseDeLApi';
 import { HealthScreen } from './HealthScreen';
 
 export function ReglagesScreen() {
@@ -44,8 +43,6 @@ export function ReglagesScreen() {
         </Texte>
         <DataRow label={t('auth.email')} value={email} />
         <DataRow label={t('auth.role')} value={role} />
-        <DataRow label={t('reglages.adresse')} value={adresseDeLApi() ?? '—'} />
-        <DataRow label={t('reglages.adresseOrigine')} value={origineDeLAdresse()} />
         <DataRow
           label={t('reglages.stockage')}
           value={

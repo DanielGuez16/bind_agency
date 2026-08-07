@@ -49,10 +49,24 @@ import { useMonCommerce } from './useMonCommerce';
 // paramètres
 // --------------------------------------------------------------------------
 
+/** La découverte : du fil jusqu'au choix d'un créneau. */
 export type PileCreateurParams = {
   Fil: undefined;
   Fiche: { businessId: string };
   Creneaux: { fiche: FichePublique; offre: OffreDeLaFiche };
+};
+
+/**
+ * Les réservations, et ce qui en découle.
+ *
+ * **Le code et la preuve vivent ici, pas dans la découverte.** Ils avaient été
+ * empilés sur le fil parce que c'est de là qu'on réserve ; le code s'affichait
+ * donc à l'intérieur de l'onglet « à proximité », qui n'a rien à voir avec une
+ * réservation déjà prise. Ils appartiennent à la réservation, et la
+ * confirmation bascule d'onglet.
+ */
+export type PileReservationsParams = {
+  Historique: undefined;
   Code: { bookingId: string };
   Preuve: { collaborationId: string };
 };
@@ -63,6 +77,7 @@ export type PileCommerceParams = {
 };
 
 const PileCreateur = createNativeStackNavigator<PileCreateurParams>();
+const PileReservations = createNativeStackNavigator<PileReservationsParams>();
 const PileCommerce = createNativeStackNavigator<PileCommerceParams>();
 const Onglets = createBottomTabNavigator();
 
@@ -102,7 +117,7 @@ function IconeDOnglet({ nom, actif }: { nom: NomIcone; actif: string }) {
  * quelque chose. Les mettre côte à côte demanderait de choisir un commerce
  * avant d'avoir vu le fil.
  */
-function ParcoursCreateur() {
+function ParcoursCreateur({ onReserve }: { onReserve: (bookingId: string) => void }) {
   const { position, demander } = usePosition();
 
   return (
@@ -131,19 +146,58 @@ function ParcoursCreateur() {
           <CreneauxScreen
             fiche={route.params.fiche}
             offre={route.params.offre}
-            // Le code remplace l'écran de créneaux plutôt que de s'empiler
-            // dessus : revenir en arrière depuis un code réservé n'a pas de
-            // sens, la place est prise.
-            onReserve={(bookingId) => navigation.replace('Code', { bookingId })}
+            onReserve={(bookingId) => {
+              // La place est prise : revenir sur les créneaux n'a plus de
+              // sens, la pile de découverte repart du fil.
+              navigation.popToTop();
+              onReserve(bookingId);
+            }}
           />
         )}
       </PileCreateur.Screen>
 
-      <PileCreateur.Screen name="Code">
-        {({ route }) => <CodeScreen bookingId={route.params.bookingId} />}
-      </PileCreateur.Screen>
+    </PileCreateur.Navigator>
+  );
+}
 
-      <PileCreateur.Screen name="Preuve">
+/**
+ * Les réservations : la liste, le code de retrait, la preuve.
+ *
+ * **Une réservation identifie son écran de code.** Sans `getId`, ouvrir une
+ * deuxième réservation revient sur l'écran déjà empilé en changeant seulement
+ * ses paramètres ; l'écran a sa propre garde, mais la faire porter aussi par
+ * la navigation évite d'avoir à s'en remettre à un seul verrou pour la règle
+ * « un code, une réservation ».
+ */
+function PileDesReservations() {
+  return (
+    <PileReservations.Navigator screenOptions={{ headerShown: false }}>
+      <PileReservations.Screen name="Historique">
+        {({ navigation }) => (
+          <HistoriqueScreen
+            // **Le code redevient atteignable.** Il ne l'était
+            // qu'immédiatement après la confirmation : fermer l'application le
+            // faisait perdre jusqu'au rendez-vous, alors que c'est la seule
+            // chose à montrer au comptoir.
+            onOuvrir={(reservation) => {
+              const cible = destination(reservation);
+              if (cible === 'code') {
+                navigation.navigate('Code', { bookingId: reservation.booking_id });
+              } else if (cible === 'preuve' && reservation.contrepartie) {
+                navigation.navigate('Preuve', {
+                  collaborationId: reservation.contrepartie.collaboration_id,
+                });
+              }
+            }}
+          />
+        )}
+      </PileReservations.Screen>
+
+      <PileReservations.Screen name="Code" getId={({ params }) => params?.bookingId}>
+        {({ route }) => <CodeScreen bookingId={route.params.bookingId} />}
+      </PileReservations.Screen>
+
+      <PileReservations.Screen name="Preuve">
         {({ route }) => (
           <PreuveScreen
             collaborationId={route.params.collaborationId}
@@ -153,8 +207,8 @@ function ParcoursCreateur() {
             onEnvoyer={() => {}}
           />
         )}
-      </PileCreateur.Screen>
-    </PileCreateur.Navigator>
+      </PileReservations.Screen>
+    </PileReservations.Navigator>
   );
 }
 
@@ -162,11 +216,23 @@ function OngletsCreateur() {
   const { t } = useI18n();
   return (
     <Onglets.Navigator screenOptions={{ headerShown: false }}>
-      <Onglets.Screen
-        name="parcours"
-        component={ParcoursCreateur}
-        options={onglet(t('onglets.fil'), 'lieu')}
-      />
+      <Onglets.Screen name="parcours" options={onglet(t('onglets.fil'), 'lieu')}>
+        {({ navigation }) => (
+          <ParcoursCreateur
+            // **La confirmation change d'onglet.** Le code de retrait
+            // appartient au parcours des réservations ; l'afficher dans
+            // l'onglet « à proximité » le donnait à lire comme une étape de la
+            // découverte, et laissait la liste des réservations muette juste
+            // après en avoir pris une.
+            onReserve={(bookingId) =>
+              navigation.navigate('reservations', {
+                screen: 'Code',
+                params: { bookingId },
+              })
+            }
+          />
+        )}
+      </Onglets.Screen>
       <Onglets.Screen
         name="paliers"
         component={PaliersScreen}
@@ -174,36 +240,9 @@ function OngletsCreateur() {
       />
       <Onglets.Screen
         name="reservations"
+        component={PileDesReservations}
         options={onglet(t('onglets.reservations'), 'calendrier')}
-      >
-        {({ navigation }) => (
-          <HistoriqueScreen
-            // **Le code redevient atteignable.** Il ne l'était
-            // qu'immédiatement après la confirmation : fermer l'application le
-            // faisait perdre jusqu'au rendez-vous, alors que c'est la seule
-            // chose à montrer au comptoir.
-            //
-            // La navigation traverse les onglets : on vise le parcours, puis
-            // l'écran dedans. Empiler le code sur l'onglet des réservations
-            // donnerait deux chemins vers le même écran, et deux piles à
-            // dépiler.
-            onOuvrir={(reservation) => {
-              const cible = destination(reservation);
-              if (cible === 'code') {
-                navigation.navigate('parcours', {
-                  screen: 'Code',
-                  params: { bookingId: reservation.booking_id },
-                });
-              } else if (cible === 'preuve' && reservation.contrepartie) {
-                navigation.navigate('parcours', {
-                  screen: 'Preuve',
-                  params: { collaborationId: reservation.contrepartie.collaboration_id },
-                });
-              }
-            }}
-          />
-        )}
-      </Onglets.Screen>
+      />
       <Onglets.Screen
         name="audience"
         component={AudienceScreen}
