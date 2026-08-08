@@ -41,7 +41,7 @@ import {
   chipDeComportement,
 } from '../src/components';
 import { I18nProvider } from '../src/i18n';
-import { ThemeProvider, codeColors, tokens, type Role } from '../src/theme';
+import { ThemeProvider, codeColors, themeForRole, tokens, type Role } from '../src/theme';
 
 function Cadre({ children, role = 'creator' }: { children: ReactNode; role?: Role }) {
   return (
@@ -228,8 +228,12 @@ describe('TierBadge', () => {
     expect(barres.map((b) => b.height)).toEqual([6, 9, 12]);
     expect(barres.map((b) => b.width)).toEqual([3, 3, 3]);
     // 3. la matière : reel est un fond plein
+    //
+    // Lu dans le thème du rôle plutôt qu'écrit en dur : le créateur est passé
+    // du sombre au clair en v0.5, et une valeur transcrite ici a fait échouer
+    // ce test pour une raison qui n'a rien à voir avec les trois marqueurs.
     expect(style(screen.getByTestId('badge')).backgroundColor).toBe(
-      tokens.color.dark['tier.reel'],
+      tokens.color[themeForRole('creator')]['tier.reel'],
     );
   });
 

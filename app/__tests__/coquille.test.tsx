@@ -25,7 +25,7 @@ import { FrontiereDErreur } from '../src/shell/FrontiereDErreur';
 import { Navigation } from '../src/shell/Navigation';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { ThemeProvider, tokens } from '../src/theme';
+import { ThemeProvider, themeForRole, tokens } from '../src/theme';
 import { ZoneSure } from '../src/shell/ZoneSure';
 
 // --------------------------------------------------------------------------
@@ -617,8 +617,9 @@ describe('zone sûre', () => {
   });
 
   it('ne laisse pas la bande d’encoche transparente', async () => {
-    // Sans couleur, elle laisse voir la racine — blanche — et coupe l'écran
-    // d'une barre claire en haut d'un thème sombre.
+    // Sans couleur, elle laisse voir la racine et coupe l'écran d'une bande
+    // qui ne suit pas le thème. Le défaut se voyait surtout en sombre, où la
+    // racine blanche tranchait ; il existe dans les deux sens.
     await render(
       <SafeAreaProvider initialMetrics={IPHONE_A_ENCOCHE}>
         <I18nProvider initialLocale="en">
@@ -632,7 +633,7 @@ describe('zone sûre', () => {
     );
 
     expect(styleAplati(screen.getByTestId('zone-sure')).backgroundColor).toBe(
-      tokens.color.dark['bg.canvas'],
+      tokens.color[themeForRole('creator')]['bg.canvas'],
     );
   });
 });
