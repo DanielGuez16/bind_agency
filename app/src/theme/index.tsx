@@ -40,7 +40,11 @@ const CLE_STOCKAGE = 'bind.theme.override';
 
 /** Le rôle administrateur travaille sur écran large, en clair comme le commerce. */
 const THEME_PAR_ROLE: Record<Role, ThemeName> = {
-  creator: 'dark',
+  // v0.5 : la découverte est un catalogue, et un catalogue se regarde en
+  // clair — les photos y portent la couleur, le fond n'a pas à la disputer.
+  // Le jeu clair existait déjà et tient AA ; aucune valeur n'a été ajoutée.
+  // La surcharge utilisateur ne bouge pas : qui préfère le sombre le garde.
+  creator: 'light',
   merchant: 'light',
   admin: 'light',
 };

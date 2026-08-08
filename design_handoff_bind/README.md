@@ -1,5 +1,11 @@
 # Passation — BIND · direction Miami After Hours
 
+> **v0.5 — découverte créateur (2026-08-08).** Le rôle créateur passe en thème
+> clair : seul changement au niveau des jetons, le jeu clair existait déjà et
+> tient AA. Deux exceptions gardent le sombre — l'écran de code de retrait, et
+> la galerie plein écran d'une fiche salon. Le détail est dans
+> `PASSATION-v0.5.md`.
+>
 > **v0.4 — révision de direction visuelle (2026-08-07).** Le sombre est
 > conservé, ses fonds cessent d'être noirs. Ce qui a changé est listé en fin de
 > document, section « v0.4 ». `tokens.json` fait foi.
