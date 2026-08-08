@@ -231,7 +231,18 @@ def ratio_de_valeur(price_cents: int, value_ratio_hint: Decimal | None) -> Decim
 
 
 def _obstacles_les_plus_proches(verdict: eligibility.Eligibilite) -> tuple:
-    """Les obstacles de tous les paliers hors d'atteinte, dédoublonnés."""
-    return eligibility.dedoublonner(
+    """Les obstacles de tous les paliers hors d'atteinte, dédoublonnés.
+
+    **Un créateur sans aucun compte social n'a aucun obstacle**, au sens du
+    moteur : il n'y a pas de couple (compte, palier) à évaluer, donc rien à
+    reprocher. Le fil rendait alors zéro commerce **et** zéro obstacle, et
+    l'app n'avait plus qu'une explication possible à donner — « rien autour de
+    toi » — qui est fausse et décourageante. C'est le piège de l'ensemble vide,
+    déjà nommé dans `creator_tiers` ; il valait aussi ici.
+    """
+    obstacles = eligibility.dedoublonner(
         obstacle for acces in verdict.acces if not acces.accessible for obstacle in acces.obstacles
     )
+    if obstacles or verdict.acces:
+        return obstacles
+    return (eligibility.Obstacle(raison=eligibility.RaisonRefus.NO_SOCIAL_ACCOUNT),)

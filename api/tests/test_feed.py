@@ -37,6 +37,7 @@ from app.services import auth as auth_service
 from app.services import business as business_service
 from app.services import capacity as capacity_service
 from app.services import catalog as catalog_service
+from app.services import eligibility
 from app.services import feed as service
 from app.services import metrics as metrics_service
 from app.services import tier_offers as tier_offer_service
@@ -410,10 +411,15 @@ async def test_un_createur_sans_compte_social_a_un_fil_vide_et_explique(
     resultat = await fil(session, user)
 
     assert resultat.commerces == ()
-    # Aucun couple à évaluer : le moteur ne rend aucun obstacle, et le fil ne
-    # peut donc rien dire de plus. C'est l'écran des paliers qui porte ce
-    # message-là, avec sa raison dédiée.
-    assert resultat.obstacles == ()
+    # Le fil portait un fil vide **et** aucun obstacle : aucun couple à
+    # évaluer, donc rien à reprocher. Le message était laissé à l'écran des
+    # paliers.
+    #
+    # Démenti par un essai sur un vrai compte : le fil est le premier écran
+    # qu'on ouvre, et il ne disait rien. Pire, la seule explication qui restait
+    # à l'app était « rien autour de toi », qui est fausse et qui envoie
+    # élargir un rayon dont la taille ne changera rien.
+    assert [o.raison for o in resultat.obstacles] == [eligibility.RaisonRefus.NO_SOCIAL_ACCOUNT]
 
 
 # --------------------------------------------------------------------------
@@ -442,7 +448,11 @@ async def test_la_route_est_reservee_aux_createurs(client: AsyncClient) -> None:
     createur_connecte = await connecte(UserRole.CREATOR)
     reponse = await client.get(f"{PREFIX}/businesses", params=parametres, **createur_connecte)
     assert reponse.status_code == 200
-    assert reponse.json() == {"commerces": [], "obstacles": []}
+    # Le créateur de ce test n'a aucun compte social : le fil est vide, et il
+    # en donne la raison plutôt que de se taire.
+    corps = reponse.json()
+    assert corps["commerces"] == []
+    assert [o["raison"] for o in corps["obstacles"]] == ["no_social_account"]
 
 
 @pytest.mark.parametrize(

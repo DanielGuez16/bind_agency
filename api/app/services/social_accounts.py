@@ -17,7 +17,8 @@ from app.core.config import get_settings
 from app.core.security import InvalidToken, TokenType, create_token, decode_token
 from app.integrations.social import SocialProvider
 from app.models import OAuthState, SocialAccount, User
-from app.models.enums import Platform, SocialAccountStatus, VerificationStatus
+from app.models.enums import JobType, Platform, SocialAccountStatus, VerificationStatus
+from app.services import jobs as job_service
 
 
 class SocialAccountError(Exception):
@@ -123,6 +124,23 @@ class Rattachement:
     retour: str | None
 
 
+async def _planifier_le_suivi(session: AsyncSession, account_id: uuid.UUID) -> None:
+    """Le premier relevé et le renouvellement de jeton, dès le rattachement.
+
+    Ils étaient laissés à la réconciliation périodique — celle qui aligne la
+    file sur l'état des comptes. Correct pour un compte de longue date, faux
+    pour un compte qu'on vient de rattacher : tant qu'elle n'a pas tourné,
+    aucun relevé n'existe, le moteur de paliers n'a aucun chiffre à juger, et
+    le créateur voit un fil vide juste après avoir connecté son compte. C'est
+    exactement le moment où il conclut que le produit ne marche pas.
+
+    `planifier` ne touche pas un job existant : appelée à chaque reconnexion,
+    elle ne repousse rien et ne réarme rien.
+    """
+    for travail in (JobType.TOKEN_REFRESH, JobType.METRICS_REFRESH):
+        await job_service.planifier(session, job_type=travail, target_id=account_id)
+
+
 async def adresse_de_retour(session: AsyncSession, *, state: str) -> str | None:
     """L'adresse de retour d'un parcours, même une fois l'état consommé.
 
@@ -174,6 +192,7 @@ async def complete_authorization(
         existant.status = SocialAccountStatus.ACTIVE
         existant.last_synced_at = None
         await session.flush()
+        await _planifier_le_suivi(session, existant.id)
         return Rattachement(compte=existant, retour=retour)
 
     compte = SocialAccount(
@@ -192,6 +211,7 @@ async def complete_authorization(
     )
     session.add(compte)
     await session.flush()
+    await _planifier_le_suivi(session, compte.id)
     return Rattachement(compte=compte, retour=retour)
 
 

@@ -679,10 +679,21 @@ async def poser_les_jobs(session: AsyncSession) -> int:
         poses += 1
 
     # Le dernier échoue jusqu'à l'épuisement.
+    #
+    # Un seul job doit être dû pendant la boucle. `reclamer` prend le prochain
+    # dû, quel qu'il soit : depuis que le rattachement planifie lui-même deux
+    # travaux par compte, les douze tentatives se répartissaient sur une
+    # dizaine de jobs et aucun n'atteignait son épuisement. Le jeu de données
+    # rendait alors un back office sans rien à montrer, sans que rien ne le
+    # signale — c'est le test de l'épuisement qui l'a dit.
+    await session.execute(sa.update(Job).values(run_after=datetime.now(UTC) + timedelta(days=30)))
+    cible = await session.scalar(
+        sa.select(Job.id).where(
+            Job.target_id == comptes[-1].id, Job.job_type == JobType.TOKEN_REFRESH
+        )
+    )
     await session.execute(
-        sa.update(Job)
-        .where(Job.target_id == comptes[-1].id)
-        .values(run_after=sa.func.clock_timestamp())
+        sa.update(Job).where(Job.id == cible).values(run_after=sa.func.clock_timestamp())
     )
     for _ in range(12):
         reclames = await jobs_service.reclamer(session, limite=1)

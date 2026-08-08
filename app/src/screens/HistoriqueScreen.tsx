@@ -23,7 +23,13 @@ import {
   type HistoriqueDuCreateur,
   type ReservationDuCreateur,
 } from '../api';
-import { EmptyState, SegmentedTabs, ServiceRow, Texte } from '../components';
+import {
+  Apparition,
+  EmptyState,
+  SegmentedTabs,
+  ServiceRow,
+  Texte,
+} from '../components';
 import { useI18n } from '../i18n';
 import { Ecran } from './Ecran';
 import { useRequete } from './useRequete';
@@ -92,11 +98,11 @@ export function HistoriqueScreen({
       {(vue) => (
         <View style={{ gap: 12 }}>
           <Onglets index={index} onChange={setIndex} compteurs={compteurs} />
-          {vue.items.map((reservation) => {
+          {vue.items.map((reservation, rang) => {
             const ouvrable = destination(reservation) !== null;
             return (
+              <Apparition key={reservation.booking_id} rang={rang}>
               <Pressable
-                key={reservation.booking_id}
                 testID={`reservation-${reservation.booking_id}`}
                 accessibilityRole={ouvrable ? 'button' : undefined}
                 accessibilityLabel={ouvrable ? reservation.business_name : undefined}
@@ -130,6 +136,7 @@ export function HistoriqueScreen({
                   </Texte>
                 ) : null}
               </Pressable>
+              </Apparition>
             );
           })}
         </View>

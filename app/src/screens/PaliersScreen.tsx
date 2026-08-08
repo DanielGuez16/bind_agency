@@ -23,16 +23,18 @@
  * **L'écart n'est chiffré qu'à partir de 60 % du seuil.** En dessous, horizon :
  * le seuil, et rien d'autre. Aucune projection de rythme.
  *
- * **Sans compte social, l'écran ne montre pas six portes fermées.** Il dit que
- * tout part de là et propose de le faire. C'est le seul cas où une carte passe
- * devant les paliers.
+ * **Quand la même cause ferme tous les paliers, elle passe devant.** Un compte
+ * absent, en vérification ou sans relevé ferme les six d'un coup : six cartes
+ * fermées pour une seule raison, c'est six fois la même mauvaise nouvelle et
+ * aucune action. La raison est alors annoncée en tête, avec son issue, et les
+ * paliers restent lisibles dessous — ils orientent, c'est leur rôle ici.
+ * Le catalogue des raisons est partagé avec le fil.
  */
 import { View } from 'react-native';
 
 import { useApi, type PalierAccessible, type VueDesPaliers } from '../api';
 import {
   Apparition,
-  Button,
   Chip,
   EnTeteDEcran,
   Filet,
@@ -46,17 +48,31 @@ import { useI18n } from '../i18n';
 import { en } from '../i18n/en';
 import { useTheme } from '../theme';
 import { Ecran } from './Ecran';
+import { RaisonDuVide } from './RaisonDuVide';
 import { messageDObstacle, nomDePlateforme } from './obstacle';
 import { useRequete } from './useRequete';
 
 const CODES_CONNUS = new Set(Object.keys(en.errors));
 
-/** L'obstacle qui ne se règle pas en gagnant des abonnés : il n'y a pas de compte. */
-const AUCUN_COMPTE = 'no_social_account';
+/**
+ * Les obstacles qui ne se lèvent pas en gagnant des abonnés.
+ *
+ * Ils portent sur le compte, pas sur un palier. Quand ils sont communs à tous,
+ * les cartes n'ont plus rien à dire d'utile et la raison passe devant.
+ */
+const BLOQUANTS = new Set([
+  'no_social_account',
+  'account_rejected',
+  'account_token_invalid',
+  'account_under_review',
+  'no_metrics',
+  'metrics_stale',
+]);
 
 export function PaliersScreen({
   prenom = null,
   onConnecterUnReseau,
+  onVoirMonAudience,
 }: {
   /**
    * Le prénom, résolu par la coquille.
@@ -68,6 +84,7 @@ export function PaliersScreen({
   prenom?: string | null;
   /** Mène là où l'on rattache un réseau. Absent chez qui n'y a pas accès. */
   onConnecterUnReseau?: () => void;
+  onVoirMonAudience?: () => void;
 }) {
   const { api } = useApi();
   const { t } = useI18n();
@@ -93,17 +110,25 @@ export function PaliersScreen({
       vide={<StatusMessage level="neutral" body={t('parcours.tiersVide')} />}
     >
       {(vue) => {
-        // Aucun compte rattaché : le moteur n'a rien à évaluer, et tous les
-        // paliers portent le même obstacle. Six cartes fermées pour une seule
-        // cause donnent six fois la même mauvaise nouvelle.
-        const sansCompte = vue.paliers.every((palier) =>
-          palier.obstacles.some((obstacle) => obstacle.raison === AUCUN_COMPTE),
-        );
+        // Les obstacles que **tous** les paliers partagent : ceux-là ne
+        // parlent pas d'un palier mais du compte, et un seul geste les lève.
+        const communs = vue.paliers.length
+          ? vue.paliers[0].obstacles.filter((obstacle) =>
+              vue.paliers.every((autre) =>
+                autre.obstacles.some((o) => o.raison === obstacle.raison),
+              ),
+            )
+          : [];
+        const bloquant = communs.some((o) => BLOQUANTS.has(o.raison));
 
         return (
           <View style={{ gap: 14 }}>
-            {sansCompte ? (
-              <CarteDeConnexion onConnecter={onConnecterUnReseau} />
+            {bloquant ? (
+              <RaisonDuVide
+                obstacles={communs}
+                issues={{ onConnecterUnReseau, onVoirMonAudience }}
+                testID="paliers-bloques"
+              />
             ) : (
               <Apparition>
                 <Texte variante="type.body" couleur="text.secondary" testID="principe">
@@ -132,46 +157,6 @@ export function PaliersScreen({
         );
       }}
     </Ecran>
-  );
-}
-
-/**
- * Le point de départ, quand aucun réseau n'est rattaché.
- *
- * En haut et non en bas : c'est la seule chose à faire, et la faire suivre six
- * paliers fermés reviendrait à expliquer l'échec avant la sortie.
- */
-function CarteDeConnexion({ onConnecter }: { onConnecter?: () => void }) {
-  const { color: c } = useTheme();
-  const { t } = useI18n();
-
-  return (
-    <Apparition>
-      <View
-        testID="palier-sans-compte"
-        style={{
-          gap: 10,
-          padding: 16,
-          borderRadius: 16,
-          borderWidth: 1,
-          borderColor: c['accent.subtle'],
-          backgroundColor: c['accent.subtle'],
-        }}
-      >
-        <Icone nom="etincelle" couleur="accent.default" taille={28} />
-        <Texte variante="type.heading">{t('tiers.connectTitle')}</Texte>
-        <Texte variante="type.body" couleur="text.secondary">
-          {t('tiers.connectBody')}
-        </Texte>
-        {onConnecter ? (
-          <Button
-            label={t('tiers.connectAction')}
-            onPress={onConnecter}
-            testID="aller-connecter-un-reseau"
-          />
-        ) : null}
-      </View>
-    </Apparition>
   );
 }
 

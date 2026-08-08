@@ -2464,3 +2464,27 @@ parce qu'au rappel la personne a déjà autorisé chez Meta.
 La redirection ne porte qu'un statut, jamais le code ni le jeton : ils ont été
 échangés côté serveur, et une adresse se dépose dans l'historique du navigateur
 et dans les journaux du système.
+
+## 2026-08-07 — Le fil dit toujours pourquoi il est vide
+
+Trois décisions, toutes venues d'un essai sur un vrai compte Instagram.
+
+**Le fil nomme le cas de l'ensemble vide.** Sans compte social, le moteur n'a
+aucun couple à évaluer, donc rien à reprocher : le fil rendait zéro commerce
+**et** zéro obstacle. Le message était laissé à l'écran des paliers — décision
+explicite, et démentie à l'usage : le fil est le premier écran qu'on ouvre, et
+la seule explication qui restait à l'app était « rien autour de toi », fausse,
+qui envoie élargir un rayon dont la taille ne changera rien.
+
+**Une seule raison à la fois, la plus en amont.** Les obstacles s'empilent — un
+compte neuf en porte trois. Les afficher côte à côte donnerait trois actions
+dont deux sans effet tant que la première n'est pas levée. Le catalogue est
+ordonné comme la chaîne : sans compte, pas de relevé ; sans relevé, pas de
+palier ; sans palier, la distance ne veut rien dire. Les autres obstacles
+restent lisibles dessous.
+
+**Le rattachement planifie le premier relevé.** Les deux travaux d'un compte
+étaient laissés à la réconciliation périodique. Correct pour un compte de longue
+date, faux pour un compte qu'on vient de rattacher : tant qu'elle n'a pas
+tourné, aucun relevé n'existe, le moteur n'a aucun chiffre à juger, et le
+créateur voit un fil vide juste après avoir connecté son compte.
