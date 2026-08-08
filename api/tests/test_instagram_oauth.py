@@ -612,3 +612,65 @@ async def test_un_echec_revient_aussi_dans_l_application(
     destination = httpx.URL(reponse.headers["location"])
     assert destination.params["statut"] == "erreur"
     assert destination.params["code"] == "social_account_taken"
+
+
+async def test_le_rattachement_planifie_le_premier_releve(
+    client_ig: AsyncClient, instagram: FauxInstagram, conn: AsyncConnection
+) -> None:
+    """Sans ça, le fil est vide juste après avoir connecté son compte.
+
+    Les deux travaux étaient laissés à la réconciliation périodique. Tant
+    qu'elle n'avait pas tourné, aucun relevé n'existait, le moteur de paliers
+    n'avait aucun chiffre à juger, et le créateur concluait que le produit ne
+    marchait pas — constaté sur un vrai compte Instagram.
+    """
+    compte = await createur(client_ig)
+    await revenir(client_ig, await demarrer(client_ig, compte))
+
+    lignes = await conn.execute(
+        sa.text(
+            "select j.job_type from job j"
+            " join social_account sa on sa.id = j.target_id"
+            " where sa.creator_id = :createur"
+        ),
+        {"createur": compte["user_id"]},
+    )
+    planifies = {ligne.job_type for ligne in lignes}
+
+    assert planifies == {"token_refresh", "metrics_refresh"}
+
+
+async def test_une_reconnexion_ne_replanifie_pas(
+    client_ig: AsyncClient, instagram: FauxInstagram, conn: AsyncConnection
+) -> None:
+    """`planifier` ne touche pas un job existant : ni son échéance, ni son statut.
+
+    Reconnecter un compte ne doit pas repousser un relevé déjà dû, ni réarmer
+    un job épuisé — ce serait une façon de contourner l'épuisement en
+    rebranchant son compte.
+    """
+    compte = await createur(client_ig)
+    await revenir(client_ig, await demarrer(client_ig, compte))
+
+    # `attempts` avec le statut : une contrainte en base refuse un job épuisé
+    # sans tentative, et elle a raison — un épuisement sans essai ne veut rien
+    # dire.
+    await conn.execute(
+        sa.text(
+            "update job set status = 'exhausted', attempts = 5 where target_id in"
+            " (select id from social_account where creator_id = :createur)"
+        ),
+        {"createur": compte["user_id"]},
+    )
+    await conn.commit()
+
+    await revenir(client_ig, await demarrer(client_ig, compte))
+
+    restants = await conn.execute(
+        sa.text(
+            "select j.status from job j join social_account sa on sa.id = j.target_id"
+            " where sa.creator_id = :createur"
+        ),
+        {"createur": compte["user_id"]},
+    )
+    assert {ligne.status for ligne in restants} == {"exhausted"}

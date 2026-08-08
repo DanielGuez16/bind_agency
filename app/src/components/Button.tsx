@@ -14,11 +14,18 @@
  * donne (« Envoi… ») et un anneau tourne à côté. Remplacer le contenu par un
  * indicateur ferait sauter la mise en page au moment précis où l'utilisateur
  * attend.
+ *
+ * **Le doigt reçoit une réponse avant l'action.** Une échelle au toucher, pas
+ * une opacité seule : un bouton qui pâlit ressemble à un bouton désactivé, et
+ * c'est le contraire qu'on veut dire. Un appel réseau met deux cents
+ * millisecondes à répondre, et pendant ces deux cents millisecondes rien ne
+ * bougeait — assez pour appuyer deux fois.
  */
 import { useEffect, useRef } from 'react';
 import { Animated, Easing, Pressable, View, type ViewStyle } from 'react-native';
 
 import { radius, size, useColors } from '../theme';
+import { useEnfoncement } from './Mouvement';
 import { Texte } from './Texte';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
@@ -59,6 +66,7 @@ export function Button({
 }: ButtonProps) {
   const c = useColors();
   const inerte = disabled || loading;
+  const enfoncement = useEnfoncement(!inerte);
 
   const fond: Record<ButtonVariant, string | undefined> = {
     primary: c['accent.default'],
@@ -80,6 +88,7 @@ export function Button({
   };
 
   return (
+    <Animated.View style={[enfoncement.style, fullWidth ? { alignSelf: 'stretch' } : null]}>
     <Pressable
       testID={testID}
       accessibilityRole="button"
@@ -87,6 +96,8 @@ export function Button({
       accessibilityState={{ disabled: inerte, busy: loading }}
       disabled={inerte}
       onPress={onPress}
+      onPressIn={enfoncement.onPressIn}
+      onPressOut={enfoncement.onPressOut}
       style={({ pressed }): ViewStyle => ({
         // La hauteur minimale de zone tactile prime sur la taille demandée :
         // un bouton `sm` de 36 reste pressable sur 44.
@@ -121,6 +132,7 @@ export function Button({
         {loading ? (loadingLabel ?? label) : label}
       </Texte>
     </Pressable>
+    </Animated.View>
   );
 }
 

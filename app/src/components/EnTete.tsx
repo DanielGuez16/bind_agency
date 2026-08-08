@@ -16,7 +16,7 @@
  */
 import { View } from 'react-native';
 
-import { radius, useColors, useTheme } from '../theme';
+import { radius, useColors, useTheme, type ColorName } from '../theme';
 import { Apparition } from './Mouvement';
 import { Texte } from './Texte';
 
@@ -35,7 +35,16 @@ export function prenomDe(nomOuAdresse: string | null | undefined): string | null
   return premier.charAt(0).toUpperCase() + premier.slice(1).toLowerCase();
 }
 
-export type Compteur = { valeur: string; libelle: string };
+export type Compteur = {
+  valeur: string;
+  libelle: string;
+  /**
+   * La teinte du chiffre. Portée par le compteur et non choisie par l'en-tête :
+   * c'est le sens du compteur qui décide — un palier prend sa couleur, un
+   * retard prend celle de l'alerte.
+   */
+  teinte?: ColorName;
+};
 
 export function EnTeteDEcran({
   titre,
@@ -95,7 +104,7 @@ export function EnTeteDEcran({
                   borderLeftColor: c['border.subtle'],
                 }}
               >
-                <Texte variante="type.title" couleur="text.primary">
+                <Texte variante="type.title" couleur={compteur.teinte ?? 'accent.default'}>
                   {compteur.valeur}
                 </Texte>
                 <Texte variante="type.caption" couleur="text.secondary" align="center">

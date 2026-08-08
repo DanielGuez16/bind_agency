@@ -18,7 +18,7 @@
  * durée courte et limité en tentatives.
  */
 import { useEffect, useRef } from 'react';
-import { Animated, View } from 'react-native';
+import { Animated, Easing, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
 import { codeColors, tokens } from '../theme';
@@ -40,7 +40,34 @@ const SECOURS_TAILLE = 22;
 
 /** Six chiffres, 76 points. Annoncés caractère par caractère. */
 export function CodeGlyphs({ code, testID }: { code: string; testID?: string }) {
+  const reduit = useMouvementReduit();
+  const entree = useRef(new Animated.Value(1)).current;
+
+  // À chaque rotation, les chiffres entrent : une seconde de plus sans rien
+  // changer à l'écran laisse croire que le code est figé, et quelqu'un finit
+  // par toucher l'écran pour vérifier.
+  useEffect(() => {
+    if (reduit) return;
+    entree.setValue(0);
+    const animation = Animated.timing(entree, {
+      toValue: 1,
+      duration: tokens.motion.durationSlow,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    });
+    animation.start();
+    return () => animation.stop();
+  }, [code, entree, reduit]);
+
   return (
+    <Animated.View
+      style={{
+        opacity: entree,
+        transform: [
+          { scale: entree.interpolate({ inputRange: [0, 1], outputRange: [0.94, 1] }) },
+        ],
+      }}
+    >
     <View
       testID={testID}
       accessibilityLabel={code.split('').join(' ')}
@@ -57,6 +84,7 @@ export function CodeGlyphs({ code, testID }: { code: string; testID?: string }) 
         {code}
       </Texte>
     </View>
+    </Animated.View>
   );
 }
 
@@ -210,7 +238,69 @@ export function QrBlock({
 export function PickupCodeSurface({ children }: { children: React.ReactNode }) {
   return (
     <View style={{ flex: 1, backgroundColor: bg, justifyContent: 'center', gap: 28, padding: 24 }}>
+      <Halo />
       {children}
     </View>
+  );
+}
+
+/**
+ * Le souffle derrière le code.
+ *
+ * L'écran était un formulaire noir : des chiffres, un carré, deux lignes. C'est
+ * pourtant le seul moment du produit où quelqu'un tend son téléphone à
+ * quelqu'un d'autre, et il doit se reconnaître d'un coup d'œil au comptoir.
+ *
+ * Un disque très sombre qui respire lentement — huit secondes, deux pour cent
+ * d'amplitude. Assez pour que l'écran soit vivant, pas assez pour attirer
+ * l'œil : ce qu'on doit lire, ce sont les chiffres.
+ *
+ * **En blanc à très faible opacité, pas en couleur.** L'écran du code ignore le
+ * thème et tient son contraste de 21:1 ; y poser une teinte le romprait.
+ */
+function Halo() {
+  const reduit = useMouvementReduit();
+  const souffle = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (reduit) return;
+    const boucle = Animated.loop(
+      Animated.sequence([
+        Animated.timing(souffle, {
+          toValue: 1,
+          duration: 4000,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(souffle, {
+          toValue: 0,
+          duration: 4000,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    boucle.start();
+    return () => boucle.stop();
+  }, [reduit, souffle]);
+
+  return (
+    <Animated.View
+      pointerEvents="none"
+      testID="halo-du-code"
+      style={{
+        position: 'absolute',
+        alignSelf: 'center',
+        top: '18%',
+        width: 320,
+        height: 320,
+        borderRadius: 160,
+        backgroundColor: fg,
+        opacity: souffle.interpolate({ inputRange: [0, 1], outputRange: [0.03, 0.07] }),
+        transform: [
+          { scale: souffle.interpolate({ inputRange: [0, 1], outputRange: [0.98, 1.02] }) },
+        ],
+      }}
+    />
   );
 }

@@ -105,6 +105,10 @@ function useOptionsDOnglets() {
 
   return {
     headerShown: false,
+    // Un fondu entre onglets. Sans lui, le changement est une coupe franche :
+    // rien ne relie l'écran qu'on quitte à celui qui arrive, et sur cinq
+    // onglets on ne sait plus lequel on vient de toucher.
+    animation: 'fade' as const,
     tabBarStyle: {
       // La hauteur se compose : le contenu, puis la marge système. Fixer une
       // hauteur *et* des marges intérieures écrase le libellé — la boîte tient
@@ -189,10 +193,14 @@ function ParcoursCreateur({
   prenom,
   onReserve,
   onConnecterUnReseau,
+  onVoirMonAudience,
+  onVoirMesPaliers,
 }: {
   prenom: string | null;
   onReserve: (bookingId: string) => void;
   onConnecterUnReseau: () => void;
+  onVoirMonAudience: () => void;
+  onVoirMesPaliers: () => void;
 }) {
   const { position, demander } = usePosition();
 
@@ -204,6 +212,8 @@ function ParcoursCreateur({
             position={position}
             prenom={prenom}
             onConnecterUnReseau={onConnecterUnReseau}
+            onVoirMonAudience={onVoirMonAudience}
+            onVoirMesPaliers={onVoirMesPaliers}
             onDemanderLaPosition={demander}
             onOuvrirLeCommerce={(businessId) => navigation.navigate('Fiche', { businessId })}
           />
@@ -293,9 +303,13 @@ function PileDesReservations() {
 function OngletsCreateur({
   prenom,
   onConnecterUnReseau,
+  onVoirMonAudience,
+  onVoirMesPaliers,
 }: {
   prenom: string | null;
   onConnecterUnReseau: () => void;
+  onVoirMonAudience: () => void;
+  onVoirMesPaliers: () => void;
 }) {
   const { t } = useI18n();
   const options = useOptionsDOnglets();
@@ -306,6 +320,8 @@ function OngletsCreateur({
           <ParcoursCreateur
             prenom={prenom}
             onConnecterUnReseau={onConnecterUnReseau}
+            onVoirMonAudience={onVoirMonAudience}
+            onVoirMesPaliers={onVoirMesPaliers}
             // **La confirmation change d'onglet.** Le code de retrait
             // appartient au parcours des réservations ; l'afficher dans
             // l'onglet « à proximité » le donnait à lire comme une étape de la
@@ -322,7 +338,11 @@ function OngletsCreateur({
       </Onglets.Screen>
       <Onglets.Screen name="paliers" options={onglet(t('onglets.paliers'), 'paliers')}>
         {() => (
-          <PaliersScreen prenom={prenom} onConnecterUnReseau={onConnecterUnReseau} />
+          <PaliersScreen
+            prenom={prenom}
+            onConnecterUnReseau={onConnecterUnReseau}
+            onVoirMonAudience={onVoirMonAudience}
+          />
         )}
       </Onglets.Screen>
       <Onglets.Screen
@@ -486,6 +506,8 @@ export function Navigation({
         <OngletsCreateur
           prenom={prenom}
           onConnecterUnReseau={() => conteneur.navigate('audience' as never)}
+          onVoirMonAudience={() => conteneur.navigate('audience' as never)}
+          onVoirMesPaliers={() => conteneur.navigate('paliers' as never)}
         />
       ) : role === 'business_member' ? (
         <OngletsCommerce />
