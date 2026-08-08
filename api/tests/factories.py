@@ -35,12 +35,26 @@ MIAMI = "POINT(-80.1918 25.7617)"
 
 
 async def new_business(conn: AsyncConnection, **overrides: Any) -> uuid.UUID:
+    """Un commerce de montage.
+
+    **`requires_booking_approval` est faux ici, alors que le produit le met à
+    vrai.** Ce n'est pas une valeur du jeu de données mais un décor : la
+    plupart des tests éprouvent ce qui se passe *après* la confirmation —
+    codes, contreparties, consommation — et les faire tous passer par une
+    validation du commerce n'éprouverait rien de plus tout en ajoutant une
+    étape à chacun.
+
+    Le défaut du produit vit dans le modèle et la migration, et il a ses
+    propres tests : le chemin avec validation est éprouvé pour lui-même, dans
+    les deux sens.
+    """
     values: dict[str, Any] = {
         "name": "Salon d'essai",
         "category": BusinessCategory.BEAUTY,
         "address": "100 Ocean Drive, Miami",
         "geo": sa.func.ST_GeogFromText(MIAMI),
         "currency": "USD",
+        "requires_booking_approval": False,
     } | overrides
     result = await conn.execute(sa.insert(Business).values(**values).returning(Business.id))
     return result.scalar_one()

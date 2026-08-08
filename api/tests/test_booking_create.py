@@ -62,6 +62,7 @@ async def monter_le_decor(
     requires_booking: bool = True,
     followers: int = 24_000,
     avec_nom: bool = True,
+    requires_booking_approval: bool = False,
 ) -> dict:
     """Un commerce ouvert, un item offert, un créateur éligible."""
     proprietaire = await auth_service.register(
@@ -83,6 +84,18 @@ async def monter_le_decor(
         creator=proprietaire,
         geocoder=ManualGeocoder(),
     )
+    # **Validation du commerce désactivée par défaut dans ce décor.** Le
+    # produit la met à vrai, et c'est bien ce qu'on veut : donner une prestation
+    # à quelqu'un qu'on n'a pas regardé demande un accord explicite. Mais la
+    # plupart des tests qui montent ce décor éprouvent ce qui se passe *après*
+    # la confirmation — code, consommation, contrepartie — et les faire tous
+    # passer par un accord du commerce n'éprouverait rien de plus.
+    #
+    # Le chemin avec validation est éprouvé pour lui-même, dans les deux sens,
+    # et ce décor l'active sur demande.
+    business.requires_booking_approval = requires_booking_approval
+    await session.flush()
+
     await business_service.activate_business(
         session, business=business, actor=Actor.from_user(proprietaire)
     )
@@ -143,6 +156,10 @@ async def monter_le_decor(
 
     return {
         "business": business,
+        # Le membre qui tranche : il faut un acteur pour l'accord du commerce
+        # comme pour son annulation, et le décor le fabriquait déjà sans le
+        # rendre.
+        "proprietaire": proprietaire,
         "item": item,
         "offre": offre,
         "createur": createur,

@@ -244,15 +244,33 @@ Un job de fond passe les `held` expirés en `expired`. Ne jamais se fier au clie
 ### 4.1 Réservation
 
 ```
-held ──confirmation créateur──> confirmed ──scan du code──> consumed
- │                                  │
- │                                  ├──annulation > 24h avant──> cancelled
- │                                  ├──annulation < 24h ou absence──> no_show
- └──délai de garde dépassé──> expired
+held ──┬─confirmation créateur, commerce en automatique────> confirmed
+       │                                                        │
+       └─confirmation créateur, commerce en validation──> awaiting_business
+                                     │                          │
+                                     ├──accord du commerce───────┘
+                                     ├──refus du commerce, avec motif──> cancelled
+                                     └──sans réponse dans le délai─────> expired
+
+confirmed ──scan du code──> consumed
+ │
+ ├──annulation créateur > 24h avant──> cancelled
+ ├──annulation créateur < 24h ou absence──> no_show
+ └──annulation par le commerce, avec motif──> cancelled
+
+held ──délai de garde dépassé──> expired
 ```
 
 `consumed` est le seul état qui crée la `collaboration` et démarre le délai de publication.
 `no_show` génère un `reliability_event` négatif.
+
+**La validation par le commerce est le comportement par défaut.** `business.requires_booking_approval` vaut vrai à la création, et pour tout commerce existant : donner une prestation à quelqu'un qu'on n'a pas regardé est la décision qui demande un accord explicite, pas l'inverse. Le commerce qui préfère laisser passer les réservations le déclare.
+
+`awaiting_business` **occupe la place** comme `confirmed`. La relâcher pendant que le commerce regarde permettrait de vendre deux fois le même créneau, et de lui faire accepter une réservation qui n'a plus de place.
+
+**Le code de retrait naît à l'arrivée dans `confirmed`**, quelle que soit la porte empruntée — confirmation directe ou accord du commerce. Aucun code n'existe donc pour une réservation que le commerce n'a pas acceptée.
+
+**Une annulation par le commerce ne dégrade jamais le score du créateur.** Elle mène à `cancelled`, jamais à `no_show`, et sans regarder l'heure : la fenêtre de vingt-quatre heures départage un créateur qui prévient d'un créateur qui ne vient pas, elle n'a rien à dire quand c'est le commerce qui se désiste. Le motif est obligatoire, côté refus comme côté annulation — le créateur le lit, et une décision sans raison ne se conteste pas.
 
 ### 4.2 Contrepartie
 

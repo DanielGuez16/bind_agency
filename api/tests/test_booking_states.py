@@ -18,10 +18,14 @@ import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.models import AuditLog, Booking
-from app.models.enums import ActorKind, BookingStatus, UserRole
+from app.integrations.geocoding import ManualGeocoder
+from app.models import AuditLog, Booking, ReliabilityEvent
+from app.models.enums import ActorKind, BookingStatus, BusinessCategory, UserRole
+from app.schemas.business import BusinessCreate, CoordinatesPayload
 from app.services import auth as auth_service
+from app.services import availability, redemption
 from app.services import booking_states as service
+from app.services import business as business_service
 from app.services.audit import Actor
 from tests.test_booking_create import monter_le_decor, premier_creneau, reserver
 
@@ -29,10 +33,20 @@ from tests.test_booking_create import monter_le_decor, premier_creneau, reserver
 #: à la table du service : si les deux divergent, c'est que l'une des deux a
 #: changé sans l'autre, et c'est précisément ce qu'on veut voir.
 DIAGRAMME = {
+    # Deux portes depuis `held` : le commerce en automatique confirme tout de
+    # suite, celui en validation reçoit la réservation en attente.
     ("held", "confirmed"),
+    ("held", "awaiting_business"),
     ("held", "cancelled"),
     ("held", "expired"),
+    # Ce que le commerce peut faire de ce qu'il a reçu, plus l'échéance.
+    ("awaiting_business", "confirmed"),
+    ("awaiting_business", "cancelled"),
+    ("awaiting_business", "expired"),
     ("confirmed", "consumed"),
+    # Deux appelants pour cette flèche : le créateur qui prévient à temps, et
+    # le commerce qui se désiste. Qui a le droit de la prendre est une question
+    # d'appelant, pas de forme.
     ("confirmed", "cancelled"),
     ("confirmed", "no_show"),
 }
@@ -350,3 +364,213 @@ async def test_une_reservation_consommee_est_terminale(session: AsyncSession) ->
             await service.transitionner(
                 session, booking=ligne, vers=vers, actor=acteur(decor), reason="essai"
             )
+
+
+# --------------------------------------------------------------------------
+# La validation par le commerce, et son annulation
+# --------------------------------------------------------------------------
+
+
+class TestValidationParLeCommerce:
+    """SPEC.md §4.1. La validation est le défaut, pas l'option."""
+
+    async def test_le_defaut_du_produit_est_la_validation(self, session: AsyncSession) -> None:
+        """Un commerce créé sans rien dire valide ses réservations.
+
+        Passe par le service de création, sans toucher au réglage : le décor des
+        tests le désactive — c'est un montage — et l'interroger là aurait
+        vérifié ce que le décor pose, pas ce que le produit décide. La première
+        version de ce test faisait exactement cela, et elle survivait à
+        l'inversion du défaut.
+        """
+        proprietaire = await auth_service.register(
+            session,
+            email=f"{uuid.uuid4()}@example.com",
+            password="un-mot-de-passe-solide-42",
+            role=UserRole.BUSINESS_MEMBER,
+        )
+        business = await business_service.create_business(
+            session,
+            payload=BusinessCreate(
+                name="Salon sans réglage",
+                category=BusinessCategory.BEAUTY,
+                currency="USD",
+                address="1234 Ocean Dr",
+                coordinates=CoordinatesPayload(longitude=-80.1918, latitude=25.7617),
+                timezone="America/New_York",
+            ),
+            creator=proprietaire,
+            geocoder=ManualGeocoder(),
+        )
+
+        assert business.requires_booking_approval is True
+
+    async def test_la_confirmation_s_arrete_en_attente(self, session: AsyncSession) -> None:
+        decor = await monter_le_decor(session, requires_booking_approval=True)
+        ligne = await reserver(session, decor, starts_at=await premier_creneau(session, decor))
+
+        await service.confirmer(session, booking=ligne, creator_id=decor["createur"].id)
+
+        assert ligne.status is BookingStatus.AWAITING_BUSINESS
+        # Et aucun code n'existe : un code qui circulerait avant l'accord du
+        # commerce serait consommable au comptoir sans qu'il ait rien accepté.
+        assert await redemption.code_du_booking(session, booking=ligne) is None
+
+    async def test_l_accord_confirme_et_fait_naitre_le_code(
+        self, session: AsyncSession
+    ) -> None:
+        decor = await monter_le_decor(session, requires_booking_approval=True)
+        ligne = await reserver(session, decor, starts_at=await premier_creneau(session, decor))
+        await service.confirmer(session, booking=ligne, creator_id=decor["createur"].id)
+
+        await service.trancher(
+            session,
+            booking=ligne,
+            business_id=decor["business"].id,
+            user_id=decor["proprietaire"].id,
+            accepte=True,
+        )
+
+        assert ligne.status is BookingStatus.CONFIRMED
+        # Le code naît de l'arrivée dans `confirmed`, quelle que soit la porte.
+        assert await redemption.code_du_booking(session, booking=ligne) is not None
+
+    async def test_un_refus_sans_motif_est_refuse(self, session: AsyncSession) -> None:
+        """Le créateur lit ce motif. Une décision sans raison ne se conteste pas."""
+        decor = await monter_le_decor(session, requires_booking_approval=True)
+        ligne = await reserver(session, decor, starts_at=await premier_creneau(session, decor))
+        await service.confirmer(session, booking=ligne, creator_id=decor["createur"].id)
+
+        for vide in (None, "", "   "):
+            with pytest.raises(service.MotifRequis):
+                await service.trancher(
+                    session,
+                    booking=ligne,
+                    business_id=decor["business"].id,
+                    user_id=decor["proprietaire"].id,
+                    accepte=False,
+                    motif=vide,
+                )
+
+        # La session reste saine, et la réservation n'a pas bougé.
+        assert ligne.status is BookingStatus.AWAITING_BUSINESS
+
+    async def test_un_refus_motive_annule_sans_penaliser(
+        self, session: AsyncSession
+    ) -> None:
+        decor = await monter_le_decor(session, requires_booking_approval=True)
+        ligne = await reserver(session, decor, starts_at=await premier_creneau(session, decor))
+        await service.confirmer(session, booking=ligne, creator_id=decor["createur"].id)
+
+        await service.trancher(
+            session,
+            booking=ligne,
+            business_id=decor["business"].id,
+            user_id=decor["proprietaire"].id,
+            accepte=False,
+            motif="planning complet ce jour-là",
+        )
+
+        assert ligne.status is BookingStatus.CANCELLED
+        assert await _evenements_de_fiabilite(session, decor["createur"].id) == []
+
+    async def test_la_place_reste_tenue_pendant_l_attente(
+        self, session: AsyncSession
+    ) -> None:
+        """La relâcher permettrait de vendre deux fois le même créneau."""
+        assert BookingStatus.AWAITING_BUSINESS in availability.STATUTS_OCCUPANTS
+
+
+class TestAnnulationParLeCommerce:
+    """Technicienne absente, fermeture imprévue."""
+
+    async def _confirmee(self, session: AsyncSession) -> tuple:
+        decor = await monter_le_decor(session)
+        ligne = await reserver(session, decor, starts_at=await premier_creneau(session, decor))
+        await service.confirmer(session, booking=ligne, creator_id=decor["createur"].id)
+        return ligne, decor
+
+    async def test_elle_ne_degrade_jamais_le_score(self, session: AsyncSession) -> None:
+        """Même à moins de vingt-quatre heures.
+
+        La fenêtre départage un créateur qui prévient d'un créateur qui ne vient
+        pas ; elle n'a rien à dire quand c'est le commerce qui se désiste. Lui
+        appliquer la même règle ferait porter au créateur la conséquence d'une
+        décision qui n'est pas la sienne.
+        """
+        ligne, decor = await self._confirmee(session)
+        # Le rendez-vous est dans l'heure : pour une annulation du créateur,
+        # ce serait une absence. `ends_at` suit — une contrainte en base exige
+        # qu'il découle de la durée, et elle a raison de le vérifier.
+        ligne.starts_at = datetime.now(UTC) + timedelta(minutes=30)
+        ligne.ends_at = ligne.starts_at + timedelta(minutes=ligne.duration_minutes)
+        await session.flush()
+
+        await service.annuler_par_le_commerce(
+            session,
+            booking=ligne,
+            business_id=decor["business"].id,
+            user_id=decor["proprietaire"].id,
+            motif="technicienne absente",
+        )
+
+        assert ligne.status is BookingStatus.CANCELLED
+        assert await _evenements_de_fiabilite(session, decor["createur"].id) == []
+
+    async def test_le_motif_est_obligatoire(self, session: AsyncSession) -> None:
+        ligne, decor = await self._confirmee(session)
+
+        with pytest.raises(service.MotifRequis):
+            await service.annuler_par_le_commerce(
+                session,
+                booking=ligne,
+                business_id=decor["business"].id,
+                user_id=decor["proprietaire"].id,
+                motif="   ",
+            )
+
+        assert ligne.status is BookingStatus.CONFIRMED
+
+    async def test_le_motif_est_journalise(self, session: AsyncSession) -> None:
+        """C'est ce que le créateur lira, et ce qu'un litige relira."""
+        ligne, decor = await self._confirmee(session)
+
+        await service.annuler_par_le_commerce(
+            session,
+            booking=ligne,
+            business_id=decor["business"].id,
+            user_id=decor["proprietaire"].id,
+            motif="fermeture imprévue",
+        )
+
+        motif = await session.scalar(
+            sa.select(AuditLog.reason)
+            .where(AuditLog.entity_id == ligne.id, AuditLog.to_status == "cancelled")
+            .order_by(AuditLog.occurred_at.desc())
+            .limit(1)
+        )
+        assert motif == "fermeture imprévue"
+
+    async def test_un_autre_commerce_ne_peut_pas_annuler(
+        self, session: AsyncSession
+    ) -> None:
+        ligne, decor = await self._confirmee(session)
+        autre = await monter_le_decor(session)
+
+        with pytest.raises(service.NotYourBusiness):
+            await service.annuler_par_le_commerce(
+                session,
+                booking=ligne,
+                business_id=autre["business"].id,
+                user_id=autre["proprietaire"].id,
+                motif="pas le mien",
+            )
+
+        assert ligne.status is BookingStatus.CONFIRMED
+
+
+async def _evenements_de_fiabilite(session: AsyncSession, creator_id) -> list[str]:
+    lignes = await session.execute(
+        sa.select(ReliabilityEvent.type).where(ReliabilityEvent.creator_id == creator_id)
+    )
+    return [ligne[0] for ligne in lignes.all()]
