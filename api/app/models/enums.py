@@ -104,6 +104,11 @@ class ContentFormat(StrEnum):
 
 class BookingStatus(StrEnum):
     HELD = "held"
+    #: Le créateur a confirmé, le commerce n'a pas encore tranché.
+    #:
+    #: La place reste tenue pendant ce temps : la relâcher permettrait de la
+    #: vendre deux fois pendant que le commerce regarde le profil.
+    AWAITING_BUSINESS = "awaiting_business"
     CONFIRMED = "confirmed"
     CONSUMED = "consumed"
     CANCELLED = "cancelled"

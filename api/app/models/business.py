@@ -62,6 +62,21 @@ class Business(UUIDPrimaryKey, CreatedAt, Base):
         server_default=BusinessStatus.ONBOARDING.value,
     )
 
+    #: Le commerce tranche lui-même chaque réservation, ou les laisse passer.
+    #:
+    #: **Vrai par défaut.** Donner une prestation à quelqu'un qu'on n'a pas
+    #: regardé est la décision qui demande un accord explicite, pas l'inverse :
+    #: un commerce qui ne connaît pas ce réglage doit être protégé par lui, pas
+    #: exposé par lui. L'automatique reste disponible pour qui a fait ce choix.
+    #: Déclaré aux deux endroits, et ce n'est pas une redondance : le défaut
+    #: serveur vaut pour ce qui est écrit hors ORM — la migration, un script —
+    #: le défaut Python pour ce que l'ORM insère. Sans le second, inverser
+    #: l'intention dans ce fichier ne change rien à l'exécution, et aucun test
+    #: ne peut donc la garder.
+    requires_booking_approval: Mapped[bool] = mapped_column(
+        sa.Boolean, nullable=False, default=True, server_default=sa.true()
+    )
+
     __table_args__ = (
         # Un commerce ne devient actif, donc visible dans le fil créateur, que
         # localisable. Tant qu'il est en onboarding, il peut rester incomplet.

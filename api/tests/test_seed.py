@@ -763,3 +763,31 @@ async def test_des_plans_d_abonnement_existent(seed_conn: AsyncConnection) -> No
     )
     # Les deux intervalles, pour que la mensualisation se voie à l'écran.
     assert intervalles == {BillingInterval.MONTHLY, BillingInterval.YEARLY}
+
+
+async def test_une_reservation_attend_le_commerce(seed_conn: AsyncConnection) -> None:
+    """L'état neuf de la v0.5 doit être visible à la démonstration.
+
+    Sans lui, la file du commerce est vide et personne ne voit à quoi sert
+    l'écran de validation — c'est le genre d'écran qu'on croit cassé.
+    """
+    combien = await seed_conn.scalar(
+        sa.select(sa.func.count())
+        .select_from(Booking)
+        .where(Booking.status == BookingStatus.AWAITING_BUSINESS)
+    )
+
+    assert combien >= 1, "aucune réservation en attente du commerce"
+
+
+async def test_un_commerce_au_moins_valide_ses_reservations(
+    seed_conn: AsyncConnection,
+) -> None:
+    """Et un autre au moins ne les valide pas : les deux modes se démontrent."""
+    modes = set(
+        (await seed_conn.execute(sa.select(Business.requires_booking_approval).distinct()))
+        .scalars()
+        .all()
+    )
+
+    assert modes == {True, False}

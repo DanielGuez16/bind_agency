@@ -124,6 +124,14 @@ class JourneeDuCommerce:
     debut: datetime
     fin: datetime
     items: tuple[ReservationDuCommerce, ...]
+    #: Ce qui attend une décision, **toutes dates confondues**.
+    #:
+    #: Hors de la journée, délibérément. Une réservation à trancher pour
+    #: après-demain n'apparaîtrait dans aucune journée qu'on ouvre, et la
+    #: créatrice attendrait une réponse que personne ne voit à donner. C'est
+    #: une file, pas un planning : elle se lit là où le commerce regarde, et il
+    #: regarde sa journée.
+    a_trancher: tuple[ReservationDuCommerce, ...]
 
 
 def _colonnes_communes() -> tuple:
@@ -259,6 +267,30 @@ def aujourd_hui(business: Business) -> date:
     return datetime.now(ZoneInfo(business.timezone)).date()
 
 
+def _lire(ligne) -> ReservationDuCommerce:
+    """Une ligne de requête en réservation du commerce.
+
+    Écrit une fois : la journée et la file à trancher lisent les mêmes colonnes,
+    et deux copies divergeraient au premier champ ajouté.
+    """
+    return ReservationDuCommerce(
+        booking_id=ligne.booking_id,
+        status=ligne.status,
+        starts_at=ligne.starts_at,
+        ends_at=ligne.ends_at,
+        valid_until=ligne.valid_until,
+        creator_id=ligne.creator_id,
+        creator_first_name=ligne.first_name,
+        creator_last_name=ligne.last_name,
+        creator_handle=ligne.handle,
+        item_name=ligne.item_name,
+        duration_minutes=ligne.duration_minutes,
+        platform=ligne.platform,
+        content_format=ligne.content_format,
+        contrepartie=_contrepartie(ligne),
+    )
+
+
 async def journee_du_commerce(
     session: AsyncSession, *, business: Business, jour: date
 ) -> JourneeDuCommerce:
@@ -303,28 +335,35 @@ async def journee_du_commerce(
         )
     ).all()
 
+    en_attente = (
+        await session.execute(
+            _jointures_communes(
+                sa.select(
+                    *_colonnes_communes(),
+                    CreatorProfile.user_id.label("creator_id"),
+                    CreatorProfile.first_name,
+                    CreatorProfile.last_name,
+                    SocialAccount.handle,
+                )
+                .join(CreatorProfile, CreatorProfile.user_id == Booking.creator_id)
+                .join(SocialAccount, SocialAccount.id == Booking.social_account_id)
+            )
+            .where(
+                Booking.business_id == business.id,
+                Booking.status == BookingStatus.AWAITING_BUSINESS,
+            )
+            # La plus ancienne d'abord : c'est celle qui attend depuis le plus
+            # longtemps, et une file qui se lit dans l'autre sens laisse le
+            # premier arrivé au fond.
+            .order_by(sa.nullslast(Booking.starts_at.asc()), Booking.created_at.asc())
+        )
+    ).all()
+
     return JourneeDuCommerce(
         jour=jour,
         timezone=business.timezone,
         debut=debut,
         fin=fin,
-        items=tuple(
-            ReservationDuCommerce(
-                booking_id=ligne.booking_id,
-                status=ligne.status,
-                starts_at=ligne.starts_at,
-                ends_at=ligne.ends_at,
-                valid_until=ligne.valid_until,
-                creator_id=ligne.creator_id,
-                creator_first_name=ligne.first_name,
-                creator_last_name=ligne.last_name,
-                creator_handle=ligne.handle,
-                item_name=ligne.item_name,
-                duration_minutes=ligne.duration_minutes,
-                platform=ligne.platform,
-                content_format=ligne.content_format,
-                contrepartie=_contrepartie(ligne),
-            )
-            for ligne in lignes
-        ),
+        a_trancher=tuple(_lire(ligne) for ligne in en_attente),
+        items=tuple(_lire(ligne) for ligne in lignes),
     )

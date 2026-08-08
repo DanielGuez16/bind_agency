@@ -8,6 +8,7 @@ import type { Catalogue } from './en';
 
 export const es: Catalogue = {
   common: {
+    annuler: 'Cancelar',
     appName: 'BIND',
     retry: 'Volver a comprobar',
     loading: 'Cargando…',
@@ -171,6 +172,7 @@ export const es: Catalogue = {
     reserver: 'Reservar',
     reservationFaite: 'Reservado',
     confirmer: 'Confirmar reserva',
+    enAttenteDuSalon: 'Esperando la confirmación del salón. Tu código de retiro aparece en cuanto respondan.',
     ouvrir_code: 'Ver código ›',
     ouvrir_preuve: 'Enviar comprobante ›',
     codeTitre: 'Muestra este código',
@@ -189,6 +191,20 @@ export const es: Catalogue = {
     ongletTerminees: 'Hechas',
   },
   commerce: {
+    aTrancher: '{{count}} esperando tu decisión',
+    accorder: 'Aceptar esta reserva',
+    refuser: 'Rechazar',
+    refuserAide: 'La creadora lo lee. Di qué lo impidió.',
+    seDesister: 'Cancelar esta reserva',
+    seDesisterAide: 'La creadora lo lee. Su fiabilidad no se ve afectada.',
+    envoyerLeMotif: 'Enviar',
+    statut_held: 'retenida',
+    statut_awaiting_business: 'esperándote',
+    statut_confirmed: 'confirmada',
+    statut_consumed: 'servida',
+    statut_cancelled: 'cancelada',
+    statut_no_show: 'ausencia',
+    statut_expired: 'caducada',
     journeeTitre: 'Hoy',
     journeeVide: 'Ninguna reserva para este día.',
     journeeReperes: 'Últimos 7 días',

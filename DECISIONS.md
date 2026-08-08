@@ -2515,3 +2515,14 @@ autoriser en bloc rendrait la redirection ouverte ; on réutilise donc
 que d'en tenir une seconde qui finirait par diverger. Sans cela, le rattachement
 était impossible dans un navigateur, et le refus revenait sous « information
 manquante ou incorrecte », qui n'aide personne.
+
+## 2026-08-08 — La file à trancher n'est pas un planning
+
+Les réservations en attente du commerce sont rendues **hors de la journée**,
+toutes dates confondues. Bornées au jour affiché, une décision à prendre pour
+après-demain n'apparaissait dans aucune page qu'on ouvre : la créatrice
+attendait une réponse que personne ne voyait à donner.
+
+Elles sont posées en tête de l'écran de journée plutôt que sur un écran à part :
+c'est là que le commerce regarde, et une file rangée ailleurs se consulte quand
+on y pense.

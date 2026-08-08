@@ -44,16 +44,66 @@ def rendre(cle: str, locale: Locale, **valeurs: Any) -> str:
 
 @dataclass(frozen=True, slots=True)
 class Contexte:
-    """Ce qu'un email de contrepartie a besoin de nommer."""
+    """Ce qu'un email de contrepartie a besoin de nommer.
+
+    Les quatre premiers champs viennent de la réservation et servent aussi aux
+    messages qui ne parlent pas de contrepartie — un refus, un désistement. Les
+    trois derniers n'ont de sens que pour une contrepartie, et restent vides
+    ailleurs plutôt que d'être inventés.
+    """
 
     destinataire: str
     locale: Locale
     creator: str
     business: str
     item: str
-    format: str
-    deadline: str
-    requirements: str
+    #: Le rendez-vous, dans le fuseau du commerce. Vide sur un item sans créneau.
+    quand: str = ""
+    format: str = ""
+    deadline: str = ""
+    requirements: str = ""
+    #: Ce que le commerce a écrit. Recopié tel quel, jamais reformulé.
+    motif: str = ""
+
+
+async def contexte_de_reservation(
+    session: AsyncSession, booking: Booking, *, motif: str = ""
+) -> Contexte | None:
+    """Ce qu'il faut dire d'une réservation, sans passer par une contrepartie.
+
+    Écrit à part parce que les messages du commerce — accord, refus,
+    désistement — arrivent **avant** qu'une contrepartie existe. Les faire
+    passer par elle aurait demandé d'en fabriquer une qui n'a pas lieu d'être.
+    """
+    ligne = (
+        await session.execute(
+            sa.select(User, CreatorProfile, Business, CatalogItem)
+            .select_from(Booking)
+            .join(User, User.id == Booking.creator_id)
+            .join(CreatorProfile, CreatorProfile.user_id == Booking.creator_id)
+            .join(Business, Business.id == Booking.business_id)
+            .join(CatalogItem, CatalogItem.id == Booking.catalog_item_id)
+            .where(Booking.id == booking.id)
+        )
+    ).one_or_none()
+
+    if ligne is None:
+        return None
+    user, profil, business, item = ligne
+    if not user.email:
+        return None
+
+    return Contexte(
+        destinataire=user.email,
+        locale=user.locale,
+        creator=profil.first_name or "",
+        business=business.name,
+        item=item.name,
+        # Sur un item sans créneau il n'y a pas d'heure : une chaîne vide plutôt
+        # qu'une date inventée, et c'est le gabarit qui décide de l'écrire.
+        quand=_lisible(booking.starts_at, business.timezone) if booking.starts_at else "",
+        motif=motif,
+    )
 
 
 async def contexte_de(session: AsyncSession, collaboration: Collaboration) -> Contexte | None:
@@ -116,6 +166,15 @@ def composer(cle: str, contexte: Contexte, **extra: Any) -> Message:
         "format": contexte.format,
         "deadline": contexte.deadline,
         "requirements": contexte.requirements,
+        "quand": contexte.quand,
+        # Le rendez-vous devient une **phrase**, ou rien. Un item sans créneau
+        # n'a pas d'heure : coller « le  » suivi du vide se remarque, et
+        # écrire deux gabarits par message pour cette seule différence les
+        # ferait diverger au premier mot changé.
+        "quand_phrase": (
+            rendre("booking.when", contexte.locale, quand=contexte.quand) if contexte.quand else ""
+        ),
+        "motif": contexte.motif,
         **extra,
     }
     return Message(
@@ -124,6 +183,25 @@ def composer(cle: str, contexte: Contexte, **extra: Any) -> Message:
         corps=rendre(f"{cle}.body", contexte.locale, **valeurs),
         locale=contexte.locale,
     )
+
+
+async def envoyer_pour_la_reservation(
+    session: AsyncSession,
+    *,
+    booking: Booking,
+    cle: str,
+    sender: EmailSender,
+    motif: str = "",
+    **extra: Any,
+) -> bool:
+    """Prévient le créateur d'une décision du commerce. Faux s'il n'y a rien à
+    envoyer — un compte anonymisé n'a pas d'adresse."""
+    contexte = await contexte_de_reservation(session, booking, motif=motif)
+    if contexte is None:
+        return False
+
+    await sender.envoyer(composer(cle, contexte, **extra))
+    return True
 
 
 async def envoyer_pour(

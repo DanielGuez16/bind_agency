@@ -143,9 +143,27 @@
         ]
       }
     },
+    "/api/v1/bookings/{booking_id}/approve": {
+      "post": {
+        "operationId": "approve_api_v1_bookings__booking_id__approve_post",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/api/v1/bookings/{booking_id}/cancel": {
       "post": {
         "operationId": "cancel_api_v1_bookings__booking_id__cancel_post",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/bookings/{booking_id}/cancel-by-business": {
+      "post": {
+        "operationId": "cancel_by_business_api_v1_bookings__booking_id__cancel_by_business_post",
         "responses": [
           "200",
           "422"
@@ -164,6 +182,15 @@
     "/api/v1/bookings/{booking_id}/confirm": {
       "post": {
         "operationId": "confirm_api_v1_bookings__booking_id__confirm_post",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/bookings/{booking_id}/decline": {
+      "post": {
+        "operationId": "decline_api_v1_bookings__booking_id__decline_post",
         "responses": [
           "200",
           "422"

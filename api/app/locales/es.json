@@ -9,5 +9,12 @@
   "collaboration.unfulfilled.subject": "Tu colaboración con {business} no se ha cumplido",
   "collaboration.unfulfilled.body": "Hola {creator}:\n\nEl plazo de {item} en {business} venció sin una prueba aceptada. Esto afecta a tu puntuación de fiabilidad.\n",
   "collaboration.requirements.mention": "Menciona a {mention} en tu publicación.",
-  "collaboration.requirements.geotag": "Añade la ubicación del negocio a tu publicación."
+  "collaboration.requirements.geotag": "Añade la ubicación del negocio a tu publicación.",
+  "booking.approved.subject": "{business} confirmó tu reserva",
+  "booking.approved.body": "Hola {creator}:\n\n{business} confirmó tu reserva de {item}{quand_phrase}.\n\nAbre la app para ver tu código de retiro. Muéstralo en el mostrador.\n",
+  "booking.declined.subject": "{business} no pudo aceptar tu reserva",
+  "booking.declined.body": "Hola {creator}:\n\n{business} no pudo aceptar tu reserva de {item}{quand_phrase}.\n\nLo que indicaron: {motif}\n\nNada cambia de tu lado: tus niveles y tu fiabilidad quedan intactos. Otros salones están abiertos para ti ahora mismo.\n",
+  "booking.cancelledByBusiness.subject": "{business} tuvo que cancelar tu reserva",
+  "booking.cancelledByBusiness.body": "Hola {creator}:\n\n{business} tuvo que cancelar tu reserva de {item}{quand_phrase}.\n\nLo que indicaron: {motif}\n\nEsto viene de su lado, no del tuyo: tu puntuación de fiabilidad queda intacta. El horario vuelve a estar libre si lo reabren.\n",
+  "booking.when": " el {quand}"
 }

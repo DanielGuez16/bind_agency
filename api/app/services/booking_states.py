@@ -1,12 +1,34 @@
 """Machine à états de la réservation — `SPEC.md` §4.1.
 
 ```
-held ──confirmation créateur──> confirmed ──scan du code──> consumed
- │                                  │
- │                                  ├──annulation > 24h avant──> cancelled
- │                                  ├──annulation < 24h ou absence──> no_show
- └──délai de garde dépassé──> expired
+held ──┬─confirmation créateur, commerce en automatique─────> confirmed
+       │                                                        │
+       └─confirmation créateur, commerce en validation──> awaiting_business
+                                     │                          │
+                                     ├──accord du commerce──────┘
+                                     ├──refus du commerce──> cancelled
+                                     └──sans réponse──────> expired
+
+confirmed ──scan du code──> consumed
+ │
+ ├──annulation créateur > 24h avant──> cancelled
+ ├──annulation créateur < 24h ou absence──> no_show
+ └──annulation par le commerce, avec motif──> cancelled
+
+held ──délai de garde dépassé──> expired
 ```
+
+**Une annulation par le commerce ne dégrade jamais le score.** Elle mène à
+`cancelled`, jamais à `no_show` : une technicienne absente ou une fermeture
+imprévue n'est pas un manquement du créateur, et le lui faire porter serait la
+façon la plus sûre de lui apprendre à se méfier du produit. Le motif est
+obligatoire — une annulation sans raison est une annulation qu'on ne peut pas
+contester.
+
+**Le commerce tranche avant que le code n'existe.** `awaiting_business` tient la
+place pendant qu'il regarde : la relâcher permettrait de la vendre deux fois. Et
+le droit de consommer ne naît qu'à `confirmed`, ce qui rend impossible qu'un
+code circule pour une réservation que le commerce n'a pas acceptée.
 
 **Les transitions autorisées sont déclarées, pas déduites.** Une table explicite
 se relit et se compare au diagramme ; une suite de `if` répartis dans le service
@@ -31,13 +53,21 @@ import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.models import Booking
+from app.models import Booking, Business
 from app.models.enums import BookingStatus, ReliabilityEventType
 from app.services import audit, collaboration, redemption, reliability
 
 #: Le diagramme, écrit une fois. Toute transition absente d'ici est refusée.
 TRANSITIONS: dict[BookingStatus, frozenset[BookingStatus]] = {
     BookingStatus.HELD: frozenset(
+        {
+            BookingStatus.AWAITING_BUSINESS,
+            BookingStatus.CONFIRMED,
+            BookingStatus.CANCELLED,
+            BookingStatus.EXPIRED,
+        }
+    ),
+    BookingStatus.AWAITING_BUSINESS: frozenset(
         {BookingStatus.CONFIRMED, BookingStatus.CANCELLED, BookingStatus.EXPIRED}
     ),
     BookingStatus.CONFIRMED: frozenset(
@@ -71,6 +101,19 @@ class NotYours(BookingStateError):
 
 class NoShowNotApplicable(BookingStateError):
     """Un item sans créneau n'a pas d'heure à laquelle ne pas se présenter."""
+
+
+class MotifRequis(BookingStateError):
+    """Le commerce annule ou refuse sans dire pourquoi.
+
+    Exigé par le service et pas seulement par le schéma de la route : c'est une
+    règle métier, et une seconde route ajoutée demain ne doit pas pouvoir s'en
+    passer.
+    """
+
+
+class NotYourBusiness(BookingStateError):
+    """Réservation d'un autre commerce."""
 
 
 async def transitionner(
@@ -112,6 +155,14 @@ async def transitionner(
         reason=reason,
     )
 
+    # Le code naît de l'arrivée dans `confirmed`, quelle que soit la porte
+    # empruntée. Il vivait dans `confirmer`, ce qui suffisait tant qu'il n'y
+    # avait qu'un chemin ; depuis que le commerce peut confirmer à son tour, un
+    # code accroché à une seule des deux portes aurait laissé la moitié des
+    # réservations confirmées sans rien à montrer au comptoir.
+    if vers is BookingStatus.CONFIRMED:
+        await redemption.creer_code(session, booking=booking)
+
     # L'événement naît de la transition, pas d'un appel que quelqu'un pourrait
     # oublier. Une absence non enregistrée serait une absence gratuite.
     if vers is BookingStatus.NO_SHOW:
@@ -132,6 +183,11 @@ async def confirmer(session: AsyncSession, *, booking: Booking, creator_id: uuid
     le balayage, la place est déjà rendue — le calcul de disponibilité la
     propose à quelqu'un d'autre. Confirmer dans cet intervalle vendrait deux
     fois la même place.
+
+    **Où cela mène dépend du commerce, pas du créateur.** Un commerce en
+    validation reçoit la réservation en attente ; les autres la confirment tout
+    de suite. Le créateur fait le même geste dans les deux cas — c'est l'écran
+    qui lui dit ensuite ce qui se passe.
     """
     if booking.creator_id != creator_id:
         raise NotYours(str(booking.id))
@@ -139,20 +195,82 @@ async def confirmer(session: AsyncSession, *, booking: Booking, creator_id: uuid
     if booking.hold_expires_at is not None and booking.hold_expires_at <= datetime.now(UTC):
         raise HoldExpired(str(booking.id))
 
-    confirme = await transitionner(
+    a_valider = await session.scalar(
+        sa.select(Business.requires_booking_approval).where(Business.id == booking.business_id)
+    )
+
+    return await transitionner(
         session,
         booking=booking,
-        vers=BookingStatus.CONFIRMED,
+        vers=BookingStatus.AWAITING_BUSINESS if a_valider else BookingStatus.CONFIRMED,
         actor=audit.Actor(kind=audit.ActorKind.CREATOR, user_id=creator_id),
     )
 
-    # Le code naît ici, à la confirmation, et pas au premier affichage. Une
-    # réservation confirmée sans ligne de code serait un cas particulier qui
-    # ressortirait partout — en reporting, en support, et le jour où le
-    # téléphone du créateur est vide de batterie et qu'il faut lui dicter son
-    # code au comptoir. Déterministe vaut mieux que paresseux.
-    await redemption.creer_code(session, booking=confirme)
-    return confirme
+
+async def trancher(
+    session: AsyncSession,
+    *,
+    booking: Booking,
+    business_id: uuid.UUID,
+    user_id: uuid.UUID,
+    accepte: bool,
+    motif: str | None = None,
+) -> Booking:
+    """Le commerce accepte ou refuse une réservation en attente.
+
+    Le refus exige un motif : c'est ce que le créateur lira, et une décision
+    sans raison est une décision qu'il ne peut pas contester. L'accord n'en
+    demande pas — il n'y a rien à justifier à dire oui.
+
+    Refuser mène à `cancelled`, jamais à `no_show` : le créateur n'a rien fait.
+    """
+    if booking.business_id != business_id:
+        raise NotYourBusiness(str(booking.id))
+
+    if not accepte and not (motif or "").strip():
+        raise MotifRequis(str(booking.id))
+
+    return await transitionner(
+        session,
+        booking=booking,
+        vers=BookingStatus.CONFIRMED if accepte else BookingStatus.CANCELLED,
+        actor=audit.Actor(kind=audit.ActorKind.BUSINESS_MEMBER, user_id=user_id),
+        reason=None if accepte else motif,
+    )
+
+
+async def annuler_par_le_commerce(
+    session: AsyncSession,
+    *,
+    booking: Booking,
+    business_id: uuid.UUID,
+    user_id: uuid.UUID,
+    motif: str,
+) -> Booking:
+    """Technicienne absente, fermeture imprévue : le commerce rend la place.
+
+    **Toujours `cancelled`, jamais `no_show`**, et sans regarder l'heure. La
+    fenêtre de vingt-quatre heures existe pour départager un créateur qui
+    prévient d'un créateur qui ne vient pas ; elle n'a rien à dire ici, où c'est
+    le commerce qui se désiste. Lui appliquer la même règle ferait porter au
+    créateur la conséquence d'une décision qui n'est pas la sienne.
+
+    Le motif est obligatoire. Sans lui, le créateur reçoit une annulation qu'il
+    ne peut ni comprendre ni contester.
+    """
+    if booking.business_id != business_id:
+        raise NotYourBusiness(str(booking.id))
+
+    if not motif.strip():
+        raise MotifRequis(str(booking.id))
+
+    return await transitionner(
+        session,
+        booking=booking,
+        vers=BookingStatus.CANCELLED,
+        actor=audit.Actor(kind=audit.ActorKind.BUSINESS_MEMBER, user_id=user_id),
+        reason=motif,
+    )
 
 
 async def annuler(session: AsyncSession, *, booking: Booking, creator_id: uuid.UUID) -> Booking:

@@ -299,3 +299,46 @@ async def test_une_reservation_annulee_reste_dans_la_journee(session: AsyncSessi
     journee = await service.journee_du_commerce(session, business=decor["business"], jour=jour)
 
     assert [i.status for i in journee.items] == [BookingStatus.CANCELLED]
+
+
+async def test_la_file_a_trancher_ignore_la_date(session: AsyncSession) -> None:
+    """Une décision en attente pour après-demain doit rester visible aujourd'hui.
+
+    Bornée à la journée, elle n'apparaissait dans aucune page qu'on ouvre : la
+    créatrice attendait une réponse que personne ne voyait à donner. C'est une
+    file, pas un planning.
+    """
+    decor = await monter_le_decor(session, requires_booking_approval=True)
+    booking = await reserver(session, decor, starts_at=await premier_creneau(session, decor))
+    # Poussé à après-demain : c'est la date qui doit cesser de compter, et le
+    # créneau du jour ne le prouverait pas.
+    booking.starts_at = booking.starts_at + timedelta(days=2)
+    booking.ends_at = booking.ends_at + timedelta(days=2)
+    await session.flush()
+    await booking_states.confirmer(session, booking=booking, creator_id=decor["createur"].id)
+
+    journee = await service.journee_du_commerce(
+        session, business=decor["business"], jour=datetime.now(UTC).date()
+    )
+
+    assert [ligne.booking_id for ligne in journee.a_trancher] == [booking.id]
+    # Et elle n'est pas dans le planning du jour : elle n'y est pas.
+    assert booking.id not in [ligne.booking_id for ligne in journee.items]
+
+
+async def test_la_file_ne_contient_que_ce_qui_attend(session: AsyncSession) -> None:
+    """L'autre sens. Une file qui contiendrait tout ferait trancher des
+
+    réservations déjà tranchées, et le bouton d'accord échouerait sans qu'on
+    comprenne pourquoi.
+    """
+    decor = await monter_le_decor(session)
+    booking = await reserver(session, decor, starts_at=await premier_creneau(session, decor))
+    await booking_states.confirmer(session, booking=booking, creator_id=decor["createur"].id)
+
+    journee = await service.journee_du_commerce(
+        session, business=decor["business"], jour=datetime.now(UTC).date()
+    )
+
+    assert journee.a_trancher == ()
+    assert booking.id in [ligne.booking_id for ligne in journee.items]

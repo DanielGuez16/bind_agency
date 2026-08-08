@@ -111,6 +111,9 @@ const JOURNEE = {
       contrepartie: null,
     },
   ],
+  // La file à trancher est une liste à part, rendue par le serveur toutes
+  // dates confondues. Vide ici : ces tests éprouvent le planning.
+  a_trancher: [],
 };
 
 const LIGNE_DE_FILE = {

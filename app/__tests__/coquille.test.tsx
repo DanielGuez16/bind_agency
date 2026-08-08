@@ -454,7 +454,14 @@ describe('aiguillage par rôle', () => {
       '/me/tiers': { creator_id: 'u1', is_new_creator: true, paliers: [] },
       '/me/bookings': { items: [], compteurs: {} },
       '/businesses': { commerces: [], obstacles: [] },
-      '/bookings': { jour: '2026-08-08', timezone: 'UTC', debut: '', fin: '', items: [] },
+      '/bookings': {
+        jour: '2026-08-08',
+        timezone: 'UTC',
+        debut: '',
+        fin: '',
+        items: [],
+        a_trancher: [],
+      },
       '/reporting': { reservations: 0, par_palier: [], par_item: [] },
       '/activation': [],
     };

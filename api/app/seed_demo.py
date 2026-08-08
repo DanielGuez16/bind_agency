@@ -47,6 +47,7 @@ from app.models import (
 )
 from app.models.enums import (
     BillingInterval,
+    BookingStatus,
     BusinessCategory,
     BusinessStatus,
     JobStatus,
@@ -321,6 +322,25 @@ async def _reserver(
         return None
 
 
+async def _accepter_si_besoin(session, booking, *, membre_id) -> None:
+    """Fait passer l'accord du commerce quand il est requis.
+
+    Le jeu de données emprunte le chemin du produit plutôt que d'écrire l'état :
+    depuis que la validation est le défaut, une réservation confirmée par le
+    créateur s'arrête en attente, et poser `confirmed` à la main aurait produit
+    un jeu de données qui ne ressemble à rien de ce que le produit fabrique.
+    """
+    if booking.status is not BookingStatus.AWAITING_BUSINESS:
+        return
+    await booking_states.trancher(
+        session,
+        booking=booking,
+        business_id=booking.business_id,
+        user_id=membre_id,
+        accepte=True,
+    )
+
+
 async def _reculer(session: AsyncSession, booking: Booking, de: timedelta) -> None:
     """Vieillit une réservation. La seule façon de fabriquer du passé.
 
@@ -381,6 +401,21 @@ async def composer_les_parcours(session: AsyncSession, createurs: dict) -> tuple
     contreparties = 0
     proprietaire = Actor.system()
 
+    async def membre_de(business_id: uuid.UUID) -> uuid.UUID | None:
+        """L'identifiant du membre qui tranche. Nul quand il n'y en a pas."""
+        membre = await session.scalar(
+            sa.select(BusinessMember).where(BusinessMember.business_id == business_id).limit(1)
+        )
+        return membre.user_id if membre else None
+
+    async def confirmer_jusqu_au_bout(booking, createur_id: uuid.UUID) -> None:
+        """Confirmation créateur, puis accord du commerce si sa validation est
+        active. Le jeu de données emprunte les deux portes du produit."""
+        await booking_states.confirmer(session, booking=booking, creator_id=createur_id)
+        membre_id = await membre_de(booking.business_id)
+        if membre_id is not None:
+            await _accepter_si_besoin(session, booking, membre_id=membre_id)
+
     async def caissier_de(business_id: uuid.UUID) -> Actor:
         """Le membre du commerce qui sert au comptoir."""
         from app.models import BusinessMember
@@ -393,10 +428,31 @@ async def composer_les_parcours(session: AsyncSession, createurs: dict) -> tuple
         user = await session.get(User, membre.user_id)
         return Actor.from_user(user) if user else proprietaire
 
+    # --- 0. en attente du commerce --------------------------------------
+    #
+    # L'état neuf de la v0.5 : la créatrice a confirmé, le salon n'a pas encore
+    # tranché. Sans lui, la file du commerce est vide à la démonstration et
+    # personne ne voit à quoi sert le nouvel écran.
+    booking = await _reserver(
+        session,
+        createur=confirmee,
+        compte=compte_confirmee,
+        offre=premiere,
+        pas_avant=datetime.now(UTC) + timedelta(days=2),
+    )
+    if booking:
+        await session.execute(
+            sa.update(Business)
+            .where(Business.id == booking.business_id)
+            .values(requires_booking_approval=True)
+        )
+        await booking_states.confirmer(session, booking=booking, creator_id=confirmee.id)
+        reservations += 1
+
     # --- 1. à venir, simplement confirmée -------------------------------
     booking = await _reserver(session, createur=confirmee, compte=compte_confirmee, offre=premiere)
     if booking:
-        await booking_states.confirmer(session, booking=booking, creator_id=confirmee.id)
+        await confirmer_jusqu_au_bout(booking, confirmee.id)
         reservations += 1
 
     # --- 2. annulée par la créatrice ------------------------------------
@@ -413,7 +469,7 @@ async def composer_les_parcours(session: AsyncSession, createurs: dict) -> tuple
         pas_avant=datetime.now(UTC) + timedelta(days=3),
     )
     if booking:
-        await booking_states.confirmer(session, booking=booking, creator_id=confirmee.id)
+        await confirmer_jusqu_au_bout(booking, confirmee.id)
         await booking_states.annuler(session, booking=booking, creator_id=confirmee.id)
         await _reculer(session, booking, timedelta(days=9))
         reservations += 1
@@ -426,7 +482,7 @@ async def composer_les_parcours(session: AsyncSession, createurs: dict) -> tuple
         else None
     )
     if booking:
-        await booking_states.confirmer(session, booking=booking, creator_id=plafonnee.id)
+        await confirmer_jusqu_au_bout(booking, plafonnee.id)
         # L'absence ne se constate qu'après l'heure prévue. Reculer le créneau
         # est le seul moyen de la produire sans attendre — et la fin se
         # recalcule depuis la durée figée, jamais choisie au jugé : une
@@ -481,7 +537,7 @@ async def composer_les_parcours(session: AsyncSession, createurs: dict) -> tuple
         if booking is None:
             continue
 
-        await booking_states.confirmer(session, booking=booking, creator_id=createur.id)
+        await confirmer_jusqu_au_bout(booking, createur.id)
         code = await redemption_service.code_du_booking(session, booking=booking)
         caissier = await caissier_de(booking.business_id)
         if code is not None:

@@ -42,7 +42,15 @@ PAS = timedelta(minutes=15)
 #: `no_show` n'occupent rien : la place est rendue. `held` occupe **tant que le
 #: garde n'a pas expiré** — c'est tout l'intérêt du garde, et l'oublier ferait
 #: vendre deux fois la même place pendant les dix minutes du parcours.
-STATUTS_OCCUPANTS = (BookingStatus.HELD, BookingStatus.CONFIRMED, BookingStatus.CONSUMED)
+#: Ce qui occupe une place. `awaiting_business` en fait partie : la relâcher
+#: pendant que le commerce regarde le profil permettrait de vendre deux fois la
+#: même place, et de lui faire accepter une réservation qui n'a plus de place.
+STATUTS_OCCUPANTS = (
+    BookingStatus.HELD,
+    BookingStatus.AWAITING_BUSINESS,
+    BookingStatus.CONFIRMED,
+    BookingStatus.CONSUMED,
+)
 
 
 class AvailabilityError(Exception):

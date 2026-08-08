@@ -45,6 +45,14 @@ export const routes = {
   reserver: () => chemin('/bookings'),
   confirmerLaReservation: (bookingId: string) => chemin(`/bookings/${bookingId}/confirm`),
   annulerLaReservation: (bookingId: string) => chemin(`/bookings/${bookingId}/cancel`),
+
+  // Les trois décisions du commerce. Trois chemins et non un avec un verbe en
+  // corps : accepter, refuser et se désister n'ont ni les mêmes exigences ni
+  // les mêmes conséquences — se désister ne pénalise pas, `no-show` si.
+  accorderLaReservation: (bookingId: string) => chemin(`/bookings/${bookingId}/approve`),
+  refuserLaReservation: (bookingId: string) => chemin(`/bookings/${bookingId}/decline`),
+  seDesisterDeLaReservation: (bookingId: string) =>
+    chemin(`/bookings/${bookingId}/cancel-by-business`),
   marquerAbsent: (bookingId: string) => chemin(`/bookings/${bookingId}/no-show`),
   codeDeRetrait: (bookingId: string) => chemin(`/bookings/${bookingId}/code`),
 
@@ -125,6 +133,9 @@ export const METHODES: Record<keyof typeof routes, ('GET' | 'POST' | 'PATCH' | '
 
     reserver: ['POST'],
     confirmerLaReservation: ['POST'],
+    accorderLaReservation: ['POST'],
+    refuserLaReservation: ['POST'],
+    seDesisterDeLaReservation: ['POST'],
     annulerLaReservation: ['POST'],
     marquerAbsent: ['POST'],
     codeDeRetrait: ['GET'],
