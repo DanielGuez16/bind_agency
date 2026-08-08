@@ -28,6 +28,7 @@ import {
   EmptyState,
   SegmentedTabs,
   ServiceRow,
+  StatusMessage,
   Texte,
 } from '../components';
 import { useI18n } from '../i18n';
@@ -36,7 +37,14 @@ import { useRequete } from './useRequete';
 
 /** Les trois onglets, et les statuts que chacun couvre. */
 const ONGLETS: { cle: string; libelle: string; statuts: BookingStatus[] }[] = [
-  { cle: 'a-venir', libelle: 'parcours.ongletAVenir', statuts: ['held', 'confirmed'] },
+  {
+    cle: 'a-venir',
+    libelle: 'parcours.ongletAVenir',
+    // `awaiting_business` est à venir, pas en cours : la place est tenue et le
+    // rendez-vous existe. Le ranger ailleurs le ferait disparaître de l'onglet
+    // où on le cherche, pendant les quelques heures qui comptent.
+    statuts: ['held', 'awaiting_business', 'confirmed'],
+  },
   { cle: 'en-cours', libelle: 'parcours.ongletEnCours', statuts: ['consumed'] },
   {
     cle: 'terminees',
@@ -123,6 +131,16 @@ export function HistoriqueScreen({
                     </Texte>
                   }
                 />
+                {/* L'attente se dit, avec ce qu'elle implique. Une ligne muette
+                    entre « réservé » et « code disponible » se lit comme une
+                    panne, et c'est le moment où l'on écrit au support. */}
+                {reservation.status === 'awaiting_business' ? (
+                  <StatusMessage
+                    level="neutral"
+                    body={t('parcours.enAttenteDuSalon')}
+                    testID={`en-attente-${reservation.booking_id}`}
+                  />
+                ) : null}
                 <Texte variante="type.caption" couleur="text.secondary">
                   {reservation.item_name}
                 </Texte>
@@ -177,9 +195,10 @@ function Onglets({
  * vous. Une prestation consommée mène à sa contrepartie, où l'on envoie la
  * preuve. Le reste ne mène nulle part, et ne se prétend donc pas pressable.
  *
- * **Confirmée seulement, pas retenue.** Le code naît à la confirmation ; une
- * réservation encore retenue n'en a pas, et le serveur refuse. La ligne
- * proposait « voir le code » sur une réservation qui n'en avait aucun.
+ * **Confirmée seulement, ni retenue ni en attente du salon.** Le code naît à la
+ * confirmation ; une réservation retenue n'en a pas, et une réservation que le
+ * salon n'a pas encore acceptée non plus — le serveur refuse dans les deux cas.
+ * La ligne proposait « voir le code » sur une réservation qui n'en avait aucun.
  */
 export function destination(
   reservation: ReservationDuCreateur,

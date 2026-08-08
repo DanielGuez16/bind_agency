@@ -428,6 +428,27 @@ async def composer_les_parcours(session: AsyncSession, createurs: dict) -> tuple
         user = await session.get(User, membre.user_id)
         return Actor.from_user(user) if user else proprietaire
 
+    # --- 0. en attente du commerce --------------------------------------
+    #
+    # L'état neuf de la v0.5 : la créatrice a confirmé, le salon n'a pas encore
+    # tranché. Sans lui, la file du commerce est vide à la démonstration et
+    # personne ne voit à quoi sert le nouvel écran.
+    booking = await _reserver(
+        session,
+        createur=confirmee,
+        compte=compte_confirmee,
+        offre=premiere,
+        pas_avant=datetime.now(UTC) + timedelta(days=2),
+    )
+    if booking:
+        await session.execute(
+            sa.update(Business)
+            .where(Business.id == booking.business_id)
+            .values(requires_booking_approval=True)
+        )
+        await booking_states.confirmer(session, booking=booking, creator_id=confirmee.id)
+        reservations += 1
+
     # --- 1. à venir, simplement confirmée -------------------------------
     booking = await _reserver(session, createur=confirmee, compte=compte_confirmee, offre=premiere)
     if booking:

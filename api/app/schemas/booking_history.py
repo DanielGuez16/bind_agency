@@ -93,3 +93,8 @@ class JourneeDuCommerceRead(BaseModel):
     debut: datetime
     fin: datetime
     items: list[ReservationDuCommerceRead]
+    #: Ce qui attend une décision, toutes dates confondues — pas seulement ce
+    #: jour-là. Une réservation à trancher pour après-demain n'apparaîtrait
+    #: dans aucune journée qu'on ouvre, et la créatrice attendrait une réponse
+    #: que personne ne voit à donner.
+    a_trancher: list[ReservationDuCommerceRead]

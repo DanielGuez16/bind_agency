@@ -11,6 +11,7 @@
  */
 export const en = {
   common: {
+    annuler: 'Cancel',
     appName: 'BIND',
     retry: 'Check again',
     loading: 'Loading…',
@@ -174,6 +175,7 @@ export const en = {
     reserver: 'Book this',
     reservationFaite: 'Booked',
     confirmer: 'Confirm booking',
+    enAttenteDuSalon: 'Waiting for the salon to confirm. Your pickup code appears once they do.',
     ouvrir_code: 'Show code ›',
     ouvrir_preuve: 'Send proof ›',
     codeTitre: 'Show this code',
@@ -192,6 +194,20 @@ export const en = {
     ongletTerminees: 'Done',
   },
   commerce: {
+    aTrancher: '{{count}} waiting for your decision',
+    accorder: 'Accept this booking',
+    refuser: 'Decline',
+    refuserAide: 'The creator reads this. Say what got in the way.',
+    seDesister: 'Cancel this booking',
+    seDesisterAide: 'The creator reads this. Their reliability is not affected.',
+    envoyerLeMotif: 'Send',
+    statut_held: 'held',
+    statut_awaiting_business: 'waiting for you',
+    statut_confirmed: 'confirmed',
+    statut_consumed: 'served',
+    statut_cancelled: 'cancelled',
+    statut_no_show: 'no show',
+    statut_expired: 'expired',
     journeeTitre: 'Today',
     journeeVide: 'No booking for this day.',
     journeeReperes: 'Last 7 days',

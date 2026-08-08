@@ -185,6 +185,34 @@ export class Api {
     });
   }
 
+  /** Le commerce accepte. Aucun motif : il n'y a rien à justifier à dire oui. */
+  accorderLaReservation(bookingId: string) {
+    return this.client.request<Booking>(routes.accorderLaReservation(bookingId), {
+      methode: 'POST',
+    });
+  }
+
+  /** Le commerce refuse. Le motif est lu par la créatrice, il est obligatoire. */
+  refuserLaReservation(bookingId: string, motif: string) {
+    return this.client.request<Booking>(routes.refuserLaReservation(bookingId), {
+      methode: 'POST',
+      corps: { reason: motif },
+    });
+  }
+
+  /**
+   * Le commerce se désiste d'une réservation déjà acceptée.
+   *
+   * Distincte de l'absence, et ce n'est pas une nuance de vocabulaire : celle-ci
+   * ne pénalise jamais la créatrice.
+   */
+  seDesisterDeLaReservation(bookingId: string, motif: string) {
+    return this.client.request<Booking>(routes.seDesisterDeLaReservation(bookingId), {
+      methode: 'POST',
+      corps: { reason: motif },
+    });
+  }
+
   annulerLaReservation(bookingId: string) {
     return this.client.request<Booking>(routes.annulerLaReservation(bookingId), {
       methode: 'POST',

@@ -1,25 +1,38 @@
 """Transitions d'une réservation.
 
 Le créateur confirme et annule sur ses propres réservations : l'appartenance se
-lit sur `creator_id`, pas sur le chemin. Le commerce constate l'absence sur les
-siennes, via le résolveur d'appartenance — c'est exactement le cas pour lequel
-il a été écrit, une ressource sans `business_id` dans l'URL.
+lit sur `creator_id`, pas sur le chemin. Le commerce tranche, se désiste et
+constate l'absence sur les siennes, via le résolveur d'appartenance — c'est
+exactement le cas pour lequel il a été écrit, une ressource sans `business_id`
+dans l'URL.
+
+**Trois routes distinctes pour le commerce, pas une seule avec un verbe en
+corps.** Accepter, refuser et se désister n'ont ni les mêmes conditions
+d'entrée, ni les mêmes exigences, ni les mêmes conséquences : une route unique
+demanderait de lire le corps pour savoir ce qui est permis, et le jour où l'une
+gagne une règle, les trois la porteraient.
 """
 
+import logging
 import uuid
 from typing import Annotated
 
+import httpx
 from fastapi import APIRouter, Depends, Path, status
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.dependencies import CurrentUser, SessionDep, require_role
 from app.core.errors import ErrorCode, api_error
 from app.core.membership import MembershipFor
+from app.integrations.email import get_sender
 from app.models import Booking
 from app.models.enums import UserRole
 from app.schemas.booking import BookingRead
 from app.services import booking_states as service
+from app.services import notifications
 from app.services.audit import Actor
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/bookings", tags=["bookings"])
 
@@ -36,7 +49,22 @@ _CODES = {
     # `NotYours` répond comme une réservation absente : distinguer les deux
     # dirait à un créateur quels identifiants appartiennent à un autre.
     service.NotYours: (status.HTTP_404_NOT_FOUND, ErrorCode.BOOKING_NOT_FOUND),
+    service.NotYourBusiness: (status.HTTP_404_NOT_FOUND, ErrorCode.BOOKING_NOT_FOUND),
+    service.MotifRequis: (status.HTTP_422_UNPROCESSABLE_CONTENT, ErrorCode.VALIDATION_FAILED),
 }
+
+
+class MotifDuCommerce(BaseModel):
+    """Refuser ou se désister : le créateur lira ce motif, il est obligatoire.
+
+    Exigé ici **et** dans le service. Le schéma protège la route, le service
+    protège la règle — une seconde route ajoutée demain ne doit pas pouvoir
+    s'en passer.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    reason: str = Field(min_length=3, max_length=500)
 
 
 class MotifAbsence(BaseModel):
@@ -118,4 +146,109 @@ async def mark_no_show(
         raise _traduire(error) from error
 
     await session.commit()
+    return BookingRead.model_validate(reservation)
+
+
+async def _prevenir(session, reservation: Booking, cle: str, *, motif: str = "") -> None:
+    """Prévient le créateur d'une décision du commerce.
+
+    **Après le commit, et sans le faire échouer.** La décision est prise et
+    écrite ; un serveur d'email en panne ne doit pas la défaire. L'échec est
+    journalisé par l'envoyeur, il n'a rien à dire à celui qui vient de trancher.
+    """
+    try:
+        async with httpx.AsyncClient() as client:
+            await notifications.envoyer_pour_la_reservation(
+                session,
+                booking=reservation,
+                cle=cle,
+                sender=get_sender(client),
+                motif=motif,
+            )
+    except Exception:
+        # Volontairement large. La décision est déjà écrite ; la seule chose
+        # qu'une exception ici peut encore faire, c'est la défaire.
+        logger.exception("notification de réservation non envoyée", extra={"cle": cle})
+
+
+@router.post("/{booking_id}/approve", response_model=BookingRead)
+async def approve(
+    booking_id: Annotated[uuid.UUID, Path()],
+    session: SessionDep,
+    user: CurrentUser,
+    membership: MembershipFor("booking", param="booking_id"),
+) -> BookingRead:
+    """Le commerce accepte. Aucun motif : il n'y a rien à justifier à dire oui."""
+    reservation = await _reservation(session, booking_id)
+    try:
+        await service.trancher(
+            session,
+            booking=reservation,
+            business_id=membership.business_id,
+            user_id=user.id,
+            accepte=True,
+        )
+    except service.BookingStateError as error:
+        raise _traduire(error) from error
+
+    await session.commit()
+    await _prevenir(session, reservation, "booking.approved")
+    return BookingRead.model_validate(reservation)
+
+
+@router.post("/{booking_id}/decline", response_model=BookingRead)
+async def decline(
+    booking_id: Annotated[uuid.UUID, Path()],
+    payload: MotifDuCommerce,
+    session: SessionDep,
+    user: CurrentUser,
+    membership: MembershipFor("booking", param="booking_id"),
+) -> BookingRead:
+    """Le commerce refuse. Le créateur lira ce motif."""
+    reservation = await _reservation(session, booking_id)
+    try:
+        await service.trancher(
+            session,
+            booking=reservation,
+            business_id=membership.business_id,
+            user_id=user.id,
+            accepte=False,
+            motif=payload.reason,
+        )
+    except service.BookingStateError as error:
+        raise _traduire(error) from error
+
+    await session.commit()
+    await _prevenir(session, reservation, "booking.declined", motif=payload.reason)
+    return BookingRead.model_validate(reservation)
+
+
+@router.post("/{booking_id}/cancel-by-business", response_model=BookingRead)
+async def cancel_by_business(
+    booking_id: Annotated[uuid.UUID, Path()],
+    payload: MotifDuCommerce,
+    session: SessionDep,
+    user: CurrentUser,
+    membership: MembershipFor("booking", param="booking_id"),
+) -> BookingRead:
+    """Technicienne absente, fermeture imprévue.
+
+    Distincte de `/no-show` et ce n'est pas une nuance de vocabulaire : l'une
+    pénalise le créateur, l'autre non. Les confondre dans une route unique
+    ferait de la pénalité une case à cocher.
+    """
+    reservation = await _reservation(session, booking_id)
+    try:
+        await service.annuler_par_le_commerce(
+            session,
+            booking=reservation,
+            business_id=membership.business_id,
+            user_id=user.id,
+            motif=payload.reason,
+        )
+    except service.BookingStateError as error:
+        raise _traduire(error) from error
+
+    await session.commit()
+    await _prevenir(session, reservation, "booking.cancelledByBusiness", motif=payload.reason)
     return BookingRead.model_validate(reservation)

@@ -29,6 +29,8 @@ export type BusinessCategory =
 
 export type BookingStatus =
   | 'held'
+  /** La créatrice a confirmé, le salon n'a pas encore tranché. */
+  | 'awaiting_business'
   | 'confirmed'
   | 'consumed'
   | 'cancelled'
@@ -300,6 +302,13 @@ export type JourneeDuCommerce = {
   debut: string;
   fin: string;
   items: ReservationDuCommerce[];
+  /**
+   * Ce qui attend une décision, **toutes dates confondues**.
+   *
+   * Hors de la journée : une réservation à trancher pour après-demain
+   * n'apparaîtrait dans aucune journée qu'on ouvre.
+   */
+  a_trancher: ReservationDuCommerce[];
 };
 
 // --------------------------------------------------------------------------

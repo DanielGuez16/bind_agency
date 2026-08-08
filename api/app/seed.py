@@ -228,6 +228,16 @@ async def _wynwood_nails(session: AsyncSession, owner: User) -> tuple[int, int, 
         geocoder=ManualGeocoder(),
     )
 
+    # Le seul salon en automatique du jeu de données. Les autres valident, ce
+    # qui est le défaut du produit ; il en faut un de chaque côté pour que la
+    # démonstration montre les deux parcours.
+    #
+    # Wynwood et non Ocean Beauty : c'est Ocean Beauty qui accueille la
+    # réservation laissée en attente, et l'y mettre en automatique revenait à
+    # défaire l'un avec l'autre.
+    business.requires_booking_approval = False
+    await session.flush()
+
     items = []
     sans_reservation: dict[str, CatalogItem] = {}
     for nom, prix in (("Vernis semi-permanent à emporter", 2500), ("Diagnostic ongles", 0)):

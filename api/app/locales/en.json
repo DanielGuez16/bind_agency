@@ -9,5 +9,12 @@
   "collaboration.unfulfilled.subject": "Your collaboration with {business} was not honoured",
   "collaboration.unfulfilled.body": "Hi {creator},\n\nThe deadline for {item} at {business} passed without an accepted proof. This affects your reliability score.\n",
   "collaboration.requirements.mention": "Mention {mention} in your post.",
-  "collaboration.requirements.geotag": "Add the business location to your post."
+  "collaboration.requirements.geotag": "Add the business location to your post.",
+  "booking.approved.subject": "{business} confirmed your booking",
+  "booking.approved.body": "Hi {creator},\n\n{business} has confirmed your booking for {item}{quand_phrase}.\n\nOpen the app to see your pickup code. Show it at the counter.\n",
+  "booking.declined.subject": "{business} could not take your booking",
+  "booking.declined.body": "Hi {creator},\n\n{business} was not able to take your booking for {item}{quand_phrase}.\n\nWhat they said: {motif}\n\nNothing changes on your side — your tiers and your reliability are untouched. Other salons are open to you right now.\n",
+  "booking.cancelledByBusiness.subject": "{business} had to cancel your booking",
+  "booking.cancelledByBusiness.body": "Hi {creator},\n\n{business} has had to cancel your booking for {item}{quand_phrase}.\n\nWhat they said: {motif}\n\nThis is on their side, not yours: your reliability score is untouched. The slot is free again if they reopen it.\n",
+  "booking.when": " on {quand}"
 }
