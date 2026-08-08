@@ -369,6 +369,8 @@ export const en = {
     account_rejected: 'This account cannot be used on BIND. Contact us if you disagree.',
     oauth_state_invalid: 'This connection link is no longer valid. Start again from your account.',
     social_account_taken: 'This social account is already linked to another BIND account.',
+    social_account_from_other_provider:
+      'This account came from demonstration mode and cannot be reconnected. Connect a real account instead.',
     social_provider_unavailable: 'We could not reach the social network. Please try again.',
     social_account_not_found: 'We could not find this social account on your profile.',
     social_account_not_active:

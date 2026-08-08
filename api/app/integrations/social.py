@@ -87,6 +87,15 @@ class MetriquesProfil:
 class SocialProvider(Protocol):
     platform: Platform
 
+    #: Ce que ce fournisseur est : `demo` ou `live`.
+    #:
+    #: Porté par le fournisseur et non lu dans la configuration, parce que les
+    #: deux peuvent diverger : le jeu de données construit ses propres
+    #: fournisseurs simulés quel que soit le mode déclaré. Enregistrer le
+    #: réglage du jour marquerait ses comptes comme réels, exactement dans le
+    #: cas qu'on cherche ensuite à détecter.
+    mode: str
+
     def authorization_url(self, *, state: str) -> str:
         """URL vers laquelle envoyer le créateur pour qu'il autorise."""
         ...

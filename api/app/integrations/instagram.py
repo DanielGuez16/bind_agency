@@ -50,6 +50,8 @@ CODES_AUTHENTIFICATION = {102, 190}
 
 class InstagramProvider:
     platform = Platform.INSTAGRAM
+    #: Il parle à la vraie plateforme : les comptes qu'il rattache sont réels.
+    mode = "live"
 
     def __init__(self, client: httpx.AsyncClient) -> None:
         settings = get_settings()

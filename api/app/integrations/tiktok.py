@@ -50,6 +50,8 @@ CHAMPS_PROFIL = "open_id,username,display_name,follower_count,following_count,vi
 
 class TikTokProvider:
     platform = Platform.TIKTOK
+    #: Il parle à la vraie plateforme : les comptes qu'il rattache sont réels.
+    mode = "live"
 
     def __init__(self, client: httpx.AsyncClient) -> None:
         settings = get_settings()

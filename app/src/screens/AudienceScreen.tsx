@@ -18,8 +18,17 @@
  * offrir d'en ajouter un : le fil et les paliers renvoyaient vers un écran qui
  * disait « aucune mesure » et s'arrêtait là. L'action existe donc dans les deux
  * états, avec des comptes et sans.
+ *
+ * Le geste vit dans `useRattachement`, en un seul exemplaire : cet écran en
+ * portait sa propre copie, dont le corps s'est vidé sans que rien ne le
+ * signale — l'appui ne produisait plus rien du tout.
+ *
+ * **Un compte venu d'un autre fournisseur le dit.** Un compte rattaché en
+ * démonstration porte un jeton qui n'existe chez personne : le jour où le mode
+ * passe en réel, il devient irrécupérable. Le fil et les paliers proposent
+ * pourtant « reconnecter », et le faire créerait un **autre** compte en
+ * laissant celui-ci mort à côté. La ligne le dit ici, où le geste se ferait.
  */
-import { useState } from 'react';
 import { View } from 'react-native';
 
 import {
@@ -31,7 +40,7 @@ import {
 import { Apparition, Button, DataRow, StatusMessage, Texte, vibration } from '../components';
 import { useI18n } from '../i18n';
 import { translateErrorCode } from '../i18n/errors';
-import { rattacherUnReseau } from '../shell/rattacherUnReseau';
+import { useRattachement } from '../shell/rattacherUnReseau';
 import { Ecran } from './Ecran';
 import { nomDePlateforme } from './obstacle';
 import { useRequete } from './useRequete';
@@ -44,8 +53,6 @@ type Vue = { audience: AudienceDuCompte[]; verification: VerificationDuCompte[] 
 export function AudienceScreen() {
   const { api, messageDErreur } = useApi();
   const { t } = useI18n();
-  const [ouverture, setOuverture] = useState<PlateformeConnectable | null>(null);
-  const [echec, setEchec] = useState<string | null>(null);
 
   const requete = useRequete<Vue>(
     async (signal) => ({
@@ -63,7 +70,7 @@ export function AudienceScreen() {
       vide={
         <View style={{ gap: 12 }}>
           <StatusMessage level="neutral" body={t('parcours.audienceVide')} testID="audience-vide" />
-          <Rattacher />
+          <Rattacher api={api} messageDErreur={messageDErreur} onFait={requete.recharger} />
         </View>
       }
     >
@@ -115,6 +122,14 @@ export function AudienceScreen() {
                     : t('parcours.jamaisMesure')}
                 </Texte>
 
+                {!compte.reconnectable ? (
+                  <StatusMessage
+                    level="warning"
+                    body={t('errors.social_account_from_other_provider')}
+                    testID="compte-d-un-autre-fournisseur"
+                  />
+                ) : null}
+
                 {controle?.verification_status === 'needs_review' ? (
                   <View style={{ gap: 6 }} testID="controle-en-cours">
                     <StatusMessage
@@ -141,53 +156,56 @@ export function AudienceScreen() {
               </View>
             );
           })}
-          <Rattacher />
+          <Rattacher api={api} messageDErreur={messageDErreur} onFait={requete.recharger} />
         </View>
       )}
     </Ecran>
   );
+}
 
-  /**
-   * Les boutons de rattachement.
-   *
-   * Déclarés ici et non au niveau du module : ils partagent l'état d'ouverture
-   * et le client d'API de l'écran, et les faire remonter demanderait de passer
-   * quatre propriétés pour deux boutons.
-   */
-  function Rattacher() {
-    async function connecter(plateforme: PlateformeConnectable) {
-      setOuverture(plateforme);
-      setEchec(null);
-      vibration.action();
-      try {
-  
-      } catch (erreur) {
-        vibration.echec();
-        setEchec(messageDErreur(erreur));
-      } finally {
-        setOuverture(null);
-      }
-    }
+/**
+ * Les boutons de rattachement.
+ *
+ * Composant du module, pas fonction imbriquée : déclarée dans le corps de
+ * l'écran, elle changeait d'identité à chaque rendu, et React démontait puis
+ * remontait tout le sous-arbre à chaque frappe.
+ */
+function Rattacher({
+  api,
+  messageDErreur,
+  onFait,
+}: {
+  api: ReturnType<typeof useApi>['api'];
+  messageDErreur: (erreur: unknown) => string;
+  /** Le compte existe côté serveur : on relit plutôt que de le croire. */
+  onFait: () => void;
+}) {
+  const { t } = useI18n();
+  const { ouverture, echec, connecter } = useRattachement({
+    api,
+    traduire: (code) => translateErrorCode(t, code),
+    messageDErreur,
+    onRattache: onFait,
+  });
 
-    return (
-      <Apparition>
-        <View style={{ gap: 8 }} testID="rattacher-un-reseau">
-          <Texte variante="type.label" couleur="text.secondary">
-            {t('parcours.audienceConnecter')}
-          </Texte>
-          {echec ? <StatusMessage level="danger" body={echec} testID="echec-connexion" /> : null}
-          {RESEAUX.map((reseau) => (
-            <Button
-              key={reseau}
-              label={nomDePlateforme(reseau)}
-              variant="secondary"
-              loading={ouverture === reseau}
-              onPress={() => void connecter(reseau)}
-              testID={`connecter-${reseau}`}
-            />
-          ))}
-        </View>
-      </Apparition>
-    );
-  }
+  return (
+    <Apparition>
+      <View style={{ gap: 8 }} testID="rattacher-un-reseau">
+        <Texte variante="type.label" couleur="text.secondary">
+          {t('parcours.audienceConnecter')}
+        </Texte>
+        {echec ? <StatusMessage level="danger" body={echec} testID="echec-connexion" /> : null}
+        {RESEAUX.map((reseau) => (
+          <Button
+            key={reseau}
+            label={nomDePlateforme(reseau)}
+            variant="secondary"
+            loading={ouverture === reseau}
+            onPress={() => void connecter(reseau)}
+            testID={`connecter-${reseau}`}
+          />
+        ))}
+      </View>
+    </Apparition>
+  );
 }

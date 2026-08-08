@@ -21,8 +21,10 @@ import pytest
 from app.core.config import API_ROOT, ConfigurationError, get_settings
 from app.integrations import providers
 from app.integrations.demo_images import COUVERTURE, PRESTATION, image
+from app.integrations.instagram import InstagramProvider
 from app.integrations.social import SocialAuthError, SocialProvider
 from app.integrations.social_demo import DemoSocialProvider
+from app.integrations.tiktok import TikTokProvider
 from app.models.enums import Platform
 
 #: Les mots qui trahissent un mode qui aurait fui dans la logique métier.
@@ -269,3 +271,16 @@ def test_les_images_restent_legeres() -> None:
     """Un jeu de données qui met vingt secondes à fabriquer ses images finit par
     ne plus être rejoué."""
     assert len(image("Ocean Beauty Studio", COUVERTURE)) < 200_000
+
+
+def test_le_fournisseur_de_demonstration_se_declare_comme_tel() -> None:
+    """Et non selon le mode configuré.
+
+    Le jeu de données construit ses propres fournisseurs simulés quel que soit
+    le réglage. Si le mode enregistré venait de la configuration, ses comptes
+    seraient marqués « réels » un jour où `SOCIAL_PROVIDER=live` — soit
+    exactement le cas qu'on cherche ensuite à détecter, rendu invisible.
+    """
+    assert DemoSocialProvider(platform=Platform.INSTAGRAM).mode == "demo"
+    assert InstagramProvider.mode == "live"
+    assert TikTokProvider.mode == "live"

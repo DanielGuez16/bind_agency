@@ -33,7 +33,7 @@ from app.core.config import get_settings
 from app.integrations.social import SocialAuthError, SocialProvider, SocialProviderError
 from app.models import SocialAccount, SocialMetricsSnapshot
 from app.models.enums import SocialAccountStatus
-from app.services import account_verification
+from app.services import account_verification, social_accounts
 
 
 class MetricsError(Exception):
@@ -69,11 +69,28 @@ async def get_owned_account(
     return compte
 
 
+class SocialAccountFromOtherProvider(Exception):
+    """Rattaché sous un autre fournisseur : rien ne le récupérera.
+
+    Distinct de « compte inactif » parce que le geste diffère : un compte
+    inactif se reconnecte, celui-ci ne se reconnecte pas — il faut en rattacher
+    un autre.
+    """
+
+
 async def refresh_profile_metrics(
     session: AsyncSession, *, account: SocialAccount, provider: SocialProvider
 ) -> SocialMetricsSnapshot:
     """Interroge la plateforme et enregistre un snapshot, ou n'écrit rien."""
     settings = get_settings()
+
+    if not social_accounts.reconnectable(account):
+        # Le compte vient d'un autre fournisseur : son jeton n'existe chez
+        # personne. Sans cette garde, on part interroger la vraie plateforme
+        # avec un jeton de démonstration, et l'échec revient sous la forme
+        # « la plateforme est indisponible » — ce qui accuse un tiers pour une
+        # cause locale, et laisse chercher une panne qui n'existe pas.
+        raise SocialAccountFromOtherProvider(str(account.id))
 
     if (
         account.status is not SocialAccountStatus.ACTIVE

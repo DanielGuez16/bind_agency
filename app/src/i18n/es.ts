@@ -368,6 +368,8 @@ export const es: Catalogue = {
     oauth_state_invalid:
       'Este enlace de conexión ya no es válido. Vuelve a empezar desde tu cuenta.',
     social_account_taken: 'Esta cuenta social ya está vinculada a otra cuenta de BIND.',
+    social_account_from_other_provider:
+      'Esta cuenta viene del modo de demostración y no puede reconectarse. Conecta una cuenta real.',
     social_provider_unavailable: 'No hemos podido contactar con la red social. Inténtalo de nuevo.',
     social_account_not_found: 'No encontramos esta cuenta social en tu perfil.',
     social_account_not_active:

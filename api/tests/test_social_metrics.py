@@ -12,6 +12,7 @@ l'absence de trace.
 
 import uuid
 from datetime import UTC, datetime, timedelta
+from types import SimpleNamespace
 
 import httpx
 import pytest
@@ -53,6 +54,8 @@ class FauxFournisseur:
     """
 
     platform = Platform.INSTAGRAM
+    #: Il tient la place d'un fournisseur réel.
+    mode = "live"
 
     def __init__(self, *, rend: MetriquesProfil | None = None, leve: Exception | None = None):
         self.rend = rend
@@ -653,3 +656,56 @@ async def test_un_renouvellement_sur_jeton_mort_se_distingue_d_une_panne(
             await InstagramProvider(http).refresh_token(access_token="jeton-bon")
 
     assert not isinstance(excinfo.value, SocialAuthError)
+
+
+async def test_un_compte_d_un_autre_fournisseur_ne_se_releve_pas(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Son jeton n'existe chez personne : partir l'interroger accuse un tiers.
+
+    Un compte rattaché en démonstration porte un jeton qui n'a de sens que pour
+    le fournisseur simulé. Le jour où le mode passe en réel, l'interroger chez
+    Meta échoue — et l'échec revenait sous « la plateforme est indisponible »,
+    ce qui envoie chercher une panne chez eux pour une cause locale.
+    """
+    from app.services import social_accounts as module_comptes
+
+    compte = await compte_actif(session, provider_mode="demo")
+    monkeypatch.setattr(
+        module_comptes, "get_settings", lambda: SimpleNamespace(social_provider="live")
+    )
+
+    with pytest.raises(service.SocialAccountFromOtherProvider):
+        await service.refresh_profile_metrics(
+            session,
+            account=compte,
+            provider=object(),  # type: ignore[arg-type]
+        )
+
+    # Et rien n'est écrit : la tentative n'a pas eu lieu, elle n'a consommé
+    # aucun quota.
+    assert await compter_snapshots(session, compte.id) == 0
+    assert compte.last_sync_attempt_at is None
+
+
+async def test_un_compte_du_meme_fournisseur_se_releve(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """L'autre sens. Une garde qui refuserait tout passerait le test précédent
+
+    sans rien garantir, et plus aucun relevé n'aurait lieu.
+    """
+    from app.services import social_accounts as module_comptes
+
+    compte = await compte_actif(session, provider_mode="live")
+    monkeypatch.setattr(
+        module_comptes, "get_settings", lambda: SimpleNamespace(social_provider="live")
+    )
+
+    snapshot = await service.refresh_profile_metrics(
+        session,
+        account=compte,
+        provider=FauxFournisseur(rend=metriques(followers_count=12_000)),
+    )
+
+    assert snapshot.followers_count == 12_000

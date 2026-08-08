@@ -53,6 +53,8 @@ class FauxRenouvellement:
     """Fournisseur programmable pour le renouvellement de jeton."""
 
     platform = Platform.INSTAGRAM
+    #: Il tient la place d'un fournisseur réel.
+    mode = "live"
 
     def __init__(self, *, rend: JetonEchange | None = None, leve: Exception | None = None):
         self.rend = rend

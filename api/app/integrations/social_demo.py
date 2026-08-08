@@ -63,6 +63,9 @@ class DemoSocialProvider:
         refuse_l_echange: bool = False,
     ) -> None:
         self.platform = platform
+        # Ce qu'il est, et non ce que la configuration déclare : le jeu de
+        # données construit ce fournisseur même quand le mode dit « live ».
+        self.mode = "demo"
         self.handle = handle
         self._graine = _graine(handle)
         # Entre 800 et 120 000 : assez bas pour qu'un créateur reste sous le

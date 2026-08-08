@@ -291,6 +291,21 @@ rien d'autre.
 Si la vue ne se referme pas, c'est que la redirection n'a pas abouti — voir
 plus bas.
 
+### Les comptes du jeu de données ne survivent pas au changement de mode
+
+Le jeu pose des comptes **simulés** : leurs jetons n'existent chez personne. En
+passant `SOCIAL_PROVIDER=live`, ces comptes deviennent irrécupérables — ni
+relevé, ni renouvellement, ni reconnexion, parce qu'il n'y a rien à reconnecter.
+
+L'app le dit sur le compte concerné, dans **Audience** : « This account came
+from demonstration mode and cannot be reconnected. » L'issue est de rattacher un
+compte réel, pas de reconnecter celui-là — le faire créerait un autre compte et
+laisserait le premier mort à côté.
+
+Chaque compte porte donc le mode sous lequel il a été rattaché. Le mode vient du
+fournisseur qui l'a créé, pas du réglage du jour : le jeu de données construit
+ses fournisseurs simulés même quand la configuration dit « live ».
+
 ### Le retour dans l'app, et pourquoi il n'allait pas de soi
 
 Le rappel d'Instagram arrive sur le **tunnel**, côté serveur. L'app tourne sur
