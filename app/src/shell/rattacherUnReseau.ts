@@ -26,10 +26,12 @@
  * l'app reprend la main. Elle relit ses comptes par une route authentifiée
  * plutôt que de croire un paramètre d'URL.
  */
+import { useCallback, useState } from 'react';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 
 import type { Api, PlateformeConnectable } from '../api';
+import { vibration } from '../components';
 
 /**
  * Le chemin de retour dans l'app.
@@ -70,4 +72,67 @@ export async function rattacherUnReseau(
 
   if (statut === 'rattache') return { issue: 'rattache' };
   return { issue: 'echec', code: typeof parametres.code === 'string' ? parametres.code : null };
+}
+
+
+/**
+ * L'état d'un rattachement en cours, et le geste qui le lance.
+ *
+ * **Un seul exemplaire.** Les deux écrans qui proposent de rattacher un réseau
+ * portaient chacun leur copie de cette dizaine de lignes. L'une d'elles s'est
+ * retrouvée avec un `try` vide : l'appui posait l'état de chargement, ne
+ * faisait rien, et le retirait aussitôt. Aucune erreur, aucune vue, rien —
+ * exactement le silence qu'on cherche à supprimer partout ailleurs. Deux copies
+ * d'une même logique, c'est une copie qui peut se vider sans qu'on le voie.
+ *
+ * **Un appui produit toujours quelque chose.** Chargement, puis la vue
+ * d'autorisation, puis l'un des trois résultats. Un abandon ne dit rien —
+ * fermer la vue est un geste volontaire, y répondre par une erreur est
+ * agressif — mais tous les autres chemins parlent.
+ */
+export function useRattachement({
+  api,
+  traduire,
+  messageDErreur,
+  onRattache,
+}: {
+  api: Api;
+  /** Traduit un code du catalogue. Fourni par l'écran, qui a le `t`. */
+  traduire: (code: string | null) => string;
+  messageDErreur: (erreur: unknown) => string;
+  onRattache: () => void;
+}) {
+  const [ouverture, setOuverture] = useState<PlateformeConnectable | null>(null);
+  const [echec, setEchec] = useState<string | null>(null);
+
+  const connecter = useCallback(
+    async (plateforme: PlateformeConnectable) => {
+      setOuverture(plateforme);
+      setEchec(null);
+      vibration.action();
+      try {
+        const resultat = await rattacherUnReseau(api, plateforme);
+
+        if (resultat.issue === 'rattache') {
+          vibration.reussite();
+          onRattache();
+          return;
+        }
+        if (resultat.issue === 'echec') {
+          vibration.echec();
+          setEchec(traduire(resultat.code));
+        }
+      } catch (erreur) {
+        // L'ouverture elle-même a échoué : personne n'est encore parti, et un
+        // écran muet passe pour un bouton mort.
+        vibration.echec();
+        setEchec(messageDErreur(erreur));
+      } finally {
+        setOuverture(null);
+      }
+    },
+    [api, messageDErreur, onRattache, traduire],
+  );
+
+  return { ouverture, echec, connecter };
 }

@@ -134,6 +134,20 @@ class SocialAccount(UUIDPrimaryKey, Base):
     )
     granted_scopes: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
+    #: Sous quel fournisseur ce compte a été rattaché : `demo` ou `live`.
+    #:
+    #: Un compte rattaché en démonstration porte un jeton qui n'existe chez
+    #: personne. Le jour où le mode passe en réel, ce compte devient
+    #: irrécupérable : ni relevé, ni renouvellement, ni reconnexion — et l'app
+    #: proposait pourtant « reconnecter », ce qui mène à une impasse.
+    #: Le savoir demande de l'avoir écrit au moment du rattachement ; rien dans
+    #: la ligne ne permet de le deviner après coup.
+    #:
+    #: Nullable : les lignes antérieures à cette colonne ne le savent pas, et
+    #: l'inventer serait pire que l'ignorer. Nul veut dire « on ne sait pas »,
+    #: et on n'en tire aucune conclusion.
+    provider_mode: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+
     status: Mapped[SocialAccountStatus] = mapped_column(
         enum_column(SocialAccountStatus, "social_account_status"),
         nullable=False,

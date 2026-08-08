@@ -250,6 +250,10 @@ async def refresh_metrics(
         snapshot = await metrics_service.refresh_profile_metrics(
             session, account=compte, provider=provider
         )
+    except metrics_service.SocialAccountFromOtherProvider as error:
+        raise api_error(
+            status.HTTP_409_CONFLICT, ErrorCode.SOCIAL_ACCOUNT_FROM_OTHER_PROVIDER
+        ) from error
     except metrics_service.SocialAccountNotActive as error:
         raise api_error(status.HTTP_409_CONFLICT, ErrorCode.SOCIAL_ACCOUNT_NOT_ACTIVE) from error
     except metrics_service.RefreshTooSoon as error:

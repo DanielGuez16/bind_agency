@@ -69,6 +69,9 @@ class ErrorCode(StrEnum):
     OAUTH_STATE_INVALID = "oauth_state_invalid"
     SOCIAL_ACCOUNT_TAKEN = "social_account_taken"
     SOCIAL_PROVIDER_UNAVAILABLE = "social_provider_unavailable"
+    #: Rattaché sous un autre fournisseur : aucun geste du créateur ne le
+    #: récupérera. Distinct de « compte inactif », qui se reconnecte.
+    SOCIAL_ACCOUNT_FROM_OTHER_PROVIDER = "social_account_from_other_provider"
     SOCIAL_ACCOUNT_NOT_FOUND = "social_account_not_found"
     SOCIAL_ACCOUNT_NOT_ACTIVE = "social_account_not_active"
     SOCIAL_TOKEN_EXPIRED = "social_token_expired"

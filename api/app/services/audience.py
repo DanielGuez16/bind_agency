@@ -49,6 +49,11 @@ class AudienceDuCompte:
     engagement_rate: Decimal | None
     #: La date du relevé. Sans elle, le chiffre est illisible.
     captured_at: datetime | None
+    #: Faux quand le compte a été rattaché sous un autre fournisseur. Son jeton
+    #: n'existe alors chez personne : ni relevé, ni renouvellement, ni
+    #: reconnexion. Rendu à l'app pour qu'elle le dise, au lieu de proposer un
+    #: geste qui ne mène nulle part.
+    reconnectable: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -109,6 +114,7 @@ async def audience(session: AsyncSession, *, creator_id: uuid.UUID) -> tuple[Aud
                 releve.c.avg_views,
                 releve.c.engagement_rate,
                 releve.c.captured_at,
+                SocialAccount.provider_mode,
             )
             .outerjoin(releve, releve.c.social_account_id == SocialAccount.id)
             .where(SocialAccount.creator_id == creator_id)
@@ -129,6 +135,10 @@ async def audience(session: AsyncSession, *, creator_id: uuid.UUID) -> tuple[Aud
             avg_views=ligne.avg_views,
             engagement_rate=ligne.engagement_rate,
             captured_at=ligne.captured_at,
+            reconnectable=(
+                ligne.provider_mode is None
+                or ligne.provider_mode == get_settings().social_provider
+            ),
         )
         for ligne in lignes
     )

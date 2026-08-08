@@ -12,12 +12,13 @@ service sur un faux fournisseur.
 
 import uuid
 from datetime import UTC, datetime, timedelta
+from types import SimpleNamespace
 
 import httpx
 import pytest
 import sqlalchemy as sa
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncConnection
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncSession
 
 from app.core import encryption
 from app.core.config import ConfigurationError, get_settings
@@ -45,6 +46,8 @@ JETON = "IGQVJXY-un-jeton-de-longue-duree-tres-secret"
 
 class FauxInstagram:
     platform = Platform.INSTAGRAM
+    #: Il tient la place du fournisseur réel : c'est ce qu'il déclare.
+    mode = "live"
 
     def __init__(self, *, external_id: str = "17841400000000001", handle: str = "rebecca.miami"):
         self.external_id = external_id
@@ -553,7 +556,15 @@ async def test_sans_adresse_de_retour_le_rappel_rend_le_compte(
 
 @pytest.mark.parametrize(
     "adresse",
-    ["https://exemple-hostile.test/vole", "javascript:alert(1)", "//exemple-hostile.test", ""],
+    [
+        "https://exemple-hostile.test/vole",
+        # Une origine http non déclarée reste refusée : c'est la liste des
+        # origines de confiance qui ouvre, pas le schéma.
+        "http://exemple-hostile.test/vole",
+        "javascript:alert(1)",
+        "//exemple-hostile.test",
+        "",
+    ],
 )
 async def test_une_adresse_de_retour_etrangere_est_refusee(
     client_ig: AsyncClient, instagram: FauxInstagram, adresse: str
@@ -574,7 +585,17 @@ async def test_une_adresse_de_retour_etrangere_est_refusee(
 
 
 @pytest.mark.parametrize(
-    "adresse", ["exp://10.0.0.7:8081/--/oauth", "exp+bind://oauth", "bind://oauth"]
+    "adresse",
+    [
+        "exp://10.0.0.7:8081/--/oauth",
+        "exp+bind://oauth",
+        "bind://oauth",
+        # Le web : l'adresse de retour est celle de la page, et son origine
+        # figure déjà dans CORS_ORIGINS. Sans cette branche, le rattachement
+        # était impossible dans un navigateur — et le refus revenait sous
+        # « information manquante ou incorrecte », qui n'aide personne.
+        "http://localhost:8081/oauth",
+    ],
 )
 async def test_les_schemas_de_l_application_sont_acceptes(
     client_ig: AsyncClient, instagram: FauxInstagram, adresse: str
@@ -674,3 +695,49 @@ async def test_une_reconnexion_ne_replanifie_pas(
         {"createur": compte["user_id"]},
     )
     assert {ligne.status for ligne in restants} == {"exhausted"}
+
+
+async def test_le_mode_du_fournisseur_est_ecrit_au_rattachement(
+    client_ig: AsyncClient, instagram: FauxInstagram, conn: AsyncConnection
+) -> None:
+    """Rien dans la ligne ne permettrait de le retrouver après coup.
+
+    Sans lui, un compte rattaché en démonstration est indiscernable d'un compte
+    réel le jour où le mode change — et c'est exactement ce cas qu'il faut
+    savoir nommer, parce qu'aucun geste du créateur ne le récupérera.
+    """
+    # Une identité à part : `FauxInstagram` en rend une seule, et un test plus
+    # haut dans le fichier l'a déjà rattachée à un autre créateur. Réutiliser la
+    # même ferait répondre 409, sans compte créé — et l'assertion tomberait sur
+    # une ligne absente en accusant l'écriture du mode.
+    instagram.external_id = "17841400000000042"
+    compte = await createur(client_ig)
+    await revenir(client_ig, await demarrer(client_ig, compte))
+
+    mode = await conn.scalar(
+        sa.text("select provider_mode from social_account where creator_id = :createur"),
+        {"createur": compte["user_id"]},
+    )
+
+    # Comparé à ce que **le fournisseur** déclare, pas au réglage : les deux
+    # divergent dès que le jeu de données construit ses propres fournisseurs
+    # simulés alors que la configuration dit « live ».
+    assert mode == instagram.mode
+
+
+async def test_un_compte_d_un_autre_fournisseur_n_est_pas_reconnectable(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """La règle, dans les deux sens.
+
+    Un mode inconnu ne conclut rien : les lignes antérieures à la colonne n'ont
+    pas à être déclarées cassées sur une supposition.
+    """
+    from app.services import social_accounts as module
+
+    for mode, attendu in (("demo", False), ("live", True), (None, True)):
+        compte = SocialAccount(platform=Platform.INSTAGRAM, provider_mode=mode)
+        monkeypatch.setattr(
+            module, "get_settings", lambda: SimpleNamespace(social_provider="live")
+        )
+        assert module.reconnectable(compte) is attendu

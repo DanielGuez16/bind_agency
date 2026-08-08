@@ -2488,3 +2488,30 @@ restent lisibles dessous.
 date, faux pour un compte qu'on vient de rattacher : tant qu'elle n'a pas
 tourné, aucun relevé n'existe, le moteur n'a aucun chiffre à juger, et le
 créateur voit un fil vide juste après avoir connecté son compte.
+
+## 2026-08-08 — Un compte social porte le fournisseur qui l'a créé
+
+Un compte rattaché en démonstration porte un jeton qui n'existe chez personne.
+Le jour où `SOCIAL_PROVIDER` passe en réel, il devient irrécupérable — et l'app
+proposait « reconnecter », ce qui aurait créé un **autre** compte en laissant
+celui-ci mort à côté. Rien dans la ligne ne permettait de le deviner après coup :
+la colonne `provider_mode` l'écrit au rattachement.
+
+**Le mode vient du fournisseur, pas de la configuration.** Les deux divergent :
+le jeu de données construit ses propres fournisseurs simulés quel que soit le
+réglage déclaré. Lire le réglage aurait marqué ses comptes comme réels, soit
+exactement le cas qu'on cherche à détecter. Chaque fournisseur déclare donc ce
+qu'il est.
+
+La colonne est nullable et **sans remplissage rétroactif** : les lignes
+antérieures ont un mode inconnu, et le deviner serait une invention. Inconnu ne
+conclut rien.
+
+## 2026-08-08 — L'adresse de retour OAuth accepte les origines déjà de confiance
+
+Sur le web, l'adresse de retour est celle de la page, en `http` ou `https`. Les
+autoriser en bloc rendrait la redirection ouverte ; on réutilise donc
+`CORS_ORIGINS`, la liste des origines à qui l'API accepte déjà de parler, plutôt
+que d'en tenir une seconde qui finirait par diverger. Sans cela, le rattachement
+était impossible dans un navigateur, et le refus revenait sous « information
+manquante ou incorrecte », qui n'aide personne.

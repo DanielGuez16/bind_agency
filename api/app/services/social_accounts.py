@@ -43,11 +43,34 @@ class AdresseDeRetourRefusee(Exception):
 
 
 def _verifier_l_adresse_de_retour(retour: str) -> None:
-    schema = urlsplit(retour).scheme.lower()
+    """Deux façons d'être reconnue, et aucune autre.
+
+    **Un schéma d'application déclaré** — `exp` sous Expo Go, `bind` une fois
+    compilée. Ces schémas ne désignent que l'application elle-même : il n'y a
+    pas d'hôte à contrôler derrière.
+
+    **Une origine web déjà de confiance.** Sur le web, l'adresse de retour est
+    celle de la page — `http://localhost:8081/oauth` — et son schéma est
+    forcément `http` ou `https`. Les autoriser en bloc rendrait la redirection
+    ouverte ; on réutilise donc `CORS_ORIGINS`, la liste des origines à qui
+    l'API accepte déjà de parler, plutôt que d'en inventer une seconde qui
+    finirait par diverger de la première.
+    """
+    settings = get_settings()
+    morceaux = urlsplit(retour)
+    schema = morceaux.scheme.lower()
+
     # Le schéma d'Expo Go porte parfois un suffixe : `exp+bind://`.
-    racine = schema.split("+", 1)[0]
-    if racine not in get_settings().oauth_return_schemes:
-        raise AdresseDeRetourRefusee(f"schéma non autorisé : {schema or 'aucun'}")
+    if schema.split("+", 1)[0] in settings.oauth_return_schemes:
+        return
+
+    if schema in ("http", "https"):
+        origine = f"{schema}://{morceaux.netloc}"
+        if origine in settings.cors_origins:
+            return
+        raise AdresseDeRetourRefusee(f"origine non déclarée : {origine}")
+
+    raise AdresseDeRetourRefusee(f"schéma non autorisé : {schema or 'aucun'}")
 
 
 async def start_authorization(
@@ -124,6 +147,20 @@ class Rattachement:
     retour: str | None
 
 
+def reconnectable(compte: SocialAccount) -> bool:
+    """Ce compte peut-il encore être renouvelé, relevé, reconnecté ?
+
+    Non quand il a été rattaché sous un autre fournisseur : son jeton n'existe
+    chez personne, et aucun geste du créateur n'y changera rien — reconnecter
+    ouvrirait un parcours réel qui créerait un **autre** compte et laisserait
+    celui-ci mort à côté.
+
+    Un mode inconnu ne conclut rien : les lignes antérieures à la colonne
+    n'ont pas à être déclarées cassées sur une supposition.
+    """
+    return compte.provider_mode is None or compte.provider_mode == get_settings().social_provider
+
+
 async def _planifier_le_suivi(session: AsyncSession, account_id: uuid.UUID) -> None:
     """Le premier relevé et le renouvellement de jeton, dès le rattachement.
 
@@ -190,6 +227,7 @@ async def complete_authorization(
         existant.refresh_token_encrypted = jeton.refresh_token
         existant.token_expires_at = jeton.expires_at
         existant.status = SocialAccountStatus.ACTIVE
+        existant.provider_mode = provider.mode
         existant.last_synced_at = None
         await session.flush()
         await _planifier_le_suivi(session, existant.id)
@@ -204,6 +242,10 @@ async def complete_authorization(
         refresh_token_encrypted=jeton.refresh_token,
         token_expires_at=jeton.expires_at,
         status=SocialAccountStatus.ACTIVE,
+        # Le mode sous lequel il a été rattaché, demandé au fournisseur et non
+        # à la configuration : les deux divergent dès que le jeu de données
+        # construit ses propres fournisseurs simulés.
+        provider_mode=provider.mode,
         # La vérification de cohérence du profil est une tâche à part : le
         # compte arrive donc en revue, et ne réserve rien tant qu'elle n'a pas
         # tranché.

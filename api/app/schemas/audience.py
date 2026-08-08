@@ -32,6 +32,10 @@ class AudienceDuCompteRead(BaseModel):
     #: Nulle quand aucun relevé n'existe. Un chiffre sans date serait pris pour
     #: celui d'aujourd'hui.
     captured_at: datetime | None
+    #: Faux quand le compte vient d'un autre fournisseur que celui en service :
+    #: rien ne le récupérera, et l'app doit le dire plutôt que de proposer une
+    #: reconnexion qui créerait un autre compte à côté.
+    reconnectable: bool
 
 
 class SignalJugeRead(BaseModel):

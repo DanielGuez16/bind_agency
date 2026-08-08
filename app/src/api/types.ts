@@ -121,6 +121,11 @@ export type AudienceDuCompte = {
   engagement_rate: string | null;
   /** Nulle quand aucun relevé n'existe. Un chiffre sans date ment. */
   captured_at: string | null;
+  /**
+   * Faux quand le compte a été rattaché sous un autre fournisseur : son jeton
+   * n'existe chez personne, et aucune reconnexion ne le récupérera.
+   */
+  reconnectable: boolean;
 };
 
 export type SignalJuge = {

@@ -19,7 +19,6 @@
  * chiffres que l'écran n'a pas, et les inventer se paierait au premier
  * démenti.
  */
-import { useState } from 'react';
 import { View } from 'react-native';
 
 import { useApi, type PlateformeConnectable } from '../api';
@@ -35,7 +34,7 @@ import {
 } from '../components';
 import { useI18n } from '../i18n';
 import { translateErrorCode } from '../i18n/errors';
-import { rattacherUnReseau } from '../shell/rattacherUnReseau';
+import { useRattachement } from '../shell/rattacherUnReseau';
 import { useTheme } from '../theme';
 import { nomDePlateforme } from './obstacle';
 
@@ -65,36 +64,13 @@ export function BienvenueScreen({
   const { color: c, density } = useTheme();
   const { api, messageDErreur } = useApi();
 
-  const [ouverture, setOuverture] = useState<PlateformeConnectable | null>(null);
-  const [echec, setEchec] = useState<string | null>(null);
+  const { ouverture, echec, connecter } = useRattachement({
+    api,
+    traduire: (code) => translateErrorCode(t, code),
+    messageDErreur,
+    onRattache: onRattache ?? onPlusTard,
+  });
 
-  async function connecter(plateforme: PlateformeConnectable) {
-    setOuverture(plateforme);
-    setEchec(null);
-    vibration.action();
-    try {
-      const resultat = await rattacherUnReseau(api, plateforme);
-
-      if (resultat.issue === 'rattache') {
-        vibration.reussite();
-        (onRattache ?? onPlusTard)();
-        return;
-      }
-      // Un abandon ne dit rien : fermer le navigateur est un geste volontaire,
-      // et lui répondre par une erreur est agressif.
-      if (resultat.issue === 'echec') {
-        vibration.echec();
-        setEchec(translateErrorCode(t, resultat.code));
-      }
-    } catch (erreur) {
-      // L'ouverture elle-même a échoué : personne n'est encore parti, et un
-      // écran muet passe pour un bouton mort.
-      vibration.echec();
-      setEchec(messageDErreur(erreur));
-    } finally {
-      setOuverture(null);
-    }
-  }
 
   return (
     <View
