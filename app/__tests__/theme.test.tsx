@@ -134,13 +134,26 @@ describe('couleurs en dur', () => {
 });
 
 describe('bascule par rôle', () => {
-  it('le créateur est en sombre, le commerce en clair', () => {
-    expect(themeForRole('creator')).toBe('dark');
+  it('les trois rôles sont en clair depuis la v0.5', () => {
+    // Le créateur était en sombre. La découverte est devenue un catalogue, et
+    // un catalogue se regarde en clair : ce sont les photos qui portent la
+    // couleur, le fond n'a pas à la leur disputer. Le jeu clair existait déjà
+    // et tient AA — c'est le seul changement au niveau des jetons.
+    expect(themeForRole('creator')).toBe('light');
     expect(themeForRole('merchant')).toBe('light');
   });
 
+  it('la densité reste celle du rôle, pas celle du thème', () => {
+    // Les deux ont bougé ensemble jusqu'ici, ce qui les rendait
+    // indiscernables. Elles ne le sont plus : même thème, densités
+    // différentes — un créateur parcourt, un commerce travaille au comptoir.
+    expect(tokens.density.creator.screenPadding).not.toBe(
+      tokens.density.merchant.screenPadding,
+    );
+  });
+
   it.each([
-    ['creator', 'dark', '20'],
+    ['creator', 'light', '20'],
     ['merchant', 'light', '16'],
   ] as const)('le rôle %s rend le thème %s et sa densité', async (role, theme, padding) => {
     const vue = await render(
