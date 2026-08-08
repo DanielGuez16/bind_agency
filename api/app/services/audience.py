@@ -136,8 +136,7 @@ async def audience(session: AsyncSession, *, creator_id: uuid.UUID) -> tuple[Aud
             engagement_rate=ligne.engagement_rate,
             captured_at=ligne.captured_at,
             reconnectable=(
-                ligne.provider_mode is None
-                or ligne.provider_mode == get_settings().social_provider
+                ligne.provider_mode is None or ligne.provider_mode == get_settings().social_provider
             ),
         )
         for ligne in lignes

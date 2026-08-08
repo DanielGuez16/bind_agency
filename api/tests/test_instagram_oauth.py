@@ -737,7 +737,5 @@ async def test_un_compte_d_un_autre_fournisseur_n_est_pas_reconnectable(
 
     for mode, attendu in (("demo", False), ("live", True), (None, True)):
         compte = SocialAccount(platform=Platform.INSTAGRAM, provider_mode=mode)
-        monkeypatch.setattr(
-            module, "get_settings", lambda: SimpleNamespace(social_provider="live")
-        )
+        monkeypatch.setattr(module, "get_settings", lambda: SimpleNamespace(social_provider="live"))
         assert module.reconnectable(compte) is attendu

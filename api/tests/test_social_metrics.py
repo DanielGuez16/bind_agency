@@ -677,7 +677,9 @@ async def test_un_compte_d_un_autre_fournisseur_ne_se_releve_pas(
 
     with pytest.raises(service.SocialAccountFromOtherProvider):
         await service.refresh_profile_metrics(
-            session, account=compte, provider=object()  # type: ignore[arg-type]
+            session,
+            account=compte,
+            provider=object(),  # type: ignore[arg-type]
         )
 
     # Et rien n'est écrit : la tentative n'a pas eu lieu, elle n'a consommé
