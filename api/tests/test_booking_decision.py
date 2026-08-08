@@ -89,9 +89,7 @@ async def test_l_accord_confirme_et_ouvre_le_code(
     assert await redemption.code_du_booking(session, booking=scene["booking"]) is not None
 
 
-async def test_l_accord_ne_demande_aucun_motif(
-    client: AsyncClient, session: AsyncSession
-) -> None:
+async def test_l_accord_ne_demande_aucun_motif(client: AsyncClient, session: AsyncSession) -> None:
     """Il n'y a rien à justifier à dire oui."""
     scene = await en_attente(session)
 
@@ -189,9 +187,7 @@ async def test_le_desistement_n_est_pas_une_absence(
 # --------------------------------------------------------------------------
 
 
-async def test_un_autre_commerce_ne_tranche_pas(
-    client: AsyncClient, session: AsyncSession
-) -> None:
+async def test_un_autre_commerce_ne_tranche_pas(client: AsyncClient, session: AsyncSession) -> None:
     """403, comme partout ailleurs derrière le résolveur d'appartenance.
 
     C'est lui qui décide du code, en un seul endroit, et ses propres tests le

@@ -416,9 +416,7 @@ class TestValidationParLeCommerce:
         # commerce serait consommable au comptoir sans qu'il ait rien accepté.
         assert await redemption.code_du_booking(session, booking=ligne) is None
 
-    async def test_l_accord_confirme_et_fait_naitre_le_code(
-        self, session: AsyncSession
-    ) -> None:
+    async def test_l_accord_confirme_et_fait_naitre_le_code(self, session: AsyncSession) -> None:
         decor = await monter_le_decor(session, requires_booking_approval=True)
         ligne = await reserver(session, decor, starts_at=await premier_creneau(session, decor))
         await service.confirmer(session, booking=ligne, creator_id=decor["createur"].id)
@@ -455,9 +453,7 @@ class TestValidationParLeCommerce:
         # La session reste saine, et la réservation n'a pas bougé.
         assert ligne.status is BookingStatus.AWAITING_BUSINESS
 
-    async def test_un_refus_motive_annule_sans_penaliser(
-        self, session: AsyncSession
-    ) -> None:
+    async def test_un_refus_motive_annule_sans_penaliser(self, session: AsyncSession) -> None:
         decor = await monter_le_decor(session, requires_booking_approval=True)
         ligne = await reserver(session, decor, starts_at=await premier_creneau(session, decor))
         await service.confirmer(session, booking=ligne, creator_id=decor["createur"].id)
@@ -474,9 +470,7 @@ class TestValidationParLeCommerce:
         assert ligne.status is BookingStatus.CANCELLED
         assert await _evenements_de_fiabilite(session, decor["createur"].id) == []
 
-    async def test_la_place_reste_tenue_pendant_l_attente(
-        self, session: AsyncSession
-    ) -> None:
+    async def test_la_place_reste_tenue_pendant_l_attente(self, session: AsyncSession) -> None:
         """La relâcher permettrait de vendre deux fois le même créneau."""
         assert BookingStatus.AWAITING_BUSINESS in availability.STATUTS_OCCUPANTS
 
@@ -551,9 +545,7 @@ class TestAnnulationParLeCommerce:
         )
         assert motif == "fermeture imprévue"
 
-    async def test_un_autre_commerce_ne_peut_pas_annuler(
-        self, session: AsyncSession
-    ) -> None:
+    async def test_un_autre_commerce_ne_peut_pas_annuler(self, session: AsyncSession) -> None:
         ligne, decor = await self._confirmee(session)
         autre = await monter_le_decor(session)
 

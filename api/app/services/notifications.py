@@ -172,9 +172,7 @@ def composer(cle: str, contexte: Contexte, **extra: Any) -> Message:
         # écrire deux gabarits par message pour cette seule différence les
         # ferait diverger au premier mot changé.
         "quand_phrase": (
-            rendre("booking.when", contexte.locale, quand=contexte.quand)
-            if contexte.quand
-            else ""
+            rendre("booking.when", contexte.locale, quand=contexte.quand) if contexte.quand else ""
         ),
         "motif": contexte.motif,
         **extra,
