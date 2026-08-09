@@ -61,6 +61,11 @@ ENVIRONNEMENTS_AUTORISES = frozenset({"local", "ci", "test", "demo"})
 #: commande. Pour eux, le nom de l'environnement ne suffit pas.
 ENVIRONNEMENTS_DISTANTS = frozenset({"demo"})
 
+#: Ce qui désigne la machine qui lance la commande. Un environnement déclaré
+#: distant n'a rien à y faire — et c'est la forme qu'a l'accident : une variable
+#: oubliée dans un shell, et la configuration retombe sur le `.env` du poste.
+HOTES_LOCAUX = frozenset({"", "localhost", "127.0.0.1", "::1", "0.0.0.0", "host.docker.internal"})
+
 #: Mot de passe unique et connu pour tous les comptes du jeu. Il n'a de sens que
 #: sur une base jetable, ce que le garde-fou ci-dessus impose.
 MOT_DE_PASSE = "bind-donnees-de-depart-2026"
@@ -624,6 +629,26 @@ async def populate() -> Resume:
         await engine.dispose()
 
 
+def verifier_l_hote(settings) -> None:
+    """Ce qui se vérifie avant **toute** écriture, migration comprise.
+
+    Séparé du reste parce qu'il s'applique plus tôt : migrer une base ne la
+    détruit pas, mais migrer *la mauvaise* base reste une écriture, et un
+    environnement déclaré distant qui vise la machine locale est une
+    contradiction quoi qu'on s'apprête à faire.
+    """
+    if settings.environment not in ENVIRONNEMENTS_DISTANTS:
+        return
+
+    hote = make_url(str(settings.database_url)).host or ""
+    if hote in HOTES_LOCAUX:
+        raise SeedRefused(
+            f"environnement « {settings.environment} » déclaré distant, mais la "
+            f"base visée est sur « {hote or 'aucun hôte'} » : c'est la base "
+            "de développement. Rien n'a été touché."
+        )
+
+
 def verifier_la_cible(settings) -> None:
     """Deux conditions, toutes deux nécessaires, avant d'effacer quoi que ce soit.
 
@@ -632,10 +657,20 @@ def verifier_la_cible(settings) -> None:
     faire passer une base pour ce qu'elle n'est pas, et cette commande détruit
     tout avant d'écrire.
 
+    **L'hôte.** Un environnement déclaré distant qui vise `localhost` est une
+    contradiction, et c'est la forme qu'a l'accident : une variable d'
+    environnement oubliée dans un shell, et la commande retombe sur le `.env`
+    du poste — donc sur la base de développement. Elle refuse.
+
     **Le nom de la base.** Sur un environnement distant, la commande exige que
     `SEED_DATABASE_NAME` soit posé **et** corresponde à la base réellement
     visée. Viser une autre base demande alors deux gestes délibérés — mentir sur
     l'environnement, puis nommer la base à détruire — au lieu d'un seul oubli.
+
+    Le nom seul ne suffirait pas : celui de Supabase est `postgres`, le plus
+    répandu qui soit, et une base locale portant ce nom passerait la
+    comparaison. C'est l'hôte qui écarte ce cas, et le nom qui écarte de viser
+    une autre base distante.
 
     Le jour où `production` existera, elle n'est ni dans la liste des
     environnements, ni dans celle des distants : l'ouverture faite ici pour la
@@ -650,6 +685,7 @@ def verifier_la_cible(settings) -> None:
     if settings.environment not in ENVIRONNEMENTS_DISTANTS:
         return
 
+    verifier_l_hote(settings)
     cible = make_url(str(settings.database_url)).database
 
     if not settings.seed_database_name:

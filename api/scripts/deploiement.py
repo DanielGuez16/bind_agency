@@ -21,7 +21,9 @@ from alembic.config import Config
 from sqlalchemy import make_url
 
 from alembic import command
+from app import seed
 from app.core.config import API_ROOT, get_settings
+from app.integrations.object_store import check_object_store_configuration
 
 
 def cible_lisible() -> str:
@@ -54,6 +56,21 @@ def main() -> int:
     print(f"environnement : {settings.environment}")
     print(f"base          : {cible_lisible()}")
 
+    # **Tout vérifier avant d'écrire quoi que ce soit.** Les migrations
+    # tournaient d'abord et le refus arrivait après : la mauvaise base était
+    # déjà migrée quand la commande disait non. Migrer ne détruit rien, mais
+    # une écriture reste une écriture, et « refuse plutôt que d'agir » ne
+    # souffre pas d'exception d'ordre.
+    seed.verifier_l_hote(settings)
+    if options.avec_jeu_de_donnees:
+        seed.verifier_la_cible(settings)
+        # Le jeu de données dépose des photos. Sans dépôt utilisable, il
+        # échouerait **après** avoir effacé, laissant une base à moitié écrite
+        # et personne pour le savoir. La vérification est celle du démarrage de
+        # l'API : une seule règle, pas deux qui divergent.
+        check_object_store_configuration()
+        print(f"dépôt d'objets : {settings.object_store_provider}")
+
     print("migrations…")
     migrer()
     print("migrations : à jour.")
@@ -61,12 +78,6 @@ def main() -> int:
     if not options.avec_jeu_de_donnees:
         print("jeu de données : ignoré (passer --avec-jeu-de-donnees pour l'écrire).")
         return 0
-
-    # Importé ici et non en tête : le module de jeu de données tire tout le
-    # modèle et ses services, ce qui n'a pas lieu d'être quand on ne fait que
-    # migrer. Ses propres garde-fous s'appliquent — il refuse une base qu'il
-    # n'a pas le droit de détruire, et il le vérifie deux fois.
-    from app import seed
 
     print("jeu de données : effacement puis écriture…")
     return seed.main()
