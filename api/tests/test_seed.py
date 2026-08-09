@@ -54,7 +54,12 @@ from app.models.enums import (
     UserRole,
     VerificationStatus,
 )
-from app.seed import MOT_DE_PASSE, SeedRefused
+from app.seed import (
+    ENVIRONNEMENTS_AUTORISES,
+    MOT_DE_PASSE,
+    SeedRefused,
+    verifier_la_cible,
+)
 from tests.conftest import _maintenance_dsn
 
 
@@ -791,3 +796,88 @@ async def test_un_commerce_au_moins_valide_ses_reservations(
     )
 
     assert modes == {True, False}
+
+
+# --------------------------------------------------------------------------
+# Le garde-fou de la cible
+# --------------------------------------------------------------------------
+
+
+def _reglages(**overrides):
+    from app.core import config as module_config
+
+    valeurs = {
+        "_env_file": None,
+        "database_url": "postgresql+psycopg://x:y@ailleurs.example/bind_demo",
+        "jwt_secret_key": "peu-importe-ici-mais-assez-longue-pour-hmac",
+        "token_encryption_key": "dGVzdC10ZXN0LXRlc3QtdGVzdC10ZXN0LXRlc3QtdGVzdC10ZXN0",
+    }
+    return module_config.build_settings(**(valeurs | overrides))
+
+
+@pytest.mark.parametrize("environnement", ["production", "prod", "staging", "", "DEMO"])
+def test_un_environnement_hors_liste_est_refuse(environnement: str) -> None:
+    """La liste est fermée, et elle protège aussi ce qu'elle ne nomme pas.
+
+    `production` en fait partie aujourd'hui : l'ouverture faite pour la
+    démonstration ne doit pas l'avoir englobée d'avance. `DEMO` en majuscules
+    aussi — une comparaison laxiste vaudrait une liste ouverte.
+    """
+    with pytest.raises(SeedRefused):
+        verifier_la_cible(_reglages(environment=environnement))
+
+
+def test_production_n_est_pas_dans_la_liste() -> None:
+    """Dit une seconde fois, sur la liste elle-même.
+
+    Le test précédent tomberait aussi si quelqu'un rendait la vérification
+    permissive ; celui-ci tombe si quelqu'un ajoute la ligne.
+    """
+    assert "production" not in ENVIRONNEMENTS_AUTORISES
+    assert "prod" not in ENVIRONNEMENTS_AUTORISES
+
+
+def test_une_base_distante_sans_nom_declare_est_refusee() -> None:
+    """Le nom de l'environnement dit ce que la configuration prétend être.
+
+    Il ne dit pas quelle base est visée, et une variable mal posée suffirait à
+    faire passer une base pour une autre.
+    """
+    with pytest.raises(SeedRefused, match="SEED_DATABASE_NAME"):
+        verifier_la_cible(_reglages(environment="demo"))
+
+
+def test_une_base_distante_qui_ne_correspond_pas_est_refusee() -> None:
+    with pytest.raises(SeedRefused, match="refus d'effacer"):
+        verifier_la_cible(
+            _reglages(
+                environment="demo",
+                database_url="postgresql+psycopg://x:y@ailleurs.example/bind_production",
+                seed_database_name="bind_demo",
+            )
+        )
+
+
+def test_une_base_distante_declaree_et_correspondante_passe() -> None:
+    """L'autre sens. Un garde qui refuserait tout passerait les tests
+
+    précédents sans rien garantir, et la commande ne tournerait nulle part.
+    """
+    verifier_la_cible(
+        _reglages(
+            environment="demo",
+            database_url="postgresql+psycopg://x:y@ailleurs.example/bind_demo",
+            seed_database_name="bind_demo",
+        )
+    )
+
+
+def test_le_local_ne_demande_rien_de_plus() -> None:
+    """Le développement local ne change pas : sa base est sur la machine qui
+    lance la commande, et lui demander de se nommer n'ajouterait rien."""
+    verifier_la_cible(
+        _reglages(
+            environment="local",
+            database_url="postgresql+psycopg://bind:bind@localhost:5434/bind",
+        )
+    )

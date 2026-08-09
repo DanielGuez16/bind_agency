@@ -79,11 +79,27 @@ async def test_le_depot_memoire_rend_ce_qu_il_a_recu() -> None:
     assert await depot.lire(cle) == CONTENU
 
 
-async def test_le_depot_s3_refuse_plutot_que_de_faire_semblant() -> None:
+def test_le_depot_s3_refuse_plutot_que_de_faire_semblant() -> None:
     """Un dépôt qui croit écrire chez un fournisseur et écrit ailleurs est pire
-    qu'un dépôt qui refuse."""
+    qu'un dépôt qui refuse.
+
+    Le refus a changé de moment : il était au premier dépôt tant que la classe
+    n'était pas branchée, il est maintenant à la construction. Une preuve perdue
+    faute d'identifiants ne se rattrape pas.
+
+    Le reste — quel compartiment pour quel préfixe, l'adresse signée — vit dans
+    `test_object_store_s3.py`.
+    """
     with pytest.raises(ObjectStoreUnavailable):
-        await S3ObjectStore("un-seau").deposer(CONTENU, prefixe="photos/item")
+        S3ObjectStore(
+            public="un-seau",
+            prive=None,
+            endpoint=None,
+            region="auto",
+            access_key=None,
+            secret_key=None,
+            duree_signature=300,
+        )
 
 
 def test_la_cle_range_par_prefixe_et_par_jour() -> None:

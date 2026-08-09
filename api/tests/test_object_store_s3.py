@@ -1,0 +1,194 @@
+"""Le dépôt S3, et sa règle de confidentialité.
+
+**Deux compartiments, jamais un seul avec un filtre de préfixe.** Un
+compartiment public s'énumère : qui connaît son adresse en liste le contenu.
+Ranger les preuves dedans en comptant sur l'API pour ne servir que `photos/`
+protégerait la route et laisserait le compartiment ouvert.
+
+La règle de rangement se teste **sans réseau** : c'est une règle de
+confidentialité, elle doit pouvoir se lire et se vérifier sans monter un
+fournisseur. Ce qui a besoin d'un client S3 est éprouvé sur un client simulé.
+"""
+
+import pytest
+
+from app.core.config import ConfigurationError
+from app.integrations import object_store
+from app.integrations.object_store import (
+    ObjectStoreUnavailable,
+    S3ObjectStore,
+    compartiment_de,
+)
+
+PUBLIC = "bind-public"
+PRIVE = "bind-prive"
+
+
+def depot(**overrides) -> S3ObjectStore:
+    valeurs = {
+        "public": PUBLIC,
+        "prive": PRIVE,
+        "endpoint": "https://exemple.test/storage/v1/s3",
+        "region": "auto",
+        "access_key": "une-cle",
+        "secret_key": "un-secret",
+        "duree_signature": 300,
+    }
+    return S3ObjectStore(**(valeurs | overrides))
+
+
+# --------------------------------------------------------------------------
+# le rangement
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "prefixe",
+    ["photos/business", "photos/item", "photos/", "photos/quelque-chose-de-neuf"],
+)
+def test_les_photos_vont_dans_le_compartiment_public(prefixe: str) -> None:
+    """Acté quand la route média a été ouverte : les photos sont publiques."""
+    assert compartiment_de(prefixe, public=PUBLIC, prive=PRIVE) == PUBLIC
+
+
+@pytest.mark.parametrize("prefixe", ["proofs/upload", "proofs/url", "proofs/"])
+def test_les_preuves_vont_dans_le_compartiment_prive(prefixe: str) -> None:
+    assert compartiment_de(prefixe, public=PUBLIC, prive=PRIVE) == PRIVE
+
+
+@pytest.mark.parametrize(
+    "prefixe",
+    [
+        # Un préfixe qui n'existe pas encore. C'est le cas qui compte : le jour
+        # où quelqu'un en ajoute un et oublie ce fichier, le repli doit être du
+        # bon côté.
+        "exports/comptabilite",
+        "documents/identite",
+        "",
+        "photo/business",  # au singulier : ressemblant, et pas dans la liste
+        "PHOTOS/business",  # la casse ne suffit pas à ouvrir un compartiment
+        "../photos/business",
+    ],
+)
+def test_tout_ce_qui_n_est_pas_declare_public_est_prive(prefixe: str) -> None:
+    """La liste des publics est fermée ; il n'y a pas de liste des privés.
+
+    L'inverse ferait d'un oubli une fuite. Ici, un oubli ne fait qu'une lecture
+    qui passe par l'API.
+    """
+    assert compartiment_de(prefixe, public=PUBLIC, prive=PRIVE) == PRIVE
+
+
+def test_le_depot_range_selon_le_prefixe() -> None:
+    """La même règle, vue depuis l'objet : elle n'est pas réécrite ailleurs."""
+    magasin = depot()
+
+    assert magasin.compartiment("photos/business") == PUBLIC
+    assert magasin.compartiment("proofs/upload/2026-08-09/abc") == PRIVE
+
+
+# --------------------------------------------------------------------------
+# le refus de faire semblant
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "manquant",
+    ["public", "prive", "access_key", "secret_key"],
+)
+def test_un_depot_incomplet_refuse_d_exister(manquant: str) -> None:
+    """À la construction, pas au premier dépôt.
+
+    Une preuve perdue faute d'identifiants ne se rattrape pas, et le créateur
+    qui l'a envoyée n'en saurait rien.
+    """
+    with pytest.raises(ObjectStoreUnavailable):
+        depot(**{manquant: None})
+
+
+def test_deux_compartiments_identiques_sont_refuses(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Le même nom des deux côtés vaut un seul compartiment public.
+
+    C'est exactement la configuration que la règle interdit, et elle est facile
+    à écrire par distraction en recopiant une ligne.
+    """
+    from app.core import config as module_config
+
+    reglages = module_config.build_settings(
+        _env_file=None,
+        database_url="postgresql+psycopg://x:y@localhost/z",
+        jwt_secret_key="peu-importe-ici-mais-assez-longue-pour-hmac",
+        token_encryption_key="dGVzdC10ZXN0LXRlc3QtdGVzdC10ZXN0LXRlc3QtdGVzdC10ZXN0",
+        object_store_provider="s3",
+        object_store_bucket_public="bind-media",
+        object_store_bucket_prive="bind-media",
+        object_store_access_key="une-cle",
+        object_store_secret_key="un-secret",
+    )
+    monkeypatch.setattr(object_store, "get_settings", lambda: reglages)
+
+    with pytest.raises((ObjectStoreUnavailable, ConfigurationError)):
+        object_store.check_object_store_configuration()
+
+
+# --------------------------------------------------------------------------
+# l'adresse signée
+# --------------------------------------------------------------------------
+
+
+class FauxClientS3:
+    """Assez de S3 pour vérifier ce qu'on lui demande, et rien de plus."""
+
+    def __init__(self) -> None:
+        self.appels: list[dict] = []
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *_):
+        return False
+
+    async def generate_presigned_url(self, operation, *, Params, ExpiresIn):  # noqa: N803
+        self.appels.append({"operation": operation, "params": Params, "expire": ExpiresIn})
+        return f"https://exemple.test/{Params['Bucket']}/{Params['Key']}?signature=xxx"
+
+    async def put_object(self, *, Bucket, Key, Body):  # noqa: N803
+        self.appels.append({"operation": "put", "params": {"Bucket": Bucket, "Key": Key}})
+
+
+@pytest.mark.anyio
+async def test_une_preuve_se_signe_sur_le_compartiment_prive() -> None:
+    faux = FauxClientS3()
+    magasin = depot()
+    magasin._client = lambda: faux  # type: ignore[method-assign]
+
+    adresse = await magasin.url_signee("proofs/upload/2026-08-09/abc")
+
+    assert faux.appels[0]["params"]["Bucket"] == PRIVE
+    assert PRIVE in adresse
+
+
+@pytest.mark.anyio
+async def test_l_adresse_signee_est_de_courte_duree() -> None:
+    """Une adresse signée est un droit de lecture transmissible, et elle voyage
+    dans un historique de navigateur. Assez longue pour ouvrir l'image qu'on
+    vient de demander, trop courte pour être partagée utilement."""
+    faux = FauxClientS3()
+    magasin = depot(duree_signature=300)
+    magasin._client = lambda: faux  # type: ignore[method-assign]
+
+    await magasin.url_signee("proofs/upload/2026-08-09/abc")
+
+    assert faux.appels[0]["expire"] == 300
+    assert faux.appels[0]["expire"] <= 3600, "une adresse de preuve ne dure pas une journée"
+
+
+@pytest.mark.anyio
+async def test_un_depot_de_preuve_ne_touche_jamais_le_public() -> None:
+    faux = FauxClientS3()
+    magasin = depot()
+    magasin._client = lambda: faux  # type: ignore[method-assign]
+
+    await magasin.deposer(b"une capture", prefixe="proofs/upload")
+
+    assert faux.appels[0]["params"]["Bucket"] == PRIVE

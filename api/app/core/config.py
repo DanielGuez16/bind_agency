@@ -39,6 +39,14 @@ class Settings(BaseSettings):
     )
 
     environment: str = "local"
+
+    #: La base que le jeu de données accepte de détruire, nommée explicitement.
+    #:
+    #: Exigée sur les environnements dont la base est distante. Le nom de
+    #: l'environnement dit ce que la configuration prétend être ; celui-ci dit
+    #: ce qu'on vise réellement. Viser autre chose demande alors deux gestes
+    #: délibérés au lieu d'un oubli.
+    seed_database_name: str | None = None
     api_v1_prefix: str = "/api/v1"
     cors_origins: CommaSeparated = ["http://localhost:8081", "http://localhost:19006"]
 
@@ -247,7 +255,32 @@ class Settings(BaseSettings):
     # retomber en silence sur le disque.
     object_store_provider: Literal["memory", "local", "s3"] = "memory"
     object_store_local_root: str = "/tmp/bind-objets"
-    object_store_bucket: str | None = None
+
+    #: **Deux compartiments, jamais un seul avec un filtre de préfixe.**
+    #:
+    #: Un compartiment public s'énumère : qui connaît son adresse en liste le
+    #: contenu. Ranger les preuves dedans et compter sur l'API pour ne servir
+    #: que `photos/` protégerait la route et rien d'autre — le compartiment,
+    #: lui, resterait ouvert.
+    #:
+    #: Les photos de salon et de prestation sont publiques, c'est acté. Les
+    #: preuves de publication ne le sont jamais : elles ne se lisent qu'à
+    #: travers l'API, par le commerce concerné et par l'administration.
+    object_store_bucket_public: str | None = None
+    object_store_bucket_prive: str | None = None
+
+    #: Point d'entrée compatible S3. Nul chez AWS, renseigné chez les autres.
+    object_store_endpoint: str | None = None
+    object_store_region: str = "auto"
+    object_store_access_key: str | None = None
+    object_store_secret_key: SecretStr | None = Field(default=None, repr=False)
+
+    #: Durée de vie d'une adresse signée de preuve.
+    #:
+    #: Courte : l'adresse est un droit de lecture transmissible, et elle voyage
+    #: dans un historique de navigateur. Assez longue pour ouvrir l'image qu'on
+    #: vient de demander, trop courte pour être partagée utilement.
+    object_store_signed_url_seconds: int = 300
 
     # Récupération d'un média depuis une URL publique — niveau 2 de la capture
     # de preuve. Tous les garde-fous sont ici, aucun en dur dans le code : une

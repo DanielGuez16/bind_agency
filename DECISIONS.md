@@ -2526,3 +2526,38 @@ attendait une réponse que personne ne voyait à donner.
 Elles sont posées en tête de l'écran de journée plutôt que sur un écran à part :
 c'est là que le commerce regarde, et une file rangée ailleurs se consulte quand
 on y pense.
+
+## 2026-08-09 — Deux compartiments d'objets, et non un seul filtré
+
+Les photos de salon et de prestation sont publiques ; les preuves de publication
+ne le sont jamais. Elles vivent donc dans **deux compartiments distincts**, et
+non dans un seul où l'API ne servirait que le préfixe `photos/`.
+
+Un compartiment public s'énumère : qui connaît son adresse en liste le contenu.
+Filtrer côté API protégerait la route et laisserait le compartiment ouvert.
+
+La liste des préfixes publics est **fermée**, et tout ce qui n'y figure pas va
+dans le privé. L'inverse — nommer ce qui est privé — ferait d'un oubli une
+fuite ; ici, un oubli ne produit qu'une lecture qui passe par l'API.
+
+Une preuve ne se sert jamais par un lien direct : l'API rend une adresse signée
+de cinq minutes. Une adresse signée est un droit de lecture transmissible qui
+voyage dans un historique de navigateur — assez longue pour ouvrir l'image
+demandée, trop courte pour être partagée utilement.
+
+## 2026-08-09 — Le jeu de données vérifie la base, pas seulement l'étiquette
+
+`demo` rejoint les environnements où la commande accepte d'effacer. Le nom de
+l'environnement dit ce que la configuration prétend être ; il ne dit pas quelle
+base est visée, et une variable mal posée suffirait à faire passer une base pour
+une autre.
+
+Sur un environnement dont la base est distante, la commande exige donc en plus
+que `SEED_DATABASE_NAME` nomme exactement la base visée. Viser autre chose
+demande deux gestes délibérés — mentir sur l'environnement, puis nommer la base
+à détruire — au lieu d'un seul oubli.
+
+`production` n'est ni dans la liste des environnements autorisés, ni dans celle
+des distants : l'ouverture faite pour la démonstration ne l'englobe pas d'avance,
+et deux tests le vérifient — l'un sur le comportement, l'autre sur la liste
+elle-même.
