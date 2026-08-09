@@ -116,6 +116,16 @@ class NotYourBusiness(BookingStateError):
     """Réservation d'un autre commerce."""
 
 
+class CreneauDepasse(BookingStateError):
+    """L'heure est passée : il n'y a plus rien à accepter.
+
+    Accepter après coup produirait une réservation confirmée pour un rendez-vous
+    qui n'aura pas lieu, et un code de retrait pour un créneau écoulé. Le
+    créateur n'a rien à se reprocher : la décision n'est simplement plus
+    possible.
+    """
+
+
 async def transitionner(
     session: AsyncSession,
     *,
@@ -230,6 +240,16 @@ async def trancher(
     if not accepte and not (motif or "").strip():
         raise MotifRequis(str(booking.id))
 
+    # **Un accord ne rattrape pas une heure passée.** Le balayage finira par
+    # l'expirer, mais il passe périodiquement : entre deux passages, l'écran
+    # proposait encore d'accepter un rendez-vous de 10 h 45 à 11 h 35. Le refus
+    # est ici, pas seulement dans l'écran — un second appelant l'ignorerait.
+    #
+    # Refuser reste possible : un commerce qui répond en retard dit quand même
+    # ce qu'il en était, et le créateur lit son motif.
+    if accepte and _est_depassee(booking):
+        raise CreneauDepasse(str(booking.id))
+
     return await transitionner(
         session,
         booking=booking,
@@ -327,6 +347,55 @@ async def consommer(session: AsyncSession, *, booking: Booking, actor: audit.Act
     )
     await collaboration.creer(session, booking=consomme)
     return consomme
+
+
+def _est_depassee(booking: Booking, *, maintenant: datetime | None = None) -> bool:
+    """L'heure du rendez-vous est-elle passée.
+
+    Sur un item sans créneau il n'y a pas d'heure : c'est la fenêtre de validité
+    qui fait foi. Prendre `starts_at` seul y répondrait toujours non, et un
+    droit périmé resterait acceptable indéfiniment.
+    """
+    instant = maintenant or datetime.now(UTC)
+    echeance = booking.starts_at or booking.valid_until
+    return echeance is not None and echeance <= instant
+
+
+async def expirer_les_attentes_depassees(session: AsyncSession, *, limite: int = 500) -> int:
+    """Passe en `expired` les demandes que le commerce n'a pas tranchées à temps.
+
+    Une réservation en attente tient une place et bloque un créateur qui ne peut
+    rien faire d'autre que patienter. Passé l'heure du rendez-vous, il n'y a
+    plus rien à trancher : la laisser en attente donnerait une file qui
+    s'allonge de dossiers morts, et un créateur qui attend une réponse qui n'a
+    plus d'objet.
+
+    Aucun événement de fiabilité : personne n'a manqué à rien.
+    """
+    depassees = list(
+        await session.scalars(
+            sa.select(Booking)
+            .where(
+                Booking.status == BookingStatus.AWAITING_BUSINESS,
+                sa.func.coalesce(Booking.starts_at, Booking.valid_until)
+                <= sa.func.clock_timestamp(),
+            )
+            .order_by(Booking.starts_at)
+            .limit(limite)
+            .with_for_update(skip_locked=True)
+        )
+    )
+
+    for reservation in depassees:
+        await transitionner(
+            session,
+            booking=reservation,
+            vers=BookingStatus.EXPIRED,
+            actor=audit.Actor.system(),
+            reason="le commerce n'a pas tranché avant l'heure du rendez-vous",
+        )
+
+    return len(depassees)
 
 
 async def expirer_les_gardes_depasses(session: AsyncSession, *, limite: int = 500) -> int:

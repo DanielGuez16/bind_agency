@@ -25,11 +25,22 @@ const coffre = { lire: async () => null, ecrire: async () => {} };
 /** Ce que l'app a envoyé : chemin et corps, dans l'ordre. */
 const envois: { chemin: string; corps: unknown }[] = [];
 
+/**
+ * Les heures sont **relatives à maintenant**, pas écrites en dur.
+ *
+ * Une date figée finit par passer, et le jour où elle passe c'est l'écran qui
+ * paraît cassé : il refusait d'offrir l'accord parce que le rendez-vous était
+ * derrière nous, ce qui est exactement le bon comportement.
+ */
+const dansUneHeure = new Date(Date.now() + 3_600_000).toISOString();
+const ilYAUneHeure = new Date(Date.now() - 3_600_000).toISOString();
+
 const RESERVATIONS = [
   {
     booking_id: 'attente-1',
     status: 'awaiting_business',
-    starts_at: '2026-08-08T18:00:00Z',
+    starts_at: dansUneHeure,
+    valid_until: dansUneHeure,
     item_name: 'Gel manicure',
     creator_first_name: 'Rebecca',
     creator_last_name: null,
@@ -38,7 +49,8 @@ const RESERVATIONS = [
   {
     booking_id: 'confirmee-1',
     status: 'confirmed',
-    starts_at: '2026-08-08T19:00:00Z',
+    starts_at: dansUneHeure,
+    valid_until: dansUneHeure,
     item_name: 'Brushing',
     creator_first_name: 'Sofia',
     creator_last_name: null,
@@ -193,4 +205,24 @@ it('traduit le statut au lieu d’afficher son code', async () => {
   // parce que c'en était une.
   expect(screen.getByText(new RegExp(en.commerce.statut_confirmed))).toBeTruthy();
   expect(screen.queryByText(/awaiting_business/)).toBeNull();
+});
+
+it('ne propose plus d’accepter une demande dont l’heure est passée', async () => {
+  // Il est 11 h 35, la demande porte sur 10 h 45. Accepter produirait une
+  // réservation confirmée pour un rendez-vous qui n'aura pas lieu, et un code
+  // de retrait pour un créneau écoulé.
+  RESERVATIONS[0].starts_at = ilYAUneHeure;
+  RESERVATIONS[0].valid_until = ilYAUneHeure;
+  try {
+    await monter();
+
+    expect(screen.getByTestId('depassee-attente-1')).toBeTruthy();
+    expect(screen.queryByTestId('accorder-attente-1')).toBeNull();
+    // Refuser reste offert : un commerce qui répond en retard dit quand même
+    // ce qu'il en était, et la créatrice lit son motif.
+    expect(screen.getByTestId('refuser-attente-1')).toBeTruthy();
+  } finally {
+    RESERVATIONS[0].starts_at = dansUneHeure;
+    RESERVATIONS[0].valid_until = dansUneHeure;
+  }
 });

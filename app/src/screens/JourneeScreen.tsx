@@ -15,6 +15,13 @@
  * ; la laisser au milieu du planning, dans l'ordre des heures, la ferait
  * découvrir en la cherchant. Le bloc disparaît quand il est vide.
  *
+ * **Une demande dont l'heure est passée ne se propose plus.** Il est 11 h 35,
+ * la demande porte sur 10 h 45 : accepter produirait une réservation confirmée
+ * pour un rendez-vous qui n'aura pas lieu, et un code de retrait pour un
+ * créneau écoulé. Le serveur refuse, et l'écran cesse de le proposer plutôt que
+ * de laisser découvrir le refus en appuyant. Refuser reste offert — un commerce
+ * qui répond en retard dit quand même ce qu'il en était.
+ *
  * **Se désister n'est pas constater une absence.** Deux actions distinctes,
  * jamais deux libellés de la même : l'une ne pénalise personne, l'autre inscrit
  * un événement négatif au dossier de la créatrice. Les réunir sous un même
@@ -179,6 +186,11 @@ function Decision({
   timezone: string;
   onFait: () => void;
 }) {
+  // Comparé ici pour l'affichage seulement : c'est le serveur qui tranche, et
+  // il refuse. Attendre son refus ferait appuyer sur un bouton pour apprendre
+  // qu'il ne servait à rien.
+  const echeance = reservation.starts_at ?? reservation.valid_until;
+  const depassee = echeance !== null && new Date(echeance) <= new Date();
   const { api, messageDErreur } = useApi();
   const { t } = useI18n();
   const { color: c } = useTheme();
@@ -224,12 +236,20 @@ function Decision({
 
       {echec ? <StatusMessage level="danger" body={echec} testID="echec-decision" /> : null}
 
-      <Button
-        label={t('commerce.accorder')}
-        loading={envoi}
-        onPress={() => void accorder()}
-        testID={`accorder-${reservation.booking_id}`}
-      />
+      {depassee ? (
+        <StatusMessage
+          level="warning"
+          body={t('commerce.decisionDepassee')}
+          testID={`depassee-${reservation.booking_id}`}
+        />
+      ) : (
+        <Button
+          label={t('commerce.accorder')}
+          loading={envoi}
+          onPress={() => void accorder()}
+          testID={`accorder-${reservation.booking_id}`}
+        />
+      )}
       <MotifPuisAction
         libelle={t('commerce.refuser')}
         aide={t('commerce.refuserAide')}

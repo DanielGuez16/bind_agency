@@ -136,8 +136,20 @@ const LIGNE_DE_FILE = {
   platform: 'instagram',
   item_name: 'Gel nails',
   dernier_motif: 'mention absente',
-  derniere_soumission: null,
+  // Une soumission réelle : c'est elle que le commerce doit pouvoir regarder.
+  derniere_soumission: {
+    proof_id: 'p1',
+    submitted_at: '2026-08-09T10:00:00Z',
+    capture_method: 'upload',
+    source_url: 'https://instagram.example/p/xyz',
+    media_key: null,
+    screenshot_key: 'proofs/upload/2026-08-09/abc',
+    platform_published_at: null,
+  },
 };
+
+/** Le statut accompagne les étapes : c'est lui qui décide de la dernière ligne. */
+const vueDActivation = (etapes: unknown[], status = 'onboarding') => ({ status, etapes });
 
 const ETAPES = [
   { cle: 'address', done: true, blocking: true },
@@ -218,7 +230,7 @@ const ECRANS = [
     nom: 'activation',
     noeud: <ActivationScreen businessId="b1" onActive={jest.fn()} />,
     role: 'merchant' as Role,
-    plein: { '/activation': ETAPES },
+    plein: { '/activation': vueDActivation(ETAPES) },
     // Une liste d'étapes vide n'arrive pas : le serveur en rend toujours six.
     vide: null,
   },
@@ -371,13 +383,27 @@ describe('contrôle des publications', () => {
     expect(screen.getByTestId('redemander')).toBeTruthy();
   });
 
-  it('rappelle la mention attendue et le dernier motif', async () => {
+  it('rappelle ce qui était exigé, et le dernier motif', async () => {
     await monter(
       <PublicationsScreen businessId="b1" />,
       clientDe({ '/collaborations': [LIGNE_DE_FILE] }),
     );
-    await waitFor(() => expect(screen.getByTestId('mention-attendue')).toBeTruthy());
+    // L'exigence est désormais rendue **à côté de la publication**, pas en
+    // ligne isolée : c'est là qu'elle se vérifie.
+    await waitFor(() => expect(screen.getByTestId('ce-qui-etait-attendu')).toBeTruthy());
+    expect(screen.getByText(new RegExp(LIGNE_DE_FILE.required_mention))).toBeTruthy();
     expect(screen.getByTestId('dernier-motif')).toBeTruthy();
+  });
+
+  it('montre ce qu’on demande d’approuver', async () => {
+    // Le défaut grave : le commerce voyait un pseudonyme, une prestation,
+    // quatre motifs de refus et un bouton — et rien de ce qui avait été publié.
+    await monter(
+      <PublicationsScreen businessId="b1" />,
+      clientDe({ '/collaborations': [LIGNE_DE_FILE] }),
+    );
+
+    await waitFor(() => expect(screen.getByTestId('preuve-soumise')).toBeTruthy());
   });
 });
 
@@ -387,7 +413,7 @@ describe('contrôle des publications', () => {
 
 describe('activation', () => {
   it('sépare le bloquant de la visibilité', async () => {
-    await monter(<ActivationScreen businessId="b1" onActive={jest.fn()} />, clientDe({ '/activation': ETAPES }));
+    await monter(<ActivationScreen businessId="b1" onActive={jest.fn()} />, clientDe({ '/activation': vueDActivation(ETAPES) }));
     await waitFor(() => expect(screen.getByTestId('etape-address')).toBeTruthy());
 
     expect(screen.getByText(en.commerce.activationBloquant)).toBeTruthy();
@@ -401,13 +427,13 @@ describe('activation', () => {
 
   it('compte les étapes sans pourcentage', async () => {
     // « 2 étapes sur 6 » se comprend ; « 33 % » ne dit pas laquelle manque.
-    await monter(<ActivationScreen businessId="b1" onActive={jest.fn()} />, clientDe({ '/activation': ETAPES }));
+    await monter(<ActivationScreen businessId="b1" onActive={jest.fn()} />, clientDe({ '/activation': vueDActivation(ETAPES) }));
     await waitFor(() => expect(screen.getByTestId('compte-etapes')).toBeTruthy());
     expect(screen.queryByText(/%/)).toBeNull();
   });
 
   it('offre l’ouverture quand les deux bloquantes sont faites', async () => {
-    await monter(<ActivationScreen businessId="b1" onActive={jest.fn()} />, clientDe({ '/activation': ETAPES }));
+    await monter(<ActivationScreen businessId="b1" onActive={jest.fn()} />, clientDe({ '/activation': vueDActivation(ETAPES) }));
     await waitFor(() => expect(screen.getByTestId('ouvrir')).toBeTruthy());
   });
 
@@ -417,10 +443,39 @@ describe('activation', () => {
     const incomplete = ETAPES.map((e) => (e.cle === 'address' ? { ...e, done: false } : e));
     await monter(
       <ActivationScreen businessId="b1" onActive={jest.fn()} />,
-      clientDe({ '/activation': incomplete }),
+      clientDe({ '/activation': vueDActivation(incomplete) }),
     );
     await waitFor(() => expect(screen.getByTestId('etape-address')).toBeTruthy());
     expect(screen.queryByTestId('ouvrir')).toBeNull();
+  });
+
+  it('ne propose pas d’ouvrir un commerce déjà ouvert', async () => {
+    // L'écran ne lisait que les étapes : six faites, donc « ouvrir mon
+    // commerce » — à un salon ouvert depuis des semaines. Les étapes disent ce
+    // qui est prêt, pas ce qui a été décidé.
+    const toutes = ETAPES.map((e) => ({ ...e, done: true }));
+    await monter(
+      <ActivationScreen businessId="b1" onActive={jest.fn()} />,
+      clientDe({ '/activation': vueDActivation(toutes, 'active') }),
+    );
+
+    await waitFor(() => expect(screen.getByTestId('deja-ouvert')).toBeTruthy());
+    expect(screen.queryByTestId('ouvrir')).toBeNull();
+    // Et la seule action qui reste a du sens : se retirer du fil.
+    expect(screen.getByTestId('mettre-en-pause')).toBeTruthy();
+  });
+
+  it('dit qu’un commerce ouvert reste invisible s’il manque une étape', async () => {
+    // Ouvert et introuvable est le pire des deux : rien ne le signale, et le
+    // commerce attend des réservations qui ne peuvent pas venir.
+    const sansOffre = ETAPES.map((e) => ({ ...e, done: e.cle !== 'tier_offer' }));
+    await monter(
+      <ActivationScreen businessId="b1" onActive={jest.fn()} />,
+      clientDe({ '/activation': vueDActivation(sansOffre, 'active') }),
+    );
+
+    await waitFor(() => expect(screen.getByTestId('deja-ouvert')).toBeTruthy());
+    expect(screen.getByText(en.commerce.activationOuvertMaisInvisible)).toBeTruthy();
   });
 });
 

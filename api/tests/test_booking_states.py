@@ -566,3 +566,73 @@ async def _evenements_de_fiabilite(session: AsyncSession, creator_id) -> list[st
         sa.select(ReliabilityEvent.type).where(ReliabilityEvent.creator_id == creator_id)
     )
     return [ligne[0] for ligne in lignes.all()]
+
+
+class TestUneAttenteDepassee:
+    """Il est 11 h 35, la demande porte sur 10 h 45 : il n'y a plus rien à accepter."""
+
+    async def _en_attente_depassee(self, session: AsyncSession) -> tuple:
+        decor = await monter_le_decor(session, requires_booking_approval=True)
+        ligne = await reserver(session, decor, starts_at=await premier_creneau(session, decor))
+        await service.confirmer(session, booking=ligne, creator_id=decor["createur"].id)
+        # L'heure est passée. `ends_at` suit : une contrainte en base exige
+        # qu'il découle de la durée.
+        ligne.starts_at = datetime.now(UTC) - timedelta(minutes=50)
+        ligne.ends_at = ligne.starts_at + timedelta(minutes=ligne.duration_minutes)
+        await session.flush()
+        return ligne, decor
+
+    async def test_l_accord_est_refuse(self, session: AsyncSession) -> None:
+        """Accepter produirait une réservation confirmée pour un rendez-vous qui
+        n'aura pas lieu, et un code de retrait pour un créneau écoulé."""
+        ligne, decor = await self._en_attente_depassee(session)
+
+        with pytest.raises(service.CreneauDepasse):
+            await service.trancher(
+                session,
+                booking=ligne,
+                business_id=decor["business"].id,
+                user_id=decor["proprietaire"].id,
+                accepte=True,
+            )
+
+        assert ligne.status is BookingStatus.AWAITING_BUSINESS
+
+    async def test_le_refus_reste_possible(self, session: AsyncSession) -> None:
+        """Un commerce qui répond en retard dit quand même ce qu'il en était,
+        et la créatrice lit son motif."""
+        ligne, decor = await self._en_attente_depassee(session)
+
+        await service.trancher(
+            session,
+            booking=ligne,
+            business_id=decor["business"].id,
+            user_id=decor["proprietaire"].id,
+            accepte=False,
+            motif="personne n'était là",
+        )
+
+        assert ligne.status is BookingStatus.CANCELLED
+
+    async def test_le_balayage_l_expire_sans_penaliser(self, session: AsyncSession) -> None:
+        """Une attente dépassée tient une place et bloque une créatrice qui ne
+        peut rien faire d'autre. Personne n'a manqué à rien."""
+        ligne, decor = await self._en_attente_depassee(session)
+
+        combien = await service.expirer_les_attentes_depassees(session)
+
+        assert combien == 1
+        assert ligne.status is BookingStatus.EXPIRED
+        assert await _evenements_de_fiabilite(session, decor["createur"].id) == []
+
+    async def test_le_balayage_ne_touche_pas_ce_qui_est_a_venir(
+        self, session: AsyncSession
+    ) -> None:
+        """L'autre sens. Un balayage qui expirerait tout viderait la file avant
+        que le commerce ait eu le temps de la lire."""
+        decor = await monter_le_decor(session, requires_booking_approval=True)
+        ligne = await reserver(session, decor, starts_at=await premier_creneau(session, decor))
+        await service.confirmer(session, booking=ligne, creator_id=decor["createur"].id)
+
+        assert await service.expirer_les_attentes_depassees(session) == 0
+        assert ligne.status is BookingStatus.AWAITING_BUSINESS

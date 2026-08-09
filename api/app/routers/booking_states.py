@@ -51,6 +51,10 @@ _CODES = {
     service.NotYours: (status.HTTP_404_NOT_FOUND, ErrorCode.BOOKING_NOT_FOUND),
     service.NotYourBusiness: (status.HTTP_404_NOT_FOUND, ErrorCode.BOOKING_NOT_FOUND),
     service.MotifRequis: (status.HTTP_422_UNPROCESSABLE_CONTENT, ErrorCode.VALIDATION_FAILED),
+    service.CreneauDepasse: (
+        status.HTTP_409_CONFLICT,
+        ErrorCode.BOOKING_SLOT_ELAPSED,
+    ),
 }
 
 

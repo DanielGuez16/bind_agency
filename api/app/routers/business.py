@@ -21,7 +21,7 @@ from app.core.errors import ErrorCode, api_error
 from app.integrations.geocoding import Geocoder, get_geocoder
 from app.models import Business, BusinessMember
 from app.models.enums import UserRole
-from app.schemas.activation import EtapeRead
+from app.schemas.activation import EtapeRead, VueDActivationRead
 from app.schemas.business import (
     BusinessCreate,
     BusinessRead,
@@ -128,17 +128,43 @@ async def update(
     return await _to_read(session, business)
 
 
-@router.get("/{business_id}/activation", response_model=list[EtapeRead])
-async def activation_steps(business: CurrentBusiness, session: SessionDep) -> list[EtapeRead]:
-    """Ce qui reste à faire, et ce qui bloque vraiment.
+@router.get("/{business_id}/activation", response_model=VueDActivationRead)
+async def activation_steps(business: CurrentBusiness, session: SessionDep) -> VueDActivationRead:
+    """Ce qui reste à faire, ce qui bloque vraiment, et où en est le commerce.
 
     Le service connaissait déjà ces conditions et ne les exposait pas : le
     commerçant les apprenait en essayant, une à la fois. `activate_business`
     consomme la même liste, ce qui garantit que l'écran et le refus disent la
     même chose.
+
+    Le statut accompagne les étapes parce que les deux répondent à la même
+    question. Sans lui, l'écran voyait six étapes faites et proposait d'ouvrir
+    un commerce ouvert depuis des semaines.
     """
     etapes = await business_service.etapes_activation(session, business=business)
-    return [EtapeRead.model_validate(etape) for etape in etapes]
+    return VueDActivationRead(
+        status=business.status,
+        etapes=[EtapeRead.model_validate(etape) for etape in etapes],
+    )
+
+
+@router.post("/{business_id}/pause", response_model=BusinessRead)
+async def pause(business: CurrentBusiness, user: CurrentUser, session: SessionDep) -> BusinessRead:
+    """Le commerce se retire du fil, sans rien perdre.
+
+    Réversible par `/activate`, qui repasse par les mêmes conditions : un
+    commerce qui a retiré sa dernière offre pendant sa pause ne rouvre pas
+    invisible.
+    """
+    try:
+        await business_service.pause_business(
+            session, business=business, actor=Actor.from_user(user)
+        )
+    except business_service.NotActive as error:
+        raise api_error(status.HTTP_409_CONFLICT, ErrorCode.BUSINESS_NOT_ACTIVE) from error
+
+    await session.commit()
+    return await _to_read(session, business)
 
 
 @router.post("/{business_id}/activate", response_model=BusinessRead)

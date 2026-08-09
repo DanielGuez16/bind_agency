@@ -26,7 +26,9 @@ import type {
   CodeDeRetrait,
   Collaboration,
   Creneau,
+  DroitDeLecture,
   EtapeActivation,
+  VueDActivation,
   FichePublique,
   Fil,
   FiltreDeContrepartie,
@@ -223,6 +225,20 @@ export class Api {
     return this.client.request<CodeDeRetrait>(routes.codeDeRetrait(bookingId), { signal });
   }
 
+  /**
+   * Le droit de regarder une preuve, pour quelques minutes.
+   *
+   * L'adresse rendue est relative : elle est complétée ici, comme celle d'un
+   * média, pour qu'une balise d'image puisse l'ouvrir directement.
+   */
+  async droitDeLireLaPreuve(proofId: string, signal?: AbortSignal) {
+    const droit = await this.client.request<DroitDeLecture>(
+      routes.droitDeLireLaPreuve(proofId),
+      { signal },
+    );
+    return { ...droit, url: this.client.urlComplete(droit.url) };
+  }
+
   // ---- contrepartie ----
 
   contrepartie(collaborationId: string, signal?: AbortSignal) {
@@ -308,8 +324,15 @@ export class Api {
   }
 
   etapesDActivation(businessId: string, signal?: AbortSignal) {
-    return this.client.request<EtapeActivation[]>(routes.etapesDActivation(businessId), {
+    return this.client.request<VueDActivation>(routes.etapesDActivation(businessId), {
       signal,
+    });
+  }
+
+  /** Le commerce se retire du fil, sans rien perdre. Réversible. */
+  mettreEnPauseLeCommerce(businessId: string) {
+    return this.client.request<unknown>(routes.mettreEnPauseLeCommerce(businessId), {
+      methode: 'POST',
     });
   }
 

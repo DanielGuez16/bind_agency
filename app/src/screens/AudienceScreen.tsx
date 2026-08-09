@@ -147,8 +147,8 @@ export function AudienceScreen() {
                     {controle.signaux.map((signal) => (
                       <DataRow
                         key={signal.signal}
-                        label={signal.signal}
-                        value={signal.verdict}
+                        label={t(`signaux.${signal.signal}`)}
+                        value={t(`verdicts.${signal.verdict}`)}
                       />
                     ))}
                   </View>

@@ -349,6 +349,9 @@ export type DerniereSoumission = {
   platform_published_at: string | null;
 };
 
+/** Où regarder une preuve, et combien de temps l'adresse vaut. */
+export type DroitDeLecture = { url: string; expires_in: number };
+
 export type LigneDeFile = {
   collaboration_id: string;
   booking_id: string;
@@ -387,6 +390,17 @@ export type EtapeActivation = {
   done: boolean;
   /** Bloquante : l'activation est refusée. Non bloquante : la visibilité l'est. */
   blocking: boolean;
+};
+
+/**
+ * Les étapes, **et où en est le commerce**.
+ *
+ * Le statut manquait : l'écran voyait six étapes faites et proposait « ouvrir
+ * mon commerce » à un commerce ouvert depuis des semaines.
+ */
+export type VueDActivation = {
+  status: 'onboarding' | 'active' | 'suspended';
+  etapes: EtapeActivation[];
 };
 
 export type PlanAdministrateur = {

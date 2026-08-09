@@ -74,3 +74,58 @@ describe('catalogues de traduction', () => {
     }
   });
 });
+
+describe('les codes du serveur ne s’affichent jamais bruts', () => {
+  /**
+   * Le défaut : « business_member » sous les yeux d'un commerçant,
+   * « awaiting_business » dans une journée, un signal de vérification affiché
+   * sous son identifiant. Chaque fois, une chaîne oubliée.
+   *
+   * Le piège en corrigeant est d'inventer des clés qui ne correspondent à rien
+   * — c'est arrivé ici même, avec cinq signaux plausibles et faux. Ce test
+   * compare le catalogue aux valeurs que le serveur déclare vraiment.
+   */
+  const FAMILLES = [
+    { section: 'roles', enumeration: 'UserRole' },
+    { section: 'contrepartie', enumeration: 'CollaborationStatus' },
+    { section: 'signaux', enumeration: 'Signal' },
+    { section: 'verdicts', enumeration: 'VerdictSignal' },
+  ] as const;
+
+  /** Les valeurs d'une énumération Python, lues dans la source de l'API. */
+  function valeursDe(nom: string): string[] {
+    const { readFileSync, readdirSync } = require('fs') as typeof import('fs');
+    const { join } = require('path') as typeof import('path');
+    const racine = join(__dirname, '..', '..', 'api', 'app');
+
+    const fichiers: string[] = [];
+    const parcourir = (dossier: string) => {
+      for (const entree of readdirSync(dossier, { withFileTypes: true })) {
+        const chemin = join(dossier, entree.name);
+        if (entree.isDirectory()) parcourir(chemin);
+        else if (entree.name.endsWith('.py')) fichiers.push(chemin);
+      }
+    };
+    parcourir(racine);
+
+    for (const chemin of fichiers) {
+      const source = readFileSync(chemin, 'utf-8');
+      const debut = source.indexOf(`class ${nom}(StrEnum)`);
+      if (debut === -1) continue;
+      const fin = source.indexOf('\nclass ', debut + 1);
+      const bloc = source.slice(debut, fin === -1 ? undefined : fin);
+      return [...bloc.matchAll(/^\s+[A-Z_]+ = "([a-z_]+)"$/gm)].map((m) => m[1]);
+    }
+    throw new Error(`énumération introuvable : ${nom}`);
+  }
+
+  it.each(FAMILLES)('$section couvre toutes les valeurs de $enumeration', ({ section, enumeration }) => {
+    const valeurs = valeursDe(enumeration);
+    expect(valeurs.length).toBeGreaterThan(0);
+
+    for (const valeur of valeurs) {
+      expect(Object.keys((en as Record<string, object>)[section])).toContain(valeur);
+      expect(Object.keys((es as Record<string, object>)[section])).toContain(valeur);
+    }
+  });
+});

@@ -17,7 +17,7 @@ import { ScrollView, View } from 'react-native';
 
 import { Button, Chip, DataRow, RangeeDeChips, Texte } from '../components';
 import { useI18n, type SupportedLocale } from '../i18n';
-import { trousseauDisponible, useSession } from '../session';
+import { useSession } from '../session';
 import { useTheme, type ThemeName } from '../theme';
 import { HealthScreen } from './HealthScreen';
 
@@ -42,13 +42,9 @@ export function ReglagesScreen() {
           {t('reglages.compte')}
         </Texte>
         <DataRow label={t('auth.email')} value={email} />
-        <DataRow label={t('auth.role')} value={role} />
-        <DataRow
-          label={t('reglages.stockage')}
-          value={
-            trousseauDisponible ? t('reglages.stockageSecurise') : t('reglages.stockageWeb')
-          }
-        />
+        {/* Le rôle traduit, jamais son code. « business_member » sous les yeux
+            d'un commerçant est une chaîne oubliée — c'en était une. */}
+        <DataRow label={t('auth.role')} value={role ? t(`roles.${role}`) : ''} />
       </View>
 
       <View style={{ gap: 8 }}>
