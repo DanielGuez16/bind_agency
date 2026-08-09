@@ -13,6 +13,51 @@ un MacBook, à titre indicatif.
 
 ---
 
+## 0. L'environnement de démonstration en ligne
+
+> **Pas encore déployé.** Les adresses seront écrites ici une fois les trois
+> comptes créés. Tout le code est prêt ; il ne manque que les inscriptions.
+
+| Quoi | Adresse |
+|---|---|
+| App web | _à venir_ |
+| API | _à venir_ |
+
+Cet environnement est **séparé du développement local** : autre base, autre
+stockage, autres identifiants. Rien de ce que vous faites ici ne touche votre
+machine, et rien de ce que vous faites sur votre machine ne le touche.
+
+`SOCIAL_PROVIDER=demo` y reste posé : les comptes sociaux sont simulés, la
+démonstration ne dépend pas d'une application Meta en revue et n'en consomme
+pas le quota.
+
+### Ce que ça change pour vous
+
+Vous ouvrez une adresse, depuis n'importe quel appareil, sans lancer quoi que ce
+soit. Plus de `make dev-lan`, plus de QR code, plus de « le téléphone et le Mac
+doivent être sur le même réseau ». Le développement local continue de
+fonctionner exactement comme avant, pour développer.
+
+**Deux attentes à connaître.** L'API s'endort après quinze minutes sans trafic :
+la première ouverture met environ une minute, les suivantes sont immédiates. Et
+le projet de base se met en pause après sept jours sans activité — un clic dans
+le tableau de bord Supabase le réveille.
+
+### Remettre le jeu de données à zéro, à distance
+
+Depuis le shell du service chez Render :
+
+```
+python -m scripts.deploiement --avec-jeu-de-donnees
+```
+
+Sans l'option, seules les migrations tournent — c'est ce qui se passe à chaque
+fusion sur `main`. La commande écrit d'abord l'environnement et la base qu'elle
+vise, et **refuse de semer** si `SEED_DATABASE_NAME` ne nomme pas exactement la
+base visée : effacer autre chose demanderait deux gestes délibérés.
+
+---
+
 ## 1. Démarrer, depuis un dépôt vierge
 
 Prérequis : **Python 3.12**, **Node 24** (`nvm use`), **Docker**, et **Expo Go**

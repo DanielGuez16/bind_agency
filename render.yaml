@@ -1,0 +1,87 @@
+# Environnement de démonstration — déclaration du service chez Render.
+#
+# **Aucune valeur de secret ici.** Ce fichier déclare les *noms* des variables
+# et laisse leurs valeurs au tableau de bord : `sync: false` demande à Render de
+# ne jamais les lire du dépôt et de les demander au premier déploiement. Un
+# secret dans un dépôt reste dans son historique même effacé.
+#
+# **La base n'est pas déclarée ici.** Elle vit chez Supabase, avec PostGIS et le
+# stockage objet. La base gratuite de Render expire au bout de trente jours puis
+# est supprimée, ce qui en fait le mauvais endroit pour une démonstration censée
+# durer.
+#
+# **Le palier gratuit endort le service** après quinze minutes sans trafic, et
+# met environ une minute à repartir. C'est le compromis retenu. Passer en
+# `starter` est un changement de cette ligne et rien d'autre.
+
+services:
+  - type: web
+    name: bind-api-demo
+    runtime: docker
+    plan: free
+    region: oregon
+    rootDir: api
+    dockerfilePath: ./Dockerfile
+
+    # Render interroge cette adresse pour savoir si le service est vivant. La
+    # nôtre vérifie réellement la base : un service qui répond 200 avec une base
+    # morte se déclare en bonne santé et sert des erreurs.
+    healthCheckPath: /api/v1/health
+
+    # La branche déployée. Chaque fusion sur `main` redéploie.
+    branch: main
+    autoDeployTrigger: commit
+
+    envVars:
+      - key: ENVIRONMENT
+        value: demo
+
+      # --- ce qui distingue la démonstration -------------------------------
+      #
+      # Le fournisseur social reste simulé : la démonstration ne doit pas
+      # dépendre d'une application Meta en revue, ni consommer son quota.
+      - key: SOCIAL_PROVIDER
+        value: demo
+      - key: EMAIL_PROVIDER
+        value: log
+      - key: BILLING_PROVIDER
+        value: log
+      - key: GEOCODING_PROVIDER
+        value: manual
+
+      # --- dépôt d'objets --------------------------------------------------
+      #
+      # Deux compartiments distincts, jamais un seul avec un filtre de préfixe :
+      # un compartiment public s'énumère, et les preuves y seraient listables.
+      - key: OBJECT_STORE_PROVIDER
+        value: s3
+      - key: OBJECT_STORE_REGION
+        value: auto
+      - key: OBJECT_STORE_BUCKET_PUBLIC
+        sync: false
+      - key: OBJECT_STORE_BUCKET_PRIVE
+        sync: false
+      - key: OBJECT_STORE_ENDPOINT
+        sync: false
+      - key: OBJECT_STORE_ACCESS_KEY
+        sync: false
+      - key: OBJECT_STORE_SECRET_KEY
+        sync: false
+
+      # --- secrets et adresses ---------------------------------------------
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET_KEY
+        sync: false
+      - key: TOKEN_ENCRYPTION_KEY
+        sync: false
+
+      # L'origine de l'app publiée, et elle seule. Une liste large annulerait
+      # l'intérêt du contrôle.
+      - key: CORS_ORIGINS
+        sync: false
+
+      # La base que le jeu de données accepte de détruire, nommée
+      # explicitement. Sans elle, la commande refuse de tourner ici.
+      - key: SEED_DATABASE_NAME
+        sync: false

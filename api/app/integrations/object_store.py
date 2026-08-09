@@ -11,10 +11,19 @@ rien à monter, et deux tests ne se marchent pas dessus.
 preuve archivée reste consultable après redémarrage, ce qui est exactement la
 propriété qui manquait quand `deposer` ne faisait que calculer une clé.
 
-**`s3`** parle à un fournisseur compatible S3. Il n'est pas branché : sans
-identifiants ni entité, l'écrire reviendrait à écrire du code que personne ne
-peut exécuter. La classe existe pour que la forme du contrat soit visible, et
-elle refuse de démarrer plutôt que de faire semblant.
+**`s3`** parle à un fournisseur compatible S3, sur **deux compartiments**.
+
+Deux et non un seul avec un filtre de préfixe : un compartiment public
+s'énumère, et qui connaît son adresse en liste le contenu. Ranger les preuves
+dedans en comptant sur l'API pour ne servir que `photos/` protégerait la route
+et laisserait le compartiment ouvert.
+
+Le préfixe décide du compartiment, et **tout ce qui n'est pas explicitement
+public va dans le privé**. Le repli est du bon côté : un préfixe ajouté demain
+et oublié ici atterrit au pire dans le compartiment fermé, jamais dans l'ouvert.
+
+**Une preuve ne se sert jamais par un lien direct.** L'API rend une adresse
+signée de courte durée, ou rien.
 
 **La clé est dérivée du contenu.** Deux dépôts du même fichier partagent la
 leur, et le stockage ne double pas. Le préfixe range par nature, ce qui rend une
@@ -109,26 +118,113 @@ class LocalObjectStore:
         return chemin.read_bytes() if chemin.is_file() else None
 
 
-class S3ObjectStore:
-    """Compatible S3. **Non branché.**
+#: Les préfixes servis par le compartiment public. Liste **fermée**.
+#:
+#: Tout le reste va dans le privé. L'inverse — une liste de ce qui est privé —
+#: ferait d'un oubli une fuite ; ici un oubli ne fait qu'une lecture qui passe
+#: par l'API.
+PREFIXES_PUBLICS = ("photos/",)
 
-    La classe existe pour que la forme du contrat se voie, et pour que le jour
-    où les identifiants arrivent, ce soit un fichier à compléter et non une
-    architecture à inventer. Elle lève au lieu de retomber en silence sur le
-    disque : un dépôt qui croit écrire chez un fournisseur et écrit ailleurs est
-    pire qu'un dépôt qui refuse.
+
+def compartiment_de(prefixe: str, *, public: str, prive: str) -> str:
+    """Où range-t-on ce préfixe.
+
+    Séparé du client pour se tester sans réseau : c'est une règle de
+    confidentialité, et elle doit pouvoir se lire sans monter un fournisseur.
+    """
+    return public if prefixe.startswith(PREFIXES_PUBLICS) else prive
+
+
+class S3ObjectStore:
+    """Compatible S3, sur deux compartiments.
+
+    Le client est construit à l'appel et refermé aussitôt : `aioboto3` ouvre une
+    session par contexte, et en garder une ouverte pour la vie du processus
+    demanderait de la refermer proprement à l'arrêt — pour un dépôt qui sert
+    quelques objets par minute, ce n'est pas le bon compromis.
     """
 
-    def __init__(self, bucket: str | None) -> None:
-        self._bucket = bucket
+    def __init__(
+        self,
+        *,
+        public: str | None,
+        prive: str | None,
+        endpoint: str | None,
+        region: str,
+        access_key: str | None,
+        secret_key: str | None,
+        duree_signature: int,
+    ) -> None:
+        if not (public and prive and access_key and secret_key):
+            # Refuser ici, à la construction, et non au premier dépôt : une
+            # preuve perdue faute d'identifiants ne se rattrape pas, et le
+            # créateur qui l'a envoyée n'en saurait rien.
+            raise ObjectStoreUnavailable(
+                "dépôt S3 incomplet : OBJECT_STORE_BUCKET_PUBLIC, "
+                "OBJECT_STORE_BUCKET_PRIVE, OBJECT_STORE_ACCESS_KEY et "
+                "OBJECT_STORE_SECRET_KEY sont tous attendus"
+            )
+        self._public = public
+        self._prive = prive
+        self._endpoint = endpoint
+        self._region = region
+        self._access_key = access_key
+        self._secret_key = secret_key
+        self._duree = duree_signature
 
-    async def deposer(self, contenu: bytes, *, prefixe: str) -> str:
-        raise ObjectStoreUnavailable(
-            "le dépôt S3 n'est pas branché : ni client, ni identifiants. Voir DECISIONS.md."
+    def _client(self):
+        import aioboto3
+
+        return aioboto3.Session().client(
+            "s3",
+            endpoint_url=self._endpoint,
+            region_name=self._region,
+            aws_access_key_id=self._access_key,
+            aws_secret_access_key=self._secret_key,
         )
 
+    def compartiment(self, cle_ou_prefixe: str) -> str:
+        """Le compartiment d'une clé ou d'un préfixe. Public seulement si déclaré."""
+        return compartiment_de(cle_ou_prefixe, public=self._public, prive=self._prive)
+
+    async def deposer(self, contenu: bytes, *, prefixe: str) -> str:
+        cle = cle_pour(contenu, prefixe=prefixe)
+        try:
+            async with self._client() as s3:
+                await s3.put_object(Bucket=self.compartiment(prefixe), Key=cle, Body=contenu)
+        except Exception as error:
+            # Enveloppé : l'appelant traite un dépôt manqué, il n'a pas à
+            # connaître les exceptions de `botocore`.
+            raise ObjectStoreError(f"dépôt S3 refusé : {type(error).__name__}") from error
+        return cle
+
     async def lire(self, cle: str) -> bytes | None:
-        raise ObjectStoreUnavailable("le dépôt S3 n'est pas branché.")
+        try:
+            async with self._client() as s3:
+                reponse = await s3.get_object(Bucket=self.compartiment(cle), Key=cle)
+                return await reponse["Body"].read()
+        except Exception as error:
+            # Une absence n'est pas une panne, et les deux se distinguent mal
+            # dans `botocore` : `NoSuchKey` porte un nom, le reste non.
+            if type(error).__name__ in ("NoSuchKey", "ClientError") and "404" in str(error):
+                return None
+            if type(error).__name__ == "NoSuchKey":
+                return None
+            raise ObjectStoreError(f"lecture S3 refusée : {type(error).__name__}") from error
+
+    async def url_signee(self, cle: str) -> str:
+        """Une adresse de lecture à durée courte.
+
+        **Le seul chemin vers une preuve.** Elle n'est pas publique et ne le
+        devient pas : l'adresse expire, et jusque-là elle ne désigne qu'un
+        objet, pas un compartiment.
+        """
+        async with self._client() as s3:
+            return await s3.generate_presigned_url(
+                "get_object",
+                Params={"Bucket": self.compartiment(cle), "Key": cle},
+                ExpiresIn=self._duree,
+            )
 
 
 #: Une seule instance par processus pour `memory` : deux instances feraient
@@ -144,7 +240,19 @@ def get_object_store() -> ObjectStore:
         return _memoire
     if settings.object_store_provider == "local":
         return LocalObjectStore(Path(settings.object_store_local_root))
-    return S3ObjectStore(settings.object_store_bucket)
+    return S3ObjectStore(
+        public=settings.object_store_bucket_public,
+        prive=settings.object_store_bucket_prive,
+        endpoint=settings.object_store_endpoint,
+        region=settings.object_store_region,
+        access_key=settings.object_store_access_key,
+        secret_key=(
+            settings.object_store_secret_key.get_secret_value()
+            if settings.object_store_secret_key
+            else None
+        ),
+        duree_signature=settings.object_store_signed_url_seconds,
+    )
 
 
 def check_object_store_configuration() -> None:
@@ -168,7 +276,14 @@ def check_object_store_configuration() -> None:
                 f"racine de dépôt inutilisable : {racine} ({error})"
             ) from error
 
-    if settings.object_store_provider == "s3" and not settings.object_store_bucket:
-        raise ObjectStoreUnavailable(
-            "OBJECT_STORE_PROVIDER=s3 sans OBJECT_STORE_BUCKET : le dépôt ne sait pas où écrire."
-        )
+    if settings.object_store_provider == "s3":
+        # Construire suffit : le constructeur refuse ce qui est incomplet, et
+        # le refaire ici en dupliquerait la liste — qui divergerait au premier
+        # champ ajouté.
+        get_object_store()
+
+        if settings.object_store_bucket_public == settings.object_store_bucket_prive:
+            raise ObjectStoreUnavailable(
+                "les deux compartiments sont le même : un compartiment public "
+                "s'énumère, et les preuves y seraient listables."
+            )

@@ -51,7 +51,15 @@ from app.services.audit import Actor
 
 #: Environnements où l'effacement de la base est acceptable. Ailleurs, la
 #: commande refuse : elle détruit tout avant d'écrire.
-ENVIRONNEMENTS_AUTORISES = frozenset({"local", "ci", "test"})
+#:
+#: **Liste fermée, et `production` n'y sera jamais ajoutée par inadvertance** :
+#: un test vérifie son absence, et vérifie aussi qu'un environnement inconnu est
+#: refusé — sans quoi la liste protégerait ce qu'elle nomme et rien d'autre.
+ENVIRONNEMENTS_AUTORISES = frozenset({"local", "ci", "test", "demo"})
+
+#: Les environnements dont la base est ailleurs que sur la machine qui lance la
+#: commande. Pour eux, le nom de l'environnement ne suffit pas.
+ENVIRONNEMENTS_DISTANTS = frozenset({"demo"})
 
 #: Mot de passe unique et connu pour tous les comptes du jeu. Il n'a de sens que
 #: sur une base jetable, ce que le garde-fou ci-dessus impose.
@@ -616,14 +624,53 @@ async def populate() -> Resume:
         await engine.dispose()
 
 
-def main() -> int:
-    settings = get_settings()
+def verifier_la_cible(settings) -> None:
+    """Deux conditions, toutes deux nécessaires, avant d'effacer quoi que ce soit.
 
+    **Le nom de l'environnement.** Il dit ce que la configuration prétend être.
+    C'est nécessaire et ce n'est pas suffisant : une variable mal posée suffit à
+    faire passer une base pour ce qu'elle n'est pas, et cette commande détruit
+    tout avant d'écrire.
+
+    **Le nom de la base.** Sur un environnement distant, la commande exige que
+    `SEED_DATABASE_NAME` soit posé **et** corresponde à la base réellement
+    visée. Viser une autre base demande alors deux gestes délibérés — mentir sur
+    l'environnement, puis nommer la base à détruire — au lieu d'un seul oubli.
+
+    Le jour où `production` existera, elle n'est ni dans la liste des
+    environnements, ni dans celle des distants : l'ouverture faite ici pour la
+    démonstration ne l'englobe pas d'avance.
+    """
     if settings.environment not in ENVIRONNEMENTS_AUTORISES:
         raise SeedRefused(
             f"environnement « {settings.environment} » : la commande efface la base "
             f"avant d'écrire, elle ne tourne que sur {sorted(ENVIRONNEMENTS_AUTORISES)}"
         )
+
+    if settings.environment not in ENVIRONNEMENTS_DISTANTS:
+        return
+
+    cible = make_url(str(settings.database_url)).database
+
+    if not settings.seed_database_name:
+        raise SeedRefused(
+            f"environnement « {settings.environment} » : la base est distante, "
+            "SEED_DATABASE_NAME doit nommer explicitement celle qu'on accepte "
+            f"de détruire (ici : « {cible} »)"
+        )
+
+    if cible != settings.seed_database_name:
+        raise SeedRefused(
+            f"la commande vise « {cible} » et SEED_DATABASE_NAME nomme "
+            f"« {settings.seed_database_name} » : refus d'effacer une base qui "
+            "n'est pas celle qu'on a déclarée"
+        )
+
+
+def main() -> int:
+    settings = get_settings()
+
+    verifier_la_cible(settings)
 
     reset_schema()
     resume = asyncio.run(populate())
