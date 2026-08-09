@@ -15,6 +15,13 @@
  * **Le bouton se voit travailler.** Il repassait par un état d'échec immédiat
  * quand l'adresse manquait, sans jamais rien afficher entre-temps : rien ne
  * bougeait, et il paraissait mort. Il est désactivé pendant la sonde.
+ *
+ * **La sonde a une échéance, et l'attente se dit.** Elle appelait `fetch` sans
+ * délai : sur un hébergeur qui endort le service, la première requête met une
+ * minute, et l'écran restait sur « chargement » sans rien indiquer — le
+ * diagnostic paraissait cassé alors qu'il diagnostiquait exactement ce qu'il
+ * fallait. Au-delà de quelques secondes, il dit que le serveur se réveille ;
+ * au-delà de l'échéance, il abandonne et le dit aussi.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
@@ -22,7 +29,7 @@ import { View } from 'react-native';
 import { Button, DataRow, StatusMessage, Texte } from '../components';
 import { useI18n } from '../i18n';
 import { errorCodeFromResponse, translateErrorCode } from '../i18n/errors';
-import { adresseDeLApi, origineDeLAdresse } from '../shell/adresseDeLApi';
+import { adresseDeLApi } from '../shell/adresseDeLApi';
 
 type Health = {
   status: 'ok' | 'unavailable';
@@ -30,8 +37,14 @@ type Health = {
   failed: string[];
 };
 
+/** Au-delà, on cesse d'attendre. Un réveil de service prend environ une minute. */
+const ECHEANCE_MS = 75_000;
+
+/** Passé ce délai sans réponse, l'attente s'explique au lieu de se subir. */
+const REVEIL_PROBABLE_MS = 4_000;
+
 type Sonde =
-  | { etat: 'encours' }
+  | { etat: 'encours'; long: boolean }
   | { etat: 'repondu'; corps: Health }
   | { etat: 'echec'; code: string | null };
 
@@ -40,7 +53,7 @@ export function HealthScreen({ apiUrl }: { apiUrl?: string | null }) {
   // Résolue au rendu et non en constante de module : une constante fige la
   // valeur au chargement du bundle, avant que la déduction soit possible.
   const adresse = apiUrl === undefined ? adresseDeLApi() : apiUrl;
-  const [sonde, setSonde] = useState<Sonde>({ etat: 'encours' });
+  const [sonde, setSonde] = useState<Sonde>({ etat: 'encours', long: false });
 
   // La sonde est asynchrone : sans cette garde, une réponse qui arrive après
   // un démontage écrit dans un composant qui n'existe plus.
@@ -57,15 +70,22 @@ export function HealthScreen({ apiUrl }: { apiUrl?: string | null }) {
   }, []);
 
   const sonder = useCallback(async () => {
-    publie({ etat: 'encours' });
+    publie({ etat: 'encours', long: false });
 
     if (!adresse) {
       publie({ etat: 'echec', code: null });
       return;
     }
 
+    // Au bout de quelques secondes, l'attente cesse d'être muette : sur un
+    // hébergeur qui endort le service, c'est la situation normale, pas une
+    // panne.
+    const lent = setTimeout(() => publie({ etat: 'encours', long: true }), REVEIL_PROBABLE_MS);
+    const abandon = new AbortController();
+    const echeance = setTimeout(() => abandon.abort(), ECHEANCE_MS);
+
     try {
-      const reponse = await fetch(`${adresse}/health`);
+      const reponse = await fetch(`${adresse}/health`, { signal: abandon.signal });
       const corps = await reponse.json();
       if (reponse.status >= 400) {
         // Le corps peut porter un code du catalogue, ou rien d'exploitable.
@@ -75,6 +95,9 @@ export function HealthScreen({ apiUrl }: { apiUrl?: string | null }) {
       publie({ etat: 'repondu', corps });
     } catch {
       publie({ etat: 'echec', code: null });
+    } finally {
+      clearTimeout(lent);
+      clearTimeout(echeance);
     }
   }, [adresse, publie]);
 
@@ -85,10 +108,13 @@ export function HealthScreen({ apiUrl }: { apiUrl?: string | null }) {
   return (
     <View style={{ gap: 12 }} testID="diagnostic-connexion">
       <DataRow label={t('health.address')} value={adresse ?? '—'} />
-      <DataRow label={t('health.addressOrigin')} value={origineDeLAdresse()} />
 
       {sonde.etat === 'encours' ? (
-        <StatusMessage level="neutral" body={t('common.loading')} testID="diagnostic-encours" />
+        <StatusMessage
+          level="neutral"
+          body={sonde.long ? t('health.reveil') : t('common.loading')}
+          testID="diagnostic-encours"
+        />
       ) : null}
 
       {sonde.etat === 'repondu' ? (

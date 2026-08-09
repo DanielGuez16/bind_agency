@@ -226,3 +226,53 @@ it('ne propose plus d’accepter une demande dont l’heure est passée', async 
     RESERVATIONS[0].valid_until = dansUneHeure;
   }
 });
+
+it('distingue ce qui est derrière de ce qui reste à faire', async () => {
+  // Une absence et un rendez-vous de 15 h se lisaient identiques : deux lignes
+  // de texte, même poids, même couleur. Le mot d'état porte le sens, la teinte
+  // ne fait que l'appuyer — jamais l'inverse.
+  RESERVATIONS[1].status = 'no_show';
+  try {
+    await monter();
+
+    expect(screen.getByTestId('statut-confirmee-1')).toHaveTextContent(
+      en.commerce.statut_no_show,
+    );
+  } finally {
+    RESERVATIONS[1].status = 'confirmed';
+  }
+});
+
+it('donne un vrai état vide à une journée sans rendez-vous', async () => {
+  // Une journée vide est une information, pas une page qui n'a pas chargé.
+  const vide = new ApiClient({
+    baseUrl: 'https://api.test',
+    coffre,
+    fetchImpl: async () =>
+      ({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          jour: '2026-08-09',
+          timezone: 'America/New_York',
+          debut: '',
+          fin: '',
+          items: [],
+          a_trancher: [],
+        }),
+      }) as Response,
+  });
+
+  await render(
+    <I18nProvider initialLocale="en">
+      <ThemeProvider role="merchant">
+        <ApiProvider client={vide}>
+          <JourneeScreen businessId="b1" />
+        </ApiProvider>
+      </ThemeProvider>
+    </I18nProvider>,
+  );
+
+  await waitFor(() => expect(screen.getByTestId('journee-vide-halo')).toBeTruthy());
+  expect(screen.getByText(en.commerce.journeeVideTitre)).toBeTruthy();
+});
