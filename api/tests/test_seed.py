@@ -881,3 +881,53 @@ def test_le_local_ne_demande_rien_de_plus() -> None:
             database_url="postgresql+psycopg://bind:bind@localhost:5434/bind",
         )
     )
+
+
+@pytest.mark.parametrize(
+    "hote", ["localhost", "127.0.0.1", "::1", "0.0.0.0", "host.docker.internal"]
+)
+def test_un_environnement_distant_qui_vise_la_machine_locale_est_refuse(hote: str) -> None:
+    """C'est la forme qu'a l'accident.
+
+    Une variable oubliée dans un shell, et la configuration retombe sur le
+    `.env` du poste : l'environnement dit « demo », la base est celle de
+    développement. Le nom seul ne l'aurait pas vu — celui de Supabase est
+    `postgres`, et une base locale peut porter le même.
+    """
+    # Une IPv6 se met entre crochets dans une URL ; sans eux, l'analyse échoue
+    # avant même d'arriver au garde-fou, et le test passerait pour la mauvaise
+    # raison.
+    ecrit = f"[{hote}]" if ":" in hote else hote
+
+    with pytest.raises(SeedRefused, match="base de développement"):
+        verifier_la_cible(
+            _reglages(
+                environment="demo",
+                database_url=f"postgresql+psycopg://x:y@{ecrit}:5432/postgres",
+                seed_database_name="postgres",
+            )
+        )
+
+
+def test_le_nom_seul_ne_suffit_pas_a_ouvrir() -> None:
+    """Deux bases nommées `postgres`, l'une ici et l'autre ailleurs.
+
+    Sans le contrôle d'hôte, la comparaison de noms les confondrait — et c'est
+    exactement la configuration de Supabase, dont la base s'appelle `postgres`.
+    """
+    locale = _reglages(
+        environment="demo",
+        database_url="postgresql+psycopg://x:y@localhost:5432/postgres",
+        seed_database_name="postgres",
+    )
+    distante = _reglages(
+        environment="demo",
+        database_url="postgresql+psycopg://x:y@db.projet.supabase.co:5432/postgres",
+        seed_database_name="postgres",
+    )
+
+    with pytest.raises(SeedRefused):
+        verifier_la_cible(locale)
+    # L'autre sens : la distante passe, sinon le garde bloquerait tout et la
+    # commande ne tournerait nulle part.
+    verifier_la_cible(distante)

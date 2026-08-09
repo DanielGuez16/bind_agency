@@ -2561,3 +2561,20 @@ demande deux gestes délibérés — mentir sur l'environnement, puis nommer la 
 des distants : l'ouverture faite pour la démonstration ne l'englobe pas d'avance,
 et deux tests le vérifient — l'un sur le comportement, l'autre sur la liste
 elle-même.
+
+## 2026-08-09 — Le garde-fou regarde l'hôte, et vérifie avant d'écrire
+
+Deux manques trouvés en écrivant le mode d'emploi de la commande distante.
+
+**Le nom de la base ne suffit pas.** Celle de Supabase s'appelle `postgres`, le
+nom le plus répandu qui soit : une base locale portant le même nom passait la
+comparaison. Un environnement déclaré distant qui vise `localhost` est refusé —
+c'est la forme qu'a l'accident, une variable oubliée dans un shell et la
+configuration retombe sur le `.env` du poste.
+
+**L'ordre comptait.** Les migrations tournaient avant le refus : la mauvaise
+base était déjà migrée quand la commande disait non. Migrer ne détruit rien,
+mais une écriture reste une écriture, et « refuser plutôt qu'agir » ne souffre
+pas d'exception d'ordre. Tout se vérifie maintenant avant la première écriture,
+le dépôt d'objets compris — sans lui, le jeu de données échouait **après** avoir
+effacé, laissant une base à moitié écrite.
