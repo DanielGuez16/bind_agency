@@ -192,3 +192,71 @@ async def test_un_depot_de_preuve_ne_touche_jamais_le_public() -> None:
     await magasin.deposer(b"une capture", prefixe="proofs/upload")
 
     assert faux.appels[0]["params"]["Bucket"] == PRIVE
+
+
+# --------------------------------------------------------------------------
+# l'aller-retour
+# --------------------------------------------------------------------------
+
+
+class FauxDepotAsymetrique:
+    """Un dépôt qui accepte tout et ne rend rien.
+
+    C'est la panne qu'aucune vérification de configuration ne voit : les deux
+    noms sont posés, non vides et différents, et l'un des deux ne désigne rien.
+    """
+
+    def __init__(self, *, rend: bool) -> None:
+        self.rend = rend
+        self.ecrits: list[str] = []
+
+    async def deposer(self, contenu: bytes, *, prefixe: str) -> str:
+        self.ecrits.append(prefixe)
+        return f"{prefixe}/2026-01-01/abc"
+
+    async def lire(self, cle: str) -> bytes | None:
+        return object_store.TEMOIN if self.rend else None
+
+
+@pytest.mark.anyio
+async def test_l_aller_retour_ecrit_dans_les_deux_compartiments(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    faux = FauxDepotAsymetrique(rend=True)
+    monkeypatch.setattr(object_store, "get_object_store", lambda: faux)
+    monkeypatch.setattr(object_store, "S3ObjectStore", FauxDepotAsymetrique)
+
+    await object_store.verifier_les_deux_compartiments()
+
+    # Les deux, pas seulement celui qu'on regarde en premier.
+    assert faux.ecrits == ["photos/temoin", "proofs/temoin"]
+
+
+@pytest.mark.anyio
+async def test_un_compartiment_qui_ne_rend_rien_est_signale(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Écrire et lire à deux endroits différents ne se voit pas autrement.
+
+    La configuration est valide, l'écriture réussit, et l'absence se découvre
+    des jours plus tard sur un écran, sous la forme d'une image manquante.
+    """
+    faux = FauxDepotAsymetrique(rend=False)
+    monkeypatch.setattr(object_store, "get_object_store", lambda: faux)
+    monkeypatch.setattr(object_store, "S3ObjectStore", FauxDepotAsymetrique)
+
+    with pytest.raises(ObjectStoreUnavailable, match="ne rend pas"):
+        await object_store.verifier_les_deux_compartiments()
+
+
+@pytest.mark.anyio
+async def test_l_aller_retour_ne_concerne_que_le_mode_s3(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Le disque local n'a pas de compartiment à joindre, et le vérifier
+    ferait échouer le développement sur une propriété qui n'existe pas."""
+    from app.integrations.object_store import MemoryObjectStore
+
+    monkeypatch.setattr(object_store, "get_object_store", MemoryObjectStore)
+
+    await object_store.verifier_les_deux_compartiments()

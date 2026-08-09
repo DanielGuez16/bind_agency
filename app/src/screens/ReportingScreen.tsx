@@ -19,12 +19,26 @@ import { View } from 'react-native';
 import { useApi, type Reporting } from '../api';
 import { DataRow, EmptyState, Texte, TierBadge } from '../components';
 import { useI18n } from '../i18n';
+
+/**
+ * Un jour, avec son mois en lettres.
+ *
+ * « 10/07/2026 » se lit octobre à Miami et juillet à Paris. Un rapport qui se
+ * lit à deux mois d'écart selon le lecteur ne se lit pas.
+ */
+function jourLisible(instant: string, locale: string): string {
+  return new Date(instant).toLocaleDateString(locale, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
 import { Ecran } from './Ecran';
 import { useRequete } from './useRequete';
 
 export function ReportingScreen({ businessId }: { businessId: string }) {
   const { api } = useApi();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   const requete = useRequete<Reporting>((signal) => api.reporting(businessId, {}, signal), {
     // Une fenêtre sans réservation n'est pas une erreur : c'est un commerce qui
@@ -50,8 +64,11 @@ export function ReportingScreen({ businessId }: { businessId: string }) {
         <View style={{ gap: 16 }}>
           <Texte variante="type.caption" couleur="text.muted" testID="fenetre">
             {t('reporting.fenetre', {
-              debut: new Date(vue.debut).toLocaleDateString(),
-              fin: new Date(vue.fin).toLocaleDateString(),
+              // Le mois en lettres : « 10/07/2026 » se lit octobre à Miami et
+              // juillet à Paris, et un rapport qui se lit à deux mois d'écart
+              // ne se lit pas.
+              debut: jourLisible(vue.debut, locale),
+              fin: jourLisible(vue.fin, locale),
             })}
           </Texte>
 
@@ -87,6 +104,17 @@ export function ReportingScreen({ businessId }: { businessId: string }) {
               }
               chiffre={vue.taux_d_honoration !== null}
             />
+            {/* Le pourcentage nomme ses deux termes. « 29 % » au milieu de
+                comptes bruts laisse deviner de quoi il est le pourcentage, et
+                chacun devine autre chose. */}
+            {vue.taux_d_honoration !== null ? (
+              <Texte variante="type.caption" couleur="text.muted" testID="taux-aide">
+                {t('reporting.tauxAide', {
+                  publications: vue.publications,
+                  consommations: vue.consommations,
+                })}
+              </Texte>
+            ) : null}
           </View>
 
           <View>
@@ -98,7 +126,8 @@ export function ReportingScreen({ businessId }: { businessId: string }) {
             />
             <DataRow
               label={t('reporting.portee')}
-              value={String(vue.portee_approximative)}
+              // Séparateur de milliers : « 128000 » se compte à la main.
+              value={vue.portee_approximative.toLocaleString(locale)}
               chiffre
             />
             <Texte variante="type.caption" couleur="text.muted" testID="note-portee">

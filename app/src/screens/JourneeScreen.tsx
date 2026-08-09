@@ -37,7 +37,7 @@ import {
   Apparition,
   Button,
   DataRow,
-  EmptyState,
+  Icone,
   Filet,
   StatusMessage,
   TextField,
@@ -45,13 +45,14 @@ import {
   vibration,
 } from '../components';
 import { useI18n } from '../i18n';
-import { useTheme } from '../theme';
+import { useTheme, type ColorName } from '../theme';
 import { Ecran } from './Ecran';
 import { useRequete } from './useRequete';
 
 export function JourneeScreen({ businessId, jour }: { businessId: string; jour?: string }) {
   const { api } = useApi();
   const { t } = useI18n();
+  const { color: c } = useTheme();
 
   const requete = useRequete<JourneeDuCommerce>(
     (signal) => api.journeeDuCommerce(businessId, jour, signal),
@@ -64,11 +65,30 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
       titre={t('commerce.journeeTitre')}
       testID="ecran-journee"
       vide={
-        <EmptyState
-          title={t('commerce.journeeTitre')}
-          body={t('commerce.journeeVide')}
-          testID="journee-vide"
-        />
+        // Un vrai état vide, pas une phrase seule. Une journée sans rendez-vous
+        // est une information, pas une page qui n'a pas chargé.
+        <View style={{ gap: 16, alignItems: 'flex-start', paddingVertical: 24 }}>
+          <View
+            style={{
+              width: 76,
+              height: 76,
+              borderRadius: 38,
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderWidth: 2,
+              borderColor: c['border.default'],
+            }}
+            testID="journee-vide-halo"
+          >
+            <Icone nom="calendrier" couleur="text.muted" taille={32} />
+          </View>
+          <View style={{ gap: 6 }}>
+            <Texte variante="type.title">{t('commerce.journeeVideTitre')}</Texte>
+            <Texte variante="type.body" couleur="text.secondary" testID="journee-vide">
+              {t('commerce.journeeVide')}
+            </Texte>
+          </View>
+        </View>
       }
     >
       {(journee) => {
@@ -140,6 +160,23 @@ function nomDe(reservation: ReservationDuCommerce) {
   );
 }
 
+/**
+ * Ce qui est derrière nous, et ce qui reste à faire.
+ *
+ * Une absence et un rendez-vous de 15 h se lisaient identiques : deux lignes de
+ * texte, même poids, même couleur. Un planning où le passé et le présent se
+ * ressemblent oblige à lire chaque ligne pour savoir où l'on en est.
+ */
+const TERMINES = new Set(['consumed', 'cancelled', 'no_show', 'expired']);
+
+/** Ce dont l'état mérite d'être teinté. Le reste reste neutre. */
+const TEINTE: Record<string, ColorName> = {
+  no_show: 'status.danger',
+  cancelled: 'text.muted',
+  expired: 'text.muted',
+  consumed: 'status.success',
+};
+
 function Ligne({
   reservation,
   timezone,
@@ -150,18 +187,43 @@ function Ligne({
   onFait: () => void;
 }) {
   const { t } = useI18n();
+  const { color: c } = useTheme();
+  const passe = TERMINES.has(reservation.status);
 
   return (
-    <View testID={`reservation-${reservation.booking_id}`}>
+    <View
+      testID={`reservation-${reservation.booking_id}`}
+      style={{
+        gap: 2,
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderRadius: 10,
+        // Le passé s'efface sans disparaître : il reste lisible, il cesse
+        // d'attirer l'œil. Jamais par la couleur seule — le mot d'état est là.
+        opacity: passe ? 0.62 : 1,
+        backgroundColor: passe ? 'transparent' : c['bg.surface'],
+        borderWidth: 1,
+        borderColor: passe ? 'transparent' : c['border.subtle'],
+      }}
+    >
       <DataRow
         label={heureDe(reservation, timezone, t('commerce.journeeSansCreneau'))}
         value={nomDe(reservation)}
       />
-      <Texte variante="type.caption" couleur="text.secondary">
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <Texte variante="type.caption" couleur="text.secondary" style={{ flexShrink: 1 }}>
+          {reservation.item_name}
+        </Texte>
         {/* Le statut traduit, jamais son code. `awaiting_business` affiché tel
             quel se lisait comme une chaîne oubliée — parce que c'en était une. */}
-        {reservation.item_name} · {t(`commerce.statut_${reservation.status}`)}
-      </Texte>
+        <Texte
+          variante="type.caption"
+          couleur={TEINTE[reservation.status] ?? 'text.secondary'}
+          testID={`statut-${reservation.booking_id}`}
+        >
+          {t(`commerce.statut_${reservation.status}`)}
+        </Texte>
+      </View>
       {reservation.status === 'confirmed' ? (
         <MotifPuisAction
           libelle={t('commerce.seDesister')}

@@ -21,6 +21,7 @@ se lit plus.
 """
 
 import argparse
+import asyncio
 import sys
 
 from alembic.config import Config
@@ -29,7 +30,10 @@ from sqlalchemy import make_url
 from alembic import command
 from app import seed
 from app.core.config import API_ROOT, get_settings
-from app.integrations.object_store import check_object_store_configuration
+from app.integrations.object_store import (
+    check_object_store_configuration,
+    verifier_les_deux_compartiments,
+)
 
 
 def cible_lisible() -> str:
@@ -75,7 +79,13 @@ def main() -> int:
         # et personne pour le savoir. La vérification est celle du démarrage de
         # l'API : une seule règle, pas deux qui divergent.
         check_object_store_configuration()
-        print(f"dépôt d'objets : {settings.object_store_provider}")
+        # **Et un aller-retour réel dans chaque compartiment.** La
+        # configuration peut être valide et pointer à côté : deux noms posés,
+        # non vides, différents, et l'un des deux inexistant. Rien ne le dit
+        # avant la première lecture — qui arrive des jours plus tard, sur un
+        # écran, sous la forme d'une image absente.
+        asyncio.run(verifier_les_deux_compartiments())
+        print(f"dépôt d'objets : {settings.object_store_provider}, deux compartiments joignables")
 
     if not options.avec_jeu_de_donnees:
         print("migrations…")

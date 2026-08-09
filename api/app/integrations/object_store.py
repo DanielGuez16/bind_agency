@@ -255,6 +255,47 @@ def get_object_store() -> ObjectStore:
     )
 
 
+async def verifier_les_deux_compartiments() -> None:
+    """Écrit un témoin dans chaque compartiment et le relit.
+
+    **Une configuration valide n'est pas une configuration qui marche.** Les
+    deux noms peuvent être posés, non vides et différents, et désigner des
+    compartiments qui n'existent pas — ou dont l'un est celui où l'on a écrit et
+    l'autre celui où l'on lit. Rien ne le dit avant la première lecture, et la
+    première lecture arrive des jours plus tard, sur un écran, sous la forme
+    d'une image absente.
+
+    Le témoin est minuscule et son contenu est fixe, donc sa clé aussi : deux
+    exécutions ne laissent qu'un objet, pas un par lancement.
+    """
+    depot = get_object_store()
+    if not isinstance(depot, S3ObjectStore):
+        return
+
+    for prefixe, compartiment in (
+        ("photos/temoin", "public"),
+        ("proofs/temoin", "privé"),
+    ):
+        try:
+            cle = await depot.deposer(TEMOIN, prefixe=prefixe)
+        except ObjectStoreError as error:
+            raise ObjectStoreUnavailable(
+                f"écriture impossible dans le compartiment {compartiment} : {error}"
+            ) from error
+
+        relu = await depot.lire(cle)
+        if relu != TEMOIN:
+            raise ObjectStoreUnavailable(
+                f"le compartiment {compartiment} accepte l'écriture mais ne rend "
+                f"pas ce qu'on y a mis ({cle}) : on écrit et on lit à deux "
+                "endroits différents"
+            )
+
+
+#: Le témoin d'aller-retour. Fixe, donc sa clé aussi.
+TEMOIN = b"bind-temoin-de-depot"
+
+
 def check_object_store_configuration() -> None:
     """Refuse de démarrer plutôt que d'échouer à la première preuve.
 
