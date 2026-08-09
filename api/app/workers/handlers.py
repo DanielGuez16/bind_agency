@@ -142,8 +142,11 @@ async def expirer_les_gardes(session: AsyncSession, *, account, provider) -> Iss
     coûterait une ligne par place tenue, pour un travail qui se fait en une
     requête.
     """
-    combien = await booking_states.expirer_les_gardes_depasses(session)
-    _ = combien  # le compte n'intéresse que les journaux d'exploitation
+    await booking_states.expirer_les_gardes_depasses(session)
+    # Le même balayage traite les demandes que le commerce n'a pas tranchées :
+    # les deux libèrent une place tenue, et un second job pour la même
+    # propriété se désynchroniserait du premier.
+    await booking_states.expirer_les_attentes_depassees(session)
     return Fait(prochain=timedelta(seconds=get_settings().booking_sweep_interval_seconds))
 
 

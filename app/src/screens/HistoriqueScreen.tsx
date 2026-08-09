@@ -150,7 +150,7 @@ export function HistoriqueScreen({
                     couleur="text.secondary"
                     testID={`contrepartie-${reservation.booking_id}`}
                   >
-                    {reservation.contrepartie.status}
+                    {t(`contrepartie.${reservation.contrepartie.status}`)}
                   </Texte>
                 ) : null}
               </Pressable>

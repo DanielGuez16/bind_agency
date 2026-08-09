@@ -2,6 +2,7 @@
 
 from pydantic import BaseModel, ConfigDict
 
+from app.models.enums import BusinessStatus
 from app.services.business import EtapeActivation
 
 
@@ -17,3 +18,17 @@ class EtapeRead(BaseModel):
     cle: EtapeActivation
     done: bool
     blocking: bool
+
+
+class VueDActivationRead(BaseModel):
+    """Les étapes, **et où en est le commerce**.
+
+    Le statut manquait : l'écran voyait six étapes faites et proposait
+    « ouvrir mon commerce » à un commerce déjà ouvert depuis des semaines. Les
+    étapes disent ce qui est prêt, elles ne disent pas ce qui a été décidé.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    status: BusinessStatus
+    etapes: list[EtapeRead]

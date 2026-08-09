@@ -82,6 +82,13 @@ class Settings(BaseSettings):
     # de revenir, pas celui d'une session.
     oauth_state_ttl_seconds: int = 600
 
+    #: Durée de vie d'un droit de lecture de preuve.
+    #:
+    #: Courte : l'adresse voyage dans un historique de navigateur et dans le
+    #: cache d'images. Assez longue pour afficher ce qu'on vient d'ouvrir, trop
+    #: courte pour être transmise utilement.
+    proof_read_ttl_seconds: int = 300
+
     #: Les schémas d'adresse vers lesquels le rappel OAuth accepte de renvoyer.
     #:
     #: Le rappel arrive sur le serveur ; c'est lui qui doit ramener la personne

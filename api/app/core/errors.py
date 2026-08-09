@@ -30,6 +30,8 @@ class ErrorCode(StrEnum):
     # Commerce
     BUSINESS_NOT_FOUND = "business_not_found"
     BUSINESS_ALREADY_ACTIVE = "business_already_active"
+    #: Mettre en pause ce qui n'est pas ouvert n'a pas de sens.
+    BUSINESS_NOT_ACTIVE = "business_not_active"
     BUSINESS_MISSING_ADDRESS = "business_missing_address"
     BUSINESS_MISSING_COORDINATES = "business_missing_coordinates"
 
@@ -92,6 +94,8 @@ class ErrorCode(StrEnum):
     BOOKING_NOT_FOUND = "booking_not_found"
     BOOKING_TRANSITION_NOT_ALLOWED = "booking_transition_not_allowed"
     BOOKING_HOLD_EXPIRED = "booking_hold_expired"
+    #: L'heure du rendez-vous est passée : il n'y a plus rien à accepter.
+    BOOKING_SLOT_ELAPSED = "booking_slot_elapsed"
     BOOKING_NO_SHOW_NOT_APPLICABLE = "booking_no_show_not_applicable"
 
     # Retrait

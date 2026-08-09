@@ -60,6 +60,13 @@ export const routes = {
   verifierLeCode: () => chemin('/redemptions/verify'),
   consommerLeCode: () => chemin('/redemptions/consume'),
 
+  // ---- preuve ----
+  //
+  // Deux temps : demander le droit, puis lire. Une balise d'image ne porte pas
+  // d'en-tête d'autorisation ; le droit voyage donc dans l'adresse, et il est
+  // court.
+  droitDeLireLaPreuve: (proofId: string) => chemin(`/proofs/${proofId}/access`),
+
   // ---- contrepartie ----
   contrepartie: (collaborationId: string) => chemin(`/collaborations/${collaborationId}`),
   soumettreLaPreuve: (collaborationId: string) =>
@@ -71,6 +78,7 @@ export const routes = {
   creerLeCommerce: () => chemin('/business'),
   commerce: (businessId: string) => chemin(`/business/${businessId}`),
   activerLeCommerce: (businessId: string) => chemin(`/business/${businessId}/activate`),
+  mettreEnPauseLeCommerce: (businessId: string) => chemin(`/business/${businessId}/pause`),
   etapesDActivation: (businessId: string) => chemin(`/business/${businessId}/activation`),
   journeeDuCommerce: (businessId: string) => chemin(`/business/${businessId}/bookings`),
   contrepartiesDuCommerce: (businessId: string) =>
@@ -143,6 +151,7 @@ export const METHODES: Record<keyof typeof routes, ('GET' | 'POST' | 'PATCH' | '
     verifierLeCode: ['POST'],
     consommerLeCode: ['POST'],
 
+    droitDeLireLaPreuve: ['GET'],
     contrepartie: ['GET'],
     soumettreLaPreuve: ['POST'],
     deciderCommerce: ['POST'],
@@ -150,6 +159,7 @@ export const METHODES: Record<keyof typeof routes, ('GET' | 'POST' | 'PATCH' | '
     creerLeCommerce: ['POST'],
     commerce: ['GET', 'PATCH'],
     activerLeCommerce: ['POST'],
+    mettreEnPauseLeCommerce: ['POST'],
     etapesDActivation: ['GET'],
     journeeDuCommerce: ['GET'],
     contrepartiesDuCommerce: ['GET'],

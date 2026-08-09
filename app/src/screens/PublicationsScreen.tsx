@@ -23,11 +23,13 @@ import {
   EmptyState,
   RangeeDeChips,
   SegmentedTabs,
+  SkeletonLine,
   StatusMessage,
   Texte,
 } from '../components';
 import { useI18n } from '../i18n';
 import { Ecran } from './Ecran';
+import { PreuveSoumise, SqueletteDePreuve } from './Preuve';
 import { useRequete } from './useRequete';
 
 const ONGLETS: { filtre: FiltreDeContrepartie; libelle: string }[] = [
@@ -68,6 +70,21 @@ export function PublicationsScreen({ businessId }: { businessId: string }) {
       requete={requete}
       titre={t('commerce.publicationsTitre')}
       testID="ecran-publications"
+      // **Le squelette ressemble à ce qui arrive.** Celui par défaut annonçait
+      // trois cartes à grande image ; l'écran rendait des lignes de texte. Un
+      // squelette qui promet autre chose fait attendre ce qui ne viendra pas,
+      // et donne l'impression que l'écran a échoué à charger.
+      squelette={
+        <View style={{ gap: 12 }}>
+          {[0, 1].map((rang) => (
+            <View key={rang} style={{ gap: 6 }}>
+              <SkeletonLine width={140} />
+              <SkeletonLine width={200} />
+              <SqueletteDePreuve />
+            </View>
+          ))}
+        </View>
+      }
       vide={
         <View style={{ gap: 8 }}>
           {onglets}
@@ -125,11 +142,15 @@ function Controle({ ligne, onDecide }: { ligne: LigneDeFile; onDecide: () => voi
         {ligne.item_name} · {t('commerce.tentative', { n: ligne.attempts_count + 1 })}
       </Texte>
 
-      {/* Ce qui était attendu, en face de ce qui a été rendu. */}
-      {ligne.required_mention ? (
-        <Texte variante="type.caption" couleur="text.secondary" testID="mention-attendue">
-          {ligne.required_mention}
-        </Texte>
+      {/* **Ce qu'on demande d'approuver.** L'écran ne le montrait pas : le
+          commerce voyait un pseudonyme, une prestation, quatre motifs de refus
+          et un bouton, sans rien de ce qui avait été publié. */}
+      {aDecider || ligne.derniere_soumission ? (
+        <PreuveSoumise
+          soumission={ligne.derniere_soumission}
+          mentionAttendue={ligne.required_mention}
+          lieuAttendu={ligne.required_geotag}
+        />
       ) : null}
       {ligne.dernier_motif ? (
         <Texte variante="type.caption" couleur="status.warning" testID="dernier-motif">

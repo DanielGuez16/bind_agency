@@ -27,12 +27,17 @@ from app.schemas.business import BusinessCreate, BusinessUpdate
 from app.services.audit import Actor, AuditedEntity, record_transition
 
 REASON_ACTIVATION = "business_activated"
+REASON_PAUSE = "business_paused"
 
 SRID = 4326
 
 
 class BusinessError(Exception):
     """Base des erreurs du profil commerce."""
+
+
+class NotActive(BusinessError):
+    """Mettre en pause ce qui n'est pas ouvert n'a pas de sens."""
 
 
 class AlreadyActive(BusinessError):
@@ -192,6 +197,36 @@ async def activate_business(session: AsyncSession, *, business: Business, actor:
         reason=REASON_ACTIVATION,
     )
 
+    return business
+
+
+async def pause_business(session: AsyncSession, *, business: Business, actor: Actor) -> Business:
+    """Le commerce se retire du fil, sans rien perdre.
+
+    **Pas un effacement.** Le catalogue, les horaires et l'historique restent ;
+    seule la visibilité s'arrête. C'est ce qu'un salon veut pendant des congés
+    ou des travaux, et c'est réversible d'un geste.
+
+    Les réservations déjà prises ne sont pas touchées : elles ont été promises,
+    et les annuler en masse par un changement de visibilité ferait porter au
+    commerce une décision qu'il n'a pas prise ligne à ligne.
+    """
+    if business.status is not BusinessStatus.ACTIVE:
+        raise NotActive(business.id)
+
+    previous = business.status
+    business.status = BusinessStatus.SUSPENDED
+    await session.flush()
+
+    await record_transition(
+        session,
+        entity=AuditedEntity.BUSINESS,
+        entity_id=business.id,
+        from_status=previous.value,
+        to_status=BusinessStatus.SUSPENDED.value,
+        actor=actor,
+        reason=REASON_PAUSE,
+    )
     return business
 
 

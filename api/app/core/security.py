@@ -26,6 +26,13 @@ class TokenType(StrEnum):
     REFRESH = "refresh"
     #: État d'un parcours OAuth. Court, signé, et lié à celui qui l'a démarré.
     OAUTH_STATE = "oauth_state"
+    #: Droit de lire **une** preuve, pour quelques minutes.
+    #:
+    #: Une preuve n'est jamais publique : elle ne se sert ni par un lien direct
+    #: vers le stockage, ni par une adresse devinable. Ce jeton porte l'identité
+    #: de la preuve dans son `jti` et celle du demandeur dans son `sub`, il
+    #: expire vite, et il ne donne accès qu'à cet objet-là.
+    PROOF_READ = "proof_read"
 
 
 class InvalidToken(Exception):

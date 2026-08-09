@@ -235,7 +235,11 @@ async def test_la_route_exige_l_appartenance(client: AsyncClient, session: Async
     accepte = await client.get(f"{PREFIX}/business/{b.id}/activation", headers=entetes)
     assert accepte.status_code == 200, accepte.text
     corps = accepte.json()
-    assert {e["cle"] for e in corps} == {e.value for e in service.EtapeActivation}
+    # Le statut accompagne les étapes : sans lui, l'écran proposait « ouvrir »
+    # à un commerce ouvert depuis des semaines.
+    assert corps["status"] in {"onboarding", "active", "suspended"}
+    etapes = corps["etapes"]
+    assert {e["cle"] for e in etapes} == {e.value for e in service.EtapeActivation}
     # Pas de pourcentage : « 2 étapes sur 4 » se comprend, « 50 % » ne dit pas
     # laquelle manque.
-    assert all(set(e) == {"cle", "done", "blocking"} for e in corps)
+    assert all(set(e) == {"cle", "done", "blocking"} for e in etapes)

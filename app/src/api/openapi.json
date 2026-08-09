@@ -417,6 +417,15 @@
         ]
       }
     },
+    "/api/v1/business/{business_id}/pause": {
+      "post": {
+        "operationId": "pause_api_v1_business__business_id__pause_post",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/api/v1/business/{business_id}/plans": {
       "get": {
         "operationId": "list_plans_api_v1_business__business_id__plans_get",
@@ -655,6 +664,24 @@
     "/api/v1/media/{cle}": {
       "get": {
         "operationId": "read_media_api_v1_media__cle__get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/proofs/{proof_id}": {
+      "get": {
+        "operationId": "lire_la_preuve_api_v1_proofs__proof_id__get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/proofs/{proof_id}/access": {
+      "get": {
+        "operationId": "demander_le_droit_api_v1_proofs__proof_id__access_get",
         "responses": [
           "200",
           "422"
