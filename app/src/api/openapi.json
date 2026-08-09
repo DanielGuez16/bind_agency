@@ -610,6 +610,15 @@
         ]
       }
     },
+    "/api/v1/me/proof-uploads": {
+      "post": {
+        "operationId": "televerser_api_v1_me_proof_uploads_post",
+        "responses": [
+          "201",
+          "422"
+        ]
+      }
+    },
     "/api/v1/me/social-accounts": {
       "get": {
         "operationId": "list_accounts_api_v1_me_social_accounts_get",

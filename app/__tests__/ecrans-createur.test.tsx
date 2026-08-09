@@ -294,7 +294,7 @@ const ECRANS = [
   },
   {
     nom: 'preuve',
-    noeud: <PreuveScreen collaborationId="k1" onEnvoyer={jest.fn()} />,
+    noeud: <PreuveScreen collaborationId="k1" />,
     plein: { '/collaborations/k1': CONTREPARTIE },
     // Une contrepartie n'est jamais « vide » : elle existe ou elle n'existe
     // pas. Le registre le dit explicitement plutôt que de forcer un cas faux.

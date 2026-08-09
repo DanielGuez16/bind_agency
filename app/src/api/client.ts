@@ -76,6 +76,14 @@ export type OptionsDeRequete = {
   methode?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
   /** Sérialisé en JSON. Absent sur un GET. */
   corps?: unknown;
+  /**
+   * Un corps déjà formé, envoyé tel quel — un `FormData` pour un fichier.
+   *
+   * Distinct de `corps` parce que l'en-tête diffère : encoder une image en
+   * JSON la ferait grossir d'un tiers, et poser `Content-Type` à la main sur
+   * un `FormData` casse la frontière que la plateforme y écrit.
+   */
+  corpsBrut?: BodyInit;
   query?: Record<string, string | number | boolean | undefined | null | string[]>;
   /** Une route publique n'attache pas de jeton et ne déclenche pas de rotation. */
   publique?: boolean;
@@ -194,6 +202,8 @@ export class ApiClient {
     const acces = jetonForce ?? jetons?.access_token;
 
     const entetes: Record<string, string> = { Accept: 'application/json' };
+    // Jamais posé sur un corps brut : la plateforme y écrit la frontière du
+    // `multipart`, et l'écraser rend le corps illisible au serveur.
     if (options.corps !== undefined) entetes['Content-Type'] = 'application/json';
     if (acces) entetes.Authorization = `Bearer ${acces}`;
 
@@ -209,7 +219,9 @@ export class ApiClient {
       return await this.fetchImpl(this.url(chemin, options.query), {
         method: options.methode ?? 'GET',
         headers: entetes,
-        body: options.corps === undefined ? undefined : JSON.stringify(options.corps),
+        body:
+          options.corpsBrut ??
+          (options.corps === undefined ? undefined : JSON.stringify(options.corps)),
         signal: horloge.signal,
       });
     } catch (cause) {

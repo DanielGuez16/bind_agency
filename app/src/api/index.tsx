@@ -226,6 +226,47 @@ export class Api {
   }
 
   /**
+   * Soumet la preuve, une fois la capture déposée.
+   *
+   * Deux appels et non un : le téléversement échoue pour des raisons qui n'ont
+   * rien à voir avec la contrepartie — réseau, poids, format — et les mêler
+   * ferait remonter « preuve refusée » pour une image trop lourde.
+   */
+  soumettreLaPreuve(
+    collaborationId: string,
+    corps: { screenshot_key?: string; source_url?: string },
+  ) {
+    return this.client.request<Collaboration>(routes.soumettreLaPreuve(collaborationId), {
+      methode: 'POST',
+      corps,
+    });
+  }
+
+  /**
+   * Dépose une capture et rend sa clé.
+   *
+   * Passe par `FormData` et non par le corps JSON du client : une image ne
+   * s'encode pas en JSON sans la faire grossir d'un tiers, sur un réseau qui
+   * est souvent celui d'un salon.
+   */
+  televerserUneCapture(uri: string) {
+    const corps = new FormData();
+    // La forme attendue par React Native pour un fichier local. Le nom et le
+    // type sont indicatifs : le serveur lit les premiers octets, il ne les
+    // croit pas.
+    corps.append('fichier', {
+      uri,
+      name: 'capture.jpg',
+      type: 'image/jpeg',
+    } as unknown as Blob);
+
+    return this.client.request<{ screenshot_key: string }>(routes.televerserUneCapture(), {
+      methode: 'POST',
+      corpsBrut: corps,
+    });
+  }
+
+  /**
    * Le droit de regarder une preuve, pour quelques minutes.
    *
    * L'adresse rendue est relative : elle est complétée ici, comme celle d'un

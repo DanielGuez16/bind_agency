@@ -296,6 +296,14 @@ class Settings(BaseSettings):
     proof_fetch_timeout_seconds: float = 8.0
     proof_fetch_max_bytes: int = 15 * 1024 * 1024
     proof_fetch_max_redirects: int = 3
+
+    #: Le poids maximal d'une capture téléversée par la créatrice.
+    #:
+    #: Plus bas que la récupération par URL : celle-ci prend ce que la
+    #: plateforme sert, celle-là ce qu'un téléphone produit — et un téléphone
+    #: récent produit des images de vingt mégaoctets que personne n'a besoin
+    #: d'archiver pour vérifier une mention.
+    proof_upload_max_bytes: int = 8 * 1024 * 1024
     proof_fetch_allowed_types: CommaSeparated = [
         "image/jpeg",
         "image/png",

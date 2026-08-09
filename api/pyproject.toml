@@ -21,6 +21,9 @@ dependencies = [
     # est fait dans la méthode : le développement local n'en a pas besoin, mais
     # une dépendance optionnelle non déclarée se découvre en production.
     "aioboto3>=13.0",
+    # Téléversement de capture : FastAPI lève au démarrage sans lui, et le
+    # message ne parle que de « form data ».
+    "python-multipart>=0.0.9",
 ]
 
 [project.optional-dependencies]

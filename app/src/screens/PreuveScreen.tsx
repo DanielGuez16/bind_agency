@@ -11,6 +11,11 @@
  *
  * **Un refus de conformité rouvre avec une nouvelle échéance.** Il ne clôt
  * pas ; le dire autrement ferait croire à un dossier perdu.
+ *
+ * **La sélection de média vit ici, dépliée sur place.** Le bouton n'ouvrait
+ * rien : c'était le maillon final de la boucle, et il manquait. La déplier
+ * plutôt que d'ouvrir un écran garde l'échéance et le format exigé sous les
+ * yeux pendant qu'on choisit ce qu'on envoie.
  */
 import { useState } from 'react';
 import { View } from 'react-native';
@@ -19,19 +24,17 @@ import { useApi, type Collaboration } from '../api';
 import { Button, StatusMessage, Texte, TierBadge } from '../components';
 import { useI18n } from '../i18n';
 import { Ecran } from './Ecran';
+import { EnvoiDePreuve } from './EnvoiDePreuve';
 import { useRequete } from './useRequete';
 
 export function PreuveScreen({
   collaborationId,
-  onEnvoyer,
 }: {
   collaborationId: string;
-  /** Ouvre la sélection de média. La soumission elle-même est en phase 7. */
-  onEnvoyer: () => void;
 }) {
   const { api } = useApi();
   const { t } = useI18n();
-  const [envoi] = useState(false);
+  const [choisit, setChoisit] = useState(false);
 
   const requete = useRequete<Collaboration>(
     (signal) => api.contrepartie(collaborationId, signal),
@@ -82,13 +85,22 @@ export function PreuveScreen({
           {/* Le bouton n'existe que quand une soumission est attendue. Il est
               retiré, pas grisé, dans tous les autres cas. */}
           {contrepartie.status === 'pending' || contrepartie.status === 'resubmit_requested' ? (
-            <Button
-              label={t('parcours.preuveEnvoyer')}
-              size="lg"
-              loading={envoi}
-              onPress={onEnvoyer}
-              testID="envoyer"
-            />
+            choisit ? (
+              <EnvoiDePreuve
+                collaborationId={collaborationId}
+                onEnvoye={() => {
+                  setChoisit(false);
+                  requete.recharger();
+                }}
+              />
+            ) : (
+              <Button
+                label={t('parcours.preuveEnvoyer')}
+                size="lg"
+                onPress={() => setChoisit(true)}
+                testID="envoyer"
+              />
+            )
           ) : null}
         </View>
       )}
