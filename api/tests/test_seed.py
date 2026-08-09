@@ -931,3 +931,45 @@ def test_le_nom_seul_ne_suffit_pas_a_ouvrir() -> None:
     # L'autre sens : la distante passe, sinon le garde bloquerait tout et la
     # commande ne tournerait nulle part.
     verifier_la_cible(distante)
+
+
+def test_la_commande_de_deploiement_ne_migre_pas_deux_fois(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Le jeu de données fait table rase puis migre lui-même.
+
+    Migrer avant lui construisait un schéma pour le jeter à la ligne suivante :
+    sans conséquence, mais deux fois plus long sur une base distante, et une
+    sortie où la même chaîne défile deux fois ne se lit plus.
+    """
+    from scripts import deploiement
+
+    appels: list[str] = []
+    monkeypatch.setattr(deploiement, "migrer", lambda: appels.append("migrer"))
+    monkeypatch.setattr(deploiement.seed, "main", lambda: appels.append("seed") or 0)
+    monkeypatch.setattr(deploiement.seed, "verifier_l_hote", lambda _: None)
+    monkeypatch.setattr(deploiement.seed, "verifier_la_cible", lambda _: None)
+    monkeypatch.setattr(deploiement, "check_object_store_configuration", lambda: None)
+    monkeypatch.setattr(sys, "argv", ["deploiement", "--avec-jeu-de-donnees"])
+
+    assert deploiement.main() == 0
+    assert appels == ["seed"], "la migration autonome fait doublon avec la table rase"
+
+
+def test_la_commande_migre_seule_quand_on_ne_seme_pas(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """L'autre sens : sans le jeu de données, personne d'autre ne migre.
+
+    C'est le chemin de chaque fusion sur `main`.
+    """
+    from scripts import deploiement
+
+    appels: list[str] = []
+    monkeypatch.setattr(deploiement, "migrer", lambda: appels.append("migrer"))
+    monkeypatch.setattr(deploiement.seed, "main", lambda: appels.append("seed") or 0)
+    monkeypatch.setattr(deploiement.seed, "verifier_l_hote", lambda _: None)
+    monkeypatch.setattr(sys, "argv", ["deploiement"])
+
+    assert deploiement.main() == 0
+    assert appels == ["migrer"]

@@ -12,6 +12,12 @@ n'y figure jamais.
 **Le jeu de données est facultatif.** Migrer ne détruit rien ; semer détruit
 tout. Les réunir sans les séparer ferait effacer une base à chaque
 redéploiement, et un redéploiement arrive à chaque fusion.
+
+**Les deux chemins ne se recouvrent pas.** Le jeu de données fait table rase
+puis migre lui-même : migrer avant lui revenait à construire un schéma pour le
+jeter à la ligne suivante. Sans conséquence, mais deux fois plus long sur une
+base distante, et une sortie où la même chaîne de migrations défile deux fois ne
+se lit plus.
 """
 
 import argparse
@@ -71,15 +77,16 @@ def main() -> int:
         check_object_store_configuration()
         print(f"dépôt d'objets : {settings.object_store_provider}")
 
-    print("migrations…")
-    migrer()
-    print("migrations : à jour.")
-
     if not options.avec_jeu_de_donnees:
+        print("migrations…")
+        migrer()
+        print("migrations : à jour.")
         print("jeu de données : ignoré (passer --avec-jeu-de-donnees pour l'écrire).")
         return 0
 
-    print("jeu de données : effacement puis écriture…")
+    # Pas de `migrer()` ici : `seed.main()` fait table rase puis migre. Le
+    # faire avant construirait un schéma pour le jeter à la ligne suivante.
+    print("jeu de données : table rase, migrations, puis écriture…")
     return seed.main()
 
 

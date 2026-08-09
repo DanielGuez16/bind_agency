@@ -15,46 +15,100 @@ un MacBook, à titre indicatif.
 
 ## 0. L'environnement de démonstration en ligne
 
-> **Pas encore déployé.** Les adresses seront écrites ici une fois les trois
-> comptes créés. Tout le code est prêt ; il ne manque que les inscriptions.
-
 | Quoi | Adresse |
 |---|---|
-| App web | _à venir_ |
-| API | _à venir_ |
+| **App web** | https://bind-agency-1.onrender.com |
+| **API** | https://bind-agency.onrender.com |
 
-Cet environnement est **séparé du développement local** : autre base, autre
-stockage, autres identifiants. Rien de ce que vous faites ici ne touche votre
-machine, et rien de ce que vous faites sur votre machine ne le touche.
+Rien à lancer, rien à installer. Vous ouvrez la première adresse depuis
+n'importe quel appareil, sur n'importe quel réseau.
 
-`SOCIAL_PROVIDER=demo` y reste posé : les comptes sociaux sont simulés, la
-démonstration ne dépend pas d'une application Meta en revue et n'en consomme
-pas le quota.
+Les comptes sont ceux de la section 3, mot de passe compris.
 
-### Ce que ça change pour vous
+Cet environnement est **séparé du développement local** : autre base — chez
+Supabase — autre stockage, autres identifiants. Rien de ce que vous faites en
+ligne ne touche votre machine, et rien de ce que vous faites sur votre machine
+ne le touche.
 
-Vous ouvrez une adresse, depuis n'importe quel appareil, sans lancer quoi que ce
-soit. Plus de `make dev-lan`, plus de QR code, plus de « le téléphone et le Mac
-doivent être sur le même réseau ». Le développement local continue de
-fonctionner exactement comme avant, pour développer.
+`SOCIAL_PROVIDER=demo` y reste posé : les comptes sociaux sont simulés. La
+démonstration ne dépend pas d'une application Meta en revue et n'en consomme pas
+le quota.
+
+### Ce que ça change dans vos essais
+
+Plus de `make dev-lan`, plus de QR code, plus de « le téléphone et le Mac
+doivent être sur le même réseau », plus d'adresse IP qui change en changeant de
+Wi-Fi. Vous envoyez le lien à quelqu'un et il ouvre le produit.
+
+Le développement local ne bouge pas : `make dev`, `make app`, `make seed`, la
+base sur le port 5434. C'est là qu'on développe ; l'environnement en ligne est
+là qu'on montre.
 
 **Deux attentes à connaître.** L'API s'endort après quinze minutes sans trafic :
-la première ouverture met environ une minute, les suivantes sont immédiates. Et
-le projet de base se met en pause après sept jours sans activité — un clic dans
-le tableau de bord Supabase le réveille.
+la première ouverture met environ une minute — l'écran reste sur son
+chargement — les suivantes sont immédiates. Et le projet Supabase se met en
+pause après sept jours sans activité ; un clic dans son tableau de bord le
+réveille.
 
 ### Remettre le jeu de données à zéro, à distance
 
-Depuis le shell du service chez Render :
+Depuis `api/`, sur votre machine. Les variables du shell l'emportent sur
+`api/.env`, et rien de ce qui suit n'est écrit dans le dépôt :
 
 ```
-python -m scripts.deploiement --avec-jeu-de-donnees
+cd api
+
+export ENVIRONMENT=demo
+export DATABASE_URL='postgresql+psycopg://…@aws-0-RÉGION.pooler.supabase.com:5432/postgres'
+export SEED_DATABASE_NAME=postgres
+
+export OBJECT_STORE_PROVIDER=s3
+export OBJECT_STORE_BUCKET_PUBLIC=bind-public
+export OBJECT_STORE_BUCKET_PRIVE=bind-prive
+export OBJECT_STORE_ENDPOINT='https://…supabase.co/storage/v1/s3'
+export OBJECT_STORE_ACCESS_KEY='…'
+export OBJECT_STORE_SECRET_KEY='…'
+
+.venv/bin/python -m scripts.deploiement --avec-jeu-de-donnees
 ```
 
-Sans l'option, seules les migrations tournent — c'est ce qui se passe à chaque
-fusion sur `main`. La commande écrit d'abord l'environnement et la base qu'elle
-vise, et **refuse de semer** si `SEED_DATABASE_NAME` ne nomme pas exactement la
-base visée : effacer autre chose demanderait deux gestes délibérés.
+Trois pièges dans l'URL de base, dans l'ordre où ils mordent :
+
+1. **`+psycopg`.** Supabase donne `postgresql://`, il faut `postgresql+psycopg://`.
+2. **Le *session pooler*, pas la connexion directe.** `db.…supabase.co` n'est
+   joignable qu'en IPv6 ; depuis un poste en IPv4 la connexion pend sans rien
+   dire. Et pas le *transaction pooler* en `:6543`, qui ne supporte pas tout ce
+   que font les migrations.
+3. **Les quatre variables de dépôt sont obligatoires ici.** Sans elles, les
+   photos partiraient sur votre disque et l'API en ligne les rendrait
+   introuvables.
+
+Sans `--avec-jeu-de-donnees`, seules les migrations tournent — c'est ce qui se
+passe à chaque fusion sur `main`, automatiquement.
+
+### La ligne à lire
+
+La commande écrit ce qu'elle vise **avant** d'agir :
+
+```
+environnement : demo
+base          : aws-0-RÉGION.pooler.supabase.com/postgres
+dépôt d'objets : s3
+```
+
+Si la deuxième ligne dit `localhost`, la commande a déjà refusé et **rien n'a
+été touché** : un environnement déclaré distant qui vise la machine locale est
+rejeté avant la première écriture, migrations comprises. Le nom de la base ne
+suffirait pas à l'écarter — celui de Supabase est `postgres`, et une base locale
+peut porter le même.
+
+### Vérifier après coup
+
+```
+curl -s https://bind-agency.onrender.com/api/v1/health
+```
+
+doit répondre `{"status":"ok","dependencies":{"database":"ok"},"failed":[]}`.
 
 ---
 
