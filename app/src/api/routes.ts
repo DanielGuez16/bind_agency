@@ -65,6 +65,7 @@ export const routes = {
   // Deux temps : demander le droit, puis lire. Une balise d'image ne porte pas
   // d'en-tête d'autorisation ; le droit voyage donc dans l'adresse, et il est
   // court.
+  televerserUneCapture: () => chemin('/me/proof-uploads'),
   droitDeLireLaPreuve: (proofId: string) => chemin(`/proofs/${proofId}/access`),
 
   // ---- contrepartie ----
@@ -151,6 +152,7 @@ export const METHODES: Record<keyof typeof routes, ('GET' | 'POST' | 'PATCH' | '
     verifierLeCode: ['POST'],
     consommerLeCode: ['POST'],
 
+    televerserUneCapture: ['POST'],
     droitDeLireLaPreuve: ['GET'],
     contrepartie: ['GET'],
     soumettreLaPreuve: ['POST'],

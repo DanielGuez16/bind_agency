@@ -11,6 +11,7 @@ import { join } from 'path';
 
 import { catalogues } from '../src/i18n';
 import { en } from '../src/i18n/en';
+import { POIDS_MAXIMAL } from '../src/screens/EnvoiDePreuve';
 import { es } from '../src/i18n/es';
 
 function clesAplaties(objet: unknown, prefixe = ''): string[] {
@@ -128,4 +129,21 @@ describe('les codes du serveur ne s’affichent jamais bruts', () => {
       expect(Object.keys((es as Record<string, object>)[section])).toContain(valeur);
     }
   });
+});
+
+it('le plafond de téléversement de l’app vaut celui du serveur', () => {
+  // Recopié plutôt que demandé — une requête pour connaître une limite
+  // ajouterait un aller-retour à chaque ouverture d'écran. Le risque est qu'ils
+  // divergent : l'app laisserait alors partir un fichier que le serveur refuse,
+  // après l'attente de l'envoi.
+  const { readFileSync } = require('fs') as typeof import('fs');
+  const { join } = require('path') as typeof import('path');
+  const config = readFileSync(join(__dirname, '..', '..', 'api', 'app', 'core', 'config.py'), 'utf-8');
+
+  const ligne = /proof_upload_max_bytes: int = ([0-9 *]+)/.exec(config);
+  expect(ligne).not.toBeNull();
+  // eslint-disable-next-line no-eval
+  const serveur = eval(ligne![1]) as number;
+
+  expect(POIDS_MAXIMAL).toBe(serveur);
 });

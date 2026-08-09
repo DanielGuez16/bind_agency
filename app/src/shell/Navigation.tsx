@@ -287,13 +287,7 @@ function PileDesReservations() {
 
       <PileReservations.Screen name="Preuve">
         {({ route }) => (
-          <PreuveScreen
-            collaborationId={route.params.collaborationId}
-            // La sélection de média n'existe pas encore : le bouton est là,
-            // il ne fait rien. Le dire ici plutôt que de le retirer, parce que
-            // l'écran doit continuer de montrer son état.
-            onEnvoyer={() => {}}
-          />
+          <PreuveScreen collaborationId={route.params.collaborationId} />
         )}
       </PileReservations.Screen>
     </PileReservations.Navigator>

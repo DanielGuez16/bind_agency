@@ -110,6 +110,12 @@ class ErrorCode(StrEnum):
     COLLABORATION_NOT_OPEN = "collaboration_not_open"
     COLLABORATION_NOT_IN_REVIEW = "collaboration_not_in_review"
     PROOF_NOTHING_ARCHIVED = "proof_nothing_archived"
+    #: La capture dépasse le poids accepté.
+    PROOF_TOO_LARGE = "proof_too_large"
+    #: Un format qu'on ne sait pas relire ne sert pas de preuve.
+    PROOF_UNSUPPORTED_TYPE = "proof_unsupported_type"
+    #: Le dépôt d'objets n'a pas répondu. Distinct d'un refus métier.
+    PROOF_STORAGE_UNAVAILABLE = "proof_storage_unavailable"
     PROOF_ALREADY_SUBMITTED = "proof_already_submitted"
 
     # Abonnement du commerce
