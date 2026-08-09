@@ -894,13 +894,16 @@ def test_un_environnement_distant_qui_vise_la_machine_locale_est_refuse(hote: st
     développement. Le nom seul ne l'aurait pas vu — celui de Supabase est
     `postgres`, et une base locale peut porter le même.
     """
+    # Une IPv6 se met entre crochets dans une URL ; sans eux, l'analyse échoue
+    # avant même d'arriver au garde-fou, et le test passerait pour la mauvaise
+    # raison.
+    ecrit = f"[{hote}]" if ":" in hote else hote
+
     with pytest.raises(SeedRefused, match="base de développement"):
         verifier_la_cible(
             _reglages(
                 environment="demo",
-                # Une IPv6 se met entre crochets dans une URL ; sans eux,
-                # l'analyse échoue avant même d'arriver au garde-fou.
-                database_url=f"postgresql+psycopg://x:y@{'[' + hote + ']' if ':' in hote else hote}:5432/postgres",
+                database_url=f"postgresql+psycopg://x:y@{ecrit}:5432/postgres",
                 seed_database_name="postgres",
             )
         )
