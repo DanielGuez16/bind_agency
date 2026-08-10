@@ -44,6 +44,17 @@ from app.integrations.object_store import (
 )
 
 
+def _valeurs(fichier: Path) -> dict[str, str]:
+    """Les couples nom / valeur d'un fichier d'environnement, commentaires exclus."""
+    valeurs: dict[str, str] = {}
+    for ligne in fichier.read_text(encoding="utf-8").splitlines():
+        nue = ligne.strip()
+        if nue and not nue.startswith("#") and "=" in nue:
+            nom, valeur = nue.split("=", 1)
+            valeurs[nom.strip()] = valeur.strip()
+    return valeurs
+
+
 def variables_attendues(exemple: Path) -> list[str]:
     """Les noms de variables que le fichier d'exemple déclare.
 
@@ -51,12 +62,7 @@ def variables_attendues(exemple: Path) -> list[str]:
     finiraient par diverger, et c'est celle du code qui manquerait la variable
     ajoutée au modèle.
     """
-    noms = []
-    for ligne in exemple.read_text(encoding="utf-8").splitlines():
-        nue = ligne.strip()
-        if nue and not nue.startswith("#") and "=" in nue:
-            noms.append(nue.split("=", 1)[0].strip())
-    return noms
+    return list(_valeurs(exemple))
 
 
 def charger(fichier: Path) -> None:
@@ -74,12 +80,19 @@ def charger(fichier: Path) -> None:
         )
 
     exemple = fichier.parent / f"{fichier.name}.example"
-    valeurs = {}
-    for ligne in fichier.read_text(encoding="utf-8").splitlines():
-        nue = ligne.strip()
-        if nue and not nue.startswith("#") and "=" in nue:
-            nom, valeur = nue.split("=", 1)
-            valeurs[nom.strip()] = valeur.strip()
+    valeurs = _valeurs(fichier)
+
+    # **Le modèle versionné ne porte jamais de valeur.** Rempli à la place du
+    # fichier ignoré — deux noms qui ne diffèrent que par un suffixe —, il
+    # emporte des identifiants dans l'historique du dépôt, d'où rien ne les
+    # sort. Le refus arrive avant la première écriture, et avant le commit.
+    portees = [nom for nom, valeur in _valeurs(exemple).items() if valeur]
+    if portees:
+        raise SystemExit(
+            f"{exemple} porte des valeurs : {', '.join(portees)}.\n"
+            "Ce fichier est versionné. Les valeurs vont dans "
+            f"{fichier.name}, qui est ignoré par git. Rien n'a été touché."
+        )
 
     manquantes = [nom for nom in variables_attendues(exemple) if not valeurs.get(nom, "").strip()]
     if manquantes:
