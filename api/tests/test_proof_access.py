@@ -97,6 +97,36 @@ async def test_le_commerce_concerne_obtient_son_droit(
     assert 0 < corps["expires_in"] <= 3600
 
 
+async def test_l_adresse_rendue_ouvre_l_objet_telle_quelle(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """**Empruntée, et non reconstruite.**
+
+    Le chemin était écrit à la main dans la réponse, sans le préfixe de
+    version. Le client le complétait avec l'origine de l'API et tombait sur un
+    404 : côté commerce, l'aperçu restait un bloc gris et le salon approuvait
+    sans voir la publication.
+
+    Aucun test ne pouvait le voir : chacun extrayait le jeton de l'adresse et
+    reconstruisait le chemin lui-même, ce qui prouvait que le jeton ouvrait —
+    jamais que l'adresse rendue menait quelque part.
+    """
+    s = await scene(session)
+
+    droit = await client.get(
+        f"{PREFIX}/proofs/{s['preuve'].id}/access",
+        headers=await entetes(client, s["membre"]),
+    )
+    assert droit.status_code == 200, droit.text
+
+    # Telle quelle. Le client ne fait qu'y accoler l'origine de l'API.
+    reponse = await client.get(droit.json()["url"])
+
+    assert reponse.status_code == 200, reponse.text
+    assert reponse.headers["content-type"].startswith("image/")
+    assert reponse.content
+
+
 async def test_un_autre_commerce_n_obtient_rien(client: AsyncClient, session: AsyncSession) -> None:
     """404 et non 403 : distinguer les deux dirait quels identifiants existent."""
     s = await scene(session)
@@ -225,12 +255,12 @@ async def test_le_droit_tombe_avec_l_appartenance(
         f"{PREFIX}/proofs/{s['preuve'].id}/access",
         headers=await entetes(client, s["membre"]),
     )
-    jeton = droit.json()["url"].split("t=")[1]
+    adresse = droit.json()["url"]
 
     await session.execute(sa.delete(BusinessMember).where(BusinessMember.user_id == s["membre"].id))
     await session.commit()
 
-    reponse = await client.get(f"{PREFIX}/proofs/{s['preuve'].id}", params={"t": jeton})
+    reponse = await client.get(adresse)
 
     assert reponse.status_code == 404
 

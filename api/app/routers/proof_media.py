@@ -12,12 +12,18 @@ Un fournisseur qui change ne change rien à ce que voit l'app.
 
 **Le droit se vérifie deux fois** : à l'émission et à la lecture. Quelques
 minutes suffisent à perdre l'appartenance qui l'a justifié.
+
+**L'adresse rendue est celle de la route montée, calculée et non écrite.** Elle
+l'était à la main, sans le préfixe de version : le client la complétait avec
+l'origine de l'API et tombait sur un 404. Côté commerce, l'aperçu restait un
+bloc gris, et le salon approuvait sans voir la publication. Une adresse écrite
+en dur ne suit pas le montage ; celle-ci en vient.
 """
 
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Path, Query, Response, status
+from fastapi import APIRouter, Path, Query, Request, Response, status
 from pydantic import BaseModel
 
 from app.core.dependencies import CurrentUser, SessionDep
@@ -46,6 +52,7 @@ class DroitDeLecture(BaseModel):
 @router.get("/proofs/{proof_id}/access", response_model=DroitDeLecture)
 async def demander_le_droit(
     proof_id: Annotated[uuid.UUID, Path()],
+    request: Request,
     user: CurrentUser,
     session: SessionDep,
 ) -> DroitDeLecture:
@@ -60,7 +67,11 @@ async def demander_le_droit(
     except proof_access.ProofNotFound as error:
         raise api_error(status.HTTP_404_NOT_FOUND, ErrorCode.NOT_FOUND) from error
 
-    return DroitDeLecture(url=f"/proofs/{proof_id}?t={jeton}", expires_in=duree)
+    # `url_path_for` et non une f-string : le chemin vient du montage, préfixe
+    # de version compris. Écrit à la main, il l'omettait — et rien ne le disait
+    # tant que personne n'empruntait l'adresse rendue.
+    chemin = request.app.url_path_for("lire_la_preuve", proof_id=proof_id)
+    return DroitDeLecture(url=f"{chemin}?t={jeton}", expires_in=duree)
 
 
 @router.get("/proofs/{proof_id}")

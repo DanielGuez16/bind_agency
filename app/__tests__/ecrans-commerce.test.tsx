@@ -12,7 +12,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import type { ReactElement, ReactNode } from 'react';
 
-import { ApiClient, ApiProvider } from '../src/api';
+import { ApiClient, ApiProvider, PREFIXE } from '../src/api';
 import { I18nProvider } from '../src/i18n';
 import { en } from '../src/i18n/en';
 import { ThemeProvider, type Role } from '../src/theme';
@@ -550,7 +550,10 @@ describe('arbitrage', () => {
       <ArbitrageScreen />,
       clientDe({
         '/admin/collaborations/review': [DOSSIER_EN_ARBITRAGE],
-        '/proofs/p1/access': { url: '/proofs/p1?t=jeton', expires_in: 300 },
+        // Le chemin complet, préfixe de version compris, tel que le serveur le
+        // calcule depuis la route montée. Le décor l'écrivait sans préfixe, ce
+        // que le serveur faisait aussi — et l'aperçu tombait sur un 404 en ligne.
+        '/proofs/p1/access': { url: `${PREFIXE}/proofs/p1?t=jeton`, expires_in: 300 },
       }),
       'admin',
     );
