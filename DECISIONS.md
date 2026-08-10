@@ -2653,3 +2653,32 @@ Ce qui est automatisé, c'est le **constat** : tout média rangé au-delà de 8 
 est signalé nommément à la fin du semis, et un test l'érige en condition. Le
 seuil ne refuse rien — le semis ne décide pas qu'une démonstration ne peut pas
 avoir lieu — mais un média trop lourd ne se découvre plus devant quelqu'un.
+## 2026-08-10 — Une erreur de dépôt porte le statut HTTP, le compartiment et la clé
+
+`ObjectStoreError` disait « dépôt S3 refusé : ClientError », et l'exception
+sous-jacente affichait « An error occurred () » — code et message vides. C'est
+ce que produit `botocore` quand le corps de la réponse n'est pas le XML S3
+attendu, ce que fait Supabase sur ses propres refus. Deux diagnostics ont été
+perdus dessus.
+
+Le **statut HTTP est présent même quand le reste est vide**. Il est désormais
+extrait, avec le compartiment visé, la clé et la taille : `http=413, sur
+bind-prive, 62914560 octets` se lit d'un coup, là où le texte nu laissait
+soupçonner un problème de droits.
+
+Conséquence trouvée en chemin : `lire` détectait une absence en cherchant
+« 404 » dans le **texte** de l'exception. Message vide, donc jamais trouvé — un
+objet absent remontait en panne, et `GET /media/{clé}` rendait 503 au lieu de
+404. La décision se prend maintenant sur le statut.
+
+## 2026-08-10 — La sonde de déploiement éprouve le gabarit, pas seulement la joignabilité
+
+Un témoin de vingt octets prouve qu'un compartiment existe et répond. Il ne
+prouve rien de sa **limite de taille par fichier**, que Supabase fixe par
+compartiment : le témoin passe, et le refus arrive plus tard sur une vraie
+preuve, envoyée par un vrai créateur, qu'on ne peut pas lui redemander.
+
+La sonde dépose donc en plus une charge à `proof_fetch_max_bytes` — la plus
+grosse chose que le produit puisse ranger — et la retire aussitôt, pour ne pas
+faire grossir le dépôt à chaque déploiement. Un 413 y est traduit en clair, avec
+les deux façons d'en sortir.

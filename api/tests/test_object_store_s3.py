@@ -209,6 +209,7 @@ class FauxDepotAsymetrique:
     def __init__(self, *, rend: bool) -> None:
         self.rend = rend
         self.ecrits: list[str] = []
+        self.retires: list[str] = []
 
     async def deposer(self, contenu: bytes, *, prefixe: str) -> str:
         self.ecrits.append(prefixe)
@@ -216,6 +217,9 @@ class FauxDepotAsymetrique:
 
     async def lire(self, cle: str) -> bytes | None:
         return object_store.TEMOIN if self.rend else None
+
+    async def supprimer(self, cle: str) -> None:
+        self.retires.append(cle)
 
 
 @pytest.mark.anyio
@@ -228,8 +232,20 @@ async def test_l_aller_retour_ecrit_dans_les_deux_compartiments(
 
     await object_store.verifier_les_deux_compartiments()
 
-    # Les deux, pas seulement celui qu'on regarde en premier.
-    assert faux.ecrits == ["photos/temoin", "proofs/temoin"]
+    # Les deux, pas seulement celui qu'on regarde en premier. Et pour chacun,
+    # le témoin d'aller-retour **puis** la charge au gabarit du produit : un
+    # témoin de vingt octets passe sur un compartiment dont la limite de taille
+    # est inférieure à ce qu'on y déposera vraiment.
+    assert faux.ecrits == [
+        "photos/temoin",
+        "photos/temoin-gabarit",
+        "proofs/temoin",
+        "proofs/temoin-gabarit",
+    ]
+
+    # La charge est retirée : la garder ferait grossir le dépôt de quinze
+    # mégaoctets à chaque déploiement.
+    assert len(faux.retires) == 2
 
 
 @pytest.mark.anyio
@@ -260,3 +276,100 @@ async def test_l_aller_retour_ne_concerne_que_le_mode_s3(
     monkeypatch.setattr(object_store, "get_object_store", MemoryObjectStore)
 
     await object_store.verifier_les_deux_compartiments()
+
+
+# --------------------------------------------------------------------------
+# ce que le serveur répond, quand il le dit mal
+# --------------------------------------------------------------------------
+
+
+def _client_error(statut: int, *, code: str = "", message: str = ""):
+    """Une `ClientError` comme en rend un fournisseur compatible S3.
+
+    Le cas qui compte est celui où le corps de la réponse n'est pas le XML
+    attendu : `botocore` construit alors une erreur dont le code et le message
+    sont **vides**, et dont le texte est « An error occurred () ». Seul le
+    statut HTTP reste. C'est ce que renvoie Supabase, et c'est ce sur quoi le
+    code doit décider.
+    """
+    from botocore.exceptions import ClientError
+
+    return ClientError(
+        {
+            "Error": {"Code": code, "Message": message},
+            "ResponseMetadata": {"HTTPStatusCode": statut},
+        },
+        "PutObject",
+    )
+
+
+class FauxClientQuiRefuse(FauxClientS3):
+    def __init__(self, erreur: Exception) -> None:
+        super().__init__()
+        self.erreur = erreur
+
+    async def put_object(self, *, Bucket, Key, Body):  # noqa: N803
+        raise self.erreur
+
+    async def get_object(self, *, Bucket, Key):  # noqa: N803
+        raise self.erreur
+
+
+def _depot(client) -> object_store.S3ObjectStore:
+    depot = object_store.S3ObjectStore(
+        public="bind-public",
+        prive="bind-prive",
+        endpoint="https://exemple.test",
+        region="us-east-1",
+        access_key="cle",
+        secret_key="secret",
+        duree_signature=600,
+    )
+    depot._client = lambda: client  # noqa: SLF001
+    return depot
+
+
+@pytest.mark.anyio
+async def test_un_refus_muet_dit_quand_meme_le_statut_et_le_compartiment() -> None:
+    """« dépôt S3 refusé : ClientError » n'oriente vers rien.
+
+    On a perdu deux fois du temps sur le compartiment privé faute de savoir ce
+    que le serveur répondait. Le statut est là même quand le code et le message
+    sont vides — et 413 se lit tout de suite comme une charge refusée, là où le
+    texte nu laisse croire à un problème de droits.
+    """
+    depot = _depot(FauxClientQuiRefuse(_client_error(413)))
+
+    with pytest.raises(object_store.ObjectStoreError) as refus:
+        await depot.deposer(b"x" * 2048, prefixe="proofs/upload")
+
+    dit = str(refus.value)
+    assert "http=413" in dit
+    assert "bind-prive" in dit, "le compartiment visé manque, on cherche du mauvais côté"
+    assert "2048 octets" in dit, "la taille manque, alors que c'est elle qui est refusée"
+    assert "PutObject" in dit
+
+
+@pytest.mark.anyio
+async def test_un_objet_absent_reste_une_absence_meme_sans_message() -> None:
+    """Le statut, jamais le texte.
+
+    La détection cherchait « 404 » dans le message de l'exception. Chez un
+    fournisseur qui répond un corps non conforme, ce message est vide : un objet
+    simplement absent remontait en panne, la route de média rendait 503 au lieu
+    de 404, et l'app affichait une erreur au lieu de son repli d'image.
+    """
+    depot = _depot(FauxClientQuiRefuse(_client_error(404)))
+
+    assert await depot.lire("photos/business/2026-01-01/absente") is None
+
+
+@pytest.mark.anyio
+async def test_une_vraie_panne_de_lecture_ne_passe_pas_pour_une_absence() -> None:
+    """L'inverse du test précédent, sans quoi il serait satisfait par un `return None` nu."""
+    depot = _depot(FauxClientQuiRefuse(_client_error(500)))
+
+    with pytest.raises(object_store.ObjectStoreError) as panne:
+        await depot.lire("photos/business/2026-01-01/illisible")
+
+    assert "http=500" in str(panne.value)
