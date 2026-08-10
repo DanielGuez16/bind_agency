@@ -365,6 +365,13 @@ async def test_un_creneau_deja_pris_est_refuse(session: AsyncSession) -> None:
 # --------------------------------------------------------------------------
 
 
+@pytest.mark.ecrit_pour_de_bon(
+    "deux transactions réellement concurrentes sur un verrou consultatif : la "
+    "transaction annulée des autres tests les rendrait invisibles l'une à "
+    "l'autre, et il n'y aurait plus rien à sérialiser. Le décor est retiré à la "
+    "main dans le `finally` ; seuls restent les comptes, que le journal d'audit "
+    "immuable retient."
+)
 async def test_deux_reservations_simultanees_sur_la_derniere_place(
     engine: AsyncEngine,
 ) -> None:
