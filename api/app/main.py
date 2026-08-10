@@ -35,6 +35,7 @@ from app.routers import (
     media,
     menu_import,
     plans,
+    platform_assets,
     proof_media,
     proof_upload,
     redemption,
@@ -128,6 +129,7 @@ def create_app() -> FastAPI:
     application.include_router(audience.router, prefix=settings.api_v1_prefix)
     application.include_router(reporting.router, prefix=settings.api_v1_prefix)
     application.include_router(subscription.router, prefix=settings.api_v1_prefix)
+    application.include_router(platform_assets.router, prefix=settings.api_v1_prefix)
     application.include_router(media.router, prefix=settings.api_v1_prefix)
     application.include_router(proof_media.router, prefix=settings.api_v1_prefix)
     application.include_router(proof_upload.router, prefix=settings.api_v1_prefix)

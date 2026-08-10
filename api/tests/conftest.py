@@ -96,6 +96,91 @@ def _managed_test_database(test_database_url: str) -> Iterator[None]:
         connection.execute(drop)
 
 
+#: Tables qu'aucune migration ne peuple : à la fin d'un test, elles doivent être
+#: vides. `tier`, `subscription_plan` et consorts en sont exclues, leurs lignes
+#: de référence étant posées par les migrations et donc légitimement présentes.
+#:
+#: Le journal d'audit y figure : c'est souvent lui qui reste seul debout quand
+#: une écriture a fui, parce qu'aucun test ne pense à le regarder.
+TABLES_QUI_DOIVENT_RESTER_VIDES = (
+    "app_user",
+    "business",
+    "catalog_item",
+    "booking",
+    "collaboration",
+    "audit_log",
+    "platform_asset",
+)
+
+
+def _compter_les_lignes(test_database_url: str) -> dict[str, int]:
+    """Le nombre de lignes de chaque table surveillée, **hors** transaction de test.
+
+    Synchrone, sur une connexion à elle : passer par un moteur de la suite la
+    ferait participer à la transaction qu'on veut justement observer du dehors,
+    et elle ne verrait jamais que ce que le test croit avoir écrit.
+    """
+    dsn = make_url(test_database_url).set(drivername="postgresql")
+    requete = sa.union_all(
+        *(
+            sa.select(sa.literal(nom).label("table"), sa.func.count().label("lignes")).select_from(
+                sa.table(nom)
+            )
+            for nom in TABLES_QUI_DOIVENT_RESTER_VIDES
+        )
+    )
+
+    sql_texte = str(requete.compile(compile_kwargs={"literal_binds": True}))
+    with psycopg.connect(dsn.render_as_string(hide_password=False), autocommit=True) as connexion:
+        return dict(connexion.execute(sql_texte).fetchall())
+
+
+@pytest.fixture(autouse=True)
+def _aucune_ecriture_ne_survit(test_database_url: str, request: pytest.FixtureRequest) -> Iterator:
+    """Aucun test ne laisse de ligne derrière lui. Vérifié après **chaque** test.
+
+    La transaction du test est annulée par la fixture `conn`, et c'est ce qui
+    isole les tests les uns des autres. Un `commit()` mal placé la valide
+    pourtant pour de bon : les écritures survivent, les tests suivants en
+    héritent, et la suite devient non déterministe — un passage donne douze
+    échecs, le suivant quarante, et chaque fichier passe seul. On cherche alors
+    quatorze défauts là où il n'y en a qu'un, et on les cherche partout sauf là
+    où ils sont.
+
+    D'où cette garde. Elle ne corrige rien : elle **nomme** le test fautif, à
+    l'instant où il fuit, au lieu de laisser le symptôme apparaître ailleurs.
+
+    **Elle compare un avant et un après, jamais un absolu.** Un résidu laissé
+    par un test antérieur ferait échouer tous les suivants, et le premier nom
+    affiché serait le seul innocent du lot. La différence, elle, ne désigne que
+    celui qui a écrit.
+
+    Un test qui doit écrire pour de bon — il en existe un, celui du verrou
+    consultatif, qui a besoin de deux transactions réellement concurrentes — le
+    déclare avec `@pytest.mark.ecrit_pour_de_bon("raison")`. La dérogation est
+    alors visible à la relecture, ce qu'un contournement silencieux ne serait
+    pas.
+    """
+    derogation = request.node.get_closest_marker("ecrit_pour_de_bon")
+    if derogation is not None:
+        yield
+        return
+
+    avant = _compter_les_lignes(test_database_url)
+    yield
+    apres = _compter_les_lignes(test_database_url)
+
+    fuites = {nom: apres[nom] - avant[nom] for nom in apres if apres[nom] > avant[nom]}
+
+    assert not fuites, (
+        f"des écritures ont survécu à la transaction du test : {fuites}. "
+        "Un commit() dans un test valide la transaction que la fixture `conn` "
+        "devait annuler ; utiliser flush() pour rendre une écriture visible "
+        "sans la valider. Si l'écriture doit vraiment survivre, la déclarer "
+        'avec @pytest.mark.ecrit_pour_de_bon("raison").'
+    )
+
+
 @pytest.fixture
 async def engine(test_database_url: str) -> AsyncIterator[AsyncEngine]:
     """NullPool : pas de connexion résiduelle qui empêcherait le DROP DATABASE final."""

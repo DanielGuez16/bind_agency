@@ -683,7 +683,11 @@ async def test_une_reconnexion_ne_replanifie_pas(
         ),
         {"createur": compte["user_id"]},
     )
-    await conn.commit()
+    # Pas de `commit()` ici. La route et le test partagent cette connexion :
+    # l'écriture est déjà visible des deux côtés. Valider la validait **pour de
+    # bon**, la transaction que la fixture devait annuler passait en base, et
+    # les tests suivants héritaient d'un créateur fantôme — un échec ailleurs,
+    # sous une erreur qui ne dit rien.
 
     await revenir(client_ig, await demarrer(client_ig, compte))
 

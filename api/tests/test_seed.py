@@ -38,6 +38,7 @@ from app.models import (
     Collaboration,
     CreatorProfile,
     Job,
+    PlatformAsset,
     SocialAccount,
     SocialMetricsSnapshot,
     SubscriptionPlan,
@@ -49,6 +50,7 @@ from app.models.enums import (
     ActorKind,
     BillingInterval,
     BookingStatus,
+    BusinessCategory,
     BusinessMemberRole,
     BusinessStatus,
     CollaborationStatus,
@@ -148,6 +150,39 @@ def test_elle_annonce_ce_qu_elle_a_pose(base_jetable: str) -> None:
     assert "5 créateurs" in resultat.stdout
     assert "contreparties" in resultat.stdout
     assert MOT_DE_PASSE in resultat.stdout
+
+
+def test_elle_distingue_les_vraies_photos_des_degrades(base_jetable: str) -> None:
+    """Le décompte des deux, et les chemins de ce qui manque.
+
+    Ce test tient dans les deux situations, et c'est voulu : ici les photos
+    peuvent être présentes, en intégration continue elles ne le sont jamais.
+    Ce qu'il vérifie, c'est que le semis **dit** dans quel cas il est — sans
+    quoi personne ne saurait qu'il regarde des dégradés.
+    """
+    resultat = _lancer(base_jetable)
+
+    assert "fournies" in resultat.stdout
+    assert "générées faute de fichier" in resultat.stdout
+
+    if "0 générées" not in resultat.stdout:
+        # Le cas de l'intégration continue : chaque absence est nommée, avec un
+        # chemin utilisable tel quel. Un décompte seul n'apprendrait pas quoi
+        # aller chercher.
+        assert "Fichiers absents de assets/photos/" in resultat.stdout
+        assert ".jpg" in resultat.stdout
+
+
+def test_aucun_media_n_est_trop_lourd(base_jetable: str) -> None:
+    """Un média de quarante mégaoctets laisse l'écran vide sur un réseau mobile.
+
+    Le semis ne refuse rien — il n'a pas à décider qu'une démonstration ne peut
+    pas avoir lieu — mais il le dit, et ce test fait de ce signalement une
+    condition et non une remarque à lire dans un journal.
+    """
+    resultat = _lancer(base_jetable)
+
+    assert "Médias lourds" not in resultat.stdout, resultat.stdout
 
 
 # --------------------------------------------------------------------------
@@ -692,6 +727,13 @@ async def test_un_job_epuise_attend_dans_le_back_office(seed_conn: AsyncConnecti
     assert epuises[0].attempts > 1, "un job épuisé sans tentative n'a pas été essayé"
 
 
+#: Les deux formes qu'une clé de photo peut prendre. Le suffixe `genere/` dit
+#: qu'aucun fichier n'a été trouvé et qu'un dégradé a pris la place — c'est
+#: toujours le cas en intégration continue, où `assets/photos/` est vide.
+def _clef_de_photo(cle: str, famille: str) -> bool:
+    return cle.startswith((f"photos/{famille}/", f"photos/genere/{famille}/"))
+
+
 async def test_les_photos_sont_posees_et_relisibles(seed_conn: AsyncConnection) -> None:
     """Une clé sans objet derrière laisserait un repli d'image partout."""
     couvertures = (
@@ -705,7 +747,7 @@ async def test_les_photos_sont_posees_et_relisibles(seed_conn: AsyncConnection) 
     )
 
     assert couvertures, "aucun commerce n'a de couverture"
-    assert all(cle.startswith("photos/business/") for cle in couvertures)
+    assert all(_clef_de_photo(cle, "business") for cle in couvertures)
 
     items = (
         (
@@ -717,6 +759,73 @@ async def test_les_photos_sont_posees_et_relisibles(seed_conn: AsyncConnection) 
         .all()
     )
     assert items, "aucune prestation n'a de photo"
+    assert all(_clef_de_photo(cle, "item") for cle in items)
+
+
+async def test_seule_la_gamme_parente_reste_sans_photo(seed_conn: AsyncConnection) -> None:
+    """Tout ce qui s'affiche porte une image, et rien d'autre.
+
+    Restreindre aux prestations réservables laissait sans photo le vernis à
+    emporter de Wynwood — pourtant proposé au palier TikTok, donc bien présent
+    dans le fil. Ce qui écarte le parent d'une gamme, c'est **ce qu'il est** :
+    un item qui a des variantes, et qui ne s'affiche jamais seul.
+    """
+    parents = sa.select(CatalogItem.parent_item_id).where(CatalogItem.parent_item_id.is_not(None))
+
+    sans_photo = (
+        (
+            await seed_conn.execute(
+                sa.select(CatalogItem.name).where(
+                    CatalogItem.photo_key.is_(None), CatalogItem.id.not_in(parents)
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    assert not sans_photo, f"des prestations affichables n'ont pas de photo : {sans_photo}"
+
+    gammes = (
+        (
+            await seed_conn.execute(
+                sa.select(CatalogItem.photo_key).where(CatalogItem.id.in_(parents))
+            )
+        )
+        .scalars()
+        .all()
+    )
+    assert gammes, "le jeu n'a plus de gamme à variantes"
+    assert all(cle is None for cle in gammes), "un parent de gamme a reçu une image invisible"
+
+
+async def test_les_six_categories_ont_leur_pastille(seed_conn: AsyncConnection) -> None:
+    """Elles n'appartiennent à aucun commerce : sans elles, Discovery n'a pas d'en-tête.
+
+    Les six, et pas seulement celles du lancement : une catégorie sans commerce
+    reste un filtre que l'écran propose.
+    """
+    posees = dict(
+        (
+            await seed_conn.execute(
+                sa.select(PlatformAsset.slug, PlatformAsset.object_key).where(
+                    PlatformAsset.slug.startswith("category/")
+                )
+            )
+        ).all()
+    )
+
+    assert set(posees) == {f"category/{categorie.value}" for categorie in BusinessCategory}
+    assert all(_clef_de_photo(cle, "category") for cle in posees.values())
+
+
+async def test_l_accueil_a_au_moins_son_affiche(seed_conn: AsyncConnection) -> None:
+    """La vidéo peut manquer, l'affiche jamais — c'est elle le substitut."""
+    affiche = await seed_conn.scalar(
+        sa.select(PlatformAsset.object_key).where(PlatformAsset.slug == "home/video-poster")
+    )
+
+    assert affiche is not None
+    assert _clef_de_photo(affiche, "home")
 
 
 async def test_un_commerce_n_a_rien_compose(seed_conn: AsyncConnection) -> None:

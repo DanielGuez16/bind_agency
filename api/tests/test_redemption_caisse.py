@@ -10,6 +10,7 @@ même instant. Une seule consomme.
 import asyncio
 import uuid
 
+import pytest
 import sqlalchemy as sa
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
@@ -268,6 +269,12 @@ async def test_une_caisse_d_un_autre_commerce_ne_consomme_rien(
 # --------------------------------------------------------------------------
 
 
+@pytest.mark.ecrit_pour_de_bon(
+    "deux connexions réelles scannent le même code au même instant : dans la "
+    "transaction annulée des autres tests, la seconde ne verrait pas la "
+    "première et il n'y aurait rien à sérialiser. Le décor est retiré dans le "
+    "`finally` ; seuls restent les comptes, que le journal d'audit retient."
+)
 async def test_deux_caisses_qui_scannent_au_meme_instant(engine: AsyncEngine) -> None:
     """Une seule consomme.
 

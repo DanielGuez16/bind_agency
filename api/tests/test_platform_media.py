@@ -1,0 +1,120 @@
+"""Les médias qui appartiennent à la plateforme, et à aucun commerce.
+
+Six pastilles de catégorie et le média d'accueil. Aucune ligne de `business` ne
+peut porter leur clé, d'où une table à part — et d'où ces tests, qui vérifient
+surtout ce que la route rend quand **rien** n'a été posé : c'est l'état d'une
+base fraîchement migrée, et celui de tout environnement où le semis n'a pas
+tourné.
+"""
+
+import uuid
+
+import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.config import get_settings
+from app.models.enums import BusinessCategory, UserRole
+from app.services import platform_assets as service
+
+PREFIX = get_settings().api_v1_prefix
+
+
+async def entetes(client: AsyncClient, role: UserRole = UserRole.CREATOR) -> dict:
+    email, password = f"{uuid.uuid4()}@example.com", "un-mot-de-passe-solide-42"
+    await client.post(
+        f"{PREFIX}/auth/register",
+        json={"email": email, "password": password, "role": role.value},
+    )
+    jetons = (
+        await client.post(f"{PREFIX}/auth/login", json={"email": email, "password": password})
+    ).json()
+    return {"Authorization": f"Bearer {jetons['access_token']}"}
+
+
+async def test_les_six_categories_repondent_meme_sans_photo(client: AsyncClient) -> None:
+    """Le `None` est une réponse ; l'absence de ligne n'en serait pas une.
+
+    Ne rendre que les catégories qui ont une image ferait disparaître les
+    autres de Discovery parce qu'un fichier manque — un filtre qu'on ne peut
+    plus choisir se serait évaporé sans que rien ne le dise.
+    """
+    reponse = await client.get(f"{PREFIX}/platform-media", headers=await entetes(client))
+
+    assert reponse.status_code == 200
+    categories = reponse.json()["categories"]
+    assert [ligne["category"] for ligne in categories] == [c.value for c in BusinessCategory]
+    assert all(ligne["photo_key"] is None for ligne in categories)
+    assert reponse.json()["home"] == {"video_key": None, "poster_key": None}
+
+
+async def test_une_photo_posee_ressort_sur_sa_categorie(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    await service.poser(
+        session,
+        slug=service.slug_de_categorie(BusinessCategory.FITNESS),
+        object_key="photos/category/2026-08-10/abc",
+    )
+    await session.commit()
+
+    reponse = await client.get(f"{PREFIX}/platform-media", headers=await entetes(client))
+
+    par_categorie = {
+        ligne["category"]: ligne["photo_key"] for ligne in reponse.json()["categories"]
+    }
+    assert par_categorie[BusinessCategory.FITNESS.value] == "photos/category/2026-08-10/abc"
+    assert par_categorie[BusinessCategory.BEAUTY.value] is None
+
+
+async def test_reposer_remplace_au_lieu_d_ajouter(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """Le semis repose les huit médias à chaque exécution.
+
+    Sans remplacement, la deuxième exécution violerait la clé primaire — et le
+    jeu de données cesserait d'être rejouable, ce qui est sa première qualité.
+    """
+    slug = service.slug_de_categorie(BusinessCategory.MUSEUM)
+    await service.poser(session, slug=slug, object_key="photos/category/2026-08-10/premiere")
+    await service.poser(session, slug=slug, object_key="photos/category/2026-08-10/seconde")
+    await session.commit()
+
+    reponse = await client.get(f"{PREFIX}/platform-media", headers=await entetes(client))
+
+    par_categorie = {
+        ligne["category"]: ligne["photo_key"] for ligne in reponse.json()["categories"]
+    }
+    assert par_categorie[BusinessCategory.MUSEUM.value] == "photos/category/2026-08-10/seconde"
+
+
+async def test_l_affiche_se_sert_sans_la_video(client: AsyncClient, session: AsyncSession) -> None:
+    """L'état tant qu'aucune vidéo n'est fournie : l'app s'en tient à l'affiche."""
+    await service.poser(session, slug=service.AFFICHE_VIDEO, object_key="photos/home/2026/aff")
+    await session.commit()
+
+    accueil = (await client.get(f"{PREFIX}/platform-media", headers=await entetes(client))).json()[
+        "home"
+    ]
+
+    assert accueil == {"video_key": None, "poster_key": "photos/home/2026/aff"}
+
+
+@pytest.mark.parametrize("role", [UserRole.CREATOR, UserRole.BUSINESS_MEMBER])
+async def test_les_deux_cotes_du_produit_y_ont_acces(client: AsyncClient, role: UserRole) -> None:
+    """Une pastille de catégorie peut s'afficher côté commerce comme côté créateur."""
+    reponse = await client.get(f"{PREFIX}/platform-media", headers=await entetes(client, role))
+
+    assert reponse.status_code == 200
+
+
+async def test_sans_jeton_la_route_refuse(client: AsyncClient) -> None:
+    """Rien de confidentiel, mais rien qui concerne quelqu'un qui n'est pas entré.
+
+    Le test continue d'utiliser la session ensuite : un refus qui laisserait la
+    transaction avortée ne se verrait qu'au test suivant, ailleurs.
+    """
+    assert (await client.get(f"{PREFIX}/platform-media")).status_code == 401
+
+    suivante = await client.get(f"{PREFIX}/platform-media", headers=await entetes(client))
+    assert suivante.status_code == 200

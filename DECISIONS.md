@@ -2603,3 +2603,53 @@ récent, avec l'acteur de chaque demande. Raison : c'est la répétition qui
 justifie l'escalade, et l'arbitre décidait sans la voir. Toujours rien de
 dupliqué sur la contrepartie — le journal reste la seule vérité.
 
+
+## 2026-08-10 — Le préfixe de la clé dit si la photo est vraie ou générée
+
+Une photo fournie se range sous `photos/business/…`, un dégradé de secours sous
+`photos/genere/business/…`. Raison : il fallait distinguer les deux pendant les
+tests, et la clé est déjà renvoyée par l'API — elle se lit dans n'importe quelle
+réponse, survit à une capture d'écran, et n'oblige aucun écran à porter un
+repère de développement qu'on oublierait d'enlever. Rien n'a changé dans
+l'interface.
+
+## 2026-08-10 — Les photos réelles ne sont pas versionnées, et le semis s'en passe
+
+`assets/photos/` est ignoré par git : vingt fichiers de plusieurs mégaoctets
+entrent dans l'historique pour toujours et rien ne les en sort. Le semis retombe
+sur ses dégradés générés pour tout fichier absent et **nomme les chemins
+manquants** au lieu d'un décompte — les photos arrivent par vagues, et « 6
+générées » n'apprend pas lesquelles aller chercher. L'intégration continue
+tourne donc entièrement sur le repli, ce qui en fait un chemin éprouvé à chaque
+exécution plutôt qu'une branche de secours jamais empruntée.
+
+## 2026-08-10 — Redimensionnement au dépôt, avec Pillow en dépendance de développement
+
+Une photo de banque d'images fait 4000 pixels et huit mégaoctets ; les
+couvertures tombent à 140 Ko une fois réduites. Le décodage vit dans le semis,
+jamais dans le produit : l'API sert des octets déjà rangés et n'ouvre aucune
+image, donc Pillow reste hors des dépendances d'exécution. Absent, le semis
+dépose les originaux et le dit — dégradé, pas cassé.
+
+## 2026-08-10 — `platform_asset` porte ce qui n'appartient à aucun commerce
+
+Les six pastilles de catégorie et le média d'accueil ne peuvent se ranger ni sur
+`business` ni sur `catalog_item`. Les recalculer était impossible — la clé est
+une empreinte du contenu — et les écrire en configuration aurait mis une valeur
+produite par le dépôt d'objets dans un fichier tenu à la main. Une table à deux
+colonnes, un slug lisible (`category/beauty`, `home/video`), et `GET
+/platform-media` qui rend les six catégories **même sans photo** : le `None` est
+une réponse, l'absence de ligne n'en est pas une.
+
+## 2026-08-10 — La vidéo d'accueil est réencodée à la main, et le semis surveille le poids
+
+La vidéo fournie faisait 39 Mo (4K, 60 im/s) pour 12 secondes servies en fond
+d'écran d'accueil. Réencodée en 720p à 30 im/s : 2,8 Mo, même durée, différence
+invisible sur un téléphone. Le réencodage reste **manuel** — l'automatiser
+demanderait `ffmpeg` au moment du semis, une dépendance d'un autre ordre que
+Pillow pour un fichier unique qui change une fois par an.
+
+Ce qui est automatisé, c'est le **constat** : tout média rangé au-delà de 8 Mo
+est signalé nommément à la fin du semis, et un test l'érige en condition. Le
+seuil ne refuse rien — le semis ne décide pas qu'une démonstration ne peut pas
+avoir lieu — mais un média trop lourd ne se découvre plus devant quelqu'un.

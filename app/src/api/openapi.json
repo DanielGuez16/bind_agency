@@ -688,6 +688,14 @@
         ]
       }
     },
+    "/api/v1/platform-media": {
+      "get": {
+        "operationId": "read_platform_media_api_v1_platform_media_get",
+        "responses": [
+          "200"
+        ]
+      }
+    },
     "/api/v1/proofs/{proof_id}": {
       "get": {
         "operationId": "lire_la_preuve_api_v1_proofs__proof_id__get",
