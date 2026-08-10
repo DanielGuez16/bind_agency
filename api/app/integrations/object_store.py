@@ -42,6 +42,48 @@ class ObjectStoreError(Exception):
     """Le dépôt n'a pas abouti. Distinct d'un refus métier."""
 
 
+def _statut_http(error: Exception) -> int | None:
+    """Le statut HTTP d'une erreur `botocore`, ou `None` si elle n'en porte pas.
+
+    Il est présent même quand le code et le message sont vides, et c'est la
+    seule chose sur laquelle on peut décider. Le chercher dans le texte de
+    l'exception marchait tant que le fournisseur rendait du XML S3 conforme.
+    """
+    reponse = getattr(error, "response", None) or {}
+    return reponse.get("ResponseMetadata", {}).get("HTTPStatusCode")
+
+
+def _details_s3(error: Exception, *, operation: str, compartiment: str, cle: str) -> str:
+    """Ce que le serveur a répondu, en une ligne lisible.
+
+    `ClientError` s'affiche « An error occurred () when calling PutObject » quand
+    le corps de la réponse n'est pas le XML attendu — ce que renvoient plusieurs
+    fournisseurs compatibles S3 sur leurs propres refus. Le message est alors
+    vide, sans code ni raison, et on a perdu deux fois du temps sur le
+    compartiment privé faute de savoir ce qui était réellement arrivé.
+
+    D'où l'extraction à la main : le **statut HTTP** est toujours là même quand
+    le code ne l'est pas, et c'est lui qui distingue un droit refusé d'un
+    compartiment absent ou d'une charge rejetée. Le compartiment visé et la clé
+    en font partie : « refusé » sans dire *où* laisse chercher du mauvais côté
+    de la frontière public / privé.
+    """
+    reponse = getattr(error, "response", None) or {}
+    meta = reponse.get("ResponseMetadata", {})
+    faute = reponse.get("Error", {})
+
+    morceaux = [
+        f"{operation} sur {compartiment}/{cle}",
+        f"http={meta.get('HTTPStatusCode') or '?'}",
+        f"code={faute.get('Code') or type(error).__name__}",
+    ]
+    if message := (faute.get("Message") or str(error)):
+        morceaux.append(f"message={message}")
+    if demande := meta.get("RequestId"):
+        morceaux.append(f"requête={demande}")
+    return ", ".join(morceaux)
+
+
 class ObjectStoreUnavailable(ObjectStoreError):
     """Le fournisseur déclaré n'est pas utilisable, et on refuse de faire semblant."""
 
@@ -189,13 +231,19 @@ class S3ObjectStore:
 
     async def deposer(self, contenu: bytes, *, prefixe: str) -> str:
         cle = cle_pour(contenu, prefixe=prefixe)
+        compartiment = self.compartiment(prefixe)
         try:
             async with self._client() as s3:
-                await s3.put_object(Bucket=self.compartiment(prefixe), Key=cle, Body=contenu)
+                await s3.put_object(Bucket=compartiment, Key=cle, Body=contenu)
         except Exception as error:
             # Enveloppé : l'appelant traite un dépôt manqué, il n'a pas à
-            # connaître les exceptions de `botocore`.
-            raise ObjectStoreError(f"dépôt S3 refusé : {type(error).__name__}") from error
+            # connaître les exceptions de `botocore`. Mais il emporte ce que le
+            # serveur a dit, sans quoi « refusé » n'oriente vers rien.
+            raise ObjectStoreError(
+                "dépôt S3 refusé : "
+                + _details_s3(error, operation="PutObject", compartiment=compartiment, cle=cle)
+                + f", {len(contenu)} octets"
+            ) from error
         return cle
 
     async def lire(self, cle: str) -> bytes | None:
@@ -206,11 +254,33 @@ class S3ObjectStore:
         except Exception as error:
             # Une absence n'est pas une panne, et les deux se distinguent mal
             # dans `botocore` : `NoSuchKey` porte un nom, le reste non.
-            if type(error).__name__ in ("NoSuchKey", "ClientError") and "404" in str(error):
+            #
+            # **Le statut, jamais le texte.** La version précédente cherchait
+            # « 404 » dans le message. Chez un fournisseur qui répond un corps
+            # non conforme, ce message est vide — « An error occurred () » — et
+            # un objet simplement absent remontait comme une panne : la route
+            # de média rendait 503 là où elle devait rendre 404, et l'app
+            # affichait une erreur au lieu de son repli d'image.
+            if type(error).__name__ == "NoSuchKey" or _statut_http(error) == 404:
                 return None
-            if type(error).__name__ == "NoSuchKey":
-                return None
-            raise ObjectStoreError(f"lecture S3 refusée : {type(error).__name__}") from error
+            raise ObjectStoreError(
+                "lecture S3 refusée : "
+                + _details_s3(
+                    error, operation="GetObject", compartiment=self.compartiment(cle), cle=cle
+                )
+            ) from error
+
+    async def supprimer(self, cle: str) -> None:
+        """Retire un objet. N'existe que pour la sonde de déploiement.
+
+        Le produit ne supprime jamais : une preuve archivée est une pièce, et
+        une photo est nommée par son empreinte, donc jamais réécrite. La sonde,
+        elle, dépose une charge de plusieurs mégaoctets pour éprouver le plafond
+        du compartiment — la laisser derrière ferait grossir le dépôt d'autant à
+        chaque déploiement.
+        """
+        async with self._client() as s3:
+            await s3.delete_object(Bucket=self.compartiment(cle), Key=cle)
 
     async def url_signee(self, cle: str) -> str:
         """Une adresse de lecture à durée courte.
@@ -290,6 +360,53 @@ async def verifier_les_deux_compartiments() -> None:
                 f"pas ce qu'on y a mis ({cle}) : on écrit et on lit à deux "
                 "endroits différents"
             )
+
+        await _verifier_le_plafond(depot, prefixe=prefixe, compartiment=compartiment)
+
+
+async def _verifier_le_plafond(depot, *, prefixe: str, compartiment: str) -> None:
+    """Le compartiment accepte-t-il la **plus grosse** chose qu'on y mettra.
+
+    Un témoin de vingt octets ne prouve que la joignabilité. Il passe sur un
+    compartiment dont la limite de taille par fichier est inférieure à ce que le
+    produit dépose, et l'échec arrive plus tard — sur une vraie preuve, envoyée
+    par un vrai créateur, qu'on ne peut pas lui redemander. C'est exactement ce
+    qui s'est produit : « deux compartiments joignables », puis un refus au
+    premier archivage.
+
+    Le refus lui-même n'aidait pas. Supabase répond **413** avec un corps que
+    `botocore` ne sait pas lire comme une erreur S3 : le code et le message
+    ressortent vides, et l'exception affiche « An error occurred () ». D'où la
+    traduction ici, où le statut suffit à nommer la cause.
+
+    La charge est retirée aussitôt : la garder ferait grossir le dépôt de quinze
+    mégaoctets à chaque déploiement.
+    """
+    plafond = get_settings().proof_fetch_max_bytes
+    charge = b"\0" * plafond
+    # Un préfixe à part, sous la même racine donc dans le même compartiment :
+    # la charge d'épreuve ne se confond pas avec le témoin d'aller-retour, qui
+    # lui reste en place.
+    gabarit = f"{prefixe}-gabarit"
+
+    try:
+        cle = await depot.deposer(charge, prefixe=gabarit)
+    except ObjectStoreError as error:
+        if "http=413" in str(error):
+            raise ObjectStoreUnavailable(
+                f"le compartiment {compartiment} refuse une charge de "
+                f"{plafond // 1024 // 1024} Mo (413) : sa limite de taille par "
+                "fichier est inférieure à ce que le produit dépose. Relever "
+                "« File size limit » sur le compartiment, ou abaisser "
+                "PROOF_FETCH_MAX_BYTES — mais alors le produit refusera des "
+                "preuves qu'il accepte aujourd'hui"
+            ) from error
+        raise ObjectStoreUnavailable(
+            f"le compartiment {compartiment} refuse une charge de "
+            f"{plafond // 1024 // 1024} Mo : {error}"
+        ) from error
+
+    await depot.supprimer(cle)
 
 
 #: Le témoin d'aller-retour. Fixe, donc sa clé aussi.
