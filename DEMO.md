@@ -159,10 +159,15 @@ et pose le jeu. ~35 s. La commande refuse de tourner ailleurs qu'en
 Elle finit par :
 
 ```
-4 commerces, 13 items, 22 plages, 2 exceptions, 10 offres, 5 créateurs,
-11 réservations, 7 contreparties, 3 jobs, 13 photos, 3 plans, 2 abonnements.
+4 commerces, 13 items, 28 plages, 2 exceptions, 10 offres, 5 créateurs,
+15 réservations, 7 contreparties, 3 jobs, 23 photos, 3 plans, 2 abonnements.
 Mot de passe de tous les comptes : bind-donnees-de-depart-2026
+Photos : 23 fournies, 0 générées faute de fichier.
 ```
+
+La dernière ligne distingue les vraies photos des dégradés de secours. Quand un
+fichier manque, elle est suivie de la liste des chemins absents — pas d'un
+décompte : c'est ce qu'il faut pour savoir quoi aller chercher.
 
 ### Lancer l'API
 
@@ -468,6 +473,13 @@ comme le semis retombe sur ses dégradés quand une photo manque, la CI et une
 machine fraîche n'en ont aucun besoin. Seuls `A-FOURNIR.md` et les dossiers vides
 sont versionnés.
 
+**Elles sont réduites au dépôt, jamais au service.** Une couverture de 5 Mo
+descend à 140 Ko, une pastille de catégorie à 25 Ko : ce qui est rangé est déjà
+à la taille d'affichage, et l'API ne fait que servir des octets. Le
+redimensionnement demande Pillow, installé par `pip install -e '.[dev]'` et
+**absent des dépendances du produit** — l'API en ligne n'ouvre jamais une image.
+Sans lui, le semis dépose les originaux et le signale.
+
 **Conséquence : sur un dépôt fraîchement cloné, ou sur une autre machine, les
 photos ne sont pas là.** Le semis tourne quand même, et liste nommément les
 fichiers absents avant de leur substituer un dégradé. Rien ne casse ; c'est
@@ -502,7 +514,7 @@ fichiers un par un, et c'est là qu'on en perd.
 | Ce qui est simulé | Ce que vous verrez |
 |---|---|
 | **Plateformes sociales** (`SOCIAL_PROVIDER=demo`) | Les abonnés et les publications sont dérivés du pseudonyme, de façon stable. Rattacher un compte depuis l'app ouvrirait une URL `instagram.demo.bind` qui n'existe pas — le jeu de données a déjà fait le parcours pour les cinq créateurs |
-| **Photos** | Générées : dégradés doux avec grain, sans texte. De loin elles tiennent leur rôle ; de près ce ne sont pas des photos de salon. De vraies photos peuvent les remplacer, voir ci-dessous |
+| **Photos** | De vraies photos quand `assets/photos/` est rempli, un dégradé généré partout où un fichier manque. Une clé en `photos/genere/…` désigne un dégradé, une clé en `photos/…` une vraie photo — la distinction se lit dans n'importe quelle réponse d'API, sans repère dans l'interface |
 | **Abonnement** (`BILLING_PROVIDER=log`) | Souscrire trace dans les logs sans appeler Stripe, et ne rend **aucune adresse de paiement** — le bouton n'a nulle part où mener. Les abonnements du jeu portent des identifiants `cus_journal_…` reconnaissables |
 | **Emails** (`EMAIL_PROVIDER=log`) | Rien n'est envoyé. Les messages apparaissent dans la console de l'API |
 | **Extraction de carte** (`MENU_EXTRACTION_PROVIDER=manual`) | N'extrait rien. L'import de carte demande une saisie |

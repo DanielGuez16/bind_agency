@@ -79,9 +79,10 @@ street art, jeune.
 | `commerces/wynwood-nails-care/prestations/vernis-semi-permanent-a-emporter.jpg` | 1:1 (carré) | 1000 × 1000 | Flacons de vernis semi-permanent, présentés comme un produit à emporter |
 | `commerces/wynwood-nails-care/prestations/diagnostic-ongles.jpg` | 1:1 (carré) | 1000 × 1000 | Examen des ongles : main observée de près, ou nuancier tenu à côté d'une main |
 
-> Les deux dernières sont des prestations **sans réservation** : le produit ne
-> leur affiche pas de photo aujourd'hui. Elles sont ici parce que le jour où il
-> le fera, tu n'auras pas à y revenir. Basse priorité.
+> Les deux dernières sont des prestations **sans réservation** : on se présente
+> quand on veut, sans créneau. Elles s'affichent comme les autres — le vernis à
+> emporter est même proposé au palier TikTok — et prennent donc une photo comme
+> les autres.
 
 ---
 
@@ -137,7 +138,7 @@ L'écran d'ouverture de l'application.
 
 | Fichier | Format | Minimum | Ce qu'il doit montrer |
 | --- | --- | --- | --- |
-| `accueil/video.mp4` | MP4 (H.264), 16:9 | 1280 × 720, 8 à 15 s, **sans son**, en boucle | Un plan lent et lumineux : Miami, un salon, un geste de soin. Doit pouvoir tourner en fond derrière du texte — donc peu contrasté et sans mouvement brusque |
+| `accueil/video.mp4` | MP4 (H.264), 16:9 | 1280 × 720 à 30 im/s, 8 à 15 s, **sans son**, sous 8 Mo | Un plan lent et lumineux : Miami, un salon, un geste de soin. Doit pouvoir tourner en fond derrière du texte — donc peu contrasté et sans mouvement brusque |
 | `accueil/video-poster.jpg` | JPEG, 16:9 | 1920 × 1080 | La **première image de la vidéo**, ou une image très proche. Elle s'affiche pendant le chargement : si elle diffère, on voit un saut |
 
 > Pour l'instant, un substitut suffit — n'importe quel plan d'ambiance fait
@@ -148,17 +149,34 @@ L'écran d'ouverture de l'application.
 
 ## Récapitulatif
 
-| Lot | Fichiers | Priorité |
+| Lot | Fichiers | État |
 | --- | --- | --- |
-| Couvertures des 3 commerces | 3 | **haute** — visibles sur chaque carte du fil |
-| Prestations réservables | 10 | **haute** — visibles sur chaque offre |
-| Catégories | 6 | **haute** — visibles dès l'ouverture de Discovery |
-| Accueil (vidéo + affiche) | 2 | moyenne |
-| Prestations sans réservation | 2 | basse — pas encore affichées |
+| Couvertures des 3 commerces | 3 | ✅ fourni |
+| Prestations | 12 | ✅ fourni |
+| Catégories | 6 | ✅ fourni |
+| Accueil (vidéo + affiche) | 2 | ✅ fourni |
 
-**Le minimum utile : les 19 fichiers de priorité haute.** Le reste peut suivre.
+**Tout est en place : 22 photos et 1 vidéo.** Le semis les range à chaque
+`make seed`, et nomme celles qu'il ne trouve pas.
 
-Soit **21 photos et 1 vidéo** en tout.
+> **La vidéo a été réencodée.** L'originale faisait 39 Mo — 4K à 60 images par
+> seconde — et l'écran d'accueil serait resté vide le temps du téléchargement
+> sur un réseau mobile. Elle est passée en 1280 × 720 à 30 images/s : **2,8 Mo**,
+> mêmes 12 secondes, différence invisible sur un téléphone. L'originale est
+> gardée à côté sous `accueil/video-source.mp4` — le semis ne lit que
+> `video.mp4`, elle ne sert donc à rien d'autre qu'à pouvoir refaire l'encodage
+> autrement.
+>
+> Si tu remplaces la vidéo un jour, la commande est celle-ci :
+>
+> ```
+> ffmpeg -i source.mp4 -an -vf "scale=1280:720:flags=lanczos,fps=30" \
+>        -c:v libx264 -preset slow -crf 26 -pix_fmt yuv420p \
+>        -movflags +faststart accueil/video.mp4
+> ```
+>
+> Le semis signale de lui-même tout média au-delà de 8 Mo, donc tu n'as pas à y
+> penser : si un jour il en range un trop lourd, il te le dira.
 
 ---
 
@@ -175,6 +193,6 @@ salon le jour de son inscription, et l'écran d'activation doit pouvoir lui dire
 « ouvert mais invisible faute de photo ». Lui en donner une viderait de son sens
 le seul cas pour lequel il existe.
 
-**Les deux prestations sans réservation de Wynwood.** Elles sont listées mais
-rien ne les affiche encore. Elles sont là pour que tu les prennes en une fois
-plutôt qu'en deux.
+**La gamme « Coloration » d'Ocean Beauty.** C'est un en-tête qui regroupe trois
+variantes, il ne s'affiche jamais seul. Une photo posée dessus n'apparaîtrait
+sur aucun écran.

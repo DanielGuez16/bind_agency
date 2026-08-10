@@ -29,6 +29,7 @@ import httpx
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.integrations import photos_reelles
 from app.integrations.demo_images import COUVERTURE, PRESTATION, image
 from app.integrations.object_store import get_object_store
 from app.integrations.social_demo import DemoSocialProvider
@@ -67,6 +68,7 @@ from app.services import booking_states, eligibility
 from app.services import collaboration as collaboration_service
 from app.services import creator_profile as profile_service
 from app.services import metrics as metrics_service
+from app.services import platform_assets as platform_asset_service
 from app.services import proof as proof_service
 from app.services import redemption as redemption_service
 from app.services import reliability as reliability_service
@@ -83,7 +85,7 @@ class ResumeDemo:
     reservations: int
     contreparties: int
     jobs: int
-    photos: int
+    photos: "ResumePhotos"
     plans: int
     abonnements: int
 
@@ -93,11 +95,113 @@ class ResumeDemo:
 # --------------------------------------------------------------------------
 
 
-async def poser_les_photos(session: AsyncSession) -> int:
-    """Une couverture par commerce **actif**, une photo par prestation réservable.
+#: Le dossier de chaque commerce sous `assets/photos/commerces/`.
+#:
+#: Une table explicite, et non un `slugify` du nom. « Massage relaxant 60 min »
+#: donnerait `massage-relaxant-60-min` là où le fichier demandé s'appelle
+#: `massage-relaxant-60`, et « Wynwood Nails & Care » dépend de ce qu'on décide
+#: de faire d'une esperluette. Une règle implicite qui se trompe range la photo
+#: sous un nom que personne n'a déposé, et le semis annonce un fichier manquant
+#: qui est pourtant là — le pire des symptômes, puisqu'il accuse l'humain.
+#:
+#: `Havana Glow` est **absent volontairement** : c'est le commerce qui n'a rien
+#: composé, il ne doit avoir aucune photo.
+DOSSIER_DU_COMMERCE = {
+    "Ocean Beauty Studio": "ocean-beauty-studio",
+    "Wynwood Nails & Care": "wynwood-nails-care",
+    "Brickell Spa Collective": "brickell-spa-collective",
+}
 
-    Le parent d'une gamme n'en reçoit pas : il ne s'affiche jamais seul, et lui
-    en donner une ferait apparaître une image que personne ne voit.
+#: Le fichier de chaque prestation, dans le dossier `prestations/` de son
+#: commerce. Le parent d'une gamme n'y figure pas : il ne s'affiche jamais seul.
+FICHIER_DE_LA_PRESTATION = {
+    "Coloration racines": "coloration-racines",
+    "Coloration longueurs": "coloration-longueurs",
+    "Coloration + balayage": "coloration-balayage",
+    "Brushing": "brushing",
+    "Manucure classique": "manucure-classique",
+    "Pose gel": "pose-gel",
+    "Vernis semi-permanent à emporter": "vernis-semi-permanent-a-emporter",
+    "Diagnostic ongles": "diagnostic-ongles",
+    "Massage relaxant 60 min": "massage-relaxant-60",
+    "Massage profond 90 min": "massage-profond-90",
+    "Soin visage hydratant": "soin-visage-hydratant",
+    "Rituel duo": "rituel-duo",
+}
+
+
+@dataclass(frozen=True, slots=True)
+class ResumePhotos:
+    """Ce que le semis a rangé, et ce qu'il n'a pas trouvé.
+
+    Le décompte seul ne sert à rien quand les photos arrivent par vagues : il
+    faut les **chemins** de celles qui manquent, tels qu'ils s'écrivent dans
+    `A-FOURNIR.md`, pour savoir quoi aller chercher.
+    """
+
+    reelles: int
+    generees: int
+    #: Chemins relatifs à `assets/photos/`, triés, prêts à être lus par un humain.
+    manquantes: tuple[str, ...]
+    #: Vrai quand Pillow n'est pas installé : les originaux sont déposés tels
+    #: quels, plusieurs mégaoctets compris.
+    sans_redimensionnement: bool
+    #: Ce qui a été rangé au-delà de `SEUIL_DE_POIDS`, avec son poids en octets.
+    trop_lourds: tuple[tuple[str, int], ...]
+
+    @property
+    def total(self) -> int:
+        return self.reelles + self.generees
+
+
+#: Au-delà, un média est signalé. Une couverture réduite pèse 150 Ko et une
+#: pastille 30 Ko : ce seuil ne peut être franchi que par ce que le semis ne
+#: sait pas réduire — la vidéo d'accueil — ou par des originaux déposés faute
+#: de Pillow.
+#:
+#: Il ne refuse rien : le semis ne s'arrête jamais pour une question de poids,
+#: il le dit. Trois mégaoctets se chargent sur un réseau mobile, quarante non,
+#: et rien d'autre ne le ferait remarquer avant une démonstration au ralenti.
+SEUIL_DE_POIDS = 8 * 1024 * 1024
+
+
+async def _deposer_photo(
+    depot,
+    *,
+    chemin: str,
+    taille_reelle: tuple[int, int],
+    graine: str,
+    taille_generee: tuple[int, int],
+    famille: str,
+) -> tuple[str, bool, int]:
+    """La vraie photo si elle est là, un dégradé sinon. Rend la clé, laquelle, et le poids.
+
+    **Le préfixe porte la nature du contenu.** `photos/genere/business/…` pour
+    un dégradé, `photos/business/…` pour une vraie photo. La clé étant renvoyée
+    telle quelle par l'API, un commerce qui n'a pas fourni sa couverture se
+    reconnaît dans n'importe quelle réponse, sans qu'aucun écran ait à porter
+    un repère de développement qu'on oublierait d'enlever.
+    """
+    reelle = photos_reelles.lire(chemin, taille=taille_reelle)
+    if reelle is not None:
+        cle = await depot.deposer(reelle.contenu, prefixe=f"photos/{famille}")
+        return cle, True, len(reelle.contenu)
+
+    degrade = image(graine, taille_generee)
+    cle = await depot.deposer(degrade, prefixe=f"photos/genere/{famille}")
+    return cle, False, len(degrade)
+
+
+async def poser_les_photos(session: AsyncSession) -> ResumePhotos:
+    """Les photos de tout le jeu : commerces, prestations, catégories, accueil.
+
+    Les vraies photos vivent dans `assets/photos/`, hors du dépôt git, et
+    peuvent manquer — sur l'intégration continue elles manquent toujours. Le
+    semis ne s'arrête donc jamais pour ça : il retombe sur un dégradé généré et
+    dit lesquelles il n'a pas trouvées.
+
+    Le parent d'une gamme ne reçoit pas de photo : il ne s'affiche jamais seul,
+    et lui en donner une ferait apparaître une image que personne ne voit.
 
     Un commerce encore en inscription n'en reçoit pas non plus, et c'est la
     raison d'être du seul qui soit dans cet état : il montre ce qu'on voit le
@@ -106,26 +210,124 @@ async def poser_les_photos(session: AsyncSession) -> int:
     invisible faute de photo » est précisément l'état qu'il doit expliquer.
     """
     depot = get_object_store()
-    posees = 0
+    reelles = 0
+    generees = 0
+    manquantes: list[str] = []
+    trop_lourds: list[tuple[str, int]] = []
 
+    def compter(trouvee: bool, chemin: str, poids: int) -> None:
+        nonlocal reelles, generees
+        if trouvee:
+            reelles += 1
+        else:
+            generees += 1
+            manquantes.append(chemin)
+        if poids > SEUIL_DE_POIDS:
+            trop_lourds.append((chemin, poids))
+
+    # --- couvertures des commerces ouverts
     actifs = await session.scalars(
         sa.select(Business).where(Business.status == BusinessStatus.ACTIVE)
     )
     for business in actifs.all():
-        cle = await depot.deposer(image(business.name, COUVERTURE), prefixe="photos/business")
-        business.cover_photo_key = cle
-        posees += 1
+        dossier = DOSSIER_DU_COMMERCE[business.name]
+        chemin = f"commerces/{dossier}/cover.jpg"
+        business.cover_photo_key, trouvee, poids = await _deposer_photo(
+            depot,
+            chemin=chemin,
+            taille_reelle=photos_reelles.COUVERTURE,
+            graine=business.name,
+            taille_generee=COUVERTURE,
+            famille="business",
+        )
+        compter(trouvee, chemin, poids)
 
+    # --- prestations
+    #
+    # Toutes celles qui s'affichent, et pas seulement les réservables : le
+    # vernis à emporter de Wynwood est proposé au palier TikTok, il apparaît
+    # donc dans le fil comme une autre. Seul le parent d'une gamme est écarté,
+    # et il l'est par ce qu'il est — un item qui a des variantes — plutôt que
+    # par un nom cité en dur.
+    parents = sa.select(CatalogItem.parent_item_id).where(CatalogItem.parent_item_id.is_not(None))
     items = (
-        await session.scalars(sa.select(CatalogItem).where(CatalogItem.requires_booking.is_(True)))
+        await session.scalars(sa.select(CatalogItem).where(CatalogItem.id.not_in(parents)))
     ).all()
     for item in items:
-        cle = await depot.deposer(image(item.name, PRESTATION), prefixe="photos/item")
-        item.photo_key = cle
-        posees += 1
+        dossier = DOSSIER_DU_COMMERCE[
+            await session.scalar(sa.select(Business.name).where(Business.id == item.business_id))
+        ]
+        chemin = f"commerces/{dossier}/prestations/{FICHIER_DE_LA_PRESTATION[item.name]}.jpg"
+        item.photo_key, trouvee, poids = await _deposer_photo(
+            depot,
+            chemin=chemin,
+            taille_reelle=photos_reelles.PRESTATION,
+            graine=item.name,
+            taille_generee=PRESTATION,
+            famille="item",
+        )
+        compter(trouvee, chemin, poids)
+
+    # --- pastilles de catégorie
+    #
+    # Elles n'appartiennent à aucun commerce : leur clé se range dans
+    # `platform_asset`, la seule table qui porte ce qui est à la plateforme.
+    for categorie in BusinessCategory:
+        chemin = f"categories/{categorie.value}.jpg"
+        cle, trouvee, poids = await _deposer_photo(
+            depot,
+            chemin=chemin,
+            taille_reelle=photos_reelles.CATEGORIE,
+            graine=f"categorie-{categorie.value}",
+            taille_generee=PRESTATION,
+            famille="category",
+        )
+        await platform_asset_service.poser(
+            session, slug=platform_asset_service.slug_de_categorie(categorie), object_key=cle
+        )
+        compter(trouvee, chemin, poids)
+
+    # --- accueil
+    #
+    # L'affiche suit le chemin des photos ; la vidéo, elle, n'est pas une image
+    # et se dépose telle quelle. Tant qu'aucun fichier n'est fourni, aucune clé
+    # n'est posée : l'app n'a pas de vidéo à jouer et s'en tient à l'affiche,
+    # ce qui est exactement le substitut voulu.
+    chemin_affiche = "accueil/video-poster.jpg"
+    cle, trouvee, poids = await _deposer_photo(
+        depot,
+        chemin=chemin_affiche,
+        taille_reelle=photos_reelles.COUVERTURE,
+        graine="accueil-affiche",
+        taille_generee=COUVERTURE,
+        famille="home",
+    )
+    await platform_asset_service.poser(
+        session, slug=platform_asset_service.AFFICHE_VIDEO, object_key=cle
+    )
+    compter(trouvee, chemin_affiche, poids)
+
+    video = photos_reelles.lire_telle_quelle("accueil/video.mp4")
+    if video is None:
+        manquantes.append("accueil/video.mp4")
+    else:
+        await platform_asset_service.poser(
+            session,
+            slug=platform_asset_service.VIDEO,
+            object_key=await depot.deposer(video, prefixe="photos/home"),
+        )
+        reelles += 1
+        if len(video) > SEUIL_DE_POIDS:
+            trop_lourds.append(("accueil/video.mp4", len(video)))
 
     await session.flush()
-    return posees
+    return ResumePhotos(
+        reelles=reelles,
+        generees=generees,
+        manquantes=tuple(sorted(manquantes)),
+        sans_redimensionnement=reelles > 0 and not photos_reelles.pillow_disponible(),
+        trop_lourds=tuple(sorted(trop_lourds)),
+    )
 
 
 # --------------------------------------------------------------------------

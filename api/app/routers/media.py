@@ -46,6 +46,24 @@ SIGNATURES = (
     (b"RIFF", "image/webp"),
 )
 
+#: MP4, dont la signature ne commence pas au premier octet : les quatre
+#: premiers portent la taille de la boîte, `ftyp` vient ensuite. Sans cette
+#: reconnaissance, la vidéo d'accueil partait en `application/octet-stream` et
+#: aucun lecteur ne la jouait — le fichier était pourtant bien servi.
+SIGNATURE_MP4 = (4, b"ftyp", "video/mp4")
+
+
+def _type_du_contenu(contenu: bytes) -> str:
+    for signature, mime in SIGNATURES:
+        if contenu.startswith(signature):
+            return mime
+
+    decalage, motif, mime = SIGNATURE_MP4
+    if contenu[decalage : decalage + len(motif)] == motif:
+        return mime
+
+    return "application/octet-stream"
+
 
 @router.get("/{cle:path}")
 async def read_media(cle: Annotated[str, Path()]) -> Response:
@@ -62,10 +80,7 @@ async def read_media(cle: Annotated[str, Path()]) -> Response:
     if contenu is None:
         raise api_error(status.HTTP_404_NOT_FOUND, ErrorCode.NOT_FOUND)
 
-    type_media = next(
-        (mime for signature, mime in SIGNATURES if contenu.startswith(signature)),
-        "application/octet-stream",
-    )
+    type_media = _type_du_contenu(contenu)
     return Response(
         content=contenu,
         media_type=type_media,

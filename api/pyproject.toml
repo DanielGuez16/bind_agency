@@ -31,6 +31,11 @@ dev = [
     "pytest>=8.3",
     "pytest-asyncio>=0.24",
     "ruff>=0.8",
+    # Redimensionne les vraies photos du jeu de démonstration au moment du
+    # dépôt. **Jamais utilisée par le produit** : l'API sert des octets déjà
+    # rangés, elle ne décode aucune image. Absente, le semis dépose les
+    # originaux et le signale — il ne s'arrête pas.
+    "pillow>=11.0",
 ]
 
 [build-system]
@@ -56,6 +61,13 @@ select = ["E", "F", "I", "UP", "B", "SIM", "ASYNC"]
 testpaths = ["tests"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+# `--strict-markers` : une marque mal orthographiée devient une erreur au lieu
+# d'un avertissement. Sans elle, `@pytest.mark.ecrit_pour_de_bonn` désactiverait
+# silencieusement rien du tout, et la garde passerait pour capricieuse.
+addopts = "--strict-markers"
+markers = [
+    "ecrit_pour_de_bon(raison): le test valide ses écritures et les nettoie lui-même. Réservé à ce qui ne peut pas vivre dans une transaction annulée — deux transactions réellement concurrentes, un verrou consultatif. Dispense de la garde anti-fuite, et la raison est obligatoire",
+]
 
 [tool.setuptools.package-data]
 "app" = ["locales/*.json"]

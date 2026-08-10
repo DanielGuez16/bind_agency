@@ -39,6 +39,7 @@ from app.schemas.business import BusinessCreate, CoordinatesPayload
 from app.schemas.capacity import CapacityExceptionCreate, CapacityRuleCreate
 from app.schemas.catalog import CatalogItemCreate
 from app.schemas.tier_offers import TierOfferCreate
+from app.seed_demo import ResumePhotos
 from app.services import auth as auth_service
 from app.services import business as business_service
 from app.services import capacity as capacity_service
@@ -94,7 +95,7 @@ class Resume:
     reservations: int
     contreparties: int
     jobs: int
-    photos: int
+    photos: ResumePhotos
     plans: int
     abonnements: int
     #: Nombre de paliers auxquels au moins un créateur du jeu accède. À zéro,
@@ -711,6 +712,40 @@ def verifier_la_cible(settings) -> None:
         )
 
 
+def annoncer_les_photos(photos: ResumePhotos) -> None:
+    """Ce qui a été rangé, et surtout ce qui manque — **nommément**.
+
+    Les photos arrivent par vagues, et un « 6 photos générées » n'apprend pas
+    lesquelles aller chercher : il faut les chemins, dans la forme exacte où ils
+    s'écrivent dans `assets/photos/A-FOURNIR.md`, prêts à être comparés à ce
+    qu'on a déjà déposé.
+    """
+    print(f"Photos : {photos.reelles} fournies, {photos.generees} générées faute de fichier.")
+
+    if photos.manquantes:
+        print("Fichiers absents de assets/photos/ (un dégradé les remplace) :")
+        for chemin in photos.manquantes:
+            print(f"  - {chemin}")
+
+    if photos.trop_lourds:
+        # Ni un refus ni une erreur : ce qui est rangé s'affiche. Mais un média
+        # de quarante mégaoctets sur un réseau mobile laisse l'écran vide le
+        # temps du téléchargement, et rien d'autre ne le ferait remarquer avant
+        # une démonstration au ralenti devant quelqu'un.
+        print("Médias lourds, à réduire avant une démonstration sur réseau mobile :")
+        for chemin, poids in photos.trop_lourds:
+            print(f"  - {chemin} : {poids / 1024 / 1024:.0f} Mo")
+
+    if photos.sans_redimensionnement:
+        # Le semis a marché, mais il a rangé des originaux de plusieurs
+        # mégaoctets. Le dire : servir ça à un fil mobile est précisément ce
+        # que le redimensionnement évite, et rien d'autre ne le signalerait.
+        print(
+            "Pillow n'est pas installé : les photos ont été déposées telles quelles, "
+            "sans être réduites. `pip install -e '.[dev]'` pour y remédier."
+        )
+
+
 def main() -> int:
     settings = get_settings()
 
@@ -724,9 +759,11 @@ def main() -> int:
         f"{resume.exceptions} exceptions, {resume.offres} offres, "
         f"{resume.createurs} créateurs, {resume.reservations} réservations, "
         f"{resume.contreparties} contreparties, {resume.jobs} jobs, "
-        f"{resume.photos} photos, {resume.plans} plans, {resume.abonnements} abonnements."
+        f"{resume.photos.total} photos, {resume.plans} plans, {resume.abonnements} abonnements."
     )
     print(f"Mot de passe de tous les comptes : {MOT_DE_PASSE}")
+
+    annoncer_les_photos(resume.photos)
 
     if resume.paliers_accessibles == 0:
         # Garde-fou, pas constat : depuis que le contrôle de cohérence existe,

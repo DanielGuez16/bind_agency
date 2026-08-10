@@ -14,6 +14,7 @@ from app.models.collaboration import Collaboration, Proof
 from app.models.identity import CreatorProfile, SocialAccount, SocialMetricsSnapshot, User
 from app.models.jobs import Job
 from app.models.oauth import OAuthState
+from app.models.platform_asset import PlatformAsset
 from app.models.reliability import ReliabilityEvent
 from app.models.tiers import Tier, TierOffer
 
@@ -30,6 +31,7 @@ __all__ = [
     "CreatorProfile",
     "MenuImport",
     "OAuthState",
+    "PlatformAsset",
     "Proof",
     "RedemptionCode",
     "RefreshToken",
