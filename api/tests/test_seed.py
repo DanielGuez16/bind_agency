@@ -1044,16 +1044,23 @@ def test_un_fichier_complet_remplace_la_configuration_locale(
     from app.core import config
     from scripts import deploiement
 
-    (tmp_path / ".env.demo.example").write_text("ENVIRONMENT=\n", encoding="utf-8")
+    (tmp_path / ".env.demo.example").write_text("TOKEN_ENCRYPTION_KEY_ID=\n", encoding="utf-8")
     fichier = tmp_path / ".env.demo"
     fichier.write_text(
-        "ENVIRONMENT=demo\n"
         f"DATABASE_URL={os.environ.get('TEST_DATABASE_URL', 'postgresql+psycopg://u:p@ailleurs:5432/postgres')}\n"
         "JWT_SECRET_KEY=une-cle-assez-longue-pour-hmac-256-au-moins\n"
-        "TOKEN_ENCRYPTION_KEY=" + Fernet.generate_key().decode() + "\n",
+        "TOKEN_ENCRYPTION_KEY=" + Fernet.generate_key().decode() + "\n"
+        # Le témoin. Pas `ENVIRONMENT` : l'intégration continue l'exporte pour
+        # de vrai, et une variable du shell l'emporte sur n'importe quel
+        # fichier — le test aurait mesuré la précédence des sources plutôt que
+        # le remplacement du fichier.
+        "TOKEN_ENCRYPTION_KEY_ID=temoin-du-fichier\n",
         encoding="utf-8",
     )
-    monkeypatch.delenv("BIND_ENV_FILE", raising=False)
+    # Par `monkeypatch` : `charger` écrit dans l'environnement du processus, et
+    # le laisser posé ferait lire ce fichier temporaire à tous les tests
+    # suivants. Même classe de fuite que la transaction validée par erreur.
+    monkeypatch.setenv("BIND_ENV_FILE", "")
 
     deploiement.charger(fichier)
 
@@ -1061,7 +1068,7 @@ def test_un_fichier_complet_remplace_la_configuration_locale(
     assert config.fichier_de_configuration() == str(fichier)
     # Résolu à l'appel : posé dans une constante de module, il était figé par le
     # premier import venu, et la commande affichait `local` en visant `demo`.
-    assert config.build_settings().environment == "demo"
+    assert config.build_settings().token_encryption_key_id == "temoin-du-fichier"
 
 
 def test_le_refus_du_garde_est_une_reponse_et_non_une_trace(
