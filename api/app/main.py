@@ -105,6 +105,7 @@ def create_app() -> FastAPI:
     application.include_router(catalog.router, prefix=settings.api_v1_prefix)
     application.include_router(capacity.router, prefix=settings.api_v1_prefix)
     application.include_router(tiers.router, prefix=settings.api_v1_prefix)
+    application.include_router(tiers.business_router, prefix=settings.api_v1_prefix)
     application.include_router(tier_offers.router, prefix=settings.api_v1_prefix)
     application.include_router(availability.router, prefix=settings.api_v1_prefix)
     application.include_router(booking.router, prefix=settings.api_v1_prefix)

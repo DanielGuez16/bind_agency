@@ -48,6 +48,25 @@ export function detectDeviceLocale(): SupportedLocale {
 
 type Translate = (key: string, params?: Record<string, unknown>) => string;
 
+/**
+ * Met en forme les nombres d'un jeu de paramètres, dans la langue courante.
+ *
+ * Les entiers seulement : un montant a sa propre fonction, qui porte la devise,
+ * et une année ne se sépare pas par milliers.
+ */
+function formaterLesNombres(
+  params: Record<string, unknown>,
+  locale: SupportedLocale,
+): Record<string, unknown> {
+  const format = new Intl.NumberFormat(locale);
+  return Object.fromEntries(
+    Object.entries(params).map(([cle, valeur]) => [
+      cle,
+      typeof valeur === 'number' && Number.isFinite(valeur) ? format.format(valeur) : valeur,
+    ]),
+  );
+}
+
 type I18nValue = {
   locale: SupportedLocale;
   setLocale: (locale: SupportedLocale) => void;
@@ -97,7 +116,11 @@ export function I18nProvider({
     return {
       locale,
       setLocale,
-      t: (key, params) => i18n.t(key, params),
+      // **Les nombres sont mis en forme ici, une fois.** Interpolés bruts, ils
+      // sortaient sans séparateur de milliers : « 1000 abonnés » là où la
+      // langue de l'écran écrit « 1,000 ». Le faire dans chaque appelant
+      // demanderait de ne l'oublier nulle part, et c'était déjà oublié partout.
+      t: (key, params) => i18n.t(key, params && formaterLesNombres(params, locale)),
     };
   }, [locale, setLocale]);
 

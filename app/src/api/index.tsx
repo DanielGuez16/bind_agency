@@ -39,6 +39,12 @@ import type {
   PlanAdministrateur,
   PlanSouscriptible,
   PlateformeConnectable,
+  ExceptionDeCapacite,
+  ItemDuCatalogue,
+  NouvelItem,
+  OffreDePalier,
+  PalierOffrable,
+  RegleDeCapacite,
   Reporting,
   VerificationDuCompte,
   VueDesPaliers,
@@ -379,6 +385,115 @@ export class Api {
 
   activerLeCommerce(businessId: string) {
     return this.client.request<unknown>(routes.activerLeCommerce(businessId), { methode: 'POST' });
+  }
+
+  // ---- composition : catalogue, paliers offerts, horaires ----
+
+  itemsDuCatalogue(businessId: string, signal?: AbortSignal) {
+    return this.client.request<ItemDuCatalogue[]>(routes.itemsDuCatalogue(businessId), { signal });
+  }
+
+  creerUnItem(businessId: string, item: NouvelItem) {
+    return this.client.request<ItemDuCatalogue>(routes.itemsDuCatalogue(businessId), {
+      methode: 'POST',
+      corps: item,
+    });
+  }
+
+  modifierUnItem(businessId: string, itemId: string, champs: Partial<NouvelItem>) {
+    return this.client.request<ItemDuCatalogue>(routes.itemDuCatalogue(businessId, itemId), {
+      methode: 'PATCH',
+      corps: champs,
+    });
+  }
+
+  /**
+   * Ouvrir ou fermer une prestation.
+   *
+   * Sa propre route, et non un champ du correctif : c'est une transition
+   * d'état, elle laisse une trace au journal. Deux chemins pour la même
+   * transition finiraient par diverger.
+   */
+  ouvrirLItem(businessId: string, itemId: string, ouvert: boolean) {
+    return this.client.request<void>(routes.disponibiliteDUnItem(businessId, itemId), {
+      methode: 'PUT',
+      corps: { is_available: ouvert },
+    });
+  }
+
+  supprimerUnItem(businessId: string, itemId: string) {
+    return this.client.request<void>(routes.itemDuCatalogue(businessId, itemId), {
+      methode: 'DELETE',
+    });
+  }
+
+  paliersDuCommerce(businessId: string, signal?: AbortSignal) {
+    return this.client.request<PalierOffrable[]>(routes.paliersDuCommerce(businessId), { signal });
+  }
+
+  offresDePalier(businessId: string, signal?: AbortSignal) {
+    return this.client.request<OffreDePalier[]>(routes.offresDePalier(businessId), { signal });
+  }
+
+  offrirAuPalier(businessId: string, tierId: string, catalogItemId: string) {
+    return this.client.request<OffreDePalier>(routes.offresDePalier(businessId), {
+      methode: 'POST',
+      corps: { tier_id: tierId, catalog_item_id: catalogItemId },
+    });
+  }
+
+  activerUneOffre(businessId: string, offreId: string, active: boolean) {
+    return this.client.request<OffreDePalier>(routes.activationDUneOffre(businessId, offreId), {
+      methode: 'PUT',
+      corps: { is_active: active },
+    });
+  }
+
+  reglesDeCapacite(businessId: string, signal?: AbortSignal) {
+    return this.client.request<RegleDeCapacite[]>(routes.reglesDeCapacite(businessId), { signal });
+  }
+
+  creerUneRegle(businessId: string, regle: Omit<RegleDeCapacite, 'id' | 'business_id'>) {
+    return this.client.request<RegleDeCapacite>(routes.reglesDeCapacite(businessId), {
+      methode: 'POST',
+      corps: regle,
+    });
+  }
+
+  modifierUneRegle(
+    businessId: string,
+    ruleId: string,
+    champs: Partial<Omit<RegleDeCapacite, 'id' | 'business_id' | 'weekday'>>,
+  ) {
+    return this.client.request<RegleDeCapacite>(routes.regleDeCapacite(businessId, ruleId), {
+      methode: 'PATCH',
+      corps: champs,
+    });
+  }
+
+  supprimerUneRegle(businessId: string, ruleId: string) {
+    return this.client.request<void>(routes.regleDeCapacite(businessId, ruleId), {
+      methode: 'DELETE',
+    });
+  }
+
+  exceptionsDeCapacite(businessId: string, signal?: AbortSignal) {
+    return this.client.request<ExceptionDeCapacite[]>(routes.exceptionsDeCapacite(businessId), {
+      signal,
+    });
+  }
+
+  fermerUneJournee(businessId: string, date: string) {
+    return this.client.request<ExceptionDeCapacite>(routes.exceptionsDeCapacite(businessId), {
+      methode: 'POST',
+      corps: { date, is_closed: true },
+    });
+  }
+
+  supprimerUneException(businessId: string, exceptionId: string) {
+    return this.client.request<void>(routes.exceptionDeCapacite(businessId, exceptionId), {
+      methode: 'DELETE',
+    });
   }
 
   // ---- back office ----

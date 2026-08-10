@@ -21,6 +21,8 @@ export const ECRANS_CREATEUR = [
 
 export const ECRANS_COMMERCE = [
   'ActivationScreen.tsx',
+  'CatalogueScreen.tsx',
+  'HorairesScreen.tsx',
   'ArbitrageScreen.tsx',
   'JourneeScreen.tsx',
   'PlansScreen.tsx',
@@ -38,6 +40,9 @@ export const ECRANS_COMMERCE = [
  */
 export const HORS_REGISTRE = [
   'BienvenueScreen.tsx',
+  // Une table des matières : trois portes, aucune requête. Lui inventer quatre
+  // états demanderait de lui inventer une donnée à charger.
+  'ConfigurationScreen.tsx',
   // La connexion et les réglages ne chargent pas de données à quatre états :
   // le premier attend une saisie, le second lit la session et le catalogue,
   // tous deux déjà en mémoire. Ils sont éprouvés par les tests de la coquille.

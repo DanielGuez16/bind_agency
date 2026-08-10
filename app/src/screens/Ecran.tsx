@@ -16,9 +16,9 @@
  * quand un téléphone passe de main en main au comptoir.
  */
 import type { ReactNode } from 'react';
-import { RefreshControl, ScrollView, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 
-import { Button, EmptyState, SkeletonCard, StatusMessage, Texte } from '../components';
+import { Button, EmptyState, Icone, SkeletonCard, StatusMessage, Texte } from '../components';
 import { useI18n } from '../i18n';
 import { useApi } from '../api';
 import { useTheme } from '../theme';
@@ -35,6 +35,13 @@ export type EcranProps<T> = {
    * page saute à chaque rafraîchissement.
    */
   entete?: ReactNode;
+  /**
+   * Le retour, quand l'écran naît d'un autre.
+   *
+   * Ici et non dans chaque écran : un écran de pile sans retour ne se quitte
+   * qu'en changeant d'onglet, et le geste de balayage n'existe pas sur le web.
+   */
+  onRetour?: () => void;
   /** Ce que l'écran montre quand tout va bien. */
   children: (donnees: T) => ReactNode;
   /** Le squelette. À défaut, trois cartes à la géométrie du contenu. */
@@ -48,6 +55,7 @@ export function Ecran<T>({
   requete,
   titre,
   entete,
+  onRetour,
   children,
   squelette,
   vide,
@@ -136,6 +144,21 @@ export function Ecran<T>({
           />
         }
       >
+        {onRetour ? (
+          <Pressable
+            onPress={onRetour}
+            accessibilityRole="button"
+            accessibilityLabel={t('common.retour')}
+            hitSlop={12}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start' }}
+            testID="retour"
+          >
+            <Icone nom="retour" couleur="text.secondary" taille={18} />
+            <Texte variante="type.label" couleur="text.secondary">
+              {t('common.retour')}
+            </Texte>
+          </Pressable>
+        ) : null}
         {entete ?? (titre ? <Texte variante="type.display">{titre}</Texte> : null)}
         {corps}
       </ScrollView>

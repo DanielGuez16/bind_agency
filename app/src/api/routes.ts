@@ -85,6 +85,11 @@ export const routes = {
   contrepartiesDuCommerce: (businessId: string) =>
     chemin(`/business/${businessId}/collaborations`),
   itemsDuCatalogue: (businessId: string) => chemin(`/business/${businessId}/catalog-items`),
+  itemDuCatalogue: (businessId: string, itemId: string) =>
+    chemin(`/business/${businessId}/catalog-items/${itemId}`),
+  disponibiliteDUnItem: (businessId: string, itemId: string) =>
+    chemin(`/business/${businessId}/catalog-items/${itemId}/availability`),
+  paliersDuCommerce: (businessId: string) => chemin(`/business/${businessId}/tiers`),
   offresDePalier: (businessId: string) => chemin(`/business/${businessId}/tier-offers`),
   activationDUneOffre: (businessId: string, offreId: string) =>
     chemin(`/business/${businessId}/tier-offers/${offreId}/activation`),
@@ -94,8 +99,12 @@ export const routes = {
   media: (cle: string) => chemin(`/media/${cle}`),
   connecterTikTok: () => chemin('/me/social-accounts/tiktok/connect'),
   reglesDeCapacite: (businessId: string) => chemin(`/business/${businessId}/capacity-rules`),
+  regleDeCapacite: (businessId: string, ruleId: string) =>
+    chemin(`/business/${businessId}/capacity-rules/${ruleId}`),
   exceptionsDeCapacite: (businessId: string) =>
     chemin(`/business/${businessId}/capacity-exceptions`),
+  exceptionDeCapacite: (businessId: string, exceptionId: string) =>
+    chemin(`/business/${businessId}/capacity-exceptions/${exceptionId}`),
 
   // ---- back office ----
   fileDeVerification: () => chemin('/admin/social-accounts/review'),
@@ -165,7 +174,10 @@ export const METHODES: Record<keyof typeof routes, ('GET' | 'POST' | 'PATCH' | '
     etapesDActivation: ['GET'],
     journeeDuCommerce: ['GET'],
     contrepartiesDuCommerce: ['GET'],
-    itemsDuCatalogue: ['POST'],
+    itemsDuCatalogue: ['GET', 'POST'],
+    itemDuCatalogue: ['GET', 'PATCH', 'DELETE'],
+    disponibiliteDUnItem: ['PUT'],
+    paliersDuCommerce: ['GET'],
     offresDePalier: ['GET', 'POST'],
     activationDUneOffre: ['PUT'],
     reporting: ['GET'],
@@ -174,7 +186,9 @@ export const METHODES: Record<keyof typeof routes, ('GET' | 'POST' | 'PATCH' | '
     media: ['GET'],
     connecterTikTok: ['POST'],
     reglesDeCapacite: ['GET', 'POST'],
+    regleDeCapacite: ['PATCH', 'DELETE'],
     exceptionsDeCapacite: ['GET', 'POST'],
+    exceptionDeCapacite: ['DELETE'],
 
     fileDeVerification: ['GET'],
     deciderVerification: ['POST'],

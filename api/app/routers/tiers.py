@@ -1,14 +1,20 @@
-"""Administration des paliers.
+"""Les paliers : leur administration, et leur lecture par un commerce.
 
-Tout est sous `require_role(ADMIN)`, sans dérogation : un palier est une
-configuration de la plateforme, pas d'un commerce.
+Tout ce qui **écrit** est sous `require_role(ADMIN)`, sans dérogation : un
+palier est une configuration de la plateforme, pas d'un commerce.
+
+**Un commerce a besoin de les lire.** Composer une offre suppose de choisir un
+palier ; sans cette liste, l'écran de catalogue n'aurait qu'un identifiant à
+saisir à la main. Elle est en lecture seule et limitée aux paliers actifs — en
+proposer un désactivé dessinerait une impasse : la composition le refuse, et
+l'écran ne l'aurait appris qu'après coup.
 """
 
 import uuid
 
 from fastapi import APIRouter, Depends, status
 
-from app.core.dependencies import CurrentUser, SessionDep, require_role
+from app.core.dependencies import CurrentBusiness, CurrentUser, SessionDep, require_role
 from app.core.errors import ErrorCode, api_error
 from app.models.enums import UserRole
 from app.schemas.tiers import TierCreate, TierRead, TierUpdate
@@ -20,6 +26,20 @@ router = APIRouter(
     tags=["admin"],
     dependencies=[Depends(require_role(UserRole.ADMIN))],
 )
+
+#: La lecture par le commerce. `CurrentBusiness` refuse déjà un membre d'un
+#: autre commerce : la borne est celle de l'appartenance, pas d'un filtre écrit
+#: dans la route.
+business_router = APIRouter(prefix="/business/{business_id}", tags=["tiers"])
+
+
+@business_router.get("/tiers", response_model=list[TierRead])
+async def list_tiers_for_business(business: CurrentBusiness, session: SessionDep) -> list[TierRead]:
+    """Les paliers qu'un commerce peut offrir, dans l'ordre d'affichage."""
+    _ = business
+    tiers = await tier_service.list_tiers(session)
+    return [TierRead.model_validate(tier, from_attributes=True) for tier in tiers if tier.is_active]
+
 
 _ERROR_CODES = {
     tier_service.TierNotFound: (status.HTTP_404_NOT_FOUND, ErrorCode.TIER_NOT_FOUND),
