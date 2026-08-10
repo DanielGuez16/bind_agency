@@ -161,9 +161,23 @@ export function CodeScreen({
             {t('parcours.codeTitre')}
           </Texte>
           <CodeGlyphs code={code.code} testID="chiffres" />
+          {/* Ce que les chiffres sont, et ce qu'ils ne sont pas. C'est le
+              premier élément qu'on lit sur cet écran, et un commerçant a
+              essayé de le taper : ils ne valent qu'avec l'identifiant que
+              porte le QR, et seuls ils ne désignent rien. */}
+          <Texte variante="type.caption" align="center" style={{ color: codeColors.fg }}>
+            {t('parcours.codeChiffresAide')}
+          </Texte>
           <Countdown secondes={restant} testID="compte-a-rebours" />
-          <QrBlock contenu={`${bookingId}:${code.code}`} testID="qr" />
+          {/* `code.payload` et non une composition locale : l'identifiant est
+              celui du code, pas celui de la réservation, et l'API le forme
+              déjà. Deux façons de l'assembler finissent par diverger — c'est
+              arrivé, et le QR était refusé sans que rien ne le dise. */}
+          <QrBlock contenu={code.payload} testID="qr" />
           <ManualCode code={code.manual_code} label={t('parcours.codeSecours')} testID="secours" />
+          <Texte variante="type.caption" align="center" style={{ color: codeColors.fg }}>
+            {t('parcours.codeSecoursAide')}
+          </Texte>
         </View>
       )}
     </PickupCodeSurface>

@@ -2682,3 +2682,26 @@ La sonde dépose donc en plus une charge à `proof_fetch_max_bytes` — la plus
 grosse chose que le produit puisse ranger — et la retire aussitôt, pour ne pas
 faire grossir le dépôt à chaque déploiement. Un 413 y est traduit en clair, avec
 les deux façons d'en sortir.
+
+## 2026-08-10 — La charge du QR vient de l'API, jamais d'une composition dans l'app
+
+L'écran du créateur assemblait `bookingId:code` ; la vérification attend
+l'identifiant du **code de retrait**, que l'API rend déjà tout formé sous
+`payload` — le type client ne le déclarait même pas. Le QR se lisait
+parfaitement et la caisse le refusait, sans que rien ne dise pourquoi.
+
+Deux façons de former une même valeur finissent toujours par diverger. Celle qui
+fait foi est celle du serveur.
+
+Corollaire tranché au passage : **le nombre à six chiffres ne se saisit pas**. Il
+tourne avec le temps et ne désigne rien sans l'identifiant que porte le QR ; le
+code destiné à la frappe est le code de secours. L'écran du créateur le dit
+maintenant, parce que les chiffres sont ce qu'on lit en premier.
+
+## 2026-08-10 — Une couverture de carte suit le rapport de l'image, pas une hauteur fixe
+
+208 points de haut ne valent le 16:9 des couvertures qu'à une seule largeur
+d'écran. Partout ailleurs, `resizeMode="cover"` rognait — et ce qu'il rognait
+était le sujet. La boîte porte donc un `aspectRatio`. La hauteur d'une carte
+reste identique d'une carte à l'autre : elle découle de la largeur, qui est la
+même pour toutes.

@@ -47,10 +47,13 @@ function taillesDeTexte(noeud: unknown): { fontSize: number; lineHeight: number 
 }
 
 /** Un code par réservation, comme le serveur en rend. */
-const CODES: Record<string, { code: string; manual_code: string }> = {
-  'reservation-a': { code: '111111', manual_code: 'AAA111' },
+const CODES: Record<string, { payload: string; code: string; manual_code: string }> = {
+  // `payload` porte l'identifiant du **code**, pas celui de la réservation.
+  // C'est le serveur qui le forme, et c'est lui qu'on encode : les deux ne se
+  // ressemblent pas, et c'est ce qui rend la confusion invisible à l'œil.
+  'reservation-a': { payload: 'code-a:111111', code: '111111', manual_code: 'AAA111' },
   // Le serveur rend le code de secours déjà groupé.
-  'reservation-b': { code: '222222', manual_code: 'BBB 222' },
+  'reservation-b': { payload: 'code-b:222222', code: '222222', manual_code: 'BBB 222' },
 };
 
 function client(compteur?: { appels: string[] }) {
@@ -247,4 +250,37 @@ it('groupe le code de secours une seule fois', async () => {
   // là où le QR ne passe pas.
   expect(screen.getByTestId('secours')).toHaveTextContent(/BBB 222/);
   expect(screen.queryByText(/BBB {2}/)).toBeNull();
+});
+
+
+describe('ce que le QR encode', () => {
+  it("encode la charge formée par l'API, jamais une composition locale", async () => {
+    const api = client();
+    await monter('reservation-a', api);
+    await waitFor(() => expect(screen.getByTestId('chiffres')).toHaveTextContent('111111'));
+
+    // On lit la valeur réellement encodée, pas la propriété passée au bloc :
+    // c'est elle que la caisse scannera.
+    // `includeHiddenElements` : le bloc est masqué aux lecteurs d'écran — un
+    // QR ne se lit pas à voix haute — et la requête l'ignorerait sinon.
+    const bloc = screen.getByTestId('qr', { includeHiddenElements: true });
+    const encode = bloc.props.children.props.value;
+
+    // L'app composait `bookingId:code`. Le QR se lisait parfaitement et la
+    // caisse le refusait : l'identifiant attendu est celui du code de retrait.
+    // Le test compare à ce que le serveur a rendu, pas à une chaîne recopiée.
+    expect(encode).toBe(CODES['reservation-a'].payload);
+    expect(encode).not.toContain('reservation-a');
+  });
+
+  it('dit que les six chiffres ne se saisissent pas', async () => {
+    const api = client();
+    await monter('reservation-a', api);
+    await waitFor(() => expect(screen.getByTestId('chiffres')).toHaveTextContent('111111'));
+
+    // C'est le premier élément qu'on lit sur cet écran, et un commerçant a
+    // essayé de le taper. L'écran doit couper court.
+    expect(await screen.findByText(en.parcours.codeChiffresAide)).toBeTruthy();
+    expect(screen.getByText(en.parcours.codeSecoursAide)).toBeTruthy();
+  });
 });
