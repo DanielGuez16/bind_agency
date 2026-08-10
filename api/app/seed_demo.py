@@ -58,6 +58,7 @@ from app.models.enums import (
     UserRole,
     VerificationStatus,
 )
+from app.schemas.collaboration import MotifDeDecision
 from app.services import auth as auth_service
 from app.services import availability as availability_service
 from app.services import booking as booking_service
@@ -623,7 +624,10 @@ async def _mener(
     # Une première demande de nouvelle soumission : le dossier est en deuxième
     # tentative, exactement comme après un contrôle non conforme.
     await collaboration_service.demander_une_nouvelle_soumission(
-        session, collaboration=contrepartie, actor=caissier, reason="La mention du salon manque"
+        session,
+        collaboration=contrepartie,
+        actor=caissier,
+        reason=MotifDeDecision.MENTION_MANQUANTE,
     )
 
     if issue != "revue_humaine":
@@ -633,7 +637,7 @@ async def _mener(
     # complet plutôt que d'incrémenter le compteur : c'est le compteur qui doit
     # être la conséquence, pas la cause.
     for rang, motif in enumerate(
-        ("Le tag de lieu manque", "Le format n'est pas celui attendu"), start=2
+        (MotifDeDecision.LIEU_MANQUANT, MotifDeDecision.FORMAT_INATTENDU), start=2
     ):
         await session.refresh(contrepartie)
         await _soumettre(session, contrepartie, createur=createur, marque=str(rang))

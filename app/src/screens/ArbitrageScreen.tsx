@@ -14,6 +14,16 @@
  *
  * **Un motif est obligatoire hors approbation**, et il vient de la liste
  * fermée du commerce — le même vocabulaire, encore.
+ *
+ * **L'arbitre voit ce que le commerce voit, et davantage.** Il lui manquait
+ * tout ce sur quoi porte la décision : la publication d'origine, l'aperçu
+ * archivé, et les demandes précédentes. Il tranchait sur un pseudonyme, un nom
+ * de prestation et une phrase — pour la décision la plus lourde du produit, et
+ * la seule qui ne se rouvre pas.
+ *
+ * **L'historique, et non le seul dernier motif.** Trois fois le même reproche
+ * et trois reproches différents n'appellent pas la même décision : c'est la
+ * répétition qui justifie l'escalade, et elle n'était nulle part.
  */
 import { useState } from 'react';
 import { View } from 'react-native';
@@ -29,7 +39,8 @@ import {
 } from '../components';
 import { useI18n } from '../i18n';
 import { Ecran } from './Ecran';
-import { MOTIFS } from './PublicationsScreen';
+import { PreuveSoumise } from './Preuve';
+import { MOTIFS, libelleDuMotif, type MotifDeDecision } from './motifs';
 import { useRequete } from './useRequete';
 
 export function ArbitrageScreen() {
@@ -67,7 +78,7 @@ export function ArbitrageScreen() {
 function Dossier({ ligne, onTranche }: { ligne: LigneDeFile; onTranche: () => void }) {
   const { api, messageDErreur } = useApi();
   const { t } = useI18n();
-  const [motif, setMotif] = useState<string | null>(null);
+  const [motif, setMotif] = useState<MotifDeDecision | null>(null);
   const [echec, setEchec] = useState<string | null>(null);
 
   async function arbitrer(issue: IssueDArbitrage) {
@@ -75,7 +86,9 @@ function Dossier({ ligne, onTranche }: { ligne: LigneDeFile; onTranche: () => vo
     try {
       await api.arbitrer(ligne.collaboration_id, {
         issue,
-        reason: issue === 'approve' ? undefined : (motif ? t(motif) : undefined),
+        // Le code, jamais le libellé traduit : c'est ce que le journal garde,
+        // et c'est ce qui permettra de le relire dans une autre langue.
+        reason: issue === 'approve' ? undefined : (motif ?? undefined),
       });
       onTranche();
     } catch (erreur) {
@@ -95,17 +108,40 @@ function Dossier({ ligne, onTranche }: { ligne: LigneDeFile; onTranche: () => vo
         {ligne.creator_handle ?? ''} · {ligne.item_name} ·{' '}
         {t('commerce.tentative', { n: ligne.attempts_count })}
       </Texte>
-      {ligne.dernier_motif ? (
-        <Texte variante="type.caption" couleur="status.warning" testID="dernier-motif">
-          {ligne.dernier_motif}
-        </Texte>
+
+      {/* **Ce sur quoi porte la décision.** La publication d'origine et
+          l'aperçu archivé, exactement comme le commerce les voit : une vue plus
+          pauvre obligerait l'arbitre à réviser une décision avec moins
+          d'information que celui qui l'a prise. */}
+      <PreuveSoumise
+        soumission={ligne.derniere_soumission}
+        mentionAttendue={ligne.required_mention}
+        lieuAttendu={ligne.required_geotag}
+      />
+
+      {/* **Les demandes précédentes, dans l'ordre.** C'est l'historique qui
+          justifie l'escalade. */}
+      {ligne.tentatives.length > 0 ? (
+        <View style={{ gap: 2 }} testID="historique">
+          {ligne.tentatives.map((tentative, rang) => (
+            <Texte
+              key={`${tentative.demandee_le}-${rang}`}
+              variante="type.caption"
+              couleur="status.warning"
+              testID={rang === ligne.tentatives.length - 1 ? 'dernier-motif' : undefined}
+            >
+              {t('commerce.tentative', { n: rang + 1 })} · {libelleDuMotif(t, tentative.motif)}
+              {tentative.par === 'admin' ? ` · ${t('admin.arbitrageParLAdministration')}` : ''}
+            </Texte>
+          ))}
+        </View>
       ) : null}
 
       <RangeeDeChips>
         {MOTIFS.map((cle) => (
           <Chip
             key={cle}
-            label={t(cle)}
+            label={libelleDuMotif(t, cle)}
             selected={motif === cle}
             onPress={() => setMotif(motif === cle ? null : cle)}
           />

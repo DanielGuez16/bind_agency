@@ -26,13 +26,19 @@ import { ECRANS_COMMERCE } from '../test-support/registre-ecrans';
 
 const coffre = { lire: async () => null, ecrire: async () => {} };
 
-function clientDe(table: Record<string, unknown>): ApiClient {
+function clientDe(
+  table: Record<string, unknown>,
+  /** Ce qui part, pour les tests qui éprouvent le corps envoyé et non le rendu. */
+  espion?: (chemin: string, corps: unknown) => void,
+): ApiClient {
   return new ApiClient({
     baseUrl: 'https://api.test',
     coffre,
-    fetchImpl: async (url) => {
-      const trouve = Object.entries(table).find(([fragment]) => String(url).includes(fragment));
-      if (!trouve) throw new Error(`route non simulée : ${url}`);
+    fetchImpl: async (url, init) => {
+      const chemin = String(url);
+      if (init?.body) espion?.(chemin, JSON.parse(String(init.body)));
+      const trouve = Object.entries(table).find(([fragment]) => chemin.includes(fragment));
+      if (!trouve) throw new Error(`route non simulée : ${chemin}`);
       return { ok: true, status: 200, json: async () => trouve[1] } as Response;
     },
   });
@@ -135,7 +141,10 @@ const LIGNE_DE_FILE = {
   creator_handle: 'rebecca.miami',
   platform: 'instagram',
   item_name: 'Gel nails',
-  dernier_motif: 'mention absente',
+  dernier_motif: 'missing_mention',
+  tentatives: [
+    { motif: 'missing_mention', demandee_le: '2026-08-08T09:00:00Z', par: 'business_member' },
+  ],
   // Une soumission réelle : c'est elle que le commerce doit pouvoir regarder.
   derniere_soumission: {
     proof_id: 'p1',
@@ -146,6 +155,27 @@ const LIGNE_DE_FILE = {
     screenshot_key: 'proofs/upload/2026-08-09/abc',
     platform_published_at: null,
   },
+};
+
+/**
+ * Un dossier tel que le produit le fabrique, et non tel qu'on l'imagine.
+ *
+ * `resubmit_requested`, trois tentatives : le drapeau de revue humaine se lève
+ * dans la demande de nouvelle soumission, qui laisse le dossier là. Le décor
+ * posait `submitted` — un état que le dossier ne traverse qu'ensuite, s'il
+ * traverse — et c'est ce qui a laissé passer un arbitrage qui répondait 409 sur
+ * deux de ses trois issues.
+ */
+const DOSSIER_EN_ARBITRAGE = {
+  ...LIGNE_DE_FILE,
+  status: 'resubmit_requested',
+  attempts_count: 3,
+  dernier_motif: 'wrong_format',
+  tentatives: [
+    { motif: 'missing_mention', demandee_le: '2026-08-07T09:00:00Z', par: 'business_member' },
+    { motif: 'missing_location', demandee_le: '2026-08-08T09:00:00Z', par: 'business_member' },
+    { motif: 'wrong_format', demandee_le: '2026-08-09T09:00:00Z', par: 'business_member' },
+  ],
 };
 
 /** Le statut accompagne les étapes : c'est lui qui décide de la dernière ligne. */
@@ -487,7 +517,7 @@ describe('arbitrage', () => {
   it('offre l’approbation sans motif, et rien d’autre', async () => {
     await monter(
       <ArbitrageScreen />,
-      clientDe({ '/admin/collaborations/review': [LIGNE_DE_FILE] }),
+      clientDe({ '/admin/collaborations/review': [DOSSIER_EN_ARBITRAGE] }),
       'admin',
     );
     await waitFor(() => expect(screen.getByTestId('dossier-k1')).toBeTruthy());
@@ -500,7 +530,7 @@ describe('arbitrage', () => {
   it('ouvre les deux autres issues dès qu’un motif est choisi', async () => {
     await monter(
       <ArbitrageScreen />,
-      clientDe({ '/admin/collaborations/review': [LIGNE_DE_FILE] }),
+      clientDe({ '/admin/collaborations/review': [DOSSIER_EN_ARBITRAGE] }),
       'admin',
     );
     await waitFor(() => expect(screen.getByTestId('dossier-k1')).toBeTruthy());
@@ -510,6 +540,80 @@ describe('arbitrage', () => {
     expect(screen.getByLabelText(en.admin.issueResubmit)).toBeTruthy();
     // La clôture n'existe que là. Le commerce ne la voit nulle part.
     expect(screen.getByLabelText(en.admin.issueUnfulfilled)).toBeTruthy();
+  });
+
+  it('montre ce sur quoi porte la décision, pas seulement un pseudonyme', async () => {
+    // C'est l'écran où la décision est la plus lourde, et la seule qui ne se
+    // rouvre pas. L'arbitre n'avait ni la publication d'origine, ni l'aperçu
+    // archivé : il tranchait sur un nom de prestation.
+    await monter(
+      <ArbitrageScreen />,
+      clientDe({
+        '/admin/collaborations/review': [DOSSIER_EN_ARBITRAGE],
+        '/proofs/p1/access': { url: '/proofs/p1?t=jeton', expires_in: 300 },
+      }),
+      'admin',
+    );
+    await waitFor(() => expect(screen.getByTestId('dossier-k1')).toBeTruthy());
+
+    await waitFor(() => expect(screen.getByTestId('apercu-de-la-preuve')).toBeTruthy());
+    expect(screen.getByTestId('ouvrir-la-publication')).toBeTruthy();
+  });
+
+  it('écrit le motif dans la langue de l’interface', async () => {
+    // Il s'affichait en français au milieu d'un écran anglais : le motif
+    // voyageait en texte libre et ressortait tel qu'il avait été écrit.
+    await monter(
+      <ArbitrageScreen />,
+      clientDe({ '/admin/collaborations/review': [DOSSIER_EN_ARBITRAGE] }),
+      'admin',
+    );
+    await waitFor(() => expect(screen.getByTestId('dossier-k1')).toBeTruthy());
+
+    expect(screen.getByTestId('dernier-motif')).toHaveTextContent(
+      new RegExp(en.commerce.motifFormat),
+    );
+    // Et aucun code interne ne transparaît.
+    expect(screen.queryByText(/wrong_format/)).toBeNull();
+  });
+
+  it('montre les trois tentatives, pas seulement la dernière', async () => {
+    // C'est l'historique qui justifie l'escalade : trois fois le même reproche
+    // et trois reproches différents n'appellent pas la même décision.
+    await monter(
+      <ArbitrageScreen />,
+      clientDe({ '/admin/collaborations/review': [DOSSIER_EN_ARBITRAGE] }),
+      'admin',
+    );
+    await waitFor(() => expect(screen.getByTestId('dossier-k1')).toBeTruthy());
+
+    const historique = screen.getByTestId('historique');
+    for (const motif of [en.commerce.motifMention, en.commerce.motifLieu, en.commerce.motifFormat]) {
+      expect(historique).toHaveTextContent(new RegExp(motif));
+    }
+  });
+
+  it('envoie le code du motif, jamais son libellé traduit', async () => {
+    // Le libellé partait dans le journal et devenait illisible pour qui ne
+    // parle pas la langue de l'arbitre. C'est ce que le code évite.
+    const envois: unknown[] = [];
+    await monter(
+      <ArbitrageScreen />,
+      clientDe(
+        { '/admin/collaborations/review': [DOSSIER_EN_ARBITRAGE] },
+        (chemin, corps) => envois.push({ chemin, corps }),
+      ),
+      'admin',
+    );
+    await waitFor(() => expect(screen.getByTestId('dossier-k1')).toBeTruthy());
+
+    await fireEvent.press(screen.getByText(en.commerce.motifMention));
+    await fireEvent.press(screen.getByLabelText(en.admin.issueResubmit));
+
+    await waitFor(() => expect(envois).toHaveLength(1));
+    expect(envois[0]).toMatchObject({
+      corps: { issue: 'resubmit', reason: 'missing_mention' },
+    });
   });
 
   it('emploie le vocabulaire du commerce pour ce qui est commun', async () => {

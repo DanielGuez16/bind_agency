@@ -43,6 +43,7 @@ from app.models import (
     TierOffer,
 )
 from app.models.enums import (
+    ActorKind,
     CaptureMethod,
     CollaborationStatus,
     ContentFormat,
@@ -90,7 +91,26 @@ TRANSITIONS: dict[CollaborationStatus, frozenset[CollaborationStatus]] = {
         }
     ),
     CollaborationStatus.RESUBMIT_REQUESTED: frozenset(
-        {CollaborationStatus.SUBMITTED, CollaborationStatus.UNFULFILLED}
+        {
+            CollaborationStatus.SUBMITTED,
+            CollaborationStatus.UNFULFILLED,
+            # **Les deux arrêtes de l'arbitrage manquaient ici**, et c'est le
+            # seul état qui atteint réellement la revue humaine : le drapeau se
+            # lève dans `demander_une_nouvelle_soumission`, qui laisse le
+            # dossier en `resubmit_requested`. Elles avaient été posées sur
+            # `submitted` et `under_review` — deux états que le dossier ne
+            # traverse qu'ensuite, s'il traverse.
+            #
+            # Résultat : la seule sortie de la boucle automatique répondait 409
+            # sur deux de ses trois issues, et un dossier à la troisième
+            # tentative restait bloqué pour toujours.
+            CollaborationStatus.APPROVED,
+            # Rouvrir une fenêtre déjà ouverte. Ce n'est pas un non-mouvement :
+            # `demander_une_nouvelle_soumission` repousse l'échéance, et c'est
+            # exactement ce qu'un arbitre accorde à une créatrice qui n'a pas
+            # eu le temps.
+            CollaborationStatus.RESUBMIT_REQUESTED,
+        }
     ),
     # Terminaux, déclarés vides plutôt qu'absents : la différence entre
     # « terminal » et « oublié » doit se voir.
@@ -412,6 +432,19 @@ class DerniereSoumission:
 
 
 @dataclass(frozen=True, slots=True)
+class Tentative:
+    """Une demande de nouvelle soumission, telle que le journal l'a écrite.
+
+    `par` distingue le commerce de l'arbitre : sur un dossier escaladé, savoir
+    laquelle des demandes vient de l'administration change la lecture.
+    """
+
+    motif: str
+    demandee_le: datetime
+    par: ActorKind
+
+
+@dataclass(frozen=True, slots=True)
 class LigneDeFile:
     collaboration_id: uuid.UUID
     booking_id: uuid.UUID
@@ -431,12 +464,22 @@ class LigneDeFile:
     creator_handle: str | None
     platform: Platform
     item_name: str
-    #: Le motif de la dernière demande de nouvelle soumission, relu dans le
-    #: journal d'audit. Il n'est stocké nulle part ailleurs, et le dupliquer sur
-    #: la contrepartie créerait une seconde vérité qu'un UPDATE pourrait faire
+    #: Chaque demande de nouvelle soumission, dans l'ordre, relue dans le
+    #: journal d'audit. Rien n'est stocké ailleurs, et le dupliquer sur la
+    #: contrepartie créerait une seconde vérité qu'un UPDATE pourrait faire
     #: diverger du journal — lequel, lui, est immuable.
-    dernier_motif: str | None
+    #:
+    #: **L'historique et non le seul dernier motif.** L'écran d'arbitrage ne
+    #: montrait que la dernière demande, alors que c'est la répétition qui
+    #: justifie l'escalade : trois fois le même reproche et trois reproches
+    #: différents n'appellent pas la même décision.
+    tentatives: tuple[Tentative, ...]
     derniere_soumission: DerniereSoumission | None
+
+    @property
+    def dernier_motif(self) -> str | None:
+        """Le plus récent, dérivé et non stocké en double."""
+        return self.tentatives[-1].motif if self.tentatives else None
 
 
 def _requete_de_file():
@@ -510,30 +553,22 @@ async def _completer(session: AsyncSession, lignes) -> tuple[LigneDeFile, ...]:
         )
     }
 
-    # Le motif le plus récent parmi les demandes de nouvelle soumission. Une
-    # approbation n'en porte pas et ne doit pas effacer celui d'avant.
-    rangee = (
-        sa.select(
-            AuditLog.entity_id,
-            AuditLog.reason,
-            sa.func.row_number()
-            .over(partition_by=AuditLog.entity_id, order_by=AuditLog.occurred_at.desc())
-            .label("rang"),
-        )
+    # Toutes les demandes de nouvelle soumission, du plus ancien au plus
+    # récent. Une approbation n'en porte pas et n'efface donc rien.
+    tentatives: dict[uuid.UUID, list[Tentative]] = {}
+    for entity_id, reason, occurred_at, actor_kind in await session.execute(
+        sa.select(AuditLog.entity_id, AuditLog.reason, AuditLog.occurred_at, AuditLog.actor_kind)
         .where(
             AuditLog.entity_type == AuditedEntity.COLLABORATION.value,
             AuditLog.entity_id.in_(ids),
             AuditLog.to_status == CollaborationStatus.RESUBMIT_REQUESTED.value,
             AuditLog.reason.is_not(None),
         )
-        .subquery()
-    )
-    motifs = {
-        entity_id: reason
-        for entity_id, reason in await session.execute(
-            sa.select(rangee.c.entity_id, rangee.c.reason).where(rangee.c.rang == 1)
+        .order_by(AuditLog.occurred_at)
+    ):
+        tentatives.setdefault(entity_id, []).append(
+            Tentative(motif=reason, demandee_le=occurred_at, par=actor_kind)
         )
-    }
 
     return tuple(
         LigneDeFile(
@@ -555,7 +590,7 @@ async def _completer(session: AsyncSession, lignes) -> tuple[LigneDeFile, ...]:
             creator_handle=ligne.handle,
             platform=ligne.platform,
             item_name=ligne.item_name,
-            dernier_motif=motifs.get(ligne.collaboration_id),
+            tentatives=tuple(tentatives.get(ligne.collaboration_id, ())),
             derniere_soumission=preuves.get(ligne.collaboration_id),
         )
         for ligne in lignes

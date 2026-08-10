@@ -291,6 +291,7 @@ export const en = {
   admin: {
     arbitrageTitre: 'Counterparts under review',
     arbitrageVide: 'Nothing to arbitrate.',
+    arbitrageParLAdministration: 'asked by BIND',
     issueApprove: 'Approve',
     issueResubmit: 'Ask again',
     issueUnfulfilled: 'Close as not fulfilled',

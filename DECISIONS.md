@@ -2578,3 +2578,28 @@ mais une écriture reste une écriture, et « refuser plutôt qu'agir » ne souf
 pas d'exception d'ordre. Tout se vérifie maintenant avant la première écriture,
 le dépôt d'objets compris — sans lui, le jeu de données échouait **après** avoir
 effacé, laissant une base à moitié écrite.
+
+## 2026-08-10 — Le motif d'un refus devient un code du vocabulaire fermé
+
+`reason` était du texte libre sur les deux routes de décision. Le commerce y
+écrivait en réalité une clé d'interface, le jeu de données une phrase française,
+et l'écran d'arbitrage rendait la valeur telle quelle : « Le format n'est pas
+celui attendu » au milieu d'une interface anglaise. Une phrase ne se traduit pas
+à l'affichage.
+
+Les quatre motifs deviennent une énumération de wire (`missing_mention`,
+`missing_location`, `wrong_format`, `low_quality`), acceptée par les deux routes
+et rendue dans la langue du client. Le texte libre est **refusé** plutôt que
+toléré : l'accepter en plus rouvrirait le trou au premier appelant qui en
+enverrait. Rien en base — le journal d'audit garde une colonne texte, et les
+motifs écrits avant ce changement s'y lisent encore comme des phrases, ce que
+l'affichage rend tel quel plutôt que de les effacer.
+
+## 2026-08-10 — La file rend l'historique des demandes, et non le seul dernier motif
+
+`dernier_motif` était calculé par une fenêtre `row_number() = 1`. Il devient
+dérivé d'une liste `tentatives` relue en une requête, du plus ancien au plus
+récent, avec l'acteur de chaque demande. Raison : c'est la répétition qui
+justifie l'escalade, et l'arbitre décidait sans la voir. Toujours rien de
+dupliqué sur la contrepartie — le journal reste la seule vérité.
+

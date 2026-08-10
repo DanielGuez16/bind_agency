@@ -18,6 +18,7 @@ qui ne descend jamais.
 import uuid
 from datetime import UTC, datetime, timedelta
 
+import pytest
 import sqlalchemy as sa
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,10 +28,14 @@ from app.models import Collaboration
 from app.models.enums import CollaborationStatus, ReliabilityEventType, UserRole
 from app.services import auth as auth_service
 from app.services import collaboration as service
+from app.services import proof as proof_service
 from app.services.audit import Actor
-from tests.test_collaboration import contrepartie
+from tests.test_collaboration import capture, contrepartie
 
 PREFIX = get_settings().api_v1_prefix
+#: Trois reproches **différents**, et non trois fois le même : l'ordre et la
+#: variété sont précisément ce que l'historique doit rendre lisible.
+MOTIFS_D_ESSAI = ("missing_mention", "missing_location", "wrong_format", "low_quality")
 MOT_DE_PASSE = "un-mot-de-passe-solide-42"
 
 
@@ -319,7 +324,7 @@ async def test_l_arbitre_peut_clore_en_non_honoree(
 
     reponse = await client.post(
         f"{PREFIX}/admin/collaborations/{ligne.id}/decision",
-        json={"issue": "unfulfilled", "reason": "trois soumissions non conformes"},
+        json={"issue": "unfulfilled", "reason": "wrong_format"},
         headers=entetes,
     )
 
@@ -359,7 +364,7 @@ async def test_l_arbitre_qui_redemande_pose_une_nouvelle_echeance(
 
     reponse = await client.post(
         f"{PREFIX}/admin/collaborations/{ligne.id}/decision",
-        json={"issue": "resubmit", "reason": "mention absente"},
+        json={"issue": "resubmit", "reason": "missing_mention"},
         headers=entetes,
     )
 
@@ -388,7 +393,7 @@ async def test_toute_issue_autre_qu_une_approbation_exige_un_motif(
     for issue in ("resubmit", "unfulfilled"):
         refuse = await client.post(
             f"{PREFIX}/admin/collaborations/{ligne.id}/decision",
-            json={"issue": issue, "reason": "   "},
+            json={"issue": issue},
             headers=entetes,
         )
         assert refuse.status_code == 422, issue
@@ -448,7 +453,7 @@ async def test_le_commerce_ne_peut_pas_clore_en_non_honoree(
     # lequel demander une clôture.
     refuse = await client.post(
         f"{PREFIX}/business/collaborations/{ligne.id}/decision",
-        json={"issue": "unfulfilled", "reason": "peu importe"},
+        json={"issue": "unfulfilled", "reason": "low_quality"},
         headers=entetes,
     )
     assert refuse.status_code == 422
@@ -456,7 +461,7 @@ async def test_le_commerce_ne_peut_pas_clore_en_non_honoree(
     # Et la route d'arbitrage lui est fermée par son rôle.
     interdit = await client.post(
         f"{PREFIX}/admin/collaborations/{ligne.id}/decision",
-        json={"issue": "unfulfilled", "reason": "peu importe"},
+        json={"issue": "unfulfilled", "reason": "low_quality"},
         headers=entetes,
     )
     assert interdit.status_code == 403
@@ -470,3 +475,144 @@ async def test_la_cloture_produit_l_evenement_de_fiabilite(session: AsyncSession
         ReliabilityEventType.UNFULFILLED
         in service.EVENEMENTS_PAR_ISSUE[CollaborationStatus.UNFULFILLED]
     )
+
+
+# --------------------------------------------------------------------------
+# Le chemin complet, sans état posé à la main
+# --------------------------------------------------------------------------
+
+
+async def _jusqu_a_la_revue_humaine(session: AsyncSession) -> Collaboration:
+    """Un dossier amené en revue humaine **par le produit**.
+
+    Aucun `UPDATE` : la créatrice soumet, le commerce redemande, autant de fois
+    que la configuration en autorise, et le drapeau se lève tout seul au
+    dernier tour.
+
+    C'est ce que ce fichier ne faisait nulle part. Chaque test d'arbitrage
+    posait `needs_human_review=True` avec un statut choisi à la main, et
+    choisissait `submitted` — un état où les flèches existaient déjà. Le produit,
+    lui, laisse le dossier en `resubmit_requested`, où il n'y en avait aucune :
+    deux issues sur trois répondaient 409 en ligne, et aucun test ne pouvait le
+    voir.
+
+    Même famille que le montage de preuve qui posait une clé sans objet derrière.
+    Un décor qui ne ressemble pas à ce que la mécanique produit ne prouve rien.
+    """
+    ligne, _ = await contrepartie(session)
+
+    for tour in range(get_settings().collaboration_max_attempts):
+        await proof_service.soumettre(
+            session, collaboration=ligne, capture=capture(), actor=Actor.system()
+        )
+        await service.demander_une_nouvelle_soumission(
+            session,
+            collaboration=ligne,
+            actor=Actor.system(),
+            reason=MOTIFS_D_ESSAI[tour],
+        )
+
+    await session.refresh(ligne)
+    return ligne
+
+
+async def test_le_produit_amene_le_dossier_en_resubmit_requested(session: AsyncSession) -> None:
+    """L'état réel de la revue humaine, constaté et non supposé.
+
+    C'est celui-là que la route d'arbitrage doit accepter. Le drapeau se lève
+    dans `demander_une_nouvelle_soumission`, qui laisse le dossier en
+    `resubmit_requested` : il n'y a pas d'autre chemin vers la revue humaine.
+    """
+    ligne = await _jusqu_a_la_revue_humaine(session)
+
+    assert ligne.needs_human_review is True
+    assert ligne.status is CollaborationStatus.RESUBMIT_REQUESTED
+    assert ligne.attempts_count == get_settings().collaboration_max_attempts
+
+    # Et c'est le seul état que la file rend : si un jour un autre chemin lève
+    # le drapeau, ce test le dira au lieu de laisser une issue muette.
+    file = await service.file_de_revue_humaine(session)
+    assert {vue.status for vue in file} == {CollaborationStatus.RESUBMIT_REQUESTED}
+
+
+@pytest.mark.parametrize(
+    ("issue", "attendu"),
+    [
+        ("approve", CollaborationStatus.APPROVED),
+        ("resubmit", CollaborationStatus.RESUBMIT_REQUESTED),
+        ("unfulfilled", CollaborationStatus.UNFULFILLED),
+    ],
+)
+async def test_les_trois_issues_partent_du_dossier_reel(
+    client: AsyncClient,
+    session: AsyncSession,
+    issue: str,
+    attendu: CollaborationStatus,
+) -> None:
+    """Les trois issues, depuis l'état que le produit fabrique, par la route.
+
+    Deux d'entre elles répondaient 409 : la seule sortie de la boucle
+    automatique était fermée, et un dossier arrivé à la dernière tentative
+    restait bloqué pour toujours — plus personne ne pouvait agir dessus, ni le
+    commerce, ni l'arbitre.
+    """
+    ligne = await _jusqu_a_la_revue_humaine(session)
+    entetes = await _admin_connecte(client, session)
+
+    reponse = await client.post(
+        f"{PREFIX}/admin/collaborations/{ligne.id}/decision",
+        json={"issue": issue, "reason": "low_quality"},
+        headers=entetes,
+    )
+
+    assert reponse.status_code == 200, reponse.text
+    assert reponse.json()["status"] == attendu.value
+    # Le drapeau reste levé : c'est une trace, elle ne s'efface pas.
+    assert reponse.json()["needs_human_review"] is True
+
+
+async def test_un_motif_en_texte_libre_est_refuse_des_deux_cotes(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """La seule chose qui empêche l'intraduisible de revenir.
+
+    Le motif était une phrase. Elle traversait le journal telle quelle et
+    ressortait sur l'écran de l'arbitre dans la langue de celui qui l'avait
+    écrite — « Le format n'est pas celui attendu » au milieu d'une interface en
+    anglais. Traduire à l'affichage suppose un code ; il suffit d'un appelant
+    qui envoie une phrase pour que le trou se rouvre.
+    """
+    ligne = await _jusqu_a_la_revue_humaine(session)
+    await session.commit()
+    entetes = await _admin_connecte(client, session)
+
+    refuse = await client.post(
+        f"{PREFIX}/admin/collaborations/{ligne.id}/decision",
+        json={"issue": "resubmit", "reason": "Le format n'est pas celui attendu"},
+        headers=entetes,
+    )
+    assert refuse.status_code == 422
+    assert refuse.json()["detail"] == "validation_failed"
+
+
+async def test_l_historique_porte_les_trois_demandes_dans_l_ordre(
+    session: AsyncSession,
+) -> None:
+    """C'est la répétition qui justifie l'escalade.
+
+    L'écran ne montrait que la dernière demande. Trois fois le même reproche et
+    trois reproches différents n'appellent pas la même décision, et l'arbitre
+    n'avait aucun moyen de les distinguer.
+    """
+    await _jusqu_a_la_revue_humaine(session)
+
+    (vue,) = await service.file_de_revue_humaine(session)
+
+    assert [t.motif for t in vue.tentatives] == list(
+        MOTIFS_D_ESSAI[: get_settings().collaboration_max_attempts]
+    )
+    # Chronologique, et non l'inverse : on lit l'escalade dans le sens où elle
+    # s'est produite.
+    assert [t.demandee_le for t in vue.tentatives] == sorted(t.demandee_le for t in vue.tentatives)
+    # Le dernier motif n'est plus stocké en double, il se dérive.
+    assert vue.dernier_motif == vue.tentatives[-1].motif
