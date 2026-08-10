@@ -1197,21 +1197,37 @@ def test_le_refus_du_garde_est_une_reponse_et_non_une_trace(
     assert "refus" in capsys.readouterr().err
 
 
-async def test_chaque_commerce_ouvert_a_une_reservation_aujourd_hui(
+#: La réservation du jour peut basculer au lendemain, et jusqu'au prochain jour
+#: d'ouverture : semé un samedi soir, un salon ouvert du mardi au samedi ne
+#: rouvre que trois jours plus tard. Sept jours couvrent le pire cas sans
+#: laisser passer une date lointaine.
+FENETRE_DU_PROCHAIN_CRENEAU = timedelta(days=7)
+
+
+async def test_chaque_commerce_ouvert_a_une_reservation_a_venir(
     seed_conn: AsyncConnection,
 ) -> None:
     """La propriété qui a lâché, et qui vidait l'écran du comptoir.
 
-    Les réservations tombaient sur le premier créneau libre à partir de
-    maintenant — donc demain — et toutes sur le même salon. Semé un lundi, où
-    trois salons sur quatre n'ouvraient pas, l'écran « Aujourd'hui » disait
-    « rien de réservé » partout. C'était exact et inutilisable : la caisse ne
-    s'atteignait que depuis une ligne de la journée, et aucun code ne pouvait
-    être validé.
+    Les réservations tombaient toutes sur le même salon, et rien n'était posé
+    ailleurs. Semé un lundi, où trois salons sur quatre n'ouvraient pas, l'écran
+    « Aujourd'hui » disait « rien de réservé » partout. C'était exact et
+    inutilisable : la caisse ne s'atteignait que depuis une ligne de la journée,
+    et aucun code ne pouvait être validé.
 
-    **Le jeu de données ne peut pas dépendre du jour où on le sème.** Le test
-    non plus : il ne fige aucune date, il demande à chaque commerce actif ce
-    qu'il a aujourd'hui, chez lui.
+    **Ce que le semis promet, c'est le prochain créneau ouvrable** — aujourd'hui
+    si la journée le permet, le prochain jour d'ouverture sinon. Ce test exigeait
+    « aujourd'hui », ce que le produit ne promet pas : passé la dernière heure
+    réservable d'un salon, il n'y a plus de place et le semis reporte, comme il
+    le doit. Le test passait donc en journée et tombait le soir — et il n'a été
+    trouvé que parce qu'une intégration continue a tourné à 17 h 50 heure de
+    Miami. Une assertion qui dépend de l'heure qu'il est ne protège que
+    certaines heures.
+
+    Ce qu'il vérifie donc, et qui est vrai à toute heure : **chaque commerce
+    ouvert a une réservation confirmée**, elle n'est **jamais derrière nous**, et
+    elle est **proche**. La première condition attrape le défaut d'origine — plus
+    aucune réservation nulle part — que les deux autres ne remplacent pas.
     """
     commerces = (
         await seed_conn.execute(
@@ -1224,19 +1240,36 @@ async def test_chaque_commerce_ouvert_a_une_reservation_aujourd_hui(
 
     for business_id, nom, fuseau in commerces:
         zone = ZoneInfo(fuseau)
+        # Le début de la journée locale, et non « maintenant » : une réservation
+        # posée ce matin et déjà commencée reste celle du jour, et l'écran du
+        # comptoir la montre encore.
         debut = datetime.combine(datetime.now(zone).date(), time.min, tzinfo=zone)
 
-        confirmees = await seed_conn.scalar(
-            sa.select(sa.func.count())
-            .select_from(Booking)
-            .where(
-                Booking.business_id == business_id,
-                Booking.starts_at >= debut,
-                Booking.starts_at < debut + timedelta(days=1),
-                Booking.status == BookingStatus.CONFIRMED,
+        creneaux = (
+            (
+                await seed_conn.execute(
+                    sa.select(Booking.starts_at).where(
+                        Booking.business_id == business_id,
+                        Booking.status == BookingStatus.CONFIRMED,
+                    )
+                )
             )
+            .scalars()
+            .all()
         )
-        assert confirmees, f"{nom} n'a aucune réservation confirmée aujourd'hui"
+
+        assert creneaux, f"{nom} n'a aucune réservation confirmée"
+
+        # Au moins une au prochain créneau ouvrable : aujourd'hui, ou le jour
+        # d'ouverture suivant. Ni derrière nous, ni dans trois semaines.
+        a_venir = [
+            quand
+            for quand in creneaux
+            if debut <= quand.astimezone(zone) < debut + FENETRE_DU_PROCHAIN_CRENEAU
+        ]
+        assert a_venir, (
+            f"{nom} n'a aucune réservation confirmée à venir : {[str(quand) for quand in creneaux]}"
+        )
 
 
 #: Avant l'ouverture, en pleine matinée, dans la coupure de midi, l'après-midi,
