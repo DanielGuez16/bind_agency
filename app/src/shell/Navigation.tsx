@@ -252,6 +252,7 @@ function ParcoursCreateur({
         {({ navigation, route }) => (
           <FicheScreen
             businessId={route.params.businessId}
+            onRetour={() => navigation.goBack()}
             onReserver={(offre, fiche) => navigation.navigate('Creneaux', { fiche, offre })}
           />
         )}
@@ -260,6 +261,7 @@ function ParcoursCreateur({
       <PileCreateur.Screen name="Creneaux">
         {({ navigation, route }) => (
           <CreneauxScreen
+            onRetour={() => navigation.goBack()}
             fiche={route.params.fiche}
             offre={route.params.offre}
             onReserve={(bookingId) => {
@@ -310,12 +312,20 @@ function PileDesReservations() {
       </PileReservations.Screen>
 
       <PileReservations.Screen name="Code" getId={({ params }) => params?.bookingId}>
-        {({ route }) => <CodeScreen bookingId={route.params.bookingId} />}
+        {({ navigation, route }) => (
+          <CodeScreen
+            bookingId={route.params.bookingId}
+            onRetour={() => navigation.goBack()}
+          />
+        )}
       </PileReservations.Screen>
 
       <PileReservations.Screen name="Preuve">
-        {({ route }) => (
-          <PreuveScreen collaborationId={route.params.collaborationId} />
+        {({ navigation, route }) => (
+          <PreuveScreen
+            collaborationId={route.params.collaborationId}
+            onRetour={() => navigation.goBack()}
+          />
         )}
       </PileReservations.Screen>
     </PileReservations.Navigator>

@@ -29,8 +29,12 @@ import { useRequete } from './useRequete';
 
 export function PreuveScreen({
   collaborationId,
+  onRetour,
 }: {
   collaborationId: string;
+  /** Le retour de la pile. Sur le web il n'y a ni geste ni bouton système :
+   * sans lui, on ne quitte l'écran qu'en changeant d'onglet. */
+  onRetour?: () => void;
 }) {
   const { api } = useApi();
   const { t } = useI18n();
@@ -42,7 +46,8 @@ export function PreuveScreen({
   );
 
   return (
-    <Ecran requete={requete} titre={t('parcours.preuveTitre')} testID="ecran-preuve">
+    <Ecran
+      onRetour={onRetour} requete={requete} titre={t('parcours.preuveTitre')} testID="ecran-preuve">
       {(contrepartie) => (
         <View style={{ gap: 12 }}>
           <TierBadge tier={contrepartie.required_format} />

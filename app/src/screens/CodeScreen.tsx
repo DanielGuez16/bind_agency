@@ -36,11 +36,12 @@
  */
 import { useIsFocused } from '@react-navigation/native';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { useApi, type CodeDeRetrait } from '../api';
 import {
   CodeGlyphs,
+  Icone,
   Countdown,
   ManualCode,
   PickupCodeSurface,
@@ -53,10 +54,19 @@ import { codeColors } from '../theme';
 
 export function CodeScreen({
   bookingId,
+  onRetour,
   /** Injectés pour les tests, et pour le web où ils n'existent pas. */
   garderEveille,
 }: {
   bookingId: string;
+  /**
+   * L'issue. Cet écran est hors thème et hors grille — pas de barre latérale,
+   * pas de barre de titre, c'est voulu — mais « hors grille » ne veut pas dire
+   * « sans sortie » : sur le web, où il n'y a ni geste de balayage ni bouton
+   * système, on n'en sortait qu'en changeant d'onglet. Le contrôle vit donc sur
+   * la surface elle-même, dans ses deux couleurs.
+   */
+  onRetour?: () => void;
   garderEveille?: { activer: () => void; desactiver: () => void };
 }) {
   const { api, messageDErreur } = useApi();
@@ -137,6 +147,18 @@ export function CodeScreen({
 
   return (
     <PickupCodeSurface>
+      {onRetour ? (
+        <Pressable
+          testID="retour"
+          accessibilityRole="button"
+          accessibilityLabel={t('common.retour')}
+          hitSlop={16}
+          onPress={onRetour}
+          style={{ position: 'absolute', top: 20, left: 20, flexDirection: 'row', gap: 6 }}
+        >
+          <Icone nom="retour" teinte={codeColors.fg} taille={20} />
+        </Pressable>
+      ) : null}
       {code === null && echec !== null ? (
         <View testID="etat-refus" style={{ gap: 12, paddingHorizontal: 24 }}>
           <Texte variante="type.heading" align="center" style={{ color: codeColors.fg }}>
