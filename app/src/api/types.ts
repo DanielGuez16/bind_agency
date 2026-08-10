@@ -372,7 +372,18 @@ export type LigneDeFile = {
   platform: Platform;
   item_name: string;
   dernier_motif: string | null;
+  /** Chaque demande de nouvelle soumission, dans l'ordre. C'est la répétition
+   *  qui justifie l'escalade ; le seul dernier motif ne la montre pas. */
+  tentatives: Tentative[];
   derniere_soumission: DerniereSoumission | null;
+};
+
+/** Une demande de nouvelle soumission, telle que le journal l'a écrite. */
+export type Tentative = {
+  /** Un code du vocabulaire fermé — ou, pour les plus anciennes, une phrase. */
+  motif: string;
+  demandee_le: string;
+  par: 'system' | 'creator' | 'business_member' | 'admin';
 };
 
 /** Les trois onglets du commerce. Facultatif : sans lui, la liste rend tout. */

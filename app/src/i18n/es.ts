@@ -288,6 +288,7 @@ export const es: Catalogue = {
   admin: {
     arbitrageTitre: 'Contrapartes en revisión',
     arbitrageVide: 'Nada que arbitrar.',
+    arbitrageParLAdministration: 'solicitado por BIND',
     issueApprove: 'Aprobar',
     issueResubmit: 'Solicitar de nuevo',
     issueUnfulfilled: 'Cerrar como no cumplida',

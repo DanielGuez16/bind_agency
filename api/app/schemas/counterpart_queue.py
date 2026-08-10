@@ -10,7 +10,13 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
-from app.models.enums import CaptureMethod, CollaborationStatus, ContentFormat, Platform
+from app.models.enums import (
+    ActorKind,
+    CaptureMethod,
+    CollaborationStatus,
+    ContentFormat,
+    Platform,
+)
 
 
 class DerniereSoumissionRead(BaseModel):
@@ -25,6 +31,19 @@ class DerniereSoumissionRead(BaseModel):
     media_key: str | None
     screenshot_key: str | None
     platform_published_at: datetime | None
+
+
+class TentativeRead(BaseModel):
+    """Une demande de nouvelle soumission, telle que le journal l'a écrite."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    #: Un code du vocabulaire fermé, jamais une phrase : c'est le client qui
+    #: l'écrit dans sa langue. Le champ reste large parce que le journal
+    #: contient aussi les motifs d'avant ce changement.
+    motif: str
+    demandee_le: datetime
+    par: ActorKind
 
 
 class LigneDeFileRead(BaseModel):
@@ -48,5 +67,11 @@ class LigneDeFileRead(BaseModel):
     creator_handle: str | None
     platform: Platform
     item_name: str
+    #: Dérivé de `tentatives`, conservé pour l'écran du commerce qui n'affiche
+    #: que la dernière demande.
     dernier_motif: str | None
+    #: **L'historique complet.** C'est la répétition qui justifie l'escalade :
+    #: trois fois le même reproche et trois reproches différents n'appellent
+    #: pas la même décision, et l'arbitre ne voyait que le dernier.
+    tentatives: list[TentativeRead]
     derniere_soumission: DerniereSoumissionRead | None

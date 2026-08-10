@@ -28,6 +28,7 @@ import {
   Texte,
 } from '../components';
 import { useI18n } from '../i18n';
+import { MOTIFS, libelleDuMotif, type MotifDeDecision } from './motifs';
 import { Ecran } from './Ecran';
 import { PreuveSoumise, SqueletteDePreuve } from './Preuve';
 import { useRequete } from './useRequete';
@@ -37,14 +38,6 @@ const ONGLETS: { filtre: FiltreDeContrepartie; libelle: string }[] = [
   { filtre: 'expected', libelle: 'commerce.filtreAttendue' },
   { filtre: 'approved', libelle: 'commerce.filtreApprouvee' },
 ];
-
-/** La liste fermée. Aucun motif libre : il ne se traduirait pas. */
-export const MOTIFS = [
-  'commerce.motifMention',
-  'commerce.motifLieu',
-  'commerce.motifFormat',
-  'commerce.motifQualite',
-] as const;
 
 export function PublicationsScreen({ businessId }: { businessId: string }) {
   const { api } = useApi();
@@ -111,7 +104,7 @@ export function PublicationsScreen({ businessId }: { businessId: string }) {
 function Controle({ ligne, onDecide }: { ligne: LigneDeFile; onDecide: () => void }) {
   const { api, messageDErreur } = useApi();
   const { t } = useI18n();
-  const [motif, setMotif] = useState<string | null>(null);
+  const [motif, setMotif] = useState<MotifDeDecision | null>(null);
   const [envoi, setEnvoi] = useState(false);
   const [echec, setEchec] = useState<string | null>(null);
 
@@ -154,7 +147,8 @@ function Controle({ ligne, onDecide }: { ligne: LigneDeFile; onDecide: () => voi
       ) : null}
       {ligne.dernier_motif ? (
         <Texte variante="type.caption" couleur="status.warning" testID="dernier-motif">
-          {ligne.dernier_motif}
+          {t('commerce.tentative', { n: ligne.attempts_count })} ·{' '}
+          {libelleDuMotif(t, ligne.dernier_motif)}
         </Texte>
       ) : null}
 
@@ -166,7 +160,7 @@ function Controle({ ligne, onDecide }: { ligne: LigneDeFile; onDecide: () => voi
             {MOTIFS.map((cle) => (
               <Chip
                 key={cle}
-                label={t(cle)}
+                label={libelleDuMotif(t, cle)}
                 selected={motif === cle}
                 onPress={() => setMotif(motif === cle ? null : cle)}
               />

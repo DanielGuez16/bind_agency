@@ -50,10 +50,20 @@ DIAGRAMME = {
     # tranche.
     ("submitted", "unfulfilled"),
     ("under_review", "unfulfilled"),
+    # Et les deux qui manquaient, sur le **seul** état qui atteint vraiment la
+    # revue humaine : le drapeau se lève dans la demande de nouvelle
+    # soumission, qui laisse le dossier en `resubmit_requested`.
+    ("resubmit_requested", "approved"),
+    ("resubmit_requested", "resubmit_requested"),
 }
 
 #: Les seules flèches qu'un arbitre peut emprunter et personne d'autre.
-ARBITRAGE_SEUL = {("submitted", "unfulfilled"), ("under_review", "unfulfilled")}
+ARBITRAGE_SEUL = {
+    ("submitted", "unfulfilled"),
+    ("under_review", "unfulfilled"),
+    ("resubmit_requested", "approved"),
+    ("resubmit_requested", "resubmit_requested"),
+}
 
 
 async def contrepartie(session: AsyncSession, **critere) -> tuple[Collaboration, dict]:
@@ -168,18 +178,41 @@ def test_tous_les_etats_figurent_dans_la_table() -> None:
 def test_les_cloture_d_arbitrage_ne_sont_atteignables_que_par_l_arbitre() -> None:
     """La table dit ce qui est possible, l'appelant dit qui en a le droit.
 
-    Les deux flèches vers `unfulfilled` depuis `submitted` et `under_review`
-    ont été ouvertes pour l'arbitrage. Le risque est qu'un autre chemin s'y
-    engouffre : la boucle d'échéances, ou le commerce. Le test le vérifie sur
-    le code, pas sur une intention.
+    Quatre flèches ont été ouvertes pour l'arbitrage. Le risque est qu'un autre
+    chemin s'y engouffre : la boucle d'échéances, ou le commerce. Le test le
+    vérifie sur le code, pas sur une intention.
+
+    **La règle porte sur la flèche, pas sur son état de départ.** Elle disait
+    « aucun état d'arbitrage n'est expirable », ce qui tenait tant que les
+    quatre partaient de `submitted` et `under_review`. Depuis que deux partent
+    de `resubmit_requested` — le seul état qui atteint vraiment la revue
+    humaine — cette formulation refuserait une flèche que le balayage ne peut
+    de toute façon pas prendre : il ne vise que `unfulfilled`.
     """
-    # La boucle d'échéances ne balaie que deux états, et ce ne sont pas ceux-là.
+    # La boucle d'échéances ne balaie que deux états.
     assert set(service.EXPIRABLES) == {
         CollaborationStatus.PENDING,
         CollaborationStatus.RESUBMIT_REQUESTED,
     }
-    for depuis, _ in ARBITRAGE_SEUL:
-        assert CollaborationStatus(depuis) not in service.EXPIRABLES
+
+    # Elle ne mène qu'à `unfulfilled`. C'est ce qui rend inatteignables les
+    # flèches d'arbitrage qui visent autre chose — vers `approved` notamment,
+    # qui serait une acceptation par écoulement du temps.
+    source = (API_ROOT / "app" / "services" / "collaboration.py").read_text()
+    debut = source.index("async def expirer_les_echeances")
+    # Bornée à la fonction : la suite du fichier mentionne `APPROVED` pour de
+    # bonnes raisons, et lire jusqu'à la fin ferait échouer ce test sur du code
+    # qui n'a rien à voir avec le balayage.
+    suivante = source.index("\nasync def ", debut + 1)
+    balayage = source[debut:suivante]
+    assert "CollaborationStatus.APPROVED" not in balayage
+    assert balayage.count("vers=CollaborationStatus.UNFULFILLED") == 1
+
+    # Et pour celles qui visent `unfulfilled`, l'état de départ reste hors du
+    # balayage : sinon le temps clorait ce qu'un arbitre doit clore.
+    for depuis, vers in ARBITRAGE_SEUL:
+        if vers == "unfulfilled":
+            assert CollaborationStatus(depuis) not in service.EXPIRABLES
 
     # Une seule fonction du service mène à `unfulfilled` par décision humaine,
     # et c'est celle que seule la route d'arbitrage appelle.
@@ -566,7 +599,7 @@ async def test_le_createur_soumet_et_le_commerce_redemande(
     caissier = await entetes(s["caissier"])
     refus = await client.post(
         f"{PREFIX}/business/collaborations/{ligne.id}/decision",
-        json={"approuve": False, "reason": "la mention du salon est absente"},
+        json={"approuve": False, "reason": "missing_mention"},
         headers=caissier,
     )
     assert refus.status_code == 200, refus.text
@@ -594,7 +627,7 @@ async def test_un_refus_sans_motif_est_refuse(client: AsyncClient, session: Asyn
 
     reponse = await client.post(
         f"{PREFIX}/business/collaborations/{ligne.id}/decision",
-        json={"approuve": False, "reason": "   "},
+        json={"approuve": False},
         headers={"Authorization": f"Bearer {jetons['access_token']}"},
     )
     assert reponse.status_code == 422

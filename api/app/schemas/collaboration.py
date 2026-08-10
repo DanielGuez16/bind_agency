@@ -82,6 +82,26 @@ class CollaborationRead(BaseModel):
         )
 
 
+class MotifDeDecision(StrEnum):
+    """Pourquoi une soumission est refusée. **Un code, pas une phrase.**
+
+    Le motif était du texte libre. Il traversait le journal d'audit tel quel et
+    ressortait sur l'écran de l'arbitre dans la langue de celui qui l'avait
+    écrit : « Le format n'est pas celui attendu » au milieu d'une interface en
+    anglais. Une phrase ne se traduit pas à l'affichage ; un code, si.
+
+    La liste est fermée des deux côtés — le commerce et l'arbitre choisissent
+    dans la même, c'est le même vocabulaire. Accepter en plus une phrase libre
+    rouvrirait exactement le trou : il suffirait d'un appelant pour que
+    l'intraduisible revienne.
+    """
+
+    MENTION_MANQUANTE = "missing_mention"
+    LIEU_MANQUANT = "missing_location"
+    FORMAT_INATTENDU = "wrong_format"
+    QUALITE_INSUFFISANTE = "low_quality"
+
+
 class DecisionCommerce(BaseModel):
     """Approuver, ou redemander. Jamais « rejeter » : il n'existe pas de statut
     de litige, et un refus rouvre avec une nouvelle échéance."""
@@ -90,7 +110,7 @@ class DecisionCommerce(BaseModel):
 
     approuve: bool
     #: Obligatoire quand on redemande : le créateur doit savoir quoi corriger.
-    reason: str | None = Field(default=None, max_length=500)
+    reason: MotifDeDecision | None = None
 
 
 class IssueDArbitrage(StrEnum):
@@ -117,4 +137,4 @@ class DecisionAdministrateur(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     issue: IssueDArbitrage
-    reason: str | None = Field(default=None, max_length=500)
+    reason: MotifDeDecision | None = None

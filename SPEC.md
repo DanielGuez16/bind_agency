@@ -290,9 +290,15 @@ needs_human_review ──arbitrage administrateur──> approved | resubmit_req
 
 Chaque passage par `resubmit_requested` incrémente `attempts_count`. À trois, `needs_human_review` passe à vrai et le dossier sort de la boucle automatique.
 
+**L'état qui atteint la revue humaine est `resubmit_requested`.** Le drapeau se lève dans la demande de nouvelle soumission, qui laisse le dossier là ; les trois issues de l'arbitrage partent donc de cet état, en plus de `submitted` et `under_review` que le dossier ne traverse qu'ensuite, s'il traverse. Les poser sur ces deux-là seulement rendait l'arbitrage impossible sur le seul état où il sert.
+
 **Un dossier marqué en revue humaine s'arbitre**, et lui seul. L'administrateur tranche dans le vocabulaire du commerce — approuver, ou redemander avec un motif — plus une issue qui n'appartient qu'à lui : clore en `unfulfilled`. Le commerce ne ferme jamais définitivement ; lui ouvrir la clôture ferait fermer des dossiers qu'on ne saurait plus rouvrir. Sans cette décision côté administrateur, en revanche, le drapeau devient une impasse : la mécanique s'arrête sans trancher, le créateur attend, le commerce attend.
 
-Deux flèches existent pour ce seul usage : `submitted → unfulfilled` et `under_review → unfulfilled`. Ni la boucle d'échéances — qui ne balaie que `pending` et `resubmit_requested` — ni le commerce ne peuvent les emprunter. La table des transitions dit ce qui est possible, l'appelant dit qui en a le droit.
+Quatre flèches existent pour ce seul usage : `submitted → unfulfilled`, `under_review → unfulfilled`, `resubmit_requested → approved` et `resubmit_requested → resubmit_requested` — cette dernière rouvre une fenêtre en repoussant l'échéance, ce qui n'est pas un non-mouvement. Ni la boucle d'échéances — qui ne balaie que `pending` et `resubmit_requested` — ni le commerce ne peuvent les emprunter. La table des transitions dit ce qui est possible, l'appelant dit qui en a le droit.
+
+**Le motif d'un refus est un code, jamais une phrase.** La liste est fermée — mention manquante, lieu manquant, format inattendu, qualité insuffisante — et la même des deux côtés : le commerce et l'arbitre choisissent dans le même vocabulaire. Une phrase libre ne se traduit pas à l'affichage : elle traversait le journal telle quelle et ressortait sur l'écran de l'arbitre dans la langue de celui qui l'avait écrite. Le texte libre est refusé par l'API, sans quoi il suffirait d'un appelant pour que l'intraduisible revienne.
+
+**L'arbitre voit l'historique des demandes, pas seulement la dernière.** C'est la répétition qui justifie l'escalade : trois fois le même reproche et trois reproches différents n'appellent pas la même décision. Les demandes sont relues dans le journal, jamais recopiées sur la contrepartie — le journal est immuable, une copie ne l'est pas.
 
 Le drapeau `needs_human_review` reste levé après l'arbitrage : c'est une trace, elle ne s'efface pas. C'est la **file** qui se vide, en écartant les dossiers dont le statut est devenu terminal.
 
