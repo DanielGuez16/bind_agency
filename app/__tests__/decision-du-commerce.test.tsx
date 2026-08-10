@@ -86,7 +86,7 @@ function client() {
 }
 
 async function monter() {
-  const vue = render(
+  const vue = await render(
     <I18nProvider initialLocale="en">
       <ThemeProvider role="merchant">
         <ApiProvider client={client()}>

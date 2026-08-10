@@ -29,16 +29,32 @@ const ASYNCHRONES = ['render', 'renderHook', 'fireEvent\\.\\w+'];
  * Repère les appels dont **personne ne retient la promesse**.
  *
  * `await render(` et `return render(` sont corrects : le premier l'attend, le
- * second la rend à un appelant qui l'attendra. Ce qui ne l'est pas, c'est un
- * appel en début d'instruction — la promesse est créée puis jetée.
+ * second la rend à un appelant qui l'attendra. Tout le reste jette la promesse.
+ *
+ * **La première version n'inspectait que le début de ligne**, et laissait donc
+ * passer la forme la plus courante de toutes : `const vue = render(…)`. Elle a
+ * couvert le dépôt pendant des semaines avec un seul cas qui lui échappait, et
+ * ce cas a fait échouer la suite deux fois sur cinq — assez pour rendre la CI
+ * illisible, trop peu pour qu'on l'attribue à autre chose qu'au hasard.
+ *
+ * On cherche donc l'appel **où qu'il soit sur la ligne**, et on regarde ce qui
+ * le précède immédiatement. Les lignes de commentaire sont écartées : elles
+ * citent `render(` en prose, et les compter ferait crier le garde-fou sur sa
+ * propre documentation.
  */
 function lignesNonAttendues(source: string): string[] {
-  const debut = new RegExp(`^(?:${ASYNCHRONES.join('|')})\\s*\\(`);
+  // Le point négatif devant évite `objet.render(`. Trois façons de ne pas
+  // perdre la promesse : l'attendre, la rendre, ou la rendre depuis une
+  // fonction fléchée — `() => render(…)` la confie à son appelant, exactement
+  // comme `return`.
+  const appel = new RegExp(`(await\\s+|return\\s+|=>\\s+)?(?<![.\\w])(?:${ASYNCHRONES.join('|')})\\s*\\(`);
 
   return source
     .split('\n')
     .map((ligne, index) => ({ ligne: ligne.trim(), numero: index + 1 }))
-    .filter(({ ligne }) => debut.test(ligne))
+    .filter(({ ligne }) => !ligne.startsWith('*') && !ligne.startsWith('//'))
+    .map(({ ligne, numero }) => ({ trouve: appel.exec(ligne), ligne, numero }))
+    .filter(({ trouve }) => trouve !== null && trouve[1] === undefined)
     .map(({ ligne, numero }) => `${numero}: ${ligne}`);
 }
 
@@ -58,9 +74,23 @@ describe('discipline des tests de rendu', () => {
     expect(lignesNonAttendues('  fireEvent.press(bouton);')).toHaveLength(1);
     expect(lignesNonAttendues('  fireEvent.changeText(champ, "x");')).toHaveLength(1);
 
+    // La forme qui échappait à la première version, et qui a coûté une CI
+    // illisible : l'appel n'est plus en début de ligne, la promesse est
+    // pourtant tout aussi perdue.
+    expect(lignesNonAttendues('  const vue = render(<Ecran />);')).toHaveLength(1);
+    expect(lignesNonAttendues('  const { rerender } = renderHook(useX);')).toHaveLength(1);
+
     expect(lignesNonAttendues('  await render(<Ecran />);')).toEqual([]);
     expect(lignesNonAttendues('  return render(<Ecran />);')).toEqual([]);
+    expect(lignesNonAttendues('  const vue = await render(<Ecran />);')).toEqual([]);
     expect(lignesNonAttendues('  await fireEvent.press(bouton);')).toEqual([]);
+    // Ni un commentaire qui cite l'appel, ni une méthode homonyme.
+    expect(lignesNonAttendues('  // render(<Ecran />) est asynchrone')).toEqual([]);
+    expect(lignesNonAttendues('  moteur.render(scene);')).toEqual([]);
+    // La flèche confie la promesse à son appelant, comme `return`.
+    expect(lignesNonAttendues('  await expect(() => render(<S />)).rejects.toThrow();')).toEqual(
+      [],
+    );
   });
 
   it.each(fichiers)('%s attend chaque appel asynchrone', (fichier) => {

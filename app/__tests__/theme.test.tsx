@@ -181,11 +181,13 @@ describe('bascule par rôle', () => {
     expect(vue.getByText('20')).toBeTruthy();
   });
 
-  it('un composant rendu hors du fournisseur lève', () => {
+  it('un composant rendu hors du fournisseur lève', async () => {
     // Retomber sur le sombre afficherait des couleurs de créateur chez un
     // commerce, sans que personne ne s'en aperçoive avant une capture d'écran.
     const silence = jest.spyOn(console, 'error').mockImplementation(() => {});
-    expect(() => render(<Sonde />)).rejects.toThrow(/ThemeProvider/);
+    // `await` : sans lui, la promesse de l'assertion est jetée et le test
+    // passe même si le rendu ne lève pas.
+    await expect(() => render(<Sonde />)).rejects.toThrow(/ThemeProvider/);
     silence.mockRestore();
   });
 });
