@@ -423,7 +423,6 @@ export const es: Catalogue = {
     publications: 'Publicaciones',
     caisse: 'Caja',
     reporting: 'Informes',
-    activation: 'Configuración',
     configuration: 'Configuración',
     arbitrage: 'Revisiones',
     plans: 'Planes',

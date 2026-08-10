@@ -426,7 +426,6 @@ export const en = {
     publications: 'Publications',
     caisse: 'Checkout',
     reporting: 'Reports',
-    activation: 'Setup',
     configuration: 'Setup',
     arbitrage: 'Reviews',
     plans: 'Plans',

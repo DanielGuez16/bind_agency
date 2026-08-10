@@ -342,3 +342,47 @@ async def test_la_file_ne_contient_que_ce_qui_attend(session: AsyncSession) -> N
 
     assert journee.a_trancher == ()
     assert booking.id in [ligne.booking_id for ligne in journee.items]
+
+
+# --------------------------------------------------------------------------
+# du chemin réel jusqu'à la journée du comptoir
+# --------------------------------------------------------------------------
+
+
+async def test_une_reservation_confirmee_aujourd_hui_apparait_dans_la_journee(
+    session: AsyncSession,
+) -> None:
+    """Le chemin complet : réserver, confirmer, puis lire la journée du commerce.
+
+    Rien n'était posé à la main et rien ne l'est ici non plus. Ce qui manquait,
+    c'est un test qui parte d'une réservation **réelle** et aille jusqu'à
+    l'écran : la journée se lisait sur des lignes fabriquées, et le jour où le
+    jeu de données a cessé d'en produire pour aujourd'hui — trois salons sur
+    quatre fermés le lundi — rien n'a bronché. Le comptoir affichait « rien de
+    réservé », et la caisse, qu'on n'atteignait que depuis une ligne de la
+    journée, devenait inaccessible.
+    """
+    decor = await monter_le_decor(session)
+    business = decor["business"]
+
+    creneau = await premier_creneau(session, decor)
+    booking = await reserver(session, decor, starts_at=creneau)
+    await booking_states.confirmer(session, booking=booking, creator_id=decor["createur"].id)
+
+    # Le jour du créneau, chez le commerce — pas chez le serveur.
+    jour = creneau.astimezone(ZoneInfo(business.timezone)).date()
+    journee = await service.journee_du_commerce(session, business=business, jour=jour)
+
+    lignes = [ligne for ligne in journee.items if ligne.booking_id == booking.id]
+    assert lignes, "une réservation confirmée n'apparaît pas dans la journée de son commerce"
+    assert lignes[0].status is BookingStatus.CONFIRMED
+    # Ce que le comptoir lit sur la ligne : qui vient, pour quoi, et combien de
+    # temps. Une ligne sans ça n'aide personne à servir.
+    assert lignes[0].item_name
+    assert lignes[0].creator_handle or lignes[0].creator_first_name
+
+    # Et le lendemain ne la montre pas : la journée est une journée.
+    demain = await service.journee_du_commerce(
+        session, business=business, jour=jour + timedelta(days=1)
+    )
+    assert all(ligne.booking_id != booking.id for ligne in demain.items)

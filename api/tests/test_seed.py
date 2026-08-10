@@ -12,8 +12,9 @@ import os
 import subprocess
 import sys
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, time, timedelta
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import psycopg
 import pytest
@@ -1078,3 +1079,45 @@ def test_le_refus_du_garde_est_une_reponse_et_non_une_trace(
 
     assert deploiement.main() == 2
     assert "refus" in capsys.readouterr().err
+
+
+async def test_chaque_commerce_ouvert_a_une_reservation_aujourd_hui(
+    seed_conn: AsyncConnection,
+) -> None:
+    """La propriété qui a lâché, et qui vidait l'écran du comptoir.
+
+    Les réservations tombaient sur le premier créneau libre à partir de
+    maintenant — donc demain — et toutes sur le même salon. Semé un lundi, où
+    trois salons sur quatre n'ouvraient pas, l'écran « Aujourd'hui » disait
+    « rien de réservé » partout. C'était exact et inutilisable : la caisse ne
+    s'atteignait que depuis une ligne de la journée, et aucun code ne pouvait
+    être validé.
+
+    **Le jeu de données ne peut pas dépendre du jour où on le sème.** Le test
+    non plus : il ne fige aucune date, il demande à chaque commerce actif ce
+    qu'il a aujourd'hui, chez lui.
+    """
+    commerces = (
+        await seed_conn.execute(
+            sa.select(Business.id, Business.name, Business.timezone).where(
+                Business.status == BusinessStatus.ACTIVE
+            )
+        )
+    ).all()
+    assert commerces, "aucun commerce actif : le jeu de données est vide"
+
+    for business_id, nom, fuseau in commerces:
+        zone = ZoneInfo(fuseau)
+        debut = datetime.combine(datetime.now(zone).date(), time.min, tzinfo=zone)
+
+        confirmees = await seed_conn.scalar(
+            sa.select(sa.func.count())
+            .select_from(Booking)
+            .where(
+                Booking.business_id == business_id,
+                Booking.starts_at >= debut,
+                Booking.starts_at < debut + timedelta(days=1),
+                Booking.status == BookingStatus.CONFIRMED,
+            )
+        )
+        assert confirmees, f"{nom} n'a aucune réservation confirmée aujourd'hui"

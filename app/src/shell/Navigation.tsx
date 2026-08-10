@@ -479,6 +479,14 @@ function OngletsCommerce() {
       <Onglets.Screen name="journee" options={onglet(t('onglets.journee'), 'calendrier')}>
         {() => <ParcoursCommerce businessId={businessId} />}
       </Onglets.Screen>
+      {/* **La caisse est un onglet, pas un écran enfoui.** Elle n'était
+          atteignable que depuis une ligne de réservation du jour : une journée
+          vide la rendait inaccessible, et le salon ne pouvait valider aucun
+          code — la boucle du produit ne se fermait jamais. C'est l'écran le
+          plus utilisé d'un comptoir, et il sert debout avec un client en face. */}
+      <Onglets.Screen name="caisse" options={onglet(t('onglets.caisse'), 'etincelle')}>
+        {() => <CaisseAvecJeton />}
+      </Onglets.Screen>
       <Onglets.Screen name="publications" options={onglet(t('onglets.publications'), 'image')}>
         {() => <PublicationsScreen businessId={businessId} />}
       </Onglets.Screen>
