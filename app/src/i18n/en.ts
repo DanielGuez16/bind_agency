@@ -420,6 +420,10 @@ export const en = {
     entreeActivation: 'Profile and go-live',
     entreeActivationCorps: 'What is still missing before your salon appears.',
   },
+  coquille: {
+    replier: 'Collapse',
+    deplier: 'Expand',
+  },
   onglets: {
     paliers: 'Tiers',
     fil: 'Nearby',

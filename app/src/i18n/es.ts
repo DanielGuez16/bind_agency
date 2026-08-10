@@ -417,6 +417,10 @@ export const es: Catalogue = {
     entreeActivation: 'Perfil y activación',
     entreeActivationCorps: 'Lo que falta para que tu salón aparezca.',
   },
+  coquille: {
+    replier: 'Contraer',
+    deplier: 'Desplegar',
+  },
   onglets: {
     paliers: 'Niveles',
     fil: 'Cerca',
