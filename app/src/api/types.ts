@@ -237,6 +237,15 @@ export type Booking = {
 };
 
 export type CodeDeRetrait = {
+  /** La charge du QR, **telle que l'API la forme** : `identifiant:chiffres`.
+   *
+   * Elle n'est pas décorative et ne se recompose pas ici. L'identifiant est
+   * celui du **code**, pas celui de la réservation ; l'app assemblait
+   * `bookingId:code`, que la vérification ne reconnaissait pas — un QR
+   * parfaitement lisible, refusé sans que rien ne dise pourquoi. */
+  payload: string;
+  /** Les chiffres tournants, pour l'affichage seul : ils ne s'identifient pas
+   * sans le code qui les porte, et ne se saisissent donc pas à la caisse. */
   code: string;
   manual_code: string;
   seconds_remaining: number;

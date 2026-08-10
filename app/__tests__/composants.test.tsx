@@ -299,7 +299,7 @@ describe('badges de profil', () => {
 // --------------------------------------------------------------------------
 
 describe('cartes', () => {
-  it('garde la même hauteur de couverture avec ou sans photo', async () => {
+  it('cadre la couverture au rapport des photos, avec ou sans image', async () => {
     const props = {
       name: 'Salón Ocean',
       meta: 'Beauty · 320 m',
@@ -308,18 +308,23 @@ describe('cartes', () => {
       tier: 'story' as const,
     };
     const sans = await monter(<BusinessCard {...props} testID="carte" />);
-    const hauteurSans = style(screen.getByTestId('couverture')).height;
+    const rapportSans = style(screen.getByTestId('couverture')).aspectRatio;
     await sans.unmount();
 
     await monter(
       <BusinessCard {...props} cover={{ uri: 'https://exemple/1.jpg' }} testID="carte" />,
     );
-    const hauteurAvec = style(screen.getByTestId('couverture')).height;
+    const rapportAvec = style(screen.getByTestId('couverture')).aspectRatio;
 
-    // La photo est le contenu : la couverture occupe la moitié de la carte.
-    // Ce qui compte reste qu'elle ne bouge pas selon la présence de l'image.
-    expect(hauteurSans).toBe(hauteurAvec);
-    expect(hauteurAvec).toBeGreaterThan(150);
+    // Un rapport, et non une hauteur fixe. Les couvertures sont déposées en
+    // 16:9 ; une boîte de hauteur fixe ne retombe sur ce rapport qu'à une seule
+    // largeur d'écran, et partout ailleurs « cover » rogne le sujet — sur un
+    // iPhone, la devanture perdait son enseigne.
+    //
+    // La carte garde par ailleurs la même hauteur avec ou sans photo : elle
+    // découle de la largeur, qui est la même pour toutes.
+    expect(rapportSans).toBe(rapportAvec);
+    expect(rapportAvec).toBeCloseTo(16 / 9, 3);
   });
 
   it('accompagne toujours le badge de la phrase de contrepartie', async () => {

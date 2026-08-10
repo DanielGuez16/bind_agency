@@ -17,12 +17,16 @@
  * permet d'éprouver tout le reste sans appareil.
  */
 import { useCallback, useEffect, useRef, useState, type ComponentType } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, ScrollView, View } from 'react-native';
 
+import { Button } from '../components/Button';
+import { SegmentedTabs } from '../components/SegmentedTabs';
+import { Texte } from '../components/Texte';
+import { TextField } from '../components/TextField';
 import { useI18n } from '../i18n';
 import { errorCodeFromResponse, translateErrorCode } from '../i18n/errors';
-
-const DEFAULT_API_URL = process.env.EXPO_PUBLIC_API_URL;
+import { adresseDeLApi } from '../shell/adresseDeLApi';
+import { radius, spacing, useColors } from '../theme';
 
 export type Verification = {
   booking_id: string;
@@ -41,7 +45,13 @@ type Etat =
   | { state: 'verification' }
   | { state: 'reconnu'; verification: Verification }
   | { state: 'servi'; verification: Verification }
-  | { state: 'refuse'; code: string | null };
+  // `injoignable` : la requête n'est jamais arrivée. Ce n'est pas un code
+  // refusé, et le dire évite qu'un commerçant redemande dix fois son code à un
+  // client alors que c'est le réseau ou l'adresse de l'API qui est en cause.
+  | { state: 'refuse'; code: string | null; injoignable: boolean };
+
+/** L'API n'a pas d'adresse : rien n'a été tenté. */
+class ApiInjoignable extends Error {}
 
 /** Ce que le scanner doit savoir faire. Rien de plus : une lecture, un texte. */
 export type Scanner = ComponentType<{
@@ -50,7 +60,7 @@ export type Scanner = ComponentType<{
 }>;
 
 export function RedemptionScreen({
-  apiUrl = DEFAULT_API_URL,
+  apiUrl,
   accessToken,
   scanner,
 }: {
@@ -59,6 +69,15 @@ export function RedemptionScreen({
   scanner?: Scanner;
 }) {
   const { t } = useI18n();
+  const c = useColors();
+
+  // `adresseDeLApi()` et non `EXPO_PUBLIC_API_URL` : sur un téléphone en
+  // développement, la variable n'est pas posée et l'adresse se déduit de
+  // l'hôte du bundler — c'est ce que fait tout le reste de l'app. Lire la
+  // variable directement donnait `undefined/redemptions/verify`, un `fetch`
+  // qui échoue avant d'atteindre quoi que ce soit, et « Something went wrong »
+  // à la caisse pour tous les codes du monde.
+  const racine = apiUrl ?? adresseDeLApi();
   const [etat, setEtat] = useState<Etat>({ state: 'saisie' });
   const [saisi, setSaisi] = useState('');
   const [ongletScan, setOngletScan] = useState(false);
@@ -73,7 +92,8 @@ export function RedemptionScreen({
 
   const appeler = useCallback(
     async (chemin: string, corps: object) => {
-      const reponse = await fetch(`${apiUrl}${chemin}`, {
+      if (!racine) throw new ApiInjoignable();
+      const reponse = await fetch(`${racine}${chemin}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -83,7 +103,7 @@ export function RedemptionScreen({
       });
       return { reponse, corps: await reponse.json() };
     },
-    [apiUrl, accessToken],
+    [racine, accessToken],
   );
 
   const verifier = useCallback(
@@ -96,10 +116,10 @@ export function RedemptionScreen({
         setEtat(
           reponse.ok
             ? { state: 'reconnu', verification: corps as Verification }
-            : { state: 'refuse', code: errorCodeFromResponse(corps) },
+            : { state: 'refuse', code: errorCodeFromResponse(corps), injoignable: false },
         );
       } catch {
-        if (monte.current) setEtat({ state: 'refuse', code: null });
+        if (monte.current) setEtat({ state: 'refuse', code: null, injoignable: true });
       }
     },
     [appeler],
@@ -116,127 +136,139 @@ export function RedemptionScreen({
         setEtat(
           reponse.ok
             ? { state: 'servi', verification }
-            : { state: 'refuse', code: errorCodeFromResponse(corps) },
+            : { state: 'refuse', code: errorCodeFromResponse(corps), injoignable: false },
         );
       } catch {
-        if (monte.current) setEtat({ state: 'refuse', code: null });
+        if (monte.current) setEtat({ state: 'refuse', code: null, injoignable: true });
       }
     },
     [appeler],
   );
 
   const Scan = scanner;
+  const refus = etat.state === 'refuse' ? etat : null;
 
   return (
-    <View style={styles.page}>
-      <Text style={styles.titre}>{t('redemption.title')}</Text>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: c['bg.canvas'] }}
+      contentContainerStyle={{ padding: spacing['space.6'], gap: spacing['space.4'] }}
+    >
+      <Texte variante="type.heading">{t('redemption.title')}</Texte>
 
-      <View style={styles.onglets}>
-        {/* La saisie d'abord, et sélectionnée par défaut. L'ordre n'est pas
-            cosmétique : c'est lui qui dit quel chemin est le principal. */}
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => setOngletScan(false)}
-          style={[styles.onglet, !ongletScan && styles.ongletActif]}
-        >
-          <Text>{t('redemption.manualTab')}</Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => setOngletScan(true)}
-          style={[styles.onglet, ongletScan && styles.ongletActif]}
-        >
-          <Text>{t('redemption.scanTab')}</Text>
-        </Pressable>
-      </View>
+      {/* La saisie d'abord, et sélectionnée par défaut. L'ordre n'est pas
+          cosmétique : c'est lui qui dit quel chemin est le principal. */}
+      <SegmentedTabs
+        items={[{ label: t('redemption.manualTab') }, { label: t('redemption.scanTab') }]}
+        index={ongletScan ? 1 : 0}
+        onChange={(i) => setOngletScan(i === 1)}
+        testID="onglets-caisse"
+      />
 
       {!ongletScan || !Scan ? (
-        <View style={styles.bloc}>
-          <Text style={styles.libelle}>{t('redemption.manualLabel')}</Text>
-          <TextInput
-            accessibilityLabel={t('redemption.manualLabel')}
+        <View style={{ gap: spacing['space.3'] }}>
+          <TextField
+            label={t('redemption.manualLabel')}
             value={saisi}
             onChangeText={setSaisi}
-            // Le code est en majuscules sans caractères ambigus : forcer la
-            // casse et couper la correction évitent des refus absurdes.
-            autoCapitalize="characters"
-            autoCorrect={false}
-            style={styles.champ}
+            helpText={t('redemption.manualHint')}
+            testID="champ-code"
           />
-          <Text style={styles.aide}>{t('redemption.manualHint')}</Text>
-          <Pressable
-            accessibilityRole="button"
+          <Button
+            label={t('redemption.manualSubmit')}
             onPress={() => verifier(saisi)}
-            style={styles.bouton}
-          >
-            <Text>{t('redemption.manualSubmit')}</Text>
-          </Pressable>
+            testID="valider-code"
+          />
           {ongletScan && !Scan ? (
-            <Text style={styles.aide}>{t('redemption.cameraUnavailable')}</Text>
+            <Texte variante="type.caption" couleur="text.secondary">
+              {t('redemption.cameraUnavailable')}
+            </Texte>
           ) : null}
         </View>
       ) : (
-        <View style={styles.bloc}>
-          <Text style={styles.aide}>{t('redemption.scanHint')}</Text>
+        <View style={{ gap: spacing['space.3'] }}>
+          <Texte variante="type.caption" couleur="text.secondary">
+            {t('redemption.scanHint')}
+          </Texte>
           <Scan onCode={verifier} indisponible={() => setOngletScan(false)} />
         </View>
       )}
 
       {etat.state === 'verification' ? (
-        <View style={styles.bloc} accessibilityRole="progressbar">
-          <ActivityIndicator />
-          <Text>{t('redemption.verifying')}</Text>
+        <View
+          style={{ gap: spacing['space.2'], alignItems: 'center' }}
+          accessibilityRole="progressbar"
+        >
+          <ActivityIndicator color={c['accent.default']} />
+          <Texte couleur="text.secondary">{t('redemption.verifying')}</Texte>
         </View>
       ) : null}
 
-      {etat.state === 'refuse' ? (
-        <Text style={styles.erreur}>{translateErrorCode(t, etat.code)}</Text>
+      {refus ? (
+        <View
+          testID="refus"
+          style={{
+            gap: spacing['space.1'],
+            padding: spacing['space.4'],
+            borderRadius: radius['radius.md'],
+            backgroundColor: c['status.danger.subtle'],
+          }}
+        >
+          <Texte variante="type.label" style={{ color: c['status.danger'] }}>
+            {refus.injoignable ? t('errors.network') : translateErrorCode(t, refus.code)}
+          </Texte>
+          {/* Un code refusé dit quoi faire, pas seulement que c'est refusé :
+              c'est un commerçant devant un client qui le lit. */}
+          <Texte variante="type.caption" couleur="text.secondary">
+            {refus.injoignable ? t('redemption.unreachableHint') : t('redemption.refusedHint')}
+          </Texte>
+        </View>
       ) : null}
 
       {etat.state === 'reconnu' ? (
-        <View style={styles.bloc}>
-          <Text style={styles.item}>{etat.verification.item_name}</Text>
+        <View
+          testID="reconnu"
+          style={{
+            gap: spacing['space.3'],
+            padding: spacing['space.4'],
+            borderRadius: radius['radius.md'],
+            backgroundColor: c['bg.raised'],
+          }}
+        >
+          <Texte variante="type.title">{etat.verification.item_name}</Texte>
           {etat.verification.creator_name ? (
-            <Text>
+            <Texte couleur="text.secondary">
               {t('redemption.creator')} : {etat.verification.creator_name}
-            </Text>
+            </Texte>
           ) : null}
           {/* La caisse a le droit de savoir qu'elle n'a pas scanné : c'est le
               chemin le moins fort des deux. */}
           {etat.verification.par_secours ? (
-            <Text style={styles.aide}>{t('redemption.usedManualCode')}</Text>
+            <Texte variante="type.caption" couleur="text.secondary">
+              {t('redemption.usedManualCode')}
+            </Texte>
           ) : null}
-          <Pressable
-            accessibilityRole="button"
+          <Button
+            label={t('redemption.serve')}
             onPress={() => servir(etat.verification)}
-            style={styles.bouton}
-          >
-            <Text>{t('redemption.serve')}</Text>
-          </Pressable>
+            testID="servir"
+          />
         </View>
       ) : null}
 
       {etat.state === 'servi' ? (
-        <Text style={styles.servi}>
-          {t('redemption.served')} — {etat.verification.item_name}
-        </Text>
+        <View
+          testID="servi"
+          style={{
+            padding: spacing['space.4'],
+            borderRadius: radius['radius.md'],
+            backgroundColor: c['status.success.subtle'],
+          }}
+        >
+          <Texte variante="type.label" style={{ color: c['status.success'] }}>
+            {t('redemption.served')} — {etat.verification.item_name}
+          </Texte>
+        </View>
       ) : null}
-    </View>
+    </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  page: { flex: 1, padding: 24, gap: 16 },
-  titre: { fontSize: 22, fontWeight: '600' },
-  onglets: { flexDirection: 'row', gap: 8 },
-  onglet: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8, backgroundColor: '#eee' },
-  ongletActif: { backgroundColor: '#dde' },
-  bloc: { gap: 8 },
-  libelle: { fontWeight: '600' },
-  champ: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, fontSize: 20 },
-  aide: { fontSize: 13, color: '#555' },
-  bouton: { padding: 14, borderRadius: 8, backgroundColor: '#dde', alignItems: 'center' },
-  item: { fontSize: 18, fontWeight: '600' },
-  erreur: { color: '#a11' },
-  servi: { color: '#136c3a', fontWeight: '600', fontSize: 18 },
-});

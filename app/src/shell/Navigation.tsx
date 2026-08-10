@@ -48,6 +48,7 @@ import { PublicationsScreen } from '../screens/PublicationsScreen';
 import { CatalogueScreen } from '../screens/CatalogueScreen';
 import { ConfigurationScreen } from '../screens/ConfigurationScreen';
 import { HorairesScreen } from '../screens/HorairesScreen';
+import { CameraScanner } from '../screens/CameraScanner';
 import { RedemptionScreen } from '../screens/RedemptionScreen';
 import { ReglagesScreen } from '../screens/ReglagesScreen';
 import { ReportingScreen } from '../screens/ReportingScreen';
@@ -379,7 +380,14 @@ function CaisseAvecJeton() {
   const { jetonDAcces } = useSession();
   // Sans jeton, l'écran ne peut rien vérifier. Il n'y en a pas tant que la
   // session n'est pas rétablie ; rendre `null` évite un appel voué à un 401.
-  return jetonDAcces ? <RedemptionScreen accessToken={jetonDAcces} /> : null;
+  //
+  // **Le scanner se branche ici**, et c'est ce qui manquait : sans lui, l'écran
+  // retombait sur son message « pas de caméra sur cet appareil » — sur un
+  // iPhone qui en a une, et sans qu'aucune autorisation ait jamais été
+  // demandée. La caméra n'était pas refusée, elle n'était jamais montée.
+  return jetonDAcces ? (
+    <RedemptionScreen accessToken={jetonDAcces} scanner={CameraScanner} />
+  ) : null;
 }
 
 

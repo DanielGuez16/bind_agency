@@ -15,6 +15,7 @@ import { I18nProvider } from '../src/i18n';
 import { en } from '../src/i18n/en';
 import { es } from '../src/i18n/es';
 import { RedemptionScreen, type Scanner } from '../src/screens/RedemptionScreen';
+import { ThemeProvider } from '../src/theme';
 
 const VERIFICATION = {
   booking_id: 'b1',
@@ -45,13 +46,18 @@ const scannerFactice: Scanner = ({ onCode }) => (
 
 async function afficher(options: { scanner?: Scanner; locale?: 'en' | 'es' } = {}) {
   return render(
-    <I18nProvider initialLocale={options.locale ?? 'en'}>
-      <RedemptionScreen
-        apiUrl="http://test/api/v1"
-        accessToken="un-jeton"
-        scanner={options.scanner}
-      />
-    </I18nProvider>,
+    // Le fournisseur de thème est celui du rôle commerce : l'écran lit ses
+    // couleurs au lieu de les écrire en dur, et un texte noir sur fond sombre
+    // ne peut plus s'y glisser.
+    <ThemeProvider role="merchant">
+      <I18nProvider initialLocale={options.locale ?? 'en'}>
+        <RedemptionScreen
+          apiUrl="http://test/api/v1"
+          accessToken="un-jeton"
+          scanner={options.scanner}
+        />
+      </I18nProvider>
+    </ThemeProvider>,
   );
 }
 

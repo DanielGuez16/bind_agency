@@ -28,8 +28,20 @@ import { useEnfoncement } from './Mouvement';
 import { Texte } from './Texte';
 import { TierBadge, LigneDeContrepartie, type Palier } from './TierBadge';
 
-/** La hauteur de couverture d'une carte de salon. La photo mène la carte. */
-const COUVERTURE = 208;
+/**
+ * Le **rapport** de la couverture d'une carte, et non sa hauteur.
+ *
+ * Les couvertures sont déposées en 16:9 — c'est ce que demande `A-FOURNIR.md`
+ * et ce que le semis range. Une boîte de hauteur fixe ne retombe sur ce rapport
+ * qu'à une seule largeur d'écran : partout ailleurs, `resizeMode="cover"` rogne
+ * pour remplir, et ce qu'il rogne est le sujet. Sur un iPhone, la devanture
+ * perdait son enseigne.
+ *
+ * Le rapport, lui, tient à toutes les largeurs : la boîte suit l'image au lieu
+ * que l'image suive la boîte. La hauteur reste identique d'une carte à l'autre
+ * — c'est la largeur qui la fixe, et elle est la même pour toutes.
+ */
+const RAPPORT_COUVERTURE = 16 / 9;
 
 /**
  * Le voile de lisibilité posé sur une photo.
@@ -55,7 +67,8 @@ export function VoileDeLisibilite({ hauteur }: { hauteur?: number }) {
 export type MediaFallbackProps = {
   /** Deux lettres, tirées du nom. Jamais une icône générique. */
   monogramme: string;
-  height: number;
+  /** Une hauteur fixe, ou `'100%'` pour épouser une boîte au rapport imposé. */
+  height: number | '100%';
   /** Côté commerce, l'absence de photo est une tâche, pas un défaut. */
   commeTache?: boolean;
   labelTache?: string;
@@ -144,20 +157,28 @@ export function BusinessCard({
           overflow: 'hidden',
         }}
       >
-        <View testID="couverture" style={{ height: COUVERTURE, justifyContent: 'flex-end' }}>
+        <View
+          testID="couverture"
+          style={{ aspectRatio: RAPPORT_COUVERTURE, justifyContent: 'flex-end' }}
+        >
           {cover ? (
             <Image
               source={cover}
-              style={{ position: 'absolute', width: '100%', height: COUVERTURE }}
+              // La boîte est au rapport de l'image : « cover » ne rogne donc
+              // rien, il remplit. Le voile et le nom se posent par-dessus sans
+              // rien retrancher au cadre.
+              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
               resizeMode="cover"
             />
           ) : (
-            <MediaFallback
-              monogramme={name}
-              height={COUVERTURE}
-              commeTache={role === 'merchant'}
-              labelTache={labelPhotoManquante}
-            />
+            <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+              <MediaFallback
+                monogramme={name}
+                height="100%"
+                commeTache={role === 'merchant'}
+                labelTache={labelPhotoManquante}
+              />
+            </View>
           )}
 
           <VoileDeLisibilite />
