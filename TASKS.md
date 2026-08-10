@@ -214,6 +214,8 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Fin : zone sûre au niveau de la coquille, icônes d'onglets, photos réellement demandées, choix de créneau par jour avec bouton fixé, code de retrait appelé une fois par rotation et arrêté hors écran, réservation qui ouvre son code, plateforme affichée sur les paliers, rayon à 15 km réglable*
 - [ ] Écrans de composition du commerce
       *Catalogue, horaires, capacité. Les routes existent depuis la phase 2, aucun écran ne les pilote — le commerce compose aujourd'hui par l'API*
+- [ ] Galerie photos d'un commerce
+      *`business` ne porte qu'une clé de couverture ; les maquettes de Discovery v0.5 prévoient plusieurs photos par fiche. Fin : un commerce téléverse plusieurs photos, les ordonne, en supprime, et la fiche publique les affiche dans cet ordre*
 - [ ] Sélection du média de preuve
       *L'écran de preuve montre son état et propose l'envoi ; il manque le sélecteur qui produit le fichier*
 - [ ] Capture de preuve niveau 1

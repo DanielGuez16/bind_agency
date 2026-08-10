@@ -7,7 +7,7 @@ PY       := $(VENV)/bin/python
 PYTHON   ?= python3.12
 COMPOSE  := docker compose
 
-.PHONY: help install db-up db-down db-logs dev dev-lan app test test-api test-app lint fmt seed migrate jobs-plan jobs-run clean
+.PHONY: help install db-up db-down db-logs dev dev-lan app test test-api test-app lint fmt seed demo-seed demo-migrate migrate jobs-plan jobs-run clean
 
 help: ## Liste les cibles disponibles
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -60,6 +60,24 @@ fmt: ## Reformate le code Python
 seed: db-up ## Recree la base de developpement avec le jeu de donnees de depart
 	@echo "Cette commande EFFACE la base de developpement avant d'ecrire."
 	cd $(API) && .venv/bin/python -m app.seed
+
+DEMO_ENV := $(API)/.env.demo
+
+demo-seed: ## Repeuple l'environnement de demonstration (EFFACE la base distante)
+	@test -f $(DEMO_ENV) || { \
+		echo "fichier de configuration absent : $(DEMO_ENV)"; \
+		echo "le creer a partir de $(API)/.env.demo.example et le remplir."; \
+		exit 1; \
+	}
+	cd $(API) && .venv/bin/python -m scripts.deploiement --depuis .env.demo --avec-jeu-de-donnees
+
+demo-migrate: ## Applique les migrations sur la demonstration, sans rien effacer
+	@test -f $(DEMO_ENV) || { \
+		echo "fichier de configuration absent : $(DEMO_ENV)"; \
+		echo "le creer a partir de $(API)/.env.demo.example et le remplir."; \
+		exit 1; \
+	}
+	cd $(API) && .venv/bin/python -m scripts.deploiement --depuis .env.demo
 
 jobs-plan: db-up ## Aligne la file de travail planifie sur l'etat des comptes
 	cd $(API) && .venv/bin/python -m app.workers plan

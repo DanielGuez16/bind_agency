@@ -93,15 +93,24 @@ class ResumeDemo:
 
 
 async def poser_les_photos(session: AsyncSession) -> int:
-    """Une couverture par commerce, une photo par prestation réservable.
+    """Une couverture par commerce **actif**, une photo par prestation réservable.
 
     Le parent d'une gamme n'en reçoit pas : il ne s'affiche jamais seul, et lui
     en donner une ferait apparaître une image que personne ne voit.
+
+    Un commerce encore en inscription n'en reçoit pas non plus, et c'est la
+    raison d'être du seul qui soit dans cet état : il montre ce qu'on voit le
+    jour où l'on s'inscrit. Lui poser une couverture le rendait présentable, et
+    l'écran d'activation n'avait plus rien à réclamer — alors que « ouvert mais
+    invisible faute de photo » est précisément l'état qu'il doit expliquer.
     """
     depot = get_object_store()
     posees = 0
 
-    for business in (await session.scalars(sa.select(Business))).all():
+    actifs = await session.scalars(
+        sa.select(Business).where(Business.status == BusinessStatus.ACTIVE)
+    )
+    for business in actifs.all():
         cle = await depot.deposer(image(business.name, COUVERTURE), prefixe="photos/business")
         business.cover_photo_key = cle
         posees += 1

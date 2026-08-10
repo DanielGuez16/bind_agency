@@ -52,25 +52,29 @@ réveille.
 
 ### Remettre le jeu de données à zéro, à distance
 
-Depuis `api/`, sur votre machine. Les variables du shell l'emportent sur
-`api/.env`, et rien de ce qui suit n'est écrit dans le dépôt :
+Une fois, remplir le fichier de configuration :
 
 ```
-cd api
-
-export ENVIRONMENT=demo
-export DATABASE_URL='postgresql+psycopg://…@aws-0-RÉGION.pooler.supabase.com:5432/postgres'
-export SEED_DATABASE_NAME=postgres
-
-export OBJECT_STORE_PROVIDER=s3
-export OBJECT_STORE_BUCKET_PUBLIC=bind-public
-export OBJECT_STORE_BUCKET_PRIVE=bind-prive
-export OBJECT_STORE_ENDPOINT='https://…supabase.co/storage/v1/s3'
-export OBJECT_STORE_ACCESS_KEY='…'
-export OBJECT_STORE_SECRET_KEY='…'
-
-.venv/bin/python -m scripts.deploiement --avec-jeu-de-donnees
+cp api/.env.demo.example api/.env.demo
 ```
+
+Onze variables, expliquées dans le modèle. `api/.env.demo` est ignoré par git ;
+`api/.env.demo.example`, qui ne porte aucune valeur, est versionné.
+
+Ensuite, à chaque fois, depuis la racine :
+
+```
+make demo-seed
+```
+
+**Ce fichier remplace `api/.env`, il ne s'y ajoute pas.** Une variable oubliée
+n'est pas comblée par la valeur de votre machine : la commande la nomme et
+s'arrête. C'est délibéré — un mélange des deux configurations viserait un
+environnement qui n'existe nulle part. Si le fichier manque, la commande le dit
+et s'arrête aussi ; elle ne retombe jamais sur la configuration locale.
+
+`make demo-migrate` fait le même chemin sans rien effacer — les migrations
+seules. C'est aussi ce qui se passe à chaque fusion sur `main`, automatiquement.
 
 Trois pièges dans l'URL de base, dans l'ordre où ils mordent :
 
@@ -79,12 +83,9 @@ Trois pièges dans l'URL de base, dans l'ordre où ils mordent :
    joignable qu'en IPv6 ; depuis un poste en IPv4 la connexion pend sans rien
    dire. Et pas le *transaction pooler* en `:6543`, qui ne supporte pas tout ce
    que font les migrations.
-3. **Les quatre variables de dépôt sont obligatoires ici.** Sans elles, les
-   photos partiraient sur votre disque et l'API en ligne les rendrait
-   introuvables.
-
-Sans `--avec-jeu-de-donnees`, seules les migrations tournent — c'est ce qui se
-passe à chaque fusion sur `main`, automatiquement.
+3. **Les deux clés doivent être celles de Render.** Le jeu de données chiffre
+   les jetons des comptes sociaux avec `TOKEN_ENCRYPTION_KEY` ; posée différente
+   de celle de l'API en ligne, celle-ci ne sait plus les relire.
 
 ### La ligne à lire
 
@@ -159,7 +160,7 @@ Elle finit par :
 
 ```
 4 commerces, 13 items, 22 plages, 2 exceptions, 10 offres, 5 créateurs,
-11 réservations, 7 contreparties, 3 jobs, 14 photos, 3 plans, 2 abonnements.
+11 réservations, 7 contreparties, 3 jobs, 13 photos, 3 plans, 2 abonnements.
 Mot de passe de tous les comptes : bind-donnees-de-depart-2026
 ```
 
@@ -455,6 +456,45 @@ make clean
 
 Après quoi il faut refaire `make install`, régénérer les deux clés et `make seed`.
 
+### Les vraies photos ne sont pas dans le dépôt
+
+Le semis sait utiliser de vraies photos au lieu de ses dégradés : il les lit dans
+`assets/photos/`, et [`assets/photos/A-FOURNIR.md`](../assets/photos/A-FOURNIR.md)
+dit exactement quel fichier va où.
+
+**Ces fichiers sont ignorés par git**, volontairement. Vingt images de plusieurs
+mégaoctets entrent dans l'historique pour toujours, et rien ne les en sort ;
+comme le semis retombe sur ses dégradés quand une photo manque, la CI et une
+machine fraîche n'en ont aucun besoin. Seuls `A-FOURNIR.md` et les dossiers vides
+sont versionnés.
+
+**Conséquence : sur un dépôt fraîchement cloné, ou sur une autre machine, les
+photos ne sont pas là.** Le semis tourne quand même, et liste nommément les
+fichiers absents avant de leur substituer un dégradé. Rien ne casse ; c'est
+seulement moins joli.
+
+**Où en garder l'original.** Hors du dépôt, dans un dossier sauvegardé — un
+espace de stockage en ligne, ou une clé — qui **reprend exactement la même
+arborescence** que `assets/photos/`. Par exemple :
+
+```
+~/Documents/Start-up/bind-photos/     ← la copie de référence, sauvegardée
+  commerces/ocean-beauty-studio/cover.jpg
+  categories/beauty.jpg
+  …
+```
+
+Remettre les photos sur une machine neuve se réduit alors à une copie :
+
+```
+cp -R ~/Documents/Start-up/bind-photos/ assets/photos/
+make seed
+```
+
+Garder la même arborescence des deux côtés est ce qui rend cette ligne possible :
+une organisation différente dans la copie de sauvegarde obligerait à replacer les
+fichiers un par un, et c'est là qu'on en perd.
+
 ---
 
 ## 5. Ce qui est simulé, et se verra
@@ -462,7 +502,7 @@ Après quoi il faut refaire `make install`, régénérer les deux clés et `make
 | Ce qui est simulé | Ce que vous verrez |
 |---|---|
 | **Plateformes sociales** (`SOCIAL_PROVIDER=demo`) | Les abonnés et les publications sont dérivés du pseudonyme, de façon stable. Rattacher un compte depuis l'app ouvrirait une URL `instagram.demo.bind` qui n'existe pas — le jeu de données a déjà fait le parcours pour les cinq créateurs |
-| **Photos** | Générées : dégradés doux avec grain, sans texte. De loin elles tiennent leur rôle ; de près ce ne sont pas des photos de salon |
+| **Photos** | Générées : dégradés doux avec grain, sans texte. De loin elles tiennent leur rôle ; de près ce ne sont pas des photos de salon. De vraies photos peuvent les remplacer, voir ci-dessous |
 | **Abonnement** (`BILLING_PROVIDER=log`) | Souscrire trace dans les logs sans appeler Stripe, et ne rend **aucune adresse de paiement** — le bouton n'a nulle part où mener. Les abonnements du jeu portent des identifiants `cus_journal_…` reconnaissables |
 | **Emails** (`EMAIL_PROVIDER=log`) | Rien n'est envoyé. Les messages apparaissent dans la console de l'API |
 | **Extraction de carte** (`MENU_EXTRACTION_PROVIDER=manual`) | N'extrait rien. L'import de carte demande une saisie |

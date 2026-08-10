@@ -547,8 +547,13 @@ async def test_un_palier_desactive_n_est_pas_proposable(
     business_id = await commerce(client, membre)
     cible = await palier(conn)
 
+    # Pas de `commit()` : la connexion du test est déjà dans une transaction
+    # annulée en sortie, et la valider désactiverait ce palier pour de bon —
+    # dans la base partagée, pour tous les tests suivants. C'est ce qui a fait
+    # tomber `test_tiers.py` en intégration continue et pas en local, où
+    # l'ordre d'exécution masquait la fuite. Le client HTTP partage cette même
+    # connexion : l'écriture lui est visible sans être validée.
     await conn.execute(sa.update(Tier).where(Tier.id == cible).values(is_active=False))
-    await conn.commit()
 
     reponse = await client.get(f"{PREFIX}/business/{business_id}/tiers", headers=membre["headers"])
 
