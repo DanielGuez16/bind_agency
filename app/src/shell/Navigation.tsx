@@ -45,6 +45,9 @@ import { PaliersScreen } from '../screens/PaliersScreen';
 import { PlansScreen } from '../screens/PlansScreen';
 import { PreuveScreen } from '../screens/PreuveScreen';
 import { PublicationsScreen } from '../screens/PublicationsScreen';
+import { CatalogueScreen } from '../screens/CatalogueScreen';
+import { ConfigurationScreen } from '../screens/ConfigurationScreen';
+import { HorairesScreen } from '../screens/HorairesScreen';
 import { RedemptionScreen } from '../screens/RedemptionScreen';
 import { ReglagesScreen } from '../screens/ReglagesScreen';
 import { ReportingScreen } from '../screens/ReportingScreen';
@@ -82,9 +85,18 @@ export type PileCommerceParams = {
   Caisse: undefined;
 };
 
+/** La composition du commerce : ce qu'il offre, quand, et à quel palier. */
+export type PileConfigurationParams = {
+  Configuration: undefined;
+  Catalogue: undefined;
+  Horaires: undefined;
+  Activation: undefined;
+};
+
 const PileCreateur = createNativeStackNavigator<PileCreateurParams>();
 const PileReservations = createNativeStackNavigator<PileReservationsParams>();
 const PileCommerce = createNativeStackNavigator<PileCommerceParams>();
+const PileConfiguration = createNativeStackNavigator<PileConfigurationParams>();
 const Onglets = createBottomTabNavigator();
 
 /**
@@ -388,6 +400,58 @@ function ParcoursCommerce({ businessId }: { businessId: string }) {
   );
 }
 
+/**
+ * La configuration : une entrée, trois écrans.
+ *
+ * Une pile et non trois onglets — la barre en a déjà cinq, et ce sont des
+ * écrans qu'on ouvre le premier jour puis une fois par saison. Chacun rend son
+ * propre retour : sur le web il n'y a pas de geste de balayage, et sans lui on
+ * ne quitte l'écran qu'en changeant d'onglet.
+ */
+function PileDeConfiguration({ businessId }: { businessId: string }) {
+  return (
+    <PileConfiguration.Navigator screenOptions={OPTIONS_DE_PILE}>
+      <PileConfiguration.Screen name="Configuration">
+        {({ navigation }) => (
+          <ConfigurationScreen
+            onOuvrir={(porte) =>
+              navigation.navigate(
+                porte === 'catalogue'
+                  ? 'Catalogue'
+                  : porte === 'horaires'
+                    ? 'Horaires'
+                    : 'Activation',
+              )
+            }
+          />
+        )}
+      </PileConfiguration.Screen>
+
+      <PileConfiguration.Screen name="Catalogue">
+        {({ navigation }) => (
+          <CatalogueScreen businessId={businessId} onRetour={() => navigation.goBack()} />
+        )}
+      </PileConfiguration.Screen>
+
+      <PileConfiguration.Screen name="Horaires">
+        {({ navigation }) => (
+          <HorairesScreen businessId={businessId} onRetour={() => navigation.goBack()} />
+        )}
+      </PileConfiguration.Screen>
+
+      <PileConfiguration.Screen name="Activation">
+        {({ navigation }) => (
+          <ActivationScreen
+            businessId={businessId}
+            onActive={() => {}}
+            onRetour={() => navigation.goBack()}
+          />
+        )}
+      </PileConfiguration.Screen>
+    </PileConfiguration.Navigator>
+  );
+}
+
 function OngletsCommerce() {
   const { t } = useI18n();
   const options = useOptionsDOnglets();
@@ -415,14 +479,22 @@ function OngletsCommerce() {
       <Onglets.Screen name="journee" options={onglet(t('onglets.journee'), 'calendrier')}>
         {() => <ParcoursCommerce businessId={businessId} />}
       </Onglets.Screen>
+      {/* **La caisse est un onglet, pas un écran enfoui.** Elle n'était
+          atteignable que depuis une ligne de réservation du jour : une journée
+          vide la rendait inaccessible, et le salon ne pouvait valider aucun
+          code — la boucle du produit ne se fermait jamais. C'est l'écran le
+          plus utilisé d'un comptoir, et il sert debout avec un client en face. */}
+      <Onglets.Screen name="caisse" options={onglet(t('onglets.caisse'), 'etincelle')}>
+        {() => <CaisseAvecJeton />}
+      </Onglets.Screen>
       <Onglets.Screen name="publications" options={onglet(t('onglets.publications'), 'image')}>
         {() => <PublicationsScreen businessId={businessId} />}
       </Onglets.Screen>
       <Onglets.Screen name="reporting" options={onglet(t('onglets.reporting'), 'rapport')}>
         {() => <ReportingScreen businessId={businessId} />}
       </Onglets.Screen>
-      <Onglets.Screen name="activation" options={onglet(t('onglets.activation'), 'coche')}>
-        {() => <ActivationScreen businessId={businessId} onActive={() => {}} />}
+      <Onglets.Screen name="configuration" options={onglet(t('onglets.configuration'), 'coche')}>
+        {() => <PileDeConfiguration businessId={businessId} />}
       </Onglets.Screen>
       <Onglets.Screen
         name="reglages"

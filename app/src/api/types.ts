@@ -497,3 +497,96 @@ export type PlanSouscriptible = {
   billing_interval: 'monthly' | 'yearly';
   features: Record<string, unknown>;
 };
+
+// --------------------------------------------------------------------------
+// composition du commerce : catalogue, paliers offerts, horaires
+// --------------------------------------------------------------------------
+
+export type ItemDuCatalogue = {
+  id: string;
+  business_id: string;
+  parent_item_id: string | null;
+  name: string;
+  description: string | null;
+  price_cents: number;
+  /** Sans elle, aucun calcul de capacité n'est possible. Le formulaire l'exige. */
+  duration_minutes: number | null;
+  requires_booking: boolean;
+  photo_key: string | null;
+  source: 'manual' | 'menu_import';
+  /** L'interrupteur propre à l'item, celui que le commerce manipule. */
+  is_available: boolean;
+  /** Calculé : un parent fermé ferme ses variantes sans toucher leur interrupteur. */
+  is_effectively_available: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+/** Un palier tel qu'un commerce le voit pour composer. Actifs seulement. */
+export type PalierOffrable = {
+  id: string;
+  platform: Platform;
+  content_format: ContentFormat;
+  min_followers: number;
+  min_completed_collabs: number;
+  min_reliability_score: string | null;
+  value_ratio_hint: string | null;
+  display_order: number;
+  is_active: boolean;
+};
+
+export type OffreDePalier = {
+  id: string;
+  business_id: string;
+  tier_id: string;
+  catalog_item_id: string;
+  platform: Platform;
+  content_format: ContentFormat;
+  item_name: string;
+  is_active: boolean;
+  is_effectively_offered: boolean;
+  created_at: string;
+};
+
+/**
+ * Une plage d'ouverture et le nombre de postes en parallèle.
+ *
+ * Horaires et capacité sont une seule règle : des horaires sans postes
+ * n'ouvrent rien, et des postes sans horaires n'ouvrent nulle part.
+ */
+export type RegleDeCapacite = {
+  id: string;
+  business_id: string;
+  /** 0 = lundi, conformément à la contrainte de base. */
+  weekday: number;
+  start_time: string;
+  end_time: string;
+  concurrent_slots: number;
+};
+
+/** Une journée qui remplace la règle du jour — jamais qui s'y ajoute. */
+export type ExceptionDeCapacite = {
+  id: string;
+  business_id: string;
+  date: string;
+  is_closed: boolean;
+  start_time: string | null;
+  end_time: string | null;
+  concurrent_slots: number | null;
+};
+
+/**
+ * Ce qu'il faut pour publier une prestation.
+ *
+ * `duration_minutes` est obligatoire ici alors que l'API l'accepte nulle :
+ * sans durée, aucun calcul de capacité n'est possible, et une prestation
+ * publiée sans elle n'ouvrirait jamais un créneau.
+ */
+export type NouvelItem = {
+  name: string;
+  price_cents: number;
+  duration_minutes: number;
+  description?: string | null;
+  requires_booking?: boolean;
+  photo_key?: string | null;
+};

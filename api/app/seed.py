@@ -193,8 +193,14 @@ async def _ocean_beauty(session: AsyncSession, owner: User) -> tuple[int, int, i
     )
     items.append(brushing)
 
+    # **Ouvert tous les jours.** Le salon fermait du dimanche au lundi : semé un
+    # lundi, il n'avait aucune place, l'écran « Aujourd'hui » disait « rien de
+    # réservé » et la caisse — atteignable seulement depuis une ligne de la
+    # journée — devenait inaccessible. Un jeu de démonstration ne peut pas
+    # dépendre du jour où on le sème. La journée coupée à midi, elle, reste :
+    # c'est ce qui distingue ce salon, et elle vaut tous les jours.
     plages = 0
-    for jour in (MARDI, MERCREDI, JEUDI, VENDREDI, SAMEDI):
+    for jour in (LUNDI, MARDI, MERCREDI, JEUDI, VENDREDI, SAMEDI, DIMANCHE):
         for debut, fin in (("09:00:00", "12:00:00"), ("14:00:00", "18:30:00")):
             await capacity_service.create_rule(
                 session,
@@ -272,8 +278,10 @@ async def _wynwood_nails(session: AsyncSession, owner: User) -> tuple[int, int, 
         )
         items.append(reservables[nom])
 
+    # Tous les jours, même raison : un salon fermé le jour du semis vide la
+    # journée du comptoir et enterre la caisse avec elle.
     plages = 0
-    for jour in (MARDI, MERCREDI, JEUDI, VENDREDI, SAMEDI):
+    for jour in (LUNDI, MARDI, MERCREDI, JEUDI, VENDREDI, SAMEDI, DIMANCHE):
         await capacity_service.create_rule(
             session,
             business_id=business.id,

@@ -22,7 +22,8 @@ explication.
 
 import uuid
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, time, timedelta
+from zoneinfo import ZoneInfo
 
 import httpx
 import sqlalchemy as sa
@@ -93,15 +94,24 @@ class ResumeDemo:
 
 
 async def poser_les_photos(session: AsyncSession) -> int:
-    """Une couverture par commerce, une photo par prestation réservable.
+    """Une couverture par commerce **actif**, une photo par prestation réservable.
 
     Le parent d'une gamme n'en reçoit pas : il ne s'affiche jamais seul, et lui
     en donner une ferait apparaître une image que personne ne voit.
+
+    Un commerce encore en inscription n'en reçoit pas non plus, et c'est la
+    raison d'être du seul qui soit dans cet état : il montre ce qu'on voit le
+    jour où l'on s'inscrit. Lui poser une couverture le rendait présentable, et
+    l'écran d'activation n'avait plus rien à réclamer — alors que « ouvert mais
+    invisible faute de photo » est précisément l'état qu'il doit expliquer.
     """
     depot = get_object_store()
     posees = 0
 
-    for business in (await session.scalars(sa.select(Business))).all():
+    actifs = await session.scalars(
+        sa.select(Business).where(Business.status == BusinessStatus.ACTIVE)
+    )
+    for business in actifs.all():
         cle = await depot.deposer(image(business.name, COUVERTURE), prefixe="photos/business")
         business.cover_photo_key = cle
         posees += 1
@@ -576,8 +586,104 @@ async def composer_les_parcours(session: AsyncSession, createurs: dict) -> tuple
     if booking:
         reservations += 1
 
+    # --- une journée qui existe, dans chaque salon ------------------------
+    reservations += await _une_reservation_aujourd_hui(
+        session,
+        createur=confirmee,
+        compte=compte_confirmee,
+        confirmer=confirmer_jusqu_au_bout,
+    )
+
     await session.flush()
     return reservations, contreparties
+
+
+async def _une_reservation_aujourd_hui(
+    session: AsyncSession,
+    *,
+    createur: User,
+    compte: SocialAccount,
+    confirmer,
+) -> int:
+    """Au moins une réservation confirmée aujourd'hui, dans **chaque** salon actif.
+
+    Sans elle, l'écran « Aujourd'hui » du commerce disait « rien de réservé »
+    sur un jeu de données fraîchement semé — ce qui était exact et inutilisable.
+    Les réservations tombaient sur le premier créneau libre à partir de
+    maintenant, donc presque toujours demain, et toutes sur le même salon :
+    `offre_pour` n'en rendait qu'une seule, la mieux classée. Trois salons sur
+    quatre n'avaient jamais eu la moindre ligne.
+
+    La conséquence dépassait l'affichage : la caisse ne s'atteignait que depuis
+    une ligne de la journée, et un écran vide la rendait inaccessible. Aucun
+    code ne pouvait être validé, la boucle du produit ne se fermait jamais.
+
+    **Le créneau vient de la disponibilité réelle, jamais posé.** On demande
+    d'abord ce qui reste aujourd'hui à partir de maintenant ; à défaut — une
+    journée coupée à midi, semée l'après-midi — ce qui existait plus tôt dans la
+    journée. Un salon qui n'ouvre pas du tout aujourd'hui n'en reçoit pas : lui
+    en inventer une contredirait ses propres horaires.
+    """
+    posees = 0
+
+    actifs = (
+        await session.scalars(sa.select(Business).where(Business.status == BusinessStatus.ACTIVE))
+    ).all()
+
+    for business in actifs:
+        offre = await session.scalar(
+            sa.select(TierOffer)
+            .join(Tier, Tier.id == TierOffer.tier_id)
+            .join(CatalogItem, CatalogItem.id == TierOffer.catalog_item_id)
+            .where(
+                TierOffer.business_id == business.id,
+                TierOffer.is_active.is_(True),
+                Tier.is_active.is_(True),
+                CatalogItem.requires_booking.is_(True),
+                CatalogItem.is_available.is_(True),
+            )
+            .order_by(Tier.display_order, TierOffer.created_at)
+            .limit(1)
+        )
+        if offre is None:
+            continue
+
+        fuseau = ZoneInfo(business.timezone)
+        maintenant = datetime.now(UTC)
+        ouverture = datetime.combine(maintenant.astimezone(fuseau).date(), time.min, tzinfo=fuseau)
+        fin_du_jour = ouverture + timedelta(days=1)
+
+        creneau = None
+        for depuis in (maintenant, ouverture):
+            candidat = await _premier_creneau(
+                session, business.id, offre.catalog_item_id, depuis=depuis
+            )
+            if candidat is not None and candidat < fin_du_jour:
+                creneau = candidat
+                break
+
+        if creneau is None:
+            print(f"  aucune place aujourd'hui chez {business.name} : ses horaires font foi")
+            continue
+
+        try:
+            booking = await booking_service.creer(
+                session,
+                creator_id=createur.id,
+                demande=booking_service.DemandeDeReservation(
+                    tier_offer_id=offre.id,
+                    social_account_id=compte.id,
+                    starts_at=creneau,
+                ),
+            )
+        except booking_service.BookingError as erreur:
+            print(f"  journée du jour écartée chez {business.name} ({type(erreur).__name__})")
+            continue
+
+        await confirmer(booking, createur.id)
+        posees += 1
+
+    return posees
 
 
 async def _mener(

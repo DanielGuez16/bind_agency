@@ -44,3 +44,18 @@ export function formatDate(isoUtc: string, locale: SupportedLocale, timeZone: st
     new Date(isoUtc),
   );
 }
+
+/**
+ * Une date sans heure, en toutes lettres pour le mois.
+ *
+ * **Sans conversion de fuseau.** `new Date('2026-08-15')` est lu comme minuit
+ * UTC : affiché à Miami, le 15 devient le 14. Une date de fermeture n'est pas
+ * un instant, c'est une case de calendrier — on la construit en heure locale
+ * plutôt que de la faire traverser un fuseau qui n'a rien à y voir.
+ */
+export function formatJour(isoDate: string, locale: SupportedLocale): string {
+  const [annee, mois, jour] = isoDate.slice(0, 10).split('-').map(Number);
+  return new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(
+    new Date(annee, mois - 1, jour),
+  );
+}

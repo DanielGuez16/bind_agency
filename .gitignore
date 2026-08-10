@@ -1,6 +1,9 @@
 # secrets et configuration locale
 .env
 .env.local
+# La configuration de l'environnement de démonstration : identifiants Supabase
+# et clés de chiffrement. Le modèle sans valeurs, lui, est versionné.
+.env.demo
 *.pem
 
 # python
@@ -20,6 +23,16 @@ dist/
 web-build/
 *.log
 npm-debug.log*
+
+# Photos de démonstration. Fournies à la main, jamais versionnées : vingt
+# fichiers de plusieurs mégaoctets entrent dans l'historique pour toujours, et
+# le semis sait s'en passer — il retombe sur ses dégradés générés. La CI et une
+# machine fraîche tournent donc sans eux. Seuls la liste et les dossiers vides
+# sont suivis, pour que l'arborescence arrive avec le dépôt.
+assets/photos/**
+!assets/photos/**/
+!assets/photos/A-FOURNIR.md
+!assets/photos/**/.gitkeep
 
 # macos / ide
 .DS_Store

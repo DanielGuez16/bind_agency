@@ -41,7 +41,8 @@ export type NomIcone =
   | 'liste'
   | 'cadenas'
   | 'etincelle'
-  | 'fleche';
+  | 'fleche'
+  | 'retour';
 
 const CHEMINS: Record<NomIcone, string> = {
   chevron: 'M9.5 5.5L16 12l-6.5 6.5',
@@ -68,6 +69,8 @@ const CHEMINS: Record<NomIcone, string> = {
   cadenas: 'M7 10.5V8a5 5 0 0110 0M5.5 10.5h13v10h-13zM12 14.5v2.5',
   etincelle: 'M12 3.5l1.9 4.9 4.9 1.9-4.9 1.9L12 17.1l-1.9-4.9L5.2 10.3l4.9-1.9zM18.5 16.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z',
   fleche: 'M4.5 12h15M13.5 6l6 6-6 6',
+  // La même flèche, retournée : le retour et l'avance se répondent.
+  retour: 'M19.5 12h-15M10.5 6l-6 6 6 6',
 };
 
 export function Icone({

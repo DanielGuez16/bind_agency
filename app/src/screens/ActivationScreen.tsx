@@ -48,9 +48,12 @@ const LIBELLES: Record<EtapeActivation['cle'], string> = {
 export function ActivationScreen({
   businessId,
   onActive,
+  onRetour,
 }: {
   businessId: string;
   onActive: () => void;
+  /** Présent quand l'écran naît d'un autre : il rend alors son propre retour. */
+  onRetour?: () => void;
 }) {
   const { api, messageDErreur } = useApi();
   const { t } = useI18n();
@@ -82,6 +85,7 @@ export function ActivationScreen({
     <Ecran
       requete={requete}
       titre={t('commerce.activationTitre')}
+      onRetour={onRetour}
       testID="ecran-activation"
       // Le squelette par défaut promettait trois cartes à grande image ;
       // l'écran rend une liste de lignes. Un squelette qui ressemble à autre

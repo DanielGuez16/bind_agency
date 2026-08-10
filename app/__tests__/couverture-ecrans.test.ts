@@ -26,12 +26,13 @@ describe('couverture des écrans', () => {
   });
 
   it('la liste hors registre ne grossit pas', () => {
-    // Sept : la connexion et les réglages, qui ne chargent rien à quatre
+    // Huit : la connexion et les réglages, qui ne chargent rien à quatre
     // états ; l'écran de code, qui garde son dernier code y compris hors
     // ligne ; l'accueil après inscription, qui explique et propose sans rien
-    // charger ; et les trois écrans de la dette d'avant le système de design.
-    // Ce test tombe si quelqu'un y range un huitième écran pour éviter
+    // charger ; la table des matières de la configuration, qui n'a que trois
+    // portes ; et les trois écrans de la dette d'avant le système de design.
+    // Ce test tombe si quelqu'un y range un neuvième écran pour éviter
     // d'écrire ses états.
-    expect(HORS_REGISTRE).toHaveLength(7);
+    expect(HORS_REGISTRE).toHaveLength(8);
   });
 });

@@ -501,6 +501,15 @@
         ]
       }
     },
+    "/api/v1/business/{business_id}/tiers": {
+      "get": {
+        "operationId": "list_tiers_for_business_api_v1_business__business_id__tiers_get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/api/v1/businesses": {
       "get": {
         "operationId": "read_feed_api_v1_businesses_get",

@@ -12,11 +12,14 @@ import os
 import subprocess
 import sys
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, time, timedelta
+from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import psycopg
 import pytest
 import sqlalchemy as sa
+from cryptography.fernet import Fernet
 from psycopg import sql
 from pydantic import EmailStr, TypeAdapter, ValidationError
 from sqlalchemy import make_url
@@ -740,6 +743,14 @@ async def test_un_commerce_n_a_rien_compose(seed_conn: AsyncConnection) -> None:
     )
     assert sans_offre == 0
 
+    # Et pas de couverture non plus. Lui en poser une le rendait présentable, ce
+    # qui contredit le seul état qu'il est là pour montrer : l'écran
+    # d'activation lui réclame une photo, il ne peut pas déjà l'avoir.
+    couverture = await seed_conn.scalar(
+        sa.select(Business.cover_photo_key).where(Business.id == en_cours[0])
+    )
+    assert couverture is None
+
 
 async def test_les_dates_sont_proches_d_aujourd_hui(seed_conn: AsyncConnection) -> None:
     """Un jeu figé montre des réservations passées trois mois plus tard, et la
@@ -973,3 +984,147 @@ def test_la_commande_migre_seule_quand_on_ne_seme_pas(
 
     assert deploiement.main() == 0
     assert appels == ["migrer"]
+
+
+# --------------------------------------------------------------------------
+# le fichier de configuration de la démonstration
+# --------------------------------------------------------------------------
+
+
+def test_un_fichier_absent_arrete_la_commande_et_se_nomme(tmp_path: Path) -> None:
+    """Elle ne retombe jamais sur la configuration locale.
+
+    Sans ce refus, viser la démonstration avec un fichier oublié aurait visé la
+    base de développement — celle dont le nom, `bind`, ne déclenche aucun garde
+    parce qu'elle est justement celle qu'on a le droit d'effacer.
+    """
+    from scripts import deploiement
+
+    absent = tmp_path / ".env.demo"
+
+    with pytest.raises(SystemExit) as refus:
+        deploiement.charger(absent)
+
+    assert str(absent) in str(refus.value)
+    assert "BIND_ENV_FILE" not in os.environ
+
+
+def test_une_variable_manquante_est_nommee_et_arrete_tout(tmp_path: Path) -> None:
+    """Le comblement silencieux est la vraie sortie de route.
+
+    Un fichier presque complet lisait le reste dans `api/.env` : la commande
+    visait un mélange des deux configurations, qui ne correspond à aucun
+    environnement réel, et rien ne le disait.
+    """
+    from scripts import deploiement
+
+    (tmp_path / ".env.demo.example").write_text(
+        "# modèle\nENVIRONMENT=\nDATABASE_URL=\nOBJECT_STORE_SECRET_KEY=\n", encoding="utf-8"
+    )
+    fichier = tmp_path / ".env.demo"
+    fichier.write_text("ENVIRONMENT=demo\nDATABASE_URL=\n", encoding="utf-8")
+
+    with pytest.raises(SystemExit) as refus:
+        deploiement.charger(fichier)
+
+    message = str(refus.value)
+    assert "DATABASE_URL" in message and "OBJECT_STORE_SECRET_KEY" in message
+    # Posée, elle n'est pas réclamée : le refus nomme ce qui manque, pas tout.
+    assert "ENVIRONMENT" not in message.split(":", 1)[1]
+
+
+def test_un_fichier_complet_remplace_la_configuration_locale(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Remplace, et non complète.
+
+    C'est la propriété qui compte : les réglages construits ensuite lisent ce
+    fichier-là et rien d'autre, quelle que soit la valeur posée dans `api/.env`.
+    """
+    from app.core import config
+    from scripts import deploiement
+
+    (tmp_path / ".env.demo.example").write_text("TOKEN_ENCRYPTION_KEY_ID=\n", encoding="utf-8")
+    fichier = tmp_path / ".env.demo"
+    fichier.write_text(
+        f"DATABASE_URL={os.environ.get('TEST_DATABASE_URL', 'postgresql+psycopg://u:p@ailleurs:5432/postgres')}\n"
+        "JWT_SECRET_KEY=une-cle-assez-longue-pour-hmac-256-au-moins\n"
+        "TOKEN_ENCRYPTION_KEY=" + Fernet.generate_key().decode() + "\n"
+        # Le témoin. Pas `ENVIRONMENT` : l'intégration continue l'exporte pour
+        # de vrai, et une variable du shell l'emporte sur n'importe quel
+        # fichier — le test aurait mesuré la précédence des sources plutôt que
+        # le remplacement du fichier.
+        "TOKEN_ENCRYPTION_KEY_ID=temoin-du-fichier\n",
+        encoding="utf-8",
+    )
+    # Par `monkeypatch` : `charger` écrit dans l'environnement du processus, et
+    # le laisser posé ferait lire ce fichier temporaire à tous les tests
+    # suivants. Même classe de fuite que la transaction validée par erreur.
+    monkeypatch.setenv("BIND_ENV_FILE", "")
+
+    deploiement.charger(fichier)
+
+    assert os.environ["BIND_ENV_FILE"] == str(fichier)
+    assert config.fichier_de_configuration() == str(fichier)
+    # Résolu à l'appel : posé dans une constante de module, il était figé par le
+    # premier import venu, et la commande affichait `local` en visant `demo`.
+    assert config.build_settings().token_encryption_key_id == "temoin-du-fichier"
+
+
+def test_le_refus_du_garde_est_une_reponse_et_non_une_trace(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Un refus attendu ne se lit pas comme une panne de la commande."""
+    from scripts import deploiement
+
+    def refuser(_settings):
+        raise deploiement.seed.SeedRefused("la base visée n'est pas celle de démonstration")
+
+    monkeypatch.setattr(deploiement.seed, "verifier_l_hote", refuser)
+    monkeypatch.setattr(deploiement, "migrer", lambda: pytest.fail("rien ne doit être écrit"))
+    monkeypatch.setattr(sys, "argv", ["deploiement", "--avec-jeu-de-donnees"])
+
+    assert deploiement.main() == 2
+    assert "refus" in capsys.readouterr().err
+
+
+async def test_chaque_commerce_ouvert_a_une_reservation_aujourd_hui(
+    seed_conn: AsyncConnection,
+) -> None:
+    """La propriété qui a lâché, et qui vidait l'écran du comptoir.
+
+    Les réservations tombaient sur le premier créneau libre à partir de
+    maintenant — donc demain — et toutes sur le même salon. Semé un lundi, où
+    trois salons sur quatre n'ouvraient pas, l'écran « Aujourd'hui » disait
+    « rien de réservé » partout. C'était exact et inutilisable : la caisse ne
+    s'atteignait que depuis une ligne de la journée, et aucun code ne pouvait
+    être validé.
+
+    **Le jeu de données ne peut pas dépendre du jour où on le sème.** Le test
+    non plus : il ne fige aucune date, il demande à chaque commerce actif ce
+    qu'il a aujourd'hui, chez lui.
+    """
+    commerces = (
+        await seed_conn.execute(
+            sa.select(Business.id, Business.name, Business.timezone).where(
+                Business.status == BusinessStatus.ACTIVE
+            )
+        )
+    ).all()
+    assert commerces, "aucun commerce actif : le jeu de données est vide"
+
+    for business_id, nom, fuseau in commerces:
+        zone = ZoneInfo(fuseau)
+        debut = datetime.combine(datetime.now(zone).date(), time.min, tzinfo=zone)
+
+        confirmees = await seed_conn.scalar(
+            sa.select(sa.func.count())
+            .select_from(Booking)
+            .where(
+                Booking.business_id == business_id,
+                Booking.starts_at >= debut,
+                Booking.starts_at < debut + timedelta(days=1),
+                Booking.status == BookingStatus.CONFIRMED,
+            )
+        )
+        assert confirmees, f"{nom} n'a aucune réservation confirmée aujourd'hui"

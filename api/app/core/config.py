@@ -5,6 +5,7 @@ variable d'environnement est une erreur de démarrage, jamais un défaut silenci
 Aucun seuil de palier, aucun prix, aucun délai métier ne vit ici en dur non plus.
 """
 
+import os
 from decimal import Decimal
 from functools import lru_cache
 from pathlib import Path
@@ -30,9 +31,26 @@ def _split_csv(value: object) -> object:
 CommaSeparated = Annotated[list[str], NoDecode, BeforeValidator(_split_csv)]
 
 
+def fichier_de_configuration() -> str:
+    """Le fichier lu, `api/.env` sauf indication contraire.
+
+    **Il remplace le fichier local, il ne s'y ajoute pas.** Viser un autre
+    environnement en exportant quelques variables laissait toutes les autres
+    retomber sur `api/.env` : une valeur oubliée dans le fichier distant se
+    comblait en silence avec celle de la machine, et la commande visait un
+    mélange des deux sans que rien ne le dise.
+
+    **Résolu à l'appel, jamais à l'import.** Posé dans une constante de module,
+    il était figé avant que quiconque ait pu le choisir : le premier import du
+    module — celui d'un autre module d'`app` — décidait pour tout le reste. La
+    commande de déploiement affichait alors `environnement : local` en visant
+    un fichier `demo`, sans que rien ne le signale.
+    """
+    return os.environ.get("BIND_ENV_FILE") or str(API_ROOT / ".env")
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=API_ROOT / ".env",
         env_file_encoding="utf-8",
         extra="ignore",
         case_sensitive=False,
@@ -366,6 +384,9 @@ def _describe(error: ValidationError) -> str:
 
 
 def build_settings(**overrides: object) -> Settings:
+    # `setdefault` : un appelant qui pose explicitement `_env_file` — les tests
+    # qui épinglent leurs propres réglages — garde la main.
+    overrides.setdefault("_env_file", fichier_de_configuration())
     try:
         return Settings(**overrides)  # type: ignore[arg-type]
     except ValidationError as error:

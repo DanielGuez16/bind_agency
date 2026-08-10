@@ -12,12 +12,14 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import type { ReactElement, ReactNode } from 'react';
 
-import { ApiClient, ApiProvider } from '../src/api';
+import { ApiClient, ApiProvider, PREFIXE } from '../src/api';
 import { I18nProvider } from '../src/i18n';
 import { en } from '../src/i18n/en';
 import { ThemeProvider, type Role } from '../src/theme';
 import { ActivationScreen } from '../src/screens/ActivationScreen';
 import { ArbitrageScreen } from '../src/screens/ArbitrageScreen';
+import { CatalogueScreen } from '../src/screens/CatalogueScreen';
+import { HorairesScreen } from '../src/screens/HorairesScreen';
 import { JourneeScreen } from '../src/screens/JourneeScreen';
 import { PlansScreen } from '../src/screens/PlansScreen';
 import { PublicationsScreen } from '../src/screens/PublicationsScreen';
@@ -241,6 +243,57 @@ const REPORTING = {
   ],
 };
 
+const ITEM = {
+  id: 'i1',
+  business_id: 'b1',
+  parent_item_id: null,
+  name: 'Gel nails',
+  description: null,
+  price_cents: 6500,
+  duration_minutes: 45,
+  requires_booking: true,
+  photo_key: null,
+  source: 'manual',
+  is_available: true,
+  is_effectively_available: true,
+  created_at: '2026-08-01T10:00:00Z',
+  updated_at: '2026-08-01T10:00:00Z',
+};
+
+const PALIER = {
+  id: 't1',
+  platform: 'instagram',
+  content_format: 'story',
+  min_followers: 1000,
+  min_completed_collabs: 0,
+  min_reliability_score: null,
+  value_ratio_hint: null,
+  display_order: 1,
+  is_active: true,
+};
+
+const OFFRE = {
+  id: 'o1',
+  business_id: 'b1',
+  tier_id: 't1',
+  catalog_item_id: 'i1',
+  platform: 'instagram',
+  content_format: 'story',
+  item_name: 'Gel nails',
+  is_active: true,
+  is_effectively_offered: true,
+  created_at: '2026-08-01T10:00:00Z',
+};
+
+const REGLE = {
+  id: 'r1',
+  business_id: 'b1',
+  weekday: 0,
+  start_time: '10:00:00',
+  end_time: '19:00:00',
+  concurrent_slots: 2,
+};
+
 const ECRANS = [
   {
     nom: 'journee',
@@ -265,6 +318,26 @@ const ECRANS = [
     vide: null,
   },
   {
+    nom: 'catalogue',
+    noeud: <CatalogueScreen businessId="b1" />,
+    role: 'merchant' as Role,
+    plein: {
+      '/catalog-items': [ITEM],
+      '/tier-offers': [OFFRE],
+      '/tiers': [PALIER],
+    },
+    vide: { '/catalog-items': [], '/tier-offers': [], '/tiers': [PALIER] },
+  },
+  {
+    nom: 'horaires',
+    noeud: <HorairesScreen businessId="b1" />,
+    role: 'merchant' as Role,
+    plein: { '/capacity-rules': [REGLE], '/capacity-exceptions': [] },
+    // Jamais vide : les sept jours existent toujours, même sans une règle. Un
+    // état vide effacerait la liste au moment où elle sert à la remplir.
+    vide: null,
+  },
+  {
     nom: 'reporting',
     noeud: <ReportingScreen businessId="b1" />,
     role: 'merchant' as Role,
@@ -286,6 +359,181 @@ const ECRANS = [
     vide: { '/admin/plans': [] },
   },
 ] as const;
+
+// --------------------------------------------------------------------------
+// composition : catalogue, horaires
+// --------------------------------------------------------------------------
+
+describe('catalogue', () => {
+  const CATALOGUE = {
+    '/catalog-items': [ITEM],
+    '/tier-offers': [OFFRE],
+    '/tiers': [PALIER],
+  };
+
+  it('groupe par palier, et nomme ce qui n’en a aucun', async () => {
+    // Une prestation sans offre n'apparaît dans aucun fil. La fondre dans un
+    // palier ferait croire l'inverse ; c'est précisément ce que le commerce
+    // n'avait aucun moyen de voir.
+    const orpheline = { ...ITEM, id: 'i2', name: 'Deep massage' };
+    await monter(
+      <CatalogueScreen businessId="b1" />,
+      clientDe({ ...CATALOGUE, '/catalog-items': [ITEM, orpheline] }),
+    );
+    await waitFor(() => expect(screen.getByTestId('etat-nominal')).toBeTruthy());
+
+    expect(screen.getByTestId('palier-t1')).toBeTruthy();
+    const sansPalier = screen.getByTestId('sans-palier');
+    expect(sansPalier).toHaveTextContent(new RegExp(en.composition.sansPalierTitre));
+    expect(screen.getByTestId('prestation-i2')).toBeTruthy();
+  });
+
+  it('ouvre et ferme par la route de transition, jamais par le correctif', async () => {
+    // C'est une transition d'état : elle laisse une trace au journal. Deux
+    // chemins pour la même transition finiraient par diverger.
+    const envois: { chemin: string; corps: unknown }[] = [];
+    await monter(
+      <CatalogueScreen businessId="b1" />,
+      clientDe(CATALOGUE, (chemin, corps) => envois.push({ chemin, corps })),
+    );
+    await waitFor(() => expect(screen.getByTestId('etat-nominal')).toBeTruthy());
+
+    await fireEvent.press(screen.getByTestId('ouverture-i1'));
+
+    await waitFor(() => expect(envois).toHaveLength(1));
+    expect(envois[0].chemin).toContain('/catalog-items/i1/availability');
+    expect(envois[0].corps).toEqual({ is_available: false });
+  });
+
+  it('dit qu’une prestation est fermée par son parent, et n’offre pas de l’ouvrir', async () => {
+    // L'interrupteur de la ligne n'y peut rien : le laisser actif ferait
+    // appuyer sur un bouton sans effet.
+    const variante = { ...ITEM, is_available: true, is_effectively_available: false };
+    await monter(
+      <CatalogueScreen businessId="b1" />,
+      clientDe({ ...CATALOGUE, '/catalog-items': [variante] }),
+    );
+    await waitFor(() => expect(screen.getByTestId('etat-nominal')).toBeTruthy());
+
+    expect(screen.getByTestId('ferme-par-parent-i1')).toBeTruthy();
+    expect(screen.getByTestId('ouverture-i1').props.accessibilityState.disabled).toBe(true);
+  });
+
+  it('publie avec sa durée, et rattache le palier dans le même geste', async () => {
+    // Publier puis rattacher en deux temps laisserait une prestation invisible
+    // entre les deux, sans que rien ne le dise. Et sans durée, aucun calcul de
+    // capacité n'est possible : elle n'ouvrirait jamais un créneau.
+    const envois: { chemin: string; corps: unknown }[] = [];
+    await monter(
+      <CatalogueScreen businessId="b1" />,
+      clientDe({ ...CATALOGUE, '/catalog-items': [] }, (chemin, corps) =>
+        envois.push({ chemin, corps }),
+      ),
+    );
+    await waitFor(() => expect(screen.getByTestId('catalogue-vide')).toBeTruthy());
+
+    await fireEvent.press(screen.getByText(en.composition.videAction));
+    await fireEvent.changeText(screen.getByTestId('champ-nom'), 'Deep massage');
+    await fireEvent.changeText(screen.getByTestId('champ-prix'), '90');
+    await fireEvent.press(screen.getByTestId('publier-la-prestation'));
+
+    await waitFor(() => expect(envois).toHaveLength(2));
+    expect(envois[0].corps).toMatchObject({ name: 'Deep massage', duration_minutes: 45 });
+    expect(envois[1].chemin).toContain('/tier-offers');
+  });
+
+  it('écrit la conséquence du palier choisi, pas seulement son nom', async () => {
+    // Un palier haut réduit le nombre de créatrices éligibles, et rien ne le
+    // disait au moment où le commerce le choisit.
+    await monter(
+      <CatalogueScreen businessId="b1" />,
+      clientDe({ ...CATALOGUE, '/catalog-items': [] }),
+    );
+    await waitFor(() => expect(screen.getByTestId('catalogue-vide')).toBeTruthy());
+
+    await fireEvent.press(screen.getByText(en.composition.videAction));
+
+    expect(screen.getByTestId('consequence-du-palier')).toHaveTextContent(/1,000/);
+  });
+});
+
+describe('horaires et capacité', () => {
+  it('garde les sept jours, et écrit « fermé » plutôt que de retirer la ligne', async () => {
+    // Une ligne absente ne dit pas si le jour est fermé ou si le commerce n'a
+    // rien rempli. Les deux se corrigent différemment.
+    await monter(
+      <HorairesScreen businessId="b1" />,
+      clientDe({ '/capacity-rules': [REGLE], '/capacity-exceptions': [] }),
+    );
+    await waitFor(() => expect(screen.getByTestId('etat-nominal')).toBeTruthy());
+
+    for (let jour = 0; jour < 7; jour += 1) {
+      expect(screen.getByTestId(`jour-${jour}`)).toBeTruthy();
+    }
+    expect(screen.getByTestId('horaires-0')).toHaveTextContent(/10:00/);
+    for (let jour = 1; jour < 7; jour += 1) {
+      expect(screen.getByTestId(`ferme-${jour}`)).toHaveTextContent(en.composition.ferme);
+    }
+  });
+
+  it('crée la règle du jour avec ses horaires et ses postes en une écriture', async () => {
+    // Des horaires sans postes n'ouvrent rien, des postes sans horaires
+    // n'ouvrent nulle part : la base les porte ensemble.
+    const envois: { chemin: string; corps: unknown }[] = [];
+    await monter(
+      <HorairesScreen businessId="b1" />,
+      clientDe({ '/capacity-rules': [REGLE], '/capacity-exceptions': [] }, (chemin, corps) =>
+        envois.push({ chemin, corps }),
+      ),
+    );
+    await waitFor(() => expect(screen.getByTestId('etat-nominal')).toBeTruthy());
+
+    await fireEvent.press(screen.getByTestId('modifier-2'));
+    await fireEvent.press(screen.getByTestId('enregistrer-2'));
+
+    await waitFor(() => expect(envois).toHaveLength(1));
+    expect(envois[0].corps).toMatchObject({
+      weekday: 2,
+      start_time: '10:00:00',
+      end_time: '19:00:00',
+      concurrent_slots: 1,
+    });
+  });
+
+  it('dit qu’une fermeture n’annule aucune réservation déjà prise', async () => {
+    // Un commerce qui croirait annuler en fermant sa journée se tairait auprès
+    // de créatrices qui viendront quand même.
+    await monter(
+      <HorairesScreen businessId="b1" />,
+      clientDe({ '/capacity-rules': [REGLE], '/capacity-exceptions': [] }),
+    );
+    await waitFor(() => expect(screen.getByTestId('etat-nominal')).toBeTruthy());
+
+    expect(screen.getByText(en.composition.fermerNAnnuleRien)).toBeTruthy();
+  });
+
+  it('affiche une date de fermeture sans la faire traverser un fuseau', async () => {
+    // `new Date('2026-08-15')` est lu comme minuit UTC : affiché à Miami, le 15
+    // devient le 14. Une date de fermeture est une case de calendrier, pas un
+    // instant.
+    const exception = {
+      id: 'e1',
+      business_id: 'b1',
+      date: '2026-08-15',
+      is_closed: true,
+      start_time: null,
+      end_time: null,
+      concurrent_slots: null,
+    };
+    await monter(
+      <HorairesScreen businessId="b1" />,
+      clientDe({ '/capacity-rules': [REGLE], '/capacity-exceptions': [exception] }),
+    );
+    await waitFor(() => expect(screen.getByTestId('etat-nominal')).toBeTruthy());
+
+    expect(screen.getByTestId('exception-e1')).toHaveTextContent(/15/);
+  });
+});
 
 // --------------------------------------------------------------------------
 // quatre états
@@ -325,6 +573,8 @@ describe('quatre états', () => {
       arbitrage: 'ArbitrageScreen.tsx',
       plans: 'PlansScreen.tsx',
       reporting: 'ReportingScreen.tsx',
+      catalogue: 'CatalogueScreen.tsx',
+      horaires: 'HorairesScreen.tsx',
     };
     expect(ECRANS.map((e) => fichiers[e.nom]).sort()).toEqual([...ECRANS_COMMERCE].sort());
   });
@@ -550,7 +800,10 @@ describe('arbitrage', () => {
       <ArbitrageScreen />,
       clientDe({
         '/admin/collaborations/review': [DOSSIER_EN_ARBITRAGE],
-        '/proofs/p1/access': { url: '/proofs/p1?t=jeton', expires_in: 300 },
+        // Le chemin complet, préfixe de version compris, tel que le serveur le
+        // calcule depuis la route montée. Le décor l'écrivait sans préfixe, ce
+        // que le serveur faisait aussi — et l'aperçu tombait sur un 404 en ligne.
+        '/proofs/p1/access': { url: `${PREFIXE}/proofs/p1?t=jeton`, expires_in: 300 },
       }),
       'admin',
     );

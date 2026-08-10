@@ -508,3 +508,68 @@ async def test_la_liste_ne_montre_que_ses_propres_offres(
     )
 
     assert [ligne["item_name"] for ligne in response.json()] == ["Chez A"]
+
+
+# --------------------------------------------------------------------------
+# la lecture des paliers par un commerce
+# --------------------------------------------------------------------------
+
+
+async def test_le_commerce_lit_les_paliers_qu_il_peut_offrir(client: AsyncClient) -> None:
+    """Sans cette liste, composer une offre demanderait de saisir un UUID.
+
+    L'écran de catalogue n'avait aucun moyen d'apprendre quels paliers
+    existent : la seule route était réservée à l'administration.
+    """
+    membre = await compte(client)
+    business_id = await commerce(client, membre)
+
+    reponse = await client.get(f"{PREFIX}/business/{business_id}/tiers", headers=membre["headers"])
+
+    assert reponse.status_code == 200, reponse.text
+    paliers = reponse.json()
+    assert paliers, "les paliers de référence viennent de la migration"
+    # Chaque ligne se suffit : l'écran montre un palier, pas un identifiant.
+    for p in paliers:
+        assert p["platform"] and p["content_format"]
+        assert p["min_followers"] >= 0
+
+
+async def test_un_palier_desactive_n_est_pas_proposable(
+    client: AsyncClient, conn: AsyncConnection
+) -> None:
+    """Le proposer ferait échouer la création après coup, sans rien annoncer.
+
+    La composition refuse déjà un palier inactif ; l'offrir au choix serait une
+    impasse dessinée à l'écran.
+    """
+    membre = await compte(client)
+    business_id = await commerce(client, membre)
+    cible = await palier(conn)
+
+    # Pas de `commit()` : la connexion du test est déjà dans une transaction
+    # annulée en sortie, et la valider désactiverait ce palier pour de bon —
+    # dans la base partagée, pour tous les tests suivants. C'est ce qui a fait
+    # tomber `test_tiers.py` en intégration continue et pas en local, où
+    # l'ordre d'exécution masquait la fuite. Le client HTTP partage cette même
+    # connexion : l'écriture lui est visible sans être validée.
+    await conn.execute(sa.update(Tier).where(Tier.id == cible).values(is_active=False))
+
+    reponse = await client.get(f"{PREFIX}/business/{business_id}/tiers", headers=membre["headers"])
+
+    assert reponse.status_code == 200, reponse.text
+    assert str(cible) not in {p["id"] for p in reponse.json()}
+
+
+async def test_un_membre_d_un_autre_commerce_n_y_accede_pas(client: AsyncClient) -> None:
+    """La borne est celle de l'appartenance, pas un filtre écrit dans la route."""
+    membre = await compte(client)
+    business_id = await commerce(client, membre)
+    etranger = await compte(client)
+    await commerce(client, etranger, nom="Autre salon")
+
+    reponse = await client.get(
+        f"{PREFIX}/business/{business_id}/tiers", headers=etranger["headers"]
+    )
+
+    assert reponse.status_code in (403, 404), reponse.text

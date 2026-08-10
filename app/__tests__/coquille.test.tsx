@@ -526,9 +526,13 @@ describe('aiguillage par rôle', () => {
     expect(vus).toEqual(
       expect.arrayContaining([
         en.onglets.journee,
+        // La caisse est un onglet, et non un écran atteint depuis une ligne de
+        // réservation : une journée vide la rendait inaccessible, et le salon
+        // ne pouvait valider aucun code.
+        en.onglets.caisse,
         en.onglets.publications,
         en.onglets.reporting,
-        en.onglets.activation,
+        en.onglets.configuration,
         en.onglets.reglages,
       ]),
     );
@@ -544,7 +548,12 @@ describe('aiguillage par rôle', () => {
     expect(vus).toEqual(
       expect.arrayContaining([en.onglets.arbitrage, en.onglets.plans, en.onglets.reglages]),
     );
-    for (const interdit of [en.onglets.fil, en.onglets.journee, en.onglets.paliers]) {
+    for (const interdit of [
+      en.onglets.fil,
+      en.onglets.journee,
+      en.onglets.caisse,
+      en.onglets.paliers,
+    ]) {
       expect(vus).not.toContain(interdit);
     }
   });
