@@ -613,8 +613,6 @@ async def test_l_historique_porte_les_trois_demandes_dans_l_ordre(
     )
     # Chronologique, et non l'inverse : on lit l'escalade dans le sens où elle
     # s'est produite.
-    assert [t.demandee_le for t in vue.tentatives] == sorted(
-        t.demandee_le for t in vue.tentatives
-    )
+    assert [t.demandee_le for t in vue.tentatives] == sorted(t.demandee_le for t in vue.tentatives)
     # Le dernier motif n'est plus stocké en double, il se dérive.
     assert vue.dernier_motif == vue.tentatives[-1].motif

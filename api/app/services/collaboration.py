@@ -557,9 +557,7 @@ async def _completer(session: AsyncSession, lignes) -> tuple[LigneDeFile, ...]:
     # récent. Une approbation n'en porte pas et n'efface donc rien.
     tentatives: dict[uuid.UUID, list[Tentative]] = {}
     for entity_id, reason, occurred_at, actor_kind in await session.execute(
-        sa.select(
-            AuditLog.entity_id, AuditLog.reason, AuditLog.occurred_at, AuditLog.actor_kind
-        )
+        sa.select(AuditLog.entity_id, AuditLog.reason, AuditLog.occurred_at, AuditLog.actor_kind)
         .where(
             AuditLog.entity_type == AuditedEntity.COLLABORATION.value,
             AuditLog.entity_id.in_(ids),
