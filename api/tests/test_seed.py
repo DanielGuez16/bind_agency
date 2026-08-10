@@ -23,7 +23,7 @@ from cryptography.fernet import Fernet
 from psycopg import sql
 from pydantic import EmailStr, TypeAdapter, ValidationError
 from sqlalchemy import make_url
-from sqlalchemy.ext.asyncio import AsyncConnection, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncConnection, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
 from app.core.config import API_ROOT, get_settings
@@ -1128,3 +1128,116 @@ async def test_chaque_commerce_ouvert_a_une_reservation_aujourd_hui(
             )
         )
         assert confirmees, f"{nom} n'a aucune réservation confirmée aujourd'hui"
+
+
+#: Avant l'ouverture, en pleine matinée, dans la coupure de midi, l'après-midi,
+#: après la fermeture, et la dernière heure du jour. Les moments où le choix du
+#: créneau change de branche.
+HEURES = (0, 6, 9, 11, 13, 17, 20, 22, 23)
+
+
+async def test_le_creneau_choisi_n_est_jamais_derriere_nous(
+    seed_conn: AsyncConnection,
+) -> None:
+    """Le défaut ne se voyait qu'à certaines heures, donc jamais en intégration.
+
+    Le choix se faisait en deux passes : ce qui reste à partir de maintenant,
+    puis — à défaut — ce qui existait depuis l'ouverture. La seconde rendait un
+    créneau déjà passé ; la réservation l'acceptait, l'acceptation par le
+    commerce le refusait (`CreneauDepasse`), et le semis s'arrêtait au milieu de
+    son écriture. Avant midi il n'y avait rien à rattraper, donc rien à casser :
+    un test lancé le matin passait, et la commande échouait le soir.
+
+    Même piège que la réservation posée à « maintenant moins trois heures », qui
+    basculait sur la veille avant 3 h. L'heure est donc un paramètre, et le test
+    la parcourt au lieu de subir celle du moment.
+    """
+    from app.seed_demo import prochain_creneau_reservable
+
+    # Les heures se parcourent **dans** le test et non par paramétrage : le jeu
+    # de données est posé par une fixture coûteuse, et neuf cas la rejouaient
+    # neuf fois — neuf `DROP DATABASE … WITH (FORCE)` concurrents, jusqu'au
+    # verrou mortel qui faisait tomber la suite entière.
+    factory = async_sessionmaker(bind=seed_conn, expire_on_commit=False)
+
+    async with factory() as session:
+        commerces = (
+            await session.scalars(
+                sa.select(Business).where(Business.status == BusinessStatus.ACTIVE)
+            )
+        ).all()
+        assert commerces, "aucun commerce actif : le jeu de données est vide"
+
+        for business, heure in ((b, h) for b in commerces for h in HEURES):
+            item_id = await session.scalar(
+                sa.select(TierOffer.catalog_item_id)
+                .join(CatalogItem, CatalogItem.id == TierOffer.catalog_item_id)
+                .where(
+                    TierOffer.business_id == business.id,
+                    CatalogItem.requires_booking.is_(True),
+                )
+                .limit(1)
+            )
+            if item_id is None:
+                continue
+
+            fuseau = ZoneInfo(business.timezone)
+            maintenant = datetime.now(fuseau).replace(hour=heure, minute=0, second=0, microsecond=0)
+
+            choix = await prochain_creneau_reservable(
+                session, business, item_id, maintenant=maintenant
+            )
+            assert choix is not None, (
+                f"{business.name} n'a aucun créneau à venir à {heure} h : "
+                "la démonstration n'aurait aucune réservation dans ce salon"
+            )
+
+            creneau, aujourd_hui = choix
+            # La propriété qui manquait, et la seule qui compte : jamais
+            # derrière nous. Un créneau passé se réserve encore et ne
+            # s'accepte plus.
+            assert creneau >= maintenant, (
+                f"{business.name} à {heure} h : créneau choisi dans le passé"
+            )
+            # Et le drapeau dit la vérité sur le jour, celui du commerce.
+            attendu = creneau.astimezone(fuseau).date() == maintenant.date()
+            assert aujourd_hui is attendu
+
+
+def test_un_modele_versionne_qui_porte_des_valeurs_arrete_tout(tmp_path: Path) -> None:
+    """Deux noms qui ne diffèrent que par un suffixe, et un secret dans l'historique.
+
+    `.env.demo.example` est versionné, `.env.demo` ne l'est pas. Remplir le
+    premier au lieu du second emporte des identifiants dans le dépôt, d'où rien
+    ne les sort — c'est arrivé. Le refus tombe avant la première écriture, donc
+    avant le commit.
+    """
+    from scripts import deploiement
+
+    (tmp_path / ".env.demo.example").write_text(
+        "ENVIRONMENT=demo\nDATABASE_URL=postgresql+psycopg://u:secret@ailleurs/postgres\n",
+        encoding="utf-8",
+    )
+    fichier = tmp_path / ".env.demo"
+    fichier.write_text("ENVIRONMENT=demo\nDATABASE_URL=peu-importe\n", encoding="utf-8")
+
+    with pytest.raises(SystemExit) as refus:
+        deploiement.charger(fichier)
+
+    message = str(refus.value)
+    assert "versionné" in message
+    assert "ENVIRONMENT" in message and "DATABASE_URL" in message
+    # Et rien du secret lui-même : le message se recopie dans un terminal
+    # partagé, il ne transporte que des noms.
+    assert "secret" not in message
+
+
+def test_le_modele_du_depot_ne_porte_aucune_valeur() -> None:
+    """Le vrai fichier, pas un décor. C'est celui-là qui part dans l'historique."""
+    from scripts import deploiement
+
+    modele = API_ROOT / ".env.demo.example"
+    assert modele.exists(), "le modèle versionné a disparu"
+
+    portees = {nom: valeur for nom, valeur in deploiement._valeurs(modele).items() if valeur}
+    assert not portees, f"le modèle versionné porte des valeurs : {sorted(portees)}"

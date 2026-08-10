@@ -618,13 +618,13 @@ async def _une_reservation_aujourd_hui(
     une ligne de la journée, et un écran vide la rendait inaccessible. Aucun
     code ne pouvait être validé, la boucle du produit ne se fermait jamais.
 
-    **Le créneau vient de la disponibilité réelle, jamais posé.** On demande
-    d'abord ce qui reste aujourd'hui à partir de maintenant ; à défaut — une
-    journée coupée à midi, semée l'après-midi — ce qui existait plus tôt dans la
-    journée. Un salon qui n'ouvre pas du tout aujourd'hui n'en reçoit pas : lui
-    en inventer une contredirait ses propres horaires.
+    **Le créneau vient de la disponibilité réelle, jamais posé, et toujours à
+    venir.** Quand la journée est finie — semé à 22 h, dans un salon fermé
+    depuis longtemps — la réservation se pose au prochain créneau plutôt que
+    d'échouer, et le résumé le dit.
     """
     posees = 0
+    reportees = 0
 
     actifs = (
         await session.scalars(sa.select(Business).where(Business.status == BusinessStatus.ACTIVE))
@@ -648,23 +648,14 @@ async def _une_reservation_aujourd_hui(
         if offre is None:
             continue
 
-        fuseau = ZoneInfo(business.timezone)
-        maintenant = datetime.now(UTC)
-        ouverture = datetime.combine(maintenant.astimezone(fuseau).date(), time.min, tzinfo=fuseau)
-        fin_du_jour = ouverture + timedelta(days=1)
-
-        creneau = None
-        for depuis in (maintenant, ouverture):
-            candidat = await _premier_creneau(
-                session, business.id, offre.catalog_item_id, depuis=depuis
-            )
-            if candidat is not None and candidat < fin_du_jour:
-                creneau = candidat
-                break
-
-        if creneau is None:
-            print(f"  aucune place aujourd'hui chez {business.name} : ses horaires font foi")
+        choix = await prochain_creneau_reservable(
+            session, business, offre.catalog_item_id, maintenant=datetime.now(UTC)
+        )
+        if choix is None:
+            print(f"  aucune place à venir chez {business.name} : ses horaires font foi")
             continue
+
+        creneau, aujourd_hui = choix
 
         try:
             booking = await booking_service.creer(
@@ -682,8 +673,58 @@ async def _une_reservation_aujourd_hui(
 
         await confirmer(booking, createur.id)
         posees += 1
+        if not aujourd_hui:
+            reportees += 1
+            quand = creneau.astimezone(ZoneInfo(business.timezone))
+            print(
+                f"  plus de place aujourd'hui chez {business.name} : "
+                f"réservation posée au prochain créneau, le {quand:%d/%m à %H:%M}"
+            )
+
+    if reportees:
+        print(
+            f"  {reportees} réservation(s) reportée(s) au prochain créneau : "
+            "semé après la fermeture, la journée du jour est derrière nous"
+        )
 
     return posees
+
+
+async def prochain_creneau_reservable(
+    session: AsyncSession,
+    business: Business,
+    catalog_item_id: uuid.UUID,
+    *,
+    maintenant: datetime,
+) -> tuple[datetime, bool] | None:
+    """Le prochain créneau libre, et s'il tombe encore aujourd'hui.
+
+    **Toujours à venir.** Le choix se faisait en deux passes : ce qui reste à
+    partir de maintenant, puis — à défaut — ce qui existait depuis l'ouverture.
+    Cette seconde passe rendait un créneau déjà passé, que la réservation
+    acceptait et que l'acceptation par le commerce refusait, à juste titre
+    (`CreneauDepasse`). Le semis s'arrêtait au milieu de son écriture, et
+    seulement à certaines heures : avant midi il n'y avait rien à rattraper,
+    donc rien à casser.
+
+    **Et jamais un échec quand la journée est finie.** Semé à 22 h, un salon
+    fermé depuis longtemps n'a plus rien aujourd'hui ; rendre `None` là
+    priverait la démonstration de toute réservation dans ce salon. On rend le
+    prochain créneau, quel que soit son jour, et l'appelant le dit.
+
+    `maintenant` est un argument et non `datetime.now()` : c'est ce qui permet
+    d'éprouver le choix à six heures du matin comme à minuit moins une, sans
+    attendre l'heure qu'il faut.
+    """
+    creneau = await _premier_creneau(session, business.id, catalog_item_id, depuis=maintenant)
+    if creneau is None:
+        return None
+
+    fuseau = ZoneInfo(business.timezone)
+    fin_du_jour = datetime.combine(
+        maintenant.astimezone(fuseau).date(), time.min, tzinfo=fuseau
+    ) + timedelta(days=1)
+    return creneau, creneau < fin_du_jour
 
 
 async def _mener(
