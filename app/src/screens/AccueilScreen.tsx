@@ -20,7 +20,7 @@
  * n'attend rien. Elle boucle, et elle se tait — un son qui démarre seul sur un
  * premier écran est le plus sûr moyen de faire fermer l'onglet.
  */
-import { useEvent } from 'expo';
+import { useEvent, useEventListener } from 'expo';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useEffect, useState } from 'react';
@@ -117,6 +117,17 @@ export function AccueilScreen({
   }, [lecteur, video]);
 
   /**
+   * **La boucle, garantie deux fois.** `loop` posé sur le lecteur suffit en
+   * principe ; il s'appliquait ici avant que l'élément existe, et la vidéo
+   * s'arrêtait sur sa dernière image. Reprendre au premier signal de fin ne
+   * coûte rien et ferme le cas.
+   */
+  useEventListener(lecteur, 'playToEnd', () => {
+    lecteur.currentTime = 0;
+    lecteur.play();
+  });
+
+  /**
    * L'affiche s'efface **quand la vidéo joue vraiment**, pas quand on la
    * demande. Superposées, les deux se voyaient l'une sur l'autre — une image de
    * fond, puis la même par-dessus. Et l'effacer trop tôt ferait clignoter
@@ -178,14 +189,19 @@ export function AccueilScreen({
       {video || affiche ? (
         <LinearGradient
           testID="voile-accueil"
-          colors={[c['scrim.top'], c['scrim.mid'], c['scrim.bottom']]}
-          locations={[0, 0.55, 1]}
+          // **Sombre en haut, où le texte se pose.** Le dégradé des cartes va
+          // du clair au sombre : il protège un titre posé en bas d'une photo.
+          // Ici le titre est en haut et les cartes au milieu — appliqué tel
+          // quel, il ne veilait rien de ce qu'il fallait, et la sous-ligne
+          // disparaissait dans le ciel.
+          colors={[c['scrim.bottom'], c['scrim.mid'], c['scrim.bottom']]}
+          locations={[0, 0.5, 1]}
           style={StyleSheet.absoluteFillObject}
         />
       ) : null}
 
       <View style={{ flex: 1, justifyContent: 'center', padding: 24 }}>
-        <ChoixDeLaPorte onChoisir={onChoisir} onSeConnecter={onSeConnecter} />
+        <ChoixDeLaPorte onChoisir={onChoisir} onSeConnecter={onSeConnecter} surMedia={Boolean(video || affiche)} />
         {video || affiche ? null : (
           // Aucun fond : on ne laisse pas un vide inexpliqué sous les portes.
           <Texte variante="type.caption" couleur="text.muted" testID="accueil-sans-fond">
