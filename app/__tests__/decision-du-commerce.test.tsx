@@ -109,10 +109,17 @@ it('met ce qui attend une décision devant le planning', async () => {
   // Une réservation en attente tient une place et bloque une créatrice qui ne
   // peut rien faire d'autre que patienter. La laisser dans l'ordre des heures
   // la ferait découvrir en la cherchant.
-  expect(screen.getByTestId('decision-attente-1')).toBeTruthy();
-  // Et la confirmée reste dans le planning, pas dans le bloc de décision.
-  expect(screen.queryByTestId('decision-confirmee-1')).toBeNull();
-  expect(screen.getByTestId('reservation-confirmee-1')).toBeTruthy();
+  //
+  // Vérifié sur **la place** et non plus sur une carte distincte : depuis la
+  // campagne 2, la colonne n'a qu'un registre, et ce qui attend se signale par
+  // sa section et sa pastille, pas par un relief propre.
+  const file = screen.getByTestId('a-trancher');
+  expect(file).toContainElement(screen.getByTestId('reservation-attente-1'));
+  // Et la confirmée reste dans le planning, pas dans la file.
+  expect(file).not.toContainElement(screen.getByTestId('reservation-confirmee-1'));
+  expect(screen.getByTestId('planning')).toContainElement(
+    screen.getByTestId('reservation-confirmee-1'),
+  );
 });
 
 it('accorde sans demander de motif', async () => {
