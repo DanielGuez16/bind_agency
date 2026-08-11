@@ -343,6 +343,9 @@ export const en = {
     etapeCapacityRule: 'Opening hours',
   },
   admin: {
+    filtreTous: 'All',
+    dossiersEnAttente: '{{count}} waiting',
+    dossiersUnSeul: '1 waiting',
     selection: '{{count}} selected',
     approuverLaSelection: 'Approve selection',
     arbitrageTitre: 'Counterparts under review',

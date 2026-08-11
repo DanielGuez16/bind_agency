@@ -340,6 +340,9 @@ export const es: Catalogue = {
     etapeCapacityRule: 'Horario de apertura',
   },
   admin: {
+    filtreTous: 'Todos',
+    dossiersEnAttente: '{{count}} en espera',
+    dossiersUnSeul: '1 en espera',
     selection: '{{count}} seleccionadas',
     approuverLaSelection: 'Aprobar la selección',
     arbitrageTitre: 'Contrapartes en revisión',
