@@ -1,0 +1,17 @@
+# Le journal des décisions se fusionne en réunissant les deux côtés.
+#
+# `DECISIONS.md` s'écrit **par ajout en fin de fichier**, et rien d'autre. Deux
+# branches menées en parallèle y ajoutent donc toujours au même endroit, et git
+# y voit un conflit à chaque fois — alors qu'il n'y a jamais rien à arbitrer :
+# les deux entrées sont vraies, elles racontent deux décisions distinctes, et la
+# résolution consiste invariablement à garder les deux.
+#
+# `merge=union` fait exactement cela, sans intervention. Le coût est connu et
+# accepté : l'ordre des deux blocs n'est pas garanti, et une ligne identique
+# ajoutée des deux côtés apparaîtrait en double. Sur un journal daté dont chaque
+# entrée porte un titre différent, ni l'un ni l'autre ne se produit.
+#
+# **À réserver à ce qui s'ajoute sans se relire.** Sur un fichier de code ou de
+# configuration, cette stratégie produirait deux définitions concurrentes que
+# rien ne signalerait — un conflit non résolu qui compile.
+DECISIONS.md merge=union
