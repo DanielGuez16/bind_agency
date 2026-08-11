@@ -114,6 +114,11 @@ export const en = {
     reliabilityGuarantee: 'It is never compared with other creators, and it is never shown to a business.',
   },
   redemption: {
+    servisDuJour: 'Served today',
+    servisAucun: 'Nothing served yet today. The first code you check will appear here.',
+    servisDernier: 'Just served',
+    servisEcheance: 'Publication due {{quand}}',
+    servisSansEcheance: 'Waiting for the counterpart to open',
     title: 'Redeem a booking',
     manualLabel: 'Enter the code',
     manualHint: 'Six characters, shown on the creator’s screen.',

@@ -456,7 +456,7 @@ function OngletsCreateur({
 // --------------------------------------------------------------------------
 
 /** Le pont vers l'écran de caisse, qui n'utilise pas encore le client d'API. */
-function CaisseAvecJeton() {
+function CaisseAvecJeton({ businessId }: { businessId?: string }) {
   const { jetonDAcces } = useSession();
   // Sans jeton, l'écran ne peut rien vérifier. Il n'y en a pas tant que la
   // session n'est pas rétablie ; rendre `null` évite un appel voué à un 401.
@@ -466,7 +466,11 @@ function CaisseAvecJeton() {
   // iPhone qui en a une, et sans qu'aucune autorisation ait jamais été
   // demandée. La caméra n'était pas refusée, elle n'était jamais montée.
   return jetonDAcces ? (
-    <RedemptionScreen accessToken={jetonDAcces} scanner={CameraScanner} />
+    <RedemptionScreen
+      accessToken={jetonDAcces}
+      scanner={CameraScanner}
+      businessId={businessId}
+    />
   ) : null;
 }
 
@@ -482,7 +486,7 @@ function ParcoursCommerce({ businessId }: { businessId: string }) {
             d'API : il construit ses requêtes et veut un jeton brut. Le pont est
             nommé ici plutôt que caché dans l'écran, pour qu'il disparaisse avec
             la dette. */}
-        {() => <CaisseAvecJeton />}
+        {() => <CaisseAvecJeton businessId={businessId} />}
       </PileCommerce.Screen>
     </PileCommerce.Navigator>
   );

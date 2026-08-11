@@ -27,8 +27,11 @@ import { TextField } from '../components/TextField';
 import { useI18n } from '../i18n';
 import { errorCodeFromResponse, translateErrorCode } from '../i18n/errors';
 import { adresseDeLApi } from '../shell/adresseDeLApi';
+import { useApi, type JourneeDuCommerce, type ReservationDuCommerce } from '../api';
+import { formatDateTime } from '../format';
 import { useGabarit } from '../shell/gabarit';
 import { radius, spacing, useColors } from '../theme';
+import { useRequete } from './useRequete';
 
 export type Verification = {
   booking_id: string;
@@ -65,10 +68,17 @@ export function RedemptionScreen({
   apiUrl,
   accessToken,
   scanner,
+  businessId,
 }: {
   apiUrl?: string;
   accessToken: string;
   scanner?: Scanner;
+  /**
+   * Le commerce dont on tient la caisse. Sert au panneau des validations du
+   * jour, qui n'existe qu'en grand écran ; sans lui la caisse fonctionne
+   * exactement comme avant.
+   */
+  businessId?: string;
 }) {
   const { t } = useI18n();
   const c = useColors();
@@ -193,6 +203,12 @@ export function RedemptionScreen({
       contentContainerStyle={{ padding: spacing['space.6'], gap: spacing['space.4'] }}
     >
       {large ? barreDeCaisse : <Texte variante="type.heading">{t('redemption.title')}</Texte>}
+
+      {/* En grand écran, la caisse et son journal côte à côte. Le pavé occupait
+          le tiers gauche et le reste était vide : la passation prévoyait ce
+          panneau, il n'avait jamais été posé. */}
+      <View style={{ flexDirection: large ? 'row' : 'column', gap: spacing['space.6'] }}>
+      <View style={{ flex: 1, minWidth: 0, gap: spacing['space.4'] }}>
 
       {/* La saisie d'abord, et sélectionnée par défaut. L'ordre n'est pas
           cosmétique : c'est lui qui dit quel chemin est le principal. */}
@@ -333,6 +349,105 @@ export function RedemptionScreen({
           </Texte>
         </View>
       ) : null}
+      </View>
+
+      {/* Le journal du jour. `etat` le fait se recharger : ce qu'on vient de
+          servir doit y apparaître, sinon le panneau ment d'une ligne. */}
+      {large && businessId ? <ServisDuJour businessId={businessId} depuis={etat.state} /> : null}
+      </View>
     </ScrollView>
+  );
+}
+
+/** La largeur du panneau, fixée par la passation v0.6 §5. */
+const LARGEUR_DU_JOURNAL = 440;
+
+/**
+ * Les validations du jour, à droite de la caisse.
+ *
+ * **Le panneau que la passation prévoyait et qui n'avait jamais été posé.** Le
+ * pavé occupait le tiers gauche et les deux autres tiers restaient blancs —
+ * relevé en campagne 2. Ce qu'on y met n'est pas du remplissage : au comptoir,
+ * la question qui suit « servi » est toujours la même, « et avant elle,
+ * combien, et quoi ».
+ *
+ * **La plus récente porte l'échéance de publication.** C'est la seule chose que
+ * le commerce doit retenir d'une place qu'il vient de donner : quand la
+ * contrepartie est attendue. Elle n'existe qu'une fois la place consommée, et
+ * elle vient du serveur — jamais recalculée ici, sinon deux dates coexisteraient
+ * et l'une des deux serait fausse.
+ */
+function ServisDuJour({ businessId, depuis }: { businessId: string; depuis: string }) {
+  const { api } = useApi();
+  const { t, locale } = useI18n();
+  const c = useColors();
+
+  const requete = useRequete<JourneeDuCommerce>(
+    (signal) => api.journeeDuCommerce(businessId, undefined, signal),
+    { estVide: () => false, dependances: [businessId, depuis] },
+  );
+
+  // `donnees` n'existe que sur les états qui en portent : en chargement il
+  // n'y a rien, et le panneau se rend alors avec sa phrase de début de journée
+  // plutôt qu'avec un squelette — c'est un journal, pas le contenu de l'écran.
+  const journee = 'donnees' in requete ? requete.donnees : null;
+  const servis = (journee?.items ?? []).filter(
+    (r: ReservationDuCommerce) => r.status === 'consumed',
+  );
+
+  return (
+    <View style={{ width: LARGEUR_DU_JOURNAL, gap: spacing['space.3'] }} testID="servis-du-jour">
+      <Texte variante="type.label" couleur="text.secondary">
+        {t('redemption.servisDuJour')}
+      </Texte>
+
+      {servis.length === 0 ? (
+        // Un panneau vide est une information : c'est le début de journée. Le
+        // dire vaut mieux qu'un cadre blanc, qui se lit comme un chargement.
+        <Texte variante="type.caption" couleur="text.muted" testID="servis-aucun">
+          {t('redemption.servisAucun')}
+        </Texte>
+      ) : null}
+
+      {servis.map((reservation: ReservationDuCommerce, rang: number) => (
+        <View
+          key={reservation.booking_id}
+          testID={`servi-${reservation.booking_id}`}
+          style={{
+            gap: 4,
+            padding: spacing['space.4'],
+            borderRadius: radius['radius.md'],
+            // La plus récente se distingue : c'est celle dont on vient de
+            // s'occuper, et celle dont l'échéance compte encore.
+            backgroundColor: rang === 0 ? c['status.success.subtle'] : c['bg.surface'],
+            borderWidth: 1,
+            borderColor: rang === 0 ? c['status.success.subtle'] : c['border.subtle'],
+          }}
+        >
+          {rang === 0 ? (
+            <Texte variante="type.caption" style={{ color: c['status.success'] }}>
+              {t('redemption.servisDernier')}
+            </Texte>
+          ) : null}
+          <Texte variante="type.bodyStrong">{reservation.item_name}</Texte>
+          <Texte variante="type.caption" couleur="text.secondary">
+            {[reservation.creator_first_name, reservation.creator_last_name]
+              .filter(Boolean)
+              .join(' ') || reservation.creator_handle}
+          </Texte>
+          <Texte variante="type.caption" couleur="text.muted">
+            {reservation.contrepartie
+              ? t('redemption.servisEcheance', {
+                  quand: formatDateTime(
+                    reservation.contrepartie.deadline_at,
+                    locale,
+                    journee?.timezone ?? 'UTC',
+                  ),
+                })
+              : t('redemption.servisSansEcheance')}
+          </Texte>
+        </View>
+      ))}
+    </View>
   );
 }

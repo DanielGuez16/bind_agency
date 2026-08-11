@@ -111,6 +111,11 @@ export const es: Catalogue = {
     reliabilityGuarantee: 'Nunca se compara con la de otros creadores, y nunca se muestra a un negocio.',
   },
   redemption: {
+    servisDuJour: 'Atendidas hoy',
+    servisAucun: 'Todavía nada hoy. El primer código que valides aparecerá aquí.',
+    servisDernier: 'Recién atendida',
+    servisEcheance: 'Publicación prevista {{quand}}',
+    servisSansEcheance: 'Esperando a que se abra la contrapartida',
     title: 'Canjear una reserva',
     manualLabel: 'Introduce el código',
     manualHint: 'Seis caracteres, visibles en la pantalla del creador.',
