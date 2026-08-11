@@ -16,6 +16,13 @@ export { Chip, RangeeDeChips, type ChipProps } from './Chip';
 export { Icone, type NomIcone } from './Icone';
 export { Logo, Marque } from './Logo';
 export {
+  BarresParPalier,
+  BarresParPeriode,
+  PALIERS,
+  type BarreDePalier,
+  type BarreVerticale,
+} from './Graphiques';
+export {
   Apparition,
   useEnfoncement,
   useMouvementReduit,

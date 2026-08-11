@@ -222,6 +222,10 @@ const REPORTING = {
   valeur_offerte_cents: 72_000,
   portee_approximative: 184_000,
   taux_d_honoration: 0.7778,
+  par_semaine: [
+    { debut: '2026-08-03', publications: 2 },
+    { debut: '2026-07-27', publications: 1 },
+  ],
   par_palier: [
     {
       tier_id: 'p1',
@@ -925,6 +929,17 @@ describe('reporting', () => {
     }
   });
 
+  it('trace douze semaines, même quand la base n’en rend que deux', async () => {
+    // Un `GROUP BY` ne fabrique pas les vides. Afficher les seules semaines
+    // publiées resserrerait l'axe : trois publications en trois mois se
+    // liraient comme trois semaines de suite.
+    await monter(<ReportingScreen businessId="b1" />, clientDe({ '/reporting': REPORTING }));
+    await waitFor(() => expect(screen.getByTestId('etat-nominal')).toBeTruthy());
+
+    expect(screen.getByTestId('graphique-par-semaine')).toBeTruthy();
+    expect(screen.getAllByTestId(/^barre-W\d+$/)).toHaveLength(12);
+  });
+
   it('annonce la portée comme approximative, en toutes lettres', async () => {
     // Le nombre d'abonnés n'est pas le nombre de personnes ayant vu une story.
     // Le rendre sans le dire ferait prendre une approximation pour un résultat.
@@ -974,6 +989,12 @@ describe('absence de Snapchat', () => {
       }),
     );
     await waitFor(() => expect(screen.getByTestId('etat-nominal')).toBeTruthy());
-    expect(screen.getByTestId('palier-p1')).toBeTruthy();
+    // La barre du palier est là : la plateforme inconnue n'a pas empêché la
+    // série de se tracer. C'est le format du contenu qui la colore, pas la
+    // plateforme — Snapchat n'y change rien.
+    expect(screen.getByTestId('graphique-par-palier')).toBeTruthy();
+    expect(
+      screen.getByTestId(`barre-${REPORTING.par_palier[0].content_format}`),
+    ).toBeTruthy();
   });
 });

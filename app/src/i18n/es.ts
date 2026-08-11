@@ -310,6 +310,8 @@ export const es: Catalogue = {
     plansMrr: 'Ingreso mensual',
   },
   reporting: {
+    publicationsParSemaine: 'Publicaciones entregadas',
+    parSemaineNote: 'por semana',
     titre: 'Lo que has recibido',
     vide: 'Todavía nada en este periodo.',
     reservations: 'Reservas',

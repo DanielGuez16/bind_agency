@@ -313,6 +313,8 @@ export const en = {
     plansMrr: 'Monthly revenue',
   },
   reporting: {
+    publicationsParSemaine: 'Publications delivered',
+    parSemaineNote: 'per week',
     titre: 'What you got back',
     vide: 'Nothing yet in this window.',
     reservations: 'Bookings',

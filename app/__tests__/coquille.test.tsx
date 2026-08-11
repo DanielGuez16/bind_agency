@@ -498,7 +498,7 @@ describe('aiguillage par rôle', () => {
         items: [],
         a_trancher: [],
       },
-      '/reporting': { reservations: 0, par_palier: [], par_item: [] },
+      '/reporting': { reservations: 0, par_palier: [], par_item: [], par_semaine: [] },
       '/activation': [],
     };
 

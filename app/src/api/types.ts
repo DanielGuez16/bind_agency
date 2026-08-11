@@ -494,6 +494,15 @@ export type Reporting = {
   taux_d_honoration: number | null;
   par_palier: LigneDePalier[];
   par_item: LigneDItem[];
+  /** L'évolution, semaine par semaine. Un total ne dit pas s'il a été atteint
+   *  régulièrement ou d'un seul coup. */
+  par_semaine: LigneDeSemaine[];
+};
+
+export type LigneDeSemaine = {
+  /** Le lundi de la semaine, en date locale du commerce. */
+  debut: string;
+  publications: number;
 };
 
 export type Abonnement = {
