@@ -23,7 +23,7 @@ const DOSSIER = __dirname;
 
 //: Les appels asynchrones de la bibliothèque. Ajouter une entrée ici suffit à
 //: étendre le garde-fou.
-const ASYNCHRONES = ['render', 'renderHook', 'fireEvent\\.\\w+'];
+const ASYNCHRONES = ['render', 'renderHook', 'fireEvent(?:\\.\\w+)?'];
 
 /**
  * Repère les appels dont **personne ne retient la promesse**.
@@ -73,6 +73,9 @@ describe('discipline des tests de rendu', () => {
     expect(lignesNonAttendues('  render(<Ecran />);')).toHaveLength(1);
     expect(lignesNonAttendues('  fireEvent.press(bouton);')).toHaveLength(1);
     expect(lignesNonAttendues('  fireEvent.changeText(champ, "x");')).toHaveLength(1);
+    // La forme nue, qu'on emploie pour un événement sans raccourci —
+    // `fireEvent(vue, 'layout', …)`. Elle échappait à la garde.
+    expect(lignesNonAttendues("  fireEvent(vue, 'layout', charge);")).toHaveLength(1);
 
     // La forme qui échappait à la première version, et qui a coûté une CI
     // illisible : l'appel n'est plus en début de ligne, la promesse est

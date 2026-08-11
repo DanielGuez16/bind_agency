@@ -59,7 +59,11 @@ export function GabaritProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <View style={{ flex: 1 }} onLayout={mesurer}>
+    // Le `testID` n'est pas décoratif : c'est par lui qu'un test envoie une
+    // vraie mesure. Sans point d'accroche, la seule façon d'éprouver le grand
+    // écran serait de remplacer `useGabarit` — et l'on ne vérifierait plus
+    // jamais que quelque chose renseigne la largeur.
+    <View testID="gabarit" style={{ flex: 1 }} onLayout={mesurer}>
       <Contexte.Provider value={valeur}>{children}</Contexte.Provider>
     </View>
   );

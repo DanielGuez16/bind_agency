@@ -35,6 +35,8 @@ export function useMonCommerce() {
 
   return {
     businessId,
+    /** Le nom, pour la barre latérale : c'est lui qui situe la session. */
+    nom: requete.etat === 'pret' && !requete.vide ? requete.donnees[0].name : null,
     /**
      * Ce qu'on montre tant qu'il n'y a pas de commerce : le chargement,
      * l'erreur ou l'invitation à en créer un. `Ecran` rend les quatre états —

@@ -179,7 +179,11 @@ export function Ecran<T>({
             </Texte>
           </Pressable>
         ) : null}
-        {entete ?? (titre ? <Texte variante="type.display">{titre}</Texte> : null)}
+        {/* **Le titre ne s'écrit pas deux fois.** En grand il vit dans la
+            barre de titre, fixe ; le répéter dans le flux donnait « Today »
+            au-dessus de « Today ». Un en-tête fourni par l'écran, lui, reste :
+            il porte autre chose que le nom. */}
+        {entete ?? (titre && !large ? <Texte variante="type.display">{titre}</Texte> : null)}
         {corps}
       </ScrollView>
     </View>
