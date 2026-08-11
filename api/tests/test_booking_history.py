@@ -317,8 +317,10 @@ async def test_la_file_a_trancher_ignore_la_date(session: AsyncSession) -> None:
     await session.flush()
     await booking_states.confirmer(session, booking=booking, creator_id=decor["createur"].id)
 
+    # Le jour du commerce, jamais celui du serveur — c'est ce que le test
+    # voisin exige du service, et l'écrire autrement ici le contredisait.
     journee = await service.journee_du_commerce(
-        session, business=decor["business"], jour=datetime.now(UTC).date()
+        session, business=decor["business"], jour=service.aujourd_hui(decor["business"])
     )
 
     assert [ligne.booking_id for ligne in journee.a_trancher] == [booking.id]
@@ -333,11 +335,19 @@ async def test_la_file_ne_contient_que_ce_qui_attend(session: AsyncSession) -> N
     comprenne pourquoi.
     """
     decor = await monter_le_decor(session)
-    booking = await reserver(session, decor, starts_at=await premier_creneau(session, decor))
+    creneau = await premier_creneau(session, decor)
+    booking = await reserver(session, decor, starts_at=creneau)
     await booking_states.confirmer(session, booking=booking, creator_id=decor["createur"].id)
 
+    # **Le jour du créneau, pas celui de l'horloge.** La date UTC n'est pas
+    # celle du commerce entre 20 h et minuit à New York, et le premier créneau
+    # libre bascule au lendemain passé la fermeture. Les deux se produisent le
+    # soir, et l'assertion tombait alors sur un planning vide — un test vert en
+    # journée, rouge en soirée, pour un produit qui n'avait rien.
     journee = await service.journee_du_commerce(
-        session, business=decor["business"], jour=datetime.now(UTC).date()
+        session,
+        business=decor["business"],
+        jour=creneau.astimezone(ZoneInfo(decor["business"].timezone)).date(),
     )
 
     assert journee.a_trancher == ()
