@@ -359,6 +359,13 @@ export const en = {
     plansMrr: 'Monthly revenue',
   },
   reporting: {
+    sectionReservations: 'The bookings',
+    sectionPublications: 'What came back',
+    sectionValeur: 'What it cost you',
+    videTitre: 'Nothing to report yet',
+    videSuite: 'This page fills itself the first time a creator is served. Nothing to set up.',
+    depuisLOuverture: 'Since you opened',
+    semainesSuivies: 'Last {{count}} weeks',
     publicationsParSemaine: 'Publications delivered',
     parSemaineNote: 'per week',
     titre: 'What you got back',

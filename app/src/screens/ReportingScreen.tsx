@@ -13,6 +13,13 @@
  * **La portée est annoncée comme approximative, en toutes lettres.** Le nombre
  * d'abonnés d'un compte n'est pas le nombre de personnes ayant vu une story ;
  * le rendre sans le dire ferait prendre une approximation pour un résultat.
+ *
+ * **Trois repères, puis le détail** (campagne 2). C'était « une longue liste de
+ * chiffres sans hiérarchie » : onze lignes de même poids, où le nombre qui
+ * répond à la question — est-ce que ça marche — se lisait exactement comme le
+ * nombre d'annulations. Les trois chiffres qui répondent passent en tête, en
+ * grand ; les onze restent, groupés et nommés, parce qu'un salon qui doute
+ * veut pouvoir vérifier.
  */
 import { View } from 'react-native';
 
@@ -60,9 +67,13 @@ export function ReportingScreen({ businessId }: { businessId: string }) {
       titre={t('reporting.titre')}
       testID="ecran-reporting"
       vide={
+        // **Le cas de tout salon qui s'inscrit**, et le premier qu'il voit de
+        // cette page. « Rien dans cette fenêtre » se lisait comme une panne de
+        // filtre ; il n'y a pas de fenêtre à corriger, il n'y a pas encore
+        // d'histoire — et il n'y a rien à régler pour qu'elle commence.
         <EmptyState
-          title={t('reporting.titre')}
-          body={t('reporting.vide')}
+          title={t('reporting.videTitre')}
+          body={`${t('reporting.vide')} ${t('reporting.videSuite')}`}
           testID="reporting-vide"
         />
       }
@@ -79,7 +90,12 @@ export function ReportingScreen({ businessId }: { businessId: string }) {
             })}
           </Texte>
 
-          <View>
+          {/* Les trois chiffres qui répondent à « est-ce que ça marche ».
+              Publications livrées, part tenue, portée. Le reste sert à
+              vérifier, pas à décider. */}
+          <Reperes vue={vue} />
+
+          <Section titre={t('reporting.sectionReservations')}>
             <DataRow label={t('reporting.reservations')} value={String(vue.reservations)} chiffre />
             <DataRow
               label={t('reporting.consommations')}
@@ -88,59 +104,25 @@ export function ReportingScreen({ businessId }: { businessId: string }) {
             />
             <DataRow label={t('reporting.absences')} value={String(vue.absences)} chiffre />
             <DataRow label={t('reporting.annulations')} value={String(vue.annulations)} chiffre />
-          </View>
+          </Section>
 
-          <View>
-            <DataRow label={t('reporting.publications')} value={String(vue.publications)} chiffre />
+          <Section titre={t('reporting.sectionPublications')}>
             <DataRow
               label={t('reporting.attendues')}
               value={String(vue.publications_attendues)}
               chiffre
             />
             <DataRow label={t('reporting.nonHonorees')} value={String(vue.non_honorees)} chiffre />
-            <DataRow
-              testID="taux"
-              label={t('reporting.taux')}
-              // Nul et non zéro : le premier se dit en mots, le second en
-              // pourcentage. Les confondre transformerait une absence de
-              // mesure en mauvais résultat.
-              value={
-                vue.taux_d_honoration === null
-                  ? t('reporting.tauxInconnu')
-                  : `${Math.round(vue.taux_d_honoration * 100)} %`
-              }
-              chiffre={vue.taux_d_honoration !== null}
-            />
-            {/* Le pourcentage nomme ses deux termes. « 29 % » au milieu de
-                comptes bruts laisse deviner de quoi il est le pourcentage, et
-                chacun devine autre chose. */}
-            {vue.taux_d_honoration !== null ? (
-              <Texte variante="type.caption" couleur="text.muted" testID="taux-aide">
-                {t('reporting.tauxAide', {
-                  publications: vue.publications,
-                  consommations: vue.consommations,
-                })}
-              </Texte>
-            ) : null}
-          </View>
+          </Section>
 
-          <View>
+          <Section titre={t('reporting.sectionValeur')}>
             <DataRow
               testID="valeur-offerte"
               label={t('reporting.valeurOfferte')}
               value={`${(vue.valeur_offerte_cents / 100).toFixed(2)} ${vue.currency}`}
               chiffre
             />
-            <DataRow
-              label={t('reporting.portee')}
-              // Séparateur de milliers : « 128000 » se compte à la main.
-              value={vue.portee_approximative.toLocaleString(locale)}
-              chiffre
-            />
-            <Texte variante="type.caption" couleur="text.muted" testID="note-portee">
-              {t('reporting.porteeNote')}
-            </Texte>
-          </View>
+          </Section>
 
           {/* **Une évolution, pas seulement un total.** « 62 publications » se
               lit pareil qu'on en ait fait cinq par semaine ou soixante en une
@@ -188,16 +170,32 @@ export function ReportingScreen({ businessId }: { businessId: string }) {
 }
 
 
+/** Jamais moins : une barre seule n'est pas une évolution. */
+const SEMAINES_MINIMUM = 4;
+/** Jamais plus : au-delà, les étiquettes ne se lisent plus. */
+const SEMAINES_MAXIMUM = 12;
+
 /**
- * Douze semaines, trous compris.
+ * L'axe suit la vie du commerce, pas une fenêtre fixe.
  *
- * La base ne rend que les semaines où quelque chose a été publié : un `GROUP BY`
- * ne fabrique pas les vides. Les afficher telles quelles resserrerait l'axe et
- * ferait croire à une régularité qui n'existe pas — trois publications en trois
- * mois se liraient comme trois semaines de suite.
+ * **Douze semaines en dur donnaient onze barres vides à tout salon de moins de
+ * trois mois** — relevé en campagne 2 comme « une seule barre visible sur
+ * douze ». Ce n'était pas un défaut du graphique : c'était un axe qui décrivait
+ * une histoire que le commerce n'avait pas encore. Un salon qui vient d'ouvrir
+ * doit voir ses quatre semaines, pas le vide des huit précédentes.
+ *
+ * L'axe part donc de la première semaine où quelque chose s'est passé, borné à
+ * quatre — une barre seule n'est pas une évolution — et à douze, au-delà
+ * desquelles les étiquettes ne se lisent plus.
+ *
+ * **Les trous à l'intérieur restent.** La base ne rend que les semaines où
+ * quelque chose a été publié : un `GROUP BY` ne fabrique pas les vides. Les
+ * omettre resserrerait l'axe et ferait croire à une régularité qui n'existe
+ * pas — trois publications en trois mois se liraient comme trois semaines de
+ * suite. C'est l'inverse du cas précédent : ici le vide est une information,
+ * là-bas il était une absence d'histoire.
  */
-function semainesCompletes(vue: Reporting): BarreVerticale[] {
-  const SEMAINES = 12;
+export function semainesCompletes(vue: Reporting): BarreVerticale[] {
   const parDebut = new Map(vue.par_semaine.map((ligne) => [ligne.debut, ligne.publications]));
 
   // On remonte depuis la dernière semaine de la fenêtre, pas depuis
@@ -206,9 +204,21 @@ function semainesCompletes(vue: Reporting): BarreVerticale[] {
   const lundi = new Date(fin);
   lundi.setUTCDate(fin.getUTCDate() - ((fin.getUTCDay() + 6) % 7));
 
-  return Array.from({ length: SEMAINES }, (_, rang) => {
+  // Combien de semaines séparent la plus ancienne trace de la fin de fenêtre.
+  // Sans trace, il n'y a pas d'axe à dessiner — l'appelant ne rend rien.
+  const premiere = vue.par_semaine
+    .map((ligne) => new Date(`${ligne.debut}T00:00:00Z`).getTime())
+    .sort((x, y) => x - y)[0];
+  const ecoulees =
+    premiere === undefined
+      ? SEMAINES_MINIMUM
+      : Math.floor((lundi.getTime() - premiere) / (7 * 86_400_000)) + 1;
+
+  const semaines = Math.min(SEMAINES_MAXIMUM, Math.max(SEMAINES_MINIMUM, ecoulees));
+
+  return Array.from({ length: semaines }, (_, rang) => {
     const jour = new Date(lundi);
-    jour.setUTCDate(lundi.getUTCDate() - (SEMAINES - 1 - rang) * 7);
+    jour.setUTCDate(lundi.getUTCDate() - (semaines - 1 - rang) * 7);
     const cle = jour.toISOString().slice(0, 10);
     return {
       etiquette: `W${numeroDeSemaine(jour)}`,
@@ -223,4 +233,105 @@ function numeroDeSemaine(jour: Date): number {
   cible.setUTCDate(cible.getUTCDate() + 4 - ((cible.getUTCDay() + 6) % 7));
   const janvier = new Date(Date.UTC(cible.getUTCFullYear(), 0, 1));
   return Math.ceil(((cible.getTime() - janvier.getTime()) / 86400000 + 1) / 7);
+}
+
+/** Un groupe de lignes, nommé. Onze lignes d'affilée ne se lisent pas. */
+function Section({ titre, children }: { titre: string; children: React.ReactNode }) {
+  return (
+    <View style={{ gap: 4 }}>
+      <Texte variante="type.label" couleur="text.secondary">
+        {titre}
+      </Texte>
+      {children}
+    </View>
+  );
+}
+
+/**
+ * Les trois chiffres qui répondent à la question de l'écran.
+ *
+ * **C'est l'écran qui doit convaincre un salon que ça marche**, et la preuve
+ * tient en trois nombres : combien de publications sont revenues, quelle part
+ * des places données a été tenue, et combien de personnes ont pu le voir. Le
+ * reste — annulations, absences, attendues — sert à vérifier, jamais à décider.
+ *
+ * Le taux nul reste en mots. Zéro sur zéro n'est pas zéro, et l'afficher en
+ * grand à un salon qui n'a encore servi personne en ferait un reproche.
+ */
+function Reperes({ vue }: { vue: Reporting }) {
+  const { t, locale } = useI18n();
+
+  // **La note suit son chiffre.** Un pourcentage qui nomme ses deux termes
+  // trois blocs plus bas ne les nomme plus ; et une portée annoncée comme
+  // approximative loin du nombre laisse le nombre passer pour un résultat.
+  const reperes: {
+    cle: string;
+    valeur: string;
+    libelle: string;
+    chiffre: boolean;
+    note: string | null;
+  }[] = [
+    {
+      cle: 'publications',
+      valeur: String(vue.publications),
+      libelle: t('reporting.publications'),
+      chiffre: true,
+      note: null,
+    },
+    {
+      cle: 'taux',
+      valeur:
+        vue.taux_d_honoration === null
+          ? t('reporting.tauxInconnu')
+          : `${Math.round(vue.taux_d_honoration * 100)} %`,
+      libelle: t('reporting.taux'),
+      chiffre: vue.taux_d_honoration !== null,
+      note:
+        vue.taux_d_honoration === null
+          ? null
+          : t('reporting.tauxAide', {
+              publications: vue.publications,
+              consommations: vue.consommations,
+            }),
+    },
+    {
+      cle: 'portee',
+      // Séparateur de milliers : « 128000 » se compte à la main.
+      valeur: vue.portee_approximative.toLocaleString(locale),
+      libelle: t('reporting.portee'),
+      chiffre: true,
+      note: t('reporting.porteeNote'),
+    },
+  ];
+
+  return (
+    <View
+      testID="reperes"
+      style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 24, paddingBottom: 4 }}
+    >
+      {reperes.map((repere) => (
+        <View key={repere.cle} style={{ width: 260, gap: 2 }} testID={`repere-${repere.cle}`}>
+          <Texte
+            variante={repere.chiffre ? 'type.mono' : 'type.heading'}
+            style={repere.chiffre ? { fontSize: 44, lineHeight: 48 } : undefined}
+            testID={repere.cle === 'taux' ? 'taux' : undefined}
+          >
+            {repere.valeur}
+          </Texte>
+          <Texte variante="type.caption" couleur="text.secondary">
+            {repere.libelle}
+          </Texte>
+          {repere.note ? (
+            <Texte
+              variante="type.caption"
+              couleur="text.muted"
+              testID={repere.cle === 'taux' ? 'taux-aide' : 'note-portee'}
+            >
+              {repere.note}
+            </Texte>
+          ) : null}
+        </View>
+      ))}
+    </View>
+  );
 }
