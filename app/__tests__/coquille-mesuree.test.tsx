@@ -110,6 +110,14 @@ async function monterLaCoquille() {
   return rendu;
 }
 
+/** Le style d'un nœud, tableau ou non. */
+function aplati(noeud: { props?: { style?: unknown } }): Record<string, unknown> {
+  const style = noeud.props?.style;
+  return Array.isArray(style)
+    ? Object.assign({}, ...style.filter(Boolean))
+    : ((style as Record<string, unknown>) ?? {});
+}
+
 /** Ce que la plateforme envoie quand elle a posé la vue. Rien de simulé. */
 async function mesurer(largeur: number) {
   await fireEvent(screen.getByTestId('gabarit'), 'layout', {
@@ -174,6 +182,18 @@ describe('la coquille, mesurée', () => {
     // disent pas la même chose. Le troisième était le titre laissé dans le
     // flux sous la barre — « Today » au-dessus de « Today ».
     expect(screen.queryAllByText(en.onglets.journee)).toHaveLength(2);
+  });
+
+  it('donne à chaque colonne la largeur que la passation lui fixe', async () => {
+    // La géométrie complète, mesurée : 240 de barre latérale et 400 de liste.
+    // Le « vide énorme à droite » relevé en ligne n'était pas un défaut de
+    // bornage — c'était la barre latérale absente, qui laissait 1512 à
+    // répartir au lieu de 1272.
+    await monterLaCoquille();
+    await mesurer(1512);
+
+    const barre = await screen.findByTestId('barre-laterale');
+    expect(aplati(barre).width).toBe(breakpoint.sidebarWidth);
   });
 
   it('porte le nom du commerce sous la marque', async () => {

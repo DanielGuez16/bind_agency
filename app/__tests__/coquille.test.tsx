@@ -236,10 +236,27 @@ describe('connexion', () => {
     return coffre;
   }
 
+  /**
+   * Monte l'écran **et va au formulaire de connexion**.
+   *
+   * L'entrée est désormais le choix de la porte, comme la maquette le veut :
+   * on demandait de se connecter à quelqu'un qui n'a pas encore de compte. Les
+   * tests qui éprouvent la connexion franchissent donc le lien de coin, comme
+   * la personne qu'ils imitent.
+   */
+  async function monterConnexion(fetchImpl: typeof fetch, coffre = coffreDeTest(null)) {
+    const rendu = await monterAuth(fetchImpl, coffre);
+    if (screen.queryByTestId('vers-connexion')) {
+      await fireEvent.press(screen.getByTestId('vers-connexion'));
+    }
+    await waitFor(() => expect(screen.getByTestId('champ-email')).toBeTruthy());
+    return rendu;
+  }
+
   it('ouvre une session et relit le rôle depuis le serveur', async () => {
     // Le rôle ne se déduit pas d'un jeton décodé côté client : ce serait
     // laisser l'appareil se déclarer administrateur.
-    const coffre = await monterAuth(
+    const coffre = await monterConnexion(
       serveur({
         '/auth/login': { corps: { access_token: 'a', refresh_token: 'r' } },
         '/me': { corps: { ...UTILISATEUR, role: 'admin' } },
@@ -259,7 +276,7 @@ describe('connexion', () => {
     // disparaître l'action impossible ; la passation v0.6 nomme cette
     // exception — c'est une action qui redeviendra possible dès qu'on aura
     // fini de taper. Le retirer laissait un écran sans issue visible.
-    await monterAuth(serveur({}) as typeof fetch);
+    await monterConnexion(serveur({}) as typeof fetch);
     expect(screen.getByTestId('valider').props.accessibilityState.disabled).toBe(true);
 
     await fireEvent.changeText(screen.getByTestId('champ-email'), 'a@b.example');
@@ -271,7 +288,7 @@ describe('connexion', () => {
 
   it('dit ce qui manque au mot de passe, en clair et en chiffres', async () => {
     // Un bouton grisé sans explication ne vaut pas mieux qu'un bouton absent.
-    await monterAuth(serveur({}) as typeof fetch);
+    await monterConnexion(serveur({}) as typeof fetch);
     await fireEvent.press(screen.getByTestId('basculer'));
     await fireEvent.press(screen.getByTestId('choisir-creator'));
 
@@ -286,7 +303,7 @@ describe('connexion', () => {
   });
 
   it('traduit un refus, sans jamais montrer le code', async () => {
-    await monterAuth(
+    await monterConnexion(
       serveur({
         '/auth/login': { status: 401, corps: { detail: 'invalid_credentials' } },
       }) as typeof fetch,
@@ -304,7 +321,7 @@ describe('connexion', () => {
   it('dit qu’un compte est suspendu, et le distingue d’une session expirée', async () => {
     // L'API répond 401 partout ailleurs sans distinguer ; la connexion, elle,
     // rend `account_not_active`. C'est le seul endroit où on l'apprend.
-    await monterAuth(
+    await monterConnexion(
       serveur({
         '/auth/login': { status: 403, corps: { detail: 'account_not_active' } },
       }) as typeof fetch,
@@ -322,8 +339,9 @@ describe('connexion', () => {
     // public en ferait une case à cocher. Les pastilles ont disparu, la
     // garantie non.
     await monterAuth(serveur({}) as typeof fetch);
-    await fireEvent.press(screen.getByTestId('basculer'));
 
+    // **Les portes sont l'entrée**, pas une étape derrière un lien : on
+    // demandait de se connecter à quelqu'un qui n'a pas encore de compte.
     expect(screen.getByTestId('porte-createur')).toBeTruthy();
     expect(screen.getByTestId('porte-commerce')).toBeTruthy();
     expect(screen.queryByText(/admin/i)).toBeNull();
@@ -333,7 +351,6 @@ describe('connexion', () => {
     // Le rôle se choisissait entre le mot de passe et le bouton : au moment
     // où l'on remplit, pas au moment où l'on décide.
     await monterAuth(serveur({}) as typeof fetch);
-    await fireEvent.press(screen.getByTestId('basculer'));
 
     // Aucun champ tant que la porte n'est pas franchie.
     expect(screen.queryByTestId('champ-email')).toBeNull();

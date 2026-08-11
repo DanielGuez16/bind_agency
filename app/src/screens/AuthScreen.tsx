@@ -56,8 +56,21 @@ export function AuthScreen({ motif }: { motif: MotifDeSortie | null }) {
   const { connecter, inscrire } = useSession();
 
   // `choix` n'existe qu'à l'inscription : se connecter n'a pas de porte.
-  const [etape, setEtape] = useState<'choix' | 'formulaire'>('formulaire');
-  const [inscription, setInscription] = useState(false);
+  /**
+   * **Les portes sont l'entrée, pas une étape cachée derrière un lien.**
+   * L'écran démarrait sur « Sign in », et les deux portes n'apparaissaient
+   * qu'après avoir pressé « No account yet? » : on demandait donc de se
+   * connecter à quelqu'un qui n'a pas encore de compte. La maquette 06a montre
+   * l'inverse — le choix occupe l'écran, et « Already have an account? » n'est
+   * qu'un lien de coin.
+   *
+   * Une exception : quelqu'un renvoyé ici par une session expirée a un compte.
+   * Lui montrer les portes serait lui demander de choisir un rôle qu'il a
+   * déjà.
+   */
+  const revient = motif !== null;
+  const [etape, setEtape] = useState<'choix' | 'formulaire'>(revient ? 'formulaire' : 'choix');
+  const [inscription, setInscription] = useState(!revient);
   const [email, setEmail] = useState('');
   const [motDePasse, setMotDePasse] = useState('');
   const [role, setRole] = useState<RoleInscriptible>('creator');
@@ -110,7 +123,16 @@ export function AuthScreen({ motif }: { motif: MotifDeSortie | null }) {
     );
   }
 
-  /** Le panneau d'encre : la promesse franchie, et ce qui vient ensuite. */
+  /**
+   * Le panneau d'encre : la promesse franchie, et ce qui vient ensuite.
+   *
+   * **Il vaut aussi pour la connexion.** Il était conditionné à l'inscription,
+   * et l'écran le plus visité du produit restait donc une colonne de 480
+   * centrée dans du vide — exactement le défaut de fond que la v0.6 devait
+   * corriger, laissé sur la première chose qu'on voit. Se connecter n'a pas de
+   * porte à rappeler ; le panneau y porte alors la promesse commune, celle qui
+   * vaut pour les deux côtés du produit.
+   */
   const suffixe = role === 'creator' ? 'Createur' : 'Commerce';
   const panneau = (
     <View
@@ -124,14 +146,23 @@ export function AuthScreen({ motif }: { motif: MotifDeSortie | null }) {
         justifyContent: 'center',
       }}
     >
-      <Texte variante="type.label" style={{ color: c['text.inverse'] }}>
-        {(role === 'creator' ? t('auth.roleCreator') : t('auth.roleMerchant')).toUpperCase()}
-      </Texte>
+      {inscription ? (
+        <Texte variante="type.label" style={{ color: c['text.inverse'] }}>
+          {(role === 'creator' ? t('auth.roleCreator') : t('auth.roleMerchant')).toUpperCase()}
+        </Texte>
+      ) : (
+        <Marque taille={30} couleur="text.inverse" />
+      )}
       <Texte variante="type.heading" style={{ color: c['text.inverse'] }}>
-        {t(role === 'creator' ? 'auth.porteCreateur' : 'auth.porteCommerce')}
+        {inscription
+          ? t(role === 'creator' ? 'auth.porteCreateur' : 'auth.porteCommerce')
+          : t('auth.accroche')}
       </Texte>
+      {inscription ? null : (
+        <Texte style={{ color: c['text.inverse'] }}>{t('auth.sousAccroche')}</Texte>
+      )}
       <View style={{ gap: spacing['space.4'] }}>
-        {[1, 2, 3].map((rang) => (
+        {(inscription ? [1, 2, 3] : []).map((rang) => (
           <View key={rang} style={{ flexDirection: 'row', gap: spacing['space.3'] }}>
             <Texte variante="type.mono" style={{ color: c['accent.default'] }}>
               {String(rang).padStart(2, '0')}
@@ -166,14 +197,14 @@ export function AuthScreen({ motif }: { motif: MotifDeSortie | null }) {
       >
         {/* Le panneau n'existe qu'en grand : en compact il prendrait toute la
             première page et repousserait les champs sous la ligne de flottaison. */}
-        {large && inscription ? panneau : null}
+        {large ? panneau : null}
 
         <View style={{ width: large ? FORMULAIRE : undefined, gap: 16, justifyContent: 'center' }}>
           <Apparition>
             <View style={{ alignItems: 'flex-start', gap: 18, paddingBottom: 6 }}>
               {/* La marque en grand : c'est le premier écran, et le seul où
                   l'on a la place de la montrer. Ailleurs, le signe suffit. */}
-              {large && inscription ? null : <Marque taille={44} />}
+              {large ? null : <Marque taille={44} />}
               {inscription ? (
                 <Button
                   label={t('common.retour')}
