@@ -25,6 +25,7 @@
  */
 import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useApi } from '../api';
 import { Apparition, Button, Marque, StatusMessage, TextField, Texte } from '../components';
@@ -54,6 +55,9 @@ export function AuthScreen({ motif }: { motif: MotifDeSortie | null }) {
   const { large } = useGabarit();
   const { messageDErreur } = useApi();
   const { connecter, inscrire } = useSession();
+  // Aucune barre d'onglets avant la connexion : la marge du bas, que
+  // `ZoneSure` laisse à la barre, n'a personne pour la poser ici.
+  const marges = useSafeAreaInsets();
 
   // `choix` n'existe qu'à l'inscription : se connecter n'a pas de porte.
   /**
@@ -195,6 +199,7 @@ export function AuthScreen({ motif }: { motif: MotifDeSortie | null }) {
       style={{ flex: 1, backgroundColor: c['bg.canvas'] }}
       contentContainerStyle={{
         padding: density.screenPadding,
+        paddingBottom: density.screenPadding + marges.bottom,
         flexGrow: 1,
         justifyContent: 'center',
         alignSelf: 'center',
