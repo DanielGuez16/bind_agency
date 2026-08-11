@@ -400,6 +400,9 @@ export const es: Catalogue = {
     sansFond: 'BIND · un servicio por una publicación.',
   },
   auth: {
+    retourA: 'Tus niveles, tus reservas y tu historial siguen donde los dejaste.',
+    retourB: 'Una prestación a cambio de una publicación. Nunca hay dinero de por medio.',
+    retourC: 'Miami, belleza y bienestar. Nada más, por ahora.',
     titreConnexion: 'Iniciar sesión',
     titreInscription: 'Crea tu cuenta',
     email: 'Correo',

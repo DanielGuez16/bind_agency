@@ -152,7 +152,16 @@ export function AuthScreen({ motif }: { motif: MotifDeSortie | null }) {
       {inscription ? null : (
         <Texte style={{ color: c['text.inverse'] }}>{t('auth.sousAccroche')}</Texte>
       )}
-      <View style={{ gap: spacing['space.4'] }}>
+      {/* **Le panneau de connexion avait trois lignes sur 604 d'encre**
+          (campagne 2) : un grand aplat noir presque vide, sur l'écran le plus
+          vu du produit. L'inscription y déroule les trois étapes de la porte
+          franchie ; la connexion n'a pas de porte à rappeler, mais elle a de
+          quoi remplir — ce que le produit est, pour qui revient.
+
+          Numéroté à l'inscription, où les trois points sont une suite ; non
+          numéroté au retour, où ce sont trois faits. « 01 02 03 » à quelqu'un
+          qui a déjà un compte se lirait comme une mise en route à refaire. */}
+      <View style={{ gap: spacing['space.4'] }} testID="points-du-panneau">
         {(inscription ? [1, 2, 3] : []).map((rang) => (
           <View key={rang} style={{ flexDirection: 'row', gap: spacing['space.3'] }}>
             <Texte variante="type.mono" style={{ color: c['accent.default'] }}>
@@ -160,6 +169,19 @@ export function AuthScreen({ motif }: { motif: MotifDeSortie | null }) {
             </Texte>
             <Texte style={{ color: c['text.inverse'], flex: 1 }}>
               {t(`auth.etape${suffixe}${rang}`)}
+            </Texte>
+          </View>
+        ))}
+        {(inscription ? [] : ['A', 'B', 'C']).map((lettre) => (
+          <View key={lettre} style={{ flexDirection: 'row', gap: spacing['space.3'] }}>
+            <Texte variante="type.mono" style={{ color: c['accent.default'] }}>
+              ·
+            </Texte>
+            <Texte
+              style={{ color: c['text.inverse'], flex: 1 }}
+              testID={`point-de-retour-${lettre}`}
+            >
+              {t(`auth.retour${lettre}`)}
             </Texte>
           </View>
         ))}

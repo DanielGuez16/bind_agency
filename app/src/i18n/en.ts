@@ -403,6 +403,9 @@ export const en = {
     sansFond: 'BIND · a service for a publication.',
   },
   auth: {
+    retourA: 'Your tiers, your bookings and your history are where you left them.',
+    retourB: 'A service in exchange for a publication. No money ever changes hands.',
+    retourC: 'Miami, beauty and wellness. Nothing else, for now.',
     titreConnexion: 'Sign in',
     titreInscription: 'Create your account',
     email: 'Email',
