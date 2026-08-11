@@ -28,7 +28,7 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import { useApi, type Fil } from '../api';
+import { useApi, type CommerceDuFil, type Fil } from '../api';
 import {
   Apparition,
   BusinessCard,
@@ -39,6 +39,7 @@ import {
   Texte,
 } from '../components';
 import { useI18n } from '../i18n';
+import { useGabarit } from '../shell/gabarit';
 import { en } from '../i18n/en';
 import { Ecran } from './Ecran';
 import { RaisonDuVide } from './RaisonDuVide';
@@ -83,6 +84,19 @@ export function FilScreen({
 }) {
   const { api } = useApi();
   const { t } = useI18n();
+  const { large, largeur } = useGabarit();
+  /**
+   * Trois à quatre cartes par ligne, comme la règle v0.6 le pose.
+   *
+   * **Le défilement horizontal reste la forme mobile.** Sur grand écran il
+   * cache du contenu sans raison : on ne sait pas combien de salons attendent
+   * derrière le bord, et on ne pense pas à pousser. La grille les montre tous.
+   *
+   * Quatre seulement quand la place y est vraiment. À 1120 bornés, quatre
+   * cartes font 268 de large : c'est le minimum où une couverture 16:9 et deux
+   * lignes de texte tiennent encore ensemble.
+   */
+  const colonnes = !large ? 1 : largeur >= 1200 ? 4 : 3;
   const [rayonKm, setRayonKm] = useState(RAYONS_KM[0]);
 
   const requete = useRequete<Fil>(
@@ -162,10 +176,23 @@ export function FilScreen({
               au palier story mais pas au reel doit savoir ce qui lui manque,
               sinon il croit avoir tout vu. */}
           <Obstacles fil={fil} />
-          {fil.commerces.map((commerce, rang) => {
-            const item = commerce.items[0];
-            return (
-              <Apparition key={commerce.business_id} rang={rang}>
+          {enRangees(fil.commerces, colonnes).map((rangee, numero) => (
+            <View
+              key={numero}
+              testID={`rangee-${numero}`}
+              style={{ flexDirection: 'row', gap: 16 }}
+            >
+              {rangee.map((commerce, rang) => {
+                if (commerce === null) {
+                  // Une place vide en fin de rangée. Sans elle, deux cartes
+                  // sur la dernière ligne s'étireraient à la moitié de la
+                  // largeur et cesseraient de ressembler aux autres.
+                  return <View key={`vide-${rang}`} style={{ flex: 1 }} />;
+                }
+                const item = commerce.items[0];
+                return (
+                  <View key={commerce.business_id} style={{ flex: 1 }}>
+                    <Apparition rang={numero * colonnes + rang}>
               <BusinessCard
                 testID={`commerce-${commerce.business_id}`}
                 name={commerce.name}
@@ -182,9 +209,12 @@ export function FilScreen({
                 distance={`${Math.round(commerce.distance_metres)} m`}
                 onPress={() => onOuvrirLeCommerce(commerce.business_id)}
               />
-              </Apparition>
-            );
-          })}
+                    </Apparition>
+                  </View>
+                );
+              })}
+            </View>
+          ))}
         </View>
       )}
     </Ecran>
@@ -209,4 +239,26 @@ function Obstacles({ fil }: { fil: Fil | null }) {
       ))}
     </View>
   );
+}
+
+
+/**
+ * Découpe la liste en rangées, en complétant la dernière.
+ *
+ * Les places vides sont explicites plutôt que laissées à `flexWrap` : avec le
+ * retour à la ligne automatique, deux cartes sur la dernière rangée s'étirent
+ * à la moitié de la largeur et cessent de ressembler aux autres. Une grille
+ * dont la dernière ligne a des cartes plus grandes n'est plus une grille.
+ */
+function enRangees(
+  commerces: CommerceDuFil[],
+  colonnes: number,
+): (CommerceDuFil | null)[][] {
+  const rangees: (CommerceDuFil | null)[][] = [];
+  for (let debut = 0; debut < commerces.length; debut += colonnes) {
+    const rangee: (CommerceDuFil | null)[] = commerces.slice(debut, debut + colonnes);
+    while (rangee.length < colonnes) rangee.push(null);
+    rangees.push(rangee);
+  }
+  return rangees;
 }
