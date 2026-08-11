@@ -115,6 +115,19 @@ const Onglets = createBottomTabNavigator();
  * **Une hauteur explicite.** La hauteur par défaut est calculée avant que les
  * marges soient connues, et ne se met pas à jour ensuite.
  */
+/**
+ * La barre latérale, à passer au **navigateur** et non aux options d'écran.
+ *
+ * `tabBar` est une propriété de `Navigator`. Rangée dans `screenOptions`, elle
+ * est ignorée sans un mot : la barre latérale n'était jamais montée, et comme
+ * la barre du bas était masquée par ailleurs, il ne restait aucune navigation.
+ */
+function useBarreLaterale(intitule?: string | null) {
+  const { large } = useGabarit();
+  if (!large) return undefined;
+  return (props: BottomTabBarProps) => <BarreLaterale {...props} intitule={intitule} />;
+}
+
 function useOptionsDOnglets(intitule?: string | null) {
   const marges = useSafeAreaInsets();
   const { color: c } = useTheme();
@@ -126,18 +139,14 @@ function useOptionsDOnglets(intitule?: string | null) {
     // `tabBarPosition` déplace la boîte, `tabBar` en remplace le contenu : il
     // faut les deux, sinon la barre latérale s'afficherait couchée en bas.
     tabBarPosition: large ? ('left' as const) : ('bottom' as const),
-    tabBar: large
-      ? (props: BottomTabBarProps) => <BarreLaterale {...props} intitule={intitule} />
-      : undefined,
     // Un fondu entre onglets. Sans lui, le changement est une coupe franche :
     // rien ne relie l'écran qu'on quitte à celui qui arrive, et sur cinq
     // onglets on ne sait plus lequel on vient de toucher.
     animation: 'fade' as const,
-    // En grand, la barre du bas n'existe plus : lui laisser une hauteur
-    // réserverait une bande vide sous la barre latérale.
-    tabBarStyle: large
-      ? { display: 'none' as const }
-      : {
+    // Ce style ne vaut que pour la barre du bas. En grand, `tabBar` la
+    // remplace entièrement et il est ignoré : le conditionner ferait croire
+    // qu'il pilote quelque chose là-haut.
+    tabBarStyle: {
       // La hauteur se compose : le contenu, puis la marge système. Fixer une
       // hauteur *et* des marges intérieures écrase le libellé — la boîte tient
       // dans la barre, mais le texte déborde sous sa ligne de base, ce qui ne
@@ -148,7 +157,7 @@ function useOptionsDOnglets(intitule?: string | null) {
       backgroundColor: c['bg.surface'],
       borderTopColor: c['border.subtle'],
       borderTopWidth: 1,
-        },
+    },
     tabBarLabelStyle: { fontSize: 11, lineHeight: 15, marginTop: 4 },
     tabBarActiveTintColor: c['accent.default'],
     tabBarInactiveTintColor: c['text.muted'],
@@ -345,8 +354,9 @@ function OngletsCreateur({
 }) {
   const { t } = useI18n();
   const options = useOptionsDOnglets();
+  const barreLaterale = useBarreLaterale(prenom);
   return (
-    <Onglets.Navigator screenOptions={options}>
+    <Onglets.Navigator screenOptions={options} tabBar={barreLaterale}>
       <Onglets.Screen name="parcours" options={onglet(t('onglets.fil'), 'lieu')}>
         {({ navigation }) => (
           <ParcoursCreateur
@@ -487,14 +497,15 @@ function PileDeConfiguration({ businessId }: { businessId: string }) {
 
 function OngletsCommerce() {
   const { t } = useI18n();
+  const { businessId, nom, ecranDAttente } = useMonCommerce();
   const options = useOptionsDOnglets();
-  const { businessId, ecranDAttente } = useMonCommerce();
+  const barreLaterale = useBarreLaterale(nom);
 
   // Pas de commerce rattaché : un onglet qui répondrait 403 partout ne dit
   // rien. On montre ce qu'il faut faire, et les réglages restent joignables.
   if (businessId === null) {
     return (
-      <Onglets.Navigator screenOptions={options}>
+      <Onglets.Navigator screenOptions={options} tabBar={barreLaterale}>
         <Onglets.Screen name="attente" options={onglet(t('onglets.journee'), 'calendrier')}>
           {() => ecranDAttente}
         </Onglets.Screen>
@@ -508,7 +519,7 @@ function OngletsCommerce() {
   }
 
   return (
-    <Onglets.Navigator screenOptions={options}>
+    <Onglets.Navigator screenOptions={options} tabBar={barreLaterale}>
       <Onglets.Screen name="journee" options={onglet(t('onglets.journee'), 'calendrier')}>
         {() => <ParcoursCommerce businessId={businessId} />}
       </Onglets.Screen>
@@ -545,8 +556,10 @@ function OngletsCommerce() {
 function OngletsAdmin() {
   const { t } = useI18n();
   const options = useOptionsDOnglets();
+  // L'administration n'a pas de contexte à situer : le rôle suffit.
+  const barreLaterale = useBarreLaterale(null);
   return (
-    <Onglets.Navigator screenOptions={options}>
+    <Onglets.Navigator screenOptions={options} tabBar={barreLaterale}>
       <Onglets.Screen
         name="arbitrage"
         component={ArbitrageScreen}
