@@ -39,6 +39,8 @@ import {
   TierBadge,
   Toggle,
   chipDeComportement,
+  BarresParPalier,
+  BarresParPeriode,
 } from '../src/components';
 import { I18nProvider } from '../src/i18n';
 import { ThemeProvider, codeColors, themeForRole, tokens, type Role } from '../src/theme';
@@ -633,9 +635,13 @@ describe("ce que la bibliothèque n'a pas", () => {
       'CodeInput.tsx',
       'EmptyState.tsx',
       'EnTete.tsx',
+      // Amendement v0.6 à `components.md` §17 : deux graphiques, et deux
+      // seulement — des barres, et une évolution dans le temps.
+      'Graphiques.tsx',
       'Icone.tsx',
       'Logo.tsx',
       'Mouvement.tsx',
+      'PaveDeSaisie.tsx',
       'PickupCode.tsx',
       'SegmentedTabs.tsx',
       'Skeleton.tsx',
@@ -653,3 +659,124 @@ describe("ce que la bibliothèque n'a pas", () => {
 // `act` est importé pour les rendus animés ; le référencer évite qu'un
 // nettoyage d'imports le retire et laisse un avertissement React.
 void act;
+
+// --------------------------------------------------------------------------
+// les deux graphiques
+// --------------------------------------------------------------------------
+
+describe('graphiques', () => {
+  it('garde les semaines vides comme des barres à zéro', async () => {
+    // Une série qui saute les semaines sans publication resserre l'axe et fait
+    // croire à une régularité qui n'existe pas : trois publications en trois
+    // mois se liraient comme trois semaines de suite.
+    await monter(
+      <BarresParPeriode
+        titre="Publications"
+        series={[
+          { etiquette: 'W30', valeur: 3 },
+          { etiquette: 'W31', valeur: 0 },
+          { etiquette: 'W32', valeur: 1 },
+        ]}
+        testID="graphique"
+      />,
+    );
+
+    expect(screen.getByTestId('barre-W31')).toBeTruthy();
+    // Et elle reste visible : « rien » n'est pas « pas de donnée ».
+    expect(style(screen.getByTestId('barre-W31')).height).toBeGreaterThan(0);
+  });
+
+  it('proportionne les hauteurs au sommet de la série', async () => {
+    await monter(
+      <BarresParPeriode
+        titre="Publications"
+        series={[
+          { etiquette: 'W30', valeur: 10 },
+          { etiquette: 'W31', valeur: 5 },
+        ]}
+        testID="graphique"
+      />,
+    );
+
+    const haute = style(screen.getByTestId('barre-W30')).height as number;
+    const moitie = style(screen.getByTestId('barre-W31')).height as number;
+    expect(moitie).toBeCloseTo(haute / 2, 0);
+  });
+
+  it('ne divise jamais par zéro sur une série entièrement vide', async () => {
+    // Un salon qui n'a rien publié doit voir un graphique plat, pas un écran
+    // blanc ni des hauteurs infinies.
+    await monter(
+      <BarresParPeriode
+        titre="Publications"
+        series={[
+          { etiquette: 'W30', valeur: 0 },
+          { etiquette: 'W31', valeur: 0 },
+        ]}
+        testID="graphique"
+      />,
+    );
+
+    expect(Number.isFinite(style(screen.getByTestId('barre-W30')).height as number)).toBe(true);
+  });
+
+  it('accompagne chaque palier de son badge, jamais la couleur seule', async () => {
+    // C'est la seule série colorée du produit : la couleur y porte déjà un
+    // sens ailleurs, et elle ne porte jamais seule.
+    await monter(
+      <BarresParPalier
+        titre="Par palier"
+        series={[
+          { palier: 'story', valeur: 34 },
+          { palier: 'post', valeur: 21 },
+        ]}
+        testID="graphique"
+      />,
+    );
+
+    expect(screen.getByTestId('barre-story')).toBeTruthy();
+    expect(screen.getByText(/34/)).toBeTruthy();
+    expect(screen.getByTestId('badge-story')).toBeTruthy();
+    expect(screen.getByTestId('badge-post')).toBeTruthy();
+  });
+});
+
+describe('état vide, v0.6', () => {
+  it('ne dessine plus le cercle qui ne disait rien', async () => {
+    // Il occupait la place du titre, qui est ce qu'on vient lire.
+    const { toJSON } = await monter(<EmptyState title="Rien ici" body="Pour l’instant." />);
+    const rendu = JSON.stringify(toJSON());
+    expect(rendu).not.toContain('"borderRadius":999');
+  });
+
+  it('porte les chiffres en mono, plus gros que le corps', async () => {
+    // Quand rien ne s'est passé, ce sont eux qu'on vient chercher.
+    await monter(
+      <EmptyState
+        title="Rien en attente"
+        body="Personne n’attend un humain."
+        chiffres={[
+          { valeur: '18', label: 'settled in 7 days' },
+          { valeur: '4 h', label: 'median time to decide' },
+        ]}
+      />,
+    );
+
+    expect(screen.getByTestId('etat-vide-chiffres')).toBeTruthy();
+    expect(style(screen.getByText('18')).fontSize).toBe(44);
+  });
+
+  it('garde chaque issue avec son gain chiffré', async () => {
+    // Une issue sans chiffre demande de tenter pour voir, et personne ne
+    // tente deux fois.
+    await monter(
+      <EmptyState
+        title="Rien à 15 km"
+        body="Élargissez."
+        actions={[{ label: 'Widen to 30 km · 9 salons', onPress: () => {} }]}
+      />,
+    );
+
+    expect(screen.getByText(/9 salons/)).toBeTruthy();
+  });
+});

@@ -113,6 +113,10 @@ class ReservationDuCommerce:
     duration_minutes: int | None
     platform: Platform
     content_format: ContentFormat
+    #: Ce qui sera exigé de la publication. Rendu au comptoir parce que c'est
+    #: lui qui le vérifiera.
+    required_mention: str | None
+    required_geotag: bool
     contrepartie: LigneDeContrepartie | None
 
 
@@ -147,6 +151,11 @@ def _colonnes_communes() -> tuple:
         Booking.duration_minutes,
         Tier.platform,
         Tier.content_format,
+        # Les critères que le salon devra vérifier sur la publication. Ils
+        # vivent sur l'offre, déjà jointe : le comptoir doit les avoir sous
+        # les yeux au moment de servir, pas les retrouver ailleurs.
+        TierOffer.required_mention,
+        TierOffer.required_geotag,
         Collaboration.id.label("collaboration_id"),
         Collaboration.status.label("collaboration_status"),
         Collaboration.deadline_at,
@@ -287,6 +296,8 @@ def _lire(ligne) -> ReservationDuCommerce:
         duration_minutes=ligne.duration_minutes,
         platform=ligne.platform,
         content_format=ligne.content_format,
+        required_mention=ligne.required_mention,
+        required_geotag=ligne.required_geotag,
         contrepartie=_contrepartie(ligne),
     )
 

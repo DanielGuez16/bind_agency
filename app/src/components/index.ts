@@ -15,6 +15,14 @@ export { SegmentedTabs, type SegmentedTabsProps } from './SegmentedTabs';
 export { Chip, RangeeDeChips, type ChipProps } from './Chip';
 export { Icone, type NomIcone } from './Icone';
 export { Logo, Marque } from './Logo';
+export { PaveDeSaisie, TOUCHES } from './PaveDeSaisie';
+export {
+  BarresParPalier,
+  BarresParPeriode,
+  PALIERS,
+  type BarreDePalier,
+  type BarreVerticale,
+} from './Graphiques';
 export {
   Apparition,
   useEnfoncement,

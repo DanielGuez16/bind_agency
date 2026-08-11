@@ -64,10 +64,14 @@ export function CreneauxScreen({
   fiche,
   offre,
   onReserve,
+  onRetour,
 }: {
   fiche: FichePublique;
   offre: OffreDeLaFiche;
   onReserve: (bookingId: string) => void;
+  /** Le retour de la pile. Sur le web il n'y a ni geste ni bouton système :
+   * sans lui, on ne quitte l'écran qu'en changeant d'onglet. */
+  onRetour?: () => void;
 }) {
   const { api, messageDErreur } = useApi();
   const { t, locale } = useI18n();
@@ -141,6 +145,7 @@ export function CreneauxScreen({
   return (
     <View style={{ flex: 1, backgroundColor: c['bg.canvas'] }} testID="ecran-creneaux">
       <Ecran
+      onRetour={onRetour}
         requete={requete}
         titre={t('parcours.creneauxTitre')}
         vide={<EmptyState title={t('parcours.creneauxTitre')} body={t('parcours.creneauxVide')} />}

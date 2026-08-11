@@ -20,6 +20,8 @@ import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 
 import { Button, EmptyState, Icone, SkeletonCard, StatusMessage, Texte } from '../components';
 import { useI18n } from '../i18n';
+import { BarreDeTitre } from '../shell/BarreDeTitre';
+import { useGabarit, largeurMaximale, type NatureDeContenu } from '../shell/gabarit';
 import { useApi } from '../api';
 import { useTheme } from '../theme';
 import type { Requete } from './useRequete';
@@ -42,6 +44,14 @@ export type EcranProps<T> = {
    * qu'en changeant d'onglet, et le geste de balayage n'existe pas sur le web.
    */
   onRetour?: () => void;
+  /** « il y a 2 h ». Rendue dans la barre de titre, sur grand écran. */
+  fraicheur?: string | null;
+  /**
+   * Ce que l'écran est, pour savoir jusqu'où son contenu s'étend. Déduit du
+   * rôle par défaut ; un écran en deux colonnes doit le dire, sa liste et son
+   * détail ne tiennent pas dans la borne du détail seul.
+   */
+  nature?: NatureDeContenu;
   /** Ce que l'écran montre quand tout va bien. */
   children: (donnees: T) => ReactNode;
   /** Le squelette. À défaut, trois cartes à la géométrie du contenu. */
@@ -56,12 +66,15 @@ export function Ecran<T>({
   titre,
   entete,
   onRetour,
+  fraicheur,
+  nature,
   children,
   squelette,
   vide,
   testID,
 }: EcranProps<T>) {
   const { color: c, role, density } = useTheme();
+  const { large } = useGabarit();
   const { t } = useI18n();
   const { messageDErreur } = useApi();
 
@@ -126,13 +139,18 @@ export function Ecran<T>({
       {role === 'merchant' ? (
         <View testID="lisere-commerce" style={{ height: 3, backgroundColor: c['role.merchant'] }} />
       ) : null}
+      {large ? (
+        <BarreDeTitre titre={titre ?? ''} onRetour={onRetour} fraicheur={fraicheur} />
+      ) : null}
       <ScrollView
         contentContainerStyle={{
           padding: density.screenPadding,
           gap: density.gap,
-          // Grand écran : le contenu créateur se centre à 760 au plus. Mesuré
-          // sur le conteneur, pas par une media query.
-          maxWidth: role === 'creator' ? 760 : undefined,
+          // Grand écran : chaque nature d'écran a sa borne, tirée des jetons.
+          // Le créateur est passé de 760 à 1120 — 760 était exactement la
+          // colonne étroite perdue dans du vide relevée en campagne de test.
+          // Le vide à droite d'un détail commerce, lui, est voulu.
+          maxWidth: largeurMaximale(nature ?? (role === 'creator' ? 'creator' : 'merchant'), large),
           width: '100%',
           alignSelf: 'center',
         }}
@@ -144,7 +162,9 @@ export function Ecran<T>({
           />
         }
       >
-        {onRetour ? (
+        {/* En grand, le retour vit dans la barre de titre, fixe : ici il
+            défilerait hors de l'écran dès la troisième ligne. */}
+        {onRetour && !large ? (
           <Pressable
             onPress={onRetour}
             accessibilityRole="button"

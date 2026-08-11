@@ -1,0 +1,145 @@
+/**
+ * Le choix du rôle, **avant** le formulaire.
+ *
+ * **Deux portes, deux promesses.** Le rôle se choisissait au milieu de
+ * l'inscription, sur une paire de pastilles entre le mot de passe et le bouton
+ * — c'est-à-dire au moment où l'on remplit un formulaire, pas au moment où l'on
+ * décide de quoi on a besoin. Un créateur et un salon ne viennent pas chercher
+ * la même chose : la première question doit être laquelle des deux, et la
+ * réponse doit s'accompagner de ce qu'elle engage.
+ *
+ * **Trois points concrets par porte, pas un argumentaire.** Ce qu'on ouvre, ce
+ * qu'on donne, ce qu'on ne donne pas. « Aucune commission, aucun abonnement »
+ * en dit plus long à un salon que n'importe quelle promesse d'audience.
+ *
+ * Sur grand écran les deux cartes de 440 sont côte à côte, parce que le choix
+ * se fait en les comparant. En compact elles s'empilent, dans le même ordre.
+ */
+import { View } from 'react-native';
+
+import { Button, Icone, Marque, Texte } from '../components';
+import { useI18n } from '../i18n';
+import { useGabarit } from '../shell/gabarit';
+import { radius, spacing, useColors, type ColorName } from '../theme';
+import type { RoleInscriptible } from '../session';
+
+/** La largeur d'une porte. La passation la fixe, et elle ne s'étire pas. */
+const LARGEUR_DE_PORTE = 440;
+
+type Porte = {
+  role: RoleInscriptible;
+  teinte: ColorName;
+  etiquette: string;
+  promesse: string;
+  points: string[];
+  action: string;
+  testID: string;
+};
+
+export function ChoixDeLaPorte({
+  onChoisir,
+  onSeConnecter,
+}: {
+  onChoisir: (role: RoleInscriptible) => void;
+  onSeConnecter: () => void;
+}) {
+  const { t } = useI18n();
+  const c = useColors();
+  const { large } = useGabarit();
+
+  const portes: Porte[] = [
+    {
+      role: 'creator',
+      teinte: 'role.creator',
+      etiquette: t('auth.roleCreator'),
+      promesse: t('auth.porteCreateur'),
+      points: [t('auth.porteCreateurA'), t('auth.porteCreateurB'), t('auth.porteCreateurC')],
+      action: t('auth.porteCreateurAction'),
+      testID: 'porte-createur',
+    },
+    {
+      role: 'business_member',
+      teinte: 'role.merchant',
+      etiquette: t('auth.roleMerchant'),
+      promesse: t('auth.porteCommerce'),
+      points: [t('auth.porteCommerceA'), t('auth.porteCommerceB'), t('auth.porteCommerceC')],
+      action: t('auth.porteCommerceAction'),
+      testID: 'porte-commerce',
+    },
+  ];
+
+  return (
+    <View style={{ gap: spacing['space.6'] }} testID="choix-de-la-porte">
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: spacing['space.4'],
+        }}
+      >
+        <Marque taille={30} />
+        <Button
+          label={t('auth.versConnexion')}
+          variant="ghost"
+          fullWidth={false}
+          onPress={onSeConnecter}
+          testID="vers-connexion"
+        />
+      </View>
+
+      <View style={{ gap: spacing['space.2'], maxWidth: 720 }}>
+        <Texte variante="type.display">{t('auth.accroche')}</Texte>
+        <Texte couleur="text.secondary">{t('auth.sousAccroche')}</Texte>
+      </View>
+
+      <View
+        style={{
+          flexDirection: large ? 'row' : 'column',
+          gap: spacing['space.4'],
+          alignItems: large ? 'stretch' : undefined,
+        }}
+      >
+        {portes.map((porte) => (
+          <View
+            key={porte.role}
+            testID={porte.testID}
+            style={{
+              // Bornée et non étirée : deux cartes qui occupent tout l'écran
+              // cessent d'être comparables d'un regard.
+              width: large ? LARGEUR_DE_PORTE : undefined,
+              gap: spacing['space.4'],
+              padding: spacing['space.5'],
+              borderRadius: radius['radius.xl'],
+              borderWidth: 1,
+              borderColor: c['border.subtle'],
+              backgroundColor: c['bg.surface'],
+            }}
+          >
+            <Texte variante="type.label" style={{ color: c[porte.teinte] }}>
+              {porte.etiquette.toUpperCase()}
+            </Texte>
+            <Texte variante="type.title">{porte.promesse}</Texte>
+
+            <View style={{ gap: spacing['space.3'], flex: 1 }}>
+              {porte.points.map((point) => (
+                <View key={point} style={{ flexDirection: 'row', gap: spacing['space.2'] }}>
+                  <Icone nom="coche" couleur="text.muted" taille={18} />
+                  <Texte couleur="text.secondary" style={{ flex: 1 }}>
+                    {point}
+                  </Texte>
+                </View>
+              ))}
+            </View>
+
+            <Button
+              label={porte.action}
+              onPress={() => onChoisir(porte.role)}
+              testID={`choisir-${porte.role}`}
+            />
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}

@@ -26,18 +26,25 @@
  * répétition qui justifie l'escalade, et elle n'était nulle part.
  */
 import { useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { useApi, type IssueDArbitrage, type LigneDeFile } from '../api';
 import {
+  Button,
   Chip,
   DecisionBar,
+  DetailPanel,
   EmptyState,
   RangeeDeChips,
   StatusMessage,
+  TableHeader,
+  TableRow,
   Texte,
+  type Colonne,
 } from '../components';
 import { useI18n } from '../i18n';
+import { ECART_DES_COLONNES, useGabarit } from '../shell/gabarit';
+import { useColors } from '../theme';
 import { Ecran } from './Ecran';
 import { PreuveSoumise } from './Preuve';
 import { MOTIFS, libelleDuMotif, type MotifDeDecision } from './motifs';
@@ -47,6 +54,7 @@ export function ArbitrageScreen() {
   const { api } = useApi();
   const { t } = useI18n();
 
+  const { large } = useGabarit();
   const requete = useRequete<LigneDeFile[]>((signal) => api.fileDArbitrage(signal), {
     estVide: (lignes) => lignes.length === 0,
   });
@@ -55,6 +63,7 @@ export function ArbitrageScreen() {
     <Ecran
       requete={requete}
       titre={t('admin.arbitrageTitre')}
+      nature="reports"
       testID="ecran-arbitrage"
       vide={
         <EmptyState
@@ -64,15 +73,173 @@ export function ArbitrageScreen() {
         />
       }
     >
-      {(lignes) => (
-        <View style={{ gap: 12 }}>
-          {lignes.map((ligne) => (
-            <Dossier key={ligne.collaboration_id} ligne={ligne} onTranche={requete.recharger} />
-          ))}
-        </View>
-      )}
+      {(lignes) =>
+        large ? (
+          <TableDArbitrage lignes={lignes} onTranche={requete.recharger} />
+        ) : (
+          <View style={{ gap: 12 }}>
+            {lignes.map((ligne) => (
+              <Dossier key={ligne.collaboration_id} ligne={ligne} onTranche={requete.recharger} />
+            ))}
+          </View>
+        )
+      }
     </Ecran>
   );
+}
+
+/** Les colonnes de la file, à largeur fixe. Les chiffres sont à droite. */
+const COLONNES: Colonne[] = [
+  { cle: 'commerce', label: 'Business', largeur: 168 },
+  { cle: 'createur', label: 'Creator', largeur: 128 },
+  { cle: 'prestation', label: 'Service', largeur: 176 },
+  { cle: 'palier', label: 'Tier', largeur: 76 },
+  { cle: 'tentatives', label: 'Attempts', largeur: 84, chiffre: true },
+  { cle: 'echeance', label: 'Flagged', largeur: 84, chiffre: true },
+];
+
+/**
+ * La file en tableau, et le dossier ouvert à droite.
+ *
+ * **Le tableau occupe sa colonne, le panneau est fixé.** Arbitrer se fait en
+ * comparant : on parcourt la file, on ouvre un dossier, on tranche, et le
+ * suivant est déjà sous les yeux. Un dossier qui remplacerait la file à chaque
+ * ouverture ferait perdre la place à chaque décision.
+ *
+ * **Les actions de masse se limitent aux approbations**, comme le veut
+ * `components.md` §16. Refuser en lot demanderait un motif commun à des
+ * dossiers qu'on n'a pas ouverts — c'est exactement la décision qu'il ne faut
+ * pas rendre facile.
+ */
+function TableDArbitrage({
+  lignes,
+  onTranche,
+}: {
+  lignes: LigneDeFile[];
+  onTranche: () => void;
+}) {
+  const { t } = useI18n();
+  const { api } = useApi();
+  const c = useColors();
+  const [ouvert, setOuvert] = useState<string | null>(null);
+  const [selection, setSelection] = useState<string[]>([]);
+  const [enCours, setEnCours] = useState(false);
+
+  const dossier = lignes.find((ligne) => ligne.collaboration_id === ouvert) ?? null;
+
+  async function approuverLaSelection() {
+    setEnCours(true);
+    try {
+      // Une par une : l'API tranche un dossier à la fois, et une route de lot
+      // rendrait « approuver dix » aussi peu coûteux qu'« approuver un ».
+      for (const identifiant of selection) {
+        await api.arbitrer(identifiant, { issue: 'approve' });
+      }
+      setSelection([]);
+      onTranche();
+    } finally {
+      setEnCours(false);
+    }
+  }
+
+  return (
+    <View style={{ flexDirection: 'row', gap: ECART_DES_COLONNES }}>
+      <View style={{ flex: 1, gap: 8 }}>
+        {/* La barre d'outils : ce qui est sélectionné, et ce qu'on peut en
+            faire. Vide, elle ne propose rien plutôt que de griser. */}
+        {selection.length > 0 ? (
+          <View
+            testID="barre-de-selection"
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 12, height: 40 }}
+          >
+            <Texte variante="type.label" couleur="text.secondary">
+              {t('admin.selection', { count: selection.length })}
+            </Texte>
+            <Button
+              label={t('admin.approuverLaSelection')}
+              size="sm"
+              fullWidth={false}
+              loading={enCours}
+              onPress={approuverLaSelection}
+              testID="approuver-la-selection"
+            />
+          </View>
+        ) : null}
+
+        <TableHeader colonnes={COLONNES} testID="entete-de-file" />
+        {lignes.map((ligne) => (
+          <View
+            key={ligne.collaboration_id}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+          >
+            {/* Cocher n'ouvre pas, et ouvrir ne coche pas. Les deux gestes
+                mènent à des décisions différentes : l'un approuve en lot sans
+                regarder, l'autre ouvre pour regarder. */}
+            <Pressable
+              testID={`cocher-${ligne.collaboration_id}`}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: selection.includes(ligne.collaboration_id) }}
+              hitSlop={8}
+              onPress={() =>
+                setSelection((precedente) =>
+                  precedente.includes(ligne.collaboration_id)
+                    ? precedente.filter((cle) => cle !== ligne.collaboration_id)
+                    : [...precedente, ligne.collaboration_id],
+                )
+              }
+              style={{
+                width: 18,
+                height: 18,
+                borderRadius: 4,
+                borderWidth: 1,
+                borderColor: selection.includes(ligne.collaboration_id)
+                  ? c['accent.default']
+                  : c['border.default'],
+                backgroundColor: selection.includes(ligne.collaboration_id)
+                  ? c['accent.default']
+                  : 'transparent',
+              }}
+            />
+            <View style={{ flex: 1 }}>
+          <TableRow
+            colonnes={COLONNES}
+            actif={ligne.collaboration_id === ouvert}
+            onPress={() => setOuvert(ligne.collaboration_id)}
+            testID={`ligne-${ligne.collaboration_id}`}
+            valeurs={{
+              commerce: ligne.business_name,
+              createur: ligne.creator_handle ?? '—',
+              prestation: ligne.item_name,
+              palier: ligne.required_format.toUpperCase(),
+              tentatives: String(ligne.attempts_count),
+              echeance: quandRestant(ligne.deadline_at),
+            }}
+          />
+            </View>
+          </View>
+        ))}
+      </View>
+
+      {dossier ? (
+        <DetailPanel
+          titre={dossier.business_name}
+          identifiant={`collab_${dossier.collaboration_id.slice(0, 8)}`}
+          testID="dossier-ouvert"
+        >
+          <View style={{ padding: 12 }}>
+            <Dossier ligne={dossier} onTranche={onTranche} />
+          </View>
+        </DetailPanel>
+      ) : null}
+    </View>
+  );
+}
+
+/** « 2 d », « 6 h ». Ce qui reste avant l'échéance, jamais une date brute. */
+function quandRestant(echeance: string): string {
+  const heures = Math.round((new Date(echeance).getTime() - Date.now()) / 3_600_000);
+  if (heures <= 0) return '0 h';
+  return heures >= 48 ? `${Math.round(heures / 24)} d` : `${heures} h`;
 }
 
 function Dossier({ ligne, onTranche }: { ligne: LigneDeFile; onTranche: () => void }) {

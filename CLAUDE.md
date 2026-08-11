@@ -103,6 +103,8 @@ npx expo start
 - Le jeu de données de départ ne pose jamais à la main une valeur qu'un mécanisme du produit doit produire. Un profil, un compteur, un score s'obtiennent en appelant le service qui les crée. Une valeur posée directement masque l'absence du mécanisme et rend le jeu de données inutile comme test
 - Quand un test vérifie un ensemble vide, se demander si le vide est le bon résultat ou le symptôme
 - Un champ accepté par un schéma et ignoré par le service est un défaut, pas une omission : l'appelant reçoit un 200 et croit avoir enregistré. Refuser explicitement vaut mieux qu'ignorer en silence
+- **Un test neuf n'est écrit que lorsqu'il a échoué au moins une fois.** Avant de le considérer comme fait, casser délibérément ce qu'il prétend protéger et vérifier qu'il tombe — puis remettre. Quatre fois sur ce projet un test est passé sans rien vérifier : un montage qui posait une clé sans objet, le palier désactivé, le jeu de données, et une assertion `rejects` dont la promesse était jetée. Aucun n'a été trouvé par relecture ; tous l'auraient été par une mutation de trente secondes. Un test qui n'a jamais échoué ne prouve pas que le code marche, il prouve qu'il s'exécute
+- **Une garde se vérifie sur les formes qu'elle doit attraper, pas sur celle qu'on avait en tête.** Écrire l'exemple qui a motivé la garde, puis les trois autres façons d'écrire la même faute, et vérifier qu'elle les prend toutes. Le garde-fou des rendus asynchrones ne cherchait l'appel qu'en début de ligne : `const vue = render(…)`, la forme la plus courante, lui a échappé pendant des semaines et a rendu la CI illisible. Une garde partielle est pire qu'aucune — elle fait croire que la question est réglée
 
 ---
 

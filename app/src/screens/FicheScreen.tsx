@@ -31,9 +31,13 @@ const CODES_CONNUS = new Set(Object.keys(en.errors));
 export function FicheScreen({
   businessId,
   onReserver,
+  onRetour,
 }: {
   businessId: string;
   onReserver: (offre: OffreDeLaFiche, fiche: FichePublique) => void;
+  /** Le retour de la pile. Sur le web il n'y a ni geste ni bouton système :
+   * sans lui, on ne quitte l'écran qu'en changeant d'onglet. */
+  onRetour?: () => void;
 }) {
   const { api } = useApi();
   const { t } = useI18n();
@@ -44,7 +48,8 @@ export function FicheScreen({
   });
 
   return (
-    <Ecran requete={requete} testID="ecran-fiche">
+    <Ecran
+      onRetour={onRetour} requete={requete} testID="ecran-fiche">
       {(fiche) => (
         <View style={{ gap: 12 }}>
           <Texte variante="type.display" ellipseSurNomPropre>

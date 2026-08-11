@@ -5,11 +5,19 @@ Le seul montant rendu à un commerce, et il est du côté de ce qu'il **donne** 
 """
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict
 
 from app.models.enums import ContentFormat, Platform
+
+
+class LigneDeSemaineRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    #: Le lundi de la semaine, en date locale du commerce.
+    debut: date
+    publications: int
 
 
 class LigneDePalierRead(BaseModel):
@@ -64,3 +72,6 @@ class ReportingRead(BaseModel):
 
     par_palier: list[LigneDePalierRead]
     par_item: list[LigneDItemRead]
+    #: L'évolution, semaine par semaine. Un total ne dit pas s'il a été atteint
+    #: régulièrement ou d'un seul coup.
+    par_semaine: list[LigneDeSemaineRead]

@@ -20,7 +20,7 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.models import Booking, BusinessMember
+from app.models import Booking, BusinessMember, TierOffer
 from app.models.enums import BookingStatus, BusinessMemberRole, UserRole
 from app.services import auth as auth_service
 from app.services import booking_history as service
@@ -266,6 +266,35 @@ async def test_la_journee_est_isolee_entre_commerces(
     assert accepte.json()["timezone"] == "America/New_York"
 
 
+async def test_la_journee_porte_les_criteres_de_publication(session: AsyncSession) -> None:
+    """Ce que le salon devra vérifier, sous ses yeux au comptoir.
+
+    La mention et le lieu attendus vivent sur l'offre de palier. Sans eux dans
+    la journée, le comptoir sert sans savoir ce qu'il exigera ensuite — et il
+    doit alors aller le chercher sur un autre écran, au moment précis où
+    quelqu'un attend devant lui.
+    """
+    decor = await monter_le_decor(session)
+    offre = await session.get(TierOffer, decor["offre"].id)
+    offre.required_mention = "@velanailstudio"
+    offre.required_geotag = True
+    await session.flush()
+
+    creneau = await premier_creneau(session, decor)
+    booking = await reserver(session, decor, starts_at=creneau)
+    await booking_states.confirmer(session, booking=booking, creator_id=decor["createur"].id)
+
+    journee = await service.journee_du_commerce(
+        session,
+        business=decor["business"],
+        jour=creneau.astimezone(ZoneInfo(decor["business"].timezone)).date(),
+    )
+
+    ligne = next(item for item in journee.items if item.booking_id == booking.id)
+    assert ligne.required_mention == "@velanailstudio"
+    assert ligne.required_geotag is True
+
+
 async def test_le_jour_par_defaut_est_celui_du_commerce(session: AsyncSession) -> None:
     """Pas celui du serveur.
 
@@ -317,8 +346,10 @@ async def test_la_file_a_trancher_ignore_la_date(session: AsyncSession) -> None:
     await session.flush()
     await booking_states.confirmer(session, booking=booking, creator_id=decor["createur"].id)
 
+    # Le jour du commerce, jamais celui du serveur — c'est ce que le test
+    # voisin exige du service, et l'écrire autrement ici le contredisait.
     journee = await service.journee_du_commerce(
-        session, business=decor["business"], jour=datetime.now(UTC).date()
+        session, business=decor["business"], jour=service.aujourd_hui(decor["business"])
     )
 
     assert [ligne.booking_id for ligne in journee.a_trancher] == [booking.id]
@@ -333,11 +364,19 @@ async def test_la_file_ne_contient_que_ce_qui_attend(session: AsyncSession) -> N
     comprenne pourquoi.
     """
     decor = await monter_le_decor(session)
-    booking = await reserver(session, decor, starts_at=await premier_creneau(session, decor))
+    creneau = await premier_creneau(session, decor)
+    booking = await reserver(session, decor, starts_at=creneau)
     await booking_states.confirmer(session, booking=booking, creator_id=decor["createur"].id)
 
+    # **Le jour du créneau, pas celui de l'horloge.** La date UTC n'est pas
+    # celle du commerce entre 20 h et minuit à New York, et le premier créneau
+    # libre bascule au lendemain passé la fermeture. Les deux se produisent le
+    # soir, et l'assertion tombait alors sur un planning vide — un test vert en
+    # journée, rouge en soirée, pour un produit qui n'avait rien.
     journee = await service.journee_du_commerce(
-        session, business=decor["business"], jour=datetime.now(UTC).date()
+        session,
+        business=decor["business"],
+        jour=creneau.astimezone(ZoneInfo(decor["business"].timezone)).date(),
     )
 
     assert journee.a_trancher == ()

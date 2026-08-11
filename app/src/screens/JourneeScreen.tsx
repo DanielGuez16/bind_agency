@@ -30,22 +30,24 @@
  * **Aucun montant.** L'écran de journée n'est pas un état de caisse.
  */
 import { useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { useApi, type JourneeDuCommerce, type ReservationDuCommerce } from '../api';
 import {
   Apparition,
   Button,
   DataRow,
-  Icone,
+  EmptyState,
   Filet,
+  TierBadge,
   StatusMessage,
   TextField,
   Texte,
   vibration,
 } from '../components';
 import { useI18n } from '../i18n';
-import { useTheme, type ColorName } from '../theme';
+import { breakpoint, radius, useTheme, type ColorName } from '../theme';
+import { ECART_DES_COLONNES, useGabarit } from '../shell/gabarit';
 import { Ecran } from './Ecran';
 import { useRequete } from './useRequete';
 
@@ -53,6 +55,11 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
   const { api } = useApi();
   const { t } = useI18n();
   const { color: c } = useTheme();
+  const { large } = useGabarit();
+  // La ligne ouverte dans le panneau de droite. Nulle au chargement : rien
+  // n'est ouvert tant qu'on n'a pas choisi, et pré-ouvrir la première ferait
+  // croire qu'elle demande quelque chose.
+  const [choisie, setChoisie] = useState<string | null>(null);
 
   const requete = useRequete<JourneeDuCommerce>(
     (signal) => api.journeeDuCommerce(businessId, jour, signal),
@@ -63,32 +70,17 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
     <Ecran
       requete={requete}
       titre={t('commerce.journeeTitre')}
+      nature="merchantListeDetail"
       testID="ecran-journee"
       vide={
-        // Un vrai état vide, pas une phrase seule. Une journée sans rendez-vous
-        // est une information, pas une page qui n'a pas chargé.
-        <View style={{ gap: 16, alignItems: 'flex-start', paddingVertical: 24 }}>
-          <View
-            style={{
-              width: 76,
-              height: 76,
-              borderRadius: 38,
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderWidth: 2,
-              borderColor: c['border.default'],
-            }}
-            testID="journee-vide-halo"
-          >
-            <Icone nom="calendrier" couleur="text.muted" taille={32} />
-          </View>
-          <View style={{ gap: 6 }}>
-            <Texte variante="type.title">{t('commerce.journeeVideTitre')}</Texte>
-            <Texte variante="type.body" couleur="text.secondary" testID="journee-vide">
-              {t('commerce.journeeVide')}
-            </Texte>
-          </View>
-        </View>
+        // **Plus de cercle.** Il ne disait rien et occupait la place du titre.
+        // Une journée sans rendez-vous est une information, pas une page qui
+        // n'a pas chargé — et c'est le titre qui doit le dire.
+        <EmptyState
+          title={t('commerce.journeeVideTitre')}
+          body={t('commerce.journeeVide')}
+          testID="journee-vide"
+        />
       }
     >
       {(journee) => {
@@ -97,9 +89,10 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
         // ouvre, et la filtrer ici l'aurait laissée invisible.
         const aTrancher = journee.a_trancher;
         const planning = journee.items.filter((r) => r.status !== 'awaiting_business');
+        const ouverte = planning.find((r) => r.booking_id === choisie) ?? null;
 
-        return (
-          <View style={{ gap: 16 }}>
+        const colonneListe = (
+          <View style={{ gap: 16, width: large ? breakpoint.listWidthMerchant : undefined }}>
             {aTrancher.length > 0 ? (
               <View style={{ gap: 10 }} testID="a-trancher">
                 <Texte variante="type.label" couleur="text.secondary">
@@ -120,13 +113,57 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
 
             <View style={{ gap: 4 }}>
               {planning.map((reservation) => (
-                <Ligne
+                <Pressable
                   key={reservation.booking_id}
-                  reservation={reservation}
+                  onPress={large ? () => setChoisie(reservation.booking_id) : undefined}
+                  accessibilityRole={large ? 'button' : undefined}
+                  testID={`ligne-${reservation.booking_id}`}
+                  style={{
+                    borderRadius: radius['radius.md'],
+                    // La ligne ouverte porte deux marques, comme dans la barre
+                    // latérale : un fond et une barre. Jamais la couleur seule.
+                    backgroundColor:
+                      large && reservation.booking_id === ouverte?.booking_id
+                        ? c['accent.subtle']
+                        : 'transparent',
+                    borderLeftWidth: 3,
+                    borderLeftColor:
+                      large && reservation.booking_id === ouverte?.booking_id
+                        ? c['accent.default']
+                        : 'transparent',
+                  }}
+                >
+                  <Ligne
+                    reservation={reservation}
+                    timezone={journee.timezone}
+                    onFait={requete.recharger}
+                  />
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        );
+
+        // En compact, une seule colonne : la liste, comme avant. Le détail y
+        // vit déjà dans la ligne elle-même, et une seconde colonne de 720 ne
+        // tiendrait nulle part.
+        if (!large) return colonneListe;
+
+        return (
+          <View style={{ flexDirection: 'row', gap: ECART_DES_COLONNES }}>
+            {colonneListe}
+            <View style={{ flex: 1, maxWidth: breakpoint.contentMaxMerchant }}>
+              {ouverte ? (
+                <Detail
+                  reservation={ouverte}
                   timezone={journee.timezone}
                   onFait={requete.recharger}
                 />
-              ))}
+              ) : (
+                <Texte couleur="text.muted" testID="aucune-ligne-ouverte">
+                  {t('commerce.choisirUneLigne')}
+                </Texte>
+              )}
             </View>
           </View>
         );
@@ -176,6 +213,66 @@ const TEINTE: Record<string, ColorName> = {
   expired: 'text.muted',
   consumed: 'status.success',
 };
+
+/**
+ * Le panneau de droite : ce qu'il faut savoir avant de servir.
+ *
+ * **Il reprend la ligne et lui ajoute ce qu'elle ne porte pas.** La ligne sait
+ * déjà présenter l'heure, la prestation, la personne et les gestes du
+ * comptoir : la redessiner ici en ferait deux à tenir d'accord. Ce que le
+ * panneau ajoute, c'est la contrepartie engagée — ce pour quoi la place est
+ * donnée, et qu'aucune ligne de planning n'a la place de dire.
+ *
+ * **Trois données de la maquette manquent à l'API** et ne sont donc pas
+ * inventées : le nombre de publications déjà livrées par le créateur, la
+ * mention attendue, et le lieu à identifier. Les deux dernières vivent sur
+ * l'offre de palier, que la journée ne rend pas. Les afficher vides aurait
+ * meublé le panneau d'un cadre que rien ne remplit.
+ */
+function Detail({
+  reservation,
+  timezone,
+  onFait,
+}: {
+  reservation: ReservationDuCommerce;
+  timezone: string;
+  onFait: () => void;
+}) {
+  const { t } = useI18n();
+
+  return (
+    <View style={{ gap: 16 }} testID="detail-de-la-ligne">
+      <Ligne reservation={reservation} timezone={timezone} onFait={onFait} />
+
+      <Filet marge={4} />
+
+      <View style={{ gap: 6 }}>
+        <Texte variante="type.label" couleur="text.secondary">
+          {t('commerce.contrepartieAttendue')}
+        </Texte>
+        <TierBadge tier={reservation.content_format} />
+      </View>
+
+      {/* Ce que le salon devra vérifier sur la publication. Au comptoir et pas
+          sur un autre écran : c'est ici qu'on sert, et c'est en servant qu'on
+          rappelle ce qui est attendu. */}
+      {reservation.required_mention ? (
+        <DataRow
+          label={t('commerce.mentionAttendue')}
+          value={reservation.required_mention}
+          testID="mention-attendue"
+        />
+      ) : null}
+      {reservation.required_geotag ? (
+        <DataRow
+          label={t('commerce.lieuAttendu')}
+          value={t('commerce.lieuAttenduOui')}
+          testID="lieu-attendu"
+        />
+      ) : null}
+    </View>
+  );
+}
 
 function Ligne({
   reservation,

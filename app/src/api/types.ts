@@ -279,6 +279,9 @@ export type ReservationDuCreateur = {
   duration_minutes: number | null;
   platform: Platform;
   content_format: ContentFormat;
+  /** Ce que la publication devra porter. Le comptoir le vérifiera. */
+  required_mention: string | null;
+  required_geotag: boolean;
   contrepartie: ContrepartieBreve | null;
 };
 
@@ -302,6 +305,9 @@ export type ReservationDuCommerce = {
   duration_minutes: number | null;
   platform: Platform;
   content_format: ContentFormat;
+  /** Ce que la publication devra porter. Le comptoir le vérifiera. */
+  required_mention: string | null;
+  required_geotag: boolean;
   contrepartie: ContrepartieBreve | null;
 };
 
@@ -488,6 +494,15 @@ export type Reporting = {
   taux_d_honoration: number | null;
   par_palier: LigneDePalier[];
   par_item: LigneDItem[];
+  /** L'évolution, semaine par semaine. Un total ne dit pas s'il a été atteint
+   *  régulièrement ou d'un seul coup. */
+  par_semaine: LigneDeSemaine[];
+};
+
+export type LigneDeSemaine = {
+  /** Le lundi de la semaine, en date locale du commerce. */
+  debut: string;
+  publications: number;
 };
 
 export type Abonnement = {

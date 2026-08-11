@@ -12,7 +12,7 @@ qu'il n'a pas fait. **La fenêtre est celle du commerce**, pas celle du serveur.
 """
 
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import sqlalchemy as sa
@@ -121,6 +121,51 @@ async def test_une_publication_approuvee_compte_une_soumise_non(
     assert approuvee.publications == 1
     assert approuvee.publications_attendues == 0
     assert approuvee.taux_d_honoration == 1.0
+
+
+async def test_les_publications_se_repartissent_par_semaine(session: AsyncSession) -> None:
+    """Un total ne dit pas s'il a été atteint régulièrement ou d'un seul coup.
+
+    Deux publications la même semaine et une la semaine précédente donnent le
+    même « 3 » qu'une par semaine sur trois semaines. C'est précisément ce que
+    le graphique montre, et ce qu'aucun compteur ne peut dire.
+
+    La semaine est celle du **fuseau du commerce** : groupée en UTC, une
+    publication d'un dimanche soir à Miami tomberait dans la semaine suivante,
+    où il est déjà lundi à Greenwich.
+    """
+    decor = await monter_le_decor(session, postes=3)
+
+    # Trois publications approuvées : deux la même semaine, une trois semaines
+    # plus tôt. Les instants sont posés à la main — aucun service ne sait
+    # remonter le temps, et attendre trois semaines n'est pas une option.
+    instants = [
+        datetime(2026, 8, 5, 15, 0, tzinfo=UTC),
+        # **Le cas qui discrimine.** 3 h UTC le lundi 10, c'est 23 h à Miami le
+        # dimanche 9 : la semaine locale est encore celle du 3. Groupée en UTC,
+        # cette publication basculerait dans la semaine du 10 — et le graphique
+        # montrerait une barre là où le salon n'a rien fait.
+        datetime(2026, 8, 10, 3, 0, tzinfo=UTC),
+        datetime(2026, 7, 15, 15, 0, tzinfo=UTC),
+    ]
+    for instant in instants:
+        booking = await _consommer(session, decor)
+        await session.execute(
+            sa.update(Collaboration)
+            .where(Collaboration.booking_id == booking.id)
+            .values(status=CollaborationStatus.APPROVED, approved_at=instant)
+        )
+    await session.flush()
+
+    rapport = await service.pour_le_commerce(session, business=decor["business"])
+
+    assert rapport.publications == 3
+    par_semaine = {ligne.debut: ligne.publications for ligne in rapport.par_semaine}
+    assert par_semaine == {date(2026, 8, 3): 2, date(2026, 7, 13): 1}
+
+    # Et l'ordre est chronologique : un graphique dont les barres arrivent dans
+    # l'ordre de la base ne raconte aucune évolution.
+    assert [ligne.debut for ligne in rapport.par_semaine] == sorted(par_semaine)
 
 
 async def test_la_valeur_offerte_ne_compte_que_le_consomme(session: AsyncSession) -> None:

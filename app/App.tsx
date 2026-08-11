@@ -29,6 +29,7 @@ import { prenomDe } from './src/components';
 import { BienvenueScreen } from './src/screens/BienvenueScreen';
 import { Navigation } from './src/shell/Navigation';
 import { adresseDeLApi } from './src/shell/adresseDeLApi';
+import { GabaritProvider } from './src/shell/gabarit';
 import { ZoneSure } from './src/shell/ZoneSure';
 import { ThemeProvider, useColors } from './src/theme';
 
@@ -66,7 +67,10 @@ function Coquille() {
             `bottom` est exclu : la barre d'onglets pose son propre décalage, et
             l'ajouter ici la ferait flotter au-dessus du bord. */}
         <ZoneSure>
-          <FrontiereDErreur>
+          {/* La mesure vient **sous** la zone sûre : ce que la coquille a
+              vraiment à sa disposition, encoches déduites. */}
+          <GabaritProvider>
+            <FrontiereDErreur>
             {session.etat !== 'connecte' ? (
               <AuthScreen motif={session.motif} />
             ) : session.vientDeSInscrire ? (
@@ -80,7 +84,8 @@ function Coquille() {
                 prenom={prenomDe(session.utilisateur.email)}
               />
             )}
-          </FrontiereDErreur>
+            </FrontiereDErreur>
+          </GabaritProvider>
         </ZoneSure>
       </ApiProvider>
     </ThemeProvider>

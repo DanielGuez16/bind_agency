@@ -23,6 +23,7 @@ import {
   useNavigationContainerRef,
   type Theme,
 } from '@react-navigation/native';
+import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -52,6 +53,8 @@ import { CameraScanner } from '../screens/CameraScanner';
 import { RedemptionScreen } from '../screens/RedemptionScreen';
 import { ReglagesScreen } from '../screens/ReglagesScreen';
 import { ReportingScreen } from '../screens/ReportingScreen';
+import { BarreLaterale } from './BarreLaterale';
+import { useGabarit } from './gabarit';
 import { usePosition } from './usePosition';
 import { useMonCommerce } from './useMonCommerce';
 
@@ -112,17 +115,29 @@ const Onglets = createBottomTabNavigator();
  * **Une hauteur explicite.** La hauteur par défaut est calculée avant que les
  * marges soient connues, et ne se met pas à jour ensuite.
  */
-function useOptionsDOnglets() {
+function useOptionsDOnglets(intitule?: string | null) {
   const marges = useSafeAreaInsets();
   const { color: c } = useTheme();
+  const { large } = useGabarit();
 
   return {
     headerShown: false,
+    // Au-delà du seuil, la barre du bas cède la place à la barre latérale.
+    // `tabBarPosition` déplace la boîte, `tabBar` en remplace le contenu : il
+    // faut les deux, sinon la barre latérale s'afficherait couchée en bas.
+    tabBarPosition: large ? ('left' as const) : ('bottom' as const),
+    tabBar: large
+      ? (props: BottomTabBarProps) => <BarreLaterale {...props} intitule={intitule} />
+      : undefined,
     // Un fondu entre onglets. Sans lui, le changement est une coupe franche :
     // rien ne relie l'écran qu'on quitte à celui qui arrive, et sur cinq
     // onglets on ne sait plus lequel on vient de toucher.
     animation: 'fade' as const,
-    tabBarStyle: {
+    // En grand, la barre du bas n'existe plus : lui laisser une hauteur
+    // réserverait une bande vide sous la barre latérale.
+    tabBarStyle: large
+      ? { display: 'none' as const }
+      : {
       // La hauteur se compose : le contenu, puis la marge système. Fixer une
       // hauteur *et* des marges intérieures écrase le libellé — la boîte tient
       // dans la barre, mais le texte déborde sous sa ligne de base, ce qui ne
@@ -133,7 +148,7 @@ function useOptionsDOnglets() {
       backgroundColor: c['bg.surface'],
       borderTopColor: c['border.subtle'],
       borderTopWidth: 1,
-    },
+        },
     tabBarLabelStyle: { fontSize: 11, lineHeight: 15, marginTop: 4 },
     tabBarActiveTintColor: c['accent.default'],
     tabBarInactiveTintColor: c['text.muted'],
@@ -237,6 +252,7 @@ function ParcoursCreateur({
         {({ navigation, route }) => (
           <FicheScreen
             businessId={route.params.businessId}
+            onRetour={() => navigation.goBack()}
             onReserver={(offre, fiche) => navigation.navigate('Creneaux', { fiche, offre })}
           />
         )}
@@ -245,6 +261,7 @@ function ParcoursCreateur({
       <PileCreateur.Screen name="Creneaux">
         {({ navigation, route }) => (
           <CreneauxScreen
+            onRetour={() => navigation.goBack()}
             fiche={route.params.fiche}
             offre={route.params.offre}
             onReserve={(bookingId) => {
@@ -295,12 +312,20 @@ function PileDesReservations() {
       </PileReservations.Screen>
 
       <PileReservations.Screen name="Code" getId={({ params }) => params?.bookingId}>
-        {({ route }) => <CodeScreen bookingId={route.params.bookingId} />}
+        {({ navigation, route }) => (
+          <CodeScreen
+            bookingId={route.params.bookingId}
+            onRetour={() => navigation.goBack()}
+          />
+        )}
       </PileReservations.Screen>
 
       <PileReservations.Screen name="Preuve">
-        {({ route }) => (
-          <PreuveScreen collaborationId={route.params.collaborationId} />
+        {({ navigation, route }) => (
+          <PreuveScreen
+            collaborationId={route.params.collaborationId}
+            onRetour={() => navigation.goBack()}
+          />
         )}
       </PileReservations.Screen>
     </PileReservations.Navigator>

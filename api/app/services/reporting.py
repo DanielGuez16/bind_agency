@@ -56,6 +56,20 @@ FENETRE_PAR_DEFAUT = timedelta(days=30)
 
 
 @dataclass(frozen=True, slots=True)
+class LigneDeSemaine:
+    """Une semaine, et ce qui y a été publié.
+
+    La semaine est celle du fuseau du commerce, pas celle du serveur : un salon
+    de Miami n'a pas la même semaine 32 qu'une base en UTC, et le décalage se
+    voit sur la première et la dernière barre.
+    """
+
+    #: Le lundi de la semaine, en date locale. Ce qui l'étiquette à l'écran.
+    debut: date
+    publications: int
+
+
+@dataclass(frozen=True, slots=True)
 class LigneDePalier:
     tier_id: uuid.UUID
     platform: Platform
@@ -104,6 +118,11 @@ class Reporting:
 
     par_palier: tuple[LigneDePalier, ...]
     par_item: tuple[LigneDItem, ...]
+    #: Les publications approuvées, semaine par semaine, dans le fuseau du
+    #: commerce. Une évolution dans le temps est ce qu'un total ne dit pas :
+    #: « 62 publications » se lit pareil qu'on en ait fait cinq par semaine ou
+    #: soixante en une.
+    par_semaine: tuple[LigneDeSemaine, ...]
 
     @property
     def taux_d_honoration(self) -> float | None:
@@ -204,6 +223,7 @@ async def pour_le_commerce(
         valeur_offerte_cents=valeur,
         portee_approximative=await _portee(session, fenetre),
         par_palier=await _par_palier(session, fenetre),
+        par_semaine=await _par_semaine(session, fenetre, fuseau),
         par_item=await _par_item(session, fenetre),
     )
 
@@ -236,6 +256,35 @@ async def _portee(session: AsyncSession, fenetre) -> int:
             .where(fenetre, Collaboration.status == CollaborationStatus.APPROVED)
         )
     ) or 0
+
+
+async def _par_semaine(session: AsyncSession, fenetre, fuseau) -> tuple[LigneDeSemaine, ...]:
+    """Les publications approuvées, groupées par semaine locale.
+
+    `date_trunc` sur l'horodatage **converti dans le fuseau du commerce** : le
+    faire en UTC rattacherait à la semaine précédente tout ce qui est publié le
+    dimanche soir à Miami, où il est déjà lundi à Greenwich.
+
+    Les semaines sans publication ne sortent pas de la base — un `GROUP BY` ne
+    fabrique pas les vides. C'est l'appelant qui complète, parce que lui seul
+    sait sur combien de semaines il veut afficher.
+    """
+    locale = sa.func.timezone(str(fuseau), Collaboration.approved_at)
+    lignes = (
+        await session.execute(
+            sa.select(
+                sa.func.date_trunc("week", locale).label("semaine"),
+                sa.func.count(Collaboration.id),
+            )
+            .select_from(Booking)
+            .join(Collaboration, Collaboration.booking_id == Booking.id)
+            .where(fenetre, Collaboration.status == CollaborationStatus.APPROVED)
+            .group_by("semaine")
+            .order_by("semaine")
+        )
+    ).all()
+
+    return tuple(LigneDeSemaine(debut=semaine.date(), publications=n) for semaine, n in lignes)
 
 
 async def _par_palier(session: AsyncSession, fenetre) -> tuple[LigneDePalier, ...]:

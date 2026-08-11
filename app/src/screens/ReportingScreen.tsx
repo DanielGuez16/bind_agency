@@ -17,7 +17,14 @@
 import { View } from 'react-native';
 
 import { useApi, type Reporting } from '../api';
-import { DataRow, EmptyState, Texte, TierBadge } from '../components';
+import {
+  BarresParPalier,
+  BarresParPeriode,
+  DataRow,
+  EmptyState,
+  Texte,
+  type BarreVerticale,
+} from '../components';
 import { useI18n } from '../i18n';
 
 /**
@@ -135,22 +142,27 @@ export function ReportingScreen({ businessId }: { businessId: string }) {
             </Texte>
           </View>
 
+          {/* **Une évolution, pas seulement un total.** « 62 publications » se
+              lit pareil qu'on en ait fait cinq par semaine ou soixante en une
+              seule, et c'est la différence qui intéresse un salon. */}
+          {vue.par_semaine.length ? (
+            <BarresParPeriode
+              titre={t('reporting.publicationsParSemaine')}
+              soustitre={t('reporting.parSemaineNote')}
+              series={semainesCompletes(vue)}
+              testID="graphique-par-semaine"
+            />
+          ) : null}
+
           {vue.par_palier.length ? (
-            <View style={{ gap: 6 }}>
-              <Texte variante="type.label" couleur="text.secondary">
-                {t('reporting.parPalier')}
-              </Texte>
-              {vue.par_palier.map((ligne) => (
-                <View
-                  key={ligne.tier_id}
-                  testID={`palier-${ligne.tier_id}`}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
-                >
-                  <TierBadge tier={ligne.content_format} size="sm" />
-                  <Texte variante="type.mono">{String(ligne.publications)}</Texte>
-                </View>
-              ))}
-            </View>
+            <BarresParPalier
+              titre={t('reporting.parPalier')}
+              series={vue.par_palier.map((ligne) => ({
+                palier: ligne.content_format,
+                valeur: ligne.publications,
+              }))}
+              testID="graphique-par-palier"
+            />
           ) : null}
 
           {vue.par_item.length ? (
@@ -173,4 +185,42 @@ export function ReportingScreen({ businessId }: { businessId: string }) {
       )}
     </Ecran>
   );
+}
+
+
+/**
+ * Douze semaines, trous compris.
+ *
+ * La base ne rend que les semaines où quelque chose a été publié : un `GROUP BY`
+ * ne fabrique pas les vides. Les afficher telles quelles resserrerait l'axe et
+ * ferait croire à une régularité qui n'existe pas — trois publications en trois
+ * mois se liraient comme trois semaines de suite.
+ */
+function semainesCompletes(vue: Reporting): BarreVerticale[] {
+  const SEMAINES = 12;
+  const parDebut = new Map(vue.par_semaine.map((ligne) => [ligne.debut, ligne.publications]));
+
+  // On remonte depuis la dernière semaine de la fenêtre, pas depuis
+  // aujourd'hui : la fenêtre est ce que le commerce a demandé à voir.
+  const fin = new Date(vue.fin);
+  const lundi = new Date(fin);
+  lundi.setUTCDate(fin.getUTCDate() - ((fin.getUTCDay() + 6) % 7));
+
+  return Array.from({ length: SEMAINES }, (_, rang) => {
+    const jour = new Date(lundi);
+    jour.setUTCDate(lundi.getUTCDate() - (SEMAINES - 1 - rang) * 7);
+    const cle = jour.toISOString().slice(0, 10);
+    return {
+      etiquette: `W${numeroDeSemaine(jour)}`,
+      valeur: parDebut.get(cle) ?? 0,
+    };
+  });
+}
+
+/** Le numéro ISO de la semaine. Ce que les étiquettes affichent. */
+function numeroDeSemaine(jour: Date): number {
+  const cible = new Date(Date.UTC(jour.getUTCFullYear(), jour.getUTCMonth(), jour.getUTCDate()));
+  cible.setUTCDate(cible.getUTCDate() + 4 - ((cible.getUTCDay() + 6) % 7));
+  const janvier = new Date(Date.UTC(cible.getUTCFullYear(), 0, 1));
+  return Math.ceil(((cible.getTime() - janvier.getTime()) / 86400000 + 1) / 7);
 }

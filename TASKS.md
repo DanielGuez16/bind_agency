@@ -214,14 +214,14 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Fin : Expo Go de l'App Store ouvre le QR code. Aucune ligne de code applicatif n'a changé — seules les versions, alignées par `expo install --fix` plutôt que devinées*
 - [x] Défauts du premier passage sur iPhone
       *Fin : zone sûre au niveau de la coquille, icônes d'onglets, photos réellement demandées, choix de créneau par jour avec bouton fixé, code de retrait appelé une fois par rotation et arrêté hors écran, réservation qui ouvre son code, plateforme affichée sur les paliers, rayon à 15 km réglable*
-- [ ] Écrans de composition du commerce
-      *Catalogue, horaires, capacité. Les routes existent depuis la phase 2, aucun écran ne les pilote — le commerce compose aujourd'hui par l'API*
+- [x] Écrans de composition du commerce
+      *Fin : catalogue groupé par palier, horaires et capacité en sept lignes toujours — un jour sans règle s'écrit « fermé », parce qu'une ligne absente ne dit pas si le commerce a fermé ou n'a rien rempli. Ouvrir et fermer passent par la route de transition, qui laisse une trace. Une lecture des paliers côté commerce est venue avec : la seule route était réservée à l'administration*
 - [ ] Galerie photos d'un commerce
       *`business` ne porte qu'une clé de couverture ; les maquettes de Discovery v0.5 prévoient plusieurs photos par fiche. Fin : un commerce téléverse plusieurs photos, les ordonne, en supprime, et la fiche publique les affiche dans cet ordre*
 - [ ] Sélection du média de preuve
       *L'écran de preuve montre son état et propose l'envoi ; il manque le sélecteur qui produit le fichier*
 - [ ] Capture de preuve niveau 1
       *Attend `fetch_media` sur l'interface de plateforme, qui viendra avec le relevé des publications — une tâche à part, qui demande de savoir quelles publications appartiennent à quelle collaboration*
-- [ ] Dépôt objet réel, compatible S3
-      *La forme du contrat est écrite, il manque les identifiants. `deposer` et `lire` sont les deux seules fonctions à compléter*
+- [x] Dépôt objet réel, compatible S3
+      *Fin : deux compartiments Supabase, `make demo-seed` y range photos et preuves. La sonde de déploiement écrit et relit dans chacun, et éprouve le gabarit — pas seulement la joignabilité : un témoin de vingt octets passe sur un compartiment dont la limite de taille est inférieure à ce qu'on y dépose. Un refus porte le statut HTTP, le compartiment et la clé, parce que « ClientError » sans rien d'autre a coûté deux diagnostics*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire
