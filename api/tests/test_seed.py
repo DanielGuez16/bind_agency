@@ -871,11 +871,21 @@ async def test_les_dates_sont_proches_d_aujourd_hui(seed_conn: AsyncConnection) 
     ).one()
 
     maintenant = datetime.now(UTC)
+    # **C'est cette moitié-là qui attrape un jeu figé.** Une base semée en mai
+    # et regardée en août a forcément une réservation récente si le semis a
+    # tourné ; sinon la plus récente a trois mois, et c'est ce qu'on refuse.
     assert (maintenant - bornes[1]) < timedelta(days=2), "la plus récente n'est pas récente"
-    assert (maintenant - bornes[0]) < timedelta(days=45), "la plus ancienne est trop vieille"
-    # Et elles s'étalent : un jeu où tout tombe le même jour ne montre aucun
-    # reporting.
-    assert (bornes[1] - bornes[0]) > timedelta(days=5)
+    # Le plafond est passé de 45 à 100 jours en campagne 2. La série
+    # hebdomadaire des rapports porte sur douze semaines : bornée à 45 jours,
+    # l'histoire ne pouvait en remplir que six, et l'écran montrait la moitié
+    # de ses barres vides quoi qu'on fasse. Le plafond reste — un jeu qui
+    # dériverait d'un an se verrait ici — il est seulement mis à la mesure de
+    # ce que les écrans doivent montrer.
+    assert (maintenant - bornes[0]) < timedelta(days=100), "la plus ancienne est trop vieille"
+    # Et elles s'étalent sur plusieurs semaines : un jeu tassé sur quinze jours
+    # laissait onze des douze barres vides, ce que la campagne 2 a relevé comme
+    # un défaut du graphique — c'en était un du jeu de données.
+    assert (bornes[1] - bornes[0]) > timedelta(weeks=8)
 
 
 async def test_des_plans_d_abonnement_existent(seed_conn: AsyncConnection) -> None:
@@ -1383,3 +1393,69 @@ def test_le_modele_du_depot_ne_porte_aucune_valeur() -> None:
 
     portees = {nom: valeur for nom, valeur in deploiement._valeurs(modele).items() if valeur}
     assert not portees, f"le modèle versionné porte des valeurs : {sorted(portees)}"
+
+
+async def test_plusieurs_revues_humaines_attendent_l_arbitrage(
+    seed_conn: AsyncConnection,
+) -> None:
+    """Une seule ligne dans un tableau plein écran ne montre pas un tableau.
+
+    Relevé en campagne 2 sur l'écran d'administration : « une ligne de tableau
+    sur un écran entier ». Le défaut n'était pas l'écran, c'était le jeu — il
+    ne produisait qu'un seul dossier en revue humaine. Le drapeau reste une
+    **conséquence** : trois demandes de nouvelle soumission le lèvent, et c'est
+    le service qui compte, jamais le semis qui l'écrit.
+    """
+    revues = list(
+        await seed_conn.scalars(
+            sa.select(Collaboration.id).where(Collaboration.needs_human_review.is_(True))
+        )
+    )
+    assert len(revues) >= 3, f"une file d'arbitrage de {len(revues)} ne se compose pas"
+
+
+async def test_l_histoire_ne_s_entasse_pas_sur_un_seul_salon(
+    seed_conn: AsyncConnection,
+) -> None:
+    """Trois écrans de journée vides sur quatre, et un quatrième surchargé.
+
+    L'ordre de recherche d'une offre — palier le plus haut, puis la plus
+    ancienne — désignait toujours la même ligne, donc toujours le même salon.
+    """
+    par_salon = dict(
+        (
+            await seed_conn.execute(
+                sa.select(Booking.business_id, sa.func.count()).group_by(Booking.business_id)
+            )
+        ).all()
+    )
+
+    assert len(par_salon) >= 3, f"{len(par_salon)} salon(s) avec une réservation"
+    # Et aucun n'en concentre la moitié : trois salons dont un porte tout
+    # reviendrait au même écran vide, avec une statistique en plus.
+    total = sum(par_salon.values())
+    assert max(par_salon.values()) <= total * 0.6, (
+        f"un salon porte {max(par_salon.values())}/{total}"
+    )
+
+
+async def test_havana_glow_reste_vierge(seed_conn: AsyncConnection) -> None:
+    """Le cas de tout salon qui vient de s'inscrire, et qu'il faut pouvoir voir.
+
+    Un jeu de données où chaque écran est plein ne laisse jamais regarder ce
+    que voit un nouveau venu — et c'est l'écran le plus important à réussir,
+    puisque c'est le premier. Havana Glow n'a rien composé, et rien ne doit lui
+    arriver par ricochet quand on enrichit le reste.
+    """
+    havana = await seed_conn.scalar(sa.select(Business.id).where(Business.name == "Havana Glow"))
+    assert havana is not None, "le salon vierge a disparu du jeu de référence"
+
+    for table, colonne in (
+        (Booking, Booking.business_id),
+        (CatalogItem, CatalogItem.business_id),
+        (TierOffer, TierOffer.business_id),
+    ):
+        combien = await seed_conn.scalar(
+            sa.select(sa.func.count()).select_from(table).where(colonne == havana)
+        )
+        assert combien == 0, f"{table.__name__} : {combien} ligne(s) sur le salon vierge"
