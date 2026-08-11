@@ -14,8 +14,20 @@ ACCUEIL = "home"
 
 #: La vidéo de l'écran d'accueil et son affiche. L'affiche s'affiche pendant le
 #: chargement, et reste seule tant qu'aucune vidéo n'est fournie.
+#: Deux orientations, parce que l'accueil est en plein écran. Une vidéo 16:9 sur
+#: un téléphone tenu droit ne peut donner que des bandes noires ou un recadrage
+#: qui coupe le sujet ; une 9:16 sur un écran large a le défaut symétrique.
+#:
+#: Chaque orientation a son affiche pour la même raison : une affiche 16:9 sous
+#: une vidéo 9:16 recadre au chargement, puis la vidéo démarre sur un autre
+#: cadrage, et le saut se voit.
 VIDEO = f"{ACCUEIL}/video"
 AFFICHE_VIDEO = f"{ACCUEIL}/video-poster"
+VIDEO_PORTRAIT = f"{ACCUEIL}/video-portrait"
+AFFICHE_PORTRAIT = f"{ACCUEIL}/video-portrait-poster"
+
+#: Les quatre, dans l'ordre où la route les rend.
+MEDIAS_D_ACCUEIL = (VIDEO, AFFICHE_VIDEO, VIDEO_PORTRAIT, AFFICHE_PORTRAIT)
 
 
 def slug_de_categorie(categorie: BusinessCategory) -> str:
@@ -63,14 +75,25 @@ async def photos_de_categories(session: AsyncSession) -> dict[BusinessCategory, 
 
 
 async def media_d_accueil(session: AsyncSession) -> dict[str, str | None]:
-    """La vidéo et son affiche. L'une, l'autre, ou aucune des deux."""
+    """Les quatre médias de l'accueil. Chacun peut manquer, séparément.
+
+    **Aucun n'est obligatoire, et c'est l'app qui arbitre.** Elle sait seule
+    quelle orientation lui va ; lui rendre une seule clé « la bonne » reviendrait
+    à décider ici d'une chose qu'on ne peut pas savoir d'ici. On rend ce qui
+    existe, elle choisit et se replie.
+    """
     posees = dict(
         (
             await session.execute(
                 sa.select(PlatformAsset.slug, PlatformAsset.object_key).where(
-                    PlatformAsset.slug.in_((VIDEO, AFFICHE_VIDEO))
+                    PlatformAsset.slug.in_(MEDIAS_D_ACCUEIL)
                 )
             )
         ).all()
     )
-    return {"video_key": posees.get(VIDEO), "poster_key": posees.get(AFFICHE_VIDEO)}
+    return {
+        "video_key": posees.get(VIDEO),
+        "poster_key": posees.get(AFFICHE_VIDEO),
+        "video_portrait_key": posees.get(VIDEO_PORTRAIT),
+        "poster_portrait_key": posees.get(AFFICHE_PORTRAIT),
+    }

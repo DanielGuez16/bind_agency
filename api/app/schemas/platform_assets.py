@@ -14,8 +14,17 @@ class CategoriePhotoRead(BaseModel):
 
 
 class AccueilRead(BaseModel):
+    """Les quatre médias de l'accueil, chacun pouvant manquer séparément.
+
+    L'app choisit l'orientation qui lui va et se replie sur l'autre : c'est elle
+    qui connaît son format, et rendre « la bonne » depuis le serveur reviendrait
+    à décider d'ici d'une chose qu'on ne peut pas y savoir.
+    """
+
     video_key: str | None
     poster_key: str | None
+    video_portrait_key: str | None
+    poster_portrait_key: str | None
 
 
 class MediasPlateformeRead(BaseModel):

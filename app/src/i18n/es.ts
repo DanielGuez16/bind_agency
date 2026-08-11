@@ -334,6 +334,9 @@ export const es: Catalogue = {
     parItem: 'Por servicio',
     fenetre: 'Del {{debut}} al {{fin}}',
   },
+  accueil: {
+    sansFond: 'BIND · un servicio por una publicación.',
+  },
   auth: {
     titreConnexion: 'Iniciar sesión',
     titreInscription: 'Crea tu cuenta',

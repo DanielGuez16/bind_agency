@@ -49,6 +49,7 @@ import type {
   VerificationDuCompte,
   VueDesPaliers,
   BookingStatus,
+  MediasPlateforme,
 } from './types';
 
 export * from './types';
@@ -337,6 +338,11 @@ export class Api {
       query: { depuis: options.depuis, jusqu_a: options.jusquA },
       signal,
     });
+  }
+
+  /** Les pastilles de catégorie et les médias d'accueil, en un appel. */
+  mediasPlateforme(signal?: AbortSignal) {
+    return this.client.request<MediasPlateforme>(routes.mediasPlateforme(), { signal });
   }
 
   abonnement(businessId: string, signal?: AbortSignal) {

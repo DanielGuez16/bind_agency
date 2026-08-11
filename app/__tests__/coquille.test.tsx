@@ -232,7 +232,14 @@ describe('connexion', () => {
         <AvecAuth />
       </Cadre>,
     );
-    await waitFor(() => expect(screen.getByTestId('ecran-auth')).toBeTruthy());
+    // L'entrée est l'accueil, avec sa vidéo en fond ; le formulaire ne vient
+    // qu'après une porte. On attend donc l'un **ou** l'autre plutôt que de
+    // supposer lequel — le montage sert les deux parcours.
+    await waitFor(() =>
+      expect(
+        screen.queryByTestId('ecran-accueil') ?? screen.getByTestId('ecran-auth'),
+      ).toBeTruthy(),
+    );
     return coffre;
   }
 

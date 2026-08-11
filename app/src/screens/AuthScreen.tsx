@@ -32,7 +32,7 @@ import { useI18n } from '../i18n';
 import { useSession, type MotifDeSortie, type RoleInscriptible } from '../session';
 import { radius, spacing, useColors, useTheme } from '../theme';
 import { useGabarit } from '../shell/gabarit';
-import { ChoixDeLaPorte } from './ChoixDeLaPorte';
+import { AccueilScreen } from './AccueilScreen';
 
 /** Le minimum imposé par l'API. La jauge s'y adosse plutôt que de le redire. */
 const CARACTERES_REQUIS = 12;
@@ -97,29 +97,20 @@ export function AuthScreen({ motif }: { motif: MotifDeSortie | null }) {
   const complet = email.includes('@') && reste === 0;
 
   if (inscription && etape === 'choix') {
+    // **L'accueil occupe l'écran.** Il ne s'inscrit pas dans le conteneur
+    // centré du formulaire, qui lui imposerait des marges et une largeur
+    // bornée — une vidéo de fond qui s'arrête à 480 n'est pas un fond.
     return (
-      <ScrollView
-        testID="ecran-auth"
-        style={{ flex: 1, backgroundColor: c['bg.canvas'] }}
-        contentContainerStyle={{
-          padding: density.screenPadding,
-          flexGrow: 1,
-          justifyContent: 'center',
-          alignSelf: 'center',
+      <AccueilScreen
+        onChoisir={(choisi) => {
+          setRole(choisi);
+          setEtape('formulaire');
         }}
-        keyboardShouldPersistTaps="handled"
-      >
-        <ChoixDeLaPorte
-          onChoisir={(choisi) => {
-            setRole(choisi);
-            setEtape('formulaire');
-          }}
-          onSeConnecter={() => {
-            setInscription(false);
-            setEtape('formulaire');
-          }}
-        />
-      </ScrollView>
+        onSeConnecter={() => {
+          setInscription(false);
+          setEtape('formulaire');
+        }}
+      />
     );
   }
 
