@@ -15,10 +15,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.models import CreatorProfile, SocialAccount, Tier
-from app.models.enums import Platform, SocialAccountStatus, UserRole, VerificationStatus
+from app.models.enums import (
+    Platform,
+    ReliabilityEventType,
+    SocialAccountStatus,
+    UserRole,
+    VerificationStatus,
+)
 from app.services import auth as auth_service
 from app.services import creator_tiers as service
 from app.services import metrics as metrics_service
+from app.services import reliability
 from app.services.eligibility import RaisonRefus
 from tests.test_social_metrics import FauxFournisseur, metriques
 
@@ -217,3 +224,58 @@ async def test_la_route_est_reservee_aux_createurs(client: AsyncClient) -> None:
     assert all(
         p["obstacles"][0]["raison"] == RaisonRefus.NO_SOCIAL_ACCOUNT.value for p in corps["paliers"]
     )
+
+
+async def test_le_score_de_fiabilite_accompagne_les_paliers(session: AsyncSession) -> None:
+    """La condition que l'écran citait sans jamais pouvoir la montrer.
+
+    `reliability_score_too_low` ferme des paliers en nommant un seuil ; sans la
+    valeur en face, le créateur lit une règle dont il ne peut pas savoir où il
+    se situe. Les deux termes viennent des caches du profil, écrits par le
+    service de fiabilité — jamais posés à la main ici, sinon le jeu de données
+    prouverait que la vue recopie ce qu'on vient d'écrire, et rien de plus.
+    """
+    user = await createur(session)
+    await compte(session, user, followers=24_000)
+
+    vue = await service.vue_des_paliers(session, user.id)
+    # Aucun événement : nul veut dire neutre. Zéro ferait d'un débutant
+    # quelqu'un de peu fiable, et l'écran afficherait une barre vide.
+    assert vue.fiabilite.reliability_score is None
+    assert vue.fiabilite.completed_collabs_count == 0
+
+    for _ in range(3):
+        await reliability.enregistrer(
+            session, creator_id=user.id, type_=ReliabilityEventType.COLLAB_COMPLETED
+        )
+
+    vue = await service.vue_des_paliers(session, user.id)
+    attendu = await reliability.recalculer(session, user.id)
+    assert vue.fiabilite.reliability_score == attendu.reliability_score
+    assert vue.fiabilite.completed_collabs_count == 3
+    # Le score et le badge sortent du même null : lus à deux instants, ils
+    # pourraient se contredire, et l'écran annoncerait « nouveau créateur »
+    # au-dessus d'un score de 92.
+    assert vue.is_new_creator is False
+
+
+async def test_la_route_rend_la_fiabilite(client: AsyncClient, session: AsyncSession) -> None:
+    """Le service peut la calculer sans que la route la laisse passer.
+
+    Le schéma est le seul endroit où un champ se perd en silence : l'appelant
+    reçoit un 200 et un objet sans la clé.
+    """
+    email, password = f"{uuid.uuid4()}@example.com", "un-mot-de-passe-solide-42"
+    await client.post(
+        f"{PREFIX}/auth/register",
+        json={"email": email, "password": password, "role": UserRole.CREATOR.value},
+    )
+    jetons = (
+        await client.post(f"{PREFIX}/auth/login", json={"email": email, "password": password})
+    ).json()
+    entetes = {"Authorization": f"Bearer {jetons['access_token']}"}
+
+    corps = (await client.get(f"{PREFIX}/me/tiers", headers=entetes)).json()
+
+    assert "fiabilite" in corps, "le champ se perd entre le service et la route"
+    assert corps["fiabilite"] == {"reliability_score": None, "completed_collabs_count": 0}

@@ -56,11 +56,37 @@ class PalierVu:
 
 
 @dataclass(frozen=True, slots=True)
+class Fiabilite:
+    """Ce que l'écran a le droit de dire du score, et rien de plus.
+
+    Le score **ferme des paliers** — `reliability_score_too_low` est une raison
+    de refus à part entière — et il n'était renvoyé nulle part : l'écran
+    annonçait une condition sans jamais donner la valeur, ce qui est la
+    définition d'une règle opaque.
+
+    Les deux champs viennent des caches de `creator_profile`, écrits par
+    `reliability.rafraichir` et recalculables depuis les événements. Rien n'est
+    calculé ici : un second calcul du score serait une seconde vérité.
+
+    **Nul veut dire neutre, jamais zéro.** Un créateur sans historique n'a pas
+    un mauvais score, il n'en a pas ; l'écran doit alors montrer la définition
+    sans le chiffre, et surtout pas une barre à zéro.
+    """
+
+    #: Zéro à cent. Nul tant qu'aucun événement n'a été enregistré.
+    reliability_score: Decimal | None
+    #: Le second terme, celui qui donne au score son assise : sans lui, « 92 »
+    #: ne dit pas s'il est tiré de douze collaborations ou d'une seule.
+    completed_collabs_count: int
+
+
+@dataclass(frozen=True, slots=True)
 class VueDesPaliers:
     creator_id: uuid.UUID
     #: Le badge : aucun historique de fiabilité, donc jugé sur son volume seul.
     #: Calculé par la base, pas ici — il ne peut pas diverger de sa source.
     is_new_creator: bool
+    fiabilite: Fiabilite
     paliers: tuple[PalierVu, ...]
 
 
@@ -112,9 +138,19 @@ async def _offres_par_palier(session: AsyncSession) -> dict[uuid.UUID, int]:
 async def vue_des_paliers(session: AsyncSession, creator_id: uuid.UUID) -> VueDesPaliers:
     verdict = await eligibility.evaluer_createur(session, creator_id)
 
-    is_new = await session.scalar(
-        sa.select(CreatorProfile.is_new_creator).where(CreatorProfile.user_id == creator_id)
-    )
+    # Les trois champs du profil d'un coup. Trois `scalar` séparés poseraient
+    # trois fois la même question à la même ligne, et surtout laisseraient le
+    # badge « nouveau créateur » et le score se contredire s'ils étaient lus à
+    # deux instants différents — c'est le même null qui produit les deux.
+    profil = (
+        await session.execute(
+            sa.select(
+                CreatorProfile.is_new_creator,
+                CreatorProfile.reliability_score,
+                CreatorProfile.completed_collabs_count,
+            ).where(CreatorProfile.user_id == creator_id)
+        )
+    ).one_or_none()
 
     paliers = (
         await session.execute(
@@ -160,4 +196,14 @@ async def vue_des_paliers(session: AsyncSession, creator_id: uuid.UUID) -> VueDe
             )
         )
 
-    return VueDesPaliers(creator_id=creator_id, is_new_creator=bool(is_new), paliers=tuple(vus))
+    return VueDesPaliers(
+        creator_id=creator_id,
+        # Sans profil, aucun historique : c'est exactement l'état d'un nouveau
+        # créateur, et non une erreur à remonter sur un écran de lecture.
+        is_new_creator=bool(profil.is_new_creator) if profil else True,
+        fiabilite=Fiabilite(
+            reliability_score=profil.reliability_score if profil else None,
+            completed_collabs_count=profil.completed_collabs_count if profil else 0,
+        ),
+        paliers=tuple(vus),
+    )

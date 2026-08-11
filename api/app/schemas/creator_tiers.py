@@ -28,6 +28,20 @@ class PalierAccessibleRead(BaseModel):
     offres_disponibles: int
 
 
+class FiabiliteRead(BaseModel):
+    """Le score, et de combien de collaborations il est tiré.
+
+    **Nul est une valeur, pas un manque.** L'app doit pouvoir distinguer « pas
+    encore de score » de « score bas » : ce sont deux écrans différents, et
+    répondre zéro à la première ferait d'un débutant quelqu'un de peu fiable.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    reliability_score: Decimal | None
+    completed_collabs_count: int
+
+
 class VueDesPaliersRead(BaseModel):
     """Tous les paliers actifs, accessibles ou non.
 
@@ -41,4 +55,8 @@ class VueDesPaliersRead(BaseModel):
 
     creator_id: uuid.UUID
     is_new_creator: bool
+    #: La condition que personne ne connaît. Elle ferme des paliers sans jamais
+    #: s'être montrée : `reliability_score_too_low` cite un seuil que l'écran ne
+    #: pouvait comparer à rien.
+    fiabilite: FiabiliteRead
     paliers: list[PalierAccessibleRead]

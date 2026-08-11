@@ -42,6 +42,10 @@ export type NomIcone =
   | 'cadenas'
   | 'etincelle'
   | 'fleche'
+  // Ce qui fait monter, ce qui fait redescendre : les deux blocs de règles des
+  // paliers. Une flèche dit le sens sans le mot, et le mot reste écrit.
+  | 'monte'
+  | 'descend'
   | 'retour';
 
 const CHEMINS: Record<NomIcone, string> = {
@@ -70,6 +74,8 @@ const CHEMINS: Record<NomIcone, string> = {
   etincelle: 'M12 3.5l1.9 4.9 4.9 1.9-4.9 1.9L12 17.1l-1.9-4.9L5.2 10.3l4.9-1.9zM18.5 16.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z',
   fleche: 'M4.5 12h15M13.5 6l6 6-6 6',
   // La même flèche, retournée : le retour et l'avance se répondent.
+  monte: 'M12 19.5V5M6 11l6-6 6 6',
+  descend: 'M12 4.5V19M6 13l6 6 6-6',
   retour: 'M19.5 12h-15M10.5 6l-6 6 6 6',
 };
 

@@ -43,6 +43,7 @@ import { FilScreen } from '../screens/FilScreen';
 import { HistoriqueScreen, destination } from '../screens/HistoriqueScreen';
 import { JourneeScreen } from '../screens/JourneeScreen';
 import { PaliersScreen } from '../screens/PaliersScreen';
+import { ReglesScreen } from '../screens/ReglesScreen';
 import { PlansScreen } from '../screens/PlansScreen';
 import { PreuveScreen } from '../screens/PreuveScreen';
 import { PublicationsScreen } from '../screens/PublicationsScreen';
@@ -84,6 +85,19 @@ export type PileReservationsParams = {
   Preuve: { collaborationId: string };
 };
 
+/**
+ * Les paliers, et les règles qui les gouvernent.
+ *
+ * Une pile pour deux écrans : les règles étaient jusqu'ici nulle part, et
+ * l'écran des paliers citait une condition de fiabilité que rien n'expliquait.
+ * En grand écran elles sont la colonne de droite de l'échelle et cette pile
+ * n'est jamais empilée — le second écran n'existe que faute de seconde colonne.
+ */
+export type PilePaliersParams = {
+  Paliers: undefined;
+  Regles: undefined;
+};
+
 export type PileCommerceParams = {
   Journee: { businessId: string };
   Caisse: undefined;
@@ -99,6 +113,7 @@ export type PileConfigurationParams = {
 
 const PileCreateur = createNativeStackNavigator<PileCreateurParams>();
 const PileReservations = createNativeStackNavigator<PileReservationsParams>();
+const PilePaliers = createNativeStackNavigator<PilePaliersParams>();
 const PileCommerce = createNativeStackNavigator<PileCommerceParams>();
 const PileConfiguration = createNativeStackNavigator<PileConfigurationParams>();
 const Onglets = createBottomTabNavigator();
@@ -287,6 +302,36 @@ function ParcoursCreateur({
   );
 }
 
+/** L'échelle, et les règles derrière elle. */
+function PileDesPaliers({
+  prenom,
+  onConnecterUnReseau,
+  onVoirMonAudience,
+}: {
+  prenom: string | null;
+  onConnecterUnReseau?: () => void;
+  onVoirMonAudience?: () => void;
+}) {
+  return (
+    <PilePaliers.Navigator screenOptions={OPTIONS_DE_PILE}>
+      <PilePaliers.Screen name="Paliers">
+        {({ navigation }) => (
+          <PaliersScreen
+            prenom={prenom}
+            onConnecterUnReseau={onConnecterUnReseau}
+            onVoirMonAudience={onVoirMonAudience}
+            onLireLesRegles={() => navigation.navigate('Regles')}
+          />
+        )}
+      </PilePaliers.Screen>
+
+      <PilePaliers.Screen name="Regles">
+        {({ navigation }) => <ReglesScreen onRetour={() => navigation.goBack()} />}
+      </PilePaliers.Screen>
+    </PilePaliers.Navigator>
+  );
+}
+
 /**
  * Les réservations : la liste, le code de retrait, la preuve.
  *
@@ -380,7 +425,7 @@ function OngletsCreateur({
       </Onglets.Screen>
       <Onglets.Screen name="paliers" options={onglet(t('onglets.paliers'), 'paliers')}>
         {() => (
-          <PaliersScreen
+          <PileDesPaliers
             prenom={prenom}
             onConnecterUnReseau={onConnecterUnReseau}
             onVoirMonAudience={onVoirMonAudience}

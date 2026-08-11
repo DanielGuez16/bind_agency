@@ -98,9 +98,22 @@ export type PalierAccessible = {
   offres_disponibles: number;
 };
 
+/**
+ * Le score de fiabilité, et de combien de collaborations il est tiré.
+ *
+ * **Nul veut dire neutre, pas zéro.** C'est ce null qui distingue « pas encore
+ * de score » de « score bas » : deux écrans différents, et répondre zéro au
+ * premier ferait d'un débutant quelqu'un de peu fiable.
+ */
+export type FiabiliteDuCreateur = {
+  reliability_score: string | null;
+  completed_collabs_count: number;
+};
+
 export type VueDesPaliers = {
   creator_id: string;
   is_new_creator: boolean;
+  fiabilite: FiabiliteDuCreateur;
   paliers: PalierAccessible[];
 };
 
