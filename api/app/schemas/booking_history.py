@@ -52,9 +52,11 @@ class ReservationDuCreateurRead(BaseModel):
     duration_minutes: int | None
     platform: Platform
     content_format: ContentFormat
-    #: Ce que la publication devra porter. Au comptoir, c'est ce qu'on vérifie.
-    required_mention: str | None
-    required_geotag: bool
+    #: Ce que la réservation a produit, une fois consommée. **C'est là et
+    #: nulle part ailleurs que le créateur lit ses obligations** : les critères
+    #: y sont figés à la création de la contrepartie, alors que ceux de l'offre
+    #: suivent le commerce. Les rendre ici aussi donnerait une seconde source,
+    #: qui dérive dès que le salon change ses exigences (SPEC §2.4).
     contrepartie: ContrepartieBreveRead | None
 
 
@@ -83,6 +85,10 @@ class ReservationDuCommerceRead(BaseModel):
     duration_minutes: int | None
     platform: Platform
     content_format: ContentFormat
+    #: Ce que la publication devra porter. Au comptoir, c'est ce qu'on vérifie,
+    #: et c'est le seul écran où on le vérifie au moment de servir.
+    required_mention: str | None
+    required_geotag: bool
     contrepartie: ContrepartieBreveRead | None
 
 

@@ -292,9 +292,13 @@ export type ReservationDuCreateur = {
   duration_minutes: number | null;
   platform: Platform;
   content_format: ContentFormat;
-  /** Ce que la publication devra porter. Le comptoir le vérifiera. */
-  required_mention: string | null;
-  required_geotag: boolean;
+  /**
+   * Ce que la réservation a produit, une fois consommée.
+   *
+   * **C'est là et nulle part ailleurs que le créateur lit ses obligations.**
+   * Les critères y sont figés à la création de la contrepartie ; ceux de
+   * l'offre suivent le commerce et changeraient sous ses pieds.
+   */
   contrepartie: ContrepartieBreve | null;
 };
 

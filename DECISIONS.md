@@ -2734,3 +2734,28 @@ graphique. Le jeu de jetons de l'autre thème est calibré pour ce fond-là — 
 d'ailleurs celui que la maquette dessine. Une surface inversée porte donc les
 couleurs du thème inversé, dans les deux sens. Aucun jeton ajouté.
 
+
+## 2026-08-11 — Les critères de publication appartiennent au comptoir, pas à l'historique du créateur
+
+`ReservationDuCreateurRead` déclarait `required_mention` et `required_geotag`,
+que la structure du service ne portait pas : `GET /me/bookings` levait à la
+validation de réponse, sur chaque appel. L'exception passe **hors** de
+l'intergiciel CORS, qui n'a donc jamais posé son en-tête — l'app lisait un refus
+de CORS et cherchait la panne du mauvais côté.
+
+Ils étaient tombés du mauvais côté. Le comptoir en a l'usage : c'est lui qui
+vérifiera la publication, et `ReservationDuCommerceRead` les omettait alors que
+le service les portait déjà — l'écran de journée les affichait vides, sans
+erreur. Le créateur, lui, lit ses obligations sur la contrepartie, où elles sont
+figées à sa création (SPEC §2.4) ; les rendre aussi sur la réservation
+donnerait une seconde source, qui dérive dès que le salon change ses exigences.
+
+Le défaut symétrique de celui des photos, et il coûte plus cher : un schéma
+d'écriture qui ignore un champ rend un 200 mensonger, un schéma de lecture qui
+en exige un rend un 500 permanent. `test_schemas_ecrits.py` éprouve désormais
+les deux sens, sur les vingt-six couples `X` / `XRead` du projet.
+
+Ce que la garde ne couvre pas : le contrat entre l'API et `app/src/api/types.ts`,
+écrit à la main. `openapi.json` ne porte que les chemins, par choix assumé — et
+c'est ce qui a laissé `ReservationDuCommerce` déclarer côté app deux champs que
+l'API ne rendait pas.
