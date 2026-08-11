@@ -39,9 +39,16 @@ type Porte = {
 export function ChoixDeLaPorte({
   onChoisir,
   onSeConnecter,
+  surMedia = false,
 }: {
   onChoisir: (role: RoleInscriptible) => void;
   onSeConnecter: () => void;
+  /**
+   * Posé sur une vidéo ou une photo. Les couleurs de texte ordinaires y sont
+   * illisibles : elles sont calculées pour un fond du thème, pas pour un ciel
+   * de Miami. Le système a deux jetons pour ce cas, et ce sont eux qu'il faut.
+   */
+  surMedia?: boolean;
 }) {
   const { t } = useI18n();
   const c = useColors();
@@ -82,27 +89,15 @@ export function ChoixDeLaPorte({
         alignSelf: 'center',
       }}
     >
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: spacing['space.4'],
-        }}
-      >
-        <Marque taille={30} />
-        <Button
-          label={t('auth.versConnexion')}
-          variant="ghost"
-          fullWidth={false}
-          onPress={onSeConnecter}
-          testID="vers-connexion"
-        />
-      </View>
+      <Marque taille={30} couleur={surMedia ? 'text.onScrim' : 'accent.default'} />
 
       <View style={{ gap: spacing['space.2'], maxWidth: 720 }}>
-        <Texte variante="type.display">{t('auth.accroche')}</Texte>
-        <Texte couleur="text.secondary">{t('auth.sousAccroche')}</Texte>
+        <Texte variante="type.display" couleur={surMedia ? 'text.onScrim' : 'text.primary'}>
+          {t('auth.accroche')}
+        </Texte>
+        <Texte couleur={surMedia ? 'text.onScrimMuted' : 'text.secondary'}>
+          {t('auth.sousAccroche')}
+        </Texte>
       </View>
 
       <View
@@ -156,6 +151,20 @@ export function ChoixDeLaPorte({
             />
           </View>
         ))}
+      </View>
+
+      {/* **Un lien secondaire, donc en bas.** Il vivait en haut à droite, seul
+          contre le bord : un élément d'en-tête, alors qu'il ne s'adresse qu'à
+          ceux dont la réponse est « ni l'une ni l'autre ». Sous les cartes et
+          centré, il ne dispute plus la place à la promesse. */}
+      <View style={{ alignItems: 'center' }}>
+        <Button
+          label={t('auth.versConnexion')}
+          variant="ghost"
+          fullWidth={false}
+          onPress={onSeConnecter}
+          testID="vers-connexion"
+        />
       </View>
     </View>
   );
