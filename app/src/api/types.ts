@@ -279,6 +279,9 @@ export type ReservationDuCreateur = {
   duration_minutes: number | null;
   platform: Platform;
   content_format: ContentFormat;
+  /** Ce que la publication devra porter. Le comptoir le vérifiera. */
+  required_mention: string | null;
+  required_geotag: boolean;
   contrepartie: ContrepartieBreve | null;
 };
 
@@ -302,6 +305,9 @@ export type ReservationDuCommerce = {
   duration_minutes: number | null;
   platform: Platform;
   content_format: ContentFormat;
+  /** Ce que la publication devra porter. Le comptoir le vérifiera. */
+  required_mention: string | null;
+  required_geotag: boolean;
   contrepartie: ContrepartieBreve | null;
 };
 

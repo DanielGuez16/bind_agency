@@ -20,7 +20,7 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.models import Booking, BusinessMember
+from app.models import Booking, BusinessMember, TierOffer
 from app.models.enums import BookingStatus, BusinessMemberRole, UserRole
 from app.services import auth as auth_service
 from app.services import booking_history as service
@@ -264,6 +264,35 @@ async def test_la_journee_est_isolee_entre_commerces(
     accepte = await client.get(f"{PREFIX}/business/{b['business'].id}/bookings", headers=entetes)
     assert accepte.status_code == 200, accepte.text
     assert accepte.json()["timezone"] == "America/New_York"
+
+
+async def test_la_journee_porte_les_criteres_de_publication(session: AsyncSession) -> None:
+    """Ce que le salon devra vérifier, sous ses yeux au comptoir.
+
+    La mention et le lieu attendus vivent sur l'offre de palier. Sans eux dans
+    la journée, le comptoir sert sans savoir ce qu'il exigera ensuite — et il
+    doit alors aller le chercher sur un autre écran, au moment précis où
+    quelqu'un attend devant lui.
+    """
+    decor = await monter_le_decor(session)
+    offre = await session.get(TierOffer, decor["offre"].id)
+    offre.required_mention = "@velanailstudio"
+    offre.required_geotag = True
+    await session.flush()
+
+    creneau = await premier_creneau(session, decor)
+    booking = await reserver(session, decor, starts_at=creneau)
+    await booking_states.confirmer(session, booking=booking, creator_id=decor["createur"].id)
+
+    journee = await service.journee_du_commerce(
+        session,
+        business=decor["business"],
+        jour=creneau.astimezone(ZoneInfo(decor["business"].timezone)).date(),
+    )
+
+    ligne = next(item for item in journee.items if item.booking_id == booking.id)
+    assert ligne.required_mention == "@velanailstudio"
+    assert ligne.required_geotag is True
 
 
 async def test_le_jour_par_defaut_est_celui_du_commerce(session: AsyncSession) -> None:

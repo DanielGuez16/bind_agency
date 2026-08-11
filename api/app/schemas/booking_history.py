@@ -52,6 +52,9 @@ class ReservationDuCreateurRead(BaseModel):
     duration_minutes: int | None
     platform: Platform
     content_format: ContentFormat
+    #: Ce que la publication devra porter. Au comptoir, c'est ce qu'on vérifie.
+    required_mention: str | None
+    required_geotag: bool
     contrepartie: ContrepartieBreveRead | None
 
 

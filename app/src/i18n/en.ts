@@ -235,6 +235,9 @@ export const en = {
     ignore_historique_insuffisant: 'Not enough history',
   },
   commerce: {
+    mentionAttendue: 'Expected mention',
+    lieuAttendu: 'Expected location tag',
+    lieuAttenduOui: 'Your business',
     choisirUneLigne: 'Pick a booking on the left to see what it commits to.',
     contrepartieAttendue: 'Counterpart',
     decisionDepassee: 'The time has passed. This booking can no longer be accepted — it expires on its own. You can still say what happened.',

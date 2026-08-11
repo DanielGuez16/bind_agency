@@ -232,6 +232,9 @@ export const es: Catalogue = {
     ignore_historique_insuffisant: 'Historial insuficiente',
   },
   commerce: {
+    mentionAttendue: 'Mención esperada',
+    lieuAttendu: 'Ubicación esperada',
+    lieuAttenduOui: 'Tu negocio',
     choisirUneLigne: 'Elige una reserva a la izquierda para ver a qué compromete.',
     contrepartieAttendue: 'Contrapartida',
     decisionDepassee: 'La hora ya pasó. Esta reserva ya no puede aceptarse: caduca sola. Aún puedes decir qué ocurrió.',

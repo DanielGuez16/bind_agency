@@ -268,6 +268,24 @@ function Detail({
         </Texte>
         <TierBadge tier={reservation.content_format} />
       </View>
+
+      {/* Ce que le salon devra vérifier sur la publication. Au comptoir et pas
+          sur un autre écran : c'est ici qu'on sert, et c'est en servant qu'on
+          rappelle ce qui est attendu. */}
+      {reservation.required_mention ? (
+        <DataRow
+          label={t('commerce.mentionAttendue')}
+          value={reservation.required_mention}
+          testID="mention-attendue"
+        />
+      ) : null}
+      {reservation.required_geotag ? (
+        <DataRow
+          label={t('commerce.lieuAttendu')}
+          value={t('commerce.lieuAttenduOui')}
+          testID="lieu-attendu"
+        />
+      ) : null}
     </View>
   );
 }

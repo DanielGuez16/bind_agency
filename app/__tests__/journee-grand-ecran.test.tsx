@@ -44,6 +44,8 @@ const JOURNEE = {
       duration_minutes: 45,
       platform: 'instagram',
       content_format: 'story',
+      required_mention: null,
+      required_geotag: false,
       contrepartie: null,
     },
     {
@@ -60,6 +62,8 @@ const JOURNEE = {
       duration_minutes: 50,
       platform: 'instagram',
       content_format: 'post',
+      required_mention: '@velanailstudio',
+      required_geotag: true,
       contrepartie: null,
     },
   ],
@@ -106,6 +110,24 @@ describe('journée du comptoir, grand écran', () => {
     expect(detail).toHaveTextContent(/Classic pedicure/);
     expect(detail).not.toHaveTextContent(/Gel manicure/);
     expect(screen.queryByTestId('aucune-ligne-ouverte')).toBeNull();
+  });
+
+  it('montre au comptoir ce qu’il devra vérifier sur la publication', async () => {
+    // La mention et le lieu vivent sur l'offre de palier. Sans eux ici, on
+    // sert sans savoir ce qu'on exigera ensuite, et il faut aller le chercher
+    // ailleurs au moment où quelqu'un attend devant soi.
+    await monter();
+    await waitFor(() => expect(screen.getByTestId('ligne-b-2')).toBeTruthy());
+
+    await fireEvent.press(screen.getByTestId('ligne-b-2'));
+    expect(screen.getByTestId('mention-attendue')).toHaveTextContent(/@velanailstudio/);
+    expect(screen.getByTestId('lieu-attendu')).toBeTruthy();
+
+    // Et rien n'est affiché quand l'offre n'exige rien : un cadre vide ferait
+    // croire à une donnée perdue.
+    await fireEvent.press(screen.getByTestId('ligne-b-1'));
+    expect(screen.queryByTestId('mention-attendue')).toBeNull();
+    expect(screen.queryByTestId('lieu-attendu')).toBeNull();
   });
 
   it('borne la liste à sa largeur, sans l’étirer', async () => {
