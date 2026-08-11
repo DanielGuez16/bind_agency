@@ -56,9 +56,9 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
   const { t } = useI18n();
   const { color: c } = useTheme();
   const { large } = useGabarit();
-  // La ligne ouverte dans le panneau de droite. Nulle au chargement : rien
-  // n'est ouvert tant qu'on n'a pas choisi, et pré-ouvrir la première ferait
-  // croire qu'elle demande quelque chose.
+  // La ligne que l'on a **touchée**. Nulle tant qu'on n'a rien touché : le
+  // panneau s'ouvre alors sur ce qui attend une décision, et à défaut sur la
+  // première ligne du jour.
   const [choisie, setChoisie] = useState<string | null>(null);
 
   const requete = useRequete<JourneeDuCommerce>(
@@ -89,7 +89,22 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
         // ouvre, et la filtrer ici l'aurait laissée invisible.
         const aTrancher = journee.a_trancher;
         const planning = journee.items.filter((r) => r.status !== 'awaiting_business');
-        const ouverte = planning.find((r) => r.booking_id === choisie) ?? null;
+        /**
+         * Ce que le panneau montre à l'ouverture.
+         *
+         * **Il ne s'ouvrait sur rien**, au motif que pré-ouvrir une ligne
+         * ferait croire qu'elle demande quelque chose. C'était raisonner à
+         * l'envers : les deux tiers de l'écran restaient occupés par une seule
+         * phrase, « choisissez une réservation à gauche », et c'est ce qu'un
+         * commerçant voyait chaque matin.
+         *
+         * S'il y a une décision en attente, elle passe devant : c'est la seule
+         * chose de cette journée qui réclame un geste. Sinon la première ligne
+         * du planning, qui remplit le panneau sans rien réclamer.
+         */
+        const parDefaut = aTrancher[0]?.booking_id ?? planning[0]?.booking_id ?? null;
+        const ouverte =
+          [...aTrancher, ...planning].find((r) => r.booking_id === (choisie ?? parDefaut)) ?? null;
 
         const colonneListe = (
           <View style={{ gap: 16, width: large ? breakpoint.listWidthMerchant : undefined }}>

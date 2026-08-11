@@ -14,7 +14,7 @@ commerce — c'est la même route publique et le même dépôt.
 
 from fastapi import APIRouter
 
-from app.core.dependencies import CurrentUser, SessionDep
+from app.core.dependencies import SessionDep
 from app.schemas.platform_assets import (
     AccueilRead,
     CategoriePhotoRead,
@@ -26,7 +26,7 @@ router = APIRouter(prefix="/platform-media", tags=["platform-media"])
 
 
 @router.get("", response_model=MediasPlateformeRead)
-async def read_platform_media(session: SessionDep, _: CurrentUser) -> MediasPlateformeRead:
+async def read_platform_media(session: SessionDep) -> MediasPlateformeRead:
     categories = await service.photos_de_categories(session)
     accueil = await service.media_d_accueil(session)
     return MediasPlateformeRead(
