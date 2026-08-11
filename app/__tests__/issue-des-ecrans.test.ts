@@ -25,11 +25,12 @@ const NAVIGATION = join(__dirname, '..', 'src', 'shell', 'Navigation.tsx');
 /**
  * Les premiers écrans de chaque pile. Rien derrière eux.
  *
- * `Fil`, `Historique`, `Journee` et `Configuration` sont les points d'entrée
- * de leurs onglets respectifs ; `Caisse` est le second onglet du commerce, pas
- * un empilement.
+ * `Fil`, `Historique`, `Journee`, `Paliers` et `Configuration` sont les points
+ * d'entrée de leurs onglets respectifs ; `Caisse` est le second onglet du
+ * commerce, pas un empilement. `Paliers` a gagné une pile en v0.7 : les règles
+ * s'y empilent en compact, mais l'échelle reste la racine de l'onglet.
  */
-const RACINES = ['Fil', 'Historique', 'Journee', 'Caisse', 'Configuration'];
+const RACINES = ['Fil', 'Historique', 'Journee', 'Caisse', 'Configuration', 'Paliers'];
 
 /** Les écrans déclarés dans une pile, et le bloc JSX qui les monte. */
 function ecransEmpiles(source: string): { nom: string; bloc: string }[] {

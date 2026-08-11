@@ -17,6 +17,7 @@ export const ECRANS_CREATEUR = [
   'HistoriqueScreen.tsx',
   'PaliersScreen.tsx',
   'PreuveScreen.tsx',
+  'ReglesScreen.tsx',
 ] as const;
 
 export const ECRANS_COMMERCE = [

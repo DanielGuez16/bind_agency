@@ -25,6 +25,7 @@ import { FicheScreen } from '../src/screens/FicheScreen';
 import { FilScreen } from '../src/screens/FilScreen';
 import { HistoriqueScreen } from '../src/screens/HistoriqueScreen';
 import { PaliersScreen } from '../src/screens/PaliersScreen';
+import { ReglesScreen } from '../src/screens/ReglesScreen';
 import { PreuveScreen } from '../src/screens/PreuveScreen';
 import { PART_POUR_CHIFFRER, formeDe } from '../src/screens/obstacle';
 import { ECRANS_CREATEUR } from '../test-support/registre-ecrans';
@@ -118,6 +119,15 @@ const PALIER = {
   accessible: true,
   social_account_id: 'c1',
   obstacles: [],
+};
+
+const FIABILITE = { reliability_score: '92.00', completed_collabs_count: 12 };
+
+const VUE = {
+  creator_id: 'u1',
+  is_new_creator: false,
+  fiabilite: FIABILITE,
+  paliers: [PALIER],
 };
 
 const COMPTE = {
@@ -255,8 +265,16 @@ const ECRANS = [
   {
     nom: 'paliers',
     noeud: <PaliersScreen />,
-    plein: { '/me/tiers': { creator_id: 'u1', is_new_creator: false, paliers: [PALIER] } },
-    vide: { '/me/tiers': { creator_id: 'u1', is_new_creator: true, paliers: [] } },
+    plein: { '/me/tiers': VUE },
+    vide: { '/me/tiers': { ...VUE, is_new_creator: true, paliers: [] } },
+  },
+  {
+    nom: 'regles',
+    noeud: <ReglesScreen />,
+    // Les règles n'ont pas d'état vide : elles existent même sans un seul
+    // palier configuré, et c'est justement alors qu'on vient les lire.
+    plein: { '/me/tiers': VUE },
+    vide: null,
   },
   {
     nom: 'fil',
@@ -361,6 +379,7 @@ describe('quatre états', () => {
 const FICHIERS: Record<string, string> = {
   audience: 'AudienceScreen.tsx',
   paliers: 'PaliersScreen.tsx',
+  regles: 'ReglesScreen.tsx',
   fil: 'FilScreen.tsx',
   fiche: 'FicheScreen.tsx',
   creneaux: 'CreneauxScreen.tsx',

@@ -2705,3 +2705,32 @@ d'écran. Partout ailleurs, `resizeMode="cover"` rognait — et ce qu'il rognait
 était le sujet. La boîte porte donc un `aspectRatio`. La hauteur d'une carte
 reste identique d'une carte à l'autre : elle découle de la largeur, qui est la
 même pour toutes.
+
+## 2026-08-11 — Le score de fiabilité accompagne les paliers ; le compte dans le rayon, non
+
+`reliability_score_too_low` ferme des paliers en citant un seuil, et rien ne
+renvoyait le score : l'écran affichait une condition que le créateur ne pouvait
+comparer à rien. Les deux termes vivent déjà sur `creator_profile`, écrits par
+`reliability.rafraichir` — une lecture de plus dans la requête qui portait déjà
+`is_new_creator` suffit. Les trois champs sont lus **d'un coup** : le badge
+« nouveau créateur » et le score sortent du même `NULL`, et deux lectures à deux
+instants pourraient les faire se contredire.
+
+Le second manque de la passation v0.7 — « 9 prestations dans 15 km » — n'est
+**pas** branché. Aucune position n'est stockée : `GET /businesses` reçoit
+longitude et latitude de l'appelant, précisément parce qu'un créateur consulte
+le fil là où il se trouve et non dans la ville qu'il a déclarée. Compter dans un
+rayon depuis `/me/tiers` demanderait de lui passer la même position, donc de
+faire dépendre du lieu une route qui n'en dépend pas. C'est un changement de
+sens de la route, pas une jointure. En attendant, le compte global reste seul,
+et la ligne « les comptes couvrent tout BIND » dit sa portée.
+
+## 2026-08-11 — Le bandeau de principe emprunte les teintes du thème opposé
+
+Le diagramme des trois formats se pose sur `bg.inverse`. Les teintes de palier du
+thème courant y sont sombres sur sombre : `tier.story` clair sur `bg.inverse`
+clair donne 2,9 de contraste, `tier.reel` 2,5, sous les 3 exigés pour un objet
+graphique. Le jeu de jetons de l'autre thème est calibré pour ce fond-là — c'est
+d'ailleurs celui que la maquette dessine. Une surface inversée porte donc les
+couleurs du thème inversé, dans les deux sens. Aucun jeton ajouté.
+
