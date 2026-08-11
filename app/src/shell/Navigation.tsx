@@ -48,7 +48,7 @@ import { PlansScreen } from '../screens/PlansScreen';
 import { PreuveScreen } from '../screens/PreuveScreen';
 import { PublicationsScreen } from '../screens/PublicationsScreen';
 import { CatalogueScreen } from '../screens/CatalogueScreen';
-import { ConfigurationScreen } from '../screens/ConfigurationScreen';
+import { CompositionDuCommerce, ConfigurationScreen } from '../screens/ConfigurationScreen';
 import { HorairesScreen } from '../screens/HorairesScreen';
 import { CameraScanner } from '../screens/CameraScanner';
 import { RedemptionScreen } from '../screens/RedemptionScreen';
@@ -497,6 +497,14 @@ function ParcoursCommerce({ businessId }: { businessId: string }) {
  * ne quitte l'écran qu'en changeant d'onglet.
  */
 function PileDeConfiguration({ businessId }: { businessId: string }) {
+  const { large } = useGabarit();
+
+  // **Sur grand écran, la table des matières n'existe pas.** Trois cartes au
+  // milieu du vide dont le seul rôle est de mener ailleurs, c'est un clic et
+  // une page dépensés pour un menu. Le menu devient une colonne, la section
+  // vit à côté, et la pile n'a plus lieu d'être : il n'y a rien à empiler.
+  if (large) return <CompositionDuCommerce businessId={businessId} />;
+
   return (
     <PileConfiguration.Navigator screenOptions={OPTIONS_DE_PILE}>
       <PileConfiguration.Screen name="Configuration">
