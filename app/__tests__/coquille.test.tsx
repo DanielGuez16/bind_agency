@@ -254,16 +254,35 @@ describe('connexion', () => {
     expect(coffre.contenu).toEqual({ access_token: 'a', refresh_token: 'r' });
   });
 
-  it('retire le bouton tant que la saisie est incomplète', async () => {
-    // Retiré, pas grisé : l'aide sous le champ dit déjà ce qui manque.
+  it('garde le bouton visible et désactivé tant que la saisie est incomplète', async () => {
+    // **Il était retiré, il est maintenant grisé.** `components.md` §1 fait
+    // disparaître l'action impossible ; la passation v0.6 nomme cette
+    // exception — c'est une action qui redeviendra possible dès qu'on aura
+    // fini de taper. Le retirer laissait un écran sans issue visible.
     await monterAuth(serveur({}) as typeof fetch);
-    expect(screen.queryByTestId('valider')).toBeNull();
+    expect(screen.getByTestId('valider').props.accessibilityState.disabled).toBe(true);
 
     await fireEvent.changeText(screen.getByTestId('champ-email'), 'a@b.example');
-    expect(screen.queryByTestId('valider')).toBeNull();
+    expect(screen.getByTestId('valider').props.accessibilityState.disabled).toBe(true);
 
     await fireEvent.changeText(screen.getByTestId('champ-mot-de-passe'), 'douze-caracteres');
-    expect(screen.getByTestId('valider')).toBeTruthy();
+    expect(screen.getByTestId('valider').props.accessibilityState.disabled).toBe(false);
+  });
+
+  it('dit ce qui manque au mot de passe, en clair et en chiffres', async () => {
+    // Un bouton grisé sans explication ne vaut pas mieux qu'un bouton absent.
+    await monterAuth(serveur({}) as typeof fetch);
+    await fireEvent.press(screen.getByTestId('basculer'));
+    await fireEvent.press(screen.getByTestId('choisir-creator'));
+
+    await fireEvent.changeText(screen.getByTestId('champ-mot-de-passe'), 'six123');
+    expect(screen.getByTestId('jauge')).toHaveTextContent('6 / 12');
+    expect(screen.getByText(/Six to go|6 to go/)).toBeTruthy();
+
+    // Et la jauge disparaît une fois le compte atteint : elle n'a plus rien
+    // à dire, et la laisser ferait douter.
+    await fireEvent.changeText(screen.getByTestId('champ-mot-de-passe'), 'douze-caracteres');
+    expect(screen.queryByTestId('jauge')).toBeNull();
   });
 
   it('traduit un refus, sans jamais montrer le code', async () => {
@@ -298,17 +317,34 @@ describe('connexion', () => {
     await waitFor(() => expect(screen.getByTestId('motif')).toHaveTextContent('compte_suspendu'));
   });
 
-  it('ne propose jamais le rôle administrateur à l’inscription', async () => {
-    // L'API l'accepte ; l'offrir dans un formulaire public ferait de
-    // « administrateur » une case à cocher.
+  it('ouvre deux portes à l’inscription, et jamais celle de l’administration', async () => {
+    // L'API accepte le rôle administrateur ; l'offrir dans un formulaire
+    // public en ferait une case à cocher. Les pastilles ont disparu, la
+    // garantie non.
     await monterAuth(serveur({}) as typeof fetch);
     await fireEvent.press(screen.getByTestId('basculer'));
 
-    expect(screen.getByText(en.auth.roleCreator)).toBeTruthy();
-    expect(screen.getByText(en.auth.roleMerchant)).toBeTruthy();
-    for (const mot of [/admin/i]) {
-      expect(screen.queryByText(mot)).toBeNull();
-    }
+    expect(screen.getByTestId('porte-createur')).toBeTruthy();
+    expect(screen.getByTestId('porte-commerce')).toBeTruthy();
+    expect(screen.queryByText(/admin/i)).toBeNull();
+  });
+
+  it('demande la porte avant le formulaire, et la retient', async () => {
+    // Le rôle se choisissait entre le mot de passe et le bouton : au moment
+    // où l'on remplit, pas au moment où l'on décide.
+    await monterAuth(serveur({}) as typeof fetch);
+    await fireEvent.press(screen.getByTestId('basculer'));
+
+    // Aucun champ tant que la porte n'est pas franchie.
+    expect(screen.queryByTestId('champ-email')).toBeNull();
+
+    await fireEvent.press(screen.getByTestId('choisir-business_member'));
+    expect(screen.getByTestId('champ-email')).toBeTruthy();
+    expect(screen.getByText(en.auth.autrePorteCommerce)).toBeTruthy();
+
+    // Et l'on peut revenir choisir l'autre.
+    await fireEvent.press(screen.getByTestId('revenir-aux-portes'));
+    expect(screen.getByTestId('porte-createur')).toBeTruthy();
   });
 });
 
