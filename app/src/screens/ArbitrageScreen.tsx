@@ -32,6 +32,8 @@ import { useApi, type IssueDArbitrage, type LigneDeFile } from '../api';
 import {
   Button,
   Chip,
+  PALIERS,
+  Toolbar,
   DecisionBar,
   DetailPanel,
   EmptyState,
@@ -123,9 +125,24 @@ function TableDArbitrage({
   const c = useColors();
   const [ouvert, setOuvert] = useState<string | null>(null);
   const [selection, setSelection] = useState<string[]>([]);
+  const [format, setFormat] = useState<string | null>(null);
   const [enCours, setEnCours] = useState(false);
 
-  const dossier = lignes.find((ligne) => ligne.collaboration_id === ouvert) ?? null;
+  // Filtré à l'écran, sur ce qui est déjà chargé : la file d'arbitrage tient
+  // en quelques dizaines de dossiers, et un aller-retour serveur pour trois
+  // chips coûterait plus que le tri lui-même.
+  const visibles = format ? lignes.filter((l) => l.required_format === format) : lignes;
+
+  /**
+   * Le dossier ouvert, et à défaut le premier de la file.
+   *
+   * **Il ne s'ouvrait sur rien.** L'écran montrait alors une ligne de tableau
+   * et deux tiers de vide — ce que la campagne 2 a relevé. Arbitrer se fait en
+   * comparant : le premier dossier doit être là quand on arrive, sinon le
+   * panneau ne sert qu'à ceux qui savent déjà qu'il existe.
+   */
+  const dossier =
+    visibles.find((ligne) => ligne.collaboration_id === ouvert) ?? visibles[0] ?? null;
 
   async function approuverLaSelection() {
     setEnCours(true);
@@ -145,29 +162,59 @@ function TableDArbitrage({
   return (
     <View style={{ flexDirection: 'row', gap: ECART_DES_COLONNES }}>
       <View style={{ flex: 1, gap: 8 }}>
-        {/* La barre d'outils : ce qui est sélectionné, et ce qu'on peut en
-            faire. Vide, elle ne propose rien plutôt que de griser. */}
-        {selection.length > 0 ? (
-          <View
-            testID="barre-de-selection"
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 12, height: 40 }}
-          >
-            <Texte variante="type.label" couleur="text.secondary">
-              {t('admin.selection', { count: selection.length })}
-            </Texte>
-            <Button
-              label={t('admin.approuverLaSelection')}
-              size="sm"
-              fullWidth={false}
-              loading={enCours}
-              onPress={approuverLaSelection}
-              testID="approuver-la-selection"
+        {/* **La barre d'outils est toujours là** (campagne 2). Elle
+            n'apparaissait qu'une fois une case cochée : à l'arrivée, l'écran
+            n'avait qu'un en-tête, une ligne, et rien qui dise combien de
+            dossiers attendent ni comment les trier. Les actions de masse, en
+            revanche, restent absentes tant que rien n'est coché — un bouton
+            grisé n'est pas une information. */}
+        <Toolbar
+          testID="barre-d-outils"
+          compteurSelection={
+            selection.length > 0 ? t('admin.selection', { count: selection.length }) : undefined
+          }
+          actionsDeMasse={
+            selection.length > 0 ? (
+              <Button
+                label={t('admin.approuverLaSelection')}
+                size="sm"
+                fullWidth={false}
+                loading={enCours}
+                onPress={approuverLaSelection}
+                testID="approuver-la-selection"
+              />
+            ) : undefined
+          }
+        >
+          <Chip
+            label={
+              visibles.length === 1
+                ? t('admin.dossiersUnSeul')
+                : t('admin.dossiersEnAttente', { count: visibles.length })
+            }
+            testID="compteur-de-file"
+          />
+          {/* Un filtre par format. Trois dossiers ne se trient pas, trente
+              si — et c'est la file d'un jour chargé. */}
+          <Chip
+            label={t('admin.filtreTous')}
+            onPress={() => setFormat(null)}
+            selected={format === null}
+            testID="filtre-tous"
+          />
+          {PALIERS.map((palier) => (
+            <Chip
+              key={palier}
+              label={palier.toUpperCase()}
+              onPress={() => setFormat(palier)}
+              selected={format === palier}
+              testID={`filtre-${palier}`}
             />
-          </View>
-        ) : null}
+          ))}
+        </Toolbar>
 
         <TableHeader colonnes={COLONNES} testID="entete-de-file" />
-        {lignes.map((ligne) => (
+        {visibles.map((ligne) => (
           <View
             key={ligne.collaboration_id}
             style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}

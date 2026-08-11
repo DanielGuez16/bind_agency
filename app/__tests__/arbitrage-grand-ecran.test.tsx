@@ -5,7 +5,9 @@
  * à droite sans quitter la file, et l'approbation en lot — bornée aux
  * approbations, comme `components.md` §16 l'exige.
  */
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
+
+import { en } from '../src/i18n/en';
 
 import { ApiClient, ApiProvider } from '../src/api';
 import { I18nProvider } from '../src/i18n';
@@ -74,7 +76,9 @@ describe('arbitrage, grand écran', () => {
     await waitFor(() => expect(screen.getByTestId('entete-de-file')).toBeTruthy());
 
     expect(screen.getByTestId('ligne-a1b2c3d4-0000')).toBeTruthy();
-    expect(screen.getByText('Casa Bruma Spa')).toBeTruthy();
+    // Deux fois : dans la ligne, et dans le panneau ouvert d'office depuis la
+    // campagne 2. Le nom n'appartient pas à l'un des deux.
+    expect(screen.getAllByText('Casa Bruma Spa').length).toBeGreaterThan(0);
   });
 
   it('ouvre un dossier sans quitter la file', async () => {
@@ -94,10 +98,13 @@ describe('arbitrage, grand écran', () => {
     // Vide, la barre ne propose rien plutôt que de griser.
     await monter();
     await waitFor(() => expect(screen.getByTestId('ligne-a1b2c3d4-0000')).toBeTruthy());
-    expect(screen.queryByTestId('barre-de-selection')).toBeNull();
+    // La barre est là dès l'arrivée — elle porte le compte et les filtres —
+    // mais elle ne propose aucune action de masse tant que rien n'est coché :
+    // un bouton grisé n'est pas une information.
+    expect(screen.getByTestId('barre-d-outils')).toBeTruthy();
+    expect(screen.queryByTestId('approuver-la-selection')).toBeNull();
 
     await fireEvent.press(screen.getByTestId('cocher-a1b2c3d4-0000'));
-    expect(screen.getByTestId('barre-de-selection')).toBeTruthy();
     expect(screen.getByTestId('approuver-la-selection')).toBeTruthy();
   });
 
@@ -107,11 +114,16 @@ describe('arbitrage, grand écran', () => {
     await monter();
     await waitFor(() => expect(screen.getByTestId('ligne-a1b2c3d4-0000')).toBeTruthy());
 
-    await fireEvent.press(screen.getByTestId('cocher-a1b2c3d4-0000'));
-    expect(screen.queryByTestId('dossier-ouvert')).toBeNull();
+    // Cocher ne change pas le dossier ouvert : le panneau montre toujours le
+    // premier, pas celui qu'on vient de cocher.
+    await fireEvent.press(screen.getByTestId('cocher-e5f6a7b8-1111'));
+    expect(
+      within(screen.getByTestId('dossier-ouvert')).getAllByText('Casa Bruma Spa').length,
+    ).toBeGreaterThan(0);
 
-    await fireEvent.press(screen.getByTestId('ligne-e5f6a7b8-1111'));
-    expect(screen.getByTestId('cocher-e5f6a7b8-1111').props.accessibilityState.checked).toBe(
+    // Et ouvrir ne coche pas : la ligne qu'on ouvre reste décochée.
+    await fireEvent.press(screen.getByTestId('ligne-a1b2c3d4-0000'));
+    expect(screen.getByTestId('cocher-a1b2c3d4-0000').props.accessibilityState.checked).toBe(
       false,
     );
   });
@@ -124,7 +136,41 @@ describe('arbitrage, grand écran', () => {
     await waitFor(() => expect(screen.getByTestId('ligne-a1b2c3d4-0000')).toBeTruthy());
     await fireEvent.press(screen.getByTestId('cocher-a1b2c3d4-0000'));
 
-    const barre = screen.getByTestId('barre-de-selection');
+    const barre = screen.getByTestId('barre-d-outils');
     expect(barre).not.toHaveTextContent(/reject|unfulfilled|resubmit/i);
+  });
+});
+
+// --------------------------------------------------------------------------
+// campagne 2 : une ligne de tableau sur un écran entier
+// --------------------------------------------------------------------------
+
+describe('l’arbitrage, après la campagne 2', () => {
+  it('ouvre le premier dossier plutôt que rien', async () => {
+    // L'écran montrait une ligne et deux tiers de vide. Arbitrer se fait en
+    // comparant : le premier dossier doit être là quand on arrive, sinon le
+    // panneau ne sert qu'à ceux qui savent déjà qu'il existe.
+    await monter();
+    await waitFor(() => expect(screen.getByTestId('ligne-a1b2c3d4-0000')).toBeTruthy());
+
+    expect(within(screen.getByTestId('dossier-ouvert')).getAllByText('Casa Bruma Spa').length).toBeGreaterThan(0);
+  });
+
+  it('dit combien de dossiers attendent, sans qu’on ait rien coché', async () => {
+    await monter();
+    await waitFor(() => expect(screen.getByTestId('barre-d-outils')).toBeTruthy());
+
+    expect(screen.getByText(en.admin.dossiersEnAttente.replace('{{count}}', '2'))).toBeTruthy();
+  });
+
+  it('trie la file par format sans aller-retour serveur', async () => {
+    await monter();
+    await waitFor(() => expect(screen.getByTestId('ligne-a1b2c3d4-0000')).toBeTruthy());
+
+    await fireEvent.press(screen.getByTestId('filtre-reel'));
+    expect(screen.queryByTestId('ligne-a1b2c3d4-0000')).toBeNull();
+
+    await fireEvent.press(screen.getByTestId('filtre-tous'));
+    expect(screen.getByTestId('ligne-a1b2c3d4-0000')).toBeTruthy();
   });
 });

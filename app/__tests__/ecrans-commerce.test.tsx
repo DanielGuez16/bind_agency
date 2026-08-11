@@ -929,15 +929,27 @@ describe('reporting', () => {
     }
   });
 
-  it('trace douze semaines, même quand la base n’en rend que deux', async () => {
+  it('comble les semaines creuses au lieu de resserrer l’axe', async () => {
     // Un `GROUP BY` ne fabrique pas les vides. Afficher les seules semaines
     // publiées resserrerait l'axe : trois publications en trois mois se
     // liraient comme trois semaines de suite.
+    //
+    // La longueur n'est plus douze mais celle de l'histoire du commerce
+    // (campagne 2). Ce qui reste vrai, et ce qui compte ici, c'est qu'entre la
+    // première et la dernière trace **aucune semaine ne manque** : deux lignes
+    // en base couvrant deux semaines consécutives donnent deux barres, et
+    // quatre au minimum, parce qu'une barre seule n'est pas une évolution.
     await monter(<ReportingScreen businessId="b1" />, clientDe({ '/reporting': REPORTING }));
     await waitFor(() => expect(screen.getByTestId('etat-nominal')).toBeTruthy());
 
     expect(screen.getByTestId('graphique-par-semaine')).toBeTruthy();
-    expect(screen.getAllByTestId(/^barre-W\d+$/)).toHaveLength(12);
+    const barres = screen.getAllByTestId(/^barre-W\d+$/);
+    const numeros = barres.map((b) => Number(String(b.props.testID).slice(6)));
+    // Consécutifs, sans trou : c'est la propriété, pas le compte.
+    expect(numeros).toEqual(
+      Array.from({ length: numeros.length }, (_, i) => numeros[0] + i),
+    );
+    expect(numeros.length).toBeGreaterThanOrEqual(4);
   });
 
   it('annonce la portée comme approximative, en toutes lettres', async () => {
@@ -996,5 +1008,109 @@ describe('absence de Snapchat', () => {
     expect(
       screen.getByTestId(`barre-${REPORTING.par_palier[0].content_format}`),
     ).toBeTruthy();
+  });
+});
+
+// --------------------------------------------------------------------------
+// campagne 2 : l'axe suit la vie du commerce
+// --------------------------------------------------------------------------
+
+describe('les rapports, après la campagne 2', () => {
+  /** Le lundi d'il y a `n` semaines, en date ISO. */
+  function lundiIlYA(n: number): string {
+    const jour = new Date();
+    jour.setUTCDate(jour.getUTCDate() - ((jour.getUTCDay() + 6) % 7) - n * 7);
+    return jour.toISOString().slice(0, 10);
+  }
+
+  function reportingDe(semaines: { debut: string; publications: number }[]) {
+    return {
+      ...REPORTING,
+      fin: new Date().toISOString(),
+      par_semaine: semaines,
+    };
+  }
+
+  it('ne dessine pas huit semaines vides à un salon qui vient d’ouvrir', async () => {
+    // « Une seule barre visible sur douze. » Ce n'était pas le graphique :
+    // c'était un axe qui décrivait une histoire que le commerce n'avait pas.
+    await monter(
+      <ReportingScreen businessId="b1" />,
+      clientDe({
+        '/reporting': reportingDe([
+          { debut: lundiIlYA(1), publications: 2 },
+          { debut: lundiIlYA(0), publications: 3 },
+        ]),
+      }),
+    );
+    await waitFor(() => expect(screen.getByTestId('graphique-par-semaine')).toBeTruthy());
+
+    // Quatre : le plancher, parce qu'une barre seule n'est pas une évolution.
+    expect(screen.getAllByTestId(/^barre-W\d+$/)).toHaveLength(4);
+  });
+
+  it('ouvre l’axe à mesure que l’histoire s’allonge', async () => {
+    await monter(
+      <ReportingScreen businessId="b1" />,
+      clientDe({
+        '/reporting': reportingDe([
+          { debut: lundiIlYA(6), publications: 1 },
+          { debut: lundiIlYA(0), publications: 4 },
+        ]),
+      }),
+    );
+    await waitFor(() => expect(screen.getByTestId('graphique-par-semaine')).toBeTruthy());
+
+    expect(screen.getAllByTestId(/^barre-W\d+$/)).toHaveLength(7);
+  });
+
+  it('s’arrête à douze, au-delà desquelles les étiquettes ne se lisent plus', async () => {
+    await monter(
+      <ReportingScreen businessId="b1" />,
+      clientDe({
+        '/reporting': reportingDe([
+          { debut: lundiIlYA(40), publications: 1 },
+          { debut: lundiIlYA(0), publications: 4 },
+        ]),
+      }),
+    );
+    await waitFor(() => expect(screen.getByTestId('graphique-par-semaine')).toBeTruthy());
+
+    expect(screen.getAllByTestId(/^barre-W\d+$/)).toHaveLength(12);
+  });
+
+  it('met en tête les trois chiffres qui répondent à la question', async () => {
+    // « Une longue liste de chiffres sans hiérarchie » : le nombre qui dit si
+    // ça marche se lisait exactement comme le nombre d'annulations.
+    await monter(<ReportingScreen businessId="b1" />, clientDe({ '/reporting': REPORTING }));
+    await waitFor(() => expect(screen.getByTestId('reperes')).toBeTruthy());
+
+    for (const cle of ['publications', 'taux', 'portee']) {
+      expect(screen.getByTestId(`repere-${cle}`)).toBeTruthy();
+    }
+  });
+
+  it('n’écrit aucun de ces trois chiffres deux fois', async () => {
+    // Le défaut corrigé sur la journée, à ne pas réintroduire ici : un chiffre
+    // en tête **et** dans le détail se lit comme deux mesures différentes.
+    await monter(<ReportingScreen businessId="b1" />, clientDe({ '/reporting': REPORTING }));
+    await waitFor(() => expect(screen.getByTestId('reperes')).toBeTruthy());
+
+    expect(screen.getAllByTestId('taux')).toHaveLength(1);
+    expect(screen.getAllByText(en.reporting.porteeNote)).toHaveLength(1);
+    expect(screen.getAllByText(en.reporting.publications)).toHaveLength(1);
+  });
+
+  it('dit à un salon sans histoire qu’il n’y a rien à régler', async () => {
+    // « Rien dans cette fenêtre » se lisait comme une panne de filtre. Il n'y
+    // a pas de fenêtre à corriger : il n'y a pas encore d'histoire.
+    await monter(
+      <ReportingScreen businessId="b1" />,
+      clientDe({ '/reporting': { ...REPORTING, reservations: 0, par_semaine: [] } }),
+    );
+    await waitFor(() => expect(screen.getByTestId('reporting-vide')).toBeTruthy());
+
+    expect(screen.getByText(en.reporting.videTitre)).toBeTruthy();
+    expect(screen.getByTestId('reporting-vide')).toHaveTextContent(/nothing to set up/i);
   });
 });

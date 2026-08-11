@@ -340,6 +340,9 @@ export const es: Catalogue = {
     etapeCapacityRule: 'Horario de apertura',
   },
   admin: {
+    filtreTous: 'Todos',
+    dossiersEnAttente: '{{count}} en espera',
+    dossiersUnSeul: '1 en espera',
     selection: '{{count}} seleccionadas',
     approuverLaSelection: 'Aprobar la selección',
     arbitrageTitre: 'Contrapartes en revisión',
@@ -356,6 +359,13 @@ export const es: Catalogue = {
     plansMrr: 'Ingreso mensual',
   },
   reporting: {
+    sectionReservations: 'Las reservas',
+    sectionPublications: 'Lo que ha vuelto',
+    sectionValeur: 'Lo que te ha costado',
+    videTitre: 'Todavía nada que informar',
+    videSuite: 'Esta página se llena sola la primera vez que atiendes a un creador. No hay nada que configurar.',
+    depuisLOuverture: 'Desde tu apertura',
+    semainesSuivies: 'Últimas {{count}} semanas',
     publicationsParSemaine: 'Publicaciones entregadas',
     parSemaineNote: 'por semana',
     titre: 'Lo que has recibido',
