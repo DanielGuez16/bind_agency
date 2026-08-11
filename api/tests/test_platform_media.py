@@ -118,13 +118,16 @@ async def test_les_deux_cotes_du_produit_y_ont_acces(client: AsyncClient, role: 
     assert reponse.status_code == 200
 
 
-async def test_sans_jeton_la_route_refuse(client: AsyncClient) -> None:
-    """Rien de confidentiel, mais rien qui concerne quelqu'un qui n'est pas entré.
+async def test_sans_jeton_la_route_repond_quand_meme(client: AsyncClient) -> None:
+    """**L'accueil s'affiche avant la connexion**, et il y prend son fond.
 
-    Le test continue d'utiliser la session ensuite : un refus qui laisserait la
-    transaction avortée ne se verrait qu'au test suivant, ailleurs.
+    Elle était derrière un jeton, au motif qu'elle ne concerne personne qui ne
+    soit pas entré. C'était faux, et le fond de l'écran d'entrée ne chargeait
+    jamais — ni la vidéo, ni son affiche. Exiger un jeton pour voir la première
+    chose du produit est impossible par construction.
     """
-    assert (await client.get(f"{PREFIX}/platform-media")).status_code == 401
+    anonyme = await client.get(f"{PREFIX}/platform-media")
 
-    suivante = await client.get(f"{PREFIX}/platform-media", headers=await entetes(client))
-    assert suivante.status_code == 200
+    assert anonyme.status_code == 200
+    assert "home" in anonyme.json()
+    assert len(anonyme.json()["categories"]) == len(BusinessCategory)

@@ -23,7 +23,14 @@ jest.mock('../src/shell/gabarit', () => ({
   useGabarit: () => ({ largeur: 1512, large: true }),
 }));
 
-const JOURNEE = {
+const JOURNEE: {
+  jour: string;
+  timezone: string;
+  debut: string;
+  fin: string;
+  a_trancher: Record<string, unknown>[];
+  items: Record<string, unknown>[];
+} = {
   jour: '2026-08-10',
   timezone: 'America/New_York',
   debut: '2026-08-10T12:00:00Z',
@@ -69,12 +76,12 @@ const JOURNEE = {
   ],
 };
 
-function monter() {
+function monter(journee: typeof JOURNEE = JOURNEE) {
   const api = new ApiClient({
     baseUrl: 'https://api.test',
     coffre: { lire: async () => null, ecrire: async () => {} },
     fetchImpl: async () =>
-      ({ ok: true, status: 200, json: async () => JOURNEE }) as Response,
+      ({ ok: true, status: 200, json: async () => journee }) as Response,
   });
 
   return render(
@@ -89,15 +96,27 @@ function monter() {
 }
 
 describe('journée du comptoir, grand écran', () => {
-  it('n’ouvre rien tant qu’aucune ligne n’est choisie', async () => {
-    // Pré-ouvrir la première ferait croire qu'elle demande quelque chose.
+  it('ouvre le panneau sur la première ligne plutôt que sur une phrase', async () => {
+    // **Il ne s'ouvrait sur rien**, au motif que pré-ouvrir ferait croire
+    // qu'une ligne demande quelque chose. Les deux tiers de l'écran restaient
+    // alors occupés par « choisissez une réservation à gauche », et c'est ce
+    // qu'un commerçant voyait chaque matin.
     await monter();
-    await waitFor(() => expect(screen.getByText('Gel manicure')).toBeTruthy());
+    await waitFor(() => expect(screen.getAllByText('Gel manicure').length).toBeGreaterThan(0));
 
-    expect(screen.getByTestId('aucune-ligne-ouverte')).toHaveTextContent(
-      en.commerce.choisirUneLigne,
-    );
-    expect(screen.queryByTestId('detail-de-la-ligne')).toBeNull();
+    expect(screen.getByTestId('detail-de-la-ligne')).toHaveTextContent(/Gel manicure/);
+    expect(screen.queryByTestId('aucune-ligne-ouverte')).toBeNull();
+  });
+
+  it('met devant ce qui attend une décision, avant le planning', async () => {
+    // C'est la seule chose de la journée qui réclame un geste.
+    await monter({
+      ...JOURNEE,
+      a_trancher: [{ ...JOURNEE.items[1], booking_id: 'b-9', item_name: 'Balayage' }],
+    });
+    await waitFor(() => expect(screen.getAllByText('Gel manicure').length).toBeGreaterThan(0));
+
+    expect(screen.getByTestId('detail-de-la-ligne')).toHaveTextContent(/Balayage/);
   });
 
   it('ouvre la ligne qu’on touche, et elle seule', async () => {
