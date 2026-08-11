@@ -20,9 +20,11 @@
  * n'attend rien. Elle boucle, et elle se tait — un son qui démarre seul sur un
  * premier écran est le plus sûr moyen de faire fermer l'onglet.
  */
+import { useEvent } from 'expo';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useEffect, useState } from 'react';
-import { Image, View } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
 
 import { useApi, type MediasPlateforme } from '../api';
 import { Texte } from '../components';
@@ -101,10 +103,34 @@ export function AccueilScreen({
     instance.play();
   });
 
+  /**
+   * **La lecture se redemande après le montage.** L'appel de la fabrique part
+   * avant que l'élément soit attaché au document : sur le web, un navigateur
+   * qui n'a pas encore d'élément n'a rien à lire, et la promesse se perd sans
+   * bruit. Le redemander une fois la vue posée est ce qui fait démarrer.
+   */
+  useEffect(() => {
+    if (!video) return;
+    lecteur.muted = true;
+    lecteur.loop = true;
+    lecteur.play();
+  }, [lecteur, video]);
+
+  /**
+   * L'affiche s'efface **quand la vidéo joue vraiment**, pas quand on la
+   * demande. Superposées, les deux se voyaient l'une sur l'autre — une image de
+   * fond, puis la même par-dessus. Et l'effacer trop tôt ferait clignoter
+   * l'écran chez qui refuse la lecture automatique.
+   */
+  const joue = useEvent(lecteur, 'playingChange', { isPlaying: false })?.isPlaying ?? false;
+
   return (
     <View
       testID="ecran-accueil"
-      style={{ flex: 1, backgroundColor: c['bg.canvas'] }}
+      // `overflow` : le média couvre en débordant, et un débordement qui
+      // élargit le conteneur produirait exactement la couture verticale et la
+      // bande sombre relevées à droite.
+      style={{ flex: 1, overflow: 'hidden', backgroundColor: c['bg.canvas'] }}
       onLayout={({ nativeEvent }) =>
         setForme({
           largeur: Math.round(nativeEvent.layout.width),
@@ -114,11 +140,11 @@ export function AccueilScreen({
     >
       {/* L'affiche est **sous** la vidéo et non à sa place : elle reste pendant
           le chargement, puis la vidéo la recouvre sans que l'écran clignote. */}
-      {affiche ? (
+      {affiche && !joue ? (
         <Image
           testID="affiche-accueil"
           source={{ uri: api.urlDuMedia(affiche) ?? undefined }}
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+          style={[StyleSheet.absoluteFillObject, { width: '100%', height: '100%' }]}
           resizeMode="cover"
         />
       ) : null}
@@ -127,8 +153,12 @@ export function AccueilScreen({
         <VideoView
           testID="video-accueil"
           player={lecteur}
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+          style={[StyleSheet.absoluteFillObject, { width: '100%', height: '100%' }]}
           contentFit="cover"
+          // **Sans `playsInline`, Safari refuse la lecture automatique** et
+          // bascule en plein écran : c'est l'attribut que le navigateur exige,
+          // avec `muted`, pour laisser une vidéo démarrer seule.
+          playsInline
           nativeControls={false}
           // Un fond ne se met pas en plein écran et ne part pas en image dans
           // l'image : ce sont des commandes, et il n'y a rien à commander.
@@ -140,17 +170,17 @@ export function AccueilScreen({
       {/* Un voile : le texte des portes se pose sur une image dont on ne
           maîtrise ni la luminosité ni le contraste. Sans lui, la promesse
           devient illisible sur un plan clair. */}
+      {/* **Un dégradé, pas un aplat.** Le texte se pose sur une image dont on
+          ne maîtrise ni la luminosité ni le contraste : sur un ciel clair, la
+          promesse devenait à peine lisible. Plus sombre en haut, où vivent le
+          titre et sa sous-ligne, puis s'éclaircissant — un aplat uniforme
+          salirait la photo pour protéger deux lignes. */}
       {video || affiche ? (
-        <View
+        <LinearGradient
           testID="voile-accueil"
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: c['scrim.mid'],
-          }}
+          colors={[c['scrim.top'], c['scrim.mid'], c['scrim.bottom']]}
+          locations={[0, 0.55, 1]}
+          style={StyleSheet.absoluteFillObject}
         />
       ) : null}
 
