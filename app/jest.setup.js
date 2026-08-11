@@ -16,8 +16,23 @@ jest.mock('expo-localization', () => ({
 // pour éprouver le choix d'orientation.
 jest.mock('expo-video', () => {
   const { View } = require('react-native');
+  // `useEvent` s'abonne au lecteur : un double sans émetteur fait lever le
+  // rendu. Il ne diffuse rien — la vidéo ne joue pas en test, et c'est le cas
+  // qu'on veut éprouver, celui où l'affiche reste en place.
+  const emetteur = {
+    addListener: () => ({ remove: () => {} }),
+    removeListener: () => {},
+    removeAllListeners: () => {},
+  };
   return {
-    useVideoPlayer: (source) => ({ source, loop: false, muted: false }),
+    useVideoPlayer: (source) => ({
+      source,
+      loop: false,
+      muted: false,
+      playing: false,
+      play: () => {},
+      ...emetteur,
+    }),
     VideoView: ({ player, testID }) =>
       require('react').createElement(View, {
         testID,

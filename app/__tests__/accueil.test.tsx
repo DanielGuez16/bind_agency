@@ -19,8 +19,23 @@ import { ThemeProvider } from '../src/theme';
 
 jest.mock('expo-video', () => {
   const { View } = require('react-native');
+  const emetteur = {
+    // `useEvent` s'abonne au lecteur : sans émetteur, le rendu lève. Il ne
+    // diffuse rien — la vidéo ne joue pas en test, et c'est le cas qu'on veut
+    // éprouver, celui où l'affiche reste en place.
+    addListener: () => ({ remove: () => {} }),
+    removeListener: () => {},
+    removeAllListeners: () => {},
+  };
   return {
-    useVideoPlayer: (source: string | null) => ({ source, loop: false, muted: false }),
+    useVideoPlayer: (source: string | null) => ({
+      source,
+      loop: false,
+      muted: false,
+      playing: false,
+      play: () => {},
+      ...emetteur,
+    }),
     VideoView: ({ player, testID }: { player: { source: string | null }; testID?: string }) => (
       <View testID={testID} accessibilityLabel={player?.source ?? 'aucune'} />
     ),

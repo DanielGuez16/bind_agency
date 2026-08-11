@@ -20,7 +20,7 @@ import { View } from 'react-native';
 import { Button, Icone, Marque, Texte } from '../components';
 import { useI18n } from '../i18n';
 import { useGabarit } from '../shell/gabarit';
-import { radius, spacing, useColors, type ColorName } from '../theme';
+import { breakpoint, radius, spacing, useColors, type ColorName } from '../theme';
 import type { RoleInscriptible } from '../session';
 
 /** La largeur d'une porte. La passation la fixe, et elle ne s'étire pas. */
@@ -69,7 +69,19 @@ export function ChoixDeLaPorte({
   ];
 
   return (
-    <View style={{ gap: spacing['space.6'] }} testID="choix-de-la-porte">
+    // **Tout vit dans la même grille.** Le lien « Already have an account? »
+    // était collé au bord droit de l'écran, seul, à plus de mille points des
+    // cartes : il partageait la largeur du viewport au lieu de celle du
+    // contenu. Borné et centré, il retrouve sa place au-dessus d'elles.
+    <View
+      testID="choix-de-la-porte"
+      style={{
+        gap: spacing['space.6'],
+        width: '100%',
+        maxWidth: large ? breakpoint.contentMaxCreator : undefined,
+        alignSelf: 'center',
+      }}
+    >
       <View
         style={{
           flexDirection: 'row',
@@ -100,6 +112,10 @@ export function ChoixDeLaPorte({
           alignItems: large ? 'stretch' : undefined,
         }}
       >
+        {/* Les cartes occupent la grille au lieu de se caler à gauche : deux
+            cartes de 440 dans 1512 laissaient la moitié droite vide. Elles
+            gardent leur largeur de référence comme plancher et s'étendent
+            à parts égales — c'est la comparaison d'un regard qui compte. */}
         {portes.map((porte) => (
           <View
             key={porte.role}
@@ -107,7 +123,8 @@ export function ChoixDeLaPorte({
             style={{
               // Bornée et non étirée : deux cartes qui occupent tout l'écran
               // cessent d'être comparables d'un regard.
-              width: large ? LARGEUR_DE_PORTE : undefined,
+              flex: large ? 1 : undefined,
+              minWidth: large ? LARGEUR_DE_PORTE : undefined,
               gap: spacing['space.4'],
               padding: spacing['space.5'],
               borderRadius: radius['radius.xl'],
