@@ -105,3 +105,23 @@ class BusinessRead(BaseModel):
     cover_photo_key: str | None
     status: BusinessStatus
     created_at: datetime
+
+
+class EtatDeLaCompositionRead(BaseModel):
+    """Où en est la composition, pour le menu de configuration.
+
+    Trois nombres et une date, en une lecture. Les demander séparément ferait
+    trois requêtes pour un menu, dont l'une arriverait toujours en dernier — et
+    le menu se recomposerait sous les yeux de qui le lit.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    business_id: uuid.UUID
+    prestations: int
+    prestations_masquees: int
+    jours_ouverts: int
+    #: Nulle tant que le commerce n'a jamais été mis en ligne. Ce n'est pas la
+    #: même chose qu'une mise en pause, et l'écran ne doit pas les confondre.
+    en_ligne_depuis: datetime | None
+    status: BusinessStatus

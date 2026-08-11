@@ -48,6 +48,7 @@ import type {
   Reporting,
   VerificationDuCompte,
   VueDesPaliers,
+  EtatDeLaComposition,
   BookingStatus,
   MediasPlateforme,
 } from './types';
@@ -374,6 +375,12 @@ export class Api {
    */
   urlDuMedia(cle: string | null): string | undefined {
     return cle ? this.client.urlComplete(routes.media(cle)) : undefined;
+  }
+
+  compositionDuCommerce(businessId: string, signal?: AbortSignal) {
+    return this.client.request<EtatDeLaComposition>(routes.compositionDuCommerce(businessId), {
+      signal,
+    });
   }
 
   etapesDActivation(businessId: string, signal?: AbortSignal) {

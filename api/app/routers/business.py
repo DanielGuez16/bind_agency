@@ -27,8 +27,10 @@ from app.schemas.business import (
     BusinessRead,
     BusinessUpdate,
     CoordinatesPayload,
+    EtatDeLaCompositionRead,
 )
 from app.services import business as business_service
+from app.services import composition as composition_service
 from app.services.audit import Actor
 
 router = APIRouter(prefix="/business", tags=["business"])
@@ -146,6 +148,25 @@ async def activation_steps(business: CurrentBusiness, session: SessionDep) -> Vu
         status=business.status,
         etapes=[EtapeRead.model_validate(etape) for etape in etapes],
     )
+
+
+@router.get("/{business_id}/composition", response_model=EtatDeLaCompositionRead)
+async def composition_state(
+    business: CurrentBusiness, session: SessionDep
+) -> EtatDeLaCompositionRead:
+    """Où en est la composition : prestations, jours ouverts, mise en ligne.
+
+    Le menu de configuration montrait trois portes sans rien dire de ce qu'il y
+    avait derrière. C'est le premier écran qu'ouvre un salon qui vient de
+    s'inscrire, et il doit voir où il en est sans entrer dans chacune.
+
+    Une route et non trois : les trois nombres vivent dans trois tables, et
+    trois appels feraient se recomposer le menu sous les yeux.
+    """
+    etat = await composition_service.etat_de_la_composition(session, business.id)
+    # `CurrentBusiness` a déjà chargé le commerce : il ne peut pas manquer ici.
+    assert etat is not None
+    return EtatDeLaCompositionRead.model_validate(etat)
 
 
 @router.post("/{business_id}/pause", response_model=BusinessRead)

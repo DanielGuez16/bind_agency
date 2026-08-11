@@ -381,6 +381,15 @@
         ]
       }
     },
+    "/api/v1/business/{business_id}/composition": {
+      "get": {
+        "operationId": "composition_state_api_v1_business__business_id__composition_get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/api/v1/business/{business_id}/menu-imports": {
       "post": {
         "operationId": "create_import_api_v1_business__business_id__menu_imports_post",

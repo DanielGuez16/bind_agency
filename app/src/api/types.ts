@@ -646,3 +646,19 @@ export type MediasPlateforme = {
     poster_portrait_key: string | null;
   };
 };
+
+/**
+ * Où en est la composition d'un commerce : les trois nombres du menu.
+ *
+ * **`en_ligne_depuis` nulle n'est pas une mise en pause.** Jamais mis en ligne
+ * et retiré du fil sont deux états différents, et le menu ne doit pas les
+ * confondre : le premier attend un premier geste, le second en attend un autre.
+ */
+export type EtatDeLaComposition = {
+  business_id: string;
+  prestations: number;
+  prestations_masquees: number;
+  jours_ouverts: number;
+  en_ligne_depuis: string | null;
+  status: 'onboarding' | 'active' | 'paused' | 'suspended';
+};
