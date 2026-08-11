@@ -2759,3 +2759,44 @@ Ce que la garde ne couvre pas : le contrat entre l'API et `app/src/api/types.ts`
 écrit à la main. `openapi.json` ne porte que les chemins, par choix assumé — et
 c'est ce qui a laissé `ReservationDuCommerce` déclarer côté app deux champs que
 l'API ne rendait pas.
+
+## 2026-08-11 — Les comptes des issues du fil sortent du même tamis que la liste
+
+« Élargir à 5 km · 9 salons », « Retirer le filtre Spa · 34 salons » : la
+passation exige qu'aucune issue ne se propose à l'aveugle, donc que le chiffre
+soit vrai. Or le seul filtre du fil qui ne s'exprime pas en SQL — reste-t-il un
+créneau — est aussi le plus discriminant. Un compte pris sur la requête
+géographique seule aurait annoncé des salons complets.
+
+Le fil interroge donc **une fois au rayon le plus large configuré**, sans filtre
+de catégorie, applique le contrôle de disponibilité une fois, puis découpe : la
+liste, les comptes par catégorie, les comptes par rayon. Ils ne peuvent pas se
+contredire, puisqu'ils sortent du même ensemble. Compter chaque rayon par une
+requête de plus aurait refait tout le contrôle de disponibilité à chaque fois.
+
+Le coût est réel et assumé : le contrôle porte désormais sur les lignes du plus
+large rayon configuré, pas du rayon demandé. À revoir si `feed_radius_options_metres`
+s'allonge, ou le jour où le fil se paginera.
+
+Deux règles que les tests figent, chacune éprouvée sur sa mutation :
+
+- Les comptes par catégorie **ignorent le filtre de catégorie en vigueur** —
+  « Retirer le filtre Spa » se lit depuis le filtre Spa, et les appliquer à la
+  requête ferait disparaître les autres pastilles au premier clic.
+- Les comptes par rayon **conservent** ce filtre. Les deux issues d'un fil vide
+  ne se mélangent pas : relâcher les deux à la fois annoncerait un total que ni
+  l'une ni l'autre ne rend.
+
+Aucune issue n'est proposée à un créateur sans compte social : élargir n'y
+changerait rien, et le proposer enverrait chercher ailleurs une cause qui est
+ici. C'est le même piège de l'ensemble vide que les obstacles ont déjà connu.
+
+**Recherche et rangées thématiques : non implémentées, et à trancher.** Le point
+3 de la campagne les demande, la passation les exclut. `components.md` §« ce qui
+n'existe pas » dit « pas de carrousel », `rules.md` §31 dit que les rangées de
+chips sont en `flexWrap` et « jamais en défilement horizontal », et aucune
+maquette — 03a à 03d — ne montre de champ de recherche. `api-map.md` ne connaît
+au fil que `longitude`, `latitude`, `rayon_metres` et `categorie`, avec la
+mention « **Pas de quartier, pas de curseur** ». L'entrée par quartier de la
+maquette 03d tombe sous la même exclusion, et aucun modèle de quartier n'existe
+en base.

@@ -8,7 +8,14 @@ from pydantic import BaseModel, ConfigDict
 from app.models.enums import BusinessCategory, ContentFormat, Platform
 from app.schemas.obstacle import ObstacleRead
 
-__all__ = ["CommerceDuFilRead", "FilRead", "ItemDuFilRead", "ObstacleRead"]
+__all__ = [
+    "CommerceDuFilRead",
+    "CompteParCategorieRead",
+    "CompteParRayonRead",
+    "FilRead",
+    "ItemDuFilRead",
+    "ObstacleRead",
+]
 
 
 class ItemDuFilRead(BaseModel):
@@ -45,15 +52,46 @@ class CommerceDuFilRead(BaseModel):
     items: list[ItemDuFilRead]
 
 
+class CompteParCategorieRead(BaseModel):
+    """Ce qu'une catégorie ouvrirait, dans le rayon courant."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    categorie: BusinessCategory
+    commerces: int
+    prestations: int
+
+
+class CompteParRayonRead(BaseModel):
+    """Ce qu'un élargissement ouvrirait, filtre de catégorie conservé."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    rayon_metres: int
+    commerces: int
+    prestations: int
+
+
 class FilRead(BaseModel):
-    """Le fil, et ce qui explique sa maigreur.
+    """Le fil, ce qui explique sa maigreur, et ce que chaque issue rapporterait.
 
     `obstacles` accompagne toujours la réponse, même quand des commerces sont
     rendus : un créateur qui accède au palier story mais pas au palier reel doit
     savoir ce qui lui manque, sinon il croit avoir tout vu.
+
+    `categories` et `rayons` sortent **du même tamis que la liste** : mêmes
+    paliers, mêmes items disponibles, même contrôle de créneau. Un compte
+    calculé plus vite promettrait des salons que l'écran suivant ne rendrait
+    pas, et « Élargir à 5 km · 9 salons » deviendrait un mensonge chiffré.
     """
 
     model_config = ConfigDict(from_attributes=True)
 
     commerces: list[CommerceDuFilRead]
     obstacles: list[ObstacleRead]
+    #: Le rayon réellement appliqué, demandé ou par défaut. L'app ne le devine
+    #: pas : c'est lui qui s'écrit dans « Wynwood · rayon 3 km ».
+    rayon_metres: int
+    total_prestations: int
+    categories: list[CompteParCategorieRead]
+    rayons: list[CompteParRayonRead]

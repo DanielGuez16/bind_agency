@@ -192,6 +192,14 @@ class Settings(BaseSettings):
     #: Rayon du fil, en mètres. Dix kilomètres : au-delà, un créateur de Miami
     #: ne se déplace pas pour un soin, et le fil se remplit de bruit.
     feed_radius_metres: int = 10_000
+    #: Les élargissements proposés quand le fil est maigre, en mètres.
+    #:
+    #: En configuration, comme tout seuil. Le fil ne les propose que s'ils sont
+    #: **plus larges** que le rayon courant, et chacun est annoncé avec ce qu'il
+    #: rapporterait — « Élargir à 5 km · 9 salons ». Proposer un élargissement
+    #: sans son gain reviendrait à faire chercher à l'aveugle, et un gain faux
+    #: est pire qu'aucun.
+    feed_radius_options_metres: tuple[int, ...] = (3_000, 5_000, 10_000, 25_000)
     #: Durée du garde posé à la création. Dix minutes : assez pour confirmer,
     #: assez court pour qu'une place abandonnée revienne vite.
     booking_hold_seconds: int = 600

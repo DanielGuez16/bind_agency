@@ -423,6 +423,246 @@ async def test_un_createur_sans_compte_social_a_un_fil_vide_et_explique(
 
 
 # --------------------------------------------------------------------------
+# ce que chaque issue rapporterait
+# --------------------------------------------------------------------------
+#
+# « Élargir à 5 km · 9 salons », « Retirer le filtre Spa · 34 salons ». La
+# règle de la passation est qu'aucune issue ne se propose à l'aveugle — donc
+# que le chiffre soit vrai. Un compte obtenu par un chemin plus court, sans le
+# contrôle de disponibilité, promettrait des salons que l'écran suivant ne
+# rendrait pas ; c'est le seul défaut que ces tests cherchent.
+
+
+async def test_le_compte_d_une_categorie_est_celui_qu_elle_rend(session: AsyncSession) -> None:
+    """La promesse et la livraison, comparées l'une à l'autre.
+
+    Le fil sans filtre annonce ce que chaque pastille ouvrirait ; le fil filtré
+    sur cette pastille doit rendre exactement cela. Deux chemins de calcul
+    finiraient par diverger, et c'est ce chiffre-là qu'on lit avant de cliquer.
+    """
+    beaute = await commerce(session, longitude=-80.1305, latitude=25.7907, name="Beauté")
+    spa_ouvert = await commerce(
+        session,
+        longitude=-80.1306,
+        latitude=25.7907,
+        name="Spa ouvert",
+        category=BusinessCategory.FITNESS,
+    )
+    await offre(session, beaute, name="Soin A")
+    await offre(session, beaute, name="Soin B")
+    await offre(session, spa_ouvert, name="Séance")
+    user, _ = await createur(session)
+
+    sans_filtre = await fil(session, user)
+    compte = {c.categorie: c for c in sans_filtre.categories}
+
+    assert compte[BusinessCategory.FITNESS].commerces == 1
+    assert compte[BusinessCategory.FITNESS].prestations == 1
+    assert compte[BusinessCategory.BEAUTY].prestations == 2
+
+    filtre = await fil(session, user, categorie=BusinessCategory.FITNESS)
+    assert len(filtre.commerces) == compte[BusinessCategory.FITNESS].commerces
+    assert filtre.total_prestations == compte[BusinessCategory.FITNESS].prestations
+
+
+async def test_un_filtre_pose_ne_masque_pas_les_autres_pastilles(
+    session: AsyncSession,
+) -> None:
+    """« Retirer le filtre Spa · 34 salons » se lit **depuis** le filtre Spa.
+
+    Les comptes ignorent donc le filtre en vigueur. Appliqués à la requête, ils
+    ne rendraient que la catégorie déjà choisie : les autres pastilles
+    disparaîtraient au premier clic, et l'écran filtré n'aurait plus d'issue
+    que le retour en arrière.
+    """
+    beaute = await commerce(session, longitude=-80.1305, latitude=25.7907, name="Beauté")
+    resto = await commerce(
+        session,
+        longitude=-80.1306,
+        latitude=25.7907,
+        name="Resto",
+        category=BusinessCategory.RESTAURANT,
+    )
+    await offre(session, beaute)
+    await offre(session, resto)
+    user, _ = await createur(session)
+
+    filtre = await fil(session, user, categorie=BusinessCategory.RESTAURANT)
+
+    proposees = {c.categorie for c in filtre.categories}
+    assert proposees == {BusinessCategory.BEAUTY, BusinessCategory.RESTAURANT}
+    # Et le total que « tout retirer » rendrait se lit sur la somme.
+    assert sum(c.commerces for c in filtre.categories) == 2
+
+
+async def test_une_categorie_sans_rien_de_reservable_n_est_pas_proposee(
+    session: AsyncSession,
+) -> None:
+    """Une pastille qui ouvre sur du vide est une action impossible.
+
+    Le commerce existe, il est actif, sa catégorie aussi, son item est
+    disponible — il n'a simplement plus **aucun créneau**. C'est le seul filtre
+    du fil qui ne s'exprime pas en SQL : compter sur la requête géographique
+    seule aurait annoncé ce musée, et la pastille aurait mené à un écran vide.
+
+    L'item indisponible ne servirait pas ici : la requête l'écarte déjà, et un
+    compte pris avant le contrôle de créneau passerait quand même.
+    """
+    beaute = await commerce(session, longitude=-80.1305, latitude=25.7907, name="Beauté")
+    musee = await commerce(
+        session,
+        longitude=-80.1306,
+        latitude=25.7907,
+        name="Musée",
+        category=BusinessCategory.MUSEUM,
+    )
+    await offre(session, beaute)
+    await offre(session, musee)
+    await session.execute(
+        sa.text("DELETE FROM capacity_rule WHERE business_id = :b"), {"b": musee.id}
+    )
+    await session.flush()
+    user, _ = await createur(session)
+
+    resultat = await fil(session, user)
+
+    proposees = {c.categorie for c in resultat.categories}
+    assert BusinessCategory.BEAUTY in proposees
+    assert BusinessCategory.MUSEUM not in proposees
+
+
+async def test_l_elargissement_ne_compte_que_le_reservable(session: AsyncSession) -> None:
+    """Le pendant, sur l'autre issue.
+
+    Le salon lointain n'a plus de créneau : l'annoncer dans « Élargir à 25 km »
+    ferait élargir pour rien, et le créateur ne saurait pas pourquoi il ne
+    trouve rien après avoir suivi un chiffre.
+    """
+    proche = await commerce(session, longitude=-80.1305, latitude=25.7907, name="Proche")
+    loin = await commerce(session, longitude=-80.2100, latitude=25.7907, name="Loin")
+    await offre(session, proche)
+    await offre(session, loin)
+    await session.execute(
+        sa.text("DELETE FROM capacity_rule WHERE business_id = :b"), {"b": loin.id}
+    )
+    await session.flush()
+    user, _ = await createur(session)
+
+    resultat = await fil(session, user, rayon_metres=1_000)
+
+    par_rayon = {r.rayon_metres: r.commerces for r in resultat.rayons}
+    assert par_rayon[25_000] == 1, "le lointain n'a plus de créneau"
+
+
+async def test_l_elargissement_annonce_ce_qu_il_ramene(session: AsyncSession) -> None:
+    """Et il garde le rayon courant hors du compte : c'est un gain, pas un total.
+
+    Le salon lointain est hors du rayon demandé et dans l'élargissement. Sans
+    balayage plus large que le rayon, il n'aurait jamais été vu, et l'issue se
+    serait proposée sans chiffre — ou avec le même que le fil courant.
+    """
+    proche = await commerce(session, longitude=-80.1305, latitude=25.7907, name="Proche")
+    # Environ 8 km à l'ouest : hors de 1 km, dans les 25 km configurés.
+    loin = await commerce(session, longitude=-80.2100, latitude=25.7907, name="Loin")
+    await offre(session, proche)
+    await offre(session, loin)
+    user, _ = await createur(session)
+
+    resultat = await fil(session, user, rayon_metres=1_000)
+
+    assert [c.name for c in resultat.commerces] == ["Proche"]
+    par_rayon = {r.rayon_metres: r.commerces for r in resultat.rayons}
+    assert par_rayon[25_000] == 2, "les deux, à 25 km"
+    assert par_rayon[3_000] == 1, "le lointain est à 8 km, pas à 3"
+
+    # Ce que l'issue promet, le fil élargi le rend.
+    elargi = await fil(session, user, rayon_metres=25_000)
+    assert len(elargi.commerces) == par_rayon[25_000]
+
+
+async def test_on_ne_propose_jamais_de_retrecir(session: AsyncSession) -> None:
+    """Rétrécir n'est pas une issue à un fil maigre.
+
+    Les rayons configurés vont de 3 à 25 km : demandé à 25, il n'en reste
+    aucun à proposer, et la liste est vide plutôt que garnie de retours en
+    arrière.
+    """
+    b = await commerce(session, longitude=-80.1305, latitude=25.7907)
+    await offre(session, b)
+    user, _ = await createur(session)
+
+    large = await fil(session, user, rayon_metres=25_000)
+    assert large.rayons == ()
+
+    etroit = await fil(session, user, rayon_metres=1_000)
+    assert all(r.rayon_metres > 1_000 for r in etroit.rayons)
+
+
+async def test_l_elargissement_garde_le_filtre_de_categorie(session: AsyncSession) -> None:
+    """Les deux issues ne se mélangent pas.
+
+    « Élargir à 5 km » garde le filtre Spa, « Retirer le filtre Spa » garde le
+    rayon. Compter l'un en relâchant l'autre annoncerait un total que ni l'une
+    ni l'autre ne rend.
+    """
+    proche_beaute = await commerce(session, longitude=-80.1305, latitude=25.7907, name="Beauté")
+    loin_resto = await commerce(
+        session,
+        longitude=-80.2100,
+        latitude=25.7907,
+        name="Resto lointain",
+        category=BusinessCategory.RESTAURANT,
+    )
+    loin_beaute = await commerce(
+        session, longitude=-80.2101, latitude=25.7907, name="Beauté lointaine"
+    )
+    await offre(session, proche_beaute)
+    await offre(session, loin_resto)
+    await offre(session, loin_beaute)
+    user, _ = await createur(session)
+
+    resultat = await fil(session, user, rayon_metres=1_000, categorie=BusinessCategory.BEAUTY)
+
+    par_rayon = {r.rayon_metres: r.commerces for r in resultat.rayons}
+    # Les deux salons de beauté, jamais le restaurant.
+    assert par_rayon[25_000] == 2
+
+
+async def test_le_fil_rend_le_rayon_qu_il_a_applique(session: AsyncSession) -> None:
+    """L'app ne le devine pas : c'est lui qui s'écrit dans « rayon 3 km »."""
+    b = await commerce(session, longitude=-80.1305, latitude=25.7907)
+    await offre(session, b)
+    user, _ = await createur(session)
+
+    assert (await fil(session, user)).rayon_metres == get_settings().feed_radius_metres
+    assert (await fil(session, user, rayon_metres=4_200)).rayon_metres == 4_200
+
+
+async def test_un_fil_sans_compte_social_ne_propose_aucune_issue(
+    session: AsyncSession,
+) -> None:
+    """Élargir n'y changerait rien, et le proposer enverrait chercher ailleurs.
+
+    La cause est ici, et l'obstacle la nomme. Une issue chiffrée à côté d'elle
+    ferait croire qu'il suffit d'élargir.
+    """
+    b = await commerce(session, longitude=-80.1305, latitude=25.7907)
+    await offre(session, b)
+    user = await auth_service.register(
+        session,
+        email=f"{uuid.uuid4()}@example.com",
+        password="un-mot-de-passe-solide-42",
+        role=UserRole.CREATOR,
+    )
+
+    resultat = await fil(session, user)
+
+    assert resultat.categories == ()
+    assert resultat.rayons == ()
+    assert resultat.total_prestations == 0
+
+
+# --------------------------------------------------------------------------
 # la route
 # --------------------------------------------------------------------------
 
