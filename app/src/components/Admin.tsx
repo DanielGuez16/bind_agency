@@ -13,7 +13,7 @@
  */
 import { Pressable, ScrollView, View } from 'react-native';
 
-import { radius, useColors } from '../theme';
+import { breakpoint, radius, useColors } from '../theme';
 import { Texte } from './Texte';
 
 export type Colonne = {
@@ -147,7 +147,9 @@ export function DetailPanel({
     <View
       testID={testID}
       style={{
-        width: 430,
+        // La passation v0.6 fixe 440, dans la fourchette 400–470. La valeur
+        // était écrite ici ; elle vient maintenant du jeton.
+        width: breakpoint.detailPanelAdmin,
         borderLeftWidth: 1,
         borderLeftColor: c['border.default'],
         backgroundColor: c['bg.surface'],

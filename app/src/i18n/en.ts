@@ -300,6 +300,8 @@ export const en = {
     etapeCapacityRule: 'Opening hours',
   },
   admin: {
+    selection: '{{count}} selected',
+    approuverLaSelection: 'Approve selection',
     arbitrageTitre: 'Counterparts under review',
     arbitrageVide: 'Nothing to arbitrate.',
     arbitrageParLAdministration: 'asked by BIND',

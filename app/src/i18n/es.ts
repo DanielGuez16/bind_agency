@@ -297,6 +297,8 @@ export const es: Catalogue = {
     etapeCapacityRule: 'Horario de apertura',
   },
   admin: {
+    selection: '{{count}} seleccionadas',
+    approuverLaSelection: 'Aprobar la selección',
     arbitrageTitre: 'Contrapartes en revisión',
     arbitrageVide: 'Nada que arbitrar.',
     arbitrageParLAdministration: 'solicitado por BIND',
