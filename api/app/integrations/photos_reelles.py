@@ -50,6 +50,9 @@ RACINE = API_ROOT.parent / "assets" / "photos"
 #: Le double d'un affichage courant, pour tenir sur un écran à densité doublée
 #: sans que le fichier double une fois de plus.
 COUVERTURE = (1200, 675)
+#: L'affiche verticale de l'accueil, au rapport 9:16 de sa vidéo. La réduire au
+#: format paysage la recadrerait, et le saut se verrait au démarrage.
+AFFICHE_PORTRAIT = (720, 1280)
 PRESTATION = (800, 800)
 CATEGORIE = (400, 400)
 

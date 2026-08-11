@@ -45,7 +45,12 @@ async def test_les_six_categories_repondent_meme_sans_photo(client: AsyncClient)
     categories = reponse.json()["categories"]
     assert [ligne["category"] for ligne in categories] == [c.value for c in BusinessCategory]
     assert all(ligne["photo_key"] is None for ligne in categories)
-    assert reponse.json()["home"] == {"video_key": None, "poster_key": None}
+    assert reponse.json()["home"] == {
+        "video_key": None,
+        "poster_key": None,
+        "video_portrait_key": None,
+        "poster_portrait_key": None,
+    }
 
 
 async def test_une_photo_posee_ressort_sur_sa_categorie(
@@ -97,7 +102,12 @@ async def test_l_affiche_se_sert_sans_la_video(client: AsyncClient, session: Asy
         "home"
     ]
 
-    assert accueil == {"video_key": None, "poster_key": "photos/home/2026/aff"}
+    assert accueil == {
+        "video_key": None,
+        "poster_key": "photos/home/2026/aff",
+        "video_portrait_key": None,
+        "poster_portrait_key": None,
+    }
 
 
 @pytest.mark.parametrize("role", [UserRole.CREATOR, UserRole.BUSINESS_MEMBER])

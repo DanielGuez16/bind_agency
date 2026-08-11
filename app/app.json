@@ -26,7 +26,8 @@
     "plugins": [
       "expo-localization",
       "expo-secure-store",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-video"
     ],
     "scheme": "bind"
   }

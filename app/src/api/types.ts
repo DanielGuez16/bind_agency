@@ -614,3 +614,22 @@ export type NouvelItem = {
   requires_booking?: boolean;
   photo_key?: string | null;
 };
+
+
+/** Les médias de la plateforme : les pastilles de catégorie et l'accueil. */
+export type MediasPlateforme = {
+  categories: { category: BusinessCategory; photo_key: string | null }[];
+  /**
+   * Les quatre médias de l'accueil, chacun pouvant manquer séparément.
+   *
+   * Deux orientations parce que l'écran est en plein écran : une vidéo 16:9 sur
+   * un téléphone tenu droit ne peut donner que des bandes noires ou un
+   * recadrage qui coupe le sujet.
+   */
+  home: {
+    video_key: string | null;
+    poster_key: string | null;
+    video_portrait_key: string | null;
+    poster_portrait_key: string | null;
+  };
+};

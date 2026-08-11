@@ -134,16 +134,32 @@ lettre, **avec le tiret bas** de `family_activity`.
 
 ## 5. Accueil
 
-L'écran d'ouverture de l'application.
+L'écran d'ouverture, en **plein écran**. Deux orientations, pas une : sur un
+téléphone tenu droit, une vidéo paysage ne peut donner que des bandes noires ou
+un recadrage qui coupe le sujet. La verticale est donc la version qui compte,
+et la paysage sert le web sur grand écran.
+
+**Chaque orientation a son affiche**, pour la même raison : une affiche 16:9
+sous une vidéo 9:16 recadre au chargement, puis la vidéo démarre sur un autre
+cadrage. Le saut se voit.
 
 | Fichier | Format | Minimum | Ce qu'il doit montrer |
 | --- | --- | --- | --- |
-| `accueil/video.mp4` | MP4 (H.264), 16:9 | 1280 × 720 à 30 im/s, 8 à 15 s, **sans son**, sous 8 Mo | Un plan lent et lumineux : Miami, un salon, un geste de soin. Doit pouvoir tourner en fond derrière du texte — donc peu contrasté et sans mouvement brusque |
-| `accueil/video-poster.jpg` | JPEG, 16:9 | 1920 × 1080 | La **première image de la vidéo**, ou une image très proche. Elle s'affiche pendant le chargement : si elle diffère, on voit un saut |
+| `accueil/video-portrait.mp4` | MP4 (H.264), **9:16 vertical** | 720 × 1280 à 30 im/s, 8 à 15 s, **sans son**, sous 8 Mo | Le plan principal : Miami, un salon, un geste de soin. **Cadré pour le vertical** — le sujet dans le tiers central en hauteur, de la place en haut et en bas, parce que le titre et le bouton se posent dessus |
+| `accueil/video-portrait-poster.jpg` | JPEG, **9:16 vertical** | 1080 × 1920 | La **première image** de la vidéo verticale, ou une image très proche |
+| `accueil/video.mp4` | MP4 (H.264), 16:9 paysage | 1280 × 720 à 30 im/s, 8 à 15 s, **sans son**, sous 8 Mo | Le même esprit, cadré large. Sert le web sur grand écran. Peut être le plan large dont la verticale est un recadrage, ou un autre plan |
+| `accueil/video-poster.jpg` | JPEG, 16:9 paysage | 1920 × 1080 | La **première image** de la vidéo paysage |
 
-> Pour l'instant, un substitut suffit — n'importe quel plan d'ambiance fait
-> l'affaire, le chemin est ce qui compte. La vidéo définitive prendra sa place
-> sans changer une ligne de code.
+**Ce qui vaut pour les deux vidéos** : un plan lent et lumineux, capable de
+tourner en fond derrière du texte — donc peu contrasté, sans mouvement brusque,
+et sans visage qui fixe l'objectif.
+
+> **Si une orientation manque, l'écran prend l'autre** plutôt que de n'afficher
+> aucune vidéo, avec le recadrage le moins mauvais : une paysage sur un
+> téléphone se recadre au centre, une verticale sur grand écran se pose au
+> milieu sans être étirée. C'est dégradé et c'est visible — mais un fond fixe
+> vaut mieux qu'un écran d'accueil sans fond.
+
 
 ---
 
@@ -154,9 +170,11 @@ L'écran d'ouverture de l'application.
 | Couvertures des 3 commerces | 3 | ✅ fourni |
 | Prestations | 12 | ✅ fourni |
 | Catégories | 6 | ✅ fourni |
-| Accueil (vidéo + affiche) | 2 | ✅ fourni |
+| Accueil, paysage (vidéo + affiche) | 2 | ✅ fourni |
+| Accueil, **vertical** (vidéo + affiche) | 2 | ⏳ attendu |
 
-**Tout est en place : 22 photos et 1 vidéo.** Le semis les range à chaque
+**Il manque les deux médias verticaux de l'accueil.** Le reste est en place :
+22 photos et 1 vidéo paysage. Le semis les range à chaque
 `make seed`, et nomme celles qu'il ne trouve pas.
 
 > **La vidéo a été réencodée.** L'originale faisait 39 Mo — 4K à 60 images par

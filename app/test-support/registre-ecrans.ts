@@ -39,6 +39,11 @@ export const ECRANS_COMMERCE = [
  * sont la dette d'avant le système de design.
  */
 export const HORS_REGISTRE = [
+  // L'accueil ne charge pas une donnée à quatre états : il charge un fond, et
+  // son absence n'est pas une erreur — c'est un des cas prévus. Un état « en
+  // échec » y afficherait « impossible de charger la vidéo » sur la première
+  // chose qu'on voit du produit, ce qui est pire que le fond manquant.
+  'AccueilScreen.tsx',
   'BienvenueScreen.tsx',
   // Une table des matières : trois portes, aucune requête. Lui inventer quatre
   // états demanderait de lui inventer une donnée à charger.

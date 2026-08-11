@@ -31,8 +31,13 @@ describe('couverture des écrans', () => {
     // ligne ; l'accueil après inscription, qui explique et propose sans rien
     // charger ; la table des matières de la configuration, qui n'a que trois
     // portes ; et les trois écrans de la dette d'avant le système de design.
-    // Ce test tombe si quelqu'un y range un neuvième écran pour éviter
-    // d'écrire ses états.
-    expect(HORS_REGISTRE).toHaveLength(8);
+    // Ce test tombe si quelqu'un y range un écran de plus pour éviter d'écrire
+    // ses états. Le plafond ne monte qu'avec sa raison, écrite dans la liste.
+    //
+    // Passé à neuf pour l'accueil : il charge un fond, et l'absence de ce fond
+    // n'est pas une erreur mais un des cas prévus. Un état « en échec » y
+    // afficherait « impossible de charger la vidéo » sur la première chose
+    // qu'on voit du produit — pire que le fond manquant.
+    expect(HORS_REGISTRE).toHaveLength(9);
   });
 });

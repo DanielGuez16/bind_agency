@@ -287,38 +287,59 @@ async def poser_les_photos(session: AsyncSession) -> ResumePhotos:
         )
         compter(trouvee, chemin, poids)
 
-    # --- accueil
+    # --- accueil, deux orientations
     #
-    # L'affiche suit le chemin des photos ; la vidéo, elle, n'est pas une image
-    # et se dépose telle quelle. Tant qu'aucun fichier n'est fourni, aucune clé
-    # n'est posée : l'app n'a pas de vidéo à jouer et s'en tient à l'affiche,
-    # ce qui est exactement le substitut voulu.
-    chemin_affiche = "accueil/video-poster.jpg"
-    cle, trouvee, poids = await _deposer_photo(
-        depot,
-        chemin=chemin_affiche,
-        taille_reelle=photos_reelles.COUVERTURE,
-        graine="accueil-affiche",
-        taille_generee=COUVERTURE,
-        famille="home",
-    )
-    await platform_asset_service.poser(
-        session, slug=platform_asset_service.AFFICHE_VIDEO, object_key=cle
-    )
-    compter(trouvee, chemin_affiche, poids)
+    # L'écran d'accueil est en plein écran : une vidéo paysage sur un téléphone
+    # tenu droit ne peut donner que des bandes noires ou un recadrage qui coupe
+    # le sujet. Chaque orientation a donc la sienne, et son affiche — une
+    # affiche 16:9 sous une vidéo 9:16 recadre au chargement, puis la vidéo
+    # démarre sur un autre cadrage, et le saut se voit.
+    #
+    # Les affiches suivent le chemin des photos, redimensionnées comme elles.
+    # Les vidéos se déposent telles quelles : les réencoder demanderait
+    # `ffmpeg`, d'un autre ordre que Pillow pour deux fichiers.
+    for chemin_affiche, slug, taille in (
+        (
+            "accueil/video-poster.jpg",
+            platform_asset_service.AFFICHE_VIDEO,
+            photos_reelles.COUVERTURE,
+        ),
+        (
+            "accueil/video-portrait-poster.jpg",
+            platform_asset_service.AFFICHE_PORTRAIT,
+            photos_reelles.AFFICHE_PORTRAIT,
+        ),
+    ):
+        cle, trouvee, poids = await _deposer_photo(
+            depot,
+            chemin=chemin_affiche,
+            taille_reelle=taille,
+            graine=f"accueil-{slug}",
+            taille_generee=COUVERTURE,
+            famille="home",
+        )
+        await platform_asset_service.poser(session, slug=slug, object_key=cle)
+        compter(trouvee, chemin_affiche, poids)
 
-    video = photos_reelles.lire_telle_quelle("accueil/video.mp4")
-    if video is None:
-        manquantes.append("accueil/video.mp4")
-    else:
+    for chemin_video, slug in (
+        ("accueil/video.mp4", platform_asset_service.VIDEO),
+        ("accueil/video-portrait.mp4", platform_asset_service.VIDEO_PORTRAIT),
+    ):
+        video = photos_reelles.lire_telle_quelle(chemin_video)
+        if video is None:
+            # Aucune clé posée : l'app n'a pas cette orientation à jouer et se
+            # replie sur l'autre. Une clé vers un objet absent ferait un lecteur
+            # qui ne démarre jamais, ce qui se diagnostique bien plus mal.
+            manquantes.append(chemin_video)
+            continue
         await platform_asset_service.poser(
             session,
-            slug=platform_asset_service.VIDEO,
+            slug=slug,
             object_key=await depot.deposer(video, prefixe="photos/home"),
         )
         reelles += 1
         if len(video) > SEUIL_DE_POIDS:
-            trop_lourds.append(("accueil/video.mp4", len(video)))
+            trop_lourds.append((chemin_video, len(video)))
 
     await session.flush()
     return ResumePhotos(

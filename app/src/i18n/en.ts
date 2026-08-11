@@ -337,6 +337,9 @@ export const en = {
     parItem: 'By service',
     fenetre: '{{debut}} to {{fin}}',
   },
+  accueil: {
+    sansFond: 'BIND · a service for a publication.',
+  },
   auth: {
     titreConnexion: 'Sign in',
     titreInscription: 'Create your account',
