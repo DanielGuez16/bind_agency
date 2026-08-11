@@ -106,6 +106,14 @@ class ResumeDemo:
 #:
 #: `Havana Glow` est **absent volontairement** : c'est le commerce qui n'a rien
 #: composé, il ne doit avoir aucune photo.
+#: Les trois salons qui ont composé quelque chose. `Havana Glow` n'en est pas,
+#: et c'est délibéré : il porte le cas « zéro historique », celui de tout salon
+#: qui vient de s'inscrire. Un jeu de données où chaque écran est plein ne
+#: laisse jamais voir ce que voit un nouveau venu.
+OCEAN = "Ocean Beauty Studio"
+WYNWOOD = "Wynwood Nails & Care"
+BRICKELL = "Brickell Spa Collective"
+
 DOSSIER_DU_COMMERCE = {
     "Ocean Beauty Studio": "ocean-beauty-studio",
     "Wynwood Nails & Care": "wynwood-nails-care",
@@ -254,10 +262,22 @@ async def poser_les_photos(session: AsyncSession) -> ResumePhotos:
         await session.scalars(sa.select(CatalogItem).where(CatalogItem.id.not_in(parents)))
     ).all()
     for item in items:
-        dossier = DOSSIER_DU_COMMERCE[
-            await session.scalar(sa.select(Business.name).where(Business.id == item.business_id))
-        ]
-        chemin = f"commerces/{dossier}/prestations/{FICHIER_DE_LA_PRESTATION[item.name]}.jpg"
+        # **Un nom inconnu se dit, il ne fait pas tomber le semis.** Les deux
+        # tables sont explicites, donc incomplètes par construction : composer
+        # une prestation pour un commerce qui n'y figure pas — ce qui arrive au
+        # premier salon ajouté — levait un `KeyError` au milieu du semis, sans
+        # rien dire de ce qui manquait. C'est l'inverse de la règle que ce
+        # module s'est donnée : il **annonce** ce qu'il écarte. Le fichier est
+        # alors compté comme manquant, et le résumé le nomme.
+        nom = await session.scalar(sa.select(Business.name).where(Business.id == item.business_id))
+        dossier = DOSSIER_DU_COMMERCE.get(nom)
+        fichier = FICHIER_DE_LA_PRESTATION.get(item.name)
+        if dossier is None or fichier is None:
+            manque = f"commerces/{nom}/prestations/{item.name}"
+            manquantes.append(manque)
+            print(f"  photo sans chemin connu : {manque}")
+            continue
+        chemin = f"commerces/{dossier}/prestations/{fichier}.jpg"
         item.photo_key, trouvee, poids = await _deposer_photo(
             depot,
             chemin=chemin,
@@ -599,7 +619,7 @@ async def composer_les_parcours(session: AsyncSession, createurs: dict) -> tuple
     confirmee, compte_confirmee = createurs["confirmee"]
     plafonnee, compte_plafonnee = createurs["plafonnee"]
 
-    async def offre_pour(createur: User) -> TierOffer | None:
+    async def offre_pour(createur: User, *, commerce: str | None = None) -> TierOffer | None:
         """Une offre que ce créateur peut **réellement** réserver, maintenant.
 
         Prendre une offre au hasard produisait quatre refus de suite : les
@@ -610,14 +630,23 @@ async def composer_les_parcours(session: AsyncSession, createurs: dict) -> tuple
         L'éligibilité est réévaluée à chaque appel : la première contrepartie
         approuvée incrémente le compteur, ce qui ouvre le palier suivant. La
         démonstration montre donc une progression réelle, pas une liste posée.
+
+        **`commerce` répartit.** Sans lui, l'ordre — palier le plus haut, puis
+        la plus ancienne offre — désigne toujours la même ligne, donc toujours
+        le même salon : tout l'historique de la démonstration s'entassait sur
+        un seul commerce, et les trois autres écrans de journée étaient vides.
+        Nommer le salon ne force rien : si le palier n'y est pas ouvert, la
+        recherche ne rend rien et la ligne est écartée à voix haute, comme
+        ailleurs.
         """
         verdict = await eligibility.evaluer_createur(session, createur.id)
         ouverts = verdict.paliers_accessibles
         if not ouverts:
             return None
-        return await session.scalar(
+        requete = (
             sa.select(TierOffer)
             .join(Tier, Tier.id == TierOffer.tier_id)
+            .join(Business, Business.id == TierOffer.business_id)
             .where(
                 TierOffer.is_active.is_(True),
                 Tier.is_active.is_(True),
@@ -626,6 +655,9 @@ async def composer_les_parcours(session: AsyncSession, createurs: dict) -> tuple
             .order_by(Tier.display_order.desc(), TierOffer.created_at)
             .limit(1)
         )
+        if commerce is not None:
+            requete = requete.where(Business.name == commerce)
+        return await session.scalar(requete)
 
     premiere = await offre_pour(confirmee)
     if premiere is None:
@@ -751,23 +783,65 @@ async def composer_les_parcours(session: AsyncSession, createurs: dict) -> tuple
     # ferait un score de quarante — alors que le jeu doit montrer une créatrice
     # vérifiée **avec un bon score**. Un premier essai l'avait fait, et cela
     # s'est vu au moment de vérifier le jeu obtenu.
+    #
+    # **L'âge s'étale sur douze semaines, et les salons alternent.** Deux
+    # défauts relevés en campagne 2 tenaient au jeu de données et non aux
+    # écrans : les rapports montraient une barre sur douze parce que tout
+    # tenait dans les quinze derniers jours, et l'administration n'avait
+    # qu'une revue humaine à trancher. Trois revues, réparties sur trois
+    # salons, et de l'historique sur chaque semaine.
+    #
+    # `Havana Glow` n'apparaît nulle part : c'est le salon qui n'a rien
+    # composé, et c'est le cas — zéro historique — que tout salon qui
+    # s'inscrit doit pouvoir regarder.
+    # **La colonne d'âge dit ce que la démonstration montre ; l'ordre des lignes
+    # dit ce que le produit permet.** Les deux sont indépendants : chaque
+    # parcours est mené à son terme puis reculé, si bien que sa date d'affichage
+    # ne dépend pas de son rang ici.
+    #
+    # L'ordre compte quand même, et il a coûté une revue. Les issues dégradées
+    # pèsent sur le score de « plafonnée », et le score est réévalué **à chaque
+    # réservation** : une absence et une non-conformité placées avant ses trois
+    # revues lui fermaient ses derniers paliers, et la dernière ligne était
+    # écartée. Ses parcours sont donc menés du moins coûteux au plus coûteux.
+    # Le score final est le même — il se recalcule sur tous les événements — et
+    # c'est bien le produit qui a tranché, pas le semis qui l'a contourné.
     issues = (
-        ("approuvee", timedelta(days=6), "confirmee"),
-        ("approuvee", timedelta(days=11), "confirmee"),
-        ("attendue", timedelta(days=1), "confirmee"),
-        ("soumise", timedelta(hours=6), "confirmee"),
-        ("deuxieme_tentative", timedelta(days=3), "plafonnee"),
-        ("revue_humaine", timedelta(days=2), "plafonnee"),
-        ("non_honoree", timedelta(days=15), "plafonnee"),
+        # Le trimestre écoulé : de quoi remplir la série hebdomadaire.
+        ("approuvee", timedelta(weeks=11, days=2), "confirmee", OCEAN),
+        ("approuvee", timedelta(weeks=10), "confirmee", WYNWOOD),
+        ("approuvee", timedelta(weeks=9, days=1), "confirmee", BRICKELL),
+        ("revue_humaine", timedelta(weeks=8, days=4), "plafonnee", OCEAN),
+        ("approuvee", timedelta(weeks=7), "confirmee", WYNWOOD),
+        # Chez Brickell et non chez Wynwood : Wynwood ne compose qu'aux
+        # paliers hauts, que le score de « plafonnée » lui ferme après sa
+        # première revue. Le semis ne force pas le passage — il place le
+        # parcours là où le produit l'autorise, et le dit.
+        ("revue_humaine", timedelta(weeks=4, days=3), "plafonnee", BRICKELL),
+        ("approuvee", timedelta(weeks=5), "confirmee", OCEAN),
+        ("revue_humaine", timedelta(weeks=1, days=2), "plafonnee", BRICKELL),
+        ("approuvee", timedelta(weeks=3), "confirmee", BRICKELL),
+        ("deuxieme_tentative", timedelta(weeks=2, days=1), "plafonnee", OCEAN),
+        ("non_honoree", timedelta(weeks=6, days=2), "plafonnee", BRICKELL),
+        # La semaine en cours, celle qu'on regarde pendant la démonstration.
+        ("approuvee", timedelta(days=6), "confirmee", WYNWOOD),
+        ("approuvee", timedelta(days=4), "confirmee", OCEAN),
+        ("attendue", timedelta(days=1), "confirmee", BRICKELL),
+        ("soumise", timedelta(hours=6), "confirmee", WYNWOOD),
     )
-    for issue, age, qui in issues:
+    for issue, age, qui, commerce in issues:
         createur, compte = createurs[qui]
-        offre = await offre_pour(createur)
-        booking = (
-            await _reserver(session, createur=createur, compte=compte, offre=offre)
-            if offre
-            else None
-        )
+        offre = await offre_pour(createur, commerce=commerce)
+        if offre is None:
+            # **Le silence était le défaut.** `_reserver` annonce ce qu'il
+            # écarte, mais il n'était jamais appelé quand aucune offre ne
+            # convenait : la ligne disparaissait sans un mot, et le jeu rendait
+            # deux revues humaines là où trois étaient demandées. Un semis qui
+            # saute la moitié de ce qu'il devait produire, en silence, se
+            # découvre pendant la démonstration.
+            print(f"  parcours écarté : aucune offre ouverte à {qui} chez {commerce}")
+            continue
+        booking = await _reserver(session, createur=createur, compte=compte, offre=offre)
         if booking is None:
             continue
 
