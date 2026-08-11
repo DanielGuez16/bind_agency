@@ -740,3 +740,43 @@ describe('graphiques', () => {
     expect(screen.getByTestId('badge-post')).toBeTruthy();
   });
 });
+
+describe('état vide, v0.6', () => {
+  it('ne dessine plus le cercle qui ne disait rien', async () => {
+    // Il occupait la place du titre, qui est ce qu'on vient lire.
+    const { toJSON } = await monter(<EmptyState title="Rien ici" body="Pour l’instant." />);
+    const rendu = JSON.stringify(toJSON());
+    expect(rendu).not.toContain('"borderRadius":999');
+  });
+
+  it('porte les chiffres en mono, plus gros que le corps', async () => {
+    // Quand rien ne s'est passé, ce sont eux qu'on vient chercher.
+    await monter(
+      <EmptyState
+        title="Rien en attente"
+        body="Personne n’attend un humain."
+        chiffres={[
+          { valeur: '18', label: 'settled in 7 days' },
+          { valeur: '4 h', label: 'median time to decide' },
+        ]}
+      />,
+    );
+
+    expect(screen.getByTestId('etat-vide-chiffres')).toBeTruthy();
+    expect(style(screen.getByText('18')).fontSize).toBe(44);
+  });
+
+  it('garde chaque issue avec son gain chiffré', async () => {
+    // Une issue sans chiffre demande de tenter pour voir, et personne ne
+    // tente deux fois.
+    await monter(
+      <EmptyState
+        title="Rien à 15 km"
+        body="Élargissez."
+        actions={[{ label: 'Widen to 30 km · 9 salons', onPress: () => {} }]}
+      />,
+    );
+
+    expect(screen.getByText(/9 salons/)).toBeTruthy();
+  });
+});

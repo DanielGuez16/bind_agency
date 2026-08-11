@@ -8,10 +8,18 @@
  * Côté commerce, la formule d'encouragement est remplacée par des repères
  * chiffrés sur sept jours : un commerçant ne veut pas être rassuré, il veut
  * savoir si son catalogue est le problème.
+ *
+ * **v0.6 : un bloc typographique, pas un titre sur du blanc.** Le cercle de 54
+ * a disparu — il ne disait rien et occupait la place du titre. Sur grand écran
+ * le titre monte à 52/56 : un état vide y est le seul contenu de la page, et
+ * lui laisser la taille d'un titre de section le fait passer pour un incident
+ * de chargement. Les chiffres, eux, se lisent en mono 44 : ce sont eux qu'on
+ * vient chercher quand rien ne s'est passé.
  */
 import { View } from 'react-native';
 
 import { radius, useTheme } from '../theme';
+import { useGabarit } from '../shell/gabarit';
 import { Button, type ButtonProps } from './Button';
 import { Texte } from './Texte';
 
@@ -22,11 +30,25 @@ export type EmptyStateProps = {
   actions?: ButtonProps[];
   /** Repères chiffrés, côté commerce. Remplacent toute formule creuse. */
   reperes?: { label: string; valeur: string }[];
+  /**
+   * Les chiffres qu'on vient chercher quand rien ne s'est passé — « 18 réglés
+   * en 7 jours », « 4 h de délai médian ». En mono 44 : plus gros que le
+   * corps, parce qu'ils sont l'information et non son commentaire.
+   */
+  chiffres?: { valeur: string; label: string }[];
   testID?: string;
 };
 
-export function EmptyState({ title, body, actions = [], reperes, testID }: EmptyStateProps) {
+export function EmptyState({
+  title,
+  body,
+  actions = [],
+  reperes,
+  chiffres,
+  testID,
+}: EmptyStateProps) {
   const { role, color: c } = useTheme();
+  const { large } = useGabarit();
   const centre = role === 'creator';
 
   return (
@@ -38,24 +60,42 @@ export function EmptyState({ title, body, actions = [], reperes, testID }: Empty
         paddingVertical: 24,
       }}
     >
-      <View
-        style={{
-          width: 54,
-          height: 54,
-          borderRadius: 999,
-          backgroundColor: c['bg.raised'],
-        }}
-      />
-      <Texte variante="type.heading" align={centre ? 'center' : 'left'}>
+      <Texte
+        variante="type.display"
+        align={centre ? 'center' : 'left'}
+        // Sur grand écran, l'état vide est tout le contenu de la page : lui
+        // laisser une taille de titre de section le fait passer pour un
+        // chargement qui n'a pas abouti.
+        style={large ? { fontSize: 52, lineHeight: 56 } : undefined}
+        testID="etat-vide-titre"
+      >
         {title}
       </Texte>
       <Texte
-        variante="type.caption"
         couleur="text.secondary"
         align={centre ? 'center' : 'left'}
+        style={large ? { fontSize: 18, lineHeight: 26 } : undefined}
       >
         {body}
       </Texte>
+
+      {chiffres?.length ? (
+        <View
+          testID="etat-vide-chiffres"
+          style={{ flexDirection: 'row', gap: 32, paddingVertical: 8, flexWrap: 'wrap' }}
+        >
+          {chiffres.map((chiffre) => (
+            <View key={chiffre.label} style={{ gap: 2 }}>
+              <Texte variante="type.mono" style={{ fontSize: 44, lineHeight: 50 }}>
+                {chiffre.valeur}
+              </Texte>
+              <Texte variante="type.caption" couleur="text.secondary">
+                {chiffre.label}
+              </Texte>
+            </View>
+          ))}
+        </View>
+      ) : null}
 
       {reperes?.length ? (
         <View

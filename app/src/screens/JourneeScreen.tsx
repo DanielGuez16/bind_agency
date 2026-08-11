@@ -37,7 +37,7 @@ import {
   Apparition,
   Button,
   DataRow,
-  Icone,
+  EmptyState,
   Filet,
   TierBadge,
   StatusMessage,
@@ -73,30 +73,14 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
       nature="merchantListeDetail"
       testID="ecran-journee"
       vide={
-        // Un vrai état vide, pas une phrase seule. Une journée sans rendez-vous
-        // est une information, pas une page qui n'a pas chargé.
-        <View style={{ gap: 16, alignItems: 'flex-start', paddingVertical: 24 }}>
-          <View
-            style={{
-              width: 76,
-              height: 76,
-              borderRadius: 38,
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderWidth: 2,
-              borderColor: c['border.default'],
-            }}
-            testID="journee-vide-halo"
-          >
-            <Icone nom="calendrier" couleur="text.muted" taille={32} />
-          </View>
-          <View style={{ gap: 6 }}>
-            <Texte variante="type.title">{t('commerce.journeeVideTitre')}</Texte>
-            <Texte variante="type.body" couleur="text.secondary" testID="journee-vide">
-              {t('commerce.journeeVide')}
-            </Texte>
-          </View>
-        </View>
+        // **Plus de cercle.** Il ne disait rien et occupait la place du titre.
+        // Une journée sans rendez-vous est une information, pas une page qui
+        // n'a pas chargé — et c'est le titre qui doit le dire.
+        <EmptyState
+          title={t('commerce.journeeVideTitre')}
+          body={t('commerce.journeeVide')}
+          testID="journee-vide"
+        />
       }
     >
       {(journee) => {

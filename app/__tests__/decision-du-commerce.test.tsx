@@ -273,6 +273,9 @@ it('donne un vrai état vide à une journée sans rendez-vous', async () => {
     </I18nProvider>,
   );
 
-  await waitFor(() => expect(screen.getByTestId('journee-vide-halo')).toBeTruthy());
+  // **Le cercle a disparu, le titre reste.** Il ne disait rien et occupait la
+  // place de ce qu'on vient lire ; c'est le titre qui porte l'information.
+  await waitFor(() => expect(screen.getByTestId('journee-vide')).toBeTruthy());
   expect(screen.getByText(en.commerce.journeeVideTitre)).toBeTruthy();
+  expect(screen.queryByTestId('journee-vide-halo')).toBeNull();
 });
