@@ -232,6 +232,8 @@ export const es: Catalogue = {
     ignore_historique_insuffisant: 'Historial insuficiente',
   },
   commerce: {
+    choisirUneLigne: 'Elige una reserva a la izquierda para ver a qué compromete.',
+    contrepartieAttendue: 'Contrapartida',
     decisionDepassee: 'La hora ya pasó. Esta reserva ya no puede aceptarse: caduca sola. Aún puedes decir qué ocurrió.',
     activationOuvertTitre: 'Tu negocio está abierto',
     activationOuvertCorps: 'Las creadoras te ven y pueden reservar. Todo lo de abajo está hecho.',

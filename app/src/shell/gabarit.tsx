@@ -76,13 +76,24 @@ export function useGabarit(): Gabarit {
  * nature a la sienne — et le vide à droite d'un détail commerce est voulu, pas
  * un défaut de remplissage.
  */
-export type NatureDeContenu = 'creator' | 'merchant' | 'reports';
+/** L'écart entre la liste et le détail. `space.6`, comme partout ailleurs. */
+export const ECART_DES_COLONNES = 24;
+
+export type NatureDeContenu = 'creator' | 'merchant' | 'reports' | 'merchantListeDetail';
 
 const BORNES: Record<NatureDeContenu, number> = {
   creator: breakpoint.contentMaxCreator,
   merchant: breakpoint.contentMaxMerchant,
   reports: breakpoint.contentMaxReports,
+  // Deux colonnes : la liste **et** le détail. Borner l'ensemble à 720 —
+  // la borne du détail seul — écraserait la liste à 300 et rendrait ses
+  // lignes illisibles. L'addition est ici plutôt que dans l'écran, avec les
+  // autres largeurs, sinon elle dériverait des jetons sans qu'on le voie.
+  merchantListeDetail:
+    breakpoint.listWidthMerchant + ECART_DES_COLONNES + breakpoint.contentMaxMerchant,
 };
+
+
 
 export function largeurMaximale(
   nature: NatureDeContenu,

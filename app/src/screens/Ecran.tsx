@@ -21,7 +21,7 @@ import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { Button, EmptyState, Icone, SkeletonCard, StatusMessage, Texte } from '../components';
 import { useI18n } from '../i18n';
 import { BarreDeTitre } from '../shell/BarreDeTitre';
-import { useGabarit, largeurMaximale } from '../shell/gabarit';
+import { useGabarit, largeurMaximale, type NatureDeContenu } from '../shell/gabarit';
 import { useApi } from '../api';
 import { useTheme } from '../theme';
 import type { Requete } from './useRequete';
@@ -46,6 +46,12 @@ export type EcranProps<T> = {
   onRetour?: () => void;
   /** « il y a 2 h ». Rendue dans la barre de titre, sur grand écran. */
   fraicheur?: string | null;
+  /**
+   * Ce que l'écran est, pour savoir jusqu'où son contenu s'étend. Déduit du
+   * rôle par défaut ; un écran en deux colonnes doit le dire, sa liste et son
+   * détail ne tiennent pas dans la borne du détail seul.
+   */
+  nature?: NatureDeContenu;
   /** Ce que l'écran montre quand tout va bien. */
   children: (donnees: T) => ReactNode;
   /** Le squelette. À défaut, trois cartes à la géométrie du contenu. */
@@ -61,6 +67,7 @@ export function Ecran<T>({
   entete,
   onRetour,
   fraicheur,
+  nature,
   children,
   squelette,
   vide,
@@ -143,7 +150,7 @@ export function Ecran<T>({
           // Le créateur est passé de 760 à 1120 — 760 était exactement la
           // colonne étroite perdue dans du vide relevée en campagne de test.
           // Le vide à droite d'un détail commerce, lui, est voulu.
-          maxWidth: largeurMaximale(role === 'creator' ? 'creator' : 'merchant', large),
+          maxWidth: largeurMaximale(nature ?? (role === 'creator' ? 'creator' : 'merchant'), large),
           width: '100%',
           alignSelf: 'center',
         }}

@@ -235,6 +235,8 @@ export const en = {
     ignore_historique_insuffisant: 'Not enough history',
   },
   commerce: {
+    choisirUneLigne: 'Pick a booking on the left to see what it commits to.',
+    contrepartieAttendue: 'Counterpart',
     decisionDepassee: 'The time has passed. This booking can no longer be accepted — it expires on its own. You can still say what happened.',
     activationOuvertTitre: 'Your business is open',
     activationOuvertCorps: 'Creators can see you and book. Everything below is done.',
