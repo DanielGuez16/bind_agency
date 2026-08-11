@@ -24,7 +24,7 @@ import { useEvent, useEventListener } from 'expo';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useEffect, useState } from 'react';
-import { Image, StyleSheet, View } from 'react-native';
+import { AppState, Image, StyleSheet, View } from 'react-native';
 
 import { useApi, type MediasPlateforme } from '../api';
 import { Texte } from '../components';
@@ -126,6 +126,32 @@ export function AccueilScreen({
     lecteur.currentTime = 0;
     lecteur.play();
   });
+
+  /**
+   * **Reprendre au retour au premier plan.**
+   *
+   * Les navigateurs suspendent la lecture quand l'onglet passe derrière, et
+   * rien ne la reprend au retour : il fallait recharger la page. Sur mobile,
+   * l'application mise en arrière-plan donne le même résultat par un autre
+   * chemin — c'est le même besoin, et `AppState` couvre les deux : sur le web,
+   * `react-native-web` l'adosse à `visibilitychange`.
+   *
+   * **On ne relance que ce qui est en pause.** Rappeler `play()` sur une vidéo
+   * qui joue déjà ne coûte rien mais ne dit rien non plus ; la garde rend
+   * l'intention lisible.
+   *
+   * Le cas de qui refuse la lecture automatique n'en souffre pas : `play()` y
+   * est refusé comme au premier appel, `playing` reste faux, et l'affiche reste
+   * en place. Elle ne clignote pas, parce que c'est l'état réel du lecteur qui
+   * la commande — jamais la demande qu'on vient de lui faire.
+   */
+  useEffect(() => {
+    if (!video) return;
+    const abonnement = AppState.addEventListener('change', (etat) => {
+      if (etat === 'active' && !lecteur.playing) lecteur.play();
+    });
+    return () => abonnement.remove();
+  }, [lecteur, video]);
 
   /**
    * L'affiche s'efface **quand la vidéo joue vraiment**, pas quand on la

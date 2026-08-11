@@ -11,35 +11,51 @@
  * demande de lire**. Le remplacement expose la source, et rien d'autre.
  */
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { AppState, type AppStateStatus } from 'react-native';
 
 import { ApiClient, ApiProvider } from '../src/api';
 import { I18nProvider } from '../src/i18n';
 import { AccueilScreen, fondDAccueil } from '../src/screens/AccueilScreen';
 import { ThemeProvider } from '../src/theme';
 
+/**
+ * Le double est **une seule instance**, comme le vrai `useVideoPlayer` : il rend
+ * le même lecteur d'un rendu à l'autre et n'en remplace que la source. Un objet
+ * neuf à chaque rendu ferait rejouer à chaque image les effets qui en dépendent
+ * — la reprise partirait alors toute seule, et le test ne prouverait plus que
+ * l'écran écoute le retour au premier plan.
+ */
+const mockLecteur = {
+  source: null as string | null,
+  loop: false,
+  muted: false,
+  playing: false,
+  currentTime: 0,
+  play: jest.fn(),
+  // `useEvent` s'abonne au lecteur : sans émetteur, le rendu lève. Il ne
+  // diffuse rien — la vidéo ne joue pas en test, et c'est le cas qu'on veut
+  // éprouver, celui où l'affiche reste en place.
+  addListener: () => ({ remove: () => {} }),
+  removeListener: () => {},
+  removeAllListeners: () => {},
+};
+
 jest.mock('expo-video', () => {
   const { View } = require('react-native');
-  const emetteur = {
-    // `useEvent` s'abonne au lecteur : sans émetteur, le rendu lève. Il ne
-    // diffuse rien — la vidéo ne joue pas en test, et c'est le cas qu'on veut
-    // éprouver, celui où l'affiche reste en place.
-    addListener: () => ({ remove: () => {} }),
-    removeListener: () => {},
-    removeAllListeners: () => {},
-  };
   return {
-    useVideoPlayer: (source: string | null) => ({
-      source,
-      loop: false,
-      muted: false,
-      playing: false,
-      play: () => {},
-      ...emetteur,
-    }),
+    useVideoPlayer: (source: string | null) => {
+      mockLecteur.source = source;
+      return mockLecteur;
+    },
     VideoView: ({ player, testID }: { player: { source: string | null }; testID?: string }) => (
       <View testID={testID} accessibilityLabel={player?.source ?? 'aucune'} />
     ),
   };
+});
+
+beforeEach(() => {
+  mockLecteur.playing = false;
+  mockLecteur.play.mockClear();
 });
 
 const TOUT = {
@@ -189,5 +205,79 @@ describe('le choix du fond, isolé', () => {
 
   it('ne rend rien quand rien n’est encore chargé', async () => {
     expect(fondDAccueil(null, true)).toEqual({ video: null, affiche: null });
+  });
+});
+
+describe('accueil, le retour au premier plan', () => {
+  /**
+   * Le retour d'onglet, tel que la plateforme l'annonce. `AppState` est le seul
+   * chemin à écouter : sur le web, `react-native-web` l'adosse à
+   * `visibilitychange`, et sur mobile il porte déjà la mise en arrière-plan.
+   */
+  function revenirAuPremierPlan(etat: AppStateStatus = 'active') {
+    const abonnements = (AppState.addEventListener as jest.Mock).mock.calls
+      .filter(([type]) => type === 'change')
+      .map(([, ecouteur]) => ecouteur as (e: AppStateStatus) => void);
+    // Sans abonnement, rien ne peut reprendre : l'absence est le défaut même.
+    expect(abonnements.length).toBeGreaterThan(0);
+    abonnements.forEach((ecouteur) => ecouteur(etat));
+  }
+
+  beforeEach(() => {
+    jest.spyOn(AppState, 'addEventListener').mockReturnValue({ remove: () => {} } as never);
+  });
+
+  afterEach(() => jest.restoreAllMocks());
+
+  it('relance la vidéo mise en pause par le navigateur', async () => {
+    // Un onglet quitté suspend la lecture, et rien ne la reprenait au retour :
+    // il fallait recharger la page pour retrouver le fond animé.
+    await afficher();
+    await poser(BUREAU);
+    await waitFor(() => expect(sourceJouee()).toContain('paysage.mp4'));
+
+    mockLecteur.play.mockClear();
+    revenirAuPremierPlan();
+
+    expect(mockLecteur.play).toHaveBeenCalled();
+  });
+
+  it('ne redemande rien à une vidéo qui joue déjà', async () => {
+    await afficher();
+    await poser(BUREAU);
+    await waitFor(() => expect(sourceJouee()).toContain('paysage.mp4'));
+
+    mockLecteur.playing = true;
+    mockLecteur.play.mockClear();
+    revenirAuPremierPlan();
+
+    expect(mockLecteur.play).not.toHaveBeenCalled();
+  });
+
+  it('laisse l’écran tranquille tant qu’on n’est pas revenu', async () => {
+    // Le passage en arrière-plan n'est pas un retour : relancer là relancerait
+    // sur un onglet qu'on vient tout juste de quitter.
+    await afficher();
+    await poser(BUREAU);
+    await waitFor(() => expect(sourceJouee()).toContain('paysage.mp4'));
+
+    mockLecteur.play.mockClear();
+    revenirAuPremierPlan('background');
+
+    expect(mockLecteur.play).not.toHaveBeenCalled();
+  });
+
+  it('garde l’affiche sans la faire clignoter chez qui refuse la lecture automatique', async () => {
+    // `play()` y reste refusé, donc `playing` reste faux : c'est l'état réel du
+    // lecteur qui commande l'affiche, jamais la demande qu'on vient de faire.
+    // Si la reprise l'effaçait pour la remettre, l'écran clignoterait à chaque
+    // retour d'onglet.
+    await afficher();
+    await poser(BUREAU);
+    await waitFor(() => expect(screen.getByTestId('affiche-accueil')).toBeTruthy());
+
+    revenirAuPremierPlan();
+
+    expect(screen.getByTestId('affiche-accueil')).toBeTruthy();
   });
 });
