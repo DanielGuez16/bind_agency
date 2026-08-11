@@ -90,3 +90,34 @@ describe('l’entrée du produit, grand écran', () => {
     expect(screen.getByTestId('motif-de-sortie')).toBeTruthy();
   });
 });
+
+// --------------------------------------------------------------------------
+// campagne 2 : un grand aplat noir presque vide
+// --------------------------------------------------------------------------
+
+describe('le panneau d’encre, après la campagne 2', () => {
+  it('n’est plus trois lignes sur 604 à la connexion', async () => {
+    // C'est l'écran le plus vu du produit. L'inscription y déroule les trois
+    // étapes de la porte franchie ; la connexion n'avait rien, donc un aplat.
+    await afficher();
+    await fireEvent.press(screen.getByTestId('vers-connexion'));
+
+    for (const lettre of ['A', 'B', 'C']) {
+      expect(screen.getByTestId(`point-de-retour-${lettre}`)).toBeTruthy();
+    }
+  });
+
+  it('ne numérote pas des faits comme une mise en route', async () => {
+    // « 01 02 03 » à quelqu'un qui a déjà un compte se lit comme des étapes à
+    // refaire. Les numéros restent à l'inscription, où ils sont une suite.
+    await afficher();
+    await fireEvent.press(screen.getByTestId('vers-connexion'));
+    expect(screen.queryByText('01')).toBeNull();
+
+    // Et à l'inscription, l'inverse : les numéros, pas les faits.
+    await afficher();
+    await fireEvent.press(screen.getByTestId('choisir-creator'));
+    expect(screen.getByText('01')).toBeTruthy();
+    expect(screen.queryByTestId('point-de-retour-A')).toBeNull();
+  });
+});
