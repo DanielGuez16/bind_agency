@@ -28,6 +28,14 @@
  * bouton ferait de la pénalité une case à cocher.
  *
  * **Aucun montant.** L'écran de journée n'est pas un état de caisse.
+ *
+ * **Une liste sélectionne, un panneau agit** (campagne 2). La colonne de gauche
+ * mêlait deux registres — des cartes en relief pour ce qui attend une décision,
+ * des lignes plates pour le planning — et portait elle-même les boutons. Le
+ * panneau de droite se contentait alors de **redessiner la ligne choisie**, ce
+ * qui se lisait comme un doublon : la même réservation deux fois, et rien à y
+ * faire. Un seul registre à gauche, marqué par une pastille et non par un
+ * relief ; les gestes et le contexte à droite, où il y a la place de les poser.
  */
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
@@ -39,12 +47,14 @@ import {
   DataRow,
   EmptyState,
   Filet,
+  LigneDeContrepartie,
   TierBadge,
   StatusMessage,
   TextField,
   Texte,
   vibration,
 } from '../components';
+import { formatDateTime } from '../format';
 import { useI18n } from '../i18n';
 import { breakpoint, radius, useTheme, type ColorName } from '../theme';
 import { ECART_DES_COLONNES, useGabarit } from '../shell/gabarit';
@@ -106,56 +116,69 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
         const ouverte =
           [...aTrancher, ...planning].find((r) => r.booking_id === (choisie ?? parDefaut)) ?? null;
 
-        const colonneListe = (
-          <View style={{ gap: 16, width: large ? breakpoint.listWidthMerchant : undefined }}>
-            {aTrancher.length > 0 ? (
-              <View style={{ gap: 10 }} testID="a-trancher">
-                <Texte variante="type.label" couleur="text.secondary">
-                  {t('commerce.aTrancher', { count: aTrancher.length })}
-                </Texte>
-                {aTrancher.map((reservation, rang) => (
-                  <Apparition key={reservation.booking_id} rang={rang}>
-                    <Decision
+        /**
+         * Une section de la liste. Deux au plus : ce qui attend, puis le jour.
+         *
+         * **Le même registre pour les deux.** Ce qui attend une décision se
+         * signale par une pastille et sa place en tête, jamais par un relief
+         * qui en ferait un autre type d'objet. Deux formes physiques pour deux
+         * états de la même chose obligent à réapprendre la lecture à chaque
+         * section.
+         */
+        const section = (titre: string, lignes: ReservationDuCommerce[], marque: boolean) =>
+          lignes.length === 0 ? null : (
+            <View style={{ gap: 4 }} testID={marque ? 'a-trancher' : 'planning'}>
+              <Texte
+                variante="type.label"
+                couleur="text.secondary"
+                style={{ paddingHorizontal: 12, paddingBottom: 4 }}
+              >
+                {titre}
+              </Texte>
+              {lignes.map((reservation, rang) => (
+                <Apparition key={reservation.booking_id} rang={rang}>
+                  <Pressable
+                    onPress={large ? () => setChoisie(reservation.booking_id) : undefined}
+                    accessibilityRole={large ? 'button' : undefined}
+                    testID={`ligne-${reservation.booking_id}`}
+                    style={{
+                      borderRadius: radius['radius.md'],
+                      // La ligne ouverte porte deux marques, comme dans la
+                      // barre latérale : un fond et une barre. Jamais la
+                      // couleur seule.
+                      backgroundColor:
+                        large && reservation.booking_id === ouverte?.booking_id
+                          ? c['accent.subtle']
+                          : 'transparent',
+                      borderLeftWidth: 3,
+                      borderLeftColor:
+                        large && reservation.booking_id === ouverte?.booking_id
+                          ? c['accent.default']
+                          : 'transparent',
+                    }}
+                  >
+                    <Ligne
                       reservation={reservation}
                       timezone={journee.timezone}
                       onFait={requete.recharger}
+                      // En grand écran la ligne ne fait que désigner : les
+                      // gestes vivent dans le panneau, une seule fois.
+                      avecGestes={!large}
                     />
-                  </Apparition>
-                ))}
-                <Filet marge={4} />
-              </View>
-            ) : null}
-
-            <View style={{ gap: 4 }}>
-              {planning.map((reservation) => (
-                <Pressable
-                  key={reservation.booking_id}
-                  onPress={large ? () => setChoisie(reservation.booking_id) : undefined}
-                  accessibilityRole={large ? 'button' : undefined}
-                  testID={`ligne-${reservation.booking_id}`}
-                  style={{
-                    borderRadius: radius['radius.md'],
-                    // La ligne ouverte porte deux marques, comme dans la barre
-                    // latérale : un fond et une barre. Jamais la couleur seule.
-                    backgroundColor:
-                      large && reservation.booking_id === ouverte?.booking_id
-                        ? c['accent.subtle']
-                        : 'transparent',
-                    borderLeftWidth: 3,
-                    borderLeftColor:
-                      large && reservation.booking_id === ouverte?.booking_id
-                        ? c['accent.default']
-                        : 'transparent',
-                  }}
-                >
-                  <Ligne
-                    reservation={reservation}
-                    timezone={journee.timezone}
-                    onFait={requete.recharger}
-                  />
-                </Pressable>
+                  </Pressable>
+                </Apparition>
               ))}
             </View>
+          );
+
+        const colonneListe = (
+          <View
+            testID="colonne-liste"
+            style={{ gap: 16, width: large ? breakpoint.listWidthMerchant : undefined }}
+          >
+            {section(t('commerce.aTrancher', { count: aTrancher.length }), aTrancher, true)}
+            {aTrancher.length > 0 && planning.length > 0 ? <Filet marge={4} /> : null}
+            {section(t('commerce.journeePlanning'), planning, false)}
           </View>
         );
 
@@ -230,19 +253,23 @@ const TEINTE: Record<string, ColorName> = {
 };
 
 /**
- * Le panneau de droite : ce qu'il faut savoir avant de servir.
+ * Le panneau de droite : le rendez-vous, ce qu'il engage, et les gestes.
  *
- * **Il reprend la ligne et lui ajoute ce qu'elle ne porte pas.** La ligne sait
- * déjà présenter l'heure, la prestation, la personne et les gestes du
- * comptoir : la redessiner ici en ferait deux à tenir d'accord. Ce que le
- * panneau ajoute, c'est la contrepartie engagée — ce pour quoi la place est
- * donnée, et qu'aucune ligne de planning n'a la place de dire.
+ * **Il ne redessine plus la ligne.** Il commençait par un `<Ligne>`, le même
+ * composant que la colonne de gauche : le panneau s'ouvrait donc sur une copie
+ * exacte de la carte qu'on venait de choisir, et se lisait comme un doublon.
+ * Il reprend maintenant les mêmes faits **sous une autre forme** — un en-tête
+ * qui porte l'heure en grand, puis des lignes de données — parce que ce n'est
+ * pas la même lecture : à gauche on cherche, à droite on se prépare à servir.
  *
- * **Trois données de la maquette manquent à l'API** et ne sont donc pas
- * inventées : le nombre de publications déjà livrées par le créateur, la
- * mention attendue, et le lieu à identifier. Les deux dernières vivent sur
- * l'offre de palier, que la journée ne rend pas. Les afficher vides aurait
- * meublé le panneau d'un cadre que rien ne remplit.
+ * **C'est ici qu'on agit.** Accorder, refuser, se désister vivaient dans la
+ * liste ; le panneau n'avait alors rien à faire et tenait sur un tiers de sa
+ * hauteur. Les gestes descendent ici, où il y a la place de les nommer et de
+ * poser leur motif.
+ *
+ * **Une seule donnée de la maquette manque encore** et n'est donc pas inventée :
+ * le nombre de publications déjà livrées par la créatrice. La mention et le lieu
+ * attendus, eux, sont arrivés depuis.
  */
 function Detail({
   reservation,
@@ -253,121 +280,133 @@ function Detail({
   timezone: string;
   onFait: () => void;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const { color: c } = useTheme();
+
+  const heure = heureDe(reservation, timezone, t('commerce.journeeSansCreneau'));
+  const gestes =
+    reservation.status === 'awaiting_business' || reservation.status === 'confirmed';
 
   return (
-    <View style={{ gap: 16 }} testID="detail-de-la-ligne">
-      <Ligne reservation={reservation} timezone={timezone} onFait={onFait} />
-
-      <Filet marge={4} />
-
+    <View style={{ gap: 20 }} testID="detail-de-la-ligne">
+      {/* L'en-tête : l'heure en grand, la personne, l'état. La même matière
+          qu'à gauche, une autre échelle — on ne cherche plus, on se prépare. */}
       <View style={{ gap: 6 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 12 }}>
+          <Texte variante="type.display" testID="detail-heure">
+            {heure}
+          </Texte>
+          <Texte
+            variante="type.label"
+            couleur={TEINTE[reservation.status] ?? 'text.secondary'}
+            testID="detail-statut"
+          >
+            {t(`commerce.statut_${reservation.status}`)}
+          </Texte>
+        </View>
+        <Texte variante="type.heading">{nomDe(reservation)}</Texte>
+        {reservation.creator_handle ? (
+          <Texte variante="type.caption" couleur="text.muted">
+            {reservation.creator_handle}
+          </Texte>
+        ) : null}
+      </View>
+
+      <View style={{ gap: 8 }}>
+        <Texte variante="type.label" couleur="text.secondary">
+          {t('commerce.journeeRendezVous')}
+        </Texte>
+        <DataRow label={t('commerce.journeeCreatrice')} value={nomDe(reservation)} />
+        <DataRow label={t('commerce.journeePlanning')} value={reservation.item_name} />
+        {reservation.duration_minutes ? (
+          <DataRow
+            label={t('commerce.journeeDuree', { count: reservation.duration_minutes })}
+            value={heure}
+            testID="detail-duree"
+          />
+        ) : null}
+      </View>
+
+      <Filet marge={0} />
+
+      {/* Ce pour quoi la place est donnée. Aucune ligne de planning n'a la
+          place de le dire, et c'est pourtant la seule raison de servir. */}
+      <View style={{ gap: 8 }}>
         <Texte variante="type.label" couleur="text.secondary">
           {t('commerce.contrepartieAttendue')}
         </Texte>
-        <TierBadge tier={reservation.content_format} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <TierBadge tier={reservation.content_format} />
+          <LigneDeContrepartie tier={reservation.content_format} />
+        </View>
+        {reservation.required_mention ? (
+          <DataRow
+            label={t('commerce.mentionAttendue')}
+            value={reservation.required_mention}
+            testID="mention-attendue"
+          />
+        ) : null}
+        {reservation.required_geotag ? (
+          <DataRow
+            label={t('commerce.lieuAttendu')}
+            value={t('commerce.lieuAttenduOui')}
+            testID="lieu-attendu"
+          />
+        ) : null}
+        {/* L'échéance n'existe qu'une fois la place consommée : avant, il n'y a
+            pas encore de contrepartie à tenir, et annoncer une date la ferait
+            croire due. */}
+        {reservation.contrepartie ? (
+          <DataRow
+            label={t('commerce.journeeEcheance')}
+            value={formatDateTime(reservation.contrepartie.deadline_at, locale, timezone)}
+            testID="detail-echeance"
+          />
+        ) : null}
       </View>
 
-      {/* Ce que le salon devra vérifier sur la publication. Au comptoir et pas
-          sur un autre écran : c'est ici qu'on sert, et c'est en servant qu'on
-          rappelle ce qui est attendu. */}
-      {reservation.required_mention ? (
-        <DataRow
-          label={t('commerce.mentionAttendue')}
-          value={reservation.required_mention}
-          testID="mention-attendue"
-        />
-      ) : null}
-      {reservation.required_geotag ? (
-        <DataRow
-          label={t('commerce.lieuAttendu')}
-          value={t('commerce.lieuAttenduOui')}
-          testID="lieu-attendu"
-        />
-      ) : null}
+      <Filet marge={0} />
+
+      <View style={{ gap: 10 }}>
+        <Texte variante="type.label" couleur="text.secondary">
+          {t('commerce.journeeGestes')}
+        </Texte>
+        {gestes ? (
+          <Gestes reservation={reservation} onFait={onFait} />
+        ) : (
+          // Un rendez-vous servi, annulé ou manqué n'appelle plus rien du
+          // comptoir. Le dire vaut mieux qu'un bloc vide, qui laisse chercher
+          // le bouton qu'on aurait oublié.
+          <Texte variante="type.caption" couleur="text.muted" testID="detail-sans-geste">
+            {t('commerce.journeeRienAFaire')}
+          </Texte>
+        )}
+      </View>
     </View>
   );
 }
 
-function Ligne({
+/**
+ * Les trois gestes du comptoir, groupés.
+ *
+ * Accorder et refuser sur une demande, se désister sur une place confirmée. Les
+ * deux jeux ne coexistent jamais : un état, un jeu de gestes.
+ */
+function Gestes({
   reservation,
-  timezone,
   onFait,
 }: {
   reservation: ReservationDuCommerce;
-  timezone: string;
   onFait: () => void;
 }) {
+  const { api, messageDErreur } = useApi();
   const { t } = useI18n();
-  const { color: c } = useTheme();
-  const passe = TERMINES.has(reservation.status);
 
-  return (
-    <View
-      testID={`reservation-${reservation.booking_id}`}
-      style={{
-        gap: 2,
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        borderRadius: 10,
-        // Le passé s'efface sans disparaître : il reste lisible, il cesse
-        // d'attirer l'œil. Jamais par la couleur seule — le mot d'état est là.
-        opacity: passe ? 0.62 : 1,
-        backgroundColor: passe ? 'transparent' : c['bg.surface'],
-        borderWidth: 1,
-        borderColor: passe ? 'transparent' : c['border.subtle'],
-      }}
-    >
-      <DataRow
-        label={heureDe(reservation, timezone, t('commerce.journeeSansCreneau'))}
-        value={nomDe(reservation)}
-      />
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-        <Texte variante="type.caption" couleur="text.secondary" style={{ flexShrink: 1 }}>
-          {reservation.item_name}
-        </Texte>
-        {/* Le statut traduit, jamais son code. `awaiting_business` affiché tel
-            quel se lisait comme une chaîne oubliée — parce que c'en était une. */}
-        <Texte
-          variante="type.caption"
-          couleur={TEINTE[reservation.status] ?? 'text.secondary'}
-          testID={`statut-${reservation.booking_id}`}
-        >
-          {t(`commerce.statut_${reservation.status}`)}
-        </Texte>
-      </View>
-      {reservation.status === 'confirmed' ? (
-        <MotifPuisAction
-          libelle={t('commerce.seDesister')}
-          aide={t('commerce.seDesisterAide')}
-          variante="danger"
-          testID={`desister-${reservation.booking_id}`}
-          onValider={(motif, api) => api.seDesisterDeLaReservation(reservation.booking_id, motif)}
-          onFait={onFait}
-        />
-      ) : null}
-    </View>
-  );
-}
-
-/** Une réservation en attente : la créatrice, l'heure, et les deux issues. */
-function Decision({
-  reservation,
-  timezone,
-  onFait,
-}: {
-  reservation: ReservationDuCommerce;
-  timezone: string;
-  onFait: () => void;
-}) {
   // Comparé ici pour l'affichage seulement : c'est le serveur qui tranche, et
   // il refuse. Attendre son refus ferait appuyer sur un bouton pour apprendre
   // qu'il ne servait à rien.
   const echeance = reservation.starts_at ?? reservation.valid_until;
   const depassee = echeance !== null && new Date(echeance) <= new Date();
-  const { api, messageDErreur } = useApi();
-  const { t } = useI18n();
-  const { color: c } = useTheme();
 
   const [envoi, setEnvoi] = useState(false);
   const [echec, setEchec] = useState<string | null>(null);
@@ -388,28 +427,24 @@ function Decision({
     }
   }
 
-  return (
-    <View
-      testID={`decision-${reservation.booking_id}`}
-      style={{
-        gap: 10,
-        padding: 14,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: c['border.default'],
-        backgroundColor: c['bg.surface'],
-      }}
-    >
-      <DataRow
-        label={heureDe(reservation, timezone, t('commerce.journeeSansCreneau'))}
-        value={nomDe(reservation)}
+  if (reservation.status === 'confirmed') {
+    return (
+      <MotifPuisAction
+        libelle={t('commerce.seDesister')}
+        aide={t('commerce.seDesisterAide')}
+        variante="danger"
+        testID={`desister-${reservation.booking_id}`}
+        onValider={(motif, client) =>
+          client.seDesisterDeLaReservation(reservation.booking_id, motif)
+        }
+        onFait={onFait}
       />
-      <Texte variante="type.caption" couleur="text.secondary">
-        {reservation.item_name}
-      </Texte>
+    );
+  }
 
+  return (
+    <View style={{ gap: 10 }}>
       {echec ? <StatusMessage level="danger" body={echec} testID="echec-decision" /> : null}
-
       {depassee ? (
         <StatusMessage
           level="warning"
@@ -429,9 +464,68 @@ function Decision({
         aide={t('commerce.refuserAide')}
         variante="secondary"
         testID={`refuser-${reservation.booking_id}`}
-        onValider={(motif, api) => api.refuserLaReservation(reservation.booking_id, motif)}
+        onValider={(motif, client) => client.refuserLaReservation(reservation.booking_id, motif)}
         onFait={onFait}
       />
+    </View>
+  );
+}
+
+function Ligne({
+  reservation,
+  timezone,
+  onFait,
+  avecGestes = true,
+}: {
+  reservation: ReservationDuCommerce;
+  timezone: string;
+  onFait: () => void;
+  /** Faux en grand écran : le panneau porte les gestes, une seule fois. */
+  avecGestes?: boolean;
+}) {
+  const { t } = useI18n();
+  const passe = TERMINES.has(reservation.status);
+
+  return (
+    <View
+      testID={`reservation-${reservation.booking_id}`}
+      style={{
+        gap: 2,
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderRadius: 10,
+        // **Un seul registre.** La ligne portait un fond et une bordure tant
+        // qu'elle n'était pas passée : dans une colonne où le bloc « à
+        // trancher » était déjà en relief, cela faisait trois épaisseurs pour
+        // trois états de la même chose. Le passé s'efface, le reste est plat,
+        // et ce qui attend se signale par sa pastille — jamais par la couleur
+        // seule, le mot d'état est là.
+        opacity: passe ? 0.62 : 1,
+      }}
+    >
+      <DataRow
+        label={heureDe(reservation, timezone, t('commerce.journeeSansCreneau'))}
+        value={nomDe(reservation)}
+      />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <Texte variante="type.caption" couleur="text.secondary" style={{ flexShrink: 1 }}>
+          {reservation.item_name}
+        </Texte>
+        {/* Le statut traduit, jamais son code. `awaiting_business` affiché tel
+            quel se lisait comme une chaîne oubliée — parce que c'en était une. */}
+        <Texte
+          variante="type.caption"
+          couleur={TEINTE[reservation.status] ?? 'text.secondary'}
+          testID={`statut-${reservation.booking_id}`}
+        >
+          {t(`commerce.statut_${reservation.status}`)}
+        </Texte>
+      </View>
+      {avecGestes && reservation.status !== 'consumed' ? (
+        <View style={{ paddingTop: 6 }}>
+          <Gestes reservation={reservation} onFait={onFait} />
+        </View>
+      ) : null}
     </View>
   );
 }

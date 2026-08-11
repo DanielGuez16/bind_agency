@@ -48,7 +48,7 @@ import { PlansScreen } from '../screens/PlansScreen';
 import { PreuveScreen } from '../screens/PreuveScreen';
 import { PublicationsScreen } from '../screens/PublicationsScreen';
 import { CatalogueScreen } from '../screens/CatalogueScreen';
-import { ConfigurationScreen } from '../screens/ConfigurationScreen';
+import { CompositionDuCommerce, ConfigurationScreen } from '../screens/ConfigurationScreen';
 import { HorairesScreen } from '../screens/HorairesScreen';
 import { CameraScanner } from '../screens/CameraScanner';
 import { RedemptionScreen } from '../screens/RedemptionScreen';
@@ -456,7 +456,7 @@ function OngletsCreateur({
 // --------------------------------------------------------------------------
 
 /** Le pont vers l'écran de caisse, qui n'utilise pas encore le client d'API. */
-function CaisseAvecJeton() {
+function CaisseAvecJeton({ businessId }: { businessId?: string }) {
   const { jetonDAcces } = useSession();
   // Sans jeton, l'écran ne peut rien vérifier. Il n'y en a pas tant que la
   // session n'est pas rétablie ; rendre `null` évite un appel voué à un 401.
@@ -466,7 +466,11 @@ function CaisseAvecJeton() {
   // iPhone qui en a une, et sans qu'aucune autorisation ait jamais été
   // demandée. La caméra n'était pas refusée, elle n'était jamais montée.
   return jetonDAcces ? (
-    <RedemptionScreen accessToken={jetonDAcces} scanner={CameraScanner} />
+    <RedemptionScreen
+      accessToken={jetonDAcces}
+      scanner={CameraScanner}
+      businessId={businessId}
+    />
   ) : null;
 }
 
@@ -482,7 +486,7 @@ function ParcoursCommerce({ businessId }: { businessId: string }) {
             d'API : il construit ses requêtes et veut un jeton brut. Le pont est
             nommé ici plutôt que caché dans l'écran, pour qu'il disparaisse avec
             la dette. */}
-        {() => <CaisseAvecJeton />}
+        {() => <CaisseAvecJeton businessId={businessId} />}
       </PileCommerce.Screen>
     </PileCommerce.Navigator>
   );
@@ -497,6 +501,14 @@ function ParcoursCommerce({ businessId }: { businessId: string }) {
  * ne quitte l'écran qu'en changeant d'onglet.
  */
 function PileDeConfiguration({ businessId }: { businessId: string }) {
+  const { large } = useGabarit();
+
+  // **Sur grand écran, la table des matières n'existe pas.** Trois cartes au
+  // milieu du vide dont le seul rôle est de mener ailleurs, c'est un clic et
+  // une page dépensés pour un menu. Le menu devient une colonne, la section
+  // vit à côté, et la pile n'a plus lieu d'être : il n'y a rien à empiler.
+  if (large) return <CompositionDuCommerce businessId={businessId} />;
+
   return (
     <PileConfiguration.Navigator screenOptions={OPTIONS_DE_PILE}>
       <PileConfiguration.Screen name="Configuration">

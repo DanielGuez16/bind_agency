@@ -155,9 +155,104 @@ describe('journée du comptoir, grand écran', () => {
     await monter();
     await waitFor(() => expect(screen.getByTestId('ligne-b-1')).toBeTruthy());
 
-    const liste = screen.getByTestId('ligne-b-1').parent?.parent;
-    expect(liste?.props.style).toEqual(
+    // Nommée plutôt que remontée par `.parent.parent` : la chaîne cassait au
+    // premier conteneur ajouté, et ce qu'on veut vérifier est la largeur de la
+    // colonne, pas la profondeur de l'arbre.
+    expect(screen.getByTestId('colonne-liste').props.style).toEqual(
       expect.objectContaining({ width: breakpoint.listWidthMerchant }),
     );
+  });
+});
+
+// --------------------------------------------------------------------------
+// campagne 2 : la liste sélectionne, le panneau agit
+// --------------------------------------------------------------------------
+
+/**
+ * Une demande en attente, et une place déjà servie.
+ *
+ * L'heure de la demande se calcule **depuis maintenant**. L'écran cesse de
+ * proposer d'accorder une demande dont l'heure est passée — à juste titre — et
+ * une date écrite en dur dans la fixture finit par tomber derrière, ce qui
+ * ferait échouer le test un matin sans que rien n'ait changé.
+ */
+const DANS_UNE_HEURE = new Date(Date.now() + 3_600_000).toISOString();
+
+const JOURNEE_COMPLETE = {
+  ...JOURNEE,
+  a_trancher: [
+    {
+      ...JOURNEE.items[0],
+      booking_id: 'b-3',
+      status: 'awaiting_business',
+      starts_at: DANS_UNE_HEURE,
+      ends_at: DANS_UNE_HEURE,
+      valid_until: DANS_UNE_HEURE,
+    },
+  ],
+  items: [
+    ...JOURNEE.items,
+    {
+      ...JOURNEE.items[0],
+      booking_id: 'b-4',
+      status: 'consumed',
+      starts_at: '2026-08-10T14:00:00Z',
+      ends_at: '2026-08-10T14:45:00Z',
+    },
+  ],
+};
+
+describe('la journée, après la campagne 2', () => {
+  it('ne redessine pas la ligne choisie dans le panneau', async () => {
+    // Le panneau commençait par le **même composant** que la colonne de
+    // gauche : il s'ouvrait sur une copie exacte de la carte qu'on venait de
+    // choisir, et se lisait comme un doublon.
+    await monter();
+    await waitFor(() => expect(screen.getByTestId('ligne-b-1')).toBeTruthy());
+
+    await fireEvent.press(screen.getByTestId('ligne-b-1'));
+
+    expect(screen.getByTestId('detail-de-la-ligne')).toBeTruthy();
+    // La ligne n'existe qu'une fois dans l'arbre : à gauche. Le panneau
+    // reprend les mêmes faits sous une autre forme, pas le même objet.
+    expect(screen.getAllByTestId('reservation-b-1')).toHaveLength(1);
+  });
+
+  it('ne met les gestes qu’à un seul endroit', async () => {
+    // Les boutons vivaient dans la liste, ce qui laissait le panneau sans rien
+    // à faire — d'où le tiers de hauteur occupé et le vide dessous.
+    await monter(JOURNEE_COMPLETE);
+    await waitFor(() => expect(screen.getByTestId('ligne-b-3')).toBeTruthy());
+
+    expect(screen.getAllByTestId('accorder-b-3')).toHaveLength(1);
+    expect(screen.getByTestId('detail-de-la-ligne')).toContainElement(
+      screen.getByTestId('accorder-b-3'),
+    );
+  });
+
+  it('donne un seul registre visuel à la colonne de gauche', async () => {
+    // Des cartes en relief pour ce qui attend, des lignes plates pour le
+    // planning : deux formes physiques pour deux états de la même chose.
+    await monter(JOURNEE_COMPLETE);
+    await waitFor(() => expect(screen.getByTestId('reservation-b-3')).toBeTruthy());
+
+    for (const id of ['b-1', 'b-2', 'b-3', 'b-4']) {
+      const style = screen.getByTestId(`reservation-${id}`).props.style;
+      expect({ id, bord: style.borderWidth ?? 0, fond: style.backgroundColor }).toEqual({
+        id,
+        bord: 0,
+        fond: undefined,
+      });
+    }
+  });
+
+  it('dit qu’il n’y a rien à faire plutôt que de laisser un blanc', async () => {
+    // Une place déjà servie n'appelle plus rien du comptoir. Un bloc vide
+    // laisse chercher le bouton qu'on croit avoir manqué.
+    await monter(JOURNEE_COMPLETE);
+    await waitFor(() => expect(screen.getByTestId('ligne-b-4')).toBeTruthy());
+
+    await fireEvent.press(screen.getByTestId('ligne-b-4'));
+    expect(screen.getByTestId('detail-sans-geste')).toBeTruthy();
   });
 });

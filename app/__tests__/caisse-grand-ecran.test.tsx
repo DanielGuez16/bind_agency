@@ -8,9 +8,10 @@
  * Le gabarit est simulé : l'environnement de test rend toujours une largeur
  * nulle, et sans ce remplacement aucun de ces éléments ne serait monté.
  */
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { Pressable, Text } from 'react-native';
 
+import { ApiClient, ApiProvider } from '../src/api';
 import { I18nProvider } from '../src/i18n';
 import { en } from '../src/i18n/en';
 import { RedemptionScreen, type Scanner } from '../src/screens/RedemptionScreen';
@@ -35,11 +36,64 @@ function repond(reponses: Array<{ ok: boolean; corps: object }>) {
   }) as unknown as typeof fetch;
 }
 
-async function afficher(scanner?: Scanner) {
+/** Une place déjà servie, avec l'échéance que le serveur a calculée. */
+const SERVI = {
+  booking_id: 'b-9',
+  status: 'consumed',
+  starts_at: '2026-08-11T14:00:00Z',
+  ends_at: '2026-08-11T14:45:00Z',
+  valid_until: '2026-08-11T23:00:00Z',
+  creator_id: 'c-9',
+  creator_first_name: 'Lea',
+  creator_last_name: null,
+  creator_handle: 'lea.mrl',
+  item_name: 'Gel manicure',
+  duration_minutes: 45,
+  platform: 'instagram',
+  content_format: 'story',
+  required_mention: null,
+  required_geotag: false,
+  contrepartie: {
+    collaboration_id: 'k-9',
+    status: 'attendue',
+    deadline_at: '2026-08-13T14:00:00Z',
+    attempts_count: 0,
+    needs_human_review: false,
+  },
+};
+
+function clientDeJournee(items: unknown[]) {
+  return new ApiClient({
+    baseUrl: 'https://api.test',
+    coffre: { lire: async () => null, ecrire: async () => {} },
+    fetchImpl: async () =>
+      ({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          jour: '2026-08-11',
+          timezone: 'America/New_York',
+          debut: '',
+          fin: '',
+          items,
+          a_trancher: [],
+        }),
+      }) as Response,
+  });
+}
+
+async function afficher(scanner?: Scanner, options: { items?: unknown[] } = {}) {
   return render(
     <ThemeProvider role="merchant">
       <I18nProvider initialLocale="en">
-        <RedemptionScreen apiUrl="http://test/api/v1" accessToken="un-jeton" scanner={scanner} />
+        <ApiProvider client={clientDeJournee(options.items ?? [])}>
+          <RedemptionScreen
+            apiUrl="http://test/api/v1"
+            accessToken="un-jeton"
+            scanner={scanner}
+            businessId="b1"
+          />
+        </ApiProvider>
       </I18nProvider>
     </ThemeProvider>,
   );
@@ -99,5 +153,50 @@ describe('caisse, grand écran', () => {
 
     expect(screen.getByTestId('champ-code')).toBeTruthy();
     expect(screen.getByText(en.redemption.manualHint)).toBeTruthy();
+  });
+});
+
+// --------------------------------------------------------------------------
+// campagne 2 : les deux tiers vides à droite
+// --------------------------------------------------------------------------
+
+describe('le journal du jour', () => {
+  it('occupe la place que le pavé laissait blanche', async () => {
+    // « Le pavé de touches occupe le tiers gauche, le reste est vide. » Le
+    // panneau était prévu par la passation v0.6 §5 et n'avait jamais été posé.
+    repond([]);
+    await afficher(undefined, { items: [SERVI] });
+
+    await waitFor(() => expect(screen.getByTestId('servi-b-9')).toBeTruthy());
+    expect(screen.getByTestId('servis-du-jour')).toBeTruthy();
+  });
+
+  it('porte l’échéance de publication de la place qu’on vient de donner', async () => {
+    // C'est la seule chose que le commerce doit retenir d'une place donnée :
+    // quand la contrepartie est attendue. Elle vient du serveur, jamais
+    // recalculée ici — deux dates coexisteraient et l'une serait fausse.
+    repond([]);
+    await afficher(undefined, { items: [SERVI] });
+
+    await waitFor(() => expect(screen.getByTestId('servi-b-9')).toBeTruthy());
+    expect(screen.getByTestId('servi-b-9')).toHaveTextContent(/Publication due/);
+  });
+
+  it('dit le début de journée plutôt que de laisser un cadre blanc', async () => {
+    // Un panneau vide se lit comme un chargement qui n'a pas abouti.
+    repond([]);
+    await afficher();
+
+    await waitFor(() => expect(screen.getByTestId('servis-aucun')).toBeTruthy());
+  });
+
+  it('ne compte pas ce qui n’a pas été servi', async () => {
+    // Une place confirmée n'est pas une place donnée : la faire figurer au
+    // journal ferait croire le code déjà consommé.
+    repond([]);
+    await afficher(undefined, { items: [{ ...SERVI, status: 'confirmed' }] });
+
+    await waitFor(() => expect(screen.getByTestId('servis-aucun')).toBeTruthy());
+    expect(screen.queryByTestId('servi-b-9')).toBeNull();
   });
 });
