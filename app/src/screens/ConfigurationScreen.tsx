@@ -18,10 +18,12 @@
  * garde tout son sens : il n'y a pas de place pour deux colonnes, et la table
  * des matières est alors le seul endroit d'où l'on choisit.
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
+import { useApi, type EtatDeLaComposition } from '../api';
 import { Icone, Texte } from '../components';
+import { formatDate } from '../format';
 import { useI18n } from '../i18n';
 import { ECART_DES_COLONNES } from '../shell/gabarit';
 import { radius, useColors, useTheme } from '../theme';
@@ -114,14 +116,38 @@ const LARGEUR_DES_SECTIONS = 280;
  * supprimer.
  */
 export function CompositionDuCommerce({ businessId }: { businessId: string }) {
+  const { api } = useApi();
   const [porte, setPorte] = useState<PorteDeConfiguration>('catalogue');
+  const [etat, setEtat] = useState<EtatDeLaComposition | null>(null);
+
+  /**
+   * L'état des trois sections, en une requête.
+   *
+   * **Il se recharge quand on change de section**, parce qu'on vient d'y faire
+   * quelque chose : composer une prestature puis revenir sur un menu qui en
+   * annonce encore zéro donnerait le sentiment que rien n'a été enregistré.
+   *
+   * Une erreur ne se remonte pas. Le menu sans ses nombres reste un menu ; y
+   * afficher « impossible de charger » là où trois portes attendent serait
+   * remplacer une aide par une panne.
+   */
+  useEffect(() => {
+    let vivant = true;
+    void api
+      .compositionDuCommerce(businessId)
+      .then((rendu) => vivant && setEtat(rendu))
+      .catch(() => {});
+    return () => {
+      vivant = false;
+    };
+  }, [api, businessId, porte]);
 
   return (
     <View
       testID="composition-du-commerce"
       style={{ flex: 1, flexDirection: 'row', gap: ECART_DES_COLONNES }}
     >
-      <ColonneDesSections courante={porte} onChoisir={setPorte} />
+      <ColonneDesSections courante={porte} onChoisir={setPorte} etat={etat} />
       <View style={{ flex: 1, minWidth: 0 }}>
         {porte === 'catalogue' ? <CatalogueScreen businessId={businessId} /> : null}
         {porte === 'horaires' ? <HorairesScreen businessId={businessId} /> : null}
@@ -136,12 +162,60 @@ export function CompositionDuCommerce({ businessId }: { businessId: string }) {
 function ColonneDesSections({
   courante,
   onChoisir,
+  etat,
 }: {
   courante: PorteDeConfiguration;
   onChoisir: (porte: PorteDeConfiguration) => void;
+  /** Nul tant que rien n'est chargé : la section garde alors sa description. */
+  etat: EtatDeLaComposition | null;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const c = useColors();
+
+  /**
+   * Ce que chaque section dit d'elle-même.
+   *
+   * **Un chiffre plutôt qu'une description, dès qu'on l'a.** « Ce que vous
+   * proposez » ne dit pas si l'on propose quelque chose ; « 12 prestations · 3
+   * masquées » le dit avant d'entrer. C'est le premier écran qu'ouvre un salon
+   * qui vient de s'inscrire, et « rien pour l'instant » y est exactement
+   * l'information qu'il cherche.
+   */
+  const etatDe = (porte: PorteDeConfiguration): string | null => {
+    if (etat === null) return null;
+
+    if (porte === 'catalogue') {
+      const combien =
+        etat.prestations === 0
+          ? t('composition.etatAucunePrestation')
+          : etat.prestations === 1
+            ? t('composition.etatUnePrestation')
+            : t('composition.etatPrestations', { count: etat.prestations });
+      // Les masquées ne se disent que s'il y en a : « · 0 masquées » est du
+      // bruit, et il pousse la ligne sur deux hauteurs pour rien.
+      return etat.prestations_masquees > 0
+        ? `${combien} · ${t('composition.etatMasquees', { count: etat.prestations_masquees })}`
+        : combien;
+    }
+
+    if (porte === 'horaires') {
+      return etat.jours_ouverts === 0
+        ? t('composition.etatAucunJour')
+        : t('composition.etatJours', { count: etat.jours_ouverts });
+    }
+
+    // **Jamais en ligne et retiré du fil sont deux états différents.** Le
+    // premier attend un premier geste, le second en attend un autre ; les dire
+    // pareil ferait chercher un bouton qui n'est pas celui qu'il faut.
+    if (etat.status === 'active' && etat.en_ligne_depuis) {
+      return t('composition.etatEnLigne', {
+        date: formatDate(etat.en_ligne_depuis, locale, 'UTC'),
+      });
+    }
+    return etat.en_ligne_depuis
+      ? t('composition.etatEnPause')
+      : t('composition.etatJamaisEnLigne');
+  };
 
   return (
     <View
@@ -180,8 +254,15 @@ function ColonneDesSections({
             <Texte variante="type.label" couleur={active ? 'accent.default' : 'text.primary'}>
               {t(section.titre)}
             </Texte>
-            <Texte variante="type.caption" couleur="text.muted">
-              {t(section.corps)}
+            {/* Le chiffre remplace la description dès qu'on l'a : la
+                description dit à quoi sert la porte, le chiffre dit où l'on
+                en est, et c'est la seconde question. */}
+            <Texte
+              variante="type.caption"
+              couleur="text.muted"
+              testID={`etat-${section.cle}`}
+            >
+              {etatDe(section.cle) ?? t(section.corps)}
             </Texte>
           </Pressable>
         );
