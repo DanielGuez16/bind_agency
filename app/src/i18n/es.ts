@@ -89,6 +89,7 @@ export const es: Catalogue = {
     manualLabel: 'Introduce el código',
     manualHint: 'Seis caracteres, visibles en la pantalla del creador.',
     manualSubmit: 'Comprobar código',
+    effacer: 'Borrar',
     scanTab: 'Escanear',
     manualTab: 'Escribirlo',
     scanHint: 'Apunta la cámara a la pantalla del creador.',

@@ -20,12 +20,14 @@ import { useCallback, useEffect, useRef, useState, type ComponentType } from 're
 import { ActivityIndicator, ScrollView, View } from 'react-native';
 
 import { Button } from '../components/Button';
+import { PaveDeSaisie } from '../components/PaveDeSaisie';
 import { SegmentedTabs } from '../components/SegmentedTabs';
 import { Texte } from '../components/Texte';
 import { TextField } from '../components/TextField';
 import { useI18n } from '../i18n';
 import { errorCodeFromResponse, translateErrorCode } from '../i18n/errors';
 import { adresseDeLApi } from '../shell/adresseDeLApi';
+import { useGabarit } from '../shell/gabarit';
 import { radius, spacing, useColors } from '../theme';
 
 export type Verification = {
@@ -70,6 +72,7 @@ export function RedemptionScreen({
 }) {
   const { t } = useI18n();
   const c = useColors();
+  const { large } = useGabarit();
 
   // `adresseDeLApi()` et non `EXPO_PUBLIC_API_URL` : sur un téléphone en
   // développement, la variable n'est pas posée et l'adresse se déduit de
@@ -148,12 +151,48 @@ export function RedemptionScreen({
   const Scan = scanner;
   const refus = etat.state === 'refuse' ? etat : null;
 
+  /**
+   * La barre de caisse, sur encre.
+   *
+   * C'est le seul écran commerce qui se lit debout, à un mètre, entre deux
+   * clientes : le contraste maximal y est un choix de lisibilité, pas de
+   * décoration. Elle n'existe qu'en grand — sur un téléphone tenu en main, la
+   * distance de lecture est celle de tous les autres écrans.
+   */
+  const barreDeCaisse = (
+    <View
+      testID="barre-de-caisse"
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: spacing['space.4'],
+        padding: spacing['space.5'],
+        borderRadius: radius['radius.lg'],
+        backgroundColor: c['bg.inverse'],
+      }}
+    >
+      <Texte variante="type.heading" style={{ color: c['text.inverse'] }}>
+        {t('redemption.title')}
+      </Texte>
+      {Scan ? (
+        <Button
+          label={t('redemption.scanTab')}
+          variant="secondary"
+          fullWidth={false}
+          onPress={() => setOngletScan(true)}
+          testID="ouvrir-le-scan"
+        />
+      ) : null}
+    </View>
+  );
+
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: c['bg.canvas'] }}
       contentContainerStyle={{ padding: spacing['space.6'], gap: spacing['space.4'] }}
     >
-      <Texte variante="type.heading">{t('redemption.title')}</Texte>
+      {large ? barreDeCaisse : <Texte variante="type.heading">{t('redemption.title')}</Texte>}
 
       {/* La saisie d'abord, et sélectionnée par défaut. L'ordre n'est pas
           cosmétique : c'est lui qui dit quel chemin est le principal. */}
@@ -173,11 +212,36 @@ export function RedemptionScreen({
             helpText={t('redemption.manualHint')}
             testID="champ-code"
           />
-          <Button
-            label={t('redemption.manualSubmit')}
-            onPress={() => verifier(saisi)}
-            testID="valider-code"
-          />
+          {/* **Le pavé est conservé même là où un clavier existe.** Au
+              comptoir on tape d'une main, souvent sans regarder ses doigts.
+              La saisie clavier reste branchée en parallèle, et l'aide sous le
+              champ le dit. */}
+          {large ? (
+            <PaveDeSaisie
+              onTouche={(caractere) => setSaisi((precedent) => precedent + caractere)}
+              onEffacer={() => setSaisi('')}
+              desactive={etat.state === 'verification'}
+            />
+          ) : null}
+
+          <View style={{ flexDirection: 'row', gap: spacing['space.2'] }}>
+            {large ? (
+              <Button
+                label={t('redemption.effacer')}
+                variant="ghost"
+                fullWidth={false}
+                onPress={() => setSaisi('')}
+                testID="effacer-code"
+              />
+            ) : null}
+            <View style={{ flex: 1 }}>
+              <Button
+                label={t('redemption.manualSubmit')}
+                onPress={() => verifier(saisi)}
+                testID="valider-code"
+              />
+            </View>
+          </View>
           {ongletScan && !Scan ? (
             <Texte variante="type.caption" couleur="text.secondary">
               {t('redemption.cameraUnavailable')}

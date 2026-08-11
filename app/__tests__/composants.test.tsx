@@ -641,6 +641,7 @@ describe("ce que la bibliothèque n'a pas", () => {
       'Icone.tsx',
       'Logo.tsx',
       'Mouvement.tsx',
+      'PaveDeSaisie.tsx',
       'PickupCode.tsx',
       'SegmentedTabs.tsx',
       'Skeleton.tsx',

@@ -92,6 +92,7 @@ export const en = {
     manualLabel: 'Enter the code',
     manualHint: 'Six characters, shown on the creator’s screen.',
     manualSubmit: 'Check code',
+    effacer: 'Clear',
     scanTab: 'Scan',
     manualTab: 'Type it',
     scanHint: 'Point the camera at the creator’s screen.',
