@@ -21,6 +21,8 @@ from app.integrations.social import (
     IdentiteSociale,
     JetonEchange,
     MetriquesProfil,
+    PublicationIntrouvable,
+    PublicationVue,
     SocialAuthError,
     SocialProviderError,
 )
@@ -38,6 +40,16 @@ DELAI = httpx.Timeout(10.0)
 #: Champs de profil demandés pour un relevé de métriques. `follows_count` est
 #: le nom Instagram de ce que nous appelons `following_count`.
 CHAMPS_METRIQUES = "followers_count,follows_count,media_count"
+
+#: Les deux collections d'un compte. Les stories vivent à part et une story ne
+#: figure jamais dans `/me/media` — les interroger toutes deux est la seule
+#: façon de retrouver une publication quel que soit son format.
+STORIES = "https://graph.instagram.com/me/stories"
+MEDIAS = "https://graph.instagram.com/me/media"
+
+#: Exactement ce que la vérification examine, et rien de plus. Demander des
+#: champs inutilisés élargirait la portée de l'autorisation pour rien.
+CHAMPS_MEDIA = "id,username,media_type,timestamp,permalink,caption"
 
 #: Meta décline l'audience sur plusieurs axes, un appel par axe étant la seule
 #: façon de les obtenir tous. On se limite à ceux que l'éligibilité regardera.
@@ -180,6 +192,54 @@ class InstagramProvider:
             audience_demographics=await self._audience(access_token, external_id),
             raw_payload=profil,
         )
+
+    async def fetch_media(self, access_token: str, *, permalink: str) -> PublicationVue:
+        """La publication désignée par son adresse.
+
+        **Meta n'offre aucun point d'entrée « média par permalien ».** On liste
+        donc les publications récentes du compte et on cherche l'adresse. C'est
+        le seul chemin disponible, et il porte deux conséquences qu'il vaut
+        mieux nommer que découvrir : la recherche est bornée à ce que Meta rend
+        sur une page, et une story de plus de vingt-quatre heures n'y est plus.
+
+        Les deux collections sont interrogées — les stories vivent sur un point
+        d'entrée séparé, et une story ne figure jamais dans `/me/media`. Les
+        stories d'abord : c'est le format le plus fréquent et le plus fragile,
+        et l'y trouver évite une seconde requête.
+
+        Lève `PublicationIntrouvable` quand aucune des deux ne la contient : ce
+        n'est pas une panne, c'est le cas normal d'une story expirée.
+        """
+        for collection in (STORIES, MEDIAS):
+            page = await self._lire(
+                collection, {"fields": CHAMPS_MEDIA, "access_token": access_token}
+            )
+            for media in page.get("data", []):
+                if media.get("permalink") != permalink:
+                    continue
+
+                # `username` plutôt que l'identifiant : Basic Display ne rend pas
+                # l'identifiant de l'auteur sur un média, et le pseudonyme est ce
+                # que la même API rend sur le profil. Les deux se comparent donc.
+                auteur = media.get("username")
+                horodatage = media.get("timestamp")
+                if not auteur or not horodatage:
+                    # Sans auteur ni horodatage, il n'y a rien à vérifier — et
+                    # rendre un objet à moitié rempli ferait passer l'absence
+                    # pour une non-correspondance.
+                    raise SocialProviderError("média sans auteur ni horodatage")
+
+                return PublicationVue(
+                    media_id=str(media["id"]),
+                    author_external_id=str(auteur),
+                    media_type=str(media.get("media_type", "")),
+                    published_at=datetime.fromisoformat(horodatage.replace("Z", "+00:00")),
+                    permalink=permalink,
+                    caption=media.get("caption"),
+                    raw_payload=media,
+                )
+
+        raise PublicationIntrouvable(permalink)
 
     async def _audience(self, access_token: str, external_id: str) -> dict | None:
         """L'audience est un supplément, jamais une condition.

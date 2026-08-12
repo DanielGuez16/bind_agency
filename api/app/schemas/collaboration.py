@@ -43,6 +43,12 @@ class PreuveRead(BaseModel):
     content_hash: str
     source_url: str | None
     platform_published_at: datetime | None
+    #: Vraie quand les quatre conditions de `SPEC.md` sont réunies. Nulle sur
+    #: une preuve de niveau 2 ou 3 : la question ne s'est pas posée, ce qui
+    #: n'est pas la même chose qu'une vérification qui a échoué.
+    verifiee: bool | None
+    #: Les codes des conditions manquantes, quand il y en a. Fermés.
+    raisons_de_non_verification: list[str]
     #: Ce que le créateur a écrit en soumettant. Lu par le commerce et par
     #: l'arbitre : c'est la moitié du canal qui vient d'en bas.
     note: str | None

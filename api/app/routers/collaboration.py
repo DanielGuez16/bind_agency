@@ -14,8 +14,9 @@ from fastapi import APIRouter, Depends, Path, status
 from app.core.dependencies import CurrentUser, SessionDep
 from app.core.errors import ErrorCode, api_error
 from app.core.membership import require_member_of
-from app.models import Booking, Collaboration
-from app.models.enums import UserRole
+from app.integrations.social import PublicationVue
+from app.models import Booking, Collaboration, SocialAccount
+from app.models.enums import CaptureMethod, UserRole
 from app.schemas.collaboration import (
     CollaborationRead,
     DecisionCommerce,
@@ -23,6 +24,7 @@ from app.schemas.collaboration import (
 )
 from app.services import collaboration as service
 from app.services import proof as proof_service
+from app.services import verification
 from app.services.audit import Actor
 from app.services.storage import archiver_la_publication
 
@@ -114,6 +116,23 @@ async def submit_proof(
         # Renvoyer la même capture après un refus n'est pas une correction.
         raise api_error(status.HTTP_409_CONFLICT, ErrorCode.PROOF_ALREADY_SUBMITTED)
 
+    # **La vérification n'a lieu que si la plateforme a répondu.** Aux niveaux
+    # 2 et 3, il n'y a rien à comparer : la contrepartie est attestée, et lui
+    # appliquer les quatre conditions produirait un « ne correspond pas » qui
+    # accuserait la créatrice d'un silence de la plateforme.
+    verdict = None
+    if capture.capture_method is CaptureMethod.API:
+        compte = await session.get(SocialAccount, booking.social_account_id)
+        verdict = verification.verdict(
+            _publication_de(capture),
+            verification.Exigences(
+                compte_externe=compte.external_id or "",
+                consomme_a=booking.consumed_at,
+                echeance_a=ligne.deadline_at,
+                format_exige=ligne.required_format,
+            ),
+        )
+
     try:
         await proof_service.soumettre(
             session,
@@ -121,6 +140,7 @@ async def submit_proof(
             capture=capture,
             actor=Actor.from_user(user),
             note=(payload.note or "").strip() or None,
+            verdict=verdict,
         )
     except (proof_service.ProofError, service.CollaborationError) as error:
         raise _traduire(error) from error
@@ -170,3 +190,24 @@ async def decide(
     await session.commit()
     _ = membership
     return await _lire(session, ligne)
+
+
+def _publication_de(capture) -> PublicationVue:
+    """Reconstitue ce que la plateforme a répondu, depuis ce que l'archivage a
+    conservé.
+
+    L'archivage et la vérification sont deux étapes, et faire voyager l'objet
+    de la plateforme à travers `MediaCapture` obligerait celui-ci à connaître
+    l'interface sociale — alors qu'il décrit un fichier. Les trois champs
+    suffisent à reformer ce que la règle examine.
+    """
+    extra = capture.extra or {}
+    return PublicationVue(
+        media_id=extra.get("platform_media_id", ""),
+        author_external_id=extra.get("platform_author_id", ""),
+        media_type=extra.get("platform_media_type", ""),
+        published_at=capture.platform_published_at,
+        permalink=capture.source_url,
+        caption=None,
+        raw_payload=extra.get("raw", {}),
+    )
