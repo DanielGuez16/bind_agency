@@ -314,8 +314,7 @@ function Reperes({ vue }: { vue: Reporting }) {
       {reperes.map((repere) => (
         <View key={repere.cle} style={{ width: 260, gap: 2 }} testID={`repere-${repere.cle}`}>
           <Texte
-            variante={repere.chiffre ? 'type.mono' : 'type.heading'}
-            style={repere.chiffre ? { fontSize: 44, lineHeight: 48 } : undefined}
+            variante={repere.chiffre ? 'type.figure' : 'type.heading'}
             testID={repere.cle === 'taux' ? 'taux' : undefined}
           >
             {repere.valeur}

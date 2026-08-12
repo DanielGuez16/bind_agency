@@ -16,11 +16,19 @@
  */
 import { Text as TextNatif, type TextProps as TextPropsNatif } from 'react-native';
 
-import { type ColorName, tokens, typography, useColors } from '../theme';
+import { type ColorName, nomDeFonte, type RoleDeFonte, typography, useColors } from '../theme';
 
 export type Variante = keyof typeof typography;
 
-const POLICES = tokens.typography.fontFamily;
+/**
+ * **La graisse fait partie du nom, elle n'est plus un attribut.** Sur iOS et
+ * Android, `fontWeight` ne choisit pas un fichier : une graisse absente est
+ * synthétisée par le moteur, ce qui donne un gras baveux au lieu du dessin
+ * voulu. Chaque graisse est enregistrée sous son propre nom, et c'est ce nom
+ * qu'on demande. `fontWeight` reste posé pour le web, où il fait le tri entre
+ * les `@font-face` d'une même famille et sert de repli si le chargement n'a
+ * pas abouti.
+ */
 
 export type TexteProps = Omit<TextPropsNatif, 'style'> & {
   variante?: Variante;
@@ -58,7 +66,7 @@ export function Texte({
           lineHeight: echelle.lineHeight,
           fontWeight: echelle.fontWeight as never,
           letterSpacing: 'letterSpacing' in echelle ? echelle.letterSpacing : undefined,
-          fontFamily: POLICES[echelle.fontFamily as keyof typeof POLICES],
+          fontFamily: nomDeFonte(echelle.fontFamily as RoleDeFonte, echelle.fontWeight),
           color: c[couleur],
           textAlign: align,
         },

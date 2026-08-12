@@ -22,7 +22,7 @@
 import { Animated, Image, Pressable, View, type ImageSourcePropType } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { radius, useColors, useTheme } from '../theme';
+import { radius, useColors, useElevation, useTheme } from '../theme';
 import { Button } from './Button';
 import { useEnfoncement } from './Mouvement';
 import { Texte } from './Texte';
@@ -139,6 +139,9 @@ export function BusinessCard({
 }: BusinessCardProps) {
   const { color: c, role } = useTheme();
   const enfoncement = useEnfoncement(Boolean(onPress));
+  // La carte décolle du fond. La maquette pose `0 1px 2px` sous chacune ; sans
+  // elle, une carte et le canevas vivent sur le même plan optique.
+  const elevation = useElevation('elevation.1');
 
   return (
     <Animated.View style={enfoncement.style}>
@@ -150,6 +153,7 @@ export function BusinessCard({
         onPressIn={enfoncement.onPressIn}
         onPressOut={enfoncement.onPressOut}
         style={{
+          ...elevation,
           borderRadius: radius['radius.xl'],
           borderWidth: 1,
           borderColor: c['border.subtle'],

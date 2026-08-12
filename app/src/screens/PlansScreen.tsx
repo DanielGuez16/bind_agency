@@ -165,7 +165,7 @@ function Totaux({ totaux }: { totaux: Totaux }) {
       style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 24, paddingBottom: 4 }}
     >
       <View style={{ width: 260, gap: 2 }} testID="total-mrr">
-        <Texte variante="type.mono" style={{ fontSize: 44, lineHeight: 48 }}>
+        <Texte variante="type.figure">
           {totaux.devise ? montant(totaux.mrrCents, totaux.devise) : '—'}
         </Texte>
         <Texte variante="type.caption" couleur="text.secondary">
@@ -173,7 +173,7 @@ function Totaux({ totaux }: { totaux: Totaux }) {
         </Texte>
       </View>
       <View style={{ width: 260, gap: 2 }} testID="total-abonnes">
-        <Texte variante="type.mono" style={{ fontSize: 44, lineHeight: 48 }}>
+        <Texte variante="type.figure">
           {String(totaux.actifs)}
         </Texte>
         <Texte variante="type.caption" couleur="text.secondary">

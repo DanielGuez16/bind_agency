@@ -2951,3 +2951,41 @@ Trouvé en écrivant le test : **un signal déjà avorté n'émettait plus rien*
 L'appelant peut annuler avant que la requête parte — le temps de lire le
 coffre, un écran a pu être quitté. S'abonner ne suffisait pas, l'événement était
 passé : la requête partait pour de bon et attendait ses quinze secondes.
+
+## 2026-08-12 — Les fontes sont chargées, et la graisse fait partie du nom
+
+`tokens.json` nommait trois familles, `Texte` les demandait par `fontFamily`, et
+aucune n'existait dans le dépôt : ni `expo-font`, ni un seul fichier de fonte.
+Tout le produit rendait en police système — SF Pro sur iPhone, Helvetica dans le
+navigateur — sans qu'aucune erreur ni aucun test ne le signale. C'était le seul
+écart de rendu portant sur cent pour cent des écrans à la fois.
+
+Chaque graisse est enregistrée sous son propre nom, « IBM Plex Sans 600 », et
+`Texte` demande ce nom-là. Sur iOS et Android, `fontWeight` ne choisit pas un
+fichier : une graisse absente est **synthétisée** par le moteur, ce qui donne un
+gras épaissi au lieu du dessin voulu. Le web suit le même chemin, ce qui évite
+d'avoir deux comportements à tenir d'accord.
+
+Les familles restent dans les jetons et nulle part ailleurs — un test parcourt
+les sources et refuse tout nom de fonte écrit hors du dossier du thème. Changer
+de direction artistique, c'est changer la ligne du jeton et l'entrée de fichier
+correspondante dans `polices.ts`, deux endroits adjacents.
+
+## 2026-08-12 — L'élévation vient du thème, pas du jeton seul
+
+`elevation.0/1/2` existaient depuis la v0.4 et n'étaient lus par aucune ligne de
+`src/` : toutes les surfaces du produit vivaient sur le plan du fond, séparées
+par un filet de 1 px. Le jeton porte une ombre calibrée sur fond sombre ; posée
+telle quelle sur le thème clair, elle écrase. La fonction `elevation()` la ramène
+à douze pour cent en clair, ce que la maquette dessine, et rend les trois formes
+que les plateformes attendent — `shadow*` sur iOS, `elevation` sur Android,
+`boxShadow` sur le web — depuis les mêmes nombres.
+
+## 2026-08-12 — Un cran de densité en grand écran, identique aux deux rôles
+
+`Ecran` appliquait la densité du rôle à toute largeur. Le commerce, calibré pour
+un téléphone posé au comptoir, était donc **plus serré que le créateur** sur un
+bureau de 1512 — 16 contre 20 — l'inverse de ce qu'une grande surface demande.
+Les deux passent à 24, comme la maquette. La densité compacte ne bouge pas :
+c'est là qu'elle a sa raison d'être.
+

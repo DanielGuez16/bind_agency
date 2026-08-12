@@ -401,8 +401,8 @@ function BandeauDePrincipe() {
                 }}
               />
               <Texte
-                variante="type.mono"
-                style={{ fontSize: 10, letterSpacing: 0.66, color: inverse['text.secondary'] }}
+                variante="type.eyebrow"
+                style={{ fontSize: 10, color: inverse['text.secondary'] }}
               >
                 {tierTokens[palier].label[locale] ?? tierTokens[palier].label.en}
               </Texte>
@@ -538,9 +538,8 @@ export function BarreauDePalier({
         </Texte>
         <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
           <Texte
-            variante="type.mono"
+            variante="type.figureSmall"
             testID={`ouvre-${palier.tier_id}`}
-            style={{ fontSize: 29, lineHeight: 32 }}
           >
             {formatNumber(palier.offres_disponibles, locale)}
           </Texte>
@@ -675,7 +674,7 @@ function EtatDuPalier({
           backgroundColor: c['accent.default'],
         }}
       >
-        <Texte variante="type.mono" couleur="accent.onAccent" style={{ fontSize: 10, letterSpacing: 0.66 }}>
+        <Texte variante="type.eyebrow" couleur="accent.onAccent" style={{ fontSize: 10 }}>
           {t('tiers.nextForYou')}
         </Texte>
       </View>
