@@ -3207,3 +3207,46 @@ retrait ni l'adresse.
 scanner caméra. Expo exige un identifiant de projet EAS et un build de
 développement ; `PUSH_PROVIDER=log` est en service et trace ce qu'il aurait
 envoyé. Tout ce qui est en amont du dernier saut est éprouvé.
+
+## 2026-08-12 — L'autorisation de notification se demande une fois connecté
+
+Jamais sur le premier écran. Une autorisation réclamée avant d'avoir montré à
+quoi elle sert se refuse, et une fois refusée elle ne se redemande plus — c'est
+la leçon de la position, où un bouton qui ne produisait plus rien a coûté une
+campagne. Une fois connecté, il y a des réservations à suivre et des
+publications à rendre : la demande a un sens.
+
+**On ne redemande qu'où la fenêtre s'ouvrira encore.** `getPermissionsAsync`
+est lu avant `requestPermissionsAsync` : après un refus définitif, le second
+répond « refusé » sans rien afficher, et insister ne rouvre rien.
+
+Le jeton se réaffirme à chaque démarrage — il change quand l'application est
+réinstallée — et la route est un `PUT` pour cette raison. Un refus n'est pas une
+panne : le produit fonctionne sans notifications, il prévient seulement moins
+bien.
+
+**Chaque rôle ne voit que les genres qui le concernent.** Le serveur les rend
+tous les sept, il ne connaît pas l'écran ; c'est l'app qui choisit. « Une
+réservation attend votre décision » ne veut rien dire pour un créateur, et un
+interrupteur qui ne commande rien est pire qu'un interrupteur absent.
+
+**Chaque bascule part seule et se corrige seule.** Un bouton « enregistrer »
+pour sept interrupteurs ferait perdre six réglages quand le septième échoue. En
+cas de refus du serveur, l'interrupteur revient où il était et le dit — le
+laisser sur une valeur que le serveur ignore ferait croire à un réglage qui
+n'existe pas.
+
+## 2026-08-12 — La note ne part jamais sans son motif, côté app aussi
+
+Le champ n'apparaît qu'une fois un motif choisi, et il n'est pas envoyé sur une
+approbation. Les deux règles disent la même chose sous deux formes : le serveur
+refuse une note seule jusque dans une contrainte de base, et l'app ne tente pas
+de l'y faire entrer.
+
+Le cas qui l'a fait écrire : choisir un motif, taper une phrase, puis changer
+d'avis et approuver. Sans la seconde règle, la note partait seule et le serveur
+refusait l'approbation — sur le geste le plus banal de l'écran. Un test l'a
+attrapé ; une relecture ne l'aurait pas vu.
+
+`NOTE_MAXIMUM` est recopié du serveur, et un test compare les deux valeurs —
+même dispositif que le poids d'une capture, pour la même raison.

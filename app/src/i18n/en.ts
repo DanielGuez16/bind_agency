@@ -347,6 +347,11 @@ export const en = {
     filtreApprouvee: 'Approved',
     approuver: 'Approve the publication',
     redemander: 'Ask for a new publication',
+    noteLabel: 'Add a note (optional)',
+    notePlaceholder: 'What exactly is missing, and where. The creator reads this.',
+    noteAide: 'The reason above is what gets translated. The note is shown as you wrote it.',
+    noteDuCreateur: 'What the creator said',
+    noteDeLArbitre: 'Note',
     motifObligatoire: 'Pick a reason before asking again.',
     motifMention: 'The mention is missing',
     motifLieu: 'The location tag is missing',
@@ -484,6 +489,8 @@ export const en = {
     motDePasseComplet: 'At least {{requis}} characters.',
   },
   reglages: {
+    notifications: 'Notifications',
+    notificationsAide: 'Turn off anything you would rather not be interrupted by. Emails keep coming either way.',
     titre: 'Settings',
     compte: 'Account',
     langue: 'Language',
@@ -717,6 +724,17 @@ export const en = {
       'Bookable items need a duration. Add one to every line you keep.',
     not_found: 'We could not find what you were looking for.',
     internal_error: 'Something went wrong on our side.',
+  },
+  /** Les sept genres, tels que le serveur les nomme. Codes bruts, jamais
+      traduits en clé : ce sont les valeurs de son énumération. */
+  notifications: {
+    booking_approved: 'A salon accepts your booking',
+    booking_declined: 'A salon declines your booking',
+    booking_cancelled_by_business: 'A salon cancels a confirmed booking',
+    publication_reminder: 'Your posting deadline is near',
+    publication_approved: 'Your post is approved',
+    publication_resubmit: 'A new post is requested',
+    booking_to_review: 'A booking is waiting for your decision',
   },
 } as const;
 

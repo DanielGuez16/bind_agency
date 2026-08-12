@@ -21,7 +21,7 @@ import type { ReactNode } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { ApiProvider } from './src/api';
+import { ApiProvider, useApi } from './src/api';
 import { I18nProvider } from './src/i18n';
 import { AuthScreen } from './src/screens/AuthScreen';
 import { SessionProvider, coffreSecurise, themeDuRole, useSession } from './src/session';
@@ -31,6 +31,7 @@ import { BienvenueScreen } from './src/screens/BienvenueScreen';
 import { Navigation } from './src/shell/Navigation';
 import { adresseDeLApi } from './src/shell/adresseDeLApi';
 import { GabaritProvider } from './src/shell/gabarit';
+import { useNotificationsPush } from './src/shell/useNotificationsPush';
 import { ZoneSure } from './src/shell/ZoneSure';
 import { ThemeProvider, policesAcharger, useColors } from './src/theme';
 
@@ -60,6 +61,12 @@ function Coquille() {
   return (
     <ThemeProvider role={themeDuRole(role)}>
       <ApiProvider client={session.client}>
+        {/* **L'autorisation se demande une fois connecté, jamais avant.** Une
+            autorisation réclamée sur le premier écran se refuse, et une fois
+            refusée elle ne se redemande plus — la position l'a appris à nos
+            dépens. Ici, il y a des réservations à suivre : la demande a un
+            sens. */}
+        <JetonDeNotification actif={session.etat === 'connecte'} />
         <StatusBar style="auto" />
         {/* **La zone sûre est traitée ici, une fois.** Chaque écran qui s'en
             occuperait produirait un oubli quelque part, et l'oubli se voit sur
@@ -91,6 +98,18 @@ function Coquille() {
       </ApiProvider>
     </ThemeProvider>
   );
+}
+
+/**
+ * Réaffirme le jeton de ce terminal auprès du serveur.
+ *
+ * Un composant sans rendu plutôt qu'un appel dans `Sous` : le hook a besoin du
+ * client d'API, que seul un enfant de `ApiProvider` peut lire.
+ */
+function JetonDeNotification({ actif }: { actif: boolean }) {
+  const { api } = useApi();
+  useNotificationsPush(api, actif);
+  return null;
 }
 
 /** Le temps de lire le trousseau. Quelques dizaines de millisecondes. */

@@ -254,10 +254,15 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       dans `app.json`, un build de développement, et l'app doit appeler
       `PUT /me/devices` au démarrage avec le jeton rendu par
       `expo-notifications`.*
-- [ ] Écrans des notifications côté app
-      *L'API est complète et le contrat à jour. Il manque : demander
-      l'autorisation au démarrage, poster le jeton, et l'écran de réglages qui
-      lit et écrit les sept préférences*
+- [x] Écrans des notifications côté app
+      *Fin : l'autorisation se demande une fois connecté et jamais avant — sur
+      le premier écran elle se refuse, et un refus ne se redemande plus. On ne
+      la redemande qu'où la fenêtre s'ouvrira encore. Le jeton se réaffirme à
+      chaque démarrage, la route étant idempotente. Les sept préférences se
+      règlent dans les réglages, une bascule à la fois, et chaque rôle ne voit
+      que les genres qui le concernent. **Toujours non vérifié de bout en
+      bout** : Expo ne délivre de jeton distant que sur un build de
+      développement*
 - [ ] Capture de preuve niveau 1
       *Attend `fetch_media` sur l'interface de plateforme, qui viendra avec le relevé des publications — une tâche à part, qui demande de savoir quelles publications appartiennent à quelle collaboration*
 - [x] Dépôt objet réel, compatible S3

@@ -26,9 +26,19 @@ import {
   SkeletonLine,
   StatusMessage,
   Texte,
+  TextField,
 } from '../components';
 import { useI18n } from '../i18n';
 import { MOTIFS, libelleDuMotif, type MotifDeDecision } from './motifs';
+
+/**
+ * La borne du serveur, recopiée.
+ *
+ * Recopiée plutôt que demandée : une requête pour connaître une limite
+ * ajouterait un aller-retour à chaque ouverture d'écran. Le risque est qu'elles
+ * divergent ; un test compare les deux valeurs.
+ */
+export const NOTE_MAXIMUM = 500;
 import { Ecran } from './Ecran';
 import { PreuveSoumise, SqueletteDePreuve } from './Preuve';
 import { useRequete } from './useRequete';
@@ -105,6 +115,7 @@ function Controle({ ligne, onDecide }: { ligne: LigneDeFile; onDecide: () => voi
   const { api, messageDErreur } = useApi();
   const { t } = useI18n();
   const [motif, setMotif] = useState<MotifDeDecision | null>(null);
+  const [note, setNote] = useState('');
   const [envoi, setEnvoi] = useState(false);
   const [echec, setEchec] = useState<string | null>(null);
 
@@ -115,6 +126,9 @@ function Controle({ ligne, onDecide }: { ligne: LigneDeFile; onDecide: () => voi
       await api.deciderCommerce(ligne.collaboration_id, {
         approuve,
         reason: approuve ? undefined : (motif ?? undefined),
+        // **Jamais sans motif.** Le serveur refuse une note seule, jusque dans
+        // une contrainte de base ; l'app ne tente pas de l'y faire entrer.
+        note: approuve ? undefined : note.trim() || undefined,
       });
       onDecide();
     } catch (erreur) {
@@ -145,6 +159,18 @@ function Controle({ ligne, onDecide }: { ligne: LigneDeFile; onDecide: () => voi
           lieuAttendu={ligne.required_geotag}
         />
       ) : null}
+      {/* **Ce que la créatrice a écrit en soumettant.** Lu au même endroit que
+          sa preuve : sinon le commerce décide en ayant vu l'image sans avoir
+          lu la phrase, ce qui est exactement la situation qu'on répare. */}
+      {ligne.derniere_soumission?.note ? (
+        <View style={{ gap: 2 }} testID="note-du-createur">
+          <Texte variante="type.label" couleur="text.secondary">
+            {t('commerce.noteDuCreateur')}
+          </Texte>
+          <Texte variante="type.caption">{ligne.derniere_soumission.note}</Texte>
+        </View>
+      ) : null}
+
       {ligne.dernier_motif ? (
         <Texte variante="type.caption" couleur="status.warning" testID="dernier-motif">
           {t('commerce.tentative', { n: ligne.attempts_count })} ·{' '}
@@ -166,6 +192,22 @@ function Controle({ ligne, onDecide }: { ligne: LigneDeFile; onDecide: () => voi
               />
             ))}
           </RangeeDeChips>
+
+          {/* **Le champ n'apparaît qu'avec un motif choisi.** Une note ne
+              voyage jamais seule — le serveur le refuse — et offrir la saisie
+              avant le motif ferait écrire une phrase qui serait rejetée. */}
+          {motif ? (
+            <TextField
+              label={t('commerce.noteLabel')}
+              placeholder={t('commerce.notePlaceholder')}
+              helpText={t('commerce.noteAide')}
+              value={note}
+              onChangeText={setNote}
+              lignes={3}
+              maxLength={NOTE_MAXIMUM}
+              testID="note"
+            />
+          ) : null}
 
           <Button
             label={t('commerce.approuver')}

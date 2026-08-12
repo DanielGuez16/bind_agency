@@ -23,7 +23,7 @@ import { CatalogueScreen } from '../src/screens/CatalogueScreen';
 import { HorairesScreen } from '../src/screens/HorairesScreen';
 import { JourneeScreen } from '../src/screens/JourneeScreen';
 import { PlansScreen } from '../src/screens/PlansScreen';
-import { PublicationsScreen } from '../src/screens/PublicationsScreen';
+import { NOTE_MAXIMUM, PublicationsScreen } from '../src/screens/PublicationsScreen';
 import { ReportingScreen } from '../src/screens/ReportingScreen';
 import { ECRANS_COMMERCE } from '../test-support/registre-ecrans';
 
@@ -1404,5 +1404,191 @@ describe('l’annuaire des créateurs', () => {
 
     await waitFor(() => expect(screen.getByTestId('annuaire-sans-abonnement')).toBeTruthy());
     expect(screen.queryByTestId('etat-erreur')).toBeNull();
+  });
+});
+
+// --------------------------------------------------------------------------
+// la note libre, des deux côtés de la décision
+// --------------------------------------------------------------------------
+
+/**
+ * Le seul message possible entre un salon et un créateur était un code dans une
+ * liste fermée de quatre. Un dossier arrivait en arbitrage après trois
+ * allers-retours sans qu'aucune phrase n'ait été échangée.
+ *
+ * **La note ne remplace jamais le motif**, et l'app ne tente pas de l'y faire
+ * entrer : le serveur refuse une note seule jusque dans une contrainte de base,
+ * et le champ n'apparaît qu'une fois un motif choisi.
+ */
+describe('la note libre côté commerce', () => {
+  const AVEC_NOTE = {
+    ...LIGNE_DE_FILE,
+    derniere_soumission: {
+      ...LIGNE_DE_FILE.derniere_soumission,
+      note: 'Le sticker est en haut à droite, la mention est dessous.',
+    },
+  };
+
+  it('montre ce que la créatrice a écrit, à côté de sa preuve', async () => {
+    // Sinon le commerce décide en ayant vu l'image sans avoir lu la phrase,
+    // ce qui est exactement la situation qu'on répare.
+    await monter(
+      <PublicationsScreen businessId="b1" />,
+      clientDe({ '/collaborations': [AVEC_NOTE] }),
+    );
+    await waitFor(() => expect(screen.getByTestId('controle-k1')).toBeTruthy());
+
+    expect(screen.getByTestId('note-du-createur')).toHaveTextContent(/en haut à droite/);
+  });
+
+  it('n’offre pas d’écrire une note avant d’avoir choisi un motif', async () => {
+    // Une note ne voyage jamais seule. Offrir la saisie avant le motif ferait
+    // écrire une phrase qui serait rejetée par le serveur.
+    await monter(
+      <PublicationsScreen businessId="b1" />,
+      clientDe({ '/collaborations': [LIGNE_DE_FILE] }),
+    );
+    await waitFor(() => expect(screen.getByTestId('controle-k1')).toBeTruthy());
+
+    expect(screen.queryByTestId('note')).toBeNull();
+
+    await fireEvent.press(screen.getByText(en.commerce.motifMention));
+    expect(screen.getByTestId('note')).toBeTruthy();
+  });
+
+  it('envoie la note avec son motif, jamais sans', async () => {
+    const envois: unknown[] = [];
+    await monter(
+      <PublicationsScreen businessId="b1" />,
+      clientDe({ '/collaborations': [LIGNE_DE_FILE] }, (chemin, corps) =>
+        envois.push({ chemin, corps }),
+      ),
+    );
+    await waitFor(() => expect(screen.getByTestId('controle-k1')).toBeTruthy());
+
+    await fireEvent.press(screen.getByText(en.commerce.motifMention));
+    await fireEvent.changeText(screen.getByTestId('note'), '  Le sticker cache la mention.  ');
+    await fireEvent.press(screen.getByTestId('redemander'));
+
+    await waitFor(() => expect(envois).toHaveLength(1));
+    expect(envois[0]).toMatchObject({
+      // Vidée de ses espaces : une note faite d'un seul retour à la ligne
+      // occuperait une place à l'écran sans rien dire.
+      corps: { approuve: false, reason: 'missing_mention', note: 'Le sticker cache la mention.' },
+    });
+  });
+
+  it('n’envoie aucune note sur une approbation, même écrite', async () => {
+    // **Le cas réel** : on choisit un motif, on écrit une phrase, puis on
+    // change d'avis et on approuve. Approuver n'accepte pas de motif ; la note
+    // serait donc seule, et le serveur refuserait l'approbation avec elle —
+    // sur le geste le plus banal de l'écran.
+    const envois: unknown[] = [];
+    await monter(
+      <PublicationsScreen businessId="b1" />,
+      clientDe({ '/collaborations': [LIGNE_DE_FILE] }, (chemin, corps) =>
+        envois.push({ chemin, corps }),
+      ),
+    );
+    await waitFor(() => expect(screen.getByTestId('controle-k1')).toBeTruthy());
+
+    await fireEvent.press(screen.getByText(en.commerce.motifMention));
+    await fireEvent.changeText(screen.getByTestId('note'), 'Finalement ça me va.');
+    await fireEvent.press(screen.getByTestId('approuver'));
+
+    await waitFor(() => expect(envois).toHaveLength(1));
+    const corps = (envois[0] as { corps: Record<string, unknown> }).corps;
+    expect(corps.approuve).toBe(true);
+    expect(corps.note).toBeUndefined();
+    expect(corps.reason).toBeUndefined();
+  });
+
+  it('borne la saisie à ce que le serveur accepte', async () => {
+    // Recopiée plutôt que demandée ; le test compare les deux valeurs.
+    await monter(
+      <PublicationsScreen businessId="b1" />,
+      clientDe({ '/collaborations': [LIGNE_DE_FILE] }),
+    );
+    await waitFor(() => expect(screen.getByTestId('controle-k1')).toBeTruthy());
+    await fireEvent.press(screen.getByText(en.commerce.motifMention));
+
+    expect(screen.getByTestId('note').props.maxLength).toBe(NOTE_MAXIMUM);
+  });
+});
+
+describe('la note libre à l’arbitrage', () => {
+  const surLeDossier = (issue: string) =>
+    en.admin.issueSurDossier
+      .replace('{{issue}}', issue)
+      .replace('{{createur}}', DOSSIER_EN_ARBITRAGE.creator_handle)
+      .replace('{{prestation}}', DOSSIER_EN_ARBITRAGE.item_name)
+      .replace('{{commerce}}', DOSSIER_EN_ARBITRAGE.business_name);
+
+  it('montre les notes de chaque demande, sous leur motif', async () => {
+    // C'est la répétition qui justifie l'escalade, et trois fois le même code
+    // avec trois explications différentes ne se lit pas comme trois fois la
+    // même chose.
+    const avecNotes = {
+      ...DOSSIER_EN_ARBITRAGE,
+      tentatives: [
+        {
+          motif: 'missing_mention',
+          note: 'La mention est absente.',
+          demandee_le: '2026-08-07T09:00:00Z',
+          par: 'business_member',
+        },
+        {
+          motif: 'missing_mention',
+          note: 'Toujours absente, et la story a changé.',
+          demandee_le: '2026-08-08T09:00:00Z',
+          par: 'business_member',
+        },
+      ],
+    };
+    await monter(
+      <ArbitrageScreen />,
+      clientDe({ '/admin/collaborations/review': [avecNotes] }),
+      'admin',
+    );
+    await waitFor(() => expect(screen.getByTestId('dossier-k1')).toBeTruthy());
+
+    expect(screen.getByTestId('note-tentative-0')).toHaveTextContent(/La mention est absente/);
+    expect(screen.getByTestId('note-tentative-1')).toHaveTextContent(/la story a changé/);
+  });
+
+  it('envoie la note de l’arbitre avec son motif', async () => {
+    const envois: unknown[] = [];
+    await monter(
+      <ArbitrageScreen />,
+      clientDe({ '/admin/collaborations/review': [DOSSIER_EN_ARBITRAGE] }, (chemin, corps) =>
+        envois.push({ chemin, corps }),
+      ),
+      'admin',
+    );
+    await waitFor(() => expect(screen.getByTestId('dossier-k1')).toBeTruthy());
+
+    await fireEvent.press(screen.getByText(en.commerce.motifMention));
+    await fireEvent.changeText(screen.getByTestId('note'), 'Trois fois le même reproche.');
+    await fireEvent.press(screen.getByLabelText(surLeDossier(en.admin.issueResubmit)));
+
+    await waitFor(() => expect(envois).toHaveLength(1));
+    expect(envois[0]).toMatchObject({
+      corps: {
+        issue: 'resubmit',
+        reason: 'missing_mention',
+        note: 'Trois fois le même reproche.',
+      },
+    });
+  });
+
+  it('n’offre pas la saisie avant qu’un motif soit choisi', async () => {
+    await monter(
+      <ArbitrageScreen />,
+      clientDe({ '/admin/collaborations/review': [DOSSIER_EN_ARBITRAGE] }),
+      'admin',
+    );
+    await waitFor(() => expect(screen.getByTestId('dossier-k1')).toBeTruthy());
+
+    expect(screen.queryByTestId('note')).toBeNull();
   });
 });

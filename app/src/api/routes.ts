@@ -36,6 +36,12 @@ export const routes = {
   mesReservations: () => chemin('/me/bookings'),
   mesCommerces: () => chemin('/me/businesses'),
 
+  // ---- notifications ----
+  enregistrerUnTerminal: () => chemin('/me/devices'),
+  revoquerUnTerminal: (token: string) => chemin(`/me/devices/${encodeURIComponent(token)}`),
+  mesPreferencesDeNotification: () => chemin('/me/notification-preferences'),
+  reglerUnePreference: (genre: string) => chemin(`/me/notification-preferences/${genre}`),
+
   // ---- découverte ----
   fil: () => chemin('/businesses'),
   fichePublique: (businessId: string) => chemin(`/businesses/${businessId}`),
@@ -153,6 +159,11 @@ export const METHODES: Record<keyof typeof routes, ('GET' | 'POST' | 'PATCH' | '
     maVerification: ['GET'],
     mesReservations: ['GET'],
     mesCommerces: ['GET'],
+
+    enregistrerUnTerminal: ['PUT'],
+    revoquerUnTerminal: ['DELETE'],
+    mesPreferencesDeNotification: ['GET'],
+    reglerUnePreference: ['PUT'],
 
     fil: ['GET'],
     fichePublique: ['GET'],
