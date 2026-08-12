@@ -23,6 +23,7 @@ import { ApiProvider, useApi } from '../src/api';
 import { METHODES, PREFIXE, routes } from '../src/api/routes';
 import { I18nProvider } from '../src/i18n';
 import { en } from '../src/i18n/en';
+import { NOTE_MAXIMUM } from '../src/screens/PublicationsScreen';
 
 const CONTRAT = JSON.parse(
   readFileSync(join(__dirname, '..', 'src', 'api', 'openapi.json'), { encoding: 'utf-8' }),
@@ -686,5 +687,30 @@ describe('le journal des requêtes interrompues', () => {
 
     await expect(client(casse).request('/api/v1/businesses')).rejects.toBeInstanceOf(NetworkError);
     expect(erreurs).toHaveBeenCalled();
+  });
+});
+
+// --------------------------------------------------------------------------
+// la borne de la note libre
+// --------------------------------------------------------------------------
+
+/**
+ * `NOTE_MAXIMUM` est recopié du serveur plutôt que demandé : une requête pour
+ * connaître une limite ajouterait un aller-retour à chaque ouverture d'écran.
+ * Le risque est qu'ils divergent — l'app laisserait alors écrire une phrase
+ * que le serveur refuse, après l'avoir tapée.
+ *
+ * Le même défaut existait sur le poids d'une capture, et le même test le tient.
+ */
+describe('la borne de la note libre', () => {
+  it('vaut celle du serveur', () => {
+    const source = readFileSync(
+      join(__dirname, '..', '..', 'api', 'app', 'core', 'config.py'),
+      'utf-8',
+    );
+    const declaration = /collaboration_note_max_length:\s*int\s*=\s*(\d+)/.exec(source);
+    if (declaration === null) throw new Error('collaboration_note_max_length introuvable');
+
+    expect(NOTE_MAXIMUM).toBe(Number(declaration[1]));
   });
 });

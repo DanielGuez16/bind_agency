@@ -25,6 +25,10 @@ import type {
   Booking,
   CodeDeRetrait,
   Collaboration,
+  GenreDeNotification,
+  PlateformeDeTerminal,
+  PreferencesDeNotification,
+  TerminalEnregistre,
   Creneau,
   DroitDeLecture,
   EtapeActivation,
@@ -244,7 +248,7 @@ export class Api {
    */
   soumettreLaPreuve(
     collaborationId: string,
-    corps: { screenshot_key?: string; source_url?: string },
+    corps: { screenshot_key?: string; source_url?: string; note?: string },
   ) {
     return this.client.request<Collaboration>(routes.soumettreLaPreuve(collaborationId), {
       methode: 'POST',
@@ -296,7 +300,17 @@ export class Api {
     return this.client.request<Collaboration>(routes.contrepartie(collaborationId), { signal });
   }
 
-  deciderCommerce(collaborationId: string, decision: { approuve: boolean; reason?: string }) {
+  /**
+   * Approuver, ou redemander avec un motif — et, facultativement, une note.
+   *
+   * **La note ne remplace jamais le motif.** Le serveur refuse une note seule,
+   * jusque dans une contrainte de base ; le type le dit à sa façon en gardant
+   * `reason` là où il était.
+   */
+  deciderCommerce(
+    collaborationId: string,
+    decision: { approuve: boolean; reason?: string; note?: string },
+  ) {
     return this.client.request<Collaboration>(routes.deciderCommerce(collaborationId), {
       methode: 'POST',
       corps: decision,
@@ -329,6 +343,39 @@ export class Api {
   mesCommerces(signal?: AbortSignal) {
     return this.client.request<{ id: string; name: string }[]>(routes.mesCommerces(), {
       signal,
+    });
+  }
+
+  // ---- notifications ----
+
+  /**
+   * Inscrit ou réactive ce terminal. **Idempotent, et rappelé à chaque
+   * démarrage** : un jeton Expo change quand l'application est réinstallée,
+   * et une route qui créerait une ligne par appel en accumulerait une par
+   * ouverture. D'où le `PUT`.
+   */
+  enregistrerUnTerminal(corps: { token: string; platform: PlateformeDeTerminal }) {
+    return this.client.request<TerminalEnregistre>(routes.enregistrerUnTerminal(), {
+      methode: 'PUT',
+      corps,
+    });
+  }
+
+  revoquerUnTerminal(token: string) {
+    return this.client.request<void>(routes.revoquerUnTerminal(token), { methode: 'DELETE' });
+  }
+
+  mesPreferencesDeNotification(signal?: AbortSignal) {
+    return this.client.request<PreferencesDeNotification>(
+      routes.mesPreferencesDeNotification(),
+      { signal },
+    );
+  }
+
+  reglerUnePreference(genre: GenreDeNotification, enabled: boolean) {
+    return this.client.request<PreferencesDeNotification>(routes.reglerUnePreference(genre), {
+      methode: 'PUT',
+      corps: { enabled },
     });
   }
 
@@ -549,7 +596,10 @@ export class Api {
     return this.client.request<LigneDeFile[]>(routes.fileDArbitrage(), { signal });
   }
 
-  arbitrer(collaborationId: string, decision: { issue: IssueDArbitrage; reason?: string }) {
+  arbitrer(
+    collaborationId: string,
+    decision: { issue: IssueDArbitrage; reason?: string; note?: string },
+  ) {
     return this.client.request<Collaboration>(routes.arbitrer(collaborationId), {
       methode: 'POST',
       corps: decision,

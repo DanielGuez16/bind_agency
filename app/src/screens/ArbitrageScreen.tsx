@@ -42,6 +42,7 @@ import {
   TableHeader,
   TableRow,
   Texte,
+  TextField,
   type Colonne,
 } from '../components';
 import { useI18n } from '../i18n';
@@ -50,6 +51,7 @@ import { useColors } from '../theme';
 import { Ecran } from './Ecran';
 import { PreuveSoumise } from './Preuve';
 import { MOTIFS, libelleDuMotif, type MotifDeDecision } from './motifs';
+import { NOTE_MAXIMUM } from './PublicationsScreen';
 import { useRequete } from './useRequete';
 
 export function ArbitrageScreen() {
@@ -313,6 +315,7 @@ function Dossier({ ligne, onTranche }: { ligne: LigneDeFile; onTranche: () => vo
   const { api, messageDErreur } = useApi();
   const { t } = useI18n();
   const [motif, setMotif] = useState<MotifDeDecision | null>(null);
+  const [note, setNote] = useState('');
   const [echec, setEchec] = useState<string | null>(null);
 
   async function arbitrer(issue: IssueDArbitrage) {
@@ -323,6 +326,9 @@ function Dossier({ ligne, onTranche }: { ligne: LigneDeFile; onTranche: () => vo
         // Le code, jamais le libellé traduit : c'est ce que le journal garde,
         // et c'est ce qui permettra de le relire dans une autre langue.
         reason: issue === 'approve' ? undefined : (motif ?? undefined),
+        // La note l'accompagne et ne le remplace pas. Le serveur refuse une
+        // note seule, jusque dans une contrainte de base.
+        note: issue === 'approve' ? undefined : note.trim() || undefined,
       });
       onTranche();
     } catch (erreur) {
@@ -368,6 +374,31 @@ function Dossier({ ligne, onTranche }: { ligne: LigneDeFile; onTranche: () => vo
               {tentative.par === 'admin' ? ` · ${t('admin.arbitrageParLAdministration')}` : ''}
             </Texte>
           ))}
+          {/* **Les notes, sous leur motif.** C'est la répétition qui justifie
+              l'escalade, et trois fois le même code avec trois explications
+              différentes ne se lit pas comme trois fois la même chose. Rendues
+              telles quelles : c'est du contenu saisi, jamais traduit. */}
+          {ligne.tentatives.map((tentative, rang) =>
+            tentative.note ? (
+              <Texte
+                key={`note-${tentative.demandee_le}-${rang}`}
+                variante="type.caption"
+                couleur="text.secondary"
+                testID={`note-tentative-${rang}`}
+              >
+                {t('commerce.tentative', { n: rang + 1 })} · {tentative.note}
+              </Texte>
+            ) : null,
+          )}
+        </View>
+      ) : null}
+
+      {ligne.derniere_soumission?.note ? (
+        <View style={{ gap: 2 }} testID="note-du-createur">
+          <Texte variante="type.label" couleur="text.secondary">
+            {t('commerce.noteDuCreateur')}
+          </Texte>
+          <Texte variante="type.caption">{ligne.derniere_soumission.note}</Texte>
         </View>
       ) : null}
 
@@ -381,6 +412,21 @@ function Dossier({ ligne, onTranche }: { ligne: LigneDeFile; onTranche: () => vo
           />
         ))}
       </RangeeDeChips>
+
+      {/* Le champ n'apparaît qu'avec un motif : une note ne voyage jamais
+          seule, et l'offrir avant ferait écrire une phrase qui serait rejetée. */}
+      {motif ? (
+        <TextField
+          label={t('commerce.noteLabel')}
+          placeholder={t('commerce.notePlaceholder')}
+          helpText={t('commerce.noteAide')}
+          value={note}
+          onChangeText={setNote}
+          lignes={3}
+          maxLength={NOTE_MAXIMUM}
+          testID="note"
+        />
+      ) : null}
 
       {echec ? <StatusMessage level="danger" body={echec} testID="echec" /> : null}
 

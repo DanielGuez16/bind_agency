@@ -120,6 +120,43 @@ export type VueDesPaliers = {
 /** Ce que rend l'ouverture d'une autorisation : où envoyer la personne. */
 export type AutorisationDemarree = { authorization_url: string };
 
+/**
+ * Les sept genres de notification, et rien d'autre.
+ *
+ * Fermée comme les codes d'obstacle : les valeurs viennent du serveur, et un
+ * genre inconnu n'a pas de libellé à afficher. Un test compare cette union à
+ * l'énumération du serveur.
+ */
+export type GenreDeNotification =
+  | 'booking_approved'
+  | 'booking_declined'
+  | 'booking_cancelled_by_business'
+  | 'publication_reminder'
+  | 'publication_approved'
+  | 'publication_resubmit'
+  | 'booking_to_review';
+
+/** Sur quoi tourne le terminal. Rendu par l'app, jamais déduit du jeton. */
+export type PlateformeDeTerminal = 'ios' | 'android' | 'web';
+
+export type TerminalEnregistre = {
+  id: string;
+  platform: PlateformeDeTerminal;
+  status: 'active' | 'revoked';
+  last_seen_at: string;
+};
+
+/**
+ * Les sept genres et leur état.
+ *
+ * Toujours les sept, y compris ceux que personne n'a touchés : l'écran de
+ * réglages se dessine sans connaître la liste, et une absence ne se lit pas
+ * comme un genre inexistant.
+ */
+export type PreferencesDeNotification = {
+  preferences: Record<GenreDeNotification, boolean>;
+};
+
 /** Les plateformes que le produit sait rattacher. Snapchat n'en est pas. */
 export type PlateformeConnectable = 'instagram' | 'tiktok';
 

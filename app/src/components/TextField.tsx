@@ -36,6 +36,18 @@ export type TextFieldProps = {
   secret?: boolean;
   /** Le libellé de la bascule, à traduire par l'appelant. */
   labelRevelation?: { montrer: string; masquer: string };
+  /**
+   * Un champ de plusieurs lignes, pour une note.
+   *
+   * **Une hauteur, pas une limite.** `multiline` seul donne un champ d'une
+   * ligne qui s'étire en cachant le début de ce qu'on écrit ; la hauteur
+   * minimale montre d'emblée qu'on attend une phrase et non un mot. Le nombre
+   * de caractères, lui, se borne par `maxLength` — les deux disent des choses
+   * différentes et l'un ne remplace pas l'autre.
+   */
+  lignes?: number;
+  /** Borne de saisie. Doit valoir celle du serveur, qui la refuse aussi. */
+  maxLength?: number;
   onChangeText?: (v: string) => void;
   testID?: string;
 };
@@ -57,6 +69,8 @@ export function TextField({
   autoFocus,
   secret = false,
   labelRevelation,
+  lignes,
+  maxLength,
   onChangeText,
   testID,
 }: TextFieldProps) {
@@ -73,7 +87,7 @@ export function TextField({
       </Texte>
       <View
         style={{
-          minHeight: size.control.md,
+          minHeight: lignes ? 24 * lignes + 20 : size.control.md,
           borderRadius: radius['radius.md'],
           borderWidth: 1,
           borderColor: enErreur ? c['status.danger'] : c['border.default'],
@@ -82,7 +96,7 @@ export function TextField({
             : enErreur
               ? c['status.danger.subtle']
               : 'transparent',
-          justifyContent: 'center',
+          justifyContent: lignes ? 'flex-start' : 'center',
           // La bascule vit dans la bordure, à droite du texte : posée
           // au-dessus, elle recouvrirait la fin de la saisie.
           flexDirection: 'row',
@@ -105,6 +119,12 @@ export function TextField({
           autoCapitalize={keyboard === 'code' ? 'characters' : 'none'}
           autoCorrect={false}
           autoFocus={autoFocus}
+          multiline={Boolean(lignes)}
+          numberOfLines={lignes}
+          maxLength={maxLength}
+          // Une note se lit du haut : sans cela, un champ multiligne centre
+          // son texte verticalement et la première ligne flotte au milieu.
+          textAlignVertical={lignes ? 'top' : 'center'}
           onChangeText={onChangeText}
           style={{
             flex: 1,
