@@ -139,7 +139,7 @@ export function RaisonDuVide({
   rayonKm?: number;
   testID?: string;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { color: c } = useTheme();
   const { cas, autres } = raisonPrincipale(obstacles);
 
@@ -228,7 +228,7 @@ export function RaisonDuVide({
                 couleur="text.secondary"
                 testID={`obstacle-${obstacle.raison}`}
               >
-                {messageDObstacle(t, obstacle, CODES_CONNUS)}
+                {messageDObstacle(t, obstacle, CODES_CONNUS, undefined, locale)}
               </Texte>
             ))}
           </View>

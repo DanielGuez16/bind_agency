@@ -18,6 +18,7 @@ import { View } from 'react-native';
 
 import { useApi, type FichePublique, type OffreDeLaFiche } from '../api';
 import { Button, LigneDeContrepartie, ServiceRow, StatusMessage, Texte } from '../components';
+import { formatDateTime } from '../format';
 import { useI18n } from '../i18n';
 import { urlImage } from './FilScreen';
 import { en } from '../i18n/en';
@@ -40,7 +41,7 @@ export function FicheScreen({
   onRetour?: () => void;
 }) {
   const { api } = useApi();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   const requete = useRequete<FichePublique>((signal) => api.fichePublique(businessId, signal), {
     estVide: (fiche) => fiche.offres.length === 0,
@@ -66,6 +67,9 @@ export function FicheScreen({
             <Offre
               key={offre.tier_offer_id}
               offre={offre}
+              // Le fuseau du salon : un « prochain créneau » se lit là où il a
+              // lieu, jamais dans le fuseau du téléphone.
+              timezone={fiche.timezone}
               onReserver={() => onReserver(offre, fiche)}
             />
           ))}
@@ -75,9 +79,17 @@ export function FicheScreen({
   );
 }
 
-function Offre({ offre, onReserver }: { offre: OffreDeLaFiche; onReserver: () => void }) {
+function Offre({
+  offre,
+  timezone,
+  onReserver,
+}: {
+  offre: OffreDeLaFiche;
+  timezone: string;
+  onReserver: () => void;
+}) {
   const { color: c } = useTheme();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { api } = useApi();
 
   const attendu = [
@@ -117,7 +129,10 @@ function Offre({ offre, onReserver }: { offre: OffreDeLaFiche; onReserver: () =>
             <Texte variante="type.mono" couleur="text.secondary" testID="prochain-creneau">
               {offre.prochains_creneaux.length
                 ? t('parcours.ficheProchain', {
-                    heure: new Date(offre.prochains_creneaux[0]).toLocaleString(),
+                    // Dans le fuseau du salon, mois en lettres, sans
+                    // secondes : « Next: 11/08/2026 16:45:00 » était la forme
+                    // brute de `toLocaleString`.
+                    heure: formatDateTime(offre.prochains_creneaux[0], locale, timezone),
                   })
                 : t('parcours.ficheComplet')}
             </Texte>
@@ -141,7 +156,7 @@ function Offre({ offre, onReserver }: { offre: OffreDeLaFiche; onReserver: () =>
                 couleur="text.secondary"
                 testID={`obstacle-${obstacle.raison}`}
               >
-                {messageDObstacle(t, obstacle, CODES_CONNUS, offre.platform)}
+                {messageDObstacle(t, obstacle, CODES_CONNUS, offre.platform, locale)}
               </Texte>
             ))}
           </View>

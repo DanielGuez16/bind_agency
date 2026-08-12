@@ -18,6 +18,8 @@
  * lit, pas les 431 200 secondes de son `ecart`.
  */
 import type { Obstacle } from '../api';
+import { formatDate } from '../format';
+import type { SupportedLocale } from '../i18n';
 
 /** Le seuil de proximité, au-delà duquel on chiffre. */
 export const PART_POUR_CHIFFRER = 0.6;
@@ -94,6 +96,14 @@ export function messageDObstacle(
    * la plateforme — c'est le palier qui la porte.
    */
   platform?: string,
+  /**
+   * La langue d'affichage, pour la seule forme qui porte une date.
+   *
+   * Facultative et anglaise par défaut : les trois autres formes n'en ont pas
+   * besoin, et l'exiger de tous les appelants pour une branche sur quatre
+   * ferait passer une valeur inutilisée partout.
+   */
+  locale: SupportedLocale = 'en',
 ): string {
   if (!codesConnus.has(obstacle.raison)) return t('etats.detailIndisponible');
 
@@ -111,7 +121,7 @@ export function messageDObstacle(
       // Le seuil, et rien d'autre. Aucune projection de rythme.
       return `${base} ${t('obstacles.horizon', { requis: forme.requis })}`;
     case 'date':
-      return `${base} ${t('obstacles.depuis', { date: new Date(forme.depuis).toLocaleDateString() })}`;
+      return `${base} ${t('obstacles.depuis', { date: formatDate(forme.depuis, locale, 'UTC') })}`;
     case 'simple':
       return base;
   }

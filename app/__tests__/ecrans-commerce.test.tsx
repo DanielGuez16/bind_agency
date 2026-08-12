@@ -613,7 +613,10 @@ describe('journée du commerce', () => {
     await waitFor(() => expect(screen.getByTestId('reservation-r1')).toBeTruthy());
     // 14:00 UTC = 10:00 à Miami en heure d'été. C'est l'heure du salon qui
     // compte, pas celle du serveur.
-    expect(screen.getByText('10:00')).toBeTruthy();
+    //
+    // Et l'horloge suit la langue : la journée la forçait sur vingt-quatre
+    // heures, à côté d'une échéance qui s'écrivait en AM/PM sur le même écran.
+    expect(screen.getByText('10:00 AM')).toBeTruthy();
   });
 
   it('n’invente pas d’heure sur un droit sans créneau', async () => {
@@ -1010,12 +1013,35 @@ describe('reporting', () => {
     expect(screen.queryByText('0 %')).toBeNull();
   });
 
-  it('affiche le taux en pourcentage quand il existe', async () => {
+  it('rend le taux en fraction, jamais en pourcentage', async () => {
     // Le pendant : sans lui, un écran qui écrirait toujours « rien servi »
     // passerait le test précédent.
+    //
+    // Et la fraction plutôt que le pourcentage, parce que les deux ensemble se
+    // contredisaient : « 29 % » s'affichait au-dessus de « 2 of 7 », qui vaut
+    // 28,57. Un seul calcul, arrondi à l'entier au-dessus de sa propre
+    // fraction — aucun arrondi ne peut les réconcilier.
     await monter(<ReportingScreen businessId="b1" />, clientDe({ '/reporting': REPORTING }));
     await waitFor(() => expect(screen.getByTestId('taux')).toBeTruthy());
-    expect(screen.getByText('78 %')).toBeTruthy();
+
+    expect(screen.getByText('7 / 9')).toBeTruthy();
+    expect(screen.queryByText(/%/)).toBeNull();
+  });
+
+  it('ne contredit jamais sa propre fraction, quel que soit le rapport', async () => {
+    // Le cas relevé, à l'identique : 2 sur 7 s'arrondit à 29, la fraction dit
+    // 28,57. C'est la forme même du défaut, pas un exemple choisi.
+    await monter(
+      <ReportingScreen businessId="b1" />,
+      clientDe({
+        '/reporting': { ...REPORTING, publications: 2, consommations: 7, taux_d_honoration: 0.2857 },
+      }),
+    );
+    await waitFor(() => expect(screen.getByTestId('taux')).toBeTruthy());
+
+    expect(screen.getByText('2 / 7')).toBeTruthy();
+    expect(screen.queryByText('29 %')).toBeNull();
+    expect(screen.queryByText(/%/)).toBeNull();
   });
 });
 

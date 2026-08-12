@@ -54,8 +54,8 @@ import {
   Texte,
   vibration,
 } from '../components';
-import { formatDateTime } from '../format';
-import { useI18n } from '../i18n';
+import { formatDateTime, formatHeure } from '../format';
+import { useI18n, type SupportedLocale } from '../i18n';
 import { breakpoint, radius, useTheme, type ColorName } from '../theme';
 import { ECART_DES_COLONNES, useGabarit } from '../shell/gabarit';
 import { Ecran } from './Ecran';
@@ -216,14 +216,14 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
  * Sur un droit sans créneau il n'y a pas d'heure. En inventer une ferait
  * attendre quelqu'un à une heure que personne ne lui a donnée.
  */
-function heureDe(reservation: ReservationDuCommerce, timezone: string, sansCreneau: string) {
+function heureDe(
+  reservation: ReservationDuCommerce,
+  timezone: string,
+  sansCreneau: string,
+  locale: SupportedLocale,
+) {
   return reservation.starts_at
-    ? new Date(reservation.starts_at).toLocaleTimeString([], {
-        timeZone: timezone,
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      })
+    ? formatHeure(reservation.starts_at, locale, timezone)
     : sansCreneau;
 }
 
@@ -283,7 +283,7 @@ function Detail({
   const { t, locale } = useI18n();
   const { color: c } = useTheme();
 
-  const heure = heureDe(reservation, timezone, t('commerce.journeeSansCreneau'));
+  const heure = heureDe(reservation, timezone, t('commerce.journeeSansCreneau'), locale);
   const gestes =
     reservation.status === 'awaiting_business' || reservation.status === 'confirmed';
 
@@ -483,7 +483,7 @@ function Ligne({
   /** Faux en grand écran : le panneau porte les gestes, une seule fois. */
   avecGestes?: boolean;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const passe = TERMINES.has(reservation.status);
 
   return (
@@ -504,7 +504,7 @@ function Ligne({
       }}
     >
       <DataRow
-        label={heureDe(reservation, timezone, t('commerce.journeeSansCreneau'))}
+        label={heureDe(reservation, timezone, t('commerce.journeeSansCreneau'), locale)}
         value={nomDe(reservation)}
       />
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>

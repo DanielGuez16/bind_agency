@@ -412,17 +412,21 @@ function OngletsCreateur({
             onConnecterUnReseau={onConnecterUnReseau}
             onVoirMonAudience={onVoirMonAudience}
             onVoirMesPaliers={onVoirMesPaliers}
-            // **La confirmation change d'onglet.** Le code de retrait
-            // appartient au parcours des réservations ; l'afficher dans
-            // l'onglet « à proximité » le donnait à lire comme une étape de la
-            // découverte, et laissait la liste des réservations muette juste
-            // après en avoir pris une.
-            onReserve={(bookingId) =>
-              navigation.navigate('reservations', {
-                screen: 'Code',
-                params: { bookingId },
-              })
-            }
+            // **La confirmation change d'onglet, et s'arrête à la liste.**
+            //
+            // Le code de retrait appartient au parcours des réservations ;
+            // l'afficher dans l'onglet « à proximité » le donnait à lire comme
+            // une étape de la découverte. Mais l'ouvrir *tout de suite* était
+            // faux aussi : la prestation est souvent dans plusieurs jours, et
+            // le code n'y sert à rien avant d'être au comptoir. Pire, la
+            // validation par le commerce étant le comportement par défaut, la
+            // réservation vient d'entrer en `awaiting_business` — elle n'a
+            // aucun code, et l'écran s'ouvrait sur un refus du serveur.
+            //
+            // La liste est la bonne arrivée : elle confirme que la place est
+            // prise, elle porte la date, et c'est de là qu'on rouvre le code le
+            // jour venu.
+            onReserve={() => navigation.navigate('reservations', { screen: 'Historique' })}
           />
         )}
       </Onglets.Screen>

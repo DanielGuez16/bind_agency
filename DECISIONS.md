@@ -2856,3 +2856,46 @@ Le libellé nomme donc l'objet — la publication — et le nom accessible ajout
 créateur, la prestation et le commerce. Le commerce et l'arbitre gardent le
 **même** vocabulaire, règle déjà éprouvée par un test : changer le libellé de
 l'arbitre seul aurait forcé chacun à traduire l'autre.
+
+## 2026-08-11 — Le taux d'honoration s'écrit en fraction, plus en pourcentage
+
+« 29 % » s'affichait au-dessus de sa propre note, « 2 of 7 », qui vaut 28,57.
+Un seul calcul, mais arrondi à l'entier au-dessus de la fraction qu'il résume.
+Aucun arrondi ne les réconcilie : sur sept prestations, un point de pourcentage
+n'existe pas.
+
+La fraction devient le chiffre, la note dit ce qu'elle compte. C'est la règle
+que la maison applique déjà à l'activation — « 2 étapes sur 4 » se comprend,
+« 50 % » ne dit pas laquelle manque. `taux_d_honoration` reste rendu par l'API :
+il est juste, et c'est une donnée de reporting légitime.
+
+## 2026-08-11 — Confirmer une réservation mène à la liste, pas au code
+
+Deux raisons, et la seconde est une panne. La prestation est souvent dans
+plusieurs jours, et un code qui tourne toutes les trente secondes ne sert à rien
+avant d'être debout au comptoir. Surtout, la validation par le commerce est le
+comportement par défaut (SPEC §4.1) : la réservation qu'on vient de confirmer
+est en `awaiting_business`, et **le code naît à l'arrivée dans `confirmed`**.
+L'écran s'ouvrait donc sur un refus du serveur, juste après le geste le plus
+engageant du parcours.
+
+La liste confirme que la place est prise, porte la date, et c'est de là qu'on
+rouvre le code le jour venu — chemin ajouté à la campagne précédente.
+
+## 2026-08-11 — Toutes les dates passent par `format.ts`
+
+Sept endroits reformataient à la main ce que `format.ts` faisait déjà :
+`toLocaleString()` sans options rend « 11/08/2026 16:45:00 », un mois en
+chiffres que la moitié du monde lit à l'envers et des secondes sur un
+rendez-vous en salon.
+
+Une garde de source l'interdit désormais hors de `format.ts`. Elle cherche le
+**nom de la méthode**, où qu'il soit sur la ligne : les six appels s'écrivaient
+de trois façons, et une garde calée sur la première en aurait laissé passer
+deux. Deux tolérances, nommées : `format.ts` lui-même, et la clé de
+regroupement ISO de `CreneauxScreen`, qui n'est jamais affichée.
+
+Conséquence assumée : **l'horloge du comptoir suit maintenant la langue**. La
+journée la forçait sur vingt-quatre heures, à côté d'une échéance de publication
+qui passait par `formatDateTime` et s'écrivait en AM/PM — deux horloges sur le
+même écran, à Miami, où l'on compte en douze.

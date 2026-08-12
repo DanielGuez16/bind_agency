@@ -22,6 +22,7 @@ import { View } from 'react-native';
 
 import { useApi, type Collaboration } from '../api';
 import { Button, StatusMessage, Texte, TierBadge } from '../components';
+import { formatDateTime } from '../format';
 import { useI18n } from '../i18n';
 import { Ecran } from './Ecran';
 import { EnvoiDePreuve } from './EnvoiDePreuve';
@@ -37,7 +38,7 @@ export function PreuveScreen({
   onRetour?: () => void;
 }) {
   const { api } = useApi();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [choisit, setChoisit] = useState(false);
 
   const requete = useRequete<Collaboration>(
@@ -56,7 +57,9 @@ export function PreuveScreen({
               se calcule à l'affichage, il ne se stocke pas. */}
           <Texte variante="type.mono" testID="echeance">
             {t('parcours.preuveEcheance', {
-              date: new Date(contrepartie.deadline_at).toLocaleString(),
+              // Sans secondes, et le mois en lettres : une échéance de
+              // publication se lit, elle ne se décode pas.
+              date: formatDateTime(contrepartie.deadline_at, locale, 'UTC'),
             })}
           </Texte>
 

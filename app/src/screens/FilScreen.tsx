@@ -92,7 +92,7 @@ export function FilScreen({
   onVoirMesPaliers?: () => void;
 }) {
   const { api } = useApi();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { large, largeur } = useGabarit();
   /**
    * Trois à quatre cartes par ligne, comme la règle v0.6 le pose.
@@ -252,7 +252,7 @@ export function FilScreen({
 }
 
 function Obstacles({ fil }: { fil: Fil | null }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   if (!fil?.obstacles.length) return null;
 
   return (
@@ -264,7 +264,7 @@ function Obstacles({ fil }: { fil: Fil | null }) {
           couleur="text.secondary"
           testID={`obstacle-${obstacle.raison}`}
         >
-          {messageDObstacle(t, obstacle, CODES_CONNUS)}
+          {messageDObstacle(t, obstacle, CODES_CONNUS, undefined, locale)}
         </Texte>
       ))}
     </View>

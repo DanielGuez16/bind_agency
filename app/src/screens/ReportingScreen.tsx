@@ -32,20 +32,19 @@ import {
   Texte,
   type BarreVerticale,
 } from '../components';
-import { useI18n } from '../i18n';
+import { formatDate, formatNumber } from '../format';
+import { useI18n, type SupportedLocale } from '../i18n';
 
 /**
  * Un jour, avec son mois en lettres.
  *
  * « 10/07/2026 » se lit octobre à Miami et juillet à Paris. Un rapport qui se
- * lit à deux mois d'écart selon le lecteur ne se lit pas.
+ * lit à deux mois d'écart selon le lecteur ne se lit pas. Le format vient de
+ * `format.ts` : la même règle écrite deux fois finit par diverger, et c'est
+ * exactement ce qui s'était produit sur six écrans.
  */
-function jourLisible(instant: string, locale: string): string {
-  return new Date(instant).toLocaleDateString(locale, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
+function jourLisible(instant: string, locale: SupportedLocale): string {
+  return formatDate(instant, locale, 'UTC');
 }
 import { Ecran } from './Ecran';
 import { useRequete } from './useRequete';
@@ -280,24 +279,27 @@ function Reperes({ vue }: { vue: Reporting }) {
     },
     {
       cle: 'taux',
+      // **La fraction est le chiffre, et il n'y a plus de pourcentage.**
+      // « 29 % » s'affichait au-dessus de « 2 of 7 », qui vaut 28,57 : un seul
+      // calcul, mais arrondi à l'entier au-dessus de sa propre fraction. Aucun
+      // arrondi ne peut les réconcilier — sur sept prestations, un point de
+      // pourcentage n'existe pas. La maison sait déjà le dire : « 2 étapes sur
+      // 4 » se comprend, « 50 % » ne dit pas laquelle manque.
       valeur:
         vue.taux_d_honoration === null
           ? t('reporting.tauxInconnu')
-          : `${Math.round(vue.taux_d_honoration * 100)} %`,
-      libelle: t('reporting.taux'),
-      chiffre: vue.taux_d_honoration !== null,
-      note:
-        vue.taux_d_honoration === null
-          ? null
-          : t('reporting.tauxAide', {
+          : t('reporting.tauxFraction', {
               publications: vue.publications,
               consommations: vue.consommations,
             }),
+      libelle: t('reporting.taux'),
+      chiffre: vue.taux_d_honoration !== null,
+      note: vue.taux_d_honoration === null ? null : t('reporting.tauxAide'),
     },
     {
       cle: 'portee',
       // Séparateur de milliers : « 128000 » se compte à la main.
-      valeur: vue.portee_approximative.toLocaleString(locale),
+      valeur: formatNumber(vue.portee_approximative, locale),
       libelle: t('reporting.portee'),
       chiffre: true,
       note: t('reporting.porteeNote'),
