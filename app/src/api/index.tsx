@@ -48,6 +48,7 @@ import type {
   Reporting,
   VerificationDuCompte,
   VueDesPaliers,
+  CreateurDeLAnnuaire,
   EtatDeLaComposition,
   BookingStatus,
   MediasPlateforme,
@@ -375,6 +376,12 @@ export class Api {
    */
   urlDuMedia(cle: string | null): string | undefined {
     return cle ? this.client.urlComplete(routes.media(cle)) : undefined;
+  }
+
+  annuaireDesCreateurs(businessId: string, signal?: AbortSignal) {
+    return this.client.request<CreateurDeLAnnuaire[]>(routes.annuaireDesCreateurs(businessId), {
+      signal,
+    });
   }
 
   compositionDuCommerce(businessId: string, signal?: AbortSignal) {

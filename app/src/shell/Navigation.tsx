@@ -33,6 +33,7 @@ import { Icone, type NomIcone } from '../components';
 import { useI18n } from '../i18n';
 import { useSession } from '../session';
 import { useTheme } from '../theme';
+import { AnnuaireScreen } from '../screens/AnnuaireScreen';
 import { ActivationScreen } from '../screens/ActivationScreen';
 import { ArbitrageScreen } from '../screens/ArbitrageScreen';
 import { AudienceScreen } from '../screens/AudienceScreen';
@@ -600,6 +601,15 @@ function OngletsCommerce() {
       </Onglets.Screen>
       <Onglets.Screen name="reporting" options={onglet(t('onglets.reporting'), 'rapport')}>
         {() => <ReportingScreen businessId={businessId} />}
+      </Onglets.Screen>
+      {/* **L'annuaire est ce que l'abonnement achète**, donc il est au premier
+          niveau : le ranger derrière un autre écran reviendrait à cacher la
+          contrepartie de ce qu'on facture. C'est le septième onglet du
+          commerce, deux de plus que ce que `Icone` recommande — la barre
+          latérale de bureau les tient sans effort, la barre du bas est
+          serrée. À arbitrer avec Design si un huitième se présente. */}
+      <Onglets.Screen name="annuaire" options={onglet(t('onglets.annuaire'), 'personne')}>
+        {() => <AnnuaireScreen businessId={businessId} />}
       </Onglets.Screen>
       <Onglets.Screen name="configuration" options={onglet(t('onglets.configuration'), 'coche')}>
         {() => <PileDeConfiguration businessId={businessId} />}

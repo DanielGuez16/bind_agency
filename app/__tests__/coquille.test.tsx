@@ -550,6 +550,10 @@ describe('aiguillage par rôle', () => {
       },
       '/reporting': { reservations: 0, par_palier: [], par_item: [], par_semaine: [] },
       '/activation': [],
+      // L'annuaire rend une liste. Le repli générique de ce double est un
+      // objet vide, sur lequel l'écran appelait `.map` — la garde tombait sur
+      // un défaut du double, pas du produit.
+      '/creators': [],
     };
 
     const fetchImpl = (async (url: RequestInfo | URL) => {
