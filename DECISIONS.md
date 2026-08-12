@@ -3250,3 +3250,57 @@ attrapé ; une relecture ne l'aurait pas vu.
 
 `NOTE_MAXIMUM` est recopié du serveur, et un test compare les deux valeurs —
 même dispositif que le poids d'une capture, pour la même raison.
+
+## 2026-08-12 — Le cas inverse de l'absence : signaler un déplacement pour rien
+
+Un créateur qui ne vient pas produit un `no_show` et un événement de fiabilité
+négatif. Un salon fermé, ou qui a oublié, ne produisait rien. Pire : la
+réservation restait `confirmed`, si bien que le commerce pouvait encore marquer
+absent quelqu'un qu'il n'avait pas reçu.
+
+**Signaler ne coûte jamais rien à celui qui signale.** C'est la règle qui fait
+exister le dispositif : un recours qui pénalise celui qui l'exerce n'est pas un
+recours, il apprend à se taire. La réservation part en `cancelled` — ce que
+`SPEC.md` §4.1 prescrit déjà pour toute défaillance qui ne vient pas du
+créateur — et aucun événement de fiabilité n'est écrit sur lui.
+
+**Et cela ferme la porte à la représaille.** `cancelled` est terminal : une fois
+le signalement posé, le commerce ne peut plus marquer absent. Sans ce corollaire,
+le recours ouvrait un risque au lieu d'en fermer un.
+
+**La fenêtre s'ouvre à l'heure du créneau.** Pas avant — on ne signale pas un
+déplacement qu'on n'a pas fait, et sans cette borne on pourrait annuler en
+déguisant l'annulation en signalement, échappant à la fenêtre de vingt-quatre
+heures. Quatre heures, en configuration. Un item sans créneau n'a pas de
+fenêtre : il n'y a pas d'heure à laquelle on l'attendait.
+
+### Ce qui est proposé plutôt que décidé
+
+**L'abus.** Un signalement est une allégation : il ne compte contre le salon
+qu'une fois arbitré, comme un dossier en revue humaine. Un signalement écarté
+écrit un événement `abusive_report` **dont le poids vaut zéro** en
+configuration — le mécanisme existe pour que la décision se prenne un jour sur
+des chiffres, pas pour punir aujourd'hui quelqu'un dont le signalement n'a pas
+été retenu, ce qui n'est pas la même chose qu'un mensonge. Le seul chiffre qui
+parle d'abus est rendu **à l'arbitre** : combien de signalements de ce créateur
+ont déjà été écartés.
+
+**Le score du salon : rien n'est inventé.** Il n'existe pas de score de commerce
+dans ce produit, et en créer un est une décision d'une autre taille que
+celle-ci. Ce qui est livré est l'événement à partir duquel il se calculerait :
+un compteur de signalements retenus, exposé au reporting du commerce et à
+l'arbitre. Le jour où un score existera, il se recalculera depuis ces faits —
+comme le score de fiabilité, jamais écrit à la main.
+
+## 2026-08-12 — Géocodage : rien à faire, sauf ouvrir le compte
+
+Vérifié plutôt que réécrit. `GeocodioGeocoder` existe depuis la phase 5, avec sa
+clé en configuration, son seuil de précision, son délai, et le refus de démarrer
+si la clé manque. Quatorze tests le couvrent. La ligne qui restait en phase 0
+n'est pas du code : c'est l'ouverture du compte.
+
+Geocodio tient toujours les trois critères — 2 500 requêtes par jour gratuites,
+puis 1 $ les mille, sans abonnement et sans carte tant qu'on reste sous le
+quota. À l'échelle de BIND, qui ne résout qu'à la création ou modification d'un
+commerce et pas du tout quand les coordonnées sont déclarées, le quota gratuit
+couvre le lancement sans marge à surveiller.

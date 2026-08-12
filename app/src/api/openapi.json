@@ -106,6 +106,23 @@
         ]
       }
     },
+    "/api/v1/admin/venue-reports": {
+      "get": {
+        "operationId": "read_queue_api_v1_admin_venue_reports_get",
+        "responses": [
+          "200"
+        ]
+      }
+    },
+    "/api/v1/admin/venue-reports/{report_id}/decision": {
+      "post": {
+        "operationId": "decide_api_v1_admin_venue_reports__report_id__decision_post",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/api/v1/auth/login": {
       "post": {
         "operationId": "login_api_v1_auth_login_post",
@@ -208,6 +225,15 @@
     "/api/v1/bookings/{booking_id}/no-show": {
       "post": {
         "operationId": "mark_no_show_api_v1_bookings__booking_id__no_show_post",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/bookings/{booking_id}/venue-report": {
+      "post": {
+        "operationId": "report_venue_api_v1_bookings__booking_id__venue_report_post",
         "responses": [
           "200",
           "422"

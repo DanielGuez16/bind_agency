@@ -48,6 +48,7 @@ from app.models import (
     TierOffer,
 )
 from app.models.enums import BookingStatus, CollaborationStatus, ContentFormat, Platform
+from app.services import venue_report
 
 #: Fenêtre par défaut. Trente jours : assez long pour qu'un commerce à faible
 #: volume voie quelque chose, assez court pour que le chiffre bouge quand il
@@ -105,6 +106,15 @@ class Reporting:
     consommations: int
     annulations: int
     absences: int
+    #: Signalements de déplacement pour rien **retenus par l'arbitrage**, sur
+    #: la fenêtre. Les signalements en attente n'y figurent pas : une
+    #: allégation n'est pas un fait, et l'afficher au salon lui ferait
+    #: contester ce que personne n'a encore examiné.
+    #:
+    #: Rendu, jamais transformé en note : il n'existe pas de score de commerce
+    #: dans ce produit, et en inventer un est une décision d'une autre taille.
+    #: C'est l'événement à partir duquel un score se calculerait le jour venu.
+    deplacements_pour_rien: int
 
     publications: int
     #: Contreparties encore ouvertes : ni approuvées, ni tombées.
@@ -217,6 +227,9 @@ async def pour_le_commerce(
         consommations=consommations,
         annulations=par_statut.get(BookingStatus.CANCELLED, 0),
         absences=par_statut.get(BookingStatus.NO_SHOW, 0),
+        deplacements_pour_rien=await venue_report.confirmes_du_commerce(
+            session, business_id=business.id, depuis=debut, jusqu_a=fin
+        ),
         publications=publications,
         publications_attendues=ouvertes,
         non_honorees=par_statut_contrepartie.get(CollaborationStatus.UNFULFILLED, 0),

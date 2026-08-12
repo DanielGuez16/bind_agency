@@ -580,6 +580,14 @@ export type Reporting = {
   consommations: number;
   annulations: number;
   absences: number;
+  /**
+   * Signalements de déplacement pour rien **retenus par l'arbitrage**.
+   *
+   * Les signalements en attente n'y figurent pas : une allégation n'est pas un
+   * fait, et l'afficher au salon lui ferait contester ce que personne n'a
+   * encore examiné.
+   */
+  deplacements_pour_rien: number;
   publications: number;
   publications_attendues: number;
   non_honorees: number;

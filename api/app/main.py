@@ -50,6 +50,7 @@ from app.routers import (
     tier_offers,
     tiers,
     tracking,
+    venue_report,
 )
 
 
@@ -144,6 +145,8 @@ def create_app() -> FastAPI:
     application.include_router(proof_media.router, prefix=settings.api_v1_prefix)
     application.include_router(proof_upload.router, prefix=settings.api_v1_prefix)
     application.include_router(notifications.router, prefix=settings.api_v1_prefix)
+    application.include_router(venue_report.creator_router, prefix=settings.api_v1_prefix)
+    application.include_router(venue_report.admin_router, prefix=settings.api_v1_prefix)
     application.include_router(tracking.creator_router, prefix=settings.api_v1_prefix)
     application.include_router(tracking.business_router, prefix=settings.api_v1_prefix)
     application.include_router(tracking.admin_router, prefix=settings.api_v1_prefix)

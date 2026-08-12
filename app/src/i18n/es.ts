@@ -622,6 +622,10 @@ export const es: Catalogue = {
     insufficient_role: 'Tu cuenta no puede acceder a esto.',
     subscription_required: 'El directorio viene con la suscripción.',
     gallery_full: 'Tu galería está llena. Quita una foto para añadir otra.',
+    venue_report_outside_window:
+      'Solo puedes informarlo en las horas siguientes a tu cita. Escríbenos y una persona lo revisará.',
+    venue_report_already_exists: 'Ya informaste sobre esta reserva. La estamos revisando.',
+    venue_report_not_pending: 'Este informe ya fue resuelto.',
     not_a_member: 'No perteneces a este negocio.',
     validation_failed: 'Falta información o es incorrecta.',
     business_not_found: 'Este negocio no está disponible.',
