@@ -84,6 +84,8 @@ export function HorairesScreen({
       requete={requete}
       titre={t('composition.horairesTitre')}
       onRetour={onRetour}
+      // Rendu dans la colonne du menu de configuration, qui borne déjà.
+      nature="section"
       testID="ecran-horaires"
     >
       {(semaine) => (

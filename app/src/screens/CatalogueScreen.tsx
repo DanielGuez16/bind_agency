@@ -89,6 +89,8 @@ export function CatalogueScreen({
       requete={requete}
       titre={t('composition.catalogueTitre')}
       onRetour={onRetour}
+      // Rendu dans la colonne du menu de configuration, qui borne déjà.
+      nature="section"
       testID="ecran-catalogue"
       vide={
         <CatalogueVide

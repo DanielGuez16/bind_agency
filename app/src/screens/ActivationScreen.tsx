@@ -86,6 +86,8 @@ export function ActivationScreen({
       requete={requete}
       titre={t('commerce.activationTitre')}
       onRetour={onRetour}
+      // Rendu dans la colonne du menu de configuration, qui borne déjà.
+      nature="section"
       testID="ecran-activation"
       // Le squelette par défaut promettait trois cartes à grande image ;
       // l'écran rend une liste de lignes. Un squelette qui ressemble à autre

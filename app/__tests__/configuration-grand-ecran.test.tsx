@@ -11,6 +11,8 @@
  * cas sont éprouvés, sinon corriger l'un casserait l'autre en silence.
  */
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 import { ApiClient, ApiProvider } from '../src/api';
 import { I18nProvider } from '../src/i18n';
@@ -19,7 +21,8 @@ import {
   CompositionDuCommerce,
   ConfigurationScreen,
 } from '../src/screens/ConfigurationScreen';
-import { ThemeProvider } from '../src/theme';
+import { largeurMaximale } from '../src/shell/gabarit';
+import { ThemeProvider, breakpoint } from '../src/theme';
 
 const mockGabarit = { large: true };
 jest.mock('../src/shell/gabarit', () => ({
@@ -221,5 +224,41 @@ describe('l’état des sections', () => {
     expect(screen.getByTestId('etat-catalogue')).toHaveTextContent(
       en.composition.entreeCatalogueCorps,
     );
+  });
+});
+
+// --------------------------------------------------------------------------
+// la section occupe sa colonne
+// --------------------------------------------------------------------------
+
+describe('la place que prend une section', () => {
+  it('déclare les trois sections comme telles', () => {
+    // Le défaut de fond de la campagne 2 : « le contenu flotte dans de grandes
+    // surfaces ». Les trois écrans se bornaient à 720 **à l'intérieur** de la
+    // colonne du menu, qui avait déjà retiré la barre latérale et le rail — une
+    // colonne centrée dans le reste de la place.
+    //
+    // Vérifié sur la source et non sur le rendu : ce qui doit tenir est qu'un
+    // quatrième écran ajouté à la configuration le déclare aussi, et cela ne se
+    // voit pas en montant les trois qui existent.
+    for (const fichier of ['CatalogueScreen', 'HorairesScreen', 'ActivationScreen']) {
+      const source = readFileSync(
+        join(__dirname, '..', 'src', 'screens', `${fichier}.tsx`),
+        'utf-8',
+      );
+      expect({ fichier, declare: source.includes('nature="section"') }).toEqual({
+        fichier,
+        declare: true,
+      });
+    }
+  });
+
+  it('garde leurs bornes aux écrans qui ne sont pas dans une colonne', async () => {
+    // La borne du commerce n'a pas disparu : elle n'a cessé de s'appliquer
+    // qu'aux écrans rendus dans une colonne qui borne déjà.
+    expect(largeurMaximale('merchant', true)).toBe(breakpoint.contentMaxMerchant);
+    expect(largeurMaximale('section', true)).toBeUndefined();
+    // En compact, personne n'est borné : la colonne est l'écran.
+    expect(largeurMaximale('merchant', false)).toBeUndefined();
   });
 });
