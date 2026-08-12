@@ -26,6 +26,10 @@ class ErrorCode(StrEnum):
     # Autorisation
     INSUFFICIENT_ROLE = "insufficient_role"
     NOT_A_MEMBER = "not_a_member"
+    #: L'annuaire des créateurs est ce que l'abonnement achète. Un refus, et
+    #: jamais une liste vide : le vide se lirait « aucun créateur », ce qui est
+    #: faux et fait un argument contre le produit.
+    SUBSCRIPTION_REQUIRED = "subscription_required"
 
     # Commerce
     BUSINESS_NOT_FOUND = "business_not_found"

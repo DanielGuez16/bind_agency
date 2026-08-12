@@ -18,6 +18,7 @@ import { en } from '../src/i18n/en';
 import { ThemeProvider, type Role } from '../src/theme';
 import { ActivationScreen } from '../src/screens/ActivationScreen';
 import { ArbitrageScreen } from '../src/screens/ArbitrageScreen';
+import { AnnuaireScreen } from '../src/screens/AnnuaireScreen';
 import { CatalogueScreen } from '../src/screens/CatalogueScreen';
 import { HorairesScreen } from '../src/screens/HorairesScreen';
 import { JourneeScreen } from '../src/screens/JourneeScreen';
@@ -264,6 +265,17 @@ const ITEM = {
   updated_at: '2026-08-01T10:00:00Z',
 };
 
+const CREATEUR_DE_L_ANNUAIRE = {
+  creator_id: 'c1',
+  first_name: 'Lea',
+  last_name: 'Moreau',
+  city: 'Miami',
+  bio: 'Nails and skin, Wynwood.',
+  comptes: [{ platform: 'instagram', handle: 'lea.mrl', followers: 24_000 }],
+  paliers_ouverts: ['story', 'post'],
+  audience_totale: 24_000,
+};
+
 const PALIER = {
   id: 't1',
   platform: 'instagram',
@@ -320,6 +332,13 @@ const ECRANS = [
     plein: { '/activation': vueDActivation(ETAPES) },
     // Une liste d'étapes vide n'arrive pas : le serveur en rend toujours six.
     vide: null,
+  },
+  {
+    nom: 'annuaire',
+    noeud: <AnnuaireScreen businessId="b1" />,
+    role: 'merchant' as Role,
+    plein: { '/creators': [CREATEUR_DE_L_ANNUAIRE] },
+    vide: { '/creators': [] },
   },
   {
     nom: 'catalogue',
@@ -577,7 +596,8 @@ describe('quatre états', () => {
       arbitrage: 'ArbitrageScreen.tsx',
       plans: 'PlansScreen.tsx',
       reporting: 'ReportingScreen.tsx',
-      catalogue: 'CatalogueScreen.tsx',
+      annuaire: 'AnnuaireScreen.tsx',
+  catalogue: 'CatalogueScreen.tsx',
       horaires: 'HorairesScreen.tsx',
     };
     expect(ECRANS.map((e) => fichiers[e.nom]).sort()).toEqual([...ECRANS_COMMERCE].sort());
@@ -1316,5 +1336,73 @@ describe('le conseil de palier', () => {
 
     expect(screen.queryByTestId('propose-bas')).toBeNull();
     expect(screen.queryByTestId('conseil-bas')).toBeNull();
+  });
+});
+
+// --------------------------------------------------------------------------
+// l'annuaire : ce qu'un salon achète, et ce qu'il n'a pas le droit de voir
+// --------------------------------------------------------------------------
+
+describe('l’annuaire des créateurs', () => {
+  it('ne montre aucun score, et le dit', async () => {
+    // Le produit promet à la créatrice, sur son écran, que son score n'est
+    // « jamais comparé entre créatrices, jamais montré à un commerce ». Sans la
+    // ligne d'explication, un salon cherche une note, ne la trouve pas, et
+    // conclut à un oubli — puis la réclame.
+    await monter(
+      <AnnuaireScreen businessId="b1" />,
+      clientDe({ '/creators': [CREATEUR_DE_L_ANNUAIRE] }),
+      'merchant',
+    );
+    await waitFor(() => expect(screen.getByTestId('createur-c1')).toBeTruthy());
+
+    expect(screen.getByTestId('ce-que-le-palier-dit')).toHaveTextContent(/never show you a rating/i);
+    expect(screen.getByTestId('ce-que-le-palier-dit')).toHaveTextContent(/never rank/i);
+    // Aucun nombre sur cent nulle part : c'est la forme qu'aurait un score.
+    expect(screen.queryByText(/\/\s*100/)).toBeNull();
+  });
+
+  it('montre les paliers ouverts, qui portent l’information à sa place', async () => {
+    await monter(
+      <AnnuaireScreen businessId="b1" />,
+      clientDe({ '/creators': [CREATEUR_DE_L_ANNUAIRE] }),
+      'merchant',
+    );
+    await waitFor(() => expect(screen.getByTestId('createur-c1')).toBeTruthy());
+
+    const fiche = screen.getByTestId('createur-c1');
+    expect(fiche).toHaveTextContent(/STORY/);
+    expect(fiche).toHaveTextContent(/POST/);
+    expect(fiche).not.toHaveTextContent(/REEL/);
+  });
+
+  it('dit qu’aucun palier n’est ouvert sans en faire un reproche', async () => {
+    // Une audience qui n'atteint pas le premier seuil n'est pas un manquement,
+    // et l'annuaire ne doit pas se lire comme un jugement.
+    await monter(
+      <AnnuaireScreen businessId="b1" />,
+      clientDe({ '/creators': [{ ...CREATEUR_DE_L_ANNUAIRE, paliers_ouverts: [] }] }),
+      'merchant',
+    );
+    await waitFor(() => expect(screen.getByTestId('sans-palier-c1')).toBeTruthy());
+  });
+
+  it('explique l’abonnement au lieu de proposer de réessayer', async () => {
+    // Un refus de paiement n'est pas une panne : « réessayer » ne mène nulle
+    // part, il y a un abonnement à prendre.
+    const api = new ApiClient({
+      baseUrl: 'https://api.test',
+      coffre: { lire: async () => null, ecrire: async () => {} },
+      fetchImpl: async () =>
+        ({
+          ok: false,
+          status: 402,
+          json: async () => ({ detail: 'subscription_required' }),
+        }) as Response,
+    });
+    await monter(<AnnuaireScreen businessId="b1" />, api, 'merchant');
+
+    await waitFor(() => expect(screen.getByTestId('annuaire-sans-abonnement')).toBeTruthy());
+    expect(screen.queryByTestId('etat-erreur')).toBeNull();
   });
 });

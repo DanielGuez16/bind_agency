@@ -3098,3 +3098,32 @@ Trouvé en écrivant les tests : la route de redirection **ne validait pas sa
 transaction**. Elle redirigeait parfaitement et ne comptait jamais rien. C'est
 le pire profil de défaut pour une route de mesure — tout fonctionne, sauf ce
 qu'elle existe pour faire.
+## 2026-08-12 — L'annuaire ne montre pas le score, et le palier le remplace
+
+La note de cadrage demandait un annuaire des créateurs portant le score de
+fiabilité. Le produit promet l'inverse à la créatrice, sur son propre écran et
+dans les deux langues : « jamais comparé entre créatrices, jamais montré à un
+commerce » — passation v0.7 §8.1, livrée en #74. Un annuaire l'affichant aurait
+cassé les deux moitiés de la phrase d'un coup.
+
+Le palier ouvert porte la même information sans la divulguer. Un score dégradé
+plafonne la créatrice à un palier inférieur — c'est le moteur d'éligibilité qui
+le fait, pas une règle d'affichage — si bien qu'un salon qui lit « ouvert au
+palier reel » sait qu'elle tient ses engagements, sans le nombre et sans
+pouvoir classer. L'interface le dit en une ligne : sans elle, un salon cherche
+une note, ne la trouve pas, et conclut à un oubli.
+
+**L'absence est tenue par le schéma**, pas par la discipline d'un écran. Une
+donnée absente de `CreateurVuRead` ne peut pas fuir, quoi que le service
+calcule. Un test compare le jeu de champs à une liste d'interdits.
+
+L'abonnement est vérifié dans la route, jamais dans l'écran : le laisser
+décider mettrait la vente derrière une condition d'affichage, et il suffirait
+de demander la route. Un commerce sans abonnement reçoit un 402 nommé, pas une
+liste vide — le vide se lirait « aucun créateur ».
+
+L'évaluation se fait en mémoire : `eligibility.evaluer` est pure, on charge en
+trois requêtes et on évalue chaque créatrice sans retourner en base. Une boucle
+sur `evaluer_createur` aurait donné trois requêtes par ligne d'annuaire, un N+1
+invisible à dix créatrices et fatal à trois cents.
+

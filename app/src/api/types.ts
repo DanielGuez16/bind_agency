@@ -698,3 +698,33 @@ export type EtatDeLaComposition = {
   en_ligne_depuis: string | null;
   status: 'onboarding' | 'active' | 'paused' | 'suspended';
 };
+
+// --------------------------------------------------------------------------
+// annuaire des créateurs
+// --------------------------------------------------------------------------
+
+export type CompteVuParLeCommerce = {
+  platform: Platform;
+  handle: string | null;
+  /** Nul quand aucun relevé n'existe. Zéro serait un chiffre, et faux. */
+  followers: number | null;
+};
+
+/**
+ * Ce qu'un salon abonné voit d'une créatrice.
+ *
+ * **Aucun score de fiabilité, et c'est une promesse tenue.** Le produit dit à la
+ * créatrice, sur son écran, qu'il n'est « jamais comparé entre créatrices,
+ * jamais montré à un commerce ». Le palier ouvert porte la même information sans
+ * la livrer : un score dégradé la plafonnerait à un palier plus bas.
+ */
+export type CreateurDeLAnnuaire = {
+  creator_id: string;
+  first_name: string | null;
+  last_name: string | null;
+  city: string | null;
+  bio: string | null;
+  comptes: CompteVuParLeCommerce[];
+  paliers_ouverts: ContentFormat[];
+  audience_totale: number;
+};
