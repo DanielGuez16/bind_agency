@@ -197,6 +197,18 @@ export const es: Catalogue = {
     filRayon: '{{rayon}} km',
     filSansPosition: 'Necesitamos tu ubicación para mostrarte locales cercanos.',
     filAutoriser: 'Compartir mi ubicación',
+    filPositionEnCours: 'Obteniendo tu ubicación…',
+    filPositionRefusee:
+      'La ubicación está desactivada para BIND, así que no podemos ordenar por distancia.',
+    filReactiverNavigateur:
+      'Haz clic en el candado a la izquierda de la barra de direcciones, pon Ubicación en «Permitir» y recarga la página.',
+    filReactiverIos:
+      'Abre Ajustes › Privacidad y seguridad › Localización › BIND y elige «Al usar la app».',
+    filReactiverAndroid:
+      'Abre Ajustes › Aplicaciones › BIND › Permisos › Ubicación y elige «Permitir solo mientras se usa la app».',
+    filPositionIndisponible:
+      'Tu dispositivo no devolvió una ubicación. Comprueba que la localización esté activada y vuelve a intentarlo.',
+    filReessayer: 'Reintentar',
     ficheOffres: 'Lo que ofrecen',
     ficheFerme: 'Todavía no disponible para ti',
     ficheProchain: 'Próximo: {{heure}}',
@@ -317,8 +329,8 @@ export const es: Catalogue = {
     filtreAControler: 'Por revisar',
     filtreAttendue: 'Esperadas',
     filtreApprouvee: 'Aprobadas',
-    approuver: 'Aprobar',
-    redemander: 'Solicitar de nuevo',
+    approuver: 'Aprobar la publicación',
+    redemander: 'Pedir una nueva publicación',
     motifObligatoire: 'Elige un motivo antes de solicitar de nuevo.',
     motifMention: 'Falta la mención',
     motifLieu: 'Falta la etiqueta de ubicación',
@@ -357,9 +369,10 @@ export const es: Catalogue = {
     arbitrageTitre: 'Contrapartes en revisión',
     arbitrageVide: 'Nada que arbitrar.',
     arbitrageParLAdministration: 'solicitado por BIND',
-    issueApprove: 'Aprobar',
-    issueResubmit: 'Solicitar de nuevo',
+    issueApprove: 'Aprobar la publicación',
+    issueResubmit: 'Pedir una nueva publicación',
     issueUnfulfilled: 'Cerrar como no cumplida',
+    issueSurDossier: '{{issue}} — {{createur}}, {{prestation}}, {{commerce}}',
     plansTitre: 'Planes de suscripción',
     plansVide: 'Ningún plan todavía.',
     plansPrix: 'Precio',
@@ -443,6 +456,8 @@ export const es: Catalogue = {
     autrePorteCommerce: '¿Te registras como creador? Vuelve y elige la otra puerta.',
     jauge: '{{saisi}} / {{requis}}',
     resteACombler: 'Al menos {{requis}} caracteres. Faltan {{reste}}.',
+    montrerLeMotDePasse: 'Mostrar contraseña',
+    masquerLeMotDePasse: 'Ocultar contraseña',
     motDePasseComplet: 'Al menos {{requis}} caracteres.',
   },
   reglages: {

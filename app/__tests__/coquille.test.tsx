@@ -309,6 +309,22 @@ describe('connexion', () => {
     expect(screen.queryByTestId('jauge')).toBeNull();
   });
 
+  it('masque le mot de passe, et l’œil le relit', async () => {
+    // Il s'affichait en clair : douze caractères en grand, sur le premier
+    // écran du produit. Éprouvé sur l'écran et pas seulement sur le composant
+    // — `TextField` sait masquer depuis toujours si on le lui demande, et
+    // personne ne le lui demandait.
+    await monterConnexion(serveur({}) as typeof fetch);
+
+    expect(screen.getByTestId('champ-mot-de-passe').props.secureTextEntry).toBe(true);
+    // L'e-mail, lui, reste lisible : un masque posé partout se relirait comme
+    // un succès dans un test et comme une régression à l'écran.
+    expect(screen.getByTestId('champ-email').props.secureTextEntry).toBeFalsy();
+
+    await fireEvent.press(screen.getByTestId('champ-mot-de-passe-revelation'));
+    expect(screen.getByTestId('champ-mot-de-passe').props.secureTextEntry).toBe(false);
+  });
+
   it('traduit un refus, sans jamais montrer le code', async () => {
     await monterConnexion(
       serveur({

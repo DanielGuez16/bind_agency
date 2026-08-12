@@ -254,7 +254,7 @@ function ParcoursCreateur({
   onVoirMonAudience: () => void;
   onVoirMesPaliers: () => void;
 }) {
-  const { position, demander } = usePosition();
+  const { position, etat, demander } = usePosition();
 
   return (
     <PileCreateur.Navigator screenOptions={OPTIONS_DE_PILE}>
@@ -262,6 +262,9 @@ function ParcoursCreateur({
         {({ navigation }) => (
           <FilScreen
             position={position}
+            // Pourquoi il n'y a pas de position : un refus ne se redemande
+            // pas, il se réactive, et l'écran doit dire où.
+            etatDeLaPosition={etat}
             prenom={prenom}
             onConnecterUnReseau={onConnecterUnReseau}
             onVoirMonAudience={onVoirMonAudience}

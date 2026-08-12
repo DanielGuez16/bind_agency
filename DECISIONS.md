@@ -2800,3 +2800,59 @@ au fil que `longitude`, `latitude`, `rayon_metres` et `categorie`, avec la
 mention « **Pas de quartier, pas de curseur** ». L'entrée par quartier de la
 maquette 03d tombe sous la même exclusion, et aucun modèle de quartier n'existe
 en base.
+
+## 2026-08-11 — Une autorisation refusée ne se redemande pas, elle se réactive
+
+`usePosition` avalait tout : refus, absence de service, panne du relevé,
+ressortaient en « pas de position ». Le bouton « Share my location » restait
+offert, et après un refus il ne produisait plus rien du tout — ni le système ni
+le navigateur ne reposent la question, et `requestForegroundPermissionsAsync`
+répond « refusé » sans rien afficher.
+
+L'état est donc **lu avant d'être demandé**. Sur un refus acquis, on ne rejoue
+pas une demande muette : on retire le bouton et on nomme le chemin exact vers le
+réglage, qui n'est pas le même dans un navigateur, sur iOS et sur Android.
+« Dans les réglages » n'aide personne.
+
+Quatre issues distinctes, parce qu'elles n'appellent pas la même conduite :
+jamais demandée (redemander), en cours (attendre), refusée (réactiver),
+indisponible (réessayer). Le relevé est borné à dix secondes : sans échéance,
+un capteur qui ne rend pas la main se lit exactement comme « rien ne se passe ».
+
+## 2026-08-11 — Le mot de passe se masque, et se relit
+
+Le champ n'avait aucun `secureTextEntry` : le mot de passe s'écrivait en clair,
+douze caractères en grand, sur le premier écran du produit. Masquer sans donner
+le moyen de relire est l'autre moitié du défaut — c'est ce qui fait ressaisir
+trois fois la même chaîne sur un clavier de téléphone.
+
+`TextField` prend donc un `secret`, avec sa bascule. Elle porte son état et pas
+seulement son action : une lecture d'écran doit pouvoir dire si le mot de passe
+est visible en ce moment. Toujours masqué au montage, y compris après un échec
+de connexion.
+
+## 2026-08-11 — Le code de secours se groupe des deux côtés, sur le même jeton
+
+La créatrice lit « PAP EDB », la caissière tapait « PAPEDB ». Six caractères
+d'affilée se recomptent à chaque fois qu'on lève les yeux, et la dictée se suit
+groupe par groupe ou pas du tout.
+
+Le groupement porte sur les **positions**, pas sur ce qui est déjà saisi : groupé
+sur la valeur, le champ changerait de forme à chaque touche et les caractères
+déjà tapés glisseraient sous les doigts. `tokens.code.manualGroupSize` fait foi
+des deux côtés — deux constantes finiraient par diverger.
+
+L'écart entre groupes est porté par le conteneur, jamais par un séparateur
+dessiné : un tiret se dicterait avec le code. Et le nom accessible reste épelé
+caractère par caractère — « PAP EDB » se prononcerait.
+
+## 2026-08-11 — Une décision nomme ce sur quoi elle porte
+
+« Approve » ne disait pas ce qu'on approuvait. À l'œil, le panneau ouvert
+au-dessus le dit ; à l'oreille, la barre arrive seule, et trois boutons
+identiques d'un dossier à l'autre ne se distinguent plus.
+
+Le libellé nomme donc l'objet — la publication — et le nom accessible ajoute le
+créateur, la prestation et le commerce. Le commerce et l'arbitre gardent le
+**même** vocabulaire, règle déjà éprouvée par un test : changer le libellé de
+l'arbitre seul aurait forcé chacun à traduire l'autre.

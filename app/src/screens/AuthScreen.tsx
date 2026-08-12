@@ -254,6 +254,15 @@ export function AuthScreen({ motif }: { motif: MotifDeSortie | null }) {
             label={t('auth.motDePasse')}
             value={motDePasse}
             onChangeText={setMotDePasse}
+            // Masqué, et relisable. Il s'affichait en clair : douze caractères
+            // en grand, sur le premier écran du produit, dans un salon ou un
+            // café. Et masquer sans donner le moyen de relire fait ressaisir
+            // trois fois la même chaîne sur un clavier de téléphone.
+            secret
+            labelRevelation={{
+              montrer: t('auth.montrerLeMotDePasse'),
+              masquer: t('auth.masquerLeMotDePasse'),
+            }}
             helpText={
               reste > 0
                 ? t('auth.resteACombler', { requis: CARACTERES_REQUIS, reste })

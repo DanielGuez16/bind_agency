@@ -46,7 +46,14 @@ export {
 export { StatusMessage, type Niveau, type StatusMessageProps } from './StatusMessage';
 export { EmptyState, type EmptyStateProps } from './EmptyState';
 export { SkeletonBox, SkeletonCard, SkeletonLine } from './Skeleton';
-export { ALPHABET, CodeInput, LONGUEUR, type CodeInputProps } from './CodeInput';
+export {
+  ALPHABET,
+  CodeInput,
+  LONGUEUR,
+  TAILLE_DE_GROUPE,
+  groupesDeRangs,
+  type CodeInputProps,
+} from './CodeInput';
 export {
   CodeGlyphs,
   Countdown,

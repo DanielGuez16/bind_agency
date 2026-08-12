@@ -180,6 +180,14 @@ export type Decision = {
   cle: string;
   label: string;
   touche: string;
+  /**
+   * Le nom accessible, quand le libellé ne suffit pas à désigner l'objet.
+   *
+   * « Approve » ne dit pas ce qu'on approuve. À l'œil, le panneau ouvert au-
+   * dessus le dit ; à l'oreille, la barre arrive seule, et trois boutons
+   * identiques d'un dossier à l'autre ne se distinguent plus.
+   */
+  accessibilityLabel?: string;
   /** Vrai pour une approbation seulement. Toute autre décision exige un motif. */
   approbation?: boolean;
   onPress: () => void;
@@ -208,7 +216,7 @@ export function DecisionBar({
           <Pressable
             key={decision.cle}
             accessibilityRole="button"
-            accessibilityLabel={decision.label}
+            accessibilityLabel={decision.accessibilityLabel ?? decision.label}
             onPress={decision.onPress}
             style={({ pressed }) => ({
               flex: 1,

@@ -768,6 +768,41 @@ describe('activation', () => {
 // --------------------------------------------------------------------------
 
 describe('arbitrage', () => {
+  /**
+   * Le nom accessible d'une issue, tel que la barre le porte.
+   *
+   * « Approve » seul ne disait pas ce qu'on approuvait : trois boutons
+   * identiques d'un dossier à l'autre, et rien pour les distinguer une fois la
+   * barre lue hors de son panneau.
+   */
+  const surLeDossier = (issue: string) =>
+    en.admin.issueSurDossier
+      .replace('{{issue}}', issue)
+      .replace('{{createur}}', DOSSIER_EN_ARBITRAGE.creator_handle)
+      .replace('{{prestation}}', DOSSIER_EN_ARBITRAGE.item_name)
+      .replace('{{commerce}}', DOSSIER_EN_ARBITRAGE.business_name);
+
+  it('nomme ce sur quoi porte chaque issue', async () => {
+    await monter(
+      <ArbitrageScreen />,
+      clientDe({ '/admin/collaborations/review': [DOSSIER_EN_ARBITRAGE] }),
+      'admin',
+    );
+    await waitFor(() => expect(screen.getByTestId('dossier-k1')).toBeTruthy());
+
+    // Le libellé visible nomme l'objet, et le nom accessible nomme le dossier.
+    expect(en.admin.issueApprove).toMatch(/publication/i);
+    const bouton = screen.getByLabelText(surLeDossier(en.admin.issueApprove));
+    expect(bouton).toBeTruthy();
+    for (const attendu of [
+      DOSSIER_EN_ARBITRAGE.creator_handle,
+      DOSSIER_EN_ARBITRAGE.item_name,
+      DOSSIER_EN_ARBITRAGE.business_name,
+    ]) {
+      expect(bouton.props.accessibilityLabel).toContain(attendu);
+    }
+  });
+
   it('offre l’approbation sans motif, et rien d’autre', async () => {
     await monter(
       <ArbitrageScreen />,
@@ -776,9 +811,9 @@ describe('arbitrage', () => {
     );
     await waitFor(() => expect(screen.getByTestId('dossier-k1')).toBeTruthy());
 
-    expect(screen.getByLabelText(en.admin.issueApprove)).toBeTruthy();
-    expect(screen.queryByLabelText(en.admin.issueResubmit)).toBeNull();
-    expect(screen.queryByLabelText(en.admin.issueUnfulfilled)).toBeNull();
+    expect(screen.getByLabelText(surLeDossier(en.admin.issueApprove))).toBeTruthy();
+    expect(screen.queryByLabelText(surLeDossier(en.admin.issueResubmit))).toBeNull();
+    expect(screen.queryByLabelText(surLeDossier(en.admin.issueUnfulfilled))).toBeNull();
   });
 
   it('ouvre les deux autres issues dès qu’un motif est choisi', async () => {
@@ -791,9 +826,9 @@ describe('arbitrage', () => {
 
     await fireEvent.press(screen.getByText(en.commerce.motifMention));
 
-    expect(screen.getByLabelText(en.admin.issueResubmit)).toBeTruthy();
+    expect(screen.getByLabelText(surLeDossier(en.admin.issueResubmit))).toBeTruthy();
     // La clôture n'existe que là. Le commerce ne la voit nulle part.
-    expect(screen.getByLabelText(en.admin.issueUnfulfilled)).toBeTruthy();
+    expect(screen.getByLabelText(surLeDossier(en.admin.issueUnfulfilled))).toBeTruthy();
   });
 
   it('montre ce sur quoi porte la décision, pas seulement un pseudonyme', async () => {
@@ -865,7 +900,7 @@ describe('arbitrage', () => {
     await waitFor(() => expect(screen.getByTestId('dossier-k1')).toBeTruthy());
 
     await fireEvent.press(screen.getByText(en.commerce.motifMention));
-    await fireEvent.press(screen.getByLabelText(en.admin.issueResubmit));
+    await fireEvent.press(screen.getByLabelText(surLeDossier(en.admin.issueResubmit)));
 
     await waitFor(() => expect(envois).toHaveLength(1));
     expect(envois[0]).toMatchObject({

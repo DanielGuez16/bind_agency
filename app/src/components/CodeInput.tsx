@@ -9,6 +9,13 @@
  *
  * **L'alphabet est réduit** — ni O ni 0, ni I ni 1. Ce qu'on dicte au téléphone
  * ne doit pas se confondre.
+ *
+ * **Le code se groupe pendant la frappe, comme il se lit chez le créateur.**
+ * Six caractères d'affilée se recomptent à chaque fois qu'on lève les yeux :
+ * la créatrice lit « PAP EDB » sur son écran, la caissière tapait
+ * « PAPEDB », et retrouver où l'on en est demandait de compter. Le même
+ * découpage des deux côtés, tiré du même jeton, fait qu'on suit la dictée
+ * groupe par groupe au lieu de caractère par caractère.
  */
 import { Pressable, View } from 'react-native';
 
@@ -17,6 +24,29 @@ import { Texte } from './Texte';
 
 export const ALPHABET = tokens.code.alphabet;
 export const LONGUEUR = tokens.code.manualChars;
+
+/** Le découpage, celui-là même que le code de retrait affiche au créateur. */
+export const TAILLE_DE_GROUPE = tokens.code.manualGroupSize;
+
+/** L'écart entre deux caractères d'un même groupe, puis entre deux groupes. */
+const ECART_DANS_LE_GROUPE = 14;
+const ECART_ENTRE_GROUPES = 30;
+
+/**
+ * Les rangs, découpés en groupes. Le découpage porte sur les **positions**, pas
+ * sur ce qui est déjà tapé : les emplacements vides se groupent comme les
+ * autres, sinon le champ changerait de forme à chaque touche et les caractères
+ * déjà saisis glisseraient sous les doigts.
+ */
+export function groupesDeRangs(longueur: number, taille: number): number[][] {
+  const groupes: number[][] = [];
+  for (let debut = 0; debut < longueur; debut += taille) {
+    groupes.push(
+      Array.from({ length: Math.min(taille, longueur - debut) }, (_, i) => debut + i),
+    );
+  }
+  return groupes;
+}
 
 /** Douze touches : dix caractères fréquents, une correction, une validation. */
 export type CodeInputProps = {
@@ -49,6 +79,8 @@ export function CodeInput({
     <View testID={testID} style={{ gap: 16 }}>
       <View
         accessibilityLabel={accessibilityLabel}
+        // Épelé caractère par caractère, groupé ou non : une lecture d'écran
+        // dit « P A P E D B », jamais « pap edb », qui se prononcerait.
         accessibilityValue={{ text: value.split('').join(' ') }}
         style={{
           height: 72,
@@ -58,31 +90,45 @@ export function CodeInput({
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: 14,
+          // L'écart entre groupes, porté par le conteneur. Un séparateur
+          // dessiné — un tiret, un point — se dicterait avec le code.
+          gap: ECART_ENTRE_GROUPES,
         }}
       >
-        {Array.from({ length: LONGUEUR }, (_, i) => {
-          const caractere = value[i];
-          if (caractere) {
-            return (
-              <Texte key={i} variante="type.mono" style={{ fontSize: 40, lineHeight: 46 }}>
-                {caractere}
-              </Texte>
-            );
-          }
-          // Le curseur est un tiret, pas une barre clignotante : il se voit de
-          // loin et ne demande aucune animation.
-          return (
-            <View
-              key={i}
-              style={{
-                width: 26,
-                height: 3,
-                backgroundColor: i === value.length ? c['text.primary'] : c['border.default'],
-              }}
-            />
-          );
-        })}
+        {groupesDeRangs(LONGUEUR, TAILLE_DE_GROUPE).map((groupe) => (
+          <View
+            key={groupe[0]}
+            testID={testID ? `${testID}-groupe-${groupe[0] / TAILLE_DE_GROUPE}` : undefined}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: ECART_DANS_LE_GROUPE,
+            }}
+          >
+            {groupe.map((i) => {
+              const caractere = value[i];
+              if (caractere) {
+                return (
+                  <Texte key={i} variante="type.mono" style={{ fontSize: 40, lineHeight: 46 }}>
+                    {caractere}
+                  </Texte>
+                );
+              }
+              // Le curseur est un tiret, pas une barre clignotante : il se voit
+              // de loin et ne demande aucune animation.
+              return (
+                <View
+                  key={i}
+                  style={{
+                    width: 26,
+                    height: 3,
+                    backgroundColor: i === value.length ? c['text.primary'] : c['border.default'],
+                  }}
+                />
+              );
+            })}
+          </View>
+        ))}
       </View>
 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>

@@ -21,6 +21,7 @@ import {
   Chip,
   CodeGlyphs,
   CodeInput,
+  groupesDeRangs,
   Countdown,
   DataRow,
   DayPicker,
@@ -143,6 +144,61 @@ describe('TextField', () => {
   it('porte son libellé comme nom accessible', async () => {
     await monter(<TextField label="Código" value="4H2" testID="champ" />);
     expect(screen.getByTestId('champ').props.accessibilityLabel).toBe('Código');
+  });
+
+  it('masque un secret, et le révèle sur demande', async () => {
+    // Le mot de passe s'affichait en clair : douze caractères en grand, sur le
+    // premier écran du produit. Et le masquer sans donner le moyen de relire
+    // fait ressaisir trois fois la même chaîne sur un clavier de téléphone.
+    await monter(
+      <TextField
+        label="Contraseña"
+        value="un-mot-de-passe"
+        secret
+        labelRevelation={{ montrer: 'Mostrar', masquer: 'Ocultar' }}
+        testID="champ"
+      />,
+    );
+
+    expect(screen.getByTestId('champ').props.secureTextEntry).toBe(true);
+
+    await fireEvent.press(screen.getByTestId('champ-revelation'));
+    expect(screen.getByTestId('champ').props.secureTextEntry).toBe(false);
+
+    // Et il se remasque : une bascule à sens unique laisserait le mot de passe
+    // à l'écran jusqu'à la fin de la saisie.
+    await fireEvent.press(screen.getByTestId('champ-revelation'));
+    expect(screen.getByTestId('champ').props.secureTextEntry).toBe(true);
+  });
+
+  it('dit lequel des deux états il est en train de montrer', async () => {
+    // Un œil sans état laisse deviner si le mot de passe est visible.
+    await monter(
+      <TextField
+        label="Contraseña"
+        value="x"
+        secret
+        labelRevelation={{ montrer: 'Mostrar', masquer: 'Ocultar' }}
+        testID="champ"
+      />,
+    );
+
+    const bascule = screen.getByTestId('champ-revelation');
+    expect(bascule.props.accessibilityLabel).toBe('Mostrar');
+    expect(bascule.props.accessibilityState.selected).toBe(false);
+
+    await fireEvent.press(bascule);
+    expect(screen.getByTestId('champ-revelation').props.accessibilityLabel).toBe('Ocultar');
+    expect(screen.getByTestId('champ-revelation').props.accessibilityState.selected).toBe(true);
+  });
+
+  it('n’ajoute ni masque ni bascule à un champ ordinaire', async () => {
+    // Le pendant : un champ qui masquerait tout passerait les tests ci-dessus
+    // sans rien prouver, et rendrait l'e-mail illisible.
+    await monter(<TextField label="Email" value="rebecca@bind.example" testID="champ" />);
+
+    expect(screen.getByTestId('champ').props.secureTextEntry).toBeFalsy();
+    expect(screen.queryByTestId('champ-revelation')).toBeNull();
   });
 });
 
@@ -488,6 +544,54 @@ describe('CodeInput', () => {
     for (const ambigu of ['O', '0', 'I', '1']) {
       expect(tokens.code.alphabet).not.toContain(ambigu);
     }
+  });
+
+  it('groupe la saisie comme le créateur lit son code', async () => {
+    // Six caractères d'affilée se recomptent à chaque fois qu'on lève les
+    // yeux : la créatrice dicte « PAP EDB », la caissière tapait « PAPEDB ».
+    await monter(
+      <CodeInput
+        value="4H2"
+        onChange={() => {}}
+        labelEffacer="Delete"
+        accessibilityLabel="Code"
+        testID="saisie"
+      />,
+    );
+
+    // Deux groupes, du même découpage que `ManualCode` côté créateur.
+    expect(screen.getByTestId('saisie-groupe-0')).toBeTruthy();
+    expect(screen.getByTestId('saisie-groupe-1')).toBeTruthy();
+    expect(screen.queryByTestId('saisie-groupe-2')).toBeNull();
+    expect(tokens.code.manualChars / tokens.code.manualGroupSize).toBe(2);
+  });
+
+  it('groupe les emplacements et non ce qui est déjà tapé', async () => {
+    // Grouper la valeur ferait changer le champ de forme à chaque touche, et
+    // les caractères déjà saisis glisseraient sous les doigts.
+    expect(groupesDeRangs(6, 3)).toEqual([
+      [0, 1, 2],
+      [3, 4, 5],
+    ]);
+    // Un découpage qui ne tombe pas juste ne perd pas le reste.
+    expect(groupesDeRangs(6, 4)).toEqual([
+      [0, 1, 2, 3],
+      [4, 5],
+    ]);
+  });
+
+  it('épelle le code plutôt que de le prononcer', async () => {
+    // « PAP EDB » se lirait comme deux mots. Le groupement est une aide à
+    // l'œil, jamais à l'oreille.
+    await monter(
+      <CodeInput
+        value="4H2A"
+        onChange={() => {}}
+        labelEffacer="Delete"
+        accessibilityLabel="Code"
+      />,
+    );
+    expect(screen.getByLabelText('Code').props.accessibilityValue.text).toBe('4 H 2 A');
   });
 });
 
