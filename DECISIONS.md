@@ -2989,3 +2989,27 @@ bureau de 1512 — 16 contre 20 — l'inverse de ce qu'une grande surface demand
 Les deux passent à 24, comme la maquette. La densité compacte ne bouge pas :
 c'est là qu'elle a sa raison d'être.
 
+## 2026-08-12 — La proposition de palier ne s'écrit nulle part
+
+La plateforme situe une prestation à partir de son prix **et de son rang parmi
+les prix de son catalogue** : un soin à 90 dollars est haut de gamme chez un
+barbier et courant dans un spa. Le calcul se fait à l'affichage, jamais en base.
+
+Trois raisons, dont chacune suffirait. La proposition dépend du catalogue
+entier, donc une valeur stockée serait périmée dès qu'un prix bouge ailleurs.
+Recalculer coûte un tri sur des lignes déjà chargées. Et une proposition sans
+trace ne peut pas usurper l'autorité du choix du commerce — une colonne posée à
+côté de `tier_id` finirait par le faire.
+
+Sous trois prix **distincts**, aucune proposition. Il n'y a pas de distribution
+à lire dans deux prix, ni dans dix lignes au même tarif, et conseiller quand
+même reviendrait à inventer sur l'écran où le commerce décide. Deux prix égaux
+reçoivent toujours le même palier : sans cela, deux manucures à 45 dollars
+tomberaient de part et d'autre d'une frontière selon leur ordre en base, et le
+commerce lirait deux conseils contradictoires sur deux lignes identiques.
+
+Un parent de gamme est écarté de la distribution, et il se reconnaît à ce qu'il
+**a des enfants** — jamais à son propre `parent_item_id`, qui est nul comme
+celui de toute prestation de premier rang. C'est la définition qu'emploient déjà
+le fil et le semis.
+
