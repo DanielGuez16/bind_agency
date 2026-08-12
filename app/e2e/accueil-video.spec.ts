@@ -29,12 +29,27 @@ test('la vidéo de fond démarre et avance', async ({ page }) => {
   // **Elle joue vraiment**, et ce n'est pas la même chose que « on a demandé à
   // ce qu'elle joue » : c'est exactement la distinction que les trois défauts
   // ont exploitée.
+  //
+  // Le message d'échec porte l'état du lecteur. Sans lui, « reste en pause »
+  // ne dit pas si le fichier n'a pas été trouvé, pas décodé, ou refusé par la
+  // politique de lecture automatique — et l'écart entre une machine de
+  // développement et un runner se diagnostique alors à l'aveugle, une
+  // exécution de quatre minutes à la fois.
+  const etat = async () =>
+    video.evaluate((noeud: HTMLVideoElement) => ({
+      paused: noeud.paused,
+      readyState: noeud.readyState,
+      networkState: noeud.networkState,
+      erreur: noeud.error ? `${noeud.error.code}: ${noeud.error.message}` : null,
+      source: noeud.currentSrc.slice(-60),
+    }));
+
   await expect
-    .poll(async () => video.evaluate((noeud: HTMLVideoElement) => noeud.paused), {
-      message: 'la vidéo est montée mais reste en pause',
+    .poll(async () => JSON.stringify(await etat()), {
+      message: 'la vidéo est montée mais ne joue pas',
       timeout: 20_000,
     })
-    .toBe(false);
+    .toContain('"paused":false');
 
   // Et le temps avance. Une vidéo « non en pause » figée sur sa première image
   // passerait l'assertion précédente.
