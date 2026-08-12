@@ -27,7 +27,8 @@
       "expo-localization",
       "expo-secure-store",
       "expo-web-browser",
-      "expo-video"
+      "expo-video",
+      "expo-font"
     ],
     "scheme": "bind"
   }

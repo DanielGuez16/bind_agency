@@ -61,12 +61,12 @@ export function EmptyState({
       }}
     >
       <Texte
-        variante="type.display"
+        variante={large ? 'type.displayLarge' : 'type.display'}
         align={centre ? 'center' : 'left'}
         // Sur grand écran, l'état vide est tout le contenu de la page : lui
         // laisser une taille de titre de section le fait passer pour un
         // chargement qui n'a pas abouti.
-        style={large ? { fontSize: 52, lineHeight: 56 } : undefined}
+
         testID="etat-vide-titre"
       >
         {title}
@@ -86,7 +86,7 @@ export function EmptyState({
         >
           {chiffres.map((chiffre) => (
             <View key={chiffre.label} style={{ gap: 2 }}>
-              <Texte variante="type.mono" style={{ fontSize: 44, lineHeight: 50 }}>
+              <Texte variante="type.figure">
                 {chiffre.valeur}
               </Texte>
               <Texte variante="type.caption" couleur="text.secondary">

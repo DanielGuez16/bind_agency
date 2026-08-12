@@ -15,6 +15,7 @@
  * premier, l'écran de connexion clignoterait à chaque ouverture pour quelqu'un
  * de déjà connecté.
  */
+import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import type { ReactNode } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
@@ -31,7 +32,7 @@ import { Navigation } from './src/shell/Navigation';
 import { adresseDeLApi } from './src/shell/adresseDeLApi';
 import { GabaritProvider } from './src/shell/gabarit';
 import { ZoneSure } from './src/shell/ZoneSure';
-import { ThemeProvider, useColors } from './src/theme';
+import { ThemeProvider, policesAcharger, useColors } from './src/theme';
 
 /**
  * L'adresse de l'API, déduite du serveur qui a servi le bundle.
@@ -147,6 +148,33 @@ function ConfigurationManquante() {
 }
 
 export default function App() {
+  /**
+   * Les fontes du système, avant le premier texte.
+   *
+   * **Elles n'étaient pas chargées du tout** : les jetons nommaient trois
+   * familles, `Texte` les demandait, et aucun fichier n'existait dans le dépôt.
+   * Tout le produit rendait donc en police système.
+   *
+   * **On attend qu'elles soient là avant de rendre.** Rendre en système puis
+   * basculer ferait sauter chaque ligne de l'écran d'accueil au premier
+   * affichage — le décalage se voit d'autant plus que Grotesk et SF Pro n'ont
+   * ni la même chasse ni la même hauteur d'x.
+   *
+   * **Un échec de chargement ne bloque pas l'application.** `useFonts` rend
+   * l'erreur plutôt que de lever ; on démarre alors en police système, ce qui
+   * est laid mais utilisable. Une application qui refuse de s'ouvrir parce
+   * qu'une fonte manque serait un défaut plus grave que celui qu'on corrige.
+   */
+  const [policesPretes, echecDesPolices] = useFonts(policesAcharger());
+
+  if (!policesPretes && !echecDesPolices) {
+    return (
+      <SafeAreaProvider>
+        <Patience />
+      </SafeAreaProvider>
+    );
+  }
+
   // Avant tout fournisseur : sans adresse, la session ne peut rien tenter, et
   // laisser la coquille démarrer produirait l'erreur de connexion qu'on
   // cherche précisément à ne plus afficher.

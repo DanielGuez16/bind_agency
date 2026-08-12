@@ -115,7 +115,7 @@ function BlocDeFiabilite({ fiabilite }: { fiabilite: FiabiliteDuCreateur | null 
         {chiffrable ? (
           <>
             <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
-              <Texte variante="type.mono" testID="score-de-fiabilite" style={{ fontSize: 34, lineHeight: 38 }}>
+              <Texte variante="type.figure" testID="score-de-fiabilite">
                 {String(Math.round(score))}
               </Texte>
               <Texte variante="type.mono" couleur="text.muted">

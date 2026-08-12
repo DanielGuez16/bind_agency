@@ -145,8 +145,13 @@ export function Ecran<T>({
       ) : null}
       <ScrollView
         contentContainerStyle={{
-          padding: density.screenPadding,
-          gap: density.gap,
+          // **Un cran de densité en grand écran.** Le padding valait celui du
+          // téléphone à toute largeur, et le commerce — calibré pour un
+          // appareil posé au comptoir — était donc le plus serré des deux rôles
+          // sur un bureau de 1512. C'est l'inverse de ce qu'une grande surface
+          // demande, et l'inverse de la maquette, qui donne 24 aux deux.
+          padding: large ? density.screenPaddingLarge : density.screenPadding,
+          gap: large ? density.gapLarge : density.gap,
           // Grand écran : chaque nature d'écran a sa borne, tirée des jetons.
           // Le créateur est passé de 760 à 1120 — 760 était exactement la
           // colonne étroite perdue dans du vide relevée en campagne de test.

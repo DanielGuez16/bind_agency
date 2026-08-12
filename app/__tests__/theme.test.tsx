@@ -12,7 +12,14 @@ import { join } from 'path';
 import { render, waitFor } from '@testing-library/react-native';
 import { Text } from 'react-native';
 
-import { ThemeProvider, codeColors, themeForRole, tokens, useTheme } from '../src/theme';
+import {
+  ThemeProvider,
+  codeColors,
+  elevation,
+  themeForRole,
+  tokens,
+  useTheme,
+} from '../src/theme';
 
 const RACINE = join(__dirname, '..', 'src');
 const PASSATION = join(__dirname, '..', '..', 'design_handoff_bind', 'tokens.json');
@@ -189,5 +196,73 @@ describe('bascule par rôle', () => {
     // passe même si le rendu ne lève pas.
     await expect(() => render(<Sonde />)).rejects.toThrow(/ThemeProvider/);
     silence.mockRestore();
+  });
+});
+
+// --------------------------------------------------------------------------
+// finition : ce que le diagnostic de rendu a relevé
+// --------------------------------------------------------------------------
+
+describe('l’échelle et la densité, après le diagnostic', () => {
+  it('porte les deux crans que la passation demandait', () => {
+    // §7 : titre d'état vide à 52/56 sur grand écran, repères en mono 44.
+    // Ils étaient écrits en dur dans cinq composants, chacun réinventant sa
+    // taille — donc cinq occasions de diverger.
+    expect(tokens.typography.scale['type.displayLarge']).toMatchObject({
+      fontSize: 52,
+      lineHeight: 56,
+    });
+    expect(tokens.typography.scale['type.figure']).toMatchObject({
+      fontSize: 44,
+      lineHeight: 48,
+    });
+  });
+
+  it('donne aux deux rôles la même respiration sur grand écran', () => {
+    // Le commerce était **plus serré** que le créateur à 1512 — 16 contre 20 —
+    // parce que sa densité est calibrée pour un téléphone posé au comptoir.
+    const { creator, merchant } = tokens.density;
+    expect(merchant.screenPaddingLarge).toBe(creator.screenPaddingLarge);
+    expect(merchant.screenPaddingLarge).toBeGreaterThan(merchant.screenPadding);
+  });
+
+  it('n’écrit plus de taille de police en dur dans les écrans', () => {
+    // Dix-sept au moment du diagnostic. Une taille en dur échappe au thème,
+    // au changement de direction artistique, et au pas grand écran.
+    const fautifs: string[] = [];
+    for (const chemin of sources(RACINE)) {
+      if (chemin.includes(join('src', 'theme'))) continue;
+      // La dette d'avant le système de design est tolérée, comme ailleurs.
+      //
+      // `CodeInput` et `PaveDeSaisie` le sont pour une autre raison : ils se
+      // lisent et se touchent à un mètre, au comptoir, et leur taille est
+      // dictée par la main plutôt que par l'échelle de lecture. Les faire
+      // suivre `type.figure` les ferait rétrécir le jour où l'on ajuste un
+      // titre.
+      if (/MenuReviewScreen|CodeInput|PaveDeSaisie|HealthScreen/.test(chemin)) continue;
+      const source = readFileSync(chemin, 'utf-8');
+      for (const ligne of source.split('\n')) {
+        // **Le seuil est à vingt, et c'est délibéré.** Un `fontSize: 13` sur
+        // une variante mono existante est un ajustement d'un cran, lisible et
+        // local. Ce que ce test attrape est l'échelle **parallèle** : les
+        // grands chiffres — 29, 34, 40, 44, 52 — que cinq composants
+        // réinventaient chacun de leur côté, donc cinq occasions de diverger
+        // le jour où la direction artistique change.
+        if (/fontSize:\s*([2-9]\d)/.test(ligne)) fautifs.push(`${chemin} · ${ligne.trim()}`);
+      }
+    }
+    expect(fautifs).toEqual([]);
+  });
+
+  it('branche enfin les élévations, qui n’étaient utilisées nulle part', () => {
+    // Les trois jetons existaient depuis la v0.4 et aucune ligne de `src/` ne
+    // les lisait : toutes les surfaces vivaient sur le plan du fond.
+    const claire = elevation('elevation.1', 'light');
+    const sombre = elevation('elevation.1', 'dark');
+
+    expect(Object.keys(claire).length).toBeGreaterThan(0);
+    // Le clair est plus discret : six pour cent de noir sur un fond presque
+    // noir ne se verrait pas, et la même ombre sur blanc écraserait.
+    expect(JSON.stringify(claire)).not.toBe(JSON.stringify(sombre));
   });
 });

@@ -25,7 +25,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { useColorScheme } from 'react-native';
+import { Platform, useColorScheme } from 'react-native';
 
 import brut from './tokens.json';
 
@@ -59,6 +59,13 @@ export const breakpoint = brut.breakpoint;
 export const motion = brut.motion;
 export const tierTokens = brut.tier;
 
+export {
+  nomDeFonte,
+  policesAcharger,
+  type Graisse,
+  type RoleDeFonte,
+} from './polices';
+
 /**
  * Les deux seules couleurs qui ne viennent pas d'un thème.
  *
@@ -83,7 +90,21 @@ type ThemeValue = {
    * `rowGap` côté commerce, ce qui décrit la même chose et obligerait chaque
    * appelant à savoir de quel rôle il dépend.
    */
-  density: { screenPadding: number; gap: number; rowHeight: number };
+  density: {
+    screenPadding: number;
+    gap: number;
+    rowHeight: number;
+    /**
+     * Les mêmes, sur un écran large.
+     *
+     * Le commerce était **plus serré que le créateur** à 1512 — 16 contre 20 —
+     * parce que sa densité est calibrée pour un téléphone posé au comptoir. Sur
+     * un bureau, la raison d'être de cette densité disparaît : les deux rôles
+     * respirent à 24, comme la maquette.
+     */
+    screenPaddingLarge: number;
+    gapLarge: number;
+  };
   /** Nul tant que l'utilisateur n'a rien forcé : le rôle décide alors. */
   override: ThemeName | null;
   setOverride: (theme: ThemeName | null) => void;
@@ -137,11 +158,15 @@ export function ThemeProvider({
               screenPadding: brut.density.merchant.screenPadding,
               gap: brut.density.merchant.rowGap,
               rowHeight: brut.density.merchant.rowHeight,
+              screenPaddingLarge: brut.density.merchant.screenPaddingLarge,
+              gapLarge: brut.density.merchant.gapLarge,
             }
           : {
               screenPadding: brut.density.creator.screenPadding,
               gap: brut.density.creator.cardGap,
               rowHeight: brut.density.creator.rowHeight,
+              screenPaddingLarge: brut.density.creator.screenPaddingLarge,
+              gapLarge: brut.density.creator.gapLarge,
             },
       override,
       setOverride,
@@ -165,4 +190,51 @@ export function useTheme(): ThemeValue {
 /** Raccourci : `const c = useColors(); c['bg.canvas']`. */
 export function useColors(): ColorTokens {
   return useTheme().color;
+}
+
+/**
+ * Une élévation, prête à poser dans un style.
+ *
+ * **Les trois jetons existaient et n'étaient utilisés nulle part** : aucune
+ * ombre dans tout `src/`, alors que les maquettes posent `0 1px 2px
+ * rgba(20,16,31,0.06)` sous chaque carte de découverte. Toutes les surfaces du
+ * produit vivaient donc sur le même plan optique que le fond, séparées par un
+ * filet de 1 px et rien d'autre.
+ *
+ * **Une seule fonction pour les trois plateformes.** iOS veut quatre
+ * propriétés `shadow*`, Android un `elevation`, et le web un `boxShadow` — les
+ * écrire à la main dans chaque composant produirait trois vérités. Les jetons
+ * portent déjà les variantes iOS et Android ; le web se déduit des mêmes
+ * nombres.
+ *
+ * **L'opacité vient du thème, pas du jeton.** Le jeton donne une ombre calibrée
+ * sur fond sombre ; posée telle quelle sur le thème clair, elle écrase. Le clair
+ * la ramène à ce que la maquette dessine — six pour cent.
+ */
+export function elevation(niveau: 'elevation.1' | 'elevation.2', theme: ThemeName) {
+  const jeton = brut.elevation[niveau];
+  const ios = jeton.ios;
+  if (!ios) return {};
+
+  // Le clair veut une ombre discrète, le sombre une ombre franche : sur un fond
+  // proche du noir, six pour cent de noir ne se voit pas du tout.
+  const opacite = theme === 'light' ? ios.shadowOpacity * 0.12 : ios.shadowOpacity;
+
+  return Platform.select({
+    web: {
+      boxShadow: `0 ${ios.shadowOffset.height}px ${ios.shadowRadius}px rgba(20,16,31,${opacite.toFixed(3)})`,
+    },
+    android: { elevation: jeton.android.elevation },
+    default: {
+      shadowColor: ios.shadowColor,
+      shadowOffset: ios.shadowOffset,
+      shadowOpacity: opacite,
+      shadowRadius: ios.shadowRadius,
+    },
+  }) as object;
+}
+
+/** L'élévation du thème courant, sans avoir à le nommer. */
+export function useElevation(niveau: 'elevation.1' | 'elevation.2') {
+  return elevation(niveau, useTheme().name);
 }
