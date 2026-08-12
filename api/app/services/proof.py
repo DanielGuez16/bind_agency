@@ -32,7 +32,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Collaboration, Proof
 from app.models.enums import CaptureMethod, CollaborationStatus
-from app.services import audit
+from app.services import audit, verification
 from app.services import collaboration as collaboration_service
 
 #: L'ordre de préférence de `SPEC.md` §5.3, du plus fiable au moins fiable.
@@ -101,6 +101,7 @@ async def soumettre(
     capture: MediaCapture,
     actor: audit.Actor,
     note: str | None = None,
+    verdict: verification.Verdict | None = None,
 ) -> Proof:
     """Archive la preuve et fait passer la contrepartie en `submitted`.
 
@@ -126,8 +127,25 @@ async def soumettre(
         screenshot_key=capture.screenshot_key,
         content_hash=empreinte(capture.contenu),
         platform_published_at=capture.platform_published_at,
+        # **Les trois champs de la vérification, écrits même si le verdict est
+        # négatif.** Ils disent ce que la plateforme a répondu ; les omettre
+        # quand la publication ne correspond pas laisserait un dossier rejeté
+        # sans ses pièces, impossible à rejuger.
+        platform_media_id=(capture.extra or {}).get("platform_media_id"),
+        platform_author_id=(capture.extra or {}).get("platform_author_id"),
+        platform_media_type=(capture.extra or {}).get("platform_media_type"),
         note=note,
-        extra=capture.extra,
+        # Le verdict rejoint ce que la plateforme a répondu : les deux
+        # racontent la même soumission, et les séparer ferait lire l'un sans
+        # l'autre.
+        extra=(
+            capture.extra
+            if verdict is None
+            else {
+                **(capture.extra or {}),
+                "verification": {"verifiee": verdict.verifiee, "raisons": list(verdict.raisons)},
+            }
+        ),
     )
     session.add(preuve)
     await session.flush()

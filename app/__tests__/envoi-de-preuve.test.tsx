@@ -113,7 +113,10 @@ it('téléverse puis soumet, dans cet ordre', async () => {
     await fireEvent.press(screen.getByTestId('confirmer-l-envoi'));
   });
 
-  await waitFor(() => expect(onEnvoye).toHaveBeenCalled());
+  // L'écran ne se referme plus tout seul : il montre d'abord ce que la
+  // plateforme a dit de la soumission, et `onEnvoye` part du bouton de retour.
+  // Ce que ce test vérifie reste l'ordre des deux appels.
+  await waitFor(() => expect(envois).toHaveLength(2));
   expect(envois[0]).toContain('/me/proof-uploads');
   expect(envois[1]).toContain('/collaborations/k1/proof');
 });
@@ -274,3 +277,89 @@ describe('la note du créateur', () => {
     expect(screen.queryByTestId('note-de-la-preuve')).toBeNull();
   });
 });
+
+// --------------------------------------------------------------------------
+// l'incitation, et le résultat de la vérification
+// --------------------------------------------------------------------------
+
+describe('la vérification, dite au créateur', () => {
+  it('annonce l’enjeu avant l’envoi, jamais après', async () => {
+    // C'est la seule chose que la créatrice peut décider à cet instant, et
+    // elle ne peut la décider qu'en la sachant.
+    mockResultat = CHOISI;
+    await monterAvecEspion([]);
+    expect(screen.queryByTestId('incitation-a-soumettre-vite')).toBeNull();
+
+    await fireEvent.press(screen.getByTestId('choisir-dans-la-galerie'));
+    // Le texte, pas seulement la présence : un encart vide passerait pour un
+    // avertissement affiché, et c'est l'incitation elle-même qui compte.
+    expect(screen.getByTestId('incitation-a-soumettre-vite')).toHaveTextContent(
+      /24 hours/i,
+    );
+  });
+
+  it('dit « vérifiée » quand la plateforme a confirmé', async () => {
+    await soumettreEtLire({ verifiee: true, raisons_de_non_verification: [] });
+    expect(screen.getByTestId('preuve-verifiee')).toBeTruthy();
+  });
+
+  it('dit « attestée » quand la question ne s’est pas posée', async () => {
+    // Nul n'est pas faux : la plateforme n'a rien confirmé, ce qui n'accuse
+    // personne. L'écrire comme un échec accuserait la créatrice d'un silence
+    // d'Instagram.
+    await soumettreEtLire({ verifiee: null, raisons_de_non_verification: [] });
+
+    expect(screen.getByTestId('preuve-attestee')).toBeTruthy();
+    expect(screen.queryByTestId('preuve-verifiee')).toBeNull();
+  });
+
+  it('ne quitte pas l’écran avant que le résultat soit lu', async () => {
+    // Refermer aussitôt ferait de l'incitation une phrase sans suite.
+    const onEnvoye = await soumettreEtLire({
+      verifiee: true,
+      raisons_de_non_verification: [],
+    });
+    expect(onEnvoye).not.toHaveBeenCalled();
+  });
+});
+
+/** Soumet, puis rend la fonction de sortie sans l'avoir appelée. */
+async function soumettreEtLire(preuve: Record<string, unknown>) {
+  const onEnvoye = jest.fn();
+  const api = new ApiClient({
+    baseUrl: 'https://api.test',
+    coffre,
+    fetchImpl: async (url) =>
+      ({
+        ok: true,
+        status: 200,
+        json: async () =>
+          String(url).endsWith('/proof')
+            ? // **Deux preuves, et c'est la dernière qui vient d'être créée.**
+              // Lire la première donnerait le verdict d'une soumission
+              // précédente — souvent celle qui avait été refusée.
+              { proofs: [{ verifiee: !preuve.verifiee, raisons_de_non_verification: [] }, preuve] }
+            : { screenshot_key: 'proofs/upload/2026-08-09/abc' },
+      }) as Response,
+  });
+
+  mockResultat = CHOISI;
+  await render(
+    <I18nProvider initialLocale="en">
+      <ThemeProvider role="creator">
+        <ApiProvider client={api}>
+          <EnvoiDePreuve collaborationId="k1" onEnvoye={onEnvoye} />
+        </ApiProvider>
+      </ThemeProvider>
+    </I18nProvider>,
+  );
+
+  await fireEvent.press(screen.getByTestId('choisir-dans-la-galerie'));
+  await fireEvent.press(screen.getByTestId('confirmer-l-envoi'));
+  await waitFor(() =>
+    expect(
+      screen.queryByTestId('preuve-verifiee') ?? screen.queryByTestId('preuve-attestee'),
+    ).toBeTruthy(),
+  );
+  return onEnvoye;
+}

@@ -30,6 +30,8 @@ from app.integrations.social import (
     IdentiteSociale,
     JetonEchange,
     MetriquesProfil,
+    PublicationIntrouvable,
+    PublicationVue,
     SocialAuthError,
 )
 from app.models.enums import Platform
@@ -125,4 +127,39 @@ class DemoSocialProvider:
                 "media_count": self.media_count,
                 "source": "demo",
             },
+        )
+
+    async def fetch_media(self, access_token: str, *, permalink: str) -> PublicationVue:
+        """La publication décrite depuis son adresse, sans réseau.
+
+        **Le fournisseur de démonstration doit pouvoir produire les deux
+        issues**, sinon la chaîne de vérification n'est éprouvable que dans le
+        cas qui marche. L'adresse porte donc la consigne : elle contient
+        `expiree` pour obtenir une `PublicationIntrouvable` — le cas normal
+        d'une story de plus de vingt-quatre heures — et le mot d'un format
+        (`story`, `post`, `reel`) pour choisir ce que la plateforme répond.
+
+        C'est le même procédé que le reste de ce fournisseur : la démonstration
+        se pilote par les données qu'on lui donne, jamais par un réglage caché.
+        """
+        if "expiree" in permalink:
+            raise PublicationIntrouvable(permalink)
+
+        # Le vocabulaire de **la plateforme**, pas celui du produit : c'est tout
+        # l'intérêt du champ, et traduire ici masquerait le travail que la
+        # correspondance doit faire au-dessus.
+        mots = {"story": "STORY", "reel": "REELS", "post": "FEED"}
+        type_media = next((valeur for mot, valeur in mots.items() if mot in permalink), "FEED")
+
+        # Publiée à l'instant : la vérification compare cet horodatage à la
+        # consommation et à l'échéance, et une date figée ferait échouer l'une
+        # ou l'autre selon le jour où le test tourne.
+        return PublicationVue(
+            media_id=f"demo-media-{abs(hash(permalink)) % 10**10}",
+            author_external_id=f"demo-{self.platform.value}-{self._graine}",
+            media_type=type_media,
+            published_at=datetime.now(UTC),
+            permalink=permalink,
+            caption=f"Merci {self.handle}",
+            raw_payload={"permalink": permalink, "media_type": type_media, "source": "demo"},
         )

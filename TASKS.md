@@ -281,8 +281,8 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       signalement est une allégation qui ne compte contre le salon qu'une fois
       arbitrée ; l'arbitre voit combien de signalements de ce créateur ont déjà
       été écartés et combien de ce salon ont été retenus. 18 tests, 4 mutations*
-- [ ] Capture de preuve niveau 1
-      *Attend `fetch_media` sur l'interface de plateforme, qui viendra avec le relevé des publications — une tâche à part, qui demande de savoir quelles publications appartiennent à quelle collaboration*
+- [x] Capture de preuve niveau 1
+      *Fin : `fetch_media` sur l'interface, le fournisseur de démonstration et Instagram ; trois colonnes sur `proof` — identifiant du média, auteur, type dans le vocabulaire de la plateforme — et un index unique partiel, parce qu'une publication ne règle qu'une contrepartie ; la règle des quatre conditions isolée dans `verification`, pure et éprouvée sur les cas qui comptent ; la vérification tentée **à la soumission**, jamais par balayage. Le relevé des publications n'a pas fait une tranche à part : le déclencheur étant la soumission, il se réduisait à `fetch_media`. Quinze mutations vérifiées*
 - [x] Dépôt objet réel, compatible S3
       *Fin : deux compartiments Supabase, `make demo-seed` y range photos et preuves. La sonde de déploiement écrit et relit dans chacun, et éprouve le gabarit — pas seulement la joignabilité : un témoin de vingt octets passe sur un compartiment dont la limite de taille est inférieure à ce qu'on y dépose. Un refus porte le statut HTTP, le compartiment et la clé, parce que « ClientError » sans rien d'autre a coûté deux diagnostics*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire

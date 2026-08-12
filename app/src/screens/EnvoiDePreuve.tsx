@@ -25,6 +25,18 @@
 import { useState } from 'react';
 
 /**
+ * Ce que la plateforme a dit de la dernière preuve soumise.
+ *
+ * La contrepartie rend toutes ses preuves ; c'est la plus récente qui vient
+ * d'être créée. Lire la première donnerait le verdict d'une soumission
+ * précédente, souvent celle qui avait été refusée.
+ */
+function verdictDe(contrepartie: Collaboration): boolean | null {
+  const derniere = contrepartie.proofs?.at(-1);
+  return derniere ? derniere.verifiee : null;
+}
+
+/**
  * La borne de la note, telle que le serveur la pose.
  *
  * Cinq cents caractères : `collaboration.note` porte une contrainte de base du
@@ -36,7 +48,7 @@ import { Image, Linking, View } from 'react-native';
 
 import * as ImagePicker from 'expo-image-picker';
 
-import { useApi } from '../api';
+import { useApi, type Collaboration } from '../api';
 import { Button, StatusMessage, TextField, Texte, vibration } from '../components';
 import { useI18n } from '../i18n';
 import { radius, useTheme } from '../theme';
@@ -59,7 +71,15 @@ type Etat =
   | { etat: 'repos' }
   | { etat: 'choisi'; media: Choisi }
   | { etat: 'envoi'; media: Choisi }
-  | { etat: 'echec'; media: Choisi | null; message: string };
+  | { etat: 'echec'; media: Choisi | null; message: string }
+  /**
+   * Envoyée, et ce que la plateforme en a dit.
+   *
+   * `verifiee` nulle veut dire « la question ne s'est pas posée » — niveau 2 ou
+   * 3 — et non « la vérification a échoué ». Les deux se disent autrement, et
+   * les confondre accuserait la créatrice d'un silence de la plateforme.
+   */
+  | { etat: 'rendu'; media: Choisi; verifiee: boolean | null };
 
 export function EnvoiDePreuve({
   collaborationId,
@@ -137,12 +157,15 @@ export function EnvoiDePreuve({
       // elle arriverait sur un dossier déjà refusé, et le commerce l'aurait
       // lue une fois sa décision prise.
       const propre = note.trim();
-      await api.soumettreLaPreuve(collaborationId, {
+      const contrepartie = await api.soumettreLaPreuve(collaborationId, {
         screenshot_key,
         ...(propre ? { note: propre } : {}),
       });
       vibration.reussite();
-      onEnvoye();
+      // **Le résultat se montre avant de quitter l'écran.** Il répond à la
+      // question que l'incitation vient de poser, et l'annoncer ailleurs — ou
+      // pas du tout — ferait de l'incitation une phrase sans suite.
+      setVue({ etat: 'rendu', media, verifiee: verdictDe(contrepartie) });
     } catch (erreur) {
       vibration.echec();
       setVue({ etat: 'echec', media, message: messageDErreur(erreur) });
@@ -199,7 +222,34 @@ export function EnvoiDePreuve({
           après trois allers-retours sans qu'aucune phrase ait été échangée.
           Facultative — une soumission conforme n'a rien à expliquer, et un
           champ obligatoire se remplirait de « rien à signaler ». */}
-      {media ? (
+      {/* Le résultat, avant de quitter l'écran. Il répond à la question que
+          l'incitation vient de poser. */}
+      {vue.etat === 'rendu' ? (
+        <StatusMessage
+          // Neutre dans les deux cas : une contrepartie attestée n'est pas
+          // un avertissement, et une vérifiée n'est pas encore approuvée — le
+          // commerce doit toujours la contrôler. Le titre porte la différence.
+          level="neutral"
+          title={t(vue.verifiee ? 'parcours.preuveVerifiee' : 'parcours.preuveAttestee')}
+          body={t(vue.verifiee ? 'parcours.preuveVerifieeAide' : 'parcours.preuveAttesteeAide')}
+          action={{ label: t('common.retour'), onPress: onEnvoye, variant: 'secondary' }}
+          testID={vue.verifiee ? 'preuve-verifiee' : 'preuve-attestee'}
+        />
+      ) : null}
+
+      {/* **L'incitation, avant l'envoi et pas après.** Soumettre vite fait
+          vérifier la publication par la plateforme elle-même ; attendre laisse
+          la parole et une capture. C'est la seule chose que la créatrice peut
+          décider à cet instant, et elle ne peut la décider qu'en la sachant. */}
+      {media && vue.etat !== 'rendu' ? (
+        <StatusMessage
+          level="neutral"
+          body={t('parcours.preuveVite')}
+          testID="incitation-a-soumettre-vite"
+        />
+      ) : null}
+
+      {media && vue.etat !== 'rendu' ? (
         <TextField
           label={t('parcours.preuveNote')}
           value={note}
@@ -211,7 +261,7 @@ export function EnvoiDePreuve({
         />
       ) : null}
 
-      {media ? (
+      {media && vue.etat !== 'rendu' ? (
         <Button
           label={t('parcours.preuveEnvoyerCelle_ci')}
           size="lg"

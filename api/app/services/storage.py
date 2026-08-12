@@ -24,8 +24,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.integrations import media_fetch
 from app.integrations.object_store import get_object_store
+from app.integrations.providers import fournisseur_de
+from app.integrations.social import SocialProviderError
 from app.models import SocialAccount
-from app.models.enums import CaptureMethod
+from app.models.enums import CaptureMethod, SocialAccountStatus
 from app.services.proof import MediaCapture
 
 
@@ -47,7 +49,7 @@ async def archiver_la_publication(
     métier, et l'appelant doit le distinguer — le créateur n'a rien fait de mal,
     il faut lui demander autre chose.
     """
-    capture = await _par_api(session, social_account_id)
+    capture = await _par_api(session, social_account_id, source_url)
     if capture is not None:
         return capture
 
@@ -58,18 +60,65 @@ async def archiver_la_publication(
     return await _par_capture_ecran(screenshot_key)
 
 
-async def _par_api(session: AsyncSession, social_account_id: uuid.UUID) -> MediaCapture | None:
+async def _par_api(
+    session: AsyncSession, social_account_id: uuid.UUID, source_url: str | None = None
+) -> MediaCapture | None:
     """Niveau 1 : la plateforme atteste elle-même.
 
-    Non branché : le relevé des publications est une tâche à part, et
-    l'interface de plateforme ne déclare pas encore `fetch_media`. Rendre `None`
-    fait descendre au niveau suivant, ce qui est le comportement correct — pas
-    un contournement.
+    **Il faut une adresse pour désigner la publication.** Sans elle, on ne sait
+    pas quoi demander à la plateforme — c'est pourquoi le niveau 1 dépend de ce
+    que le créateur fournit au niveau 2, et non l'inverse. Une capture d'écran
+    seule ne pourra jamais être vérifiée : elle ne désigne rien.
+
+    **Une publication introuvable descend d'un niveau, sans bruit.** C'est le
+    cas normal d'une story de plus de vingt-quatre heures, pas une panne. Un
+    jeton refusé aussi : la contrepartie sera attestée, et le compte expiré se
+    traite ailleurs, sur son propre écran.
     """
     compte = await session.get(SocialAccount, social_account_id)
-    if compte is None:
+    if (
+        compte is None
+        or source_url is None
+        or compte.status is not SocialAccountStatus.ACTIVE
+        or compte.access_token_encrypted is None
+    ):
         return None
-    return None
+
+    try:
+        async with fournisseur_de(compte.platform) as provider:
+            publication = await provider.fetch_media(
+                compte.access_token_encrypted, permalink=source_url
+            )
+    except SocialProviderError:
+        # `PublicationIntrouvable` et `SocialAuthError` en héritent toutes deux.
+        # Aucune n'est un défaut du créateur, et aucune ne justifie de refuser
+        # la preuve : on descend, et le dossier sera attesté.
+        return None
+
+    # Le fichier reste celui du niveau 2 : la vérification prouve **qui** a
+    # publié **quoi** et **quand**, elle ne dispense pas d'archiver le contenu.
+    # Sans archive, un dossier rouvert dans six mois n'a plus rien à montrer.
+    # Le même téléchargement que le niveau 2, à dessein : ce qui distingue les
+    # deux niveaux n'est pas la façon d'obtenir le fichier, c'est ce que la
+    # plateforme a confirmé à côté.
+    try:
+        media = await media_fetch.recuperer(publication.permalink or source_url)
+    except media_fetch.MediaFetchError:
+        return None
+
+    return MediaCapture(
+        capture_method=CaptureMethod.API,
+        contenu=media.contenu,
+        media_key=await deposer(media.contenu, prefixe="proofs/api"),
+        source_url=media.url_finale,
+        platform_published_at=publication.published_at,
+        extra={
+            "platform_media_id": publication.media_id,
+            "platform_author_id": publication.author_external_id,
+            "platform_media_type": publication.media_type,
+            "raw": publication.raw_payload,
+        },
+    )
 
 
 async def _par_url(source_url: str | None) -> MediaCapture | None:

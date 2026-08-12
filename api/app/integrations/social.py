@@ -83,6 +83,63 @@ class MetriquesProfil:
     raw_payload: dict
 
 
+@dataclass(frozen=True, slots=True)
+class PublicationVue:
+    """Une publication, telle que la plateforme la décrit.
+
+    **C'est l'objet qui rend une contrepartie vérifiable.** `SPEC.md` pose que
+    quatre conditions font qu'une publication appartient à une collaboration :
+    postée après la consommation, avant l'échéance, sur le compte figé à la
+    réservation, et au format exigé. Aux niveaux 2 et 3, `proof` ne porte rien
+    de comparable au compte ni au format — une URL est copiable, un fichier
+    ré-téléversé ne prouve pas son format. Les quatre champs ci-dessous sont
+    exactement ce qui manquait.
+
+    **`author_external_id` est le champ décisif**, et il vient de la plateforme,
+    jamais de nous. C'est lui qu'on compare à l'identifiant du compte figé à la
+    réservation : sans lui, rien n'empêche de soumettre la publication d'un
+    autre.
+
+    **`media_type` reste dans le vocabulaire de la plateforme.** Meta dit
+    `STORY`, `FEED`, `REELS` ; une autre dira autre chose. Le traduire dans le
+    fournisseur ferait de chaque implémentation l'arbitre de ce qu'est un
+    `ContentFormat`, et deux plateformes trancheraient différemment le jour où
+    l'une invente un format. La traduction se fait une fois, au-dessus.
+    """
+
+    #: L'identifiant de la publication chez la plateforme. Ce qui permet de la
+    #: retrouver, et de refuser deux preuves pour le même média.
+    media_id: str
+    #: Le compte qui a publié, tel que la plateforme le désigne. Comparé à
+    #: `social_account.external_id`, figé à la réservation.
+    author_external_id: str
+    #: Le type, dans les mots de la plateforme. Traduit plus haut, jamais ici.
+    media_type: str
+    #: L'horodatage de la plateforme. Le seul qui puisse prouver l'antériorité :
+    #: celui lu sur une page est écrit par la page.
+    published_at: datetime
+    #: L'adresse permanente, quand elle existe. Une story n'en a pas.
+    permalink: str | None
+    #: La légende, pour vérifier la mention exigée. Nulle quand il n'y en a pas.
+    caption: str | None
+    #: Conservé tel quel : quand une vérification surprendra, c'est la seule
+    #: preuve de ce que la plateforme a réellement répondu.
+    raw_payload: dict
+
+
+class PublicationIntrouvable(SocialProviderError):
+    """La plateforme ne connaît pas cette publication, ou ne la rend plus.
+
+    **Le cas normal d'une story de plus de vingt-quatre heures**, pas une
+    panne. L'appelant retombe alors sur le niveau inférieur : la contrepartie
+    est attestée et non vérifiée, ce qui est un résultat et non un échec.
+
+    Distincte de `SocialProviderError`, dont elle hérite pour qu'un appelant qui
+    ne fait pas la différence reste correct : réessayer ne la fera pas
+    apparaître, et une story expirée ne reviendra jamais.
+    """
+
+
 @runtime_checkable
 class SocialProvider(Protocol):
     platform: Platform
@@ -132,5 +189,23 @@ class SocialProvider(Protocol):
         `SocialProviderError` pour tout le reste. Ne rend jamais un résultat
         partiel : sans les compteurs obligatoires, c'est une erreur, pas un
         objet à moitié rempli.
+        """
+        ...
+
+    async def fetch_media(self, access_token: str, *, permalink: str) -> PublicationVue:
+        """La publication désignée par son adresse, telle que la plateforme la
+        décrit.
+
+        **Interrogée à la soumission, jamais par un balayage.** Un balayage
+        périodique sur toutes les collaborations en attente heurterait les
+        limites d'appel de Meta pour n'apprendre, la plupart du temps, que rien
+        n'a changé. La soumission épouse le geste réel — on publie, puis on
+        soumet — et une story soumise dans les vingt-quatre heures est encore
+        là.
+
+        Lève `PublicationIntrouvable` quand la plateforme ne la rend plus : ce
+        n'est pas une panne, c'est le cas normal d'une story expirée, et
+        l'appelant retombe alors sur le niveau inférieur. `SocialAuthError` si
+        le jeton est refusé, `SocialProviderError` pour le reste.
         """
         ...

@@ -80,6 +80,23 @@ class Proof(UUIDPrimaryKey, Base):
     media_key: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     screenshot_key: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     content_hash: Mapped[str] = mapped_column(sa.Text, nullable=False)
+    #: Les quatre champs qui rendent une contrepartie **vérifiable** plutôt
+    #: qu'attestée. Ils ne peuvent venir que de la plateforme, et donc que d'une
+    #: capture de niveau 1 : nuls partout ailleurs, et c'est cette nullité qui
+    #: distingue les deux régimes. Voir `SPEC.md`, « Vérifiée, ou seulement
+    #: attestée ».
+    #:
+    #: L'identifiant du média chez la plateforme. Unique : deux contreparties ne
+    #: se règlent pas avec la même publication.
+    platform_media_id: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    #: Le compte qui a publié, tel que la plateforme le désigne. Comparé au
+    #: compte figé à la réservation — c'est le champ qui empêche de soumettre la
+    #: publication d'un autre.
+    platform_author_id: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    #: Le type dans le vocabulaire de la plateforme, conservé tel quel. La
+    #: traduction vers `ContentFormat` vit dans le service ; garder le mot brut
+    #: permet de rejuger un dossier si la correspondance change.
+    platform_media_type: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     platform_published_at: Mapped[datetime | None] = mapped_column(
         sa.DateTime(timezone=True), nullable=True
     )
@@ -93,6 +110,28 @@ class Proof(UUIDPrimaryKey, Base):
     # `metadata` est réservé par SQLAlchemy déclaratif : la colonne garde son
     # nom, l'attribut Python s'appelle `extra`.
     extra: Mapped[dict | None] = mapped_column("metadata", JSONB, nullable=True)
+
+    @property
+    def verifiee(self) -> bool | None:
+        """Le verdict rendu **au moment de la soumission**.
+
+        Nul quand la question ne s'est pas posée — niveaux 2 et 3 — ce qui n'est
+        pas la même chose qu'une vérification qui a échoué. Les deux se lisent
+        autrement : l'une dit « attestée », l'autre « ne correspond pas ».
+
+        Conservé plutôt que recalculé : le verdict est un fait daté. Recalculé
+        six mois plus tard avec une table de correspondance qui a bougé, il
+        pourrait contredire ce qui a été dit au commerce le jour même. Le type
+        brut reste à côté pour permettre de **rejuger** délibérément, ce qui
+        n'est pas la même chose que de dériver en silence.
+        """
+        verification = (self.extra or {}).get("verification")
+        return None if verification is None else bool(verification.get("verifiee"))
+
+    @property
+    def raisons_de_non_verification(self) -> list[str]:
+        verification = (self.extra or {}).get("verification") or {}
+        return list(verification.get("raisons", []))
 
     __table_args__ = (
         # Une preuve sans aucun fichier archivé n'est pas une preuve.
@@ -108,4 +147,16 @@ class Proof(UUIDPrimaryKey, Base):
             sa.desc("submitted_at"),
         ),
         sa.Index("ix_proof_content_hash", "content_hash"),
+        # **Une publication ne règle qu'une contrepartie.** Sans cette unicité,
+        # la même story servirait deux collaborations chez deux salons — et
+        # c'est la fraude la plus simple à tenter puisqu'elle ne demande aucun
+        # faux. Partielle : les preuves de niveau 2 et 3 n'ont pas
+        # d'identifiant, et une contrainte pleine les ferait toutes entrer en
+        # collision sur `NULL`.
+        sa.Index(
+            "uq_proof_platform_media_id",
+            "platform_media_id",
+            unique=True,
+            postgresql_where=sa.text("platform_media_id IS NOT NULL"),
+        ),
     )

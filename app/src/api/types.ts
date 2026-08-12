@@ -417,6 +417,14 @@ export type JourneeDuCommerce = {
 // --------------------------------------------------------------------------
 
 export type Preuve = {
+  /**
+   * Vraie quand les quatre conditions de `SPEC.md` sont réunies. **Nulle** sur
+   * une preuve de niveau 2 ou 3 : la question ne s'est pas posée, ce qui n'est
+   * pas la même chose qu'une vérification qui a échoué. Les deux se disent
+   * autrement — « attestée » d'un côté, « ne correspond pas » de l'autre.
+   */
+  verifiee: boolean | null;
+  raisons_de_non_verification: string[];
   id: string;
   submitted_at: string;
   capture_method: 'api' | 'url_fetch' | 'upload';
