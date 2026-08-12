@@ -17,6 +17,7 @@
  * par la route qui existe déjà. En créer une seconde ferait deux vérités sur la
  * même donnée.
  */
+import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
 import { Image, Pressable, View } from 'react-native';
 
@@ -56,6 +57,31 @@ export function GalerieDuCommerce({
     } finally {
       setEnvoi(false);
     }
+  }
+
+  /**
+   * Choisit une image et l'ajoute.
+   *
+   * **Un refus de permission se dit comme un choix, pas comme une panne.** La
+   * seule issue est les réglages du téléphone, et c'est ce qu'on nomme —
+   * réessayer ne redemandera rien, le système ne repose la question qu'une
+   * fois.
+   */
+  async function choisirEtEnvoyer() {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      setEchec(t('composition.galeriePermission'));
+      return;
+    }
+
+    const resultat = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.9,
+    });
+    const choisie = resultat.canceled ? null : resultat.assets[0];
+    if (!choisie) return;
+
+    await agir(() => api.ajouterUnePhoto(businessId, choisie.uri));
   }
 
   /** Échange deux rangs et envoie l'ordre complet. */
@@ -178,6 +204,32 @@ export function GalerieDuCommerce({
           </View>
         );
       })}
+
+      {/* Ajouter est en pied, après ce qui existe : la galerie se lit avant
+          de s'allonger, et un bouton en tête ferait passer l'ajout pour le
+          geste principal d'un écran qui sert surtout à ordonner. */}
+      <Pressable
+        accessibilityRole="button"
+        disabled={envoi}
+        onPress={() => void choisirEtEnvoyer()}
+        testID="ajouter-une-photo"
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+          minHeight: 48,
+          borderRadius: radius['radius.md'],
+          borderWidth: 1,
+          borderStyle: 'dashed',
+          borderColor: c['border.default'],
+        }}
+      >
+        <Icone nom="image" couleur="accent.default" taille={20} />
+        <Texte variante="type.label" couleur="accent.default">
+          {t('composition.galerieAjouter')}
+        </Texte>
+      </Pressable>
 
       <Texte variante="type.caption" couleur="text.muted">
         {t('composition.galerieCouvertureAide')}

@@ -29,6 +29,7 @@ import {
   type OffreDePalier,
   type PalierOffrable,
   type ContentFormat,
+  type PhotoDuCommerce,
 } from '../api';
 import {
   Button,
@@ -37,11 +38,13 @@ import {
   StatusMessage,
   Stepper,
   TextField,
+  Filet,
   Texte,
   TierBadge,
   Toggle,
   vibration,
 } from '../components';
+import { GalerieDuCommerce } from './GalerieDuCommerce';
 import { useI18n } from '../i18n';
 import {
   ecartAuConseil,
@@ -57,6 +60,9 @@ type Composition = {
   items: ItemDuCatalogue[];
   offres: OffreDePalier[];
   paliers: PalierOffrable[];
+  photos: PhotoDuCommerce[];
+  /** La couverture actuelle, pour marquer la photo qui la porte. */
+  couverture: string | null;
 };
 
 const ONGLETS = ['toutes', 'ouvertes', 'fermees'] as const;
@@ -76,18 +82,27 @@ export function CatalogueScreen({
 
   const charger = useCallback(
     async (signal: AbortSignal): Promise<Composition> => {
-      const [items, offres, paliers] = await Promise.all([
+      // La galerie voyage avec le catalogue : les deux composent la même
+      // page, et deux requêtes séparées feraient apparaître les photos après
+      // les prestations, sous les yeux de qui les regarde.
+      const [items, offres, paliers, photos, commerce] = await Promise.all([
         api.itemsDuCatalogue(businessId, signal),
         api.offresDePalier(businessId, signal),
         api.paliersDuCommerce(businessId, signal),
+        api.photosDuCommerce(businessId, signal),
+        api.commerce(businessId, signal),
       ]);
-      return { items, offres, paliers };
+      return { items, offres, paliers, photos, couverture: commerce.cover_photo_key };
     },
     [api, businessId],
   );
 
   const requete = useRequete<Composition>(charger, {
-    estVide: (c) => c.items.length === 0,
+    // **Un catalogue vide n'est plus un écran vide.** La galerie vit ici : un
+    // commerce qui n'a pas encore composé de prestation peut vouloir commencer
+    // par ses photos, et l'état vide lui retirerait la seule chose qu'il peut
+    // faire tout de suite.
+    estVide: (c) => c.items.length === 0 && c.photos.length === 0,
     dependances: [businessId],
   });
 
@@ -254,18 +269,31 @@ function Groupes({
   const rien =
     groupes.orphelines.length === 0 && groupes.rangees.every((r) => r.items.length === 0);
 
-  if (rien) {
-    return (
-      <StatusMessage
-        level="neutral"
-        body={t('composition.aucuneDansCeFiltre')}
-        testID="filtre-sans-resultat"
-      />
-    );
-  }
-
   return (
     <View style={{ gap: 16 }}>
+      {/* La galerie en tête. Elle est ce qu'un visiteur voit en premier de la
+          fiche, et un commerce qui compose sa page commence souvent par là —
+          la ranger sous les prestations la ferait chercher. */}
+      <GalerieDuCommerce
+        businessId={businessId}
+        photos={composition.photos}
+        couverture={composition.couverture}
+        onChange={onChange}
+      />
+      <Filet />
+
+      {/* **Le filtre ne fait pas disparaître la galerie.** Elle vivait sous un
+          court-circuit « aucun résultat dans ce filtre » : un commerce sans
+          prestation — ou dont le filtre n'en retient aucune — perdait la seule
+          chose qu'il pouvait faire tout de suite. */}
+      {rien ? (
+        <StatusMessage
+          level="neutral"
+          body={t('composition.aucuneDansCeFiltre')}
+          testID="filtre-sans-resultat"
+        />
+      ) : null}
+
       {groupes.rangees
         .filter((r) => r.items.length > 0)
         .map(({ palier, items }) => (

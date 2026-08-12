@@ -12,7 +12,7 @@
  */
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
-import { ApiClient, ApiProvider, type PhotoDuCommerce } from '../src/api';
+import { Api, ApiClient, ApiProvider, type PhotoDuCommerce } from '../src/api';
 import { I18nProvider } from '../src/i18n';
 import { GalerieDuCommerce } from '../src/screens/GalerieDuCommerce';
 import { ThemeProvider } from '../src/theme';
@@ -25,6 +25,15 @@ const PHOTOS: PhotoDuCommerce[] = [
 
 type Envoi = { chemin: string; methode?: string; corps?: unknown };
 
+function lireLeCorps(corps: BodyInit | null | undefined): unknown {
+  if (!corps || typeof corps !== 'string') return undefined;
+  try {
+    return JSON.parse(corps);
+  } catch {
+    return undefined;
+  }
+}
+
 function clientEspion(envois: Envoi[]) {
   return new ApiClient({
     baseUrl: 'https://api.test',
@@ -33,9 +42,16 @@ function clientEspion(envois: Envoi[]) {
       envois.push({
         chemin: String(url),
         methode: init?.method,
-        corps: init?.body ? JSON.parse(String(init.body)) : undefined,
+        // Un corps de fichier n'est pas du JSON : `String(FormData)` donne
+        // « [object FormData] », et l'analyser lèverait — ce que le client
+        // rapporterait en panne réseau, loin de la vraie cause.
+        corps: lireLeCorps(init?.body),
       });
-      return { ok: true, status: 200, json: async () => ({}) } as Response;
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ storage_key: 'photos/commerces/b1/neuve.jpg' }),
+      } as Response;
     },
   });
 }
@@ -113,5 +129,27 @@ describe('la couverture', () => {
     expect(screen.getByTestId('couverture-p1')).toBeTruthy();
     expect(screen.queryByTestId('definir-couverture-p1')).toBeNull();
     expect(screen.getByTestId('definir-couverture-p2')).toBeTruthy();
+  });
+});
+
+// --------------------------------------------------------------------------
+// le téléversement, et son branchement
+// --------------------------------------------------------------------------
+
+describe('ajouter une photo', () => {
+  it('dépose le fichier puis l’ajoute, en deux appels', async () => {
+    // Le serveur sépare les deux : déposer échoue pour des raisons qui n'ont
+    // rien à voir avec la galerie — réseau, poids, format — et les mêler
+    // ferait remonter « galerie pleine » pour une image trop lourde.
+    const envois: Envoi[] = [];
+    // `Api` et non `ApiClient` : c'est la façade qui enchaîne les deux appels.
+    const api = new Api(clientEspion(envois));
+
+    await api.ajouterUnePhoto('b1', 'file:///photo.jpg');
+
+    expect(envois).toHaveLength(2);
+    expect(envois[0].chemin).toContain('/photos/uploads');
+    expect(envois[1].chemin).toMatch(/\/photos$/);
+    expect(envois[1].methode).toBe('POST');
   });
 });

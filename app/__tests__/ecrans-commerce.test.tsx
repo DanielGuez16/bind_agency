@@ -348,8 +348,18 @@ const ECRANS = [
       '/catalog-items': [ITEM],
       '/tier-offers': [OFFRE],
       '/tiers': [PALIER],
+      '/photos': [],
+      // En dernier : la table est parcourue par sous-chaîne, et
+      // « /business/b1 » est contenu dans « /business/b1/catalog-items ».
+      '/business/b1': { cover_photo_key: null },
     },
-    vide: { '/catalog-items': [], '/tier-offers': [], '/tiers': [PALIER] },
+    vide: {
+      '/catalog-items': [],
+      '/tier-offers': [],
+      '/tiers': [PALIER],
+      '/photos': [],
+      '/business/b1': { cover_photo_key: null },
+    },
   },
   {
     nom: 'horaires',
@@ -392,7 +402,41 @@ describe('catalogue', () => {
     '/catalog-items': [ITEM],
     '/tier-offers': [OFFRE],
     '/tiers': [PALIER],
+    '/photos': [],
+    // En dernier : la table est parcourue par sous-chaîne, et « /business/b1 »
+    // est contenu dans « /business/b1/catalog-items ».
+    '/business/b1': { cover_photo_key: null },
   };
+
+  it('porte la galerie en tête, avant les prestations', async () => {
+    // Elle est ce qu'un visiteur voit en premier de la fiche, et un commerce
+    // qui compose sa page commence souvent par là. La ranger sous les
+    // prestations la ferait chercher.
+    await monter(<CatalogueScreen businessId="b1" />, clientDe(CATALOGUE), 'merchant');
+    await waitFor(() => expect(screen.getByTestId('galerie-du-commerce')).toBeTruthy());
+
+    expect(screen.getByTestId('ajouter-une-photo')).toBeTruthy();
+  });
+
+  it('reste utilisable quand le catalogue est vide mais pas la galerie', async () => {
+    // Un commerce qui n'a pas encore composé de prestation peut vouloir
+    // commencer par ses photos ; l'état vide lui retirerait la seule chose
+    // qu'il peut faire tout de suite.
+    await monter(
+      <CatalogueScreen businessId="b1" />,
+      clientDe({
+        ...CATALOGUE,
+        '/catalog-items': [],
+        '/photos': [
+          { id: 'p1', storage_key: 'photos/commerces/b1/a.jpg', position: 0, alt_text: null },
+        ],
+      }),
+      'merchant',
+    );
+
+    await waitFor(() => expect(screen.getByTestId('photo-p1')).toBeTruthy());
+    expect(screen.queryByTestId('etat-vide')).toBeNull();
+  });
 
   it('groupe par palier, et nomme ce qui n’en a aucun', async () => {
     // Une prestation sans offre n'apparaît dans aucun fil. La fondre dans un
@@ -1220,6 +1264,8 @@ describe('le conseil de palier', () => {
       '/catalog-items': CATALOGUE,
       '/tier-offers': offres,
       '/tiers': TROIS_PALIERS,
+      '/photos': [],
+      '/business/b1': { cover_photo_key: null },
     });
   }
 
@@ -1308,6 +1354,8 @@ describe('le conseil de palier', () => {
         '/catalog-items': [parent, variante, CATALOGUE[1], CATALOGUE[2]],
         '/tier-offers': [],
         '/tiers': TROIS_PALIERS,
+        '/photos': [],
+        '/business/b1': { cover_photo_key: null },
       }),
       'merchant',
     );
@@ -1329,6 +1377,8 @@ describe('le conseil de palier', () => {
         '/catalog-items': CATALOGUE.slice(0, 2),
         '/tier-offers': [],
         '/tiers': TROIS_PALIERS,
+        '/photos': [],
+        '/business/b1': { cover_photo_key: null },
       }),
       'merchant',
     );
