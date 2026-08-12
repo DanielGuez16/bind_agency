@@ -19,6 +19,7 @@ from app.models.catalog import CatalogItem, MenuImport
 from app.models.collaboration import Collaboration, Proof
 from app.models.identity import CreatorProfile, SocialAccount, SocialMetricsSnapshot, User
 from app.models.jobs import Job
+from app.models.notifications import DeviceToken, NotificationPreference
 from app.models.oauth import OAuthState
 from app.models.platform_asset import PlatformAsset
 from app.models.reliability import ReliabilityEvent
@@ -38,7 +39,9 @@ __all__ = [
     "Collaboration",
     "CollaborationLink",
     "CreatorProfile",
+    "DeviceToken",
     "MenuImport",
+    "NotificationPreference",
     "OAuthState",
     "PlatformAsset",
     "Proof",

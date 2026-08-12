@@ -3170,3 +3170,40 @@ code qui n'avait pas bougé, et coûtait un diagnostic à chaque fois.
 
 Changer `TEST_DATABASE_URL` ne suffisait pas — ce nom-là ne s'en déduisait pas.
 Il en dérive maintenant.
+
+## 2026-08-12 — Les notifications push partent à côté des emails, jamais à leur place
+
+Le produit ne savait prévenir que par email. Un créateur dont la réservation est
+acceptée l'apprenait en ouvrant sa boîte ; un salon qui reçoit une demande à
+valider ne l'apprenait qu'en ouvrant l'application — sur un produit où une place
+se tient dix minutes et où une story vit vingt-quatre heures.
+
+**Chaque envoi est appelé à côté de l'email, jamais dans une seconde détection
+d'événement.** Détecter deux fois « le salon a accepté » ferait deux vérités qui
+divergeraient à la première branche ajoutée, et c'est la branche oubliée qui
+laisse quelqu'un sans nouvelle. Les gabarits sont les mêmes des deux côtés : un
+titre de notification et un sujet d'email disent la même chose.
+
+**Deux garanties, chacune tenue à deux endroits.** Un compte suspendu ou
+anonymisé ne reçoit rien : le service refuse de servir un compte non actif, et
+l'anonymisation révoque ses terminaux. L'un est une garantie permanente, l'autre
+une transition ponctuelle ; la seconde peut être oubliée sur un chemin nouveau,
+la première vaut sur tous.
+
+**Un jeton de terminal se révoque comme un jeton social**, et au moment où le
+fournisseur le déclare mort — c'est la seule occasion qu'on ait, il ne prévient
+pas d'avance. Un échec passager, lui, ne révoque rien : couper les notifications
+de quelqu'un dont le terminal va bien le laisserait sans rien à réparer.
+
+**Une préférence absente vaut « oui ».** La table ne porte que les décisions
+prises ; écrire sept lignes par personne à l'inscription en ferait sept dont
+personne ne changera jamais aucune.
+
+**Aucun contenu sensible dans une notification.** Elle s'affiche sur un écran
+verrouillé : le titre dit ce qui s'est passé et chez qui, jamais le code de
+retrait ni l'adresse.
+
+**Non vérifiées de bout en bout**, et `TASKS.md` le dit — même statut que le
+scanner caméra. Expo exige un identifiant de projet EAS et un build de
+développement ; `PUSH_PROVIDER=log` est en service et trace ce qu'il aurait
+envoyé. Tout ce qui est en amont du dernier saut est éprouvé.

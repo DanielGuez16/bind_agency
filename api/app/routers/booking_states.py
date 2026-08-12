@@ -25,11 +25,13 @@ from app.core.dependencies import CurrentUser, SessionDep, require_role
 from app.core.errors import ErrorCode, api_error
 from app.core.membership import MembershipFor
 from app.integrations.email import get_sender
+from app.integrations.push import get_push_sender
 from app.models import Booking
-from app.models.enums import UserRole
+from app.models.enums import NotificationKind, UserRole
 from app.schemas.booking import BookingRead
 from app.services import booking_states as service
 from app.services import notifications
+from app.services import push as push_service
 from app.services.audit import Actor
 
 logger = logging.getLogger(__name__)
@@ -153,6 +155,17 @@ async def mark_no_show(
     return BookingRead.model_validate(reservation)
 
 
+#: La clé du message donne le genre de notification. Une seule table plutôt
+#: qu'un second argument à chaque appel : deux valeurs à tenir d'accord se
+#: désaccordent, et c'est le genre qu'on oublierait — donc la préférence qui
+#: cesserait d'être respectée.
+GENRE_PAR_CLE = {
+    "booking.approved": NotificationKind.BOOKING_APPROVED,
+    "booking.declined": NotificationKind.BOOKING_DECLINED,
+    "booking.cancelledByBusiness": NotificationKind.BOOKING_CANCELLED_BY_BUSINESS,
+}
+
+
 async def _prevenir(session, reservation: Booking, cle: str, *, motif: str = "") -> None:
     """Prévient le créateur d'une décision du commerce.
 
@@ -173,6 +186,23 @@ async def _prevenir(session, reservation: Booking, cle: str, *, motif: str = "")
         # Volontairement large. La décision est déjà écrite ; la seule chose
         # qu'une exception ici peut encore faire, c'est la défaire.
         logger.exception("notification de réservation non envoyée", extra={"cle": cle})
+
+    # **Le push part à côté de l'email, pas à sa place.** Les deux disent la
+    # même chose à des endroits différents : la boîte pour la trace, l'écran
+    # verrouillé pour l'urgence. Et il est protégé par le même filet — la
+    # décision est écrite, rien de ce qui l'annonce ne doit la défaire.
+    try:
+        await push_service.pour_la_reservation(
+            session,
+            booking_id=reservation.id,
+            kind=GENRE_PAR_CLE[cle],
+            cle=cle,
+            sender=get_push_sender(),
+            motif=motif,
+        )
+        await session.commit()
+    except Exception:
+        logger.exception("notification push non envoyée", extra={"cle": cle})
 
 
 @router.post("/{booking_id}/approve", response_model=BookingRead)

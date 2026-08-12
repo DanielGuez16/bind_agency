@@ -237,6 +237,27 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       au salon, au créateur, à l'administration ; les signaux de fabrication à
       la seule administration. Score d'impact local à poids nul en
       configuration. 38 tests, 5 mutations éprouvées*
+- [x] Notifications push, derrière une interface
+      *Sept événements sortent de l'application : réservation acceptée, refusée,
+      annulée par le salon, rappel d'échéance, publication approuvée, nouvelle
+      soumission demandée, et — seule à remonter vers le commerce — demande à
+      valider. Préférence par genre et par personne, l'absence valant « oui ».
+      **Jamais pour un compte suspendu ou anonymisé**, garanti par le service et
+      par la révocation à l'anonymisation. Un jeton de terminal se révoque comme
+      un jeton social, au moment où le fournisseur le déclare mort.*
+      *Fin : **non vérifié de bout en bout**, même statut que le scanner caméra.
+      Expo exige un identifiant de projet EAS et un build de développement —
+      Expo Go ne reçoit plus de notifications distantes depuis le SDK 53.
+      `PUSH_PROVIDER=log` est en service et trace ce qu'il aurait envoyé ; tout
+      ce qui est en amont du dernier saut est éprouvé (21 tests, 5 mutations).
+      Le jour où le compte existe : `PUSH_PROVIDER=expo`, un `projectId` EAS
+      dans `app.json`, un build de développement, et l'app doit appeler
+      `PUT /me/devices` au démarrage avec le jeton rendu par
+      `expo-notifications`.*
+- [ ] Écrans des notifications côté app
+      *L'API est complète et le contrat à jour. Il manque : demander
+      l'autorisation au démarrage, poster le jeton, et l'écran de réglages qui
+      lit et écrit les sept préférences*
 - [ ] Capture de preuve niveau 1
       *Attend `fetch_media` sur l'interface de plateforme, qui viendra avec le relevé des publications — une tâche à part, qui demande de savoir quelles publications appartiennent à quelle collaboration*
 - [x] Dépôt objet réel, compatible S3

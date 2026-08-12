@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import CreatorProfile, SocialAccount, SocialMetricsSnapshot, User
 from app.models.enums import ActorKind, SocialAccountStatus, UserStatus
 from app.services import auth as auth_service
+from app.services import push as push_service
 from app.services.audit import Actor, AuditedEntity, record_transition
 
 REASON = "account_anonymized"
@@ -43,6 +44,12 @@ async def anonymize_account(session: AsyncSession, *, user: User, actor: Actor) 
         return False
 
     await _revoke_sessions(session, user.id, actor)
+    # Les terminaux, comme les jetons sociaux et pour la même raison : un
+    # compte anonymisé ne doit plus être joignable nulle part. Le service
+    # d'envoi refuse déjà de servir un compte non actif ; ceci est la
+    # transition ponctuelle, celui-là la garantie permanente, et les deux
+    # existent parce que la première peut être oubliée sur un chemin nouveau.
+    await push_service.revoquer_les_terminaux(session, user_id=user.id)
     await _strip_social_accounts(session, user.id, actor)
     await _strip_creator_profile(session, user.id)
     await _strip_account(session, user, actor)

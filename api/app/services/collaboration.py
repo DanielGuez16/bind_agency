@@ -20,6 +20,7 @@ sort le dossier de la boucle sans le trancher — il n'existe pas de statut
 appelle un regard.
 """
 
+import logging
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -30,6 +31,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
+from app.integrations.push import get_push_sender
 from app.models import (
     AuditLog,
     Booking,
@@ -47,11 +49,15 @@ from app.models.enums import (
     CaptureMethod,
     CollaborationStatus,
     ContentFormat,
+    NotificationKind,
     Platform,
     ReliabilityEventType,
 )
 from app.services import audit, reliability
+from app.services import push as push_service
 from app.services.audit import AuditedEntity
+
+logger = logging.getLogger(__name__)
 
 #: Depuis ces états, une échéance dépassée fait tomber le dossier. `submitted`
 #: n'en fait pas partie : le créateur a répondu, c'est à nous de contrôler.
@@ -216,6 +222,7 @@ async def transitionner(
         note=note,
     )
     await _emettre_les_evenements(session, collaboration=collaboration, vers=vers)
+    await _prevenir_le_createur(session, collaboration=collaboration, vers=vers)
     return collaboration
 
 
@@ -230,6 +237,50 @@ EVENEMENTS_PAR_ISSUE: dict[CollaborationStatus, tuple[ReliabilityEventType, ...]
     CollaborationStatus.RESUBMIT_REQUESTED: (ReliabilityEventType.RESUBMIT_REQUIRED,),
     CollaborationStatus.UNFULFILLED: (ReliabilityEventType.UNFULFILLED,),
 }
+
+
+#: Les deux issues qui méritent de sortir de l'application, et leur message.
+#: `unfulfilled` n'y est pas : un dossier clos ne demande plus rien, et
+#: l'annoncer par une vibration serait une punition de plus.
+NOTIFICATION_PAR_ISSUE = {
+    CollaborationStatus.APPROVED: (
+        NotificationKind.PUBLICATION_APPROVED,
+        "collaboration.approved",
+    ),
+    CollaborationStatus.RESUBMIT_REQUESTED: (
+        NotificationKind.PUBLICATION_RESUBMIT,
+        "collaboration.resubmit",
+    ),
+}
+
+
+async def _prevenir_le_createur(
+    session: AsyncSession, *, collaboration: Collaboration, vers: CollaborationStatus
+) -> None:
+    """Notifie sur la transition, comme les événements de fiabilité.
+
+    **Au même endroit et pour la même raison** : un appel séparé finit par être
+    oublié sur une branche, et c'est la branche oubliée qui laisse quelqu'un
+    sans nouvelle de sa publication.
+
+    Un échec n'annule pas la transition. Elle est écrite ; la seule chose qu'une
+    exception pourrait encore faire ici, c'est la défaire.
+    """
+    couple = NOTIFICATION_PAR_ISSUE.get(vers)
+    if couple is None:
+        return
+    kind, cle = couple
+
+    try:
+        await push_service.pour_la_contrepartie(
+            session,
+            collaboration_id=collaboration.id,
+            kind=kind,
+            cle=cle,
+            sender=get_push_sender(),
+        )
+    except Exception:
+        logger.exception("notification de contrepartie non envoyée", extra={"cle": cle})
 
 
 async def _emettre_les_evenements(
