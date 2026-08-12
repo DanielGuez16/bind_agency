@@ -742,3 +742,11 @@ export type CreateurDeLAnnuaire = {
   paliers_ouverts: ContentFormat[];
   audience_totale: number;
 };
+
+/** Une photo de la galerie d'un commerce. La clé, jamais une adresse. */
+export type PhotoDuCommerce = {
+  id: string;
+  storage_key: string;
+  position: number;
+  alt_text: string | null;
+};

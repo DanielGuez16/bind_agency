@@ -49,6 +49,7 @@ import type {
   VerificationDuCompte,
   VueDesPaliers,
   CreateurDeLAnnuaire,
+  PhotoDuCommerce,
   EtatDeLaComposition,
   BookingStatus,
   MediasPlateforme,
@@ -381,6 +382,32 @@ export class Api {
   annuaireDesCreateurs(businessId: string, signal?: AbortSignal) {
     return this.client.request<CreateurDeLAnnuaire[]>(routes.annuaireDesCreateurs(businessId), {
       signal,
+    });
+  }
+
+  photosDuCommerce(businessId: string, signal?: AbortSignal) {
+    return this.client.request<PhotoDuCommerce[]>(routes.photosDuCommerce(businessId), { signal });
+  }
+
+  ordonnerLesPhotos(businessId: string, photos: string[]) {
+    return this.client.request<PhotoDuCommerce[]>(routes.ordreDesPhotos(businessId), {
+      methode: 'PUT',
+      corps: { photos },
+    });
+  }
+
+  retirerUnePhoto(businessId: string, photoId: string) {
+    return this.client.request<void>(routes.retirerUnePhoto(businessId, photoId), {
+      methode: 'DELETE',
+    });
+  }
+
+  /** La couverture est un champ du commerce, pas de la galerie : la route qui
+   *  la change existe déjà, et en créer une seconde ferait deux vérités. */
+  definirLaCouverture(businessId: string, cle: string) {
+    return this.client.request<unknown>(routes.modifierLeCommerce(businessId), {
+      methode: 'PATCH',
+      corps: { cover_photo_key: cle },
     });
   }
 
