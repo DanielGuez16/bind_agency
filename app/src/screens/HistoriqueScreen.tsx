@@ -31,7 +31,8 @@ import {
   StatusMessage,
   Texte,
 } from '../components';
-import { useI18n } from '../i18n';
+import { useI18n, type SupportedLocale } from '../i18n';
+import { formatDateTime } from '../format';
 import { Ecran } from './Ecran';
 import { useRequete } from './useRequete';
 
@@ -62,7 +63,7 @@ export function HistoriqueScreen({
   onOuvrir: (reservation: ReservationDuCreateur) => void;
 }) {
   const { api } = useApi();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [index, setIndex] = useState(0);
 
   const statuts = ONGLETS[index].statuts;
@@ -123,7 +124,7 @@ export function HistoriqueScreen({
               >
                 <ServiceRow
                   name={reservation.business_name}
-                  meta={heureLocaleDuCommerce(reservation)}
+                  meta={heureLocaleDuCommerce(reservation, locale)}
                   tier={reservation.content_format}
                   right={
                     <Texte variante="type.caption" couleur="text.secondary">
@@ -214,7 +215,14 @@ export function destination(
  * Sur un item sans créneau, il n'y a pas d'heure : c'est une fenêtre de
  * validité. En inventer une afficherait un rendez-vous qui n'existe pas.
  */
-function heureLocaleDuCommerce(reservation: ReservationDuCreateur): string {
+function heureLocaleDuCommerce(
+  reservation: ReservationDuCreateur,
+  locale: SupportedLocale,
+): string {
   const instant = reservation.starts_at ?? reservation.valid_until;
-  return new Date(instant).toLocaleString([], { timeZone: reservation.business_timezone });
+  // `toLocaleString` sans options rendait « 11/08/2026 16:45:00 » : un mois en
+  // chiffres, que la moitié du monde lit à l'envers, et des secondes sur un
+  // rendez-vous en salon. `formatDateTime` porte le format de la maison —
+  // mois en lettres, heure à la minute.
+  return formatDateTime(instant, locale, reservation.business_timezone);
 }

@@ -200,6 +200,17 @@ export const en = {
     filRayon: '{{rayon}} km',
     filSansPosition: 'We need your location to show places near you.',
     filAutoriser: 'Share my location',
+    filPositionEnCours: 'Getting your location…',
+    // Refusée : le système ne repose plus la question, et un bouton qui
+    // promettrait de la reposer mentirait. On dit où lever le refus.
+    filPositionRefusee: 'Location is turned off for BIND, so we can’t sort by distance.',
+    filReactiverNavigateur:
+      'Click the lock icon left of the address bar, set Location to “Allow”, then reload the page.',
+    filReactiverIos: 'Open Settings › Privacy & Security › Location Services › BIND, then pick “While Using the App”.',
+    filReactiverAndroid: 'Open Settings › Apps › BIND › Permissions › Location, then pick “Allow only while using the app”.',
+    filPositionIndisponible:
+      'Your device didn’t return a location. Check that location services are on, then try again.',
+    filReessayer: 'Try again',
     ficheOffres: 'What they offer',
     ficheFerme: 'Not open to you yet',
     ficheProchain: 'Next: {{heure}}',
@@ -320,8 +331,8 @@ export const en = {
     filtreAControler: 'To review',
     filtreAttendue: 'Expected',
     filtreApprouvee: 'Approved',
-    approuver: 'Approve',
-    redemander: 'Ask again',
+    approuver: 'Approve the publication',
+    redemander: 'Ask for a new publication',
     motifObligatoire: 'Pick a reason before asking again.',
     motifMention: 'The mention is missing',
     motifLieu: 'The location tag is missing',
@@ -347,7 +358,7 @@ export const en = {
     plansMensuel: 'Monthly',
     plansAnnuel: 'Yearly',
     plansTotal: 'Total',
-    plansMrrTotal: 'Monthly revenue, all plans',
+    plansMrrTotal: 'Revenue per month, all plans',
     plansSalonsAbonnes: 'Businesses subscribed',
     plansSansPreneur: 'Not taken yet',
     plansDevisesMelees: 'Plans are priced in several currencies, so they do not add up.',
@@ -360,15 +371,22 @@ export const en = {
     arbitrageTitre: 'Counterparts under review',
     arbitrageVide: 'Nothing to arbitrate.',
     arbitrageParLAdministration: 'asked by BIND',
-    issueApprove: 'Approve',
-    issueResubmit: 'Ask again',
+    issueApprove: 'Approve the publication',
+    issueResubmit: 'Ask for a new publication',
     issueUnfulfilled: 'Close as not fulfilled',
+    // Ce que la barre annonce à l'oreille : trois boutons identiques d'un
+    // dossier à l'autre ne se distinguent que par ce qu'ils nomment.
+    issueSurDossier: '{{issue}} — {{createur}}, {{prestation}}, {{commerce}}',
     plansTitre: 'Subscription plans',
     plansVide: 'No plan yet.',
     plansPrix: 'Price',
     plansAbonnes: 'Businesses',
     plansActifs: 'Active',
-    plansMrr: 'Monthly revenue',
+    plansMrr: 'Revenue / month',
+    // La règle, écrite sous le tableau : sans elle, « revenu par mois » sur
+    // une ligne annuelle laisse deviner si c'est le prix ou son douzième.
+    plansMrrNote:
+      'A yearly plan counts for a twelfth of its price each month, so every row is comparable. Only active subscriptions are counted.',
   },
   reporting: {
     sectionReservations: 'The bookings',
@@ -390,7 +408,8 @@ export const en = {
     attendues: 'Awaited',
     nonHonorees: 'Not fulfilled',
     taux: 'Posts delivered, of services consumed',
-    tauxAide: '{{publications}} of {{consommations}} consumed services led to a post.',
+    tauxFraction: '{{publications}} / {{consommations}}',
+    tauxAide: 'Posts obtained, out of the services actually served at the counter.',
     tauxInconnu: 'Nothing served yet',
     valeurOfferte: 'Value you gave',
     portee: 'Rough reach',
@@ -446,6 +465,8 @@ export const en = {
     autrePorteCommerce: 'Registering as a creator instead? Go back and pick the other door.',
     jauge: '{{saisi}} / {{requis}}',
     resteACombler: 'At least {{requis}} characters. {{reste}} to go.',
+    montrerLeMotDePasse: 'Show password',
+    masquerLeMotDePasse: 'Hide password',
     motDePasseComplet: 'At least {{requis}} characters.',
   },
   reglages: {

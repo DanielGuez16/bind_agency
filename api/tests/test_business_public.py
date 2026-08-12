@@ -24,6 +24,10 @@ from app.services import creator_tiers
 from app.services.eligibility import RaisonRefus
 from tests.test_feed import REEL, STORY, commerce, createur, offre
 
+#: Le palier `story` de TikTok, dans les paliers de référence. Un créateur qui
+#: n'a qu'Instagram n'a aucun couple à évaluer dessus.
+TIKTOK_STORY = uuid.UUID("f09a110c-0286-4d01-a643-19402e55ba71")
+
 PREFIX = get_settings().api_v1_prefix
 
 
@@ -208,6 +212,48 @@ async def test_l_obstacle_de_la_fiche_est_celui_de_l_ecran_des_paliers(
 
     assert {o.raison for o in fermee.obstacles} == {o.raison for o in palier.obstacles}
     assert fermee.obstacles, "une offre fermée sans obstacle serait une porte sans serrure"
+
+
+async def test_un_palier_d_une_autre_plateforme_dit_quand_meme_ce_qui_manque(
+    session: AsyncSession,
+) -> None:
+    """Le cas le plus fréquent, et celui qui ne disait rien.
+
+    Le moteur n'évalue que les couples (compte, palier) **de même plateforme**.
+    Un palier TikTok chez quelqu'un qui n'a connecté qu'Instagram n'a donc
+    aucun couple, donc aucun obstacle à reprocher : la fiche affichait « pas
+    encore ouverte à toi » et rien d'autre. Ce n'est pas un accès sans
+    reproche, c'est un accès jamais examiné.
+
+    Il suffit d'un salon qui compose un palier sur un réseau qu'on n'a pas —
+    plus courant que l'absence totale de compte, et invisible dans les tests
+    qui n'emploient qu'Instagram.
+    """
+    b = await commerce(session, longitude=-80.1305, latitude=25.7907)
+    await offre(session, b, tier_id=TIKTOK_STORY, name="Sur TikTok")
+    # Un compte Instagram, largement au-dessus des seuils : rien ne manque de
+    # ce que le moteur sait mesurer.
+    user, _ = await createur(session, followers=90_000)
+
+    fermee = next(o for o in (await fiche(session, b, user)).offres if not o.accessible)
+
+    assert fermee.obstacles, "une offre fermée sans obstacle est une porte sans serrure"
+    assert [o.raison for o in fermee.obstacles] == [RaisonRefus.NO_SOCIAL_ACCOUNT]
+    # La plateforme voyage avec l'offre : l'app en fait « connecte un compte
+    # TikTok », jamais un « connecte un compte » qui laisserait chercher lequel.
+    assert fermee.platform.value == "tiktok"
+
+
+async def test_une_offre_ouverte_ne_porte_jamais_d_obstacle(session: AsyncSession) -> None:
+    """Le pendant. Sans lui, un service qui poserait `no_social_account` sur
+    toutes les offres passerait le test précédent sans rien garantir."""
+    b = await commerce(session, longitude=-80.1305, latitude=25.7907)
+    await offre(session, b, tier_id=STORY, name="Ouverte")
+    user, _ = await createur(session, followers=90_000)
+
+    ouverte = next(o for o in (await fiche(session, b, user)).offres if o.accessible)
+
+    assert ouverte.obstacles == ()
 
 
 async def test_une_offre_fermee_est_structurellement_non_reservable(

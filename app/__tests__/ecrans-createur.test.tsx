@@ -477,10 +477,13 @@ describe('obstacles', () => {
 });
 
 describe('audience et vérification', () => {
-  it('date le chiffre d’abonnés', async () => {
+  it('date le chiffre d’abonnés, et le sépare par milliers', async () => {
     await monter(<AudienceScreen />, clientDe({ '/me/audience': [COMPTE], '/me/verification': [] }));
     await waitFor(() => expect(screen.getByTestId('date-du-releve')).toBeTruthy());
-    expect(screen.getByText('24000')).toBeTruthy();
+    // « 24000 » se compte à la main, chiffre par chiffre, sur le nombre qui
+    // est la raison d'être de l'écran.
+    expect(screen.getByText('24,000')).toBeTruthy();
+    expect(screen.queryByText('24000')).toBeNull();
   });
 
   it('écrit « pas encore mesuré » plutôt que zéro', async () => {

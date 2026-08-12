@@ -12,11 +12,24 @@
  */
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { AppState, type AppStateStatus } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ApiClient, ApiProvider } from '../src/api';
 import { I18nProvider } from '../src/i18n';
 import { AccueilScreen, fondDAccueil } from '../src/screens/AccueilScreen';
 import { ThemeProvider } from '../src/theme';
+
+/** Les marges d'un iPhone 13. Le bas est ce qui nous intéresse ici. */
+const IPHONE_A_ENCOCHE = {
+  frame: { x: 0, y: 0, width: 390, height: 844 },
+  insets: { top: 47, left: 0, right: 0, bottom: 34 },
+};
+
+function styleAplati(valeur: unknown): Record<string, unknown> {
+  return Array.isArray(valeur)
+    ? Object.assign({}, ...valeur.map(styleAplati))
+    : ((valeur as Record<string, unknown>) ?? {});
+}
 
 /**
  * Le double est **une seule instance**, comme le vrai `useVideoPlayer` : il rend
@@ -79,13 +92,15 @@ async function afficher(medias: unknown = TOUT) {
   });
 
   return render(
-    <ThemeProvider role="creator">
-      <I18nProvider initialLocale="en">
-        <ApiProvider client={api}>
-          <AccueilScreen onChoisir={() => {}} onSeConnecter={() => {}} />
-        </ApiProvider>
-      </I18nProvider>
-    </ThemeProvider>,
+    <SafeAreaProvider initialMetrics={IPHONE_A_ENCOCHE}>
+      <ThemeProvider role="creator">
+        <I18nProvider initialLocale="en">
+          <ApiProvider client={api}>
+            <AccueilScreen onChoisir={() => {}} onSeConnecter={() => {}} />
+          </ApiProvider>
+        </I18nProvider>
+      </ThemeProvider>
+    </SafeAreaProvider>,
   );
 }
 
@@ -177,16 +192,80 @@ describe('accueil, ce qui manque', () => {
       },
     });
     await render(
-      <ThemeProvider role="creator">
-        <I18nProvider initialLocale="en">
-          <ApiProvider client={api}>
-            <AccueilScreen onChoisir={() => {}} onSeConnecter={() => {}} />
-          </ApiProvider>
-        </I18nProvider>
-      </ThemeProvider>,
+      <SafeAreaProvider initialMetrics={IPHONE_A_ENCOCHE}>
+        <ThemeProvider role="creator">
+          <I18nProvider initialLocale="en">
+            <ApiProvider client={api}>
+              <AccueilScreen onChoisir={() => {}} onSeConnecter={() => {}} />
+            </ApiProvider>
+          </I18nProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>,
     );
 
     expect(screen.getByTestId('porte-createur')).toBeTruthy();
+  });
+});
+
+// --------------------------------------------------------------------------
+// ce qui dépasse de l'écran
+// --------------------------------------------------------------------------
+
+describe('accueil, atteindre le bas de la page', () => {
+  /**
+   * Le contenu tenait dans un `View` centré en `flex: 1`. Sur un iPhone, les
+   * deux cartes empilées dépassent la hauteur de l'écran : le titre sortait
+   * par le haut, et « Already have an account? Sign in » par le bas — hors
+   * d'atteinte, sans contournement, l'app n'ayant qu'une adresse et aucune
+   * route web. Un créateur déjà inscrit n'avait plus de chemin vers son compte
+   * depuis son téléphone.
+   */
+  it('laisse défiler le contenu au lieu de le couper', async () => {
+    await afficher();
+    await poser(TELEPHONE);
+
+    const defilant = screen.getByTestId('accueil-defilant');
+    // Un `View` ne défile pas. C'est bien une vue défilante qu'on veut ici,
+    // pas une boîte dont on aurait seulement changé les marges.
+    expect(defilant.props.scrollEnabled ?? true).toBe(true);
+    expect(typeof defilant.props.onScroll === 'function' || defilant.props.horizontal !== true).toBe(
+      true,
+    );
+
+    const contenu = styleAplati(defilant.props.contentContainerStyle);
+    // `flexGrow` et non `flex` : le premier centre tant que la place suffit et
+    // laisse déborder ensuite, le second borne le contenu à la fenêtre et
+    // rendrait le défilement inutile.
+    expect(contenu.flexGrow).toBe(1);
+    expect(contenu.flex).toBeUndefined();
+    expect(contenu.justifyContent).toBe('center');
+  });
+
+  it('pose la marge du bas que la barre d’onglets ne pose pas ici', async () => {
+    // `ZoneSure` laisse le bas à la barre d'onglets — qui n'existe pas avant
+    // la connexion. Sans cette marge, le lien de connexion se termine sous la
+    // barre d'accueil de l'iPhone : visible en fin de défilement, impressable.
+    await afficher();
+    await poser(TELEPHONE);
+
+    const contenu = styleAplati(
+      screen.getByTestId('accueil-defilant').props.contentContainerStyle,
+    );
+    expect(contenu.paddingBottom).toBe(24 + IPHONE_A_ENCOCHE.insets.bottom);
+  });
+
+  it('fait défiler les portes, pas le fond', async () => {
+    // Le lien de connexion doit défiler — c'est le défaut qu'on répare. La
+    // vidéo, l'affiche et le voile non : un fond qui remonte avec le contenu
+    // laisserait le bas de la page sur du vide, et le voile cesserait de
+    // protéger le texte qu'il couvre.
+    await afficher();
+    await poser(TELEPHONE);
+
+    const defilant = screen.getByTestId('accueil-defilant');
+    expect(defilant).toContainElement(screen.getByTestId('vers-connexion'));
+    expect(defilant).not.toContainElement(screen.getByTestId('video-accueil'));
+    expect(defilant).not.toContainElement(screen.getByTestId('voile-accueil'));
   });
 });
 

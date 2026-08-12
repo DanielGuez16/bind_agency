@@ -309,6 +309,22 @@ describe('connexion', () => {
     expect(screen.queryByTestId('jauge')).toBeNull();
   });
 
+  it('masque le mot de passe, et l’œil le relit', async () => {
+    // Il s'affichait en clair : douze caractères en grand, sur le premier
+    // écran du produit. Éprouvé sur l'écran et pas seulement sur le composant
+    // — `TextField` sait masquer depuis toujours si on le lui demande, et
+    // personne ne le lui demandait.
+    await monterConnexion(serveur({}) as typeof fetch);
+
+    expect(screen.getByTestId('champ-mot-de-passe').props.secureTextEntry).toBe(true);
+    // L'e-mail, lui, reste lisible : un masque posé partout se relirait comme
+    // un succès dans un test et comme une régression à l'écran.
+    expect(screen.getByTestId('champ-email').props.secureTextEntry).toBeFalsy();
+
+    await fireEvent.press(screen.getByTestId('champ-mot-de-passe-revelation'));
+    expect(screen.getByTestId('champ-mot-de-passe').props.secureTextEntry).toBe(false);
+  });
+
   it('traduit un refus, sans jamais montrer le code', async () => {
     await monterConnexion(
       serveur({
@@ -505,7 +521,17 @@ describe('aiguillage par rôle', () => {
    * n'est pas le contenu des écrans — ils ont leurs propres tests — mais quels
    * onglets existent.
    */
+  /**
+   * Les chemins réellement demandés au serveur pendant le dernier montage.
+   *
+   * Un onglet absent ne prouve pas qu'aucun écran de l'autre rôle ne tourne :
+   * un écran monté hors de la barre demanderait sa route sans rien afficher.
+   * Ce que le serveur reçoit le dit, et rien d'autre.
+   */
+  let chemins: string[] = [];
+
   async function monterPour(role: Utilisateur['role']) {
+    chemins = [];
     // Certaines routes rendent une liste, d'autres un objet. Servir la
     // mauvaise forme ferait tomber un écran et le test accuserait la
     // navigation d'un défaut qui serait le sien.
@@ -528,6 +554,7 @@ describe('aiguillage par rôle', () => {
 
     const fetchImpl = (async (url: RequestInfo | URL) => {
       const chemin = String(url);
+      chemins.push(chemin);
       const rendre = (corps: unknown) =>
         ({ ok: true, status: 200, json: async () => corps }) as Response;
 
@@ -599,6 +626,66 @@ describe('aiguillage par rôle', () => {
     for (const interdit of [en.onglets.paliers, en.onglets.audience, en.onglets.arbitrage]) {
       expect(vus).not.toContain(interdit);
     }
+  });
+
+  /**
+   * Les routes qui n'appartiennent qu'au créateur.
+   *
+   * `/me` et `/me/businesses` n'en sont pas : la première dit qui l'on est,
+   * la seconde est la route du commerce.
+   */
+  const ROUTES_DU_CREATEUR = ['/me/bookings', '/me/tiers', '/me/audience', '/me/verification'];
+
+  /**
+   * Ouvre chaque onglet du rôle, l'un après l'autre.
+   *
+   * **Le montage seul ne prouve rien.** Les onglets sont paresseux : seul le
+   * premier existe tant qu'on n'a pas pressé les autres. Un écran de créateur
+   * rangé sur le troisième onglet ne demanderait donc rien pendant tout un
+   * test qui se contente de monter, et la garde annoncerait « aucune route de
+   * créateur » sur un arbre qui en contient un.
+   */
+  async function parcourirLesOnglets() {
+    for (const libelle of onglets()) {
+      await fireEvent.press(screen.getAllByText(libelle)[0]);
+    }
+  }
+
+  it('le commerce ne demande aucune route de créateur, sur aucun de ses onglets', async () => {
+    // `GET /me/bookings` partait en étant connecté en commerce, où ce rôle n'a
+    // rien à faire. Compter les onglets ne l'aurait pas vu : un écran monté
+    // sous un libellé d'onglet du commerce demande sa route sans rien annoncer,
+    // et la réponse — un 403, ou le 500 que cette route rendait — n'apparaît
+    // que dans la console de quelqu'un qui regardait.
+    await monterPour('business_member');
+    await parcourirLesOnglets();
+
+    const fautives = chemins.filter((chemin) =>
+      ROUTES_DU_CREATEUR.some((route) => chemin.includes(route)),
+    );
+    expect(fautives).toEqual([]);
+  });
+
+  it('l’administrateur non plus', async () => {
+    await monterPour('admin');
+    await parcourirLesOnglets();
+
+    const fautives = chemins.filter((chemin) =>
+      ROUTES_DU_CREATEUR.some((route) => chemin.includes(route)),
+    );
+    expect(fautives).toEqual([]);
+  });
+
+  it('le créateur, lui, la demande bien', async () => {
+    // Le pendant, sur la même route et par le même geste. Sans lui, une
+    // navigation qui ne monterait plus aucun écran passerait le test précédent
+    // en ne demandant rien du tout.
+    await monterPour('creator');
+    await fireEvent.press(screen.getAllByText(en.onglets.reservations)[0]);
+
+    await waitFor(() =>
+      expect(chemins.some((chemin) => chemin.includes('/me/bookings'))).toBe(true),
+    );
   });
 
   it('l’administrateur ne voit ni fil ni caisse', async () => {

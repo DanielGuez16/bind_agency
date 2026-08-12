@@ -23,12 +23,20 @@ import { en } from '../src/i18n/en';
 import { AuthScreen } from '../src/screens/AuthScreen';
 import { SessionProvider } from '../src/session';
 import { ApiProvider, ApiClient } from '../src/api';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
 import { ThemeProvider } from '../src/theme';
 
 jest.mock('../src/shell/gabarit', () => ({
   ...jest.requireActual('../src/shell/gabarit'),
   useGabarit: () => ({ largeur: 1512, large: true }),
 }));
+
+/** Un écran de bureau : aucune encoche, aucune barre d'accueil. */
+const ECRAN_LARGE = {
+  frame: { x: 0, y: 0, width: 1512, height: 982 },
+  insets: { top: 0, left: 0, right: 0, bottom: 0 },
+};
 
 const coffre = { lire: async () => null, ecrire: async () => {} };
 const fetchImpl = (async () =>
@@ -37,15 +45,21 @@ const fetchImpl = (async () =>
 async function afficher(motif: 'session_expiree' | null = null) {
   const api = new ApiClient({ baseUrl: 'https://api.test', coffre, fetchImpl });
   return render(
-    <ThemeProvider role="creator">
-      <I18nProvider initialLocale="en">
-        <SessionProvider baseUrl="https://api.test" coffre={coffre} fetchImpl={fetchImpl}>
-          <ApiProvider client={api}>
-            <AuthScreen motif={motif} />
-          </ApiProvider>
-        </SessionProvider>
-      </I18nProvider>
-    </ThemeProvider>,
+    // Les marges système sont fournies comme dans `App`, où elles enveloppent
+    // tout. L'écran de connexion pose lui-même celle du bas : aucune barre
+    // d'onglets n'existe avant la connexion pour la poser à sa place, et sans
+    // elle le dernier bouton finit sous la barre d'accueil de l'iPhone.
+    <SafeAreaProvider initialMetrics={ECRAN_LARGE}>
+      <ThemeProvider role="creator">
+        <I18nProvider initialLocale="en">
+          <SessionProvider baseUrl="https://api.test" coffre={coffre} fetchImpl={fetchImpl}>
+            <ApiProvider client={api}>
+              <AuthScreen motif={motif} />
+            </ApiProvider>
+          </SessionProvider>
+        </I18nProvider>
+      </ThemeProvider>
+    </SafeAreaProvider>,
   );
 }
 

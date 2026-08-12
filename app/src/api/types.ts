@@ -191,10 +191,42 @@ export type CommerceDuFil = {
   items: ItemDuFil[];
 };
 
+/** Ce qu'une pastille de catégorie ouvrirait, dans le rayon courant. */
+export type CompteParCategorie = {
+  categorie: BusinessCategory;
+  commerces: number;
+  prestations: number;
+};
+
+/** Ce qu'un élargissement ouvrirait, filtre de catégorie conservé. */
+export type CompteParRayon = {
+  rayon_metres: number;
+  commerces: number;
+  prestations: number;
+};
+
 export type Fil = {
   commerces: CommerceDuFil[];
   /** Accompagne toujours la réponse, même quand le fil n'est pas vide. */
   obstacles: Obstacle[];
+  /** Le rayon réellement appliqué : c'est lui qui s'écrit dans « rayon 3 km ». */
+  rayon_metres: number;
+  total_prestations: number;
+  /**
+   * Les catégories qui mènent quelque part, **filtre en vigueur ignoré**.
+   *
+   * C'est ce qui permet d'écrire « Retirer le filtre Spa · 34 salons » depuis
+   * l'écran filtré sur Spa, et de n'afficher que les pastilles qui ouvrent sur
+   * quelque chose. Une catégorie absente n'a rien de réservable ici.
+   */
+  categories: CompteParCategorie[];
+  /**
+   * Les élargissements possibles, du plus étroit au plus large, avec leur gain.
+   *
+   * Ne contient jamais un rayon plus étroit que celui en vigueur : rétrécir
+   * n'est pas une issue à un fil vide. Vide quand on est déjà au plus large.
+   */
+  rayons: CompteParRayon[];
 };
 
 export type OffreDeLaFiche = {
@@ -292,9 +324,13 @@ export type ReservationDuCreateur = {
   duration_minutes: number | null;
   platform: Platform;
   content_format: ContentFormat;
-  /** Ce que la publication devra porter. Le comptoir le vérifiera. */
-  required_mention: string | null;
-  required_geotag: boolean;
+  /**
+   * Ce que la réservation a produit, une fois consommée.
+   *
+   * **C'est là et nulle part ailleurs que le créateur lit ses obligations.**
+   * Les critères y sont figés à la création de la contrepartie ; ceux de
+   * l'offre suivent le commerce et changeraient sous ses pieds.
+   */
   contrepartie: ContrepartieBreve | null;
 };
 

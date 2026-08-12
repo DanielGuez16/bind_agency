@@ -46,7 +46,12 @@ export type NomIcone =
   // paliers. Une flèche dit le sens sans le mot, et le mot reste écrit.
   | 'monte'
   | 'descend'
-  | 'retour';
+  | 'retour'
+  // Révéler un mot de passe, et le remasquer. Deux icônes et non une : l'œil
+  // barré dit ce que l'action fera, l'œil seul dit ce qu'on regarde, et les
+  // confondre laisse l'utilisateur deviner dans quel état il se trouve.
+  | 'oeil'
+  | 'oeil-barre';
 
 const CHEMINS: Record<NomIcone, string> = {
   chevron: 'M9.5 5.5L16 12l-6.5 6.5',
@@ -77,6 +82,9 @@ const CHEMINS: Record<NomIcone, string> = {
   monte: 'M12 19.5V5M6 11l6-6 6 6',
   descend: 'M12 4.5V19M6 13l6 6 6-6',
   retour: 'M19.5 12h-15M10.5 6l-6 6 6 6',
+  oeil: 'M2.5 12S6.2 5.5 12 5.5 21.5 12 21.5 12 17.8 18.5 12 18.5 2.5 12 2.5 12zM12 14.8a2.8 2.8 0 100-5.6 2.8 2.8 0 000 5.6z',
+  'oeil-barre':
+    'M9.9 5.8A8.8 8.8 0 0112 5.5c5.8 0 9.5 6.5 9.5 6.5a17 17 0 01-2.9 3.6M6.4 7.7A17 17 0 002.5 12S6.2 18.5 12 18.5c1 0 2-.2 2.9-.5M10 10a2.8 2.8 0 004 4M4 4l16 16',
 };
 
 export function Icone({

@@ -138,3 +138,98 @@ describe('aucun émoji', () => {
     expect(fautifs).toEqual([]);
   });
 });
+
+// --------------------------------------------------------------------------
+// aucune date brute
+// --------------------------------------------------------------------------
+
+/**
+ * `toLocaleString` et ses variantes, hors de `format.ts`.
+ *
+ * Sans options, elles rendent « 11/08/2026 16:45:00 » : un mois en chiffres,
+ * que la moitié du monde lit à l'envers, et des secondes sur un rendez-vous en
+ * salon. C'était partout — sept endroits, chacun ayant reformaté à la main ce
+ * que `format.ts` faisait déjà correctement.
+ *
+ * **La garde cherche la faute, pas la forme qui l'a introduite.** Les six
+ * appels relevés s'écrivaient de trois façons — `new Date(x).toLocaleString()`,
+ * `toLocaleString([], { timeZone })`, `toLocaleDateString()` — et une garde
+ * calée sur la première les aurait laissé passer toutes les deux autres. On
+ * cherche donc le **nom de la méthode**, où qu'il soit sur la ligne et quels
+ * que soient ses arguments.
+ *
+ * `format.ts` est le seul endroit qui a le droit de les appeler, et il ne les
+ * appelle pas nus : `Intl.DateTimeFormat` y porte `dateStyle`, `timeStyle` et
+ * `timeZone`. `toLocaleDateString('en-CA', …)` dans `CreneauxScreen` est une
+ * **clé de regroupement**, jamais un affichage — d'où sa tolérance, nommée.
+ */
+describe('aucune date brute', () => {
+  const METHODES = /\.toLocale(?:Date|Time)?String\s*\(/;
+
+  //: Les usages légitimes, avec leur raison. Liste courte : c'est elle qu'on
+  //: relit quand la garde tombe.
+  const TOLERES = new Set([
+    // La maison du formatage. Elle n'appelle rien nu.
+    'src/format.ts',
+    // Une clé de regroupement par jour, en ISO, jamais affichée.
+    'src/screens/CreneauxScreen.tsx',
+  ]);
+
+  function fichiersSource(dossier: string, trouves: string[] = []): string[] {
+    for (const entree of readdirSync(dossier, { withFileTypes: true })) {
+      const chemin = join(dossier, entree.name);
+      if (entree.isDirectory()) fichiersSource(chemin, trouves);
+      else if (/\.tsx?$/.test(entree.name)) trouves.push(chemin);
+    }
+    return trouves;
+  }
+
+  it('formate par `format.ts`, et nulle part à la main', () => {
+    const fautifs: string[] = [];
+    for (const chemin of fichiersSource(join(__dirname, '..', 'src'))) {
+      const relatif = chemin.slice(chemin.indexOf('src/'));
+      if (TOLERES.has(relatif)) continue;
+      readFileSync(chemin, 'utf-8')
+        .split('\n')
+        .forEach((ligne, index) => {
+          // Les commentaires citent ces noms en prose ; les compter ferait
+          // crier la garde sur sa propre documentation.
+          if (/^\s*(\/\/|\*|\/\*)/.test(ligne)) return;
+          if (METHODES.test(ligne)) fautifs.push(`${relatif}:${index + 1}`);
+        });
+    }
+
+    expect(fautifs).toEqual([]);
+  });
+
+  it('attrape les trois formes, pas seulement celle qu’on avait en tête', () => {
+    // Les six appels relevés s'écrivaient de trois façons. Une garde calée sur
+    // la première en aurait laissé passer deux — et une garde partielle fait
+    // croire que la question est réglée.
+    const formes = [
+      "  return new Date(x).toLocaleString();",
+      "  return new Date(x).toLocaleString([], { timeZone: tz });",
+      "  const j = new Date(x).toLocaleDateString();",
+      "  label: new Date(x).toLocaleTimeString(locale, { hour: '2-digit' }),",
+      "  valeur: n.toLocaleString(locale),",
+    ];
+    for (const forme of formes) expect(METHODES.test(forme)).toBe(true);
+
+    // Et rien d'autre : une garde qui crie sur tout se désactive au bout d'une
+    // semaine.
+    for (const innocent of ['  const s = String(x);', '  toLocale(x);', '  // toLocaleString()']) {
+      expect(METHODES.test(innocent) && !/^\s*\/\//.test(innocent)).toBe(false);
+    }
+  });
+
+  it('a bien des fichiers à inspecter', () => {
+    // Sans cela, un dossier déplacé rendrait la garde verte en ne lisant rien.
+    expect(fichiersSource(join(__dirname, '..', 'src')).length).toBeGreaterThan(30);
+  });
+
+  it('tolère uniquement des fichiers qui existent encore', () => {
+    for (const relatif of TOLERES) {
+      expect(readFileSync(join(__dirname, '..', relatif), 'utf-8')).toBeTruthy();
+    }
+  });
+});

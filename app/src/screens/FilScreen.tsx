@@ -40,6 +40,8 @@ import {
 } from '../components';
 import { useI18n } from '../i18n';
 import { useGabarit } from '../shell/gabarit';
+import { messageDePosition } from '../shell/messageDePosition';
+import type { EtatDePosition } from '../shell/usePosition';
 import { en } from '../i18n/en';
 import { Ecran } from './Ecran';
 import { RaisonDuVide } from './RaisonDuVide';
@@ -65,6 +67,7 @@ export type Position = { longitude: number; latitude: number };
 
 export function FilScreen({
   position,
+  etatDeLaPosition = { etat: 'jamais_demandee' },
   prenom = null,
   onDemanderLaPosition,
   onOuvrirLeCommerce,
@@ -74,6 +77,12 @@ export function FilScreen({
 }: {
   /** Nulle tant que l'autorisation n'est pas donnée. */
   position: Position | null;
+  /**
+   * **Pourquoi** il n'y a pas de position. Sans cela, l'écran ne peut que
+   * reproposer la même demande, et après un refus cette demande ne fait plus
+   * rien du tout — le système ne repose pas la question.
+   */
+  etatDeLaPosition?: EtatDePosition;
   /** Résolu par la coquille : l'écran ne lit pas la session. */
   prenom?: string | null;
   onDemanderLaPosition: () => void;
@@ -83,7 +92,7 @@ export function FilScreen({
   onVoirMesPaliers?: () => void;
 }) {
   const { api } = useApi();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { large, largeur } = useGabarit();
   /**
    * Trois à quatre cartes par ligne, comme la règle v0.6 le pose.
@@ -112,12 +121,33 @@ export function FilScreen({
   );
 
   if (position === null) {
+    // Ce qu'on dit et ce qu'on propose dépendent de **pourquoi** il n'y a pas
+    // de position. Le même message pour tous laissait un bouton « Share my
+    // location » qui, après un refus, ne produisait plus rien : le système ne
+    // repose pas la question, et presser à nouveau n'ouvre aucune fenêtre.
+    // Jamais nul ici : `messageDePosition` ne rend `null` que sur `accordee`,
+    // qui porte une position et ne passe donc pas par cette branche.
+    const message = messageDePosition(etatDeLaPosition) ?? {
+      corps: 'parcours.filSansPosition',
+      ouReactiver: null,
+      action: { cle: 'parcours.filAutoriser' },
+    };
     return (
       <View testID="ecran-fil" style={{ flex: 1, padding: 20, gap: 12 }}>
         <StatusMessage
           level="neutral"
-          body={t('parcours.filSansPosition')}
-          action={{ label: t('parcours.filAutoriser'), onPress: onDemanderLaPosition }}
+          // Le chemin exact vers le réglage suit le constat, dans le même
+          // corps : `StatusMessage` n'a pas de troisième niveau, et lui en
+          // ajouter un pour un seul écran ferait diverger la bibliothèque.
+          body={[message.corps, message.ouReactiver]
+            .filter((cle): cle is string => cle !== null)
+            .map((cle) => t(cle))
+            .join('\n\n')}
+          action={
+            message.action
+              ? { label: t(message.action.cle), onPress: onDemanderLaPosition }
+              : undefined
+          }
           testID="fil-sans-position"
         />
       </View>
@@ -222,7 +252,7 @@ export function FilScreen({
 }
 
 function Obstacles({ fil }: { fil: Fil | null }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   if (!fil?.obstacles.length) return null;
 
   return (
@@ -234,7 +264,7 @@ function Obstacles({ fil }: { fil: Fil | null }) {
           couleur="text.secondary"
           testID={`obstacle-${obstacle.raison}`}
         >
-          {messageDObstacle(t, obstacle, CODES_CONNUS)}
+          {messageDObstacle(t, obstacle, CODES_CONNUS, undefined, locale)}
         </Texte>
       ))}
     </View>

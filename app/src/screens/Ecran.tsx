@@ -19,7 +19,8 @@ import type { ReactNode } from 'react';
 import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 
 import { Button, EmptyState, Icone, SkeletonCard, StatusMessage, Texte } from '../components';
-import { useI18n } from '../i18n';
+import { useI18n, type SupportedLocale } from '../i18n';
+import { formatDate } from '../format';
 import { BarreDeTitre } from '../shell/BarreDeTitre';
 import { useGabarit, largeurMaximale, type NatureDeContenu } from '../shell/gabarit';
 import { useApi } from '../api';
@@ -197,14 +198,20 @@ export function Ecran<T>({
  * pas quand c'était. Au-delà d'un jour, on bascule sur la date : « il y a
  * 37 h » ne se lit plus.
  */
-export function quand(t: (cle: string, params?: Record<string, unknown>) => string, instant: number | null): string {
+export function quand(
+  t: (cle: string, params?: Record<string, unknown>) => string,
+  instant: number | null,
+  locale: SupportedLocale = 'en',
+): string {
   if (instant === null) return '';
   const minutes = Math.max(0, Math.round((Date.now() - instant) / 60_000));
   if (minutes < 1) return t('etats.instantMaintenant');
   if (minutes < 60) return t('etats.instantMinutes', { count: minutes });
   const heures = Math.round(minutes / 60);
   if (heures < 24) return t('etats.instantHeures', { count: heures });
-  return new Date(instant).toLocaleDateString();
+  // Mois en lettres. `toLocaleDateString` rendait « 8/11/2026 », qui se lit
+  // dans deux ordres selon d'où l'on vient.
+  return formatDate(new Date(instant).toISOString(), locale, 'UTC');
 }
 
 /** Un bouton de réessai isolé, pour les écrans qui n'utilisent pas `Ecran`. */

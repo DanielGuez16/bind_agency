@@ -130,7 +130,7 @@ export function PaliersScreen({
   onVoirLesPrestations?: (palier: PalierAccessible) => void;
 }) {
   const { api } = useApi();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { large } = useGabarit();
 
   const requete = useRequete<VueDesPaliers>((signal) => api.mesPaliers(signal), {
@@ -217,7 +217,7 @@ function Echelle({
   onLireLesRegles?: () => void;
   onVoirLesPrestations?: (palier: PalierAccessible) => void;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { large } = useGabarit();
   const [plateforme, setPlateforme] = useState<string | null>(null);
 
@@ -415,7 +415,7 @@ function BandeauDePrincipe() {
 }
 
 function PorteDesRegles({ onPress }: { onPress: () => void }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const c = useColors();
 
   return (
@@ -649,7 +649,7 @@ function EtatDuPalier({
   teinte: ColorName;
   plein: boolean;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const c = useColors();
 
   if (etat === 'ouvert') {
@@ -733,7 +733,7 @@ export function EcartAuSeuil({
         couleur="text.secondary"
         testID={`obstacle-${obstacle.raison}`}
       >
-        {messageDObstacle(t, obstacle, CODES_CONNUS, platform)}
+        {messageDObstacle(t, obstacle, CODES_CONNUS, platform, locale)}
       </Texte>
     );
   }

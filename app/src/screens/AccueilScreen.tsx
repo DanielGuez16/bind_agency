@@ -24,7 +24,8 @@ import { useEvent, useEventListener } from 'expo';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useEffect, useState } from 'react';
-import { AppState, Image, StyleSheet, View } from 'react-native';
+import { AppState, Image, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useApi, type MediasPlateforme } from '../api';
 import { Texte } from '../components';
@@ -76,6 +77,10 @@ export function AccueilScreen({
   const { api } = useApi();
   const { t } = useI18n();
   const c = useColors();
+  // `ZoneSure` laisse le bas à la barre d'onglets, qui n'existe pas avant la
+  // connexion : sans cette marge, le lien de connexion se termine sous la
+  // barre d'accueil de l'iPhone, atteignable mais impressable.
+  const marges = useSafeAreaInsets();
 
   const [medias, setMedias] = useState<MediasPlateforme | null>(null);
   const [forme, setForme] = useState({ largeur: 0, hauteur: 0 });
@@ -226,7 +231,34 @@ export function AccueilScreen({
         />
       ) : null}
 
-      <View style={{ flex: 1, justifyContent: 'center', padding: 24 }}>
+      {/**
+       * **Le contenu défile.** Il tenait dans un `View` en `flex: 1` centré :
+       * sur un écran de bureau la hauteur suffit, sur un iPhone les deux
+       * cartes empilées dépassent largement. Ce qui dépasse d'un `View` est
+       * coupé — le titre sortait par le haut et « Already have an account? »
+       * par le bas, hors d'atteinte. L'app n'a qu'une adresse et aucune route
+       * web : un créateur déjà inscrit n'avait plus aucun chemin vers son
+       * compte depuis son téléphone.
+       *
+       * `flexGrow: 1` avec `justifyContent: 'center'` garde le centrage tant
+       * que le contenu tient, et laisse défiler dès qu'il déborde. Un
+       * `flex: 1` sur le conteneur de contenu ferait l'inverse : il bornerait
+       * la hauteur du contenu à celle de la fenêtre, et le défilement ne
+       * servirait plus à rien.
+       */}
+      <ScrollView
+        testID="accueil-defilant"
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: 'center',
+          padding: 24,
+          paddingBottom: 24 + marges.bottom,
+        }}
+        // Le fond reste visible sous le contenu : la vidéo est derrière, et un
+        // fond opaque de liste la masquerait.
+        showsVerticalScrollIndicator={false}
+      >
         <ChoixDeLaPorte onChoisir={onChoisir} onSeConnecter={onSeConnecter} surMedia={Boolean(video || affiche)} />
         {video || affiche ? null : (
           // Aucun fond : on ne laisse pas un vide inexpliqué sous les portes.
@@ -234,7 +266,7 @@ export function AccueilScreen({
             {t('accueil.sansFond')}
           </Texte>
         )}
-      </View>
+      </ScrollView>
     </View>
   );
 }

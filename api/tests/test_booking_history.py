@@ -153,6 +153,62 @@ async def test_l_historique_ne_rend_aucun_montant(session: AsyncSession) -> None
     assert not any("cents" in champ or "price" in champ for champ in champs)
 
 
+async def test_l_historique_repond_sur_la_route(client: AsyncClient, session: AsyncSession) -> None:
+    """Le service rendait la bonne chose et la route levait quand même.
+
+    `ReservationDuCreateurRead` exigeait `required_mention` et `required_geotag`,
+    que la structure du service ne portait pas : la validation de réponse levait
+    sur **chaque** appel. L'écran des réservations ne chargeait jamais, et comme
+    l'exception passe hors de l'intergiciel CORS, l'app ne voyait qu'un refus de
+    CORS et cherchait la panne du mauvais côté.
+
+    Tous les autres tests de l'historique appellent le service directement.
+    C'est exactement ce qui a laissé passer le défaut : le contrat de sortie
+    n'était éprouvé nulle part.
+    """
+    decor = await monter_le_decor(session, postes=3)
+    await reserver(session, decor, starts_at=await premier_creneau(session, decor))
+    await session.commit()
+
+    jetons = (
+        await client.post(
+            f"{PREFIX}/auth/login",
+            json={"email": decor["createur"].email, "password": MOT_DE_PASSE},
+        )
+    ).json()
+
+    reponse = await client.get(
+        f"{PREFIX}/me/bookings",
+        headers={"Authorization": f"Bearer {jetons['access_token']}"},
+    )
+
+    assert reponse.status_code == 200, reponse.text
+    corps = reponse.json()
+    assert len(corps["items"]) == 1
+    assert corps["items"][0]["business_name"] == "Salon d'essai"
+    # Les compteurs de tous les onglets, y compris ceux à zéro.
+    assert corps["compteurs"]["held"] == 1
+
+
+async def test_l_historique_ne_rend_pas_les_criteres_de_l_offre(
+    session: AsyncSession,
+) -> None:
+    """Le créateur lit ses obligations sur la contrepartie, pas sur l'offre.
+
+    Les critères sont figés à la création de la contrepartie (SPEC §2.4) ; ceux
+    de l'offre suivent le commerce et changent sous ses pieds. Les rendre ici
+    donnerait une seconde source, qui dérive au premier changement d'exigence.
+    """
+    decor = await monter_le_decor(session, postes=2)
+    await reserver(session, decor, starts_at=await premier_creneau(session, decor))
+
+    historique = await service.historique_du_createur(session, creator_id=decor["createur"].id)
+    champs = set(historique.items[0].__slots__)
+
+    assert "required_mention" not in champs
+    assert "required_geotag" not in champs
+
+
 async def test_un_createur_ne_voit_que_ses_reservations(session: AsyncSession) -> None:
     a = await monter_le_decor(session, postes=3)
     b = await monter_le_decor(session, postes=3)
@@ -293,6 +349,48 @@ async def test_la_journee_porte_les_criteres_de_publication(session: AsyncSessio
     ligne = next(item for item in journee.items if item.booking_id == booking.id)
     assert ligne.required_mention == "@velanailstudio"
     assert ligne.required_geotag is True
+
+
+async def test_la_journee_porte_les_criteres_jusqu_a_la_reponse(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """Le service les portait, le schéma de sortie ne les déclarait pas.
+
+    Ils étaient tombés du mauvais côté : déclarés sur la lecture du créateur —
+    où ils faisaient lever la route — et absents de celle du commerce, qui est
+    la seule à en avoir l'usage. Le comptoir les affichait donc vides, sans
+    erreur, sur un écran qui prétend dire ce qu'on exigera de la publication.
+    """
+    decor = await monter_le_decor(session)
+    offre = await session.get(TierOffer, decor["offre"].id)
+    offre.required_mention = "@velanailstudio"
+    offre.required_geotag = True
+    await session.flush()
+
+    creneau = await premier_creneau(session, decor)
+    booking = await reserver(session, decor, starts_at=creneau)
+    await booking_states.confirmer(session, booking=booking, creator_id=decor["createur"].id)
+    membre = await caissier(session, decor["business"])
+    await session.commit()
+
+    jetons = (
+        await client.post(
+            f"{PREFIX}/auth/login",
+            json={"email": membre.email, "password": MOT_DE_PASSE},
+        )
+    ).json()
+
+    jour = creneau.astimezone(ZoneInfo(decor["business"].timezone)).date()
+    reponse = await client.get(
+        f"{PREFIX}/business/{decor['business'].id}/bookings",
+        params={"jour": jour.isoformat()},
+        headers={"Authorization": f"Bearer {jetons['access_token']}"},
+    )
+
+    assert reponse.status_code == 200, reponse.text
+    ligne = next(item for item in reponse.json()["items"] if item["booking_id"] == str(booking.id))
+    assert ligne["required_mention"] == "@velanailstudio"
+    assert ligne["required_geotag"] is True
 
 
 async def test_le_jour_par_defaut_est_celui_du_commerce(session: AsyncSession) -> None:

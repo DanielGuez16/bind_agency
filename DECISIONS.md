@@ -2734,3 +2734,220 @@ graphique. Le jeu de jetons de l'autre thème est calibré pour ce fond-là — 
 d'ailleurs celui que la maquette dessine. Une surface inversée porte donc les
 couleurs du thème inversé, dans les deux sens. Aucun jeton ajouté.
 
+
+## 2026-08-11 — Les critères de publication appartiennent au comptoir, pas à l'historique du créateur
+
+`ReservationDuCreateurRead` déclarait `required_mention` et `required_geotag`,
+que la structure du service ne portait pas : `GET /me/bookings` levait à la
+validation de réponse, sur chaque appel. L'exception passe **hors** de
+l'intergiciel CORS, qui n'a donc jamais posé son en-tête — l'app lisait un refus
+de CORS et cherchait la panne du mauvais côté.
+
+Ils étaient tombés du mauvais côté. Le comptoir en a l'usage : c'est lui qui
+vérifiera la publication, et `ReservationDuCommerceRead` les omettait alors que
+le service les portait déjà — l'écran de journée les affichait vides, sans
+erreur. Le créateur, lui, lit ses obligations sur la contrepartie, où elles sont
+figées à sa création (SPEC §2.4) ; les rendre aussi sur la réservation
+donnerait une seconde source, qui dérive dès que le salon change ses exigences.
+
+Le défaut symétrique de celui des photos, et il coûte plus cher : un schéma
+d'écriture qui ignore un champ rend un 200 mensonger, un schéma de lecture qui
+en exige un rend un 500 permanent. `test_schemas_ecrits.py` éprouve désormais
+les deux sens, sur les vingt-six couples `X` / `XRead` du projet.
+
+Ce que la garde ne couvre pas : le contrat entre l'API et `app/src/api/types.ts`,
+écrit à la main. `openapi.json` ne porte que les chemins, par choix assumé — et
+c'est ce qui a laissé `ReservationDuCommerce` déclarer côté app deux champs que
+l'API ne rendait pas.
+
+## 2026-08-11 — Les comptes des issues du fil sortent du même tamis que la liste
+
+« Élargir à 5 km · 9 salons », « Retirer le filtre Spa · 34 salons » : la
+passation exige qu'aucune issue ne se propose à l'aveugle, donc que le chiffre
+soit vrai. Or le seul filtre du fil qui ne s'exprime pas en SQL — reste-t-il un
+créneau — est aussi le plus discriminant. Un compte pris sur la requête
+géographique seule aurait annoncé des salons complets.
+
+Le fil interroge donc **une fois au rayon le plus large configuré**, sans filtre
+de catégorie, applique le contrôle de disponibilité une fois, puis découpe : la
+liste, les comptes par catégorie, les comptes par rayon. Ils ne peuvent pas se
+contredire, puisqu'ils sortent du même ensemble. Compter chaque rayon par une
+requête de plus aurait refait tout le contrôle de disponibilité à chaque fois.
+
+Le coût est réel et assumé : le contrôle porte désormais sur les lignes du plus
+large rayon configuré, pas du rayon demandé. À revoir si `feed_radius_options_metres`
+s'allonge, ou le jour où le fil se paginera.
+
+Deux règles que les tests figent, chacune éprouvée sur sa mutation :
+
+- Les comptes par catégorie **ignorent le filtre de catégorie en vigueur** —
+  « Retirer le filtre Spa » se lit depuis le filtre Spa, et les appliquer à la
+  requête ferait disparaître les autres pastilles au premier clic.
+- Les comptes par rayon **conservent** ce filtre. Les deux issues d'un fil vide
+  ne se mélangent pas : relâcher les deux à la fois annoncerait un total que ni
+  l'une ni l'autre ne rend.
+
+Aucune issue n'est proposée à un créateur sans compte social : élargir n'y
+changerait rien, et le proposer enverrait chercher ailleurs une cause qui est
+ici. C'est le même piège de l'ensemble vide que les obstacles ont déjà connu.
+
+**Recherche et rangées thématiques : non implémentées, et à trancher.** Le point
+3 de la campagne les demande, la passation les exclut. `components.md` §« ce qui
+n'existe pas » dit « pas de carrousel », `rules.md` §31 dit que les rangées de
+chips sont en `flexWrap` et « jamais en défilement horizontal », et aucune
+maquette — 03a à 03d — ne montre de champ de recherche. `api-map.md` ne connaît
+au fil que `longitude`, `latitude`, `rayon_metres` et `categorie`, avec la
+mention « **Pas de quartier, pas de curseur** ». L'entrée par quartier de la
+maquette 03d tombe sous la même exclusion, et aucun modèle de quartier n'existe
+en base.
+
+## 2026-08-11 — Une autorisation refusée ne se redemande pas, elle se réactive
+
+`usePosition` avalait tout : refus, absence de service, panne du relevé,
+ressortaient en « pas de position ». Le bouton « Share my location » restait
+offert, et après un refus il ne produisait plus rien du tout — ni le système ni
+le navigateur ne reposent la question, et `requestForegroundPermissionsAsync`
+répond « refusé » sans rien afficher.
+
+L'état est donc **lu avant d'être demandé**. Sur un refus acquis, on ne rejoue
+pas une demande muette : on retire le bouton et on nomme le chemin exact vers le
+réglage, qui n'est pas le même dans un navigateur, sur iOS et sur Android.
+« Dans les réglages » n'aide personne.
+
+Quatre issues distinctes, parce qu'elles n'appellent pas la même conduite :
+jamais demandée (redemander), en cours (attendre), refusée (réactiver),
+indisponible (réessayer). Le relevé est borné à dix secondes : sans échéance,
+un capteur qui ne rend pas la main se lit exactement comme « rien ne se passe ».
+
+## 2026-08-11 — Le mot de passe se masque, et se relit
+
+Le champ n'avait aucun `secureTextEntry` : le mot de passe s'écrivait en clair,
+douze caractères en grand, sur le premier écran du produit. Masquer sans donner
+le moyen de relire est l'autre moitié du défaut — c'est ce qui fait ressaisir
+trois fois la même chaîne sur un clavier de téléphone.
+
+`TextField` prend donc un `secret`, avec sa bascule. Elle porte son état et pas
+seulement son action : une lecture d'écran doit pouvoir dire si le mot de passe
+est visible en ce moment. Toujours masqué au montage, y compris après un échec
+de connexion.
+
+## 2026-08-11 — Le code de secours se groupe des deux côtés, sur le même jeton
+
+La créatrice lit « PAP EDB », la caissière tapait « PAPEDB ». Six caractères
+d'affilée se recomptent à chaque fois qu'on lève les yeux, et la dictée se suit
+groupe par groupe ou pas du tout.
+
+Le groupement porte sur les **positions**, pas sur ce qui est déjà saisi : groupé
+sur la valeur, le champ changerait de forme à chaque touche et les caractères
+déjà tapés glisseraient sous les doigts. `tokens.code.manualGroupSize` fait foi
+des deux côtés — deux constantes finiraient par diverger.
+
+L'écart entre groupes est porté par le conteneur, jamais par un séparateur
+dessiné : un tiret se dicterait avec le code. Et le nom accessible reste épelé
+caractère par caractère — « PAP EDB » se prononcerait.
+
+## 2026-08-11 — Une décision nomme ce sur quoi elle porte
+
+« Approve » ne disait pas ce qu'on approuvait. À l'œil, le panneau ouvert
+au-dessus le dit ; à l'oreille, la barre arrive seule, et trois boutons
+identiques d'un dossier à l'autre ne se distinguent plus.
+
+Le libellé nomme donc l'objet — la publication — et le nom accessible ajoute le
+créateur, la prestation et le commerce. Le commerce et l'arbitre gardent le
+**même** vocabulaire, règle déjà éprouvée par un test : changer le libellé de
+l'arbitre seul aurait forcé chacun à traduire l'autre.
+
+## 2026-08-11 — Le taux d'honoration s'écrit en fraction, plus en pourcentage
+
+« 29 % » s'affichait au-dessus de sa propre note, « 2 of 7 », qui vaut 28,57.
+Un seul calcul, mais arrondi à l'entier au-dessus de la fraction qu'il résume.
+Aucun arrondi ne les réconcilie : sur sept prestations, un point de pourcentage
+n'existe pas.
+
+La fraction devient le chiffre, la note dit ce qu'elle compte. C'est la règle
+que la maison applique déjà à l'activation — « 2 étapes sur 4 » se comprend,
+« 50 % » ne dit pas laquelle manque. `taux_d_honoration` reste rendu par l'API :
+il est juste, et c'est une donnée de reporting légitime.
+
+## 2026-08-11 — Confirmer une réservation mène à la liste, pas au code
+
+Deux raisons, et la seconde est une panne. La prestation est souvent dans
+plusieurs jours, et un code qui tourne toutes les trente secondes ne sert à rien
+avant d'être debout au comptoir. Surtout, la validation par le commerce est le
+comportement par défaut (SPEC §4.1) : la réservation qu'on vient de confirmer
+est en `awaiting_business`, et **le code naît à l'arrivée dans `confirmed`**.
+L'écran s'ouvrait donc sur un refus du serveur, juste après le geste le plus
+engageant du parcours.
+
+La liste confirme que la place est prise, porte la date, et c'est de là qu'on
+rouvre le code le jour venu — chemin ajouté à la campagne précédente.
+
+## 2026-08-11 — Toutes les dates passent par `format.ts`
+
+Sept endroits reformataient à la main ce que `format.ts` faisait déjà :
+`toLocaleString()` sans options rend « 11/08/2026 16:45:00 », un mois en
+chiffres que la moitié du monde lit à l'envers et des secondes sur un
+rendez-vous en salon.
+
+Une garde de source l'interdit désormais hors de `format.ts`. Elle cherche le
+**nom de la méthode**, où qu'il soit sur la ligne : les six appels s'écrivaient
+de trois façons, et une garde calée sur la première en aurait laissé passer
+deux. Deux tolérances, nommées : `format.ts` lui-même, et la clé de
+regroupement ISO de `CreneauxScreen`, qui n'est jamais affichée.
+
+Conséquence assumée : **l'horloge du comptoir suit maintenant la langue**. La
+journée la forçait sur vingt-quatre heures, à côté d'une échéance de publication
+qui passait par `formatDateTime` et s'écrivait en AM/PM — deux horloges sur le
+même écran, à Miami, où l'on compte en douze.
+
+## 2026-08-11 — Un palier fermé porte toujours un obstacle, même jamais évalué
+
+Le moteur d'éligibilité n'évalue que les couples (compte, palier) **de même
+plateforme**. Un palier TikTok chez quelqu'un qui n'a connecté qu'Instagram n'a
+donc aucun couple, donc aucun obstacle à reprocher : la fiche affichait « pas
+encore ouverte à toi » et rien d'autre. Ce n'est pas un accès sans reproche,
+c'est un accès jamais examiné.
+
+Le cas est plus fréquent que l'absence totale de compte — il suffit d'un salon
+qui compose un palier sur un réseau qu'on n'a pas — et invisible dans des tests
+qui n'emploient qu'Instagram. `no_social_account` est la bonne raison, et l'app
+la rend déjà avec la plateforme du palier : « connecte un compte TikTok »,
+jamais un « connecte un compte » qui laisserait chercher lequel.
+
+Troisième occurrence du piège de l'ensemble vide, après `creator_tiers` et le
+fil. Il valait aussi sur l'écran où l'on vient pour réserver.
+
+## 2026-08-11 — Les plateformes rattachables se comparent entre les deux dépôts
+
+`PlateformeConnectable` est écrite à la main dans `types.ts`, `PLATEFORMES_BRANCHEES`
+vit dans `providers.py`. Deux listes de la même chose, dans deux langages, que
+rien ne rapprochait — et le contrat de chemins ne pouvait pas les rapprocher :
+`openapi.json` ne porte que les routes, par choix assumé, et une plateforme
+n'est pas une route.
+
+Ce n'est pas théorique. Snapchat existe déjà en base et dans les paliers, et la
+fabrique **lève** au lieu de rendre un fournisseur muet : le jour où l'app
+l'offrirait sans que le serveur l'implémente, le bouton mènerait à une erreur
+serveur, sur l'écran dont le seul rôle est de dire quels réseaux rattacher.
+
+Un test lit les deux sources et les compare. Comparer des sources plutôt que des
+routes est inhabituel ici ; c'est le seul moyen tant que la liste ne transite
+pas par l'API, et elle n'a aucune raison d'y transiter pour deux valeurs.
+
+## 2026-08-11 — Une annulation n'est pas une panne
+
+Toutes les fins prématurées d'une requête se ressemblent à l'arrivée : `fetch`
+lève la même `AbortError`. Elles n'ont rien en commun. Une annulation par
+l'appelant est le fonctionnement normal — on change d'écran, on change de
+filtre, la requête en vol ne sert plus. Une échéance dépassée est une panne. Une
+levée inattendue est un défaut de programmation.
+
+Les trois s'écrivaient `console.error` : `/businesses` et
+`/business/{id}/collaborations` remplissaient la console d'erreurs rouges à
+chaque geste, et la vraie panne s'y noyait. Ce qui rend un journal inutile est
+le bruit, pas le silence.
+
+Trouvé en écrivant le test : **un signal déjà avorté n'émettait plus rien**.
+L'appelant peut annuler avant que la requête parte — le temps de lire le
+coffre, un écran a pu être quitté. S'abonner ne suffisait pas, l'événement était
+passé : la requête partait pour de bon et attendait ses quinze secondes.

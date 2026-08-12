@@ -38,6 +38,7 @@ import {
   type VerificationDuCompte,
 } from '../api';
 import { Apparition, Button, DataRow, StatusMessage, Texte, vibration } from '../components';
+import { formatDate, formatNumber } from '../format';
 import { useI18n } from '../i18n';
 import { translateErrorCode } from '../i18n/errors';
 import { useRattachement } from '../shell/rattacherUnReseau';
@@ -52,7 +53,7 @@ type Vue = { audience: AudienceDuCompte[]; verification: VerificationDuCompte[] 
 
 export function AudienceScreen() {
   const { api, messageDErreur } = useApi();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   const requete = useRequete<Vue>(
     async (signal) => ({
@@ -92,7 +93,10 @@ export function AudienceScreen() {
                   value={
                     compte.followers_count === null
                       ? t('parcours.jamaisMesure')
-                      : String(compte.followers_count)
+                      // Séparateur de milliers : « 128000 » se compte à la
+                      // main, chiffre par chiffre, sur le nombre qui est la
+                      // raison d'être de l'écran.
+                      : formatNumber(compte.followers_count, locale)
                   }
                   chiffre={compte.followers_count !== null}
                 />
@@ -101,7 +105,7 @@ export function AudienceScreen() {
                   value={
                     compte.media_count === null
                       ? t('parcours.jamaisMesure')
-                      : String(compte.media_count)
+                      : formatNumber(compte.media_count, locale)
                   }
                   chiffre={compte.media_count !== null}
                 />
@@ -117,7 +121,7 @@ export function AudienceScreen() {
                 <Texte variante="type.caption" couleur="text.muted" testID="date-du-releve">
                   {compte.captured_at
                     ? t('parcours.mesureLe', {
-                        date: new Date(compte.captured_at).toLocaleDateString(),
+                        date: formatDate(compte.captured_at, locale, 'UTC'),
                       })
                     : t('parcours.jamaisMesure')}
                 </Texte>
@@ -138,7 +142,7 @@ export function AudienceScreen() {
                       // Le texte ne contient aucune durée annoncée : ni
                       // objectif, ni estimation. Seulement la date de départ.
                       body={`${t('parcours.verificationEnCours')} ${t('parcours.verificationDepuis', {
-                        date: new Date(controle.started_at).toLocaleDateString(),
+                        date: formatDate(controle.started_at, locale, 'UTC'),
                       })}`}
                     />
                     <Texte variante="type.caption" couleur="text.secondary">
@@ -180,7 +184,7 @@ function Rattacher({
   /** Le compte existe côté serveur : on relit plutôt que de le croire. */
   onFait: () => void;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { ouverture, echec, connecter } = useRattachement({
     api,
     traduire: (code) => translateErrorCode(t, code),

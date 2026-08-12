@@ -69,12 +69,54 @@ class CommerceDuFil:
 
 
 @dataclass(frozen=True, slots=True)
+class CompteParCategorie:
+    """Ce qu'une catégorie rapporterait, dans le rayon courant.
+
+    Compté **sans** le filtre de catégorie en vigueur : c'est ce qui permet
+    d'écrire « Retirer le filtre Spa · 34 salons » et de n'afficher que les
+    pastilles qui mènent quelque part.
+    """
+
+    categorie: BusinessCategory
+    commerces: int
+    prestations: int
+
+
+@dataclass(frozen=True, slots=True)
+class CompteParRayon:
+    """Ce qu'un élargissement rapporterait, filtre de catégorie conservé.
+
+    Seuls les rayons **plus larges** que le rayon courant sont proposés :
+    rétrécir n'est pas une issue à un fil vide.
+    """
+
+    rayon_metres: int
+    commerces: int
+    prestations: int
+
+
+@dataclass(frozen=True, slots=True)
 class Fil:
     commerces: tuple[CommerceDuFil, ...]
     #: Ce qui empêche d'accéder aux paliers non représentés. Vide quand tous
     #: sont accessibles. C'est ce qui permet à l'app de distinguer « il n'y a
     #: rien près de chez toi » de « tu n'as pas encore accès ».
     obstacles: tuple[eligibility.Obstacle, ...]
+    #: Le rayon réellement appliqué. Demandé ou par défaut, l'app ne le devine
+    #: pas : c'est lui qui s'écrit dans « Wynwood · rayon 3 km ».
+    rayon_metres: int
+    #: Le nombre de prestations du fil rendu. Le titre l'annonce, et le compter
+    #: dans l'app obligerait à additionner ce qu'elle vient de recevoir — juste
+    #: aujourd'hui, faux le jour où la liste sera paginée.
+    total_prestations: int
+    #: Les catégories qui mènent quelque part, dans le rayon courant. Une
+    #: catégorie sans commerce réservable n'y figure pas : une pastille qui
+    #: ouvre sur du vide est une action impossible, et `components.md` §1 les
+    #: retire au lieu de les griser.
+    categories: tuple[CompteParCategorie, ...]
+    #: Les élargissements possibles, avec leur gain. Vide quand aucun rayon
+    #: configuré n'est plus large que celui en vigueur.
+    rayons: tuple[CompteParRayon, ...]
 
 
 async def fil_du_createur(
@@ -87,6 +129,14 @@ async def fil_du_createur(
 ) -> Fil:
     settings = get_settings()
     rayon = rayon_metres or settings.feed_radius_metres
+    # Les élargissements proposés, et le rayon le plus large à balayer. On
+    # interroge une fois au plus large et on découpe ensuite : compter chaque
+    # rayon par une requête de plus multiplierait le contrôle de disponibilité,
+    # qui est déjà le calcul le plus cher du fil.
+    elargissements = tuple(
+        sorted(option for option in settings.feed_radius_options_metres if option > rayon)
+    )
+    balayage = max((rayon, *elargissements))
 
     verdict = await eligibility.evaluer_createur(session, creator_id)
     accessibles = verdict.couples_accessibles
@@ -95,7 +145,18 @@ async def fil_du_createur(
         # Aucun palier ouvert : le fil est vide, et il faut dire pourquoi.
         # Rendre une liste vide sans obstacle laisserait croire qu'il n'y a
         # aucun commerce, ce qui est faux et décourageant.
-        return Fil(commerces=(), obstacles=_obstacles_les_plus_proches(verdict))
+        #
+        # Aucun compte non plus : élargir le rayon ou changer de catégorie n'y
+        # changerait rien, et proposer ces issues enverrait chercher ailleurs
+        # une cause qui est ici. Les listes sont vides, délibérément.
+        return Fil(
+            commerces=(),
+            obstacles=_obstacles_les_plus_proches(verdict),
+            rayon_metres=rayon,
+            total_prestations=0,
+            categories=(),
+            rayons=(),
+        )
 
     paliers_ouverts = {tier_id for _, tier_id in accessibles}
     #: Quel compte social ouvre quel palier. La réservation en aura besoin :
@@ -140,26 +201,46 @@ async def fil_du_createur(
             .where(
                 Business.status == BusinessStatus.ACTIVE,
                 Business.geo.is_not(None),
-                sa.func.ST_DWithin(sa.cast(Business.geo, Geography), point, rayon),
+                # **Le balayage, pas le rayon demandé.** Les comptes annoncés
+                # sur les issues — « Élargir à 5 km · 9 salons » — doivent
+                # sortir du même tamis que la liste, sinon ils promettent ce
+                # que l'écran suivant ne rendra pas. Une seconde requête plus
+                # large les rendrait vrais aussi ; elle referait aussi tout le
+                # contrôle de disponibilité.
+                sa.func.ST_DWithin(sa.cast(Business.geo, Geography), point, balayage),
                 TierOffer.is_active.is_(True),
                 Tier.is_active.is_(True),
                 Tier.id.in_(paliers_ouverts),
                 CatalogItem.is_available.is_(True),
                 sa.or_(parent.id.is_(None), parent.is_available.is_(True)),
-                *([Business.category == categorie] if categorie else []),
+                # Le filtre de catégorie ne s'applique pas ici non plus : les
+                # pastilles annoncent ce que **les autres** catégories
+                # rapporteraient, et le filtre les aurait effacées.
             )
             .order_by(distance, Business.id, CatalogItem.name)
         )
     ).all()
 
+    # Toutes les lignes réservables du balayage, filtres d'affichage exclus.
+    # Le contrôle de disponibilité ne se fait qu'ici : la liste et chacun des
+    # comptes se découpent ensuite dans le même ensemble, et ne peuvent donc
+    # pas se contredire.
+    reservables = [
+        ligne
+        for ligne in lignes
+        if not ligne.requires_booking or await _reste_un_creneau(session, ligne)
+    ]
+
+    categories = _compter_par_categorie(reservables, rayon)
+    rayons = _compter_par_rayon(reservables, elargissements, categorie)
+
     par_commerce: dict[uuid.UUID, list] = {}
     entetes: dict[uuid.UUID, tuple] = {}
 
-    for ligne in lignes:
-        if ligne.requires_booking and not await _reste_un_creneau(session, ligne):
-            # Plus aucun créneau dans l'horizon : l'item n'existe pas pour ce
-            # créateur aujourd'hui. C'est le filtre le plus coûteux, donc le
-            # dernier — tout ce qui pouvait être écarté par une requête l'a été.
+    for ligne in reservables:
+        if ligne.distance > rayon:
+            continue
+        if categorie is not None and ligne.category != categorie:
             continue
 
         entetes.setdefault(
@@ -204,7 +285,68 @@ async def fil_du_createur(
         # story mais pas au palier reel doit savoir ce qui lui manque pour le
         # second, sinon il croit avoir tout vu.
         obstacles=_obstacles_les_plus_proches(verdict),
+        rayon_metres=rayon,
+        total_prestations=sum(len(commerce.items) for commerce in commerces),
+        categories=categories,
+        rayons=rayons,
     )
+
+
+def _compter_par_categorie(reservables: list, rayon: int) -> tuple[CompteParCategorie, ...]:
+    """Ce que chaque catégorie rapporte dans le rayon courant.
+
+    **Sans le filtre de catégorie en vigueur** : une pastille dit ce qu'elle
+    ouvrirait, pas ce que la sélection actuelle contient. Les catégories sans
+    commerce réservable n'apparaissent pas — une pastille qui ouvre sur du vide
+    est une action impossible, et on les retire au lieu de les griser.
+
+    L'ordre suit celui de l'énumération, pas le nombre : des pastilles qui
+    changent de place à chaque rafraîchissement se repèrent mal.
+    """
+    commerces: dict[BusinessCategory, set] = {}
+    prestations: dict[BusinessCategory, int] = {}
+
+    for ligne in reservables:
+        if ligne.distance > rayon:
+            continue
+        commerces.setdefault(ligne.category, set()).add(ligne.id)
+        prestations[ligne.category] = prestations.get(ligne.category, 0) + 1
+
+    return tuple(
+        CompteParCategorie(
+            categorie=categorie,
+            commerces=len(commerces[categorie]),
+            prestations=prestations[categorie],
+        )
+        for categorie in BusinessCategory
+        if categorie in commerces
+    )
+
+
+def _compter_par_rayon(
+    reservables: list,
+    elargissements: tuple[int, ...],
+    categorie: BusinessCategory | None,
+) -> tuple[CompteParRayon, ...]:
+    """Ce que chaque élargissement rapporte, **filtre de catégorie conservé**.
+
+    Les deux issues d'un fil vide ne se mélangent pas : « Élargir à 5 km »
+    garde le filtre Spa, « Retirer le filtre Spa » garde le rayon. Compter l'un
+    en relâchant l'autre annoncerait un total que ni l'une ni l'autre ne rend.
+    """
+    retenues = [ligne for ligne in reservables if categorie is None or ligne.category == categorie]
+
+    comptes = []
+    for option in elargissements:
+        dedans = [ligne for ligne in retenues if ligne.distance <= option]
+        comptes.append(
+            CompteParRayon(
+                rayon_metres=option,
+                commerces=len({ligne.id for ligne in dedans}),
+                prestations=len(dedans),
+            )
+        )
+    return tuple(comptes)
 
 
 async def _reste_un_creneau(session: AsyncSession, ligne) -> bool:

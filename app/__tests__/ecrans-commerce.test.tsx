@@ -613,7 +613,10 @@ describe('journée du commerce', () => {
     await waitFor(() => expect(screen.getByTestId('reservation-r1')).toBeTruthy());
     // 14:00 UTC = 10:00 à Miami en heure d'été. C'est l'heure du salon qui
     // compte, pas celle du serveur.
-    expect(screen.getByText('10:00')).toBeTruthy();
+    //
+    // Et l'horloge suit la langue : la journée la forçait sur vingt-quatre
+    // heures, à côté d'une échéance qui s'écrivait en AM/PM sur le même écran.
+    expect(screen.getByText('10:00 AM')).toBeTruthy();
   });
 
   it('n’invente pas d’heure sur un droit sans créneau', async () => {
@@ -768,6 +771,41 @@ describe('activation', () => {
 // --------------------------------------------------------------------------
 
 describe('arbitrage', () => {
+  /**
+   * Le nom accessible d'une issue, tel que la barre le porte.
+   *
+   * « Approve » seul ne disait pas ce qu'on approuvait : trois boutons
+   * identiques d'un dossier à l'autre, et rien pour les distinguer une fois la
+   * barre lue hors de son panneau.
+   */
+  const surLeDossier = (issue: string) =>
+    en.admin.issueSurDossier
+      .replace('{{issue}}', issue)
+      .replace('{{createur}}', DOSSIER_EN_ARBITRAGE.creator_handle)
+      .replace('{{prestation}}', DOSSIER_EN_ARBITRAGE.item_name)
+      .replace('{{commerce}}', DOSSIER_EN_ARBITRAGE.business_name);
+
+  it('nomme ce sur quoi porte chaque issue', async () => {
+    await monter(
+      <ArbitrageScreen />,
+      clientDe({ '/admin/collaborations/review': [DOSSIER_EN_ARBITRAGE] }),
+      'admin',
+    );
+    await waitFor(() => expect(screen.getByTestId('dossier-k1')).toBeTruthy());
+
+    // Le libellé visible nomme l'objet, et le nom accessible nomme le dossier.
+    expect(en.admin.issueApprove).toMatch(/publication/i);
+    const bouton = screen.getByLabelText(surLeDossier(en.admin.issueApprove));
+    expect(bouton).toBeTruthy();
+    for (const attendu of [
+      DOSSIER_EN_ARBITRAGE.creator_handle,
+      DOSSIER_EN_ARBITRAGE.item_name,
+      DOSSIER_EN_ARBITRAGE.business_name,
+    ]) {
+      expect(bouton.props.accessibilityLabel).toContain(attendu);
+    }
+  });
+
   it('offre l’approbation sans motif, et rien d’autre', async () => {
     await monter(
       <ArbitrageScreen />,
@@ -776,9 +814,9 @@ describe('arbitrage', () => {
     );
     await waitFor(() => expect(screen.getByTestId('dossier-k1')).toBeTruthy());
 
-    expect(screen.getByLabelText(en.admin.issueApprove)).toBeTruthy();
-    expect(screen.queryByLabelText(en.admin.issueResubmit)).toBeNull();
-    expect(screen.queryByLabelText(en.admin.issueUnfulfilled)).toBeNull();
+    expect(screen.getByLabelText(surLeDossier(en.admin.issueApprove))).toBeTruthy();
+    expect(screen.queryByLabelText(surLeDossier(en.admin.issueResubmit))).toBeNull();
+    expect(screen.queryByLabelText(surLeDossier(en.admin.issueUnfulfilled))).toBeNull();
   });
 
   it('ouvre les deux autres issues dès qu’un motif est choisi', async () => {
@@ -791,9 +829,9 @@ describe('arbitrage', () => {
 
     await fireEvent.press(screen.getByText(en.commerce.motifMention));
 
-    expect(screen.getByLabelText(en.admin.issueResubmit)).toBeTruthy();
+    expect(screen.getByLabelText(surLeDossier(en.admin.issueResubmit))).toBeTruthy();
     // La clôture n'existe que là. Le commerce ne la voit nulle part.
-    expect(screen.getByLabelText(en.admin.issueUnfulfilled)).toBeTruthy();
+    expect(screen.getByLabelText(surLeDossier(en.admin.issueUnfulfilled))).toBeTruthy();
   });
 
   it('montre ce sur quoi porte la décision, pas seulement un pseudonyme', async () => {
@@ -865,7 +903,7 @@ describe('arbitrage', () => {
     await waitFor(() => expect(screen.getByTestId('dossier-k1')).toBeTruthy());
 
     await fireEvent.press(screen.getByText(en.commerce.motifMention));
-    await fireEvent.press(screen.getByLabelText(en.admin.issueResubmit));
+    await fireEvent.press(screen.getByLabelText(surLeDossier(en.admin.issueResubmit)));
 
     await waitFor(() => expect(envois).toHaveLength(1));
     expect(envois[0]).toMatchObject({
@@ -975,12 +1013,35 @@ describe('reporting', () => {
     expect(screen.queryByText('0 %')).toBeNull();
   });
 
-  it('affiche le taux en pourcentage quand il existe', async () => {
+  it('rend le taux en fraction, jamais en pourcentage', async () => {
     // Le pendant : sans lui, un écran qui écrirait toujours « rien servi »
     // passerait le test précédent.
+    //
+    // Et la fraction plutôt que le pourcentage, parce que les deux ensemble se
+    // contredisaient : « 29 % » s'affichait au-dessus de « 2 of 7 », qui vaut
+    // 28,57. Un seul calcul, arrondi à l'entier au-dessus de sa propre
+    // fraction — aucun arrondi ne peut les réconcilier.
     await monter(<ReportingScreen businessId="b1" />, clientDe({ '/reporting': REPORTING }));
     await waitFor(() => expect(screen.getByTestId('taux')).toBeTruthy());
-    expect(screen.getByText('78 %')).toBeTruthy();
+
+    expect(screen.getByText('7 / 9')).toBeTruthy();
+    expect(screen.queryByText(/%/)).toBeNull();
+  });
+
+  it('ne contredit jamais sa propre fraction, quel que soit le rapport', async () => {
+    // Le cas relevé, à l'identique : 2 sur 7 s'arrondit à 29, la fraction dit
+    // 28,57. C'est la forme même du défaut, pas un exemple choisi.
+    await monter(
+      <ReportingScreen businessId="b1" />,
+      clientDe({
+        '/reporting': { ...REPORTING, publications: 2, consommations: 7, taux_d_honoration: 0.2857 },
+      }),
+    );
+    await waitFor(() => expect(screen.getByTestId('taux')).toBeTruthy());
+
+    expect(screen.getByText('2 / 7')).toBeTruthy();
+    expect(screen.queryByText('29 %')).toBeNull();
+    expect(screen.queryByText(/%/)).toBeNull();
   });
 });
 

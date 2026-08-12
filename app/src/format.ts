@@ -39,6 +39,27 @@ export function formatDateTime(
   }).format(new Date(isoUtc));
 }
 
+/**
+ * Une heure seule, à la minute, dans le fuseau du commerce.
+ *
+ * Le planning du comptoir n'a pas besoin de la date : toute la colonne est du
+ * même jour, et la répéter à chaque ligne noierait l'heure qu'on cherche.
+ *
+ * **L'horloge suit la langue**, comme partout ailleurs. La journée du comptoir
+ * la forçait sur vingt-quatre heures, à côté d'une échéance de publication qui
+ * passait par `formatDateTime` et s'écrivait donc en AM/PM : deux horloges sur
+ * le même écran, à Miami, où l'on compte en douze.
+ */
+export function formatHeure(
+  isoUtc: string,
+  locale: SupportedLocale,
+  timeZone: string,
+): string {
+  return new Intl.DateTimeFormat(locale, { timeStyle: 'short', timeZone }).format(
+    new Date(isoUtc),
+  );
+}
+
 export function formatDate(isoUtc: string, locale: SupportedLocale, timeZone: string): string {
   return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeZone }).format(
     new Date(isoUtc),

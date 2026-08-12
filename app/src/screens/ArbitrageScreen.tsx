@@ -282,6 +282,26 @@ function TableDArbitrage({
   );
 }
 
+/**
+ * Une issue, rattachée à son dossier.
+ *
+ * Le créateur, la prestation, le commerce : les trois choses qui distinguent
+ * deux dossiers de la file. Le nom du commerce vient en dernier — c'est le
+ * titre du panneau, donc le plus redondant des trois.
+ */
+export function surCeDossier(
+  t: (cle: string, valeurs?: Record<string, string | number>) => string,
+  ligne: LigneDeFile,
+  issue: string,
+): string {
+  return t('admin.issueSurDossier', {
+    issue,
+    createur: ligne.creator_handle ?? ligne.creator_first_name ?? '—',
+    prestation: ligne.item_name,
+    commerce: ligne.business_name,
+  });
+}
+
 /** « 2 d », « 6 h ». Ce qui reste avant l'échéance, jamais une date brute. */
 function quandRestant(echeance: string): string {
   const heures = Math.round((new Date(echeance).getTime() - Date.now()) / 3_600_000);
@@ -365,7 +385,14 @@ function Dossier({ ligne, onTranche }: { ligne: LigneDeFile; onTranche: () => vo
       {echec ? <StatusMessage level="danger" body={echec} testID="echec" /> : null}
 
       {/* `DecisionBar` retire d'elle-même les décisions qui exigent un motif
-          tant qu'il manque. L'approbation reste toujours offerte. */}
+          tant qu'il manque. L'approbation reste toujours offerte.
+
+          **Chaque issue nomme son objet.** « Approve » seul ne disait pas ce
+          qu'on approuvait : à l'œil, le panneau au-dessus le dit ; à l'oreille
+          et dans un journal d'accessibilité, la barre arrive seule, et trois
+          boutons identiques d'un dossier à l'autre ne se distinguent plus. Le
+          libellé nomme donc la publication, et le nom accessible ajoute de qui
+          et de quelle prestation il s'agit. */}
       <DecisionBar
         testID={`decisions-${ligne.collaboration_id}`}
         motif={motif ?? undefined}
@@ -373,6 +400,7 @@ function Dossier({ ligne, onTranche }: { ligne: LigneDeFile; onTranche: () => vo
           {
             cle: 'approve',
             label: t('admin.issueApprove'),
+            accessibilityLabel: surCeDossier(t, ligne, t('admin.issueApprove')),
             touche: 'A',
             approbation: true,
             onPress: () => void arbitrer('approve'),
@@ -380,12 +408,14 @@ function Dossier({ ligne, onTranche }: { ligne: LigneDeFile; onTranche: () => vo
           {
             cle: 'resubmit',
             label: t('admin.issueResubmit'),
+            accessibilityLabel: surCeDossier(t, ligne, t('admin.issueResubmit')),
             touche: 'R',
             onPress: () => void arbitrer('resubmit'),
           },
           {
             cle: 'unfulfilled',
             label: t('admin.issueUnfulfilled'),
+            accessibilityLabel: surCeDossier(t, ligne, t('admin.issueUnfulfilled')),
             touche: 'N',
             onPress: () => void arbitrer('unfulfilled'),
           },

@@ -528,3 +528,163 @@ describe('chemins du client', () => {
     expect(enDur).toEqual([]);
   });
 });
+
+// --------------------------------------------------------------------------
+// les plateformes qu'on peut réellement rattacher
+// --------------------------------------------------------------------------
+
+/**
+ * `PlateformeConnectable` est écrite à la main dans `types.ts`, et le serveur
+ * tient la sienne dans `PLATEFORMES_BRANCHEES`. Deux listes de la même chose,
+ * dans deux langages, que rien ne rapprochait.
+ *
+ * Ce n'est pas un défaut théorique. Snapchat existe déjà en base et dans les
+ * paliers, et la fabrique **lève** au lieu de rendre un fournisseur muet : le
+ * jour où l'app l'offrirait sans que le serveur l'implémente, le bouton
+ * mènerait à une erreur serveur — sur l'écran dont le seul rôle est de dire
+ * quels réseaux rattacher. Et le jour où l'accès partenaire arrive, la liste
+ * du serveur bougera sans que l'app le sache.
+ *
+ * Le contrat de chemins ne pouvait pas l'attraper : `openapi.json` ne porte
+ * que les routes, par choix assumé, et une plateforme n'est pas une route.
+ */
+describe('les plateformes connectables', () => {
+  /** Les valeurs de l'union TypeScript, lues dans la source. */
+  function coteApp(): string[] {
+    const source = readFileSync(join(__dirname, '..', 'src', 'api', 'types.ts'), 'utf-8');
+    const declaration = /export type PlateformeConnectable =([^;]+);/.exec(source);
+    if (declaration === null) throw new Error('PlateformeConnectable introuvable');
+    return [...declaration[1].matchAll(/'([a-z_]+)'/g)].map((trouve) => trouve[1]).sort();
+  }
+
+  /** Celles que la fabrique du serveur accepte. */
+  function coteServeur(): string[] {
+    const source = readFileSync(
+      join(__dirname, '..', '..', 'api', 'app', 'integrations', 'providers.py'),
+      'utf-8',
+    );
+    const declaration = /PLATEFORMES_BRANCHEES\s*=\s*frozenset\(\{([^}]+)\}\)/.exec(source);
+    if (declaration === null) throw new Error('PLATEFORMES_BRANCHEES introuvable');
+    return [...declaration[1].matchAll(/Platform\.([A-Z_]+)/g)]
+      .map((trouve) => trouve[1].toLowerCase())
+      .sort();
+  }
+
+  it('sont exactement les mêmes des deux côtés', () => {
+    expect(coteApp()).toEqual(coteServeur());
+  });
+
+  it('ne sont pas vides des deux côtés', () => {
+    // Sans cela, une expression régulière qui cesserait de trouver quoi que ce
+    // soit rendrait le test vert en comparant deux listes vides.
+    expect(coteApp().length).toBeGreaterThan(0);
+    expect(coteServeur().length).toBeGreaterThan(0);
+  });
+});
+
+// --------------------------------------------------------------------------
+// ce qui s'écrit dans la console, et ce qui ne s'y écrit pas
+// --------------------------------------------------------------------------
+
+/**
+ * Une annulation au changement d'écran est le fonctionnement normal.
+ *
+ * Toutes les fins prématurées se ressemblent à l'arrivée — `fetch` lève la
+ * même `AbortError` — et n'ont rien en commun. `/businesses` et
+ * `/business/{id}/collaborations` remplissaient la console d'erreurs rouges à
+ * chaque changement d'onglet et de filtre, et la vraie panne s'y noyait. Ce
+ * qui rend un journal inutile est le bruit, pas le silence.
+ */
+describe('le journal des requêtes interrompues', () => {
+  function client(fetchImpl: typeof fetch, delaiMs?: number) {
+    return new ApiClient({ baseUrl: 'https://api.test', coffre: coffre(), fetchImpl, delaiMs });
+  }
+
+  /** Ce que `fetch` fait d'un signal déjà avorté, ou avorté pendant l'attente. */
+  const suitLeSignal = (async (_url: RequestInfo | URL, init?: RequestInit) =>
+    new Promise<Response>((_resoudre, rejeter) => {
+      const signal = init?.signal;
+      const abandonner = () => rejeter(Object.assign(new Error('aborted'), { name: 'AbortError' }));
+      if (signal?.aborted) abandonner();
+      else signal?.addEventListener('abort', abandonner);
+    })) as unknown as typeof fetch;
+
+  let erreurs: jest.SpyInstance;
+  let avertissements: jest.SpyInstance;
+
+  beforeEach(() => {
+    erreurs = jest.spyOn(console, 'error').mockImplementation(() => {});
+    avertissements = jest.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterEach(() => jest.restoreAllMocks());
+
+  it('ne crie pas quand c’est l’appelant qui a annulé en vol', async () => {
+    let partie: () => void = () => {};
+    const attendLAnnulation = (async (_url: RequestInfo | URL, init?: RequestInit) =>
+      new Promise<Response>((_resoudre, rejeter) => {
+        partie = () => {};
+        init?.signal?.addEventListener('abort', () =>
+          rejeter(Object.assign(new Error('aborted'), { name: 'AbortError' })),
+        );
+        partie();
+      })) as unknown as typeof fetch;
+
+    const horloge = new AbortController();
+    const promesse = client(attendLAnnulation).request('/api/v1/businesses', {
+      signal: horloge.signal,
+    });
+    // Le temps que la requête parte réellement : le coffre se lit d'abord.
+    await Promise.resolve();
+    await Promise.resolve();
+    horloge.abort();
+
+    await expect(promesse).rejects.toBeInstanceOf(NetworkError);
+    expect(erreurs).not.toHaveBeenCalled();
+    expect(avertissements).not.toHaveBeenCalled();
+  });
+
+  it('n’envoie même pas une requête déjà annulée', async () => {
+    // L'appelant peut annuler avant que la requête parte — le temps de lire le
+    // coffre, un écran a pu être quitté. S'abonner ne suffit pas : l'événement
+    // est passé, et la requête partirait pour de bon, à attendre son échéance.
+    const horloge = new AbortController();
+    horloge.abort();
+    const appels: string[] = [];
+    const compte = (async (url: RequestInfo | URL, init?: RequestInit) => {
+      appels.push(String(url));
+      return suitLeSignal(url, init);
+    }) as unknown as typeof fetch;
+
+    await expect(
+      client(compte).request('/api/v1/businesses', { signal: horloge.signal }),
+    ).rejects.toBeInstanceOf(NetworkError);
+
+    expect(erreurs).not.toHaveBeenCalled();
+    expect(avertissements).not.toHaveBeenCalled();
+  });
+
+  it('distingue une échéance dépassée, sans la cacher', async () => {
+    // Le serveur a accepté la connexion et n'a pas répondu. C'est une panne,
+    // pas un défaut de programmation : elle se dit, à un autre niveau.
+    await expect(
+      client(suitLeSignal, 5).request('/api/v1/businesses'),
+    ).rejects.toBeInstanceOf(NetworkError);
+
+    expect(avertissements).toHaveBeenCalled();
+    expect(erreurs).not.toHaveBeenCalled();
+  });
+
+  it('crie encore sur ce que personne n’a demandé', async () => {
+    // Le pendant, et il compte : un client devenu muet ferait passer un
+    // `fetch` mal lié pour « vérifiez votre connexion », sans rien dans la
+    // console ni dans l'onglet réseau. C'est arrivé, et c'est ce que le
+    // journal existe pour éviter.
+    const casse = (async () => {
+      throw new TypeError('Illegal invocation');
+    }) as unknown as typeof fetch;
+
+    await expect(client(casse).request('/api/v1/businesses')).rejects.toBeInstanceOf(NetworkError);
+    expect(erreurs).toHaveBeenCalled();
+  });
+});
