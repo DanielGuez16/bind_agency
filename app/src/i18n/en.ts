@@ -487,6 +487,11 @@ export const en = {
     stockageWeb: 'Browser storage — development only',
   },
   composition: {
+    palierPropose: 'Suggested: {{palier}}',
+    palierProposeAide: 'From this service’s price and where it sits in your catalogue. You decide.',
+    palierPlusExigeant: 'You ask for {{retenu}} where {{propose}} was suggested. Fewer creators qualify — {{abonnes}} followers instead of {{proposeAbonnes}}.',
+    palierMoinsExigeant: 'You ask for {{retenu}} where {{propose}} was suggested. One of your higher-priced services for your lightest commitment.',
+    palierSansAvis: 'Add a third price to your catalogue and BIND will suggest a tier for each service.',
     etatPrestations: '{{count}} services',
     etatUnePrestation: '1 service',
     etatAucunePrestation: 'Nothing yet',

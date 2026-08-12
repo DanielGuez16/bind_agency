@@ -1177,3 +1177,144 @@ describe('les rapports, après la campagne 2', () => {
     expect(screen.getByTestId('reporting-vide')).toHaveTextContent(/nothing to set up/i);
   });
 });
+
+// --------------------------------------------------------------------------
+// la proposition de palier, sur l'écran du catalogue
+// --------------------------------------------------------------------------
+
+describe('le conseil de palier', () => {
+  /** Trois prix distincts : le minimum pour qu'une distribution existe. */
+  const CATALOGUE = [
+    { ...ITEM, id: 'bas', name: 'Pose vernis', price_cents: 2_000 },
+    { ...ITEM, id: 'milieu', name: 'Manucure', price_cents: 5_000 },
+    { ...ITEM, id: 'haut', name: 'Soin complet', price_cents: 12_000 },
+  ];
+  const TROIS_PALIERS = [
+    { ...PALIER, id: 't1', content_format: 'story', min_followers: 1_000 },
+    { ...PALIER, id: 't2', content_format: 'post', min_followers: 10_000 },
+    { ...PALIER, id: 't3', content_format: 'reel', min_followers: 50_000 },
+  ];
+
+  function catalogueDe(offres: Record<string, unknown>[]) {
+    return clientDe({
+      '/catalog-items': CATALOGUE,
+      '/tier-offers': offres,
+      '/tiers': TROIS_PALIERS,
+    });
+  }
+
+  it('propose un palier à la prestation qui n’en a aucun', async () => {
+    // C'est là que le conseil vaut le plus : il n'y a rien d'autre à lire.
+    await monter(<CatalogueScreen businessId="b1" />, catalogueDe([]), 'merchant');
+    await waitFor(() => expect(screen.getByTestId('propose-haut')).toBeTruthy());
+
+    expect(screen.getByTestId('propose-haut')).toHaveTextContent(/REEL/);
+    expect(screen.getByTestId('propose-bas')).toHaveTextContent(/STORY/);
+  });
+
+  it('se tait quand le commerce suit le conseil', async () => {
+    // Un message qui approuve chaque ligne devient un bruit qu'on n'écoute
+    // plus, et le jour où il alerte vraiment, il est déjà invisible.
+    await monter(
+      <CatalogueScreen businessId="b1" />,
+      catalogueDe([
+        { ...OFFRE, id: 'o1', tier_id: 't3', catalog_item_id: 'haut', content_format: 'reel' },
+      ]),
+      'merchant',
+    );
+    await waitFor(() => expect(screen.getByTestId('prestation-haut')).toBeTruthy());
+
+    expect(screen.queryByTestId('conseil-haut')).toBeNull();
+    expect(screen.queryByTestId('propose-haut')).toBeNull();
+  });
+
+  it('chiffre ce que coûte un palier plus exigeant que le conseil', async () => {
+    // « Moins de créatrices » ne se mesure pas. « 50 000 abonnés au lieu de
+    // 1 000 » se mesure, et c'est le seul chiffre que le commerce peut peser.
+    await monter(
+      <CatalogueScreen businessId="b1" />,
+      catalogueDe([
+        { ...OFFRE, id: 'o1', tier_id: 't3', catalog_item_id: 'bas', content_format: 'reel' },
+      ]),
+      'merchant',
+    );
+    await waitFor(() => expect(screen.getByTestId('conseil-bas')).toBeTruthy());
+
+    // Séparés par milliers, comme partout ailleurs : « 50000 » se compte à la
+    // main, et c'est un chiffre qu'on lit pour décider.
+    const conseil = screen.getByTestId('conseil-bas');
+    expect(conseil).toHaveTextContent(/REEL/);
+    expect(conseil).toHaveTextContent(/50,000/);
+    expect(conseil).toHaveTextContent(/1,000/);
+  });
+
+  it('dit l’autre risque quand le palier est plus bas que le conseil', async () => {
+    // Une prestation de valeur contre l'engagement le plus léger : ce n'est pas
+    // une erreur, mais ce n'est pas la même décision, et elle doit se voir.
+    await monter(
+      <CatalogueScreen businessId="b1" />,
+      catalogueDe([
+        { ...OFFRE, id: 'o1', tier_id: 't1', catalog_item_id: 'haut', content_format: 'story' },
+      ]),
+      'merchant',
+    );
+    await waitFor(() => expect(screen.getByTestId('conseil-haut')).toBeTruthy());
+
+    expect(screen.getByTestId('conseil-haut')).toHaveTextContent(/lightest commitment/i);
+  });
+
+  it('ne compte pas le parent d’une gamme dans la distribution', async () => {
+    // Un parent ne se réserve pas et son prix est nul ou décoratif. Le laisser
+    // dans la distribution ajouterait un prix bas qui décalerait tous les rangs
+    // vers le haut — et le conseil se tromperait sur chaque ligne.
+    // Le prix du parent est **décoratif** — « Coloration, à partir de 90 » —
+    // et se place au milieu de la gamme. À zéro il se compenserait de
+    // lui-même : un prix de plus en bas décale les rangs d'un cran et le
+    // diviseur aussi. C'est un parent au milieu qui déplace vraiment une
+    // frontière, et c'est le cas qu'il faut éprouver.
+    const parent = {
+      ...ITEM,
+      id: 'gamme',
+      name: 'Coloration',
+      price_cents: 9_000,
+      requires_booking: false,
+      duration_minutes: null,
+    };
+    const variante = { ...CATALOGUE[0], id: 'bas', parent_item_id: 'gamme' };
+
+    await monter(
+      <CatalogueScreen businessId="b1" />,
+      clientDe({
+        '/catalog-items': [parent, variante, CATALOGUE[1], CATALOGUE[2]],
+        '/tier-offers': [],
+        '/tiers': TROIS_PALIERS,
+      }),
+      'merchant',
+    );
+    await waitFor(() => expect(screen.getByTestId('propose-haut')).toBeTruthy());
+
+    // Les trois prestations réelles gardent les trois paliers. Avec le parent
+    // compté, « bas » et « milieu » glisseraient tous deux sur story.
+    expect(screen.getByTestId('propose-bas')).toHaveTextContent(/STORY/);
+    expect(screen.getByTestId('propose-milieu')).toHaveTextContent(/POST/);
+    expect(screen.getByTestId('propose-haut')).toHaveTextContent(/REEL/);
+  });
+
+  it('ne conseille rien sur un catalogue sans distribution', async () => {
+    // Deux prix ne font pas une échelle. Conseiller quand même reviendrait à
+    // inventer, sur l'écran où le commerce prend ses décisions.
+    await monter(
+      <CatalogueScreen businessId="b1" />,
+      clientDe({
+        '/catalog-items': CATALOGUE.slice(0, 2),
+        '/tier-offers': [],
+        '/tiers': TROIS_PALIERS,
+      }),
+      'merchant',
+    );
+    await waitFor(() => expect(screen.getByTestId('prestation-bas')).toBeTruthy());
+
+    expect(screen.queryByTestId('propose-bas')).toBeNull();
+    expect(screen.queryByTestId('conseil-bas')).toBeNull();
+  });
+});

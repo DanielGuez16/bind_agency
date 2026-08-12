@@ -28,6 +28,7 @@ import {
   type ItemDuCatalogue,
   type OffreDePalier,
   type PalierOffrable,
+  type ContentFormat,
 } from '../api';
 import {
   Button,
@@ -42,6 +43,12 @@ import {
   vibration,
 } from '../components';
 import { useI18n } from '../i18n';
+import {
+  ecartAuConseil,
+  motDuPalier,
+  palierRetenu,
+  propositionsDuCatalogue,
+} from './propositionDePalier';
 import { Ecran } from './Ecran';
 import { useRequete } from './useRequete';
 
@@ -180,6 +187,48 @@ function Groupes({
     [onglet],
   );
 
+  /**
+   * Le palier proposé pour chaque prestation.
+   *
+   * Calculé sur le catalogue **entier**, une fois : la proposition dépend de la
+   * position d'un prix parmi les autres, donc la calculer ligne par ligne
+   * reviendrait à la recalculer autant de fois qu'il y a de lignes, avec le
+   * même résultat.
+   *
+   * Les parents de gamme sont écartés : ils ne se réservent pas, leur prix est
+   * nul ou décoratif, et les laisser dans la distribution tirerait tous les
+   * rangs vers le haut.
+   */
+  const propositions = useMemo(() => {
+    // **Un parent se reconnaît à ce qu'il a des enfants**, jamais à son propre
+    // `parent_item_id`, qui est nul comme celui de toute prestation de premier
+    // rang. C'est la définition qu'emploient déjà le fil et le semis : un item
+    // qui a des variantes ne se réserve pas et ne s'affiche jamais seul.
+    const parents = new Set(
+      composition.items.map((item) => item.parent_item_id).filter(Boolean) as string[],
+    );
+    return propositionsDuCatalogue(
+      composition.items
+        .filter((item) => !parents.has(item.id))
+        .map((item) => ({ id: item.id, price_cents: item.price_cents })),
+    );
+  }, [composition.items]);
+
+  /** Le format le plus exigeant réellement retenu, par prestation. */
+  const retenus = useMemo(() => {
+    const parItem = new Map<string, ContentFormat[]>();
+    for (const offre of composition.offres) {
+      if (!offre.is_active) continue;
+      parItem.set(offre.catalog_item_id, [
+        ...(parItem.get(offre.catalog_item_id) ?? []),
+        offre.content_format,
+      ]);
+    }
+    return new Map(
+      [...parItem].map(([id, formats]) => [id, palierRetenu(formats)] as const),
+    );
+  }, [composition.offres]);
+
   const groupes = useMemo(() => {
     const parItem = new Map<string, OffreDePalier[]>();
     for (const offre of composition.offres) {
@@ -233,6 +282,9 @@ function Groupes({
                 item={item}
                 businessId={businessId}
                 onChange={onChange}
+                propose={propositions.get(item.id)}
+                retenu={retenus.get(item.id)}
+                paliers={composition.paliers}
               />
             ))}
           </View>
@@ -252,6 +304,11 @@ function Groupes({
               item={item}
               businessId={businessId}
               onChange={onChange}
+              // C'est ici que le conseil vaut le plus : la prestation n'a aucun
+              // palier, donc rien d'autre à lire que ce qu'on lui propose.
+              propose={propositions.get(item.id)}
+              retenu={undefined}
+              paliers={composition.paliers}
             />
           ))}
         </View>
@@ -264,13 +321,21 @@ function LignePrestation({
   item,
   businessId,
   onChange,
+  propose,
+  retenu,
+  paliers = [],
 }: {
   item: ItemDuCatalogue;
   businessId: string;
   onChange: () => void;
+  /** Ce que la plateforme aurait fait. Absent sous trois prix distincts. */
+  propose?: ContentFormat;
+  /** Le plus exigeant des paliers réellement ouverts sur cette prestation. */
+  retenu?: ContentFormat;
+  paliers?: PalierOffrable[];
 }) {
   const { api, messageDErreur } = useApi();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [echec, setEchec] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
 
@@ -292,6 +357,10 @@ function LignePrestation({
   // Fermée par son parent : l'interrupteur de la ligne ne peut rien y faire, et
   // le laisser actif ferait appuyer sur un bouton sans effet.
   const parLeParent = !item.is_effectively_available && item.is_available;
+
+  const ecart = ecartAuConseil(propose, retenu);
+  const abonnesDe = (format: ContentFormat) =>
+    paliers.find((palier) => palier.content_format === format)?.min_followers ?? 0;
 
   return (
     <View style={{ gap: 4 }} testID={`prestation-${item.id}`}>
@@ -315,6 +384,39 @@ function LignePrestation({
       {parLeParent ? (
         <Texte variante="type.caption" couleur="text.muted" testID={`ferme-par-parent-${item.id}`}>
           {t('composition.fermeeParSonParent')}
+        </Texte>
+      ) : null}
+      {/* **Le conseil, et jamais la décision.** La plateforme dit ce qu'elle
+          aurait fait à partir du prix et de la place de cette prestation dans
+          le catalogue ; rien ne bascule, rien n'est écrit. Un commerce qui
+          s'écarte lit ce que cela lui coûte, et s'écarte quand même s'il le
+          veut — c'est son catalogue. */}
+      {ecart.forme === 'conforme' || ecart.forme === 'sans-avis' ? null : (
+        <Texte
+          variante="type.caption"
+          couleur="text.secondary"
+          testID={`conseil-${item.id}`}
+        >
+          {ecart.forme === 'plus-exigeant'
+            ? // Le coût est chiffré : « moins de créatrices » ne se mesure pas,
+              // « 10 000 abonnés au lieu de 1 000 » se mesure.
+              t('composition.palierPlusExigeant', {
+                retenu: motDuPalier(ecart.retenu, locale),
+                propose: motDuPalier(ecart.propose, locale),
+                abonnes: abonnesDe(ecart.retenu),
+                proposeAbonnes: abonnesDe(ecart.propose),
+              })
+            : t('composition.palierMoinsExigeant', {
+                retenu: motDuPalier(ecart.retenu, locale),
+                propose: motDuPalier(ecart.propose, locale),
+              })}
+        </Texte>
+      )}
+      {/* Une prestation sans palier : la proposition est alors la seule chose
+          à dire, et elle a d'autant plus de valeur qu'il n'y a rien d'autre. */}
+      {retenu === undefined && propose !== undefined ? (
+        <Texte variante="type.caption" couleur="accent.default" testID={`propose-${item.id}`}>
+          {t('composition.palierPropose', { palier: motDuPalier(propose, locale) })}
         </Texte>
       ) : null}
       {echec ? <StatusMessage level="danger" body={echec} testID={`echec-${item.id}`} /> : null}
