@@ -83,7 +83,22 @@ export function useGabarit(): Gabarit {
 /** L'écart entre la liste et le détail. `space.6`, comme partout ailleurs. */
 export const ECART_DES_COLONNES = 24;
 
-export type NatureDeContenu = 'creator' | 'merchant' | 'reports' | 'merchantListeDetail';
+export type NatureDeContenu =
+  | 'creator'
+  | 'merchant'
+  | 'reports'
+  | 'merchantListeDetail'
+  /**
+   * Un écran rendu **dans** une colonne déjà bornée par son parent.
+   *
+   * Les trois écrans de la configuration vivent à droite du menu de sections :
+   * s'y borner à 720 y centrait une colonne dans le reste de la place, et le
+   * contenu flottait dans une grande surface — le défaut de fond de la
+   * campagne 2. Ce n'est pas une borne de plus, c'est l'absence de borne :
+   * celle du parent est la bonne, elle a déjà retiré la barre latérale et le
+   * menu.
+   */
+  | 'section';
 
 const BORNES: Record<NatureDeContenu, number> = {
   creator: breakpoint.contentMaxCreator,
@@ -95,6 +110,9 @@ const BORNES: Record<NatureDeContenu, number> = {
   // autres largeurs, sinon elle dériverait des jetons sans qu'on le voie.
   merchantListeDetail:
     breakpoint.listWidthMerchant + ECART_DES_COLONNES + breakpoint.contentMaxMerchant,
+  // Zéro veut dire « aucune borne » : `largeurMaximale` le traduit en
+  // `undefined`. Le parent a déjà mesuré ce qui restait.
+  section: 0,
 };
 
 
@@ -103,5 +121,5 @@ export function largeurMaximale(
   nature: NatureDeContenu,
   large: boolean,
 ): number | undefined {
-  return large ? BORNES[nature] : undefined;
+  return large ? BORNES[nature] || undefined : undefined;
 }
