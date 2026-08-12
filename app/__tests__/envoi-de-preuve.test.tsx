@@ -195,3 +195,82 @@ it('demande la caméra avant de l’ouvrir', async () => {
   await waitFor(() => expect(screen.getByText(en.parcours.preuvePermissionCamera)).toBeTruthy());
   expect(mockOuvertures).toHaveLength(0);
 });
+
+// --------------------------------------------------------------------------
+// la note libre, l'autre moitié du canal
+// --------------------------------------------------------------------------
+
+/** Un espion qui garde les corps, que le double partagé ne retient pas. */
+type EnvoiComplet = { chemin: string; corps?: unknown };
+
+async function monterAvecEspion(recueil: EnvoiComplet[]) {
+  const api = new ApiClient({
+    baseUrl: 'https://api.test',
+    coffre,
+    fetchImpl: async (url, init) => {
+      const corps = typeof init?.body === 'string' ? JSON.parse(init.body) : undefined;
+      recueil.push({ chemin: String(url), corps });
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ screenshot_key: 'proofs/upload/2026-08-09/abc' }),
+      } as Response;
+    },
+  });
+
+  await render(
+    <I18nProvider initialLocale="en">
+      <ThemeProvider role="creator">
+        <ApiProvider client={api}>
+          <EnvoiDePreuve collaborationId="k1" onEnvoye={jest.fn()} />
+        </ApiProvider>
+      </ThemeProvider>
+    </I18nProvider>,
+  );
+}
+
+async function envoyerAvecNote(note: string): Promise<EnvoiComplet[]> {
+  const recueil: EnvoiComplet[] = [];
+  mockResultat = CHOISI;
+  await monterAvecEspion(recueil);
+
+  await fireEvent.press(screen.getByTestId('choisir-dans-la-galerie'));
+  await waitFor(() => expect(screen.getByTestId('note-de-la-preuve')).toBeTruthy());
+  await fireEvent.changeText(screen.getByTestId('note-de-la-preuve'), note);
+  await fireEvent.press(screen.getByTestId('confirmer-l-envoi'));
+
+  await waitFor(() => expect(recueil.some((e) => /\/proof$/.test(e.chemin))).toBe(true));
+  return recueil;
+}
+
+async function afficherSansMedia() {
+  mockResultat = { canceled: true };
+  await monterAvecEspion([]);
+}
+
+describe('la note du créateur', () => {
+  it('part avec la soumission, jamais séparément', async () => {
+    // Envoyée après, elle arriverait sur un dossier déjà refusé, et le
+    // commerce l'aurait lue une fois sa décision prise.
+    const envois = await envoyerAvecNote('la cliente est arrivée en retard');
+
+    const soumission = envois.find((e) => /\/proof$/.test(e.chemin));
+    expect(soumission?.corps).toMatchObject({ note: 'la cliente est arrivée en retard' });
+  });
+
+  it('n’envoie rien quand elle est vide', async () => {
+    // Une soumission conforme n'a rien à expliquer, et une clé `note: ""`
+    // ferait exister une note vide côté commerce.
+    const envois = await envoyerAvecNote('   ');
+
+    const soumission = envois.find((e) => /\/proof$/.test(e.chemin));
+    expect(soumission?.corps).not.toHaveProperty('note');
+  });
+
+  it('ne s’offre qu’une fois le média choisi', async () => {
+    // Écrire avant d'avoir quoi que ce soit à joindre n'a pas d'objet, et le
+    // champ occuperait la place de l'action qu'on attend.
+    await afficherSansMedia();
+    expect(screen.queryByTestId('note-de-la-preuve')).toBeNull();
+  });
+});
