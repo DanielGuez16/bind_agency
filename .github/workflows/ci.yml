@@ -188,18 +188,19 @@ jobs:
 
       # Les vraies vidéos ne sont pas versionnées — elles pèsent plusieurs
       # mégaoctets. Sans fichier, le semis ne pose aucune clé et l'accueil
-      # n'affiche pas de lecteur : le test de la vidéo mesurerait alors
-      # l'absence d'un fichier plutôt que notre code. On en fabrique une
-      # minuscule, qui traverse exactement le même chemin — dépôt objet,
-      # route de média, lecteur.
+      # n'affiche pas de lecteur : le test mesurerait alors l'absence d'un
+      # fichier plutôt que notre code.
+      #
+      # Deux fixtures de trois kilooctets, noires, deux secondes, versionnées.
+      # Elles traversent exactement le même chemin que les vraies — semis,
+      # dépôt objet, route de média, lecteur. **Fabriquées ici par ffmpeg dans
+      # une première version, ce qui a échoué : le runner ne l'a pas.** Une
+      # fixture versionnée ne dépend de rien.
       - name: Vidéo d'accueil de test
         run: |
-          command -v ffmpeg >/dev/null || { echo "::error::ffmpeg absent du runner"; exit 1; }
           mkdir -p assets/photos/accueil
-          ffmpeg -hide_banner -loglevel error -f lavfi -i color=c=black:s=320x180:d=2 \
-            -pix_fmt yuv420p assets/photos/accueil/video.mp4
-          ffmpeg -hide_banner -loglevel error -f lavfi -i color=c=black:s=180x320:d=2 \
-            -pix_fmt yuv420p assets/photos/accueil/video-portrait.mp4
+          cp app/e2e/fixtures/video-paysage.mp4 assets/photos/accueil/video.mp4
+          cp app/e2e/fixtures/video-portrait.mp4 assets/photos/accueil/video-portrait.mp4
 
       - name: Migrations et jeu de données
         working-directory: api
