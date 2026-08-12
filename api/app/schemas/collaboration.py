@@ -25,6 +25,11 @@ class PreuveSoumise(BaseModel):
     #: Une capture d'écran déjà téléversée, pour le niveau 3. Clé de stockage
     #: objet, jamais une URL.
     screenshot_key: str | None = Field(default=None, max_length=500)
+    #: Ce que le créateur dit de sa soumission. **L'autre moitié du canal** :
+    #: le commerce refusait avec un code, le créateur resoumettait sans un mot,
+    #: et le dossier arrivait en arbitrage sans qu'aucune phrase n'ait été
+    #: échangée. Facultatif — une soumission conforme n'a rien à expliquer.
+    note: str | None = Field(default=None, max_length=500)
 
 
 class PreuveRead(BaseModel):
@@ -38,6 +43,9 @@ class PreuveRead(BaseModel):
     content_hash: str
     source_url: str | None
     platform_published_at: datetime | None
+    #: Ce que le créateur a écrit en soumettant. Lu par le commerce et par
+    #: l'arbitre : c'est la moitié du canal qui vient d'en bas.
+    note: str | None
 
 
 class CollaborationRead(BaseModel):
@@ -111,6 +119,14 @@ class DecisionCommerce(BaseModel):
     approuve: bool
     #: Obligatoire quand on redemande : le créateur doit savoir quoi corriger.
     reason: MotifDeDecision | None = None
+    #: Le texte libre attaché au motif. **Facultatif, jamais seul.**
+    #:
+    #: `SPEC.md` §4.2 interdisait le texte libre pour une raison qui tient
+    #: toujours : une phrase ne se traduit pas, et elle ressort sur l'écran de
+    #: l'arbitre dans la langue de qui l'a écrite. Le code reste donc
+    #: obligatoire et porte le sens ; la note ajoute ce qu'un code ne peut pas
+    #: dire, et n'existe pas sans lui.
+    note: str | None = Field(default=None, max_length=500)
 
 
 class IssueDArbitrage(StrEnum):
@@ -138,3 +154,11 @@ class DecisionAdministrateur(BaseModel):
 
     issue: IssueDArbitrage
     reason: MotifDeDecision | None = None
+    #: Le texte libre attaché au motif. **Facultatif, jamais seul.**
+    #:
+    #: `SPEC.md` §4.2 interdisait le texte libre pour une raison qui tient
+    #: toujours : une phrase ne se traduit pas, et elle ressort sur l'écran de
+    #: l'arbitre dans la langue de qui l'a écrite. Le code reste donc
+    #: obligatoire et porte le sens ; la note ajoute ce qu'un code ne peut pas
+    #: dire, et n'existe pas sans lui.
+    note: str | None = Field(default=None, max_length=500)

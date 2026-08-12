@@ -3127,3 +3127,46 @@ trois requêtes et on évalue chaque créatrice sans retourner en base. Une bouc
 sur `evaluer_createur` aurait donné trois requêtes par ligne d'annuaire, un N+1
 invisible à dix créatrices et fatal à trois cents.
 
+
+## 2026-08-12 — Une note libre accompagne le motif, sans jamais le remplacer
+
+**Cette décision révise `SPEC.md` §4.2**, qui refusait tout texte libre. La
+règle d'origine avait une raison qui tient toujours : une phrase ne se traduit
+pas à l'affichage, et elle ressortait sur l'écran de l'arbitre dans la langue de
+qui l'avait écrite. Elle a aussi produit ce qu'elle ne prévoyait pas — un
+dossier arrivant en arbitrage après trois allers-retours sans qu'aucune phrase
+n'ait été échangée, un créateur lisant « mention manquante » sans savoir
+laquelle ni où, un commerce refusant sans pouvoir dire ce qu'il voyait.
+
+L'objection est traitée plutôt qu'ignorée, en quatre points :
+
+- **Le code reste obligatoire** et porte le sens traduisible. La note ajoute ce
+  qu'un code ne peut pas dire.
+- **La note ne voyage jamais seule**, et c'est une contrainte de base
+  (`ck_audit_log_note_accompagne_un_motif`), pas la discipline des appelants.
+  C'était précisément le trou craint : « il suffirait d'un appelant ».
+- **Elle est rendue telle quelle et jamais traduite**, comme le nom d'un item de
+  catalogue. Le service d'emails appliquait déjà cette règle au motif.
+- **Elle est immuable** comme la ligne de journal qui la porte : le trigger qui
+  refuse tout UPDATE vaut aussi pour elle. Une note qu'on pourrait réécrire
+  cesserait d'être ce qui a été dit au moment où ça a été dit, et c'est tout ce
+  qui lui donne sa valeur devant un arbitre.
+
+Le créateur dispose de la même chose sur sa soumission (`proof.note`), lue au
+même endroit que sa preuve — sinon le commerce déciderait en ayant vu l'image
+sans avoir lu la phrase.
+
+Ce n'est **pas** une messagerie : ni fil, ni notification de message, ni réponse
+hors décision. Une phrase attachée à un acte. La messagerie complète reste une
+décision à part.
+
+## 2026-08-12 — La base sonde du jeu de données dérive du nom de la base de test
+
+`bind_seed_probe` était en dur. Deux copies de travail sur le même Postgres se
+la détruisaient l'une à l'autre : chacune commence par un `DROP DATABASE ...
+WITH (FORCE)`, et la seconde emportait la sonde de la première entre sa création
+et son premier appel. L'échec ressortait en « database does not exist » sur du
+code qui n'avait pas bougé, et coûtait un diagnostic à chaque fois.
+
+Changer `TEST_DATABASE_URL` ne suffisait pas — ce nom-là ne s'en déduisait pas.
+Il en dérive maintenant.

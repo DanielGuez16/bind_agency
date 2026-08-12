@@ -70,8 +70,20 @@ from tests.conftest import _maintenance_dsn
 
 @pytest.fixture(scope="module")
 def base_jetable(test_database_url: str) -> str:
-    """Une base à part, créée et détruite ici. Surtout pas celle de la suite."""
-    url = make_url(test_database_url).set(database="bind_seed_probe")
+    """Une base à part, créée et détruite ici. Surtout pas celle de la suite.
+
+    **Son nom dérive de la base de test**, il n'est pas fixe. Deux copies de
+    travail sur le même Postgres — le cas normal quand deux personnes ou deux
+    sessions avancent en parallèle — se détruisaient cette base l'une à
+    l'autre : chacune commence par `DROP DATABASE ... WITH (FORCE)`, et la
+    seconde emportait la sonde de la première entre sa création et son premier
+    appel. L'échec ressortait en « database does not exist » sur du code qui
+    n'avait pas bougé.
+
+    Changer `TEST_DATABASE_URL` ne suffisait pas : ce nom-ci était en dur.
+    """
+    url = make_url(test_database_url)
+    url = url.set(database=f"{url.database}_seed_probe")
     dsn = _maintenance_dsn(url)
     drop = sql.SQL("DROP DATABASE IF EXISTS {} WITH (FORCE)").format(sql.Identifier(url.database))
 

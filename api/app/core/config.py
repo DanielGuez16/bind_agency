@@ -361,6 +361,11 @@ class Settings(BaseSettings):
         }
     )
 
+    #: Longueur maximale d'une note libre attachée à une décision ou à une
+    #: soumission. Cinq cents caractères : de quoi expliquer ce qu'un code ne
+    #: dit pas, pas de quoi ouvrir une messagerie par la bande.
+    collaboration_note_max_length: int = 500
+
     # ----------------------------------------------------------------------
     # Lien traqué : mesurer la portée réelle au lieu de la prédire.
     # ----------------------------------------------------------------------

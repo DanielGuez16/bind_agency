@@ -100,6 +100,7 @@ async def soumettre(
     collaboration: Collaboration,
     capture: MediaCapture,
     actor: audit.Actor,
+    note: str | None = None,
 ) -> Proof:
     """Archive la preuve et fait passer la contrepartie en `submitted`.
 
@@ -125,6 +126,7 @@ async def soumettre(
         screenshot_key=capture.screenshot_key,
         content_hash=empreinte(capture.contenu),
         platform_published_at=capture.platform_published_at,
+        note=note,
         extra=capture.extra,
     )
     session.add(preuve)

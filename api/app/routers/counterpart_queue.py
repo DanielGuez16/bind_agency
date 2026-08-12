@@ -101,17 +101,21 @@ async def arbitrer(
     if payload.issue is not IssueDArbitrage.APPROUVER and not motif:
         raise api_error(status.HTTP_422_UNPROCESSABLE_CONTENT, ErrorCode.VALIDATION_FAILED)
 
+    # Vidée de ses espaces : une note faite d'un seul retour à la ligne
+    # occuperait une place à l'écran sans rien dire, et la contrainte de base
+    # l'accepterait.
+    note = (payload.note or "").strip() or None
     acteur = Actor.from_user(user)
     try:
         if payload.issue is IssueDArbitrage.APPROUVER:
             await service.approuver(session, collaboration=ligne, actor=acteur)
         elif payload.issue is IssueDArbitrage.REDEMANDER:
             await service.demander_une_nouvelle_soumission(
-                session, collaboration=ligne, actor=acteur, reason=motif
+                session, collaboration=ligne, actor=acteur, reason=motif, note=note
             )
         else:
             await service.constater_non_honoree(
-                session, collaboration=ligne, actor=acteur, reason=motif
+                session, collaboration=ligne, actor=acteur, reason=motif, note=note
             )
     except service.TransitionNotAllowed as error:
         raise api_error(

@@ -120,6 +120,7 @@ async def submit_proof(
             collaboration=ligne,
             capture=capture,
             actor=Actor.from_user(user),
+            note=(payload.note or "").strip() or None,
         )
     except (proof_service.ProofError, service.CollaborationError) as error:
         raise _traduire(error) from error
@@ -161,6 +162,7 @@ async def decide(
                 collaboration=ligne,
                 actor=Actor.from_user(user),
                 reason=payload.reason,
+                note=(payload.note or "").strip() or None,
             )
     except service.CollaborationError as error:
         raise _traduire(error) from error

@@ -77,6 +77,7 @@ async def record_transition(
     actor: Actor,
     from_status: str | None = None,
     reason: str | None = None,
+    note: str | None = None,
     extra: dict | None = None,
 ) -> AuditLog:
     """Écrit une ligne de journal dans la session de l'appelant, sans committer.
@@ -85,9 +86,20 @@ async def record_transition(
     vérifiée automatiquement pour les transitions déclenchées par le système :
     une décision automatique qui ne dit pas pourquoi elle s'est produite est
     indéfendable trois mois plus tard.
+
+    `note` est le texte libre qu'un humain ajoute à son motif. **Il ne s'écrit
+    jamais seul** : le code porte le sens traduisible, la note le détail qu'un
+    code ne peut pas porter. Un système n'en écrit pas — il n'a rien à
+    expliquer qu'un code ne dise déjà.
     """
     if actor.kind is ActorKind.SYSTEM and not reason:
         raise ValueError("une transition automatique doit dire pourquoi elle s'est déclenchée")
+
+    # **Le texte libre ne voyage jamais seul.** La base l'interdit aussi ; on le
+    # refuse ici pour que l'appelant lise une erreur de programmation plutôt
+    # qu'une violation de contrainte à la validation, à trois appels de là.
+    if note and not reason:
+        raise ValueError("une note libre ne s'écrit qu'attachée à un motif")
 
     entry = AuditLog(
         entity_type=entity.value,
@@ -97,6 +109,7 @@ async def record_transition(
         actor_kind=actor.kind,
         actor_user_id=actor.user_id,
         reason=reason,
+        note=note,
         extra=extra,
     )
     session.add(entry)
