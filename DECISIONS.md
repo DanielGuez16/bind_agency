@@ -3345,3 +3345,14 @@ même quand la famille n'existe pas** : le navigateur juge que le texte peut
 être rendu, en repli. Le test passait sur un produit dont les polices ne
 s'appliquent nulle part. Il ne restait vert que parce qu'il ne demandait rien.
 On lit désormais les faces enregistrées une à une, sous leur nom exact.
+
+**Un troisième, sur la machine d'intégration :** le dépôt objet vaut `memory`
+par défaut. Le semis y déposait photos et vidéos, son processus se terminait,
+l'API redémarrait sur un dépôt vide — toutes les clés en base, aucun octet
+derrière, et la route de média répondait 404 sur tout. Le navigateur, lui,
+rapporte `MEDIA_ELEMENT_ERROR: Format error` : le même message qu'un codec
+absent. Deux exécutions ont cherché du côté du codec avant que le journal de
+l'API ne montre les 404. Le test vérifie maintenant que la source répond 200
+**avant** de demander si elle se lit — un fichier manquant et un fichier
+illisible ne se diagnostiquent pas au même endroit, et le navigateur ne les
+distingue pas pour nous.

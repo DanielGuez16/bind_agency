@@ -157,6 +157,15 @@ jobs:
       # que ce job a trouvé, et il n'était visible que d'un navigateur.
       CORS_ORIGINS: http://127.0.0.1:4173,http://localhost:4173
       E2E_WEB_PORT: 4173
+      # **Un dépôt sur disque, partagé par le semis et l'API.** Le défaut par
+      # configuration est `memory` : le semis y déposait les photos et les
+      # vidéos, son processus se terminait, et l'API redémarrait sur un dépôt
+      # vide. Toutes les clés existaient en base, aucun octet derrière — la
+      # route de média répondait 404 sur tout, et le navigateur rapportait
+      # « Format error », ce qui a d'abord fait chercher un codec. Deux
+      # processus qui se passent des fichiers ont besoin d'un endroit commun.
+      OBJECT_STORE_PROVIDER: local
+      OBJECT_STORE_LOCAL_ROOT: /tmp/bind-objets-e2e
 
     steps:
       - uses: actions/checkout@v4

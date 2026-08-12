@@ -13,7 +13,7 @@
  */
 import { expect, test } from '@playwright/test';
 
-test('la vidéo de fond démarre et avance', async ({ page }) => {
+test('la vidéo de fond démarre et avance', async ({ page, request }) => {
   await page.goto('/');
   await expect(page.getByTestId('ecran-accueil')).toBeVisible();
 
@@ -25,6 +25,15 @@ test('la vidéo de fond démarre et avance', async ({ page }) => {
   await expect(video).toHaveJSProperty('muted', true);
   await expect(video).toHaveJSProperty('loop', true);
   expect(await video.getAttribute('playsinline')).not.toBeNull();
+
+  // **Le fichier existe, avant de demander s'il se lit.** Un lecteur qui ne
+  // démarre pas rapporte `MEDIA_ELEMENT_ERROR: Format error` aussi bien quand
+  // le codec manque que quand la source répond 404 — le premier diagnostic a
+  // porté sur le codec pendant deux exécutions alors que le dépôt objet était
+  // vide. Le distinguer ici coûte une requête et rend l'échec lisible.
+  const source = await video.evaluate((noeud: HTMLVideoElement) => noeud.currentSrc);
+  const reponse = await request.get(source);
+  expect(reponse.status(), `la source de la vidéo répond ${reponse.status()} : ${source}`).toBe(200);
 
   // **Elle joue vraiment**, et ce n'est pas la même chose que « on a demandé à
   // ce qu'elle joue » : c'est exactement la distinction que les trois défauts
