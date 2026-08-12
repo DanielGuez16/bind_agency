@@ -12,10 +12,17 @@
  * **Ce qui tourne ici est le build web réel**, exporté par Metro, servi en
  * statique, parlant à une vraie API sur une vraie base. Pas un double.
  *
- * **Un seul navigateur, Chromium.** Ajouter Firefox et WebKit triplerait la
- * durée pour éprouver le même code : ce qu'on cherche ici n'est pas une
- * différence de moteur, c'est ce que le nôtre fait de notre application. Le
- * jour où un défaut viendra d'un moteur, on ajoutera celui-là.
+ * **Un seul navigateur, et c'est Chrome.** Ajouter Firefox et WebKit
+ * triplerait la durée pour éprouver le même code : ce qu'on cherche ici n'est
+ * pas une différence de moteur, c'est ce que le nôtre fait de notre
+ * application. Le jour où un défaut viendra d'un moteur, on ajoutera celui-là.
+ *
+ * **Chrome et non le Chromium fourni**, parce que ce dernier est la version
+ * libre : elle n'embarque pas les codecs propriétaires, et n'a donc pas H.264.
+ * La vidéo d'accueil y répond `MEDIA_ELEMENT_ERROR: Format error` — sur une
+ * machine de développement elle joue, parce que le système prête son décodeur,
+ * et en intégration continue non. Le test aurait mesuré la compilation du
+ * navigateur au lieu de notre code. Chrome est aussi ce que les gens ouvrent.
  */
 import { defineConfig, devices } from '@playwright/test';
 
@@ -56,9 +63,10 @@ export default defineConfig({
 
   projects: [
     {
-      name: 'chromium',
+      name: 'chrome',
       use: {
         ...devices['Desktop Chrome'],
+        channel: 'chrome',
         launchOptions: {
           args: [
             // Sans lui, Chromium refuse la lecture automatique même en muet,

@@ -228,7 +228,7 @@ jobs:
 
       - name: Navigateur
         working-directory: app
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chrome
 
       - name: Playwright
         working-directory: app
