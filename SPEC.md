@@ -345,6 +345,31 @@ Dans les trois cas : archivage du fichier, empreinte de contenu, horodatage serv
 
 Les stories sont le cas le plus fréquent et le plus fragile. Elles disparaissent en 24 heures et ne sont pas accessibles depuis un simple lien. Le délai de soumission doit donc être plus court que la durée de vie du contenu, sinon la preuve n'existe plus au moment où on la demande.
 
+### Vérifiée, ou seulement attestée
+
+**Une contrepartie n'est vérifiable qu'au niveau 1. En dessous, elle est attestée et non vérifiée.** La distinction n'est pas une nuance de vocabulaire : c'est ce que le produit devra tenir devant un salon qui conteste.
+
+Une publication n'appartient à une collaboration que si elle est postée **après la consommation**, **avant l'échéance**, **sur le compte figé à la réservation**, et **au format exigé**. Ces quatre conditions ne sont pas également vérifiables :
+
+| Condition | Donnée | Vérifiable |
+| --- | --- | --- |
+| Avant l'échéance | `collaboration.deadline_at` | Oui, à tous les niveaux |
+| Après la consommation | `booking.consumed_at` contre `proof.platform_published_at` | Seulement si l'horodatage vient de la plateforme |
+| Sur le compte figé | `booking.social_account_id` | **Niveau 1 seul** |
+| Au format exigé | `collaboration.required_format` | **Niveau 1 seul** |
+
+Aux niveaux 2 et 3, `proof` ne porte rien qui puisse être comparé au compte ni au format : ni identifiant de média chez la plateforme, ni auteur, ni type. Une URL est copiable — elle ne prouve pas l'auteur. Un fichier ré-téléversé ne prouve pas le format. Le niveau 1 exige donc quatre champs que seule la plateforme peut donner : l'**identifiant du média**, l'**identifiant du compte auteur**, le **type de média dans le vocabulaire de la plateforme**, et son **horodatage de publication**.
+
+### Le déclencheur est la soumission, jamais un balayage
+
+La vérification de niveau 1 est tentée **au moment où le créateur soumet sa preuve**. Trois raisons :
+
+- un balayage périodique sur toutes les collaborations en attente heurterait les limites d'appel de Meta pour n'apprendre, la plupart du temps, que rien n'a changé ;
+- la soumission épouse le geste réel — on publie, puis on soumet ;
+- elle crée la bonne incitation, à condition de la dire.
+
+Soumise dans les 24 heures suivant la publication, une story est encore dans l'API et la vérification aboutit. Au-delà, elle est attestée et non vérifiée. **Cela se dit au créateur avant l'envoi**, en clair : soumettre vite fait vérifier la publication par la plateforme elle-même ; attendre laisse sa parole et une capture.
+
 ---
 
 ## 6. Surface d'API
