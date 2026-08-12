@@ -358,7 +358,7 @@ export const en = {
     plansMensuel: 'Monthly',
     plansAnnuel: 'Yearly',
     plansTotal: 'Total',
-    plansMrrTotal: 'Monthly revenue, all plans',
+    plansMrrTotal: 'Revenue per month, all plans',
     plansSalonsAbonnes: 'Businesses subscribed',
     plansSansPreneur: 'Not taken yet',
     plansDevisesMelees: 'Plans are priced in several currencies, so they do not add up.',
@@ -382,7 +382,11 @@ export const en = {
     plansPrix: 'Price',
     plansAbonnes: 'Businesses',
     plansActifs: 'Active',
-    plansMrr: 'Monthly revenue',
+    plansMrr: 'Revenue / month',
+    // La règle, écrite sous le tableau : sans elle, « revenu par mois » sur
+    // une ligne annuelle laisse deviner si c'est le prix ou son douzième.
+    plansMrrNote:
+      'A yearly plan counts for a twelfth of its price each month, so every row is comparable. Only active subscriptions are counted.',
   },
   reporting: {
     sectionReservations: 'The bookings',

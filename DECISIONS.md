@@ -2899,3 +2899,55 @@ Conséquence assumée : **l'horloge du comptoir suit maintenant la langue**. La
 journée la forçait sur vingt-quatre heures, à côté d'une échéance de publication
 qui passait par `formatDateTime` et s'écrivait en AM/PM — deux horloges sur le
 même écran, à Miami, où l'on compte en douze.
+
+## 2026-08-11 — Un palier fermé porte toujours un obstacle, même jamais évalué
+
+Le moteur d'éligibilité n'évalue que les couples (compte, palier) **de même
+plateforme**. Un palier TikTok chez quelqu'un qui n'a connecté qu'Instagram n'a
+donc aucun couple, donc aucun obstacle à reprocher : la fiche affichait « pas
+encore ouverte à toi » et rien d'autre. Ce n'est pas un accès sans reproche,
+c'est un accès jamais examiné.
+
+Le cas est plus fréquent que l'absence totale de compte — il suffit d'un salon
+qui compose un palier sur un réseau qu'on n'a pas — et invisible dans des tests
+qui n'emploient qu'Instagram. `no_social_account` est la bonne raison, et l'app
+la rend déjà avec la plateforme du palier : « connecte un compte TikTok »,
+jamais un « connecte un compte » qui laisserait chercher lequel.
+
+Troisième occurrence du piège de l'ensemble vide, après `creator_tiers` et le
+fil. Il valait aussi sur l'écran où l'on vient pour réserver.
+
+## 2026-08-11 — Les plateformes rattachables se comparent entre les deux dépôts
+
+`PlateformeConnectable` est écrite à la main dans `types.ts`, `PLATEFORMES_BRANCHEES`
+vit dans `providers.py`. Deux listes de la même chose, dans deux langages, que
+rien ne rapprochait — et le contrat de chemins ne pouvait pas les rapprocher :
+`openapi.json` ne porte que les routes, par choix assumé, et une plateforme
+n'est pas une route.
+
+Ce n'est pas théorique. Snapchat existe déjà en base et dans les paliers, et la
+fabrique **lève** au lieu de rendre un fournisseur muet : le jour où l'app
+l'offrirait sans que le serveur l'implémente, le bouton mènerait à une erreur
+serveur, sur l'écran dont le seul rôle est de dire quels réseaux rattacher.
+
+Un test lit les deux sources et les compare. Comparer des sources plutôt que des
+routes est inhabituel ici ; c'est le seul moyen tant que la liste ne transite
+pas par l'API, et elle n'a aucune raison d'y transiter pour deux valeurs.
+
+## 2026-08-11 — Une annulation n'est pas une panne
+
+Toutes les fins prématurées d'une requête se ressemblent à l'arrivée : `fetch`
+lève la même `AbortError`. Elles n'ont rien en commun. Une annulation par
+l'appelant est le fonctionnement normal — on change d'écran, on change de
+filtre, la requête en vol ne sert plus. Une échéance dépassée est une panne. Une
+levée inattendue est un défaut de programmation.
+
+Les trois s'écrivaient `console.error` : `/businesses` et
+`/business/{id}/collaborations` remplissaient la console d'erreurs rouges à
+chaque geste, et la vraie panne s'y noyait. Ce qui rend un journal inutile est
+le bruit, pas le silence.
+
+Trouvé en écrivant le test : **un signal déjà avorté n'émettait plus rien**.
+L'appelant peut annuler avant que la requête parte — le temps de lire le
+coffre, un écran a pu être quitté. S'abonner ne suffisait pas, l'événement était
+passé : la requête partait pour de bon et attendait ses quinze secondes.

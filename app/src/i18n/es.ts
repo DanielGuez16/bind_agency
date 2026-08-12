@@ -356,7 +356,7 @@ export const es: Catalogue = {
     plansMensuel: 'Mensual',
     plansAnnuel: 'Anual',
     plansTotal: 'Total',
-    plansMrrTotal: 'Ingresos mensuales, todos los planes',
+    plansMrrTotal: 'Ingresos por mes, todos los planes',
     plansSalonsAbonnes: 'Negocios abonados',
     plansSansPreneur: 'Sin contratar',
     plansDevisesMelees: 'Los planes tienen monedas distintas, así que no se suman.',
@@ -378,7 +378,9 @@ export const es: Catalogue = {
     plansPrix: 'Precio',
     plansAbonnes: 'Negocios',
     plansActifs: 'Activos',
-    plansMrr: 'Ingreso mensual',
+    plansMrr: 'Ingresos / mes',
+    plansMrrNote:
+      'Un plan anual cuenta como un doceavo de su precio cada mes, para que todas las filas sean comparables. Solo se cuentan las suscripciones activas.',
   },
   reporting: {
     sectionReservations: 'Las reservas',

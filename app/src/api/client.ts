@@ -208,12 +208,39 @@ export class ApiClient {
     if (acces) entetes.Authorization = `Bearer ${acces}`;
 
     const horloge = new AbortController();
-    const echeance = setTimeout(() => horloge.abort(), this.delaiMs);
+    /**
+     * **Pourquoi la requête s'est arrêtée**, et non seulement qu'elle l'a fait.
+     *
+     * Les trois causes se ressemblent à l'arrivée — `fetch` lève la même
+     * `AbortError` — et n'ont rien en commun. Une annulation par l'appelant est
+     * le fonctionnement normal : on change d'écran, on change de filtre, la
+     * requête en vol ne sert plus. Une échéance dépassée est une panne. Une
+     * levée inattendue est un défaut de programmation.
+     *
+     * Sans cette distinction, toutes trois s'écrivaient `console.error` :
+     * `/businesses` et `/business/{id}/collaborations` remplissaient la console
+     * d'erreurs rouges à chaque changement d'onglet, et la vraie panne s'y
+     * noyait — ce qui rend un journal inutile est le bruit, pas le silence.
+     */
+    let motif: 'appelant' | 'echeance' | null = null;
+
+    const echeance = setTimeout(() => {
+      motif = 'echeance';
+      horloge.abort();
+    }, this.delaiMs);
     // Le signal de l'appelant et celui du délai doivent tous deux pouvoir
     // annuler : un écran quitté pendant un chargement ne doit pas attendre
     // quinze secondes de plus.
-    const relais = () => horloge.abort();
+    const relais = () => {
+      motif = 'appelant';
+      horloge.abort();
+    };
     options.signal?.addEventListener('abort', relais);
+    // **Un signal déjà avorté n'émettra plus rien.** L'appelant peut annuler
+    // avant que la requête parte — le temps de lire le coffre, un écran a pu
+    // être quitté. S'abonner ne suffit alors pas : l'événement est passé, et
+    // la requête serait partie pour de bon, à attendre son échéance.
+    if (options.signal?.aborted) relais();
 
     try {
       return await this.fetchImpl(this.url(chemin, options.query), {
@@ -225,11 +252,27 @@ export class ApiClient {
         signal: horloge.signal,
       });
     } catch (cause) {
-      // **Journalisé avant d'être enveloppé.** Sans cette ligne, un défaut de
-      // programmation — un `fetch` mal lié, un en-tête invalide — se présente
-      // à l'écran comme « vérifiez votre connexion », sans rien dans la
-      // console et sans requête dans l'onglet réseau. C'est exactement ce qui
-      // s'est produit, et ce qui a rendu la cause invisible.
+      // **Journalisé avant d'être enveloppé**, mais selon ce qui s'est passé.
+      //
+      // Sans journal du tout, un défaut de programmation — un `fetch` mal lié,
+      // un en-tête invalide — se présente à l'écran comme « vérifiez votre
+      // connexion », sans rien dans la console et sans requête dans l'onglet
+      // réseau. C'est exactement ce qui s'est produit une fois.
+      //
+      // Mais tout journaliser en erreur revient au même : une annulation au
+      // changement d'écran est le fonctionnement normal, elle arrivait à
+      // chaque geste, et la vraie panne se noyait dedans.
+      if (motif === 'appelant') {
+        // Rien. L'appelant sait qu'il a annulé — c'est lui qui l'a demandé.
+        throw new NetworkError(cause);
+      }
+      if (motif === 'echeance') {
+        // Une panne, mais une panne connue et nommée : le serveur a accepté la
+        // connexion et n'a pas répondu dans le délai. `warn` la distingue d'un
+        // défaut de programmation sans la cacher.
+        console.warn('requête expirée', chemin, `${this.delaiMs} ms`);
+        throw new NetworkError(cause);
+      }
       console.error('requête non partie', chemin, cause);
       throw new NetworkError(cause);
     } finally {

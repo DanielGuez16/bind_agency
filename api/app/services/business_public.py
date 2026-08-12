@@ -95,6 +95,35 @@ class FichePublique:
     offres: tuple[OffreDeLaFiche, ...]
 
 
+def _obstacles_de(
+    par_palier: dict[uuid.UUID, list[eligibility.Obstacle]], tier_id: uuid.UUID
+) -> tuple[eligibility.Obstacle, ...]:
+    """Ce qui ferme un palier — et jamais rien du tout.
+
+    **Un palier fermé sans obstacle est le pire des états.** L'offre s'affiche
+    « pas encore ouverte à toi », et rien ne dit ce qui manque : le créateur
+    n'a aucun geste à faire, et conclut que le produit ne veut pas de lui.
+
+    Le moteur n'évalue que les couples (compte, palier) **de même plateforme**.
+    Un palier TikTok chez quelqu'un qui n'a connecté qu'Instagram n'a donc
+    aucun couple, donc aucun obstacle à reprocher — ce n'est pas un accès sans
+    reproche, c'est un accès jamais examiné. Le cas est plus fréquent que
+    l'absence totale de compte : il suffit d'un salon qui compose un palier sur
+    un réseau qu'on n'a pas.
+
+    `no_social_account` est la bonne raison des deux côtés, et l'app la rend
+    avec la plateforme du palier : « connecte un compte TikTok », jamais un
+    « connecte un compte » qui laisserait chercher lequel.
+
+    C'est le piège de l'ensemble vide, déjà nommé dans `creator_tiers` et dans
+    le fil. Il valait aussi ici, sur l'écran où l'on vient pour réserver.
+    """
+    obstacles = eligibility.dedoublonner(par_palier.get(tier_id, ()))
+    if obstacles:
+        return obstacles
+    return (eligibility.Obstacle(raison=eligibility.RaisonRefus.NO_SOCIAL_ACCOUNT),)
+
+
 async def fiche(
     session: AsyncSession, *, business_id: uuid.UUID, creator_id: uuid.UUID
 ) -> FichePublique:
@@ -190,9 +219,7 @@ async def fiche(
                 value_ratio=ratio_de_valeur(ligne.price_cents, ligne.value_ratio_hint),
                 accessible=accessible,
                 social_account_id=compte,
-                obstacles=()
-                if accessible
-                else eligibility.dedoublonner(obstacles_par_palier.get(ligne.tier_id, ())),
+                obstacles=() if accessible else _obstacles_de(obstacles_par_palier, ligne.tier_id),
                 prochains_creneaux=creneaux,
             )
         )

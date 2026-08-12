@@ -38,7 +38,7 @@ import {
   type VerificationDuCompte,
 } from '../api';
 import { Apparition, Button, DataRow, StatusMessage, Texte, vibration } from '../components';
-import { formatDate } from '../format';
+import { formatDate, formatNumber } from '../format';
 import { useI18n } from '../i18n';
 import { translateErrorCode } from '../i18n/errors';
 import { useRattachement } from '../shell/rattacherUnReseau';
@@ -93,7 +93,10 @@ export function AudienceScreen() {
                   value={
                     compte.followers_count === null
                       ? t('parcours.jamaisMesure')
-                      : String(compte.followers_count)
+                      // Séparateur de milliers : « 128000 » se compte à la
+                      // main, chiffre par chiffre, sur le nombre qui est la
+                      // raison d'être de l'écran.
+                      : formatNumber(compte.followers_count, locale)
                   }
                   chiffre={compte.followers_count !== null}
                 />
@@ -102,7 +105,7 @@ export function AudienceScreen() {
                   value={
                     compte.media_count === null
                       ? t('parcours.jamaisMesure')
-                      : String(compte.media_count)
+                      : formatNumber(compte.media_count, locale)
                   }
                   chiffre={compte.media_count !== null}
                 />
