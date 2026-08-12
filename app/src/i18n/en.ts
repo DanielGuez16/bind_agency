@@ -609,6 +609,7 @@ export const en = {
     email_already_used: 'This email address is already registered.',
     insufficient_role: 'Your account cannot access this.',
     subscription_required: 'The directory comes with a subscription.',
+    gallery_full: 'Your gallery is full. Remove a photo to add another.',
     not_a_member: 'You do not belong to this business.',
     validation_failed: 'Some information is missing or incorrect.',
     business_not_found: 'This business is not available.',

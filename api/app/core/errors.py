@@ -30,6 +30,9 @@ class ErrorCode(StrEnum):
     #: jamais une liste vide : le vide se lirait « aucun créateur », ce qui est
     #: faux et fait un argument contre le produit.
     SUBSCRIPTION_REQUIRED = "subscription_required"
+    #: La galerie a un plafond de produit, pas une limite technique : au-delà,
+    #: la fiche devient un catalogue et le commerce un photographe.
+    GALLERY_FULL = "gallery_full"
 
     # Commerce
     BUSINESS_NOT_FOUND = "business_not_found"

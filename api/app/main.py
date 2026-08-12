@@ -23,6 +23,7 @@ from app.routers import (
     booking_history,
     booking_states,
     business,
+    business_photos,
     business_public,
     capacity,
     catalog,
@@ -107,6 +108,7 @@ def create_app() -> FastAPI:
     application.include_router(auth.router, prefix=settings.api_v1_prefix)
     application.include_router(business.router, prefix=settings.api_v1_prefix)
     application.include_router(business.mes_commerces_router, prefix=settings.api_v1_prefix)
+    application.include_router(business_photos.router, prefix=settings.api_v1_prefix)
     application.include_router(catalog.router, prefix=settings.api_v1_prefix)
     application.include_router(creator_directory.router, prefix=settings.api_v1_prefix)
     application.include_router(capacity.router, prefix=settings.api_v1_prefix)

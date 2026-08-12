@@ -461,6 +461,49 @@
         ]
       }
     },
+    "/api/v1/business/{business_id}/photos": {
+      "get": {
+        "operationId": "lister_api_v1_business__business_id__photos_get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "post": {
+        "operationId": "ajouter_api_v1_business__business_id__photos_post",
+        "responses": [
+          "201",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/business/{business_id}/photos/order": {
+      "put": {
+        "operationId": "reordonner_api_v1_business__business_id__photos_order_put",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/business/{business_id}/photos/uploads": {
+      "post": {
+        "operationId": "televerser_api_v1_business__business_id__photos_uploads_post",
+        "responses": [
+          "201",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/business/{business_id}/photos/{photo_id}": {
+      "delete": {
+        "operationId": "retirer_api_v1_business__business_id__photos__photo_id__delete",
+        "responses": [
+          "204",
+          "422"
+        ]
+      }
+    },
     "/api/v1/business/{business_id}/plans": {
       "get": {
         "operationId": "list_plans_api_v1_business__business_id__plans_get",

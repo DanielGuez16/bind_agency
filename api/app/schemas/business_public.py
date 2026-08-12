@@ -53,4 +53,6 @@ class FichePubliqueRead(BaseModel):
     timezone: str
     phone: str | None
     cover_photo_key: str | None
+    #: Les clés de la galerie, dans l'ordre du commerce. Jamais des adresses.
+    photos: list[str]
     offres: list[OffreDeLaFicheRead]
