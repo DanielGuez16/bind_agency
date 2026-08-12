@@ -21,11 +21,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.integrations.email import get_sender
+from app.integrations.push import get_push_sender
 from app.integrations.social import SocialAuthError, SocialProvider, SocialProviderError
 from app.models import Collaboration, Job, SocialAccount
-from app.models.enums import JobType, Platform, SocialAccountStatus
+from app.models.enums import JobType, NotificationKind, Platform, SocialAccountStatus
 from app.services import booking_states, collaboration, notifications, tracking
 from app.services import metrics as metrics_service
+from app.services import push as push_service
 
 
 @dataclass(frozen=True, slots=True)
@@ -183,6 +185,15 @@ async def rappeler_les_echeances(session: AsyncSession, *, account, provider) ->
                 collaboration=ligne,
                 cle="collaboration.reminder",
                 sender=sender,
+            )
+            # À côté de l'email, jamais à sa place : c'est le seul des sept
+            # événements où l'urgence est la raison d'être du message.
+            await push_service.pour_la_contrepartie(
+                session,
+                collaboration_id=ligne.id,
+                kind=NotificationKind.PUBLICATION_REMINDER,
+                cle="collaboration.reminder",
+                sender=get_push_sender(),
             )
 
     return Fait(prochain=timedelta(seconds=settings.collaboration_reminder_interval_seconds))

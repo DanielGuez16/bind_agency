@@ -691,11 +691,46 @@
         ]
       }
     },
+    "/api/v1/me/devices": {
+      "put": {
+        "operationId": "register_device_api_v1_me_devices_put",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/me/devices/{token}": {
+      "delete": {
+        "operationId": "revoke_device_api_v1_me_devices__token__delete",
+        "responses": [
+          "204",
+          "422"
+        ]
+      }
+    },
     "/api/v1/me/link-clicks": {
       "get": {
         "operationId": "read_my_audience_api_v1_me_link_clicks_get",
         "responses": [
           "200"
+        ]
+      }
+    },
+    "/api/v1/me/notification-preferences": {
+      "get": {
+        "operationId": "read_preferences_api_v1_me_notification_preferences_get",
+        "responses": [
+          "200"
+        ]
+      }
+    },
+    "/api/v1/me/notification-preferences/{kind}": {
+      "put": {
+        "operationId": "set_preference_api_v1_me_notification_preferences__kind__put",
+        "responses": [
+          "200",
+          "422"
         ]
       }
     },

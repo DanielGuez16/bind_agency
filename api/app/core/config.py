@@ -361,6 +361,12 @@ class Settings(BaseSettings):
         }
     )
 
+    # Notifications push. `log` n'appelle personne et trace : c'est le mode en
+    # service tant qu'aucun compte Expo n'existe. Aucun repli silencieux — un
+    # mode inconnu refuse de démarrer.
+    push_provider: Literal["log", "expo"] = "log"
+    push_timeout_seconds: float = 10.0
+
     #: Longueur maximale d'une note libre attachée à une décision ou à une
     #: soumission. Cinq cents caractères : de quoi expliquer ce qu'un code ne
     #: dit pas, pas de quoi ouvrir une messagerie par la bande.

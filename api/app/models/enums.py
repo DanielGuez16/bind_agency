@@ -265,3 +265,57 @@ class ClickOutcome(StrEnum):
     PREFETCH = "prefetch"
     #: Même empreinte, même lien, dans la fenêtre de déduplication.
     DUPLICATE = "duplicate"
+
+
+class DevicePlatform(StrEnum):
+    """Sur quoi tourne le terminal qui a donné son jeton.
+
+    Rendu par l'app, pas déduit : Expo distingue déjà les trois, et le déduire
+    d'un jeton reviendrait à lire un format qui ne nous appartient pas.
+    """
+
+    IOS = "ios"
+    ANDROID = "android"
+    WEB = "web"
+
+
+class DeviceTokenStatus(StrEnum):
+    """Deux états, comme un jeton social — et pour la même raison.
+
+    Un jeton de terminal se révoque : l'application est désinstallée, les
+    notifications sont coupées dans les réglages du téléphone, ou Expo répond
+    que le terminal n'est plus enregistré. Il ne se supprime pas, il se marque
+    — sinon le même jeton se réinscrirait à la première ouverture et on ne
+    saurait jamais qu'il avait cessé de valoir.
+    """
+
+    ACTIVE = "active"
+    REVOKED = "revoked"
+
+
+class NotificationKind(StrEnum):
+    """Les sept événements qui méritent de sortir de l'application.
+
+    **Fermée, et c'est le point.** Chaque valeur est une préférence que
+    quelqu'un peut couper ; une liste ouverte ferait apparaître des
+    notifications qu'on n'aurait jamais proposé de refuser.
+
+    Six s'adressent au créateur, la dernière au commerce. C'est la seule qui
+    remonte dans l'autre sens, et elle manquait le plus : un salon ne savait
+    qu'une réservation attendait sa décision qu'en ouvrant l'application.
+    """
+
+    #: Le salon a accepté. La place est tenue, le code existe.
+    BOOKING_APPROVED = "booking_approved"
+    #: Le salon a refusé, avec son motif.
+    BOOKING_DECLINED = "booking_declined"
+    #: Le salon s'est désisté après avoir accepté. Ne dégrade jamais le score.
+    BOOKING_CANCELLED_BY_BUSINESS = "booking_cancelled_by_business"
+    #: L'échéance de publication approche.
+    PUBLICATION_REMINDER = "publication_reminder"
+    #: La publication est acceptée. La collaboration est close, du bon côté.
+    PUBLICATION_APPROVED = "publication_approved"
+    #: Une nouvelle soumission est demandée, avec son motif et sa note.
+    PUBLICATION_RESUBMIT = "publication_resubmit"
+    #: **Côté commerce.** Une réservation attend sa décision.
+    BOOKING_TO_REVIEW = "booking_to_review"

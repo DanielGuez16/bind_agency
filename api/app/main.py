@@ -14,6 +14,7 @@ from app.integrations.geocoding import check_geocoder_configuration
 from app.integrations.geoip import check_geoip_configuration
 from app.integrations.menu_extraction import check_extraction_configuration
 from app.integrations.object_store import check_object_store_configuration
+from app.integrations.push import check_push_configuration
 from app.routers import (
     account_verification,
     audience,
@@ -37,6 +38,7 @@ from app.routers import (
     jobs,
     media,
     menu_import,
+    notifications,
     plans,
     platform_assets,
     proof_media,
@@ -85,6 +87,7 @@ def create_app() -> FastAPI:
     check_object_store_configuration()
     check_billing_configuration()
     check_geoip_configuration()
+    check_push_configuration()
 
     application = FastAPI(
         title="BIND API",
@@ -140,6 +143,7 @@ def create_app() -> FastAPI:
     application.include_router(media.router, prefix=settings.api_v1_prefix)
     application.include_router(proof_media.router, prefix=settings.api_v1_prefix)
     application.include_router(proof_upload.router, prefix=settings.api_v1_prefix)
+    application.include_router(notifications.router, prefix=settings.api_v1_prefix)
     application.include_router(tracking.creator_router, prefix=settings.api_v1_prefix)
     application.include_router(tracking.business_router, prefix=settings.api_v1_prefix)
     application.include_router(tracking.admin_router, prefix=settings.api_v1_prefix)
