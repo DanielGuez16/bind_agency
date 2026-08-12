@@ -155,3 +155,49 @@ class Subscription(UUIDPrimaryKey, Base):
         sa.UniqueConstraint("stripe_subscription_id"),
         sa.Index("ix_subscription_business_id", "business_id"),
     )
+
+
+class BusinessPhoto(UUIDPrimaryKey, CreatedAt, Base):
+    """Une photo de la galerie d'un commerce.
+
+    **Distincte de `cover_photo_key`, et volontairement.** La couverture est ce
+    que la carte du fil montre — une seule image, choisie pour tenir en petit et
+    survivre à un recadrage. La galerie est ce que la fiche déroule. Les
+    confondre obligerait la première photo à jouer deux rôles qui n'ont ni le
+    même cadrage ni la même fonction.
+
+    **La position est unique par commerce, et l'unicité est différée.**
+    Réordonner une galerie, c'est réécrire toutes les positions : à contrainte
+    immédiate, la deuxième ligne écrite entrerait en collision avec la troisième
+    avant que celle-ci ait bougé, et il faudrait passer par des valeurs
+    intermédiaires. `DEFERRABLE INITIALLY DEFERRED` laisse la transaction se
+    contredire en son milieu et vérifie à la fin, ce qui est exactement la
+    sémantique voulue.
+    """
+
+    __tablename__ = "business_photo"
+
+    business_id: Mapped[uuid.UUID] = mapped_column(
+        sa.ForeignKey("business.id", ondelete="CASCADE"), nullable=False
+    )
+    #: La clé dans le dépôt objet, sous un préfixe public. Jamais une adresse :
+    #: l'URL se compose à la lecture, et le fournisseur peut changer.
+    storage_key: Mapped[str] = mapped_column(sa.Text, nullable=False)
+    #: Le rang dans la galerie, à partir de zéro. C'est l'ordre que la fiche
+    #: publique respecte.
+    position: Mapped[int] = mapped_column(sa.Integer, nullable=False)
+    #: Ce que la photo montre, pour qui ne la voit pas. Facultatif : une
+    #: description obligatoire se remplit de « photo ».
+    alt_text: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+
+    __table_args__ = (
+        sa.CheckConstraint("position >= 0", name="business_photo_position_positive"),
+        sa.UniqueConstraint(
+            "business_id",
+            "position",
+            name="uq_business_photo_position",
+            deferrable=True,
+            initially="DEFERRED",
+        ),
+        sa.Index("ix_business_photo_business_position", "business_id", "position"),
+    )

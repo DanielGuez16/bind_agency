@@ -600,6 +600,7 @@ export const es: Catalogue = {
     email_already_used: 'Este correo electrónico ya está registrado.',
     insufficient_role: 'Tu cuenta no puede acceder a esto.',
     subscription_required: 'El directorio viene con la suscripción.',
+    gallery_full: 'Tu galería está llena. Quita una foto para añadir otra.',
     not_a_member: 'No perteneces a este negocio.',
     validation_failed: 'Falta información o es incorrecta.',
     business_not_found: 'Este negocio no está disponible.',

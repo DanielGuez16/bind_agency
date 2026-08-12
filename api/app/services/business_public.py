@@ -34,7 +34,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Business, CatalogItem, Tier, TierOffer
 from app.models.enums import BusinessCategory, BusinessStatus, ContentFormat, Platform
-from app.services import availability, eligibility
+from app.services import availability, business_photos, eligibility
 from app.services.feed import ratio_de_valeur
 
 #: Assez pour écrire « prochaine place mardi 14 h », pas assez pour composer un
@@ -92,6 +92,10 @@ class FichePublique:
     timezone: str
     phone: str | None
     cover_photo_key: str | None
+    #: La galerie, dans l'ordre choisi par le commerce. Distincte de la
+    #: couverture : celle-ci est l'image de la carte du fil, calibrée pour
+    #: tenir en petit ; la galerie est ce que la fiche déroule.
+    photos: tuple[str, ...]
     offres: tuple[OffreDeLaFiche, ...]
 
 
@@ -232,5 +236,8 @@ async def fiche(
         timezone=business.timezone,
         phone=business.phone,
         cover_photo_key=business.cover_photo_key,
+        photos=tuple(
+            photo.storage_key for photo in await business_photos.lister(session, business.id)
+        ),
         offres=tuple(offres),
     )

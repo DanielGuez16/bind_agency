@@ -8,7 +8,13 @@ from app.models.audit import AuditLog
 from app.models.auth import RefreshToken
 from app.models.base import Base
 from app.models.booking import Booking, CapacityException, CapacityRule, RedemptionCode
-from app.models.business import Business, BusinessMember, Subscription, SubscriptionPlan
+from app.models.business import (
+    Business,
+    BusinessMember,
+    BusinessPhoto,
+    Subscription,
+    SubscriptionPlan,
+)
 from app.models.catalog import CatalogItem, MenuImport
 from app.models.collaboration import Collaboration, Proof
 from app.models.identity import CreatorProfile, SocialAccount, SocialMetricsSnapshot, User
@@ -24,6 +30,7 @@ __all__ = [
     "Base",
     "Booking",
     "Business",
+    "BusinessPhoto",
     "BusinessMember",
     "CapacityException",
     "CapacityRule",

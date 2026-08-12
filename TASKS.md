@@ -218,8 +218,8 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Fin : catalogue groupé par palier, horaires et capacité en sept lignes toujours — un jour sans règle s'écrit « fermé », parce qu'une ligne absente ne dit pas si le commerce a fermé ou n'a rien rempli. Ouvrir et fermer passent par la route de transition, qui laisse une trace. Une lecture des paliers côté commerce est venue avec : la seule route était réservée à l'administration*
 - [x] Écran des paliers créateur, v0.7 · une échelle et non un historique
       *Fin : la plateforme passe en onglets et l'échelle compte trois barreaux, triés par format croissant ; chaque barreau dit ce qu'on donne et ce qu'on obtient, au conditionnel s'il est fermé ; la progression est portée par la matière du bandeau — contour, teinte, aplat — et se lit en niveaux de gris ; l'écart n'est chiffré et jauge qu'à 60 % du seuil, obstacle par obstacle ; une cause commune passe devant et est retirée des barreaux, où le palier acquis dit « en pause, pas perdu » ; les règles existent enfin, colonne de droite en bureau et écran empilé en compact, le score de fiabilité en tête. Douze mutations vérifiées.*
-- [ ] Galerie photos d'un commerce
-      *`business` ne porte qu'une clé de couverture ; les maquettes de Discovery v0.5 prévoient plusieurs photos par fiche. Fin : un commerce téléverse plusieurs photos, les ordonne, en supprime, et la fiche publique les affiche dans cet ordre*
+- [ ] Galerie photos d'un commerce · l'écran de composition
+      *Le service, les routes et la fiche publique sont livrés : un commerce téléverse, ordonne, supprime, et la fiche rend les clés dans cet ordre. Reste l'écran, dans la section catalogue de la configuration — le glisser-déposer d'ordre n'existe pas en React Native sans bibliothèque, à arbitrer entre deux flèches par ligne et un mode réordonnancement*
 - [x] Sélection du média de preuve
       *Livré avec la soumission de preuve et resté non coché. Vérifié : galerie et
       appareil photo, aperçu avant envoi, refus de permission dit comme un choix
