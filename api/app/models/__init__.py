@@ -17,6 +17,7 @@ from app.models.oauth import OAuthState
 from app.models.platform_asset import PlatformAsset
 from app.models.reliability import ReliabilityEvent
 from app.models.tiers import Tier, TierOffer
+from app.models.tracking import CollaborationLink, LinkClick, LinkClickSalt
 
 __all__ = [
     "AuditLog",
@@ -28,6 +29,7 @@ __all__ = [
     "CapacityRule",
     "CatalogItem",
     "Collaboration",
+    "CollaborationLink",
     "CreatorProfile",
     "MenuImport",
     "OAuthState",
@@ -37,6 +39,8 @@ __all__ = [
     "RefreshToken",
     "ReliabilityEvent",
     "Job",
+    "LinkClick",
+    "LinkClickSalt",
     "SocialAccount",
     "SocialMetricsSnapshot",
     "Subscription",

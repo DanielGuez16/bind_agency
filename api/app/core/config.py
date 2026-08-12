@@ -361,6 +361,45 @@ class Settings(BaseSettings):
         }
     )
 
+    # ----------------------------------------------------------------------
+    # Lien traqué : mesurer la portée réelle au lieu de la prédire.
+    # ----------------------------------------------------------------------
+    #: Base MMDB locale pour résoudre une adresse IP en ville. Absente, les
+    #: clics sont enregistrés sans géographie plutôt qu'avec une géographie
+    #: inventée. **Aucune adresse n'est jamais stockée, avec ou sans base.**
+    geoip_database_path: str | None = None
+    #: Longueur de l'identifiant court d'un lien. Dix caractères dans un
+    #: alphabet de trente-deux font cinquante bits : un lien ne se devine pas,
+    #: et il tient dans un sticker de story.
+    link_slug_length: int = 10
+    #: Où la redirection envoie le visiteur. Sans elle, la route refuse de
+    #: rendre une adresse plutôt que d'en inventer une.
+    link_redirect_base_url: str | None = None
+    #: Fenêtre de déduplication d'une même empreinte. Trente minutes : assez
+    #: pour absorber le va-et-vient d'une même personne dans une story, assez
+    #: court pour ne pas confondre deux visites d'intention différente.
+    #:
+    #: C'est **aussi** la durée de vie de l'empreinte et de son sel : passé ce
+    #: délai, plus rien ne permet de relier deux clics, même à nous.
+    link_click_dedup_seconds: int = 1800
+    #: Combien de temps garder les coups écartés — robots, préchargements. Ils
+    #: ne comptent dans aucun agrégat ; ils servent à voir une anomalie, et
+    #: c'est tout ce qui justifie de les garder un temps.
+    link_click_rejected_retention_days: int = 30
+    #: Rayon dans lequel un clic est dit « local », en mètres. Trente
+    #: kilomètres couvrent l'agglomération de Miami, qui est l'unité qu'un
+    #: salon a en tête quand il parle de sa clientèle.
+    link_local_radius_metres: int = 30_000
+    #: Période de la purge des empreintes. Cinq minutes : la fenêtre de
+    #: déduplication est de trente, et une purge plus lente laisserait vivre
+    #: des empreintes au-delà de leur seul usage.
+    link_click_purge_interval_seconds: int = 300
+    #: Poids du score d'impact local. **Zéro, et il le reste** tant qu'aucune
+    #: donnée réelle n'a été observée : la mécanique existe, se teste et
+    #: s'expose, et ne pèse sur rien. Le jour où elle pèsera, ce sera une
+    #: décision prise sur des chiffres, pas un effet de bord de sa livraison.
+    local_impact_weight: Decimal = Decimal("0")
+
     # Lue uniquement par la session pytest, jamais par l'application.
     # Sa présence est vérifiée dans tests/conftest.py, qui refuse de tourner sans.
     test_database_url: PostgresDsn | None = Field(default=None, repr=False)

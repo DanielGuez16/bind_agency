@@ -3013,3 +3013,88 @@ Un parent de gamme est écarté de la distribution, et il se reconnaît à ce qu
 celui de toute prestation de premier rang. C'est la définition qu'emploient déjà
 le fil et le semis.
 
+
+## 2026-08-12 — La géographie se résout d'un fichier local, jamais d'un service
+
+Le lien traqué doit dire d'où viennent les gens. La question posée était :
+comment, sans dépendance payante et sans stocker l'adresse.
+
+**Un service hébergé est écarté pour la raison même qui motive la contrainte.**
+Une API de géolocalisation, gratuite ou non, exige d'*envoyer* l'adresse à un
+tiers — c'est-à-dire de faire exactement ce qu'on s'interdit de faire soi-même,
+en s'en remettant à la politique de rétention de quelqu'un d'autre. Le quota et
+le prix ne sont pas le vrai sujet.
+
+**Retenu : une base MMDB locale**, lue par `maxminddb` (MIT). Deux bases
+publiques la publient sans abonnement — DB-IP Lite City (CC BY, mensuelle, sans
+compte) et MaxMind GeoLite2 City (gratuite, compte requis). Le lecteur est le
+même : changer de base est une ligne de configuration. Aucun réseau, aucune
+clé, aucun quota, et l'adresse ne quitte jamais le processus.
+
+**Sans base, on ne devine pas.** Le résolveur absent rend `None` et le clic est
+enregistré sans géographie. L'intégration continue tourne ainsi, aucun fichier
+n'étant versionné. Un repli sur un pays par défaut contaminerait la part locale
+de toutes les campagnes.
+
+La granularité s'arrête à la ville, et les coordonnées rendues sont **le centre
+de la ville** — identiques pour tous ses habitants. Elles situent une ville,
+jamais quelqu'un.
+
+## 2026-08-12 — L'adresse IP n'est jamais stockée, et l'oubli est définitif
+
+Exigence, pas préférence. Trois choses la tiennent, et la troisième est celle
+qui la distingue d'un pseudonymat.
+
+**Aucune colonne n'existe pour elle.** Il n'y a pas de champ à oublier de
+purger. Un test parcourt `information_schema` — le schéma entier, pas trois
+colonnes choisies — et refuse tout nom ou type qui y ressemblerait.
+
+**Elle sert à deux choses et disparaît avec la requête** : résoudre une ville,
+calculer une empreinte de déduplication.
+
+**Le sel de l'empreinte est tiré au hasard chaque jour et détruit avec elle.**
+Une clé de configuration resterait, et avec elle la possibilité de recalculer
+une empreinte des mois plus tard en tenant l'adresse d'origine. Le sel parti, ce
+calcul n'existe plus pour personne — nous compris. La purge est un balayage de
+la file de travail : sans lui, la garantie tiendrait dans une docstring.
+
+L'empreinte inclut le lien. Sans cela, un même visiteur porterait la même
+empreinte sur toutes les contreparties, et recouper deux liens dirait « ces deux
+salons ont été vus par le même téléphone » — un recoupement qu'on ne veut ni
+faire ni rendre possible.
+
+## 2026-08-12 — Ce qu'on écarte laisse une trace, et ce qu'on doute ne condamne pas
+
+**Trois filtres avant de compter** : agent utilisateur de robot déclaré (liste
+fermée, agent vide compris), préchargement (`Sec-Purpose`, `Purpose`, `X-Moz`,
+et `HEAD`), doublon d'empreinte dans la fenêtre. Chacun est enregistré **avec sa
+raison** plutôt que jeté : un compteur qui n'avance pas s'explique mieux avec
+« quatre-vingts préchargements » qu'avec le silence, et la forme des rejets est
+le principal signal d'une campagne fabriquée.
+
+**On ne prétend pas distinguer un humain d'un programme.** Ce serait faux, et le
+prétendre ferait accuser des créateurs honnêtes sur une heuristique. Quatre
+signaux nommés — une seule ville, un seul terminal, aucun référent, une majorité
+de coups écartés — sont exposés **à l'administration seule**, avec le constat et
+le seuil qui les ont déclenchés. Un doute n'est pas un fait : le montrer au
+salon ferait refuser des publications que personne n'a arbitrées.
+
+Rien n'est signalé sous trente clics : sur douze, toutes les proportions sont
+aberrantes et aucune ne signifie quoi que ce soit.
+
+## 2026-08-12 — La part locale se calcule, le score d'impact pèse zéro
+
+Le clic garde le centre de sa ville ; la distance au salon se refait à la
+lecture. Un booléen « local » figé au moment du clic cesserait d'être vrai le
+jour où le rayon change — même règle que le score de fiabilité, recalculé depuis
+ses événements plutôt qu'écrit à la main.
+
+`local_impact_weight` vaut **zéro** et le reste tant qu'aucune donnée réelle n'a
+été observée. La mécanique existe, se teste et s'expose ; le jour où elle
+pèsera, ce sera une décision prise sur des chiffres, pas un effet de bord de sa
+livraison.
+
+Trouvé en écrivant les tests : la route de redirection **ne validait pas sa
+transaction**. Elle redirigeait parfaitement et ne comptait jamais rien. C'est
+le pire profil de défaut pour une route de mesure — tout fonctionne, sauf ce
+qu'elle existe pour faire.

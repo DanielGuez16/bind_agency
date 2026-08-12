@@ -11,6 +11,7 @@ from app.core.errors import ErrorCode
 from app.integrations.billing import check_billing_configuration
 from app.integrations.email import check_email_configuration
 from app.integrations.geocoding import check_geocoder_configuration
+from app.integrations.geoip import check_geoip_configuration
 from app.integrations.menu_extraction import check_extraction_configuration
 from app.integrations.object_store import check_object_store_configuration
 from app.routers import (
@@ -44,6 +45,7 @@ from app.routers import (
     subscription,
     tier_offers,
     tiers,
+    tracking,
 )
 
 
@@ -80,6 +82,7 @@ def create_app() -> FastAPI:
     check_extraction_configuration()
     check_object_store_configuration()
     check_billing_configuration()
+    check_geoip_configuration()
 
     application = FastAPI(
         title="BIND API",
@@ -133,6 +136,13 @@ def create_app() -> FastAPI:
     application.include_router(media.router, prefix=settings.api_v1_prefix)
     application.include_router(proof_media.router, prefix=settings.api_v1_prefix)
     application.include_router(proof_upload.router, prefix=settings.api_v1_prefix)
+    application.include_router(tracking.creator_router, prefix=settings.api_v1_prefix)
+    application.include_router(tracking.business_router, prefix=settings.api_v1_prefix)
+    application.include_router(tracking.admin_router, prefix=settings.api_v1_prefix)
+    # **Hors préfixe, délibérément.** Le lien voyage dans un sticker de story,
+    # où il se lit et parfois se recopie à la main : « /r/k3f9x2 » tient,
+    # « /api/v1/tracking/redirect/k3f9x2 » non.
+    application.include_router(tracking.redirect_router)
 
     return application
 

@@ -207,6 +207,11 @@ class JobType(StrEnum):
     COLLABORATION_DEADLINE_SWEEP = "collaboration_deadline_sweep"
     #: Rappels d'échéance de publication. Balayage global.
     COLLABORATION_REMINDER_SWEEP = "collaboration_reminder_sweep"
+    #: Efface les empreintes de clic échues, leur sel, et les coups écartés
+    #: trop vieux. Balayage global. **C'est ce job qui rend l'oubli réel** :
+    #: sans lui, la promesse de purge ne serait qu'une fonction que personne
+    #: n'appelle.
+    LINK_CLICK_PURGE_SWEEP = "link_click_purge_sweep"
 
 
 class JobStatus(StrEnum):
@@ -222,3 +227,41 @@ class JobStatus(StrEnum):
     #: il attend un administrateur. Un job qui échoue en silence pour toujours
     #: est pire qu'un job qui n'existe pas.
     EXHAUSTED = "exhausted"
+
+
+class DeviceFamily(StrEnum):
+    """Famille de terminal, déduite de l'agent utilisateur.
+
+    Trois familles et un repli, pas davantage. Un agent utilisateur ne dit pas
+    de façon fiable le modèle, la version ni la marque, et prétendre le
+    contraire produirait une statistique fausse. Ce qu'on veut savoir tient
+    dans la question : est-ce qu'on lit depuis un téléphone.
+    """
+
+    MOBILE = "mobile"
+    TABLET = "tablet"
+    DESKTOP = "desktop"
+    #: Ni l'un ni l'autre, ou rien d'exploitable. Se dit plutôt que de ranger
+    #: d'office dans « bureau », qui gonflerait la famille la moins probable.
+    UNKNOWN = "unknown"
+
+
+class ClickOutcome(StrEnum):
+    """Ce qu'on a fait d'un passage sur un lien.
+
+    Un seul de ces états entre dans les agrégats. Les autres existent pour dire
+    **pourquoi** un passage n'a pas compté : un compteur qui descend sans
+    explication se lit comme une panne, et la forme des rejets est le principal
+    signal d'une campagne fabriquée.
+    """
+
+    #: Compté. Le seul qui figure dans un agrégat.
+    COUNTED = "counted"
+    #: Agent utilisateur de robot déclaré. Ce n'est pas une accusation : la
+    #: plupart s'annoncent honnêtement.
+    BOT = "bot"
+    #: Préchargement du navigateur ou de la plateforme. Personne n'a cliqué —
+    #: c'est un aperçu fabriqué pour aller plus vite.
+    PREFETCH = "prefetch"
+    #: Même empreinte, même lien, dans la fenêtre de déduplication.
+    DUPLICATE = "duplicate"

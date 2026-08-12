@@ -24,7 +24,7 @@ from app.integrations.email import get_sender
 from app.integrations.social import SocialAuthError, SocialProvider, SocialProviderError
 from app.models import Collaboration, Job, SocialAccount
 from app.models.enums import JobType, Platform, SocialAccountStatus
-from app.services import booking_states, collaboration, notifications
+from app.services import booking_states, collaboration, notifications, tracking
 from app.services import metrics as metrics_service
 
 
@@ -188,6 +188,20 @@ async def rappeler_les_echeances(session: AsyncSession, *, account, provider) ->
     return Fait(prochain=timedelta(seconds=settings.collaboration_reminder_interval_seconds))
 
 
+async def purger_les_clics(session: AsyncSession, *, account, provider) -> Issue:
+    """Efface les empreintes échues, leur sel, et les coups écartés trop vieux.
+
+    **C'est ce job qui rend l'oubli réel.** La fonction de purge existait avant
+    lui et n'était appelée par personne : la garantie tenait alors dans une
+    docstring, ce qui ne protège personne.
+
+    Le sel parti, aucune empreinte n'est plus recalculable — même en possession
+    de l'adresse d'origine, et même par nous.
+    """
+    await tracking.purger(session)
+    return Fait(prochain=timedelta(seconds=get_settings().link_click_purge_interval_seconds))
+
+
 #: Ce que chaque type de job sait faire. Un type absent d'ici est un job qui ne
 #: tournera jamais — l'exécuteur le dit plutôt que de l'ignorer.
 TRAITEMENTS = {
@@ -196,6 +210,7 @@ TRAITEMENTS = {
     JobType.BOOKING_HOLD_SWEEP: expirer_les_gardes,
     JobType.COLLABORATION_DEADLINE_SWEEP: expirer_les_echeances,
     JobType.COLLABORATION_REMINDER_SWEEP: rappeler_les_echeances,
+    JobType.LINK_CLICK_PURGE_SWEEP: purger_les_clics,
 }
 
 
@@ -205,6 +220,7 @@ SANS_CIBLE = frozenset(
         JobType.BOOKING_HOLD_SWEEP,
         JobType.COLLABORATION_DEADLINE_SWEEP,
         JobType.COLLABORATION_REMINDER_SWEEP,
+        JobType.LINK_CLICK_PURGE_SWEEP,
     }
 )
 

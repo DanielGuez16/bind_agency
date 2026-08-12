@@ -35,6 +35,14 @@
         ]
       }
     },
+    "/api/v1/admin/link-clicks": {
+      "get": {
+        "operationId": "read_all_audience_api_v1_admin_link_clicks_get",
+        "responses": [
+          "200"
+        ]
+      }
+    },
     "/api/v1/admin/plans": {
       "get": {
         "operationId": "list_plans_api_v1_admin_plans_get",
@@ -390,6 +398,15 @@
         ]
       }
     },
+    "/api/v1/business/{business_id}/link-clicks": {
+      "get": {
+        "operationId": "read_business_audience_api_v1_business__business_id__link_clicks_get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/api/v1/business/{business_id}/menu-imports": {
       "post": {
         "operationId": "create_import_api_v1_business__business_id__menu_imports_post",
@@ -613,6 +630,23 @@
         ]
       }
     },
+    "/api/v1/me/collaborations/{collaboration_id}/link": {
+      "get": {
+        "operationId": "read_my_link_api_v1_me_collaborations__collaboration_id__link_get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/me/link-clicks": {
+      "get": {
+        "operationId": "read_my_audience_api_v1_me_link_clicks_get",
+        "responses": [
+          "200"
+        ]
+      }
+    },
     "/api/v1/me/profile": {
       "get": {
         "operationId": "read_profile_api_v1_me_profile_get",
@@ -755,6 +789,16 @@
         "operationId": "tiktok_callback_api_v1_social_accounts_tiktok_callback_get",
         "responses": [
           "200",
+          "422"
+        ]
+      }
+    },
+    "/r/{slug}": {
+      "get": {
+        "operationId": "suivre_le_lien_r__slug__get",
+        "responses": [
+          "302",
+          "404",
           "422"
         ]
       }
