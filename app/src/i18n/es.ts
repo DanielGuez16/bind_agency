@@ -502,6 +502,8 @@ export const es: Catalogue = {
     stockageWeb: 'Almacenamiento del navegador — solo desarrollo',
   },
   composition: {
+    galerieAjouter: 'Añadir una foto',
+    galeriePermission: 'El acceso a las fotos está desactivado. Actívalo en los ajustes del teléfono para añadir una.',
     galerieTitre: 'Fotos',
     galerieAide: 'Lo que se ve en tu ficha, en el orden que elijas.',
     galerieVide: 'Todavía ninguna foto. La primera que añadas será tu portada.',

@@ -432,8 +432,40 @@ export class Api {
     });
   }
 
+  /** Le commerce lui-même. Lu ici pour sa couverture, qui marque la galerie. */
+  commerce(businessId: string, signal?: AbortSignal) {
+    return this.client.request<{ cover_photo_key: string | null }>(routes.commerce(businessId), {
+      signal,
+    });
+  }
+
   photosDuCommerce(businessId: string, signal?: AbortSignal) {
     return this.client.request<PhotoDuCommerce[]>(routes.photosDuCommerce(businessId), { signal });
+  }
+
+  /**
+   * Dépose le fichier, puis l'ajoute à la galerie. Deux appels, pas un.
+   *
+   * Le téléversement peut échouer pour des raisons qui n'ont rien à voir avec
+   * la galerie — réseau, poids, format — et les mêler ferait remonter
+   * « galerie pleine » pour une image trop lourde. Le serveur les sépare, le
+   * client suit la même coupure.
+   */
+  async ajouterUnePhoto(businessId: string, uri: string) {
+    const corps = new FormData();
+    // La forme attendue par React Native pour un fichier local. Le nom et le
+    // type sont indicatifs : le serveur lit les premiers octets.
+    corps.append('fichier', { uri, name: 'photo.jpg', type: 'image/jpeg' } as unknown as Blob);
+
+    const { storage_key } = await this.client.request<{ storage_key: string }>(
+      routes.televerserUnePhoto(businessId),
+      { methode: 'POST', corpsBrut: corps },
+    );
+
+    return this.client.request<PhotoDuCommerce>(routes.photosDuCommerce(businessId), {
+      methode: 'POST',
+      corps: { storage_key },
+    });
   }
 
   ordonnerLesPhotos(businessId: string, photos: string[]) {

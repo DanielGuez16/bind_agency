@@ -508,6 +508,8 @@ export const en = {
     stockageWeb: 'Browser storage — development only',
   },
   composition: {
+    galerieAjouter: 'Add a photo',
+    galeriePermission: 'Photo access is off. Turn it on in your phone settings to add a photo.',
     galerieTitre: 'Photos',
     galerieAide: 'What people see on your page, in the order you choose.',
     galerieVide: 'No photo yet. The first one you add becomes your cover.',

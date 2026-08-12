@@ -88,6 +88,7 @@ export const routes = {
   mettreEnPauseLeCommerce: (businessId: string) => chemin(`/business/${businessId}/pause`),
   annuaireDesCreateurs: (businessId: string) => chemin(`/business/${businessId}/creators`),
   photosDuCommerce: (businessId: string) => chemin(`/business/${businessId}/photos`),
+  televerserUnePhoto: (businessId: string) => chemin(`/business/${businessId}/photos/uploads`),
   ordreDesPhotos: (businessId: string) => chemin(`/business/${businessId}/photos/order`),
   retirerUnePhoto: (businessId: string, photoId: string) =>
     chemin(`/business/${businessId}/photos/${photoId}`),
@@ -193,6 +194,7 @@ export const METHODES: Record<keyof typeof routes, ('GET' | 'POST' | 'PATCH' | '
     mettreEnPauseLeCommerce: ['POST'],
     annuaireDesCreateurs: ['GET'],
     photosDuCommerce: ['GET', 'POST'],
+    televerserUnePhoto: ['POST'],
     ordreDesPhotos: ['PUT'],
     retirerUnePhoto: ['DELETE'],
     modifierLeCommerce: ['GET', 'PATCH'],
