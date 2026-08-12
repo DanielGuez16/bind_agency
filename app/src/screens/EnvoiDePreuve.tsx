@@ -23,12 +23,21 @@
  * récupérer automatiquement, et c'est acté.
  */
 import { useState } from 'react';
+
+/**
+ * La borne de la note, telle que le serveur la pose.
+ *
+ * Cinq cents caractères : `collaboration.note` porte une contrainte de base du
+ * même nombre. Le champ s'arrête donc là où le serveur refuserait, plutôt que
+ * de laisser écrire une phrase qui sera coupée à l'envoi.
+ */
+const LONGUEUR_DE_LA_NOTE = 500;
 import { Image, Linking, View } from 'react-native';
 
 import * as ImagePicker from 'expo-image-picker';
 
 import { useApi } from '../api';
-import { Button, StatusMessage, Texte, vibration } from '../components';
+import { Button, StatusMessage, TextField, Texte, vibration } from '../components';
 import { useI18n } from '../i18n';
 import { radius, useTheme } from '../theme';
 
@@ -63,6 +72,7 @@ export function EnvoiDePreuve({
   const { t } = useI18n();
   const { color: c } = useTheme();
   const [vue, setVue] = useState<Etat>({ etat: 'repos' });
+  const [note, setNote] = useState('');
 
   const media = 'media' in vue ? vue.media : null;
 
@@ -123,7 +133,14 @@ export function EnvoiDePreuve({
     vibration.action();
     try {
       const { screenshot_key } = await api.televerserUneCapture(media.uri);
-      await api.soumettreLaPreuve(collaborationId, { screenshot_key });
+      // La note part avec la soumission, jamais séparément : envoyée après,
+      // elle arriverait sur un dossier déjà refusé, et le commerce l'aurait
+      // lue une fois sa décision prise.
+      const propre = note.trim();
+      await api.soumettreLaPreuve(collaborationId, {
+        screenshot_key,
+        ...(propre ? { note: propre } : {}),
+      });
       vibration.reussite();
       onEnvoye();
     } catch (erreur) {
@@ -174,6 +191,23 @@ export function EnvoiDePreuve({
           level="neutral"
           body={t('parcours.preuveEnvoiEnCours')}
           testID="envoi-en-cours"
+        />
+      ) : null}
+
+      {/* **L'autre moitié du canal.** Le commerce refuse avec un code, et le
+          créateur resoumettait sans un mot : un dossier arrivait en arbitrage
+          après trois allers-retours sans qu'aucune phrase ait été échangée.
+          Facultative — une soumission conforme n'a rien à expliquer, et un
+          champ obligatoire se remplirait de « rien à signaler ». */}
+      {media ? (
+        <TextField
+          label={t('parcours.preuveNote')}
+          value={note}
+          onChangeText={setNote}
+          helpText={t('parcours.preuveNoteAide')}
+          lignes={3}
+          maxLength={LONGUEUR_DE_LA_NOTE}
+          testID="note-de-la-preuve"
         />
       ) : null}
 

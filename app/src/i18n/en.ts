@@ -260,6 +260,8 @@ export const en = {
     preuvePermissionGalerie: 'BIND cannot open your photos. Allow access in your phone settings, then come back.',
     preuvePermissionCamera: 'BIND cannot open your camera. Allow access in your phone settings, then come back.',
     preuveOuvrirReglages: 'Open settings',
+    preuveNote: 'Anything to add?',
+    preuveNoteAide: 'Optional. The salon reads this with your proof — useful if something did not go to plan.',
     preuveCommentFaire: 'A screenshot of your published post. Stories are captured by hand — they disappear after 24 h and have no stable link.',
     preuveEnControle: 'We are checking your proof.',
     preuveANouveau: 'A new submission was requested.',

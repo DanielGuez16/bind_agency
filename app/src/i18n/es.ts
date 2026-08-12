@@ -258,6 +258,8 @@ export const es: Catalogue = {
     preuvePermissionGalerie: 'BIND no puede abrir tus fotos. Permite el acceso en los ajustes del teléfono y vuelve.',
     preuvePermissionCamera: 'BIND no puede abrir tu cámara. Permite el acceso en los ajustes del teléfono y vuelve.',
     preuveOuvrirReglages: 'Abrir ajustes',
+    preuveNote: '¿Algo que añadir?',
+    preuveNoteAide: 'Opcional. El salón lo lee junto a tu prueba — útil si algo no salió según lo previsto.',
     preuveCommentFaire: 'Una captura de tu publicación. Las historias se capturan a mano: desaparecen en 24 h y no tienen enlace estable.',
     preuveEnControle: 'Estamos revisando tu comprobante.',
     preuveANouveau: 'Se solicitó una nueva presentación.',
