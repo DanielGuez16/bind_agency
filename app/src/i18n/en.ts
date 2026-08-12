@@ -631,6 +631,12 @@ export const en = {
     insufficient_role: 'Your account cannot access this.',
     subscription_required: 'The directory comes with a subscription.',
     gallery_full: 'Your gallery is full. Remove a photo to add another.',
+    // Trois refus, trois causes. « Quelque chose s'est mal passé » à quelqu'un
+    // qui vient de se déplacer pour rien serait le pire message du produit.
+    venue_report_outside_window:
+      'You can only report this in the hours right after your slot. Write to us and a person will look at it.',
+    venue_report_already_exists: 'You already reported this booking. We are looking at it.',
+    venue_report_not_pending: 'This report has already been decided.',
     not_a_member: 'You do not belong to this business.',
     validation_failed: 'Some information is missing or incorrect.',
     business_not_found: 'This business is not available.',

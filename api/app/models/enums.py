@@ -142,6 +142,31 @@ class ReliabilityEventType(StrEnum):
     NO_SHOW = "no_show"
     UNFULFILLED = "unfulfilled"
     BUSINESS_RATING = "business_rating"
+    #: Un signalement de déplacement pour rien, écarté par l'arbitrage.
+    #:
+    #: **Son poids vaut zéro**, et le restera tant qu'on n'aura pas vu de vrais
+    #: abus. Le mécanisme existe pour que la décision se prenne sur des
+    #: chiffres — pas pour punir dès le premier jour quelqu'un dont le
+    #: signalement n'a pas été retenu, ce qui n'est pas la même chose qu'un
+    #: mensonge.
+    ABUSIVE_REPORT = "abusive_report"
+
+
+class VenueReportStatus(StrEnum):
+    """Ce qu'est devenu un signalement de déplacement pour rien.
+
+    **Un signalement est une allégation, jamais un verdict.** Tant qu'il est
+    `pending`, il ne compte contre personne : ni contre le salon, qui n'a pas
+    été entendu, ni contre le créateur, qui n'a fait que dire ce qu'il a vu.
+    C'est l'arbitrage qui tranche, comme pour les contreparties.
+    """
+
+    PENDING = "pending"
+    #: Le salon n'a pas honoré. Compté contre lui, jamais contre le créateur.
+    CONFIRMED = "confirmed"
+    #: Écarté. Ne prouve pas le mensonge — seulement que l'arbitre n'a pas
+    #: retenu le signalement.
+    REJECTED = "rejected"
 
 
 class ActorKind(StrEnum):

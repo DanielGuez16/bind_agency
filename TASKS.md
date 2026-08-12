@@ -25,8 +25,16 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Fin : `.env.example` documenté*
 - [ ] Poser un premier jeu de seuils de paliers provisoire en configuration
       *Fin : valeurs modifiables sans redéploiement, à faire valider par Rebecca plus tard*
-- [ ] Choisir le fournisseur de géocodage d'adresse, ouvrir le compte et la clé
-      *Fin : clé en configuration, coût à l'appel connu. N'est apparu qu'à la phase 2 : la contrainte « un commerce n'est actif que géocodé » suppose un service de résolution, qu'aucune ligne de cette liste ne prévoyait. Contourné en phase 2 par saisie manuelle des coordonnées, réellement nécessaire en phase 5*
+- [ ] Ouvrir le compte Geocodio et poser la clé
+      *Le fournisseur est choisi et **le code est écrit** — voir `DECISIONS.md`
+      du 2026-08-06 et `app/integrations/geocoding.py`. Ne reste que
+      l'administratif, qui n'est pas du code : créer le compte, copier la clé
+      dans `GEOCODING_API_KEY`, et passer `GEOCODING_PROVIDER=geocodio`.
+      Coût : 2 500 requêtes par jour gratuites, puis 1 $ les mille — sans
+      abonnement, et sans carte tant qu'on reste sous le quota. BIND ne résout
+      qu'à la création ou à la modification d'un commerce, et pas du tout quand
+      les coordonnées sont déclarées : le quota gratuit couvre le lancement
+      sans marge à surveiller.*
 - [ ] Comptes Apple et Google au nom de l'entité
       *Fin : à faire avant la distribution seulement, un build de développement Expo n'en a pas besoin*
 
@@ -263,6 +271,16 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       que les genres qui le concernent. **Toujours non vérifié de bout en
       bout** : Expo ne délivre de jeton distant que sur un build de
       développement*
+- [x] Le cas inverse de l'absence : signaler un déplacement pour rien
+      *Un créateur qui ne vient pas est pénalisé ; un salon fermé ne l'était
+      pas, et la réservation restait `confirmed` — si bien que le commerce
+      pouvait encore marquer absent quelqu'un qu'il n'avait pas reçu. Fin :
+      fenêtre courte après l'heure du créneau, sur l'heure serveur ; la
+      réservation part en `cancelled`, jamais en `no_show`, et **signaler
+      n'écrit aucun événement de fiabilité sur celui qui signale** ; le
+      signalement est une allégation qui ne compte contre le salon qu'une fois
+      arbitrée ; l'arbitre voit combien de signalements de ce créateur ont déjà
+      été écartés et combien de ce salon ont été retenus. 18 tests, 4 mutations*
 - [ ] Capture de preuve niveau 1
       *Attend `fetch_media` sur l'interface de plateforme, qui viendra avec le relevé des publications — une tâche à part, qui demande de savoir quelles publications appartiennent à quelle collaboration*
 - [x] Dépôt objet réel, compatible S3

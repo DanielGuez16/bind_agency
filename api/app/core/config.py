@@ -358,8 +358,20 @@ class Settings(BaseSettings):
             "no_show": Decimal("-25"),
             "unfulfilled": Decimal("-30"),
             "business_rating": Decimal("0"),
+            # **Zéro, et il le reste** tant qu'aucun abus réel n'a été observé.
+            # Un signalement écarté n'est pas un mensonge : c'est un arbitre qui
+            # ne l'a pas retenu, et pénaliser les deux de la même façon
+            # découragerait de signaler — ce qui est exactement ce qu'on essaie
+            # de rendre possible.
+            "abusive_report": Decimal("0"),
         }
     )
+
+    #: Fenêtre pendant laquelle un créateur peut signaler s'être déplacé pour
+    #: rien, à compter de l'heure du créneau. Quatre heures : assez pour
+    #: rentrer chez soi et y penser, trop court pour que le souvenir se
+    #: reconstruise. Au-delà, plus personne ne peut vérifier quoi que ce soit.
+    venue_report_window_seconds: int = 4 * 3600
 
     # Notifications push. `log` n'appelle personne et trace : c'est le mode en
     # service tant qu'aucun compte Expo n'existe. Aucun repli silencieux — un

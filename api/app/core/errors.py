@@ -99,6 +99,13 @@ class ErrorCode(StrEnum):
     BOOKING_SLOT_NOT_ALLOWED = "booking_slot_not_allowed"
     BOOKING_SLOT_UNAVAILABLE = "booking_slot_unavailable"
     BOOKING_NOT_FOUND = "booking_not_found"
+    #: Signalement de déplacement pour rien. Trois refus, trois causes
+    #: distinctes : l'app doit pouvoir dire laquelle, et « quelque chose s'est
+    #: mal passé » à quelqu'un qui vient de se déplacer serait le pire message
+    #: du produit.
+    VENUE_REPORT_OUTSIDE_WINDOW = "venue_report_outside_window"
+    VENUE_REPORT_ALREADY_EXISTS = "venue_report_already_exists"
+    VENUE_REPORT_NOT_PENDING = "venue_report_not_pending"
     BOOKING_TRANSITION_NOT_ALLOWED = "booking_transition_not_allowed"
     BOOKING_HOLD_EXPIRED = "booking_hold_expired"
     #: L'heure du rendez-vous est passée : il n'y a plus rien à accepter.

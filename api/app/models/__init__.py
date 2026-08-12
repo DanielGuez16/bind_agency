@@ -25,6 +25,7 @@ from app.models.platform_asset import PlatformAsset
 from app.models.reliability import ReliabilityEvent
 from app.models.tiers import Tier, TierOffer
 from app.models.tracking import CollaborationLink, LinkClick, LinkClickSalt
+from app.models.venue_report import VenueReport
 
 __all__ = [
     "AuditLog",
@@ -58,4 +59,5 @@ __all__ = [
     "Tier",
     "TierOffer",
     "User",
+    "VenueReport",
 ]

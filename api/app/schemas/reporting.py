@@ -56,6 +56,10 @@ class ReportingRead(BaseModel):
     consommations: int
     annulations: int
     absences: int
+    #: Signalements de déplacement pour rien retenus par l'arbitrage. Les
+    #: signalements en attente n'y figurent pas : une allégation n'est pas un
+    #: fait, et l'afficher ferait contester ce que personne n'a examiné.
+    deplacements_pour_rien: int
 
     publications: int
     publications_attendues: int
