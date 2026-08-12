@@ -192,6 +192,7 @@ async def transitionner(
     vers: CollaborationStatus,
     actor: audit.Actor,
     reason: str | None = None,
+    note: str | None = None,
 ) -> Collaboration:
     """Le seul chemin. Vérifie la flèche, écrit l'état, écrit le journal."""
     depuis = collaboration.status
@@ -212,6 +213,7 @@ async def transitionner(
         to_status=vers.value,
         actor=actor,
         reason=reason,
+        note=note,
     )
     await _emettre_les_evenements(session, collaboration=collaboration, vers=vers)
     return collaboration
@@ -269,6 +271,7 @@ async def demander_une_nouvelle_soumission(
     collaboration: Collaboration,
     actor: audit.Actor,
     reason: str,
+    note: str | None = None,
 ) -> Collaboration:
     """Non conforme : on rouvre, on ne ferme pas.
 
@@ -297,6 +300,7 @@ async def demander_une_nouvelle_soumission(
         vers=CollaborationStatus.RESUBMIT_REQUESTED,
         actor=actor,
         reason=reason,
+        note=note,
     )
 
 
@@ -315,7 +319,12 @@ async def approuver(
 
 
 async def constater_non_honoree(
-    session: AsyncSession, *, collaboration: Collaboration, actor: audit.Actor, reason: str
+    session: AsyncSession,
+    *,
+    collaboration: Collaboration,
+    actor: audit.Actor,
+    reason: str,
+    note: str | None = None,
 ) -> Collaboration:
     """Clore un dossier en non honoré. **Réservé à l'arbitrage administrateur.**
 
@@ -333,6 +342,7 @@ async def constater_non_honoree(
         vers=CollaborationStatus.UNFULFILLED,
         actor=actor,
         reason=reason,
+        note=note,
     )
 
 
@@ -429,6 +439,10 @@ class DerniereSoumission:
     media_key: str | None
     screenshot_key: str | None
     platform_published_at: datetime | None
+    #: Ce que le créateur a écrit en soumettant. C'est la moitié du canal qui
+    #: vient d'en bas, et elle se lit au même endroit que la preuve — sinon le
+    #: commerce décide en ayant vu l'image sans avoir lu la phrase.
+    note: str | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -440,6 +454,10 @@ class Tentative:
     """
 
     motif: str
+    #: Ce que l'auteur a ajouté au code. **Rendu tel quel, jamais traduit** :
+    #: c'est du contenu saisi, comme le nom d'un item de catalogue. Le code, à
+    #: côté, porte le sens que l'interface sait traduire.
+    note: str | None
     demandee_le: datetime
     par: ActorKind
 
@@ -541,6 +559,7 @@ async def _completer(session: AsyncSession, lignes) -> tuple[LigneDeFile, ...]:
             media_key=p.media_key,
             screenshot_key=p.screenshot_key,
             platform_published_at=p.platform_published_at,
+            note=p.note,
         )
         for p in await session.scalars(
             sa.select(Proof).join(
@@ -556,8 +575,14 @@ async def _completer(session: AsyncSession, lignes) -> tuple[LigneDeFile, ...]:
     # Toutes les demandes de nouvelle soumission, du plus ancien au plus
     # récent. Une approbation n'en porte pas et n'efface donc rien.
     tentatives: dict[uuid.UUID, list[Tentative]] = {}
-    for entity_id, reason, occurred_at, actor_kind in await session.execute(
-        sa.select(AuditLog.entity_id, AuditLog.reason, AuditLog.occurred_at, AuditLog.actor_kind)
+    for entity_id, reason, note, occurred_at, actor_kind in await session.execute(
+        sa.select(
+            AuditLog.entity_id,
+            AuditLog.reason,
+            AuditLog.note,
+            AuditLog.occurred_at,
+            AuditLog.actor_kind,
+        )
         .where(
             AuditLog.entity_type == AuditedEntity.COLLABORATION.value,
             AuditLog.entity_id.in_(ids),
@@ -567,7 +592,7 @@ async def _completer(session: AsyncSession, lignes) -> tuple[LigneDeFile, ...]:
         .order_by(AuditLog.occurred_at)
     ):
         tentatives.setdefault(entity_id, []).append(
-            Tentative(motif=reason, demandee_le=occurred_at, par=actor_kind)
+            Tentative(motif=reason, note=note, demandee_le=occurred_at, par=actor_kind)
         )
 
     return tuple(

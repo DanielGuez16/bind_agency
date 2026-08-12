@@ -31,6 +31,8 @@ class DerniereSoumissionRead(BaseModel):
     media_key: str | None
     screenshot_key: str | None
     platform_published_at: datetime | None
+    #: Ce que le créateur a écrit en soumettant.
+    note: str | None
 
 
 class TentativeRead(BaseModel):
@@ -42,6 +44,9 @@ class TentativeRead(BaseModel):
     #: l'écrit dans sa langue. Le champ reste large parce que le journal
     #: contient aussi les motifs d'avant ce changement.
     motif: str
+    #: Ce que l'auteur a ajouté au code. **Rendu tel quel, jamais traduit** :
+    #: c'est du contenu saisi, comme le nom d'un item de catalogue.
+    note: str | None
     demandee_le: datetime
     par: ActorKind
 

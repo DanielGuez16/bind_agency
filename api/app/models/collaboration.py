@@ -83,6 +83,13 @@ class Proof(UUIDPrimaryKey, Base):
     platform_published_at: Mapped[datetime | None] = mapped_column(
         sa.DateTime(timezone=True), nullable=True
     )
+    #: Ce que le créateur dit de sa soumission. **L'autre moitié du canal.**
+    #:
+    #: Le commerce refusait avec un code, le créateur resoumettait sans un mot,
+    #: et un dossier arrivait en arbitrage après trois allers-retours sans
+    #: qu'aucune phrase n'ait été échangée. Facultatif : une soumission
+    #: conforme n'a rien à expliquer.
+    note: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     # `metadata` est réservé par SQLAlchemy déclaratif : la colonne garde son
     # nom, l'attribut Python s'appelle `extra`.
     extra: Mapped[dict | None] = mapped_column("metadata", JSONB, nullable=True)
@@ -92,6 +99,9 @@ class Proof(UUIDPrimaryKey, Base):
         sa.CheckConstraint(
             "media_key IS NOT NULL OR screenshot_key IS NOT NULL", name="has_archived_file"
         ),
+        # La même borne que sur le journal. En base et pas seulement dans le
+        # schéma : un second appelant la contournerait.
+        sa.CheckConstraint("note IS NULL OR length(note) <= 500", name="note_bornee"),
         sa.Index(
             "ix_proof_collaboration_id_submitted_at",
             "collaboration_id",

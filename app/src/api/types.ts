@@ -386,6 +386,11 @@ export type Preuve = {
   content_hash: string;
   source_url: string | null;
   platform_published_at: string | null;
+  /**
+   * Ce que le créateur a écrit en soumettant. **Rendu tel quel, jamais
+   * traduit** : c'est du contenu saisi, comme le nom d'un item de catalogue.
+   */
+  note: string | null;
 };
 
 export type Collaboration = {
@@ -411,6 +416,8 @@ export type DerniereSoumission = {
   media_key: string | null;
   screenshot_key: string | null;
   platform_published_at: string | null;
+  /** Ce que le créateur a écrit. Se lit au même endroit que sa preuve. */
+  note: string | null;
 };
 
 /** Où regarder une preuve, et combien de temps l'adresse vaut. */
@@ -446,6 +453,13 @@ export type LigneDeFile = {
 export type Tentative = {
   /** Un code du vocabulaire fermé — ou, pour les plus anciennes, une phrase. */
   motif: string;
+  /**
+   * Ce que l'auteur a ajouté au code. **Rendu tel quel, jamais traduit** :
+   * c'est du contenu saisi. Le code, à côté, porte le sens que l'interface
+   * sait traduire — c'est ce qui permet à la note d'exister sans rouvrir le
+   * trou que `SPEC.md` §4.2 craignait.
+   */
+  note: string | null;
   demandee_le: string;
   par: 'system' | 'creator' | 'business_member' | 'admin';
 };

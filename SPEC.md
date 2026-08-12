@@ -296,7 +296,18 @@ Chaque passage par `resubmit_requested` incrémente `attempts_count`. À trois, 
 
 Quatre flèches existent pour ce seul usage : `submitted → unfulfilled`, `under_review → unfulfilled`, `resubmit_requested → approved` et `resubmit_requested → resubmit_requested` — cette dernière rouvre une fenêtre en repoussant l'échéance, ce qui n'est pas un non-mouvement. Ni la boucle d'échéances — qui ne balaie que `pending` et `resubmit_requested` — ni le commerce ne peuvent les emprunter. La table des transitions dit ce qui est possible, l'appelant dit qui en a le droit.
 
-**Le motif d'un refus est un code, jamais une phrase.** La liste est fermée — mention manquante, lieu manquant, format inattendu, qualité insuffisante — et la même des deux côtés : le commerce et l'arbitre choisissent dans le même vocabulaire. Une phrase libre ne se traduit pas à l'affichage : elle traversait le journal telle quelle et ressortait sur l'écran de l'arbitre dans la langue de celui qui l'avait écrite. Le texte libre est refusé par l'API, sans quoi il suffirait d'un appelant pour que l'intraduisible revienne.
+**Le motif d'un refus est un code**, et il reste obligatoire. La liste est fermée — mention manquante, lieu manquant, format inattendu, qualité insuffisante — et la même des deux côtés : le commerce et l'arbitre choisissent dans le même vocabulaire. C'est le code qui porte le sens, parce que c'est lui que l'interface sait traduire.
+
+**Une note libre peut l'accompagner, jamais le remplacer.** *Révision du 2026-08-12.* La règle précédente refusait tout texte libre. Elle a produit ce qu'elle ne prévoyait pas : un dossier arrivant en arbitrage après trois allers-retours sans qu'aucune phrase n'ait été échangée, un créateur lisant « mention manquante » sans savoir laquelle ni où, et un commerce refusant sans pouvoir dire ce qu'il voyait.
+
+L'objection d'origine tient toujours — une phrase ne se traduit pas, et elle ressort sur l'écran de l'arbitre dans la langue de qui l'a écrite. Elle est traitée, pas ignorée :
+
+- le code reste obligatoire et porte le sens traduisible ;
+- la note **ne voyage jamais seule**, garanti par une contrainte de base et non par la discipline des appelants — c'était précisément le trou craint, « il suffirait d'un appelant » ;
+- elle est rendue telle quelle et jamais traduite, comme le nom d'un item de catalogue ;
+- elle est bornée en longueur, et immuable comme la ligne de journal qui la porte : une note ne se corrige pas après coup, on en écrit une autre.
+
+Le créateur dispose de la même chose sur sa soumission. Ce n'est pas une messagerie : il n'y a ni fil, ni notification de message, ni réponse hors décision. C'est une phrase attachée à un acte.
 
 **L'arbitre voit l'historique des demandes, pas seulement la dernière.** C'est la répétition qui justifie l'escalade : trois fois le même reproche et trois reproches différents n'appellent pas la même décision. Les demandes sont relues dans le journal, jamais recopiées sur la contrepartie — le journal est immuable, une copie ne l'est pas.
 
