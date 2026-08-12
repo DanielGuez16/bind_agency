@@ -220,8 +220,23 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Fin : la plateforme passe en onglets et l'échelle compte trois barreaux, triés par format croissant ; chaque barreau dit ce qu'on donne et ce qu'on obtient, au conditionnel s'il est fermé ; la progression est portée par la matière du bandeau — contour, teinte, aplat — et se lit en niveaux de gris ; l'écart n'est chiffré et jauge qu'à 60 % du seuil, obstacle par obstacle ; une cause commune passe devant et est retirée des barreaux, où le palier acquis dit « en pause, pas perdu » ; les règles existent enfin, colonne de droite en bureau et écran empilé en compact, le score de fiabilité en tête. Douze mutations vérifiées.*
 - [ ] Galerie photos d'un commerce
       *`business` ne porte qu'une clé de couverture ; les maquettes de Discovery v0.5 prévoient plusieurs photos par fiche. Fin : un commerce téléverse plusieurs photos, les ordonne, en supprime, et la fiche publique les affiche dans cet ordre*
-- [ ] Sélection du média de preuve
-      *L'écran de preuve montre son état et propose l'envoi ; il manque le sélecteur qui produit le fichier*
+- [x] Sélection du média de preuve
+      *Livré avec la soumission de preuve et resté non coché. Vérifié : galerie et
+      appareil photo, aperçu avant envoi, refus de permission dit comme un choix
+      avec la seule issue qui existe — les réglages — et poids mesuré avant de
+      partir plutôt qu'après vingt mégaoctets sur le réseau d'un salon. Sept tests*
+- [x] Lien traqué par contrepartie, et audience réellement mesurée
+      *Réponse au problème posé : TikTok ne rend pas la composition géographique
+      d'une audience, et un créateur de Miami peut toucher l'Inde. On cesse de
+      prédire. Fin : un identifiant court par contrepartie, une redirection
+      publique, des clics horodatés côté serveur avec pays, région, ville,
+      famille de terminal et hôte du référent. **L'adresse IP n'est jamais
+      stockée** — vérifié sur le schéma entier — et son empreinte de
+      déduplication disparaît avec son sel, ce qui rend l'oubli définitif.
+      Robots et préchargements écartés en gardant la trace du rejet. Agrégats
+      au salon, au créateur, à l'administration ; les signaux de fabrication à
+      la seule administration. Score d'impact local à poids nul en
+      configuration. 38 tests, 5 mutations éprouvées*
 - [ ] Capture de preuve niveau 1
       *Attend `fetch_media` sur l'interface de plateforme, qui viendra avec le relevé des publications — une tâche à part, qui demande de savoir quelles publications appartiennent à quelle collaboration*
 - [x] Dépôt objet réel, compatible S3

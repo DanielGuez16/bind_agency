@@ -24,6 +24,10 @@ dependencies = [
     # Téléversement de capture : FastAPI lève au démarrage sans lui, et le
     # message ne parle que de « form data ».
     "python-multipart>=0.0.9",
+    # Lecture d'une base géographique MMDB locale, pour résoudre une adresse IP
+    # en ville **sans la transmettre à personne**. MIT. Une API hébergée ferait
+    # exactement l'inverse de ce qu'on cherche : envoyer l'adresse à un tiers.
+    "maxminddb>=2.6",
 ]
 
 [project.optional-dependencies]
