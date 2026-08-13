@@ -20,5 +20,7 @@
   "collaboration.resubmit.body": "Hola {creator}:\n\n{business} no ha podido aceptar tu prueba de {item}:\n\n{reason}\n\nTienes hasta el {deadline} para enviar una corregida.\n",
   "collaboration.resubmit.subject": "Un paso más para {business}",
   "collaboration.unfulfilled.body": "Hola {creator}:\n\nEl plazo de {item} en {business} venció sin una prueba aceptada. Esto afecta a tu puntuación de fiabilidad.\n",
-  "collaboration.unfulfilled.subject": "Tu colaboración con {business} no se ha cumplido"
+  "collaboration.unfulfilled.subject": "Tu colaboración con {business} no se ha cumplido",
+  "handover.invitation.body": "Hola:\n\nHemos preparado la página de {business} en BIND — dirección, horarios y servicios ya están cargados.\n\nAbre el enlace para revisarla, crear tu cuenta y publicarla. Nada es visible para los creadores hasta que lo hagas.\n\n{url}\n\nEl enlace funciona una sola vez y caduca el {expiration}.\n",
+  "handover.invitation.subject": "{business} ya está listo en BIND"
 }

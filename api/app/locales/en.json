@@ -20,5 +20,7 @@
   "collaboration.resubmit.body": "Hi {creator},\n\n{business} could not accept your proof for {item}:\n\n{reason}\n\nYou have until {deadline} to send a corrected one.\n",
   "collaboration.resubmit.subject": "One more step for {business}",
   "collaboration.unfulfilled.body": "Hi {creator},\n\nThe deadline for {item} at {business} passed without an accepted proof. This affects your reliability score.\n",
-  "collaboration.unfulfilled.subject": "Your collaboration with {business} was not honoured"
+  "collaboration.unfulfilled.subject": "Your collaboration with {business} was not honoured",
+  "handover.invitation.body": "Hi,\n\nWe prepared your BIND page for {business} — address, hours and services are already in.\n\nOpen the link below to review it, create your account and put it online. Nothing is visible to creators until you do.\n\n{url}\n\nThe link works once and expires on {expiration}.\n",
+  "handover.invitation.subject": "{business} is ready on BIND"
 }

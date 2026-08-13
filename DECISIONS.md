@@ -3356,3 +3356,59 @@ l'API ne montre les 404. Le test vérifie maintenant que la source répond 200
 **avant** de demander si elle se lit — un fichier manquant et un fichier
 illisible ne se diagnostiquent pas au même endroit, et le navigateur ne les
 distingue pas pour nous.
+
+## 2026-08-13 — Inscription sur le terrain : des faits, jamais des engagements
+
+La fondatrice démarche en physique, tablette à la main. L'inscription autonome
+demande une demi-heure au comptoir — identité, adresse, horaires, carte des
+prestations avec leurs durées, photos, mot de passe, moyen de paiement — et
+personne ne la fait pendant qu'un client attend. La visite se termine sur
+« je le ferai ce soir », et ce soir n'arrive pas.
+
+**La ligne de partage est celle-ci : elle peut saisir des *faits*, jamais des
+*engagements*.** Nom, adresse, horaires, carte, photos : elle les connaît aussi
+bien que le salon, et c'est là que sont les trente minutes. Mot de passe,
+acceptation des conditions, mise en ligne : si elle les pose, personne ne peut
+dire qui a accepté quoi, elle détient les identifiants d'un tiers, et le premier
+litige n'a aucune réponse. **Un parcours entièrement assisté est plus rapide et
+indéfendable ; l'inscription autonome est défendable et convertit à zéro sur le
+trottoir.**
+
+**Un statut `draft`, et non un `onboarding` sans membre.** Les deux décrivent un
+commerce incomplet, et c'est justement pourquoi il fallait les séparer :
+`onboarding` désigne un commerce dont quelqu'un a déjà le compte, `draft` une
+fiche que personne n'assume. Les confondre reviendrait à ne plus savoir si un
+commerce a un propriétaire — la seule question à laquelle ce dispositif doit
+pouvoir répondre.
+
+**Le QR d'abord, le courriel ensuite, et les deux sont nécessaires.** Si le
+décideur est là, il scanne l'écran de la tablette : rien à taper, et la personne
+qui assume est manifestement celle qui est présente. Mais le propriétaire n'est
+souvent pas dans le salon — c'est précisément ce cas-là qui perdait la visite —
+et le lien doit alors le suivre.
+
+**La preuve de l'engagement va au journal d'audit, pas sur la ligne de prise en
+main.** Le journal est immuable et ne disparaît pas avec le commerce ; la ligne,
+elle, s'efface en cascade avec un prospect qui n'a rien donné. Ce qu'on
+regardera le jour où quelqu'un contestera avoir accepté quoi que ce soit — qui,
+quand, quelle version — doit survivre au ménage.
+
+**Une version de conditions, pas un booléen.** Un lien ouvert la semaine
+dernière montre les conditions de la semaine dernière : la version acceptée est
+comparée à celle en vigueur, et un écart refuse. Écrire la version courante sur
+une acceptation produite sur une autre serait écrire une preuve fausse.
+
+**Pas de système général de conditions pour autant.** Aucune colonne n'est
+ajoutée à `app_user`, aucune table de versions n'est créée : ce qui existe ici
+est la preuve d'un engagement précis, celui d'un salon qui assume sa fiche. Un
+dispositif général est une autre décision, et elle se prendra quand les
+conditions changeront pour de vrai.
+
+**Un compte existant peut assumer une seconde fiche.** Un propriétaire qui tient
+deux adresses n'a pas à s'inventer une seconde adresse électronique ni à tenir
+deux mots de passe pour deux salons de la même rue.
+
+**Ce qui est écarté, et pourquoi.** La saisie hors ligne : une file d'envois
+différés avec résolution de conflits est un mécanisme d'une autre taille que
+celui-ci. La concession retenue est plus modeste — un envoi de photo qui échoue
+se rejoue sans refaire le formulaire.

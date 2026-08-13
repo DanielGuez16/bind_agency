@@ -45,7 +45,7 @@ mes_commerces_router = APIRouter(
 GeocoderDep = Annotated[Geocoder, Depends(get_geocoder)]
 
 
-async def _to_read(session: AsyncSession, business: Business) -> BusinessRead:
+async def lire_le_commerce(session: AsyncSession, business: Business) -> BusinessRead:
     coordinates = await business_service.coordinates_of(session, business)
     return BusinessRead(
         id=business.id,
@@ -89,7 +89,7 @@ async def list_my_businesses(user: CurrentUser, session: SessionDep) -> list[Bus
         .where(BusinessMember.user_id == user.id)
         .order_by(Business.name)
     )
-    return [await _to_read(session, commerce) for commerce in commerces]
+    return [await lire_le_commerce(session, commerce) for commerce in commerces]
 
 
 @router.post(
@@ -108,12 +108,12 @@ async def create(
         session, payload=payload, creator=user, geocoder=geocoder
     )
     await session.commit()
-    return await _to_read(session, business)
+    return await lire_le_commerce(session, business)
 
 
 @router.get("/{business_id}", response_model=BusinessRead)
 async def read(business: CurrentBusiness, session: SessionDep) -> BusinessRead:
-    return await _to_read(session, business)
+    return await lire_le_commerce(session, business)
 
 
 @router.patch("/{business_id}", response_model=BusinessRead)
@@ -127,7 +127,7 @@ async def update(
         session, business=business, payload=payload, geocoder=geocoder
     )
     await session.commit()
-    return await _to_read(session, business)
+    return await lire_le_commerce(session, business)
 
 
 @router.get("/{business_id}/activation", response_model=VueDActivationRead)
@@ -185,7 +185,7 @@ async def pause(business: CurrentBusiness, user: CurrentUser, session: SessionDe
         raise api_error(status.HTTP_409_CONFLICT, ErrorCode.BUSINESS_NOT_ACTIVE) from error
 
     await session.commit()
-    return await _to_read(session, business)
+    return await lire_le_commerce(session, business)
 
 
 @router.post("/{business_id}/activate", response_model=BusinessRead)
@@ -199,6 +199,8 @@ async def activate(
         )
     except business_service.AlreadyActive as error:
         raise api_error(status.HTTP_409_CONFLICT, ErrorCode.BUSINESS_ALREADY_ACTIVE) from error
+    except business_service.NotClaimed as error:
+        raise api_error(status.HTTP_409_CONFLICT, ErrorCode.BUSINESS_NOT_CLAIMED) from error
     except business_service.MissingAddress as error:
         raise api_error(
             status.HTTP_422_UNPROCESSABLE_CONTENT, ErrorCode.BUSINESS_MISSING_ADDRESS
@@ -209,4 +211,4 @@ async def activate(
         ) from error
 
     await session.commit()
-    return await _to_read(session, business)
+    return await lire_le_commerce(session, business)

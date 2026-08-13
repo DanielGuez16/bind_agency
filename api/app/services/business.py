@@ -23,7 +23,7 @@ from app.models import (
     User,
 )
 from app.models.enums import BusinessMemberRole, BusinessStatus
-from app.schemas.business import BusinessCreate, BusinessUpdate
+from app.schemas.business import BusinessCreate, BusinessUpdate, CoordinatesPayload
 from app.services.audit import Actor, AuditedEntity, record_transition
 
 REASON_ACTIVATION = "business_activated"
@@ -44,6 +44,10 @@ class AlreadyActive(BusinessError):
     pass
 
 
+class NotClaimed(BusinessError):
+    """Une fiche préparée sur le terrain que personne n'a encore assumée."""
+
+
 class MissingAddress(BusinessError):
     pass
 
@@ -52,8 +56,24 @@ class MissingCoordinates(BusinessError):
     pass
 
 
-def _point(coordinates: Coordinates) -> WKTElement:
+def point(coordinates: Coordinates) -> WKTElement:
     return WKTElement(coordinates.as_wkt(), srid=SRID)
+
+
+async def resoudre_la_position(
+    geocoder: Geocoder, *, address: str | None, declared: CoordinatesPayload | None
+) -> Coordinates | None:
+    """L'adresse et les coordonnées déclarées, ramenées à un point.
+
+    Partagée avec la préparation d'une fiche sur le terrain : deux façons de
+    créer un commerce, une seule règle de résolution. Écrite deux fois, elle
+    aurait fini par diverger — et un commerce préparé au comptoir se serait
+    placé ailleurs que le même commerce inscrit depuis son bureau.
+    """
+    coordonnees = (
+        Coordinates(declared.longitude, declared.latitude) if declared is not None else None
+    )
+    return await geocoder.locate(address, declared=coordonnees)
 
 
 async def coordinates_of(session: AsyncSession, business: Business) -> Coordinates | None:
@@ -84,18 +104,15 @@ async def create_business(
     les deux écritures appartiennent à la même transaction, pas à deux étapes
     dont la seconde pourrait manquer.
     """
-    declared = (
-        Coordinates(payload.coordinates.longitude, payload.coordinates.latitude)
-        if payload.coordinates
-        else None
+    resolved = await resoudre_la_position(
+        geocoder, address=payload.address, declared=payload.coordinates
     )
-    resolved = await geocoder.locate(payload.address, declared=declared)
 
     business = Business(
         name=payload.name,
         category=payload.category,
         address=payload.address,
-        geo=_point(resolved) if resolved else None,
+        geo=point(resolved) if resolved else None,
         timezone=payload.timezone,
         default_locale=payload.default_locale,
         phone=payload.phone,
@@ -142,14 +159,11 @@ async def update_business(
     fields = payload.model_dump(exclude_unset=True)
 
     if "coordinates" in fields or "address" in fields:
-        declared = (
-            Coordinates(payload.coordinates.longitude, payload.coordinates.latitude)
-            if payload.coordinates
-            else None
-        )
         address = fields.get("address", business.address)
-        resolved = await geocoder.locate(address, declared=declared)
-        business.geo = _point(resolved) if resolved else None
+        resolved = await resoudre_la_position(
+            geocoder, address=address, declared=payload.coordinates
+        )
+        business.geo = point(resolved) if resolved else None
 
     for name in (
         "name",
@@ -175,6 +189,12 @@ async def activate_business(session: AsyncSession, *, business: Business, actor:
     """
     if business.status is BusinessStatus.ACTIVE:
         raise AlreadyActive(business.id)
+    # **Une fiche préparée ne s'ouvre pas.** Elle n'appartient à personne tant
+    # que personne ne l'a prise en main ; l'activer publierait un salon que
+    # nul n'assume, à une adresse que nul n'a confirmée. Le chemin passe par la
+    # prise en main, qui la fait sortir de `draft`.
+    if business.status is BusinessStatus.DRAFT:
+        raise NotClaimed(business.id)
 
     # La même liste que celle rendue par `etapes_activation`. Réécrire les
     # conditions ici en ferait deux, et l'écran finirait par annoncer « prêt »

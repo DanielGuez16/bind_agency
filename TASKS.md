@@ -307,4 +307,22 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       instruire — c'est cent pour cent des écrans web.*
 - [x] Dépôt objet réel, compatible S3
       *Fin : deux compartiments Supabase, `make demo-seed` y range photos et preuves. La sonde de déploiement écrit et relit dans chacun, et éprouve le gabarit — pas seulement la joignabilité : un témoin de vingt octets passe sur un compartiment dont la limite de taille est inférieure à ce qu'on y dépose. Un refus porte le statut HTTP, le compartiment et la clé, parce que « ClientError » sans rien d'autre a coûté deux diagnostics*
+- [x] Inscription d'un salon sur le terrain · la fiche préparée et sa prise en main
+      *La fondatrice démarche en physique ; l'inscription autonome demande une
+      demi-heure au comptoir et personne ne la fait pendant qu'un client
+      attend. Ligne de partage retenue : **elle saisit des faits, jamais des
+      engagements**. Fin : un statut `draft` — une fiche sans aucun membre,
+      invisible du fil et de la fiche publique, et qui refuse de s'ouvrir ; un
+      jeton de prise en main à usage unique, borné, révocable, dont seule
+      l'empreinte est stockée et dont un seul est vivant par fiche ; deux
+      chemins de remise, le QR pour le décideur présent et le courriel pour le
+      propriétaire absent — c'est ce second cas qui perdait la visite ; la
+      prise en main crée le compte, rattache le propriétaire, sort la fiche de
+      `draft` et **écrit au journal d'audit la version des conditions
+      acceptée**, avec qui et quand ; un compte existant peut assumer une
+      seconde fiche, parce qu'un propriétaire de deux adresses n'a pas à
+      s'inventer une seconde adresse électronique ; une liste de suivi qui
+      garde les fiches assumées, sans quoi on ne saurait jamais combien de
+      visites ont abouti. Un refus ne distingue jamais inconnu, expiré,
+      consommé ou révoqué. 23 tests, 12 mutations vérifiées*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire

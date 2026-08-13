@@ -41,6 +41,23 @@ class ErrorCode(StrEnum):
     BUSINESS_NOT_ACTIVE = "business_not_active"
     BUSINESS_MISSING_ADDRESS = "business_missing_address"
     BUSINESS_MISSING_COORDINATES = "business_missing_coordinates"
+    #: Une fiche préparée sur le terrain que personne n'a encore assumée : elle
+    #: n'a pas de propriétaire, et l'ouvrir publierait un salon que nul ne
+    #: revendique.
+    BUSINESS_NOT_CLAIMED = "business_not_claimed"
+
+    # Prise en main d'une fiche préparée
+    #: Jeton inconnu, expiré, déjà utilisé ou révoqué. **Un seul code pour les
+    #: quatre** : distinguer « expiré » de « inconnu » dirait à qui essaie des
+    #: jetons au hasard quels salons existent, et « déjà utilisé » dirait
+    #: lesquels ont signé.
+    HANDOVER_INVALID = "handover_invalid"
+    #: La fiche a déjà un propriétaire. Un changement de main est une autre
+    #: décision, qui ne se prend pas par un lien.
+    HANDOVER_NOT_A_DRAFT = "handover_not_a_draft"
+    #: Les conditions acceptées ne sont pas celles en vigueur — un lien ouvert
+    #: la semaine dernière montre les conditions de la semaine dernière.
+    HANDOVER_TERMS_OUTDATED = "handover_terms_outdated"
 
     # Catalogue
     CATALOG_ITEM_NOT_FOUND = "catalog_item_not_found"
