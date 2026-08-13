@@ -811,6 +811,14 @@ async def composer_les_parcours(session: AsyncSession, createurs: dict) -> tuple
         ("approuvee", timedelta(weeks=11, days=2), "confirmee", OCEAN),
         ("approuvee", timedelta(weeks=10), "confirmee", WYNWOOD),
         ("approuvee", timedelta(weeks=9, days=1), "confirmee", BRICKELL),
+        # Des réussites pour « plafonnée » **avant** ses issues dégradées.
+        # Sans elles, son score touchait le plancher — zéro sur cent — et la
+        # démonstration montrait une condamnation là où elle doit montrer un
+        # plafond. Une créatrice qui plafonne a tenu des engagements ; c'est
+        # justement pour cela qu'elle accède au bas de l'échelle.
+        ("approuvee", timedelta(weeks=9, days=5), "plafonnee", OCEAN),
+        ("approuvee", timedelta(weeks=9, days=3), "plafonnee", BRICKELL),
+        ("approuvee", timedelta(weeks=9), "plafonnee", OCEAN),
         ("revue_humaine", timedelta(weeks=8, days=4), "plafonnee", OCEAN),
         ("approuvee", timedelta(weeks=7), "confirmee", WYNWOOD),
         # Chez Brickell et non chez Wynwood : Wynwood ne compose qu'aux
@@ -1155,6 +1163,18 @@ async def recalculer_les_scores(session: AsyncSession, createurs: dict) -> None:
         raise RuntimeError(
             f"la créatrice confirmée ({confirmee.reliability_score}) n'est pas au-dessus de "
             f"la plafonnée ({plafonnee.reliability_score}) : le jeu ne montre pas ce qu'il annonce"
+        )
+
+    # **Plafonnée, pas anéantie.** Toutes les issues dégradées lui tombant
+    # dessus, son score atteignait le plancher : zéro sur cent. C'est un chiffre
+    # exact et une mauvaise démonstration — « plafonnée » veut dire qu'elle
+    # accède au bas de l'échelle et pas au haut, pas qu'elle ne vaut rien, et un
+    # zéro se lit comme une condamnation. Elle a aussi mené des collaborations à
+    # terme : c'est ce que fait une créatrice qui plafonne.
+    if plafonnee.reliability_score <= 0:
+        raise RuntimeError(
+            "la créatrice plafonnée est au plancher : le jeu montre une condamnation "
+            "là où il doit montrer un plafond"
         )
 
 
