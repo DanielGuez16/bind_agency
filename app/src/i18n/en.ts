@@ -601,6 +601,48 @@ export const en = {
     replier: 'Collapse',
     deplier: 'Expand',
   },
+  priseEnMain: {
+    chargement: 'Opening your page…',
+    lienMort: 'This link no longer works',
+    lienMortAide:
+      'It may have expired, or already been used. Ask BIND for a new one — nothing you did is lost.',
+    preparePourVous: 'Prepared for you',
+    ceQuiEstPret: '{{prestations}} services and {{plages}} opening blocks are already in.',
+    introduction:
+      'Create your account to take this page over. You decide when it goes live to creators — nothing is visible until you do.',
+    aideMotDePasse: 'At least {{minimum}} characters.',
+    conditions: 'I accept the BIND terms (version {{version}})',
+    assumer: 'Take over this page',
+    enCours: 'Creating your account…',
+    pasEncoreEnLigne:
+      'Taking it over does not publish it. You will see what is left to check, and you decide when to open.',
+  },
+  terrain: {
+    titre: 'Field signups',
+    videTitre: 'No page prepared yet',
+    videCorps:
+      'Prepare a page while you are in the salon — name, address, phone. The manager finishes it from their own phone.',
+    preparer: 'Prepare a page',
+    nom: 'Salon name',
+    adresse: 'Address',
+    telephone: 'Phone',
+    enregistrer: 'Save this page',
+    enregistrement: 'Saving…',
+    suivi: 'Prepared pages',
+    preparee: 'Prepared {{quand}}',
+    aScanner: 'Have the manager scan this',
+    expire: 'Works once, until {{quand}}',
+    fermerLeLien: 'Done',
+    emettre: 'Get a link',
+    reemettre: 'New link',
+    revoquer: 'Cancel link',
+    etat: {
+      preparee: 'Prepared',
+      'lien-ouvert': 'Link open',
+      'lien-expire': 'Link expired',
+      assumee: 'Taken over',
+    },
+  },
   onglets: {
     annuaire: 'Creators',
     paliers: 'Tiers',
@@ -616,6 +658,7 @@ export const en = {
     arbitrage: 'Reviews',
     plans: 'Plans',
     verifications: 'Accounts',
+    terrain: 'Field',
   },
   global: {
     erreurTitre: 'Something broke',

@@ -46,6 +46,7 @@ import { JourneeScreen } from '../screens/JourneeScreen';
 import { PaliersScreen } from '../screens/PaliersScreen';
 import { ReglesScreen } from '../screens/ReglesScreen';
 import { PlansScreen } from '../screens/PlansScreen';
+import { TerrainScreen } from '../screens/TerrainScreen';
 import { PreuveScreen } from '../screens/PreuveScreen';
 import { PublicationsScreen } from '../screens/PublicationsScreen';
 import { CatalogueScreen } from '../screens/CatalogueScreen';
@@ -643,6 +644,14 @@ function OngletsAdmin() {
         name="plans"
         component={PlansScreen}
         options={onglet(t('onglets.plans'), 'rapport')}
+      />
+      {/* **Le mode terrain.** Il n'est pas rangé derrière un autre écran : la
+          fondatrice l'ouvre debout dans un salon, entre deux clients, et deux
+          gestes de plus pour l'atteindre suffisent à ne pas le sortir. */}
+      <Onglets.Screen
+        name="terrain"
+        component={TerrainScreen}
+        options={onglet(t('onglets.terrain'), 'personne')}
       />
       <Onglets.Screen
         name="reglages"

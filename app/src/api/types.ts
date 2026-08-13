@@ -535,8 +535,17 @@ export type EtapeActivation = {
  * Le statut manquait : l'écran voyait six étapes faites et proposait « ouvrir
  * mon commerce » à un commerce ouvert depuis des semaines.
  */
+/**
+ * L'état d'un commerce.
+ *
+ * `draft` est **une fiche préparée sur le terrain que personne n'assume
+ * encore** : aucun membre, invisible du fil, et qui refuse de s'ouvrir. Elle
+ * n'apparaît que dans le suivi du démarchage.
+ */
+export type StatutDuCommerce = 'draft' | 'onboarding' | 'active' | 'suspended';
+
 export type VueDActivation = {
-  status: 'onboarding' | 'active' | 'suspended';
+  status: StatutDuCommerce;
   etapes: EtapeActivation[];
 };
 
@@ -805,4 +814,61 @@ export type PhotoDuCommerce = {
   storage_key: string;
   position: number;
   alt_text: string | null;
+};
+
+// --------------------------------------------------------------------------
+// inscription sur le terrain
+// --------------------------------------------------------------------------
+
+/**
+ * Ce que le salon voit d'une fiche préparée pour lui, avant de s'engager.
+ *
+ * **Des nombres, pas des listes.** Le gérant a besoin de reconnaître son salon
+ * — son nom, son adresse, « douze prestations relevées de votre carte » — pas
+ * de lire sa fiche entière depuis un lien qui circule dans un SMS.
+ */
+export type ApercuDeLaFiche = {
+  business_name: string;
+  address: string | null;
+  phone: string | null;
+  prestations_preparees: number;
+  plages_preparees: number;
+  /** À renvoyer telle quelle : un lien ouvert la semaine dernière montre les
+   *  conditions de la semaine dernière. */
+  terms_version: string;
+};
+
+/** Le lien remis, rendu **une seule fois**. La base n'en garde que l'empreinte. */
+export type LienRemis = {
+  business_id: string;
+  url: string;
+  expires_at: string;
+  channel: 'qr' | 'email';
+};
+
+/** Une fiche préparée et où elle en est. La mesure du démarchage physique. */
+export type FichePreparee = {
+  business_id: string;
+  name: string;
+  status: StatutDuCommerce;
+  address: string | null;
+  prepared_at: string;
+  issued_at: string | null;
+  expires_at: string | null;
+  used_at: string | null;
+  revoked_at: string | null;
+  channel: 'qr' | 'email' | null;
+};
+
+/** Une reprise du compte par l'administration, telle que le salon la lit. */
+export type RepriseDuCompte = {
+  id: string;
+  business_id: string;
+  admin_user_id: string;
+  reason: string;
+  started_at: string;
+  expires_at: string;
+  /** Nulle quand personne n'a refermé : une reprise échue n'est pas une
+   *  reprise fermée, et les deux ne se lisent pas pareil. */
+  ended_at: string | null;
 };

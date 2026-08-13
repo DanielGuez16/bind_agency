@@ -57,6 +57,11 @@ import type {
   EtatDeLaComposition,
   BookingStatus,
   MediasPlateforme,
+  ApercuDeLaFiche,
+  FichePreparee,
+  LienRemis,
+  RepriseDuCompte,
+  StatutDuCommerce,
 } from './types';
 
 export * from './types';
@@ -377,6 +382,98 @@ export class Api {
       methode: 'PUT',
       corps: { enabled },
     });
+  }
+
+  // ---- inscription sur le terrain ----
+
+  /**
+   * Ce qui a été préparé pour ce salon. **Sans session** : il n'a pas encore de
+   * compte, et le jeton fait toute l'autorisation.
+   */
+  apercuDeLaPriseEnMain(jeton: string, signal?: AbortSignal) {
+    return this.client.request<ApercuDeLaFiche>(routes.apercuDeLaPriseEnMain(jeton), {
+      signal,
+      publique: true,
+    });
+  }
+
+  /**
+   * Le salon crée son compte et devient propriétaire de sa fiche.
+   *
+   * Il ne repart pas connecté : la réponse est la fiche, pas une session. C'est
+   * voulu — un lien qui ouvrirait une session serait un mot de passe.
+   */
+  prendreEnMain(
+    jeton: string,
+    donnees: {
+      email: string;
+      motDePasse: string;
+      versionDesConditions: string;
+      langue?: 'en' | 'es';
+    },
+  ) {
+    return this.client.request<{ id: string; name: string; status: StatutDuCommerce }>(routes.prendreEnMain(jeton), {
+      methode: 'POST',
+      corps: {
+        email: donnees.email,
+        password: donnees.motDePasse,
+        terms_version: donnees.versionDesConditions,
+        ...(donnees.langue ? { locale: donnees.langue } : {}),
+      },
+      publique: true,
+    });
+  }
+
+  /** Un compte commerce qui existe déjà assume la fiche. Le deuxième salon. */
+  rattacherLaFiche(jeton: string, versionDesConditions: string) {
+    return this.client.request<{ id: string; name: string; status: StatutDuCommerce }>(routes.rattacherLaFiche(jeton), {
+      methode: 'POST',
+      corps: { terms_version: versionDesConditions },
+    });
+  }
+
+  /** Les fiches préparées et l'état de leur lien. La mesure du démarchage. */
+  fichesPreparees(signal?: AbortSignal) {
+    return this.client.request<FichePreparee[]>(routes.fichesPreparees(), { signal });
+  }
+
+  preparerUneFiche(corps: Record<string, unknown>) {
+    return this.client.request<{ id: string; name: string; status: StatutDuCommerce }>(routes.fichesPreparees(), {
+      methode: 'POST',
+      corps,
+    });
+  }
+
+  /** Émet le lien, et **ferme le précédent**. L'adresse n'est rendue qu'ici. */
+  emettreLeLien(businessId: string, canal: 'qr' | 'email', destination?: string) {
+    return this.client.request<LienRemis>(routes.lienDePriseEnMain(businessId), {
+      methode: 'POST',
+      corps: { channel: canal, ...(destination ? { destination } : {}) },
+    });
+  }
+
+  revoquerLeLien(businessId: string) {
+    return this.client.request<void>(routes.lienDePriseEnMain(businessId), {
+      methode: 'DELETE',
+    });
+  }
+
+  // ---- reprise d'un compte commerce ----
+
+  /** Ce que **le salon** lit des reprises faites chez lui. */
+  mesReprises(businessId: string, signal?: AbortSignal) {
+    return this.client.request<RepriseDuCompte[]>(routes.mesReprises(businessId), { signal });
+  }
+
+  ouvrirUneReprise(businessId: string, motif: string) {
+    return this.client.request<RepriseDuCompte>(routes.repriseAdmin(businessId), {
+      methode: 'POST',
+      corps: { reason: motif },
+    });
+  }
+
+  fermerLaReprise(businessId: string) {
+    return this.client.request<void>(routes.repriseAdmin(businessId), { methode: 'DELETE' });
   }
 
   reporting(

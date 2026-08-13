@@ -367,4 +367,13 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       La phrase « aucune dérogation pour les administrateurs » du socle devient
       « aucune dérogation implicite » — c'est dans `DECISIONS.md`. 18 tests,
       13 mutations vérifiées*
+- [ ] **Les avertissements partent dans la requête qui les déclenche**
+      *Relevé en revue sur la reprise de compte, et vrai partout : décision de
+      réservation, prise en main, ouverture de reprise envoient courriel et
+      push **avant de répondre**. Chacun est borné par sa configuration —
+      `EMAIL_TIMEOUT_SECONDS`, `PUSH_TIMEOUT_SECONDS` — donc la requête ne
+      pend pas indéfiniment, mais elle peut attendre vingt secondes pour deux
+      messages dont l'appelant n'a rien à faire. La file de jobs existe et sait
+      reporter ; il manque un type de job « envoyer un message » et le passage
+      des trois appelants dessus. À faire d'un coup, pas un appelant à la fois*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire

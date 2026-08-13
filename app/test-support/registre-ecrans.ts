@@ -30,6 +30,7 @@ export const ECRANS_COMMERCE = [
   'PlansScreen.tsx',
   'ReportingScreen.tsx',
   'PublicationsScreen.tsx',
+  'TerrainScreen.tsx',
 ] as const;
 
 /**
@@ -58,5 +59,12 @@ export const HORS_REGISTRE = [
   'CodeScreen.tsx',
   'HealthScreen.tsx',
   'MenuReviewScreen.tsx',
+  // La prise en main s'ouvre **avant la porte d'authentification**, sur un
+  // lien et sans compte. Ses états ne sont pas les quatre d'`Ecran` : un lien
+  // mort n'est pas une erreur de chargement mais le cas prévu — expiré, déjà
+  // utilisé, révoqué — et l'écran doit alors dire à qui redemander plutôt que
+  // d'offrir un bouton « réessayer » qui ne réessaiera rien. Ses trois états
+  // sont éprouvés dans `prise-en-main.test.tsx`.
+  'PriseEnMainScreen.tsx',
   'RedemptionScreen.tsx',
 ] as const;

@@ -134,6 +134,23 @@ export const routes = {
   plans: () => chemin('/admin/plans'),
   jobsEpuises: () => chemin('/admin/jobs/exhausted'),
   relancerLeJob: (jobId: string) => chemin(`/admin/jobs/${jobId}/retry`),
+
+  // ---- inscription sur le terrain ----
+  //
+  // Les trois premières sont **publiques** : le salon les appelle sans compte,
+  // sur la seule possession du lien. C'est le seul endroit du produit où une
+  // route d'écriture se sert sans session, et c'est le jeton qui fait toute
+  // l'autorisation.
+  apercuDeLaPriseEnMain: (jeton: string) => chemin(`/handover/${encodeURIComponent(jeton)}`),
+  prendreEnMain: (jeton: string) => chemin(`/handover/${encodeURIComponent(jeton)}/claim`),
+  rattacherLaFiche: (jeton: string) => chemin(`/handover/${encodeURIComponent(jeton)}/attach`),
+  fichesPreparees: () => chemin('/admin/prospects'),
+  lienDePriseEnMain: (businessId: string) =>
+    chemin(`/admin/prospects/${businessId}/handover`),
+
+  // ---- reprise d'un compte commerce ----
+  repriseAdmin: (businessId: string) => chemin(`/admin/businesses/${businessId}/support-access`),
+  mesReprises: (businessId: string) => chemin(`/business/${businessId}/support-access`),
 } as const;
 
 /**
@@ -227,5 +244,13 @@ export const METHODES: Record<keyof typeof routes, ('GET' | 'POST' | 'PATCH' | '
     palierAdmin: ['GET', 'PATCH', 'DELETE'],
     plans: ['GET'],
     jobsEpuises: ['GET'],
+
+    apercuDeLaPriseEnMain: ['GET'],
+    prendreEnMain: ['POST'],
+    rattacherLaFiche: ['POST'],
+    fichesPreparees: ['GET', 'POST'],
+    lienDePriseEnMain: ['POST', 'DELETE'],
+    repriseAdmin: ['GET', 'POST', 'DELETE'],
+    mesReprises: ['GET'],
     relancerLeJob: ['POST'],
   };

@@ -38,6 +38,11 @@ describe('couverture des écrans', () => {
     // n'est pas une erreur mais un des cas prévus. Un état « en échec » y
     // afficherait « impossible de charger la vidéo » sur la première chose
     // qu'on voit du produit — pire que le fond manquant.
-    expect(HORS_REGISTRE).toHaveLength(9);
+    //
+    // Passé à dix pour la prise en main : elle s'ouvre avant la porte
+    // d'authentification, sur un lien et sans compte. Un lien mort n'y est pas
+    // une erreur de chargement mais le cas prévu, et un bouton « réessayer »
+    // n'y réessaierait rien. Ses trois états ont leur propre fichier.
+    expect(HORS_REGISTRE).toHaveLength(10);
   });
 });
