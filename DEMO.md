@@ -106,10 +106,16 @@ peut porter le même.
 ### Vérifier après coup
 
 ```
-curl -s https://bind-agency.onrender.com/api/v1/health
+curl -s --max-time 90 https://bind-agency.onrender.com/api/v1/health
 ```
 
 doit répondre `{"status":"ok","dependencies":{"database":"ok"},"failed":[]}`.
+
+**`--max-time 90`, et ce n'est pas une précaution de style.** Le service dort
+après une période sans trafic ; le premier appel le réveille et met près d'une
+minute. Sans délai large, `curl` rend une réponse **vide** — pas une erreur —
+et l'on croit le service mort alors qu'il démarre. Vérifié le 13/08/2026 : vide
+à 25 secondes, correct à 90.
 
 ---
 
@@ -160,9 +166,9 @@ Elle finit par :
 
 ```
 4 commerces, 13 items, 28 plages, 2 exceptions, 10 offres, 5 créateurs,
-15 réservations, 7 contreparties, 3 jobs, 23 photos, 3 plans, 2 abonnements.
+23 réservations, 15 contreparties, 3 jobs, 25 photos, 3 plans, 2 abonnements.
 Mot de passe de tous les comptes : bind-donnees-de-depart-2026
-Photos : 23 fournies, 0 générées faute de fichier.
+Photos : 25 fournies, 0 générées faute de fichier.
 ```
 
 La dernière ligne distingue les vraies photos des dégradés de secours. Quand un
@@ -487,7 +493,15 @@ seulement moins joli.
 
 **Où en garder l'original.** Hors du dépôt, dans un dossier sauvegardé — un
 espace de stockage en ligne, ou une clé — qui **reprend exactement la même
-arborescence** que `assets/photos/`. Par exemple :
+arborescence** que `assets/photos/`.
+
+> **Ce dossier n'existe pas encore.** Le chemin ci-dessous est un exemple, pas
+> un fait : au 13/08/2026, les seules copies des 50 Mo de photos sont les deux
+> arbres de travail de cette machine. Un disque qui lâche, et la démonstration
+> repart en dégradés générés. C'est la première chose à faire avant de montrer
+> le produit à qui que ce soit.
+
+Par exemple :
 
 ```
 ~/Documents/Start-up/bind-photos/     ← la copie de référence, sauvegardée
@@ -539,3 +553,92 @@ disponibilité, le verrou de réservation, les codes de retrait, la machine à
 | TikTok en vrai | Des identifiants d'application. Le code est écrit ; **non vérifié** |
 | Stripe en production | Une entité juridique. Le mode test fonctionne dès qu'une clé `sk_test_…` est posée dans `STRIPE_SECRET_KEY` |
 | Snapchat | L'accès partenaire. Rien n'est écrit, délibérément : la fabrique refuse la plateforme plutôt que de rendre un fournisseur muet |
+
+---
+
+## Le parcours de démonstration
+
+Écrit dans l'ordre où le montrer. Trente minutes, deux appareils : l'iPhone
+pour le créateur, le navigateur pour le commerce et l'administration.
+
+**Avant d'ouvrir quoi que ce soit**, lancer `make seed` et lire sa dernière
+ligne. Si elle annonce des photos générées, la démonstration partira en
+dégradés : les vraies photos manquent, et rien d'autre ne le dira.
+
+Mot de passe de tous les comptes : `bind-donnees-de-depart-2026`.
+
+### 1 · L'accueil, sans compte — 2 min
+
+Ouvrir l'application sans se connecter. La vidéo, les deux portes, la promesse.
+
+C'est le seul écran que voit quelqu'un qui ne connaît pas BIND, et il dit tout
+le produit en une phrase : une prestation contre une publication.
+
+### 2 · La créatrice qui réussit — 8 min
+
+`rebecca@bind.example`. Le compte le plus complet du jeu : 64 000 abonnés,
+huit collaborations menées à terme, score de 100.
+
+Montrer **l'écran des paliers en premier**. C'est le cœur du modèle et celui
+que personne n'avait compris avant la v0.7 : trois barreaux qui montent, ce
+qu'on donne à gauche, ce qu'on obtient à droite. Insister sur la matière du
+bandeau — contour, teinte, aplat — qui dit la progression sans couleur.
+
+Puis le fil, ses cartes photo, une fiche de salon. Puis une réservation, et le
+code de retrait qui s'ouvre juste après.
+
+### 3 · La créatrice qui plafonne — 3 min
+
+`mateo@bind.example`, **et seulement après Rebecca**. Score de 15 sur 100 pour
+trois collaborations tenues et plusieurs manquées : il accède au bas de
+l'échelle et pas au haut.
+
+Montré en premier, ce compte fait croire que le produit punit. Montré après
+Rebecca, il montre que l'échelle discrimine — ce qui est exactement l'argument
+à vendre au salon.
+
+Ouvrir « How tiers work » depuis son écran : le score, ses deux garanties —
+jamais comparé, jamais montré à un commerce — et ce qui ouvre ou referme un
+palier.
+
+### 4 · Le salon qui tourne — 8 min
+
+`ocean@bind.example`, sur le navigateur, en grand écran.
+
+La journée d'abord : la liste à gauche, le panneau à droite, une décision en
+attente. Accorder une réservation.
+
+Puis la caisse : taper un code au pavé, servir, et voir la ligne apparaître au
+journal du jour avec son échéance de publication.
+
+Puis les rapports : trois repères en tête, l'axe hebdomadaire qui suit la vie
+du commerce. Onze semaines d'historique — assez pour que la courbe raconte
+quelque chose.
+
+Puis l'annuaire des créateurs, qui est **ce que l'abonnement achète**. Dire à
+voix haute qu'aucun score n'y figure et pourquoi : le palier ouvert porte la
+même information sans permettre de classer qui que ce soit.
+
+### 5 · Le salon qui vient de s'inscrire — 3 min
+
+`havana@bind.example`. **Annoncer avant d'ouvrir** que ce salon n'a rien
+composé : c'est délibéré, et c'est ce que voit quelqu'un qui s'inscrit.
+
+L'écran d'activation liste ce qui reste à faire. Les rapports disent qu'il n'y
+a rien à régler pour que l'histoire commence. Ouvert sans prévenir, ce compte
+passe pour un produit vide ; annoncé, il montre qu'on a pensé au premier jour.
+
+### 6 · L'administration — 4 min
+
+`admin@bind.example`. La file d'arbitrage — trois dossiers en revue humaine,
+avec la barre d'outils, le filtre et le premier dossier déjà ouvert. Puis les
+plans, avec le revenu mensuel et les abonnés en tête.
+
+### Ce qu'il vaut mieux ne pas ouvrir
+
+`camila@bind.example` — 640 abonnés, aucun palier. Utile pour expliquer le
+seuil d'entrée, mauvais pour montrer le produit.
+
+`nina@bind.example` — autorisation expirée, et `sofia@bind.example` — compte en
+vérification. Les deux montrent des écrans de blocage. À garder pour une
+question précise sur la robustesse, pas pour la démonstration.
