@@ -3356,3 +3356,31 @@ l'API ne montre les 404. Le test vérifie maintenant que la source répond 200
 **avant** de demander si elle se lit — un fichier manquant et un fichier
 illisible ne se diagnostiquent pas au même endroit, et le navigateur ne les
 distingue pas pour nous.
+
+## 2026-08-12 — Un nom de fonte doit être un identifiant CSS valide
+
+Les trois familles étaient déclarées, servies et chargées, et **pas une ligne de
+texte ne les employait**. `Texte` posait pourtant bien `fontFamily`.
+
+`react-native-web` écrit `fontFamily` **verbatim**, sans guillemets : la valeur
+arrive telle quelle dans `font-family:`. Or un nom de famille non guillemeté est
+une suite d'identifiants CSS, et un identifiant ne peut pas commencer par un
+chiffre. « IBM Plex Sans 600 » invalidait donc la déclaration **entière**, que le
+navigateur jetait sans erreur, sans avertissement, sans rien. Le texte retombait
+sur la pile système.
+
+Les noms sont d'un seul tenant — « IBMPlexSans_600 » — valides non guillemetés,
+donc à l'abri de toute couche qui oublierait de citer. Un test unitaire les
+compare à l'expression d'un identifiant CSS.
+
+`fontWeight` n'est plus posé du tout. Chaque fichier est enregistré sans
+descripteur de graisse : pour le navigateur, la face est de graisse normale.
+Demander 600 par-dessus la faisait grossir une seconde fois, par synthèse,
+au-dessus d'un semi-gras déjà dessiné. Le nom porte la graisse, et lui seul.
+
+**Ce que les trois tests de bout en bout ne pouvaient pas voir.** Ils
+vérifiaient que les faces étaient enregistrées, servies et chargées — les trois
+étaient vraies. Une face chargée ne prouve pas qu'un élément la demande, ni que
+sa demande est valide. Le test qui manquait lit la police **effectivement
+appliquée** par un élément rendu, et c'est le seul qui aurait attrapé le défaut.
+

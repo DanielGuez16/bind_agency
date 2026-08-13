@@ -67,7 +67,21 @@ const FICHIERS: Record<string, Partial<Record<Graisse, unknown>>> = {
   },
 };
 
-/** Le nom sous lequel une graisse est enregistrée. « IBM Plex Sans 600 ». */
+/**
+ * Le nom sous lequel une graisse est enregistrée. « IBMPlexSans_600 ».
+ *
+ * **Sans espace ni chiffre isolé, et c'est la correction d'un défaut qui
+ * rendait tout le produit en police système.** Le nom était « IBM Plex Sans
+ * 600 » ; `react-native-web` écrit `fontFamily` **verbatim**, sans guillemets,
+ * ce qui donnait `font-family: IBM Plex Sans 600`. En CSS, un nom de famille
+ * non guillemeté est une suite d'identifiants, et un identifiant ne peut pas
+ * commencer par un chiffre : `600` invalidait la déclaration **entière**, que
+ * le navigateur jetait en silence. Les fontes étaient déclarées, servies,
+ * chargées — et pas une ligne de texte ne les employait.
+ *
+ * Un seul identifiant, commençant par une lettre : valide non guillemeté,
+ * donc à l'abri de toute couche qui oublierait de citer.
+ */
 export function nomDeFonte(role: RoleDeFonte, graisse: string | number): string {
   const famille = brut.typography.fontFamily[role];
   const demandee = String(graisse) as Graisse;
@@ -79,7 +93,9 @@ export function nomDeFonte(role: RoleDeFonte, graisse: string | number): string 
     ? demandee
     : ((['600', '500', '400', '700'] as Graisse[]).find((g) => disponibles?.[g]) ?? demandee);
 
-  return `${famille} ${retenue}`;
+  // L'espace disparaît, la graisse se rattache : « IBM Plex Sans » + « 600 »
+  // donne « IBMPlexSans_600 ». La famille reste celle des jetons.
+  return `${famille.replace(/\s+/g, '')}_${retenue}`;
 }
 
 /**
@@ -101,7 +117,10 @@ export function policesAcharger(): Record<string, unknown> {
     const role = echelle.fontFamily as RoleDeFonte;
     const nom = nomDeFonte(role, echelle.fontWeight);
     const famille = brut.typography.fontFamily[role];
-    const graisse = nom.slice(famille.length + 1) as Graisse;
+    // La graisse retenue se relit sur le nom : `nomDeFonte` a pu retomber sur
+    // une autre que celle demandée, et charger la demandée poserait un fichier
+    // sous un nom que personne n'utilise.
+    const graisse = nom.slice(nom.lastIndexOf('_') + 1) as Graisse;
     const fichier = FICHIERS[famille]?.[graisse];
     if (fichier) a_charger[nom] = fichier;
   }
@@ -109,7 +128,7 @@ export function policesAcharger(): Record<string, unknown> {
   // Le gras de la marque n'est dans aucune variante de l'échelle : le
   // monogramme le demande directement, et sans lui il serait synthétisé.
   const display = brut.typography.fontFamily.display;
-  if (FICHIERS[display]?.['700']) a_charger[`${display} 700`] = FICHIERS[display]['700'];
+  if (FICHIERS[display]?.['700']) a_charger[nomDeFonte('display', '700')] = FICHIERS[display]['700'];
 
   return a_charger;
 }
