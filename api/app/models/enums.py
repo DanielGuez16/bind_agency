@@ -363,13 +363,13 @@ class DeviceTokenStatus(StrEnum):
 
 
 class NotificationKind(StrEnum):
-    """Les neuf événements qui méritent de sortir de l'application.
+    """Les dix événements qui méritent de sortir de l'application.
 
     **Fermée, et c'est le point.** Chaque valeur est une préférence que
     quelqu'un peut couper ; une liste ouverte ferait apparaître des
     notifications qu'on n'aurait jamais proposé de refuser.
 
-    Six s'adressent au créateur, les trois dernières au commerce. Celles qui
+    Six s'adressent au créateur, les quatre dernières au commerce. Celles qui
     remontent dans l'autre sens manquaient le plus : un salon ne savait qu'une
     réservation attendait sa décision qu'en ouvrant l'application, et il
     n'aurait appris la fin de sa période d'essai qu'en disparaissant du fil.
@@ -397,3 +397,8 @@ class NotificationKind(StrEnum):
     #: Les réservations déjà prises sont honorées, et le message le dit — c'est
     #: la première question que le salon se posera.
     SUBSCRIPTION_ENDED = "subscription_ended"
+    #: **Côté commerce.** L'administration est entrée dans le compte, et dit
+    #: pourquoi. Un accès de support silencieux est un accès dont personne ne
+    #: peut demander compte : c'est cette notification qui fait la différence
+    #: entre un accès déclaré et un accès qu'on découvre.
+    SUPPORT_ACCESS_STARTED = "support_access_started"

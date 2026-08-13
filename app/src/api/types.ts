@@ -136,7 +136,8 @@ export type GenreDeNotification =
   | 'publication_resubmit'
   | 'booking_to_review'
   | 'subscription_grace_ending'
-  | 'subscription_ended';
+  | 'subscription_ended'
+  | 'support_access_started';
 
 /** Sur quoi tourne le terminal. Rendu par l'app, jamais déduit du jeton. */
 export type PlateformeDeTerminal = 'ios' | 'android' | 'web';

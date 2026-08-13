@@ -643,6 +643,8 @@ export const es: Catalogue = {
       'Todavía nadie es dueño de esta ficha. Se publica cuando el salón la asume.',
     handover_invalid: 'Este enlace ya no es válido. Pide uno nuevo.',
     handover_not_a_draft: 'Esta ficha ya tiene dueño.',
+    support_reason_required: 'Indica por qué entras en esta cuenta.',
+    support_access_already_open: 'Ya tienes un acceso abierto en esta cuenta.',
     handover_terms_outdated:
       'Las condiciones han cambiado desde que se abrió la página. Recárgala y vuelve a leerlas.',
     catalog_duration_mismatch:
@@ -752,5 +754,6 @@ export const es: Catalogue = {
     booking_to_review: 'Una reserva espera tu decisión',
     subscription_grace_ending: 'Tu periodo de prueba está por terminar',
     subscription_ended: 'Tus ofertas han dejado de mostrarse',
+    support_access_started: 'El soporte de BIND entra en tu cuenta',
   },
 };

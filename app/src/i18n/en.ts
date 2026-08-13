@@ -654,6 +654,8 @@ export const en = {
       'Nobody owns this page yet. It goes live once the salon takes it over.',
     handover_invalid: 'This link is no longer valid. Ask for a new one.',
     handover_not_a_draft: 'This page already has an owner.',
+    support_reason_required: 'Say why you are opening this account.',
+    support_access_already_open: 'You already have an open access on this account.',
     handover_terms_outdated:
       'The terms have changed since this page was opened. Reload and read them again.',
     catalog_duration_mismatch:
@@ -758,6 +760,7 @@ export const en = {
     booking_to_review: 'A booking is waiting for your decision',
     subscription_grace_ending: 'Your trial period is about to end',
     subscription_ended: 'Your offers stopped showing to creators',
+    support_access_started: 'BIND support opens your account',
   },
 } as const;
 

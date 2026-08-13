@@ -20,6 +20,11 @@ commerce. La chaîne est explicite et se relit :
     proof            → collaboration → booking → business_id
     redemption_code  → booking → business_id
 
+**Une reprise vaut sur les deux résolveurs.** Un administrateur en reprise
+accède aux ressources du commerce comme il accède à sa fiche : n'ouvrir que
+l'une des deux portes ferait un support qui voit le salon sans pouvoir toucher
+à ce qui coince.
+
 **403, jamais 404.** Une ressource inexistante et une ressource d'un autre
 commerce reçoivent la même réponse. Distinguer les deux transformerait la route
 en oracle : on lit l'existence d'une réservation en observant lequel des deux
@@ -33,7 +38,7 @@ from typing import Annotated, Any
 import sqlalchemy as sa
 from fastapi import Depends, Path, status
 
-from app.core.dependencies import CurrentUser, SessionDep
+from app.core.dependencies import CurrentUser, SessionDep, _reprise_ou_refus
 from app.core.errors import ErrorCode, api_error
 from app.models import Booking, BusinessMember, Collaboration, Proof, RedemptionCode
 from app.models.enums import UserRole
@@ -78,7 +83,7 @@ def require_member_of(
         session: SessionDep,
         resource_id: Annotated[uuid.UUID, Path(alias=param)],
     ) -> BusinessMember:
-        if user.role is not UserRole.BUSINESS_MEMBER:
+        if user.role not in (UserRole.BUSINESS_MEMBER, UserRole.ADMIN):
             raise api_error(status.HTTP_403_FORBIDDEN, ErrorCode.INSUFFICIENT_ROLE)
 
         business_id = await session.scalar(chemin(resource_id))
@@ -87,6 +92,14 @@ def require_member_of(
         # la route un oracle d'existence pour le commerce d'en face.
         if business_id is None:
             raise api_error(status.HTTP_403_FORBIDDEN, ErrorCode.NOT_A_MEMBER)
+
+        # **La reprise vaut ici aussi**, et ce n'est pas un détail : une reprise
+        # qui ouvrirait la fiche du commerce mais pas ses réservations ni ses
+        # contreparties ne débloquerait à peu près rien, et obligerait le
+        # support à demander au salon de faire lui-même ce qu'on est venu faire
+        # pour lui. Les deux résolveurs disent donc la même chose.
+        if user.role is UserRole.ADMIN:
+            return await _reprise_ou_refus(session, user=user, business_id=business_id)
 
         membership = await session.scalar(
             sa.select(BusinessMember).where(

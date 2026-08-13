@@ -59,6 +59,13 @@ class ErrorCode(StrEnum):
     #: la semaine dernière montre les conditions de la semaine dernière.
     HANDOVER_TERMS_OUTDATED = "handover_terms_outdated"
 
+    # Reprise d'un compte commerce
+    #: Un motif vide ne dit pas pourquoi on est entré. C'est lui qui distingue
+    #: une intervention d'une habitude, et c'est lui que le salon lira.
+    SUPPORT_REASON_REQUIRED = "support_reason_required"
+    #: Une reprise est déjà ouverte sur ce commerce par cet administrateur.
+    SUPPORT_ACCESS_ALREADY_OPEN = "support_access_already_open"
+
     # Catalogue
     CATALOG_ITEM_NOT_FOUND = "catalog_item_not_found"
     CATALOG_DURATION_MISMATCH = "catalog_duration_mismatch"

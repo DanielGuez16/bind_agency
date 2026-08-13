@@ -26,5 +26,7 @@
   "subscription.ended.body": "Hi,\n\nThe trial period for {business} ended, so your offers no longer appear in the creator feed.\n\nNothing has been deleted: your catalogue, hours and history are untouched, and **bookings already made will still be honoured**. Subscribe from the app to come back.\n",
   "subscription.ended.subject": "{business} is no longer showing to creators",
   "subscription.graceEnding.body": "Hi,\n\n{business} has been live on BIND without a subscription so far. That period ends on {echeance}.\n\nAfter that your offers stop showing to creators. Nothing is deleted — your catalogue, hours and history stay, and **bookings already made will still be honoured**. Subscribe from the app and you are back in the feed straight away.\n",
-  "subscription.graceEnding.subject": "Your BIND trial ends on {echeance}"
+  "subscription.graceEnding.subject": "Your BIND trial ends on {echeance}",
+  "support.accessOpened.body": "Hi,\n\nSomeone from BIND support opened your {business} account to work on it.\n\nReason given: {motif}\n\nThe access is time-limited and closes on its own. You can see every past access in your settings — we tell you each time, every time.\n",
+  "support.accessOpened.subject": "BIND support opened your {business} account"
 }

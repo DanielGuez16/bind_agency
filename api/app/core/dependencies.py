@@ -21,7 +21,7 @@ from app.core.db import get_session
 from app.core.errors import ErrorCode, api_error
 from app.core.security import InvalidToken, TokenType, decode_token
 from app.models import Business, BusinessMember, User
-from app.models.enums import UserRole, UserStatus
+from app.models.enums import BusinessMemberRole, UserRole, UserStatus
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
@@ -80,10 +80,16 @@ async def require_business_member(
     Le bon rôle ne suffit pas : sans ce second contrôle, un membre du commerce A
     lit les ressources du commerce B. C'est la fuite classique entre locataires.
 
-    Aucune dérogation pour les administrateurs : une route d'administration
-    déclare `require_role(UserRole.ADMIN)`, elle ne se déguise pas en route
-    commerce.
+    **Aucune dérogation implicite pour les administrateurs.** Une route
+    d'administration déclare `require_role(UserRole.ADMIN)`, elle ne se déguise
+    pas en route commerce. La seule façon pour un administrateur d'agir au nom
+    d'un salon est d'ouvrir une **reprise** : un geste explicite, motivé, borné
+    dans le temps, écrit au journal et **dont le salon est prévenu**. Hors
+    reprise, il reçoit exactement le même refus que n'importe qui — c'est ce
+    que le premier test de `test_support_access.py` vérifie.
     """
+    if user.role is UserRole.ADMIN:
+        return await _reprise_ou_refus(session, user=user, business_id=business_id)
     if user.role is not UserRole.BUSINESS_MEMBER:
         raise api_error(status.HTTP_403_FORBIDDEN, ErrorCode.INSUFFICIENT_ROLE)
 
@@ -100,6 +106,33 @@ async def require_business_member(
         raise api_error(status.HTTP_403_FORBIDDEN, ErrorCode.NOT_A_MEMBER)
 
     return membership
+
+
+async def _reprise_ou_refus(
+    session: AsyncSession, *, user: User, business_id: uuid.UUID
+) -> BusinessMember:
+    """L'appartenance qu'une reprise ouverte confère à un administrateur.
+
+    **L'objet rendu n'est pas écrit en base.** Il n'existe que le temps de la
+    requête, pour que les routes lisent `membership.role` sans savoir d'où il
+    vient. Poser une vraie ligne `business_member` reviendrait à créer un
+    accès qui survivrait à la reprise — exactement ce qu'on refuse.
+
+    **Le rôle est `owner`**, parce qu'une intervention qui ne peut pas toucher
+    à la configuration ne débloque rien, et qu'un demi-accès obligerait à
+    rouvrir une reprise plus large trois minutes plus tard.
+    """
+    from app.services import support as support_service
+
+    if (
+        await support_service.en_cours(session, business_id=business_id, admin_user_id=user.id)
+        is None
+    ):
+        # Le même refus qu'un membre du commerce d'à côté. Un code distinct
+        # apprendrait à qui tâtonne quels commerces existent.
+        raise api_error(status.HTTP_403_FORBIDDEN, ErrorCode.NOT_A_MEMBER)
+
+    return BusinessMember(business_id=business_id, user_id=user.id, role=BusinessMemberRole.OWNER)
 
 
 BusinessMembership = Annotated[BusinessMember, Depends(require_business_member)]
