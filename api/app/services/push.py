@@ -394,3 +394,41 @@ async def pour_le_commerce(
         ):
             joints += 1
     return joints
+
+
+async def pour_le_commerce_seul(
+    session: AsyncSession,
+    *,
+    business_id: uuid.UUID,
+    kind: NotificationKind,
+    cle: str,
+    sender: PushSender,
+    **valeurs: object,
+) -> int:
+    """Prévient tous les membres d'un salon d'un fait qui ne parle d'aucune
+    réservation. Rend combien ont été joints.
+
+    Distinct de `pour_le_commerce`, qui part d'une réservation et nomme l'item :
+    la fin d'une période d'essai ne se rattache à rien de ce genre. Les faire
+    passer par la même fonction aurait demandé de fabriquer une réservation qui
+    n'a pas lieu d'être.
+    """
+    from app.models import BusinessMember
+
+    membres = await session.scalars(
+        sa.select(BusinessMember.user_id).where(BusinessMember.business_id == business_id)
+    )
+
+    joints = 0
+    for user_id in membres:
+        if await envoyer(
+            session,
+            user_id=user_id,
+            kind=kind,
+            sender=sender,
+            cle=cle,
+            donnees={"business_id": str(business_id)},
+            **valeurs,
+        ):
+            joints += 1
+    return joints

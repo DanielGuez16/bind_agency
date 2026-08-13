@@ -22,8 +22,9 @@ from app.models import (
     TierOffer,
     User,
 )
-from app.models.enums import BusinessMemberRole, BusinessStatus
+from app.models.enums import BusinessMemberRole, BusinessStatus, SuspensionReason
 from app.schemas.business import BusinessCreate, BusinessUpdate, CoordinatesPayload
+from app.services import grace
 from app.services.audit import Actor, AuditedEntity, record_transition
 
 REASON_ACTIVATION = "business_activated"
@@ -205,6 +206,11 @@ async def activate_business(session: AsyncSession, *, business: Business, actor:
 
     previous = business.status
     business.status = BusinessStatus.ACTIVE
+    # **La raison du retrait ne survit pas au retour.** Un salon revenu en
+    # ligne dont la raison traîne encore ferait croire à un retrait qui
+    # n'existe plus — et la base l'interdit, ce qui est la bonne façon de ne
+    # pas l'oublier ici.
+    business.suspended_reason = None
     await session.flush()
 
     await record_transition(
@@ -216,6 +222,11 @@ async def activate_business(session: AsyncSession, *, business: Business, actor:
         actor=actor,
         reason=REASON_ACTIVATION,
     )
+
+    # **Aucune carte bancaire n'est demandée ici.** Le salon ouvre, et
+    # l'échéance lui est posée tout de suite plutôt qu'au prochain balayage :
+    # il doit pouvoir lire sa date le jour où il ouvre, pas le lendemain.
+    await grace.ouvrir(session, business=business)
 
     return business
 
@@ -236,6 +247,9 @@ async def pause_business(session: AsyncSession, *, business: Business, actor: Ac
 
     previous = business.status
     business.status = BusinessStatus.SUSPENDED
+    # Qui s'est retiré, et pourquoi. Sans cette raison, souscrire ramènerait en
+    # ligne un salon parti en travaux — un paiement ne décide pas à sa place.
+    business.suspended_reason = SuspensionReason.PAUSED_BY_BUSINESS
     await session.flush()
 
     await record_transition(

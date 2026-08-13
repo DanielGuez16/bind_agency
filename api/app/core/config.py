@@ -443,6 +443,25 @@ class Settings(BaseSettings):
     #: conditions changent.
     terms_version: str = "2026-01"
 
+    # ----------------------------------------------------------------------
+    # Période de grâce : ouvrir sans carte bancaire.
+    # ----------------------------------------------------------------------
+    #: Combien de temps un commerce reste visible sans abonnement, à compter de
+    #: son ouverture. **Demander une carte au comptoir est la friction la plus
+    #: forte du parcours**, et elle arriverait au moment exact où le gérant
+    #: vient de dire oui. Trente jours : de quoi voir passer des réservations
+    #: et juger sur pièces, ce qui est le seul argument qui vaille.
+    subscription_grace_period_seconds: int = 30 * 24 * 3600
+    #: Combien de temps avant l'échéance on prévient. Sept jours : assez pour
+    #: en parler à son associé et sortir une carte sans se sentir forcé.
+    #: **Prévenir avant est la moitié de la règle** — disparaître du fil sans
+    #: l'avoir dit se lit comme une panne, et c'est le support qui l'apprend.
+    subscription_grace_warning_seconds: int = 7 * 24 * 3600
+    #: Période du balayage qui ouvre, avertit et ferme. Une heure : l'échéance
+    #: se compte en jours, et un balayage plus fréquent ne rendrait rien de
+    #: plus juste.
+    subscription_grace_sweep_interval_seconds: int = 3600
+
     # Lue uniquement par la session pytest, jamais par l'application.
     # Sa présence est vérifiée dans tests/conftest.py, qui refuse de tourner sans.
     test_database_url: PostgresDsn | None = Field(default=None, repr=False)

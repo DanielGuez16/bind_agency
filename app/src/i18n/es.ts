@@ -750,5 +750,7 @@ export const es: Catalogue = {
     publication_approved: 'Tu publicación es aprobada',
     publication_resubmit: 'Se pide una nueva publicación',
     booking_to_review: 'Una reserva espera tu decisión',
+    subscription_grace_ending: 'Tu periodo de prueba está por terminar',
+    subscription_ended: 'Tus ofertas han dejado de mostrarse',
   },
 };

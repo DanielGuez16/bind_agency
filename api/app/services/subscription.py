@@ -139,6 +139,15 @@ async def souscrire(
         actor=audit.Actor.from_user(actor),
         reason=f"plan {plan.name}",
     )
+
+    # **Souscrire referme la période de grâce, et rend le fil au salon qui n'en
+    # était sorti que pour ça.** Importé ici et non en tête de fichier : la
+    # grâce a besoin de savoir ce qu'est un abonnement vivant, et se déclarer
+    # mutuellement en haut des deux fichiers ferait un cycle. Un salon en
+    # congés, lui, reste en congés — c'est la règle de `rendre_la_visibilite`.
+    from app.services import grace
+
+    await grace.rendre_la_visibilite(session, business=business, actor=actor)
     return AbonnementOuvert(subscription=ligne, checkout_url=distant.checkout_url)
 
 
