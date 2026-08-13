@@ -3412,3 +3412,54 @@ deux mots de passe pour deux salons de la même rue.
 différés avec résolution de conflits est un mécanisme d'une autre taille que
 celui-ci. La concession retenue est plus modeste — un envoi de photo qui échoue
 se rejoue sans refaire le formulaire.
+
+## 2026-08-13 — La période de grâce, et ce qui arrive au bout
+
+Suite de la décision précédente : le salon assume sa fiche, il ne sort pas sa
+carte pour autant. **Demander un moyen de paiement au comptoir est la friction
+la plus forte du parcours, et elle arrive au moment exact où la personne vient
+de dire oui.** Le salon ouvre, se montre, reçoit des réservations ; la question
+de l'abonnement se pose une fois qu'il a vu ce que ça donne — ce qui est le seul
+argument qui vaille.
+
+**La fin de grâce est une mise en pause, pas une fermeture.** Les offres cessent
+de paraître dans le fil ; le catalogue, les horaires et l'historique restent. Le
+mécanisme existait déjà pour les congés et les travaux, et il n'y avait aucune
+raison d'en écrire un second.
+
+**Les réservations déjà prises sont honorées, jusqu'au code de retrait.** Ni la
+consommation ni la contrepartie ne regardent le statut du commerce — c'était
+déjà vrai, et c'est maintenant tenu par un test qui va jusqu'à consommer la
+réservation d'un salon sorti du fil. Vérifier que la ligne existe encore
+n'aurait rien prouvé : une promesse tenue à moitié n'est pas tenue.
+
+**Prévenir avant est la moitié de la règle.** Disparaître du fil sans l'avoir
+dit se lit comme une panne, et c'est le support qui l'apprend. L'avertissement
+part une seule fois — `grace_warned_at` existe pour ça : sans lui, un salon
+recevrait le même message toutes les heures pendant une semaine et cesserait de
+lire les suivants. Et la date s'écrit **après** l'envoi : la poser avant ferait
+passer pour prévenu un salon dont le message n'est jamais parti.
+
+**`suspended_reason` est une colonne, et non une lecture du journal d'audit.**
+C'est ce qui distingue le salon sorti pour non-paiement — que souscrire ramène
+en ligne — du salon parti en travaux, que rien ne doit rouvrir à sa place. Le
+journal porte bien la raison de chaque transition, mais lire un état courant
+dans un journal d'événements est exactement ce qui a déjà coûté cher ici. Une
+contrainte pose l'équivalence dans les deux sens : suspendu sans raison, ou une
+raison sans être suspendu, sont refusés tous les deux.
+
+**Le balayage ouvre avant d'avertir et de fermer.** Un commerce ouvert avant ce
+dispositif, ou dont l'abonnement s'est arrêté, n'a pas d'échéance : sans ce
+rattrapage il resterait visible pour toujours sans jamais payer, et personne ne
+s'en apercevrait parce que rien ne le regarde.
+
+**Le contrôle des préférences a été posé sur le chemin du courriel.** Les six
+genres plus anciens ne le font que sur le chemin du push : couper une
+notification sur l'écran la coupe sur le téléphone et la laisse arriver dans la
+boîte. C'est un défaut, il est noté dans `TASKS.md`, et ce n'était pas une
+raison d'en ajouter un septième.
+
+**Trois contraintes `CHECK` réécrites à la main dans une seule migration**, et
+la troisième avait été oubliée : `business.status`, `notification_preference.kind`
+et `job.job_type`. Toute énumération applicative se rend en VARCHAR + CHECK, et
+l'autogénération ne compare pas les listes. La suite l'a dit, pas la relecture.

@@ -29,8 +29,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.i18n import translate
 from app.integrations.email import EmailSender, Message
-from app.models import Booking, Business, CatalogItem, Collaboration, CreatorProfile, User
-from app.models.enums import CollaborationStatus, Locale
+from app.models import (
+    Booking,
+    Business,
+    BusinessMember,
+    CatalogItem,
+    Collaboration,
+    CreatorProfile,
+    NotificationPreference,
+    User,
+)
+from app.models.enums import CollaborationStatus, Locale, NotificationKind, UserStatus
 
 
 def rendre(cle: str, locale: Locale, **valeurs: Any) -> str:
@@ -248,3 +257,58 @@ async def echeances_a_rappeler(
             .limit(limite)
         )
     )
+
+
+async def envoyer_au_commerce(
+    session: AsyncSession,
+    *,
+    business: Business,
+    cle: str,
+    kind: NotificationKind,
+    sender: EmailSender,
+    **extra: Any,
+) -> int:
+    """Prévient **tous les membres** du salon par courriel. Rend combien ont été joints.
+
+    Tous, et non le propriétaire seul : un comptoir se tient à plusieurs, et la
+    personne qui a créé le compte n'est pas forcément celle qui lit ses
+    messages. Chacun garde sa préférence — celui qui coupe ne coupe que pour
+    lui.
+
+    **Le compte et la préférence sont vérifiés ici, comme du côté du push.**
+    Un compte suspendu ou anonymisé ne reçoit rien, jamais, et un genre refusé
+    n'arrive pas par la boîte après avoir été coupé sur l'écran. Les six genres
+    plus anciens ne font pas encore ce contrôle sur leur chemin de courriel —
+    c'est noté dans `TASKS.md`, et ce n'est pas une raison d'ajouter un
+    septième défaut.
+    """
+    membres = await session.scalars(
+        sa.select(BusinessMember.user_id).where(BusinessMember.business_id == business.id)
+    )
+
+    joints = 0
+    for user_id in membres:
+        utilisateur = await session.get(User, user_id)
+        if utilisateur is None or utilisateur.status is not UserStatus.ACTIVE:
+            continue
+        if not utilisateur.email:
+            continue
+        refus = await session.scalar(
+            sa.select(NotificationPreference.enabled).where(
+                NotificationPreference.user_id == user_id,
+                NotificationPreference.kind == kind,
+            )
+        )
+        if refus is False:
+            continue
+
+        await sender.envoyer(
+            Message(
+                destinataire=utilisateur.email,
+                sujet=rendre(f"{cle}.subject", utilisateur.locale, business=business.name, **extra),
+                corps=rendre(f"{cle}.body", utilisateur.locale, business=business.name, **extra),
+                locale=utilisateur.locale,
+            )
+        )
+        joints += 1
+    return joints

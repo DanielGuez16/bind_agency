@@ -16,6 +16,7 @@ from app.models.enums import (
     BusinessStatus,
     Locale,
     SubscriptionStatus,
+    SuspensionReason,
 )
 
 
@@ -77,6 +78,33 @@ class Business(UUIDPrimaryKey, CreatedAt, Base):
         sa.Boolean, nullable=False, default=True, server_default=sa.true()
     )
 
+    #: Fin de la période de grâce, quand il y en a une.
+    #:
+    #: **Aucune carte bancaire n'est demandée à l'ouverture.** C'est la
+    #: friction la plus forte du parcours, et elle arriverait au moment exact
+    #: où le gérant vient de dire oui. Le salon ouvre, se montre, reçoit des
+    #: réservations ; la question de l'abonnement se pose une fois qu'il a vu
+    #: ce que ça donne.
+    #:
+    #: Nulle quand un abonnement vivant existe : il n'y a alors plus d'échéance
+    #: à surveiller.
+    grace_ends_at: Mapped[datetime | None] = mapped_column(
+        sa.DateTime(timezone=True), nullable=True
+    )
+    #: Quand l'avertissement d'échéance est parti. **Sans cette date, le
+    #: balayage préviendrait à chaque passage** : un salon recevrait le même
+    #: message toutes les heures pendant trois jours, et cesserait de lire les
+    #: suivants.
+    grace_warned_at: Mapped[datetime | None] = mapped_column(
+        sa.DateTime(timezone=True), nullable=True
+    )
+    #: Pourquoi il a quitté le fil. Voir `SuspensionReason` : les deux raisons
+    #: ne se rattrapent pas de la même façon, et souscrire ne doit pas ramener
+    #: en ligne un salon qui s'était mis en pause pour travaux.
+    suspended_reason: Mapped[SuspensionReason | None] = mapped_column(
+        enum_column(SuspensionReason, "suspension_reason"), nullable=True
+    )
+
     __table_args__ = (
         # Un commerce ne devient actif, donc visible dans le fil créateur, que
         # localisable. Tant qu'il est en onboarding, il peut rester incomplet.
@@ -84,8 +112,19 @@ class Business(UUIDPrimaryKey, CreatedAt, Base):
         sa.CheckConstraint(
             "status <> 'active' OR address IS NOT NULL", name="active_requires_address"
         ),
+        # Suspendu et sans raison, ou avec une raison sans être suspendu : les
+        # deux rendraient la colonne inutile. La seconde est celle qu'on
+        # oublierait — un salon revenu en ligne dont la raison traîne encore
+        # ferait croire à un retrait qui n'existe plus.
+        sa.CheckConstraint(
+            "(status = 'suspended') = (suspended_reason IS NOT NULL)",
+            name="suspendu_dit_pourquoi",
+        ),
         sa.Index("ix_business_geo", "geo", postgresql_using="gist"),
         sa.Index("ix_business_category_status", "category", "status"),
+        # Le balayage des périodes de grâce : les échéances à venir, dans
+        # l'ordre. Sans lui, il parcourt tous les commerces à chaque passage.
+        sa.Index("ix_business_grace_ends_at", "grace_ends_at"),
     )
 
 

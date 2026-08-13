@@ -756,6 +756,8 @@ export const en = {
     publication_approved: 'Your post is approved',
     publication_resubmit: 'A new post is requested',
     booking_to_review: 'A booking is waiting for your decision',
+    subscription_grace_ending: 'Your trial period is about to end',
+    subscription_ended: 'Your offers stopped showing to creators',
   },
 } as const;
 

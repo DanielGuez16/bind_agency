@@ -1,14 +1,14 @@
 /**
  * Les sept genres de notification, et leur interrupteur.
  *
- * **Sept lignes toujours**, y compris celles que personne n'a touchées. La
+ * **Toutes les lignes du rôle, toujours**, y compris celles que personne n'a touchées. La
  * réponse du serveur les porte toutes : un écran qui ne dessinerait que les
  * refus stockés serait vide pour tout le monde le premier jour, et laisserait
  * croire qu'il n'y a rien à régler.
  *
  * **Le genre qui ne concerne pas le rôle n'apparaît pas.** « Une réservation
- * attend votre décision » ne veut rien dire pour un créateur, et les six autres
- * ne veulent rien dire pour un salon. Le serveur les rend tous — il ne connaît
+ * attend votre décision » ne veut rien dire pour un créateur, et les six du
+ * créateur ne veulent rien dire pour un salon. Le serveur les rend tous — il ne connaît
  * pas l'écran — et c'est ici qu'on choisit lesquels montrer. Un interrupteur
  * qui ne commande rien est pire qu'un interrupteur absent.
  *
@@ -31,9 +31,10 @@ import { useRequete } from './useRequete';
 /**
  * Qui voit quel genre.
  *
- * Le septième ne remonte que vers le commerce ; les six autres ne descendent
- * que vers le créateur. L'administration ne reçoit rien : elle travaille sur
- * une file, pas sur des événements qui la concernent personnellement.
+ * Les trois derniers ne remontent que vers le commerce ; les six autres ne
+ * descendent que vers le créateur. L'administration ne reçoit rien : elle
+ * travaille sur une file, pas sur des événements qui la concernent
+ * personnellement.
  */
 const GENRES_PAR_ROLE: Record<string, GenreDeNotification[]> = {
   creator: [
@@ -44,7 +45,7 @@ const GENRES_PAR_ROLE: Record<string, GenreDeNotification[]> = {
     'publication_approved',
     'publication_resubmit',
   ],
-  business_member: ['booking_to_review'],
+  business_member: ['booking_to_review', 'subscription_grace_ending', 'subscription_ended'],
   admin: [],
 };
 

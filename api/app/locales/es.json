@@ -22,5 +22,9 @@
   "collaboration.unfulfilled.body": "Hola {creator}:\n\nEl plazo de {item} en {business} venció sin una prueba aceptada. Esto afecta a tu puntuación de fiabilidad.\n",
   "collaboration.unfulfilled.subject": "Tu colaboración con {business} no se ha cumplido",
   "handover.invitation.body": "Hola:\n\nHemos preparado la página de {business} en BIND — dirección, horarios y servicios ya están cargados.\n\nAbre el enlace para revisarla, crear tu cuenta y publicarla. Nada es visible para los creadores hasta que lo hagas.\n\n{url}\n\nEl enlace funciona una sola vez y caduca el {expiration}.\n",
-  "handover.invitation.subject": "{business} ya está listo en BIND"
+  "handover.invitation.subject": "{business} ya está listo en BIND",
+  "subscription.ended.body": "Hola:\n\nEl periodo de prueba de {business} ha terminado, así que tus ofertas ya no aparecen en el muro de los creadores.\n\nNo se ha borrado nada: tu catálogo, tus horarios y tu historial siguen intactos, y **las reservas ya hechas se respetarán**. Suscríbete desde la aplicación para volver.\n",
+  "subscription.ended.subject": "{business} ya no se muestra a los creadores",
+  "subscription.graceEnding.body": "Hola:\n\n{business} lleva publicado en BIND sin suscripción. Ese periodo termina el {echeance}.\n\nDespués, tus ofertas dejarán de mostrarse a los creadores. No se borra nada — tu catálogo, tus horarios y tu historial se mantienen, y **las reservas ya hechas se respetarán**. Suscríbete desde la aplicación y vuelves al instante.\n",
+  "subscription.graceEnding.subject": "Tu prueba de BIND termina el {echeance}"
 }

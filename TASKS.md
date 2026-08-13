@@ -325,4 +325,34 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       garde les fiches assumées, sans quoi on ne saurait jamais combien de
       visites ont abouti. Un refus ne distingue jamais inconnu, expiré,
       consommé ou révoqué. 23 tests, 12 mutations vérifiées*
+- [x] Période de grâce : ouvrir sans carte bancaire
+      *Arbitrage retenu : aucun paiement à l'activation. Fin : `grace_ends_at`
+      posé à l'ouverture — durée en configuration, aucun délai en dur — un
+      avertissement unique avant l'échéance, et à l'échéance un retrait du fil
+      qui est **exactement la mise en pause** : rien n'est effacé, et **les
+      réservations déjà prises sont honorées jusqu'au code de retrait**,
+      vérifié en consommant celle d'un salon sorti du fil. `suspended_reason`
+      distingue le salon sorti pour non-paiement — que souscrire ramène en
+      ligne — du salon parti en travaux, que rien ne rouvre à sa place. Un
+      balayage horaire ouvre, avertit et ferme, et rattrape les commerces sans
+      échéance ni abonnement. Deux genres de notification de plus, avec leurs
+      préférences. 20 tests, 16 mutations vérifiées*
+- [ ] **Les six genres de notification plus anciens ignorent la préférence sur
+      le chemin du courriel**
+      *Trouvé en écrivant le septième. `push.destinataire` vérifie le statut du
+      compte et la préférence ; `notifications.envoyer_pour` et
+      `envoyer_pour_la_reservation` ne vérifient ni l'un ni l'autre. Couper une
+      notification sur l'écran la coupe donc sur le téléphone et la laisse
+      arriver dans la boîte — l'utilisateur croit avoir coupé, et il n'a coupé
+      qu'à moitié. `envoyer_au_commerce` fait le contrôle ; les deux autres
+      restent à aligner, et un test doit tomber si l'un d'eux le perd*
+- [ ] **Aucun garde-fou sur la surface des routes publiques**
+      *Rien n'inventorie les routes servies sans authentification ni rôle. Les
+      trois routes de prise en main sont volontairement publiques — le salon
+      n'a pas encore de compte — mais rien n'empêche qu'une quatrième le
+      devienne par accident, en oubliant une dépendance. Un test qui énumère
+      les routes et les compare à une liste explicite fermerait la question.
+      Écrit et abandonné une fois : `app.routes` ne rend plus des `APIRoute`
+      mais des `_IncludedRouter` qu'il faut parcourir, ce qui demande un peu
+      plus que dix lignes*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire

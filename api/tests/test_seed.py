@@ -393,9 +393,14 @@ async def test_les_transitions_sont_journalisees(seed_conn: AsyncConnection) -> 
     )
 
     # Quatre créations, trois activations — le commerce encore en inscription
-    # n'en a pas — et deux souscriptions d'abonnement, journalisées sous la
-    # même entité.
-    assert par_entite["business"] == 9
+    # n'en a pas — trois ouvertures de période de grâce, une par activation, et
+    # deux souscriptions d'abonnement, journalisées sous la même entité.
+    #
+    # Les deux commerces qui souscrivent ont bien eu leur grâce ouverte
+    # d'abord : le jeu de données les active avant de les abonner, comme un
+    # vrai salon le ferait. Souscrire referme l'échéance sans effacer la trace
+    # de son ouverture — le journal dit ce qui s'est passé, pas ce qui reste.
+    assert par_entite["business"] == 12
     # Un administrateur, quatre propriétaires, cinq créateurs.
     assert par_entite["app_user"] == 10
     # Et les entités de la démonstration laissent aussi leurs traces : sans

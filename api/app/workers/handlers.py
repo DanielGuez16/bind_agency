@@ -1,4 +1,4 @@
-"""Les deux traitements planifiés de cette phase.
+"""Les traitements planifiés.
 
 Un traitement ne connaît ni la file, ni le report, ni le compteur de
 tentatives : il fait son travail et rend une issue. C'est l'exécuteur qui
@@ -14,8 +14,10 @@ comme s'il y avait quelque chose à réparer — alors que la seule suite possib
 est une reconnexion par le créateur.
 """
 
+import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,11 +25,13 @@ from app.core.config import get_settings
 from app.integrations.email import get_sender
 from app.integrations.push import get_push_sender
 from app.integrations.social import SocialAuthError, SocialProvider, SocialProviderError
-from app.models import Collaboration, Job, SocialAccount
+from app.models import Business, Collaboration, Job, SocialAccount
 from app.models.enums import JobType, NotificationKind, Platform, SocialAccountStatus
-from app.services import booking_states, collaboration, notifications, tracking
+from app.services import booking_states, collaboration, grace, notifications, tracking
 from app.services import metrics as metrics_service
 from app.services import push as push_service
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -213,6 +217,96 @@ async def purger_les_clics(session: AsyncSession, *, account, provider) -> Issue
     return Fait(prochain=timedelta(seconds=get_settings().link_click_purge_interval_seconds))
 
 
+async def balayer_les_periodes_de_grace(session: AsyncSession, *, account, provider) -> Issue:
+    """Ouvre, avertit, et ferme les périodes de grâce d'abonnement.
+
+    **Trois gestes dans cet ordre, et l'ordre compte.** On ouvre d'abord — un
+    commerce ouvert avant ce dispositif, ou dont l'abonnement s'est arrêté, n'a
+    pas d'échéance et resterait visible pour toujours sans que rien ne le
+    regarde. On avertit ensuite, une seule fois. On ferme enfin.
+
+    **Prévenir avant est la moitié de la règle.** Disparaître du fil sans
+    l'avoir dit se lit comme une panne, et c'est le support qui l'apprend.
+
+    Un envoi qui échoue fait échouer le job, donc le reporte : c'est ce qu'on
+    veut d'un avertissement. Le faire réussir en silence laisserait un salon
+    quitter le fil sans jamais avoir été prévenu — exactement ce que ce
+    dispositif existe pour éviter.
+    """
+    settings = get_settings()
+    sender = get_sender()
+    maintenant = datetime.now(UTC)
+
+    ouvertes = 0
+    for identifiant in await grace.sans_echeance_ni_abonnement(session):
+        commerce = await session.get(Business, identifiant)
+        if commerce is not None and await grace.ouvrir(
+            session, business=commerce, maintenant=maintenant
+        ):
+            ouvertes += 1
+
+    averties = 0
+    for identifiant in await grace.a_prevenir(session, maintenant=maintenant):
+        commerce = await session.get(Business, identifiant)
+        if commerce is None or commerce.grace_ends_at is None:
+            continue
+        echeance = commerce.grace_ends_at.astimezone(ZoneInfo(commerce.timezone)).strftime(
+            "%Y-%m-%d"
+        )
+        await notifications.envoyer_au_commerce(
+            session,
+            business=commerce,
+            cle="subscription.graceEnding",
+            kind=NotificationKind.SUBSCRIPTION_GRACE_ENDING,
+            sender=sender,
+            echeance=echeance,
+        )
+        await push_service.pour_le_commerce_seul(
+            session,
+            business_id=commerce.id,
+            kind=NotificationKind.SUBSCRIPTION_GRACE_ENDING,
+            cle="subscription.graceEnding",
+            sender=get_push_sender(),
+            business=commerce.name,
+            echeance=echeance,
+        )
+        # **Écrit après l'envoi.** Le poser avant ferait passer pour prévenu un
+        # salon dont le message n'est jamais parti, et le job reporté ne le
+        # rattraperait plus.
+        commerce.grace_warned_at = maintenant
+        await session.flush()
+        averties += 1
+
+    fermees = 0
+    for identifiant in await grace.echues(session, maintenant=maintenant):
+        commerce = await session.get(Business, identifiant)
+        if commerce is None or not await grace.fermer(
+            session, business=commerce, maintenant=maintenant
+        ):
+            continue
+        fermees += 1
+        await notifications.envoyer_au_commerce(
+            session,
+            business=commerce,
+            cle="subscription.ended",
+            kind=NotificationKind.SUBSCRIPTION_ENDED,
+            sender=sender,
+        )
+        await push_service.pour_le_commerce_seul(
+            session,
+            business_id=commerce.id,
+            kind=NotificationKind.SUBSCRIPTION_ENDED,
+            cle="subscription.ended",
+            sender=get_push_sender(),
+            business=commerce.name,
+        )
+
+    logger.info(
+        "périodes de grâce : %d ouvertes, %d averties, %d fermées", ouvertes, averties, fermees
+    )
+    return Fait(prochain=timedelta(seconds=settings.subscription_grace_sweep_interval_seconds))
+
+
 #: Ce que chaque type de job sait faire. Un type absent d'ici est un job qui ne
 #: tournera jamais — l'exécuteur le dit plutôt que de l'ignorer.
 TRAITEMENTS = {
@@ -222,6 +316,7 @@ TRAITEMENTS = {
     JobType.COLLABORATION_DEADLINE_SWEEP: expirer_les_echeances,
     JobType.COLLABORATION_REMINDER_SWEEP: rappeler_les_echeances,
     JobType.LINK_CLICK_PURGE_SWEEP: purger_les_clics,
+    JobType.SUBSCRIPTION_GRACE_SWEEP: balayer_les_periodes_de_grace,
 }
 
 
@@ -232,6 +327,7 @@ SANS_CIBLE = frozenset(
         JobType.COLLABORATION_DEADLINE_SWEEP,
         JobType.COLLABORATION_REMINDER_SWEEP,
         JobType.LINK_CLICK_PURGE_SWEEP,
+        JobType.SUBSCRIPTION_GRACE_SWEEP,
     }
 )
 

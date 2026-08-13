@@ -22,5 +22,9 @@
   "collaboration.unfulfilled.body": "Hi {creator},\n\nThe deadline for {item} at {business} passed without an accepted proof. This affects your reliability score.\n",
   "collaboration.unfulfilled.subject": "Your collaboration with {business} was not honoured",
   "handover.invitation.body": "Hi,\n\nWe prepared your BIND page for {business} — address, hours and services are already in.\n\nOpen the link below to review it, create your account and put it online. Nothing is visible to creators until you do.\n\n{url}\n\nThe link works once and expires on {expiration}.\n",
-  "handover.invitation.subject": "{business} is ready on BIND"
+  "handover.invitation.subject": "{business} is ready on BIND",
+  "subscription.ended.body": "Hi,\n\nThe trial period for {business} ended, so your offers no longer appear in the creator feed.\n\nNothing has been deleted: your catalogue, hours and history are untouched, and **bookings already made will still be honoured**. Subscribe from the app to come back.\n",
+  "subscription.ended.subject": "{business} is no longer showing to creators",
+  "subscription.graceEnding.body": "Hi,\n\n{business} has been live on BIND without a subscription so far. That period ends on {echeance}.\n\nAfter that your offers stop showing to creators. Nothing is deleted — your catalogue, hours and history stay, and **bookings already made will still be honoured**. Subscribe from the app and you are back in the feed straight away.\n",
+  "subscription.graceEnding.subject": "Your BIND trial ends on {echeance}"
 }

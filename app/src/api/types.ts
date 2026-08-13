@@ -134,7 +134,9 @@ export type GenreDeNotification =
   | 'publication_reminder'
   | 'publication_approved'
   | 'publication_resubmit'
-  | 'booking_to_review';
+  | 'booking_to_review'
+  | 'subscription_grace_ending'
+  | 'subscription_ended';
 
 /** Sur quoi tourne le terminal. Rendu par l'app, jamais déduit du jeton. */
 export type PlateformeDeTerminal = 'ios' | 'android' | 'web';

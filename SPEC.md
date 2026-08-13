@@ -76,6 +76,22 @@ La tarification est une donnée, jamais une constante dans le code. Plusieurs pl
 **subscription**
 `id, business_id, plan_id, status, current_period_end, stripe_customer_id, stripe_subscription_id`
 
+**Période de grâce**
+
+**Aucun paiement n'est demandé à l'ouverture.** Demander une carte au comptoir est la friction la plus forte du parcours, et elle arriverait au moment exact où le gérant vient de dire oui. Le salon ouvre, se montre, reçoit des réservations ; la question de l'abonnement se pose une fois qu'il a vu ce que ça donne.
+
+L'activation pose donc `grace_ends_at` sur le commerce, sauf s'il a déjà un abonnement vivant. La durée est en configuration, aucun délai en dur.
+
+À l'échéance, sans abonnement :
+
+- **les offres cessent de paraître dans le fil** — le commerce passe en `suspended`, exactement comme une mise en pause ;
+- **le salon a été prévenu avant**, une seule fois, sur une avance elle aussi configurée. `grace_warned_at` est ce qui empêche de le prévenir à chaque passage du balayage ;
+- **les réservations déjà prises sont honorées** jusqu'au code de retrait. Ni la consommation ni la contrepartie ne regardent le statut du commerce, et c'est délibéré : une question de facturation ne défait pas une promesse déjà faite.
+
+Rien n'est effacé : catalogue, horaires et historique restent.
+
+`suspended_reason` dit **pourquoi** le commerce a quitté le fil, et c'est une colonne et non une lecture du journal d'audit. Souscrire ramène en ligne le salon sorti pour `grace_expired` ; **un salon qui s'était mis en pause lui-même reste en pause** — un paiement ne décide pas à sa place de rouvrir.
+
 **Étapes d'activation**
 
 Le passage de `onboarding` à `active` est une transition explicite, jamais un effet de bord d'une mise à jour. Six conditions sont exposées au commerce avant qu'il essaie, chacune marquée bloquante ou non.

@@ -67,6 +67,25 @@ class BusinessStatus(StrEnum):
     SUSPENDED = "suspended"
 
 
+class SuspensionReason(StrEnum):
+    """Pourquoi un commerce a quitté le fil. **Deux raisons, et elles ne se
+    rattrapent pas de la même façon.**
+
+    Sans cette colonne, souscrire ramènerait en ligne un salon qui s'était mis
+    en pause pour travaux — ou, dans l'autre sens, laisserait hors du fil un
+    salon qui vient de payer. Le journal d'audit porte bien la raison de la
+    transition, mais lire un état courant dans un journal d'événements est
+    exactement ce qui a déjà coûté cher ici.
+    """
+
+    #: Le salon s'est retiré lui-même. Congés, travaux : il reviendra quand il
+    #: le décidera, et un paiement ne décide pas à sa place.
+    PAUSED_BY_BUSINESS = "paused_by_business"
+    #: La période de grâce s'est terminée sans abonnement. Souscrire le ramène
+    #: en ligne — c'est la seule chose qui manquait.
+    GRACE_EXPIRED = "grace_expired"
+
+
 class HandoverChannel(StrEnum):
     """Comment le lien de prise en main est parvenu au salon.
 
@@ -258,6 +277,10 @@ class JobType(StrEnum):
     #: sans lui, la promesse de purge ne serait qu'une fonction que personne
     #: n'appelle.
     LINK_CLICK_PURGE_SWEEP = "link_click_purge_sweep"
+    #: Ouvre, avertit, et ferme les périodes de grâce d'abonnement. Balayage
+    #: global : un job par commerce coûterait une ligne par salon pour une
+    #: échéance qu'on regarde une fois par jour.
+    SUBSCRIPTION_GRACE_SWEEP = "subscription_grace_sweep"
 
 
 class JobStatus(StrEnum):
@@ -340,15 +363,16 @@ class DeviceTokenStatus(StrEnum):
 
 
 class NotificationKind(StrEnum):
-    """Les sept événements qui méritent de sortir de l'application.
+    """Les neuf événements qui méritent de sortir de l'application.
 
     **Fermée, et c'est le point.** Chaque valeur est une préférence que
     quelqu'un peut couper ; une liste ouverte ferait apparaître des
     notifications qu'on n'aurait jamais proposé de refuser.
 
-    Six s'adressent au créateur, la dernière au commerce. C'est la seule qui
-    remonte dans l'autre sens, et elle manquait le plus : un salon ne savait
-    qu'une réservation attendait sa décision qu'en ouvrant l'application.
+    Six s'adressent au créateur, les trois dernières au commerce. Celles qui
+    remontent dans l'autre sens manquaient le plus : un salon ne savait qu'une
+    réservation attendait sa décision qu'en ouvrant l'application, et il
+    n'aurait appris la fin de sa période d'essai qu'en disparaissant du fil.
     """
 
     #: Le salon a accepté. La place est tenue, le code existe.
@@ -365,3 +389,11 @@ class NotificationKind(StrEnum):
     PUBLICATION_RESUBMIT = "publication_resubmit"
     #: **Côté commerce.** Une réservation attend sa décision.
     BOOKING_TO_REVIEW = "booking_to_review"
+    #: **Côté commerce.** La période d'essai se termine bientôt. Prévenir
+    #: avant est la moitié de la règle : disparaître du fil sans l'avoir dit
+    #: se lit comme une panne, et c'est le support qui l'apprend.
+    SUBSCRIPTION_GRACE_ENDING = "subscription_grace_ending"
+    #: **Côté commerce.** Elle s'est terminée : les offres ne paraissent plus.
+    #: Les réservations déjà prises sont honorées, et le message le dit — c'est
+    #: la première question que le salon se posera.
+    SUBSCRIPTION_ENDED = "subscription_ended"
