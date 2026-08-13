@@ -217,6 +217,40 @@ async def purger_les_clics(session: AsyncSession, *, account, provider) -> Issue
     return Fait(prochain=timedelta(seconds=get_settings().link_click_purge_interval_seconds))
 
 
+async def _prevenir_le_commerce(
+    session: AsyncSession,
+    *,
+    commerce: Business,
+    cle: str,
+    kind: NotificationKind,
+    sender,
+    **valeurs: object,
+) -> None:
+    """La boîte **et** l'écran verrouillé, jamais l'un à la place de l'autre.
+
+    Remarque de revue retenue : les deux messages du balayage écrivaient le
+    même couple d'appels à quelques mots près. Le risque n'est pas la longueur,
+    c'est le troisième message qu'on ajoutera un jour en oubliant le push — et
+    personne ne s'apercevrait qu'il ne part pas.
+
+    Écrit ici et non dans un service : c'est de l'orchestration, et faire
+    porter à `grace` ou à `notifications` la connaissance des deux canaux leur
+    donnerait une responsabilité qu'ils n'ont pas.
+    """
+    await notifications.envoyer_au_commerce(
+        session, business=commerce, cle=cle, kind=kind, sender=sender, **valeurs
+    )
+    await push_service.pour_le_commerce_seul(
+        session,
+        business_id=commerce.id,
+        kind=kind,
+        cle=cle,
+        sender=get_push_sender(),
+        business=commerce.name,
+        **valeurs,
+    )
+
+
 async def balayer_les_periodes_de_grace(session: AsyncSession, *, account, provider) -> Issue:
     """Ouvre, avertit, et ferme les périodes de grâce d'abonnement.
 
@@ -253,21 +287,12 @@ async def balayer_les_periodes_de_grace(session: AsyncSession, *, account, provi
         echeance = commerce.grace_ends_at.astimezone(ZoneInfo(commerce.timezone)).strftime(
             "%Y-%m-%d"
         )
-        await notifications.envoyer_au_commerce(
+        await _prevenir_le_commerce(
             session,
-            business=commerce,
+            commerce=commerce,
             cle="subscription.graceEnding",
             kind=NotificationKind.SUBSCRIPTION_GRACE_ENDING,
             sender=sender,
-            echeance=echeance,
-        )
-        await push_service.pour_le_commerce_seul(
-            session,
-            business_id=commerce.id,
-            kind=NotificationKind.SUBSCRIPTION_GRACE_ENDING,
-            cle="subscription.graceEnding",
-            sender=get_push_sender(),
-            business=commerce.name,
             echeance=echeance,
         )
         # **Écrit après l'envoi.** Le poser avant ferait passer pour prévenu un
@@ -285,20 +310,12 @@ async def balayer_les_periodes_de_grace(session: AsyncSession, *, account, provi
         ):
             continue
         fermees += 1
-        await notifications.envoyer_au_commerce(
+        await _prevenir_le_commerce(
             session,
-            business=commerce,
+            commerce=commerce,
             cle="subscription.ended",
             kind=NotificationKind.SUBSCRIPTION_ENDED,
             sender=sender,
-        )
-        await push_service.pour_le_commerce_seul(
-            session,
-            business_id=commerce.id,
-            kind=NotificationKind.SUBSCRIPTION_ENDED,
-            cle="subscription.ended",
-            sender=get_push_sender(),
-            business=commerce.name,
         )
 
     logger.info(
