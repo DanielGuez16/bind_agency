@@ -6,12 +6,16 @@
  * fichier de fonte dans le dépôt. Tout le produit rendait en police système,
  * sans erreur, sans test rouge, sans rien qui le signale.
  *
- * **Ce que ces tests éprouvent, et ce qu'ils n'éprouvent pas.** Ils vérifient
- * que les fontes sont déclarées sous les noms que le thème demande, servies par
- * le serveur, et réellement chargées par le navigateur. Ils ne vérifient pas
- * encore qu'un texte les *emploie* : cette assertion échoue aujourd'hui, et la
- * cause est ouverte — voir `TASKS.md`. Écrire ici un test vert sur une
- * propriété fausse serait pire que de ne rien écrire.
+ * **La cause, trouvée depuis.** Déclarées, servies, chargées — et pas une ligne
+ * de texte ne les employait. `react-native-web` écrit `fontFamily` **verbatim**,
+ * sans guillemets : le nom arrivait tel quel dans `font-family:`. Or un nom de
+ * famille non guillemeté est une suite d'identifiants CSS, et un identifiant ne
+ * peut pas commencer par un chiffre — « IBM Plex Sans 600 » invalidait donc la
+ * déclaration **entière**, que le navigateur jetait en silence. Les noms sont
+ * désormais d'un seul tenant : « IBMPlexSans_600 ».
+ *
+ * Le dernier test est celui qui manquait, et le seul qui aurait attrapé le
+ * défaut : il lit la police **effectivement employée** par un élément rendu.
  *
  * **Attention au piège de `document.fonts.check`.** Avec un nom de famille nu,
  * il répond vrai même quand la famille n'existe pas : le navigateur considère
@@ -29,7 +33,7 @@ import { expect, test } from '@playwright/test';
  * absente est synthétisée par le moteur. Chaque graisse est donc enregistrée
  * sous son propre nom, et c'est ce nom-là qu'il faut chercher.
  */
-const FACES_ATTENDUES = ['Familjen Grotesk', 'IBM Plex Sans', 'IBM Plex Mono'];
+const FACES_ATTENDUES = ['FamiljenGrotesk_', 'IBMPlexSans_', 'IBMPlexMono_'];
 
 test('les trois familles sont déclarées sous les noms que le thème demande', async ({ page }) => {
   await page.goto('/');
@@ -81,4 +85,37 @@ test('les fichiers de fonte sont réellement servis et chargés', async ({ page 
 
   expect(servies.length, 'aucun fichier de fonte demandé au serveur').toBeGreaterThan(0);
   expect(servies.filter((code) => code >= 400), 'un fichier de fonte répond en erreur').toEqual([]);
+});
+
+test('le texte rendu emploie réellement la fonte, et non la pile système', async ({ page }) => {
+  // **Le test qui manquait.** Les trois précédents passaient pendant que cent
+  // pour cent du texte rendait en police système : une face enregistrée et
+  // chargée ne prouve pas qu'un élément la demande, ni que sa demande est
+  // valide. Celui-ci lit ce que le navigateur applique vraiment.
+  await page.goto('/');
+  await expect(page.getByTestId('ecran-accueil')).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
+
+  const employee = await page
+    .getByTestId('promesse-accueil')
+    .evaluate((noeud) => getComputedStyle(noeud).fontFamily);
+
+  // La pile système de `react-native-web` commence par `-apple-system` : la
+  // retrouver ici signifie que la déclaration de l'app a été jetée.
+  expect(employee, 'le texte est rendu dans la pile système').not.toContain('-apple-system');
+  expect(employee).toMatch(/FamiljenGrotesk_|IBMPlexSans_/);
+});
+
+test('aucune graisse n’est synthétisée par-dessus une face déjà dessinée', async ({ page }) => {
+  // Chaque fichier est enregistré sans descripteur de graisse : pour le
+  // navigateur, la face est normale. Demander 600 par-dessus la ferait grossir
+  // une seconde fois, et le trait s'épaissirait salement.
+  await page.goto('/');
+  await expect(page.getByTestId('ecran-accueil')).toBeVisible();
+
+  const graisse = await page
+    .getByTestId('promesse-accueil')
+    .evaluate((noeud) => getComputedStyle(noeud).fontWeight);
+
+  expect(graisse, 'une graisse demandée en plus du nom fait doubler le gras').toBe('400');
 });

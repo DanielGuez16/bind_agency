@@ -52,18 +52,18 @@ describe('les fontes du système', () => {
     // Sur iOS et Android, `fontWeight` ne choisit pas un fichier. Demander la
     // famille seule laisse le moteur épaissir les fûts lui-même.
     const famille = tokens.typography.fontFamily.ui;
-    expect(nomDeFonte('ui', '600')).toBe(`${famille} 600`);
+    expect(nomDeFonte('ui', '600')).toBe(`${famille.replace(/\s+/g, '')}_600`);
     expect(nomDeFonte('ui', '600')).not.toBe(famille);
   });
 
   it('retombe sur une graisse réelle quand celle qu’on demande manque', async () => {
     // Mieux vaut un 500 dessiné qu'un 800 fabriqué. La règle vaut surtout pour
     // la direction artistique à venir, qui n'aura pas forcément sept graisses.
-    const famille = tokens.typography.fontFamily.mono;
+    const famille = tokens.typography.fontFamily.mono.replace(/\s+/g, '');
     const retenue = nomDeFonte('mono', '800');
 
-    expect(retenue).not.toBe(`${famille} 800`);
-    expect(retenue in policesAcharger() || retenue.startsWith(famille)).toBe(true);
+    expect(retenue).not.toBe(`${famille}_800`);
+    expect(retenue.startsWith(`${famille}_`)).toBe(true);
   });
 
   it('pose le nom enregistré sur le texte rendu', async () => {
@@ -107,5 +107,40 @@ describe('les fontes du système', () => {
     });
 
     expect(fautifs).toEqual([]);
+  });
+
+  it('rend un nom que le CSS accepte sans guillemets', async () => {
+    // **Le défaut qui a rendu tout le produit en police système.**
+    // `react-native-web` écrit `fontFamily` verbatim, sans guillemets : le nom
+    // arrive tel quel dans `font-family:`. Un identifiant CSS ne peut pas
+    // commencer par un chiffre, si bien que « IBM Plex Sans 600 » invalidait la
+    // déclaration entière — et le navigateur la jetait sans rien dire.
+    const valide = /^[A-Za-z][A-Za-z0-9_-]*$/;
+
+    for (const role of ['display', 'ui', 'mono'] as const) {
+      for (const graisse of ['400', '500', '600', '700']) {
+        const nom = nomDeFonte(role, graisse);
+        expect({ nom, accepte: valide.test(nom) }).toEqual({ nom, accepte: true });
+      }
+    }
+  });
+
+  it('ne demande plus la graisse en plus du nom qui la porte', async () => {
+    // Chaque fichier est enregistré sans descripteur de graisse : pour le
+    // navigateur, la face est normale. Demander 600 par-dessus la ferait
+    // grossir une seconde fois, par synthèse, au-dessus d'un semi-gras déjà
+    // dessiné.
+    await render(
+      <ThemeProvider role="creator">
+        <Texte variante="type.bodyStrong" testID="fort">
+          BIND
+        </Texte>
+      </ThemeProvider>,
+    );
+
+    const style = screen.getByTestId('fort').props.style;
+    const aplati = Array.isArray(style) ? Object.assign({}, ...style.filter(Boolean)) : style;
+    expect(aplati.fontWeight).toBeUndefined();
+    expect(aplati.fontFamily).toBe(nomDeFonte('ui', '600'));
   });
 });
