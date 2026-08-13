@@ -27,7 +27,7 @@ from app.core.membership import MembershipFor
 from app.integrations.email import get_sender
 from app.integrations.push import get_push_sender
 from app.models import Booking
-from app.models.enums import NotificationKind, UserRole
+from app.models.enums import UserRole
 from app.schemas.booking import BookingRead
 from app.services import booking_states as service
 from app.services import notifications
@@ -155,17 +155,6 @@ async def mark_no_show(
     return BookingRead.model_validate(reservation)
 
 
-#: La clé du message donne le genre de notification. Une seule table plutôt
-#: qu'un second argument à chaque appel : deux valeurs à tenir d'accord se
-#: désaccordent, et c'est le genre qu'on oublierait — donc la préférence qui
-#: cesserait d'être respectée.
-GENRE_PAR_CLE = {
-    "booking.approved": NotificationKind.BOOKING_APPROVED,
-    "booking.declined": NotificationKind.BOOKING_DECLINED,
-    "booking.cancelledByBusiness": NotificationKind.BOOKING_CANCELLED_BY_BUSINESS,
-}
-
-
 async def _prevenir(session, reservation: Booking, cle: str, *, motif: str = "") -> None:
     """Prévient le créateur d'une décision du commerce.
 
@@ -195,7 +184,7 @@ async def _prevenir(session, reservation: Booking, cle: str, *, motif: str = "")
         await push_service.pour_la_reservation(
             session,
             booking_id=reservation.id,
-            kind=GENRE_PAR_CLE[cle],
+            kind=notifications.genre_de(cle),
             cle=cle,
             sender=get_push_sender(),
             motif=motif,

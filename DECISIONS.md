@@ -3505,3 +3505,32 @@ demanderait de choisir ce qu'on lui cache, et il n'y a rien ici qui se cache.
 si quelqu'un a refermé ; l'expiration éteint sans rien écrire. Dans une liste,
 « refermée à 15 h 12 » et « expirée toute seule » ne se lisent pas pareil, et
 c'est la seconde qui devrait gêner.
+
+## 2026-08-13 — La préférence vaut pour la boîte comme pour l'écran verrouillé
+
+Le chemin du push consultait deux choses avant d'envoyer : le statut du compte
+et la préférence du genre. Le chemin du courriel ne consultait ni l'une ni
+l'autre. **Couper une notification sur l'écran la coupait sur le téléphone et la
+laissait arriver dans la boîte** — le pire des deux mondes pour quelqu'un qui a
+explicitement demandé le silence, parce qu'il croit avoir coupé et qu'il n'a
+coupé qu'à moitié.
+
+**Une seule garde, appelée par les trois envois.** `notifications.joignable`
+porte les deux règles ; les écrire une seconde fois est exactement ce qui les
+avait fait diverger.
+
+**Une seule table clé → genre.** Elle vivait dans le routeur des décisions de
+réservation, où seul le push la lisait. Elle est maintenant dans le module des
+notifications, et les deux canaux y puisent.
+
+**Une clé sans genre lève, elle ne part pas.** Un message dont aucune préférence
+ne commande l'envoi est un message qu'on ne peut pas couper : le laisser partir
+« au cas où » rétablirait le défaut qu'on vient de réparer. Deux messages sont
+dans ce cas — `collaboration.opened` et `collaboration.unfulfilled` — écrits,
+traduits, et émis par personne. Leur rattacher le rappel d'échéance ferait taire
+« votre contrepartie n'a pas été honorée » pour qui coupe les rappels : c'est
+une décision de produit, elle est notée et non prise.
+
+**Et un test dans l'autre sens :** chaque genre doit être commandé par au moins
+une clé. L'écran des réglages en propose dix ; celui qui en couperait un sans
+effet ferait douter des neuf autres.
