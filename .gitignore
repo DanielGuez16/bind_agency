@@ -44,3 +44,8 @@ assets/photos/**
 # main : commités, ils divergeraient de `app.json` sans que rien ne le signale.
 app/ios/
 app/android/
+
+# Build web produit pour les tests de bout en bout, et leurs artefacts.
+app/dist-e2e/
+app/test-results/
+app/playwright-report/

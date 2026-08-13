@@ -3304,3 +3304,55 @@ puis 1 $ les mille, sans abonnement et sans carte tant qu'on reste sous le
 quota. À l'échelle de BIND, qui ne résout qu'à la création ou modification d'un
 commerce et pas du tout quand les coordonnées sont déclarées, le quota gratuit
 couvre le lancement sans marge à surveiller.
+
+## 2026-08-12 — Des tests de bout en bout dans un vrai navigateur
+
+Le trou structurel du projet. Trois défauts n'ont été trouvés que par
+l'observation de quelqu'un qui ouvrait l'application : la vidéo d'accueil qui
+ne jouait pas, les polices jamais chargées, la barre latérale jamais montée.
+Aucun n'était visible d'un test unitaire — les doubles répondent ce qu'on leur
+fait dire, et rien n'y charge de fonte, ne joue de vidéo, ni ne mesure une
+fenêtre.
+
+**Playwright sur le build web réel**, exporté par Metro, servi en statique,
+parlant à une vraie API sur une vraie base, dans un job d'intégration continue
+à part. Un seul navigateur : ce qu'on cherche n'est pas une différence de
+moteur, c'est ce que le nôtre fait de notre application.
+
+**Aucune reprise.** Un test de bout en bout qui ne passe qu'à la seconde
+tentative est instable, et le masquer par une reprise le rendrait inutile.
+
+**Les trois défauts historiques ont été rejoués en mutation.** Retirer
+`playsInline`, ranger la barre latérale dans `screenOptions` comme à l'origine,
+et vider la liste des fontes : les trois sont attrapés. C'est la seule preuve
+qui valait quelque chose ici — une suite verte sur un produit sain ne dit rien.
+
+### Ce que la première exécution a trouvé
+
+**Un défaut de configuration :** l'origine du serveur statique n'était pas dans
+`CORS_ORIGINS`, si bien que chaque requête partait et revenait en échec. L'app
+affichait des écrans vides sans qu'aucune erreur ne remonte à l'utilisateur.
+Invisible de tout test unitaire, par construction.
+
+**Un défaut de produit, non résolu :** les trois `@font-face` sont déclarées,
+servies, chargées — et **aucun élément du document n'emploie ces familles**.
+Tout le texte du build web rend dans la pile système. La cause n'est pas
+établie et la tâche est ouverte dans `TASKS.md`.
+
+**Et un test creux, le mien.** La première version du fichier des polices
+appelait `document.fonts.check('16px "Familjen Grotesk"')`, qui répond **vrai
+même quand la famille n'existe pas** : le navigateur juge que le texte peut
+être rendu, en repli. Le test passait sur un produit dont les polices ne
+s'appliquent nulle part. Il ne restait vert que parce qu'il ne demandait rien.
+On lit désormais les faces enregistrées une à une, sous leur nom exact.
+
+**Un troisième, sur la machine d'intégration :** le dépôt objet vaut `memory`
+par défaut. Le semis y déposait photos et vidéos, son processus se terminait,
+l'API redémarrait sur un dépôt vide — toutes les clés en base, aucun octet
+derrière, et la route de média répondait 404 sur tout. Le navigateur, lui,
+rapporte `MEDIA_ELEMENT_ERROR: Format error` : le même message qu'un codec
+absent. Deux exécutions ont cherché du côté du codec avant que le journal de
+l'API ne montre les 404. Le test vérifie maintenant que la source répond 200
+**avant** de demander si elle se lit — un fichier manquant et un fichier
+illisible ne se diagnostiquent pas au même endroit, et le navigateur ne les
+distingue pas pour nous.

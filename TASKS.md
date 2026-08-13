@@ -283,6 +283,28 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       été écartés et combien de ce salon ont été retenus. 18 tests, 4 mutations*
 - [x] Capture de preuve niveau 1
       *Fin : `fetch_media` sur l'interface, le fournisseur de démonstration et Instagram ; trois colonnes sur `proof` — identifiant du média, auteur, type dans le vocabulaire de la plateforme — et un index unique partiel, parce qu'une publication ne règle qu'une contrepartie ; la règle des quatre conditions isolée dans `verification`, pure et éprouvée sur les cas qui comptent ; la vérification tentée **à la soumission**, jamais par balayage. Le relevé des publications n'a pas fait une tranche à part : le déclencheur étant la soumission, il se réduisait à `fetch_media`. Quinze mutations vérifiées*
+- [x] Tests de bout en bout dans un vrai navigateur
+      *Le trou structurel : trois défauts n'ont été trouvés que par
+      l'observation — la vidéo qui ne jouait pas, les polices jamais chargées,
+      la barre latérale jamais montée. Fin : Playwright sur le build web réel,
+      servi en statique, parlant à une vraie API sur une vraie base, dans un
+      job d'intégration continue à part. Dix tests couvrant la navigation aux
+      trois largeurs et à la bascule, la déclaration et le chargement réel des
+      fontes, la lecture effective de la vidéo, et le parcours complet du fil
+      jusqu'au code de retrait. Les trois défauts historiques ont été rejoués
+      en mutation : les trois sont attrapés.*
+- [ ] **Les polices ne s'appliquent à aucun texte sur le web**
+      *Trouvé par les tests de bout en bout, à leur première exécution. Les
+      trois `@font-face` sont déclarées sous les noms que le thème demande, les
+      fichiers sont servis, une face atteint `loaded` — et pourtant **aucun
+      élément du document n'a une `font-family` de nos familles** : tout le
+      texte rend dans la pile système de React Native Web. Reproduction :
+      ouvrir le build web, `[...document.querySelectorAll('*')]` filtré sur
+      `getComputedStyle(n).fontFamily` contenant « Familjen » ou « IBM Plex »
+      rend une liste vide. Aucune règle CSS n'applique ces familles, seulement
+      les `@font-face`. La cause n'est pas établie : `Texte` pose bien
+      `fontFamily: nomDeFonte(...)`, qui rend « Familjen Grotesk 600 ». À
+      instruire — c'est cent pour cent des écrans web.*
 - [x] Dépôt objet réel, compatible S3
       *Fin : deux compartiments Supabase, `make demo-seed` y range photos et preuves. La sonde de déploiement écrit et relit dans chacun, et éprouve le gabarit — pas seulement la joignabilité : un témoin de vingt octets passe sur un compartiment dont la limite de taille est inférieure à ce qu'on y dépose. Un refus porte le statut HTTP, le compartiment et la clé, parce que « ClientError » sans rien d'autre a coûté deux diagnostics*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire
