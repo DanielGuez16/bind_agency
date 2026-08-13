@@ -133,7 +133,7 @@ async def issue_handover(
             destinataire=payload.destination,
             business=business,
             url=emis.url,
-            expiration=emis.handover.expires_at.isoformat(timespec="minutes"),
+            expiration=emis.expires_at.isoformat(timespec="minutes"),
         )
 
     return LienRemisRead.model_validate(emis)

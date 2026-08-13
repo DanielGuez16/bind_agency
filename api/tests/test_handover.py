@@ -158,7 +158,7 @@ async def test_le_jeton_n_est_pas_stocke(session: AsyncSession) -> None:
     )
 
     stocke = await session.scalar(
-        sa.select(BusinessHandover.token_hash).where(BusinessHandover.id == emis.handover.id)
+        sa.select(BusinessHandover.token_hash).where(BusinessHandover.id == emis.handover_id)
     )
     assert stocke != emis.jeton.encode()
     assert emis.jeton not in stocke.decode("latin-1")
@@ -180,7 +180,7 @@ async def test_emettre_ferme_le_lien_precedent(session: AsyncSession) -> None:
         await service.resoudre(session, jeton=premier.jeton)
 
     # Et le nouveau, lui, ouvre bien.
-    assert (await service.resoudre(session, jeton=second.jeton)).id == second.handover.id
+    assert (await service.resoudre(session, jeton=second.jeton)).id == second.handover_id
 
 
 async def test_un_lien_revoque_ne_resout_plus(session: AsyncSession) -> None:
@@ -192,7 +192,7 @@ async def test_un_lien_revoque_ne_resout_plus(session: AsyncSession) -> None:
 
     ferme = await service.revoquer(session, business=business, actor=admin)
 
-    assert ferme is not None and ferme.id == emis.handover.id
+    assert ferme is not None and ferme.id == emis.handover_id
     with pytest.raises(service.HandoverUnknown):
         await service.resoudre(session, jeton=emis.jeton)
 
@@ -209,9 +209,9 @@ async def test_un_lien_expire_ne_resout_plus(session: AsyncSession) -> None:
         session, business=business, emis_par=admin, canal=HandoverChannel.QR
     )
 
-    plus_tard = emis.handover.expires_at + timedelta(seconds=1)
+    plus_tard = emis.expires_at + timedelta(seconds=1)
 
-    assert (await service.resoudre(session, jeton=emis.jeton)).id == emis.handover.id
+    assert (await service.resoudre(session, jeton=emis.jeton)).id == emis.handover_id
     with pytest.raises(service.HandoverUnknown):
         await service.resoudre(session, jeton=emis.jeton, maintenant=plus_tard)
 

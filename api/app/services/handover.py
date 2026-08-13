@@ -104,7 +104,7 @@ class TermsNotAccepted(HandoverError):
     """
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class LienRemis:
     """Ce qu'on rend à la fondatrice, **une seule fois**.
 
@@ -113,28 +113,19 @@ class LienRemis:
     comportement voulu — un lien qu'on peut relire est un lien qu'on peut
     voler.
 
-    Les trois propriétés recopient la ligne plutôt que de laisser le routeur y
-    puiser : `LienRemisRead` se construit alors de cette structure et de rien
-    d'autre, et le garde-fou des schémas de lecture vérifie que les deux
-    disent la même chose. Sans `slots`, parce que les propriétés d'une
-    `dataclass` à fentes ne se déclarent pas aussi simplement.
+    **Des valeurs recopiées, pas la ligne.** Porter le modèle et en réexposer
+    trois champs par des propriétés faisait une représentation de plus, posée
+    en parallèle de la ligne et du schéma. `LienRemisRead` se construit
+    maintenant de cette structure et de rien d'autre — ce que le garde-fou des
+    schémas de lecture vérifie.
     """
 
-    handover: BusinessHandover
+    handover_id: uuid.UUID
+    business_id: uuid.UUID
+    channel: HandoverChannel
+    expires_at: datetime
     jeton: str
     url: str
-
-    @property
-    def business_id(self) -> uuid.UUID:
-        return self.handover.business_id
-
-    @property
-    def expires_at(self) -> datetime:
-        return self.handover.expires_at
-
-    @property
-    def channel(self) -> HandoverChannel:
-        return self.handover.channel
 
 
 @dataclass(frozen=True, slots=True)
@@ -285,7 +276,10 @@ async def emettre(
     )
 
     return LienRemis(
-        handover=ligne,
+        handover_id=ligne.id,
+        business_id=ligne.business_id,
+        channel=ligne.channel,
+        expires_at=ligne.expires_at,
         jeton=jeton,
         url=f"{reglages.handover_base_url.rstrip('/')}/{jeton}",
     )
