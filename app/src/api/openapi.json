@@ -51,6 +51,37 @@
         ]
       }
     },
+    "/api/v1/admin/prospects": {
+      "get": {
+        "operationId": "list_prospects_api_v1_admin_prospects_get",
+        "responses": [
+          "200"
+        ]
+      },
+      "post": {
+        "operationId": "prepare_prospect_api_v1_admin_prospects_post",
+        "responses": [
+          "201",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/admin/prospects/{business_id}/handover": {
+      "delete": {
+        "operationId": "revoke_handover_api_v1_admin_prospects__business_id__handover_delete",
+        "responses": [
+          "204",
+          "422"
+        ]
+      },
+      "post": {
+        "operationId": "issue_handover_api_v1_admin_prospects__business_id__handover_post",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/api/v1/admin/social-accounts/review": {
       "get": {
         "operationId": "review_queue_api_v1_admin_social_accounts_review_get",
@@ -653,6 +684,33 @@
     "/api/v1/collaborations/{collaboration_id}/proof": {
       "post": {
         "operationId": "submit_proof_api_v1_collaborations__collaboration_id__proof_post",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/handover/{jeton}": {
+      "get": {
+        "operationId": "preview_handover_api_v1_handover__jeton__get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/handover/{jeton}/attach": {
+      "post": {
+        "operationId": "attach_handover_api_v1_handover__jeton__attach_post",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/handover/{jeton}/claim": {
+      "post": {
+        "operationId": "claim_handover_api_v1_handover__jeton__claim_post",
         "responses": [
           "200",
           "422"
