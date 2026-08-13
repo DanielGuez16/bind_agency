@@ -3698,3 +3698,32 @@ et une modification de configuration.
 existe aucune aujourd'hui : le routeur d'administration ne les lit que. Câbler
 un journal sur un chemin qui n'existe pas aurait produit du code que rien
 n'appelle, et un test qui ne prouve rien.
+
+## 2026-08-13 — Un réglage qu'on ne sait pas régler n'existe pas
+
+Trente-quatre réglages sur cent dix ne figuraient pas dans `.env.example` — dont
+plusieurs ajoutés dans les jours précédents, par moi. Chacun a une valeur par
+défaut dans le code, donc rien ne cassait : le produit tournait, et la seule
+façon d'apprendre qu'un délai était réglable était de lire `config.py`.
+
+C'est une dette qui ne fait jamais mal une bonne fois. Elle fait perdre une
+heure à chaque fois que quelqu'un cherche « comment allonger la garde de
+réservation » et conclut que ce n'est pas réglable.
+
+**Un test compare le fichier aux champs de `Settings`, dans les deux sens.** Un
+réglage absent du fichier est invisible ; une variable nommée dans le fichier et
+inconnue du code se recopie dans un vrai `.env`, où elle est ignorée en silence —
+et quelqu'un passe une demi-heure à se demander pourquoi son réglage ne prend
+pas. Les deux sens comptent.
+
+**Une seule exclusion, et elle porte sa raison :** `TEST_DATABASE_URL`, lue par
+la seule session pytest. La poser dans le fichier d'exemple inviterait à la
+renseigner en production, où elle désignerait une base qu'un jeu de données
+accepte d'effacer.
+
+**Et une découverte au passage.** Le texte des conditions n'existe dans aucun
+fichier du dépôt. Un salon accepte « la version 2026-01 », l'acceptation est
+écrite au journal d'audit avec son auteur et son instant — et le document
+qu'elle désigne n'existe pas. Le mécanisme de preuve est complet ; ce qu'il
+prouve ne l'est pas. Ce n'est pas bloqué par un accès externe, mais par une
+rédaction juridique.
