@@ -17,7 +17,13 @@ from fastapi import APIRouter, Depends, status
 from app.core.dependencies import CurrentBusiness, CurrentUser, SessionDep, require_role
 from app.core.errors import ErrorCode, api_error
 from app.models.enums import UserRole
-from app.schemas.tiers import TierCreate, TierRead, TierUpdate
+from app.schemas.tiers import (
+    ConfigurationChangeRead,
+    TierCreate,
+    TierRead,
+    TierUpdate,
+)
+from app.services import config_journal
 from app.services import tiers as tier_service
 from app.services.audit import Actor
 
@@ -94,6 +100,21 @@ async def update_tier(
 
     await session.commit()
     return TierRead.model_validate(tier, from_attributes=True)
+
+
+@router.get("/{tier_id}/changes", response_model=list[ConfigurationChangeRead])
+async def list_tier_changes(tier_id: uuid.UUID, session: SessionDep) -> list:
+    """L'histoire d'un palier : qui a changé quoi, et depuis quelle valeur.
+
+    **La question à laquelle elle répond.** Un créateur perd l'accès à un
+    palier qu'il avait ; six semaines plus tard, on ne sait pas si son audience
+    a baissé ou si le seuil a monté. Sans cette lecture, la seule façon de
+    trancher est de croire quelqu'un sur parole.
+    """
+    return [
+        ConfigurationChangeRead.model_validate(ligne)
+        for ligne in await config_journal.historique(session, entity_id=tier_id)
+    ]
 
 
 @router.delete("/{tier_id}", status_code=status.HTTP_204_NO_CONTENT)

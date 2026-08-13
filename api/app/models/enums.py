@@ -403,6 +403,16 @@ class NotificationKind(StrEnum):
     PUBLICATION_APPROVED = "publication_approved"
     #: Une nouvelle soumission est demandée, avec son motif et sa note.
     PUBLICATION_RESUBMIT = "publication_resubmit"
+    #: La contrepartie s'ouvre : la prestation est consommée, le délai de
+    #: publication court. **Son propre genre, et non celui du rappel** : couper
+    #: les rappels ne doit pas faire disparaître le message qui dit ce qu'on
+    #: doit faire et pour quand.
+    COLLABORATION_OPENED = "collaboration_opened"
+    #: L'échéance est passée sans publication acceptée. **Son propre genre
+    #: aussi** : cela touche le score de fiabilité, et quelqu'un qui coupe les
+    #: rappels ne doit pas cesser d'apprendre qu'une contrepartie n'a pas été
+    #: honorée.
+    COLLABORATION_UNFULFILLED = "collaboration_unfulfilled"
     #: **Côté commerce.** Une réservation attend sa décision.
     BOOKING_TO_REVIEW = "booking_to_review"
     #: **Côté commerce.** La période d'essai se termine bientôt. Prévenir

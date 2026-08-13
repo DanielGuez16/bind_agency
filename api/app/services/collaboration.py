@@ -48,7 +48,6 @@ from app.models.enums import (
     CaptureMethod,
     CollaborationStatus,
     ContentFormat,
-    NotificationKind,
     Platform,
     ReliabilityEventType,
 )
@@ -190,6 +189,14 @@ async def creer(session: AsyncSession, *, booking: Booking) -> Collaboration:
         actor=audit.Actor.system(),
         reason="prestation consommée, délai de publication ouvert",
     )
+
+    # **Le message qui ouvre le délai.** Il était écrit et traduit depuis des
+    # mois, et personne ne l'envoyait : le créateur repartait du salon sans
+    # savoir ce qu'il devait publier ni pour quand, sinon en rouvrant
+    # l'application. Déposé ici, dans la transaction qui crée la contrepartie.
+    await _deposer_pour_le_createur(
+        session, collaboration=collaboration, cle="collaboration.opened"
+    )
     return collaboration
 
 
@@ -241,18 +248,24 @@ EVENEMENTS_PAR_ISSUE: dict[CollaborationStatus, tuple[ReliabilityEventType, ...]
 }
 
 
-#: Les deux issues qui méritent de sortir de l'application, et leur message.
-#: `unfulfilled` n'y est pas : un dossier clos ne demande plus rien, et
-#: l'annoncer par une vibration serait une punition de plus.
+#: Les issues qui méritent de sortir de l'application, et leur message.
+#:
+#: **`unfulfilled` y figure désormais.** On l'en avait écarté au motif qu'un
+#: dossier clos ne demande plus rien et que l'annoncer serait une punition de
+#: plus. C'était se tromper de sujet : la non-honoration **fait baisser le
+#: score de fiabilité**, donc ferme des paliers. L'apprendre en constatant, des
+#: semaines plus tard, qu'on ne peut plus réserver ce qu'on réservait est bien
+#: pire que de le lire le jour même. Le message a son propre genre : il se
+#: coupe, mais séparément des rappels.
+#: **La clé seule, et non un couple (genre, clé).** Le genre y figurait, et
+#: plus personne ne le lisait depuis que la boîte d'envoi le déduit de la clé :
+#: une mutation l'a montré en changeant ce genre sans qu'aucun test ne tombe.
+#: Deux sources pour la même information finissent par se contredire, et c'est
+#: celle qu'on ne lit pas qui ment le plus longtemps.
 NOTIFICATION_PAR_ISSUE = {
-    CollaborationStatus.APPROVED: (
-        NotificationKind.PUBLICATION_APPROVED,
-        "collaboration.approved",
-    ),
-    CollaborationStatus.RESUBMIT_REQUESTED: (
-        NotificationKind.PUBLICATION_RESUBMIT,
-        "collaboration.resubmit",
-    ),
+    CollaborationStatus.APPROVED: "collaboration.approved",
+    CollaborationStatus.RESUBMIT_REQUESTED: "collaboration.resubmit",
+    CollaborationStatus.UNFULFILLED: "collaboration.unfulfilled",
 }
 
 
@@ -265,10 +278,21 @@ async def _prevenir_le_createur(
     oublié sur une branche, et c'est la branche oubliée qui laisse quelqu'un
     sans nouvelle de sa publication.
     """
-    couple = NOTIFICATION_PAR_ISSUE.get(vers)
-    if couple is None:
+    cle = NOTIFICATION_PAR_ISSUE.get(vers)
+    if cle is None:
         return
-    _, cle = couple
+    await _deposer_pour_le_createur(session, collaboration=collaboration, cle=cle)
+
+
+async def _deposer_pour_le_createur(
+    session: AsyncSession, *, collaboration: Collaboration, cle: str
+) -> None:
+    """Dépose un message du dossier dans la boîte d'envoi.
+
+    Une seule fonction pour l'ouverture et pour les issues : deux façons de
+    composer le même contexte finiraient par en oublier un champ, et c'est le
+    message le moins fréquent qui partirait amputé.
+    """
 
     # **Déposé dans la transition, pas envoyé à côté.** Le message part avec la
     # transition qu'il annonce : ou les deux existent, ou aucun. Il n'y a plus
@@ -280,6 +304,11 @@ async def _prevenir_le_createur(
     if contexte is None:
         return
 
+    # **Tous les champs du contexte, et non ceux du message du jour.** Le
+    # gabarit d'ouverture est le seul à nommer le format et les exigences ; ne
+    # passer que ce dont les autres ont besoin les aurait rendus vides, sans
+    # rien casser et sans que personne ne le voie — le message serait parti en
+    # disant « publiez » sans dire quoi.
     await outbox.deposer(
         session,
         user_id=contexte.user_id,
@@ -287,7 +316,9 @@ async def _prevenir_le_createur(
         creator=contexte.creator,
         business=contexte.business,
         item=contexte.item,
+        format=contexte.format,
         deadline=contexte.deadline,
+        requirements=contexte.requirements,
         motif=contexte.motif,
     )
 

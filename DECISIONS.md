@@ -3644,3 +3644,57 @@ vérifiaient que les faces étaient enregistrées, servies et chargées — les 
 sa demande est valide. Le test qui manquait lit la police **effectivement
 appliquée** par un élément rendu, et c'est le seul qui aurait attrapé le défaut.
 
+
+## 2026-08-13 — Deux genres pour deux messages, et un journal pour la configuration
+
+**Les deux messages orphelins ont chacun leur genre.** `collaboration.opened` et
+`collaboration.unfulfilled` étaient écrits, traduits, et émis par personne. Les
+rattacher au rappel d'échéance aurait été le raccourci commode : c'eût été faire
+taire « votre contrepartie n'a pas été honorée » pour quelqu'un qui coupe les
+rappels — au moment précis où l'information compte le plus, puisqu'elle touche
+le score de fiabilité et ferme donc des paliers. L'apprendre six semaines plus
+tard en constatant qu'on ne peut plus réserver ce qu'on réservait est bien pire
+que de le lire le jour même.
+
+**L'ouverture porte le format et les exigences.** Le contexte est passé en
+entier au dépôt et non champ par champ selon le message du jour : le gabarit
+d'ouverture est le seul à les nommer, et ne passer que ce dont les autres ont
+besoin l'aurait laissé partir en disant « publiez » sans dire quoi — sans rien
+casser, et sans que personne ne le voie.
+
+**Une table qui portait une donnée que plus personne ne lisait.**
+`NOTIFICATION_PAR_ISSUE` associait un statut à un couple (genre, clé) ; depuis
+que la boîte d'envoi déduit le genre de la clé, le premier membre n'était plus
+lu. Une mutation l'a montré en le changeant sans qu'aucun test ne tombe. Deux
+sources pour la même information finissent par se contredire, et c'est celle
+qu'on ne lit pas qui ment le plus longtemps.
+
+---
+
+**Le journal des modifications de configuration**, laissé ouvert depuis la
+phase 3 « à faire quand un deuxième besoin du même type apparaîtra ». Il est
+apparu : les seuils de paliers se changent par l'interface d'administration sans
+redéploiement — c'est la règle du produit — et rien ne gardait trace de qui
+avait changé quoi. Un créateur perd l'accès à un palier qu'il avait ; six
+semaines plus tard, personne ne peut dire si son audience a baissé ou si le
+seuil a monté.
+
+**Une table à part, et non le journal d'audit.** Celui-ci décrit des
+transitions : `from_status` vers `to_status`. Un seuil qui passe de mille à deux
+mille n'en est pas une, et l'y forcer aurait produit des lignes illisibles —
+« to_status : 2000 » ne dit ni de quoi, ni depuis quoi.
+
+**Les valeurs sont stockées en texte.** Un journal qui retyperait ses valeurs
+selon la colonne d'origine se tromperait le jour où cette colonne change de
+type — c'est-à-dire précisément le jour où l'on vient le relire. `None` reste
+`None` : un seuil de score qui passe de « aucun » à soixante n'est pas le même
+geste qu'un seuil qui monte de cinquante à soixante.
+
+**La bascule d'activité figure dans les deux journaux**, et ce n'est pas une
+redondance : c'est une transition d'état — que d'autres lectures interrogent —
+et une modification de configuration.
+
+**Les plans d'abonnement suivront quand une route les modifiera.** Il n'en
+existe aucune aujourd'hui : le routeur d'administration ne les lit que. Câbler
+un journal sur un chemin qui n'existe pas aurait produit du code que rien
+n'appelle, et un test qui ne prouve rien.

@@ -462,3 +462,210 @@ async def test_desactiver_un_palier_n_affecte_pas_une_reservation_en_cours(
 
     statut = await conn.scalar(sa.select(Booking.status).where(Booking.id == booking_id))
     assert statut == BookingStatus.CONFIRMED
+
+
+# --------------------------------------------------------------------------
+# le journal des modifications de configuration
+# --------------------------------------------------------------------------
+#
+# **La question à laquelle ces lignes répondent.** Un créateur perd l'accès à un
+# palier qu'il avait ; six semaines plus tard, personne ne peut dire si son
+# audience a baissé ou si le seuil a monté. Sans ce journal, la seule façon de
+# trancher est de croire quelqu'un sur parole.
+
+
+async def _palier_neuf(client: AsyncClient, admin: dict) -> dict:
+    reponse = await client.post(
+        f"{PREFIX}/admin/tiers",
+        json={
+            # YouTube : le seul couple encore libre. Les paliers de référence
+            # occupent Instagram et TikTok en entier, et le palier créé ici ne
+            # doit pas entrer en collision avec eux.
+            "platform": Platform.YOUTUBE.value,
+            "content_format": ContentFormat.POST.value,
+            "min_followers": 1000,
+            "display_order": 90,
+        },
+        headers=admin["headers"],
+    )
+    assert reponse.status_code == 201, reponse.text
+    return reponse.json()
+
+
+async def test_un_seuil_modifie_laisse_sa_trace(client: AsyncClient) -> None:
+    """Le champ, l'ancienne valeur, la nouvelle, et l'administrateur."""
+    admin = await compte(client, UserRole.ADMIN)
+    palier = await _palier_neuf(client, admin)
+
+    await client.patch(
+        f"{PREFIX}/admin/tiers/{palier['id']}",
+        json={"min_followers": 2000},
+        headers=admin["headers"],
+    )
+
+    lignes = (
+        await client.get(f"{PREFIX}/admin/tiers/{palier['id']}/changes", headers=admin["headers"])
+    ).json()
+    assert len(lignes) == 1
+    assert lignes[0]["field"] == "min_followers"
+    assert lignes[0]["value_before"] == "1000"
+    assert lignes[0]["value_after"] == "2000"
+    assert lignes[0]["actor_user_id"] == admin["user_id"]
+
+
+async def test_une_valeur_renvoyee_a_l_identique_n_est_pas_une_modification(
+    client: AsyncClient,
+) -> None:
+    """Une ligne par appel remplirait le journal de bruit, après quoi personne
+    ne le lirait plus."""
+    admin = await compte(client, UserRole.ADMIN)
+    palier = await _palier_neuf(client, admin)
+
+    await client.patch(
+        f"{PREFIX}/admin/tiers/{palier['id']}",
+        json={"min_followers": 1000},
+        headers=admin["headers"],
+    )
+
+    lignes = (
+        await client.get(f"{PREFIX}/admin/tiers/{palier['id']}/changes", headers=admin["headers"])
+    ).json()
+    assert lignes == []
+
+
+async def test_chaque_champ_modifie_a_sa_ligne(client: AsyncClient) -> None:
+    """Une ligne par champ, et non une par appel : « le palier a changé » ne
+    dit pas ce qui a changé."""
+    admin = await compte(client, UserRole.ADMIN)
+    palier = await _palier_neuf(client, admin)
+
+    await client.patch(
+        f"{PREFIX}/admin/tiers/{palier['id']}",
+        json={"min_followers": 2000, "display_order": 91},
+        headers=admin["headers"],
+    )
+
+    lignes = (
+        await client.get(f"{PREFIX}/admin/tiers/{palier['id']}/changes", headers=admin["headers"])
+    ).json()
+    assert {ligne["field"] for ligne in lignes} == {"min_followers", "display_order"}
+
+
+async def test_un_passage_a_nul_se_distingue_d_une_valeur(client: AsyncClient) -> None:
+    """**Un seuil qui passe de « aucun » à soixante n'est pas le même geste**
+    qu'un seuil qui monte de cinquante à soixante. Un journal qui écrirait
+    « None » comme une chaîne perdrait la différence."""
+    admin = await compte(client, UserRole.ADMIN)
+    palier = await _palier_neuf(client, admin)
+
+    await client.patch(
+        f"{PREFIX}/admin/tiers/{palier['id']}",
+        json={"min_reliability_score": "60.00"},
+        headers=admin["headers"],
+    )
+
+    lignes = (
+        await client.get(f"{PREFIX}/admin/tiers/{palier['id']}/changes", headers=admin["headers"])
+    ).json()
+    ligne = next(x for x in lignes if x["field"] == "min_reliability_score")
+    assert ligne["value_before"] is None
+    assert ligne["value_after"] == "60"
+
+
+async def test_la_bascule_d_activite_est_dans_les_deux_journaux(
+    client: AsyncClient, conn: AsyncConnection
+) -> None:
+    """Et ce n'est pas une redondance : c'est une transition d'état — que
+    d'autres lectures interrogent — **et** une modification de configuration."""
+    admin = await compte(client, UserRole.ADMIN)
+    palier = await _palier_neuf(client, admin)
+
+    await client.patch(
+        f"{PREFIX}/admin/tiers/{palier['id']}",
+        json={"is_active": False},
+        headers=admin["headers"],
+    )
+
+    lignes = (
+        await client.get(f"{PREFIX}/admin/tiers/{palier['id']}/changes", headers=admin["headers"])
+    ).json()
+    transitions = (
+        (
+            await conn.execute(
+                sa.select(AuditLog.to_status).where(AuditLog.entity_id == uuid.UUID(palier["id"]))
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+    assert [ligne["field"] for ligne in lignes] == ["is_active"]
+    assert lignes[0]["value_after"] == "false"
+    assert "inactive" in transitions
+
+
+async def test_le_journal_d_un_palier_ne_montre_pas_celui_d_un_autre(
+    client: AsyncClient,
+) -> None:
+    """La fuite qu'on oublierait de vérifier sur une lecture neuve."""
+    admin = await compte(client, UserRole.ADMIN)
+    premier = await _palier_neuf(client, admin)
+    second = await client.post(
+        f"{PREFIX}/admin/tiers",
+        json={
+            "platform": Platform.YOUTUBE.value,
+            "content_format": ContentFormat.REEL.value,
+            "min_followers": 1000,
+            "display_order": 92,
+        },
+        headers=admin["headers"],
+    )
+    await client.patch(
+        f"{PREFIX}/admin/tiers/{premier['id']}",
+        json={"min_followers": 2000},
+        headers=admin["headers"],
+    )
+
+    lignes = (
+        await client.get(
+            f"{PREFIX}/admin/tiers/{second.json()['id']}/changes", headers=admin["headers"]
+        )
+    ).json()
+    assert lignes == []
+
+
+async def test_seule_l_administration_lit_le_journal(client: AsyncClient) -> None:
+    admin = await compte(client, UserRole.ADMIN)
+    palier = await _palier_neuf(client, admin)
+    membre = await compte(client, UserRole.BUSINESS_MEMBER)
+
+    reponse = await client.get(
+        f"{PREFIX}/admin/tiers/{palier['id']}/changes", headers=membre["headers"]
+    )
+
+    assert reponse.status_code == 403
+
+
+async def test_une_modification_sans_auteur_est_refusee(conn: AsyncConnection) -> None:
+    """**Le système ne change pas une configuration.**
+
+    S'il le faisait, la trace dirait « personne » — et une modification de seuil
+    sans auteur est exactement ce que ce journal existe pour empêcher. La
+    colonne est déjà `NOT NULL` ; le refus explicite donne à l'appelant une
+    erreur de son geste plutôt qu'une violation de contrainte trois appels plus
+    loin.
+    """
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    from app.services import config_journal
+    from app.services.audit import Actor
+
+    session = AsyncSession(bind=conn, expire_on_commit=False)
+    with pytest.raises(ValueError, match="auteur"):
+        await config_journal.enregistrer(
+            session,
+            entity_type=config_journal.TIER,
+            entity_id=uuid.uuid4(),
+            champs={"min_followers": (1000, 2000)},
+            actor=Actor.system(),
+        )

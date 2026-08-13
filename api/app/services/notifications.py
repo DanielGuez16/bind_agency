@@ -61,6 +61,8 @@ GENRE_PAR_CLE: dict[str, NotificationKind] = {
     "collaboration.reminder": NotificationKind.PUBLICATION_REMINDER,
     "collaboration.approved": NotificationKind.PUBLICATION_APPROVED,
     "collaboration.resubmit": NotificationKind.PUBLICATION_RESUBMIT,
+    "collaboration.opened": NotificationKind.COLLABORATION_OPENED,
+    "collaboration.unfulfilled": NotificationKind.COLLABORATION_UNFULFILLED,
     "subscription.graceEnding": NotificationKind.SUBSCRIPTION_GRACE_ENDING,
     "subscription.ended": NotificationKind.SUBSCRIPTION_ENDED,
     "support.accessOpened": NotificationKind.SUPPORT_ACCESS_STARTED,

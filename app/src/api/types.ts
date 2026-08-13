@@ -137,7 +137,9 @@ export type GenreDeNotification =
   | 'booking_to_review'
   | 'subscription_grace_ending'
   | 'subscription_ended'
-  | 'support_access_started';
+  | 'support_access_started'
+  | 'collaboration_opened'
+  | 'collaboration_unfulfilled';
 
 /** Sur quoi tourne le terminal. Rendu par l'app, jamais déduit du jeton. */
 export type PlateformeDeTerminal = 'ios' | 'android' | 'web';

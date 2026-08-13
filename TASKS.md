@@ -23,8 +23,14 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Fin : pages en ligne. Nécessaire avant les revues, pas avant le code*
 - [ ] Ouvrir Stripe en mode test, le stockage objet et le Postgres hébergé
       *Fin : `.env.example` documenté*
-- [ ] Poser un premier jeu de seuils de paliers provisoire en configuration
-      *Fin : valeurs modifiables sans redéploiement, à faire valider par Rebecca plus tard*
+- [x] Poser un premier jeu de seuils de paliers provisoire en configuration
+      *Fait depuis la migration `ca6ed22e418a` et jamais coché : sept paliers de
+      référence, identifiants fixés en dur pour être lisibles d'un
+      environnement à l'autre, Snapchat posé mais inactif. Modifiables sans
+      redéploiement par `PATCH /admin/tiers/{id}` — et depuis aujourd'hui,
+      chaque modification laisse une trace nommant le champ, l'ancienne valeur,
+      la nouvelle et l'administrateur. **Les seuils restent à valider par
+      Rebecca** : c'est la seule partie de cette tâche qui n'est pas du code*
 - [ ] Ouvrir le compte Geocodio et poser la clé
       *Le fournisseur est choisi et **le code est écrit** — voir `DECISIONS.md`
       du 2026-08-06 et `app/integrations/geocoding.py`. Ne reste que
@@ -76,8 +82,20 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Fin : créer et modifier un palier sans toucher au code*
 - [x] Composition des offres par palier côté commerce
       *Fin : un item peut être placé à plusieurs paliers*
-- [ ] Journal des modifications de configuration
-      *Fin : toute modification d'un palier ou d'un plan d'abonnement laisse une trace nommant le champ, l'ancienne et la nouvelle valeur, et l'administrateur. Le journal actuel ne sait décrire qu'une bascule d'état — `from_status` vers `to_status` — il faudra une autre forme d'enregistrement. À faire quand un deuxième besoin du même type apparaîtra*
+- [x] Journal des modifications de configuration
+      *Le second besoin est apparu : les seuils sont modifiables sans
+      redéploiement, et rien ne gardait trace de qui les avait changés. Fin :
+      une table `configuration_change` — le champ, l'ancienne valeur, la
+      nouvelle, l'auteur, l'instant — écrite dans la transaction qui modifie,
+      et une route de lecture par palier. **Une table à part et non le journal
+      d'audit** : celui-ci décrit des transitions, et « to_status : 2000 » ne
+      dirait ni de quoi ni depuis quoi. Les valeurs sont du texte : un journal
+      qui les retyperait se tromperait le jour où la colonne change de type,
+      c'est-à-dire le jour où l'on vient le relire. La bascule d'activité
+      figure dans les deux, et ce n'est pas une redondance — c'est une
+      transition **et** une modification. Les plans d'abonnement suivront quand
+      une route les modifiera : aucune n'existe aujourd'hui. 8 tests,
+      8 mutations vérifiées*
 - [x] Fonction d'éligibilité
       *Fin : tests unitaires couvrant score nul (neutre), score bas (plafonné), volume insuffisant, mauvaise plateforme*
 
@@ -348,13 +366,17 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       défaut. Un test vérifie que chaque genre est commandé par au moins une
       clé : un interrupteur qui ne coupe rien fait douter des neuf autres.
       7 tests, 7 mutations vérifiées*
-- [ ] **Deux messages écrits, traduits, et que rien n'envoie**
-      *`collaboration.opened` et `collaboration.unfulfilled` existent dans les
-      deux catalogues et aucun appelant ne les émet. Depuis que la préférence
-      est vérifiée, les envoyer lève : leur genre reste à décider, et c'est une
-      décision de produit — les rattacher au rappel d'échéance ferait taire
-      « votre contrepartie n'a pas été honorée » pour qui coupe les rappels,
-      ce qui n'est pas la même chose*
+- [x] Les deux messages orphelins ont leur genre, et partent
+      *`collaboration.opened` et `collaboration.unfulfilled` étaient écrits,
+      traduits, et émis par personne. Chacun reçoit **son propre genre** plutôt
+      que celui du rappel : couper les rappels ne doit pas faire taire « votre
+      contrepartie n'a pas été honorée », qui touche le score de fiabilité donc
+      ferme des paliers — l'apprendre six semaines plus tard en constatant
+      qu'on ne peut plus réserver est bien pire. L'ouverture est déposée à la
+      création de la contrepartie, avec le format et les exigences : un message
+      qui dirait « publiez » sans dire quoi ne vaudrait pas mieux que son
+      absence. Au passage, `NOTIFICATION_PAR_ISSUE` portait un genre que plus
+      personne ne lisait — une mutation l'a montré. 6 tests, 6 mutations*
 - [x] La surface publique, énumérée et fermée
       *Rien n'inventoriait les routes servies sans authentification. Fin : un
       test parcourt l'arbre des routeurs — `app.routes` ne rend plus des

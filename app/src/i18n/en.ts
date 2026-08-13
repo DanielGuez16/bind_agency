@@ -800,6 +800,8 @@ export const en = {
     publication_reminder: 'Your posting deadline is near',
     publication_approved: 'Your post is approved',
     publication_resubmit: 'A new post is requested',
+    collaboration_opened: 'Your counterpart opens, with what to publish',
+    collaboration_unfulfilled: 'A counterpart was not honoured',
     booking_to_review: 'A booking is waiting for your decision',
     subscription_grace_ending: 'Your trial period is about to end',
     subscription_ended: 'Your offers stopped showing to creators',
