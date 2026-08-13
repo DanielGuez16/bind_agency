@@ -3534,3 +3534,34 @@ une décision de produit, elle est notée et non prise.
 **Et un test dans l'autre sens :** chaque genre doit être commandé par au moins
 une clé. L'écran des réglages en propose dix ; celui qui en couperait un sans
 effet ferait douter des neuf autres.
+
+## 2026-08-13 — La surface publique s'énumère, elle ne se devine pas
+
+Rien n'inventoriait les routes servies sans authentification. Le produit en a
+quelques-unes et chacune a sa raison, mais rien n'empêchait qu'une de plus le
+devienne par accident, en oubliant une dépendance dans un routeur neuf. **Une
+route d'écriture ouverte par distraction ne se voit ni à la relecture ni à
+l'exécution : elle marche.**
+
+**Le parcours de l'arbre, et pas la lecture à plat.** `app.routes` ne rend plus
+des `APIRoute` mais des routeurs inclus, qui portent leur routeur d'origine et
+le préfixe de leur montage. Une première écriture lisait `app.routes`
+directement, trouvait zéro route, et passait — c'est le piège habituel de
+l'ensemble vide, et il est refermé par une assertion sur le nombre de routes
+inspectées.
+
+**La liste porte ses raisons.** Ajouter une route publique demande d'écrire
+pourquoi elle l'est. C'est le seul moment où quelqu'un se posera la question.
+
+**Trois routes que personne n'avait énumérées.** Les deux rappels OAuth — c'est
+la plateforme qui appelle, elle ne porte aucun jeton de session, et l'état signé
+autorise — et la lecture d'une preuve, servie à une balise d'image qui ne porte
+pas d'en-tête : le droit voyage dans l'adresse, court et lié à cette preuve-là,
+obtenu par une route authentifiée qui vérifie l'appartenance. Les trois sont
+défendables. C'est la première fois qu'on le vérifie.
+
+**Et une mutation qui a corrigé le test plutôt que le code :** retirer
+`CurrentUser` d'une route ne la rendait pas publique, parce que son routeur
+portait déjà un rôle. La garde tenait ; c'était la mutation qui visait mal. Il a
+fallu chercher une route dont `current_user` est la seule garde pour éprouver ce
+cas-là pour de bon.
