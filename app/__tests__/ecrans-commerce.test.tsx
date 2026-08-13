@@ -25,6 +25,7 @@ import { JourneeScreen } from '../src/screens/JourneeScreen';
 import { PlansScreen } from '../src/screens/PlansScreen';
 import { NOTE_MAXIMUM, PublicationsScreen } from '../src/screens/PublicationsScreen';
 import { ReportingScreen } from '../src/screens/ReportingScreen';
+import { TerrainScreen } from '../src/screens/TerrainScreen';
 import { ECRANS_COMMERCE } from '../test-support/registre-ecrans';
 
 const coffre = { lire: async () => null, ecrire: async () => {} };
@@ -310,6 +311,19 @@ const REGLE = {
   concurrent_slots: 2,
 };
 
+const FICHE_PREPAREE = {
+  business_id: 'p1',
+  name: 'Salon Ocean',
+  status: 'draft' as const,
+  address: '100 Ocean Drive',
+  prepared_at: '2026-08-13T12:00:00Z',
+  issued_at: null,
+  expires_at: null,
+  used_at: null,
+  revoked_at: null,
+  channel: null,
+};
+
 const ECRANS = [
   {
     nom: 'journee',
@@ -332,6 +346,13 @@ const ECRANS = [
     plein: { '/activation': vueDActivation(ETAPES) },
     // Une liste d'étapes vide n'arrive pas : le serveur en rend toujours six.
     vide: null,
+  },
+  {
+    nom: 'terrain',
+    noeud: <TerrainScreen />,
+    role: 'merchant' as Role,
+    plein: { '/admin/prospects': [FICHE_PREPAREE] },
+    vide: { '/admin/prospects': [] },
   },
   {
     nom: 'annuaire',
@@ -641,6 +662,7 @@ describe('quatre états', () => {
       plans: 'PlansScreen.tsx',
       reporting: 'ReportingScreen.tsx',
       annuaire: 'AnnuaireScreen.tsx',
+      terrain: 'TerrainScreen.tsx',
   catalogue: 'CatalogueScreen.tsx',
       horaires: 'HorairesScreen.tsx',
     };

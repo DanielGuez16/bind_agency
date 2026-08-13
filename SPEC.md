@@ -51,6 +51,25 @@ Historisé, jamais écrasé. L'éligibilité lit toujours le dernier snapshot va
 **business_member**
 `id, business_id, user_id, role (owner | staff)`
 
+**business_support_access**
+`id, business_id, admin_user_id, reason, started_at, expires_at, ended_at`
+
+**Reprise d'un compte commerce**
+
+Après l'activation, **l'administration n'a aucun accès au compte d'un salon**. Un accès permanent est commode le premier mois et ingérable au centième : personne ne saurait plus qui peut entrer où, ni ce qui a été fait au nom de qui.
+
+Quand il faut entrer, une reprise s'ouvre, et elle est :
+
+- **explicite** — un geste, avec un motif écrit à la main. Un motif en liste déroulante se choisit sans réfléchir ; une phrase demande de savoir ce qu'on va faire ;
+- **bornée** — sa durée est en configuration. Une reprise qu'on oublie de fermer redeviendrait un accès permanent ;
+- **nominative** — elle vaut pour un administrateur et un commerce, jamais pour l'un ou l'autre en général ;
+- **tracée** — l'ouverture écrit son motif au journal d'audit, en note libre. Ce qui est fait pendant l'est déjà : chaque transition porte `actor_kind = admin` ;
+- **visible du salon** — il est prévenu à l'ouverture, et il lit la liste des reprises passées, dans la même forme que l'administration. Un accès de support silencieux est un accès dont personne ne peut demander compte.
+
+La dérogation vaut sur **les deux résolveurs d'appartenance** : n'ouvrir que la fiche du commerce et pas ses réservations ferait un support qui voit le salon sans pouvoir toucher à ce qui coince. L'appartenance rendue à l'administrateur n'est **pas écrite en base** — elle ne vit que le temps de la requête, sans quoi elle survivrait à la reprise.
+
+Hors reprise, un administrateur reçoit sur une route commerce exactement le même refus que n'importe qui.
+
 **business_handover**
 `id, business_id, token_hash, channel (qr | email), destination, issued_by_user_id, issued_at, expires_at, used_at, used_by_user_id, accepted_terms_version, revoked_at`
 

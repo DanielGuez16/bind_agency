@@ -17,19 +17,21 @@
  */
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ApiProvider, useApi } from './src/api';
 import { I18nProvider } from './src/i18n';
 import { AuthScreen } from './src/screens/AuthScreen';
+import { PriseEnMainScreen } from './src/screens/PriseEnMainScreen';
 import { SessionProvider, coffreSecurise, themeDuRole, useSession } from './src/session';
 import { FrontiereDErreur } from './src/shell/FrontiereDErreur';
 import { prenomDe } from './src/components';
 import { BienvenueScreen } from './src/screens/BienvenueScreen';
 import { Navigation } from './src/shell/Navigation';
 import { adresseDeLApi } from './src/shell/adresseDeLApi';
+import { jetonDePriseEnMain, oublierLeJeton } from './src/shell/jetonDePriseEnMain';
 import { GabaritProvider } from './src/shell/gabarit';
 import { useNotificationsPush } from './src/shell/useNotificationsPush';
 import { ZoneSure } from './src/shell/ZoneSure';
@@ -50,6 +52,14 @@ const BASE_URL = (API_URL ?? '').replace(/\/api\/v1\/?$/, '');
 
 function Coquille() {
   const session = useSession();
+  /**
+   * **Le jeton, lu une seule fois à l'ouverture.**
+   *
+   * Relu à chaque rendu, il ferait revenir l'écran de prise en main par-dessus
+   * l'application du gérant qui vient de s'y connecter. `useState` avec une
+   * fonction d'initialisation est ce qui le fige au premier rendu.
+   */
+  const [jetonDeReprise, setJetonDeReprise] = useState(jetonDePriseEnMain);
 
   if (session.etat === 'retablissement') {
     return <Patience />;
@@ -79,7 +89,19 @@ function Coquille() {
               vraiment à sa disposition, encoches déduites. */}
           <GabaritProvider>
             <FrontiereDErreur>
-            {session.etat !== 'connecte' ? (
+            {jetonDeReprise ? (
+              /* **Avant la porte d'authentification, et c'est le point.** Le
+                 gérant arrive par un lien et n'a pas de compte : lui montrer
+                 un écran de connexion serait lui demander ce que le lien
+                 existe pour lui éviter. */
+              <PriseEnMainScreen
+                jeton={jetonDeReprise}
+                onTermine={() => {
+                  oublierLeJeton();
+                  setJetonDeReprise(null);
+                }}
+              />
+            ) : session.etat !== 'connecte' ? (
               <AuthScreen motif={session.motif} />
             ) : session.vientDeSInscrire ? (
               // **Une fois, juste après l'inscription.** Le fil et les paliers

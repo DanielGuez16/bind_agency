@@ -26,5 +26,7 @@
   "subscription.ended.body": "Hola:\n\nEl periodo de prueba de {business} ha terminado, así que tus ofertas ya no aparecen en el muro de los creadores.\n\nNo se ha borrado nada: tu catálogo, tus horarios y tu historial siguen intactos, y **las reservas ya hechas se respetarán**. Suscríbete desde la aplicación para volver.\n",
   "subscription.ended.subject": "{business} ya no se muestra a los creadores",
   "subscription.graceEnding.body": "Hola:\n\n{business} lleva publicado en BIND sin suscripción. Ese periodo termina el {echeance}.\n\nDespués, tus ofertas dejarán de mostrarse a los creadores. No se borra nada — tu catálogo, tus horarios y tu historial se mantienen, y **las reservas ya hechas se respetarán**. Suscríbete desde la aplicación y vuelves al instante.\n",
-  "subscription.graceEnding.subject": "Tu prueba de BIND termina el {echeance}"
+  "subscription.graceEnding.subject": "Tu prueba de BIND termina el {echeance}",
+  "support.accessOpened.body": "Hola:\n\nAlguien del soporte de BIND ha entrado en la cuenta de {business} para trabajar en ella.\n\nMotivo indicado: {motif}\n\nEl acceso está limitado en el tiempo y se cierra solo. Puedes ver todos los accesos anteriores en tus ajustes: te avisamos cada vez, siempre.\n",
+  "support.accessOpened.subject": "El soporte de BIND ha entrado en tu cuenta de {business}"
 }

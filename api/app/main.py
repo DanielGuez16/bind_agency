@@ -48,6 +48,7 @@ from app.routers import (
     reporting,
     social_accounts,
     subscription,
+    support,
     tier_offers,
     tiers,
     tracking,
@@ -148,6 +149,8 @@ def create_app() -> FastAPI:
     application.include_router(notifications.router, prefix=settings.api_v1_prefix)
     application.include_router(handover.admin_router, prefix=settings.api_v1_prefix)
     application.include_router(handover.public_router, prefix=settings.api_v1_prefix)
+    application.include_router(support.admin_router, prefix=settings.api_v1_prefix)
+    application.include_router(support.business_router, prefix=settings.api_v1_prefix)
     application.include_router(venue_report.creator_router, prefix=settings.api_v1_prefix)
     application.include_router(venue_report.admin_router, prefix=settings.api_v1_prefix)
     application.include_router(tracking.creator_router, prefix=settings.api_v1_prefix)

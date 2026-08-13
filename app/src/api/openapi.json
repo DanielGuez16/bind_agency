@@ -1,5 +1,28 @@
 {
   "paths": {
+    "/api/v1/admin/businesses/{business_id}/support-access": {
+      "delete": {
+        "operationId": "close_support_access_api_v1_admin_businesses__business_id__support_access_delete",
+        "responses": [
+          "204",
+          "422"
+        ]
+      },
+      "get": {
+        "operationId": "list_support_accesses_api_v1_admin_businesses__business_id__support_access_get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "post": {
+        "operationId": "open_support_access_api_v1_admin_businesses__business_id__support_access_post",
+        "responses": [
+          "201",
+          "422"
+        ]
+      }
+    },
     "/api/v1/admin/collaborations/review": {
       "get": {
         "operationId": "list_human_review_api_v1_admin_collaborations_review_get",
@@ -598,6 +621,15 @@
         "operationId": "subscribe_api_v1_business__business_id__subscription_post",
         "responses": [
           "201",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/business/{business_id}/support-access": {
+      "get": {
+        "operationId": "list_my_support_accesses_api_v1_business__business_id__support_access_get",
+        "responses": [
+          "200",
           "422"
         ]
       }

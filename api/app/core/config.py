@@ -462,6 +462,15 @@ class Settings(BaseSettings):
     #: plus juste.
     subscription_grace_sweep_interval_seconds: int = 3600
 
+    # ----------------------------------------------------------------------
+    # Reprise d'un compte commerce par l'administration.
+    # ----------------------------------------------------------------------
+    #: Combien de temps dure une reprise. Deux heures : le temps d'une
+    #: intervention, pas celui d'une journée. **Une reprise qu'on oublie de
+    #: fermer redevient un accès permanent** — c'est précisément ce que ce
+    #: dispositif refuse, et c'est ce délai qui l'en empêche.
+    support_access_ttl_seconds: int = 2 * 3600
+
     # Lue uniquement par la session pytest, jamais par l'application.
     # Sa présence est vérifiée dans tests/conftest.py, qui refuse de tourner sans.
     test_database_url: PostgresDsn | None = Field(default=None, repr=False)

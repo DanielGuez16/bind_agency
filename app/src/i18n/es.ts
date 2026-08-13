@@ -595,6 +595,48 @@ export const es: Catalogue = {
     replier: 'Contraer',
     deplier: 'Desplegar',
   },
+  priseEnMain: {
+    chargement: 'Abriendo tu ficha…',
+    lienMort: 'Este enlace ya no funciona',
+    lienMortAide:
+      'Puede haber caducado o ya haberse usado. Pide otro a BIND: no se ha perdido nada de lo que hiciste.',
+    preparePourVous: 'Preparado para ti',
+    ceQuiEstPret: 'Ya están cargados {{prestations}} servicios y {{plages}} franjas horarias.',
+    introduction:
+      'Crea tu cuenta para asumir esta ficha. Tú decides cuándo se publica para los creadores: nada es visible hasta entonces.',
+    aideMotDePasse: 'Mínimo {{minimum}} caracteres.',
+    conditions: 'Acepto las condiciones de BIND (versión {{version}})',
+    assumer: 'Asumir esta ficha',
+    enCours: 'Creando tu cuenta…',
+    pasEncoreEnLigne:
+      'Asumirla no la publica. Verás lo que falta revisar, y tú decides cuándo abrir.',
+  },
+  terrain: {
+    titre: 'Altas sobre el terreno',
+    videTitre: 'Ninguna ficha preparada',
+    videCorps:
+      'Prepara una ficha mientras estás en el salón — nombre, dirección, teléfono. El responsable la termina desde su propio móvil.',
+    preparer: 'Preparar una ficha',
+    nom: 'Nombre del salón',
+    adresse: 'Dirección',
+    telephone: 'Teléfono',
+    enregistrer: 'Guardar la ficha',
+    enregistrement: 'Guardando…',
+    suivi: 'Fichas preparadas',
+    preparee: 'Preparada el {{quand}}',
+    aScanner: 'Que el responsable escanee esto',
+    expire: 'Sirve una vez, hasta el {{quand}}',
+    fermerLeLien: 'Listo',
+    emettre: 'Obtener enlace',
+    reemettre: 'Nuevo enlace',
+    revoquer: 'Anular enlace',
+    etat: {
+      preparee: 'Preparada',
+      'lien-ouvert': 'Enlace abierto',
+      'lien-expire': 'Enlace caducado',
+      assumee: 'Asumida',
+    },
+  },
   onglets: {
     annuaire: 'Creadores',
     paliers: 'Niveles',
@@ -610,6 +652,7 @@ export const es: Catalogue = {
     arbitrage: 'Revisiones',
     plans: 'Planes',
     verifications: 'Cuentas',
+    terrain: 'Terreno',
   },
   global: {
     erreurTitre: 'Algo se rompió',
@@ -643,6 +686,8 @@ export const es: Catalogue = {
       'Todavía nadie es dueño de esta ficha. Se publica cuando el salón la asume.',
     handover_invalid: 'Este enlace ya no es válido. Pide uno nuevo.',
     handover_not_a_draft: 'Esta ficha ya tiene dueño.',
+    support_reason_required: 'Indica por qué entras en esta cuenta.',
+    support_access_already_open: 'Ya tienes un acceso abierto en esta cuenta.',
     handover_terms_outdated:
       'Las condiciones han cambiado desde que se abrió la página. Recárgala y vuelve a leerlas.',
     catalog_duration_mismatch:
@@ -752,5 +797,6 @@ export const es: Catalogue = {
     booking_to_review: 'Una reserva espera tu decisión',
     subscription_grace_ending: 'Tu periodo de prueba está por terminar',
     subscription_ended: 'Tus ofertas han dejado de mostrarse',
+    support_access_started: 'El soporte de BIND entra en tu cuenta',
   },
 };

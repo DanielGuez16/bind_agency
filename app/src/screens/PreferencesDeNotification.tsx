@@ -45,7 +45,12 @@ const GENRES_PAR_ROLE: Record<string, GenreDeNotification[]> = {
     'publication_approved',
     'publication_resubmit',
   ],
-  business_member: ['booking_to_review', 'subscription_grace_ending', 'subscription_ended'],
+  business_member: [
+    'booking_to_review',
+    'subscription_grace_ending',
+    'subscription_ended',
+    'support_access_started',
+  ],
   admin: [],
 };
 

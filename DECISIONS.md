@@ -3463,3 +3463,45 @@ raison d'en ajouter un septième.
 la troisième avait été oubliée : `business.status`, `notification_preference.kind`
 et `job.job_type`. Toute énumération applicative se rend en VARCHAR + CHECK, et
 l'autogénération ne compare pas les listes. La suite l'a dit, pas la relecture.
+
+## 2026-08-13 — La reprise d'un compte commerce, plutôt qu'un accès permanent
+
+Troisième volet de l'inscription sur le terrain. La fondatrice accompagne des
+salons qui découvrent le produit, et il arrivera qu'il faille entrer dans un
+compte pour débloquer quelque chose.
+
+**Aucun accès permanent après l'activation.** Il est commode le premier mois et
+ingérable au centième salon : personne ne saurait plus qui peut entrer où, ni ce
+qui a été fait au nom de qui.
+
+**Une reprise, avec quatre qualificatifs qui ne se séparent pas.** Explicite —
+un geste, et un motif écrit à la main, parce qu'un motif en liste déroulante se
+choisit sans réfléchir. Bornée — une reprise qu'on oublie de fermer redevient un
+accès permanent. Nominative — elle vaut pour un administrateur et un commerce,
+et ne se prête pas. Visible du salon — il est prévenu à l'ouverture et lit la
+liste des reprises passées.
+
+**Cette décision renverse une phrase écrite au socle**, et il faut le dire :
+`require_business_member` portait « aucune dérogation pour les
+administrateurs ». La règle devient « aucune dérogation *implicite* » — la seule
+porte est une reprise, et hors reprise le refus est identique à celui de
+n'importe qui, ce que le premier test du fichier vérifie.
+
+**La dérogation vaut sur les deux résolveurs.** Une reprise qui ouvrirait la
+fiche du commerce mais pas ses réservations ni ses contreparties ne débloquerait
+à peu près rien, et obligerait le support à demander au salon de faire lui-même
+ce qu'on est venu faire pour lui.
+
+**L'appartenance rendue n'est pas écrite en base.** Elle n'existe que le temps de
+la requête, pour que les routes lisent `membership.role` sans savoir d'où il
+vient. Poser une vraie ligne `business_member` créerait un accès qui survivrait à
+la reprise — exactement ce qu'on refuse. Le rôle est `owner` : une intervention
+qui ne peut pas toucher à la configuration ne débloque rien.
+
+**Le salon lit la même chose que nous.** Rendre une version allégée au commerce
+demanderait de choisir ce qu'on lui cache, et il n'y a rien ici qui se cache.
+
+**Une reprise échue n'est pas une reprise fermée.** `ended_at` ne se remplit que
+si quelqu'un a refermé ; l'expiration éteint sans rien écrire. Dans une liste,
+« refermée à 15 h 12 » et « expirée toute seule » ne se lisent pas pareil, et
+c'est la seconde qui devrait gêner.

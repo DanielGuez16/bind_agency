@@ -355,4 +355,25 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       Écrit et abandonné une fois : `app.routes` ne rend plus des `APIRoute`
       mais des `_IncludedRouter` qu'il faut parcourir, ce qui demande un peu
       plus que dix lignes*
+- [x] Reprise d'un compte commerce, plutôt qu'un accès permanent
+      *Arbitrage retenu : aucun accès permanent après l'activation. Fin : une
+      reprise explicite — motif écrit à la main, obligatoire — bornée par une
+      durée en configuration, nominative, écrite au journal d'audit avec son
+      motif en note libre, et **visible du salon** : il est prévenu à
+      l'ouverture et lit la liste des reprises passées, dans la même forme que
+      l'administration. La dérogation vaut sur les deux résolveurs
+      d'appartenance, et l'appartenance rendue n'est jamais écrite en base.
+      Hors reprise, un administrateur reçoit le même refus que n'importe qui.
+      La phrase « aucune dérogation pour les administrateurs » du socle devient
+      « aucune dérogation implicite » — c'est dans `DECISIONS.md`. 18 tests,
+      13 mutations vérifiées*
+- [ ] **Les avertissements partent dans la requête qui les déclenche**
+      *Relevé en revue sur la reprise de compte, et vrai partout : décision de
+      réservation, prise en main, ouverture de reprise envoient courriel et
+      push **avant de répondre**. Chacun est borné par sa configuration —
+      `EMAIL_TIMEOUT_SECONDS`, `PUSH_TIMEOUT_SECONDS` — donc la requête ne
+      pend pas indéfiniment, mais elle peut attendre vingt secondes pour deux
+      messages dont l'appelant n'a rien à faire. La file de jobs existe et sait
+      reporter ; il manque un type de job « envoyer un message » et le passage
+      des trois appelants dessus. À faire d'un coup, pas un appelant à la fois*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire
