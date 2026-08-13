@@ -21,13 +21,14 @@ plusieurs tentatives doit cesser d'occuper la boîte plutôt que d'y tourner.
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from enum import StrEnum
 
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.integrations.email import EmailError, EmailSender, Message
-from app.integrations.push import Envoi, PushSender, Verdict
+from app.integrations.email import EmailSender, Message
+from app.integrations.push import Envoi, PushError, PushSender, Verdict
 from app.models import DeviceToken, OutboundMessage, User
 from app.models.enums import (
     DeviceTokenStatus,
@@ -115,6 +116,22 @@ async def en_attente(
     )
 
 
+class Issue(StrEnum):
+    """Ce qu'il advient d'un message. **Trois, et nommées.**
+
+    Le module rendait `bool | None`, ce qui encodait les trois issues dans deux
+    valeurs et forçait l'appelant à les interpréter — alors que sa propre
+    docstring dit « trois issues, et pas deux ». Nommées, elles se lisent, et le
+    jour où une quatrième apparaît elle ne se glissera pas dans un `None`.
+    """
+
+    PARTI = "parti"
+    #: Définitif : ce qui l'a écarté ne changera pas au prochain passage.
+    ECARTE = "ecarte"
+    #: Passager : le service d'envoi a refusé, on réessaiera plus tard.
+    A_REESSAYER = "a_reessayer"
+
+
 async def vider(
     session: AsyncSession,
     *,
@@ -123,18 +140,23 @@ async def vider(
     maintenant: datetime | None = None,
     limite: int = 100,
 ) -> Vidage:
-    """Sort de la boîte ce qui peut en sortir. Rend ce qui a été fait."""
+    """Sort de la boîte ce qui peut en sortir. Rend ce qui a été fait.
+
+    **Le seul endroit qui avance l'état d'un message.** `_emettre` dit ce qui
+    s'est passé, il ne l'écrit pas : deux fonctions qui ferment des lignes
+    finiraient par en fermer une de deux façons différentes.
+    """
     instant = maintenant or datetime.now(UTC)
     envoyes = ecartes = reportes = 0
 
     for ligne in await en_attente(session, maintenant=instant, limite=limite):
         if not await notifications.joignable(session, user_id=ligne.user_id, kind=ligne.kind):
-            await ecarter(session, ligne, ECARTE_INJOIGNABLE, maintenant=instant)
+            await _ecarter(session, ligne, ECARTE_INJOIGNABLE)
             ecartes += 1
             continue
 
         try:
-            parti = await _emettre(
+            issue, raison = await _emettre(
                 session, ligne, email_sender=email_sender, push_sender=push_sender
             )
         except Exception as echec:  # noqa: BLE001 - le report est la conduite voulue
@@ -142,11 +164,14 @@ async def vider(
             reportes += 1
             continue
 
-        if parti is None:
-            ecartes += 1
-        elif parti:
+        if issue is Issue.PARTI:
+            await _marquer_parti(session, ligne, maintenant=instant)
             envoyes += 1
+        elif issue is Issue.ECARTE:
+            await _ecarter(session, ligne, raison or ECARTE_INJOIGNABLE)
+            ecartes += 1
         else:
+            await _reporter(session, ligne, PushError(raison or "envoi refusé"), maintenant=instant)
             reportes += 1
 
     return Vidage(envoyes=envoyes, ecartes=ecartes, reportes=reportes)
@@ -158,16 +183,16 @@ async def _emettre(
     *,
     email_sender: EmailSender,
     push_sender: PushSender,
-) -> bool | None:
-    """Émet une ligne. Vrai si parti, `None` s'il n'y avait rien à joindre.
+) -> tuple[Issue, str | None]:
+    """Tente l'envoi et **dit ce qui s'est passé**, sans rien écrire sur la ligne.
 
-    `None` et non faux : « aucune adresse » n'est pas un échec à réessayer, et
-    le prochain passage trouverait la même absence.
+    Le second membre est la raison, quand il y en a une à retenir. Une
+    exception, elle, remonte : c'est un échec du service d'envoi, et `vider`
+    sait qu'il se reporte.
     """
     utilisateur = await session.get(User, ligne.user_id)
     if utilisateur is None or utilisateur.status is not UserStatus.ACTIVE:
-        await ecarter(session, ligne, ECARTE_INJOIGNABLE)
-        return None
+        return Issue.ECARTE, ECARTE_INJOIGNABLE
 
     valeurs = notifications.valeurs_du_gabarit(utilisateur.locale, dict(ligne.values))
     sujet = notifications.rendre(f"{ligne.template_key}.subject", utilisateur.locale, **valeurs)
@@ -175,8 +200,7 @@ async def _emettre(
 
     if ligne.channel is MessageChannel.EMAIL:
         if not utilisateur.email:
-            await ecarter(session, ligne, ECARTE_SANS_ADRESSE)
-            return None
+            return Issue.ECARTE, ECARTE_SANS_ADRESSE
         await email_sender.envoyer(
             Message(
                 destinataire=utilisateur.email,
@@ -185,8 +209,7 @@ async def _emettre(
                 locale=utilisateur.locale,
             )
         )
-        await marquer_parti(session, ligne)
-        return True
+        return Issue.PARTI, None
 
     jetons = tuple(
         await session.scalars(
@@ -197,14 +220,15 @@ async def _emettre(
         )
     )
     if not jetons:
-        await ecarter(session, ligne, ECARTE_SANS_TERMINAL)
-        return None
+        return Issue.ECARTE, ECARTE_SANS_TERMINAL
 
     envois = [Envoi(token=jeton, titre=sujet, corps=corps, donnees={}) for jeton in jetons]
     verdicts = await push_sender.envoyer(envois)
 
     # Les jetons que le fournisseur déclare morts sont révoqués ici : c'est la
-    # seule occasion qu'on ait de l'apprendre.
+    # seule occasion qu'on ait de l'apprendre. **Une écriture, et elle ne porte
+    # pas sur le message** — la règle « un seul endroit avance l'état d'une
+    # ligne » parle de la boîte, pas des terminaux.
     morts = [
         envoi.token
         for envoi, verdict in zip(envois, verdicts, strict=False)
@@ -218,16 +242,14 @@ async def _emettre(
         )
 
     if any(verdict is Verdict.ENVOYE for verdict in verdicts):
-        await marquer_parti(session, ligne)
-        return True
+        return Issue.PARTI, None
 
     # Aucun jeton n'a abouti et aucun n'était invalide : le fournisseur a
     # refusé pour une autre raison, et cela se réessaie.
-    await _reporter(session, ligne, EmailError("aucun terminal joint"))
-    return False
+    return Issue.A_REESSAYER, "aucun terminal joint"
 
 
-async def marquer_parti(
+async def _marquer_parti(
     session: AsyncSession, ligne: OutboundMessage, *, maintenant: datetime | None = None
 ) -> None:
     ligne.sent_at = maintenant or datetime.now(UTC)
@@ -235,19 +257,12 @@ async def marquer_parti(
     await session.flush()
 
 
-async def ecarter(
-    session: AsyncSession,
-    ligne: OutboundMessage,
-    raison: str,
-    *,
-    maintenant: datetime | None = None,
-) -> None:
+async def _ecarter(session: AsyncSession, ligne: OutboundMessage, raison: str) -> None:
     """Ferme la ligne sans l'envoyer, en disant pourquoi.
 
     Elle ne sera pas réessayée : ce qui l'a écartée ne changera pas au prochain
     passage, et la relire chaque minute ferait tourner la boîte sur place.
     """
-    del maintenant  # l'instant n'a pas de sens ici : rien n'est parti
     ligne.skipped_reason = raison
     await session.flush()
 
