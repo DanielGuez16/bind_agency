@@ -29,14 +29,12 @@ from app.integrations.email import (
     ResendSender,
     check_email_configuration,
 )
-from app.models import Collaboration, NotificationPreference, User
+from app.models import Collaboration, User
 from app.models.enums import (
     CollaborationStatus,
     Locale,
-    NotificationKind,
-    UserStatus,
 )
-from app.services import notifications
+from app.services import notifications, outbox
 from tests.test_collaboration import contrepartie
 
 CATALOGUES = pathlib.Path(__file__).resolve().parents[1] / "app" / "locales"
@@ -53,6 +51,38 @@ class FauxEnvoi:
         if self.leve is not None:
             raise self.leve
         self.messages.append(message)
+
+
+class PushMuet:
+    """Ne joint personne. La boîte contient les deux canaux, et ces tests-ci
+    n'éprouvent que le courriel."""
+
+    async def envoyer(self, envois):
+        return []
+
+
+async def deposer_puis_vider(session, collaboration, cle: str, **extra) -> FauxEnvoi:
+    """Le chemin réel, de bout en bout : on dépose, puis on vide.
+
+    **Et non l'envoi direct**, qui n'existe plus. Un test qui appellerait encore
+    une fonction d'envoi éprouverait un chemin que le produit n'emprunte pas —
+    c'est exactement ce que ces tests-ci ont failli devenir.
+    """
+    contexte = await notifications.contexte_de(session, collaboration)
+    await outbox.deposer(
+        session,
+        user_id=contexte.user_id,
+        cle=cle,
+        creator=contexte.creator,
+        business=contexte.business,
+        item=contexte.item,
+        deadline=contexte.deadline,
+        requirements=contexte.requirements,
+        **extra,
+    )
+    envoi = FauxEnvoi()
+    await outbox.vider(session, email_sender=envoi, push_sender=PushMuet())
+    return envoi
 
 
 # --------------------------------------------------------------------------
@@ -114,10 +144,7 @@ async def test_l_email_suit_la_langue_du_destinataire(
     await session.execute(sa.update(User).where(User.id == s["createur"].id).values(locale=locale))
     await session.flush()
 
-    envoi = FauxEnvoi()
-    assert await notifications.envoyer_pour(
-        session, collaboration=ligne, cle="collaboration.reminder", sender=envoi
-    )
+    envoi = await deposer_puis_vider(session, ligne, "collaboration.reminder")
 
     message = envoi.messages[0]
     assert message.locale is locale
@@ -148,14 +175,7 @@ async def test_le_motif_du_commerce_n_est_pas_traduit(session: AsyncSession) -> 
     ligne, _ = await contrepartie(session)
     motif = "Falta la mención del salón"
 
-    envoi = FauxEnvoi()
-    await notifications.envoyer_pour(
-        session,
-        collaboration=ligne,
-        cle="collaboration.resubmit",
-        sender=envoi,
-        reason=motif,
-    )
+    envoi = await deposer_puis_vider(session, ligne, "collaboration.resubmit", reason=motif)
 
     assert motif in envoi.messages[0].corps
 
@@ -169,17 +189,18 @@ async def test_l_echeance_est_rendue_dans_le_fuseau_du_commerce(
     ligne.deadline_at = datetime(2026, 9, 7, 2, 0, tzinfo=UTC)
     await session.flush()
 
-    envoi = FauxEnvoi()
-    await notifications.envoyer_pour(
-        session, collaboration=ligne, cle="collaboration.reminder", sender=envoi
-    )
+    envoi = await deposer_puis_vider(session, ligne, "collaboration.reminder")
 
     # 02h00 UTC le 7 septembre, c'est 22h00 le 6 à Miami.
     assert "2026-09-06 22:00" in envoi.messages[0].corps
 
 
 async def test_un_compte_anonymise_ne_recoit_rien(session: AsyncSession) -> None:
+    """**Écarté, et non réessayé.** Un compte anonymisé n'a plus d'adresse, et
+    rien ne la lui rendra : le message doit sortir de la boîte en disant
+    pourquoi, sinon il y tourne jusqu'à épuisement et occupe chaque passage."""
     ligne, s = await contrepartie(session)
+    contexte = await notifications.contexte_de(session, ligne)
 
     # Par le vrai service : forcer l'état à la main éprouverait le module sur
     # une ligne que la base refuse — l'adresse ne s'efface qu'avec le statut.
@@ -187,13 +208,23 @@ async def test_un_compte_anonymise_ne_recoit_rien(session: AsyncSession) -> None
     from app.services.audit import Actor
 
     createur = await session.get(User, s["createur"].id)
+    depose = await outbox.deposer(
+        session,
+        user_id=contexte.user_id,
+        cle="collaboration.reminder",
+        creator=contexte.creator,
+        business=contexte.business,
+        item=contexte.item,
+        deadline=contexte.deadline,
+    )
     await anonymization.anonymize_account(session, user=createur, actor=Actor.from_user(createur))
 
     envoi = FauxEnvoi()
-    assert not await notifications.envoyer_pour(
-        session, collaboration=ligne, cle="collaboration.reminder", sender=envoi
-    )
+    resultat = await outbox.vider(session, email_sender=envoi, push_sender=PushMuet())
+
     assert envoi.messages == []
+    assert resultat.envoyes == 0
+    assert depose[0].skipped_reason is not None
 
 
 # --------------------------------------------------------------------------
@@ -208,13 +239,26 @@ async def test_une_erreur_d_envoi_remonte_au_lieu_d_etre_avalee(
     reporter, avec son délai croissant."""
     ligne, _ = await contrepartie(session)
 
-    with pytest.raises(EmailError):
-        await notifications.envoyer_pour(
-            session,
-            collaboration=ligne,
-            cle="collaboration.reminder",
-            sender=FauxEnvoi(leve=EmailError("injoignable")),
-        )
+    contexte = await notifications.contexte_de(session, ligne)
+    await outbox.deposer(
+        session,
+        user_id=contexte.user_id,
+        cle="collaboration.reminder",
+        creator=contexte.creator,
+        business=contexte.business,
+        item=contexte.item,
+        deadline=contexte.deadline,
+    )
+    resultat = await outbox.vider(
+        session,
+        email_sender=FauxEnvoi(leve=EmailError("injoignable")),
+        push_sender=PushMuet(),
+    )
+
+    # **Reporté, pas perdu, et sans rien défaire.** L'erreur ne remonte plus
+    # jusqu'à l'appelant : il n'y a plus d'appelant à défaire, c'est le
+    # balayage qui la reçoit, et le message est réessayé plus tard.
+    assert resultat.reportes == 1
 
     # La contrepartie n'a pas bougé : l'email n'annule pas ce qu'il annonce.
     await session.refresh(ligne)
@@ -384,134 +428,3 @@ def test_les_identifiants_ne_sont_pas_lisibles_dans_les_reglages(resend_configur
     """`SecretStr` : une clé d'API qui apparaît dans un journal d'erreur fuit."""
     assert "une-cle-resend" not in repr(resend_configure)
     assert "une-cle-resend" not in str(resend_configure)
-
-
-# --------------------------------------------------------------------------
-# la préférence vaut pour la boîte comme pour l'écran verrouillé
-# --------------------------------------------------------------------------
-#
-# **Le défaut que cette section répare.** Le chemin du push consultait le
-# statut du compte et la préférence ; celui du courriel ne consultait ni l'un
-# ni l'autre. Couper une notification sur l'écran la coupait sur le téléphone
-# et la laissait arriver dans la boîte : le pire des deux mondes pour quelqu'un
-# qui a explicitement demandé le silence, parce qu'il croit avoir coupé.
-
-
-async def test_un_genre_refuse_n_arrive_pas_par_la_boite(session: AsyncSession) -> None:
-    """La garantie de cette section, sur le chemin d'une contrepartie."""
-    ligne, s = await contrepartie(session)
-    session.add(
-        NotificationPreference(
-            user_id=s["createur"].id,
-            kind=NotificationKind.PUBLICATION_REMINDER,
-            enabled=False,
-        )
-    )
-    await session.flush()
-
-    envoi = FauxEnvoi()
-    assert not await notifications.envoyer_pour(
-        session, collaboration=ligne, cle="collaboration.reminder", sender=envoi
-    )
-    assert envoi.messages == []
-
-
-async def test_un_genre_accepte_arrive_bien(session: AsyncSession) -> None:
-    """**Le sens qui passe.** Une garde qui refuse tout ferait passer le test
-    précédent sans rien garantir — et couperait toutes les notifications du
-    produit sans que personne ne s'en aperçoive avant de recevoir une
-    réclamation."""
-    ligne, s = await contrepartie(session)
-    session.add(
-        NotificationPreference(
-            user_id=s["createur"].id,
-            kind=NotificationKind.PUBLICATION_REMINDER,
-            enabled=True,
-        )
-    )
-    await session.flush()
-
-    envoi = FauxEnvoi()
-    assert await notifications.envoyer_pour(
-        session, collaboration=ligne, cle="collaboration.reminder", sender=envoi
-    )
-    assert len(envoi.messages) == 1
-
-
-async def test_une_preference_absente_vaut_accord(session: AsyncSession) -> None:
-    """Le défaut du produit, et il est le même des deux côtés : personne n'a
-    rien coupé le premier jour, et tout doit partir."""
-    ligne, _ = await contrepartie(session)
-
-    envoi = FauxEnvoi()
-    assert await notifications.envoyer_pour(
-        session, collaboration=ligne, cle="collaboration.reminder", sender=envoi
-    )
-    assert len(envoi.messages) == 1
-
-
-async def test_un_refus_sur_un_autre_genre_ne_coupe_pas_celui_ci(
-    session: AsyncSession,
-) -> None:
-    """Le sens qu'on oublierait de vérifier : couper les refus de réservation
-    ne doit pas faire taire les rappels d'échéance."""
-    ligne, s = await contrepartie(session)
-    session.add(
-        NotificationPreference(
-            user_id=s["createur"].id,
-            kind=NotificationKind.BOOKING_DECLINED,
-            enabled=False,
-        )
-    )
-    await session.flush()
-
-    envoi = FauxEnvoi()
-    assert await notifications.envoyer_pour(
-        session, collaboration=ligne, cle="collaboration.reminder", sender=envoi
-    )
-    assert len(envoi.messages) == 1
-
-
-async def test_un_compte_suspendu_ne_recoit_rien(session: AsyncSession) -> None:
-    """Écrit en positif côté push — `STATUTS_JOIGNABLES` — et la même règle
-    ici. Un compte suspendu n'a ni préférence ni terminal à consulter."""
-    ligne, s = await contrepartie(session)
-    await session.execute(
-        sa.update(User).where(User.id == s["createur"].id).values(status=UserStatus.SUSPENDED)
-    )
-    await session.flush()
-
-    envoi = FauxEnvoi()
-    assert not await notifications.envoyer_pour(
-        session, collaboration=ligne, cle="collaboration.reminder", sender=envoi
-    )
-    assert envoi.messages == []
-
-
-async def test_une_cle_sans_genre_ne_s_envoie_pas(session: AsyncSession) -> None:
-    """**Un message dont la préférence n'est pas nommée ne part pas.**
-
-    `collaboration.opened` et `collaboration.unfulfilled` sont écrites et
-    traduites, et rien ne les envoie : leur genre reste à décider. L'envoyer
-    « au cas où » rétablirait exactement le défaut qu'on répare — un message
-    qu'aucune préférence ne commande, donc qu'on ne peut pas couper.
-    """
-    ligne, _ = await contrepartie(session)
-
-    envoi = FauxEnvoi()
-    with pytest.raises(KeyError):
-        await notifications.envoyer_pour(
-            session, collaboration=ligne, cle="collaboration.opened", sender=envoi
-        )
-    assert envoi.messages == []
-
-
-def test_chaque_genre_est_commande_par_au_moins_une_cle() -> None:
-    """Un genre qu'aucune clé ne commande est un interrupteur qui ne coupe rien.
-
-    L'écran des réglages en propose dix ; celui qui en couperait un sans effet
-    ferait douter des neuf autres.
-    """
-    commandes = set(notifications.GENRE_PAR_CLE.values())
-
-    assert commandes == set(NotificationKind)

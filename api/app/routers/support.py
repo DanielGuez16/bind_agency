@@ -7,25 +7,19 @@ support silencieux — et le jour où un commerçant découvrirait qu'on est ent
 chez lui, ce qu'il retiendrait n'est pas qu'on l'a aidé.
 """
 
-import logging
 import uuid
 from typing import Annotated
 
-import httpx
+import sqlalchemy as sa
 from fastapi import APIRouter, Depends, Path, status
 
 from app.core.dependencies import BusinessMembership, CurrentUser, SessionDep, require_role
 from app.core.errors import ErrorCode, api_error
-from app.integrations.email import get_sender
-from app.integrations.push import get_push_sender
 from app.models import Business
-from app.models.enums import NotificationKind, UserRole
+from app.models.enums import UserRole
 from app.schemas.support import BusinessSupportAccessRead, RepriseDemandee
-from app.services import notifications
-from app.services import push as push_service
+from app.services import outbox
 from app.services import support as service
-
-logger = logging.getLogger(__name__)
 
 admin_router = APIRouter(
     prefix="/admin/businesses",
@@ -65,9 +59,10 @@ async def open_support_access(
 ) -> BusinessSupportAccessRead:
     """Ouvre une reprise, et **prévient le salon**.
 
-    L'avertissement part après le commit et ne peut pas défaire la reprise :
-    un serveur d'email en panne ne doit pas empêcher une intervention. Mais il
-    part — c'est ce qui distingue un accès déclaré d'un accès qu'on découvre.
+    L'avertissement est déposé dans la même transaction que la reprise : ou les
+    deux existent, ou aucun. C'est ce qui distingue un accès déclaré d'un accès
+    qu'on découvre — et ce qui empêche qu'une panne d'envoi laisse l'accès
+    ouvert sans que personne ne l'ait dit.
     """
     business = await session.get(Business, business_id)
     if business is None:
@@ -78,8 +73,8 @@ async def open_support_access(
     except (service.NotAnAdmin, service.ReasonRequired, service.AlreadyOpen) as erreur:
         raise _traduire(erreur) from erreur
 
-    await session.commit()
     await _prevenir_le_salon(session, business=business, motif=acces.reason)
+    await session.commit()
     return BusinessSupportAccessRead.model_validate(acces)
 
 
@@ -133,31 +128,25 @@ async def list_my_support_accesses(
     ]
 
 
-async def _prevenir_le_salon(session: SessionDep, *, business: Business, motif: str) -> None:
-    """Dit au salon qu'on est entré, et pourquoi. Ne défait jamais la reprise."""
-    try:
-        async with httpx.AsyncClient() as client:
-            await notifications.envoyer_au_commerce(
-                session,
-                business=business,
-                cle="support.accessOpened",
-                kind=NotificationKind.SUPPORT_ACCESS_STARTED,
-                sender=get_sender(client),
-                motif=motif,
-            )
-        await push_service.pour_le_commerce_seul(
+async def _prevenir_le_salon(session, *, business: Business, motif: str) -> None:
+    """Dépose l'avertissement pour tous les membres, **avant le commit**.
+
+    Le salon apprend qu'on est entré chez lui par le même chemin que tout le
+    reste : la boîte d'envoi, vidée par le travail de fond. C'est aussi ce qui
+    garantit qu'il l'apprendra — le message est écrit dans la transaction qui
+    ouvre la reprise, et un processus qui meurt entre les deux ne peut plus
+    faire disparaître l'avertissement en laissant l'accès.
+    """
+    from app.models import BusinessMember
+
+    membres = await session.scalars(
+        sa.select(BusinessMember.user_id).where(BusinessMember.business_id == business.id)
+    )
+    for user_id in membres:
+        await outbox.deposer(
             session,
-            business_id=business.id,
-            kind=NotificationKind.SUPPORT_ACCESS_STARTED,
+            user_id=user_id,
             cle="support.accessOpened",
-            sender=get_push_sender(),
             business=business.name,
             motif=motif,
-        )
-    except Exception:
-        # La reprise est déjà écrite ; la seule chose qu'une exception ici
-        # pourrait encore faire, c'est la défaire. L'échec part au journal
-        # d'exploitation, où il se voit.
-        logger.exception(
-            "avertissement de reprise non envoyé", extra={"business_id": str(business.id)}
         )

@@ -20,9 +20,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.models import BusinessMember, ReliabilityEvent
-from app.models.enums import BookingStatus, BusinessMemberRole, UserRole
+from app.models.enums import (
+    BookingStatus,
+    BusinessMemberRole,
+    NotificationKind,
+    UserRole,
+)
 from app.services import auth as auth_service
-from app.services import booking_states, redemption
+from app.services import booking_states, outbox, redemption
 from tests.test_booking_create import monter_le_decor, premier_creneau, reserver
 
 PREFIX = get_settings().api_v1_prefix
@@ -222,3 +227,57 @@ async def test_la_creatrice_ne_tranche_pas_a_la_place_du_commerce(
     assert reponse.status_code in (403, 404)
     await session.refresh(scene["booking"])
     assert scene["booking"].status is BookingStatus.AWAITING_BUSINESS
+
+
+# --------------------------------------------------------------------------
+# ce que la décision annonce
+# --------------------------------------------------------------------------
+
+
+async def test_l_accord_depose_son_annonce_dans_la_meme_transaction(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """**La garantie que rien ne vérifiait.** Le créateur doit apprendre la
+    décision, et il doit l'apprendre même si le processus meurt juste après.
+
+    Le message est écrit par le commit qui écrit la décision : ou les deux
+    existent, ou aucun. Vérifié sur la boîte d'envoi — la route ne parle plus à
+    aucun service externe, et l'attendre pour répondre était le défaut.
+    """
+    scene = await en_attente(session)
+
+    reponse = await client.post(
+        f"{PREFIX}/bookings/{scene['booking'].id}/approve",
+        headers=await entetes(client, scene["membre"]),
+    )
+    assert reponse.status_code == 200, reponse.text
+
+    lignes = await outbox.pour(
+        session,
+        user_id=scene["createur"].id,
+        kind=NotificationKind.BOOKING_APPROVED,
+    )
+    # Un dépôt par canal : la boîte pour la trace, l'écran pour l'urgence.
+    assert len(lignes) == 2
+    assert all(ligne.sent_at is None for ligne in lignes)
+    assert {ligne.template_key for ligne in lignes} == {"booking.approved"}
+
+
+async def test_le_refus_depose_son_motif(client: AsyncClient, session: AsyncSession) -> None:
+    """Le motif du commerce voyage avec l'annonce. Sans lui, le créateur lit un
+    refus sans savoir ce qu'on lui reproche."""
+    scene = await en_attente(session)
+
+    await client.post(
+        f"{PREFIX}/bookings/{scene['booking'].id}/decline",
+        json={"reason": "Complet ce jour-là"},
+        headers=await entetes(client, scene["membre"]),
+    )
+
+    lignes = await outbox.pour(
+        session,
+        user_id=scene["createur"].id,
+        kind=NotificationKind.BOOKING_DECLINED,
+    )
+    assert lignes
+    assert all(ligne.values["motif"] == "Complet ce jour-là" for ligne in lignes)

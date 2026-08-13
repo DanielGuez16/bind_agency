@@ -28,11 +28,10 @@ import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.i18n import translate
-from app.integrations.email import EmailSender, Message
+from app.integrations.email import Message
 from app.models import (
     Booking,
     Business,
-    BusinessMember,
     CatalogItem,
     Collaboration,
     CreatorProfile,
@@ -235,6 +234,34 @@ def _lisible(instant: datetime, fuseau: str) -> str:
     return instant.astimezone(ZoneInfo(fuseau)).strftime("%Y-%m-%d %H:%M")
 
 
+def valeurs_du_gabarit(locale: Locale, valeurs: dict[str, Any]) -> dict[str, Any]:
+    """Les valeurs qu'un gabarit attend, complétées de ce qui se déduit.
+
+    **Partagée avec la boîte d'envoi**, qui rend le même message des heures plus
+    tard à partir de valeurs stockées. Écrite deux fois, elle aurait divergé sur
+    `quand_phrase` — et un gabarit se serait mis à afficher « le » suivi du
+    vide.
+
+    Les défauts vides comptent : un message déposé sans `motif` ne doit pas
+    faire échouer son rendu au milieu d'un balayage, deux jours après que la
+    décision a été prise.
+    """
+    quand = str(valeurs.get("quand") or "")
+    return {
+        "creator": "",
+        "business": "",
+        "item": "",
+        "format": "",
+        "deadline": "",
+        "requirements": "",
+        "motif": "",
+        "quand": "",
+        **valeurs,
+        # Le rendez-vous devient une **phrase**, ou rien.
+        "quand_phrase": rendre("booking.when", locale, quand=quand) if quand else "",
+    }
+
+
 def composer(cle: str, contexte: Contexte, **extra: Any) -> Message:
     valeurs = {
         "creator": contexte.creator,
@@ -244,72 +271,16 @@ def composer(cle: str, contexte: Contexte, **extra: Any) -> Message:
         "deadline": contexte.deadline,
         "requirements": contexte.requirements,
         "quand": contexte.quand,
-        # Le rendez-vous devient une **phrase**, ou rien. Un item sans créneau
-        # n'a pas d'heure : coller « le  » suivi du vide se remarque, et
-        # écrire deux gabarits par message pour cette seule différence les
-        # ferait diverger au premier mot changé.
-        "quand_phrase": (
-            rendre("booking.when", contexte.locale, quand=contexte.quand) if contexte.quand else ""
-        ),
         "motif": contexte.motif,
         **extra,
     }
+    complet = valeurs_du_gabarit(contexte.locale, valeurs)
     return Message(
         destinataire=contexte.destinataire,
-        sujet=rendre(f"{cle}.subject", contexte.locale, **valeurs),
-        corps=rendre(f"{cle}.body", contexte.locale, **valeurs),
+        sujet=rendre(f"{cle}.subject", contexte.locale, **complet),
+        corps=rendre(f"{cle}.body", contexte.locale, **complet),
         locale=contexte.locale,
     )
-
-
-async def envoyer_pour_la_reservation(
-    session: AsyncSession,
-    *,
-    booking: Booking,
-    cle: str,
-    sender: EmailSender,
-    motif: str = "",
-    **extra: Any,
-) -> bool:
-    """Prévient le créateur d'une décision du commerce.
-
-    Faux quand il n'y a rien à envoyer : un compte anonymisé n'a pas d'adresse,
-    un compte suspendu ne reçoit rien, et un genre refusé n'arrive pas par la
-    boîte après avoir été coupé sur l'écran.
-    """
-    kind = genre_de(cle)
-    contexte = await contexte_de_reservation(session, booking, motif=motif)
-    if contexte is None:
-        return False
-    if not await joignable(session, user_id=contexte.user_id, kind=kind):
-        return False
-
-    await sender.envoyer(composer(cle, contexte, **extra))
-    return True
-
-
-async def envoyer_pour(
-    session: AsyncSession,
-    *,
-    collaboration: Collaboration,
-    cle: str,
-    sender: EmailSender,
-    **extra: Any,
-) -> bool:
-    """Compose et envoie. Rend faux quand il n'y avait rien à envoyer.
-
-    Les erreurs d'envoi remontent : c'est au job de les reporter, pas à ce
-    module de les avaler. Une erreur avalée ici ferait croire à un envoi.
-    """
-    kind = genre_de(cle)
-    contexte = await contexte_de(session, collaboration)
-    if contexte is None:
-        return False
-    if not await joignable(session, user_id=contexte.user_id, kind=kind):
-        return False
-
-    await sender.envoyer(composer(cle, contexte, **extra))
-    return True
 
 
 async def echeances_a_rappeler(
@@ -335,47 +306,3 @@ async def echeances_a_rappeler(
             .limit(limite)
         )
     )
-
-
-async def envoyer_au_commerce(
-    session: AsyncSession,
-    *,
-    business: Business,
-    cle: str,
-    kind: NotificationKind,
-    sender: EmailSender,
-    **extra: Any,
-) -> int:
-    """Prévient **tous les membres** du salon par courriel. Rend combien ont été joints.
-
-    Tous, et non le propriétaire seul : un comptoir se tient à plusieurs, et la
-    personne qui a créé le compte n'est pas forcément celle qui lit ses
-    messages. Chacun garde sa préférence — celui qui coupe ne coupe que pour
-    lui.
-
-    **Le compte et la préférence sont vérifiés par `joignable`**, comme sur
-    tous les autres chemins de courriel et comme du côté du push. Ce fut un
-    temps le seul envoi à le faire ; les autres l'ont rejoint.
-    """
-    membres = await session.scalars(
-        sa.select(BusinessMember.user_id).where(BusinessMember.business_id == business.id)
-    )
-
-    joints = 0
-    for user_id in membres:
-        if not await joignable(session, user_id=user_id, kind=kind):
-            continue
-        utilisateur = await session.get(User, user_id)
-        if utilisateur is None or not utilisateur.email:
-            continue
-
-        await sender.envoyer(
-            Message(
-                destinataire=utilisateur.email,
-                sujet=rendre(f"{cle}.subject", utilisateur.locale, business=business.name, **extra),
-                corps=rendre(f"{cle}.body", utilisateur.locale, business=business.name, **extra),
-                locale=utilisateur.locale,
-            )
-        )
-        joints += 1
-    return joints

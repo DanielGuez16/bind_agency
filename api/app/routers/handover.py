@@ -129,7 +129,8 @@ async def issue_handover(
     await session.commit()
 
     if payload.channel is HandoverChannel.EMAIL and payload.destination:
-        await _envoyer_le_lien(
+        await _deposer_l_invitation(
+            session,
             destinataire=payload.destination,
             business=business,
             url=emis.url,
@@ -243,15 +244,23 @@ async def attach_handover(
     return await lire_le_commerce(session, business)
 
 
-async def _envoyer_le_lien(
-    *, destinataire: str, business: Business, url: str, expiration: str
+async def _deposer_l_invitation(
+    session, *, destinataire: str, business: Business, url: str, expiration: str
 ) -> None:
-    """Envoie l'invitation. **Ne fait jamais échouer l'émission.**
+    """Dépose l'invitation, **si le destinataire a un compte**.
 
-    Le jeton est déjà écrit et l'adresse est rendue à l'appelant : la seule
-    chose qu'une exception ici pourrait encore faire, c'est défaire un lien
-    valide. L'échec part au journal d'exploitation, où il se voit.
+    C'est ici que la boîte d'envoi ne suffit pas, et il faut le dire : elle
+    écrit à un utilisateur, et le gérant qu'on invite n'en est pas encore un —
+    c'est précisément ce que le lien existe pour changer. L'invitation part
+    donc directement, comme avant.
+
+    **Et c'est défendable ici.** L'adresse est rendue à l'écran quoi qu'il
+    arrive : la fondatrice a le QR sous les yeux, elle n'attend pas ce courriel
+    pour continuer, et un envoi qui traîne ne lui coûte que le temps de la
+    requête d'émission — pas la perte de l'information.
     """
+    del session
+
     try:
         async with httpx.AsyncClient() as client:
             await get_sender(client).envoyer(
