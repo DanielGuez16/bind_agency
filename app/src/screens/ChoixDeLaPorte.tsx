@@ -92,7 +92,15 @@ export function ChoixDeLaPorte({
       <Marque taille={30} couleur={surMedia ? 'text.onScrim' : 'accent.default'} />
 
       <View style={{ gap: spacing['space.2'], maxWidth: 720 }}>
-        <Texte variante="type.display" couleur={surMedia ? 'text.onScrim' : 'text.primary'}>
+        {/* Nommée : c'est sur elle que la suite de bout en bout lit la police
+            réellement employée. Sans point d'accroche, la seule façon de
+            vérifier qu'un texte emploie la fonte serait de deviner un
+            sélecteur, qui casserait au premier changement de structure. */}
+        <Texte
+          variante="type.display"
+          couleur={surMedia ? 'text.onScrim' : 'text.primary'}
+          testID="promesse-accueil"
+        >
           {t('auth.accroche')}
         </Texte>
         <Texte couleur={surMedia ? 'text.onScrimMuted' : 'text.secondary'}>

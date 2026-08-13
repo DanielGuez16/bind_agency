@@ -25,9 +25,13 @@ export type Variante = keyof typeof typography;
  * Android, `fontWeight` ne choisit pas un fichier : une graisse absente est
  * synthétisée par le moteur, ce qui donne un gras baveux au lieu du dessin
  * voulu. Chaque graisse est enregistrée sous son propre nom, et c'est ce nom
- * qu'on demande. `fontWeight` reste posé pour le web, où il fait le tri entre
- * les `@font-face` d'une même famille et sert de repli si le chargement n'a
- * pas abouti.
+ * qu'on demande.
+ *
+ * **`fontWeight` n'est plus posé du tout.** Chaque fichier est enregistré sous
+ * son propre nom, sans descripteur de graisse : pour le navigateur, cette face
+ * est donc de graisse normale. Lui demander 600 par-dessus la faisait
+ * **grossir une seconde fois**, par synthèse, au-dessus d'un semi-gras déjà
+ * dessiné. Le nom porte la graisse, et lui seul.
  */
 
 export type TexteProps = Omit<TextPropsNatif, 'style'> & {
@@ -64,7 +68,7 @@ export function Texte({
         {
           fontSize: echelle.fontSize,
           lineHeight: echelle.lineHeight,
-          fontWeight: echelle.fontWeight as never,
+
           letterSpacing: 'letterSpacing' in echelle ? echelle.letterSpacing : undefined,
           fontFamily: nomDeFonte(echelle.fontFamily as RoleDeFonte, echelle.fontWeight),
           color: c[couleur],
