@@ -423,6 +423,26 @@ class Settings(BaseSettings):
     #: décision prise sur des chiffres, pas un effet de bord de sa livraison.
     local_impact_weight: Decimal = Decimal("0")
 
+    # ----------------------------------------------------------------------
+    # Inscription sur le terrain : la fiche préparée, et sa prise en main.
+    # ----------------------------------------------------------------------
+    #: Durée de vie d'un lien de prise en main. Sept jours : le gérant qui n'a
+    #: pas décidé au comptoir en parle à son associé, et le lien doit survivre
+    #: à un week-end. Au-delà, un lien qui traîne dans une boîte est une porte
+    #: ouverte sur une fiche que plus personne ne surveille — et il se renvoie
+    #: en un geste.
+    handover_token_ttl_seconds: int = 7 * 24 * 3600
+    #: Où pointe le lien remis au salon. Sans elle, l'émission refuse plutôt
+    #: que de fabriquer une adresse — même règle que le lien traqué : une
+    #: adresse inventée envoie le gérant sur une page morte, et c'est la seule
+    #: impression qu'il gardera.
+    handover_base_url: str | None = None
+    #: La version des conditions en vigueur. **Ce qui est accepté à la prise en
+    #: main est cette chaîne-là**, écrite au journal d'audit avec l'instant et
+    #: la personne. Un booléen « a accepté » ne vaudrait rien le jour où les
+    #: conditions changent.
+    terms_version: str = "2026-01"
+
     # Lue uniquement par la session pytest, jamais par l'application.
     # Sa présence est vérifiée dans tests/conftest.py, qui refuse de tourner sans.
     test_database_url: PostgresDsn | None = Field(default=None, repr=False)

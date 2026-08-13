@@ -650,6 +650,12 @@ export const en = {
     business_already_active: 'This business is already active.',
     business_missing_address: 'Add the business address before going live.',
     business_missing_coordinates: 'Add the business location before going live.',
+    business_not_claimed:
+      'Nobody owns this page yet. It goes live once the salon takes it over.',
+    handover_invalid: 'This link is no longer valid. Ask for a new one.',
+    handover_not_a_draft: 'This page already has an owner.',
+    handover_terms_outdated:
+      'The terms have changed since this page was opened. Reload and read them again.',
     catalog_duration_mismatch:
       'A bookable item needs a duration, and an item that is not bookable must not have one.',
     catalog_item_not_bookable:

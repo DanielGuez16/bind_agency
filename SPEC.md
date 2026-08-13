@@ -46,10 +46,27 @@ Historisé, jamais écrasé. L'éligibilité lit toujours le dernier snapshot va
 ### 2.2 Commerce
 
 **business**
-`id, name, category (beauty | restaurant | museum | fitness | family_activity | other), address, geo (point), timezone (défaut America/New_York), default_locale, phone, status (onboarding | active | suspended), created_at`
+`id, name, category (beauty | restaurant | museum | fitness | family_activity | other), address, geo (point), timezone (défaut America/New_York), default_locale, phone, status (draft | onboarding | active | suspended), created_at`
 
 **business_member**
 `id, business_id, user_id, role (owner | staff)`
+
+**business_handover**
+`id, business_id, token_hash, channel (qr | email), destination, issued_by_user_id, issued_at, expires_at, used_at, used_by_user_id, accepted_terms_version, revoked_at`
+
+**Inscription sur le terrain**
+
+La fondatrice démarche en physique. L'inscription autonome demande une demi-heure au comptoir et personne ne la fait pendant qu'un client attend.
+
+La ligne de partage : **elle saisit des faits, jamais des engagements.** Nom, adresse, horaires, carte des prestations, photos — elle les connaît aussi bien que le salon. Mot de passe, acceptation des conditions, mise en ligne — si elle les pose, personne ne peut dire qui a accepté quoi.
+
+`draft` est donc un statut à part entière, et non un `onboarding` sans membre : une fiche préparée n'a **aucun** `business_member`, n'apparaît nulle part côté créateur, et **refuse de s'activer**. `onboarding` désigne un commerce dont quelqu'un a déjà le compte ; les confondre reviendrait à ne plus savoir si un commerce a un propriétaire.
+
+Le passage de `draft` à `onboarding` s'appelle la prise en main. Elle se fait par un jeton à usage unique, dont **seule l'empreinte est stockée**, borné dans le temps, révocable, et dont **un seul est vivant par fiche** — émettre un nouveau lien ferme le précédent. Deux chemins de remise : un QR affiché sur la tablette quand le décideur est présent, un courriel quand le propriétaire n'est pas dans le salon.
+
+La prise en main crée le compte du gérant, le rattache comme `owner`, sort la fiche de `draft`, et **écrit au journal d'audit la version des conditions acceptée**, avec qui et quand. La version acceptée doit être celle en vigueur : un lien ouvert la semaine dernière montre les conditions de la semaine dernière. Un compte commerce existant peut assumer une fiche sans en créer un second.
+
+Un refus ne distingue jamais inconnu, expiré, consommé ou révoqué : distinguer « expiré » de « inconnu » apprendrait quels salons ont été démarchés, et « déjà utilisé » lesquels ont signé.
 
 **subscription_plan**
 `id, category, name, price_cents, currency, billing_interval, features (jsonb), is_active`

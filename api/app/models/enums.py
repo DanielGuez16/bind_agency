@@ -55,9 +55,30 @@ class BusinessCategory(StrEnum):
 
 
 class BusinessStatus(StrEnum):
+    #: **Une fiche préparée par quelqu'un d'autre, que personne n'assume
+    #: encore.** C'est ce que la fondatrice remplit au comptoir pendant la
+    #: démonstration : des faits, aucun engagement, aucun membre. Distinct de
+    #: `onboarding`, qui désigne un commerce dont quelqu'un a déjà le compte et
+    #: qui n'a pas fini de se décrire. Les confondre reviendrait à ne plus
+    #: savoir si un commerce a un propriétaire.
+    DRAFT = "draft"
     ONBOARDING = "onboarding"
     ACTIVE = "active"
     SUSPENDED = "suspended"
+
+
+class HandoverChannel(StrEnum):
+    """Comment le lien de prise en main est parvenu au salon.
+
+    Les deux cas se présentent réellement, et le second est celui où la visite
+    se perdait : ou bien le décideur est là et scanne le QR de la tablette — il
+    n'a rien à taper, et la personne qui active est manifestement celle qui est
+    présente — ou bien le propriétaire n'est pas dans le salon, et le lien doit
+    le suivre.
+    """
+
+    QR = "qr"
+    EMAIL = "email"
 
 
 class BusinessMemberRole(StrEnum):

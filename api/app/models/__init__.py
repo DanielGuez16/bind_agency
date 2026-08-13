@@ -17,6 +17,7 @@ from app.models.business import (
 )
 from app.models.catalog import CatalogItem, MenuImport
 from app.models.collaboration import Collaboration, Proof
+from app.models.handover import BusinessHandover
 from app.models.identity import CreatorProfile, SocialAccount, SocialMetricsSnapshot, User
 from app.models.jobs import Job
 from app.models.notifications import DeviceToken, NotificationPreference
@@ -32,6 +33,7 @@ __all__ = [
     "Base",
     "Booking",
     "Business",
+    "BusinessHandover",
     "BusinessPhoto",
     "BusinessMember",
     "CapacityException",
