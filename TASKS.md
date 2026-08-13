@@ -21,8 +21,19 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Fin : demande soumise. Le produit se livre sans Snapchat si l'accès tarde*
 - [ ] Réserver le nom de domaine, préparer les pages politique de confidentialité et conditions
       *Fin : pages en ligne. Nécessaire avant les revues, pas avant le code*
-- [ ] Ouvrir Stripe en mode test, le stockage objet et le Postgres hébergé
-      *Fin : `.env.example` documenté*
+- [ ] Ouvrir Stripe en mode test et le Postgres hébergé
+      *Le stockage objet est ouvert — deux compartiments Supabase, voir plus
+      bas. **La moitié code de cette tâche est faite** : `.env.example`
+      documente désormais les cent dix réglages, et un test tombe à chaque
+      oubli — trente-quatre y manquaient, dont plusieurs récents. Ne reste que
+      l'ouverture de deux comptes, qui n'est pas du code*
+- [ ] **Le texte des conditions n'existe nulle part**
+      *Trouvé en écrivant la prise en main : un salon accepte « la version
+      2026-01 des conditions », cette acceptation est écrite au journal d'audit
+      avec son auteur et son instant — et **le document qu'elle désigne n'existe
+      dans aucun fichier du dépôt**. Le mécanisme de preuve est complet, ce
+      qu'il prouve ne l'est pas. Ce n'est pas bloqué par un accès externe mais
+      par une décision juridique : le texte se rédige, il ne s'invente pas*
 - [x] Poser un premier jeu de seuils de paliers provisoire en configuration
       *Fait depuis la migration `ca6ed22e418a` et jamais coché : sept paliers de
       référence, identifiants fixés en dur pour être lisibles d'un
