@@ -39,6 +39,15 @@ from app.services.audit import Actor, AuditedEntity, record_transition
 #: Motifs écrits au journal. Ce sont eux qu'on relira le jour où un salon
 #: demandera pourquoi il a disparu du fil.
 REASON_GRACE_OUVERTE = "grace_opened"
+#: L'état écrit au journal à l'ouverture d'une grâce.
+#:
+#: **Pas le statut du commerce.** Une grâce s'ouvre sur un commerce qui vient de
+#: passer `active` : écrire `active` produisait une seconde ligne indistincte de
+#: la transition d'activation elle-même, et un test qui cherchait « la ligne qui
+#: mène à active » en trouvait deux. Le journal décrit des transitions ; ceci
+#: est un événement, et il se nomme comme tel — c'est déjà ce que fait
+#: l'abonnement avec `subscription:...`.
+ETAT_GRACE_OUVERTE = "grace:opened"
 REASON_GRACE_ECHUE = "grace_expired"
 REASON_RETOUR_EN_LIGNE = "subscription_restored_visibility"
 
@@ -82,7 +91,7 @@ async def ouvrir(
         session,
         entity=AuditedEntity.BUSINESS,
         entity_id=business.id,
-        to_status=business.status.value,
+        to_status=ETAT_GRACE_OUVERTE,
         actor=Actor.system(),
         reason=REASON_GRACE_OUVERTE,
         extra={"grace_ends_at": business.grace_ends_at.isoformat()},

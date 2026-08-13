@@ -523,3 +523,36 @@ async def test_le_balayage_ouvre_ce_qui_n_a_pas_d_echeance(session: AsyncSession
 
     assert business.grace_ends_at is not None
     assert business.status is BusinessStatus.ACTIVE
+
+
+async def test_l_ouverture_ne_se_confond_pas_avec_l_activation(
+    session: AsyncSession,
+) -> None:
+    """**Deux lignes de journal, deux états distincts.**
+
+    L'ouverture de la grâce écrivait le statut du commerce — `active` — la même
+    valeur que la transition d'activation elle-même. Un test qui cherchait « la
+    ligne qui mène à active » en trouvait alors deux et tombait. Le journal
+    décrit des transitions ; une ouverture de grâce est un événement, et elle se
+    nomme comme tel.
+    """
+    business, _ = await ouvert(session)
+
+    vers_actif = (
+        await session.scalars(
+            sa.select(AuditLog.reason).where(
+                AuditLog.entity_id == business.id,
+                AuditLog.to_status == BusinessStatus.ACTIVE.value,
+            )
+        )
+    ).all()
+    ouverture = await session.scalar(
+        sa.select(AuditLog).where(
+            AuditLog.entity_id == business.id,
+            AuditLog.to_status == service.ETAT_GRACE_OUVERTE,
+        )
+    )
+
+    assert list(vers_actif) == [business_service.REASON_ACTIVATION]
+    assert ouverture is not None
+    assert ouverture.extra["grace_ends_at"] == business.grace_ends_at.isoformat()
