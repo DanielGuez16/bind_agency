@@ -19,6 +19,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
+import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
@@ -26,10 +27,9 @@ from app.integrations.email import get_sender
 from app.integrations.push import get_push_sender
 from app.integrations.social import SocialAuthError, SocialProvider, SocialProviderError
 from app.models import Business, Collaboration, Job, SocialAccount
-from app.models.enums import JobType, NotificationKind, Platform, SocialAccountStatus
-from app.services import booking_states, collaboration, grace, notifications, tracking
+from app.models.enums import JobType, Platform, SocialAccountStatus
+from app.services import booking_states, collaboration, grace, notifications, outbox, tracking
 from app.services import metrics as metrics_service
-from app.services import push as push_service
 
 logger = logging.getLogger(__name__)
 
@@ -170,35 +170,37 @@ async def expirer_les_echeances(session: AsyncSession, *, account, provider) -> 
 async def rappeler_les_echeances(session: AsyncSession, *, account, provider) -> Issue:
     """Rappelle les échéances qui approchent.
 
-    Un envoi qui échoue fait échouer le job, donc le reporte : c'est
-    exactement ce qu'on veut d'un rappel. Le faire réussir en silence
-    laisserait des créateurs sans avertissement et des dossiers tomber en non
-    honoré sans que personne n'ait rien dit.
+    **Le rappel se dépose, il ne s'envoie plus ici.** Un envoi raté faisait
+    échouer le balayage entier, donc le reportait — et laissait sans rappel
+    toutes les échéances qui suivaient dans la même passe. Chaque message porte
+    maintenant son propre report.
     """
     settings = get_settings()
-    sender = get_sender()
 
     identifiants = await notifications.echeances_a_rappeler(
         session, avance_secondes=settings.collaboration_reminder_lead_seconds
     )
     for identifiant in identifiants:
         ligne = await session.get(Collaboration, identifiant)
-        if ligne is not None:
-            await notifications.envoyer_pour(
-                session,
-                collaboration=ligne,
-                cle="collaboration.reminder",
-                sender=sender,
-            )
-            # À côté de l'email, jamais à sa place : c'est le seul des sept
-            # événements où l'urgence est la raison d'être du message.
-            await push_service.pour_la_contrepartie(
-                session,
-                collaboration_id=ligne.id,
-                kind=NotificationKind.PUBLICATION_REMINDER,
-                cle="collaboration.reminder",
-                sender=get_push_sender(),
-            )
+        if ligne is None:
+            continue
+        contexte = await notifications.contexte_de(session, ligne)
+        if contexte is None:
+            continue
+        # **Déposé, pas envoyé.** Les deux canaux partent du même dépôt : la
+        # boîte pour la trace, l'écran verrouillé pour l'urgence. Un service
+        # d'envoi injoignable reporte ce message-là et non le balayage entier,
+        # qui laissait sans rappel toutes les échéances derrière lui.
+        await outbox.deposer(
+            session,
+            user_id=contexte.user_id,
+            cle="collaboration.reminder",
+            creator=contexte.creator,
+            business=contexte.business,
+            item=contexte.item,
+            deadline=contexte.deadline,
+            requirements=contexte.requirements,
+        )
 
     return Fait(prochain=timedelta(seconds=settings.collaboration_reminder_interval_seconds))
 
@@ -218,37 +220,25 @@ async def purger_les_clics(session: AsyncSession, *, account, provider) -> Issue
 
 
 async def _prevenir_le_commerce(
-    session: AsyncSession,
-    *,
-    commerce: Business,
-    cle: str,
-    kind: NotificationKind,
-    sender,
-    **valeurs: object,
+    session: AsyncSession, *, commerce: Business, cle: str, **valeurs: object
 ) -> None:
-    """La boîte **et** l'écran verrouillé, jamais l'un à la place de l'autre.
+    """Dépose le message pour **tous les membres** du salon.
 
-    Remarque de revue retenue : les deux messages du balayage écrivaient le
-    même couple d'appels à quelques mots près. Le risque n'est pas la longueur,
-    c'est le troisième message qu'on ajoutera un jour en oubliant le push — et
-    personne ne s'apercevrait qu'il ne part pas.
+    Tous, et non le propriétaire seul : un comptoir se tient à plusieurs, et la
+    personne qui a créé le compte n'est pas forcément celle qui lit ses
+    messages. Chacun garde sa préférence — elle est relue au moment où le
+    message sortirait, et non ici.
 
-    Écrit ici et non dans un service : c'est de l'orchestration, et faire
-    porter à `grace` ou à `notifications` la connaissance des deux canaux leur
-    donnerait une responsabilité qu'ils n'ont pas.
+    Un dépôt par membre et par canal : c'est ce qui permet à l'un de recevoir
+    quand l'autre a coupé, et à un envoi raté de ne reporter que le sien.
     """
-    await notifications.envoyer_au_commerce(
-        session, business=commerce, cle=cle, kind=kind, sender=sender, **valeurs
+    from app.models import BusinessMember
+
+    membres = await session.scalars(
+        sa.select(BusinessMember.user_id).where(BusinessMember.business_id == commerce.id)
     )
-    await push_service.pour_le_commerce_seul(
-        session,
-        business_id=commerce.id,
-        kind=kind,
-        cle=cle,
-        sender=get_push_sender(),
-        business=commerce.name,
-        **valeurs,
-    )
+    for user_id in membres:
+        await outbox.deposer(session, user_id=user_id, cle=cle, business=commerce.name, **valeurs)
 
 
 async def balayer_les_periodes_de_grace(session: AsyncSession, *, account, provider) -> Issue:
@@ -268,7 +258,6 @@ async def balayer_les_periodes_de_grace(session: AsyncSession, *, account, provi
     dispositif existe pour éviter.
     """
     settings = get_settings()
-    sender = get_sender()
     maintenant = datetime.now(UTC)
 
     ouvertes = 0
@@ -291,8 +280,6 @@ async def balayer_les_periodes_de_grace(session: AsyncSession, *, account, provi
             session,
             commerce=commerce,
             cle="subscription.graceEnding",
-            kind=NotificationKind.SUBSCRIPTION_GRACE_ENDING,
-            sender=sender,
             echeance=echeance,
         )
         # **Écrit après l'envoi.** Le poser avant ferait passer pour prévenu un
@@ -314,14 +301,36 @@ async def balayer_les_periodes_de_grace(session: AsyncSession, *, account, provi
             session,
             commerce=commerce,
             cle="subscription.ended",
-            kind=NotificationKind.SUBSCRIPTION_ENDED,
-            sender=sender,
         )
 
     logger.info(
         "périodes de grâce : %d ouvertes, %d averties, %d fermées", ouvertes, averties, fermees
     )
     return Fait(prochain=timedelta(seconds=settings.subscription_grace_sweep_interval_seconds))
+
+
+async def vider_la_boite_d_envoi(session: AsyncSession, *, account, provider) -> Issue:
+    """Sort de la boîte d'envoi ce qui peut en sortir.
+
+    **C'est ici que les messages partent, et nulle part ailleurs.** Une décision
+    de réservation, une prise en main, une ouverture de reprise déposent leur
+    message dans la transaction qui les écrit, puis répondent. Le message part
+    d'ici, une minute plus tard au pire — et il part même si le processus qui a
+    pris la décision est mort entre-temps, ce qui n'était pas le cas avant.
+
+    Le report des échecs est celui de la boîte, pas celui du job : un service
+    d'envoi injoignable ne doit pas faire échouer le balayage entier, sans quoi
+    un message cassé bloquerait tous les autres derrière lui.
+    """
+    resultat = await outbox.vider(session, email_sender=get_sender(), push_sender=get_push_sender())
+    if resultat.envoyes or resultat.ecartes or resultat.reportes:
+        logger.info(
+            "boîte d'envoi : %d partis, %d écartés, %d reportés",
+            resultat.envoyes,
+            resultat.ecartes,
+            resultat.reportes,
+        )
+    return Fait(prochain=timedelta(seconds=get_settings().outbox_sweep_interval_seconds))
 
 
 #: Ce que chaque type de job sait faire. Un type absent d'ici est un job qui ne
@@ -334,6 +343,7 @@ TRAITEMENTS = {
     JobType.COLLABORATION_REMINDER_SWEEP: rappeler_les_echeances,
     JobType.LINK_CLICK_PURGE_SWEEP: purger_les_clics,
     JobType.SUBSCRIPTION_GRACE_SWEEP: balayer_les_periodes_de_grace,
+    JobType.OUTBOX_SWEEP: vider_la_boite_d_envoi,
 }
 
 
@@ -345,6 +355,7 @@ SANS_CIBLE = frozenset(
         JobType.COLLABORATION_REMINDER_SWEEP,
         JobType.LINK_CLICK_PURGE_SWEEP,
         JobType.SUBSCRIPTION_GRACE_SWEEP,
+        JobType.OUTBOX_SWEEP,
     }
 )
 

@@ -17,21 +17,17 @@ import logging
 import uuid
 from typing import Annotated
 
-import httpx
 from fastapi import APIRouter, Depends, Path, status
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.dependencies import CurrentUser, SessionDep, require_role
 from app.core.errors import ErrorCode, api_error
 from app.core.membership import MembershipFor
-from app.integrations.email import get_sender
-from app.integrations.push import get_push_sender
 from app.models import Booking
 from app.models.enums import UserRole
 from app.schemas.booking import BookingRead
 from app.services import booking_states as service
-from app.services import notifications
-from app.services import push as push_service
+from app.services import notifications, outbox
 from app.services.audit import Actor
 
 logger = logging.getLogger(__name__)
@@ -155,43 +151,36 @@ async def mark_no_show(
     return BookingRead.model_validate(reservation)
 
 
-async def _prevenir(session, reservation: Booking, cle: str, *, motif: str = "") -> None:
-    """Prévient le créateur d'une décision du commerce.
+async def _deposer_l_annonce(session, reservation: Booking, cle: str, *, motif: str = "") -> None:
+    """Dépose l'annonce dans la boîte d'envoi, **avant le commit**.
 
-    **Après le commit, et sans le faire échouer.** La décision est prise et
-    écrite ; un serveur d'email en panne ne doit pas la défaire. L'échec est
-    journalisé par l'envoyeur, il n'a rien à dire à celui qui vient de trancher.
+    C'est tout l'intérêt : le commit qui écrit la décision écrit le message. Ou
+    les deux existent, ou aucun — il n'y a plus de fenêtre où un créateur est
+    refusé sans jamais l'apprendre parce que le processus est mort entre les
+    deux, ni de requête qui attend vingt secondes un service d'envoi dont celui
+    qui tranche n'a rien à faire.
+
+    Un échec ici est une erreur de programmation — une clé sans genre — et non
+    une panne réseau : il n'y a rien à avaler.
     """
-    try:
-        async with httpx.AsyncClient() as client:
-            await notifications.envoyer_pour_la_reservation(
-                session,
-                booking=reservation,
-                cle=cle,
-                sender=get_sender(client),
-                motif=motif,
-            )
-    except Exception:
-        # Volontairement large. La décision est déjà écrite ; la seule chose
-        # qu'une exception ici peut encore faire, c'est la défaire.
-        logger.exception("notification de réservation non envoyée", extra={"cle": cle})
+    contexte = await notifications.contexte_de_reservation(session, reservation, motif=motif)
+    if contexte is None:
+        # Compte anonymisé : il n'y a personne à prévenir, et déposer un
+        # message pour un destinataire qui n'existe plus remplirait la boîte de
+        # lignes qu'aucun balayage ne pourrait fermer autrement qu'en les
+        # écartant.
+        return
 
-    # **Le push part à côté de l'email, pas à sa place.** Les deux disent la
-    # même chose à des endroits différents : la boîte pour la trace, l'écran
-    # verrouillé pour l'urgence. Et il est protégé par le même filet — la
-    # décision est écrite, rien de ce qui l'annonce ne doit la défaire.
-    try:
-        await push_service.pour_la_reservation(
-            session,
-            booking_id=reservation.id,
-            kind=notifications.genre_de(cle),
-            cle=cle,
-            sender=get_push_sender(),
-            motif=motif,
-        )
-        await session.commit()
-    except Exception:
-        logger.exception("notification push non envoyée", extra={"cle": cle})
+    await outbox.deposer(
+        session,
+        user_id=contexte.user_id,
+        cle=cle,
+        creator=contexte.creator,
+        business=contexte.business,
+        item=contexte.item,
+        quand=contexte.quand,
+        motif=contexte.motif,
+    )
 
 
 @router.post("/{booking_id}/approve", response_model=BookingRead)
@@ -214,8 +203,8 @@ async def approve(
     except service.BookingStateError as error:
         raise _traduire(error) from error
 
+    await _deposer_l_annonce(session, reservation, "booking.approved")
     await session.commit()
-    await _prevenir(session, reservation, "booking.approved")
     return BookingRead.model_validate(reservation)
 
 
@@ -241,8 +230,8 @@ async def decline(
     except service.BookingStateError as error:
         raise _traduire(error) from error
 
+    await _deposer_l_annonce(session, reservation, "booking.declined", motif=payload.reason)
     await session.commit()
-    await _prevenir(session, reservation, "booking.declined", motif=payload.reason)
     return BookingRead.model_validate(reservation)
 
 
@@ -272,6 +261,8 @@ async def cancel_by_business(
     except service.BookingStateError as error:
         raise _traduire(error) from error
 
+    await _deposer_l_annonce(
+        session, reservation, "booking.cancelledByBusiness", motif=payload.reason
+    )
     await session.commit()
-    await _prevenir(session, reservation, "booking.cancelledByBusiness", motif=payload.reason)
     return BookingRead.model_validate(reservation)

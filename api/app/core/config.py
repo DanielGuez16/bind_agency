@@ -471,6 +471,11 @@ class Settings(BaseSettings):
     #: dispositif refuse, et c'est ce délai qui l'en empêche.
     support_access_ttl_seconds: int = 2 * 3600
 
+    #: Période du vidage de la boîte d'envoi. Une minute : un message annonce
+    #: une décision que quelqu'un attend, et le faire attendre l'intervalle
+    #: d'un balayage horaire reviendrait à ne pas l'envoyer.
+    outbox_sweep_interval_seconds: int = 60
+
     # Lue uniquement par la session pytest, jamais par l'application.
     # Sa présence est vérifiée dans tests/conftest.py, qui refuse de tourner sans.
     test_database_url: PostgresDsn | None = Field(default=None, repr=False)

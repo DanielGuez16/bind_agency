@@ -3565,3 +3565,55 @@ défendables. C'est la première fois qu'on le vérifie.
 portait déjà un rôle. La garde tenait ; c'était la mutation qui visait mal. Il a
 fallu chercher une route dont `current_user` est la seule garde pour éprouver ce
 cas-là pour de bon.
+
+## 2026-08-13 — Une boîte d'envoi, et un seul chemin pour un message
+
+Une décision de réservation, une transition de contrepartie, un avertissement de
+fin de grâce, une ouverture de reprise envoyaient leur courriel et leur push
+**avant de répondre**. Chacun est borné par sa configuration, donc la requête ne
+pendait pas indéfiniment — mais elle pouvait attendre vingt secondes pour deux
+messages dont l'appelant n'a rien à faire. Et si le processus mourait entre le
+commit et l'envoi, personne n'était prévenu et rien ne le rattrapait.
+
+**Une table, et non un type de job.** La table de jobs porte « une ligne par
+travail, pour toujours » : `UNIQUE (job_type, target_id)`, reprogrammée plutôt
+que consommée. Un message est l'inverse — une occurrence. Deux reprises ouvertes
+sur le même salon sont deux messages ; les y forcer aurait cassé l'invariant, ou
+perdu l'un des deux.
+
+**Le dépôt est dans la transaction de l'événement.** C'est tout l'intérêt : le
+commit qui écrit la décision écrit le message. Il n'y a plus de fenêtre où
+quelqu'un est refusé sans jamais l'apprendre.
+
+**La préférence se relit à l'envoi, pas au dépôt.** Le message est écrit à
+l'instant de la décision et part une minute plus tard ; entre les deux,
+quelqu'un peut avoir coupé. C'est le moment où le message arriverait qui compte.
+La langue aussi se relit là : quelqu'un qui change de langue entre les deux doit
+lire le message dans celle qu'il vient de choisir.
+
+**Trois issues, et pas deux.** Parti, écarté, à réessayer. « Écarté » est celle
+qu'on oublie : un compte suspendu, un genre refusé, aucun terminal — ce ne sont
+ni des succès ni des échecs. Les compter comme des échecs ferait marteler ;
+comme des succès, ferait croire que quelqu'un a reçu.
+
+**Un envoi raté ne bloque plus les autres.** C'était le défaut du balayage des
+rappels : une exception faisait échouer le job entier et laissait sans rappel
+toutes les échéances qui suivaient dans la même passe. Chaque message porte
+maintenant son propre report.
+
+**Les envois directs ont été supprimés**, pas seulement contournés. Sept
+fonctions — trois de courriel, quatre de push — n'avaient plus d'appelant.
+Les garder aurait laissé deux façons d'envoyer un message dans le produit, ce
+qui est exactement le défaut qu'on répare : celle qu'on oublierait de corriger
+serait celle qui continuerait d'ignorer une préférence ou de tenir une requête.
+
+**Une exception, et elle est dite dans le code :** l'invitation de prise en main
+part toujours directement. La boîte écrit à un utilisateur, et le gérant qu'on
+invite n'en est pas encore un — c'est ce que le lien existe pour changer.
+L'adresse étant rendue à l'écran quoi qu'il arrive, un envoi qui traîne ne coûte
+que le temps de la requête d'émission, pas la perte de l'information.
+
+**Et deux tests qui ne vérifiaient plus rien.** Après le passage à la boîte, les
+tests de la période de grâce appelaient encore la fonction d'envoi direct : ils
+passaient, et n'éprouvaient plus le chemin du produit. C'est le défaut le plus
+discret de cette campagne — un test vert sur un code mort.

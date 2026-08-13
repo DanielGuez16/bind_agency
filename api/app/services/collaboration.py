@@ -31,7 +31,6 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.integrations.push import get_push_sender
 from app.models import (
     AuditLog,
     Booking,
@@ -54,7 +53,10 @@ from app.models.enums import (
     ReliabilityEventType,
 )
 from app.services import audit, reliability
-from app.services import push as push_service
+
+# **Importés dans la fonction et non en tête.** `notifications` lit un
+# commerce, `outbox` lit les préférences : les deux remontent jusqu'ici par
+# leurs propres imports, et se déclarer mutuellement en haut ferait un cycle.
 from app.services.audit import AuditedEntity
 
 logger = logging.getLogger(__name__)
@@ -262,25 +264,32 @@ async def _prevenir_le_createur(
     **Au même endroit et pour la même raison** : un appel séparé finit par être
     oublié sur une branche, et c'est la branche oubliée qui laisse quelqu'un
     sans nouvelle de sa publication.
-
-    Un échec n'annule pas la transition. Elle est écrite ; la seule chose qu'une
-    exception pourrait encore faire ici, c'est la défaire.
     """
     couple = NOTIFICATION_PAR_ISSUE.get(vers)
     if couple is None:
         return
-    kind, cle = couple
+    _, cle = couple
 
-    try:
-        await push_service.pour_la_contrepartie(
-            session,
-            collaboration_id=collaboration.id,
-            kind=kind,
-            cle=cle,
-            sender=get_push_sender(),
-        )
-    except Exception:
-        logger.exception("notification de contrepartie non envoyée", extra={"cle": cle})
+    # **Déposé dans la transition, pas envoyé à côté.** Le message part avec la
+    # transition qu'il annonce : ou les deux existent, ou aucun. Il n'y a plus
+    # rien à avaler ici — un service d'envoi injoignable reporte le message et
+    # ne touche pas à la contrepartie.
+    from app.services import notifications, outbox
+
+    contexte = await notifications.contexte_de(session, collaboration)
+    if contexte is None:
+        return
+
+    await outbox.deposer(
+        session,
+        user_id=contexte.user_id,
+        cle=cle,
+        creator=contexte.creator,
+        business=contexte.business,
+        item=contexte.item,
+        deadline=contexte.deadline,
+        motif=contexte.motif,
+    )
 
 
 async def _emettre_les_evenements(

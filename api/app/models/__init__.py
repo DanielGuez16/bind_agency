@@ -22,6 +22,7 @@ from app.models.identity import CreatorProfile, SocialAccount, SocialMetricsSnap
 from app.models.jobs import Job
 from app.models.notifications import DeviceToken, NotificationPreference
 from app.models.oauth import OAuthState
+from app.models.outbox import OutboundMessage
 from app.models.platform_asset import PlatformAsset
 from app.models.reliability import ReliabilityEvent
 from app.models.support import BusinessSupportAccess
@@ -48,6 +49,7 @@ __all__ = [
     "MenuImport",
     "NotificationPreference",
     "OAuthState",
+    "OutboundMessage",
     "PlatformAsset",
     "Proof",
     "RedemptionCode",

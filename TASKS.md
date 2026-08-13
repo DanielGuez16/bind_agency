@@ -378,13 +378,16 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       La phrase « aucune dérogation pour les administrateurs » du socle devient
       « aucune dérogation implicite » — c'est dans `DECISIONS.md`. 18 tests,
       13 mutations vérifiées*
-- [ ] **Les avertissements partent dans la requête qui les déclenche**
-      *Relevé en revue sur la reprise de compte, et vrai partout : décision de
-      réservation, prise en main, ouverture de reprise envoient courriel et
-      push **avant de répondre**. Chacun est borné par sa configuration —
-      `EMAIL_TIMEOUT_SECONDS`, `PUSH_TIMEOUT_SECONDS` — donc la requête ne
-      pend pas indéfiniment, mais elle peut attendre vingt secondes pour deux
-      messages dont l'appelant n'a rien à faire. La file de jobs existe et sait
-      reporter ; il manque un type de job « envoyer un message » et le passage
-      des trois appelants dessus. À faire d'un coup, pas un appelant à la fois*
+- [x] Une boîte d'envoi : les messages ne partent plus dans la requête
+      *Décision de réservation, transition de contrepartie, avertissement de
+      grâce, ouverture de reprise envoyaient courriel et push **avant de
+      répondre**. Fin : une table `outbound_message` — et non un type de job,
+      dont l'invariant est « une ligne par travail, pour toujours » quand un
+      message est une occurrence. Le dépôt se fait **dans la transaction de
+      l'événement** : ou la décision et son annonce existent toutes deux, ou
+      aucune, ce qui referme la fenêtre où quelqu'un était refusé sans jamais
+      l'apprendre. Un balayage à la minute vide la boîte, avec le report des
+      jobs et trois issues — parti, écarté, reporté. **Les envois directs ont
+      été supprimés** : deux façons d'envoyer un message serait le défaut
+      lui-même. 20 tests, 15 mutations vérifiées*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire

@@ -38,7 +38,7 @@ from app.models.enums import (
     UserRole,
 )
 from app.services import auth as auth_service
-from app.services import booking_states, notifications
+from app.services import booking_states, outbox
 from app.services import business as business_service
 from app.services import grace as service
 from app.services import subscription as subscription_service
@@ -57,6 +57,13 @@ class EnvoyeurQuiNote:
 
     async def envoyer(self, message: Message) -> None:
         self.messages.append(message)
+
+
+class PushMuet:
+    """Ne joint personne : ces tests-ci n'éprouvent que le courriel."""
+
+    async def envoyer(self, envois):
+        return []
 
 
 async def ouvert(session: AsyncSession) -> tuple[Business, User]:
@@ -259,16 +266,14 @@ async def test_on_ne_previent_pas_trop_tot(session: AsyncSession) -> None:
     assert business.id not in await service.a_prevenir(session, maintenant=tot)
 
 
-async def test_l_avertissement_part_a_tous_les_membres_et_dit_l_essentiel(
+async def test_l_avertissement_est_depose_pour_tous_les_membres(
     session: AsyncSession,
 ) -> None:
-    """Tous : un comptoir se tient à plusieurs. Et le message dit ce que le
-    salon demandera en premier — ce qu'il advient de ses réservations."""
+    """Tous : un comptoir se tient à plusieurs. Et **déposé, pas envoyé** — le
+    balayage n'attend plus un service d'envoi pour finir son travail."""
+    from app.workers import handlers
+
     business, proprietaire = await ouvert(session)
-    # **Un second membre, et il est indispensable au test.** Avec le seul
-    # propriétaire, une fonction qui s'arrête au premier destinataire passerait
-    # — la mutation l'a montré, et le test ne prouvait alors que « quelqu'un a
-    # reçu quelque chose ».
     second = await auth_service.register(
         session,
         email=f"{uuid.uuid4()}@example.com",
@@ -278,31 +283,49 @@ async def test_l_avertissement_part_a_tous_les_membres_et_dit_l_essentiel(
     session.add(
         BusinessMember(business_id=business.id, user_id=second.id, role=BusinessMemberRole.STAFF)
     )
+    business.grace_ends_at = datetime.now(UTC) + timedelta(days=1)
     await session.flush()
-    envoyeur = EnvoyeurQuiNote()
 
-    joints = await notifications.envoyer_au_commerce(
-        session,
-        business=business,
-        cle="subscription.graceEnding",
-        kind=NotificationKind.SUBSCRIPTION_GRACE_ENDING,
-        sender=envoyeur,
-        echeance="2026-09-12",
+    await handlers.balayer_les_periodes_de_grace(session, account=None, provider=None)
+
+    for utilisateur in (proprietaire, second):
+        lignes = await outbox.pour(
+            session,
+            user_id=utilisateur.id,
+            kind=NotificationKind.SUBSCRIPTION_GRACE_ENDING,
+        )
+        # Un dépôt par canal : la boîte pour la trace, l'écran pour l'urgence.
+        assert len(lignes) == 2
+
+
+async def test_l_avertissement_dit_ce_que_le_salon_demandera_en_premier(
+    session: AsyncSession,
+) -> None:
+    """Ce qu'il advient de ses réservations déjà prises. Vérifié sur le message
+    rendu, et non sur le gabarit : c'est ce que le gérant lira."""
+    from app.workers import handlers
+
+    business, proprietaire = await ouvert(session)
+    business.grace_ends_at = datetime.now(UTC) + timedelta(days=1)
+    await session.flush()
+    await handlers.balayer_les_periodes_de_grace(session, account=None, provider=None)
+
+    envoye = EnvoyeurQuiNote()
+    await outbox.vider(session, email_sender=envoye, push_sender=PushMuet())
+
+    corps = next(
+        message.corps for message in envoye.messages if message.destinataire == proprietaire.email
     )
-
-    assert joints == 2
-    assert {message.destinataire for message in envoyeur.messages} == {
-        proprietaire.email,
-        second.email,
-    }
-    assert "honoured" in envoyeur.messages[0].corps
-    assert "2026-09-12" in envoyeur.messages[0].corps
+    assert "honoured" in corps
 
 
 async def test_un_membre_qui_a_coupe_le_genre_ne_recoit_rien(
     session: AsyncSession,
 ) -> None:
-    """La préférence vaut pour la boîte comme pour l'écran verrouillé."""
+    """La préférence vaut pour la boîte comme pour l'écran verrouillé — et elle
+    est relue au moment où le message sortirait, pas au dépôt."""
+    from app.workers import handlers
+
     business, proprietaire = await ouvert(session)
     session.add(
         NotificationPreference(
@@ -311,20 +334,14 @@ async def test_un_membre_qui_a_coupe_le_genre_ne_recoit_rien(
             enabled=False,
         )
     )
+    business.grace_ends_at = datetime.now(UTC) + timedelta(days=1)
     await session.flush()
-    envoyeur = EnvoyeurQuiNote()
+    await handlers.balayer_les_periodes_de_grace(session, account=None, provider=None)
 
-    joints = await notifications.envoyer_au_commerce(
-        session,
-        business=business,
-        cle="subscription.graceEnding",
-        kind=NotificationKind.SUBSCRIPTION_GRACE_ENDING,
-        sender=envoyeur,
-        echeance="2026-09-12",
-    )
+    envoye = EnvoyeurQuiNote()
+    await outbox.vider(session, email_sender=envoye, push_sender=PushMuet())
 
-    assert joints == 0
-    assert envoyeur.messages == []
+    assert envoye.messages == []
 
 
 # --------------------------------------------------------------------------

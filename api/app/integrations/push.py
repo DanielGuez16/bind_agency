@@ -44,6 +44,12 @@ EXPO_ENDPOINT = "https://exp.host/--/api/v2/push/send"
 LOT_MAXIMUM = 100
 
 
+class PushError(Exception):
+    """L'envoi n'a pas abouti. Distincte de `EmailError`, et pas par symétrie :
+    `last_error` se relit dans une file d'administration, et « EmailError » sur
+    un push enverrait chercher une panne du mauvais côté."""
+
+
 @dataclass(frozen=True, slots=True)
 class Envoi:
     """Une notification, pour un terminal.

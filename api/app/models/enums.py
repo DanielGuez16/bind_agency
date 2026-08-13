@@ -86,6 +86,18 @@ class SuspensionReason(StrEnum):
     GRACE_EXPIRED = "grace_expired"
 
 
+class MessageChannel(StrEnum):
+    """Par où un message sort de la boîte d'envoi.
+
+    Les deux vivent dans la même table : ils disent la même chose à deux
+    endroits — la boîte pour la trace, l'écran verrouillé pour l'urgence — et
+    les séparer ferait deux mécaniques de report à tenir d'accord.
+    """
+
+    EMAIL = "email"
+    PUSH = "push"
+
+
 class HandoverChannel(StrEnum):
     """Comment le lien de prise en main est parvenu au salon.
 
@@ -281,6 +293,10 @@ class JobType(StrEnum):
     #: global : un job par commerce coûterait une ligne par salon pour une
     #: échéance qu'on regarde une fois par jour.
     SUBSCRIPTION_GRACE_SWEEP = "subscription_grace_sweep"
+    #: Vide la boîte d'envoi. Balayage global lui aussi : un job par message
+    #: casserait l'invariant « une ligne par travail, pour toujours » — un
+    #: message est une occurrence, pas un travail récurrent.
+    OUTBOX_SWEEP = "outbox_sweep"
 
 
 class JobStatus(StrEnum):
