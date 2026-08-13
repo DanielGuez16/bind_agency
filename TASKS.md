@@ -355,15 +355,17 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       décision de produit — les rattacher au rappel d'échéance ferait taire
       « votre contrepartie n'a pas été honorée » pour qui coupe les rappels,
       ce qui n'est pas la même chose*
-- [ ] **Aucun garde-fou sur la surface des routes publiques**
-      *Rien n'inventorie les routes servies sans authentification ni rôle. Les
-      trois routes de prise en main sont volontairement publiques — le salon
-      n'a pas encore de compte — mais rien n'empêche qu'une quatrième le
-      devienne par accident, en oubliant une dépendance. Un test qui énumère
-      les routes et les compare à une liste explicite fermerait la question.
-      Écrit et abandonné une fois : `app.routes` ne rend plus des `APIRoute`
-      mais des `_IncludedRouter` qu'il faut parcourir, ce qui demande un peu
-      plus que dix lignes*
+- [x] La surface publique, énumérée et fermée
+      *Rien n'inventoriait les routes servies sans authentification. Fin : un
+      test parcourt l'arbre des routeurs — `app.routes` ne rend plus des
+      `APIRoute` mais des routeurs inclus, et le lire à plat rend une liste
+      vide, donc un test vert qui n'inspecte rien : une assertion de volume
+      garde ce piège-là. Douze routes publiques déclarées, chacune avec sa
+      raison écrite, et le sens inverse tenu — une tolérance qui ne sert plus
+      fait tomber le test. Le garde-fou a trouvé trois routes que personne
+      n'avait jamais énumérées : les deux rappels OAuth et la lecture d'une
+      preuve. Les trois sont défendables, et c'est la première fois qu'on le
+      vérifie. 4 tests, 5 mutations vérifiées*
 - [x] Reprise d'un compte commerce, plutôt qu'un accès permanent
       *Arbitrage retenu : aucun accès permanent après l'activation. Fin : une
       reprise explicite — motif écrit à la main, obligatoire — bornée par une
