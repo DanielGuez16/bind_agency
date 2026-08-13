@@ -355,4 +355,16 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       Écrit et abandonné une fois : `app.routes` ne rend plus des `APIRoute`
       mais des `_IncludedRouter` qu'il faut parcourir, ce qui demande un peu
       plus que dix lignes*
+- [x] Reprise d'un compte commerce, plutôt qu'un accès permanent
+      *Arbitrage retenu : aucun accès permanent après l'activation. Fin : une
+      reprise explicite — motif écrit à la main, obligatoire — bornée par une
+      durée en configuration, nominative, écrite au journal d'audit avec son
+      motif en note libre, et **visible du salon** : il est prévenu à
+      l'ouverture et lit la liste des reprises passées, dans la même forme que
+      l'administration. La dérogation vaut sur les deux résolveurs
+      d'appartenance, et l'appartenance rendue n'est jamais écrite en base.
+      Hors reprise, un administrateur reçoit le même refus que n'importe qui.
+      La phrase « aucune dérogation pour les administrateurs » du socle devient
+      « aucune dérogation implicite » — c'est dans `DECISIONS.md`. 18 tests,
+      13 mutations vérifiées*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire
