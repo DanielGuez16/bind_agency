@@ -337,15 +337,24 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       balayage horaire ouvre, avertit et ferme, et rattrape les commerces sans
       échéance ni abonnement. Deux genres de notification de plus, avec leurs
       préférences. 20 tests, 16 mutations vérifiées*
-- [ ] **Les six genres de notification plus anciens ignorent la préférence sur
-      le chemin du courriel**
-      *Trouvé en écrivant le septième. `push.destinataire` vérifie le statut du
-      compte et la préférence ; `notifications.envoyer_pour` et
-      `envoyer_pour_la_reservation` ne vérifient ni l'un ni l'autre. Couper une
-      notification sur l'écran la coupe donc sur le téléphone et la laisse
-      arriver dans la boîte — l'utilisateur croit avoir coupé, et il n'a coupé
-      qu'à moitié. `envoyer_au_commerce` fait le contrôle ; les deux autres
-      restent à aligner, et un test doit tomber si l'un d'eux le perd*
+- [x] La préférence respectée sur le chemin du courriel
+      *Le chemin du push consultait le statut du compte et la préférence ;
+      celui du courriel ne consultait ni l'un ni l'autre — couper une
+      notification la coupait sur le téléphone et la laissait arriver dans la
+      boîte. Fin : une seule garde, `notifications.joignable`, aux mêmes deux
+      règles que le push, appelée par les trois envois ; une seule table
+      clé → genre, celle du routeur des décisions ayant disparu ; **et une clé
+      sans genre lève** au lieu de partir « au cas où », ce qui rétablirait le
+      défaut. Un test vérifie que chaque genre est commandé par au moins une
+      clé : un interrupteur qui ne coupe rien fait douter des neuf autres.
+      7 tests, 7 mutations vérifiées*
+- [ ] **Deux messages écrits, traduits, et que rien n'envoie**
+      *`collaboration.opened` et `collaboration.unfulfilled` existent dans les
+      deux catalogues et aucun appelant ne les émet. Depuis que la préférence
+      est vérifiée, les envoyer lève : leur genre reste à décider, et c'est une
+      décision de produit — les rattacher au rappel d'échéance ferait taire
+      « votre contrepartie n'a pas été honorée » pour qui coupe les rappels,
+      ce qui n'est pas la même chose*
 - [ ] **Aucun garde-fou sur la surface des routes publiques**
       *Rien n'inventorie les routes servies sans authentification ni rôle. Les
       trois routes de prise en main sont volontairement publiques — le salon

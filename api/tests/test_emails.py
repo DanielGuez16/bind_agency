@@ -29,8 +29,13 @@ from app.integrations.email import (
     ResendSender,
     check_email_configuration,
 )
-from app.models import Collaboration, User
-from app.models.enums import CollaborationStatus, Locale
+from app.models import Collaboration, NotificationPreference, User
+from app.models.enums import (
+    CollaborationStatus,
+    Locale,
+    NotificationKind,
+    UserStatus,
+)
 from app.services import notifications
 from tests.test_collaboration import contrepartie
 
@@ -111,7 +116,7 @@ async def test_l_email_suit_la_langue_du_destinataire(
 
     envoi = FauxEnvoi()
     assert await notifications.envoyer_pour(
-        session, collaboration=ligne, cle="collaboration.opened", sender=envoi
+        session, collaboration=ligne, cle="collaboration.reminder", sender=envoi
     )
 
     message = envoi.messages[0]
@@ -119,7 +124,7 @@ async def test_l_email_suit_la_langue_du_destinataire(
     from app.core.i18n import translate
 
     assert message.sujet == translate(
-        "collaboration.opened.subject", locale=locale, business="Salon d'essai"
+        "collaboration.reminder.subject", locale=locale, business="Salon d'essai"
     )
 
 
@@ -127,12 +132,12 @@ async def test_les_exigences_figurent_dans_le_message(session: AsyncSession) -> 
     """Celles figées sur la contrepartie, pas celles de l'offre aujourd'hui."""
     ligne, _ = await contrepartie(session, required_mention="@salon.ocean", required_geotag=True)
 
-    envoi = FauxEnvoi()
-    await notifications.envoyer_pour(
-        session, collaboration=ligne, cle="collaboration.opened", sender=envoi
-    )
-
-    corps = envoi.messages[0].corps
+    # **Par la composition et non par l'envoi.** Le seul gabarit qui porte les
+    # exigences est celui d'une contrepartie qui s'ouvre, et aucune préférence
+    # ne le commande encore : l'envoyer lèverait, à raison. Ce qu'on éprouve
+    # ici est le rendu, qui n'a pas besoin d'un genre.
+    contexte = await notifications.contexte_de(session, ligne)
+    corps = notifications.composer("collaboration.opened", contexte).corps
     assert "@salon.ocean" in corps
     assert "Salon d'essai" in corps
     assert "Soin visage" in corps
@@ -186,7 +191,7 @@ async def test_un_compte_anonymise_ne_recoit_rien(session: AsyncSession) -> None
 
     envoi = FauxEnvoi()
     assert not await notifications.envoyer_pour(
-        session, collaboration=ligne, cle="collaboration.opened", sender=envoi
+        session, collaboration=ligne, cle="collaboration.reminder", sender=envoi
     )
     assert envoi.messages == []
 
@@ -207,7 +212,7 @@ async def test_une_erreur_d_envoi_remonte_au_lieu_d_etre_avalee(
         await notifications.envoyer_pour(
             session,
             collaboration=ligne,
-            cle="collaboration.opened",
+            cle="collaboration.reminder",
             sender=FauxEnvoi(leve=EmailError("injoignable")),
         )
 
@@ -379,3 +384,134 @@ def test_les_identifiants_ne_sont_pas_lisibles_dans_les_reglages(resend_configur
     """`SecretStr` : une clé d'API qui apparaît dans un journal d'erreur fuit."""
     assert "une-cle-resend" not in repr(resend_configure)
     assert "une-cle-resend" not in str(resend_configure)
+
+
+# --------------------------------------------------------------------------
+# la préférence vaut pour la boîte comme pour l'écran verrouillé
+# --------------------------------------------------------------------------
+#
+# **Le défaut que cette section répare.** Le chemin du push consultait le
+# statut du compte et la préférence ; celui du courriel ne consultait ni l'un
+# ni l'autre. Couper une notification sur l'écran la coupait sur le téléphone
+# et la laissait arriver dans la boîte : le pire des deux mondes pour quelqu'un
+# qui a explicitement demandé le silence, parce qu'il croit avoir coupé.
+
+
+async def test_un_genre_refuse_n_arrive_pas_par_la_boite(session: AsyncSession) -> None:
+    """La garantie de cette section, sur le chemin d'une contrepartie."""
+    ligne, s = await contrepartie(session)
+    session.add(
+        NotificationPreference(
+            user_id=s["createur"].id,
+            kind=NotificationKind.PUBLICATION_REMINDER,
+            enabled=False,
+        )
+    )
+    await session.flush()
+
+    envoi = FauxEnvoi()
+    assert not await notifications.envoyer_pour(
+        session, collaboration=ligne, cle="collaboration.reminder", sender=envoi
+    )
+    assert envoi.messages == []
+
+
+async def test_un_genre_accepte_arrive_bien(session: AsyncSession) -> None:
+    """**Le sens qui passe.** Une garde qui refuse tout ferait passer le test
+    précédent sans rien garantir — et couperait toutes les notifications du
+    produit sans que personne ne s'en aperçoive avant de recevoir une
+    réclamation."""
+    ligne, s = await contrepartie(session)
+    session.add(
+        NotificationPreference(
+            user_id=s["createur"].id,
+            kind=NotificationKind.PUBLICATION_REMINDER,
+            enabled=True,
+        )
+    )
+    await session.flush()
+
+    envoi = FauxEnvoi()
+    assert await notifications.envoyer_pour(
+        session, collaboration=ligne, cle="collaboration.reminder", sender=envoi
+    )
+    assert len(envoi.messages) == 1
+
+
+async def test_une_preference_absente_vaut_accord(session: AsyncSession) -> None:
+    """Le défaut du produit, et il est le même des deux côtés : personne n'a
+    rien coupé le premier jour, et tout doit partir."""
+    ligne, _ = await contrepartie(session)
+
+    envoi = FauxEnvoi()
+    assert await notifications.envoyer_pour(
+        session, collaboration=ligne, cle="collaboration.reminder", sender=envoi
+    )
+    assert len(envoi.messages) == 1
+
+
+async def test_un_refus_sur_un_autre_genre_ne_coupe_pas_celui_ci(
+    session: AsyncSession,
+) -> None:
+    """Le sens qu'on oublierait de vérifier : couper les refus de réservation
+    ne doit pas faire taire les rappels d'échéance."""
+    ligne, s = await contrepartie(session)
+    session.add(
+        NotificationPreference(
+            user_id=s["createur"].id,
+            kind=NotificationKind.BOOKING_DECLINED,
+            enabled=False,
+        )
+    )
+    await session.flush()
+
+    envoi = FauxEnvoi()
+    assert await notifications.envoyer_pour(
+        session, collaboration=ligne, cle="collaboration.reminder", sender=envoi
+    )
+    assert len(envoi.messages) == 1
+
+
+async def test_un_compte_suspendu_ne_recoit_rien(session: AsyncSession) -> None:
+    """Écrit en positif côté push — `STATUTS_JOIGNABLES` — et la même règle
+    ici. Un compte suspendu n'a ni préférence ni terminal à consulter."""
+    ligne, s = await contrepartie(session)
+    await session.execute(
+        sa.update(User).where(User.id == s["createur"].id).values(status=UserStatus.SUSPENDED)
+    )
+    await session.flush()
+
+    envoi = FauxEnvoi()
+    assert not await notifications.envoyer_pour(
+        session, collaboration=ligne, cle="collaboration.reminder", sender=envoi
+    )
+    assert envoi.messages == []
+
+
+async def test_une_cle_sans_genre_ne_s_envoie_pas(session: AsyncSession) -> None:
+    """**Un message dont la préférence n'est pas nommée ne part pas.**
+
+    `collaboration.opened` et `collaboration.unfulfilled` sont écrites et
+    traduites, et rien ne les envoie : leur genre reste à décider. L'envoyer
+    « au cas où » rétablirait exactement le défaut qu'on répare — un message
+    qu'aucune préférence ne commande, donc qu'on ne peut pas couper.
+    """
+    ligne, _ = await contrepartie(session)
+
+    envoi = FauxEnvoi()
+    with pytest.raises(KeyError):
+        await notifications.envoyer_pour(
+            session, collaboration=ligne, cle="collaboration.opened", sender=envoi
+        )
+    assert envoi.messages == []
+
+
+def test_chaque_genre_est_commande_par_au_moins_une_cle() -> None:
+    """Un genre qu'aucune clé ne commande est un interrupteur qui ne coupe rien.
+
+    L'écran des réglages en propose dix ; celui qui en couperait un sans effet
+    ferait douter des neuf autres.
+    """
+    commandes = set(notifications.GENRE_PAR_CLE.values())
+
+    assert commandes == set(NotificationKind)

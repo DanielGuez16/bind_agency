@@ -41,6 +41,68 @@ from app.models import (
 )
 from app.models.enums import CollaborationStatus, Locale, NotificationKind, UserStatus
 
+#: La clé du message donne le genre de notification.
+#:
+#: **Une seule table, pour les deux canaux.** Elle vivait dans le routeur des
+#: décisions de réservation, et le chemin du courriel ne la consultait pas :
+#: couper une notification sur l'écran la coupait sur le téléphone et la
+#: laissait arriver dans la boîte. C'est le pire des deux mondes pour quelqu'un
+#: qui a explicitement demandé le silence — il croit avoir coupé, et il n'a
+#: coupé qu'à moitié.
+#:
+#: **Une clé absente lève.** Un message dont on ne sait pas le genre est un
+#: message dont on ne sait pas s'il a été refusé : l'envoyer « au cas où »
+#: rétablirait exactement le défaut qu'on répare. Ajouter un message oblige
+#: donc à dire quelle préférence le commande.
+GENRE_PAR_CLE: dict[str, NotificationKind] = {
+    "booking.approved": NotificationKind.BOOKING_APPROVED,
+    "booking.declined": NotificationKind.BOOKING_DECLINED,
+    "booking.cancelledByBusiness": NotificationKind.BOOKING_CANCELLED_BY_BUSINESS,
+    "booking.toReview": NotificationKind.BOOKING_TO_REVIEW,
+    "collaboration.reminder": NotificationKind.PUBLICATION_REMINDER,
+    "collaboration.approved": NotificationKind.PUBLICATION_APPROVED,
+    "collaboration.resubmit": NotificationKind.PUBLICATION_RESUBMIT,
+    "subscription.graceEnding": NotificationKind.SUBSCRIPTION_GRACE_ENDING,
+    "subscription.ended": NotificationKind.SUBSCRIPTION_ENDED,
+    "support.accessOpened": NotificationKind.SUPPORT_ACCESS_STARTED,
+}
+
+
+def genre_de(cle: str) -> NotificationKind:
+    """Le genre que cette clé commande. Lève si la clé n'en déclare aucun."""
+    try:
+        return GENRE_PAR_CLE[cle]
+    except KeyError as absente:
+        raise KeyError(
+            f"aucun genre de notification déclaré pour « {cle} » : "
+            "un message dont la préférence n'est pas nommée ne s'envoie pas"
+        ) from absente
+
+
+async def joignable(session: AsyncSession, *, user_id: uuid.UUID, kind: NotificationKind) -> bool:
+    """Peut-on écrire à cette personne pour ce genre ?
+
+    **Les deux mêmes règles que le push, et c'est le point.** Un compte
+    suspendu ou anonymisé ne reçoit rien, jamais ; un genre explicitement
+    refusé n'arrive pas davantage par la boîte que par l'écran verrouillé.
+    Écrites deux fois, elles auraient divergé — elles l'avaient déjà fait, dans
+    le sens le plus désagréable pour l'utilisateur.
+
+    Une préférence absente vaut accord : c'est le défaut du produit, et il est
+    le même côté serveur.
+    """
+    utilisateur = await session.get(User, user_id)
+    if utilisateur is None or utilisateur.status is not UserStatus.ACTIVE:
+        return False
+
+    refus = await session.scalar(
+        sa.select(NotificationPreference.enabled).where(
+            NotificationPreference.user_id == user_id,
+            NotificationPreference.kind == kind,
+        )
+    )
+    return refus is not False
+
 
 def rendre(cle: str, locale: Locale, **valeurs: Any) -> str:
     """Le gabarit, rempli, par le catalogue serveur.
@@ -62,6 +124,10 @@ class Contexte:
     """
 
     destinataire: str
+    #: Qui reçoit. **Nécessaire pour lire sa préférence** : l'adresse ne suffit
+    #: pas à retrouver le compte, et c'est ce trou-là qui laissait passer des
+    #: messages refusés.
+    user_id: uuid.UUID
     locale: Locale
     creator: str
     business: str
@@ -104,6 +170,7 @@ async def contexte_de_reservation(
 
     return Contexte(
         destinataire=user.email,
+        user_id=user.id,
         locale=user.locale,
         creator=profil.first_name or "",
         business=business.name,
@@ -151,6 +218,7 @@ async def contexte_de(session: AsyncSession, collaboration: Collaboration) -> Co
 
     return Contexte(
         destinataire=user.email,
+        user_id=user.id,
         locale=user.locale,
         creator=profil.first_name or "",
         business=business.name,
@@ -203,10 +271,17 @@ async def envoyer_pour_la_reservation(
     motif: str = "",
     **extra: Any,
 ) -> bool:
-    """Prévient le créateur d'une décision du commerce. Faux s'il n'y a rien à
-    envoyer — un compte anonymisé n'a pas d'adresse."""
+    """Prévient le créateur d'une décision du commerce.
+
+    Faux quand il n'y a rien à envoyer : un compte anonymisé n'a pas d'adresse,
+    un compte suspendu ne reçoit rien, et un genre refusé n'arrive pas par la
+    boîte après avoir été coupé sur l'écran.
+    """
+    kind = genre_de(cle)
     contexte = await contexte_de_reservation(session, booking, motif=motif)
     if contexte is None:
+        return False
+    if not await joignable(session, user_id=contexte.user_id, kind=kind):
         return False
 
     await sender.envoyer(composer(cle, contexte, **extra))
@@ -226,8 +301,11 @@ async def envoyer_pour(
     Les erreurs d'envoi remontent : c'est au job de les reporter, pas à ce
     module de les avaler. Une erreur avalée ici ferait croire à un envoi.
     """
+    kind = genre_de(cle)
     contexte = await contexte_de(session, collaboration)
     if contexte is None:
+        return False
+    if not await joignable(session, user_id=contexte.user_id, kind=kind):
         return False
 
     await sender.envoyer(composer(cle, contexte, **extra))
@@ -275,12 +353,9 @@ async def envoyer_au_commerce(
     messages. Chacun garde sa préférence — celui qui coupe ne coupe que pour
     lui.
 
-    **Le compte et la préférence sont vérifiés ici, comme du côté du push.**
-    Un compte suspendu ou anonymisé ne reçoit rien, jamais, et un genre refusé
-    n'arrive pas par la boîte après avoir été coupé sur l'écran. Les six genres
-    plus anciens ne font pas encore ce contrôle sur leur chemin de courriel —
-    c'est noté dans `TASKS.md`, et ce n'est pas une raison d'ajouter un
-    septième défaut.
+    **Le compte et la préférence sont vérifiés par `joignable`**, comme sur
+    tous les autres chemins de courriel et comme du côté du push. Ce fut un
+    temps le seul envoi à le faire ; les autres l'ont rejoint.
     """
     membres = await session.scalars(
         sa.select(BusinessMember.user_id).where(BusinessMember.business_id == business.id)
@@ -288,18 +363,10 @@ async def envoyer_au_commerce(
 
     joints = 0
     for user_id in membres:
+        if not await joignable(session, user_id=user_id, kind=kind):
+            continue
         utilisateur = await session.get(User, user_id)
-        if utilisateur is None or utilisateur.status is not UserStatus.ACTIVE:
-            continue
-        if not utilisateur.email:
-            continue
-        refus = await session.scalar(
-            sa.select(NotificationPreference.enabled).where(
-                NotificationPreference.user_id == user_id,
-                NotificationPreference.kind == kind,
-            )
-        )
-        if refus is False:
+        if utilisateur is None or not utilisateur.email:
             continue
 
         await sender.envoyer(
