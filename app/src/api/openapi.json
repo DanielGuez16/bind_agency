@@ -160,6 +160,15 @@
         ]
       }
     },
+    "/api/v1/admin/tiers/{tier_id}/changes": {
+      "get": {
+        "operationId": "list_tier_changes_api_v1_admin_tiers__tier_id__changes_get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/api/v1/admin/venue-reports": {
       "get": {
         "operationId": "read_queue_api_v1_admin_venue_reports_get",

@@ -794,6 +794,8 @@ export const es: Catalogue = {
     publication_reminder: 'Se acerca tu plazo de publicación',
     publication_approved: 'Tu publicación es aprobada',
     publication_resubmit: 'Se pide una nueva publicación',
+    collaboration_opened: 'Se abre tu contrapartida, con lo que hay que publicar',
+    collaboration_unfulfilled: 'Una contrapartida no se ha cumplido',
     booking_to_review: 'Una reserva espera tu decisión',
     subscription_grace_ending: 'Tu periodo de prueba está por terminar',
     subscription_ended: 'Tus ofertas han dejado de mostrarse',

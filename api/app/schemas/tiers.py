@@ -4,6 +4,7 @@ Configuration globale de la plateforme, jamais modifiée par un commerce.
 """
 
 import uuid
+from datetime import datetime
 from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -54,3 +55,22 @@ class TierRead(BaseModel):
     value_ratio_hint: Decimal | None
     display_order: int
     is_active: bool
+
+
+class ConfigurationChangeRead(BaseModel):
+    """Une modification de configuration, telle qu'on la relit.
+
+    Les valeurs sont du texte : c'est ce qui a été écrit, et un journal qui les
+    retyperait se tromperait le jour où la colonne change de type — c'est-à-dire
+    précisément le jour où l'on vient le relire.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    entity_type: str
+    entity_id: uuid.UUID
+    field: str
+    value_before: str | None
+    value_after: str | None
+    actor_user_id: uuid.UUID
+    changed_at: datetime

@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Collaboration, Tier, TierOffer, User
 from app.models.enums import TierState
 from app.schemas.tiers import TierCreate, TierUpdate
+from app.services import config_journal
 from app.services.audit import Actor, AuditedEntity, record_transition
 
 
@@ -76,16 +77,23 @@ async def create_tier(session: AsyncSession, *, payload: TierCreate) -> Tier:
 async def update_tier(
     session: AsyncSession, *, tier: Tier, payload: TierUpdate, actor: Actor
 ) -> Tier:
-    """Met à jour un palier. Seule la bascule d'activité laisse une trace.
+    """Met à jour un palier, et **écrit ce qui a changé**.
 
-    Un changement de seuil n'est pas une transition d'état — le journal, dont la
-    forme est `from_status` vers `to_status`, ne sait pas le décrire. Voir
-    DECISIONS.md : c'est un manque assumé, pas un oubli.
+    Deux journaux, et ce n'est pas une redondance. La bascule d'activité est
+    une transition d'état et va au journal d'audit, que d'autres lectures
+    interrogent. Les seuils vont au journal de configuration : un seuil qui
+    passe de mille à deux mille n'est pas une transition, et le forcer dans la
+    forme `from_status` vers `to_status` produirait une ligne illisible.
+
+    **Le manque est comblé.** Un créateur qui perd un palier qu'il avait ; six
+    semaines plus tard, personne ne savait dire si son audience avait baissé ou
+    si le seuil avait monté.
     """
     fields = payload.model_dump(exclude_unset=True)
     bascule = "is_active" in fields and fields["is_active"] != tier.is_active
     precedent = tier.is_active
 
+    modifies: dict[str, tuple[object, object]] = {}
     for name in (
         "min_followers",
         "min_completed_collabs",
@@ -95,9 +103,20 @@ async def update_tier(
         "is_active",
     ):
         if name in fields:
+            # Lu **avant** l'écriture : après, l'ancienne valeur n'existe plus
+            # nulle part, et c'est elle qu'on viendra chercher.
+            modifies[name] = (getattr(tier, name), fields[name])
             setattr(tier, name, fields[name])
 
     await session.flush()
+
+    await config_journal.enregistrer(
+        session,
+        entity_type=config_journal.TIER,
+        entity_id=tier.id,
+        champs=modifies,
+        actor=actor,
+    )
 
     if bascule:
         await record_transition(

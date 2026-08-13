@@ -44,6 +44,8 @@ const GENRES_PAR_ROLE: Record<string, GenreDeNotification[]> = {
     'publication_reminder',
     'publication_approved',
     'publication_resubmit',
+    'collaboration_opened',
+    'collaboration_unfulfilled',
   ],
   business_member: [
     'booking_to_review',

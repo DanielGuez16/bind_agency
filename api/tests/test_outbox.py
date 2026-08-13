@@ -129,11 +129,17 @@ async def test_le_genre_vient_de_la_cle(session: AsyncSession) -> None:
 
 async def test_une_cle_sans_genre_ne_se_depose_pas(session: AsyncSession) -> None:
     """Un message qu'aucune préférence ne commande ne se dépose pas plus qu'il
-    ne s'envoie : le laisser entrer dans la boîte le ferait partir plus tard."""
+    ne s'envoie : le laisser entrer dans la boîte le ferait partir plus tard.
+
+    `account.welcome` est le dernier message du catalogue dans ce cas : écrit,
+    traduit, et émis par personne. Les deux autres — l'ouverture d'une
+    contrepartie et sa non-honoration — ont reçu leur genre et sont désormais
+    envoyés.
+    """
     utilisateur = await destinataire(session)
 
     with pytest.raises(KeyError):
-        await outbox.deposer(session, user_id=utilisateur.id, cle="collaboration.opened")
+        await outbox.deposer(session, user_id=utilisateur.id, cle="account.welcome")
 
 
 # --------------------------------------------------------------------------

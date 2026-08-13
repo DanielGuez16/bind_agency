@@ -68,6 +68,12 @@ async def deposer_puis_vider(session, collaboration, cle: str, **extra) -> FauxE
     une fonction d'envoi éprouverait un chemin que le produit n'emprunte pas —
     c'est exactement ce que ces tests-ci ont failli devenir.
     """
+    # **La boîte est vidée d'abord.** Créer une contrepartie dépose désormais
+    # son propre message — celui qui ouvre le délai de publication — et le
+    # laisser là ferait lire au test le mauvais message, sur un décor
+    # parfaitement sain.
+    await outbox.vider(session, email_sender=FauxEnvoi(), push_sender=PushMuet())
+
     contexte = await notifications.contexte_de(session, collaboration)
     await outbox.deposer(
         session,
@@ -239,6 +245,7 @@ async def test_une_erreur_d_envoi_remonte_au_lieu_d_etre_avalee(
     reporter, avec son délai croissant."""
     ligne, _ = await contrepartie(session)
 
+    await outbox.vider(session, email_sender=FauxEnvoi(), push_sender=PushMuet())
     contexte = await notifications.contexte_de(session, ligne)
     await outbox.deposer(
         session,

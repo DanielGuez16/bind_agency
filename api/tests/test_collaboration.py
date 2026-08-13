@@ -21,11 +21,17 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import API_ROOT, get_settings
-from app.models import AuditLog, Collaboration, Proof, TierOffer
-from app.models.enums import ActorKind, CaptureMethod, CollaborationStatus
+from app.models import AuditLog, Collaboration, NotificationPreference, Proof, TierOffer
+from app.models.enums import (
+    ActorKind,
+    CaptureMethod,
+    CollaborationStatus,
+    Locale,
+    NotificationKind,
+)
 from app.services import collaboration as service
+from app.services import notifications, redemption
 from app.services import proof as proof_service
-from app.services import redemption
 from app.services.audit import Actor
 from tests.test_redemption_caisse import scene
 
@@ -684,3 +690,119 @@ async def test_un_commerce_d_ailleurs_ne_decide_de_rien(
         headers={"Authorization": f"Bearer {jetons['access_token']}"},
     )
     assert reponse.status_code == 403
+
+
+# --------------------------------------------------------------------------
+# les deux messages qui n'étaient envoyés par personne
+# --------------------------------------------------------------------------
+
+
+async def test_l_ouverture_annonce_ce_qu_il_faut_publier(session: AsyncSession) -> None:
+    """**Le message existait, traduit, et personne ne l'envoyait.**
+
+    Le créateur repartait du salon sans savoir ce qu'il devait publier ni pour
+    quand, sinon en rouvrant l'application. Et il porte le format et les
+    exigences : un message qui dirait « publiez » sans dire quoi ne vaudrait
+    pas mieux que son absence.
+    """
+    from app.services import outbox
+
+    ligne, decor = await contrepartie(session, required_mention="@salon.ocean")
+
+    lignes = await outbox.pour(
+        session,
+        user_id=decor["createur"].id,
+        kind=NotificationKind.COLLABORATION_OPENED,
+    )
+
+    assert lignes
+    assert all(ligne.template_key == "collaboration.opened" for ligne in lignes)
+    assert lignes[0].values["requirements"]
+    assert lignes[0].values["deadline"]
+    assert lignes[0].values["format"]
+
+
+async def test_la_non_honoration_est_annoncee(session: AsyncSession) -> None:
+    """**Elle touche le score de fiabilité, donc les paliers.**
+
+    On l'avait écartée au motif qu'un dossier clos ne demande plus rien.
+    L'apprendre en constatant, des semaines plus tard, qu'on ne peut plus
+    réserver ce qu'on réservait est pire que de le lire le jour même.
+    """
+    from app.services import outbox
+
+    ligne, decor = await contrepartie(session)
+    ligne.deadline_at = datetime.now(UTC) - timedelta(seconds=1)
+    await session.flush()
+
+    await service.expirer_les_echeances(session)
+
+    lignes = await outbox.pour(
+        session,
+        user_id=decor["createur"].id,
+        kind=NotificationKind.COLLABORATION_UNFULFILLED,
+    )
+    assert lignes
+    assert ligne.status is CollaborationStatus.UNFULFILLED
+
+
+class FauxEnvoi:
+    """Retient ce qui est parti."""
+
+    def __init__(self) -> None:
+        self.messages: list = []
+
+    async def envoyer(self, message) -> None:
+        self.messages.append(message)
+
+
+class PushMuet:
+    """Ne joint personne : ce test-ci n'éprouve que le courriel."""
+
+    async def envoyer(self, envois):
+        return []
+
+
+async def test_couper_les_rappels_ne_coupe_pas_la_non_honoration(
+    session: AsyncSession,
+) -> None:
+    """**La raison pour laquelle ces deux messages ont leur propre genre.**
+
+    Les rattacher au rappel d'échéance aurait fait taire « votre contrepartie
+    n'a pas été honorée » pour qui coupe les rappels — c'est-à-dire au moment
+    où l'information compte le plus.
+    """
+
+    from app.services import outbox
+
+    ligne, decor = await contrepartie(session)
+    session.add(
+        NotificationPreference(
+            user_id=decor["createur"].id,
+            kind=NotificationKind.PUBLICATION_REMINDER,
+            enabled=False,
+        )
+    )
+    ligne.deadline_at = datetime.now(UTC) - timedelta(seconds=1)
+    await session.flush()
+    await service.expirer_les_echeances(session)
+
+    # Le genre déposé, et non celui qu'on espérait : c'est la clé qui le
+    # décide, et une table qui en porterait un second finirait par mentir.
+    lignes = await outbox.pour(
+        session,
+        user_id=decor["createur"].id,
+        kind=NotificationKind.COLLABORATION_UNFULFILLED,
+    )
+    assert lignes
+
+    # Et le message sort bien, malgré les rappels coupés.
+    envoye = FauxEnvoi()
+    await outbox.vider(session, email_sender=envoye, push_sender=PushMuet())
+    assert any(
+        message.sujet
+        == notifications.rendre(
+            "collaboration.unfulfilled.subject", Locale.EN, business=decor["business"].name
+        )
+        for message in envoye.messages
+    )
