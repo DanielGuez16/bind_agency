@@ -36,11 +36,11 @@
  * valeurs qu'aucune passation ne définit, c'est-à-dire exactement la seconde
  * vérité que ce fichier existe pour empêcher.
  *
- * `tokens.json` porte encore `theme.userOverride: true` : la bascule n'a plus
- * de second thème vers lequel basculer, et le réglage a donc été retiré de
- * l'écran des réglages. Contradiction signalée à la direction artistique
- * plutôt que tranchée en silence — le jour où un jeu sombre est livré, il se
- * rebranche ici et nulle part ailleurs.
+ * Le fichier de jetons portait un réglage de bascule ; il a été retiré avec le
+ * second thème, et la clé qui reste à sa place dit pourquoi. Un interrupteur
+ * qui ne commande rien est pire que son absence : il fait douter de ceux qui
+ * commandent quelque chose. Le jour où un jeu sombre est livré, il se rebranche
+ * ici et nulle part ailleurs.
  *
  * **Le rôle reste lisible, en matière et non en teinte.** `role.creator` et
  * `role.merchant` sont supprimés du système. L'alternative du §8 de la

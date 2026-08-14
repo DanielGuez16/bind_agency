@@ -28,7 +28,7 @@ import { AppState, Image, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useApi, type MediasPlateforme } from '../api';
-import { Texte } from '../components';
+import { ENCRE_DU_SATIN, Marque, SurfaceSatin, TitreAccentue } from '../components';
 import { useI18n } from '../i18n';
 import type { RoleInscriptible } from '../session';
 import { useColors } from '../theme';
@@ -259,13 +259,40 @@ export function AccueilScreen({
         // fond opaque de liste la masquerait.
         showsVerticalScrollIndicator={false}
       >
-        <ChoixDeLaPorte onChoisir={onChoisir} onSeConnecter={onSeConnecter} surMedia={Boolean(video || affiche)} />
+        {/* **Sans média, la marque se présente sur un satin.** L'écran
+            annonçait « aucun fond » sous les portes : une phrase d'excuse à
+            l'endroit exact où le produit se montre pour la première fois. Le
+            satin est fait pour ça — « accueil avant inscription », dit la
+            passation, et c'est le seul des trois emplois qui soit un écran
+            entier. Il porte donc l'en-tête que les portes cèdent : la marque
+            avec sa signature, et le titre avec son bloc.
+
+            **Le bloc reste unique à l'exécution.** `avecEnTete` retire aux
+            portes celui qu'elles portaient ; les deux branches en montrent un
+            et un seul, et un test le vérifie sur les deux. La garde statique,
+            elle, ne voit qu'un fichier à la fois — elle ne peut pas savoir
+            qu'un composant s'efface quand un autre parle. */}
         {video || affiche ? null : (
-          // Aucun fond : on ne laisse pas un vide inexpliqué sous les portes.
-          <Texte variante="type.caption" couleur="ink.mute" testID="accueil-sans-fond">
-            {t('accueil.sansFond')}
-          </Texte>
+          <SurfaceSatin variante="drape" testID="satin-accueil">
+            <View style={{ gap: 12 }}>
+              <Marque taille={30} couleur={ENCRE_DU_SATIN.drape} signature />
+              <TitreAccentue
+                texte={t('auth.accroche')}
+                motAccentue={t('auth.accrocheAccent')}
+                taille="heading"
+                bloc
+                couleur={ENCRE_DU_SATIN.drape}
+                testID="promesse-accueil"
+              />
+            </View>
+          </SurfaceSatin>
         )}
+        <ChoixDeLaPorte
+          onChoisir={onChoisir}
+          onSeConnecter={onSeConnecter}
+          surMedia={Boolean(video || affiche)}
+          avecEnTete={Boolean(video || affiche)}
+        />
       </ScrollView>
     </View>
   );

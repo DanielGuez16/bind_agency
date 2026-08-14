@@ -10,9 +10,9 @@
 > la couleur de rôle est gardée **en matière et non en teinte**, et la
 > désaturation des photos est **refusée sur le contenu**.
 >
-> Deux manques nommés : le logo vectoriel et les trois images de satin.
-> `SurfaceSatin` n'existe pas tant qu'elles ne sont pas livrées — un dégradé
-> linéaire en attendant serait exactement le cliché que la direction évite.
+> Un manque nommé : le logo vectoriel. Les trois satins, eux, sont cuits depuis
+> les déclarations `radial-gradient` de la planche par
+> `app/scripts/cuire-les-satins.mjs` — la source, et non un recadrage.
 
 ---
 

@@ -40,6 +40,7 @@ export function ChoixDeLaPorte({
   onChoisir,
   onSeConnecter,
   surMedia = false,
+  avecEnTete = true,
 }: {
   onChoisir: (role: RoleInscriptible) => void;
   onSeConnecter: () => void;
@@ -49,6 +50,15 @@ export function ChoixDeLaPorte({
    * de Miami. Le système a deux jetons pour ce cas, et ce sont eux qu'il faut.
    */
   surMedia?: boolean;
+  /**
+   * L'en-tête — la marque, le titre accentué, la sous-ligne.
+   *
+   * **Faux quand l'écran le porte lui-même**, sur un satin. Sans ce prop, la
+   * marque se présenterait deux fois et le bloc accentué aussi : la règle du
+   * bloc se compte par écran, pas par composant, et deux titres empilés
+   * n'accentuent plus rien.
+   */
+  avecEnTete?: boolean;
 }) {
   const { t } = useI18n();
   const c = useColors();
@@ -89,11 +99,13 @@ export function ChoixDeLaPorte({
         alignSelf: 'center',
       }}
     >
-      {/* Le seul écran, avec l'accueil, où la marque **se présente** : le sigle
-          y porte sa signature, qu'aucun autre écran ne répète. */}
-      <Marque taille={30} couleur={surMedia ? 'ink.onScrim' : 'ink.default'} signature />
+      {avecEnTete ? (
+        <>
+          {/* Le seul écran, avec l'accueil, où la marque **se présente** : le
+              sigle y porte sa signature, qu'aucun autre écran ne répète. */}
+          <Marque taille={30} couleur={surMedia ? 'ink.onScrim' : 'ink.default'} signature />
 
-      <View style={{ gap: spacing['space.2'], maxWidth: 720 }}>
+          <View style={{ gap: spacing['space.2'], maxWidth: 720 }}>
         {/* Nommée : c'est sur elle que la suite de bout en bout lit la police
             réellement employée. Sans point d'accroche, la seule façon de
             vérifier qu'un texte emploie la fonte serait de deviner un
@@ -109,10 +121,12 @@ export function ChoixDeLaPorte({
           couleur={surMedia ? 'ink.onScrim' : 'ink.default'}
           testID="promesse-accueil"
         />
-        <Texte couleur={surMedia ? 'ink.onScrimMuted' : 'ink.soft'}>
-          {t('auth.sousAccroche')}
-        </Texte>
-      </View>
+            <Texte couleur={surMedia ? 'ink.onScrimMuted' : 'ink.soft'}>
+              {t('auth.sousAccroche')}
+            </Texte>
+          </View>
+        </>
+      ) : null}
 
       <View
         style={{

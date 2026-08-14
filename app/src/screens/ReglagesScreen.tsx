@@ -11,9 +11,9 @@
  * sont déclarés hors système et portent leurs couleurs eux-mêmes. Un
  * interrupteur qui ne commande rien fait douter des trois autres réglages de
  * cet écran, et c'est pour la même raison qu'on vérifie ailleurs que chaque
- * genre de notification est commandé par au moins une clé. `tokens.json` porte
- * encore `theme.userOverride: true` : la contradiction est remontée à la
- * direction artistique, pas tranchée ici.
+ * genre de notification est commandé par au moins une clé. Le réglage a été
+ * retiré des jetons dans la foulée : la contradiction n'a pas survécu à
+ * l'arbitrage.
  *
  * **Le stockage des jetons est affiché.** Sur le web il n'y a pas de trousseau,
  * et le dire à l'écran vaut mieux que de laisser croire que le navigateur

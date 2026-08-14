@@ -441,12 +441,21 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       Un champ réellement manquant — le temps de fauteuil des rapports — est
       rendu **absent et non zéro** ; les trois autres, annoncés manquants par le
       brief, étaient servis depuis des semaines et c'est la carte de passation
-      qui les sous-décrivait. Deux manques nommés : le logo vectoriel et
-      les trois images de satin, sans lesquelles `SurfaceSatin` n'est pas écrit
-      — un dégradé linéaire en attendant serait le cliché que la direction
-      évite. Le thème sombre est retiré : la v1.0 n'en livre pas, et en
-      reconstituer un demandait d'inventer une dizaine de valeurs qu'aucune
-      passation ne définit. 46 tests neufs, 12 mutations vérifiées*
+      qui les sous-décrivait. Un manque nommé : le logo vectoriel. Le
+      thème sombre est retiré : la v1.0 n'en livre pas, et en reconstituer un
+      demandait d'inventer une dizaine de valeurs qu'aucune passation ne
+      définit. 46 tests neufs, 12 mutations vérifiées*
+- [x] **Le réglage retiré, et les trois satins cuits**
+      *Fin : `theme.userOverride` quitte les jetons — un interrupteur qui ne
+      commande rien fait douter de ceux qui commandent quelque chose — et une
+      note prend sa place, qui dit pourquoi et où la bascule se rebranche. Les
+      trois satins sont **cuits depuis les déclarations `radial-gradient` de la
+      planche**, peintes par le moteur du navigateur et capturées en 1x, 2x et
+      3x : c'est la source, pas un recadrage de JPEG dont le banding se serait
+      vu sur 240 px de haut. En JPEG à qualité 90 — 5 valeurs sur 255 d'écart,
+      176 Ko au lieu de 2,6 Mo. `SurfaceSatin` porte trois refus plutôt que
+      trois consignes, et l'accueil sans média cesse d'annoncer « aucun fond ».
+      11 tests neufs, 6 mutations vérifiées*
 - [x] **Lots 2 et 3 · le commerce et l'administration dans le système v1.0**
       *Fin : les rapports **ne lisent plus le montant que la réponse porte
       encore** et comptent du temps de fauteuil ; une garde nomme les trois

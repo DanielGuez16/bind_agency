@@ -3964,14 +3964,12 @@ de l'écran d'audience envoyait connecter un réseau quelqu'un qui en avait déj
 un — un cul-de-sac qui ment, sur le seul écran où elle vient vérifier que le
 sien est bien pris en compte.
 
-**Deux manques restent, et ils sont nommés.** Le **logo vectoriel** : les lettres
-sont dessinées à la main, le D porte une coupe oblique qu'aucune fonte ne donne,
-et toute reconstruction est une approximation — `tokens.json` la porte dans
-`$meta.unconfirmed`. Les **trois images de satin** : la passation les livre en 2x
-et 3x et interdit de les recalculer à l'exécution, `expo-linear-gradient`
-donnant la pente droite que la direction refuse. Sans fichiers, `SurfaceSatin`
-n'est pas écrit : un composant qui rendrait un dégradé linéaire en attendant
-serait exactement le cliché que la direction évite.
+**Un manque reste, et il est nommé.** Le **logo vectoriel** : les lettres sont
+dessinées à la main, le D porte une coupe oblique qu'aucune fonte ne donne, et
+toute reconstruction est une approximation — `tokens.json` la porte dans
+`$meta.unconfirmed`.
+
+*Les trois satins sont arrivés depuis. Voir plus bas.*
 
 ---
 
@@ -4055,3 +4053,80 @@ Deux compositions restent à faire faute de route : les **deux blocs
 photographiés** du mode terrain — carte des prix et horaires, qui remplacent
 deux formulaires — et le **cochage prestation par prestation** de la prise en
 main, qui demande la liste des items relevés et non leur seul compte.
+
+
+---
+
+## 2026-08-14 — Le réglage retiré, et les trois satins cuits
+
+**`theme.userOverride` quitte les jetons.** La bascule de thème avait déjà quitté
+l'écran des réglages avec le second thème ; la clé restait dans le fichier et
+désignait une bascule vers rien. Un interrupteur qui ne commande rien est pire
+que son absence, parce qu'il fait douter de ceux qui commandent quelque chose —
+c'est la même raison qui fait vérifier ailleurs que chaque genre de notification
+est commandé par au moins une clé.
+
+La clé est remplacée par une note qui dit pourquoi elle n'est plus là et où la
+bascule se rebranche. Un test refuse qu'elle revienne, et refuse aussi qu'une
+source la relise : une clé retirée qu'un écran interroge encore rend
+`undefined`, ce qui se lit comme « faux » et ne casse rien — le pire des deux
+mondes.
+
+*C'est une retouche du fichier de passation, et c'est la seconde.* La règle
+« copié tel quel » vaut contre la dérive silencieuse, pas contre une correction
+demandée : les deux copies bougent ensemble, le test qui les lie tient, et la
+raison est écrite dans le fichier lui-même plutôt que dans un commit.
+
+### Les satins ne sont pas recadrés d'une photo, et c'est mieux
+
+La consigne était de les recadrer depuis les visuels Instagram en attendant les
+sources. **La planche de design les donne exactement** : `BIND AGENCY - Design
+System v1.0.dc.html` porte les trois déclarations `radial-gradient` complètes,
+arrêt par arrêt. C'est la source, pas une approximation de la source.
+
+Recadrer un JPEG aurait figé dans le produit un banding de compression qui
+n'appartient pas à la charte, et il se serait vu : un satin vit sur 240 px de
+haut au minimum, c'est-à-dire sur la plus grande surface du produit.
+
+**C'est le navigateur qui peint.** `scripts/cuire-les-satins.mjs` fait rendre les
+déclarations CSS par Chromium et capture le résultat en 1x, 2x et 3x.
+Réimplémenter l'ellipse et l'interpolation en aurait fait une approximation de
+plus, à vérifier à l'œil ; ici il n'y a rien à vérifier, c'est le même peintre.
+La dépendance existait déjà — c'est celle des tests de bout en bout.
+
+*Vérifié en chemin :* une première cuisson maison, en radiales calculées à la
+main, s'écartait du rendu du navigateur de 3 valeurs sur 255 au maximum. Assez
+proche pour qu'on ne voie rien, assez loin pour qu'on ne sache pas si ce qu'on
+regarde est la charte ou notre lecture d'elle.
+
+**En JPEG, et c'est le seul endroit du produit où ce serait vrai.** Un satin n'a
+ni transparence, ni arête, ni aplat de texte : rien de ce que le JPEG abîme.
+Mesuré plutôt que supposé — à qualité 90, l'écart maximal au rendu du navigateur
+est de 5 valeurs sur 255, pour un dix-huitième du poids. Les neuf PNG pesaient
+2,6 Mo ; ils pèsent 176 Ko.
+
+### Trois refus dans le composant, plutôt que trois consignes
+
+Un satin est la surface la plus facile à mal employer du système : elle est
+belle, et il est tentant de la poser derrière une liste. `SurfaceSatin` lève
+sous 240 px de haut, refuse un enfant dont la variante typographique passe sous
+24 px — `type.section`, à 22, est dehors, et c'est le cas limite qui compte — et
+n'existe qu'en trois variantes dont un test vérifie qu'elles rendent trois
+images distinctes.
+
+**Il ne porte pas de voile.** Sur `drape` et `fold`, le titre est en encre ; sur
+`ember`, qui est la variante sombre, le blanc est admis. Poser un voile pour
+rattraper un contraste reviendrait à salir le satin pour sauver un texte qu'on
+aurait pu écrire de la bonne couleur.
+
+### Où il est branché, et le comptage qui en découle
+
+L'accueil sans média annonçait « aucun fond » sous les portes : une phrase
+d'excuse à l'endroit exact où le produit se montre pour la première fois. C'est
+le premier des trois emplois que la passation donne au satin, et il le remplace.
+
+Le satin y prend l'en-tête que les portes cèdent — la marque avec sa signature,
+le titre avec son bloc. **La garde statique ne peut pas voir ça** : elle lit un
+fichier à la fois et ne sait pas qu'un composant s'efface quand un autre parle.
+Les deux fichiers déclarent donc chacun leur bloc, et c'est un test de rendu qui
+compte le vrai, sur l'écran monté, dans les deux branches.

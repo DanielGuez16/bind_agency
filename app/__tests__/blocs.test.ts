@@ -50,6 +50,11 @@ const BLOCS: Record<string, number> = {
   //
   // L'accueil avant inscription et les deux portes de connexion sont les seuls
   // écrans qu'on voit une fois. C'est là que la signature a un sens.
+  // **Ces deux-là ne s'additionnent pas**, et la garde ne peut pas le voir :
+  // elle lit un fichier à la fois. L'accueil porte les portes ; quand il montre
+  // son satin, il leur retire leur en-tête et prend le bloc à son compte, et
+  // quand il montre une vidéo il le leur laisse. Un et un seul dans les deux
+  // branches — c'est un test de rendu qui le compte, sur l'écran monté.
   AccueilScreen: 1,
   ChoixDeLaPorte: 1,
   // Le franchissement d'un palier, et lui seul : l'écran des paliers ne porte
