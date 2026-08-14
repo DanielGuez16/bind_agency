@@ -40,7 +40,6 @@ export function ChoixDeLaPorte({
   onChoisir,
   onSeConnecter,
   surMedia = false,
-  avecEnTete = true,
 }: {
   onChoisir: (role: RoleInscriptible) => void;
   onSeConnecter: () => void;
@@ -50,15 +49,6 @@ export function ChoixDeLaPorte({
    * de Miami. Le système a deux jetons pour ce cas, et ce sont eux qu'il faut.
    */
   surMedia?: boolean;
-  /**
-   * L'en-tête — la marque, le titre accentué, la sous-ligne.
-   *
-   * **Faux quand l'écran le porte lui-même**, sur un satin. Sans ce prop, la
-   * marque se présenterait deux fois et le bloc accentué aussi : la règle du
-   * bloc se compte par écran, pas par composant, et deux titres empilés
-   * n'accentuent plus rien.
-   */
-  avecEnTete?: boolean;
 }) {
   const { t } = useI18n();
   const c = useColors();
@@ -99,13 +89,16 @@ export function ChoixDeLaPorte({
         alignSelf: 'center',
       }}
     >
-      {avecEnTete ? (
-        <>
-          {/* Le seul écran, avec l'accueil, où la marque **se présente** : le
-              sigle y porte sa signature, qu'aucun autre écran ne répète. */}
-          <Marque taille={30} couleur={surMedia ? 'ink.onScrim' : 'ink.default'} signature />
+      {/* **L'en-tête vit ici, et nulle part ailleurs.** Il a porté un prop
+          `avecEnTete` le temps que l'accueil le lui prenne sur un satin ; c'est
+          précisément ce déplacement qui refaisait la page une seconde après
+          l'ouverture. Le satin est passé en fond, l'en-tête est revenu, et le
+          prop est parti avec la bascule qu'il servait. */}
+      {/* Le seul écran, avec l'accueil, où la marque **se présente** : le sigle
+          y porte sa signature, qu'aucun autre écran ne répète. */}
+      <Marque taille={30} couleur={surMedia ? 'ink.onScrim' : 'ink.default'} signature />
 
-          <View style={{ gap: spacing['space.2'], maxWidth: 720 }}>
+      <View style={{ gap: spacing['space.2'], maxWidth: 720 }}>
         {/* Nommée : c'est sur elle que la suite de bout en bout lit la police
             réellement employée. Sans point d'accroche, la seule façon de
             vérifier qu'un texte emploie la fonte serait de deviner un
@@ -121,12 +114,15 @@ export function ChoixDeLaPorte({
           couleur={surMedia ? 'ink.onScrim' : 'ink.default'}
           testID="promesse-accueil"
         />
-            <Texte couleur={surMedia ? 'ink.onScrimMuted' : 'ink.soft'}>
-              {t('auth.sousAccroche')}
-            </Texte>
-          </View>
-        </>
-      ) : null}
+        {/* **La sous-ligne est blanche sur un média, pas sourde.** Mesuré sur
+            le satin de l'accueil sous son voile : `ink.onScrimMuted` y donne
+            3,83:1, sous le seuil, quand `ink.onScrim` donne 6,00:1. La nuance
+            sourde n'était défendable que sur un fond clair connu ; sur un voile
+            posé au-dessus d'une image quelconque, elle ne l'a jamais été. */}
+        <Texte couleur={surMedia ? 'ink.onScrim' : 'ink.soft'}>
+          {t('auth.sousAccroche')}
+        </Texte>
+      </View>
 
       <View
         style={{

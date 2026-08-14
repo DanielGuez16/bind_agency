@@ -28,7 +28,7 @@ import { AppState, Image, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useApi, type MediasPlateforme } from '../api';
-import { ENCRE_DU_SATIN, Marque, SurfaceSatin, TitreAccentue } from '../components';
+import { CADRAGE_DU_SATIN, imageDuSatin } from '../components';
 import { useI18n } from '../i18n';
 import type { RoleInscriptible } from '../session';
 import { useColors } from '../theme';
@@ -180,6 +180,36 @@ export function AccueilScreen({
         })
       }
     >
+      {/* **Le satin est le fond, toujours, et il ne bouge jamais.**
+          
+          C'est la correction d'un défaut qu'une campagne de test a rapporté
+          comme « la vidéo met plusieurs secondes à démarrer ». La vidéo n'était
+          pas lente : le manifeste des médias arrive par un aller-retour, et
+          tant qu'il n'était pas là, `video` et `affiche` valaient tous deux
+          `null` — l'écran rendait alors une **composition entièrement
+          différente**, satin dans le flux et portes sans en-tête, puis
+          basculait sur la composition vidéo une seconde plus tard.
+
+          Ce que le testeur voyait n'était pas un démarrage lent : c'était la
+          première chose que montre le produit qui se réorganisait sous ses
+          yeux. Un délai se supporte ; une page qui se refait, non.
+
+          Le satin cesse donc d'être une composition de repli pour devenir la
+          couche du dessous. La composition est la même à la milliseconde zéro
+          et à l'arrivée du manifeste : mêmes couches, même voile, même encre,
+          même en-tête au même endroit. Ce qui arrive ensuite ne remplace rien,
+          ça s'intercale. */}
+      <Image
+        testID="satin-accueil"
+        source={imageDuSatin('drape')}
+        style={[StyleSheet.absoluteFillObject, { width: '100%', height: '100%' }]}
+        resizeMode={CADRAGE_DU_SATIN}
+        // Décorative : elle ne porte aucun sens qu'un lecteur d'écran doive
+        // annoncer, et la nommer ferait dire « dégradé orange » avant le titre.
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+      />
+
       {/* L'affiche est **sous** la vidéo et non à sa place : elle reste pendant
           le chargement, puis la vidéo la recouvre sans que l'écran clignote. */}
       {affiche && !joue ? (
@@ -217,8 +247,13 @@ export function AccueilScreen({
           promesse devenait à peine lisible. Plus sombre en haut, où vivent le
           titre et sa sous-ligne, puis s'éclaircissant — un aplat uniforme
           salirait la photo pour protéger deux lignes. */}
-      {video || affiche ? (
-        <LinearGradient
+      {/* **Le voile aussi est permanent**, et c'est ce qui rend l'encre stable.
+          Il ne protégeait le texte que quand une photo était là ; le faire
+          apparaître avec le manifeste ferait changer la couleur du titre une
+          seconde après l'ouverture, ce qui est le même défaut sous une autre
+          forme. Sur le satin `drape`, il donne 6,00:1 à `ink.onScrim` —
+          mesuré, pas supposé. */}
+      <LinearGradient
           testID="voile-accueil"
           // **Sombre en haut, où le texte se pose.** Le dégradé des cartes va
           // du clair au sombre : il protège un titre posé en bas d'une photo.
@@ -229,7 +264,6 @@ export function AccueilScreen({
           locations={[0, 0.5, 1]}
           style={StyleSheet.absoluteFillObject}
         />
-      ) : null}
 
       {/**
        * **Le contenu défile.** Il tenait dans un `View` en `flex: 1` centré :
@@ -259,40 +293,12 @@ export function AccueilScreen({
         // fond opaque de liste la masquerait.
         showsVerticalScrollIndicator={false}
       >
-        {/* **Sans média, la marque se présente sur un satin.** L'écran
-            annonçait « aucun fond » sous les portes : une phrase d'excuse à
-            l'endroit exact où le produit se montre pour la première fois. Le
-            satin est fait pour ça — « accueil avant inscription », dit la
-            passation, et c'est le seul des trois emplois qui soit un écran
-            entier. Il porte donc l'en-tête que les portes cèdent : la marque
-            avec sa signature, et le titre avec son bloc.
-
-            **Le bloc reste unique à l'exécution.** `avecEnTete` retire aux
-            portes celui qu'elles portaient ; les deux branches en montrent un
-            et un seul, et un test le vérifie sur les deux. La garde statique,
-            elle, ne voit qu'un fichier à la fois — elle ne peut pas savoir
-            qu'un composant s'efface quand un autre parle. */}
-        {video || affiche ? null : (
-          <SurfaceSatin variante="drape" testID="satin-accueil">
-            <View style={{ gap: 12 }}>
-              <Marque taille={30} couleur={ENCRE_DU_SATIN.drape} signature />
-              <TitreAccentue
-                texte={t('auth.accroche')}
-                motAccentue={t('auth.accrocheAccent')}
-                taille="heading"
-                bloc
-                couleur={ENCRE_DU_SATIN.drape}
-                testID="promesse-accueil"
-              />
-            </View>
-          </SurfaceSatin>
-        )}
-        <ChoixDeLaPorte
-          onChoisir={onChoisir}
-          onSeConnecter={onSeConnecter}
-          surMedia={Boolean(video || affiche)}
-          avecEnTete={Boolean(video || affiche)}
-        />
+        {/* **`surMedia` ne se calcule plus**, il est vrai. Il l'était déjà
+            dès qu'une photo arrivait ; il l'est désormais tout le temps, parce
+            que le satin et son voile sont là dès la première image. Une
+            constante à la place d'un booléen calculé, c'est exactement ce que
+            « la composition ne change pas » veut dire. */}
+        <ChoixDeLaPorte onChoisir={onChoisir} onSeConnecter={onSeConnecter} surMedia />
       </ScrollView>
     </View>
   );

@@ -463,7 +463,6 @@ export const en = {
     fenetre: '{{debut}} to {{fin}}',
   },
   accueil: {
-    sansFond: 'BIND · a service for a publication.',
   },
   auth: {
     retourA: 'Your tiers, your bookings and your history are where you left them.',
