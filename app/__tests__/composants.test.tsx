@@ -44,7 +44,16 @@ import {
   BarresParPeriode,
 } from '../src/components';
 import { I18nProvider } from '../src/i18n';
-import { ThemeProvider, codeColors, themeForRole, tokens, type Role } from '../src/theme';
+import {
+  ThemeProvider,
+  codeColors,
+  couleurs,
+  matiereDePalier,
+  produit,
+  size,
+  tokens,
+  type Role,
+} from '../src/theme';
 
 function Cadre({ children, role = 'creator' }: { children: ReactNode; role?: Role }) {
   return (
@@ -87,8 +96,8 @@ describe('Button', () => {
   it('tient la zone tactile de 44 même en taille sm', async () => {
     await monter(<Button label="Abrir" size="sm" testID="b" />);
     // La taille demandée est 36 ; c'est la zone tactile qui l'emporte.
-    expect(tokens.size.control.sm).toBe(36);
-    expect(style(screen.getByTestId('b')).minHeight).toBe(tokens.size.tapMin);
+    expect(size.row).toBe(36);
+    expect(style(screen.getByTestId('b')).minHeight).toBe(size.hit);
   });
 
   it('remplace le libellé pendant le chargement sans changer la géométrie', async () => {
@@ -285,13 +294,14 @@ describe('TierBadge', () => {
     );
     expect(barres.map((b) => b.height)).toEqual([6, 9, 12]);
     expect(barres.map((b) => b.width)).toEqual([3, 3, 3]);
-    // 3. la matière : reel est un fond plein
+    // 3. la matière : reel est un aplat, et c'est le troisième marqueur.
     //
-    // Lu dans le thème du rôle plutôt qu'écrit en dur : le créateur est passé
-    // du sombre au clair en v0.5, et une valeur transcrite ici a fait échouer
-    // ce test pour une raison qui n'a rien à voir avec les trois marqueurs.
+    // Lue dans la table de matière plutôt qu'écrite en dur : la direction
+    // artistique a déjà changé une fois, et une valeur transcrite ici ferait
+    // échouer ce test pour une raison qui n'a rien à voir avec les trois
+    // marqueurs.
     expect(style(screen.getByTestId('badge')).backgroundColor).toBe(
-      tokens.color[themeForRole('creator')]['tier.reel'],
+      couleurs[matiereDePalier('reel').surface],
     );
   });
 
@@ -310,7 +320,7 @@ describe('TierBadge', () => {
   it("n'affiche aucun chiffre de niveau", async () => {
     for (const tier of ['story', 'post', 'reel'] as const) {
       const rendu = await monter(<TierBadge tier={tier} />);
-      expect(screen.queryByText(String(tokens.tier[tier].level))).toBeNull();
+      expect(screen.queryByText(String(produit.tier[tier].level))).toBeNull();
       await rendu.unmount();
     }
   });
@@ -346,9 +356,9 @@ describe('badges de profil', () => {
   });
 
   it('ne connaît plus la vague', () => {
-    expect(tokens.badge.priority).toEqual(['behaviour', 'newcomer']);
-    expect(tokens.badge.maxVisible).toBe(2);
-    expect(Object.keys(tokens.color.dark)).not.toContain('badge.wave');
+    expect(produit.badge.priority).toEqual(['behaviour', 'newcomer']);
+    expect(produit.badge.maxVisible).toBe(2);
+    expect(Object.keys(couleurs)).not.toContain('badge.wave');
   });
 });
 
@@ -396,7 +406,7 @@ describe('cartes', () => {
       />,
     );
     // C'est la phrase qui informe, pas le badge.
-    expect(screen.getByText(tokens.tier.story.counterpart.en)).toBeTruthy();
+    expect(screen.getByText(produit.tier.story.counterpart.en)).toBeTruthy();
   });
 
   it("ne commente pas l'absence de photo côté créateur, et la commente côté commerce", async () => {
@@ -471,7 +481,7 @@ describe('code de retrait', () => {
     await monter(<CodeGlyphs code="481629" testID="glyphes" />);
     const bloc = screen.getByTestId('glyphes');
     expect(bloc.props.accessibilityLabel).toBe('4 8 1 6 2 9');
-    expect(tokens.code.chars).toBe(6);
+    expect(produit.code.chars).toBe(6);
   });
 
   it('ignore le thème dans les deux rôles', async () => {
@@ -542,7 +552,7 @@ describe('CodeInput', () => {
 
   it('exclut les caractères ambigus de son alphabet', () => {
     for (const ambigu of ['O', '0', 'I', '1']) {
-      expect(tokens.code.alphabet).not.toContain(ambigu);
+      expect(produit.code.alphabet).not.toContain(ambigu);
     }
   });
 
@@ -563,7 +573,7 @@ describe('CodeInput', () => {
     expect(screen.getByTestId('saisie-groupe-0')).toBeTruthy();
     expect(screen.getByTestId('saisie-groupe-1')).toBeTruthy();
     expect(screen.queryByTestId('saisie-groupe-2')).toBeNull();
-    expect(tokens.code.manualChars / tokens.code.manualGroupSize).toBe(2);
+    expect(produit.code.manualChars / produit.code.manualGroupSize).toBe(2);
   });
 
   it('groupe les emplacements et non ce qui est déjà tapé', async () => {
@@ -723,7 +733,10 @@ describe("ce que la bibliothèque n'a pas", () => {
   it('compte exactement les familles prévues', async () => {
     // La bibliothèque ne grossit pas sans qu'on le voie : une famille de plus
     // demande de toucher ce test. Trois ajoutées avec la direction visuelle —
-    // la marque, le mouvement, l'en-tête d'écran.
+    // la marque, le mouvement, l'en-tête d'écran. Deux de plus avec la v1.0 :
+    // le titre accentué, qui porte les règles du mot plutôt que de les laisser
+    // à l'appelant, et le filet segmenté, repris des carrousels de la
+    // fondatrice pour dire une progression sans écrire « 2 sur 4 ».
     const { readdirSync } = require('fs') as typeof import('fs');
     const { join } = require('path') as typeof import('path');
     const fichiers = readdirSync(join(__dirname, '..', 'src', 'components'))
@@ -739,6 +752,7 @@ describe("ce que la bibliothèque n'a pas", () => {
       'CodeInput.tsx',
       'EmptyState.tsx',
       'EnTete.tsx',
+      'FiletSegmente.tsx',
       // Amendement v0.6 à `components.md` §17 : deux graphiques, et deux
       // seulement — des barres, et une évolution dans le temps.
       'Graphiques.tsx',
@@ -755,6 +769,7 @@ describe("ce que la bibliothèque n'a pas", () => {
       'TextField.tsx',
       'Texte.tsx',
       'TierBadge.tsx',
+      'TitreAccentue.tsx',
       'Toggle.tsx',
     ]);
   });

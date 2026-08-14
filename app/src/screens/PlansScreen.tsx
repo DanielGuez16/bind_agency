@@ -106,7 +106,7 @@ export function PlansScreen() {
             </View>
 
             {totaux.devise === null ? (
-              <Texte variante="type.caption" couleur="text.muted" testID="devises-melees">
+              <Texte variante="type.caption" couleur="ink.mute" testID="devises-melees">
                 {t('admin.plansDevisesMelees')}
               </Texte>
             ) : null}
@@ -168,7 +168,7 @@ function Totaux({ totaux }: { totaux: Totaux }) {
         <Texte variante="type.figure">
           {totaux.devise ? montant(totaux.mrrCents, totaux.devise) : '—'}
         </Texte>
-        <Texte variante="type.caption" couleur="text.secondary">
+        <Texte variante="type.caption" couleur="ink.soft">
           {t('admin.plansMrrTotal')}
         </Texte>
       </View>
@@ -176,7 +176,7 @@ function Totaux({ totaux }: { totaux: Totaux }) {
         <Texte variante="type.figure">
           {String(totaux.actifs)}
         </Texte>
-        <Texte variante="type.caption" couleur="text.secondary">
+        <Texte variante="type.caption" couleur="ink.soft">
           {t('admin.plansSalonsAbonnes')}
         </Texte>
       </View>

@@ -79,7 +79,7 @@ export function ReportingScreen({ businessId }: { businessId: string }) {
     >
       {(vue) => (
         <View style={{ gap: 16 }}>
-          <Texte variante="type.caption" couleur="text.muted" testID="fenetre">
+          <Texte variante="type.caption" couleur="ink.mute" testID="fenetre">
             {t('reporting.fenetre', {
               // Le mois en lettres : « 10/07/2026 » se lit octobre à Miami et
               // juillet à Paris, et un rapport qui se lit à deux mois d'écart
@@ -148,7 +148,7 @@ export function ReportingScreen({ businessId }: { businessId: string }) {
 
           {vue.par_item.length ? (
             <View style={{ gap: 4 }}>
-              <Texte variante="type.label" couleur="text.secondary">
+              <Texte variante="type.label" couleur="ink.soft">
                 {t('reporting.parItem')}
               </Texte>
               {vue.par_item.map((ligne) => (
@@ -238,7 +238,7 @@ function numeroDeSemaine(jour: Date): number {
 function Section({ titre, children }: { titre: string; children: React.ReactNode }) {
   return (
     <View style={{ gap: 4 }}>
-      <Texte variante="type.label" couleur="text.secondary">
+      <Texte variante="type.label" couleur="ink.soft">
         {titre}
       </Texte>
       {children}
@@ -314,18 +314,18 @@ function Reperes({ vue }: { vue: Reporting }) {
       {reperes.map((repere) => (
         <View key={repere.cle} style={{ width: 260, gap: 2 }} testID={`repere-${repere.cle}`}>
           <Texte
-            variante={repere.chiffre ? 'type.figure' : 'type.heading'}
+            variante={repere.chiffre ? 'type.figure' : 'type.bodyStrong'}
             testID={repere.cle === 'taux' ? 'taux' : undefined}
           >
             {repere.valeur}
           </Texte>
-          <Texte variante="type.caption" couleur="text.secondary">
+          <Texte variante="type.caption" couleur="ink.soft">
             {repere.libelle}
           </Texte>
           {repere.note ? (
             <Texte
               variante="type.caption"
-              couleur="text.muted"
+              couleur="ink.mute"
               testID={repere.cle === 'taux' ? 'taux-aide' : 'note-portee'}
             >
               {repere.note}

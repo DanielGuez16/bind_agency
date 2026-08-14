@@ -30,8 +30,8 @@ export function SegmentedTabs({ items, index, onChange, testID }: SegmentedTabsP
       style={{
         flexDirection: 'row',
         gap: 1,
-        backgroundColor: c['border.subtle'],
-        borderRadius: radius['radius.md'],
+        backgroundColor: c['line.default'],
+        borderRadius: radius['radius.none'],
         overflow: 'hidden',
       }}
     >
@@ -57,7 +57,7 @@ export function SegmentedTabs({ items, index, onChange, testID }: SegmentedTabsP
           >
             <Texte
               variante="type.label"
-              couleur={actif ? 'text.inverse' : 'text.secondary'}
+              couleur={actif ? 'ink.onDark' : 'ink.soft'}
               align="center"
             >
               {libelle}

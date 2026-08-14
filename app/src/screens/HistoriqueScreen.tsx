@@ -127,7 +127,7 @@ export function HistoriqueScreen({
                   meta={heureLocaleDuCommerce(reservation, locale)}
                   tier={reservation.content_format}
                   right={
-                    <Texte variante="type.caption" couleur="text.secondary">
+                    <Texte variante="type.caption" couleur="ink.soft">
                       {ouvrable ? t(`parcours.ouvrir_${destination(reservation)}`) : ''}
                     </Texte>
                   }
@@ -142,13 +142,13 @@ export function HistoriqueScreen({
                     testID={`en-attente-${reservation.booking_id}`}
                   />
                 ) : null}
-                <Texte variante="type.caption" couleur="text.secondary">
+                <Texte variante="type.caption" couleur="ink.soft">
                   {reservation.item_name}
                 </Texte>
                 {reservation.contrepartie ? (
                   <Texte
                     variante="type.caption"
-                    couleur="text.secondary"
+                    couleur="ink.soft"
                     testID={`contrepartie-${reservation.booking_id}`}
                   >
                     {t(`contrepartie.${reservation.contrepartie.status}`)}

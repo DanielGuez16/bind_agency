@@ -84,7 +84,7 @@ export function PriseEnMainScreen({
         testID="prise-en-main-chargement"
         style={{ flex: 1, justifyContent: 'center', padding: 24 }}
       >
-        <Texte variante="type.body" couleur="text.secondary">
+        <Texte variante="type.body" couleur="ink.soft">
           {t('priseEnMain.chargement')}
         </Texte>
       </View>
@@ -103,8 +103,8 @@ export function PriseEnMainScreen({
         style={{ flex: 1, justifyContent: 'center', padding: 24, gap: 12 }}
       >
         <Marque />
-        <Texte variante="type.title">{t('priseEnMain.lienMort')}</Texte>
-        <Texte variante="type.body" couleur="text.secondary">
+        <Texte variante="type.section">{t('priseEnMain.lienMort')}</Texte>
+        <Texte variante="type.body" couleur="ink.soft">
           {t('priseEnMain.lienMortAide')}
         </Texte>
       </View>
@@ -134,22 +134,22 @@ export function PriseEnMainScreen({
           style={{
             gap: 8,
             padding: 16,
-            borderRadius: radius['radius.md'],
+            borderRadius: radius['radius.none'],
             backgroundColor: c['bg.surface'],
             borderWidth: 1,
-            borderColor: c['border.subtle'],
+            borderColor: c['line.default'],
           }}
         >
-          <Texte variante="type.label" couleur="text.secondary">
+          <Texte variante="type.label" couleur="ink.soft">
             {t('priseEnMain.preparePourVous')}
           </Texte>
-          <Texte variante="type.title">{apercu.business_name}</Texte>
+          <Texte variante="type.section">{apercu.business_name}</Texte>
           {apercu.address ? (
-            <Texte variante="type.body" couleur="text.secondary">
+            <Texte variante="type.body" couleur="ink.soft">
               {apercu.address}
             </Texte>
           ) : null}
-          <Texte variante="type.caption" couleur="text.muted" testID="ce-qui-est-pret">
+          <Texte variante="type.caption" couleur="ink.mute" testID="ce-qui-est-pret">
             {t('priseEnMain.ceQuiEstPret', {
               prestations: apercu.prestations_preparees,
               plages: apercu.plages_preparees,
@@ -157,7 +157,7 @@ export function PriseEnMainScreen({
           </Texte>
         </View>
 
-        <Texte variante="type.body" couleur="text.secondary">
+        <Texte variante="type.body" couleur="ink.soft">
           {t('priseEnMain.introduction')}
         </Texte>
 
@@ -219,7 +219,7 @@ export function PriseEnMainScreen({
 
         {/* Ce que la fiche ne fait **pas** encore. Un salon qui croirait être
             en ligne chercherait ses réservations pendant deux jours. */}
-        <Texte variante="type.caption" couleur="text.muted">
+        <Texte variante="type.caption" couleur="ink.mute">
           {t('priseEnMain.pasEncoreEnLigne')}
         </Texte>
       </View>

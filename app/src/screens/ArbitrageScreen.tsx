@@ -47,7 +47,7 @@ import {
 } from '../components';
 import { useI18n } from '../i18n';
 import { ECART_DES_COLONNES, useGabarit } from '../shell/gabarit';
-import { useColors } from '../theme';
+import { radius, useColors } from '../theme';
 import { Ecran } from './Ecran';
 import { PreuveSoumise } from './Preuve';
 import { MOTIFS, libelleDuMotif, type MotifDeDecision } from './motifs';
@@ -239,13 +239,13 @@ function TableDArbitrage({
               style={{
                 width: 18,
                 height: 18,
-                borderRadius: 4,
+                borderRadius: radius['radius.none'],
                 borderWidth: 1,
                 borderColor: selection.includes(ligne.collaboration_id)
-                  ? c['accent.default']
-                  : c['border.default'],
+                  ? c['brand.700']
+                  : c['line.default'],
                 backgroundColor: selection.includes(ligne.collaboration_id)
-                  ? c['accent.default']
+                  ? c['brand.700']
                   : 'transparent',
               }}
             />
@@ -344,7 +344,7 @@ function Dossier({ ligne, onTranche }: { ligne: LigneDeFile; onTranche: () => vo
       <Texte variante="type.label" ellipseSurNomPropre>
         {ligne.business_name}
       </Texte>
-      <Texte variante="type.caption" couleur="text.secondary">
+      <Texte variante="type.caption" couleur="ink.soft">
         {ligne.creator_handle ?? ''} · {ligne.item_name} ·{' '}
         {t('commerce.tentative', { n: ligne.attempts_count })}
       </Texte>
@@ -367,7 +367,7 @@ function Dossier({ ligne, onTranche }: { ligne: LigneDeFile; onTranche: () => vo
             <Texte
               key={`${tentative.demandee_le}-${rang}`}
               variante="type.caption"
-              couleur="status.warning"
+              couleur="status.warning.text"
               testID={rang === ligne.tentatives.length - 1 ? 'dernier-motif' : undefined}
             >
               {t('commerce.tentative', { n: rang + 1 })} · {libelleDuMotif(t, tentative.motif)}
@@ -383,7 +383,7 @@ function Dossier({ ligne, onTranche }: { ligne: LigneDeFile; onTranche: () => vo
               <Texte
                 key={`note-${tentative.demandee_le}-${rang}`}
                 variante="type.caption"
-                couleur="text.secondary"
+                couleur="ink.soft"
                 testID={`note-tentative-${rang}`}
               >
                 {t('commerce.tentative', { n: rang + 1 })} · {tentative.note}
@@ -395,7 +395,7 @@ function Dossier({ ligne, onTranche }: { ligne: LigneDeFile; onTranche: () => vo
 
       {ligne.derniere_soumission?.note ? (
         <View style={{ gap: 2 }} testID="note-du-createur">
-          <Texte variante="type.label" couleur="text.secondary">
+          <Texte variante="type.label" couleur="ink.soft">
             {t('commerce.noteDuCreateur')}
           </Texte>
           <Texte variante="type.caption">{ligne.derniere_soumission.note}</Texte>

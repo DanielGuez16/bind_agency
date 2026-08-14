@@ -17,8 +17,21 @@
  * pour qui ne la distingue pas, et l'écran courant est précisément ce qu'on ne
  * peut pas se permettre de perdre.
  *
- * **Le rôle se lit une fois, sous la marque.** Sa couleur, et rien d'autre —
- * pas de bandeau, pas de pastille répétée à chaque ligne.
+ * **Le rôle se lit à la matière de la barre, plus à une teinte.** La v1.0
+ * supprime `role.creator` et `role.merchant` : une seule teinte de marque ne
+ * peut plus distinguer deux rôles, et une teinte de rôle ne servait de toute
+ * façon qu'à nous — un rôle ne coexiste jamais avec un autre dans une session,
+ * et personne n'a besoin de reconnaître le sien à une couleur.
+ *
+ * L'arbitrage rendu est celui du §8 de la passation : la distinction est
+ * gardée, **en matière**. Encre pour l'administration, os pour le commerce,
+ * papier pour le créateur. Trois fonds qui existent déjà dans le système, et
+ * aucune couleur de plus à décoder. Une capture d'écran dit donc encore d'où
+ * elle vient, ce qui était le seul coût de la suppression pure.
+ *
+ * **Le nom sous la marque reste**, en `ink.mute` — ou sa nuance claire sur
+ * l'encre de l'administration. Il est plus explicite qu'une teinte, et c'est
+ * lui qui situe la session.
  */
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Pressable, ScrollView, View } from 'react-native';
@@ -27,25 +40,11 @@ import { Icone } from '../components';
 import { Marque } from '../components/Logo';
 import { Texte } from '../components/Texte';
 import { useI18n } from '../i18n';
-import {
-  breakpoint,
-  radius,
-  spacing,
-  useColors,
-  useTheme,
-  type ColorName,
-} from '../theme';
+import { breakpoint, radius, spacing, useColors, useTheme } from '../theme';
 import { useRepli } from './preferenceDeRepli';
 
 /** La hauteur d'une ligne de navigation. L'administration est plus dense. */
 const HAUTEUR_DE_LIGNE = { creator: 44, merchant: 44, admin: 38 } as const;
-
-/** La couleur du nom sous la marque. L'administration n'a pas de teinte. */
-const COULEUR_DU_ROLE: Record<string, ColorName> = {
-  creator: 'role.creator',
-  merchant: 'role.merchant',
-  admin: 'text.secondary',
-};
 
 export type ContexteDeBarre = {
   /** Le nom du commerce, ou celui de la personne. Ce qui situe la session. */
@@ -59,7 +58,7 @@ export function BarreLaterale({
   intitule,
 }: BottomTabBarProps & ContexteDeBarre) {
   const c = useColors();
-  const { role } = useTheme();
+  const { role, matiere } = useTheme();
   const { t } = useI18n();
   const [replie, basculer] = useRepli();
 
@@ -74,9 +73,10 @@ export function BarreLaterale({
       accessibilityRole='tablist'
       style={{
         width: largeur,
-        backgroundColor: c['bg.surface'],
+        // La matière du rôle, et rien d'autre : encre, os ou papier.
+        backgroundColor: c[matiere.surface],
         borderRightWidth: 1,
-        borderRightColor: c['border.subtle'],
+        borderRightColor: c[matiere.ligne],
         paddingVertical: spacing['space.4'],
       }}
     >
@@ -90,14 +90,16 @@ export function BarreLaterale({
         {/* Replié, le signe suffit : la passation ne fait accompagner le nom
             que sur l'accueil et la connexion. */}
         {replie ? (
-          <Icone nom='etincelle' couleur='accent.default' />
+          <Icone nom='etincelle' couleur={matiere.texte} />
         ) : (
-          <Marque taille={26} />
+          // Le sigle est monochrome, et d'une seule couleur par occurrence :
+          // l'encre de la matière sur laquelle il est posé.
+          <Marque taille={26} couleur={matiere.texte} />
         )}
         {!replie && intitule ? (
           <Texte
             variante='type.caption'
-            couleur={COULEUR_DU_ROLE[role]}
+            couleur={matiere.texteSourd}
             ellipseSurNomPropre
           >
             {intitule}
@@ -139,23 +141,32 @@ export function BarreLaterale({
                 marginHorizontal: spacing['space.2'],
                 paddingLeft: replie ? 0 : spacing['space.3'],
                 justifyContent: replie ? 'center' : 'flex-start',
-                borderRadius: radius['radius.md'],
-                backgroundColor: actif ? c['accent.subtle'] : 'transparent',
+                borderRadius: radius['radius.none'],
+                // `brand.50` est une nappe orange très claire : elle se lit
+                // sur le papier et sur l'os, et disparaît sur l'encre de
+                // l'administration, où c'est le contraire qui marque — un cran
+                // plus clair que le fond.
+                backgroundColor: actif
+                  ? c[matiere.surface === 'bg.inverse' ? 'line.onDark' : 'brand.50']
+                  : 'transparent',
                 // Deux marques et non une : le fond, et cette barre. La couleur
-                // seule ne dit rien à qui ne la distingue pas.
+                // seule ne dit rien à qui ne la distingue pas. Et la barre est
+                // en `brand.500` — c'est une surface de 3 px, pas une encre.
                 borderLeftWidth: 3,
-                borderLeftColor: actif ? c['accent.default'] : 'transparent',
+                borderLeftColor: actif ? c['brand.500'] : 'transparent',
               }}
             >
               {options.tabBarIcon?.({
                 focused: actif,
-                color: actif ? c['accent.default'] : c['text.muted'],
+                color: actif
+                  ? c[matiere.surface === 'bg.inverse' ? matiere.texte : 'brand.700']
+                  : c[matiere.texteSourd],
                 size: 24,
               })}
               {replie ? null : (
                 <Texte
                   variante='type.label'
-                  couleur={actif ? 'text.primary' : 'text.secondary'}
+                  couleur={actif ? matiere.texte : matiere.texteSourd}
                   ellipseSurNomPropre
                 >
                   {libelle}
@@ -185,10 +196,10 @@ export function BarreLaterale({
             retourner vaut mieux que d'en ajouter un second à traduire
             visuellement — et une rotation statique n'anime rien. */}
         <View style={{ transform: [{ rotate: replie ? '0deg' : '180deg' }] }}>
-          <Icone nom='chevron' couleur='text.muted' />
+          <Icone nom='chevron' couleur={matiere.texteSourd} />
         </View>
         {replie ? null : (
-          <Texte variante='type.caption' couleur='text.muted'>
+          <Texte variante='type.caption' couleur={matiere.texteSourd}>
             {t('coquille.replier')}
           </Texte>
         )}

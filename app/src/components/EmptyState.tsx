@@ -61,7 +61,7 @@ export function EmptyState({
       }}
     >
       <Texte
-        variante={large ? 'type.displayLarge' : 'type.display'}
+        variante={large ? 'type.screenTitle' : 'type.screenTitle'}
         align={centre ? 'center' : 'left'}
         // Sur grand écran, l'état vide est tout le contenu de la page : lui
         // laisser une taille de titre de section le fait passer pour un
@@ -72,7 +72,7 @@ export function EmptyState({
         {title}
       </Texte>
       <Texte
-        couleur="text.secondary"
+        couleur="ink.soft"
         align={centre ? 'center' : 'left'}
         style={large ? { fontSize: 18, lineHeight: 26 } : undefined}
       >
@@ -89,7 +89,7 @@ export function EmptyState({
               <Texte variante="type.figure">
                 {chiffre.valeur}
               </Texte>
-              <Texte variante="type.caption" couleur="text.secondary">
+              <Texte variante="type.caption" couleur="ink.soft">
                 {chiffre.label}
               </Texte>
             </View>
@@ -101,9 +101,9 @@ export function EmptyState({
         <View
           style={{
             alignSelf: 'stretch',
-            borderRadius: radius['radius.lg'],
+            borderRadius: radius['radius.none'],
             borderWidth: 1,
-            borderColor: c['border.subtle'],
+            borderColor: c['line.default'],
           }}
         >
           {reperes.map((repere, i) => (
@@ -116,10 +116,10 @@ export function EmptyState({
                 paddingHorizontal: 12,
                 paddingVertical: 10,
                 borderTopWidth: i === 0 ? 0 : 1,
-                borderTopColor: c['border.subtle'],
+                borderTopColor: c['line.default'],
               }}
             >
-              <Texte variante="type.caption" couleur="text.secondary">
+              <Texte variante="type.caption" couleur="ink.soft">
                 {repere.label}
               </Texte>
               <Texte variante="type.mono">{repere.valeur}</Texte>

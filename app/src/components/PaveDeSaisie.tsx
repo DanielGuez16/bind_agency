@@ -70,9 +70,9 @@ export function PaveDeSaisie({
             height: TOUCHE,
             alignItems: 'center',
             justifyContent: 'center',
-            borderRadius: radius['radius.md'],
+            borderRadius: radius['radius.none'],
             borderWidth: 1,
-            borderColor: c['border.default'],
+            borderColor: c['line.default'],
             backgroundColor: c['bg.surface'],
             opacity: desactive ? 0.4 : 1,
           }}

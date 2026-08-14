@@ -60,40 +60,40 @@ const CAS: Cas[] = [
   {
     cle: 'no_social_account',
     icone: 'etincelle',
-    teinte: 'accent.default',
+    teinte: 'brand.700',
     issue: (i) => i.onConnecterUnReseau,
     labelIssue: 'tiers.connectAction',
   },
   {
     cle: 'account_rejected',
     icone: 'croix',
-    teinte: 'status.danger',
+    teinte: 'status.danger.text',
   },
   {
     cle: 'account_token_invalid',
     icone: 'etincelle',
-    teinte: 'status.warning',
+    teinte: 'status.warning.text',
     issue: (i) => i.onConnecterUnReseau,
     labelIssue: 'tiers.connectAction',
   },
   {
     cle: 'account_under_review',
     icone: 'horloge',
-    teinte: 'status.warning',
+    teinte: 'status.warning.text',
     issue: (i) => i.onVoirMesPaliers,
     labelIssue: 'vide.voirPaliers',
   },
   {
     cle: 'no_metrics',
     icone: 'rapport',
-    teinte: 'accent.warm',
+    teinte: 'brand.700',
     issue: (i) => i.onVoirMonAudience,
     labelIssue: 'vide.voirAudience',
   },
   {
     cle: 'metrics_stale',
     icone: 'rapport',
-    teinte: 'accent.warm',
+    teinte: 'brand.700',
     issue: (i) => i.onVoirMonAudience,
     labelIssue: 'vide.voirAudience',
   },
@@ -146,12 +146,10 @@ export function RaisonDuVide({
   const cle = typeof cas === 'string' ? cas : cas.cle;
   const icone: NomIcone =
     typeof cas === 'string' ? (cas === 'aucun_palier' ? 'paliers' : 'lieu') : cas.icone;
-  const teinte: ColorName =
-    typeof cas === 'string'
-      ? cas === 'aucun_palier'
-        ? 'tier.post'
-        : 'accent.default'
-      : cas.teinte;
+  // Les deux cas nommés en clair partageaient une teinte de palier et une
+  // teinte d'accent ; la v1.0 n'a plus qu'une encre de marque, et le glyphe
+  // porte déjà la distinction que la couleur faisait.
+  const teinte: ColorName = typeof cas === 'string' ? 'brand.700' : cas.teinte;
 
   const surIssue = typeof cas === 'string' ? undefined : cas.issue?.(issues);
   const labelIssue =
@@ -173,7 +171,7 @@ export function RaisonDuVide({
           style={{
             width: 88,
             height: 88,
-            borderRadius: radius['radius.full'],
+            borderRadius: radius['radius.pill'],
             alignItems: 'center',
             justifyContent: 'center',
             backgroundColor: c['bg.surface'],
@@ -189,8 +187,8 @@ export function RaisonDuVide({
           {/* Le rayon est passé aux deux : il figure dans le titre comme dans
               le corps, et un seul des deux interpolé laisse « Nothing within
               {{rayon}} km » à l'écran. */}
-          <Texte variante="type.title">{t(`vide.${cle}Titre`, { rayon: rayonKm })}</Texte>
-          <Texte variante="type.body" couleur="text.secondary">
+          <Texte variante="type.section">{t(`vide.${cle}Titre`, { rayon: rayonKm })}</Texte>
+          <Texte variante="type.body" couleur="ink.soft">
             {t(`vide.${cle}Corps`, { rayon: rayonKm })}
           </Texte>
         </View>
@@ -218,14 +216,14 @@ export function RaisonDuVide({
         {/* Le détail, dans l'ordre du serveur. */}
         {autres.length > 0 ? (
           <View style={{ gap: 4 }} testID="autres-obstacles">
-            <Texte variante="type.label" couleur="text.muted">
+            <Texte variante="type.label" couleur="ink.mute">
               {t('vide.aussi')}
             </Texte>
             {autres.map((obstacle, index) => (
               <Texte
                 key={`${obstacle.raison}-${index}`}
                 variante="type.caption"
-                couleur="text.secondary"
+                couleur="ink.soft"
                 testID={`obstacle-${obstacle.raison}`}
               >
                 {messageDObstacle(t, obstacle, CODES_CONNUS, undefined, locale)}

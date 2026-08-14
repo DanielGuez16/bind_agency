@@ -64,7 +64,7 @@ import { formatNumber } from '../format';
 import { useI18n } from '../i18n';
 import { en } from '../i18n/en';
 import { useGabarit } from '../shell/gabarit';
-import { radius, tierTokens, tokens, useColors, useTheme, type ColorName } from '../theme';
+import { matiereDePalier, radius, tierTokens, useColors, useTheme, type ColorName } from '../theme';
 import { Ecran } from './Ecran';
 import { Jauge, ReglesDesPaliers } from './ReglesDesPaliers';
 import { RaisonDuVide } from './RaisonDuVide';
@@ -266,7 +266,7 @@ function Echelle({
         <>
           <RaisonDuVide obstacles={communs} issues={issues} testID="paliers-bloques" />
           {/* Pourquoi l'échelle est encore là, sous une mauvaise nouvelle. */}
-          <Texte variante="type.label" couleur="text.secondary" style={{ fontWeight: '400' }} testID="encore-la">
+          <Texte variante="type.label" couleur="ink.soft" style={{ fontWeight: '400' }} testID="encore-la">
             {t('tiers.stillWaiting')}
           </Texte>
         </>
@@ -314,7 +314,7 @@ function Echelle({
 
       {/* Le compte porte sur tout BIND, pas sur le rayon : sans cette ligne,
           « 12 prestations » se lit comme « 12 autour de moi ». */}
-      <Texte variante="type.caption" couleur="text.muted" testID="portee-des-comptes">
+      <Texte variante="type.caption" couleur="ink.mute" testID="portee-des-comptes">
         {t('tiers.opensHelp')}
       </Texte>
 
@@ -343,18 +343,20 @@ function Echelle({
  * qui fait tenir la promesse des trois secondes : trois barres qui montent
  * disent la règle avant que la phrase soit lue.
  *
- * Les teintes viennent du **thème opposé**. Le bandeau est une surface
- * inversée : les teintes du thème courant y seraient sombres sur sombre. Ce
- * n'est pas une couleur choisie ici, c'est le jeu de jetons de l'autre thème,
- * celui qui a été calibré pour ce fond-là.
+ * **Les trois barres portent la matière du palier, pas sa teinte.** Depuis la
+ * v1.0 il n'y a plus qu'une teinte de marque : ce sont le contour, la teinte et
+ * l'aplat qui montent. La progression reste ordinale — de moins de matière à
+ * plus de matière — et elle se lit en niveaux de gris, ce que trois couleurs ne
+ * garantissaient qu'en théorie.
+ *
+ * Le bandeau est posé sur l'encre, et les matières y sont prises dans leur
+ * variante sombre : contour et teinte s'éclaircissent, l'aplat ne bouge pas.
  */
 function BandeauDePrincipe() {
   const { t, locale } = useI18n();
   const c = useColors();
-  const { name } = useTheme();
   const { large } = useGabarit();
 
-  const inverse = tokens.color[name === 'dark' ? 'light' : 'dark'];
   const hauteurs: Record<Palier, number> = large
     ? { story: 16, post: 32, reel: 50 }
     : { story: 18, post: 34, reel: 52 };
@@ -364,7 +366,7 @@ function BandeauDePrincipe() {
       <View
         testID="bandeau-de-principe"
         style={{
-          borderRadius: radius['radius.md'],
+          borderRadius: radius['radius.none'],
           backgroundColor: c['bg.inverse'],
           padding: large ? 20 : 16,
           gap: large ? 0 : 12,
@@ -373,8 +375,8 @@ function BandeauDePrincipe() {
         }}
       >
         <Texte
-          variante={large ? 'type.heading' : 'type.body'}
-          couleur="text.inverse"
+          variante={large ? 'type.bodyStrong' : 'type.body'}
+          couleur="ink.onDark"
           style={{ flex: large ? 1 : undefined, fontWeight: large ? '400' : undefined }}
           testID="principe"
         >
@@ -391,23 +393,25 @@ function BandeauDePrincipe() {
             width: large ? 200 : undefined,
           }}
         >
-          {ORDRE.map((palier) => (
-            <View key={palier} style={{ flex: 1, gap: 6 }}>
-              <View
-                testID={`principe-barre-${palier}`}
-                style={{
-                  height: hauteurs[palier],
-                  backgroundColor: inverse[`tier.${palier}` as ColorName],
-                }}
-              />
-              <Texte
-                variante="type.eyebrow"
-                style={{ fontSize: 10, color: inverse['text.secondary'] }}
-              >
-                {tierTokens[palier].label[locale] ?? tierTokens[palier].label.en}
-              </Texte>
-            </View>
-          ))}
+          {ORDRE.map((palier) => {
+            const m = matiereDePalier(palier, true);
+            return (
+              <View key={palier} style={{ flex: 1, gap: 6 }}>
+                <View
+                  testID={`principe-barre-${palier}`}
+                  style={{
+                    height: hauteurs[palier],
+                    backgroundColor: c[m.surface],
+                    borderWidth: m.epaisseur,
+                    borderColor: m.bordure === 'transparent' ? 'transparent' : c[m.bordure],
+                  }}
+                />
+                <Texte variante="type.monoSmall" couleur={m.texte} style={{ fontSize: 10 }}>
+                  {tierTokens[palier].label[locale] ?? tierTokens[palier].label.en}
+                </Texte>
+              </View>
+            );
+          })}
         </View>
       </View>
     </Apparition>
@@ -429,19 +433,19 @@ function PorteDesRegles({ onPress }: { onPress: () => void }) {
         alignItems: 'center',
         gap: 12,
         padding: 16,
-        borderRadius: radius['radius.md'],
+        borderRadius: radius['radius.none'],
         borderWidth: 1,
-        borderColor: c['border.subtle'],
+        borderColor: c['line.default'],
         backgroundColor: c['bg.surface'],
       }}
     >
       <View style={{ flex: 1, gap: 2 }}>
         <Texte variante="type.bodyStrong">{t('tiers.rulesEntry')}</Texte>
-        <Texte variante="type.caption" couleur="text.muted">
+        <Texte variante="type.caption" couleur="ink.mute">
           {t('tiers.rulesEntryHelp')}
         </Texte>
       </View>
-      <Icone nom="chevron" couleur="accent.default" taille={20} />
+      <Icone nom="chevron" couleur="brand.700" taille={20} />
     </Pressable>
   );
 }
@@ -473,16 +477,20 @@ export function BarreauDePalier({
   const { large } = useGabarit();
 
   const format = palier.content_format as Palier;
-  const teinte = `tier.${format}` as ColorName;
-  const matiere = tierTokens[format].material;
-  const plein = matiere === 'solidInverse';
-
-  // La matière du badge, à l'échelle de la carte : contour, teinte, aplat.
-  const fondDuBandeau = plein
-    ? c[teinte]
-    : matiere === 'solidAccent'
-      ? c[`${teinte}.subtle` as ColorName]
-      : c[`${teinte}.subtle` as ColorName];
+  // **Le bandeau prend la matière du palier, plus sa teinte `subtle`.** Les
+  // trois teintes distinctes n'existent plus ; ce qui distingue les paliers est
+  // la façon dont l'unique orange est posé, à l'échelle de la carte comme à
+  // celle du badge.
+  const m = matiereDePalier(format);
+  const plein = m.matiere === 'solid';
+  const fondDuBandeau = c[m.surface];
+  // **La bordure de la carte suit la matière, sans la copier.** L'aplat n'a pas
+  // de filet sur le badge — c'est ce qui le rend plein — mais la carte en a
+  // besoin pour se détacher du fond : `brand.500`, comme la teinte.
+  const bordureDeCarte: ColorName = m.matiere === 'solid' ? 'brand.500' : m.bordure as ColorName;
+  // Sur le corps de la carte, qui est papier, l'encre de marque est toujours
+  // `brand.700` : c'est la seule valeur de la rampe qui s'écrit.
+  const encre: ColorName = 'brand.700';
 
   const ouvert = etat === 'ouvert';
   // La seule variation de copie entre ouvert et fermé. Elle suffit à dire que
@@ -505,12 +513,12 @@ export function BarreauDePalier({
         width: large ? LARGEUR_DU_BANDEAU : undefined,
         borderBottomWidth: large ? 0 : 1,
         borderRightWidth: large ? 1 : 0,
-        borderColor: plein ? fondDuBandeau : c[teinte],
+        borderColor: plein ? fondDuBandeau : c[bordureDeCarte],
       }}
     >
       <TierBadge tier={format} />
       {large ? null : <View style={{ flex: 1 }} />}
-      <EtatDuPalier etat={etat} teinte={teinte} plein={plein} />
+      <EtatDuPalier etat={etat} teinte={m.texte} plein={plein} />
     </View>
   );
 
@@ -524,16 +532,16 @@ export function BarreauDePalier({
       }}
     >
       <View style={{ width: large ? LARGEUR_DU_DON : undefined, flex: large ? undefined : 1, minWidth: 0, gap: 4 }}>
-        <Texte variante="type.caption" couleur="text.muted">
+        <Texte variante="type.caption" couleur="ink.mute">
           {donne}
         </Texte>
         <LigneDeContrepartie tier={format} />
       </View>
 
-      <View style={{ width: 1, alignSelf: 'stretch', backgroundColor: c['border.subtle'] }} />
+      <View style={{ width: 1, alignSelf: 'stretch', backgroundColor: c['line.default'] }} />
 
       <View style={{ flex: 1, minWidth: 0, gap: 5 }}>
-        <Texte variante="type.caption" couleur="text.muted">
+        <Texte variante="type.caption" couleur="ink.mute">
           {obtient}
         </Texte>
         <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
@@ -543,11 +551,11 @@ export function BarreauDePalier({
           >
             {formatNumber(palier.offres_disponibles, locale)}
           </Texte>
-          <Texte variante="type.caption" couleur="text.secondary">
+          <Texte variante="type.caption" couleur="ink.soft">
             {t('tiers.services')}
           </Texte>
         </View>
-        <Jauge part={palier.offres_disponibles / sommet} teinte={teinte} testID={`part-${palier.tier_id}`} />
+        <Jauge part={palier.offres_disponibles / sommet} teinte={encre} testID={`part-${palier.tier_id}`} />
       </View>
 
       {large && porteOuverte ? (
@@ -560,12 +568,12 @@ export function BarreauDePalier({
             minHeight: 40,
             justifyContent: 'center',
             paddingHorizontal: 14,
-            borderRadius: radius['radius.md'],
+            borderRadius: radius['radius.none'],
             borderWidth: 1,
-            borderColor: c[teinte],
+            borderColor: c[bordureDeCarte],
           }}
         >
-          <Texte variante="type.label" couleur={teinte}>
+          <Texte variante="type.label" couleur={encre}>
             {t('tiers.seeShort')}
           </Texte>
         </Pressable>
@@ -577,11 +585,13 @@ export function BarreauDePalier({
     <View
       testID={`palier-${palier.tier_id}`}
       style={{
-        borderRadius: radius['radius.lg'],
+        borderRadius: radius['radius.none'],
         // Le prochain palier porte deux pixels. C'est le seul objectif de
         // l'écran, et l'épaisseur le dit sans couleur.
         borderWidth: etat === 'prochain' ? 2 : 1,
-        borderColor: c[teinte],
+        // Le prochain palier porte deux pixels d'encre et non d'orange : un filet
+        // orange de 2 px posé contre un bandeau orange ne se voyait plus.
+        borderColor: etat === 'prochain' ? c['line.ink'] : c[bordureDeCarte],
         backgroundColor: c['bg.surface'],
         overflow: 'hidden',
         flexDirection: large ? 'row' : 'column',
@@ -594,7 +604,7 @@ export function BarreauDePalier({
         {obstacles.length > 0 ? (
           <View style={{ paddingHorizontal: large ? 16 : 14, paddingBottom: large ? 16 : 14, gap: 10 }}>
             <Filet />
-            <Texte variante="type.label" couleur="text.secondary">
+            <Texte variante="type.label" couleur="ink.soft">
               {t('tiers.toUnlock')}
             </Texte>
             {/* Tous les obstacles, dans l'ordre du serveur. N'en montrer qu'un
@@ -605,7 +615,7 @@ export function BarreauDePalier({
                 key={`${obstacle.raison}-${index}`}
                 obstacle={obstacle}
                 platform={palier.platform}
-                teinte={teinte}
+                teinte={encre}
               />
             ))}
           </View>
@@ -625,13 +635,13 @@ export function BarreauDePalier({
               gap: 8,
               paddingHorizontal: 14,
               borderTopWidth: 1,
-              borderTopColor: c['border.subtle'],
+              borderTopColor: c['line.default'],
             }}
           >
-            <Texte variante="type.bodyStrong" couleur={teinte} style={{ flex: 1 }}>
+            <Texte variante="type.bodyStrong" couleur={encre} style={{ flex: 1 }}>
               {t('tiers.seeServices', { count: palier.offres_disponibles })}
             </Texte>
-            <Icone nom="chevron" couleur={teinte} taille={20} />
+            <Icone nom="chevron" couleur={encre} taille={20} />
           </Pressable>
         ) : null}
       </View>
@@ -654,8 +664,8 @@ function EtatDuPalier({
   if (etat === 'ouvert') {
     return (
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }} testID="etat-ouvert">
-        <Icone nom="coche" couleur="status.success" taille={16} />
-        <Texte variante="type.label" couleur="status.success">
+        <Icone nom="coche" couleur="status.success.text" taille={16} />
+        <Texte variante="type.label" couleur="status.success.text">
           {t('tiers.openToYou')}
         </Texte>
       </View>
@@ -670,11 +680,13 @@ function EtatDuPalier({
         style={{
           paddingVertical: 3,
           paddingHorizontal: 9,
-          borderRadius: radius['radius.full'],
-          backgroundColor: c['accent.default'],
+          borderRadius: radius['radius.pill'],
+          // `brand.500` et non `brand.700` : c'est une surface, et l'encre par
+          // dessus donne 6,1:1 là où le blanc échouerait à cette taille.
+          backgroundColor: c['brand.500'],
         }}
       >
-        <Texte variante="type.eyebrow" couleur="accent.onAccent" style={{ fontSize: 10 }}>
+        <Texte variante="type.monoSmall" couleur="ink.onBrand" style={{ fontSize: 10 }}>
           {t('tiers.nextForYou')}
         </Texte>
       </View>
@@ -688,7 +700,7 @@ function EtatDuPalier({
       testID={etat === 'enPause' ? 'etat-en-pause' : 'etat-lointain'}
       // Sur un aplat, le texte porte la couleur d'écriture du palier ; ailleurs
       // celle du thème. Un `text.secondary` sur l'aplat violet serait illisible.
-      couleur={etat === 'enPause' ? 'status.warning' : plein ? (`${teinte}.onTier` as ColorName) : 'text.secondary'}
+      couleur={etat === 'enPause' ? 'status.warning.text' : plein ? (`${teinte}.onTier` as ColorName) : 'ink.soft'}
     >
       {libelle}
     </Texte>
@@ -729,7 +741,7 @@ export function EcartAuSeuil({
     return (
       <Texte
         variante="type.caption"
-        couleur="text.secondary"
+        couleur="ink.soft"
         testID={`obstacle-${obstacle.raison}`}
       >
         {messageDObstacle(t, obstacle, CODES_CONNUS, platform, locale)}
@@ -776,7 +788,7 @@ export function EcartAuSeuil({
               />
             </View>
           ) : (
-            <Texte variante="type.caption" couleur="text.secondary" style={{ flex: 1 }}>
+            <Texte variante="type.caption" couleur="ink.soft" style={{ flex: 1 }}>
               {phrase}
             </Texte>
           )
@@ -796,7 +808,7 @@ export function EcartAuSeuil({
       ) : null}
 
       {!large || forme.forme === 'ecart' ? (
-        <Texte variante="type.caption" couleur="text.secondary">
+        <Texte variante="type.caption" couleur="ink.soft">
           {phrase}
         </Texte>
       ) : null}

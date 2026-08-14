@@ -124,7 +124,7 @@ export function CatalogueScreen({
     >
       {(composition) => (
         <View style={{ gap: 12 }}>
-          <Texte variante="type.caption" couleur="text.secondary" testID="resume-du-catalogue">
+          <Texte variante="type.caption" couleur="ink.soft" testID="resume-du-catalogue">
             {t('composition.catalogueResume', { n: composition.items.length })}
           </Texte>
 
@@ -300,7 +300,7 @@ function Groupes({
           <View key={palier.id} style={{ gap: 8 }} testID={`palier-${palier.id}`}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <TierBadge tier={palier.content_format} />
-              <Texte variante="type.caption" couleur="text.secondary">
+              <Texte variante="type.caption" couleur="ink.soft">
                 {t('composition.abonnesMinimum', { n: palier.min_followers })}
               </Texte>
             </View>
@@ -323,7 +323,7 @@ function Groupes({
           <Texte variante="type.label">{t('composition.sansPalierTitre')}</Texte>
           {/* Dit, et non deviné : une prestation sans palier n'apparaît dans
               aucun fil, et rien à l'écran ne le laissait supposer. */}
-          <Texte variante="type.caption" couleur="text.secondary">
+          <Texte variante="type.caption" couleur="ink.soft">
             {t('composition.sansPalierCorps')}
           </Texte>
           {groupes.orphelines.map((item) => (
@@ -395,7 +395,7 @@ function LignePrestation({
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         <View style={{ flex: 1, gap: 2 }}>
           <Texte variante="type.label">{item.name}</Texte>
-          <Texte variante="type.caption" couleur="text.secondary">
+          <Texte variante="type.caption" couleur="ink.soft">
             {item.duration_minutes === null
               ? t('composition.dureeManquante')
               : t('composition.duree', { n: item.duration_minutes })}
@@ -410,7 +410,7 @@ function LignePrestation({
         />
       </View>
       {parLeParent ? (
-        <Texte variante="type.caption" couleur="text.muted" testID={`ferme-par-parent-${item.id}`}>
+        <Texte variante="type.caption" couleur="ink.mute" testID={`ferme-par-parent-${item.id}`}>
           {t('composition.fermeeParSonParent')}
         </Texte>
       ) : null}
@@ -422,7 +422,7 @@ function LignePrestation({
       {ecart.forme === 'conforme' || ecart.forme === 'sans-avis' ? null : (
         <Texte
           variante="type.caption"
-          couleur="text.secondary"
+          couleur="ink.soft"
           testID={`conseil-${item.id}`}
         >
           {ecart.forme === 'plus-exigeant'
@@ -443,7 +443,7 @@ function LignePrestation({
       {/* Une prestation sans palier : la proposition est alors la seule chose
           à dire, et elle a d'autant plus de valeur qu'il n'y a rien d'autre. */}
       {retenu === undefined && propose !== undefined ? (
-        <Texte variante="type.caption" couleur="accent.default" testID={`propose-${item.id}`}>
+        <Texte variante="type.caption" couleur="brand.700" testID={`propose-${item.id}`}>
           {t('composition.palierPropose', { palier: motDuPalier(propose, locale) })}
         </Texte>
       ) : null}
@@ -548,7 +548,7 @@ function NouvellePrestation({
         {/* La conséquence écrite, pas seulement le choix. Un palier haut réduit
             le nombre de créatrices éligibles, et rien ne le disait. */}
         {choisi ? (
-          <Texte variante="type.caption" couleur="text.secondary" testID="consequence-du-palier">
+          <Texte variante="type.caption" couleur="ink.soft" testID="consequence-du-palier">
             {t('composition.consequenceDuPalier', { n: choisi.min_followers })}
           </Texte>
         ) : null}

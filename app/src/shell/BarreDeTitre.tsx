@@ -57,8 +57,8 @@ export function BarreDeTitre({
         gap: spacing['space.3'],
         paddingHorizontal: spacing['space.5'],
         borderBottomWidth: 1,
-        borderBottomColor: c['border.subtle'],
-        backgroundColor: c['bg.canvas'],
+        borderBottomColor: c['line.default'],
+        backgroundColor: c['bg.page'],
       }}
     >
       {onRetour ? (
@@ -70,16 +70,16 @@ export function BarreDeTitre({
           onPress={onRetour}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
         >
-          <Icone nom="retour" couleur="text.secondary" taille={18} />
+          <Icone nom="retour" couleur="ink.soft" taille={18} />
         </Pressable>
       ) : null}
 
-      <Texte variante="type.title" ellipseSurNomPropre style={{ flexShrink: 1 }}>
+      <Texte variante="type.section" ellipseSurNomPropre style={{ flexShrink: 1 }}>
         {titre}
       </Texte>
 
       {fraicheur ? (
-        <Texte variante="type.caption" couleur="text.muted" testID="fraicheur">
+        <Texte variante="type.caption" couleur="ink.mute" testID="fraicheur">
           {fraicheur}
         </Texte>
       ) : null}

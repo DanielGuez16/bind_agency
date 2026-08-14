@@ -83,7 +83,7 @@ export function AudienceScreen() {
             );
             return (
               <View key={compte.social_account_id} style={{ gap: 4 }}>
-                <Texte variante="type.heading" ellipseSurNomPropre>
+                <Texte variante="type.bodyStrong" ellipseSurNomPropre>
                   {compte.handle ?? compte.platform}
                 </Texte>
 
@@ -118,7 +118,7 @@ export function AudienceScreen() {
                 ) : null}
 
                 {/* La date du relevé. Sans elle, le chiffre est illisible. */}
-                <Texte variante="type.caption" couleur="text.muted" testID="date-du-releve">
+                <Texte variante="type.caption" couleur="ink.mute" testID="date-du-releve">
                   {compte.captured_at
                     ? t('parcours.mesureLe', {
                         date: formatDate(compte.captured_at, locale, 'UTC'),
@@ -145,7 +145,7 @@ export function AudienceScreen() {
                         date: formatDate(controle.started_at, locale, 'UTC'),
                       })}`}
                     />
-                    <Texte variante="type.caption" couleur="text.secondary">
+                    <Texte variante="type.caption" couleur="ink.soft">
                       {t('parcours.verificationSignaux')}
                     </Texte>
                     {controle.signaux.map((signal) => (
@@ -195,7 +195,7 @@ function Rattacher({
   return (
     <Apparition>
       <View style={{ gap: 8 }} testID="rattacher-un-reseau">
-        <Texte variante="type.label" couleur="text.secondary">
+        <Texte variante="type.label" couleur="ink.soft">
           {t('parcours.audienceConnecter')}
         </Texte>
         {echec ? <StatusMessage level="danger" body={echec} testID="echec-connexion" /> : null}

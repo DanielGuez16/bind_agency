@@ -77,7 +77,7 @@ export function BienvenueScreen({
       testID="ecran-bienvenue"
       style={{
         flex: 1,
-        backgroundColor: c['bg.canvas'],
+        backgroundColor: c['bg.page'],
         padding: density.screenPadding,
         gap: 20,
         justifyContent: 'center',
@@ -86,8 +86,8 @@ export function BienvenueScreen({
       <Apparition>
         <View style={{ gap: 14 }}>
           <Logo taille={56} />
-          <Texte variante="type.display">{t('bienvenue.titre')}</Texte>
-          <Texte variante="type.body" couleur="text.secondary">
+          <Texte variante="type.screenTitle">{t('bienvenue.titre')}</Texte>
+          <Texte variante="type.body" couleur="ink.soft">
             {t('bienvenue.principe')}
           </Texte>
         </View>
@@ -96,10 +96,10 @@ export function BienvenueScreen({
       {ETAPES.map((etape, rang) => (
         <Apparition key={etape.titre} rang={rang + 1}>
           <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
-            <Icone nom={etape.icone} couleur="accent.default" taille={22} />
+            <Icone nom={etape.icone} couleur="brand.700" taille={22} />
             <View style={{ flex: 1, gap: 2 }}>
               <Texte variante="type.bodyStrong">{t(etape.titre)}</Texte>
-              <Texte variante="type.caption" couleur="text.secondary">
+              <Texte variante="type.caption" couleur="ink.soft">
                 {t(etape.corps)}
               </Texte>
             </View>
@@ -111,7 +111,7 @@ export function BienvenueScreen({
 
       <Apparition rang={ETAPES.length + 1}>
         <View style={{ gap: 8 }}>
-          <Texte variante="type.label" couleur="text.secondary">
+          <Texte variante="type.label" couleur="ink.soft">
             {t('bienvenue.choisir')}
           </Texte>
           {RESEAUX.map((reseau) => (

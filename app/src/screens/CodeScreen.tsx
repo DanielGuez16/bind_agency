@@ -161,7 +161,7 @@ export function CodeScreen({
       ) : null}
       {code === null && echec !== null ? (
         <View testID="etat-refus" style={{ gap: 12, paddingHorizontal: 24 }}>
-          <Texte variante="type.heading" align="center" style={{ color: codeColors.fg }}>
+          <Texte variante="type.bodyStrong" align="center" style={{ color: codeColors.fg }}>
             {t('parcours.codeIndisponible')}
           </Texte>
           <Texte variante="type.body" align="center" style={{ color: codeColors.fg }}>

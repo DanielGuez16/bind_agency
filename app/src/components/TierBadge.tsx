@@ -6,6 +6,21 @@
  * portée par la couleur seule — un daltonien, un écran mal calibré ou une
  * capture en noir et blanc doivent tous laisser lire le palier.
  *
+ * **Depuis la v1.0, la matière est la seule chose qui distingue les trois.**
+ * Une seule teinte de marque a supprimé le rose, le vert et le violet ; ce qui
+ * les remplace n'est pas une autre palette mais la **manière dont la teinte est
+ * posée** : contour, teinte, aplat. Deux gains, au-delà du fait de survivre au
+ * monochrome.
+ *
+ * D'abord **la progression devient ordinale**. Un rose, un vert et un violet ne
+ * disaient pas lequel était le plus exigeant ; il fallait l'apprendre. De moins
+ * de matière à plus de matière s'ordonne sans apprentissage.
+ *
+ * Ensuite **la règle des trois marqueurs devient vérifiable par
+ * construction**. Avec trois teintes, « distinct en niveaux de gris » était
+ * vrai en théorie et n'avait jamais été testé. Un contour, une teinte et un
+ * aplat le restent quoi qu'on fasse de la couleur.
+ *
  * **Le mot n'est jamais abrégé.** `HISTORIA` et `PUBLICACIÓN` passent sur deux
  * lignes dans les listes denses plutôt qu'en initiale. Une initiale ne se
  * devine pas, et « P » vaudrait pour `POST` comme pour `PUBLICACIÓN`.
@@ -15,11 +30,11 @@
  */
 import { View } from 'react-native';
 
-import { radius, tierTokens, useColors } from '../theme';
+import { matiereDePalier, radius, tierTokens, useColors, type Palier } from '../theme';
 import { useI18n } from '../i18n';
 import { Texte } from './Texte';
 
-export type Palier = 'story' | 'post' | 'reel';
+export type { Palier };
 
 export type TierBadgeProps = {
   tier: Palier;
@@ -35,17 +50,15 @@ export function TierBadge({ tier, size = 'md', onPhoto, testID }: TierBadgeProps
   const c = useColors();
   const { locale } = useI18n();
   const config = tierTokens[tier];
+  const m = matiereDePalier(tier);
   const mot = config.label[locale] ?? config.label.en;
 
-  // La matière : contour pour story, fond léger pour post, fond plein pour
-  // reel. C'est le troisième marqueur, celui qui se lit sans lire.
-  const plein = config.material === 'solidInverse';
-  const fond = plein
-    ? c[`tier.${tier}`]
-    : config.material === 'solidAccent'
-      ? c[`tier.${tier}.subtle`]
-      : 'transparent';
-  const surTeinte = plein ? (`tier.${tier}.onTier` as const) : (`tier.${tier}` as const);
+  // Sur une photo, le contour et la teinte perdent leur fond : ce qui est
+  // derrière est quelconque. Le voile de badge le leur rend. L'aplat, lui, est
+  // déjà opaque — et c'est l'unique élément coloré que la couverture a le droit
+  // de porter, la pastille de distance passant alors sur le même voile.
+  const surface = onPhoto && m.matiere !== 'solid' ? c['scrim.badge'] : c[m.surface];
+  const bordure = m.bordure === 'transparent' ? 'transparent' : c[m.bordure];
 
   return (
     <View
@@ -57,16 +70,16 @@ export function TierBadge({ tier, size = 'md', onPhoto, testID }: TierBadgeProps
         gap: 5,
         paddingVertical: size === 'sm' ? 3 : 4,
         paddingHorizontal: size === 'sm' ? 6 : 8,
-        borderRadius: radius['radius.sm'],
-        borderWidth: plein ? 0 : 1,
-        borderColor: c[`tier.${tier}`],
-        backgroundColor: onPhoto && !plein ? c['badge.scrim'] : fond,
+        borderRadius: radius['radius.none'],
+        borderWidth: m.epaisseur,
+        borderColor: bordure,
+        backgroundColor: surface,
       }}
     >
-      <Glyphe tier={tier} barres={config.glyphBars} plein={plein} />
+      <Glyphe tier={tier} />
       <Texte
         variante="type.mono"
-        couleur={surTeinte}
+        couleur={m.texte}
         style={{ fontSize: size === 'sm' ? 10 : 11, letterSpacing: 0.66 }}
       >
         {mot}
@@ -76,8 +89,9 @@ export function TierBadge({ tier, size = 'md', onPhoto, testID }: TierBadgeProps
 }
 
 /** Une à trois barres. Les inactives restent dessinées, souvent transparentes. */
-function Glyphe({ tier, barres, plein }: { tier: Palier; barres: number; plein: boolean }) {
+function Glyphe({ tier }: { tier: Palier }) {
   const c = useColors();
+  const m = matiereDePalier(tier);
   return (
     <View
       accessibilityElementsHidden
@@ -94,12 +108,11 @@ function Glyphe({ tier, barres, plein }: { tier: Palier; barres: number; plein: 
           style={{
             width: 3,
             height: hauteur,
-            backgroundColor:
-              i < barres
-                ? plein
-                  ? c[`tier.${tier}.onTier`]
-                  : c[`tier.${tier}.glyphFilled`]
-                : c[`tier.${tier}.glyphEmpty`],
+            backgroundColor: i < m.barresPleines ? c[m.glyphePlein] : c[m.glypheVide],
+            // Sur l'aplat, la barre vide est la même encre que la pleine et
+            // disparaîtrait. Elle reste dessinée, en retrait : trois barres
+            // dont une seule s'efface ne compteraient plus jusqu'à trois.
+            opacity: i < m.barresPleines ? 1 : m.matiere === 'solid' ? 0.3 : 1,
           }}
         />
       ))}
@@ -118,7 +131,7 @@ export function LigneDeContrepartie({ tier }: { tier: Palier }) {
   const { locale } = useI18n();
   const config = tierTokens[tier];
   return (
-    <Texte variante="type.caption" couleur="text.secondary">
+    <Texte variante="type.caption" couleur="ink.soft">
       {config.counterpart[locale] ?? config.counterpart.en}
     </Texte>
   );

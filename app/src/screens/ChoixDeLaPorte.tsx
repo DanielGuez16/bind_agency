@@ -57,7 +57,7 @@ export function ChoixDeLaPorte({
   const portes: Porte[] = [
     {
       role: 'creator',
-      teinte: 'role.creator',
+      teinte: 'brand.700',
       etiquette: t('auth.roleCreator'),
       promesse: t('auth.porteCreateur'),
       points: [t('auth.porteCreateurA'), t('auth.porteCreateurB'), t('auth.porteCreateurC')],
@@ -66,7 +66,7 @@ export function ChoixDeLaPorte({
     },
     {
       role: 'business_member',
-      teinte: 'role.merchant',
+      teinte: 'ink.mute',
       etiquette: t('auth.roleMerchant'),
       promesse: t('auth.porteCommerce'),
       points: [t('auth.porteCommerceA'), t('auth.porteCommerceB'), t('auth.porteCommerceC')],
@@ -89,7 +89,7 @@ export function ChoixDeLaPorte({
         alignSelf: 'center',
       }}
     >
-      <Marque taille={30} couleur={surMedia ? 'text.onScrim' : 'accent.default'} />
+      <Marque taille={30} couleur={surMedia ? 'ink.onScrim' : 'brand.700'} />
 
       <View style={{ gap: spacing['space.2'], maxWidth: 720 }}>
         {/* Nommée : c'est sur elle que la suite de bout en bout lit la police
@@ -97,13 +97,13 @@ export function ChoixDeLaPorte({
             vérifier qu'un texte emploie la fonte serait de deviner un
             sélecteur, qui casserait au premier changement de structure. */}
         <Texte
-          variante="type.display"
-          couleur={surMedia ? 'text.onScrim' : 'text.primary'}
+          variante="type.screenTitle"
+          couleur={surMedia ? 'ink.onScrim' : 'ink.default'}
           testID="promesse-accueil"
         >
           {t('auth.accroche')}
         </Texte>
-        <Texte couleur={surMedia ? 'text.onScrimMuted' : 'text.secondary'}>
+        <Texte couleur={surMedia ? 'ink.onScrimMuted' : 'ink.soft'}>
           {t('auth.sousAccroche')}
         </Texte>
       </View>
@@ -130,22 +130,26 @@ export function ChoixDeLaPorte({
               minWidth: large ? LARGEUR_DE_PORTE : undefined,
               gap: spacing['space.4'],
               padding: spacing['space.5'],
-              borderRadius: radius['radius.xl'],
+              borderRadius: radius['radius.none'],
               borderWidth: 1,
-              borderColor: c['border.subtle'],
+              borderColor: c['line.default'],
               backgroundColor: c['bg.surface'],
             }}
           >
-            <Texte variante="type.label" style={{ color: c[porte.teinte] }}>
+            {/* **Les deux portes ne se distinguent plus par une teinte.** La
+                v1.0 n'a qu'une encre de marque : elle va à celle qu'on veut
+                voir en premier, la créatrice, et l'autre reste en sourd. Ce
+                qui les sépare est le texte de la carte, pas sa couleur. */}
+            <Texte variante="type.label" couleur={porte.teinte}>
               {porte.etiquette.toUpperCase()}
             </Texte>
-            <Texte variante="type.title">{porte.promesse}</Texte>
+            <Texte variante="type.section">{porte.promesse}</Texte>
 
             <View style={{ gap: spacing['space.3'], flex: 1 }}>
               {porte.points.map((point) => (
                 <View key={point} style={{ flexDirection: 'row', gap: spacing['space.2'] }}>
-                  <Icone nom="coche" couleur="text.muted" taille={18} />
-                  <Texte couleur="text.secondary" style={{ flex: 1 }}>
+                  <Icone nom="coche" couleur="ink.mute" taille={18} />
+                  <Texte couleur="ink.soft" style={{ flex: 1 }}>
                     {point}
                   </Texte>
                 </View>

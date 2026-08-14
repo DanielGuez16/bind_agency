@@ -21,12 +21,12 @@ import { useEffect, useRef } from 'react';
 import { Animated, Easing, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
-import { codeColors, tokens } from '../theme';
+import { codeColors, motion, produit, radius } from '../theme';
 import { useMouvementReduit } from './Mouvement';
 import { Texte } from './Texte';
 
 const { fg, bg } = codeColors;
-const CONFIG = tokens.code;
+const CONFIG = produit.code;
 
 /**
  * La taille du code de secours, et la hauteur de ligne qui va avec.
@@ -51,7 +51,7 @@ export function CodeGlyphs({ code, testID }: { code: string; testID?: string }) 
     entree.setValue(0);
     const animation = Animated.timing(entree, {
       toValue: 1,
-      duration: tokens.motion.durationSlow,
+      duration: motion.slow,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
     });
@@ -73,14 +73,10 @@ export function CodeGlyphs({ code, testID }: { code: string; testID?: string }) 
       accessibilityLabel={code.split('').join(' ')}
       style={{ flexDirection: 'row', justifyContent: 'center' }}
     >
-      <Texte
-        variante="type.code"
-        style={{
-          fontSize: CONFIG.codeFontSize,
-          lineHeight: CONFIG.codeFontSize + 8,
-          color: fg,
-        }}
-      >
+      {/* La taille vient de la variante, comme partout ailleurs. Elle était
+          réécrite ici à partir d'un second jeton, `codeFontSize`, qui répétait
+          la même valeur : deux endroits à changer pour un seul chiffre. */}
+      <Texte variante="type.code" style={{ color: fg }}>
         {code}
       </Texte>
     </View>
@@ -116,7 +112,7 @@ export function Countdown({
     const animation = Animated.sequence([
       Animated.timing(battement, {
         toValue: 0.92,
-        duration: tokens.motion.durationFast,
+        duration: motion.fast,
         useNativeDriver: true,
       }),
       Animated.spring(battement, {
@@ -142,14 +138,7 @@ export function Countdown({
         backgroundColor: urgent ? fg : bg,
       }}
     >
-      <Texte
-        variante="type.countdown"
-        style={{
-          fontSize: CONFIG.countdownFontSize,
-          lineHeight: CONFIG.countdownFontSize + 6,
-          color: urgent ? bg : fg,
-        }}
-      >
+      <Texte variante="type.countdown" style={{ color: urgent ? bg : fg }}>
         {secondes}
       </Texte>
     </View>
@@ -294,7 +283,7 @@ function Halo() {
         top: '18%',
         width: 320,
         height: 320,
-        borderRadius: 160,
+        borderRadius: radius['radius.pill'],
         backgroundColor: fg,
         opacity: souffle.interpolate({ inputRange: [0, 1], outputRange: [0.03, 0.07] }),
         transform: [

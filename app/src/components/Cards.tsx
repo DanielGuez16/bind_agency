@@ -22,7 +22,7 @@
 import { Animated, Image, Pressable, View, type ImageSourcePropType } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { radius, useColors, useElevation, useTheme } from '../theme';
+import { radius, useColors, useTheme } from '../theme';
 import { Button } from './Button';
 import { useEnfoncement } from './Mouvement';
 import { Texte } from './Texte';
@@ -55,7 +55,7 @@ export function VoileDeLisibilite({ hauteur }: { hauteur?: number }) {
   return (
     <LinearGradient
       pointerEvents="none"
-      colors={[c['scrim.top'], c['scrim.mid'], c['scrim.bottom']]}
+      colors={[c['scrim.photoTop'], c['scrim.modal'], c['scrim.photoBottom']]}
       locations={[0, 0.55, 1]}
       style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: hauteur ?? '70%' }}
     />
@@ -94,11 +94,11 @@ export function MediaFallback({
         gap: 4,
       }}
     >
-      <Texte variante="type.title" couleur="media.placeholderText">
+      <Texte variante="type.section" couleur="media.placeholderText">
         {monogramme.slice(0, 2).toUpperCase()}
       </Texte>
       {commeTache && labelTache ? (
-        <Texte variante="type.caption" couleur="status.warning">
+        <Texte variante="type.caption" couleur="status.warning.text">
           {labelTache}
         </Texte>
       ) : null}
@@ -139,9 +139,11 @@ export function BusinessCard({
 }: BusinessCardProps) {
   const { color: c, role } = useTheme();
   const enfoncement = useEnfoncement(Boolean(onPress));
-  // La carte décolle du fond. La maquette pose `0 1px 2px` sous chacune ; sans
-  // elle, une carte et le canevas vivent sur le même plan optique.
-  const elevation = useElevation('elevation.1');
+  // **Plus d'ombre sous une carte.** La v1.0 supprime `elevation.1` : une
+  // carte se tient à son filet de 1 px. Répétée sous chaque carte d'un fil,
+  // l'ombre faisait une nappe grise, et c'est exactement ce que le filet
+  // remplace. La seule ombre qui reste est celle de ce qui flotte vraiment —
+  // feuille, menu, dialogue.
 
   return (
     <Animated.View style={enfoncement.style}>
@@ -153,10 +155,9 @@ export function BusinessCard({
         onPressIn={enfoncement.onPressIn}
         onPressOut={enfoncement.onPressOut}
         style={{
-          ...elevation,
-          borderRadius: radius['radius.xl'],
+          borderRadius: radius['radius.none'],
           borderWidth: 1,
-          borderColor: c['border.subtle'],
+          borderColor: c['line.default'],
           backgroundColor: c['bg.surface'],
           overflow: 'hidden',
         }}
@@ -198,11 +199,11 @@ export function BusinessCard({
                 left: 10,
                 paddingVertical: 3,
                 paddingHorizontal: 8,
-                borderRadius: radius['radius.full'],
-                backgroundColor: c['badge.scrim'],
+                borderRadius: radius['radius.pill'],
+                backgroundColor: c['scrim.badge'],
               }}
             >
-              <Texte variante="type.mono" couleur="text.primary" style={{ fontSize: 11 }}>
+              <Texte variante="type.mono" couleur="ink.default" style={{ fontSize: 11 }}>
                 {distance}
               </Texte>
             </View>
@@ -212,16 +213,16 @@ export function BusinessCard({
               et le mettre sous l'image le renvoyait à la troisième ligne. */}
           <View style={{ padding: 14, gap: 2 }}>
             <Texte
-              variante="type.title"
+              variante="type.section"
               ellipseSurNomPropre
               // Le texte est posé sur le voile, pas sur une surface : sa
               // couleur ne suit pas le thème mais le voile, qui est sombre
               // dans les deux.
-              couleur="text.onScrim"
+              couleur="ink.onScrim"
             >
               {name}
             </Texte>
-            <Texte variante="type.caption" couleur="text.onScrimMuted">
+            <Texte variante="type.caption" couleur="ink.onScrimMuted">
               {meta}
             </Texte>
           </View>
@@ -264,10 +265,10 @@ export function ServiceRow({ name, meta, tier, thumbnail, right, testID }: Servi
         gap: 10,
         paddingHorizontal: 12,
         borderBottomWidth: 1,
-        borderBottomColor: c['border.subtle'],
+        borderBottomColor: c['line.default'],
       }}
     >
-      <View style={{ width: 44, height: 44, borderRadius: radius['radius.sm'], overflow: 'hidden' }}>
+      <View style={{ width: 44, height: 44, borderRadius: radius['radius.none'], overflow: 'hidden' }}>
         {thumbnail ? (
           <Image source={thumbnail} style={{ width: 44, height: 44 }} resizeMode="cover" />
         ) : (
@@ -276,7 +277,7 @@ export function ServiceRow({ name, meta, tier, thumbnail, right, testID }: Servi
       </View>
       <View style={{ flex: 1, gap: 2 }}>
         <Texte variante="type.label">{name}</Texte>
-        <Texte variante="type.mono" couleur="text.secondary" style={{ fontSize: 12 }}>
+        <Texte variante="type.mono" couleur="ink.soft" style={{ fontSize: 12 }}>
           {meta}
         </Texte>
       </View>
@@ -310,10 +311,10 @@ export function DataRow({ label, value, chiffre, testID }: DataRowProps) {
         paddingHorizontal: 12,
         paddingVertical: 8,
         borderBottomWidth: 1,
-        borderBottomColor: c['border.subtle'],
+        borderBottomColor: c['line.default'],
       }}
     >
-      <Texte variante="type.caption" couleur="text.secondary" style={{ flexShrink: 1 }}>
+      <Texte variante="type.caption" couleur="ink.soft" style={{ flexShrink: 1 }}>
         {label}
       </Texte>
       <Texte variante={chiffre ? 'type.mono' : 'type.body'} align="right" style={{ flexShrink: 1 }}>

@@ -19,14 +19,14 @@
  */
 import { Pressable, View } from 'react-native';
 
-import { radius, tokens, useColors } from '../theme';
+import { produit, radius, useColors } from '../theme';
 import { Texte } from './Texte';
 
-export const ALPHABET = tokens.code.alphabet;
-export const LONGUEUR = tokens.code.manualChars;
+export const ALPHABET = produit.code.alphabet;
+export const LONGUEUR = produit.code.manualChars;
 
 /** Le découpage, celui-là même que le code de retrait affiche au créateur. */
-export const TAILLE_DE_GROUPE = tokens.code.manualGroupSize;
+export const TAILLE_DE_GROUPE = produit.code.manualGroupSize;
 
 /** L'écart entre deux caractères d'un même groupe, puis entre deux groupes. */
 const ECART_DANS_LE_GROUPE = 14;
@@ -85,8 +85,8 @@ export function CodeInput({
         style={{
           height: 72,
           borderWidth: 2,
-          borderColor: c['text.primary'],
-          borderRadius: radius['radius.md'],
+          borderColor: c['ink.default'],
+          borderRadius: radius['radius.none'],
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'center',
@@ -122,7 +122,7 @@ export function CodeInput({
                   style={{
                     width: 26,
                     height: 3,
-                    backgroundColor: i === value.length ? c['text.primary'] : c['border.default'],
+                    backgroundColor: i === value.length ? c['ink.default'] : c['line.default'],
                   }}
                 />
               );
@@ -163,8 +163,8 @@ function Touche({
         height: 56,
         alignItems: 'center',
         justifyContent: 'center',
-        borderRadius: radius['radius.md'],
-        backgroundColor: c['bg.raised'],
+        borderRadius: radius['radius.none'],
+        backgroundColor: c['bg.surface'],
         opacity: pressed ? 0.7 : 1,
       })}
     >

@@ -178,11 +178,11 @@ export function RedemptionScreen({
         justifyContent: 'space-between',
         gap: spacing['space.4'],
         padding: spacing['space.5'],
-        borderRadius: radius['radius.lg'],
+        borderRadius: radius['radius.none'],
         backgroundColor: c['bg.inverse'],
       }}
     >
-      <Texte variante="type.heading" style={{ color: c['text.inverse'] }}>
+      <Texte variante="type.bodyStrong" style={{ color: c['ink.onDark'] }}>
         {t('redemption.title')}
       </Texte>
       {Scan ? (
@@ -199,10 +199,10 @@ export function RedemptionScreen({
 
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: c['bg.canvas'] }}
+      style={{ flex: 1, backgroundColor: c['bg.page'] }}
       contentContainerStyle={{ padding: spacing['space.6'], gap: spacing['space.4'] }}
     >
-      {large ? barreDeCaisse : <Texte variante="type.heading">{t('redemption.title')}</Texte>}
+      {large ? barreDeCaisse : <Texte variante="type.bodyStrong">{t('redemption.title')}</Texte>}
 
       {/* En grand écran, la caisse et son journal côte à côte. Le pavé occupait
           le tiers gauche et le reste était vide : la passation prévoyait ce
@@ -259,14 +259,14 @@ export function RedemptionScreen({
             </View>
           </View>
           {ongletScan && !Scan ? (
-            <Texte variante="type.caption" couleur="text.secondary">
+            <Texte variante="type.caption" couleur="ink.soft">
               {t('redemption.cameraUnavailable')}
             </Texte>
           ) : null}
         </View>
       ) : (
         <View style={{ gap: spacing['space.3'] }}>
-          <Texte variante="type.caption" couleur="text.secondary">
+          <Texte variante="type.caption" couleur="ink.soft">
             {t('redemption.scanHint')}
           </Texte>
           <Scan onCode={verifier} indisponible={() => setOngletScan(false)} />
@@ -278,8 +278,8 @@ export function RedemptionScreen({
           style={{ gap: spacing['space.2'], alignItems: 'center' }}
           accessibilityRole="progressbar"
         >
-          <ActivityIndicator color={c['accent.default']} />
-          <Texte couleur="text.secondary">{t('redemption.verifying')}</Texte>
+          <ActivityIndicator color={c['brand.700']} />
+          <Texte couleur="ink.soft">{t('redemption.verifying')}</Texte>
         </View>
       ) : null}
 
@@ -289,16 +289,16 @@ export function RedemptionScreen({
           style={{
             gap: spacing['space.1'],
             padding: spacing['space.4'],
-            borderRadius: radius['radius.md'],
-            backgroundColor: c['status.danger.subtle'],
+            borderRadius: radius['radius.none'],
+            backgroundColor: c['status.danger.surface'],
           }}
         >
-          <Texte variante="type.label" style={{ color: c['status.danger'] }}>
+          <Texte variante="type.label" style={{ color: c['status.danger.text'] }}>
             {refus.injoignable ? t('errors.network') : translateErrorCode(t, refus.code)}
           </Texte>
           {/* Un code refusé dit quoi faire, pas seulement que c'est refusé :
               c'est un commerçant devant un client qui le lit. */}
-          <Texte variante="type.caption" couleur="text.secondary">
+          <Texte variante="type.caption" couleur="ink.soft">
             {refus.injoignable ? t('redemption.unreachableHint') : t('redemption.refusedHint')}
           </Texte>
         </View>
@@ -310,20 +310,20 @@ export function RedemptionScreen({
           style={{
             gap: spacing['space.3'],
             padding: spacing['space.4'],
-            borderRadius: radius['radius.md'],
-            backgroundColor: c['bg.raised'],
+            borderRadius: radius['radius.none'],
+            backgroundColor: c['bg.surface'],
           }}
         >
-          <Texte variante="type.title">{etat.verification.item_name}</Texte>
+          <Texte variante="type.section">{etat.verification.item_name}</Texte>
           {etat.verification.creator_name ? (
-            <Texte couleur="text.secondary">
+            <Texte couleur="ink.soft">
               {t('redemption.creator')} : {etat.verification.creator_name}
             </Texte>
           ) : null}
           {/* La caisse a le droit de savoir qu'elle n'a pas scanné : c'est le
               chemin le moins fort des deux. */}
           {etat.verification.par_secours ? (
-            <Texte variante="type.caption" couleur="text.secondary">
+            <Texte variante="type.caption" couleur="ink.soft">
               {t('redemption.usedManualCode')}
             </Texte>
           ) : null}
@@ -340,11 +340,11 @@ export function RedemptionScreen({
           testID="servi"
           style={{
             padding: spacing['space.4'],
-            borderRadius: radius['radius.md'],
-            backgroundColor: c['status.success.subtle'],
+            borderRadius: radius['radius.none'],
+            backgroundColor: c['status.success.surface'],
           }}
         >
-          <Texte variante="type.label" style={{ color: c['status.success'] }}>
+          <Texte variante="type.label" style={{ color: c['status.success.text'] }}>
             {t('redemption.served')} — {etat.verification.item_name}
           </Texte>
         </View>
@@ -397,14 +397,14 @@ function ServisDuJour({ businessId, depuis }: { businessId: string; depuis: stri
 
   return (
     <View style={{ width: LARGEUR_DU_JOURNAL, gap: spacing['space.3'] }} testID="servis-du-jour">
-      <Texte variante="type.label" couleur="text.secondary">
+      <Texte variante="type.label" couleur="ink.soft">
         {t('redemption.servisDuJour')}
       </Texte>
 
       {servis.length === 0 ? (
         // Un panneau vide est une information : c'est le début de journée. Le
         // dire vaut mieux qu'un cadre blanc, qui se lit comme un chargement.
-        <Texte variante="type.caption" couleur="text.muted" testID="servis-aucun">
+        <Texte variante="type.caption" couleur="ink.mute" testID="servis-aucun">
           {t('redemption.servisAucun')}
         </Texte>
       ) : null}
@@ -416,26 +416,26 @@ function ServisDuJour({ businessId, depuis }: { businessId: string; depuis: stri
           style={{
             gap: 4,
             padding: spacing['space.4'],
-            borderRadius: radius['radius.md'],
+            borderRadius: radius['radius.none'],
             // La plus récente se distingue : c'est celle dont on vient de
             // s'occuper, et celle dont l'échéance compte encore.
-            backgroundColor: rang === 0 ? c['status.success.subtle'] : c['bg.surface'],
+            backgroundColor: rang === 0 ? c['status.success.surface'] : c['bg.surface'],
             borderWidth: 1,
-            borderColor: rang === 0 ? c['status.success.subtle'] : c['border.subtle'],
+            borderColor: rang === 0 ? c['status.success.surface'] : c['line.default'],
           }}
         >
           {rang === 0 ? (
-            <Texte variante="type.caption" style={{ color: c['status.success'] }}>
+            <Texte variante="type.caption" style={{ color: c['status.success.text'] }}>
               {t('redemption.servisDernier')}
             </Texte>
           ) : null}
           <Texte variante="type.bodyStrong">{reservation.item_name}</Texte>
-          <Texte variante="type.caption" couleur="text.secondary">
+          <Texte variante="type.caption" couleur="ink.soft">
             {[reservation.creator_first_name, reservation.creator_last_name]
               .filter(Boolean)
               .join(' ') || reservation.creator_handle}
           </Texte>
-          <Texte variante="type.caption" couleur="text.muted">
+          <Texte variante="type.caption" couleur="ink.mute">
             {reservation.contrepartie
               ? t('redemption.servisEcheance', {
                   quand: formatDateTime(

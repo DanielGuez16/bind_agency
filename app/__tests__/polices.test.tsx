@@ -15,7 +15,7 @@
 import { render, screen } from '@testing-library/react-native';
 
 import { Texte } from '../src/components';
-import { nomDeFonte, policesAcharger, tokens, typography } from '../src/theme';
+import { familles, nomDeFonte, policesAcharger, typography } from '../src/theme';
 import { ThemeProvider } from '../src/theme';
 
 describe('la direction v1.0 a bien remplacé les familles', () => {
@@ -24,9 +24,9 @@ describe('la direction v1.0 a bien remplacé les familles', () => {
     // fonctionnel au géométrique, le mono ne bouge pas — c'est lui qui porte
     // les chiffres, les codes et les horaires, et rien dans la nouvelle
     // direction ne le concerne.
-    expect(tokens.typography.fontFamily).toEqual({
+    expect(familles).toEqual({
       display: 'Bodoni Moda',
-      ui: 'Outfit',
+      sans: 'Outfit',
       mono: 'IBM Plex Mono',
     });
   });
@@ -72,8 +72,9 @@ describe('les fontes du système', () => {
 
     for (const [nom, echelle] of Object.entries(typography)) {
       const attendu = nomDeFonte(
-        echelle.fontFamily as never,
-        (echelle as { fontWeight: string }).fontWeight,
+        echelle.fontFamily,
+        echelle.fontWeight,
+        echelle.fontStyle === 'italic' ? 'italic' : 'normal',
       );
       expect({ variante: nom, presente: attendu in chargees }).toEqual({
         variante: nom,
@@ -96,15 +97,15 @@ describe('les fontes du système', () => {
   it('nomme la graisse, au lieu de la laisser synthétiser', async () => {
     // Sur iOS et Android, `fontWeight` ne choisit pas un fichier. Demander la
     // famille seule laisse le moteur épaissir les fûts lui-même.
-    const famille = tokens.typography.fontFamily.ui;
-    expect(nomDeFonte('ui', '600')).toBe(`${famille.replace(/\s+/g, '')}_600`);
-    expect(nomDeFonte('ui', '600')).not.toBe(famille);
+    const famille = familles.sans;
+    expect(nomDeFonte('sans', '600')).toBe(`${famille.replace(/\s+/g, '')}_600`);
+    expect(nomDeFonte('sans', '600')).not.toBe(famille);
   });
 
   it('retombe sur une graisse réelle quand celle qu’on demande manque', async () => {
     // Mieux vaut un 500 dessiné qu'un 800 fabriqué. La règle vaut surtout pour
     // la direction artistique à venir, qui n'aura pas forcément sept graisses.
-    const famille = tokens.typography.fontFamily.mono.replace(/\s+/g, '');
+    const famille = familles.mono.replace(/\s+/g, '');
     const retenue = nomDeFonte('mono', '800');
 
     expect(retenue).not.toBe(`${famille}_800`);
@@ -114,7 +115,7 @@ describe('les fontes du système', () => {
   it('pose le nom enregistré sur le texte rendu', async () => {
     await render(
       <ThemeProvider role="creator">
-        <Texte variante="type.display" testID="titre">
+        <Texte variante="type.screenTitle" testID="titre">
           BIND
         </Texte>
       </ThemeProvider>,
@@ -122,7 +123,9 @@ describe('les fontes du système', () => {
 
     const style = screen.getByTestId('titre').props.style;
     const aplati = Array.isArray(style) ? Object.assign({}, ...style.filter(Boolean)) : style;
-    expect(aplati.fontFamily).toBe(nomDeFonte('display', '600'));
+    // `type.screenTitle` est en Outfit : sous le plancher de 34 px, le Didone
+    // n'a rien à faire dans une interface.
+    expect(aplati.fontFamily).toBe(nomDeFonte('sans', '600'));
   });
 
   it('garde les familles dans les jetons, et nulle part ailleurs', async () => {
@@ -142,13 +145,14 @@ describe('les fontes du système', () => {
     };
     parcourir(join(__dirname, '..', 'src'));
 
-    const familles = Object.values(tokens.typography.fontFamily);
-    const fautifs = sources.filter((chemin) => {
+
+    const noms: string[] = Object.values(familles);
+    const fautifs = sources.filter((chemin: string) => {
       // Le dossier du thème est le seul endroit autorisé : les jetons les
       // déclarent, `polices.ts` dit quel fichier va avec.
       if (chemin.includes(join('src', 'theme'))) return false;
       const source = readFileSync(chemin, 'utf-8');
-      return familles.some((famille) => source.includes(famille));
+      return noms.some((famille) => source.includes(famille));
     });
 
     expect(fautifs).toEqual([]);
@@ -176,7 +180,7 @@ describe('les fontes du système', () => {
     // en charger un coûterait un fichier au démarrage pour rien. Demander
     // l'italique là ne doit pas rendre un nom que rien n'enregistre : mieux
     // vaut un romain qu'un repli silencieux sur la pile système.
-    for (const role of ['ui', 'mono'] as const) {
+    for (const role of ['sans', 'mono'] as const) {
       expect(nomDeFonte(role, '500', 'italic')).toBe(nomDeFonte(role, '500'));
     }
   });
@@ -187,11 +191,18 @@ describe('les fontes du système', () => {
     // pense ; tant qu'aucune ne la demande, aucun fichier italique ne pèse au
     // démarrage.
     const chargees = Object.keys(policesAcharger());
-    const italiquesDemandees = Object.values(typography).filter(
-      (echelle) => (echelle as { fontStyle?: string }).fontStyle === 'italic',
-    ).length;
+    // Les **noms distincts** et non le nombre de variantes : `displayAccent` et
+    // `headingAccent` sont le même fichier à deux tailles, et compter les
+    // variantes ferait attendre deux fichiers là où un seul est chargé.
+    const italiquesDemandees = new Set(
+      Object.values(typography)
+        .filter((echelle) => echelle.fontStyle === 'italic')
+        .map((echelle) => nomDeFonte(echelle.fontFamily, echelle.fontWeight, 'italic')),
+    );
 
-    expect(chargees.filter((nom) => nom.endsWith('Italic'))).toHaveLength(italiquesDemandees);
+    expect(chargees.filter((nom) => nom.endsWith('Italic')).sort()).toEqual(
+      [...italiquesDemandees].sort(),
+    );
   });
 
   it('rend un nom que le CSS accepte sans guillemets', async () => {
@@ -202,7 +213,7 @@ describe('les fontes du système', () => {
     // déclaration entière — et le navigateur la jetait sans rien dire.
     const valide = /^[A-Za-z][A-Za-z0-9_-]*$/;
 
-    for (const role of ['display', 'ui', 'mono'] as const) {
+    for (const role of ['display', 'sans', 'mono'] as const) {
       for (const graisse of ['400', '500', '600', '700']) {
         // Les deux voix : l'italique suffixe le même identifiant, et c'est là
         // qu'un séparateur mal choisi — un espace, un tiret devant un chiffre —
@@ -231,6 +242,6 @@ describe('les fontes du système', () => {
     const style = screen.getByTestId('fort').props.style;
     const aplati = Array.isArray(style) ? Object.assign({}, ...style.filter(Boolean)) : style;
     expect(aplati.fontWeight).toBeUndefined();
-    expect(aplati.fontFamily).toBe(nomDeFonte('ui', '600'));
+    expect(aplati.fontFamily).toBe(nomDeFonte('sans', '600'));
   });
 });

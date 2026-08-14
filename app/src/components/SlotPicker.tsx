@@ -53,9 +53,9 @@ export function DayPicker({
               alignItems: 'center',
               justifyContent: 'center',
               gap: 2,
-              borderRadius: radius['radius.md'],
+              borderRadius: radius['radius.none'],
               borderWidth: 1,
-              borderColor: choisi ? c['bg.inverse'] : c['border.default'],
+              borderColor: choisi ? c['bg.inverse'] : c['line.default'],
               backgroundColor: choisi
                 ? c['bg.inverse']
                 : jour.disponible
@@ -65,13 +65,13 @@ export function DayPicker({
           >
             <Texte
               variante="type.caption"
-              couleur={choisi ? 'text.inverse' : jour.disponible ? 'text.secondary' : 'text.disabled'}
+              couleur={choisi ? 'ink.onDark' : jour.disponible ? 'ink.soft' : 'ink.faint'}
             >
               {jour.jourCourt}
             </Texte>
             <Texte
               variante="type.mono"
-              couleur={choisi ? 'text.inverse' : jour.disponible ? 'text.primary' : 'text.disabled'}
+              couleur={choisi ? 'ink.onDark' : jour.disponible ? 'ink.default' : 'ink.faint'}
             >
               {jour.numero}
             </Texte>
@@ -120,11 +120,11 @@ export function SlotPicker({
               minHeight: 44,
               paddingVertical: 11,
               paddingHorizontal: 16,
-              borderRadius: radius['radius.md'],
+              borderRadius: radius['radius.none'],
               borderWidth: 1,
-              borderColor: choisi ? c['accent.default'] : c['border.default'],
+              borderColor: choisi ? c['brand.700'] : c['line.default'],
               backgroundColor: choisi
-                ? c['accent.subtle']
+                ? c['brand.50']
                 : creneau.pris
                   ? c['bg.sunken']
                   : 'transparent',
@@ -132,7 +132,7 @@ export function SlotPicker({
           >
             <Texte
               variante="type.mono"
-              couleur={creneau.pris ? 'text.disabled' : 'text.primary'}
+              couleur={creneau.pris ? 'ink.faint' : 'ink.default'}
               style={{ fontSize: 15 }}
             >
               {creneau.heure}

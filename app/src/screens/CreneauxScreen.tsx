@@ -143,7 +143,7 @@ export function CreneauxScreen({
   const pretAReserver = Boolean(choisi) || !offre.requires_booking;
 
   return (
-    <View style={{ flex: 1, backgroundColor: c['bg.canvas'] }} testID="ecran-creneaux">
+    <View style={{ flex: 1, backgroundColor: c['bg.page'] }} testID="ecran-creneaux">
       <Ecran
       onRetour={onRetour}
         requete={requete}
@@ -152,7 +152,7 @@ export function CreneauxScreen({
       >
         {() => (
           <View style={{ gap: 16 }}>
-            <Texte variante="type.heading">{offre.name}</Texte>
+            <Texte variante="type.bodyStrong">{offre.name}</Texte>
 
             <DayPicker
               testID="jours"
@@ -184,7 +184,7 @@ export function CreneauxScreen({
             />
 
             {duJour.length === 0 ? (
-              <Texte variante="type.caption" couleur="text.secondary" testID="jour-vide">
+              <Texte variante="type.caption" couleur="ink.soft" testID="jour-vide">
                 {t('parcours.creneauxJourVide')}
               </Texte>
             ) : null}
@@ -205,7 +205,7 @@ export function CreneauxScreen({
             padding: density.screenPadding,
             paddingTop: 12,
             borderTopWidth: 1,
-            borderTopColor: c['border.subtle'],
+            borderTopColor: c['line.default'],
             backgroundColor: c['bg.surface'],
           }}
         >
@@ -247,7 +247,7 @@ function Groupe({
 
   return (
     <View style={{ gap: 8 }} testID={testID}>
-      <Texte variante="type.label" couleur="text.secondary">
+      <Texte variante="type.label" couleur="ink.soft">
         {titre}
       </Texte>
       <SlotPicker

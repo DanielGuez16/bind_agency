@@ -25,7 +25,7 @@ import { FrontiereDErreur } from '../src/shell/FrontiereDErreur';
 import { Navigation } from '../src/shell/Navigation';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { ThemeProvider, themeForRole, tokens } from '../src/theme';
+import { ThemeProvider, couleurs } from '../src/theme';
 import { ZoneSure } from '../src/shell/ZoneSure';
 
 // --------------------------------------------------------------------------
@@ -800,7 +800,7 @@ describe('zone sûre', () => {
     );
 
     expect(styleAplati(screen.getByTestId('zone-sure')).backgroundColor).toBe(
-      tokens.color[themeForRole('creator')]['bg.canvas'],
+      couleurs['bg.page'],
     );
   });
 });

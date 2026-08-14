@@ -112,7 +112,7 @@ export function ActivationScreen({
         return (
           <View style={{ gap: 16 }}>
             {/* Un compte, pas un pourcentage. */}
-            <Texte variante="type.caption" couleur="text.secondary" testID="compte-etapes">
+            <Texte variante="type.caption" couleur="ink.soft" testID="compte-etapes">
               {t('commerce.activationCompte', { faites, total: etapes.length })}
             </Texte>
 
@@ -164,7 +164,7 @@ function Groupe({ titre, etapes }: { titre: string; etapes: EtapeActivation[] })
 
   return (
     <View style={{ gap: 4 }}>
-      <Texte variante="type.label" couleur="text.secondary">
+      <Texte variante="type.label" couleur="ink.soft">
         {titre}
       </Texte>
       {etapes.map((etape) => (

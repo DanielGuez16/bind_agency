@@ -178,7 +178,7 @@ export function EnvoiDePreuve({
         <View
           style={{
             height: APERCU,
-            borderRadius: radius['radius.lg'],
+            borderRadius: radius['radius.none'],
             overflow: 'hidden',
             backgroundColor: c['bg.sunken'],
           }}
@@ -271,7 +271,7 @@ export function EnvoiDePreuve({
         />
       ) : null}
 
-      <Texte variante="type.caption" couleur="text.secondary">
+      <Texte variante="type.caption" couleur="ink.soft">
         {t('parcours.preuveCommentFaire')}
       </Texte>
 

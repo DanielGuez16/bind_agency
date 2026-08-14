@@ -1,7 +1,7 @@
 /**
  * Le mouvement.
  *
- * **Opacité et transformation, rien d'autre.** `motion.animatableProps` le dit
+ * **Opacité et transformation, rien d'autre.** `motion.animatable` le dit
  * dans les jetons, et ce n'est pas une préférence : ce sont les deux seules
  * propriétés que React Native anime sur le fil natif. Animer une hauteur, une
  * marge ou une couleur repasse par le pont à chaque image et saccade sur un
@@ -26,9 +26,9 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 
-import { tokens } from '../theme';
+import { motion } from '../theme';
 
-const MOTION = tokens.motion;
+const MOTION = motion;
 
 /** Le décalage entre deux éléments d'une cascade. */
 const CASCADE_MS = 45;
@@ -91,7 +91,7 @@ export function Apparition({
     }
     const animation = Animated.timing(avancement, {
       toValue: 1,
-      duration: MOTION.durationBase,
+      duration: MOTION.default,
       delay: Math.min(rang, CASCADE_MAX) * CASCADE_MS,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: true,

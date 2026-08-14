@@ -57,16 +57,18 @@ export function ConfigurationScreen({
   onOuvrir: (porte: PorteDeConfiguration) => void;
 }) {
   const { t } = useI18n();
-  const { color: c, density } = useTheme();
+  const { color: c, density, matiere } = useTheme();
 
   return (
     <View
-      style={{ flex: 1, backgroundColor: c['bg.canvas'] }}
+      style={{ flex: 1, backgroundColor: c['bg.page'] }}
       testID="ecran-configuration"
     >
-      <View style={{ height: 3, backgroundColor: c['role.merchant'] }} />
+      {/* Le même liseré de rôle que dans `Ecran` : cet écran est une porte
+          d'entrée et n'en passe pas par lui. */}
+      <View style={{ height: 3, backgroundColor: c[matiere.ligne] }} />
       <View style={{ padding: density.screenPadding, gap: density.gap }}>
-        <Texte variante="type.display">{t('composition.titre')}</Texte>
+        <Texte variante="type.screenTitle">{t('composition.titre')}</Texte>
 
         {PORTES.map((porte) => (
           <Pressable
@@ -78,20 +80,20 @@ export function ConfigurationScreen({
               alignItems: 'center',
               gap: 12,
               padding: 16,
-              borderRadius: radius['radius.lg'],
+              borderRadius: radius['radius.none'],
               backgroundColor: c['bg.surface'],
               borderWidth: 1,
-              borderColor: c['border.default'],
+              borderColor: c['line.default'],
             }}
             testID={`ouvrir-${porte.cle}`}
           >
             <View style={{ flex: 1, gap: 2 }}>
               <Texte variante="type.label">{t(porte.titre)}</Texte>
-              <Texte variante="type.caption" couleur="text.secondary">
+              <Texte variante="type.caption" couleur="ink.soft">
                 {t(porte.corps)}
               </Texte>
             </View>
-            <Icone nom="chevron" couleur="text.muted" taille={18} />
+            <Icone nom="chevron" couleur="ink.mute" taille={18} />
           </Pressable>
         ))}
       </View>
@@ -227,7 +229,7 @@ function ColonneDesSections({
         paddingLeft: 16,
       }}
     >
-      <Texte variante="type.label" couleur="text.secondary" style={{ paddingBottom: 8 }}>
+      <Texte variante="type.label" couleur="ink.soft" style={{ paddingBottom: 8 }}>
         {t('composition.titre')}
       </Texte>
 
@@ -243,15 +245,15 @@ function ColonneDesSections({
             style={{
               gap: 2,
               padding: 12,
-              borderRadius: radius['radius.md'],
+              borderRadius: radius['radius.none'],
               // Deux marques, comme partout ailleurs dans la coquille : un fond
               // et une barre. Jamais la couleur seule.
-              backgroundColor: active ? c['accent.subtle'] : 'transparent',
+              backgroundColor: active ? c['brand.50'] : 'transparent',
               borderLeftWidth: 3,
-              borderLeftColor: active ? c['accent.default'] : 'transparent',
+              borderLeftColor: active ? c['brand.700'] : 'transparent',
             }}
           >
-            <Texte variante="type.label" couleur={active ? 'accent.default' : 'text.primary'}>
+            <Texte variante="type.label" couleur={active ? 'brand.700' : 'ink.default'}>
               {t(section.titre)}
             </Texte>
             {/* Le chiffre remplace la description dès qu'on l'a : la
@@ -259,7 +261,7 @@ function ColonneDesSections({
                 en est, et c'est la seconde question. */}
             <Texte
               variante="type.caption"
-              couleur="text.muted"
+              couleur="ink.mute"
               testID={`etat-${section.cle}`}
             >
               {etatDe(section.cle) ?? t(section.corps)}

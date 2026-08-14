@@ -51,10 +51,9 @@ import { Outfit_500Medium } from '@expo-google-fonts/outfit/500Medium';
 import { Outfit_600SemiBold } from '@expo-google-fonts/outfit/600SemiBold';
 import { Outfit_700Bold } from '@expo-google-fonts/outfit/700Bold';
 
-import brut from './tokens.json';
+import { familles, type RoleDeFonte, typography } from './echelle';
 
-/** Les trois rôles de fonte du système. Les jetons disent quelle famille. */
-export type RoleDeFonte = keyof typeof brut.typography.fontFamily;
+export type { RoleDeFonte };
 
 /** Les graisses du système, en clair. */
 export type Graisse = '300' | '400' | '500' | '600' | '700';
@@ -140,7 +139,7 @@ export function nomDeFonte(
   graisse: string | number,
   voix: Voix = 'normal',
 ): string {
-  const famille = brut.typography.fontFamily[role];
+  const famille = familles[role];
   const demandee = String(graisse) as Graisse;
 
   // Une voix absente retombe sur la romaine plutôt que de rendre un nom qui
@@ -167,17 +166,13 @@ export function nomDeFonte(
  * de coûter un fichier au démarrage.
  */
 export function policesAcharger(): Record<string, unknown> {
-  const echelles = Object.values(brut.typography.scale) as {
-    fontFamily: string;
-    fontWeight: string;
-    fontStyle?: string;
-  }[];
+  const echelles = Object.values(typography);
 
   const a_charger: Record<string, unknown> = {};
 
   const poser = (role: RoleDeFonte, graisse: string, voix: Voix) => {
     const nom = nomDeFonte(role, graisse, voix);
-    const famille = brut.typography.fontFamily[role];
+    const famille = familles[role];
     // La graisse et la voix retenues se relisent sur le nom : `nomDeFonte` a pu
     // retomber sur d'autres que celles demandées, et charger les demandées
     // poserait un fichier sous un nom que personne n'utilise.
@@ -189,11 +184,7 @@ export function policesAcharger(): Record<string, unknown> {
   };
 
   for (const echelle of echelles) {
-    poser(
-      echelle.fontFamily as RoleDeFonte,
-      echelle.fontWeight,
-      echelle.fontStyle === 'italic' ? 'italic' : 'normal',
-    );
+    poser(echelle.fontFamily, echelle.fontWeight, echelle.fontStyle === 'italic' ? 'italic' : 'normal');
   }
 
   return a_charger;

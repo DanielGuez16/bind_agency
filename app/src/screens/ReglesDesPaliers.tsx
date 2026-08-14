@@ -50,11 +50,11 @@ export function ReglesDesPaliers({
     <View style={{ gap: 14 }} testID={testID}>
       <BlocDeFiabilite fiabilite={fiabilite} />
 
-      <Bloc titre={t('tiers.rulesUp')} icone="monte" teinte="status.success">
+      <Bloc titre={t('tiers.rulesUp')} icone="monte" teinte="status.success.text">
         {[t('tiers.rulesUpOne'), t('tiers.rulesUpTwo'), t('tiers.rulesUpThree')].map(
           (ligne, index) => (
             <View key={ligne} style={{ flexDirection: 'row', gap: 10 }}>
-              <Texte variante="type.mono" couleur="text.muted" style={{ width: 14, fontSize: 12 }}>
+              <Texte variante="type.mono" couleur="ink.mute" style={{ width: 14, fontSize: 12 }}>
                 {String(index + 1)}
               </Texte>
               <Texte variante="type.label" style={{ flex: 1, fontWeight: '400' }}>
@@ -63,12 +63,12 @@ export function ReglesDesPaliers({
             </View>
           ),
         )}
-        <Texte variante="type.caption" couleur="text.muted">
+        <Texte variante="type.caption" couleur="ink.mute">
           {t('tiers.rulesUpNot')}
         </Texte>
       </Bloc>
 
-      <Bloc titre={t('tiers.rulesDown')} icone="descend" teinte="status.warning">
+      <Bloc titre={t('tiers.rulesDown')} icone="descend" teinte="status.warning.text">
         <Texte variante="type.label" style={{ fontWeight: '400' }}>
           {t('tiers.rulesDownOne')}
         </Texte>
@@ -79,7 +79,7 @@ export function ReglesDesPaliers({
         {/* Ce qui **ne** compte **pas**. Reprend mot pour mot la promesse faite
             au commerce quand il se désiste : les deux côtés doivent lire la
             même règle, sinon l'un des deux se croit lésé. */}
-        <Texte variante="type.caption" couleur="text.muted" testID="regles-sans-consequence">
+        <Texte variante="type.caption" couleur="ink.mute" testID="regles-sans-consequence">
           {t('tiers.rulesDownNot')}
         </Texte>
       </Bloc>
@@ -100,14 +100,14 @@ function BlocDeFiabilite({ fiabilite }: { fiabilite: FiabiliteDuCreateur | null 
     <View
       testID="bloc-fiabilite"
       style={{
-        borderRadius: radius['radius.md'],
+        borderRadius: radius['radius.none'],
         borderWidth: 1,
-        borderColor: c['border.subtle'],
+        borderColor: c['line.default'],
         backgroundColor: c['bg.surface'],
         overflow: 'hidden',
       }}
     >
-      <View style={{ padding: 14, borderBottomWidth: 1, borderBottomColor: c['border.subtle'] }}>
+      <View style={{ padding: 14, borderBottomWidth: 1, borderBottomColor: c['line.default'] }}>
         <Texte variante="type.bodyStrong">{t('tiers.reliabilityTitle')}</Texte>
       </View>
 
@@ -118,19 +118,19 @@ function BlocDeFiabilite({ fiabilite }: { fiabilite: FiabiliteDuCreateur | null 
               <Texte variante="type.figure" testID="score-de-fiabilite">
                 {String(Math.round(score))}
               </Texte>
-              <Texte variante="type.mono" couleur="text.muted">
+              <Texte variante="type.mono" couleur="ink.mute">
                 {t('tiers.reliabilityOutOf')}
               </Texte>
             </View>
-            <Jauge part={score / MAXIMUM} teinte="status.success" hauteur={10} />
-            <Texte variante="type.label" couleur="text.secondary" style={{ fontWeight: '400' }}>
+            <Jauge part={score / MAXIMUM} teinte="status.success.text" hauteur={10} />
+            <Texte variante="type.label" couleur="ink.soft" style={{ fontWeight: '400' }}>
               {t('tiers.reliabilityMeaning', { count: fiabilite?.completed_collabs_count ?? 0 })}
             </Texte>
           </>
         ) : (
           // Ni chiffre ni barre. Une barre vide se lit comme un zéro, et zéro
           // n'est pas ce que dit l'absence d'historique.
-          <Texte variante="type.label" couleur="text.secondary" testID="fiabilite-sans-score" style={{ fontWeight: '400' }}>
+          <Texte variante="type.label" couleur="ink.soft" testID="fiabilite-sans-score" style={{ fontWeight: '400' }}>
             {t('tiers.reliabilityNone')}
           </Texte>
         )}
@@ -138,7 +138,7 @@ function BlocDeFiabilite({ fiabilite }: { fiabilite: FiabiliteDuCreateur | null 
         {/* Les deux garanties. Elles ne sont pas décoratives : sans elles, le
             score se lit comme une note publique, et c'est la crainte
             spontanée de toutes celles à qui on l'a montré. */}
-        <Texte variante="type.caption" couleur="text.muted" testID="garanties-du-score">
+        <Texte variante="type.caption" couleur="ink.mute" testID="garanties-du-score">
           {t('tiers.reliabilityGuarantee')}
         </Texte>
       </View>
@@ -154,7 +154,7 @@ function Bloc({
 }: {
   titre: string;
   icone: 'monte' | 'descend';
-  teinte: 'status.success' | 'status.warning';
+  teinte: 'status.success.text' | 'status.warning.text';
   children: React.ReactNode;
 }) {
   const c = useColors();
@@ -162,9 +162,9 @@ function Bloc({
   return (
     <View
       style={{
-        borderRadius: radius['radius.md'],
+        borderRadius: radius['radius.none'],
         borderWidth: 1,
-        borderColor: c['border.subtle'],
+        borderColor: c['line.default'],
         backgroundColor: c['bg.surface'],
         overflow: 'hidden',
       }}
@@ -176,7 +176,7 @@ function Bloc({
           gap: 8,
           padding: 12,
           borderBottomWidth: 1,
-          borderBottomColor: c['border.subtle'],
+          borderBottomColor: c['line.default'],
           backgroundColor: c[`${teinte}.subtle` as ColorName],
         }}
       >

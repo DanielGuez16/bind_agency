@@ -152,10 +152,10 @@ function Fond() {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: c['bg.canvas'],
+        backgroundColor: c['bg.page'],
       }}
     >
-      <ActivityIndicator color={c['text.secondary']} />
+      <ActivityIndicator color={c['ink.soft']} />
     </View>
   );
 }

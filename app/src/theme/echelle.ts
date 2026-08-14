@@ -1,0 +1,97 @@
+/**
+ * L'échelle typographique, normalisée pour React Native.
+ *
+ * **Un module à part, et pas un bout de `index.tsx`.** `polices.ts` a besoin de
+ * l'échelle pour savoir quels fichiers charger, et `index.tsx` a besoin de
+ * `polices.ts` pour nommer une fonte : les mettre ensemble ferait un cycle.
+ * L'échelle est la seule chose que les deux partagent, elle vit donc entre eux.
+ *
+ * **Ce que fait ce fichier, et ce qu'il ne fait pas.** Il traduit la forme dans
+ * laquelle un designer écrit un jeton — `family`, `size`, `weight`, `style` —
+ * vers celle que React Native attend. Il n'ajoute aucune valeur, ne corrige
+ * aucune taille, et n'invente aucune variante. Une traduction n'est pas une
+ * seconde vérité tant qu'elle ne décide de rien.
+ */
+import produitBrut from './produit.json';
+import brut from './tokens.json';
+
+/** Les trois rôles de fonte du système. Les jetons disent quelle famille. */
+export type RoleDeFonte = 'display' | 'sans' | 'mono';
+
+/** Les familles, telles que les jetons les nomment. */
+export const familles: Record<RoleDeFonte, string> = {
+  display: brut.font.display,
+  sans: brut.font.sans,
+  mono: brut.font.mono,
+};
+
+type VarianteBrute = {
+  family: string;
+  weight: number;
+  size: number;
+  lineHeight: number;
+  letterSpacing?: number;
+  style?: string;
+  transform?: string;
+};
+
+/** La forme que React Native attend, dérivée du jeton sans rien y ajouter. */
+export type EchelleTypo = {
+  fontFamily: RoleDeFonte;
+  fontWeight: string;
+  fontSize: number;
+  lineHeight: number;
+  letterSpacing?: number;
+  fontStyle?: 'italic';
+  textTransform?: 'uppercase';
+};
+
+function normaliser(brute: VarianteBrute): EchelleTypo {
+  return {
+    fontFamily: brute.family as RoleDeFonte,
+    fontWeight: String(brute.weight),
+    fontSize: brute.size,
+    lineHeight: brute.lineHeight,
+    ...(brute.letterSpacing === undefined ? {} : { letterSpacing: brute.letterSpacing }),
+    ...(brute.style === 'italic' ? { fontStyle: 'italic' as const } : {}),
+    ...(brute.transform === 'uppercase' ? { textTransform: 'uppercase' as const } : {}),
+  };
+}
+
+/**
+ * `$onBrandRule`, `$pourquoi` et compagnie documentent des règles ; ce ne sont
+ * pas des variantes, et les traiter comme telles poserait une fonte nulle sur
+ * un texte que personne n'aurait demandé.
+ */
+const variantes = (source: object, prefixe: string) =>
+  Object.entries(source)
+    .filter(([nom]) => !nom.startsWith('$'))
+    .map(([nom, valeur]) => [`${prefixe}${nom}`, normaliser(valeur as VarianteBrute)] as const);
+
+/**
+ * L'échelle complète, préfixée `type.`.
+ *
+ * Le préfixe n'est pas cosmétique : `type.body` se cherche dans un écran,
+ * `body` s'y trouve deux cents fois. Il vit ici plutôt que dans le fichier de
+ * jetons, qui reste la copie exacte de la passation.
+ *
+ * Les quatre variantes de `produit.json` — code, compte à rebours et les deux
+ * repères chiffrés — portent déjà leur préfixe : elles appartiennent au
+ * produit et non à la marque, et l'écrire dans leur clé le rappelle.
+ */
+export const typography: Record<string, EchelleTypo> = Object.fromEntries([
+  ...variantes(brut.type, 'type.'),
+  ...variantes(produitBrut.type, ''),
+]);
+
+export type Variante = keyof typeof typography;
+
+/**
+ * Le plancher du Didone : 34 px, bloc ou pas.
+ *
+ * En dessous, Outfit, toujours. C'est ce qui empêche le serif de se répandre
+ * dans une interface où il n'a rien à faire — et un serif de 22 px est un bug
+ * visible en revue, mais seulement pour qui sait qu'il en est un. Un test le
+ * sait à notre place.
+ */
+export const PLANCHER_DIDONE = 34;

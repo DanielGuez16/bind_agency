@@ -102,7 +102,7 @@ export function HorairesScreen({
                 onChange={requete.recharger}
               />
             ))}
-            <Texte variante="type.caption" couleur="text.secondary">
+            <Texte variante="type.caption" couleur="ink.soft">
               {t('composition.capaciteExplication')}
             </Texte>
           </View>
@@ -185,14 +185,14 @@ function LigneDeJour({
         <Texte variante="type.label">{libelle}</Texte>
         <View style={{ flex: 1 }}>
           {regle ? (
-            <Texte variante="type.mono" couleur="text.secondary" testID={`horaires-${jour}`}>
+            <Texte variante="type.mono" couleur="ink.soft" testID={`horaires-${jour}`}>
               {regle.start_time.slice(0, 5)} – {regle.end_time.slice(0, 5)} ·{' '}
               {t('composition.postes', { n: regle.concurrent_slots })}
             </Texte>
           ) : (
             /* Écrit, jamais absent : une ligne manquante ne dit pas si le jour
                est fermé ou si le commerce n'a rien rempli. */
-            <Texte variante="type.caption" couleur="text.muted" testID={`ferme-${jour}`}>
+            <Texte variante="type.caption" couleur="ink.mute" testID={`ferme-${jour}`}>
               {t('composition.ferme')}
             </Texte>
           )}
@@ -285,7 +285,7 @@ function Exceptions({
       <Texte variante="type.label">{t('composition.exceptions')}</Texte>
 
       {exceptions.length === 0 ? (
-        <Texte variante="type.caption" couleur="text.muted" testID="aucune-exception">
+        <Texte variante="type.caption" couleur="ink.mute" testID="aucune-exception">
           {t('composition.aucuneException')}
         </Texte>
       ) : (
@@ -321,7 +321,7 @@ function Exceptions({
       {/* Ce que fermer fait, et ce que fermer ne fait pas. Un commerce qui
           croirait annuler ses réservations en fermant sa journée se tairait
           auprès de créatrices qui viendront quand même. */}
-      <Texte variante="type.caption" couleur="text.secondary">
+      <Texte variante="type.caption" couleur="ink.soft">
         {t('composition.fermerNAnnuleRien')}
       </Texte>
       {echec ? <StatusMessage level="danger" body={echec} testID="echec-exception" /> : null}
