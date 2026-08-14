@@ -122,9 +122,16 @@ Une session, une tâche de `TASKS.md`. Pas deux.
 
 Une branche par tâche, nommée `phase-N/nom-court`.
 
-`main` est protégée : fusion par PR uniquement, `api` et `app` verts et à jour,
-sans contournement administrateur. La règle est dans le dépôt, pas dans la
-vigilance.
+`main` est protégée : fusion par PR uniquement, **les trois jobs verts** — `api`,
+`app` et `e2e` — et à jour, sans contournement administrateur. La règle est dans
+le dépôt, pas dans la vigilance.
+
+**Les trois, et `e2e` a été ajoutée après les deux autres.** Cette phrase disait
+« `api` et `app` » longtemps après l'arrivée de la e2e : elle attrapait déjà ce
+que les deux autres ne voient pas, et rien ne l'empêchait de rester rouge. Une
+PR a été fusionnée sur une e2e rouge — un test asservi à un `testID` retiré par
+la PR elle-même — sans que rien ne s'y oppose. Une règle écrite en dessous de ce
+qu'on attend réellement ne protège que ce qu'elle écrit.
 
 L'état d'une exécution se lit sur **sa conclusion**, jamais sur un décompte de
 lignes. `gh pr checks` liste des vérifications sans les résumer : y compter les
@@ -133,6 +140,21 @@ lignes. `gh pr checks` liste des vérifications sans les résumer : y compter le
 ```
 gh run watch <id> --exit-status
 gh run view <id> --json conclusion -q .conclusion
+```
+
+Et lire la conclusion **par job** quand une seule ligne suffit à décider :
+
+```
+gh run view <id> --json jobs -q '.jobs[] | "\(.name): \(.conclusion)"'
+```
+
+**Ce que la protection exige se vérifie, il ne se suppose pas.** Un job ajouté à
+la CI n'entre pas de lui-même dans les vérifications requises, et la fusion
+automatique ne l'attend alors pas :
+
+```
+gh api repos/DanielGuez16/bind_agency/branches/main/protection \
+  --jq .required_status_checks.contexts
 ```
 
 Ne pas réécrire un fichier entier pour changer trois lignes. Modifications ciblées.
