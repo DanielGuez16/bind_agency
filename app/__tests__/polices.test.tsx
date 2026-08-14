@@ -18,6 +18,51 @@ import { Texte } from '../src/components';
 import { nomDeFonte, policesAcharger, tokens, typography } from '../src/theme';
 import { ThemeProvider } from '../src/theme';
 
+describe('la direction v1.0 a bien remplacé les familles', () => {
+  it('nomme Bodoni Moda et Outfit, et plus les deux retirées', () => {
+    // Première tranche de BIND AGENCY. Le titre passe au Didone, le
+    // fonctionnel au géométrique, le mono ne bouge pas — c'est lui qui porte
+    // les chiffres, les codes et les horaires, et rien dans la nouvelle
+    // direction ne le concerne.
+    expect(tokens.typography.fontFamily).toEqual({
+      display: 'Bodoni Moda',
+      ui: 'Outfit',
+      mono: 'IBM Plex Mono',
+    });
+  });
+
+  it('ne charge plus une seule face des deux familles retirées', () => {
+    // Une famille qui survit à la bascule ne casse rien de visible : elle pèse
+    // au démarrage, et le texte qui la demanderait encore retomberait sur la
+    // pile système sans erreur et sans test rouge — le défaut d'origine, à
+    // l'identique. On regarde ce qui est réellement posé, pas ce qui est écrit.
+    const retirees = Object.keys(policesAcharger()).filter((nom) =>
+      /^(FamiljenGrotesk|IBMPlexSans)_/.test(nom),
+    );
+
+    expect(retirees).toEqual([]);
+  });
+
+  it('ne les garde pas non plus en dépendance', () => {
+    // Le test précédent regarde ce que l'app pose ; celui-ci regarde ce que le
+    // paquet embarque. Un `@expo-google-fonts` orphelin reste installé, reste
+    // téléchargé en intégration continue, et fait croire à la relecture que la
+    // famille est encore une option ouverte.
+    const { readFileSync } = require('fs');
+    const { join } = require('path');
+    const paquet = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf-8'));
+    const polices = Object.keys(paquet.dependencies).filter((nom) =>
+      nom.startsWith('@expo-google-fonts/'),
+    );
+
+    expect(polices.sort()).toEqual([
+      '@expo-google-fonts/bodoni-moda',
+      '@expo-google-fonts/ibm-plex-mono',
+      '@expo-google-fonts/outfit',
+    ]);
+  });
+});
+
 describe('les fontes du système', () => {
   it('charge un fichier pour chaque variante de l’échelle', async () => {
     // Déduit des jetons, jamais énuméré : une variante ajoutée amène sa fonte
@@ -109,6 +154,46 @@ describe('les fontes du système', () => {
     expect(fautifs).toEqual([]);
   });
 
+  it('donne à l’italique son propre fichier, jamais une romaine penchée', async () => {
+    // **La v1.0 fait de l'accent un changement de voix dans une famille.** Sur
+    // un Didone, l'italique n'est pas la romaine inclinée : c'est un autre
+    // dessin — autres axes, autres empattements. `fontStyle: 'italic'` sur une
+    // face romaine produit un oblique **synthétique**, et l'écart entre les
+    // deux est exactement ce qui distingue la direction de son imitation.
+    const roman = nomDeFonte('display', '500');
+    const italique = nomDeFonte('display', '500', 'italic');
+
+    expect(italique).not.toBe(roman);
+    expect(italique.endsWith('Italic')).toBe(true);
+
+    // Et le fichier existe vraiment : un nom qui n'est enregistré nulle part
+    // ramène la police système sans rien signaler.
+    expect(policesAcharger()).toBeDefined();
+  });
+
+  it('retombe sur la romaine quand la famille n’a pas d’italique', async () => {
+    // IBM Plex Mono et Outfit n'ont aucun emploi d'italique dans le système, et
+    // en charger un coûterait un fichier au démarrage pour rien. Demander
+    // l'italique là ne doit pas rendre un nom que rien n'enregistre : mieux
+    // vaut un romain qu'un repli silencieux sur la pile système.
+    for (const role of ['ui', 'mono'] as const) {
+      expect(nomDeFonte(role, '500', 'italic')).toBe(nomDeFonte(role, '500'));
+    }
+  });
+
+  it('ne charge que ce que l’échelle demande, italique compris', async () => {
+    // Le contrat de `policesAcharger` : déduit des jetons, jamais énuméré. Une
+    // variante italique ajoutée à l'échelle amène son fichier sans qu'on y
+    // pense ; tant qu'aucune ne la demande, aucun fichier italique ne pèse au
+    // démarrage.
+    const chargees = Object.keys(policesAcharger());
+    const italiquesDemandees = Object.values(typography).filter(
+      (echelle) => (echelle as { fontStyle?: string }).fontStyle === 'italic',
+    ).length;
+
+    expect(chargees.filter((nom) => nom.endsWith('Italic'))).toHaveLength(italiquesDemandees);
+  });
+
   it('rend un nom que le CSS accepte sans guillemets', async () => {
     // **Le défaut qui a rendu tout le produit en police système.**
     // `react-native-web` écrit `fontFamily` verbatim, sans guillemets : le nom
@@ -119,8 +204,13 @@ describe('les fontes du système', () => {
 
     for (const role of ['display', 'ui', 'mono'] as const) {
       for (const graisse of ['400', '500', '600', '700']) {
-        const nom = nomDeFonte(role, graisse);
-        expect({ nom, accepte: valide.test(nom) }).toEqual({ nom, accepte: true });
+        // Les deux voix : l'italique suffixe le même identifiant, et c'est là
+        // qu'un séparateur mal choisi — un espace, un tiret devant un chiffre —
+        // recréerait le défaut d'origine.
+        for (const voix of ['normal', 'italic'] as const) {
+          const nom = nomDeFonte(role, graisse, voix);
+          expect({ nom, accepte: valide.test(nom) }).toEqual({ nom, accepte: true });
+        }
       }
     }
   });
