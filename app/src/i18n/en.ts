@@ -617,6 +617,34 @@ export const en = {
     pasEncoreEnLigne:
       'Taking it over does not publish it. You will see what is left to check, and you decide when to open.',
   },
+  /**
+   * Les catégories, une fois pour toutes.
+   *
+   * Un bloc partagé et non des libellés recopiés dans chaque écran : la même
+   * catégorie se lit sur la création, dans les filtres du fil et dans les
+   * compteurs par rayon, et trois traductions divergentes du même mot se
+   * lisent comme trois choses.
+   */
+  categories: {
+    beauty: 'Beauty & wellness',
+    fitness: 'Fitness',
+    restaurant: 'Restaurant',
+    museum: 'Museum',
+    family_activity: 'Family activity',
+    other: 'Other',
+  },
+  creationCommerce: {
+    titre: 'Create your business',
+    corps: 'A few facts to get you on the map. Hours, services and photos come next.',
+    nom: 'Business name',
+    categorie: 'What kind of business is it?',
+    adresse: 'Address',
+    adresseAide: 'Without an address you will not show up in any creator’s feed.',
+    telephone: 'Phone',
+    creer: 'Create my business',
+    creation: 'Creating…',
+    ensuite: 'Creating it does not put you online. You choose when, once your services and hours are in.',
+  },
   terrain: {
     titre: 'Field signups',
     videTitre: 'No page prepared yet',
@@ -644,6 +672,7 @@ export const en = {
     },
   },
   onglets: {
+    demarrer: 'Get started',
     annuaire: 'Creators',
     paliers: 'Tiers',
     fil: 'Nearby',

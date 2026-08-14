@@ -21,6 +21,15 @@
  * **Les fiches assumées restent dans la liste.** Sans elles, on ne saurait
  * jamais combien de visites ont abouti, et la tournée ne se jugerait qu'au
  * souvenir qu'on en a.
+ *
+ * **Le formulaire survit à l'état vide, et c'est le défaut qu'on répare ici.**
+ * `Ecran` rend l'état vide *à la place* du contenu : sur un compte neuf — celui
+ * de la toute première tournée, exactement celui pour lequel cet écran
+ * existe — la liste était vide, le corps n'était donc jamais rendu, et les
+ * trois champs n'apparaissaient nulle part. Le mode terrain était complet et
+ * inutilisable tant qu'aucune fiche n'existait, c'est-à-dire toujours au
+ * premier usage. Le formulaire est donc rendu dans les deux états, et une seule
+ * fois : le recopier, c'est le laisser diverger.
  */
 import { useState } from 'react';
 import { View } from 'react-native';
@@ -129,15 +138,62 @@ export function TerrainScreen() {
     }
   }
 
+  /**
+   * Ce qui ne dépend pas de la liste : le refus s'il y en a un, et les trois
+   * champs. Rendu dans l'état vide comme dans l'état nominal — construit une
+   * fois, parce que deux copies finissent par ne plus dire la même chose.
+   */
+  const saisie = (
+    <>
+      {echec ? <StatusMessage level="danger" body={echec} testID="echec-terrain" /> : null}
+
+      {/* Préparer, en trois champs. Debout, entre deux clients. */}
+      <View style={{ gap: 12 }} testID="formulaire-de-fiche">
+        <Texte variante="type.heading">{t('terrain.preparer')}</Texte>
+        <TextField
+          label={t('terrain.nom')}
+          value={brouillon.nom}
+          onChangeText={(nom) => setBrouillon((avant) => ({ ...avant, nom }))}
+          testID="champ-nom"
+        />
+        <TextField
+          label={t('terrain.adresse')}
+          value={brouillon.adresse}
+          onChangeText={(adresse) => setBrouillon((avant) => ({ ...avant, adresse }))}
+          testID="champ-adresse"
+        />
+        <TextField
+          label={t('terrain.telephone')}
+          value={brouillon.telephone}
+          onChangeText={(telephone) => setBrouillon((avant) => ({ ...avant, telephone }))}
+          keyboard="numeric"
+          testID="champ-telephone"
+        />
+        <Button
+          label={t('terrain.enregistrer')}
+          onPress={() => void preparer()}
+          disabled={brouillon.nom.trim().length === 0}
+          loading={enCours}
+          loadingLabel={t('terrain.enregistrement')}
+          testID="enregistrer-la-fiche"
+        />
+      </View>
+    </>
+  );
+
   return (
     <Ecran
       requete={requete}
       titre={t('terrain.titre')}
-      vide={<EmptyState title={t('terrain.videTitre')} body={t('terrain.videCorps')} />}
+      vide={
+        <View style={{ gap: 20 }}>
+          <EmptyState title={t('terrain.videTitre')} body={t('terrain.videCorps')} />
+          {saisie}
+        </View>
+      }
     >
       {(fiches) => (
         <View style={{ gap: 20 }}>
-          {echec ? <StatusMessage level="danger" body={echec} testID="echec-terrain" /> : null}
 
           {/* Le lien qu'on vient d'émettre, en grand. Il ne se relit pas. */}
           {lien ? (
@@ -193,37 +249,7 @@ export function TerrainScreen() {
             </View>
           ) : null}
 
-          {/* Préparer, en trois champs. Debout, entre deux clients. */}
-          <View style={{ gap: 12 }} testID="formulaire-de-fiche">
-            <Texte variante="type.heading">{t('terrain.preparer')}</Texte>
-            <TextField
-              label={t('terrain.nom')}
-              value={brouillon.nom}
-              onChangeText={(nom) => setBrouillon((avant) => ({ ...avant, nom }))}
-              testID="champ-nom"
-            />
-            <TextField
-              label={t('terrain.adresse')}
-              value={brouillon.adresse}
-              onChangeText={(adresse) => setBrouillon((avant) => ({ ...avant, adresse }))}
-              testID="champ-adresse"
-            />
-            <TextField
-              label={t('terrain.telephone')}
-              value={brouillon.telephone}
-              onChangeText={(telephone) => setBrouillon((avant) => ({ ...avant, telephone }))}
-              keyboard="numeric"
-              testID="champ-telephone"
-            />
-            <Button
-              label={t('terrain.enregistrer')}
-              onPress={() => void preparer()}
-              disabled={brouillon.nom.trim().length === 0}
-              loading={enCours}
-              loadingLabel={t('terrain.enregistrement')}
-              testID="enregistrer-la-fiche"
-            />
-          </View>
+          {saisie}
 
           {/* Le suivi. Les fiches assumées y restent. */}
           <View style={{ gap: 12 }}>
