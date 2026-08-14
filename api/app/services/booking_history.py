@@ -30,6 +30,7 @@ from zoneinfo import ZoneInfo
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.models import (
     Booking,
     Business,
@@ -118,6 +119,12 @@ class ReservationDuCommerce:
     required_mention: str | None
     required_geotag: bool
     contrepartie: LigneDeContrepartie | None
+    #: L'instant à partir duquel l'absence peut être constatée, `None` quand
+    #: elle ne le pourra jamais. Calculé ici pour que l'écran n'ait pas à
+    #: connaître le délai : un seuil recopié dans l'application dérive du jour
+    #: où on l'ajuste côté serveur, et cette dérive-là se lit comme un bouton
+    #: grisé qui devrait être actif.
+    absence_signalable_a: datetime | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -299,7 +306,22 @@ def _lire(ligne) -> ReservationDuCommerce:
         required_mention=ligne.required_mention,
         required_geotag=ligne.required_geotag,
         contrepartie=_contrepartie(ligne),
+        absence_signalable_a=_absence_signalable_a(ligne.starts_at),
     )
+
+
+def _absence_signalable_a(starts_at: datetime | None) -> datetime | None:
+    """L'ouverture du bouton « signaler une absence », lue sur l'heure du rendez-vous.
+
+    `starts_at` seul suffit à décider, et ce n'est pas un raccourci : une
+    contrainte de base — `slot_matches_requires_booking` — garantit que les deux
+    vont toujours ensemble. Un item sans créneau n'a pas d'heure à laquelle ne
+    pas se présenter, et `SPEC.md` §4.1 dit que `no_show` n'existe pas dans ce
+    cas.
+    """
+    if starts_at is None:
+        return None
+    return starts_at + timedelta(minutes=get_settings().no_show_delai_minutes)
 
 
 async def journee_du_commerce(

@@ -28,9 +28,11 @@ from app.schemas.business import (
     BusinessUpdate,
     CoordinatesPayload,
     EtatDeLaCompositionRead,
+    ReperesDuVoisinageRead,
 )
 from app.services import business as business_service
 from app.services import composition as composition_service
+from app.services import neighbourhood as neighbourhood_service
 from app.services.audit import Actor
 
 router = APIRouter(prefix="/business", tags=["business"])
@@ -167,6 +169,27 @@ async def composition_state(
     # `CurrentBusiness` a déjà chargé le commerce : il ne peut pas manquer ici.
     assert etat is not None
     return EtatDeLaCompositionRead.model_validate(etat)
+
+
+@router.get("/{business_id}/neighbourhood", response_model=ReperesDuVoisinageRead)
+async def neighbourhood(business: CurrentBusiness, session: SessionDep) -> ReperesDuVoisinageRead:
+    """Trois repères des salons d'à côté, pour l'état vide du commerce.
+
+    L'état vide disait « ajoutez une prestation » et rien de plus. Un salon qui
+    vient de s'inscrire ne sait pas combien en publier ni combien de places
+    ouvrir : il ouvre au hasard, se trouve invisible dans le fil, et conclut que
+    le produit ne marche pas.
+
+    **Le voisinage est un rayon, pas un quartier.** Le modèle n'a pas de
+    quartiers et n'en gagne pas ici — c'est déjà pour cette raison que la ville
+    d'un créateur est un champ libre (SPEC §5.2). Le rayon est rendu avec les
+    chiffres pour que l'écran l'écrive.
+
+    **Des fourchettes, et rien sous un plancher d'effectif.** Un commerce ne doit
+    pas pouvoir lire le catalogue d'un concurrent en s'inscrivant à côté de lui.
+    """
+    reperes = await neighbourhood_service.reperes_du_voisinage(session, business=business)
+    return ReperesDuVoisinageRead.model_validate(reperes)
 
 
 @router.post("/{business_id}/pause", response_model=BusinessRead)

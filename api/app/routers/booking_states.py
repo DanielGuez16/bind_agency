@@ -44,6 +44,10 @@ _CODES = {
         status.HTTP_409_CONFLICT,
         ErrorCode.BOOKING_NO_SHOW_NOT_APPLICABLE,
     ),
+    service.AbsenceTropTot: (
+        status.HTTP_409_CONFLICT,
+        ErrorCode.BOOKING_NO_SHOW_TOO_EARLY,
+    ),
     # `NotYours` répond comme une réservation absente : distinguer les deux
     # dirait à un créateur quels identifiants appartiennent à un autre.
     service.NotYours: (status.HTTP_404_NOT_FOUND, ErrorCode.BOOKING_NOT_FOUND),

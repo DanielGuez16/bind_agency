@@ -62,6 +62,7 @@ import type {
   FichePreparee,
   LienRemis,
   RepriseDuCompte,
+  ReperesDuVoisinage,
   StatutDuCommerce,
 } from './types';
 
@@ -606,6 +607,34 @@ export class Api {
     return this.client.request<unknown>(routes.modifierLeCommerce(businessId), {
       methode: 'PATCH',
       corps: { cover_photo_key: cle },
+    });
+  }
+
+  /**
+   * Ce que font les salons d'à côté. Pour les états vides du commerce.
+   *
+   * Des fourchettes, jamais des chiffres exacts, et rien sous cinq salons
+   * alentour : un commerce ne doit pas pouvoir lire le catalogue de son voisin
+   * en s'inscrivant à côté de lui.
+   */
+  reperesDuVoisinage(businessId: string, signal?: AbortSignal) {
+    return this.client.request<ReperesDuVoisinage>(routes.reperesDuVoisinage(businessId), {
+      signal,
+    });
+  }
+
+  /**
+   * Le commerce constate une absence. **Motif obligatoire** : il pénalise
+   * quelqu'un, et l'événement de fiabilité ne se retire pas.
+   *
+   * Le serveur refuse avant le délai. L'écran ouvre le bouton sur
+   * `absence_signalable_a`, mais c'est l'horloge du serveur qui décide — celle
+   * du téléphone n'est pas une preuve.
+   */
+  marquerAbsent(bookingId: string, motif: string) {
+    return this.client.request<Booking>(routes.marquerAbsent(bookingId), {
+      methode: 'POST',
+      corps: { reason: motif },
     });
   }
 

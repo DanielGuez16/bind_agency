@@ -550,6 +550,15 @@
         ]
       }
     },
+    "/api/v1/business/{business_id}/neighbourhood": {
+      "get": {
+        "operationId": "neighbourhood_api_v1_business__business_id__neighbourhood_get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/api/v1/business/{business_id}/pause": {
       "post": {
         "operationId": "pause_api_v1_business__business_id__pause_post",

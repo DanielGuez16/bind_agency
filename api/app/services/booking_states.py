@@ -116,6 +116,21 @@ class NotYourBusiness(BookingStateError):
     """Réservation d'un autre commerce."""
 
 
+class AbsenceTropTot(BookingStateError):
+    """L'heure du rendez-vous n'est pas assez loin pour parler d'absence.
+
+    **Une absence pénalise, et une pénalité ne se pose pas sur un retard de
+    trois minutes.** Sans ce délai, un salon pressé pouvait marquer absente une
+    créatrice qui poussait la porte — et l'événement de fiabilité, lui, ne se
+    retire pas. Le délai est en configuration : c'est un seuil, et c'est aussi
+    la première chose qu'on voudra ajuster en observant les premières tournées.
+
+    Ce n'est pas une règle d'affichage doublée côté serveur pour faire joli. Le
+    bouton s'ouvre à l'heure du téléphone du salon, qui n'est pas une preuve ;
+    la seule horloge qui décide est celle du serveur.
+    """
+
+
 class CreneauDepasse(BookingStateError):
     """L'heure est passée : il n'y a plus rien à accepter.
 
@@ -326,10 +341,50 @@ async def annuler(session: AsyncSession, *, booking: Booking, creator_id: uuid.U
     )
 
 
+def absence_signalable_a(booking: Booking) -> datetime | None:
+    """L'instant à partir duquel l'absence peut être constatée.
+
+    `None` quand elle ne le sera jamais : un item sans créneau n'a pas d'heure à
+    laquelle ne pas se présenter, et `SPEC.md` §4.1 dit que `no_show` n'existe
+    pas dans ce cas — l'expiration suffit.
+
+    Rendue au client pour qu'il sache **quand** ouvrir le bouton, et calculée
+    ici pour que l'écran n'ait pas à connaître le délai. Un seuil recopié dans
+    l'application dérive du jour où on l'ajuste côté serveur, et cette dérive-là
+    se lit comme un bouton grisé qui devrait être actif.
+    """
+    if not booking.requires_booking or booking.starts_at is None:
+        return None
+    return booking.starts_at + timedelta(minutes=get_settings().no_show_delai_minutes)
+
+
 async def marquer_absent(
-    session: AsyncSession, *, booking: Booking, actor: audit.Actor, reason: str
+    session: AsyncSession,
+    *,
+    booking: Booking,
+    actor: audit.Actor,
+    reason: str,
+    maintenant: datetime | None = None,
 ) -> Booking:
-    """Le commerce constate l'absence. Toujours motivé : il pénalise quelqu'un."""
+    """Le commerce constate l'absence. Toujours motivé : il pénalise quelqu'un.
+
+    **Et jamais avant le délai.** Voir `AbsenceTropTot` : une créatrice en
+    retard de trois minutes n'est pas absente, et l'événement de fiabilité que
+    la transition écrit ne se retire pas.
+    """
+    # **L'état d'abord, l'heure ensuite.** Une réservation déjà annulée ne
+    # deviendra jamais une absence, quelle que soit l'heure : lui répondre
+    # « trop tôt » ferait attendre vingt minutes pour rien, puis recommencer.
+    # C'est un test existant — celui du signalement de lieu, où le commerce
+    # tente l'absence après une annulation — qui a montré l'ordre à prendre.
+    if BookingStatus.NO_SHOW in TRANSITIONS[booking.status]:
+        ouverture = absence_signalable_a(booking)
+        # `None` laisse passer : c'est le cas de l'item sans créneau, que
+        # `transitionner` refuse déjà avec le message qui convient. Le doubler
+        # ici rendrait deux refus différents pour une même situation.
+        if ouverture is not None and (maintenant or datetime.now(UTC)) < ouverture:
+            raise AbsenceTropTot(ouverture.isoformat())
+
     return await transitionner(
         session, booking=booking, vers=BookingStatus.NO_SHOW, actor=actor, reason=reason
     )

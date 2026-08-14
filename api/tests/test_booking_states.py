@@ -249,6 +249,97 @@ async def test_une_absence_sur_un_item_sans_creneau_est_refusee(
 
 
 # --------------------------------------------------------------------------
+# le délai avant qu'une absence puisse être constatée
+# --------------------------------------------------------------------------
+
+
+async def test_une_absence_avant_le_delai_est_refusee(session: AsyncSession) -> None:
+    """**Le défaut que ce délai répare.** Rien n'empêchait un salon de marquer
+    absente une créatrice à l'heure pile — pendant qu'elle poussait la porte.
+    L'événement de fiabilité que la transition écrit, lui, ne se retire pas.
+
+    L'instant est passé explicitement : lire l'horloge dans le test rendrait le
+    résultat dépendant de la seconde à laquelle il tourne.
+    """
+    ligne, decor = await reservation(session)
+    await service.confirmer(session, booking=ligne, creator_id=decor["createur"].id)
+    delai = get_settings().no_show_delai_minutes
+
+    with pytest.raises(service.AbsenceTropTot):
+        await service.marquer_absent(
+            session,
+            booking=ligne,
+            actor=acteur(decor),
+            reason="pas là",
+            maintenant=ligne.starts_at + timedelta(minutes=delai - 1),
+        )
+
+    assert ligne.status is BookingStatus.CONFIRMED
+    # Et aucune pénalité n'a été écrite au passage : un refus qui laisserait
+    # l'événement derrière lui serait pire que pas de refus du tout.
+    evenements = await session.scalars(
+        sa.select(ReliabilityEvent).where(ReliabilityEvent.booking_id == ligne.id)
+    )
+    assert list(evenements) == []
+
+
+async def test_une_absence_au_delai_exact_passe(session: AsyncSession) -> None:
+    """Le sens inverse, et il compte autant.
+
+    Une garde qui refuserait *toute* absence passerait le test de refus sans
+    rien garantir — et le mode terrain se découvrirait inutilisable un samedi.
+    La borne est inclusive : à la minute pile, l'attente a été tenue.
+    """
+    ligne, decor = await reservation(session)
+    await service.confirmer(session, booking=ligne, creator_id=decor["createur"].id)
+    delai = get_settings().no_show_delai_minutes
+
+    await service.marquer_absent(
+        session,
+        booking=ligne,
+        actor=acteur(decor),
+        reason="pas là",
+        maintenant=ligne.starts_at + timedelta(minutes=delai),
+    )
+
+    assert ligne.status is BookingStatus.NO_SHOW
+
+
+async def test_le_delai_vient_de_la_configuration_et_non_du_code(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Un seuil recopié en dur se découvre le jour où on l'ajuste et où rien ne
+    bouge. On le déplace, et le comportement doit suivre."""
+    from app.services import booking_states as module
+
+    reglages = get_settings().model_copy(update={"no_show_delai_minutes": 90})
+    monkeypatch.setattr(module, "get_settings", lambda: reglages)
+
+    ligne, decor = await reservation(session)
+    await service.confirmer(session, booking=ligne, creator_id=decor["createur"].id)
+
+    # Vingt minutes suffisaient avant : avec le nouveau réglage, plus.
+    with pytest.raises(service.AbsenceTropTot):
+        await service.marquer_absent(
+            session,
+            booking=ligne,
+            actor=acteur(decor),
+            reason="pas là",
+            maintenant=ligne.starts_at + timedelta(minutes=20),
+        )
+
+    assert service.absence_signalable_a(ligne) == ligne.starts_at + timedelta(minutes=90)
+
+
+async def test_un_item_sans_creneau_n_ouvre_jamais_l_absence(session: AsyncSession) -> None:
+    """`None` et non une date lointaine : l'écran doit pouvoir ne pas dessiner
+    le bouton du tout, pas le dessiner grisé pour toujours."""
+    ligne, _ = await reservation(session, requires_booking=False)
+
+    assert service.absence_signalable_a(ligne) is None
+
+
+# --------------------------------------------------------------------------
 # journal
 # --------------------------------------------------------------------------
 

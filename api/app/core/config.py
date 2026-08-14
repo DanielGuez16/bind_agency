@@ -192,6 +192,17 @@ class Settings(BaseSettings):
     #: Rayon du fil, en mètres. Dix kilomètres : au-delà, un créateur de Miami
     #: ne se déplace pas pour un soin, et le fil se remplit de bruit.
     feed_radius_metres: int = 10_000
+    #: Rayon des repères de voisinage montrés au commerce dans ses états vides.
+    #: Deux kilomètres : « le quartier » n'existe pas dans le modèle — la ville
+    #: d'un créateur est déjà un champ libre pour cette raison (SPEC §5.2) — et
+    #: un rayon court en est l'approximation honnête. Plus large, on compare un
+    #: salon de Wynwood à South Beach.
+    neighbourhood_radius_metres: int = 2_000
+    #: Effectif minimum sous lequel aucune fourchette n'est rendue. Cinq : une
+    #: fourchette sur trois salons désigne des salons précis, et un commerce ne
+    #: doit pas pouvoir lire le catalogue d'un concurrent en s'inscrivant à côté
+    #: de lui. Le compte, lui, est rendu quand même.
+    neighbourhood_minimum_businesses: int = 5
     #: Les élargissements proposés quand le fil est maigre, en mètres.
     #:
     #: En configuration, comme tout seuil. Le fil ne les propose que s'ils sont
@@ -209,6 +220,12 @@ class Settings(BaseSettings):
     #: Fenêtre d'annulation sans pénalité avant le créneau. Vingt-quatre heures :
     #: au-delà, le commerce a bloqué un poste qu'il ne remplira plus.
     booking_free_cancellation_seconds: int = 86_400
+    #: Délai après l'heure du rendez-vous avant qu'une absence puisse être
+    #: constatée. Vingt minutes : une créatrice en retard de trois minutes n'est
+    #: pas absente, et l'événement de fiabilité qu'une absence écrit ne se
+    #: retire pas. C'est le premier seuil qu'on voudra ajuster en observant les
+    #: premières tournées — d'où la configuration plutôt que le code.
+    no_show_delai_minutes: int = 20
     #: Période du balayage des gardes dépassés. Deux minutes : le calcul de
     #: disponibilité les ignore déjà à l'échéance, ce balayage ne fait que
     #: mettre l'état en accord avec ce qui est vrai.
@@ -263,6 +280,12 @@ class Settings(BaseSettings):
     menu_extraction_provider: Literal["manual", "vision"] = "manual"
     menu_extraction_api_key: SecretStr | None = Field(default=None, repr=False)
     menu_extraction_model: str = "claude-sonnet-5"
+    #: Plafond de jetons de la réponse du modèle. Huit mille tiennent une carte
+    #: de soixante lignes avec de la marge ; quatre mille — la valeur d'avant —
+    #: coupaient au milieu d'une carte fournie, et une réponse coupée n'est pas
+    #: une extraction partielle mais du JSON invalide. La réflexion étant
+    #: explicitement désactivée, ce plafond ne sert qu'à la réponse.
+    menu_extraction_max_tokens: int = 8192
     menu_extraction_timeout_seconds: float = 60.0
 
     # Plateformes sociales. `demo` répond de mémoire et n'appelle personne : le

@@ -18,6 +18,27 @@ relecture est le seul moyen d'obtenir la bonne.
 l'écran de relecture s'en sert pour ordonner ce qu'un humain doit regarder en
 premier. Une extraction rendue sans confiance obligerait à tout relire avec la
 même attention, ce qui revient à ne rien relire.
+
+**La réflexion est coupée, explicitement.** Sur les modèles de la génération 5,
+ne pas envoyer de champ `thinking` ne veut plus dire « sans réflexion » : c'est
+la réflexion adaptative qui s'applique par défaut. Or `max_tokens` plafonne la
+réflexion **et** la réponse ensemble : une carte longue pouvait dépenser son
+budget à réfléchir et rendre un JSON coupé au milieu d'une ligne, que `_lire`
+signalait comme « réponse illisible ». Le défaut se serait découvert debout dans
+un salon, sur la carte la plus fournie de la tournée — celle qui a le plus à
+gagner à être lue automatiquement.
+
+Lire une carte est une transcription, pas un raisonnement : les jetons dépensés
+à délibérer n'ajoutent rien et prennent la place du résultat. On coupe donc, et
+on relève quand même le plafond — les deux, parce que couper protège du partage
+et relever protège de la carte de soixante lignes. Le plafond est en
+configuration : c'est un seuil, et aucun seuil ne vit dans le code.
+
+**Une troncature se dit, elle ne se devine pas.** Si la réponse s'arrête sur
+`max_tokens`, l'erreur le nomme au lieu de dire « illisible ». Les deux
+appellent des gestes opposés — relever le plafond, ou reprendre la photo — et
+les confondre, c'est reprendre la photo trois fois d'une carte qui était bien
+cadrée.
 """
 
 import json
@@ -113,6 +134,7 @@ class VisionExtractor:
         self._client = client
         self._cle = settings.menu_extraction_api_key.get_secret_value()
         self._modele = settings.menu_extraction_model
+        self._plafond = settings.menu_extraction_max_tokens
         self._delai = httpx.Timeout(settings.menu_extraction_timeout_seconds)
 
     async def extraire(self, contenu: bytes, *, mime_type: str) -> Extraction:
@@ -128,7 +150,11 @@ class VisionExtractor:
                 },
                 json={
                     "model": self._modele,
-                    "max_tokens": 4096,
+                    "max_tokens": self._plafond,
+                    # Explicite, et jamais omis : sur la génération 5, omettre
+                    # ce champ active la réflexion adaptative, qui partagerait
+                    # `max_tokens` avec la réponse. Voir l'en-tête du module.
+                    "thinking": {"type": "disabled"},
                     "messages": [
                         {
                             "role": "user",
@@ -166,6 +192,16 @@ def _lire(corps: object) -> Extraction:
     """
     if not isinstance(corps, dict):
         raise ExtractionError("réponse inattendue")
+
+    # **Avant de tenter de lire.** Une réponse coupée au plafond est du JSON
+    # valide jusqu'à l'endroit où elle s'arrête, et invalide ensuite : sans ce
+    # test elle se signale « illisible », ce qui fait reprendre la photo d'une
+    # carte parfaitement cadrée. Le geste qu'elle appelle est de relever
+    # `MENU_EXTRACTION_MAX_TOKENS`, et il faut le dire.
+    if corps.get("stop_reason") == "max_tokens":
+        raise ExtractionError(
+            "réponse tronquée au plafond de jetons : relever MENU_EXTRACTION_MAX_TOKENS"
+        )
 
     blocs = corps.get("content") or []
     texte = next((b.get("text") for b in blocs if isinstance(b, dict) and b.get("text")), None)

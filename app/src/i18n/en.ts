@@ -813,6 +813,8 @@ export const en = {
       'The time has passed. This booking can no longer be accepted.',
     booking_hold_expired: 'Your hold expired and the slot was released. Book again.',
     booking_no_show_not_applicable: 'This booking has no time slot, so there is no no-show.',
+    booking_no_show_too_early:
+      'Too early to report an absence. Give them a few more minutes.',
     redemption_code_unknown: 'This code is not valid. Ask the creator to refresh it.',
     redemption_too_many_attempts:
       'Too many failed attempts on this code. Ask the creator for a new booking.',

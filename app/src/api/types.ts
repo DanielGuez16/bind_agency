@@ -400,6 +400,16 @@ export type ReservationDuCommerce = {
   required_mention: string | null;
   required_geotag: boolean;
   contrepartie: ContrepartieBreve | null;
+  /**
+   * Quand le bouton « signaler une absence » s'ouvre. `null` : jamais — un item
+   * sans créneau n'a pas d'heure à laquelle ne pas se présenter.
+   *
+   * Rendu par le serveur plutôt que déduit ici : le délai est un réglage, et le
+   * recopier côté écran le ferait dériver au premier ajustement. L'écran s'en
+   * sert pour ouvrir le bouton et pour dire à quelle heure il s'ouvre ; c'est le
+   * serveur qui refuse, jamais l'horloge du téléphone.
+   */
+  absence_signalable_a: string | null;
 };
 
 export type JourneeDuCommerce = {
@@ -794,6 +804,27 @@ export type EtatDeLaComposition = {
   jours_ouverts: number;
   en_ligne_depuis: string | null;
   status: 'onboarding' | 'active' | 'paused' | 'suspended';
+};
+
+/** La moitié centrale du voisinage. Jamais ses extrêmes. */
+export type Fourchette = { bas: number; haut: number };
+
+/**
+ * Ce que font les salons d'à côté, pour les états vides du commerce.
+ *
+ * **Les deux fourchettes sont nulles sous cinq salons alentour**, et `commerces`
+ * est rendu quand même : l'écran écrit alors « pas encore assez de salons autour
+ * de vous » plutôt qu'un vide qu'on prendrait pour une panne.
+ *
+ * `rayon_metres` s'écrit : « les salons dans 2 km » situe le repère, « votre
+ * quartier » serait un découpage que le modèle n'a pas.
+ */
+export type ReperesDuVoisinage = {
+  rayon_metres: number;
+  commerces: number;
+  prestations_publiees: Fourchette | null;
+  places_par_jour: Fourchette | null;
+  palier_le_plus_offert: { platform: Platform; content_format: ContentFormat } | null;
 };
 
 // --------------------------------------------------------------------------

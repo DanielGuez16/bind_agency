@@ -470,6 +470,81 @@ async def test_le_reseau_coupe_leve_une_erreur_d_extraction(vision_configure) ->
             await VisionExtractor(http).extraire(CARTE, mime_type="image/jpeg")
 
 
+async def test_la_reflexion_est_coupee_et_le_plafond_vient_de_la_configuration(
+    vision_configure,
+) -> None:
+    """**Le défaut qui se serait découvert debout dans un salon.**
+
+    Sur la génération 5, omettre `thinking` n'active pas « sans réflexion » mais
+    la réflexion adaptative — et `max_tokens` plafonne la réflexion *et* la
+    réponse ensemble. Une carte longue dépensait son budget à délibérer et
+    rendait un JSON coupé au milieu d'une ligne. Le champ est donc envoyé
+    explicitement, et le plafond vient de la configuration parce qu'un seuil ne
+    vit pas dans le code.
+    """
+    envois: list[dict] = []
+
+    def capturer(request: httpx.Request) -> httpx.Response:
+        envois.append(json.loads(request.content))
+        return reponse_modele({"currency": None, "lignes": []})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(capturer)) as http:
+        await VisionExtractor(http).extraire(CARTE, mime_type="image/jpeg")
+
+    assert envois[0]["thinking"] == {"type": "disabled"}
+    assert envois[0]["max_tokens"] == vision_configure.menu_extraction_max_tokens
+
+
+async def test_une_reponse_tronquee_nomme_le_plafond_et_non_l_illisibilite(
+    vision_configure,
+) -> None:
+    """Les deux appellent des gestes opposés : relever le plafond, ou reprendre
+    la photo. Les confondre fait reprendre trois fois une carte bien cadrée.
+
+    Le texte tronqué est du JSON valide **jusqu'à l'endroit où il s'arrête** :
+    c'est exactement la forme qui, sans le test sur `stop_reason`, se serait
+    signalée « réponse illisible ».
+    """
+    coupee = httpx.Response(
+        200,
+        json={
+            "stop_reason": "max_tokens",
+            "content": [{"type": "text", "text": '{"currency": "USD", "lignes": [{"name": "So'}],
+        },
+    )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(lambda r: coupee)) as http:
+        with pytest.raises(ExtractionError, match="MENU_EXTRACTION_MAX_TOKENS"):
+            await VisionExtractor(http).extraire(CARTE, mime_type="image/jpeg")
+
+
+async def test_une_fin_normale_n_est_pas_prise_pour_une_troncature(vision_configure) -> None:
+    """Le sens inverse. Une garde qui refuserait toute réponse portant un
+    `stop_reason` refuserait aussi les bonnes : `end_turn` est ce que rend une
+    extraction réussie, et le confondre avec un plafond rendrait le mode vision
+    inutilisable sans qu'aucun autre test ne le voie.
+    """
+    normale = httpx.Response(
+        200,
+        json={
+            "stop_reason": "end_turn",
+            "content": [
+                {
+                    "type": "text",
+                    "text": json.dumps(
+                        {"currency": "USD", "lignes": [{"name": "Soin", "price_cents": 8000}]}
+                    ),
+                }
+            ],
+        },
+    )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(lambda r: normale)) as http:
+        resultat = await VisionExtractor(http).extraire(CARTE, mime_type="image/jpeg")
+
+    assert resultat.lignes[0].name == "Soin"
+
+
 def test_l_instruction_interdit_d_inventer_une_duree() -> None:
     """Le garde-fou est dans la consigne autant que dans le type de retour."""
     from app.integrations.menu_extraction import INSTRUCTION
