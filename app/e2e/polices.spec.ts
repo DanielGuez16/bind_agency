@@ -33,7 +33,17 @@ import { expect, test } from '@playwright/test';
  * absente est synthétisée par le moteur. Chaque graisse est donc enregistrée
  * sous son propre nom, et c'est ce nom-là qu'il faut chercher.
  */
-const FACES_ATTENDUES = ['FamiljenGrotesk_', 'IBMPlexSans_', 'IBMPlexMono_'];
+const FACES_ATTENDUES = ['BodoniModa_', 'Outfit_', 'IBMPlexMono_'];
+
+/**
+ * Les deux familles retirées par la direction BIND AGENCY v1.0.
+ *
+ * Elles sont vérifiées **absentes** et pas seulement remplacées : un
+ * `@font-face` orphelin qui survivrait au changement ne casserait rien de
+ * visible, continuerait de peser au démarrage, et laisserait croire que la
+ * bascule est faite là où elle ne l'est qu'à moitié.
+ */
+const FACES_RETIREES = ['FamiljenGrotesk_', 'IBMPlexSans_'];
 
 test('les trois familles sont déclarées sous les noms que le thème demande', async ({ page }) => {
   await page.goto('/');
@@ -54,6 +64,12 @@ test('les trois familles sont déclarées sous les noms que le thème demande', 
       faces.some((nom) => nom.startsWith(famille)),
       `aucune face « ${famille} » : les jetons la nomment et rien ne la charge`,
     ).toBe(true);
+  }
+  for (const retiree of FACES_RETIREES) {
+    expect(
+      faces.filter((nom) => nom.startsWith(retiree)),
+      `« ${retiree} » est retirée par la v1.0 et pèse encore au démarrage`,
+    ).toEqual([]);
   }
 });
 
@@ -103,7 +119,7 @@ test('le texte rendu emploie réellement la fonte, et non la pile système', asy
   // La pile système de `react-native-web` commence par `-apple-system` : la
   // retrouver ici signifie que la déclaration de l'app a été jetée.
   expect(employee, 'le texte est rendu dans la pile système').not.toContain('-apple-system');
-  expect(employee).toMatch(/FamiljenGrotesk_|IBMPlexSans_/);
+  expect(employee).toMatch(/BodoniModa_|Outfit_/);
 });
 
 test('aucune graisse n’est synthétisée par-dessus une face déjà dessinée', async ({ page }) => {
