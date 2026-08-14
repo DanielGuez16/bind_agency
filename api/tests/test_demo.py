@@ -195,6 +195,9 @@ def _en_mode(monkeypatch: pytest.MonkeyPatch, mode: str) -> None:
         jwt_secret_key="peu-importe-ici-mais-assez-longue-pour-hmac",
         token_encryption_key=encryption.generate_key(),
         social_provider=mode,
+        # Le rappel du parcours de demonstration. Sans lui la fabrique refuse,
+        # et c''est voulu : une adresse morte ne se decouvre qu''au clic.
+        api_public_base_url="https://api.bind.test",
         instagram_app_id="1234567890",
         instagram_app_secret="un-secret-meta",
         instagram_redirect_uri="https://api.bind.test/callback",

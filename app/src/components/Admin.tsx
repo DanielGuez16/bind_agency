@@ -11,7 +11,10 @@
  * `DecisionBar` demande un motif à chaque action qui n'est pas une approbation,
  * et ne peut pas être appelée sans.
  */
+import { useMemo } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
+
+import { useRaccourcis } from '../shell/useRaccourcis';
 
 import { breakpoint, radius, useColors } from '../theme';
 import { Texte } from './Texte';
@@ -205,13 +208,28 @@ export function DecisionBar({
 }) {
   const c = useColors();
 
+  // Le bouton est **retiré**, pas grisé : une action impossible ne se grise que
+  // si elle redeviendra possible d'elle-même, ce qui n'est pas le cas ici —
+  // c'est à l'arbitre de choisir un motif.
+  const offertes = decisions.filter((decision) => decision.approbation || motif);
+
+  // **La pastille tenait une promesse que rien n'écoutait.** Elle dessinait
+  // « A », « R », « N » depuis le début, et le clavier ne servait à rien : qui
+  // traite vingt dossiers à la chaîne y croit, appuie, n'obtient rien, puis
+  // cesse d'y croire. Les raccourcis suivent exactement les décisions offertes —
+  // un raccourci qui survivrait à son bouton ferait ce que le bouton refuse.
+  useRaccourcis(
+    useMemo(
+      () => offertes.map(({ touche, onPress }) => ({ touche, action: onPress })),
+      // La liste se reconstruit à chaque rendu ; c'est son contenu qui compte.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [offertes.map((d) => d.touche).join(''), ...offertes.map((d) => d.onPress)],
+    ),
+  );
+
   return (
     <View testID={testID} style={{ flexDirection: 'row', gap: 6, padding: 12 }}>
-      {decisions
-        // Le bouton est **retiré**, pas grisé : une action impossible ne se
-        // grise que si elle redeviendra possible d'elle-même, ce qui n'est pas
-        // le cas ici — c'est à l'arbitre de choisir un motif.
-        .filter((decision) => decision.approbation || motif)
+      {offertes
         .map((decision) => (
           <Pressable
             key={decision.cle}

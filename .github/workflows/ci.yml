@@ -47,6 +47,9 @@ jobs:
       ENVIRONMENT: ci
       DATABASE_URL: postgresql+psycopg://bind:bind@localhost:5434/bind
       TEST_DATABASE_URL: postgresql+psycopg://bind:bind@localhost:5434/bind_test
+      # Le parcours d'autorisation de démonstration revient ici. Sans elle, la
+      # fabrique refuse plutôt que de rendre une adresse qui n'existe pas.
+      API_PUBLIC_BASE_URL: http://localhost:8000
 
     steps:
       - uses: actions/checkout@v4

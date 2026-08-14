@@ -545,7 +545,6 @@ disponibilité, le verrou de réservation, les codes de retrait, la machine à
 
 | Ce qui manque | Prérequis |
 |---|---|
-| Envoi d'une preuve | L'écran existe et montre son état ; le bouton d'envoi n'ouvre pas encore de sélecteur de média |
 | Écrans commerce de composition | Catalogue, horaires et capacité se pilotent par l'API. Les routes existent, les écrans non |
 | Choix entre deux commerces | La navigation prend le premier commerce de l'utilisateur. Personne n'en a deux dans le jeu ; le sélecteur viendra avec le cas |
 | Preuve niveau 1 | `fetch_media` sur l'interface de plateforme, qui arrive avec le relevé des publications |

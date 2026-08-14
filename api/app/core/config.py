@@ -294,6 +294,19 @@ class Settings(BaseSettings):
     # qu'un raccourci ferait croire que le parcours marche alors qu'on ne
     # l'aurait pas parcouru.
     social_provider: Literal["demo", "live"] = "demo"
+    #: L'adresse publique de cette API, pour le rappel du parcours de
+    #: démonstration.
+    #:
+    #: Le fournisseur de démonstration rendait `https://instagram.demo.bind/…`,
+    #: un domaine qui n'existe pas : les deux boutons « connecter un réseau »
+    #: ouvraient une page d'erreur du navigateur — la toute première action que
+    #: le produit demande à une créatrice. L'autorisation revient désormais sur
+    #: notre propre rappel, et le parcours se déroule en entier.
+    #:
+    #: Sans elle, la démonstration refuse de démarrer plutôt que de rendre une
+    #: adresse morte : c'est déjà ce que font le lien de prise en main et la
+    #: redirection publique.
+    api_public_base_url: str | None = None
 
     # TikTok. En bac à sable tant que l'application n'est pas revue : les
     # identifiants existent, l'audience est limitée aux comptes de test.
