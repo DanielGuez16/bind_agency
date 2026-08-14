@@ -19,6 +19,31 @@
  * part** : c'est une lettre, pas un accent, et c'est la faute que la première
  * lecture du brief avait commise.
  *
+ * ---
+ *
+ * ## Où le logotype a le droit d'aller
+ *
+ * **Le logotype partout où on a la place de le lire, la marque compacte
+ * partout ailleurs. Le seuil est la lisibilité des quatre lettres, pas le
+ * support.**
+ *
+ * La règle a coûté deux découvertes. Le logotype réduit à seize pixels donnait
+ * quatre taches — d'où la marque compacte, livrée par Design. Puis la tuile
+ * d'application, qu'on avait gardée au logotype *parce qu'elle est fournie en
+ * 1024*, jusqu'à mesurer ce qu'un lanceur en affiche : vingt-sept pixels de
+ * large pour quatre lettres à 48 dp. La résolution du fichier n'a jamais été la
+ * question ; ce que l'œil reçoit l'a toujours été.
+ *
+ * Ce composant **refuse** donc de rendre sous le plancher, comme `Texte` refuse
+ * une surface employée en encre. Un logotype illisible ne se signale pas : il
+ * ressemble à un logotype, en plus petit, et il traverse une revue. C'est très
+ * exactement ainsi que l'ancien monogramme a traversé le remplacement du
+ * système.
+ *
+ * Le plancher n'est pas écrit, il se calcule depuis deux mesures tenues dans
+ * `produit.json` — la largeur d'une lettre dans la fonte, et le minimum de
+ * pixels par lettre.
+ *
  * **Ceci reste une approximation, et elle est nommée.** Les lettres du logo de
  * l'agence sont dessinées à la main — le D porte une coupe oblique qu'aucune
  * fonte ne donne. Le rendu dans la fonte fonctionnelle du système
@@ -28,7 +53,7 @@
  */
 import { View } from 'react-native';
 
-import { tokens, useColors, type ColorName } from '../theme';
+import { produit, tokens, type ColorName } from '../theme';
 import { Texte } from './Texte';
 
 /**
@@ -39,6 +64,25 @@ import { Texte } from './Texte';
  * nom et non du texte courant — quatre lettres serrées ne se lisent pas comme
  * une marque.
  */
+/**
+ * Le rapport entre `taille` et le corps du mot.
+ *
+ * Il vaut ce que la composition lui donne plus bas ; nommé ici parce que le
+ * plancher s'en déduit, et qu'un rapport écrit à deux endroits finirait par
+ * diverger de celui qui rend.
+ */
+const CORPS_POUR_TAILLE = 0.72;
+
+/**
+ * La taille sous laquelle le logotype ne se lit plus, et se refuse.
+ *
+ * Calculée, pas choisie : `taille × 0,72` donne le corps, `corps × 0,592` donne
+ * la largeur d'une lettre, et il en faut dix pixels. Vingt-quatre, aujourd'hui.
+ */
+export const PLANCHER_DU_LOGOTYPE = Math.ceil(
+  produit.marque.pixelsParLettreMinimum / (CORPS_POUR_TAILLE * produit.marque.largeurParLettre),
+);
+
 export function Marque({
   taille = 40,
   couleur = 'ink.default',
@@ -54,12 +98,21 @@ export function Marque({
   signature?: boolean;
   testID?: string;
 }) {
+  if (taille < PLANCHER_DU_LOGOTYPE) {
+    throw new Error(
+      `Le logotype ne se lit plus à ${taille} : sous ${PLANCHER_DU_LOGOTYPE}, ` +
+        `« ${tokens.logo.wordmark.text} » donne moins de ` +
+        `${produit.marque.pixelsParLettreMinimum} pixels par lettre. ` +
+        "C'est la marque compacte qu'il faut ici — celle du favicon et des tuiles.",
+    );
+  }
+
   return (
     <View testID={testID} style={{ alignItems: signature ? 'center' : 'flex-start' }}>
       <Texte
         variante="type.wordmark"
         couleur={couleur}
-        style={{ fontSize: taille * 0.72, lineHeight: taille * 0.86 }}
+        style={{ fontSize: taille * CORPS_POUR_TAILLE, lineHeight: taille * 0.86 }}
       >
         {tokens.logo.wordmark.text}
       </Texte>

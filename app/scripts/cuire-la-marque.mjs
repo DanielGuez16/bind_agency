@@ -1,37 +1,41 @@
 /**
  * Cuisson des fichiers de la marque.
  *
- * **Ce qu'il remplace, et pourquoi il fallait tout reprendre.** Le script
- * précédent dessinait à la main, en Python, un « B » construit — deux arcs
- * inégaux tenus par un axe débordant — en vert d'eau sur un indigo. C'était le
- * monogramme du système d'avant. Il a traversé le remplacement complet de la
- * direction artistique sans que rien ne l'arrête : les jetons ont changé, les
- * fontes ont changé, les écrans ont changé, et l'onglet du navigateur montrait
- * toujours l'ancienne marque. Une icône ne se relit jamais, c'est tout le
- * problème.
+ * ---
  *
- * **La marque est le mot.** `B!ND`, le point d'exclamation à la place du I. Il
- * n'y a plus de signe à côté du mot, donc plus de monogramme à réduire : ces
- * fichiers portent le mot lui-même.
+ * ## La règle
  *
- * **C'est le navigateur qui peint, avec la fonte du produit.** Le fichier
- * `.ttf` est celui que l'application embarque, lu depuis `node_modules` et
- * inséré dans la page : pas une fonte système qui lui ressemble, pas une
- * approximation. Même raisonnement que pour les satins — réimplémenter un
- * rendu de texte en aurait fait une ressemblance à vérifier à l'œil.
+ * **Le logotype partout où on a la place de le lire, la marque compacte
+ * partout ailleurs. Le seuil est la lisibilité des quatre lettres, pas le
+ * support.**
  *
- * **Ce que ces fichiers ne sont pas.** Le logo de l'agence est dessiné à la
- * main : le D porte une coupe oblique qu'aucune fonte ne donne. Ceci est donc
- * la meilleure approximation disponible, et elle est nommée comme telle dans
- * `tokens.json` (`$meta.unconfirmed`). Le jour où le vectoriel arrive, ce
- * script est remplacé par un tracé — pas retouché.
+ * Elle s'est écrite en trois temps, et chacun a coûté une découverte. Le
+ * logotype réduit à seize pixels donnait quatre taches ; refuser de le réduire
+ * était juste, mais laisser le favicon dans cet état l'était moins. Design a
+ * livré la marque compacte. Restait la tuile d'application, gardée au logotype
+ * parce qu'elle est fournie en 1024 — jusqu'à mesurer ce qu'un lanceur en
+ * affiche : **vingt-sept pixels de large pour quatre lettres** à 48 dp. La
+ * résolution du fichier n'a jamais été la question.
  *
- * **Seize pixels ne lisent pas quatre lettres, et on ne l'invente pas.** La
- * tentation serait d'y mettre un « B » seul, ou un « B! » : ce serait dessiner
- * un monogramme que personne n'a validé, c'est-à-dire refaire exactement ce
- * qu'on vient de retirer. À cette taille l'identité tient à la couleur — une
- * tuile orange dans un onglet se reconnaît sans se lire — et le mot y est
- * présent, dense, plutôt qu'inventé.
+ * **Ce script ne produit donc plus que la marque compacte.** Tous ses fichiers
+ * sont des tuiles, et aucune tuile ne s'affiche assez grand. Le logotype n'est
+ * plus cuit du tout : il ne vit que dans l'interface, en texte, là où l'écran
+ * lui donne la place — la règle exprimée par la structure plutôt que par un
+ * commentaire.
+ *
+ * Le seuil est mesuré, pas choisi. `B!ND` dans la fonte du produit occupe
+ * 0,592 fois le corps par lettre. Dix pixels par lettre est encadré par deux
+ * mesures : 6,75 au lanceur Android, dont la capture est illisible, et 11,1 au
+ * plus petit usage in-app, qui se lit. `Marque` refuse de rendre en dessous.
+ *
+ * ---
+ *
+ * **Il n'y a plus de navigateur ici.** Il en fallait un tant que le logotype
+ * était cuit : le texte se peint, il ne se calcule pas. La marque compacte est
+ * faite de rectangles alignés sur une grille de seize — les écrire directement
+ * est exact, et ne laisse entrer aucun lissage.
+ *
+ * Voir `marque-compacte.mjs` pour la géométrie et ce qu'elle protège.
  *
  * Relancer : `node scripts/cuire-la-marque.mjs`
  */
@@ -39,9 +43,9 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { chromium } from 'playwright';
+import { PNG } from 'pngjs';
 
-import { enIco, enPng, GRILLE, MARGES, SIGNE } from './marque-compacte.mjs';
+import { aplat, couche, enIco, enPng, GRILLE, MARGES, SIGNE } from './marque-compacte.mjs';
 
 const ICI = dirname(fileURLToPath(import.meta.url));
 const RACINE = join(ICI, '..');
@@ -50,156 +54,106 @@ const SORTIE = join(RACINE, 'assets');
  * Ce que le navigateur va chercher à la racine du site.
  *
  * `public/` est recopié tel quel à la racine du build par `expo export` —
- * vérifié, pas supposé. C'est ce qui permet de poser l'icône d'iOS **sans
- * remplacer le gabarit HTML** qu'Expo génère : Safari demande
- * `/apple-touch-icon.png` par convention quand aucune balise ne la déclare, et
- * le gabarit d'Expo n'en déclare aucune — il n'écrit qu'un `<link rel="icon">`.
+ * vérifié, pas supposé — et l'emporte sur ce qu'Expo génère. C'est ce qui
+ * permet de livrer un `.ico` dont chaque taille est **dessinée** au lieu d'être
+ * réduite, et de poser l'icône d'iOS sans remplacer le gabarit HTML : Safari
+ * demande `/apple-touch-icon.png` par convention, et tout navigateur demande
+ * `/favicon.ico`.
  */
 const PUBLIC = join(RACINE, 'public');
 
 /** Les jetons, lus et non recopiés : deux sources finiraient par diverger. */
 const jetons = JSON.parse(await readFile(join(RACINE, 'src/theme/tokens.json'), 'utf-8'));
+/** Le seuil de lisibilité, tenu du côté produit et lu ici — jamais recopié. */
 const produit = JSON.parse(await readFile(join(RACINE, 'src/theme/produit.json'), 'utf-8'));
 
-/** La surface de marque, et l'encre claire qui s'y pose. */
+/** La surface de marque, et l'encre qui s'y creuse. */
 const ORANGE = jetons.color.brand['500'];
-const CLAIR = jetons.color.ink.onDark;
-/** L'encre, pour la version qu'Android teinte lui-même. */
 const ENCRE = jetons.color.ink.default;
-
-const MOT = jetons.logo.wordmark.text;
-const INTERLETTRE = jetons.logo.wordmark.letterSpacing;
-const GRAISSE = produit.type['type.wordmark'].weight;
-
-const ttf = await readFile(
-  join(RACINE, 'node_modules/@expo-google-fonts/outfit/300Light/Outfit_300Light.ttf'),
-);
-const FONTE = `data:font/ttf;base64,${ttf.toString('base64')}`;
+/** L'encre claire ne sert plus qu'au logotype vivant, dans l'interface. */
+const CLAIR = jetons.color.ink.onDark;
 
 /**
- * Une tuile carrée portant le mot.
+ * Le gabarit d'Android, et sa zone sûre.
  *
- * Le mot occupe `part` de la largeur : les icônes d'application respirent
- * (Android masque les bords, iOS arrondit), le favicon serre pour rester
- * lisible dans un onglet.
+ * 108 unités dont 72 garanties visibles. À quatre fois la densité de référence
+ * cela fait 432 et 288 — et 288 vaut dix-huit pixels par unité de la grille de
+ * seize, donc aucun arrondi.
  */
-function page({ cote, fond, encre, part }) {
-  return `<!doctype html><meta charset="utf-8"><style>
-    @font-face { font-family: 'Marque'; src: url('${FONTE}') format('truetype'); font-weight: 300; }
-    html, body { margin: 0; padding: 0; }
-    .tuile {
-      width: ${cote}px; height: ${cote}px;
-      background: ${fond};
-      display: flex; align-items: center; justify-content: center;
-      /* Le mot est vectoriel jusqu'à la capture : la taille se donne en
-         proportion du côté, jamais en pixels arrondis d'une taille de
-         référence — un 180 obtenu en agrandissant un 64 serait flou. */
-      font-family: 'Marque'; font-weight: ${GRAISSE};
-      color: ${encre};
-      /* L'interlettrage pousse la dernière lettre hors du bloc centré :
-         la moitié en marge gauche recentre optiquement. */
-      letter-spacing: ${INTERLETTRE * (cote / 64)}px;
-      padding-left: ${(INTERLETTRE * (cote / 64)) / 2}px;
-      box-sizing: border-box;
-      font-size: ${cote * part}px;
-      line-height: 1;
-      white-space: nowrap;
-      -webkit-font-smoothing: antialiased;
-    }
-  </style><div class="tuile">${MOT}</div>`;
-}
+const ANDROID = { cote: 432, zoneSure: 288 };
 
-/** Les fichiers, et ce que chacun doit être. */
+/**
+ * Ce que chaque fichier est, et **à quelle taille il est vu**.
+ *
+ * `afficheA` n'est pas la résolution du fichier : c'est ce que l'utilisateur en
+ * voit. C'est la seule grandeur qui décide, et c'est celle qu'on avait cessé de
+ * regarder en gardant le logotype sur une icône livrée en 1024.
+ */
 const FICHIERS = [
-  // Le mot clair sur la surface de marque : c'est le traitement en bloc de la
-  // fondatrice, à la taille où le blanc sur orange passe largement.
-  { nom: 'icon.png', cote: 1024, fond: ORANGE, encre: CLAIR, part: 0.2 },
-  { nom: 'splash-icon.png', cote: 1024, fond: ORANGE, encre: CLAIR, part: 0.2 },
-  // **Le favicon et l'icône d'iOS ne sont plus ici** : ils portent la marque
-  // compacte, qui se dessine sur une grille au lieu de se peindre. Voir plus
-  // bas — et `marque-compacte.mjs` pour ce que ce dessin protège.
-
-  // **Android masque la forme et compose trois couches.** Le premier plan doit
-  // tenir dans la zone sûre — les deux tiers du centre — parce que le système
-  // rogne les bords selon le masque du constructeur.
-  { nom: 'android-icon-background.png', cote: 512, fond: ORANGE, encre: ORANGE, part: 0 },
-  {
-    nom: 'android-icon-foreground.png',
-    cote: 512,
-    fond: 'transparent',
-    encre: CLAIR,
-    part: 0.14,
-  },
-  // La monochrome est teintée par le système : elle se livre en encre pleine
-  // sur du vide, jamais en couleur de marque.
-  {
-    nom: 'android-icon-monochrome.png',
-    cote: 432,
-    fond: 'transparent',
-    encre: ENCRE,
-    part: 0.14,
-  },
+  { nom: 'favicon.ico', ou: 'public', afficheA: 16, pourquoi: "l'onglet du navigateur" },
+  { nom: 'apple-touch-icon.png', ou: 'public', afficheA: 60, pourquoi: "l'écran d'accueil d'iOS" },
+  { nom: 'icon.png', ou: 'assets', afficheA: 60, pourquoi: "la tuile d'application" },
+  // Les trois couches d'Android. Le fond est un aplat : le signe vit dans la
+  // couche de premier plan, et le masque du constructeur n'entame que lui.
+  { nom: 'android-icon-background.png', ou: 'assets', afficheA: 48, aplat: true, pourquoi: 'le lanceur Android' },
+  { nom: 'android-icon-foreground.png', ou: 'assets', afficheA: 48, couche: true, pourquoi: 'le lanceur Android' },
+  { nom: 'android-icon-monochrome.png', ou: 'assets', afficheA: 48, couche: true, pourquoi: 'le lanceur en thème' },
 ];
 
 await mkdir(SORTIE, { recursive: true });
 await mkdir(PUBLIC, { recursive: true });
-const navigateur = await chromium.launch();
 
-for (const fichier of FICHIERS) {
-  const contexte = await navigateur.newContext({
-    viewport: { width: fichier.cote, height: fichier.cote },
-    // Le fond de la page reste transparent : sans cela, les couches Android
-    // arriveraient sur du blanc et le masque montrerait un anneau.
-    ...(fichier.fond === 'transparent' ? {} : {}),
-  });
-  const onglet = await contexte.newPage();
-  await onglet.setContent(page(fichier));
-  await onglet.evaluate(() => document.fonts.ready);
-  await onglet.screenshot({
-    path: join(fichier.dossier ?? SORTIE, fichier.nom),
-    omitBackground: fichier.fond === 'transparent',
-  });
-  await contexte.close();
-  console.log(`  ${fichier.nom}  ${fichier.cote}px`);
-}
-
-await navigateur.close();
-
-/**
- * **La marque compacte, dessinée et non peinte.**
- *
- * Le favicon est livré en `.ico` complet plutôt qu'en PNG à réduire : chaque
- * taille y est tracée sur la grille de seize. `expo export` sait produire un
- * `.ico` de trois images, mais en *réduisant* la source — et une réduction
- * lisse, ce qui rendrait gris le blanc de deux unités qui sépare le fût du
- * point. `public/` est recopié tel quel à la racine du build et l'emporte sur
- * ce qu'Expo génère, vérifié sur un export.
- *
- * Les trois tailles sont celles qu'Expo mettait dans son `.ico` : 16, 32, 48.
- */
+// Le favicon : trois tailles, chacune tracée. Une réduction rendrait gris le
+// blanc de deux unités qui sépare le fût du point, et c'est ce qu'elle protège.
 await writeFile(join(PUBLIC, 'favicon.ico'), enIco([16, 32, 48], ORANGE, ENCRE));
-console.log('  public/favicon.ico  16 · 32 · 48');
+console.log('  public/favicon.ico            16 · 32 · 48');
 
-// 180, la taille qu'Apple impose. Elle ne tombe pas sur la grille — 11,25
-// unités — donc les bords sont arrondis à l'entier : deux couleurs franches
+// 180 est la taille qu'Apple impose ; elle ne tombe pas sur la grille — 11,25
+// unités — donc les bords sont arrondis à l'entier. Deux couleurs franches
 // plutôt qu'un lissage, au prix d'un demi-pixel.
 await writeFile(join(PUBLIC, 'apple-touch-icon.png'), enPng(180, ORANGE, ENCRE));
-console.log('  public/apple-touch-icon.png  180');
+console.log('  public/apple-touch-icon.png   180');
 
-// Ce que les fichiers portent, écrit à côté d'eux : un test compare les
-// couleurs trouvées dans les PNG à celles-ci, et refuse toute autre.
+// La tuile d'application. 1024 vaut soixante-quatre pixels par unité.
+await writeFile(join(SORTIE, 'icon.png'), enPng(1024, ORANGE, ENCRE));
+console.log('  assets/icon.png               1024');
+
+// Android compose deux couches et rogne le tout : le fond est plein, le signe
+// vit dans la zone sûre. Après masquage, ce qu'on voit est la tuile entière.
+await writeFile(
+  join(SORTIE, 'android-icon-background.png'),
+  PNG.sync.write(aplat(ANDROID.cote, ORANGE)),
+);
+await writeFile(
+  join(SORTIE, 'android-icon-foreground.png'),
+  PNG.sync.write(couche(ANDROID.cote, ANDROID.zoneSure, ENCRE)),
+);
+// La monochrome est teintée par le système : elle se livre en encre pleine sur
+// du vide, jamais en couleur de marque.
+await writeFile(
+  join(SORTIE, 'android-icon-monochrome.png'),
+  PNG.sync.write(couche(ANDROID.cote, ANDROID.zoneSure, ENCRE)),
+);
+console.log(`  assets/android-icon-*.png     ${ANDROID.cote} · zone sûre ${ANDROID.zoneSure}`);
+
+// Ce que les fichiers portent, écrit à côté d'eux : les tests comparent, et la
+// règle s'y lit sans lire le script.
 await writeFile(
   join(SORTIE, 'marque.json'),
   `${JSON.stringify(
     {
+      $regle:
+        "Le logotype partout où on a la place de le lire, la marque compacte partout ailleurs. Le seuil est la lisibilité des quatre lettres, pas le support : `afficheA` est ce que l'utilisateur voit, jamais la résolution du fichier. Tous les fichiers cuits sont des tuiles et aucune ne s'affiche assez grand — le logotype n'est donc plus cuit du tout, il ne vit qu'en texte dans l'interface.",
       $pourquoi:
-        "Les couleurs que les fichiers de la marque ont le droit de porter. Produit par scripts/cuire-la-marque.mjs, lu par __tests__/marque.test.ts. L'ancien monogramme vert a traversé le remplacement complet du système sans que rien ne l'arrête : c'est cette liste qui l'aurait arrêté.",
-      mot: MOT,
+        "Produit par scripts/cuire-la-marque.mjs, lu par __tests__/marque.test.ts. L'ancien monogramme vert a traversé le remplacement complet du système sans que rien ne l'arrête : ce fichier est ce qui l'aurait arrêté.",
+      mot: jetons.logo.wordmark.text,
       couleurs: { surface: ORANGE, encreClaire: CLAIR, encre: ENCRE },
-      compacte: { grille: GRILLE, signe: SIGNE, marges: MARGES },
+      lisibilite: produit.marque,
+      compacte: { grille: GRILLE, signe: SIGNE, marges: MARGES, android: ANDROID },
+      fichiers: FICHIERS.map((fichier) => ({ ...fichier, marque: 'compacte' })),
     },
     null,
     2,
   )}\n`,
 );
-console.log('  marque.json');
+console.log('  assets/marque.json');

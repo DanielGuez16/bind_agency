@@ -110,6 +110,69 @@ export function tuile(cote, surface, encre) {
   return png;
 }
 
+/**
+ * Une **couche** : le signe seul, sur du vide.
+ *
+ * Android ne masque pas une tuile, il en compose deux et rogne le tout : sur
+ * les 108 unités de son gabarit, seules les 72 du centre sont garanties
+ * visibles. Une tuile pleine posée là verrait son signe coupé en haut et en
+ * bas — il occupe douze unités sur seize, soit trois quarts de la tuile, quand
+ * le masque n'en garantit que deux tiers.
+ *
+ * La grille de seize est donc ramenée à la **zone sûre**, et le fond est
+ * fourni par l'autre couche. Après masquage, ce qu'on voit est exactement la
+ * marque compacte — c'est la composition d'Android qui restitue la tuile, pas
+ * nous qui la redessinons.
+ *
+ * 432 est le gabarit d'Android à quatre fois la densité de référence ; sa zone
+ * sûre vaut 288, soit dix-huit pixels par unité. Aucun arrondi.
+ */
+export function couche(cote, zoneSure, encre) {
+  const png = new PNG({ width: cote, height: cote });
+  const trait = enCanaux(encre);
+  const unite = zoneSure / GRILLE;
+  const marge = (cote - zoneSure) / 2;
+
+  for (let y = 0; y < cote; y += 1) {
+    for (let x = 0; x < cote; x += 1) {
+      const i = (cote * y + x) << 2;
+      const dans = SIGNE.some(
+        (part) =>
+          x >= Math.round(marge + part.x * unite) &&
+          x < Math.round(marge + (part.x + part.largeur) * unite) &&
+          y >= Math.round(marge + part.y * unite) &&
+          y < Math.round(marge + (part.y + part.hauteur) * unite),
+      );
+      png.data[i] = trait[0];
+      png.data[i + 1] = trait[1];
+      png.data[i + 2] = trait[2];
+      // Le vide est **transparent et noir**, pas transparent et coloré : un
+      // pixel transparent qui porte une couleur la laisse remonter dès qu'un
+      // rendu prémultiplie, et l'icône gagne un halo.
+      png.data[i + 3] = dans ? 255 : 0;
+      if (!dans) {
+        png.data[i] = 0;
+        png.data[i + 1] = 0;
+        png.data[i + 2] = 0;
+      }
+    }
+  }
+  return png;
+}
+
+/** Un aplat : la couche de fond d'Android, que le masque entame seul. */
+export function aplat(cote, surface) {
+  const png = new PNG({ width: cote, height: cote });
+  const fond = enCanaux(surface);
+  for (let i = 0; i < png.data.length; i += 4) {
+    png.data[i] = fond[0];
+    png.data[i + 1] = fond[1];
+    png.data[i + 2] = fond[2];
+    png.data[i + 3] = 255;
+  }
+  return png;
+}
+
 export function enPng(cote, surface, encre) {
   return PNG.sync.write(tuile(cote, surface, encre));
 }

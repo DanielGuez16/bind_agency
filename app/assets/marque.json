@@ -1,10 +1,16 @@
 {
-  "$pourquoi": "Les couleurs que les fichiers de la marque ont le droit de porter. Produit par scripts/cuire-la-marque.mjs, lu par __tests__/marque.test.ts. L'ancien monogramme vert a traversé le remplacement complet du système sans que rien ne l'arrête : c'est cette liste qui l'aurait arrêté.",
+  "$regle": "Le logotype partout où on a la place de le lire, la marque compacte partout ailleurs. Le seuil est la lisibilité des quatre lettres, pas le support : `afficheA` est ce que l'utilisateur voit, jamais la résolution du fichier. Tous les fichiers cuits sont des tuiles et aucune ne s'affiche assez grand — le logotype n'est donc plus cuit du tout, il ne vit qu'en texte dans l'interface.",
+  "$pourquoi": "Produit par scripts/cuire-la-marque.mjs, lu par __tests__/marque.test.ts. L'ancien monogramme vert a traversé le remplacement complet du système sans que rien ne l'arrête : ce fichier est ce qui l'aurait arrêté.",
   "mot": "B!ND",
   "couleurs": {
     "surface": "#F26B21",
     "encreClaire": "#F7F3EF",
     "encre": "#17120E"
+  },
+  "lisibilite": {
+    "$pourquoi": "Le seuil qui décide entre le logotype et la marque compacte. La règle : le logotype partout où on a la place de le lire, la marque compacte partout ailleurs — le seuil est la lisibilité des quatre lettres, pas le support. `largeurParLettre` est mesuré dans la fonte du produit : « B!ND » occupe 2,368 fois le corps pour quatre lettres. `pixelsParLettreMinimum` est encadré par deux mesures et non choisi : 6,75 px par lettre au lanceur Android à 48 dp, dont la capture est illisible ; 11,1 px au plus petit usage in-app, qui se lit. Lu par components/Logo.tsx, qui refuse de rendre en dessous, et par scripts/cuire-la-marque.mjs.",
+    "largeurParLettre": 0.592,
+    "pixelsParLettreMinimum": 10
   },
   "compacte": {
     "grille": 16,
@@ -27,6 +33,57 @@
       "bas": 2,
       "gauche": 6,
       "droite": 6
+    },
+    "android": {
+      "cote": 432,
+      "zoneSure": 288
     }
-  }
+  },
+  "fichiers": [
+    {
+      "nom": "favicon.ico",
+      "ou": "public",
+      "afficheA": 16,
+      "pourquoi": "l'onglet du navigateur",
+      "marque": "compacte"
+    },
+    {
+      "nom": "apple-touch-icon.png",
+      "ou": "public",
+      "afficheA": 60,
+      "pourquoi": "l'écran d'accueil d'iOS",
+      "marque": "compacte"
+    },
+    {
+      "nom": "icon.png",
+      "ou": "assets",
+      "afficheA": 60,
+      "pourquoi": "la tuile d'application",
+      "marque": "compacte"
+    },
+    {
+      "nom": "android-icon-background.png",
+      "ou": "assets",
+      "afficheA": 48,
+      "aplat": true,
+      "pourquoi": "le lanceur Android",
+      "marque": "compacte"
+    },
+    {
+      "nom": "android-icon-foreground.png",
+      "ou": "assets",
+      "afficheA": 48,
+      "couche": true,
+      "pourquoi": "le lanceur Android",
+      "marque": "compacte"
+    },
+    {
+      "nom": "android-icon-monochrome.png",
+      "ou": "assets",
+      "afficheA": 48,
+      "couche": true,
+      "pourquoi": "le lanceur en thème",
+      "marque": "compacte"
+    }
+  ]
 }

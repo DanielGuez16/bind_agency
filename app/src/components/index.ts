@@ -14,7 +14,7 @@ export { Toggle, type ToggleProps } from './Toggle';
 export { SegmentedTabs, type SegmentedTabsProps } from './SegmentedTabs';
 export { Chip, RangeeDeChips, type ChipProps } from './Chip';
 export { Icone, type NomIcone } from './Icone';
-export { Marque } from './Logo';
+export { Marque, PLANCHER_DU_LOGOTYPE } from './Logo';
 export { PaveDeSaisie, TOUCHES } from './PaveDeSaisie';
 export {
   BarresParPalier,

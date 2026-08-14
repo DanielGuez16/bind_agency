@@ -33,12 +33,24 @@ type Rectangle = { x: number; y: number; largeur: number; hauteur: number };
 const declare = JSON.parse(readFileSync(join(ASSETS, 'marque.json'), 'utf-8')) as {
   mot: string;
   couleurs: Record<string, string>;
+  lisibilite: { largeurParLettre: number; pixelsParLettreMinimum: number };
   compacte: {
     grille: number;
     signe: Rectangle[];
     marges: { haut: number; bas: number; gauche: number; droite: number };
+    android: { cote: number; zoneSure: number };
   };
+  fichiers: {
+    nom: string;
+    ou: 'assets' | 'public';
+    afficheA: number;
+    marque: string;
+    aplat?: boolean;
+    couche?: boolean;
+  }[];
 };
+
+const DOSSIER = { assets: ASSETS, public: PUBLIC } as const;
 
 /**
  * Les dimensions d'un PNG, lues dans son en-tête.
@@ -116,28 +128,17 @@ function distanceAuSegment(
 }
 
 /**
- * Tout ce que la marque imprime, et **où chaque fichier est réclamé**.
+ * Tout ce que la marque imprime, **lu du manifeste** et non recopié.
  *
- * **Les quatre `marque-*.png` ont été retirés, et c'est le sujet.** Ils ne
- * servaient à rien : Expo compile `favicon.png` en un `.ico` de trois images —
- * 16, 32 et 48 — et n'écrit qu'un `<link rel="icon">` vers lui. Aucun gabarit
- * ne les citait, aucune balise ne les demandait. Un fichier orphelin qui porte
- * la marque ne reste pas inerte : il finit par resservir, en portant une
- * version périmée. C'est très exactement ce qui venait d'arriver au monogramme
- * du système vert.
- *
- * Un seul avait une destination réelle — le 180, taille de l'icône d'iOS. Il
- * est désormais **posé là où Safari la cherche**, `public/apple-touch-icon.png`,
- * plutôt que rangé où rien n'irait le prendre.
+ * Les quatre `marque-*.png` ont disparu, puis `favicon.png`, puis
+ * `splash-icon.png` : à chaque fois un fichier que rien ne réclamait, et à
+ * chaque fois la même leçon — un fichier orphelin qui porte la marque ne reste
+ * pas inerte, il attend qu'on le reprenne en portant une version périmée.
+ * C'est ce qui est arrivé au monogramme du système vert.
  */
-const TOUS: readonly (readonly [string, string])[] = [
-  ['icon.png', ASSETS],
-  ['splash-icon.png', ASSETS],
-  ['android-icon-background.png', ASSETS],
-  ['android-icon-foreground.png', ASSETS],
-  ['android-icon-monochrome.png', ASSETS],
-  ['apple-touch-icon.png', PUBLIC],
-];
+const TOUS: readonly (readonly [string, string])[] = declare.fichiers.map(
+  (fichier) => [fichier.nom, DOSSIER[fichier.ou]] as const,
+);
 
 /**
  * Les images d'un `.ico`, chacune telle qu'elle y est rangée.
@@ -218,13 +219,43 @@ describe('les fichiers de la marque', () => {
     expect(largeur).toBeGreaterThanOrEqual(1024);
   });
 
+  it('la règle décide de chaque fichier, et aucun n’y échappe', () => {
+    // **Le logotype partout où on a la place de le lire, la marque compacte
+    // partout ailleurs — et le seuil est la lisibilité des quatre lettres, pas
+    // le support.** C'est `afficheA` qui décide : ce que l'utilisateur voit,
+    // jamais la résolution du fichier. On avait gardé le logotype sur l'icône
+    // d'application *parce qu'elle est livrée en 1024*, et un lanceur en
+    // affichait vingt-sept pixels pour quatre lettres.
+    const { largeurParLettre, pixelsParLettreMinimum } = declare.lisibilite;
+
+    for (const fichier of declare.fichiers) {
+      const parLettre = (fichier.afficheA * largeurParLettre) / declare.mot.length;
+      expect({
+        nom: fichier.nom,
+        marque: fichier.marque,
+      }).toEqual({
+        nom: fichier.nom,
+        marque: parLettre >= pixelsParLettreMinimum ? 'logotype' : 'compacte',
+      });
+    }
+  });
+
+  it('et aucun fichier cuit ne porte le logotype, puisque toutes sont des tuiles', () => {
+    // Le sens inverse : si un jour un fichier repassait au logotype, c'est
+    // qu'on l'afficherait assez grand — et il faudrait le prouver, pas
+    // l'affirmer. En attendant, la règle s'exprime par la structure.
+    expect(declare.fichiers.map((fichier) => fichier.marque)).toEqual(
+      declare.fichiers.map(() => 'compacte'),
+    );
+  });
+
   it('aucun fichier ne montre une couleur que les jetons ne déclarent pas', () => {
     // **La garde qui manquait.** Elle ne dit pas que le dessin est le bon ; elle
     // dit qu'il appartient encore au système en vigueur. C'est exactement ce
     // qu'il fallait pour arrêter un monogramme vert dans un produit orange.
     const permises = Object.values(declare.couleurs);
 
-    const fautifs = TOUS.flatMap(([fichier, dossier]) =>
+    const fautifs = TOUS.filter(([nom]) => nom.endsWith('.png')).flatMap(([fichier, dossier]) =>
       pixelsEtrangers(fichier, permises, dossier).map((couleur) => `${fichier} : ${couleur}`),
     );
 
@@ -262,7 +293,7 @@ describe('les fichiers de la marque', () => {
     // tuile — son centre en haut à gauche, loin du mot.
     for (const [fichier, dossier] of [
       ['icon.png', ASSETS],
-      ['splash-icon.png', ASSETS],
+      ['android-icon-background.png', ASSETS],
       ['apple-touch-icon.png', PUBLIC],
     ] as const) {
       const png = PNG.sync.read(readFileSync(join(dossier, fichier)));
@@ -386,5 +417,57 @@ describe('la marque compacte', () => {
     const config = JSON.parse(readFileSync(join(__dirname, '..', 'app.json'), 'utf-8'));
     expect(config.expo.web.favicon).toBeUndefined();
     expect(existsSync(join(ASSETS, 'favicon.png'))).toBe(false);
+  });
+});
+
+/**
+ * Le logotype vivant, celui de l'interface.
+ *
+ * **C'est le seul endroit où il reste**, maintenant qu'aucun fichier ne le
+ * porte. Le protéger là est donc tout ce qu'il y a à protéger — et un logotype
+ * illisible ne se signale pas : il ressemble à un logotype, en plus petit, et
+ * il traverse une revue. C'est exactement ainsi que l'ancien monogramme a
+ * traversé le remplacement complet du système.
+ */
+describe('le plancher du logotype', () => {
+  it('se calcule depuis deux mesures, il ne s’écrit pas', () => {
+    const { PLANCHER_DU_LOGOTYPE } = require('../src/components');
+    const { largeurParLettre, pixelsParLettreMinimum } = declare.lisibilite;
+    // `taille × 0,72` donne le corps, et une lettre vaut `largeurParLettre` du
+    // corps. Le plancher est la plus petite taille qui tienne le minimum.
+    expect(PLANCHER_DU_LOGOTYPE).toBe(
+      Math.ceil(pixelsParLettreMinimum / (0.72 * largeurParLettre)),
+    );
+    // Et il vaut bien quelque chose : un plancher à zéro passerait le calcul.
+    expect(PLANCHER_DU_LOGOTYPE).toBeGreaterThan(0);
+  });
+
+  it('refuse de rendre en dessous, et dit quoi employer à la place', () => {
+    const { Marque, PLANCHER_DU_LOGOTYPE } = require('../src/components');
+    const { renderToStaticMarkup } = require('react-dom/server');
+    const { createElement } = require('react');
+
+    expect(() =>
+      renderToStaticMarkup(createElement(Marque, { taille: PLANCHER_DU_LOGOTYPE - 1 })),
+    ).toThrow(/marque compacte/);
+  });
+
+  it('et le plus petit usage du produit passe au-dessus', () => {
+    // Le sens inverse. Un plancher qui refuserait ce que le produit emploie
+    // déjà serait faux, pas strict — et il se ferait baisser au lieu d'être cru.
+    const { PLANCHER_DU_LOGOTYPE } = require('../src/components');
+    const source = readdirSync(join(__dirname, '..', 'src'), { recursive: true }) as string[];
+
+    const tailles = source
+      .filter((chemin) => chemin.endsWith('.tsx'))
+      .flatMap((chemin) => [
+        ...readFileSync(join(__dirname, '..', 'src', chemin), 'utf-8').matchAll(
+          /<Marque[^>]*taille=\{(\d+)\}/g,
+        ),
+      ])
+      .map((trouve) => Number(trouve[1]));
+
+    expect(tailles.length).toBeGreaterThan(0);
+    expect(tailles.filter((taille) => taille < PLANCHER_DU_LOGOTYPE)).toEqual([]);
   });
 });

@@ -4714,3 +4714,52 @@ d'affichage, un lanceur Android à 48 dp donne 27 pixels de large pour quatre
 lettres — la tache que ce dessin existe pour éviter. La planche range la « tuile
 d'application » dans son domaine ; la demande ne nommait que le favicon et
 l'icône d'iOS. Remonté plutôt que décidé.
+
+## 2026-08-14 — La règle des deux marques, et sa forme la plus sûre
+
+Les icônes d'application passent à la marque compacte sur les deux plateformes.
+La règle qui en sort mérite d'être écrite, et elle l'est maintenant dans la
+passation :
+
+> Le logotype partout où on a la place de le lire, la marque compacte partout
+> ailleurs. Le seuil est la lisibilité des quatre lettres, pas le support.
+
+**Ce que j'avais mal regardé.** J'avais gardé le logotype sur `icon.png` et les
+couches Android *parce qu'elles sont livrées en 1024 et 512*. La résolution du
+fichier n'a jamais été la question : mesuré sur la couche réelle réduite à sa
+taille d'affichage, un lanceur à 48 dp donne vingt-sept pixels de large pour
+quatre lettres. La même tache que la marque compacte existe pour éviter.
+
+**Le seuil est mesuré, pas choisi.** `B!ND` dans la fonte du produit occupe
+0,592 fois le corps par lettre — mesuré au navigateur, sur le fichier de fonte
+que l'application embarque. Dix pixels par lettre est encadré par deux mesures :
+6,75 au lanceur Android, dont la capture est illisible, et 11,1 au plus petit
+usage in-app, qui se lit. Les deux nombres vivent dans `produit.json` ; le
+script de cuisson et le composant les lisent, aucun ne les recopie.
+
+**La forme la plus sûre de la règle est structurelle.** Aucun fichier cuit ne
+porte plus le logotype — tous sont des tuiles, aucune tuile ne s'affiche assez
+grand. Le script n'a donc plus besoin de navigateur : il ne peint plus de texte,
+il trace des rectangles sur une grille de seize, ce qui est exact et ne laisse
+entrer aucun lissage. Le logotype ne vit qu'en texte, dans l'interface, et
+`Marque` **refuse** de rendre sous le plancher — comme `Texte` refuse une
+surface employée en encre. Le plancher se calcule des deux mesures, il ne
+s'écrit pas : vingt-quatre aujourd'hui.
+
+Un logotype illisible ne se signale pas. Il ressemble à un logotype, en plus
+petit, et il traverse une revue — c'est exactement ainsi que l'ancien monogramme
+vert a traversé le remplacement complet du système.
+
+**Android reçoit enfin le bon gabarit.** Ses icônes ne sont pas des tuiles
+masquées mais deux couches composées puis rognées : sur 108 unités, seules les
+72 du centre sont garanties. Une tuile pleine posée là aurait vu son signe coupé
+en haut et en bas — il occupe trois quarts de la tuile quand le masque n'en
+garantit que deux tiers. La grille est donc ramenée à la zone sûre et le fond
+fourni par l'autre couche : 432 et 288, soit dix-huit pixels par unité, aucun
+arrondi. Après masquage, ce qu'on voit est exactement la marque compacte.
+
+*Et une mutation qui n'a rien muté.* La première tentative pour éprouver la
+garde de la règle remplaçait une chaîne qui ne correspondait pas : le test est
+passé, et j'ai failli en conclure qu'il ne protégeait rien. Vérifier que la
+mutation **s'applique** avant de lire le résultat est la moitié du geste, et
+c'est celle qu'on oublie.

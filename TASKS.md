@@ -574,15 +574,23 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       fichier généré puis masqué par `public/` est pire qu'un orphelin, il
       reparaît le jour où l'on retire ce qui le masquait. 9 tests neufs,
       3 mutations vérifiées*
-- [ ] **La tuile d'application : marque compacte ou logotype ?**
-      *Non tranché, parce que ce n'est pas ce qui a été demandé. La marque
-      compacte remplace le favicon et l'icône d'iOS, comme convenu. Restent
-      `icon.png` et les trois couches Android, qui portent le logotype — et
-      mesuré sur la couche réelle réduite à sa taille d'affichage, un lanceur
-      Android à 48 dp donne **27 pixels de large pour quatre lettres** : la
-      tache que la marque compacte existe pour éviter. La planche range
-      d'ailleurs la « tuile d'application » dans son propre domaine. À trancher
-      d'un mot*
+- [x] **La règle des deux marques, et les tuiles d'application avec**
+      *Tranché : les icônes passent à la marque compacte sur les deux
+      plateformes. La règle qui en sort est écrite dans la passation — **le
+      logotype partout où on a la place de le lire, la marque compacte partout
+      ailleurs ; le seuil est la lisibilité des quatre lettres, pas le
+      support**. Le seuil est mesuré et non choisi : « B!ND » occupe 0,592 fois
+      le corps par lettre, et dix pixels par lettre est encadré par 6,75 au
+      lanceur Android — capture illisible à l'appui — et 11,1 au plus petit
+      usage in-app, qui se lit. Conséquence, et c'est la forme la plus sûre de
+      la règle : **aucun fichier cuit ne porte plus le logotype**, puisque tous
+      sont des tuiles. Il ne vit qu'en texte dans l'interface, et `Marque`
+      refuse de rendre sous le plancher — un logotype illisible ne se signale
+      pas, il ressemble à un logotype en plus petit et traverse une revue.
+      Android reçoit ses trois couches au bon gabarit : 432 avec zone sûre à
+      288, dix-huit pixels par unité, aucun arrondi. `splash-icon.png` part au
+      passage, orphelin comme les précédents. 8 tests neufs, 3 mutations
+      vérifiées — dont une qui n'avait rien muté et qu'il a fallu reprendre*
 - [ ] **Le vectoriel du logotype**
       *Le dernier point du système, attendu de la fondatrice. Les lettres sont
       dessinées à la main et le D porte une coupe oblique qu'aucune fonte ne
