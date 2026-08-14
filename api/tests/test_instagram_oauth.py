@@ -29,6 +29,7 @@ from app.integrations.social import (
     JetonEchange,
     SocialProviderError,
 )
+from app.integrations.social_demo import DemoSocialProvider
 from app.models import OAuthState, SocialAccount
 from app.models.enums import Platform, SocialAccountStatus, UserRole, VerificationStatus
 from app.routers.social_accounts import get_instagram_provider
@@ -743,3 +744,67 @@ async def test_un_compte_d_un_autre_fournisseur_n_est_pas_reconnectable(
         compte = SocialAccount(platform=Platform.INSTAGRAM, provider_mode=mode)
         monkeypatch.setattr(module, "get_settings", lambda: SimpleNamespace(social_provider="live"))
         assert module.reconnectable(compte) is attendu
+
+
+# --------------------------------------------------------------------------
+# la démonstration ne renvoie plus vers un domaine qui n'existe pas
+# --------------------------------------------------------------------------
+
+
+def test_l_autorisation_de_demonstration_revient_sur_notre_rappel() -> None:
+    """**Le défaut réparé.** `instagram.demo.bind` n'existe pas : les deux
+    boutons « connecter un réseau » ouvraient une page d'erreur du navigateur.
+    C'est la toute première action que le produit demande à une créatrice, et la
+    démonstration s'arrêtait là.
+    """
+    fournisseur = DemoSocialProvider(
+        platform=Platform.INSTAGRAM, rappel="https://api.bind.test/api/v1"
+    )
+
+    url = httpx.URL(fournisseur.authorization_url(state="un-etat-signe"))
+
+    assert "demo.bind" not in str(url)
+    assert str(url).startswith("https://api.bind.test/api/v1/social-accounts/instagram/callback")
+    # L'état traverse : c'est lui qui identifie la personne au retour, et le
+    # perdre ferait échouer le rappel après un aller-retour réussi.
+    assert url.params["state"] == "un-etat-signe"
+    # Et le code doit être accepté par l'échange du même fournisseur, sans quoi
+    # l'adresse serait joignable et le parcours s'arrêterait une étape plus loin.
+    assert url.params["code"]
+
+
+async def test_le_code_rendu_par_l_adresse_est_accepte_a_l_echange() -> None:
+    """Le parcours se déroule en entier, ou il ne sert à rien.
+
+    Une adresse joignable qui mènerait à un échange refusé déplacerait le mur
+    d'un écran : la créatrice verrait une page à nous, puis une erreur.
+    """
+    fournisseur = DemoSocialProvider(
+        platform=Platform.INSTAGRAM, rappel="https://api.bind.test/api/v1"
+    )
+    url = httpx.URL(fournisseur.authorization_url(state="un-etat-signe"))
+
+    jeton = await fournisseur.exchange_code(url.params["code"])
+
+    assert jeton.access_token
+
+
+def test_la_demonstration_sans_adresse_publique_refuse_de_demarrer(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Refuser au démarrage plutôt que rendre une adresse morte au premier clic.
+
+    C'est déjà ce que font le lien de prise en main et la redirection publique :
+    sans leur base, la route refuse d'inventer une adresse. Une démonstration
+    dont le parcours d'autorisation ne peut pas revenir n'est pas une
+    démonstration dégradée, c'est une démonstration cassée.
+    """
+    from app.integrations import providers as module
+
+    reglages = get_settings().model_copy(
+        update={"social_provider": "demo", "api_public_base_url": None}
+    )
+    monkeypatch.setattr(module, "get_settings", lambda: reglages)
+
+    with pytest.raises(ConfigurationError, match="API_PUBLIC_BASE_URL"):
+        module.creer(Platform.INSTAGRAM, client=None)

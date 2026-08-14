@@ -48,7 +48,21 @@ def creer(platform: Platform, client: httpx.AsyncClient) -> SocialProvider:
         # plateforme à l'échange. En démonstration, c'est le jeu de données qui
         # construit ses propres fournisseurs avec les handles qu'il veut ; ici
         # on sert le cas où quelqu'un appelle la route depuis l'app.
-        return DemoSocialProvider(platform=platform)
+        #
+        # **Le rappel se donne ici et nulle part ailleurs.** La fabrique est le
+        # seul endroit du produit autorisé à savoir qu'on est en démonstration —
+        # un test parcourt les services pour refuser la question partout
+        # ailleurs. Le routeur qui réécrirait l'adresse « si le mode est demo »
+        # ferait exactement ce que cette règle interdit.
+        if settings.api_public_base_url is None:
+            raise ConfigurationError(
+                "SOCIAL_PROVIDER=demo exige API_PUBLIC_BASE_URL : sans elle, "
+                "le parcours d'autorisation renvoie vers un domaine qui n'existe pas"
+            )
+        return DemoSocialProvider(
+            platform=platform,
+            rappel=settings.api_public_base_url.rstrip("/") + settings.api_v1_prefix,
+        )
 
     if platform is Platform.INSTAGRAM:
         return InstagramProvider(client)

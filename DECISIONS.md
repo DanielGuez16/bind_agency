@@ -4208,3 +4208,52 @@ publié comptent **pour zéro** : un `GROUP BY` ne rend que ceux qui ont au moin
 une ligne, et sans remplissage la fourchette serait celle des seuls salons
 actifs — un salon neuf lirait qu'il est très en retard alors qu'il est dans la
 moyenne.
+## 2026-08-14 — Une pastille est une promesse, une URL de démonstration aussi
+
+**Les raccourcis d'arbitrage.** `DecisionBar` dessinait « A », « R », « N » à
+côté de chaque décision depuis le premier jour, et rien n'écoutait le clavier.
+Une pastille qui ne répond pas est pire que pas de pastille : on la croit, on
+appuie, rien ne vient, puis on cesse d'y croire et on clique — ce qui est plus
+lent qu'avant.
+
+Le sujet de ce raccourci n'est pas de l'ajouter, c'est de le faire **taire**.
+L'arbitre écrit un motif dans un champ de texte avant de clore un dossier en non
+honoré ; un raccourci sans discernement clôrait le dossier — la seule décision
+du produit qui ne se rouvre pas — au premier caractère de « non conforme ». Il
+se tait donc dans une saisie, sous une touche de modification, sur une touche
+non déclarée, et hors du web.
+
+**La garde est éprouvée sur les quatre façons d'écrire la même faute** :
+`input`, `textarea`, `select`, et l'élément éditable qui n'est aucun des trois.
+La mutation qui la réduit à `input` seul — la forme qu'on avait en tête — fait
+tomber trois tests. C'est exactement le défaut du garde-fou des rendus
+asynchrones, qui ne cherchait l'appel qu'en début de ligne.
+
+**Et les raccourcis suivent le filtre du motif**, parce que la barre retire ses
+décisions non approbatives tant qu'aucun motif n'est choisi : un raccourci qui
+survivrait à son bouton ferait exactement ce que le bouton refuse.
+
+**Les URL mortes de la démonstration.** Le fournisseur de démonstration rendait
+`https://instagram.demo.bind/authorize?state=…`. Ce domaine n'existe pas : les
+deux boutons « connecter un réseau » ouvraient une page d'erreur du navigateur.
+C'est la **toute première action** que le produit demande à une créatrice, et la
+démonstration s'arrêtait là.
+
+L'autorisation revient désormais sur notre propre rappel, avec un code que le
+fournisseur de démonstration accepte : le parcours se déroule en entier — état
+signé, usage unique, échange, rattachement, retour à l'application — et c'est
+bien celui qu'on veut montrer, le même chemin que le vrai sans la plateforme au
+bout. L'adresse vient de la requête et non d'un réglage : le serveur connaît la
+sienne.
+
+Le test qui compte le plus est **l'autre sens** : une réécriture qui
+s'appliquerait à tous les fournisseurs enverrait une vraie créatrice sur notre
+rappel au lieu d'Instagram, elle n'autoriserait jamais rien, et le défaut ne se
+verrait qu'en production avec de vraies clés.
+
+**Une ligne de `DEMO.md` qui mentait.** Le tableau des limites annonçait que le
+bouton d'envoi de preuve « n'ouvre pas encore de sélecteur de média ». Il en
+ouvre un depuis deux phases, avec galerie, appareil photo, aperçu, mesure du
+poids avant envoi et note facultative. Une limite qui a été levée et qu'on
+oublie de retirer coûte exactement ce qu'a coûté celle-ci : elle a été relevée
+comme un défaut du produit pendant une campagne de test.

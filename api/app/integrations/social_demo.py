@@ -25,6 +25,7 @@ en base à la main.
 
 import hashlib
 from datetime import UTC, datetime, timedelta
+from urllib.parse import urlencode
 
 from app.integrations.social import (
     IdentiteSociale,
@@ -63,6 +64,10 @@ class DemoSocialProvider:
         token_ttl: timedelta = timedelta(days=60),
         #: Refuse l'échange, comme une plateforme qui a révoqué l'application.
         refuse_l_echange: bool = False,
+        #: La racine des routes de l'API, rappel compris. Le jeu de données
+        #: construit ce fournisseur sans elle : il n'ouvre jamais de parcours,
+        #: il pose des comptes directement.
+        rappel: str = "",
     ) -> None:
         self.platform = platform
         # Ce qu'il est, et non ce que la configuration déclare : le jeu de
@@ -80,10 +85,27 @@ class DemoSocialProvider:
         #: navigateur du créateur ; ici on le retient au vol pour le rendre au
         #: rappel, sans court-circuiter sa signature ni son usage unique.
         self.etat: str | None = None
+        #: Où l'autorisation revient. Fournie par la fabrique, qui est le seul
+        #: endroit du produit autorisé à savoir qu'on est en démonstration.
+        self._rappel = rappel
 
     def authorization_url(self, *, state: str) -> str:
+        """L'adresse où envoyer la créatrice, et elle doit exister.
+
+        **Elle rendait `https://instagram.demo.bind/authorize`**, un domaine qui
+        n'a jamais existé : les deux boutons « connecter un réseau » ouvraient
+        une page d'erreur du navigateur. C'est la toute première action que le
+        produit demande, et la démonstration s'arrêtait là.
+
+        On renvoie donc vers **notre propre rappel**, avec un code que
+        `exchange_code` accepte. Le parcours se déroule alors en entier — état
+        signé, usage unique, échange, rattachement, retour à l'application — et
+        c'est bien celui qu'on veut montrer : le même chemin que le vrai, sans
+        la plateforme au bout.
+        """
         self.etat = state
-        return f"https://{self.platform.value}.demo.bind/authorize?state={state}"
+        parametres = urlencode({"code": f"demo-{state[:8]}", "state": state})
+        return f"{self._rappel}/social-accounts/{self.platform.value}/callback?{parametres}"
 
     async def exchange_code(self, code: str) -> JetonEchange:
         if self._refuse:
