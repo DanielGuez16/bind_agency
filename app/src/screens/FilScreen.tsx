@@ -229,7 +229,10 @@ export function FilScreen({
                 // La couverture était simplement absente : la carte recevait
                 // toujours son repli, et le monogramme passait pour un défaut
                 // de chargement alors que rien n'était jamais demandé.
-                cover={urlImage(api.urlDuMedia(commerce.cover_photo_key))}
+                // La vignette, pas l'original : une carte de fil fait cent
+                // cinquante points de haut, et la photo sortait du téléphone
+                // du commerce à quatre mille pixels de large.
+                cover={urlImage(api.urlDeLaVignette(commerce.cover_photo_key))}
                 meta={commerce.address ?? ''}
                 serviceName={item.name}
                 serviceDuration={

@@ -40,7 +40,6 @@ import { Pressable, View } from 'react-native';
 
 import { useApi, type CodeDeRetrait } from '../api';
 import {
-  CodeGlyphs,
   Icone,
   Countdown,
   ManualCode,
@@ -182,14 +181,16 @@ export function CodeScreen({
           >
             {t('parcours.codeTitre')}
           </Texte>
-          <CodeGlyphs code={code.code} testID="chiffres" />
-          {/* Ce que les chiffres sont, et ce qu'ils ne sont pas. C'est le
-              premier élément qu'on lit sur cet écran, et un commerçant a
-              essayé de le taper : ils ne valent qu'avec l'identifiant que
-              porte le QR, et seuls ils ne désignent rien. */}
-          <Texte variante="type.caption" align="center" style={{ color: codeColors.fg }}>
-            {t('parcours.codeChiffresAide')}
-          </Texte>
+          {/* **Le nombre à six chiffres ne s'affiche plus.**
+              Il ne se saisit pas, il ne désigne rien seul — il ne vaut qu'avec
+              l'identifiant que porte le QR — et c'est précisément ce qui le
+              faisait confondre avec le code de secours, qui se dicte : un
+              commerçant a essayé de le taper. Une légende sous les chiffres ne
+              suffisait pas ; ce qui trompe, c'est la forme, pas l'absence
+              d'explication.
+
+              Le QR le porte déjà. Ce qui reste à montrer, c'est que le code est
+              **vivant** — et le décompte le dit sans ressembler à une saisie. */}
           <Countdown secondes={restant} testID="compte-a-rebours" />
           {/* `code.payload` et non une composition locale : l'identifiant est
               celui du code, pas celui de la réservation, et l'API le forme

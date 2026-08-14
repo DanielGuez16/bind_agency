@@ -547,6 +547,23 @@ export class Api {
     return cle ? this.client.urlComplete(routes.media(cle)) : undefined;
   }
 
+  /**
+   * L'adresse de la **vignette** d'une image. Pour les listes et les cartes.
+   *
+   * La vignette est produite au dépôt et rangée sous une clé dérivée : il n'y a
+   * rien à demander au serveur pour la connaître, et rien à stocker à côté. Les
+   * images déposées avant ce changement n'en ont pas — la route des médias sert
+   * alors l'original, ce qui est moins bien que la vignette et infiniment mieux
+   * qu'un trou.
+   *
+   * **Le détail garde l'original.** Une fiche ouverte en plein écran montre la
+   * photo telle que le commerce l'a envoyée ; c'est la liste qui n'a jamais eu
+   * besoin de quatre mille pixels.
+   */
+  urlDeLaVignette(cle: string | null): string | undefined {
+    return cle ? this.client.urlComplete(routes.media(`${cle}@vignette`)) : undefined;
+  }
+
   annuaireDesCreateurs(businessId: string, signal?: AbortSignal) {
     return this.client.request<CreateurDeLAnnuaire[]>(routes.annuaireDesCreateurs(businessId), {
       signal,
@@ -555,7 +572,9 @@ export class Api {
 
   /** Le commerce lui-même. Lu ici pour sa couverture, qui marque la galerie. */
   commerce(businessId: string, signal?: AbortSignal) {
-    return this.client.request<{ cover_photo_key: string | null }>(routes.commerce(businessId), {
+    return this.client.request<{ cover_photo_key: string | null; menu_url: string | null }>(
+      routes.commerce(businessId),
+      {
       signal,
     });
   }

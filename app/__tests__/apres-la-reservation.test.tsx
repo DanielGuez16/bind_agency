@@ -75,6 +75,9 @@ const FICHE = {
   timezone: 'America/New_York',
   phone: null,
   cover_photo_key: null,
+  photos: [],
+  menu_pages: [],
+  menu_url: null,
   offres: [OFFRE],
 };
 

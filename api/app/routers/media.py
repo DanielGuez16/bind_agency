@@ -30,6 +30,7 @@ from fastapi import APIRouter, Path, Response, status
 
 from app.core.errors import ErrorCode, api_error
 from app.integrations.object_store import ObjectStoreError, get_object_store
+from app.services import storage
 
 router = APIRouter(prefix="/media", tags=["media"])
 
@@ -74,6 +75,13 @@ async def read_media(cle: Annotated[str, Path()]) -> Response:
 
     try:
         contenu = await get_object_store().lire(cle)
+        # **Le repli des images déposées avant la vignette.** Elles n'en ont
+        # pas, et l'app demande la vignette partout où elle affiche petit :
+        # sans ce repli, toutes les photos d'avant ce changement
+        # disparaîtraient des listes. Servir l'original est moins bien que
+        # servir une vignette et infiniment mieux que servir un trou.
+        if contenu is None and cle.endswith(storage.SUFFIXE_VIGNETTE):
+            contenu = await get_object_store().lire(storage.cle_d_origine(cle))
     except ObjectStoreError as error:
         raise api_error(status.HTTP_503_SERVICE_UNAVAILABLE, ErrorCode.INTERNAL_ERROR) from error
 

@@ -106,6 +106,17 @@ class ObjectStore(Protocol):
         """Range le contenu et rend sa clé."""
         ...
 
+    async def deposer_sous(self, contenu: bytes, *, cle: str) -> None:
+        """Range le contenu **sous une clé imposée**.
+
+        Pour les dérivés, et pour eux seuls : une vignette doit se retrouver à
+        partir de la clé de son original, sans qu'on ait à la stocker à côté.
+        `deposer` calcule la clé sur l'empreinte du contenu, ce qui est la bonne
+        règle pour un objet qui se suffit à lui-même et la mauvaise pour un
+        dérivé — l'empreinte de la vignette ne dit rien de son original.
+        """
+        ...
+
     async def lire(self, cle: str) -> bytes | None:
         """Le contenu, ou `None` s'il n'existe pas. Jamais une exception pour
         une absence : elle se distingue mal d'une panne."""
@@ -122,6 +133,9 @@ class MemoryObjectStore:
         cle = cle_pour(contenu, prefixe=prefixe)
         self._objets[cle] = contenu
         return cle
+
+    async def deposer_sous(self, contenu: bytes, *, cle: str) -> None:
+        self._objets[cle] = contenu
 
     async def lire(self, cle: str) -> bytes | None:
         return self._objets.get(cle)
@@ -147,13 +161,22 @@ class LocalObjectStore:
         cle = cle_pour(contenu, prefixe=prefixe)
         chemin = self._chemin(cle)
         chemin.parent.mkdir(parents=True, exist_ok=True)
+        self._ecrire(chemin, contenu)
+        return cle
+
+    async def deposer_sous(self, contenu: bytes, *, cle: str) -> None:
+        chemin = self._chemin(cle)
+        chemin.parent.mkdir(parents=True, exist_ok=True)
+        self._ecrire(chemin, contenu)
+
+    @staticmethod
+    def _ecrire(chemin: Path, contenu: bytes) -> None:
         # Écriture puis renommage : un processus tué au milieu laisse un
         # fichier temporaire, jamais un objet tronqué sous une clé qui promet
         # son contenu.
         provisoire = chemin.with_suffix(".partiel")
         provisoire.write_bytes(contenu)
         provisoire.replace(chemin)
-        return cle
 
     async def lire(self, cle: str) -> bytes | None:
         chemin = self._chemin(cle)
@@ -245,6 +268,18 @@ class S3ObjectStore:
                 + f", {len(contenu)} octets"
             ) from error
         return cle
+
+    async def deposer_sous(self, contenu: bytes, *, cle: str) -> None:
+        compartiment = self.compartiment(cle)
+        try:
+            async with self._client() as s3:
+                await s3.put_object(Bucket=compartiment, Key=cle, Body=contenu)
+        except Exception as error:
+            raise ObjectStoreError(
+                "dépôt S3 refusé : "
+                + _details_s3(error, operation="PutObject", compartiment=compartiment, cle=cle)
+                + f", {len(contenu)} octets"
+            ) from error
 
     async def lire(self, cle: str) -> bytes | None:
         try:

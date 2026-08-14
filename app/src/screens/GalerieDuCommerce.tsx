@@ -130,7 +130,9 @@ export function GalerieDuCommerce({
             }}
           >
             <Image
-              source={{ uri: api.urlDuMedia(photo.storage_key) ?? undefined }}
+              // Une grille de vignettes : le commerce vérifie son ordre, il
+              // ne regarde pas ses photos en détail depuis cet écran.
+              source={{ uri: api.urlDeLaVignette(photo.storage_key) ?? undefined }}
               style={{ width: 56, height: 56, borderRadius: radius['radius.none'] }}
               resizeMode="cover"
             />

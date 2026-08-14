@@ -79,7 +79,7 @@ async def televerser(
     if not contenu.startswith(SIGNATURES):
         raise api_error(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, ErrorCode.PROOF_UNSUPPORTED_TYPE)
 
-    cle = await storage.deposer(contenu, prefixe=f"{service.PREFIXE}/{business.id}")
+    cle = await storage.deposer_une_image(contenu, prefixe=f"{service.PREFIXE}/{business.id}")
     return {"storage_key": cle}
 
 

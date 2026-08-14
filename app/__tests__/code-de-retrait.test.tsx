@@ -85,10 +85,26 @@ function monter(bookingId: string, api: ApiClient) {
   );
 }
 
+/**
+ * Ce que le QR encode réellement.
+ *
+ * **C'est devenu le seul point d'observation du code**, depuis que les six
+ * chiffres ne s'affichent plus : ils ne se saisissaient pas, ne désignaient rien
+ * seuls, et se confondaient avec le code de secours, qui se dicte.
+ *
+ * On lit la valeur passée au composant de QR et non une propriété du bloc :
+ * c'est elle que la caisse scannera. `includeHiddenElements` parce que le bloc
+ * est masqué aux lecteurs d'écran — un QR ne se lit pas à voix haute.
+ */
+function charge(vue: typeof screen): string {
+  const bloc = vue.getByTestId('qr', { includeHiddenElements: true });
+  return bloc.props.children.props.value as string;
+}
+
 it('affiche le code de la réservation ouverte, pas celui de la précédente', async () => {
   const api = client();
   const { rerender } = await monter('reservation-a', api);
-  await waitFor(() => expect(screen.getByTestId('chiffres')).toHaveTextContent('111111'));
+  await waitFor(() => expect(charge(screen)).toBe(CODES['reservation-a'].payload));
 
   // Ouvrir une autre réservation depuis la liste réutilise l'écran : la
   // navigation change ses paramètres sans le démonter. Le code affiché n'avait
@@ -104,14 +120,14 @@ it('affiche le code de la réservation ouverte, pas celui de la précédente', a
     </I18nProvider>,
   );
 
-  await waitFor(() => expect(screen.getByTestId('chiffres')).toHaveTextContent('222222'));
+  await waitFor(() => expect(charge(screen)).toBe(CODES['reservation-b'].payload));
   expect(screen.getByTestId('secours')).toHaveTextContent(/BBB 222/);
 });
 
 it("n'affiche jamais le code d'une réservation à côté du numéro d'une autre", async () => {
   const api = client();
   const { rerender } = await monter('reservation-a', api);
-  await waitFor(() => expect(screen.getByTestId('chiffres')).toHaveTextContent('111111'));
+  await waitFor(() => expect(charge(screen)).toBe(CODES['reservation-a'].payload));
 
   await rerender(
     <I18nProvider initialLocale="en">
@@ -127,14 +143,14 @@ it("n'affiche jamais le code d'une réservation à côté du numéro d'une autre
   // l'ancien code une fraction de seconde : le QR porte
   // `identifiant:code`, et un identifiant neuf collé à un code périmé est
   // scannable, faux, et refusé à la caisse sans explication.
-  await waitFor(() => expect(screen.getByTestId('chiffres')).toHaveTextContent('222222'));
+  await waitFor(() => expect(charge(screen)).toBe(CODES['reservation-b'].payload));
   expect(screen.queryByText(/111111/)).toBeNull();
 });
 
 it('ne demande le code qu’une fois à l’ouverture', async () => {
   const compteur = { appels: [] as string[] };
   await monter('reservation-a', client(compteur));
-  await waitFor(() => expect(screen.getByTestId('chiffres')).toBeTruthy());
+  await waitFor(() => expect(screen.getByTestId('qr', { includeHiddenElements: true })).toBeTruthy());
 
   // Le décompte est piloté localement à partir de l'échéance rendue ; il ne
   // rappelle qu'à l'expiration. L'attente est enveloppée : le battement écrit
@@ -148,7 +164,7 @@ it('ne demande le code qu’une fois à l’ouverture', async () => {
 
 it('aucun texte de l’écran ne déborde de sa ligne', async () => {
   const vue = await monter('reservation-a', client());
-  await waitFor(() => expect(screen.getByTestId('chiffres')).toBeTruthy());
+  await waitFor(() => expect(screen.getByTestId('qr', { includeHiddenElements: true })).toBeTruthy());
 
   // Le code de secours est dicté au comptoir : c'est le seul recours quand le
   // QR ne passe pas. Sa taille avait été augmentée sans sa hauteur de ligne,
@@ -209,7 +225,7 @@ describe('quand le serveur refuse', () => {
     });
 
     await monter('reservation-a', api);
-    await waitFor(() => expect(screen.getByTestId('chiffres')).toHaveTextContent('111111'));
+    await waitFor(() => expect(charge(screen)).toBe(CODES['reservation-a'].payload));
 
     // Le code expire, la relecture échoue : il reste à l'écran, parce qu'au
     // comptoir c'est la seule chose à montrer et qu'il y est encore valide.
@@ -217,7 +233,7 @@ describe('quand le serveur refuse', () => {
     await act(async () => {
       await new Promise((suite) => setTimeout(suite, 1_500));
     });
-    expect(screen.getByTestId('chiffres')).toHaveTextContent('111111');
+    expect(charge(screen)).toBe(CODES['reservation-a'].payload);
     expect(screen.queryByTestId('etat-refus')).toBeNull();
   });
 });
@@ -243,7 +259,7 @@ describe('ce qu’une ligne de réservation ouvre', () => {
 
 it('groupe le code de secours une seule fois', async () => {
   await monter('reservation-b', client());
-  await waitFor(() => expect(screen.getByTestId('chiffres')).toHaveTextContent('222222'));
+  await waitFor(() => expect(charge(screen)).toBe(CODES['reservation-b'].payload));
 
   // Le serveur groupe déjà par trois. Regrouper son résultat donnait
   // « BBB  22 2 » : trois groupes faux sur le code qu'on dicte au comptoir,
@@ -257,14 +273,9 @@ describe('ce que le QR encode', () => {
   it("encode la charge formée par l'API, jamais une composition locale", async () => {
     const api = client();
     await monter('reservation-a', api);
-    await waitFor(() => expect(screen.getByTestId('chiffres')).toHaveTextContent('111111'));
+    await waitFor(() => expect(charge(screen)).toBe(CODES['reservation-a'].payload));
 
-    // On lit la valeur réellement encodée, pas la propriété passée au bloc :
-    // c'est elle que la caisse scannera.
-    // `includeHiddenElements` : le bloc est masqué aux lecteurs d'écran — un
-    // QR ne se lit pas à voix haute — et la requête l'ignorerait sinon.
-    const bloc = screen.getByTestId('qr', { includeHiddenElements: true });
-    const encode = bloc.props.children.props.value;
+    const encode = charge(screen);
 
     // L'app composait `bookingId:code`. Le QR se lisait parfaitement et la
     // caisse le refusait : l'identifiant attendu est celui du code de retrait.
@@ -273,14 +284,25 @@ describe('ce que le QR encode', () => {
     expect(encode).not.toContain('reservation-a');
   });
 
-  it('dit que les six chiffres ne se saisissent pas', async () => {
+  it('n’affiche plus les six chiffres, et garde le décompte', async () => {
+    // **Le défaut réparé.** Deux codes se ressemblaient : le nombre tournant,
+    // qui ne se saisit pas et ne désigne rien seul, et le code de secours, qui
+    // se dicte. Un commerçant a essayé de taper le premier. Une légende sous
+    // les chiffres ne suffisait pas — ce qui trompe est la forme, pas l'absence
+    // d'explication.
     const api = client();
     await monter('reservation-a', api);
-    await waitFor(() => expect(screen.getByTestId('chiffres')).toHaveTextContent('111111'));
+    await waitFor(() => expect(screen.getByTestId('qr', { includeHiddenElements: true })).toBeTruthy());
 
-    // C'est le premier élément qu'on lit sur cet écran, et un commerçant a
-    // essayé de le taper. L'écran doit couper court.
-    expect(await screen.findByText(en.parcours.codeChiffresAide)).toBeTruthy();
+    // Le nombre n'est plus nulle part à l'écran, sous aucune forme.
+    expect(screen.queryByTestId('chiffres')).toBeNull();
+    expect(screen.queryByText('111111')).toBeNull();
+    expect(screen.queryByText(/1\s*1\s*1\s*1\s*1\s*1/)).toBeNull();
+
+    // Ce qui reste : le décompte, qui dit que le code est vivant sans
+    // ressembler à une saisie, et le seul code qui se dicte.
+    expect(screen.getByTestId('compte-a-rebours')).toBeTruthy();
+    expect(screen.getByTestId('secours')).toHaveTextContent(/AAA 111/);
     expect(screen.getByText(en.parcours.codeSecoursAide)).toBeTruthy();
   });
 });

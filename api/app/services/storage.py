@@ -18,22 +18,77 @@ avec le relevé des publications ; rendre `None` fait descendre au niveau
 suivant, ce qui est le comportement correct et pas un contournement.
 """
 
+import logging
 import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.integrations import media_fetch
-from app.integrations.object_store import get_object_store
+from app.integrations import images, media_fetch
+from app.integrations.object_store import ObjectStoreError, get_object_store
 from app.integrations.providers import fournisseur_de
 from app.integrations.social import SocialProviderError
 from app.models import SocialAccount
 from app.models.enums import CaptureMethod, SocialAccountStatus
 from app.services.proof import MediaCapture
 
+logger = logging.getLogger(__name__)
+
+
+#: Le suffixe d'une vignette, accolé à la clé de son original.
+#:
+#: **Dérivée plutôt que stockée.** Une colonne de plus par table portant une
+#: image — galerie, carte, prestation, couverture — se remplirait à la migration
+#: et se désynchroniserait au premier dépôt qui échoue à mi-chemin. Le suffixe se
+#: recompose partout à partir de la clé qu'on a déjà, et l'absence de vignette
+#: est un cas prévu, pas une incohérence.
+SUFFIXE_VIGNETTE = "@vignette"
+
+
+def cle_de_vignette(cle: str) -> str:
+    """La clé de la vignette d'une image. Pure : elle ne consulte aucun dépôt."""
+    return f"{cle}{SUFFIXE_VIGNETTE}"
+
+
+def cle_d_origine(cle: str) -> str:
+    """L'inverse. Rend la clé telle quelle quand ce n'en est pas une vignette."""
+    return cle.removesuffix(SUFFIXE_VIGNETTE)
+
 
 async def deposer(contenu: bytes, *, prefixe: str) -> str:
     """Range le fichier chez le fournisseur déclaré et rend sa clé."""
     return await get_object_store().deposer(contenu, prefixe=prefixe)
+
+
+async def deposer_une_image(contenu: bytes, *, prefixe: str) -> str:
+    """Range l'image **et sa vignette**, et rend la clé de l'original.
+
+    **Au dépôt, jamais au service.** Une photo de prestation partait vers le fil
+    telle qu'elle sortait du téléphone : quatre mille pixels pour un cadre de
+    cent cinquante points, à chaque affichage, pour tout le monde. Réduire une
+    fois ici le paie une fois pour toutes ; réduire à la lecture demanderait un
+    décodeur sur le chemin chaud, un cache, et une invalidation.
+
+    **La vignette manquante n'échoue jamais.** Pillow absent, image illisible,
+    dépôt qui refuse le second objet : dans les trois cas l'original est déjà
+    rangé, et le refuser reviendrait à perdre une photo que le commerce vient
+    d'envoyer pour une raison qui ne le regarde pas. La route des médias retombe
+    sur l'original quand la vignette n'existe pas.
+    """
+    cle = await get_object_store().deposer(contenu, prefixe=prefixe)
+
+    reduite = images.vignette(contenu)
+    if reduite is None:
+        return cle
+
+    try:
+        await get_object_store().deposer_sous(reduite, cle=cle_de_vignette(cle))
+    except ObjectStoreError:
+        # L'original est rangé : c'est ce qui compte. La vignette se
+        # reconstruira au prochain dépôt de la même image, et d'ici là la route
+        # des médias sert l'original.
+        logger.warning("vignette non déposée", extra={"cle": cle})
+
+    return cle
 
 
 async def archiver_la_publication(
