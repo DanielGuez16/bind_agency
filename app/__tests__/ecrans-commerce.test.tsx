@@ -1873,3 +1873,53 @@ describe('l’annuaire est en lecture seule', () => {
     }
   });
 });
+
+describe('la journée se coupe par ce qu’elle demande', () => {
+  const RESERVATION = (id: string, status: string) => ({
+    ...JOURNEE.items[0],
+    booking_id: id,
+    status,
+  });
+
+  it('sépare ce qui attend, ce qui est servi et ce qui est clos', async () => {
+    // **Le tri par statut mélangeait deux choses.** Une absence à constater et
+    // une prestation servie la veille se lisaient dans la même colonne, au même
+    // poids. Un statut ne devient une section que s'il change ce que la
+    // vendeuse doit faire.
+    const journee = {
+      ...JOURNEE,
+      a_trancher: [],
+      items: [
+        RESERVATION('b-attendue', 'confirmed'),
+        RESERVATION('b-servie', 'consumed'),
+        RESERVATION('b-close', 'no_show'),
+      ],
+    };
+    await monter(<JourneeScreen businessId="b1" />, clientDe({ '/bookings': journee }));
+    await waitFor(() => expect(screen.getByTestId('planning')).toBeTruthy());
+
+    expect(screen.getByTestId('servies')).toBeTruthy();
+    expect(screen.getByTestId('closes')).toBeTruthy();
+
+    // Et chaque ligne est dans la bonne : c'est le rangement qui est le test,
+    // pas la présence des trois titres.
+    expect(screen.getByTestId('planning')).toContainElement(screen.getByTestId('ligne-b-attendue'));
+    expect(screen.getByTestId('servies')).toContainElement(screen.getByTestId('ligne-b-servie'));
+    expect(screen.getByTestId('closes')).toContainElement(screen.getByTestId('ligne-b-close'));
+  });
+
+  it('n’ouvre pas une section vide', async () => {
+    // Un titre « 0 servie » est une ligne de plus à lire chaque matin pour
+    // apprendre qu'il n'y a rien à lire.
+    const journee = {
+      ...JOURNEE,
+      a_trancher: [],
+      items: [RESERVATION('b-attendue', 'confirmed')],
+    };
+    await monter(<JourneeScreen businessId="b1" />, clientDe({ '/bookings': journee }));
+    await waitFor(() => expect(screen.getByTestId('planning')).toBeTruthy());
+
+    expect(screen.queryByTestId('servies')).toBeNull();
+    expect(screen.queryByTestId('closes')).toBeNull();
+  });
+});

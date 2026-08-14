@@ -99,6 +99,24 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
         // ouvre, et la filtrer ici l'aurait laissée invisible.
         const aTrancher = journee.a_trancher;
         const planning = journee.items.filter((r) => r.status !== 'awaiting_business');
+
+        /**
+         * **La liste se coupe par ce qu'elle demande, pas par des statuts.**
+         *
+         * Le tri par statut mélangeait ce qui attend une action et ce qui n'en
+         * attend plus : une absence à constater et une prestation servie la
+         * veille se lisaient dans la même colonne, au même poids. Un statut ne
+         * devient une section que **s'il change ce que la vendeuse doit
+         * faire** — sinon c'est une nuance, et elle vit dans la ligne.
+         *
+         * Trois groupes, donc. Ce qui attend quelqu'un — la décision à prendre
+         * et la personne qui va arriver — passe en tête. Ce qui est servi
+         * attend sa publication et n'attend rien du salon. Ce qui est clos ne
+         * se rouvre pas.
+         */
+        const servies = planning.filter((r) => r.status === 'consumed');
+        const closes = planning.filter((r) => TERMINES.has(r.status) && r.status !== 'consumed');
+        const attendues = planning.filter((r) => !TERMINES.has(r.status));
         /**
          * Ce que le panneau montre à l'ouverture.
          *
@@ -112,7 +130,7 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
          * chose de cette journée qui réclame un geste. Sinon la première ligne
          * du planning, qui remplit le panneau sans rien réclamer.
          */
-        const parDefaut = aTrancher[0]?.booking_id ?? planning[0]?.booking_id ?? null;
+        const parDefaut = aTrancher[0]?.booking_id ?? attendues[0]?.booking_id ?? planning[0]?.booking_id ?? null;
         const ouverte =
           [...aTrancher, ...planning].find((r) => r.booking_id === (choisie ?? parDefaut)) ?? null;
 
@@ -125,9 +143,13 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
          * états de la même chose obligent à réapprendre la lecture à chaque
          * section.
          */
-        const section = (titre: string, lignes: ReservationDuCommerce[], marque: boolean) =>
+        const section = (
+          titre: string,
+          lignes: ReservationDuCommerce[],
+          nom: string,
+        ) =>
           lignes.length === 0 ? null : (
-            <View style={{ gap: 4 }} testID={marque ? 'a-trancher' : 'planning'}>
+            <View style={{ gap: 4 }} testID={nom}>
               <Texte
                 variante="type.label"
                 couleur="ink.soft"
@@ -176,9 +198,24 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
             testID="colonne-liste"
             style={{ gap: 16, width: large ? breakpoint.listWidthMerchant : undefined }}
           >
-            {section(t('commerce.aTrancher', { count: aTrancher.length }), aTrancher, true)}
-            {aTrancher.length > 0 && planning.length > 0 ? <Filet marge={4} /> : null}
-            {section(t('commerce.journeePlanning'), planning, false)}
+            {/* Ce qui attend quelqu'un. La décision à prendre d'abord — c'est
+                la seule chose que personne d'autre ne peut faire — puis les
+                arrivées de la journée. */}
+            {section(t('commerce.aTrancher', { count: aTrancher.length }), aTrancher, 'a-trancher')}
+            {section(
+              t('commerce.journeeAttendues', { count: attendues.length }),
+              attendues,
+              'planning',
+            )}
+            {servies.length > 0 && (aTrancher.length > 0 || attendues.length > 0) ? (
+              <Filet marge={4} />
+            ) : null}
+            {/* Servi : la contrepartie court, et le salon n'a plus rien à
+                faire. La ligne dit quand la publication est due. */}
+            {section(t('commerce.journeeServies', { count: servies.length }), servies, 'servies')}
+            {closes.length > 0 ? <Filet marge={4} /> : null}
+            {/* Clos : ni absence à constater, ni geste à reprendre. */}
+            {section(t('commerce.journeeCloses', { count: closes.length }), closes, 'closes')}
           </View>
         );
 
