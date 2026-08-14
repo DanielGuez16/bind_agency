@@ -4,17 +4,52 @@
     "pourquoiCeFichier": "tokens.json est copié tel quel de la passation, et un test lie les deux fichiers. La v1.0 remplace le système de la v0.4 mais son §12 conserve explicitement des choses qu'elle ne réécrit pas : les densités du gabarit v0.6, l'écran de code déclaré hors système, les repères en mono des deux graphiques autorisés, et les données de produit — libellés de palier, contrepartie, badges — qui n'ont jamais été des jetons de design. Les remettre dans tokens.json casserait la copie conforme ; les écrire dans un écran recréerait l'échelle parallèle que le diagnostic de rendu avait démontée. Ils vivent donc ici, chacun avec la raison de sa présence.",
     "regle": "Rien n'entre ici qui existe dans tokens.json. Un test le vérifie dans les deux sens : une clé présente des deux côtés est une seconde vérité, et c'est la seconde qu'on oublie de mettre à jour."
   },
-
   "type": {
     "$pourquoi": "Six variantes que l'échelle v1.0 n'énumère pas et que le produit ne peut pas perdre. Le code de retrait et son compte à rebours appartiennent à un écran que la passation déclare hors système (§11) : il n'a donc aucune raison d'apparaître dans une échelle de marque. Les deux repères chiffrés servent les deux graphiques autorisés et les états vides, et c'est précisément parce qu'ils étaient écrits en dur dans cinq composants qu'ils ont été remontés en jetons. Les deux dernières portent le sigle et sa signature : tokens.json décrit le logo — trait fin, monoline, AGENCY centré à 12 d'interlettrage — sans en donner de variante typographique, parce qu'il attend un vectoriel qui n'est pas arrivé. En attendant, la reconstruction en Outfit 300 est nommée ici comme l'approximation qu'elle est.",
-    "type.code":        { "family": "mono", "weight": 600, "size": 76, "lineHeight": 84, "letterSpacing": 1.5 },
-    "type.countdown":   { "family": "mono", "weight": 600, "size": 46, "lineHeight": 52, "letterSpacing": 0 },
-    "type.figure":      { "family": "mono", "weight": 600, "size": 44, "lineHeight": 48, "letterSpacing": 0.4 },
-    "type.figureSmall": { "family": "mono", "weight": 600, "size": 29, "lineHeight": 32, "letterSpacing": 0.4 },
-    "type.wordmark":    { "family": "sans", "weight": 300, "size": 28, "lineHeight": 32, "letterSpacing": 1 },
-    "type.tagline":     { "family": "sans", "weight": 300, "size": 10, "lineHeight": 12, "letterSpacing": 12, "transform": "uppercase" }
+    "type.code": {
+      "family": "mono",
+      "weight": 600,
+      "size": 76,
+      "lineHeight": 84,
+      "letterSpacing": 1.5
+    },
+    "type.countdown": {
+      "family": "mono",
+      "weight": 600,
+      "size": 46,
+      "lineHeight": 52,
+      "letterSpacing": 0
+    },
+    "type.figure": {
+      "family": "mono",
+      "weight": 600,
+      "size": 44,
+      "lineHeight": 48,
+      "letterSpacing": 0.4
+    },
+    "type.figureSmall": {
+      "family": "mono",
+      "weight": 600,
+      "size": 29,
+      "lineHeight": 32,
+      "letterSpacing": 0.4
+    },
+    "type.wordmark": {
+      "family": "sans",
+      "weight": 300,
+      "size": 28,
+      "lineHeight": 32,
+      "letterSpacing": 1
+    },
+    "type.tagline": {
+      "family": "sans",
+      "weight": 300,
+      "size": 10,
+      "lineHeight": 12,
+      "letterSpacing": 12,
+      "transform": "uppercase"
+    }
   },
-
   "density": {
     "$pourquoi": "Gabarit v0.6, conservé tel quel par le §12. Le commerce est plus dense parce qu'il lit des listes longues sur un téléphone posé au comptoir ; sur un bureau, cette raison disparaît et les deux rôles respirent pareil.",
     "creator": {
@@ -32,7 +67,6 @@
       "gapLarge": 16
     }
   },
-
   "code": {
     "$pourquoi": "Écran hors système (§11) : blanc pur sur noir pur, plein écran, sans marque ni orange. Il est lu par une caméra et par une vendeuse à un mètre, et c'est pour ça qu'il ignore le thème. Ses deux couleurs sont les seules du produit à ne venir d'aucun jeton de marque — tokens.json le déclare dans theme.outOfTheme sans en donner les valeurs.",
     "chars": 6,
@@ -48,30 +82,51 @@
     "rotationSeconds": 30,
     "ignoresTheme": true
   },
-
   "tier": {
     "$pourquoi": "Données de produit, jamais des jetons de design : l'ordre des paliers, le mot écrit dans les deux langues, le nombre de barres du glyphe et la contrepartie annoncée. tokens.json porte désormais la matière de chaque palier — contour, teinte, aplat — et rien d'autre ; ces deux sources se rejoignent dans le composant, sans se recopier.",
-    "order": ["story", "post", "reel"],
+    "order": [
+      "story",
+      "post",
+      "reel"
+    ],
     "story": {
       "level": 1,
-      "label": { "en": "STORY", "es": "HISTORIA" },
+      "label": {
+        "en": "STORY",
+        "es": "HISTORIA"
+      },
       "glyphBars": 1,
       "minFollowers": 1000,
-      "counterpart": { "en": "One story within 48 h", "es": "Una historia en 48 h" }
+      "counterpart": {
+        "en": "One story within 48 h",
+        "es": "Una historia en 48 h"
+      }
     },
     "post": {
       "level": 2,
-      "label": { "en": "POST", "es": "PUBLICACIÓN" },
+      "label": {
+        "en": "POST",
+        "es": "PUBLICACIÓN"
+      },
       "glyphBars": 2,
       "minFollowers": 10000,
-      "counterpart": { "en": "One feed post within 48 h", "es": "Una publicación en 48 h" }
+      "counterpart": {
+        "en": "One feed post within 48 h",
+        "es": "Una publicación en 48 h"
+      }
     },
     "reel": {
       "level": 3,
-      "label": { "en": "REEL", "es": "REEL" },
+      "label": {
+        "en": "REEL",
+        "es": "REEL"
+      },
       "glyphBars": 3,
       "minFollowers": 50000,
-      "counterpart": { "en": "One dedicated reel within 72 h", "es": "Un reel dedicado en 72 h" }
+      "counterpart": {
+        "en": "One dedicated reel within 72 h",
+        "es": "Un reel dedicado en 72 h"
+      }
     },
     "rules": [
       "mot toujours écrit, jamais abrégé",
@@ -81,28 +136,41 @@
       "jamais de chiffre de niveau dans le badge"
     ]
   },
-
   "badge": {
     "$pourquoi": "Copie de produit, arbitrée avec la fondatrice, et sans rapport avec la direction artistique. La v1.0 ne la mentionne pas parce qu'elle n'a rien à en dire.",
     "newcomer": {
-      "label": { "en": "New on BIND", "es": "Nuevo en BIND" },
+      "label": {
+        "en": "New on BIND",
+        "es": "Nuevo en BIND"
+      },
       "expires": "21 jours ou 3 publications livrées",
       "audience": "commerce",
       "neverShowsZero": true
     },
     "behaviour": {
-      "examples": ["12 publications livrées", "Habitué · {salon}", "Toujours dans les délais"],
+      "examples": [
+        "12 publications livrées",
+        "Habitué · {salon}",
+        "Toujours dans les délais"
+      ],
       "cumulative": true,
       "neverDecreases": true
     },
     "maxVisible": 2,
-    "priority": ["behaviour", "newcomer"],
+    "priority": [
+      "behaviour",
+      "newcomer"
+    ],
     "negativeBadges": "aucun"
   },
-
   "motion": {
     "$pourquoi": "tokens.json donne les trois durées et la liste des propriétés animables. La pulsation du squelette n'y est pas : elle appartient à l'écriture des états, pas à la marque.",
     "skeletonLoop": 1400,
     "easing": "ease-out"
+  },
+  "marque": {
+    "$pourquoi": "Le seuil qui décide entre le logotype et la marque compacte. La règle : le logotype partout où on a la place de le lire, la marque compacte partout ailleurs — le seuil est la lisibilité des quatre lettres, pas le support. `largeurParLettre` est mesuré dans la fonte du produit : « B!ND » occupe 2,368 fois le corps pour quatre lettres. `pixelsParLettreMinimum` est encadré par deux mesures et non choisi : 6,75 px par lettre au lanceur Android à 48 dp, dont la capture est illisible ; 11,1 px au plus petit usage in-app, qui se lit. Lu par components/Logo.tsx, qui refuse de rendre en dessous, et par scripts/cuire-la-marque.mjs.",
+    "largeurParLettre": 0.592,
+    "pixelsParLettreMinimum": 10
   }
 }

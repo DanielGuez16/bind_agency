@@ -1,115 +1,93 @@
 /**
  * La marque.
  *
- * **Deux arcs tenus par un axe.** C'est ce que fait le produit : deux parties
- * — le salon, la créatrice — liées par un même engagement. Le mot se lit « B »
- * sans être la lettre d'une police : l'axe dépasse en haut et en bas, ce qui en
- * fait un signe et non un caractère.
+ * **La marque est le mot.** `B!ND`, le point d'exclamation à la place du I,
+ * `AGENCY` centré dessous en lettres très espacées, trait fin et monochrome.
+ * Il n'y a pas de signe à côté du mot : le mot *est* le signe.
  *
- * **Rien qu'une géométrie.** Pas de dégradé, pas d'ombre, pas de remplissage :
- * un trait d'épaisseur constante, qui tient à 20 points dans une barre comme à
- * 96 sur l'écran de connexion. Une marque qui a besoin d'un effet pour exister
- * disparaît dès qu'on la met en petit.
+ * **Ce que ce fichier a porté jusqu'ici.** Il dessinait un « B » construit —
+ * deux arcs inégaux tenus par un axe qui dépassait en haut et en bas — hérité
+ * du système vert, où il valait monogramme. La v1.0 l'a repeint sans le
+ * regarder : il a traversé le remplacement complet du système, changé de
+ * couleur, gardé sa forme, et il était encore en tête de l'accueil en ligne
+ * pendant que tout le reste avait changé. Une direction artistique se remplace
+ * en entier ou pas du tout ; recolorer le signe de l'ancienne revient à la
+ * garder.
  *
- * **Les deux arcs sont inégaux.** Le bas est plus large que le haut, comme dans
- * un « B » dessiné à la main. Deux arcs identiques donnent un signe mort, que
- * l'œil lit comme une erreur de construction.
+ * **Une seule couleur par occurrence.** Encre sur os ou papier, clair sur
+ * orange, satin ou encre. Le point d'exclamation n'est **jamais coloré à
+ * part** : c'est une lettre, pas un accent, et c'est la faute que la première
+ * lecture du brief avait commise.
  *
  * ---
  *
- * ## Ce que la v1.0 change, et ce qu'elle laisse en attente
+ * ## Où le logotype a le droit d'aller
  *
- * **Une seule couleur par occurrence.** Le logo est monochrome : encre sur os
- * ou papier, clair sur orange, satin ou encre. Il ne suit plus l'accent du
- * rôle — il n'y a plus d'accent de rôle — et le défaut est donc l'encre, que
- * chaque appelant remplace par celle de la matière sur laquelle il le pose.
+ * **Le logotype partout où on a la place de le lire, la marque compacte
+ * partout ailleurs. Le seuil est la lisibilité des quatre lettres, pas le
+ * support.**
  *
- * **Le sigle s'écrit `B!ND`, en trait fin.** Le point d'exclamation est une
- * lettre, jamais un accent : il n'est **jamais coloré à part**, et c'est la
- * faute que la première lecture du brief avait commise.
+ * La règle a coûté deux découvertes. Le logotype réduit à seize pixels donnait
+ * quatre taches — d'où la marque compacte, livrée par Design. Puis la tuile
+ * d'application, qu'on avait gardée au logotype *parce qu'elle est fournie en
+ * 1024*, jusqu'à mesurer ce qu'un lanceur en affiche : vingt-sept pixels de
+ * large pour quatre lettres à 48 dp. La résolution du fichier n'a jamais été la
+ * question ; ce que l'œil reçoit l'a toujours été.
  *
- * **`AGENCY` est centré dessous**, très espacé, jamais aligné à gauche. La
- * signature est optionnelle : dans une barre latérale, le sigle suffit et la
- * répéter à chaque écran en ferait un décor.
+ * Ce composant **refuse** donc de rendre sous le plancher, comme `Texte` refuse
+ * une surface employée en encre. Un logotype illisible ne se signale pas : il
+ * ressemble à un logotype, en plus petit, et il traverse une revue. C'est très
+ * exactement ainsi que l'ancien monogramme a traversé le remplacement du
+ * système.
+ *
+ * Le plancher n'est pas écrit, il se calcule depuis deux mesures tenues dans
+ * `produit.json` — la largeur d'une lettre dans la fonte, et le minimum de
+ * pixels par lettre.
  *
  * **Ceci reste une approximation, et elle est nommée.** Les lettres du logo de
  * l'agence sont dessinées à la main — le D porte une coupe oblique qu'aucune
- * fonte ne donne. Toute reconstruction dans la fonte fonctionnelle du système,
- * y compris celle de la planche de design, s'en écarte. Le vectoriel est réclamé ; d'ici là, `tokens.json`
- * porte ce manque dans `$meta.unconfirmed` plutôt que de laisser croire que la
- * question est réglée.
+ * fonte ne donne. Le rendu dans la fonte fonctionnelle du système
+ * s'en écarte. Le vectoriel est réclamé ;
+ * d'ici là `tokens.json` porte ce manque dans `$meta.unconfirmed`, plutôt que
+ * de laisser croire que la question est réglée.
  */
 import { View } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
 
-import { tokens, useColors, type ColorName } from '../theme';
+import { produit, tokens, type ColorName } from '../theme';
 import { Texte } from './Texte';
 
 /**
- * Le dessin, sur une grille de 32.
+ * Le mot, et sa signature quand la marque se présente.
  *
- * L'axe court de 3 à 29 ; les arcs s'y accrochent de 5 à 27. Le décalage de
- * deux unités est ce qui distingue le signe de la lettre.
+ * `taille` est la hauteur de référence du mot, pas celle d'une boîte : il n'y a
+ * plus de carré à côté duquel s'aligner. L'espacement des lettres est celui du
+ * nom et non du texte courant — quatre lettres serrées ne se lisent pas comme
+ * une marque.
  */
-const AXE = 'M9 3V29';
-const ARC_HAUT = 'M9 5h4.5a5.5 5.5 0 010 11H9';
-const ARC_BAS = 'M9 16h6a5.5 5.5 0 010 11H9';
+/**
+ * Le rapport entre `taille` et le corps du mot.
+ *
+ * Il vaut ce que la composition lui donne plus bas ; nommé ici parce que le
+ * plancher s'en déduit, et qu'un rapport écrit à deux endroits finirait par
+ * diverger de celui qui rend.
+ */
+const CORPS_POUR_TAILLE = 0.72;
 
 /**
- * Proportion du trait.
+ * La taille sous laquelle le logotype ne se lit plus, et se refuse.
  *
- * **Amincie avec la v1.0** : le logo de l'agence est monoline et fin, et un
- * trait calé sur celui des icônes — qui vient lui-même de passer à 2 — donnait
- * un signe plus gras que la marque qu'il représente.
+ * Calculée, pas choisie : `taille × 0,72` donne le corps, `corps × 0,592` donne
+ * la largeur d'une lettre, et il en faut dix pixels. Vingt-quatre, aujourd'hui.
  */
-const TRAIT = 2 / 32;
+export const PLANCHER_DU_LOGOTYPE = Math.ceil(
+  produit.marque.pixelsParLettreMinimum / (CORPS_POUR_TAILLE * produit.marque.largeurParLettre),
+);
 
-export function Logo({
-  taille = 32,
-  couleur = 'ink.default',
-  testID,
-}: {
-  taille?: number;
-  couleur?: ColorName;
-  testID?: string;
-}) {
-  const c = useColors();
-  return (
-    <Svg
-      width={taille}
-      height={taille}
-      viewBox="0 0 32 32"
-      fill="none"
-      testID={testID}
-      accessibilityRole="image"
-      accessibilityLabel={tokens.logo.wordmark.text}
-    >
-      {[AXE, ARC_HAUT, ARC_BAS].map((d) => (
-        <Path
-          key={d}
-          d={d}
-          stroke={c[couleur]}
-          strokeWidth={taille * TRAIT}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      ))}
-    </Svg>
-  );
-}
-
-/**
- * La marque et le nom, côte à côte.
- *
- * Le nom n'est écrit qu'en grand — dans une barre, le signe suffit et le mot
- * répété n'ajoute rien. L'espacement des lettres est celui du nom, pas celui du
- * texte courant : quatre lettres serrées ne se lisent pas comme une marque.
- */
 export function Marque({
   taille = 40,
   couleur = 'ink.default',
   /**
-   * `AGENCY` sous le sigle. Réservée aux écrans où la marque **se présente** —
+   * `AGENCY` sous le mot. Réservée aux écrans où la marque **se présente** —
    * accueil, connexion — et absente partout où elle ne fait que situer.
    */
   signature = false,
@@ -120,18 +98,24 @@ export function Marque({
   signature?: boolean;
   testID?: string;
 }) {
+  if (taille < PLANCHER_DU_LOGOTYPE) {
+    throw new Error(
+      `Le logotype ne se lit plus à ${taille} : sous ${PLANCHER_DU_LOGOTYPE}, ` +
+        `« ${tokens.logo.wordmark.text} » donne moins de ` +
+        `${produit.marque.pixelsParLettreMinimum} pixels par lettre. ` +
+        "C'est la marque compacte qu'il faut ici — celle du favicon et des tuiles.",
+    );
+  }
+
   return (
     <View testID={testID} style={{ alignItems: signature ? 'center' : 'flex-start' }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: taille * 0.3 }}>
-        <Logo taille={taille} couleur={couleur} />
-        <Texte
-          variante="type.wordmark"
-          couleur={couleur}
-          style={{ fontSize: taille * 0.72, lineHeight: taille * 0.86 }}
-        >
-          {tokens.logo.wordmark.text}
-        </Texte>
-      </View>
+      <Texte
+        variante="type.wordmark"
+        couleur={couleur}
+        style={{ fontSize: taille * CORPS_POUR_TAILLE, lineHeight: taille * 0.86 }}
+      >
+        {tokens.logo.wordmark.text}
+      </Texte>
       {signature ? (
         <Texte
           variante="type.tagline"

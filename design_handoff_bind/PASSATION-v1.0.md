@@ -357,3 +357,46 @@ vernis, d'une mèche, d'une pièce. Le traitement reste possible sur les fonds
 décoratifs, jamais sur le contenu. Rien n'est donc à faire côté API à
 l'ingestion, et le point ouvert que le §7 laissait à arbitrer est clos par un
 non.
+
+---
+
+## La règle des deux marques (2026-08-14)
+
+Le système a deux marques, et une règle qui décide entre elles.
+
+> **Le logotype partout où on a la place de le lire, la marque compacte partout
+> ailleurs. Le seuil est la lisibilité des quatre lettres, pas le support.**
+
+Elle s'est écrite en trois temps, et chacun a coûté une découverte.
+
+1. Le logotype réduit à seize pixels donnait quatre taches. Refuser de le
+   réduire était juste ; laisser le favicon dans cet état l'était moins.
+2. Design a livré `BIND Mark - Favicon 16` : le bloc orange, avec le point
+   d'exclamation **évidé** dedans. Évidé et non posé — un point orange sur blanc
+   est un panneau d'alerte, le même creusé dans un carré plein devient une
+   marque, parce que l'objet reconnu est le carré et le signe ce qui y manque.
+3. Restait la tuile d'application, gardée au logotype **parce qu'elle est
+   livrée en 1024** — jusqu'à mesurer ce qu'un lanceur en affiche : vingt-sept
+   pixels de large pour quatre lettres à 48 dp. La résolution du fichier n'a
+   jamais été la question.
+
+**Le seuil est mesuré, pas choisi.** `B!ND` dans la fonte du système occupe
+0,592 fois le corps par lettre. Dix pixels par lettre est *encadré* par deux
+mesures : 6,75 au lanceur Android, dont la capture est illisible, et 11,1 au
+plus petit usage in-app, qui se lit. Les deux nombres vivent dans
+`produit.json`, et rien ne les recopie.
+
+**Conséquence, et c'est la forme la plus sûre de la règle :** aucun fichier cuit
+ne porte plus le logotype. Tous sont des tuiles, aucune tuile ne s'affiche assez
+grand. Le logotype ne vit donc qu'en texte, dans l'interface, là où l'écran lui
+donne la place — et `Marque` refuse de rendre sous le plancher, comme `Texte`
+refuse une surface employée en encre. Un logotype illisible ne se signale pas :
+il ressemble à un logotype, en plus petit, et il traverse une revue. C'est
+exactement ainsi que l'ancien monogramme vert a traversé le remplacement complet
+du système.
+
+*Un écart relevé sur la planche du 16, et tranché :* sa dernière colonne annonce
+« quatre unités à gauche et à droite ». La géométrie qu'elle donne huit fois, et
+son tableau de cotes, disent **six** — quatre est la largeur du signe, pas sa
+marge. La géométrie fait foi, et l'argument sur les masques des plateformes
+tient mieux encore avec six.

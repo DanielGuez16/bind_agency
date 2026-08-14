@@ -96,6 +96,10 @@ const BLOCS: Record<string, number> = {
   AudienceScreen: 0,
   CarteDuCommerce: 0,
   GalerieDuCommerce: 0,
+  // Les deux visionneuses plein écran. Zéro par nature : ce qu'on y regarde
+  // est la photo ou la page, et une signature posée dessus serait la seule
+  // chose que la marque aurait à dire par-dessus le travail d'un salon.
+  Visionneuses: 0,
   PreuveScreen: 0,
   EnvoiDePreuve: 0,
   Preuve: 0,

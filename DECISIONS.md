@@ -4535,3 +4535,231 @@ vérifications requises.
 --json conclusion` — et jamais sur l'état de la PR, qui ne reflète que les deux
 vérifications requises. C'est la même leçon que celle des sept PR fusionnées sur
 une CI rouge, sous une autre forme.
+
+## 2026-08-14 — Une carte se lit, une galerie se regarde
+
+Le lot 4 tient sur deux règles, et aucune des deux ne survit à l'œil seul.
+
+**Les deux fonds.** La galerie s'ouvre sur `bg.sunken`, la carte sur `bg.page`.
+Ce n'est pas une variation : on regarde une photo sur du sombre, où le cadre
+disparaît, et on lit un texte sur du clair, où l'encre porte. La difficulté est
+que la règle tient à *une seule propriété* de deux composants voisins — elle
+ressemble à une incohérence pour qui la découvre, et la première main qui passe
+l'uniformise en croyant corriger. `FOND_DES_VISIONNEUSES` la nomme, et un test
+vérifie **les deux sens** : que chacune peint le sien, et qu'ils diffèrent.
+
+**Une page de carte est une photographie.** L'extraction existe dans le produit,
+mais elle ne sert qu'au commerce, à créer ses items depuis sa carte, avec
+validation. Elle n'alimente jamais ce que la créatrice lit. Recomposer la carte
+reviendrait à la republier sous notre nom : une colonne de prix mal lue, et
+c'est nous qui répondons devant quelqu'un qui a commandé autre chose. La garde
+refuse tout nom du chemin d'extraction dans le fichier de la visionneuse, et
+ignore les lignes de commentaire — sinon elle crierait sur la prose qui
+l'explique, et se ferait désactiver.
+
+**Ce qu'une mutation a trouvé.** Rendre le bandeau de blocage permanent — donc
+visible même une fois la carte déposée — n'a fait tomber aucun test. Le dépôt
+côté commerce n'avait aucune couverture : les 124 tests « écrans commerce » qui
+passaient pendant la mutation ne le touchaient pas. Six tests l'entourent
+maintenant, dont trois du sens inverse. C'est la quatrième fois sur ce projet
+qu'une mutation de trente secondes trouve ce qu'aucune relecture n'a vu, et la
+première où ce qu'elle trouve est **une absence** plutôt qu'un test creux.
+
+## 2026-08-14 — Le voile ne protégeait plus rien, et il cachait la vidéo
+
+Rapporté depuis la production : « la vidéo de fond n'apparaît plus, elle jouait
+avant #118 ». Les deux hypothèses proposées étaient que le satin permanent la
+couvre, ou qu'elle ait cessé d'être demandée. **Ni l'une ni l'autre.**
+
+Mesuré dans Chromium sur le build réel, avec une vidéo unie pour que tout écart
+soit imputable aux couches : le satin est bien la couche du dessous, la vidéo
+est montée, elle joue, elle avance. Ce qui la couvrait est le **voile** —
+`photoBottom` aux deux bouts, `modal` au milieu. Il n'en laissait passer que
+**18 % en haut et 48 % au mieux** : un bleu vif arrivait à l'œil en (31, 43, 46),
+un gris d'ardoise. Le même écrasement rendait presque noir un satin qui est une
+surface de marque.
+
+**Il n'était pas devenu trop lourd, il avait cessé d'être nécessaire.** Il datait
+de l'époque où il était la seule protection du texte. Depuis, chaque ligne de cet
+écran a reçu son propre fond : l'en-tête sa bande à 12,10:1, les deux portes
+leurs cartes opaques. Il payait donc plein tarif pour un service que plus
+personne ne lui demandait. Il redevient `photoTop`, en aplat — la pente
+n'existait que pour couvrir davantage aux deux bouts, là où vivaient les deux
+textes qui portent maintenant leur bande.
+
+**#118 n'a pas introduit le défaut, il a retiré ce qui le masquait.** Les
+couleurs du voile sont identiques avant et après ; seule sa condition a changé.
+Ce qui a disparu est le basculement de composition à l'arrivée du manifeste —
+le seul indice qu'une vidéo existait. Corriger la réorganisation a rendu visible
+qu'on ne voyait déjà rien.
+
+**Et un troisième texte n'avait aucun fond.** Le lien « Already have an
+account? » est un bouton fantôme, donc en `brand.700`, une encre foncée
+calibrée pour du papier : **2,14:1** au pire sur un média. Le voile ne l'a jamais
+sauvé et ne pouvait pas — il assombrit l'encre exactement autant que le fond,
+et c'est pourquoi l'alléger ne change rien à ce défaut-là. Il prend sa bande et
+passe à `ink.onScrim`, à 12,14:1. Défaut préexistant, trouvé en mesurant l'autre.
+
+## 2026-08-14 — L'ancienne marque avait survécu au remplacement du système
+
+Le logo en ligne était encore le « B » du système vert : deux arcs inégaux tenus
+par un axe débordant, hérité d'une direction artistique retirée. Il avait
+traversé la v1.0 sans que rien ne l'arrête. Les jetons avaient changé, les
+fontes, les soixante-quatre écrans ; `Logo.tsx` avait été **repeint** — la
+couleur passait par `useColors`, donc il devenait orange et paraissait à jour.
+Personne ne regardait sa forme.
+
+**La marque est le mot.** `B!ND`, le point d'exclamation à la place du I,
+`AGENCY` centré dessous. Il n'y a pas de signe à côté du mot. Le composant perd
+donc son tracé, et `Marque` ne compose plus qu'un texte.
+
+**Les fichiers statiques étaient pires, parce qu'on ne les relit jamais.**
+Favicon, icône d'application, trois couches Android, et la couleur qu'Android
+compose derrière l'icône, restée bleu pâle dans `app.json`. Ils étaient produits
+par un script Python qui dessinait le monogramme à la main, en vert d'eau sur
+indigo, valeurs écrites en dur. Le script est remplacé : Chromium peint le mot
+avec **le fichier de fonte que l'application embarque**, lu depuis
+`node_modules` — même raisonnement que pour les satins.
+
+**Ce que les tests d'alors vérifiaient.** Que les fichiers existaient et
+faisaient la bonne taille. Aucun ne regardait ce qu'ils montraient — c'est
+exactement par là que l'ancienne marque est passée. La garde neuve ne prétend
+pas juger un dessin ; elle vérifie que chaque pixel opaque est **un mélange de
+deux couleurs déclarées dans les jetons**. Compter les couleurs dominantes ne
+suffisait pas : sur une tuile de seize pixels, l'antialiasing *est* l'image. Un
+vert d'eau sur un indigo n'est sur aucun segment de la v1.0, à aucune taille.
+
+*Ce qui reste ouvert :* le vectoriel. Les lettres du logo sont dessinées à la
+main — le D porte une coupe oblique qu'aucune fonte ne donne. Ces fichiers sont
+la meilleure approximation disponible, et `$meta.unconfirmed` le porte déjà. À
+seize pixels, quatre lettres ne se lisent pas ; y mettre un « B » seul aurait été
+dessiner un monogramme que personne n'a validé, c'est-à-dire refaire ce qu'on
+venait de retirer.
+
+## 2026-08-14 — Un fichier de marque que rien ne réclame finit par resservir
+
+Suite du constat précédent. Les quatre `marque-*.png` avaient été régénérés pour
+qu'aucun fichier ne porte l'ancienne marque, sans qu'on sache à quoi ils
+servaient. La question a été tranchée en regardant ce que le build **réclame**.
+
+`expo export` compile `assets/favicon.png` en un `favicon.ico` de trois
+images — 16, 32 et 48 — et le gabarit qu'il génère n'écrit qu'un
+`<link rel="icon">` vers lui. Le 16, le 32 et le 64 doublaient donc une chaîne
+qui produit déjà ces tailles depuis une source unique. **Retirés.**
+
+Le 180 est la taille de l'icône d'iOS, et c'était clairement son intention
+d'origine. Il avait donc une destination réelle, à condition de le poser où la
+plateforme regarde : `public/` est recopié tel quel à la racine du build —
+vérifié sur un export, pas supposé — et Safari demande `/apple-touch-icon.png`
+par convention quand aucune balise ne la déclare. Il y vit désormais, produit
+directement par le script de cuisson.
+
+*L'alternative écartée :* remplacer le gabarit HTML généré par un
+`public/index.html` pour y écrire les balises. Cela aurait mis à notre charge la
+réinitialisation CSS et l'injection du script d'Expo — un fichier de plus à
+tenir à jour à chaque version du SDK — pour une balise que la convention rend
+inutile.
+
+**Et une garde de plus, qui ne porte pas sur les couleurs.** Celle des couleurs
+ne regarde que les fichiers qu'on lui nomme : un orphelin lui échappe *par
+construction*. Elle est doublée d'une garde qui refuse qu'un `marque-*.png`
+existe sans être réclamé. C'est la leçon exacte du monogramme vert — un fichier
+inerte ne le reste pas, il attend qu'on le reprenne en portant une version que
+plus personne ne vérifie.
+
+## 2026-08-14 — La marque en petit : ce qui manque fait le signe
+
+Design a livré `BIND Mark - Favicon 16`, qui règle le point laissé ouvert. Le
+dessin ne réduit pas le logotype — il part des deux signes que la marque
+possède : le bloc orange plein, et le point d'exclamation **évidé** dedans.
+
+L'évidement n'est pas un effet. Un point d'exclamation orange sur fond blanc est
+un panneau d'alerte ; le même point creusé dans un carré plein devient une
+marque, parce que l'objet reconnu est le carré et le signe ce qui y manque.
+
+**La propriété qui porte le dessin est la grille**, et c'est elle que les tests
+éprouvent. Tout est posé en unités d'une grille de seize, donc chaque cote tombe
+sur un pixel entier à 16, 32, 48 et 128 : la forme est *la même* aux quatre
+tailles. Une garde qui se contenterait de compter deux couleurs laisserait
+passer un dessin franc à chaque taille mais différent d'une taille à l'autre —
+c'est-à-dire ce que produit toute réduction. Les trois tailles du `.ico` sont
+donc comparées **au centre de chaque unité**, et l'empreinte attendue est écrite
+en toutes lettres dans le test plutôt que recalculée depuis le manifeste, qui se
+régénère avec le dessin et approuverait tout.
+
+**Le favicon est livré en `.ico` complet.** `expo export` sait en produire un de
+trois images, mais en *réduisant* la source : le blanc de deux unités entre le
+fût et le point serait rendu en gris, et c'est précisément ce que le dessin
+protège. `public/` est recopié tel quel à la racine du build et l'emporte sur ce
+qu'Expo génère — vérifié sur un export.
+
+**`web.favicon` est retiré, et `assets/favicon.png` avec.** Tant que la clé
+désignait une source, la chaîne compilait un `.ico` que le nôtre recouvrait
+*silencieusement*. Un fichier généré puis masqué est pire qu'un orphelin : il
+reparaît le jour où l'on retire ce qui le masquait, en portant son propre
+dessin. Sans la clé, Expo n'écrit plus de `<link rel="icon">` — la racine suffit,
+c'est la plus ancienne convention du web et celle qui sert déjà pour
+`apple-touch-icon.png`.
+
+*Un écart relevé sur la planche, et tranché :* sa dernière colonne annonce
+« deux unités de marge en haut et en bas, quatre à gauche et à droite ». La
+géométrie qu'elle donne huit fois, et son tableau de cotes, disent **six** à
+gauche et à droite — quatre est la largeur du signe, pas sa marge. La géométrie
+fait foi, et l'affirmation sur les masques des plateformes tient mieux encore
+avec six.
+
+*Ce qui n'a pas été tranché :* `icon.png` et les trois couches Android portent
+toujours le logotype. Mesuré sur la couche réelle réduite à sa taille
+d'affichage, un lanceur Android à 48 dp donne 27 pixels de large pour quatre
+lettres — la tache que ce dessin existe pour éviter. La planche range la « tuile
+d'application » dans son domaine ; la demande ne nommait que le favicon et
+l'icône d'iOS. Remonté plutôt que décidé.
+
+## 2026-08-14 — La règle des deux marques, et sa forme la plus sûre
+
+Les icônes d'application passent à la marque compacte sur les deux plateformes.
+La règle qui en sort mérite d'être écrite, et elle l'est maintenant dans la
+passation :
+
+> Le logotype partout où on a la place de le lire, la marque compacte partout
+> ailleurs. Le seuil est la lisibilité des quatre lettres, pas le support.
+
+**Ce que j'avais mal regardé.** J'avais gardé le logotype sur `icon.png` et les
+couches Android *parce qu'elles sont livrées en 1024 et 512*. La résolution du
+fichier n'a jamais été la question : mesuré sur la couche réelle réduite à sa
+taille d'affichage, un lanceur à 48 dp donne vingt-sept pixels de large pour
+quatre lettres. La même tache que la marque compacte existe pour éviter.
+
+**Le seuil est mesuré, pas choisi.** `B!ND` dans la fonte du produit occupe
+0,592 fois le corps par lettre — mesuré au navigateur, sur le fichier de fonte
+que l'application embarque. Dix pixels par lettre est encadré par deux mesures :
+6,75 au lanceur Android, dont la capture est illisible, et 11,1 au plus petit
+usage in-app, qui se lit. Les deux nombres vivent dans `produit.json` ; le
+script de cuisson et le composant les lisent, aucun ne les recopie.
+
+**La forme la plus sûre de la règle est structurelle.** Aucun fichier cuit ne
+porte plus le logotype — tous sont des tuiles, aucune tuile ne s'affiche assez
+grand. Le script n'a donc plus besoin de navigateur : il ne peint plus de texte,
+il trace des rectangles sur une grille de seize, ce qui est exact et ne laisse
+entrer aucun lissage. Le logotype ne vit qu'en texte, dans l'interface, et
+`Marque` **refuse** de rendre sous le plancher — comme `Texte` refuse une
+surface employée en encre. Le plancher se calcule des deux mesures, il ne
+s'écrit pas : vingt-quatre aujourd'hui.
+
+Un logotype illisible ne se signale pas. Il ressemble à un logotype, en plus
+petit, et il traverse une revue — c'est exactement ainsi que l'ancien monogramme
+vert a traversé le remplacement complet du système.
+
+**Android reçoit enfin le bon gabarit.** Ses icônes ne sont pas des tuiles
+masquées mais deux couches composées puis rognées : sur 108 unités, seules les
+72 du centre sont garanties. Une tuile pleine posée là aurait vu son signe coupé
+en haut et en bas — il occupe trois quarts de la tuile quand le masque n'en
+garantit que deux tiers. La grille est donc ramenée à la zone sûre et le fond
+fourni par l'autre couche : 432 et 288, soit dix-huit pixels par unité, aucun
+arrondi. Après masquage, ce qu'on voit est exactement la marque compacte.
+
+*Et une mutation qui n'a rien muté.* La première tentative pour éprouver la
+garde de la règle remplaçait une chaîne qui ne correspondait pas : le test est
+passé, et j'ai failli en conclure qu'il ne protégeait rien. Vérifier que la
+mutation **s'applique** avant de lire le résultat est la moitié du geste, et
+c'est celle qu'on oublie.

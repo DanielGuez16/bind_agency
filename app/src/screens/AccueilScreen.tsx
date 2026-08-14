@@ -21,7 +21,6 @@
  * premier écran est le plus sûr moyen de faire fermer l'onglet.
  */
 import { useEvent, useEventListener } from 'expo';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useEffect, useState } from 'react';
 import { AppState, Image, ScrollView, StyleSheet, View } from 'react-native';
@@ -239,31 +238,39 @@ export function AccueilScreen({
         />
       ) : null}
 
-      {/* Un voile : le texte des portes se pose sur une image dont on ne
-          maîtrise ni la luminosité ni le contraste. Sans lui, la promesse
-          devient illisible sur un plan clair. */}
-      {/* **Un dégradé, pas un aplat.** Le texte se pose sur une image dont on
-          ne maîtrise ni la luminosité ni le contraste : sur un ciel clair, la
-          promesse devenait à peine lisible. Plus sombre en haut, où vivent le
-          titre et sa sous-ligne, puis s'éclaircissant — un aplat uniforme
-          salirait la photo pour protéger deux lignes. */}
-      {/* **Le voile aussi est permanent**, et c'est ce qui rend l'encre stable.
-          Il ne protégeait le texte que quand une photo était là ; le faire
-          apparaître avec le manifeste ferait changer la couleur du titre une
-          seconde après l'ouverture, ce qui est le même défaut sous une autre
-          forme. Sur le satin `drape`, il donne 6,00:1 à `ink.onScrim` —
-          mesuré, pas supposé. */}
-      <LinearGradient
-          testID="voile-accueil"
-          // **Sombre en haut, où le texte se pose.** Le dégradé des cartes va
-          // du clair au sombre : il protège un titre posé en bas d'une photo.
-          // Ici le titre est en haut et les cartes au milieu — appliqué tel
-          // quel, il ne veilait rien de ce qu'il fallait, et la sous-ligne
-          // disparaissait dans le ciel.
-          colors={[c['scrim.photoBottom'], c['scrim.modal'], c['scrim.photoBottom']]}
-          locations={[0, 0.5, 1]}
-          style={StyleSheet.absoluteFillObject}
-        />
+      {/* **Un voile adoucit, il ne garantit rien** — et celui-ci avait fini par
+          faire les deux mal.
+
+          Il valait `photoBottom` en haut et en bas, `modal` au milieu : entre
+          0,88 et 0,55 sur toute la surface. C'était la seule protection du
+          texte à l'époque où le texte n'en avait pas d'autre. Depuis, chaque
+          ligne de cet écran a reçu son propre fond — l'en-tête sa bande à
+          12,10:1, les deux portes leurs cartes opaques, et le lien de
+          connexion sa bande à son tour. Le voile ne protégeait donc plus rien
+          que lui-même, et il le payait cher : mesuré au navigateur sur une
+          vidéo unie, il n'en laissait passer que **18 % en haut et 48 % au
+          mieux**. Un bleu vif arrivait à l'œil en (31, 43, 46), un gris
+          d'ardoise. C'est ce qui a été rapporté comme « la vidéo n'apparaît
+          plus » : elle jouait, elle était bien au-dessus du satin, et on ne la
+          voyait pas.
+
+          Le même calcul vaut contre le satin, qui est une surface de marque :
+          l'écrasement à 12 % rendait l'orange de la fondatrice presque noir.
+
+          Il redevient donc ce qu'un voile est — `photoTop`, une seule valeur,
+          celle que le système nomme pour adoucir le haut d'une photo. Il lie
+          l'image à la page et ne prétend plus rien garantir, parce que ce qui
+          doit l'être l'est ailleurs, par des fonds qui ne dépendent ni de la
+          hauteur du contenu, ni du terminal, ni de ce qui a fini de charger.
+
+          **Un aplat et non plus un dégradé** : la pente n'existait que pour
+          couvrir davantage aux deux bouts, là où vivaient les deux textes qui
+          portent maintenant leur bande. */}
+      <View
+        testID="voile-accueil"
+        style={[StyleSheet.absoluteFillObject, { backgroundColor: c['scrim.photoTop'] }]}
+        pointerEvents="none"
+      />
 
       {/**
        * **Le contenu défile.** Il tenait dans un `View` en `flex: 1` centré :

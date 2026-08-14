@@ -500,10 +500,101 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       sur une vidéo claire — et prend sa bande aussi : une garantie qui dépend
       de ce qui a fini de charger n'en est pas une. 6 tests neufs, 3 mutations
       vérifiées*
-- [ ] **Ajouter `e2e` aux vérifications requises de `main`**
-      *La protection n'exige que `api` et `app` : le job qui monte le produit
-      entier tourne et **ne bloque pas**. Une PR rouge sur lui a été fusionnée
-      aujourd'hui. C'est le job qui a trouvé les trois défauts qu'aucun test
-      unitaire n'aurait vus. Réglage d'administration du dépôt, pas une décision
-      de code — à faire par Daniel, ou sur son accord*
+- [x] **Lot 4 — la carte du commerce, composée par-dessus le fonctionnel**
+      *Deux règles de Design portent le lot, et toutes deux sont devenues
+      mécaniques. **La galerie sur l'encre, la carte sur l'os** — on regarde une
+      photo sur du sombre, on lit un texte sur du clair : `FOND_DES_VISIONNEUSES`
+      nomme les deux fonds, et un test refuse qu'ils se rejoignent, parce
+      qu'uniformiser ressemble à une mise en cohérence. **Une page de carte est
+      toujours une photographie** : la visionneuse rend l'original en `contain`,
+      jamais la vignette, et une garde refuse que quoi que ce soit du chemin
+      d'extraction y entre — recomposer la carte reviendrait à la republier sous
+      notre nom. Côté commerce, le blocage se dit en tête et **nomme ses
+      prestations** au-dessus de ce qui les débloque, le compte des pages se lit
+      avant que la borne se subisse, et « l'un ou l'autre suffit » vit sur le
+      filet **entre** les deux formes — écrite sous l'une, elle désignerait
+      l'autre comme facultative. Côté fiche, deux lignes de même hauteur pour
+      deux accès qu'on ne mêle plus, le glyphe de sortie qui remplace le chevron
+      quand la carte n'existe qu'ailleurs, et la feuille qui annonce le domaine.
+      18 tests neufs, 10 mutations vérifiées — dont une qui a révélé que le
+      dépôt côté commerce n'avait aucune couverture*
+- [x] **Ajouter `e2e` aux vérifications requises de `main`**
+      *Arbitré par Daniel et posé par la conversation fonctionnelle : la
+      protection exige désormais `api`, `app` et `e2e`, en `strict` et sans
+      contournement administrateur. Le job qui monte le produit entier bloque
+      enfin — c'est celui qui a trouvé les trois défauts qu'aucun test unitaire
+      n'aurait vus. `--auto` reste piégeux d'une autre façon : il fusionne dès
+      que les requis passent. La conclusion du run entier avant de fusionner
+      reste la règle*
+- [x] **La vidéo d'accueil réapparaît, et l'ancienne marque disparaît**
+      *Deux constats de production. **Le voile** — ni le satin ni un défaut de
+      montage : mesuré dans Chromium sur le build réel, il ne laissait passer
+      que 18 % de la vidéo en haut et 48 % au mieux, et écrasait le satin, qui
+      est une surface de marque. Il n'était pas devenu trop lourd, il avait
+      cessé d'être nécessaire : chaque texte de l'écran a depuis son propre fond.
+      #118 n'a pas créé le défaut, il a retiré le basculement de composition qui
+      seul signalait qu'une vidéo existait. Trouvé au passage, un défaut
+      préexistant : le lien de connexion, seul texte sans fond, à 2,14:1 — bande
+      et encre claire, 12,14:1. **La marque** — le « B » du système vert avait
+      traversé la v1.0 parce que le composant était repeint et pas redessiné, et
+      les fichiers statiques venaient d'un script qui écrivait le vert d'eau et
+      l'indigo en dur. La marque est le mot ; Chromium le peint avec la fonte
+      que l'application embarque. La garde neuve ne juge pas un dessin, elle
+      exige que chaque pixel opaque soit un mélange de deux couleurs des
+      jetons — les tests d'avant ne regardaient que l'existence et la taille.
+      7 tests neufs, 7 mutations vérifiées*
+- [x] **Les quatre `marque-*.png` : un câblé, trois retirés**
+      *Tranché en regardant ce que le build réclame, et non ce qu'on pouvait
+      leur supposer. Expo compile `assets/favicon.png` en un `.ico` de trois
+      images — 16, 32 et 48 — et n'écrit qu'un `<link rel="icon">` vers lui :
+      le 16, le 32 et le 64 doublaient donc une chaîne qui les produit déjà.
+      Retirés. Le 180 est la taille de l'icône d'iOS et avait, lui, une
+      destination réelle : `public/` est recopié tel quel à la racine du build —
+      vérifié sur un export — et Safari demande `/apple-touch-icon.png` par
+      convention quand aucune balise ne la déclare. Il y est posé, ce qui évite
+      de remplacer le gabarit HTML généré pour y ajouter une ligne. La garde
+      refuse désormais **l'orphelin lui-même** : celle des couleurs ne regarde
+      que les fichiers qu'on lui nomme, donc un fichier que personne ne réclame
+      lui échappe par construction — et c'est ainsi qu'une marque périmée
+      attend son tour. 5 tests neufs, 3 mutations vérifiées*
+- [x] **La marque en petit : le bloc, avec le point évidé**
+      *Livrée par Design, et elle règle ce que j'avais laissé ouvert. Quatre
+      lettres ne tiennent pas dans seize pixels ; le dessin part donc des deux
+      signes que la marque possède — le bloc orange plein, et le point
+      d'exclamation évidé dedans. Évidé et non posé : un point orange sur blanc
+      est un panneau d'alerte, le même creusé dans un carré plein devient une
+      marque, parce que l'objet reconnu est le carré et le signe ce qui y
+      manque. **Tout est en unités d'une grille de seize**, donc la forme est la
+      même à 16, 32, 48 et 128 au lieu d'être arrondie différemment à chacune —
+      c'est la propriété que les tests éprouvent, et pas seulement « deux
+      couleurs ». Le favicon est livré en `.ico` complet, chaque taille tracée :
+      `expo export` en produisait un en **réduisant** la source, et une
+      réduction lisse — elle rendrait gris le blanc de deux unités qui sépare le
+      fût du point. `web.favicon` est retiré avec `assets/favicon.png` : un
+      fichier généré puis masqué par `public/` est pire qu'un orphelin, il
+      reparaît le jour où l'on retire ce qui le masquait. 9 tests neufs,
+      3 mutations vérifiées*
+- [x] **La règle des deux marques, et les tuiles d'application avec**
+      *Tranché : les icônes passent à la marque compacte sur les deux
+      plateformes. La règle qui en sort est écrite dans la passation — **le
+      logotype partout où on a la place de le lire, la marque compacte partout
+      ailleurs ; le seuil est la lisibilité des quatre lettres, pas le
+      support**. Le seuil est mesuré et non choisi : « B!ND » occupe 0,592 fois
+      le corps par lettre, et dix pixels par lettre est encadré par 6,75 au
+      lanceur Android — capture illisible à l'appui — et 11,1 au plus petit
+      usage in-app, qui se lit. Conséquence, et c'est la forme la plus sûre de
+      la règle : **aucun fichier cuit ne porte plus le logotype**, puisque tous
+      sont des tuiles. Il ne vit qu'en texte dans l'interface, et `Marque`
+      refuse de rendre sous le plancher — un logotype illisible ne se signale
+      pas, il ressemble à un logotype en plus petit et traverse une revue.
+      Android reçoit ses trois couches au bon gabarit : 432 avec zone sûre à
+      288, dix-huit pixels par unité, aucun arrondi. `splash-icon.png` part au
+      passage, orphelin comme les précédents. 8 tests neufs, 3 mutations
+      vérifiées — dont une qui n'avait rien muté et qu'il a fallu reprendre*
+- [ ] **Le vectoriel du logotype**
+      *Le dernier point du système, attendu de la fondatrice. Les lettres sont
+      dessinées à la main et le D porte une coupe oblique qu'aucune fonte ne
+      donne : ce que le produit affiche aujourd'hui est une approximation dans
+      la fonte fonctionnelle, nommée comme telle dans `$meta.unconfirmed`. La
+      marque compacte, elle, n'attend plus rien — elle est livrée*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire

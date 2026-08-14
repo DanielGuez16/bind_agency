@@ -202,14 +202,23 @@ export function ChoixDeLaPorte({
           contre le bord : un élément d'en-tête, alors qu'il ne s'adresse qu'à
           ceux dont la réponse est « ni l'une ni l'autre ». Sous les cartes et
           centré, il ne dispute plus la place à la promesse. */}
+      {/* **Le seul texte de cet écran qui touchait le média.** Le titre et sa
+          sous-ligne ont leur bande, les deux portes sont des cartes opaques ;
+          celui-ci se posait à nu sur ce que le fond voulait bien lui donner,
+          en `brand.700` — 2,14:1 au pire. Le voile ne l'a jamais sauvé et ne
+          pouvait pas : il assombrit l'encre exactement autant que le fond.
+          Bande et encre claire, comme l'en-tête. */}
       <View style={{ alignItems: 'center' }}>
-        <Button
-          label={t('auth.versConnexion')}
-          variant="ghost"
-          fullWidth={false}
-          onPress={onSeConnecter}
-          testID="vers-connexion"
-        />
+        <Enveloppe surMedia={surMedia} testID="bande-de-la-connexion">
+          <Button
+            label={t('auth.versConnexion')}
+            variant="ghost"
+            surMedia={surMedia}
+            fullWidth={false}
+            onPress={onSeConnecter}
+            testID="vers-connexion"
+          />
+        </Enveloppe>
       </View>
     </View>
   );
@@ -223,7 +232,15 @@ export function ChoixDeLaPorte({
  * qu'une vidéo peut couvrir — c'est la bande qui garantit, parce qu'elle ne
  * dépend ni de la hauteur du contenu ni du terminal.
  */
-function Enveloppe({ surMedia, children }: { surMedia: boolean; children: ReactNode }) {
+function Enveloppe({
+  surMedia,
+  children,
+  testID = 'bande-de-l-entete',
+}: {
+  surMedia: boolean;
+  children: ReactNode;
+  testID?: string;
+}) {
   if (!surMedia) return <>{children}</>;
-  return <BandeDeTexteSurPhoto testID="bande-de-l-entete">{children}</BandeDeTexteSurPhoto>;
+  return <BandeDeTexteSurPhoto testID={testID}>{children}</BandeDeTexteSurPhoto>;
 }

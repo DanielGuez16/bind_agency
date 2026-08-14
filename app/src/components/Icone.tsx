@@ -56,7 +56,14 @@ export type NomIcone =
   // l'avertissement n'a plus de teinte : un ambre dans un système orange se
   // lit comme une mise en avant de marque et non comme une alerte. Le glyphe
   // est donc le seul marqueur qui lui reste, et il est obligatoire.
-  | 'alerte';
+  | 'alerte'
+  // La carte du commerce : une feuille et ses lignes. Volontairement **pas**
+  // l'icône d'image — c'est ce qui distingue les deux accès de la fiche à
+  // l'œil, avant même d'avoir lu les deux mots.
+  | 'carte'
+  // Ce qui sort de l'application. Il remplace le chevron sur une ligne qui
+  // mène dehors : la différence se voit **avant** l'appui, pas après.
+  | 'sortie';
 
 const CHEMINS: Record<NomIcone, string> = {
   chevron: 'M9.5 5.5L16 12l-6.5 6.5',
@@ -94,6 +101,10 @@ const CHEMINS: Record<NomIcone, string> = {
   // seule, ce qu'aucun rond ne fait : c'est ce qui reste quand la couleur est
   // partie.
   alerte: 'M12 3.8L21.7 20.4H2.3zM12 9.8v4.6M12 17.3h.01',
+  carte: 'M6 3.5h12v17H6zM9 8h6M9 12h6M9 16h4',
+  // Un cadre échancré et une flèche qui en sort. L'échancrure est ce qui fait
+  // lire « sortir » plutôt que « agrandir ».
+  sortie: 'M10 4.5H5.5v15h15V15M14 4.5h5.5V10M19 5L11 13',
 };
 
 export function Icone({
