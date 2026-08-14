@@ -41,6 +41,8 @@ import { fileURLToPath } from 'node:url';
 
 import { chromium } from 'playwright';
 
+import { enIco, enPng, GRILLE, MARGES, SIGNE } from './marque-compacte.mjs';
+
 const ICI = dirname(fileURLToPath(import.meta.url));
 const RACINE = join(ICI, '..');
 const SORTIE = join(RACINE, 'assets');
@@ -113,25 +115,9 @@ const FICHIERS = [
   // fondatrice, à la taille où le blanc sur orange passe largement.
   { nom: 'icon.png', cote: 1024, fond: ORANGE, encre: CLAIR, part: 0.2 },
   { nom: 'splash-icon.png', cote: 1024, fond: ORANGE, encre: CLAIR, part: 0.2 },
-  // **Une seule source pour tout le favicon du web.** Expo compile
-  // `assets/favicon.png` en un `.ico` de trois images — 16, 32 et 48 — et
-  // n'écrit qu'un `<link rel="icon">` vers lui. Les quatre `marque-*.png` qui
-  // vivaient ici doublaient donc ce que la chaîne produit déjà, sans que rien
-  // ne les réclame : quatre fichiers portant la marque que personne ne
-  // regarde, c'est-à-dire exactement ce qui a laissé l'ancien logo survivre.
-  { nom: 'favicon.png', cote: 64, fond: ORANGE, encre: CLAIR, part: 0.32 },
-
-  // L'icône d'iOS, la seule des quatre qui avait une destination réelle : 180
-  // est sa taille. Elle est **posée là où Safari la cherche** plutôt que rangée
-  // dans `assets/`, où rien ne serait jamais allé la prendre.
-  {
-    nom: 'apple-touch-icon.png',
-    dossier: PUBLIC,
-    cote: 180,
-    fond: ORANGE,
-    encre: CLAIR,
-    part: 0.26,
-  },
+  // **Le favicon et l'icône d'iOS ne sont plus ici** : ils portent la marque
+  // compacte, qui se dessine sur une grille au lieu de se peindre. Voir plus
+  // bas — et `marque-compacte.mjs` pour ce que ce dessin protège.
 
   // **Android masque la forme et compose trois couches.** Le premier plan doit
   // tenir dans la zone sûre — les deux tiers du centre — parce que le système
@@ -179,6 +165,27 @@ for (const fichier of FICHIERS) {
 
 await navigateur.close();
 
+/**
+ * **La marque compacte, dessinée et non peinte.**
+ *
+ * Le favicon est livré en `.ico` complet plutôt qu'en PNG à réduire : chaque
+ * taille y est tracée sur la grille de seize. `expo export` sait produire un
+ * `.ico` de trois images, mais en *réduisant* la source — et une réduction
+ * lisse, ce qui rendrait gris le blanc de deux unités qui sépare le fût du
+ * point. `public/` est recopié tel quel à la racine du build et l'emporte sur
+ * ce qu'Expo génère, vérifié sur un export.
+ *
+ * Les trois tailles sont celles qu'Expo mettait dans son `.ico` : 16, 32, 48.
+ */
+await writeFile(join(PUBLIC, 'favicon.ico'), enIco([16, 32, 48], ORANGE, ENCRE));
+console.log('  public/favicon.ico  16 · 32 · 48');
+
+// 180, la taille qu'Apple impose. Elle ne tombe pas sur la grille — 11,25
+// unités — donc les bords sont arrondis à l'entier : deux couleurs franches
+// plutôt qu'un lissage, au prix d'un demi-pixel.
+await writeFile(join(PUBLIC, 'apple-touch-icon.png'), enPng(180, ORANGE, ENCRE));
+console.log('  public/apple-touch-icon.png  180');
+
 // Ce que les fichiers portent, écrit à côté d'eux : un test compare les
 // couleurs trouvées dans les PNG à celles-ci, et refuse toute autre.
 await writeFile(
@@ -189,6 +196,7 @@ await writeFile(
         "Les couleurs que les fichiers de la marque ont le droit de porter. Produit par scripts/cuire-la-marque.mjs, lu par __tests__/marque.test.ts. L'ancien monogramme vert a traversé le remplacement complet du système sans que rien ne l'arrête : c'est cette liste qui l'aurait arrêté.",
       mot: MOT,
       couleurs: { surface: ORANGE, encreClaire: CLAIR, encre: ENCRE },
+      compacte: { grille: GRILLE, signe: SIGNE, marges: MARGES },
     },
     null,
     2,

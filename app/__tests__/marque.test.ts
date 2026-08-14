@@ -29,9 +29,15 @@ import { PNG } from 'pngjs';
 const ASSETS = join(__dirname, '..', 'assets');
 /** Recopié tel quel à la racine du build : c'est là que Safari va chercher. */
 const PUBLIC = join(__dirname, '..', 'public');
+type Rectangle = { x: number; y: number; largeur: number; hauteur: number };
 const declare = JSON.parse(readFileSync(join(ASSETS, 'marque.json'), 'utf-8')) as {
   mot: string;
   couleurs: Record<string, string>;
+  compacte: {
+    grille: number;
+    signe: Rectangle[];
+    marges: { haut: number; bas: number; gauche: number; droite: number };
+  };
 };
 
 /**
@@ -125,7 +131,6 @@ function distanceAuSegment(
  * plutôt que rangé où rien n'irait le prendre.
  */
 const TOUS: readonly (readonly [string, string])[] = [
-  ['favicon.png', ASSETS],
   ['icon.png', ASSETS],
   ['splash-icon.png', ASSETS],
   ['android-icon-background.png', ASSETS],
@@ -133,6 +138,54 @@ const TOUS: readonly (readonly [string, string])[] = [
   ['android-icon-monochrome.png', ASSETS],
   ['apple-touch-icon.png', PUBLIC],
 ];
+
+/**
+ * Les images d'un `.ico`, chacune telle qu'elle y est rangée.
+ *
+ * Le format est un en-tête de six octets, puis une entrée de seize par image —
+ * côté, taille, décalage — puis les images bout à bout. Les nôtres sont des
+ * PNG, que `pngjs` relit tels quels.
+ */
+function imagesDuIco(chemin: string): { cote: number; png: PNG }[] {
+  const octets = readFileSync(chemin);
+  const nombre = octets.readUInt16LE(4);
+  return Array.from({ length: nombre }, (_, rang) => {
+    const entree = 6 + 16 * rang;
+    const taille = octets.readUInt32LE(entree + 8);
+    const decalage = octets.readUInt32LE(entree + 12);
+    return {
+      cote: octets.readUInt8(entree) || 256,
+      png: PNG.sync.read(octets.subarray(decalage, decalage + taille)),
+    };
+  });
+}
+
+/** Le dessin attendu à une taille donnée, reconstruit depuis la géométrie déclarée. */
+function attendu(cote: number): boolean[][] {
+  const unite = cote / declare.compacte.grille;
+  return Array.from({ length: cote }, (_, y) =>
+    Array.from({ length: cote }, (_, x) =>
+      declare.compacte.signe.some(
+        (part) =>
+          x >= Math.round(part.x * unite) &&
+          x < Math.round((part.x + part.largeur) * unite) &&
+          y >= Math.round(part.y * unite) &&
+          y < Math.round((part.y + part.hauteur) * unite),
+      ),
+    ),
+  );
+}
+
+/** Ce que l'image montre vraiment : encre ou surface, pixel par pixel. */
+function lu(png: PNG): boolean[][] {
+  const encre = declare.couleurs.encre.replace('#', '').toUpperCase();
+  return Array.from({ length: png.height }, (_, y) =>
+    Array.from({ length: png.width }, (_, x) => {
+      const i = (png.width * y + x) << 2;
+      return versHexa(png.data[i], png.data[i + 1], png.data[i + 2]).slice(1) === encre;
+    }),
+  );
+}
 
 describe('les fichiers de la marque', () => {
   it.each(TOUS)('%s existe', (fichier, dossier) => {
@@ -159,14 +212,10 @@ describe('les fichiers de la marque', () => {
     expect(traînards).toEqual([]);
   });
 
-  it('le favicon et l’icône d’application existent et sont carrés', () => {
-    for (const fichier of ['favicon.png', 'icon.png']) {
-      const { largeur, hauteur } = dimensions(fichier);
-      expect(largeur).toBe(hauteur);
-      // Un favicon de 16 serait flou partout ailleurs que dans l'onglet ;
-      // les navigateurs réduisent mieux qu'ils n'agrandissent.
-      expect(largeur).toBeGreaterThanOrEqual(64);
-    }
+  it('l’icône d’application est carrée, et assez grande pour les magasins', () => {
+    const { largeur, hauteur } = dimensions('icon.png');
+    expect(largeur).toBe(hauteur);
+    expect(largeur).toBeGreaterThanOrEqual(1024);
   });
 
   it('aucun fichier ne montre une couleur que les jetons ne déclarent pas', () => {
@@ -213,7 +262,7 @@ describe('les fichiers de la marque', () => {
     // tuile — son centre en haut à gauche, loin du mot.
     for (const [fichier, dossier] of [
       ['icon.png', ASSETS],
-      ['favicon.png', ASSETS],
+      ['splash-icon.png', ASSETS],
       ['apple-touch-icon.png', PUBLIC],
     ] as const) {
       const png = PNG.sync.read(readFileSync(join(dossier, fichier)));
@@ -223,5 +272,119 @@ describe('les fichiers de la marque', () => {
         coin: versHexa(png.data[coin], png.data[coin + 1], png.data[coin + 2]),
       }).toEqual({ fichier, coin: declare.couleurs.surface.toUpperCase() });
     }
+  });
+});
+
+/**
+ * La marque en petit : le bloc, avec le point évidé.
+ *
+ * **La propriété qui porte ce dessin est la grille.** Tout est posé en unités
+ * d'une grille de seize, donc chaque cote tombe sur un pixel entier à 16, 32,
+ * 64 et 128 : la forme est *la même* aux quatre tailles au lieu d'être arrondie
+ * quatre fois différemment. Un test qui se contenterait de vérifier « il y a
+ * bien deux couleurs » laisserait passer un dessin qui tremble d'une taille à
+ * l'autre — c'est-à-dire le défaut exact qu'on cherche à éviter, et celui qu'une
+ * réduction produit toujours.
+ */
+describe('la marque compacte', () => {
+  const ICO = join(PUBLIC, 'favicon.ico');
+
+  it('le favicon porte les trois tailles, dessinées et non réduites', () => {
+    // Expo sait produire un `.ico` de trois images, mais en **réduisant** la
+    // source — et une réduction lisse. Elle rendrait gris le blanc de deux
+    // unités entre le fût et le point, qui est ce que le dessin protège.
+    expect(imagesDuIco(ICO).map((image) => image.cote)).toEqual([16, 32, 48]);
+  });
+
+  it.each([16, 32, 48])('à %i, le dessin est exactement celui de la grille', (cote) => {
+    const image = imagesDuIco(ICO).find((candidate) => candidate.cote === cote)!;
+    expect(lu(image.png)).toEqual(attendu(cote));
+  });
+
+  it('et il ne connaît que deux couleurs, à chaque taille', () => {
+    // Sans lissage, un blanc de deux unités reste deux pixels. La contrainte
+    // garantit le dessin au lieu de le menacer — encore faut-il la tenir.
+    for (const { cote, png } of imagesDuIco(ICO)) {
+      const trouvees = new Set<string>();
+      for (let i = 0; i < png.data.length; i += 4) {
+        trouvees.add(versHexa(png.data[i], png.data[i + 1], png.data[i + 2]));
+      }
+      expect({ cote, couleurs: [...trouvees].sort() }).toEqual({
+        cote,
+        couleurs: [declare.couleurs.encre, declare.couleurs.surface].map((c) => c.toUpperCase()).sort(),
+      });
+    }
+  });
+
+  it('la forme est la même aux trois tailles, et pas seulement nette à chacune', () => {
+    // **Le sens inverse, et c'est celui qui compte.** Chaque taille prise seule
+    // pourrait être franche et pourtant différente des autres : c'est ce que
+    // donne un dessin arrondi indépendamment à chaque échelle. On compare donc
+    // les trois **au centre de chaque unité de la grille**, où la forme est
+    // définie, plutôt que pixel à pixel — seules les cotes doivent coïncider.
+    const grille = declare.compacte.grille;
+    const empreintes = imagesDuIco(ICO).map(({ cote, png }) => {
+      const pixels = lu(png);
+      const unite = cote / grille;
+      return Array.from({ length: grille }, (_, ligne) =>
+        Array.from({ length: grille }, (_, colonne) =>
+          pixels[Math.floor((ligne + 0.5) * unite)][Math.floor((colonne + 0.5) * unite)] ? '#' : '.',
+        ).join(''),
+      ).join('|');
+    });
+
+    expect(new Set(empreintes).size).toBe(1);
+    // Et cette empreinte est bien le dessin de la planche : un fût de 4 sur 6,
+    // deux unités de blanc, un point de 4 sur 4, le tout centré.
+    expect(empreintes[0].split('|')).toEqual([
+      '................',
+      '................',
+      '......####......',
+      '......####......',
+      '......####......',
+      '......####......',
+      '......####......',
+      '......####......',
+      '................',
+      '................',
+      '......####......',
+      '......####......',
+      '......####......',
+      '......####......',
+      '................',
+      '................',
+    ]);
+  });
+
+  it('l’icône d’iOS porte le même dessin, arrondi à l’entier', () => {
+    // 180 est la taille qu'Apple impose, et elle ne tombe pas sur la grille —
+    // 11,25 unités. Les bords sont arrondis plutôt que laissés en fraction :
+    // deux couleurs franches, au prix d'un demi-pixel.
+    const png = PNG.sync.read(readFileSync(join(PUBLIC, 'apple-touch-icon.png')));
+    expect({ largeur: png.width, hauteur: png.height }).toEqual({ largeur: 180, hauteur: 180 });
+    expect(lu(png)).toEqual(attendu(180));
+  });
+
+  it('les marges laissent les masques mordre le fond, jamais le dessin', () => {
+    // Un masque circulaire ou arrondi entame les bords d'une tuile
+    // d'application. Le signe est centré, à deux unités du haut et du bas, six
+    // de chaque côté — donc rien à redessiner pour iOS ou Android.
+    const { grille, signe, marges } = declare.compacte;
+    const hauts = Math.min(...signe.map((part) => part.y));
+    const bas = grille - Math.max(...signe.map((part) => part.y + part.hauteur));
+    const gauches = Math.min(...signe.map((part) => part.x));
+    const droites = grille - Math.max(...signe.map((part) => part.x + part.largeur));
+    expect({ haut: hauts, bas, gauche: gauches, droite: droites }).toEqual(marges);
+  });
+
+  it('rien ne fabrique un second favicon derrière celui-ci', () => {
+    // **Un fichier généré puis masqué est pire qu'un orphelin.** `public/`
+    // l'emporte sur ce qu'Expo écrit : tant que `web.favicon` désignait une
+    // source, la chaîne compilait un `.ico` que le nôtre recouvrait
+    // silencieusement — et le jour où l'on retire le nôtre, c'est l'autre qui
+    // reparaît, avec le dessin qu'il portait.
+    const config = JSON.parse(readFileSync(join(__dirname, '..', 'app.json'), 'utf-8'));
+    expect(config.expo.web.favicon).toBeUndefined();
+    expect(existsSync(join(ASSETS, 'favicon.png'))).toBe(false);
   });
 });

@@ -557,4 +557,36 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       que les fichiers qu'on lui nomme, donc un fichier que personne ne réclame
       lui échappe par construction — et c'est ainsi qu'une marque périmée
       attend son tour. 5 tests neufs, 3 mutations vérifiées*
+- [x] **La marque en petit : le bloc, avec le point évidé**
+      *Livrée par Design, et elle règle ce que j'avais laissé ouvert. Quatre
+      lettres ne tiennent pas dans seize pixels ; le dessin part donc des deux
+      signes que la marque possède — le bloc orange plein, et le point
+      d'exclamation évidé dedans. Évidé et non posé : un point orange sur blanc
+      est un panneau d'alerte, le même creusé dans un carré plein devient une
+      marque, parce que l'objet reconnu est le carré et le signe ce qui y
+      manque. **Tout est en unités d'une grille de seize**, donc la forme est la
+      même à 16, 32, 48 et 128 au lieu d'être arrondie différemment à chacune —
+      c'est la propriété que les tests éprouvent, et pas seulement « deux
+      couleurs ». Le favicon est livré en `.ico` complet, chaque taille tracée :
+      `expo export` en produisait un en **réduisant** la source, et une
+      réduction lisse — elle rendrait gris le blanc de deux unités qui sépare le
+      fût du point. `web.favicon` est retiré avec `assets/favicon.png` : un
+      fichier généré puis masqué par `public/` est pire qu'un orphelin, il
+      reparaît le jour où l'on retire ce qui le masquait. 9 tests neufs,
+      3 mutations vérifiées*
+- [ ] **La tuile d'application : marque compacte ou logotype ?**
+      *Non tranché, parce que ce n'est pas ce qui a été demandé. La marque
+      compacte remplace le favicon et l'icône d'iOS, comme convenu. Restent
+      `icon.png` et les trois couches Android, qui portent le logotype — et
+      mesuré sur la couche réelle réduite à sa taille d'affichage, un lanceur
+      Android à 48 dp donne **27 pixels de large pour quatre lettres** : la
+      tache que la marque compacte existe pour éviter. La planche range
+      d'ailleurs la « tuile d'application » dans son propre domaine. À trancher
+      d'un mot*
+- [ ] **Le vectoriel du logotype**
+      *Le dernier point du système, attendu de la fondatrice. Les lettres sont
+      dessinées à la main et le D porte une coupe oblique qu'aucune fonte ne
+      donne : ce que le produit affiche aujourd'hui est une approximation dans
+      la fonte fonctionnelle, nommée comme telle dans `$meta.unconfirmed`. La
+      marque compacte, elle, n'attend plus rien — elle est livrée*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire

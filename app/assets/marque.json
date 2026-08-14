@@ -5,5 +5,28 @@
     "surface": "#F26B21",
     "encreClaire": "#F7F3EF",
     "encre": "#17120E"
+  },
+  "compacte": {
+    "grille": 16,
+    "signe": [
+      {
+        "x": 6,
+        "y": 2,
+        "largeur": 4,
+        "hauteur": 6
+      },
+      {
+        "x": 6,
+        "y": 10,
+        "largeur": 4,
+        "hauteur": 4
+      }
+    ],
+    "marges": {
+      "haut": 2,
+      "bas": 2,
+      "gauche": 6,
+      "droite": 6
+    }
   }
 }

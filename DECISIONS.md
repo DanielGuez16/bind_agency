@@ -4666,3 +4666,51 @@ construction*. Elle est doublée d'une garde qui refuse qu'un `marque-*.png`
 existe sans être réclamé. C'est la leçon exacte du monogramme vert — un fichier
 inerte ne le reste pas, il attend qu'on le reprenne en portant une version que
 plus personne ne vérifie.
+
+## 2026-08-14 — La marque en petit : ce qui manque fait le signe
+
+Design a livré `BIND Mark - Favicon 16`, qui règle le point laissé ouvert. Le
+dessin ne réduit pas le logotype — il part des deux signes que la marque
+possède : le bloc orange plein, et le point d'exclamation **évidé** dedans.
+
+L'évidement n'est pas un effet. Un point d'exclamation orange sur fond blanc est
+un panneau d'alerte ; le même point creusé dans un carré plein devient une
+marque, parce que l'objet reconnu est le carré et le signe ce qui y manque.
+
+**La propriété qui porte le dessin est la grille**, et c'est elle que les tests
+éprouvent. Tout est posé en unités d'une grille de seize, donc chaque cote tombe
+sur un pixel entier à 16, 32, 48 et 128 : la forme est *la même* aux quatre
+tailles. Une garde qui se contenterait de compter deux couleurs laisserait
+passer un dessin franc à chaque taille mais différent d'une taille à l'autre —
+c'est-à-dire ce que produit toute réduction. Les trois tailles du `.ico` sont
+donc comparées **au centre de chaque unité**, et l'empreinte attendue est écrite
+en toutes lettres dans le test plutôt que recalculée depuis le manifeste, qui se
+régénère avec le dessin et approuverait tout.
+
+**Le favicon est livré en `.ico` complet.** `expo export` sait en produire un de
+trois images, mais en *réduisant* la source : le blanc de deux unités entre le
+fût et le point serait rendu en gris, et c'est précisément ce que le dessin
+protège. `public/` est recopié tel quel à la racine du build et l'emporte sur ce
+qu'Expo génère — vérifié sur un export.
+
+**`web.favicon` est retiré, et `assets/favicon.png` avec.** Tant que la clé
+désignait une source, la chaîne compilait un `.ico` que le nôtre recouvrait
+*silencieusement*. Un fichier généré puis masqué est pire qu'un orphelin : il
+reparaît le jour où l'on retire ce qui le masquait, en portant son propre
+dessin. Sans la clé, Expo n'écrit plus de `<link rel="icon">` — la racine suffit,
+c'est la plus ancienne convention du web et celle qui sert déjà pour
+`apple-touch-icon.png`.
+
+*Un écart relevé sur la planche, et tranché :* sa dernière colonne annonce
+« deux unités de marge en haut et en bas, quatre à gauche et à droite ». La
+géométrie qu'elle donne huit fois, et son tableau de cotes, disent **six** à
+gauche et à droite — quatre est la largeur du signe, pas sa marge. La géométrie
+fait foi, et l'affirmation sur les masques des plateformes tient mieux encore
+avec six.
+
+*Ce qui n'a pas été tranché :* `icon.png` et les trois couches Android portent
+toujours le logotype. Mesuré sur la couche réelle réduite à sa taille
+d'affichage, un lanceur Android à 48 dp donne 27 pixels de large pour quatre
+lettres — la tache que ce dessin existe pour éviter. La planche range la « tuile
+d'application » dans son domaine ; la demande ne nommait que le favicon et
+l'icône d'iOS. Remonté plutôt que décidé.
