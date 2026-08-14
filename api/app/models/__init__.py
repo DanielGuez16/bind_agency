@@ -11,6 +11,7 @@ from app.models.booking import Booking, CapacityException, CapacityRule, Redempt
 from app.models.business import (
     Business,
     BusinessMember,
+    BusinessMenuPage,
     BusinessPhoto,
     Subscription,
     SubscriptionPlan,
@@ -37,6 +38,7 @@ __all__ = [
     "Booking",
     "Business",
     "BusinessHandover",
+    "BusinessMenuPage",
     "BusinessPhoto",
     "BusinessSupportAccess",
     "BusinessMember",

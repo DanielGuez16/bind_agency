@@ -64,6 +64,7 @@ async def lire_le_commerce(session: AsyncSession, business: Business) -> Busines
         phone=business.phone,
         currency=business.currency,
         cover_photo_key=business.cover_photo_key,
+        menu_url=business.menu_url,
         status=business.status,
         created_at=business.created_at,
     )

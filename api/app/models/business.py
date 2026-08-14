@@ -56,6 +56,14 @@ class Business(UUIDPrimaryKey, CreatedAt, Base):
     # exiger une image avant de pouvoir s'inscrire perdrait des commerces sur
     # une étape qui n'engage rien.
     cover_photo_key: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    #: L'adresse de la carte du commerce, quand elle existe déjà en ligne.
+    #:
+    #: **Alternative ou complément aux pages déposées**, jamais un remplacement
+    #: obligatoire : forcer un restaurant à photographier une carte déjà bien
+    #: présentée sur son site serait absurde, et forcer l'inverse priverait un
+    #: salon qui n'a qu'un tableau au mur. L'un ou l'autre suffit — c'est ce que
+    #: la règle d'ouverture d'offre vérifie.
+    menu_url: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
 
     status: Mapped[BusinessStatus] = mapped_column(
         enum_column(BusinessStatus, "business_status"),
@@ -239,4 +247,51 @@ class BusinessPhoto(UUIDPrimaryKey, CreatedAt, Base):
             initially="DEFERRED",
         ),
         sa.Index("ix_business_photo_business_position", "business_id", "position"),
+    )
+
+
+class BusinessMenuPage(UUIDPrimaryKey, CreatedAt, Base):
+    """Une page de la carte d'un commerce.
+
+    **Distincte de la galerie, et c'est tout l'objet.** La galerie montre le
+    lieu : on la fait défiler, on se fait une idée, on passe. La carte se
+    *consulte* : on l'ouvre pour y chercher un plat et un prix. Deux gestes
+    différents, donc deux entrées différentes sur la fiche — les mêler ferait
+    chercher une entrecôte entre deux photos de salle.
+
+    **Plusieurs pages, parce qu'une carte tient rarement sur une.** Entrées et
+    plats d'un côté, desserts et boissons de l'autre : une seule image
+    obligerait à photographier un dépliant entier de trop loin pour être lu.
+
+    Le mécanisme est **exactement** celui de la galerie — clé de dépôt, position
+    unique différée, retrait qui referme le trou. Le recopier plutôt que le
+    partager est délibéré : les deux ont le même mécanisme aujourd'hui et pas la
+    même raison d'être, et une abstraction commune ferait qu'un plafond changé
+    pour l'une bougerait pour l'autre.
+    """
+
+    __tablename__ = "business_menu_page"
+
+    business_id: Mapped[uuid.UUID] = mapped_column(
+        sa.ForeignKey("business.id", ondelete="CASCADE"), nullable=False
+    )
+    #: La clé dans le dépôt objet, sous un préfixe public : une carte se lit
+    #: depuis la fiche publique, avant toute session.
+    storage_key: Mapped[str] = mapped_column(sa.Text, nullable=False)
+    #: Le rang dans la carte, à partir de zéro. Une carte se lit dans l'ordre
+    #: où elle est reliée, et c'est le commerce qui le connaît.
+    position: Mapped[int] = mapped_column(sa.Integer, nullable=False)
+    #: Ce que la page montre, pour qui ne la voit pas. Facultatif.
+    alt_text: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+
+    __table_args__ = (
+        sa.CheckConstraint("position >= 0", name="business_menu_page_position_positive"),
+        sa.UniqueConstraint(
+            "business_id",
+            "position",
+            name="uq_business_menu_page_position",
+            deferrable=True,
+            initially="DEFERRED",
+        ),
+        sa.Index("ix_business_menu_page_business_position", "business_id", "position"),
     )

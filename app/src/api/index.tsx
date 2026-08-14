@@ -54,6 +54,7 @@ import type {
   VerificationDuCompte,
   VueDesPaliers,
   CreateurDeLAnnuaire,
+  PageDeLaCarte,
   PhotoDuCommerce,
   EtatDeLaComposition,
   BookingStatus,
@@ -598,6 +599,59 @@ export class Api {
   retirerUnePhoto(businessId: string, photoId: string) {
     return this.client.request<void>(routes.retirerUnePhoto(businessId, photoId), {
       methode: 'DELETE',
+    });
+  }
+
+  // ---- la carte du commerce ----
+  //
+  // **Distincte de la galerie**, et jumelle par le mécanisme. La galerie montre
+  // le lieu : on la fait défiler, on se fait une idée, on passe. La carte se
+  // consulte : on l'ouvre pour y chercher un plat et un prix. Deux gestes
+  // différents, donc deux entrées sur la fiche — les mêler ferait chercher une
+  // entrecôte entre deux photos de salle.
+
+  pagesDeLaCarte(businessId: string, signal?: AbortSignal) {
+    return this.client.request<PageDeLaCarte[]>(routes.carteDuCommerce(businessId), { signal });
+  }
+
+  /** Dépose la page, puis l'ajoute à la carte. Deux appels, comme la galerie. */
+  async ajouterUnePageDeCarte(businessId: string, uri: string) {
+    const corps = new FormData();
+    corps.append('fichier', { uri, name: 'carte.jpg', type: 'image/jpeg' } as unknown as Blob);
+
+    const { storage_key } = await this.client.request<{ storage_key: string }>(
+      routes.televerserUnePageDeCarte(businessId),
+      { methode: 'POST', corpsBrut: corps },
+    );
+
+    return this.client.request<PageDeLaCarte>(routes.carteDuCommerce(businessId), {
+      methode: 'POST',
+      corps: { storage_key },
+    });
+  }
+
+  ordonnerLaCarte(businessId: string, pages: string[]) {
+    return this.client.request<PageDeLaCarte[]>(routes.ordreDeLaCarte(businessId), {
+      methode: 'PUT',
+      corps: { pages },
+    });
+  }
+
+  retirerUnePageDeCarte(businessId: string, pageId: string) {
+    return this.client.request<void>(routes.retirerUnePageDeCarte(businessId, pageId), {
+      methode: 'DELETE',
+    });
+  }
+
+  /**
+   * Le lien vers la carte en ligne. **Un champ du commerce**, comme la
+   * couverture : la route qui le change existe déjà, et en créer une seconde
+   * ferait deux vérités. `null` le retire.
+   */
+  definirLeLienDeLaCarte(businessId: string, url: string | null) {
+    return this.client.request<unknown>(routes.modifierLeCommerce(businessId), {
+      methode: 'PATCH',
+      corps: { menu_url: url },
     });
   }
 

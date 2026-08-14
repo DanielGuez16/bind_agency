@@ -35,6 +35,10 @@ _ERROR_CODES = {
         status.HTTP_409_CONFLICT,
         ErrorCode.TIER_OFFER_HAS_BOOKINGS,
     ),
+    offer_service.CarteManquante: (
+        status.HTTP_409_CONFLICT,
+        ErrorCode.TIER_OFFER_MENU_REQUIRED,
+    ),
 }
 
 

@@ -728,6 +728,13 @@ export const en = {
     insufficient_role: 'Your account cannot access this.',
     subscription_required: 'The directory comes with a subscription.',
     gallery_full: 'Your gallery is full. Remove a photo to add another.',
+    menu_full: 'Your menu is full. Remove a page to add another.',
+    // **Le refus qui explique quoi faire.** Dire « impossible » sur une offre
+    // qui laisse un choix laisserait chercher longtemps : ce n'est ni le
+    // palier, ni le prix, ni la disponibilité — c'est que le créateur ne
+    // saurait pas ce qu'il obtient.
+    tier_offer_menu_required:
+      'This service lets the creator choose, so they need to see your menu first. Add menu photos or a link to your online menu, then publish it.',
     // Trois refus, trois causes. « Quelque chose s'est mal passé » à quelqu'un
     // qui vient de se déplacer pour rien serait le pire message du produit.
     venue_report_outside_window:

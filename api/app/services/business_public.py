@@ -34,7 +34,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Business, CatalogItem, Tier, TierOffer
 from app.models.enums import BusinessCategory, BusinessStatus, ContentFormat, Platform
-from app.services import availability, business_photos, eligibility
+from app.services import availability, business_menu, business_photos, eligibility
 from app.services.feed import ratio_de_valeur
 
 #: Assez pour écrire « prochaine place mardi 14 h », pas assez pour composer un
@@ -65,6 +65,11 @@ class OffreDeLaFiche:
     duration_minutes: int | None
     requires_booking: bool
     photo_key: str | None
+    #: La prestation laisse-t-elle un choix. Vrai : le créateur choisira sur
+    #: place, et la carte est ce qui lui dit quoi. C'est ce drapeau qui rend
+    #: l'accès à la carte utile plutôt que décoratif — sans lui, l'écran ne
+    #: saurait pas quelles offres appellent une lecture avant de réserver.
+    leaves_choice: bool
     platform: Platform
     content_format: ContentFormat
     required_mention: str | None
@@ -96,6 +101,17 @@ class FichePublique:
     #: couverture : celle-ci est l'image de la carte du fil, calibrée pour
     #: tenir en petit ; la galerie est ce que la fiche déroule.
     photos: tuple[str, ...]
+    #: Les pages de la carte, dans l'ordre où elle se lit. **Distinctes de la
+    #: galerie** : la galerie montre le lieu, la carte se consulte. L'écran leur
+    #: donne deux accès différents.
+    menu_pages: tuple[str, ...]
+    #: L'adresse de la carte en ligne, quand le commerce en a une.
+    #:
+    #: **L'écran doit dire qu'on sortira de l'application** quand c'est la seule
+    #: forme disponible — `menu_pages` vide et celle-ci renseignée. Un lien qui
+    #: s'ouvre sans prévenir, au milieu d'un parcours de réservation, fait
+    #: perdre le fil à qui revient.
+    menu_url: str | None
     offres: tuple[OffreDeLaFiche, ...]
 
 
@@ -165,6 +181,7 @@ async def fiche(
                 CatalogItem.duration_minutes,
                 CatalogItem.requires_booking,
                 CatalogItem.photo_key,
+                CatalogItem.leaves_choice,
                 Tier.platform,
                 Tier.content_format,
                 Tier.value_ratio_hint,
@@ -216,6 +233,7 @@ async def fiche(
                 duration_minutes=ligne.duration_minutes,
                 requires_booking=ligne.requires_booking,
                 photo_key=ligne.photo_key,
+                leaves_choice=ligne.leaves_choice,
                 platform=ligne.platform,
                 content_format=ligne.content_format,
                 required_mention=ligne.required_mention,
@@ -239,5 +257,9 @@ async def fiche(
         photos=tuple(
             photo.storage_key for photo in await business_photos.lister(session, business.id)
         ),
+        menu_pages=tuple(
+            page.storage_key for page in await business_menu.lister(session, business.id)
+        ),
+        menu_url=business.menu_url,
         offres=tuple(offres),
     )

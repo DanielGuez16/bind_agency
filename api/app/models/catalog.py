@@ -40,6 +40,24 @@ class CatalogItem(UUIDPrimaryKey, CreatedAt, Base):
     # commerce. Un item sans photo reste parfaitement réservable : l'affichage
     # s'en arrange, pas la réservation.
     photo_key: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    #: La prestation laisse-t-elle un choix au créateur.
+    #:
+    #: « Un menu contre une story » en laisse un : le créateur ne sait pas ce
+    #: qu'il va manger, et sans carte il ne vient pas. « Brushing 45 min » n'en
+    #: laisse aucun : la prestation se désigne elle-même.
+    #:
+    #: **C'est le commerce qui le pose, et ça ne se devine pas d'un nom.**
+    #: Le déduire d'un mot — « menu », « formule », « au choix » — marcherait
+    #: sur les exemples qu'on a en tête et se tromperait sur « Menu signature
+    #: du chef », qui est un plat précis, comme sur « Soin visage » d'un salon
+    #: qui en propose quatre.
+    #:
+    #: Faux par défaut : le lancement est en beauté, où une prestation désigne
+    #: presque toujours quelque chose de précis. Une valeur par défaut vraie
+    #: fermerait toutes les offres existantes à la migration.
+    leaves_choice: Mapped[bool] = mapped_column(
+        sa.Boolean, nullable=False, server_default=sa.text("false")
+    )
 
     is_available: Mapped[bool] = mapped_column(
         sa.Boolean, nullable=False, server_default=sa.text("true")

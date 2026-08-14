@@ -505,6 +505,22 @@
         ]
       }
     },
+    "/api/v1/business/{business_id}/menu": {
+      "get": {
+        "operationId": "lister_api_v1_business__business_id__menu_get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "post": {
+        "operationId": "ajouter_api_v1_business__business_id__menu_post",
+        "responses": [
+          "201",
+          "422"
+        ]
+      }
+    },
     "/api/v1/business/{business_id}/menu-imports": {
       "post": {
         "operationId": "create_import_api_v1_business__business_id__menu_imports_post",
@@ -546,6 +562,33 @@
         "operationId": "validate_api_v1_business__business_id__menu_imports__import_id__validate_post",
         "responses": [
           "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/business/{business_id}/menu/order": {
+      "put": {
+        "operationId": "reordonner_api_v1_business__business_id__menu_order_put",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/business/{business_id}/menu/uploads": {
+      "post": {
+        "operationId": "televerser_api_v1_business__business_id__menu_uploads_post",
+        "responses": [
+          "201",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/business/{business_id}/menu/{page_id}": {
+      "delete": {
+        "operationId": "retirer_api_v1_business__business_id__menu__page_id__delete",
+        "responses": [
+          "204",
           "422"
         ]
       }
