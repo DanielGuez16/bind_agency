@@ -46,6 +46,14 @@ export {
 export { StatusMessage, type Niveau, type StatusMessageProps } from './StatusMessage';
 export { TitreAccentue, type TitreAccentueProps } from './TitreAccentue';
 export { FiletSegmente, type FiletSegmenteProps } from './FiletSegmente';
+export {
+  SurfaceSatin,
+  ENCRE_DU_SATIN,
+  POSE_DU_SATIN,
+  HAUTEUR_MINIMALE_DU_SATIN,
+  type SurfaceSatinProps,
+  type VarianteDeSatin,
+} from './SurfaceSatin';
 export { EmptyState, type EmptyStateProps } from './EmptyState';
 export { SkeletonBox, SkeletonCard, SkeletonLine } from './Skeleton';
 export {

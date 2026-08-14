@@ -736,7 +736,8 @@ describe("ce que la bibliothèque n'a pas", () => {
     // la marque, le mouvement, l'en-tête d'écran. Deux de plus avec la v1.0 :
     // le titre accentué, qui porte les règles du mot plutôt que de les laisser
     // à l'appelant, et le filet segmenté, repris des carrousels de la
-    // fondatrice pour dire une progression sans écrire « 2 sur 4 ».
+    // fondatrice pour dire une progression sans écrire « 2 sur 4 ». Puis le
+    // satin, quand les trois images sont arrivées.
     const { readdirSync } = require('fs') as typeof import('fs');
     const { join } = require('path') as typeof import('path');
     const fichiers = readdirSync(join(__dirname, '..', 'src', 'components'))
@@ -766,6 +767,9 @@ describe("ce que la bibliothèque n'a pas", () => {
       'SlotPicker.tsx',
       'StatusMessage.tsx',
       'Stepper.tsx',
+      // Le satin. Sa place dans cette liste est ce qui rappelle qu'il est un
+      // composant et non un fond : trois surfaces cuites, et trois refus.
+      'SurfaceSatin.tsx',
       'TextField.tsx',
       'Texte.tsx',
       'TierBadge.tsx',
@@ -897,5 +901,136 @@ describe('état vide, v0.6', () => {
     );
 
     expect(screen.getByText(/9 salons/)).toBeTruthy();
+  });
+});
+
+// --------------------------------------------------------------------------
+// Le satin
+// --------------------------------------------------------------------------
+
+describe('le satin, et ses trois refus', () => {
+  it('rend les trois variantes, et chacune la sienne', async () => {
+    const { SurfaceSatin } = require('../src/components');
+    const sources = new Set<unknown>();
+    for (const variante of ['drape', 'fold', 'ember'] as const) {
+      const vue = await monter(
+        <SurfaceSatin variante={variante} testID="satin">
+          <Texte variante="type.heading">Titre</Texte>
+        </SurfaceSatin>,
+      );
+      // L'image est masquée aux lecteurs d'écran — elle ne porte aucun sens —
+      // et la requête doit donc la demander explicitement.
+      sources.add(
+        JSON.stringify(
+          screen.getByTestId('satin-image', { includeHiddenElements: true }).props.source,
+        ),
+      );
+      await vue.unmount();
+    }
+    // Trois images distinctes : une variante qui retomberait sur la même
+    // ferait trois écrans de seuil identiques, et personne ne le verrait sans
+    // les ouvrir côte à côte.
+    expect(sources.size).toBe(3);
+  });
+
+  it('refuse de descendre sous la hauteur minimale', async () => {
+    // « Il vit sur une surface de 240 px de haut au minimum. » En dessous, les
+    // plis se serrent et le dégradé se lit comme une bande sale. Lever plutôt
+    // que corriger en silence : une surface remontée sans prévenir déplacerait
+    // la mise en page de l'appelant, qui chercherait ailleurs.
+    const { SurfaceSatin, HAUTEUR_MINIMALE_DU_SATIN } = require('../src/components');
+    expect(HAUTEUR_MINIMALE_DU_SATIN).toBe(240);
+
+    const silence = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const trop = (
+      <SurfaceSatin variante="drape" hauteurMin={180}>
+        <Texte variante="type.heading">Titre</Texte>
+      </SurfaceSatin>
+    );
+    await expect(() => monter(trop)).rejects.toThrow(/240/);
+    silence.mockRestore();
+  });
+
+  it('refuse un texte trop fin au-dessus de lui', async () => {
+    // « Jamais sous un texte de moins de 24 px. » Un dégradé derrière de la
+    // donnée rend la donnée illisible et le dégradé bon marché. `type.section`
+    // est à 22 : il est dehors, et c'est le cas limite qui compte.
+    const { SurfaceSatin } = require('../src/components');
+    const silence = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const fin = (
+      <SurfaceSatin variante="fold">
+        <Texte variante="type.section">Trop fin</Texte>
+      </SurfaceSatin>
+    );
+    await expect(() => monter(fin)).rejects.toThrow(/24 px/);
+    silence.mockRestore();
+  });
+
+  it('accepte les quatre variantes qui tiennent au-dessus du seuil', async () => {
+    // Une garde se vérifie aussi dans l'autre sens : celle qui refuse tout
+    // passerait le test de refus sans rien garantir.
+    const { SurfaceSatin } = require('../src/components');
+    for (const variante of [
+      'type.display',
+      'type.displayAccent',
+      'type.heading',
+      'type.headingAccent',
+    ] as const) {
+      const vue = await monter(
+        <SurfaceSatin variante="ember" testID="satin">
+          <Texte variante={variante}>Titre</Texte>
+        </SurfaceSatin>,
+      );
+      expect(screen.getByTestId('satin')).toBeTruthy();
+      await vue.unmount();
+    }
+  });
+
+  it('pose le titre là où l’image le laisse lire, et le prouve des deux côtés', () => {
+    // **Un satin n'est ni clair ni sombre : il a des plis.** L'ancrage et
+    // l'encre sont une propriété de l'image, mesurée à la cuisson et déposée
+    // dans `contrastes.json`. Ce test compare ce que le composant déclare à ce
+    // que la mesure dit — **dans les deux sens**, parce qu'un ancrage qui
+    // passerait des deux côtés ne prouverait rien : ce serait un satin plat,
+    // c'est-à-dire une pente, c'est-à-dire ce que la direction refuse.
+    const { POSE_DU_SATIN } = require('../src/components');
+    const { mesures } = require('../assets/satin/contrastes.json');
+
+    for (const [variante, pose] of Object.entries(POSE_DU_SATIN) as [
+      string,
+      { ancrage: 'haut' | 'bas'; encre: string },
+    ][]) {
+      const bandes = mesures[`satin-${variante}`];
+      const autre = pose.ancrage === 'haut' ? 'bas' : 'haut';
+
+      expect({
+        variante,
+        ou: pose.ancrage,
+        contraste: bandes[pose.ancrage][pose.encre] >= 4.5,
+      }).toEqual({ variante, ou: pose.ancrage, contraste: true });
+
+      expect({
+        variante,
+        ou: autre,
+        contraste: bandes[autre][pose.encre] >= 4.5,
+      }).toEqual({ variante, ou: autre, contraste: false });
+    }
+  });
+
+  it('ancre en haut ou en bas selon le pli, jamais toujours au même endroit', async () => {
+    const { SurfaceSatin } = require('../src/components');
+    const alignement = async (variante: string) => {
+      const vue = await monter(
+        <SurfaceSatin variante={variante} testID="satin">
+          <Texte variante="type.heading">Titre</Texte>
+        </SurfaceSatin>,
+      );
+      const aligne = style(screen.getByTestId('satin')).justifyContent;
+      await vue.unmount();
+      return aligne;
+    };
+
+    expect(await alignement('drape')).toBe('flex-start');
+    expect(await alignement('ember')).toBe('flex-end');
   });
 });

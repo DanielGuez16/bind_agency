@@ -1,0 +1,35 @@
+{
+  "$pourquoi": "Le contraste du pire pixel de chaque bande, pour les deux encres du système. C'est lui qui décide où le titre se pose sur chaque satin — un satin n'est ni clair ni sombre, il a des plis. Produit par scripts/cuire-les-satins.mjs, jamais écrit à la main : le recuire sans remesurer est impossible, les deux sortent de la même exécution.",
+  "mesures": {
+    "satin-drape": {
+      "haut": {
+        "ink.default": 7.06,
+        "ink.onDark": 1
+      },
+      "bas": {
+        "ink.default": 1.7,
+        "ink.onDark": 2.27
+      }
+    },
+    "satin-fold": {
+      "haut": {
+        "ink.default": 5.06,
+        "ink.onDark": 1
+      },
+      "bas": {
+        "ink.default": 1.52,
+        "ink.onDark": 2.76
+      }
+    },
+    "satin-ember": {
+      "haut": {
+        "ink.default": 1.46,
+        "ink.onDark": 1.5
+      },
+      "bas": {
+        "ink.default": 1,
+        "ink.onDark": 6.21
+      }
+    }
+  }
+}

@@ -392,3 +392,83 @@ describe('accueil, le retour au premier plan', () => {
     expect(screen.getByTestId('affiche-accueil')).toBeTruthy();
   });
 });
+
+// --------------------------------------------------------------------------
+// le satin, et le bloc unique
+// --------------------------------------------------------------------------
+
+describe('la marque se présente une fois, et une seule', () => {
+  async function accueil(medias: unknown) {
+    const api = new ApiClient({
+      baseUrl: 'https://api.test',
+      coffre: { lire: async () => null, ecrire: async () => {} },
+      fetchImpl: async () => ({ ok: true, status: 200, json: async () => medias }) as Response,
+    });
+    return render(
+      <SafeAreaProvider initialMetrics={IPHONE_A_ENCOCHE}>
+        <ThemeProvider role="creator">
+          <I18nProvider initialLocale="en">
+            <ApiProvider client={api}>
+              <AccueilScreen onChoisir={() => {}} onSeConnecter={() => {}} />
+            </ApiProvider>
+          </I18nProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>,
+    );
+  }
+
+  // La clé est `home`, comme la carte d'API la nomme : `accueil` ici aurait
+  // rendu les deux branches identiques et le test se serait cru vert.
+  const SANS_MEDIA = {
+    categories: [],
+    home: {
+      video_key: null,
+      poster_key: null,
+      video_portrait_key: null,
+      poster_portrait_key: null,
+    },
+  };
+  const AVEC_VIDEO = {
+    categories: [],
+    home: {
+      video_key: 'photos/accueil/video.mp4',
+      poster_key: 'photos/accueil/poster.jpg',
+      video_portrait_key: null,
+      poster_portrait_key: null,
+    },
+  };
+
+  it('sans média, elle se présente sur un satin plutôt que de s’excuser', async () => {
+    // L'écran annonçait « aucun fond » sous les portes : une phrase d'excuse à
+    // l'endroit exact où le produit se montre pour la première fois. Le satin
+    // est fait pour ça — « accueil avant inscription » est le premier des trois
+    // emplois que la passation lui donne.
+    await accueil(SANS_MEDIA);
+    await waitFor(() => expect(screen.getByTestId('satin-accueil')).toBeTruthy());
+    expect(screen.queryByTestId('accueil-sans-fond')).toBeNull();
+  });
+
+  it('avec un média, le satin ne s’ajoute pas', async () => {
+    // Une seule surface où la marque se présente, jamais deux empilées : la
+    // vidéo est déjà cette surface.
+    await accueil(AVEC_VIDEO);
+    await waitFor(() => expect(screen.getByTestId('porte-createur')).toBeTruthy());
+    expect(screen.queryByTestId('satin-accueil')).toBeNull();
+  });
+
+  it.each([
+    ['sans média', SANS_MEDIA],
+    ['avec un média', AVEC_VIDEO],
+  ])('%s, l’écran porte exactement un bloc accentué', async (_nom, medias) => {
+    // **La garde statique ne peut pas voir ça.** Elle lit un fichier à la fois
+    // et ne sait pas qu'un composant s'efface quand un autre parle : l'accueil
+    // et les portes déclarent chacun leur bloc, et c'est à l'exécution que la
+    // règle « un par écran » se joue. Le comptage, ici, est réel.
+    await accueil(medias);
+    await waitFor(() => expect(screen.getByTestId('promesse-accueil')).toBeTruthy());
+
+    expect(screen.getAllByTestId('bloc-accentue')).toHaveLength(1);
+    // Et la marque non plus ne se présente pas deux fois.
+    expect(screen.getAllByTestId('signature-agence')).toHaveLength(1);
+  });
+});

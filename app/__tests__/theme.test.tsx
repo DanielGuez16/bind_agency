@@ -199,6 +199,29 @@ describe('couleurs en dur', () => {
     }
   });
 
+  it('aucun réglage de thème ne subsiste, ni dans les jetons ni dans l’écran', () => {
+    // **Un interrupteur qui ne commande rien est pire que son absence** : il
+    // fait douter de ceux qui commandent quelque chose. La v1.0 ne livre
+    // qu'une palette, et `userOverride` désignait une bascule vers un second
+    // thème qui n'existe pas. Il est parti des jetons comme il était déjà parti
+    // de l'écran de réglages, et la clé porte à sa place la raison de son
+    // absence — ce qui la rend relisible le jour où un jeu sombre arrive.
+    expect(tokens.theme).not.toHaveProperty('userOverride');
+    expect(tokens.theme.$userOverrideRetire.length).toBeGreaterThan(80);
+
+    // Et rien dans les sources ne le lit encore : une clé retirée qu'un écran
+    // interroge encore rend `undefined`, ce qui se lit comme « faux » et ne
+    // casse rien — le pire des deux mondes.
+    const fautifs = sources(RACINE).filter((chemin) =>
+      readFileSync(chemin, 'utf-8')
+        .split('\n')
+        // La prose qui documente le retrait cite forcément ce qu'elle retire.
+        .filter((ligne) => !/^\s*(\/\/|\*|\/\*)/.test(ligne))
+        .some((ligne) => /userOverride|setOverride|ThemeName/.test(ligne)),
+    );
+    expect(fautifs).toEqual([]);
+  });
+
   it('l’écran de code a ses deux couleurs, exportées et conformes', () => {
     // Elles ne viennent d'aucun jeton de marque : la passation déclare cet
     // écran hors système. Il est lu par une caméra et par une vendeuse à un
