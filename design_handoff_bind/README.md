@@ -1,4 +1,20 @@
-# Passation — BIND · direction Miami After Hours
+# Passation — BIND
+
+> **v1.0 — BIND AGENCY (2026-08-14). Remplacement complet du système.** Le
+> produit passe du vert éditorial à l'orange de l'agence. `PASSATION-v1.0.md`,
+> `components-v1.0.md` et `tokens.json` font foi ; **tout ce qui suit dans ce
+> fichier décrit la direction Miami After Hours et reste valable pour la
+> structure des écrans, jamais pour une couleur, une fonte ou un rayon.**
+>
+> Deux arbitrages rendus côté produit, écrits en fin de `PASSATION-v1.0.md` :
+> la couleur de rôle est gardée **en matière et non en teinte**, et la
+> désaturation des photos est **refusée sur le contenu**.
+>
+> Deux manques nommés : le logo vectoriel et les trois images de satin.
+> `SurfaceSatin` n'existe pas tant qu'elles ne sont pas livrées — un dégradé
+> linéaire en attendant serait exactement le cliché que la direction évite.
+
+---
 
 > **v0.5 — découverte créateur (2026-08-08).** Le rôle créateur passe en thème
 > clair : seul changement au niveau des jetons, le jeu clair existait déjà et
