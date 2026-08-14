@@ -16,12 +16,12 @@ sans elles ; `assets/photos/A-FOURNIR.md` dit lesquelles récupérer et où.
 qui l'affiche sur 150 points est un gâchis qui se paie à chaque affichage, pour
 tous. Réduire une fois au dépôt le paie une fois pour toutes.
 
-**Pillow est une dépendance de développement, pas du produit.** L'API en ligne
-ne redimensionne jamais rien : elle sert des octets déjà rangés. Charger un
-décodeur d'images dans le produit entier pour une préoccupation du jeu de
-données serait payer un coût permanent pour un besoin qui n'existe qu'ici. S'il
-est absent, on dépose l'original et on le signale — c'est moins bien, ce n'est
-pas cassé.
+**Pillow est passé au produit, et ce module n'en garde plus de copie.** Il
+n'était ici que pour le jeu de données ; le produit réduit désormais lui aussi
+au dépôt, et le décodeur est déclaré une fois. La détection de sa présence vit
+dans `app/integrations/images.py`, que ce module appelle — deux copies d'un même
+traitement d'image divergent au premier réglage qu'on touche. S'il est absent,
+on dépose l'original et on le signale : c'est moins bien, ce n'est pas cassé.
 
 **Le recadrage est décidé ici, pas à l'affichage.** `ImageOps.fit` remplit le
 rapport demandé et rogne le débord, centré : exactement ce que fait un
@@ -37,6 +37,7 @@ from pathlib import Path
 from types import ModuleType
 
 from app.core.config import API_ROOT
+from app.integrations import images
 
 #: `API_ROOT` est le dossier `api/` ; les photos vivent à la racine du dépôt,
 #: à côté de l'app, parce qu'elles n'appartiennent pas plus au backend qu'au
@@ -56,9 +57,8 @@ AFFICHE_PORTRAIT = (720, 1280)
 PRESTATION = (800, 800)
 CATEGORIE = (400, 400)
 
-#: 82 et non 95 : au-delà, le poids monte franchement pour une différence que
-#: l'œil ne fait pas sur une photographie.
-QUALITE = 82
+#: Reprise de `images` : une seule valeur, un seul endroit où la changer.
+QUALITE = images.QUALITE
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,19 +74,14 @@ class PhotoReelle:
 
 
 def _pillow() -> ModuleType | None:
-    """Le module, ou `None` s'il n'est pas installé. Jamais une exception :
-    son absence est un mode de fonctionnement dégradé, pas une panne."""
-    try:
-        from PIL import (
-            Image,
-            ImageOps,  # noqa: F401  (vérifie le paquet entier)
-        )
-    except ModuleNotFoundError:
-        return None
-    return Image
+    """Le module, ou `None`. Emprunté à `images`, qui le déclare une seule fois."""
+    return images._pillow()
 
 
 def pillow_disponible() -> bool:
+    # Par `_pillow` et non par `images` directement : un seul point à remplacer
+    # pour éprouver le mode dégradé, sans quoi la lecture et cette réponse-ci
+    # pourraient dire deux choses différentes.
     return _pillow() is not None
 
 

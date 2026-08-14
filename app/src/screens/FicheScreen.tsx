@@ -14,7 +14,8 @@
  * tag de lieu sont les deux éléments contrôlés ; les découvrir sur l'écran de
  * preuve serait les découvrir trop tard.
  */
-import { View } from 'react-native';
+import { useState } from 'react';
+import { Image, Linking, View } from 'react-native';
 
 import { useApi, type FichePublique, type OffreDeLaFiche } from '../api';
 import { Button, LigneDeContrepartie, ServiceRow, StatusMessage, Texte } from '../components';
@@ -62,6 +63,13 @@ export function FicheScreen({
             </Texte>
           ) : null}
 
+          {/* **La carte a son propre accès, avant les offres.** Elle se
+              consulte, la galerie se fait défiler : les ranger ensemble ferait
+              chercher un plat entre deux photos de salle. Et elle vient avant,
+              parce qu'une offre qui laisse un choix ne se décide pas sans
+              elle. */}
+          <AccesALaCarte pages={fiche.menu_pages} lien={fiche.menu_url} />
+
           <Texte variante="type.bodyStrong">{t('parcours.ficheOffres')}</Texte>
           {fiche.offres.map((offre) => (
             <Offre
@@ -78,6 +86,77 @@ export function FicheScreen({
     </Ecran>
   );
 }
+
+/**
+ * L'entrée vers la carte du commerce.
+ *
+ * **Rien du tout quand il n'y a rien** : un salon de beauté n'a pas de carte, et
+ * un bouton vide serait un cul-de-sac de plus.
+ *
+ * **Le lien seul s'annonce comme tel.** Quand il n'y a pas de pages, ouvrir la
+ * carte sort de l'application. Un lien qui s'ouvre sans prévenir, au milieu d'un
+ * parcours de réservation, fait perdre le fil à qui revient — et sur un
+ * téléphone, « revenir » n'est pas toujours un geste évident.
+ */
+function AccesALaCarte({ pages, lien }: { pages: string[]; lien: string | null }) {
+  const { t } = useI18n();
+  const { api } = useApi();
+  const [ouverte, setOuverte] = useState(false);
+
+  if (pages.length === 0 && !lien) return null;
+
+  return (
+    <View style={{ gap: 8 }} testID="acces-a-la-carte">
+      {pages.length > 0 ? (
+        <>
+          <Button
+            label={t(ouverte ? 'parcours.ficheCarteFermer' : 'parcours.ficheCarteVoir')}
+            variant="secondary"
+            size="sm"
+            onPress={() => setOuverte((avant) => !avant)}
+            testID="voir-la-carte"
+          />
+          {/* Dépliée sur place plutôt qu'ouverte dans un écran à part : on
+              consulte une carte en gardant l'offre sous les yeux, et une pile
+              de plus ferait revenir en arrière pour comparer. */}
+          {ouverte
+            ? pages.map((cle, rang) => (
+                <Image
+                  key={cle}
+                  testID={`page-de-carte-${rang}`}
+                  // L'original : une carte se lit, et une vignette de 480 points
+                  // ne se lit pas.
+                  source={{ uri: api.urlDuMedia(cle) ?? undefined }}
+                  style={{ width: '100%', aspectRatio: 3 / 4 }}
+                  resizeMode="contain"
+                />
+              ))
+            : null}
+        </>
+      ) : null}
+
+      {lien ? (
+        <>
+          <Button
+            label={t('parcours.ficheCarteEnLigne')}
+            variant="ghost"
+            size="sm"
+            onPress={() => void Linking.openURL(lien)}
+            testID="ouvrir-la-carte-en-ligne"
+          />
+          {/* Dit seulement quand c'est la seule forme : avec des pages
+              au-dessus, le créateur a déjà lu la carte sans sortir. */}
+          {pages.length === 0 ? (
+            <Texte variante="type.caption" couleur="ink.mute" testID="carte-hors-application">
+              {t('parcours.ficheCarteHorsApp')}
+            </Texte>
+          ) : null}
+        </>
+      ) : null}
+    </View>
+  );
+}
+
 
 function Offre({
   offre,
@@ -114,7 +193,9 @@ function Offre({
         name={offre.name}
         meta={offre.duration_minutes === null ? '' : `${offre.duration_minutes} min`}
         tier={offre.content_format}
-        thumbnail={urlImage(api.urlDuMedia(offre.photo_key))}
+        // Une vignette dans une liste d'offres. Le détail, lui, garde
+        // l'original.
+        thumbnail={urlImage(api.urlDeLaVignette(offre.photo_key))}
       />
       <View style={{ padding: 12, gap: 6 }}>
         <LigneDeContrepartie tier={offre.content_format} />

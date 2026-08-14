@@ -174,6 +174,11 @@ const FICHE = {
   timezone: 'America/New_York',
   phone: null,
   cover_photo_key: null,
+  photos: [],
+  // Sans carte par défaut : le salon de beauté est le cas ordinaire, et
+  // l'accès ne doit alors rien montrer du tout.
+  menu_pages: [],
+  menu_url: null,
   offres: [OFFRE],
 };
 

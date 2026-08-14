@@ -135,7 +135,7 @@ async def televerser(
     if signature is None:
         raise api_error(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, ErrorCode.PROOF_UNSUPPORTED_TYPE)
 
-    cle = await storage.deposer(contenu, prefixe=f"photos/cartes/{business.id}")
+    cle = await storage.deposer_une_image(contenu, prefixe=f"photos/cartes/{business.id}")
     return {"file_key": cle, "mime_type": TYPE_PAR_SIGNATURE[signature]}
 
 

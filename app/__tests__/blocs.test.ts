@@ -94,6 +94,7 @@ const BLOCS: Record<string, number> = {
   FilScreen: 0,
   FicheScreen: 0,
   AudienceScreen: 0,
+  CarteDuCommerce: 0,
   GalerieDuCommerce: 0,
   PreuveScreen: 0,
   EnvoiDePreuve: 0,

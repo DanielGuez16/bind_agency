@@ -4392,3 +4392,68 @@ serait resté du satin que sa partie sombre.
 retient la réponse du manifeste à la main, compare la liste avant et après. Deux
 mutations le rejouent : le satin remis en repli, et le voile remis en
 conditionnel.
+
+---
+
+## 2026-08-14 — Réduire au dépôt, et deux codes qui n'en font plus qu'un
+
+**Les photos, réduites au dépôt.** Une photo de prestation partait vers le fil
+telle qu'elle sortait du téléphone : quatre mille pixels pour un cadre de cent
+cinquante points. Le gâchis se paie à chaque affichage, pour tout le monde, et
+deux fois sur le réseau d'un salon.
+
+Au dépôt plutôt qu'à la lecture. Le stockage est ce qui coûte le moins cher de
+la pile ; une clé dérivée n'a ni cache à invalider ni coût à l'exécution, et la
+route des médias continue de ne faire que servir des octets déjà rangés.
+Redimensionner à la lecture demanderait un décodeur sur le chemin chaud, un
+cache, et une invalidation — trois choses à tenir pour une image qui ne change
+jamais.
+
+**Le mécanisme n'est pas neuf : il vient du semis.** `photos_reelles` réduisait
+déjà les vraies photos de la démonstration au moment de les ranger, avec le
+redressement EXIF et la conversion de mode qui vont avec. On en a extrait le
+cœur dans `integrations/images.py`, et le semis l'appelle désormais plutôt que
+d'en garder une copie : deux copies d'un même traitement d'image divergent au
+premier réglage qu'on touche.
+
+**Pillow passe donc au produit**, et le commentaire qui disait « jamais utilisée
+par le produit » a été corrigé au lieu d'être laissé à mentir. C'est la même
+leçon que la ligne de `DEMO.md` d'hier.
+
+**La vignette borne, elle ne recadre pas.** Une couverture est en 16:9, une
+photo de prestation en carré, une page de carte en portrait : imposer un rapport
+au dépôt recadrerait une image dont l'écran décide déjà du cadrage. On borne le
+côté le plus long à 480 points, l'application continue de couvrir comme avant,
+et une seule taille sert partout.
+
+**La clé est dérivée, pas stockée.** Une colonne par table portant une image —
+galerie, carte, prestation, couverture — se remplirait à la migration et se
+désynchroniserait au premier dépôt qui échoue à mi-chemin. Le suffixe
+`@vignette` se recompose partout à partir de la clé qu'on a déjà, et la route
+des médias retombe sur l'original quand la vignette n'existe pas : les images
+d'avant ce changement continuent de s'afficher.
+
+**Et la vignette ne fait jamais échouer le dépôt.** Pillow absent, image
+illisible, second objet refusé : l'original est déjà rangé. Perdre une photo que
+le commerce vient d'envoyer, pour une raison qui ne le regarde pas, coûte plus
+que tout ce que la vignette fait gagner. Le détail, lui, garde l'original —
+c'est la liste qui n'a jamais eu besoin de quatre mille pixels.
+
+**Les six chiffres du code de retrait ne s'affichent plus.** Ils ne se
+saisissent pas, ne désignent rien seuls — ils ne valent qu'avec l'identifiant
+que porte le QR — et c'est précisément ce qui les faisait confondre avec le code
+de secours, qui se dicte : un commerçant a essayé de taper les premiers.
+
+Une légende sous les chiffres avait été ajoutée pour le dire. Elle ne suffisait
+pas, et l'insuffisance était prévisible : **ce qui trompe est la forme, pas
+l'absence d'explication.** Six chiffres alignés en gros ressemblent à une saisie,
+quoi qu'on écrive dessous.
+
+Le QR les porte déjà. Ce qui restait à montrer, c'est que le code est *vivant* —
+et le décompte le dit sans ressembler à une saisie. Les tests de rotation
+portaient sur l'affichage des chiffres ; ils portent maintenant sur la charge
+réellement encodée dans le QR, c'est-à-dire sur ce que la caisse scanne.
+
+**La suspension automatique n'est pas construite**, et c'est confirmé : le score
+de fiabilité couvre déjà le cas, de façon graduée et réversible, là où une
+suspension de trente jours est binaire et engage des droits.

@@ -28,6 +28,11 @@ dependencies = [
     # en ville **sans la transmettre à personne**. MIT. Une API hébergée ferait
     # exactement l'inverse de ce qu'on cherche : envoyer l'adresse à un tiers.
     "maxminddb>=2.6",
+    # Réduit les images **au dépôt**, jamais au service : la route des médias
+    # continue de ne faire que servir des octets déjà rangés. Le semis s'en
+    # servait déjà pour les photos de démonstration ; c'est le même mécanisme,
+    # étendu au produit. Absente, on dépose l'original — dégradé, pas cassé.
+    "pillow>=11.0",
 ]
 
 [project.optional-dependencies]
@@ -35,11 +40,6 @@ dev = [
     "pytest>=8.3",
     "pytest-asyncio>=0.24",
     "ruff>=0.8",
-    # Redimensionne les vraies photos du jeu de démonstration au moment du
-    # dépôt. **Jamais utilisée par le produit** : l'API sert des octets déjà
-    # rangés, elle ne décode aucune image. Absente, le semis dépose les
-    # originaux et le signale — il ne s'arrête pas.
-    "pillow>=11.0",
 ]
 
 [build-system]

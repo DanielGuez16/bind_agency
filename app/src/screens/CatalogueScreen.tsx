@@ -29,6 +29,7 @@ import {
   type OffreDePalier,
   type PalierOffrable,
   type ContentFormat,
+  type PageDeLaCarte,
   type PhotoDuCommerce,
 } from '../api';
 import {
@@ -44,6 +45,7 @@ import {
   Toggle,
   vibration,
 } from '../components';
+import { CarteDuCommerce } from './CarteDuCommerce';
 import { GalerieDuCommerce } from './GalerieDuCommerce';
 import { useI18n } from '../i18n';
 import {
@@ -63,6 +65,9 @@ type Composition = {
   photos: PhotoDuCommerce[];
   /** La couverture actuelle, pour marquer la photo qui la porte. */
   couverture: string | null;
+  /** Les pages de la carte. **Distinctes de la galerie** : voir `CarteDuCommerce`. */
+  pagesDeLaCarte: PageDeLaCarte[];
+  lienDeLaCarte: string | null;
 };
 
 const ONGLETS = ['toutes', 'ouvertes', 'fermees'] as const;
@@ -85,14 +90,23 @@ export function CatalogueScreen({
       // La galerie voyage avec le catalogue : les deux composent la même
       // page, et deux requêtes séparées feraient apparaître les photos après
       // les prestations, sous les yeux de qui les regarde.
-      const [items, offres, paliers, photos, commerce] = await Promise.all([
+      const [items, offres, paliers, photos, pagesDeLaCarte, commerce] = await Promise.all([
         api.itemsDuCatalogue(businessId, signal),
         api.offresDePalier(businessId, signal),
         api.paliersDuCommerce(businessId, signal),
         api.photosDuCommerce(businessId, signal),
+        api.pagesDeLaCarte(businessId, signal),
         api.commerce(businessId, signal),
       ]);
-      return { items, offres, paliers, photos, couverture: commerce.cover_photo_key };
+      return {
+        items,
+        offres,
+        paliers,
+        photos,
+        couverture: commerce.cover_photo_key,
+        pagesDeLaCarte,
+        lienDeLaCarte: commerce.menu_url,
+      };
     },
     [api, businessId],
   );
@@ -102,7 +116,10 @@ export function CatalogueScreen({
     // commerce qui n'a pas encore composé de prestation peut vouloir commencer
     // par ses photos, et l'état vide lui retirerait la seule chose qu'il peut
     // faire tout de suite.
-    estVide: (c) => c.items.length === 0 && c.photos.length === 0,
+    // La carte compte comme la galerie : un commerce qui a déposé sa carte et
+    // rien d'autre a déjà fait quelque chose, et l'état vide le lui nierait.
+    estVide: (c) =>
+      c.items.length === 0 && c.photos.length === 0 && c.pagesDeLaCarte.length === 0,
     dependances: [businessId],
   });
 
@@ -278,6 +295,17 @@ function Groupes({
         businessId={businessId}
         photos={composition.photos}
         couverture={composition.couverture}
+        onChange={onChange}
+      />
+      <Filet />
+
+      {/* **La carte suit la galerie, et ne s'y mêle pas.** La galerie montre le
+          lieu, la carte se consulte : deux dépôts distincts, parce qu'un
+          commerce qui les confondrait rendrait la sienne illisible. */}
+      <CarteDuCommerce
+        businessId={businessId}
+        pages={composition.pagesDeLaCarte}
+        lien={composition.lienDeLaCarte}
         onChange={onChange}
       />
       <Filet />

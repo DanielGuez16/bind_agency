@@ -370,16 +370,18 @@ const ECRANS = [
       '/tier-offers': [OFFRE],
       '/tiers': [PALIER],
       '/photos': [],
+    '/menu': [],
       // En dernier : la table est parcourue par sous-chaîne, et
       // « /business/b1 » est contenu dans « /business/b1/catalog-items ».
-      '/business/b1': { cover_photo_key: null },
+      '/business/b1': { cover_photo_key: null, menu_url: null },
     },
     vide: {
       '/catalog-items': [],
       '/tier-offers': [],
       '/tiers': [PALIER],
       '/photos': [],
-      '/business/b1': { cover_photo_key: null },
+    '/menu': [],
+      '/business/b1': { cover_photo_key: null, menu_url: null },
     },
   },
   {
@@ -424,9 +426,10 @@ describe('catalogue', () => {
     '/tier-offers': [OFFRE],
     '/tiers': [PALIER],
     '/photos': [],
+    '/menu': [],
     // En dernier : la table est parcourue par sous-chaîne, et « /business/b1 »
     // est contenu dans « /business/b1/catalog-items ».
-    '/business/b1': { cover_photo_key: null },
+    '/business/b1': { cover_photo_key: null, menu_url: null },
   };
 
   it('porte la galerie en tête, avant les prestations', async () => {
@@ -1383,7 +1386,8 @@ describe('le conseil de palier', () => {
       '/tier-offers': offres,
       '/tiers': TROIS_PALIERS,
       '/photos': [],
-      '/business/b1': { cover_photo_key: null },
+    '/menu': [],
+      '/business/b1': { cover_photo_key: null, menu_url: null },
     });
   }
 
@@ -1473,7 +1477,8 @@ describe('le conseil de palier', () => {
         '/tier-offers': [],
         '/tiers': TROIS_PALIERS,
         '/photos': [],
-        '/business/b1': { cover_photo_key: null },
+    '/menu': [],
+        '/business/b1': { cover_photo_key: null, menu_url: null },
       }),
       'merchant',
     );
@@ -1496,7 +1501,8 @@ describe('le conseil de palier', () => {
         '/tier-offers': [],
         '/tiers': TROIS_PALIERS,
         '/photos': [],
-        '/business/b1': { cover_photo_key: null },
+    '/menu': [],
+        '/business/b1': { cover_photo_key: null, menu_url: null },
       }),
       'merchant',
     );
