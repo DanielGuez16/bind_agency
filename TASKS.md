@@ -423,4 +423,26 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       jobs et trois issues — parti, écarté, reporté. **Les envois directs ont
       été supprimés** : deux façons d'envoyer un message serait le défaut
       lui-même. 20 tests, 15 mutations vérifiées*
+- [x] **BIND AGENCY v1.0 · le système visuel remplacé**
+      *La fondatrice a donné la direction artistique de son agence : le produit
+      passe du vert éditorial à l'orange. Remplacement de système, pas
+      ajustement — les jetons `accent.*`, `role.*` et les trois teintes de
+      palier disparaissent ensemble. Fin : les fontes livrées seules
+      (Bodoni Moda, Outfit, l'italique devenu un fichier et non un attribut) ;
+      la rampe orange où **`brand.500` ne s'écrit jamais**, tenue par une garde
+      statique à quatre formes et par un refus à l'exécution ; les rayons à
+      zéro et l'ombre de carte supprimée ; le rôle gardé **en matière** — encre,
+      os, papier ; les paliers passés de trois teintes à trois matières, dont la
+      progression ordinale se lit en niveaux de gris ; l'avertissement neutre au
+      glyphe obligatoire et le danger au cramoisi ; le focus du champ, annoncé
+      depuis la v0.4 et **jamais implémenté**, enfin en deux pixels d'encre ; et
+      une garde qui **compte les blocs orange écran par écran**, table
+      exhaustive, les écrans de travail quotidien à zéro pour une raison écrite.
+      Trois champs annoncés au contrat et pas encore servis sont rendus comme
+      **absents et non comme zéro**. Deux manques nommés : le logo vectoriel et
+      les trois images de satin, sans lesquelles `SurfaceSatin` n'est pas écrit
+      — un dégradé linéaire en attendant serait le cliché que la direction
+      évite. Le thème sombre est retiré : la v1.0 n'en livre pas, et en
+      reconstituer un demandait d'inventer une dizaine de valeurs qu'aucune
+      passation ne définit. 46 tests neufs, 12 mutations vérifiées*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire

@@ -60,7 +60,14 @@ export function AudienceScreen() {
       audience: await api.monAudience(signal),
       verification: await api.maVerification(signal),
     }),
-    { estVide: (v) => v.audience.length === 0 },
+    // **Vide veut dire « aucun compte rattaché », jamais « aucun relevé ».**
+    // Le relevé par compte connecté est annoncé au contrat et n'est pas encore
+    // servi ; quand il manque, `audience` revient vide alors que la créatrice a
+    // bel et bien branché un réseau. L'état vide lui disait alors d'en
+    // connecter un — un cul-de-sac qui ment, sur le seul écran où elle vient
+    // vérifier que le sien est bien pris en compte. C'est la file de
+    // vérification qui dit ce qui est rattaché, parce qu'elle, elle répond.
+    { estVide: (v) => v.audience.length === 0 && v.verification.length === 0 },
   );
 
   return (
@@ -77,6 +84,16 @@ export function AudienceScreen() {
     >
       {({ audience, verification }) => (
         <View style={{ gap: 16 }}>
+          {/* Des comptes rattachés, et aucun relevé pour eux. Ce n'est ni une
+              erreur ni un vide : c'est un calcul qui n'est pas encore rendu, et
+              on le marque indisponible plutôt que d'afficher des zéros. */}
+          {audience.length === 0 && verification.length > 0 ? (
+            <StatusMessage
+              level="neutral"
+              body={t('parcours.audienceReleveIndisponible')}
+              testID="releve-indisponible"
+            />
+          ) : null}
           {audience.map((compte) => {
             const controle = verification.find(
               (v) => v.social_account_id === compte.social_account_id,

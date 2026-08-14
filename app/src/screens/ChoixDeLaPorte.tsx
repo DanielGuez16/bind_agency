@@ -17,7 +17,7 @@
  */
 import { View } from 'react-native';
 
-import { Button, Icone, Marque, Texte } from '../components';
+import { Button, Icone, Marque, Texte, TitreAccentue } from '../components';
 import { useI18n } from '../i18n';
 import { useGabarit } from '../shell/gabarit';
 import { breakpoint, radius, spacing, useColors, type ColorName } from '../theme';
@@ -89,20 +89,26 @@ export function ChoixDeLaPorte({
         alignSelf: 'center',
       }}
     >
-      <Marque taille={30} couleur={surMedia ? 'ink.onScrim' : 'brand.700'} />
+      {/* Le seul écran, avec l'accueil, où la marque **se présente** : le sigle
+          y porte sa signature, qu'aucun autre écran ne répète. */}
+      <Marque taille={30} couleur={surMedia ? 'ink.onScrim' : 'ink.default'} signature />
 
       <View style={{ gap: spacing['space.2'], maxWidth: 720 }}>
         {/* Nommée : c'est sur elle que la suite de bout en bout lit la police
             réellement employée. Sans point d'accroche, la seule façon de
             vérifier qu'un texte emploie la fonte serait de deviner un
-            sélecteur, qui casserait au premier changement de structure. */}
-        <Texte
-          variante="type.screenTitle"
+            sélecteur, qui casserait au premier changement de structure.
+
+            **Le bloc de l'écran est ici**, et il n'y en a pas d'autre : c'est
+            un écran de seuil, qu'on ne voit qu'une fois. Une garde compte. */}
+        <TitreAccentue
+          texte={t('auth.accroche')}
+          motAccentue={t('auth.accrocheAccent')}
+          taille="heading"
+          bloc
           couleur={surMedia ? 'ink.onScrim' : 'ink.default'}
           testID="promesse-accueil"
-        >
-          {t('auth.accroche')}
-        </Texte>
+        />
         <Texte couleur={surMedia ? 'ink.onScrimMuted' : 'ink.soft'}>
           {t('auth.sousAccroche')}
         </Texte>

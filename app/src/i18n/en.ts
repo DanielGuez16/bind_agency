@@ -79,6 +79,7 @@ export const en = {
     pausedNotLost: 'Paused, not lost',
     stillWaiting: 'This is what you had, and what is waiting once it is back.',
     services: 'services',
+    servicesIndisponible: 'Count not available yet',
     seeServices: 'See the {{count}} services',
     openCount: '{{count}} open',
     opens: '{{count}} services open at this tier',
@@ -193,6 +194,8 @@ export const en = {
     audienceConnecter: 'Connect a network',
     audienceAucun: 'No network connected yet.',
     audienceTitre: 'Your audience',
+    audienceReleveIndisponible:
+      'Your networks are connected. The audience reading is not available yet — nothing is missing on your side.',
     audienceVide: 'No measurement yet. Connect a social account to get started.',
     followers: 'Followers',
     engagement: 'Engagement',
@@ -470,6 +473,9 @@ export const en = {
     inscriptionEnCours: 'Creating…',
     // v0.6 — le rôle se choisit avant le formulaire, sur deux portes.
     accroche: 'Salons and creators, on one agreement',
+    // Le mot accentué voyage par sa propre clé : il se déplace d'une langue
+    // à l'autre, et un index de caractères se décalerait au premier accord.
+    accrocheAccent: 'agreement',
     sousAccroche: 'A service in exchange for a publication. No money changes hands, on either side.',
     porteCreateur: 'Book the salon, post what you loved',
     porteCreateurA: 'Nails, hair, facials, spa and massage across Miami',

@@ -76,6 +76,7 @@ export const es: Catalogue = {
     pausedNotLost: 'En pausa, no perdido',
     stillWaiting: 'Esto es lo que tenías, y lo que te espera en cuanto vuelva.',
     services: 'prestaciones',
+    servicesIndisponible: 'Recuento aún no disponible',
     seeServices: 'Ver las {{count}} prestaciones',
     openCount: '{{count}} abiertos',
     opens: '{{count}} prestaciones abiertas en este nivel',
@@ -190,6 +191,8 @@ export const es: Catalogue = {
     audienceConnecter: 'Conectar una red',
     audienceAucun: 'Ninguna red conectada todavía.',
     audienceTitre: 'Tu audiencia',
+    audienceReleveIndisponible:
+      'Tus redes están conectadas. La lectura de audiencia aún no está disponible; no falta nada de tu parte.',
     audienceVide: 'Todavía no hay mediciones. Conecta una cuenta para empezar.',
     followers: 'Seguidores',
     engagement: 'Interacción',
@@ -464,6 +467,9 @@ export const es: Catalogue = {
     inscriptionEnCours: 'Creando…',
     // v0.6 — el rol se elige antes del formulario, en dos puertas.
     accroche: 'Salones y creadores, un mismo acuerdo',
+    // Le mot accentué voyage par sa propre clé : il se déplace d'une langue
+    // à l'autre, et un index de caractères se décalerait au premier accord.
+    accrocheAccent: 'acuerdo',
     sousAccroche: 'Un servicio a cambio de una publicación. No circula dinero, en ningún sentido.',
     porteCreateur: 'Reserva en el salón, publica lo que te gustó',
     porteCreateurA: 'Uñas, peluquería, faciales, spa y masajes en todo Miami',

@@ -3840,3 +3840,135 @@ vérifie qu'un état vide **porte son action**, pas qu'il porte sa phrase, et il
 monte l'onglet d'attente lui-même — sans quoi il prouverait qu'un écran de
 création fonctionne et rien de plus, ce qui reste vert pendant qu'aucun onglet ne
 le monte.
+---
+
+## 2026-08-14 — BIND AGENCY v1.0, remplacement du système visuel
+
+La fondatrice a donné la direction artistique de son agence. Le produit passe du
+vert éditorial à l'orange. C'est un remplacement de système, pas un ajustement,
+et il n'existait pas d'état intermédiaire sain : les jetons de la v0.4 —
+`accent.*`, `role.*`, `tier.*` en trois teintes — disparaissent tous ensemble.
+
+**Les fontes sont livrées seules, et c'est la seule tranche qui pouvait l'être.**
+`polices.ts` lit les familles dans les jetons : les remplacer ne touche aucun
+écran. Coût assumé et nommé dans le changelog des jetons : `design_handoff_bind/
+tokens.json` a avancé de deux lignes au lieu de passer en v1.0 d'un bloc, parce
+que le test « le fichier de l'app est celui de la passation, sans retouche » lie
+les deux fichiers.
+
+**L'italique est un fichier, jamais un attribut.** La v1.0 fait de l'accent un
+changement de **voix** à l'intérieur d'une famille. Sur un Didone, l'italique
+n'est pas la romaine inclinée mais un autre dessin ; `fontStyle: 'italic'`
+produirait un oblique synthétique, et l'écart entre les deux est précisément ce
+qui distingue la direction de son imitation. Même mécanique que pour les
+graisses, même raison.
+
+**Un seul jeu de couleurs, et le thème sombre est retiré.** La v1.0 livre une
+palette, met les trois rôles en clair, et déclare **hors système** les deux
+seuls écrans qui restent sombres — le code de retrait et la galerie plein écran,
+qui portent leurs couleurs eux-mêmes. Ce qu'elle donne pour le sombre
+(`ink.onDark`, `line.onDark`, `bg.sunken`, les variantes `onDark` des paliers)
+est un kit d'accommodation pour ces surfaces-là : ni gris intermédiaires, ni
+statuts, ni états de bordure. Reconstituer un thème sombre demandait d'inventer
+une dizaine de valeurs qu'aucune passation ne définit — exactement la seconde
+vérité que le dossier de thème existe pour empêcher.
+
+*Contradiction laissée ouverte et signalée :* `tokens.json` porte encore
+`theme.userOverride: true`. La bascule n'a plus de second thème vers lequel
+basculer et a donc quitté l'écran des réglages, plutôt que d'y rester en
+interrupteur qui ne commande rien. Le jour où un jeu sombre est livré, il se
+rebranche dans `theme/index.tsx` et nulle part ailleurs.
+
+**`brand.500` est une surface et ne s'écrit jamais.** C'est la règle centrale du
+système — 3,0:1 sur blanc, refusée à toute taille — et la seule que le code peut
+réellement tenir. Elle l'est à deux endroits : `Texte` lève quand on lui passe
+une surface en couleur, ce qui attrape les couleurs **calculées** ; une garde
+statique cherche les quatre formes d'écrire du texte, dont
+`tabBarActiveTintColor`, où le mot est au milieu d'un nom composé et qu'une
+garde ancrée sur un début de mot aurait laissé passer.
+
+*Ce qui n'est pas dans la liste, et pourquoi.* Les matières claires — 50, 100,
+200, 400 — échouent sur un fond clair et tiennent largement sur l'encre, où ce
+sont précisément elles qui écrivent. Une garde qui les refuserait partout
+interdirait le seul endroit où elles servent, et se ferait désactiver dans la
+semaine.
+
+**Le rôle reste lisible, en matière et non en teinte.** Arbitrage rendu sur le §8
+de la passation, qui proposait de supprimer purement la couleur de rôle : la
+distinction est gardée — encre pour l'administration, os pour le commerce,
+papier pour la créatrice. Trois fonds qui existent déjà, aucune teinte de plus à
+décoder, et une capture d'écran qui dit encore d'où elle vient.
+
+**Les paliers passent de trois teintes à trois matières.** Contour, teinte,
+aplat. Deux gains au-delà du monochrome : la progression devient **ordinale** —
+un rose, un vert et un violet ne disaient pas lequel était le plus exigeant, il
+fallait l'apprendre — et la règle des trois marqueurs redondants devient
+vérifiable par construction. Avec les teintes, « distinct en niveaux de gris »
+était vrai en théorie et n'avait jamais été testé.
+
+La table de matière est écrite en **noms de jetons** et non en valeurs, pour que
+la garde des couleurs en dur tienne et qu'une couleur se relise dans un écran.
+C'est donc une *lecture* des hexadécimaux de la passation, et un test vérifie
+que les deux disent la même chose — sans quoi ce serait une seconde vérité.
+
+**L'avertissement perd sa couleur et gagne un glyphe obligatoire.** Un ambre
+dans un système orange se lit comme une mise en avant de marque, pas comme une
+alerte. Le triangle porte l'alerte à lui seul ; il n'y a aucun prop pour
+l'enlever, parce qu'un avertissement sans glyphe serait un bug et non un choix.
+
+**Le focus du champ de saisie existe enfin.** Le commentaire l'annonçait depuis
+la v0.4 et le composant n'écoutait ni `onFocus` ni `onBlur` : la bordure restait
+à 1 px d'un bout à l'autre de la saisie. Deux pixels d'**encre**, jamais
+d'orange — sur un écran qui porte de l'orange, un focus orange se perd.
+
+**`produit.json`, à côté de `tokens.json`.** La v1.0 conserve explicitement (§12)
+des choses qu'elle ne réénumère pas : densités du gabarit v0.6, écran de code
+hors système, repères en mono des deux graphiques autorisés, libellés de palier
+et copie des badges — qui n'ont jamais été des jetons de design. Les remettre
+dans `tokens.json` casserait la copie conforme ; les écrire dans un écran
+recréerait l'échelle parallèle que le diagnostic de rendu avait démontée. Un
+test refuse qu'une clé existe des deux côtés.
+
+**La règle du bloc se compte, elle ne se regarde pas.** La passation dit qu'elle
+« se vérifie à l'œil nu ». C'est précisément ce qui ne tient pas : un bloc de
+plus arrive six semaines après, par un sous-titre ajouté dans un fichier que
+personne ne rouvre, et il ne se voit qu'en ouvrant les huit écrans côte à côte.
+Une garde déclare le compte autorisé **écran par écran**, table exhaustive
+vérifiée, et les écrans de travail quotidien y sont à zéro pour une raison
+écrite plutôt que par défaut.
+
+Le bouton principal n'est pas compté, et le tableau du §13 de la passation le
+confirme : « Journée du commerce : 0 », alors que cet écran porte un bouton
+principal orange. Ce qui est banni du travail quotidien est la **signature**, pas
+la teinte.
+
+Une seconde règle, plus durable que le comptage : **un écran ne peint jamais
+`brand.500` lui-même**. Les surfaces orange légitimes vivent toutes dans un
+composant. C'est par là qu'arriveraient la ligne de liste, la carte de fil et la
+pastille de statut que le §5 refuse — et aucune d'elles ne ressemble à un bloc
+dans le code.
+
+**La désaturation des photos est refusée sur le contenu.** Arbitrage rendu sur le
+§7 : c'est un procédé de collage marketing, et l'appliquer au fil détruirait ce
+qui fait choisir un salon — la couleur d'un vernis, d'une mèche, d'une pièce.
+Elle reste possible sur les fonds décoratifs. Conséquence : le point que le §7
+laissait à arbitrer avec l'API — un traitement d'image à l'ingestion — est clos
+par un non, et rien n'est à faire côté serveur.
+
+**Trois champs annoncés au contrat et pas encore servis, rendus comme absents et
+non comme zéro.** `offres_disponibles` par palier, le compte de salons par
+catégorie, le relevé d'audience par compte connecté. Chacun est optionnel dans
+les types, et chaque écran distingue **absent** de **vide** : « 0 prestation »
+dirait à une créatrice éligible que son palier n'ouvre sur rien, et l'état vide
+de l'écran d'audience envoyait connecter un réseau quelqu'un qui en avait déjà
+un — un cul-de-sac qui ment, sur le seul écran où elle vient vérifier que le
+sien est bien pris en compte.
+
+**Deux manques restent, et ils sont nommés.** Le **logo vectoriel** : les lettres
+sont dessinées à la main, le D porte une coupe oblique qu'aucune fonte ne donne,
+et toute reconstruction est une approximation — `tokens.json` la porte dans
+`$meta.unconfirmed`. Les **trois images de satin** : la passation les livre en 2x
+et 3x et interdit de les recalculer à l'exécution, `expo-linear-gradient`
+donnant la pente droite que la direction refuse. Sans fichiers, `SurfaceSatin`
+n'est pas écrit : un composant qui rendrait un dégradé linéaire en attendant
+serait exactement le cliché que la direction évite.

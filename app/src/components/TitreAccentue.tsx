@@ -52,6 +52,11 @@ export type TitreAccentueProps = {
   taille?: 'display' | 'heading' | 'ecran';
   /** L'encre du bloc. Blanc par défaut ; l'encre est une variante admise. */
   encreDuBloc?: Extract<ColorName, 'ink.onDark' | 'ink.onBrand'>;
+  /**
+   * L'encre du titre. Le titre suit la surface sur laquelle il est posé — un
+   * voile de photo demande l'encre claire — et le bloc garde la sienne.
+   */
+  couleur?: ColorName;
   testID?: string;
 };
 
@@ -61,6 +66,7 @@ export function TitreAccentue({
   bloc = false,
   taille = 'heading',
   encreDuBloc = 'ink.onDark',
+  couleur = 'ink.default',
   testID,
 }: TitreAccentueProps) {
   const c = useColors();
@@ -80,6 +86,7 @@ export function TitreAccentue({
     return (
       <Texte
         variante={taille === 'ecran' ? 'type.screenTitle' : `type.${taille}`}
+        couleur={couleur}
         testID={testID}
       >
         {texte}
@@ -99,9 +106,11 @@ export function TitreAccentue({
     // détacher, et le texte reste un seul flux que la mise en page peut couper
     // où elle veut.
     return (
-      <Texte variante={variante} testID={testID}>
+      <Texte variante={variante} couleur={couleur} testID={testID}>
         {avant ? `${avant} ` : ''}
-        <Texte variante={varianteAccent}>{mot}</Texte>
+        <Texte variante={varianteAccent} couleur={couleur}>
+          {mot}
+        </Texte>
         {apres}
       </Texte>
     );
@@ -109,7 +118,11 @@ export function TitreAccentue({
 
   return (
     <View testID={testID} style={{ alignItems: 'flex-start' }}>
-      {avant ? <Texte variante={variante}>{avant}</Texte> : null}
+      {avant ? (
+        <Texte variante={variante} couleur={couleur}>
+          {avant}
+        </Texte>
+      ) : null}
       {/* Le bloc et sa ponctuation restent solidaires : la virgule qui suit le
           mot appartient au bloc visuellement, et la séparer les ferait
           diverger au premier retour à la ligne. */}
@@ -127,7 +140,11 @@ export function TitreAccentue({
             {mot}
           </Texte>
         </View>
-        {apres.trim() ? <Texte variante={variante}>{apres}</Texte> : null}
+        {apres.trim() ? (
+          <Texte variante={variante} couleur={couleur}>
+            {apres}
+          </Texte>
+        ) : null}
       </View>
     </View>
   );
