@@ -487,4 +487,20 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       et non recadré : ses radiales sont en pourcentages de leur boîte. Un test
       liste ce que l'écran montre et compare avant et après la réponse ; 2
       mutations vérifiées*
+- [x] **Un voile adoucit, il ne garantit rien**
+      *Le constat fait sur la sous-ligne de l'accueil se répétait sur les cartes
+      du fil, et il est plus net qu'annoncé : mesuré sur la pire photo possible,
+      `ink.onScrim` ne tient qu'à 0,606 d'opacité et `ink.onScrimMuted` qu'à
+      0,733 — des trois arrêts du système, **seul `scrim.photoBottom` les
+      dépasse**. La question n'est donc pas l'encre mais l'endroit, et sur un
+      dégradé l'endroit dépend de la hauteur de la carte, donc du terminal. Fin :
+      le voile adoucit et s'arrête à `modal`, le texte porte sa propre bande à
+      `photoBottom`, et le seuil est **calculé depuis les jetons** plutôt
+      qu'écrit. 4 tests neufs, 2 mutations vérifiées*
+- [ ] **Ajouter `e2e` aux vérifications requises de `main`**
+      *La protection n'exige que `api` et `app` : le job qui monte le produit
+      entier tourne et **ne bloque pas**. Une PR rouge sur lui a été fusionnée
+      aujourd'hui. C'est le job qui a trouvé les trois défauts qu'aucun test
+      unitaire n'aurait vus. Réglage d'administration du dépôt, pas une décision
+      de code — à faire par Daniel, ou sur son accord*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire

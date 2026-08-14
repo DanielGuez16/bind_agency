@@ -37,6 +37,7 @@ export {
   DataRow,
   MediaFallback,
   ServiceRow,
+  BandeDeTexteSurPhoto,
   VoileDeLisibilite,
   type BusinessCardProps,
   type DataRowProps,

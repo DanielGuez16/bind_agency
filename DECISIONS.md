@@ -4457,3 +4457,63 @@ réellement encodée dans le QR, c'est-à-dire sur ce que la caisse scanne.
 **La suspension automatique n'est pas construite**, et c'est confirmé : le score
 de fiabilité couvre déjà le cas, de façon graduée et réversible, là où une
 suspension de trente jours est binaire et engage des droits.
+## 2026-08-14 — Un voile adoucit, il ne garantit rien
+
+La conversation fonctionnelle a relevé que le constat fait sur la sous-ligne de
+l'accueil devait se répéter ailleurs : si `ink.onScrimMuted` n'est pas
+défendable sur un voile posé au-dessus d'une image quelconque, elle ne l'est
+probablement nulle part où le fond est une photo de commerce.
+
+C'est exact, et c'est plus net que ça.
+
+**Mesuré sur la pire photo possible — une blanche.** C'est le seul raisonnement
+qui vaille sur une image dont on ne maîtrise rien, et ce n'est pas un cas
+d'école : les mosaïques de la fondatrice alternent justement des ensembles
+presque blancs. `ink.onScrim` ne tient qu'à partir d'un voile à **0,606**
+d'opacité ; `ink.onScrimMuted` qu'à **0,733**. Des trois arrêts du système —
+`photoTop` 0,45, `modal` 0,55, `photoBottom` 0,88 — **seul le dernier les
+dépasse**.
+
+**Donc la question n'est pas l'encre, c'est l'endroit.** Un texte posé sur le
+haut ou le milieu d'un dégradé n'est démontrable avec aucune des deux encres. Et
+sur un dégradé, l'endroit où un texte tombe dépend de la hauteur de la carte,
+donc du terminal : les deux lignes du nom d'un salon tombaient autour de 0,65 et
+0,76 — au-dessus du seuil pour l'une, en dessous pour l'autre, et impossible à
+prouver dans les deux cas.
+
+**Le partage retenu.** `VoileDeLisibilite` adoucit la transition et s'arrête à
+`modal` ; le texte porte **sa propre bande** à `photoBottom`. La lisibilité
+cesse alors de dépendre d'une hauteur : 12,10:1 et 7,72:1 sur une photo blanche,
+sur n'importe quel écran. Descendre le dégradé jusqu'à `photoBottom` en plus
+aurait empilé deux couches sombres et mangé le dernier tiers de la photo pour
+rien.
+
+**Le seuil est calculé, pas écrit.** `opaciteMinimaleDuVoile` le dérive des
+jetons, et trois tests le tiennent : l'arithmétique de contraste elle-même
+— vérifiée sur le noir sur blanc à 21:1, qui attraperait une erreur d'exposant
+que rien d'autre ne verrait —, les deux seuils, et la conclusion que seul
+`photoBottom` les atteint. Le jour où quelqu'un éclaircit cet arrêt pour laisser
+voir la photo, c'est là que ça tombe : vérifié en le passant à 0,70.
+
+## 2026-08-14 — La e2e tourne et ne bloque pas
+
+Signalé par la conversation fonctionnelle, vérifié : la protection de `main`
+n'exige que `api` et `app`. Le job `e2e` s'exécute sur chaque PR et **son échec
+n'empêche rien** — une PR rouge sur lui a été fusionnée aujourd'hui sans que
+rien ne s'y oppose.
+
+C'est le job qui monte le produit entier, et il existe parce que trois défauts
+n'ont été trouvés que par lui : la vidéo qui ne jouait pas, les polices jamais
+chargées, la barre latérale jamais montée. Un garde-fou qui ne bloque pas est
+une intention, pas une règle — et `CLAUDE.md` dit précisément le contraire :
+« La règle est dans le dépôt, pas dans la vigilance. »
+
+La liste des vérifications requises est un réglage d'administration du dépôt et
+pas une décision de composition : elle n'a pas été modifiée ici. **Elle est
+remontée à Daniel**, avec la correction proposée — ajouter `e2e` aux
+vérifications requises.
+
+*En attendant, la conclusion se lit sur le run entier* — `gh run view <id>
+--json conclusion` — et jamais sur l'état de la PR, qui ne reflète que les deux
+vérifications requises. C'est la même leçon que celle des sept PR fusionnées sur
+une CI rouge, sous une autre forme.

@@ -313,6 +313,56 @@ describe('brand.500 est une surface, jamais une encre', () => {
   });
 });
 
+describe('un texte sur une photo ne tient que sur le plus opaque des arrêts', () => {
+  /**
+   * **Le motif se répète partout où un texte est posé sur une photo**, et il
+   * s'est trouvé deux fois en un jour : la sous-ligne de l'accueil, puis le nom
+   * des cartes du fil. Dans les deux cas la même erreur — croire qu'un dégradé
+   * garantit une lisibilité alors qu'il en donne une par pixel.
+   *
+   * Ce que ces tests fixent est le fait de départ, pas ses conséquences : ce
+   * qu'il faut d'opacité, et lesquels des arrêts du système l'atteignent. Le
+   * jour où quelqu'un éclaircit `scrim.photoBottom` pour laisser voir la photo,
+   * c'est ici que ça tombe.
+   */
+  const { opaciteMinimaleDuVoile, luminance, contraste } = require('../src/theme');
+
+  /** L'opacité d'un `rgba(...)`, telle que les jetons l'écrivent. */
+  const opacite = (jeton: string) => Number(/,\s*([\d.]+)\)/.exec(jeton)![1]);
+
+  it('l’arithmétique de contraste dit ce que WCAG dit', () => {
+    // Deux repères que tout le monde connaît : le noir sur blanc vaut 21:1, et
+    // une couleur contre elle-même vaut 1:1. Sans eux, une erreur d'exposant
+    // dans la luminance ne se verrait nulle part.
+    expect(contraste(luminance('#FFFFFF'), luminance('#000000'))).toBeCloseTo(21, 1);
+    expect(contraste(luminance('#F26B21'), luminance('#F26B21'))).toBeCloseTo(1, 5);
+  });
+
+  it('dit ce qu’il faut d’opacité pour chaque encre', () => {
+    // Sur la pire photo possible — une blanche. C'est le seul raisonnement qui
+    // vaille sur une image dont on ne maîtrise rien, et ce n'est pas un cas
+    // d'école : les mosaïques de la fondatrice alternent justement des
+    // ensembles presque blancs.
+    expect(opaciteMinimaleDuVoile('ink.onScrim')).toBeCloseTo(0.606, 2);
+    expect(opaciteMinimaleDuVoile('ink.onScrimMuted')).toBeCloseTo(0.733, 2);
+    // La sourde en demande plus que la claire : c'est ce qui rend l'ordre
+    // vérifiable plutôt que su.
+    expect(opaciteMinimaleDuVoile('ink.onScrimMuted')).toBeGreaterThan(
+      opaciteMinimaleDuVoile('ink.onScrim'),
+    );
+  });
+
+  it('et seul `scrim.photoBottom` l’atteint', () => {
+    // C'est la conclusion qui compte : un texte posé sur le haut ou le milieu
+    // d'un voile n'est pas démontrable, quelle que soit son encre.
+    const requis = opaciteMinimaleDuVoile('ink.onScrimMuted');
+
+    expect(opacite(tokens.color.scrim.photoBottom)).toBeGreaterThanOrEqual(requis);
+    expect(opacite(tokens.color.scrim.modal)).toBeLessThan(requis);
+    expect(opacite(tokens.color.scrim.photoTop)).toBeLessThan(requis);
+  });
+});
+
 describe('le Didone ne descend jamais sous son plancher', () => {
   it('toutes les variantes en serif sont à 34 px ou au-dessus', () => {
     // « Un serif de 22 px est un bug visible » — pour qui sait qu'il en est un.
