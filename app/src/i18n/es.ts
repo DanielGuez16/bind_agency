@@ -611,6 +611,26 @@ export const es: Catalogue = {
     pasEncoreEnLigne:
       'Asumirla no la publica. Verás lo que falta revisar, y tú decides cuándo abrir.',
   },
+  categories: {
+    beauty: 'Belleza y bienestar',
+    fitness: 'Fitness',
+    restaurant: 'Restaurante',
+    museum: 'Museo',
+    family_activity: 'Actividad familiar',
+    other: 'Otro',
+  },
+  creationCommerce: {
+    titre: 'Crea tu negocio',
+    corps: 'Unos pocos datos para aparecer en el mapa. Horarios, servicios y fotos vienen después.',
+    nom: 'Nombre del negocio',
+    categorie: '¿Qué tipo de negocio es?',
+    adresse: 'Dirección',
+    adresseAide: 'Sin dirección no aparecerás en el feed de ningún creador.',
+    telephone: 'Teléfono',
+    creer: 'Crear mi negocio',
+    creation: 'Creando…',
+    ensuite: 'Crearlo no te pone en línea. Tú eliges cuándo, una vez que estén tus servicios y horarios.',
+  },
   terrain: {
     titre: 'Altas sobre el terreno',
     videTitre: 'Ninguna ficha preparada',
@@ -638,6 +658,7 @@ export const es: Catalogue = {
     },
   },
   onglets: {
+    demarrer: 'Empezar',
     annuaire: 'Creadores',
     paliers: 'Niveles',
     fil: 'Cerca',

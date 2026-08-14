@@ -43,6 +43,12 @@ describe('couverture des écrans', () => {
     // d'authentification, sur un lien et sans compte. Un lien mort n'y est pas
     // une erreur de chargement mais le cas prévu, et un bouton « réessayer »
     // n'y réessaierait rien. Ses trois états ont leur propre fichier.
-    expect(HORS_REGISTRE).toHaveLength(10);
+    //
+    // Passé à onze pour la création d'un commerce : elle n'est pas un écran
+    // monté par le navigateur mais le contenu de l'état vide de l'écran
+    // d'attente. Le chargement et l'erreur sont ceux de la requête
+    // d'appartenance, rendus par l'`Ecran` qui l'enveloppe ; le formulaire
+    // lui-même ne charge rien.
+    expect(HORS_REGISTRE).toHaveLength(11);
   });
 });

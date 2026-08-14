@@ -23,6 +23,7 @@ import type {
   AudienceDuCompte,
   AutorisationDemarree,
   Booking,
+  BusinessCategory,
   CodeDeRetrait,
   Collaboration,
   GenreDeNotification,
@@ -348,6 +349,27 @@ export class Api {
   mesCommerces(signal?: AbortSignal) {
     return this.client.request<{ id: string; name: string }[]>(routes.mesCommerces(), {
       signal,
+    });
+  }
+
+  /**
+   * Crée le commerce et en fait l'appelant propriétaire, d'un seul tenant.
+   *
+   * La route existait depuis la première phase et **rien ne l'appelait** : un
+   * membre qui venait de s'inscrire tombait sur un onglet d'attente sans issue,
+   * et le seul moyen d'obtenir un commerce était qu'on le lui prépare depuis le
+   * mode terrain. C'était un produit à une seule porte d'entrée.
+   */
+  creerMonCommerce(corps: {
+    name: string;
+    category: BusinessCategory;
+    currency: string;
+    address: string | null;
+    phone: string | null;
+  }) {
+    return this.client.request<{ id: string; name: string }>(routes.creerLeCommerce(), {
+      methode: 'POST',
+      corps,
     });
   }
 

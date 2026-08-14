@@ -572,7 +572,11 @@ function OngletsCommerce() {
   if (businessId === null) {
     return (
       <Onglets.Navigator screenOptions={options} tabBar={barreLaterale}>
-        <Onglets.Screen name="attente" options={onglet(t('onglets.journee'), 'calendrier')}>
+        {/* **L'onglet dit ce qu'il y a derrière, et non ce qu'il y aura.**
+            « Aujourd'hui » annonçait une journée de rendez-vous à quelqu'un qui
+            n'a pas encore de commerce ; ce qui l'attend est un formulaire de
+            création, et c'est ce que l'onglet doit nommer. */}
+        <Onglets.Screen name="attente" options={onglet(t('onglets.demarrer'), 'coche')}>
           {() => ecranDAttente}
         </Onglets.Screen>
         <Onglets.Screen

@@ -67,4 +67,11 @@ export const HORS_REGISTRE = [
   // sont éprouvés dans `prise-en-main.test.tsx`.
   'PriseEnMainScreen.tsx',
   'RedemptionScreen.tsx',
+  // La création d'un commerce **est l'état vide d'un autre écran**, et n'a donc
+  // pas d'`Ecran` à elle : elle est rendue dans le `vide` de l'écran d'attente,
+  // qui porte le chargement et l'erreur de la requête d'appartenance. Lui
+  // inventer quatre états lui demanderait d'inventer une donnée à charger — un
+  // formulaire de création n'en a aucune. Il est éprouvé dans
+  // `etats-vides-actionnables.test.tsx`.
+  'CreationDuCommerceScreen.tsx',
 ] as const;

@@ -3794,3 +3794,49 @@ sa photo illisible.
 et sa clé. Tant qu'ils manquent, l'extraction rend une charge vide — et l'écran
 doit proposer la saisie plutôt qu'un état d'erreur, ce que la carte de passation
 dit maintenant.
+---
+
+## 2026-08-14 — Un état vide qui remplace le contenu emporte l'action avec lui
+
+`Ecran` rend son état vide **à la place** du contenu. C'est la bonne règle
+quand le contenu est une liste. Elle devient un piège dès qu'une action vit
+dans ce contenu : l'action disparaît exactement dans le cas où elle sert, celui
+du compte qui n'a rien.
+
+Le défaut s'est présenté deux fois, aux deux portes d'entrée du produit, et
+n'avait été vu ni l'une ni l'autre fois.
+
+**Le mode terrain.** Le formulaire de préparation était complet — trois champs,
+un bouton, un QR — et rendu dans le corps de l'écran. Tant qu'aucune fiche
+n'existait, l'état vide le remplaçait par « aucune fiche préparée ». C'est-à-dire
+qu'il était invisible à la première tournée, la seule pour laquelle l'écran a été
+écrit. Le formulaire est désormais rendu dans les deux états, construit une seule
+fois : deux copies finissent par ne plus dire la même chose.
+
+**Le commerce qui s'inscrit seul.** `POST /business` existait depuis la première
+phase, avec son service, son test, sa migration — et **aucun écran ne
+l'appelait**. Un gérant inscrit seul arrivait sur un onglet d'attente qui disait
+que son commerce n'était pas en ligne et n'offrait rien. Le seul chemin vers un
+commerce passait par le mode terrain, donc par quelqu'un d'autre : un produit à
+deux côtés dont un côté ne peut pas s'inscrire n'a pas de côté commerce, il a une
+liste d'invités.
+
+**Ce qui est demandé à la création, et ce qui ne l'est pas.** Le nom, la
+catégorie, l'adresse, le téléphone. La catégorie se choisit et ne se devine pas :
+elle classe le commerce dans le fil et dans les compteurs par rayon, et un
+commerce mal classé ne remonte dans aucun filtre — défaut qui ne se voit que
+côté créateur. L'adresse part au géocodeur ; sans elle le commerce n'est dans
+aucun rayon, et l'écran le dit plutôt que de le laisser découvrir. La devise
+n'est pas un champ : elle est immuable après création, et la proposer serait
+offrir une décision irréversible à quelqu'un qui n'a pas les éléments pour la
+prendre. Le reste — horaires, catalogue, photos, paliers — se remplit ensuite,
+avec les étapes d'activation qui disent ce qu'il manque.
+
+**Pourquoi les tests d'écran ne l'ont pas vu.** Ils montent chaque écran dans
+ses quatre états et vérifient, pour le vide, que le texte du vide s'affiche.
+C'est exactement ce que faisait le produit. Une garde qui n'éprouve que la forme
+qu'on avait en tête laisse passer celle qu'on n'y avait pas : le test neuf
+vérifie qu'un état vide **porte son action**, pas qu'il porte sa phrase, et il
+monte l'onglet d'attente lui-même — sans quoi il prouverait qu'un écran de
+création fonctionne et rien de plus, ce qui reste vert pendant qu'aucun onglet ne
+le monte.
