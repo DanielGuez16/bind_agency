@@ -105,7 +105,7 @@ export function CreationDuCommerceScreen({ onCree }: CreationDuCommerceProps) {
     // écran et en tête de flux en compact. L'écrire aussi donnerait « Create
     // your business » au-dessus de « Create your business ».
     <View testID="creation-du-commerce" style={{ gap: 16 }}>
-      <Texte variante="type.body" couleur="text.secondary">
+      <Texte variante="type.body" couleur="ink.soft">
         {t('creationCommerce.corps')}
       </Texte>
 
@@ -121,7 +121,7 @@ export function CreationDuCommerceScreen({ onCree }: CreationDuCommerceProps) {
       />
 
       <View style={{ gap: 8 }}>
-        <Texte variante="type.label" couleur="text.secondary">
+        <Texte variante="type.label" couleur="ink.soft">
           {t('creationCommerce.categorie')}
         </Texte>
         <RangeeDeChips>
@@ -164,7 +164,7 @@ export function CreationDuCommerceScreen({ onCree }: CreationDuCommerceProps) {
       {/* Ce qui vient après. Un formulaire qui ne dit pas où il mène laisse
           croire que le commerce sera en ligne au clic — il ne le sera pas, et
           l'activation attend six étapes de plus. */}
-      <Texte variante="type.caption" couleur="text.muted">
+      <Texte variante="type.caption" couleur="ink.mute">
         {t('creationCommerce.ensuite')}
       </Texte>
     </View>
