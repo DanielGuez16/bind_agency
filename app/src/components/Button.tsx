@@ -41,6 +41,17 @@ export type ButtonProps = {
   /** Le libellé pendant le chargement : un verbe, pas un mot vide. */
   loadingLabel?: string;
   fullWidth?: boolean;
+  /**
+   * Le bouton se pose sur un média, pas sur une surface du thème.
+   *
+   * **N'a de sens que pour `ghost`**, seul variant dont le texte touche
+   * directement ce qu'il y a derrière : le principal porte sa surface, le
+   * secondaire son filet, le danger sa bordure. Le fantôme, lui, est en
+   * `brand.700` — une encre foncée, calibrée pour du papier. Sur un média elle
+   * donne 2,14:1 au pire, et rien ne le rattrape : ni un voile, qui assombrit
+   * l'encre autant que le fond, ni la chance d'avoir une image sombre.
+   */
+  surMedia?: boolean;
   onPress?: () => void;
   accessibilityLabel?: string;
   testID?: string;
@@ -60,6 +71,7 @@ export function Button({
   loading = false,
   loadingLabel,
   fullWidth = true,
+  surMedia = false,
   onPress,
   accessibilityLabel,
   testID,
@@ -91,7 +103,11 @@ export function Button({
   const texte: Record<ButtonVariant, Parameters<typeof Texte>[0]['couleur']> = {
     primary: 'ink.onBrand',
     secondary: 'ink.default',
-    ghost: 'brand.700',
+    // Sur un média, le fantôme passe à l'encre claire — 12,14:1 sur la bande
+    // qui le porte, contre 2,14:1 pour `brand.700` au pire. C'est le même
+    // raisonnement que la sous-ligne de l'accueil : une teinte sourde n'est
+    // défendable que sur un fond clair connu.
+    ghost: surMedia ? 'ink.onScrim' : 'brand.700',
     danger: 'status.danger.text',
   };
 

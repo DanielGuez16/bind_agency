@@ -600,7 +600,7 @@ describe('la composition ne change pas quand le manifeste arrive', () => {
   }
 });
 
-describe('l’en-tête de l’accueil porte sa bande', () => {
+describe('sur un média, chaque texte porte son propre fond', () => {
   it('sur une vidéo comme sur le satin, et avec le même fond', async () => {
     // **Le voile ne suffit pas ici, et c'est mesuré.** Il descend à 0,55 en son
     // milieu, et l'en-tête tombe entre le tiers et la moitié de l'écran selon
@@ -623,6 +623,55 @@ describe('l’en-tête de l’accueil porte sa bande', () => {
       expect(opacite).toBeGreaterThanOrEqual(opaciteMinimaleDuVoile('ink.onScrim'));
       await vue.unmount();
     }
+  });
+
+  /**
+   * **Le défaut rapporté comme « la vidéo n'apparaît plus ».** Elle
+   * apparaissait : elle jouait, elle était bien au-dessus du satin, et le voile
+   * n'en laissait passer que 18 % en haut et 48 % au mieux — mesuré au
+   * navigateur sur une vidéo unie, un bleu vif arrivait à l'œil en gris
+   * d'ardoise.
+   *
+   * Le voile valait `photoBottom` aux deux bouts et `modal` au milieu parce
+   * qu'il était, à l'époque, la seule protection du texte. Depuis, chaque ligne
+   * de cet écran a reçu son propre fond — c'est le sujet de ce bloc. Il ne
+   * protégeait donc plus rien, et le prix qu'il faisait payer à l'image comme
+   * au satin n'achetait plus rien.
+   */
+  it('le voile adoucit, et ne cache plus ce qu’il couvre', async () => {
+    const { couleurs } = require('../src/theme');
+    await accueilBrut(AVEC_VIDEO_HAUT);
+    await waitFor(() => expect(screen.getByTestId('voile-accueil')).toBeTruthy());
+
+    const fond = styleAplati(screen.getByTestId('voile-accueil')).backgroundColor;
+    expect(fond).toBe(couleurs['scrim.photoTop']);
+    // Les deux valeurs dont il sortait. Un voile qui y retourne rend la vidéo
+    // invisible, et c'est très exactement ce qui s'est produit.
+    expect(fond).not.toBe(couleurs['scrim.photoBottom']);
+    expect(fond).not.toBe(couleurs['scrim.modal']);
+
+    // Et il laisse passer plus de la moitié. Le seuil est une décision de
+    // composition — un fond doit rester un fond — pas une propriété du système,
+    // donc il s'écrit ici plutôt que de se déduire d'un jeton.
+    const opacite = Number(/,\s*([\d.]+)\)/.exec(couleurs['scrim.photoTop'])![1]);
+    expect(1 - opacite).toBeGreaterThan(0.5);
+  });
+
+  it('le lien de connexion porte sa bande et passe à l’encre claire', async () => {
+    // **Le seul texte de l'écran qui touchait le média.** En `brand.700`, une
+    // encre foncée calibrée pour du papier : 2,14:1 au pire. Le voile ne l'a
+    // jamais sauvé et ne pouvait pas — il assombrit l'encre autant que le fond,
+    // et c'est pourquoi l'alléger ne change rien à ce défaut-là.
+    const { couleurs } = require('../src/theme');
+    await accueilBrut(AVEC_VIDEO_HAUT);
+    await waitFor(() => expect(screen.getByTestId('vers-connexion')).toBeTruthy());
+
+    expect(styleAplati(screen.getByTestId('bande-de-la-connexion')).backgroundColor).toBe(
+      couleurs['scrim.photoBottom'],
+    );
+    expect(styleAplati(screen.getByText(en.auth.versConnexion)).color).toBe(
+      couleurs['ink.onScrim'],
+    );
   });
 
   const SANS_MEDIA_HAUT = {

@@ -1,0 +1,9 @@
+{
+  "$pourquoi": "Les couleurs que les fichiers de la marque ont le droit de porter. Produit par scripts/cuire-la-marque.mjs, lu par __tests__/marque.test.ts. L'ancien monogramme vert a traversé le remplacement complet du système sans que rien ne l'arrête : c'est cette liste qui l'aurait arrêté.",
+  "mot": "B!ND",
+  "couleurs": {
+    "surface": "#F26B21",
+    "encreClaire": "#F7F3EF",
+    "encre": "#17120E"
+  }
+}

@@ -4564,3 +4564,74 @@ passaient pendant la mutation ne le touchaient pas. Six tests l'entourent
 maintenant, dont trois du sens inverse. C'est la quatrième fois sur ce projet
 qu'une mutation de trente secondes trouve ce qu'aucune relecture n'a vu, et la
 première où ce qu'elle trouve est **une absence** plutôt qu'un test creux.
+
+## 2026-08-14 — Le voile ne protégeait plus rien, et il cachait la vidéo
+
+Rapporté depuis la production : « la vidéo de fond n'apparaît plus, elle jouait
+avant #118 ». Les deux hypothèses proposées étaient que le satin permanent la
+couvre, ou qu'elle ait cessé d'être demandée. **Ni l'une ni l'autre.**
+
+Mesuré dans Chromium sur le build réel, avec une vidéo unie pour que tout écart
+soit imputable aux couches : le satin est bien la couche du dessous, la vidéo
+est montée, elle joue, elle avance. Ce qui la couvrait est le **voile** —
+`photoBottom` aux deux bouts, `modal` au milieu. Il n'en laissait passer que
+**18 % en haut et 48 % au mieux** : un bleu vif arrivait à l'œil en (31, 43, 46),
+un gris d'ardoise. Le même écrasement rendait presque noir un satin qui est une
+surface de marque.
+
+**Il n'était pas devenu trop lourd, il avait cessé d'être nécessaire.** Il datait
+de l'époque où il était la seule protection du texte. Depuis, chaque ligne de cet
+écran a reçu son propre fond : l'en-tête sa bande à 12,10:1, les deux portes
+leurs cartes opaques. Il payait donc plein tarif pour un service que plus
+personne ne lui demandait. Il redevient `photoTop`, en aplat — la pente
+n'existait que pour couvrir davantage aux deux bouts, là où vivaient les deux
+textes qui portent maintenant leur bande.
+
+**#118 n'a pas introduit le défaut, il a retiré ce qui le masquait.** Les
+couleurs du voile sont identiques avant et après ; seule sa condition a changé.
+Ce qui a disparu est le basculement de composition à l'arrivée du manifeste —
+le seul indice qu'une vidéo existait. Corriger la réorganisation a rendu visible
+qu'on ne voyait déjà rien.
+
+**Et un troisième texte n'avait aucun fond.** Le lien « Already have an
+account? » est un bouton fantôme, donc en `brand.700`, une encre foncée
+calibrée pour du papier : **2,14:1** au pire sur un média. Le voile ne l'a jamais
+sauvé et ne pouvait pas — il assombrit l'encre exactement autant que le fond,
+et c'est pourquoi l'alléger ne change rien à ce défaut-là. Il prend sa bande et
+passe à `ink.onScrim`, à 12,14:1. Défaut préexistant, trouvé en mesurant l'autre.
+
+## 2026-08-14 — L'ancienne marque avait survécu au remplacement du système
+
+Le logo en ligne était encore le « B » du système vert : deux arcs inégaux tenus
+par un axe débordant, hérité d'une direction artistique retirée. Il avait
+traversé la v1.0 sans que rien ne l'arrête. Les jetons avaient changé, les
+fontes, les soixante-quatre écrans ; `Logo.tsx` avait été **repeint** — la
+couleur passait par `useColors`, donc il devenait orange et paraissait à jour.
+Personne ne regardait sa forme.
+
+**La marque est le mot.** `B!ND`, le point d'exclamation à la place du I,
+`AGENCY` centré dessous. Il n'y a pas de signe à côté du mot. Le composant perd
+donc son tracé, et `Marque` ne compose plus qu'un texte.
+
+**Les fichiers statiques étaient pires, parce qu'on ne les relit jamais.**
+Favicon, icône d'application, trois couches Android, et la couleur qu'Android
+compose derrière l'icône, restée bleu pâle dans `app.json`. Ils étaient produits
+par un script Python qui dessinait le monogramme à la main, en vert d'eau sur
+indigo, valeurs écrites en dur. Le script est remplacé : Chromium peint le mot
+avec **le fichier de fonte que l'application embarque**, lu depuis
+`node_modules` — même raisonnement que pour les satins.
+
+**Ce que les tests d'alors vérifiaient.** Que les fichiers existaient et
+faisaient la bonne taille. Aucun ne regardait ce qu'ils montraient — c'est
+exactement par là que l'ancienne marque est passée. La garde neuve ne prétend
+pas juger un dessin ; elle vérifie que chaque pixel opaque est **un mélange de
+deux couleurs déclarées dans les jetons**. Compter les couleurs dominantes ne
+suffisait pas : sur une tuile de seize pixels, l'antialiasing *est* l'image. Un
+vert d'eau sur un indigo n'est sur aucun segment de la v1.0, à aucune taille.
+
+*Ce qui reste ouvert :* le vectoriel. Les lettres du logo sont dessinées à la
+main — le D porte une coupe oblique qu'aucune fonte ne donne. Ces fichiers sont
+la meilleure approximation disponible, et `$meta.unconfirmed` le porte déjà. À
+seize pixels, quatre lettres ne se lisent pas ; y mettre un « B » seul aurait été
+dessiner un monogramme que personne n'a validé, c'est-à-dire refaire ce qu'on
+venait de retirer.
