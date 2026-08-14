@@ -1,10 +1,21 @@
 /**
  * Reporting du commerce : ce que sa participation lui a rapporté.
  *
- * **Le seul montant qu'un commerce voit, et il est du côté de ce qu'il
- * donne.** `valeur_offerte_cents` n'est pas un revenu, et le libellé le dit :
- * « ce que vous avez donné ». Sans lui, « douze publications » ne se met en
- * regard de rien.
+ * **Aucun montant, nulle part, et c'est un changement de la v1.1.** La page
+ * portait « ce que vous avez donné · 4 280,00 USD ». Elle n'aurait pas dû : la
+ * règle de la carte d'API est qu'aucun montant ne figure dans une réponse
+ * destinée aux applications créateur et commerce, et **même si la réponse en
+ * porte un, le client l'ignore**.
+ *
+ * Ce qui remplace le montant est le **temps de fauteuil** : c'est ce qu'un
+ * salon donne réellement, et il se calcule à partir de la durée des
+ * prestations sans jamais toucher à un prix. C'est aussi plus juste — un salon
+ * ne compare pas des euros, il compare ce qu'il a donné à ce qu'il a reçu.
+ *
+ * **L'écran commence par la phrase**, pas par les chiffres. C'est celle qu'un
+ * salon répète à son associé : tant de prestations données, tant de
+ * publications reçues. Les nombres qui la composent viennent ensuite, pour qui
+ * doute et veut vérifier.
  *
  * **Le taux nul ne s'affiche pas comme zéro.** Zéro sur zéro n'est pas zéro, et
  * afficher 0 % à un commerce qui n'a encore servi personne serait un reproche
@@ -89,6 +100,16 @@ export function ReportingScreen({ businessId }: { businessId: string }) {
             })}
           </Texte>
 
+          {/* **La phrase d'abord.** C'est celle qu'un salon répète à son
+              associé, et elle contient déjà la réponse ; les chiffres qui la
+              composent servent à la vérifier, pas à la trouver. */}
+          <Texte variante="type.section" testID="phrase-du-rapport">
+            {t('reporting.phrase', {
+              prestations: vue.consommations,
+              publications: vue.publications,
+            })}
+          </Texte>
+
           {/* Les trois chiffres qui répondent à « est-ce que ça marche ».
               Publications livrées, part tenue, portée. Le reste sert à
               vérifier, pas à décider. */}
@@ -114,12 +135,25 @@ export function ReportingScreen({ businessId }: { businessId: string }) {
             <DataRow label={t('reporting.nonHonorees')} value={String(vue.non_honorees)} chiffre />
           </Section>
 
-          <Section titre={t('reporting.sectionValeur')}>
+          {/* **Le temps de fauteuil, à la place du montant.** Absent n'est pas
+              zéro : « 0 heure donnée » à un salon qui a servi quatre-vingt-huit
+              prestations serait faux, et c'est précisément le chiffre censé le
+              convaincre. Tant qu'il n'est pas servi, la ligne le dit. */}
+          <Section titre={t('reporting.sectionDonne')}>
             <DataRow
-              testID="valeur-offerte"
-              label={t('reporting.valeurOfferte')}
-              value={`${(vue.valeur_offerte_cents / 100).toFixed(2)} ${vue.currency}`}
-              chiffre
+              testID="temps-de-fauteuil"
+              label={t('reporting.tempsDeFauteuil')}
+              value={
+                typeof vue.temps_de_fauteuil_minutes === 'number'
+                  ? t('reporting.heures', {
+                      heures: formatNumber(
+                        Math.round(vue.temps_de_fauteuil_minutes / 60),
+                        locale,
+                      ),
+                    })
+                  : t('reporting.tempsIndisponible')
+              }
+              chiffre={typeof vue.temps_de_fauteuil_minutes === 'number'}
             />
           </Section>
 
