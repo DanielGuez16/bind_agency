@@ -63,10 +63,18 @@ test('une réservation confirmée mène à son code', async ({ page }) => {
   await expect(ouvrable, 'aucune réservation confirmée dans le jeu de données').toBeVisible();
   await ouvrable.click();
 
-  // **Le code existe et s'affiche.** C'est le dernier maillon : une
+  // **Le code existe et se présente.** C'est le dernier maillon : une
   // réservation qu'on ne peut pas présenter au comptoir ne vaut rien. La
   // rotation a son test unitaire ; ce qu'on éprouve ici est que l'écran
   // s'ouvre et que le serveur rend un code, ce que ni l'un ni l'autre ne
   // prouve seul.
-  await expect(page.getByTestId('chiffres')).toBeVisible();
+  //
+  // **Le QR et non plus les six chiffres.** Ils ne s'affichent plus : ils ne se
+  // saisissent pas, ne désignent rien seuls, et se confondaient avec le code de
+  // secours qu'on dicte. Ce qui prouve qu'un code est arrivé est ce que la
+  // caisse scanne — et le code de secours, qui est le seul qu'on lise à voix
+  // haute.
+  await expect(page.getByTestId('qr')).toBeVisible();
+  await expect(page.getByTestId('secours')).toBeVisible();
+  await expect(page.getByTestId('compte-a-rebours')).toBeVisible();
 });
