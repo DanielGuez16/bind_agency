@@ -502,6 +502,7 @@ describe('la composition ne change pas quand le manifeste arrive', () => {
    */
   const REPERES = [
     'satin-accueil',
+    'bande-de-l-entete',
     'voile-accueil',
     'accueil-defilant',
     'choix-de-la-porte',
@@ -580,6 +581,78 @@ describe('la composition ne change pas quand le manifeste arrive', () => {
   });
 
   async function accueilAvec(medias: unknown) {
+    const api = new ApiClient({
+      baseUrl: 'https://api.test',
+      coffre: { lire: async () => null, ecrire: async () => {} },
+      fetchImpl: async () => ({ ok: true, status: 200, json: async () => medias }) as Response,
+    });
+    return render(
+      <SafeAreaProvider initialMetrics={IPHONE_A_ENCOCHE}>
+        <ThemeProvider role="creator">
+          <I18nProvider initialLocale="en">
+            <ApiProvider client={api}>
+              <AccueilScreen onChoisir={() => {}} onSeConnecter={() => {}} />
+            </ApiProvider>
+          </I18nProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>,
+    );
+  }
+});
+
+describe('l’en-tête de l’accueil porte sa bande', () => {
+  it('sur une vidéo comme sur le satin, et avec le même fond', async () => {
+    // **Le voile ne suffit pas ici, et c'est mesuré.** Il descend à 0,55 en son
+    // milieu, et l'en-tête tombe entre le tiers et la moitié de l'écran selon
+    // la hauteur du contenu : sur une vidéo claire, cela fait entre 5,48:1 et
+    // 3,72:1 — au-dessus du seuil ou en dessous selon le terminal. Une
+    // garantie qui varie avec le terminal n'en est pas une.
+    //
+    // Sur le satin seul on est à 6,00:1 ; mais le satin n'est là que tant
+    // qu'aucune vidéo ne le couvre, et une garantie qui dépend de ce qui a fini
+    // de charger n'en est pas une non plus.
+    const { couleurs, opaciteMinimaleDuVoile } = require('../src/theme');
+    const opacite = Number(/,\s*([\d.]+)\)/.exec(couleurs['scrim.photoBottom'])![1]);
+
+    for (const medias of [SANS_MEDIA_HAUT, AVEC_VIDEO_HAUT]) {
+      const vue = await accueilBrut(medias);
+      await waitFor(() => expect(screen.getByTestId('bande-de-l-entete')).toBeTruthy());
+      expect(styleAplati(screen.getByTestId('bande-de-l-entete')).backgroundColor).toBe(
+        couleurs['scrim.photoBottom'],
+      );
+      expect(opacite).toBeGreaterThanOrEqual(opaciteMinimaleDuVoile('ink.onScrim'));
+      await vue.unmount();
+    }
+  });
+
+  const SANS_MEDIA_HAUT = {
+    categories: [],
+    home: {
+      video_key: null,
+      poster_key: null,
+      video_portrait_key: null,
+      poster_portrait_key: null,
+    },
+  };
+  const AVEC_VIDEO_HAUT = {
+    categories: [],
+    home: {
+      video_key: 'photos/accueil/video.mp4',
+      poster_key: 'photos/accueil/poster.jpg',
+      video_portrait_key: null,
+      poster_portrait_key: null,
+    },
+  };
+
+  function styleAplati(element: { props: { style?: unknown } }): Record<string, unknown> {
+    const empile = (valeur: unknown): Record<string, unknown> =>
+      Array.isArray(valeur)
+        ? Object.assign({}, ...valeur.map(empile))
+        : ((valeur as Record<string, unknown>) ?? {});
+    return empile(element.props.style);
+  }
+
+  async function accueilBrut(medias: unknown) {
     const api = new ApiClient({
       baseUrl: 'https://api.test',
       coffre: { lire: async () => null, ecrire: async () => {} },

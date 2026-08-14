@@ -211,6 +211,66 @@ export const blockRule = brut.blockRule;
 export const segmentedRule = brut.pattern.segmentedRule;
 
 // --------------------------------------------------------------------------
+// ce qu'un voile doit peser pour qu'un texte tienne dessus
+// --------------------------------------------------------------------------
+
+/**
+ * La luminance relative d'une couleur, au sens de WCAG.
+ *
+ * Exportée pour être éprouvée seule : c'est la seule arithmétique du dossier
+ * de thème, et une erreur d'exposant s'y verrait nulle part ailleurs.
+ */
+export function luminance(hexa: string): number {
+  const canaux = [1, 3, 5].map((i) => parseInt(hexa.slice(i, i + 2), 16) / 255);
+  const lineaire = canaux.map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * lineaire[0] + 0.7152 * lineaire[1] + 0.0722 * lineaire[2];
+}
+
+/** Le rapport de contraste entre deux luminances. */
+export function contraste(a: number, b: number): number {
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+}
+
+/**
+ * L'opacité minimale d'un voile pour qu'une encre claire y tienne.
+ *
+ * **Calculée sur la pire photo possible : une blanche.** Un voile est posé sur
+ * une image dont on ne maîtrise rien ; le seul raisonnement qui vaille est
+ * celui du cas le plus défavorable, et il n'est pas si rare — les mosaïques de
+ * la fondatrice alternent justement des ensembles presque blancs.
+ *
+ * Elle vaut 0,606 pour `ink.onScrim` et 0,733 pour `ink.onScrimMuted`.
+ * **Des trois arrêts du système, seul `scrim.photoBottom` (0,88) les
+ * dépasse** : un texte posé ailleurs que sur cet arrêt-là n'est pas
+ * démontrable. C'est ce qui a fait passer la sous-ligne de l'accueil au blanc,
+ * et le nom des cartes du fil sur une bande plutôt que sur la queue d'un
+ * dégradé.
+ */
+export function opaciteMinimaleDuVoile(encre: 'ink.onScrim' | 'ink.onScrimMuted'): number {
+  const claire = luminance(COULEURS[encre]);
+
+  // Un pas de un millième : plus fin que ce qu'une valeur d'opacité écrite en
+  // jeton peut porter, et le résultat est arrondi au millième de toute façon.
+  for (let a = 0; a <= 1; a += 0.001) {
+    // Le composite d'un voile d'encre sur du blanc, en luminance linéaire —
+    // c'est bien le mélange des canaux, pas celui des luminances, mais sur du
+    // blanc et de l'encre l'écart est sous le millième et le pas l'absorbe.
+    const fond = luminance(melange(a));
+    if (contraste(claire, fond) >= 4.5) return Math.round(a * 1000) / 1000;
+  }
+  // Aucune opacité ne suffit : l'encre n'est pas claire. Rendre 1 plutôt que
+  // lever — l'appelant est un test, et un nombre se compare.
+  return 1;
+}
+
+/** Le voile d'encre, à une opacité donnée, posé sur du blanc. */
+function melange(alpha: number): string {
+  const encre = [1, 3, 5].map((i) => parseInt(brut.color.ink.default.slice(i, i + 2), 16));
+  const composite = encre.map((canal) => Math.round(255 * (1 - alpha) + canal * alpha));
+  return `#${composite.map((n) => n.toString(16).padStart(2, '0')).join('')}`;
+}
+
+// --------------------------------------------------------------------------
 // paliers
 // --------------------------------------------------------------------------
 

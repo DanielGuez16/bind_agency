@@ -1034,3 +1034,34 @@ describe('le satin, et ses trois refus', () => {
     expect(await alignement('ember')).toBe('flex-end');
   });
 });
+
+describe('le nom d’une carte est sur une bande, pas sur une queue de dégradé', () => {
+  it('porte le plus opaque des arrêts, et non une opacité de hasard', async () => {
+    // **Le défaut que ça ferme.** Sur un dégradé, l'opacité sous un texte
+    // dépend de l'endroit exact où ce texte tombe — donc de la hauteur de la
+    // carte, donc du terminal. Les deux lignes tombaient autour de 0,65 et
+    // 0,76 : au-dessus du seuil pour l'une, en dessous pour l'autre, et
+    // impossible à prouver dans les deux cas.
+    //
+    // Sur une bande, les deux nombres sont fixes : 12,10:1 et 7,72:1 sur une
+    // photo blanche, sur n'importe quel écran.
+    const { couleurs, opaciteMinimaleDuVoile } = require('../src/theme');
+    await monter(
+      <BusinessCard
+        name="Salón Ocean"
+        meta="Beauty · 1,2 km"
+        serviceName="Gel nails"
+        serviceDuration="45 min"
+        tier="story"
+      />,
+    );
+
+    expect(style(screen.getByTestId('bande-du-nom')).backgroundColor).toBe(
+      couleurs['scrim.photoBottom'],
+    );
+
+    // Et cette bande dépasse ce que la plus exigeante des deux encres demande.
+    const opacite = Number(/,\s*([\d.]+)\)/.exec(couleurs['scrim.photoBottom'])![1]);
+    expect(opacite).toBeGreaterThanOrEqual(opaciteMinimaleDuVoile('ink.onScrimMuted'));
+  });
+});

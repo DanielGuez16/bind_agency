@@ -19,6 +19,7 @@
  * Côté commerce, il devient une tâche — « Photo manquante · ajouter » — parce
  * que c'est quelqu'un qui peut la faire qui la lit.
  */
+import type { ReactNode } from 'react';
 import { Animated, Image, Pressable, View, type ImageSourcePropType } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -46,19 +47,62 @@ const RAPPORT_COUVERTURE = 16 / 9;
 /**
  * Le voile de lisibilité posé sur une photo.
  *
- * Transparent en haut, opaque en bas : le texte se lit sur n'importe quelle
- * image sans que l'image disparaisse. Les trois arrêts sont des jetons — un
- * dégradé écrit en dur ne suit pas le thème, et il y en a deux.
+ * Transparent en haut, opaque en bas : la photo reste visible sans que le fond
+ * du texte devienne quelconque. Les arrêts sont des jetons — un dégradé écrit
+ * en dur ne suit pas le système.
+ *
+ * **Ce voile adoucit, il ne garantit rien.** C'est une distinction qui a coûté
+ * un défaut : sur un dégradé, l'opacité sous un texte dépend de l'endroit exact
+ * où ce texte tombe, donc de la hauteur de la carte, donc du terminal. Mesuré
+ * sur la pire photo possible — une blanche —, `ink.onScrim` ne tient qu'à
+ * partir d'un voile à 0,61 et `ink.onScrimMuted` qu'à 0,735 ; des trois arrêts
+ * du système, **seul `scrim.photoBottom` les dépasse**. Un texte posé ailleurs
+ * que sur cet arrêt-là est illisible sur une photo claire, et le prouver
+ * demanderait de connaître une mise en page qu'on ne connaît pas.
+ *
+ * D'où le partage : le dégradé fait la transition, et le texte porte **sa
+ * propre bande** à `scrim.photoBottom` — voir `BandeDeTexteSurPhoto`. La
+ * lisibilité cesse alors de dépendre d'une hauteur.
  */
 export function VoileDeLisibilite({ hauteur }: { hauteur?: number }) {
   const c = useColors();
   return (
     <LinearGradient
       pointerEvents="none"
-      colors={[c['scrim.photoTop'], c['scrim.modal'], c['scrim.photoBottom']]}
-      locations={[0, 0.55, 1]}
+      // S'arrête à `modal` : ce qui suit est la bande du texte, qui porte son
+      // fond elle-même. Descendre jusqu'à `photoBottom` ici ferait deux
+      // couches sombres empilées, et la photo perdrait son dernier tiers pour
+      // rien.
+      colors={[c['scrim.photoTop'], c['scrim.modal']]}
+      locations={[0, 1]}
       style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: hauteur ?? '70%' }}
     />
+  );
+}
+
+/**
+ * La bande sur laquelle un texte se pose, au-dessus d'une photo.
+ *
+ * **Un fond, pas un dégradé.** C'est tout l'intérêt : `scrim.photoBottom` donne
+ * 12,10:1 à `ink.onScrim` et 7,72:1 à `ink.onScrimMuted` sur une photo blanche,
+ * et ces deux nombres ne dépendent ni de la hauteur de la carte, ni du
+ * terminal, ni de l'endroit où la ligne tombe. Un dégradé, lui, donne un
+ * chiffre différent à chaque pixel — et sur les cartes du fil, les deux lignes
+ * tombaient à 0,65 et 0,76 d'opacité, c'est-à-dire à la limite pour l'une et
+ * en dessous pour l'autre selon la taille de l'écran.
+ */
+export function BandeDeTexteSurPhoto({
+  children,
+  testID,
+}: {
+  children: ReactNode;
+  testID?: string;
+}) {
+  const c = useColors();
+  return (
+    <View testID={testID} style={{ padding: 14, gap: 2, backgroundColor: c['scrim.photoBottom'] }}>
+      {children}
+    </View>
   );
 }
 
@@ -210,14 +254,18 @@ export function BusinessCard({
           ) : null}
 
           {/* Le nom sur la photo. C'est lui qu'on cherche en faisant défiler,
-              et le mettre sous l'image le renvoyait à la troisième ligne. */}
-          <View style={{ padding: 14, gap: 2 }}>
+              et le mettre sous l'image le renvoyait à la troisième ligne.
+
+              **Sur sa propre bande, pas sur la queue du dégradé.** Les deux
+              lignes tombaient à 0,65 et 0,76 d'opacité selon la hauteur de la
+              carte — au-dessus du seuil pour l'une, en dessous pour l'autre, et
+              impossible à prouver dans les deux cas. */}
+          <BandeDeTexteSurPhoto testID="bande-du-nom">
             <Texte
               variante="type.section"
               ellipseSurNomPropre
               // Le texte est posé sur le voile, pas sur une surface : sa
-              // couleur ne suit pas le thème mais le voile, qui est sombre
-              // dans les deux.
+              // couleur ne suit pas le fond de l'écran mais celui de la bande.
               couleur="ink.onScrim"
             >
               {name}
@@ -225,7 +273,7 @@ export function BusinessCard({
             <Texte variante="type.caption" couleur="ink.onScrimMuted">
               {meta}
             </Texte>
-          </View>
+          </BandeDeTexteSurPhoto>
         </View>
 
         <View style={{ padding: 14, gap: 6 }}>
