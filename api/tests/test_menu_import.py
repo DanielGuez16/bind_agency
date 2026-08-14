@@ -16,6 +16,7 @@ from decimal import Decimal
 import httpx
 import pytest
 import sqlalchemy as sa
+from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import ConfigurationError, build_settings, get_settings
@@ -32,6 +33,8 @@ from app.models.enums import CatalogItemSource, MenuImportStatus, UserRole
 from app.services import auth as auth_service
 from app.services import menu_import as service
 from tests.test_availability import commerce
+
+PREFIX = get_settings().api_v1_prefix
 
 CARTE = b"un-pdf-de-carte"
 
@@ -473,3 +476,161 @@ def test_l_instruction_interdit_d_inventer_une_duree() -> None:
 
     assert "durée" in INSTRUCTION.lower()
     assert "n'invente" in INSTRUCTION.lower()
+
+
+# --------------------------------------------------------------------------
+# la photo de la carte, de bout en bout
+# --------------------------------------------------------------------------
+#
+# **Ce que ces tests gardent, et qui manquait.** L'extraction est faite pour
+# lire une photo — le contenu part en bloc image vers un modèle vision. Mais la
+# route d'extraction passait `b""` : elle ne relisait jamais le fichier. En mode
+# `manual` l'extraction rend une charge vide de toute façon, donc **aucun test
+# ne le voyait**. Une photo de carte partait au modèle vide.
+#
+# Et aucune route ne permettait de déposer une carte : la création d'un import
+# exige une clé de fichier, et seules la galerie et les preuves savaient en
+# produire une.
+
+PIXEL_PNG = bytes.fromhex(
+    "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4"
+    "890000000a49444154789c6300010000050001"
+)
+
+
+async def entetes_du_commerce(session, client: AsyncClient, business) -> dict[str, str]:
+    """Le propriétaire du commerce, connecté.
+
+    Le décor rend le commerce et non son membre : on retrouve celui-ci par
+    l'appartenance, qui est la seule vérité sur qui peut agir en son nom.
+    """
+    from app.models import BusinessMember, User
+
+    membre = await session.scalar(
+        sa.select(User)
+        .join(BusinessMember, BusinessMember.user_id == User.id)
+        .where(BusinessMember.business_id == business.id)
+    )
+    await session.commit()
+    jetons = (
+        await client.post(
+            f"{PREFIX}/auth/login",
+            json={"email": membre.email, "password": "un-mot-de-passe-solide-42"},
+        )
+    ).json()
+    return {"Authorization": f"Bearer {jetons['access_token']}"}
+
+
+async def test_une_photo_de_carte_se_depose_et_rend_sa_cle(
+    session: AsyncSession, client: AsyncClient
+) -> None:
+    """**Le chemin qui n'existait pas.** Sans lui, la fondatrice photographie la
+    carte au mur et n'a nulle part où la mettre."""
+    business = await commerce(session)
+    en_tetes = await entetes_du_commerce(session, client, business)
+
+    reponse = await client.post(
+        f"{PREFIX}/business/{business.id}/menu-imports/uploads",
+        files={"fichier": ("carte.png", PIXEL_PNG, "image/png")},
+        headers=en_tetes,
+    )
+
+    assert reponse.status_code == 201, reponse.text
+    assert reponse.json()["file_key"].startswith("photos/cartes/")
+    # Le type vient de la signature, jamais de ce que l'appelant déclare.
+    assert reponse.json()["mime_type"] == "image/png"
+
+
+async def test_le_type_declare_par_l_appelant_ne_compte_pas(
+    session: AsyncSession, client: AsyncClient
+) -> None:
+    """Un appelant qui annonce `image/png` sur un fichier texte se ferait
+    refuser par le modèle, après l'avoir payé."""
+    business = await commerce(session)
+    en_tetes = await entetes_du_commerce(session, client, business)
+
+    reponse = await client.post(
+        f"{PREFIX}/business/{business.id}/menu-imports/uploads",
+        files={"fichier": ("carte.png", b"ceci n'est pas une image", "image/png")},
+        headers=en_tetes,
+    )
+
+    assert reponse.status_code == 415
+
+
+async def test_l_extraction_lit_reellement_le_fichier_depose(
+    session: AsyncSession, client: AsyncClient
+) -> None:
+    """**Le défaut trouvé en campagne 3.** La route passait `b""` au modèle.
+
+    Le fournisseur retenu ici note ce qu'il a reçu : c'est la seule façon de
+    prouver que les octets déposés sont ceux qui partent — un fournisseur muet
+    aurait laissé passer le `b""` pendant encore trois campagnes.
+    """
+    business = await commerce(session)
+    en_tetes = await entetes_du_commerce(session, client, business)
+
+    depot = (
+        await client.post(
+            f"{PREFIX}/business/{business.id}/menu-imports/uploads",
+            files={"fichier": ("carte.png", PIXEL_PNG, "image/png")},
+            headers=en_tetes,
+        )
+    ).json()
+    cree = await client.post(
+        f"{PREFIX}/business/{business.id}/menu-imports",
+        json={"file_key": depot["file_key"], "mime_type": depot["mime_type"]},
+        headers=en_tetes,
+    )
+    assert cree.status_code == 201, cree.text
+
+    recus: list[bytes] = []
+
+    class ExtracteurQuiNote:
+        async def extraire(self, contenu: bytes, *, mime_type: str):
+            recus.append(contenu)
+            return Extraction(lignes=())
+
+    from app.integrations import menu_extraction
+    from app.routers import menu_import as routeur
+
+    original = routeur.get_extractor
+    routeur.get_extractor = lambda _client: ExtracteurQuiNote()
+    try:
+        reponse = await client.post(
+            f"{PREFIX}/business/{business.id}/menu-imports/{cree.json()['id']}/extract",
+            headers=en_tetes,
+        )
+    finally:
+        routeur.get_extractor = original
+    del menu_extraction
+
+    assert reponse.status_code == 200, reponse.text
+    assert recus == [PIXEL_PNG], "le modèle doit recevoir les octets déposés, pas du vide"
+
+
+async def test_une_cle_morte_ne_part_pas_au_modele(
+    session: AsyncSession, client: AsyncClient
+) -> None:
+    """**Le vide n'est pas une carte blanche.**
+
+    Si la clé ne désigne plus rien, envoyer zéro octet au modèle lui ferait
+    répondre « rien trouvé » — et le commerce validerait une carte vide en
+    croyant que sa photo était illisible. Un refus nommé, et rien de payé.
+    """
+    business = await commerce(session)
+    en_tetes = await entetes_du_commerce(session, client, business)
+
+    cree = await client.post(
+        f"{PREFIX}/business/{business.id}/menu-imports",
+        json={"file_key": "photos/cartes/inexistante", "mime_type": "image/png"},
+        headers=en_tetes,
+    )
+    assert cree.status_code == 201, cree.text
+
+    reponse = await client.post(
+        f"{PREFIX}/business/{business.id}/menu-imports/{cree.json()['id']}/extract",
+        headers=en_tetes,
+    )
+
+    assert reponse.status_code == 404, reponse.text
