@@ -11,6 +11,15 @@
  * Ce qui est éprouvé ici est donc **ce que le hook rend de chaque issue**, et
  * ce que l'écran en tire : redemander là où la fenêtre s'ouvrira, dire où
  * réactiver là où elle ne s'ouvrira plus.
+ *
+ * **Et depuis le blocage en ligne : la demande d'autorisation elle-même.** Sur
+ * le web, `requestForegroundPermissionsAsync` se règle en appelant
+ * `getCurrentPosition` **sans `timeout`** — on accepte dans le navigateur, la
+ * position n'arrive jamais derrière, aucun rappel n'est appelé, et la promesse
+ * ne se règle pas. Le relevé était borné, la demande ne l'était pas, et l'écran
+ * restait sur « Getting your location… » pour toujours, sans aucun bouton :
+ * l'état `en_cours` n'en propose pas, à raison. Le rôle créateur en devenait
+ * intestable.
  */
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import * as Location from 'expo-location';
@@ -127,6 +136,79 @@ describe('la demande de position', () => {
     jest.useRealTimers();
   });
 
+  it('**ne reste pas en attente quand la demande d’autorisation ne répond jamais**', async () => {
+    // Le blocage relevé en ligne, écrit tel qu'il se produit : la plateforme
+    // ne rappelle ni le succès ni l'échec, et l'ancienne version n'atteignait
+    // alors aucun `setEtat` — l'écran gardait « Getting your location… » sans
+    // le moindre bouton pour en sortir.
+    jest.useFakeTimers();
+    lire.mockResolvedValue(autorisation({ status: 'undetermined', canAskAgain: true }));
+    demanderAuSysteme.mockReturnValue(new Promise(() => {}));
+
+    const vue = await renderHook(() => usePosition());
+    await act(async () => {
+      vue.result.current.demander();
+    });
+    expect(vue.result.current.etat.etat).toBe('en_cours');
+
+    await act(async () => {
+      jest.advanceTimersByTime(30_000);
+    });
+
+    expect(vue.result.current.etat.etat).toBe('sans_reponse');
+    jest.useRealTimers();
+  });
+
+  it('**une seule demande en vol, même sur deux appels**', async () => {
+    // L'ancienne garde comparait l'état précédent : elle dédoublonnait l'objet
+    // posé, jamais l'appel. Deux `demander()` concurrents passaient tous les
+    // deux, ouvraient deux fenêtres, et la seconde réponse écrasait la
+    // première — alors que le commentaire affirmait le contraire.
+    let repondre: ((valeur: unknown) => void) | null = null;
+    lire.mockResolvedValue(autorisation({ status: 'undetermined', canAskAgain: true }));
+    demanderAuSysteme.mockReturnValue(
+      new Promise((resoudre) => {
+        repondre = resoudre;
+      }),
+    );
+
+    const vue = await renderHook(() => usePosition());
+    await act(async () => {
+      vue.result.current.demander();
+      vue.result.current.demander();
+      vue.result.current.demander();
+    });
+
+    expect(demanderAuSysteme).toHaveBeenCalledTimes(1);
+
+    // Et le verrou se relâche : une fois répondu, une nouvelle demande passe.
+    await act(async () => {
+      repondre?.(autorisation({ status: 'granted', canAskAgain: true }));
+    });
+    await waitFor(() => expect(vue.result.current.etat.etat).toBe('accordee'));
+
+    await act(async () => {
+      vue.result.current.demander();
+    });
+    expect(lire).toHaveBeenCalledTimes(2);
+  });
+
+  it('le verrou se relâche même quand la plateforme lève', async () => {
+    // Un verrou qui ne se relâche pas transforme un écran lent en écran mort —
+    // exactement le défaut qu'on répare. Le `finally` est ce qui le garantit.
+    lire.mockRejectedValue(new Error('module absent'));
+
+    const vue = await renderHook(() => usePosition());
+    await act(async () => {
+      vue.result.current.demander();
+    });
+    await act(async () => {
+      vue.result.current.demander();
+    });
+
+    expect(lire).toHaveBeenCalledTimes(2);
+  });
+
   it('ne prend pas une plateforme muette pour un refus', async () => {
     // Ni service ni matériel : il n'y a aucun réglage à aller chercher.
     lire.mockRejectedValue(new Error('module absent'));
@@ -164,6 +246,22 @@ describe('ce que l’écran dit de chaque état', () => {
 
     expect(chemins.every((chemin) => chemin !== null && chemin !== undefined)).toBe(true);
     expect(new Set(chemins).size).toBe(3);
+  });
+
+  it('sépare « on vous attend » de « votre appareil n’a rien rendu »', () => {
+    // Deux situations, deux phrases. « Your device didn't return a location »
+    // sur une autorisation encore en attente envoyait vérifier des services de
+    // localisation qui n'étaient pas en cause, et ne parlait pas de la fenêtre
+    // du navigateur — la seule chose à regarder.
+    const attente = messageDePosition({ etat: 'sans_reponse' });
+    const muet = messageDePosition({ etat: 'indisponible' });
+
+    expect(attente?.corps).not.toBe(muet?.corps);
+    // Les deux proposent de réessayer : dans les deux cas, presser a du sens.
+    expect(attente?.action).toEqual({ cle: 'parcours.filReessayer' });
+    // Et ni l'un ni l'autre n'envoie chercher un réglage : rien n'a été refusé.
+    expect(attente?.ouReactiver).toBeNull();
+    expect(muet?.ouReactiver).toBeNull();
   });
 
   it('n’a rien à dire quand la position est là', () => {

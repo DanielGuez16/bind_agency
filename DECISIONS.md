@@ -4763,3 +4763,65 @@ garde de la règle remplaçait une chaîne qui ne correspondait pas : le test es
 passé, et j'ai failli en conclure qu'il ne protégeait rien. Vérifier que la
 mutation **s'applique** avant de lire le résultat est la moitié du geste, et
 c'est celle qu'on oublie.
+
+---
+
+## 2026-08-14 — La demande d'autorisation était la seule chose non bornée
+
+**Le blocage.** Le fil créateur restait indéfiniment sur « Getting your
+location… » en ligne, sur Chrome. Le navigateur demandait, on acceptait, et
+l'écran ne repartait jamais — l'état `en_cours` ne propose aucun bouton, à
+raison, donc il n'y avait littéralement aucune issue. Le rôle créateur en était
+intestable.
+
+**La cause, et pourquoi elle avait échappé.** Sur le web,
+`requestForegroundPermissionsAsync` se résout en appelant
+`navigator.geolocation.getCurrentPosition` **sans passer de `timeout`** : le
+défaut par défaut est l'attente infinie. Si la position n'arrive jamais derrière
+l'acceptation — services de localisation désactivés pour le navigateur au niveau
+du système, cas ordinaire sur macOS — aucun des deux rappels n'est appelé, la
+promesse ne se règle pas, `demander` n'atteint aucun `setEtat`.
+
+Le module portait pourtant, en toutes lettres, « **Le relevé est borné dans le
+temps** », avec la bonne raison : « sans échéance, l'écran resterait en attente
+pour toujours ». C'était vrai du relevé, et le relevé n'était pas le problème.
+La *demande*, qui vient avant, ne l'était pas — et c'est elle qui pend. Une
+garde posée sur l'étape qu'on avait en tête, pas sur celle qui casse.
+
+**Le verrou n'en était pas un.** Le code comparait l'état précédent :
+
+```
+setEtat((precedent) => (precedent.etat === 'en_cours' ? precedent : { etat: 'en_cours' }));
+```
+
+sous un commentaire affirmant « deux demandes en vol ouvriraient deux fenêtres,
+et la seconde réponse écraserait la première ». Cette ligne dédoublonne l'**objet
+d'état**, jamais l'**appel** : deux `demander()` concurrents passaient tous les
+deux. Un commentaire qui décrit une protection que le code n'applique pas est
+pire qu'aucun commentaire — il fait passer la relecture ailleurs. Remplacé par
+une référence, relâchée dans un `finally` : un verrou qui ne se relâche pas
+transforme un écran lent en écran mort, c'est-à-dire le défaut qu'on répare.
+
+**Deux messages qui accusaient à tort.**
+
+« Your device didn't return a location » se déclenchait sur une autorisation
+encore en attente. L'appareil n'avait rien refusé et n'avait rien manqué :
+personne n'avait encore répondu. L'état `sans_reponse` est distinct
+d'`indisponible` — là, l'appareil a répondu qu'il n'avait rien ; ici, la fenêtre
+est peut-être encore ouverte. Les deux proposent de réessayer ; un seul parle de
+services de localisation, et ce n'est pas celui de l'attente.
+
+« We could not reach BIND. Check your connection and try again » désignait la
+connexion de la personne, alors que le cas courant est notre propre service qui
+se réveille. Une panne de transport ne dit pas de quel côté elle est ; le message
+non plus, désormais. Il propose d'attendre un instant et de réessayer, sans
+nommer de coupable.
+
+**Une erreur de méthode, notée parce qu'elle a failli passer.** Le test qui
+sépare les deux messages n'avait pas été inséré — son ancre citait
+`async () => {` là où le fichier écrit `() => {`, le remplacement n'a rien fait,
+et la suite est restée verte à quatorze tests au lieu de quinze. Il n'a été
+trouvé que parce que la mutation correspondante **n'a pas fait tomber le test
+qu'elle visait**. C'est exactement à ça que sert l'exercice : un test qui n'a
+jamais échoué ne prouve pas que le code marche, il prouve qu'il s'exécute — et
+celui-là ne s'exécutait même pas.

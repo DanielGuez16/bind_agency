@@ -225,6 +225,8 @@ export const en = {
     filReactiverAndroid: 'Open Settings › Apps › BIND › Permissions › Location, then pick “Allow only while using the app”.',
     filPositionIndisponible:
       'Your device didn’t return a location. Check that location services are on, then try again.',
+    filPositionSansReponse:
+      'We are still waiting for an answer. If your browser is asking, choose “Allow” — otherwise try again.',
     filReessayer: 'Try again',
     ficheOffres: 'What they offer',
     // Dit seulement quand le lien est la seule forme : sur un téléphone,
@@ -757,7 +759,11 @@ export const en = {
     // Pas un code de l'API : une panne de transport, où rien n'est parti
     // ou rien n'est revenu. La phrase à dire n'est pas la même, et
     // « réessayez » n'a de sens que dans ce cas-là.
-    network: 'We could not reach BIND. Check your connection and try again.',
+    // **N'accuse personne.** Elle disait « vérifiez votre connexion », ce qui
+    // désigne un coupable qu'on ne connaît pas : le plus souvent c'est notre
+    // service qui se réveille, pas le réseau de la personne. Une panne de
+    // transport ne dit pas de quel côté elle est, et le message non plus.
+    network: 'We couldn’t load that just now. Give it a moment and try again.',
     authentication_required: 'Please sign in to continue.',
     invalid_credentials: 'Incorrect email address or password.',
     account_not_active: 'This account has been closed.',

@@ -64,5 +64,18 @@ export function messageDePosition(etat: EtatDePosition): MessageDePosition | nul
         ouReactiver: null,
         action: { cle: 'parcours.filReessayer' },
       };
+
+    case 'sans_reponse':
+      // **Distinct d'`indisponible`, et c'est tout l'objet.** Là, l'appareil a
+      // répondu qu'il n'avait rien ; ici personne n'a répondu — la fenêtre du
+      // navigateur est peut-être encore ouverte, ou fermée sans choisir.
+      // « Votre appareil n'a rien rendu » envoyait vérifier des services de
+      // localisation qui n'étaient pas en cause, et ne parlait pas de la
+      // fenêtre, qui est la seule chose à regarder.
+      return {
+        corps: 'parcours.filPositionSansReponse',
+        ouReactiver: null,
+        action: { cle: 'parcours.filReessayer' },
+      };
   }
 }
