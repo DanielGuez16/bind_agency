@@ -21,12 +21,14 @@
  * couleurs déclarées dans les jetons. Le vert d'eau et l'indigo n'y sont plus
  * depuis la v1.0, et une icône qui les porte tombe.
  */
-import { readFileSync, existsSync } from 'fs';
+import { existsSync, readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 
 import { PNG } from 'pngjs';
 
 const ASSETS = join(__dirname, '..', 'assets');
+/** Recopié tel quel à la racine du build : c'est là que Safari va chercher. */
+const PUBLIC = join(__dirname, '..', 'public');
 const declare = JSON.parse(readFileSync(join(ASSETS, 'marque.json'), 'utf-8')) as {
   mot: string;
   couleurs: Record<string, string>;
@@ -38,8 +40,8 @@ const declare = JSON.parse(readFileSync(join(ASSETS, 'marque.json'), 'utf-8')) a
  * `IHDR` est toujours le premier bloc, largeur et hauteur en gros-boutiste aux
  * octets 16 à 24. Aucune dépendance pour lire huit octets.
  */
-function dimensions(fichier: string): { largeur: number; hauteur: number } {
-  const octets = readFileSync(join(ASSETS, fichier));
+function dimensions(fichier: string, dossier = ASSETS): { largeur: number; hauteur: number } {
+  const octets = readFileSync(join(dossier, fichier));
   return { largeur: octets.readUInt32BE(16), hauteur: octets.readUInt32BE(20) };
 }
 
@@ -62,8 +64,8 @@ function versHexa(r: number, v: number, b: number): string {
  * Un vert d'eau sur un indigo n'est sur aucun des segments de la v1.0, à
  * n'importe quelle taille et quelle que soit la part qu'il occupe.
  */
-function pixelsEtrangers(fichier: string, permises: string[]): string[] {
-  const png = PNG.sync.read(readFileSync(join(ASSETS, fichier)));
+function pixelsEtrangers(fichier: string, permises: string[], dossier = ASSETS): string[] {
+  const png = PNG.sync.read(readFileSync(join(dossier, fichier)));
   const points = permises.map(enCanaux);
   // Douze valeurs sur 255 : de quoi absorber l'arrondi du rendu et la
   // conversion de l'espace colorimétrique, pas de quoi absorber une teinte.
@@ -107,28 +109,54 @@ function distanceAuSegment(
   return Math.hypot(ap[0] - t * ab[0], ap[1] - t * ab[1], ap[2] - t * ab[2]);
 }
 
-const CARRES = [
-  ['marque-16.png', 16],
-  ['marque-32.png', 32],
-  ['marque-64.png', 64],
-  ['marque-180.png', 180],
-] as const;
-
-/** Tout ce que la marque imprime, y compris les couches d'Android. */
-const TOUS = [
-  ...CARRES.map(([nom]) => nom),
-  'favicon.png',
-  'icon.png',
-  'splash-icon.png',
-  'android-icon-background.png',
-  'android-icon-foreground.png',
-  'android-icon-monochrome.png',
+/**
+ * Tout ce que la marque imprime, et **où chaque fichier est réclamé**.
+ *
+ * **Les quatre `marque-*.png` ont été retirés, et c'est le sujet.** Ils ne
+ * servaient à rien : Expo compile `favicon.png` en un `.ico` de trois images —
+ * 16, 32 et 48 — et n'écrit qu'un `<link rel="icon">` vers lui. Aucun gabarit
+ * ne les citait, aucune balise ne les demandait. Un fichier orphelin qui porte
+ * la marque ne reste pas inerte : il finit par resservir, en portant une
+ * version périmée. C'est très exactement ce qui venait d'arriver au monogramme
+ * du système vert.
+ *
+ * Un seul avait une destination réelle — le 180, taille de l'icône d'iOS. Il
+ * est désormais **posé là où Safari la cherche**, `public/apple-touch-icon.png`,
+ * plutôt que rangé où rien n'irait le prendre.
+ */
+const TOUS: readonly (readonly [string, string])[] = [
+  ['favicon.png', ASSETS],
+  ['icon.png', ASSETS],
+  ['splash-icon.png', ASSETS],
+  ['android-icon-background.png', ASSETS],
+  ['android-icon-foreground.png', ASSETS],
+  ['android-icon-monochrome.png', ASSETS],
+  ['apple-touch-icon.png', PUBLIC],
 ];
 
 describe('les fichiers de la marque', () => {
-  it.each(CARRES)('%s fait exactement %i pixels de côté', (fichier, cote) => {
-    expect(existsSync(join(ASSETS, fichier))).toBe(true);
-    expect(dimensions(fichier)).toEqual({ largeur: cote, hauteur: cote });
+  it.each(TOUS)('%s existe', (fichier, dossier) => {
+    expect(existsSync(join(dossier, fichier))).toBe(true);
+  });
+
+  it('l’icône d’iOS est à la racine du site, et à sa taille', () => {
+    // **Elle n'est pas déclarée par une balise, et n'a pas à l'être.** Le
+    // gabarit d'Expo n'écrit qu'un `<link rel="icon">` ; Safari, lui, demande
+    // `/apple-touch-icon.png` par convention quand rien ne la déclare. La
+    // câbler par là évite de remplacer un gabarit généré pour y ajouter une
+    // ligne — un fichier de plus à tenir à jour pour une balise.
+    expect(dimensions('apple-touch-icon.png', PUBLIC)).toEqual({ largeur: 180, hauteur: 180 });
+  });
+
+  it('aucun fichier de marque ne traîne sans que rien ne le réclame', () => {
+    // Le sens inverse, et c'est celui qui compte ici : la garde des couleurs ne
+    // regarde que les fichiers qu'on lui nomme. Un orphelin lui échappe par
+    // construction — il faut donc refuser les orphelins eux-mêmes.
+    const connus = new Set(TOUS.map(([nom]) => nom));
+    const traînards = readdirSync(ASSETS).filter(
+      (nom) => nom.startsWith('marque-') && !connus.has(nom),
+    );
+    expect(traînards).toEqual([]);
   });
 
   it('le favicon et l’icône d’application existent et sont carrés', () => {
@@ -147,8 +175,8 @@ describe('les fichiers de la marque', () => {
     // qu'il fallait pour arrêter un monogramme vert dans un produit orange.
     const permises = Object.values(declare.couleurs);
 
-    const fautifs = TOUS.flatMap((fichier) =>
-      pixelsEtrangers(fichier, permises).map((couleur) => `${fichier} : ${couleur}`),
+    const fautifs = TOUS.flatMap(([fichier, dossier]) =>
+      pixelsEtrangers(fichier, permises, dossier).map((couleur) => `${fichier} : ${couleur}`),
     );
 
     expect(fautifs).toEqual([]);
@@ -183,8 +211,12 @@ describe('les fichiers de la marque', () => {
     // Le sens inverse : un fichier entièrement blanc passerait la garde des
     // couleurs si le blanc était permis. On vérifie que l'orange **est** la
     // tuile — son centre en haut à gauche, loin du mot.
-    for (const fichier of ['icon.png', 'favicon.png', 'marque-180.png']) {
-      const png = PNG.sync.read(readFileSync(join(ASSETS, fichier)));
+    for (const [fichier, dossier] of [
+      ['icon.png', ASSETS],
+      ['favicon.png', ASSETS],
+      ['apple-touch-icon.png', PUBLIC],
+    ] as const) {
+      const png = PNG.sync.read(readFileSync(join(dossier, fichier)));
       const coin = (png.width * Math.round(png.height * 0.12) + Math.round(png.width * 0.12)) * 4;
       expect({
         fichier,

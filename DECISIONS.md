@@ -4635,3 +4635,34 @@ la meilleure approximation disponible, et `$meta.unconfirmed` le porte déjà. �
 seize pixels, quatre lettres ne se lisent pas ; y mettre un « B » seul aurait été
 dessiner un monogramme que personne n'a validé, c'est-à-dire refaire ce qu'on
 venait de retirer.
+
+## 2026-08-14 — Un fichier de marque que rien ne réclame finit par resservir
+
+Suite du constat précédent. Les quatre `marque-*.png` avaient été régénérés pour
+qu'aucun fichier ne porte l'ancienne marque, sans qu'on sache à quoi ils
+servaient. La question a été tranchée en regardant ce que le build **réclame**.
+
+`expo export` compile `assets/favicon.png` en un `favicon.ico` de trois
+images — 16, 32 et 48 — et le gabarit qu'il génère n'écrit qu'un
+`<link rel="icon">` vers lui. Le 16, le 32 et le 64 doublaient donc une chaîne
+qui produit déjà ces tailles depuis une source unique. **Retirés.**
+
+Le 180 est la taille de l'icône d'iOS, et c'était clairement son intention
+d'origine. Il avait donc une destination réelle, à condition de le poser où la
+plateforme regarde : `public/` est recopié tel quel à la racine du build —
+vérifié sur un export, pas supposé — et Safari demande `/apple-touch-icon.png`
+par convention quand aucune balise ne la déclare. Il y vit désormais, produit
+directement par le script de cuisson.
+
+*L'alternative écartée :* remplacer le gabarit HTML généré par un
+`public/index.html` pour y écrire les balises. Cela aurait mis à notre charge la
+réinitialisation CSS et l'injection du script d'Expo — un fichier de plus à
+tenir à jour à chaque version du SDK — pour une balise que la convention rend
+inutile.
+
+**Et une garde de plus, qui ne porte pas sur les couleurs.** Celle des couleurs
+ne regarde que les fichiers qu'on lui nomme : un orphelin lui échappe *par
+construction*. Elle est doublée d'une garde qui refuse qu'un `marque-*.png`
+existe sans être réclamé. C'est la leçon exacte du monogramme vert — un fichier
+inerte ne le reste pas, il attend qu'on le reprenne en portant une version que
+plus personne ne vérifie.

@@ -543,11 +543,18 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       exige que chaque pixel opaque soit un mélange de deux couleurs des
       jetons — les tests d'avant ne regardaient que l'existence et la taille.
       7 tests neufs, 7 mutations vérifiées*
-- [ ] **Câbler les quatre `marque-*.png`, ou les retirer**
-      *Trouvé en refaisant la marque : `marque-16/32/64/180.png` ne sont
-      référencés par rien — ni `app.json`, ni un gabarit web, ni le code. Seul
-      leur propre test les tient. Ils ont été régénérés pour qu'aucun fichier ne
-      porte l'ancienne marque, mais ce sont soit des `apple-touch-icon` et un
-      `<link rel="icon">` qui n'ont jamais été posés, soit du poids mort. À
-      trancher, pas à deviner*
+- [x] **Les quatre `marque-*.png` : un câblé, trois retirés**
+      *Tranché en regardant ce que le build réclame, et non ce qu'on pouvait
+      leur supposer. Expo compile `assets/favicon.png` en un `.ico` de trois
+      images — 16, 32 et 48 — et n'écrit qu'un `<link rel="icon">` vers lui :
+      le 16, le 32 et le 64 doublaient donc une chaîne qui les produit déjà.
+      Retirés. Le 180 est la taille de l'icône d'iOS et avait, lui, une
+      destination réelle : `public/` est recopié tel quel à la racine du build —
+      vérifié sur un export — et Safari demande `/apple-touch-icon.png` par
+      convention quand aucune balise ne la déclare. Il y est posé, ce qui évite
+      de remplacer le gabarit HTML généré pour y ajouter une ligne. La garde
+      refuse désormais **l'orphelin lui-même** : celle des couleurs ne regarde
+      que les fichiers qu'on lui nomme, donc un fichier que personne ne réclame
+      lui échappe par construction — et c'est ainsi qu'une marque périmée
+      attend son tour. 5 tests neufs, 3 mutations vérifiées*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire

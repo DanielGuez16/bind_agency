@@ -44,6 +44,16 @@ import { chromium } from 'playwright';
 const ICI = dirname(fileURLToPath(import.meta.url));
 const RACINE = join(ICI, '..');
 const SORTIE = join(RACINE, 'assets');
+/**
+ * Ce que le navigateur va chercher à la racine du site.
+ *
+ * `public/` est recopié tel quel à la racine du build par `expo export` —
+ * vérifié, pas supposé. C'est ce qui permet de poser l'icône d'iOS **sans
+ * remplacer le gabarit HTML** qu'Expo génère : Safari demande
+ * `/apple-touch-icon.png` par convention quand aucune balise ne la déclare, et
+ * le gabarit d'Expo n'en déclare aucune — il n'écrit qu'un `<link rel="icon">`.
+ */
+const PUBLIC = join(RACINE, 'public');
 
 /** Les jetons, lus et non recopiés : deux sources finiraient par diverger. */
 const jetons = JSON.parse(await readFile(join(RACINE, 'src/theme/tokens.json'), 'utf-8'));
@@ -103,11 +113,25 @@ const FICHIERS = [
   // fondatrice, à la taille où le blanc sur orange passe largement.
   { nom: 'icon.png', cote: 1024, fond: ORANGE, encre: CLAIR, part: 0.2 },
   { nom: 'splash-icon.png', cote: 1024, fond: ORANGE, encre: CLAIR, part: 0.2 },
+  // **Une seule source pour tout le favicon du web.** Expo compile
+  // `assets/favicon.png` en un `.ico` de trois images — 16, 32 et 48 — et
+  // n'écrit qu'un `<link rel="icon">` vers lui. Les quatre `marque-*.png` qui
+  // vivaient ici doublaient donc ce que la chaîne produit déjà, sans que rien
+  // ne les réclame : quatre fichiers portant la marque que personne ne
+  // regarde, c'est-à-dire exactement ce qui a laissé l'ancien logo survivre.
   { nom: 'favicon.png', cote: 64, fond: ORANGE, encre: CLAIR, part: 0.32 },
-  { nom: 'marque-16.png', cote: 16, fond: ORANGE, encre: CLAIR, part: 0.40 },
-  { nom: 'marque-32.png', cote: 32, fond: ORANGE, encre: CLAIR, part: 0.36 },
-  { nom: 'marque-64.png', cote: 64, fond: ORANGE, encre: CLAIR, part: 0.32 },
-  { nom: 'marque-180.png', cote: 180, fond: ORANGE, encre: CLAIR, part: 0.26 },
+
+  // L'icône d'iOS, la seule des quatre qui avait une destination réelle : 180
+  // est sa taille. Elle est **posée là où Safari la cherche** plutôt que rangée
+  // dans `assets/`, où rien ne serait jamais allé la prendre.
+  {
+    nom: 'apple-touch-icon.png',
+    dossier: PUBLIC,
+    cote: 180,
+    fond: ORANGE,
+    encre: CLAIR,
+    part: 0.26,
+  },
 
   // **Android masque la forme et compose trois couches.** Le premier plan doit
   // tenir dans la zone sûre — les deux tiers du centre — parce que le système
@@ -132,6 +156,7 @@ const FICHIERS = [
 ];
 
 await mkdir(SORTIE, { recursive: true });
+await mkdir(PUBLIC, { recursive: true });
 const navigateur = await chromium.launch();
 
 for (const fichier of FICHIERS) {
@@ -145,7 +170,7 @@ for (const fichier of FICHIERS) {
   await onglet.setContent(page(fichier));
   await onglet.evaluate(() => document.fonts.ready);
   await onglet.screenshot({
-    path: join(SORTIE, fichier.nom),
+    path: join(fichier.dossier ?? SORTIE, fichier.nom),
     omitBackground: fichier.fond === 'transparent',
   });
   await contexte.close();
