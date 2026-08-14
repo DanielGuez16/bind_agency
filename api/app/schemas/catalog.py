@@ -25,6 +25,16 @@ class CatalogItemCreate(BaseModel):
     #: Clé de stockage objet, jamais une URL. Un article sans photo reste
     #: parfaitement réservable : c'est l'affichage qui s'en arrange.
     photo_key: str | None = Field(default=None, max_length=500)
+    #: La prestation laisse-t-elle un choix au créateur.
+    #:
+    #: « Un menu contre une story » en laisse un ; « Brushing 45 min » n'en
+    #: laisse aucun. **C'est le commerce qui le pose** — le déduire d'un nom
+    #: marcherait sur les exemples qu'on a en tête et se tromperait sur « Menu
+    #: signature du chef », qui est un plat précis.
+    #:
+    #: Une prestation à choix ne s'ouvre pas tant que le commerce n'a ni carte
+    #: ni lien : la règle est vérifiée à l'ouverture de l'offre, pas ici.
+    leaves_choice: bool = False
 
 
 class CatalogItemUpdate(BaseModel):
@@ -49,6 +59,9 @@ class CatalogItemUpdate(BaseModel):
     #: Envoyer `null` retire la photo. C'est le seul champ de ce schéma dont
     #: l'effacement explicite a un sens — les autres décrivent l'article.
     photo_key: str | None = Field(default=None, max_length=500)
+    #: Le drapeau se change : un restaurant peut décider qu'une formule devient
+    #: un plat précis. La règle d'ouverture s'appliquera au prochain geste.
+    leaves_choice: bool | None = None
 
 
 class CatalogItemRead(BaseModel):
@@ -61,6 +74,7 @@ class CatalogItemRead(BaseModel):
     duration_minutes: int | None
     requires_booking: bool
     photo_key: str | None
+    leaves_choice: bool
     source: CatalogItemSource
 
     #: L'interrupteur propre à l'item, celui que le commerce manipule.

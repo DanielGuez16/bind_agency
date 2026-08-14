@@ -4257,3 +4257,78 @@ ouvre un depuis deux phases, avec galerie, appareil photo, aperçu, mesure du
 poids avant envoi et note facultative. Une limite qui a été levée et qu'on
 oublie de retirer coûte exactement ce qu'a coûté celle-ci : elle a été relevée
 comme un défaut du produit pendant une campagne de test.
+
+---
+
+## 2026-08-14 — La carte du commerce, et l'extraction abandonnée
+
+**Ce qu'on abandonne.** L'extraction automatique de la carte des prix ne passe
+pas à l'échelle, et un salon ne met de toute façon que trois ou cinq prestations
+sur BIND, pas sa carte entière. Le code reste en place derrière
+`MENU_EXTRACTION_PROVIDER=manual`, qui est déjà la valeur par défaut : coût zéro,
+et le chemin de la saisie manuelle continue de fonctionner. Rien n'est supprimé —
+un fournisseur vision se rebranche en changeant un réglage, si l'usage revient.
+
+**Le manque réel, à la place.** Un restaurant peut proposer « un menu contre une
+story ». Le créateur ne sait pas ce qu'il va manger, donc il ne vient pas.
+L'offre est en ligne, elle a l'air normale, elle ne convertit pas, et le commerce
+n'a aucun moyen de savoir pourquoi.
+
+**La carte n'est pas la galerie, et c'est le point de départ.** La galerie montre
+le lieu : on la fait défiler, on se fait une idée, on passe. La carte se
+*consulte* : on l'ouvre pour y chercher un plat et un prix. Deux gestes
+différents, donc deux entrées sur la fiche — les mêler ferait chercher une
+entrecôte entre deux photos de salle. Le mécanisme, lui, est exactement celui de
+la galerie, et il est **recopié plutôt que partagé** : les deux ont la même forme
+aujourd'hui et pas la même raison d'être, et une abstraction commune ferait qu'un
+plafond relevé pour une carte de restaurant relèverait aussi celui d'une galerie
+de salon, sans que personne voie le lien au moment de le changer.
+
+**Plusieurs pages, parce qu'une carte tient rarement sur une.** Entrées et plats
+d'un côté, desserts et boissons de l'autre. Plafond à huit : au-delà, ce n'est
+plus une carte, c'est un livre.
+
+**Le lien vaut la carte, et réciproquement.** Forcer à photographier une carte
+déjà bien présentée en ligne serait absurde ; n'accepter que le lien priverait le
+salon qui n'a qu'un tableau au mur. `menu_url` est un champ du commerce, pas une
+ressource à part : la route qui le change existe déjà, et en créer une seconde
+ferait deux vérités. Un lien vide ou fait d'espaces ne compte pas — c'est le
+genre de valeur qu'un formulaire laisse passer, et elle ouvrirait une offre vers
+une carte que personne ne peut lire.
+
+**Le drapeau se pose, il ne se devine pas.** `leaves_choice` est déclaré par le
+commerce. Le déduire d'un nom — « menu », « formule », « au choix » — marcherait
+sur les exemples qu'on a en tête et se tromperait sur « Menu signature du chef »,
+qui est un plat précis, comme sur « Soin visage » d'un salon qui en propose
+quatre. Faux par défaut : le lancement est en beauté, et une valeur par défaut
+vraie fermerait à la migration toutes les offres déjà ouvertes.
+
+**La règle, et ses deux portes.** Une offre à choix ne s'ouvre pas tant que le
+commerce n'a ni pages ni lien. Vérifiée à l'ouverture de l'offre et non à la
+création de l'item : un item se saisit au fil de l'eau, souvent avant que la
+carte soit photographiée, et refuser là obligerait à tout faire dans un ordre
+imposé. C'est le geste de *publier* qui engage le commerce vis-à-vis d'un
+créateur — exactement comme les critères d'activation.
+
+Deux portes, parce qu'une offre naît **active** : `is_active` vaut vrai par
+défaut, donc composer une offre la met en ligne dans le même geste. Ne garder que
+la route d'activation aurait laissé passer le chemin le plus court, celui que
+tout le monde emprunte, et la règle ne se serait jamais déclenchée. Rouvrir
+compte aussi : ouvrir pendant que la carte est là, fermer, effacer la carte,
+rouvrir — sans garde sur l'activation, l'offre repartait en ligne sans carte.
+
+**Ce qui n'est délibérément pas bloqué.** Fermer une offre ne demande jamais de
+carte : on ne bloque pas quelqu'un qui range, et une garde posée sur les deux
+sens enfermerait une offre ouverte avant la règle. Et retirer la dernière page ne
+referme aucune offre : la règle se vérifie à l'ouverture, pas en continu —
+refermer derrière le commerce pendant qu'il réorganise sa carte lui ferait perdre
+sa composition sans un mot. Il retrouvera le refus au prochain geste
+d'ouverture, au moment où la question se pose.
+
+**Sur la fiche publique, la carte a son accès et son avertissement.**
+`menu_pages` et `menu_url` sont rendus séparément, et `leaves_choice` accompagne
+chaque offre : c'est lui qui dit à l'écran quelles prestations appellent une
+lecture avant de réserver. Quand `menu_pages` est vide et que `menu_url` est
+renseignée, l'écran doit annoncer qu'on sortira de l'application — un lien qui
+s'ouvre sans prévenir, au milieu d'un parcours de réservation, fait perdre le fil
+à qui revient.

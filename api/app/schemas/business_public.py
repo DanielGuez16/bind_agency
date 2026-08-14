@@ -23,6 +23,9 @@ class OffreDeLaFicheRead(BaseModel):
     duration_minutes: int | None
     requires_booking: bool
     photo_key: str | None
+    #: La prestation laisse-t-elle un choix au créateur. Vrai : il choisira sur
+    #: place, et c'est la carte qui lui dit quoi.
+    leaves_choice: bool
     platform: Platform
     content_format: ContentFormat
     #: Ce que le commerce attend dans la publication. Rappelé **avant** la
@@ -55,4 +58,12 @@ class FichePubliqueRead(BaseModel):
     cover_photo_key: str | None
     #: Les clés de la galerie, dans l'ordre du commerce. Jamais des adresses.
     photos: list[str]
+    #: Les pages de la carte, dans l'ordre où elle se lit. **Un accès à part
+    #: de la galerie** : montrer le lieu et consulter une carte sont deux
+    #: gestes différents.
+    menu_pages: list[str]
+    #: L'adresse de la carte en ligne. Quand `menu_pages` est vide et que
+    #: celle-ci est renseignée, l'écran doit **dire qu'on sortira de
+    #: l'application** avant d'ouvrir le lien.
+    menu_url: str | None
     offres: list[OffreDeLaFicheRead]

@@ -88,6 +88,13 @@ export const routes = {
   mettreEnPauseLeCommerce: (businessId: string) => chemin(`/business/${businessId}/pause`),
   annuaireDesCreateurs: (businessId: string) => chemin(`/business/${businessId}/creators`),
   photosDuCommerce: (businessId: string) => chemin(`/business/${businessId}/photos`),
+  // La carte du commerce. **Distincte de la galerie** : la galerie montre le
+  // lieu, la carte se consulte. Même mécanisme, deux gestes différents.
+  carteDuCommerce: (businessId: string) => chemin(`/business/${businessId}/menu`),
+  televerserUnePageDeCarte: (businessId: string) => chemin(`/business/${businessId}/menu/uploads`),
+  ordreDeLaCarte: (businessId: string) => chemin(`/business/${businessId}/menu/order`),
+  retirerUnePageDeCarte: (businessId: string, pageId: string) =>
+    chemin(`/business/${businessId}/menu/${pageId}`),
   televerserUnePhoto: (businessId: string) => chemin(`/business/${businessId}/photos/uploads`),
   ordreDesPhotos: (businessId: string) => chemin(`/business/${businessId}/photos/order`),
   retirerUnePhoto: (businessId: string, photoId: string) =>
@@ -212,6 +219,10 @@ export const METHODES: Record<keyof typeof routes, ('GET' | 'POST' | 'PATCH' | '
     mettreEnPauseLeCommerce: ['POST'],
     annuaireDesCreateurs: ['GET'],
     photosDuCommerce: ['GET', 'POST'],
+    carteDuCommerce: ['GET', 'POST'],
+    televerserUnePageDeCarte: ['POST'],
+    ordreDeLaCarte: ['PUT'],
+    retirerUnePageDeCarte: ['DELETE'],
     televerserUnePhoto: ['POST'],
     ordreDesPhotos: ['PUT'],
     retirerUnePhoto: ['DELETE'],

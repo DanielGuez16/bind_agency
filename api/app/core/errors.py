@@ -33,6 +33,11 @@ class ErrorCode(StrEnum):
     #: La galerie a un plafond de produit, pas une limite technique : au-delà,
     #: la fiche devient un catalogue et le commerce un photographe.
     GALLERY_FULL = "gallery_full"
+    #: La carte du commerce est pleine : huit pages, au-delà c'est un livre.
+    MENU_FULL = "menu_full"
+    #: La prestation laisse un choix et le commerce n'a ni carte ni lien. Le
+    #: créateur ne saurait pas ce qu'il obtient, donc il ne viendrait pas.
+    TIER_OFFER_MENU_REQUIRED = "tier_offer_menu_required"
 
     # Commerce
     BUSINESS_NOT_FOUND = "business_not_found"

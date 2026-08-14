@@ -711,6 +711,9 @@ export const es: Catalogue = {
     insufficient_role: 'Tu cuenta no puede acceder a esto.',
     subscription_required: 'El directorio viene con la suscripción.',
     gallery_full: 'Tu galería está llena. Quita una foto para añadir otra.',
+    menu_full: 'Tu carta está llena. Quita una página para añadir otra.',
+    tier_offer_menu_required:
+      'Esta prestación deja elegir al creador, así que necesita ver tu carta antes. Añade fotos de la carta o un enlace a tu carta en línea, y luego publícala.',
     venue_report_outside_window:
       'Solo puedes informarlo en las horas siguientes a tu cita. Escríbenos y una persona lo revisará.',
     venue_report_already_exists: 'Ya informaste sobre esta reserva. La estamos revisando.',

@@ -63,6 +63,7 @@ def _to_read(item: CatalogItem, *, effectively_available: bool) -> CatalogItemRe
         duration_minutes=item.duration_minutes,
         requires_booking=item.requires_booking,
         photo_key=item.photo_key,
+        leaves_choice=item.leaves_choice,
         source=item.source,
         is_available=item.is_available,
         is_effectively_available=effectively_available,

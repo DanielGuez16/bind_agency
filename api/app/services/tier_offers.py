@@ -19,9 +19,10 @@ import sqlalchemy as sa
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Booking, CatalogItem, Tier, TierOffer
+from app.models import Booking, Business, CatalogItem, Tier, TierOffer
 from app.models.enums import TierOfferState
 from app.schemas.tier_offers import TierOfferCreate
+from app.services import business_menu
 from app.services.audit import Actor, AuditedEntity, record_transition
 
 
@@ -47,6 +48,23 @@ class TierInactive(TierOfferError):
 
 class OfferHasBookings(TierOfferError):
     """Une offre réservée ne se supprime pas, elle se désactive."""
+
+
+class CarteManquante(TierOfferError):
+    """La prestation laisse un choix, et le commerce n'a ni carte ni lien.
+
+    **Un restaurant peut proposer « un menu contre une story ».** Le créateur ne
+    sait alors pas ce qu'il va manger — donc il ne vient pas. Une offre à choix
+    sans carte lisible est une offre que personne ne prend, et le commerce n'a
+    aucun moyen de savoir pourquoi : son offre est en ligne, elle a l'air
+    normale, elle ne convertit pas.
+
+    **Vérifiée à l'ouverture, pas à la création de l'item.** Un item se saisit
+    au fil de l'eau, souvent avant que la carte soit photographiée ; refuser là
+    obligerait à tout faire dans un ordre imposé. C'est le geste de *publier*
+    qui engage le commerce vis-à-vis d'un créateur, et c'est celui-là qu'on
+    garde — exactement comme les critères d'activation du commerce.
+    """
 
 
 # --------------------------------------------------------------------------
@@ -163,6 +181,12 @@ async def create_offer(
     if await _has_variants(session, item.id):
         raise ParentNotAllowed(item.id)
 
+    # **La création est une ouverture.** `is_active` vaut vrai par défaut :
+    # composer une offre la met en ligne dans le même geste. Ne garder que la
+    # route d'activation laisserait donc passer le chemin le plus court — celui
+    # que tout le monde emprunte — et la règle ne se déclencherait jamais.
+    await _exiger_une_carte(session, business_id=business_id, item=item)
+
     offer = TierOffer(business_id=business_id, tier_id=tier.id, catalog_item_id=item.id)
 
     try:
@@ -178,12 +202,43 @@ async def create_offer(
     return offer
 
 
+async def _exiger_une_carte(
+    session: AsyncSession, *, business_id: uuid.UUID, item: CatalogItem
+) -> None:
+    """Refuse d'ouvrir une offre à choix quand la carte n'est nulle part.
+
+    Seulement pour les items qui laissent un choix : c'est le commerce qui pose
+    ce drapeau, et une prestation qui se désigne elle-même n'a besoin d'aucune
+    carte.
+    """
+    if not item.leaves_choice:
+        return
+
+    business = await session.get(Business, business_id)
+    # Le commerce existe forcément ici — l'appelant l'a résolu pour arriver
+    # jusqu'à cette route — mais le lire rend l'intention explicite plutôt que
+    # de faire confiance à un `None` impossible.
+    if business is None or not await business_menu.carte_disponible(session, business):
+        raise CarteManquante(item.id)
+
+
 async def set_active(
     session: AsyncSession, *, offer: TierOffer, is_active: bool, actor: Actor
 ) -> bool:
-    """Retrait sans suppression. Renvoie faux si rien n'a changé."""
+    """Retrait sans suppression. Renvoie faux si rien n'a changé.
+
+    **Rouvrir est une ouverture aussi.** Une offre à choix retirée pendant que
+    la carte était en place, puis rouverte après que le commerce a effacé son
+    lien, repartirait en ligne sans carte. Fermer, en revanche, ne demande
+    rien : on ne bloque pas quelqu'un qui range.
+    """
     if offer.is_active == is_active:
         return False
+
+    if is_active:
+        item = await session.get(CatalogItem, offer.catalog_item_id)
+        if item is not None:
+            await _exiger_une_carte(session, business_id=offer.business_id, item=item)
 
     precedent = TierOfferState.ACTIVE if offer.is_active else TierOfferState.INACTIVE
     courant = TierOfferState.ACTIVE if is_active else TierOfferState.INACTIVE

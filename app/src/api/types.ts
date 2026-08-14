@@ -282,6 +282,12 @@ export type OffreDeLaFiche = {
   duration_minutes: number | null;
   requires_booking: boolean;
   photo_key: string | null;
+  /**
+   * La prestation laisse-t-elle un choix au créateur. Vrai : il choisira sur
+   * place, et c'est la carte qui lui dit quoi — l'écran a alors une raison de
+   * mettre l'accès à la carte en avant.
+   */
+  leaves_choice: boolean;
   platform: Platform;
   content_format: ContentFormat;
   required_mention: string | null;
@@ -301,6 +307,22 @@ export type FichePublique = {
   timezone: string;
   phone: string | null;
   cover_photo_key: string | null;
+  /** La galerie, dans l'ordre choisi par le commerce. Elle montre le lieu. */
+  photos: string[];
+  /**
+   * Les pages de la carte, dans l'ordre où elle se lit. **Un accès à part de la
+   * galerie** : montrer le lieu et consulter une carte sont deux gestes.
+   */
+  menu_pages: string[];
+  /**
+   * L'adresse de la carte en ligne.
+   *
+   * Quand `menu_pages` est vide et que celle-ci est renseignée, l'écran doit
+   * **dire qu'on sortira de l'application** avant d'ouvrir le lien : un lien
+   * qui s'ouvre sans prévenir, au milieu d'un parcours de réservation, fait
+   * perdre le fil à qui revient.
+   */
+  menu_url: string | null;
   offres: OffreDeLaFiche[];
 };
 
@@ -693,6 +715,12 @@ export type ItemDuCatalogue = {
   duration_minutes: number | null;
   requires_booking: boolean;
   photo_key: string | null;
+  /**
+   * La prestation laisse-t-elle un choix au créateur. Vrai : il choisira sur
+   * place, et c'est la carte qui lui dit quoi — l'écran a alors une raison de
+   * mettre l'accès à la carte en avant.
+   */
+  leaves_choice: boolean;
   source: 'manual' | 'menu_import';
   /** L'interrupteur propre à l'item, celui que le commerce manipule. */
   is_available: boolean;
@@ -797,6 +825,17 @@ export type MediasPlateforme = {
  * et retiré du fil sont deux états différents, et le menu ne doit pas les
  * confondre : le premier attend un premier geste, le second en attend un autre.
  */
+/**
+ * Une page de la carte du commerce. Jumelle d'une photo de galerie, et distincte
+ * par ce qu'elle sert : la galerie montre le lieu, la carte se consulte.
+ */
+export type PageDeLaCarte = {
+  id: string;
+  storage_key: string;
+  position: number;
+  alt_text: string | null;
+};
+
 export type EtatDeLaComposition = {
   business_id: string;
   prestations: number;
