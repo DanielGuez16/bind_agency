@@ -79,7 +79,6 @@ export const en = {
     pausedNotLost: 'Paused, not lost',
     stillWaiting: 'This is what you had, and what is waiting once it is back.',
     services: 'services',
-    servicesIndisponible: 'Count not available yet',
     seeServices: 'See the {{count}} services',
     openCount: '{{count}} open',
     opens: '{{count}} services open at this tier',
@@ -194,8 +193,6 @@ export const en = {
     audienceConnecter: 'Connect a network',
     audienceAucun: 'No network connected yet.',
     audienceTitre: 'Your audience',
-    audienceReleveIndisponible:
-      'Your networks are connected. The audience reading is not available yet — nothing is missing on your side.',
     audienceVide: 'No measurement yet. Connect a social account to get started.',
     followers: 'Followers',
     engagement: 'Engagement',

@@ -242,12 +242,7 @@ function Echelle({
   // Le palier le plus généreux de **la liste affichée** donne l'échelle des
   // barres. C'est là que la générosité croissante devient visible sans lecture.
   //
-  // Les paliers dont le compte n'est pas servi sont écartés du calcul plutôt
-  // que comptés zéro : un seul palier compté au lieu de trois donnerait une
-  // échelle fausse aux deux autres, et une barre pleine sur un chiffre qui
-  // n'existe pas est un mensonge sans texte.
-  const comptes = paliers.map((p) => p.offres_disponibles).filter((n) => typeof n === 'number');
-  const sommet = Math.max(1, ...comptes);
+  const sommet = Math.max(1, ...paliers.map((p) => p.offres_disponibles));
 
   const propres = (palier: PalierAccessible) =>
     palier.obstacles.filter((o) => !raisonsCommunes.has(o.raison));
@@ -504,13 +499,7 @@ export function BarreauDePalier({
   const donne = ouvert ? t('tiers.giveLabel') : t('tiers.giveLabelLocked');
   const obtient = ouvert ? t('tiers.getLabel') : t('tiers.getLabelLocked');
 
-  // **Le compte peut ne pas être servi, et absent n'est pas zéro.** Le champ
-  // est annoncé au contrat et le serveur ne le rend pas encore. Compter zéro
-  // fermerait la porte en disant « aucune prestation », ce qui est faux ;
-  // l'ouvrir sur un compte inconnu ferait promettre un nombre qu'on n'a pas.
-  // La porte reste donc fermée, et l'écran le dit au lieu de l'inventer.
-  const compte = typeof palier.offres_disponibles === 'number' ? palier.offres_disponibles : null;
-  const porteOuverte = ouvert && compte !== null && compte > 0 && Boolean(onVoirLesPrestations);
+  const porteOuverte = ouvert && palier.offres_disponibles > 0 && Boolean(onVoirLesPrestations);
 
   const bandeau = (
     <View
@@ -556,36 +545,26 @@ export function BarreauDePalier({
         <Texte variante="type.caption" couleur="ink.mute">
           {obtient}
         </Texte>
-        {compte === null ? (
-          // « Seul le calcul manquant est marqué indisponible. » Une phrase, pas
-          // un tiret : un chiffre absent remplacé par « — » se lit comme zéro.
-          <Texte
-            variante="type.caption"
-            couleur="ink.mute"
-            testID={`compte-indisponible-${palier.tier_id}`}
-          >
-            {t('tiers.servicesIndisponible')}
+        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
+          <Texte variante="type.figureSmall" testID={`ouvre-${palier.tier_id}`}>
+            {formatNumber(palier.offres_disponibles, locale)}
           </Texte>
-        ) : (
-          <>
-            <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
-              <Texte variante="type.figureSmall" testID={`ouvre-${palier.tier_id}`}>
-                {formatNumber(compte, locale)}
-              </Texte>
-              <Texte variante="type.caption" couleur="ink.soft">
-                {t('tiers.services')}
-              </Texte>
-            </View>
-            <Jauge part={compte / sommet} teinte={encre} testID={`part-${palier.tier_id}`} />
-          </>
-        )}
+          <Texte variante="type.caption" couleur="ink.soft">
+            {t('tiers.services')}
+          </Texte>
+        </View>
+        <Jauge
+          part={palier.offres_disponibles / sommet}
+          teinte={encre}
+          testID={`part-${palier.tier_id}`}
+        />
       </View>
 
       {large && porteOuverte ? (
         <Pressable
           testID={`vers-prestations-${palier.tier_id}`}
           accessibilityRole="button"
-          accessibilityLabel={t('tiers.seeServices', { count: compte ?? 0 })}
+          accessibilityLabel={t('tiers.seeServices', { count: palier.offres_disponibles })}
           onPress={() => onVoirLesPrestations?.(palier)}
           style={{
             minHeight: 40,
@@ -662,7 +641,7 @@ export function BarreauDePalier({
             }}
           >
             <Texte variante="type.bodyStrong" couleur={encre} style={{ flex: 1 }}>
-              {t('tiers.seeServices', { count: compte ?? 0 })}
+              {t('tiers.seeServices', { count: palier.offres_disponibles })}
             </Texte>
             <Icone nom="chevron" couleur={encre} taille={20} />
           </Pressable>

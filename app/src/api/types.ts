@@ -94,17 +94,8 @@ export type PalierAccessible = {
   accessible: boolean;
   social_account_id: string | null;
   obstacles: Obstacle[];
-  /**
-   * Ce que le palier ouvre, tous commerces confondus.
-   *
-   * **Annoncé, pas encore servi.** Le champ est au contrat et le serveur ne le
-   * rend pas aujourd'hui ; il arrive par ailleurs. D'ici là il est absent, et
-   * absent n'est pas zéro : « 0 prestation » dirait à une créatrice éligible
-   * que son palier n'ouvre sur rien, ce qui est faux et décourageant. Zéro
-   * reste une réponse possible le jour où le champ existe — d'où les deux cas
-   * distincts plutôt qu'un nombre par défaut.
-   */
-  offres_disponibles?: number | null;
+  /** Ce que le palier ouvre, tous commerces confondus. Zéro est une réponse. */
+  offres_disponibles: number;
 };
 
 /**
@@ -269,14 +260,8 @@ export type Fil = {
    * C'est ce qui permet d'écrire « Retirer le filtre Spa · 34 salons » depuis
    * l'écran filtré sur Spa, et de n'afficher que les pastilles qui ouvrent sur
    * quelque chose. Une catégorie absente n'a rien de réservable ici.
-   *
-   * **Annoncé, pas encore servi**, comme `offres_disponibles`. Le champ absent
-   * et le tableau vide ne veulent pas dire la même chose : le second dit
-   * « aucune catégorie n'ouvre sur quelque chose ici », et c'est une
-   * information qui mérite d'être écrite. Le premier dit seulement que
-   * personne n'a encore compté, et il ne doit rien faire écrire du tout.
    */
-  categories?: CompteParCategorie[] | null;
+  categories: CompteParCategorie[];
   /**
    * Les élargissements possibles, du plus étroit au plus large, avec leur gain.
    *

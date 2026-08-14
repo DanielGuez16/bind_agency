@@ -76,7 +76,6 @@ export const es: Catalogue = {
     pausedNotLost: 'En pausa, no perdido',
     stillWaiting: 'Esto es lo que tenías, y lo que te espera en cuanto vuelva.',
     services: 'prestaciones',
-    servicesIndisponible: 'Recuento aún no disponible',
     seeServices: 'Ver las {{count}} prestaciones',
     openCount: '{{count}} abiertos',
     opens: '{{count}} prestaciones abiertas en este nivel',
@@ -191,8 +190,6 @@ export const es: Catalogue = {
     audienceConnecter: 'Conectar una red',
     audienceAucun: 'Ninguna red conectada todavía.',
     audienceTitre: 'Tu audiencia',
-    audienceReleveIndisponible:
-      'Tus redes están conectadas. La lectura de audiencia aún no está disponible; no falta nada de tu parte.',
     audienceVide: 'Todavía no hay mediciones. Conecta una cuenta para empezar.',
     followers: 'Seguidores',
     engagement: 'Interacción',

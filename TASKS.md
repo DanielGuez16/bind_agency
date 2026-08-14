@@ -438,8 +438,10 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       depuis la v0.4 et **jamais implémenté**, enfin en deux pixels d'encre ; et
       une garde qui **compte les blocs orange écran par écran**, table
       exhaustive, les écrans de travail quotidien à zéro pour une raison écrite.
-      Trois champs annoncés au contrat et pas encore servis sont rendus comme
-      **absents et non comme zéro**. Deux manques nommés : le logo vectoriel et
+      Un champ réellement manquant — le temps de fauteuil des rapports — est
+      rendu **absent et non zéro** ; les trois autres, annoncés manquants par le
+      brief, étaient servis depuis des semaines et c'est la carte de passation
+      qui les sous-décrivait. Deux manques nommés : le logo vectoriel et
       les trois images de satin, sans lesquelles `SurfaceSatin` n'est pas écrit
       — un dégradé linéaire en attendant serait le cliché que la direction
       évite. Le thème sombre est retiré : la v1.0 n'en livre pas, et en
