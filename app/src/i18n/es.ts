@@ -223,6 +223,8 @@ export const es: Catalogue = {
       'Abre Ajustes › Aplicaciones › BIND › Permisos › Ubicación y elige «Permitir solo mientras se usa la app».',
     filPositionIndisponible:
       'Tu dispositivo no devolvió una ubicación. Comprueba que la localización esté activada y vuelve a intentarlo.',
+    filPositionSansReponse:
+      'Seguimos esperando una respuesta. Si tu navegador te lo está pidiendo, elige «Permitir»; si no, vuelve a intentarlo.',
     filReessayer: 'Reintentar',
     ficheOffres: 'Lo que ofrecen',
     ficheFerme: 'Todavía no disponible para ti',
@@ -731,7 +733,7 @@ export const es: Catalogue = {
     erreurAction: 'Volver al inicio',
   },
   errors: {
-    network: 'No pudimos conectar con BIND. Revisa tu conexión e inténtalo de nuevo.',
+    network: 'No pudimos cargarlo ahora mismo. Espera un momento e inténtalo de nuevo.',
     generic: 'Algo ha salido mal. Inténtalo de nuevo.',
     authentication_required: 'Inicia sesión para continuar.',
     invalid_credentials: 'Correo electrónico o contraseña incorrectos.',
