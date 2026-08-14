@@ -192,7 +192,9 @@ export function TextField({
               width: 8,
               height: 8,
               borderRadius: radius['radius.pill'],
-              backgroundColor: c['status.danger.text'],
+              // Le filet du statut, pas son encre : c'est une pastille, une
+              // surface, et la v1.0 sépare les deux.
+              backgroundColor: c['status.danger.rule'],
             }}
           />
           <Texte variante="type.caption" couleur="status.danger.text" style={{ flexShrink: 1 }}>
