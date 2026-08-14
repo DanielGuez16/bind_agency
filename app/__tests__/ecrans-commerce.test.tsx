@@ -879,9 +879,9 @@ describe('arbitrage', () => {
     );
     await waitFor(() => expect(screen.getByTestId('dossier-k1')).toBeTruthy());
 
-    // Le libellé visible nomme l'objet, et le nom accessible nomme le dossier.
-    expect(en.admin.issueApprove).toMatch(/publication/i);
-    const bouton = screen.getByLabelText(surLeDossier(en.admin.issueApprove));
+    // Le libellé visible nomme l'objet **et son écart**, et le nom accessible
+    // nomme le dossier. Le dernier reproche de ce dossier porte sur le format.
+    const bouton = screen.getByLabelText(surLeDossier(en.admin.issueApproveMalgreFormat));
     expect(bouton).toBeTruthy();
     for (const attendu of [
       DOSSIER_EN_ARBITRAGE.creator_handle,
@@ -900,7 +900,7 @@ describe('arbitrage', () => {
     );
     await waitFor(() => expect(screen.getByTestId('dossier-k1')).toBeTruthy());
 
-    expect(screen.getByLabelText(surLeDossier(en.admin.issueApprove))).toBeTruthy();
+    expect(screen.getByLabelText(surLeDossier(en.admin.issueApproveMalgreFormat))).toBeTruthy();
     expect(screen.queryByLabelText(surLeDossier(en.admin.issueResubmit))).toBeNull();
     expect(screen.queryByLabelText(surLeDossier(en.admin.issueUnfulfilled))).toBeNull();
   });
@@ -995,6 +995,60 @@ describe('arbitrage', () => {
     expect(envois[0]).toMatchObject({
       corps: { issue: 'resubmit', reason: 'missing_mention' },
     });
+  });
+
+  it.each([
+    ['missing_location', 'issueApproveSansLieu'],
+    ['missing_mention', 'issueApproveSansMention'],
+    ['wrong_format', 'issueApproveMalgreFormat'],
+    ['low_quality', 'issueApproveMalgreQualite'],
+  ] as const)('sur %s, le bouton nomme son écart', async (motif, cle) => {
+    // **Le défaut de campagne.** « Approve » seul ne disait pas ce qu'on
+    // approuvait. Dans une file où l'on tranche vingt dossiers à la chaîne, un
+    // verbe seul finit par vouloir dire « suivant » — et c'est la seule
+    // décision du produit qui ne se rouvre pas.
+    const dossier = {
+      ...DOSSIER_EN_ARBITRAGE,
+      tentatives: [{ motif, demandee_le: '2026-08-09T09:00:00Z', par: 'business_member' }],
+    };
+    await monter(<ArbitrageScreen />, clientDe({ '/admin/collaborations/review': [dossier] }), 'admin');
+    await waitFor(() => expect(screen.getByTestId('dossier-k1')).toBeTruthy());
+
+    expect(screen.getByLabelText(surLeDossier(en.admin[cle]))).toBeTruthy();
+    // Et le libellé nu n'est plus offert : c'est lui qu'on pressait sans lire.
+    expect(screen.queryByLabelText(surLeDossier(en.admin.issueApprove))).toBeNull();
+  });
+
+  it('redevient simple quand il n’y a aucun écart à excuser', async () => {
+    // « L'écart n'existe que s'il y en a un. » Annoncer « sans la mention » sur
+    // un dossier conforme ferait douter de l'approbation elle-même.
+    const dossier = { ...DOSSIER_EN_ARBITRAGE, tentatives: [] };
+    await monter(<ArbitrageScreen />, clientDe({ '/admin/collaborations/review': [dossier] }), 'admin');
+    await waitFor(() => expect(screen.getByTestId('dossier-k1')).toBeTruthy());
+
+    expect(screen.getByLabelText(surLeDossier(en.admin.issueApprove))).toBeTruthy();
+  });
+
+  it('désigne la ligne qui manque, et ne prétend rien sur les autres', async () => {
+    // L'attendu et le constaté face à face. Le constaté vient du reproche et
+    // non d'une lecture automatique : aux niveaux 2 et 3, la preuve ne porte
+    // ni auteur, ni format, ni mention, et écrire « conforme » en face d'une
+    // ligne que personne n'a vérifiée serait indéfendable devant un salon.
+    const dossier = {
+      ...DOSSIER_EN_ARBITRAGE,
+      tentatives: [
+        { motif: 'missing_location', demandee_le: '2026-08-09T09:00:00Z', par: 'business_member' },
+      ],
+    };
+    await monter(<ArbitrageScreen />, clientDe({ '/admin/collaborations/review': [dossier] }), 'admin');
+    await waitFor(() => expect(screen.getByTestId('attendu-et-constate')).toBeTruthy());
+
+    expect(screen.getByTestId('manque-lieu')).toBeTruthy();
+    expect(screen.queryByTestId('manque-mention')).toBeNull();
+    expect(screen.queryByTestId('manque-format')).toBeNull();
+    // Et l'écran dit d'où vient le constat, plutôt que de le faire passer pour
+    // une vérification de la plateforme.
+    expect(screen.getByTestId('constat-humain')).toBeTruthy();
   });
 
   it('emploie le vocabulaire du commerce pour ce qui est commun', async () => {

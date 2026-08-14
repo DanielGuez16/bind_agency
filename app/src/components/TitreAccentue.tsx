@@ -108,7 +108,7 @@ export function TitreAccentue({
     return (
       <Texte variante={variante} couleur={couleur} testID={testID}>
         {avant ? `${avant} ` : ''}
-        <Texte variante={varianteAccent} couleur={couleur}>
+        <Texte variante={varianteAccent} couleur={couleur} testID={testID && `${testID}-mot`}>
           {mot}
         </Texte>
         {apres}
@@ -136,7 +136,16 @@ export function TitreAccentue({
             paddingBottom: 2,
           }}
         >
-          <Texte variante={varianteAccent} couleur={encreDuBloc}>
+          {/* Nommé : c'est le seul nœud de **texte** que porte un titre à
+              bloc — le reste est une pile de vues — et c'est sur lui que la
+              suite de bout en bout lit la fonte réellement employée. Sans
+              point d'accroche, elle lisait le conteneur, qui n'hérite d'aucune
+              famille et rendait la pile système. */}
+          <Texte
+            variante={varianteAccent}
+            couleur={encreDuBloc}
+            testID={testID && `${testID}-mot`}
+          >
             {mot}
           </Texte>
         </View>

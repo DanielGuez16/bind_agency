@@ -32,6 +32,7 @@ import { useApi, type IssueDArbitrage, type LigneDeFile } from '../api';
 import {
   Button,
   Chip,
+  Icone,
   PALIERS,
   Toolbar,
   DecisionBar,
@@ -45,12 +46,13 @@ import {
   TextField,
   type Colonne,
 } from '../components';
+import { formatDate } from '../format';
 import { useI18n } from '../i18n';
 import { ECART_DES_COLONNES, useGabarit } from '../shell/gabarit';
-import { radius, useColors } from '../theme';
+import { radius, tierTokens, useColors } from '../theme';
 import { Ecran } from './Ecran';
 import { PreuveSoumise } from './Preuve';
-import { MOTIFS, libelleDuMotif, type MotifDeDecision } from './motifs';
+import { MOTIFS, libelleDApprobation, libelleDuMotif, type MotifDeDecision } from './motifs';
 import { NOTE_MAXIMUM } from './PublicationsScreen';
 import { useRequete } from './useRequete';
 
@@ -285,6 +287,120 @@ function TableDArbitrage({
 }
 
 /**
+ * L'attendu et le constaté, face à face.
+ *
+ * **Le défaut de campagne était double.** Le bouton ne disait pas ce qu'il
+ * approuvait — corrigé plus bas — et l'écran ne montrait nulle part *ce qui
+ * cloche*. L'arbitre lisait une exigence d'un côté, un motif de l'autre, et
+ * faisait le rapprochement de tête, vingt fois d'affilée.
+ *
+ * **Le constaté vient du reproche, pas d'une lecture automatique, et l'écran le
+ * dit.** Aux niveaux 2 et 3, la preuve ne porte ni auteur, ni format, ni
+ * mention : rien qui puisse être comparé à l'exigence. Écrire « conforme » en
+ * face d'une ligne que personne n'a vérifiée serait une affirmation que le
+ * produit ne peut pas tenir devant un salon qui conteste. Seule la ligne
+ * désignée par le dernier motif porte un constat, et c'est un constat humain.
+ *
+ * L'échéance fait exception : elle se compare vraiment, des deux côtés, à tous
+ * les niveaux. C'est la seule ligne où le constaté est une mesure.
+ */
+function AttenduEtConstate({
+  ligne,
+  dernierMotif,
+}: {
+  ligne: LigneDeFile;
+  dernierMotif: string | null;
+}) {
+  const { t, locale } = useI18n();
+
+  const soumis = ligne.derniere_soumission;
+  const lignes: { cle: string; attendu: string; manque: boolean }[] = [];
+
+  if (ligne.required_mention) {
+    lignes.push({
+      cle: 'mention',
+      attendu: t('commerce.preuveMention', { mention: ligne.required_mention }),
+      manque: dernierMotif === 'missing_mention',
+    });
+  }
+  if (ligne.required_geotag) {
+    lignes.push({
+      cle: 'lieu',
+      attendu: t('commerce.preuveLieu'),
+      manque: dernierMotif === 'missing_location',
+    });
+  }
+  // Le mot du palier, celui que le badge écrit et que le commerce a choisi.
+  // Une seconde liste de noms de format divergerait au premier ajout.
+  const motDuFormat =
+    tierTokens[ligne.required_format].label[locale] ??
+    tierTokens[ligne.required_format].label.en;
+  lignes.push({
+    cle: 'format',
+    attendu: t('admin.attenduFormat', { format: motDuFormat }),
+    manque: dernierMotif === 'wrong_format',
+  });
+
+  if (lignes.length === 0 && !soumis) return null;
+
+  return (
+    <View style={{ gap: 4 }} testID="attendu-et-constate">
+      <Texte variante="type.label" couleur="ink.soft">
+        {t('admin.attenduEtConstate')}
+      </Texte>
+      {lignes.map((l) => (
+        <View
+          key={l.cle}
+          testID={`exigence-${l.cle}`}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+        >
+          {/* Le glyphe est le marqueur, pas la couleur : dans ce système
+              l'avertissement n'a plus de teinte, et une ligne « manquante »
+              reconnue à sa seule nuance se perdrait en niveaux de gris. */}
+          {l.manque ? <Icone nom="alerte" couleur="status.warning.rule" taille={16} /> : null}
+          <Texte
+            variante="type.caption"
+            couleur={l.manque ? 'ink.default' : 'ink.soft'}
+            style={{ flex: 1 }}
+          >
+            {l.attendu}
+          </Texte>
+          {l.manque ? (
+            <Texte variante="type.label" couleur="ink.default" testID={`manque-${l.cle}`}>
+              {t('admin.constateManquant')}
+            </Texte>
+          ) : null}
+        </View>
+      ))}
+
+      {/* L'échéance, la seule ligne qui se mesure vraiment des deux côtés. */}
+      {soumis ? (
+        <View style={{ flexDirection: 'row', gap: 8 }} testID="exigence-echeance">
+          <Texte variante="type.caption" couleur="ink.soft" style={{ flex: 1 }}>
+            {t('admin.echeanceAttendue', {
+              date: formatDate(ligne.deadline_at, locale, 'UTC'),
+            })}
+          </Texte>
+          <Texte variante="type.caption" couleur="ink.soft">
+            {t('admin.echeanceConstatee', {
+              date: formatDate(soumis.platform_published_at ?? soumis.submitted_at, locale, 'UTC'),
+            })}
+          </Texte>
+        </View>
+      ) : null}
+
+      {/* Ce que le constaté vaut. Une phrase, une fois, et jamais un « conforme »
+          en face d'une ligne que personne n'a vérifiée. */}
+      {soumis && soumis.capture_method !== 'api' ? (
+        <Texte variante="type.caption" couleur="ink.mute" testID="constat-humain">
+          {t('admin.constatHumain')}
+        </Texte>
+      ) : null}
+    </View>
+  );
+}
+
+/**
  * Une issue, rattachée à son dossier.
  *
  * Le créateur, la prestation, le commerce : les trois choses qui distinguent
@@ -317,6 +433,11 @@ function Dossier({ ligne, onTranche }: { ligne: LigneDeFile; onTranche: () => vo
   const [motif, setMotif] = useState<MotifDeDecision | null>(null);
   const [note, setNote] = useState('');
   const [echec, setEchec] = useState<string | null>(null);
+
+  // **Le reproche qui a mis ce dossier là.** C'est lui que l'approbation
+  // accepte, et c'est donc lui que le bouton doit nommer.
+  const dernierMotif = ligne.tentatives.at(-1)?.motif ?? null;
+  const approbation = libelleDApprobation(t, dernierMotif);
 
   async function arbitrer(issue: IssueDArbitrage) {
     setEchec(null);
@@ -358,6 +479,8 @@ function Dossier({ ligne, onTranche }: { ligne: LigneDeFile; onTranche: () => vo
         mentionAttendue={ligne.required_mention}
         lieuAttendu={ligne.required_geotag}
       />
+
+      <AttenduEtConstate ligne={ligne} dernierMotif={dernierMotif} />
 
       {/* **Les demandes précédentes, dans l'ordre.** C'est l'historique qui
           justifie l'escalade. */}
@@ -445,8 +568,13 @@ function Dossier({ ligne, onTranche }: { ligne: LigneDeFile; onTranche: () => vo
         decisions={[
           {
             cle: 'approve',
-            label: t('admin.issueApprove'),
-            accessibilityLabel: surCeDossier(t, ligne, t('admin.issueApprove')),
+            // **Le bouton nomme son écart.** « Approve » seul ne disait pas ce
+            // qu'on approuvait ; dans une file où l'on tranche vingt dossiers
+            // à la chaîne, un verbe seul finit par vouloir dire « suivant ».
+            // Quand il n'y a rien à excuser, il redevient simple : l'écart
+            // n'existe que s'il y en a un.
+            label: approbation,
+            accessibilityLabel: surCeDossier(t, ligne, approbation),
             touche: 'A',
             approbation: true,
             onPress: () => void arbitrer('approve'),
