@@ -4535,3 +4535,32 @@ vérifications requises.
 --json conclusion` — et jamais sur l'état de la PR, qui ne reflète que les deux
 vérifications requises. C'est la même leçon que celle des sept PR fusionnées sur
 une CI rouge, sous une autre forme.
+
+## 2026-08-14 — Une carte se lit, une galerie se regarde
+
+Le lot 4 tient sur deux règles, et aucune des deux ne survit à l'œil seul.
+
+**Les deux fonds.** La galerie s'ouvre sur `bg.sunken`, la carte sur `bg.page`.
+Ce n'est pas une variation : on regarde une photo sur du sombre, où le cadre
+disparaît, et on lit un texte sur du clair, où l'encre porte. La difficulté est
+que la règle tient à *une seule propriété* de deux composants voisins — elle
+ressemble à une incohérence pour qui la découvre, et la première main qui passe
+l'uniformise en croyant corriger. `FOND_DES_VISIONNEUSES` la nomme, et un test
+vérifie **les deux sens** : que chacune peint le sien, et qu'ils diffèrent.
+
+**Une page de carte est une photographie.** L'extraction existe dans le produit,
+mais elle ne sert qu'au commerce, à créer ses items depuis sa carte, avec
+validation. Elle n'alimente jamais ce que la créatrice lit. Recomposer la carte
+reviendrait à la republier sous notre nom : une colonne de prix mal lue, et
+c'est nous qui répondons devant quelqu'un qui a commandé autre chose. La garde
+refuse tout nom du chemin d'extraction dans le fichier de la visionneuse, et
+ignore les lignes de commentaire — sinon elle crierait sur la prose qui
+l'explique, et se ferait désactiver.
+
+**Ce qu'une mutation a trouvé.** Rendre le bandeau de blocage permanent — donc
+visible même une fois la carte déposée — n'a fait tomber aucun test. Le dépôt
+côté commerce n'avait aucune couverture : les 124 tests « écrans commerce » qui
+passaient pendant la mutation ne le touchaient pas. Six tests l'entourent
+maintenant, dont trois du sens inverse. C'est la quatrième fois sur ce projet
+qu'une mutation de trente secondes trouve ce qu'aucune relecture n'a vu, et la
+première où ce qu'elle trouve est **une absence** plutôt qu'un test creux.

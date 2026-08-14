@@ -500,6 +500,24 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       sur une vidéo claire — et prend sa bande aussi : une garantie qui dépend
       de ce qui a fini de charger n'en est pas une. 6 tests neufs, 3 mutations
       vérifiées*
+- [x] **Lot 4 — la carte du commerce, composée par-dessus le fonctionnel**
+      *Deux règles de Design portent le lot, et toutes deux sont devenues
+      mécaniques. **La galerie sur l'encre, la carte sur l'os** — on regarde une
+      photo sur du sombre, on lit un texte sur du clair : `FOND_DES_VISIONNEUSES`
+      nomme les deux fonds, et un test refuse qu'ils se rejoignent, parce
+      qu'uniformiser ressemble à une mise en cohérence. **Une page de carte est
+      toujours une photographie** : la visionneuse rend l'original en `contain`,
+      jamais la vignette, et une garde refuse que quoi que ce soit du chemin
+      d'extraction y entre — recomposer la carte reviendrait à la republier sous
+      notre nom. Côté commerce, le blocage se dit en tête et **nomme ses
+      prestations** au-dessus de ce qui les débloque, le compte des pages se lit
+      avant que la borne se subisse, et « l'un ou l'autre suffit » vit sur le
+      filet **entre** les deux formes — écrite sous l'une, elle désignerait
+      l'autre comme facultative. Côté fiche, deux lignes de même hauteur pour
+      deux accès qu'on ne mêle plus, le glyphe de sortie qui remplace le chevron
+      quand la carte n'existe qu'ailleurs, et la feuille qui annonce le domaine.
+      18 tests neufs, 10 mutations vérifiées — dont une qui a révélé que le
+      dépôt côté commerce n'avait aucune couverture*
 - [ ] **Ajouter `e2e` aux vérifications requises de `main`**
       *La protection n'exige que `api` et `app` : le job qui monte le produit
       entier tourne et **ne bloque pas**. Une PR rouge sur lui a été fusionnée

@@ -23,9 +23,25 @@
  * flèches suffisent — elles marchent partout, se comprennent sans apprentissage,
  * et sont accessibles au lecteur d'écran.
  *
- * Design composera par-dessus. Ce qui compte ici est que chaque route soit
- * appelée par quelque chose : une route que personne n'appelle est le défaut
- * qu'on a réparé deux fois cette semaine.
+ * ---
+ *
+ * ## Ce que la composition du lot 4 ajoute
+ *
+ * **Le blocage est en tête, et il nomme ses prestations.** Une phrase d'aide
+ * qui dit « une prestation qui laisse un choix ne se publie pas » oblige à
+ * aller vérifier lesquelles, sur un autre écran, puis à revenir. Le bandeau
+ * dit combien, lesquelles, et ce qui les ouvre — trois choses, au-dessus de
+ * ce qui les débloque.
+ *
+ * Il n'apparaît **que s'il bloque quelque chose** : sur un salon de beauté qui
+ * n'a aucune prestation à choix, un avertissement permanent sur la carte serait
+ * du bruit sur un écran qu'il n'a aucune raison d'ouvrir.
+ *
+ * **« L'un ou l'autre suffit » vit sur le filet qui sépare les deux colonnes.**
+ * C'est le seul endroit où la phrase ne peut pas être lue comme appartenant à
+ * l'une des deux — écrite sous les pages, elle dirait « les pages suffisent » ;
+ * sous le lien, l'inverse. Sans elle, un commerce qui a déjà un lien croit
+ * devoir aussi photographier huit pages, et abandonne.
  */
 import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
@@ -36,16 +52,27 @@ import { Button, Icone, StatusMessage, TextField, Texte, vibration } from '../co
 import { useI18n } from '../i18n';
 import { radius, useColors } from '../theme';
 
+/** Huit pages au plus. La borne est du serveur ; l'écran la dit avant de la subir. */
+const PAGES_AU_MAXIMUM = 8;
+
 export function CarteDuCommerce({
   businessId,
   pages,
   lien,
+  bloquees = [],
   onChange,
 }: {
   businessId: string;
   pages: PageDeLaCarte[];
   /** L'adresse enregistrée, ou `null`. Le champ part d'elle. */
   lien: string | null;
+  /**
+   * Les prestations qui laissent un choix, et que l'absence de carte retient.
+   *
+   * Passées plutôt que relues ici : le catalogue les a déjà, et les redemander
+   * ferait un second appel pour une donnée qu'on tient.
+   */
+  bloquees?: { id: string; name: string }[];
   onChange: () => void;
 }) {
   const { api, messageDErreur } = useApi();
@@ -113,19 +140,59 @@ export function CarteDuCommerce({
     return agir(() => api.definirLeLienDeLaCarte(businessId, propre === '' ? null : propre));
   }
 
+  // Le blocage tombe dès qu'une des deux formes existe : c'est exactement la
+  // règle du serveur, et l'écran ne doit pas en inventer une plus sévère.
+  const carteDeposee = pages.length > 0 || Boolean(lien);
+  const retenues = carteDeposee ? [] : bloquees;
+
   return (
     <View style={{ gap: 10 }} testID="carte-du-commerce">
       <Texte variante="type.label" couleur="ink.soft">
         {t('composition.carteTitre')}
       </Texte>
-      {/* La distinction avec la galerie, et la règle qu'elle commande. Les deux
-          en une phrase chacune : c'est tout ce que cet écran a à expliquer. */}
+      {/* La distinction avec la galerie. Une phrase : c'est tout ce que cet
+          écran a à expliquer une fois que le blocage se dit lui-même. */}
       <Texte variante="type.caption" couleur="ink.mute">
         {t('composition.carteAide')}
       </Texte>
-      <Texte variante="type.caption" couleur="ink.mute" testID="carte-pourquoi">
-        {t('composition.cartePourquoi')}
-      </Texte>
+
+      {/* **Le blocage nomme ses prestations, au-dessus de ce qui les ouvre.**
+          Pas un point d'exclamation à côté d'un onglet : un compte, une raison,
+          une issue, et la liste de ce qui attend. */}
+      {retenues.length > 0 ? (
+        <View
+          testID="carte-blocage"
+          style={{
+            backgroundColor: c['status.warning.surface'],
+            borderLeftWidth: 3,
+            borderLeftColor: c['status.warning.rule'],
+            padding: 14,
+            flexDirection: 'row',
+            gap: 12,
+          }}
+        >
+          <Icone nom="alerte" couleur="status.warning.rule" taille={20} />
+          <View style={{ flex: 1, gap: 3 }}>
+            <Texte variante="type.bodyStrong">
+              {t('composition.carteBloqueTitre', { count: retenues.length })}
+            </Texte>
+            <Texte variante="type.caption" couleur="ink.soft">
+              {t('composition.carteBloqueCorps')}
+            </Texte>
+            {/* Nommées, et toutes : « 2 prestations » sans lesquelles oblige à
+                les chercher, et c'est le geste qu'on ne fait pas. */}
+            {retenues.map((prestation) => (
+              <Texte
+                key={prestation.id}
+                variante="type.caption"
+                testID={`bloquee-${prestation.id}`}
+              >
+                {prestation.name}
+              </Texte>
+            ))}
+          </View>
+        </View>
+      ) : null}
 
       {echec ? <StatusMessage level="danger" body={echec} testID="echec-carte" /> : null}
 
@@ -208,11 +275,30 @@ export function CarteDuCommerce({
       <Button
         label={t('composition.carteAjouter')}
         variant="secondary"
+        // Le compte se dit avant que le refus arrive : « 3 / 8 » sur le bouton
+        // vaut mieux qu'un « limite atteinte » à la neuvième photo choisie.
         size="sm"
-        disabled={envoi}
+        disabled={envoi || pages.length >= PAGES_AU_MAXIMUM}
         onPress={() => void choisirEtEnvoyer()}
         testID="ajouter-une-page"
       />
+      <Texte variante="type.monoSmall" couleur="ink.mute" testID="compte-des-pages">
+        {`${pages.length} / ${PAGES_AU_MAXIMUM}`}
+      </Texte>
+
+      {/* **La phrase vit entre les deux formes, jamais sous l'une d'elles.**
+          C'est le seul endroit où elle ne peut pas être lue comme appartenant à
+          la colonne qui la porte. */}
+      <View
+        testID="l-un-ou-l-autre"
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 4 }}
+      >
+        <View style={{ flex: 1, height: 1, backgroundColor: c['line.strong'] }} />
+        <Texte variante="type.monoSmall" couleur="ink.default">
+          {t('composition.carteLUnOuLAutre')}
+        </Texte>
+        <View style={{ flex: 1, height: 1, backgroundColor: c['line.strong'] }} />
+      </View>
 
       {/* L'autre forme, présentée à égalité. L'une ou l'autre suffit. */}
       <TextField

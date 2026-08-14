@@ -306,6 +306,12 @@ function Groupes({
         businessId={businessId}
         pages={composition.pagesDeLaCarte}
         lien={composition.lienDeLaCarte}
+        // **Ce que l'absence de carte retient.** Le catalogue les a déjà en
+        // main ; les faire relire à la carte serait un second appel pour une
+        // donnée qu'on tient, et deux listes qui finiraient par diverger.
+        bloquees={composition.items
+          .filter((item) => item.leaves_choice)
+          .map((item) => ({ id: item.id, name: item.name }))}
         onChange={onChange}
       />
       <Filet />
