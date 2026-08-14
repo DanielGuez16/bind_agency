@@ -76,6 +76,13 @@ class MetriquesProfil:
     followers_count: int
     following_count: int
     media_count: int
+    #: L'adresse de la photo de profil chez la plateforme, quand elle la donne.
+    #:
+    #: **Une adresse, et pas une clé** : c'est ce que la plateforme répond. Elle
+    #: expire — les deux fournisseurs servent des URL signées — et c'est
+    #: précisément pourquoi elle ne se range jamais telle quelle. Le relevé la
+    #: télécharge et n'en garde qu'une clé dans notre dépôt.
+    avatar_url: str | None
     #: Répartition de l'audience, quand la plateforme la donne.
     audience_demographics: dict | None
     #: Conservé tel quel : quand un chiffre surprendra, c'est la seule preuve

@@ -19,7 +19,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.models import SocialAccount
-from app.models.enums import ContentFormat, ReliabilityEventType, SocialAccountStatus
+from app.models.enums import (
+    ContentFormat,
+    Platform,
+    ReliabilityEventType,
+    SocialAccountStatus,
+)
 from app.services import directory as service
 from app.services import reliability
 from tests.test_activation import MOT_DE_PASSE, commerce_en_cours
@@ -146,3 +151,74 @@ async def test_sans_abonnement_la_route_refuse(client: AsyncClient, session: Asy
 
     assert reponse.status_code == 402
     assert reponse.json()["detail"] == "subscription_required"
+
+
+# --------------------------------------------------------------------------
+# le visage et le lien
+# --------------------------------------------------------------------------
+#
+# **Les deux premières choses qu'un salon cherche**, et l'annuaire n'en donnait
+# aucune : il listait des pseudonymes qu'il fallait recopier dans une barre
+# d'adresse pour voir de qui l'on parlait.
+
+
+async def test_le_lien_public_se_derive_du_pseudonyme(session: AsyncSession) -> None:
+    """**Dérivé, jamais stocké.** Le pseudonyme est déjà en base ; ranger à côté
+    une adresse qu'on en déduit ferait deux vérités, et celle qu'on ne
+    rafraîchit pas vieillirait."""
+    assert (
+        service.lien_public(Platform.INSTAGRAM, "rebecca.miami")
+        == "https://www.instagram.com/rebecca.miami/"
+    )
+    assert (
+        service.lien_public(Platform.TIKTOK, "rebecca.miami")
+        == "https://www.tiktok.com/@rebecca.miami"
+    )
+
+
+async def test_un_arobase_de_trop_ne_double_pas(session: AsyncSession) -> None:
+    """Un pseudonyme saisi « @rebecca » donnerait `.../@@rebecca` — une adresse
+    qui ne mène nulle part, et qu'on n'aurait vue qu'en cliquant."""
+    assert service.lien_public(Platform.TIKTOK, "@rebecca") == "https://www.tiktok.com/@rebecca"
+
+
+async def test_sans_pseudonyme_il_n_y_a_pas_de_lien(session: AsyncSession) -> None:
+    """**Rien plutôt qu'une adresse partielle.** Un lien qui mène à une page
+    d'erreur est pire qu'un lien absent : le salon croit que la créatrice a
+    supprimé son compte."""
+    assert service.lien_public(Platform.INSTAGRAM, None) is None
+    assert service.lien_public(Platform.INSTAGRAM, "") is None
+
+
+async def test_une_plateforme_non_rattachee_n_a_pas_de_lien(session: AsyncSession) -> None:
+    """Snapchat existe en base et aucune implémentation ne le rattache :
+    fabriquer une adresse pour une plateforme qu'on ne sait pas lire produirait
+    un lien qu'on n'a jamais vu fonctionner."""
+    assert service.lien_public(Platform.SNAPCHAT, "rebecca") is None
+
+
+async def test_l_annuaire_rend_le_visage_et_le_lien(session: AsyncSession) -> None:
+    """Bout en bout : ce que le salon reçoit réellement."""
+    user = await createur(session)
+    ligne = await compte(session, user, followers=12_000)
+    ligne.avatar_key = "photos/avatars/abcdef"
+    await session.flush()
+
+    lignes = await service.annuaire(session)
+
+    vu = next(c for c in lignes if c.creator_id == user.id)
+    assert vu.comptes[0].avatar_key == "photos/avatars/abcdef"
+    assert vu.comptes[0].profil_url == "https://www.instagram.com/compte.dessai/"
+
+
+async def test_un_compte_sans_photo_ne_ment_pas(session: AsyncSession) -> None:
+    """**Nulle, et non une image par défaut posée côté serveur.** Le choix de ce
+    qu'on montre à la place appartient à l'écran, qui sait la taille et le
+    thème ; le serveur qui trancherait imposerait son choix aux deux."""
+    user = await createur(session)
+    await compte(session, user, followers=12_000)
+
+    lignes = await service.annuaire(session)
+
+    vu = next(c for c in lignes if c.creator_id == user.id)
+    assert vu.comptes[0].avatar_key is None

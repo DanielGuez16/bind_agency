@@ -3727,3 +3727,70 @@ fichier du dépôt. Un salon accepte « la version 2026-01 », l'acceptation est
 qu'elle désigne n'existe pas. Le mécanisme de preuve est complet ; ce qu'il
 prouve ne l'est pas. Ce n'est pas bloqué par un accès externe, mais par une
 rédaction juridique.
+
+## 2026-08-14 — La carte se vérifie dans les deux sens
+
+Le garde-fou de la carte de passation ne vérifiait qu'un sens : toute route
+citée doit exister. J'avais écarté l'autre — toute route existante doit être
+citée — au motif qu'il ferait tomber la CI à chaque route neuve avant qu'on ait
+écrit à quoi elle sert.
+
+C'était protéger la CI au prix d'une carte qui sous-décrit l'API. **Cela a coûté
+deux écrans** : Claude Design en a composé deux en croyant absentes des choses
+présentes depuis des semaines. Une route non citée est invisible, et l'invisible
+se redemande ou se réinvente.
+
+Le coût que je redoutais est réel mais petit : ajouter une route oblige à écrire
+sa ligne de carte dans la même PR. C'est le bon moment — c'est le seul où
+quelqu'un sait à quoi elle sert.
+
+**Six routes sont hors carte, chacune avec sa raison** : la sonde de
+déploiement, les deux rappels OAuth, la lecture d'un média, celle d'une preuve,
+et la redirection publique. Aucune n'est appelée par un écran. La liste doit
+rester courte : s'y glisse une route d'écran, et l'écran sera composé sans elle.
+
+**Ce que la bidirectionnalité n'attrape pas, et il faut le dire.** Elle compare
+des chemins, pas des champs. Les deux manques signalés étaient d'une autre
+nature : l'agrégat hebdomadaire des rapports est un **champ** — `par_semaine` —
+d'une route déjà citée, et je l'avais perdu en recopiant une introspection
+tronquée à 280 caractères sans voir les points de suspension. Un garde-fou sur
+les champs demanderait de nommer dans la carte chaque `id` et chaque
+`created_at` ; le bruit qu'il produirait le ferait contourner. La parade est
+plus simple : ne pas recopier une sortie tronquée.
+
+## 2026-08-14 — L'extraction lisait bien une photo, et ne lisait rien
+
+Question posée en campagne 3 : l'extraction de carte lit-elle une **photo** de
+la carte au mur, ou seulement un fichier structuré ? De la réponse dépend la
+valeur du mode terrain — si le salon doit ressaisir son catalogue, la visite
+n'économise que trois champs.
+
+**Elle lit une photo.** `VisionExtractor` encode le contenu en base64 et
+l'envoie en bloc `image` à un modèle vision. C'est fait pour ça, et l'instruction
+est explicitement écrite pour une carte affichée.
+
+**Mais le fichier n'arrivait jamais jusqu'à elle**, et de deux façons.
+
+La route d'extraction passait `contenu=b""` au modèle, avec un commentaire
+disant qu'on attendait le dépôt objet réel. Le dépôt existe depuis, et personne
+n'est revenu ici. En mode `manual` l'extraction rend une charge vide de toute
+façon : **aucun test ne pouvait le voir**, et les trente tests du fichier
+passaient. C'est le défaut le plus coûteux de cette série, parce qu'il se serait
+révélé le jour de la première démonstration réelle, devant un salon.
+
+Et **aucune route ne permettait de déposer une carte**. La création d'un import
+exige une clé de fichier ; seules la galerie et les preuves savaient en produire
+une. La fondatrice photographiait la carte au mur et n'avait nulle part où la
+mettre.
+
+**Les deux bouts sont branchés** : un téléversement qui rend `{file_key,
+mime_type}`, le type déduit de la signature et jamais de ce que l'appelant
+déclare, et une lecture réelle du fichier à l'extraction. Une clé qui ne désigne
+plus rien répond 404 au lieu d'envoyer zéro octet — le vide ferait répondre
+« rien trouvé » au modèle, et le commerce validerait une carte blanche en croyant
+sa photo illisible.
+
+**Ce qui reste, et qui n'est pas du code** : `MENU_EXTRACTION_PROVIDER=vision`
+et sa clé. Tant qu'ils manquent, l'extraction rend une charge vide — et l'écran
+doit proposer la saisie plutôt qu'un état d'erreur, ce que la carte de passation
+dit maintenant.

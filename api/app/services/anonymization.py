@@ -89,6 +89,10 @@ async def _strip_social_accounts(session: AsyncSession, user_id: uuid.UUID, acto
         account.granted_scopes = None
         account.external_id = None
         account.handle = None
+        # Un visage nomme quelqu'un autant qu'un pseudonyme. La clé part ; le
+        # fichier lui-même est effacé par la purge du dépôt, qui ne garde rien
+        # que plus aucune ligne ne désigne.
+        account.avatar_key = None
         account.status = SocialAccountStatus.REVOKED
 
         await session.flush()

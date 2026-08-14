@@ -26,6 +26,7 @@ from app.services import auth as auth_service
 from app.services import creator_tiers as service
 from app.services import metrics as metrics_service
 from app.services import reliability
+from app.services.audit import Actor
 from app.services.eligibility import RaisonRefus
 from tests.test_social_metrics import FauxFournisseur, metriques
 
@@ -279,3 +280,86 @@ async def test_la_route_rend_la_fiabilite(client: AsyncClient, session: AsyncSes
 
     assert "fiabilite" in corps, "le champ se perd entre le service et la route"
     assert corps["fiabilite"] == {"reliability_score": None, "completed_collabs_count": 0}
+
+
+# --------------------------------------------------------------------------
+# ce qu'un palier ouvrirait
+# --------------------------------------------------------------------------
+#
+# **Sans ce compte, une carte de palier fermé affiche un tiret** et ne peut plus
+# dire ce qu'elle ouvrirait — ce qui était tout son intérêt. Le fil ne peut pas
+# le fournir : il ne rend jamais une prestation d'un palier fermé.
+
+
+async def test_chaque_palier_dit_combien_de_prestations_il_ouvre(
+    session: AsyncSession,
+) -> None:
+    """Le compte est **par palier**, et il vaut pour les fermés comme pour les
+    ouverts."""
+    from tests.test_feed import commerce, offre
+
+    b = await commerce(session, longitude=-80.1301, latitude=25.7908)
+    await offre(session, b, tier_id=STORY, name="Soin A")
+    await offre(session, b, tier_id=STORY, name="Soin B")
+    await offre(session, b, tier_id=REEL, name="Soin C")
+
+    # Un créateur qui n'ouvre que le palier story : le palier reel lui est
+    # fermé, et c'est justement celui dont le compte doit rester juste.
+    user = await createur(session)
+    await compte(session, user, followers=1_800)
+
+    vue = await service.vue_des_paliers(session, user.id)
+    par_palier = {p.tier_id: p for p in vue.paliers}
+
+    assert par_palier[STORY].accessible is True
+    assert par_palier[STORY].offres_disponibles == 2
+    assert par_palier[REEL].accessible is False
+    assert par_palier[REEL].offres_disponibles == 1, (
+        "un palier fermé doit dire ce qu'il ouvrirait, sinon la carte n'a plus d'objet"
+    )
+
+
+async def test_un_palier_que_personne_n_a_compose_dit_zero(session: AsyncSession) -> None:
+    """**Zéro est une réponse, pas une absence.** Un palier qu'aucun commerce
+    n'a encore composé se dit, il ne se masque pas."""
+    user = await createur(session)
+    await compte(session, user, followers=1_800)
+
+    vue = await service.vue_des_paliers(session, user.id)
+
+    assert all(p.offres_disponibles == 0 for p in vue.paliers)
+
+
+async def test_une_prestation_retiree_ne_compte_plus(session: AsyncSession) -> None:
+    """Le compte suit l'état effectif, comme le fil : un item indisponible ne
+    s'ouvre pas, et le promettre serait une impasse chiffrée."""
+    from app.services import capacity as capacity_service
+    from tests.test_feed import commerce, offre
+
+    b = await commerce(session, longitude=-80.1301, latitude=25.7908)
+    item, _ = await offre(session, b, tier_id=STORY, name="Soin retiré")
+    user = await createur(session)
+    await compte(session, user, followers=1_800)
+
+    avant = {
+        p.tier_id: p.offres_disponibles
+        for p in (await service.vue_des_paliers(session, user.id)).paliers
+    }
+    # Un acteur humain : une transition décidée par le système doit dire
+    # pourquoi, et retirer une prestation est une décision du commerce.
+    membre = await auth_service.register(
+        session,
+        email=f"{uuid.uuid4()}@example.com",
+        password="un-mot-de-passe-solide-42",
+        role=UserRole.BUSINESS_MEMBER,
+    )
+    await capacity_service.set_availability(
+        session, item=item, is_available=False, actor=Actor.from_user(membre)
+    )
+    apres = {
+        p.tier_id: p.offres_disponibles
+        for p in (await service.vue_des_paliers(session, user.id)).paliers
+    }
+
+    assert avant[STORY] == 1
+    assert apres[STORY] == 0

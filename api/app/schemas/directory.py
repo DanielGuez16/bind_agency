@@ -21,6 +21,13 @@ class CompteVuRead(BaseModel):
     handle: str | None
     #: Nul quand aucun relevé n'existe. Zéro serait un chiffre, et faux.
     followers: int | None
+    #: La photo, **par sa clé** — servie par `GET /media/{cle}`, comme les
+    #: photos de salon. Jamais l'adresse de la plateforme : elle expire.
+    avatar_key: str | None
+    #: L'adresse du profil public, dérivée du pseudonyme. Nulle sur une
+    #: plateforme qu'on ne sait pas rattacher, ou sans pseudonyme : un lien qui
+    #: mène à une page d'erreur est pire qu'un lien absent.
+    profil_url: str | None
 
 
 class CreateurVuRead(BaseModel):

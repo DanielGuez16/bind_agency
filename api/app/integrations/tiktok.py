@@ -45,7 +45,9 @@ PROFIL = "https://open.tiktokapis.com/v2/user/info/"
 #: `video_count` tient lieu de `media_count` : ce n'est pas la même chose qu'un
 #: post Instagram, mais c'est le compteur de publications de la plateforme, et
 #: le contrôle de cohérence n'en demande pas plus.
-CHAMPS_PROFIL = "open_id,username,display_name,follower_count,following_count,video_count"
+CHAMPS_PROFIL = (
+    "open_id,username,display_name,follower_count,following_count,video_count,avatar_url"
+)
 
 
 class TikTokProvider:
@@ -151,6 +153,7 @@ class TikTokProvider:
             followers_count=int(donnees["follower_count"]),
             following_count=int(donnees["following_count"]),
             media_count=int(donnees["video_count"]),
+            avatar_url=donnees.get("avatar_url") or None,
             # TikTok ne donne pas de répartition d'audience sur cette portée.
             audience_demographics=None,
             raw_payload=donnees,

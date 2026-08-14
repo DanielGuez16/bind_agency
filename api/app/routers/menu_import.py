@@ -10,11 +10,12 @@ import uuid
 from typing import Annotated
 
 import httpx
-from fastapi import APIRouter, Depends, Path, status
+from fastapi import APIRouter, Depends, File, Path, UploadFile, status
 
 from app.core.dependencies import CurrentBusiness, CurrentUser, SessionDep, require_role
 from app.core.errors import ErrorCode, api_error
 from app.integrations.menu_extraction import get_extractor
+from app.integrations.object_store import get_object_store
 from app.models.enums import UserRole
 from app.schemas.menu_import import (
     LigneExtraiteRead,
@@ -24,6 +25,7 @@ from app.schemas.menu_import import (
     ValidationRead,
 )
 from app.services import menu_import as service
+from app.services import storage
 
 router = APIRouter(
     prefix="/business/{business_id}/menu-imports",
@@ -76,27 +78,97 @@ async def create_import(
     return _lire(import_)
 
 
+#: Les signatures acceptées, et **le type déclaré n'est pas consulté** : il vient
+#: de l'appelant, donc il ne prouve rien. Ce sont aussi les trois formats qu'un
+#: modèle vision sait lire — envoyer autre chose reviendrait à payer un appel
+#: pour un refus.
+SIGNATURES: tuple[bytes, ...] = (b"\xff\xd8\xff", b"\x89PNG\r\n\x1a\n", b"RIFF")
+
+#: Le type qu'on déclare au modèle, déduit de la signature et non de l'appelant.
+TYPE_PAR_SIGNATURE = {
+    b"\xff\xd8\xff": "image/jpeg",
+    b"\x89PNG\r\n\x1a\n": "image/png",
+    b"RIFF": "image/webp",
+}
+
+TRANCHE = 64 * 1024
+
+#: Une photo de carte prise au téléphone, pas un scan d'imprimerie. Huit
+#: mégaoctets suffisent largement, et au-delà c'est le réseau du salon qui
+#: souffrirait avant nous.
+PLAFOND = 8 * 1024 * 1024
+
+
+@router.post("/uploads", status_code=status.HTTP_201_CREATED)
+async def televerser(
+    business: CurrentBusiness,
+    fichier: Annotated[UploadFile, File()],
+) -> dict[str, str]:
+    """Dépose la photo de la carte et rend sa clé. Rien n'est encore lu.
+
+    **C'est ce qui manquait pour que le mode terrain vaille son nom.** La
+    création d'un import demande une clé de fichier, et aucune route ne
+    permettait d'en obtenir une pour une carte : le dépôt objet ne recevait que
+    des photos de galerie et des preuves. La fondatrice photographiait la carte
+    au mur et n'avait nulle part où la mettre.
+
+    Séparé de la création, comme pour la galerie et les preuves : déposer un
+    fichier échoue pour des raisons — réseau, poids, format — qui n'ont rien à
+    voir avec l'import.
+    """
+    morceaux: list[bytes] = []
+    total = 0
+
+    while tranche := await fichier.read(TRANCHE):
+        total += len(tranche)
+        if total > PLAFOND:
+            # On s'arrête à la lecture : accepter le flux entier pour le refuser
+            # après ferait dépendre la mémoire du serveur de ce qu'on envoie.
+            raise api_error(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, ErrorCode.PROOF_TOO_LARGE)
+        morceaux.append(tranche)
+
+    contenu = b"".join(morceaux)
+    if not contenu:
+        raise api_error(status.HTTP_422_UNPROCESSABLE_CONTENT, ErrorCode.VALIDATION_FAILED)
+
+    signature = next((s for s in SIGNATURES if contenu.startswith(s)), None)
+    if signature is None:
+        raise api_error(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, ErrorCode.PROOF_UNSUPPORTED_TYPE)
+
+    cle = await storage.deposer(contenu, prefixe=f"photos/cartes/{business.id}")
+    return {"file_key": cle, "mime_type": TYPE_PAR_SIGNATURE[signature]}
+
+
 @router.post("/{import_id}/extract", response_model=MenuImportRead)
 async def extract(
     import_id: Annotated[uuid.UUID, Path()], business: CurrentBusiness, session: SessionDep
 ) -> MenuImportRead:
     """Lit la carte et remplit la charge. Ne crée aucun item.
 
-    Le contenu du fichier est relu depuis sa clé. En attendant le dépôt objet
-    réel, le mode `manual` ne lit rien et rend une charge vide : le commerce
-    saisit sa carte, ce qui reste le chemin de la phase 2.
+    **Le contenu est relu depuis sa clé.** Il ne l'était pas : la route passait
+    `b""` au modèle, avec un commentaire disant qu'on attendait le dépôt objet
+    réel. Le dépôt existe depuis, et personne n'est revenu ici — en mode
+    `manual` l'extraction rend une charge vide de toute façon, donc rien ne le
+    signalait. Une photo de carte partait au modèle vide.
     """
     try:
         import_ = await service.du_commerce(session, import_id=import_id, business_id=business.id)
     except service.MenuImportError as error:
         raise _traduire(error) from error
 
+    contenu = await get_object_store().lire(import_.file_key)
+    if contenu is None:
+        # La clé ne désigne plus rien : le dire plutôt que d'envoyer du vide au
+        # modèle, qui répondrait « rien trouvé » et ferait valider une carte
+        # blanche.
+        raise api_error(status.HTTP_404_NOT_FOUND, ErrorCode.NOT_FOUND)
+
     async with httpx.AsyncClient() as client:
         try:
             import_ = await service.extraire(
                 session,
                 import_=import_,
-                contenu=b"",
+                contenu=contenu,
                 extractor=get_extractor(client),
             )
         except service.MenuImportError as error:

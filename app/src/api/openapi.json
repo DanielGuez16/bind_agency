@@ -514,6 +514,15 @@
         ]
       }
     },
+    "/api/v1/business/{business_id}/menu-imports/uploads": {
+      "post": {
+        "operationId": "televerser_api_v1_business__business_id__menu_imports_uploads_post",
+        "responses": [
+          "201",
+          "422"
+        ]
+      }
+    },
     "/api/v1/business/{business_id}/menu-imports/{import_id}": {
       "get": {
         "operationId": "read_import_api_v1_business__business_id__menu_imports__import_id__get",
