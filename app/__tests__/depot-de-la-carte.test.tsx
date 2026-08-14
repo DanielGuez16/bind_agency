@@ -15,6 +15,7 @@ import { render, screen, within } from '@testing-library/react-native';
 
 import { ApiClient, ApiProvider, type PageDeLaCarte } from '../src/api';
 import { I18nProvider } from '../src/i18n';
+import { en } from '../src/i18n/en';
 import { CarteDuCommerce } from '../src/screens/CarteDuCommerce';
 import { ThemeProvider } from '../src/theme';
 
@@ -69,6 +70,23 @@ describe('le blocage se dit en tête, et il nomme ses prestations', () => {
     for (const prestation of BLOQUEES) {
       expect(screen.getByTestId(`bloquee-${prestation.id}`)).toHaveTextContent(prestation.name);
     }
+  });
+
+  it('dit « une prestation » au singulier, parce que c’est le cas courant', async () => {
+    // Le dépôt n'a pas de machinerie de pluriel — le produit choisit entre deux
+    // clés là où ça compte. Ici ça compte : un salon qui n'a qu'une prestation
+    // à choix est le cas fréquent, pas le cas limite, et « 1 services » est ce
+    // qu'il lit sur son premier écran.
+    await monter({ bloquees: [BLOQUEES[0]] });
+
+    const bandeau = screen.getByTestId('carte-blocage');
+    expect(within(bandeau).queryByText(/^1 /)).toBeNull();
+    expect(within(bandeau).getByText(en.composition.carteBloqueUne)).toBeTruthy();
+  });
+
+  it('repasse au pluriel au-delà d’une', async () => {
+    await monter();
+    expect(within(screen.getByTestId('carte-blocage')).getByText(/^2 /)).toBeTruthy();
   });
 
   it('tombe dès qu’une page existe', async () => {

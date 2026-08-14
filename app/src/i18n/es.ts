@@ -541,8 +541,9 @@ export const es: Catalogue = {
   composition: {
     carteTitre: 'Carta',
     carteAide: 'No son tus fotos: esto es lo que lee un creador para saber qué va a obtener.',
+    carteBloqueUne: 'Una prestación aún no se puede publicar',
     carteBloqueTitre: '{{count}} prestaciones aún no se pueden publicar',
-    carteBloqueCorps: 'Dejan elegir a la creadora, así que necesita leer tu carta antes de reservar. Añade páginas o un enlace y ambas se abren.',
+    carteBloqueCorps: 'Dejan elegir a la creadora, así que necesita leer tu carta antes de reservar. Añade páginas o un enlace y se abren.',
     carteLUnOuLAutre: 'Basta con una de las dos',
     carteVide: 'Ninguna página todavía. Fotografíala, o pega el enlace abajo: con una de las dos basta.',
     carteAjouter: 'Añadir una página',

@@ -174,7 +174,9 @@ export function CarteDuCommerce({
           <Icone nom="alerte" couleur="status.warning.rule" taille={20} />
           <View style={{ flex: 1, gap: 3 }}>
             <Texte variante="type.bodyStrong">
-              {t('composition.carteBloqueTitre', { count: retenues.length })}
+              {retenues.length === 1
+                ? t('composition.carteBloqueUne')
+                : t('composition.carteBloqueTitre', { count: retenues.length })}
             </Texte>
             <Texte variante="type.caption" couleur="ink.soft">
               {t('composition.carteBloqueCorps')}

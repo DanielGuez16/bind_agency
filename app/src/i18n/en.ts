@@ -552,8 +552,12 @@ export const en = {
     // vraiment à expliquer : les deux se déposent pareil et ne servent pas à
     // la même chose.
     carteAide: 'Not your photos — this is what a creator reads to know what they will get.',
+    // Deux clés plutôt qu'un pluriel : « 1 services » se lit sur le premier
+    // écran d'un salon qui n'a qu'une prestation à choix — le cas le plus
+    // fréquent, pas le cas limite.
+    carteBloqueUne: 'One service cannot be published yet',
     carteBloqueTitre: '{{count}} services cannot be published yet',
-    carteBloqueCorps: 'They let the creator choose, so she needs to read your menu before she books. Add pages or a link and both open.',
+    carteBloqueCorps: 'They let the creator choose, so she needs to read your menu before she books. Add pages or a link and they open.',
     carteLUnOuLAutre: 'Either one is enough',
     carteVide: 'No menu page yet. Photograph it, or paste the link below — either one is enough.',
     carteAjouter: 'Add a menu page',
