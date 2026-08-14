@@ -1,5 +1,7 @@
 """Point d'entrée de l'API BIND."""
 
+import logging
+
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -55,6 +57,8 @@ from app.routers import (
     venue_report,
 )
 
+logger = logging.getLogger(__name__)
+
 
 async def _validation_error_handler(_: Request, error: RequestValidationError) -> JSONResponse:
     """Uniformise le 422 sur un code du catalogue, et n'y renvoie aucune valeur reçue.
@@ -72,6 +76,36 @@ async def _validation_error_handler(_: Request, error: RequestValidationError) -
         status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         content={"detail": ErrorCode.VALIDATION_FAILED.value, "fields": champs},
     )
+
+
+async def _intercepter_les_erreurs(request: Request, appeler_la_suite):
+    """Rend un 500 **qui traverse la pile de middlewares**, et non un mur de CORS.
+
+    **Le défaut que ceci répare a coûté trois campagnes de test.** Une exception
+    non rattrapée remonte jusqu'à `ServerErrorMiddleware`, qui est *au-dessus*
+    de `CORSMiddleware` : sa réponse ne porte donc aucun en-tête d'origine. Le
+    navigateur n'y voit pas un 500, il y voit une violation de CORS — et
+    l'enquête part du mauvais côté, sur la configuration d'origines, pendant que
+    la vraie erreur dort dans le journal du serveur.
+
+    **Un gestionnaire d'exception n'y suffit pas**, et c'est le piège :
+    `add_exception_handler(Exception, ...)` ne pose pas un gestionnaire de plus,
+    il remplace celui de `ServerErrorMiddleware` — lequel reste au-dessus du
+    CORS. Seul un middleware posé *sous* lui rend une réponse qui repasse par le
+    CORS et en ressort avec ses en-têtes.
+
+    **Aucun détail ne sort.** Le message d'une exception porte régulièrement une
+    requête SQL, un identifiant, parfois une valeur reçue. La trace part au
+    journal d'exploitation, lisible par ceux qui exploitent et par eux seuls.
+    """
+    try:
+        return await appeler_la_suite(request)
+    except Exception:
+        logger.exception("erreur non rattrapée", extra={"chemin": request.url.path})
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"detail": ErrorCode.INTERNAL_ERROR.value},
+        )
 
 
 def create_app() -> FastAPI:
@@ -99,6 +133,12 @@ def create_app() -> FastAPI:
         docs_url=f"{settings.api_v1_prefix}/docs",
         redoc_url=None,
     )
+
+    # **L'ordre de ces deux-là est tout le correctif.** `add_middleware` empile
+    # vers l'extérieur : le dernier posé enveloppe les précédents. L'intercepteur
+    # est donc posé **avant** le CORS, pour se retrouver **dessous** — sa réponse
+    # repasse par lui et en ressort avec ses en-têtes.
+    application.middleware("http")(_intercepter_les_erreurs)
 
     application.add_middleware(
         CORSMiddleware,
