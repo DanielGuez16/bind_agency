@@ -4130,3 +4130,81 @@ le titre avec son bloc. **La garde statique ne peut pas voir ça** : elle lit un
 fichier à la fois et ne sait pas qu'un composant s'efface quand un autre parle.
 Les deux fichiers déclarent donc chacun leur bloc, et c'est un test de rendu qui
 compte le vrai, sur l'écran monté, dans les deux branches.
+---
+
+## 2026-08-14 — Trois seuils que le code n'a pas à connaître
+
+**Le plafond de jetons de l'extraction de carte.** Sur les modèles de la
+génération 5, ne pas envoyer de champ `thinking` ne veut plus dire « sans
+réflexion » : c'est la réflexion adaptative qui s'applique par défaut, et
+`max_tokens` plafonne la réflexion **et** la réponse ensemble. Une carte longue
+pouvait donc dépenser son budget à délibérer et rendre un JSON coupé au milieu
+d'une ligne, que le lecteur signalait « réponse illisible ». Le défaut se serait
+découvert debout dans un salon, sur la carte la plus fournie de la tournée —
+celle qui a le plus à gagner à être lue automatiquement.
+
+Lire une carte est une transcription, pas un raisonnement : on coupe la
+réflexion explicitement, et on relève quand même le plafond. Les deux, parce que
+couper protège du partage et relever protège de la carte de soixante lignes.
+`MENU_EXTRACTION_MAX_TOKENS` passe de quatre mille — figés dans le code — à huit
+mille en configuration. Et une réponse tronquée nomme désormais le plafond au
+lieu de se dire illisible : les deux appellent des gestes opposés, et les
+confondre fait reprendre trois fois la photo d'une carte bien cadrée.
+
+**Le délai avant qu'une absence puisse être constatée.** Rien n'empêchait un
+salon de marquer absente une créatrice à l'heure pile, pendant qu'elle poussait
+la porte — et l'événement de fiabilité qu'une absence écrit ne se retire pas.
+`NO_SHOW_DELAI_MINUTES` vaut vingt, et la journée du commerce rend désormais
+`absence_signalable_a` : l'écran sait **quand** ouvrir le bouton sans connaître
+le seuil. Recopier vingt minutes dans l'application aurait suffi à faire dériver
+les deux au premier ajustement, et cette dérive-là se lit comme un bouton grisé
+qui devrait être actif.
+
+**L'ordre des deux refus, trouvé par un test existant.** La garde du délai
+passait avant la vérification d'état, et un commerce qui tentait l'absence sur
+une réservation déjà annulée lisait « trop tôt » — donc attendait vingt minutes
+pour rien avant de recommencer. L'état d'abord, l'heure ensuite. Le test du
+signalement de lieu l'a montré en tombant ; il n'a pas été modifié, ce qui est le
+meilleur signe que l'ordre est le bon.
+
+**Ce qui n'est pas fait, et pourquoi.** La composition de Design annonce aussi
+que « deux absences non prévenues suspendent la créatrice 30 jours, sans que tu
+aies à intervenir ». `SPEC.md` §4.1 ne connaît qu'un événement de fiabilité
+négatif ; une suspension automatique est une sanction d'une autre nature, avec
+son seuil, sa durée, sa notification et sa voie de recours. Elle engage le modèle
+et les droits du créateur : elle est signalée, pas implémentée.
+
+---
+
+## 2026-08-14 — Le voisinage est un rayon, parce que le quartier n'existe pas
+
+L'état vide du commerce disait « ajoutez une prestation » et rien de plus. Un
+salon qui vient de s'inscrire ne sait pas combien de prestations publier ni
+combien de places ouvrir : il ouvre au hasard, se trouve invisible dans le fil,
+et conclut que le produit ne marche pas. `GET /business/{id}/neighbourhood` rend
+trois repères — prestations publiées, places par jour, palier le plus offert.
+
+**« Quartier » n'entre pas dans le modèle.** Miami compte assez de quartiers
+nommés pour qu'une liste fermée soit fausse dès le premier jour ; c'est déjà la
+raison pour laquelle la ville d'un créateur est un champ libre (SPEC §5.2). Le
+voisinage est donc un **rayon** autour du point du commerce, comme le fil et les
+compteurs par rayon. Rien de neuf en base, et `rayon_metres` est rendu avec les
+chiffres pour que l'écran écrive « les salons dans 2 km » plutôt que « votre
+quartier » — qui serait un découpage inventé.
+
+**Des fourchettes, jamais des chiffres exacts, et rien sous cinq salons.** Un
+commerce ne doit pas pouvoir lire le catalogue d'un concurrent en s'inscrivant à
+côté de lui. On rend l'intervalle interquartile et non les extrêmes : les
+extrêmes d'un petit ensemble désignent des salons précis et sautent dès qu'un
+seul ouvre ou ferme. Sous le plancher, aucune fourchette — mais le compte est
+rendu quand même, pour que l'écran puisse dire « quatre salons autour de vous,
+pas encore assez pour se comparer » plutôt qu'afficher un vide qu'on prendrait
+pour une panne.
+
+**Deux pièges, chacun avec son test.** Le commerce ne se compte pas lui-même :
+un salon au catalogue vide qui s'inclut lirait « 0 à 0 » comme la norme du
+quartier, l'exact contraire du repère cherché. Et les salons qui n'ont rien
+publié comptent **pour zéro** : un `GROUP BY` ne rend que ceux qui ont au moins
+une ligne, et sans remplissage la fourchette serait celle des seuls salons
+actifs — un salon neuf lirait qu'il est très en retard alors qu'il est dans la
+moyenne.

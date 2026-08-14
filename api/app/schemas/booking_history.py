@@ -90,6 +90,14 @@ class ReservationDuCommerceRead(BaseModel):
     required_mention: str | None
     required_geotag: bool
     contrepartie: ContrepartieBreveRead | None
+    #: Quand le bouton « signaler une absence » s'ouvre. `None` : jamais — un
+    #: item sans créneau n'a pas d'heure à laquelle ne pas se présenter.
+    #:
+    #: Rendu plutôt que déduit dans l'application : le délai est un réglage, et
+    #: le recopier côté écran le ferait dériver au premier ajustement. L'écran
+    #: s'en sert pour ouvrir le bouton et pour dire à quelle heure il s'ouvre ;
+    #: c'est le serveur qui refuse, jamais l'horloge du téléphone.
+    absence_signalable_a: datetime | None
 
 
 class JourneeDuCommerceRead(BaseModel):

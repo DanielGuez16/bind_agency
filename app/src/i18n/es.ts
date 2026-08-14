@@ -801,6 +801,8 @@ export const es: Catalogue = {
     booking_hold_expired: 'Tu reserva temporal expiró y la plaza se liberó. Reserva de nuevo.',
     booking_no_show_not_applicable:
       'Esta reserva no tiene franja horaria, no hay ausencia posible.',
+    booking_no_show_too_early:
+      'Demasiado pronto para señalar una ausencia. Dale unos minutos más.',
     redemption_code_unknown: 'Este código no es válido. Pide al creador que lo actualice.',
     redemption_too_many_attempts:
       'Demasiados intentos fallidos con este código. Pide al creador una nueva reserva.',

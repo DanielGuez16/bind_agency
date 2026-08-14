@@ -135,6 +135,9 @@ class ErrorCode(StrEnum):
     #: L'heure du rendez-vous est passée : il n'y a plus rien à accepter.
     BOOKING_SLOT_ELAPSED = "booking_slot_elapsed"
     BOOKING_NO_SHOW_NOT_APPLICABLE = "booking_no_show_not_applicable"
+    #: Trop tôt : une créatrice en retard de trois minutes n'est pas absente,
+    #: et l'événement de fiabilité qu'une absence écrit ne se retire pas.
+    BOOKING_NO_SHOW_TOO_EARLY = "booking_no_show_too_early"
 
     # Retrait
     REDEMPTION_CODE_UNKNOWN = "redemption_code_unknown"
