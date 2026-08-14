@@ -419,6 +419,8 @@ export const en = {
     // Ce que la barre annonce à l'oreille : trois boutons identiques d'un
     // dossier à l'autre ne se distinguent que par ce qu'ils nomment.
     issueSurDossier: '{{issue}} — {{createur}}, {{prestation}}, {{commerce}}',
+    plansLectureSeule: 'Read only · monthly figures computed server-side',
+    plansNoteAnnuel: 'A yearly plan bills once a year. Its monthly figure is the server’s own division — it is not a price, and it must not be read as one.',
     plansTitre: 'Subscription plans',
     plansVide: 'No plan yet.',
     plansPrix: 'Price',
@@ -629,7 +631,9 @@ export const en = {
     lienMortAide:
       'It may have expired, or already been used. Ask BIND for a new one — nothing you did is lost.',
     preparePourVous: 'Prepared for you',
-    ceQuiEstPret: '{{prestations}} services and {{plages}} opening blocks are already in.',
+    prestationsPretes: '{{prestations}} services read from your price list are already in.',
+    prestationsAVenir: 'You will add your services after taking over. Nothing was read for you.',
+    plagesPretes: '{{plages}} opening blocks are already in.',
     introduction:
       'Create your account to take this page over. You decide when it goes live to creators — nothing is visible until you do.',
     aideMotDePasse: 'At least {{minimum}} characters.',

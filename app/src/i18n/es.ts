@@ -415,6 +415,8 @@ export const es: Catalogue = {
     issueResubmit: 'Pedir una nueva publicación',
     issueUnfulfilled: 'Cerrar como no cumplida',
     issueSurDossier: '{{issue}} — {{createur}}, {{prestation}}, {{commerce}}',
+    plansLectureSeule: 'Solo lectura · cifras mensuales calculadas en el servidor',
+    plansNoteAnnuel: 'Un plan anual se factura una vez al año. Su cifra mensual es la división que hace el servidor: no es un precio y no debe leerse como tal.',
     plansTitre: 'Planes de suscripción',
     plansVide: 'Ningún plan todavía.',
     plansPrix: 'Precio',
@@ -623,7 +625,9 @@ export const es: Catalogue = {
     lienMortAide:
       'Puede haber caducado o ya haberse usado. Pide otro a BIND: no se ha perdido nada de lo que hiciste.',
     preparePourVous: 'Preparado para ti',
-    ceQuiEstPret: 'Ya están cargados {{prestations}} servicios y {{plages}} franjas horarias.',
+    prestationsPretes: 'Ya están cargados {{prestations}} servicios leídos de tu carta.',
+    prestationsAVenir: 'Añadirás tus servicios después de asumir el salón. No se leyó nada por ti.',
+    plagesPretes: 'Ya están cargadas {{plages}} franjas horarias.',
     introduction:
       'Crea tu cuenta para asumir esta ficha. Tú decides cuándo se publica para los creadores: nada es visible hasta entonces.',
     aideMotDePasse: 'Mínimo {{minimum}} caracteres.',

@@ -149,12 +149,29 @@ export function PriseEnMainScreen({
               {apercu.address}
             </Texte>
           ) : null}
+          {/* **L'écran ne dit jamais avoir lu ce qu'il n'a pas lu.**
+              Un seul bloc, deux rendus selon ce que le dépouillement renvoie.
+              La phrase unique annonçait « 0 prestation et 0 plage sont déjà
+              là » à un gérant dont rien n'avait été relevé : elle affirmait une
+              lecture qui n'avait pas eu lieu, sur le premier écran qu'il voit
+              de BIND, et le seul qui doit lui donner envie de continuer.
+
+              Les deux comptes sont traités séparément : une carte relevée sans
+              horaires est le cas courant — la carte des prix est affichée au
+              mur, les horaires sont sur la porte, et on ne photographie pas
+              toujours les deux. */}
           <Texte variante="type.caption" couleur="ink.mute" testID="ce-qui-est-pret">
-            {t('priseEnMain.ceQuiEstPret', {
-              prestations: apercu.prestations_preparees,
-              plages: apercu.plages_preparees,
-            })}
+            {apercu.prestations_preparees > 0
+              ? t('priseEnMain.prestationsPretes', {
+                  prestations: apercu.prestations_preparees,
+                })
+              : t('priseEnMain.prestationsAVenir')}
           </Texte>
+          {apercu.plages_preparees > 0 ? (
+            <Texte variante="type.caption" couleur="ink.mute" testID="plages-pretes">
+              {t('priseEnMain.plagesPretes', { plages: apercu.plages_preparees })}
+            </Texte>
+          ) : null}
         </View>
 
         <Texte variante="type.body" couleur="ink.soft">
