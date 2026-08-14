@@ -4495,6 +4495,24 @@ que rien d'autre ne verrait —, les deux seuils, et la conclusion que seul
 `photoBottom` les atteint. Le jour où quelqu'un éclaircit cet arrêt pour laisser
 voir la photo, c'est là que ça tombe : vérifié en le passant à 0,70.
 
+### Et l'accueil, que j'avais laissé passer
+
+En vérifiant le relevé plutôt qu'en le croyant, la même faute s'est trouvée sur
+l'écran que je venais de livrer deux fois. Le voile de l'accueil descend à 0,55
+en son milieu, et l'en-tête tombe entre le tiers et la moitié de l'écran selon
+la hauteur du contenu : sur une vidéo claire, cela fait entre **5,48:1 et
+3,72:1** — au-dessus du seuil ou en dessous selon le terminal.
+
+Sur le satin seul, mesuré, on est à 6,00:1. Mais le satin n'est là que tant
+qu'aucune vidéo ne le couvre : **une garantie qui dépend de ce qui a fini de
+charger n'en est pas une**, exactement comme celle qui dépend d'une hauteur.
+
+L'en-tête porte donc sa bande lui aussi, et elle vaut 12,10:1 quoi qu'il y ait
+derrière. *Coût assumé et à arbitrer si la fondatrice le voit autrement :* la
+bande cache le satin sous l'en-tête. Le satin occupe encore tout le reste de
+l'écran, et il n'a jamais eu pour rôle de passer sous un texte — mais c'est un
+choix visible, pas une conséquence technique.
+
 ## 2026-08-14 — La e2e tourne et ne bloque pas
 
 Signalé par la conversation fonctionnelle, vérifié : la protection de `main`

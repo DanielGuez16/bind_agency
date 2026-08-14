@@ -496,7 +496,10 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       dégradé l'endroit dépend de la hauteur de la carte, donc du terminal. Fin :
       le voile adoucit et s'arrête à `modal`, le texte porte sa propre bande à
       `photoBottom`, et le seuil est **calculé depuis les jetons** plutôt
-      qu'écrit. 4 tests neufs, 2 mutations vérifiées*
+      qu'écrit. L'en-tête de l'accueil portait la même faute — 3,72:1 au pire
+      sur une vidéo claire — et prend sa bande aussi : une garantie qui dépend
+      de ce qui a fini de charger n'en est pas une. 6 tests neufs, 3 mutations
+      vérifiées*
 - [ ] **Ajouter `e2e` aux vérifications requises de `main`**
       *La protection n'exige que `api` et `app` : le job qui monte le produit
       entier tourne et **ne bloque pas**. Une PR rouge sur lui a été fusionnée

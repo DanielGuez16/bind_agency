@@ -17,7 +17,9 @@
  */
 import { View } from 'react-native';
 
-import { Button, Icone, Marque, Texte, TitreAccentue } from '../components';
+import type { ReactNode } from 'react';
+
+import { BandeDeTexteSurPhoto, Button, Icone, Marque, Texte, TitreAccentue } from '../components';
 import { useI18n } from '../i18n';
 import { useGabarit } from '../shell/gabarit';
 import { breakpoint, radius, spacing, useColors, type ColorName } from '../theme';
@@ -93,12 +95,26 @@ export function ChoixDeLaPorte({
           `avecEnTete` le temps que l'accueil le lui prenne sur un satin ; c'est
           précisément ce déplacement qui refaisait la page une seconde après
           l'ouverture. Le satin est passé en fond, l'en-tête est revenu, et le
-          prop est parti avec la bascule qu'il servait. */}
-      {/* Le seul écran, avec l'accueil, où la marque **se présente** : le sigle
-          y porte sa signature, qu'aucun autre écran ne répète. */}
-      <Marque taille={30} couleur={surMedia ? 'ink.onScrim' : 'ink.default'} signature />
+          prop est parti avec la bascule qu'il servait.
 
-      <View style={{ gap: spacing['space.2'], maxWidth: 720 }}>
+          **Sur un média, il porte sa bande.** Le voile de l'accueil descend à
+          0,55 en son milieu, et l'en-tête tombe quelque part entre le tiers et
+          la moitié selon la hauteur du contenu : sur une vidéo claire, cela
+          fait entre 5,48:1 et 3,72:1 — au-dessus du seuil ou en dessous selon
+          le terminal. Sur le satin seul, mesuré, on est à 6,00:1 ; mais le
+          satin n'est là que tant qu'aucune vidéo ne le couvre, et une garantie
+          qui dépend de ce qui a fini de charger n'en est pas une.
+
+          La bande vaut 12,10:1 quoi qu'il y ait derrière. Elle coûte de cacher
+          le satin sous l'en-tête, et c'est le prix assumé : le satin occupe
+          encore tout le reste de l'écran, et il n'a jamais eu pour rôle de
+          passer sous un texte. */}
+      <Enveloppe surMedia={surMedia}>
+        {/* Le seul écran, avec l'accueil, où la marque **se présente** : le
+            sigle y porte sa signature, qu'aucun autre écran ne répète. */}
+        <Marque taille={30} couleur={surMedia ? 'ink.onScrim' : 'ink.default'} signature />
+
+        <View style={{ gap: spacing['space.2'], maxWidth: 720 }}>
         {/* Nommée : c'est sur elle que la suite de bout en bout lit la police
             réellement employée. Sans point d'accroche, la seule façon de
             vérifier qu'un texte emploie la fonte serait de deviner un
@@ -119,10 +135,11 @@ export function ChoixDeLaPorte({
             3,83:1, sous le seuil, quand `ink.onScrim` donne 6,00:1. La nuance
             sourde n'était défendable que sur un fond clair connu ; sur un voile
             posé au-dessus d'une image quelconque, elle ne l'a jamais été. */}
-        <Texte couleur={surMedia ? 'ink.onScrim' : 'ink.soft'}>
-          {t('auth.sousAccroche')}
-        </Texte>
-      </View>
+          <Texte couleur={surMedia ? 'ink.onScrim' : 'ink.soft'}>
+            {t('auth.sousAccroche')}
+          </Texte>
+        </View>
+      </Enveloppe>
 
       <View
         style={{
@@ -196,4 +213,17 @@ export function ChoixDeLaPorte({
       </View>
     </View>
   );
+}
+
+/**
+ * L'en-tête, avec ou sans sa bande.
+ *
+ * Sur une surface du thème, il n'y a rien à protéger : le fond est connu et les
+ * encres sont calibrées pour lui. Sur un média — une vidéo, une photo, un satin
+ * qu'une vidéo peut couvrir — c'est la bande qui garantit, parce qu'elle ne
+ * dépend ni de la hauteur du contenu ni du terminal.
+ */
+function Enveloppe({ surMedia, children }: { surMedia: boolean; children: ReactNode }) {
+  if (!surMedia) return <>{children}</>;
+  return <BandeDeTexteSurPhoto testID="bande-de-l-entete">{children}</BandeDeTexteSurPhoto>;
 }
