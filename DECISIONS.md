@@ -3727,3 +3727,39 @@ fichier du dépôt. Un salon accepte « la version 2026-01 », l'acceptation est
 qu'elle désigne n'existe pas. Le mécanisme de preuve est complet ; ce qu'il
 prouve ne l'est pas. Ce n'est pas bloqué par un accès externe, mais par une
 rédaction juridique.
+
+## 2026-08-14 — Un 500 sort par la porte, pas par le mur
+
+Trois campagnes de test ont rapporté « échoue en CORS » sur une route qui
+n'avait aucun problème de CORS. La troisième le disait elle-même : « comme les
+fois précédentes, le CORS est probablement le symptôme d'une erreur serveur ».
+Quand un outil ment assez souvent pour qu'on cesse de le croire, ce n'est plus
+un outil.
+
+**La cause.** Une exception non rattrapée remonte jusqu'à
+`ServerErrorMiddleware`, qui est *au-dessus* de `CORSMiddleware`. Sa réponse ne
+repasse donc pas par le CORS et ne porte aucun en-tête d'origine. Le navigateur
+n'y voit pas un 500 — il y voit une violation de CORS, et l'enquête part sur la
+configuration des origines pendant que la vraie erreur dort dans le journal.
+
+**Le piège du correctif évident.** `add_exception_handler(Exception, ...)` ne
+pose pas un gestionnaire de plus : Starlette le retire de la table et le donne à
+`ServerErrorMiddleware`, qui reste au-dessus du CORS. Écrit ainsi, le correctif
+ne change rien — et c'est bien ce qui s'est passé à la première tentative, que
+le test a rattrapée.
+
+**Ce qui marche : un middleware posé sous le CORS.** `add_middleware` empile
+vers l'extérieur, le dernier posé enveloppant les précédents. L'intercepteur est
+donc posé **avant** le CORS pour se retrouver **dessous** : sa réponse repasse
+par lui et en ressort avec ses en-têtes. L'appelant lit `internal_error`, ce qui
+est peu, mais ce qui est vrai.
+
+**Rien du message ne sort.** Une exception porte régulièrement une requête SQL,
+un identifiant, parfois une valeur reçue. La trace part au journal
+d'exploitation, et un test vérifie qu'elle n'apparaît pas dans la réponse.
+
+**Une note sur le test du journal.** Sous pytest, l'enregistrement n'arrive ni à
+`caplog` ni à un collecteur posé sur le logger — il naît dans la tâche que le
+middleware ouvre pour appeler la suite. Hors pytest, il arrive. Une assertion
+sur la collecte aurait donc été verte ou rouge selon le harnais et non selon le
+code : le test remplace le journal du module et vérifie l'appel.
