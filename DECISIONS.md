@@ -3972,3 +3972,86 @@ et 3x et interdit de les recalculer à l'exécution, `expo-linear-gradient`
 donnant la pente droite que la direction refuse. Sans fichiers, `SurfaceSatin`
 n'est pas écrit : un composant qui rendrait un dégradé linéaire en attendant
 serait exactement le cliché que la direction évite.
+
+---
+
+## 2026-08-14 — Lots 2 et 3, dans le système v1.0
+
+Trois écrans du commerce et quatre de l'administration, repris dans le système
+qui vient d'être posé. Deux règles de Design touchent les données, et c'est ce
+qui les rend intéressantes.
+
+**Aucun montant dans les rapports, et le client l'ignore même quand la réponse
+en porte un.** La page portait « ce que vous avez donné · 4 280,00 USD ». La
+règle de la carte d'API est qu'aucun montant ne figure dans une réponse
+destinée aux applications créateur et commerce ; la réponse en porte encore un,
+et l'écran cesse de le lire. Ce n'est pas cosmétique : ce qui convainc un salon
+se dit en prestations, en publications et en délais tenus — et c'est plus juste,
+un salon ne compare pas des euros, il compare ce qu'il a donné à ce qu'il a
+reçu.
+
+Ce qui remplace le montant est le **temps de fauteuil**, calculé sur la durée
+des prestations sans jamais toucher à un prix. `temps_de_fauteuil_minutes` est
+annoncé au contrat et pas encore servi, traité comme les trois champs du lot 1 :
+absent n'est pas zéro.
+
+**La garde est une liste de trois écrans, chacun avec sa raison.** Les plans —
+seul écran du produit à afficher des montants, et il est du back-office. Le
+catalogue et la relecture de carte — le prix que le salon tape lui-même sur sa
+propre carte, donnée de reporting interne jamais montrée à une créatrice.
+Partout ailleurs, ni `formatMoney` ni la division à la main, qui était
+justement la forme employée par la page de rapports.
+
+**L'annuaire reste en lecture seule, et c'est une décision, pas un trou.** Aucune
+route d'invitation ni de message n'existe, dans aucun sens : le produit circule
+dans un seul sens, la créatrice choisit et réserve. L'abonnement achète de la
+**visibilité**, pas du contact. Deux gardes plutôt qu'une : l'écran ne porte
+aucune action, et le client d'API n'en offre aucune — sans quoi la lecture seule
+serait une discipline, et une discipline finit par céder.
+
+**Le bouton d'arbitrage nomme son écart.** Défaut relevé en campagne :
+« Approve » seul ne disait pas ce qu'on approuvait, et dans une file où l'on
+tranche vingt dossiers à la chaîne un verbe seul finit par vouloir dire
+« suivant ». Le libellé vient du **dernier motif** — celui qui a mis le dossier
+là — parce qu'il est déjà codé dans le vocabulaire fermé et qu'il vient du
+journal : on nomme ce que quelqu'un a reproché, pas ce qu'on croit voir. Quand
+il n'y a rien à excuser, le bouton redevient simple.
+
+**Et le constaté dit d'où il vient.** Aux niveaux 2 et 3, la preuve ne porte ni
+auteur, ni format, ni mention : rien qui puisse être comparé à l'exigence.
+Écrire « conforme » en face d'une ligne que personne n'a vérifiée serait une
+affirmation que le produit ne peut pas tenir devant un salon qui conteste. Seule
+l'échéance se mesure vraiment des deux côtés.
+
+**La journée se coupe par ce qu'elle demande, pas par des statuts.** Une absence
+à constater et une prestation servie la veille se lisaient dans la même colonne,
+au même poids. Un statut ne devient une section que s'il change ce que la
+vendeuse doit faire ; sinon c'est une nuance, et elle vit dans la ligne.
+
+**La prise en main ne dit plus avoir lu ce qu'elle n'a pas lu.** Elle annonçait
+« 0 prestation et 0 plage sont déjà là » quand rien n'avait été relevé — une
+lecture affirmée qui n'avait pas eu lieu, sur le premier écran qu'un gérant voit
+de BIND et le seul qui doit lui donner envie de continuer. Un bloc, deux rendus,
+et les deux comptes traités séparément : une carte relevée sans horaires est le
+cas courant.
+
+**Les plans disent leur lecture seule une fois, en haut**, plutôt que de griser.
+Un bouton grisé promet qu'il s'allumera, et rien ici ne s'allumera. La règle de
+la maison est que l'action impossible est retirée ; la mention la remplace.
+
+### Ce que ces deux lots demandent encore
+
+Trois manques nommés par Design, tous côté serveur, et **aucun n'a été
+contourné en inventant une donnée** :
+
+- **la route de l'annuaire** — aucune route commerce ne liste les créateurs ;
+- **l'agrégat des rapports** — sans lui, douze semaines font quatre-vingt-quatre
+  appels jour par jour ;
+- **le point de comparaison de quartier**, exposé sur le catalogue vide et dont
+  la journée vide a besoin : c'est là qu'un salon décide de rester ou
+  d'abandonner.
+
+Deux compositions restent à faire faute de route : les **deux blocs
+photographiés** du mode terrain — carte des prix et horaires, qui remplacent
+deux formulaires — et le **cochage prestation par prestation** de la prise en
+main, qui demande la liste des items relevés et non leur seul compte.

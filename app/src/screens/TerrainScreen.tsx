@@ -36,7 +36,15 @@ import { View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
 import { useApi, type FichePreparee, type LienRemis } from '../api';
-import { Button, Chip, EmptyState, StatusMessage, TextField, Texte } from '../components';
+import {
+  Button,
+  Chip,
+  EmptyState,
+  FiletSegmente,
+  StatusMessage,
+  Texte,
+  TextField,
+} from '../components';
 import { formatDate } from '../format';
 import { useI18n } from '../i18n';
 import { codeColors, radius, useColors } from '../theme';
@@ -138,6 +146,13 @@ export function TerrainScreen() {
     }
   }
 
+  // Ce qui est réellement saisi, et non ce qui est obligatoire : la fiche part
+  // avec le nom seul, et le filet dit ce qu'il reste à gagner, pas ce qui
+  // bloque. Une fiche à trois champs vaut mieux qu'une fiche abandonnée.
+  const remplis = [brouillon.nom, brouillon.adresse, brouillon.telephone].filter(
+    (valeur) => valeur.trim().length > 0,
+  ).length;
+
   /**
    * Ce qui ne dépend pas de la liste : le refus s'il y en a un, et les trois
    * champs. Rendu dans l'état vide comme dans l'état nominal — construit une
@@ -150,6 +165,18 @@ export function TerrainScreen() {
       {/* Préparer, en trois champs. Debout, entre deux clients. */}
       <View style={{ gap: 12 }} testID="formulaire-de-fiche">
         <Texte variante="type.bodyStrong">{t('terrain.preparer')}</Texte>
+        {/* **Le filet segmenté, repris des carrousels de la marque.** Il
+            remplace le compteur « 2 sur 3 » : debout, à une main, entre deux
+            clientes, on voit où l'on en est sans lire. L'orange y est admis
+            alors qu'il est compté ailleurs, parce que le filet ne porte aucun
+            texte — c'est une surface, comme le filet d'onglet actif, et la
+            règle du bloc ne parle que du bloc. */}
+        <FiletSegmente
+          etapes={3}
+          faites={remplis}
+          accessibilityLabel={t('terrain.avancement')}
+          testID="avancement-de-la-fiche"
+        />
         <TextField
           label={t('terrain.nom')}
           value={brouillon.nom}

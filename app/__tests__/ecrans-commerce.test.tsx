@@ -1923,3 +1923,30 @@ describe('la journée se coupe par ce qu’elle demande', () => {
     expect(screen.queryByTestId('closes')).toBeNull();
   });
 });
+
+describe('le mode terrain dit son avancement sans l’écrire', () => {
+  it('un segment par champ rempli, et zéro n’est pas une absence de filet', async () => {
+    // **Debout, à une main, entre deux clientes.** Le filet segmenté remplace
+    // le compteur « 2 sur 3 » : on voit où l'on en est sans lire. Il compte ce
+    // qui est **rempli**, pas ce qui est obligatoire — la fiche part avec le
+    // nom seul, et une fiche à trois champs vaut mieux qu'une fiche
+    // abandonnée.
+    await monter(<TerrainScreen />, clientDe({ '/admin/prospects': [FICHE_PREPAREE] }), 'merchant');
+    await waitFor(() => expect(screen.getByTestId('formulaire-de-fiche')).toBeTruthy());
+
+    const segment = (i: number) =>
+      screen.getByTestId(`avancement-de-la-fiche-segment-${i}`).props.style.backgroundColor;
+
+    // Rien de saisi : trois segments, aucun franchi. Le filet existe quand
+    // même — un parcours à zéro pour cent n'est pas l'absence de parcours.
+    expect(screen.getByTestId('avancement-de-la-fiche')).toBeTruthy();
+    const eteint = segment(0);
+
+    await fireEvent.changeText(screen.getByTestId('champ-nom'), 'Studio Lume');
+    await waitFor(() => expect(segment(0)).not.toBe(eteint));
+    // Et seul le premier bouge : deux segments allumés pour un champ rempli
+    // feraient de la progression une décoration.
+    expect(segment(1)).toBe(eteint);
+    expect(segment(2)).toBe(eteint);
+  });
+});

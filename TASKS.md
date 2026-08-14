@@ -445,4 +445,22 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       évite. Le thème sombre est retiré : la v1.0 n'en livre pas, et en
       reconstituer un demandait d'inventer une dizaine de valeurs qu'aucune
       passation ne définit. 46 tests neufs, 12 mutations vérifiées*
+- [x] **Lots 2 et 3 · le commerce et l'administration dans le système v1.0**
+      *Fin : les rapports **ne lisent plus le montant que la réponse porte
+      encore** et comptent du temps de fauteuil ; une garde nomme les trois
+      écrans qui ont le droit d'afficher une somme, chacun avec sa raison.
+      L'annuaire est en lecture seule, tenu par deux gardes — l'écran sans
+      action, et le client d'API sans route de contact — parce qu'une lecture
+      seule tenue par la discipline finit par céder. Le bouton d'arbitrage
+      **nomme son écart** : « Approve without the location tag » plutôt
+      qu'« Approve », et l'attendu se lit en face du constaté, qui dit d'où il
+      vient. La journée se coupe par ce qu'elle demande et non par des statuts.
+      La prise en main n'annonce plus « 0 prestation lue ». Les plans disent
+      leur lecture seule une fois plutôt que de griser, et un mensuel calculé
+      porte sa note là où le chiffre est. Le mode terrain dit son avancement au
+      filet segmenté. 22 tests neufs, 7 mutations vérifiées.*
+      *Restent, faute de route : l'annuaire côté serveur, l'agrégat des
+      rapports, le point de comparaison de quartier sur la journée vide, les
+      deux blocs photographiés du terrain et le cochage prestation par
+      prestation — aucun n'a été contourné en inventant une donnée.*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire

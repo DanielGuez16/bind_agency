@@ -662,6 +662,7 @@ export const es: Catalogue = {
     videTitre: 'Ninguna ficha preparada',
     videCorps:
       'Prepara una ficha mientras estás en el salón — nombre, dirección, teléfono. El responsable la termina desde su propio móvil.',
+    avancement: 'Campos rellenados',
     preparer: 'Preparar una ficha',
     nom: 'Nombre del salón',
     adresse: 'Dirección',

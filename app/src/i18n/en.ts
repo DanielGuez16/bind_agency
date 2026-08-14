@@ -676,6 +676,7 @@ export const en = {
     videTitre: 'No page prepared yet',
     videCorps:
       'Prepare a page while you are in the salon — name, address, phone. The manager finishes it from their own phone.',
+    avancement: 'Fields filled in',
     preparer: 'Prepare a page',
     nom: 'Salon name',
     adresse: 'Address',
