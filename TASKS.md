@@ -474,4 +474,17 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       rapports, le point de comparaison de quartier sur la journée vide, les
       deux blocs photographiés du terrain et le cochage prestation par
       prestation — aucun n'a été contourné en inventant une donnée.*
+- [x] **L'accueil ne se refait plus sous les yeux**
+      *Rapporté comme « la vidéo met plusieurs secondes à démarrer » ; c'était un
+      basculement de composition. Tant que le manifeste des médias n'était pas
+      revenu, l'écran rendait la composition satin complète, puis basculait sur
+      la composition vidéo — la bande quittait le flux, l'en-tête réapparaissait
+      ailleurs, l'encre changeait. Fin : le satin devient **la couche du
+      dessous**, le voile devient permanent avec lui, `surMedia` est une
+      constante et `avecEnTete` disparaît avec la bascule qu'il servait. Deux
+      mesures plutôt que deux intuitions — 6,00:1 pour l'encre claire sur le
+      satin voilé, 3,83:1 pour la sourde, qui passe au blanc. Le satin est étiré
+      et non recadré : ses radiales sont en pourcentages de leur boîte. Un test
+      liste ce que l'écran montre et compare avant et après la réponse ; 2
+      mutations vérifiées*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire

@@ -77,6 +77,33 @@ const IMAGES: Record<VarianteDeSatin, ReturnType<typeof require>> = {
 };
 
 /**
+ * L'image seule, pour qui a besoin du satin **en fond** et non en bande.
+ *
+ * `SurfaceSatin` est une bande où la marque se présente, avec ses trois refus.
+ * L'accueil avant inscription, lui, est le seul emploi que la passation décrit
+ * comme « plein écran » : le satin y est une couche sous une vidéo, pas un bloc
+ * dans le flux. Lui faire porter un titre serait le détourner ; l'exposer
+ * ainsi dit exactement ce qu'on prend.
+ */
+export function imageDuSatin(variante: VarianteDeSatin) {
+  return IMAGES[variante];
+}
+
+/**
+ * **Étiré, jamais recadré.**
+ *
+ * Les radiales de la planche sont écrites en pourcentages de leur boîte : un
+ * satin de 390 × 320 et un satin plein écran ne sont pas la même image cadrée
+ * deux fois, ce sont **les mêmes pourcentages sur deux boîtes**. `cover`
+ * agrandirait jusqu'à remplir puis couperait les côtés — sur un téléphone, la
+ * lumière que `drape` pose à 15 % de la largeur sortirait du cadre, et il ne
+ * resterait du satin que sa partie sombre. Étirer reproduit ce que le CSS
+ * aurait fait, et un dégradé est la seule image du produit dont la déformation
+ * ne se voit pas.
+ */
+export const CADRAGE_DU_SATIN = 'stretch' as const;
+
+/**
  * Où le titre se pose sur chaque satin, et de quelle encre.
  *
  * Les deux vont ensemble : c'est le pli de l'image qui décide, pas le goût.
@@ -154,9 +181,7 @@ export function SurfaceSatin({
     >
       <Image
         source={IMAGES[variante]}
-        // Un dégradé est la seule image du produit dont la déformation ne se
-        // voit pas : `cover` la fait remplir sans qu'un pli se dénonce.
-        resizeMode="cover"
+        resizeMode={CADRAGE_DU_SATIN}
         style={StyleSheet.absoluteFill}
         // Décorative : elle ne porte aucun sens qu'un lecteur d'écran doive
         // annoncer, et la nommer ferait dire « dégradé orange » avant le titre.

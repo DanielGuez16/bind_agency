@@ -181,7 +181,11 @@ describe('accueil, ce qui manque', () => {
 
     await waitFor(() => expect(screen.getByTestId('porte-createur')).toBeTruthy());
     expect(screen.getByTestId('porte-commerce')).toBeTruthy();
-    expect(screen.queryByTestId('voile-accueil')).toBeNull();
+    // Le satin et son voile restent : ce ne sont pas des accompagnements du
+    // média, c'est le fond de l'écran. Sans eux, « pas de vidéo » redeviendrait
+    // une composition à part.
+    expect(screen.getByTestId('satin-accueil', { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.getByTestId('voile-accueil')).toBeTruthy();
   });
 
   it('rend les portes même si la route échoue', async () => {
@@ -440,20 +444,24 @@ describe('la marque se présente une fois, et une seule', () => {
 
   it('sans média, elle se présente sur un satin plutôt que de s’excuser', async () => {
     // L'écran annonçait « aucun fond » sous les portes : une phrase d'excuse à
-    // l'endroit exact où le produit se montre pour la première fois. Le satin
-    // est fait pour ça — « accueil avant inscription » est le premier des trois
-    // emplois que la passation lui donne.
+    // l'endroit exact où le produit se montre pour la première fois.
     await accueil(SANS_MEDIA);
-    await waitFor(() => expect(screen.getByTestId('satin-accueil')).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId('porte-createur')).toBeTruthy());
+    expect(
+      screen.getByTestId('satin-accueil', { includeHiddenElements: true }),
+    ).toBeTruthy();
     expect(screen.queryByTestId('accueil-sans-fond')).toBeNull();
   });
 
-  it('avec un média, le satin ne s’ajoute pas', async () => {
-    // Une seule surface où la marque se présente, jamais deux empilées : la
-    // vidéo est déjà cette surface.
+  it('avec un média, le satin reste dessous', async () => {
+    // **Il ne s'efface pas quand la vidéo arrive.** C'est le fond de l'écran,
+    // pas une composition de repli : ce qui arrive ensuite s'intercale, ça ne
+    // remplace rien.
     await accueil(AVEC_VIDEO);
-    await waitFor(() => expect(screen.getByTestId('porte-createur')).toBeTruthy());
-    expect(screen.queryByTestId('satin-accueil')).toBeNull();
+    await waitFor(() => expect(screen.getByTestId('video-accueil')).toBeTruthy());
+    expect(
+      screen.getByTestId('satin-accueil', { includeHiddenElements: true }),
+    ).toBeTruthy();
   });
 
   it.each([
@@ -471,4 +479,122 @@ describe('la marque se présente une fois, et une seule', () => {
     // Et la marque non plus ne se présente pas deux fois.
     expect(screen.getAllByTestId('signature-agence')).toHaveLength(1);
   });
+});
+
+// --------------------------------------------------------------------------
+// la page ne se refait pas sous les yeux
+// --------------------------------------------------------------------------
+
+describe('la composition ne change pas quand le manifeste arrive', () => {
+  /**
+   * Ce que l'écran montre, en une liste de noms.
+   *
+   * **C'est la mesure du défaut**, et elle vaut mieux qu'une capture : le
+   * testeur avait rapporté « la vidéo met plusieurs secondes à démarrer », et
+   * la vidéo n'était pas en cause. Le manifeste des médias arrive par un
+   * aller-retour ; tant qu'il n'était pas là, l'écran rendait une composition
+   * entièrement différente — satin dans le flux, portes sans en-tête — puis
+   * basculait. Ce qu'on voyait n'était pas un délai, c'était la première chose
+   * que montre le produit qui se réorganisait.
+   *
+   * Ce qui a le droit d'apparaître ensuite est l'affiche et la vidéo, et rien
+   * d'autre : elles s'intercalent entre le satin et le voile.
+   */
+  const REPERES = [
+    'satin-accueil',
+    'voile-accueil',
+    'accueil-defilant',
+    'choix-de-la-porte',
+    'promesse-accueil',
+    'signature-agence',
+    'porte-createur',
+    'porte-commerce',
+  ];
+
+  const presents = () =>
+    REPERES.filter(
+      (nom) => screen.queryAllByTestId(nom, { includeHiddenElements: true }).length > 0,
+    );
+
+  it('rend la même composition avant et après la réponse', async () => {
+    // Une promesse qu'on tient à la main : entre le montage et sa résolution,
+    // l'écran est exactement dans l'état où le testeur l'a vu.
+    let repondre: (m: unknown) => void = () => {};
+    const attendue = new Promise((ok) => {
+      repondre = ok;
+    });
+    const api = new ApiClient({
+      baseUrl: 'https://api.test',
+      coffre: { lire: async () => null, ecrire: async () => {} },
+      fetchImpl: async () =>
+        ({ ok: true, status: 200, json: async () => await attendue }) as Response,
+    });
+
+    await render(
+      <SafeAreaProvider initialMetrics={IPHONE_A_ENCOCHE}>
+        <ThemeProvider role="creator">
+          <I18nProvider initialLocale="en">
+            <ApiProvider client={api}>
+              <AccueilScreen onChoisir={() => {}} onSeConnecter={() => {}} />
+            </ApiProvider>
+          </I18nProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>,
+    );
+
+    // Manifeste inconnu : tout est déjà là.
+    await waitFor(() => expect(screen.getByTestId('porte-createur')).toBeTruthy());
+    const avant = presents();
+    expect(avant).toEqual(REPERES);
+
+    repondre({
+      categories: [],
+      home: {
+        video_key: 'photos/accueil/video.mp4',
+        poster_key: 'photos/accueil/poster.jpg',
+        video_portrait_key: null,
+        poster_portrait_key: null,
+      },
+    });
+
+    // Manifeste arrivé : la vidéo s'est intercalée, et rien d'autre n'a bougé.
+    await waitFor(() => expect(screen.getByTestId('video-accueil')).toBeTruthy());
+    expect(presents()).toEqual(avant);
+  });
+
+  it('et la même encore quand le manifeste dit qu’il n’y a pas de média', async () => {
+    // « Manifeste inconnu » et « manifeste connu et vide » donnaient tous deux
+    // `null`, et appelaient pourtant deux rendus différents. Ils n'en appellent
+    // plus qu'un : il n'y a plus de bascule à distinguer.
+    await accueilAvec({
+      categories: [],
+      home: {
+        video_key: null,
+        poster_key: null,
+        video_portrait_key: null,
+        poster_portrait_key: null,
+      },
+    });
+    await waitFor(() => expect(screen.getByTestId('porte-createur')).toBeTruthy());
+    expect(presents()).toEqual(REPERES);
+  });
+
+  async function accueilAvec(medias: unknown) {
+    const api = new ApiClient({
+      baseUrl: 'https://api.test',
+      coffre: { lire: async () => null, ecrire: async () => {} },
+      fetchImpl: async () => ({ ok: true, status: 200, json: async () => medias }) as Response,
+    });
+    return render(
+      <SafeAreaProvider initialMetrics={IPHONE_A_ENCOCHE}>
+        <ThemeProvider role="creator">
+          <I18nProvider initialLocale="en">
+            <ApiProvider client={api}>
+              <AccueilScreen onChoisir={() => {}} onSeConnecter={() => {}} />
+            </ApiProvider>
+          </I18nProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>,
+    );
+  }
 });

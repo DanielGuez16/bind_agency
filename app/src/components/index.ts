@@ -48,7 +48,9 @@ export { TitreAccentue, type TitreAccentueProps } from './TitreAccentue';
 export { FiletSegmente, type FiletSegmenteProps } from './FiletSegmente';
 export {
   SurfaceSatin,
+  CADRAGE_DU_SATIN,
   ENCRE_DU_SATIN,
+  imageDuSatin,
   POSE_DU_SATIN,
   HAUTEUR_MINIMALE_DU_SATIN,
   type SurfaceSatinProps,

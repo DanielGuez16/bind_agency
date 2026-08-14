@@ -4332,3 +4332,63 @@ lecture avant de réserver. Quand `menu_pages` est vide et que `menu_url` est
 renseignée, l'écran doit annoncer qu'on sortira de l'application — un lien qui
 s'ouvre sans prévenir, au milieu d'un parcours de réservation, fait perdre le fil
 à qui revient.
+## 2026-08-14 — L'accueil ne se refait plus sous les yeux
+
+Défaut rapporté en campagne de test comme « la vidéo d'accueil met plusieurs
+secondes à démarrer ». La vidéo n'était pas en cause, et l'affiche non plus :
+elle faisait déjà son travail sous la vidéo, jusqu'à `playingChange`.
+
+**C'était un basculement de composition.** Le manifeste des médias arrive par un
+aller-retour. Tant qu'il n'était pas là, `video` et `affiche` valaient tous deux
+`null`, et l'écran rendait la composition satin **complète** — bande de satin
+dans le flux, marque et titre dedans, portes sans en-tête. À l'arrivée du
+manifeste, il basculait sur la composition vidéo : la bande quittait le flux,
+l'en-tête réapparaissait ailleurs, l'encre passait de l'encre au blanc.
+
+Ce que le testeur voyait n'était pas un délai. C'était la première chose que
+montre le produit qui se réorganisait entièrement, une seconde après
+l'ouverture. Un délai se supporte ; une page qui se refait, non.
+
+**Le satin cesse d'être une composition de repli pour devenir la couche du
+dessous.** Il est peint en fond, toujours, sous l'affiche et sous la vidéo. La
+composition est la même à la milliseconde zéro et à l'arrivée du manifeste :
+mêmes couches, même voile, même encre, même en-tête au même endroit. Ce qui
+arrive ensuite ne remplace rien, ça s'intercale.
+
+**Le voile devient permanent avec lui**, et c'est ce qui rend l'encre stable. Il
+ne protégeait le texte que quand une photo était là ; le faire apparaître avec le
+manifeste aurait fait changer la couleur du titre une seconde après l'ouverture,
+c'est-à-dire le même défaut sous une autre forme.
+
+**`surMedia` n'est plus calculé, il est vrai.** Une constante à la place d'un
+booléen dérivé de l'état de chargement : c'est exactement ce que « la composition
+ne change pas » veut dire, et c'est ce qui empêche le défaut de revenir par un
+autre chemin.
+
+**`avecEnTete` est supprimé.** Le prop existait le temps que l'accueil prenne
+l'en-tête aux portes sur son satin, et c'est précisément ce déplacement qui
+refaisait la page. Le satin passé en fond, l'en-tête est revenu là où il vivait,
+et le prop est parti avec la bascule qu'il servait.
+
+*La piste de la conversation fonctionnelle — distinguer « manifeste inconnu » de
+« manifeste connu et sans média » — est juste, et elle devient sans objet : avec
+une composition unique, les deux états appellent le même rendu. Il n'y a plus de
+bascule à départager.*
+
+**Deux mesures, plutôt que deux intuitions.** Sur le satin `drape` sous son
+voile, `ink.onScrim` donne 6,00:1 — le titre tient. `ink.onScrimMuted`, qui
+portait la sous-ligne, donne 3,83:1 : sous le seuil. La nuance sourde n'était
+défendable que sur un fond clair connu ; sur un voile posé au-dessus d'une image
+quelconque elle ne l'a jamais été, et elle passe au blanc.
+
+**Le satin est étiré, plus recadré.** Les radiales de la planche sont écrites en
+pourcentages de leur boîte : un satin en bande et un satin plein écran ne sont
+pas la même image cadrée deux fois, ce sont les mêmes pourcentages sur deux
+boîtes. `cover` aurait agrandi puis coupé les côtés — sur un téléphone, la
+lumière que `drape` pose à 15 % de la largeur serait sortie du cadre, et il ne
+serait resté du satin que sa partie sombre.
+
+**Le test mesure le défaut, pas son symptôme.** Il liste ce que l'écran montre,
+retient la réponse du manifeste à la main, compare la liste avant et après. Deux
+mutations le rejouent : le satin remis en repli, et le voile remis en
+conditionnel.

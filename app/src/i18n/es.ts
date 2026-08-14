@@ -457,7 +457,6 @@ export const es: Catalogue = {
     fenetre: 'Del {{debut}} al {{fin}}',
   },
   accueil: {
-    sansFond: 'BIND · un servicio por una publicación.',
   },
   auth: {
     retourA: 'Tus niveles, tus reservas y tu historial siguen donde los dejaste.',
