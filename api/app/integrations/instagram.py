@@ -39,7 +39,7 @@ DELAI = httpx.Timeout(10.0)
 
 #: Champs de profil demandés pour un relevé de métriques. `follows_count` est
 #: le nom Instagram de ce que nous appelons `following_count`.
-CHAMPS_METRIQUES = "followers_count,follows_count,media_count"
+CHAMPS_METRIQUES = "followers_count,follows_count,media_count,profile_picture_url"
 
 #: Les deux collections d'un compte. Les stories vivent à part et une story ne
 #: figure jamais dans `/me/media` — les interroger toutes deux est la seule
@@ -189,6 +189,9 @@ class InstagramProvider:
             following_count=int(profil["follows_count"]),
             # Un compte peut n'avoir jamais publié sans que Meta renvoie la clé.
             media_count=int(profil.get("media_count", 0)),
+            # Absente si le compte n'a pas de photo, ou si la portée accordée
+            # ne la couvre pas. Ni l'un ni l'autre n'est une panne.
+            avatar_url=profil.get("profile_picture_url") or None,
             audience_demographics=await self._audience(access_token, external_id),
             raw_payload=profil,
         )

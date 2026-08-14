@@ -38,6 +38,34 @@ from app.models import CreatorProfile, SocialAccount, Tier, User
 from app.models.enums import ContentFormat, Platform, SocialAccountStatus
 from app.services import eligibility
 
+#: Où mène un pseudonyme, par plateforme.
+#:
+#: **Dérivé et non stocké.** Le pseudonyme est déjà en base ; ranger à côté une
+#: adresse qu'on en déduit ferait deux vérités, et c'est celle qu'on ne
+#: rafraîchit pas qui vieillirait — un créateur qui change de pseudonyme
+#: laisserait un lien mort derrière lui.
+#:
+#: Snapchat et YouTube n'y figurent pas : aucune implémentation ne les rattache,
+#: et fabriquer une adresse pour une plateforme qu'on ne sait pas lire
+#: produirait un lien qu'on n'a jamais vu fonctionner.
+PROFIL_PUBLIC = {
+    Platform.INSTAGRAM: "https://www.instagram.com/{handle}/",
+    Platform.TIKTOK: "https://www.tiktok.com/@{handle}",
+}
+
+
+def lien_public(platform: Platform, handle: str | None) -> str | None:
+    """L'adresse du profil, ou rien.
+
+    Rien plutôt qu'une adresse partielle : un lien qui mène à une page d'erreur
+    est pire qu'un lien absent — le salon croit que la créatrice a supprimé son
+    compte.
+    """
+    gabarit = PROFIL_PUBLIC.get(platform)
+    if gabarit is None or not handle:
+        return None
+    return gabarit.format(handle=handle.lstrip("@"))
+
 
 @dataclass(frozen=True, slots=True)
 class CompteVu:
@@ -47,6 +75,13 @@ class CompteVu:
     platform: Platform
     handle: str | None
     followers: int | None
+    #: Le visage, par sa clé dans notre dépôt. Nulle tant qu'aucun relevé n'a
+    #: abouti, et sur un compte qui n'a pas de photo.
+    avatar_key: str | None
+    #: Où le salon va la regarder. **C'est la première chose qu'il cherche** :
+    #: un annuaire qui liste des pseudonymes sans y mener oblige à les recopier
+    #: dans une barre d'adresse.
+    profil_url: str | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -108,6 +143,7 @@ async def annuaire(session: AsyncSession, *, limite: int = 200) -> tuple[Createu
                 SocialAccount.creator_id,
                 SocialAccount.platform,
                 SocialAccount.handle,
+                SocialAccount.avatar_key,
                 SocialAccount.status,
                 SocialAccount.verification_status,
                 SocialAccount.connected_at,
@@ -197,6 +233,8 @@ async def annuaire(session: AsyncSession, *, limite: int = 200) -> tuple[Createu
                         platform=ligne.platform,
                         handle=ligne.handle,
                         followers=ligne.followers_count,
+                        avatar_key=ligne.avatar_key,
+                        profil_url=lien_public(ligne.platform, ligne.handle),
                     )
                     for ligne in lignes
                     # Un compte révoqué ou refusé n'est pas un réseau atteignable.

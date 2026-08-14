@@ -10,10 +10,21 @@ Une carte périmée ne fait pas échouer de test : elle fait dessiner un écran
 contre une route absente, et le défaut apparaît à l'intégration, une semaine
 plus tard, chez quelqu'un d'autre.
 
-**Ce test ne vérifie qu'un sens, et c'est le sens qui coûte cher.** Toute route
-citée doit exister. L'inverse — toute route existante doit être citée — ferait
+**Le test vérifie les deux sens, et le second a été ajouté après coup.**
+
+Il ne vérifiait d'abord que le premier : toute route citée doit exister. J'avais
+écarté le second — toute route existante doit être citée — au motif qu'il ferait
 tomber la CI à chaque route neuve avant qu'on ait eu le temps d'écrire ce
-qu'elle sert, ce qui apprendrait surtout à contourner le test.
+qu'elle sert.
+
+C'était protéger la CI au prix d'une carte qui sous-décrit l'API, et cela a
+coûté deux écrans : Claude Design en a composé deux en croyant absentes des
+routes présentes depuis des semaines. Une route non citée est invisible, et
+l'invisible se redemande ou se réinvente.
+
+Le coût que je redoutais est réel mais petit : ajouter une route oblige à écrire
+une ligne de carte dans la même PR. C'est le bon moment pour l'écrire — c'est le
+seul où quelqu'un sait à quoi elle sert.
 """
 
 import pathlib
@@ -33,8 +44,8 @@ CHEMIN = re.compile(r"`(?:GET|POST|PATCH|PUT|DELETE)?\s*(/[a-zA-Z0-9_{}/.:-]+)")
 
 #: Ce que la carte nomme sans que ce soit une route de l'API.
 #:
-#: Deux entrées, et chacune dit pourquoi. Une liste qui s'allonge sans raison
-#: est le début du contournement que ce test existe pour éviter.
+#: Chaque entrée dit pourquoi. Une liste qui s'allonge sans raison est le début
+#: du contournement que ce test existe pour éviter.
 TOLERES = {
     "/api/v1": "le préfixe lui-même, cité dans les conventions",
     "/admin": "un préfixe cité dans les conventions, pas une route",
@@ -43,6 +54,29 @@ TOLERES = {
     # corrections, et celle-ci nomme le chemin fautif à côté du bon. Le retirer
     # priverait le lecteur de ce qu'il doit désapprendre.
     "/merchant/pause": "cité dans le tableau des corrections comme n'ayant jamais existé",
+}
+
+
+#: Les routes que la carte n'a pas à décrire, et pourquoi.
+#:
+#: **La liste est courte et le restera.** Chaque exception est une route que
+#: Claude Design ne verra jamais ; s'y glisse un jour une route d'écran, et
+#: l'écran sera composé sans elle. Ajouter une entrée ici doit coûter une
+#: phrase qu'on peut défendre.
+HORS_CARTE = {
+    "/api/v1/health": "sonde de déploiement : aucun écran ne la lit",
+    "/api/v1/social-accounts/instagram/callback": (
+        "rappel appelé par la plateforme, jamais par un écran"
+    ),
+    "/api/v1/social-accounts/tiktok/callback": "idem",
+    "/api/v1/media/{cle:path}": (
+        "servie à une balise d'image et non appelée : les écrans manipulent des"
+        " clés, et la convention est décrite dans les conventions de la carte"
+    ),
+    "/api/v1/proofs/{proof_id}": (
+        "idem : l'écran demande un droit de lecture, puis pose l'adresse rendue dans une balise"
+    ),
+    "/r/{slug}": "redirection publique ouverte hors de l'app, par un visiteur sans compte",
 }
 
 
@@ -116,3 +150,38 @@ def test_chaque_route_citee_existe() -> None:
 def test_les_tolerances_disent_pourquoi() -> None:
     """Une raison vide est une case cochée, pas une décision."""
     assert [nom for nom, raison in TOLERES.items() if not raison.strip()] == []
+
+
+def test_chaque_route_existante_est_citee() -> None:
+    """**Le second sens, et celui que la relecture ne voit pas.**
+
+    Une route absente de la carte est une route invisible : Claude Design la
+    redemande, ou compose l'écran sans elle. C'est arrivé deux fois — l'annuaire
+    des créateurs et l'agrégat hebdomadaire des rapports étaient là depuis des
+    semaines.
+    """
+    citees = {_normaliser(chemin) for chemin in _cites()}
+    absentes = sorted(
+        chemin
+        for chemin in _routes_reelles()
+        if chemin not in HORS_CARTE and _normaliser(chemin) not in citees
+    )
+
+    assert absentes == [], (
+        f"routes servies et absentes de la carte de passation : {absentes}. "
+        "Les y décrire — ce que l'écran en reçoit et les états qu'il doit rendre — "
+        "ou les écrire dans HORS_CARTE avec leur raison."
+    )
+
+
+def test_les_exclusions_de_carte_disent_pourquoi() -> None:
+    """Une raison vide est une case cochée, pas une décision."""
+    assert [nom for nom, raison in HORS_CARTE.items() if not raison.strip()] == []
+
+
+def test_les_exclusions_de_carte_servent_toutes_encore() -> None:
+    """Une exclusion qui ne correspond plus à une route couvrirait un vrai oubli
+    le jour où la route change de nom."""
+    reelles = _routes_reelles()
+
+    assert sorted(set(HORS_CARTE) - reelles) == []

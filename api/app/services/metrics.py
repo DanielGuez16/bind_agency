@@ -23,17 +23,25 @@ panne passera, et déconnecter un compte à chaque hoquet réseau ferait
 recommencer un parcours OAuth pour rien.
 """
 
+import logging
 import uuid
 from datetime import UTC, datetime, timedelta
 
+import httpx
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
+from app.integrations.object_store import get_object_store
 from app.integrations.social import SocialAuthError, SocialProvider, SocialProviderError
 from app.models import SocialAccount, SocialMetricsSnapshot
 from app.models.enums import SocialAccountStatus
 from app.services import account_verification, social_accounts
+
+logger = logging.getLogger(__name__)
+
+#: Court : la photo est un accessoire, et le relevé ne doit pas attendre.
+DELAI_AVATAR = httpx.Timeout(5.0)
 
 
 class MetricsError(Exception):
@@ -145,6 +153,10 @@ async def refresh_profile_metrics(
     # sans relevé il n'aurait rien à regarder. Ici plutôt que dans la route,
     # parce que le job planifié devra le déclencher aussi et qu'un enchaînement
     # posé dans une route ne vaut que pour cette route.
+    # **Après le snapshot, et sans pouvoir le défaire.** La photo est un
+    # accessoire de l'annuaire ; les compteurs ouvrent des paliers.
+    await _ranger_l_avatar(session, account=account, adresse=metriques.avatar_url)
+
     await account_verification.verifier(session, account=account)
     return snapshot
 
@@ -196,3 +208,51 @@ __all__ = [
     "latest_snapshot",
     "refresh_profile_metrics",
 ]
+
+
+#: Où sont rangées les photos de profil. Sous `photos/`, donc dans le
+#: compartiment public : un visage d'annuaire se sert à une balise d'image, qui
+#: ne porte pas d'en-tête d'autorisation.
+PREFIXE_AVATAR = "photos/avatars"
+
+#: Au-delà, on ne range pas. Une photo de profil pèse quelques dizaines de
+#: kilooctets ; un mégaoctet signale qu'on télécharge autre chose qu'un avatar,
+#: et le dépôt n'est pas l'endroit où s'en apercevoir.
+AVATAR_MAX_OCTETS = 1_000_000
+
+
+async def _ranger_l_avatar(
+    session: AsyncSession, *, account: SocialAccount, adresse: str | None
+) -> None:
+    """Télécharge la photo de profil et n'en garde qu'une clé.
+
+    **Jamais l'adresse de la plateforme.** Les deux fournisseurs servent des URL
+    signées qui expirent en quelques heures : rangée telle quelle, elle donnerait
+    un annuaire dont les visages disparaissent entre deux relevés — et cela
+    ressemblerait à une panne de notre côté.
+
+    **Un échec ne fait pas échouer le relevé.** Les compteurs sont ce qui ouvre
+    des paliers ; perdre un relevé d'audience parce qu'un réseau de diffusion a
+    hoqueté serait échanger l'essentiel contre l'accessoire. La photo précédente
+    reste alors en place, ce qui est le bon repli : elle est vieille, pas fausse.
+    """
+    if not adresse:
+        return
+
+    try:
+        async with httpx.AsyncClient(timeout=DELAI_AVATAR) as client:
+            reponse = await client.get(adresse, follow_redirects=True)
+            reponse.raise_for_status()
+            contenu = reponse.content
+    except Exception:
+        logger.warning("photo de profil non relevée", extra={"social_account_id": str(account.id)})
+        return
+
+    if not contenu or len(contenu) > AVATAR_MAX_OCTETS:
+        return
+
+    try:
+        account.avatar_key = await get_object_store().deposer(contenu, prefixe=PREFIXE_AVATAR)
+        await session.flush()
+    except Exception:
+        logger.warning("photo de profil non rangée", extra={"social_account_id": str(account.id)})

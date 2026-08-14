@@ -30,8 +30,10 @@ from app.models.enums import (
 from app.services import account_verification, eligibility
 from app.services import audience as service
 from app.services import auth as auth_service
+from app.services import metrics as metrics_service
 from app.services.eligibility import RaisonRefus
 from tests.test_feed import createur
+from tests.test_social_metrics import FauxFournisseur, metriques
 
 PREFIX = get_settings().api_v1_prefix
 MOT_DE_PASSE = "un-mot-de-passe-solide-42"
@@ -306,3 +308,53 @@ async def test_les_routes_sont_reservees_aux_createurs(
 
     audience = (await client.get(f"{PREFIX}/me/audience", headers=await entetes(user))).json()
     assert audience[0]["followers_count"] == 1800
+
+
+async def test_deux_reseaux_ne_partagent_jamais_un_chiffre(session: AsyncSession) -> None:
+    """**Un relevé par compte, daté, et jamais mélangé.**
+
+    C'est le défaut que la campagne a relevé trois fois sous d'autres formes :
+    deux réseaux qui affichent la même audience. La route rend une ligne par
+    compte connecté ; ce test l'éprouve avec deux comptes qui n'ont ni la même
+    plateforme, ni le même volume, ni la même date.
+
+    Un seul compte ne prouve rien : une implémentation qui rendrait le premier
+    relevé venu pour tout le monde passerait tous les autres tests de ce
+    fichier.
+    """
+    user, instagram = await createur(session, followers=1_800)
+
+    tiktok = SocialAccount(
+        creator_id=user.id,
+        platform=Platform.TIKTOK,
+        external_id=f"tt-{uuid.uuid4().hex[:12]}",
+        handle="compte.tiktok",
+        access_token_encrypted="TT-jeton",
+        status=SocialAccountStatus.ACTIVE,
+        verification_status=VerificationStatus.VERIFIED,
+    )
+    session.add(tiktok)
+    await session.flush()
+    # **Par le service, pas à la main.** Poser un relevé directement demanderait
+    # de connaître les colonnes non nulles une par une — et surtout, cela
+    # éprouverait une ligne que le produit n'écrit jamais ainsi.
+    await metrics_service.refresh_profile_metrics(
+        session,
+        account=tiktok,
+        provider=FauxFournisseur(rend=metriques(followers_count=42_000, media_count=97)),
+    )
+
+    par_compte = {
+        ligne.social_account_id: ligne
+        for ligne in await service.audience(session, creator_id=user.id)
+    }
+
+    assert set(par_compte) == {instagram.id, tiktok.id}
+    assert par_compte[instagram.id].followers_count == 1_800
+    assert par_compte[tiktok.id].followers_count == 42_000
+    assert par_compte[instagram.id].platform is Platform.INSTAGRAM
+    assert par_compte[tiktok.id].platform is Platform.TIKTOK
+    assert par_compte[instagram.id].handle != par_compte[tiktok.id].handle
+    # Les dates aussi : un relevé de mardi affiché avec la date de jeudi est un
+    # chiffre faux, même quand le chiffre est juste.
+    assert par_compte[instagram.id].captured_at != par_compte[tiktok.id].captured_at

@@ -121,6 +121,11 @@ class DemoSocialProvider:
             followers_count=self.followers,
             following_count=max(self.followers // 12, 40),
             media_count=self.media_count,
+            # **Le mode démonstration n'invente pas de photo.** Une adresse
+            # fabriquée mènerait à un 404 que le relevé confondrait avec une
+            # panne réseau, et l'annuaire montrerait un cadre vide en croyant
+            # montrer quelqu'un.
+            avatar_url=None,
             audience_demographics={"country": {"US": self.followers}},
             raw_payload={
                 "followers_count": self.followers,

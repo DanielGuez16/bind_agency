@@ -86,6 +86,7 @@ def metriques(**overrides) -> MetriquesProfil:
         "followers_count": 12_400,
         "following_count": 310,
         "media_count": 208,
+        "avatar_url": None,
         "audience_demographics": {"country": {"US": 9_800, "MX": 1_200}},
         "raw_payload": dict(PROFIL_COMPLET),
     }
@@ -393,7 +394,12 @@ async def test_le_profil_demande_les_trois_compteurs(instagram_configure, transp
     # ici, elle ne remonte pas jusqu'au modèle.
     assert mesure.following_count == 310
     assert mesure.media_count == 208
-    assert transport.appels[0].url.params["fields"] == "followers_count,follows_count,media_count"
+    # La photo de profil est demandée avec les compteurs : elle change comme
+    # eux, et un second appel pour un champ du même objet doublerait le quota.
+    assert (
+        transport.appels[0].url.params["fields"]
+        == "followers_count,follows_count,media_count,profile_picture_url"
+    )
 
 
 async def test_un_compte_a_zero_abonne_n_est_pas_un_compte_sans_mesure(

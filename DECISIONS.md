@@ -3727,3 +3727,33 @@ fichier du dépôt. Un salon accepte « la version 2026-01 », l'acceptation est
 qu'elle désigne n'existe pas. Le mécanisme de preuve est complet ; ce qu'il
 prouve ne l'est pas. Ce n'est pas bloqué par un accès externe, mais par une
 rédaction juridique.
+
+## 2026-08-14 — La carte se vérifie dans les deux sens
+
+Le garde-fou de la carte de passation ne vérifiait qu'un sens : toute route
+citée doit exister. J'avais écarté l'autre — toute route existante doit être
+citée — au motif qu'il ferait tomber la CI à chaque route neuve avant qu'on ait
+écrit à quoi elle sert.
+
+C'était protéger la CI au prix d'une carte qui sous-décrit l'API. **Cela a coûté
+deux écrans** : Claude Design en a composé deux en croyant absentes des choses
+présentes depuis des semaines. Une route non citée est invisible, et l'invisible
+se redemande ou se réinvente.
+
+Le coût que je redoutais est réel mais petit : ajouter une route oblige à écrire
+sa ligne de carte dans la même PR. C'est le bon moment — c'est le seul où
+quelqu'un sait à quoi elle sert.
+
+**Six routes sont hors carte, chacune avec sa raison** : la sonde de
+déploiement, les deux rappels OAuth, la lecture d'un média, celle d'une preuve,
+et la redirection publique. Aucune n'est appelée par un écran. La liste doit
+rester courte : s'y glisse une route d'écran, et l'écran sera composé sans elle.
+
+**Ce que la bidirectionnalité n'attrape pas, et il faut le dire.** Elle compare
+des chemins, pas des champs. Les deux manques signalés étaient d'une autre
+nature : l'agrégat hebdomadaire des rapports est un **champ** — `par_semaine` —
+d'une route déjà citée, et je l'avais perdu en recopiant une introspection
+tronquée à 280 caractères sans voir les points de suspension. Un garde-fou sur
+les champs demanderait de nommer dans la carte chaque `id` et chaque
+`created_at` ; le bruit qu'il produirait le ferait contourner. La parade est
+plus simple : ne pas recopier une sortie tronquée.

@@ -124,6 +124,17 @@ class SocialAccount(UUIDPrimaryKey, Base):
     external_id: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     handle: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
 
+    #: La photo de profil, **rangée chez nous et désignée par sa clé**.
+    #:
+    #: Jamais l'adresse de la plateforme : les deux fournisseurs servent des URL
+    #: signées qui expirent en quelques heures. Stockée telle quelle, elle
+    #: donnerait un annuaire dont les visages disparaissent entre deux relevés —
+    #: le pire des affichages, parce qu'il ressemble à une panne de notre côté.
+    #:
+    #: Nulle tant qu'aucun relevé n'a abouti, et sur un compte sans photo. Elle
+    #: s'efface avec l'anonymisation, comme le pseudonyme.
+    avatar_key: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+
     # Chiffrés par le type de colonne, pas par un appel du service : il n'existe
     # aucun chemin qui écrirait un jeton en clair. Le `bytea` sous-jacent n'a pas
     # changé, seule la traversée l'a fait.

@@ -475,6 +475,7 @@ class FournisseurLocal:
             followers_count=self.followers,
             following_count=max(self.followers // 10, 50),
             media_count=max(self.followers // 40, 12),
+            avatar_url=None,
             audience_demographics={"country": {"US": self.followers}},
             raw_payload={"followers_count": self.followers, "source": "seed"},
         )
