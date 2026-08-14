@@ -518,10 +518,36 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       quand la carte n'existe qu'ailleurs, et la feuille qui annonce le domaine.
       18 tests neufs, 10 mutations vérifiées — dont une qui a révélé que le
       dépôt côté commerce n'avait aucune couverture*
-- [ ] **Ajouter `e2e` aux vérifications requises de `main`**
-      *La protection n'exige que `api` et `app` : le job qui monte le produit
-      entier tourne et **ne bloque pas**. Une PR rouge sur lui a été fusionnée
-      aujourd'hui. C'est le job qui a trouvé les trois défauts qu'aucun test
-      unitaire n'aurait vus. Réglage d'administration du dépôt, pas une décision
-      de code — à faire par Daniel, ou sur son accord*
+- [x] **Ajouter `e2e` aux vérifications requises de `main`**
+      *Arbitré par Daniel et posé par la conversation fonctionnelle : la
+      protection exige désormais `api`, `app` et `e2e`, en `strict` et sans
+      contournement administrateur. Le job qui monte le produit entier bloque
+      enfin — c'est celui qui a trouvé les trois défauts qu'aucun test unitaire
+      n'aurait vus. `--auto` reste piégeux d'une autre façon : il fusionne dès
+      que les requis passent. La conclusion du run entier avant de fusionner
+      reste la règle*
+- [x] **La vidéo d'accueil réapparaît, et l'ancienne marque disparaît**
+      *Deux constats de production. **Le voile** — ni le satin ni un défaut de
+      montage : mesuré dans Chromium sur le build réel, il ne laissait passer
+      que 18 % de la vidéo en haut et 48 % au mieux, et écrasait le satin, qui
+      est une surface de marque. Il n'était pas devenu trop lourd, il avait
+      cessé d'être nécessaire : chaque texte de l'écran a depuis son propre fond.
+      #118 n'a pas créé le défaut, il a retiré le basculement de composition qui
+      seul signalait qu'une vidéo existait. Trouvé au passage, un défaut
+      préexistant : le lien de connexion, seul texte sans fond, à 2,14:1 — bande
+      et encre claire, 12,14:1. **La marque** — le « B » du système vert avait
+      traversé la v1.0 parce que le composant était repeint et pas redessiné, et
+      les fichiers statiques venaient d'un script qui écrivait le vert d'eau et
+      l'indigo en dur. La marque est le mot ; Chromium le peint avec la fonte
+      que l'application embarque. La garde neuve ne juge pas un dessin, elle
+      exige que chaque pixel opaque soit un mélange de deux couleurs des
+      jetons — les tests d'avant ne regardaient que l'existence et la taille.
+      7 tests neufs, 7 mutations vérifiées*
+- [ ] **Câbler les quatre `marque-*.png`, ou les retirer**
+      *Trouvé en refaisant la marque : `marque-16/32/64/180.png` ne sont
+      référencés par rien — ni `app.json`, ni un gabarit web, ni le code. Seul
+      leur propre test les tient. Ils ont été régénérés pour qu'aucun fichier ne
+      porte l'ancienne marque, mais ce sont soit des `apple-touch-icon` et un
+      `<link rel="icon">` qui n'ont jamais été posés, soit du poids mort. À
+      trancher, pas à deviner*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire

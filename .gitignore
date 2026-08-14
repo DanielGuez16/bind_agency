@@ -47,5 +47,9 @@ app/android/
 
 # Build web produit pour les tests de bout en bout, et leurs artefacts.
 app/dist-e2e/
+# Les exports web de diagnostic : on en produit un pour mesurer une couche dans
+# un vrai navigateur, et il pèse deux mégaoctets. `dist/` ne les couvre pas —
+# `expo export` prend le nom qu'on lui donne.
+app/dist-probe/
 app/test-results/
 app/playwright-report/
