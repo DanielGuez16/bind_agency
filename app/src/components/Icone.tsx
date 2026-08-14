@@ -51,7 +51,12 @@ export type NomIcone =
   // barré dit ce que l'action fera, l'œil seul dit ce qu'on regarde, et les
   // confondre laisse l'utilisateur deviner dans quel état il se trouve.
   | 'oeil'
-  | 'oeil-barre';
+  | 'oeil-barre'
+  // **Le glyphe d'avertissement, et il n'est pas décoratif.** Depuis la v1.0,
+  // l'avertissement n'a plus de teinte : un ambre dans un système orange se
+  // lit comme une mise en avant de marque et non comme une alerte. Le glyphe
+  // est donc le seul marqueur qui lui reste, et il est obligatoire.
+  | 'alerte';
 
 const CHEMINS: Record<NomIcone, string> = {
   chevron: 'M9.5 5.5L16 12l-6.5 6.5',
@@ -85,11 +90,15 @@ const CHEMINS: Record<NomIcone, string> = {
   oeil: 'M2.5 12S6.2 5.5 12 5.5 21.5 12 21.5 12 17.8 18.5 12 18.5 2.5 12 2.5 12zM12 14.8a2.8 2.8 0 100-5.6 2.8 2.8 0 000 5.6z',
   'oeil-barre':
     'M9.9 5.8A8.8 8.8 0 0112 5.5c5.8 0 9.5 6.5 9.5 6.5a17 17 0 01-2.9 3.6M6.4 7.7A17 17 0 002.5 12S6.2 18.5 12 18.5c1 0 2-.2 2.9-.5M10 10a2.8 2.8 0 004 4M4 4l16 16',
+  // Un triangle et une barre. La forme du triangle porte l'alerte à elle
+  // seule, ce qu'aucun rond ne fait : c'est ce qui reste quand la couleur est
+  // partie.
+  alerte: 'M12 3.8L21.7 20.4H2.3zM12 9.8v4.6M12 17.3h.01',
 };
 
 export function Icone({
   nom,
-  couleur = 'text.primary',
+  couleur = 'ink.default',
   teinte,
   taille = size.icon,
   testID,

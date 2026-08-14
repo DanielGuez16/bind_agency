@@ -145,7 +145,7 @@ function Controle({ ligne, onDecide }: { ligne: LigneDeFile; onDecide: () => voi
       <Texte variante="type.label" ellipseSurNomPropre>
         {ligne.creator_handle ?? ligne.creator_first_name ?? ''}
       </Texte>
-      <Texte variante="type.caption" couleur="text.secondary">
+      <Texte variante="type.caption" couleur="ink.soft">
         {ligne.item_name} · {t('commerce.tentative', { n: ligne.attempts_count + 1 })}
       </Texte>
 
@@ -164,7 +164,7 @@ function Controle({ ligne, onDecide }: { ligne: LigneDeFile; onDecide: () => voi
           lu la phrase, ce qui est exactement la situation qu'on répare. */}
       {ligne.derniere_soumission?.note ? (
         <View style={{ gap: 2 }} testID="note-du-createur">
-          <Texte variante="type.label" couleur="text.secondary">
+          <Texte variante="type.label" couleur="ink.soft">
             {t('commerce.noteDuCreateur')}
           </Texte>
           <Texte variante="type.caption">{ligne.derniere_soumission.note}</Texte>
@@ -172,7 +172,7 @@ function Controle({ ligne, onDecide }: { ligne: LigneDeFile; onDecide: () => voi
       ) : null}
 
       {ligne.dernier_motif ? (
-        <Texte variante="type.caption" couleur="status.warning" testID="dernier-motif">
+        <Texte variante="type.caption" couleur="status.warning.text" testID="dernier-motif">
           {t('commerce.tentative', { n: ligne.attempts_count })} ·{' '}
           {libelleDuMotif(t, ligne.dernier_motif)}
         </Texte>
@@ -226,7 +226,7 @@ function Controle({ ligne, onDecide }: { ligne: LigneDeFile; onDecide: () => voi
               testID="redemander"
             />
           ) : (
-            <Texte variante="type.caption" couleur="text.muted" testID="motif-obligatoire">
+            <Texte variante="type.caption" couleur="ink.mute" testID="motif-obligatoire">
               {t('commerce.motifObligatoire')}
             </Texte>
           )}

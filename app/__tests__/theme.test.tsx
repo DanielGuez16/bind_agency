@@ -1,10 +1,15 @@
 /**
- * Thème et jetons.
+ * Thème et jetons — direction BIND AGENCY v1.0.
  *
  * Le test qui compte est celui des couleurs en dur : une couleur écrite dans un
- * écran survit au changement de thème, et ne se voit qu'en mode clair, chez le
- * commerce, à la lumière du jour. Le trouver à la lecture est illusoire ; le
- * trouver par un test est mécanique.
+ * écran survit au changement de direction artistique, et ne se voit qu'une fois
+ * la bascule faite, sur un écran que personne ne rouvre. Le trouver à la
+ * lecture est illusoire ; le trouver par un test est mécanique.
+ *
+ * Viennent ensuite les deux règles que la v1.0 pose et que le code peut
+ * réellement tenir : **`brand.500` ne s'écrit jamais**, et **le Didone ne
+ * descend jamais sous 34 px**. Les deux se vérifient « à l'œil » selon la
+ * passation, et c'est précisément ce qui ne tient pas six semaines.
  */
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { join } from 'path';
@@ -15,17 +20,23 @@ import { Text } from 'react-native';
 import {
   ThemeProvider,
   codeColors,
-  elevation,
-  themeForRole,
+  couleurs,
+  matiereDePalier,
+  matiereDeRole,
+  PLANCHER_DIDONE,
+  produit,
   tokens,
+  typography,
   useTheme,
+  type ColorName,
+  type Palier,
 } from '../src/theme';
 
 const RACINE = join(__dirname, '..', 'src');
 const PASSATION = join(__dirname, '..', '..', 'design_handoff_bind', 'tokens.json');
 
 /** Seuls fichiers autorisés à porter un littéral de couleur. */
-const TOLERES = ['src/theme/index.tsx', 'src/theme/tokens.json'];
+const TOLERES = ['src/theme/index.tsx', 'src/theme/tokens.json', 'src/theme/produit.json'];
 
 /**
  * Écrans écrits avant le système de design, qui seront refaits sur les jetons.
@@ -51,12 +62,13 @@ function sources(dossier: string, trouves: string[] = []): string[] {
 }
 
 function Sonde() {
-  const { name, role, color, density } = useTheme();
+  const { role, color, density, matiere } = useTheme();
   return (
     <>
-      <Text>{`${name}/${role}`}</Text>
-      <Text>{color['bg.canvas']}</Text>
+      <Text>{role}</Text>
+      <Text>{color['bg.page']}</Text>
       <Text>{String(density.screenPadding)}</Text>
+      <Text>{matiere.surface}</Text>
     </>
   );
 }
@@ -71,18 +83,81 @@ describe('jetons', () => {
     expect(JSON.parse(app)).toEqual(JSON.parse(passation));
   });
 
-  it('les deux thèmes portent exactement les mêmes noms', () => {
-    // Un nom présent d'un seul côté produit une couleur indéfinie dans un
-    // thème et correcte dans l'autre — le pire des deux.
-    expect(Object.keys(tokens.color.dark).sort()).toEqual(Object.keys(tokens.color.light).sort());
+  it('c’est bien la v1.0 qui est en place', () => {
+    // Une assertion de volume, comme sur l'inventaire des routes publiques :
+    // sans elle, un fichier vidé des deux côtés passerait le test précédent
+    // sans rien prouver.
+    expect(tokens.$meta.name).toBe('BIND AGENCY (v1.0)');
+    expect(Object.keys(tokens.color.brand)).toContain('500');
+    expect(Object.keys(couleurs).length).toBeGreaterThan(30);
   });
 
-  it('les jetons qui ne doivent pas être copiés diffèrent bien', () => {
-    // `role.merchant` et `accent.default` sont déclinés par thème : l'ocre
-    // clair du sombre est illisible sur blanc.
-    for (const nom of ['role.merchant', 'accent.default', 'text.muted', 'badge.scrim'] as const) {
-      expect(tokens.color.dark[nom]).not.toBe(tokens.color.light[nom]);
+  it('rien de `produit.json` n’existe déjà dans `tokens.json`', () => {
+    // La règle du fichier compagnon, tenue mécaniquement. Une clé présente des
+    // deux côtés est une seconde vérité, et c'est la seconde qu'on oublie.
+    // `motion` et `type` sont des sections partagées par construction : ce
+    // sont leurs **clés internes** qui ne doivent pas se recouvrir.
+    const doublons: string[] = [];
+    for (const [section, valeur] of Object.entries(produit)) {
+      if (section === '$meta') continue;
+      const cote = (tokens as Record<string, unknown>)[section];
+      if (cote === undefined) continue;
+      for (const cle of Object.keys(valeur as object)) {
+        if (cle.startsWith('$')) continue;
+        if (cle in (cote as object)) doublons.push(`${section}.${cle}`);
+      }
     }
+
+    expect(doublons).toEqual([]);
+  });
+
+  it('les tables de matière disent la même chose que les jetons', () => {
+    // `matiereDePalier` lit les hexadécimaux de `tokens.color.tier` dans le
+    // vocabulaire du système — `brand.700` plutôt que `#A83E06`. C'est une
+    // lecture, pas une seconde vérité, et c'est ce test qui fait la différence
+    // entre les deux : les valeurs résolues doivent retomber sur celles de la
+    // passation, sans quoi la table dérive en silence.
+    const attendu: Record<Palier, { surface: string; texte: string; barres: number }> = {
+      story: {
+        surface: tokens.color.tier.story.surface,
+        texte: tokens.color.tier.story.text,
+        barres: tokens.color.tier.story.glyphFilled,
+      },
+      post: {
+        surface: tokens.color.tier.post.surface,
+        texte: tokens.color.tier.post.text,
+        barres: tokens.color.tier.post.glyphFilled,
+      },
+      reel: {
+        surface: tokens.color.tier.reel.surface,
+        texte: tokens.color.tier.reel.text,
+        barres: tokens.color.tier.reel.glyphFilled,
+      },
+    };
+
+    for (const palier of ['story', 'post', 'reel'] as Palier[]) {
+      const m = matiereDePalier(palier);
+      expect({
+        palier,
+        surface: couleurs[m.surface],
+        texte: couleurs[m.texte],
+        barres: m.barresPleines,
+      }).toEqual({ palier, ...attendu[palier] });
+    }
+  });
+
+  it('la progression des matières est ordinale, et le reste sur l’encre', () => {
+    // C'est le gain de la v1.0 sur les trois teintes : contour, teinte, aplat
+    // s'ordonne sans apprentissage, et se lit en niveaux de gris. Un rose, un
+    // vert et un violet ne disaient pas lequel était le plus exigeant.
+    const ordre = (surEncre: boolean) =>
+      (['story', 'post', 'reel'] as Palier[]).map((p) => matiereDePalier(p, surEncre).matiere);
+
+    expect(ordre(false)).toEqual(['outline', 'tint', 'solid']);
+    expect(ordre(true)).toEqual(['outline', 'tint', 'solid']);
+    // « L'aplat ne bouge pas » : c'est lui qui garde l'ordre lisible d'un fond
+    // à l'autre.
+    expect(matiereDePalier('reel', true).surface).toBe(matiereDePalier('reel').surface);
   });
 });
 
@@ -113,84 +188,197 @@ describe('couleurs en dur', () => {
   });
 
   it('la dette d’écrans non migrés ne grossit pas', () => {
-    // Écrans écrits avant le système de design. Ils seront refaits sur les
-    // jetons ; d'ici là, la dette est nommée et comptée plutôt que silencieuse.
-    //
-    // Le nombre **décroît** : cinq au départ, quatre quand l'écran des paliers
-    // a été refait sur les composants et le client d'API, trois depuis que le
-    // diagnostic de connexion a quitté ses couleurs en dur. Ce test tombe dans
-    // les deux sens — si quelqu'un en ajoute un, et si quelqu'un en migre un
-    // sans mettre la liste à jour, ce qui laisserait une tolérance ouverte sur
-    // un fichier qui n'en a plus besoin.
+    // Le nombre **décroît**. Ce test tombe dans les deux sens — si quelqu'un en
+    // ajoute un, et si quelqu'un en migre un sans mettre la liste à jour, ce
+    // qui laisserait une tolérance ouverte sur un fichier qui n'en a plus
+    // besoin.
     expect(A_MIGRER).toHaveLength(3);
 
-    // Et chacun existe encore : une entrée obsolète couvrirait un fichier
-    // recréé plus tard sous le même nom.
     for (const relatif of A_MIGRER) {
       expect(() => readFileSync(join(RACINE, '..', relatif), 'utf-8')).not.toThrow();
     }
   });
 
   it('l’écran de code a ses deux couleurs, exportées et conformes', () => {
-    // Elles ne viennent d'aucun thème : un code de retrait doit se lire à
-    // 1,20 m dans un salon très éclairé.
+    // Elles ne viennent d'aucun jeton de marque : la passation déclare cet
+    // écran hors système. Il est lu par une caméra et par une vendeuse à un
+    // mètre.
     expect(codeColors).toEqual({ fg: '#FFFFFF', bg: '#000000' });
-    expect(codeColors.fg).toBe(tokens.code.fg);
-    expect(codeColors.bg).toBe(tokens.code.bg);
+    expect(codeColors.fg).toBe(produit.code.fg);
+    expect(codeColors.bg).toBe(produit.code.bg);
+    // Et la passation le sait : l'écran est nommé dans la liste des exceptions.
+    expect(tokens.theme.outOfTheme.join(' ')).toContain('redemptionCode');
   });
 });
 
-describe('bascule par rôle', () => {
-  it('les trois rôles sont en clair depuis la v0.5', () => {
-    // Le créateur était en sombre. La découverte est devenue un catalogue, et
-    // un catalogue se regarde en clair : ce sont les photos qui portent la
-    // couleur, le fond n'a pas à la leur disputer. Le jeu clair existait déjà
-    // et tient AA — c'est le seul changement au niveau des jetons.
-    expect(themeForRole('creator')).toBe('light');
-    expect(themeForRole('merchant')).toBe('light');
+// --------------------------------------------------------------------------
+// les deux règles centrales de la v1.0
+// --------------------------------------------------------------------------
+
+/**
+ * Les façons d'écrire du texte, dans le vocabulaire du produit.
+ *
+ * **Quatre formes, et pas seulement celle qu'on avait en tête.** Un
+ * `couleur="brand.500"` sur `Texte` est la forme évidente ; `color:
+ * c['brand.500']` dans un style en est une autre, et `tabBarActiveTintColor`
+ * une troisième, qui ne ressemble à aucune des deux. Une garde calée sur la
+ * première laisserait passer les autres, et ferait croire que la question est
+ * réglée.
+ */
+const ENCRES = [
+  /couleur=["']brand\.(500|600)["']/,
+  /couleur=\{['"]brand\.(500|600)['"]\}/,
+  /\bcolor:\s*c\[['"]brand\.(500|600)['"]\]/,
+  // `tabBarActiveTintColor` : le mot est au milieu d'un nom composé, et une
+  // garde ancrée sur un début de mot l'aurait laissé passer.
+  /\w*(?:[Tt]int|[Tt]ext)Color[^,;]*brand\.(500|600)/,
+];
+
+describe('brand.500 est une surface, jamais une encre', () => {
+  it('attrape les quatre formes, et rien d’innocent', () => {
+    const fautives = [
+      '  <Texte couleur="brand.500">x</Texte>',
+      "  <Texte couleur={'brand.500'} />",
+      "  style={{ color: c['brand.500'] }}",
+      "  tabBarActiveTintColor: c['brand.500'],",
+    ];
+    for (const ligne of fautives) {
+      expect({ ligne, prise: ENCRES.some((r) => r.test(ligne)) }).toEqual({ ligne, prise: true });
+    }
+
+    const innocentes = [
+      "  backgroundColor: c['brand.500'],",
+      '  <Texte couleur="brand.700">x</Texte>',
+      "  borderLeftColor: actif ? c['brand.500'] : 'transparent',",
+      "  style={{ color: c['ink.onBrand'] }}",
+    ];
+    for (const ligne of innocentes) {
+      expect({ ligne, prise: ENCRES.some((r) => r.test(ligne)) }).toEqual({ ligne, prise: false });
+    }
   });
 
-  it('la densité reste celle du rôle, pas celle du thème', () => {
-    // Les deux ont bougé ensemble jusqu'ici, ce qui les rendait
-    // indiscernables. Elles ne le sont plus : même thème, densités
-    // différentes — un créateur parcourt, un commerce travaille au comptoir.
-    expect(tokens.density.creator.screenPadding).not.toBe(
-      tokens.density.merchant.screenPadding,
+  it('aucune source n’écrit du texte avec une surface de la rampe', () => {
+    // 3,0:1 sur blanc : refusé à toute taille. C'est la règle centrale de la
+    // direction et la seule que le code puisse réellement tenir. Le texte
+    // orange du système est `brand.700`, sans exception.
+    const fautives: string[] = [];
+    for (const chemin of sources(RACINE)) {
+      const relatif = chemin.slice(chemin.indexOf('src/'));
+      readFileSync(chemin, 'utf-8')
+        .split('\n')
+        .forEach((ligne, index) => {
+          if (/^\s*(\/\/|\*|\/\*)/.test(ligne)) return;
+          if (ENCRES.some((r) => r.test(ligne))) fautives.push(`${relatif}:${index + 1}`);
+        });
+    }
+
+    expect(fautives).toEqual([]);
+  });
+
+  it('`Texte` refuse la surface au lieu de la rendre en silence', async () => {
+    // La garde statique attrape ce qui est écrit ; celle-ci attrape ce qui est
+    // calculé — une couleur passée en variable ne se lit dans aucune source.
+    const { Texte } = require('../src/components');
+    const silence = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const sonde = (
+      <ThemeProvider role="creator">
+        <Texte couleur={'brand.500' as ColorName}>x</Texte>
+      </ThemeProvider>
     );
+    await expect(() => render(sonde)).rejects.toThrow(/surface/);
+    silence.mockRestore();
+  });
+});
+
+describe('le Didone ne descend jamais sous son plancher', () => {
+  it('toutes les variantes en serif sont à 34 px ou au-dessus', () => {
+    // « Un serif de 22 px est un bug visible » — pour qui sait qu'il en est un.
+    // Ce test le sait à notre place, et il tombe le jour où quelqu'un ajoute un
+    // sous-titre en Bodoni parce que ça faisait joli sur la maquette.
+    const fautives = Object.entries(typography)
+      .filter(([, echelle]) => echelle.fontFamily === 'display')
+      .filter(([, echelle]) => echelle.fontSize < PLANCHER_DIDONE)
+      .map(([nom, echelle]) => `${nom} → ${echelle.fontSize}`);
+
+    expect(fautives).toEqual([]);
+  });
+
+  it('et le plancher est bien celui de la passation', () => {
+    expect(PLANCHER_DIDONE).toBe(34);
+    // Le titre d'écran est juste en dessous, en Outfit : c'est la frontière
+    // elle-même, et elle sépare deux familles et non deux rôles.
+    expect(typography['type.screenTitle'].fontFamily).toBe('sans');
+    expect(typography['type.heading'].fontFamily).toBe('display');
+    expect(typography['type.heading'].fontSize).toBe(PLANCHER_DIDONE);
+  });
+});
+
+// --------------------------------------------------------------------------
+// le rôle, en matière
+// --------------------------------------------------------------------------
+
+describe('matière du rôle', () => {
+  it('encre pour l’administration, os pour le commerce, papier pour la créatrice', () => {
+    // §8 de la passation, alternative retenue : la couleur de rôle disparaît,
+    // la distinction reste. Une capture d'écran dit donc encore d'où elle
+    // vient, sans qu'une teinte ait à porter un sens que personne ne décode.
+    expect(matiereDeRole('admin').surface).toBe('bg.inverse');
+    expect(matiereDeRole('merchant').surface).toBe('bg.page');
+    expect(matiereDeRole('creator').surface).toBe('bg.surface');
+
+    // Les trois diffèrent réellement : une matière partagée ne distinguerait
+    // rien, et c'est la faute qu'on ne verrait pas sur une seule capture.
+    const surfaces = (['creator', 'merchant', 'admin'] as const).map(
+      (role) => couleurs[matiereDeRole(role).surface],
+    );
+    expect(new Set(surfaces).size).toBe(3);
+  });
+
+  it('l’encre de chaque matière tient dessus', () => {
+    // L'administration est la seule dont le fond est sombre : son encre doit
+    // être claire, sinon le rôle qu'on reconnaît d'un regard est illisible.
+    expect(matiereDeRole('admin').texte).toBe('ink.onDark');
+    expect(matiereDeRole('merchant').texte).toBe('ink.default');
+    expect(matiereDeRole('creator').texte).toBe('ink.default');
+  });
+
+  it('plus aucune teinte de rôle dans les jetons', () => {
+    // `role.creator` et `role.merchant` sont supprimés. Le fichier de jetons
+    // garde une note à leur place : elle dit pourquoi, et où retrouver
+    // l'alternative.
+    expect(Object.keys(tokens.color.role)).toEqual(['$removed']);
+    expect(couleurs).not.toHaveProperty('role.creator');
+    expect(couleurs).not.toHaveProperty('role.merchant');
+  });
+});
+
+describe('rôle et densité', () => {
+  it('la densité reste celle du rôle', () => {
+    // Un créateur parcourt, un commerce travaille au comptoir.
+    expect(produit.density.creator.screenPadding).not.toBe(produit.density.merchant.screenPadding);
   });
 
   it.each([
-    ['creator', 'light', '20'],
-    ['merchant', 'light', '16'],
-  ] as const)('le rôle %s rend le thème %s et sa densité', async (role, theme, padding) => {
+    ['creator', '20', 'bg.surface'],
+    ['merchant', '16', 'bg.page'],
+    // L'administration n'a pas de densité propre : elle hérite de celle du
+    // créateur, et c'est sa barre latérale qui la resserre.
+    ['admin', '20', 'bg.inverse'],
+  ] as const)('le rôle %s rend sa densité et sa matière', async (role, padding, surface) => {
     const vue = await render(
       <ThemeProvider role={role}>
         <Sonde />
       </ThemeProvider>,
     );
 
-    await waitFor(() => expect(vue.getByText(`${theme}/${role}`)).toBeTruthy());
-    expect(vue.getByText(tokens.color[theme]['bg.canvas'])).toBeTruthy();
-    // La densité suit le rôle, pas le thème : le commerce lit des listes
-    // longues sur un téléphone posé au comptoir.
+    await waitFor(() => expect(vue.getByText(role)).toBeTruthy());
     expect(vue.getByText(padding)).toBeTruthy();
-  });
-
-  it('le choix de l’utilisateur l’emporte sur le rôle', async () => {
-    const vue = await render(
-      <ThemeProvider role="creator" initialTheme="light">
-        <Sonde />
-      </ThemeProvider>,
-    );
-
-    await waitFor(() => expect(vue.getByText('light/creator')).toBeTruthy());
-    // La densité, elle, ne bouge pas : elle appartient au rôle.
-    expect(vue.getByText('20')).toBeTruthy();
+    expect(vue.getByText(surface)).toBeTruthy();
   });
 
   it('un composant rendu hors du fournisseur lève', async () => {
-    // Retomber sur le sombre afficherait des couleurs de créateur chez un
-    // commerce, sans que personne ne s'en aperçoive avant une capture d'écran.
+    // Retomber sur des valeurs par défaut ferait perdre la densité du rôle
+    // sans que personne ne s'en aperçoive avant une capture d'écran.
     const silence = jest.spyOn(console, 'error').mockImplementation(() => {});
     // `await` : sans lui, la promesse de l'assertion est jetée et le test
     // passe même si le rendu ne lève pas.
@@ -200,69 +388,60 @@ describe('bascule par rôle', () => {
 });
 
 // --------------------------------------------------------------------------
-// finition : ce que le diagnostic de rendu a relevé
+// surfaces
 // --------------------------------------------------------------------------
 
-describe('l’échelle et la densité, après le diagnostic', () => {
-  it('porte les deux crans que la passation demandait', () => {
-    // §7 : titre d'état vide à 52/56 sur grand écran, repères en mono 44.
-    // Ils étaient écrits en dur dans cinq composants, chacun réinventant sa
-    // taille — donc cinq occasions de diverger.
-    expect(tokens.typography.scale['type.displayLarge']).toMatchObject({
-      fontSize: 52,
-      lineHeight: 56,
-    });
-    expect(tokens.typography.scale['type.figure']).toMatchObject({
-      fontSize: 44,
-      lineHeight: 48,
-    });
+describe('les surfaces de la v1.0', () => {
+  it('les rayons sont tombés à trois, et le défaut est l’angle droit', () => {
+    // « La mode ne s'arrondit pas, et le bloc plein ne fonctionne que
+    // d'équerre. » Restent la vignette photo et la pilule des chips de filtre.
+    expect(tokens.radius.none).toBe(0);
+    expect(tokens.radius.photo).toBe(2);
+    expect(tokens.radius.pill).toBe(999);
   });
 
-  it('donne aux deux rôles la même respiration sur grand écran', () => {
-    // Le commerce était **plus serré** que le créateur à 1512 — 16 contre 20 —
-    // parce que sa densité est calibrée pour un téléphone posé au comptoir.
-    const { creator, merchant } = tokens.density;
-    expect(merchant.screenPaddingLarge).toBe(creator.screenPaddingLarge);
-    expect(merchant.screenPaddingLarge).toBeGreaterThan(merchant.screenPadding);
-  });
-
-  it('n’écrit plus de taille de police en dur dans les écrans', () => {
-    // Dix-sept au moment du diagnostic. Une taille en dur échappe au thème,
-    // au changement de direction artistique, et au pas grand écran.
+  it('aucun rayon écrit en dur dans une source', () => {
+    // Les 6, 8, 12 et 16 de la v0.4 disparaissent. Un `borderRadius: 12` oublié
+    // dans un coin est le genre de détail qu'on ne voit qu'en comparant deux
+    // cartes côte à côte, ce que personne ne fait.
     const fautifs: string[] = [];
     for (const chemin of sources(RACINE)) {
-      if (chemin.includes(join('src', 'theme'))) continue;
-      // La dette d'avant le système de design est tolérée, comme ailleurs.
-      //
-      // `CodeInput` et `PaveDeSaisie` le sont pour une autre raison : ils se
-      // lisent et se touchent à un mètre, au comptoir, et leur taille est
-      // dictée par la main plutôt que par l'échelle de lecture. Les faire
-      // suivre `type.figure` les ferait rétrécir le jour où l'on ajuste un
-      // titre.
-      if (/MenuReviewScreen|CodeInput|PaveDeSaisie|HealthScreen/.test(chemin)) continue;
-      const source = readFileSync(chemin, 'utf-8');
-      for (const ligne of source.split('\n')) {
-        // **Le seuil est à vingt, et c'est délibéré.** Un `fontSize: 13` sur
-        // une variante mono existante est un ajustement d'un cran, lisible et
-        // local. Ce que ce test attrape est l'échelle **parallèle** : les
-        // grands chiffres — 29, 34, 40, 44, 52 — que cinq composants
-        // réinventaient chacun de leur côté, donc cinq occasions de diverger
-        // le jour où la direction artistique change.
-        if (/fontSize:\s*([2-9]\d)/.test(ligne)) fautifs.push(`${chemin} · ${ligne.trim()}`);
-      }
+      const relatif = chemin.slice(chemin.indexOf('src/'));
+      if (A_MIGRER.includes(relatif)) continue;
+      readFileSync(chemin, 'utf-8')
+        .split('\n')
+        .forEach((ligne, index) => {
+          if (/^\s*(\/\/|\*|\/\*)/.test(ligne)) return;
+          // Un nombre littéral, jamais un jeton : `radius['radius.photo']`
+          // passe, `borderRadius: 12` non.
+          if (/border(?:Top|Bottom)?(?:Left|Right)?Radius:\s*\d/.test(ligne)) {
+            fautifs.push(`${relatif}:${index + 1} → ${ligne.trim()}`);
+          }
+        });
     }
+
     expect(fautifs).toEqual([]);
   });
 
-  it('branche enfin les élévations, qui n’étaient utilisées nulle part', () => {
-    // Les trois jetons existaient depuis la v0.4 et aucune ligne de `src/` ne
-    // les lisait : toutes les surfaces vivaient sur le plan du fond.
-    const claire = elevation('elevation.1', 'light');
-    const sombre = elevation('elevation.1', 'dark');
+  it('l’ombre de carte n’existe plus, et une seule ombre subsiste', () => {
+    // `elevation.1` est supprimé : une carte se tient à son filet de 1 px.
+    // Répétée sous chaque carte d'un fil, l'ombre faisait une nappe grise.
+    expect(Object.keys(tokens.elevation).filter((cle) => !cle.startsWith('$'))).toEqual([
+      '0',
+      'float',
+    ]);
 
-    expect(Object.keys(claire).length).toBeGreaterThan(0);
-    // Le clair est plus discret : six pour cent de noir sur un fond presque
-    // noir ne se verrait pas, et la même ombre sur blanc écraserait.
-    expect(JSON.stringify(claire)).not.toBe(JSON.stringify(sombre));
+    const fautifs = sources(RACINE)
+      .filter((chemin) => !chemin.includes(join('src', 'theme')))
+      .filter((chemin) =>
+        readFileSync(chemin, 'utf-8')
+          .split('\n')
+          // Les commentaires citent le jeton supprimé en prose ; les compter
+          // ferait crier la garde sur la documentation de sa propre règle.
+          .filter((ligne) => !/^\s*(\/\/|\*|\/\*)/.test(ligne))
+          .some((ligne) => /useElevation|elevation\.1/.test(ligne)),
+      );
+
+    expect(fautifs).toEqual([]);
   });
 });

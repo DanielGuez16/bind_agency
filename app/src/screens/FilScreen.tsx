@@ -261,7 +261,7 @@ function Obstacles({ fil }: { fil: Fil | null }) {
         <Texte
           key={`${obstacle.raison}-${index}`}
           variante="type.caption"
-          couleur="text.secondary"
+          couleur="ink.soft"
           testID={`obstacle-${obstacle.raison}`}
         >
           {messageDObstacle(t, obstacle, CODES_CONNUS, undefined, locale)}

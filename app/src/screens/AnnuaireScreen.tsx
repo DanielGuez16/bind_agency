@@ -25,7 +25,7 @@ import { Apparition, EmptyState, Filet, StatusMessage, Texte, TierBadge } from '
 import { formatNumber } from '../format';
 import { useI18n } from '../i18n';
 import { useGabarit } from '../shell/gabarit';
-import { radius, useColors, useElevation } from '../theme';
+import { radius, useColors } from '../theme';
 import { Ecran } from './Ecran';
 import { useRequete } from './useRequete';
 
@@ -110,7 +110,7 @@ export function AnnuaireScreen({ businessId }: { businessId: string }) {
     >
       {(createurs) => (
         <View style={{ gap: 16 }}>
-          <Texte variante="type.body" couleur="text.secondary" testID="annuaire-sous-titre">
+          <Texte variante="type.body" couleur="ink.soft" testID="annuaire-sous-titre">
             {t('annuaire.sousTitre')}
           </Texte>
 
@@ -120,11 +120,11 @@ export function AnnuaireScreen({ businessId }: { businessId: string }) {
             testID="ce-que-le-palier-dit"
             style={{
               padding: 14,
-              borderRadius: radius['radius.md'],
+              borderRadius: radius['radius.none'],
               backgroundColor: c['bg.sunken'],
             }}
           >
-            <Texte variante="type.caption" couleur="text.secondary">
+            <Texte variante="type.caption" couleur="ink.soft">
               {t('annuaire.ceQueLePalierDit')}
             </Texte>
           </View>
@@ -144,7 +144,6 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
   const { t, locale } = useI18n();
   const c = useColors();
   const { large } = useGabarit();
-  const elevation = useElevation('elevation.1');
 
   const nom =
     [createur.first_name, createur.last_name].filter(Boolean).join(' ') || t('annuaire.sansNom');
@@ -153,12 +152,11 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
     <View
       testID={`createur-${createur.creator_id}`}
       style={{
-        ...elevation,
         gap: 12,
         padding: 16,
-        borderRadius: radius['radius.lg'],
+        borderRadius: radius['radius.none'],
         borderWidth: 1,
-        borderColor: c['border.subtle'],
+        borderColor: c['line.default'],
         backgroundColor: c['bg.surface'],
         flexDirection: large ? 'row' : 'column',
         alignItems: large ? 'center' : undefined,
@@ -167,18 +165,18 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
       <View style={{ flex: large ? 1 : undefined, gap: 2, minWidth: 0 }}>
         <Texte variante="type.bodyStrong">{nom}</Texte>
         {createur.city ? (
-          <Texte variante="type.caption" couleur="text.muted">
+          <Texte variante="type.caption" couleur="ink.mute">
             {createur.city}
           </Texte>
         ) : null}
         {createur.bio ? (
-          <Texte variante="type.caption" couleur="text.secondary">
+          <Texte variante="type.caption" couleur="ink.soft">
             {createur.bio}
           </Texte>
         ) : null}
       </View>
 
-      {large ? <View style={{ width: 1, alignSelf: 'stretch', backgroundColor: c['border.subtle'] }} /> : <Filet />}
+      {large ? <View style={{ width: 1, alignSelf: 'stretch', backgroundColor: c['line.default'] }} /> : <Filet />}
 
       <View style={{ width: large ? 260 : undefined, gap: 4 }}>
         {/* L'audience, en volume cumulé. Un ordre de grandeur, jamais une
@@ -186,7 +184,7 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
         <Texte variante="type.figureSmall" testID={`audience-${createur.creator_id}`}>
           {formatNumber(createur.audience_totale, locale)}
         </Texte>
-        <Texte variante="type.caption" couleur="text.secondary">
+        <Texte variante="type.caption" couleur="ink.soft">
           {createur.comptes.length === 1
             ? t('annuaire.audienceUnReseau', { count: createur.audience_totale })
             : t('annuaire.audience', {
@@ -198,7 +196,7 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
           <Texte
             key={`${compte.platform}-${compte.handle}`}
             variante="type.caption"
-            couleur="text.muted"
+            couleur="ink.mute"
           >
             {compte.handle ?? compte.platform}
           </Texte>
@@ -206,7 +204,7 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
       </View>
 
       <View style={{ width: large ? 220 : undefined, gap: 6 }}>
-        <Texte variante="type.label" couleur="text.secondary">
+        <Texte variante="type.label" couleur="ink.soft">
           {t('annuaire.paliersOuverts')}
         </Texte>
         {createur.paliers_ouverts.length === 0 ? (
@@ -214,7 +212,7 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
           // audience peut simplement ne pas encore atteindre le premier seuil.
           <Texte
             variante="type.caption"
-            couleur="text.muted"
+            couleur="ink.mute"
             testID={`sans-palier-${createur.creator_id}`}
           >
             {t('annuaire.aucunPalier')}

@@ -99,6 +99,24 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
         // ouvre, et la filtrer ici l'aurait laissée invisible.
         const aTrancher = journee.a_trancher;
         const planning = journee.items.filter((r) => r.status !== 'awaiting_business');
+
+        /**
+         * **La liste se coupe par ce qu'elle demande, pas par des statuts.**
+         *
+         * Le tri par statut mélangeait ce qui attend une action et ce qui n'en
+         * attend plus : une absence à constater et une prestation servie la
+         * veille se lisaient dans la même colonne, au même poids. Un statut ne
+         * devient une section que **s'il change ce que la vendeuse doit
+         * faire** — sinon c'est une nuance, et elle vit dans la ligne.
+         *
+         * Trois groupes, donc. Ce qui attend quelqu'un — la décision à prendre
+         * et la personne qui va arriver — passe en tête. Ce qui est servi
+         * attend sa publication et n'attend rien du salon. Ce qui est clos ne
+         * se rouvre pas.
+         */
+        const servies = planning.filter((r) => r.status === 'consumed');
+        const closes = planning.filter((r) => TERMINES.has(r.status) && r.status !== 'consumed');
+        const attendues = planning.filter((r) => !TERMINES.has(r.status));
         /**
          * Ce que le panneau montre à l'ouverture.
          *
@@ -112,7 +130,7 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
          * chose de cette journée qui réclame un geste. Sinon la première ligne
          * du planning, qui remplit le panneau sans rien réclamer.
          */
-        const parDefaut = aTrancher[0]?.booking_id ?? planning[0]?.booking_id ?? null;
+        const parDefaut = aTrancher[0]?.booking_id ?? attendues[0]?.booking_id ?? planning[0]?.booking_id ?? null;
         const ouverte =
           [...aTrancher, ...planning].find((r) => r.booking_id === (choisie ?? parDefaut)) ?? null;
 
@@ -125,12 +143,16 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
          * états de la même chose obligent à réapprendre la lecture à chaque
          * section.
          */
-        const section = (titre: string, lignes: ReservationDuCommerce[], marque: boolean) =>
+        const section = (
+          titre: string,
+          lignes: ReservationDuCommerce[],
+          nom: string,
+        ) =>
           lignes.length === 0 ? null : (
-            <View style={{ gap: 4 }} testID={marque ? 'a-trancher' : 'planning'}>
+            <View style={{ gap: 4 }} testID={nom}>
               <Texte
                 variante="type.label"
-                couleur="text.secondary"
+                couleur="ink.soft"
                 style={{ paddingHorizontal: 12, paddingBottom: 4 }}
               >
                 {titre}
@@ -142,18 +164,18 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
                     accessibilityRole={large ? 'button' : undefined}
                     testID={`ligne-${reservation.booking_id}`}
                     style={{
-                      borderRadius: radius['radius.md'],
+                      borderRadius: radius['radius.none'],
                       // La ligne ouverte porte deux marques, comme dans la
                       // barre latérale : un fond et une barre. Jamais la
                       // couleur seule.
                       backgroundColor:
                         large && reservation.booking_id === ouverte?.booking_id
-                          ? c['accent.subtle']
+                          ? c['brand.50']
                           : 'transparent',
                       borderLeftWidth: 3,
                       borderLeftColor:
                         large && reservation.booking_id === ouverte?.booking_id
-                          ? c['accent.default']
+                          ? c['brand.700']
                           : 'transparent',
                     }}
                   >
@@ -176,9 +198,24 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
             testID="colonne-liste"
             style={{ gap: 16, width: large ? breakpoint.listWidthMerchant : undefined }}
           >
-            {section(t('commerce.aTrancher', { count: aTrancher.length }), aTrancher, true)}
-            {aTrancher.length > 0 && planning.length > 0 ? <Filet marge={4} /> : null}
-            {section(t('commerce.journeePlanning'), planning, false)}
+            {/* Ce qui attend quelqu'un. La décision à prendre d'abord — c'est
+                la seule chose que personne d'autre ne peut faire — puis les
+                arrivées de la journée. */}
+            {section(t('commerce.aTrancher', { count: aTrancher.length }), aTrancher, 'a-trancher')}
+            {section(
+              t('commerce.journeeAttendues', { count: attendues.length }),
+              attendues,
+              'planning',
+            )}
+            {servies.length > 0 && (aTrancher.length > 0 || attendues.length > 0) ? (
+              <Filet marge={4} />
+            ) : null}
+            {/* Servi : la contrepartie court, et le salon n'a plus rien à
+                faire. La ligne dit quand la publication est due. */}
+            {section(t('commerce.journeeServies', { count: servies.length }), servies, 'servies')}
+            {closes.length > 0 ? <Filet marge={4} /> : null}
+            {/* Clos : ni absence à constater, ni geste à reprendre. */}
+            {section(t('commerce.journeeCloses', { count: closes.length }), closes, 'closes')}
           </View>
         );
 
@@ -198,7 +235,7 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
                   onFait={requete.recharger}
                 />
               ) : (
-                <Texte couleur="text.muted" testID="aucune-ligne-ouverte">
+                <Texte couleur="ink.mute" testID="aucune-ligne-ouverte">
                   {t('commerce.choisirUneLigne')}
                 </Texte>
               )}
@@ -246,10 +283,10 @@ const TERMINES = new Set(['consumed', 'cancelled', 'no_show', 'expired']);
 
 /** Ce dont l'état mérite d'être teinté. Le reste reste neutre. */
 const TEINTE: Record<string, ColorName> = {
-  no_show: 'status.danger',
-  cancelled: 'text.muted',
-  expired: 'text.muted',
-  consumed: 'status.success',
+  no_show: 'status.danger.text',
+  cancelled: 'ink.mute',
+  expired: 'ink.mute',
+  consumed: 'status.success.text',
 };
 
 /**
@@ -293,27 +330,27 @@ function Detail({
           qu'à gauche, une autre échelle — on ne cherche plus, on se prépare. */}
       <View style={{ gap: 6 }}>
         <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 12 }}>
-          <Texte variante="type.display" testID="detail-heure">
+          <Texte variante="type.screenTitle" testID="detail-heure">
             {heure}
           </Texte>
           <Texte
             variante="type.label"
-            couleur={TEINTE[reservation.status] ?? 'text.secondary'}
+            couleur={TEINTE[reservation.status] ?? 'ink.soft'}
             testID="detail-statut"
           >
             {t(`commerce.statut_${reservation.status}`)}
           </Texte>
         </View>
-        <Texte variante="type.heading">{nomDe(reservation)}</Texte>
+        <Texte variante="type.bodyStrong">{nomDe(reservation)}</Texte>
         {reservation.creator_handle ? (
-          <Texte variante="type.caption" couleur="text.muted">
+          <Texte variante="type.caption" couleur="ink.mute">
             {reservation.creator_handle}
           </Texte>
         ) : null}
       </View>
 
       <View style={{ gap: 8 }}>
-        <Texte variante="type.label" couleur="text.secondary">
+        <Texte variante="type.label" couleur="ink.soft">
           {t('commerce.journeeRendezVous')}
         </Texte>
         <DataRow label={t('commerce.journeeCreatrice')} value={nomDe(reservation)} />
@@ -332,7 +369,7 @@ function Detail({
       {/* Ce pour quoi la place est donnée. Aucune ligne de planning n'a la
           place de le dire, et c'est pourtant la seule raison de servir. */}
       <View style={{ gap: 8 }}>
-        <Texte variante="type.label" couleur="text.secondary">
+        <Texte variante="type.label" couleur="ink.soft">
           {t('commerce.contrepartieAttendue')}
         </Texte>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -368,7 +405,7 @@ function Detail({
       <Filet marge={0} />
 
       <View style={{ gap: 10 }}>
-        <Texte variante="type.label" couleur="text.secondary">
+        <Texte variante="type.label" couleur="ink.soft">
           {t('commerce.journeeGestes')}
         </Texte>
         {gestes ? (
@@ -377,7 +414,7 @@ function Detail({
           // Un rendez-vous servi, annulé ou manqué n'appelle plus rien du
           // comptoir. Le dire vaut mieux qu'un bloc vide, qui laisse chercher
           // le bouton qu'on aurait oublié.
-          <Texte variante="type.caption" couleur="text.muted" testID="detail-sans-geste">
+          <Texte variante="type.caption" couleur="ink.mute" testID="detail-sans-geste">
             {t('commerce.journeeRienAFaire')}
           </Texte>
         )}
@@ -493,7 +530,7 @@ function Ligne({
         gap: 2,
         paddingVertical: 8,
         paddingHorizontal: 12,
-        borderRadius: 10,
+        borderRadius: radius['radius.none'],
         // **Un seul registre.** La ligne portait un fond et une bordure tant
         // qu'elle n'était pas passée : dans une colonne où le bloc « à
         // trancher » était déjà en relief, cela faisait trois épaisseurs pour
@@ -508,14 +545,14 @@ function Ligne({
         value={nomDe(reservation)}
       />
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-        <Texte variante="type.caption" couleur="text.secondary" style={{ flexShrink: 1 }}>
+        <Texte variante="type.caption" couleur="ink.soft" style={{ flexShrink: 1 }}>
           {reservation.item_name}
         </Texte>
         {/* Le statut traduit, jamais son code. `awaiting_business` affiché tel
             quel se lisait comme une chaîne oubliée — parce que c'en était une. */}
         <Texte
           variante="type.caption"
-          couleur={TEINTE[reservation.status] ?? 'text.secondary'}
+          couleur={TEINTE[reservation.status] ?? 'ink.soft'}
           testID={`statut-${reservation.booking_id}`}
         >
           {t(`commerce.statut_${reservation.status}`)}

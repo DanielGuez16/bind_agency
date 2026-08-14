@@ -27,11 +27,11 @@ export function Stepper({ label, value, min = 0, max = 99, onChange, testID }: S
     <View
       testID={testID}
       style={{
-        height: size.tapMin,
+        height: size.hit,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        borderRadius: radius['radius.md'],
+        borderRadius: radius['radius.none'],
         backgroundColor: c['bg.sunken'],
         paddingHorizontal: 12,
         gap: 8,
@@ -69,14 +69,14 @@ function Touche({
       style={{
         width: 32,
         height: 32,
-        borderRadius: radius['radius.sm'],
+        borderRadius: radius['radius.none'],
         borderWidth: 1,
-        borderColor: c['border.default'],
+        borderColor: c['line.default'],
         alignItems: 'center',
         justifyContent: 'center',
       }}
     >
-      <Texte variante="type.bodyStrong" couleur={actif ? 'text.primary' : 'text.disabled'}>
+      <Texte variante="type.bodyStrong" couleur={actif ? 'ink.default' : 'ink.faint'}>
         {signe}
       </Texte>
     </Pressable>
@@ -118,23 +118,23 @@ export function RangeeDeValeurs({
               height: 40,
               alignItems: 'center',
               justifyContent: 'center',
-              borderRadius: radius['radius.md'],
+              borderRadius: radius['radius.none'],
               borderWidth: choisi ? 2 : 1,
               borderColor: choisi
                 ? sousLeSeuil
-                  ? c['status.danger']
-                  : c['accent.default']
-                : c['border.default'],
+                  ? c['status.danger.text']
+                  : c['brand.700']
+                : c['line.default'],
               backgroundColor: choisi
                 ? sousLeSeuil
-                  ? c['status.danger.subtle']
-                  : c['accent.subtle']
+                  ? c['status.danger.surface']
+                  : c['brand.50']
                 : 'transparent',
             }}
           >
             <Texte
               variante="type.mono"
-              couleur={choisi && sousLeSeuil ? 'status.danger' : 'text.primary'}
+              couleur={choisi && sousLeSeuil ? 'status.danger.text' : 'ink.default'}
             >
               {v}
             </Texte>

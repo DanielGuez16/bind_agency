@@ -172,12 +172,12 @@ function useOptionsDOnglets(intitule?: string | null) {
       paddingTop: 6,
       paddingBottom: marges.bottom + 6,
       backgroundColor: c['bg.surface'],
-      borderTopColor: c['border.subtle'],
+      borderTopColor: c['line.default'],
       borderTopWidth: 1,
     },
     tabBarLabelStyle: { fontSize: 11, lineHeight: 15, marginTop: 4 },
-    tabBarActiveTintColor: c['accent.default'],
-    tabBarInactiveTintColor: c['text.muted'],
+    tabBarActiveTintColor: c['brand.700'],
+    tabBarInactiveTintColor: c['ink.mute'],
   } as const;
 }
 
@@ -674,12 +674,12 @@ function themeDeNavigation(couleurs: ReturnType<typeof useTheme>['color']): Them
     ...DefaultTheme,
     colors: {
       ...DefaultTheme.colors,
-      primary: couleurs['accent.default'],
-      background: couleurs['bg.canvas'],
+      primary: couleurs['brand.700'],
+      background: couleurs['bg.page'],
       card: couleurs['bg.surface'],
-      text: couleurs['text.primary'],
-      border: couleurs['border.subtle'],
-      notification: couleurs['status.danger'],
+      text: couleurs['ink.default'],
+      border: couleurs['line.default'],
+      notification: couleurs['status.danger.text'],
     },
   };
 }

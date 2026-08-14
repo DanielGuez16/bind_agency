@@ -172,7 +172,7 @@ export function AccueilScreen({
       // `overflow` : le média couvre en débordant, et un débordement qui
       // élargit le conteneur produirait exactement la couture verticale et la
       // bande sombre relevées à droite.
-      style={{ flex: 1, overflow: 'hidden', backgroundColor: c['bg.canvas'] }}
+      style={{ flex: 1, overflow: 'hidden', backgroundColor: c['bg.page'] }}
       onLayout={({ nativeEvent }) =>
         setForme({
           largeur: Math.round(nativeEvent.layout.width),
@@ -225,7 +225,7 @@ export function AccueilScreen({
           // Ici le titre est en haut et les cartes au milieu — appliqué tel
           // quel, il ne veilait rien de ce qu'il fallait, et la sous-ligne
           // disparaissait dans le ciel.
-          colors={[c['scrim.bottom'], c['scrim.mid'], c['scrim.bottom']]}
+          colors={[c['scrim.photoBottom'], c['scrim.modal'], c['scrim.photoBottom']]}
           locations={[0, 0.5, 1]}
           style={StyleSheet.absoluteFillObject}
         />
@@ -262,7 +262,7 @@ export function AccueilScreen({
         <ChoixDeLaPorte onChoisir={onChoisir} onSeConnecter={onSeConnecter} surMedia={Boolean(video || affiche)} />
         {video || affiche ? null : (
           // Aucun fond : on ne laisse pas un vide inexpliqué sous les portes.
-          <Texte variante="type.caption" couleur="text.muted" testID="accueil-sans-fond">
+          <Texte variante="type.caption" couleur="ink.mute" testID="accueil-sans-fond">
             {t('accueil.sansFond')}
           </Texte>
         )}

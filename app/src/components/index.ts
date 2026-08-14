@@ -44,6 +44,8 @@ export {
   type ServiceRowProps,
 } from './Cards';
 export { StatusMessage, type Niveau, type StatusMessageProps } from './StatusMessage';
+export { TitreAccentue, type TitreAccentueProps } from './TitreAccentue';
+export { FiletSegmente, type FiletSegmenteProps } from './FiletSegmente';
 export { EmptyState, type EmptyStateProps } from './EmptyState';
 export { SkeletonBox, SkeletonCard, SkeletonLine } from './Skeleton';
 export {

@@ -879,9 +879,9 @@ describe('arbitrage', () => {
     );
     await waitFor(() => expect(screen.getByTestId('dossier-k1')).toBeTruthy());
 
-    // Le libellé visible nomme l'objet, et le nom accessible nomme le dossier.
-    expect(en.admin.issueApprove).toMatch(/publication/i);
-    const bouton = screen.getByLabelText(surLeDossier(en.admin.issueApprove));
+    // Le libellé visible nomme l'objet **et son écart**, et le nom accessible
+    // nomme le dossier. Le dernier reproche de ce dossier porte sur le format.
+    const bouton = screen.getByLabelText(surLeDossier(en.admin.issueApproveMalgreFormat));
     expect(bouton).toBeTruthy();
     for (const attendu of [
       DOSSIER_EN_ARBITRAGE.creator_handle,
@@ -900,7 +900,7 @@ describe('arbitrage', () => {
     );
     await waitFor(() => expect(screen.getByTestId('dossier-k1')).toBeTruthy());
 
-    expect(screen.getByLabelText(surLeDossier(en.admin.issueApprove))).toBeTruthy();
+    expect(screen.getByLabelText(surLeDossier(en.admin.issueApproveMalgreFormat))).toBeTruthy();
     expect(screen.queryByLabelText(surLeDossier(en.admin.issueResubmit))).toBeNull();
     expect(screen.queryByLabelText(surLeDossier(en.admin.issueUnfulfilled))).toBeNull();
   });
@@ -997,6 +997,60 @@ describe('arbitrage', () => {
     });
   });
 
+  it.each([
+    ['missing_location', 'issueApproveSansLieu'],
+    ['missing_mention', 'issueApproveSansMention'],
+    ['wrong_format', 'issueApproveMalgreFormat'],
+    ['low_quality', 'issueApproveMalgreQualite'],
+  ] as const)('sur %s, le bouton nomme son écart', async (motif, cle) => {
+    // **Le défaut de campagne.** « Approve » seul ne disait pas ce qu'on
+    // approuvait. Dans une file où l'on tranche vingt dossiers à la chaîne, un
+    // verbe seul finit par vouloir dire « suivant » — et c'est la seule
+    // décision du produit qui ne se rouvre pas.
+    const dossier = {
+      ...DOSSIER_EN_ARBITRAGE,
+      tentatives: [{ motif, demandee_le: '2026-08-09T09:00:00Z', par: 'business_member' }],
+    };
+    await monter(<ArbitrageScreen />, clientDe({ '/admin/collaborations/review': [dossier] }), 'admin');
+    await waitFor(() => expect(screen.getByTestId('dossier-k1')).toBeTruthy());
+
+    expect(screen.getByLabelText(surLeDossier(en.admin[cle]))).toBeTruthy();
+    // Et le libellé nu n'est plus offert : c'est lui qu'on pressait sans lire.
+    expect(screen.queryByLabelText(surLeDossier(en.admin.issueApprove))).toBeNull();
+  });
+
+  it('redevient simple quand il n’y a aucun écart à excuser', async () => {
+    // « L'écart n'existe que s'il y en a un. » Annoncer « sans la mention » sur
+    // un dossier conforme ferait douter de l'approbation elle-même.
+    const dossier = { ...DOSSIER_EN_ARBITRAGE, tentatives: [] };
+    await monter(<ArbitrageScreen />, clientDe({ '/admin/collaborations/review': [dossier] }), 'admin');
+    await waitFor(() => expect(screen.getByTestId('dossier-k1')).toBeTruthy());
+
+    expect(screen.getByLabelText(surLeDossier(en.admin.issueApprove))).toBeTruthy();
+  });
+
+  it('désigne la ligne qui manque, et ne prétend rien sur les autres', async () => {
+    // L'attendu et le constaté face à face. Le constaté vient du reproche et
+    // non d'une lecture automatique : aux niveaux 2 et 3, la preuve ne porte
+    // ni auteur, ni format, ni mention, et écrire « conforme » en face d'une
+    // ligne que personne n'a vérifiée serait indéfendable devant un salon.
+    const dossier = {
+      ...DOSSIER_EN_ARBITRAGE,
+      tentatives: [
+        { motif: 'missing_location', demandee_le: '2026-08-09T09:00:00Z', par: 'business_member' },
+      ],
+    };
+    await monter(<ArbitrageScreen />, clientDe({ '/admin/collaborations/review': [dossier] }), 'admin');
+    await waitFor(() => expect(screen.getByTestId('attendu-et-constate')).toBeTruthy());
+
+    expect(screen.getByTestId('manque-lieu')).toBeTruthy();
+    expect(screen.queryByTestId('manque-mention')).toBeNull();
+    expect(screen.queryByTestId('manque-format')).toBeNull();
+    // Et l'écran dit d'où vient le constat, plutôt que de le faire passer pour
+    // une vérification de la plateforme.
+    expect(screen.getByTestId('constat-humain')).toBeTruthy();
+  });
+
   it('emploie le vocabulaire du commerce pour ce qui est commun', async () => {
     // Un second langage pour l'arbitre obligerait chacun à traduire.
     expect(en.admin.issueApprove).toBe(en.commerce.approuver);
@@ -1044,15 +1098,57 @@ describe('plans', () => {
 // --------------------------------------------------------------------------
 
 describe('reporting', () => {
-  it('dit ce que le commerce a donné, jamais ce qu’il a gagné', async () => {
+  it('ne montre aucun montant, même quand la réponse en porte un', async () => {
+    // **Le défaut relevé par Design.** La page portait « ce que vous avez
+    // donné · 4 280,00 USD ». La règle de la carte d'API est qu'aucun montant
+    // ne figure dans une réponse destinée aux applications créateur et
+    // commerce ; la réponse en porte encore un, et le client l'ignore. Ce n'est
+    // pas cosmétique : un salon ne compare pas des euros, il compare ce qu'il a
+    // donné à ce qu'il a reçu.
     await monter(<ReportingScreen businessId="b1" />, clientDe({ '/reporting': REPORTING }));
-    await waitFor(() => expect(screen.getByTestId('valeur-offerte')).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId('etat-nominal')).toBeTruthy());
 
-    expect(screen.getByText('720.00 USD')).toBeTruthy();
-    // Aucun mot de revenu, de chiffre d'affaires ou de gain sur cet écran.
+    // Le montant que la réponse porte, sous ses deux écritures possibles.
+    expect(screen.queryByText(/720[.,]00/)).toBeNull();
+    expect(screen.queryByText(new RegExp(REPORTING.currency))).toBeNull();
+    // Aucun mot de revenu, de chiffre d'affaires ou de gain non plus.
     for (const mot of [/revenue/i, /earned/i, /income/i, /profit/i]) {
       expect(screen.queryByText(mot)).toBeNull();
     }
+  });
+
+  it('remplace le montant par du temps de fauteuil', async () => {
+    // Ce qu'un salon donne réellement, calculé sur la durée des prestations et
+    // jamais sur un prix.
+    await monter(
+      <ReportingScreen businessId="b1" />,
+      clientDe({ '/reporting': { ...REPORTING, temps_de_fauteuil_minutes: 4260 } }),
+    );
+    await waitFor(() => expect(screen.getByTestId('temps-de-fauteuil')).toBeTruthy());
+
+    expect(screen.getByText(en.reporting.heures.replace('{{heures}}', '71'))).toBeTruthy();
+  });
+
+  it('dit que le temps de fauteuil manque, au lieu d’afficher zéro', async () => {
+    // Absent n'est pas zéro. « 0 heure donnée » à un salon qui a servi
+    // quatre-vingt-huit prestations serait faux, et c'est précisément le
+    // chiffre censé le convaincre.
+    await monter(<ReportingScreen businessId="b1" />, clientDe({ '/reporting': REPORTING }));
+    await waitFor(() => expect(screen.getByTestId('temps-de-fauteuil')).toBeTruthy());
+
+    expect(screen.getByText(en.reporting.tempsIndisponible)).toBeTruthy();
+    expect(screen.queryByText(en.reporting.heures.replace('{{heures}}', '0'))).toBeNull();
+  });
+
+  it('commence par la phrase, pas par les chiffres', async () => {
+    // C'est celle qu'un salon répète à son associé, et elle contient déjà la
+    // réponse ; les chiffres qui la composent servent à la vérifier.
+    await monter(<ReportingScreen businessId="b1" />, clientDe({ '/reporting': REPORTING }));
+    await waitFor(() => expect(screen.getByTestId('phrase-du-rapport')).toBeTruthy());
+
+    const phrase = screen.getByTestId('phrase-du-rapport').props.children;
+    expect(String(phrase)).toContain(String(REPORTING.consommations));
+    expect(String(phrase)).toContain(String(REPORTING.publications));
   });
 
   it('comble les semaines creuses au lieu de resserrer l’axe', async () => {
@@ -1662,5 +1758,195 @@ describe('la note libre à l’arbitrage', () => {
     await waitFor(() => expect(screen.getByTestId('dossier-k1')).toBeTruthy());
 
     expect(screen.queryByTestId('note')).toBeNull();
+  });
+});
+
+// --------------------------------------------------------------------------
+// deux règles du lot 2, tenues mécaniquement
+// --------------------------------------------------------------------------
+
+describe('aucun montant sur un écran de lecture', () => {
+  /**
+   * Les trois écrans où un montant a le droit de paraître, avec leur raison.
+   *
+   * Aucun n'est un écran de **lecture** côté commerce. La règle de la carte
+   * d'API — aucun montant dans une réponse destinée aux applications créateur
+   * et commerce — se traduit ici en une règle que le code peut tenir : ce qui
+   * est *lu* ne porte pas de montant, ce qui est *saisi* porte ce que le salon
+   * a tapé lui-même.
+   */
+  const TOLERES: Record<string, string> = {
+    'PlansScreen.tsx':
+      "seul écran du produit à afficher des montants, et il est du back-office : " +
+      "c'est ce que BIND facture, pas ce qu'un salon donne.",
+    'CatalogueScreen.tsx':
+      "le prix que le salon tape lui-même sur sa propre carte. Il est une donnée " +
+      "de reporting interne, jamais un avoir, et jamais montré à une créatrice.",
+    'MenuReviewScreen.tsx':
+      "la relecture d'une carte importée : les prix extraits se corrigent avant " +
+      "de créer les items.",
+  };
+
+  const { readdirSync, readFileSync } = require('fs') as typeof import('fs');
+  const { join } = require('path') as typeof import('path');
+  const DOSSIER = join(__dirname, '..', 'src', 'screens');
+
+  it('aucun écran de lecture ne formate un montant', () => {
+    const fautifs: string[] = [];
+    for (const fichier of readdirSync(DOSSIER).filter((f) => f.endsWith('.tsx'))) {
+      if (TOLERES[fichier]) continue;
+      readFileSync(join(DOSSIER, fichier), 'utf-8')
+        .split('\n')
+        .forEach((ligne, index) => {
+          if (/^\s*(\/\/|\*|\/\*)/.test(ligne)) return;
+          // Les deux façons d'écrire un montant : la maison — `formatMoney` —
+          // et la division à la main, qui est celle que la page de rapports
+          // employait.
+          if (/formatMoney\s*\(|_cents\s*\/\s*100/.test(ligne)) {
+            fautifs.push(`${fichier}:${index + 1} → ${ligne.trim()}`);
+          }
+        });
+    }
+
+    expect(fautifs).toEqual([]);
+  });
+
+  it('la garde attrape les deux formes, et rien d’innocent', () => {
+    const attrape = (l: string) =>
+      /formatMoney\s*\(|_cents\s*\/\s*100/.test(l) && !/^\s*(\/\/|\*|\/\*)/.test(l);
+
+    expect(attrape('  value={formatMoney(plan.price_cents, plan.currency, locale)}')).toBe(true);
+    expect(attrape('  value={`${(vue.valeur_offerte_cents / 100).toFixed(2)} ${vue.currency}`}')).toBe(true);
+    expect(attrape('  // formatMoney( est réservé aux plans')).toBe(false);
+    expect(attrape('  const minutes = vue.temps_de_fauteuil_minutes / 60;')).toBe(false);
+  });
+
+  it('chaque tolérance nomme un écran qui existe et qui s’en sert', () => {
+    // Une tolérance qui ne sert plus fait croire que la règle a une exception
+    // là où elle n'en a plus.
+    for (const [fichier, raison] of Object.entries(TOLERES)) {
+      const source = readFileSync(join(DOSSIER, fichier), 'utf-8');
+      expect({ fichier, sert: /formatMoney\s*\(|price_cents/.test(source) }).toEqual({
+        fichier,
+        sert: true,
+      });
+      expect(raison.length).toBeGreaterThan(40);
+    }
+  });
+});
+
+describe('l’annuaire est en lecture seule', () => {
+  it('ne porte aucune action au-delà de la lecture', async () => {
+    // **Décision de produit, et non un trou à combler.** Aucune route
+    // d'invitation ni de message n'existe, dans aucun sens : le produit circule
+    // dans un seul sens, la créatrice choisit et réserve. L'abonnement achète
+    // donc de la *visibilité*, pas du contact — et il ne faut surtout pas de
+    // bouton qui n'existe pas derrière.
+    const { readFileSync } = require('fs') as typeof import('fs');
+    const { join } = require('path') as typeof import('path');
+    const source = readFileSync(
+      join(__dirname, '..', 'src', 'screens', 'AnnuaireScreen.tsx'),
+      'utf-8',
+    );
+
+    for (const interdit of [/<Button/, /onPress/, /accessibilityRole="button"/]) {
+      expect({ interdit: String(interdit), present: interdit.test(source) }).toEqual({
+        interdit: String(interdit),
+        present: false,
+      });
+    }
+  });
+
+  it('et l’API ne lui en offre aucune', () => {
+    // La garde précédente regarde l'écran ; celle-ci regarde ce qu'il pourrait
+    // appeler. Un client qui exposerait « inviter » ou « contacter » ferait de
+    // la lecture seule une discipline, et une discipline finit par céder.
+    const { readFileSync } = require('fs') as typeof import('fs');
+    const { join } = require('path') as typeof import('path');
+    const routes = readFileSync(join(__dirname, '..', 'src', 'api', 'routes.ts'), 'utf-8');
+
+    for (const interdit of ['invite', 'contact', 'message']) {
+      expect({ interdit, present: routes.includes(interdit) }).toEqual({
+        interdit,
+        present: false,
+      });
+    }
+  });
+});
+
+describe('la journée se coupe par ce qu’elle demande', () => {
+  const RESERVATION = (id: string, status: string) => ({
+    ...JOURNEE.items[0],
+    booking_id: id,
+    status,
+  });
+
+  it('sépare ce qui attend, ce qui est servi et ce qui est clos', async () => {
+    // **Le tri par statut mélangeait deux choses.** Une absence à constater et
+    // une prestation servie la veille se lisaient dans la même colonne, au même
+    // poids. Un statut ne devient une section que s'il change ce que la
+    // vendeuse doit faire.
+    const journee = {
+      ...JOURNEE,
+      a_trancher: [],
+      items: [
+        RESERVATION('b-attendue', 'confirmed'),
+        RESERVATION('b-servie', 'consumed'),
+        RESERVATION('b-close', 'no_show'),
+      ],
+    };
+    await monter(<JourneeScreen businessId="b1" />, clientDe({ '/bookings': journee }));
+    await waitFor(() => expect(screen.getByTestId('planning')).toBeTruthy());
+
+    expect(screen.getByTestId('servies')).toBeTruthy();
+    expect(screen.getByTestId('closes')).toBeTruthy();
+
+    // Et chaque ligne est dans la bonne : c'est le rangement qui est le test,
+    // pas la présence des trois titres.
+    expect(screen.getByTestId('planning')).toContainElement(screen.getByTestId('ligne-b-attendue'));
+    expect(screen.getByTestId('servies')).toContainElement(screen.getByTestId('ligne-b-servie'));
+    expect(screen.getByTestId('closes')).toContainElement(screen.getByTestId('ligne-b-close'));
+  });
+
+  it('n’ouvre pas une section vide', async () => {
+    // Un titre « 0 servie » est une ligne de plus à lire chaque matin pour
+    // apprendre qu'il n'y a rien à lire.
+    const journee = {
+      ...JOURNEE,
+      a_trancher: [],
+      items: [RESERVATION('b-attendue', 'confirmed')],
+    };
+    await monter(<JourneeScreen businessId="b1" />, clientDe({ '/bookings': journee }));
+    await waitFor(() => expect(screen.getByTestId('planning')).toBeTruthy());
+
+    expect(screen.queryByTestId('servies')).toBeNull();
+    expect(screen.queryByTestId('closes')).toBeNull();
+  });
+});
+
+describe('le mode terrain dit son avancement sans l’écrire', () => {
+  it('un segment par champ rempli, et zéro n’est pas une absence de filet', async () => {
+    // **Debout, à une main, entre deux clientes.** Le filet segmenté remplace
+    // le compteur « 2 sur 3 » : on voit où l'on en est sans lire. Il compte ce
+    // qui est **rempli**, pas ce qui est obligatoire — la fiche part avec le
+    // nom seul, et une fiche à trois champs vaut mieux qu'une fiche
+    // abandonnée.
+    await monter(<TerrainScreen />, clientDe({ '/admin/prospects': [FICHE_PREPAREE] }), 'merchant');
+    await waitFor(() => expect(screen.getByTestId('formulaire-de-fiche')).toBeTruthy());
+
+    const segment = (i: number) =>
+      screen.getByTestId(`avancement-de-la-fiche-segment-${i}`).props.style.backgroundColor;
+
+    // Rien de saisi : trois segments, aucun franchi. Le filet existe quand
+    // même — un parcours à zéro pour cent n'est pas l'absence de parcours.
+    expect(screen.getByTestId('avancement-de-la-fiche')).toBeTruthy();
+    const eteint = segment(0);
+
+    await fireEvent.changeText(screen.getByTestId('champ-nom'), 'Studio Lume');
+    await waitFor(() => expect(segment(0)).not.toBe(eteint));
+    // Et seul le premier bouge : deux segments allumés pour un champ rempli
+    // feraient de la progression une décoration.
+    expect(segment(1)).toBe(eteint);
+    expect(segment(2)).toBe(eteint);
   });
 });

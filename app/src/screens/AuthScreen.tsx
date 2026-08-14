@@ -136,25 +136,25 @@ export function AuthScreen({ motif }: { motif: MotifDeSortie | null }) {
         width: PANNEAU,
         padding: spacing['space.8'],
         gap: spacing['space.6'],
-        borderRadius: radius['radius.xl'],
+        borderRadius: radius['radius.none'],
         backgroundColor: c['bg.inverse'],
         justifyContent: 'center',
       }}
     >
       {inscription ? (
-        <Texte variante="type.label" style={{ color: c['text.inverse'] }}>
+        <Texte variante="type.label" style={{ color: c['ink.onDark'] }}>
           {(role === 'creator' ? t('auth.roleCreator') : t('auth.roleMerchant')).toUpperCase()}
         </Texte>
       ) : (
-        <Marque taille={30} couleur="text.inverse" />
+        <Marque taille={30} couleur="ink.onDark" />
       )}
-      <Texte variante="type.heading" style={{ color: c['text.inverse'] }}>
+      <Texte variante="type.bodyStrong" style={{ color: c['ink.onDark'] }}>
         {inscription
           ? t(role === 'creator' ? 'auth.porteCreateur' : 'auth.porteCommerce')
           : t('auth.accroche')}
       </Texte>
       {inscription ? null : (
-        <Texte style={{ color: c['text.inverse'] }}>{t('auth.sousAccroche')}</Texte>
+        <Texte style={{ color: c['ink.onDark'] }}>{t('auth.sousAccroche')}</Texte>
       )}
       {/* **Le panneau de connexion avait trois lignes sur 604 d'encre**
           (campagne 2) : un grand aplat noir presque vide, sur l'écran le plus
@@ -168,21 +168,21 @@ export function AuthScreen({ motif }: { motif: MotifDeSortie | null }) {
       <View style={{ gap: spacing['space.4'] }} testID="points-du-panneau">
         {(inscription ? [1, 2, 3] : []).map((rang) => (
           <View key={rang} style={{ flexDirection: 'row', gap: spacing['space.3'] }}>
-            <Texte variante="type.mono" style={{ color: c['accent.default'] }}>
+            <Texte variante="type.mono" style={{ color: c['brand.700'] }}>
               {String(rang).padStart(2, '0')}
             </Texte>
-            <Texte style={{ color: c['text.inverse'], flex: 1 }}>
+            <Texte style={{ color: c['ink.onDark'], flex: 1 }}>
               {t(`auth.etape${suffixe}${rang}`)}
             </Texte>
           </View>
         ))}
         {(inscription ? [] : ['A', 'B', 'C']).map((lettre) => (
           <View key={lettre} style={{ flexDirection: 'row', gap: spacing['space.3'] }}>
-            <Texte variante="type.mono" style={{ color: c['accent.default'] }}>
+            <Texte variante="type.mono" style={{ color: c['brand.700'] }}>
               ·
             </Texte>
             <Texte
-              style={{ color: c['text.inverse'], flex: 1 }}
+              style={{ color: c['ink.onDark'], flex: 1 }}
               testID={`point-de-retour-${lettre}`}
             >
               {t(`auth.retour${lettre}`)}
@@ -196,7 +196,7 @@ export function AuthScreen({ motif }: { motif: MotifDeSortie | null }) {
   return (
     <ScrollView
       testID="ecran-auth"
-      style={{ flex: 1, backgroundColor: c['bg.canvas'] }}
+      style={{ flex: 1, backgroundColor: c['bg.page'] }}
       contentContainerStyle={{
         padding: density.screenPadding,
         paddingBottom: density.screenPadding + marges.bottom,
@@ -232,7 +232,7 @@ export function AuthScreen({ motif }: { motif: MotifDeSortie | null }) {
                   testID="revenir-aux-portes"
                 />
               ) : null}
-              <Texte variante="type.display">
+              <Texte variante="type.screenTitle">
                 {inscription ? t('auth.titreInscription') : t('auth.titreConnexion')}
               </Texte>
             </View>
@@ -275,7 +275,7 @@ export function AuthScreen({ motif }: { motif: MotifDeSortie | null }) {
               la saisie commencée : « 0 / 12 » devant un champ vide sonne comme
               un reproche avant d'avoir rien fait. */}
           {inscription && motDePasse.length > 0 && reste > 0 ? (
-            <Texte variante="type.mono" couleur="text.muted" testID="jauge">
+            <Texte variante="type.mono" couleur="ink.mute" testID="jauge">
               {t('auth.jauge', { saisi: motDePasse.length, requis: CARACTERES_REQUIS })}
             </Texte>
           ) : null}
@@ -298,7 +298,7 @@ export function AuthScreen({ motif }: { motif: MotifDeSortie | null }) {
           />
 
           {inscription ? (
-            <Texte variante="type.caption" couleur="text.muted">
+            <Texte variante="type.caption" couleur="ink.mute">
               {t(role === 'creator' ? 'auth.autrePorteCreateur' : 'auth.autrePorteCommerce')}
             </Texte>
           ) : null}

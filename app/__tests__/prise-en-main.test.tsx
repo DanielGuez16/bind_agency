@@ -113,7 +113,10 @@ describe('prise en main', () => {
     // Les nombres, pas la liste : le gérant reconnaît son salon sans que le
     // lien devienne une lecture complète de sa fiche.
     expect(screen.getByTestId('ce-qui-est-pret')).toHaveTextContent(/12/);
-    expect(screen.getByTestId('ce-qui-est-pret')).toHaveTextContent(/6/);
+    // Les deux comptes vivent dans deux lignes : une carte relevée sans
+    // horaires est le cas courant, et une phrase unique forcerait à écrire un
+    // zéro pour celui des deux qui manque.
+    expect(screen.getByTestId('plages-pretes')).toHaveTextContent(/6/);
   });
 
   it('ne demande que trois choses', async () => {
@@ -197,4 +200,40 @@ describe('prise en main', () => {
     await waitFor(() => expect(termine).toHaveBeenCalledWith('gerant@salon.example'));
   });
 
+});
+
+describe('l’écran ne dit jamais avoir lu ce qu’il n’a pas lu', () => {
+  it('n’annonce pas « 0 prestation » quand rien n’a été relevé', async () => {
+    // **Le défaut relevé par Design.** La phrase unique annonçait « 0
+    // prestation et 0 plage sont déjà là » à un gérant dont rien n'avait été
+    // relevé : elle affirmait une lecture qui n'avait pas eu lieu, sur le
+    // premier écran qu'il voit de BIND et le seul qui doit lui donner envie de
+    // continuer.
+    await monter(
+      <PriseEnMainScreen jeton="j1" onTermine={jest.fn()} />,
+      clientDe({ '/handover/j1': { ...APERCU, prestations_preparees: 0, plages_preparees: 0 } }),
+    );
+    await waitFor(() => expect(screen.getByTestId('ce-qui-est-pret')).toBeTruthy());
+
+    expect(screen.getByTestId('ce-qui-est-pret')).toHaveTextContent(
+      en.priseEnMain.prestationsAVenir,
+    );
+    expect(screen.getByTestId('ce-qui-est-pret')).not.toHaveTextContent(/\b0\b/);
+    // Et pas de ligne vide à la place : rien du tout.
+    expect(screen.queryByTestId('plages-pretes')).toBeNull();
+  });
+
+  it('traite les deux comptes séparément', async () => {
+    // Une carte relevée sans horaires est le cas courant : la carte des prix
+    // est affichée au mur, les horaires sont sur la porte, et on ne
+    // photographie pas toujours les deux.
+    await monter(
+      <PriseEnMainScreen jeton="j1" onTermine={jest.fn()} />,
+      clientDe({ '/handover/j1': { ...APERCU, prestations_preparees: 4, plages_preparees: 0 } }),
+    );
+    await waitFor(() => expect(screen.getByTestId('ce-qui-est-pret')).toBeTruthy());
+
+    expect(screen.getByTestId('ce-qui-est-pret')).toHaveTextContent(/4/);
+    expect(screen.queryByTestId('plages-pretes')).toBeNull();
+  });
 });

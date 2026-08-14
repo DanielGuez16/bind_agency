@@ -16,6 +16,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ApiClient, ApiProvider } from '../src/api';
 import { I18nProvider } from '../src/i18n';
+import { en } from '../src/i18n/en';
 import { AccueilScreen, fondDAccueil } from '../src/screens/AccueilScreen';
 import { ThemeProvider } from '../src/theme';
 
@@ -204,6 +205,37 @@ describe('accueil, ce qui manque', () => {
     );
 
     expect(screen.getByTestId('porte-createur')).toBeTruthy();
+  });
+
+  it('porte le mot accentué sous son propre point d’accroche', async () => {
+    // **La suite de bout en bout lit la fonte sur ce nœud-là.** Un titre à bloc
+    // est une pile de vues dont un seul enfant porte du texte ; interroger le
+    // conteneur rendait la pile système — aucune famille n'y est déclarée — et
+    // le test de fonte tombait sur la structure au lieu de la police. Ce test
+    // garde le point d'accroche : le renommer ici casse la suite ailleurs, et
+    // il vaut mieux l'apprendre en trois secondes qu'en dix minutes de CI.
+    const api = new ApiClient({
+      baseUrl: 'https://api.test',
+      coffre: { lire: async () => null, ecrire: async () => {} },
+      fetchImpl: async () => {
+        throw new Error('hors ligne');
+      },
+    });
+    await render(
+      <SafeAreaProvider initialMetrics={IPHONE_A_ENCOCHE}>
+        <ThemeProvider role="creator">
+          <I18nProvider initialLocale="en">
+            <ApiProvider client={api}>
+              <AccueilScreen onChoisir={() => {}} onSeConnecter={() => {}} />
+            </ApiProvider>
+          </I18nProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>,
+    );
+
+    expect(screen.getByTestId('promesse-accueil-mot')).toBeTruthy();
+    // Et le mot est bien celui de la clé d'accent, pas le titre entier.
+    expect(screen.getByTestId('promesse-accueil-mot').props.children).toBe(en.auth.accrocheAccent);
   });
 });
 

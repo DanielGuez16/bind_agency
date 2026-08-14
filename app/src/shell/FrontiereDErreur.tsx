@@ -56,7 +56,7 @@ function EcranTombe({ rejouer }: { rejouer: () => void }) {
       testID="ecran-erreur-globale"
       style={{
         flex: 1,
-        backgroundColor: c['bg.canvas'],
+        backgroundColor: c['bg.page'],
         padding: density.screenPadding,
         justifyContent: 'center',
         gap: 16,

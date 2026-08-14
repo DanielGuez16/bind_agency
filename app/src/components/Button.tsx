@@ -47,9 +47,9 @@ export type ButtonProps = {
 };
 
 const HAUTEURS: Record<ButtonSize, number> = {
-  sm: size.control.sm,
-  md: size.control.md,
-  lg: size.control.lg,
+  sm: size.row,
+  md: size.field,
+  lg: size.button,
 };
 
 export function Button({
@@ -68,23 +68,31 @@ export function Button({
   const inerte = disabled || loading;
   const enfoncement = useEnfoncement(!inerte);
 
+  // **Le principal est une surface `brand.500`, et son texte est en encre.**
+  // Blanc sur `brand.500` donne 3,0:1 et échoue au seuil des petits corps ; à
+  // 15 px, l'encre donne 6,1:1. C'est la seule divergence assumée avec les
+  // visuels de la fondatrice, où le mot dans le bloc est blanc : à 200 px le
+  // blanc passe, à 15 px il échoue.
   const fond: Record<ButtonVariant, string | undefined> = {
-    primary: c['accent.default'],
-    secondary: c['bg.surface'],
+    primary: c['brand.500'],
+    secondary: undefined,
     ghost: undefined,
     danger: undefined,
   };
+  // Le secondaire porte un filet d'encre et non de teinte : deux oranges
+  // d'intensité différente sur le même écran créent une hiérarchie fausse
+  // entre deux actions de même niveau.
   const bordure: Record<ButtonVariant, string | undefined> = {
     primary: undefined,
-    secondary: c['border.default'],
+    secondary: c['line.ink'],
     ghost: undefined,
-    danger: c['status.danger'],
+    danger: c['status.danger.rule'],
   };
   const texte: Record<ButtonVariant, Parameters<typeof Texte>[0]['couleur']> = {
-    primary: 'accent.onAccent',
-    secondary: 'text.primary',
-    ghost: 'accent.default',
-    danger: 'status.danger',
+    primary: 'ink.onBrand',
+    secondary: 'ink.default',
+    ghost: 'brand.700',
+    danger: 'status.danger.text',
   };
 
   return (
@@ -101,16 +109,16 @@ export function Button({
       style={({ pressed }): ViewStyle => ({
         // La hauteur minimale de zone tactile prime sur la taille demandée :
         // un bouton `sm` de 36 reste pressable sur 44.
-        minHeight: Math.max(HAUTEURS[taille], size.tapMin),
+        minHeight: Math.max(HAUTEURS[taille], size.hit),
         paddingHorizontal: 16,
         paddingVertical: 8,
-        borderRadius: radius['radius.md'],
+        borderRadius: radius['radius.none'],
         borderWidth: bordure[variant] ? 1 : 0,
         borderColor: bordure[variant],
         backgroundColor: disabled
-          ? c['bg.raised']
+          ? c['bg.surface']
           : pressed && variant === 'primary'
-            ? c['accent.pressed']
+            ? c['brand.600']
             : fond[variant],
         alignItems: 'center',
         justifyContent: 'center',
@@ -122,10 +130,10 @@ export function Button({
         opacity: pressed && variant !== 'primary' ? 0.7 : 1,
       })}
     >
-      {loading ? <Anneau couleur={c[disabled ? 'text.disabled' : 'text.primary']} /> : null}
+      {loading ? <Anneau couleur={c[disabled ? 'ink.faint' : 'ink.default']} /> : null}
       <Texte
         variante="type.bodyStrong"
-        couleur={disabled ? 'text.disabled' : texte[variant]}
+        couleur={disabled ? 'ink.faint' : texte[variant]}
         align="center"
         style={{ flexShrink: 1 }}
       >
@@ -160,7 +168,7 @@ function Anneau({ couleur }: { couleur: string }) {
       style={{
         width: 15,
         height: 15,
-        borderRadius: 999,
+        borderRadius: radius['radius.pill'],
         borderWidth: 2,
         borderColor: couleur,
         // Un bord transparent donne l'arc : aucune image, aucun dégradé.

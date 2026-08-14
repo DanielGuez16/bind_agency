@@ -9,9 +9,13 @@
  * règle de facturation une décision de mise en page, à réécrire dans chaque
  * client.
  *
- * **Lecture seule.** La modification d'un plan touche la facturation et attend
- * Stripe : offrir un champ modifiable ici ferait croire à une action qui
- * n'existe pas.
+ * **Lecture seule, et l'écran le dit une fois, en haut.** La modification d'un
+ * plan touche la facturation et attend Stripe : offrir un champ modifiable ici
+ * ferait croire à une action qui n'existe pas. Le dire vaut mieux que ne rien
+ * dire, et **mieux que de griser un bouton** — un bouton grisé promet qu'il
+ * s'allumera, et rien ici ne s'allumera. La règle de la maison est que l'action
+ * impossible est retirée ; la mention en haut est ce qui la remplace, une seule
+ * fois, plutôt que six fois en gris.
  *
  * **Trois lignes ne se rempliront jamais** (campagne 2). Le catalogue compte
  * trois plans et n'a pas vocation à grossir : cet écran ne gagnera pas sa
@@ -61,6 +65,10 @@ export function PlansScreen() {
 
         return (
           <View style={{ gap: 20 }}>
+            <Texte variante="type.label" couleur="ink.mute" testID="lecture-seule">
+              {t('admin.plansLectureSeule')}
+            </Texte>
+
             <Totaux totaux={totaux} />
 
             <View>
@@ -105,8 +113,19 @@ export function PlansScreen() {
               />
             </View>
 
+            {/* **Un mensuel calculé n'est pas un prix mensuel.** Un plan
+                facturé à l'année porte un revenu mensuel qui est la division du
+                serveur ; posé dans la même colonne qu'un prix mensuel, il se
+                lit comme un tarif. La note le dit là où le chiffre est, pas
+                dans une légende générale. */}
+            {plans.some((plan) => plan.billing_interval === 'yearly') ? (
+              <Texte variante="type.caption" couleur="ink.mute" testID="note-annuel">
+                {t('admin.plansNoteAnnuel')}
+              </Texte>
+            ) : null}
+
             {totaux.devise === null ? (
-              <Texte variante="type.caption" couleur="text.muted" testID="devises-melees">
+              <Texte variante="type.caption" couleur="ink.mute" testID="devises-melees">
                 {t('admin.plansDevisesMelees')}
               </Texte>
             ) : null}
@@ -168,7 +187,7 @@ function Totaux({ totaux }: { totaux: Totaux }) {
         <Texte variante="type.figure">
           {totaux.devise ? montant(totaux.mrrCents, totaux.devise) : '—'}
         </Texte>
-        <Texte variante="type.caption" couleur="text.secondary">
+        <Texte variante="type.caption" couleur="ink.soft">
           {t('admin.plansMrrTotal')}
         </Texte>
       </View>
@@ -176,7 +195,7 @@ function Totaux({ totaux }: { totaux: Totaux }) {
         <Texte variante="type.figure">
           {String(totaux.actifs)}
         </Texte>
-        <Texte variante="type.caption" couleur="text.secondary">
+        <Texte variante="type.caption" couleur="ink.soft">
           {t('admin.plansSalonsAbonnes')}
         </Texte>
       </View>

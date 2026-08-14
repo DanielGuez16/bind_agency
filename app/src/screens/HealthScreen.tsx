@@ -140,7 +140,7 @@ export function HealthScreen({ apiUrl }: { apiUrl?: string | null }) {
             level="danger"
             body={adresse ? t('health.unreachable') : t('health.missingApiUrl')}
           />
-          <Texte variante="type.caption" couleur="text.secondary">
+          <Texte variante="type.caption" couleur="ink.soft">
             {adresse ? translateErrorCode(t, sonde.code) : t('health.missingApiUrlHelp')}
           </Texte>
         </View>

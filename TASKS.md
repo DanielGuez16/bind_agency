@@ -423,4 +423,46 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       jobs et trois issues — parti, écarté, reporté. **Les envois directs ont
       été supprimés** : deux façons d'envoyer un message serait le défaut
       lui-même. 20 tests, 15 mutations vérifiées*
+- [x] **BIND AGENCY v1.0 · le système visuel remplacé**
+      *La fondatrice a donné la direction artistique de son agence : le produit
+      passe du vert éditorial à l'orange. Remplacement de système, pas
+      ajustement — les jetons `accent.*`, `role.*` et les trois teintes de
+      palier disparaissent ensemble. Fin : les fontes livrées seules
+      (Bodoni Moda, Outfit, l'italique devenu un fichier et non un attribut) ;
+      la rampe orange où **`brand.500` ne s'écrit jamais**, tenue par une garde
+      statique à quatre formes et par un refus à l'exécution ; les rayons à
+      zéro et l'ombre de carte supprimée ; le rôle gardé **en matière** — encre,
+      os, papier ; les paliers passés de trois teintes à trois matières, dont la
+      progression ordinale se lit en niveaux de gris ; l'avertissement neutre au
+      glyphe obligatoire et le danger au cramoisi ; le focus du champ, annoncé
+      depuis la v0.4 et **jamais implémenté**, enfin en deux pixels d'encre ; et
+      une garde qui **compte les blocs orange écran par écran**, table
+      exhaustive, les écrans de travail quotidien à zéro pour une raison écrite.
+      Un champ réellement manquant — le temps de fauteuil des rapports — est
+      rendu **absent et non zéro** ; les trois autres, annoncés manquants par le
+      brief, étaient servis depuis des semaines et c'est la carte de passation
+      qui les sous-décrivait. Deux manques nommés : le logo vectoriel et
+      les trois images de satin, sans lesquelles `SurfaceSatin` n'est pas écrit
+      — un dégradé linéaire en attendant serait le cliché que la direction
+      évite. Le thème sombre est retiré : la v1.0 n'en livre pas, et en
+      reconstituer un demandait d'inventer une dizaine de valeurs qu'aucune
+      passation ne définit. 46 tests neufs, 12 mutations vérifiées*
+- [x] **Lots 2 et 3 · le commerce et l'administration dans le système v1.0**
+      *Fin : les rapports **ne lisent plus le montant que la réponse porte
+      encore** et comptent du temps de fauteuil ; une garde nomme les trois
+      écrans qui ont le droit d'afficher une somme, chacun avec sa raison.
+      L'annuaire est en lecture seule, tenu par deux gardes — l'écran sans
+      action, et le client d'API sans route de contact — parce qu'une lecture
+      seule tenue par la discipline finit par céder. Le bouton d'arbitrage
+      **nomme son écart** : « Approve without the location tag » plutôt
+      qu'« Approve », et l'attendu se lit en face du constaté, qui dit d'où il
+      vient. La journée se coupe par ce qu'elle demande et non par des statuts.
+      La prise en main n'annonce plus « 0 prestation lue ». Les plans disent
+      leur lecture seule une fois plutôt que de griser, et un mensuel calculé
+      porte sa note là où le chiffre est. Le mode terrain dit son avancement au
+      filet segmenté. 22 tests neufs, 7 mutations vérifiées.*
+      *Restent, faute de route : l'annuaire côté serveur, l'agrégat des
+      rapports, le point de comparaison de quartier sur la journée vide, les
+      deux blocs photographiés du terrain et le cochage prestation par
+      prestation — aucun n'a été contourné en inventant une donnée.*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire

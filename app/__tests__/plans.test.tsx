@@ -115,3 +115,35 @@ describe('l’écran des plans', () => {
     expect(within(screen.getByTestId('plan-p1')).getByText(en.admin.plansSansPreneur)).toBeTruthy();
   });
 });
+
+describe('lecture seule, dite une fois', () => {
+  it('annonce la lecture seule en haut, et ne grise aucun bouton', async () => {
+    // **Un bouton grisé promet qu'il s'allumera**, et rien ici ne s'allumera :
+    // la modification touche la facturation et attend Stripe. La règle de la
+    // maison est que l'action impossible est retirée ; la mention en haut est
+    // ce qui la remplace, une seule fois, plutôt que six fois en gris.
+    await monter([plan()]);
+    await waitFor(() => expect(screen.getByTestId('lecture-seule')).toBeTruthy());
+
+    const { readFileSync } = require('fs') as typeof import('fs');
+    const { join } = require('path') as typeof import('path');
+    const source = readFileSync(join(__dirname, '..', 'src', 'screens', 'PlansScreen.tsx'), 'utf-8');
+    expect(/disabled/.test(source)).toBe(false);
+    expect(/<Button/.test(source)).toBe(false);
+  });
+
+  it('avertit qu’un mensuel calculé n’est pas un prix mensuel', async () => {
+    // Posé dans la même colonne qu'un prix mensuel, le revenu mensuel d'un plan
+    // annuel se lit comme un tarif.
+    await monter([plan({ billing_interval: 'yearly' })]);
+    await waitFor(() => expect(screen.getByTestId('note-annuel')).toBeTruthy());
+  });
+
+  it('et se tait quand aucun plan n’est annuel', async () => {
+    // Une note qui ne concerne rien de ce qui est à l'écran apprend à ignorer
+    // les notes.
+    await monter([plan()]);
+    await waitFor(() => expect(screen.getByTestId('ecran-plans')).toBeTruthy());
+    expect(screen.queryByTestId('note-annuel')).toBeNull();
+  });
+});

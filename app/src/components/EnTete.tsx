@@ -70,11 +70,11 @@ export function EnTeteDEcran({
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 12 }}>
           <View style={{ flex: 1, gap: 2 }}>
             {surtitre ? (
-              <Texte variante="type.label" couleur="accent.default" testID="surtitre">
+              <Texte variante="type.label" couleur="brand.700" testID="surtitre">
                 {surtitre}
               </Texte>
             ) : null}
-            <Texte variante="type.display">{titre}</Texte>
+            <Texte variante="type.screenTitle">{titre}</Texte>
           </View>
           {droite}
         </View>
@@ -84,10 +84,10 @@ export function EnTeteDEcran({
             testID="compteurs"
             style={{
               flexDirection: 'row',
-              borderRadius: radius['radius.lg'],
+              borderRadius: radius['radius.none'],
               backgroundColor: c['bg.surface'],
               borderWidth: 1,
-              borderColor: c['border.subtle'],
+              borderColor: c['line.default'],
               paddingVertical: 10,
             }}
           >
@@ -101,13 +101,13 @@ export function EnTeteDEcran({
                   // Un filet entre les colonnes, jamais autour : le cadre est
                   // déjà porté par la carte.
                   borderLeftWidth: index === 0 ? 0 : 1,
-                  borderLeftColor: c['border.subtle'],
+                  borderLeftColor: c['line.default'],
                 }}
               >
-                <Texte variante="type.title" couleur={compteur.teinte ?? 'accent.default'}>
+                <Texte variante="type.section" couleur={compteur.teinte ?? 'brand.700'}>
                   {compteur.valeur}
                 </Texte>
-                <Texte variante="type.caption" couleur="text.secondary" align="center">
+                <Texte variante="type.caption" couleur="ink.soft" align="center">
                   {compteur.libelle}
                 </Texte>
               </View>
@@ -129,6 +129,6 @@ export function EnTeteDEcran({
 export function Filet({ marge = 0 }: { marge?: number }) {
   const c = useColors();
   return (
-    <View style={{ height: 1, backgroundColor: c['border.subtle'], marginVertical: marge }} />
+    <View style={{ height: 1, backgroundColor: c['line.default'], marginVertical: marge }} />
   );
 }

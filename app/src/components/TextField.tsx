@@ -7,6 +7,18 @@
  *
  * **Le focus épaissit la bordure sans halo**, et le padding est compensé pour
  * que le texte ne bouge pas d'un pixel quand on entre dans le champ.
+ *
+ * **Et cette bordure est une encre, jamais l'orange.** Sur un écran qui porte
+ * de l'orange — un bouton principal, un filet d'onglet actif, un badge de
+ * palier — un focus orange se perd dans le décor. Deux pixels d'encre, eux, ne
+ * se confondent avec rien. C'est aussi la seule marque de focus du système :
+ * la direction v1.0 n'a pas de halo, et un anneau flou n'existe pas en
+ * React Native sans une ombre, qui est réservée à ce qui flotte.
+ *
+ * Le commentaire annonçait ce focus depuis la v0.4 et **rien ne l'implémentait** :
+ * le champ n'écoutait ni `onFocus` ni `onBlur`, et la bordure restait à 1 px
+ * d'un bout à l'autre de la saisie. Un focus décrit dans un commentaire n'est
+ * pas un focus.
  */
 import { useState } from 'react';
 import { Pressable, TextInput, View, type KeyboardTypeOptions } from 'react-native';
@@ -76,25 +88,32 @@ export function TextField({
 }: TextFieldProps) {
   const c = useColors();
   const enErreur = errorText !== undefined;
+  const [enFocus, setEnFocus] = useState(false);
   // **Toujours masqué au départ**, y compris après une erreur : on ne laisse
   // pas un mot de passe révélé par un écran précédent.
   const [revele, setRevele] = useState(false);
 
   return (
     <View style={{ gap: 6 }}>
-      <Texte variante="type.label" couleur="text.secondary">
+      <Texte variante="type.label" couleur="ink.soft">
         {label}
       </Texte>
       <View
         style={{
-          minHeight: lignes ? 24 * lignes + 20 : size.control.md,
-          borderRadius: radius['radius.md'],
-          borderWidth: 1,
-          borderColor: enErreur ? c['status.danger'] : c['border.default'],
+          minHeight: lignes ? 24 * lignes + 20 : size.field,
+          borderRadius: radius['radius.none'],
+          // L'erreur prime sur le focus : un champ refusé qu'on rouvre doit
+          // continuer de dire qu'il est refusé.
+          borderWidth: enErreur || enFocus ? 2 : 1,
+          borderColor: enErreur
+            ? c['status.danger.rule']
+            : enFocus
+              ? c['line.ink']
+              : c['line.default'],
           backgroundColor: disabled
             ? c['bg.sunken']
             : enErreur
-              ? c['status.danger.subtle']
+              ? c['status.danger.surface']
               : 'transparent',
           justifyContent: lignes ? 'flex-start' : 'center',
           // La bascule vit dans la bordure, à droite du texte : posée
@@ -109,7 +128,7 @@ export function TextField({
           value={value}
           editable={!disabled}
           placeholder={placeholder}
-          placeholderTextColor={c['text.muted']}
+          placeholderTextColor={c['ink.mute']}
           keyboardType={CLAVIERS[keyboard]}
           // **`secureTextEntry` seul ne suffit pas.** Sur iOS, un champ
           // masqué que l'on révèle garde la correction automatique et la
@@ -126,11 +145,16 @@ export function TextField({
           // son texte verticalement et la première ligne flotte au milieu.
           textAlignVertical={lignes ? 'top' : 'center'}
           onChangeText={onChangeText}
+          onFocus={() => setEnFocus(true)}
+          onBlur={() => setEnFocus(false)}
           style={{
             flex: 1,
-            paddingHorizontal: 14,
-            paddingVertical: 10,
-            color: c[disabled ? 'text.disabled' : 'text.primary'],
+            // Le pixel de bordure gagné au focus est repris sur le padding :
+            // sans cette compensation, tout le texte se décale d'un pixel au
+            // moment précis où le curseur arrive dessus.
+            paddingHorizontal: enErreur || enFocus ? 13 : 14,
+            paddingVertical: enErreur || enFocus ? 9 : 10,
+            color: c[disabled ? 'ink.faint' : 'ink.default'],
             fontSize: 15,
             lineHeight: 23,
           }}
@@ -154,7 +178,7 @@ export function TextField({
           >
             <Icone
               nom={revele ? 'oeil-barre' : 'oeil'}
-              couleur={disabled ? 'text.disabled' : 'text.muted'}
+              couleur={disabled ? 'ink.faint' : 'ink.mute'}
               taille={20}
             />
           </Pressable>
@@ -167,16 +191,18 @@ export function TextField({
             style={{
               width: 8,
               height: 8,
-              borderRadius: 999,
-              backgroundColor: c['status.danger'],
+              borderRadius: radius['radius.pill'],
+              // Le filet du statut, pas son encre : c'est une pastille, une
+              // surface, et la v1.0 sépare les deux.
+              backgroundColor: c['status.danger.rule'],
             }}
           />
-          <Texte variante="type.caption" couleur="status.danger" style={{ flexShrink: 1 }}>
+          <Texte variante="type.caption" couleur="status.danger.text" style={{ flexShrink: 1 }}>
             {errorText}
           </Texte>
         </View>
       ) : helpText ? (
-        <Texte variante="type.caption" couleur="text.muted">
+        <Texte variante="type.caption" couleur="ink.mute">
           {helpText}
         </Texte>
       ) : null}

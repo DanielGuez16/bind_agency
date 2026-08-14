@@ -14,10 +14,10 @@
  */
 import { View } from 'react-native';
 
-import { tokens } from '../theme';
+import { produit } from '../theme';
 import { Chip } from './Chip';
 
-const MAX_VISIBLE = tokens.badge.maxVisible;
+const MAX_VISIBLE = produit.badge.maxVisible;
 
 export type BadgeDeProfil =
   | { genre: 'comportement'; label: string }
@@ -25,8 +25,8 @@ export type BadgeDeProfil =
 
 /** L'ordre du jeton, pas un ordre écrit ici. */
 const RANG: Record<BadgeDeProfil['genre'], number> = {
-  comportement: tokens.badge.priority.indexOf('behaviour'),
-  nouveau: tokens.badge.priority.indexOf('newcomer'),
+  comportement: produit.badge.priority.indexOf('behaviour'),
+  nouveau: produit.badge.priority.indexOf('newcomer'),
 };
 
 export function BadgesDeProfil({

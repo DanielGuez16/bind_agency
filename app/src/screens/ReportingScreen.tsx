@@ -1,10 +1,21 @@
 /**
  * Reporting du commerce : ce que sa participation lui a rapporté.
  *
- * **Le seul montant qu'un commerce voit, et il est du côté de ce qu'il
- * donne.** `valeur_offerte_cents` n'est pas un revenu, et le libellé le dit :
- * « ce que vous avez donné ». Sans lui, « douze publications » ne se met en
- * regard de rien.
+ * **Aucun montant, nulle part, et c'est un changement de la v1.1.** La page
+ * portait « ce que vous avez donné · 4 280,00 USD ». Elle n'aurait pas dû : la
+ * règle de la carte d'API est qu'aucun montant ne figure dans une réponse
+ * destinée aux applications créateur et commerce, et **même si la réponse en
+ * porte un, le client l'ignore**.
+ *
+ * Ce qui remplace le montant est le **temps de fauteuil** : c'est ce qu'un
+ * salon donne réellement, et il se calcule à partir de la durée des
+ * prestations sans jamais toucher à un prix. C'est aussi plus juste — un salon
+ * ne compare pas des euros, il compare ce qu'il a donné à ce qu'il a reçu.
+ *
+ * **L'écran commence par la phrase**, pas par les chiffres. C'est celle qu'un
+ * salon répète à son associé : tant de prestations données, tant de
+ * publications reçues. Les nombres qui la composent viennent ensuite, pour qui
+ * doute et veut vérifier.
  *
  * **Le taux nul ne s'affiche pas comme zéro.** Zéro sur zéro n'est pas zéro, et
  * afficher 0 % à un commerce qui n'a encore servi personne serait un reproche
@@ -79,13 +90,23 @@ export function ReportingScreen({ businessId }: { businessId: string }) {
     >
       {(vue) => (
         <View style={{ gap: 16 }}>
-          <Texte variante="type.caption" couleur="text.muted" testID="fenetre">
+          <Texte variante="type.caption" couleur="ink.mute" testID="fenetre">
             {t('reporting.fenetre', {
               // Le mois en lettres : « 10/07/2026 » se lit octobre à Miami et
               // juillet à Paris, et un rapport qui se lit à deux mois d'écart
               // ne se lit pas.
               debut: jourLisible(vue.debut, locale),
               fin: jourLisible(vue.fin, locale),
+            })}
+          </Texte>
+
+          {/* **La phrase d'abord.** C'est celle qu'un salon répète à son
+              associé, et elle contient déjà la réponse ; les chiffres qui la
+              composent servent à la vérifier, pas à la trouver. */}
+          <Texte variante="type.section" testID="phrase-du-rapport">
+            {t('reporting.phrase', {
+              prestations: vue.consommations,
+              publications: vue.publications,
             })}
           </Texte>
 
@@ -114,12 +135,25 @@ export function ReportingScreen({ businessId }: { businessId: string }) {
             <DataRow label={t('reporting.nonHonorees')} value={String(vue.non_honorees)} chiffre />
           </Section>
 
-          <Section titre={t('reporting.sectionValeur')}>
+          {/* **Le temps de fauteuil, à la place du montant.** Absent n'est pas
+              zéro : « 0 heure donnée » à un salon qui a servi quatre-vingt-huit
+              prestations serait faux, et c'est précisément le chiffre censé le
+              convaincre. Tant qu'il n'est pas servi, la ligne le dit. */}
+          <Section titre={t('reporting.sectionDonne')}>
             <DataRow
-              testID="valeur-offerte"
-              label={t('reporting.valeurOfferte')}
-              value={`${(vue.valeur_offerte_cents / 100).toFixed(2)} ${vue.currency}`}
-              chiffre
+              testID="temps-de-fauteuil"
+              label={t('reporting.tempsDeFauteuil')}
+              value={
+                typeof vue.temps_de_fauteuil_minutes === 'number'
+                  ? t('reporting.heures', {
+                      heures: formatNumber(
+                        Math.round(vue.temps_de_fauteuil_minutes / 60),
+                        locale,
+                      ),
+                    })
+                  : t('reporting.tempsIndisponible')
+              }
+              chiffre={typeof vue.temps_de_fauteuil_minutes === 'number'}
             />
           </Section>
 
@@ -148,7 +182,7 @@ export function ReportingScreen({ businessId }: { businessId: string }) {
 
           {vue.par_item.length ? (
             <View style={{ gap: 4 }}>
-              <Texte variante="type.label" couleur="text.secondary">
+              <Texte variante="type.label" couleur="ink.soft">
                 {t('reporting.parItem')}
               </Texte>
               {vue.par_item.map((ligne) => (
@@ -238,7 +272,7 @@ function numeroDeSemaine(jour: Date): number {
 function Section({ titre, children }: { titre: string; children: React.ReactNode }) {
   return (
     <View style={{ gap: 4 }}>
-      <Texte variante="type.label" couleur="text.secondary">
+      <Texte variante="type.label" couleur="ink.soft">
         {titre}
       </Texte>
       {children}
@@ -314,18 +348,18 @@ function Reperes({ vue }: { vue: Reporting }) {
       {reperes.map((repere) => (
         <View key={repere.cle} style={{ width: 260, gap: 2 }} testID={`repere-${repere.cle}`}>
           <Texte
-            variante={repere.chiffre ? 'type.figure' : 'type.heading'}
+            variante={repere.chiffre ? 'type.figure' : 'type.bodyStrong'}
             testID={repere.cle === 'taux' ? 'taux' : undefined}
           >
             {repere.valeur}
           </Texte>
-          <Texte variante="type.caption" couleur="text.secondary">
+          <Texte variante="type.caption" couleur="ink.soft">
             {repere.libelle}
           </Texte>
           {repere.note ? (
             <Texte
               variante="type.caption"
-              couleur="text.muted"
+              couleur="ink.mute"
               testID={repere.cle === 'taux' ? 'taux-aide' : 'note-portee'}
             >
               {repere.note}

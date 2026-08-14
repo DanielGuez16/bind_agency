@@ -36,7 +36,15 @@ import { View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
 import { useApi, type FichePreparee, type LienRemis } from '../api';
-import { Button, Chip, EmptyState, StatusMessage, TextField, Texte } from '../components';
+import {
+  Button,
+  Chip,
+  EmptyState,
+  FiletSegmente,
+  StatusMessage,
+  Texte,
+  TextField,
+} from '../components';
 import { formatDate } from '../format';
 import { useI18n } from '../i18n';
 import { codeColors, radius, useColors } from '../theme';
@@ -138,6 +146,13 @@ export function TerrainScreen() {
     }
   }
 
+  // Ce qui est réellement saisi, et non ce qui est obligatoire : la fiche part
+  // avec le nom seul, et le filet dit ce qu'il reste à gagner, pas ce qui
+  // bloque. Une fiche à trois champs vaut mieux qu'une fiche abandonnée.
+  const remplis = [brouillon.nom, brouillon.adresse, brouillon.telephone].filter(
+    (valeur) => valeur.trim().length > 0,
+  ).length;
+
   /**
    * Ce qui ne dépend pas de la liste : le refus s'il y en a un, et les trois
    * champs. Rendu dans l'état vide comme dans l'état nominal — construit une
@@ -149,7 +164,19 @@ export function TerrainScreen() {
 
       {/* Préparer, en trois champs. Debout, entre deux clients. */}
       <View style={{ gap: 12 }} testID="formulaire-de-fiche">
-        <Texte variante="type.heading">{t('terrain.preparer')}</Texte>
+        <Texte variante="type.bodyStrong">{t('terrain.preparer')}</Texte>
+        {/* **Le filet segmenté, repris des carrousels de la marque.** Il
+            remplace le compteur « 2 sur 3 » : debout, à une main, entre deux
+            clientes, on voit où l'on en est sans lire. L'orange y est admis
+            alors qu'il est compté ailleurs, parce que le filet ne porte aucun
+            texte — c'est une surface, comme le filet d'onglet actif, et la
+            règle du bloc ne parle que du bloc. */}
+        <FiletSegmente
+          etapes={3}
+          faites={remplis}
+          accessibilityLabel={t('terrain.avancement')}
+          testID="avancement-de-la-fiche"
+        />
         <TextField
           label={t('terrain.nom')}
           value={brouillon.nom}
@@ -203,13 +230,13 @@ export function TerrainScreen() {
                 alignItems: 'center',
                 gap: 12,
                 padding: 20,
-                borderRadius: radius['radius.md'],
+                borderRadius: radius['radius.none'],
                 backgroundColor: c['bg.surface'],
                 borderWidth: 1,
-                borderColor: c['border.strong'],
+                borderColor: c['line.strong'],
               }}
             >
-              <Texte variante="type.label" couleur="text.secondary">
+              <Texte variante="type.label" couleur="ink.soft">
                 {t('terrain.aScanner')}
               </Texte>
               {/* **Sombre sur clair, et non l'inverse.** Les deux mêmes
@@ -221,7 +248,7 @@ export function TerrainScreen() {
                 style={{
                   padding: 12,
                   backgroundColor: codeColors.fg,
-                  borderRadius: radius['radius.sm'],
+                  borderRadius: radius['radius.none'],
                 }}
               >
                 <QRCode
@@ -235,7 +262,7 @@ export function TerrainScreen() {
               <Texte variante="type.mono" testID="adresse-du-lien">
                 {lien.url}
               </Texte>
-              <Texte variante="type.caption" couleur="text.muted">
+              <Texte variante="type.caption" couleur="ink.mute">
                 {t('terrain.expire', {
                   quand: formatDate(lien.expires_at, locale, FUSEAU),
                 })}
@@ -253,7 +280,7 @@ export function TerrainScreen() {
 
           {/* Le suivi. Les fiches assumées y restent. */}
           <View style={{ gap: 12 }}>
-            <Texte variante="type.heading">{t('terrain.suivi')}</Texte>
+            <Texte variante="type.bodyStrong">{t('terrain.suivi')}</Texte>
             {fiches.map((fiche) => (
               <LigneDeFiche
                 key={fiche.business_id}
@@ -288,10 +315,10 @@ function LigneDeFiche({
       style={{
         gap: 8,
         padding: 16,
-        borderRadius: radius['radius.md'],
+        borderRadius: radius['radius.none'],
         backgroundColor: c['bg.surface'],
         borderWidth: 1,
-        borderColor: c['border.subtle'],
+        borderColor: c['line.default'],
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -304,11 +331,11 @@ function LigneDeFiche({
         <Chip label={t(`terrain.etat.${etat}`)} testID={`etat-${fiche.business_id}`} />
       </View>
       {fiche.address ? (
-        <Texte variante="type.caption" couleur="text.muted">
+        <Texte variante="type.caption" couleur="ink.mute">
           {fiche.address}
         </Texte>
       ) : null}
-      <Texte variante="type.caption" couleur="text.muted">
+      <Texte variante="type.caption" couleur="ink.mute">
         {t('terrain.preparee', { quand: formatDate(fiche.prepared_at, locale, FUSEAU) })}
       </Texte>
 

@@ -59,7 +59,7 @@ export function BarresParPeriode({
       <View style={{ gap: 2 }}>
         <Texte variante="type.label">{titre}</Texte>
         {soustitre ? (
-          <Texte variante="type.caption" couleur="text.secondary">
+          <Texte variante="type.caption" couleur="ink.soft">
             {soustitre}
           </Texte>
         ) : null}
@@ -70,7 +70,7 @@ export function BarresParPeriode({
             valeurs oblige à survoler, ce qu'un doigt ne fait pas. */}
         <View style={{ height: HAUTEUR, justifyContent: 'space-between' }}>
           {Array.from({ length: REPERES }, (_, rang) => (
-            <Texte key={rang} variante="type.mono" couleur="text.muted" style={{ fontSize: 11 }}>
+            <Texte key={rang} variante="type.mono" couleur="ink.mute" style={{ fontSize: 11 }}>
               {Math.round((sommet * (REPERES - 1 - rang)) / (REPERES - 1))}
             </Texte>
           ))}
@@ -81,7 +81,7 @@ export function BarresParPeriode({
             {Array.from({ length: REPERES }, (_, rang) => (
               <View
                 key={rang}
-                style={{ borderBottomWidth: 1, borderBottomColor: c['border.subtle'] }}
+                style={{ borderBottomWidth: 1, borderBottomColor: c['line.default'] }}
               />
             ))}
           </View>
@@ -109,9 +109,9 @@ export function BarresParPeriode({
                   // Une barre à zéro garde un trait : elle dit « rien », ce
                   // qui n'est pas la même chose que « pas de donnée ».
                   height: Math.max(1, (point.valeur / sommet) * HAUTEUR),
-                  backgroundColor: c['accent.default'],
-                  borderTopLeftRadius: radius['radius.sm'],
-                  borderTopRightRadius: radius['radius.sm'],
+                  backgroundColor: c['brand.700'],
+                  borderTopLeftRadius: radius['radius.none'],
+                  borderTopRightRadius: radius['radius.none'],
                 }}
               />
             ))}
@@ -124,7 +124,7 @@ export function BarresParPeriode({
           <Texte
             key={point.etiquette}
             variante="type.mono"
-            couleur="text.muted"
+            couleur="ink.mute"
             align="center"
             style={{ flex: 1, fontSize: 11 }}
           >
@@ -178,11 +178,11 @@ export function BarresParPalier({
                 width: `${Math.max(1, (ligne.valeur / sommet) * 100)}%`,
                 height: 20,
                 backgroundColor: c[`tier.${ligne.palier}` as ColorName],
-                borderRadius: radius['radius.sm'],
+                borderRadius: radius['radius.none'],
               }}
             />
           </View>
-          <Texte variante="type.mono" couleur="text.secondary" style={{ width: 36 }}>
+          <Texte variante="type.mono" couleur="ink.soft" style={{ width: 36 }}>
             {ligne.valeur}
           </Texte>
         </View>

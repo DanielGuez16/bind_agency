@@ -8,7 +8,7 @@
 import { useEffect, useRef } from 'react';
 import { Animated, Pressable } from 'react-native';
 
-import { motion, useColors } from '../theme';
+import { motion, radius, useColors } from '../theme';
 
 export type ToggleProps = {
   value: boolean;
@@ -31,7 +31,7 @@ export function Toggle({
   useEffect(() => {
     Animated.timing(position, {
       toValue: value ? 1 : 0,
-      duration: motion.durationFast,
+      duration: motion.fast,
       useNativeDriver: true,
     }).start();
   }, [position, value]);
@@ -48,10 +48,10 @@ export function Toggle({
       style={{
         width: 40,
         height: 22,
-        borderRadius: 999,
+        borderRadius: radius['radius.pill'],
         justifyContent: 'center',
         paddingHorizontal: 3,
-        backgroundColor: value ? c['accent.default'] : c['border.default'],
+        backgroundColor: value ? c['brand.700'] : c['line.default'],
         opacity: disabled ? 0.5 : 1,
       }}
     >
@@ -59,13 +59,13 @@ export function Toggle({
         style={{
           width: 16,
           height: 16,
-          borderRadius: 999,
+          borderRadius: radius['radius.pill'],
           // La passation dit « pastille blanche ». Le blanc ne marche que dans
           // un thème : en clair, une pastille blanche sur l'accent sombre passe,
           // mais éteinte sur `border.default` clair elle disparaît. Deux jetons
           // règlent les deux cas dans les deux thèmes — `accent.onAccent` est
           // par construction lisible sur l'accent, `text.primary` sur le fond.
-          backgroundColor: value ? c['accent.onAccent'] : c['text.primary'],
+          backgroundColor: value ? c['ink.onBrand'] : c['ink.default'],
           transform: [
             { translateX: position.interpolate({ inputRange: [0, 1], outputRange: [0, 18] }) },
           ],

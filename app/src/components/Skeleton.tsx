@@ -63,7 +63,7 @@ function useBoucleDOpacite(decalage: number) {
 export function SkeletonBox({
   width,
   height,
-  rayon = radius['radius.md'],
+  rayon = radius['radius.none'],
   decalage = 0,
   testID,
 }: {
@@ -99,7 +99,7 @@ export function SkeletonLine({
   width?: number | `${number}%`;
   decalage?: number;
 }) {
-  return <SkeletonBox width={width} height={14} rayon={radius['radius.sm']} decalage={decalage} />;
+  return <SkeletonBox width={width} height={14} rayon={radius['radius.none']} decalage={decalage} />;
 }
 
 /** La géométrie de `BusinessCard`, à l'identique. */
@@ -109,9 +109,9 @@ export function SkeletonCard({ testID }: { testID?: string }) {
     <View
       testID={testID}
       style={{
-        borderRadius: radius['radius.lg'],
+        borderRadius: radius['radius.none'],
         borderWidth: 1,
-        borderColor: c['border.subtle'],
+        borderColor: c['line.default'],
         overflow: 'hidden',
       }}
     >

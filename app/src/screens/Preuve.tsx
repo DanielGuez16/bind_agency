@@ -88,7 +88,7 @@ export function PreuveSoumise({
       <View
         style={{
           height: APERCU,
-          borderRadius: radius['radius.lg'],
+          borderRadius: radius['radius.none'],
           overflow: 'hidden',
           backgroundColor: c['bg.sunken'],
           alignItems: 'center',
@@ -106,8 +106,8 @@ export function PreuveSoumise({
         ) : null}
         {vue.etat === 'sans_objet' ? (
           <View style={{ alignItems: 'center', gap: 6, padding: 16 }} testID="preuve-sans-objet">
-            <Icone nom="image" couleur="text.muted" taille={28} />
-            <Texte variante="type.caption" couleur="text.secondary" align="center">
+            <Icone nom="image" couleur="ink.mute" taille={28} />
+            <Texte variante="type.caption" couleur="ink.soft" align="center">
               {t('commerce.preuveSansImage')}
             </Texte>
           </View>
@@ -126,7 +126,7 @@ export function PreuveSoumise({
           onPress={() => void Linking.openURL(soumission.source_url!)}
           testID="ouvrir-la-publication"
         >
-          <Texte variante="type.caption" couleur="accent.default">
+          <Texte variante="type.caption" couleur="brand.700">
             {t('commerce.preuveOuvrirSource')}
           </Texte>
         </Pressable>
@@ -137,16 +137,16 @@ export function PreuveSoumise({
           pas l'avoir vérifiée. */}
       {mentionAttendue || lieuAttendu ? (
         <View style={{ gap: 4 }} testID="ce-qui-etait-attendu">
-          <Texte variante="type.label" couleur="text.secondary">
+          <Texte variante="type.label" couleur="ink.soft">
             {t('commerce.preuveAttendu')}
           </Texte>
           {mentionAttendue ? (
-            <Texte variante="type.caption" couleur="text.secondary">
+            <Texte variante="type.caption" couleur="ink.soft">
               {t('commerce.preuveMention', { mention: mentionAttendue })}
             </Texte>
           ) : null}
           {lieuAttendu ? (
-            <Texte variante="type.caption" couleur="text.secondary">
+            <Texte variante="type.caption" couleur="ink.soft">
               {t('commerce.preuveLieu')}
             </Texte>
           ) : null}

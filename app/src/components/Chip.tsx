@@ -24,13 +24,13 @@ export function Chip({ label, selected = false, onPress, testID }: ChipProps) {
       style={{
         paddingVertical: 7,
         paddingHorizontal: 13,
-        borderRadius: radius['radius.full'],
+        borderRadius: radius['radius.pill'],
         borderWidth: selected ? 0 : 1,
-        borderColor: c['border.default'],
+        borderColor: c['line.default'],
         backgroundColor: selected ? c['bg.inverse'] : 'transparent',
       }}
     >
-      <Texte variante="type.label" couleur={selected ? 'text.inverse' : 'text.secondary'}>
+      <Texte variante="type.label" couleur={selected ? 'ink.onDark' : 'ink.soft'}>
         {label}
       </Texte>
     </View>

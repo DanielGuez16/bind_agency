@@ -11,9 +11,15 @@
  * qu'il avait, avec un bandeau qui dit depuis quand. Masquer reviendrait à
  * effacer une information juste parce qu'elle a vieilli.
  *
- * **Le liseré du rôle commerce est ici**, pas dans chaque écran : 3 px en haut,
- * `role.merchant`. C'est le seul repère qui distingue les deux applications
- * quand un téléphone passe de main en main au comptoir.
+ * **Le liseré du rôle est ici**, pas dans chaque écran : 3 px en haut. C'est le
+ * seul repère qui distingue les deux applications quand un téléphone passe de
+ * main en main au comptoir — et il est le seul, parce qu'en compact il n'y a
+ * pas de barre latérale pour porter la matière du rôle.
+ *
+ * **Il ne porte plus de teinte.** La v1.0 supprime `role.merchant` ; ce qui
+ * reste est la matière du rôle, dont ce filet prend la ligne : sourde et chaude
+ * pour le commerce, encre pour l'administration, rien pour la créatrice, dont
+ * la matière est le papier — c'est-à-dire l'absence de marque.
  */
 import type { ReactNode } from 'react';
 import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
@@ -74,7 +80,7 @@ export function Ecran<T>({
   vide,
   testID,
 }: EcranProps<T>) {
-  const { color: c, role, density } = useTheme();
+  const { color: c, role, density, matiere } = useTheme();
   const { large } = useGabarit();
   const { t } = useI18n();
   const { messageDErreur } = useApi();
@@ -107,7 +113,7 @@ export function Ecran<T>({
               panne qui ne le concerne pas. */}
           {requete.donnees !== null ? (
             <>
-              <Texte variante="type.caption" couleur="text.muted">
+              <Texte variante="type.caption" couleur="ink.mute">
                 {t('etats.vuA', { quand: quand(t, requete.vuA) })}
               </Texte>
               {children(requete.donnees)}
@@ -135,11 +141,14 @@ export function Ecran<T>({
   })();
 
   return (
-    <View testID={testID} style={{ flex: 1, backgroundColor: c['bg.canvas'] }}>
+    <View testID={testID} style={{ flex: 1, backgroundColor: c['bg.page'] }}>
       {/* Le liseré du rôle. Trois pixels, une seule fois, ici. */}
-      {role === 'merchant' ? (
-        <View testID="lisere-commerce" style={{ height: 3, backgroundColor: c['role.merchant'] }} />
-      ) : null}
+      {role === 'creator' ? null : (
+        <View
+          testID={role === 'merchant' ? 'lisere-commerce' : 'lisere-administration'}
+          style={{ height: 3, backgroundColor: c[matiere.ligne] }}
+        />
+      )}
       {large ? (
         <BarreDeTitre titre={titre ?? ''} onRetour={onRetour} fraicheur={fraicheur} />
       ) : null}
@@ -164,7 +173,7 @@ export function Ecran<T>({
           <RefreshControl
             refreshing={requete.etat === 'pret' && requete.rechargement}
             onRefresh={requete.recharger}
-            tintColor={c['text.secondary']}
+            tintColor={c['ink.soft']}
           />
         }
       >
@@ -179,8 +188,8 @@ export function Ecran<T>({
             style={{ flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start' }}
             testID="retour"
           >
-            <Icone nom="retour" couleur="text.secondary" taille={18} />
-            <Texte variante="type.label" couleur="text.secondary">
+            <Icone nom="retour" couleur="ink.soft" taille={18} />
+            <Texte variante="type.label" couleur="ink.soft">
               {t('common.retour')}
             </Texte>
           </Pressable>
@@ -189,7 +198,7 @@ export function Ecran<T>({
             barre de titre, fixe ; le répéter dans le flux donnait « Today »
             au-dessus de « Today ». Un en-tête fourni par l'écran, lui, reste :
             il porte autre chose que le nom. */}
-        {entete ?? (titre && !large ? <Texte variante="type.display">{titre}</Texte> : null)}
+        {entete ?? (titre && !large ? <Texte variante="type.screenTitle">{titre}</Texte> : null)}
         {corps}
       </ScrollView>
     </View>

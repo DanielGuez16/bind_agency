@@ -614,10 +614,26 @@ export type Reporting = {
   publications_attendues: number;
   non_honorees: number;
   /**
-   * Ce que le commerce a **donné**, pas ce qu'il a gagné. C'est le seul montant
-   * qu'un commerce voit, et il ne s'affiche pas comme un revenu.
+   * Ce que le commerce a **donné**, en centimes.
+   *
+   * **Le client ne l'affiche plus.** La règle de la carte d'API est qu'aucun
+   * montant ne figure dans une réponse destinée aux applications créateur et
+   * commerce ; la réponse en porte encore un, et le client l'ignore. Ce n'est
+   * pas cosmétique : ce qui convainc un salon se dit en prestations, en
+   * publications et en délais tenus, et c'est plus juste — un salon ne compare
+   * pas des euros, il compare ce qu'il a donné à ce qu'il a reçu.
    */
   valeur_offerte_cents: number;
+  /**
+   * Le temps de fauteuil donné, en minutes, qui remplace le montant.
+   *
+   * **Annoncé, pas encore servi.** Il se calcule à partir de la durée des
+   * prestations consommées, sans jamais toucher à un prix. Absent n'est pas
+   * zéro : « 0 heure donnée » à un salon qui a servi quatre-vingt-huit
+   * prestations serait faux, et c'est exactement le chiffre qui doit le
+   * convaincre.
+   */
+  temps_de_fauteuil_minutes?: number | null;
   /** Ordre de grandeur, jamais une audience atteinte. */
   portee_approximative: number;
   /** Nul quand rien n'a été servi : zéro sur zéro n'est pas zéro. */

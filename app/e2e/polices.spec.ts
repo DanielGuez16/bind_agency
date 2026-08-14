@@ -28,10 +28,11 @@ import { expect, test } from '@playwright/test';
 /**
  * Les noms **avec graisse**, tels que le thème les demande.
  *
- * `nomDeFonte` rend « Familjen Grotesk 600 » et non « Familjen Grotesk » : sur
- * iOS et Android, `fontWeight` ne choisit pas un fichier, et une graisse
- * absente est synthétisée par le moteur. Chaque graisse est donc enregistrée
- * sous son propre nom, et c'est ce nom-là qu'il faut chercher.
+ * `nomDeFonte` rend « Outfit_600 » et non « Outfit » : sur iOS et Android,
+ * `fontWeight` ne choisit pas un fichier, et une graisse absente est
+ * synthétisée par le moteur. Chaque graisse — et depuis la v1.0 chaque voix —
+ * est donc enregistrée sous son propre nom, et c'est ce nom-là qu'il faut
+ * chercher.
  */
 const FACES_ATTENDUES = ['BodoniModa_', 'Outfit_', 'IBMPlexMono_'];
 
@@ -112,8 +113,12 @@ test('le texte rendu emploie réellement la fonte, et non la pile système', asy
   await expect(page.getByTestId('ecran-accueil')).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
 
+  // **Le mot accentué, et non le titre entier.** Depuis la v1.0, un titre à
+  // bloc est une pile de vues dont un seul nœud porte du texte ; lire le
+  // conteneur rendait la pile système parce qu'aucune famille n'y est
+  // déclarée — et le test tombait sur la structure, pas sur la fonte.
   const employee = await page
-    .getByTestId('promesse-accueil')
+    .getByTestId('promesse-accueil-mot')
     .evaluate((noeud) => getComputedStyle(noeud).fontFamily);
 
   // La pile système de `react-native-web` commence par `-apple-system` : la
@@ -130,7 +135,7 @@ test('aucune graisse n’est synthétisée par-dessus une face déjà dessinée'
   await expect(page.getByTestId('ecran-accueil')).toBeVisible();
 
   const graisse = await page
-    .getByTestId('promesse-accueil')
+    .getByTestId('promesse-accueil-mot')
     .evaluate((noeud) => getComputedStyle(noeud).fontWeight);
 
   expect(graisse, 'une graisse demandée en plus du nom fait doubler le gras').toBe('400');

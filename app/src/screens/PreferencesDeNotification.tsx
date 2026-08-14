@@ -108,10 +108,10 @@ export function PreferencesDeNotification({ role }: { role: string }) {
 
   return (
     <View style={{ gap: 8 }} testID="preferences-de-notification">
-      <Texte variante="type.label" couleur="text.secondary">
+      <Texte variante="type.label" couleur="ink.soft">
         {t('reglages.notifications')}
       </Texte>
-      <Texte variante="type.caption" couleur="text.muted">
+      <Texte variante="type.caption" couleur="ink.mute">
         {t('reglages.notificationsAide')}
       </Texte>
 

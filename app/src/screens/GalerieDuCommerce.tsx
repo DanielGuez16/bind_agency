@@ -93,17 +93,17 @@ export function GalerieDuCommerce({
 
   return (
     <View style={{ gap: 10 }} testID="galerie-du-commerce">
-      <Texte variante="type.label" couleur="text.secondary">
+      <Texte variante="type.label" couleur="ink.soft">
         {t('composition.galerieTitre')}
       </Texte>
-      <Texte variante="type.caption" couleur="text.muted">
+      <Texte variante="type.caption" couleur="ink.mute">
         {t('composition.galerieAide')}
       </Texte>
 
       {echec ? <StatusMessage level="danger" body={echec} testID="echec-galerie" /> : null}
 
       {photos.length === 0 ? (
-        <Texte variante="type.caption" couleur="text.muted" testID="galerie-vide">
+        <Texte variante="type.caption" couleur="ink.mute" testID="galerie-vide">
           {t('composition.galerieVide')}
         </Texte>
       ) : null}
@@ -123,23 +123,23 @@ export function GalerieDuCommerce({
               alignItems: 'center',
               gap: 12,
               padding: 8,
-              borderRadius: radius['radius.md'],
+              borderRadius: radius['radius.none'],
               borderWidth: 1,
-              borderColor: estCouverture ? c['accent.default'] : c['border.subtle'],
+              borderColor: estCouverture ? c['brand.700'] : c['line.default'],
               backgroundColor: c['bg.surface'],
             }}
           >
             <Image
               source={{ uri: api.urlDuMedia(photo.storage_key) ?? undefined }}
-              style={{ width: 56, height: 56, borderRadius: radius['radius.sm'] }}
+              style={{ width: 56, height: 56, borderRadius: radius['radius.none'] }}
               resizeMode="cover"
             />
 
             <View style={{ flex: 1, gap: 2 }}>
               {estCouverture ? (
                 <Texte
-                  variante="type.eyebrow"
-                  couleur="accent.default"
+                  variante="type.monoSmall"
+                  couleur="brand.700"
                   testID={`couverture-${photo.id}`}
                 >
                   {t('composition.galerieEstCouverture')}
@@ -151,13 +151,13 @@ export function GalerieDuCommerce({
                   onPress={() => void agir(() => api.definirLaCouverture(businessId, photo.storage_key))}
                   testID={`definir-couverture-${photo.id}`}
                 >
-                  <Texte variante="type.caption" couleur="accent.default">
+                  <Texte variante="type.caption" couleur="brand.700">
                     {t('composition.galerieCouverture')}
                   </Texte>
                 </Pressable>
               )}
               {photo.alt_text ? (
-                <Texte variante="type.caption" couleur="text.muted" ellipseSurNomPropre>
+                <Texte variante="type.caption" couleur="ink.mute" ellipseSurNomPropre>
                   {photo.alt_text}
                 </Texte>
               ) : null}
@@ -175,7 +175,7 @@ export function GalerieDuCommerce({
                 onPress={() => void deplacer(rang, rang - 1)}
                 testID={`monter-${photo.id}`}
               >
-                <Icone nom="monte" couleur="text.secondary" taille={20} />
+                <Icone nom="monte" couleur="ink.soft" taille={20} />
               </Pressable>
             ) : null}
             {rang < photos.length - 1 ? (
@@ -187,7 +187,7 @@ export function GalerieDuCommerce({
                 onPress={() => void deplacer(rang, rang + 1)}
                 testID={`descendre-${photo.id}`}
               >
-                <Icone nom="descend" couleur="text.secondary" taille={20} />
+                <Icone nom="descend" couleur="ink.soft" taille={20} />
               </Pressable>
             ) : null}
 
@@ -199,7 +199,7 @@ export function GalerieDuCommerce({
               onPress={() => void agir(() => api.retirerUnePhoto(businessId, photo.id))}
               testID={`retirer-${photo.id}`}
             >
-              <Icone nom="croix" couleur="status.danger" taille={18} />
+              <Icone nom="croix" couleur="status.danger.text" taille={18} />
             </Pressable>
           </View>
         );
@@ -219,19 +219,19 @@ export function GalerieDuCommerce({
           justifyContent: 'center',
           gap: 8,
           minHeight: 48,
-          borderRadius: radius['radius.md'],
+          borderRadius: radius['radius.none'],
           borderWidth: 1,
           borderStyle: 'dashed',
-          borderColor: c['border.default'],
+          borderColor: c['line.default'],
         }}
       >
-        <Icone nom="image" couleur="accent.default" taille={20} />
-        <Texte variante="type.label" couleur="accent.default">
+        <Icone nom="image" couleur="brand.700" taille={20} />
+        <Texte variante="type.label" couleur="brand.700">
           {t('composition.galerieAjouter')}
         </Texte>
       </Pressable>
 
-      <Texte variante="type.caption" couleur="text.muted">
+      <Texte variante="type.caption" couleur="ink.mute">
         {t('composition.galerieCouvertureAide')}
       </Texte>
     </View>

@@ -37,7 +37,7 @@ export function TableHeader({ colonnes, testID }: { colonnes: Colonne[]; testID?
         alignItems: 'center',
         paddingHorizontal: 12,
         borderBottomWidth: 1,
-        borderBottomColor: c['border.default'],
+        borderBottomColor: c['line.default'],
       }}
     >
       {colonnes.map((colonne) => (
@@ -50,7 +50,7 @@ export function TableHeader({ colonnes, testID }: { colonnes: Colonne[]; testID?
             paddingRight: colonne.chiffre ? GOUTTIERE : 0,
           }}
         >
-          <Texte variante="type.caption" couleur="text.muted">
+          <Texte variante="type.caption" couleur="ink.mute">
             {colonne.label}
           </Texte>
         </View>
@@ -85,10 +85,10 @@ export function TableRow({
         alignItems: 'center',
         paddingHorizontal: 12,
         borderBottomWidth: 1,
-        borderBottomColor: c['border.subtle'],
-        backgroundColor: actif ? c['accent.subtle'] : 'transparent',
+        borderBottomColor: c['line.default'],
+        backgroundColor: actif ? c['brand.50'] : 'transparent',
         borderLeftWidth: 3,
-        borderLeftColor: actif ? c['accent.default'] : 'transparent',
+        borderLeftColor: actif ? c['brand.700'] : 'transparent',
       }}
     >
       {colonnes.map((colonne) => (
@@ -119,11 +119,11 @@ export function KeyHint({ touche }: { touche: string }) {
       style={{
         paddingHorizontal: 5,
         paddingVertical: 1,
-        borderRadius: radius['radius.sm'],
-        backgroundColor: c['bg.raised'],
+        borderRadius: radius['radius.none'],
+        backgroundColor: c['bg.surface'],
       }}
     >
-      <Texte variante="type.mono" couleur="text.secondary" style={{ fontSize: 10 }}>
+      <Texte variante="type.mono" couleur="ink.soft" style={{ fontSize: 10 }}>
         {touche}
       </Texte>
     </View>
@@ -151,7 +151,7 @@ export function DetailPanel({
         // était écrite ici ; elle vient maintenant du jeton.
         width: breakpoint.detailPanelAdmin,
         borderLeftWidth: 1,
-        borderLeftColor: c['border.default'],
+        borderLeftColor: c['line.default'],
         backgroundColor: c['bg.surface'],
       }}
     >
@@ -163,11 +163,11 @@ export function DetailPanel({
           justifyContent: 'space-between',
           paddingHorizontal: 12,
           borderBottomWidth: 1,
-          borderBottomColor: c['border.default'],
+          borderBottomColor: c['line.default'],
         }}
       >
         <Texte variante="type.label">{titre}</Texte>
-        <Texte variante="type.mono" couleur="text.muted" style={{ fontSize: 11 }}>
+        <Texte variante="type.mono" couleur="ink.mute" style={{ fontSize: 11 }}>
           {identifiant}
         </Texte>
       </View>
@@ -225,9 +225,9 @@ export function DecisionBar({
               alignItems: 'center',
               justifyContent: 'center',
               gap: 6,
-              borderRadius: radius['radius.sm'],
+              borderRadius: radius['radius.none'],
               borderWidth: 1,
-              borderColor: c['border.default'],
+              borderColor: c['line.default'],
               opacity: pressed ? 0.7 : 1,
             })}
           >
@@ -267,12 +267,12 @@ export function Toolbar({
         gap: 8,
         paddingHorizontal: 12,
         borderBottomWidth: 1,
-        borderBottomColor: c['border.default'],
+        borderBottomColor: c['line.default'],
       }}
     >
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, flex: 1 }}>{children}</View>
       {compteurSelection ? (
-        <Texte variante="type.caption" couleur="text.secondary">
+        <Texte variante="type.caption" couleur="ink.soft">
           {compteurSelection}
         </Texte>
       ) : null}

@@ -22,7 +22,7 @@ import { formatDateTime } from '../format';
 import { useI18n } from '../i18n';
 import { urlImage } from './FilScreen';
 import { en } from '../i18n/en';
-import { useTheme } from '../theme';
+import { radius, useTheme } from '../theme';
 import { Ecran } from './Ecran';
 import { messageDObstacle } from './obstacle';
 import { useRequete } from './useRequete';
@@ -53,16 +53,16 @@ export function FicheScreen({
       onRetour={onRetour} requete={requete} testID="ecran-fiche">
       {(fiche) => (
         <View style={{ gap: 12 }}>
-          <Texte variante="type.display" ellipseSurNomPropre>
+          <Texte variante="type.screenTitle" ellipseSurNomPropre>
             {fiche.name}
           </Texte>
           {fiche.address ? (
-            <Texte variante="type.caption" couleur="text.secondary">
+            <Texte variante="type.caption" couleur="ink.soft">
               {fiche.address}
             </Texte>
           ) : null}
 
-          <Texte variante="type.heading">{t('parcours.ficheOffres')}</Texte>
+          <Texte variante="type.bodyStrong">{t('parcours.ficheOffres')}</Texte>
           {fiche.offres.map((offre) => (
             <Offre
               key={offre.tier_offer_id}
@@ -101,9 +101,9 @@ function Offre({
     <View
       testID={`offre-${offre.tier_offer_id}`}
       style={{
-        borderRadius: 12,
+        borderRadius: radius['radius.none'],
         borderWidth: 1,
-        borderColor: c['border.subtle'],
+        borderColor: c['line.default'],
         overflow: 'hidden',
         // Une offre fermée est visiblement en retrait. Le mot et l'obstacle
         // disent le reste ; la couleur seule ne porte rien.
@@ -119,14 +119,14 @@ function Offre({
       <View style={{ padding: 12, gap: 6 }}>
         <LigneDeContrepartie tier={offre.content_format} />
         {attendu.length ? (
-          <Texte variante="type.caption" couleur="text.secondary" testID="attendu">
+          <Texte variante="type.caption" couleur="ink.soft" testID="attendu">
             {t('parcours.ficheAttendu', { quoi: attendu.join(' · ') })}
           </Texte>
         ) : null}
 
         {offre.accessible ? (
           <>
-            <Texte variante="type.mono" couleur="text.secondary" testID="prochain-creneau">
+            <Texte variante="type.mono" couleur="ink.soft" testID="prochain-creneau">
               {offre.prochains_creneaux.length
                 ? t('parcours.ficheProchain', {
                     // Dans le fuseau du salon, mois en lettres, sans
@@ -153,7 +153,7 @@ function Offre({
               <Texte
                 key={`${obstacle.raison}-${index}`}
                 variante="type.caption"
-                couleur="text.secondary"
+                couleur="ink.soft"
                 testID={`obstacle-${obstacle.raison}`}
               >
                 {messageDObstacle(t, obstacle, CODES_CONNUS, offre.platform, locale)}

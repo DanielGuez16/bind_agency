@@ -33,7 +33,7 @@ export function ZoneSure({ children }: { children: ReactNode }) {
       testID="zone-sure"
       style={{
         flex: 1,
-        backgroundColor: c['bg.canvas'],
+        backgroundColor: c['bg.page'],
         paddingTop: marges.top,
         paddingLeft: marges.left,
         paddingRight: marges.right,
