@@ -51,6 +51,7 @@ import type {
   PalierOffrable,
   RegleDeCapacite,
   Reporting,
+  Verification,
   VerificationDuCompte,
   VueDesPaliers,
   CreateurDeLAnnuaire,
@@ -200,6 +201,30 @@ export class Api {
     return this.client.request<Booking>(routes.reserver(), {
       methode: 'POST',
       corps: demande,
+    });
+  }
+
+  // ---- caisse ----
+  //
+  // **Passées par le client, comme tout le reste.** La caisse construisait ses
+  // deux requêtes elle-même, avec un jeton brut lu une fois à l'ouverture de
+  // l'écran. Au bout de quinze minutes ce jeton expirait, le serveur répondait
+  // 401, et l'écran affichait « authentification requise » à la caisse — sans
+  // rotation, sans retour à la connexion, sans issue. Ici, un 401 fait tourner
+  // les jetons et rejoue ; s'il persiste, la session se ferme et l'écran de
+  // connexion s'affiche, comme partout ailleurs.
+
+  verifierUnCode(code: string) {
+    return this.client.request<Verification>(routes.verifierLeCode(), {
+      methode: 'POST',
+      corps: { code },
+    });
+  }
+
+  consommerUnCode(redemptionCodeId: string) {
+    return this.client.request<unknown>(routes.consommerLeCode(), {
+      methode: 'POST',
+      corps: { redemption_code_id: redemptionCodeId },
     });
   }
 

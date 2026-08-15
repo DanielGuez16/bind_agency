@@ -11,11 +11,40 @@
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { Pressable, Text } from 'react-native';
 
+import { ApiClient, ApiProvider } from '../src/api';
 import { I18nProvider } from '../src/i18n';
 import { en } from '../src/i18n/en';
 import { es } from '../src/i18n/es';
 import { RedemptionScreen, type Scanner } from '../src/screens/RedemptionScreen';
 import { ThemeProvider } from '../src/theme';
+
+/**
+ * Un client d'API branché sur le `fetch` que `repond` vient de poser.
+ *
+ * **L'écran ne reçoit plus de jeton brut.** Il passait `accessToken` et
+ * construisait ses requêtes ; à l'expiration du jeton, la caisse affichait
+ * « authentification requise » sur chaque code présenté, sans rotation ni
+ * retour à la connexion. Le monter derrière un vrai client fait passer ces
+ * tests par le même chemin que la production — rotation comprise.
+ *
+ * Construit **après** `repond`, jamais avant : le client capture le `fetch`
+ * global à sa construction, et le prendre plus tôt le figerait sur le vrai.
+ */
+function clientDeTest() {
+  let jetons: { access_token: string; refresh_token: string } | null = {
+    access_token: 'un-jeton',
+    refresh_token: 'de-rotation',
+  };
+  return new ApiClient({
+    baseUrl: 'http://test',
+    coffre: {
+      lire: async () => jetons,
+      ecrire: async (nouveaux) => {
+        jetons = nouveaux;
+      },
+    },
+  });
+}
 
 const VERIFICATION = {
   booking_id: 'b1',
@@ -51,11 +80,9 @@ async function afficher(options: { scanner?: Scanner; locale?: 'en' | 'es' } = {
     // ne peut plus s'y glisser.
     <ThemeProvider role="merchant">
       <I18nProvider initialLocale={options.locale ?? 'en'}>
-        <RedemptionScreen
-          apiUrl="http://test/api/v1"
-          accessToken="un-jeton"
-          scanner={options.scanner}
-        />
+        <ApiProvider client={clientDeTest()}>
+          <RedemptionScreen scanner={options.scanner} />
+        </ApiProvider>
       </I18nProvider>
     </ThemeProvider>,
   );
@@ -163,5 +190,74 @@ describe('écran de caisse', () => {
 
     expect(vue.getByText(es.redemption.title)).toBeTruthy();
     expect(vue.queryByText(en.redemption.title)).toBeNull();
+  });
+
+  it("dit que le code n'a pas été vérifié quand la requête n'est jamais partie", async () => {
+    /**
+     * **La distinction que la caisse ne peut pas se permettre de perdre.** Un
+     * refus nomme le code — déjà servi, expiré — et la cliente est en cause.
+     * Une panne de transport n'a rien appris du code : afficher un refus ferait
+     * redemander dix fois son code à quelqu'un dont le code est parfaitement
+     * bon, parce que le réseau du salon est tombé.
+     *
+     * Aucun test ne couvrait cette branche : une mutation qui remplaçait la
+     * panne par un refus passait toute la suite au vert.
+     */
+    global.fetch = jest.fn().mockRejectedValue(new TypeError('offline')) as unknown as typeof fetch;
+    const vue = await afficher();
+
+    await fireEvent.changeText(vue.getByLabelText(en.redemption.manualLabel), '4H29KX');
+    await fireEvent.press(vue.getByText(en.redemption.manualSubmit));
+
+    await waitFor(() => expect(vue.getByText(en.redemption.unreachableHint)).toBeTruthy());
+    expect(vue.getByText(en.errors.network)).toBeTruthy();
+    // Et surtout : aucun code de refus, qui désignerait la cliente à tort.
+    expect(vue.queryByText(en.redemption.refusedHint)).toBeNull();
+  });
+
+  it('ferme la session quand le jeton de la caisse a expiré', async () => {
+    /**
+     * **Le blocage que ça répare.** L'écran recevait un jeton brut, lu une fois
+     * à son ouverture. Quinze minutes plus tard il était périmé, le serveur
+     * répondait 401, et la caisse affichait « authentification requise » sur
+     * chaque code présenté — indéfiniment, sans rotation et sans jamais
+     * proposer de se reconnecter. Le seul recours était de fermer
+     * l'application.
+     *
+     * On éprouve le signal, pas l'écran de connexion : c'est `surSessionPerdue`
+     * qui fait basculer la coquille, et elle le fait au-dessus de tous les
+     * écrans à la fois.
+     */
+    const perdue = jest.fn();
+    // 401 sur le retrait *et* sur la rotation : la session est prouvée morte.
+    global.fetch = jest.fn().mockImplementation(async () => ({
+      ok: false,
+      status: 401,
+      json: async () => ({ detail: 'authentication_required' }),
+    })) as unknown as typeof fetch;
+
+    const client = new ApiClient({
+      baseUrl: 'http://test',
+      coffre: {
+        lire: async () => ({ access_token: 'perime', refresh_token: 'perime-aussi' }),
+        ecrire: async () => {},
+      },
+      surSessionPerdue: perdue,
+    });
+
+    const vue = await render(
+      <ThemeProvider role="merchant">
+        <I18nProvider initialLocale="en">
+          <ApiProvider client={client}>
+            <RedemptionScreen />
+          </ApiProvider>
+        </I18nProvider>
+      </ThemeProvider>,
+    );
+
+    await fireEvent.changeText(vue.getByLabelText(en.redemption.manualLabel), '4H29KX');
+    await fireEvent.press(vue.getByText(en.redemption.manualSubmit));
+
+    await waitFor(() => expect(perdue).toHaveBeenCalled());
   });
 });

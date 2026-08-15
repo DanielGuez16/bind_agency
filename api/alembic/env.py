@@ -16,8 +16,16 @@ config = context.config
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
+#
+# **`disable_existing_loggers=False`, et ce n'est pas un détail.** La valeur par
+# défaut est `True` : `fileConfig` éteint alors *tous* les journaux déjà créés,
+# c'est-à-dire tout `app.*`. La suite de tests appliquant les migrations dans
+# son propre processus, plus une seule ligne de journal applicative n'y était
+# émise ensuite — `caplog` ne capturait rien, et un test écrit dessus serait
+# passé vert le jour où le journal aurait disparu pour de bon. Découvert en
+# éprouvant qu'une exception non rattrapée reste tracée côté serveur.
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 # L'URL vient de la configuration applicative, jamais de alembic.ini : une seule
 # source de vérité, et aucun identifiant de connexion commité.

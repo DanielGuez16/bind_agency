@@ -4825,3 +4825,80 @@ trouvé que parce que la mutation correspondante **n'a pas fait tomber le test
 qu'elle visait**. C'est exactement à ça que sert l'exercice : un test qui n'a
 jamais échoué ne prouve pas que le code marche, il prouve qu'il s'exécute — et
 celui-là ne s'exécutait même pas.
+
+---
+
+## 2026-08-14 — Le fil créateur bloqué : ce n'était ni le jeton, ni le réseau
+
+Le symptôme était un 401 sur `GET /api/v1/businesses`, et la piste naturelle
+l'authentification. Elle était fausse de bout en bout. Ce que la mesure a donné,
+contre le déploiement :
+
+- `POST /auth/login` répond 200, et le jeton frais est **accepté** — `/me` passe,
+  `/businesses` répond 422 sur des coordonnées manquantes. `JWT_SECRET_KEY` est
+  hors de cause, et une reconnexion n'y aurait rien changé : la connexion émet
+  avec la clé courante et la vérification lit la même.
+- La rotation et la déconnexion fonctionnent. Le 401 vu « à la main » venait d'un
+  `curl` sans en-tête `Authorization` : la route répond exactement cela quand on
+  ne lui présente rien, et c'est correct.
+- Reproduit dans un vrai navigateur : `GET /businesses` avec des coordonnées de
+  Miami répond **500**. Au large, où aucun commerce n'est dans le rayon, la même
+  route répond 200. Un identifiant de commerce **inexistant** répond 500 lui
+  aussi — donc l'échec est dans le SQL, pas dans les données.
+
+**La cause : rien n'appliquait les migrations au déploiement.** Ni le
+`Dockerfile`, ni `render.yaml`. Le schéma ne bougeait que lorsque quelqu'un
+lançait `make demo-seed` à la main, tandis que le code déployé avançait à chaque
+fusion. Ils ont divergé, et toutes les routes qui lisent un commerce
+demandaient une colonne que la base n'avait pas. `alembic upgrade head` entre
+donc dans la commande de démarrage du conteneur — avec `&&`, pour qu'une
+migration en échec empêche de servir. Pas en pré-déploiement : Render le réserve
+aux plans payants.
+
+**Pourquoi ça a coûté une journée : un 500 se présentait comme une panne de
+réseau.** Une exception non rattrapée remonte jusqu'à uvicorn, qui répond en
+texte brut *hors* de la pile d'intergiciels — donc sans en-tête CORS. Le
+navigateur ne voit alors plus une réponse mais une origine interdite, `fetch`
+lève `TypeError: Failed to fetch`, et l'app, qui ne peut pas distinguer cela
+d'un câble débranché, affiche « réessayez dans un instant » avec un bouton qui
+ne peut pas aboutir. `ErreurInattendueEnJson` rend maintenant un 500 en JSON,
+porteur du code `internal_error`, **sous** `CORSMiddleware` pour que la réponse
+en ressorte avec ses en-têtes. L'ordre d'ajout est ce qui décide : le dernier
+ajouté est le plus extérieur, celui-ci s'ajoute donc en premier.
+
+**Un défaut trouvé en éprouvant ce correctif.** `alembic/env.py` appelait
+`fileConfig` sans `disable_existing_loggers=False` : la valeur par défaut éteint
+tous les journaux déjà créés, c'est-à-dire tout `app.*`. La suite appliquant les
+migrations dans son propre processus, plus une seule ligne de journal applicative
+n'y était émise — `caplog` ne capturait rien, et un test écrit dessus serait
+passé vert le jour où le journal aurait disparu pour de bon.
+
+**Le 401 renvoie à la connexion, et le chemin manquait à deux endroits.** La
+bascule était déjà globale — `AuthScreen` se rend au-dessus de toute la
+navigation dès que la session n'est plus établie. Ce qui manquait, c'est *quand*
+elle se déclenche :
+
+1. La rotation rendait `null` pour deux choses opposées — un serveur qui refuse
+   le jeton de rafraîchissement, et un serveur injoignable. L'appelant en tirait
+   la même conclusion : il jetait dehors quelqu'un qui passait sous un tunnel.
+   Trois issues désormais : `jetons`, `morte`, `injoignable`. La dernière lève
+   une erreur de réseau et ne ferme rien — ne pas pouvoir poser la question
+   n'est pas une réponse.
+2. Un 401 sur l'appel **rejoué**, avec un jeton qui vient d'être émis, ne fermait
+   pas la session. C'est pourtant ce que répond un compte suspendu, et l'API ne
+   le distingue nulle part ailleurs. L'erreur remontait à l'écran, qui affichait
+   un message et un bouton « réessayer » que rien ne pouvait faire aboutir.
+
+**La caisse passe enfin par le client.** `RedemptionScreen` recevait un jeton
+brut, lu une fois à l'ouverture de l'écran, et construisait ses deux requêtes
+elle-même. Quinze minutes plus tard ce jeton était périmé : le serveur répondait
+401, et la caisse affichait « authentification requise » sur chaque code
+présenté — sans rotation, sans retour à la connexion, sans autre issue que
+fermer l'application. Le même blocage que celui du jour, en embuscade, au pire
+endroit possible. La dette était nommée dans `Navigation.tsx` ; elle est payée.
+
+**Et une branche qui n'avait jamais été éprouvée.** La distinction entre « code
+refusé » et « requête jamais partie » existait dans la caisse depuis le début et
+aucun test ne la couvrait : une mutation qui remplaçait la panne de transport par
+un refus passait toute la suite au vert. Elle aurait fait redemander dix fois son
+code à une cliente dont le code était bon.

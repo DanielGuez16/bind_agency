@@ -90,13 +90,34 @@ export type OptionsDeRequete = {
   signal?: AbortSignal;
 };
 
+/**
+ * Ce qu'une tentative de rotation a appris.
+ *
+ * **Trois issues et non deux, parce que « pas de jetons » recouvrait deux
+ * choses opposées.** Un serveur qui refuse le jeton de rafraîchissement dit que
+ * la session est finie ; un serveur injoignable ne dit rien du tout. Les deux
+ * rendaient `null`, et l'appelant en tirait la même conclusion : il jetait
+ * dehors quelqu'un qui passait sous un tunnel, et il gardait sur place
+ * quelqu'un dont la session était morte.
+ */
+type Rotation =
+  | { readonly quoi: 'jetons'; readonly jetons: Jetons }
+  /** Le serveur a refusé, ou il n'y avait rien à faire tourner. */
+  | { readonly quoi: 'morte' }
+  /** On ne sait pas : la question n'est pas arrivée jusqu'au serveur. */
+  | { readonly quoi: 'injoignable'; readonly cause: unknown };
+
 export type ConfigurationDuClient = {
   baseUrl: string;
   coffre: CoffreDeJetons;
   /**
-   * Appelé quand la session est définitivement perdue : le rafraîchissement a
-   * échoué, ou il n'y avait pas de jeton de rafraîchissement. Le client ne
-   * navigue pas lui-même — il prévient, l'application décide.
+   * Appelé quand la session est **prouvée** perdue : le serveur a refusé le
+   * jeton de rafraîchissement, il n'y en avait pas, ou l'appel rejoué avec un
+   * jeton tout neuf a repris un 401. Le client ne navigue pas lui-même — il
+   * prévient, l'application décide.
+   *
+   * Jamais sur une panne de réseau : ne pas pouvoir poser la question n'est pas
+   * une réponse.
    */
   surSessionPerdue?: () => void;
   delaiMs?: number;
@@ -112,7 +133,7 @@ export class ApiClient {
   private readonly fetchImpl: typeof fetch;
 
   /** La rotation en cours, partagée par tous les appels qui prennent un 401. */
-  private rotation: Promise<Jetons | null> | null = null;
+  private rotation: Promise<Rotation> | null = null;
 
   constructor(config: ConfigurationDuClient) {
     // Sans cette normalisation, une base finissant par `/` produit `//me` :
@@ -147,12 +168,30 @@ export class ApiClient {
 
     // 401 sur une route authentifiée : une rotation, une seule, puis on rejoue.
     if (premiere.status === 401 && !options.publique) {
-      const jetons = await this.rafraichir();
-      if (jetons === null) {
+      const rotation = await this.rafraichir();
+
+      // **Injoignable n'est pas mort.** On ne ferme pas une session parce
+      // qu'un train est entré dans un tunnel : l'écran dit qu'il n'a pas pu
+      // charger, et le prochain appel repose la question.
+      if (rotation.quoi === 'injoignable') throw new NetworkError(rotation.cause);
+
+      if (rotation.quoi === 'morte') {
         this.surSessionPerdue?.();
         throw await this.erreur(premiere);
       }
-      const seconde = await this.envoyer(chemin, options, jetons.access_token);
+
+      const seconde = await this.envoyer(chemin, options, rotation.jetons.access_token);
+
+      // **Un 401 sur l'appel rejoué ferme la session, lui aussi.** Le jeton
+      // vient d'être émis : s'il est refusé, ce n'est plus une question
+      // d'expiration — un compte suspendu répond exactement ainsi, et l'API ne
+      // le distingue nulle part ailleurs. Sans ce chemin, l'erreur remontait à
+      // l'écran, qui affichait un message et un bouton « réessayer » que rien
+      // ne pouvait faire aboutir.
+      if (seconde.status === 401) {
+        await this.coffre.ecrire(null);
+        this.surSessionPerdue?.();
+      }
       return this.lire<T>(seconde);
     }
 
@@ -326,16 +365,16 @@ export class ApiClient {
   }
 
   /** Une seule rotation vivante à la fois, partagée. */
-  private async rafraichir(): Promise<Jetons | null> {
+  private async rafraichir(): Promise<Rotation> {
     this.rotation ??= this.faireTournerLesJetons().finally(() => {
       this.rotation = null;
     });
     return this.rotation;
   }
 
-  private async faireTournerLesJetons(): Promise<Jetons | null> {
+  private async faireTournerLesJetons(): Promise<Rotation> {
     const jetons = await this.coffre.lire();
-    if (!jetons?.refresh_token) return null;
+    if (!jetons?.refresh_token) return { quoi: 'morte' };
 
     try {
       const reponse = await this.envoyer(routes.rotation(), {
@@ -347,15 +386,16 @@ export class ApiClient {
         // Le jeton de rafraîchissement est mort : la session l'est aussi. Le
         // garder ferait retenter à chaque appel, indéfiniment.
         await this.coffre.ecrire(null);
-        return null;
+        return { quoi: 'morte' };
       }
       const neufs = (await reponse.json()) as Jetons;
       await this.coffre.ecrire(neufs);
-      return neufs;
-    } catch {
+      return { quoi: 'jetons', jetons: neufs };
+    } catch (cause) {
       // Panne réseau pendant la rotation : la session n'est pas prouvée morte,
-      // on ne l'efface pas. Le prochain appel réessaiera.
-      return null;
+      // on ne l'efface pas et on ne renvoie personne à l'écran de connexion.
+      // Le prochain appel réessaiera.
+      return { quoi: 'injoignable', cause };
     }
   }
 }

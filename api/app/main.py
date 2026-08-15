@@ -1,9 +1,12 @@
 """Point d'entrée de l'API BIND."""
 
-from fastapi import FastAPI, Request, status
+import logging
+
+from fastapi import FastAPI, Request, Response, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
 from app.core.config import get_settings
 from app.core.encryption import build_keyring
@@ -56,6 +59,8 @@ from app.routers import (
     venue_report,
 )
 
+logger = logging.getLogger(__name__)
+
 
 async def _validation_error_handler(_: Request, error: RequestValidationError) -> JSONResponse:
     """Uniformise le 422 sur un code du catalogue, et n'y renvoie aucune valeur reçue.
@@ -73,6 +78,45 @@ async def _validation_error_handler(_: Request, error: RequestValidationError) -
         status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         content={"detail": ErrorCode.VALIDATION_FAILED.value, "fields": champs},
     )
+
+
+class ErreurInattendueEnJson(BaseHTTPMiddleware):
+    """Rend un 500 que l'app sait lire, et que le navigateur laisse passer.
+
+    **Ce que ça répare, et ce que ça a coûté.** Une exception non rattrapée
+    remontait jusqu'à uvicorn, qui répond `Internal Server Error` en texte brut,
+    hors de toute la pile d'intergiciels — donc **sans en-tête CORS**. Le
+    navigateur ne voyait plus une réponse, il voyait une origine interdite ;
+    `fetch` levait `TypeError: Failed to fetch` ; l'app, qui ne peut pas
+    distinguer cela d'un câble débranché, affichait « réessayez dans un
+    instant » avec un bouton qui ne pouvait pas marcher. Le fil créateur est
+    resté bloqué une journée sur cette phrase, pendant qu'on cherchait du côté
+    des jetons.
+
+    **Un 500 doit rester une réponse.** Rendu ici, il traverse `CORSMiddleware`
+    en remontant, en ressort avec ses en-têtes, et arrive à l'app comme les
+    autres erreurs : un code du catalogue, traduit dans les deux langues. La
+    panne reste une panne — elle se lit enfin comme telle.
+
+    **L'exception est journalisée entière, la réponse ne dit rien.** Une trace
+    d'appels renvoyée à l'appelant nomme des fichiers, des tables et des
+    versions. Le serveur la garde.
+
+    **Placé sous `CORSMiddleware`, jamais au-dessus.** Starlette construit la
+    pile de sorte que le dernier intergiciel ajouté soit le plus extérieur :
+    celui-ci s'ajoute donc *avant* CORS pour se retrouver *dedans*. Au-dessus,
+    il reproduirait exactement le défaut qu'il corrige.
+    """
+
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+        try:
+            return await call_next(request)
+        except Exception:
+            logger.exception("exception non rattrapée sur %s %s", request.method, request.url.path)
+            return JSONResponse(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                content={"detail": ErrorCode.INTERNAL_ERROR.value},
+            )
 
 
 def create_app() -> FastAPI:
@@ -100,6 +144,13 @@ def create_app() -> FastAPI:
         docs_url=f"{settings.api_v1_prefix}/docs",
         redoc_url=None,
     )
+
+    # **L'ordre compte, et il se lit à l'envers.** `add_middleware` empile : le
+    # dernier ajouté est le plus extérieur. Celui-ci s'ajoute donc en premier
+    # pour finir *sous* CORS, de sorte que sa réponse remonte à travers CORS et
+    # en ressorte avec les en-têtes qu'un navigateur exige. Inverser ces deux
+    # appels rendrait à nouveau les 500 illisibles depuis le web.
+    application.add_middleware(ErreurInattendueEnJson)
 
     application.add_middleware(
         CORSMiddleware,

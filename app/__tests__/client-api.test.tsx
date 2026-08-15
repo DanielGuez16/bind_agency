@@ -312,19 +312,58 @@ describe('rotation des jetons', () => {
   it('garde la session quand la rotation tombe sur une panne réseau', async () => {
     // La session n'est pas prouvée morte. L'effacer déconnecterait quelqu'un
     // qui passe sous un tunnel.
+    //
+    // **L'erreur levée est celle du réseau, et ce test l'attendait à l'envers.**
+    // Il exigeait une `ApiError`, c'est-à-dire le message « connectez-vous »,
+    // pour une panne qui n'a rien appris sur la session. Ne pas pouvoir poser
+    // la question n'est pas une réponse : l'écran doit proposer de réessayer,
+    // ce qui est ici la bonne conduite et peut aboutir.
+    const perdue = jest.fn();
     const c = coffre({ access_token: 'a', refresh_token: 'r' });
 
     const client = new ApiClient({
       baseUrl: 'https://api.test',
       coffre: c,
+      surSessionPerdue: perdue,
       fetchImpl: async (url) => {
         if (String(url).endsWith('/auth/refresh')) throw new TypeError('offline');
         return reponse(401, { detail: 'authentication_required' });
       },
     });
 
-    await expect(client.request('/api/v1/me')).rejects.toBeInstanceOf(ApiError);
+    await expect(client.request('/api/v1/me')).rejects.toBeInstanceOf(NetworkError);
     expect(c.contenu).toEqual({ access_token: 'a', refresh_token: 'r' });
+    // L'assertion qui manquait : garder les jetons ne sert à rien si l'écran
+    // de connexion s'affiche quand même par-dessus.
+    expect(perdue).not.toHaveBeenCalled();
+  });
+
+  it("ferme la session quand l'appel rejoué reprend un 401", async () => {
+    // **Le cas du blocage total.** La rotation réussit — le serveur émet un
+    // jeton — et l'appel rejoué avec ce jeton tout neuf est refusé quand même.
+    // Ce n'est plus une expiration : un compte suspendu répond exactement
+    // ainsi, et l'API ne le distingue nulle part ailleurs.
+    //
+    // Sans ce chemin, l'erreur remontait à l'écran, qui affichait un message et
+    // un bouton « réessayer » que rien ne pouvait faire aboutir.
+    const perdue = jest.fn();
+    const c = coffre({ access_token: 'vieux', refresh_token: 'r' });
+
+    const client = new ApiClient({
+      baseUrl: 'https://api.test',
+      coffre: c,
+      surSessionPerdue: perdue,
+      fetchImpl: async (url) =>
+        String(url).endsWith('/auth/refresh')
+          ? reponse(200, { access_token: 'neuf', refresh_token: 'r2' })
+          : reponse(401, { detail: 'authentication_required' }),
+    });
+
+    await expect(client.request('/api/v1/me')).rejects.toBeInstanceOf(ApiError);
+    expect(perdue).toHaveBeenCalledTimes(1);
+    // Les jetons sont effacés : les garder ferait retenter la même rotation
+    // à chaque écran, indéfiniment.
+    expect(c.contenu).toBeNull();
   });
 
   it('ne rafraîchit pas sur une route publique', async () => {

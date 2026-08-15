@@ -62,12 +62,25 @@ const SERVI = {
   },
 };
 
+/**
+ * Le client de l'écran : la journée du commerce, et la caisse.
+ *
+ * **La caisse passe par lui, elle aussi.** Elle recevait un jeton brut et
+ * construisait ses requêtes ; à l'expiration du jeton, elle affichait
+ * « authentification requise » sur chaque code présenté, sans rotation ni
+ * retour à la connexion. `repond` sert les deux routes de retrait, le reste
+ * sert la journée.
+ */
 function clientDeJournee(items: unknown[]) {
   return new ApiClient({
     baseUrl: 'https://api.test',
-    coffre: { lire: async () => null, ecrire: async () => {} },
-    fetchImpl: async () =>
-      ({
+    coffre: {
+      lire: async () => ({ access_token: 'un-jeton', refresh_token: 'de-rotation' }),
+      ecrire: async () => {},
+    },
+    fetchImpl: async (url, init) => {
+      if (String(url).includes('/redemptions/')) return global.fetch(url, init);
+      return {
         ok: true,
         status: 200,
         json: async () => ({
@@ -78,7 +91,8 @@ function clientDeJournee(items: unknown[]) {
           items,
           a_trancher: [],
         }),
-      }) as Response,
+      } as Response;
+    },
   });
 }
 
@@ -87,12 +101,7 @@ async function afficher(scanner?: Scanner, options: { items?: unknown[] } = {}) 
     <ThemeProvider role="merchant">
       <I18nProvider initialLocale="en">
         <ApiProvider client={clientDeJournee(options.items ?? [])}>
-          <RedemptionScreen
-            apiUrl="http://test/api/v1"
-            accessToken="un-jeton"
-            scanner={scanner}
-            businessId="b1"
-          />
+          <RedemptionScreen scanner={scanner} businessId="b1" />
         </ApiProvider>
       </I18nProvider>
     </ThemeProvider>,
