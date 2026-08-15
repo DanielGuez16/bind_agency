@@ -52,6 +52,23 @@ USER bind
 ENV PORT=8010
 EXPOSE 8010
 
+# **Le schéma est migré avant que le premier octet soit servi.**
+#
+# Rien ne l'appliquait : ni ce fichier, ni `render.yaml`. Le schéma ne bougeait
+# que lorsque quelqu'un lançait `make demo-seed` à la main, tandis que le code
+# déployé avançait à chaque fusion. Les deux ont divergé, et l'API a servi des
+# 500 sur toutes les routes qui lisent un commerce — une colonne que le code
+# demandait et que la base n'avait pas. La panne s'est présentée comme un défaut
+# d'authentification, puis comme une panne réseau.
+#
+# **Au démarrage et non en pré-déploiement** : la commande de pré-déploiement de
+# Render demande un plan payant, celui-ci est gratuit. Le coût est une poignée
+# de secondes à chaque réveil, sur un démarrage à froid qui en prend déjà
+# soixante ; `alembic upgrade head` ne fait rien quand il n'y a rien à faire.
+#
+# **`&&` et non `;`** : une migration qui échoue empêche l'API de démarrer.
+# Servir avec un schéma dont on sait qu'il est faux est ce qu'on corrige ici.
+#
 # `sh -c` : `PORT` doit être développé au démarrage, pas figé à la
 # construction.
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]
+CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]

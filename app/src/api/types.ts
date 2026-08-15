@@ -192,6 +192,24 @@ export type SignalJuge = {
   requis: string | number | null;
 };
 
+/**
+ * Ce que la caisse voit après avoir reconnu un code, avant de servir.
+ *
+ * Déclaré ici et non dans l'écran : `Api` le rend, et un client d'API qui
+ * importerait un type depuis un écran inverserait la dépendance.
+ */
+export type Verification = {
+  booking_id: string;
+  redemption_code_id: string;
+  creator_name: string | null;
+  item_name: string;
+  item_photo_key: string | null;
+  starts_at: string | null;
+  valid_until: string;
+  status: string;
+  par_secours: boolean;
+};
+
 export type VerificationDuCompte = {
   social_account_id: string;
   platform: Platform;

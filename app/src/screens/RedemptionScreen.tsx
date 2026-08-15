@@ -25,25 +25,20 @@ import { SegmentedTabs } from '../components/SegmentedTabs';
 import { Texte } from '../components/Texte';
 import { TextField } from '../components/TextField';
 import { useI18n } from '../i18n';
-import { errorCodeFromResponse, translateErrorCode } from '../i18n/errors';
-import { adresseDeLApi } from '../shell/adresseDeLApi';
-import { useApi, type JourneeDuCommerce, type ReservationDuCommerce } from '../api';
+import { translateErrorCode } from '../i18n/errors';
+import {
+  ApiError,
+  useApi,
+  type JourneeDuCommerce,
+  type ReservationDuCommerce,
+  type Verification,
+} from '../api';
 import { formatDateTime } from '../format';
 import { useGabarit } from '../shell/gabarit';
 import { radius, spacing, useColors } from '../theme';
 import { useRequete } from './useRequete';
 
-export type Verification = {
-  booking_id: string;
-  redemption_code_id: string;
-  creator_name: string | null;
-  item_name: string;
-  item_photo_key: string | null;
-  starts_at: string | null;
-  valid_until: string;
-  status: string;
-  par_secours: boolean;
-};
+export type { Verification } from '../api';
 
 type Etat =
   | { state: 'saisie' }
@@ -55,9 +50,6 @@ type Etat =
   // client alors que c'est le réseau ou l'adresse de l'API qui est en cause.
   | { state: 'refuse'; code: string | null; injoignable: boolean };
 
-/** L'API n'a pas d'adresse : rien n'a été tenté. */
-class ApiInjoignable extends Error {}
-
 /** Ce que le scanner doit savoir faire. Rien de plus : une lecture, un texte. */
 export type Scanner = ComponentType<{
   onCode: (valeur: string) => void;
@@ -65,13 +57,9 @@ export type Scanner = ComponentType<{
 }>;
 
 export function RedemptionScreen({
-  apiUrl,
-  accessToken,
   scanner,
   businessId,
 }: {
-  apiUrl?: string;
-  accessToken: string;
   scanner?: Scanner;
   /**
    * Le commerce dont on tient la caisse. Sert au panneau des validations du
@@ -83,14 +71,8 @@ export function RedemptionScreen({
   const { t } = useI18n();
   const c = useColors();
   const { large } = useGabarit();
+  const { api } = useApi();
 
-  // `adresseDeLApi()` et non `EXPO_PUBLIC_API_URL` : sur un téléphone en
-  // développement, la variable n'est pas posée et l'adresse se déduit de
-  // l'hôte du bundler — c'est ce que fait tout le reste de l'app. Lire la
-  // variable directement donnait `undefined/redemptions/verify`, un `fetch`
-  // qui échoue avant d'atteindre quoi que ce soit, et « Something went wrong »
-  // à la caisse pour tous les codes du monde.
-  const racine = apiUrl ?? adresseDeLApi();
   const [etat, setEtat] = useState<Etat>({ state: 'saisie' });
   const [saisi, setSaisi] = useState('');
   const [ongletScan, setOngletScan] = useState(false);
@@ -103,59 +85,53 @@ export function RedemptionScreen({
     };
   }, []);
 
-  const appeler = useCallback(
-    async (chemin: string, corps: object) => {
-      if (!racine) throw new ApiInjoignable();
-      const reponse = await fetch(`${racine}${chemin}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify(corps),
-      });
-      return { reponse, corps: await reponse.json() };
-    },
-    [racine, accessToken],
-  );
+  /**
+   * Traduit ce qui a été levé en état d'écran.
+   *
+   * **Une erreur d'API et une panne de transport ne se disent pas pareil.** La
+   * première nomme un refus — code déjà servi, code expiré — et la caisse doit
+   * le lire. La seconde n'a rien appris du code : redemander dix fois le sien à
+   * une cliente parce que le réseau du salon est tombé est ce que `injoignable`
+   * existe pour éviter.
+   *
+   * **Un 401 ne passe plus par ici.** Le client fait tourner les jetons, rejoue,
+   * et ferme la session s'il reprend un 401 : l'écran de connexion s'affiche
+   * par-dessus la caisse. Avant, l'écran construisait ses requêtes avec un jeton
+   * brut lu une fois à l'ouverture — au bout de quinze minutes il expirait, et
+   * la caisse affichait « authentification requise » sans aucune issue.
+   */
+  const echoue = useCallback((cause: unknown): Etat => {
+    if (cause instanceof ApiError) {
+      return { state: 'refuse', code: cause.code, injoignable: false };
+    }
+    return { state: 'refuse', code: null, injoignable: true };
+  }, []);
 
   const verifier = useCallback(
     async (code: string) => {
       if (!code.trim()) return;
       setEtat({ state: 'verification' });
       try {
-        const { reponse, corps } = await appeler('/redemptions/verify', { code });
-        if (!monte.current) return;
-        setEtat(
-          reponse.ok
-            ? { state: 'reconnu', verification: corps as Verification }
-            : { state: 'refuse', code: errorCodeFromResponse(corps), injoignable: false },
-        );
-      } catch {
-        if (monte.current) setEtat({ state: 'refuse', code: null, injoignable: true });
+        const verification = await api.verifierUnCode(code);
+        if (monte.current) setEtat({ state: 'reconnu', verification });
+      } catch (cause) {
+        if (monte.current) setEtat(echoue(cause));
       }
     },
-    [appeler],
+    [api, echoue],
   );
 
   const servir = useCallback(
     async (verification: Verification) => {
       setEtat({ state: 'verification' });
       try {
-        const { reponse, corps } = await appeler('/redemptions/consume', {
-          redemption_code_id: verification.redemption_code_id,
-        });
-        if (!monte.current) return;
-        setEtat(
-          reponse.ok
-            ? { state: 'servi', verification }
-            : { state: 'refuse', code: errorCodeFromResponse(corps), injoignable: false },
-        );
-      } catch {
-        if (monte.current) setEtat({ state: 'refuse', code: null, injoignable: true });
+        await api.consommerUnCode(verification.redemption_code_id);
+        if (monte.current) setEtat({ state: 'servi', verification });
+      } catch (cause) {
+        if (monte.current) setEtat(echoue(cause));
       }
     },
-    [appeler],
+    [api, echoue],
   );
 
   const Scan = scanner;

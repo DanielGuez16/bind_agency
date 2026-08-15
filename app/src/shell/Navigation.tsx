@@ -464,23 +464,24 @@ function OngletsCreateur({
 // commerce
 // --------------------------------------------------------------------------
 
-/** Le pont vers l'écran de caisse, qui n'utilise pas encore le client d'API. */
+/**
+ * La caisse, avec sa caméra.
+ *
+ * **Le pont au jeton brut a disparu, et c'est le correctif.** L'écran recevait
+ * `accessToken`, lu une fois à l'ouverture, et construisait ses requêtes
+ * lui-même. Quinze minutes plus tard ce jeton était périmé, le serveur
+ * répondait 401, et la caisse affichait « authentification requise » sur chaque
+ * code présenté — sans rotation, sans retour à la connexion, sans issue autre
+ * que fermer l'application. Elle passe maintenant par le client, comme tout le
+ * reste de l'app.
+ *
+ * **Le scanner se branche ici**, et c'est ce qui manquait avant : sans lui,
+ * l'écran retombait sur son message « pas de caméra sur cet appareil » — sur un
+ * iPhone qui en a une, et sans qu'aucune autorisation ait jamais été demandée.
+ * La caméra n'était pas refusée, elle n'était jamais montée.
+ */
 function CaisseAvecJeton({ businessId }: { businessId?: string }) {
-  const { jetonDAcces } = useSession();
-  // Sans jeton, l'écran ne peut rien vérifier. Il n'y en a pas tant que la
-  // session n'est pas rétablie ; rendre `null` évite un appel voué à un 401.
-  //
-  // **Le scanner se branche ici**, et c'est ce qui manquait : sans lui, l'écran
-  // retombait sur son message « pas de caméra sur cet appareil » — sur un
-  // iPhone qui en a une, et sans qu'aucune autorisation ait jamais été
-  // demandée. La caméra n'était pas refusée, elle n'était jamais montée.
-  return jetonDAcces ? (
-    <RedemptionScreen
-      accessToken={jetonDAcces}
-      scanner={CameraScanner}
-      businessId={businessId}
-    />
-  ) : null;
+  return <RedemptionScreen scanner={CameraScanner} businessId={businessId} />;
 }
 
 
