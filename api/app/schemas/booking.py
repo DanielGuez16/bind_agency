@@ -41,4 +41,6 @@ class BookingRead(BaseModel):
     #: rebours : une place tenue sans qu'on sache jusqu'à quand est une place
     #: qu'on croit acquise.
     hold_expires_at: datetime | None
+    #: L'échéance de l'accord du commerce. Nulle hors d'`awaiting_business`.
+    approval_expires_at: datetime | None
     value_cents_snapshot: int

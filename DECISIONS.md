@@ -4902,3 +4902,72 @@ refusé » et « requête jamais partie » existait dans la caisse depuis le dé
 aucun test ne la couvrait : une mutation qui remplaçait la panne de transport par
 un refus passait toute la suite au vert. Elle aurait fait redemander dix fois son
 code à une cliente dont le code était bon.
+
+---
+
+## 2026-08-16 — Le temps laissé au commerce pour trancher, et ce qu'il risque
+
+**Le délai n'existait pas.** `SPEC.md` §4.1 prescrit
+`awaiting_business ──sans réponse dans le délai──> expired` depuis le début ;
+rien ne l'implémentait. La seule échéance portée par une réservation était
+`hold_expires_at`, le garde de dix minutes du panier, effacé dès qu'on quitte
+`held`.
+
+**Une correction à ma propre première lecture.** J'avais annoncé qu'aucune
+demande en attente n'expirait jamais. C'était faux : `expirer_les_attentes_depassees`
+existait déjà. Mais il expirait sur `coalesce(starts_at, valid_until)` — l'heure
+du rendez-vous — ce qui est un filet contre les dossiers morts, pas un délai de
+réponse. Une demande posée trois semaines à l'avance pouvait dormir trois
+semaines, un droit sans créneau trente jours, **en tenant la place** puisque
+`awaiting_business` compte dans la capacité. Le manque était réel, il n'était
+pas là où je l'avais dit.
+
+**Vingt-quatre heures, bornées par le début du créneau.** Un jour pour un salon
+qui ne regarde son écran qu'entre deux clientes ; mais si la prestation commence
+avant, l'échéance tombe au créneau — promettre une réponse pour après le
+rendez-vous ne veut rien dire. Un droit sans créneau reçoit le délai plein :
+`starts_at` est nul, rien ne le borne. La durée est en configuration
+(`BOOKING_APPROVAL_SECONDS`), le bornage est dans le code parce que c'est une
+règle, pas un réglage.
+
+**Une colonne distincte, pas un prolongement de `hold_expires_at`.** Les deux
+comptent une attente, pas la même et pas pour la même personne. Réutiliser la
+première rendrait illisible toute lecture qui demande depuis quand un panier est
+ouvert, et la contrainte `held_has_hold_expiry` ne pourrait plus rien affirmer.
+Une contrainte symétrique refuse une demande en attente sans échéance : sans
+elle, l'oubli produirait exactement le défaut qu'on corrige, et il ne se verrait
+qu'au bout de plusieurs jours sur une place que personne ne comprend.
+
+**Posée dans `transitionner` et nulle part ailleurs**, pour la même raison que
+la table des transitions existe. `awaiting_business` s'atteint depuis
+`confirmer` aujourd'hui ; rien ne dit que ce sera le seul chemin demain, et la
+pose faite chez l'appelant est celle qu'on oublie au deuxième.
+
+**Dans la migration, l'ordre est le sujet.** L'autogénération posait la
+contrainte avant de remplir la colonne : sur une base portant la moindre demande
+en attente, la création échouait et le déploiement s'arrêtait là. Colonne,
+remplissage, contrainte. Les demandes déjà en vol reçoivent vingt-quatre heures
+à compter du déploiement — leur donner l'échéance qu'elles *auraient eue* ferait
+expirer d'un coup des demandes que des commerces sont peut-être en train de
+regarder.
+
+**Affiché des deux côtés, depuis la même donnée.** `approval_expires_at` entre
+dans `_colonnes_communes` : le commerce lit jusqu'à quand il peut trancher, la
+créatrice jusqu'à quand elle attend, et c'est la même heure. Deux comptes à
+rebours calculés séparément auraient divergé. L'heure est absolue et dans le
+fuseau du salon, pas un décompte : sur vingt-quatre heures, « avant mardi 10 h »
+se retient là où « dans 21 h 14 min » demande de refaire le calcul et oblige
+l'écran à battre la seconde pour rien.
+
+**Ce que le commerce risque, dit au moment où il décide.** Qu'une contrepartie
+non honorée coûte à la créatrice était vrai et construit — `unfulfilled` pèse
+−30 dans `reliability_weights`, `no_show` −25 — sans que rien ne le lui dise.
+La phrase est sous le bouton d'accord, pas dans un écran d'aide que personne
+n'ouvre : c'est là que le doute se pose, quand on s'apprête à donner une
+prestation contre une promesse.
+
+**Une mutation qui a d'abord survécu.** Remplacer `approval_expires_at` par
+`starts_at` côté écran ne cassait rien : dans tous les décors existants les deux
+dates coïncidaient. Il a fallu écrire le cas qui les sépare — rendez-vous la
+semaine prochaine, délai écoulé depuis une heure — c'est-à-dire exactement celui
+qui motive tout le changement.

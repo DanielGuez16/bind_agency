@@ -138,7 +138,23 @@ export function HistoriqueScreen({
                 {reservation.status === 'awaiting_business' ? (
                   <StatusMessage
                     level="neutral"
-                    body={t('parcours.enAttenteDuSalon')}
+                    body={
+                      // **Jusqu'à quand, et pas seulement « on attend ».**
+                      // « En attente » sans terme se lit comme une file sans
+                      // fin : on ne sait pas s'il faut relancer, réserver
+                      // ailleurs, ou ne rien faire. L'heure vient du serveur —
+                      // c'est exactement celle que le salon voit de son côté —
+                      // et s'affiche dans le fuseau du salon, comme le reste.
+                      reservation.approval_expires_at
+                        ? `${t('parcours.enAttenteDuSalon')} ${t('parcours.enAttenteJusquA', {
+                            quand: formatDateTime(
+                              reservation.approval_expires_at,
+                              locale,
+                              reservation.business_timezone,
+                            ),
+                          })}`
+                        : t('parcours.enAttenteDuSalon')
+                    }
                     testID={`en-attente-${reservation.booking_id}`}
                   />
                 ) : null}

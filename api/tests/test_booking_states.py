@@ -107,7 +107,18 @@ async def test_aucune_transition_hors_diagramme_ne_passe(
     le seul moyen de savoir qu'aucune n'a été laissée ouverte.
     """
     ligne, decor = await reservation(session)
-    await session.execute(sa.update(Booking).where(Booking.id == ligne.id).values(status=depuis))
+    # `awaiting_business` exige son échéance d'accord : une demande sans
+    # échéance n'expirerait jamais, et la contrainte le refuse. On la calcule
+    # avec la fonction du produit plutôt que de poser une date à la main — une
+    # valeur posée ici masquerait la disparition du mécanisme.
+    echeance = (
+        service.echeance_d_accord(ligne) if depuis is BookingStatus.AWAITING_BUSINESS else None
+    )
+    await session.execute(
+        sa.update(Booking)
+        .where(Booking.id == ligne.id)
+        .values(status=depuis, approval_expires_at=echeance)
+    )
     await session.refresh(ligne)
 
     with pytest.raises(service.TransitionNotAllowed):
@@ -659,6 +670,120 @@ async def _evenements_de_fiabilite(session: AsyncSession, creator_id) -> list[st
     return [ligne[0] for ligne in lignes.all()]
 
 
+class TestLEcheanceDAccord:
+    """Le temps laissé au commerce pour trancher.
+
+    **Ce que ça répare.** Rien ne bornait ce temps. Un balayage existait bien,
+    mais il n'expirait qu'à l'heure du rendez-vous : une demande posée trois
+    semaines à l'avance pouvait dormir trois semaines, un droit sans créneau
+    trente jours — en **tenant la place** tout du long, puisque
+    `awaiting_business` compte dans la capacité. `SPEC.md` §4.1 prescrivait la
+    transition « sans réponse dans le délai » depuis le début ; elle n'avait
+    jamais été construite.
+    """
+
+    async def test_l_echeance_se_pose_en_entrant_en_attente(self, session: AsyncSession) -> None:
+        """Sans elle, la demande n'expire jamais et garde sa place."""
+        decor = await monter_le_decor(session, requires_booking_approval=True)
+        ligne = await reserver(session, decor, starts_at=await premier_creneau(session, decor))
+        avant = datetime.now(UTC)
+
+        await service.confirmer(session, booking=ligne, creator_id=decor["createur"].id)
+
+        assert ligne.status is BookingStatus.AWAITING_BUSINESS
+        assert ligne.approval_expires_at is not None
+        assert ligne.approval_expires_at > avant
+
+    async def test_l_echeance_ne_depasse_jamais_le_creneau(self, session: AsyncSession) -> None:
+        """**Le bornage, et c'est le cœur de la règle.** Promettre une réponse
+        pour demain sur une prestation qui commence dans trois heures ferait
+        croire au commerce qu'il a encore le temps alors que la créatrice serait
+        déjà passée devant la porte."""
+        decor = await monter_le_decor(session, requires_booking_approval=True)
+        ligne = await reserver(session, decor, starts_at=await premier_creneau(session, decor))
+        # Un créneau dans deux heures, bien avant les vingt-quatre du délai.
+        ligne.starts_at = datetime.now(UTC) + timedelta(hours=2)
+        ligne.ends_at = ligne.starts_at + timedelta(minutes=ligne.duration_minutes)
+        await session.flush()
+
+        await service.confirmer(session, booking=ligne, creator_id=decor["createur"].id)
+
+        assert ligne.approval_expires_at == ligne.starts_at
+
+    async def test_un_droit_sans_creneau_recoit_le_delai_plein(self, session: AsyncSession) -> None:
+        """**L'autre sens.** `starts_at` est nul : rien ne borne, et un bornage
+        qui rendrait `None` laisserait la demande sans échéance — ce que la
+        contrainte refuse, mais bien plus loin, sous une erreur d'intégrité."""
+        decor = await monter_le_decor(
+            session, requires_booking=False, requires_booking_approval=True
+        )
+        ligne = await reserver(session, decor, starts_at=None)
+        avant = datetime.now(UTC)
+
+        await service.confirmer(session, booking=ligne, creator_id=decor["createur"].id)
+
+        assert ligne.starts_at is None
+        attendu = avant + timedelta(seconds=get_settings().booking_approval_seconds)
+        assert ligne.approval_expires_at is not None
+        assert abs((ligne.approval_expires_at - attendu).total_seconds()) < 60
+
+    async def test_l_echeance_s_efface_quand_le_commerce_tranche(
+        self, session: AsyncSession
+    ) -> None:
+        """La laisser en place ferait mentir toute lecture qui s'y fie — à
+        commencer par le balayage, qui expirerait une réservation acceptée."""
+        decor = await monter_le_decor(session, requires_booking_approval=True)
+        ligne = await reserver(session, decor, starts_at=await premier_creneau(session, decor))
+        await service.confirmer(session, booking=ligne, creator_id=decor["createur"].id)
+        assert ligne.approval_expires_at is not None
+
+        await service.trancher(
+            session,
+            booking=ligne,
+            business_id=decor["business"].id,
+            user_id=decor["proprietaire"].id,
+            accepte=True,
+        )
+
+        assert ligne.status is BookingStatus.CONFIRMED
+        assert ligne.approval_expires_at is None
+
+    async def test_le_balayage_expire_la_demande_sans_reponse(self, session: AsyncSession) -> None:
+        """**Le cas que rien ne couvrait.** Créneau la semaine prochaine,
+        échéance d'accord dépassée : l'ancien balayage attendait l'heure du
+        rendez-vous et laissait la place tenue six jours de plus."""
+        decor = await monter_le_decor(session, requires_booking_approval=True)
+        ligne = await reserver(session, decor, starts_at=await premier_creneau(session, decor))
+        ligne.starts_at = datetime.now(UTC) + timedelta(days=7)
+        ligne.ends_at = ligne.starts_at + timedelta(minutes=ligne.duration_minutes)
+        await session.flush()
+        await service.confirmer(session, booking=ligne, creator_id=decor["createur"].id)
+        # Le délai s'est écoulé ; le créneau, lui, est encore loin devant.
+        ligne.approval_expires_at = datetime.now(UTC) - timedelta(minutes=1)
+        await session.flush()
+
+        combien = await service.expirer_les_attentes_depassees(session)
+
+        assert combien == 1
+        assert ligne.status is BookingStatus.EXPIRED
+        # Personne n'a manqué à rien : un commerce qui ne répond pas n'a rien
+        # promis, et la créatrice n'a rien manqué non plus.
+        assert await _evenements_de_fiabilite(session, decor["createur"].id) == []
+
+    async def test_le_balayage_epargne_la_demande_encore_dans_les_temps(
+        self, session: AsyncSession
+    ) -> None:
+        """**La contrainte se teste dans les deux sens.** Un balayage qui
+        expirerait tout viderait la file avant que le commerce l'ait lue, et
+        passerait le test ci-dessus sans rien garantir."""
+        decor = await monter_le_decor(session, requires_booking_approval=True)
+        ligne = await reserver(session, decor, starts_at=await premier_creneau(session, decor))
+        await service.confirmer(session, booking=ligne, creator_id=decor["createur"].id)
+
+        assert await service.expirer_les_attentes_depassees(session) == 0
+        assert ligne.status is BookingStatus.AWAITING_BUSINESS
+
+
 class TestUneAttenteDepassee:
     """Il est 11 h 35, la demande porte sur 10 h 45 : il n'y a plus rien à accepter."""
 
@@ -670,6 +795,11 @@ class TestUneAttenteDepassee:
         # qu'il découle de la durée.
         ligne.starts_at = datetime.now(UTC) - timedelta(minutes=50)
         ligne.ends_at = ligne.starts_at + timedelta(minutes=ligne.duration_minutes)
+        # **L'échéance d'accord suit le créneau**, parce qu'elle en découle :
+        # elle vaut le délai plein *borné par* `starts_at`. La recalculer par la
+        # fonction du produit, et non poser une date choisie ici, est ce qui
+        # fait que ce montage éprouve encore la règle le jour où elle change.
+        ligne.approval_expires_at = service.echeance_d_accord(ligne)
         await session.flush()
         return ligne, decor
 

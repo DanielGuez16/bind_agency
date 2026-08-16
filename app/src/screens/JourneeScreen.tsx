@@ -409,7 +409,7 @@ function Detail({
           {t('commerce.journeeGestes')}
         </Texte>
         {gestes ? (
-          <Gestes reservation={reservation} onFait={onFait} />
+          <Gestes reservation={reservation} timezone={timezone} onFait={onFait} />
         ) : (
           // Un rendez-vous servi, annulé ou manqué n'appelle plus rien du
           // comptoir. Le dire vaut mieux qu'un bloc vide, qui laisse chercher
@@ -431,18 +431,28 @@ function Detail({
  */
 function Gestes({
   reservation,
+  timezone,
   onFait,
 }: {
   reservation: ReservationDuCommerce;
+  /** Le fuseau du commerce : l'échéance s'y lit, pas dans celui du téléphone. */
+  timezone: string;
   onFait: () => void;
 }) {
   const { api, messageDErreur } = useApi();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   // Comparé ici pour l'affichage seulement : c'est le serveur qui tranche, et
   // il refuse. Attendre son refus ferait appuyer sur un bouton pour apprendre
   // qu'il ne servait à rien.
-  const echeance = reservation.starts_at ?? reservation.valid_until;
+  //
+  // **`approval_expires_at` d'abord, et c'est la vraie échéance.** L'écran
+  // lisait `starts_at ?? valid_until` — l'heure du rendez-vous, qui n'était pas
+  // un délai de réponse : une demande posée trois semaines à l'avance semblait
+  // ouverte trois semaines. Le repli reste pour les lignes qui n'ont pas encore
+  // d'échéance, le temps que la migration passe partout.
+  const echeance =
+    reservation.approval_expires_at ?? reservation.starts_at ?? reservation.valid_until;
   const depassee = echeance !== null && new Date(echeance) <= new Date();
 
   const [envoi, setEnvoi] = useState(false);
@@ -489,12 +499,43 @@ function Gestes({
           testID={`depassee-${reservation.booking_id}`}
         />
       ) : (
-        <Button
-          label={t('commerce.accorder')}
-          loading={envoi}
-          onPress={() => void accorder()}
-          testID={`accorder-${reservation.booking_id}`}
-        />
+        <>
+          {/* **Le temps qu'il reste, avant les boutons.** Rien ne disait que
+              cette décision avait une fin : la demande semblait pouvoir
+              attendre indéfiniment, et elle le pouvait — c'est ce qu'on vient
+              de corriger côté serveur. L'heure est absolue et dans le fuseau du
+              salon, pas un compte à rebours : sur vingt-quatre heures, « avant
+              mardi 10 h » se retient, « dans 21 h 14 min » demande de refaire
+              le calcul et oblige l'écran à battre la seconde pour rien. */}
+          {reservation.approval_expires_at ? (
+            <DataRow
+              label={t('commerce.decisionAvant', {
+                quand: formatDateTime(reservation.approval_expires_at, locale, timezone),
+              })}
+              value={t('commerce.decisionAvantAide')}
+              testID={`echeance-decision-${reservation.booking_id}`}
+            />
+          ) : null}
+          <Button
+            label={t('commerce.accorder')}
+            loading={envoi}
+            onPress={() => void accorder()}
+            testID={`accorder-${reservation.booking_id}`}
+          />
+          {/* **Ce qui rassure au moment exact où le doute se pose.** Le
+              commerce s'apprête à donner une prestation sans contrepartie
+              immédiate. Que le manquement coûte quelque chose est vrai —
+              `unfulfilled` pèse −30 au dossier — et c'était construit sans que
+              rien ne le lui dise. Sous le bouton d'accord et nulle part
+              ailleurs : dans un écran d'aide, personne ne le lirait. */}
+          <Texte
+            variante="type.caption"
+            couleur="ink.mute"
+            testID={`garantie-score-${reservation.booking_id}`}
+          >
+            {t('commerce.decisionSiElleNePubliePas')}
+          </Texte>
+        </>
       )}
       <MotifPuisAction
         libelle={t('commerce.refuser')}
@@ -560,7 +601,7 @@ function Ligne({
       </View>
       {avecGestes && reservation.status !== 'consumed' ? (
         <View style={{ paddingTop: 6 }}>
-          <Gestes reservation={reservation} onFait={onFait} />
+          <Gestes reservation={reservation} timezone={timezone} onFait={onFait} />
         </View>
       ) : null}
     </View>

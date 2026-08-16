@@ -141,6 +141,29 @@ class CreneauDepasse(BookingStateError):
     """
 
 
+def echeance_d_accord(booking: Booking, *, maintenant: datetime | None = None) -> datetime:
+    """Jusqu'à quand le commerce peut trancher.
+
+    **Le délai de configuration, borné par le début du créneau.** Promettre une
+    réponse pour le lendemain sur une prestation qui commence dans trois heures
+    ne veut rien dire : le commerce aurait « encore le temps » alors que la
+    créatrice serait déjà passée devant la porte. Le plus tôt des deux gagne.
+
+    **Un droit sans créneau n'a rien qui le borne** — `starts_at` est nul, on
+    prend le délai plein. Le créateur se présente quand il veut avant
+    `valid_until`, et rien dans la journée ne fixe d'heure limite.
+
+    **Une échéance déjà passée est un résultat valable**, pas un cas à
+    rattraper. Confirmer une demande dont le créneau a commencé laisse au
+    commerce un temps nul : c'est exact, il n'y a plus rien à accepter. Le
+    balayage la fera expirer au passage suivant, ce qui rend la place au lieu de
+    la garder pour un rendez-vous qui n'aura pas lieu.
+    """
+    depart = maintenant or datetime.now(UTC)
+    plein = depart + timedelta(seconds=get_settings().booking_approval_seconds)
+    return min(plein, booking.starts_at) if booking.starts_at is not None else plein
+
+
 async def transitionner(
     session: AsyncSession,
     *,
@@ -168,6 +191,16 @@ async def transitionner(
     # ferait mentir toute lecture qui s'y fie, à commencer par le calcul de
     # disponibilité.
     booking.hold_expires_at = None
+
+    # **Posée ici et nulle part ailleurs**, pour la même raison que la table des
+    # transitions existe : `awaiting_business` s'atteint depuis `confirmer`
+    # aujourd'hui, et rien ne dit que ce sera le seul chemin demain. Une pose
+    # faite chez l'appelant serait celle qu'on oublierait au deuxième chemin, et
+    # l'oubli produirait une demande sans échéance — que la contrainte refuse,
+    # mais bien plus loin, sous une erreur d'intégrité qui ne dit rien.
+    booking.approval_expires_at = (
+        echeance_d_accord(booking) if vers is BookingStatus.AWAITING_BUSINESS else None
+    )
 
     await session.flush()
     await audit.record_transition(
@@ -420,22 +453,30 @@ async def expirer_les_attentes_depassees(session: AsyncSession, *, limite: int =
     """Passe en `expired` les demandes que le commerce n'a pas tranchées à temps.
 
     Une réservation en attente tient une place et bloque un créateur qui ne peut
-    rien faire d'autre que patienter. Passé l'heure du rendez-vous, il n'y a
-    plus rien à trancher : la laisser en attente donnerait une file qui
-    s'allonge de dossiers morts, et un créateur qui attend une réponse qui n'a
-    plus d'objet.
+    rien faire d'autre que patienter.
 
-    Aucun événement de fiabilité : personne n'a manqué à rien.
+    **Sur `approval_expires_at`, et non plus à l'heure du rendez-vous.** Ce
+    balayage attendait `coalesce(starts_at, valid_until)` : un filet contre les
+    dossiers morts, pas un délai de réponse. Une demande posée trois semaines à
+    l'avance pouvait dormir trois semaines, et un droit sans créneau trente
+    jours — en tenant la place tout du long, et sans que personne, d'aucun des
+    deux côtés, sache jusqu'à quand.
+
+    La nouvelle échéance est toujours **plus stricte** que l'ancienne : elle
+    vaut au plus le délai de configuration, et elle est bornée par `starts_at`.
+    Ce balayage attrape donc tout ce qu'il attrapait, plus tôt.
+
+    Aucun événement de fiabilité : personne n'a manqué à rien. Un commerce qui
+    ne répond pas n'a rien promis, et le créateur n'a rien manqué non plus.
     """
     depassees = list(
         await session.scalars(
             sa.select(Booking)
             .where(
                 Booking.status == BookingStatus.AWAITING_BUSINESS,
-                sa.func.coalesce(Booking.starts_at, Booking.valid_until)
-                <= sa.func.clock_timestamp(),
+                Booking.approval_expires_at <= sa.func.clock_timestamp(),
             )
-            .order_by(Booking.starts_at)
+            .order_by(Booking.approval_expires_at)
             .limit(limite)
             .with_for_update(skip_locked=True)
         )
@@ -447,7 +488,7 @@ async def expirer_les_attentes_depassees(session: AsyncSession, *, limite: int =
             booking=reservation,
             vers=BookingStatus.EXPIRED,
             actor=audit.Actor.system(),
-            reason="le commerce n'a pas tranché avant l'heure du rendez-vous",
+            reason="le commerce n'a pas tranché dans le délai",
         )
 
     return len(depassees)

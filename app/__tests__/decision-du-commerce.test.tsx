@@ -34,6 +34,7 @@ const envois: { chemin: string; corps: unknown }[] = [];
  */
 const dansUneHeure = new Date(Date.now() + 3_600_000).toISOString();
 const ilYAUneHeure = new Date(Date.now() - 3_600_000).toISOString();
+const dansUneSemaine = new Date(Date.now() + 7 * 86_400_000).toISOString();
 
 const RESERVATIONS = [
   {
@@ -41,6 +42,9 @@ const RESERVATIONS = [
     status: 'awaiting_business',
     starts_at: dansUneHeure,
     valid_until: dansUneHeure,
+    // L'échéance d'accord vaut le délai plein **borné par le créneau** : avec
+    // un rendez-vous dans une heure, c'est l'heure du rendez-vous.
+    approval_expires_at: dansUneHeure,
     item_name: 'Gel manicure',
     creator_first_name: 'Rebecca',
     creator_last_name: null,
@@ -57,6 +61,15 @@ const RESERVATIONS = [
     creator_handle: 'sofia.brickell',
   },
 ];
+
+/**
+ * La file que le serveur rendra au prochain montage.
+ *
+ * Une variable plutôt qu'un filtre figé : certains cas ont besoin d'une demande
+ * dont l'échéance est passée, et remonter tout le décor pour une date serait
+ * recopier le montage à côté de lui-même.
+ */
+let fileDuJour: (typeof RESERVATIONS)[number][] = [];
 
 function client() {
   return new ApiClient({
@@ -78,7 +91,7 @@ function client() {
           fin: '2026-08-09T00:00:00Z',
           items: RESERVATIONS.filter((r) => r.status !== 'awaiting_business'),
           // La file vient du serveur, toutes dates confondues.
-          a_trancher: RESERVATIONS.filter((r) => r.status === 'awaiting_business'),
+          a_trancher: fileDuJour,
         }),
       } as Response;
     },
@@ -99,8 +112,15 @@ async function monter() {
   return vue;
 }
 
+/** Monte l'écran avec une file choisie plutôt qu'avec celle du décor. */
+async function monterAvec(file: (typeof RESERVATIONS)[number][]) {
+  fileDuJour = file;
+  return monter();
+}
+
 beforeEach(() => {
   envois.length = 0;
+  fileDuJour = RESERVATIONS.filter((r) => r.status === 'awaiting_business');
 });
 
 it('met ce qui attend une décision devant le planning', async () => {
@@ -218,20 +238,29 @@ it('ne propose plus d’accepter une demande dont l’heure est passée', async 
   // Il est 11 h 35, la demande porte sur 10 h 45. Accepter produirait une
   // réservation confirmée pour un rendez-vous qui n'aura pas lieu, et un code
   // de retrait pour un créneau écoulé.
-  RESERVATIONS[0].starts_at = ilYAUneHeure;
-  RESERVATIONS[0].valid_until = ilYAUneHeure;
-  try {
-    await monter();
+  //
+  // **`approval_expires_at` suit le créneau, et le décor doit le refléter.** Le
+  // serveur borne l'échéance d'accord par `starts_at` : un rendez-vous passé ne
+  // peut pas porter une échéance à venir. Ce test reculait les deux autres
+  // dates en laissant l'échéance devant, ce qui décrivait une réservation que
+  // le serveur ne produit jamais.
+  //
+  // Il mutait aussi le décor partagé, avec un `finally` pour le remettre — un
+  // montage explicite dit la même chose sans laisser de trace entre les tests.
+  await monterAvec([
+    {
+      ...RESERVATIONS[0],
+      starts_at: ilYAUneHeure,
+      valid_until: ilYAUneHeure,
+      approval_expires_at: ilYAUneHeure,
+    },
+  ]);
 
-    expect(screen.getByTestId('depassee-attente-1')).toBeTruthy();
-    expect(screen.queryByTestId('accorder-attente-1')).toBeNull();
-    // Refuser reste offert : un commerce qui répond en retard dit quand même
-    // ce qu'il en était, et la créatrice lit son motif.
-    expect(screen.getByTestId('refuser-attente-1')).toBeTruthy();
-  } finally {
-    RESERVATIONS[0].starts_at = dansUneHeure;
-    RESERVATIONS[0].valid_until = dansUneHeure;
-  }
+  expect(screen.getByTestId('depassee-attente-1')).toBeTruthy();
+  expect(screen.queryByTestId('accorder-attente-1')).toBeNull();
+  // Refuser reste offert : un commerce qui répond en retard dit quand même
+  // ce qu'il en était, et la créatrice lit son motif.
+  expect(screen.getByTestId('refuser-attente-1')).toBeTruthy();
 });
 
 it('distingue ce qui est derrière de ce qui reste à faire', async () => {
@@ -285,4 +314,70 @@ it('donne un vrai état vide à une journée sans rendez-vous', async () => {
   await waitFor(() => expect(screen.getByTestId('journee-vide')).toBeTruthy());
   expect(screen.getByText(en.commerce.journeeVideTitre)).toBeTruthy();
   expect(screen.queryByTestId('journee-vide-halo')).toBeNull();
+});
+
+
+it("dit jusqu'à quand la décision reste possible", async () => {
+  /**
+   * **Rien ne le disait, et il n'y avait rien à dire.** Aucun délai n'existait
+   * côté serveur : une demande posée trois semaines à l'avance pouvait dormir
+   * trois semaines en tenant la place. Maintenant qu'il existe, le commerce doit
+   * le lire là où il décide — pas dans un écran d'aide que personne n'ouvre.
+   */
+  await monter();
+
+  expect(screen.getByTestId('echeance-decision-attente-1')).toBeTruthy();
+  expect(screen.getByText(en.commerce.decisionAvantAide)).toBeTruthy();
+});
+
+it("dit au commerce ce qu'il risque à donner sans contrepartie immédiate", async () => {
+  /**
+   * **Le moment exact où le doute se pose.** Le commerce s'apprête à donner une
+   * prestation contre une promesse. Que le manquement coûte quelque chose est
+   * vrai — `unfulfilled` pèse −30 au dossier de la créatrice — et c'était
+   * construit sans que rien ne le lui dise.
+   */
+  await monter();
+
+  expect(screen.getByTestId('garantie-score-attente-1')).toBeTruthy();
+  expect(screen.getByText(en.commerce.decisionSiElleNePubliePas)).toBeTruthy();
+});
+
+it("ne promet plus rien quand l'échéance est passée", async () => {
+  /**
+   * **L'autre sens.** Un écran qui afficherait toujours l'échéance et la
+   * garantie passerait les deux tests ci-dessus sans rien garantir — et
+   * proposerait de décider là où il n'y a plus rien à décider.
+   */
+  await monterAvec([
+    { ...RESERVATIONS[0], starts_at: ilYAUneHeure, approval_expires_at: ilYAUneHeure },
+  ]);
+
+  expect(screen.queryByTestId('echeance-decision-attente-1')).toBeNull();
+  expect(screen.queryByTestId('garantie-score-attente-1')).toBeNull();
+  expect(screen.getByTestId('depassee-attente-1')).toBeTruthy();
+});
+
+it("ferme la décision quand le délai est passé, même si le créneau est loin", async () => {
+  /**
+   * **Le cas qui motive tout le changement, et le seul qui sépare les deux
+   * dates.** Un rendez-vous la semaine prochaine, un délai de réponse écoulé
+   * depuis une heure. L'écran lisait `starts_at` : il proposait donc encore
+   * d'accepter six jours durant, sur une demande que le serveur a déjà fait
+   * expirer — un bouton qui part chercher un refus.
+   *
+   * Sans ce test, remplacer `approval_expires_at` par `starts_at` ne casse
+   * rien : dans tous les autres décors les deux dates coïncident.
+   */
+  await monterAvec([
+    {
+      ...RESERVATIONS[0],
+      starts_at: dansUneSemaine,
+      valid_until: dansUneSemaine,
+      approval_expires_at: ilYAUneHeure,
+    },
+  ]);
+
+  expect(screen.getByTestId('depassee-attente-1')).toBeTruthy();
+  expect(screen.queryByTestId('accorder-attente-1')).toBeNull();
 });
