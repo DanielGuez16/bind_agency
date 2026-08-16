@@ -65,7 +65,7 @@ export function PaveDeSaisie({
           accessibilityLabel={caractere}
           disabled={desactive}
           onPress={() => onTouche(caractere)}
-          style={{
+          style={({ pressed }) => ({
             width: TOUCHE,
             height: TOUCHE,
             alignItems: 'center',
@@ -74,8 +74,10 @@ export function PaveDeSaisie({
             borderWidth: 1,
             borderColor: c['line.default'],
             backgroundColor: c['bg.surface'],
-            opacity: desactive ? 0.4 : 1,
-          }}
+            // Deux raisons de pâlir, une seule opacité : la désactivation
+            // l'emporte, sinon une touche inactive « réagirait » à l'appui.
+            opacity: desactive ? 0.4 : pressed ? 0.7 : 1,
+        })}
         >
           <Texte variante="type.mono" style={{ fontSize: 22 }}>
             {caractere}

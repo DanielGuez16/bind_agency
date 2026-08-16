@@ -24,7 +24,7 @@ import {
   type GenreDeNotification,
   type PreferencesDeNotification as Vue,
 } from '../api';
-import { StatusMessage, Texte, Toggle } from '../components';
+import { SkeletonBox, StatusMessage, Texte, Toggle } from '../components';
 import { useI18n } from '../i18n';
 import { useRequete } from './useRequete';
 
@@ -77,17 +77,28 @@ export function PreferencesDeNotification({ role }: { role: string }) {
   if (genres.length === 0) return null;
 
   /**
-   * L'état d'un interrupteur : le local d'abord, la réponse ensuite, « oui »
-   * à défaut.
+   * L'état d'un interrupteur, **une fois la réponse là** : le local d'abord,
+   * la réponse ensuite, « oui » à défaut.
    *
    * **Lu prudemment, jusqu'au champ.** Une réponse sans `preferences` faisait
    * tomber l'écran entier — et un écran de réglages qui plante emporte la
    * langue et le thème avec lui. « Oui » est aussi le défaut du serveur : une
    * préférence absente vaut accord, ici comme là-bas.
+   *
+   * **Ce défaut ne vaut que pour une préférence absente d'une réponse reçue.**
+   * Il servait aussi tant qu'aucune réponse n'était arrivée : les sept
+   * interrupteurs s'affichaient alors sur « activé », c'est-à-dire un état
+   * inventé montré comme un fait. Quelqu'un qui en coupait un à cet instant
+   * n'avait aucun moyen de savoir qu'il coupait peut-être ce qui était déjà
+   * coupé — et l'écran redessinait sous ses doigts quand la réponse arrivait.
+   * Une valeur qu'on ne connaît pas ne se devine pas, elle s'attend.
+   *
+   * Elle n'est appelée que depuis la branche `pret` — l'interrupteur n'existe
+   * pas avant, et `basculer` ne part que d'un interrupteur.
    */
+  const recues = requete.etat === 'pret' ? requete.donnees : null;
   const etat = (genre: GenreDeNotification): boolean =>
-    local[genre] ??
-    (requete.etat === 'pret' ? (requete.donnees?.preferences?.[genre] ?? true) : true);
+    local[genre] ?? recues?.preferences?.[genre] ?? true;
 
   async function basculer(genre: GenreDeNotification) {
     const voulu = !etat(genre);
@@ -117,7 +128,7 @@ export function PreferencesDeNotification({ role }: { role: string }) {
 
       {echec ? <StatusMessage level="danger" body={echec} testID="echec-preference" /> : null}
 
-      {genres.map((genre) => (
+      {genres.map((genre, rang) => (
         <View
           key={genre}
           testID={`preference-${genre}`}
@@ -130,15 +141,45 @@ export function PreferencesDeNotification({ role }: { role: string }) {
           }}
         >
           <Texte style={{ flex: 1 }}>{t(`notifications.${genre}`)}</Texte>
-          <Toggle
-            value={etat(genre)}
-            disabled={enCours === genre || requete.etat === 'chargement'}
-            onChange={() => void basculer(genre)}
-            accessibilityLabel={t(`notifications.${genre}`)}
-            testID={`bascule-${genre}`}
-          />
+          {requete.etat === 'pret' ? (
+            <Toggle
+              value={etat(genre)}
+              disabled={enCours === genre}
+              onChange={() => void basculer(genre)}
+              accessibilityLabel={t(`notifications.${genre}`)}
+              testID={`bascule-${genre}`}
+            />
+          ) : (
+            // **Une silhouette à la place d'une valeur.** Aux dimensions exactes
+            // de l'interrupteur — 40 × 22 — pour que rien ne se déplace quand la
+            // réponse arrive. Le libellé, lui, reste : il ne dépend d'aucune
+            // réponse, et le faire disparaître ferait clignoter tout le bloc.
+            <SkeletonBox
+              width={40}
+              height={22}
+              rayon={11}
+              decalage={rang * 60}
+              testID={`bascule-en-attente-${genre}`}
+            />
+          )}
         </View>
       ))}
+
+      {/* Une réponse qui n'arrive pas se dit. Sans cela l'écran garderait ses
+          silhouettes indéfiniment, ce qui se lit comme une page qui n'a pas
+          fini de charger — alors qu'elle a fini, et qu'elle a échoué. */}
+      {requete.etat === 'erreur' ? (
+        <StatusMessage
+          level="warning"
+          body={messageDErreur(requete.erreur)}
+          action={{
+            label: t('common.retry'),
+            onPress: requete.recharger,
+            variant: 'secondary',
+          }}
+          testID="preferences-illisibles"
+        />
+      ) : null}
     </View>
   );
 }

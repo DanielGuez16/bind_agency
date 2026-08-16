@@ -66,7 +66,7 @@ function Touche({
       // 32 de haut mais 44 de zone tactile : `hitSlop` élargit sans changer la
       // géométrie, ce qu'aucune marge ne sait faire.
       hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-      style={{
+      style={({ pressed }) => ({
         width: 32,
         height: 32,
         borderRadius: radius['radius.none'],
@@ -74,7 +74,8 @@ function Touche({
         borderColor: c['line.default'],
         alignItems: 'center',
         justifyContent: 'center',
-      }}
+          opacity: pressed ? 0.7 : 1,
+        })}
     >
       <Texte variante="type.bodyStrong" couleur={actif ? 'ink.default' : 'ink.faint'}>
         {signe}
@@ -113,7 +114,7 @@ export function RangeeDeValeurs({
             accessibilityState={{ selected: choisi }}
             accessibilityLabel={String(v)}
             onPress={() => onChange(v)}
-            style={{
+            style={({ pressed }) => ({
               flex: 1,
               height: 40,
               alignItems: 'center',
@@ -130,7 +131,8 @@ export function RangeeDeValeurs({
                   ? c['status.danger.surface']
                   : c['brand.50']
                 : 'transparent',
-            }}
+          opacity: pressed ? 0.7 : 1,
+        })}
           >
             <Texte
               variante="type.mono"

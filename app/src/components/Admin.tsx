@@ -82,7 +82,7 @@ export function TableRow({
       accessibilityRole="button"
       accessibilityState={{ selected: actif }}
       onPress={onPress}
-      style={{
+      style={({ pressed }) => ({
         flexDirection: 'row',
         minHeight: 36,
         alignItems: 'center',
@@ -92,7 +92,8 @@ export function TableRow({
         backgroundColor: actif ? c['brand.50'] : 'transparent',
         borderLeftWidth: 3,
         borderLeftColor: actif ? c['brand.700'] : 'transparent',
-      }}
+          opacity: pressed ? 0.7 : 1,
+        })}
     >
       {colonnes.map((colonne) => (
         <View

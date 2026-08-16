@@ -191,7 +191,11 @@ export function MenuReviewScreen({
       {etat.state === 'fait' ? (
         <Text style={styles.fait}>{t('menuImport.validated', { count: etat.count })}</Text>
       ) : (
-        <Pressable accessibilityRole="button" onPress={valider} style={styles.bouton}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={valider}
+          style={({ pressed }) => [styles.bouton, { opacity: pressed ? 0.7 : 1 }]}
+        >
           <Text>{t('menuImport.validate')}</Text>
         </Pressable>
       )}

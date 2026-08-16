@@ -47,7 +47,7 @@ export function DayPicker({
             accessibilityLabel={`${jour.jourCourt} ${jour.numero}`}
             disabled={!jour.disponible}
             onPress={() => onChange(jour.cle)}
-            style={{
+            style={({ pressed }) => ({
               flex: 1,
               height: 60,
               alignItems: 'center',
@@ -61,7 +61,8 @@ export function DayPicker({
                 : jour.disponible
                   ? 'transparent'
                   : c['bg.sunken'],
-            }}
+          opacity: pressed ? 0.7 : 1,
+        })}
           >
             <Texte
               variante="type.caption"
@@ -116,7 +117,7 @@ export function SlotPicker({
             // rythme du salon.
             disabled={creneau.pris}
             onPress={() => onChange(creneau.cle)}
-            style={{
+            style={({ pressed }) => ({
               minHeight: 44,
               paddingVertical: 11,
               paddingHorizontal: 16,
@@ -128,7 +129,8 @@ export function SlotPicker({
                 : creneau.pris
                   ? c['bg.sunken']
                   : 'transparent',
-            }}
+          opacity: pressed ? 0.7 : 1,
+        })}
           >
             <Texte
               variante="type.mono"

@@ -75,7 +75,7 @@ export function ConfigurationScreen({
             key={porte.cle}
             accessibilityRole="button"
             onPress={() => onOuvrir(porte.cle)}
-            style={{
+            style={({ pressed }) => ({
               flexDirection: 'row',
               alignItems: 'center',
               gap: 12,
@@ -84,7 +84,8 @@ export function ConfigurationScreen({
               backgroundColor: c['bg.surface'],
               borderWidth: 1,
               borderColor: c['line.default'],
-            }}
+          opacity: pressed ? 0.7 : 1,
+        })}
             testID={`ouvrir-${porte.cle}`}
           >
             <View style={{ flex: 1, gap: 2 }}>
@@ -242,7 +243,7 @@ function ColonneDesSections({
             accessibilityState={{ selected: active }}
             onPress={() => onChoisir(section.cle)}
             testID={`section-${section.cle}`}
-            style={{
+            style={({ pressed }) => ({
               gap: 2,
               padding: 12,
               borderRadius: radius['radius.none'],
@@ -251,7 +252,8 @@ function ColonneDesSections({
               backgroundColor: active ? c['brand.50'] : 'transparent',
               borderLeftWidth: 3,
               borderLeftColor: active ? c['brand.700'] : 'transparent',
-            }}
+          opacity: pressed ? 0.7 : 1,
+        })}
           >
             <Texte variante="type.label" couleur={active ? 'brand.700' : 'ink.default'}>
               {t(section.titre)}

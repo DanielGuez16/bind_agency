@@ -27,10 +27,11 @@ import { View } from 'react-native';
 import { useApi, type ExceptionDeCapacite, type RegleDeCapacite } from '../api';
 import {
   Button,
+  SkeletonLignes,
   StatusMessage,
   Stepper,
-  TextField,
   Texte,
+  TextField,
   vibration,
 } from '../components';
 import { useI18n } from '../i18n';
@@ -86,6 +87,7 @@ export function HorairesScreen({
       onRetour={onRetour}
       // Rendu dans la colonne du menu de configuration, qui borne déjà.
       nature="section"
+      squelette={<SkeletonLignes combien={7} testID="squelette-horaires" />}
       testID="ecran-horaires"
     >
       {(semaine) => (

@@ -21,7 +21,15 @@
 import { View } from 'react-native';
 
 import { useApi, type CreateurDeLAnnuaire } from '../api';
-import { Apparition, EmptyState, Filet, StatusMessage, Texte, TierBadge } from '../components';
+import {
+  Apparition,
+  EmptyState,
+  Filet,
+  SkeletonLignes,
+  StatusMessage,
+  Texte,
+  TierBadge,
+} from '../components';
 import { formatNumber } from '../format';
 import { useI18n } from '../i18n';
 import { useGabarit } from '../shell/gabarit';
@@ -99,6 +107,7 @@ export function AnnuaireScreen({ businessId }: { businessId: string }) {
       requete={requete}
       titre={t('annuaire.titre')}
       nature="creator"
+      squelette={<SkeletonLignes combien={6} testID="squelette-annuaire" />}
       testID="ecran-annuaire"
       vide={
         <EmptyState

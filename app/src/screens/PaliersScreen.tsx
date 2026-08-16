@@ -429,7 +429,7 @@ function PorteDesRegles({ onPress }: { onPress: () => void }) {
       accessibilityRole="button"
       accessibilityLabel={t('tiers.rulesEntry')}
       onPress={onPress}
-      style={{
+      style={({ pressed }) => ({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 12,
@@ -438,7 +438,8 @@ function PorteDesRegles({ onPress }: { onPress: () => void }) {
         borderWidth: 1,
         borderColor: c['line.default'],
         backgroundColor: c['bg.surface'],
-      }}
+          opacity: pressed ? 0.7 : 1,
+        })}
     >
       <View style={{ flex: 1, gap: 2 }}>
         <Texte variante="type.bodyStrong">{t('tiers.rulesEntry')}</Texte>
@@ -566,14 +567,15 @@ export function BarreauDePalier({
           accessibilityRole="button"
           accessibilityLabel={t('tiers.seeServices', { count: palier.offres_disponibles })}
           onPress={() => onVoirLesPrestations?.(palier)}
-          style={{
+          style={({ pressed }) => ({
             minHeight: 40,
             justifyContent: 'center',
             paddingHorizontal: 14,
             borderRadius: radius['radius.none'],
             borderWidth: 1,
             borderColor: c[bordureDeCarte],
-          }}
+          opacity: pressed ? 0.7 : 1,
+        })}
         >
           <Texte variante="type.label" couleur={encre}>
             {t('tiers.seeShort')}
@@ -630,7 +632,7 @@ export function BarreauDePalier({
             testID={`vers-prestations-${palier.tier_id}`}
             accessibilityRole="button"
             onPress={() => onVoirLesPrestations?.(palier)}
-            style={{
+            style={({ pressed }) => ({
               minHeight: 48,
               flexDirection: 'row',
               alignItems: 'center',
@@ -638,7 +640,8 @@ export function BarreauDePalier({
               paddingHorizontal: 14,
               borderTopWidth: 1,
               borderTopColor: c['line.default'],
-            }}
+          opacity: pressed ? 0.7 : 1,
+        })}
           >
             <Texte variante="type.bodyStrong" couleur={encre} style={{ flex: 1 }}>
               {t('tiers.seeServices', { count: palier.offres_disponibles })}

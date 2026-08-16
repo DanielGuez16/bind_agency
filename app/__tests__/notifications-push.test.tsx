@@ -10,7 +10,7 @@
  * s'ouvrira**. C'est la leçon de la position, où un bouton qui ne produisait
  * plus rien a coûté une campagne.
  */
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 
 import { Api, ApiClient, ApiProvider } from '../src/api';
@@ -149,6 +149,95 @@ async function monter(role: string, api: ApiClient) {
 }
 
 describe('les préférences de notification', () => {
+  it("n'affiche aucune valeur tant que le serveur n'a pas répondu", async () => {
+    /**
+     * **Un état inventé montré comme un fait.** Tant que la réponse n'était pas
+     * là, les sept interrupteurs s'affichaient sur « activé » — le défaut d'une
+     * préférence absente, appliqué à une préférence simplement pas encore lue.
+     * Quelqu'un qui en coupait un à cet instant n'avait aucun moyen de savoir
+     * qu'il coupait peut-être ce qui était déjà coupé, et l'écran redessinait
+     * sous ses doigts à l'arrivée de la réponse.
+     *
+     * Ici, le serveur dira « coupé ». Pendant l'attente, l'écran ne doit donc
+     * montrer **ni** « activé » **ni** « coupé » : une silhouette, et le
+     * libellé qui, lui, ne dépend d'aucune réponse.
+     */
+    let repondre: (() => void) | null = null;
+    const attente = new Promise<void>((resoudre) => {
+      repondre = resoudre;
+    });
+
+    const client = new ApiClient({
+      baseUrl: 'https://api.test',
+      coffre,
+      fetchImpl: async () => {
+        await attente;
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ preferences: { ...TOUT_OUVERT.preferences, publication_reminder: false } }),
+        } as Response;
+      },
+    });
+
+    await monter('creator', client);
+
+    // Pendant l'attente : la silhouette, et aucun interrupteur.
+    //
+    // `includeHiddenElements` parce que la silhouette est **délibérément**
+    // masquée aux technologies d'assistance : elle ne porte aucune information,
+    // et la faire annoncer reviendrait à lire « chargement » sept fois.
+    await waitFor(() =>
+      expect(
+        screen.getByTestId('bascule-en-attente-publication_reminder', {
+          includeHiddenElements: true,
+        }),
+      ).toBeTruthy(),
+    );
+    expect(screen.queryByTestId('bascule-publication_reminder')).toBeNull();
+    // Le libellé reste, **et c'est le texte qu'on vérifie**, pas la ligne qui
+    // le contient : la ligne survit à la disparition de son libellé, et
+    // l'assertion passait donc sur un écran devenu muet.
+    expect(screen.getByText(en.notifications.publication_reminder)).toBeTruthy();
+
+    await act(async () => {
+      repondre?.();
+      await attente;
+    });
+
+    // La réponse arrivée : l'interrupteur paraît, sur la valeur du serveur.
+    await waitFor(() => expect(screen.getByTestId('bascule-publication_reminder')).toBeTruthy());
+    expect(
+      screen.getByTestId('bascule-publication_reminder').props.accessibilityState,
+    ).toMatchObject({ checked: false });
+    expect(
+      screen.queryByTestId('bascule-en-attente-publication_reminder', {
+        includeHiddenElements: true,
+      }),
+    ).toBeNull();
+  });
+
+  it('dit que les préférences sont illisibles plutôt que de garder ses silhouettes', async () => {
+    /**
+     * **L'autre sens.** Un écran qui garderait ses silhouettes après un échec se
+     * lit comme une page qui n'a pas fini de charger — alors qu'elle a fini, et
+     * qu'elle a échoué. Sans ce chemin, la correction ci-dessus troquerait une
+     * valeur fausse contre une attente sans fin.
+     */
+    const client = new ApiClient({
+      baseUrl: 'https://api.test',
+      coffre,
+      fetchImpl: async () =>
+        ({ ok: false, status: 500, json: async () => ({ detail: 'internal_error' }) }) as Response,
+    });
+
+    await monter('creator', client);
+
+    await waitFor(() => expect(screen.getByTestId('preferences-illisibles')).toBeTruthy());
+    expect(screen.queryByTestId('bascule-publication_reminder')).toBeNull();
+  });
+
+
   it('ne montre au créateur que les genres qui le concernent', async () => {
     // « Une réservation attend votre décision » ne veut rien dire pour un
     // créateur. Un interrupteur qui ne commande rien est pire qu'absent.

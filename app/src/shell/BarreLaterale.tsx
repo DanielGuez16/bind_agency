@@ -134,7 +134,7 @@ export function BarreLaterale({
                   navigation.navigate(route.name, route.params);
                 }
               }}
-              style={{
+              style={({ pressed }) => ({
                 height: hauteur,
                 flexDirection: 'row',
                 alignItems: 'center',
@@ -155,7 +155,8 @@ export function BarreLaterale({
                 // en `brand.500` — c'est une surface de 3 px, pas une encre.
                 borderLeftWidth: 3,
                 borderLeftColor: actif ? c['brand.500'] : 'transparent',
-              }}
+          opacity: pressed ? 0.7 : 1,
+        })}
             >
               {options.tabBarIcon?.({
                 focused: actif,
@@ -183,7 +184,7 @@ export function BarreLaterale({
         accessibilityRole='button'
         accessibilityLabel={t(replie ? 'coquille.deplier' : 'coquille.replier')}
         onPress={basculer}
-        style={{
+        style={({ pressed }) => ({
           height: hauteur,
           flexDirection: 'row',
           alignItems: 'center',
@@ -191,7 +192,8 @@ export function BarreLaterale({
           marginHorizontal: spacing['space.2'],
           paddingLeft: replie ? 0 : spacing['space.3'],
           justifyContent: replie ? 'center' : 'flex-start',
-        }}
+          opacity: pressed ? 0.7 : 1,
+        })}
       >
         {/* Un seul chevron dans le jeu d'icônes, tourné vers la droite. Le
             retourner vaut mieux que d'en ajouter un second à traduire

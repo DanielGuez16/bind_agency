@@ -90,8 +90,14 @@ export function Ecran<T>({
       return (
         <View testID="etat-chargement" style={{ gap: density.gap }}>
           {squelette ?? (
+            // **Le défaut promet une carte à photo, et il n'a raison que sur le
+            // fil.** Nommé pour qu'une garde puisse vérifier qu'il ne sert pas
+            // là où l'écran rend des lignes, un tableau, une grille ou une
+            // fiche unique : le squelette de la mauvaise forme fait sauter la
+            // page entière à l'arrivée des données, exactement au moment où on
+            // commençait à lire.
             <>
-              <SkeletonCard />
+              <SkeletonCard testID="squelette-par-defaut" />
               <SkeletonCard />
               <SkeletonCard />
             </>
@@ -185,7 +191,9 @@ export function Ecran<T>({
             accessibilityRole="button"
             accessibilityLabel={t('common.retour')}
             hitSlop={12}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start' }}
+            style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start',
+              opacity: pressed ? 0.7 : 1,
+            })}
             testID="retour"
           >
             <Icone nom="retour" couleur="ink.soft" taille={18} />

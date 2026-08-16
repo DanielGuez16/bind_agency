@@ -22,7 +22,16 @@ import { useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
 import { useApi, type Creneau as CreneauApi, type FichePublique, type OffreDeLaFiche } from '../api';
-import { Button, DayPicker, EmptyState, SlotPicker, StatusMessage, Texte } from '../components';
+import {
+  Button,
+  DayPicker,
+  EmptyState,
+  SkeletonGrille,
+  SlotPicker,
+  StatusMessage,
+  Texte,
+  vibration,
+} from '../components';
 import { useI18n } from '../i18n';
 import { Ecran } from './Ecran';
 import { useRequete } from './useRequete';
@@ -118,10 +127,26 @@ export function CreneauxScreen({
   const matin = duJour.filter((x) => heureLocale(x.starts_at, fiche.timezone) < MIDI);
   const apresMidi = duJour.filter((x) => heureLocale(x.starts_at, fiche.timezone) >= MIDI);
 
+  /**
+   * Choisir un créneau, avec le cran qui va avec.
+   *
+   * **Le geste central du parcours créateur, et il ne renvoyait rien.** Le
+   * doigt appuyait, la pastille ne changeait de couleur qu'au rendu suivant, et
+   * rien dans la main ne disait que le choix était pris. `action` est le même
+   * retour que celui des envois : léger, une fois, jamais une célébration.
+   */
+  function choisir(cle: string | undefined) {
+    vibration.action();
+    setChoisi(cle);
+  }
+
   async function reserver() {
     if (!offre.social_account_id) return;
     setEnvoi(true);
     setEchec(null);
+    // Le seul geste de tout le parcours qui engage la créatrice auprès d'un
+    // salon : il se sent, et son issue se sent aussi.
+    vibration.action();
     try {
       const booking = await api.reserver({
         tier_offer_id: offre.tier_offer_id,
@@ -129,8 +154,10 @@ export function CreneauxScreen({
         starts_at: offre.requires_booking ? choisi : null,
       });
       await api.confirmerLaReservation(booking.id);
+      vibration.reussite();
       onReserve(booking.id);
     } catch (erreur) {
+      vibration.echec();
       setEchec(messageDErreur(erreur));
       // La place a peut-être été prise pendant l'hésitation : on relit.
       setChoisi(undefined);
@@ -149,6 +176,7 @@ export function CreneauxScreen({
         requete={requete}
         titre={t('parcours.creneauxTitre')}
         vide={<EmptyState title={t('parcours.creneauxTitre')} body={t('parcours.creneauxVide')} />}
+        squelette={<SkeletonGrille testID="squelette-creneaux" />}
       >
         {() => (
           <View style={{ gap: 16 }}>
@@ -171,7 +199,7 @@ export function CreneauxScreen({
               creneaux={matin}
               timezone={fiche.timezone}
               selection={choisi}
-              onChange={setChoisi}
+              onChange={choisir}
               testID="matin"
             />
             <Groupe
@@ -179,7 +207,7 @@ export function CreneauxScreen({
               creneaux={apresMidi}
               timezone={fiche.timezone}
               selection={choisi}
-              onChange={setChoisi}
+              onChange={choisir}
               testID="apres-midi"
             />
 
