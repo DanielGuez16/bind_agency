@@ -70,6 +70,15 @@ export type PileCreateurParams = {
   Fil: undefined;
   Fiche: { businessId: string };
   Creneaux: { fiche: FichePublique; offre: OffreDeLaFiche };
+  /**
+   * **L'explication, ouverte depuis le fil.** Les paliers étaient un onglet ;
+   * ils répondaient à une question qu'on ne se pose pas en ouvrant
+   * l'application. Ce qu'on veut savoir, c'est ce qu'on peut réserver — le fil
+   * répond, et les paliers expliquent pourquoi. Une pile, donc : l'écran naît
+   * d'une ligne du fil et y revient.
+   */
+  Paliers: undefined;
+  Regles: undefined;
 };
 
 /**
@@ -87,19 +96,6 @@ export type PileReservationsParams = {
   Preuve: { collaborationId: string };
 };
 
-/**
- * Les paliers, et les règles qui les gouvernent.
- *
- * Une pile pour deux écrans : les règles étaient jusqu'ici nulle part, et
- * l'écran des paliers citait une condition de fiabilité que rien n'expliquait.
- * En grand écran elles sont la colonne de droite de l'échelle et cette pile
- * n'est jamais empilée — le second écran n'existe que faute de seconde colonne.
- */
-export type PilePaliersParams = {
-  Paliers: undefined;
-  Regles: undefined;
-};
-
 export type PileCommerceParams = {
   Journee: { businessId: string };
   Caisse: undefined;
@@ -115,7 +111,6 @@ export type PileConfigurationParams = {
 
 const PileCreateur = createNativeStackNavigator<PileCreateurParams>();
 const PileReservations = createNativeStackNavigator<PileReservationsParams>();
-const PilePaliers = createNativeStackNavigator<PilePaliersParams>();
 const PileCommerce = createNativeStackNavigator<PileCommerceParams>();
 const PileConfiguration = createNativeStackNavigator<PileConfigurationParams>();
 const Onglets = createBottomTabNavigator();
@@ -270,7 +265,9 @@ function ParcoursCreateur({
             prenom={prenom}
             onConnecterUnReseau={onConnecterUnReseau}
             onVoirMonAudience={onVoirMonAudience}
-            onVoirMesPaliers={onVoirMesPaliers}
+            // Dans la pile, plus vers un onglet : c'est ce déplacement qui
+            // fait de l'écran une explication au lieu d'une destination.
+            onVoirMesPaliers={() => navigation.navigate('Paliers')}
             onDemanderLaPosition={demander}
             onOuvrirLeCommerce={(businessId) => navigation.navigate('Fiche', { businessId })}
           />
@@ -285,6 +282,25 @@ function ParcoursCreateur({
             onReserver={(offre, fiche) => navigation.navigate('Creneaux', { fiche, offre })}
           />
         )}
+      </PileCreateur.Screen>
+
+      {/* **Les paliers s'ouvrent d'ici, et nulle part ailleurs.** L'écran
+          explique le nombre que le fil annonce ; le sortir de cette pile le
+          remettrait à distance de la question qu'il répond. */}
+      <PileCreateur.Screen name="Paliers">
+        {({ navigation }) => (
+          <PaliersScreen
+            prenom={prenom}
+            onRetour={() => navigation.goBack()}
+            onConnecterUnReseau={onConnecterUnReseau}
+            onVoirMonAudience={onVoirMonAudience}
+            onLireLesRegles={() => navigation.navigate('Regles')}
+          />
+        )}
+      </PileCreateur.Screen>
+
+      <PileCreateur.Screen name="Regles">
+        {({ navigation }) => <ReglesScreen onRetour={() => navigation.goBack()} />}
       </PileCreateur.Screen>
 
       <PileCreateur.Screen name="Creneaux">
@@ -304,36 +320,6 @@ function ParcoursCreateur({
       </PileCreateur.Screen>
 
     </PileCreateur.Navigator>
-  );
-}
-
-/** L'échelle, et les règles derrière elle. */
-function PileDesPaliers({
-  prenom,
-  onConnecterUnReseau,
-  onVoirMonAudience,
-}: {
-  prenom: string | null;
-  onConnecterUnReseau?: () => void;
-  onVoirMonAudience?: () => void;
-}) {
-  return (
-    <PilePaliers.Navigator screenOptions={OPTIONS_DE_PILE}>
-      <PilePaliers.Screen name="Paliers">
-        {({ navigation }) => (
-          <PaliersScreen
-            prenom={prenom}
-            onConnecterUnReseau={onConnecterUnReseau}
-            onVoirMonAudience={onVoirMonAudience}
-            onLireLesRegles={() => navigation.navigate('Regles')}
-          />
-        )}
-      </PilePaliers.Screen>
-
-      <PilePaliers.Screen name="Regles">
-        {({ navigation }) => <ReglesScreen onRetour={() => navigation.goBack()} />}
-      </PilePaliers.Screen>
-    </PilePaliers.Navigator>
   );
 }
 
@@ -429,15 +415,6 @@ function OngletsCreateur({
             // prise, elle porte la date, et c'est de là qu'on rouvre le code le
             // jour venu.
             onReserve={() => navigation.navigate('reservations', { screen: 'Historique' })}
-          />
-        )}
-      </Onglets.Screen>
-      <Onglets.Screen name="paliers" options={onglet(t('onglets.paliers'), 'paliers')}>
-        {() => (
-          <PileDesPaliers
-            prenom={prenom}
-            onConnecterUnReseau={onConnecterUnReseau}
-            onVoirMonAudience={onVoirMonAudience}
           />
         )}
       </Onglets.Screen>

@@ -212,6 +212,14 @@ export const en = {
     filTitre: 'Near you',
     filVide: 'No place within {{rayon}} km.',
     filElargir: 'Widen to {{rayon}} km',
+    // Deux clés plutôt qu'un pluriel : le produit choisit entre deux clés
+    // là où ça compte, et une créatrice à qui une seule prestation est
+    // ouverte est le cas du premier jour, pas le cas limite.
+    filPrestationsOuverteUne: 'One service is open to you',
+    filPrestationsOuvertes: '{{count}} services are open to you',
+    // Le mot qui nomme ce qu'on ouvre. « Paliers » est un mot du produit
+    // qu'il faut déjà connaître pour vouloir appuyer dessus.
+    filPourquoi: 'Why',
     filRayon: '{{rayon}} km',
     filSansPosition: 'We need your location to show places near you.',
     filAutoriser: 'Share my location',

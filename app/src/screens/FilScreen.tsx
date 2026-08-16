@@ -24,9 +24,22 @@
  * Élargir le rayon n'est proposé que dans le seul cas où la distance est en
  * cause. Le proposer ailleurs enverrait chercher plus loin quelque chose qui
  * n'est nulle part.
+ *
+ * ---
+ *
+ * **Les paliers ne sont plus un onglet, ils sont une ligne d'ici.** Un onglet
+ * répond à une question qu'on se pose en ouvrant l'application ; « quel est mon
+ * palier » n'en est pas une. Ce que la créatrice veut savoir en ouvrant l'app,
+ * c'est **ce qu'elle peut réserver** — et c'est le fil qui répond.
+ *
+ * La ligne dit le nombre avant de proposer l'explication : « douze prestations
+ * vous sont ouvertes » est la réponse, et les paliers sont la raison. Rangée
+ * dans un onglet, la raison était offerte à qui n'avait pas posé la question ;
+ * ici elle attend qu'on la pose. L'information ne disparaît pas, elle arrive au
+ * moment où elle sert.
  */
 import { useState } from 'react';
-import { View } from 'react-native';
+import { Animated, Pressable, View } from 'react-native';
 
 import { useApi, type CommerceDuFil, type Fil } from '../api';
 import {
@@ -34,12 +47,16 @@ import {
   BusinessCard,
   Chip,
   EnTeteDEcran,
+  Icone,
   RangeeDeChips,
   StatusMessage,
   Texte,
 } from '../components';
+import { useEnfoncement } from '../components/Mouvement';
 import { useI18n } from '../i18n';
+import { formatNumber } from '../format';
 import { useGabarit } from '../shell/gabarit';
+import { size } from '../theme';
 import { messageDePosition } from '../shell/messageDePosition';
 import type { EtatDePosition } from '../shell/usePosition';
 import { en } from '../i18n/en';
@@ -202,6 +219,11 @@ export function FilScreen({
             ))}
           </RangeeDeChips>
 
+          {/* **La réponse, puis la raison.** Le nombre est ce que la créatrice
+              est venue chercher ; les paliers sont ce qui l'explique, et ils
+              s'ouvrent d'ici plutôt que d'occuper un onglet. */}
+          <PrestationsOuvertes total={fil.total_prestations} onOuvrir={onVoirMesPaliers} />
+
           {/* Rendus même quand le fil n'est pas vide : un créateur qui accède
               au palier story mais pas au reel doit savoir ce qui lui manque,
               sinon il croit avoir tout vu. */}
@@ -251,6 +273,78 @@ export function FilScreen({
         </View>
       )}
     </Ecran>
+  );
+}
+
+/**
+ * « Douze prestations vous sont ouvertes », et de quoi savoir pourquoi.
+ *
+ * **Le nombre d'abord, l'explication ensuite.** C'est la réponse à la question
+ * qu'on se pose en ouvrant l'application, et les paliers en sont la raison —
+ * pas l'inverse. L'écran des paliers s'ouvre d'ici, quand la question se pose,
+ * au lieu d'attendre dans un onglet qu'on ne visite qu'une fois.
+ *
+ * **Il n'y a pas de cas zéro à traiter, et c'est vérifié côté serveur.**
+ * `total_prestations` vaut `sum(len(commerce.items))` : il est nul exactement
+ * quand le fil est vide, et un fil vide rend `RaisonDuVide` à la place de ce
+ * corps. Une garde `total <= 0` ici protégerait donc un état qu'aucun appel
+ * n'atteint — et il faudrait, pour l'éprouver, fabriquer une réponse que le
+ * serveur ne produit pas. Le coût d'un repli défensif n'est pas nul : il crée
+ * un chemin que rien ne parcourt et un test qui ment sur ce qu'il couvre.
+ *
+ * La ligne est donc un résumé de ce qui est **sous** elle, pas un fait séparé :
+ * les douze prestations annoncées sont celles des cartes qui suivent.
+ */
+function PrestationsOuvertes({
+  total,
+  onOuvrir,
+}: {
+  total: number;
+  onOuvrir?: () => void;
+}) {
+  const { t, locale } = useI18n();
+  const enfoncement = useEnfoncement(Boolean(onOuvrir));
+
+  const phrase =
+    total === 1
+      ? t('parcours.filPrestationsOuverteUne')
+      : t('parcours.filPrestationsOuvertes', { count: formatNumber(total, locale) });
+
+  // Sans issue vers l'explication, la ligne reste une phrase : elle informe
+  // toujours, et un appui qui ne mène nulle part vaut moins que pas d'appui.
+  if (!onOuvrir) {
+    return (
+      <Texte variante="type.body" testID="prestations-ouvertes">
+        {phrase}
+      </Texte>
+    );
+  }
+
+  return (
+    // Le même enfoncement que les cartes du fil : sur un écran où tout ce qui
+    // s'appuie répond au doigt, une ligne qui ne répond pas se lit comme du
+    // texte, et personne n'essaie deux fois.
+    <Animated.View style={enfoncement.style}>
+    <Pressable
+      accessibilityRole="button"
+      onPress={onOuvrir}
+      onPressIn={enfoncement.onPressIn}
+      onPressOut={enfoncement.onPressOut}
+      testID="prestations-ouvertes"
+      style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: size.hit }}
+    >
+      <Texte variante="type.body" style={{ flex: 1 }}>
+        {phrase}
+      </Texte>
+      {/* Le mot qui nomme ce qu'on ouvre, et non un chevron seul : « pourquoi »
+          est ce qu'on cherche, « paliers » est un mot du produit qu'il faut
+          déjà connaître pour vouloir appuyer dessus. */}
+      <Texte variante="type.label" couleur="brand.700" testID="prestations-ouvertes-issue">
+        {t('parcours.filPourquoi')}
+      </Texte>
+      <Icone nom="chevron" couleur="brand.700" taille={20} />
+    </Pressable>
+    </Animated.View>
   );
 }
 

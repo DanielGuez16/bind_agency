@@ -610,4 +610,16 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       approximation dans la fonte fonctionnelle, et le D porte une coupe oblique
       qu'aucune fonte ne donne. `$meta.unconfirmed` le porte toujours. Ce qui
       manque n'est plus une décision mais un fichier*
+- [x] **Les paliers sortent des onglets : quatre au lieu de cinq**
+      *Un onglet répond à une question qu'on se pose en ouvrant l'application, et
+      « quel est mon palier » n'en est pas une : ce qu'on veut savoir, c'est ce
+      qu'on peut réserver. Le fil répond, les paliers expliquent — depuis une
+      ligne « douze prestations vous sont ouvertes », d'où l'écran s'ouvre et
+      revient. Rien à ajouter côté données, `Fil.total_prestations` existait.
+      **Une garde écrite puis retirée** : le `total <= 0` protégeait un état
+      qu'aucun appel n'atteint — le total est nul exactement quand le fil est
+      vide, et un fil vide rend l'état vide à la place du corps — et son test
+      fabriquait une réponse que le serveur ne produit pas. Le test des onglets
+      passe d'un `arrayContaining`, qui aurait laissé passer un sixième onglet,
+      à une égalité stricte. 5 tests neufs, 4 mutations vérifiées*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire

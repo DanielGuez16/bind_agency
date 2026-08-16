@@ -209,6 +209,14 @@ export const es: Catalogue = {
     filTitre: 'Cerca de ti',
     filVide: 'Ningún local en {{rayon}} km.',
     filElargir: 'Ampliar a {{rayon}} km',
+    // Deux clés plutôt qu'un pluriel : le produit choisit entre deux clés
+    // là où ça compte, et une créatrice à qui une seule prestation est
+    // ouverte est le cas du premier jour, pas le cas limite.
+    filPrestationsOuverteUne: 'Una prestación está abierta para ti',
+    filPrestationsOuvertes: '{{count}} prestaciones están abiertas para ti',
+    // Le mot qui nomme ce qu'on ouvre. « Paliers » est un mot du produit
+    // qu'il faut déjà connaître pour vouloir appuyer dessus.
+    filPourquoi: 'Por qué',
     filRayon: '{{rayon}} km',
     filSansPosition: 'Necesitamos tu ubicación para mostrarte locales cercanos.',
     filAutoriser: 'Compartir mi ubicación',
