@@ -27,10 +27,22 @@
  * Ce fichier ne fournit que la géométrie et les rendus. Ce qui les écrit sur le
  * disque est `cuire-la-marque.mjs`.
  */
+import { readFileSync } from 'node:fs';
+
 import { PNG } from 'pngjs';
 
+/**
+ * La géométrie et les couleurs viennent des jetons, **jamais recopiées ici**.
+ *
+ * `logo.mark16` porte le dessin complet : la grille, la tuile, le fût, le
+ * point, les marges, la palette. Ce fichier ne fait que le tracer.
+ */
+const MARK16 = JSON.parse(
+  readFileSync(new URL('../src/theme/tokens.json', import.meta.url), 'utf-8'),
+).logo.mark16;
+
 /** La grille. Toutes les cotes ci-dessous sont dans cette unité. */
-export const GRILLE = 16;
+export const GRILLE = MARK16.grid;
 
 /**
  * Le dessin, recopié de `BIND Mark - Favicon 16.dc.html`.
@@ -46,11 +58,18 @@ export const GRILLE = 16;
  * taille à l'autre. Le carré est franc et s'accorde à l'angle droit du système.
  */
 export const SIGNE = [
-  /** Le fût. */
-  { x: 6, y: 2, largeur: 4, hauteur: 6 },
-  /** Le point. Deux unités de blanc le séparent du fût. */
-  { x: 6, y: 10, largeur: 4, hauteur: 4 },
+  /** Le fût, à l'encre claire — il suit les lettres du logotype. */
+  { ...enRectangle(MARK16.stem), role: 'fut', couleur: MARK16.stem.fill },
+  /** Le point, orange. Deux unités le séparent du fût. */
+  { ...enRectangle(MARK16.dot), role: 'point', couleur: MARK16.dot.fill },
 ];
+
+function enRectangle(part) {
+  return { x: part.x, y: part.y, largeur: part.w, hauteur: part.h };
+}
+
+/** Le fond de la tuile : encre, et non orange. */
+export const TUILE = MARK16.tile.fill;
 
 /**
  * Ce que les plateformes ont le droit de mordre.
@@ -65,7 +84,12 @@ export const SIGNE = [
  * qui fait foi ici, et l'affirmation sur les masques tient mieux encore avec
  * six.
  */
-export const MARGES = { haut: 2, bas: 2, gauche: 6, droite: 6 };
+export const MARGES = {
+  haut: MARK16.margin.top,
+  bas: MARK16.margin.bottom,
+  gauche: MARK16.margin.left,
+  droite: MARK16.margin.right,
+};
 
 function enCanaux(hexa) {
   const n = parseInt(hexa.replace('#', ''), 16);
@@ -73,34 +97,47 @@ function enCanaux(hexa) {
 }
 
 /**
- * La tuile, à `cote` pixels.
+ * Quelle part du signe couvre ce pixel, ou `null` pour le fond.
  *
  * **Les bords sont arrondis à l'entier, jamais laissés en fraction.** Aux
  * tailles multiples de seize la question ne se pose pas. Ailleurs — l'icône
  * d'iOS fait 180, qu'Apple impose et qui vaut 11,25 unités — une cote
  * fractionnaire ferait lisser le bord par n'importe quel moteur de rendu, et le
- * dessin sortirait en trois couleurs au lieu de deux. Arrondir garde deux
- * couleurs franches et déplace un bord d'un demi-pixel.
+ * dessin sortirait avec des couleurs qui ne sont dans aucun jeton. Arrondir
+ * garde des aplats francs et déplace un bord d'un demi-pixel.
  */
-export function tuile(cote, surface, encre) {
-  const png = new PNG({ width: cote, height: cote });
-  const fond = enCanaux(surface);
-  const trait = enCanaux(encre);
-  const unite = cote / GRILLE;
-
-  const dansLeSigne = (x, y) =>
-    SIGNE.some(
+function partSous(x, y, unite, marge = 0) {
+  return (
+    SIGNE.find(
       (part) =>
-        x >= Math.round(part.x * unite) &&
-        x < Math.round((part.x + part.largeur) * unite) &&
-        y >= Math.round(part.y * unite) &&
-        y < Math.round((part.y + part.hauteur) * unite),
-    );
+        x >= Math.round(marge + part.x * unite) &&
+        x < Math.round(marge + (part.x + part.largeur) * unite) &&
+        y >= Math.round(marge + part.y * unite) &&
+        y < Math.round(marge + (part.y + part.hauteur) * unite),
+    ) ?? null
+  );
+}
+
+/**
+ * La tuile, à `cote` pixels.
+ *
+ * **Trois couleurs, et c'est le sujet.** La contrainte de palette à deux
+ * couleurs est tombée avec la correction du 2026-08-15 : le sens du logotype
+ * *est* le contraste entre les lettres et le point, et il ne survit pas à une
+ * palette qui ne peut pas porter les deux. Le fût prend l'encre claire, le
+ * point l'orange, la tuile l'encre — et le fond est encre et non orange, parce
+ * que sur une tuile orange le point disparaîtrait, et c'est lui la marque.
+ */
+export function tuile(cote) {
+  const png = new PNG({ width: cote, height: cote });
+  const fond = enCanaux(TUILE);
+  const unite = cote / GRILLE;
 
   for (let y = 0; y < cote; y += 1) {
     for (let x = 0; x < cote; x += 1) {
       const i = (cote * y + x) << 2;
-      const [r, v, b] = dansLeSigne(x, y) ? trait : fond;
+      const part = partSous(x, y, unite);
+      const [r, v, b] = part ? enCanaux(part.couleur) : fond;
       png.data[i] = r;
       png.data[i + 1] = v;
       png.data[i + 2] = b;
@@ -126,34 +163,35 @@ export function tuile(cote, surface, encre) {
  *
  * 432 est le gabarit d'Android à quatre fois la densité de référence ; sa zone
  * sûre vaut 288, soit dix-huit pixels par unité. Aucun arrondi.
+ *
+ * `encreUnique` sert la couche monochrome, qu'Android teinte lui-même : elle ne
+ * porte qu'une silhouette, donc le point y perd sa couleur. C'est le seul
+ * endroit du système où le point n'est pas orange, et c'est la plateforme qui
+ * l'impose — pas nous.
  */
-export function couche(cote, zoneSure, encre) {
+export function couche(cote, zoneSure, encreUnique = null) {
   const png = new PNG({ width: cote, height: cote });
-  const trait = enCanaux(encre);
   const unite = zoneSure / GRILLE;
   const marge = (cote - zoneSure) / 2;
 
   for (let y = 0; y < cote; y += 1) {
     for (let x = 0; x < cote; x += 1) {
       const i = (cote * y + x) << 2;
-      const dans = SIGNE.some(
-        (part) =>
-          x >= Math.round(marge + part.x * unite) &&
-          x < Math.round(marge + (part.x + part.largeur) * unite) &&
-          y >= Math.round(marge + part.y * unite) &&
-          y < Math.round(marge + (part.y + part.hauteur) * unite),
-      );
-      png.data[i] = trait[0];
-      png.data[i + 1] = trait[1];
-      png.data[i + 2] = trait[2];
-      // Le vide est **transparent et noir**, pas transparent et coloré : un
-      // pixel transparent qui porte une couleur la laisse remonter dès qu'un
-      // rendu prémultiplie, et l'icône gagne un halo.
-      png.data[i + 3] = dans ? 255 : 0;
-      if (!dans) {
+      const part = partSous(x, y, unite, marge);
+      if (part) {
+        const [r, v, b] = enCanaux(encreUnique ?? part.couleur);
+        png.data[i] = r;
+        png.data[i + 1] = v;
+        png.data[i + 2] = b;
+        png.data[i + 3] = 255;
+      } else {
+        // Le vide est **transparent et noir**, pas transparent et coloré : un
+        // pixel transparent qui porte une couleur la laisse remonter dès qu'un
+        // rendu prémultiplie, et l'icône gagne un halo.
         png.data[i] = 0;
         png.data[i + 1] = 0;
         png.data[i + 2] = 0;
+        png.data[i + 3] = 0;
       }
     }
   }
@@ -173,8 +211,8 @@ export function aplat(cote, surface) {
   return png;
 }
 
-export function enPng(cote, surface, encre) {
-  return PNG.sync.write(tuile(cote, surface, encre));
+export function enPng(cote) {
+  return PNG.sync.write(tuile(cote));
 }
 
 /**
@@ -188,8 +226,8 @@ export function enPng(cote, surface, encre) {
  * Les entrées sont des PNG. Le format l'admet depuis Vista et tous les
  * navigateurs le lisent ; ce sont les seuls consommateurs d'un favicon.
  */
-export function enIco(cotes, surface, encre) {
-  const images = cotes.map((cote) => enPng(cote, surface, encre));
+export function enIco(cotes) {
+  const images = cotes.map((cote) => enPng(cote));
 
   const entete = Buffer.alloc(6);
   entete.writeUInt16LE(0, 0); // réservé

@@ -60,6 +60,22 @@ export type Role = 'creator' | 'merchant' | 'admin';
 export const tokens = brut;
 export const produit = produitBrut;
 
+/**
+ * Les trois couleurs du logotype.
+ *
+ * **Le logotype ne suit pas l'échelle d'encres**, il a la sienne : la passation
+ * lui donne l'encre du système sur os et papier, le **blanc pur** sur encre,
+ * satin et orange — et non `ink.onDark`, qui est l'encre claire du texte
+ * courant. Les faire coïncider ferait suivre le logo le jour où l'une des deux
+ * bougerait.
+ *
+ * Le point est `brand.500` dans les deux cas. C'est la seule couleur du
+ * logotype, et c'est elle qui fait la marque : une variante blanche dont le
+ * point suivrait les lettres serait un logotype monochrome pâle, c'est-à-dire
+ * l'erreur que le vectoriel de la fondatrice a corrigée.
+ */
+export const ENCRES_DU_LOGOTYPE = produitBrut.marque.encres;
+
 export { nomDeFonte, policesAcharger, type Graisse, type Voix } from './polices';
 export {
   familles,

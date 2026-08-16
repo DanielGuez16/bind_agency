@@ -24,18 +24,32 @@
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 
+import { render, screen } from '@testing-library/react-native';
 import { PNG } from 'pngjs';
+import { createElement } from 'react';
+
+import { Marque } from '../src/components';
+import { produit } from '../src/theme';
 
 const ASSETS = join(__dirname, '..', 'assets');
 /** Recopié tel quel à la racine du build : c'est là que Safari va chercher. */
 const PUBLIC = join(__dirname, '..', 'public');
-type Rectangle = { x: number; y: number; largeur: number; hauteur: number };
+type Rectangle = {
+  x: number;
+  y: number;
+  largeur: number;
+  hauteur: number;
+  role: 'fut' | 'point';
+  couleur: string;
+};
 const declare = JSON.parse(readFileSync(join(ASSETS, 'marque.json'), 'utf-8')) as {
   mot: string;
   couleurs: Record<string, string>;
   lisibilite: { largeurParLettre: number; pixelsParLettreMinimum: number };
+  palette: string[];
   compacte: {
     grille: number;
+    tuile: string;
     signe: Rectangle[];
     marges: { haut: number; bas: number; gauche: number; droite: number };
     android: { cote: number; zoneSure: number };
@@ -161,29 +175,42 @@ function imagesDuIco(chemin: string): { cote: number; png: PNG }[] {
   });
 }
 
-/** Le dessin attendu à une taille donnée, reconstruit depuis la géométrie déclarée. */
-function attendu(cote: number): boolean[][] {
+/**
+ * Le dessin attendu à une taille donnée, reconstruit depuis la géométrie
+ * déclarée — et **en trois valeurs, pas deux**.
+ *
+ * La correction du 2026-08-15 est là : le fût et le point ne sont plus la même
+ * chose. Une lecture binaire « signe ou fond » les confondrait, et laisserait
+ * passer très exactement la faute que le vectoriel de la fondatrice a corrigée.
+ */
+function attendu(cote: number): string[][] {
   const unite = cote / declare.compacte.grille;
   return Array.from({ length: cote }, (_, y) =>
-    Array.from({ length: cote }, (_, x) =>
-      declare.compacte.signe.some(
-        (part) =>
-          x >= Math.round(part.x * unite) &&
-          x < Math.round((part.x + part.largeur) * unite) &&
-          y >= Math.round(part.y * unite) &&
-          y < Math.round((part.y + part.hauteur) * unite),
-      ),
-    ),
+    Array.from({ length: cote }, (_, x) => {
+      const part = declare.compacte.signe.find(
+        (candidate) =>
+          x >= Math.round(candidate.x * unite) &&
+          x < Math.round((candidate.x + candidate.largeur) * unite) &&
+          y >= Math.round(candidate.y * unite) &&
+          y < Math.round((candidate.y + candidate.hauteur) * unite),
+      );
+      return part ? part.role : 'tuile';
+    }),
   );
 }
 
-/** Ce que l'image montre vraiment : encre ou surface, pixel par pixel. */
-function lu(png: PNG): boolean[][] {
-  const encre = declare.couleurs.encre.replace('#', '').toUpperCase();
+/** Ce que l'image montre vraiment, ramené aux mêmes trois noms. */
+function lu(png: PNG): string[][] {
+  const nom = new Map<string, string>([
+    [declare.compacte.tuile.toUpperCase(), 'tuile'],
+    ...declare.compacte.signe.map(
+      (part) => [part.couleur.toUpperCase(), part.role] as [string, string],
+    ),
+  ]);
   return Array.from({ length: png.height }, (_, y) =>
     Array.from({ length: png.width }, (_, x) => {
       const i = (png.width * y + x) << 2;
-      return versHexa(png.data[i], png.data[i + 1], png.data[i + 2]).slice(1) === encre;
+      return nom.get(versHexa(png.data[i], png.data[i + 1], png.data[i + 2])) ?? 'étranger';
     }),
   );
 }
@@ -269,10 +296,15 @@ describe('les fichiers de la marque', () => {
       readFileSync(join(__dirname, '..', 'src', 'theme', 'tokens.json'), 'utf-8'),
     );
     expect(declare.couleurs).toEqual({
-      surface: jetons.color.brand['500'],
-      encreClaire: jetons.color.ink.onDark,
-      encre: jetons.color.ink.default,
+      tuile: jetons.color.ink.default,
+      fut: '#FFFFFF',
+      point: jetons.color.brand['500'],
     });
+    // Et la palette du dessin est bien celle que les jetons déclarent : trois
+    // couleurs, pas deux. La contrainte à deux est tombée avec la correction —
+    // le sens du sigle **est** le contraste entre le fût et le point.
+    expect(declare.palette).toEqual(jetons.logo.mark16.palette);
+    expect(declare.palette).toHaveLength(3);
     expect(declare.mot).toBe(jetons.logo.wordmark.text);
   });
 
@@ -284,13 +316,14 @@ describe('les fichiers de la marque', () => {
     // d'avant — pendant que tout le reste passait à l'orange, parce qu'elle
     // vit dans un fichier de configuration que personne ne relit.
     const config = JSON.parse(readFileSync(join(__dirname, '..', 'app.json'), 'utf-8'));
-    expect(config.expo.android.adaptiveIcon.backgroundColor).toBe(declare.couleurs.surface);
+    expect(config.expo.android.adaptiveIcon.backgroundColor).toBe(declare.couleurs.tuile);
   });
 
-  it('la surface de marque occupe vraiment les tuiles, elle n’est pas un liseré', () => {
-    // Le sens inverse : un fichier entièrement blanc passerait la garde des
-    // couleurs si le blanc était permis. On vérifie que l'orange **est** la
-    // tuile — son centre en haut à gauche, loin du mot.
+  it('la tuile est bien de l’encre, et pas de l’orange', () => {
+    // **Le fond est encre et non orange, et c'est une décision.** Sur une tuile
+    // orange le point disparaîtrait, et c'est lui la marque : le sens du sigle
+    // est le rapport entre le fût et le point, pas la silhouette. On lit le
+    // coin, loin du signe.
     for (const [fichier, dossier] of [
       ['icon.png', ASSETS],
       ['android-icon-background.png', ASSETS],
@@ -301,7 +334,7 @@ describe('les fichiers de la marque', () => {
       expect({
         fichier,
         coin: versHexa(png.data[coin], png.data[coin + 1], png.data[coin + 2]),
-      }).toEqual({ fichier, coin: declare.couleurs.surface.toUpperCase() });
+      }).toEqual({ fichier, coin: declare.couleurs.tuile.toUpperCase() });
     }
   });
 });
@@ -332,9 +365,10 @@ describe('la marque compacte', () => {
     expect(lu(image.png)).toEqual(attendu(cote));
   });
 
-  it('et il ne connaît que deux couleurs, à chaque taille', () => {
-    // Sans lissage, un blanc de deux unités reste deux pixels. La contrainte
-    // garantit le dessin au lieu de le menacer — encore faut-il la tenir.
+  it('et il ne connaît que ses trois couleurs, à chaque taille', () => {
+    // Sans lissage, un vide de deux unités reste deux pixels : il ne se comble
+    // pas en gris. Trois couleurs et pas une de plus — un quatrième ton serait
+    // un bord lissé, donc une réduction déguisée.
     for (const { cote, png } of imagesDuIco(ICO)) {
       const trouvees = new Set<string>();
       for (let i = 0; i < png.data.length; i += 4) {
@@ -342,9 +376,33 @@ describe('la marque compacte', () => {
       }
       expect({ cote, couleurs: [...trouvees].sort() }).toEqual({
         cote,
-        couleurs: [declare.couleurs.encre, declare.couleurs.surface].map((c) => c.toUpperCase()).sort(),
+        couleurs: declare.palette.map((c) => c.toUpperCase()).sort(),
       });
     }
+  });
+
+  it('le point est orange, et le fût ne l’est pas', () => {
+    // **La correction du 2026-08-15, et la seule chose qui compte ici.** La
+    // règle précédente disait « jamais coloré à part », déduite de visuels
+    // entièrement blancs sur orange où un point orange ne *pouvait pas* se
+    // distinguer. Le vectoriel montre l'inverse : le point est la seule couleur
+    // du logotype, et c'est elle qui fait la marque.
+    //
+    // Un sigle dont le fût prendrait l'orange, ou dont le point prendrait
+    // l'encre du fût, resterait net, franc, sur la grille — et serait la faute.
+    const jetons = JSON.parse(
+      readFileSync(join(__dirname, '..', 'src', 'theme', 'tokens.json'), 'utf-8'),
+    );
+    const { png } = imagesDuIco(ICO).find((image) => image.cote === 48)!;
+    const pixels = lu(png);
+    const unite = 48 / declare.compacte.grille;
+    const au = (colonne: number, ligne: number) =>
+      pixels[Math.floor((ligne + 0.5) * unite)][Math.floor((colonne + 0.5) * unite)];
+
+    // Au cœur du fût, et au cœur du point.
+    expect({ fut: au(8, 4), point: au(8, 12) }).toEqual({ fut: 'fut', point: 'point' });
+    expect(declare.couleurs.point).toBe(jetons.color.brand['500']);
+    expect(declare.couleurs.fut).not.toBe(declare.couleurs.point);
   });
 
   it('la forme est la même aux trois tailles, et pas seulement nette à chacune', () => {
@@ -357,16 +415,22 @@ describe('la marque compacte', () => {
     const empreintes = imagesDuIco(ICO).map(({ cote, png }) => {
       const pixels = lu(png);
       const unite = cote / grille;
+      const glyphe = { tuile: '.', fut: '#', point: 'o', étranger: '?' } as const;
       return Array.from({ length: grille }, (_, ligne) =>
         Array.from({ length: grille }, (_, colonne) =>
-          pixels[Math.floor((ligne + 0.5) * unite)][Math.floor((colonne + 0.5) * unite)] ? '#' : '.',
+          glyphe[
+            pixels[Math.floor((ligne + 0.5) * unite)][
+              Math.floor((colonne + 0.5) * unite)
+            ] as keyof typeof glyphe
+          ],
         ).join(''),
       ).join('|');
     });
 
     expect(new Set(empreintes).size).toBe(1);
     // Et cette empreinte est bien le dessin de la planche : un fût de 4 sur 6,
-    // deux unités de blanc, un point de 4 sur 4, le tout centré.
+    // deux unités de vide, un point de 4 sur 4, le tout centré — et le point
+    // écrit d'un autre signe que le fût, parce qu'il est d'une autre couleur.
     expect(empreintes[0].split('|')).toEqual([
       '................',
       '................',
@@ -378,10 +442,10 @@ describe('la marque compacte', () => {
       '......####......',
       '................',
       '................',
-      '......####......',
-      '......####......',
-      '......####......',
-      '......####......',
+      '......oooo......',
+      '......oooo......',
+      '......oooo......',
+      '......oooo......',
       '................',
       '................',
     ]);
@@ -469,5 +533,150 @@ describe('le plancher du logotype', () => {
 
     expect(tailles.length).toBeGreaterThan(0);
     expect(tailles.filter((taille) => taille < PLANCHER_DU_LOGOTYPE)).toEqual([]);
+  });
+});
+
+/**
+ * Le logotype vivant, et la correction du 2026-08-15.
+ *
+ * **Le point est la seule couleur du logotype.** La règle précédente disait
+ * l'inverse — « le « ! » n'est jamais coloré à part » — et l'erreur était
+ * méthodique plutôt qu'accidentelle : elle avait été déduite de visuels
+ * Instagram entièrement blancs sur orange, **où un point orange ne peut pas se
+ * distinguer du fond**. L'information manquait de la seule source disponible,
+ * et il en est sorti une règle au lieu d'une incertitude.
+ *
+ * La conséquence technique est ce que ces tests protègent : le « ! » ne peut
+ * pas être posé comme caractère, parce qu'une couleur de texte s'applique au
+ * glyphe entier et que le fût prendrait celle du point.
+ */
+/** Les chaînes rendues, dans l'ordre, quel que soit le composant qui les pose. */
+function feuillesDeTexte(noeud: unknown): string[] {
+  if (typeof noeud === 'string') return [noeud];
+  if (Array.isArray(noeud)) return noeud.flatMap(feuillesDeTexte);
+  if (noeud && typeof noeud === 'object') {
+    return feuillesDeTexte((noeud as { children?: unknown }).children);
+  }
+  return [];
+}
+
+describe('le logotype porte son point', () => {
+  /**
+   * Le logotype rendu, et **ses props lues sur l'arbre**.
+   *
+   * Une première version de ces tests cherchait les couleurs dans le HTML
+   * produit : les styles y arrivent en `[object Object]` et l'assertion ne
+   * regardait rien. Les props se lisent.
+   */
+  async function rendu(variante: 'encre' | 'blanc') {
+    const vue = await render(createElement(Marque, { taille: 40, variante, testID: 'logo' }));
+    /**
+     * `react-native-svg` normalise `fill` en entier ARGB avant de le poser sur
+     * l'arbre : lire la prop telle quelle compare une chaîne à un objet, et
+     * l'assertion échoue pour la mauvaise raison.
+     */
+    const couleurLue = (valeur: unknown): string => {
+      if (typeof valeur === 'string') return valeur.toUpperCase();
+      const brut = (valeur as { payload?: number }).payload ?? 0;
+      return `#${(brut & 0xffffff).toString(16).padStart(6, '0').toUpperCase()}`;
+    };
+    const empile = (valeur: unknown): Record<string, unknown> =>
+      Array.isArray(valeur)
+        ? Object.assign({}, ...valeur.map(empile))
+        : ((valeur as Record<string, unknown>) ?? {});
+    return {
+      // Toutes les feuilles de texte de l'arbre, mises bout à bout : c'est ce
+      // que l'œil lit, indépendamment du composant qui l'a posé.
+      textes: feuillesDeTexte(vue.toJSON()).join(''),
+      lettres: couleurLue(empile(screen.getByTestId('logo-lettres').props.style).color),
+      fut: couleurLue(
+        screen.getByTestId('logo-signe-fut', { includeHiddenElements: true }).props.fill,
+      ),
+      point: couleurLue(
+        screen.getByTestId('logo-signe-point', { includeHiddenElements: true }).props.fill,
+      ),
+    };
+  }
+
+  it('le « ! » est dessiné, jamais posé comme caractère', () => {
+    // **La conséquence technique de la correction.** Posé en texte, le fût
+    // prendrait la couleur du point : une couleur de texte s'applique au glyphe
+    // entier, et rien ne permet d'en peindre la moitié. Un logotype qui le
+    // poserait en caractère serait plus court à écrire, passerait la revue, et
+    // son fût serait orange.
+    const source = readFileSync(join(__dirname, '..', 'src', 'components', 'Logo.tsx'), 'utf-8');
+    const utiles = source.split('\n').filter((ligne) => !/^\s*(\/\/|\*|\/\*)/.test(ligne));
+
+    // Le mot est coupé sur le « ! », jamais rendu d'un bloc…
+    expect(utiles.some((ligne) => ligne.includes("wordmark.text.split('!')"))).toBe(true);
+    // …et le signe est un tracé.
+    expect(utiles.some((ligne) => ligne.includes('<Polygon'))).toBe(true);
+    expect(utiles.some((ligne) => ligne.includes('<Circle'))).toBe(true);
+  });
+
+  it('et le rendu ne porte que les lettres, jamais le « ! » en texte', async () => {
+    // Le sens inverse, lu sur l'arbre : la garde précédente lit un fichier, et
+    // un fichier peut contenir les deux formes. Ce que l'écran montre décide.
+    const { textes } = await rendu('encre');
+    expect(textes).toBe(declare.mot.replace('!', ''));
+  });
+
+  it.each(['encre', 'blanc'] as const)(
+    'sur %s, le fût suit les lettres et le point reste orange',
+    async (variante) => {
+      const { lettres, fut, point } = await rendu(variante);
+
+      // Le fût suit les lettres — c'est toute la correction.
+      expect(fut).toBe(produit.marque.encres[variante].toUpperCase());
+      expect(lettres).toBe(produit.marque.encres[variante].toUpperCase());
+      // Et le point ne les suit pas.
+      expect(point).toBe(produit.marque.encres.point.toUpperCase());
+      expect(point).not.toBe(fut);
+    },
+  );
+
+  it('les deux variantes diffèrent par les lettres, jamais par le point', async () => {
+    // **Le sens inverse, et c'est celui qui compte.** Une variante blanche dont
+    // le point suivrait les lettres serait un logotype monochrome pâle —
+    // c'est-à-dire l'erreur d'avant, remise en place par la porte de derrière.
+    const surClair = await rendu('encre');
+    const surSombre = await rendu('blanc');
+
+    expect(surClair.lettres).not.toBe(surSombre.lettres);
+    expect(surClair.fut).not.toBe(surSombre.fut);
+    expect(surClair.point).toBe(surSombre.point);
+  });
+
+  it('les encres du logotype sont rattachées aux jetons, sauf le blanc', () => {
+    // Deux des trois doublent un jeton : elles ne doivent pas devenir une
+    // seconde source. Le blanc est le seul chiffre propre au logo — la
+    // passation dit #FFFFFF, et non `ink.onDark`, qui est l'encre claire du
+    // texte courant. Les faire coïncider ferait suivre le logo le jour où l'une
+    // des deux bougerait.
+    const jetons = JSON.parse(
+      readFileSync(join(__dirname, '..', 'src', 'theme', 'tokens.json'), 'utf-8'),
+    );
+    expect(produit.marque.encres.encre).toBe(jetons.color.ink.default);
+    expect(produit.marque.encres.point).toBe(jetons.color.brand['500']);
+    expect(produit.marque.encres.blanc).not.toBe(jetons.color.ink.onDark);
+    expect(jetons.logo.monochrome).toBe(false);
+  });
+
+  it('aucune signature nulle part, y compris à l’écran', async () => {
+    // La garde de fichier ne voit pas une chaîne écrite à la main dans le JSX.
+    // Celle-ci lit ce que le logotype rend, et rien d'autre n'y a sa place.
+    // Ni AGENCY ni CRÉATEUR DE LIEN. Le jeton part avec le prop : un réglage
+    // qui ne commande plus rien est pire que son absence.
+    expect(produit.type).not.toHaveProperty('type.tagline');
+    expect((await rendu('encre')).textes).not.toMatch(/AGENCY|CR[ÉE]ATEUR/i);
+
+    const fautifs = readdirSync(join(__dirname, '..', 'src'), { recursive: true })
+      .filter((chemin) => typeof chemin === 'string' && /\.tsx?$/.test(chemin as string))
+      .filter((chemin) =>
+        /type\.tagline|signature-agence/.test(
+          readFileSync(join(__dirname, '..', 'src', chemin as string), 'utf-8'),
+        ),
+      );
+    expect(fautifs).toEqual([]);
   });
 });

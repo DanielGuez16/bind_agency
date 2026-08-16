@@ -476,8 +476,10 @@ describe('la marque se présente une fois, et une seule', () => {
     await waitFor(() => expect(screen.getByTestId('promesse-accueil')).toBeTruthy());
 
     expect(screen.getAllByTestId('bloc-accentue')).toHaveLength(1);
-    // Et la marque non plus ne se présente pas deux fois.
-    expect(screen.getAllByTestId('signature-agence')).toHaveLength(1);
+    // Et la marque non plus ne se présente pas deux fois. L'ancre était la
+    // signature, qui a disparu avec la correction du logotype — c'est le
+    // logotype lui-même qui la remplace, et il dit la même chose.
+    expect(screen.getAllByTestId('logotype')).toHaveLength(1);
   });
 });
 
@@ -507,7 +509,7 @@ describe('la composition ne change pas quand le manifeste arrive', () => {
     'accueil-defilant',
     'choix-de-la-porte',
     'promesse-accueil',
-    'signature-agence',
+    'logotype',
     'porte-createur',
     'porte-commerce',
   ];
