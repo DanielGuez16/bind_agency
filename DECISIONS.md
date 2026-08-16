@@ -5024,3 +5024,74 @@ les fichiers et le jeton, jamais ce que l'écran montre. Les deux gardes existen
 maintenant dans les deux sens, sur le fichier **et** sur l'arbre rendu. Une
 garde qui n'a jamais échoué ne prouve pas qu'elle protège ; elle prouve qu'elle
 s'exécute — et celle-ci ne s'exécutait même plus.
+
+---
+
+## 2026-08-16 — Le mouvement, et l'état faux qu'il a fait sortir du bois
+
+**Le constat de départ était partiellement faux, et c'est utile de le noter.**
+« Aucun mouvement nulle part » : en réalité `Skeleton`, `Mouvement`
+(`Apparition`, `useEnfoncement`, `vibration`) et l'animation de pile
+`slide_from_right` existaient déjà. Le fil → fiche **était** animé. Ce qui
+manquait n'était pas le mouvement mais son câblage : deux composants sur
+vingt-six portaient l'enfoncement, cinq écrans sur dix-huit l'apparition, et le
+squelette par défaut mentait sur la forme du contenu quinze fois sur dix-huit.
+
+**L'exception, traitée à part parce que ce n'est pas de l'animation.** Les
+préférences de notification affichaient les sept interrupteurs sur « activé »
+tant que la réponse n'était pas arrivée : le défaut d'une *préférence absente*
+appliqué à une préférence *pas encore lue*. Une valeur inventée montrée comme un
+fait. Une silhouette aux dimensions exactes du `Toggle` la remplace, et un échec
+de lecture se dit au lieu de laisser les silhouettes indéfiniment.
+
+**Le squelette dit la forme, ou il aggrave le saut.** Le défaut d'`Ecran` est
+trois cartes à photo de 150 px — juste sur le fil, faux ailleurs. Trois formes
+s'ajoutent (`SkeletonLignes`, `SkeletonFiche`, `SkeletonGrille`) et six écrans
+les prennent. Une garde vérifie **les deux sens** : chaque écran montre le sien
+*et* ne montre pas celui par défaut, que le défaut a reçu un `testID` pour être
+détectable.
+
+**Le retour au toucher : une garde plutôt que des tests d'écran.** Sur
+trente-quatre `Pressable`, un seul réagissait à l'appui — dont le bouton retour
+de chaque écran, toute la navigation en grand écran, et le choix d'un créneau.
+Le défaut n'est pas dans un écran, il est dans l'habitude d'écrire `<Pressable>`
+avec un `style` objet : un test par site aurait couvert les trente-quatre
+d'aujourd'hui et rien du trente-cinquième.
+
+**La garde a d'abord accusé à tort, et c'est la leçon du jour.** Sa première
+version connaissait quatre formes et déclarait `BusinessCard` sans retour — la
+carte du fil, qui a un ressort depuis toujours, câblé par
+`onPressIn={enfoncement.onPressIn}`. Une cinquième forme a été ajoutée, et la
+garde s'éprouve désormais **sur les cinq**. Une garde qui accuse à tort se fait
+désactiver ; c'est le même défaut que le garde-fou des rendus asynchrones, à
+l'envers.
+
+**Un fondu là où la pile ne voit rien.** Les bascules de la racine — connexion,
+déconnexion, sortie de l'accueil — sont un rendu conditionnel et non une
+navigation : `slide_from_right` ne s'y applique pas. `Fondu` les enchaîne, sur
+une opacité seule : `Apparition` fait monter son contenu de dix pixels, ce qui
+convient à une carte et pas à un écran entier. La `key` est ce qui rejoue le
+fondu, et `brancheDeLaRacine` vit dans son propre module — importer `App.tsx`
+depuis un test tire `expo-font` puis `expo-asset`, absent hors appareil.
+
+**L'haptique sur les deux gestes qui engagent** : choisir un créneau et
+réserver. Le parcours créateur était entièrement muet alors que les envois du
+côté commerce vibraient déjà.
+
+**Ce qui a été mesuré plutôt que supposé.** Le fil ne se recharge pas au retour
+de la fiche : compté dans un navigateur contre le déploiement — un appel au
+chargement, aucun au retour, aucun squelette. Changer de rayon relance bien une
+requête, sans repasser par le squelette ; un aller-retour d'onglet ne relance
+rien. `FilScreen` reste monté sous la pile et les dépendances de `useRequete`
+sont des primitives. Aucun cache de session n'a donc été ajouté : il n'aurait
+rien réparé.
+
+**La transition partagée est écartée.** Elle demanderait Reanimated 3 et une
+couche à maintenir, pour un effet spectaculaire — c'est-à-dire l'inverse de la
+règle qu'on s'est donnée : le mouvement sert la lecture, il ne se montre pas.
+
+**Une erreur de méthode.** `npx prettier --write` a reformaté huit fichiers en
+style par défaut — le dépôt n'a aucune configuration Prettier, et le style
+maison est en guillemets simples. Annulé et refait sans lui. La CI de l'app ne
+vérifie pas le format ; celle de l'api, si, via `ruff format --check` en plus de
+`ruff check`.

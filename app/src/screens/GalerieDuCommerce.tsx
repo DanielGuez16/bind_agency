@@ -148,6 +148,7 @@ export function GalerieDuCommerce({
                 </Texte>
               ) : (
                 <Pressable
+          style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
                   accessibilityRole="button"
                   disabled={envoi}
                   onPress={() => void agir(() => api.definirLaCouverture(businessId, photo.storage_key))}
@@ -170,6 +171,7 @@ export function GalerieDuCommerce({
                 à appuyer pour découvrir qu'il ne fait rien. */}
             {rang > 0 ? (
               <Pressable
+          style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
                 accessibilityRole="button"
                 accessibilityLabel={t('composition.galerieMonter')}
                 disabled={envoi}
@@ -182,6 +184,7 @@ export function GalerieDuCommerce({
             ) : null}
             {rang < photos.length - 1 ? (
               <Pressable
+          style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
                 accessibilityRole="button"
                 accessibilityLabel={t('composition.galerieDescendre')}
                 disabled={envoi}
@@ -194,6 +197,7 @@ export function GalerieDuCommerce({
             ) : null}
 
             <Pressable
+          style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
               accessibilityRole="button"
               accessibilityLabel={t('composition.galerieRetirer')}
               disabled={envoi}
@@ -215,7 +219,7 @@ export function GalerieDuCommerce({
         disabled={envoi}
         onPress={() => void choisirEtEnvoyer()}
         testID="ajouter-une-photo"
-        style={{
+        style={({ pressed }) => ({
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'center',
@@ -225,7 +229,8 @@ export function GalerieDuCommerce({
           borderWidth: 1,
           borderStyle: 'dashed',
           borderColor: c['line.default'],
-        }}
+          opacity: pressed ? 0.7 : 1,
+        })}
       >
         <Icone nom="image" couleur="brand.700" taille={20} />
         <Texte variante="type.label" couleur="brand.700">

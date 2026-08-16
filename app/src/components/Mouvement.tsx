@@ -124,6 +124,60 @@ export function Apparition({
 }
 
 /**
+ * Un fondu simple, pour ce qui remplace un écran entier.
+ *
+ * **Où ça manquait.** Les bascules de la racine — connexion, déconnexion,
+ * sortie de l'écran de bienvenue, fin du rétablissement de session — ne sont
+ * pas des navigations mais des rendus conditionnels : la pile de React
+ * Navigation les ignore, et son glissement horizontal ne s'y applique pas. Ce
+ * sont pourtant les seuls moments où l'application change **entièrement** de
+ * contenu, et ils coupaient franchement, sans rien dire de ce qui venait
+ * d'arriver.
+ *
+ * **Une opacité, jamais une translation.** `Apparition` fait monter son contenu
+ * de dix pixels, ce qui convient à une carte dans une liste et pas à un écran :
+ * déplacer toute la page attire l'œil sur le mouvement au lieu de l'amener au
+ * contenu. On enchaîne, on ne glisse pas.
+ *
+ * **Il faut le remonter pour le rejouer.** Poser une `key` qui change à chaque
+ * bascule est ce qui relance le fondu ; sans elle, React réutiliserait le même
+ * nœud et le second changement se ferait sans transition.
+ */
+export function Fondu({
+  children,
+  style,
+  testID,
+}: {
+  children: ReactNode;
+  style?: StyleProp<ViewStyle>;
+  testID?: string;
+}) {
+  const reduit = useMouvementReduit();
+  const opacite = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (reduit) {
+      opacite.setValue(1);
+      return;
+    }
+    const animation = Animated.timing(opacite, {
+      toValue: 1,
+      duration: MOTION.default,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    });
+    animation.start();
+    return () => animation.stop();
+  }, [opacite, reduit]);
+
+  return (
+    <Animated.View testID={testID} style={[style, { opacity: opacite }]}>
+      {children}
+    </Animated.View>
+  );
+}
+
+/**
  * L'enfoncement d'un élément pressable.
  *
  * Une échelle, pas une opacité : un élément qui pâlit ressemble à un élément

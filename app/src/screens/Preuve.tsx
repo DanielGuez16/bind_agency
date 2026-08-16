@@ -123,6 +123,7 @@ export function PreuveSoumise({
           se vérifie vraiment, l'archive n'en est que la trace. */}
       {soumission.source_url ? (
         <Pressable
+          style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
           onPress={() => void Linking.openURL(soumission.source_url!)}
           testID="ouvrir-la-publication"
         >

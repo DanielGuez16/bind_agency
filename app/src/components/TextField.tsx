@@ -174,7 +174,9 @@ export function TextField({
             // Quarante-quatre : la cible tactile minimale. L'icône fait 20,
             // et une cible dimensionnée sur elle se rate une fois sur trois.
             hitSlop={12}
-            style={{ paddingHorizontal: 12, height: '100%', justifyContent: 'center' }}
+            style={({ pressed }) => ({ paddingHorizontal: 12, height: '100%', justifyContent: 'center',
+              opacity: pressed ? 0.7 : 1,
+            })}
           >
             <Icone
               nom={revele ? 'oeil-barre' : 'oeil'}

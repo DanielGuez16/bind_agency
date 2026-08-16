@@ -153,7 +153,9 @@ export function CodeScreen({
           accessibilityLabel={t('common.retour')}
           hitSlop={16}
           onPress={onRetour}
-          style={{ position: 'absolute', top: 20, left: 20, flexDirection: 'row', gap: 6 }}
+          style={({ pressed }) => ({ position: 'absolute', top: 20, left: 20, flexDirection: 'row', gap: 6,
+            opacity: pressed ? 0.7 : 1,
+          })}
         >
           <Icone nom="retour" teinte={codeColors.fg} taille={20} />
         </Pressable>

@@ -21,7 +21,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { useApi, type Collaboration } from '../api';
-import { Button, StatusMessage, Texte, TierBadge } from '../components';
+import { Button, SkeletonFiche, StatusMessage, Texte, TierBadge } from '../components';
 import { formatDateTime } from '../format';
 import { useI18n } from '../i18n';
 import { Ecran } from './Ecran';
@@ -48,7 +48,7 @@ export function PreuveScreen({
 
   return (
     <Ecran
-      onRetour={onRetour} requete={requete} titre={t('parcours.preuveTitre')} testID="ecran-preuve">
+      onRetour={onRetour} requete={requete} titre={t('parcours.preuveTitre')} squelette={<SkeletonFiche testID="squelette-preuve" />} testID="ecran-preuve">
       {(contrepartie) => (
         <View style={{ gap: 12 }}>
           <TierBadge tier={contrepartie.required_format} />

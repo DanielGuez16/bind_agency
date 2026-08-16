@@ -27,7 +27,8 @@ import { AuthScreen } from './src/screens/AuthScreen';
 import { PriseEnMainScreen } from './src/screens/PriseEnMainScreen';
 import { SessionProvider, coffreSecurise, themeDuRole, useSession } from './src/session';
 import { FrontiereDErreur } from './src/shell/FrontiereDErreur';
-import { prenomDe } from './src/components';
+import { Fondu, prenomDe } from './src/components';
+import { brancheDeLaRacine } from './src/shell/brancheDeLaRacine';
 import { BienvenueScreen } from './src/screens/BienvenueScreen';
 import { Navigation } from './src/shell/Navigation';
 import { adresseDeLApi } from './src/shell/adresseDeLApi';
@@ -89,6 +90,16 @@ function Coquille() {
               vraiment à sa disposition, encoches déduites. */}
           <GabaritProvider>
             <FrontiereDErreur>
+            {/* **Un fondu sur ce que la pile de navigation ne voit pas.**
+                Ces quatre branches ne sont pas des écrans navigués mais un
+                rendu conditionnel : `slide_from_right` ne s'y applique pas, et
+                ce sont pourtant les seuls moments où l'application change
+                entièrement de contenu — on se connecte, on se déconnecte, on
+                sort de l'accueil, la session se rétablit. Ça coupait franc.
+
+                La `key` est ce qui rejoue le fondu : sans elle React garderait
+                le même nœud et seule la première bascule s'animerait. */}
+            <Fondu key={brancheDeLaRacine(jetonDeReprise, session)} style={{ flex: 1 }}>
             {jetonDeReprise ? (
               /* **Avant la porte d'authentification, et c'est le point.** Le
                  gérant arrive par un lien et n'a pas de compte : lui montrer
@@ -114,6 +125,7 @@ function Coquille() {
                 prenom={prenomDe(session.utilisateur.email)}
               />
             )}
+            </Fondu>
             </FrontiereDErreur>
           </GabaritProvider>
         </ZoneSure>

@@ -163,7 +163,7 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
                     onPress={large ? () => setChoisie(reservation.booking_id) : undefined}
                     accessibilityRole={large ? 'button' : undefined}
                     testID={`ligne-${reservation.booking_id}`}
-                    style={{
+                    style={({ pressed }) => ({
                       borderRadius: radius['radius.none'],
                       // La ligne ouverte porte deux marques, comme dans la
                       // barre latérale : un fond et une barre. Jamais la
@@ -177,7 +177,8 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
                         large && reservation.booking_id === ouverte?.booking_id
                           ? c['brand.700']
                           : 'transparent',
-                    }}
+          opacity: pressed ? 0.7 : 1,
+        })}
                   >
                     <Ligne
                       reservation={reservation}

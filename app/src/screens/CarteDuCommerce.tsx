@@ -238,6 +238,7 @@ export function CarteDuCommerce({
               fait rien. */}
           {rang > 0 ? (
             <Pressable
+          style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
               accessibilityRole="button"
               accessibilityLabel={t('composition.carteMonter')}
               disabled={envoi}
@@ -250,6 +251,7 @@ export function CarteDuCommerce({
           ) : null}
           {rang < pages.length - 1 ? (
             <Pressable
+          style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
               accessibilityRole="button"
               accessibilityLabel={t('composition.carteDescendre')}
               disabled={envoi}
@@ -262,6 +264,7 @@ export function CarteDuCommerce({
           ) : null}
 
           <Pressable
+          style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
             accessibilityRole="button"
             accessibilityLabel={t('composition.carteRetirer')}
             disabled={envoi}

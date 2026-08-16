@@ -40,6 +40,7 @@ import {
   BarresParPeriode,
   DataRow,
   EmptyState,
+  SkeletonLignes,
   Texte,
   type BarreVerticale,
 } from '../components';
@@ -75,6 +76,7 @@ export function ReportingScreen({ businessId }: { businessId: string }) {
     <Ecran
       requete={requete}
       titre={t('reporting.titre')}
+      squelette={<SkeletonLignes combien={7} testID="squelette-reporting" />}
       testID="ecran-reporting"
       vide={
         // **Le cas de tout salon qui s'inscrit**, et le premier qu'il voit de

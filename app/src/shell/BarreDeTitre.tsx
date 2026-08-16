@@ -68,7 +68,9 @@ export function BarreDeTitre({
           accessibilityLabel={t('common.retour')}
           hitSlop={12}
           onPress={onRetour}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+          style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 4,
+            opacity: pressed ? 0.7 : 1,
+          })}
         >
           <Icone nom="retour" couleur="ink.soft" taille={18} />
         </Pressable>

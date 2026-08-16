@@ -24,6 +24,7 @@ import {
   Icone,
   LigneDeContrepartie,
   ServiceRow,
+  SkeletonFiche,
   StatusMessage,
   Texte,
   type NomIcone,
@@ -70,7 +71,7 @@ export function FicheScreen({
 
   return (
     <Ecran
-      onRetour={onRetour} requete={requete} testID="ecran-fiche">
+      onRetour={onRetour} requete={requete} squelette={<SkeletonFiche testID="squelette-fiche" />} testID="ecran-fiche">
       {(fiche) => (
         <View style={{ gap: 12 }}>
           <Texte variante="type.screenTitle" ellipseSurNomPropre>

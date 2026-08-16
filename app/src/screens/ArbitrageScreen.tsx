@@ -238,7 +238,7 @@ function TableDArbitrage({
                     : [...precedente, ligne.collaboration_id],
                 )
               }
-              style={{
+              style={({ pressed }) => ({
                 width: 18,
                 height: 18,
                 borderRadius: radius['radius.none'],
@@ -249,7 +249,8 @@ function TableDArbitrage({
                 backgroundColor: selection.includes(ligne.collaboration_id)
                   ? c['brand.700']
                   : 'transparent',
-              }}
+          opacity: pressed ? 0.7 : 1,
+        })}
             />
             <View style={{ flex: 1 }}>
           <TableRow

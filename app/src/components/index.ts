@@ -25,6 +25,7 @@ export {
 } from './Graphiques';
 export {
   Apparition,
+  Fondu,
   useEnfoncement,
   useMouvementReduit,
   vibration,
@@ -58,7 +59,14 @@ export {
   type VarianteDeSatin,
 } from './SurfaceSatin';
 export { EmptyState, type EmptyStateProps } from './EmptyState';
-export { SkeletonBox, SkeletonCard, SkeletonLine } from './Skeleton';
+export {
+  SkeletonBox,
+  SkeletonCard,
+  SkeletonFiche,
+  SkeletonGrille,
+  SkeletonLignes,
+  SkeletonLine,
+} from './Skeleton';
 export {
   ALPHABET,
   CodeInput,

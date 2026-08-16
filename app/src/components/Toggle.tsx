@@ -45,15 +45,15 @@ export function Toggle({
       disabled={disabled}
       onPress={() => onChange(!value)}
       hitSlop={{ top: 11, bottom: 11, left: 0, right: 0 }}
-      style={{
+      style={({ pressed }) => ({
         width: 40,
         height: 22,
         borderRadius: radius['radius.pill'],
         justifyContent: 'center',
         paddingHorizontal: 3,
         backgroundColor: value ? c['brand.700'] : c['line.default'],
-        opacity: disabled ? 0.5 : 1,
-      }}
+        opacity: disabled ? 0.5 : pressed ? 0.7 : 1,
+        })}
     >
       <Animated.View
         style={{

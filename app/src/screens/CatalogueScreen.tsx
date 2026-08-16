@@ -572,7 +572,11 @@ function NouvellePrestation({
               accessibilityRole="button"
               accessibilityState={{ selected: palier.id === palierId }}
               onPress={() => setPalierId(palier.id)}
-              style={{ opacity: palier.id === palierId ? 1 : 0.45 }}
+              style={({ pressed }) => ({
+                // Le palier non choisi est déjà pâle ; l'appui le pâlit
+                // encore, sans jamais éclaircir celui qui est choisi.
+                opacity: (palier.id === palierId ? 1 : 0.45) * (pressed ? 0.7 : 1),
+              })}
               testID={`choix-palier-${palier.id}`}
             >
               <TierBadge tier={palier.content_format} />

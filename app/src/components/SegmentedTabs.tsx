@@ -45,7 +45,7 @@ export function SegmentedTabs({ items, index, onChange, testID }: SegmentedTabsP
             accessibilityState={{ selected: actif }}
             accessibilityLabel={libelle}
             onPress={() => onChange(i)}
-            style={{
+            style={({ pressed }) => ({
               flex: 1,
               minHeight: 32,
               alignItems: 'center',
@@ -53,7 +53,8 @@ export function SegmentedTabs({ items, index, onChange, testID }: SegmentedTabsP
               paddingHorizontal: 8,
               paddingVertical: 7,
               backgroundColor: actif ? c['bg.inverse'] : c['bg.surface'],
-            }}
+          opacity: pressed ? 0.7 : 1,
+        })}
           >
             <Texte
               variante="type.label"
