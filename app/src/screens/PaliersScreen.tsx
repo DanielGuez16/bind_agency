@@ -101,6 +101,7 @@ const LARGEUR_DU_DON = 210;
 
 export function PaliersScreen({
   prenom = null,
+  onRetour,
   onConnecterUnReseau,
   onVoirMonAudience,
   onLireLesRegles,
@@ -117,6 +118,15 @@ export function PaliersScreen({
   /** Mène là où l'on rattache un réseau. Absent chez qui n'y a pas accès. */
   onConnecterUnReseau?: () => void;
   onVoirMonAudience?: () => void;
+  /**
+   * Le retour vers le fil.
+   *
+   * **L'écran n'est plus un onglet, il est une explication.** On l'ouvre depuis
+   * la ligne qui annonce ce qui est ouvert, et on en revient — un écran empilé
+   * sans retour est un cul-de-sac sur les plateformes qui n'ont pas de geste
+   * système pour reculer.
+   */
+  onRetour?: () => void;
   /** Mobile seulement : en bureau les règles sont la colonne de droite. */
   onLireLesRegles?: () => void;
   /**
@@ -145,6 +155,7 @@ export function PaliersScreen({
       requete={requete}
       testID="ecran-paliers"
       nature="creator"
+      onRetour={onRetour}
       titre={t('parcours.tiersTitre')}
       entete={
         // En grand écran le titre vit déjà dans la barre de titre : le répéter

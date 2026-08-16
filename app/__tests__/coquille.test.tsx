@@ -591,19 +591,25 @@ describe('aiguillage par rôle', () => {
     return Object.values(en.onglets).filter((libelle) => screen.queryAllByText(libelle).length > 0);
   }
 
-  it('le créateur voit ses cinq onglets, et aucun autre', async () => {
+  it('le créateur voit ses quatre onglets, et aucun autre', async () => {
     await monterPour('creator');
     const vus = onglets();
 
-    expect(vus).toEqual(
-      expect.arrayContaining([
-        en.onglets.fil,
-        en.onglets.paliers,
-        en.onglets.reservations,
-        en.onglets.audience,
-        en.onglets.reglages,
-      ]),
-    );
+    // **Quatre, et non plus cinq.** Les paliers ont quitté la barre : un onglet
+    // répond à une question qu'on se pose en ouvrant l'application, et « quel
+    // est mon palier » n'en est pas une. Ce qu'on veut savoir, c'est ce qu'on
+    // peut réserver — le fil répond, et les paliers l'expliquent depuis une
+    // ligne du fil.
+    expect(vus).toEqual([
+      en.onglets.fil,
+      en.onglets.reservations,
+      en.onglets.audience,
+      en.onglets.reglages,
+    ]);
+    // Écrit en égalité stricte et non en « contient » : la version d'avant
+    // laissait passer un onglet de plus sans rien dire, ce qui est exactement
+    // la faute qu'on vient de corriger à la main.
+    expect(vus).not.toContain(en.onglets.paliers);
     // Un onglet qui répondrait 403 est pire qu'un onglet absent.
     for (const interdit of [en.onglets.journee, en.onglets.arbitrage, en.onglets.plans]) {
       expect(vus).not.toContain(interdit);

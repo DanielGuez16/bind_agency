@@ -5095,3 +5095,56 @@ style par défaut — le dépôt n'a aucune configuration Prettier, et le style
 maison est en guillemets simples. Annulé et refait sans lui. La CI de l'app ne
 vérifie pas le format ; celle de l'api, si, via `ruff format --check` en plus de
 `ruff check`.
+## 2026-08-16 — Les paliers ne sont plus un onglet, ils sont une réponse
+
+L'écran des paliers sort des onglets créateur. Quatre au lieu de cinq.
+
+**Ce que l'onglet faisait de travers.** Un onglet répond à une question qu'on se
+pose en ouvrant l'application. « Quel est mon palier » n'en est pas une : ce que
+la créatrice veut savoir en ouvrant BIND, c'est **ce qu'elle peut réserver**, et
+c'est le fil qui répond. Les paliers sont la *raison*, pas la réponse — rangés
+dans un onglet, ils étaient offerts à qui n'avait pas posé la question, et
+absents au moment où elle se pose.
+
+L'explication s'ouvre donc depuis une ligne du fil : « douze prestations vous
+sont ouvertes ». Le nombre d'abord, la raison ensuite. L'information ne
+disparaît pas, elle arrive quand elle sert.
+
+**Rien à ajouter côté données.** `Fil.total_prestations` existait déjà.
+
+**Une garde écrite puis retirée, et c'est le plus instructif.** La ligne portait
+d'abord un `if (total <= 0) return null`, avec son test. La mutation qui a
+supprimé la garde n'a rien fait tomber — parce que le test fabriquait un fil
+peuplé avec un total nul, une réponse que le serveur ne produit pas :
+`total_prestations` y vaut `sum(len(commerce.items))`, donc il est nul
+**exactement** quand le fil est vide, et un fil vide rend `RaisonDuVide` à la
+place de ce corps. La garde protégeait un état qu'aucun appel n'atteint, et le
+test passait sans rien couvrir. Les deux sont partis. C'est la même leçon que
+les trois champs d'API défensifs de la campagne précédente : le coût d'un repli
+n'est pas nul, il crée un chemin que rien ne parcourt et un test qui ment sur ce
+qu'il couvre.
+
+**Ce que la coquille garde de plus.** Le test des onglets était écrit en
+`arrayContaining` : il aurait laissé passer un sixième onglet sans rien dire.
+Il compare maintenant la liste entière, dans l'ordre.
+
+## 2026-08-16 — Une PR en conflit ne reçoit aucune CI, et ça ne se voit pas
+
+Trois quarts d'heure perdus dessus, donc autant l'écrire.
+
+La PR #126 n'a **jamais** déclenché d'exécution. Le workflow était actif, la PR
+n'était pas en brouillon, la concurrence est par référence, et fermer puis
+rouvrir n'a rien changé. La cause : `main` avait avancé et la branche était en
+conflit. GitHub construit les exécutions `pull_request` sur le **commit de
+fusion** ; quand il ne peut pas le calculer, il ne dispatche rien du tout.
+
+Ce qui rend le défaut coûteux est ce qu'on voit à la place : `gh pr checks` ne
+listait qu'un contrôle tiers en `skipping`. Ça se lit comme « en attente », pas
+comme « rien n'a tourné ». **Le signal fiable est `gh pr view --json
+mergeable`** : il valait `CONFLICTING`. Après rebase, `MERGEABLE`, et
+l'exécution est partie dans la seconde.
+
+À ajouter au réflexe déjà écrit dans `CLAUDE.md` — lire la conclusion du run
+entier et non le décompte des contrôles : encore faut-il qu'un run existe.
+Quand aucun n'apparaît, la question n'est pas « pourquoi est-il lent » mais
+« la branche est-elle fusionnable ».
