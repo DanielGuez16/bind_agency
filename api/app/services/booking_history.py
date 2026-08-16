@@ -72,6 +72,8 @@ class ReservationDuCreateur:
     starts_at: datetime | None
     ends_at: datetime | None
     valid_until: datetime
+    #: Jusqu'à quand le commerce peut trancher. Nulle hors d'`awaiting_business`.
+    approval_expires_at: datetime | None
     created_at: datetime
     business_id: uuid.UUID
     business_name: str
@@ -106,6 +108,8 @@ class ReservationDuCommerce:
     starts_at: datetime | None
     ends_at: datetime | None
     valid_until: datetime
+    #: Jusqu'à quand le commerce peut trancher. Nulle hors d'`awaiting_business`.
+    approval_expires_at: datetime | None
     creator_id: uuid.UUID
     creator_first_name: str | None
     creator_last_name: str | None
@@ -152,6 +156,11 @@ def _colonnes_communes() -> tuple:
         Booking.starts_at,
         Booking.ends_at,
         Booking.valid_until,
+        # **Dans les colonnes communes, donc rendue aux deux.** Le commerce doit
+        # savoir jusqu'à quand il peut trancher ; la créatrice doit savoir
+        # jusqu'à quand elle attend. C'est la même donnée, et la servir d'un
+        # seul côté laisserait l'autre deviner.
+        Booking.approval_expires_at,
         Booking.created_at,
         CatalogItem.name.label("item_name"),
         CatalogItem.photo_key.label("item_photo_key"),
@@ -254,6 +263,7 @@ async def historique_du_createur(
                 starts_at=ligne.starts_at,
                 ends_at=ligne.ends_at,
                 valid_until=ligne.valid_until,
+                approval_expires_at=ligne.approval_expires_at,
                 created_at=ligne.created_at,
                 business_id=ligne.business_id,
                 business_name=ligne.business_name,
@@ -295,6 +305,7 @@ def _lire(ligne) -> ReservationDuCommerce:
         starts_at=ligne.starts_at,
         ends_at=ligne.ends_at,
         valid_until=ligne.valid_until,
+        approval_expires_at=ligne.approval_expires_at,
         creator_id=ligne.creator_id,
         creator_first_name=ligne.first_name,
         creator_last_name=ligne.last_name,

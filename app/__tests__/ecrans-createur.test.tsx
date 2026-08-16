@@ -549,6 +549,65 @@ describe('historique', () => {
     expect(screen.getByText(`${en.parcours.ongletTerminees} · 4`)).toBeTruthy();
   });
 
+  it("dit jusqu'à quand le salon peut répondre", async () => {
+    /**
+     * **« En attente » sans terme se lit comme une file sans fin.** On ne sait
+     * pas s'il faut relancer, réserver ailleurs, ou ne rien faire. L'heure est
+     * celle que le salon voit de son côté — la même donnée, rendue aux deux —
+     * et s'affiche dans le fuseau du salon comme le reste de l'écran.
+     */
+    await monter(
+      <HistoriqueScreen onOuvrir={jest.fn()} />,
+      clientDe({
+        '/me/bookings': {
+          items: [
+            {
+              ...RESERVATION,
+              status: 'awaiting_business',
+              approval_expires_at: '2026-08-07T13:00:00Z',
+            },
+          ],
+          compteurs: { ...COMPTEURS_VIDES, awaiting_business: 1 },
+        },
+      }),
+    );
+    await waitFor(() => expect(screen.getByTestId('en-attente-r1')).toBeTruthy());
+
+    const message = screen.getByTestId('en-attente-r1');
+    // 13 h UTC, soit 9 h à New York : le fuseau du salon, pas celui d'ici.
+    // Une chaîne nue serait comparée au texte entier ; l'expression régulière
+    // cherche bien l'heure convertie à l'intérieur du message.
+    expect(message).toHaveTextContent(/9:00\s*AM/);
+    // `toHaveTextContent` compare une **chaîne** au texte entier : passer la
+    // phrase telle quelle échouerait alors même qu'elle est bien là, puisque
+    // l'échéance s'y ajoute. En expression régulière, c'est une recherche.
+    expect(message).toHaveTextContent(
+      new RegExp(en.parcours.enAttenteDuSalon.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
+    );
+  });
+
+  it("n'invente pas d'échéance quand le serveur n'en donne pas", async () => {
+    /**
+     * **L'autre sens.** Une ligne d'avant la migration n'a pas d'échéance.
+     * Afficher « ils ont jusqu'au » suivi d'un vide, ou pire d'une date
+     * calculée ici, vaudrait moins que ne rien promettre.
+     */
+    await monter(
+      <HistoriqueScreen onOuvrir={jest.fn()} />,
+      clientDe({
+        '/me/bookings': {
+          items: [{ ...RESERVATION, status: 'awaiting_business', approval_expires_at: null }],
+          compteurs: { ...COMPTEURS_VIDES, awaiting_business: 1 },
+        },
+      }),
+    );
+    await waitFor(() => expect(screen.getByTestId('en-attente-r1')).toBeTruthy());
+
+    expect(screen.getByTestId('en-attente-r1')).toHaveTextContent(en.parcours.enAttenteDuSalon);
+    // La phrase à trous ne part pas telle quelle vers l'écran.
+    expect(screen.queryByText(/\{\{quand\}\}/)).toBeNull();
+  });
+
   it('garde les onglets visibles quand un onglet est vide', async () => {
     // Un historique dont seul « à venir » est vide n'est pas un historique
     // vide : masquer les onglets empêcherait d'aller voir les autres.

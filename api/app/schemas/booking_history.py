@@ -38,6 +38,13 @@ class ReservationDuCreateurRead(BaseModel):
     starts_at: datetime | None
     ends_at: datetime | None
     valid_until: datetime
+    #: Jusqu'à quand le commerce peut trancher. `None` hors d'`awaiting_business`.
+    #:
+    #: Rendue plutôt que déduite dans l'application : le délai est un réglage,
+    #: et le recopier côté écran le ferait dériver au premier ajustement. C'est
+    #: aussi ce qui permet à la créatrice de lire la même heure que le commerce,
+    #: au lieu de deux comptes à rebours calculés séparément.
+    approval_expires_at: datetime | None
     created_at: datetime
     business_id: uuid.UUID
     business_name: str
@@ -77,6 +84,13 @@ class ReservationDuCommerceRead(BaseModel):
     starts_at: datetime | None
     ends_at: datetime | None
     valid_until: datetime
+    #: Jusqu'à quand le commerce peut trancher. `None` hors d'`awaiting_business`.
+    #:
+    #: Rendue plutôt que déduite dans l'application : le délai est un réglage,
+    #: et le recopier côté écran le ferait dériver au premier ajustement. C'est
+    #: aussi ce qui permet à la créatrice de lire la même heure que le commerce,
+    #: au lieu de deux comptes à rebours calculés séparément.
+    approval_expires_at: datetime | None
     creator_id: uuid.UUID
     creator_first_name: str | None
     creator_last_name: str | None

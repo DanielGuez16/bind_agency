@@ -214,6 +214,18 @@ class Settings(BaseSettings):
     #: Durée du garde posé à la création. Dix minutes : assez pour confirmer,
     #: assez court pour qu'une place abandonnée revienne vite.
     booking_hold_seconds: int = 600
+    #: Temps laissé au commerce pour accepter ou refuser une demande.
+    #:
+    #: **Vingt-quatre heures, et l'échéance est bornée par le créneau.** Un jour
+    #: pour un salon qui ne regarde son écran qu'entre deux clientes ; mais si la
+    #: prestation commence avant, l'échéance tombe au début du créneau — promettre
+    #: une réponse pour après le rendez-vous ne veut rien dire.
+    #:
+    #: Sans ce délai, une demande restait en attente indéfiniment **en occupant
+    #: la place** : `awaiting_business` compte dans la capacité, et un commerce
+    #: distrait bloquait un créneau pour toujours. `SPEC.md` §4.1 prescrivait la
+    #: transition depuis le début ; elle n'avait jamais été construite.
+    booking_approval_seconds: int = 86_400
     #: Fenêtre de validité d'un droit sans créneau. Le créateur se présente
     #: quand il veut avant l'échéance.
     booking_open_validity_days: int = 30

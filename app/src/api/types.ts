@@ -393,6 +393,15 @@ export type ReservationDuCreateur = {
   starts_at: string | null;
   ends_at: string | null;
   valid_until: string;
+  /**
+   * Jusqu'à quand le commerce peut accepter ou refuser. `null` hors d'attente.
+   *
+   * Rendue par le serveur plutôt que déduite ici : le délai est un réglage, et
+   * le recopier côté écran le ferait dériver au premier ajustement. C'est aussi
+   * ce qui fait lire **la même heure** aux deux côtés, au lieu de deux comptes
+   * à rebours calculés séparément.
+   */
+  approval_expires_at: string | null;
   created_at: string;
   business_id: string;
   business_name: string;
@@ -428,6 +437,15 @@ export type ReservationDuCommerce = {
   starts_at: string | null;
   ends_at: string | null;
   valid_until: string;
+  /**
+   * Jusqu'à quand le commerce peut accepter ou refuser. `null` hors d'attente.
+   *
+   * Rendue par le serveur plutôt que déduite ici : le délai est un réglage, et
+   * le recopier côté écran le ferait dériver au premier ajustement. C'est aussi
+   * ce qui fait lire **la même heure** aux deux côtés, au lieu de deux comptes
+   * à rebours calculés séparément.
+   */
+  approval_expires_at: string | null;
   creator_id: string;
   creator_first_name: string | null;
   creator_last_name: string | null;

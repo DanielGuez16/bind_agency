@@ -114,6 +114,20 @@ class Booking(UUIDPrimaryKey, CreatedAt, Base):
         sa.DateTime(timezone=True), nullable=True
     )
 
+    #: Jusqu'à quand le commerce peut accepter ou refuser. Nul hors
+    #: d'`awaiting_business`.
+    #:
+    #: **Une colonne distincte de `hold_expires_at`, et pas son prolongement.**
+    #: Les deux comptent un temps d'attente, mais pas le même, et pas pour la
+    #: même personne : le garde de dix minutes protège la place pendant qu'un
+    #: créateur remplit son écran, celui-ci borne le temps de réflexion d'un
+    #: commerce. Réutiliser la première colonne rendrait illisible toute lecture
+    #: qui demande « depuis quand ce panier est-il ouvert », et la contrainte
+    #: `held_has_hold_expiry` ne pourrait plus rien affirmer.
+    approval_expires_at: Mapped[datetime | None] = mapped_column(
+        sa.DateTime(timezone=True), nullable=True
+    )
+
     # Prix figé à la réservation : le commerce peut changer sa carte ensuite,
     # l'historique ne bouge pas. Devise = celle du commerce.
     value_cents_snapshot: Mapped[int] = money_column(nullable=False)
@@ -141,6 +155,15 @@ class Booking(UUIDPrimaryKey, CreatedAt, Base):
         ),
         sa.CheckConstraint(
             "status <> 'held' OR hold_expires_at IS NOT NULL", name="held_has_hold_expiry"
+        ),
+        # Le pendant pour l'accord du commerce. Sans elle, une demande sans
+        # échéance n'expirerait jamais et garderait sa place indéfiniment —
+        # exactement le défaut qu'on corrige, et il ne se verrait qu'au bout de
+        # plusieurs jours, sur une place que personne ne comprend pourquoi elle
+        # est prise.
+        sa.CheckConstraint(
+            "status <> 'awaiting_business' OR approval_expires_at IS NOT NULL",
+            name="awaiting_business_has_approval_expiry",
         ),
         sa.CheckConstraint("value_cents_snapshot >= 0", name="value_cents_snapshot_positive"),
         # Nommée à la main : la convention produirait 67 caractères, au-delà de
@@ -189,6 +212,9 @@ class Booking(UUIDPrimaryKey, CreatedAt, Base):
         sa.Index("ix_booking_business_id_starts_at", "business_id", "starts_at"),
         # Job d'expiration des gardes.
         sa.Index("ix_booking_status_hold_expires_at", "status", "hold_expires_at"),
+        # Le balayage des accords sans réponse cherche exactement ce couple, et
+        # il tourne toutes les deux minutes sur toute la table.
+        sa.Index("ix_booking_status_approval_expires_at", "status", "approval_expires_at"),
         # Historique côté créateur.
         sa.Index("ix_booking_creator_id_created_at", "creator_id", sa.desc("created_at")),
     )
