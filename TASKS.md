@@ -591,10 +591,23 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       288, dix-huit pixels par unité, aucun arrondi. `splash-icon.png` part au
       passage, orphelin comme les précédents. 8 tests neufs, 3 mutations
       vérifiées — dont une qui n'avait rien muté et qu'il a fallu reprendre*
-- [ ] **Le vectoriel du logotype**
-      *Le dernier point du système, attendu de la fondatrice. Les lettres sont
-      dessinées à la main et le D porte une coupe oblique qu'aucune fonte ne
-      donne : ce que le produit affiche aujourd'hui est une approximation dans
-      la fonte fonctionnelle, nommée comme telle dans `$meta.unconfirmed`. La
-      marque compacte, elle, n'attend plus rien — elle est livrée*
+- [x] **Le vectoriel a corrigé la règle : le point est orange**
+      *Le logo de la fondatrice contredit ce qui avait été déduit de ses visuels
+      Instagram — entièrement blancs sur orange, **où un point orange ne peut
+      pas se distinguer du fond**. Les lettres prennent l'encre du fond, seul le
+      point du « ! » est `brand.500`, et le fût suit les lettres. Conséquence
+      technique : le « ! » ne peut pas être un caractère, une couleur de texte
+      s'appliquant au glyphe entier — il se dessine, et son tracé est **mesuré
+      sur la fonte** (le fût s'affine de 31 à 22 pixels à 400, le point est rond).
+      Le sigle s'inverse — tuile encre, fût blanc, point orange — et sa palette
+      passe à trois couleurs : sur une tuile orange le point disparaîtrait, et
+      c'est lui la marque. La signature disparaît partout, jeton compris.
+      12 tests neufs, 7 mutations vérifiées — dont deux passées d'abord, qui ont
+      révélé une garde supprimée par une réécriture et une autre qui ne lisait
+      jamais le rendu*
+- [ ] **Le fichier vectoriel lui-même**
+      *La règle est corrigée, le dessin ne l'est pas : les lettres restent une
+      approximation dans la fonte fonctionnelle, et le D porte une coupe oblique
+      qu'aucune fonte ne donne. `$meta.unconfirmed` le porte toujours. Ce qui
+      manque n'est plus une décision mais un fichier*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire

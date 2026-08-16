@@ -146,7 +146,7 @@ export function AuthScreen({ motif }: { motif: MotifDeSortie | null }) {
           {(role === 'creator' ? t('auth.roleCreator') : t('auth.roleMerchant')).toUpperCase()}
         </Texte>
       ) : (
-        <Marque taille={30} couleur="ink.onDark" />
+        <Marque taille={30} variante="blanc" />
       )}
       <Texte variante="type.bodyStrong" style={{ color: c['ink.onDark'] }}>
         {inscription

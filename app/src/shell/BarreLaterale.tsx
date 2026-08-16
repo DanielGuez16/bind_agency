@@ -92,9 +92,10 @@ export function BarreLaterale({
         {replie ? (
           <Icone nom='etincelle' couleur={matiere.texte} />
         ) : (
-          // Le sigle est monochrome, et d'une seule couleur par occurrence :
-          // l'encre de la matière sur laquelle il est posé.
-          <Marque taille={26} couleur={matiere.texte} />
+          // Les lettres suivent la matière de la coquille — encre sur os et
+          // papier, blanc sur l'encre de l'administration. Le point reste
+          // orange dans les deux cas : c'est la seule couleur du logotype.
+          <Marque taille={26} variante={matiere.surface === 'bg.inverse' ? 'blanc' : 'encre'} />
         )}
         {!replie && intitule ? (
           <Texte

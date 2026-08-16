@@ -4971,3 +4971,56 @@ prestation contre une promesse.
 dates coïncidaient. Il a fallu écrire le cas qui les sépare — rendez-vous la
 semaine prochaine, délai écoulé depuis une heure — c'est-à-dire exactement celui
 qui motive tout le changement.
+## 2026-08-15 — Le point est la seule couleur du logotype
+
+Le vectoriel de la fondatrice est arrivé et **corrige la règle**. Design a mis à
+jour la planche, les jetons et la passation ; le dépôt suit.
+
+**Ce qui était faux, et pourquoi.** La règle disait « le point d'exclamation
+n'est jamais coloré à part : c'est une lettre, pas un accent ». Elle avait été
+déduite de visuels Instagram entièrement blancs sur orange — **où un point
+orange ne peut pas se distinguer du fond**. L'information manquait de la seule
+source disponible, et il en est sorti une règle au lieu d'une incertitude.
+C'est la deuxième fois que ce fichier porte une marque déduite plutôt que vue,
+après le « B » du système vert.
+
+**La règle.** Les lettres prennent l'encre du fond — encre sur os et papier,
+blanc pur sur encre, satin et orange. **Seul le point du « ! » est
+`brand.500`**, dans les deux cas. Le fût suit les lettres.
+
+**Conséquence technique, et c'en est bien une.** Le « ! » ne peut pas être posé
+comme caractère : une couleur de texte s'applique au glyphe entier, et le fût
+prendrait celle du point. Il se dessine. Le mot se compose donc en trois
+morceaux — `B`, le signe, `ND` — et le signe est un tracé.
+
+**Le tracé vient de la fonte, il n'est pas inventé.** Mesuré au navigateur sur
+le fichier que l'application embarque, à 400 px : le fût s'affine de 31 à 22
+pixels, et le point est rond, de diamètre égal à la largeur haute du fût. Un
+rectangle droit à côté de trois lettres de la même fonte se verrait — ce n'est
+pas un pictogramme posé près du mot, c'est une de ses lettres.
+
+**Le sigle s'inverse.** Il était une tuile orange avec le point évidé ; il
+devient **tuile encre, fût blanc, point orange**, et sa palette passe de deux
+couleurs à trois. La raison est dans les jetons : sur une tuile orange le point
+disparaîtrait, et c'est lui la marque. La contrainte de palette à deux couleurs
+tombe avec elle — le sens du sigle *est* le contraste entre le fût et le point,
+il ne survit pas à une palette qui ne peut pas porter les deux.
+
+**Le composant expose une variante, pas une couleur.** `encre` ou `blanc`, et le
+point ne bouge pas. Un appelant qui choisit une encre choisit tôt ou tard celle
+du point, et le logotype cesse d'avoir sa couleur — c'est la même raison qui
+fait refuser `Marque` sous son plancher.
+
+**La signature disparaît.** Ni `AGENCY` ni `CRÉATEUR DE LIEN` — cette dernière
+est en français, et BIND s'adresse à Miami en anglais et en espagnol. Le jeton
+`type.tagline` part avec le prop.
+
+*Deux mutations sont passées, et ce qu'elles ont trouvé vaut d'être écrit.*
+Remettre le « ! » en caractère n'a rien fait tomber : la garde qui le
+protégeait avait été **supprimée par une de mes propres réécritures** — un
+découpage de bloc trop large l'avait emportée, et le fichier passait au vert
+sans elle. Remettre la signature n'a rien fait tomber non plus : la garde lisait
+les fichiers et le jeton, jamais ce que l'écran montre. Les deux gardes existent
+maintenant dans les deux sens, sur le fichier **et** sur l'arbre rendu. Une
+garde qui n'a jamais échoué ne prouve pas qu'elle protège ; elle prouve qu'elle
+s'exécute — et celle-ci ne s'exécutait même plus.

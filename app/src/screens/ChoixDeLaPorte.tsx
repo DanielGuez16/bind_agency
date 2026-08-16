@@ -110,9 +110,10 @@ export function ChoixDeLaPorte({
           encore tout le reste de l'écran, et il n'a jamais eu pour rôle de
           passer sous un texte. */}
       <Enveloppe surMedia={surMedia}>
-        {/* Le seul écran, avec l'accueil, où la marque **se présente** : le
-            sigle y porte sa signature, qu'aucun autre écran ne répète. */}
-        <Marque taille={30} couleur={surMedia ? 'ink.onScrim' : 'ink.default'} signature />
+        {/* **Plus de signature.** Ni AGENCY ni CRÉATEUR DE LIEN : cette
+            dernière est en français, et BIND s'adresse à Miami en anglais et en
+            espagnol. Le logotype seul suffit, ici comme partout. */}
+        <Marque taille={30} variante={surMedia ? 'blanc' : 'encre'} testID="logotype" />
 
         <View style={{ gap: spacing['space.2'], maxWidth: 720 }}>
         {/* Nommée : c'est sur elle que la suite de bout en bout lit la police

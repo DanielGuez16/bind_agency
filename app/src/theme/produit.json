@@ -40,14 +40,6 @@
       "size": 28,
       "lineHeight": 32,
       "letterSpacing": 1
-    },
-    "type.tagline": {
-      "family": "sans",
-      "weight": 300,
-      "size": 10,
-      "lineHeight": 12,
-      "letterSpacing": 12,
-      "transform": "uppercase"
     }
   },
   "density": {
@@ -171,6 +163,24 @@
   "marque": {
     "$pourquoi": "Le seuil qui décide entre le logotype et la marque compacte. La règle : le logotype partout où on a la place de le lire, la marque compacte partout ailleurs — le seuil est la lisibilité des quatre lettres, pas le support. `largeurParLettre` est mesuré dans la fonte du produit : « B!ND » occupe 2,368 fois le corps pour quatre lettres. `pixelsParLettreMinimum` est encadré par deux mesures et non choisi : 6,75 px par lettre au lanceur Android à 48 dp, dont la capture est illisible ; 11,1 px au plus petit usage in-app, qui se lit. Lu par components/Logo.tsx, qui refuse de rendre en dessous, et par scripts/cuire-la-marque.mjs.",
     "largeurParLettre": 0.592,
-    "pixelsParLettreMinimum": 10
+    "pixelsParLettreMinimum": 10,
+    "$pourquoiLesEncres": "Les trois couleurs du logotype. `encre` et `point` doublent des jetons — un test le vérifie, elles ne sont pas une seconde source. `blanc` est le seul chiffre propre au logo : la passation dit #FFFFFF sur encre, satin et orange, et non `ink.onDark` (#F7F3EF), qui est l'encre claire du texte courant. Les faire coïncider ferait suivre le logo le jour où l'une des deux bougerait.",
+    "encres": {
+      "encre": "#17120E",
+      "blanc": "#FFFFFF",
+      "point": "#F26B21"
+    },
+    "$pourquoiLeSigne": "La géométrie du « ! » dessiné, en fractions du corps, mesurée sur la fonte du produit à 400 px : le fût s'affine de 31 à 22 pixels et le point est rond, de diamètre égal à la largeur haute du fût. Un rectangle droit jurerait à côté des trois lettres, qui viennent de la même fonte. Le « ! » se dessine parce que posé en caractère, son fût prendrait la couleur du point.",
+    "signe": {
+      "avance": 0.26102,
+      "futHautY": 0.1625,
+      "futHautLargeur": 0.0775,
+      "futBasY": 0.66,
+      "futBasLargeur": 0.055,
+      "futCentreX": 0.127,
+      "pointCentreX": 0.12625,
+      "pointCentreY": 0.82125,
+      "pointRayon": 0.0575
+    }
   }
 }

@@ -1,23 +1,43 @@
 /**
- * La marque.
+ * Le logotype.
  *
- * **La marque est le mot.** `B!ND`, le point d'exclamation à la place du I,
- * `AGENCY` centré dessous en lettres très espacées, trait fin et monochrome.
- * Il n'y a pas de signe à côté du mot : le mot *est* le signe.
+ * **La marque est le mot, et le point est sa couleur.** `B!ND`, le point
+ * d'exclamation à la place du I. Les lettres prennent l'encre du fond — encre
+ * sur os et papier, blanc sur encre, satin et orange — et **seul le point du
+ * « ! » est orange**, dans les deux cas. C'est la seule couleur du logotype, et
+ * c'est elle qui fait la marque.
  *
- * **Ce que ce fichier a porté jusqu'ici.** Il dessinait un « B » construit —
- * deux arcs inégaux tenus par un axe qui dépassait en haut et en bas — hérité
- * du système vert, où il valait monogramme. La v1.0 l'a repeint sans le
- * regarder : il a traversé le remplacement complet du système, changé de
- * couleur, gardé sa forme, et il était encore en tête de l'accueil en ligne
- * pendant que tout le reste avait changé. Une direction artistique se remplace
- * en entier ou pas du tout ; recolorer le signe de l'ancienne revient à la
- * garder.
+ * **Le « ! » ne peut donc pas être un caractère.** Posé en texte, son fût
+ * prendrait la couleur du point : une couleur de texte s'applique au glyphe
+ * entier, et rien ne permet d'en peindre la moitié. Il se dessine — fût plus
+ * point rond — et c'est une contrainte d'implémentation, pas une préférence.
+ * Le mot se compose donc en trois morceaux : `B`, le signe, `ND`.
  *
- * **Une seule couleur par occurrence.** Encre sur os ou papier, clair sur
- * orange, satin ou encre. Le point d'exclamation n'est **jamais coloré à
- * part** : c'est une lettre, pas un accent, et c'est la faute que la première
- * lecture du brief avait commise.
+ * **Le tracé vient de la fonte, il n'est pas inventé.** Mesuré sur le fichier
+ * que l'application embarque, à 400 px : le fût s'affine de 31 à 22 pixels, et
+ * le point est rond, de diamètre égal à la largeur haute du fût. Un rectangle
+ * droit à côté de trois lettres de la même fonte se verrait — ce n'est pas un
+ * pictogramme posé près du mot, c'est une de ses lettres.
+ *
+ * ---
+ *
+ * ## Ce que ce fichier a porté, et pourquoi la règle a changé deux fois
+ *
+ * Il a d'abord dessiné un « B » construit — deux arcs inégaux tenus par un axe
+ * débordant — hérité du système vert. La v1.0 l'a *repeint sans le regarder* :
+ * il a traversé le remplacement complet du système, changé de couleur, gardé sa
+ * forme, et il était encore en tête de l'accueil en ligne quand tout le reste
+ * avait changé.
+ *
+ * Puis il a porté un logotype **monochrome**, avec `AGENCY` dessous. Les deux
+ * étaient faux, et l'erreur était méthodique : la règle avait été déduite de
+ * visuels Instagram entièrement blancs sur orange, **où un point orange ne peut
+ * pas se distinguer du fond**. L'information manquait de la seule source
+ * disponible, et il en est sorti une règle au lieu d'une incertitude. Le
+ * vectoriel de la fondatrice montre des lettres noires et un point orange.
+ *
+ * **Aucune signature.** Ni `AGENCY`, ni `CRÉATEUR DE LIEN` — cette dernière est
+ * en français, et BIND s'adresse à Miami en anglais et en espagnol.
  *
  * ---
  *
@@ -27,18 +47,10 @@
  * partout ailleurs. Le seuil est la lisibilité des quatre lettres, pas le
  * support.**
  *
- * La règle a coûté deux découvertes. Le logotype réduit à seize pixels donnait
- * quatre taches — d'où la marque compacte, livrée par Design. Puis la tuile
- * d'application, qu'on avait gardée au logotype *parce qu'elle est fournie en
- * 1024*, jusqu'à mesurer ce qu'un lanceur en affiche : vingt-sept pixels de
- * large pour quatre lettres à 48 dp. La résolution du fichier n'a jamais été la
- * question ; ce que l'œil reçoit l'a toujours été.
- *
- * Ce composant **refuse** donc de rendre sous le plancher, comme `Texte` refuse
- * une surface employée en encre. Un logotype illisible ne se signale pas : il
- * ressemble à un logotype, en plus petit, et il traverse une revue. C'est très
- * exactement ainsi que l'ancien monogramme a traversé le remplacement du
- * système.
+ * Ce composant **refuse** de rendre sous le plancher, comme `Texte` refuse une
+ * surface employée en encre. Un logotype illisible ne se signale pas : il
+ * ressemble à un logotype, en plus petit, et il traverse une revue. C'est
+ * exactement ainsi que l'ancien monogramme est passé.
  *
  * Le plancher n'est pas écrit, il se calcule depuis deux mesures tenues dans
  * `produit.json` — la largeur d'une lettre dans la fonte, et le minimum de
@@ -46,30 +58,21 @@
  *
  * **Ceci reste une approximation, et elle est nommée.** Les lettres du logo de
  * l'agence sont dessinées à la main — le D porte une coupe oblique qu'aucune
- * fonte ne donne. Le rendu dans la fonte fonctionnelle du système
- * s'en écarte. Le vectoriel est réclamé ;
- * d'ici là `tokens.json` porte ce manque dans `$meta.unconfirmed`, plutôt que
- * de laisser croire que la question est réglée.
+ * fonte ne donne. Le rendu dans la fonte fonctionnelle du système s'en écarte.
+ * Le vectoriel est réclamé ; d'ici là `tokens.json` porte ce manque dans
+ * `$meta.unconfirmed`, plutôt que de laisser croire que la question est réglée.
  */
 import { View } from 'react-native';
+import Svg, { Circle, Polygon } from 'react-native-svg';
 
-import { produit, tokens, type ColorName } from '../theme';
+import { ENCRES_DU_LOGOTYPE, produit, tokens } from '../theme';
 import { Texte } from './Texte';
 
 /**
- * Le mot, et sa signature quand la marque se présente.
- *
- * `taille` est la hauteur de référence du mot, pas celle d'une boîte : il n'y a
- * plus de carré à côté duquel s'aligner. L'espacement des lettres est celui du
- * nom et non du texte courant — quatre lettres serrées ne se lisent pas comme
- * une marque.
- */
-/**
  * Le rapport entre `taille` et le corps du mot.
  *
- * Il vaut ce que la composition lui donne plus bas ; nommé ici parce que le
- * plancher s'en déduit, et qu'un rapport écrit à deux endroits finirait par
- * diverger de celui qui rend.
+ * Nommé parce que le plancher s'en déduit et que le signe s'y accroche : un
+ * rapport écrit à trois endroits finirait par diverger de celui qui rend.
  */
 const CORPS_POUR_TAILLE = 0.72;
 
@@ -83,19 +86,74 @@ export const PLANCHER_DU_LOGOTYPE = Math.ceil(
   produit.marque.pixelsParLettreMinimum / (CORPS_POUR_TAILLE * produit.marque.largeurParLettre),
 );
 
+/** Les deux fonds possibles. Le point ne change pas d'un cas à l'autre. */
+export type VarianteDuLogotype = 'encre' | 'blanc';
+
+/**
+ * Le « ! », dessiné.
+ *
+ * Sa boîte fait exactement l'avance du caractère et la hauteur du corps : posée
+ * dans une rangée dont les autres morceaux ont `lineHeight` égal au corps, elle
+ * se superpose à la boîte cadratin du texte, et le signe retombe où la fonte
+ * l'aurait mis. C'est pour cela que le logotype fixe `lineHeight` au corps au
+ * lieu de le laisser respirer : ici, l'interligne est un alignement.
+ */
+function SigneExclamation({
+  corps,
+  encre,
+  testID,
+}: {
+  corps: number;
+  encre: string;
+  testID?: string;
+}) {
+  const s = produit.marque.signe;
+  const largeur = s.avance * corps;
+
+  const gaucheHaut = (s.futCentreX - s.futHautLargeur / 2) * corps;
+  const droiteHaut = (s.futCentreX + s.futHautLargeur / 2) * corps;
+  const gaucheBas = (s.futCentreX - s.futBasLargeur / 2) * corps;
+  const droiteBas = (s.futCentreX + s.futBasLargeur / 2) * corps;
+
+  return (
+    <Svg width={largeur} height={corps} accessibilityElementsHidden>
+      {/* Le fût suit les lettres — c'est toute la correction du 2026-08-15. */}
+      <Polygon
+        testID={testID ? `${testID}-fut` : undefined}
+        points={[
+          `${gaucheHaut},${s.futHautY * corps}`,
+          `${droiteHaut},${s.futHautY * corps}`,
+          `${droiteBas},${s.futBasY * corps}`,
+          `${gaucheBas},${s.futBasY * corps}`,
+        ].join(' ')}
+        fill={encre}
+      />
+      {/* Et le point est orange, quelle que soit la variante. */}
+      <Circle
+        testID={testID ? `${testID}-point` : undefined}
+        cx={s.pointCentreX * corps}
+        cy={s.pointCentreY * corps}
+        r={s.pointRayon * corps}
+        fill={ENCRES_DU_LOGOTYPE.point}
+      />
+    </Svg>
+  );
+}
+
+/**
+ * Le mot.
+ *
+ * `taille` est sa hauteur de référence. `variante` dit le fond, jamais une
+ * couleur : un appelant qui choisit une encre choisit tôt ou tard celle du
+ * point, et le logotype cesse d'avoir sa couleur.
+ */
 export function Marque({
   taille = 40,
-  couleur = 'ink.default',
-  /**
-   * `AGENCY` sous le mot. Réservée aux écrans où la marque **se présente** —
-   * accueil, connexion — et absente partout où elle ne fait que situer.
-   */
-  signature = false,
+  variante = 'encre',
   testID,
 }: {
   taille?: number;
-  couleur?: ColorName;
-  signature?: boolean;
+  variante?: VarianteDuLogotype;
   testID?: string;
 }) {
   if (taille < PLANCHER_DU_LOGOTYPE) {
@@ -107,29 +165,51 @@ export function Marque({
     );
   }
 
+  const corps = taille * CORPS_POUR_TAILLE;
+  const encre = ENCRES_DU_LOGOTYPE[variante];
+  const [avant, apres] = tokens.logo.wordmark.text.split('!');
+
+  const lettres = {
+    fontSize: corps,
+    // Égal au corps : c'est ce qui fait coïncider la boîte du texte et celle du
+    // signe. Voir `SigneExclamation`.
+    lineHeight: corps,
+  } as const;
+
   return (
-    <View testID={testID} style={{ alignItems: signature ? 'center' : 'flex-start' }}>
+    <View
+      testID={testID}
+      accessibilityRole="image"
+      accessibilityLabel={tokens.logo.wordmark.text}
+      // `alignSelf` : la rangée est un enfant de colonne, donc étirée par
+      // défaut — la boîte du logotype faisait toute la largeur de l'écran, ce
+      // qui ne se voit pas mais déplace tout ce qui s'aligne sur elle.
+      style={{ flexDirection: 'row', alignItems: 'flex-start', alignSelf: 'flex-start' }}
+    >
+      {/* **La couleur passe par le style, et c'est délibéré.** `couleur`
+          n'accepte qu'un nom de jeton, et le logotype ne suit pas l'échelle
+          d'encres : la passation lui donne ses propres valeurs — encre du
+          système sur clair, blanc pur sur sombre, et non `ink.onDark`, qui est
+          l'encre claire du texte courant. Un test rattache les deux valeurs
+          partagées aux jetons, pour qu'elles ne deviennent pas une seconde
+          source. */}
       <Texte
         variante="type.wordmark"
-        couleur={couleur}
-        style={{ fontSize: taille * CORPS_POUR_TAILLE, lineHeight: taille * 0.86 }}
+        testID={testID ? `${testID}-lettres` : undefined}
+        style={[lettres, { color: encre }]}
       >
-        {tokens.logo.wordmark.text}
+        {avant}
       </Texte>
-      {signature ? (
-        <Texte
-          variante="type.tagline"
-          couleur={couleur}
-          align="center"
-          testID="signature-agence"
-          // L'interlettrage pousse la dernière lettre hors du bloc centré : le
-          // décalage à gauche le recentre optiquement, ce qu'aucun `align` ne
-          // fait — le texte est centré, le blanc final ne l'est pas.
-          style={{ marginTop: taille * 0.18, marginLeft: tokens.logo.tagline.letterSpacing }}
-        >
-          {tokens.logo.tagline.text}
-        </Texte>
-      ) : null}
+      <View
+        // L'interlettrage que le caractère aurait porté après lui : les lettres
+        // le reçoivent de leur variante typographique, le signe ne peut pas.
+        style={{ marginRight: tokens.logo.wordmark.letterSpacing }}
+      >
+        <SigneExclamation corps={corps} encre={encre} testID={testID ? `${testID}-signe` : undefined} />
+      </View>
+      <Texte variante="type.wordmark" style={[lettres, { color: encre }]}>
+        {apres}
+      </Texte>
     </View>
   );
 }

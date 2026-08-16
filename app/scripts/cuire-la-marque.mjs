@@ -45,7 +45,7 @@ import { fileURLToPath } from 'node:url';
 
 import { PNG } from 'pngjs';
 
-import { aplat, couche, enIco, enPng, GRILLE, MARGES, SIGNE } from './marque-compacte.mjs';
+import { aplat, couche, enIco, enPng, GRILLE, MARGES, SIGNE, TUILE } from './marque-compacte.mjs';
 
 const ICI = dirname(fileURLToPath(import.meta.url));
 const RACINE = join(ICI, '..');
@@ -67,11 +67,15 @@ const jetons = JSON.parse(await readFile(join(RACINE, 'src/theme/tokens.json'), 
 /** Le seuil de lisibilité, tenu du côté produit et lu ici — jamais recopié. */
 const produit = JSON.parse(await readFile(join(RACINE, 'src/theme/produit.json'), 'utf-8'));
 
-/** La surface de marque, et l'encre qui s'y creuse. */
-const ORANGE = jetons.color.brand['500'];
-const ENCRE = jetons.color.ink.default;
-/** L'encre claire ne sert plus qu'au logotype vivant, dans l'interface. */
-const CLAIR = jetons.color.ink.onDark;
+/**
+ * Les trois couleurs du sigle, lues du dessin et non recomposées.
+ *
+ * **La tuile est encre, pas orange** — c'était l'inverse avant la correction du
+ * 2026-08-15. Sur une tuile orange le point disparaîtrait, et c'est lui la
+ * marque : le sens du sigle est le rapport entre le fût et le point, pas la
+ * silhouette.
+ */
+const PALETTE = jetons.logo.mark16.palette;
 
 /**
  * Le gabarit d'Android, et sa zone sûre.
@@ -105,34 +109,38 @@ await mkdir(PUBLIC, { recursive: true });
 
 // Le favicon : trois tailles, chacune tracée. Une réduction rendrait gris le
 // blanc de deux unités qui sépare le fût du point, et c'est ce qu'elle protège.
-await writeFile(join(PUBLIC, 'favicon.ico'), enIco([16, 32, 48], ORANGE, ENCRE));
+await writeFile(join(PUBLIC, 'favicon.ico'), enIco([16, 32, 48]));
 console.log('  public/favicon.ico            16 · 32 · 48');
 
 // 180 est la taille qu'Apple impose ; elle ne tombe pas sur la grille — 11,25
 // unités — donc les bords sont arrondis à l'entier. Deux couleurs franches
 // plutôt qu'un lissage, au prix d'un demi-pixel.
-await writeFile(join(PUBLIC, 'apple-touch-icon.png'), enPng(180, ORANGE, ENCRE));
+await writeFile(join(PUBLIC, 'apple-touch-icon.png'), enPng(180));
 console.log('  public/apple-touch-icon.png   180');
 
 // La tuile d'application. 1024 vaut soixante-quatre pixels par unité.
-await writeFile(join(SORTIE, 'icon.png'), enPng(1024, ORANGE, ENCRE));
+await writeFile(join(SORTIE, 'icon.png'), enPng(1024));
 console.log('  assets/icon.png               1024');
 
 // Android compose deux couches et rogne le tout : le fond est plein, le signe
 // vit dans la zone sûre. Après masquage, ce qu'on voit est la tuile entière.
 await writeFile(
   join(SORTIE, 'android-icon-background.png'),
-  PNG.sync.write(aplat(ANDROID.cote, ORANGE)),
+  // Le fond de la composition d'Android : l'encre de la tuile.
+  PNG.sync.write(aplat(ANDROID.cote, TUILE)),
 );
 await writeFile(
   join(SORTIE, 'android-icon-foreground.png'),
-  PNG.sync.write(couche(ANDROID.cote, ANDROID.zoneSure, ENCRE)),
+  // Le fût clair et le point orange, chacun sa couleur : c'est cette couche
+  // qui porte la marque, le fond ne fait que la tenir.
+  PNG.sync.write(couche(ANDROID.cote, ANDROID.zoneSure)),
 );
-// La monochrome est teintée par le système : elle se livre en encre pleine sur
-// du vide, jamais en couleur de marque.
+// **La monochrome est une silhouette**, qu'Android teinte lui-même : le point y
+// perd sa couleur, et c'est le seul endroit du système où cela arrive. La
+// plateforme l'impose ; on ne le choisit pas.
 await writeFile(
   join(SORTIE, 'android-icon-monochrome.png'),
-  PNG.sync.write(couche(ANDROID.cote, ANDROID.zoneSure, ENCRE)),
+  PNG.sync.write(couche(ANDROID.cote, ANDROID.zoneSure, jetons.color.ink.default)),
 );
 console.log(`  assets/android-icon-*.png     ${ANDROID.cote} · zone sûre ${ANDROID.zoneSure}`);
 
@@ -147,9 +155,10 @@ await writeFile(
       $pourquoi:
         "Produit par scripts/cuire-la-marque.mjs, lu par __tests__/marque.test.ts. L'ancien monogramme vert a traversé le remplacement complet du système sans que rien ne l'arrête : ce fichier est ce qui l'aurait arrêté.",
       mot: jetons.logo.wordmark.text,
-      couleurs: { surface: ORANGE, encreClaire: CLAIR, encre: ENCRE },
+      couleurs: Object.fromEntries(PALETTE.map((c, r) => [['tuile', 'fut', 'point'][r], c])),
+      palette: PALETTE,
       lisibilite: produit.marque,
-      compacte: { grille: GRILLE, signe: SIGNE, marges: MARGES, android: ANDROID },
+      compacte: { grille: GRILLE, tuile: TUILE, signe: SIGNE, marges: MARGES, android: ANDROID },
       fichiers: FICHIERS.map((fichier) => ({ ...fichier, marque: 'compacte' })),
     },
     null,

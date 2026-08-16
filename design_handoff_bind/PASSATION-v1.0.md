@@ -51,12 +51,37 @@ Le blanc devient donc le défaut du bloc, l'encre une variante admise. La règle
 d'accessibilité ne bouge pas : le bloc est toujours au-dessus de 34 px, où le blanc
 passe. L'encre reste obligatoire sous 24 px, donc sur les boutons et les pastilles.
 
-### Le logo est fin et monochrome
+### Le logo est fin, et son point est orange
 
-Je l'avais fait gras, avec le point d'exclamation en orange. Il est en **trait
-fin**, monoline, géométrique large, **entièrement blanc**, et le « ! » n'est jamais
-coloré à part : c'est une lettre, pas un accent. AGENCY est centré dessous, en trait
-fin, très espacé.
+> **Corrigé le 2026-08-14, sur le vectoriel de la fondatrice.** Cette section
+> énonçait l'inverse ; ce qui suit fait foi. Voir aussi `tokens.json → logo` et
+> la planche `BIND Mark - Favicon 16.dc.html`.
+
+Je l'avais fait gras : il est en **trait fin**, monoline, géométrique large. Cette
+moitié tenait.
+
+Sur la couleur, j'avais conclu que le « ! » n'était jamais coloré à part. C'était
+faux, et l'erreur était méthodique plutôt qu'accidentelle : je lisais des visuels
+Instagram entièrement blancs sur orange, où un point orange ne **peut pas** se
+distinguer du fond. L'information manquait de la seule source dont je disposais, et
+j'en ai tiré une règle au lieu d'une incertitude.
+
+Le vectoriel montre des lettres noires et un point orange. La règle est donc :
+
+- **les lettres prennent l'encre du fond** — `ink.default` sur os et papier,
+  `#FFFFFF` sur encre, satin et orange ;
+- **seul le point du « ! » est `brand.500`**, dans tous les cas. Le fût suit les
+  lettres. C'est la seule couleur du logotype, et c'est elle qui fait la marque ;
+- le « ! » ne peut donc pas être posé comme caractère typographique : il se
+  **dessine**, fût plus point rond, sinon le fût prend la couleur du point.
+
+**Aucune signature dans le produit.** Ni « AGENCY », ni « CRÉATEUR DE LIEN » — cette
+dernière est en français, et BIND s'adresse à Miami en anglais et en espagnol. Le
+logotype seul suffit, partout.
+
+**Sous 128 px, le logotype cède au sigle** : quatre lettres n'ont pas quatre pixels
+chacune. Le sigle est un dessin distinct — le « ! » seul sur tuile encre, fût blanc,
+point orange — spécifié dans `tokens.json → logo.mark16`.
 
 Une seule couleur par occurrence : blanc sur orange, satin ou encre ; encre sur os.
 
@@ -360,34 +385,36 @@ non.
 
 ---
 
-## La règle des deux marques (2026-08-14)
+## La règle des deux marques (2026-08-14, révisée le 2026-08-15)
 
 Le système a deux marques, et une règle qui décide entre elles.
 
 > **Le logotype partout où on a la place de le lire, la marque compacte partout
 > ailleurs. Le seuil est la lisibilité des quatre lettres, pas le support.**
 
-Elle s'est écrite en trois temps, et chacun a coûté une découverte.
+Elle s'est écrite en quatre temps, et chacun a coûté une découverte.
 
 1. Le logotype réduit à seize pixels donnait quatre taches. Refuser de le
    réduire était juste ; laisser le favicon dans cet état l'était moins.
-2. Design a livré `BIND Mark - Favicon 16` : le bloc orange, avec le point
-   d'exclamation **évidé** dedans. Évidé et non posé — un point orange sur blanc
-   est un panneau d'alerte, le même creusé dans un carré plein devient une
-   marque, parce que l'objet reconnu est le carré et le signe ce qui y manque.
+2. Design a livré `BIND Mark - Favicon 16` : le « ! » seul, en grand.
 3. Restait la tuile d'application, gardée au logotype **parce qu'elle est
    livrée en 1024** — jusqu'à mesurer ce qu'un lanceur en affiche : vingt-sept
    pixels de large pour quatre lettres à 48 dp. La résolution du fichier n'a
    jamais été la question.
+4. Le vectoriel de la fondatrice est arrivé et a corrigé la couleur. Le
+   sigle s'inverse : **tuile encre, fût blanc, point orange**, là où la première
+   livraison posait un point évidé dans un bloc orange.
 
 **Le seuil est mesuré, pas choisi.** `B!ND` dans la fonte du système occupe
 0,592 fois le corps par lettre. Dix pixels par lettre est *encadré* par deux
 mesures : 6,75 au lanceur Android, dont la capture est illisible, et 11,1 au
 plus petit usage in-app, qui se lit. Les deux nombres vivent dans
-`produit.json`, et rien ne les recopie.
+`produit.json`, et rien ne les recopie. Le seuil de 128 px que pose
+`logo.mark16.$doctrine` dit la même chose sur l'autre axe : une tuile de 128
+donne environ 8,3 pixels par lettre, donc sous le seuil.
 
 **Conséquence, et c'est la forme la plus sûre de la règle :** aucun fichier cuit
-ne porte plus le logotype. Tous sont des tuiles, aucune tuile ne s'affiche assez
+ne porte le logotype. Tous sont des tuiles, aucune tuile ne s'affiche assez
 grand. Le logotype ne vit donc qu'en texte, dans l'interface, là où l'écran lui
 donne la place — et `Marque` refuse de rendre sous le plancher, comme `Texte`
 refuse une surface employée en encre. Un logotype illisible ne se signale pas :
@@ -395,8 +422,25 @@ il ressemble à un logotype, en plus petit, et il traverse une revue. C'est
 exactement ainsi que l'ancien monogramme vert a traversé le remplacement complet
 du système.
 
-*Un écart relevé sur la planche du 16, et tranché :* sa dernière colonne annonce
-« quatre unités à gauche et à droite ». La géométrie qu'elle donne huit fois, et
-son tableau de cotes, disent **six** — quatre est la largeur du signe, pas sa
-marge. La géométrie fait foi, et l'argument sur les masques des plateformes
-tient mieux encore avec six.
+### Ce que la correction du 2026-08-15 change dans le produit
+
+**Le « ! » cesse d'être un caractère.** La passation le dit et c'est une
+contrainte d'implémentation, pas une préférence : posé en texte, le fût prend la
+couleur du point. Le logotype se compose donc en trois morceaux — `B`, le signe
+dessiné, `ND` — et le signe est un tracé, fût plus point rond.
+
+**Deux variantes, et deux seulement.** Lettres encre sur os et papier, lettres
+blanches sur encre, satin et orange. Le point reste `brand.500` dans les deux :
+c'est ce qui empêche la variante blanche d'être un logotype monochrome pâle.
+Le composant expose la variante, pas une couleur libre — un appelant qui choisit
+une encre choisit tôt ou tard celle du point.
+
+**La signature disparaît partout.** Ni `AGENCY` ni `CRÉATEUR DE LIEN`. Le jeton
+`type.tagline` et le prop `signature` sont retirés avec elle : un réglage qui ne
+commande plus rien est pire que son absence, et c'est la même leçon que
+`theme.userOverride`.
+
+*Un écart relevé sur la première planche du 16, et tranché :* sa dernière
+colonne annonçait « quatre unités à gauche et à droite ». La géométrie qu'elle
+donnait huit fois, et son tableau de cotes, disaient **six**. Les jetons du
+2026-08-15 tranchent dans le même sens — `logo.mark16.margin.left` vaut 6.
