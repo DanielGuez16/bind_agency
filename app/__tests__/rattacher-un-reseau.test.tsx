@@ -220,6 +220,21 @@ describe('un compte venu d’un autre fournisseur', () => {
             ],
           } as Response;
         }
+        // **Le serveur rend toujours `/me/tiers`**, et l'écran d'audience y
+        // lit ce qui compte pour les paliers. Un montage qui rendrait une
+        // liste vide ici fabriquerait une réponse qui n'existe pas.
+        if (chemin.includes('/me/tiers')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              creator_id: 'u1',
+              is_new_creator: false,
+              fiabilite: { reliability_score: '92.0', completed_collabs_count: 12 },
+              paliers: [],
+            }),
+          } as Response;
+        }
         return { ok: true, status: 200, json: async () => [] } as Response;
       },
     });

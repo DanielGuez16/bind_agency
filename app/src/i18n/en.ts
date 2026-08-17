@@ -203,6 +203,21 @@ export const en = {
     depuis: 'Last checked {{date}}.',
   },
   parcours: {
+    audienceCertifie: 'Certified',
+    audienceJourN: 'Day {{n}}',
+    // Le tiret cadratin ne suffit pas : il faut dire ce qu'il veut dire.
+    audienceAucunReleve: 'No reading yet. This is not zero: the reading has not happened.',
+    audienceReleveDu: 'Reading from {{date}}',
+    audienceDejaAcquis: 'Already verified',
+    audienceCeQuiCompte: 'What counts toward tiers',
+    audienceCollaborations: 'Completed collaborations',
+    audienceScore: 'Reliability score',
+    audienceScoreSur: '{{score}} / 100',
+    // Nul veut dire neutre, pas zéro : la distinction sépare un débutant de
+    // quelqu'un de peu fiable, et l'inverser accuse celui qui n'a rien fait.
+    audiencePasEncoreDeScore: 'No score yet',
+    audienceNonConnecte: 'Not connected',
+    audienceConnecterAction: 'Connect',
     audienceConnecter: 'Connect a network',
     audienceAucun: 'No network connected yet.',
     audienceTitre: 'Your audience',
@@ -211,7 +226,6 @@ export const en = {
     engagement: 'Engagement',
     posts: 'Posts',
     mesureLe: 'Measured {{date}}',
-    jamaisMesure: 'Not measured yet',
     verificationTitre: 'Account check',
     verificationDepuis: 'Started {{date}}',
     verificationEnCours: 'We are checking this account. You can keep using BIND meanwhile.',

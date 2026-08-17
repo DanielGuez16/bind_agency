@@ -6120,3 +6120,49 @@ la durée nulle et l'absence de règle dans `couples_avec_creneau`, et le statut
 ailleurs. Elles sont conservées et **annotées** : elles disent l'intention à qui
 lit, là où une comparaison de date sur une colonne nullable la laisse deviner,
 et elles protègent d'un changement de contrainte qui casserait la boucle.
+
+---
+
+## 2026-08-17 — L'audience, confrontée à sa planche
+
+L'écran que Daniel a qualifié deux fois de plus faible du produit, sans pouvoir
+le nommer. Le registre des planches donne la raison : `Lot 1 v1.1` était la
+seule planche sans entrée nulle part. Ses écrans emploient les jetons de la
+v1.0 — ils ont traversé la migration — donc **rien ne signalait** qu'ils
+n'avaient jamais été comparés cadre par cadre. Repeint n'est pas passé.
+
+**Un chiffre appartient à un compte, et à une date.** L'écran empilait des
+lignes de données sans dire à qui elles étaient : deux réseaux connectés y
+auraient partagé visuellement un chiffre. Un bloc par compte, le réseau en
+tête, le relevé daté sous les valeurs.
+
+**Un compte connecté est une carte, un réseau à connecter est une ligne : la
+forme dit l'état avant le mot.** L'écran rendait deux boutons blancs
+identiques, l'un sous l'autre — **y compris pour un réseau déjà rattaché**. Il
+proposait donc de connecter ce qui l'était. Ce n'est pas une question d'allure :
+les deux objets n'ont pas la même action, et rien ne le disait.
+
+**Le tiret cadratin, et la phrase qui dit ce qu'il veut dire.** « Pas encore
+mesuré » se lisait comme une valeur ; le tiret ne se lit pas comme une quantité,
+ce qui est sa fonction — mais un tiret seul se lit comme une panne, d'où la
+phrase. Afficher zéro à quelqu'un qui a douze mille abonnés reste la pire chose
+que cet écran puisse faire.
+
+**Deux blocs manquaient.** « Ce qui compte pour les paliers » — les abonnés
+n'ouvrent pas un palier seuls, et personne n'allait chercher les collaborations
+et le score sur un autre écran. Et **les termes du contrôle** : `SignalJuge`
+porte `constate` et `requis` depuis toujours, l'écran n'affichait que le
+verdict, si bien qu'« ancienneté : insuffisante » ne disait ni de combien ni
+depuis quand. Un verdict sans ses termes ne se conteste pas, et ne s'améliore
+pas non plus. **Deux champs servis et rendus nulle part** — la même classe que
+le paramètre `categorie` que personne n'envoyait.
+
+**Un test a été repris plutôt que contourné.** Il bannissait le mot « day » sur
+tout l'écran, ce qui interdisait le compteur de jours que la planche demande. Ce
+n'est pas le mot qui promet, c'est la forme : « jour 3 » dit ce qui s'est passé,
+« sous 3 jours » dit ce qui va se passer, et seule la seconde se brise le
+premier jour de charge auprès de gens qui n'ont rien fait de mal. La garde
+interdit désormais les formes de promesse et **exige** le compteur d'écoulé.
+
+**Une clé de traduction est morte avec le changement** et a été retirée :
+`jamaisMesure` ne commandait plus rien.
