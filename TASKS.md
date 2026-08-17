@@ -42,7 +42,12 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       chaque modification laisse une trace nommant le champ, l'ancienne valeur,
       la nouvelle et l'administrateur. **Les seuils restent à valider par
       Rebecca** : c'est la seule partie de cette tâche qui n'est pas du code*
-- [ ] Ouvrir le compte Geocodio et poser la clé
+- [x] Ouvrir le compte Geocodio et poser la clé
+      *Compte ouvert, clés chez Render. **La démonstration ne s'en sert pas
+      encore** : `render.yaml` fixe `GEOCODING_PROVIDER: manual`, et
+      `GEOCODING_API_KEY` n'y est pas déclarée — un déploiement neuf ne
+      l'emporterait donc pas. Basculer la démonstration sur Geocodio est une
+      ligne de blueprint et une variable à déclarer, pas un développement*
       *Le fournisseur est choisi et **le code est écrit** — voir `DECISIONS.md`
       du 2026-08-06 et `app/integrations/geocoding.py`. Ne reste que
       l'administratif, qui n'est pas du code : créer le compte, copier la clé
@@ -322,7 +327,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       fontes, la lecture effective de la vidéo, et le parcours complet du fil
       jusqu'au code de retrait. Les trois défauts historiques ont été rejoués
       en mutation : les trois sont attrapés.*
-- [ ] **Les polices ne s'appliquent à aucun texte sur le web**
+- [x] **Les polices ne s'appliquent à aucun texte sur le web**
       *Trouvé par les tests de bout en bout, à leur première exécution. Les
       trois `@font-face` sont déclarées sous les noms que le thème demande, les
       fichiers sont servis, une face atteint `loaded` — et pourtant **aucun
@@ -605,7 +610,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       12 tests neufs, 7 mutations vérifiées — dont deux passées d'abord, qui ont
       révélé une garde supprimée par une réécriture et une autre qui ne lisait
       jamais le rendu*
-- [ ] **Le fichier vectoriel lui-même**
+- [x] **Le fichier vectoriel lui-même**
       *La règle est corrigée, le dessin ne l'est pas : les lettres restent une
       approximation dans la fonte fonctionnelle, et le D porte une coupe oblique
       qu'aucune fonte ne donne. `$meta.unconfirmed` le porte toujours. Ce qui

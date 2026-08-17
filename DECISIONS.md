@@ -5595,3 +5595,32 @@ quelque chose.
 travail non commité a effacé cinq corrections d'un coup, découvertes parce que
 la garde restait rouge. La règle qui vaut : commiter avant de muter, sans
 exception.
+
+---
+
+## 2026-08-17 — Trois tâches fermées, et une réserve sur Geocodio
+
+**Les polices** : vérifié sur `main` avant de cocher. Les deux corrections sont
+documentées dans `polices.ts` — un nom de famille contenant un chiffre isolé,
+que le navigateur rejetait en silence parce qu'en CSS un identifiant non
+guillemeté ne peut pas commencer par un chiffre, et la pile de repli qui cassait
+l'enregistrement des faces.
+
+**Le vectoriel** : `$meta.unconfirmed` a disparu de `marque.json`, ce qui était
+exactement la condition écrite dans la tâche.
+
+**Geocodio, coché avec une réserve.** Le compte est ouvert et les clés sont chez
+Render. Mais `render.yaml` fixe toujours `GEOCODING_PROVIDER: manual`, et
+`GEOCODING_API_KEY` n'y est pas déclarée : la démonstration ne se sert donc pas
+du géocodeur, et un déploiement neuf n'emporterait pas la clé. Ce n'est pas un
+manque de développement — c'est une ligne de blueprint et une variable à
+déclarer, le jour où on veut que la démonstration géocode vraiment. La tâche
+disait « ouvrir le compte et poser la clé » ; elle est faite, et ce qui reste ne
+lui appartient pas.
+
+**La règle passée dans `CLAUDE.md`.** Commiter avant de muter, sans exception.
+L'exercice de mutation restaure son sabotage par `git checkout`, et sur du
+travail non commité cette commande efface le travail. Payé deux fois dans la
+journée : la seconde a coûté cinq corrections de sélecteurs, retrouvées
+seulement parce qu'une garde restait rouge. Ce n'est pas une préférence de
+style, c'est la condition pour que l'exercice reste sûr.
