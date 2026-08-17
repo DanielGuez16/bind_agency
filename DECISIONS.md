@@ -5993,3 +5993,14 @@ L'outil de cette classe est `jest --detectOpenHandles`. Il ne peut pas encore
 l'arbre propre, avant comme après cette correction. La fuite est ailleurs et
 n'est pas identifiée — tâche à part. Écrire la limite de la garde vaut mieux que
 la laisser faire croire que la question est réglée.
+
+### La mesure du court-circuit
+
+*Cette section est écrite par la PR docs-only qui la mesure : elle ne touche que
+`DECISIONS.md`, donc les trois jobs doivent se court-circuiter et sortir en vert
+sans rien exécuter. Le chiffre obtenu est reporté ici après coup, dans la même
+PR que la suivante — un fichier ne peut pas contenir sa propre mesure avant
+qu'elle existe.*
+
+Référence à battre, relevée sur l'exécution complète juste avant : `perimetre`
+5 s, `api` 739 s, `app` 56 s, `e2e` 226 s.
