@@ -14,8 +14,10 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
+from app.integrations.geocoding import Coordinates
 from app.models import CreatorProfile, SocialAccount, Tier
 from app.models.enums import (
+    Neighborhood,
     Platform,
     ReliabilityEventType,
     SocialAccountStatus,
@@ -363,3 +365,202 @@ async def test_une_prestation_retiree_ne_compte_plus(session: AsyncSession) -> N
 
     assert avant[STORY] == 1
     assert apres[STORY] == 0
+
+
+# --------------------------------------------------------------------------
+# le compte dans le rayon
+# --------------------------------------------------------------------------
+#
+# **La route ne dépend jamais d'une position, elle en tire parti quand elle est
+# là.** Faire dépendre un écran d'identité d'une position avait été écarté à
+# raison : les paliers d'un créateur ne changent pas parce qu'il a bougé. Mais
+# rien n'interdit d'en tirer parti — et l'écran doit pouvoir écrire « douze au
+# total, dont neuf à moins de quinze kilomètres ».
+
+
+ICI_MIAMI = Coordinates(longitude=-80.19, latitude=25.79)
+
+
+async def _createur_qui_ouvre_story(session: AsyncSession):
+    user = await createur(session)
+    await compte(session, user, followers=1_800)
+    return user
+
+
+async def test_sans_position_le_compte_est_nul_et_non_zero(session: AsyncSession) -> None:
+    """**Une absence, pas un zéro.** L'écran doit distinguer « on n'a pas
+    demandé » de « il n'y en a aucun autour de vous » : rendre zéro ferait
+    afficher « aucun salon près d'ici » à quelqu'un dont on ignore où il est."""
+    from tests.test_feed import commerce, offre
+
+    b = await commerce(session, longitude=ICI_MIAMI.longitude, latitude=ICI_MIAMI.latitude)
+    await offre(session, b, tier_id=STORY)
+    user = await _createur_qui_ouvre_story(session)
+
+    vue = await service.vue_des_paliers(session, user.id)
+
+    assert all(p.commerces_dans_le_rayon is None for p in vue.paliers)
+    assert all(p.offres_dans_le_rayon is None for p in vue.paliers)
+    # Et le total, lui, reste rendu : la réponse d'avant, au champ près.
+    assert palier(vue, STORY).offres_disponibles == 1
+
+
+async def test_avec_une_position_chaque_palier_compte_ses_commerces(
+    session: AsyncSession,
+) -> None:
+    """Des **commerces**, pas des prestations : un salon qui propose trois
+    prestations au même palier ne compte qu'une fois. Compter des offres ferait
+    dire « dont quatorze » d'un total de douze."""
+    from tests.test_feed import commerce, offre
+
+    proche = await commerce(session, longitude=ICI_MIAMI.longitude, latitude=ICI_MIAMI.latitude)
+    await offre(session, proche, tier_id=STORY, name="Soin A")
+    await offre(session, proche, tier_id=STORY, name="Soin B")
+    user = await _createur_qui_ouvre_story(session)
+
+    vue = await service.vue_des_paliers(session, user.id, autour_de=ICI_MIAMI)
+
+    story = palier(vue, STORY)
+    assert story.offres_disponibles == 2, "deux prestations au total"
+    # **Les deux grandeurs, et c'est le point.** « Douze ouvertes, dont neuf à
+    # moins de quinze kilomètres » compare deux fois des prestations ; « chez N
+    # salons » compte des salons. Confondre les deux fait une phrase fausse que
+    # personne ne remarque, parce que les deux nombres sont plausibles.
+    assert story.offres_dans_le_rayon == 2, "les deux prestations sont à portée"
+    assert story.commerces_dans_le_rayon == 1, "mais chez un seul salon"
+
+
+async def test_le_rayon_ecarte_ce_qui_est_trop_loin(session: AsyncSession) -> None:
+    """L'autre sens, et c'est celui qui donne son sens au champ : un compte qui
+    rendrait le total quel que soit le rayon n'apprendrait rien."""
+    from tests.test_feed import commerce, offre
+
+    proche = await commerce(session, longitude=ICI_MIAMI.longitude, latitude=ICI_MIAMI.latitude)
+    await offre(session, proche, tier_id=STORY)
+    loin = await commerce(session, longitude=ICI_MIAMI.longitude + 0.5, latitude=ICI_MIAMI.latitude)
+    await offre(session, loin, tier_id=STORY)
+    user = await _createur_qui_ouvre_story(session)
+
+    vue = await service.vue_des_paliers(session, user.id, autour_de=ICI_MIAMI, rayon_metres=5_000)
+
+    story = palier(vue, STORY)
+    assert story.offres_disponibles == 2, "les deux salons existent"
+    assert story.offres_dans_le_rayon == 1, "une seule prestation est à portée"
+    assert story.commerces_dans_le_rayon == 1, "chez un seul salon"
+
+
+async def test_une_seule_coordonnee_est_refusee(client: AsyncClient) -> None:
+    """Une longitude sans latitude est une erreur de l'appelant, pas une demande
+    à moitié. L'accepter en silence ferait répondre « aucun commerce autour » à
+    quelqu'un dont la latitude s'est perdue en route."""
+    email = f"{uuid.uuid4()}@example.com"
+    await client.post(
+        f"{PREFIX}/auth/register",
+        json={"email": email, "password": "un-mot-de-passe-solide-42", "role": "creator"},
+    )
+    jetons = (
+        await client.post(
+            f"{PREFIX}/auth/login",
+            json={"email": email, "password": "un-mot-de-passe-solide-42"},
+        )
+    ).json()
+    entetes = {"Authorization": f"Bearer {jetons['access_token']}"}
+
+    refuse = await client.get(f"{PREFIX}/me/tiers?longitude=-80.19", headers=entetes)
+    assert refuse.status_code == 422, refuse.text
+
+    # La session reste utilisable : un refus ne doit pas la laisser inemployable.
+    complet = await client.get(f"{PREFIX}/me/tiers", headers=entetes)
+    assert complet.status_code == 200, complet.text
+
+
+# --------------------------------------------------------------------------
+# les offres d'un palier, sans borne de distance
+# --------------------------------------------------------------------------
+
+
+async def test_les_offres_d_un_palier_ne_sont_pas_bornees_par_la_distance(
+    session: AsyncSession,
+) -> None:
+    """**Ce que le fil ne peut pas rendre.** Il est borné par un rayon par
+    construction ; la bascule « près de vous / les douze » a besoin des objets,
+    et ses deux états doivent montrer deux listes différentes."""
+    from tests.test_feed import commerce, offre
+
+    pres = await commerce(session, longitude=ICI_MIAMI.longitude, latitude=ICI_MIAMI.latitude)
+    await offre(session, pres, tier_id=STORY, name="Tout pres")
+    loin = await commerce(session, longitude=ICI_MIAMI.longitude + 0.9, latitude=ICI_MIAMI.latitude)
+    await offre(session, loin, tier_id=STORY, name="Tres loin")
+
+    offres = await service.offres_du_palier(session, tier_id=STORY)
+
+    assert {o.nom for o in offres} == {"Tout pres", "Tres loin"}
+
+
+async def test_elles_sont_triees_par_quartier_puis_par_nom(session: AsyncSession) -> None:
+    """**Le seul axe qui ne classe personne.** Trier par palier hiérarchiserait
+    des prestations que la créatrice peut toutes réserver ; trier par salon
+    supposerait un ordre entre eux. Le quartier est un fait, pas un jugement.
+
+    Les salons sans quartier viennent en dernier : ils ne sont pas situés, pas
+    relégués — et Postgres les mettrait en tête sans `nullslast`.
+    """
+    from tests.test_feed import commerce, offre
+
+    wynwood = await commerce(
+        session,
+        longitude=ICI_MIAMI.longitude,
+        latitude=ICI_MIAMI.latitude,
+        neighborhood=Neighborhood.WYNWOOD,
+    )
+    await offre(session, wynwood, tier_id=STORY, name="Zebre")
+    await offre(session, wynwood, tier_id=STORY, name="Abricot")
+    brickell = await commerce(
+        session,
+        longitude=ICI_MIAMI.longitude,
+        latitude=ICI_MIAMI.latitude,
+        neighborhood=Neighborhood.BRICKELL,
+    )
+    await offre(session, brickell, tier_id=STORY, name="Melon")
+    sans = await commerce(session, longitude=ICI_MIAMI.longitude, latitude=ICI_MIAMI.latitude)
+    await offre(session, sans, tier_id=STORY, name="Ananas")
+
+    offres = await service.offres_du_palier(session, tier_id=STORY)
+
+    # `brickell` avant `wynwood` — l'ordre des valeurs de l'énumération — puis
+    # alphabétique à l'intérieur, et le non-situé en dernier.
+    assert [o.nom for o in offres] == ["Melon", "Abricot", "Zebre", "Ananas"]
+
+
+async def test_la_position_ajoute_la_distance_sans_rien_borner(
+    session: AsyncSession,
+) -> None:
+    """La position ne filtre pas : elle informe. `null` sans elle, ce qui
+    distingue « loin » de « on ne sait pas d'où »."""
+    from tests.test_feed import commerce, offre
+
+    b = await commerce(session, longitude=ICI_MIAMI.longitude, latitude=ICI_MIAMI.latitude)
+    await offre(session, b, tier_id=STORY)
+
+    sans = await service.offres_du_palier(session, tier_id=STORY)
+    avec = await service.offres_du_palier(session, tier_id=STORY, autour_de=ICI_MIAMI)
+
+    assert [o.distance_metres for o in sans] == [None]
+    assert avec[0].distance_metres is not None
+    assert len(avec) == len(sans), "la position ne doit rien retirer"
+
+
+async def test_une_prestation_desactivee_ne_figure_pas(session: AsyncSession) -> None:
+    """Le même tamis que le compte : une liste de douze qui porterait onze
+    lignes ne dirait pas laquelle manque."""
+    from tests.test_feed import commerce, offre
+
+    b = await commerce(session, longitude=ICI_MIAMI.longitude, latitude=ICI_MIAMI.latitude)
+    item, _ligne = await offre(session, b, tier_id=STORY, name="Retiree")
+    await offre(session, b, tier_id=STORY, name="Gardee")
+    item.is_available = False
+    await session.flush()
+
+    offres = await service.offres_du_palier(session, tier_id=STORY)
+
+    assert [o.nom for o in offres] == ["Gardee"]

@@ -148,6 +148,37 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Fin : toutes les transitions de la spec testées, aucune transition illégale possible*
 - [x] Implémentation réelle du géocodage d'adresse
       *Fin : une adresse saisie librement produit des coordonnées, et l'échec de résolution laisse le commerce en `onboarding` sans bloquer son inscription*
+- [x] **La disponibilité vérifiée une fois pour tout le fil**
+      *Elle se vérifiait ligne par ligne : six lectures répétées par couple, soit
+      **121 requêtes et 56 ms** pour dix-neuf salons. `couples_avec_creneau` fait
+      les six une fois pour l'ensemble et rejoue le parcours en mémoire — **9
+      requêtes, 10 ms**, verdict identique, vérifié couple par couple contre
+      `creneaux_libres`. Le groupement porte sur l'ensemble **large** : les
+      comptes par rayon et par catégorie s'y découpent*
+- [x] **Filtre « libre aujourd'hui » et « sept prochains jours »**
+      *`disponible=aujourd_hui|sept_jours`, posé sur le fil rendu et **après** les
+      comptes : c'est un choix sur ce qu'on regarde, pas sur ce qu'on propose
+      d'élargir. Un test vérifie que `categories` et `rayons` ne bougent pas.
+      « Aujourd'hui » vaut un jour glissant — à 23 h, « jusqu'à minuit » ne
+      rendrait presque rien*
+- [x] **Recherche libre sur le fil**
+      *`recherche=`, en `ILIKE` avec `unaccent` des deux côtés, sur le nom du
+      salon, celui de la prestation et sa description. Miami est bilingue :
+      « panaderia » trouve « Panadería ». Un balayage assumé — à vingt salons un
+      index coûterait plus cher qu'il ne rapporte, et la forme de la requête ne
+      change pas le jour où `pg_trgm` deviendra nécessaire*
+- [x] **Point de suggestions, deux groupes**
+      *`GET /businesses/suggestions` rend prestations et salons, passés par le
+      même tamis que le fil. `origine` dit s'il classe sur les réservations
+      **servies** du quartier ou sur la distance, et l'écran change de mot :
+      un salon proche annoncé comme populaire est invérifiable. Le quartier vient
+      de la position, jamais d'un paramètre*
+- [x] **Compte par palier dans le rayon, sur `/me/tiers`**
+      *Coordonnées facultatives : la route n'en dépend jamais, elle en tire parti
+      quand elles sont là. `commerces_dans_le_rayon` vaut `null` — pas zéro —
+      sans position, pour que l'écran distingue « on n'a pas demandé » de « il
+      n'y en a aucun ». Des commerces et non des offres : « douze au total, dont
+      neuf à moins de quinze kilomètres »*
 - [x] Résolveur d'appartenance pour les ressources sans `business_id` dans l'URL
       *Fin : un test par type de ressource — réservation, contrepartie, preuve, code de retrait — vérifiant qu'un membre du commerce A reçoit 403 sur une ressource du commerce B. `require_business_member` ne sait aujourd'hui lire l'identifiant que dans le chemin ; c'est le point de fuite entre commerces le plus probable du projet*
 
@@ -233,6 +264,39 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Fin : générées, sans réseau ni licence, dérivées du nom de façon stable. Servies par `GET /media/{cle}`, restreinte aux préfixes de photos — jamais aux preuves*
 - [x] Vraies photos, en remplacement des dégradés
       *Fin : le semis lit `assets/photos/`, réduit chaque image au dépôt et retombe sur un dégradé pour tout fichier absent, qu'il nomme. Les fichiers ne sont pas versionnés ; l'intégration continue tourne donc entièrement sur le repli. Le préfixe `photos/genere/` distingue un dégradé d'une vraie photo dans toute réponse d'API. Les six pastilles de catégorie et le média d'accueil, qui n'appartiennent à aucun commerce, vivent dans `platform_asset` et se lisent par `GET /platform-media`*
+
+---
+
+## Vitesse de vérification
+
+- [x] **Court-circuit de la CI quand un job n'a rien à éprouver**
+      *Livré par la conversation produit sous le nom `perimetre`, arrivé le
+      premier — j'avais écrit le même job en parallèle sous le nom
+      `changements`, et je l'ai abandonné au rebase. Le travail en double a
+      coûté une demi-heure : ce qui touche `.github/` mérite d'être annoncé
+      avant d'être écrit, comme on le fait déjà pour les fichiers d'écran*
+- [x] **Garde sur les fichiers de test dix fois plus lents que leurs voisins**
+      *Un rapport à la médiane, jamais un seuil en secondes — un plafond absolu
+      mesurerait le matériel. Un avertissement et non un échec : faire tomber la
+      suite sur une mesure de temps la rendrait instable là où elle doit être
+      l'inverse. `test_seed.py` est déclaré avec sa raison ; il pèse 21 fois la
+      médiane, et c'est le prix de semer vingt commerces quatre fois*
+- [ ] **`pytest -n auto`, une base par worker**
+      *La suite entière prend dix minutes ; huit workers la ramèneraient sous
+      deux. Deux obstacles mesurés : les workers visent tous la **même** base —
+      réparable en dérivant le nom de `PYTEST_XDIST_WORKER` — et un second, non
+      résolu, où les workers échouent à s'authentifier alors que la même
+      configuration marche en série. **Non fait délibérément** : les tests de
+      concurrence — verrou consultatif, deux réservations simultanées sur la
+      dernière place — deviendraient douteux si l'isolation par worker était
+      imparfaite, et c'est trop cher payé*
+- [ ] **La suite complète est instable, deux exécutions sur quatre**
+      *Deux jeux de tests différents ont échoué sur deux exécutions complètes —
+      `test_emails.py` une fois, `test_balayage`/`place_expiree` une autre — et
+      **tous passent isolément et par paire**. Ce ne sont donc ni des
+      régressions ni des défauts de leur code : ce sont des tests sensibles au
+      temps qui dérivent quand la suite met dix minutes. À reprendre avec la
+      tâche ci-dessus, dont ils sont le symptôme*
 
 ---
 

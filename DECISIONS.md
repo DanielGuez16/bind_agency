@@ -6014,3 +6014,109 @@ n'aurait rien rapporté du tout, et la fusion l'aurait attendu indéfiniment.
 Le plancher qui reste — vingt secondes sur `api` et sur `e2e` — est le démarrage
 du conteneur Postgres, qu'un `services:` ne sait pas rendre conditionnel. Trois
 secondes sur `app`, qui n'en a pas.
+---
+
+## 2026-08-17 — Le fil : la disponibilité groupée, le compte par palier, la recherche
+
+### La disponibilité : 121 requêtes, puis 9
+
+Le fil vérifiait la disponibilité **couple par couple**. Six lectures — l'item,
+son parent, le commerce, les règles, les exceptions, les occupations — répétées
+pour chaque ligne réservable : dix-neuf salons coûtaient **cent vingt et une
+requêtes** et cinquante-six millisecondes. Après groupement : **neuf requêtes,
+dix millisecondes**, pour un résultat identique.
+
+**`couples_avec_creneau` ne réimplémente pas le calcul.** Les six lectures se
+font une fois pour tout l'ensemble, puis `fenetres_du_jour` et
+`_creneaux_de_la_fenetre` — ceux de `creneaux_libres` — s'appliquent en mémoire.
+Une seconde implémentation de la disponibilité divergerait de la première au
+premier changement, et c'est la divergence qu'on ne verrait pas : les deux
+répondraient, l'une aurait tort. Le test central compare donc les deux verdicts
+couple par couple.
+
+**Le groupement porte sur l'ensemble large, jamais sur le fil rendu.**
+`_compter_par_rayon` a besoin des lignes *au-delà* du rayon pour écrire
+« élargir à 30 km · 9 salons » ; `_compter_par_categorie` a besoin de celles
+*hors* de la catégorie filtrée. Restreindre avant la vérification ferait mentir
+les deux issues de l'écran vide.
+
+**Le filtre `disponible`, lui, se pose après les comptes.** C'est un choix sur
+ce qu'on regarde, pas sur ce qu'on propose d'élargir. Un test vérifie que
+`categories` et `rayons` ne bougent pas quand le filtre s'applique — c'est la
+seule chose qui garantit l'emplacement.
+
+**« Aujourd'hui » vaut un jour glissant, pas « jusqu'à minuit ».** À vingt-trois
+heures, la seconde définition ne rendrait presque rien et la créatrice
+conclurait que le quartier est vide alors qu'il ouvre dans neuf heures.
+
+**Un cas qu'il a fallu construire.** Rien ne distinguait « sept jours » de
+l'horizon complet : une règle de capacité est hebdomadaire, donc elle revient
+toujours sous sept jours. Il a fallu un salon **fermé par exception** les huit
+prochains jours pour que la fenêtre ait un sens éprouvable.
+
+### Le compte par palier : la position acceptée, jamais exigée
+
+Faire dépendre `/me/tiers` d'une position avait été écarté, et à raison — les
+paliers d'un créateur ne changent pas parce qu'il a bougé. La distinction qui
+manquait : la route **accepte** une position sans en **dépendre**. Sans
+coordonnées, la réponse est celle d'avant au champ près ; avec, chaque palier
+porte `commerces_dans_le_rayon`.
+
+**`None` et non zéro quand rien n'est demandé.** L'écran doit distinguer « on
+n'a pas demandé » de « il n'y en a aucun autour de vous » : rendre zéro ferait
+afficher « aucun salon près d'ici » à quelqu'un dont on ignore où il est.
+
+**Des commerces, pas des offres.** La phrase à écrire est « douze au total, dont
+neuf à moins de quinze kilomètres » : un salon qui propose trois prestations au
+même palier ne compte qu'une fois dans le second nombre, sinon on dirait
+« dont quatorze » d'un total de douze.
+
+**Une seule coordonnée est refusée.** C'est une erreur de l'appelant, pas une
+demande à moitié : l'accepter en silence ferait répondre « aucun commerce
+autour » à quelqu'un dont la latitude s'est perdue en route.
+
+### La recherche : une extension, pas un moteur
+
+`ILIKE` avec `unaccent`, dans la requête du fil qui existe déjà. À vingt salons
+et soixante prestations, c'est un balayage de quelques microsecondes ; un index
+coûterait plus cher à tenir qu'à ne pas exister. **La forme de la requête ne
+change pas quand les données grossissent** : le jour venu, `pg_trgm` et un index
+GIN sur les mêmes expressions suffisent, sans rien réécrire.
+
+**`unaccent` des deux côtés.** Sur la colonne parce que « Panadería » porte son
+accent, sur le terme parce qu'on peut le taper avec. Ne le mettre que d'un côté
+ferait échouer exactement la moitié des cas.
+
+**Le terme est échappé.** Un `%` tapé cherche un pour cent ; laissé tel quel il
+devient un joker qui rend le catalogue entier à qui a cherché « 50% ».
+
+### Les suggestions : « populaire » est vrai ou se tait
+
+Deux groupes — prestations et salons — passés par **le même tamis que le fil**.
+Une suggestion qu'on ne peut pas réserver envoie sur une impasse quelqu'un qui
+cherchait de l'aide.
+
+**`origine` porte la différence, et l'écran change de mot.** On classe sur les
+réservations **servies** du quartier ; quand il n'y en a aucune, on retombe sur
+la distance et on le dit. Un salon proche annoncé comme populaire est un
+mensonge que personne ne peut vérifier — le créateur n'a aucun moyen de savoir
+combien de fois il a été réservé. L'application a deux phrases, pas une phrase
+et deux contenus.
+
+**Le quartier vient de la position** — celui du salon ouvert le plus proche —
+jamais d'un paramètre. Le demander à l'appelant reviendrait à lui faire décider
+ce qu'on est mieux placé pour savoir, et à accepter qu'il se trompe.
+
+**La disponibilité n'est pas vérifiée dans les suggestions**, délibérément : une
+suggestion est une entrée dans le fil, pas une place réservée. La vérifier
+coûterait le calcul le plus cher du produit pour un panneau qu'on ouvre en
+tapant, et le fil la vérifiera à l'arrivée.
+
+### Trois gardes redondantes, gardées et dites
+
+L'exercice de mutation a montré que trois conditions ne changent aucun verdict :
+la durée nulle et l'absence de règle dans `couples_avec_creneau`, et le statut
+`consumed` dans le compteur de popularité — `consumed_at` étant nul partout
+ailleurs. Elles sont conservées et **annotées** : elles disent l'intention à qui
+lit, là où une comparaison de date sur une colonne nullable la laisse deviner,
+et elles protègent d'un changement de contrainte qui casserait la boucle.

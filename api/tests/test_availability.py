@@ -503,3 +503,149 @@ async def test_un_creneau_deja_commence_n_est_pas_propose(session: AsyncSession)
 
     debuts = [c.starts_at.astimezone(MIAMI).strftime("%H:%M") for c in libres]
     assert debuts == ["10:30", "10:45", "11:00"]
+
+
+class _CompteurDeRequetes:
+    """Compte les requêtes SQL réellement parties, sur le moteur de la session.
+
+    **Sur le moteur et non sur la session** : c'est là que passe chaque curseur,
+    y compris ceux qu'un `flush` implicite déclenche. Compter ailleurs
+    laisserait passer exactement les lectures qu'on cherche à supprimer.
+    """
+
+    def __init__(self, session: AsyncSession) -> None:
+        # La session de test est liée à une connexion synchrone : son moteur
+        # est déjà celui sur lequel les événements se posent.
+        self._moteur = session.get_bind().engine
+        self.total = 0
+
+    def _noter(self, *_args, **_kwargs) -> None:
+        self.total += 1
+
+    def remettre(self) -> None:
+        self.total = 0
+
+    def __enter__(self) -> "_CompteurDeRequetes":
+        sa.event.listen(self._moteur, "before_cursor_execute", self._noter)
+        return self
+
+    def __exit__(self, *_exc) -> None:
+        sa.event.remove(self._moteur, "before_cursor_execute", self._noter)
+
+
+# --------------------------------------------------------------------------
+# la vérification groupée
+# --------------------------------------------------------------------------
+
+
+class TestLaVerificationGroupee:
+    """`couples_avec_creneau` : une requête pour tout l'ensemble.
+
+    **Ce que ça répare.** Le fil vérifiait la disponibilité couple par couple :
+    dix-neuf salons coûtaient **cent vingt et une requêtes**, dont l'essentiel
+    n'était que six lectures répétées vingt fois. Après groupement : neuf.
+
+    **Le test central est l'accord avec `creneaux_libres`.** Une seconde
+    implémentation du calcul de disponibilité divergerait de la première au
+    premier changement, et c'est la divergence qu'on ne verrait pas : les deux
+    répondraient, l'une aurait tort. On compare donc les deux verdicts sur les
+    mêmes données, cas par cas.
+    """
+
+    async def _verdicts_concordent(self, session: AsyncSession, couples) -> None:
+        """Les deux implémentations disent la même chose sur chaque couple."""
+        groupe = await service.couples_avec_creneau(session, couples)
+        for business_id, item_id in couples:
+            try:
+                un_par_un = bool(
+                    await service.creneaux_libres(
+                        session, business_id=business_id, catalog_item_id=item_id, limite=1
+                    )
+                )
+            except (service.ItemNotBookable, service.ItemNotFound):
+                un_par_un = False
+            assert ((business_id, item_id) in groupe) is un_par_un, (
+                f"désaccord sur {business_id}/{item_id} : "
+                f"groupé={((business_id, item_id) in groupe)}, un par un={un_par_un}"
+            )
+
+    async def test_elle_accorde_avec_le_calcul_un_par_un(self, session: AsyncSession) -> None:
+        """Deux commerces, quatre items, des situations différentes."""
+        ouvert = await commerce(session)
+        for jour in range(7):
+            await ouverture(session, ouvert, weekday=jour)
+        libre = await item(session, ouvert)
+        long_ = await item(session, ouvert, minutes=600)
+
+        ferme = await commerce(session)
+        sans_horaire = await item(session, ferme)
+
+        await self._verdicts_concordent(
+            session,
+            [
+                (ouvert.id, libre.id),
+                (ouvert.id, long_.id),
+                (ferme.id, sans_horaire.id),
+            ],
+        )
+
+    async def test_elle_accorde_quand_un_item_est_desactive(self, session: AsyncSession) -> None:
+        """`is_available` du parent désactive ses variantes sans le dupliquer :
+        le groupement doit lire l'état du parent comme le fait le calcul un par
+        un, sinon il propose une variante d'une gamme retirée."""
+        b = await commerce(session)
+        for jour in range(7):
+            await ouverture(session, b, weekday=jour)
+        parent = await catalog_service.create_item(
+            session,
+            business=b,
+            payload=CatalogItemCreate(name="Gamme", price_cents=0, requires_booking=False),
+        )
+        variante = await item(session, b, parent_item_id=parent.id)
+        seul = await item(session, b)
+
+        parent.is_available = False
+        await session.flush()
+
+        await self._verdicts_concordent(session, [(b.id, variante.id), (b.id, seul.id)])
+        # Et le sens du verdict, pas seulement son accord : la variante est
+        # écartée, l'item indépendant reste.
+        groupe = await service.couples_avec_creneau(session, [(b.id, variante.id), (b.id, seul.id)])
+        assert (b.id, variante.id) not in groupe
+        assert (b.id, seul.id) in groupe
+
+    async def test_elle_ne_lit_pas_la_base_par_couple(self, session: AsyncSession) -> None:
+        """**Le cœur du changement, et il se mesure.** Le nombre de requêtes ne
+        doit pas dépendre du nombre de couples : c'est exactement ce qui faisait
+        cent vingt et une requêtes pour dix-neuf salons."""
+        b = await commerce(session)
+        for jour in range(7):
+            await ouverture(session, b, weekday=jour, postes=4)
+        items = [await item(session, b) for _ in range(6)]
+        couples = [(b.id, i.id) for i in items]
+
+        await session.flush()
+        compte = _CompteurDeRequetes(session)
+
+        with compte:
+            await service.couples_avec_creneau(session, couples[:1])
+        pour_un = compte.total
+
+        compte.remettre()
+        with compte:
+            await service.couples_avec_creneau(session, couples)
+        pour_six = compte.total
+
+        assert pour_six == pour_un, (
+            f"six couples ont coûté {pour_six} requêtes contre {pour_un} pour un seul : "
+            "la lecture n'est pas groupée"
+        )
+
+    async def test_un_ensemble_vide_ne_lit_rien(self, session: AsyncSession) -> None:
+        """L'autre sens : sans couple, aucune requête et aucun résultat. Une
+        version qui interrogerait quand même paierait le fil vide, qui est
+        précisément celui qu'on veut rapide."""
+        compte = _CompteurDeRequetes(session)
+        with compte:
+            assert await service.couples_avec_creneau(session, []) == set()
+        assert compte.total == 0

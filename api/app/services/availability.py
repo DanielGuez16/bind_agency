@@ -22,6 +22,7 @@ sans quoi le calcul verrait des occupations qui n'ont jamais été prises ainsi.
 """
 
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
@@ -200,6 +201,182 @@ async def creneaux_libres(
         jour += timedelta(days=1)
 
     return creneaux
+
+
+async def couples_avec_creneau(
+    session: AsyncSession,
+    couples: Sequence[tuple[uuid.UUID, uuid.UUID]],
+    *,
+    depuis: datetime | None = None,
+    horizon: timedelta | None = None,
+) -> set[tuple[uuid.UUID, uuid.UUID]]:
+    """Parmi ces couples `(commerce, item)`, lesquels ont encore un créneau.
+
+    **Cinq requêtes, quel que soit le nombre de couples.** `creneaux_libres` en
+    fait six par couple : l'item, son parent, le commerce, les règles, les
+    exceptions, les occupations. Le fil en appelait une par ligne réservable et
+    montait à cent vingt et une requêtes pour dix-neuf salons. Ici les six
+    lectures sont faites une fois pour tout l'ensemble, et le parcours des
+    créneaux — qui ne touche pas la base — se refait par couple en mémoire.
+
+    **Le même algorithme, pas un second.** `fenetres_du_jour` et
+    `_creneaux_de_la_fenetre` sont ceux de `creneaux_libres`, appelés sur les
+    mêmes données. Une seconde implémentation du calcul de disponibilité
+    divergerait de la première au premier changement, et c'est la divergence
+    qu'on ne verrait pas : les deux répondraient, l'une aurait tort.
+
+    **On s'arrête au premier créneau trouvé.** La question posée est « en
+    reste-t-il un », jamais « lesquels » : parcourir trente jours pour répondre
+    oui multiplierait le coût par le nombre d'items.
+
+    Un item qui n'exige pas de réservation n'est pas ici : il est réservable par
+    construction, et l'appelant le sait avant d'appeler.
+    """
+    if not couples:
+        return set()
+
+    settings = get_settings()
+    depuis = depuis or datetime.now(UTC)
+    horizon = horizon or timedelta(days=settings.booking_horizon_days)
+    jusqu_a = depuis + horizon
+
+    items_vises = {item_id for _, item_id in couples}
+    commerces_vises = {business_id for business_id, _ in couples}
+
+    # 1 · Les items, et l'état de leur parent. `outerjoin` plutôt qu'une seconde
+    #     requête : un item sans parent garde une disponibilité nulle, que le
+    #     `is_(None)` ci-dessous lit comme « rien ne le désactive ».
+    parent = sa.orm.aliased(CatalogItem)
+    lignes_items = (
+        await session.execute(
+            sa.select(
+                CatalogItem.id,
+                CatalogItem.business_id,
+                CatalogItem.requires_booking,
+                CatalogItem.duration_minutes,
+                CatalogItem.is_available,
+                parent.is_available.label("parent_disponible"),
+            )
+            .outerjoin(parent, parent.id == CatalogItem.parent_item_id)
+            .where(CatalogItem.id.in_(items_vises))
+        )
+    ).all()
+    items = {ligne.id: ligne for ligne in lignes_items}
+
+    # 2 · Le fuseau de chaque commerce.
+    fuseaux = {
+        identifiant: ZoneInfo(nom)
+        for identifiant, nom in (
+            await session.execute(
+                sa.select(Business.id, Business.timezone).where(Business.id.in_(commerces_vises))
+            )
+        ).all()
+    }
+
+    # 3 · Les règles de capacité, groupées par commerce.
+    regles: dict[uuid.UUID, list[CapacityRule]] = {}
+    for regle in await session.scalars(
+        sa.select(CapacityRule).where(CapacityRule.business_id.in_(commerces_vises))
+    ):
+        regles.setdefault(regle.business_id, []).append(regle)
+
+    # 4 · Les exceptions, sur la plage de dates la plus large possible.
+    #
+    #     Les commerces n'ont pas le même fuseau : prendre les bornes en UTC
+    #     élargies d'un jour de chaque côté couvre tous les décalages sans avoir
+    #     à faire une requête par fuseau. Une exception lue en trop ne sert
+    #     simplement à personne.
+    exceptions: dict[uuid.UUID, dict[date, CapacityException]] = {}
+    for exception in await session.scalars(
+        sa.select(CapacityException).where(
+            CapacityException.business_id.in_(commerces_vises),
+            CapacityException.date.between(
+                (depuis - timedelta(days=1)).date(), (jusqu_a + timedelta(days=1)).date()
+            ),
+        )
+    ):
+        exceptions.setdefault(exception.business_id, {})[exception.date] = exception
+
+    # 5 · Les occupations, groupées par commerce.
+    occupations: dict[uuid.UUID, list[tuple[datetime, datetime]]] = {}
+    for business_id, debut, fin in (
+        await session.execute(
+            sa.select(Booking.business_id, Booking.starts_at, Booking.ends_at).where(
+                Booking.business_id.in_(commerces_vises),
+                Booking.status.in_(STATUTS_OCCUPANTS),
+                Booking.starts_at.is_not(None),
+                Booking.starts_at < jusqu_a,
+                Booking.ends_at > depuis,
+                sa.or_(
+                    Booking.status != BookingStatus.HELD,
+                    Booking.hold_expires_at > sa.func.clock_timestamp(),
+                ),
+            )
+        )
+    ).all():
+        occupations.setdefault(business_id, []).append((debut, fin))
+
+    avec: set[tuple[uuid.UUID, uuid.UUID]] = set()
+    for business_id, item_id in couples:
+        item = items.get(item_id)
+        if item is None or item.business_id != business_id:
+            continue
+        # **Deux gardes que rien ne peut faire tomber, et c'est voulu.** Une
+        # contrainte en base interdit `requires_booking` sans durée, et
+        # `fenetres_du_jour` ne rend rien pour un commerce sans règle : les
+        # retirer ne change aucun verdict, l'exercice de mutation le montre. On
+        # les garde parce qu'elles disent la même chose que `creneaux_libres`
+        # — `ItemNotBookable` d'un côté, un `continue` de l'autre — et parce que
+        # sans elles, `timedelta(minutes=None)` lèverait le jour où la
+        # contrainte bougerait, dans une boucle qui traite tout le fil.
+        if not item.requires_booking or item.duration_minutes is None:
+            continue
+        # `is_available` du parent désactive ses variantes, sans le dupliquer :
+        # nul quand il n'y a pas de parent, donc rien ne désactive.
+        if not item.is_available or item.parent_disponible is False:
+            continue
+        lignes = regles.get(business_id)
+        fuseau = fuseaux.get(business_id)
+        if not lignes or fuseau is None:
+            continue
+
+        if _reste_un_creneau_en_memoire(
+            regles=lignes,
+            exceptions=exceptions.get(business_id, {}),
+            occupations=occupations.get(business_id, []),
+            fuseau=fuseau,
+            duree=timedelta(minutes=item.duration_minutes),
+            depuis=depuis,
+            jusqu_a=jusqu_a,
+        ):
+            avec.add((business_id, item_id))
+
+    return avec
+
+
+def _reste_un_creneau_en_memoire(
+    *,
+    regles: list[CapacityRule],
+    exceptions: dict[date, CapacityException],
+    occupations: list[tuple[datetime, datetime]],
+    fuseau: ZoneInfo,
+    duree: timedelta,
+    depuis: datetime,
+    jusqu_a: datetime,
+) -> bool:
+    """Le parcours de `creneaux_libres`, sans aucune lecture de base.
+
+    Séparé pour que le groupement n'ait rien à réimplémenter : il fournit les
+    données, celui-ci applique la règle, et la règle reste écrite une fois.
+    """
+    jour = depuis.astimezone(fuseau).date()
+    dernier = jusqu_a.astimezone(fuseau).date()
+    while jour <= dernier:
+        for fenetre in fenetres_du_jour(jour, regles, exceptions.get(jour)):
+            if _creneaux_de_la_fenetre(jour, fenetre, fuseau, duree, occupations, depuis, jusqu_a):
+                return True
+        jour += timedelta(days=1)
+    return False
 
 
 def _creneaux_de_la_fenetre(
