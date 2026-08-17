@@ -610,11 +610,14 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       12 tests neufs, 7 mutations vérifiées — dont deux passées d'abord, qui ont
       révélé une garde supprimée par une réécriture et une autre qui ne lisait
       jamais le rendu*
-- [x] **Le fichier vectoriel lui-même**
-      *La règle est corrigée, le dessin ne l'est pas : les lettres restent une
-      approximation dans la fonte fonctionnelle, et le D porte une coupe oblique
-      qu'aucune fonte ne donne. `$meta.unconfirmed` le porte toujours. Ce qui
-      manque n'est plus une décision mais un fichier*
+- [x] **Le vectoriel : tracé, mesuré, intégré**
+      *Le PNG de la fondatrice vectorisé au seuil, les deux couleurs séparées sur
+      une même toile pour que les chemins s'alignent. La trace est **mesurée
+      contre la source** : 99,75 % de recouvrement sur l'encre, 99,22 % sur le
+      point, écart de contour jamais supérieur à un pixel, et la coupe oblique du
+      D à -1,835° des deux côtés. Le point est un chemin distinct, donc la
+      variante blanche recolore les lettres seules. `$meta.unconfirmed` tombe.
+      6 tests neufs*
 - [x] **Les paliers sortent des onglets : quatre au lieu de cinq**
       *Un onglet répond à une question qu'on se pose en ouvrant l'application, et
       « quel est mon palier » n'en est pas une : ce qu'on veut savoir, c'est ce

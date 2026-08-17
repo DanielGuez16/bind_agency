@@ -5624,3 +5624,84 @@ travail non commité cette commande efface le travail. Payé deux fois dans la
 journée : la seconde a coûté cinq corrections de sélecteurs, retrouvées
 seulement parce qu'une garde restait rouge. Ce n'est pas une préférence de
 style, c'est la condition pour que l'exercice reste sûr.
+
+## 2026-08-17 — Le vectoriel, tracé et mesuré
+
+Le logo de la fondatrice est arrivé en PNG haute résolution. Il a été vectorisé
+plutôt qu'attendu, et **la trace a été mesurée contre la source** plutôt que crue.
+
+**Deux masques, une seule toile.** Le PNG est séparé par la couleur — lettres et
+fût du « ! » d'un côté, point de l'autre — et chaque masque passe par `potrace`
+sans recadrage. C'est ce qui garantit que les deux chemins s'alignent : un
+premier essai avec `--tight` recadrait chaque trace sur sa propre boîte, et les
+deux ne se superposaient plus.
+
+**Ce que la mesure dit.** 99,75 % de recouvrement sur l'encre, 99,22 % sur le
+point, et un écart de contour qui ne dépasse **jamais un pixel** — la largeur de
+l'antialiasing de la source. La coupe oblique du D, qui est justement ce
+qu'aucune fonte ne donne, mesure **-1,835° sur la source comme sur le tracé**.
+
+**Deux chemins, et c'est ce qui rend la variante blanche possible.** Le point est
+un chemin distinct : la variante blanche recolore les lettres seules, et le point
+reste orange dans les deux cas.
+
+**`taille` change de sens, et le plancher avec.** Elle désignait un corps de
+fonte dont l'encre n'occupait qu'une part ; elle désigne maintenant la hauteur du
+tracé. Le plancher passe de vingt-quatre à quatorze — ce n'est pas un
+relâchement, c'est la même exigence sur une grandeur différente. Les cinq appels
+du produit sont rééchelonnés pour que la largeur rendue ne bouge sur aucun écran.
+
+**Un test qui a failli passer pour juste.** La règle qui décide entre logotype et
+marque compacte se calculait depuis `largeurParLettre`. Ce chiffre a changé de
+sens avec le vectoriel — la largeur des quatre lettres rapportée au corps devient
+celle d'**une** rapportée à la hauteur — et le réutiliser sans le recalibrer
+faisait dire à la règle qu'un favicon de seize pixels pouvait porter le logotype.
+La borne est désormais celle que Design pose elle-même dans
+`logo.mark16.$doctrine` : sous 128, le logotype ne tient pas. Une borne empruntée
+vaut mieux qu'une borne dérivée d'une grandeur qui vient de bouger.
+
+**`$meta.unconfirmed` tombe**, et `logo.$asset` avec. Le garder après avoir
+obtenu ce qu'il réclamait ferait douter des autres manques qu'il nommerait.
+
+*Un écart relevé et non corrigé :* le point de la fondatrice est `#FF5E00`, celui
+du produit `brand.500` `#F26B21`, parce que `tokens.json` le prescrit « dans tous
+les cas ». Les SVG portent la couleur du produit ; le PNG reste la référence de
+forme. À arbitrer si l'écart n'est pas voulu.
+
+## 2026-08-17 — `brand.500` passe à #FF5E00, mesuré avant d'être propagé
+
+Le 500 devient `#FF5E00`, la couleur du fichier de la fondatrice. `#F26B21` était
+une estimation lue sur une capture Instagram compressée ; celle-ci vient d'un
+fichier fait par elle. Et le point du logo est le seul endroit du produit où la
+marque se signe elle-même.
+
+**La question posée était : est-ce que des seuils cassent.** La réponse est non,
+et la marge est confortable.
+
+| combinaison | avant | après | seuil |
+| --- | --- | --- | --- |
+| encre sur orange — bouton, palier reel, pastille de distance | 6,11:1 | **6,07:1** | 4,5 |
+| blanc sur orange — le bloc accentué, ≥ 24 px | 3,04:1 | **3,06:1** | 3,0 |
+| orange sur papier — interdit en texte | 3,04:1 | 3,06:1 | — |
+
+La luminance ne bouge que de **-0,8 %** : `#FF5E00` a moins de vert et pas de
+bleu, mais il est plus clair d'un cheveu en luminance relative. L'encre sur
+orange perd quatre centièmes et garde une marge de 35 % sur son seuil ; le blanc
+sur orange en **gagne** deux.
+
+**La rampe l'accepte.** Teinte 22,1°, en plein dans les 20–24° des huit autres
+valeurs. Luminosité 50 %, entre le 500 d'avant (53,9) et le 600 (44,1).
+Saturation 100 %, la plus pure de la rampe — ce qu'on attend d'une couleur
+d'ancrage, dont les autres stops sont des dérivés légèrement rabattus.
+
+**Ce qu'il a fallu recuire.** Les trois satins portent le 500 dans leurs arrêts
+et sont livrés en images : recuits, et leurs contrastes **remesurés** dans la même
+exécution. `satin.drape` passe de 7,06:1 à 6,94:1 en haut, `fold` de 5,06 à 5,05.
+Les commentaires qui citaient ces chiffres ont suivi — un commentaire qui annonce
+une mesure cesse d'en être une dès qu'il diverge. Les fichiers de marque aussi :
+le point du sigle et des icônes est orange, il devait le rester à la bonne
+valeur.
+
+*Un point relevé et non tranché :* l'écart de luminosité entre le 500 et le 600 —
+l'état appuyé — se resserre de 9,8 à 5,9 points. La distinction tient, mais elle
+est plus étroite qu'avant. À voir avec Design si l'appui doit descendre.

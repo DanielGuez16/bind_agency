@@ -113,7 +113,7 @@ export function ChoixDeLaPorte({
         {/* **Plus de signature.** Ni AGENCY ni CRÉATEUR DE LIEN : cette
             dernière est en français, et BIND s'adresse à Miami en anglais et en
             espagnol. Le logotype seul suffit, ici comme partout. */}
-        <Marque taille={30} variante={surMedia ? 'blanc' : 'encre'} testID="logotype" />
+        <Marque taille={18} variante={surMedia ? 'blanc' : 'encre'} testID="logotype" />
 
         <View style={{ gap: spacing['space.2'], maxWidth: 720 }}>
         {/* Nommée : c'est sur elle que la suite de bout en bout lit la police

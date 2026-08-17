@@ -51,5 +51,13 @@ app/dist-e2e/
 # un vrai navigateur, et il pèse deux mégaoctets. `dist/` ne les couvre pas —
 # `expo export` prend le nom qu'on lui donne.
 app/dist-probe/
+
+# Les intermédiaires de la vectorisation du logo. `vectoriser.sh` les régénère
+# depuis le PNG source ; versionnés, ils divergeraient du jour où quelqu'un
+# retoucherait un SVG sans les refaire — et c'est le fichier dérivé qu'on
+# rouvrirait pour vérifier.
+design_handoff_bind/logo/masque-*.pbm
+design_handoff_bind/logo/trace-*.svg
+design_handoff_bind/logo/d-*.txt
 app/test-results/
 app/playwright-report/
