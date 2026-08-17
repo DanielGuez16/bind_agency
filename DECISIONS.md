@@ -5253,3 +5253,42 @@ routeur, celui-ci le réencodage silencieux.
 carte, catalogue, listes. Une source unique pour le mur, en revanche : servir la
 vignette au triptyque et l'original au cadre plein donnerait deux cadrages du
 même salon selon sa position dans le cycle.
+
+---
+
+## 2026-08-17 — Little Haiti, et la garde que son ajout a révélée
+
+Dixième quartier, décidé par Daniel après que la conversation design l'a
+remonté : sa planche le montrait, il n'était pas dans les neuf validés. Ni elle
+ni moi ne l'avons ajouté sur une maquette.
+
+**Une valeur d'énumération ne se voit pas à l'autogénération.** `neighborhood`
+est un `sa.Enum(native_enum=False)` : en base, ce n'est pas un type mais une
+contrainte de vérification qui énumère les valeurs. Alembic compare les
+contraintes **par leur nom** ; celui-ci ne change pas, donc ni l'autogénération
+ni `alembic check` ne signalent quoi que ce soit. Une valeur ajoutée côté Python
+sans migration serait refusée par la base au premier commerce qui la choisit —
+un 500 sur une valeur que le schéma d'entrée accepte. La migration est écrite à
+la main, et elle remplace la contrainte entière : une contrainte de vérification
+ne s'étend pas.
+
+**`op.f()` sur le nom de la contrainte**, sans quoi la convention de nommage du
+dépôt le préfixe une seconde fois et produit
+`ck_business_ck_business_neighborhood`. La migration échoue alors au `DROP` —
+au bon moment, mais seulement si quelqu'un l'exécute.
+
+**Deux gardes plutôt qu'un test.** Un test qui parcourt `Neighborhood` en entier
+et crée un commerce pour chaque valeur : c'est le seul moyen de savoir qu'aucune
+n'a été oubliée en base. Et côté app, un test qui exige un nom dans les deux
+catalogues pour chacune.
+
+**La seconde a été trouvée par mutation.** Retirer un quartier d'un seul
+catalogue tombait déjà, sur la parité anglais/espagnol. Le retirer des **deux**
+passait : l'écran aurait affiché `quartiers.little_haiti` en clair, dans les deux
+langues, sans que rien ne le dise. La parité vérifie que les catalogues se
+ressemblent, pas qu'ils sont complets.
+
+**Vérifié plutôt que refait.** Le délai d'acceptation et le message sur le score
+étaient donnés pour manquants ; ils sont sur `main` depuis la veille (#127) —
+colonne, configuration, balayage, affichage des deux côtés, et la phrase sous le
+bouton d'accord. Rien n'a été réécrit.
