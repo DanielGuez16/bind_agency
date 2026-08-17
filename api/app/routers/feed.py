@@ -7,8 +7,9 @@ from fastapi import APIRouter, Depends, Query
 from app.core.dependencies import CurrentUser, SessionDep, require_role
 from app.integrations.geocoding import Coordinates
 from app.models.enums import BusinessCategory, UserRole
-from app.schemas.feed import FilRead
+from app.schemas.feed import FilRead, SuggestionsRead
 from app.services import feed as service
+from app.services.feed import FenetreDeDisponibilite
 
 router = APIRouter(
     prefix="/businesses",
@@ -25,6 +26,8 @@ async def read_feed(
     latitude: Annotated[float, Query(ge=-90, le=90)],
     rayon_metres: Annotated[int | None, Query(ge=100, le=100_000)] = None,
     categorie: Annotated[BusinessCategory | None, Query()] = None,
+    disponible: Annotated[FenetreDeDisponibilite | None, Query()] = None,
+    recherche: Annotated[str | None, Query(max_length=120)] = None,
 ) -> FilRead:
     """Les coordonnées viennent de l'appelant, pas du profil.
 
@@ -38,5 +41,31 @@ async def read_feed(
         autour_de=Coordinates(longitude=longitude, latitude=latitude),
         rayon_metres=rayon_metres,
         categorie=categorie,
+        disponible=disponible,
+        recherche=recherche,
     )
     return FilRead.model_validate(fil)
+
+
+@router.get("/suggestions", response_model=SuggestionsRead)
+async def read_suggestions(
+    session: SessionDep,
+    user: CurrentUser,
+    longitude: Annotated[float, Query(ge=-180, le=180)],
+    latitude: Annotated[float, Query(ge=-90, le=90)],
+    rayon_metres: Annotated[int | None, Query(ge=100, le=100_000)] = None,
+) -> SuggestionsRead:
+    """Ce qu'on propose avant que la créatrice ait tapé quoi que ce soit.
+
+    **La position est obligatoire ici**, contrairement au fil des paliers : une
+    suggestion sans lieu ne suggère rien d'utile, et le quartier — qui décide de
+    ce qui est « populaire » — en découle.
+    """
+    return SuggestionsRead.model_validate(
+        await service.suggestions_du_createur(
+            session,
+            creator_id=user.id,
+            autour_de=Coordinates(longitude=longitude, latitude=latitude),
+            rayon_metres=rayon_metres,
+        )
+    )

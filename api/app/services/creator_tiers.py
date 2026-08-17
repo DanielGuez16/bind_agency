@@ -29,10 +29,13 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 import sqlalchemy as sa
+from geoalchemy2 import Geography
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
+from app.integrations.geocoding import Coordinates
 from app.models import Business, CatalogItem, CreatorProfile, Tier, TierOffer
-from app.models.enums import BusinessStatus, ContentFormat, Platform
+from app.models.enums import BusinessStatus, ContentFormat, Neighborhood, Platform
 from app.services import eligibility
 
 
@@ -53,6 +56,20 @@ class PalierVu:
     obstacles: tuple[eligibility.Obstacle, ...]
     #: Combien de prestations les commerces proposent à ce palier.
     offres_disponibles: int
+    #: Combien de **prestations** ce palier ouvre dans le rayon demandé.
+    #:
+    #: La même grandeur qu'`offres_disponibles`, restreinte à la distance :
+    #: « douze au total, dont neuf à moins de quinze kilomètres » compare deux
+    #: fois des prestations. Y mettre un compte de salons ferait comparer deux
+    #: grandeurs dans la même phrase.
+    offres_dans_le_rayon: int | None
+    #: Combien de **commerces** proposent ce palier dans le rayon demandé.
+    #:
+    #: `None` quand aucune position n'a été fournie, et c'est une absence, pas
+    #: un zéro : l'écran doit pouvoir distinguer « on n'a pas demandé » de
+    #: « il n'y en a aucun autour de vous ». La route ne dépend jamais d'une
+    #: position, elle en tire parti quand elle est là.
+    commerces_dans_le_rayon: int | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -110,6 +127,160 @@ def _le_plus_proche(acces: list[eligibility.AccesPalier]) -> eligibility.AccesPa
     return min(acces, key=rang)
 
 
+@dataclass(frozen=True, slots=True)
+class OffreDuPalier:
+    """Une prestation ouverte à ce palier, où qu'elle soit."""
+
+    tier_offer_id: uuid.UUID
+    catalog_item_id: uuid.UUID
+    business_id: uuid.UUID
+    nom: str
+    nom_du_commerce: str
+    neighborhood: Neighborhood | None
+    price_cents: int
+    currency: str
+    duration_minutes: int | None
+    photo_key: str | None
+    #: La distance depuis la position, quand elle est fournie. `None` sinon —
+    #: c'est ce qui distingue « loin » de « on ne sait pas d'où ».
+    distance_metres: float | None
+
+
+async def offres_du_palier(
+    session: AsyncSession,
+    *,
+    tier_id: uuid.UUID,
+    autour_de: Coordinates | None = None,
+) -> tuple[OffreDuPalier, ...]:
+    """Toutes les prestations d'un palier, **sans borne de distance**.
+
+    **Ce que le fil ne peut pas rendre.** `/businesses` est borné par un rayon
+    par construction, et le déborner n'y suffirait pas : il exige une position
+    et trie par distance, ce qui n'a pas de sens pour « tout BIND ». La bascule
+    « près de vous / les douze » a besoin des objets, pas d'un nombre — et ses
+    deux états doivent montrer deux listes différentes, sinon elle ne vaut pas
+    d'exister.
+
+    **Trié par quartier, puis par nom de prestation.** C'est le seul axe que le
+    produit connaît déjà et qui ne classe personne : trier par palier
+    hiérarchiserait des prestations que la créatrice peut toutes réserver, trier
+    par salon supposerait un ordre entre eux, et ne rien trier ferait une liste
+    sans forme. Les salons sans quartier viennent en dernier — ils ne sont pas
+    situés, pas relégués.
+
+    **Le même tamis que le compte.** Offre active, commerce actif, item
+    disponible, parent disponible. Deux tamis différents feraient qu'une liste
+    de douze porterait onze lignes, et personne ne saurait laquelle manque.
+
+    La disponibilité n'est **pas** vérifiée : c'est une lecture de catalogue, et
+    la vérifier ici coûterait le calcul le plus cher du produit pour un panneau
+    qu'on déplie. Le fil la vérifie à l'arrivée.
+    """
+    parent = sa.orm.aliased(CatalogItem)
+    distance = (
+        sa.func.ST_Distance(
+            sa.cast(Business.geo, Geography),
+            sa.func.ST_GeogFromText(f"SRID=4326;{autour_de.as_wkt()}"),
+        ).label("distance")
+        if autour_de is not None
+        else sa.null().label("distance")
+    )
+
+    lignes = (
+        await session.execute(
+            sa.select(
+                TierOffer.id.label("tier_offer_id"),
+                CatalogItem.id.label("catalog_item_id"),
+                Business.id.label("business_id"),
+                CatalogItem.name.label("nom"),
+                Business.name.label("nom_du_commerce"),
+                Business.neighborhood,
+                CatalogItem.price_cents,
+                Business.currency,
+                CatalogItem.duration_minutes,
+                CatalogItem.photo_key,
+                distance,
+            )
+            .join(Business, Business.id == TierOffer.business_id)
+            .join(CatalogItem, CatalogItem.id == TierOffer.catalog_item_id)
+            .outerjoin(parent, parent.id == CatalogItem.parent_item_id)
+            .where(
+                TierOffer.tier_id == tier_id,
+                TierOffer.is_active.is_(True),
+                Business.status == BusinessStatus.ACTIVE,
+                CatalogItem.is_available.is_(True),
+                sa.or_(parent.id.is_(None), parent.is_available.is_(True)),
+            )
+            # `nullslast` est **explicite et redondant**, et c'est voulu : en
+            # Postgres, `NULLS LAST` est déjà le défaut d'un tri ascendant —
+            # l'exercice de mutation le confirme, le retirer ne change rien.
+            # Mais le défaut dépend du **sens** du tri : passer un jour ce
+            # `asc()` en `desc()` remonterait silencieusement les salons non
+            # situés en tête de liste. L'écrire fige l'intention plutôt que de
+            # la faire dépendre d'une direction.
+            .order_by(sa.nullslast(Business.neighborhood.asc()), CatalogItem.name.asc())
+        )
+    ).all()
+
+    return tuple(
+        OffreDuPalier(
+            tier_offer_id=ligne.tier_offer_id,
+            catalog_item_id=ligne.catalog_item_id,
+            business_id=ligne.business_id,
+            nom=ligne.nom,
+            nom_du_commerce=ligne.nom_du_commerce,
+            neighborhood=ligne.neighborhood,
+            price_cents=ligne.price_cents,
+            currency=ligne.currency,
+            duration_minutes=ligne.duration_minutes,
+            photo_key=ligne.photo_key,
+            distance_metres=None if ligne.distance is None else round(ligne.distance, 1),
+        )
+        for ligne in lignes
+    )
+
+
+async def _commerces_par_palier_dans_le_rayon(
+    session: AsyncSession, autour_de: Coordinates, rayon_metres: int
+) -> dict[uuid.UUID, tuple[int, int]]:
+    """Ce que chaque palier ouvre à portée : combien de salons, combien de prestations.
+
+    **Les deux grandeurs, et c'est le point.** L'écran écrit « douze prestations
+    ouvertes, dont neuf à moins de quinze kilomètres » : les deux nombres de
+    cette phrase doivent compter la même chose, sinon elle compare des salons à
+    des prestations et personne ne s'en aperçoit jamais. `offres_dans_le_rayon`
+    répond à ça. `commerces_dans_le_rayon` répond à l'autre phrase — « chez N
+    salons » — et un salon qui propose trois prestations au même palier n'y
+    compte qu'une fois. Deux faits différents, deux champs, une seule requête.
+
+    Mêmes conditions que le compte total — offre active, commerce actif, item
+    disponible, parent disponible — plus la distance. Deux tamis différents
+    donneraient deux nombres dont l'un contredirait l'autre sur le même écran.
+    """
+    point = sa.func.ST_GeogFromText(f"SRID=4326;{autour_de.as_wkt()}")
+    parent = sa.orm.aliased(CatalogItem)
+    lignes = await session.execute(
+        sa.select(
+            TierOffer.tier_id,
+            sa.func.count(sa.distinct(Business.id)),
+            sa.func.count(TierOffer.id),
+        )
+        .join(Business, Business.id == TierOffer.business_id)
+        .join(CatalogItem, CatalogItem.id == TierOffer.catalog_item_id)
+        .outerjoin(parent, parent.id == CatalogItem.parent_item_id)
+        .where(
+            TierOffer.is_active.is_(True),
+            Business.status == BusinessStatus.ACTIVE,
+            Business.geo.is_not(None),
+            sa.func.ST_DWithin(sa.cast(Business.geo, Geography), point, rayon_metres),
+            CatalogItem.is_available.is_(True),
+            sa.or_(parent.id.is_(None), parent.is_available.is_(True)),
+        )
+        .group_by(TierOffer.tier_id)
+    )
+    return {tier_id: (salons, offres) for tier_id, salons, offres in lignes.all()}
+
+
 async def _offres_par_palier(session: AsyncSession) -> dict[uuid.UUID, int]:
     """Combien de prestations chaque palier ouvre, tous commerces confondus.
 
@@ -135,7 +306,22 @@ async def _offres_par_palier(session: AsyncSession) -> dict[uuid.UUID, int]:
     return {tier_id: nombre for tier_id, nombre in lignes.all()}
 
 
-async def vue_des_paliers(session: AsyncSession, creator_id: uuid.UUID) -> VueDesPaliers:
+async def vue_des_paliers(
+    session: AsyncSession,
+    creator_id: uuid.UUID,
+    *,
+    autour_de: Coordinates | None = None,
+    rayon_metres: int | None = None,
+) -> VueDesPaliers:
+    """La vue des paliers, et ce qu'ils ouvrent — au total, et près d'ici.
+
+    **La position est facultative, et c'est tout le sujet.** Faire dépendre un
+    écran d'identité d'une position avait été écarté, et à raison : les paliers
+    d'un créateur ne changent pas parce qu'il a bougé. Mais rien n'interdit d'en
+    tirer parti quand elle est là. Sans coordonnées, la réponse est celle
+    d'avant au champ près ; avec, chaque palier porte en plus combien de
+    commerces le proposent à portée.
+    """
     verdict = await eligibility.evaluer_createur(session, creator_id)
 
     # Les trois champs du profil d'un coup. Trois `scalar` séparés poseraient
@@ -161,6 +347,16 @@ async def vue_des_paliers(session: AsyncSession, creator_id: uuid.UUID) -> VueDe
     ).scalars()
 
     offres = await _offres_par_palier(session)
+    # **Une seconde requête, et seulement si on a une position.** Sans
+    # coordonnées la réponse est celle d'hier au champ près : le compte vaut
+    # `None`, pas zéro, et l'écran sait qu'il n'a rien demandé.
+    dans_le_rayon = (
+        None
+        if autour_de is None
+        else await _commerces_par_palier_dans_le_rayon(
+            session, autour_de, rayon_metres or get_settings().feed_radius_metres
+        )
+    )
 
     par_palier: dict[uuid.UUID, list[eligibility.AccesPalier]] = {}
     for acces in verdict.acces:
@@ -185,6 +381,12 @@ async def vue_des_paliers(session: AsyncSession, creator_id: uuid.UUID) -> VueDe
                 accessible=ouvert is not None,
                 social_account_id=proche.social_account_id if proche else None,
                 offres_disponibles=offres.get(palier.id, 0),
+                offres_dans_le_rayon=(
+                    None if dans_le_rayon is None else dans_le_rayon.get(palier.id, (0, 0))[1]
+                ),
+                commerces_dans_le_rayon=(
+                    None if dans_le_rayon is None else dans_le_rayon.get(palier.id, (0, 0))[0]
+                ),
                 obstacles=(
                     proche.obstacles
                     if proche is not None

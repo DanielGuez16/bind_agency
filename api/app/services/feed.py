@@ -22,7 +22,9 @@ montrés : là-bas un palier fermé oriente, ici il encombre.
 
 import uuid
 from dataclasses import dataclass
+from datetime import timedelta
 from decimal import Decimal
+from enum import StrEnum
 from typing import NamedTuple
 
 import sqlalchemy as sa
@@ -31,8 +33,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.integrations.geocoding import Coordinates
-from app.models import Business, CatalogItem, Tier, TierOffer
+from app.models import Booking, Business, CatalogItem, Tier, TierOffer
 from app.models.enums import (
+    BookingStatus,
     BusinessCategory,
     BusinessStatus,
     ContentFormat,
@@ -62,6 +65,70 @@ class ItemDuFil:
     #: utilisé pour masquer : le commerce compose ce qu'il veut, le créateur
     #: sait ce qu'il accepte.
     value_ratio: Decimal | None
+
+
+class FenetreDeDisponibilite(StrEnum):
+    """Ce que la créatrice choisit de regarder, jamais ce qu'on lui propose.
+
+    **Posée sur le fil rendu, après les comptes**, et c'est la distinction qui
+    décide de son emplacement. `categories` et `rayons` disent ce qu'un
+    élargissement rapporterait : ils se calculent sur l'ensemble large, sans ce
+    filtre. Le lui appliquer ferait dire « élargir à 30 km · 9 salons » puis
+    n'en montrer que trois, parce que les six autres n'ont pas de place demain.
+
+    L'horizon complet reste le défaut : ne rien demander, c'est tout voir.
+    """
+
+    AUJOURD_HUI = "aujourd_hui"
+    SEPT_JOURS = "sept_jours"
+
+    @property
+    def horizon(self) -> timedelta:
+        """La fenêtre à parcourir, à partir de maintenant.
+
+        Un jour et non « jusqu'à minuit » : à vingt-trois heures, « libre
+        aujourd'hui » ne rendrait presque jamais rien, et la créatrice
+        conclurait que le quartier est vide alors qu'il ouvre dans neuf heures.
+        Ce qu'elle demande est « bientôt », et le produit doit répondre à ça.
+        """
+        return (
+            timedelta(days=1) if self is FenetreDeDisponibilite.AUJOURD_HUI else timedelta(days=7)
+        )
+
+
+def condition_de_recherche(texte: str):
+    """Le `WHERE` d'une recherche libre, sur le nom, la prestation et sa description.
+
+    **`unaccent` des deux côtés.** Sur la colonne parce que « Panadería » est
+    écrit avec son accent, et sur le terme parce qu'on peut le taper avec.
+    Ne le mettre que d'un côté ferait échouer exactement la moitié des cas, et
+    c'est la moitié qu'on ne teste jamais.
+
+    **`ILIKE` et non `LIKE`.** Personne ne tape « Ocean Beauty Studio » avec ses
+    majuscules dans un champ de recherche.
+
+    **Un balayage, et c'est le bon choix aujourd'hui.** À vingt salons et
+    soixante prestations, chercher coûte quelques microsecondes ; un index
+    coûterait plus cher à tenir qu'à ne pas exister. La forme de la requête ne
+    change pas quand les données grossissent : le jour venu, `pg_trgm` et un
+    index GIN sur ces mêmes expressions suffisent, sans rien réécrire ici.
+
+    Le terme est échappé : un `%` tapé par quelqu'un cherche un pour cent, il ne
+    doit pas devenir un joker qui rend tout le catalogue.
+    """
+    motif = f"%{_echapper(texte.strip())}%"
+    return sa.or_(
+        sa.func.unaccent(Business.name).ilike(sa.func.unaccent(motif), escape="\\"),
+        sa.func.unaccent(CatalogItem.name).ilike(sa.func.unaccent(motif), escape="\\"),
+        sa.func.unaccent(sa.func.coalesce(CatalogItem.description, "")).ilike(
+            sa.func.unaccent(motif), escape="\\"
+        ),
+    )
+
+
+def _echapper(texte: str) -> str:
+    """Neutralise les jokers de `LIKE` dans ce que l'utilisateur a tapé."""
+    return texte.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
 
 class _EnTete(NamedTuple):
@@ -205,6 +272,53 @@ class Fil:
     prochain_palier: ProchainPalier | None
 
 
+@dataclass(frozen=True, slots=True)
+class SuggestionDePrestation:
+    catalog_item_id: uuid.UUID
+    business_id: uuid.UUID
+    nom: str
+    nom_du_commerce: str
+    neighborhood: Neighborhood | None
+    distance_metres: float
+
+
+@dataclass(frozen=True, slots=True)
+class SuggestionDeSalon:
+    business_id: uuid.UUID
+    nom: str
+    category: BusinessCategory
+    neighborhood: Neighborhood | None
+    distance_metres: float
+    prestations: int
+
+
+class OrigineDesSuggestions(StrEnum):
+    """D'où sortent les suggestions, et l'écran doit changer de mot avec.
+
+    **« Populaire » doit être vrai ou se taire.** Un salon proche annoncé comme
+    populaire est un mensonge que personne ne peut vérifier : le créateur n'a
+    aucun moyen de savoir combien de fois il a été réservé. À vingt salons
+    l'historique est mince, et il le restera longtemps dans un quartier neuf.
+
+    Le corps dit donc lequel des deux il rend, et l'application a **deux
+    phrases**, pas une phrase et deux contenus.
+    """
+
+    #: Classé sur les réservations réellement consommées dans le quartier.
+    POPULAIRE = "populaire"
+    #: Aucun historique dans ce quartier : classé sur la distance.
+    A_PROXIMITE = "a_proximite"
+
+
+@dataclass(frozen=True, slots=True)
+class Suggestions:
+    prestations: tuple[SuggestionDePrestation, ...]
+    salons: tuple[SuggestionDeSalon, ...]
+    #: Le quartier de la position, quand elle tombe dans un quartier ouvert.
+    quartier: Neighborhood | None
+    origine: OrigineDesSuggestions
+
+
 async def fil_du_createur(
     session: AsyncSession,
     *,
@@ -212,6 +326,8 @@ async def fil_du_createur(
     autour_de: Coordinates,
     rayon_metres: int | None = None,
     categorie: BusinessCategory | None = None,
+    disponible: FenetreDeDisponibilite | None = None,
+    recherche: str | None = None,
 ) -> Fil:
     settings = get_settings()
     rayon = rayon_metres or settings.feed_radius_metres
@@ -301,6 +417,11 @@ async def fil_du_createur(
                 TierOffer.is_active.is_(True),
                 Tier.is_active.is_(True),
                 Tier.id.in_(paliers_ouverts),
+                # **La recherche est dans la requête du fil, pas à côté.** Elle
+                # traverse donc le même tamis : paliers accessibles, offre
+                # active, item disponible, créneau restant. Un résultat qu'on ne
+                # peut pas réserver serait pire qu'aucun résultat.
+                *([condition_de_recherche(recherche)] if recherche and recherche.strip() else []),
                 CatalogItem.is_available.is_(True),
                 sa.or_(parent.id.is_(None), parent.is_available.is_(True)),
                 # Le filtre de catégorie ne s'applique pas ici non plus : les
@@ -315,10 +436,22 @@ async def fil_du_createur(
     # Le contrôle de disponibilité ne se fait qu'ici : la liste et chacun des
     # comptes se découpent ensuite dans le même ensemble, et ne peuvent donc
     # pas se contredire.
+    # **Une requête pour tout l'ensemble, pas une par ligne.** La vérification
+    # se faisait couple par couple : dix-neuf salons coûtaient cent vingt et une
+    # requêtes, dont l'essentiel n'était que six lectures répétées vingt fois.
+    #
+    # **Sur l'ensemble large, et surtout pas sur le fil rendu.** Les comptes par
+    # rayon et par catégorie se découpent ici : `_compter_par_rayon` a besoin des
+    # lignes *au-delà* du rayon courant pour écrire « élargir à 30 km · 9 »,
+    # `_compter_par_categorie` a besoin de celles *hors* de la catégorie filtrée.
+    # Restreindre avant la vérification ferait mentir les deux issues de l'écran
+    # vide — celles-là mêmes qu'on vient de leur donner.
+    a_verifier = [(ligne.id, ligne.catalog_item_id) for ligne in lignes if ligne.requires_booking]
+    ouverts = await availability.couples_avec_creneau(session, a_verifier)
     reservables = [
         ligne
         for ligne in lignes
-        if not ligne.requires_booking or await _reste_un_creneau(session, ligne)
+        if not ligne.requires_booking or (ligne.id, ligne.catalog_item_id) in ouverts
     ]
 
     categories = _compter_par_categorie(reservables, rayon)
@@ -327,10 +460,36 @@ async def fil_du_createur(
     par_commerce: dict[uuid.UUID, list] = {}
     entetes: dict[uuid.UUID, tuple] = {}
 
+    # **Après les comptes, et sur les seules lignes rendues.** Une seconde
+    # vérification, sur un horizon plus court : celle de l'ensemble large a
+    # répondu « il reste un créneau dans les trente jours », celle-ci demande
+    # « et dans les sept ». Elle ne porte que sur ce qui survit au rayon et à la
+    # catégorie, donc sur une poignée de couples.
+    bientot: set[tuple[uuid.UUID, uuid.UUID]] = set()
+    if disponible is not None:
+        dans_le_fil = [
+            (ligne.id, ligne.catalog_item_id)
+            for ligne in reservables
+            if ligne.requires_booking
+            and ligne.distance <= rayon
+            and (categorie is None or ligne.category == categorie)
+        ]
+        bientot = await availability.couples_avec_creneau(
+            session, dans_le_fil, horizon=disponible.horizon
+        )
+
     for ligne in reservables:
         if ligne.distance > rayon:
             continue
         if categorie is not None and ligne.category != categorie:
+            continue
+        # Un item sans réservation est disponible par construction : on se
+        # présente quand on veut, donc « libre aujourd'hui » est toujours vrai.
+        if (
+            disponible is not None
+            and ligne.requires_booking
+            and (ligne.id, ligne.catalog_item_id) not in bientot
+        ):
             continue
 
         entetes.setdefault(
@@ -504,6 +663,177 @@ def _compter_par_quartier(commerces: tuple[CommerceDuFil, ...]) -> tuple[CompteP
             key=lambda compte: compte.distance_metres,
         )
     )
+
+
+#: Combien de suggestions par groupe. Assez pour remplir un panneau, assez peu
+#: pour qu'on lise la liste au lieu de la parcourir.
+SUGGESTIONS_PAR_GROUPE = 5
+
+#: La fenêtre sur laquelle « populaire » se mesure. Quatre-vingt-dix jours :
+#: assez long pour qu'un salon qui marche ressorte, assez court pour qu'un salon
+#: qui a fermé cesse d'être recommandé.
+FENETRE_DE_POPULARITE = timedelta(days=90)
+
+
+async def suggestions_du_createur(
+    session: AsyncSession,
+    *,
+    creator_id: uuid.UUID,
+    autour_de: Coordinates,
+    rayon_metres: int | None = None,
+) -> Suggestions:
+    """Deux groupes — prestations et salons — et ce qui marche dans le quartier.
+
+    **Le même tamis que le fil**, et c'est la première exigence : paliers
+    accessibles, offre active, item disponible, parent disponible, dans le
+    rayon. Une suggestion qu'on ne peut pas réserver est pire qu'aucune
+    suggestion — elle envoie sur une impasse quelqu'un qui cherchait de l'aide.
+
+    **Le quartier vient de la position**, jamais d'un paramètre : c'est celui du
+    salon ouvert le plus proche. Le demander à l'appelant reviendrait à lui
+    faire décider ce qu'on est mieux placé pour savoir, et à accepter qu'il se
+    trompe.
+
+    **« Populaire » est vrai ou se tait.** On classe sur les réservations
+    consommées du quartier ; quand il n'y en a aucune, on retombe sur la
+    distance **et on le dit** — `origine` porte la différence, pour que
+    l'écran change de mot et pas seulement de contenu.
+
+    La disponibilité n'est **pas** vérifiée ici, et c'est délibéré : une
+    suggestion est une entrée dans le fil, pas une place réservée. La vérifier
+    coûterait le calcul le plus cher du produit pour un panneau qu'on ouvre en
+    tapant, et le fil la vérifiera à l'arrivée.
+    """
+    rayon = rayon_metres or get_settings().feed_radius_metres
+    verdict = await eligibility.evaluer_createur(session, creator_id)
+    paliers_ouverts = verdict.paliers_accessibles
+    if not paliers_ouverts:
+        return Suggestions(
+            prestations=(), salons=(), quartier=None, origine=OrigineDesSuggestions.A_PROXIMITE
+        )
+
+    point = sa.func.ST_GeogFromText(f"SRID=4326;{autour_de.as_wkt()}")
+    distance = sa.func.ST_Distance(sa.cast(Business.geo, Geography), point).label("distance")
+    parent = sa.orm.aliased(CatalogItem)
+
+    lignes = (
+        await session.execute(
+            sa.select(
+                Business.id.label("business_id"),
+                Business.name.label("nom_du_commerce"),
+                Business.category,
+                Business.neighborhood,
+                distance,
+                CatalogItem.id.label("catalog_item_id"),
+                CatalogItem.name.label("nom"),
+            )
+            .join(TierOffer, TierOffer.business_id == Business.id)
+            .join(CatalogItem, CatalogItem.id == TierOffer.catalog_item_id)
+            .join(Tier, Tier.id == TierOffer.tier_id)
+            .outerjoin(parent, parent.id == CatalogItem.parent_item_id)
+            .where(
+                Business.status == BusinessStatus.ACTIVE,
+                Business.geo.is_not(None),
+                sa.func.ST_DWithin(sa.cast(Business.geo, Geography), point, rayon),
+                TierOffer.is_active.is_(True),
+                Tier.is_active.is_(True),
+                Tier.id.in_(paliers_ouverts),
+                CatalogItem.is_available.is_(True),
+                sa.or_(parent.id.is_(None), parent.is_available.is_(True)),
+            )
+            .order_by(distance)
+        )
+    ).all()
+
+    if not lignes:
+        return Suggestions(
+            prestations=(), salons=(), quartier=None, origine=OrigineDesSuggestions.A_PROXIMITE
+        )
+
+    # Le quartier est celui du salon ouvert le plus proche : les lignes sont
+    # déjà triées par distance, la première qui en déclare un fait foi.
+    quartier = next((ligne.neighborhood for ligne in lignes if ligne.neighborhood), None)
+
+    populaires = await _consommations_du_quartier(session, quartier) if quartier is not None else {}
+    origine = OrigineDesSuggestions.POPULAIRE if populaires else OrigineDesSuggestions.A_PROXIMITE
+
+    def rang(business_id: uuid.UUID, distance_metres: float) -> tuple:
+        """Le plus consommé d'abord ; à défaut, le plus proche.
+
+        La distance départage toujours : deux salons à égalité de réservations —
+        zéro, le plus souvent — se classent alors dans un ordre stable et utile.
+        """
+        return (-populaires.get(business_id, 0), distance_metres)
+
+    prestations = [
+        SuggestionDePrestation(
+            catalog_item_id=ligne.catalog_item_id,
+            business_id=ligne.business_id,
+            nom=ligne.nom,
+            nom_du_commerce=ligne.nom_du_commerce,
+            neighborhood=ligne.neighborhood,
+            distance_metres=round(ligne.distance, 1),
+        )
+        for ligne in sorted(lignes, key=lambda x: rang(x.business_id, x.distance))
+    ]
+
+    par_salon: dict[uuid.UUID, list] = {}
+    for ligne in lignes:
+        par_salon.setdefault(ligne.business_id, []).append(ligne)
+
+    salons = sorted(
+        (
+            SuggestionDeSalon(
+                business_id=identifiant,
+                nom=groupe[0].nom_du_commerce,
+                category=groupe[0].category,
+                neighborhood=groupe[0].neighborhood,
+                distance_metres=round(groupe[0].distance, 1),
+                prestations=len(groupe),
+            )
+            for identifiant, groupe in par_salon.items()
+        ),
+        key=lambda s: rang(s.business_id, s.distance_metres),
+    )
+
+    return Suggestions(
+        prestations=tuple(prestations[:SUGGESTIONS_PAR_GROUPE]),
+        salons=tuple(salons[:SUGGESTIONS_PAR_GROUPE]),
+        quartier=quartier,
+        origine=origine,
+    )
+
+
+async def _consommations_du_quartier(
+    session: AsyncSession, quartier: Neighborhood
+) -> dict[uuid.UUID, int]:
+    """Combien de réservations chaque salon du quartier a réellement servies.
+
+    **`consumed` et rien d'autre.** Une réservation prise puis abandonnée ne dit
+    rien de ce qui marche ; une réservation servie le dit. C'est aussi le seul
+    état qui ne se défait pas, donc le seul dont le compte ne recule jamais.
+
+    Le dictionnaire est vide quand le quartier n'a aucun historique, et c'est
+    cette absence — pas un zéro — qui fait basculer `origine` vers « à
+    proximité ». Un quartier neuf ne doit pas annoncer des salons populaires.
+    """
+    lignes = await session.execute(
+        sa.select(Booking.business_id, sa.func.count(Booking.id))
+        .join(Business, Business.id == Booking.business_id)
+        .where(
+            Business.neighborhood == quartier,
+            # **Doublée par la fenêtre, et gardée quand même.** `consumed_at`
+            # est nul partout ailleurs, donc la comparaison ci-dessous écarte
+            # déjà tout ce qui n'a pas été servi — l'exercice de mutation le
+            # montre. On garde la condition parce qu'elle dit l'intention à
+            # celui qui lit, là où une comparaison de date sur une colonne
+            # nullable la laisse deviner.
+            Booking.status == BookingStatus.CONSUMED,
+            Booking.consumed_at > sa.func.now() - FENETRE_DE_POPULARITE,
+        )
+        .group_by(Booking.business_id)
+    )
+    return {business_id: compte for business_id, compte in lignes.all()}
 
 
 def _compter_par_categorie(reservables: list, rayon: int) -> tuple[CompteParCategorie, ...]:

@@ -7,13 +7,16 @@ from pydantic import BaseModel, ConfigDict
 
 from app.models.enums import BusinessCategory, ContentFormat, Neighborhood, Platform
 from app.schemas.obstacle import ObstacleRead
+from app.services.feed import OrigineDesSuggestions
 
 __all__ = [
     "CommerceDuFilRead",
     "CompteParCategorieRead",
     "CompteParQuartierRead",
     "CompteParRayonRead",
+    "OrigineDesSuggestions",
     "ProchainPalierRead",
+    "SuggestionsRead",
     "FilRead",
     "ItemDuFilRead",
     "ObstacleRead",
@@ -139,3 +142,44 @@ class FilRead(BaseModel):
     #: Le palier le plus proche, et ce qu'il ouvrirait. `null` quand tout est
     #: ouvert, qu'aucun n'est atteignable, ou qu'il n'ouvrirait aucun salon.
     prochain_palier: ProchainPalierRead | None
+
+
+class SuggestionDePrestationRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    catalog_item_id: uuid.UUID
+    business_id: uuid.UUID
+    nom: str
+    nom_du_commerce: str
+    neighborhood: Neighborhood | None
+    distance_metres: float
+
+
+class SuggestionDeSalonRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    business_id: uuid.UUID
+    nom: str
+    category: BusinessCategory
+    neighborhood: Neighborhood | None
+    distance_metres: float
+    prestations: int
+
+
+class SuggestionsRead(BaseModel):
+    """Deux groupes, et **d'où ils sortent**.
+
+    `origine` n'est pas une donnée de journal : c'est ce qui décide de la phrase
+    affichée. « Populaire à Wynwood » et « À côté de vous » ne disent pas la
+    même chose, et un salon proche annoncé comme populaire est un mensonge que
+    personne ne peut vérifier. L'application a deux phrases, pas une phrase et
+    deux contenus.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    prestations: list[SuggestionDePrestationRead]
+    salons: list[SuggestionDeSalonRead]
+    #: Le quartier de la position, `null` hors des quartiers ouverts.
+    quartier: Neighborhood | None
+    origine: OrigineDesSuggestions

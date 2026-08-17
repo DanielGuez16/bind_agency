@@ -756,6 +756,15 @@
         ]
       }
     },
+    "/api/v1/businesses/suggestions": {
+      "get": {
+        "operationId": "read_suggestions_api_v1_businesses_suggestions_get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/api/v1/businesses/{business_id}": {
       "get": {
         "operationId": "read_public_api_v1_businesses__business_id__get",
@@ -983,7 +992,17 @@
       "get": {
         "operationId": "read_tiers_api_v1_me_tiers_get",
         "responses": [
-          "200"
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/me/tiers/{tier_id}/offres": {
+      "get": {
+        "operationId": "read_offres_du_palier_api_v1_me_tiers__tier_id__offres_get",
+        "responses": [
+          "200",
+          "422"
         ]
       }
     },
