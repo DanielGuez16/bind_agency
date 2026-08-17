@@ -735,3 +735,44 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       colonne de plus sur `catalog_item` et un compteur de plus dans le fil : à
       trancher avant, pas pendant*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire
+
+---
+
+## Planches de Design
+
+**La règle.** Aucune nouvelle planche n'est prise tant que la précédente n'est
+pas **entièrement passée** ou **explicitement reportée**, avec sa raison écrite
+ici. Six spécifications ont été perdues en route faute de cette liste : elles
+n'avaient l'air d'être perdues nulle part.
+
+Une planche est *passée* quand ses écrans ont été confrontés à elle, cadre par
+cadre. **Repeinte n'est pas passée.** Un écran qui adopte les jetons d'un
+nouveau système paraît juste et peut n'avoir jamais été comparé à ce que la
+planche dessine — c'est le mode d'échec le plus discret, parce qu'il ne laisse
+aucun écran laid derrière lui.
+
+Une planche *reportée* porte ici la raison du report et ce qui débloque. Sans
+cette ligne, elle est perdue, pas reportée.
+
+| Planche | État |
+| --- | --- |
+| `BIND Creator - Current UI (recreation)` | **Hors registre.** Ce n'est pas une spécification mais un état des lieux de l'existant, qui a servi de point de départ. Rien à implémenter. |
+| `BIND Creator - Discovery v0.5` | **Passée**, puis dépassée. Le catalogue et ses rangées ont été livrés, puis remplacés par `Fil v2` et `Le mur v2.1`. Ses sept données manquantes restent listées dans sa passation. |
+| `BIND Desktop - v0.6` | **Passée.** Coquille, barre latérale, barre de titre, largeurs bornées, densités, états vides typographiques, favicon et marque. Son §8 — les paliers — a été reporté puis traité par la v0.7. |
+| `BIND Creator - Tiers v0.7` | **Passée**, puis redessinée par la v1.0 : l'échelle d'échange tient, les trois teintes de palier sont devenues trois matières. |
+| `BIND AGENCY - Design System v1.0` | **Passée** (#112). Fontes, rampe orange, rayons à zéro, ombre de carte supprimée, rôle gardé en matière, paliers en contour/teinte/aplat. |
+| `BIND Merchant - Lot 2 v1.1` | **Passée.** |
+| `BIND Admin - Lot 3 v1.1` | **Passée.** |
+| `BIND Menu - Lot 4 v1.1` | **Passée** (#123), avec la marque et sa règle. |
+| `BIND Mark - Favicon 16` | **Passée.** Le 16 est un dessin distinct, et aucun fichier cuit ne porte le logotype. |
+| `BIND Creator - Fil v2` | **Partiellement passée.** La direction 1b — les rangées par catégorie — est branchée là où Design l'a elle-même placée. La direction 1a a été remplacée par `Le mur v2.1`. Rien d'autre n'en reste à prendre. |
+| `BIND Creator - Le mur v2.1` | **Passée** (#131, #132, #140, #141), avec **quatre réserves ouvertes** listées plus haut : le Didone à 28 contre son plancher à 34, le quartier de la position, le rayon qui ne se resserre plus, et les catégories de Design qui ne sont pas celles du modèle. |
+| `BIND Creator - Lot 1 v1.1` | **Repeinte, jamais confrontée à sa planche.** Le fil, les réservations, les paliers et l'audience emploient les jetons de la v1.0 — ils ont traversé la migration — mais aucune trace ne dit qu'ils ont été comparés cadre par cadre à `Lot 1 v1.1`. Le fil a depuis été remplacé par le mur ; les trois autres sont à reprendre ou à reporter explicitement. |
+
+### Ce que cette liste a révélé en étant écrite
+
+`Lot 1 v1.1` était la seule planche sans entrée nulle part, alors que les lots
+2, 3 et 4 en avaient une. Ses écrans emploient les bons jetons, donc rien ne
+signalait le manque — ni un test, ni une revue, ni un écran visiblement faux.
+C'est le cas que la règle ci-dessus existe pour attraper.
+
