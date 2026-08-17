@@ -777,3 +777,46 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       colonne de plus sur `catalog_item` et un compteur de plus dans le fil : à
       trancher avant, pas pendant*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire
+
+---
+
+## Les planches de Design
+
+**La règle.** Aucune nouvelle planche n'est prise tant que la précédente n'est
+pas **entièrement passée** ou **explicitement reportée**, avec sa raison écrite
+ici. Six spécifications ont été perdues en route faute de cette liste, et elles
+n'avaient l'air d'être perdues nulle part.
+
+**Passée n'est pas repeinte.** Une planche est passée quand ses écrans ont été
+confrontés à elle, cadre par cadre. Un écran qui adopte les jetons d'un nouveau
+système paraît juste et peut n'avoir jamais été comparé à ce que la planche
+dessine — c'est le mode d'échec le plus discret du lot, parce qu'il ne laisse
+**aucun écran laid derrière lui** : ni un test, ni une revue, ni une capture ne
+le signalent. Le dépôt en porte déjà la trace ailleurs, avec le « B » du système
+vert qui a « traversé la v1.0 parce que le composant était repeint et pas
+redessiné ».
+
+**Reportée sans raison écrite veut dire perdue.** La raison et ce qui débloque
+tiennent sur la ligne, sinon le report n'est qu'un oubli qu'on a eu l'air de
+décider.
+
+| Planche | État |
+| --- | --- |
+| `BIND Creator - Current UI (recreation)` | **Hors registre.** Ce n'est pas une spécification mais un état des lieux de l'existant, qui a servi de point de départ. Rien à implémenter. |
+| `BIND Creator - Discovery v0.5` | **Passée**, puis dépassée. Le catalogue et ses rangées ont été livrés, puis remplacés par `Fil v2` et `Le mur v2.1`. |
+| `BIND Desktop - v0.6` | **Passée** (#142 la ferme). Coquille, barre latérale, barre de titre, largeurs bornées, densités, états vides typographiques, favicon et marque. Son §8 — les paliers — a été reporté puis traité par la v0.7. Sa dernière ligne ouverte était l'étiquette au survol du rail replié. |
+| `BIND Creator - Tiers v0.7` | **Partiellement passée, et le reste est reporté avec sa raison.** L'échelle d'échange tient, redessinée depuis en matières par la v1.0. **Le cadre 11c — les prestations d'un palier — n'est pas livré** : sa bascule « Near you first / All 12 » demande de *lister* les prestations hors du rayon, et aucune lecture ne les rend. Débloqué par une lecture des offres d'un palier non bornée par la distance, dont la forme dépend d'un arbitrage que Daniel n'a pas pris — « tout BIND » n'a pas d'ordre naturel. Voir l'entrée détaillée plus haut. |
+| `BIND AGENCY - Design System v1.0` | **Passée** (#112). Fontes, rampe orange, rayons à zéro, ombre de carte supprimée, rôle gardé en matière, paliers en contour, teinte et aplat. |
+| `BIND Merchant - Lot 2 v1.1` | **Passée.** |
+| `BIND Admin - Lot 3 v1.1` | **Passée.** |
+| `BIND Menu - Lot 4 v1.1` | **Passée** (#123). |
+| `BIND Mark - Favicon 16` | **Passée.** Le 16 est un dessin distinct, et aucun fichier cuit ne porte plus le logotype. |
+| `BIND Creator - Fil v2` | **Partiellement passée, et le reste est sans objet.** La direction 1b — les rangées par quartier — est branchée là où Design l'a elle-même placée : ce que montre une catégorie choisie (#141). La direction 1a a été remplacée par `Le mur v2.1`. |
+| `BIND Creator - Le mur v2.1` | **Passée** (#131, #132, #140, #141), avec **cinq réserves ouvertes** listées plus haut : le Didone à 28 contre son plancher à 34, le quartier de la position que rien ne sait résoudre, le rayon qui ne se resserre plus, les catégories de Design qui ne sont pas celles du modèle, et le mur qui ne va pas à fond perdu. |
+| `BIND Creator - Lot 1 v1.1` | **Repeinte, jamais confrontée à sa planche.** Les réservations, les paliers et l'audience emploient les jetons de la v1.0 — ils ont traversé la migration — mais aucune trace ne dit qu'ils ont été comparés cadre par cadre à cette planche. Son fil a depuis été remplacé par le mur, et son cadre 03b a servi à composer le filtre par catégorie. Les trois écrans restants sont à reprendre ou à reporter explicitement. |
+
+**Ce que cette liste a trouvé en étant écrite :** `Lot 1 v1.1` était la seule
+planche sans entrée nulle part, alors que les lots 2, 3 et 4 en avaient chacun
+une. Ses écrans emploient les bons jetons, donc rien ne signalait le manque —
+ni un test, ni une revue, ni un écran visiblement faux. C'est exactement le cas
+que la règle ci-dessus existe pour attraper.
