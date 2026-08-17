@@ -5815,3 +5815,50 @@ de la suite se lit désormais sur le compte, qui le porte typé.
 le jeton est celle qui se vérifie mécaniquement, donc c'est elle qui est suivie
 et l'écart est écrit dans `TASKS.md`. Trancher un plancher typographique en
 passant, pour un écran, est exactement ce qui fait diverger un système.
+
+---
+
+## 2026-08-17 — L'étiquette du rail replié, et le geste qu'aucun test n'atteignait
+
+Le rail de 72 gardait ses libellés dans l'arbre d'accessibilité et nulle part
+ailleurs : un lecteur d'écran savait lire la navigation, un œil devait deviner
+cinq pictogrammes. La planche Desktop v0.6 demande l'étiquette au survol depuis
+qu'elle existe.
+
+**Au survol *et* au focus.** Le survol seul aurait déplacé le manque au lieu de
+le combler : le clavier traverse le même rail et rencontre les mêmes
+pictogrammes.
+
+**`onPointerEnter` et non `onHoverIn`.** Les deux nomment le même geste, mais
+`Pressable` retient `onHoverIn` pour sa propre mécanique de pression et ne le
+repose pas sur la vue rendue. Écrit avec `onHoverIn`, le composant aurait été
+**intestable** — aucun événement ne serait arrivé, et le test aurait dû être
+abandonné ou truqué. Vérifié sur un rendu avant d'écrire la ligne : les
+événements de pointeur, eux, traversent jusqu'à l'hôte.
+
+**L'étiquette vit hors du défileur.** Posée dans la ligne, elle aurait été
+rognée net : un `ScrollView` vertical coupe ce qui déborde à droite, et aucun
+test de rendu ne le voit — on ne l'aurait découvert que dans un vrai navigateur,
+c'est-à-dire au même endroit que les trois défauts qui ont motivé la suite de
+bout en bout. Elle est donc ancrée dans la barre, avec la position que la ligne
+**rapporte** et le défilement retranché. La déduire du rang et de la hauteur
+marcherait jusqu'au premier changement de densité, où elle désignerait la
+voisine.
+
+**Elle est cachée des lecteurs d'écran**, le libellé étant déjà sur la ligne :
+l'annoncer deux fois est une gêne, pas un service. Conséquence de test, qui vaut
+d'être écrite : la chercher demande `includeHiddenElements`, et c'est le test
+qui a rendu la règle visible plutôt que l'inverse.
+
+**Deux tests changeaient de sens tout seuls.** Le repli est retenu par appareil,
+et le stockage simulé survit d'un test à l'autre : un test qui repliait le rail
+décidait de l'état de départ des suivants, si bien que « presser la bascule » y
+**dépliait**. Un `beforeEach` qui vide le stockage, et un `replier()` qui
+regarde avant d'appuyer.
+
+**Une garde qui ne pouvait pas tomber, rendue vérifiable.** `oublier` n'efface
+que la ligne qu'il avait posée. Aucun test ne l'atteignait, parce que dans
+l'ordre courant le pointeur quitte A avant d'entrer dans B. Le geste réel est un
+glissement : à la vitesse d'une main, l'entrée dans B peut précéder la sortie de
+A, et effacer sans regarder referme alors l'étiquette qui venait de s'ouvrir. Le
+cas est maintenant écrit, et la mutation le fait tomber.
