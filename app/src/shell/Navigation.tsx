@@ -262,7 +262,6 @@ function ParcoursCreateur({
             // Pourquoi il n'y a pas de position : un refus ne se redemande
             // pas, il se réactive, et l'écran doit dire où.
             etatDeLaPosition={etat}
-            prenom={prenom}
             onConnecterUnReseau={onConnecterUnReseau}
             onVoirMonAudience={onVoirMonAudience}
             // Dans la pile, plus vers un onglet : c'est ce déplacement qui

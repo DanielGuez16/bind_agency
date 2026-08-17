@@ -55,6 +55,7 @@ function filAvec(total: number, commerces = 1): Partial<Fil> {
     // le composant défensif contre un cas qu'aucun appel n'atteint.
     rayons: [],
     quartiers: [],
+    categories: [],
     prochain_palier: null,
   };
 }

@@ -665,4 +665,46 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       `rayons` et `quartiers`, obligatoires dans le type : corrigés côté
       montages, pas en rendant le composant défensif. 14 tests neufs,
       6 mutations vérifiées*
+- [x] **L'en-tête du mur, et le filtre par catégorie qu'il commande**
+      *L'en-tête nommait l'écran — « Near you », un bonjour, des chips de
+      rayon ; il nomme maintenant l'endroit : le quartier, le rayon avec son
+      compte, la marque, et les catégories avec les leurs. Le rayon et « All »
+      sont là **avant le premier appel**, parce que la navigation n'attend pas
+      la donnée. Le filtre était prêt sur trois couches et appelé par personne :
+      la route l'accepte, le client sait l'envoyer, le serveur rend les
+      comptes — il ne manquait qu'un état, et il est **vérifié sur l'URL
+      réellement appelée**, jamais sur l'allure de la chip. Réappuyer sur la
+      catégorie en vigueur la retire : c'est le « Clear » du cadre 03b, posé sur
+      le geste qui a filtré plutôt qu'à côté. **Sous deux catégories la rangée
+      entière tombe**, « All » compris — une chip seule est un interrupteur qui
+      ne commande rien. Le compte passe aussi par le libellé d'accessibilité :
+      c'est lui qui décide du geste, il ne peut pas n'exister que pour qui voit.
+      Trois montages de test omettaient `categories`, et c'est une lecture non
+      défensive qui les a trouvés. 12 tests neufs, 12 mutations vérifiées*
+- [ ] **Le quartier où l'on est, que le produit ne sait pas résoudre**
+      *La planche du mur veut le quartier **de la position**, et son cadre du
+      vide l'écrit noir sur blanc : « Key Biscayne » s'affiche alors qu'aucun
+      salon n'y répond. Aucune donnée ne le permet — il n'existe pas de
+      géocodage inverse (`integrations/geocoding.py` ne résout que l'adresse
+      d'un commerce vers un point), et la ville du profil est un champ libre qui
+      dit où l'on habite, pas où l'on est. L'en-tête rend donc le quartier du
+      **salon le plus proche**, et se tait quand il n'y en a pas plutôt que
+      d'inventer un nom. Ce qu'il faudrait : une résolution position → quartier
+      côté serveur, sur la même liste fermée que `Business.neighborhood`*
+- [ ] **Le rayon s'élargit et ne se resserre plus**
+      *Conséquence assumée du retrait des chips de rayon, que la planche
+      remplace par les catégories. Élargir porte son nombre à deux endroits — le
+      bas du mur et l'état vide — et `rayons` ne contient jamais un rayon plus
+      étroit que celui en vigueur, donc rien ne ramène de 30 km à 15 avant de
+      quitter l'écran. La planche v2.1 n'offre aucun réglage de rayon : à
+      trancher par Design, ce n'est pas un oubli d'implémentation*
+- [ ] **Les catégories de Design ne sont pas celles du modèle**
+      *« Nails 5 · Hair 4 · Facials 3 · Spa 4 » sur le mur, « Nails 34 ·
+      Hair 21 » sur le cadre 03b du lot 1 : ce sont des types de prestation. Le
+      modèle ne connaît que six catégories de **commerce** — beauty, fitness,
+      restaurant, museum, family_activity, other — et c'est à cette granularité
+      que la route filtre et que le serveur compte. Les chips sont donc livrées
+      sur les catégories qui existent. Une taxinomie de prestation serait une
+      colonne de plus sur `catalog_item` et un compteur de plus dans le fil : à
+      trancher avant, pas pendant*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire

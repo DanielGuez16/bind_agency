@@ -248,6 +248,10 @@ export const en = {
     murProchainPalier: 'The {{palier}} tier would open {{count}} more businesses',
     murProchainPalierSansCompte: 'The {{palier}} tier would open more businesses',
     murEcartAbonnes: '{{ecart}} followers to reach, out of {{requis}}',
+    // L'en-tête du mur. Deux clés et non une concaténation : « 15 km » avant
+    // que le fil réponde et « 15 km · 20 » après ne sont pas la même phrase.
+    murRayonEtCompte: '{{rayon}} km · {{count}}',
+    murToutesLesCategories: 'All',
     filRayon: '{{rayon}} km',
     filSansPosition: 'We need your location to show places near you.',
     filAutoriser: 'Share my location',
