@@ -157,6 +157,14 @@ gh api repos/DanielGuez16/bind_agency/branches/main/protection \
   --jq .required_status_checks.contexts
 ```
 
+**Commiter avant de muter, sans exception.** L'exercice de mutation restaure
+son sabotage par `git checkout` ; sur du travail non commité, la commande efface
+le travail lui-même. C'est arrivé deux fois dans la même journée — cinq
+corrections de sélecteurs perdues d'un coup la seconde fois, et découvertes
+seulement parce qu'une garde restait rouge. Une mutation se prépare donc en deux
+temps : on commite ce qu'on vient d'écrire, **puis** on casse. Le `git checkout`
+retrouve alors exactement ce qu'on voulait retrouver.
+
 Ne pas réécrire un fichier entier pour changer trois lignes. Modifications ciblées.
 
 Ne pas anticiper les phases suivantes. Si une tâche future rend l'implémentation actuelle plus simple, le signaler plutôt que de l'implémenter en avance.
