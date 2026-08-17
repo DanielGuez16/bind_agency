@@ -252,6 +252,12 @@ export const en = {
     // que le fil réponde et « 15 km · 20 » après ne sont pas la même phrase.
     murRayonEtCompte: '{{rayon}} km · {{count}}',
     murToutesLesCategories: 'All',
+    // Les rangées par quartier. La carte d'os ferme une rangée courte et dit
+    // ce qu'il y a plus loin : sans elle, une rangée de deux cartes ressemble
+    // à un chargement qui a échoué.
+    rangeeAilleurs: 'Elsewhere',
+    rangeeSuite: '{{count}} more, further out.',
+    rangeeSuiteUn: 'One more, further out.',
     filRayon: '{{rayon}} km',
     filSansPosition: 'We need your location to show places near you.',
     filAutoriser: 'Share my location',

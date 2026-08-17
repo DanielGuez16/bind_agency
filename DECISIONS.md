@@ -5762,3 +5762,56 @@ catégories de commerce, et c'est à cette granularité que la route filtre et q
 le serveur compte. Les chips sont livrées sur ce qui existe. Inventer la
 taxinomie fine aurait été une colonne de base et un compteur de fil décidés en
 passant.
+
+---
+
+## 2026-08-17 — Les rangées par quartier, et le salon qui aurait disparu
+
+Design a tranché elle-même où placer la direction 1b : « le mur de 1a peut être
+le fil par défaut, et les rangées de 1b devenir ce que montre une catégorie
+choisie ». C'est donc la question posée qui sépare les deux rendus, pas un
+réglage : le mur répond à « je descends sans intention », les rangées à « je
+cherche quelque chose près de chez moi » — et appuyer sur une catégorie est
+exactement la seconde phrase.
+
+**Le vrai risque n'était pas la composition.** L'ossature de cette vue est le
+quartier, et la liste des quartiers est fermée : un salon hors des dix ouverts
+porte `neighborhood: null`, et le serveur ne le compte dans aucun quartier
+(`feed.py` l'écarte explicitement). Une vue bâtie sur `quartiers` l'aurait donc
+perdu **en silence** — filtrer par catégorie aurait caché des salons
+réservables, ce qui est pire que ne pas filtrer du tout. Ils forment une
+dernière rangée, sans nom de quartier à porter.
+
+**Le seuil de la carte d'os est mesuré, pas choisi.** La première carte fait
+216, les suivantes 150, l'écart 5, la marge 18 : sur 390 points, deux cartes
+occupent 371 et s'arrêtent juste avant le bord. Il en faut trois pour que
+quelque chose dépasse, et c'est ce dépassement qui annonce le glissement — la
+planche s'y tient, « sans flèche ». Sous trois, la rangée ressemble à un
+chargement qui a échoué : la carte d'os dit ce qu'il y a plus loin, ce qui est
+à la fois l'information manquante et la preuve que rien n'a raté.
+
+**Elle ne s'appuie pas.** Ce qu'elle annonce est la rangée juste en dessous,
+déjà sur le même écran ; un lien qui ferait défiler de deux cents points
+promettrait un déplacement que le geste fait déjà. C'est le traitement de la
+respiration du mur, qui nomme un quartier, le compte, le situe, et ne prétend
+pas être une porte.
+
+**Le glissement horizontal, autorisé ici et interdit aux chips.** La
+bibliothèque interdit le défilement horizontal aux rangées d'options, parce
+qu'une option qui sort de l'écran n'existe pas pour qui n'y pense pas. Ici ce
+qui sort est du **contenu**, pas un réglage, et le dépassement est précisément
+ce qui annonce le geste. Une rangée qui reviendrait à la ligne perdrait les deux
+axes qui font toute la direction.
+
+**Une garde qui ne pouvait pas tomber.** `enRangees` en portait deux avant de
+proposer un aperçu : la rangée suivante n'est pas celle des sans-quartier, et le
+compte existe. La première ne pouvait jamais s'exécuter utilement — `quartiers`
+ne contient que des quartiers nommés, donc y chercher `null` ne rend rien et la
+seconde suffisait. Trouvée par mutation, pas par relecture. Retirée, et le nom
+de la suite se lit désormais sur le compte, qui le porte typé.
+
+**Le Didone reste à 34.** La planche le descend à 28 « sur ce seul écran », et
+`type.heading` déclare 34 comme plancher. Deux sources validées se contredisent ;
+le jeton est celle qui se vérifie mécaniquement, donc c'est elle qui est suivie
+et l'écart est écrit dans `TASKS.md`. Trancher un plancher typographique en
+passant, pour un écran, est exactement ce qui fait diverger un système.
