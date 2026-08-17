@@ -168,7 +168,7 @@
     "encres": {
       "encre": "#17120E",
       "blanc": "#FFFFFF",
-      "point": "#F26B21"
+      "point": "#FF5E00"
     },
     "$pourquoiLeSigne": "Le logotype est désormais un tracé vectoriel, plus une composition en fonte : `signe` n'a plus d'objet et disparaît. Ce qui le remplace est le rapport de la boîte du mot, mesuré sur le fichier de la fondatrice — 1991 sur 682, soit 2,919. C'est lui qui donne la largeur d'une lettre à partir de la hauteur, et donc le plancher.",
     "rapportDeLaBoite": 2.9194

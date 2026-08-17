@@ -113,9 +113,9 @@ export const POSE_DU_SATIN: Record<
   VarianteDeSatin,
   { ancrage: 'haut' | 'bas'; encre: ColorName }
 > = {
-  // 7,06:1 en haut, 1,70:1 en bas.
+  // 6,94:1 en haut, 1,70:1 en bas.
   drape: { ancrage: 'haut', encre: 'ink.default' },
-  // 5,06:1 en haut, 1,52:1 en bas.
+  // 5,05:1 en haut, 1,52:1 en bas.
   fold: { ancrage: 'haut', encre: 'ink.default' },
   // 6,21:1 en bas, 1,50:1 en haut. La variante sombre, et la seule qui se lit
   // par le bas.

@@ -52,12 +52,12 @@ const RECETTES = {
     'radial-gradient(120% 80% at 15% 10%, #FEF1E9 0%, rgba(254,241,233,0) 42%), ' +
     'radial-gradient(90% 120% at 88% 30%, #F9BC97 0%, rgba(249,188,151,0) 55%), ' +
     'radial-gradient(140% 100% at 30% 105%, #5E2204 0%, rgba(94,34,4,0) 60%), ' +
-    'radial-gradient(80% 60% at 70% 85%, #D2500F 0%, rgba(210,80,15,0) 65%), #F26B21',
+    'radial-gradient(80% 60% at 70% 85%, #D2500F 0%, rgba(210,80,15,0) 65%), #FF5E00',
   'satin-fold':
     'radial-gradient(100% 140% at 80% 0%, #FEF1E9 0%, rgba(254,241,233,0) 38%), ' +
     'radial-gradient(120% 90% at 0% 55%, #D2500F 0%, rgba(210,80,15,0) 58%), ' +
     'radial-gradient(90% 70% at 55% 100%, #5E2204 0%, rgba(94,34,4,0) 62%), ' +
-    'radial-gradient(70% 90% at 35% 25%, #F58A4A 0%, rgba(245,138,74,0) 60%), #F26B21',
+    'radial-gradient(70% 90% at 35% 25%, #F58A4A 0%, rgba(245,138,74,0) 60%), #FF5E00',
   'satin-ember':
     'radial-gradient(110% 70% at 50% 0%, #F9BC97 0%, rgba(249,188,151,0) 45%), ' +
     'radial-gradient(130% 110% at 10% 90%, #17120E 0%, rgba(23,18,14,0) 55%), ' +

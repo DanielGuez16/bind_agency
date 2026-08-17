@@ -5667,3 +5667,41 @@ obtenu ce qu'il réclamait ferait douter des autres manques qu'il nommerait.
 du produit `brand.500` `#F26B21`, parce que `tokens.json` le prescrit « dans tous
 les cas ». Les SVG portent la couleur du produit ; le PNG reste la référence de
 forme. À arbitrer si l'écart n'est pas voulu.
+
+## 2026-08-17 — `brand.500` passe à #FF5E00, mesuré avant d'être propagé
+
+Le 500 devient `#FF5E00`, la couleur du fichier de la fondatrice. `#F26B21` était
+une estimation lue sur une capture Instagram compressée ; celle-ci vient d'un
+fichier fait par elle. Et le point du logo est le seul endroit du produit où la
+marque se signe elle-même.
+
+**La question posée était : est-ce que des seuils cassent.** La réponse est non,
+et la marge est confortable.
+
+| combinaison | avant | après | seuil |
+| --- | --- | --- | --- |
+| encre sur orange — bouton, palier reel, pastille de distance | 6,11:1 | **6,07:1** | 4,5 |
+| blanc sur orange — le bloc accentué, ≥ 24 px | 3,04:1 | **3,06:1** | 3,0 |
+| orange sur papier — interdit en texte | 3,04:1 | 3,06:1 | — |
+
+La luminance ne bouge que de **-0,8 %** : `#FF5E00` a moins de vert et pas de
+bleu, mais il est plus clair d'un cheveu en luminance relative. L'encre sur
+orange perd quatre centièmes et garde une marge de 35 % sur son seuil ; le blanc
+sur orange en **gagne** deux.
+
+**La rampe l'accepte.** Teinte 22,1°, en plein dans les 20–24° des huit autres
+valeurs. Luminosité 50 %, entre le 500 d'avant (53,9) et le 600 (44,1).
+Saturation 100 %, la plus pure de la rampe — ce qu'on attend d'une couleur
+d'ancrage, dont les autres stops sont des dérivés légèrement rabattus.
+
+**Ce qu'il a fallu recuire.** Les trois satins portent le 500 dans leurs arrêts
+et sont livrés en images : recuits, et leurs contrastes **remesurés** dans la même
+exécution. `satin.drape` passe de 7,06:1 à 6,94:1 en haut, `fold` de 5,06 à 5,05.
+Les commentaires qui citaient ces chiffres ont suivi — un commentaire qui annonce
+une mesure cesse d'en être une dès qu'il diverge. Les fichiers de marque aussi :
+le point du sigle et des icônes est orange, il devait le rester à la bonne
+valeur.
+
+*Un point relevé et non tranché :* l'écart de luminosité entre le 500 et le 600 —
+l'état appuyé — se resserre de 9,8 à 5,9 points. La distinction tient, mais elle
+est plus étroite qu'avant. À voir avec Design si l'appui doit descendre.

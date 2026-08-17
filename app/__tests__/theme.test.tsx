@@ -335,7 +335,7 @@ describe('un texte sur une photo ne tient que sur le plus opaque des arrêts', (
     // une couleur contre elle-même vaut 1:1. Sans eux, une erreur d'exposant
     // dans la luminance ne se verrait nulle part.
     expect(contraste(luminance('#FFFFFF'), luminance('#000000'))).toBeCloseTo(21, 1);
-    expect(contraste(luminance('#F26B21'), luminance('#F26B21'))).toBeCloseTo(1, 5);
+    expect(contraste(luminance('#FF5E00'), luminance('#FF5E00'))).toBeCloseTo(1, 5);
   });
 
   it('dit ce qu’il faut d’opacité pour chaque encre', () => {
