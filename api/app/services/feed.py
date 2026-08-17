@@ -77,6 +77,7 @@ class _EnTete(NamedTuple):
     adresse: str | None
     quartier: Neighborhood | None
     couverture: str | None
+    couverture_verticale: str | None
     distance: float
 
 
@@ -89,6 +90,8 @@ class CommerceDuFil:
     #: Le quartier déclaré par le commerce. `None` hors des quartiers ouverts.
     neighborhood: Neighborhood | None
     cover_photo_key: str | None
+    #: La couverture verticale du mur. `None` : le mur retombe sur la paysage.
+    cover_portrait_key: str | None
     distance_metres: float
     items: tuple[ItemDuFil, ...]
 
@@ -228,6 +231,7 @@ async def fil_du_createur(
                 Business.address,
                 Business.neighborhood,
                 Business.cover_photo_key,
+                Business.cover_portrait_key,
                 Business.currency,
                 distance,
                 TierOffer.id.label("tier_offer_id"),
@@ -305,6 +309,7 @@ async def fil_du_createur(
                 adresse=ligne.address,
                 quartier=ligne.neighborhood,
                 couverture=ligne.cover_photo_key,
+                couverture_verticale=ligne.cover_portrait_key,
                 distance=ligne.distance,
             ),
         )
@@ -335,6 +340,7 @@ async def fil_du_createur(
             address=entetes[business_id].adresse,
             neighborhood=entetes[business_id].quartier,
             cover_photo_key=entetes[business_id].couverture,
+            cover_portrait_key=entetes[business_id].couverture_verticale,
             distance_metres=round(entetes[business_id].distance, 1),
             items=tuple(items),
         )

@@ -249,6 +249,15 @@ export type CommerceDuFil = {
   /** Le quartier déclaré par le commerce. `null` hors des quartiers ouverts. */
   neighborhood: Neighborhood | null;
   cover_photo_key: string | null;
+  /**
+   * La couverture verticale du mur, livrée en 1600 × 2000 (4:5).
+   *
+   * Un champ à part, jamais un remplacement : la paysage sert encore la fiche
+   * et les listes. `null` : le mur retombe sur `cover_photo_key` — un 16:9
+   * recadré vaut mieux qu'un monogramme. Le serveur ne recopie pas l'une dans
+   * l'autre, sinon les deux ne se distinguent plus le jour où l'une change.
+   */
+  cover_portrait_key: string | null;
   distance_metres: number;
   items: ItemDuFil[];
 };

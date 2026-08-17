@@ -51,6 +51,8 @@ class CommerceDuFilRead(BaseModel):
     #: Le quartier déclaré par le commerce. `null` hors des quartiers ouverts.
     neighborhood: Neighborhood | None
     cover_photo_key: str | None
+    #: La couverture verticale du mur. `null` : le mur retombe sur la paysage.
+    cover_portrait_key: str | None
     distance_metres: float
     items: list[ItemDuFilRead]
 

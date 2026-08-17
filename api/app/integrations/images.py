@@ -42,6 +42,20 @@ from types import ModuleType
 #: plusieurs milliers.
 COTE_VIGNETTE = 480
 
+#: Le côté le plus long d'un original rangé, en pixels.
+#:
+#: **L'original n'était pas borné du tout** : on rangeait ce qu'on recevait,
+#: c'est-à-dire quatre mille pixels sortis d'un téléphone. Tant que le fil
+#: servait la vignette, personne ne le payait. Le mur, lui, sert l'original —
+#: une couverture pleine largeur sur 520 points ne peut pas se contenter de 480
+#: pixels — et trois salons par écran de quatre mille pixels rendraient le
+#: défilement impraticable sur le réseau d'un salon.
+#:
+#: **Deux mille, et pas moins.** Une couverture verticale se livre en
+#: 1600 × 2000 : le plafond ne doit rien écrêter de ce format, seulement de ce
+#: qui le dépasse. Il borne le grand côté, sans recadrer, comme la vignette.
+COTE_ORIGINAL = 2000
+
 #: 82 et non 95 : au-delà, le poids monte franchement pour une différence que
 #: l'œil ne fait pas sur une photographie. Repris tel quel du semis.
 QUALITE = 82
@@ -68,6 +82,37 @@ def _pillow() -> ModuleType | None:
 
 def pillow_disponible() -> bool:
     return _pillow() is not None
+
+
+def borner_l_original(brut: bytes, *, cote: int = COTE_ORIGINAL) -> bytes | None:
+    """Réduit l'image **seulement si elle dépasse**, et rend `None` sinon.
+
+    **La différence avec `vignette` est tout le sujet.** `vignette` réencode
+    toujours : elle produit un JPEG à qualité 82 même quand l'image est déjà
+    plus petite que la borne. Sur une vignette c'est sans conséquence — elle
+    n'existe que pour être affichée petit. Sur l'original, ce serait une perte
+    sèche appliquée à des images qui n'avaient rien à perdre : une page de carte
+    photographiée en PNG net deviendrait un JPEG, et les prix s'y liraient moins
+    bien qu'avant.
+
+    On ne touche donc que ce qui dépasse. Une image dans les clous ressort
+    **telle qu'elle est arrivée**, octet pour octet, et l'appelant garde ses
+    octets d'origine.
+
+    `None` couvre les trois cas où il n'y a rien à faire : image déjà dans les
+    clous, Pillow absent, image illisible. L'appelant range l'original reçu.
+    """
+    module = _pillow()
+    if module is None:
+        return None
+
+    try:
+        with module.open(io.BytesIO(brut)) as source:
+            if max(source.size) <= cote:
+                return None
+        return _reduire(brut, cote=cote, module=module)
+    except OSError:
+        return None
 
 
 def vignette(brut: bytes, *, cote: int = COTE_VIGNETTE) -> bytes | None:

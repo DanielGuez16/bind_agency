@@ -858,3 +858,40 @@ class TestLesQuartiersDuFil:
         assert midtown.commerces == 1
         assert midtown.prestations == 2
         assert midtown.prestations == sum(len(c.items) for c in vue.commerces)
+
+
+async def test_le_fil_rend_la_couverture_verticale_et_la_paysage(
+    session: AsyncSession,
+) -> None:
+    """**Un champ à part, jamais un remplacement.** Le mur sert la verticale ;
+    la fiche et les listes servent encore la paysage. Rendre l'une à la place de
+    l'autre casserait deux usages pour un troisième — et le mur retombe sur la
+    paysage quand la verticale manque, un 16:9 recadré valant mieux qu'un
+    monogramme."""
+    b = await commerce(
+        session,
+        longitude=ICI.longitude,
+        latitude=ICI.latitude,
+        cover_photo_key="photos/commerces/b/paysage",
+        cover_portrait_key="photos/commerces/b/verticale",
+    )
+    await offre(session, b)
+    sans = await commerce(
+        session,
+        longitude=ICI.longitude,
+        latitude=ICI.latitude,
+        cover_photo_key="photos/commerces/c/paysage",
+    )
+    await offre(session, sans)
+    user, _ = await createur(session)
+
+    vue = await fil(session, user)
+
+    par_cle = {c.cover_photo_key: c for c in vue.commerces}
+    assert par_cle["photos/commerces/b/paysage"].cover_portrait_key == (
+        "photos/commerces/b/verticale"
+    )
+    # Sans verticale : `None`, et c'est l'app qui retombe sur la paysage. Le
+    # serveur ne recopie pas l'une dans l'autre — deux champs qui portent la
+    # même valeur ne se distinguent plus le jour où l'un des deux change.
+    assert par_cle["photos/commerces/c/paysage"].cover_portrait_key is None
