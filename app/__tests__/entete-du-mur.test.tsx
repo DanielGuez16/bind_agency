@@ -105,31 +105,27 @@ async function monter(donnees: Fil = fil()) {
 }
 
 describe('ce que l’en-tête dit', () => {
-  it('nomme le quartier le plus proche, et non l’écran', async () => {
-    // « Near you » nommait l'endroit où l'on était dans l'application. Ce qu'on
-    // veut savoir est où l'on est dans la ville.
+  it('ne nomme aucun lieu, quoi que le fil sache de ses quartiers', async () => {
+    // **Tranché : on ne nomme pas le quartier.** La planche veut celui où l'on
+    // est, et rien ne sait le résoudre — pas de géocodage inverse, et la ville
+    // du profil dit où l'on habite. Le quartier du salon le plus proche avait
+    // été rendu à sa place : plausible, invérifiable de l'autre côté, donc
+    // jamais relevé. C'est la classe de défaut que ce dépôt poursuit.
+    //
+    // Le montage porte deux quartiers **nommables** : un fil sans quartier
+    // ferait passer ce test sans rien vérifier.
     await monter();
-    await waitFor(() => expect(screen.getByTestId('entete-quartier')).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId('entete-rayon')).toBeTruthy());
 
-    expect(screen.getByTestId('entete-quartier')).toHaveTextContent(en.quartiers.wynwood);
-    // Le second quartier du fil n'est pas un titre : c'est le plus proche qui
-    // situe, pas la liste.
-    expect(screen.getByTestId('entete-quartier')).not.toHaveTextContent(en.quartiers.brickell);
-  });
-
-  it('se tait plutôt que d’inventer un nom quand aucun quartier ne répond', async () => {
-    // Le sens inverse. La planche veut ici le quartier **où l'on est**, que le
-    // produit ne sait pas résoudre ; le fil ne connaît que celui de ses salons.
-    // Sans salon, il n'y a rien de vrai à écrire.
-    await monter(fil({ commerces: [], quartiers: [] }));
-    await waitFor(() => expect(screen.getByTestId('entete-du-mur')).toBeTruthy());
-
+    const entete = screen.getByTestId('entete-du-mur');
+    expect(entete).not.toHaveTextContent(en.quartiers.wynwood);
+    expect(entete).not.toHaveTextContent(en.quartiers.brickell);
     expect(screen.queryByTestId('entete-quartier')).toBeNull();
   });
 
   it('écrit le rayon avec ce qu’il ouvre', async () => {
     await monter();
-    await waitFor(() => expect(screen.getByTestId('entete-quartier')).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId('categorie-beauty')).toBeTruthy());
 
     const rayon = screen.getByTestId('entete-rayon');
     expect(rayon).toHaveTextContent(/\b15\b/);
@@ -140,11 +136,18 @@ describe('ce que l’en-tête dit', () => {
     // **La navigation n'attend pas la donnée.** Le rayon est un état local : le
     // taire jusqu'à la réponse ferait apparaître l'en-tête d'un coup, ce qui
     // est le défaut que l'accueil a déjà coûté.
-    const jamais = new Promise<never>(() => {});
+    // **La requête est suspendue, pas abandonnée** : c'est l'état de
+    // chargement qu'on veut voir. Elle est relâchée à la fin du test — une
+    // promesse laissée pendante garde Jest éveillé, et ce fichier coûtait
+    // dix-sept secondes au lieu de deux, dans chaque boucle de mutation.
+    let relacher: (reponse: Response) => void = () => {};
+    const suspendue = new Promise<Response>((resoudre) => {
+      relacher = resoudre;
+    });
     const api = new ApiClient({
       baseUrl: 'https://api.test',
       coffre: { lire: async () => null, ecrire: async () => {} },
-      fetchImpl: (() => jamais) as unknown as typeof fetch,
+      fetchImpl: (() => suspendue) as unknown as typeof fetch,
     });
     await render(
       <I18nProvider initialLocale="en">
@@ -163,6 +166,9 @@ describe('ce que l’en-tête dit', () => {
     await waitFor(() => expect(screen.getByTestId('etat-chargement')).toBeTruthy());
     expect(screen.getByTestId('entete-rayon')).toHaveTextContent(/\b15\b/);
     expect(screen.getByTestId('entete-marque')).toBeTruthy();
+
+    relacher({ ok: true, status: 200, json: async () => fil() } as Response);
+    await waitFor(() => expect(screen.getByTestId('etat-nominal')).toBeTruthy());
   });
 
   it('donne à chaque catégorie ce qu’elle ouvrirait', async () => {
@@ -193,6 +199,33 @@ describe('ce que l’en-tête dit', () => {
     await waitFor(() => expect(screen.getByTestId('fil-vide')).toBeTruthy());
 
     expect(screen.getByTestId('categorie-toutes')).toBeTruthy();
+  });
+});
+
+describe('le rayon se règle dans les deux sens', () => {
+  it('élargir puis revenir : le retour existe, et il ramène', async () => {
+    // **C'était une régression.** Les chips de rayon sont parties avec leur
+    // ligne quand les catégories ont pris leur place, et `rayons` ne rend
+    // jamais un rayon plus étroit que celui en vigueur : on partait à 30 km
+    // pour la session entière. Provisoire — le rayon appartient à la feuille de
+    // filtres, qui n'existe pas encore.
+    const { appels } = await monter(
+      fil({ rayons: [{ rayon_metres: 30_000, commerces: 9, prestations: 12 }] as Fil['rayons'] }),
+    );
+    await waitFor(() => expect(screen.getByTestId('sortie-elargir')).toBeTruthy());
+
+    // Au rayon de départ, il n'y a rien à annuler.
+    expect(screen.queryByTestId('sortie-resserrer')).toBeNull();
+
+    await fireEvent.press(screen.getByTestId('sortie-elargir'));
+    await waitFor(() => expect(appels[appels.length - 1]).toContain('rayon_metres=30000'));
+
+    await waitFor(() => expect(screen.getByTestId('sortie-resserrer')).toBeTruthy());
+    await fireEvent.press(screen.getByTestId('sortie-resserrer'));
+    await waitFor(() => expect(appels[appels.length - 1]).toContain('rayon_metres=15000'));
+
+    // Et le retour disparaît une fois revenu : il n'annulerait plus rien.
+    await waitFor(() => expect(screen.queryByTestId('sortie-resserrer')).toBeNull());
   });
 });
 

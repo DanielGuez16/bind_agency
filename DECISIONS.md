@@ -5862,3 +5862,52 @@ l'ordre courant le pointeur quitte A avant d'entrer dans B. Le geste réel est u
 glissement : à la vitesse d'une main, l'entrée dans B peut précéder la sortie de
 A, et effacer sans regarder referme alors l'étiquette qui venait de s'ouvrir. Le
 cas est maintenant écrit, et la mutation le fait tomber.
+
+---
+
+## 2026-08-17 — Les cinq réserves du mur, tranchées par Daniel
+
+Trois sont des écarts à la planche, assumés ; deux étaient des défauts.
+
+**On ne nomme pas le quartier où l'on est.** La planche le veut — son cadre du
+vide affiche « Key Biscayne » alors qu'aucun salon n'y répond, donc le nom ne
+vient pas du fil — et rien ne sait le résoudre. Le quartier du salon le plus
+proche avait été rendu à sa place ; il tombe. **Annoncer un lieu qu'on ne peut
+pas vérifier est la classe de défaut que ce dépôt passe ses journées à
+corriger** : plausible, invérifiable de l'autre côté, donc jamais relevé.
+
+**Le rayon se règle de nouveau dans les deux sens.** Le retrait des chips était
+une régression : `rayons` ne rend jamais un rayon plus étroit que celui en
+vigueur, donc élargir engageait la session entière. Le bas du mur porte un
+retour au rayon de départ, provisoire — sa place est la feuille de filtres. Il
+ne porte **pas** de nombre, contrairement aux deux autres sorties : celles-là
+promettent un gain qu'on ne peut pas deviner, celle-ci ramène à l'état d'où l'on
+vient, et lui coller un compte demanderait une requête pour dire ce qu'on savait
+déjà. Un seul objet porte le geste et sa cible, plutôt qu'un rappel et un nombre
+qu'il aurait fallu garder l'un contre l'autre.
+
+**Les catégories sont les six du modèle.** Design a dessiné Nails, Hair, Facials
+et Spa quand le produit était beauté seule ; il y a maintenant des restaurants,
+des salles de sport et des musées.
+
+**Le plancher du Didone tient à 34.** La raison de Design est bonne — cinq
+salons ne méritent pas l'emphase de vingt — mais **une exception qui n'est pas
+écrite dans les jetons est une violation**.
+
+**Le mur va à fond perdu, et la règle qui en sort vaut mieux que le réglage :
+`Ecran` marge ce qu'il compose, l'appelant marge ce qu'il fournit.** Le bandeau
+d'erreur et le squelette par défaut sont écrits dans `Ecran`, donc ils gardent
+leur marge ; l'en-tête, le corps, l'état vide et un squelette fourni viennent de
+l'écran, qui seul sait lesquels de ses blocs touchent le bord.
+
+**Pas une marge négative**, qui aurait été plus courte à écrire et fausse : elle
+se serait fait rogner par le défileur sur un téléphone, où le conteneur occupe
+déjà toute la largeur, et serait passée sur grand écran, où il est plus étroit
+que le défileur. Un défaut qui n'apparaît que sous un seuil de largeur est
+exactement ce qu'aucun test de rendu ne voit.
+
+**Et le test du fond perdu passait sur le défaut qu'il interdisait.** Il
+remontait l'arbre en ne lisant que `style` ; la marge de l'écran vit sur
+`contentContainerStyle` du `ScrollView`. Débrancher le fond perdu ne le faisait
+pas tomber. Trouvé par mutation, pas par relecture — la sixième fois cette
+semaine.

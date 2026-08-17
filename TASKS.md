@@ -733,49 +733,50 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       prestations** — « douze prestations, dont neuf à moins de quinze
       kilomètres » comparerait alors deux grandeurs dans la même ligne, et
       personne ne s'en apercevrait. La question lui est posée.*
-- [ ] **Le mur et les rangées ne vont pas à fond perdu**
-      *Relevé en composant les rangées, et vrai depuis le mur lui-même : les
-      deux vivent dans le `ScrollView` d'`Ecran`, qui pose vingt points de marge
-      sur les quatre côtés. Les photos du mur sont donc encadrées là où la
-      planche les veut au bord, et les cartes des rangées ne dépassent plus le
-      bord droit de l'écran mais celui d'une boîte en retrait — le geste
-      horizontal s'annonce quand même, moins nettement. Le retirer demande soit
-      une option sur `Ecran`, soit une marge négative de la largeur du padding :
-      les deux touchent la composition du fil entier, ce qui n'est pas une
-      correction à prendre en passant*
-- [ ] **Le Didone à 28 sur les rangées, contre son plancher à 34**
-      *La planche l'écrit : « c'est le seul écran où le Didone descend à 28 —
-      cinq salons ne méritent pas la même emphase que vingt ». Et `type.heading`
-      porte `$rule: plancher du Didone` à 34. Deux sources validées se
-      contredisent ; le jeton est celle qui se vérifie mécaniquement, donc les
-      titres de quartier sont rendus à 34 en attendant. À trancher : ou le
-      plancher descend et le jeton le dit, ou la planche remonte*
-- [ ] **Le quartier où l'on est, que le produit ne sait pas résoudre**
-      *La planche du mur veut le quartier **de la position**, et son cadre du
-      vide l'écrit noir sur blanc : « Key Biscayne » s'affiche alors qu'aucun
-      salon n'y répond. Aucune donnée ne le permet — il n'existe pas de
-      géocodage inverse (`integrations/geocoding.py` ne résout que l'adresse
-      d'un commerce vers un point), et la ville du profil est un champ libre qui
-      dit où l'on habite, pas où l'on est. L'en-tête rend donc le quartier du
-      **salon le plus proche**, et se tait quand il n'y en a pas plutôt que
-      d'inventer un nom. Ce qu'il faudrait : une résolution position → quartier
-      côté serveur, sur la même liste fermée que `Business.neighborhood`*
-- [ ] **Le rayon s'élargit et ne se resserre plus**
-      *Conséquence assumée du retrait des chips de rayon, que la planche
-      remplace par les catégories. Élargir porte son nombre à deux endroits — le
-      bas du mur et l'état vide — et `rayons` ne contient jamais un rayon plus
-      étroit que celui en vigueur, donc rien ne ramène de 30 km à 15 avant de
-      quitter l'écran. La planche v2.1 n'offre aucun réglage de rayon : à
-      trancher par Design, ce n'est pas un oubli d'implémentation*
-- [ ] **Les catégories de Design ne sont pas celles du modèle**
-      *« Nails 5 · Hair 4 · Facials 3 · Spa 4 » sur le mur, « Nails 34 ·
-      Hair 21 » sur le cadre 03b du lot 1 : ce sont des types de prestation. Le
-      modèle ne connaît que six catégories de **commerce** — beauty, fitness,
-      restaurant, museum, family_activity, other — et c'est à cette granularité
-      que la route filtre et que le serveur compte. Les chips sont donc livrées
-      sur les catégories qui existent. Une taxinomie de prestation serait une
-      colonne de plus sur `catalog_item` et un compteur de plus dans le fil : à
-      trancher avant, pas pendant*
+- [x] **Le mur et les rangées vont à fond perdu**
+      *Tranché : c'est un écart à la planche, et le mur perd la moitié de son
+      effet si les images ne touchent pas les bords. `Ecran` sait rendre sa
+      marge latérale à l'appelant, et la règle qui en sort est plus utile que le
+      réglage : **`Ecran` marge ce qu'il compose, l'appelant marge ce qu'il
+      fournit** — le bandeau d'erreur et le squelette par défaut sont écrits
+      dans `Ecran`, donc ils la gardent ; l'en-tête, le corps, l'état vide et un
+      squelette fourni viennent de l'écran, qui seul sait lesquels de ses blocs
+      touchent le bord. **Pas une marge négative** : elle se serait fait rogner
+      par le défileur sur un téléphone, où le conteneur occupe déjà toute la
+      largeur, et serait passée sur grand écran — un défaut qui n'apparaît que
+      sous un seuil de largeur*
+- [x] **Le plancher du Didone tient à 34**
+      *Tranché. La raison de Design est bonne — cinq salons ne méritent pas
+      l'emphase de vingt — mais **une exception qui n'est pas écrite dans les
+      jetons est une violation** : si elle la veut, elle la déclare. Les titres
+      de quartier restent à `type.heading`. Rien à changer : c'est ce qui est
+      livré*
+- [x] **Le quartier où l'on est : on ne le nomme pas**
+      *Tranché par Daniel. La planche veut le quartier de la position — son
+      cadre du vide affiche « Key Biscayne » alors qu'aucun salon n'y répond,
+      donc le nom ne vient pas du fil. Rien ne sait le résoudre : pas de
+      géocodage inverse, et la ville du profil est un champ libre qui dit où
+      l'on habite. Le quartier du salon le plus proche avait été rendu à sa
+      place ; il tombe. **Annoncer un lieu qu'on ne peut pas vérifier est la
+      classe de défaut que ce dépôt passe ses journées à corriger** — plausible,
+      invérifiable de l'autre côté, donc jamais relevé. L'en-tête porte le
+      rayon, le compte et les catégories, et rien qui situe*
+- [x] **Le rayon se règle de nouveau dans les deux sens**
+      *Tranché : c'est une régression, pas une simplification. Sa place est la
+      feuille de filtres, qui n'existe pas encore ; en attendant, le bas du mur
+      porte un retour au rayon de départ, qui n'apparaît que si l'on a élargi.
+      **C'est une annulation, pas une issue chiffrée** — les deux autres
+      sorties portent leur nombre parce qu'elles promettent un gain qu'on ne
+      peut pas deviner ; celle-ci ramène à l'état d'où l'on vient, qu'on a vu, et
+      lui coller un compte demanderait une requête pour dire ce qu'on savait
+      déjà. Un seul objet porte le geste et sa cible, plutôt qu'un rappel et un
+      nombre qu'il aurait fallu garder l'un contre l'autre*
+- [x] **Les catégories sont les six du modèle, et c'est le bon axe**
+      *Tranché. Design a dessiné « Nails, Hair, Facials, Spa » quand le produit
+      était beauté seule ; il y a maintenant des restaurants, des salles de
+      sport et des musées, et les six catégories de commerce sont l'axe qui
+      trie réellement. Rien à changer : c'est ce qui est livré. La taxinomie de
+      prestation ne se rouvre que si le produit redevient mono-catégorie*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire
 
 ---
@@ -812,7 +813,7 @@ décider.
 | `BIND Menu - Lot 4 v1.1` | **Passée** (#123). |
 | `BIND Mark - Favicon 16` | **Passée.** Le 16 est un dessin distinct, et aucun fichier cuit ne porte plus le logotype. |
 | `BIND Creator - Fil v2` | **Partiellement passée, et le reste est sans objet.** La direction 1b — les rangées par quartier — est branchée là où Design l'a elle-même placée : ce que montre une catégorie choisie (#141). La direction 1a a été remplacée par `Le mur v2.1`. |
-| `BIND Creator - Le mur v2.1` | **Passée** (#131, #132, #140, #141), avec **cinq réserves ouvertes** listées plus haut : le Didone à 28 contre son plancher à 34, le quartier de la position que rien ne sait résoudre, le rayon qui ne se resserre plus, les catégories de Design qui ne sont pas celles du modèle, et le mur qui ne va pas à fond perdu. |
+| `BIND Creator - Le mur v2.1` | **Passée, et ses cinq réserves sont tranchées** (#131, #132, #140, #141, #145). Trois écarts à la planche sont assumés et écrits : le quartier de la position n'est pas nommé — rien ne sait le résoudre ; le Didone reste à son plancher de 34, une exception non déclarée dans les jetons étant une violation ; et les catégories sont les six du modèle, celles de la planche datant du produit mono-catégorie. Deux étaient des défauts et sont corrigés : le rayon se règle de nouveau dans les deux sens, et le mur va à fond perdu. |
 | `BIND Creator - Lot 1 v1.1` | **Repeinte, jamais confrontée à sa planche.** Les réservations, les paliers et l'audience emploient les jetons de la v1.0 — ils ont traversé la migration — mais aucune trace ne dit qu'ils ont été comparés cadre par cadre à cette planche. Son fil a depuis été remplacé par le mur, et son cadre 03b a servi à composer le filtre par catégorie. Les trois écrans restants sont à reprendre ou à reporter explicitement. |
 
 **Ce que cette liste a trouvé en étant écrite :** `Lot 1 v1.1` était la seule

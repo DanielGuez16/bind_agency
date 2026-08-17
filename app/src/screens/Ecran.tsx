@@ -65,6 +65,23 @@ export type EcranProps<T> = {
   squelette?: ReactNode;
   /** L'état vide. Jamais un cul-de-sac : chaque issue annonce son gain. */
   vide?: ReactNode;
+  /**
+   * L'écran prend toute la largeur, et pose lui-même ses marges latérales.
+   *
+   * **Pour le mur, et pour lui seul jusqu'ici.** Ses photos vont à fond perdu :
+   * encadrées de vingt points, elles perdent la moitié de leur effet, et les
+   * cartes des rangées cessent de dépasser le bord — c'est ce dépassement qui
+   * annonce le glissement horizontal, sans flèche.
+   *
+   * **La règle qui en sort : `Ecran` marge ce qu'il compose, l'appelant marge
+   * ce qu'il fournit.** Le bandeau d'erreur et le squelette par défaut sont
+   * écrits ici, donc ils gardent leur marge même à fond perdu ; l'en-tête, le
+   * corps, l'état vide et un squelette fourni viennent de l'écran, qui sait
+   * lesquels de ses blocs touchent le bord. Une marge négative aurait été plus
+   * courte à écrire et se serait fait rogner par le défileur sur un téléphone,
+   * où le conteneur occupe déjà toute la largeur.
+   */
+  bordAbord?: boolean;
   testID?: string;
 };
 
@@ -78,6 +95,7 @@ export function Ecran<T>({
   children,
   squelette,
   vide,
+  bordAbord = false,
   testID,
 }: EcranProps<T>) {
   const { color: c, role, density, matiere } = useTheme();
@@ -85,10 +103,14 @@ export function Ecran<T>({
   const { t } = useI18n();
   const { messageDErreur } = useApi();
 
+  const margeLaterale = large ? density.screenPaddingLarge : density.screenPadding;
+  /** Ce qu'`Ecran` compose lui-même garde sa marge, même à fond perdu. */
+  const margeDeSecours = bordAbord ? { paddingHorizontal: margeLaterale } : null;
+
   const corps = (() => {
     if (requete.etat === 'chargement') {
       return (
-        <View testID="etat-chargement" style={{ gap: density.gap }}>
+        <View testID="etat-chargement" style={[{ gap: density.gap }, squelette ? null : margeDeSecours]}>
           {squelette ?? (
             // **Le défaut promet une carte à photo, et il n'a raison que sur le
             // fil.** Nommé pour qu'une garde puisse vérifier qu'il ne sert pas
@@ -108,7 +130,7 @@ export function Ecran<T>({
 
     if (requete.etat === 'erreur') {
       return (
-        <View testID="etat-erreur" style={{ gap: density.gap }}>
+        <View testID="etat-erreur" style={[{ gap: density.gap }, margeDeSecours]}>
           <StatusMessage
             level="danger"
             title={t('etats.erreurTitre')}
@@ -131,7 +153,7 @@ export function Ecran<T>({
 
     if (requete.vide) {
       return (
-        <View testID="etat-vide">
+        <View testID="etat-vide" style={vide ? null : margeDeSecours}>
           {vide ?? (
             <EmptyState title={t('etats.videTitre')} body={t('etats.videCorps')} />
           )}
@@ -165,7 +187,8 @@ export function Ecran<T>({
           // appareil posé au comptoir — était donc le plus serré des deux rôles
           // sur un bureau de 1512. C'est l'inverse de ce qu'une grande surface
           // demande, et l'inverse de la maquette, qui donne 24 aux deux.
-          padding: large ? density.screenPaddingLarge : density.screenPadding,
+          paddingVertical: margeLaterale,
+          paddingHorizontal: bordAbord ? 0 : margeLaterale,
           gap: large ? density.gapLarge : density.gap,
           // Grand écran : chaque nature d'écran a sa borne, tirée des jetons.
           // Le créateur est passé de 760 à 1120 — 760 était exactement la
@@ -192,6 +215,7 @@ export function Ecran<T>({
             accessibilityLabel={t('common.retour')}
             hitSlop={12}
             style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start',
+              marginHorizontal: bordAbord ? margeLaterale : 0,
               opacity: pressed ? 0.7 : 1,
             })}
             testID="retour"
@@ -206,7 +230,12 @@ export function Ecran<T>({
             barre de titre, fixe ; le répéter dans le flux donnait « Today »
             au-dessus de « Today ». Un en-tête fourni par l'écran, lui, reste :
             il porte autre chose que le nom. */}
-        {entete ?? (titre && !large ? <Texte variante="type.screenTitle">{titre}</Texte> : null)}
+        {entete ??
+          (titre && !large ? (
+            <Texte variante="type.screenTitle" style={margeDeSecours}>
+              {titre}
+            </Texte>
+          ) : null)}
         {corps}
       </ScrollView>
     </View>

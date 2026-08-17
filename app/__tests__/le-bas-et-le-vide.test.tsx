@@ -5,7 +5,7 @@
  * promesse, et les deux issues portent leur nombre**. « Élargir à 30 km » sans
  * chiffre demande de tenter pour voir, et personne ne tente deux fois.
  */
-import { render, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
 import { ApiClient, ApiProvider, type CommerceDuFil, type Fil } from '../src/api';
 import { I18nProvider } from '../src/i18n';
@@ -137,6 +137,23 @@ describe('les deux sorties portent leur nombre', () => {
     expect(screen.queryByTestId('sortie-elargir')).toBeNull();
   });
 
+  it('et resserrer est une annulation, sans nombre', async () => {
+    // **Les deux autres sorties portent leur nombre parce qu'elles promettent
+    // un gain qu'on ne peut pas deviner.** Celle-ci ramène à l'état d'où l'on
+    // vient, qu'on a vu : lui coller un compte demanderait une requête pour
+    // dire ce qu'on savait déjà. Ce qu'elle doit dire est où elle ramène.
+    const revenir = jest.fn();
+    await monter(fil(), { rayonKm: 30, resserrer: { versKm: 15, onPress: revenir } });
+    await waitFor(() => expect(screen.getByTestId('sortie-resserrer')).toBeTruthy());
+
+    const sortie = screen.getByTestId('sortie-resserrer');
+    expect(sortie).toHaveTextContent(/\b15\b/);
+    expect(sortie).not.toHaveTextContent(/\b30\b/);
+
+    await fireEvent.press(sortie);
+    expect(revenir).toHaveBeenCalledTimes(1);
+  });
+
   it('sans chemin fourni, la sortie ne s’affiche pas', async () => {
     await monter(
       fil({ rayons: [{ rayon_metres: 30000, commerces: 14, prestations: 20 }] as Fil['rayons'] }),
@@ -145,6 +162,7 @@ describe('les deux sorties portent leur nombre', () => {
 
     expect(screen.queryByTestId('sortie-elargir')).toBeNull();
     expect(screen.queryByTestId('sortie-remonter')).toBeNull();
+    expect(screen.queryByTestId('sortie-resserrer')).toBeNull();
   });
 });
 
