@@ -339,6 +339,21 @@ export type Fil = {
    * n'est pas une issue à un fil vide. Vide quand on est déjà au plus large.
    */
   rayons: CompteParRayon[];
+  /**
+   * Le palier suivant, et ce qu'il ouvrirait.
+   *
+   * **Nul quand il n'y en a pas** — tout est déjà ouvert, ou aucun n'est
+   * atteignable. Le pied du mur disparaît alors, plutôt que de promettre un
+   * palier qui n'existe pas. Ce n'est pas un repli défensif : c'est un état que
+   * le produit atteint, et qui s'éprouve.
+   */
+  prochain_palier: {
+    tier_id: string;
+    content_format: ContentFormat;
+    /** Combien de commerces de plus ce palier ouvrirait. */
+    commerces_de_plus: number;
+    obstacle: Obstacle;
+  } | null;
   /** Les quartiers du fil rendu, du plus proche au plus lointain. */
   quartiers: CompteParQuartier[];
 };

@@ -290,8 +290,27 @@ const ECRANS = [
         onOuvrirLeCommerce={jest.fn()}
       />
     ),
-    plein: { '/businesses': { commerces: [COMMERCE_DU_FIL], obstacles: [] } },
-    vide: { '/businesses': { commerces: [], obstacles: [] } },
+    // Le fil rend toujours ces quatre listes : les omettre fabriquerait une
+    // réponse que le serveur ne produit pas, et rendrait le mur défensif contre
+    // un cas qu'aucun appel n'atteint.
+    plein: {
+      '/businesses': {
+        commerces: [COMMERCE_DU_FIL],
+        obstacles: [],
+        rayons: [],
+        quartiers: [],
+        prochain_palier: null,
+      },
+    },
+    vide: {
+      '/businesses': {
+        commerces: [],
+        obstacles: [],
+        rayons: [],
+        quartiers: [],
+        prochain_palier: null,
+      },
+    },
   },
   {
     nom: 'fiche',
