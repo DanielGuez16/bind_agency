@@ -5466,3 +5466,40 @@ doit être **porté par l'écran qu'on éprouve** — `page.getByTestId('ecran-x
 .locator(…)` plutôt qu'un `page.locator(…)` global. Ce qui n'a pas été fait ici :
 la correction se contente de viser le bon identifiant, parce qu'élargir la règle
 à toute la suite dépasse ce lot. Noté dans `TASKS.md`.
+
+## 2026-08-17 — Les deux cadres qui encadrent le mur
+
+**Le vide n'est pas une page d'excuse.** Les deux issues portent désormais leur
+nombre — « Élargir à 30 km · 9 » — et le compte vient de `rayons`, que le
+serveur rendait déjà. Sans chiffre, l'issue demande de tenter pour voir, et
+personne ne tente deux fois.
+
+Et **un élargissement qui n'ouvrirait rien ne se propose pas** : une issue à zéro
+est un cul-de-sac chiffré, ce qui est pire qu'une issue absente — elle promet un
+geste dont on revient bredouille.
+
+**Le bas du fil est le seul fond d'encre du mur.** Il ferme, là où l'os des
+respirations ouvrait ; une fermeture qui se répéterait cesserait d'en être une.
+Il compte ce qui a été vu — salons, quartiers, répartition par contrepartie — et
+ce décompte est **local par définition** : la planche dit « il compte ce qui a
+été **vu** », donc il ne peut pas venir du serveur.
+
+Le pied nomme le prochain palier et ce qu'il ouvrirait. C'est **la seule fois où
+le fil parle des paliers**, et le seul endroit où c'est utile : depuis qu'ils ont
+quitté les onglets, c'est là qu'une créatrice croise ce qui lui manque sans être
+allée le chercher. `prochain_palier` a été demandé à la conversation
+fonctionnelle et arbitré par Daniel — je ne l'ai pas pris comme acquis, et le
+pied a été écrit pour se taire quand il vaut `null`, ce qui est un état réel et
+non un repli.
+
+**Cinq montages de test fabriquaient une réponse impossible.** Ils omettaient
+`rayons` et `quartiers`, que `Fil` déclare obligatoires et que le serveur rend
+toujours. Le premier réflexe était de rendre le composant défensif —
+`fil.rayons ?? []` — et c'est exactement la faute déjà consignée deux fois : un
+chemin que rien n'atteint, gardé par un test qui ment sur ce qu'il couvre. Ce
+sont les montages qui ont été corrigés.
+
+*Un compte que la planche illustre et ne contracte pas :* elle annonce « vingt
+salons » ; le jeu de démonstration en rend dix-neuf, le vingtième restant vierge
+par construction. Le pied lit `commerces.length` et dira dix-neuf. Confirmé par
+Daniel.

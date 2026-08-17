@@ -382,3 +382,134 @@ export function MurEnChargement({ cycles = 1 }: { cycles?: number }) {
     </View>
   );
 }
+
+/**
+ * Le bas du mur : le seul fond d'encre du fil.
+ *
+ * **Il ferme, là où l'os des respirations ouvrait.** C'est la seule surface
+ * sombre de l'écran, et elle ne revient pas : une fermeture qui se répéterait
+ * cesserait d'en être une.
+ *
+ * Il fait trois choses et pas une de plus. Il **compte ce qui a été vu** —
+ * salons, quartiers, et la répartition par contrepartie. Il offre **deux
+ * sorties chiffrées**, élargir ou remonter. Et il rappelle en pied ce que le
+ * prochain palier ouvrirait : **la seule fois où le fil parle des paliers**, et
+ * le seul endroit où c'est utile — depuis qu'ils ont quitté les onglets, c'est
+ * là qu'une créatrice croise ce qui lui manque sans être allée le chercher.
+ */
+export function BasDuMur({
+  fil,
+  rayonKm,
+  onElargir,
+  onRemonter,
+}: {
+  fil: Fil;
+  rayonKm: number;
+  onElargir?: (rayonKm: number) => void;
+  onRemonter?: () => void;
+}) {
+  const { t, locale } = useI18n();
+  const c = useColors();
+
+  // **Ce qui a été vu, compté ici.** La planche dit « il compte ce qui a été
+  // vu par palier » : c'est un décompte des salons rendus, pas une statistique
+  // du serveur, et il ne peut donc venir que d'ici.
+  const parContrepartie = fil.commerces.reduce<Record<string, number>>((compte, commerce) => {
+    const format = commerce.items[0]?.content_format;
+    if (format) compte[format] = (compte[format] ?? 0) + 1;
+    return compte;
+  }, {});
+
+  const plusLarge = fil.rayons.find((rayon) => rayon.commerces > 0);
+  const prochain = fil.prochain_palier;
+
+  return (
+    <View
+      testID="bas-du-mur"
+      style={{ backgroundColor: c['bg.inverse'], padding: 24, gap: 18 }}
+    >
+      <Texte variante="type.monoSmall" style={{ color: c['ink.faint'] }}>
+        {t('parcours.murToutVu', {
+          rayon: formatNumber(rayonKm, locale),
+        }).toUpperCase()}
+      </Texte>
+
+      {/* Le Didone, une seconde et dernière fois. Il n'apparaît que sur les
+          respirations et ici : sur trois hauteurs d'écran de photos, on en
+          croise un. */}
+      <View>
+        <Texte variante="type.heading" style={{ color: c['ink.onDark'] }} testID="bilan-salons">
+          {t('parcours.murBilanSalons', { count: formatNumber(fil.commerces.length, locale) })}
+        </Texte>
+        <Texte variante="type.heading" couleur="brand.700" testID="bilan-quartiers">
+          {t('parcours.murBilanQuartiers', {
+            count: formatNumber(fil.quartiers.length, locale),
+          })}
+        </Texte>
+      </View>
+
+      <View style={{ flexDirection: 'row', gap: 24 }} testID="par-contrepartie">
+        {(['story', 'post', 'reel'] as const)
+          .filter((format) => parContrepartie[format])
+          .map((format) => (
+            <View key={format} style={{ gap: 2 }} testID={`vu-${format}`}>
+              <Texte variante="type.section" style={{ color: c['ink.onDark'] }}>
+                {formatNumber(parContrepartie[format], locale)}
+              </Texte>
+              <Texte variante="type.monoSmall" style={{ color: c['ink.faint'] }}>
+                {format.toUpperCase()}
+              </Texte>
+            </View>
+          ))}
+      </View>
+
+      <View style={{ gap: 8, alignItems: 'flex-start' }}>
+        {plusLarge && onElargir ? (
+          <Texte
+            variante="type.body"
+            couleur="brand.700"
+            testID="sortie-elargir"
+            onPress={() => onElargir(Math.round(plusLarge.rayon_metres / 1000))}
+          >
+            {t('parcours.filElargirCompte', {
+              rayon: formatNumber(Math.round(plusLarge.rayon_metres / 1000), locale),
+              count: formatNumber(plusLarge.commerces, locale),
+            })}
+          </Texte>
+        ) : null}
+        {onRemonter ? (
+          <Texte
+            variante="type.body"
+            style={{ color: c['ink.faint'] }}
+            testID="sortie-remonter"
+            onPress={onRemonter}
+          >
+            {t('parcours.murRepartirDuHaut')}
+          </Texte>
+        ) : null}
+      </View>
+
+      {/* **La seule fois où le fil parle des paliers.** Absent quand il n'y a
+          pas de palier suivant : promettre un palier qui n'existe pas serait
+          pire que se taire. */}
+      {prochain ? (
+        <View style={{ gap: 2 }} testID="prochain-palier">
+          <Texte variante="type.caption" style={{ color: c['ink.onDark'] }}>
+            {t('parcours.murProchainPalier', {
+              palier: prochain.content_format,
+              count: formatNumber(prochain.commerces_de_plus, locale),
+            })}
+          </Texte>
+          {prochain.obstacle.ecart !== null && prochain.obstacle.requis !== null ? (
+            <Texte variante="type.monoSmall" style={{ color: c['ink.faint'] }}>
+              {t('parcours.murEcartAbonnes', {
+                ecart: String(prochain.obstacle.ecart),
+                requis: String(prochain.obstacle.requis),
+              })}
+            </Texte>
+          ) : null}
+        </View>
+      ) : null}
+    </View>
+  );
+}

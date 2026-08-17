@@ -644,4 +644,13 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       en regardant un écran qu'il ne visitait pas. Corrigé sur ce cas ; la règle
       générale — un sélecteur par préfixe se porte depuis `getByTestId('ecran-x')`
       et non depuis `page` — reste à passer sur toute la suite*
+- [x] **Les cadres E et F du mur : le vide, et le bas**
+      *Les deux issues du vide portent leur nombre, depuis `rayons` ; celle qui
+      n'ouvrirait rien disparaît, une issue à zéro étant un cul-de-sac chiffré.
+      Le bas du fil est le seul fond d'encre du mur — il compte ce qui a été vu,
+      offre deux sorties chiffrées, et nomme en pied ce que le prochain palier
+      ouvrirait, seule fois où le fil en parle. Cinq montages de test omettaient
+      `rayons` et `quartiers`, obligatoires dans le type : corrigés côté
+      montages, pas en rendant le composant défensif. 14 tests neufs,
+      6 mutations vérifiées*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire

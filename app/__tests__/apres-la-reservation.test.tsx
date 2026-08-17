@@ -132,8 +132,12 @@ function serveur() {
         obstacles: [],
         rayon_metres: 15_000,
         total_prestations: 1,
-        categories: [{ categorie: 'beauty', commerces: 1, prestations: 1 }],
+        // Toujours rendues par le serveur : les omettre fabriquerait une
+        // réponse qui n'existe pas.
         rayons: [],
+        quartiers: [],
+        prochain_palier: null,
+        categories: [{ categorie: 'beauty', commerces: 1, prestations: 1 }],
       });
     }
     if (chemin.includes('/me/bookings')) {

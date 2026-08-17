@@ -60,7 +60,7 @@ import { messageDePosition } from '../shell/messageDePosition';
 import type { EtatDePosition } from '../shell/usePosition';
 import { en } from '../i18n/en';
 import { Ecran } from './Ecran';
-import { Mur, MurEnChargement } from './mur/Mur';
+import { BasDuMur, Mur, MurEnChargement } from './mur/Mur';
 import { RaisonDuVide } from './RaisonDuVide';
 import { messageDObstacle } from './obstacle';
 import { useRequete } from './useRequete';
@@ -91,6 +91,7 @@ export function FilScreen({
   onConnecterUnReseau,
   onVoirMonAudience,
   onVoirMesPaliers,
+  onRemonterEnHaut,
 }: {
   /** Nulle tant que l'autorisation n'est pas donnée. */
   position: Position | null;
@@ -107,6 +108,8 @@ export function FilScreen({
   onConnecterUnReseau?: () => void;
   onVoirMonAudience?: () => void;
   onVoirMesPaliers?: () => void;
+  /** Remonte le mur en tête. Absent, la sortie ne s'affiche pas. */
+  onRemonterEnHaut?: () => void;
 }) {
   const { api } = useApi();
   const { t, locale } = useI18n();
@@ -164,10 +167,25 @@ export function FilScreen({
     onConnecterUnReseau,
     onVoirMonAudience,
     onVoirMesPaliers,
-    elargir: RAYONS_KM.filter((r) => r > rayonKm).map((rayon) => ({
-      label: t('parcours.filElargir', { rayon }),
-      onPress: () => setRayonKm(rayon),
-    })),
+    /**
+     * **Les deux issues portent leur nombre.** « Élargir à 30 km » sans chiffre
+     * demande de tenter pour voir, et personne ne tente deux fois. Le serveur
+     * les compte — `rayons` dit ce que chaque élargissement ouvrirait, filtre de
+     * catégorie conservé — et on les rend dans son ordre, du plus étroit au plus
+     * large.
+     *
+     * Un élargissement qui n'ouvrirait rien ne se propose pas : une issue à zéro
+     * est un cul-de-sac chiffré, ce qui est pire qu'une issue absente.
+     */
+    elargir: (filPret?.rayons ?? [])
+      .filter((rayon) => rayon.commerces > 0)
+      .map((rayon) => ({
+        label: t('parcours.filElargirCompte', {
+          rayon: formatNumber(Math.round(rayon.rayon_metres / 1000), locale),
+          count: formatNumber(rayon.commerces, locale),
+        }),
+        onPress: () => setRayonKm(Math.round(rayon.rayon_metres / 1000)),
+      })),
   };
 
   return (
@@ -223,6 +241,15 @@ export function FilScreen({
               triés par distance et se posent dans les positions : personne ne
               décide quel salon mérite le grand format. */}
           <Mur fil={fil} onOuvrir={onOuvrirLeCommerce} />
+
+          {/* Le seul fond d'encre du fil : il ferme, là où l'os des
+              respirations ouvrait. */}
+          <BasDuMur
+            fil={fil}
+            rayonKm={rayonKm}
+            onElargir={setRayonKm}
+            onRemonter={onRemonterEnHaut}
+          />
         </View>
       )}
     </Ecran>

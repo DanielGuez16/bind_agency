@@ -50,6 +50,12 @@ function filAvec(total: number, commerces = 1): Partial<Fil> {
     commerces: Array.from({ length: commerces }, () => COMMERCE) as Fil['commerces'],
     obstacles: [],
     total_prestations: total,
+    // Le type les déclare obligatoires et le serveur les rend toujours : un
+    // montage qui les omet fabrique une réponse qui n'existe pas, et rendrait
+    // le composant défensif contre un cas qu'aucun appel n'atteint.
+    rayons: [],
+    quartiers: [],
+    prochain_palier: null,
   };
 }
 
@@ -129,5 +135,28 @@ describe('la ligne qui répond, et l’explication qu’elle ouvre', () => {
 
     expect(screen.getByTestId('prestations-ouvertes')).toHaveTextContent(/\b12\b/);
     expect(screen.queryByTestId('prestations-ouvertes-issue')).toBeNull();
+  });
+
+  it('les élargissements portent leur nombre, et aucun n’en promet zéro', async () => {
+    // **Une issue à zéro est un cul-de-sac chiffré**, pire qu'une issue
+    // absente : elle promet un geste dont on revient bredouille. Le fil vide
+    // est le seul endroit où ces boutons se montrent, donc le seul où
+    // l'éprouver.
+    await monter({
+      ...filAvec(0),
+      commerces: [],
+      rayons: [
+        { rayon_metres: 30000, commerces: 9, prestations: 12 },
+        { rayon_metres: 50000, commerces: 0, prestations: 0 },
+      ],
+    } as never);
+    await waitFor(() => expect(screen.getByTestId('fil-vide')).toBeTruthy());
+
+    const elargir = screen.getByTestId('elargir');
+    // Celui qui ouvre quelque chose dit combien.
+    expect(elargir).toHaveTextContent(/30/);
+    expect(elargir).toHaveTextContent(/\b9\b/);
+    // Celui qui n'ouvre rien n'est pas là.
+    expect(elargir).not.toHaveTextContent(/50/);
   });
 });

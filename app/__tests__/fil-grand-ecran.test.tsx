@@ -57,6 +57,12 @@ function monter(nombre: number) {
   const fil = {
     commerces: Array.from({ length: nombre }, (_, rang) => commerce(`b${rang}`)),
     obstacles: [],
+    // Le type les déclare obligatoires et le serveur les rend toujours : un
+    // montage qui les omet fabrique une réponse qui n'existe pas, et rendrait
+    // le composant défensif contre un cas qu'aucun appel n'atteint.
+    rayons: [],
+    quartiers: [],
+    prochain_palier: null,
   };
   const api = new ApiClient({
     baseUrl: 'https://api.test',
