@@ -76,6 +76,20 @@ export const produit = produitBrut;
  */
 export const ENCRES_DU_LOGOTYPE = produitBrut.marque.encres;
 
+/**
+ * Un voile d'encre à l'opacité demandée.
+ *
+ * **Les jetons de voile sont des aplats ; le mur a besoin d'une pente.** Ses
+ * dégradés à trois arrêts laissent le haut de l'image intact, ce qu'aucune
+ * valeur fixe ne fait. Plutôt que d'écrire `rgba(23,18,14,…)` dans un écran —
+ * ce que la garde des couleurs littérales refuse, et à raison — l'opacité se
+ * compose ici, sur l'encre du système.
+ */
+export function voileDEncre(opacite: number): string {
+  const [r, v, b] = [1, 3, 5].map((i) => parseInt(brut.color.ink.default.slice(i, i + 2), 16));
+  return `rgba(${r},${v},${b},${opacite})`;
+}
+
 export { nomDeFonte, policesAcharger, type Graisse, type Voix } from './polices';
 export {
   familles,

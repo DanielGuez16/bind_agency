@@ -34,6 +34,10 @@
  * changement de **voix** à l'intérieur d'une famille : cette voix doit être un
  * fichier.
  */
+import { Platform } from 'react-native';
+
+import produit from './produit.json';
+
 import { BodoniModa_400Regular } from '@expo-google-fonts/bodoni-moda/400Regular';
 import { BodoniModa_400Regular_Italic } from '@expo-google-fonts/bodoni-moda/400Regular_Italic';
 import { BodoniModa_500Medium } from '@expo-google-fonts/bodoni-moda/500Medium';
@@ -134,6 +138,25 @@ const REPLI: Graisse[] = ['600', '500', '400', '700', '300'];
  * donc à l'abri de toute couche qui oublierait de citer. L'italique se suffixe
  * au même endroit, pour la même raison.
  */
+/**
+ * La pile de repli, **sur le web uniquement**.
+ *
+ * Sur appareil, `fontFamily` désigne un fichier chargé : il n'y a pas de repli
+ * et une famille inconnue ne rend rien de bon. Sur le web, le navigateur
+ * choisit seul tant que la fonte n'est pas arrivée — ou si elle ne vient
+ * jamais — et sans pile il atterrit sur sa fonte par défaut, un Times. Un
+ * Didone du XVIIIe remplacé par une romaine de journal est le contraire de la
+ * direction, et ça se voit sur le premier écran.
+ *
+ * C'est la seule part de la correction de fonte de Design qui s'applique ici :
+ * le produit charge des TTF statiques par graisse, donc il n'a ni axe `opsz` à
+ * retirer ni graisse à épingler.
+ */
+function avecRepli(nom: string, role: RoleDeFonte): string {
+  if (Platform.OS !== 'web') return nom;
+  return [nom, ...produit.repli[role]].map((f) => (f.includes(' ') ? `"${f}"` : f)).join(', ');
+}
+
 export function nomDeFonte(
   role: RoleDeFonte,
   graisse: string | number,
@@ -154,7 +177,8 @@ export function nomDeFonte(
 
   // L'espace disparaît, la graisse se rattache : « Bodoni Moda » + « 500 » +
   // italique donne « BodoniModa_500Italic ». La famille reste celle des jetons.
-  return `${famille.replace(/\s+/g, '')}_${retenue}${retenueVoix === 'italic' ? 'Italic' : ''}`;
+  const nom = `${famille.replace(/\s+/g, '')}_${retenue}${retenueVoix === 'italic' ? 'Italic' : ''}`;
+  return avecRepli(nom, role);
 }
 
 /**

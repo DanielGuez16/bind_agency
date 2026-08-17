@@ -622,4 +622,19 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       fabriquait une réponse que le serveur ne produit pas. Le test des onglets
       passe d'un `arrayContaining`, qui aurait laissé passer un sixième onglet,
       à une égalité stricte. 5 tests neufs, 4 mutations vérifiées*
+- [x] **Le mur : le fil créateur refait**
+      *Six positions dans un ordre fixe, huit salons puis une respiration, trois
+      pixels partout. Les salons arrivent triés par distance et se posent : la
+      position décide, pas nous. Le placement et les trois arbitrages vivent
+      hors du rendu et s'éprouvent seuls — 41 tests, plus 10 sur ce que l'écran
+      montre, 5 mutations vérifiées. Une lecture de la planche a évité un champ
+      serveur : la respiration annonce le quartier du salon qui la **suit**, pas
+      un quartier hors rayon. Et un test tombé a révélé que l'échelle du texte
+      suit la largeur et non la hauteur — la bande fait 150 et porte 22, le duo
+      238 et porte 19*
+- [ ] **Little Haiti : dans la liste des quartiers, ou pas**
+      *La planche du mur le montre — « Soleil Braids · LITTLE HAITI · 2,6 KM » —
+      et il n'est pas dans les neuf quartiers de la liste fermée. Deux choses
+      validées se contredisent. Le mur code sur les neuf en attendant : le type
+      ne permet rien d'autre. À trancher par Daniel*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire

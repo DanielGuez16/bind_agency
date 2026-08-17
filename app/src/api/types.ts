@@ -258,6 +258,14 @@ export type CommerceDuFil = {
    * l'autre, sinon les deux ne se distinguent plus le jour où l'une change.
    */
   cover_portrait_key: string | null;
+  /**
+   * **Et le mur en sert l'original, jamais la vignette.** Celle-ci est bornée à
+   * 480 px sur le grand côté : sur un héros de 520 points à fond perdu, elle
+   * serait agrandie trois fois. Une seule source pour tous les formats, même là
+   * où un triptyque de 158 points s'en contenterait — deux sources donneraient
+   * deux cadrages du même salon selon sa position dans le cycle, ce que le mur
+   * existe précisément pour éviter.
+   */
   distance_metres: number;
   items: ItemDuFil[];
 };
