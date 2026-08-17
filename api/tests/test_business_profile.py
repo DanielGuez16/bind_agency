@@ -429,3 +429,65 @@ def test_des_coordonnees_hors_bornes_sont_refusees(longitude: float, latitude: f
 def test_l_ordre_wkt_est_longitude_puis_latitude() -> None:
     """PostGIS attend l'inverse de l'usage courant : une inversion place Miami en Somalie."""
     assert Coordinates(longitude=-80.1918, latitude=25.7617).as_wkt() == "POINT(-80.1918 25.7617)"
+
+
+# --------------------------------------------------------------------------
+# le quartier
+# --------------------------------------------------------------------------
+
+
+async def test_le_quartier_declare_a_la_creation_revient_dans_la_reponse(
+    client: AsyncClient,
+) -> None:
+    """**Le défaut que ce test existe pour attraper.** Le champ traversait le
+    schéma d'entrée, le service et la base sans problème, et le routeur, qui
+    construit `BusinessRead` champ par champ, l'oubliait. Un champ accepté puis
+    perdu rend un 200 à quelqu'un qui croit avoir enregistré — c'est nommé dans
+    `CLAUDE.md`, et c'est arrivé ici.
+    """
+    membre = await compte(client)
+
+    cree = await commerce(client, membre, neighborhood="wynwood")
+
+    assert cree["neighborhood"] == "wynwood"
+    relu = await client.get(f"{PREFIX}/business/{cree['id']}", headers=membre["headers"])
+    assert relu.json()["neighborhood"] == "wynwood"
+
+
+async def test_le_quartier_se_change_et_se_retire(client: AsyncClient) -> None:
+    """Un salon déménage, ou s'est trompé. `null` le retire : il reste
+    réservable, il n'est simplement plus situé."""
+    membre = await compte(client)
+    cree = await commerce(client, membre, neighborhood="brickell")
+
+    change = await client.patch(
+        f"{PREFIX}/business/{cree['id']}",
+        json={"neighborhood": "midtown"},
+        headers=membre["headers"],
+    )
+    assert change.status_code == 200, change.text
+    assert change.json()["neighborhood"] == "midtown"
+
+    retire = await client.patch(
+        f"{PREFIX}/business/{cree['id']}",
+        json={"neighborhood": None},
+        headers=membre["headers"],
+    )
+    assert retire.json()["neighborhood"] is None
+
+
+async def test_un_quartier_hors_liste_est_refuse(client: AsyncClient) -> None:
+    """**L'autre sens, et c'est la raison d'être de la liste fermée.** Deux
+    salons qui écriraient « South Beach » et « SoBe » ne se compteraient pas
+    ensemble, et le fil annoncerait deux quartiers là où il y en a un."""
+    membre = await compte(client)
+
+    refuse = await client.post(
+        f"{PREFIX}/business",
+        json=payload_commerce(neighborhood="sobe"),
+        headers=membre["headers"],
+    )
+
+    assert refuse.status_code == 422, refuse.text
+    # La session reste utilisable après le refus.
+    assert (await commerce(client, membre))["neighborhood"] is None

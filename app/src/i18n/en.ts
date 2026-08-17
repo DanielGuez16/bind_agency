@@ -128,6 +128,17 @@ export const en = {
     abonnementRequis: 'The directory comes with a subscription.',
     abonnementRequisAide: 'It is what a subscription buys: seeing who you can reach before you open a single service.',
   },
+  quartiers: {
+    wynwood: 'Wynwood',
+    brickell: 'Brickell',
+    south_beach: 'South Beach',
+    little_havana: 'Little Havana',
+    design_district: 'Design District',
+    coral_gables: 'Coral Gables',
+    midtown: 'Midtown',
+    edgewater: 'Edgewater',
+    coconut_grove: 'Coconut Grove',
+  },
   redemption: {
     servisDuJour: 'Served today',
     servisAucun: 'Nothing served yet today. The first code you check will appear here.',

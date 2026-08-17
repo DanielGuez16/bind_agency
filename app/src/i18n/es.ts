@@ -125,6 +125,17 @@ export const es: Catalogue = {
     abonnementRequis: 'El directorio viene con la suscripción.',
     abonnementRequisAide: 'Es lo que compra una suscripción: ver a quién puedes llegar antes de abrir una sola prestación.',
   },
+  quartiers: {
+    wynwood: 'Wynwood',
+    brickell: 'Brickell',
+    south_beach: 'South Beach',
+    little_havana: 'Little Havana',
+    design_district: 'Design District',
+    coral_gables: 'Coral Gables',
+    midtown: 'Midtown',
+    edgewater: 'Edgewater',
+    coconut_grove: 'Coconut Grove',
+  },
   redemption: {
     servisDuJour: 'Atendidas hoy',
     servisAucun: 'Todavía nada hoy. El primer código que valides aparecerá aquí.',

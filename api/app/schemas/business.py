@@ -12,6 +12,7 @@ from app.models.enums import (
     BusinessStatus,
     ContentFormat,
     Locale,
+    Neighborhood,
     Platform,
 )
 
@@ -49,6 +50,10 @@ class BusinessCreate(BaseModel):
     category: BusinessCategory
     currency: str = Field(min_length=3, max_length=3)
     address: str | None = Field(default=None, max_length=500)
+    #: Le quartier, choisi dans une liste fermée. `None` pour un salon hors
+    #: des quartiers ouverts : il reste réservable, il n'apparaît simplement
+    #: dans aucun groupe du fil.
+    neighborhood: Neighborhood | None = None
     coordinates: CoordinatesPayload | None = None
     timezone: str = DEFAULT_TIMEZONE
     default_locale: Locale = Locale.EN
@@ -87,6 +92,10 @@ class BusinessUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=200)
     category: BusinessCategory | None = None
     address: str | None = Field(default=None, max_length=500)
+    #: Le quartier, choisi dans une liste fermée. `None` pour un salon hors
+    #: des quartiers ouverts : il reste réservable, il n'apparaît simplement
+    #: dans aucun groupe du fil.
+    neighborhood: Neighborhood | None = None
     coordinates: CoordinatesPayload | None = None
     timezone: str | None = None
     default_locale: Locale | None = None
@@ -111,6 +120,7 @@ class BusinessRead(BaseModel):
     name: str
     category: BusinessCategory
     address: str | None
+    neighborhood: Neighborhood | None
     coordinates: CoordinatesPayload | None
     timezone: str
     default_locale: Locale

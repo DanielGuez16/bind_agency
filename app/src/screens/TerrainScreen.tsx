@@ -41,6 +41,7 @@ import {
   Chip,
   EmptyState,
   FiletSegmente,
+  SkeletonLignes,
   StatusMessage,
   Texte,
   TextField,
@@ -212,6 +213,7 @@ export function TerrainScreen() {
     <Ecran
       requete={requete}
       titre={t('terrain.titre')}
+      squelette={<SkeletonLignes combien={5} testID="squelette-terrain" />}
       vide={
         <View style={{ gap: 20 }}>
           <EmptyState title={t('terrain.videTitre')} body={t('terrain.videCorps')} />

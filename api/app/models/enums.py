@@ -45,6 +45,36 @@ class VerificationStatus(StrEnum):
     REJECTED = "rejected"
 
 
+class Neighborhood(StrEnum):
+    """Les quartiers de Miami où BIND ouvre.
+
+    **Une liste fermée, et déclarée par le commerce.** Le géocodeur ne rend que
+    des coordonnées — l'adaptateur Geocodio jette les composants d'adresse, et
+    `ManualGeocoder`, celui de la démonstration et du jeu de données, ne résout
+    rien du tout. Déduire le quartier d'une chaîne d'adresse ne marcherait pas
+    davantage : « 2250 NW 2nd Ave, Miami, FL 33127 » est à Wynwood et ne le dit
+    nulle part.
+
+    **Fermée plutôt que libre**, parce que c'est un axe de navigation : deux
+    salons qui écriraient « South Beach » et « SoBe » ne se compteraient pas
+    ensemble, et le fil annoncerait deux quartiers là où il y en a un.
+
+    **Nullable sur le commerce**, sans valeur « autre » : un salon hors de ces
+    neuf quartiers n'a pas de quartier chez nous, et le dire par l'absence vaut
+    mieux que par une catégorie fourre-tout qui se remplirait de tout Miami.
+    """
+
+    WYNWOOD = "wynwood"
+    BRICKELL = "brickell"
+    SOUTH_BEACH = "south_beach"
+    LITTLE_HAVANA = "little_havana"
+    DESIGN_DISTRICT = "design_district"
+    CORAL_GABLES = "coral_gables"
+    MIDTOWN = "midtown"
+    EDGEWATER = "edgewater"
+    COCONUT_GROVE = "coconut_grove"
+
+
 class BusinessCategory(StrEnum):
     BEAUTY = "beauty"
     RESTAURANT = "restaurant"

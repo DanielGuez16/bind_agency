@@ -35,12 +35,13 @@ import {
 import {
   Button,
   EmptyState,
+  Filet,
   SegmentedTabs,
+  SkeletonLignes,
   StatusMessage,
   Stepper,
-  TextField,
-  Filet,
   Texte,
+  TextField,
   TierBadge,
   Toggle,
   vibration,
@@ -130,6 +131,7 @@ export function CatalogueScreen({
       onRetour={onRetour}
       // Rendu dans la colonne du menu de configuration, qui borne déjà.
       nature="section"
+      squelette={<SkeletonLignes combien={6} testID="squelette-catalogue" />}
       testID="ecran-catalogue"
       vide={
         <CatalogueVide
