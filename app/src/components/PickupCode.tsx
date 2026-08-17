@@ -224,9 +224,18 @@ export function QrBlock({
 }
 
 /** Le fond de l'écran. Aucun thème, aucun rayon, aucune ombre. */
-export function PickupCodeSurface({ children }: { children: React.ReactNode }) {
+export function PickupCodeSurface({
+  children,
+  testID,
+}: {
+  children: React.ReactNode;
+  testID?: string;
+}) {
   return (
-    <View style={{ flex: 1, backgroundColor: bg, justifyContent: 'center', gap: 28, padding: 24 }}>
+    <View
+      testID={testID}
+      style={{ flex: 1, backgroundColor: bg, justifyContent: 'center', gap: 28, padding: 24 }}
+    >
       <Halo />
       {children}
     </View>

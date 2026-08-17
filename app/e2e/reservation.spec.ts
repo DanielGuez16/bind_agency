@@ -23,7 +23,7 @@ test('réserver un créneau, puis retrouver son code', async ({ page }) => {
   await accorderLaPosition(page);
   // `salon-` et non `commerce-` : la carte du fil n'existe plus, le mur pose
   // des photos. Le parcours, lui, est le même — c'est ce que ce test éprouve.
-  const salon = page.locator('[data-testid^="salon-"]').first();
+  const salon = page.getByTestId('ecran-fil').locator('[data-testid^="salon-"]').first();
   await expect(salon, 'le fil est vide : aucun salon à réserver').toBeVisible();
   await salon.click();
 
@@ -34,13 +34,14 @@ test('réserver un créneau, puis retrouver son code', async ({ page }) => {
   // Les créneaux. On prend le premier libre, quel que soit le groupe.
   await expect(page.getByTestId('ecran-creneaux')).toBeVisible();
   const creneau = page
+    .getByTestId('ecran-creneaux')
     .locator('[data-testid="matin"], [data-testid="apres-midi"]')
     .getByRole('button')
     .first();
   await expect(creneau, 'aucun créneau libre dans l’horizon').toBeVisible();
   await creneau.click();
 
-  await page.getByTestId('confirmer').click();
+  await page.getByTestId('ecran-creneaux').getByTestId('confirmer').click();
 
   // **On atterrit sur la liste, pas sur le code.** La prestation est dans
   // plusieurs jours, et la validation par le salon est le comportement par
@@ -55,7 +56,9 @@ test('réserver un créneau, puis retrouver son code', async ({ page }) => {
   // l'autre onglet — resté monté dans le document, donc trouvé par `.first()`.
   // Le test passait en regardant un écran qu'il ne visitait pas. Il ne l'a dit
   // qu'en tombant, le jour où la grille a disparu.
-  await expect(page.locator('[data-testid^="reservation-"]').first()).toBeVisible();
+  await expect(
+    page.getByTestId('ecran-historique').locator('[data-testid^="reservation-"]').first(),
+  ).toBeVisible();
 });
 
 test('une réservation confirmée mène à son code', async ({ page }) => {
@@ -82,7 +85,8 @@ test('une réservation confirmée mène à son code', async ({ page }) => {
   // secours qu'on dicte. Ce qui prouve qu'un code est arrivé est ce que la
   // caisse scanne — et le code de secours, qui est le seul qu'on lise à voix
   // haute.
-  await expect(page.getByTestId('qr')).toBeVisible();
-  await expect(page.getByTestId('secours')).toBeVisible();
-  await expect(page.getByTestId('compte-a-rebours')).toBeVisible();
+  const code = page.getByTestId('ecran-code');
+  await expect(code.getByTestId('qr')).toBeVisible();
+  await expect(code.getByTestId('secours')).toBeVisible();
+  await expect(code.getByTestId('compte-a-rebours')).toBeVisible();
 });

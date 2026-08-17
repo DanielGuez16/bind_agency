@@ -37,11 +37,12 @@ export async function seConnecter(page: Page, email: string): Promise<void> {
   await page.goto('/');
 
   // L'accueil ouvre sur les deux portes ; se connecter est un lien de bas.
-  await page.getByTestId('vers-connexion').click();
+  await page.getByTestId('ecran-accueil').getByTestId('vers-connexion').click();
 
-  await page.getByTestId('champ-email').fill(email);
-  await page.getByTestId('champ-mot-de-passe').fill(MOT_DE_PASSE);
-  await page.getByTestId('valider').click();
+  const auth = page.getByTestId('ecran-auth');
+  await auth.getByTestId('champ-email').fill(email);
+  await auth.getByTestId('champ-mot-de-passe').fill(MOT_DE_PASSE);
+  await auth.getByTestId('valider').click();
 
   // **On attend la navigation, pas la coquille.** `zone-sure` apparaît avant
   // que les onglets soient montés : s'arrêter là faisait lire un écran encore
@@ -74,10 +75,16 @@ export async function ongletsVisibles(page: Page): Promise<string[]> {
  * à quoi elle sert se refuse. L'autorisation du navigateur est déjà donnée par
  * la configuration — ce qui manque est le clic.
  */
-export async function accorderLaPosition(page: Page): Promise<void> {
+export async function accorderLaPosition(page: Page, ecran = 'ecran-fil'): Promise<void> {
   const bouton = page.getByText('Share my location', { exact: true }).first();
   if (await bouton.isVisible().catch(() => false)) {
     await bouton.click();
   }
-  await expect(page.getByTestId('etat-nominal')).toBeVisible({ timeout: 30_000 });
+  // **Porté par l'écran, comme tout le reste.** `etat-nominal` est le nom que
+  // le gabarit donne à son contenu chargé : il existe donc sur *chaque* écran
+  // monté, et un onglet resté en arrière-plan le porte aussi. Le chercher dans
+  // la page entière revenait à attendre que n'importe quoi ait chargé.
+  await expect(page.getByTestId(ecran).getByTestId('etat-nominal')).toBeVisible({
+    timeout: 30_000,
+  });
 }
