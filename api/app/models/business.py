@@ -68,6 +68,16 @@ class Business(UUIDPrimaryKey, CreatedAt, Base):
     # exiger une image avant de pouvoir s'inscrire perdrait des commerces sur
     # une étape qui n'engage rien.
     cover_photo_key: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    #: La couverture verticale, pour le mur du fil.
+    #:
+    #: **Un champ à part, jamais un remplacement.** La couverture paysage sert
+    #: encore la fiche et les listes ; la remplacer casserait ces deux usages
+    #: pour un troisième. Le mur retombe sur elle quand celle-ci manque — un
+    #: 16:9 recadré en 4:5 vaut mieux qu'un monogramme.
+    #:
+    #: Livrée en 1600 × 2000. Le dépôt borne le grand côté à 2000, donc ce
+    #: format traverse sans rien perdre.
+    cover_portrait_key: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     #: L'adresse de la carte du commerce, quand elle existe déjà en ligne.
     #:
     #: **Alternative ou complément aux pages déposées**, jamais un remplacement

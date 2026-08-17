@@ -112,14 +112,56 @@ def depot(monkeypatch: pytest.MonkeyPatch) -> MemoryObjectStore:
     return store
 
 
-async def test_le_depot_range_l_original_et_sa_vignette(depot: MemoryObjectStore) -> None:
-    original = _photo()
+async def test_le_depot_range_deux_tailles(depot: MemoryObjectStore) -> None:
+    """Deux objets, deux tailles, et la vignette bien plus légère que l'original."""
+    from PIL import Image
 
-    cle = await storage.deposer_une_image(original, prefixe="photos/commerces/x")
+    envoye = _photo(cote=3000)
 
-    assert await depot.lire(cle) == original
+    cle = await storage.deposer_une_image(envoye, prefixe="photos/commerces/x")
+
+    range_ = await depot.lire(cle)
     vignette = await depot.lire(storage.cle_de_vignette(cle))
-    assert vignette is not None and len(vignette) < len(original) / 4
+    assert range_ is not None and vignette is not None
+    assert len(vignette) < len(range_) / 4
+    with Image.open(io.BytesIO(vignette)) as lue:
+        assert max(lue.size) == images.COTE_VIGNETTE
+
+
+async def test_l_original_est_borne_avant_d_etre_range(depot: MemoryObjectStore) -> None:
+    """**Ce que ça répare.** On rangeait ce qu'on recevait, soit quatre mille
+    pixels sortis d'un téléphone. Tant que le fil servait la vignette, personne
+    ne le payait ; le mur sert l'original, et trois salons par écran à cette
+    taille rendraient le défilement impraticable sur le réseau d'un salon."""
+    from PIL import Image
+
+    envoye = _photo(cote=3000)
+
+    cle = await storage.deposer_une_image(envoye, prefixe="photos/commerces/x")
+
+    range_ = await depot.lire(cle)
+    assert range_ is not None
+    with Image.open(io.BytesIO(range_)) as lue:
+        assert max(lue.size) == images.COTE_ORIGINAL
+    assert len(range_) < len(envoye)
+
+
+async def test_une_couverture_au_bon_format_ne_perd_rien(depot: MemoryObjectStore) -> None:
+    """**L'autre sens, et c'est lui qui contraint le plafond.** Une couverture
+    verticale se livre en 1600 × 2000 : le bornage ne doit rien lui écrêter,
+    seulement rogner ce qui le dépasse. Un plafond à 1500 passerait le test
+    ci-dessus et abîmerait toutes les couvertures du mur."""
+    from PIL import Image
+
+    sortie = io.BytesIO()
+    Image.new("RGB", (1600, 2000), (120, 90, 60)).save(sortie, format="JPEG")
+
+    cle = await storage.deposer_une_image(sortie.getvalue(), prefixe="photos/commerces/x")
+
+    range_ = await depot.lire(cle)
+    assert range_ is not None
+    with Image.open(io.BytesIO(range_)) as lue:
+        assert lue.size == (1600, 2000)
 
 
 async def test_une_image_illisible_se_depose_quand_meme(depot: MemoryObjectStore) -> None:
@@ -158,3 +200,50 @@ def test_les_deux_cles_se_derivent_l_une_de_l_autre() -> None:
     # Et sur une clé qui n'est pas une vignette, la fonction ne fait rien :
     # l'appliquer deux fois ne doit pas ronger la clé.
     assert storage.cle_d_origine(cle) == cle
+
+
+async def test_une_image_dans_les_clous_ressort_octet_pour_octet(
+    depot: MemoryObjectStore,
+) -> None:
+    """**La nuance qui sépare `borner_l_original` de `vignette`.**
+
+    `vignette` réencode toujours, en JPEG à qualité 82. Appliquée à l'original,
+    elle aurait dégradé des images qui n'avaient rien à perdre : une page de
+    carte photographiée en PNG net serait devenue un JPEG, et les prix s'y
+    seraient lus moins bien qu'avant. Le défaut s'est manifesté sur l'extraction
+    de carte, qui recevait des octets différents de ceux déposés.
+
+    Ce qui passe la borne doit donc ressortir **exactement** comme il est entré.
+    """
+    from PIL import Image
+
+    sortie = io.BytesIO()
+    Image.new("RGB", (300, 400), (10, 20, 30)).save(sortie, format="PNG")
+    envoye = sortie.getvalue()
+
+    cle = await storage.deposer_une_image(envoye, prefixe="photos/cartes/x")
+
+    assert await depot.lire(cle) == envoye
+
+
+def test_borner_ne_rend_rien_quand_il_n_y_a_rien_a_faire() -> None:
+    """Le contrat de la fonction, à part du dépôt : `None` veut dire « garde ce
+    que tu as », jamais « je n'ai pas su »."""
+    petite = _photo(cote=200)
+
+    assert images.borner_l_original(petite) is None
+    assert images.borner_l_original(b"pas une image") is None
+
+
+def test_borner_reduit_ce_qui_depasse() -> None:
+    """L'autre sens. Une fonction qui rendrait toujours `None` passerait le test
+    ci-dessus sans jamais rien borner."""
+    from PIL import Image
+
+    grande = _photo(cote=3000)
+
+    borne = images.borner_l_original(grande)
+
+    assert borne is not None
+    with Image.open(io.BytesIO(borne)) as lue:
+        assert max(lue.size) == images.COTE_ORIGINAL

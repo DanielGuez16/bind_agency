@@ -74,9 +74,23 @@ async def deposer_une_image(contenu: bytes, *, prefixe: str) -> str:
     d'envoyer pour une raison qui ne le regarde pas. La route des médias retombe
     sur l'original quand la vignette n'existe pas.
     """
-    cle = await get_object_store().deposer(contenu, prefixe=prefixe)
+    # **L'original est borné avant d'être rangé.** Il ne l'était pas : on
+    # rangeait les quatre mille pixels du téléphone. Tant que le fil servait la
+    # vignette, personne ne le payait ; le mur sert l'original, et trois salons
+    # par écran à cette taille rendraient le défilement impraticable.
+    #
+    # **Seulement ce qui dépasse.** Réencoder une image déjà dans les clous la
+    # dégraderait sans rien gagner — une page de carte en PNG net deviendrait un
+    # JPEG, et ses prix s'y liraient moins bien. Ce qui passe la borne ressort
+    # octet pour octet.
+    #
+    # Le repli est celui de la vignette, et pour la même raison : une image
+    # illisible ou un Pillow absent rangent l'original tel quel plutôt que de
+    # perdre une photo que le commerce vient d'envoyer.
+    borne = images.borner_l_original(contenu) or contenu
+    cle = await get_object_store().deposer(borne, prefixe=prefixe)
 
-    reduite = images.vignette(contenu)
+    reduite = images.vignette(borne)
     if reduite is None:
         return cle
 

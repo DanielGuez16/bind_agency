@@ -62,6 +62,10 @@ class BusinessCreate(BaseModel):
     #: publique fuit, et les deux se figeraient en base au changement de
     #: fournisseur. Envoyer `null` la retire.
     cover_photo_key: str | None = Field(default=None, max_length=500)
+    #: La couverture verticale du mur. Un champ à part : la paysage sert
+    #: encore la fiche et les listes. Envoyer `null` la retire.
+    cover_portrait_key: str | None = Field(default=None, max_length=500)
+
     #: L'adresse de la carte du commerce, quand elle existe déjà en ligne.
     #: Envoyer `null` la retire. Alternative ou complément aux pages déposées :
     #: l'un ou l'autre suffit à ouvrir une offre à choix.
@@ -104,6 +108,10 @@ class BusinessUpdate(BaseModel):
     #: publique fuit, et les deux se figeraient en base au changement de
     #: fournisseur. Envoyer `null` la retire.
     cover_photo_key: str | None = Field(default=None, max_length=500)
+    #: La couverture verticale du mur. Un champ à part : la paysage sert
+    #: encore la fiche et les listes. Envoyer `null` la retire.
+    cover_portrait_key: str | None = Field(default=None, max_length=500)
+
     #: L'adresse de la carte du commerce, quand elle existe déjà en ligne.
     #: Envoyer `null` la retire. Alternative ou complément aux pages déposées :
     #: l'un ou l'autre suffit à ouvrir une offre à choix.
@@ -127,6 +135,7 @@ class BusinessRead(BaseModel):
     phone: str | None
     currency: str
     cover_photo_key: str | None
+    cover_portrait_key: str | None
     menu_url: str | None
     status: BusinessStatus
     created_at: datetime

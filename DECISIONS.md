@@ -5211,3 +5211,45 @@ bornée à 480 px sur le grand côté, ce qui donnerait une image agrandie trois
 fois sur une couverture de 520 points. Le mur devra servir l'original, et le
 dépôt devra borner l'original — il range aujourd'hui ce qu'il reçoit, soit
 4000 px depuis un téléphone. Ce n'est pas fait dans ce lot.
+
+---
+
+## 2026-08-17 — La couverture verticale, et l'original enfin borné
+
+**Un champ à part, jamais un remplacement.** `cover_portrait_key` s'ajoute à
+`cover_photo_key` : la paysage sert encore la fiche et les listes, et la
+remplacer casserait deux usages pour un troisième. Le mur retombe sur la paysage
+quand la verticale manque — un 16:9 recadré vaut mieux qu'un monogramme. **Le
+serveur ne recopie pas l'une dans l'autre** : deux champs qui portent la même
+valeur ne se distinguent plus le jour où l'un des deux change, et c'est l'app
+qui décide du repli.
+
+**Le format, calculé plutôt que choisi.** Pour une boîte pleine largeur sur 520
+points de haut : l'écran le plus large en pratique fait 430 points, soit
+1290 px à densité 3, et 1560 px de haut. **4:5, minimum 1290 × 1612, livré en
+1600 × 2000.** Un 9:16 perdrait un quart de sa hauteur au recadrage là où un 4:5
+perd 6 % de sa largeur.
+
+**L'original n'était borné par rien.** On rangeait ce qu'on recevait, soit
+quatre mille pixels sortis d'un téléphone. Tant que le fil servait la vignette,
+personne ne le payait ; le mur sert l'original — 480 px ne peuvent pas remplir
+520 points — et trois salons par écran à cette taille rendraient le défilement
+impraticable sur le réseau d'un salon. Le grand côté est désormais borné à 2000,
+ce qui laisse passer le 1600 × 2000 sans rien lui écrêter.
+
+**Le défaut que la première version introduisait.** Borner en réutilisant
+`vignette` réencodait **toujours**, y compris les images déjà dans les clous :
+une page de carte déposée en PNG net devenait un JPEG à qualité 82, et ses prix
+s'y lisaient moins bien. L'extraction de carte l'a signalé — son test vérifie
+que le modèle reçoit les octets déposés, et il recevait autre chose.
+`borner_l_original` ne touche donc que ce qui dépasse ; ce qui passe la borne
+ressort octet pour octet.
+
+C'est la deuxième fois en deux jours qu'un test existant attrape une régression
+que la relecture n'aurait pas vue. Le premier était le champ perdu par le
+routeur, celui-ci le réencodage silencieux.
+
+**La vignette à 480 ne bouge pas.** Elle reste juste là où elle sert — galerie,
+carte, catalogue, listes. Une source unique pour le mur, en revanche : servir la
+vignette au triptyque et l'original au cadre plein donnerait deux cadrages du
+même salon selon sa position dans le cycle.
