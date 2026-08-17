@@ -80,6 +80,7 @@ test("l'accueil reste utilisable quand aucun fond ne charge", async ({ page }) =
 
   await page.goto('/');
 
-  await expect(page.getByTestId('porte-createur')).toBeVisible();
-  await expect(page.getByTestId('porte-commerce')).toBeVisible();
+  const accueil = page.getByTestId('ecran-accueil');
+  await expect(accueil.getByTestId('porte-createur')).toBeVisible();
+  await expect(accueil.getByTestId('porte-commerce')).toBeVisible();
 });

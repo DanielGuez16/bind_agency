@@ -145,7 +145,13 @@ export function CodeScreen({
   }, [courant, relire, visible]);
 
   return (
-    <PickupCodeSurface>
+    // **`ecran-code` n'existait nulle part**, et le parcours de bout en bout
+    // vérifiait pourtant qu'on n'y atterrit pas :
+    // `expect(page.getByTestId('ecran-code')).toHaveCount(0)`. L'assertion ne
+    // pouvait pas échouer — elle constatait l'absence de ce qui n'existe sur
+    // aucun écran. Le même défaut que celui qui a motivé cette règle, une
+    // seconde fois, et trouvé en la passant sur la suite.
+    <PickupCodeSurface testID="ecran-code">
       {onRetour ? (
         <Pressable
           testID="retour"

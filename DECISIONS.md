@@ -5552,3 +5552,46 @@ définitive.
 le grand côté. La demande faite aux photographes — 1600 × 2000 en 4:5 — suffit,
 et elle ramènerait le dossier entier sous les 10 Mo. C'est un réglage d'export,
 pas un script à maintenir.
+
+---
+
+## 2026-08-17 — La règle des sélecteurs, passée sur toute la suite
+
+La leçon était notée, la correction ne portait que sur son cas. Elle porte
+maintenant sur les cinq fichiers de bout en bout, et une garde la tient.
+
+**Sept sélecteurs partaient de `page`.** Le salon du fil, la grille des
+créneaux, le bouton de confirmation, la ligne d'historique, les trois éléments
+du code, les deux portes de l'accueil, les trois champs de connexion. Chacun
+trouvait la bonne chose aujourd'hui, et aucun ne garantissait de la trouver
+demain : en web, les onglets quittés restent montés, et un sélecteur trop large
+trouve toujours quelque chose.
+
+**Un huitième, trouvé par la garde et qui valait le détour.** `etat-nominal`
+est le nom que le gabarit `Ecran` donne à son contenu chargé : il existe donc
+sur **chaque** écran monté. `accorderLaPosition` l'attendait depuis `page` —
+c'est-à-dire qu'elle attendait que n'importe quel écran ait chargé, y compris un
+onglet d'arrière-plan. Elle reçoit désormais l'écran à surveiller.
+
+**La garde ignore les commentaires**, et ce n'est pas un détail : le dépôt cite
+le `rangee-` d'origine dans l'explication du défaut. Les compter ferait échouer
+la garde sur sa propre explication, et le premier réflexe serait d'effacer
+l'explication.
+
+**Deux échappatoires, chacune une décision.** L'écran lui-même — c'est la
+portée, elle ne peut pas être portée — et un écran reçu en paramètre, parce
+qu'une aide partagée entre parcours ne peut pas nommer l'écran en dur.
+
+**Et un second cas du même défaut, trouvé en appliquant la règle.**
+`ecran-code` n'existait **nulle part** dans le produit. Le parcours vérifiait
+pourtant qu'on n'y atterrit pas — `expect(page.getByTestId('ecran-code'))
+.toHaveCount(0)` — une assertion qui constatait l'absence de ce qui n'existe sur
+aucun écran, et qui ne pouvait donc pas échouer. Porter les sélecteurs a rendu
+la chose visible immédiatement : `code.getByTestId('qr')` ne trouvait rien.
+L'écran porte désormais son identifiant, et les deux assertions disent enfin
+quelque chose.
+
+**Une erreur de méthode, la seconde de la journée.** `git checkout` sur du
+travail non commité a effacé cinq corrections d'un coup, découvertes parce que
+la garde restait rouge. La règle qui vaut : commiter avant de muter, sans
+exception.

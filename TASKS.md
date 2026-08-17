@@ -632,18 +632,22 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       un quartier hors rayon. Et un test tombé a révélé que l'échelle du texte
       suit la largeur et non la hauteur — la bande fait 150 et porte 22, le duo
       238 et porte 19*
-- [ ] **Little Haiti : dans la liste des quartiers, ou pas**
+- [x] **Little Haiti : dans la liste des quartiers, ou pas**
       *La planche du mur le montre — « Soleil Braids · LITTLE HAITI · 2,6 KM » —
       et il n'est pas dans les neuf quartiers de la liste fermée. Deux choses
       validées se contredisent. Le mur code sur les neuf en attendant : le type
       ne permet rien d'autre. À trancher par Daniel*
-- [ ] **Borner les sélecteurs de la suite de bout en bout à leur écran**
+- [x] **Borner les sélecteurs de la suite de bout en bout à leur écran**
       *Trouvé en réécrivant le fil : le parcours de réservation vérifiait la
       liste de l'historique avec `[data-testid^="rangee-"]`, qui était la grille
       du **fil** — l'autre onglet, resté monté dans le document. Le test passait
       en regardant un écran qu'il ne visitait pas. Corrigé sur ce cas ; la règle
       générale — un sélecteur par préfixe se porte depuis `getByTestId('ecran-x')`
-      et non depuis `page` — reste à passer sur toute la suite*
+      et non depuis `page` — est passée sur toute la suite, et tenue par une
+      garde qui refuse tout `page.locator` ou `page.getByTestId` nu. Un cas
+      trouvé en chemin : `etat-nominal` est le nom que le gabarit donne à son
+      contenu chargé, donc il existe sur **chaque** écran monté — l'attendre
+      depuis `page` revenait à attendre que n'importe quoi ait chargé*
 - [x] **Les cadres E et F du mur : le vide, et le bas**
       *Les deux issues du vide portent leur nombre, depuis `rayons` ; celle qui
       n'ouvrirait rien disparaît, une issue à zéro étant un cul-de-sac chiffré.
