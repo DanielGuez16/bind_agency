@@ -5408,3 +5408,32 @@ ne vient jamais : sans pile il atterrit sur sa fonte par défaut, un Times. Un
 Didone du XVIIIe remplacé par une romaine de journal est le contraire de la
 direction, et ça se voit sur le premier écran. `nomDeFonte` compose donc la pile
 sur le web et rend le nom seul ailleurs.
+
+## 2026-08-17 — La pile de repli a cassé l'enregistrement des fontes
+
+Vingt minutes de CI rouge, et la leçon vaut plus que le correctif.
+
+`nomDeFonte` sert **deux choses** : écrire un style, et **enregistrer** la face
+auprès d'`expo-font`. J'y ai composé la pile de repli du web. Résultat : le
+produit enregistrait une famille appelée « BodoniModa_400Regular, Didot,
+"Playfair Display", Georgia, serif » — plus aucune face posée, et toutes les
+fontes du web perdues. `pileDeFontes` est désormais une fonction à part, employée
+là où l'on écrit un style et nulle part ailleurs.
+
+**Ce que la suite unitaire ne pouvait pas voir.** Ses quatorze tests lisaient le
+nom rendu ; aucun ne regardait ce qui part à l'enregistrement. C'est `e2e` qui
+l'a dit — « aucune face enregistrée : expo-font n'a rien posé ». Quatrième défaut
+que ce job trouve et qu'aucun test unitaire n'aurait vu.
+
+**Et la garde écrite pour ça a d'abord été inutile.** Première version : forcer
+`Platform.OS = 'web'` pour éprouver le chemin. La mutation qui remet la pile dans
+`nomDeFonte` **passait quand même** — jest rend en natif, où la pile ne
+s'applique pas, donc le test ne pouvait pas attraper le défaut pour lequel il
+était écrit. Mocker `react-native` entier pour forcer la plateforme a fait tomber
+un module natif sans rapport.
+
+La garde vérifie donc **où** le repli est composé, à la source : `pileDeFontes`
+le mentionne, `nomDeFonte` non, et il n'y a qu'une mention dans tout le fichier.
+Une garde de source est le bon outil quand la distinction tient à une plateforme
+que la suite ne joue pas — et la refuser par principe aurait laissé un test vert
+qui ne protège rien.

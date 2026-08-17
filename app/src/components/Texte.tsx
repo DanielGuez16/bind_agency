@@ -24,7 +24,7 @@ import { Text as TextNatif, type TextProps as TextPropsNatif } from 'react-nativ
 
 import {
   type ColorName,
-  nomDeFonte,
+  pileDeFontes,
   type RoleDeFonte,
   typography,
   useColors,
@@ -112,7 +112,7 @@ export function Texte({
           lineHeight: echelle.lineHeight,
           letterSpacing: echelle.letterSpacing,
           textTransform: echelle.textTransform,
-          fontFamily: nomDeFonte(
+          fontFamily: pileDeFontes(
             echelle.fontFamily as RoleDeFonte,
             echelle.fontWeight,
             echelle.fontStyle === 'italic' ? 'italic' : 'normal',

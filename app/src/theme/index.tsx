@@ -90,7 +90,7 @@ export function voileDEncre(opacite: number): string {
   return `rgba(${r},${v},${b},${opacite})`;
 }
 
-export { nomDeFonte, policesAcharger, type Graisse, type Voix } from './polices';
+export { nomDeFonte, pileDeFontes, policesAcharger, type Graisse, type Voix } from './polices';
 export {
   familles,
   typography,

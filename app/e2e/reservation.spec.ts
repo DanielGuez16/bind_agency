@@ -21,7 +21,9 @@ test('réserver un créneau, puis retrouver son code', async ({ page }) => {
   // produit, qui ne demande rien au démarrage.
   await expect(page.getByTestId('ecran-fil')).toBeVisible();
   await accorderLaPosition(page);
-  const salon = page.locator('[data-testid^="commerce-"]').first();
+  // `salon-` et non `commerce-` : la carte du fil n'existe plus, le mur pose
+  // des photos. Le parcours, lui, est le même — c'est ce que ce test éprouve.
+  const salon = page.locator('[data-testid^="salon-"]').first();
   await expect(salon, 'le fil est vide : aucun salon à réserver').toBeVisible();
   await salon.click();
 

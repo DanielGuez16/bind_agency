@@ -151,8 +151,17 @@ const REPLI: Graisse[] = ['600', '500', '400', '700', '300'];
  * C'est la seule part de la correction de fonte de Design qui s'applique ici :
  * le produit charge des TTF statiques par graisse, donc il n'a ni axe `opsz` à
  * retirer ni graisse à épingler.
+ *
+ * **Séparée de `nomDeFonte`, et il a fallu le payer pour le comprendre.** Ce
+ * nom sert deux choses : écrire un style, et **enregistrer** la face auprès
+ * d'`expo-font`. Composer la pile dans `nomDeFonte` a donc enregistré une
+ * famille appelée « BodoniModa_400Regular, Didot, … » — plus aucune face posée,
+ * et toutes les fontes du web perdues. Les tests unitaires n'ont rien vu : ils
+ * lisent le nom rendu, pas ce que le navigateur enregistre. C'est la suite de
+ * bout en bout qui l'a dit.
  */
-function avecRepli(nom: string, role: RoleDeFonte): string {
+export function pileDeFontes(role: RoleDeFonte, graisse: string | number, voix: Voix = 'normal'): string {
+  const nom = nomDeFonte(role, graisse, voix);
   if (Platform.OS !== 'web') return nom;
   return [nom, ...produit.repli[role]].map((f) => (f.includes(' ') ? `"${f}"` : f)).join(', ');
 }
@@ -177,8 +186,7 @@ export function nomDeFonte(
 
   // L'espace disparaît, la graisse se rattache : « Bodoni Moda » + « 500 » +
   // italique donne « BodoniModa_500Italic ». La famille reste celle des jetons.
-  const nom = `${famille.replace(/\s+/g, '')}_${retenue}${retenueVoix === 'italic' ? 'Italic' : ''}`;
-  return avecRepli(nom, role);
+  return `${famille.replace(/\s+/g, '')}_${retenue}${retenueVoix === 'italic' ? 'Italic' : ''}`;
 }
 
 /**
