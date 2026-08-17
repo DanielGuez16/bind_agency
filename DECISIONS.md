@@ -5911,3 +5911,74 @@ remontait l'arbre en ne lisant que `style` ; la marge de l'écran vit sur
 `contentContainerStyle` du `ScrollView`. Débrancher le fond perdu ne le faisait
 pas tomber. Trouvé par mutation, pas par relecture — la sixième fois cette
 semaine.
+
+---
+
+## 2026-08-17 — Où passe le temps, mesuré plutôt que supposé
+
+Question de Daniel : je passe plus de temps à vérifier qu'à écrire, et il veut
+la même vérification en moins de temps. Mesuré au lieu d'être répondu de
+mémoire — et les deux hypothèses de départ, les miennes comme les siennes,
+étaient fausses.
+
+| | mesuré |
+| --- | --- |
+| Suite jest entière | **13,0 s** (`user` 39,4 s sur 10 cœurs) |
+| Un fichier de test | 1,7 s |
+| Une exécution CI | **~750 s** |
+| dont `api` | 754 s, **dont 704 dans `pytest` seul** |
+| dont `e2e` | 215 s |
+| dont `app` | 60 s |
+
+**Sept exécutions CI sur une session : environ 85 minutes.** Tout le reste —
+écriture, tests, suites locales, cinquante et une mutations — tient sous le
+quart d'heure de calcul cumulé.
+
+**Le parallélisme était déjà là** côté jest : trois fois le temps réel en temps
+processeur. Rien à gagner.
+
+**Les mutations visaient déjà le fichier concerné**, et la prémisse « la suite
+entière coûte plusieurs minutes » était fausse d'un facteur soixante.
+
+**Mais la mesure a trouvé autre chose** : `entete-du-mur.test.tsx` coûtait
+17,4 s quand ses voisins en prenaient 1,7 — un test que j'avais écrit laissait
+une requête pendante pour observer l'état de chargement, et Jest attendait le
+handle ouvert. Relâcher la requête à la fin du test : 2,5 s. C'est moi qui avais
+fabriqué le coût, et il retombait dans chaque boucle de mutation.
+
+### Le court-circuit, et la seule forme qui préserve la protection
+
+`main` exige `api`, `app` et `e2e`. Un job **sauté** par une condition de job ne
+rapporte jamais rien : la fusion l'attend indéfiniment et la protection se
+retourne contre elle-même. La condition est donc posée sur les **étapes** — le
+job démarre, ne fait rien, et sort en vert.
+
+**En cas de doute, tout s'exécute.** Base de comparaison introuvable, `git diff`
+en échec, événement inattendu : le repli est « tout a changé ». Un court-circuit
+qui se trompe dans l'autre sens laisse passer exactement ce qu'il prétend
+vérifier, et personne ne le sait.
+
+Deux dépendances croisées valaient d'être écrites : `openapi.json` vit dans
+`app/` et **est le contrat que le job `api` regénère et compare**, donc le
+modifier seul doit réveiller `api` ; et le test des catalogues lit
+`api/app/core/errors.py`, donc un code d'erreur ajouté côté serveur doit
+réveiller `app`.
+
+### La garde de durée, et ce qu'elle ne peut pas attraper
+
+Généralisée depuis le cas trouvé : dix fois la médiane des fichiers, avec un
+plancher de cinq secondes — relatif, parce qu'une durée absolue dit surtout à
+quel point le runner était chargé.
+
+**Elle attrape deux formes sur trois, et c'est écrit dans le fichier.** Une
+attente réelle qu'on regarde passer, et un `waitFor` qui va au bout de son
+délai : vérifiés tous les deux en les fabriquant. **Le cas qui l'a motivée lui
+échappe** — les dix-sept secondes étaient du démontage, et Jest ne les compte
+pas dans la durée du fichier. Vérifié en rejouant le défaut : le fichier fautif
+ne ressort même pas parmi les cinq plus lents d'une exécution complète.
+
+L'outil de cette classe est `jest --detectOpenHandles`. Il ne peut pas encore
+être exigé : la suite force la sortie d'un worker à **chaque** exécution, sur
+l'arbre propre, avant comme après cette correction. La fuite est ailleurs et
+n'est pas identifiée — tâche à part. Écrire la limite de la garde vaut mieux que
+la laisser faire croire que la question est réglée.

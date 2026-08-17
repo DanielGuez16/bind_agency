@@ -777,6 +777,26 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       sport et des musées, et les six catégories de commerce sont l'axe qui
       trie réellement. Rien à changer : c'est ce qui est livré. La taxinomie de
       prestation ne se rouvre que si le produit redevient mono-catégorie*
+- [ ] **`pytest -n auto`, avec une base par worker**
+      *Mesuré : le job `api` prend 754 s, dont **704 dans `pytest` seul** —
+      l'installation en fait 22, le reste est du bruit. C'est 93 % du job et
+      78 % de l'attente d'une exécution complète. Mais ce n'est pas un drapeau
+      à ajouter : les tests partagent une seule base `bind_test`, et le dépôt
+      éprouve explicitement les verrous consultatifs et le comportement
+      transactionnel. Des workers `xdist` demandent une base par worker, et
+      chaque test de concurrence doit être relu un par un. **Reporté
+      délibérément** : rendre douteux exactement les tests qu'on ne peut pas se
+      permettre de douter serait payer trop cher pour dix minutes*
+- [ ] **La suite `app` force la sortie d'un worker, sur un arbre propre**
+      *« A worker process has failed to exit gracefully » sort à **chaque**
+      exécution, avant comme après la correction du fichier à 17 secondes : la
+      fuite est ailleurs et n'est pas identifiée. Elle est sans conséquence
+      visible — la suite passe — mais elle interdit d'exiger
+      `jest --detectOpenHandles`, qui est le seul outil qui nomme un handle
+      resté ouvert **et** son fichier. C'est la classe de défaut que la garde de
+      durée ne peut pas attraper : le coût est dans le démontage, et Jest ne le
+      compte pas dans la durée du fichier. Fin : `--detectOpenHandles` sort
+      propre, et devient une étape de la CI*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire
 
 ---

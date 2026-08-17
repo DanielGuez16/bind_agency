@@ -122,6 +122,16 @@ Une session, une tâche de `TASKS.md`. Pas deux.
 
 Une branche par tâche, nommée `phase-N/nom-court`.
 
+**Deux à trois points par PR quand ils touchent la même zone.** Une PR par
+point coûtait douze minutes d'intégration continue à chaque fois, mesurées :
+sept exécutions sur une seule session, quatre-vingt-cinq minutes d'attente pour
+moins d'un quart d'heure de calcul réel. Relire un peu plus à chaque fois vaut
+mieux qu'attendre six fois.
+
+Ce qui ne se regroupe jamais : une PR qui ne compile pas, et une migration
+laissée à moitié. Le regroupement réduit l'attente, il ne réduit pas ce qui doit
+être vrai à chaque fusion.
+
 `main` est protégée : fusion par PR uniquement, **les trois jobs verts** — `api`,
 `app` et `e2e` — et à jour, sans contournement administrateur. La règle est dans
 le dépôt, pas dans la vigilance.
