@@ -85,7 +85,7 @@ export function BienvenueScreen({
     >
       <Apparition>
         <View style={{ gap: 14 }}>
-          <Marque taille={56} />
+          <Marque taille={33} />
           <Texte variante="type.screenTitle">{t('bienvenue.titre')}</Texte>
           <Texte variante="type.body" couleur="ink.soft">
             {t('bienvenue.principe')}

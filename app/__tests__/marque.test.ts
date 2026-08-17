@@ -248,21 +248,27 @@ describe('les fichiers de la marque', () => {
 
   it('la règle décide de chaque fichier, et aucun n’y échappe', () => {
     // **Le logotype partout où on a la place de le lire, la marque compacte
-    // partout ailleurs — et le seuil est la lisibilité des quatre lettres, pas
-    // le support.** C'est `afficheA` qui décide : ce que l'utilisateur voit,
-    // jamais la résolution du fichier. On avait gardé le logotype sur l'icône
-    // d'application *parce qu'elle est livrée en 1024*, et un lanceur en
-    // affichait vingt-sept pixels pour quatre lettres.
-    const { largeurParLettre, pixelsParLettreMinimum } = declare.lisibilite;
+    // partout ailleurs.** Le seuil est la lisibilité des quatre lettres, pas le
+    // support : `afficheA` est ce que l'utilisateur voit, jamais la résolution
+    // du fichier.
+    //
+    // **La borne est celle que Design pose**, et non un nombre dérivé ici :
+    // « le logotype ne tient pas sous 128 : quatre lettres n'ont pas quatre
+    // pixels chacune » (`logo.mark16.$doctrine`). Une première version calculait
+    // le seuil depuis `largeurParLettre` ; ce chiffre a changé de sens avec le
+    // vectoriel — il valait la largeur des quatre lettres rapportée au corps de
+    // la fonte, il vaut maintenant celle d'**une** lettre rapportée à la hauteur
+    // du tracé — et le réutiliser sans le recalibrer faisait dire à la règle
+    // qu'un favicon de seize pixels pouvait porter le logotype.
+    const jetons = JSON.parse(
+      readFileSync(join(__dirname, '..', 'src', 'theme', 'tokens.json'), 'utf-8'),
+    );
+    const BORNE = Math.min(...(jetons.logo.mark16.sizes as number[]).slice(-1), 128);
 
     for (const fichier of declare.fichiers) {
-      const parLettre = (fichier.afficheA * largeurParLettre) / declare.mot.length;
-      expect({
+      expect({ nom: fichier.nom, marque: fichier.marque }).toEqual({
         nom: fichier.nom,
-        marque: fichier.marque,
-      }).toEqual({
-        nom: fichier.nom,
-        marque: parLettre >= pixelsParLettreMinimum ? 'logotype' : 'compacte',
+        marque: fichier.afficheA >= BORNE ? 'logotype' : 'compacte',
       });
     }
   });
@@ -497,11 +503,13 @@ describe('le plancher du logotype', () => {
   it('se calcule depuis deux mesures, il ne s’écrit pas', () => {
     const { PLANCHER_DU_LOGOTYPE } = require('../src/components');
     const { largeurParLettre, pixelsParLettreMinimum } = declare.lisibilite;
-    // `taille × 0,72` donne le corps, et une lettre vaut `largeurParLettre` du
-    // corps. Le plancher est la plus petite taille qui tienne le minimum.
-    expect(PLANCHER_DU_LOGOTYPE).toBe(
-      Math.ceil(pixelsParLettreMinimum / (0.72 * largeurParLettre)),
-    );
+    // `taille` est la **hauteur** du tracé, et une lettre vaut
+    // `largeurParLettre` de cette hauteur — un quart du rapport de la boîte.
+    // Le plancher est la plus petite hauteur qui tienne le minimum.
+    expect(PLANCHER_DU_LOGOTYPE).toBe(Math.ceil(pixelsParLettreMinimum / largeurParLettre));
+    // Et ce rapport est celui de la boîte mesurée sur la source, pas un chiffre
+    // en l'air : quatre lettres dans 2,919 fois la hauteur.
+    expect(largeurParLettre * 4).toBeCloseTo(produit.marque.rapportDeLaBoite, 3);
     // Et il vaut bien quelque chose : un plancher à zéro passerait le calcul.
     expect(PLANCHER_DU_LOGOTYPE).toBeGreaterThan(0);
   });
@@ -561,100 +569,84 @@ function feuillesDeTexte(noeud: unknown): string[] {
 }
 
 describe('le logotype porte son point', () => {
-  /**
-   * Le logotype rendu, et **ses props lues sur l'arbre**.
-   *
-   * Une première version de ces tests cherchait les couleurs dans le HTML
-   * produit : les styles y arrivent en `[object Object]` et l'assertion ne
-   * regardait rien. Les props se lisent.
-   */
+  const { readFileSync: lire } = require('fs') as typeof import('fs');
+  const { join: chemin } = require('path') as typeof import('path');
+
   async function rendu(variante: 'encre' | 'blanc') {
     const vue = await render(createElement(Marque, { taille: 40, variante, testID: 'logo' }));
-    /**
-     * `react-native-svg` normalise `fill` en entier ARGB avant de le poser sur
-     * l'arbre : lire la prop telle quelle compare une chaîne à un objet, et
-     * l'assertion échoue pour la mauvaise raison.
-     */
     const couleurLue = (valeur: unknown): string => {
       if (typeof valeur === 'string') return valeur.toUpperCase();
       const brut = (valeur as { payload?: number }).payload ?? 0;
       return `#${(brut & 0xffffff).toString(16).padStart(6, '0').toUpperCase()}`;
     };
-    const empile = (valeur: unknown): Record<string, unknown> =>
-      Array.isArray(valeur)
-        ? Object.assign({}, ...valeur.map(empile))
-        : ((valeur as Record<string, unknown>) ?? {});
     return {
-      // Toutes les feuilles de texte de l'arbre, mises bout à bout : c'est ce
-      // que l'œil lit, indépendamment du composant qui l'a posé.
       textes: feuillesDeTexte(vue.toJSON()).join(''),
-      lettres: couleurLue(empile(screen.getByTestId('logo-lettres').props.style).color),
-      fut: couleurLue(
-        screen.getByTestId('logo-signe-fut', { includeHiddenElements: true }).props.fill,
+      lettres: couleurLue(
+        screen.getByTestId('logo-lettres', { includeHiddenElements: true }).props.fill,
       ),
       point: couleurLue(
-        screen.getByTestId('logo-signe-point', { includeHiddenElements: true }).props.fill,
+        screen.getByTestId('logo-point', { includeHiddenElements: true }).props.fill,
       ),
     };
   }
 
-  it('le « ! » est dessiné, jamais posé comme caractère', () => {
-    // **La conséquence technique de la correction.** Posé en texte, le fût
-    // prendrait la couleur du point : une couleur de texte s'applique au glyphe
-    // entier, et rien ne permet d'en peindre la moitié. Un logotype qui le
-    // poserait en caractère serait plus court à écrire, passerait la revue, et
-    // son fût serait orange.
-    const source = readFileSync(join(__dirname, '..', 'src', 'components', 'Logo.tsx'), 'utf-8');
-    const utiles = source.split('\n').filter((ligne) => !/^\s*(\/\/|\*|\/\*)/.test(ligne));
-
-    // Le mot est coupé sur le « ! », jamais rendu d'un bloc…
-    expect(utiles.some((ligne) => ligne.includes("wordmark.text.split('!')"))).toBe(true);
-    // …et le signe est un tracé.
-    expect(utiles.some((ligne) => ligne.includes('<Polygon'))).toBe(true);
-    expect(utiles.some((ligne) => ligne.includes('<Circle'))).toBe(true);
-  });
-
-  it('et le rendu ne porte que les lettres, jamais le « ! » en texte', async () => {
-    // Le sens inverse, lu sur l'arbre : la garde précédente lit un fichier, et
-    // un fichier peut contenir les deux formes. Ce que l'écran montre décide.
+  it('est un tracé, et ne pose plus une seule lettre en texte', async () => {
+    // **Le vectoriel remplace l'approximation.** Les lettres étaient composées
+    // dans la fonte du système, et le D y perdait sa coupe oblique — ce que
+    // `$meta.unconfirmed` portait. Il n'y a plus de texte du tout : c'est la
+    // forme la plus sûre de la règle, puisqu'un caractère ne peut plus
+    // réapparaître sans que ce test tombe.
     const { textes } = await rendu('encre');
-    expect(textes).toBe(declare.mot.replace('!', ''));
+    expect(textes).toBe('');
   });
 
   it.each(['encre', 'blanc'] as const)(
-    'sur %s, le fût suit les lettres et le point reste orange',
+    'sur %s, les lettres suivent le fond et le point reste orange',
     async (variante) => {
-      const { lettres, fut, point } = await rendu(variante);
-
-      // Le fût suit les lettres — c'est toute la correction.
-      expect(fut).toBe(produit.marque.encres[variante].toUpperCase());
+      const { lettres, point } = await rendu(variante);
       expect(lettres).toBe(produit.marque.encres[variante].toUpperCase());
-      // Et le point ne les suit pas.
       expect(point).toBe(produit.marque.encres.point.toUpperCase());
-      expect(point).not.toBe(fut);
+      expect(point).not.toBe(lettres);
     },
   );
 
   it('les deux variantes diffèrent par les lettres, jamais par le point', async () => {
-    // **Le sens inverse, et c'est celui qui compte.** Une variante blanche dont
-    // le point suivrait les lettres serait un logotype monochrome pâle —
-    // c'est-à-dire l'erreur d'avant, remise en place par la porte de derrière.
+    // **Le sens qui compte.** Une variante blanche dont le point suivrait les
+    // lettres serait un logotype monochrome pâle — l'erreur que le vectoriel a
+    // corrigée, remise en place par la porte de derrière.
     const surClair = await rendu('encre');
     const surSombre = await rendu('blanc');
-
     expect(surClair.lettres).not.toBe(surSombre.lettres);
-    expect(surClair.fut).not.toBe(surSombre.fut);
     expect(surClair.point).toBe(surSombre.point);
   });
 
+  it('les deux chemins sont distincts, et le point n’est pas dans les lettres', async () => {
+    // C'est ce qui rend la recoloration possible : un chemin unique obligerait
+    // à repeindre le point avec le reste.
+    const { LETTRES, POINT } = require('../src/components/logotype');
+    expect(LETTRES).not.toContain(POINT);
+    expect(POINT.length).toBeLessThan(LETTRES.length);
+    expect(LETTRES.startsWith('M')).toBe(true);
+    expect(POINT.startsWith('M')).toBe(true);
+  });
+
+  it('le tracé du dépôt est bien celui que le composant rend', async () => {
+    // Les SVG livrés dans le dossier de passation et les chemins inlinés
+    // viennent de la même trace : deux sources divergeraient au premier
+    // ajustement, et c'est le fichier qu'on rouvrirait pour vérifier.
+    const svg = lire(
+      chemin(__dirname, '..', '..', 'design_handoff_bind', 'logo', 'bind-logotype.svg'),
+      'utf-8',
+    );
+    const { LETTRES, POINT } = require('../src/components/logotype');
+    const compact = (t: string) => t.split(/\s+/).join(' ').trim();
+    expect(compact(svg)).toContain(compact(LETTRES));
+    expect(compact(svg)).toContain(compact(POINT));
+  });
+
   it('les encres du logotype sont rattachées aux jetons, sauf le blanc', () => {
-    // Deux des trois doublent un jeton : elles ne doivent pas devenir une
-    // seconde source. Le blanc est le seul chiffre propre au logo — la
-    // passation dit #FFFFFF, et non `ink.onDark`, qui est l'encre claire du
-    // texte courant. Les faire coïncider ferait suivre le logo le jour où l'une
-    // des deux bougerait.
     const jetons = JSON.parse(
-      readFileSync(join(__dirname, '..', 'src', 'theme', 'tokens.json'), 'utf-8'),
+      lire(chemin(__dirname, '..', 'src', 'theme', 'tokens.json'), 'utf-8'),
     );
     expect(produit.marque.encres.encre).toBe(jetons.color.ink.default);
     expect(produit.marque.encres.point).toBe(jetons.color.brand['500']);
@@ -662,19 +654,26 @@ describe('le logotype porte son point', () => {
     expect(jetons.logo.monochrome).toBe(false);
   });
 
+  it('et le logo n’est plus une approximation déclarée', () => {
+    // **`$meta.unconfirmed` tombe avec le vectoriel.** Il portait « réclamer le
+    // vectoriel » ; le garder après l'avoir obtenu ferait douter des autres
+    // manques qu'il nomme.
+    const jetons = JSON.parse(
+      lire(chemin(__dirname, '..', 'src', 'theme', 'tokens.json'), 'utf-8'),
+    );
+    const restants: string[] = jetons.$meta.unconfirmed ?? [];
+    expect(restants.filter((l) => /logo/i.test(l))).toEqual([]);
+  });
+
   it('aucune signature nulle part, y compris à l’écran', async () => {
-    // La garde de fichier ne voit pas une chaîne écrite à la main dans le JSX.
-    // Celle-ci lit ce que le logotype rend, et rien d'autre n'y a sa place.
-    // Ni AGENCY ni CRÉATEUR DE LIEN. Le jeton part avec le prop : un réglage
-    // qui ne commande plus rien est pire que son absence.
     expect(produit.type).not.toHaveProperty('type.tagline');
     expect((await rendu('encre')).textes).not.toMatch(/AGENCY|CR[ÉE]ATEUR/i);
 
     const fautifs = readdirSync(join(__dirname, '..', 'src'), { recursive: true })
-      .filter((chemin) => typeof chemin === 'string' && /\.tsx?$/.test(chemin as string))
-      .filter((chemin) =>
+      .filter((c) => typeof c === 'string' && /\.tsx?$/.test(c as string))
+      .filter((c) =>
         /type\.tagline|signature-agence/.test(
-          readFileSync(join(__dirname, '..', 'src', chemin as string), 'utf-8'),
+          readFileSync(join(__dirname, '..', 'src', c as string), 'utf-8'),
         ),
       );
     expect(fautifs).toEqual([]);

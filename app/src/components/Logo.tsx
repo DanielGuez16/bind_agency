@@ -62,83 +62,30 @@
  * Le vectoriel est réclamé ; d'ici là `tokens.json` porte ce manque dans
  * `$meta.unconfirmed`, plutôt que de laisser croire que la question est réglée.
  */
-import { View } from 'react-native';
-import Svg, { Circle, Polygon } from 'react-native-svg';
+import Svg, { G, Path } from 'react-native-svg';
 
 import { ENCRES_DU_LOGOTYPE, produit, tokens } from '../theme';
-import { Texte } from './Texte';
+import { BOITE, LETTRES, POINT, REPERE } from './logotype';
 
-/**
- * Le rapport entre `taille` et le corps du mot.
- *
- * Nommé parce que le plancher s'en déduit et que le signe s'y accroche : un
- * rapport écrit à trois endroits finirait par diverger de celui qui rend.
- */
-const CORPS_POUR_TAILLE = 0.72;
+
 
 /**
  * La taille sous laquelle le logotype ne se lit plus, et se refuse.
  *
- * Calculée, pas choisie : `taille × 0,72` donne le corps, `corps × 0,592` donne
- * la largeur d'une lettre, et il en faut dix pixels. Vingt-quatre, aujourd'hui.
+ * Calculée, pas choisie. `taille` est la **hauteur** du tracé ; la boîte du mot
+ * fait 1991 sur 682, donc une lettre vaut un quart de 2,919 fois la hauteur, et
+ * il en faut dix pixels. Quatorze, aujourd'hui.
+ *
+ * Le plancher a baissé de vingt-quatre à quatorze, et ce n'est pas un
+ * relâchement : `taille` désignait un corps de fonte dont l'encre n'occupait
+ * qu'une part, elle désigne maintenant l'encre elle-même.
  */
 export const PLANCHER_DU_LOGOTYPE = Math.ceil(
-  produit.marque.pixelsParLettreMinimum / (CORPS_POUR_TAILLE * produit.marque.largeurParLettre),
+  produit.marque.pixelsParLettreMinimum / produit.marque.largeurParLettre,
 );
 
 /** Les deux fonds possibles. Le point ne change pas d'un cas à l'autre. */
 export type VarianteDuLogotype = 'encre' | 'blanc';
-
-/**
- * Le « ! », dessiné.
- *
- * Sa boîte fait exactement l'avance du caractère et la hauteur du corps : posée
- * dans une rangée dont les autres morceaux ont `lineHeight` égal au corps, elle
- * se superpose à la boîte cadratin du texte, et le signe retombe où la fonte
- * l'aurait mis. C'est pour cela que le logotype fixe `lineHeight` au corps au
- * lieu de le laisser respirer : ici, l'interligne est un alignement.
- */
-function SigneExclamation({
-  corps,
-  encre,
-  testID,
-}: {
-  corps: number;
-  encre: string;
-  testID?: string;
-}) {
-  const s = produit.marque.signe;
-  const largeur = s.avance * corps;
-
-  const gaucheHaut = (s.futCentreX - s.futHautLargeur / 2) * corps;
-  const droiteHaut = (s.futCentreX + s.futHautLargeur / 2) * corps;
-  const gaucheBas = (s.futCentreX - s.futBasLargeur / 2) * corps;
-  const droiteBas = (s.futCentreX + s.futBasLargeur / 2) * corps;
-
-  return (
-    <Svg width={largeur} height={corps} accessibilityElementsHidden>
-      {/* Le fût suit les lettres — c'est toute la correction du 2026-08-15. */}
-      <Polygon
-        testID={testID ? `${testID}-fut` : undefined}
-        points={[
-          `${gaucheHaut},${s.futHautY * corps}`,
-          `${droiteHaut},${s.futHautY * corps}`,
-          `${droiteBas},${s.futBasY * corps}`,
-          `${gaucheBas},${s.futBasY * corps}`,
-        ].join(' ')}
-        fill={encre}
-      />
-      {/* Et le point est orange, quelle que soit la variante. */}
-      <Circle
-        testID={testID ? `${testID}-point` : undefined}
-        cx={s.pointCentreX * corps}
-        cy={s.pointCentreY * corps}
-        r={s.pointRayon * corps}
-        fill={ENCRES_DU_LOGOTYPE.point}
-      />
-    </Svg>
-  );
-}
 
 /**
  * Le mot.
@@ -148,7 +95,7 @@ function SigneExclamation({
  * point, et le logotype cesse d'avoir sa couleur.
  */
 export function Marque({
-  taille = 40,
+  taille = 23,
   variante = 'encre',
   testID,
 }: {
@@ -165,51 +112,28 @@ export function Marque({
     );
   }
 
-  const corps = taille * CORPS_POUR_TAILLE;
   const encre = ENCRES_DU_LOGOTYPE[variante];
-  const [avant, apres] = tokens.logo.wordmark.text.split('!');
-
-  const lettres = {
-    fontSize: corps,
-    // Égal au corps : c'est ce qui fait coïncider la boîte du texte et celle du
-    // signe. Voir `SigneExclamation`.
-    lineHeight: corps,
-  } as const;
+  const largeur = taille * (BOITE.largeur / BOITE.hauteur);
 
   return (
-    <View
+    <Svg
       testID={testID}
+      width={largeur}
+      height={taille}
+      viewBox={`${BOITE.x} ${BOITE.y} ${BOITE.largeur} ${BOITE.hauteur}`}
       accessibilityRole="image"
       accessibilityLabel={tokens.logo.wordmark.text}
-      // `alignSelf` : la rangée est un enfant de colonne, donc étirée par
-      // défaut — la boîte du logotype faisait toute la largeur de l'écran, ce
-      // qui ne se voit pas mais déplace tout ce qui s'aligne sur elle.
-      style={{ flexDirection: 'row', alignItems: 'flex-start', alignSelf: 'flex-start' }}
     >
-      {/* **La couleur passe par le style, et c'est délibéré.** `couleur`
-          n'accepte qu'un nom de jeton, et le logotype ne suit pas l'échelle
-          d'encres : la passation lui donne ses propres valeurs — encre du
-          système sur clair, blanc pur sur sombre, et non `ink.onDark`, qui est
-          l'encre claire du texte courant. Un test rattache les deux valeurs
-          partagées aux jetons, pour qu'elles ne deviennent pas une seconde
-          source. */}
-      <Texte
-        variante="type.wordmark"
-        testID={testID ? `${testID}-lettres` : undefined}
-        style={[lettres, { color: encre }]}
-      >
-        {avant}
-      </Texte>
-      <View
-        // L'interlettrage que le caractère aurait porté après lui : les lettres
-        // le reçoivent de leur variante typographique, le signe ne peut pas.
-        style={{ marginRight: tokens.logo.wordmark.letterSpacing }}
-      >
-        <SigneExclamation corps={corps} encre={encre} testID={testID ? `${testID}-signe` : undefined} />
-      </View>
-      <Texte variante="type.wordmark" style={[lettres, { color: encre }]}>
-        {apres}
-      </Texte>
-    </View>
+      <G transform={REPERE}>
+        {/* Les lettres et le fût suivent le fond. */}
+        <Path testID={testID ? `${testID}-lettres` : undefined} d={LETTRES} fill={encre} />
+        {/* Le point ne les suit pas : c'est la seule couleur du logotype. */}
+        <Path
+          testID={testID ? `${testID}-point` : undefined}
+          d={POINT}
+          fill={ENCRES_DU_LOGOTYPE.point}
+        />
+      </G>
+    </Svg>
   );
 }

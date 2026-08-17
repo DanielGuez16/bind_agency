@@ -5624,3 +5624,46 @@ travail non commité cette commande efface le travail. Payé deux fois dans la
 journée : la seconde a coûté cinq corrections de sélecteurs, retrouvées
 seulement parce qu'une garde restait rouge. Ce n'est pas une préférence de
 style, c'est la condition pour que l'exercice reste sûr.
+
+## 2026-08-17 — Le vectoriel, tracé et mesuré
+
+Le logo de la fondatrice est arrivé en PNG haute résolution. Il a été vectorisé
+plutôt qu'attendu, et **la trace a été mesurée contre la source** plutôt que crue.
+
+**Deux masques, une seule toile.** Le PNG est séparé par la couleur — lettres et
+fût du « ! » d'un côté, point de l'autre — et chaque masque passe par `potrace`
+sans recadrage. C'est ce qui garantit que les deux chemins s'alignent : un
+premier essai avec `--tight` recadrait chaque trace sur sa propre boîte, et les
+deux ne se superposaient plus.
+
+**Ce que la mesure dit.** 99,75 % de recouvrement sur l'encre, 99,22 % sur le
+point, et un écart de contour qui ne dépasse **jamais un pixel** — la largeur de
+l'antialiasing de la source. La coupe oblique du D, qui est justement ce
+qu'aucune fonte ne donne, mesure **-1,835° sur la source comme sur le tracé**.
+
+**Deux chemins, et c'est ce qui rend la variante blanche possible.** Le point est
+un chemin distinct : la variante blanche recolore les lettres seules, et le point
+reste orange dans les deux cas.
+
+**`taille` change de sens, et le plancher avec.** Elle désignait un corps de
+fonte dont l'encre n'occupait qu'une part ; elle désigne maintenant la hauteur du
+tracé. Le plancher passe de vingt-quatre à quatorze — ce n'est pas un
+relâchement, c'est la même exigence sur une grandeur différente. Les cinq appels
+du produit sont rééchelonnés pour que la largeur rendue ne bouge sur aucun écran.
+
+**Un test qui a failli passer pour juste.** La règle qui décide entre logotype et
+marque compacte se calculait depuis `largeurParLettre`. Ce chiffre a changé de
+sens avec le vectoriel — la largeur des quatre lettres rapportée au corps devient
+celle d'**une** rapportée à la hauteur — et le réutiliser sans le recalibrer
+faisait dire à la règle qu'un favicon de seize pixels pouvait porter le logotype.
+La borne est désormais celle que Design pose elle-même dans
+`logo.mark16.$doctrine` : sous 128, le logotype ne tient pas. Une borne empruntée
+vaut mieux qu'une borne dérivée d'une grandeur qui vient de bouger.
+
+**`$meta.unconfirmed` tombe**, et `logo.$asset` avec. Le garder après avoir
+obtenu ce qu'il réclamait ferait douter des autres manques qu'il nommerait.
+
+*Un écart relevé et non corrigé :* le point de la fondatrice est `#FF5E00`, celui
+du produit `brand.500` `#F26B21`, parce que `tokens.json` le prescrit « dans tous
+les cas ». Les SVG portent la couleur du produit ; le PNG reste la référence de
+forme. À arbitrer si l'écart n'est pas voulu.

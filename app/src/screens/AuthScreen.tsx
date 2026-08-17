@@ -146,7 +146,7 @@ export function AuthScreen({ motif }: { motif: MotifDeSortie | null }) {
           {(role === 'creator' ? t('auth.roleCreator') : t('auth.roleMerchant')).toUpperCase()}
         </Texte>
       ) : (
-        <Marque taille={30} variante="blanc" />
+        <Marque taille={18} variante="blanc" />
       )}
       <Texte variante="type.bodyStrong" style={{ color: c['ink.onDark'] }}>
         {inscription
@@ -222,7 +222,7 @@ export function AuthScreen({ motif }: { motif: MotifDeSortie | null }) {
             <View style={{ alignItems: 'flex-start', gap: 18, paddingBottom: 6 }}>
               {/* La marque en grand : c'est le premier écran, et le seul où
                   l'on a la place de la montrer. Ailleurs, le signe suffit. */}
-              {large ? null : <Marque taille={44} />}
+              {large ? null : <Marque taille={26} />}
               {inscription ? (
                 <Button
                   label={t('common.retour')}
