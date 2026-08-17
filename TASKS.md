@@ -701,6 +701,20 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       réservables. Ils font une dernière rangée. Une mutation a révélé une garde
       qui ne pouvait pas tomber, doublée par celle d'à côté. 15 tests neufs,
       11 mutations vérifiées*
+- [x] **L'étiquette au survol du rail replié**
+      *Le rail de 72 gardait ses libellés dans l'arbre d'accessibilité et nulle
+      part ailleurs : un lecteur d'écran savait lire la navigation, un œil
+      devait deviner cinq pictogrammes. L'étiquette s'ouvre au survol **et au
+      focus** — le survol seul aurait déplacé le manque sur le clavier. Trois
+      choses qui ne se devinent pas : `Pressable` retient `onHoverIn` pour sa
+      propre mécanique et ne le repose pas sur la vue, donc le composant écrit
+      avec aurait été **intestable** ; l'étiquette vit hors du défileur, qui
+      rogne ce qui déborde à droite et qu'aucun test de rendu ne voit ; et elle
+      est cachée des lecteurs d'écran, le libellé étant déjà sur la ligne. Deux
+      tests de la coquille changeaient de sens tout seuls, le repli étant retenu
+      par appareil dans un stockage simulé qui survit d'un test à l'autre.
+      6 tests neufs, 9 mutations vérifiées — dont une qui n'a rien cassé et a
+      fait écrire le cas manquant*
 - [ ] **Le Didone à 28 sur les rangées, contre son plancher à 34**
       *La planche l'écrit : « c'est le seul écran où le Didone descend à 28 —
       cinq salons ne méritent pas la même emphase que vingt ». Et `type.heading`

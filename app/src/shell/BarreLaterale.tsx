@@ -32,7 +32,19 @@
  * **Le nom sous la marque reste**, en `ink.mute` — ou sa nuance claire sur
  * l'encre de l'administration. Il est plus explicite qu'une teinte, et c'est
  * lui qui situe la session.
+ *
+ * **Replié, le libellé revient au survol.** Il était dans l'arbre
+ * d'accessibilité et nulle part ailleurs : un lecteur d'écran savait lire le
+ * rail, un œil devait deviner cinq pictogrammes. L'étiquette apparaît à droite
+ * de la ligne, hors du rail, ce que la planche Desktop v0.6 demande depuis
+ * qu'elle existe.
+ *
+ * **Au survol et au focus.** Le survol seul laisserait la navigation au clavier
+ * devant les mêmes pictogrammes muets, et c'est le même manque déplacé. Ni l'un
+ * ni l'autre n'existe au doigt, où le rail ne se replie de toute façon qu'à la
+ * demande sur un appareil qui a un pointeur.
  */
+import { useRef, useState } from 'react';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Pressable, ScrollView, View } from 'react-native';
 
@@ -61,11 +73,47 @@ export function BarreLaterale({
   const { role, matiere } = useTheme();
   const { t } = useI18n();
   const [replie, basculer] = useRepli();
+  /**
+   * La ligne dont l'étiquette est visible, avec de quoi la placer.
+   *
+   * Une seule à la fois : deux étiquettes ouvertes se chevaucheraient, et le
+   * pointeur comme le focus ne désignent jamais deux lignes ensemble.
+   *
+   * **`y` vient de la ligne, il ne se calcule pas.** Le déduire du rang et de
+   * la hauteur marcherait jusqu'au jour où une ligne change de densité ou
+   * qu'un séparateur s'ajoute, et l'étiquette désignerait alors la voisine.
+   */
+  const [designee, setDesignee] = useState<{
+    cle: string;
+    nom: string;
+    libelle: string;
+    y: number;
+  } | null>(
+    null,
+  );
+  const positions = useRef<Record<string, number>>({});
+  /**
+   * De combien la liste a défilé.
+   *
+   * L'étiquette vit **hors** du défileur : celui-ci rogne ce qui déborde à
+   * droite, et une étiquette posée dans une ligne y serait coupée net. Elle est
+   * donc placée dans la barre, ce qui oblige à retrancher le défilement — sans
+   * quoi elle resterait où la ligne était.
+   */
+  const [defilement, setDefilement] = useState(0);
+  const [hautDeLaListe, setHautDeLaListe] = useState(0);
 
   const largeur = replie
     ? breakpoint.sidebarRailWidth
     : breakpoint.sidebarWidth;
   const hauteur = HAUTEUR_DE_LIGNE[role];
+
+  const designer = (cle: string, nom: string, libelle: string) =>
+    setDesignee({ cle, nom, libelle, y: positions.current[cle] ?? 0 });
+  // On n'efface que ce qu'on avait posé : le pointeur quitte une ligne après
+  // être entré dans la suivante, et effacer sans regarder laquelle ferait
+  // disparaître l'étiquette qui venait d'apparaître.
+  const oublier = (cle: string) => setDesignee((posee) => (posee?.cle === cle ? null : posee));
 
   return (
     <View
@@ -78,6 +126,10 @@ export function BarreLaterale({
         borderRightWidth: 1,
         borderRightColor: c[matiere.ligne],
         paddingVertical: spacing['space.4'],
+        // La barre est rendue avant le contenu dans la rangée de la coquille :
+        // sans ce cran, l'étiquette du rail replié, qui déborde à droite,
+        // passerait sous l'écran plutôt que dessus.
+        zIndex: 1,
       }}
     >
       <View
@@ -108,7 +160,13 @@ export function BarreLaterale({
         ) : null}
       </View>
 
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ gap: 2 }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ gap: 2 }}
+        onLayout={(evenement) => setHautDeLaListe(evenement.nativeEvent.layout.y)}
+        onScroll={(evenement) => setDefilement(evenement.nativeEvent.contentOffset.y)}
+        scrollEventThrottle={16}
+      >
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];
           const actif = state.index === index;
@@ -124,6 +182,23 @@ export function BarreLaterale({
               // l'arbre d'accessibilité, sans quoi le rail devient une colonne
               // de pictogrammes muets pour un lecteur d'écran.
               accessibilityLabel={libelle}
+              // Les quatre ensemble, et jamais le survol seul : le clavier
+              // traverse le même rail et rencontrerait les mêmes pictogrammes.
+              //
+              // **`onPointerEnter` et non `onHoverIn`.** Les deux existent et
+              // décrivent le même geste, mais `Pressable` retient `onHoverIn`
+              // pour sa propre mécanique de pression et ne le repose pas sur la
+              // vue : aucun test ne peut l'atteindre, donc rien n'aurait dit
+              // que l'étiquette ne s'ouvre pas. Les événements de pointeur, eux,
+              // traversent jusqu'à l'hôte — vérifié avant d'écrire la ligne, et
+              // c'est ce qui rend le test possible.
+              onLayout={(evenement) => {
+                positions.current[route.key] = evenement.nativeEvent.layout.y;
+              }}
+              onPointerEnter={() => designer(route.key, route.name, libelle)}
+              onPointerLeave={() => oublier(route.key)}
+              onFocus={() => designer(route.key, route.name, libelle)}
+              onBlur={() => oublier(route.key)}
               onPress={() => {
                 const evenement = navigation.emit({
                   type: 'tabPress',
@@ -178,6 +253,43 @@ export function BarreLaterale({
           );
         })}
       </ScrollView>
+
+      {/* **L'étiquette sort du rail**, et elle sort aussi du défileur.
+          Soixante-douze points ne portent pas « Bookings » : la loger dedans
+          redonnerait le pictogramme muet sous une autre forme. Et posée dans
+          une ligne, elle serait rognée net par le défileur, qui coupe ce qui
+          déborde à droite — ce qu'aucun test de rendu ne voit, et qu'on ne
+          découvrirait que dans un vrai navigateur.
+
+          Elle ne reçoit pas le pointeur : sans quoi elle se mettrait entre lui
+          et la ligne qui l'a fait naître, et clignoterait. Et elle est cachée
+          des lecteurs d'écran — le libellé y est déjà, sur la ligne, et
+          l'annoncer deux fois est une gêne, pas un service. */}
+      {replie && designee ? (
+        <View
+          testID={`etiquette-${designee.nom}`}
+          pointerEvents='none'
+          accessibilityElementsHidden
+          importantForAccessibility='no-hide-descendants'
+          style={{
+            position: 'absolute',
+            left: largeur + spacing['space.2'],
+            top: hautDeLaListe + designee.y - defilement,
+            height: hauteur,
+            justifyContent: 'center',
+            paddingHorizontal: spacing['space.3'],
+            backgroundColor: c['bg.inverse'],
+            borderRadius: radius['radius.none'],
+            // La barre est rendue avant le contenu dans la rangée de la
+            // coquille : sans cela, l'étiquette passerait dessous.
+            zIndex: 1,
+          }}
+        >
+          <Texte variante='type.label' couleur='ink.onDark'>
+            {designee.libelle}
+          </Texte>
+        </View>
+      ) : null}
 
       <Pressable
         testID='basculer-le-repli'

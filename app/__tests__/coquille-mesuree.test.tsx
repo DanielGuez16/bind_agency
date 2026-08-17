@@ -19,6 +19,7 @@
  * ni barre d'onglets — aucune navigation, sur le seul écran d'où l'on peut
  * atteindre les autres.
  */
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -126,6 +127,14 @@ async function mesurer(largeur: number) {
 }
 
 describe('la coquille, mesurée', () => {
+  // **Le repli est retenu par appareil**, et le stockage simulé survit d'un
+  // test à l'autre : sans ce nettoyage, un test qui replie le rail décide de
+  // l'état de départ des suivants, et deux d'entre eux ont effectivement changé
+  // de sens en cours d'écriture.
+  beforeEach(async () => {
+    await AsyncStorage.clear();
+  });
+
   it('affiche une navigation au-delà du seuil', async () => {
     // **Le test qui manquait.** Sans navigation, on ne peut atteindre aucun
     // autre écran : c'est le défaut le plus grave possible sur une coquille.
@@ -194,6 +203,115 @@ describe('la coquille, mesurée', () => {
 
     const barre = await screen.findByTestId('barre-laterale');
     expect(aplati(barre).width).toBe(breakpoint.sidebarWidth);
+  });
+
+  /**
+   * Replie le rail, quel que soit l'état retenu au montage.
+   *
+   * La préférence est persistée par appareil, et le stockage simulé garde donc
+   * ce qu'un test précédent y a écrit : presser sans regarder déplierait le
+   * rail une fois sur deux, et le test le plus important passerait à côté.
+   */
+  async function replier() {
+    await waitFor(() => expect(screen.getByTestId('basculer-le-repli')).toBeTruthy());
+    if (aplati(screen.getByTestId('barre-laterale')).width !== breakpoint.sidebarRailWidth) {
+      await fireEvent.press(screen.getByTestId('basculer-le-repli'));
+    }
+    await waitFor(() =>
+      expect(aplati(screen.getByTestId('barre-laterale')).width).toBe(
+        breakpoint.sidebarRailWidth,
+      ),
+    );
+  }
+
+  /** L'étiquette est cachée des lecteurs d'écran : on la cherche telle quelle. */
+  const etiquette = (nom: string) =>
+    screen.queryByTestId(`etiquette-${nom}`, { includeHiddenElements: true });
+
+  it('replié, le libellé revient au survol — et au focus', async () => {
+    // **Le rail était une colonne de pictogrammes muets.** Le libellé n'existait
+    // que dans l'arbre d'accessibilité : un lecteur d'écran savait lire le rail,
+    // un œil devait deviner. La planche Desktop v0.6 demande l'étiquette depuis
+    // qu'elle existe.
+    await monterLaCoquille();
+    await mesurer(1512);
+    await replier();
+
+    const ligne = await screen.findByTestId('ligne-journee');
+    expect(etiquette('journee')).toBeNull();
+
+    await fireEvent(ligne, 'pointerEnter');
+    expect(etiquette('journee')).toHaveTextContent(en.onglets.journee);
+
+    await fireEvent(ligne, 'pointerLeave');
+    expect(etiquette('journee')).toBeNull();
+
+    // Le clavier traverse le même rail : le survol seul déplacerait le manque
+    // au lieu de le combler.
+    await fireEvent(ligne, 'focus');
+    expect(etiquette('journee')).toBeTruthy();
+  });
+
+  it('et l’étiquette ne se fait pas annoncer deux fois', async () => {
+    // Le libellé est déjà sur la ligne, dans son `accessibilityLabel` : une
+    // étiquette lisible par un lecteur d'écran ferait dire « Today, Today ».
+    // C'est aussi pourquoi la chercher demande `includeHiddenElements`.
+    await monterLaCoquille();
+    await mesurer(1512);
+    await replier();
+
+    await fireEvent(await screen.findByTestId('ligne-journee'), 'pointerEnter');
+
+    expect(etiquette('journee')).toBeTruthy();
+    expect(screen.queryByTestId('etiquette-journee')).toBeNull();
+  });
+
+  it('et ne s’affiche jamais quand la barre est dépliée', async () => {
+    // Le sens inverse : dépliée, le libellé est déjà sur la ligne. Une
+    // étiquette par-dessus le doublerait et sortirait de la barre pour rien.
+    await monterLaCoquille();
+    await mesurer(1512);
+    expect(aplati(screen.getByTestId('barre-laterale')).width).toBe(breakpoint.sidebarWidth);
+
+    await fireEvent(await screen.findByTestId('ligne-journee'), 'pointerEnter');
+
+    expect(etiquette('journee')).toBeNull();
+  });
+
+  it('le pointeur qui quitte une ligne n’efface pas l’étiquette d’une autre', async () => {
+    // **Le geste réel est un glissement, pas deux clics.** Selon la vitesse, le
+    // pointeur peut entrer dans la ligne suivante avant d'avoir quitté la
+    // précédente ; effacer sans regarder laquelle referme alors l'étiquette qui
+    // venait de s'ouvrir, et le rail clignote sous la main.
+    await monterLaCoquille();
+    await mesurer(1512);
+    await replier();
+
+    const premiere = await screen.findByTestId('ligne-journee');
+    const seconde = await screen.findByTestId('ligne-publications');
+
+    await fireEvent(premiere, 'pointerEnter');
+    await fireEvent(seconde, 'pointerEnter');
+    await fireEvent(premiere, 'pointerLeave');
+
+    expect(etiquette('publications')).toBeTruthy();
+  });
+
+  it('l’étiquette se place sur la ligne survolée, pas sur la première', async () => {
+    // Elle est posée **hors du défileur**, qui rognerait ce qui déborde à
+    // droite : sa position vient donc de la disposition rapportée par la ligne.
+    // La déduire du rang la ferait glisser au premier changement de densité.
+    await monterLaCoquille();
+    await mesurer(1512);
+    await replier();
+
+    const seconde = await screen.findByTestId('ligne-publications');
+    await fireEvent(seconde, 'layout', {
+      nativeEvent: { layout: { x: 0, y: 92, width: 48, height: 44 } },
+    });
+    await fireEvent(seconde, 'pointerEnter');
+
+    expect(aplati(etiquette('publications')!).top).toBe(92);
   });
 
   it('porte le nom du commerce sous la marque', async () => {
