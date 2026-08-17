@@ -22,7 +22,77 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # ------------------------------------------------------------------------
+  # Ce que la modification touche
+  # ------------------------------------------------------------------------
+  #
+  # **Le job reste, seul son contenu se court-circuite.** `main` exige `api`,
+  # `app` et `e2e` : un job sauté par une condition de job ne rapporte jamais
+  # rien, la fusion l'attend indéfiniment, et la protection se retourne contre
+  # elle-même. La condition est donc posée sur les **étapes** — le job démarre,
+  # ne fait rien, et sort en vert en quelques secondes.
+  #
+  # **En cas de doute, on exécute tout.** Une base de comparaison introuvable,
+  # un `git diff` en échec, un événement inattendu : le repli est « tout a
+  # changé ». Un court-circuit qui se trompe dans l'autre sens laisserait passer
+  # exactement ce qu'il prétend vérifier, et personne ne le saurait.
+  perimetre:
+    runs-on: ubuntu-latest
+    outputs:
+      api: ${{ steps.decider.outputs.api }}
+      app: ${{ steps.decider.outputs.app }}
+      e2e: ${{ steps.decider.outputs.e2e }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # L'historique entier : la base de comparaison d'une PR peut être
+          # loin derrière, et une copie superficielle rendrait un diff faux
+          # plutôt qu'une erreur.
+          fetch-depth: 0
+
+      - id: decider
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          set -u
+          tout() {
+            echo "::notice::périmètre indéterminé ($1) — tout est exécuté"
+            { echo "api=oui"; echo "app=oui"; echo "e2e=oui"; } >> "$GITHUB_OUTPUT"
+            exit 0
+          }
+          [ -n "${BASE:-}" ] || tout "aucune base de comparaison"
+          # Une première poussée sur une branche neuve donne un SHA nul.
+          [ "$BASE" != "0000000000000000000000000000000000000000" ] || tout "base nulle"
+          git cat-file -e "$BASE^{commit}" 2>/dev/null || tout "base $BASE inconnue"
+          FICHIERS=$(git diff --name-only "$BASE"...HEAD) || tout "git diff en échec"
+
+          echo "Fichiers modifiés :"; echo "$FICHIERS" | sed 's/^/  /'
+
+          concerne() { echo "$FICHIERS" | grep -qE "$1"; }
+
+          # L'intégration continue elle-même : si elle change, plus rien n'est
+          # acquis sur ce qu'elle vérifiait.
+          if concerne '^\.github/workflows/'; then tout "l'intégration continue a changé"; fi
+
+          API=non; APP=non
+          # `openapi.json` vit dans `app/` et **est le contrat que le job `api`
+          # regénère et compare**. Le modifier seul doit donc réveiller `api`,
+          # sans quoi une photographie périmée du serveur passerait.
+          concerne '^api/|^app/src/api/openapi\.json$' && API=oui
+          # Le test des catalogues lit `api/app/core/errors.py` : un code
+          # d'erreur ajouté côté serveur doit faire tomber le job `app`.
+          concerne '^app/|^api/app/core/errors\.py$' && APP=oui
+          # Le seul job qui monte le produit entier : tout ce qui n'est pas de
+          # la documentation le concerne.
+          E2E=non; { [ "$API" = oui ] || [ "$APP" = oui ]; } && E2E=oui
+
+          echo "api=$API" >> "$GITHUB_OUTPUT"
+          echo "app=$APP" >> "$GITHUB_OUTPUT"
+          echo "e2e=$E2E" >> "$GITHUB_OUTPUT"
+          echo "::notice::api=$API app=$APP e2e=$E2E"
+
   api:
+    needs: perimetre
     runs-on: ubuntu-latest
 
     services:
@@ -53,12 +123,15 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        if: needs.perimetre.outputs.api == 'oui'
 
       - uses: actions/setup-python@v5
+        if: needs.perimetre.outputs.api == 'oui'
         with:
           python-version: "3.12"
 
       - name: Installer les dépendances
+        if: needs.perimetre.outputs.api == 'oui'
         working-directory: api
         run: |
           python -m pip install --upgrade pip
@@ -68,17 +141,20 @@ jobs:
       # et une clé de signature commitée finit toujours par être réutilisée
       # ailleurs. Elle ne sert qu'à la durée de ce job.
       - name: Clés éphémères
+        if: needs.perimetre.outputs.api == 'oui'
         run: |
           echo "JWT_SECRET_KEY=$(openssl rand -base64 48)" >> "$GITHUB_ENV"
           echo "TOKEN_ENCRYPTION_KEY=$(openssl rand -base64 32 | tr '+/' '-_')" >> "$GITHUB_ENV"
 
       - name: Ruff
+        if: needs.perimetre.outputs.api == 'oui'
         working-directory: api
         run: |
           ruff check .
           ruff format --check .
 
       - name: Pytest
+        if: needs.perimetre.outputs.api == 'oui'
         working-directory: api
         run: pytest -q
 
@@ -88,6 +164,7 @@ jobs:
       # au moment précis où une route est renommée. On le régénère ici et on
       # refuse la différence.
       - name: Contrat d'API à jour
+        if: needs.perimetre.outputs.api == 'oui'
         working-directory: api
         run: |
           python scripts/dump_openapi.py
@@ -95,30 +172,45 @@ jobs:
             || { echo "::error::app/src/api/openapi.json est périmé — lancez api/scripts/dump_openapi.py"; exit 1; }
 
   app:
+    needs: perimetre
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
+        if: needs.perimetre.outputs.app == 'oui'
 
       - uses: actions/setup-node@v4
+        if: needs.perimetre.outputs.app == 'oui'
         with:
           node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: app/package-lock.json
 
       - name: Installer les dépendances
+        if: needs.perimetre.outputs.app == 'oui'
         working-directory: app
         run: npm ci
 
       - name: Types
+        if: needs.perimetre.outputs.app == 'oui'
         working-directory: app
         run: npx tsc --noEmit
 
       # Le test des catalogues lit api/app/core/errors.py : il a besoin du
       # dépôt entier, pas seulement du dossier app.
       - name: Jest
+        if: needs.perimetre.outputs.app == 'oui'
         working-directory: app
-        run: npx jest --ci
+        run: npx jest --ci --json --outputFile=/tmp/jest.json
+
+      # **Un fichier de test qui coûte dix fois ses voisins porte un défaut**,
+      # et il ne fait échouer personne : la suite passe, la CI reste verte, et
+      # le coût retombe dans chaque boucle de mutation. Ce que la garde attrape
+      # et ce qu'elle ne peut pas attraper est écrit dans le script.
+      - name: Durée des fichiers de test
+        if: needs.perimetre.outputs.app == 'oui'
+        working-directory: app
+        run: node scripts/duree-des-tests.mjs /tmp/jest.json
 
   # ------------------------------------------------------------------------
   # Bout en bout, dans un vrai navigateur
@@ -131,6 +223,7 @@ jobs:
   # jouait pas, les polices jamais chargées, la barre latérale jamais montée.
   # Aucun n'était visible d'un test unitaire, et aucun ne l'aurait jamais été.
   e2e:
+    needs: perimetre
     runs-on: ubuntu-latest
 
     services:
@@ -172,29 +265,35 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        if: needs.perimetre.outputs.e2e == 'oui'
 
       - uses: actions/setup-python@v5
+        if: needs.perimetre.outputs.e2e == 'oui'
         with:
           python-version: "3.12"
 
       - uses: actions/setup-node@v4
+        if: needs.perimetre.outputs.e2e == 'oui'
         with:
           node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: app/package-lock.json
 
       - name: Clés éphémères
+        if: needs.perimetre.outputs.e2e == 'oui'
         run: |
           echo "JWT_SECRET_KEY=$(openssl rand -base64 48)" >> "$GITHUB_ENV"
           echo "TOKEN_ENCRYPTION_KEY=$(openssl rand -base64 32 | tr '+/' '-_')" >> "$GITHUB_ENV"
 
       - name: Dépendances API
+        if: needs.perimetre.outputs.e2e == 'oui'
         working-directory: api
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
 
       - name: Dépendances app
+        if: needs.perimetre.outputs.e2e == 'oui'
         working-directory: app
         run: npm ci
 
@@ -209,18 +308,21 @@ jobs:
       # une première version, ce qui a échoué : le runner ne l'a pas.** Une
       # fixture versionnée ne dépend de rien.
       - name: Vidéo d'accueil de test
+        if: needs.perimetre.outputs.e2e == 'oui'
         run: |
           mkdir -p assets/photos/accueil
           cp app/e2e/fixtures/video-paysage.mp4 assets/photos/accueil/video.mp4
           cp app/e2e/fixtures/video-portrait.mp4 assets/photos/accueil/video-portrait.mp4
 
       - name: Migrations et jeu de données
+        if: needs.perimetre.outputs.e2e == 'oui'
         working-directory: api
         run: |
           alembic upgrade head
           python -m app.seed
 
       - name: Démarrer l'API
+        if: needs.perimetre.outputs.e2e == 'oui'
         working-directory: api
         run: |
           uvicorn app.main:app --port 8010 > /tmp/api.log 2>&1 &
@@ -233,23 +335,26 @@ jobs:
       # L'adresse est **gravée dans le bundle** au moment de l'export : la
       # poser plus tard n'aurait aucun effet.
       - name: Build web
+        if: needs.perimetre.outputs.e2e == 'oui'
         working-directory: app
         env:
           EXPO_PUBLIC_API_URL: http://127.0.0.1:8010/api/v1
         run: npx expo export --platform web --output-dir dist-e2e
 
       - name: Navigateur
+        if: needs.perimetre.outputs.e2e == 'oui'
         working-directory: app
         run: npx playwright install --with-deps chrome
 
       - name: Playwright
+        if: needs.perimetre.outputs.e2e == 'oui'
         working-directory: app
         run: npx playwright test
 
       # La trace du premier échec : c'est elle qui permet de voir ce que le
       # navigateur voyait, sans avoir à reproduire la CI sur sa machine.
       - name: Traces des échecs
-        if: failure()
+        if: failure() && needs.perimetre.outputs.e2e == 'oui'
         uses: actions/upload-artifact@v4
         with:
           name: traces-e2e
@@ -257,5 +362,5 @@ jobs:
           retention-days: 7
 
       - name: Journal de l'API
-        if: failure()
+        if: failure() && needs.perimetre.outputs.e2e == 'oui'
         run: cat /tmp/api.log
