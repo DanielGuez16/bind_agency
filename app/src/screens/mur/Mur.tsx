@@ -401,11 +401,27 @@ export function BasDuMur({
   fil,
   rayonKm,
   onElargir,
+  resserrer,
   onRemonter,
 }: {
   fil: Fil;
   rayonKm: number;
   onElargir?: (rayonKm: number) => void;
+  /**
+   * Revenir au rayon de départ, et lequel. Absent quand on y est déjà.
+   *
+   * **C'est une annulation, pas une issue chiffrée.** Les deux autres sorties
+   * portent leur nombre parce qu'elles promettent un gain qu'on ne peut pas
+   * deviner ; celle-ci ramène à l'état d'où l'on vient, qu'on a vu. Lui coller
+   * un compte demanderait une requête pour dire ce qu'on savait déjà.
+   *
+   * **Provisoire, et la place définitive est ailleurs.** Le rayon appartient à
+   * la feuille de filtres, qui n'existe pas encore. En attendant, `rayons` ne
+   * rend jamais un rayon plus étroit que celui en vigueur : sans ce chemin,
+   * élargir serait sans retour, ce qui est une régression sur les chips que la
+   * planche a remplacées.
+   */
+  resserrer?: { versKm: number; onPress: () => void };
   onRemonter?: () => void;
 }) {
   const { t, locale } = useI18n();
@@ -475,6 +491,20 @@ export function BasDuMur({
               rayon: formatNumber(Math.round(plusLarge.rayon_metres / 1000), locale),
               count: formatNumber(plusLarge.commerces, locale),
             })}
+          </Texte>
+        ) : null}
+        {/* **Un seul objet porte le geste et sa cible.** Deux props — un
+            rappel et un nombre — se seraient dédoublées, et il aurait fallu
+            garder contre le cas où l'une arrive sans l'autre : une garde de
+            plus pour une seule chose. */}
+        {resserrer ? (
+          <Texte
+            variante="type.body"
+            couleur="brand.700"
+            testID="sortie-resserrer"
+            onPress={resserrer.onPress}
+          >
+            {t('parcours.murResserrer', { rayon: formatNumber(resserrer.versKm, locale) })}
           </Texte>
         ) : null}
         {onRemonter ? (

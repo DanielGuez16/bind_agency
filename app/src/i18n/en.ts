@@ -258,6 +258,8 @@ export const en = {
     rangeeAilleurs: 'Elsewhere',
     rangeeSuite: '{{count}} more, further out.',
     rangeeSuiteUn: 'One more, further out.',
+    // Une annulation, pas une issue chiffrée : elle ramène à ce qu'on a vu.
+    murResserrer: 'Back to {{rayon}} km',
     filRayon: '{{rayon}} km',
     filSansPosition: 'We need your location to show places near you.',
     filAutoriser: 'Share my location',

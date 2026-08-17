@@ -78,6 +78,15 @@ export function urlImage(url: string | undefined) {
  */
 const RAYON_DE_DEPART_KM = 15;
 
+/**
+ * La marge des blocs de texte, maintenant que l'écran va au bord.
+ *
+ * Dix-huit, comme la planche, et non les vingt d'`Ecran` : c'est la même valeur
+ * que les titres de rangée et le bord gauche des cartes, et deux marges d'un
+ * point d'écart sur le même écran se voient plus qu'une seule mal choisie.
+ */
+const MARGE = 18;
+
 export type Position = { longitude: number; latitude: number };
 
 export function FilScreen({
@@ -198,6 +207,12 @@ export function FilScreen({
     <Ecran
       requete={requete}
       testID="ecran-fil"
+      // **Le mur va au bord.** Encadré de vingt points, il perd la moitié de
+      // son effet, et les cartes des rangées cessent de dépasser le bord droit —
+      // c'est ce dépassement qui annonce le glissement, sans flèche. L'écran
+      // reprend donc ses marges à sa charge : elles vivent maintenant sur les
+      // blocs qui en veulent, et nulle part ailleurs.
+      bordAbord
       // L'écran ne rend plus des cartes : le défaut à photo promettrait une
       // forme que le mur n'a pas, et tout sauterait à l'arrivée des images.
       squelette={<MurEnChargement />}
@@ -207,20 +222,24 @@ export function FilScreen({
       // Il est rendu hors des quatre états : le mur en chargement le garde,
       // l'état vide aussi — c'est de là qu'on relâche un filtre trop étroit.
       entete={
-        <EnTeteDuMur
-          fil={filPret}
-          rayonKm={rayonKm}
-          categorie={categorie}
-          onCategorie={setCategorie}
-        />
+        <View style={{ paddingHorizontal: MARGE }}>
+          <EnTeteDuMur
+            fil={filPret}
+            rayonKm={rayonKm}
+            categorie={categorie}
+            onCategorie={setCategorie}
+          />
+        </View>
       }
       vide={
+        <View style={{ paddingHorizontal: MARGE }}>
         <RaisonDuVide
           obstacles={filPret?.obstacles ?? []}
           issues={issues}
           rayonKm={rayonKm}
           testID="fil-vide"
         />
+        </View>
       }
     >
       {(fil) => (
@@ -234,12 +253,16 @@ export function FilScreen({
           {/* **La réponse, puis la raison.** Le nombre est ce que la créatrice
               est venue chercher ; les paliers sont ce qui l'explique, et ils
               s'ouvrent d'ici plutôt que d'occuper un onglet. */}
-          <PrestationsOuvertes total={fil.total_prestations} onOuvrir={onVoirMesPaliers} />
+          {/* Le texte porte sa marge, les photos n'en ont pas : c'est la
+              contrepartie du fond perdu, et elle se voit là où elle est. */}
+          <View style={{ paddingHorizontal: MARGE, gap: 16 }}>
+            <PrestationsOuvertes total={fil.total_prestations} onOuvrir={onVoirMesPaliers} />
 
-          {/* Rendus même quand le fil n'est pas vide : un créateur qui accède
-              au palier story mais pas au reel doit savoir ce qui lui manque,
-              sinon il croit avoir tout vu. */}
-          <Obstacles fil={fil} />
+            {/* Rendus même quand le fil n'est pas vide : un créateur qui accède
+                au palier story mais pas au reel doit savoir ce qui lui manque,
+                sinon il croit avoir tout vu. */}
+            <Obstacles fil={fil} />
+          </View>
           {/* **Deux rendus, et c'est la question posée qui les sépare.**
               Sans filtre, le mur : un salon occupe l'écran, six positions dans
               un ordre fixe, huit salons puis une respiration — on y descend
@@ -256,10 +279,20 @@ export function FilScreen({
 
           {/* Le seul fond d'encre du fil : il ferme, là où l'os des
               respirations ouvrait. */}
+          {/* **Élargir avait cessé d'avoir un retour.** Le serveur ne propose
+              jamais un rayon plus étroit que celui en vigueur, et les chips de
+              rayon sont parties avec leur ligne : sans cette sortie, on partait
+              à 30 km pour la session entière. Provisoire — le rayon appartient
+              à la feuille de filtres, qui n'existe pas encore. */}
           <BasDuMur
             fil={fil}
             rayonKm={rayonKm}
             onElargir={setRayonKm}
+            resserrer={
+              rayonKm > RAYON_DE_DEPART_KM
+                ? { versKm: RAYON_DE_DEPART_KM, onPress: () => setRayonKm(RAYON_DE_DEPART_KM) }
+                : undefined
+            }
             onRemonter={onRemonterEnHaut}
           />
         </View>

@@ -1,11 +1,10 @@
 /**
- * L'en-tête du mur : où l'on est, ce que ça ouvre, et par quoi le trancher.
+ * L'en-tête du mur : ce que le rayon ouvre, et par quoi le trancher.
  *
- * Quatre choses sur deux lignes, et la planche v2.1 les veut dans cet ordre :
- * le quartier, le rayon avec son compte, la marque, puis les catégories avec
- * leurs comptes. Ce qui existait ici — « Near you », un bonjour et des chips de
- * rayon — répondait à une autre question : le titre nommait l'écran au lieu de
- * nommer l'endroit, et le seul réglage offert était de chercher plus loin.
+ * Le rayon avec son compte, la marque, puis les catégories avec les leurs. Ce
+ * qui existait ici — « Near you », un bonjour et des chips de rayon —
+ * répondait à une autre question : le titre nommait l'écran, et le seul réglage
+ * offert était de chercher plus loin.
  *
  * **La navigation n'attend pas la donnée.** Le rayon est un état local, la
  * chip « All » ne dépend de rien : les deux sont là avant le premier appel, et
@@ -14,16 +13,15 @@
  * coup — un écran qui se compose sous les yeux a déjà coûté un diagnostic sur
  * l'accueil.
  *
- * **Le quartier, lui, attend la donnée, et ce n'est pas ce que Design demande.**
- * La planche veut le quartier **où l'on est** : son cadre du vide affiche « Key
- * Biscayne » alors qu'aucun salon n'y répond, ce qu'aucune donnée du fil ne
- * permet d'écrire. Le produit ne sait pas résoudre une position en quartier —
+ * **Aucun lieu n'est nommé ici, et c'est tranché.** La planche veut le quartier
+ * **où l'on est** — son cadre du vide affiche « Key Biscayne » alors qu'aucun
+ * salon n'y répond, donc le nom ne vient pas du fil. Rien ne sait le résoudre :
  * il n'y a pas de géocodage inverse, et la ville du profil est un champ libre
- * qui désigne où l'on habite, pas où l'on est. Ce qui est rendu ici est donc le
- * **quartier du salon le plus proche**, que le fil trie déjà en tête de
- * `quartiers`. Dans le cas courant les deux coïncident ; dans le cas vide, il
- * n'y a rien à écrire et le titre s'efface au lieu d'inventer un nom. Le manque
- * est nommé dans `TASKS.md` plutôt que comblé au jugé.
+ * qui dit où l'on habite. Le quartier du salon le plus proche avait été rendu à
+ * sa place ; il tombe. **Annoncer un lieu qu'on ne peut pas vérifier est la
+ * classe de défaut que ce dépôt passe ses journées à corriger** — plausible,
+ * invérifiable de l'autre côté, et donc jamais relevé. L'en-tête porte le
+ * rayon, le compte et les catégories, et rien qui situe.
  *
  * **Les chips ne sont pas la liste des catégories du produit, mais celles qui
  * mènent quelque part.** `Fil.categories` ignore le filtre en vigueur : la
@@ -38,7 +36,7 @@
 import { View } from 'react-native';
 
 import type { BusinessCategory, Fil } from '../../api';
-import { Chip, Icone, Marque, RangeeDeChips, Texte } from '../../components';
+import { Chip, Marque, RangeeDeChips, Texte } from '../../components';
 import { formatNumber } from '../../format';
 import { useI18n } from '../../i18n';
 
@@ -66,25 +64,15 @@ export function EnTeteDuMur({
 }) {
   const { t, locale } = useI18n();
 
-  // `fil === null` et non `fil?.` : le serveur rend toujours `quartiers` et
-  // `categories`, et un repli sur l'absence du champ masquerait un montage de
-  // test qui fabrique une réponse que le serveur ne produit pas — ce qui s'est
-  // déjà produit cinq fois sur ce même écran.
-  const quartier = fil === null ? null : (fil.quartiers[0]?.quartier ?? null);
+  // `fil === null` et non `fil?.` : le serveur rend toujours `categories`, et
+  // un repli sur l'absence du champ masquerait un montage de test qui fabrique
+  // une réponse que le serveur ne produit pas — ce qui s'est déjà produit cinq
+  // fois sur ce même écran.
   const categories = fil === null ? [] : fil.categories;
 
   return (
     <View style={{ gap: 12 }} testID="entete-du-mur">
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        {quartier ? (
-          <>
-            <Icone nom="lieu" couleur="ink.default" taille={15} />
-            <Texte variante="type.bodyStrong" testID="entete-quartier">
-              {t(`quartiers.${quartier}`)}
-            </Texte>
-          </>
-        ) : null}
-
         {/* Le rayon est connu avant l'appel, son compte après. Deux clés
             plutôt qu'une concaténation : « 15 km · 20 » et « 15 km » ne sont
             pas la même phrase, et l'espagnol ne les ponctue pas forcément

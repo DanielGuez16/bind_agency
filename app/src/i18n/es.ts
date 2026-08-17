@@ -250,6 +250,7 @@ export const es: Catalogue = {
     rangeeAilleurs: 'En otros barrios',
     rangeeSuite: '{{count}} más, un poco más lejos.',
     rangeeSuiteUn: 'Uno más, un poco más lejos.',
+    murResserrer: 'Volver a {{rayon}} km',
     filRayon: '{{rayon}} km',
     filSansPosition: 'Necesitamos tu ubicación para mostrarte locales cercanos.',
     filAutoriser: 'Compartir mi ubicación',
