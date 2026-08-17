@@ -26,6 +26,7 @@ from sqlalchemy import make_url
 from sqlalchemy.ext.asyncio import AsyncConnection, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
+from app import seed
 from app.core.config import API_ROOT, get_settings
 from app.models import (
     AuditLog,
@@ -66,6 +67,24 @@ from app.seed import (
     verifier_la_cible,
 )
 from tests.conftest import _maintenance_dsn
+
+#: Ce que le semis produit, **dérivé de lui** et non recopié.
+#:
+#: Ces tests comptaient « 4 commerces » et « 3 actifs ». Le jour où le jeu de
+#: données est passé à vingt, huit d'entre eux sont tombés d'un coup sur des
+#: nombres qui ne disaient plus rien de ce qu'ils protégeaient. Un compte écrit
+#: en dur se périme au premier salon ajouté ; celui-ci suit.
+#:
+#: Les quatre écrits à la main, plus le marché. `Havana Glow` reste en
+#: onboarding — c'est son rôle — donc les actifs sont un de moins.
+COMMERCES = 4 + len(seed.MARCHE)
+ACTIFS = COMMERCES - 1
+
+#: Les offres des quatre écrits à la main, plus celles du marché.
+OFFRES = 10 + sum(len(fiche.offres) for fiche in seed.MARCHE)
+
+#: Un administrateur, un propriétaire par commerce, cinq créateurs.
+COMPTES = 1 + COMMERCES + 5
 
 
 @pytest.fixture(scope="module")
@@ -155,8 +174,8 @@ def test_la_commande_est_rejouable(jeu_pose: str) -> None:
 def test_elle_annonce_ce_qu_elle_a_pose(base_jetable: str) -> None:
     resultat = _lancer(base_jetable)
 
-    assert "4 commerces" in resultat.stdout
-    assert "10 offres" in resultat.stdout
+    assert f"{COMMERCES} commerces" in resultat.stdout
+    assert f"{OFFRES} offres" in resultat.stdout
     # Le résumé annonce aussi ce que la démonstration a produit : un jeu qui
     # poserait zéro contrepartie se verrait ici, pas trois écrans plus loin.
     assert "5 créateurs" in resultat.stdout
@@ -219,10 +238,10 @@ async def test_les_commerces_sont_geolocalises_et_pas_tous_ouverts(
         )
     ).all()
 
-    assert len(lignes) == 4
+    assert len(lignes) == COMMERCES
     par_statut = {ligne.status for ligne in lignes}
     assert par_statut == {BusinessStatus.ACTIVE, BusinessStatus.ONBOARDING}
-    assert sum(1 for ligne in lignes if ligne.status == BusinessStatus.ACTIVE) == 3
+    assert sum(1 for ligne in lignes if ligne.status == BusinessStatus.ACTIVE) == ACTIFS
 
     for ligne in lignes:
         assert ligne.currency == "USD"
@@ -234,7 +253,7 @@ async def test_chaque_commerce_a_son_owner(seed_conn: AsyncConnection) -> None:
         await seed_conn.execute(sa.select(BusinessMember.business_id, BusinessMember.role))
     ).all()
 
-    assert len(lignes) == 4
+    assert len(lignes) == COMMERCES
     assert {ligne.role for ligne in lignes} == {BusinessMemberRole.OWNER}
 
 
@@ -400,9 +419,9 @@ async def test_les_transitions_sont_journalisees(seed_conn: AsyncConnection) -> 
     # d'abord : le jeu de données les active avant de les abonner, comme un
     # vrai salon le ferait. Souscrire referme l'échéance sans effacer la trace
     # de son ouverture — le journal dit ce qui s'est passé, pas ce qui reste.
-    assert par_entite["business"] == 12
+    assert par_entite["business"] == COMMERCES * 3
     # Un administrateur, quatre propriétaires, cinq créateurs.
-    assert par_entite["app_user"] == 10
+    assert par_entite["app_user"] == COMPTES
     # Et les entités de la démonstration laissent aussi leurs traces : sans
     # elles, le jeu aurait posé des états sans passer par les services.
     assert par_entite["booking"] > 0
@@ -509,7 +528,7 @@ async def test_aucun_identifiant_n_est_devinable(seed_conn: AsyncConnection) -> 
     """Rien de séquentiel : les identifiants circulent dans des URL."""
     identifiants = list(await seed_conn.scalars(sa.select(Business.id)))
 
-    assert len(identifiants) == 4
+    assert len(identifiants) == COMMERCES
     for identifiant in identifiants:
         assert isinstance(identifiant, uuid.UUID)
         assert identifiant.version == 4
@@ -529,8 +548,8 @@ async def test_chaque_commerce_compose_ses_offres(seed_conn: AsyncConnection) ->
         ).all()
     )
 
-    assert len(par_commerce) == 3
-    assert sum(par_commerce.values()) == 10
+    assert len(par_commerce) == ACTIFS
+    assert sum(par_commerce.values()) == OFFRES
     assert len(set(par_commerce.values())) > 1, "des offres identiques ne révèlent rien"
 
 

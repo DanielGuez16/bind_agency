@@ -16,7 +16,9 @@ les contraintes et triggers en dessous.
 """
 
 import asyncio
+import re
 import sys
+import unicodedata
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
@@ -132,6 +134,435 @@ async def _offrir(
             payload=TierOfferCreate(tier_id=tier.id, catalog_item_id=item.id),
         )
     return len(couples)
+
+
+# --------------------------------------------------------------------------
+# le marché : seize salons de plus
+# --------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class SalonDuMarche:
+    """Un salon du marché, décrit plutôt que codé.
+
+    **Une table et un semeur, pas seize fonctions.** Les quatre premiers salons
+    sont écrits à la main parce qu'ils portent chacun un cas de démonstration —
+    variantes profondes, items sans réservation, journée coupée, commerce vierge
+    — et que ce cas *est* leur raison d'être. Les seize suivants portent une
+    seule chose : le nombre. Les écrire à la main donnerait quatorze cents
+    lignes où seuls des noms changeraient, et la première divergence entre deux
+    d'entre eux passerait inaperçue.
+
+    **Le catalogue et les offres varient délibérément.** Vingt salons à trois
+    prestations et un palier ne font pas un marché : ils font le même salon
+    vingt fois. Les tailles vont de deux à six prestations, les paliers couvrent
+    les trois formats et les trois plateformes, et les durées vont du quart
+    d'heure à deux heures.
+    """
+
+    nom: str
+    categorie: str
+    quartier: Neighborhood
+    adresse: str
+    longitude: float
+    latitude: float
+    #: Le numéro de la couverture portrait, dans `couvertures-portrait/`.
+    couverture: str
+    locale: Locale
+    #: `(nom, prix en centimes, durée en minutes ou None)`.
+    items: tuple[tuple[str, int, int | None], ...]
+    #: `(plateforme, format, index dans `items`)`.
+    offres: tuple[tuple[Platform, ContentFormat, int], ...]
+    ouverture: tuple[str, str] = ("09:00:00", "19:00:00")
+    places: int = 2
+    #: L'adresse d'une carte en ligne. Posée sur le restaurant qui laisse un
+    #: choix : c'est elle qui rend son offre publiable.
+    menu_url: str | None = None
+    #: L'index de l'item qui laisse un choix, quand il y en a un.
+    laisse_un_choix: int | None = None
+
+
+def courriel_du_gerant(fiche: "SalonDuMarche") -> str:
+    """L'adresse du gérant, dérivée du nom du salon.
+
+    Dérivée plutôt que listée : une seconde liste à tenir à jour finit par
+    diverger de la première, et l'écart se voit à la connexion — c'est-à-dire
+    au pire moment d'une démonstration. Les accents et la ponctuation tombent,
+    le reste devient un identifiant stable.
+    """
+    sans_accent = unicodedata.normalize("NFKD", fiche.nom).encode("ascii", "ignore").decode()
+    return re.sub(r"[^a-z0-9]+", "-", sans_accent.lower()).strip("-") + "@bind.example"
+
+
+MARCHE: tuple[SalonDuMarche, ...] = (
+    SalonDuMarche(
+        nom="Calle Ocho Barber Co.",
+        categorie="beauty",
+        quartier=Neighborhood.LITTLE_HAVANA,
+        adresse="1642 SW 8th St, Miami, FL 33135",
+        longitude=-80.2231,
+        latitude=25.7654,
+        couverture="05",
+        locale=Locale.ES,
+        items=(("Corte clásico", 4500, 30), ("Corte y barba", 6500, 45), ("Afeitado", 3500, 20)),
+        offres=(
+            (Platform.INSTAGRAM, ContentFormat.STORY, 0),
+            (Platform.TIKTOK, ContentFormat.REEL, 1),
+        ),
+        ouverture=("10:00:00", "20:00:00"),
+        places=3,
+    ),
+    SalonDuMarche(
+        nom="Verre Skin Studio",
+        categorie="beauty",
+        quartier=Neighborhood.DESIGN_DISTRICT,
+        adresse="140 NE 39th St, Miami, FL 33137",
+        longitude=-80.1937,
+        latitude=25.8130,
+        couverture="06",
+        locale=Locale.EN,
+        items=(
+            ("Signature facial", 12000, 60),
+            ("Deep cleanse", 9000, 45),
+            ("LED add-on", 4000, 20),
+            ("Peel", 15000, 75),
+        ),
+        offres=(
+            (Platform.INSTAGRAM, ContentFormat.POST, 0),
+            (Platform.INSTAGRAM, ContentFormat.STORY, 2),
+        ),
+    ),
+    SalonDuMarche(
+        nom="La Mesa Larga",
+        categorie="restaurant",
+        quartier=Neighborhood.LITTLE_HAITI,
+        adresse="5900 NE 2nd Ave, Miami, FL 33137",
+        longitude=-80.1930,
+        latitude=25.8320,
+        couverture="07",
+        locale=Locale.ES,
+        # **Le seul salon dont une prestation laisse un choix.** Le créateur ne
+        # sait pas ce qu'il mangera : sans carte lisible il ne vient pas, et la
+        # règle refuse d'ouvrir l'offre. `menu_url` la rend publiable ; le semis
+        # des photos y ajoute des pages déposées, pour que les deux formes se
+        # voient — l'une n'exclut pas l'autre.
+        items=(("Menú del día", 3200, 75), ("Postre del día", 900, 15)),
+        offres=((Platform.INSTAGRAM, ContentFormat.REEL, 0),),
+        ouverture=("12:00:00", "22:00:00"),
+        places=6,
+        menu_url="https://lamesalarga.example/carta",
+        laisse_un_choix=0,
+    ),
+    SalonDuMarche(
+        nom="Edgewater Coffee House",
+        categorie="restaurant",
+        quartier=Neighborhood.EDGEWATER,
+        adresse="3401 Biscayne Blvd, Miami, FL 33137",
+        longitude=-80.1893,
+        latitude=25.8072,
+        couverture="08",
+        locale=Locale.EN,
+        items=(
+            ("Latte art class", 3500, 45),
+            ("Flat white", 500, None),
+            ("Cold brew", 600, None),
+            ("Affogato", 800, None),
+        ),
+        offres=((Platform.INSTAGRAM, ContentFormat.STORY, 0),),
+        ouverture=("07:00:00", "17:00:00"),
+        places=8,
+    ),
+    SalonDuMarche(
+        nom="Panadería del Sol",
+        categorie="restaurant",
+        quartier=Neighborhood.LITTLE_HAVANA,
+        adresse="2306 SW 8th St, Miami, FL 33135",
+        longitude=-80.2348,
+        latitude=25.7652,
+        couverture="09",
+        locale=Locale.ES,
+        items=(
+            ("Taller de pastelería", 5500, 60),
+            ("Pastelito de guayaba", 350, None),
+            ("Café con leche", 400, None),
+        ),
+        # **Les deux plateformes.** Avec TikTok seul, ce salon n'apparaissait
+        # dans aucun fil de la démonstration : Rebecca n'a qu'Instagram, et un
+        # salon que personne ne voit ne démontre rien. Les obstacles de palier
+        # sont déjà représentés ailleurs, par des comptes qui les rencontrent.
+        offres=(
+            (Platform.INSTAGRAM, ContentFormat.STORY, 0),
+            (Platform.TIKTOK, ContentFormat.STORY, 1),
+        ),
+        ouverture=("06:30:00", "15:00:00"),
+        places=10,
+    ),
+    SalonDuMarche(
+        nom="Brickell Highball",
+        categorie="restaurant",
+        quartier=Neighborhood.BRICKELL,
+        adresse="900 S Miami Ave, Miami, FL 33130",
+        longitude=-80.1932,
+        latitude=25.7663,
+        couverture="10",
+        locale=Locale.EN,
+        items=(("Signature cocktail", 1800, None), ("Tasting flight", 3600, 45)),
+        offres=(
+            (Platform.INSTAGRAM, ContentFormat.REEL, 1),
+            (Platform.INSTAGRAM, ContentFormat.POST, 0),
+        ),
+        ouverture=("17:00:00", "23:30:00"),
+        places=4,
+    ),
+    SalonDuMarche(
+        nom="Midtown Brunch Club",
+        categorie="restaurant",
+        quartier=Neighborhood.MIDTOWN,
+        adresse="3252 NE 1st Ave, Miami, FL 33137",
+        longitude=-80.1926,
+        latitude=25.8058,
+        couverture="11",
+        locale=Locale.EN,
+        items=(
+            ("Brunch plate", 2400, 60),
+            ("Pancake stack", 1600, 30),
+            ("Fresh juice", 700, None),
+        ),
+        offres=((Platform.INSTAGRAM, ContentFormat.POST, 0),),
+        ouverture=("08:00:00", "15:00:00"),
+        places=6,
+    ),
+    SalonDuMarche(
+        nom="Wynwood Strength",
+        categorie="fitness",
+        quartier=Neighborhood.WYNWOOD,
+        adresse="250 NW 24th St, Miami, FL 33127",
+        longitude=-80.1985,
+        latitude=25.7995,
+        couverture="12",
+        locale=Locale.EN,
+        items=(
+            ("Drop-in session", 3000, 60),
+            ("Personal training", 8000, 60),
+            ("Assessment", 5000, 45),
+        ),
+        offres=(
+            (Platform.INSTAGRAM, ContentFormat.REEL, 1),
+            (Platform.TIKTOK, ContentFormat.REEL, 0),
+        ),
+        ouverture=("06:00:00", "21:00:00"),
+        places=4,
+    ),
+    SalonDuMarche(
+        nom="Coconut Grove Yoga",
+        categorie="fitness",
+        quartier=Neighborhood.COCONUT_GROVE,
+        adresse="3390 Mary St, Miami, FL 33133",
+        longitude=-80.2439,
+        latitude=25.7285,
+        couverture="13",
+        locale=Locale.EN,
+        items=(("Vinyasa class", 2500, 75), ("Restorative class", 2200, 60)),
+        offres=((Platform.INSTAGRAM, ContentFormat.STORY, 0),),
+        ouverture=("07:00:00", "20:00:00"),
+        places=12,
+    ),
+    SalonDuMarche(
+        nom="Gables Pilates Room",
+        categorie="fitness",
+        quartier=Neighborhood.CORAL_GABLES,
+        adresse="270 Giralda Ave, Coral Gables, FL 33134",
+        longitude=-80.2585,
+        latitude=25.7508,
+        couverture="14",
+        locale=Locale.ES,
+        items=(
+            ("Reformer privado", 7500, 55),
+            ("Clase en grupo", 3200, 55),
+            ("Evaluación postural", 4500, 40),
+            ("Bono de tres clases", 8800, 55),
+        ),
+        offres=(
+            (Platform.INSTAGRAM, ContentFormat.POST, 1),
+            (Platform.INSTAGRAM, ContentFormat.REEL, 0),
+        ),
+        places=3,
+    ),
+    SalonDuMarche(
+        nom="Galería Sur",
+        categorie="museum",
+        quartier=Neighborhood.LITTLE_HAITI,
+        adresse="7218 NW 2nd Ave, Miami, FL 33150",
+        longitude=-80.2003,
+        latitude=25.8420,
+        couverture="15",
+        locale=Locale.ES,
+        items=(("Visita guiada", 1500, 60), ("Entrada general", 900, None)),
+        offres=((Platform.INSTAGRAM, ContentFormat.POST, 0),),
+        ouverture=("11:00:00", "19:00:00"),
+        places=15,
+    ),
+    SalonDuMarche(
+        nom="Clay & Co. Studio",
+        categorie="family_activity",
+        quartier=Neighborhood.DESIGN_DISTRICT,
+        adresse="4141 NE 2nd Ave, Miami, FL 33137",
+        longitude=-80.1928,
+        latitude=25.8155,
+        couverture="16",
+        locale=Locale.EN,
+        items=(
+            ("Wheel throwing", 6500, 120),
+            ("Hand-building class", 4500, 90),
+            ("Open studio hour", 2000, 60),
+        ),
+        offres=((Platform.INSTAGRAM, ContentFormat.REEL, 0),),
+        ouverture=("10:00:00", "20:00:00"),
+    ),
+    SalonDuMarche(
+        nom="Bayside Play Loft",
+        categorie="family_activity",
+        quartier=Neighborhood.EDGEWATER,
+        adresse="601 NE 36th St, Miami, FL 33137",
+        longitude=-80.1873,
+        latitude=25.8098,
+        couverture="17",
+        locale=Locale.EN,
+        items=(("Birthday hour", 12000, 90), ("Day pass", 2200, None)),
+        offres=((Platform.INSTAGRAM, ContentFormat.STORY, 0),),
+        ouverture=("09:30:00", "18:30:00"),
+        places=20,
+    ),
+    SalonDuMarche(
+        nom="Objet Concept Store",
+        categorie="other",
+        quartier=Neighborhood.MIDTOWN,
+        adresse="3401 N Miami Ave, Miami, FL 33127",
+        longitude=-80.1958,
+        latitude=25.8078,
+        couverture="18",
+        locale=Locale.EN,
+        items=(
+            ("Styling session", 5000, 45),
+            ("Gift wrapping", 800, 15),
+            ("Personal shopping", 9000, 90),
+            ("Scent bar", 3000, 30),
+            ("Alteration", 2500, 30),
+        ),
+        offres=(
+            (Platform.INSTAGRAM, ContentFormat.POST, 0),
+            (Platform.INSTAGRAM, ContentFormat.STORY, 3),
+        ),
+        ouverture=("11:00:00", "20:00:00"),
+    ),
+    SalonDuMarche(
+        nom="Fleur de Biscayne",
+        categorie="other",
+        quartier=Neighborhood.SOUTH_BEACH,
+        adresse="1656 Meridian Ave, Miami Beach, FL 33139",
+        longitude=-80.1372,
+        latitude=25.7906,
+        couverture="19",
+        locale=Locale.EN,
+        items=(("Seasonal bouquet", 4500, 20), ("Arrangement workshop", 7500, 90)),
+        offres=((Platform.INSTAGRAM, ContentFormat.POST, 0),),
+        ouverture=("09:00:00", "19:00:00"),
+    ),
+    SalonDuMarche(
+        nom="Librería Aurora",
+        categorie="other",
+        quartier=Neighborhood.CORAL_GABLES,
+        adresse="265 Aragon Ave, Coral Gables, FL 33134",
+        longitude=-80.2591,
+        latitude=25.7495,
+        couverture="20",
+        locale=Locale.ES,
+        items=(
+            ("Club de lectura", 1200, 90),
+            ("Recomendación personal", 0, 20),
+            ("Café y libro", 1500, None),
+            ("Firma de autor", 0, 60),
+            ("Taller de escritura", 5500, 120),
+            ("Envoltura de regalo", 600, 10),
+        ),
+        # L'offre Instagram porte un item **réservable** : elle portait « Café
+        # y libro », qui n'a pas de durée, donc aucune place — le salon
+        # n'apparaissait dans aucune journée et le semis écartait sa
+        # réservation.
+        offres=(
+            (Platform.INSTAGRAM, ContentFormat.STORY, 0),
+            (Platform.TIKTOK, ContentFormat.STORY, 2),
+        ),
+        ouverture=("10:00:00", "21:00:00"),
+        places=10,
+    ),
+)
+
+
+async def _semer_un_salon(
+    session: AsyncSession, owner: User, fiche: SalonDuMarche
+) -> tuple[int, int, int, int]:
+    """Un salon du marché, de sa création à son activation.
+
+    Ouvert **tous les jours** sur une seule plage : un jeu de données ne peut
+    pas dépendre du jour où on le sème, et la journée coupée reste la
+    particularité d'Ocean Beauty plutôt qu'un motif recopié seize fois.
+    """
+    business = await business_service.create_business(
+        session,
+        payload=BusinessCreate(
+            name=fiche.nom,
+            category=fiche.categorie,
+            currency="usd",
+            address=fiche.adresse,
+            neighborhood=fiche.quartier,
+            coordinates=CoordinatesPayload(longitude=fiche.longitude, latitude=fiche.latitude),
+            timezone="America/New_York",
+            default_locale=fiche.locale,
+            menu_url=fiche.menu_url,
+        ),
+        creator=owner,
+        geocoder=ManualGeocoder(),
+    )
+
+    items: list[CatalogItem] = []
+    for rang, (nom, prix, duree) in enumerate(fiche.items):
+        items.append(
+            await catalog_service.create_item(
+                session,
+                business=business,
+                payload=CatalogItemCreate(
+                    name=nom,
+                    price_cents=prix,
+                    duration_minutes=duree,
+                    requires_booking=duree is not None,
+                    leaves_choice=rang == fiche.laisse_un_choix,
+                ),
+            )
+        )
+
+    plages = 0
+    debut, fin = fiche.ouverture
+    for jour in range(7):
+        await capacity_service.create_rule(
+            session,
+            business_id=business.id,
+            payload=CapacityRuleCreate(
+                weekday=jour, start_time=debut, end_time=fin, concurrent_slots=fiche.places
+            ),
+        )
+        plages += 1
+
+    offres = await _offrir(
+        session,
+        business.id,
+        [(plateforme, format_, items[rang]) for plateforme, format_, rang in fiche.offres],
+    )
+
+    await business_service.activate_business(
+        session, business=business, actor=Actor.from_user(owner)
+    )
+    return len(items), plages, 0, offres
 
 
 # --------------------------------------------------------------------------
@@ -599,6 +1030,19 @@ async def populate() -> Resume:
                 await _brickell_spa(session, proprietaires[2]),
                 await _little_havana(session, proprietaires[3]),
             ]
+
+            # **Le marché.** Seize salons de plus, un propriétaire chacun :
+            # partager un compte entre plusieurs commerces ferait de la
+            # démonstration un cas que le produit ne connaît pas encore.
+            for fiche in MARCHE:
+                gerant = await auth_service.register(
+                    session,
+                    email=courriel_du_gerant(fiche),
+                    password=MOT_DE_PASSE,
+                    role=UserRole.BUSINESS_MEMBER,
+                    locale=fiche.locale,
+                )
+                totaux.append(await _semer_un_salon(session, gerant, fiche))
 
             # Les créateurs, les parcours, les contreparties et les jobs sont
             # posés par l'enrichissement de démonstration. Il vit à part parce

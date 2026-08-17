@@ -5292,3 +5292,57 @@ ressemblent, pas qu'ils sont complets.
 étaient donnés pour manquants ; ils sont sur `main` depuis la veille (#127) —
 colonne, configuration, balayage, affichage des deux côtés, et la phrase sous le
 bouton d'accord. Rien n'a été réécrit.
+
+---
+
+## 2026-08-17 — Vingt salons, et ce que le nombre a fait tomber
+
+**Une table et un semeur, pas seize fonctions.** Les quatre premiers salons
+sont écrits à la main parce qu'ils portent chacun un cas — variantes profondes,
+items sans réservation, journée coupée, commerce vierge — et que ce cas *est*
+leur raison d'être. Les seize suivants portent une seule chose : le nombre. Les
+écrire à la main aurait donné quatorze cents lignes où seuls des noms changent,
+et la première divergence entre deux d'entre eux serait passée inaperçue.
+
+**Ce que le nombre a fait tomber, et qui ne se voyait pas à quatre.**
+
+1. **Huit tests comptaient en dur** : « 4 commerces », « 10 offres »,
+   `app_user == 10`. Ils sont dérivés du semis désormais — `4 + len(MARCHE)` —
+   parce qu'un compte écrit en dur se périme au premier salon ajouté et ne dit
+   plus rien de ce qu'il protège.
+2. **Une prestation sans photo.** Le semis des photos passait son tour quand le
+   nom n'était pas au catalogue des fichiers : vingt-huit items sont partis dans
+   le fil sans image, et une carte sans image se lit comme une carte qui n'a pas
+   chargé. Le chemin est dérivé du nom, ce qui rejoint le mécanisme existant —
+   fichier absent, dégradé, et `A-FOURNIR.md` le réclame.
+3. **Trois salons qu'aucune journée ne montrait.** Leurs offres portaient des
+   items sans durée, donc sans créneau : le comptoir n'avait rien à afficher et
+   le semis écartait leur réservation. Chaque salon a maintenant au moins une
+   prestation réservable, et son offre porte dessus.
+4. **Un salon invisible.** Panadería del Sol n'offrait qu'en TikTok, que Rebecca
+   n'a pas : il n'apparaissait dans aucun fil de la démonstration. Un salon que
+   personne ne voit ne démontre rien ; les obstacles de palier sont déjà
+   représentés par des comptes qui les rencontrent vraiment.
+
+**Les couvertures ne sont pas au format demandé, et ce n'est pas bloquant.**
+Deux sur vingt sont en 4:5 ; treize sont en 2:3, trois en 3:4, deux en 9:16.
+Après bornage du grand côté à 2000, dix-huit dépassent les 1290 px de large
+qu'un écran de 430 points réclame à densité 3. Les deux 9:16 — `03` et `15` —
+tombent à 1123 et 1125, soit un agrandissement de 13 % sur les téléphones les
+plus larges. Visible de près, pas de loin.
+
+**`04` n'est attribuée à personne.** C'est le salon de beauté, réservé à Havana
+Glow, qui reste vierge et n'apparaît donc dans aucun fil. Elle attend le jour où
+elle composera quelque chose.
+
+**Le restaurant à choix a les deux formes.** `menu_url` rend son offre
+publiable au semis, avant qu'aucune image n'existe ; les pages déposées montrent
+l'autre forme. Un commerce peut avoir les deux, et la fiche publique doit savoir
+les présenter — sans cela, ce mécanisme n'avait aucun sujet dans la
+démonstration.
+
+**Un import différé, et c'est le cycle qui l'impose.** `seed` importe
+`ResumePhotos` de `seed_demo` : le second ne peut donc pas importer le premier
+en tête de fichier. Lire `MARCHE` à l'appel rompt le cycle et évite de recopier
+seize numéros de couverture — une seconde liste finit par donner à un salon
+renommé la photo d'un autre.

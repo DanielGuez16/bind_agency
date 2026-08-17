@@ -20,6 +20,8 @@ réservations passées en octobre, et la démonstration commence par une
 explication.
 """
 
+import re
+import unicodedata
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime, time, timedelta
@@ -64,7 +66,7 @@ from app.schemas.collaboration import MotifDeDecision
 from app.services import auth as auth_service
 from app.services import availability as availability_service
 from app.services import booking as booking_service
-from app.services import booking_states, eligibility
+from app.services import booking_states, business_menu, eligibility
 from app.services import collaboration as collaboration_service
 from app.services import creator_profile as profile_service
 from app.services import metrics as metrics_service
@@ -119,6 +121,45 @@ DOSSIER_DU_COMMERCE = {
     "Wynwood Nails & Care": "wynwood-nails-care",
     "Brickell Spa Collective": "brickell-spa-collective",
 }
+
+#: La couverture **verticale** de chaque salon, dans `couvertures-portrait/`.
+#:
+#: **Dérivée du marché, pas recopiée.** Les seize salons du marché portent leur
+#: numéro de couverture dans leur fiche ; le lire là plutôt que de tenir une
+#: seconde liste évite qu'un salon renommé garde la photo d'un autre. Les trois
+#: salons écrits à la main sont nommés ici parce qu'ils n'ont pas de fiche.
+#:
+#: `04` — le salon de beauté — n'est attribué à personne : il est réservé à
+#: Havana Glow, qui reste vierge et n'apparaît donc dans aucun fil. Il attend le
+#: jour où elle composera quelque chose.
+#: Les trois salons écrits à la main. Les seize du marché portent leur numéro
+#: dans leur propre fiche, et `couverture_portrait_du_commerce` les y lit.
+COUVERTURE_PORTRAIT_ECRITE_A_LA_MAIN = {
+    "Wynwood Nails & Care": "01",
+    "Ocean Beauty Studio": "02",
+    "Brickell Spa Collective": "03",
+}
+
+
+def _dossier_derive(nom: str) -> str:
+    """Le dossier de photos d'un salon, tiré de son nom."""
+    sans_accent = unicodedata.normalize("NFKD", nom).encode("ascii", "ignore").decode()
+    return re.sub(r"[^a-z0-9]+", "-", sans_accent.lower()).strip("-")
+
+
+def couverture_portrait_du_commerce() -> dict[str, str]:
+    """Le numéro de couverture verticale de chaque salon, nom par nom.
+
+    **L'import est différé, et c'est le cycle qui l'impose** : `seed` importe
+    `ResumePhotos` d'ici, donc ce module ne peut pas importer `seed` en tête de
+    fichier. Le faire à l'appel est la façon la plus courte de le rompre, et
+    elle vaut mieux que de recopier les seize numéros — une seconde liste
+    finirait par donner à un salon renommé la photo d'un autre.
+    """
+    from app.seed import MARCHE
+
+    return COUVERTURE_PORTRAIT_ECRITE_A_LA_MAIN | {fiche.nom: fiche.couverture for fiche in MARCHE}
+
 
 #: Le fichier de chaque prestation, dans le dossier `prestations/` de son
 #: commerce. Le parent d'une gamme n'y figure pas : il ne s'affiche jamais seul.
@@ -234,11 +275,17 @@ async def poser_les_photos(session: AsyncSession) -> ResumePhotos:
             trop_lourds.append((chemin, poids))
 
     # --- couvertures des commerces ouverts
+    portraits = couverture_portrait_du_commerce()
     actifs = await session.scalars(
         sa.select(Business).where(Business.status == BusinessStatus.ACTIVE)
     )
     for business in actifs.all():
-        dossier = DOSSIER_DU_COMMERCE[business.name]
+        # **Dérivé quand il n'est pas nommé.** Les trois salons écrits à la main
+        # ont leur dossier ; les seize du marché n'en ont pas, et leur en
+        # inventer un à la main serait seize lignes à tenir d'accord avec seize
+        # noms. Le chemin dérivé rejoint le mécanisme qui existe déjà : le
+        # fichier absent devient un dégradé, et `A-FOURNIR.md` le réclame.
+        dossier = DOSSIER_DU_COMMERCE.get(business.name) or _dossier_derive(business.name)
         chemin = f"commerces/{dossier}/cover.jpg"
         business.cover_photo_key, trouvee, poids = await _deposer_photo(
             depot,
@@ -249,6 +296,48 @@ async def poser_les_photos(session: AsyncSession) -> ResumePhotos:
             famille="business",
         )
         compter(trouvee, chemin, poids)
+
+        # --- la couverture verticale, pour le mur du fil
+        #
+        # **Un champ à part, et un fichier à part.** Le mur donne à un salon
+        # toute la hauteur de l'écran : un 16:9 recadré n'y donne rien. Le
+        # dépôt borne le grand côté à 2000, donc un 1600 × 2000 traverse sans
+        # rien perdre. Un salon sans couverture verticale garde la sienne en
+        # paysage — c'est l'app qui retombe dessus.
+        numero = portraits.get(business.name)
+        if numero is not None:
+            portrait = f"couvertures-portrait/{numero}.jpg"
+            business.cover_portrait_key, trouvee, poids = await _deposer_photo(
+                depot,
+                chemin=portrait,
+                taille_reelle=photos_reelles.COUVERTURE_PORTRAIT,
+                graine=f"{business.name}-portrait",
+                taille_generee=COUVERTURE,
+                famille="business",
+            )
+            compter(trouvee, portrait, poids)
+
+    # --- la carte du restaurant qui laisse un choix
+    #
+    # **Le lien et les pages, ensemble.** `menu_url` suffit à rendre l'offre
+    # publiable — c'est ce qui la rend publiable au semis, avant que la moindre
+    # image existe. Les pages déposées montrent l'autre forme : un commerce peut
+    # avoir les deux, et la fiche publique doit savoir les présenter. Sans elles,
+    # ce mécanisme n'aurait aucun sujet dans la démonstration.
+    a_choix = await session.scalar(sa.select(Business).where(Business.name == "La Mesa Larga"))
+    if a_choix is not None:
+        for page in (1, 2):
+            chemin = f"cartes/la-mesa-larga/{page}.jpg"
+            cle, trouvee, poids = await _deposer_photo(
+                depot,
+                chemin=chemin,
+                taille_reelle=photos_reelles.PAGE_DE_CARTE,
+                graine=f"carte-la-mesa-larga-{page}",
+                taille_generee=PRESTATION,
+                famille="cartes",
+            )
+            await business_menu.ajouter(session, business_id=a_choix.id, storage_key=cle)
+            compter(trouvee, chemin, poids)
 
     # --- prestations
     #
@@ -272,11 +361,16 @@ async def poser_les_photos(session: AsyncSession) -> ResumePhotos:
         nom = await session.scalar(sa.select(Business.name).where(Business.id == item.business_id))
         dossier = DOSSIER_DU_COMMERCE.get(nom)
         fichier = FICHIER_DE_LA_PRESTATION.get(item.name)
-        if dossier is None or fichier is None:
-            manque = f"commerces/{nom}/prestations/{item.name}"
-            manquantes.append(manque)
-            print(f"  photo sans chemin connu : {manque}")
-            continue
+        # **Un chemin dérivé plutôt qu'un item sans photo.** On passait notre
+        # tour quand le nom n'était pas au catalogue des fichiers : l'item
+        # partait alors dans le fil sans image du tout, et une carte sans image
+        # se lit comme une carte qui n'a pas chargé. Les seize salons du marché
+        # en ont fait vingt-huit d'un coup.
+        #
+        # Le chemin dérivé rejoint le mécanisme qui existe : le fichier absent
+        # devient un dégradé, et `A-FOURNIR.md` le réclame nommément.
+        dossier = dossier or _dossier_derive(nom)
+        fichier = fichier or _dossier_derive(item.name)
         chemin = f"commerces/{dossier}/prestations/{fichier}.jpg"
         item.photo_key, trouvee, poids = await _deposer_photo(
             depot,
