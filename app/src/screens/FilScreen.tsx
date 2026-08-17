@@ -53,6 +53,7 @@ import { en } from '../i18n/en';
 import { Ecran } from './Ecran';
 import { EnTeteDuMur } from './mur/EnTeteDuMur';
 import { BasDuMur, Mur, MurEnChargement } from './mur/Mur';
+import { RangeesParQuartier } from './mur/RangeesParQuartier';
 import { RaisonDuVide } from './RaisonDuVide';
 import { messageDObstacle } from './obstacle';
 import { useRequete } from './useRequete';
@@ -239,11 +240,19 @@ export function FilScreen({
               au palier story mais pas au reel doit savoir ce qui lui manque,
               sinon il croit avoir tout vu. */}
           <Obstacles fil={fil} />
-          {/* **Le mur.** Un salon occupe l'écran, six positions dans un
-              ordre fixe, huit salons puis une respiration. Les salons arrivent
-              triés par distance et se posent dans les positions : personne ne
-              décide quel salon mérite le grand format. */}
-          <Mur fil={fil} onOuvrir={onOuvrirLeCommerce} />
+          {/* **Deux rendus, et c'est la question posée qui les sépare.**
+              Sans filtre, le mur : un salon occupe l'écran, six positions dans
+              un ordre fixe, huit salons puis une respiration — on y descend
+              sans intention. Avec une catégorie, les rangées par quartier : on
+              vient de dire ce qu'on cherche, et deux axes valent mieux qu'un
+              seul pour le trouver. C'est l'arbitrage que Design a écrit
+              lui-même au bas de la planche « Fil v2 », et non un choix de
+              composition pris ici. */}
+          {categorie === null ? (
+            <Mur fil={fil} onOuvrir={onOuvrirLeCommerce} />
+          ) : (
+            <RangeesParQuartier fil={fil} onOuvrir={onOuvrirLeCommerce} />
+          )}
 
           {/* Le seul fond d'encre du fil : il ferme, là où l'os des
               respirations ouvrait. */}

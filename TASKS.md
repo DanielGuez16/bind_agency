@@ -681,6 +681,33 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       c'est lui qui décide du geste, il ne peut pas n'exister que pour qui voit.
       Trois montages de test omettaient `categories`, et c'est une lecture non
       défensive qui les a trouvés. 12 tests neufs, 12 mutations vérifiées*
+- [x] **Les rangées par quartier : ce que montre une catégorie choisie**
+      *La direction 1b de « Fil v2 », branchée là où Design l'a elle-même
+      placée — « le mur de 1a peut être le fil par défaut, et les rangées de 1b
+      devenir ce que montre une catégorie choisie ». Le mur répond à « je
+      descends sans intention », les rangées à « je cherche quelque chose près
+      de chez moi », qui est exactement ce qu'on vient de dire en appuyant sur
+      une catégorie. Deux axes : on descend par quartiers, on balaie dedans. La
+      première carte est plus large — c'est le salon le plus proche du quartier,
+      pas un mérite — et la prestation ne s'écrit que sur elle, même règle que le
+      mur : le texte suit la largeur. **Une rangée sous trois salons se ferme sur
+      une carte d'os** qui nomme le quartier suivant et sa distance : sous trois,
+      rien ne dépasse le bord droit, le glissement ne s'annonce plus et la rangée
+      ressemble à un chargement qui a échoué. Elle ne s'appuie pas — ce qu'elle
+      annonce est la rangée juste dessous. **Le vrai risque de cette vue était
+      ailleurs** : l'ossature étant le quartier, les salons hors des dix quartiers
+      ouverts — `neighborhood: null`, qu'aucun compte du serveur ne porte —
+      auraient disparu en silence, si bien que filtrer aurait caché des salons
+      réservables. Ils font une dernière rangée. Une mutation a révélé une garde
+      qui ne pouvait pas tomber, doublée par celle d'à côté. 15 tests neufs,
+      11 mutations vérifiées*
+- [ ] **Le Didone à 28 sur les rangées, contre son plancher à 34**
+      *La planche l'écrit : « c'est le seul écran où le Didone descend à 28 —
+      cinq salons ne méritent pas la même emphase que vingt ». Et `type.heading`
+      porte `$rule: plancher du Didone` à 34. Deux sources validées se
+      contredisent ; le jeton est celle qui se vérifie mécaniquement, donc les
+      titres de quartier sont rendus à 34 en attendant. À trancher : ou le
+      plancher descend et le jeton le dit, ou la planche remonte*
 - [ ] **Le quartier où l'on est, que le produit ne sait pas résoudre**
       *La planche du mur veut le quartier **de la position**, et son cadre du
       vide l'écrit noir sur blanc : « Key Biscayne » s'affiche alors qu'aucun
