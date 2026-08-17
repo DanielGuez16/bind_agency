@@ -5705,3 +5705,60 @@ valeur.
 *Un point relevé et non tranché :* l'écart de luminosité entre le 500 et le 600 —
 l'état appuyé — se resserre de 9,8 à 5,9 points. La distinction tient, mais elle
 est plus étroite qu'avant. À voir avec Design si l'appui doit descendre.
+
+---
+
+## 2026-08-17 — L'en-tête du mur nomme l'endroit, et trois manques nommés avec lui
+
+Le fil rendait « Near you », un bonjour et des chips de rayon. La planche
+v2.1 — et le cadre 03b du lot 1, qui dit la même chose depuis une autre
+page — demande le quartier, le rayon avec son compte, la marque, et des
+catégories avec les leurs. Ce n'est pas un habillage : un titre qui nomme
+l'écran répond à « où suis-je dans l'application », et la question est « où
+suis-je dans la ville ».
+
+**Le filtre par catégorie était prêt et appelé par personne.** La route accepte
+`categorie`, `ApiClient.fil` sait le passer, `Fil.categories` rend les comptes
+en ignorant le filtre en vigueur — trois couches, aucun appelant. C'est le
+pendant exact du champ accepté par un schéma et ignoré par un service : rien
+n'échoue, et il faut lire les trois pour s'apercevoir qu'aucune ne sert. Le test
+qui le couvre vérifie donc **l'URL réellement appelée** ; une assertion sur
+l'état visuel de la chip aurait passé sur un filtre débranché.
+
+**Réappuyer sur la catégorie en vigueur la retire.** Le cadre 03b pose un
+« Clear » à côté de la rangée ; il est posé ici sur la chip elle-même. Le geste
+qui a filtré est celui qu'on refait pour défiltrer, et il n'y a rien à chercher
+des yeux.
+
+**Sous deux catégories, la rangée entière disparaît, « All » compris.** Une chip
+seule à côté d'« All » est un interrupteur qui ne commande rien : les deux états
+rendent le même mur. C'est la raison qui avait déjà fait retirer
+`theme.userOverride`.
+
+**Une lecture non défensive a trouvé trois montages faux.** `fil.categories`
+est lu sans `??`, comme `quartiers` : trois fichiers de test fabriquaient une
+réponse sans ce champ, que le serveur rend toujours. Le repli les aurait
+laissés mentir. C'est la cinquième fois que ce choix paie sur cet écran.
+
+### Trois manques, nommés plutôt que comblés
+
+**Le quartier où l'on est n'existe pas.** La planche l'écrit sans ambiguïté :
+son cadre du vide affiche « Key Biscayne » alors qu'aucun salon n'y répond,
+donc le nom ne vient pas du fil. Le produit ne sait pas résoudre une position en
+quartier — `integrations/geocoding.py` ne fait que l'adresse d'un commerce vers
+un point — et la ville du profil est un champ libre qui dit où l'on habite. Ce
+qui est rendu est le quartier du **salon le plus proche**, que `quartiers` trie
+déjà en tête ; sans salon, le titre s'efface au lieu d'inventer un nom.
+
+**Le rayon ne se resserre plus.** Les chips de rayon partent avec la ligne
+qu'elles occupaient. Élargir porte son nombre à deux endroits, mais `rayons` ne
+rend jamais un rayon plus étroit que celui en vigueur : on ne revient pas de
+30 km à 15 sans quitter l'écran. La planche n'offre aucun réglage de rayon —
+c'est une décision de composition, pas un oubli, et elle revient à Design.
+
+**Les catégories de Design ne sont pas celles du modèle.** « Nails, Hair,
+Facials, Spa » sont des types de prestation ; le modèle ne connaît que six
+catégories de commerce, et c'est à cette granularité que la route filtre et que
+le serveur compte. Les chips sont livrées sur ce qui existe. Inventer la
+taxinomie fine aurait été une colonne de base et un compteur de fil décidés en
+passant.

@@ -255,6 +255,24 @@ describe('contrôles', () => {
     await monter(<Chip label="Uñas" testID="chip" />);
     expect(screen.getByTestId('chip').props.accessibilityRole).toBeUndefined();
   });
+
+  it('le compte d’une chip s’entend autant qu’il se voit', async () => {
+    // Le nombre est ce qui décide du geste : rendu en mono à côté du mot, il
+    // n'existerait que pour qui voit s'il ne passait pas aussi par le libellé
+    // d'accessibilité. Un lecteur d'écran annoncerait « Nails », bouton, et
+    // rien de ce qui distingue cette chip des quatre autres.
+    await monter(<Chip label="Nails" compte={5} onPress={jest.fn()} testID="chip" />);
+    expect(screen.getByTestId('chip-compte')).toHaveTextContent('5');
+    expect(screen.getByTestId('chip').props.accessibilityLabel).toContain('5');
+  });
+
+  it('et une chip sans compte n’en annonce pas un', async () => {
+    // Le sens inverse. `0` s'écrirait, lui : c'est à l'appelant de ne pas
+    // proposer une chip qui n'ouvre rien, pas au composant de le masquer.
+    await monter(<Chip label="Nails" onPress={jest.fn()} testID="chip" />);
+    expect(screen.queryByTestId('chip-compte')).toBeNull();
+    expect(screen.getByTestId('chip').props.accessibilityLabel).toBe('Nails');
+  });
 });
 
 // --------------------------------------------------------------------------

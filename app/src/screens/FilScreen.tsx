@@ -41,17 +41,8 @@
 import { useState } from 'react';
 import { Animated, Pressable, View } from 'react-native';
 
-import { useApi, type Fil } from '../api';
-import {
-  Apparition,
-  BusinessCard,
-  Chip,
-  EnTeteDEcran,
-  Icone,
-  RangeeDeChips,
-  StatusMessage,
-  Texte,
-} from '../components';
+import { useApi, type BusinessCategory, type Fil } from '../api';
+import { Icone, StatusMessage, Texte } from '../components';
 import { useEnfoncement } from '../components/Mouvement';
 import { useI18n } from '../i18n';
 import { formatNumber } from '../format';
@@ -60,6 +51,7 @@ import { messageDePosition } from '../shell/messageDePosition';
 import type { EtatDePosition } from '../shell/usePosition';
 import { en } from '../i18n/en';
 import { Ecran } from './Ecran';
+import { EnTeteDuMur } from './mur/EnTeteDuMur';
 import { BasDuMur, Mur, MurEnChargement } from './mur/Mur';
 import { RaisonDuVide } from './RaisonDuVide';
 import { messageDObstacle } from './obstacle';
@@ -72,20 +64,24 @@ export function urlImage(url: string | undefined) {
   return url ? { uri: url } : undefined;
 }
 /**
- * Le rayon de départ, et les élargissements proposés.
+ * Le rayon de départ.
  *
  * Quinze kilomètres et non deux : Miami est une ville de voiture, où deux
  * kilomètres ne couvrent qu'un quartier et ne montrent qu'un salon. Le fil
  * paraissait vide alors qu'il était seulement myope.
+ *
+ * **Les élargissements ne sont plus écrits ici.** C'était une liste de trois
+ * valeurs dont une seule servait : le serveur rend `rayons`, avec ce que chaque
+ * élargissement ouvrirait, et c'est lui que le bas du mur et l'état vide
+ * proposent. Deux listes en auraient tôt ou tard désigné deux différentes.
  */
-const RAYONS_KM = [15, 30, 50];
+const RAYON_DE_DEPART_KM = 15;
 
 export type Position = { longitude: number; latitude: number };
 
 export function FilScreen({
   position,
   etatDeLaPosition = { etat: 'jamais_demandee' },
-  prenom = null,
   onDemanderLaPosition,
   onOuvrirLeCommerce,
   onConnecterUnReseau,
@@ -101,8 +97,6 @@ export function FilScreen({
    * rien du tout — le système ne repose pas la question.
    */
   etatDeLaPosition?: EtatDePosition;
-  /** Résolu par la coquille : l'écran ne lit pas la session. */
-  prenom?: string | null;
   onDemanderLaPosition: () => void;
   onOuvrirLeCommerce: (businessId: string) => void;
   onConnecterUnReseau?: () => void;
@@ -113,13 +107,24 @@ export function FilScreen({
 }) {
   const { api } = useApi();
   const { t, locale } = useI18n();
-  const [rayonKm, setRayonKm] = useState(RAYONS_KM[0]);
+  const [rayonKm, setRayonKm] = useState(RAYON_DE_DEPART_KM);
+  /**
+   * La catégorie choisie dans l'en-tête. `null` : toutes.
+   *
+   * **Trois couches étaient prêtes et rien ne les appelait** : la route accepte
+   * `categorie`, le client sait la passer, le serveur rend les comptes par
+   * catégorie. Il ne manquait que cet état — et un paramètre accepté par un
+   * contrat que personne n'envoie est le pendant exact d'un champ accepté par
+   * un schéma et ignoré par un service.
+   */
+  const [categorie, setCategorie] = useState<BusinessCategory | null>(null);
 
   const requete = useRequete<Fil>(
-    (signal) => api.fil(position!, { rayonMetres: rayonKm * 1000 }, signal),
+    (signal) =>
+      api.fil(position!, { rayonMetres: rayonKm * 1000, categorie: categorie ?? undefined }, signal),
     {
       estVide: (fil) => fil.commerces.length === 0,
-      dependances: [position?.longitude, position?.latitude, rayonKm],
+      dependances: [position?.longitude, position?.latitude, rayonKm, categorie],
       // Sans position, on ne lance rien : une requête sans coordonnées ne
       // renverrait pas « rien près de toi », elle renverrait une erreur de
       // validation que l'écran traduirait mal.
@@ -195,11 +200,17 @@ export function FilScreen({
       // L'écran ne rend plus des cartes : le défaut à photo promettrait une
       // forme que le mur n'a pas, et tout sauterait à l'arrivée des images.
       squelette={<MurEnChargement />}
+      // **L'en-tête nomme l'endroit, pas l'écran.** « Near you » et un bonjour
+      // disaient où l'on était dans l'application ; le quartier, le rayon et
+      // son compte disent où l'on est dans la ville, ce qui est la question.
+      // Il est rendu hors des quatre états : le mur en chargement le garde,
+      // l'état vide aussi — c'est de là qu'on relâche un filtre trop étroit.
       entete={
-        <EnTeteDEcran
-          titre={t('parcours.filTitre')}
-          surtitre={prenom ? t('tiers.greeting', { prenom }) : null}
-          testID="entete-fil"
+        <EnTeteDuMur
+          fil={filPret}
+          rayonKm={rayonKm}
+          categorie={categorie}
+          onCategorie={setCategorie}
         />
       }
       vide={
@@ -213,19 +224,11 @@ export function FilScreen({
     >
       {(fil) => (
         <View style={{ gap: 16 }}>
-          {/* Le rayon se règle depuis le fil lui-même, pas seulement depuis
-              l'état vide : un fil maigre n'est pas un fil vide, et il faut
-              pouvoir l'élargir sans avoir à le vider d'abord. */}
-          <RangeeDeChips>
-            {RAYONS_KM.map((rayon) => (
-              <Chip
-                key={rayon}
-                label={t('parcours.filRayon', { rayon })}
-                selected={rayon === rayonKm}
-                onPress={() => setRayonKm(rayon)}
-              />
-            ))}
-          </RangeeDeChips>
+          {/* **Les chips de rayon ont laissé la place aux catégories**, et le
+              rayon a quitté le corps pour l'en-tête, où il se lit sans se
+              régler. Ce qui l'élargit est ailleurs et porte son nombre : le bas
+              du mur, et l'état vide. Ce qui le resserre n'existe plus — voir
+              `TASKS.md`, c'est une question pour Design et non un oubli. */}
 
           {/* **La réponse, puis la raison.** Le nombre est ce que la créatrice
               est venue chercher ; les paliers sont ce qui l'explique, et ils

@@ -245,6 +245,8 @@ export const es: Catalogue = {
     murProchainPalier: 'El nivel {{palier}} te abriría {{count}} negocios más',
     murProchainPalierSansCompte: 'El nivel {{palier}} te abriría más negocios',
     murEcartAbonnes: '{{ecart}} seguidores por alcanzar, de {{requis}}',
+    murRayonEtCompte: '{{rayon}} km · {{count}}',
+    murToutesLesCategories: 'Todo',
     filRayon: '{{rayon}} km',
     filSansPosition: 'Necesitamos tu ubicación para mostrarte locales cercanos.',
     filAutoriser: 'Compartir mi ubicación',

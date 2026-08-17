@@ -62,6 +62,7 @@ function monter(nombre: number) {
     // le composant défensif contre un cas qu'aucun appel n'atteint.
     rayons: [],
     quartiers: [],
+    categories: [],
     prochain_palier: null,
   };
   const api = new ApiClient({
