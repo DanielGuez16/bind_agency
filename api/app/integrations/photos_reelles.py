@@ -54,6 +54,16 @@ COUVERTURE = (1200, 675)
 #: L'affiche verticale de l'accueil, au rapport 9:16 de sa vidéo. La réduire au
 #: format paysage la recadrerait, et le saut se verrait au démarrage.
 AFFICHE_PORTRAIT = (720, 1280)
+#: La couverture verticale du mur du fil, en 4:5.
+#:
+#: **Bornée à 2000 sur le grand côté**, comme tout original depuis que le mur
+#: sert l'original et non la vignette : une couverture pleine largeur sur 520
+#: points ne peut pas se contenter de 480 pixels. 1600 × 2000 traverse donc
+#: sans rien perdre — c'est le format demandé aux photographes.
+COUVERTURE_PORTRAIT = (1600, 2000)
+#: Une page de carte : du texte, donc plus haut que large et assez défini pour
+#: que les prix se lisent.
+PAGE_DE_CARTE = (1200, 1600)
 PRESTATION = (800, 800)
 CATEGORIE = (400, 400)
 
