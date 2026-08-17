@@ -24,6 +24,7 @@ from app.integrations.geocoding import Coordinates, ManualGeocoder
 from app.models import SocialAccount, TierOffer
 from app.models.enums import (
     BusinessCategory,
+    ContentFormat,
     Neighborhood,
     Platform,
     SocialAccountStatus,
@@ -53,6 +54,7 @@ ICI = Coordinates(longitude=-80.1300, latitude=25.7907)
 
 STORY = uuid.UUID("8f9bfcd8-39ff-41a3-9b6b-f00e40f8774d")  # instagram/story, 1000 abonnés
 REEL = uuid.UUID("a839969b-3965-4c7e-92b1-b6274f899162")  # instagram/reel, 10000 abonnés
+POST = uuid.UUID("a0ee68db-f167-4af3-ba72-e3149469da4a")  # instagram/post
 
 
 async def commerce(session: AsyncSession, *, longitude: float, latitude: float, **overrides):
@@ -895,3 +897,62 @@ async def test_le_fil_rend_la_couverture_verticale_et_la_paysage(
     # serveur ne recopie pas l'une dans l'autre — deux champs qui portent la
     # même valeur ne se distinguent plus le jour où l'un des deux change.
     assert par_cle["photos/commerces/c/paysage"].cover_portrait_key is None
+
+
+class TestLeProchainPalier:
+    """Le palier le plus proche, et ce qu'il ouvrirait.
+
+    **Le seul endroit du produit où une créatrice croise ce qui lui manque sans
+    l'avoir cherché**, et le seul depuis que les paliers ont quitté les onglets.
+    Un pied de fil qui dirait « d'autres salons » sans les compter serait une
+    bannière ; c'est le chiffre qui en fait une promesse.
+    """
+
+    async def test_il_nomme_le_palier_et_compte_ce_qu_il_ouvrirait(
+        self, session: AsyncSession
+    ) -> None:
+        """Un salon accessible, un salon derrière un palier plus haut."""
+        ouvert = await commerce(session, longitude=ICI.longitude, latitude=ICI.latitude)
+        await offre(session, ouvert, tier_id=STORY)
+        ferme = await commerce(session, longitude=ICI.longitude, latitude=ICI.latitude)
+        await offre(session, ferme, tier_id=POST)
+        # Cinq mille abonnés : la story (1 000) est ouverte, le reel (10 000) non.
+        user, _ = await createur(session, followers=5_000)
+
+        vue = await fil(session, user)
+
+        assert vue.prochain_palier is not None
+        assert vue.prochain_palier.content_format is ContentFormat.POST
+        assert vue.prochain_palier.commerces_de_plus == 1
+        # L'obstacle chiffre ce qui manque : c'est lui qui fait la promesse.
+        assert vue.prochain_palier.obstacle.ecart is not None
+
+    async def test_il_ne_compte_pas_les_salons_deja_rendus(self, session: AsyncSession) -> None:
+        """**Le piège du compte.** Un salon qui offre aux deux paliers est déjà
+        dans le fil : le compter comme un gain promettrait un salon de plus qui
+        est déjà à l'écran, et le pied mentirait d'un rang."""
+        deux = await commerce(session, longitude=ICI.longitude, latitude=ICI.latitude)
+        await offre(session, deux, tier_id=STORY)
+        await offre(session, deux, tier_id=POST, name="Autre soin")
+        user, _ = await createur(session, followers=5_000)
+
+        vue = await fil(session, user)
+
+        assert len(vue.commerces) == 1
+        # Rien à gagner : le seul salon du rayon est déjà rendu.
+        assert vue.prochain_palier is None
+
+    async def test_rien_a_promettre_quand_le_palier_n_ouvre_aucun_salon(
+        self, session: AsyncSession
+    ) -> None:
+        """**L'autre sens.** Promettre un palier qui n'apporte rien dans ce
+        rayon serait pire que se taire : on enverrait travailler son audience
+        pour un gain qui n'existe pas ici."""
+        ouvert = await commerce(session, longitude=ICI.longitude, latitude=ICI.latitude)
+        await offre(session, ouvert, tier_id=STORY)
+        user, _ = await createur(session, followers=5_000)
+
+        vue = await fil(session, user)
+
+        assert vue.commerces
+        assert vue.prochain_palier is None

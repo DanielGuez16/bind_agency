@@ -296,6 +296,22 @@ export type Neighborhood =
  * quartier se choisit pour s'y rendre, et une moyenne ne désignerait aucun
  * salon existant.
  */
+/**
+ * Le palier le plus proche, et ce qu'il ouvrirait.
+ *
+ * Classé sur le **nombre de conditions qui manquent**, jamais sur leur ampleur :
+ * « une collaboration » et « cinq mille abonnés » sont deux grandeurs sans
+ * rapport, et les comparer reviendrait à inventer un ordre.
+ */
+export type ProchainPalier = {
+  tier_id: string;
+  platform: Platform;
+  content_format: ContentFormat;
+  /** Les salons que ce palier ouvrirait en plus de ceux déjà rendus. */
+  commerces_de_plus: number;
+  obstacle: Obstacle;
+};
+
 export type CompteParQuartier = {
   quartier: Neighborhood;
   commerces: number;
@@ -339,23 +355,16 @@ export type Fil = {
    * n'est pas une issue à un fil vide. Vide quand on est déjà au plus large.
    */
   rayons: CompteParRayon[];
-  /**
-   * Le palier suivant, et ce qu'il ouvrirait.
-   *
-   * **Nul quand il n'y en a pas** — tout est déjà ouvert, ou aucun n'est
-   * atteignable. Le pied du mur disparaît alors, plutôt que de promettre un
-   * palier qui n'existe pas. Ce n'est pas un repli défensif : c'est un état que
-   * le produit atteint, et qui s'éprouve.
-   */
-  prochain_palier: {
-    tier_id: string;
-    content_format: ContentFormat;
-    /** Combien de commerces de plus ce palier ouvrirait. */
-    commerces_de_plus: number;
-    obstacle: Obstacle;
-  } | null;
   /** Les quartiers du fil rendu, du plus proche au plus lointain. */
   quartiers: CompteParQuartier[];
+  /**
+   * Le palier le plus proche d'être atteint, et ce qu'il ouvrirait.
+   *
+   * `null` quand tout est ouvert, qu'aucun n'est atteignable, ou qu'il
+   * n'ouvrirait aucun salon dans le rayon — promettre un palier qui n'apporte
+   * rien serait pire que se taire, et le pied disparaît alors.
+   */
+  prochain_palier: ProchainPalier | null;
 };
 
 export type OffreDeLaFiche = {

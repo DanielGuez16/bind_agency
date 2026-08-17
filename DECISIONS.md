@@ -5503,3 +5503,52 @@ sont les montages qui ont été corrigés.
 salons » ; le jeu de démonstration en rend dix-neuf, le vingtième restant vierge
 par construction. Le pied lit `commerces.length` et dira dix-neuf. Confirmé par
 Daniel.
+---
+
+## 2026-08-17 — Le prochain palier, et un classement qu'il a fallu refaire
+
+Le seul endroit du produit où une créatrice croise ce qui lui manque sans
+l'avoir cherché, et le seul depuis que les paliers ont quitté les onglets. Un
+pied de fil qui dirait « d'autres salons » sans les compter serait une
+bannière ; c'est le chiffre qui en fait une promesse.
+
+**Le classement de la première version était faux.** Elle triait les paliers
+fermés sur l'**écart brut** de leur obstacle : elle plaçait donc « une
+collaboration de plus » devant « cinq mille abonnés de plus » parce que
+1 < 5000. Ce sont deux grandeurs sans rapport, et les comparer revenait à
+inventer un ordre. Le tri se fait maintenant sur le **nombre de conditions non
+remplies** — à qui il manque une chose est plus proche qu'à qui il en manque
+deux — et l'échelle du produit tranche les ex æquo : story, post, reel.
+
+**On essaie les candidats dans l'ordre.** S'arrêter au plus proche ferait taire
+le pied dès que ce palier-là n'a aucun salon dans le rayon, alors que le suivant
+en a. On rend le premier qui ouvre vraiment quelque chose, et `None` sinon.
+
+**Une requête à part, et elle est obligatoire.** La requête du fil filtre sur
+`Tier.id.in_(paliers_ouverts)` : aucune ligne d'un palier fermé n'en sort.
+Compter le gain sur elle aurait toujours rendu zéro — un pied muet, sans que
+rien ne le signale. La requête dédiée ne part que lorsqu'un candidat existe.
+
+**Ce que le champ ne fait pas.** Il ne compte pas les salons déjà rendus : un
+commerce qui offre aux deux paliers est déjà à l'écran, et le compter comme un
+gain ferait mentir le pied d'un rang.
+
+## Les originaux des photos, et jusqu'où les garder
+
+Question posée : faut-il garder 70 Mo de couvertures dans l'arbre de travail ?
+
+**Elles ne sont pas dans le dépôt.** `.gitignore` exclut `assets/photos/**` :
+ni l'historique ni un clone ne les portent. Les 70 Mo sont du disque local et
+une copie manuelle entre arbres, ce qui coûte peu.
+
+**Elles restent telles que livrées, et c'est délibéré.** Ce sont les masters :
+le bornage à 2000 se fait au dépôt, une fois, et se refera si la règle change —
+un mur plus haut, un recadrage paysage, un export retina. Réencoder les fichiers
+source une fois pour toutes échangerait une gêne de disque contre une perte
+définitive.
+
+**Ce qui vaut la peine, en revanche, c'est de ne pas les livrer si gros.**
+`20.jpg` fait 15 Mo en 5760 × 8640 ; rien n'en a besoin au-delà de 2000 px sur
+le grand côté. La demande faite aux photographes — 1600 × 2000 en 4:5 — suffit,
+et elle ramènerait le dossier entier sous les 10 Mo. C'est un réglage d'export,
+pas un script à maintenir.

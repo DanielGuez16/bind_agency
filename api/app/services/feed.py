@@ -135,6 +135,34 @@ class CompteParQuartier:
 
 
 @dataclass(frozen=True, slots=True)
+class ProchainPalier:
+    """Le palier le plus proche d'être atteint, et ce qu'il ouvrirait.
+
+    **Le seul endroit du produit où une créatrice croise ce qui lui manque sans
+    l'avoir cherché**, et le seul depuis que les paliers ont quitté les onglets.
+    Un pied de fil qui dirait « d'autres salons » sans les compter serait une
+    bannière ; c'est le chiffre qui en fait une promesse.
+
+    **Le plus proche, pas le plus généreux.** On classe sur l'écart qui reste à
+    combler, jamais sur le nombre de salons gagnés : proposer le palier le plus
+    rémunérateur enverrait chercher ce qui est le plus loin, ce qui décourage
+    exactement la personne qu'on veut aider.
+
+    **Compté sur le même tamis que la liste** — mêmes commerces dans le rayon,
+    mêmes items disponibles, même contrôle de créneau. Un compte plus large
+    promettrait des salons que l'écran suivant ne rendrait pas.
+    """
+
+    tier_id: uuid.UUID
+    platform: Platform
+    content_format: ContentFormat
+    #: Les commerces que ce palier ouvrirait **en plus** de ceux déjà rendus.
+    commerces_de_plus: int
+    #: Ce qui manque pour l'atteindre : la raison, le requis, l'écart.
+    obstacle: eligibility.Obstacle
+
+
+@dataclass(frozen=True, slots=True)
 class CompteParRayon:
     """Ce qu'un élargissement rapporterait, filtre de catégorie conservé.
 
@@ -172,6 +200,9 @@ class Fil:
     #: Les quartiers représentés dans le fil rendu, du plus proche au plus
     #: lointain. Vide quand aucun salon rendu n'a déclaré de quartier.
     quartiers: tuple[CompteParQuartier, ...]
+    #: Le palier le plus proche, et ce qu'il ouvrirait. `None` quand tout est
+    #: ouvert, qu'aucun n'est atteignable, ou qu'il n'ouvrirait aucun salon.
+    prochain_palier: ProchainPalier | None
 
 
 async def fil_du_createur(
@@ -212,6 +243,7 @@ async def fil_du_createur(
             categories=(),
             rayons=(),
             quartiers=(),
+            prochain_palier=None,
         )
 
     paliers_ouverts = {tier_id for _, tier_id in accessibles}
@@ -358,7 +390,90 @@ async def fil_du_createur(
         categories=categories,
         rayons=rayons,
         quartiers=_compter_par_quartier(commerces),
+        prochain_palier=await _prochain_palier(
+            session,
+            verdict=verdict,
+            commerces=commerces,
+            point=point,
+            rayon=rayon,
+            paliers_ouverts=paliers_ouverts,
+        ),
     )
+
+
+async def _prochain_palier(
+    session: AsyncSession,
+    *,
+    verdict: eligibility.Eligibilite,
+    commerces: tuple[CommerceDuFil, ...],
+    point,
+    rayon: int,
+    paliers_ouverts: set[uuid.UUID],
+) -> ProchainPalier | None:
+    """Le palier hors d'atteinte le plus proche, et les salons qu'il ouvrirait.
+
+    **Classé sur le nombre de conditions qui manquent, pas sur leur ampleur.**
+    Une première version triait sur l'écart brut : elle plaçait « une
+    collaboration de plus » devant « cinq mille abonnés de plus » parce que
+    1 < 5000. Ce sont deux grandeurs sans rapport, et les comparer revenait à
+    inventer un ordre. Le nombre de conditions non remplies, lui, se compare :
+    à qui il manque une chose est plus proche qu'à qui il en manque deux. À
+    égalité, l'échelle du produit tranche — story, puis post, puis reel.
+
+    **On essaie les candidats dans l'ordre**, et on rend le premier qui ouvre
+    vraiment quelque chose. S'arrêter au plus proche ferait taire le pied dès
+    que ce palier-là n'a aucun salon dans le rayon, alors que le suivant en a.
+    """
+    ECHELLE = {ContentFormat.STORY: 0, ContentFormat.POST: 1, ContentFormat.REEL: 2}
+
+    fermes = sorted(
+        (
+            acces
+            for acces in verdict.acces
+            if not acces.accessible and acces.tier_id not in paliers_ouverts
+        ),
+        key=lambda a: (len(a.obstacles), ECHELLE.get(a.content_format, 9)),
+    )
+
+    deja = {commerce.business_id for commerce in commerces}
+
+    for plus_proche in fermes:
+        if not plus_proche.obstacles:
+            continue
+
+        # Ce que ce palier ouvrirait **en plus**. Une requête à part, et c'est
+        # obligé : la requête du fil filtre sur `Tier.id.in_(paliers_ouverts)`,
+        # donc aucune ligne d'un palier fermé n'en sort. Compter sur elle aurait
+        # toujours rendu zéro — un pied muet, sans que rien ne le signale.
+        de_plus = await session.scalar(
+            sa.select(sa.func.count(sa.distinct(Business.id)))
+            .select_from(Business)
+            .join(TierOffer, TierOffer.business_id == Business.id)
+            .join(CatalogItem, CatalogItem.id == TierOffer.catalog_item_id)
+            .where(
+                Business.status == BusinessStatus.ACTIVE,
+                Business.geo.is_not(None),
+                sa.func.ST_DWithin(sa.cast(Business.geo, Geography), point, rayon),
+                TierOffer.tier_id == plus_proche.tier_id,
+                TierOffer.is_active.is_(True),
+                CatalogItem.is_available.is_(True),
+                Business.id.not_in(deja) if deja else sa.true(),
+            )
+        )
+        if not de_plus:
+            continue
+
+        return ProchainPalier(
+            tier_id=plus_proche.tier_id,
+            platform=plus_proche.platform,
+            content_format=plus_proche.content_format,
+            commerces_de_plus=de_plus,
+            # Le premier obstacle du palier : ils sont déjà rangés par le moteur
+            # d'éligibilité, et le premier est celui qu'on affiche.
+            obstacle=plus_proche.obstacles[0],
+        )
+
+    return None
 
 
 def _compter_par_quartier(commerces: tuple[CommerceDuFil, ...]) -> tuple[CompteParQuartier, ...]:
