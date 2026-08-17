@@ -715,6 +715,34 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       par appareil dans un stockage simulé qui survit d'un test à l'autre.
       6 tests neufs, 9 mutations vérifiées — dont une qui n'a rien cassé et a
       fait écrire le cas manquant*
+- [ ] **Le cadre 11c des paliers : il manque une liste, pas un nombre**
+      *L'écran qui liste les prestations d'un palier, avec sa bascule « Near you
+      first » / « All 12 ». Repris ici parce que le manque avait été nommé de
+      travers : ce n'est pas le compte total qui manque —
+      `PalierAccessible.offres_disponibles` le porte depuis toujours, tous
+      commerces confondus — c'est **le second état de la bascule**. « All 12 »
+      doit lister les douze prestations, dont trois sont hors du rayon, et
+      `GET /businesses` est borné par la distance par construction. Il faut une
+      lecture des offres d'un palier non bornée, ou un rayon qui accepte de ne
+      pas borner. Composer la bascule sans elle donnerait deux états montrant la
+      même liste. `onVoirLesPrestations` attend déjà sur `PaliersScreen`, et la
+      navigation ne le passe toujours pas — délibérément.*
+      *Le compte du proche arrive : la conversation fonctionnelle ajoute
+      `commerces_dans_le_rayon` à `GET /me/tiers`, `null` valant « on n'a pas
+      demandé » et non zéro. **Il compte des salons, la phrase compte des
+      prestations** — « douze prestations, dont neuf à moins de quinze
+      kilomètres » comparerait alors deux grandeurs dans la même ligne, et
+      personne ne s'en apercevrait. La question lui est posée.*
+- [ ] **Le mur et les rangées ne vont pas à fond perdu**
+      *Relevé en composant les rangées, et vrai depuis le mur lui-même : les
+      deux vivent dans le `ScrollView` d'`Ecran`, qui pose vingt points de marge
+      sur les quatre côtés. Les photos du mur sont donc encadrées là où la
+      planche les veut au bord, et les cartes des rangées ne dépassent plus le
+      bord droit de l'écran mais celui d'une boîte en retrait — le geste
+      horizontal s'annonce quand même, moins nettement. Le retirer demande soit
+      une option sur `Ecran`, soit une marge négative de la largeur du padding :
+      les deux touchent la composition du fil entier, ce qui n'est pas une
+      correction à prendre en passant*
 - [ ] **Le Didone à 28 sur les rangées, contre son plancher à 34**
       *La planche l'écrit : « c'est le seul écran où le Didone descend à 28 —
       cinq salons ne méritent pas la même emphase que vingt ». Et `type.heading`
