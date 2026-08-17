@@ -5993,3 +5993,24 @@ L'outil de cette classe est `jest --detectOpenHandles`. Il ne peut pas encore
 l'arbre propre, avant comme après cette correction. La fuite est ailleurs et
 n'est pas identifiée — tâche à part. Écrire la limite de la garde vaut mieux que
 la laisser faire croire que la question est réglée.
+
+### La mesure du court-circuit
+
+Éprouvé sur une PR qui ne touche que `DECISIONS.md`, contre une exécution
+complète relevée quelques minutes plus tôt sur le même dépôt.
+
+| | complète | docs seulement |
+| --- | --- | --- |
+| `perimetre` | 5 s | 4 s |
+| `api` | 739 s | **22 s** |
+| `e2e` | 226 s | **21 s** |
+| `app` | 56 s | **3 s** |
+| total | **~750 s** | **33 s** |
+
+`perimetre` a rendu `api=non app=non e2e=non`, et **les trois vérifications
+requises rapportent `pass`** : c'est la moitié qui comptait. Un job sauté
+n'aurait rien rapporté du tout, et la fusion l'aurait attendu indéfiniment.
+
+Le plancher qui reste — vingt secondes sur `api` et sur `e2e` — est le démarrage
+du conteneur Postgres, qu'un `services:` ne sait pas rendre conditionnel. Trois
+secondes sur `app`, qui n'en a pas.
