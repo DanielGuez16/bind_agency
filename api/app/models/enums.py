@@ -68,6 +68,7 @@ class Neighborhood(StrEnum):
     BRICKELL = "brickell"
     SOUTH_BEACH = "south_beach"
     LITTLE_HAVANA = "little_havana"
+    LITTLE_HAITI = "little_haiti"
     DESIGN_DISTRICT = "design_district"
     CORAL_GABLES = "coral_gables"
     MIDTOWN = "midtown"

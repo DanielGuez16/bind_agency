@@ -147,3 +147,45 @@ it('le plafond de téléversement de l’app vaut celui du serveur', () => {
 
   expect(POIDS_MAXIMAL).toBe(serveur);
 });
+
+describe('les quartiers', () => {
+  /**
+   * **La garde qui manquait, trouvée par mutation.** Retirer un quartier d'un
+   * seul catalogue tombait déjà, sur la parité anglais/espagnol. Le retirer des
+   * **deux** passait : l'écran aurait affiché `quartiers.little_haiti` en clair,
+   * dans les deux langues, sans que rien ne le dise.
+   *
+   * La liste est recopiée à la main depuis `Neighborhood` — c'est ce qui en
+   * fait un oracle. La dériver du catalogue qu'elle vérifie la rendrait
+   * toujours d'accord avec lui, y compris le jour où il perd une entrée.
+   */
+  const QUARTIERS = [
+    'wynwood',
+    'brickell',
+    'south_beach',
+    'little_havana',
+    'little_haiti',
+    'design_district',
+    'coral_gables',
+    'midtown',
+    'edgewater',
+    'coconut_grove',
+  ] as const;
+
+  it.each(QUARTIERS)('%s a son nom dans les deux catalogues', (code) => {
+    expect(en.quartiers[code]).toBeTruthy();
+    expect(es.quartiers[code]).toBeTruthy();
+  });
+
+  it('les noms propres ne sont pas traduits', () => {
+    // « Petite Havane » n'est écrit sur aucune plaque à Miami. Les deux
+    // catalogues portent les mêmes chaînes, et c'est délibéré.
+    expect(en.quartiers).toEqual(es.quartiers);
+  });
+
+  it('le catalogue ne porte rien de plus que la liste', () => {
+    // L'autre sens : un quartier retiré de `Neighborhood` et laissé au
+    // catalogue promettrait un lieu que le serveur ne rend plus jamais.
+    expect(Object.keys(en.quartiers).sort()).toEqual([...QUARTIERS].sort());
+  });
+});

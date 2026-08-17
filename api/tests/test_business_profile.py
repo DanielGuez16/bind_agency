@@ -15,7 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from app.core.config import get_settings
 from app.integrations.geocoding import Coordinates, ManualGeocoder
 from app.models import AuditLog, Business, BusinessMember
-from app.models.enums import ActorKind, BusinessMemberRole, BusinessStatus, UserRole
+from app.models.enums import ActorKind, BusinessMemberRole, BusinessStatus, Neighborhood, UserRole
 from app.services import business as business_service
 
 PREFIX = get_settings().api_v1_prefix
@@ -491,3 +491,27 @@ async def test_un_quartier_hors_liste_est_refuse(client: AsyncClient) -> None:
     assert refuse.status_code == 422, refuse.text
     # La session reste utilisable après le refus.
     assert (await commerce(client, membre))["neighborhood"] is None
+
+
+async def test_chaque_quartier_de_la_liste_est_accepte_par_la_base(client: AsyncClient) -> None:
+    """**La garde qui manquait, et que Little Haiti a rendue nécessaire.**
+
+    `neighborhood` n'est pas un type Postgres mais une **contrainte de
+    vérification** qui énumère les valeurs. Alembic compare les contraintes par
+    leur nom : la contrainte s'appelle toujours pareil, donc une valeur ajoutée
+    à l'énumération Python sans migration ne se voit ni à l'autogénération ni à
+    `alembic check`. Elle se verrait en production, au premier commerce qui la
+    choisit, sous un 500 sur une valeur que le schéma d'entrée accepte.
+
+    Les parcourir toutes est le seul moyen de savoir qu'aucune n'a été oubliée.
+    """
+    membre = await compte(client)
+
+    for quartier in Neighborhood:
+        cree = await client.post(
+            f"{PREFIX}/business",
+            json=payload_commerce(neighborhood=quartier.value),
+            headers=membre["headers"],
+        )
+        assert cree.status_code == 201, f"{quartier.value} refusé : {cree.text}"
+        assert cree.json()["neighborhood"] == quartier.value

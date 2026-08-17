@@ -274,6 +274,7 @@ export type Neighborhood =
   | 'brickell'
   | 'south_beach'
   | 'little_havana'
+  | 'little_haiti'
   | 'design_district'
   | 'coral_gables'
   | 'midtown'

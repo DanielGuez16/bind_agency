@@ -130,6 +130,7 @@ export const es: Catalogue = {
     brickell: 'Brickell',
     south_beach: 'South Beach',
     little_havana: 'Little Havana',
+    little_haiti: 'Little Haiti',
     design_district: 'Design District',
     coral_gables: 'Coral Gables',
     midtown: 'Midtown',
