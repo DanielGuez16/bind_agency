@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #EBE7F3; }
+  a { color: #0A7364; text-decoration: none; }
+  a:hover { color: #07574B; }
+</style>
+</helmet>
+
+<section style="display:flex; flex-direction:column; gap:14px; padding:56px 56px 8px; font-family:'IBM Plex Sans',sans-serif;">
+  <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:1.2px; color:#5B5375;">BIND · v0.7 · PALIERS CRÉATEUR</div>
+  <div style="font-family:'Familjen Grotesk',sans-serif; font-size:44px; line-height:48px; font-weight:600; color:#14101F; letter-spacing:-0.5px; max-width:900px;">Un échange, pas un historique</div>
+  <div style="font-size:15px; line-height:23px; color:#4B4363; max-width:720px; text-wrap:pretty;">L'écran se lisait comme une liste de publications passées parce qu'il énumérait des états. Il énonce maintenant un échange : ce que je donne à gauche, ce que j'obtiens à droite, et le tout monte. Le format le plus exigeant ouvre le plus de prestations, et cela se voit avant de lire.</div>
+  <div style="font-size:15px; line-height:23px; color:#4B4363; max-width:720px; text-wrap:pretty;">Aucun palier fermé n'est compacté ni atténué : ils portent l'information la plus utile de l'écran.</div>
+</section>
+
+<section style="display:flex; flex-direction:column; gap:24px; padding:32px 56px 56px; font-family:'IBM Plex Sans',sans-serif;">
+  <div style="display:flex; flex-direction:column; gap:6px; max-width:820px;">
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:1.2px; color:#5B5375;">11 · MOBILE</div>
+    <div style="font-family:'Familjen Grotesk',sans-serif; font-size:29px; line-height:34px; font-weight:600; color:#14101F;">L'échelle</div>
+    <div style="font-size:15px; line-height:23px; color:#4B4363; max-width:680px; text-wrap:pretty;">Trois barreaux, un par format. La matière du bandeau monte avec l'exigence — contour, teinte, aplat plein — et la barre de droite dit combien de prestations chacun ouvre. La plateforme passe en onglets : elle est orthogonale à l'échelle, et six cartes mélangées cassaient la progression.</div>
+  </div>
+
+  <div style="display:flex; flex-wrap:wrap; gap:40px; align-items:flex-start;">
+
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="display:flex; gap:10px; align-items:baseline;"><div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#0A7364;">11a</div><div style="font-size:13px; line-height:18px; font-weight:600; color:#14101F;">Paliers · haut d'écran</div></div>
+      <div data-screen-label="11a" style="width:390px; height:844px; border-radius:40px; overflow:hidden; background:#F7F5FB; border:1px solid #E0DBEC; display:flex; flex-direction:column;">
+        <div style="height:52px; flex:none;"></div>
+
+        <div style="flex:none; padding:0 20px 16px; display:flex; flex-direction:column; gap:14px;">
+          <div style="display:flex; flex-direction:column; gap:2px;">
+            <div style="font-size:13px; line-height:18px; font-weight:600; color:#0A7364;">Hi Lea</div>
+            <div style="font-family:'Familjen Grotesk',sans-serif; font-size:34px; line-height:38px; font-weight:600; letter-spacing:-0.3px; color:#14101F;">Your tiers</div>
+          </div>
+
+          <div style="border-radius:12px; background:#14101F; padding:16px; display:flex; flex-direction:column; gap:12px;">
+            <div style="font-size:15px; line-height:23px; color:#FFFFFF; text-wrap:pretty;">The more demanding the format you commit to, the more generous the services it opens.</div>
+            <div style="display:flex; align-items:flex-end; gap:8px;">
+              <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+                <div style="height:18px; background:#FF9EB7;"></div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.66px; color:#DBD5EA;">STORY</div>
+              </div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+                <div style="height:34px; background:#3FE3C6;"></div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.66px; color:#DBD5EA;">POST</div>
+              </div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+                <div style="height:52px; background:#B39BFF;"></div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.66px; color:#DBD5EA;">REEL</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:0; border-radius:8px; border:1px solid #E0DBEC; background:#FFFFFF; padding:4px;">
+            <div style="flex:1; min-height:40px; border-radius:6px; background:#14101F; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0;">
+              <span style="font-size:13px; line-height:17px; font-weight:600; color:#FFFFFF;">Instagram</span>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.6px; color:#BDB5D4;">1 OPEN</span>
+            </div>
+            <div style="flex:1; min-height:40px; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+              <span style="font-size:13px; line-height:17px; font-weight:600; color:#4B4363;">TikTok</span>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.6px; color:#5B5375;">0 OPEN</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="flex:1; overflow:hidden; padding:0 20px; display:flex; flex-direction:column; gap:14px;">
+
+          <div style="flex:none; border-radius:16px; border:1px solid #A8305A; background:#FFFFFF; overflow:hidden;">
+            <div style="padding:10px 14px; display:flex; align-items:center; gap:10px; background:#FBE7EE; border-bottom:1px solid #F0D3DD;">
+              <div style="display:flex; align-items:center; gap:5px; padding:4px 8px; border-radius:6px; border:1px solid #A8305A; background:#FFFFFF;">
+                <div style="display:flex; align-items:flex-end; gap:2px; height:12px;"><div style="width:3px; height:6px; background:#8C2149;"></div><div style="width:3px; height:9px; background:#E9BCCD;"></div><div style="width:3px; height:12px; background:#E9BCCD;"></div></div>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.66px; color:#A8305A;">STORY</span>
+              </div>
+              <div style="flex:1;"></div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#137F55" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                <span style="font-size:12px; line-height:17px; font-weight:600; color:#137F55;">Open to you</span>
+              </div>
+            </div>
+            <div style="padding:14px; display:flex; align-items:stretch; gap:12px;">
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+                <div style="font-size:12px; line-height:17px; color:#5B5375;">You give</div>
+                <div style="font-size:15px; line-height:21px; font-weight:600; color:#14101F; text-wrap:pretty;">One story within 48 h</div>
+              </div>
+              <div style="width:1px; background:#EDE9F4; flex:none;"></div>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+                <div style="font-size:12px; line-height:17px; color:#5B5375;">You get</div>
+                <div style="display:flex; align-items:baseline; gap:5px;">
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:29px; line-height:32px; font-weight:600; color:#14101F;">12</span>
+                  <span style="font-size:12px; line-height:17px; color:#4B4363;">services</span>
+                </div>
+                <div style="height:8px; background:#EBE7F3;"><div style="width:21%; height:8px; background:#A8305A;"></div></div>
+              </div>
+            </div>
+            <div style="min-height:48px; border-top:1px solid #EDE9F4; display:flex; align-items:center; gap:8px; padding:0 14px;">
+              <span style="flex:1; font-size:15px; line-height:23px; font-weight:600; color:#A8305A;">See the 12 services</span>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9.5 5.5L16 12l-6.5 6.5" stroke="#A8305A" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            </div>
+          </div>
+
+          <div style="flex:none; border-radius:16px; border:2px solid #0A7364; background:#FFFFFF; overflow:hidden;">
+            <div style="padding:10px 14px; display:flex; align-items:center; gap:10px; background:#DEF2EE; border-bottom:1px solid #BFE3DB;">
+              <div style="display:flex; align-items:center; gap:5px; padding:4px 8px; border-radius:6px; background:#DEF2EE; border:1px solid #0A7364;">
+                <div style="display:flex; align-items:flex-end; gap:2px; height:12px;"><div style="width:3px; height:6px; background:#0A5F52;"></div><div style="width:3px; height:9px; background:#0A5F52;"></div><div style="width:3px; height:12px; background:#9ED3C9;"></div></div>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.66px; color:#0A7364;">POST</span>
+              </div>
+              <div style="flex:1;"></div>
+              <div style="padding:3px 9px; border-radius:999px; background:#0A7364;"><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.66px; color:#FFFFFF;">NEXT FOR YOU</span></div>
+            </div>
+            <div style="padding:14px; display:flex; align-items:stretch; gap:12px;">
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+                <div style="font-size:12px; line-height:17px; color:#5B5375;">You would give</div>
+                <div style="font-size:15px; line-height:21px; font-weight:600; color:#14101F; text-wrap:pretty;">One feed post within 48 h</div>
+              </div>
+              <div style="width:1px; background:#EDE9F4; flex:none;"></div>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+                <div style="font-size:12px; line-height:17px; color:#5B5375;">You would get</div>
+                <div style="display:flex; align-items:baseline; gap:5px;">
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:29px; line-height:32px; font-weight:600; color:#14101F;">34</span>
+                  <span style="font-size:12px; line-height:17px; color:#4B4363;">services</span>
+                </div>
+                <div style="height:8px; background:#EBE7F3;"><div style="width:59%; height:8px; background:#0A7364;"></div></div>
+              </div>
+            </div>
+            <div style="padding:0 14px 14px; display:flex; flex-direction:column; gap:10px;">
+              <div style="height:1px; background:#EDE9F4;"></div>
+              <div style="font-size:13px; line-height:18px; font-weight:600; color:#4B4363;">To open it</div>
+              <div style="display:flex; flex-direction:column; gap:7px;">
+                <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+                  <span style="font-size:13px; line-height:18px; color:#14101F;">Followers</span>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:13px; letter-spacing:0.8px; color:#14101F;">7,600 / 10,000</span>
+                </div>
+                <div style="height:10px; background:#EBE7F3;"><div style="width:76%; height:10px; background:#0A7364;"></div></div>
+                <span style="font-size:12px; line-height:17px; color:#4B4363;">2,400 to go out of 10,000.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="width:390px; font-size:12px; line-height:17px; color:#5B5375; text-wrap:pretty;">Le bandeau noir porte le principe et le rend visible : trois barres qui montent, dans les trois teintes de palier. C'est le seul endroit du produit où les trois formats se voient ensemble.</div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="display:flex; gap:10px; align-items:baseline;"><div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#0A7364;">11b</div><div style="font-size:13px; line-height:18px; font-weight:600; color:#14101F;">Paliers · défilé, l'horizon</div></div>
+      <div data-screen-label="11b" style="width:390px; height:844px; border-radius:40px; overflow:hidden; background:#F7F5FB; border:1px solid #E0DBEC; display:flex; flex-direction:column;">
+        <div style="height:52px; flex:none;"></div>
+        <div style="flex:none; height:44px; display:flex; align-items:center; padding:0 20px; background:#F7F5FB; border-bottom:1px solid #EDE9F4;">
+          <span style="flex:1; font-size:15px; line-height:23px; font-weight:600; color:#14101F;">Your tiers</span>
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.8px; color:#5B5375;">INSTAGRAM</span>
+        </div>
+
+        <div style="flex:1; overflow:hidden; padding:16px 20px 0; display:flex; flex-direction:column; gap:14px;">
+
+          <div style="flex:none; border-radius:16px; border:1px solid #5B3CB8; background:#FFFFFF; overflow:hidden;">
+            <div style="padding:10px 14px; display:flex; align-items:center; gap:10px; background:#5B3CB8;">
+              <div style="display:flex; align-items:center; gap:5px; padding:4px 8px; border-radius:6px; background:rgba(255,255,255,0.18);">
+                <div style="display:flex; align-items:flex-end; gap:2px; height:12px;"><div style="width:3px; height:6px; background:#FFFFFF;"></div><div style="width:3px; height:9px; background:#FFFFFF;"></div><div style="width:3px; height:12px; background:#FFFFFF;"></div></div>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.66px; color:#FFFFFF;">REEL</span>
+              </div>
+              <div style="flex:1;"></div>
+              <span style="font-size:12px; line-height:17px; font-weight:600; color:#DDD2FF;">Further ahead</span>
+            </div>
+            <div style="padding:14px; display:flex; align-items:stretch; gap:12px;">
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+                <div style="font-size:12px; line-height:17px; color:#5B5375;">You would give</div>
+                <div style="font-size:15px; line-height:21px; font-weight:600; color:#14101F; text-wrap:pretty;">One dedicated reel within 72 h</div>
+              </div>
+              <div style="width:1px; background:#EDE9F4; flex:none;"></div>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+                <div style="font-size:12px; line-height:17px; color:#5B5375;">You would get</div>
+                <div style="display:flex; align-items:baseline; gap:5px;">
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:29px; line-height:32px; font-weight:600; color:#14101F;">58</span>
+                  <span style="font-size:12px; line-height:17px; color:#4B4363;">services</span>
+                </div>
+                <div style="height:8px; background:#EBE7F3;"><div style="width:100%; height:8px; background:#5B3CB8;"></div></div>
+              </div>
+            </div>
+            <div style="padding:0 14px 14px; display:flex; flex-direction:column; gap:10px;">
+              <div style="height:1px; background:#EDE9F4;"></div>
+              <div style="font-size:13px; line-height:18px; font-weight:600; color:#4B4363;">To open it</div>
+              <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+                <span style="font-size:13px; line-height:18px; color:#14101F;">Followers</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:13px; letter-spacing:0.8px; color:#14101F;">50,000</span>
+              </div>
+              <div style="font-size:12px; line-height:17px; color:#4B4363; text-wrap:pretty;">Unlocks at 50,000. We will let you know as you get close.</div>
+              <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+                <span style="font-size:13px; line-height:18px; color:#14101F;">Completed collaborations</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:13px; letter-spacing:0.8px; color:#14101F;">10</span>
+              </div>
+              <div style="font-size:12px; line-height:17px; color:#4B4363; text-wrap:pretty;">Unlocks at 10. We will let you know as you get close.</div>
+            </div>
+          </div>
+
+          <div style="flex:none; border-radius:16px; border:1px solid #EDE9F4; background:#FFFFFF; padding:16px; display:flex; align-items:center; gap:12px;">
+            <div style="flex:1; display:flex; flex-direction:column; gap:2px;">
+              <span style="font-size:15px; line-height:23px; font-weight:600; color:#14101F;">How tiers work</span>
+              <span style="font-size:12px; line-height:17px; color:#5B5375; text-wrap:pretty;">What lifts you, what sets you back, and what reliability means.</span>
+            </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="flex:none;"><path d="M9.5 5.5L16 12l-6.5 6.5" stroke="#0A7364" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          </div>
+
+          <div style="flex:none; font-size:12px; line-height:17px; color:#5B5375; text-wrap:pretty;">Counts cover every business on BIND, not only those near you.</div>
+        </div>
+
+        <div style="flex:none; height:74px; display:flex; background:#FFFFFF; border-top:1px solid #EDE9F4; padding-top:6px;">
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M11 19a8 8 0 100-16 8 8 0 000 16zM16.8 16.8L21 21" stroke="#5B5375" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <div style="font-size:11px; line-height:15px; margin-top:4px; color:#5B5375;">Discover</div>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5.5 20v-5M12 20V9M18.5 20V4" stroke="#0A7364" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <div style="font-size:11px; line-height:15px; margin-top:4px; color:#0A7364;">Tiers</div>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 6.5h16v14H4zM4 11h16M8.5 3.5v4M15.5 3.5v4M8 15h2M14 15h2" stroke="#5B5375" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <div style="font-size:11px; line-height:15px; margin-top:4px; color:#5B5375;">Bookings</div>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 12.2a4 4 0 100-8 4 4 0 000 8zM4.8 20.5a7.2 7.2 0 0114.4 0" stroke="#5B5375" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <div style="font-size:11px; line-height:15px; margin-top:4px; color:#5B5375;">Audience</div>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 7h9M17 7h3M4 12h3M11 12h9M4 17h9M17 17h3M15 7a2 2 0 10-4 0 2 2 0 004 0M9 12a2 2 0 10-4 0 2 2 0 004 0M15 17a2 2 0 10-4 0 2 2 0 004 0" stroke="#5B5375" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <div style="font-size:11px; line-height:15px; margin-top:4px; color:#5B5375;">Settings</div>
+          </div>
+        </div>
+      </div>
+      <div style="width:390px; font-size:12px; line-height:17px; color:#5B5375; text-wrap:pretty;">Sous 60 % du seuil, aucune barre et aucun délai : le seuil, et la phrase d'horizon. Deux obstacles, donc deux lignes — n'en montrer qu'un ferait combler le premier pour découvrir le second.</div>
+    </div>
+
+  </div>
+</section>
+
+
+<section style="display:flex; flex-direction:column; gap:24px; padding:32px 56px 56px; font-family:'IBM Plex Sans',sans-serif;">
+  <div style="display:flex; flex-direction:column; gap:6px; max-width:820px;">
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:1.2px; color:#5B5375;">11 · MOBILE, SUITE</div>
+    <div style="font-family:'Familjen Grotesk',sans-serif; font-size:29px; line-height:34px; font-weight:600; color:#14101F;">La destination, les règles, le blocage</div>
+    <div style="font-size:15px; line-height:23px; color:#4B4363; max-width:680px; text-wrap:pretty;">« 12 services » devient une porte. Les règles existent enfin. Et quand une seule cause ferme tout, elle passe devant sans faire disparaître l'échelle.</div>
+  </div>
+
+  <div style="display:flex; flex-wrap:wrap; gap:40px; align-items:flex-start;">
+
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="display:flex; gap:10px; align-items:baseline;"><div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#0A7364;">11c</div><div style="font-size:13px; line-height:18px; font-weight:600; color:#14101F;">Les prestations d'un palier</div></div>
+      <div data-screen-label="11c" style="width:390px; height:844px; border-radius:40px; overflow:hidden; background:#F7F5FB; border:1px solid #E0DBEC; display:flex; flex-direction:column;">
+        <div style="height:52px; flex:none;"></div>
+        <div style="flex:none; padding:0 20px 14px; display:flex; flex-direction:column; gap:12px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="transform:rotate(180deg); flex:none;"><path d="M4.5 12h15M13.5 6l6 6-6 6" stroke="#14101F" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <div style="flex:1; display:flex; align-items:center; gap:8px;">
+              <div style="display:flex; align-items:center; gap:5px; padding:4px 8px; border-radius:6px; border:1px solid #A8305A; background:#FFFFFF;">
+                <div style="display:flex; align-items:flex-end; gap:2px; height:12px;"><div style="width:3px; height:6px; background:#8C2149;"></div><div style="width:3px; height:9px; background:#E9BCCD;"></div><div style="width:3px; height:12px; background:#E9BCCD;"></div></div>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.66px; color:#A8305A;">STORY</span>
+              </div>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.8px; color:#5B5375;">INSTAGRAM</span>
+            </div>
+          </div>
+          <div style="font-family:'Familjen Grotesk',sans-serif; font-size:29px; line-height:34px; font-weight:600; letter-spacing:-0.3px; color:#14101F;">12 services open to you</div>
+          <div style="font-size:13px; line-height:18px; color:#4B4363; text-wrap:pretty;">Across every business on BIND. Nine of them are within 15 km of you.</div>
+          <div style="display:flex; gap:8px;">
+            <div style="min-height:36px; display:flex; align-items:center; padding:0 13px; border-radius:999px; background:#14101F;"><span style="font-size:13px; line-height:18px; font-weight:600; color:#FFFFFF;">Near you first</span></div>
+            <div style="min-height:36px; display:flex; align-items:center; padding:0 13px; border-radius:999px; border:1px solid #E0DBEC; background:#FFFFFF;"><span style="font-size:13px; line-height:18px; font-weight:600; color:#4B4363;">All 12</span></div>
+          </div>
+        </div>
+
+        <div style="flex:1; overflow:hidden; padding:0 20px; display:flex; flex-direction:column; gap:12px;">
+          <div style="flex:none; border-radius:16px; border:1px solid #EDE9F4; background:#FFFFFF; overflow:hidden; box-shadow:0 1px 2px rgba(20,16,31,0.06);">
+            <div style="height:176px; position:relative; display:flex; flex-direction:column; justify-content:flex-end; background:repeating-linear-gradient(135deg,#EBE7F3 0 10px,#E0DBEC 10px 20px);">
+              <div style="position:absolute; inset:auto 0 0 0; height:70%; background:linear-gradient(to bottom, rgba(20,16,31,0.05) 0%, rgba(20,16,31,0.45) 55%, rgba(20,16,31,0.88) 100%);"></div>
+              <div style="position:absolute; top:10px; left:10px; padding:3px 8px; border-radius:999px; background:rgba(255,255,255,0.92);"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.8px; color:#14101F;">320 m</span></div>
+              <div style="position:relative; padding:14px;"><div style="font-family:'Familjen Grotesk',sans-serif; font-size:24px; line-height:30px; font-weight:600; color:#FFFFFF;">Vela Nail Studio</div></div>
+            </div>
+            <div style="padding:14px; display:flex; flex-direction:column; gap:4px;">
+              <div style="font-size:15px; line-height:23px; font-weight:600; color:#14101F;">Gel manicure · 45 min</div>
+              <div style="font-size:12px; line-height:17px; color:#5B5375;">One story within 48 h</div>
+            </div>
+          </div>
+          <div style="flex:none; border-radius:16px; border:1px solid #EDE9F4; background:#FFFFFF; overflow:hidden; box-shadow:0 1px 2px rgba(20,16,31,0.06);">
+            <div style="height:176px; position:relative; display:flex; flex-direction:column; justify-content:flex-end; background:repeating-linear-gradient(135deg,#EBE7F3 0 10px,#E0DBEC 10px 20px);">
+              <div style="position:absolute; inset:auto 0 0 0; height:70%; background:linear-gradient(to bottom, rgba(20,16,31,0.05) 0%, rgba(20,16,31,0.45) 55%, rgba(20,16,31,0.88) 100%);"></div>
+              <div style="position:absolute; top:10px; left:10px; padding:3px 8px; border-radius:999px; background:rgba(255,255,255,0.92);"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.8px; color:#14101F;">1 400 m</span></div>
+              <div style="position:relative; padding:14px;"><div style="font-family:'Familjen Grotesk',sans-serif; font-size:24px; line-height:30px; font-weight:600; color:#FFFFFF;">Aurora Brow Bar</div></div>
+            </div>
+          </div>
+        </div>
+        <div style="flex:none; height:74px; background:#FFFFFF; border-top:1px solid #EDE9F4;"></div>
+      </div>
+      <div style="width:390px; font-size:12px; line-height:17px; color:#5B5375; text-wrap:pretty;">Le compte est une porte vers les cartes de la découverte, filtrées sur ce palier. Il dit aussi combien sont dans le rayon : douze au total dont neuf accessibles à pied, ce n'est pas la même promesse.</div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="display:flex; gap:10px; align-items:baseline;"><div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#0A7364;">11d</div><div style="font-size:13px; line-height:18px; font-weight:600; color:#14101F;">Les règles</div></div>
+      <div data-screen-label="11d" style="width:390px; height:844px; border-radius:40px; overflow:hidden; background:#F7F5FB; border:1px solid #E0DBEC; display:flex; flex-direction:column;">
+        <div style="height:52px; flex:none;"></div>
+        <div style="flex:none; padding:0 20px 16px; display:flex; flex-direction:column; gap:12px;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="transform:rotate(180deg);"><path d="M4.5 12h15M13.5 6l6 6-6 6" stroke="#14101F" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          <div style="font-family:'Familjen Grotesk',sans-serif; font-size:34px; line-height:38px; font-weight:600; letter-spacing:-0.3px; color:#14101F;">How tiers work</div>
+        </div>
+
+        <div style="flex:1; overflow:hidden; padding:0 20px; display:flex; flex-direction:column; gap:14px;">
+          <div style="flex:none; border-radius:12px; border:1px solid #EDE9F4; background:#FFFFFF; overflow:hidden;">
+            <div style="padding:12px 14px; border-bottom:1px solid #EDE9F4;">
+              <span style="font-size:15px; line-height:23px; font-weight:600; color:#14101F;">Your reliability score</span>
+            </div>
+            <div style="padding:14px; display:flex; flex-direction:column; gap:10px;">
+              <div style="display:flex; align-items:baseline; gap:8px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:34px; line-height:38px; font-weight:600; color:#14101F;">92</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:14px; letter-spacing:0.8px; color:#5B5375;">/ 100</span>
+              </div>
+              <div style="height:10px; background:#EBE7F3;"><div style="width:92%; height:10px; background:#137F55;"></div></div>
+              <div style="font-size:13px; line-height:19px; color:#4B4363; text-wrap:pretty;">The share of your counterparts delivered within the agreed time. Eleven of your twelve collaborations were.</div>
+              <div style="font-size:12px; line-height:17px; color:#5B5375; text-wrap:pretty;">It is never compared with other creators, and it is never shown to a business.</div>
+            </div>
+          </div>
+
+          <div style="flex:none; border-radius:12px; border:1px solid #EDE9F4; background:#FFFFFF; overflow:hidden;">
+            <div style="padding:12px 14px; background:#E1F3EA; border-bottom:1px solid #EDE9F4; display:flex; align-items:center; gap:8px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 19.5V5M6 11l6-6 6 6" stroke="#137F55" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              <span style="font-size:15px; line-height:23px; font-weight:600; color:#137F55;">What opens a tier</span>
+            </div>
+            <div style="padding:12px 14px; display:flex; flex-direction:column; gap:10px;">
+              <div style="display:flex; gap:10px; align-items:baseline;"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#5B5375; width:14px; flex:none;">1</span><span style="flex:1; font-size:13px; line-height:19px; color:#14101F; text-wrap:pretty;">Your audience on the connected account. Read every few days, never guessed.</span></div>
+              <div style="display:flex; gap:10px; align-items:baseline;"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#5B5375; width:14px; flex:none;">2</span><span style="flex:1; font-size:13px; line-height:19px; color:#14101F; text-wrap:pretty;">Collaborations you have completed. A service taken, then a publication approved.</span></div>
+              <div style="display:flex; gap:10px; align-items:baseline;"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#5B5375; width:14px; flex:none;">3</span><span style="flex:1; font-size:13px; line-height:19px; color:#14101F; text-wrap:pretty;">Your reliability score, above.</span></div>
+              <div style="font-size:12px; line-height:17px; color:#5B5375; text-wrap:pretty;">A tier opens when all three conditions are met. Each tier sets its own.</div>
+            </div>
+          </div>
+
+          <div style="flex:none; border-radius:12px; border:1px solid #EDE9F4; background:#FFFFFF; overflow:hidden;">
+            <div style="padding:12px 14px; background:#FBF0DC; border-bottom:1px solid #EDE9F4; display:flex; align-items:center; gap:8px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 4.5V19M6 13l6 6 6-6" stroke="#8F5602" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              <span style="font-size:15px; line-height:23px; font-weight:600; color:#8F5602;">What closes one again</span>
+            </div>
+            <div style="padding:12px 14px; display:flex; flex-direction:column; gap:10px;">
+              <div style="font-size:13px; line-height:19px; color:#14101F; text-wrap:pretty;">A counterpart closed as not fulfilled, or a booking you did not turn up for.</div>
+              <div style="font-size:13px; line-height:19px; color:#14101F; text-wrap:pretty;">An audience that falls back under a threshold you had passed.</div>
+              <div style="height:1px; background:#EDE9F4;"></div>
+              <div style="font-size:12px; line-height:17px; color:#5B5375; text-wrap:pretty;">A salon cancelling on you never counts against you. Neither does a publication still under review.</div>
+            </div>
+          </div>
+        </div>
+        <div style="flex:none; height:74px; background:#FFFFFF; border-top:1px solid #EDE9F4;"></div>
+      </div>
+      <div style="width:390px; font-size:12px; line-height:17px; color:#5B5375; text-wrap:pretty;">Trois blocs, dans l'ordre où la question se pose : comment on monte, comment on redescend, ce qu'est ce score. Le dernier paragraphe de chaque bloc dit ce qui ne compte pas — c'est ce que les créatrices demandent en premier.</div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="display:flex; gap:10px; align-items:baseline;"><div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#0A7364;">11e</div><div style="font-size:13px; line-height:18px; font-weight:600; color:#14101F;">Une cause ferme tout</div></div>
+      <div data-screen-label="11e" style="width:390px; height:844px; border-radius:40px; overflow:hidden; background:#F7F5FB; border:1px solid #E0DBEC; display:flex; flex-direction:column;">
+        <div style="height:52px; flex:none;"></div>
+        <div style="flex:none; padding:0 20px 16px; display:flex; flex-direction:column; gap:14px;">
+          <div style="font-family:'Familjen Grotesk',sans-serif; font-size:34px; line-height:38px; font-weight:600; letter-spacing:-0.3px; color:#14101F;">Your tiers</div>
+          <div style="border-radius:12px; border:1px solid #E0DBEC; background:#FBF0DC; padding:16px; display:flex; flex-direction:column; gap:10px;">
+            <div style="font-size:18px; line-height:24px; font-weight:600; color:#8F5602;">Reconnect your account</div>
+            <div style="font-size:13px; line-height:19px; color:#4B4363; text-wrap:pretty;">Instagram limits how long an authorisation lasts, and yours has run out. Your tiers and your history are intact — reconnecting takes ten seconds.</div>
+            <div style="min-height:48px; border-radius:8px; background:#8F5602; display:flex; align-items:center; justify-content:center; padding:8px 16px;"><span style="font-size:15px; line-height:23px; font-weight:600; color:#FFFFFF;">Reconnect Instagram</span></div>
+          </div>
+          <div style="font-size:13px; line-height:19px; color:#4B4363; text-wrap:pretty;">This is what you had, and what is waiting once it is back.</div>
+        </div>
+
+        <div style="flex:1; overflow:hidden; padding:0 20px; display:flex; flex-direction:column; gap:14px;">
+          <div style="flex:none; border-radius:16px; border:1px solid #A8305A; background:#FFFFFF; overflow:hidden;">
+            <div style="padding:10px 14px; display:flex; align-items:center; gap:10px; background:#FBE7EE; border-bottom:1px solid #F0D3DD;">
+              <div style="display:flex; align-items:center; gap:5px; padding:4px 8px; border-radius:6px; border:1px solid #A8305A; background:#FFFFFF;">
+                <div style="display:flex; align-items:flex-end; gap:2px; height:12px;"><div style="width:3px; height:6px; background:#8C2149;"></div><div style="width:3px; height:9px; background:#E9BCCD;"></div><div style="width:3px; height:12px; background:#E9BCCD;"></div></div>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.66px; color:#A8305A;">STORY</span>
+              </div>
+              <div style="flex:1;"></div>
+              <span style="font-size:12px; line-height:17px; font-weight:600; color:#8F5602;">Paused, not lost</span>
+            </div>
+            <div style="padding:14px; display:flex; align-items:stretch; gap:12px;">
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+                <div style="font-size:12px; line-height:17px; color:#5B5375;">You give</div>
+                <div style="font-size:15px; line-height:21px; font-weight:600; color:#14101F; text-wrap:pretty;">One story within 48 h</div>
+              </div>
+              <div style="width:1px; background:#EDE9F4; flex:none;"></div>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+                <div style="font-size:12px; line-height:17px; color:#5B5375;">You get</div>
+                <div style="display:flex; align-items:baseline; gap:5px;">
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:29px; line-height:32px; font-weight:600; color:#14101F;">12</span>
+                  <span style="font-size:12px; line-height:17px; color:#4B4363;">services</span>
+                </div>
+                <div style="height:8px; background:#EBE7F3;"><div style="width:21%; height:8px; background:#A8305A;"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div style="flex:none; border-radius:16px; border:1px solid #0A7364; background:#FFFFFF; overflow:hidden;">
+            <div style="padding:10px 14px; display:flex; align-items:center; gap:10px; background:#DEF2EE; border-bottom:1px solid #BFE3DB;">
+              <div style="display:flex; align-items:center; gap:5px; padding:4px 8px; border-radius:6px; background:#DEF2EE; border:1px solid #0A7364;">
+                <div style="display:flex; align-items:flex-end; gap:2px; height:12px;"><div style="width:3px; height:6px; background:#0A5F52;"></div><div style="width:3px; height:9px; background:#0A5F52;"></div><div style="width:3px; height:12px; background:#9ED3C9;"></div></div>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.66px; color:#0A7364;">POST</span>
+              </div>
+              <div style="flex:1;"></div>
+              <span style="font-size:12px; line-height:17px; font-weight:600; color:#4B4363;">2,400 followers to go</span>
+            </div>
+            <div style="padding:14px; display:flex; align-items:stretch; gap:12px;">
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+                <div style="font-size:12px; line-height:17px; color:#5B5375;">You would give</div>
+                <div style="font-size:15px; line-height:21px; font-weight:600; color:#14101F; text-wrap:pretty;">One feed post within 48 h</div>
+              </div>
+              <div style="width:1px; background:#EDE9F4; flex:none;"></div>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+                <div style="font-size:12px; line-height:17px; color:#5B5375;">You would get</div>
+                <div style="display:flex; align-items:baseline; gap:5px;">
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:29px; line-height:32px; font-weight:600; color:#14101F;">34</span>
+                  <span style="font-size:12px; line-height:17px; color:#4B4363;">services</span>
+                </div>
+                <div style="height:8px; background:#EBE7F3;"><div style="width:59%; height:8px; background:#0A7364;"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="flex:none; height:74px; background:#FFFFFF; border-top:1px solid #EDE9F4;"></div>
+      </div>
+      <div style="width:390px; font-size:12px; line-height:17px; color:#5B5375; text-wrap:pretty;">La cause passe devant avec son issue, et l'échelle reste entière dessous. Le palier acquis dit « en pause, pas perdu » : c'est la question qu'on se pose en voyant l'écran, et y répondre coûte quatre mots.</div>
+    </div>
+
+  </div>
+</section>
+
+<section style="display:flex; flex-direction:column; gap:24px; padding:32px 56px 72px; font-family:'IBM Plex Sans',sans-serif;">
+  <div style="display:flex; flex-direction:column; gap:6px; max-width:820px;">
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:1.2px; color:#5B5375;">12 · GRAND ÉCRAN</div>
+    <div style="font-family:'Familjen Grotesk',sans-serif; font-size:29px; line-height:34px; font-weight:600; color:#14101F;">L'échelle et ses règles côte à côte</div>
+    <div style="font-size:15px; line-height:23px; color:#4B4363; max-width:680px; text-wrap:pretty;">Sur le gabarit v0.6 : contenu borné à 1120, échelle sur 720, règles en colonne de 360. C'est le meilleur usage de la largeur — les règles n'ont plus à être un écran séparé, et la progression se lit d'un coup, les trois barreaux visibles ensemble.</div>
+  </div>
+
+  <div style="display:flex; flex-direction:column; gap:12px;">
+    <div style="display:flex; gap:10px; align-items:baseline;"><div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#0A7364;">12a</div><div style="font-size:13px; line-height:18px; font-weight:600; color:#14101F;">Paliers · 1512</div></div>
+    <div data-screen-label="12a" style="width:1512px; height:900px; background:#F7F5FB; border:1px solid #E0DBEC; border-radius:12px; overflow:hidden; display:flex;">
+
+      <div style="width:240px; flex:none; background:#FFFFFF; border-right:1px solid #EDE9F4; display:flex; flex-direction:column;">
+        <div style="padding:20px 16px 16px; display:flex; align-items:center; gap:10px;">
+          <svg width="28" height="28" viewBox="0 0 32 32" fill="none"><path d="M9 3V29" stroke="#14101F" stroke-width="2.9" stroke-linecap="round"></path><path d="M9 5h4.5a5.5 5.5 0 010 11H9" stroke="#14101F" stroke-width="2.9" stroke-linecap="round" stroke-linejoin="round"></path><path d="M9 16h6a5.5 5.5 0 010 11H9" stroke="#14101F" stroke-width="2.9" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          <div style="flex:1; display:flex; flex-direction:column; gap:1px;">
+            <div style="font-family:'Familjen Grotesk',sans-serif; font-size:18px; line-height:22px; font-weight:600; letter-spacing:2.6px; color:#14101F;">BIND</div>
+            <div style="font-size:12px; line-height:16px; color:#0A7364;">Lea Moreau</div>
+          </div>
+        </div>
+        <div style="padding:8px 12px 0; display:flex; flex-direction:column; gap:2px;">
+          <div style="min-height:44px; border-radius:8px; display:flex; align-items:center; gap:10px; padding:0 12px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M11 19a8 8 0 100-16 8 8 0 000 16zM16.8 16.8L21 21" stroke="#4B4363" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="flex:1; font-size:13px; line-height:18px; font-weight:600; color:#4B4363;">Discover</span></div>
+          <div style="position:relative; min-height:44px; border-radius:8px; background:#DEF2EE; display:flex; align-items:center; gap:10px; padding:0 12px;">
+            <div style="position:absolute; left:0; top:10px; bottom:10px; width:3px; border-radius:2px; background:#0A7364;"></div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5.5 20v-5M12 20V9M18.5 20V4" stroke="#0A7364" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span style="flex:1; font-size:13px; line-height:18px; font-weight:600; color:#0A7364;">Tiers</span>
+          </div>
+          <div style="min-height:44px; border-radius:8px; display:flex; align-items:center; gap:10px; padding:0 12px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 6.5h16v14H4zM4 11h16M8.5 3.5v4M15.5 3.5v4" stroke="#4B4363" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="flex:1; font-size:13px; line-height:18px; font-weight:600; color:#4B4363;">Bookings</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#5B5375;">1</span></div>
+          <div style="min-height:44px; border-radius:8px; display:flex; align-items:center; gap:10px; padding:0 12px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 12.2a4 4 0 100-8 4 4 0 000 8zM4.8 20.5a7.2 7.2 0 0114.4 0" stroke="#4B4363" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="flex:1; font-size:13px; line-height:18px; font-weight:600; color:#4B4363;">Audience</span></div>
+        </div>
+        <div style="flex:1;"></div>
+        <div style="padding:12px; border-top:1px solid #EDE9F4;"><div style="min-height:44px; border-radius:8px; display:flex; align-items:center; gap:10px; padding:0 12px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 7h9M17 7h3M4 12h3M11 12h9M4 17h9M17 17h3M15 7a2 2 0 10-4 0 2 2 0 004 0M9 12a2 2 0 10-4 0 2 2 0 004 0M15 17a2 2 0 10-4 0 2 2 0 004 0" stroke="#4B4363" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="flex:1; font-size:13px; line-height:18px; font-weight:600; color:#4B4363;">Settings</span></div></div>
+      </div>
+
+      <div style="flex:1; display:flex; flex-direction:column; min-width:0;">
+        <div style="height:56px; flex:none; background:#FFFFFF; border-bottom:1px solid #EDE9F4; display:flex; align-items:center; gap:16px; padding:0 24px;">
+          <div style="font-size:18px; line-height:24px; font-weight:600; color:#14101F;">Your tiers</div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#5B5375;">audience read 2 h ago</div>
+          <div style="flex:1;"></div>
+          <div style="display:flex; gap:6px;">
+            <div style="min-height:32px; display:flex; align-items:center; gap:8px; padding:0 12px; border-radius:999px; background:#14101F;"><span style="font-size:12px; line-height:17px; font-weight:600; color:#FFFFFF;">Instagram</span><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.6px; color:#BDB5D4;">1 OPEN</span></div>
+            <div style="min-height:32px; display:flex; align-items:center; gap:8px; padding:0 12px; border-radius:999px; border:1px solid #E0DBEC;"><span style="font-size:12px; line-height:17px; font-weight:600; color:#4B4363;">TikTok</span><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.6px; color:#5B5375;">0 OPEN</span></div>
+          </div>
+        </div>
+
+        <div style="flex:1; overflow:hidden; padding:24px; display:flex; justify-content:flex-start;">
+          <div style="width:100%; max-width:1120px; display:flex; gap:24px; align-items:flex-start;">
+
+            <div style="width:720px; flex:none; display:flex; flex-direction:column; gap:16px;">
+              <div style="border-radius:12px; background:#14101F; padding:18px 20px; display:flex; align-items:center; gap:24px;">
+                <div style="flex:1; font-size:18px; line-height:26px; color:#FFFFFF; text-wrap:pretty;">The more demanding the format you commit to, the more generous the services it opens.</div>
+                <div style="width:200px; flex:none; display:flex; align-items:flex-end; gap:10px;">
+                  <div style="flex:1; display:flex; flex-direction:column; gap:6px;"><div style="height:16px; background:#FF9EB7;"></div><div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.66px; color:#DBD5EA;">STORY</div></div>
+                  <div style="flex:1; display:flex; flex-direction:column; gap:6px;"><div style="height:32px; background:#3FE3C6;"></div><div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.66px; color:#DBD5EA;">POST</div></div>
+                  <div style="flex:1; display:flex; flex-direction:column; gap:6px;"><div style="height:50px; background:#B39BFF;"></div><div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.66px; color:#DBD5EA;">REEL</div></div>
+                </div>
+              </div>
+
+              <div style="border-radius:16px; border:1px solid #A8305A; background:#FFFFFF; overflow:hidden; display:flex;">
+                <div style="width:150px; flex:none; background:#FBE7EE; border-right:1px solid #F0D3DD; padding:16px 14px; display:flex; flex-direction:column; gap:10px;">
+                  <div style="align-self:flex-start; display:flex; align-items:center; gap:5px; padding:4px 8px; border-radius:6px; border:1px solid #A8305A; background:#FFFFFF;">
+                    <div style="display:flex; align-items:flex-end; gap:2px; height:12px;"><div style="width:3px; height:6px; background:#8C2149;"></div><div style="width:3px; height:9px; background:#E9BCCD;"></div><div style="width:3px; height:12px; background:#E9BCCD;"></div></div>
+                    <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.66px; color:#A8305A;">STORY</span>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#137F55" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                    <span style="font-size:12px; line-height:17px; font-weight:600; color:#137F55;">Open to you</span>
+                  </div>
+                </div>
+                <div style="flex:1; min-width:0; padding:16px; display:flex; align-items:center; gap:20px;">
+                  <div style="width:210px; flex:none; display:flex; flex-direction:column; gap:4px;">
+                    <div style="font-size:12px; line-height:17px; color:#5B5375;">You give</div>
+                    <div style="font-size:15px; line-height:21px; font-weight:600; color:#14101F;">One story within 48 h</div>
+                  </div>
+                  <div style="width:1px; align-self:stretch; background:#EDE9F4; flex:none;"></div>
+                  <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:5px;">
+                    <div style="font-size:12px; line-height:17px; color:#5B5375;">You get</div>
+                    <div style="display:flex; align-items:baseline; gap:6px;">
+                      <span style="font-family:'IBM Plex Mono',monospace; font-size:29px; line-height:32px; font-weight:600; color:#14101F;">12</span>
+                      <span style="font-size:13px; line-height:18px; color:#4B4363;">services · 9 within 15 km</span>
+                    </div>
+                    <div style="height:8px; background:#EBE7F3;"><div style="width:21%; height:8px; background:#A8305A;"></div></div>
+                  </div>
+                  <div style="min-height:40px; border-radius:8px; border:1px solid #A8305A; display:flex; align-items:center; padding:0 14px; flex:none;"><span style="font-size:13px; line-height:18px; font-weight:600; color:#A8305A;">See them</span></div>
+                </div>
+              </div>
+
+              <div style="border-radius:16px; border:2px solid #0A7364; background:#FFFFFF; overflow:hidden; display:flex;">
+                <div style="width:150px; flex:none; background:#DEF2EE; border-right:1px solid #BFE3DB; padding:16px 14px; display:flex; flex-direction:column; gap:10px;">
+                  <div style="align-self:flex-start; display:flex; align-items:center; gap:5px; padding:4px 8px; border-radius:6px; background:#DEF2EE; border:1px solid #0A7364;">
+                    <div style="display:flex; align-items:flex-end; gap:2px; height:12px;"><div style="width:3px; height:6px; background:#0A5F52;"></div><div style="width:3px; height:9px; background:#0A5F52;"></div><div style="width:3px; height:12px; background:#9ED3C9;"></div></div>
+                    <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.66px; color:#0A7364;">POST</span>
+                  </div>
+                  <div style="align-self:flex-start; padding:3px 9px; border-radius:999px; background:#0A7364;"><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.66px; color:#FFFFFF;">NEXT FOR YOU</span></div>
+                </div>
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column;">
+                  <div style="padding:16px; display:flex; align-items:center; gap:20px;">
+                    <div style="width:210px; flex:none; display:flex; flex-direction:column; gap:4px;">
+                      <div style="font-size:12px; line-height:17px; color:#5B5375;">You would give</div>
+                      <div style="font-size:15px; line-height:21px; font-weight:600; color:#14101F;">One feed post within 48 h</div>
+                    </div>
+                    <div style="width:1px; align-self:stretch; background:#EDE9F4; flex:none;"></div>
+                    <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:5px;">
+                      <div style="font-size:12px; line-height:17px; color:#5B5375;">You would get</div>
+                      <div style="display:flex; align-items:baseline; gap:6px;">
+                        <span style="font-family:'IBM Plex Mono',monospace; font-size:29px; line-height:32px; font-weight:600; color:#14101F;">34</span>
+                        <span style="font-size:13px; line-height:18px; color:#4B4363;">services · 22 within 15 km</span>
+                      </div>
+                      <div style="height:8px; background:#EBE7F3;"><div style="width:59%; height:8px; background:#0A7364;"></div></div>
+                    </div>
+                  </div>
+                  <div style="padding:0 16px 16px; display:flex; flex-direction:column; gap:8px;">
+                    <div style="height:1px; background:#EDE9F4;"></div>
+                    <div style="font-size:13px; line-height:18px; font-weight:600; color:#4B4363;">To open it</div>
+                    <div style="display:flex; align-items:center; gap:16px;">
+                      <span style="width:210px; flex:none; font-size:13px; line-height:18px; color:#14101F;">Followers</span>
+                      <div style="flex:1; height:10px; background:#EBE7F3;"><div style="width:76%; height:10px; background:#0A7364;"></div></div>
+                      <span style="font-family:'IBM Plex Mono',monospace; font-size:13px; letter-spacing:0.8px; color:#14101F; flex:none;">7,600 / 10,000</span>
+                    </div>
+                    <div style="font-size:12px; line-height:17px; color:#4B4363;">2,400 to go out of 10,000.</div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="border-radius:16px; border:1px solid #5B3CB8; background:#FFFFFF; overflow:hidden; display:flex;">
+                <div style="width:150px; flex:none; background:#5B3CB8; padding:16px 14px; display:flex; flex-direction:column; gap:10px;">
+                  <div style="align-self:flex-start; display:flex; align-items:center; gap:5px; padding:4px 8px; border-radius:6px; background:rgba(255,255,255,0.18);">
+                    <div style="display:flex; align-items:flex-end; gap:2px; height:12px;"><div style="width:3px; height:6px; background:#FFFFFF;"></div><div style="width:3px; height:9px; background:#FFFFFF;"></div><div style="width:3px; height:12px; background:#FFFFFF;"></div></div>
+                    <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.66px; color:#FFFFFF;">REEL</span>
+                  </div>
+                  <span style="font-size:12px; line-height:17px; font-weight:600; color:#DDD2FF;">Further ahead</span>
+                </div>
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column;">
+                  <div style="padding:16px; display:flex; align-items:center; gap:20px;">
+                    <div style="width:210px; flex:none; display:flex; flex-direction:column; gap:4px;">
+                      <div style="font-size:12px; line-height:17px; color:#5B5375;">You would give</div>
+                      <div style="font-size:15px; line-height:21px; font-weight:600; color:#14101F;">One dedicated reel within 72 h</div>
+                    </div>
+                    <div style="width:1px; align-self:stretch; background:#EDE9F4; flex:none;"></div>
+                    <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:5px;">
+                      <div style="font-size:12px; line-height:17px; color:#5B5375;">You would get</div>
+                      <div style="display:flex; align-items:baseline; gap:6px;">
+                        <span style="font-family:'IBM Plex Mono',monospace; font-size:29px; line-height:32px; font-weight:600; color:#14101F;">58</span>
+                        <span style="font-size:13px; line-height:18px; color:#4B4363;">services · 41 within 15 km</span>
+                      </div>
+                      <div style="height:8px; background:#EBE7F3;"><div style="width:100%; height:8px; background:#5B3CB8;"></div></div>
+                    </div>
+                  </div>
+                  <div style="padding:0 16px 16px; display:flex; flex-direction:column; gap:8px;">
+                    <div style="height:1px; background:#EDE9F4;"></div>
+                    <div style="font-size:13px; line-height:18px; font-weight:600; color:#4B4363;">To open it</div>
+                    <div style="display:flex; align-items:center; gap:16px;">
+                      <span style="width:210px; flex:none; font-size:13px; line-height:18px; color:#14101F;">Followers</span>
+                      <span style="flex:1; font-size:12px; line-height:17px; color:#4B4363;">Unlocks at 50,000. We will let you know as you get close.</span>
+                      <span style="font-family:'IBM Plex Mono',monospace; font-size:13px; letter-spacing:0.8px; color:#14101F; flex:none;">50,000</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:16px;">
+                      <span style="width:210px; flex:none; font-size:13px; line-height:18px; color:#14101F;">Completed collaborations</span>
+                      <span style="flex:1; font-size:12px; line-height:17px; color:#4B4363;">Unlocks at 10. We will let you know as you get close.</span>
+                      <span style="font-family:'IBM Plex Mono',monospace; font-size:13px; letter-spacing:0.8px; color:#14101F; flex:none;">10</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style="width:360px; flex:none; display:flex; flex-direction:column; gap:16px;">
+              <div style="border-radius:12px; border:1px solid #EDE9F4; background:#FFFFFF; overflow:hidden;">
+                <div style="padding:14px 16px; border-bottom:1px solid #EDE9F4;"><span style="font-size:15px; line-height:23px; font-weight:600; color:#14101F;">Your reliability score</span></div>
+                <div style="padding:16px; display:flex; flex-direction:column; gap:10px;">
+                  <div style="display:flex; align-items:baseline; gap:8px;">
+                    <span style="font-family:'IBM Plex Mono',monospace; font-size:34px; line-height:38px; font-weight:600; color:#14101F;">92</span>
+                    <span style="font-family:'IBM Plex Mono',monospace; font-size:14px; letter-spacing:0.8px; color:#5B5375;">/ 100</span>
+                  </div>
+                  <div style="height:10px; background:#EBE7F3;"><div style="width:92%; height:10px; background:#137F55;"></div></div>
+                  <div style="font-size:13px; line-height:19px; color:#4B4363; text-wrap:pretty;">Eleven of your twelve counterparts were delivered within the agreed time.</div>
+                  <div style="font-size:12px; line-height:17px; color:#5B5375; text-wrap:pretty;">Never compared with other creators, never shown to a business.</div>
+                </div>
+              </div>
+
+              <div style="border-radius:12px; border:1px solid #EDE9F4; background:#FFFFFF; overflow:hidden;">
+                <div style="padding:12px 16px; background:#E1F3EA; border-bottom:1px solid #EDE9F4; display:flex; align-items:center; gap:8px;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 19.5V5M6 11l6-6 6 6" stroke="#137F55" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                  <span style="font-size:15px; line-height:23px; font-weight:600; color:#137F55;">What opens a tier</span>
+                </div>
+                <div style="padding:14px 16px; display:flex; flex-direction:column; gap:9px;">
+                  <div style="display:flex; gap:10px; align-items:baseline;"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#5B5375; width:14px; flex:none;">1</span><span style="flex:1; font-size:13px; line-height:19px; color:#14101F; text-wrap:pretty;">Your audience on the connected account. Read every few days, never guessed.</span></div>
+                  <div style="display:flex; gap:10px; align-items:baseline;"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#5B5375; width:14px; flex:none;">2</span><span style="flex:1; font-size:13px; line-height:19px; color:#14101F; text-wrap:pretty;">Collaborations you have completed.</span></div>
+                  <div style="display:flex; gap:10px; align-items:baseline;"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#5B5375; width:14px; flex:none;">3</span><span style="flex:1; font-size:13px; line-height:19px; color:#14101F; text-wrap:pretty;">Your reliability score, above.</span></div>
+                  <div style="font-size:12px; line-height:17px; color:#5B5375; text-wrap:pretty;">A tier opens when all three are met. Each tier sets its own.</div>
+                </div>
+              </div>
+
+              <div style="border-radius:12px; border:1px solid #EDE9F4; background:#FFFFFF; overflow:hidden;">
+                <div style="padding:12px 16px; background:#FBF0DC; border-bottom:1px solid #EDE9F4; display:flex; align-items:center; gap:8px;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 4.5V19M6 13l6 6 6-6" stroke="#8F5602" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                  <span style="font-size:15px; line-height:23px; font-weight:600; color:#8F5602;">What closes one again</span>
+                </div>
+                <div style="padding:14px 16px; display:flex; flex-direction:column; gap:9px;">
+                  <div style="font-size:13px; line-height:19px; color:#14101F; text-wrap:pretty;">A counterpart closed as not fulfilled, or a booking you did not turn up for.</div>
+                  <div style="font-size:13px; line-height:19px; color:#14101F; text-wrap:pretty;">An audience that falls back under a threshold you had passed.</div>
+                  <div style="height:1px; background:#EDE9F4;"></div>
+                  <div style="font-size:12px; line-height:17px; color:#5B5375; text-wrap:pretty;">A salon cancelling on you never counts against you. Neither does a publication still under review.</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="width:1000px; font-size:12px; line-height:17px; color:#5B5375; text-wrap:pretty;">Le bandeau de format passe à gauche sur 150 : les trois matières s'empilent alors en colonne et la progression contour → teinte → aplat se lit verticalement, sans avoir à comparer trois en-têtes éloignés. Les obstacles gagnent leur barre pleine largeur, et la phrase d'horizon tient sur la même ligne que le seuil.</div>
+  </div>
+</section>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=Outfit:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #EDE6DE; }
+  a { color: #A83E06; text-decoration: none; }
+  a:hover { color: #5E2204; }
+</style>
+</helmet>
+
+<section style="display:flex; flex-direction:column; gap:0; font-family:'Outfit',sans-serif;">
+  <div style="background:#17120E; padding:60px 56px 52px; display:flex; flex-direction:column; gap:28px;">
+    <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:48px;">
+      <div style="display:flex; flex-direction:column; gap:8px; align-items:center;">
+        <svg viewBox="50 26 1991 682" style="height:27px; width:79px; display:block; flex:none;" role="img" aria-label="B!ND"><g transform="translate(0,760) scale(0.1,-0.1)" fill-rule="evenodd"><path fill="#FFFFFF" d="M6460 7290 c19 -1773 58 -4792 63 -4796 3 -4 168 -9 366 -12 l360 -5 5 34 c6 41 159 4810 154 4814 -2 2 -216 5 -476 7 l-472 3 0 -45z M8830 3925 l0 -3385 440 0 440 0 2 2685 3 2685 1770 -2685 1770 -2685 1865 0 c1860 0 2059 3 2335 36 396 47 784 144 1095 276 265 112 551 281 760 449 540 433 904 1072 1044 1829 51 277 61 399 61 775 0 276 -4 381 -18 495 -60 480 -164 841 -350 1205 -75 147 -226 381 -322 500 -396 492 -957 848 -1628 1035 -290 80 -607 130 -952 150 -118 6 -892 11 -2038 13 l-1847 2 0 -2679 c0 -1873 -3 -2677 -11 -2669 -5 5 -803 1211 -1773 2679 l-1763 2669 -442 3 -441 2 0 -3385z m8516 2627 c554 -79 957 -240 1305 -520 97 -78 278 -266 355 -368 267 -355 426 -782 491 -1314 24 -205 24 -678 0 -880 -69 -563 -236 -991 -530 -1355 -84 -104 -249 -263 -360 -346 -373 -280 -865 -445 -1452 -489 -87 -6 -683 -10 -1577 -10 l-1438 0 0 2655 0 2656 1528 -4 c1505 -3 1529 -3 1678 -25z M500 3920 l0 -3381 1408 4 c1519 4 1471 2 1747 58 454 91 866 311 1129 601 198 218 338 492 396 770 84 407 33 809 -146 1159 -226 442 -598 756 -1024 865 -58 14 -106 27 -107 29 -2 1 36 16 85 35 197 74 410 201 567 337 256 223 418 508 481 848 15 80 19 147 19 340 -1 211 -3 253 -23 345 -60 276 -170 501 -345 708 -227 268 -629 495 -1039 586 -148 32 -293 54 -452 66 -77 6 -648 10 -1412 10 l-1284 0 0 -3380z m2725 2622 c125 -24 297 -77 376 -117 364 -184 559 -512 559 -941 0 -278 -69 -497 -215 -682 -157 -198 -404 -332 -729 -394 -106 -20 -146 -21 -973 -25 l-863 -4 0 1096 0 1096 868 -4 c832 -3 871 -4 977 -25z m-34 -2907 c492 -65 848 -291 1025 -650 137 -278 159 -633 58 -945 -115 -358 -400 -605 -823 -711 -220 -56 -283 -59 -1218 -59 l-853 0 0 1190 0 1190 853 0 c677 0 874 -3 958 -15z"></path><path fill="#FF5E00" d="M6835 1714 c-11 -2 -45 -9 -75 -15 -117 -24 -249 -110 -326 -213 -96 -127 -119 -200 -119 -371 0 -109 4 -140 23 -196 65 -188 224 -336 415 -386 35 -9 102 -16 157 -16 165 0 288 51 405 168 121 120 175 255 175 435 0 108 -21 194 -67 283 -69 131 -190 237 -322 283 -64 22 -220 39 -266 28z"></path></g></svg>
+        <div style="font-size:9px; line-height:11px; font-weight:300; letter-spacing:7px; color:#FFFFFF; padding-left:7px;">AGENCY</div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:1.4px; color:#9A8D80;">LOT 3 · ADMINISTRATION</div>
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:1.4px; color:#9A8D80;">SYSTÈME v1.0</div>
+      </div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:16px; max-width:900px;">
+      <div style="display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 14px;">
+        <span style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:50px; line-height:60px; font-weight:400; color:#FFFFFF;">Deux écrans assis, trois écrans</span>
+        <span style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-style:italic; font-size:50px; line-height:60px; font-weight:500; color:#F58A4A;">debout</span>
+      </div>
+      <div style="font-size:17px; line-height:27px; color:#CFC3B6; max-width:760px; text-wrap:pretty;">L'arbitrage et les plans se tiennent au bureau, sur le gabarit v0.6. Le mode terrain et la prise en main du salon se tiennent sur un comptoir, à une main, entre deux clientes — donc en 390, pas en 1512. C'est la première fois que l'administration descend sur mobile, et c'est la contrainte qui a dessiné ces deux écrans.</div>
+      <div style="font-size:15px; line-height:24px; color:#9A8D80; max-width:760px; text-wrap:pretty;">L'annuaire reste en lecture seule, décision notée : le produit circule dans un seul sens. Les deux écrans du lot 2 seront reprises sur la carte d'API corrigée.</div>
+    </div>
+  </div>
+</section>
+
+<section style="display:flex; flex-direction:column; gap:24px; padding:56px 56px 0; font-family:'Outfit',sans-serif;">
+  <div style="display:flex; flex-direction:column; gap:8px; max-width:840px;">
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:1.4px; color:#6B5F54;">16 · L'ARBITRAGE</div>
+    <div style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:36px; line-height:44px; font-weight:400; color:#17120E;">Un bouton dit ce qu'il accepte</div>
+    <div style="font-size:16px; line-height:25px; color:#3A3128; max-width:740px; text-wrap:pretty;">Le défaut relevé en test était juste et il était grave : « Approve » ne disait pas ce qu'on approuvait. Dans une file où l'on tranche vingt dossiers à la chaîne, un verbe seul finit par vouloir dire « suivant ».</div>
+    <div style="font-size:15px; line-height:23px; color:#6B5F54; max-width:740px; text-wrap:pretty;">Deux corrections. L'attendu et le constaté sont mis face à face, ligne par ligne, avec ce qui manque désigné. Et le bouton nomme son objet <span style="font-weight:600;">et son écart</span> : quand la mention manque, il ne dit plus « Approve » mais « Approve without the mention ». On ne peut plus valider sans lire.</div>
+  </div>
+
+  <div style="display:flex; flex-direction:column; gap:12px;">
+    <div style="display:flex; gap:10px; align-items:baseline;"><div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#A83E06;">16a</div><div style="font-size:13px; line-height:18px; font-weight:600; color:#17120E;">Arbitrage · un dossier ouvert</div></div>
+    <div data-screen-label="16a" style="width:1512px; height:900px; background:#F7F3EF; border:1px solid #E2D9CF; overflow:hidden; display:flex;">
+
+      <div style="width:240px; flex:none; background:#FFFFFF; border-right:1px solid #E2D9CF; display:flex; flex-direction:column;">
+        <div style="padding:22px 16px 18px; display:flex; flex-direction:column; gap:3px;">
+          <svg viewBox="50 26 1991 682" style="height:15px; width:44px; display:block; flex:none;" role="img" aria-label="B!ND"><g transform="translate(0,760) scale(0.1,-0.1)" fill-rule="evenodd"><path fill="#17120E" d="M6460 7290 c19 -1773 58 -4792 63 -4796 3 -4 168 -9 366 -12 l360 -5 5 34 c6 41 159 4810 154 4814 -2 2 -216 5 -476 7 l-472 3 0 -45z M8830 3925 l0 -3385 440 0 440 0 2 2685 3 2685 1770 -2685 1770 -2685 1865 0 c1860 0 2059 3 2335 36 396 47 784 144 1095 276 265 112 551 281 760 449 540 433 904 1072 1044 1829 51 277 61 399 61 775 0 276 -4 381 -18 495 -60 480 -164 841 -350 1205 -75 147 -226 381 -322 500 -396 492 -957 848 -1628 1035 -290 80 -607 130 -952 150 -118 6 -892 11 -2038 13 l-1847 2 0 -2679 c0 -1873 -3 -2677 -11 -2669 -5 5 -803 1211 -1773 2679 l-1763 2669 -442 3 -441 2 0 -3385z m8516 2627 c554 -79 957 -240 1305 -520 97 -78 278 -266 355 -368 267 -355 426 -782 491 -1314 24 -205 24 -678 0 -880 -69 -563 -236 -991 -530 -1355 -84 -104 -249 -263 -360 -346 -373 -280 -865 -445 -1452 -489 -87 -6 -683 -10 -1577 -10 l-1438 0 0 2655 0 2656 1528 -4 c1505 -3 1529 -3 1678 -25z M500 3920 l0 -3381 1408 4 c1519 4 1471 2 1747 58 454 91 866 311 1129 601 198 218 338 492 396 770 84 407 33 809 -146 1159 -226 442 -598 756 -1024 865 -58 14 -106 27 -107 29 -2 1 36 16 85 35 197 74 410 201 567 337 256 223 418 508 481 848 15 80 19 147 19 340 -1 211 -3 253 -23 345 -60 276 -170 501 -345 708 -227 268 -629 495 -1039 586 -148 32 -293 54 -452 66 -77 6 -648 10 -1412 10 l-1284 0 0 -3380z m2725 2622 c125 -24 297 -77 376 -117 364 -184 559 -512 559 -941 0 -278 -69 -497 -215 -682 -157 -198 -404 -332 -729 -394 -106 -20 -146 -21 -973 -25 l-863 -4 0 1096 0 1096 868 -4 c832 -3 871 -4 977 -25z m-34 -2907 c492 -65 848 -291 1025 -650 137 -278 159 -633 58 -945 -115 -358 -400 -605 -823 -711 -220 -56 -283 -59 -1218 -59 l-853 0 0 1190 0 1190 853 0 c677 0 874 -3 958 -15z"></path><path fill="#FF5E00" d="M6835 1714 c-11 -2 -45 -9 -75 -15 -117 -24 -249 -110 -326 -213 -96 -127 -119 -200 -119 -371 0 -109 4 -140 23 -196 65 -188 224 -336 415 -386 35 -9 102 -16 157 -16 165 0 288 51 405 168 121 120 175 255 175 435 0 108 -21 194 -67 283 -69 131 -190 237 -322 283 -64 22 -220 39 -266 28z"></path></g></svg>
+          <div style="font-size:12px; line-height:16px; color:#6B5F54;">Administration</div>
+        </div>
+        <div style="padding:6px 12px 0; display:flex; flex-direction:column; gap:2px;">
+          <div style="position:relative; min-height:38px; background:#FEF1E9; display:flex; align-items:center; gap:10px; padding:0 12px;">
+            <div style="position:absolute; left:0; top:0; bottom:0; width:3px; background:#FF5E00;"></div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h10" stroke="#A83E06" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span style="flex:1; font-size:14px; line-height:19px; font-weight:600; color:#A83E06;">Arbitration</span>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#A83E06;">14</span>
+          </div>
+          <div style="min-height:38px; display:flex; align-items:center; gap:10px; padding:0 12px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 12.2a4 4 0 100-8 4 4 0 000 8zM4.8 20.5a7.2 7.2 0 0114.4 0" stroke="#3A3128" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span style="flex:1; font-size:14px; line-height:19px; color:#3A3128;">Accounts</span>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#6B5F54;">6</span>
+          </div>
+          <div style="min-height:38px; display:flex; align-items:center; gap:10px; padding:0 12px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5.5 20v-5M12 20V9M18.5 20V4" stroke="#3A3128" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span style="flex:1; font-size:14px; line-height:19px; color:#3A3128;">Plans</span>
+          </div>
+          <div style="min-height:38px; display:flex; align-items:center; gap:10px; padding:0 12px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3.5 12h4l2.5-6 4 12 2.5-6h4" stroke="#3A3128" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span style="flex:1; font-size:14px; line-height:19px; color:#3A3128;">Health</span>
+            <span style="width:8px; height:8px; border-radius:999px; background:#1F6B4A;"></span>
+          </div>
+          <div style="min-height:38px; display:flex; align-items:center; gap:10px; padding:0 12px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 21.5c4.4-4.6 6.6-8.2 6.6-11a6.6 6.6 0 10-13.2 0c0 2.8 2.2 6.4 6.6 11zM12 12.6a2.6 2.6 0 100-5.2 2.6 2.6 0 000 5.2z" stroke="#3A3128" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span style="flex:1; font-size:14px; line-height:19px; color:#3A3128;">Field mode</span>
+          </div>
+        </div>
+        <div style="flex:1;"></div>
+        <div style="padding:12px; border-top:1px solid #E2D9CF;">
+          <div style="min-height:38px; display:flex; align-items:center; gap:10px; padding:0 12px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 7h9M17 7h3M4 12h3M11 12h9M4 17h9M17 17h3M15 7a2 2 0 10-4 0 2 2 0 004 0M9 12a2 2 0 10-4 0 2 2 0 004 0M15 17a2 2 0 10-4 0 2 2 0 004 0" stroke="#3A3128" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span style="flex:1; font-size:14px; line-height:19px; color:#3A3128;">Settings</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="flex:1; min-width:0; display:flex; flex-direction:column;">
+        <div style="height:56px; flex:none; background:#FFFFFF; border-bottom:1px solid #E2D9CF; display:flex; align-items:center; gap:16px; padding:0 20px;">
+          <div style="font-size:20px; line-height:26px; font-weight:600; letter-spacing:-0.3px; color:#17120E;">Arbitration</div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#6B5F54;">DATA AS OF 15:58 · 2 MIN AGO</div>
+          <div style="flex:1;"></div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="min-width:22px; height:22px; background:#EDE6DE; display:flex; align-items:center; justify-content:center; padding:0 6px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; color:#17120E;">J</span></span>
+            <span style="min-width:22px; height:22px; background:#EDE6DE; display:flex; align-items:center; justify-content:center; padding:0 6px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; color:#17120E;">K</span></span>
+            <span style="font-size:13px; line-height:18px; color:#6B5F54;">move</span>
+          </div>
+        </div>
+
+        <div style="height:40px; flex:none; background:#FFFFFF; border-bottom:1px solid #E2D9CF; display:flex; align-items:center; gap:8px; padding:0 20px;">
+          <div style="min-height:26px; display:flex; align-items:center; padding:0 10px; border-radius:999px; background:#17120E;"><span style="font-size:12px; line-height:17px; font-weight:600; color:#FFFFFF;">Human review · 14</span></div>
+          <div style="min-height:26px; display:flex; align-items:center; padding:0 10px; border-radius:999px; border:1px solid #E2D9CF;"><span style="font-size:12px; line-height:17px; font-weight:600; color:#3A3128;">Third attempt</span></div>
+          <div style="min-height:26px; display:flex; align-items:center; padding:0 10px; border-radius:999px; border:1px solid #E2D9CF;"><span style="font-size:12px; line-height:17px; font-weight:600; color:#3A3128;">Deadline passed</span></div>
+          <div style="flex:1;"></div>
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#6B5F54;">NEAREST DEADLINE FIRST</span>
+        </div>
+
+        <div style="flex:1; min-height:0; display:flex;">
+          <div style="flex:1; min-width:0; background:#FFFFFF; display:flex; flex-direction:column; overflow:hidden;">
+            <div style="height:30px; flex:none; display:flex; align-items:center; padding:0 12px; border-bottom:1px solid #CFC3B6; background:#F7F3EF;">
+              <div style="width:190px; font-size:12px; line-height:17px; font-weight:600; color:#3A3128;">Business</div>
+              <div style="width:130px; font-size:12px; line-height:17px; font-weight:600; color:#3A3128;">Creator</div>
+              <div style="flex:1; font-size:12px; line-height:17px; font-weight:600; color:#3A3128;">Service</div>
+              <div style="width:86px; font-size:12px; line-height:17px; font-weight:600; color:#3A3128;">Tier</div>
+              <div style="width:78px; text-align:right; padding-right:14px; font-size:12px; line-height:17px; font-weight:600; color:#3A3128;">Attempts</div>
+              <div style="width:96px; text-align:right; padding-right:14px; font-size:12px; line-height:17px; font-weight:600; color:#3A3128;">Overdue</div>
+            </div>
+
+            <div style="height:36px; flex:none; display:flex; align-items:center; padding:0 12px; border-bottom:1px solid #E2D9CF; background:#FEF1E9; position:relative;">
+              <div style="position:absolute; left:0; top:0; bottom:0; width:3px; background:#FF5E00;"></div>
+              <div style="width:190px; font-size:13px; line-height:18px; font-weight:600; color:#17120E; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Casa Bruma Spa</div>
+              <div style="width:130px; font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#17120E;">@sofia.rz</div>
+              <div style="flex:1; font-size:13px; line-height:18px; color:#17120E; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:14px;">Signature facial</div>
+              <div style="width:86px;"><div style="display:inline-flex; align-items:center; gap:4px; padding:2px 6px; background:#FCDCC7; border:1px solid #FF5E00;"><span style="font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:1px; color:#A83E06;">POST</span></div></div>
+              <div style="width:78px; text-align:right; padding-right:14px; font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#17120E;">3</div>
+              <div style="width:96px; text-align:right; padding-right:14px; font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#17120E;">2 d</div>
+            </div>
+            <div style="height:36px; flex:none; display:flex; align-items:center; padding:0 12px; border-bottom:1px solid #E2D9CF;">
+              <div style="width:190px; font-size:13px; line-height:18px; color:#17120E; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Vela Nail Studio</div>
+              <div style="width:130px; font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#17120E;">@lea.mrl</div>
+              <div style="flex:1; font-size:13px; line-height:18px; color:#17120E; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:14px;">Gel manicure</div>
+              <div style="width:86px;"><div style="display:inline-flex; align-items:center; gap:4px; padding:2px 6px; border:1.5px solid #A83E06;"><span style="font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:1px; color:#A83E06;">STORY</span></div></div>
+              <div style="width:78px; text-align:right; padding-right:14px; font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#17120E;">3</div>
+              <div style="width:96px; text-align:right; padding-right:14px; font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#17120E;">1 d</div>
+            </div>
+            <div style="height:36px; flex:none; display:flex; align-items:center; padding:0 12px; border-bottom:1px solid #E2D9CF;">
+              <div style="width:190px; font-size:13px; line-height:18px; color:#17120E;">Rótulo Hair</div>
+              <div style="width:130px; font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#17120E;">@camille.b</div>
+              <div style="flex:1; font-size:13px; line-height:18px; color:#17120E; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:14px;">Balayage, mid-length</div>
+              <div style="width:86px;"><div style="display:inline-flex; align-items:center; gap:4px; padding:2px 6px; background:#FF5E00;"><span style="font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:1px; color:#17120E;">REEL</span></div></div>
+              <div style="width:78px; text-align:right; padding-right:14px; font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#17120E;">3</div>
+              <div style="width:96px; text-align:right; padding-right:14px; font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#17120E;">6 h</div>
+            </div>
+            <div style="height:36px; flex:none; display:flex; align-items:center; padding:0 12px; border-bottom:1px solid #E2D9CF;">
+              <div style="width:190px; font-size:13px; line-height:18px; color:#17120E;">Aurora Brow Bar</div>
+              <div style="width:130px; font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#17120E;">@ana.p</div>
+              <div style="flex:1; font-size:13px; line-height:18px; color:#17120E; padding-right:14px;">Brow lamination</div>
+              <div style="width:86px;"><div style="display:inline-flex; align-items:center; gap:4px; padding:2px 6px; border:1.5px solid #A83E06;"><span style="font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:1px; color:#A83E06;">STORY</span></div></div>
+              <div style="width:78px; text-align:right; padding-right:14px; font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#17120E;">3</div>
+              <div style="width:96px; text-align:right; padding-right:14px; font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#17120E;">4 h</div>
+            </div>
+            <div style="height:36px; flex:none; display:flex; align-items:center; padding:0 12px; border-bottom:1px solid #E2D9CF;">
+              <div style="width:190px; font-size:13px; line-height:18px; color:#17120E;">Sable Massage</div>
+              <div style="width:130px; font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#17120E;">@nina.k</div>
+              <div style="flex:1; font-size:13px; line-height:18px; color:#17120E; padding-right:14px;">Deep tissue, 60 min</div>
+              <div style="width:86px;"><div style="display:inline-flex; align-items:center; gap:4px; padding:2px 6px; background:#FCDCC7; border:1px solid #FF5E00;"><span style="font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:1px; color:#A83E06;">POST</span></div></div>
+              <div style="width:78px; text-align:right; padding-right:14px; font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#17120E;">3</div>
+              <div style="width:96px; text-align:right; padding-right:14px; font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#17120E;">2 h</div>
+            </div>
+          </div>
+
+          <div style="width:440px; flex:none; border-left:1px solid #CFC3B6; background:#FFFFFF; display:flex; flex-direction:column; overflow:hidden;">
+            <div style="flex:none; height:36px; display:flex; align-items:center; gap:8px; padding:0 16px; border-bottom:1px solid #E2D9CF; background:#F7F3EF;">
+              <span style="flex:1; font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.8px; color:#6B5F54; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">collab_8f31c0a4</span>
+              <span style="min-width:24px; height:20px; background:#EDE6DE; display:flex; align-items:center; justify-content:center; padding:0 6px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; color:#17120E;">ESC</span></span>
+            </div>
+
+            <div style="flex:none; padding:16px; border-bottom:1px solid #E2D9CF; display:flex; flex-direction:column; gap:4px;">
+              <span style="font-size:17px; line-height:24px; font-weight:600; color:#17120E;">Casa Bruma Spa</span>
+              <span style="font-size:13px; line-height:19px; color:#6B5F54;">@sofia.rz · Signature facial · attempt 3 of 3</span>
+            </div>
+
+            <div style="flex:none; padding:14px 16px; display:flex; gap:12px; border-bottom:1px solid #E2D9CF;">
+              <div style="width:104px; height:140px; flex:none; border-radius:2px; background:linear-gradient(150deg,#FFFFFF 0%,#EDE6DE 45%,#9A8D80 100%); display:flex; align-items:flex-end; padding:7px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:0.8px; color:#F7F3EF;">ARCHIVED</span>
+              </div>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:0;">
+                <div style="display:flex; padding:0 0 6px;">
+                  <span style="flex:1; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#6B5F54;">EXPECTED</span>
+                  <span style="width:22px;"></span>
+                  <span style="flex:1; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#6B5F54;">OBSERVED</span>
+                </div>
+                <div style="display:flex; align-items:center; padding:7px 0; border-top:1px solid #E2D9CF;">
+                  <span style="flex:1; font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.4px; color:#17120E; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@casabruma</span>
+                  <span style="width:22px; display:flex; justify-content:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#1F6B4A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+                  <span style="flex:1; font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.4px; color:#17120E; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@casabruma</span>
+                </div>
+                <div style="display:flex; align-items:center; padding:7px 0; border-top:1px solid #E2D9CF; background:#EDE6DE;">
+                  <span style="flex:1; font-size:12px; line-height:17px; color:#17120E; padding-left:4px;">Location tag</span>
+                  <span style="width:22px; display:flex; justify-content:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="#17120E" stroke-width="2.6" stroke-linecap="round"></path></svg></span>
+                  <span style="flex:1; font-size:12px; line-height:17px; font-weight:600; color:#17120E;">Missing</span>
+                </div>
+                <div style="display:flex; align-items:center; padding:7px 0; border-top:1px solid #E2D9CF;">
+                  <span style="flex:1; font-size:12px; line-height:17px; color:#17120E;">Post</span>
+                  <span style="width:22px; display:flex; justify-content:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#1F6B4A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+                  <span style="flex:1; font-size:12px; line-height:17px; color:#17120E;">Feed post</span>
+                </div>
+                <div style="display:flex; align-items:center; padding:7px 0; border-top:1px solid #E2D9CF;">
+                  <span style="flex:1; font-size:12px; line-height:17px; color:#17120E;">Within 48 h</span>
+                  <span style="width:22px; display:flex; justify-content:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#1F6B4A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+                  <span style="flex:1; font-size:12px; line-height:17px; color:#17120E;">In 31 h</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="flex:none; padding:12px 16px; border-bottom:1px solid #E2D9CF; display:flex; flex-direction:column; gap:5px;">
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#6B5F54;">PREVIOUS REQUESTS</span>
+              <span style="font-size:12px; line-height:18px; color:#3A3128;">1 · Mention missing &nbsp;·&nbsp; 2 · Mention missing &nbsp;·&nbsp; 3 · Location tag missing</span>
+            </div>
+
+            <div style="flex:1; min-height:0; overflow:hidden; padding:12px 16px; display:flex; flex-direction:column; gap:8px;">
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#6B5F54;">REASON · REQUIRED OUTSIDE APPROVAL</span>
+              <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                <div style="min-height:30px; display:flex; align-items:center; padding:0 10px; border-radius:999px; background:#17120E;"><span style="font-size:12px; line-height:17px; font-weight:600; color:#FFFFFF;">Location tag missing</span></div>
+                <div style="min-height:30px; display:flex; align-items:center; padding:0 10px; border-radius:999px; border:1px solid #E2D9CF;"><span style="font-size:12px; line-height:17px; font-weight:600; color:#3A3128;">Mention missing</span></div>
+                <div style="min-height:30px; display:flex; align-items:center; padding:0 10px; border-radius:999px; border:1px solid #E2D9CF;"><span style="font-size:12px; line-height:17px; font-weight:600; color:#3A3128;">Not visible</span></div>
+                <div style="min-height:30px; display:flex; align-items:center; padding:0 10px; border-radius:999px; border:1px solid #E2D9CF;"><span style="font-size:12px; line-height:17px; font-weight:600; color:#3A3128;">Wrong service</span></div>
+              </div>
+            </div>
+
+            <div style="flex:none; border-top:1px solid #E2D9CF; padding:14px 16px 16px; display:flex; flex-direction:column; gap:10px;">
+              <div style="display:flex; flex-direction:column; gap:8px;">
+                <div style="min-height:46px; background:#FF5E00; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:0 14px;">
+                  <span style="font-size:15px; line-height:22px; font-weight:600; color:#17120E;">Approve without the location tag</span>
+                  <span style="min-width:20px; height:20px; background:rgba(23,18,14,0.16); display:flex; align-items:center; justify-content:center; padding:0 5px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; color:#17120E;">A</span></span>
+                </div>
+                <span style="font-size:12px; line-height:18px; color:#6B5F54; text-wrap:pretty;">Closes the collaboration as honoured. @sofia.rz keeps her tier, Casa Bruma keeps the service as given.</span>
+              </div>
+              <div style="height:1px; background:#E2D9CF;"></div>
+              <div style="display:flex; gap:8px;">
+                <div style="flex:1; min-height:40px; border:1px solid #17120E; display:flex; align-items:center; justify-content:center; gap:7px;">
+                  <span style="font-size:14px; line-height:20px; font-weight:600; color:#17120E;">Ask again</span>
+                  <span style="min-width:18px; height:18px; background:#EDE6DE; display:flex; align-items:center; justify-content:center; padding:0 4px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; color:#17120E;">R</span></span>
+                </div>
+                <div style="flex:1; min-height:40px; border:1px solid #A31B2F; display:flex; align-items:center; justify-content:center; gap:7px;">
+                  <span style="font-size:14px; line-height:20px; font-weight:600; color:#A31B2F;">Not honoured</span>
+                  <span style="min-width:18px; height:18px; background:#F7E9EB; display:flex; align-items:center; justify-content:center; padding:0 4px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; color:#A31B2F;">N</span></span>
+                </div>
+              </div>
+              <span style="font-size:12px; line-height:18px; color:#6B5F54; text-wrap:pretty;">Third attempt already used: « Ask again » extends the deadline by 24 h and is the last one.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="width:1100px; font-size:13px; line-height:20px; color:#6B5F54; text-wrap:pretty;">L'attendu et le constaté se lisent en deux colonnes avec un signe entre eux : la ligne qui manque est la seule teintée, et c'est elle que le bouton nomme. Quand tout concorde, le bouton redevient « Approve the post » — l'écart n'existe que s'il y en a un. La conséquence est écrite sous l'action, en deux lignes : qui garde quoi.</div>
+  </div>
+</section>
+
+
+<section style="display:flex; flex-direction:column; gap:24px; padding:56px 56px 0; font-family:'Outfit',sans-serif;">
+  <div style="display:flex; flex-direction:column; gap:8px; max-width:840px;">
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:1.4px; color:#6B5F54;">18 · LES PLANS</div>
+    <div style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:36px; line-height:44px; font-weight:400; color:#17120E;">Trois lignes qui ne grossiront jamais</div>
+    <div style="font-size:16px; line-height:25px; color:#3A3128; max-width:740px; text-wrap:pretty;">Un tableau de trois lignes étiré sur 1512 est un tableau vide avec trois lignes dedans. La largeur sert donc à <span style="font-weight:600;">comparer</span> : une colonne par plan, les mêmes rangées en face, l'œil descend et compare. Le total est à part, en pied.</div>
+    <div style="font-size:15px; line-height:23px; color:#6B5F54; max-width:740px; text-wrap:pretty;">Seul écran du produit qui affiche des montants, et seul écran strictement en lecture : la modification est hors périmètre, donc il n'y a aucun bouton d'édition à griser. L'écran le dit une fois, en haut.</div>
+  </div>
+
+  <div style="display:flex; flex-direction:column; gap:12px;">
+    <div style="display:flex; gap:10px; align-items:baseline;"><div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#A83E06;">18a</div><div style="font-size:13px; line-height:18px; font-weight:600; color:#17120E;">Plans · lecture seule</div></div>
+    <div data-screen-label="18a" style="width:1512px; height:900px; background:#F7F3EF; border:1px solid #E2D9CF; overflow:hidden; display:flex;">
+
+      <div style="width:240px; flex:none; background:#FFFFFF; border-right:1px solid #E2D9CF; display:flex; flex-direction:column;">
+        <div style="padding:22px 16px 18px; display:flex; flex-direction:column; gap:3px;">
+          <svg viewBox="50 26 1991 682" style="height:15px; width:44px; display:block; flex:none;" role="img" aria-label="B!ND"><g transform="translate(0,760) scale(0.1,-0.1)" fill-rule="evenodd"><path fill="#17120E" d="M6460 7290 c19 -1773 58 -4792 63 -4796 3 -4 168 -9 366 -12 l360 -5 5 34 c6 41 159 4810 154 4814 -2 2 -216 5 -476 7 l-472 3 0 -45z M8830 3925 l0 -3385 440 0 440 0 2 2685 3 2685 1770 -2685 1770 -2685 1865 0 c1860 0 2059 3 2335 36 396 47 784 144 1095 276 265 112 551 281 760 449 540 433 904 1072 1044 1829 51 277 61 399 61 775 0 276 -4 381 -18 495 -60 480 -164 841 -350 1205 -75 147 -226 381 -322 500 -396 492 -957 848 -1628 1035 -290 80 -607 130 -952 150 -118 6 -892 11 -2038 13 l-1847 2 0 -2679 c0 -1873 -3 -2677 -11 -2669 -5 5 -803 1211 -1773 2679 l-1763 2669 -442 3 -441 2 0 -3385z m8516 2627 c554 -79 957 -240 1305 -520 97 -78 278 -266 355 -368 267 -355 426 -782 491 -1314 24 -205 24 -678 0 -880 -69 -563 -236 -991 -530 -1355 -84 -104 -249 -263 -360 -346 -373 -280 -865 -445 -1452 -489 -87 -6 -683 -10 -1577 -10 l-1438 0 0 2655 0 2656 1528 -4 c1505 -3 1529 -3 1678 -25z M500 3920 l0 -3381 1408 4 c1519 4 1471 2 1747 58 454 91 866 311 1129 601 198 218 338 492 396 770 84 407 33 809 -146 1159 -226 442 -598 756 -1024 865 -58 14 -106 27 -107 29 -2 1 36 16 85 35 197 74 410 201 567 337 256 223 418 508 481 848 15 80 19 147 19 340 -1 211 -3 253 -23 345 -60 276 -170 501 -345 708 -227 268 -629 495 -1039 586 -148 32 -293 54 -452 66 -77 6 -648 10 -1412 10 l-1284 0 0 -3380z m2725 2622 c125 -24 297 -77 376 -117 364 -184 559 -512 559 -941 0 -278 -69 -497 -215 -682 -157 -198 -404 -332 -729 -394 -106 -20 -146 -21 -973 -25 l-863 -4 0 1096 0 1096 868 -4 c832 -3 871 -4 977 -25z m-34 -2907 c492 -65 848 -291 1025 -650 137 -278 159 -633 58 -945 -115 -358 -400 -605 -823 -711 -220 -56 -283 -59 -1218 -59 l-853 0 0 1190 0 1190 853 0 c677 0 874 -3 958 -15z"></path><path fill="#FF5E00" d="M6835 1714 c-11 -2 -45 -9 -75 -15 -117 -24 -249 -110 -326 -213 -96 -127 -119 -200 -119 -371 0 -109 4 -140 23 -196 65 -188 224 -336 415 -386 35 -9 102 -16 157 -16 165 0 288 51 405 168 121 120 175 255 175 435 0 108 -21 194 -67 283 -69 131 -190 237 -322 283 -64 22 -220 39 -266 28z"></path></g></svg>
+          <div style="font-size:12px; line-height:16px; color:#6B5F54;">Administration</div>
+        </div>
+        <div style="padding:6px 12px 0; display:flex; flex-direction:column; gap:2px;">
+          <div style="min-height:38px; display:flex; align-items:center; gap:10px; padding:0 12px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h10" stroke="#3A3128" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span style="flex:1; font-size:14px; line-height:19px; color:#3A3128;">Arbitration</span>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#6B5F54;">14</span>
+          </div>
+          <div style="min-height:38px; display:flex; align-items:center; gap:10px; padding:0 12px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 12.2a4 4 0 100-8 4 4 0 000 8zM4.8 20.5a7.2 7.2 0 0114.4 0" stroke="#3A3128" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span style="flex:1; font-size:14px; line-height:19px; color:#3A3128;">Accounts</span>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#6B5F54;">6</span>
+          </div>
+          <div style="position:relative; min-height:38px; background:#FEF1E9; display:flex; align-items:center; gap:10px; padding:0 12px;">
+            <div style="position:absolute; left:0; top:0; bottom:0; width:3px; background:#FF5E00;"></div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5.5 20v-5M12 20V9M18.5 20V4" stroke="#A83E06" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span style="flex:1; font-size:14px; line-height:19px; font-weight:600; color:#A83E06;">Plans</span>
+          </div>
+          <div style="min-height:38px; display:flex; align-items:center; gap:10px; padding:0 12px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3.5 12h4l2.5-6 4 12 2.5-6h4" stroke="#3A3128" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span style="flex:1; font-size:14px; line-height:19px; color:#3A3128;">Health</span>
+            <span style="width:8px; height:8px; border-radius:999px; background:#1F6B4A;"></span>
+          </div>
+          <div style="min-height:38px; display:flex; align-items:center; gap:10px; padding:0 12px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 21.5c4.4-4.6 6.6-8.2 6.6-11a6.6 6.6 0 10-13.2 0c0 2.8 2.2 6.4 6.6 11zM12 12.6a2.6 2.6 0 100-5.2 2.6 2.6 0 000 5.2z" stroke="#3A3128" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span style="flex:1; font-size:14px; line-height:19px; color:#3A3128;">Field mode</span>
+          </div>
+        </div>
+        <div style="flex:1;"></div>
+        <div style="padding:12px; border-top:1px solid #E2D9CF;">
+          <div style="min-height:38px; display:flex; align-items:center; gap:10px; padding:0 12px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 7h9M17 7h3M4 12h3M11 12h9M4 17h9M17 17h3M15 7a2 2 0 10-4 0 2 2 0 004 0M9 12a2 2 0 10-4 0 2 2 0 004 0M15 17a2 2 0 10-4 0 2 2 0 004 0" stroke="#3A3128" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span style="flex:1; font-size:14px; line-height:19px; color:#3A3128;">Settings</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="flex:1; min-width:0; display:flex; flex-direction:column;">
+        <div style="height:56px; flex:none; background:#FFFFFF; border-bottom:1px solid #E2D9CF; display:flex; align-items:center; gap:14px; padding:0 24px;">
+          <div style="font-size:20px; line-height:26px; font-weight:600; letter-spacing:-0.3px; color:#17120E;">Plans</div>
+          <div style="display:flex; align-items:center; gap:7px; padding:4px 10px; background:#EDE6DE;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4.5 8.5h15v11h-15zM8 8.5V6a4 4 0 018 0v2.5" stroke="#17120E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1px; color:#17120E;">READ ONLY</span>
+          </div>
+          <div style="flex:1;"></div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#6B5F54;">MONTHLY FIGURES COMPUTED SERVER-SIDE</div>
+        </div>
+
+        <div style="flex:1; min-height:0; overflow:hidden; padding:24px 32px; display:flex; justify-content:flex-start;">
+          <div style="width:100%; max-width:1120px; display:flex; flex-direction:column; gap:14px;">
+
+            <div style="display:flex; gap:0; border:1px solid #E2D9CF; background:#FFFFFF;">
+              <div style="width:210px; flex:none; border-right:1px solid #CFC3B6; display:flex; flex-direction:column;">
+                <div style="height:104px; padding:20px; border-bottom:1px solid #E2D9CF;"></div>
+                <div style="min-height:60px; padding:11px 20px; border-bottom:1px solid #E2D9CF; display:flex; align-items:center;"><span style="font-size:14px; line-height:20px; color:#3A3128;">Price</span></div>
+                <div style="min-height:60px; padding:11px 20px; border-bottom:1px solid #E2D9CF; display:flex; align-items:center;"><span style="font-size:14px; line-height:20px; color:#3A3128;">Subscriptions</span></div>
+                <div style="min-height:60px; padding:11px 20px; border-bottom:1px solid #E2D9CF; display:flex; align-items:center;"><span style="font-size:14px; line-height:20px; color:#3A3128;">Active</span></div>
+                <div style="min-height:60px; padding:11px 20px; border-bottom:1px solid #E2D9CF; display:flex; align-items:center;"><span style="font-size:14px; line-height:20px; color:#3A3128;">Monthly revenue</span></div>
+                <div style="min-height:60px; padding:11px 20px; display:flex; align-items:center;"><span style="font-size:14px; line-height:20px; color:#3A3128;">Share of monthly</span></div>
+              </div>
+
+              <div style="flex:1; border-right:1px solid #E2D9CF; display:flex; flex-direction:column;">
+                <div style="height:104px; padding:20px; border-bottom:1px solid #E2D9CF; display:flex; flex-direction:column; gap:5px; justify-content:center;">
+                  <span style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:34px; line-height:40px; font-weight:400; color:#17120E;">Essentiel</span>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.1px; color:#6B5F54;">MONTHLY</span>
+                </div>
+                <div style="min-height:60px; padding:11px 20px; border-bottom:1px solid #E2D9CF; display:flex; align-items:center;"><span style="font-family:'IBM Plex Mono',monospace; font-size:24px; line-height:28px; font-weight:600; color:#17120E;">49.00 €</span></div>
+                <div style="min-height:60px; padding:11px 20px; border-bottom:1px solid #E2D9CF; display:flex; align-items:center;"><span style="font-family:'IBM Plex Mono',monospace; font-size:24px; line-height:28px; font-weight:600; color:#17120E;">142</span></div>
+                <div style="min-height:60px; padding:11px 20px; border-bottom:1px solid #E2D9CF; display:flex; align-items:baseline; gap:9px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:24px; line-height:28px; font-weight:600; color:#17120E;">128</span><span style="font-size:13px; line-height:19px; color:#6B5F54;">14 lapsed</span></div>
+                <div style="min-height:60px; padding:11px 20px; border-bottom:1px solid #E2D9CF; display:flex; align-items:center;"><span style="font-family:'IBM Plex Mono',monospace; font-size:24px; line-height:28px; font-weight:600; color:#17120E;">6,272.00 €</span></div>
+                <div style="min-height:60px; padding:11px 20px; display:flex; flex-direction:column; gap:7px; justify-content:center;">
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:15px; letter-spacing:0.8px; color:#17120E;">38 %</span>
+                  <div style="height:8px; background:#EDE6DE;"><div style="width:38%; height:8px; background:#FF5E00;"></div></div>
+                </div>
+              </div>
+
+              <div style="flex:1; border-right:1px solid #E2D9CF; display:flex; flex-direction:column;">
+                <div style="height:104px; padding:20px; border-bottom:1px solid #E2D9CF; display:flex; flex-direction:column; gap:5px; justify-content:center;">
+                  <span style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:34px; line-height:40px; font-weight:400; color:#17120E;">Studio</span>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.1px; color:#6B5F54;">MONTHLY</span>
+                </div>
+                <div style="min-height:60px; padding:11px 20px; border-bottom:1px solid #E2D9CF; display:flex; align-items:center;"><span style="font-family:'IBM Plex Mono',monospace; font-size:24px; line-height:28px; font-weight:600; color:#17120E;">99.00 €</span></div>
+                <div style="min-height:60px; padding:11px 20px; border-bottom:1px solid #E2D9CF; display:flex; align-items:center;"><span style="font-family:'IBM Plex Mono',monospace; font-size:24px; line-height:28px; font-weight:600; color:#17120E;">86</span></div>
+                <div style="min-height:60px; padding:11px 20px; border-bottom:1px solid #E2D9CF; display:flex; align-items:baseline; gap:9px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:24px; line-height:28px; font-weight:600; color:#17120E;">81</span><span style="font-size:13px; line-height:19px; color:#6B5F54;">5 lapsed</span></div>
+                <div style="min-height:60px; padding:11px 20px; border-bottom:1px solid #E2D9CF; display:flex; align-items:center;"><span style="font-family:'IBM Plex Mono',monospace; font-size:24px; line-height:28px; font-weight:600; color:#17120E;">8,019.00 €</span></div>
+                <div style="min-height:60px; padding:11px 20px; display:flex; flex-direction:column; gap:7px; justify-content:center;">
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:15px; letter-spacing:0.8px; color:#17120E;">48 %</span>
+                  <div style="height:8px; background:#EDE6DE;"><div style="width:48%; height:8px; background:#FF5E00;"></div></div>
+                </div>
+              </div>
+
+              <div style="flex:1; display:flex; flex-direction:column;">
+                <div style="height:104px; padding:20px; border-bottom:1px solid #E2D9CF; display:flex; flex-direction:column; gap:5px; justify-content:center;">
+                  <span style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:34px; line-height:40px; font-weight:400; color:#17120E;">Maison</span>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.1px; color:#6B5F54;">YEARLY</span>
+                </div>
+                <div style="min-height:60px; padding:11px 20px; border-bottom:1px solid #E2D9CF; display:flex; align-items:baseline; gap:9px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:24px; line-height:28px; font-weight:600; color:#17120E;">2,400.00 €</span><span style="font-size:13px; line-height:19px; color:#6B5F54;">/ year</span></div>
+                <div style="min-height:60px; padding:11px 20px; border-bottom:1px solid #E2D9CF; display:flex; align-items:center;"><span style="font-family:'IBM Plex Mono',monospace; font-size:24px; line-height:28px; font-weight:600; color:#17120E;">12</span></div>
+                <div style="min-height:60px; padding:11px 20px; border-bottom:1px solid #E2D9CF; display:flex; align-items:baseline; gap:9px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:24px; line-height:28px; font-weight:600; color:#17120E;">12</span><span style="font-size:13px; line-height:19px; color:#6B5F54;">none lapsed</span></div>
+                <div style="min-height:60px; padding:11px 20px; border-bottom:1px solid #E2D9CF; display:flex; align-items:center;"><span style="font-family:'IBM Plex Mono',monospace; font-size:24px; line-height:28px; font-weight:600; color:#17120E;">2,400.00 €</span></div>
+                <div style="min-height:60px; padding:11px 20px; display:flex; flex-direction:column; gap:7px; justify-content:center;">
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:15px; letter-spacing:0.8px; color:#17120E;">14 %</span>
+                  <div style="height:8px; background:#EDE6DE;"><div style="width:14%; height:8px; background:#FF5E00;"></div></div>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:20px; align-items:stretch;">
+              <div style="flex:1; border:1px solid #E2D9CF; background:#FFFFFF; padding:20px 24px; display:flex; flex-direction:column; gap:4px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#6B5F54;">MONTHLY REVENUE, ALL PLANS</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:34px; line-height:40px; font-weight:600; color:#17120E;">16,691.00 €</span>
+              </div>
+              <div style="flex:1; border:1px solid #E2D9CF; background:#FFFFFF; padding:20px 24px; display:flex; flex-direction:column; gap:4px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#6B5F54;">SUBSCRIPTIONS</span>
+                <div style="display:flex; align-items:baseline; gap:10px;">
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:34px; line-height:40px; font-weight:600; color:#17120E;">240</span>
+                  <span style="font-size:14px; line-height:20px; color:#6B5F54;">221 active · 19 lapsed</span>
+                </div>
+              </div>
+              <div style="flex:1; border:1px solid #E2D9CF; background:#FFFFFF; padding:20px 24px; display:flex; flex-direction:column; gap:4px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#6B5F54;">LAPSED</span>
+                <div style="display:flex; align-items:baseline; gap:10px;">
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:34px; line-height:40px; font-weight:600; color:#17120E;">8 %</span>
+                  <span style="font-size:14px; line-height:20px; color:#6B5F54;">19 of 240</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="background:#EDE6DE; border-left:3px solid #17120E; padding:16px 20px; display:flex; align-items:flex-start; gap:11px; max-width:720px;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="flex:none; margin-top:2px;"><path d="M12 3.5L21.5 20H2.5z" stroke="#17120E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M12 9.5v4.2" stroke="#17120E" stroke-width="2" stroke-linecap="round"></path><circle cx="12" cy="16.6" r="1.1" fill="#17120E"></circle></svg>
+              <span style="flex:1; font-size:14px; line-height:21px; color:#3A3128; text-wrap:pretty;">Maison bills yearly. Its monthly figure is the server's own division — it is not a price, and it must not be read as one.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="width:1100px; font-size:13px; line-height:20px; color:#6B5F54; text-wrap:pretty;">La colonne d'intitulés à gauche fait de la comparaison une lecture verticale. La part du mensuel est la seule barre : elle dit d'où vient l'argent, ce qu'aucun des trois montants ne dit seul. Le plan annuel porte son intervalle dans son en-tête et son avertissement en pied, parce qu'un mensuel calculé se confond avec un prix mensuel.</div>
+  </div>
+</section>
+
+<section style="display:flex; flex-direction:column; gap:24px; padding:56px 56px 0; font-family:'Outfit',sans-serif;">
+  <div style="display:flex; flex-direction:column; gap:8px; max-width:840px;">
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:1.4px; color:#6B5F54;">20 · LE MODE TERRAIN</div>
+    <div style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:36px; line-height:44px; font-weight:400; color:#17120E;">Photographier plutôt que saisir</div>
+    <div style="font-size:16px; line-height:25px; color:#3A3128; max-width:740px; text-wrap:pretty;">Trente secondes debout, à une main, entre deux clientes. Le principe qui a dessiné l'écran : <span style="font-weight:600;">tout ce qui est écrit sur un mur se photographie</span>. La carte des prix est déjà affichée, les horaires sont sur la porte — deux photos remplacent deux formulaires, et la saisie se réduit à trois champs.</div>
+    <div style="font-size:15px; line-height:23px; color:#6B5F54; max-width:740px; text-wrap:pretty;">Seul écran d'administration en 390. Il fonctionne hors ligne par construction : rien n'est envoyé avant la remise, la fiche vit en local et le bandeau le dit.</div>
+  </div>
+
+  <div style="display:flex; flex-wrap:wrap; gap:36px; align-items:flex-start;">
+
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="display:flex; gap:10px; align-items:baseline;"><div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#A83E06;">20a</div><div style="font-size:13px; line-height:18px; font-weight:600; color:#17120E;">Fiche de prospect · en cours</div></div>
+      <div data-screen-label="20a" style="width:390px; height:844px; overflow:hidden; background:#F7F3EF; border:1px solid #E2D9CF; display:flex; flex-direction:column;">
+        <div style="height:50px; flex:none;"></div>
+        <div style="flex:none; padding:0 20px 14px; display:flex; align-items:flex-end; justify-content:space-between; gap:12px;">
+          <div style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:34px; line-height:40px; font-weight:400; color:#17120E;">New salon</div>
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#6B5F54; padding-bottom:7px;">3 / 5</span>
+        </div>
+
+        <div style="flex:none; padding:0 20px 14px; display:flex; gap:6px;">
+          <div style="flex:1; height:3px; background:#FF5E00;"></div>
+          <div style="flex:1; height:3px; background:#FF5E00;"></div>
+          <div style="flex:1; height:3px; background:#FF5E00;"></div>
+          <div style="flex:1; height:3px; background:#CFC3B6;"></div>
+          <div style="flex:1; height:3px; background:#CFC3B6;"></div>
+        </div>
+
+        <div style="flex:none; margin:0 20px 14px; background:#EDE6DE; border-left:3px solid #17120E; padding:11px 13px; display:flex; align-items:center; gap:9px;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" style="flex:none;"><path d="M12 3.5L21.5 20H2.5z" stroke="#17120E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M12 9.8v4" stroke="#17120E" stroke-width="2.2" stroke-linecap="round"></path><circle cx="12" cy="16.5" r="1.1" fill="#17120E"></circle></svg>
+          <span style="flex:1; font-size:13px; line-height:19px; color:#17120E;">Offline. Saved on this phone.</span>
+        </div>
+
+        <div style="flex:1; overflow:hidden; padding:0 20px; display:flex; flex-direction:column; gap:12px;">
+          <div style="background:#FFFFFF; border:1px solid #E2D9CF;">
+            <div style="min-height:62px; padding:11px 14px; border-bottom:1px solid #E2D9CF; display:flex; flex-direction:column; gap:2px;">
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#6B5F54;">SALON</span>
+              <span style="font-size:17px; line-height:24px; font-weight:600; color:#17120E;">Studio Lume</span>
+            </div>
+            <div style="min-height:62px; padding:11px 14px; border-bottom:1px solid #E2D9CF; display:flex; flex-direction:column; gap:2px;">
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#6B5F54;">ADDRESS</span>
+              <span style="font-size:16px; line-height:23px; color:#17120E;">418 NW 2nd Ave, Miami</span>
+            </div>
+            <div style="min-height:62px; padding:11px 14px; display:flex; align-items:center; gap:12px;">
+              <div style="flex:1; display:flex; flex-direction:column; gap:2px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#6B5F54;">PHONE</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:16px; letter-spacing:0.8px; color:#17120E;">+1 305 555 0134</span>
+              </div>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="flex:none;"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#1F6B4A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            </div>
+          </div>
+
+          <div style="background:#FFFFFF; border:1px solid #E2D9CF;">
+            <div style="padding:11px 14px; border-bottom:1px solid #E2D9CF; display:flex; align-items:center; gap:10px;">
+              <span style="flex:1; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#6B5F54;">PRICE LIST</span>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#1F6B4A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                <span style="font-size:12px; line-height:17px; font-weight:600; color:#1F6B4A;">2 photos</span>
+              </div>
+            </div>
+            <div style="padding:12px 14px; display:flex; gap:10px;">
+              <div style="width:84px; height:112px; flex:none; border-radius:2px; background:linear-gradient(150deg,#FFFFFF 0%,#EDE6DE 45%,#9A8D80 100%);"></div>
+              <div style="width:84px; height:112px; flex:none; border-radius:2px; background:linear-gradient(150deg,#FFFFFF 0%,#EDE6DE 45%,#9A8D80 100%);"></div>
+              <div style="flex:1; min-height:112px; border:1px solid #CFC3B6; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 7.5h4l1.5-2.5h5L16 7.5h4v12H4z" stroke="#17120E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="12" cy="13" r="3.4" stroke="#17120E" stroke-width="2"></circle></svg>
+                <span style="font-size:13px; line-height:18px; font-weight:600; color:#17120E;">Add</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="background:#FFFFFF; border:1px solid #E2D9CF; border-left:3px solid #17120E;">
+            <div style="padding:11px 14px; border-bottom:1px solid #E2D9CF;">
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#6B5F54;">OPENING HOURS</span>
+            </div>
+            <div style="padding:12px 14px; display:flex; flex-direction:column; gap:10px;">
+              <div style="min-height:52px; background:#FF5E00; display:flex; align-items:center; justify-content:center; gap:9px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 7.5h4l1.5-2.5h5L16 7.5h4v12H4z" stroke="#17120E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="12" cy="13" r="3.4" stroke="#17120E" stroke-width="2"></circle></svg>
+                <span style="font-size:16px; line-height:23px; font-weight:600; color:#17120E;">Photograph the door sign</span>
+              </div>
+              <div style="min-height:46px; border:1px solid #17120E; display:flex; align-items:center; justify-content:center;"><span style="font-size:15px; line-height:22px; font-weight:600; color:#17120E;">Type them instead</span></div>
+              <span style="font-size:13px; line-height:19px; color:#6B5F54; text-wrap:pretty;">The salon retypes them when it takes over. You only need the sign.</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="flex:none; padding:14px 20px 20px; background:#FFFFFF; border-top:1px solid #E2D9CF; display:flex; gap:10px;">
+          <div style="flex:1; min-height:52px; border:1px solid #17120E; display:flex; align-items:center; justify-content:center;"><span style="font-size:16px; line-height:23px; font-weight:600; color:#17120E;">Save, finish later</span></div>
+          <div style="flex:1; min-height:52px; background:#FF5E00; display:flex; align-items:center; justify-content:center;"><span style="font-size:16px; line-height:23px; font-weight:600; color:#17120E;">Hand over</span></div>
+        </div>
+      </div>
+      <div style="width:390px; font-size:13px; line-height:19px; color:#6B5F54; text-wrap:pretty;">Trois champs saisis, deux blocs photographiés. Le filet segmenté du carrousel de la marque sert ici de progression. « Hand over » reste actif même incomplet : une fiche à trois champs vaut mieux qu'une fiche abandonnée.</div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="display:flex; gap:10px; align-items:baseline;"><div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#A83E06;">20b</div><div style="font-size:13px; line-height:18px; font-weight:600; color:#17120E;">La remise</div></div>
+      <div data-screen-label="20b" style="width:390px; height:844px; overflow:hidden; background:#17120E; display:flex; flex-direction:column;">
+        <div style="height:50px; flex:none;"></div>
+        <div style="flex:none; padding:0 20px 20px; display:flex; align-items:center; gap:12px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style="transform:rotate(180deg);"><path d="M4.5 12h15M13.5 6l6 6-6 6" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          <span style="flex:1; font-size:16px; line-height:23px; font-weight:600; color:#FFFFFF;">Studio Lume</span>
+        </div>
+
+        <div style="flex:1; padding:0 20px; display:flex; flex-direction:column; gap:24px; align-items:center;">
+          <div style="text-align:center; display:flex; flex-direction:column; gap:8px;">
+            <span style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:32px; line-height:40px; font-weight:400; color:#FFFFFF;">Show this to the salon</span>
+            <span style="font-size:15px; line-height:23px; color:#CFC3B6; text-wrap:pretty;">They scan it, set their password, and the salon is theirs.</span>
+          </div>
+
+          <div style="width:280px; height:280px; background:#FFFFFF; display:flex; align-items:center; justify-content:center; padding:22px;">
+            <div style="width:100%; height:100%; display:grid; grid-template-columns:repeat(9,1fr); grid-template-rows:repeat(9,1fr); gap:3px;">
+              <div style="background:#17120E; grid-column:1/4; grid-row:1/4;"></div>
+              <div style="background:#FFFFFF; grid-column:2/3; grid-row:2/3;"></div>
+              <div style="background:#17120E; grid-column:6/10; grid-row:1/4;"></div>
+              <div style="background:#FFFFFF; grid-column:8/9; grid-row:2/3;"></div>
+              <div style="background:#17120E; grid-column:1/4; grid-row:6/10;"></div>
+              <div style="background:#FFFFFF; grid-column:2/3; grid-row:8/9;"></div>
+              <div style="background:#17120E; grid-column:5/6; grid-row:5/6;"></div>
+              <div style="background:#17120E; grid-column:7/8; grid-row:5/6;"></div>
+              <div style="background:#17120E; grid-column:9/10; grid-row:5/6;"></div>
+              <div style="background:#17120E; grid-column:5/6; grid-row:7/8;"></div>
+              <div style="background:#17120E; grid-column:6/7; grid-row:9/10;"></div>
+              <div style="background:#17120E; grid-column:8/9; grid-row:7/8;"></div>
+              <div style="background:#17120E; grid-column:9/10; grid-row:9/10;"></div>
+              <div style="background:#17120E; grid-column:5/6; grid-row:2/3;"></div>
+            </div>
+          </div>
+
+          <div style="width:100%; display:flex; flex-direction:column; gap:5px; align-items:center;">
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#9A8D80;">OR READ IT OUT</span>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:26px; line-height:32px; font-weight:600; letter-spacing:5px; color:#FFFFFF;">7KQ 4MB</span>
+          </div>
+
+          <div style="width:100%; height:1px; background:#3A3128;"></div>
+
+          <div style="width:100%; display:flex; flex-direction:column; gap:10px;">
+            <div style="min-height:52px; border:1px solid #4F4034; display:flex; align-items:center; justify-content:center; gap:9px;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 6h16v12H4zM4 7l8 6 8-6" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              <span style="font-size:16px; line-height:23px; font-weight:600; color:#FFFFFF;">Send by SMS</span>
+            </div>
+            <span style="font-size:13px; line-height:19px; color:#9A8D80; text-wrap:pretty; text-align:center;">Sent to +1 305 555 0134. The link expires in 7 days.</span>
+          </div>
+        </div>
+
+        <div style="flex:none; padding:16px 20px 22px; display:flex; align-items:center; gap:9px; justify-content:center;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M12 3.5L21.5 20H2.5z" stroke="#F58A4A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M12 9.8v4" stroke="#F58A4A" stroke-width="2.2" stroke-linecap="round"></path><circle cx="12" cy="16.5" r="1.1" fill="#F58A4A"></circle></svg>
+          <span style="font-size:13px; line-height:19px; color:#F58A4A;">Offline · the SMS leaves when you have signal</span>
+        </div>
+      </div>
+      <div style="width:390px; font-size:13px; line-height:19px; color:#6B5F54; text-wrap:pretty;">Sur encre, parce qu'un QR se scanne mieux en fort contraste et qu'on tend le téléphone à quelqu'un. Le code écrit sert quand la caméra refuse. Le SMS est le repli, pas le chemin principal : la remise en main propre conclut sur place.</div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="display:flex; gap:10px; align-items:baseline;"><div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#A83E06;">21a</div><div style="font-size:13px; line-height:18px; font-weight:600; color:#17120E;">Prise en main, côté salon</div></div>
+      <div data-screen-label="21a" style="width:390px; height:844px; overflow:hidden; background:#F7F3EF; border:1px solid #E2D9CF; display:flex; flex-direction:column;">
+        <div style="height:50px; flex:none;"></div>
+        <div style="flex:none; padding:0 20px 14px; display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; align-items:baseline; gap:9px;">
+            <svg viewBox="50 26 1991 682" style="height:13px; width:38px; display:block; flex:none;" role="img" aria-label="B!ND"><g transform="translate(0,760) scale(0.1,-0.1)" fill-rule="evenodd"><path fill="#17120E" d="M6460 7290 c19 -1773 58 -4792 63 -4796 3 -4 168 -9 366 -12 l360 -5 5 34 c6 41 159 4810 154 4814 -2 2 -216 5 -476 7 l-472 3 0 -45z M8830 3925 l0 -3385 440 0 440 0 2 2685 3 2685 1770 -2685 1770 -2685 1865 0 c1860 0 2059 3 2335 36 396 47 784 144 1095 276 265 112 551 281 760 449 540 433 904 1072 1044 1829 51 277 61 399 61 775 0 276 -4 381 -18 495 -60 480 -164 841 -350 1205 -75 147 -226 381 -322 500 -396 492 -957 848 -1628 1035 -290 80 -607 130 -952 150 -118 6 -892 11 -2038 13 l-1847 2 0 -2679 c0 -1873 -3 -2677 -11 -2669 -5 5 -803 1211 -1773 2679 l-1763 2669 -442 3 -441 2 0 -3385z m8516 2627 c554 -79 957 -240 1305 -520 97 -78 278 -266 355 -368 267 -355 426 -782 491 -1314 24 -205 24 -678 0 -880 -69 -563 -236 -991 -530 -1355 -84 -104 -249 -263 -360 -346 -373 -280 -865 -445 -1452 -489 -87 -6 -683 -10 -1577 -10 l-1438 0 0 2655 0 2656 1528 -4 c1505 -3 1529 -3 1678 -25z M500 3920 l0 -3381 1408 4 c1519 4 1471 2 1747 58 454 91 866 311 1129 601 198 218 338 492 396 770 84 407 33 809 -146 1159 -226 442 -598 756 -1024 865 -58 14 -106 27 -107 29 -2 1 36 16 85 35 197 74 410 201 567 337 256 223 418 508 481 848 15 80 19 147 19 340 -1 211 -3 253 -23 345 -60 276 -170 501 -345 708 -227 268 -629 495 -1039 586 -148 32 -293 54 -452 66 -77 6 -648 10 -1412 10 l-1284 0 0 -3380z m2725 2622 c125 -24 297 -77 376 -117 364 -184 559 -512 559 -941 0 -278 -69 -497 -215 -682 -157 -198 -404 -332 -729 -394 -106 -20 -146 -21 -973 -25 l-863 -4 0 1096 0 1096 868 -4 c832 -3 871 -4 977 -25z m-34 -2907 c492 -65 848 -291 1025 -650 137 -278 159 -633 58 -945 -115 -358 -400 -605 -823 -711 -220 -56 -283 -59 -1218 -59 l-853 0 0 1190 0 1190 853 0 c677 0 874 -3 958 -15z"></path><path fill="#FF5E00" d="M6835 1714 c-11 -2 -45 -9 -75 -15 -117 -24 -249 -110 -326 -213 -96 -127 -119 -200 -119 -371 0 -109 4 -140 23 -196 65 -188 224 -336 415 -386 35 -9 102 -16 157 -16 165 0 288 51 405 168 121 120 175 255 175 435 0 108 -21 194 -67 283 -69 131 -190 237 -322 283 -64 22 -220 39 -266 28z"></path></g></svg>
+            <span style="font-size:8px; line-height:10px; font-weight:300; letter-spacing:5px; color:#6B5F54;">AGENCY</span>
+          </div>
+          <div style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:34px; line-height:42px; font-weight:400; color:#17120E; text-wrap:pretty;">Studio Lume is ready for you</div>
+        </div>
+
+        <div style="flex:1; min-height:0; overflow:hidden; padding:0 20px; display:flex; flex-direction:column; gap:10px;">
+          <div style="background:#FFFFFF; border:1px solid #E2D9CF;">
+            <div style="min-height:44px; padding:8px 14px; border-bottom:1px solid #E2D9CF; display:flex; align-items:center; gap:11px;">
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:1px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#6B5F54;">ADDRESS</span>
+                <span style="font-size:14px; line-height:20px; color:#17120E;">418 NW 2nd Ave, Miami</span>
+              </div>
+              <span style="flex:none; font-size:13px; line-height:19px; font-weight:600; color:#A83E06;">Edit</span>
+            </div>
+            <div style="min-height:44px; padding:8px 14px; display:flex; align-items:center; gap:11px;">
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:1px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#6B5F54;">PHONE</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:14px; letter-spacing:0.8px; color:#17120E;">+1 305 555 0134</span>
+              </div>
+              <span style="flex:none; font-size:13px; line-height:19px; font-weight:600; color:#A83E06;">Edit</span>
+            </div>
+          </div>
+
+          <div style="background:#FFFFFF; border:1px solid #E2D9CF;">
+            <div style="box-sizing:border-box; min-height:46px; padding:6px 14px; border-bottom:1px solid #E2D9CF; display:flex; align-items:center; gap:10px;">
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:1px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#6B5F54;">FROM YOUR PRICE LIST</span>
+                <span style="font-size:14px; line-height:20px; color:#17120E;">6 read from 2 photos · 2 checked</span>
+              </div>
+              <span style="flex:none; font-size:13px; line-height:19px; font-weight:600; color:#A83E06;">Check all</span>
+            </div>
+            <div style="box-sizing:border-box; min-height:44px; padding:6px 14px; border-bottom:1px solid #E2D9CF; display:flex; align-items:center; gap:11px;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="flex:none;"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#1F6B4A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              <span style="flex:1; min-width:0; font-size:14px; line-height:20px; color:#17120E;">Brow lamination</span>
+              <span style="flex:none; font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#6B5F54;">40 MIN</span>
+            </div>
+
+            <div style="box-sizing:border-box; min-height:44px; padding:6px 14px; display:flex; align-items:center; gap:11px; background:#FEF1E9;">
+              <div style="width:20px; height:20px; flex:none; border:2px solid #17120E;"></div>
+              <span style="flex:1; min-width:0; font-size:14px; line-height:20px; color:#17120E;">Brow tint</span>
+              <span style="flex:none; font-size:13px; line-height:19px; font-weight:600; color:#A83E06;">Check</span>
+            </div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <span style="font-size:13px; line-height:18px; font-weight:600; color:#3A3128;">Your name</span>
+            <div style="min-height:50px; border:1px solid #E2D9CF; background:#FFFFFF; display:flex; align-items:center; padding:0 14px;"><span style="font-size:16px; line-height:23px; color:#17120E;">Camille Duarte</span></div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <span style="font-size:13px; line-height:18px; font-weight:600; color:#3A3128;">Password</span>
+            <div style="min-height:50px; border:2px solid #17120E; background:#FFFFFF; display:flex; align-items:center; padding:0 13px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:15px; letter-spacing:0.8px; color:#17120E;">••••••••</span></div>
+            <div style="display:flex; align-items:center; gap:9px;">
+              <div style="flex:1; height:4px; background:#EDE6DE;"><div style="width:67%; height:4px; background:#17120E;"></div></div>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#6B5F54;">8 / 12</span>
+            </div>
+            <span style="font-size:12px; line-height:17px; color:#6B5F54;">At least 12 characters. Four to go.</span>
+          </div>
+
+          <div style="display:flex; align-items:flex-start; gap:11px;">
+            <div style="width:24px; height:24px; flex:none; border:2px solid #17120E; background:#17120E; display:flex; align-items:center; justify-content:center;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            </div>
+            <span style="flex:1; font-size:13px; line-height:19px; color:#3A3128; text-wrap:pretty;">I accept the terms. No commission on services given — I give a service, nothing more.</span>
+          </div>
+        </div>
+
+        <div style="flex:none; padding:14px 20px 20px; background:#FFFFFF; border-top:1px solid #E2D9CF; display:flex; flex-direction:column; gap:9px;">
+          <div style="min-height:54px; background:#FFFFFF; border:1px solid #E2D9CF; display:flex; align-items:center; justify-content:center;"><span style="font-size:16px; line-height:23px; font-weight:600; color:#9A8D80;">Take over the salon</span></div>
+          <span style="font-size:12px; line-height:18px; color:#6B5F54; text-align:center;">Four more characters and this opens.</span>
+        </div>
+      </div>
+      <div style="width:390px; display:flex; flex-direction:column; gap:10px; padding-top:8px;">
+        <div style="display:flex; gap:10px; align-items:baseline;"><div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#A83E06;">21a′</div><div style="font-size:13px; line-height:18px; font-weight:600; color:#17120E;">Le même bloc, sans dépouillement</div></div>
+        <div style="background:#FFFFFF; border:1px solid #E2D9CF;">
+          <div style="padding:11px 14px; border-bottom:1px solid #E2D9CF; display:flex; align-items:center; gap:10px;">
+            <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:1px;">
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#6B5F54;">FROM YOUR PRICE LIST</span>
+              <span style="font-size:14px; line-height:20px; color:#17120E;">2 photos</span>
+            </div>
+            <span style="flex:none; font-size:13px; line-height:19px; font-weight:600; color:#A83E06;">View</span>
+          </div>
+          <div style="padding:12px 14px; display:flex; gap:10px; align-items:flex-start;">
+            <div style="width:56px; height:74px; flex:none; border-radius:2px; background:linear-gradient(150deg,#FFFFFF 0%,#EDE6DE 45%,#9A8D80 100%);"></div>
+            <div style="width:56px; height:74px; flex:none; border-radius:2px; background:linear-gradient(150deg,#FFFFFF 0%,#EDE6DE 45%,#9A8D80 100%);"></div>
+            <span style="flex:1; font-size:13px; line-height:19px; color:#6B5F54; text-wrap:pretty;">You will add your services after taking over. The photos stay here for reference.</span>
+          </div>
+        </div>
+        <div style="font-size:13px; line-height:19px; color:#6B5F54; text-wrap:pretty;">Une seule condition, deux rendus. Quand le dépouillement rend des prestations, le bloc les compte et les fait cocher une par une. Quand il ne rend rien, il annonce les photos et rien de plus — pas de compte, pas de liste vide, pas de « 0 service lu ». Le reste de l'écran est identique dans les deux cas.</div>
+      </div>
+      <div style="width:390px; font-size:13px; line-height:19px; color:#6B5F54; text-wrap:pretty;">Ce qui a été préparé se relit d'abord et vient avant le mot de passe : personne ne crée un compte pour des données qu'il n'a pas vues. Les prestations se cochent une par une, avec leur durée — jamais leur prix, que BIND ne stocke pas et n'affiche nulle part. Le bouton reste visible, désactivé, avec la jauge qui dit ce qui manque.</div>
+    </div>
+
+  </div>
+</section>
+
+<section style="display:flex; flex-direction:column; gap:24px; padding:56px 56px 72px; font-family:'Outfit',sans-serif;">
+  <div style="background:#17120E; padding:40px 44px; display:flex; flex-direction:column; gap:24px;">
+    <div style="display:flex; flex-direction:column; gap:10px; max-width:820px;">
+      <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:1.4px; color:#9A8D80;">CE QUE CE LOT SUPPOSE</div>
+      <div style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:34px; line-height:44px; font-weight:400; color:#FFFFFF;">Deux écrans sans route, et une décision de produit</div>
+    </div>
+    <div style="display:flex; gap:0; flex-wrap:wrap; border:1px solid #3A3128;">
+      <div style="flex:1; min-width:300px; border-right:1px solid #3A3128; padding:22px 24px; display:flex; flex-direction:column; gap:8px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#9A8D80;">CONFIRMÉ</div>
+        <div style="font-size:16px; line-height:24px; font-weight:600; color:#FFFFFF;">Le parcours a ses routes</div>
+        <div style="font-size:14px; line-height:21px; color:#9A8D80; text-wrap:pretty;">Brouillon de commerce, jeton de remise à durée de vie, reprise qui crée le commerce avec son premier utilisateur : tout existe. C'est la carte d'API qui était incomplète, pour la troisième fois — les écrans de ce lot n'ont rien supposé qui n'existe pas.</div>
+      </div>
+      <div style="flex:1; min-width:300px; border-right:1px solid #3A3128; padding:22px 24px; display:flex; flex-direction:column; gap:8px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#9A8D80;">TRANCHÉ · UN SEUL ÉCRAN</div>
+        <div style="font-size:16px; line-height:24px; font-weight:600; color:#FFFFFF;">L'écran ne dit jamais avoir lu ce qu'il n'a pas lu</div>
+        <div style="font-size:14px; line-height:21px; color:#9A8D80; text-wrap:pretty;">Un bloc, deux rendus selon ce que le dépouillement renvoie : le compte et les prestations à cocher une par une, ou les photos seules. Jamais de compte affirmé sans données derrière, jamais de « 0 service lu ». La lecture ne retient que le nom et la durée : BIND n'a pas de champ prix, et les montants de la carte sont ignorés à la source.</div>
+      </div>
+      <div style="flex:1; min-width:300px; padding:22px 24px; display:flex; flex-direction:column; gap:8px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#9A8D80;">NOTÉ</div>
+        <div style="font-size:16px; line-height:24px; font-weight:600; color:#FFFFFF;">L'annuaire reste en lecture seule</div>
+        <div style="font-size:14px; line-height:21px; color:#9A8D80; text-wrap:pretty;">Décision enregistrée : le produit circule dans un seul sens, la créatrice choisit et réserve. L'annuaire n'aura donc jamais de bouton de contact, et ce n'est plus un trou à combler mais une règle à écrire dans la passation.</div>
+      </div>
+    </div>
+  </div>
+</section>
+</x-dc>
+</body>
+</html>

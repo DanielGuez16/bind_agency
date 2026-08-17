@@ -1,0 +1,10 @@
+Design a livré : la table de contraste est refaite d'un seul calcul,
+brand.900 est interdit en texte sur orange, et aucun texte sous 24 px sur
+un satin. Les deux règles sont dans tokens.json.
+
+Reprends la table et les deux règles dans le produit.
+
+Deux réponses que je viens de donner à Design et qui te concernent : le
+logo ne se pose jamais sur un satin nu, il porte son cartouche comme la
+légende. Et le point du logo reste #FF5E00 dans les deux variantes, y
+compris la blanche.
