@@ -5996,11 +5996,21 @@ la laisser faire croire que la question est réglée.
 
 ### La mesure du court-circuit
 
-*Cette section est écrite par la PR docs-only qui la mesure : elle ne touche que
-`DECISIONS.md`, donc les trois jobs doivent se court-circuiter et sortir en vert
-sans rien exécuter. Le chiffre obtenu est reporté ici après coup, dans la même
-PR que la suivante — un fichier ne peut pas contenir sa propre mesure avant
-qu'elle existe.*
+Éprouvé sur une PR qui ne touche que `DECISIONS.md`, contre une exécution
+complète relevée quelques minutes plus tôt sur le même dépôt.
 
-Référence à battre, relevée sur l'exécution complète juste avant : `perimetre`
-5 s, `api` 739 s, `app` 56 s, `e2e` 226 s.
+| | complète | docs seulement |
+| --- | --- | --- |
+| `perimetre` | 5 s | 4 s |
+| `api` | 739 s | **22 s** |
+| `e2e` | 226 s | **21 s** |
+| `app` | 56 s | **3 s** |
+| total | **~750 s** | **33 s** |
+
+`perimetre` a rendu `api=non app=non e2e=non`, et **les trois vérifications
+requises rapportent `pass`** : c'est la moitié qui comptait. Un job sauté
+n'aurait rien rapporté du tout, et la fusion l'aurait attendu indéfiniment.
+
+Le plancher qui reste — vingt secondes sur `api` et sur `e2e` — est le démarrage
+du conteneur Postgres, qu'un `services:` ne sait pas rendre conditionnel. Trois
+secondes sur `app`, qui n'en a pas.
