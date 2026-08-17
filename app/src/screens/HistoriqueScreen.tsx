@@ -28,6 +28,7 @@ import {
   EmptyState,
   SegmentedTabs,
   ServiceRow,
+  SkeletonLignes,
   StatusMessage,
   Texte,
 } from '../components';
@@ -92,6 +93,7 @@ export function HistoriqueScreen({
     <Ecran
       requete={requete}
       titre={t('parcours.historiqueTitre')}
+      squelette={<SkeletonLignes combien={6} testID="squelette-historique" />}
       testID="ecran-historique"
       vide={
         <View style={{ gap: 12 }}>

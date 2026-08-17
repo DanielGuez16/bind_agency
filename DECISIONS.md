@@ -5148,3 +5148,66 @@ l'exécution est partie dans la seconde.
 entier et non le décompte des contrôles : encore faut-il qu'un run existe.
 Quand aucun n'apparaît, la question n'est pas « pourquoi est-il lent » mais
 « la branche est-elle fusionnable ».
+
+---
+
+## 2026-08-17 — Le quartier, une liste fermée, et douze squelettes de plus
+
+**Pourquoi une colonne et pas une lecture de l'adresse.** Le géocodeur ne rend
+que des coordonnées : l'adaptateur Geocodio jette les composants d'adresse, et
+`ManualGeocoder` — celui de la démonstration, des tests et du jeu de données —
+ne résout rien du tout. Déduire le quartier d'une chaîne ne marcherait pas
+davantage : « 2250 NW 2nd Ave, Miami, FL 33127 » est à Wynwood et ne le dit
+nulle part.
+
+**Fermée plutôt que libre, et c'est la décision.** Le quartier est un axe de
+navigation : deux salons qui écriraient « South Beach » et « SoBe » ne se
+compteraient pas ensemble, et le fil annoncerait deux quartiers là où il y en a
+un. Neuf valeurs, déclarées par le commerce. Le serveur rend le **code**, jamais
+le nom affiché — celui-ci vit dans les catalogues, identique en anglais et en
+espagnol parce que ce sont des noms propres.
+
+**Nullable, sans valeur « autre ».** Un salon hors des neuf quartiers n'a pas de
+quartier chez nous, et l'absence le dit mieux qu'une catégorie fourre-tout qui
+se remplirait de tout Miami. Il reste dans le fil et reste réservable : le
+retirer pour une donnée de navigation le rendrait invisible pour une raison qui
+ne le regarde pas.
+
+**La distance d'un quartier est celle de son salon le plus proche**, jamais une
+moyenne. « Wynwood · 4 salons · 1,2 km » doit désigner un salon qui existe
+vraiment à 1,2 km ; une moyenne n'en désignerait aucun. Et le groupement se fait
+sur **le fil déjà rendu**, comme les catégories : deux comptes calculés
+séparément divergent au premier filtre, et c'est le compte affiché qui aurait
+tort.
+
+**Un tuple positionnel devenu nommé.** L'en-tête de commerce était lu par
+indices dans le service du fil ; y insérer le quartier aurait décalé tout ce qui
+suivait, et l'adresse serait devenue le quartier sans qu'aucun type ne s'en
+plaigne. `_EnTete` est un `NamedTuple`.
+
+**Le défaut que ce lot a produit, et qu'un test attrape désormais.** Le champ
+traversait le schéma d'entrée, le service et la base sans encombre — et le
+routeur, qui construit `BusinessRead` champ par champ, l'oubliait. Cent
+dix-sept tests sont tombés d'un coup sur un `internal_error`. C'est exactement
+le défaut nommé dans `CLAUDE.md` : un champ accepté puis perdu rend un 200 à
+quelqu'un qui croit avoir enregistré. Trois tests de route le tiennent
+maintenant, et les trois mutations correspondantes les font tomber.
+
+**Les douze squelettes restants.** La garde ne vérifie plus seulement les six
+premiers écrans : elle exige désormais que **tout** écran passant par `Ecran`
+déclare le sien, et elle nomme la seule exception — `FilScreen`, dont le contenu
+est vraiment une liste de cartes à photo. Une liste d'exceptions qu'on oublie
+d'étendre est précisément ainsi que quinze écrans sur dix-huit s'étaient
+retrouvés à mentir sur leur forme.
+
+**Les couvertures verticales : les chiffres, et une conséquence.** Pour une
+boîte pleine largeur sur 520 points de haut, l'écran le plus large en pratique
+fait 430 points, soit 1290 px à densité 3, et 1560 px de haut. Format **4:5**,
+minimum 1290 × 1612, à livrer en 1600 × 2000. Un 9:16 perdrait un quart de la
+hauteur au recadrage là où un 4:5 perd 6 % en largeur.
+
+La conséquence n'est pas dans le format : le fil sert aujourd'hui la **vignette**
+bornée à 480 px sur le grand côté, ce qui donnerait une image agrandie trois
+fois sur une couverture de 520 points. Le mur devra servir l'original, et le
+dépôt devra borner l'original — il range aujourd'hui ce qu'il reçoit, soit
+4000 px depuis un téléphone. Ce n'est pas fait dans ce lot.

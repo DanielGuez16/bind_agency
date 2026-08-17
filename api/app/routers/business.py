@@ -54,6 +54,7 @@ async def lire_le_commerce(session: AsyncSession, business: Business) -> Busines
         name=business.name,
         category=business.category,
         address=business.address,
+        neighborhood=business.neighborhood,
         coordinates=(
             CoordinatesPayload(longitude=coordinates.longitude, latitude=coordinates.latitude)
             if coordinates

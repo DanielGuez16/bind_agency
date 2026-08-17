@@ -48,10 +48,11 @@ import {
   EmptyState,
   Filet,
   LigneDeContrepartie,
-  TierBadge,
+  SkeletonLignes,
   StatusMessage,
-  TextField,
   Texte,
+  TextField,
+  TierBadge,
   vibration,
 } from '../components';
 import { formatDateTime, formatHeure } from '../format';
@@ -81,6 +82,7 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
       requete={requete}
       titre={t('commerce.journeeTitre')}
       nature="merchantListeDetail"
+      squelette={<SkeletonLignes combien={6} testID="squelette-journee" />}
       testID="ecran-journee"
       vide={
         // **Plus de cercle.** Il ne disait rien et occupait la place du titre.

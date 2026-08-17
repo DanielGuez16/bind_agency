@@ -32,18 +32,19 @@ import { useApi, type IssueDArbitrage, type LigneDeFile } from '../api';
 import {
   Button,
   Chip,
-  Icone,
-  PALIERS,
-  Toolbar,
   DecisionBar,
   DetailPanel,
   EmptyState,
+  Icone,
+  PALIERS,
   RangeeDeChips,
+  SkeletonLignes,
   StatusMessage,
   TableHeader,
   TableRow,
   Texte,
   TextField,
+  Toolbar,
   type Colonne,
 } from '../components';
 import { formatDate } from '../format';
@@ -70,6 +71,7 @@ export function ArbitrageScreen() {
       requete={requete}
       titre={t('admin.arbitrageTitre')}
       nature="reports"
+      squelette={<SkeletonLignes combien={5} testID="squelette-arbitrage" />}
       testID="ecran-arbitrage"
       vide={
         <EmptyState

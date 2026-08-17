@@ -15,6 +15,7 @@ from app.models.enums import (
     BusinessMemberRole,
     BusinessStatus,
     Locale,
+    Neighborhood,
     SubscriptionStatus,
     SuspensionReason,
 )
@@ -31,6 +32,17 @@ class Business(UUIDPrimaryKey, CreatedAt, Base):
     # saisie ou service indisponible, et l'inscription ne doit pas se bloquer
     # là-dessus. La garantie est reportée au passage en `active`, ci-dessous.
     address: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    #: Le quartier, déclaré par le commerce et choisi dans une liste fermée.
+    #:
+    #: **Une colonne, pas une lecture de l'adresse.** Le fil groupe dessus et en
+    #: rend le compte : le déduire à la volée d'une chaîne libre ferait dépendre
+    #: un axe de navigation de la façon dont chacun écrit sa rue.
+    #:
+    #: Nullable : un salon hors des quartiers ouverts n'en a pas, et il reste
+    #: parfaitement réservable — il n'apparaît simplement dans aucun groupe.
+    neighborhood: Mapped[Neighborhood | None] = mapped_column(
+        enum_column(Neighborhood, "neighborhood"), nullable=True
+    )
     geo: Mapped[object | None] = mapped_column(
         Geography(geometry_type="POINT", srid=4326, spatial_index=False), nullable=True
     )

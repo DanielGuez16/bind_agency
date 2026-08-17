@@ -55,6 +55,7 @@ import {
   Icone,
   LigneDeContrepartie,
   SegmentedTabs,
+  SkeletonLignes,
   StatusMessage,
   Texte,
   TierBadge,
@@ -154,6 +155,7 @@ export function PaliersScreen({
     <Ecran
       requete={requete}
       testID="ecran-paliers"
+      squelette={<SkeletonLignes combien={6} testID="squelette-paliers" />}
       nature="creator"
       onRetour={onRetour}
       titre={t('parcours.tiersTitre')}

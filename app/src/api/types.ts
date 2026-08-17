@@ -246,9 +246,43 @@ export type CommerceDuFil = {
   name: string;
   category: BusinessCategory;
   address: string | null;
+  /** Le quartier déclaré par le commerce. `null` hors des quartiers ouverts. */
+  neighborhood: Neighborhood | null;
   cover_photo_key: string | null;
   distance_metres: number;
   items: ItemDuFil[];
+};
+
+/**
+ * Les quartiers de Miami où BIND ouvre.
+ *
+ * Une liste fermée, déclarée par le commerce : deux salons qui écriraient
+ * « South Beach » et « SoBe » ne se compteraient pas ensemble, et le fil
+ * annoncerait deux quartiers là où il y en a un.
+ */
+export type Neighborhood =
+  | 'wynwood'
+  | 'brickell'
+  | 'south_beach'
+  | 'little_havana'
+  | 'design_district'
+  | 'coral_gables'
+  | 'midtown'
+  | 'edgewater'
+  | 'coconut_grove';
+
+/**
+ * Un quartier du fil : ses salons, ses prestations, sa distance.
+ *
+ * La distance est celle du **salon le plus proche**, jamais une moyenne : un
+ * quartier se choisit pour s'y rendre, et une moyenne ne désignerait aucun
+ * salon existant.
+ */
+export type CompteParQuartier = {
+  quartier: Neighborhood;
+  commerces: number;
+  prestations: number;
+  distance_metres: number;
 };
 
 /** Ce qu'une pastille de catégorie ouvrirait, dans le rayon courant. */
@@ -287,6 +321,8 @@ export type Fil = {
    * n'est pas une issue à un fil vide. Vide quand on est déjà au plus large.
    */
   rayons: CompteParRayon[];
+  /** Les quartiers du fil rendu, du plus proche au plus lointain. */
+  quartiers: CompteParQuartier[];
 };
 
 export type OffreDeLaFiche = {

@@ -20,6 +20,9 @@
  * portent aucune information et les faire annoncer reviendrait à lire
  * « chargement » sept fois. D'où `includeHiddenElements` partout ici.
  */
+import { readFileSync, readdirSync } from 'fs';
+import { join } from 'path';
+
 import { render, screen } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 
@@ -85,6 +88,36 @@ const CAS = [
   },
 ] as const;
 
+/**
+ * Les écrans qui doivent porter leur propre squelette, vérifiés **sur la
+ * source** et non en les montant.
+ *
+ * Monter les dix-sept écrans demanderait autant de décors, et un décor incomplet
+ * ferait échouer la garde pour une raison qui n'a rien à voir avec le squelette.
+ * Ici on vérifie la seule chose qui compte : l'écran passe une prop `squelette`
+ * à `Ecran`. Les six cas montés au-dessus prouvent, eux, que la prop arrive
+ * bien à l'écran — les deux ensemble couvrent la chaîne.
+ */
+const DOIVENT_AVOIR_LEUR_SQUELETTE = [
+  'ActivationScreen.tsx',
+  'AnnuaireScreen.tsx',
+  'ArbitrageScreen.tsx',
+  'AudienceScreen.tsx',
+  'CatalogueScreen.tsx',
+  'CreneauxScreen.tsx',
+  'FicheScreen.tsx',
+  'HistoriqueScreen.tsx',
+  'HorairesScreen.tsx',
+  'JourneeScreen.tsx',
+  'PaliersScreen.tsx',
+  'PlansScreen.tsx',
+  'PreuveScreen.tsx',
+  'PublicationsScreen.tsx',
+  'ReglesScreen.tsx',
+  'ReportingScreen.tsx',
+  'TerrainScreen.tsx',
+] as const;
+
 function Cadre({ role, children }: { role: 'creator' | 'merchant'; children: ReactNode }) {
   return (
     <I18nProvider initialLocale="en">
@@ -96,6 +129,40 @@ function Cadre({ role, children }: { role: 'creator' | 'merchant'; children: Rea
 }
 
 const cache = { includeHiddenElements: true } as const;
+
+describe('les écrans dont le contenu n’est pas une carte à photo', () => {
+  it.each(DOIVENT_AVOIR_LEUR_SQUELETTE.map((f) => [f] as const))(
+    '%s passe son propre squelette',
+    (fichier) => {
+      // Le défaut d'`Ecran` promet trois cartes à photo de 150 px. Il n'est
+      // juste que sur le fil ; partout ailleurs il fait sauter la page à
+      // l'arrivée des données, au moment précis où on commençait à lire.
+      const source = readFileSync(join(__dirname, '..', 'src', 'screens', fichier), 'utf8');
+
+      expect(source).toMatch(/squelette=\{/);
+    },
+  );
+
+  it('la liste couvre tous les écrans sauf le fil, qui rend vraiment des cartes', () => {
+    // **L'autre sens.** Une liste qu'on oublie d'étendre laisse un écran neuf
+    // hériter du défaut sans que rien ne le dise — c'est exactement comme ça
+    // que quinze écrans sur dix-huit s'étaient retrouvés à mentir.
+    const dossier = join(__dirname, '..', 'src', 'screens');
+    const passentParEcran = readdirSync(dossier).filter(
+      (f) =>
+        /Screen\.tsx$/.test(f) &&
+        /<Ecran\b/.test(readFileSync(join(dossier, f), 'utf8')),
+    );
+
+    const sansSquelette = passentParEcran.filter(
+      (f) => !DOIVENT_AVOIR_LEUR_SQUELETTE.includes(f as never),
+    );
+
+    // `FilScreen` est le seul écran dont le contenu est bien une liste de
+    // cartes à photo : le défaut y est juste, et l'y remplacer serait un recul.
+    expect(sansSquelette).toEqual(['FilScreen.tsx']);
+  });
+});
 
 describe('le squelette a la forme de ce qui arrive', () => {
   it.each(CAS.map((c) => [c.nom, c] as const))('%s montre le sien', async (_nom, cas) => {

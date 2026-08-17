@@ -37,7 +37,15 @@ import {
   type PlateformeConnectable,
   type VerificationDuCompte,
 } from '../api';
-import { Apparition, Button, DataRow, StatusMessage, Texte, vibration } from '../components';
+import {
+  Apparition,
+  Button,
+  DataRow,
+  SkeletonLignes,
+  StatusMessage,
+  Texte,
+  vibration,
+} from '../components';
 import { formatDate, formatNumber } from '../format';
 import { useI18n } from '../i18n';
 import { translateErrorCode } from '../i18n/errors';
@@ -67,6 +75,7 @@ export function AudienceScreen() {
     <Ecran
       requete={requete}
       titre={t('parcours.audienceTitre')}
+      squelette={<SkeletonLignes combien={5} testID="squelette-audience" />}
       testID="ecran-audience"
       vide={
         <View style={{ gap: 12 }}>

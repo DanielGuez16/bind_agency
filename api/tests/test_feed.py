@@ -24,6 +24,7 @@ from app.integrations.geocoding import Coordinates, ManualGeocoder
 from app.models import SocialAccount, TierOffer
 from app.models.enums import (
     BusinessCategory,
+    Neighborhood,
     Platform,
     SocialAccountStatus,
     UserRole,
@@ -721,3 +722,139 @@ async def test_des_coordonnees_invalides_sont_refusees(
         headers={"Authorization": f"Bearer {jetons['access_token']}"},
     )
     assert reponse.status_code == 422
+
+
+# --------------------------------------------------------------------------
+# le quartier
+# --------------------------------------------------------------------------
+
+
+class TestLesQuartiersDuFil:
+    """Le quartier, son compte de salons et sa distance.
+
+    **Pourquoi une colonne et pas une lecture de l'adresse.** Le géocodeur ne
+    rend que des coordonnées, et `ManualGeocoder` — celui de la démonstration,
+    des tests et du jeu de données — ne résout rien du tout. Déduire le quartier
+    d'une chaîne ne marcherait pas davantage : « 2250 NW 2nd Ave, Miami, FL
+    33127 » est à Wynwood et ne le dit nulle part.
+    """
+
+    async def test_le_fil_groupe_les_salons_par_quartier(self, session: AsyncSession) -> None:
+        """Deux salons d'un même quartier font un groupe, pas deux."""
+        for _ in range(2):
+            b = await commerce(
+                session,
+                longitude=ICI.longitude,
+                latitude=ICI.latitude,
+                neighborhood=Neighborhood.WYNWOOD,
+            )
+            await offre(session, b)
+        ailleurs = await commerce(
+            session,
+            longitude=ICI.longitude,
+            latitude=ICI.latitude,
+            neighborhood=Neighborhood.BRICKELL,
+        )
+        await offre(session, ailleurs)
+        user, _ = await createur(session)
+
+        vue = await fil(session, user)
+
+        par_quartier = {q.quartier: q for q in vue.quartiers}
+        assert par_quartier[Neighborhood.WYNWOOD].commerces == 2
+        assert par_quartier[Neighborhood.BRICKELL].commerces == 1
+
+    async def test_la_distance_est_celle_du_salon_le_plus_proche(
+        self, session: AsyncSession
+    ) -> None:
+        """**Jamais une moyenne.** Un quartier se choisit pour s'y rendre :
+        « Wynwood · 1,2 km » doit désigner un salon qui existe vraiment à
+        1,2 km. Une moyenne n'en désignerait aucun."""
+        proche = await commerce(
+            session,
+            longitude=ICI.longitude,
+            latitude=ICI.latitude,
+            neighborhood=Neighborhood.WYNWOOD,
+        )
+        await offre(session, proche)
+        loin = await commerce(
+            session,
+            longitude=ICI.longitude + 0.02,
+            latitude=ICI.latitude,
+            neighborhood=Neighborhood.WYNWOOD,
+        )
+        await offre(session, loin)
+        user, _ = await createur(session)
+
+        vue = await fil(session, user)
+
+        [wynwood] = vue.quartiers
+        distances = sorted(c.distance_metres for c in vue.commerces)
+        assert wynwood.distance_metres == distances[0]
+        # Et surtout : pas la moyenne, qui serait à mi-chemin des deux.
+        assert wynwood.distance_metres < sum(distances) / len(distances)
+
+    async def test_les_quartiers_sortent_du_plus_proche_au_plus_lointain(
+        self, session: AsyncSession
+    ) -> None:
+        """C'est l'ordre dans lequel on choisit où aller."""
+        loin = await commerce(
+            session,
+            longitude=ICI.longitude + 0.03,
+            latitude=ICI.latitude,
+            neighborhood=Neighborhood.CORAL_GABLES,
+        )
+        await offre(session, loin)
+        proche = await commerce(
+            session,
+            longitude=ICI.longitude,
+            latitude=ICI.latitude,
+            neighborhood=Neighborhood.WYNWOOD,
+        )
+        await offre(session, proche)
+        user, _ = await createur(session)
+
+        vue = await fil(session, user)
+
+        assert [q.quartier for q in vue.quartiers] == [
+            Neighborhood.WYNWOOD,
+            Neighborhood.CORAL_GABLES,
+        ]
+
+    async def test_un_salon_sans_quartier_reste_dans_le_fil(self, session: AsyncSession) -> None:
+        """**L'autre sens, et il compte.** Un salon hors des quartiers ouverts
+        est parfaitement réservable : le retirer du fil pour une donnée de
+        navigation le rendrait invisible pour une raison qui ne le regarde
+        pas. Il n'est simplement dans aucun groupe."""
+        sans = await commerce(
+            session, longitude=ICI.longitude, latitude=ICI.latitude, neighborhood=None
+        )
+        await offre(session, sans)
+        user, _ = await createur(session)
+
+        vue = await fil(session, user)
+
+        assert len(vue.commerces) == 1
+        assert vue.commerces[0].neighborhood is None
+        assert vue.quartiers == ()
+
+    async def test_le_compte_de_prestations_suit_le_fil_rendu(self, session: AsyncSession) -> None:
+        """Compté sur la liste rendue, jamais sur une seconde requête : deux
+        comptes calculés séparément divergent au premier filtre, et c'est le
+        compte affiché qui aurait tort."""
+        b = await commerce(
+            session,
+            longitude=ICI.longitude,
+            latitude=ICI.latitude,
+            neighborhood=Neighborhood.MIDTOWN,
+        )
+        await offre(session, b, name="Soin visage")
+        await offre(session, b, name="Brushing")
+        user, _ = await createur(session)
+
+        vue = await fil(session, user)
+
+        [midtown] = vue.quartiers
+        assert midtown.commerces == 1
+        assert midtown.prestations == 2
+        assert midtown.prestations == sum(len(c.items) for c in vue.commerces)

@@ -5,12 +5,13 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict
 
-from app.models.enums import BusinessCategory, ContentFormat, Platform
+from app.models.enums import BusinessCategory, ContentFormat, Neighborhood, Platform
 from app.schemas.obstacle import ObstacleRead
 
 __all__ = [
     "CommerceDuFilRead",
     "CompteParCategorieRead",
+    "CompteParQuartierRead",
     "CompteParRayonRead",
     "FilRead",
     "ItemDuFilRead",
@@ -47,6 +48,8 @@ class CommerceDuFilRead(BaseModel):
     name: str
     category: BusinessCategory
     address: str | None
+    #: Le quartier déclaré par le commerce. `null` hors des quartiers ouverts.
+    neighborhood: Neighborhood | None
     cover_photo_key: str | None
     distance_metres: float
     items: list[ItemDuFilRead]
@@ -60,6 +63,22 @@ class CompteParCategorieRead(BaseModel):
     categorie: BusinessCategory
     commerces: int
     prestations: int
+
+
+class CompteParQuartierRead(BaseModel):
+    """Un quartier du fil courant : ses salons, ses prestations, sa distance.
+
+    La distance est celle du **salon le plus proche**, jamais une moyenne : un
+    quartier se choisit pour s'y rendre, et une moyenne ne désignerait aucun
+    salon existant.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    quartier: Neighborhood
+    commerces: int
+    prestations: int
+    distance_metres: float
 
 
 class CompteParRayonRead(BaseModel):
@@ -95,3 +114,5 @@ class FilRead(BaseModel):
     total_prestations: int
     categories: list[CompteParCategorieRead]
     rayons: list[CompteParRayonRead]
+    #: Les quartiers du fil rendu, du plus proche au plus lointain.
+    quartiers: list[CompteParQuartierRead]

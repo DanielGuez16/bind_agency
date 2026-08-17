@@ -13,6 +13,7 @@
  * ouvre rarement coûte moins cher que cette incohérence.
  */
 import { useApi, type VueDesPaliers } from '../api';
+import { SkeletonLignes } from '../components';
 import { useI18n } from '../i18n';
 import { Ecran } from './Ecran';
 import { ReglesDesPaliers } from './ReglesDesPaliers';
@@ -33,6 +34,7 @@ export function ReglesScreen({ onRetour }: { onRetour?: () => void }) {
     <Ecran
       requete={requete}
       testID="ecran-regles"
+      squelette={<SkeletonLignes combien={8} testID="squelette-regles" />}
       nature="creator"
       titre={t('tiers.rulesEntry')}
       onRetour={onRetour}

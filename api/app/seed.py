@@ -34,7 +34,7 @@ from app.core.config import API_ROOT, get_settings
 from app.integrations.geocoding import ManualGeocoder
 from app.integrations.social import IdentiteSociale, JetonEchange, MetriquesProfil
 from app.models import CatalogItem, Tier, User
-from app.models.enums import ContentFormat, Locale, Platform, UserRole
+from app.models.enums import ContentFormat, Locale, Neighborhood, Platform, UserRole
 from app.schemas.business import BusinessCreate, CoordinatesPayload
 from app.schemas.capacity import CapacityExceptionCreate, CapacityRuleCreate
 from app.schemas.catalog import CatalogItemCreate
@@ -148,6 +148,7 @@ async def _ocean_beauty(session: AsyncSession, owner: User) -> tuple[int, int, i
             category="beauty",
             currency="usd",
             address="1201 Ocean Drive, Miami Beach, FL 33139",
+            neighborhood=Neighborhood.SOUTH_BEACH,
             coordinates=CoordinatesPayload(longitude=-80.1300, latitude=25.7825),
             timezone="America/New_York",
             default_locale=Locale.EN,
@@ -239,6 +240,7 @@ async def _wynwood_nails(session: AsyncSession, owner: User) -> tuple[int, int, 
             category="beauty",
             currency="usd",
             address="2250 NW 2nd Ave, Miami, FL 33127",
+            neighborhood=Neighborhood.WYNWOOD,
             coordinates=CoordinatesPayload(longitude=-80.1990, latitude=25.7990),
             timezone="America/New_York",
             default_locale=Locale.ES,
@@ -325,6 +327,7 @@ async def _brickell_spa(session: AsyncSession, owner: User) -> tuple[int, int, i
             category="beauty",
             currency="usd",
             address="1450 Brickell Ave, Miami, FL 33131",
+            neighborhood=Neighborhood.BRICKELL,
             coordinates=CoordinatesPayload(longitude=-80.1918, latitude=25.7600),
             timezone="America/New_York",
             default_locale=Locale.EN,
@@ -415,6 +418,7 @@ async def _little_havana(session: AsyncSession, owner: User) -> tuple[int, int, 
             category="beauty",
             currency="usd",
             address="1500 SW 8th St, Miami, FL 33135",
+            neighborhood=Neighborhood.LITTLE_HAVANA,
             coordinates=CoordinatesPayload(longitude=-80.2192, latitude=25.7650),
             timezone="America/New_York",
             default_locale=Locale.ES,

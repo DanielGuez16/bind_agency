@@ -31,7 +31,14 @@
 import { View } from 'react-native';
 
 import { useApi, type PlanAdministrateur } from '../api';
-import { EmptyState, TableHeader, TableRow, Texte, type Colonne } from '../components';
+import {
+  EmptyState,
+  SkeletonLignes,
+  TableHeader,
+  TableRow,
+  Texte,
+  type Colonne,
+} from '../components';
 import { useI18n } from '../i18n';
 import { Ecran } from './Ecran';
 import { useRequete } from './useRequete';
@@ -57,6 +64,7 @@ export function PlansScreen() {
     <Ecran
       requete={requete}
       titre={t('admin.plansTitre')}
+      squelette={<SkeletonLignes combien={3} testID="squelette-plans" />}
       testID="ecran-plans"
       vide={<EmptyState title={t('admin.plansTitre')} body={t('admin.plansVide')} />}
     >

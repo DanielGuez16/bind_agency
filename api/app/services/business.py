@@ -113,6 +113,7 @@ async def create_business(
         name=payload.name,
         category=payload.category,
         address=payload.address,
+        neighborhood=payload.neighborhood,
         geo=point(resolved) if resolved else None,
         timezone=payload.timezone,
         default_locale=payload.default_locale,
@@ -171,6 +172,11 @@ async def update_business(
         "name",
         "category",
         "address",
+        # **Dans la liste, sinon accepté et ignoré.** Un champ que le schéma
+        # laisse passer et que le service oublie rend un 200 à quelqu'un qui
+        # croit avoir enregistré — c'est le défaut nommé dans CLAUDE.md, et
+        # cette liste blanche est précisément l'endroit où on l'introduit.
+        "neighborhood",
         "timezone",
         "default_locale",
         "phone",

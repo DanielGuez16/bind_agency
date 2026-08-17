@@ -23,6 +23,7 @@ montrés : là-bas un palier fermé oriente, ici il encombre.
 import uuid
 from dataclasses import dataclass
 from decimal import Decimal
+from typing import NamedTuple
 
 import sqlalchemy as sa
 from geoalchemy2 import Geography
@@ -31,7 +32,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.integrations.geocoding import Coordinates
 from app.models import Business, CatalogItem, Tier, TierOffer
-from app.models.enums import BusinessCategory, BusinessStatus, ContentFormat, Platform
+from app.models.enums import (
+    BusinessCategory,
+    BusinessStatus,
+    ContentFormat,
+    Neighborhood,
+    Platform,
+)
 from app.services import availability, eligibility
 
 
@@ -57,12 +64,30 @@ class ItemDuFil:
     value_ratio: Decimal | None
 
 
+class _EnTete(NamedTuple):
+    """Ce qu'on retient d'un commerce en parcourant ses lignes.
+
+    Nommé et non positionnel : c'était un tuple lu par indices, et y insérer un
+    champ décalait tout ce qui suivait — l'adresse serait devenue le quartier
+    sans qu'aucun type ne s'en plaigne.
+    """
+
+    nom: str
+    categorie: BusinessCategory
+    adresse: str | None
+    quartier: Neighborhood | None
+    couverture: str | None
+    distance: float
+
+
 @dataclass(frozen=True, slots=True)
 class CommerceDuFil:
     business_id: uuid.UUID
     name: str
     category: BusinessCategory
     address: str | None
+    #: Le quartier déclaré par le commerce. `None` hors des quartiers ouverts.
+    neighborhood: Neighborhood | None
     cover_photo_key: str | None
     distance_metres: float
     items: tuple[ItemDuFil, ...]
@@ -80,6 +105,30 @@ class CompteParCategorie:
     categorie: BusinessCategory
     commerces: int
     prestations: int
+
+
+@dataclass(frozen=True, slots=True)
+class CompteParQuartier:
+    """Un quartier du fil courant : combien de salons, et à quelle distance.
+
+    **La distance est celle du salon le plus proche**, jamais une moyenne. Un
+    quartier se choisit pour s'y rendre : « Wynwood · 4 salons · 1,2 km » dit
+    qu'il y a quelque chose à 1,2 km, ce qui est une information vérifiable sur
+    place. Une moyenne ne désignerait aucun salon existant.
+
+    **Compté sur le fil rendu**, comme les catégories : mêmes paliers, mêmes
+    items disponibles. Un compte plus large promettrait des salons que l'écran
+    suivant ne rendrait pas.
+
+    Les salons sans quartier déclaré ne sont dans aucun groupe. Ils restent
+    dans le fil : ils sont réservables, ils ne sont simplement pas situés.
+    """
+
+    quartier: Neighborhood
+    commerces: int
+    prestations: int
+    #: La distance du salon le plus proche de ce quartier, en mètres.
+    distance_metres: float
 
 
 @dataclass(frozen=True, slots=True)
@@ -117,6 +166,9 @@ class Fil:
     #: Les élargissements possibles, avec leur gain. Vide quand aucun rayon
     #: configuré n'est plus large que celui en vigueur.
     rayons: tuple[CompteParRayon, ...]
+    #: Les quartiers représentés dans le fil rendu, du plus proche au plus
+    #: lointain. Vide quand aucun salon rendu n'a déclaré de quartier.
+    quartiers: tuple[CompteParQuartier, ...]
 
 
 async def fil_du_createur(
@@ -156,6 +208,7 @@ async def fil_du_createur(
             total_prestations=0,
             categories=(),
             rayons=(),
+            quartiers=(),
         )
 
     paliers_ouverts = {tier_id for _, tier_id in accessibles}
@@ -173,6 +226,7 @@ async def fil_du_createur(
                 Business.name,
                 Business.category,
                 Business.address,
+                Business.neighborhood,
                 Business.cover_photo_key,
                 Business.currency,
                 distance,
@@ -245,7 +299,14 @@ async def fil_du_createur(
 
         entetes.setdefault(
             ligne.id,
-            (ligne.name, ligne.category, ligne.address, ligne.cover_photo_key, ligne.distance),
+            _EnTete(
+                nom=ligne.name,
+                categorie=ligne.category,
+                adresse=ligne.address,
+                quartier=ligne.neighborhood,
+                couverture=ligne.cover_photo_key,
+                distance=ligne.distance,
+            ),
         )
         par_commerce.setdefault(ligne.id, []).append(
             ItemDuFil(
@@ -269,11 +330,12 @@ async def fil_du_createur(
     commerces = tuple(
         CommerceDuFil(
             business_id=business_id,
-            name=entetes[business_id][0],
-            category=entetes[business_id][1],
-            address=entetes[business_id][2],
-            cover_photo_key=entetes[business_id][3],
-            distance_metres=round(entetes[business_id][4], 1),
+            name=entetes[business_id].nom,
+            category=entetes[business_id].categorie,
+            address=entetes[business_id].adresse,
+            neighborhood=entetes[business_id].quartier,
+            cover_photo_key=entetes[business_id].couverture,
+            distance_metres=round(entetes[business_id].distance, 1),
             items=tuple(items),
         )
         for business_id, items in par_commerce.items()
@@ -289,6 +351,37 @@ async def fil_du_createur(
         total_prestations=sum(len(commerce.items) for commerce in commerces),
         categories=categories,
         rayons=rayons,
+        quartiers=_compter_par_quartier(commerces),
+    )
+
+
+def _compter_par_quartier(commerces: tuple[CommerceDuFil, ...]) -> tuple[CompteParQuartier, ...]:
+    """Groupe le fil **déjà rendu** par quartier.
+
+    Sur la liste et non sur une seconde requête : deux comptes calculés
+    séparément divergent dès qu'un filtre change, et c'est le compte affiché qui
+    aurait tort. Le tri suit la distance du plus proche, parce que c'est l'ordre
+    dans lequel on choisit où aller.
+    """
+    groupes: dict[Neighborhood, list[CommerceDuFil]] = {}
+    for commerce in commerces:
+        if commerce.neighborhood is None:
+            continue
+        groupes.setdefault(commerce.neighborhood, []).append(commerce)
+
+    return tuple(
+        sorted(
+            (
+                CompteParQuartier(
+                    quartier=quartier,
+                    commerces=len(lot),
+                    prestations=sum(len(c.items) for c in lot),
+                    distance_metres=min(c.distance_metres for c in lot),
+                )
+                for quartier, lot in groupes.items()
+            ),
+            key=lambda compte: compte.distance_metres,
+        )
     )
 
 
