@@ -177,8 +177,10 @@ async function monterLeParcours() {
 it('atterrit sur la liste des réservations, pas sur le code', async () => {
   await monterLeParcours();
 
-  await waitFor(() => expect(screen.getByTestId('commerce-b1')).toBeTruthy());
-  await fireEvent.press(screen.getByTestId('commerce-b1'));
+  // `salon-…` et non `commerce-…` : la carte du fil n'existe plus, le mur pose
+  // des photos. Le parcours, lui, ne change pas — c'est ce que ce test vérifie.
+  await waitFor(() => expect(screen.getByTestId('salon-b1')).toBeTruthy());
+  await fireEvent.press(screen.getByTestId('salon-b1'));
 
   await waitFor(() => expect(screen.getByTestId('offre-o1')).toBeTruthy());
   await fireEvent.press(screen.getByText(en.parcours.reserver));

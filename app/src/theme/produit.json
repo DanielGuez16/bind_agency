@@ -182,5 +182,26 @@
       "pointCentreY": 0.82125,
       "pointRayon": 0.0575
     }
+  },
+  "repli": {
+    "$pourquoi": "La pile de repli du web, corrigée par Design sur ses huit planches. Sur appareil, `fontFamily` désigne un fichier chargé et il n'y a pas de repli : ceci ne vaut que pour le build web, où le navigateur choisit seul tant que la fonte n'est pas là — ou si elle ne vient jamais. Sans pile, il atterrit sur sa fonte par défaut, un Times : un Didone du XVIIIe remplacé par une romaine de journal, c'est-à-dire le contraire de la direction. Les deux autres parts de la correction de Design ne s'appliquent pas au produit — il charge des TTF statiques par graisse, donc pas d'axe `opsz` et les graisses sont déjà épinglées.",
+    "display": [
+      "Didot",
+      "Playfair Display",
+      "Georgia",
+      "serif"
+    ],
+    "sans": [
+      "Avenir Next",
+      "Segoe UI",
+      "Helvetica Neue",
+      "sans-serif"
+    ],
+    "mono": [
+      "SFMono-Regular",
+      "Menlo",
+      "Consolas",
+      "monospace"
+    ]
   }
 }

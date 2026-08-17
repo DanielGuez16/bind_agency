@@ -100,6 +100,11 @@ const CAS = [
  */
 const DOIVENT_AVOIR_LEUR_SQUELETTE = [
   'ActivationScreen.tsx',
+  // Le fil était la seule exception : son contenu était bien une liste de
+  // cartes à photo, et le défaut y était juste. Il ne l'est plus — le fil est
+  // devenu le mur, six formats dans un ordre fixe, et le squelette du système
+  // promettrait trois cartes là où arrivent un héros, un duo et un triptyque.
+  'FilScreen.tsx',
   'AnnuaireScreen.tsx',
   'ArbitrageScreen.tsx',
   'AudienceScreen.tsx',
@@ -158,9 +163,11 @@ describe('les écrans dont le contenu n’est pas une carte à photo', () => {
       (f) => !DOIVENT_AVOIR_LEUR_SQUELETTE.includes(f as never),
     );
 
-    // `FilScreen` est le seul écran dont le contenu est bien une liste de
-    // cartes à photo : le défaut y est juste, et l'y remplacer serait un recul.
-    expect(sansSquelette).toEqual(['FilScreen.tsx']);
+    // **Plus aucune exception.** Le fil était la dernière, et elle est tombée
+    // avec le mur : un écran fait de six formats ne peut pas hériter d'un
+    // défaut qui promet trois cartes. Cette liste dit désormais « tous », et
+    // c'est le seul état où elle n'a plus à être relue.
+    expect(sansSquelette).toEqual([]);
   });
 });
 

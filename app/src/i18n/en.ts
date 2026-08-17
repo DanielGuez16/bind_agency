@@ -232,6 +232,15 @@ export const en = {
     // Le mot qui nomme ce qu'on ouvre. « Paliers » est un mot du produit
     // qu'il faut déjà connaître pour vouloir appuyer dessus.
     filPourquoi: 'Why',
+    murUnStory: 'one story',
+    murUnPost: 'one post',
+    murUnReel: 'one reel',
+    murRienVuDans: "You haven't seen anything in",
+    murVoirLesSalons: 'See the {{count}} businesses',
+    murVoirLeSalon: 'See the one business',
+    murToutVuDans: 'You have seen everything within {{rayon}} km',
+    murBilan: '{{salons}} businesses, {{quartiers}} neighbourhoods',
+    murRepartirDuHaut: 'Back to the top',
     filRayon: '{{rayon}} km',
     filSansPosition: 'We need your location to show places near you.',
     filAutoriser: 'Share my location',

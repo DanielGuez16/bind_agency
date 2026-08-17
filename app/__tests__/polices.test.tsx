@@ -245,3 +245,60 @@ describe('les fontes du système', () => {
     expect(aplati.fontFamily).toBe(nomDeFonte('sans', '600'));
   });
 });
+
+/**
+ * La pile de repli, et **ce qu'elle ne doit jamais toucher**.
+ *
+ * Elle a coûté une CI rouge, et la leçon vaut d'être tenue. `nomDeFonte` sert
+ * deux choses : écrire un style, et **enregistrer** la face auprès d'`expo-font`.
+ * Composer la pile dedans a enregistré une famille appelée
+ * « BodoniModa_400Regular, Didot, … » — plus aucune face posée, et toutes les
+ * fontes du web perdues.
+ *
+ * Aucun test unitaire ne l'a vu : ils lisaient le nom rendu, jamais ce qui part
+ * à l'enregistrement. C'est la suite de bout en bout qui l'a dit, vingt minutes
+ * plus tard. Les deux tests ci-dessous ferment l'écart.
+ */
+describe('la pile de repli ne sort pas de son emploi', () => {
+  const { nomDeFonte, policesAcharger } = require('../src/theme');
+  const { readFileSync } = require('fs') as typeof import('fs');
+  const { join } = require('path') as typeof import('path');
+  const source = readFileSync(join(__dirname, '..', 'src', 'theme', 'polices.ts'), 'utf-8');
+
+  it('ce qui s’enregistre est un nom, jamais une pile', () => {
+    // **La propriété exacte qui a cassé.** Une virgule dans une clé
+    // d'enregistrement, et `expo-font` ne pose plus rien.
+    for (const nom of Object.keys(policesAcharger())) {
+      expect({ nom, virgule: nom.includes(','), espace: nom.includes(' ') }).toEqual({
+        nom,
+        virgule: false,
+        espace: false,
+      });
+    }
+  });
+
+  it('et `nomDeFonte` rend ce nom-là, pas la pile', () => {
+    const nom = nomDeFonte('display', 400);
+    expect(nom).not.toContain(',');
+    expect(Object.keys(policesAcharger())).toContain(nom);
+  });
+
+  it('le repli ne se compose que dans `pileDeFontes`, et nulle part ailleurs', () => {
+    // **Une garde de source, et c'est délibéré.** Le défaut ne se produit que
+    // sur le web, et jest rend en natif : une première version de ce bloc
+    // forçait `Platform.OS`, ce qui a demandé de mocker `react-native` entier
+    // et fait tomber le module natif du menu de développement. La distinction
+    // étant liée à une plateforme que la suite unitaire ne joue pas, ce qui se
+    // vérifie ici est **où** le repli est composé — la seule chose qui compte.
+    const corps = (nom: string) => {
+      const d = source.indexOf(`export function ${nom}(`);
+      const f = source.indexOf('\nexport ', d + 1);
+      return source.slice(d, f === -1 ? undefined : f);
+    };
+
+    expect(corps('pileDeFontes')).toContain('repli');
+    expect(corps('nomDeFonte')).not.toContain('repli');
+    // Et une seule mention en tout : deux endroits divergeraient.
+    expect(source.split('produit.repli').length - 1).toBe(1);
+  });
+});

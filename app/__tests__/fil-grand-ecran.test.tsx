@@ -82,47 +82,38 @@ function monter(nombre: number) {
   );
 }
 
-describe('fil créateur, grand écran', () => {
-  afterEach(() => {
-    mockLargeur = 1120;
-  });
-
-  it('range les salons en grille de trois', async () => {
-    await monter(6);
-    await waitFor(() => expect(screen.getByTestId('commerce-b0')).toBeTruthy());
-
-    // Six salons, trois par ligne : deux rangées, pas six.
-    expect(screen.getByTestId('rangee-0')).toBeTruthy();
-    expect(screen.getByTestId('rangee-1')).toBeTruthy();
-    expect(screen.queryByTestId('rangee-2')).toBeNull();
-  });
-
-  it('passe à quatre quand la place y est vraiment', async () => {
-    mockLargeur = 1280;
-    await monter(8);
-    await waitFor(() => expect(screen.getByTestId('commerce-b0')).toBeTruthy());
-
-    expect(screen.getByTestId('rangee-1')).toBeTruthy();
-    expect(screen.queryByTestId('rangee-2')).toBeNull();
-  });
-
-  it('complète la dernière rangée plutôt que d’étirer ce qui reste', async () => {
-    // Deux cartes seules sur la dernière ligne s'étireraient à la moitié de la
-    // largeur et cesseraient de ressembler aux autres. Une grille dont la
-    // dernière ligne a des cartes plus grandes n'est plus une grille.
-    await monter(4);
-    await waitFor(() => expect(screen.getByTestId('commerce-b3')).toBeTruthy());
-
-    const derniere = screen.getByTestId('rangee-1');
-    expect(derniere.props.children).toHaveLength(3);
-  });
-
-  it('affiche tous les salons, aucun caché derrière un bord', async () => {
-    await monter(7);
-    await waitFor(() => expect(screen.getByTestId('commerce-b0')).toBeTruthy());
-
-    for (let rang = 0; rang < 7; rang += 1) {
-      expect(screen.getByTestId(`commerce-b${rang}`)).toBeTruthy();
+/**
+ * **La grille de cartes n'existe plus.** Le fil est devenu le mur : six
+ * positions dans un ordre fixe, un salon qui occupe l'écran, et plus aucune
+ * rangée à compléter. Les quatre tests qui vivaient ici décrivaient une
+ * composition retirée — ils ne sont pas « à mettre à jour », ils n'ont plus
+ * d'objet, et les garder en les tordant aurait fait croire que la grille tient
+ * encore quelque part.
+ *
+ * Ce qui les remplace : `le-cycle-du-mur` pour le placement, `les-regles-du-mur`
+ * pour les trois arbitrages, et le bloc ci-dessous pour ce que le grand écran
+ * change — c'est-à-dire rien. Le mur est vertical par construction : il ne se
+ * réorganise pas en colonnes, et c'est une propriété qui mérite d'être tenue.
+ */
+describe('le mur ne devient pas une grille sur grand écran', () => {
+  it('rend les mêmes blocs, dans le même ordre, quelle que soit la largeur', async () => {
+    // Un mur qui passerait en trois colonnes au-delà d'un seuil redeviendrait
+    // un catalogue — ce que le cycle existe pour éviter.
+    const vus: string[][] = [];
+    for (const largeur of [390, 1120, 1512]) {
+      mockLargeur = largeur;
+      const vue = await monter(8);
+      await waitFor(() => expect(screen.getByTestId('le-mur')).toBeTruthy());
+      vus.push(
+        screen
+          .getAllByTestId(/^bloc-\d+-/)
+          .map((noeud) => String(noeud.props.testID).replace(/^bloc-\d+-/, '')),
+      );
+      await vue.unmount();
     }
+
+    expect(vus[0]).toEqual(['heros', 'duo', 'bande', 'herosGalerie', 'triptyque']);
+    expect(vus[1]).toEqual(vus[0]);
+    expect(vus[2]).toEqual(vus[0]);
   });
 });

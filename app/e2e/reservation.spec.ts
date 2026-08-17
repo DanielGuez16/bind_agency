@@ -21,7 +21,9 @@ test('réserver un créneau, puis retrouver son code', async ({ page }) => {
   // produit, qui ne demande rien au démarrage.
   await expect(page.getByTestId('ecran-fil')).toBeVisible();
   await accorderLaPosition(page);
-  const salon = page.locator('[data-testid^="commerce-"]').first();
+  // `salon-` et non `commerce-` : la carte du fil n'existe plus, le mur pose
+  // des photos. Le parcours, lui, est le même — c'est ce que ce test éprouve.
+  const salon = page.locator('[data-testid^="salon-"]').first();
   await expect(salon, 'le fil est vide : aucun salon à réserver').toBeVisible();
   await salon.click();
 
@@ -47,7 +49,13 @@ test('réserver un créneau, puis retrouver son code', async ({ page }) => {
   await expect(page.getByTestId('ecran-code')).toHaveCount(0);
 
   // La réservation qu'on vient de prendre est dans la liste.
-  await expect(page.locator('[data-testid^="rangee-"]').first()).toBeVisible();
+  //
+  // **Cette assertion visait `rangee-`, et ne prouvait rien.** L'historique
+  // nomme ses lignes `reservation-<id>` ; `rangee-` était la grille du fil, dans
+  // l'autre onglet — resté monté dans le document, donc trouvé par `.first()`.
+  // Le test passait en regardant un écran qu'il ne visitait pas. Il ne l'a dit
+  // qu'en tombant, le jour où la grille a disparu.
+  await expect(page.locator('[data-testid^="reservation-"]').first()).toBeVisible();
 });
 
 test('une réservation confirmée mène à son code', async ({ page }) => {

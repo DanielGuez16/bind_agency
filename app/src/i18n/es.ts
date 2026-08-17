@@ -229,6 +229,15 @@ export const es: Catalogue = {
     // Le mot qui nomme ce qu'on ouvre. « Paliers » est un mot du produit
     // qu'il faut déjà connaître pour vouloir appuyer dessus.
     filPourquoi: 'Por qué',
+    murUnStory: 'una story',
+    murUnPost: 'un post',
+    murUnReel: 'un reel',
+    murRienVuDans: 'No has visto nada en',
+    murVoirLesSalons: 'Ver los {{count}} negocios',
+    murVoirLeSalon: 'Ver el negocio',
+    murToutVuDans: 'Has visto todo en {{rayon}} km',
+    murBilan: '{{salons}} negocios, {{quartiers}} barrios',
+    murRepartirDuHaut: 'Volver arriba',
     filRayon: '{{rayon}} km',
     filSansPosition: 'Necesitamos tu ubicación para mostrarte locales cercanos.',
     filAutoriser: 'Compartir mi ubicación',

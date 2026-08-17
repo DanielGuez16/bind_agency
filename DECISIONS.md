@@ -5346,3 +5346,123 @@ démonstration.
 en tête de fichier. Lire `MARCHE` à l'appel rompt le cycle et évite de recopier
 seize numéros de couverture — une seconde liste finit par donner à un salon
 renommé la photo d'un autre.
+## 2026-08-17 — Le mur : la position décide, pas nous
+
+Le fil créateur est refait. Un mur vertical, six positions dans un ordre fixe,
+huit salons puis une respiration.
+
+**Ce que la règle achète.** L'alternance de la première passe était une
+intention : quelqu'un décidait quel salon méritait le grand format. Ici la
+position décide — les salons arrivent triés par distance et se posent dans
+l'ordre. Le plus proche tombe en position 1, la plus grande, mais c'est un effet
+du tri et non une mise en avant. Aucun classement éditorial, aucun salon promu,
+et surtout **rien à défendre** le jour où un commerce demandera pourquoi il n'est
+pas en héros.
+
+Le placement vit dans `cycle.ts` et les trois arbitrages dans `regles.ts`, tous
+deux sans JSX. Ce n'est pas un découpage de confort : une décision qui vit dans
+du rendu se teste au travers de six composants, et celle-ci mérite d'être
+éprouvée seule. Le jour où quelqu'un ajoutera « si le salon est bien noté, on le
+monte », c'est un test qui dira non.
+
+**Une lecture de la planche corrigée avant qu'elle ne coûte un champ.** La
+conversation fonctionnelle s'apprêtait à demander à Daniel un champ serveur pour
+les quartiers *hors rayon*, que la respiration aurait annoncés. Ce n'est pas ce
+que fait le panneau : le salon juste en dessous **est** dans le quartier annoncé
+— Design l'écrit, « la respiration est la porte du quartier qu'elle annonce ».
+« Tu n'as rien vu dans » se dit donc de ce qui est **au-dessus**, pas de ce qui
+est hors du rayon. Ça se calcule côté app avec ce qui existait déjà.
+
+**L'échelle du texte ne suit pas la hauteur, et ça se lit comme une erreur.** La
+bande fait 150 points de haut et porte un nom de 22 ; le duo en fait 238 et n'en
+porte que 19. La place se mesure en **largeur** : la bande occupe tout l'écran,
+le duo le coupe en deux. Un premier test affirmait la décroissance par hauteur
+et tombait — c'est lui qui a révélé la vraie règle, et le commentaire du module
+la nomme maintenant pour que la surprise ne passe pas pour un défaut.
+
+**Une seule source d'image, la plus grande.** Le fil servait la vignette, bornée
+à 480 px : sur un héros de 520 points à fond perdu, elle serait agrandie trois
+fois. Le mur sert l'original, y compris là où un triptyque de 158 points s'en
+contenterait — deux sources donneraient deux cadrages du même salon selon sa
+position dans le cycle, ce que le mur existe précisément pour éviter.
+
+*Ce qui reste ouvert, et qui n'est pas à moi :* **Little Haiti**. La planche le
+montre, la liste fermée des neuf quartiers ne le contient pas. Deux choses
+validées se contredisent ; remonté à Daniel, et le mur code sur les neuf en
+attendant — le type ne permet rien d'autre.
+
+## 2026-08-17 — La correction de fonte, et les deux tiers qui ne s'appliquent pas
+
+Design a corrigé un défaut de chargement présent sur ses huit planches : axe
+`opsz` retiré, graisses épinglées, pile de repli qui atterrit sur un Didone.
+
+**Les deux premiers ne concernent pas le produit.** Il charge des TTF statiques
+par graisse depuis `@expo-google-fonts` : il n'y a pas d'axe à retirer, et les
+graisses sont épinglées par construction. Reprendre la correction telle quelle
+aurait été du bruit.
+
+**Le troisième s'applique, et seulement sur le web.** Sur appareil,
+`fontFamily` désigne un fichier chargé — il n'y a pas de repli. Sur le build
+web, le navigateur choisit seul tant que la fonte n'est pas arrivée, ou si elle
+ne vient jamais : sans pile il atterrit sur sa fonte par défaut, un Times. Un
+Didone du XVIIIe remplacé par une romaine de journal est le contraire de la
+direction, et ça se voit sur le premier écran. `nomDeFonte` compose donc la pile
+sur le web et rend le nom seul ailleurs.
+
+## 2026-08-17 — La pile de repli a cassé l'enregistrement des fontes
+
+Vingt minutes de CI rouge, et la leçon vaut plus que le correctif.
+
+`nomDeFonte` sert **deux choses** : écrire un style, et **enregistrer** la face
+auprès d'`expo-font`. J'y ai composé la pile de repli du web. Résultat : le
+produit enregistrait une famille appelée « BodoniModa_400Regular, Didot,
+"Playfair Display", Georgia, serif » — plus aucune face posée, et toutes les
+fontes du web perdues. `pileDeFontes` est désormais une fonction à part, employée
+là où l'on écrit un style et nulle part ailleurs.
+
+**Ce que la suite unitaire ne pouvait pas voir.** Ses quatorze tests lisaient le
+nom rendu ; aucun ne regardait ce qui part à l'enregistrement. C'est `e2e` qui
+l'a dit — « aucune face enregistrée : expo-font n'a rien posé ». Quatrième défaut
+que ce job trouve et qu'aucun test unitaire n'aurait vu.
+
+**Et la garde écrite pour ça a d'abord été inutile.** Première version : forcer
+`Platform.OS = 'web'` pour éprouver le chemin. La mutation qui remet la pile dans
+`nomDeFonte` **passait quand même** — jest rend en natif, où la pile ne
+s'applique pas, donc le test ne pouvait pas attraper le défaut pour lequel il
+était écrit. Mocker `react-native` entier pour forcer la plateforme a fait tomber
+un module natif sans rapport.
+
+La garde vérifie donc **où** le repli est composé, à la source : `pileDeFontes`
+le mentionne, `nomDeFonte` non, et il n'y a qu'une mention dans tout le fichier.
+Une garde de source est le bon outil quand la distinction tient à une plateforme
+que la suite ne joue pas — et la refuser par principe aurait laissé un test vert
+qui ne protège rien.
+
+## 2026-08-17 — Un test de bout en bout qui regardait un autre écran
+
+Trouvé en réécrivant le fil, et il vaut plus que sa correction.
+
+Le parcours de réservation vérifiait que la réservation prise apparaît bien dans
+l'historique :
+
+```ts
+await expect(page.getByTestId('ecran-historique')).toBeVisible();
+await expect(page.locator('[data-testid^="rangee-"]').first()).toBeVisible();
+```
+
+**`rangee-` n'a jamais été l'historique.** Celui-ci nomme ses lignes
+`reservation-<id>`. `rangee-` était la grille du **fil** — l'autre onglet, resté
+monté dans le document par la navigation web, donc trouvé par `.first()`. Le test
+passait en regardant un écran qu'il ne visitait pas, et il ne l'a dit qu'en
+tombant, le jour où la grille a disparu avec le mur.
+
+C'est le défaut le plus coûteux de la famille : non pas un test qui ne vérifie
+rien, mais un test qui vérifie **la mauvaise chose** et rassure sur la bonne. Une
+suite de bout en bout y est plus exposée qu'une suite unitaire, parce que tout
+l'arbre est là et qu'un sélecteur trop large trouve toujours quelque chose.
+
+*La leçon transposable :* dans un test de bout en bout, un sélecteur par préfixe
+doit être **porté par l'écran qu'on éprouve** — `page.getByTestId('ecran-x')
+.locator(…)` plutôt qu'un `page.locator(…)` global. Ce qui n'a pas été fait ici :
+la correction se contente de viser le bon identifiant, parce qu'élargir la règle
+à toute la suite dépasse ce lot. Noté dans `TASKS.md`.

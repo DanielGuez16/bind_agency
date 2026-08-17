@@ -232,6 +232,12 @@ describe('un écran ne peint jamais la teinte de marque lui-même', () => {
    * main dans un écran.
    */
   const TOLERES: Record<string, string> = {
+    'src/screens/mur/Mur.tsx':
+      "la pastille de distance et le badge reel : le mur pose sa propre borne, " +
+      "« une seule chose orange par photo », et un test l'éprouve dans les deux " +
+      "sens — jamais deux aplats de marque sur la même image, jamais aucun. " +
+      "C'est la règle du bloc accentué transposée à la photo, sans quoi un mur " +
+      "de vingt salons en porterait vingt.",
     'src/screens/PaliersScreen.tsx':
       "la pastille « next for you » : components.md §3 la prescrit en brand.500 à texte encre. " +
       "C'est une désignation — le prochain palier — et non un état : le §5 ne bannit le bloc " +

@@ -41,7 +41,7 @@
 import { useState } from 'react';
 import { Animated, Pressable, View } from 'react-native';
 
-import { useApi, type CommerceDuFil, type Fil } from '../api';
+import { useApi, type Fil } from '../api';
 import {
   Apparition,
   BusinessCard,
@@ -55,12 +55,12 @@ import {
 import { useEnfoncement } from '../components/Mouvement';
 import { useI18n } from '../i18n';
 import { formatNumber } from '../format';
-import { useGabarit } from '../shell/gabarit';
 import { size } from '../theme';
 import { messageDePosition } from '../shell/messageDePosition';
 import type { EtatDePosition } from '../shell/usePosition';
 import { en } from '../i18n/en';
 import { Ecran } from './Ecran';
+import { Mur, MurEnChargement } from './mur/Mur';
 import { RaisonDuVide } from './RaisonDuVide';
 import { messageDObstacle } from './obstacle';
 import { useRequete } from './useRequete';
@@ -110,19 +110,6 @@ export function FilScreen({
 }) {
   const { api } = useApi();
   const { t, locale } = useI18n();
-  const { large, largeur } = useGabarit();
-  /**
-   * Trois à quatre cartes par ligne, comme la règle v0.6 le pose.
-   *
-   * **Le défilement horizontal reste la forme mobile.** Sur grand écran il
-   * cache du contenu sans raison : on ne sait pas combien de salons attendent
-   * derrière le bord, et on ne pense pas à pousser. La grille les montre tous.
-   *
-   * Quatre seulement quand la place y est vraiment. À 1120 bornés, quatre
-   * cartes font 268 de large : c'est le minimum où une couverture 16:9 et deux
-   * lignes de texte tiennent encore ensemble.
-   */
-  const colonnes = !large ? 1 : largeur >= 1200 ? 4 : 3;
   const [rayonKm, setRayonKm] = useState(RAYONS_KM[0]);
 
   const requete = useRequete<Fil>(
@@ -187,6 +174,9 @@ export function FilScreen({
     <Ecran
       requete={requete}
       testID="ecran-fil"
+      // L'écran ne rend plus des cartes : le défaut à photo promettrait une
+      // forme que le mur n'a pas, et tout sauterait à l'arrivée des images.
+      squelette={<MurEnChargement />}
       entete={
         <EnTeteDEcran
           titre={t('parcours.filTitre')}
@@ -228,48 +218,11 @@ export function FilScreen({
               au palier story mais pas au reel doit savoir ce qui lui manque,
               sinon il croit avoir tout vu. */}
           <Obstacles fil={fil} />
-          {enRangees(fil.commerces, colonnes).map((rangee, numero) => (
-            <View
-              key={numero}
-              testID={`rangee-${numero}`}
-              style={{ flexDirection: 'row', gap: 16 }}
-            >
-              {rangee.map((commerce, rang) => {
-                if (commerce === null) {
-                  // Une place vide en fin de rangée. Sans elle, deux cartes
-                  // sur la dernière ligne s'étireraient à la moitié de la
-                  // largeur et cesseraient de ressembler aux autres.
-                  return <View key={`vide-${rang}`} style={{ flex: 1 }} />;
-                }
-                const item = commerce.items[0];
-                return (
-                  <View key={commerce.business_id} style={{ flex: 1 }}>
-                    <Apparition rang={numero * colonnes + rang}>
-              <BusinessCard
-                testID={`commerce-${commerce.business_id}`}
-                name={commerce.name}
-                // La couverture était simplement absente : la carte recevait
-                // toujours son repli, et le monogramme passait pour un défaut
-                // de chargement alors que rien n'était jamais demandé.
-                // La vignette, pas l'original : une carte de fil fait cent
-                // cinquante points de haut, et la photo sortait du téléphone
-                // du commerce à quatre mille pixels de large.
-                cover={urlImage(api.urlDeLaVignette(commerce.cover_photo_key))}
-                meta={commerce.address ?? ''}
-                serviceName={item.name}
-                serviceDuration={
-                  item.duration_minutes === null ? '' : `${item.duration_minutes} min`
-                }
-                tier={item.content_format}
-                distance={`${Math.round(commerce.distance_metres)} m`}
-                onPress={() => onOuvrirLeCommerce(commerce.business_id)}
-              />
-                    </Apparition>
-                  </View>
-                );
-              })}
-            </View>
-          ))}
+          {/* **Le mur.** Un salon occupe l'écran, six positions dans un
+              ordre fixe, huit salons puis une respiration. Les salons arrivent
+              triés par distance et se posent dans les positions : personne ne
+              décide quel salon mérite le grand format. */}
+          <Mur fil={fil} onOuvrir={onOuvrirLeCommerce} />
         </View>
       )}
     </Ecran>
@@ -369,23 +322,3 @@ function Obstacles({ fil }: { fil: Fil | null }) {
 }
 
 
-/**
- * Découpe la liste en rangées, en complétant la dernière.
- *
- * Les places vides sont explicites plutôt que laissées à `flexWrap` : avec le
- * retour à la ligne automatique, deux cartes sur la dernière rangée s'étirent
- * à la moitié de la largeur et cessent de ressembler aux autres. Une grille
- * dont la dernière ligne a des cartes plus grandes n'est plus une grille.
- */
-function enRangees(
-  commerces: CommerceDuFil[],
-  colonnes: number,
-): (CommerceDuFil | null)[][] {
-  const rangees: (CommerceDuFil | null)[][] = [];
-  for (let debut = 0; debut < commerces.length; debut += colonnes) {
-    const rangee: (CommerceDuFil | null)[] = commerces.slice(debut, debut + colonnes);
-    while (rangee.length < colonnes) rangee.push(null);
-    rangees.push(rangee);
-  }
-  return rangees;
-}
