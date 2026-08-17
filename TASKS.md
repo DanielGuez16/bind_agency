@@ -637,4 +637,11 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       et il n'est pas dans les neuf quartiers de la liste fermée. Deux choses
       validées se contredisent. Le mur code sur les neuf en attendant : le type
       ne permet rien d'autre. À trancher par Daniel*
+- [ ] **Borner les sélecteurs de la suite de bout en bout à leur écran**
+      *Trouvé en réécrivant le fil : le parcours de réservation vérifiait la
+      liste de l'historique avec `[data-testid^="rangee-"]`, qui était la grille
+      du **fil** — l'autre onglet, resté monté dans le document. Le test passait
+      en regardant un écran qu'il ne visitait pas. Corrigé sur ce cas ; la règle
+      générale — un sélecteur par préfixe se porte depuis `getByTestId('ecran-x')`
+      et non depuis `page` — reste à passer sur toute la suite*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire

@@ -5437,3 +5437,32 @@ le mentionne, `nomDeFonte` non, et il n'y a qu'une mention dans tout le fichier.
 Une garde de source est le bon outil quand la distinction tient à une plateforme
 que la suite ne joue pas — et la refuser par principe aurait laissé un test vert
 qui ne protège rien.
+
+## 2026-08-17 — Un test de bout en bout qui regardait un autre écran
+
+Trouvé en réécrivant le fil, et il vaut plus que sa correction.
+
+Le parcours de réservation vérifiait que la réservation prise apparaît bien dans
+l'historique :
+
+```ts
+await expect(page.getByTestId('ecran-historique')).toBeVisible();
+await expect(page.locator('[data-testid^="rangee-"]').first()).toBeVisible();
+```
+
+**`rangee-` n'a jamais été l'historique.** Celui-ci nomme ses lignes
+`reservation-<id>`. `rangee-` était la grille du **fil** — l'autre onglet, resté
+monté dans le document par la navigation web, donc trouvé par `.first()`. Le test
+passait en regardant un écran qu'il ne visitait pas, et il ne l'a dit qu'en
+tombant, le jour où la grille a disparu avec le mur.
+
+C'est le défaut le plus coûteux de la famille : non pas un test qui ne vérifie
+rien, mais un test qui vérifie **la mauvaise chose** et rassure sur la bonne. Une
+suite de bout en bout y est plus exposée qu'une suite unitaire, parce que tout
+l'arbre est là et qu'un sélecteur trop large trouve toujours quelque chose.
+
+*La leçon transposable :* dans un test de bout en bout, un sélecteur par préfixe
+doit être **porté par l'écran qu'on éprouve** — `page.getByTestId('ecran-x')
+.locator(…)` plutôt qu'un `page.locator(…)` global. Ce qui n'a pas été fait ici :
+la correction se contente de viser le bon identifiant, parce qu'élargir la règle
+à toute la suite dépasse ce lot. Noté dans `TASKS.md`.

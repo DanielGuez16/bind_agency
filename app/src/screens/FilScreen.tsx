@@ -41,7 +41,7 @@
 import { useState } from 'react';
 import { Animated, Pressable, View } from 'react-native';
 
-import { useApi, type CommerceDuFil, type Fil } from '../api';
+import { useApi, type Fil } from '../api';
 import {
   Apparition,
   BusinessCard,
@@ -55,7 +55,6 @@ import {
 import { useEnfoncement } from '../components/Mouvement';
 import { useI18n } from '../i18n';
 import { formatNumber } from '../format';
-import { useGabarit } from '../shell/gabarit';
 import { size } from '../theme';
 import { messageDePosition } from '../shell/messageDePosition';
 import type { EtatDePosition } from '../shell/usePosition';
@@ -111,19 +110,6 @@ export function FilScreen({
 }) {
   const { api } = useApi();
   const { t, locale } = useI18n();
-  const { large, largeur } = useGabarit();
-  /**
-   * Trois à quatre cartes par ligne, comme la règle v0.6 le pose.
-   *
-   * **Le défilement horizontal reste la forme mobile.** Sur grand écran il
-   * cache du contenu sans raison : on ne sait pas combien de salons attendent
-   * derrière le bord, et on ne pense pas à pousser. La grille les montre tous.
-   *
-   * Quatre seulement quand la place y est vraiment. À 1120 bornés, quatre
-   * cartes font 268 de large : c'est le minimum où une couverture 16:9 et deux
-   * lignes de texte tiennent encore ensemble.
-   */
-  const colonnes = !large ? 1 : largeur >= 1200 ? 4 : 3;
   const [rayonKm, setRayonKm] = useState(RAYONS_KM[0]);
 
   const requete = useRequete<Fil>(
@@ -336,23 +322,3 @@ function Obstacles({ fil }: { fil: Fil | null }) {
 }
 
 
-/**
- * Découpe la liste en rangées, en complétant la dernière.
- *
- * Les places vides sont explicites plutôt que laissées à `flexWrap` : avec le
- * retour à la ligne automatique, deux cartes sur la dernière rangée s'étirent
- * à la moitié de la largeur et cessent de ressembler aux autres. Une grille
- * dont la dernière ligne a des cartes plus grandes n'est plus une grille.
- */
-function enRangees(
-  commerces: CommerceDuFil[],
-  colonnes: number,
-): (CommerceDuFil | null)[][] {
-  const rangees: (CommerceDuFil | null)[][] = [];
-  for (let debut = 0; debut < commerces.length; debut += colonnes) {
-    const rangee: (CommerceDuFil | null)[] = commerces.slice(debut, debut + colonnes);
-    while (rangee.length < colonnes) rangee.push(null);
-    rangees.push(rangee);
-  }
-  return rangees;
-}
