@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=Outfit:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #EDE6DE; }
+  a { color: #A83E06; text-decoration: none; }
+  a:hover { color: #5E2204; }
+</style>
+</helmet>
+
+<section style="display:flex; flex-direction:column; gap:0; font-family:'Outfit',sans-serif;">
+  <div style="background:#17120E; padding:56px 56px 48px; display:flex; gap:56px; align-items:flex-start; flex-wrap:wrap;">
+    <div style="flex:1; min-width:520px; display:flex; flex-direction:column; gap:20px;">
+      <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:1.4px; color:#9A8D80;">LA MARQUE À 16 PIXELS · CORRIGÉE SUR LE VECTORIEL</div>
+      <div style="display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 14px;">
+        <span style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:48px; line-height:58px; font-weight:400; color:#FFFFFF;">Le point, et rien d'autre en</span>
+        <span style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-style:italic; font-size:48px; line-height:58px; font-weight:500; color:#F58A4A;">orange</span>
+      </div>
+      <div style="font-size:17px; line-height:27px; color:#CFC3B6; max-width:660px; text-wrap:pretty;">Le sigle des petites tailles est le « ! » seul, aux couleurs exactes du logotype : le fût suit les lettres, le point est orange. Ce n'est plus une silhouette qu'on reconnaît, c'est un <span style="font-weight:600;">rapport de couleur</span> — le même que celui du logo en grand.</div>
+      <div style="font-size:15px; line-height:24px; color:#9A8D80; max-width:660px; text-wrap:pretty;">Le fond est encre et non orange. Sur une tuile orange le point disparaîtrait, et c'est lui la marque.</div>
+    </div>
+
+    <div style="flex:none; display:flex; flex-direction:column; gap:14px; align-items:center;">
+      <div style="width:256px; height:256px; background:#17120E; border:1px solid #3A3128; position:relative;">
+        <div style="position:absolute; left:37.5%; top:12.5%; width:25%; height:37.5%; background:#FFFFFF;"></div>
+        <div style="position:absolute; left:37.5%; top:62.5%; width:25%; height:25%; background:#FF5E00;"></div>
+      </div>
+      <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#9A8D80;">256 · L'ÉTUDE</span>
+    </div>
+  </div>
+</section>
+
+<section style="display:flex; flex-direction:column; gap:24px; padding:56px 56px 0; font-family:'Outfit',sans-serif;">
+  <div style="background:#FFFFFF; border:1px solid #E2D9CF; border-left:3px solid #FF5E00; padding:26px 30px; display:flex; gap:22px; align-items:flex-start; max-width:1100px;">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="flex:none; margin-top:4px;"><path d="M12 3.5L21.5 20H2.5z" stroke="#A83E06" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M12 9.5v4.2" stroke="#A83E06" stroke-width="2" stroke-linecap="round"></path><circle cx="12" cy="16.6" r="1.1" fill="#A83E06"></circle></svg>
+    <div style="flex:1; display:flex; flex-direction:column; gap:10px;">
+      <span style="font-size:19px; line-height:27px; font-weight:600; color:#17120E;">Ma règle « le point n'est jamais coloré à part » était fausse, et le premier dessin en découlait</span>
+      <span style="font-size:15px; line-height:24px; color:#3A3128; max-width:820px; text-wrap:pretty;">Je l'avais déduite des visuels Instagram, où tout est blanc sur orange — un fond orange ne peut pas montrer un point orange, donc l'information était invisible dans la seule source que j'avais. Le vectoriel dit l'inverse : lettres noires, point orange, et c'est la seule couleur du logotype.</span>
+      <span style="font-size:15px; line-height:24px; color:#3A3128; max-width:820px; text-wrap:pretty;">Le premier sigle évidait le « ! » dans un bloc orange. Il était cohérent avec la règle fausse, donc il tombe avec elle : il perdait précisément ce qui fait la marque.</span>
+    </div>
+  </div>
+
+  <div style="display:flex; flex-direction:column; gap:8px; max-width:840px; padding-top:8px;">
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:1.4px; color:#6B5F54;">LA CONSTRUCTION</div>
+    <div style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:36px; line-height:44px; font-weight:400; color:#17120E;">Une grille de seize, six valeurs entières</div>
+    <div style="font-size:16px; line-height:25px; color:#3A3128; max-width:740px; text-wrap:pretty;">La géométrie ne change pas, seules les couleurs changent. Tout est posé en unités de la grille de 16, donc chaque cote tombe sur un pixel entier à 16, 32, 64 et 128 : la forme est <span style="font-weight:600;">la même</span> aux quatre tailles au lieu d'être arrondie quatre fois différemment.</div>
+  </div>
+
+  <div style="display:flex; gap:36px; align-items:flex-start; flex-wrap:wrap;">
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="width:384px; height:384px; background:#17120E; position:relative; background-image:repeating-linear-gradient(to right, rgba(255,255,255,0.14) 0 1px, transparent 1px 24px), repeating-linear-gradient(to bottom, rgba(255,255,255,0.14) 0 1px, transparent 1px 24px);">
+        <div style="position:absolute; left:37.5%; top:12.5%; width:25%; height:37.5%; background:#FFFFFF;"></div>
+        <div style="position:absolute; left:37.5%; top:62.5%; width:25%; height:25%; background:#FF5E00;"></div>
+        <div style="position:absolute; left:0; top:0; width:37.5%; height:12.5%; border-right:1px dashed rgba(255,255,255,0.45); border-bottom:1px dashed rgba(255,255,255,0.45);"></div>
+      </div>
+      <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#6B5F54;">UNE CASE = UNE UNITÉ = UN PIXEL À 16</span>
+    </div>
+
+    <div style="flex:1; min-width:440px; background:#FFFFFF; border:1px solid #E2D9CF;">
+      <div style="box-sizing:border-box; min-height:46px; padding:0 20px; border-bottom:1px solid #E2D9CF; display:flex; align-items:center; gap:12px;">
+        <span style="flex:1; font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#6B5F54;">COTE</span>
+        <span style="width:74px; text-align:right; font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#6B5F54;">UNITÉS</span>
+        <span style="width:112px; text-align:right; font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#6B5F54;">COULEUR</span>
+      </div>
+      <div style="box-sizing:border-box; min-height:46px; padding:0 20px; border-bottom:1px solid #E2D9CF; display:flex; align-items:center; gap:12px;">
+        <span style="flex:1; font-size:14px; line-height:20px; color:#17120E;">Tuile, à fond perdu</span>
+        <span style="width:74px; text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; color:#17120E;">16 × 16</span>
+        <span style="width:112px; text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; color:#6B5F54;">#17120E</span>
+      </div>
+      <div style="box-sizing:border-box; min-height:46px; padding:0 20px; border-bottom:1px solid #E2D9CF; display:flex; align-items:center; gap:12px;">
+        <span style="flex:1; font-size:14px; line-height:20px; color:#17120E;">Fût du « ! »</span>
+        <span style="width:74px; text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; color:#17120E;">4 × 6</span>
+        <span style="width:112px; text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; color:#6B5F54;">#FFFFFF</span>
+      </div>
+      <div style="box-sizing:border-box; min-height:46px; padding:0 20px; border-bottom:1px solid #E2D9CF; display:flex; align-items:center; gap:12px;">
+        <span style="flex:1; font-size:14px; line-height:20px; color:#17120E;">Blanc entre fût et point</span>
+        <span style="width:74px; text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; color:#17120E;">2</span>
+        <span style="width:112px; text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; color:#6B5F54;">tuile</span>
+      </div>
+      <div style="box-sizing:border-box; min-height:46px; padding:0 20px; border-bottom:1px solid #E2D9CF; display:flex; align-items:center; gap:12px;">
+        <span style="flex:1; font-size:14px; line-height:20px; font-weight:600; color:#17120E;">Point du « ! »</span>
+        <span style="width:74px; text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; color:#17120E;">4 × 4</span>
+        <span style="width:112px; text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; color:#A83E06;">#FF5E00</span>
+      </div>
+      <div style="box-sizing:border-box; min-height:46px; padding:0 20px; display:flex; align-items:center; gap:12px;">
+        <span style="flex:1; font-size:14px; line-height:20px; color:#17120E;">Marge, haut et bas</span>
+        <span style="width:74px; text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; color:#17120E;">2</span>
+        <span style="width:112px; text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; color:#6B5F54;">tuile</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex; gap:24px; flex-wrap:wrap;">
+    <div style="flex:1; min-width:340px; background:#EDE6DE; border-left:3px solid #17120E; padding:22px 24px; display:flex; flex-direction:column; gap:9px;">
+      <span style="font-size:16px; line-height:23px; font-weight:600; color:#17120E;">La palette passe de deux à trois couleurs</span>
+      <span style="font-size:14px; line-height:21px; color:#3A3128; text-wrap:pretty;">La contrainte tombe avec la correction, et elle ne peut pas être sauvée : le sens du logotype <span style="font-weight:600;">est</span> le contraste entre les lettres et le point. Une palette qui ne porte pas les deux ne porte pas la marque. Un PNG indexé à quatre entrées ne coûte rien de plus qu'à deux.</span>
+    </div>
+    <div style="flex:1; min-width:340px; background:#FFFFFF; border:1px solid #E2D9CF; padding:22px 24px; display:flex; flex-direction:column; gap:9px;">
+      <span style="font-size:16px; line-height:23px; font-weight:600; color:#17120E;">Le point reste carré</span>
+      <span style="font-size:14px; line-height:21px; color:#3A3128; text-wrap:pretty;">Il est rond sur le vectoriel. À quatre pixels sans lissage, un rond est un carré à coins mordus qui tremble d'une taille à l'autre — et c'est le seul élément coloré, donc le seul qu'on ne peut pas se permettre de laisser trembler. Il redevient rond dès que le logotype reprend, au-delà de 128.</span>
+    </div>
+    <div style="flex:1; min-width:340px; background:#FFFFFF; border:1px solid #E2D9CF; padding:22px 24px; display:flex; flex-direction:column; gap:9px;">
+      <span style="font-size:16px; line-height:23px; font-weight:600; color:#17120E;">Le fût est trapu, et c'est voulu</span>
+      <span style="font-size:14px; line-height:21px; color:#3A3128; text-wrap:pretty;">Un vrai « ! » a un fût quatre fois plus haut que large. À seize pixels ce rapport donne un fût d'un pixel, qui disparaît. Six sur quatre est le rapport le plus élancé qui survive : c'est précisément pourquoi ce dessin est distinct et non une réduction.</span>
+    </div>
+  </div>
+</section>
+
+<section style="display:flex; flex-direction:column; gap:28px; padding:56px 56px 0; font-family:'Outfit',sans-serif;">
+  <div style="display:flex; flex-direction:column; gap:8px; max-width:840px;">
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:1.4px; color:#6B5F54;">LES QUATRE TAILLES, À L'ÉCHELLE</div>
+    <div style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:36px; line-height:44px; font-weight:400; color:#17120E;">La même forme, quatre fois</div>
+  </div>
+
+  <div style="display:flex; gap:44px; align-items:flex-end; flex-wrap:wrap;">
+    <div style="display:flex; flex-direction:column; gap:12px; align-items:center;">
+      <div style="width:16px; height:16px; background:#17120E; position:relative;">
+        <div style="position:absolute; left:37.5%; top:12.5%; width:25%; height:37.5%; background:#FFFFFF;"></div>
+        <div style="position:absolute; left:37.5%; top:62.5%; width:25%; height:25%; background:#FF5E00;"></div>
+      </div>
+      <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#6B5F54;">16</span>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:12px; align-items:center;">
+      <div style="width:32px; height:32px; background:#17120E; position:relative;">
+        <div style="position:absolute; left:37.5%; top:12.5%; width:25%; height:37.5%; background:#FFFFFF;"></div>
+        <div style="position:absolute; left:37.5%; top:62.5%; width:25%; height:25%; background:#FF5E00;"></div>
+      </div>
+      <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#6B5F54;">32</span>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:12px; align-items:center;">
+      <div style="width:64px; height:64px; background:#17120E; position:relative;">
+        <div style="position:absolute; left:37.5%; top:12.5%; width:25%; height:37.5%; background:#FFFFFF;"></div>
+        <div style="position:absolute; left:37.5%; top:62.5%; width:25%; height:25%; background:#FF5E00;"></div>
+      </div>
+      <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#6B5F54;">64</span>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:12px; align-items:center;">
+      <div style="width:128px; height:128px; background:#17120E; position:relative;">
+        <div style="position:absolute; left:37.5%; top:12.5%; width:25%; height:37.5%; background:#FFFFFF;"></div>
+        <div style="position:absolute; left:37.5%; top:62.5%; width:25%; height:25%; background:#FF5E00;"></div>
+      </div>
+      <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#6B5F54;">128 · TUILE D'APPLICATION</span>
+    </div>
+  </div>
+
+  <div style="display:flex; gap:24px; flex-wrap:wrap; align-items:stretch;">
+    <div style="flex:1; min-width:460px; background:#FFFFFF; border:1px solid #E2D9CF; padding:24px; display:flex; flex-direction:column; gap:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#6B5F54;">DANS UNE BARRE D'ONGLETS, À 16</span>
+      <div style="background:#EDE6DE; padding:10px; display:flex; gap:0;">
+        <div style="flex:1; background:#FFFFFF; padding:9px 12px; display:flex; align-items:center; gap:9px; border-right:1px solid #E2D9CF;">
+          <div style="width:16px; height:16px; flex:none; background:#CFC3B6;"></div>
+          <span style="font-size:12px; line-height:16px; color:#6B5F54; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Inbox</span>
+        </div>
+        <div style="flex:1; background:#FFFFFF; padding:9px 12px; display:flex; align-items:center; gap:9px; border-right:1px solid #E2D9CF;">
+          <div style="width:16px; height:16px; flex:none; border-radius:999px; background:#9A8D80;"></div>
+          <span style="font-size:12px; line-height:16px; color:#6B5F54; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Calendar</span>
+        </div>
+        <div style="flex:1; background:#F7F3EF; padding:9px 12px; display:flex; align-items:center; gap:9px; border-right:1px solid #E2D9CF;">
+          <div style="width:16px; height:16px; flex:none; background:#17120E; position:relative;">
+            <div style="position:absolute; left:37.5%; top:12.5%; width:25%; height:37.5%; background:#FFFFFF;"></div>
+            <div style="position:absolute; left:37.5%; top:62.5%; width:25%; height:25%; background:#FF5E00;"></div>
+          </div>
+          <span style="font-size:12px; line-height:16px; font-weight:600; color:#17120E; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">B!ND</span>
+        </div>
+        <div style="flex:1; background:#FFFFFF; padding:9px 12px; display:flex; align-items:center; gap:9px;">
+          <div style="width:16px; height:16px; flex:none; background:#3A3128;"></div>
+          <span style="font-size:12px; line-height:16px; color:#6B5F54; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Docs</span>
+        </div>
+      </div>
+      <span style="font-size:14px; line-height:21px; color:#3A3128; text-wrap:pretty;">L'épreuve qui compte. La tuile encre tient sur un onglet clair comme sur un onglet sombre, et l'orange du point est la seule couleur saturée de la rangée.</span>
+    </div>
+
+    <div style="width:420px; flex:none; background:#FFFFFF; border:1px solid #E2D9CF; padding:24px; display:flex; flex-direction:column; gap:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#6B5F54;">CE QUI A ÉTÉ ÉCARTÉ</span>
+      <div style="display:flex; gap:16px; align-items:center;">
+        <div style="width:64px; height:64px; flex:none; background:#FF5E00; position:relative;">
+          <div style="position:absolute; left:37.5%; top:12.5%; width:25%; height:37.5%; background:#17120E;"></div>
+          <div style="position:absolute; left:37.5%; top:62.5%; width:25%; height:25%; background:#17120E;"></div>
+        </div>
+        <div style="flex:1; display:flex; flex-direction:column; gap:2px;">
+          <span style="font-size:14px; line-height:20px; font-weight:600; color:#17120E;">Le « ! » évidé dans le bloc</span>
+          <span style="font-size:13px; line-height:19px; color:#6B5F54; text-wrap:pretty;">Mon premier dessin. Il découlait de la règle fausse et perdait le rapport de couleur.</span>
+        </div>
+      </div>
+      <div style="display:flex; gap:16px; align-items:center;">
+        <div style="width:64px; height:64px; flex:none; background:#FFFFFF; border:1px solid #E2D9CF; position:relative;">
+          <div style="position:absolute; left:37.5%; top:12.5%; width:25%; height:37.5%; background:#17120E;"></div>
+          <div style="position:absolute; left:37.5%; top:62.5%; width:25%; height:25%; background:#FF5E00;"></div>
+        </div>
+        <div style="flex:1; display:flex; flex-direction:column; gap:2px;">
+          <span style="font-size:14px; line-height:20px; font-weight:600; color:#17120E;">La tuile blanche</span>
+          <span style="font-size:13px; line-height:19px; color:#6B5F54; text-wrap:pretty;">Le plus fidèle au logo, mais le blanc se dissout sur un onglet clair et le signe n'a plus de bord.</span>
+        </div>
+      </div>
+      <div style="display:flex; gap:16px; align-items:center;">
+        <div style="width:64px; height:64px; flex:none; background:#17120E; display:flex; align-items:center; justify-content:center;">
+          <span style="font-size:15px; line-height:15px; font-weight:300; letter-spacing:0.3px; color:#FFFFFF;">B!ND</span>
+        </div>
+        <div style="flex:1; display:flex; flex-direction:column; gap:2px;">
+          <span style="font-size:14px; line-height:20px; font-weight:600; color:#17120E;">Le logotype réduit</span>
+          <span style="font-size:13px; line-height:19px; color:#6B5F54; text-wrap:pretty;">Quatre pixels par lettre. Illisible même à 64.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="display:flex; flex-direction:column; gap:28px; padding:56px 56px 0; font-family:'Outfit',sans-serif;">
+  <div style="display:flex; flex-direction:column; gap:8px; max-width:840px;">
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:1.4px; color:#6B5F54;">LE LOGOTYPE DANS LE PRODUIT</div>
+    <div style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:36px; line-height:44px; font-weight:400; color:#17120E;">Deux encres, aucune signature</div>
+    <div style="font-size:16px; line-height:25px; color:#3A3128; max-width:740px; text-wrap:pretty;">Les lettres prennent l'encre du fond — <span style="font-family:'IBM Plex Mono',monospace; font-size:14px;">ink.default</span> sur os et papier, blanc sur encre, satin et orange. Seul le <span style="font-weight:600;">point</span> est <span style="font-family:'IBM Plex Mono',monospace; font-size:14px;">brand.500</span> : le fût du « ! » suit les lettres. C'est ce qui garde le caractère lisible sur le satin, où seul le point passe en ton sur ton.</div>
+  </div>
+
+  <div style="display:flex; gap:20px; flex-wrap:wrap;">
+    <div style="flex:1; min-width:250px; background:#F7F3EF; border:1px solid #E2D9CF; height:150px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;">
+      <svg viewBox="50 26 1991 682" style="height:46px; width:134px; display:block;" role="img" aria-label="B!ND"><g transform="translate(0,760) scale(0.1,-0.1)" fill-rule="evenodd"><path fill="#17120E" d="M6460 7290 c19 -1773 58 -4792 63 -4796 3 -4 168 -9 366 -12 l360 -5 5 34 c6 41 159 4810 154 4814 -2 2 -216 5 -476 7 l-472 3 0 -45z M8830 3925 l0 -3385 440 0 440 0 2 2685 3 2685 1770 -2685 1770 -2685 1865 0 c1860 0 2059 3 2335 36 396 47 784 144 1095 276 265 112 551 281 760 449 540 433 904 1072 1044 1829 51 277 61 399 61 775 0 276 -4 381 -18 495 -60 480 -164 841 -350 1205 -75 147 -226 381 -322 500 -396 492 -957 848 -1628 1035 -290 80 -607 130 -952 150 -118 6 -892 11 -2038 13 l-1847 2 0 -2679 c0 -1873 -3 -2677 -11 -2669 -5 5 -803 1211 -1773 2679 l-1763 2669 -442 3 -441 2 0 -3385z m8516 2627 c554 -79 957 -240 1305 -520 97 -78 278 -266 355 -368 267 -355 426 -782 491 -1314 24 -205 24 -678 0 -880 -69 -563 -236 -991 -530 -1355 -84 -104 -249 -263 -360 -346 -373 -280 -865 -445 -1452 -489 -87 -6 -683 -10 -1577 -10 l-1438 0 0 2655 0 2656 1528 -4 c1505 -3 1529 -3 1678 -25z M500 3920 l0 -3381 1408 4 c1519 4 1471 2 1747 58 454 91 866 311 1129 601 198 218 338 492 396 770 84 407 33 809 -146 1159 -226 442 -598 756 -1024 865 -58 14 -106 27 -107 29 -2 1 36 16 85 35 197 74 410 201 567 337 256 223 418 508 481 848 15 80 19 147 19 340 -1 211 -3 253 -23 345 -60 276 -170 501 -345 708 -227 268 -629 495 -1039 586 -148 32 -293 54 -452 66 -77 6 -648 10 -1412 10 l-1284 0 0 -3380z m2725 2622 c125 -24 297 -77 376 -117 364 -184 559 -512 559 -941 0 -278 -69 -497 -215 -682 -157 -198 -404 -332 -729 -394 -106 -20 -146 -21 -973 -25 l-863 -4 0 1096 0 1096 868 -4 c832 -3 871 -4 977 -25z m-34 -2907 c492 -65 848 -291 1025 -650 137 -278 159 -633 58 -945 -115 -358 -400 -605 -823 -711 -220 -56 -283 -59 -1218 -59 l-853 0 0 1190 0 1190 853 0 c677 0 874 -3 958 -15z"></path><path fill="#FF5E00" d="M6835 1714 c-11 -2 -45 -9 -75 -15 -117 -24 -249 -110 -326 -213 -96 -127 -119 -200 -119 -371 0 -109 4 -140 23 -196 65 -188 224 -336 415 -386 35 -9 102 -16 157 -16 165 0 288 51 405 168 121 120 175 255 175 435 0 108 -21 194 -67 283 -69 131 -190 237 -322 283 -64 22 -220 39 -266 28z"></path></g></svg>
+      <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#6B5F54;">SUR OS</span>
+    </div>
+    <div style="flex:1; min-width:250px; background:#17120E; height:150px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;">
+      <svg viewBox="50 26 1991 682" style="height:46px; width:134px; display:block;" role="img" aria-label="B!ND"><g transform="translate(0,760) scale(0.1,-0.1)" fill-rule="evenodd"><path fill="#FFFFFF" d="M6460 7290 c19 -1773 58 -4792 63 -4796 3 -4 168 -9 366 -12 l360 -5 5 34 c6 41 159 4810 154 4814 -2 2 -216 5 -476 7 l-472 3 0 -45z M8830 3925 l0 -3385 440 0 440 0 2 2685 3 2685 1770 -2685 1770 -2685 1865 0 c1860 0 2059 3 2335 36 396 47 784 144 1095 276 265 112 551 281 760 449 540 433 904 1072 1044 1829 51 277 61 399 61 775 0 276 -4 381 -18 495 -60 480 -164 841 -350 1205 -75 147 -226 381 -322 500 -396 492 -957 848 -1628 1035 -290 80 -607 130 -952 150 -118 6 -892 11 -2038 13 l-1847 2 0 -2679 c0 -1873 -3 -2677 -11 -2669 -5 5 -803 1211 -1773 2679 l-1763 2669 -442 3 -441 2 0 -3385z m8516 2627 c554 -79 957 -240 1305 -520 97 -78 278 -266 355 -368 267 -355 426 -782 491 -1314 24 -205 24 -678 0 -880 -69 -563 -236 -991 -530 -1355 -84 -104 -249 -263 -360 -346 -373 -280 -865 -445 -1452 -489 -87 -6 -683 -10 -1577 -10 l-1438 0 0 2655 0 2656 1528 -4 c1505 -3 1529 -3 1678 -25z M500 3920 l0 -3381 1408 4 c1519 4 1471 2 1747 58 454 91 866 311 1129 601 198 218 338 492 396 770 84 407 33 809 -146 1159 -226 442 -598 756 -1024 865 -58 14 -106 27 -107 29 -2 1 36 16 85 35 197 74 410 201 567 337 256 223 418 508 481 848 15 80 19 147 19 340 -1 211 -3 253 -23 345 -60 276 -170 501 -345 708 -227 268 -629 495 -1039 586 -148 32 -293 54 -452 66 -77 6 -648 10 -1412 10 l-1284 0 0 -3380z m2725 2622 c125 -24 297 -77 376 -117 364 -184 559 -512 559 -941 0 -278 -69 -497 -215 -682 -157 -198 -404 -332 -729 -394 -106 -20 -146 -21 -973 -25 l-863 -4 0 1096 0 1096 868 -4 c832 -3 871 -4 977 -25z m-34 -2907 c492 -65 848 -291 1025 -650 137 -278 159 -633 58 -945 -115 -358 -400 -605 -823 -711 -220 -56 -283 -59 -1218 -59 l-853 0 0 1190 0 1190 853 0 c677 0 874 -3 958 -15z"></path><path fill="#FF5E00" d="M6835 1714 c-11 -2 -45 -9 -75 -15 -117 -24 -249 -110 -326 -213 -96 -127 -119 -200 -119 -371 0 -109 4 -140 23 -196 65 -188 224 -336 415 -386 35 -9 102 -16 157 -16 165 0 288 51 405 168 121 120 175 255 175 435 0 108 -21 194 -67 283 -69 131 -190 237 -322 283 -64 22 -220 39 -266 28z"></path></g></svg>
+      <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#9A8D80;">SUR ENCRE</span>
+    </div>
+    <div style="flex:1; min-width:250px; height:150px; background:radial-gradient(120% 90% at 22% 18%, #FBB98A 0%, #F58A4A 34%, #FF5E00 62%, #A83E06 100%); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;">
+      <div style="background:#17120E; padding:14px 18px;"><svg viewBox="50 26 1991 682" style="height:46px; width:134px; display:block;" role="img" aria-label="B!ND"><g transform="translate(0,760) scale(0.1,-0.1)" fill-rule="evenodd"><path fill="#FFFFFF" d="M6460 7290 c19 -1773 58 -4792 63 -4796 3 -4 168 -9 366 -12 l360 -5 5 34 c6 41 159 4810 154 4814 -2 2 -216 5 -476 7 l-472 3 0 -45z M8830 3925 l0 -3385 440 0 440 0 2 2685 3 2685 1770 -2685 1770 -2685 1865 0 c1860 0 2059 3 2335 36 396 47 784 144 1095 276 265 112 551 281 760 449 540 433 904 1072 1044 1829 51 277 61 399 61 775 0 276 -4 381 -18 495 -60 480 -164 841 -350 1205 -75 147 -226 381 -322 500 -396 492 -957 848 -1628 1035 -290 80 -607 130 -952 150 -118 6 -892 11 -2038 13 l-1847 2 0 -2679 c0 -1873 -3 -2677 -11 -2669 -5 5 -803 1211 -1773 2679 l-1763 2669 -442 3 -441 2 0 -3385z m8516 2627 c554 -79 957 -240 1305 -520 97 -78 278 -266 355 -368 267 -355 426 -782 491 -1314 24 -205 24 -678 0 -880 -69 -563 -236 -991 -530 -1355 -84 -104 -249 -263 -360 -346 -373 -280 -865 -445 -1452 -489 -87 -6 -683 -10 -1577 -10 l-1438 0 0 2655 0 2656 1528 -4 c1505 -3 1529 -3 1678 -25z M500 3920 l0 -3381 1408 4 c1519 4 1471 2 1747 58 454 91 866 311 1129 601 198 218 338 492 396 770 84 407 33 809 -146 1159 -226 442 -598 756 -1024 865 -58 14 -106 27 -107 29 -2 1 36 16 85 35 197 74 410 201 567 337 256 223 418 508 481 848 15 80 19 147 19 340 -1 211 -3 253 -23 345 -60 276 -170 501 -345 708 -227 268 -629 495 -1039 586 -148 32 -293 54 -452 66 -77 6 -648 10 -1412 10 l-1284 0 0 -3380z m2725 2622 c125 -24 297 -77 376 -117 364 -184 559 -512 559 -941 0 -278 -69 -497 -215 -682 -157 -198 -404 -332 -729 -394 -106 -20 -146 -21 -973 -25 l-863 -4 0 1096 0 1096 868 -4 c832 -3 871 -4 977 -25z m-34 -2907 c492 -65 848 -291 1025 -650 137 -278 159 -633 58 -945 -115 -358 -400 -605 -823 -711 -220 -56 -283 -59 -1218 -59 l-853 0 0 1190 0 1190 853 0 c677 0 874 -3 958 -15z"></path><path fill="#FF5E00" d="M6835 1714 c-11 -2 -45 -9 -75 -15 -117 -24 -249 -110 -326 -213 -96 -127 -119 -200 -119 -371 0 -109 4 -140 23 -196 65 -188 224 -336 415 -386 35 -9 102 -16 157 -16 165 0 288 51 405 168 121 120 175 255 175 435 0 108 -21 194 -67 283 -69 131 -190 237 -322 283 -64 22 -220 39 -266 28z"></path></g></svg></div>
+      <span style="background:#17120E; padding:3px 8px; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#FFFFFF;">SUR SATIN · EN CARTOUCHE</span>
+    </div>
+    <div style="flex:1; min-width:250px; background:#FFFFFF; border:1px solid #E2D9CF; height:150px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;">
+      <div style="display:flex; align-items:flex-end; opacity:0.4;">
+        <svg viewBox="50 26 1991 682" style="height:22px; width:64px; display:block; flex:none;" role="img" aria-label="B!ND"><g transform="translate(0,760) scale(0.1,-0.1)" fill-rule="evenodd"><path fill="#17120E" d="M6460 7290 c19 -1773 58 -4792 63 -4796 3 -4 168 -9 366 -12 l360 -5 5 34 c6 41 159 4810 154 4814 -2 2 -216 5 -476 7 l-472 3 0 -45z M8830 3925 l0 -3385 440 0 440 0 2 2685 3 2685 1770 -2685 1770 -2685 1865 0 c1860 0 2059 3 2335 36 396 47 784 144 1095 276 265 112 551 281 760 449 540 433 904 1072 1044 1829 51 277 61 399 61 775 0 276 -4 381 -18 495 -60 480 -164 841 -350 1205 -75 147 -226 381 -322 500 -396 492 -957 848 -1628 1035 -290 80 -607 130 -952 150 -118 6 -892 11 -2038 13 l-1847 2 0 -2679 c0 -1873 -3 -2677 -11 -2669 -5 5 -803 1211 -1773 2679 l-1763 2669 -442 3 -441 2 0 -3385z m8516 2627 c554 -79 957 -240 1305 -520 97 -78 278 -266 355 -368 267 -355 426 -782 491 -1314 24 -205 24 -678 0 -880 -69 -563 -236 -991 -530 -1355 -84 -104 -249 -263 -360 -346 -373 -280 -865 -445 -1452 -489 -87 -6 -683 -10 -1577 -10 l-1438 0 0 2655 0 2656 1528 -4 c1505 -3 1529 -3 1678 -25z M500 3920 l0 -3381 1408 4 c1519 4 1471 2 1747 58 454 91 866 311 1129 601 198 218 338 492 396 770 84 407 33 809 -146 1159 -226 442 -598 756 -1024 865 -58 14 -106 27 -107 29 -2 1 36 16 85 35 197 74 410 201 567 337 256 223 418 508 481 848 15 80 19 147 19 340 -1 211 -3 253 -23 345 -60 276 -170 501 -345 708 -227 268 -629 495 -1039 586 -148 32 -293 54 -452 66 -77 6 -648 10 -1412 10 l-1284 0 0 -3380z m2725 2622 c125 -24 297 -77 376 -117 364 -184 559 -512 559 -941 0 -278 -69 -497 -215 -682 -157 -198 -404 -332 -729 -394 -106 -20 -146 -21 -973 -25 l-863 -4 0 1096 0 1096 868 -4 c832 -3 871 -4 977 -25z m-34 -2907 c492 -65 848 -291 1025 -650 137 -278 159 -633 58 -945 -115 -358 -400 -605 -823 -711 -220 -56 -283 -59 -1218 -59 l-853 0 0 1190 0 1190 853 0 c677 0 874 -3 958 -15z"></path><path fill="#FF5E00" d="M6835 1714 c-11 -2 -45 -9 -75 -15 -117 -24 -249 -110 -326 -213 -96 -127 -119 -200 -119 -371 0 -109 4 -140 23 -196 65 -188 224 -336 415 -386 35 -9 102 -16 157 -16 165 0 288 51 405 168 121 120 175 255 175 435 0 108 -21 194 -67 283 -69 131 -190 237 -322 283 -64 22 -220 39 -266 28z"></path></g></svg>
+        <span style="font-size:11px; line-height:14px; font-weight:300; letter-spacing:6px; color:#17120E; padding:0 0 5px 8px;">AGENCY</span>
+      </div>
+      <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#A31B2F;">RETIRÉ · AUCUNE SIGNATURE</span>
+    </div>
+  </div>
+</section>
+
+<section style="display:flex; flex-direction:column; gap:24px; padding:56px 56px 72px; font-family:'Outfit',sans-serif;">
+  <div style="background:#17120E; padding:38px 42px; display:flex; flex-direction:column; gap:24px;">
+    <div style="display:flex; flex-direction:column; gap:10px; max-width:840px;">
+      <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:1.4px; color:#F58A4A;">VOTRE QUESTION · LA VERSION BLANCHE</div>
+      <div style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:34px; line-height:44px; font-weight:400; color:#FFFFFF;">Demandez-la à la fondatrice, et demandez-en trois</div>
+      <div style="font-size:16px; line-height:25px; color:#CFC3B6; max-width:800px; text-wrap:pretty;">Je peux produire une version blanche utilisable en maquette dès maintenant, et les cadres ci-dessus le montrent. Mais ce que vous m'avez envoyé est un <span style="font-weight:600;">PNG</span> : inverser des lettres tramées donne des bords sales dès qu'on agrandit, et le « D » à coupe oblique n'y survit pas. Un logo se livre en vectoriel, pas en pixels retouchés.</div>
+    </div>
+    <div style="display:flex; gap:0; flex-wrap:wrap; border:1px solid #3A3128;">
+      <div style="flex:1; min-width:300px; border-right:1px solid #3A3128; padding:22px 24px; display:flex; flex-direction:column; gap:7px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#9A8D80;">À DEMANDER · 1</div>
+        <div style="font-size:15px; line-height:23px; font-weight:600; color:#FFFFFF;">Le logotype sans signature</div>
+        <div style="font-size:14px; line-height:21px; color:#9A8D80; text-wrap:pretty;">En <span style="font-family:'IBM Plex Mono',monospace; font-size:12px;">.svg</span> ou <span style="font-family:'IBM Plex Mono',monospace; font-size:12px;">.ai</span>, tracés vectorisés, sans « CRÉATEUR DE LIEN ». C'est l'asset principal, tout le reste en découle.</div>
+      </div>
+      <div style="flex:1; min-width:300px; border-right:1px solid #3A3128; padding:22px 24px; display:flex; flex-direction:column; gap:7px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#9A8D80;">À DEMANDER · 2</div>
+        <div style="font-size:15px; line-height:23px; font-weight:600; color:#FFFFFF;">La version blanche, point orange</div>
+        <div style="font-size:14px; line-height:21px; color:#9A8D80; text-wrap:pretty;">Un même fichier à deux remplissages nommés suffit. Si elle envoie le vectoriel du premier point, je la dérive moi-même en dix minutes et sans perte.</div>
+      </div>
+      <div style="flex:1; min-width:300px; padding:22px 24px; display:flex; flex-direction:column; gap:7px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#9A8D80;">À CONFIRMER · 3</div>
+        <div style="font-size:15px; line-height:23px; font-weight:600; color:#FFFFFF;">L'orange exact du point</div>
+        <div style="font-size:14px; line-height:21px; color:#9A8D80; text-wrap:pretty;">Le point du PNG relève un orange plus vif que <span style="font-family:'IBM Plex Mono',monospace; font-size:12px;">#FF5E00</span>. Un PNG traverse des conversions ; je garde <span style="font-family:'IBM Plex Mono',monospace; font-size:12px;">brand.500</span> et j'attends sa valeur de référence plutôt que de prélever un pixel.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</x-dc>
+</body>
+</html>

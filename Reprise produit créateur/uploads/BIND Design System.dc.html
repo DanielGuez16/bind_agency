@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #DEDBD5; }
+  a { color: #145A47; text-decoration: none; }
+  a:hover { color: #C0512F; }
+  @keyframes pulse { 0%, 100% { opacity: .45 } 50% { opacity: 1 } }
+  @keyframes spin { to { transform: rotate(360deg) } }
+</style>
+</helmet>
+<section style="display:flex;flex-direction:column;gap:20px;padding:44px 44px 0;font-family:'IBM Plex Sans',sans-serif">
+  <div style="display:flex;flex-direction:column;gap:6px;max-width:900px">
+    <div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#7A756D">Passage 2 · After Hours retenu · trois points traités</div>
+    <div style="font:600 30px/1.15 'Familjen Grotesk',sans-serif;color:#171410">Mode commerce en plein jour, badge qui vieillit, paliers lisibles seuls</div>
+  </div>
+  <div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:28px;align-items:flex-start">
+    <div id="2a" style="display:flex;flex-direction:column;width:1120px;background:#0C0F11;border:1px solid #2E363B;border-radius:14px;overflow:hidden">
+      <div style="display:flex;flex-direction:row;align-items:center;gap:10px;padding:20px 28px;background:#15191C;border-bottom:1px solid #23292E">
+        <div style="padding:4px 9px;border-radius:6px;background:#35DBC0;font:600 12px/1 'IBM Plex Mono',monospace;color:#062621">2a</div>
+        <div style="font:600 20px/1.1 'Familjen Grotesk',sans-serif;color:#F2F5F4">After Hours · affiné</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:34px;padding:28px">
+
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+            <div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#6F7A7F">01 · Le rôle commerce passe en clair par défaut</div>
+            <div style="flex:1;height:1px;background:#23292E"></div>
+          </div>
+          <div style="font:400 13px/1.65 'IBM Plex Sans',sans-serif;color:#A7B0B4;max-width:820px;text-wrap:pretty">Verdict : non, le sombre ne tient pas. Sur un téléphone posé près d'une vitrine, un fond #15191C reçoit assez de lumière réfléchie pour que le blanc du texte tombe sous 3:1 apparents — le contraste mesuré reste bon, le contraste perçu s'effondre. Le mode commerce bascule donc en thème clair par défaut, et c'est bien le liseré ocre plus la densité qui portent le rôle. Ce n'est pas une exception : les deux thèmes existent déjà dans les jetons, on choisit simplement le défaut par rôle. Le créateur reste en sombre, l'utilisateur peut forcer l'un ou l'autre dans les réglages, le système ne change pas d'un octet.</div>
+          <div style="display:flex;flex-direction:row;gap:16px;flex-wrap:wrap;align-items:flex-start">
+            <div style="display:flex;flex-direction:column;width:340px;border-radius:12px;overflow:hidden;border:1px solid #E3E6E6;background:#F4F5F4">
+              <div style="display:flex;flex-direction:column;gap:8px;padding:12px 14px;background:#FFFFFF;border-bottom:3px solid #9A5F04">
+                <div style="display:flex;flex-direction:row;justify-content:space-between;align-items:center">
+                  <div style="display:flex;flex-direction:column;gap:1px"><div style="font:600 15px/1.2 'IBM Plex Sans',sans-serif;color:#101416">Caisse · Little Havana Nails</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#9A5F04">MODE COMMERCE · 3 retraits en attente</div></div>
+                  <div style="height:36px;padding:0 14px;border-radius:8px;background:#101416;display:flex;align-items:center;font:600 13px/1 'IBM Plex Sans',sans-serif;color:#FFFFFF">Scanner</div>
+                </div>
+                <div style="display:flex;flex-direction:row;gap:1px;border-radius:8px;overflow:hidden;background:#E3E6E6"><div style="flex:1;padding:8px 0;text-align:center;background:#101416;font:600 12px/1 'IBM Plex Sans',sans-serif;color:#FFFFFF">Aujourd'hui</div><div style="flex:1;padding:8px 0;text-align:center;background:#FFFFFF;font:600 12px/1 'IBM Plex Sans',sans-serif;color:#4A5459">Catalogue</div><div style="flex:1;padding:8px 0;text-align:center;background:#FFFFFF;font:600 12px/1 'IBM Plex Sans',sans-serif;color:#4A5459">Preuves</div></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px;padding:12px 14px">
+                <div style="display:flex;flex-direction:row;gap:10px;align-items:center;padding:10px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6">
+                  <div style="width:44px;height:44px;border-radius:6px;background:#E9ECEC;display:flex;align-items:center;justify-content:center;font:600 13px/1 'IBM Plex Mono',monospace;color:#4A5459;flex-shrink:0">14:30</div>
+                  <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Sofia M. · Pose gel, mains</div><div style="font:400 11px/1.3 'IBM Plex Sans',sans-serif;color:#4A5459">Code 8F42 · 45 min</div></div>
+                  <div style="padding:3px 8px;border-radius:999px;border:1px solid #5A666B;font:600 10px/1.5 'IBM Plex Mono',monospace;color:#3F4A4E">STORY</div>
+                </div>
+                <div style="display:flex;flex-direction:row;gap:10px;align-items:center;padding:10px;border-radius:8px;background:#FFFFFF;border:1px solid #E3E6E6">
+                  <div style="width:44px;height:44px;border-radius:6px;background:#E9ECEC;display:flex;align-items:center;justify-content:center;font:600 13px/1 'IBM Plex Mono',monospace;color:#4A5459;flex-shrink:0">15:15</div>
+                  <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#101416">Dani R. · Soin visage</div><div style="font:400 11px/1.3 'IBM Plex Sans',sans-serif;color:#137F55">Retiré · preuve reçue</div></div>
+                  <div style="padding:3px 8px;border-radius:999px;background:#DEF2EE;font:600 10px/1.5 'IBM Plex Mono',monospace;color:#0A5F52">POST</div>
+                </div>
+                <div style="height:56px;border-radius:8px;background:#0A7364;display:flex;align-items:center;justify-content:center;font:600 16px/1 'IBM Plex Sans',sans-serif;color:#FFFFFF">Valider un code</div>
+                <div style="font:400 10px/1.4 'IBM Plex Mono',monospace;color:#5A6463">commerce · thème clair par défaut · liseré ocre 3px</div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;width:250px;padding:16px;border-radius:12px;background:#15191C;border:1px solid #23292E">
+              <div style="font:600 12px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Contrastes du mode clair</div>
+              <div style="display:flex;flex-direction:row;justify-content:space-between"><div style="font:400 11px/1.6 'IBM Plex Sans',sans-serif;color:#A7B0B4">text.primary / surface</div><div style="font:500 11px/1.6 'IBM Plex Mono',monospace;color:#34C88A">16,8:1</div></div>
+              <div style="display:flex;flex-direction:row;justify-content:space-between"><div style="font:400 11px/1.6 'IBM Plex Sans',sans-serif;color:#A7B0B4">text.secondary / surface</div><div style="font:500 11px/1.6 'IBM Plex Mono',monospace;color:#34C88A">8,1:1</div></div>
+              <div style="display:flex;flex-direction:row;justify-content:space-between"><div style="font:400 11px/1.6 'IBM Plex Sans',sans-serif;color:#A7B0B4">accent #0A7364 / blanc</div><div style="font:500 11px/1.6 'IBM Plex Mono',monospace;color:#34C88A">4,6:1</div></div>
+              <div style="display:flex;flex-direction:row;justify-content:space-between"><div style="font:400 11px/1.6 'IBM Plex Sans',sans-serif;color:#A7B0B4">ocre #9A5F04 / blanc</div><div style="font:500 11px/1.6 'IBM Plex Mono',monospace;color:#34C88A">5,2:1</div></div>
+              <div style="font:400 11px/1.6 'IBM Plex Sans',sans-serif;color:#6F7A7F">L'ocre du mode sombre (#F5A524) est illisible sur blanc : le jeton role.merchant se décline, il ne se copie pas. Même nom, deux valeurs.</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;flex:1;min-width:300px;padding:16px;border-radius:12px;background:#15191C;border:1px solid #23292E">
+              <div style="font:600 12px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Ce que le rôle porte désormais</div>
+              <div style="font:400 11px/1.7 'IBM Plex Sans',sans-serif;color:#A7B0B4">1 · Le liseré ocre 3px en haut de la barre, présent sur tous les écrans commerce, jamais côté créateur. 2 · La densité : 16/8 et lignes de 64 contre 20/16 et cartes de 76. 3 · La hiérarchie : heure et nom d'abord, image ensuite ou pas du tout. 4 · Le thème par défaut, clair contre sombre. Aucun composant dupliqué, aucun second jeu de jetons : <span style="font-family:'IBM Plex Mono',monospace;color:#35DBC0">theme = role === 'merchant' ? 'light' : 'dark'</span>, surchargeable par l'utilisateur.</div>
+              <div style="height:1px;background:#23292E;margin:2px 0"></div>
+              <div style="font:400 11px/1.7 'IBM Plex Sans',sans-serif;color:#6F7A7F">Effet secondaire utile : un créateur qui montre son téléphone à la caisse et l'écran du salon ne se ressemblent plus, ce qui évite toute confusion sur qui valide quoi. Et l'écran de code reste noir sur blanc pur dans les deux cas — il n'appartient à aucun thème.</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+            <div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#6F7A7F">02 · Badge d'arrivée qui vieillit bien</div>
+            <div style="flex:1;height:1px;background:#23292E"></div>
+          </div>
+          <div style="font:400 13px/1.65 'IBM Plex Sans',sans-serif;color:#A7B0B4;max-width:820px;text-wrap:pretty">Le numéro individuel est abandonné : 001 flatte trois personnes et humilie les 3 997 suivantes. On garde l'idée d'arrivée mais on la déplace du rang vers la vague. La vague est une cohorte de lancement, datée, close : « Vague 01 · Miami · 2026 ». Tout le monde dans une vague porte le même badge, personne n'est un rang. Une vague se ferme et devient un fait historique, pas un classement — un créateur de la vague 03 n'est pas « moins bien », il est arrivé quand BIND s'est ouvert à Coral Gables.</div>
+          <div style="display:flex;flex-direction:row;gap:16px;flex-wrap:wrap;align-items:flex-start">
+            <div style="display:flex;flex-direction:column;gap:10px;width:340px">
+              <div style="display:flex;flex-direction:row;gap:10px;align-items:center;padding:14px;border-radius:12px;background:#15191C;border:1px solid #23292E">
+                <div style="width:44px;height:44px;border-radius:999px;background:#0C2A27;border:2px solid #35DBC0;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0"><div style="font:600 13px/1 'IBM Plex Mono',monospace;color:#35DBC0">01</div></div>
+                <div style="display:flex;flex-direction:column;gap:3px"><div style="font:600 15px/1.3 'IBM Plex Sans',sans-serif;color:#F2F5F4">Vague 01 · Miami</div><div style="font:400 12px/1.45 'IBM Plex Sans',sans-serif;color:#A7B0B4">Ouverture beauté, printemps 2026. Accès prioritaire aux salons qui arrivent.</div></div>
+              </div>
+              <div style="display:flex;flex-direction:row;gap:10px;align-items:center;padding:14px;border-radius:12px;background:#15191C;border:1px solid #23292E">
+                <div style="width:44px;height:44px;border-radius:999px;background:#1D2226;border:2px solid #A7B0B4;display:flex;align-items:center;justify-content:center;flex-shrink:0"><div style="font:600 13px/1 'IBM Plex Mono',monospace;color:#C3CDD2">03</div></div>
+                <div style="display:flex;flex-direction:column;gap:3px"><div style="font:600 15px/1.3 'IBM Plex Sans',sans-serif;color:#F2F5F4">Vague 03 · Coral Gables</div><div style="font:400 12px/1.45 'IBM Plex Sans',sans-serif;color:#A7B0B4">Ouverture du quartier, automne 2026. Même badge pour les 900 créateurs de la vague.</div></div>
+              </div>
+              <div style="font:400 11px/1.6 'IBM Plex Sans',sans-serif;color:#6F7A7F">Le chiffre de vague ne se compare pas : il se lit comme un millésime. Aucune vague n'est stylée « en moins bien » — matière argent pour les vagues passées, matière aqua pour la vague en cours.</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;width:340px">
+              <div style="font:600 12px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Les 21 premiers jours, en plus</div>
+              <div style="display:flex;flex-direction:row;gap:8px;flex-wrap:wrap;align-items:center">
+                <div style="padding:5px 11px;border-radius:999px;background:#0C2A27;border:1px solid #1E7A6B;font:600 12px/1.4 'IBM Plex Sans',sans-serif;color:#35DBC0">Nouveau sur BIND</div>
+                <div style="padding:5px 11px;border-radius:999px;background:#1D2226;font:600 12px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Vague 03 · Coral Gables</div>
+              </div>
+              <div style="font:400 11px/1.6 'IBM Plex Sans',sans-serif;color:#A7B0B4">« Nouveau sur BIND » est temporaire (21 jours ou 3 publications livrées, au premier des deux) et sert au commerce, pas au créateur : il signale une première visite à accueillir. Il ne dit rien d'un manque, il ne s'affiche jamais avec un compteur à zéro, et il disparaît sans notification d'échec.</div>
+              <div style="height:1px;background:#23292E;margin:2px 0"></div>
+              <div style="font:600 12px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Ce qui prend le relais</div>
+              <div style="display:flex;flex-direction:row;gap:8px;flex-wrap:wrap;align-items:center">
+                <div style="padding:5px 11px;border-radius:999px;background:#1D2226;font:600 12px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">12 publications livrées</div>
+                <div style="padding:5px 11px;border-radius:999px;background:#1D2226;font:600 12px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Habitué · Sunset Brow Bar</div>
+                <div style="padding:5px 11px;border-radius:999px;background:#1D2226;font:600 12px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Toujours dans les délais</div>
+              </div>
+              <div style="font:400 11px/1.6 'IBM Plex Sans',sans-serif;color:#6F7A7F">Badges de comportement, cumulables, jamais décroissants : on n'y perd rien, on y ajoute. Aucun badge négatif n'existe dans le système ; un retard se règle en message, pas en étiquette permanente.</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;flex:1;min-width:280px;padding:16px;border-radius:12px;background:#15191C;border:1px solid #23292E">
+              <div style="font:600 12px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Règles de gouvernance du badge</div>
+              <div style="font:400 11px/1.7 'IBM Plex Sans',sans-serif;color:#A7B0B4">Une vague se nomme par un lieu et une saison, jamais par un effectif. Une vague ne se réouvre pas. Trois badges maximum affichés sur un profil, priorité : comportement, puis vague, puis « Nouveau ». Aucun badge n'affiche de zéro, de pourcentage, ni de rang. Un badge qui vieillit mal est retiré du système et pas rétrogradé sur les profils qui le portent.</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+            <div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#6F7A7F">03 · Paliers lisibles isolément</div>
+            <div style="flex:1;height:1px;background:#23292E"></div>
+          </div>
+          <div style="font:400 13px/1.65 'IBM Plex Sans',sans-serif;color:#A7B0B4;max-width:820px;text-wrap:pretty">Tu as raison : l'inversion de contraste ne se lit qu'en série. Chaque palier reçoit donc trois marqueurs redondants qui fonctionnent seuls — un mot (STORY / POST / REEL, toujours écrit), un glyphe de comptage (une barre, deux, trois, à gauche du mot) et une matière propre (contour argent, aqua plein, blanc plein). Le glyphe fait le travail que la couleur ne peut pas faire seule : trois barres se lisent comme « le plus haut » sans référence, comme des barres de réseau. Aucune référence à la comparaison, aucune couleur seule porteuse de sens.</div>
+          <div style="display:flex;flex-direction:row;gap:16px;flex-wrap:wrap;align-items:flex-start">
+            <div style="display:flex;flex-direction:column;gap:12px;width:250px;padding:16px;border-radius:12px;background:#15191C;border:1px solid #23292E">
+              <div style="font:400 10px/1.3 'IBM Plex Mono',monospace;color:#6F7A7F">vu seul, dans un fil</div>
+              <div style="display:flex;flex-direction:row;gap:7px;align-items:center;align-self:flex-start;padding:5px 11px 5px 9px;border-radius:999px;border:1px solid #C3CDD2">
+                <div style="display:flex;flex-direction:row;gap:2px;align-items:flex-end"><div style="width:3px;height:6px;background:#C3CDD2"></div><div style="width:3px;height:9px;background:#39434700"></div><div style="width:3px;height:12px;background:#39434700"></div></div>
+                <div style="font:600 11px/1.4 'IBM Plex Mono',monospace;color:#C3CDD2;letter-spacing:.06em">STORY</div>
+              </div>
+              <div style="display:flex;flex-direction:row;gap:7px;align-items:center;align-self:flex-start;padding:5px 11px 5px 9px;border-radius:999px;background:#0C2A27;border:1px solid #1E7A6B">
+                <div style="display:flex;flex-direction:row;gap:2px;align-items:flex-end"><div style="width:3px;height:6px;background:#35DBC0"></div><div style="width:3px;height:9px;background:#35DBC0"></div><div style="width:3px;height:12px;background:#1E7A6B"></div></div>
+                <div style="font:600 11px/1.4 'IBM Plex Mono',monospace;color:#35DBC0;letter-spacing:.06em">POST</div>
+              </div>
+              <div style="display:flex;flex-direction:row;gap:7px;align-items:center;align-self:flex-start;padding:5px 11px 5px 9px;border-radius:999px;background:#F2F5F4">
+                <div style="display:flex;flex-direction:row;gap:2px;align-items:flex-end"><div style="width:3px;height:6px;background:#0C0F11"></div><div style="width:3px;height:9px;background:#0C0F11"></div><div style="width:3px;height:12px;background:#0C0F11"></div></div>
+                <div style="font:600 11px/1.4 'IBM Plex Mono',monospace;color:#0C0F11;letter-spacing:.06em">REEL</div>
+              </div>
+              <div style="font:400 11px/1.6 'IBM Plex Sans',sans-serif;color:#6F7A7F">Les barres inactives restent en creux (vides, pas grises sales) : on voit 1 sur 3 sans qu'il manque quelque chose.</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px;width:300px">
+              <div style="display:flex;flex-direction:column;width:100%;border-radius:12px;overflow:hidden;background:#15191C;border:1px solid #23292E">
+                <div style="height:120px;background:repeating-linear-gradient(135deg,#232A2E 0 8px,#1B2225 8px 16px);display:flex;align-items:flex-start;justify-content:flex-end;padding:10px">
+                  <div style="display:flex;flex-direction:row;gap:7px;align-items:center;padding:5px 11px 5px 9px;border-radius:999px;background:rgba(8,10,11,.9);border:1px solid #C3CDD2">
+                    <div style="display:flex;flex-direction:row;gap:2px;align-items:flex-end"><div style="width:3px;height:6px;background:#C3CDD2"></div><div style="width:3px;height:9px;background:#39434700"></div><div style="width:3px;height:12px;background:#39434700"></div></div>
+                    <div style="font:600 11px/1.4 'IBM Plex Mono',monospace;color:#C3CDD2;letter-spacing:.06em">STORY</div>
+                  </div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:6px;padding:14px">
+                  <div style="font:600 17px/1.25 'Familjen Grotesk',sans-serif;color:#F2F5F4">Little Havana Nails</div>
+                  <div style="font:400 12px/1.45 'IBM Plex Sans',sans-serif;color:#A7B0B4">Pose gel, mains · 45 min · 1,2 km</div>
+                  <div style="font:400 12px/1.45 'IBM Plex Sans',sans-serif;color:#35DBC0">Une story dans les 48 h</div>
+                </div>
+              </div>
+              <div style="font:400 11px/1.6 'IBM Plex Sans',sans-serif;color:#A7B0B4">Sur une carte de fil, le badge est toujours accompagné d'une ligne de contrepartie en clair : « Une story dans les 48 h ». C'est cette phrase qui informe ; le badge sert de repère visuel rapide.</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;flex:1;min-width:300px;padding:16px;border-radius:12px;background:#15191C;border:1px solid #23292E">
+              <div style="font:600 12px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Correctifs apportés au passage 1</div>
+              <div style="font:400 11px/1.7 'IBM Plex Sans',sans-serif;color:#A7B0B4">Les chiffres 01/02/03 quittent les badges de palier : ils entraient en collision avec le badge de vague et invitaient justement à la comparaison. Le glyphe à barres les remplace. Le mot du palier est écrit en mono à 11 px minimum, jamais tronqué, jamais réduit à une initiale — en espagnol HISTORIA et PUBLICACIÓN passent en deux lignes dans les listes denses plutôt qu'en abrégé. La matière argent du palier Story est maintenue : c'est le palier le plus fréquent, il doit rester net sur photo, d'où le fond opaque sous le contour sur les couvertures.</div>
+              <div style="height:1px;background:#23292E;margin:2px 0"></div>
+              <div style="font:400 11px/1.7 'IBM Plex Sans',sans-serif;color:#6F7A7F">Jetons ajoutés : tier.*.glyphFilled / glyphEmpty, badge.scrim (fond opaque sur photo), theme.defaultByRole. Fichier mis à jour : <a href="tokens/bind-tokens-1a-after-hours.json" style="color:#35DBC0">tokens/bind-tokens-1a-after-hours.json</a></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+<section style="display:flex;flex-direction:column;gap:20px;padding:44px 44px 80px;font-family:'IBM Plex Sans',sans-serif">
+  <div style="display:flex;flex-direction:column;gap:6px;max-width:900px">
+    <div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#7A756D">BIND · Passage 1 · Design system only</div>
+    <div style="font:600 30px/1.15 'Familjen Grotesk',sans-serif;color:#171410">Deux directions visuelles, à trancher</div>
+    <div style="font:400 14px/1.55 'IBM Plex Sans',sans-serif;color:#5C574F;text-wrap:pretty">Chaque colonne est un système complet et autonome : jetons sémantiques (clair + sombre), échelles, composants de base, paliers, badge nouveau créateur, signature des deux rôles, et l'écran de code de retrait. Tout est en flex, sans grid CSS, sans backdrop blur, ombres déclarées en propriétés RN + elevation Android.</div>
+  </div>
+  <div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:28px;align-items:flex-start">
+
+    <div id="1a" style="display:flex;flex-direction:column;width:1120px;background:#0C0F11;border:1px solid #2E363B;border-radius:14px;overflow:hidden">
+      <div style="display:flex;flex-direction:row;align-items:flex-start;justify-content:space-between;gap:24px;padding:26px 28px;background:#15191C;border-bottom:1px solid #23292E">
+        <div style="display:flex;flex-direction:column;gap:8px;max-width:640px">
+          <div style="display:flex;flex-direction:row;align-items:center;gap:10px">
+            <div style="padding:4px 9px;border-radius:6px;background:#35DBC0;font:600 12px/1 'IBM Plex Mono',monospace;color:#062621">1a</div>
+            <div style="font:600 22px/1.1 'Familjen Grotesk',sans-serif;color:#F2F5F4">After Hours</div>
+          </div>
+          <div style="font:400 13px/1.6 'IBM Plex Sans',sans-serif;color:#A7B0B4;text-wrap:pretty">Sombre par défaut, dense, outillé. Grotesque serré, chiffres monospace, un seul accent aqua tenu du début à la fin. Le créateur y lit un fil le soir, le commerce y travaille en caisse sous lumière crue. Ni néon ni dégradé : l'énergie vient du contraste et du rythme, pas de la couleur.</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;font:400 11px/1.5 'IBM Plex Mono',monospace;color:#6F7A7F;text-align:right">
+          <div>Familjen Grotesk · display</div>
+          <div>IBM Plex Sans · UI</div>
+          <div>IBM Plex Mono · codes, chiffres</div>
+          <div style="color:#35DBC0">radius 8/12/16 · dark-first</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:34px;padding:28px">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+            <div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#6F7A7F">01 · Couleur sémantique</div>
+            <div style="flex:1;height:1px;background:#23292E"></div>
+          </div>
+          <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#A7B0B4">Thème sombre (référence). Chaque jeton existe aussi en clair, mêmes noms.</div>
+          <div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:12px">
+            <div style="display:flex;flex-direction:column;gap:6px;width:120px"><div style="height:48px;border-radius:8px;background:#0C0F11;border:1px solid #2E363B"></div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#F2F5F4">bg.canvas</div><div style="font:400 10px/1.3 'IBM Plex Mono',monospace;color:#6F7A7F">#0C0F11</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px;width:120px"><div style="height:48px;border-radius:8px;background:#15191C;border:1px solid #2E363B"></div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#F2F5F4">bg.surface</div><div style="font:400 10px/1.3 'IBM Plex Mono',monospace;color:#6F7A7F">#15191C</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px;width:120px"><div style="height:48px;border-radius:8px;background:#1D2226;border:1px solid #2E363B"></div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#F2F5F4">bg.raised</div><div style="font:400 10px/1.3 'IBM Plex Mono',monospace;color:#6F7A7F">#1D2226</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px;width:120px"><div style="height:48px;border-radius:8px;background:#080A0B;border:1px solid #2E363B"></div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#F2F5F4">bg.sunken</div><div style="font:400 10px/1.3 'IBM Plex Mono',monospace;color:#6F7A7F">#080A0B</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px;width:120px"><div style="height:48px;border-radius:8px;background:#F2F5F4"></div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#F2F5F4">bg.inverse</div><div style="font:400 10px/1.3 'IBM Plex Mono',monospace;color:#6F7A7F">#F2F5F4</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px;width:120px"><div style="height:48px;border-radius:8px;background:#35DBC0"></div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#F2F5F4">accent.default</div><div style="font:400 10px/1.3 'IBM Plex Mono',monospace;color:#6F7A7F">#35DBC0</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px;width:120px"><div style="height:48px;border-radius:8px;background:#22B49D"></div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#F2F5F4">accent.pressed</div><div style="font:400 10px/1.3 'IBM Plex Mono',monospace;color:#6F7A7F">#22B49D</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px;width:120px"><div style="height:48px;border-radius:8px;background:#0C2A27;border:1px solid #2E363B"></div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#F2F5F4">accent.subtle</div><div style="font:400 10px/1.3 'IBM Plex Mono',monospace;color:#6F7A7F">#0C2A27</div></div>
+          </div>
+          <div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:12px">
+            <div style="display:flex;flex-direction:column;gap:6px;width:120px"><div style="height:34px;border-radius:8px;background:#F2F5F4"></div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#F2F5F4">text.primary</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px;width:120px"><div style="height:34px;border-radius:8px;background:#A7B0B4"></div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#A7B0B4">text.secondary</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px;width:120px"><div style="height:34px;border-radius:8px;background:#6F7A7F"></div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#6F7A7F">text.muted</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px;width:120px"><div style="height:34px;border-radius:8px;background:#2E363B"></div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#A7B0B4">border.default</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px;width:120px"><div style="height:34px;border-radius:8px;background:#35DBC0"></div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#A7B0B4">role.creator</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px;width:120px"><div style="height:34px;border-radius:8px;background:#F5A524"></div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#A7B0B4">role.merchant</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px;width:120px"><div style="height:34px;border-radius:8px;background:#34C88A"></div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#A7B0B4">status.success</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px;width:120px"><div style="height:34px;border-radius:8px;background:#FF6B5E"></div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#A7B0B4">status.danger</div></div>
+          </div>
+          <div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:10px;padding:14px;border-radius:10px;background:#15191C;border:1px solid #23292E">
+            <div style="font:400 11px/1.6 'IBM Plex Mono',monospace;color:#A7B0B4;width:100%">Même jeu de noms en thème clair</div>
+            <div style="display:flex;flex-direction:column;gap:5px;width:120px"><div style="height:34px;border-radius:8px;background:#F4F5F4;border:1px solid #2E363B"></div><div style="font:400 10px/1.3 'IBM Plex Mono',monospace;color:#6F7A7F">bg.canvas #F4F5F4</div></div>
+            <div style="display:flex;flex-direction:column;gap:5px;width:120px"><div style="height:34px;border-radius:8px;background:#FFFFFF;border:1px solid #2E363B"></div><div style="font:400 10px/1.3 'IBM Plex Mono',monospace;color:#6F7A7F">bg.surface #FFFFFF</div></div>
+            <div style="display:flex;flex-direction:column;gap:5px;width:120px"><div style="height:34px;border-radius:8px;background:#101416"></div><div style="font:400 10px/1.3 'IBM Plex Mono',monospace;color:#6F7A7F">text.primary #101416</div></div>
+            <div style="display:flex;flex-direction:column;gap:5px;width:120px"><div style="height:34px;border-radius:8px;background:#0A7364"></div><div style="font:400 10px/1.3 'IBM Plex Mono',monospace;color:#6F7A7F">accent #0A7364</div></div>
+            <div style="display:flex;flex-direction:column;gap:5px;width:120px"><div style="height:34px;border-radius:8px;background:#E3E6E6"></div><div style="font:400 10px/1.3 'IBM Plex Mono',monospace;color:#6F7A7F">border #E3E6E6</div></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+            <div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#6F7A7F">02 · Typographie</div>
+            <div style="flex:1;height:1px;background:#23292E"></div>
+          </div>
+          <div style="display:flex;flex-direction:row;gap:28px;flex-wrap:wrap">
+            <div style="display:flex;flex-direction:column;gap:12px;flex:1;min-width:420px">
+              <div style="display:flex;flex-direction:row;align-items:baseline;gap:14px"><div style="width:118px;font:400 10px/1.3 'IBM Plex Mono',monospace;color:#6F7A7F">display / 34·38 / 600</div><div style="font:600 34px/1.12 'Familjen Grotesk',sans-serif;color:#F2F5F4;letter-spacing:-.01em">Gel manicure</div></div>
+              <div style="display:flex;flex-direction:row;align-items:baseline;gap:14px"><div style="width:118px;font:400 10px/1.3 'IBM Plex Mono',monospace;color:#6F7A7F">title / 24·30 / 600</div><div style="font:600 24px/1.25 'Familjen Grotesk',sans-serif;color:#F2F5F4">Little Havana Nails</div></div>
+              <div style="display:flex;flex-direction:row;align-items:baseline;gap:14px"><div style="width:118px;font:400 10px/1.3 'IBM Plex Mono',monospace;color:#6F7A7F">heading / 18·24 / 600</div><div style="font:600 18px/1.35 'IBM Plex Sans',sans-serif;color:#F2F5F4">Prestations disponibles</div></div>
+              <div style="display:flex;flex-direction:row;align-items:baseline;gap:14px"><div style="width:118px;font:400 10px/1.3 'IBM Plex Mono',monospace;color:#6F7A7F">body / 15·23 / 400</div><div style="font:400 15px/1.5 'IBM Plex Sans',sans-serif;color:#F2F5F4">Une prestation offerte, publication en contrepartie.</div></div>
+              <div style="display:flex;flex-direction:row;align-items:baseline;gap:14px"><div style="width:118px;font:400 10px/1.3 'IBM Plex Mono',monospace;color:#6F7A7F">label / 13·18 / 600</div><div style="font:600 13px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Créneau</div></div>
+              <div style="display:flex;flex-direction:row;align-items:baseline;gap:14px"><div style="width:118px;font:400 10px/1.3 'IBM Plex Mono',monospace;color:#6F7A7F">caption / 12·17 / 400</div><div style="font:400 12px/1.45 'IBM Plex Sans',sans-serif;color:#A7B0B4">1,2 km · Wynwood · ouvert jusqu'à 20h</div></div>
+              <div style="display:flex;flex-direction:row;align-items:baseline;gap:14px"><div style="width:118px;font:400 10px/1.3 'IBM Plex Mono',monospace;color:#6F7A7F">mono / 14·20 / 500</div><div style="font:500 14px/1.4 'IBM Plex Mono',monospace;color:#35DBC0;letter-spacing:.06em">8F42-19</div></div>
+              <div style="display:flex;flex-direction:row;align-items:baseline;gap:14px"><div style="width:118px;font:400 10px/1.3 'IBM Plex Mono',monospace;color:#6F7A7F">code / 64·64 / 600</div><div style="font:600 52px/1 'IBM Plex Mono',monospace;color:#F2F5F4;letter-spacing:.08em">8F42</div></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;width:300px;padding:16px;border-radius:10px;background:#15191C;border:1px solid #23292E">
+              <div style="font:600 12px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">EN / ES, +30 % de longueur</div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;flex-direction:row;gap:8px;align-items:center"><div style="flex:1;padding:9px 12px;border-radius:8px;background:#35DBC0;font:600 13px/1.2 'IBM Plex Sans',sans-serif;color:#062621;text-align:center">Confirm booking</div><div style="flex:1;padding:9px 12px;border-radius:8px;background:#35DBC0;font:600 13px/1.2 'IBM Plex Sans',sans-serif;color:#062621;text-align:center">Confirmar reserva</div></div>
+                <div style="display:flex;flex-direction:row;gap:8px;align-items:center"><div style="flex:1;padding:9px 12px;border-radius:8px;border:1px solid #2E363B;font:600 13px/1.2 'IBM Plex Sans',sans-serif;color:#F2F5F4;text-align:center">Show code</div><div style="flex:1;padding:9px 12px;border-radius:8px;border:1px solid #2E363B;font:600 13px/1.2 'IBM Plex Sans',sans-serif;color:#F2F5F4;text-align:center">Mostrar código</div></div>
+              </div>
+              <div style="font:400 11px/1.6 'IBM Plex Sans',sans-serif;color:#A7B0B4">Règle : boutons en largeur pleine ou flex:1, jamais dimensionnés sur le texte. Deux lignes autorisées sur les libellés d'action, hauteur mini 48. Pas de troncature sur une action, ellipsis seulement sur les noms propres.</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+            <div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#6F7A7F">03 · Espacement · rayons · élévation</div>
+            <div style="flex:1;height:1px;background:#23292E"></div>
+          </div>
+          <div style="display:flex;flex-direction:row;gap:20px;flex-wrap:wrap">
+            <div style="display:flex;flex-direction:column;gap:8px;width:330px">
+              <div style="font:600 12px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Espacement — base 4</div>
+              <div style="display:flex;flex-direction:row;align-items:flex-end;gap:6px;height:60px">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:14px;height:4px;background:#35DBC0"></div><div style="font:400 9px/1 'IBM Plex Mono',monospace;color:#6F7A7F">1</div></div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:14px;height:8px;background:#35DBC0"></div><div style="font:400 9px/1 'IBM Plex Mono',monospace;color:#6F7A7F">2</div></div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:14px;height:12px;background:#35DBC0"></div><div style="font:400 9px/1 'IBM Plex Mono',monospace;color:#6F7A7F">3</div></div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:14px;height:16px;background:#35DBC0"></div><div style="font:400 9px/1 'IBM Plex Mono',monospace;color:#6F7A7F">4</div></div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:14px;height:20px;background:#35DBC0"></div><div style="font:400 9px/1 'IBM Plex Mono',monospace;color:#6F7A7F">5</div></div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:14px;height:24px;background:#35DBC0"></div><div style="font:400 9px/1 'IBM Plex Mono',monospace;color:#6F7A7F">6</div></div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:14px;height:32px;background:#35DBC0"></div><div style="font:400 9px/1 'IBM Plex Mono',monospace;color:#6F7A7F">8</div></div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:14px;height:40px;background:#35DBC0"></div><div style="font:400 9px/1 'IBM Plex Mono',monospace;color:#6F7A7F">10</div></div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:14px;height:48px;background:#35DBC0"></div><div style="font:400 9px/1 'IBM Plex Mono',monospace;color:#6F7A7F">12</div></div>
+              </div>
+              <div style="font:400 11px/1.6 'IBM Plex Sans',sans-serif;color:#A7B0B4">Créateur : padding d'écran 20, gap de cartes 16. Commerce : padding 16, gap 8. La densité est le premier signal de rôle.</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;width:280px">
+              <div style="font:600 12px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Rayons</div>
+              <div style="display:flex;flex-direction:row;gap:10px;flex-wrap:wrap">
+                <div style="display:flex;flex-direction:column;gap:4px;align-items:center"><div style="width:52px;height:40px;background:#1D2226;border:1px solid #2E363B;border-radius:6px"></div><div style="font:400 9px/1 'IBM Plex Mono',monospace;color:#6F7A7F">sm 6</div></div>
+                <div style="display:flex;flex-direction:column;gap:4px;align-items:center"><div style="width:52px;height:40px;background:#1D2226;border:1px solid #2E363B;border-radius:8px"></div><div style="font:400 9px/1 'IBM Plex Mono',monospace;color:#6F7A7F">md 8</div></div>
+                <div style="display:flex;flex-direction:column;gap:4px;align-items:center"><div style="width:52px;height:40px;background:#1D2226;border:1px solid #2E363B;border-radius:12px"></div><div style="font:400 9px/1 'IBM Plex Mono',monospace;color:#6F7A7F">lg 12</div></div>
+                <div style="display:flex;flex-direction:column;gap:4px;align-items:center"><div style="width:52px;height:40px;background:#1D2226;border:1px solid #2E363B;border-radius:16px"></div><div style="font:400 9px/1 'IBM Plex Mono',monospace;color:#6F7A7F">xl 16</div></div>
+                <div style="display:flex;flex-direction:column;gap:4px;align-items:center"><div style="width:52px;height:40px;background:#1D2226;border:1px solid #2E363B;border-radius:999px"></div><div style="font:400 9px/1 'IBM Plex Mono',monospace;color:#6F7A7F">full</div></div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;flex:1;min-width:300px">
+              <div style="font:600 12px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Élévation (RN : shadow* iOS + elevation Android)</div>
+              <div style="display:flex;flex-direction:row;gap:10px;flex-wrap:wrap">
+                <div style="display:flex;flex-direction:column;gap:5px"><div style="width:104px;height:44px;border-radius:8px;background:#1D2226;border:1px solid #2E363B"></div><div style="font:400 9px/1.4 'IBM Plex Mono',monospace;color:#6F7A7F">e0 · bordure seule</div></div>
+                <div style="display:flex;flex-direction:column;gap:5px"><div style="width:104px;height:44px;border-radius:8px;background:#1D2226;border:1px solid #2E363B;box-shadow:0 1px 2px rgba(0,0,0,.5)"></div><div style="font:400 9px/1.4 'IBM Plex Mono',monospace;color:#6F7A7F">e1 · elev 2</div></div>
+                <div style="display:flex;flex-direction:column;gap:5px"><div style="width:104px;height:44px;border-radius:8px;background:#1D2226;border:1px solid #2E363B;box-shadow:0 4px 10px rgba(0,0,0,.55)"></div><div style="font:400 9px/1.4 'IBM Plex Mono',monospace;color:#6F7A7F">e2 · elev 6</div></div>
+              </div>
+              <div style="font:400 11px/1.6 'IBM Plex Sans',sans-serif;color:#A7B0B4">En sombre, la profondeur passe par bg.raised + border, pas par l'ombre. e2 réservé aux feuilles modales et à la barre d'action collée en bas.</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+            <div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#6F7A7F">04 · Boutons et champs</div>
+            <div style="flex:1;height:1px;background:#23292E"></div>
+          </div>
+          <div style="display:flex;flex-direction:row;gap:20px;flex-wrap:wrap;align-items:flex-start">
+            <div style="display:flex;flex-direction:column;gap:10px;width:330px">
+              <div style="display:flex;flex-direction:row;gap:10px;align-items:center"><div style="flex:1;height:48px;border-radius:8px;background:#35DBC0;display:flex;align-items:center;justify-content:center;font:600 15px/1 'IBM Plex Sans',sans-serif;color:#062621">Réserver</div><div style="width:66px;font:400 10px/1.3 'IBM Plex Mono',monospace;color:#6F7A7F">primary</div></div>
+              <div style="display:flex;flex-direction:row;gap:10px;align-items:center"><div style="flex:1;height:48px;border-radius:8px;background:#22B49D;display:flex;align-items:center;justify-content:center;font:600 15px/1 'IBM Plex Sans',sans-serif;color:#062621">Réserver</div><div style="width:66px;font:400 10px/1.3 'IBM Plex Mono',monospace;color:#6F7A7F">pressed</div></div>
+              <div style="display:flex;flex-direction:row;gap:10px;align-items:center"><div style="flex:1;height:48px;border-radius:8px;border:1px solid #2E363B;background:#15191C;display:flex;align-items:center;justify-content:center;font:600 15px/1 'IBM Plex Sans',sans-serif;color:#F2F5F4">Voir le salon</div><div style="width:66px;font:400 10px/1.3 'IBM Plex Mono',monospace;color:#6F7A7F">secondary</div></div>
+              <div style="display:flex;flex-direction:row;gap:10px;align-items:center"><div style="flex:1;height:48px;border-radius:8px;display:flex;align-items:center;justify-content:center;font:600 15px/1 'IBM Plex Sans',sans-serif;color:#35DBC0">Plus tard</div><div style="width:66px;font:400 10px/1.3 'IBM Plex Mono',monospace;color:#6F7A7F">ghost</div></div>
+              <div style="display:flex;flex-direction:row;gap:10px;align-items:center"><div style="flex:1;height:48px;border-radius:8px;border:1px solid #FF6B5E;display:flex;align-items:center;justify-content:center;font:600 15px/1 'IBM Plex Sans',sans-serif;color:#FF6B5E">Annuler la réservation</div><div style="width:66px;font:400 10px/1.3 'IBM Plex Mono',monospace;color:#6F7A7F">danger</div></div>
+              <div style="display:flex;flex-direction:row;gap:10px;align-items:center"><div style="flex:1;height:48px;border-radius:8px;background:#1D2226;display:flex;align-items:center;justify-content:center;font:600 15px/1 'IBM Plex Sans',sans-serif;color:#4E585D">Réserver</div><div style="width:66px;font:400 10px/1.3 'IBM Plex Mono',monospace;color:#6F7A7F">disabled</div></div>
+              <div style="display:flex;flex-direction:row;gap:10px;align-items:center"><div style="flex:1;height:48px;border-radius:8px;background:#35DBC0;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:9px"><div style="width:15px;height:15px;border-radius:999px;border:2px solid rgba(6,38,33,.3);border-top-color:#062621;animation:spin .8s linear infinite"></div><div style="font:600 15px/1 'IBM Plex Sans',sans-serif;color:#062621">Réservation…</div></div><div style="width:66px;font:400 10px/1.3 'IBM Plex Mono',monospace;color:#6F7A7F">loading</div></div>
+              <div style="display:flex;flex-direction:row;gap:10px;align-items:center"><div style="height:36px;padding:0 14px;border-radius:8px;border:1px solid #2E363B;display:flex;align-items:center;font:600 13px/1 'IBM Plex Sans',sans-serif;color:#F2F5F4">Scanner</div><div style="height:56px;padding:0 20px;border-radius:8px;background:#35DBC0;display:flex;align-items:center;font:600 16px/1 'IBM Plex Sans',sans-serif;color:#062621">Valider en caisse</div></div>
+              <div style="font:400 11px/1.6 'IBM Plex Sans',sans-serif;color:#A7B0B4">Trois tailles : 36 (secondaire dense, commerce), 48 (par défaut), 56 (action de caisse, gantée et pressée vite).</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:14px;width:330px">
+              <div style="display:flex;flex-direction:column;gap:6px"><div style="font:600 13px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Instagram handle</div><div style="height:48px;border-radius:8px;border:1px solid #2E363B;background:#15191C;display:flex;align-items:center;padding:0 14px;font:400 15px/1 'IBM Plex Sans',sans-serif;color:#6F7A7F">@yourhandle</div><div style="font:400 12px/1.45 'IBM Plex Sans',sans-serif;color:#A7B0B4">Utilisé pour certifier l'audience.</div></div>
+              <div style="display:flex;flex-direction:column;gap:6px"><div style="font:600 13px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Instagram handle</div><div style="height:48px;border-radius:8px;border:2px solid #35DBC0;background:#15191C;display:flex;align-items:center;padding:0 13px;font:400 15px/1 'IBM Plex Sans',sans-serif;color:#F2F5F4">@sofia.mia</div><div style="font:400 12px/1.45 'IBM Plex Sans',sans-serif;color:#35DBC0">focus · anneau 2px, pas de glow</div></div>
+              <div style="display:flex;flex-direction:column;gap:6px"><div style="font:600 13px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Instagram handle</div><div style="height:48px;border-radius:8px;border:1px solid #FF6B5E;background:#20100F;display:flex;align-items:center;padding:0 14px;font:400 15px/1 'IBM Plex Sans',sans-serif;color:#F2F5F4">@sofia..mia</div><div style="display:flex;flex-direction:row;gap:6px;align-items:flex-start"><div style="width:14px;height:14px;border-radius:999px;background:#FF6B5E;flex-shrink:0;margin-top:1px"></div><div style="font:400 12px/1.45 'IBM Plex Sans',sans-serif;color:#FF6B5E">Ce compte est introuvable. Vérifie l'orthographe du pseudo.</div></div></div>
+              <div style="display:flex;flex-direction:column;gap:6px"><div style="font:600 13px/1.4 'IBM Plex Sans',sans-serif;color:#6F7A7F">Ville</div><div style="height:48px;border-radius:8px;border:1px solid #23292E;background:#101416;display:flex;align-items:center;padding:0 14px;font:400 15px/1 'IBM Plex Sans',sans-serif;color:#4E585D">Miami</div><div style="font:400 12px/1.45 'IBM Plex Sans',sans-serif;color:#6F7A7F">disabled · une seule ville au lancement</div></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;flex:1;min-width:300px;padding:16px;border-radius:10px;background:#15191C;border:1px solid #23292E">
+              <div style="font:600 12px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Messages d'erreur — trois niveaux</div>
+              <div style="display:flex;flex-direction:row;gap:10px;padding:12px;border-radius:8px;background:#20100F;border-left:0;border:1px solid #4A2321"><div style="width:16px;height:16px;border-radius:999px;background:#FF6B5E;flex-shrink:0"></div><div style="display:flex;flex-direction:column;gap:3px"><div style="font:600 13px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Ce créneau vient d'être pris</div><div style="font:400 12px/1.45 'IBM Plex Sans',sans-serif;color:#A7B0B4">Choisis une autre heure, le salon garde ta place jusqu'à 19h.</div></div></div>
+              <div style="display:flex;flex-direction:row;gap:10px;padding:12px;border-radius:8px;background:#211A0C;border:1px solid #4A3A18"><div style="width:16px;height:16px;border-radius:999px;background:#F5A524;flex-shrink:0"></div><div style="display:flex;flex-direction:column;gap:3px"><div style="font:600 13px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Preuve à envoyer avant 48 h</div><div style="font:400 12px/1.45 'IBM Plex Sans',sans-serif;color:#A7B0B4">Il te reste 11 heures pour soumettre ta story.</div></div></div>
+              <div style="display:flex;flex-direction:row;gap:8px;align-items:center;padding:10px 12px;border-radius:8px;background:#1D2226"><div style="width:14px;height:14px;border-radius:999px;background:#6F7A7F;flex-shrink:0"></div><div style="font:400 12px/1.45 'IBM Plex Sans',sans-serif;color:#A7B0B4">Hors ligne. Le code de retrait reste valide et lisible.</div></div>
+              <div style="font:400 11px/1.6 'IBM Plex Sans',sans-serif;color:#6F7A7F">Toujours : ce qui s'est passé, puis quoi faire. Jamais de code d'erreur en face utilisateur, jamais de « oops ».</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+            <div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#6F7A7F">05 · Cartes, avec et sans photo</div>
+            <div style="flex:1;height:1px;background:#23292E"></div>
+          </div>
+          <div style="display:flex;flex-direction:row;gap:16px;flex-wrap:wrap;align-items:flex-start">
+            <div style="display:flex;flex-direction:column;width:300px;border-radius:12px;overflow:hidden;background:#15191C;border:1px solid #23292E">
+              <div style="height:150px;background:repeating-linear-gradient(135deg,#232A2E 0 8px,#1B2225 8px 16px);display:flex;align-items:flex-end;justify-content:space-between;padding:10px">
+                <div style="font:400 10px/1.3 'IBM Plex Mono',monospace;color:#7D8A90">cover · 16:9 · 1200×675</div>
+                <div style="padding:4px 8px;border-radius:6px;background:rgba(8,10,11,.82);font:600 11px/1 'IBM Plex Sans',sans-serif;color:#F2F5F4">1,2 km</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px;padding:14px">
+                <div style="display:flex;flex-direction:row;justify-content:space-between;gap:10px;align-items:flex-start">
+                  <div style="font:600 17px/1.25 'Familjen Grotesk',sans-serif;color:#F2F5F4">Little Havana Nails</div>
+                  <div style="padding:3px 8px;border-radius:999px;border:1px solid #35DBC0;font:600 10px/1.5 'IBM Plex Mono',monospace;color:#35DBC0;white-space:nowrap">STORY</div>
+                </div>
+                <div style="font:400 12px/1.45 'IBM Plex Sans',sans-serif;color:#A7B0B4">Ongles · Wynwood · ouvert jusqu'à 20h</div>
+                <div style="height:1px;background:#23292E;margin:2px 0"></div>
+                <div style="display:flex;flex-direction:row;justify-content:space-between;align-items:center;gap:10px">
+                  <div style="font:600 13px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Pose gel, mains</div>
+                  <div style="font:400 12px/1.4 'IBM Plex Sans',sans-serif;color:#A7B0B4">45 min</div>
+                </div>
+                <div style="height:44px;border-radius:8px;background:#35DBC0;display:flex;align-items:center;justify-content:center;font:600 14px/1 'IBM Plex Sans',sans-serif;color:#062621">Réserver</div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;width:300px;border-radius:12px;overflow:hidden;background:#15191C;border:1px solid #23292E">
+              <div style="height:150px;background:#1D2226;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;border-bottom:1px solid #23292E">
+                <div style="width:46px;height:46px;border-radius:999px;background:#0C2A27;display:flex;align-items:center;justify-content:center;font:600 18px/1 'Familjen Grotesk',sans-serif;color:#35DBC0">SB</div>
+                <div style="font:400 11px/1.4 'IBM Plex Sans',sans-serif;color:#6F7A7F">Photo à venir</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px;padding:14px">
+                <div style="display:flex;flex-direction:row;justify-content:space-between;gap:10px;align-items:flex-start">
+                  <div style="font:600 17px/1.25 'Familjen Grotesk',sans-serif;color:#F2F5F4">Sunset Brow Bar</div>
+                  <div style="padding:3px 8px;border-radius:999px;background:#0C2A27;font:600 10px/1.5 'IBM Plex Mono',monospace;color:#35DBC0;white-space:nowrap">POST</div>
+                </div>
+                <div style="font:400 12px/1.45 'IBM Plex Sans',sans-serif;color:#A7B0B4">Sourcils · Brickell · nouveau sur BIND</div>
+                <div style="height:1px;background:#23292E;margin:2px 0"></div>
+                <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#A7B0B4">Sans photo : monogramme sur bg.raised, hauteur identique. La carte ne change ni de taille ni de rythme.</div>
+                <div style="height:44px;border-radius:8px;border:1px solid #2E363B;display:flex;align-items:center;justify-content:center;font:600 14px/1 'IBM Plex Sans',sans-serif;color:#F2F5F4">Voir les prestations</div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;flex:1;min-width:330px;gap:10px;padding:14px;border-radius:12px;background:#15191C;border:1px solid #23292E">
+              <div style="font:600 12px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Ligne prestation, vue commerce (dense, 64 de haut)</div>
+              <div style="display:flex;flex-direction:row;gap:12px;align-items:center;padding:10px;border-radius:8px;background:#1D2226">
+                <div style="width:44px;height:44px;border-radius:6px;background:repeating-linear-gradient(135deg,#2A3236 0 6px,#222A2E 6px 12px);flex-shrink:0"></div>
+                <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#F2F5F4">Pose gel, mains</div><div style="font:400 11px/1.3 'IBM Plex Sans',sans-serif;color:#A7B0B4">45 min · 3 places / jour</div></div>
+                <div style="padding:3px 8px;border-radius:999px;border:1px solid #4A5459;font:600 10px/1.5 'IBM Plex Mono',monospace;color:#A7B0B4">STORY</div>
+              </div>
+              <div style="display:flex;flex-direction:row;gap:12px;align-items:center;padding:10px;border-radius:8px;background:#1D2226">
+                <div style="width:44px;height:44px;border-radius:6px;background:#252D31;display:flex;align-items:center;justify-content:center;font:400 9px/1.2 'IBM Plex Mono',monospace;color:#6F7A7F;text-align:center;flex-shrink:0">no img</div>
+                <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#F2F5F4">Soin hydratant visage</div><div style="font:400 11px/1.3 'IBM Plex Sans',sans-serif;color:#F5A524">Photo manquante · ajouter</div></div>
+                <div style="padding:3px 8px;border-radius:999px;background:#0C2A27;font:600 10px/1.5 'IBM Plex Mono',monospace;color:#35DBC0">POST</div>
+              </div>
+              <div style="font:400 11px/1.6 'IBM Plex Sans',sans-serif;color:#6F7A7F">Côté commerce, l'absence de photo est une tâche à faire, pas un défaut caché. Côté créateur, elle est neutre et jamais commentée.</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+            <div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#6F7A7F">06 · Paliers et badges</div>
+            <div style="flex:1;height:1px;background:#23292E"></div>
+          </div>
+          <div style="display:flex;flex-direction:row;gap:16px;flex-wrap:wrap;align-items:flex-start">
+            <div style="display:flex;flex-direction:column;gap:10px;width:520px">
+              <div style="display:flex;flex-direction:row;gap:12px;align-items:center;padding:14px;border-radius:12px;background:#15191C;border:1px solid #4A5459">
+                <div style="width:38px;height:38px;border-radius:999px;border:2px solid #C3CDD2;display:flex;align-items:center;justify-content:center;font:600 13px/1 'IBM Plex Mono',monospace;color:#C3CDD2">01</div>
+                <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 15px/1.3 'IBM Plex Sans',sans-serif;color:#F2F5F4">Story · Historia</div><div style="font:400 12px/1.4 'IBM Plex Sans',sans-serif;color:#A7B0B4">Une story dans les 48 h. Le palier le plus rapide.</div></div>
+                <div style="padding:4px 10px;border-radius:999px;border:1px solid #C3CDD2;font:600 11px/1.4 'IBM Plex Mono',monospace;color:#C3CDD2">1K+</div>
+              </div>
+              <div style="display:flex;flex-direction:row;gap:12px;align-items:center;padding:16px;border-radius:12px;background:#0C2A27;border:1px solid #1E7A6B">
+                <div style="width:42px;height:42px;border-radius:999px;background:#35DBC0;display:flex;align-items:center;justify-content:center;font:600 14px/1 'IBM Plex Mono',monospace;color:#062621">02</div>
+                <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 16px/1.3 'IBM Plex Sans',sans-serif;color:#F2F5F4">Post · Publicación</div><div style="font:400 12px/1.4 'IBM Plex Sans',sans-serif;color:#9FD9CF">Un post au feed, prestations plus longues.</div></div>
+                <div style="padding:4px 10px;border-radius:999px;background:#35DBC0;font:600 11px/1.4 'IBM Plex Mono',monospace;color:#062621">10K+</div>
+              </div>
+              <div style="display:flex;flex-direction:row;gap:12px;align-items:center;padding:18px;border-radius:12px;background:#F2F5F4;border:1px solid #F2F5F4">
+                <div style="width:46px;height:46px;border-radius:999px;background:#0C0F11;display:flex;align-items:center;justify-content:center;font:600 15px/1 'IBM Plex Mono',monospace;color:#35DBC0">03</div>
+                <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 17px/1.3 'IBM Plex Sans',sans-serif;color:#0C0F11">Reel · Reel</div><div style="font:400 12px/1.4 'IBM Plex Sans',sans-serif;color:#454E52">Vidéo dédiée. Accès aux prestations signature.</div></div>
+                <div style="padding:4px 10px;border-radius:999px;background:#0C0F11;font:600 11px/1.4 'IBM Plex Mono',monospace;color:#35DBC0">50K+</div>
+              </div>
+              <div style="font:400 11px/1.6 'IBM Plex Sans',sans-serif;color:#A7B0B4">Hiérarchie par inversion progressive du contraste, pas par saturation. Story a sa propre matière (graphite outline, chiffre 01) : elle se lit comme le palier le plus rapide, jamais comme un palier au rabais. Aucun palier n'est grisé.</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px;flex:1;min-width:330px">
+              <div style="display:flex;flex-direction:row;gap:10px;align-items:center;padding:14px;border-radius:12px;background:#15191C;border:1px solid #23292E">
+                <div style="width:44px;height:44px;border-radius:999px;background:#0C2A27;border:2px solid #35DBC0;display:flex;align-items:center;justify-content:center;font:600 11px/1 'IBM Plex Mono',monospace;color:#35DBC0">001</div>
+                <div style="display:flex;flex-direction:column;gap:3px"><div style="font:600 15px/1.3 'IBM Plex Sans',sans-serif;color:#F2F5F4">Première vague · Primera ola</div><div style="font:400 12px/1.45 'IBM Plex Sans',sans-serif;color:#A7B0B4">Créateur des 500 premiers à Miami. Accès prioritaire aux nouveaux salons.</div></div>
+              </div>
+              <div style="display:flex;flex-direction:row;gap:8px;flex-wrap:wrap;align-items:center">
+                <div style="padding:5px 11px;border-radius:999px;background:#0C2A27;border:1px solid #1E7A6B;font:600 12px/1.4 'IBM Plex Sans',sans-serif;color:#35DBC0">Première vague</div>
+                <div style="padding:5px 11px;border-radius:999px;background:#1D2226;font:600 12px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Audience certifiée</div>
+                <div style="padding:5px 11px;border-radius:999px;background:#1D2226;font:600 12px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">4 publications livrées</div>
+                <div style="padding:5px 11px;border-radius:999px;background:#211A0C;font:600 12px/1.4 'IBM Plex Sans',sans-serif;color:#F5A524">Preuve en attente</div>
+              </div>
+              <div style="font:400 11px/1.6 'IBM Plex Sans',sans-serif;color:#6F7A7F">Le badge nouveau créateur ne dit jamais « 0 publication » ni « non vérifié ». Il numérote une arrivée : 001, première vague. Il expire seul après la 3e publication livrée, remplacé par le badge de régularité.</div>
+              <div style="display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:10px;background:#15191C;border:1px solid #23292E">
+                <div style="font:600 12px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Jamais de montant</div>
+                <div style="font:400 11px/1.6 'IBM Plex Sans',sans-serif;color:#A7B0B4">La valeur s'écrit en prestation et en durée : « Pose gel, 45 min ». Pas de $, pas de solde, pas de barré. Le commerce voit ses coûts dans son back office, pas dans le fil créateur.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+            <div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#6F7A7F">07 · États vides et chargement</div>
+            <div style="flex:1;height:1px;background:#23292E"></div>
+          </div>
+          <div style="display:flex;flex-direction:row;gap:16px;flex-wrap:wrap;align-items:stretch">
+            <div style="display:flex;flex-direction:column;gap:10px;width:300px;padding:24px 18px;border-radius:12px;background:#15191C;border:1px dashed #2E363B;align-items:center;text-align:center">
+              <div style="width:52px;height:52px;border-radius:999px;background:#1D2226;border:1px solid #2E363B"></div>
+              <div style="font:600 15px/1.3 'IBM Plex Sans',sans-serif;color:#F2F5F4">Rien d'ouvert autour de toi</div>
+              <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#A7B0B4">Les salons de Wynwood publient leurs créneaux le matin. Élargis à 5 km pour voir Brickell et Little Havana.</div>
+              <div style="height:40px;padding:0 16px;border-radius:8px;border:1px solid #2E363B;display:flex;align-items:center;font:600 13px/1 'IBM Plex Sans',sans-serif;color:#F2F5F4">Élargir à 5 km</div>
+              <div style="font:400 10px/1.3 'IBM Plex Mono',monospace;color:#6F7A7F">créateur · vide, pas d'échec</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;width:300px;padding:18px;border-radius:12px;background:#15191C;border:1px solid #23292E">
+              <div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#F2F5F4">Aucune réservation aujourd'hui</div>
+              <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#A7B0B4">Deux prestations sont au palier Reel : peu de créateurs y accèdent. Ouvre une prestation au palier Story pour remplir tes creux.</div>
+              <div style="height:40px;border-radius:8px;background:#35DBC0;display:flex;align-items:center;justify-content:center;font:600 13px/1 'IBM Plex Sans',sans-serif;color:#062621">Ajuster un palier</div>
+              <div style="height:1px;background:#23292E"></div>
+              <div style="display:flex;flex-direction:row;justify-content:space-between"><div style="font:400 12px/1.4 'IBM Plex Sans',sans-serif;color:#A7B0B4">Cette semaine</div><div style="font:500 12px/1.4 'IBM Plex Mono',monospace;color:#F2F5F4">6 retraits · 5 preuves</div></div>
+              <div style="font:400 10px/1.3 'IBM Plex Mono',monospace;color:#6F7A7F">commerce · vide + diagnostic</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;flex:1;min-width:300px;padding:18px;border-radius:12px;background:#15191C;border:1px solid #23292E">
+              <div style="font:600 12px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Squelettes (opacité pulsée, 1,4 s)</div>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div style="height:110px;border-radius:10px;background:#1D2226;animation:pulse 1.4s ease-in-out infinite"></div>
+                <div style="display:flex;flex-direction:column;gap:6px">
+                  <div style="width:62%;height:14px;border-radius:4px;background:#1D2226;animation:pulse 1.4s ease-in-out infinite"></div>
+                  <div style="width:40%;height:11px;border-radius:4px;background:#1D2226;animation:pulse 1.4s ease-in-out .15s infinite"></div>
+                </div>
+                <div style="display:flex;flex-direction:row;gap:10px;align-items:center">
+                  <div style="width:40px;height:40px;border-radius:6px;background:#1D2226;animation:pulse 1.4s ease-in-out infinite"></div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:5px"><div style="width:70%;height:12px;border-radius:4px;background:#1D2226;animation:pulse 1.4s ease-in-out .1s infinite"></div><div style="width:45%;height:10px;border-radius:4px;background:#1D2226;animation:pulse 1.4s ease-in-out .2s infinite"></div></div>
+                </div>
+              </div>
+              <div style="font:400 11px/1.6 'IBM Plex Sans',sans-serif;color:#6F7A7F">Animated.loop sur opacity, jamais de shimmer en dégradé animé : trop coûteux sur Android bas de gamme. Le squelette a exactement la géométrie de la carte finale.</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+            <div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#6F7A7F">08 · Deux rôles, une seule app</div>
+            <div style="flex:1;height:1px;background:#23292E"></div>
+          </div>
+          <div style="display:flex;flex-direction:row;gap:16px;flex-wrap:wrap;align-items:flex-start">
+            <div style="display:flex;flex-direction:column;width:300px;border-radius:12px;overflow:hidden;border:1px solid #23292E">
+              <div style="display:flex;flex-direction:column;gap:10px;padding:16px;background:#0C0F11">
+                <div style="display:flex;flex-direction:row;justify-content:space-between;align-items:center"><div style="font:600 20px/1.2 'Familjen Grotesk',sans-serif;color:#F2F5F4">Autour de toi</div><div style="width:32px;height:32px;border-radius:999px;background:#1D2226"></div></div>
+                <div style="display:flex;flex-direction:row;gap:6px"><div style="padding:6px 12px;border-radius:999px;background:#F2F5F4;font:600 12px/1 'IBM Plex Sans',sans-serif;color:#0C0F11">Tout</div><div style="padding:6px 12px;border-radius:999px;border:1px solid #2E363B;font:600 12px/1 'IBM Plex Sans',sans-serif;color:#A7B0B4">Ongles</div><div style="padding:6px 12px;border-radius:999px;border:1px solid #2E363B;font:600 12px/1 'IBM Plex Sans',sans-serif;color:#A7B0B4">Spa</div></div>
+                <div style="height:3px;width:44px;border-radius:2px;background:#35DBC0"></div>
+                <div style="font:400 11px/1.5 'IBM Plex Sans',sans-serif;color:#6F7A7F">Créateur : canvas noir, respiration 20, titres display, accent aqua, photos plein cadre.</div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;width:300px;border-radius:12px;overflow:hidden;border:1px solid #23292E">
+              <div style="display:flex;flex-direction:column;gap:8px;padding:12px 14px;background:#15191C;border-bottom:2px solid #F5A524">
+                <div style="display:flex;flex-direction:row;justify-content:space-between;align-items:center">
+                  <div style="display:flex;flex-direction:column;gap:1px"><div style="font:600 15px/1.2 'IBM Plex Sans',sans-serif;color:#F2F5F4">Caisse · Little Havana Nails</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#F5A524">MODE COMMERCE · 3 retraits en attente</div></div>
+                  <div style="height:32px;padding:0 12px;border-radius:6px;background:#F5A524;display:flex;align-items:center;font:600 12px/1 'IBM Plex Sans',sans-serif;color:#241703">Scanner</div>
+                </div>
+                <div style="display:flex;flex-direction:row;gap:1px;border-radius:6px;overflow:hidden;background:#23292E"><div style="flex:1;padding:7px 0;text-align:center;background:#1D2226;font:600 12px/1 'IBM Plex Sans',sans-serif;color:#F2F5F4">Aujourd'hui</div><div style="flex:1;padding:7px 0;text-align:center;font:600 12px/1 'IBM Plex Sans',sans-serif;color:#A7B0B4">Catalogue</div><div style="flex:1;padding:7px 0;text-align:center;font:600 12px/1 'IBM Plex Sans',sans-serif;color:#A7B0B4">Preuves</div></div>
+                <div style="font:400 11px/1.5 'IBM Plex Sans',sans-serif;color:#6F7A7F">Commerce : surface relevée, liseré ocre permanent, densité 8/16, onglets segmentés, chiffres avant images.</div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;flex:1;min-width:300px;padding:16px;border-radius:12px;background:#15191C;border:1px solid #23292E">
+              <div style="font:600 12px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Ce qui reste commun</div>
+              <div style="font:400 11px/1.7 'IBM Plex Sans',sans-serif;color:#A7B0B4">Même typographie, mêmes rayons, mêmes composants, même grammaire d'erreur. Ne changent que trois choses : la densité (20/16 contre 16/8), la couleur de rôle (aqua contre ocre, en liseré et en accent secondaire seulement — le bouton primaire reste aqua partout), et la hiérarchie de la page (image d'abord contre donnée d'abord). Un utilisateur qui passe d'un rôle à l'autre reconnaît l'app en une seconde et sait pourtant où il est.</div>
+              <div style="height:1px;background:#23292E;margin:4px 0"></div>
+              <div style="font:600 12px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Grand écran</div>
+              <div style="font:400 11px/1.7 'IBM Plex Sans',sans-serif;color:#A7B0B4">Contenu centré, 720 max côté créateur ; côté commerce, colonne de liste 380 + panneau détail en flexDirection row au-delà de 900. Aucun grid CSS : flexWrap et pourcentages.</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+            <div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#6F7A7F">09 · Code de retrait, plein écran</div>
+            <div style="flex:1;height:1px;background:#23292E"></div>
+          </div>
+          <div style="display:flex;flex-direction:row;gap:20px;flex-wrap:wrap;align-items:flex-start">
+            <div style="display:flex;flex-direction:column;width:340px;height:660px;border-radius:20px;overflow:hidden;background:#FFFFFF;border:1px solid #2E363B">
+              <div style="display:flex;flex-direction:column;gap:6px;padding:20px 20px 0"><div style="font:600 13px/1.3 'IBM Plex Sans',sans-serif;color:#000000">Little Havana Nails</div><div style="font:400 13px/1.3 'IBM Plex Sans',sans-serif;color:#3D3D3D">Pose gel, mains · 45 min</div></div>
+              <div style="display:flex;flex-direction:column;flex:1;align-items:center;justify-content:center;gap:18px;padding:20px">
+                <div style="font:600 13px/1.3 'IBM Plex Sans',sans-serif;color:#000000;letter-spacing:.1em;text-transform:uppercase">Montre ce code</div>
+                <div style="display:flex;flex-direction:row;gap:10px"><div style="font:600 76px/1 'IBM Plex Mono',monospace;color:#000000;letter-spacing:.02em">8F42</div></div>
+                <div style="width:100%;height:2px;background:#000000"></div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="font:600 46px/1 'IBM Plex Mono',monospace;color:#000000">04:57</div><div style="font:600 13px/1.3 'IBM Plex Sans',sans-serif;color:#000000">Valide encore 4 min 57 s</div></div>
+                <div style="width:180px;height:180px;background:repeating-linear-gradient(90deg,#000 0 6px,#FFF 6px 12px),repeating-linear-gradient(0deg,#000 0 6px,#FFF 6px 12px);background-blend-mode:difference"></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:10px;padding:0 20px 20px">
+                <div style="height:56px;border-radius:8px;background:#000000;display:flex;align-items:center;justify-content:center;font:600 16px/1 'IBM Plex Sans',sans-serif;color:#FFFFFF">Le salon a validé</div>
+                <div style="font:400 12px/1.45 'IBM Plex Sans',sans-serif;color:#3D3D3D;text-align:center">Écran forcé en clair, luminosité poussée au max, veille désactivée le temps du retrait.</div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;flex:1;min-width:300px;padding:16px;border-radius:12px;background:#15191C;border:1px solid #23292E">
+              <div style="font:600 12px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Règles de l'écran de code</div>
+              <div style="font:400 11px/1.7 'IBM Plex Sans',sans-serif;color:#A7B0B4">Le seul écran qui ignore le thème : toujours #FFFFFF sur #000000, 21:1. Aucun gris sur les éléments porteurs, aucune opacité, aucune ombre. Chiffres monospace 76 px, lisibles à 1,20 m. Quatre caractères, jamais plus, alphabet sans O/0/I/1. Compte à rebours en chiffres, pas en anneau de progression : un anneau ne se lit pas de loin. Sous 60 s, le compteur passe en 46 px gras et le libellé devient « Encore 42 s ». Expiré : le bloc code est barré d'un trait plein et l'action unique devient « Demander un nouveau code ».</div>
+              <div style="display:flex;flex-direction:row;gap:8px;flex-wrap:wrap;align-items:center;margin-top:2px">
+                <div style="padding:5px 10px;border-radius:6px;background:#FFFFFF;font:600 12px/1.3 'IBM Plex Mono',monospace;color:#000000">code.fg #FFFFFF</div>
+                <div style="padding:5px 10px;border-radius:6px;background:#000000;border:1px solid #2E363B;font:600 12px/1.3 'IBM Plex Mono',monospace;color:#FFFFFF">code.bg #000000</div>
+                <div style="padding:5px 10px;border-radius:6px;background:#1D2226;font:600 12px/1.3 'IBM Plex Mono',monospace;color:#A7B0B4">21:1</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:row;gap:10px;flex-wrap:wrap;padding:14px;border-radius:10px;background:#0C2A27;border:1px solid #1E7A6B">
+          <div style="font:600 12px/1.4 'IBM Plex Sans',sans-serif;color:#35DBC0;width:100%">Implémentable tel quel en React Native</div>
+          <div style="font:400 11px/1.7 'IBM Plex Sans',sans-serif;color:#9FD9CF">Flexbox uniquement · pas de backdrop-filter · ombres déclarées en shadowColor/Offset/Opacity/Radius + elevation Android, et jamais porteuses de sens · animations limitées à opacity et transform · bordures 1 et 2 px seulement · pas de dégradé (les fonds pleins sont des couleurs unies) · icônes en react-native-svg 24 px, trait 1,75.</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="1b" style="display:flex;flex-direction:column;width:1120px;background:#F6F2EC;border:1px solid #D6CCBF;border-radius:20px;overflow:hidden">
+      <div style="display:flex;flex-direction:row;align-items:flex-start;justify-content:space-between;gap:24px;padding:26px 28px;background:#FFFFFF;border-bottom:1px solid #E4DCD1">
+        <div style="display:flex;flex-direction:column;gap:8px;max-width:640px">
+          <div style="display:flex;flex-direction:row;align-items:center;gap:10px">
+            <div style="padding:4px 9px;border-radius:6px;background:#C0512F;font:600 12px/1 'IBM Plex Mono',monospace;color:#FFF6F2">1b</div>
+            <div style="font:400 26px/1.05 'Instrument Serif',serif;color:#1B1714">Salon Daylight</div>
+          </div>
+          <div style="font:400 13px/1.6 'Manrope',sans-serif;color:#57504A;text-wrap:pretty">Clair par défaut, chaud, éditorial. Un serif d'affichage pour les titres et les chiffres de code, une sans humaniste pour l'interface. Codes couleur empruntés au salon : terre cuite, vert profond, papier. Plus de souffle côté créateur, des lignes serrées côté commerce.</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;font:400 11px/1.5 'IBM Plex Mono',monospace;color:#8A8078;text-align:right">
+          <div>Instrument Serif · display</div>
+          <div>Manrope · UI</div>
+          <div>IBM Plex Mono · codes</div>
+          <div style="color:#C0512F">radius 12/18/26 · light-first</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:34px;padding:28px">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+            <div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#8A8078">01 · Couleur sémantique</div>
+            <div style="flex:1;height:1px;background:#E4DCD1"></div>
+          </div>
+          <div style="font:400 12px/1.5 'Manrope',sans-serif;color:#57504A">Thème clair (référence). Mêmes noms en sombre, plus bas.</div>
+          <div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:12px">
+            <div style="display:flex;flex-direction:column;gap:6px;width:120px"><div style="height:48px;border-radius:12px;background:#F6F2EC;border:1px solid #D6CCBF"></div><div style="font:600 11px/1.3 'IBM Plex Mono',monospace;color:#1B1714">bg.canvas</div><div style="font:400 10px/1.3 'IBM Plex Mono',monospace;color:#8A8078">#F6F2EC</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px;width:120px"><div style="height:48px;border-radius:12px;background:#FFFFFF;border:1px solid #D6CCBF"></div><div style="font:600 11px/1.3 'IBM Plex Mono',monospace;color:#1B1714">bg.surface</div><div style="font:400 10px/1.3 'IBM Plex Mono',monospace;color:#8A8078">#FFFFFF</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px;width:120px"><div style="height:48px;border-radius:12px;background:#EDE7DE;border:1px solid #D6CCBF"></div><div style="font:600 11px/1.3 'IBM Plex Mono',monospace;color:#1B1714">bg.sunken</div><div style="font:400 10px/1.3 'IBM Plex Mono',monospace;color:#8A8078">#EDE7DE</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px;width:120px"><div style="height:48px;border-radius:12px;background:#1B1714"></div><div style="font:600 11px/1.3 'IBM Plex Mono',monospace;color:#1B1714">bg.inverse</div><div style="font:400 10px/1.3 'IBM Plex Mono',monospace;color:#8A8078">#1B1714</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px;width:120px"><div style="height:48px;border-radius:12px;background:#0F5C4A"></div><div style="font:600 11px/1.3 'IBM Plex Mono',monospace;color:#1B1714">accent.default</div><div style="font:400 10px/1.3 'IBM Plex Mono',monospace;color:#8A8078">#0F5C4A</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px;width:120px"><div style="height:48px;border-radius:12px;background:#0A4638"></div><div style="font:600 11px/1.3 'IBM Plex Mono',monospace;color:#1B1714">accent.pressed</div><div style="font:400 10px/1.3 'IBM Plex Mono',monospace;color:#8A8078">#0A4638</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px;width:120px"><div style="height:48px;border-radius:12px;background:#DDEBE4;border:1px solid #D6CCBF"></div><div style="font:600 11px/1.3 'IBM Plex Mono',monospace;color:#1B1714">accent.subtle</div><div style="font:400 10px/1.3 'IBM Plex Mono',monospace;color:#8A8078">#DDEBE4</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px;width:120px"><div style="height:48px;border-radius:12px;background:#C0512F"></div><div style="font:600 11px/1.3 'IBM Plex Mono',monospace;color:#1B1714">role.creator</div><div style="font:400 10px/1.3 'IBM Plex Mono',monospace;color:#8A8078">#C0512F</div></div>
+          </div>
+          <div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:12px">
+            <div style="display:flex;flex-direction:column;gap:6px;width:120px"><div style="height:34px;border-radius:10px;background:#1B1714"></div><div style="font:600 11px/1.3 'IBM Plex Mono',monospace;color:#1B1714">text.primary</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px;width:120px"><div style="height:34px;border-radius:10px;background:#57504A"></div><div style="font:600 11px/1.3 'IBM Plex Mono',monospace;color:#57504A">text.secondary</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px;width:120px"><div style="height:34px;border-radius:10px;background:#8A8078"></div><div style="font:600 11px/1.3 'IBM Plex Mono',monospace;color:#8A8078">text.muted</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px;width:120px"><div style="height:34px;border-radius:10px;background:#D6CCBF"></div><div style="font:600 11px/1.3 'IBM Plex Mono',monospace;color:#57504A">border.default</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px;width:120px"><div style="height:34px;border-radius:10px;background:#2B3F6B"></div><div style="font:600 11px/1.3 'IBM Plex Mono',monospace;color:#57504A">role.merchant</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px;width:120px"><div style="height:34px;border-radius:10px;background:#1F7A4C"></div><div style="font:600 11px/1.3 'IBM Plex Mono',monospace;color:#57504A">status.success</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px;width:120px"><div style="height:34px;border-radius:10px;background:#B4711A"></div><div style="font:600 11px/1.3 'IBM Plex Mono',monospace;color:#57504A">status.warning</div></div>
+            <div style="display:flex;flex-direction:column;gap:6px;width:120px"><div style="height:34px;border-radius:10px;background:#B3271E"></div><div style="font:600 11px/1.3 'IBM Plex Mono',monospace;color:#57504A">status.danger</div></div>
+          </div>
+          <div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:10px;padding:14px;border-radius:14px;background:#14110E">
+            <div style="font:400 11px/1.6 'IBM Plex Mono',monospace;color:#C9BFB3;width:100%">Même jeu de noms en thème sombre</div>
+            <div style="display:flex;flex-direction:column;gap:5px;width:120px"><div style="height:34px;border-radius:10px;background:#14110E;border:1px solid #2E2823"></div><div style="font:400 10px/1.3 'IBM Plex Mono',monospace;color:#9A9086">bg.canvas #14110E</div></div>
+            <div style="display:flex;flex-direction:column;gap:5px;width:120px"><div style="height:34px;border-radius:10px;background:#1C1815;border:1px solid #2E2823"></div><div style="font:400 10px/1.3 'IBM Plex Mono',monospace;color:#9A9086">bg.surface #1C1815</div></div>
+            <div style="display:flex;flex-direction:column;gap:5px;width:120px"><div style="height:34px;border-radius:10px;background:#F3EDE5"></div><div style="font:400 10px/1.3 'IBM Plex Mono',monospace;color:#9A9086">text.primary #F3EDE5</div></div>
+            <div style="display:flex;flex-direction:column;gap:5px;width:120px"><div style="height:34px;border-radius:10px;background:#4FB89A"></div><div style="font:400 10px/1.3 'IBM Plex Mono',monospace;color:#9A9086">accent #4FB89A</div></div>
+            <div style="display:flex;flex-direction:column;gap:5px;width:120px"><div style="height:34px;border-radius:10px;background:#E0805C"></div><div style="font:400 10px/1.3 'IBM Plex Mono',monospace;color:#9A9086">role.creator #E0805C</div></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+            <div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#8A8078">02 · Typographie</div>
+            <div style="flex:1;height:1px;background:#E4DCD1"></div>
+          </div>
+          <div style="display:flex;flex-direction:row;gap:28px;flex-wrap:wrap">
+            <div style="display:flex;flex-direction:column;gap:12px;flex:1;min-width:420px">
+              <div style="display:flex;flex-direction:row;align-items:baseline;gap:14px"><div style="width:118px;font:400 10px/1.3 'IBM Plex Mono',monospace;color:#8A8078">display / 36·40 / serif</div><div style="font:400 36px/1.1 'Instrument Serif',serif;color:#1B1714">Gel manicure</div></div>
+              <div style="display:flex;flex-direction:row;align-items:baseline;gap:14px"><div style="width:118px;font:400 10px/1.3 'IBM Plex Mono',monospace;color:#8A8078">title / 26·30 / serif</div><div style="font:400 26px/1.15 'Instrument Serif',serif;color:#1B1714">Little Havana Nails</div></div>
+              <div style="display:flex;flex-direction:row;align-items:baseline;gap:14px"><div style="width:118px;font:400 10px/1.3 'IBM Plex Mono',monospace;color:#8A8078">heading / 17·24 / 700</div><div style="font:700 17px/1.35 'Manrope',sans-serif;color:#1B1714">Prestations disponibles</div></div>
+              <div style="display:flex;flex-direction:row;align-items:baseline;gap:14px"><div style="width:118px;font:400 10px/1.3 'IBM Plex Mono',monospace;color:#8A8078">body / 15·24 / 400</div><div style="font:400 15px/1.55 'Manrope',sans-serif;color:#1B1714">Une prestation offerte, publication en contrepartie.</div></div>
+              <div style="display:flex;flex-direction:row;align-items:baseline;gap:14px"><div style="width:118px;font:400 10px/1.3 'IBM Plex Mono',monospace;color:#8A8078">label / 13·18 / 600</div><div style="font:600 13px/1.4 'Manrope',sans-serif;color:#1B1714">Créneau</div></div>
+              <div style="display:flex;flex-direction:row;align-items:baseline;gap:14px"><div style="width:118px;font:400 10px/1.3 'IBM Plex Mono',monospace;color:#8A8078">caption / 12·17 / 500</div><div style="font:500 12px/1.45 'Manrope',sans-serif;color:#57504A">1,2 km · Wynwood · ouvert jusqu'à 20h</div></div>
+              <div style="display:flex;flex-direction:row;align-items:baseline;gap:14px"><div style="width:118px;font:400 10px/1.3 'IBM Plex Mono',monospace;color:#8A8078">mono / 14·20 / 500</div><div style="font:500 14px/1.4 'IBM Plex Mono',monospace;color:#0F5C4A;letter-spacing:.06em">8F42-19</div></div>
+              <div style="display:flex;flex-direction:row;align-items:baseline;gap:14px"><div style="width:118px;font:400 10px/1.3 'IBM Plex Mono',monospace;color:#8A8078">code / 64·64 / mono</div><div style="font:600 52px/1 'IBM Plex Mono',monospace;color:#1B1714;letter-spacing:.08em">8F42</div></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;width:300px;padding:16px;border-radius:14px;background:#FFFFFF;border:1px solid #E4DCD1">
+              <div style="font:700 12px/1.4 'Manrope',sans-serif;color:#1B1714">EN / ES, +30 % de longueur</div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;flex-direction:row;gap:8px"><div style="flex:1;padding:10px 12px;border-radius:12px;background:#0F5C4A;font:700 13px/1.2 'Manrope',sans-serif;color:#FFFFFF;text-align:center">Confirm booking</div><div style="flex:1;padding:10px 12px;border-radius:12px;background:#0F5C4A;font:700 13px/1.2 'Manrope',sans-serif;color:#FFFFFF;text-align:center">Confirmar reserva</div></div>
+                <div style="display:flex;flex-direction:row;gap:8px"><div style="flex:1;padding:10px 12px;border-radius:12px;border:1px solid #D6CCBF;font:700 13px/1.2 'Manrope',sans-serif;color:#1B1714;text-align:center">Show code</div><div style="flex:1;padding:10px 12px;border-radius:12px;border:1px solid #D6CCBF;font:700 13px/1.2 'Manrope',sans-serif;color:#1B1714;text-align:center">Mostrar código</div></div>
+              </div>
+              <div style="font:400 11px/1.6 'Manrope',sans-serif;color:#57504A">Le serif ne sert jamais aux libellés d'action : il s'allonge mal. Titres en serif, tout le fonctionnel en Manrope, deux lignes autorisées, hauteur mini 48.</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+            <div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#8A8078">03 · Espacement · rayons · élévation</div>
+            <div style="flex:1;height:1px;background:#E4DCD1"></div>
+          </div>
+          <div style="display:flex;flex-direction:row;gap:20px;flex-wrap:wrap">
+            <div style="display:flex;flex-direction:column;gap:8px;width:330px">
+              <div style="font:700 12px/1.4 'Manrope',sans-serif;color:#1B1714">Espacement — base 4</div>
+              <div style="display:flex;flex-direction:row;align-items:flex-end;gap:6px;height:60px">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:14px;height:4px;background:#C0512F"></div><div style="font:400 9px/1 'IBM Plex Mono',monospace;color:#8A8078">1</div></div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:14px;height:8px;background:#C0512F"></div><div style="font:400 9px/1 'IBM Plex Mono',monospace;color:#8A8078">2</div></div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:14px;height:12px;background:#C0512F"></div><div style="font:400 9px/1 'IBM Plex Mono',monospace;color:#8A8078">3</div></div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:14px;height:16px;background:#C0512F"></div><div style="font:400 9px/1 'IBM Plex Mono',monospace;color:#8A8078">4</div></div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:14px;height:20px;background:#C0512F"></div><div style="font:400 9px/1 'IBM Plex Mono',monospace;color:#8A8078">5</div></div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:14px;height:24px;background:#C0512F"></div><div style="font:400 9px/1 'IBM Plex Mono',monospace;color:#8A8078">6</div></div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:14px;height:32px;background:#C0512F"></div><div style="font:400 9px/1 'IBM Plex Mono',monospace;color:#8A8078">8</div></div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:14px;height:40px;background:#C0512F"></div><div style="font:400 9px/1 'IBM Plex Mono',monospace;color:#8A8078">10</div></div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:14px;height:48px;background:#C0512F"></div><div style="font:400 9px/1 'IBM Plex Mono',monospace;color:#8A8078">12</div></div>
+              </div>
+              <div style="font:400 11px/1.6 'Manrope',sans-serif;color:#57504A">Créateur : padding 24, gap 20 — le blanc de papier fait partie de la direction. Commerce : padding 16, gap 8, lignes de 64.</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;width:280px">
+              <div style="font:700 12px/1.4 'Manrope',sans-serif;color:#1B1714">Rayons</div>
+              <div style="display:flex;flex-direction:row;gap:10px;flex-wrap:wrap">
+                <div style="display:flex;flex-direction:column;gap:4px;align-items:center"><div style="width:52px;height:40px;background:#FFFFFF;border:1px solid #D6CCBF;border-radius:8px"></div><div style="font:400 9px/1 'IBM Plex Mono',monospace;color:#8A8078">sm 8</div></div>
+                <div style="display:flex;flex-direction:column;gap:4px;align-items:center"><div style="width:52px;height:40px;background:#FFFFFF;border:1px solid #D6CCBF;border-radius:12px"></div><div style="font:400 9px/1 'IBM Plex Mono',monospace;color:#8A8078">md 12</div></div>
+                <div style="display:flex;flex-direction:column;gap:4px;align-items:center"><div style="width:52px;height:40px;background:#FFFFFF;border:1px solid #D6CCBF;border-radius:18px"></div><div style="font:400 9px/1 'IBM Plex Mono',monospace;color:#8A8078">lg 18</div></div>
+                <div style="display:flex;flex-direction:column;gap:4px;align-items:center"><div style="width:52px;height:40px;background:#FFFFFF;border:1px solid #D6CCBF;border-radius:26px"></div><div style="font:400 9px/1 'IBM Plex Mono',monospace;color:#8A8078">xl 26</div></div>
+                <div style="display:flex;flex-direction:column;gap:4px;align-items:center"><div style="width:52px;height:40px;background:#FFFFFF;border:1px solid #D6CCBF;border-radius:999px"></div><div style="font:400 9px/1 'IBM Plex Mono',monospace;color:#8A8078">full</div></div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;flex:1;min-width:300px">
+              <div style="font:700 12px/1.4 'Manrope',sans-serif;color:#1B1714">Élévation (RN : shadow* iOS + elevation Android)</div>
+              <div style="display:flex;flex-direction:row;gap:10px;flex-wrap:wrap">
+                <div style="display:flex;flex-direction:column;gap:5px"><div style="width:104px;height:44px;border-radius:12px;background:#FFFFFF;border:1px solid #E4DCD1"></div><div style="font:400 9px/1.4 'IBM Plex Mono',monospace;color:#8A8078">e0 · bordure seule</div></div>
+                <div style="display:flex;flex-direction:column;gap:5px"><div style="width:104px;height:44px;border-radius:12px;background:#FFFFFF;box-shadow:0 1px 2px rgba(60,44,30,.10)"></div><div style="font:400 9px/1.4 'IBM Plex Mono',monospace;color:#8A8078">e1 · elev 2</div></div>
+                <div style="display:flex;flex-direction:column;gap:5px"><div style="width:104px;height:44px;border-radius:12px;background:#FFFFFF;box-shadow:0 6px 16px rgba(60,44,30,.14)"></div><div style="font:400 9px/1.4 'IBM Plex Mono',monospace;color:#8A8078">e2 · elev 6</div></div>
+              </div>
+              <div style="font:400 11px/1.6 'Manrope',sans-serif;color:#57504A">Ombre teintée brun chaud, jamais noire. e1 par défaut sur les cartes créateur ; côté commerce, tout est à plat sur bordure pour ne pas alourdir des listes longues.</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+            <div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#8A8078">04 · Boutons et champs</div>
+            <div style="flex:1;height:1px;background:#E4DCD1"></div>
+          </div>
+          <div style="display:flex;flex-direction:row;gap:20px;flex-wrap:wrap;align-items:flex-start">
+            <div style="display:flex;flex-direction:column;gap:10px;width:330px">
+              <div style="display:flex;flex-direction:row;gap:10px;align-items:center"><div style="flex:1;height:48px;border-radius:12px;background:#0F5C4A;display:flex;align-items:center;justify-content:center;font:700 15px/1 'Manrope',sans-serif;color:#FFFFFF">Réserver</div><div style="width:66px;font:400 10px/1.3 'IBM Plex Mono',monospace;color:#8A8078">primary</div></div>
+              <div style="display:flex;flex-direction:row;gap:10px;align-items:center"><div style="flex:1;height:48px;border-radius:12px;background:#0A4638;display:flex;align-items:center;justify-content:center;font:700 15px/1 'Manrope',sans-serif;color:#FFFFFF">Réserver</div><div style="width:66px;font:400 10px/1.3 'IBM Plex Mono',monospace;color:#8A8078">pressed</div></div>
+              <div style="display:flex;flex-direction:row;gap:10px;align-items:center"><div style="flex:1;height:48px;border-radius:12px;background:#FFFFFF;border:1px solid #D6CCBF;display:flex;align-items:center;justify-content:center;font:700 15px/1 'Manrope',sans-serif;color:#1B1714">Voir le salon</div><div style="width:66px;font:400 10px/1.3 'IBM Plex Mono',monospace;color:#8A8078">secondary</div></div>
+              <div style="display:flex;flex-direction:row;gap:10px;align-items:center"><div style="flex:1;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font:700 15px/1 'Manrope',sans-serif;color:#0F5C4A">Plus tard</div><div style="width:66px;font:400 10px/1.3 'IBM Plex Mono',monospace;color:#8A8078">ghost</div></div>
+              <div style="display:flex;flex-direction:row;gap:10px;align-items:center"><div style="flex:1;height:48px;border-radius:12px;border:1px solid #B3271E;display:flex;align-items:center;justify-content:center;font:700 15px/1 'Manrope',sans-serif;color:#B3271E">Annuler la réservation</div><div style="width:66px;font:400 10px/1.3 'IBM Plex Mono',monospace;color:#8A8078">danger</div></div>
+              <div style="display:flex;flex-direction:row;gap:10px;align-items:center"><div style="flex:1;height:48px;border-radius:12px;background:#EDE7DE;display:flex;align-items:center;justify-content:center;font:700 15px/1 'Manrope',sans-serif;color:#A79C90">Réserver</div><div style="width:66px;font:400 10px/1.3 'IBM Plex Mono',monospace;color:#8A8078">disabled</div></div>
+              <div style="display:flex;flex-direction:row;gap:10px;align-items:center"><div style="flex:1;height:48px;border-radius:12px;background:#0F5C4A;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:9px"><div style="width:15px;height:15px;border-radius:999px;border:2px solid rgba(255,255,255,.35);border-top-color:#FFFFFF;animation:spin .8s linear infinite"></div><div style="font:700 15px/1 'Manrope',sans-serif;color:#FFFFFF">Réservation…</div></div><div style="width:66px;font:400 10px/1.3 'IBM Plex Mono',monospace;color:#8A8078">loading</div></div>
+              <div style="display:flex;flex-direction:row;gap:10px;align-items:center"><div style="height:36px;padding:0 14px;border-radius:10px;border:1px solid #D6CCBF;background:#FFFFFF;display:flex;align-items:center;font:700 13px/1 'Manrope',sans-serif;color:#1B1714">Scanner</div><div style="height:56px;padding:0 20px;border-radius:14px;background:#2B3F6B;display:flex;align-items:center;font:700 16px/1 'Manrope',sans-serif;color:#FFFFFF">Valider en caisse</div></div>
+              <div style="font:400 11px/1.6 'Manrope',sans-serif;color:#57504A">L'action de caisse prend la couleur de rôle commerce (indigo) : c'est le seul endroit où le rôle prend le dessus sur l'accent.</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:14px;width:330px">
+              <div style="display:flex;flex-direction:column;gap:6px"><div style="font:600 13px/1.4 'Manrope',sans-serif;color:#1B1714">Instagram handle</div><div style="height:48px;border-radius:12px;border:1px solid #D6CCBF;background:#FFFFFF;display:flex;align-items:center;padding:0 14px;font:400 15px/1 'Manrope',sans-serif;color:#8A8078">@yourhandle</div><div style="font:400 12px/1.45 'Manrope',sans-serif;color:#57504A">Utilisé pour certifier l'audience.</div></div>
+              <div style="display:flex;flex-direction:column;gap:6px"><div style="font:600 13px/1.4 'Manrope',sans-serif;color:#1B1714">Instagram handle</div><div style="height:48px;border-radius:12px;border:2px solid #0F5C4A;background:#FFFFFF;display:flex;align-items:center;padding:0 13px;font:400 15px/1 'Manrope',sans-serif;color:#1B1714">@sofia.mia</div><div style="font:400 12px/1.45 'Manrope',sans-serif;color:#0F5C4A">focus · anneau 2px vert profond</div></div>
+              <div style="display:flex;flex-direction:column;gap:6px"><div style="font:600 13px/1.4 'Manrope',sans-serif;color:#1B1714">Instagram handle</div><div style="height:48px;border-radius:12px;border:1px solid #B3271E;background:#FCF1EF;display:flex;align-items:center;padding:0 14px;font:400 15px/1 'Manrope',sans-serif;color:#1B1714">@sofia..mia</div><div style="display:flex;flex-direction:row;gap:6px;align-items:flex-start"><div style="width:14px;height:14px;border-radius:999px;background:#B3271E;flex-shrink:0;margin-top:1px"></div><div style="font:400 12px/1.45 'Manrope',sans-serif;color:#B3271E">Ce compte est introuvable. Vérifie l'orthographe du pseudo.</div></div></div>
+              <div style="display:flex;flex-direction:column;gap:6px"><div style="font:600 13px/1.4 'Manrope',sans-serif;color:#8A8078">Ville</div><div style="height:48px;border-radius:12px;border:1px solid #E4DCD1;background:#EDE7DE;display:flex;align-items:center;padding:0 14px;font:400 15px/1 'Manrope',sans-serif;color:#A79C90">Miami</div><div style="font:400 12px/1.45 'Manrope',sans-serif;color:#8A8078">disabled · une seule ville au lancement</div></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;flex:1;min-width:300px;padding:16px;border-radius:14px;background:#FFFFFF;border:1px solid #E4DCD1">
+              <div style="font:700 12px/1.4 'Manrope',sans-serif;color:#1B1714">Messages d'erreur — trois niveaux</div>
+              <div style="display:flex;flex-direction:row;gap:10px;padding:12px;border-radius:12px;background:#FCF1EF;border:1px solid #EBC9C4"><div style="width:16px;height:16px;border-radius:999px;background:#B3271E;flex-shrink:0"></div><div style="display:flex;flex-direction:column;gap:3px"><div style="font:700 13px/1.4 'Manrope',sans-serif;color:#1B1714">Ce créneau vient d'être pris</div><div style="font:400 12px/1.45 'Manrope',sans-serif;color:#57504A">Choisis une autre heure, le salon garde ta place jusqu'à 19h.</div></div></div>
+              <div style="display:flex;flex-direction:row;gap:10px;padding:12px;border-radius:12px;background:#FBF2E2;border:1px solid #E8D2AC"><div style="width:16px;height:16px;border-radius:999px;background:#B4711A;flex-shrink:0"></div><div style="display:flex;flex-direction:column;gap:3px"><div style="font:700 13px/1.4 'Manrope',sans-serif;color:#1B1714">Preuve à envoyer avant 48 h</div><div style="font:400 12px/1.45 'Manrope',sans-serif;color:#57504A">Il te reste 11 heures pour soumettre ta story.</div></div></div>
+              <div style="display:flex;flex-direction:row;gap:8px;align-items:center;padding:10px 12px;border-radius:12px;background:#EDE7DE"><div style="width:14px;height:14px;border-radius:999px;background:#8A8078;flex-shrink:0"></div><div style="font:400 12px/1.45 'Manrope',sans-serif;color:#57504A">Hors ligne. Le code de retrait reste valide et lisible.</div></div>
+              <div style="font:400 11px/1.6 'Manrope',sans-serif;color:#8A8078">Fonds teintés de la même famille chaude que le canvas : l'erreur reste dans le salon, elle ne crie pas.</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+            <div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#8A8078">05 · Cartes, avec et sans photo</div>
+            <div style="flex:1;height:1px;background:#E4DCD1"></div>
+          </div>
+          <div style="display:flex;flex-direction:row;gap:16px;flex-wrap:wrap;align-items:flex-start">
+            <div style="display:flex;flex-direction:column;width:300px;border-radius:18px;overflow:hidden;background:#FFFFFF;box-shadow:0 1px 2px rgba(60,44,30,.10)">
+              <div style="height:150px;background:repeating-linear-gradient(135deg,#E7DFD4 0 8px,#DFD6C9 8px 16px);display:flex;align-items:flex-end;justify-content:space-between;padding:10px">
+                <div style="font:400 10px/1.3 'IBM Plex Mono',monospace;color:#8A8078">cover · 16:9 · 1200×675</div>
+                <div style="padding:4px 8px;border-radius:999px;background:#FFFFFF;font:700 11px/1 'Manrope',sans-serif;color:#1B1714">1,2 km</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px;padding:16px">
+                <div style="display:flex;flex-direction:row;justify-content:space-between;gap:10px;align-items:flex-start">
+                  <div style="font:400 20px/1.15 'Instrument Serif',serif;color:#1B1714">Little Havana Nails</div>
+                  <div style="padding:3px 9px;border-radius:999px;border:1px solid #C0512F;font:600 10px/1.6 'IBM Plex Mono',monospace;color:#C0512F;white-space:nowrap">STORY</div>
+                </div>
+                <div style="font:500 12px/1.45 'Manrope',sans-serif;color:#57504A">Ongles · Wynwood · ouvert jusqu'à 20h</div>
+                <div style="height:1px;background:#EDE7DE;margin:2px 0"></div>
+                <div style="display:flex;flex-direction:row;justify-content:space-between;align-items:center;gap:10px">
+                  <div style="font:600 13px/1.4 'Manrope',sans-serif;color:#1B1714">Pose gel, mains</div>
+                  <div style="font:500 12px/1.4 'Manrope',sans-serif;color:#57504A">45 min</div>
+                </div>
+                <div style="height:44px;border-radius:12px;background:#0F5C4A;display:flex;align-items:center;justify-content:center;font:700 14px/1 'Manrope',sans-serif;color:#FFFFFF">Réserver</div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;width:300px;border-radius:18px;overflow:hidden;background:#FFFFFF;box-shadow:0 1px 2px rgba(60,44,30,.10)">
+              <div style="height:150px;background:#EDE7DE;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px">
+                <div style="width:48px;height:48px;border-radius:999px;background:#FFFFFF;display:flex;align-items:center;justify-content:center;font:400 20px/1 'Instrument Serif',serif;color:#0F5C4A">SB</div>
+                <div style="font:500 11px/1.4 'Manrope',sans-serif;color:#8A8078">Photo à venir</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px;padding:16px">
+                <div style="display:flex;flex-direction:row;justify-content:space-between;gap:10px;align-items:flex-start">
+                  <div style="font:400 20px/1.15 'Instrument Serif',serif;color:#1B1714">Sunset Brow Bar</div>
+                  <div style="padding:3px 9px;border-radius:999px;background:#0F5C4A;font:600 10px/1.6 'IBM Plex Mono',monospace;color:#FFFFFF;white-space:nowrap">POST</div>
+                </div>
+                <div style="font:500 12px/1.45 'Manrope',sans-serif;color:#57504A">Sourcils · Brickell · nouveau sur BIND</div>
+                <div style="height:1px;background:#EDE7DE;margin:2px 0"></div>
+                <div style="font:400 12px/1.5 'Manrope',sans-serif;color:#57504A">Sans photo : monogramme serif sur bg.sunken, hauteur identique. La carte garde sa forme et son poids.</div>
+                <div style="height:44px;border-radius:12px;border:1px solid #D6CCBF;display:flex;align-items:center;justify-content:center;font:700 14px/1 'Manrope',sans-serif;color:#1B1714">Voir les prestations</div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;flex:1;min-width:330px;gap:10px;padding:16px;border-radius:18px;background:#FFFFFF;border:1px solid #E4DCD1">
+              <div style="font:700 12px/1.4 'Manrope',sans-serif;color:#1B1714">Ligne prestation, vue commerce (dense, 64 de haut)</div>
+              <div style="display:flex;flex-direction:row;gap:12px;align-items:center;padding:10px;border-radius:12px;background:#F6F2EC">
+                <div style="width:44px;height:44px;border-radius:10px;background:repeating-linear-gradient(135deg,#E7DFD4 0 6px,#DFD6C9 6px 12px);flex-shrink:0"></div>
+                <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:700 14px/1.3 'Manrope',sans-serif;color:#1B1714">Pose gel, mains</div><div style="font:500 11px/1.3 'Manrope',sans-serif;color:#57504A">45 min · 3 places / jour</div></div>
+                <div style="padding:3px 9px;border-radius:999px;border:1px solid #C0512F;font:600 10px/1.6 'IBM Plex Mono',monospace;color:#C0512F">STORY</div>
+              </div>
+              <div style="display:flex;flex-direction:row;gap:12px;align-items:center;padding:10px;border-radius:12px;background:#F6F2EC">
+                <div style="width:44px;height:44px;border-radius:10px;background:#EDE7DE;display:flex;align-items:center;justify-content:center;font:400 9px/1.2 'IBM Plex Mono',monospace;color:#8A8078;flex-shrink:0">no img</div>
+                <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:700 14px/1.3 'Manrope',sans-serif;color:#1B1714">Soin hydratant visage</div><div style="font:600 11px/1.3 'Manrope',sans-serif;color:#B4711A">Photo manquante · ajouter</div></div>
+                <div style="padding:3px 9px;border-radius:999px;background:#0F5C4A;font:600 10px/1.6 'IBM Plex Mono',monospace;color:#FFFFFF">POST</div>
+              </div>
+              <div style="font:400 11px/1.6 'Manrope',sans-serif;color:#8A8078">Le placeholder rayé est un asset statique (pas un dégradé animé) et se décline en trois formats : 16:9 couverture, 1:1 prestation, 44 vignette de liste.</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+            <div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#8A8078">06 · Paliers et badges</div>
+            <div style="flex:1;height:1px;background:#E4DCD1"></div>
+          </div>
+          <div style="display:flex;flex-direction:row;gap:16px;flex-wrap:wrap;align-items:flex-start">
+            <div style="display:flex;flex-direction:column;gap:10px;width:520px">
+              <div style="display:flex;flex-direction:row;gap:12px;align-items:center;padding:14px;border-radius:14px;background:#FFF3EE;border:1px solid #E8C4B4">
+                <div style="width:38px;height:38px;border-radius:999px;background:#FFFFFF;border:1px solid #E8C4B4;display:flex;align-items:center;justify-content:center;font:400 17px/1 'Instrument Serif',serif;color:#C0512F">I</div>
+                <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:700 15px/1.3 'Manrope',sans-serif;color:#1B1714">Story · Historia</div><div style="font:400 12px/1.4 'Manrope',sans-serif;color:#57504A">Une story dans les 48 h. Le palier le plus rapide.</div></div>
+                <div style="padding:4px 10px;border-radius:999px;background:#C0512F;font:600 11px/1.4 'IBM Plex Mono',monospace;color:#FFFFFF">1K+</div>
+              </div>
+              <div style="display:flex;flex-direction:row;gap:12px;align-items:center;padding:16px;border-radius:14px;background:#DDEBE4;border:1px solid #9EC4B5">
+                <div style="width:42px;height:42px;border-radius:999px;background:#FFFFFF;border:1px solid #9EC4B5;display:flex;align-items:center;justify-content:center;font:400 18px/1 'Instrument Serif',serif;color:#0F5C4A">II</div>
+                <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:700 16px/1.3 'Manrope',sans-serif;color:#12332A">Post · Publicación</div><div style="font:400 12px/1.4 'Manrope',sans-serif;color:#3A5C51">Un post au feed, prestations plus longues.</div></div>
+                <div style="padding:4px 10px;border-radius:999px;background:#0F5C4A;font:600 11px/1.4 'IBM Plex Mono',monospace;color:#FFFFFF">10K+</div>
+              </div>
+              <div style="display:flex;flex-direction:row;gap:12px;align-items:center;padding:18px;border-radius:14px;background:#1B1714">
+                <div style="width:46px;height:46px;border-radius:999px;background:#F3EDE5;display:flex;align-items:center;justify-content:center;font:400 19px/1 'Instrument Serif',serif;color:#1B1714">III</div>
+                <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:700 17px/1.3 'Manrope',sans-serif;color:#F3EDE5">Reel · Reel</div><div style="font:400 12px/1.4 'Manrope',sans-serif;color:#C9BFB3">Vidéo dédiée. Accès aux prestations signature.</div></div>
+                <div style="padding:4px 10px;border-radius:999px;background:#F3EDE5;font:600 11px/1.4 'IBM Plex Mono',monospace;color:#1B1714">50K+</div>
+              </div>
+              <div style="font:400 11px/1.6 'Manrope',sans-serif;color:#57504A">Chiffres romains en serif, I / II / III : trois matières d'égale qualité (terre cuite, vert, encre), et non trois degrés de gris. Story est la couleur la plus vive du système — le palier d'entrée est celui qui saute aux yeux dans le fil.</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px;flex:1;min-width:330px">
+              <div style="display:flex;flex-direction:row;gap:10px;align-items:center;padding:14px;border-radius:14px;background:#FFFFFF;border:1px solid #E4DCD1;box-shadow:0 1px 2px rgba(60,44,30,.10)">
+                <div style="width:44px;height:44px;border-radius:999px;background:#FFF3EE;border:1px solid #E8C4B4;display:flex;align-items:center;justify-content:center;font:400 15px/1 'Instrument Serif',serif;color:#C0512F">001</div>
+                <div style="display:flex;flex-direction:column;gap:3px"><div style="font:700 15px/1.3 'Manrope',sans-serif;color:#1B1714">Première vague · Primera ola</div><div style="font:400 12px/1.45 'Manrope',sans-serif;color:#57504A">Créateur des 500 premiers à Miami. Accès prioritaire aux nouveaux salons.</div></div>
+              </div>
+              <div style="display:flex;flex-direction:row;gap:8px;flex-wrap:wrap;align-items:center">
+                <div style="padding:5px 11px;border-radius:999px;background:#FFF3EE;border:1px solid #E8C4B4;font:700 12px/1.4 'Manrope',sans-serif;color:#C0512F">Première vague</div>
+                <div style="padding:5px 11px;border-radius:999px;background:#EDE7DE;font:700 12px/1.4 'Manrope',sans-serif;color:#1B1714">Audience certifiée</div>
+                <div style="padding:5px 11px;border-radius:999px;background:#EDE7DE;font:700 12px/1.4 'Manrope',sans-serif;color:#1B1714">4 publications livrées</div>
+                <div style="padding:5px 11px;border-radius:999px;background:#FBF2E2;border:1px solid #E8D2AC;font:700 12px/1.4 'Manrope',sans-serif;color:#B4711A">Preuve en attente</div>
+              </div>
+              <div style="font:400 11px/1.6 'Manrope',sans-serif;color:#8A8078">Le badge nouveau créateur numérote une arrivée, il ne mesure pas une absence : jamais « 0 publication », jamais « non vérifié ». Il cède la place au badge de régularité après la 3e preuve validée.</div>
+              <div style="display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:12px;background:#FFFFFF;border:1px solid #E4DCD1">
+                <div style="font:700 12px/1.4 'Manrope',sans-serif;color:#1B1714">Jamais de montant</div>
+                <div style="font:400 11px/1.6 'Manrope',sans-serif;color:#57504A">« Pose gel, 45 min », pas « 60 $ offerts ». Pas de solde, pas de prix barré, pas de compteur de valeur cumulée. Le back office commerce est le seul endroit où des chiffres de coût existent.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+            <div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#8A8078">07 · États vides et chargement</div>
+            <div style="flex:1;height:1px;background:#E4DCD1"></div>
+          </div>
+          <div style="display:flex;flex-direction:row;gap:16px;flex-wrap:wrap;align-items:stretch">
+            <div style="display:flex;flex-direction:column;gap:10px;width:300px;padding:24px 18px;border-radius:18px;background:#FFFFFF;border:1px dashed #D6CCBF;align-items:center;text-align:center">
+              <div style="width:52px;height:52px;border-radius:999px;background:#EDE7DE"></div>
+              <div style="font:400 20px/1.2 'Instrument Serif',serif;color:#1B1714">Rien d'ouvert autour de toi</div>
+              <div style="font:400 12px/1.5 'Manrope',sans-serif;color:#57504A">Les salons de Wynwood publient leurs créneaux le matin. Élargis à 5 km pour voir Brickell et Little Havana.</div>
+              <div style="height:40px;padding:0 16px;border-radius:12px;border:1px solid #D6CCBF;display:flex;align-items:center;font:700 13px/1 'Manrope',sans-serif;color:#1B1714">Élargir à 5 km</div>
+              <div style="font:400 10px/1.3 'IBM Plex Mono',monospace;color:#8A8078">créateur · vide, pas d'échec</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;width:300px;padding:18px;border-radius:18px;background:#FFFFFF;border:1px solid #E4DCD1">
+              <div style="font:700 14px/1.3 'Manrope',sans-serif;color:#1B1714">Aucune réservation aujourd'hui</div>
+              <div style="font:400 12px/1.5 'Manrope',sans-serif;color:#57504A">Deux prestations sont au palier Reel : peu de créateurs y accèdent. Ouvre une prestation au palier Story pour remplir tes creux.</div>
+              <div style="height:40px;border-radius:12px;background:#2B3F6B;display:flex;align-items:center;justify-content:center;font:700 13px/1 'Manrope',sans-serif;color:#FFFFFF">Ajuster un palier</div>
+              <div style="height:1px;background:#EDE7DE"></div>
+              <div style="display:flex;flex-direction:row;justify-content:space-between"><div style="font:500 12px/1.4 'Manrope',sans-serif;color:#57504A">Cette semaine</div><div style="font:500 12px/1.4 'IBM Plex Mono',monospace;color:#1B1714">6 retraits · 5 preuves</div></div>
+              <div style="font:400 10px/1.3 'IBM Plex Mono',monospace;color:#8A8078">commerce · vide + diagnostic</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;flex:1;min-width:300px;padding:18px;border-radius:18px;background:#FFFFFF;border:1px solid #E4DCD1">
+              <div style="font:700 12px/1.4 'Manrope',sans-serif;color:#1B1714">Squelettes (opacité pulsée, 1,4 s)</div>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div style="height:110px;border-radius:14px;background:#EDE7DE;animation:pulse 1.4s ease-in-out infinite"></div>
+                <div style="display:flex;flex-direction:column;gap:6px">
+                  <div style="width:62%;height:14px;border-radius:6px;background:#EDE7DE;animation:pulse 1.4s ease-in-out infinite"></div>
+                  <div style="width:40%;height:11px;border-radius:6px;background:#EDE7DE;animation:pulse 1.4s ease-in-out .15s infinite"></div>
+                </div>
+                <div style="display:flex;flex-direction:row;gap:10px;align-items:center">
+                  <div style="width:44px;height:44px;border-radius:10px;background:#EDE7DE;animation:pulse 1.4s ease-in-out infinite"></div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:5px"><div style="width:70%;height:12px;border-radius:6px;background:#EDE7DE;animation:pulse 1.4s ease-in-out .1s infinite"></div><div style="width:45%;height:10px;border-radius:6px;background:#EDE7DE;animation:pulse 1.4s ease-in-out .2s infinite"></div></div>
+                </div>
+              </div>
+              <div style="font:400 11px/1.6 'Manrope',sans-serif;color:#8A8078">Animated.loop sur opacity uniquement. Géométrie identique à la carte réelle, pour éviter le saut de mise en page à l'arrivée des données.</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+            <div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#8A8078">08 · Deux rôles, une seule app</div>
+            <div style="flex:1;height:1px;background:#E4DCD1"></div>
+          </div>
+          <div style="display:flex;flex-direction:row;gap:16px;flex-wrap:wrap;align-items:flex-start">
+            <div style="display:flex;flex-direction:column;width:300px;border-radius:18px;overflow:hidden;border:1px solid #E4DCD1">
+              <div style="display:flex;flex-direction:column;gap:12px;padding:20px;background:#F6F2EC">
+                <div style="display:flex;flex-direction:row;justify-content:space-between;align-items:center"><div style="font:400 24px/1.1 'Instrument Serif',serif;color:#1B1714">Autour de toi</div><div style="width:32px;height:32px;border-radius:999px;background:#EDE7DE"></div></div>
+                <div style="display:flex;flex-direction:row;gap:6px"><div style="padding:7px 13px;border-radius:999px;background:#1B1714;font:700 12px/1 'Manrope',sans-serif;color:#F6F2EC">Tout</div><div style="padding:7px 13px;border-radius:999px;background:#FFFFFF;border:1px solid #D6CCBF;font:700 12px/1 'Manrope',sans-serif;color:#57504A">Ongles</div><div style="padding:7px 13px;border-radius:999px;background:#FFFFFF;border:1px solid #D6CCBF;font:700 12px/1 'Manrope',sans-serif;color:#57504A">Spa</div></div>
+                <div style="height:3px;width:44px;border-radius:2px;background:#C0512F"></div>
+                <div style="font:400 11px/1.5 'Manrope',sans-serif;color:#8A8078">Créateur : papier chaud, padding 24, titres serif, accent terre cuite, photos en 18 de rayon.</div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;width:300px;border-radius:18px;overflow:hidden;border:1px solid #E4DCD1">
+              <div style="display:flex;flex-direction:column;gap:8px;padding:12px 14px;background:#FFFFFF;border-top:3px solid #2B3F6B">
+                <div style="display:flex;flex-direction:row;justify-content:space-between;align-items:center">
+                  <div style="display:flex;flex-direction:column;gap:1px"><div style="font:700 15px/1.2 'Manrope',sans-serif;color:#1B1714">Caisse · Little Havana Nails</div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#2B3F6B">MODE COMMERCE · 3 retraits en attente</div></div>
+                  <div style="height:32px;padding:0 12px;border-radius:10px;background:#2B3F6B;display:flex;align-items:center;font:700 12px/1 'Manrope',sans-serif;color:#FFFFFF">Scanner</div>
+                </div>
+                <div style="display:flex;flex-direction:row;gap:1px;border-radius:10px;overflow:hidden;background:#EDE7DE"><div style="flex:1;padding:8px 0;text-align:center;background:#1B1714;font:700 12px/1 'Manrope',sans-serif;color:#F6F2EC">Aujourd'hui</div><div style="flex:1;padding:8px 0;text-align:center;font:700 12px/1 'Manrope',sans-serif;color:#57504A">Catalogue</div><div style="flex:1;padding:8px 0;text-align:center;font:700 12px/1 'Manrope',sans-serif;color:#57504A">Preuves</div></div>
+                <div style="font:400 11px/1.5 'Manrope',sans-serif;color:#8A8078">Commerce : fond blanc, liseré indigo en haut, plus de serif dans les titres d'écran, densité 16/8, chiffres monospace.</div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;flex:1;min-width:300px;padding:16px;border-radius:18px;background:#FFFFFF;border:1px solid #E4DCD1">
+              <div style="font:700 12px/1.4 'Manrope',sans-serif;color:#1B1714">La règle du serif</div>
+              <div style="font:400 11px/1.7 'Manrope',sans-serif;color:#57504A">Le rôle se lit d'abord à la typographie : le créateur a du serif d'affichage et du papier, le commerce n'en a pas et travaille sur blanc. Ensuite la couleur de rôle en liseré (terre cuite contre indigo), enfin la densité. Composants, rayons, champs et messages sont strictement les mêmes objets.</div>
+              <div style="height:1px;background:#EDE7DE;margin:4px 0"></div>
+              <div style="font:700 12px/1.4 'Manrope',sans-serif;color:#1B1714">Grand écran</div>
+              <div style="font:400 11px/1.7 'Manrope',sans-serif;color:#57504A">Créateur : colonne centrée 760, cartes en flexWrap à 2 puis 3 par ligne. Commerce : liste 400 + détail en row au-delà de 900, barre de caisse fixée en haut. Aucun grid CSS, aucune media query exotique — un simple seuil sur la largeur mesurée.</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+            <div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#8A8078">09 · Code de retrait, plein écran</div>
+            <div style="flex:1;height:1px;background:#E4DCD1"></div>
+          </div>
+          <div style="display:flex;flex-direction:row;gap:20px;flex-wrap:wrap;align-items:flex-start">
+            <div style="display:flex;flex-direction:column;width:340px;height:660px;border-radius:20px;overflow:hidden;background:#000000">
+              <div style="display:flex;flex-direction:column;gap:6px;padding:20px 20px 0"><div style="font:700 13px/1.3 'Manrope',sans-serif;color:#FFFFFF">Little Havana Nails</div><div style="font:400 13px/1.3 'Manrope',sans-serif;color:#D6D6D6">Pose gel, mains · 45 min</div></div>
+              <div style="display:flex;flex-direction:column;flex:1;align-items:center;justify-content:center;gap:18px;padding:20px">
+                <div style="font:700 13px/1.3 'Manrope',sans-serif;color:#FFFFFF;letter-spacing:.1em;text-transform:uppercase">Montre ce code</div>
+                <div style="font:600 76px/1 'IBM Plex Mono',monospace;color:#FFFFFF;letter-spacing:.02em">8F42</div>
+                <div style="width:100%;height:2px;background:#FFFFFF"></div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="font:600 46px/1 'IBM Plex Mono',monospace;color:#FFFFFF">04:57</div><div style="font:700 13px/1.3 'Manrope',sans-serif;color:#FFFFFF">Valide encore 4 min 57 s</div></div>
+                <div style="width:180px;height:180px;background:#FFFFFF;display:flex;align-items:center;justify-content:center"><div style="width:156px;height:156px;background:repeating-linear-gradient(90deg,#000 0 6px,#FFF 6px 12px)"></div></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:10px;padding:0 20px 20px">
+                <div style="height:56px;border-radius:14px;background:#FFFFFF;display:flex;align-items:center;justify-content:center;font:700 16px/1 'Manrope',sans-serif;color:#000000">Le salon a validé</div>
+                <div style="font:400 12px/1.45 'Manrope',sans-serif;color:#D6D6D6;text-align:center">Écran forcé en sombre, luminosité au max, veille désactivée le temps du retrait.</div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;flex:1;min-width:300px;padding:16px;border-radius:18px;background:#FFFFFF;border:1px solid #E4DCD1">
+              <div style="font:700 12px/1.4 'Manrope',sans-serif;color:#1B1714">Règles de l'écran de code</div>
+              <div style="font:400 11px/1.7 'Manrope',sans-serif;color:#57504A">Le seul écran qui sort du thème chaud : blanc pur sur noir pur, 21:1, aucun gris sur les porteurs, aucune ombre, aucun rayon sur le bloc code. Mono 76 px, lisible à 1,20 m dans un salon très éclairé. Quatre caractères, alphabet sans O/0/I/1. Compte à rebours en chiffres et non en anneau. Sous 60 s : compteur en 46 px et libellé « Encore 42 s ». Expiré : trait plein sur le code, action unique « Demander un nouveau code ». Le QR reste utile pour le scan caisse, mais le code lu à voix haute est le chemin principal.</div>
+              <div style="display:flex;flex-direction:row;gap:8px;flex-wrap:wrap;align-items:center;margin-top:2px">
+                <div style="padding:5px 10px;border-radius:8px;background:#000000;font:600 12px/1.3 'IBM Plex Mono',monospace;color:#FFFFFF">code.bg #000000</div>
+                <div style="padding:5px 10px;border-radius:8px;background:#FFFFFF;border:1px solid #D6CCBF;font:600 12px/1.3 'IBM Plex Mono',monospace;color:#000000">code.fg #FFFFFF</div>
+                <div style="padding:5px 10px;border-radius:8px;background:#EDE7DE;font:600 12px/1.3 'IBM Plex Mono',monospace;color:#57504A">21:1</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:row;gap:10px;flex-wrap:wrap;padding:14px;border-radius:14px;background:#DDEBE4;border:1px solid #9EC4B5">
+          <div style="font:700 12px/1.4 'Manrope',sans-serif;color:#0F5C4A;width:100%">Implémentable tel quel en React Native</div>
+          <div style="font:400 11px/1.7 'Manrope',sans-serif;color:#2F5348">Flexbox uniquement · pas de backdrop-filter · ombres en shadowColor/Offset/Opacity/Radius + elevation Android, purement décoratives · animations sur opacity et transform seulement · Instrument Serif et Manrope chargés en assets locaux via expo-font · placeholders rayés en PNG statique · icônes react-native-svg 24 px.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+</x-dc>
+</body>
+</html>

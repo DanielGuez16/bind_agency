@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #DEDBD5; }
+  a { color: #0E8E7B; text-decoration: none; }
+  a:hover { color: #9A5F04; }
+  @keyframes pulse { 0%, 100% { opacity: .45 } 50% { opacity: 1 } }
+  @keyframes spin { to { transform: rotate(360deg) } }
+</style>
+</helmet>
+<section style="display:flex;flex-direction:column;gap:36px;padding:44px 44px 80px;font-family:'IBM Plex Sans',sans-serif">
+  <div style="display:flex;flex-direction:column;gap:6px;max-width:920px">
+    <div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#7A756D">BIND · After Hours · écrans créateur, lot 2 sur 2</div>
+    <div style="font:600 30px/1.15 'Familjen Grotesk',sans-serif;color:#171410">Réservation, code de retrait, preuve, historique</div>
+    <div style="font:400 14px/1.55 'IBM Plex Sans',sans-serif;color:#5C574F;text-wrap:pretty">Suite du lot 1, mêmes règles : aucun montant, obstacles issus du catalogue fermé, écart chiffré seulement s'il est à portée, donnée périmée datée plutôt que masquée. Le code de retrait sort du thème sombre : blanc pur et noir pur, lisible à bout de bras.</div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+      <div style="font:600 15px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#171410">05 · Réservation et choix de créneau</div>
+      <div style="flex:1;height:1px;background:#C9C5BE"></div>
+    </div>
+    <div style="display:flex;flex-direction:row;gap:20px;flex-wrap:wrap;align-items:flex-start">
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div data-screen-label="05a" style="display:flex;flex-direction:column;width:390px;height:800px;border-radius:26px;overflow:hidden;background:#0C0F11;border:1px solid #2E363B">
+          <div style="display:flex;flex-direction:row;justify-content:space-between;padding:14px 22px 0;font:500 12px/1 'IBM Plex Mono',monospace;color:#6F7A7F"><div>9:41</div><div>Miami</div></div>
+          <div style="display:flex;flex-direction:column;flex:1;gap:14px;padding:18px 20px 20px">
+            <div style="display:flex;flex-direction:row;gap:12px;align-items:center;flex-shrink:0">
+              <div style="width:52px;height:52px;border-radius:8px;background:repeating-linear-gradient(135deg,#2A3236 0 6px,#222A2E 6px 12px);flex-shrink:0"></div>
+              <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 16px/1.25 'IBM Plex Sans',sans-serif;color:#F2F5F4">Pose gel, mains</div><div style="font:400 12px/1.4 'IBM Plex Sans',sans-serif;color:#A7B0B4">Little Havana Nails · 45 min</div></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;flex-shrink:0">
+              <div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#F2F5F4">Jour</div>
+              <div style="display:flex;flex-direction:row;gap:8px">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0;width:60px;border-radius:8px;background:#F2F5F4"><div style="font:600 11px/1 'IBM Plex Sans',sans-serif;color:#0C0F11">Auj.</div><div style="font:600 16px/1 'IBM Plex Mono',monospace;color:#0C0F11">06</div></div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0;width:60px;border-radius:8px;border:1px solid #2E363B"><div style="font:600 11px/1 'IBM Plex Sans',sans-serif;color:#A7B0B4">jeu</div><div style="font:600 16px/1 'IBM Plex Mono',monospace;color:#F2F5F4">07</div></div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0;width:60px;border-radius:8px;border:1px solid #2E363B"><div style="font:600 11px/1 'IBM Plex Sans',sans-serif;color:#A7B0B4">ven</div><div style="font:600 16px/1 'IBM Plex Mono',monospace;color:#F2F5F4">08</div></div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0;width:60px;border-radius:8px;background:#101416"><div style="font:600 11px/1 'IBM Plex Sans',sans-serif;color:#4E585D">sam</div><div style="font:600 16px/1 'IBM Plex Mono',monospace;color:#4E585D">09</div></div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;flex-shrink:0">
+              <div style="display:flex;flex-direction:row;justify-content:space-between;align-items:baseline"><div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#F2F5F4">Créneau</div><div style="font:400 12px/1.3 'IBM Plex Sans',sans-serif;color:#A7B0B4">2 places ouvertes aujourd'hui</div></div>
+              <div style="display:flex;flex-direction:row;gap:8px;flex-wrap:wrap">
+                <div style="padding:11px 16px;border-radius:8px;background:#0C2A27;border:1px solid #35DBC0;font:600 15px/1 'IBM Plex Mono',monospace;color:#35DBC0">14:30</div>
+                <div style="padding:11px 16px;border-radius:8px;border:1px solid #2E363B;font:600 15px/1 'IBM Plex Mono',monospace;color:#F2F5F4">16:00</div>
+                <div style="padding:11px 16px;border-radius:8px;background:#101416;font:600 15px/1 'IBM Plex Mono',monospace;color:#4E585D">17:15</div>
+                <div style="padding:11px 16px;border-radius:8px;background:#101416;font:600 15px/1 'IBM Plex Mono',monospace;color:#4E585D">18:30</div>
+              </div>
+              <div style="font:400 11px/1.5 'IBM Plex Sans',sans-serif;color:#6F7A7F">Les créneaux pris restent visibles, en creux, pour donner une idée du rythme du salon.</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:12px;background:#15191C;border:1px solid #23292E;flex-shrink:0">
+              <div style="display:flex;flex-direction:row;gap:7px;align-items:center;align-self:flex-start;padding:4px 10px 4px 8px;border-radius:999px;border:1px solid #C3CDD2"><div style="display:flex;flex-direction:row;gap:2px;align-items:flex-end"><div style="width:3px;height:6px;background:#C3CDD2"></div><div style="width:3px;height:9px;background:transparent"></div><div style="width:3px;height:12px;background:transparent"></div></div><div style="font:600 10px/1.4 'IBM Plex Mono',monospace;color:#C3CDD2;letter-spacing:.06em">STORY</div></div>
+              <div style="font:600 14px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Ta contrepartie</div>
+              <div style="font:400 13px/1.5 'IBM Plex Sans',sans-serif;color:#A7B0B4">Une story publiée dans les 48 h après ton passage, avec la mention du salon. Tu soumets ensuite le lien ou une capture.</div>
+              <div style="height:1px;background:#23292E"></div>
+              <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#A7B0B4">Annulation possible jusqu'à 2 h avant. Deux absences sans prévenir suspendent les réservations pendant 30 jours.</div>
+            </div>
+            <div style="flex:1"></div>
+            <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0">
+              <div style="height:56px;flex-shrink:0;border-radius:8px;background:#35DBC0;display:flex;align-items:center;justify-content:center;font:600 16px/1 'IBM Plex Sans',sans-serif;color:#062621">Confirmer pour 14:30</div>
+              <div style="font:400 11px/1.5 'IBM Plex Sans',sans-serif;color:#6F7A7F;text-align:center">Prestation offerte. Aucun paiement, aucune empreinte bancaire.</div>
+            </div>
+          </div>
+        </div>
+        <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#5C574F;width:390px">05a · nominal · contrepartie et règles avant confirmation</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div data-screen-label="05b" style="display:flex;flex-direction:column;width:390px;height:800px;border-radius:26px;overflow:hidden;background:#0C0F11;border:1px solid #2E363B">
+          <div style="display:flex;flex-direction:row;justify-content:space-between;padding:14px 22px 0;font:500 12px/1 'IBM Plex Mono',monospace;color:#6F7A7F"><div>9:41</div><div>Miami</div></div>
+          <div style="display:flex;flex-direction:column;flex:1;gap:16px;padding:22px 20px 20px">
+            <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0">
+              <div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#34C88A">RÉSERVATION CONFIRMÉE</div>
+              <div style="font:600 26px/1.15 'Familjen Grotesk',sans-serif;color:#F2F5F4">Aujourd'hui, 14:30</div>
+              <div style="font:400 13px/1.5 'IBM Plex Sans',sans-serif;color:#A7B0B4">Little Havana Nails · 145 NW 24th St · 1,2 km</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:12px;background:#15191C;border:1px solid #2E363B;flex-shrink:0">
+              <div style="font:600 14px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Sur place</div>
+              <div style="display:flex;flex-direction:row;gap:10px;align-items:flex-start"><div style="font:500 12px/1.6 'IBM Plex Mono',monospace;color:#35DBC0;width:14px">1</div><div style="font:400 13px/1.5 'IBM Plex Sans',sans-serif;color:#A7B0B4">Ouvre ton code de retrait à l'accueil</div></div>
+              <div style="display:flex;flex-direction:row;gap:10px;align-items:flex-start"><div style="font:500 12px/1.6 'IBM Plex Mono',monospace;color:#35DBC0;width:14px">2</div><div style="font:400 13px/1.5 'IBM Plex Sans',sans-serif;color:#A7B0B4">Le salon le valide, la prestation commence</div></div>
+              <div style="display:flex;flex-direction:row;gap:10px;align-items:flex-start"><div style="font:500 12px/1.6 'IBM Plex Mono',monospace;color:#35DBC0;width:14px">3</div><div style="font:400 13px/1.5 'IBM Plex Sans',sans-serif;color:#A7B0B4">Tu publies ta story dans les 48 h et tu soumets ta preuve</div></div>
+            </div>
+            <div style="display:flex;flex-direction:row;gap:10px;padding:12px 14px;border-radius:12px;background:#1D2226;flex-shrink:0">
+              <div style="width:14px;height:14px;border-radius:999px;background:#6F7A7F;flex-shrink:0;margin-top:2px"></div>
+              <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#A7B0B4">Le code s'active 15 minutes avant l'heure et reste valable 5 minutes après ouverture. Rappel à 13:30.</div>
+            </div>
+            <div style="flex:1"></div>
+            <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0">
+              <div style="height:56px;flex-shrink:0;border-radius:8px;background:#35DBC0;display:flex;align-items:center;justify-content:center;font:600 16px/1 'IBM Plex Sans',sans-serif;color:#062621">Ajouter à mon agenda</div>
+              <div style="height:48px;flex-shrink:0;border-radius:8px;border:1px solid #2E363B;display:flex;align-items:center;justify-content:center;font:600 15px/1 'IBM Plex Sans',sans-serif;color:#F2F5F4">Itinéraire</div>
+              <div style="height:44px;flex-shrink:0;border-radius:8px;display:flex;align-items:center;justify-content:center;font:600 14px/1 'IBM Plex Sans',sans-serif;color:#FF6B5E">Annuler la réservation</div>
+            </div>
+          </div>
+        </div>
+        <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#5C574F;width:390px">05b · confirmé · la suite est écrite en trois étapes</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div data-screen-label="05c" style="display:flex;flex-direction:column;width:390px;height:800px;border-radius:26px;overflow:hidden;background:#0C0F11;border:1px solid #2E363B">
+          <div style="display:flex;flex-direction:row;justify-content:space-between;padding:14px 22px 0;font:500 12px/1 'IBM Plex Mono',monospace;color:#6F7A7F"><div>9:41</div><div>Miami</div></div>
+          <div style="display:flex;flex-direction:column;flex:1;gap:14px;padding:18px 20px 20px">
+            <div style="display:flex;flex-direction:row;gap:12px;align-items:center;flex-shrink:0">
+              <div style="width:52px;height:52px;border-radius:8px;background:repeating-linear-gradient(135deg,#2A3236 0 6px,#222A2E 6px 12px);flex-shrink:0"></div>
+              <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 16px/1.25 'IBM Plex Sans',sans-serif;color:#F2F5F4">Pose gel, mains</div><div style="font:400 12px/1.4 'IBM Plex Sans',sans-serif;color:#A7B0B4">Little Havana Nails · 45 min</div></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;flex-shrink:0">
+              <div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#F2F5F4">Jour</div>
+              <div style="display:flex;flex-direction:row;gap:8px">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0;width:60px;border-radius:8px;background:#F2F5F4"><div style="font:600 11px/1 'IBM Plex Sans',sans-serif;color:#0C0F11">Auj.</div><div style="font:600 16px/1 'IBM Plex Mono',monospace;color:#0C0F11">06</div></div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0;width:60px;border-radius:8px;border:1px solid #2E363B"><div style="font:600 11px/1 'IBM Plex Sans',sans-serif;color:#A7B0B4">jeu</div><div style="font:600 16px/1 'IBM Plex Mono',monospace;color:#F2F5F4">07</div></div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0;width:60px;border-radius:8px;border:1px solid #2E363B"><div style="font:600 11px/1 'IBM Plex Sans',sans-serif;color:#A7B0B4">ven</div><div style="font:600 16px/1 'IBM Plex Mono',monospace;color:#F2F5F4">08</div></div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0;width:60px;border-radius:8px;border:1px solid #2E363B"><div style="font:600 11px/1 'IBM Plex Sans',sans-serif;color:#A7B0B4">sam</div><div style="font:600 16px/1 'IBM Plex Mono',monospace;color:#F2F5F4">09</div></div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px;padding:18px;border-radius:12px;background:#15191C;border:1px dashed #2E363B;align-items:center;flex-shrink:0">
+              <div style="width:48px;height:48px;border-radius:999px;background:#1D2226;border:1px solid #2E363B"></div>
+              <div style="font:600 16px/1.3 'IBM Plex Sans',sans-serif;color:#F2F5F4;text-align:center">Plus de place aujourd'hui</div>
+              <div style="font:400 13px/1.5 'IBM Plex Sans',sans-serif;color:#A7B0B4;text-align:center">Le salon ouvre 3 places par jour pour cette prestation. Les prochaines tombent demain à 9 h.</div>
+              <div style="display:flex;flex-direction:column;gap:8px;width:100%">
+                <div style="height:48px;flex-shrink:0;border-radius:8px;background:#35DBC0;display:flex;align-items:center;justify-content:center;font:600 15px/1 'IBM Plex Sans',sans-serif;color:#062621">Voir jeudi 07 · 4 créneaux</div>
+                <div style="height:44px;flex-shrink:0;border-radius:8px;border:1px solid #2E363B;display:flex;align-items:center;justify-content:center;font:600 14px/1 'IBM Plex Sans',sans-serif;color:#F2F5F4">M'avertir à la prochaine ouverture</div>
+              </div>
+            </div>
+            <div style="font:400 11px/1.5 'IBM Plex Sans',sans-serif;color:#6F7A7F">Le vide reste dans le contexte : le sélecteur de jour est conservé au-dessus, et l'issue proposée annonce son nombre de créneaux.</div>
+            <div style="flex:1"></div>
+          </div>
+        </div>
+        <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#5C574F;width:390px">05c · vide · aucun créneau, le sélecteur reste en place</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div data-screen-label="05d" style="display:flex;flex-direction:column;width:390px;height:800px;border-radius:26px;overflow:hidden;background:#0C0F11;border:1px solid #2E363B">
+          <div style="display:flex;flex-direction:row;justify-content:space-between;padding:14px 22px 0;font:500 12px/1 'IBM Plex Mono',monospace;color:#6F7A7F"><div>9:41</div><div>Miami</div></div>
+          <div style="display:flex;flex-direction:column;flex:1;gap:14px;padding:18px 20px 20px">
+            <div style="display:flex;flex-direction:row;gap:10px;padding:14px;border-radius:12px;background:#20100F;border:1px solid #4A2321;flex-shrink:0">
+              <div style="width:16px;height:16px;border-radius:999px;background:#FF6B5E;flex-shrink:0;margin-top:2px"></div>
+              <div style="display:flex;flex-direction:column;gap:4px"><div style="font:600 14px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">14:30 vient d'être pris</div><div style="font:400 13px/1.5 'IBM Plex Sans',sans-serif;color:#A7B0B4">Quelqu'un a confirmé pendant que tu choisissais. Rien n'est réservé de ton côté, tu peux reprendre sur un autre créneau.</div></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;flex-shrink:0">
+              <div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#F2F5F4">Encore libre aujourd'hui</div>
+              <div style="display:flex;flex-direction:row;gap:8px;flex-wrap:wrap">
+                <div style="padding:11px 16px;border-radius:8px;border:1px solid #2E363B;font:600 15px/1 'IBM Plex Mono',monospace;color:#F2F5F4">16:00</div>
+                <div style="padding:11px 16px;border-radius:8px;background:#101416;font:600 15px/1 'IBM Plex Mono',monospace;color:#4E585D">17:15</div>
+              </div>
+            </div>
+            <div style="height:52px;flex-shrink:0;border-radius:8px;background:#35DBC0;display:flex;align-items:center;justify-content:center;font:600 15px/1 'IBM Plex Sans',sans-serif;color:#062621">Confirmer pour 16:00</div>
+            <div style="height:1px;background:#23292E;flex-shrink:0"></div>
+            <div style="display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:12px;background:#15191C;border:1px solid #23292E;flex-shrink:0">
+              <div style="font:600 13px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Deux autres cas, même traitement</div>
+              <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#A7B0B4">Palier fermé : « Cette prestation est au palier Reel. Elle reste visible, elle n'est pas réservable pour toi aujourd'hui » — le bouton de confirmation est retiré, pas grisé.</div>
+              <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#A7B0B4">Hors ligne au moment de confirmer : « Pas de réseau, on garde ton choix 10 minutes et on confirme dès le retour. » Aucun double envoi possible.</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:12px;background:#15191C;border:1px solid #23292E;flex-shrink:0">
+              <div style="font:600 13px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Chargement de la confirmation</div>
+              <div style="height:52px;flex-shrink:0;border-radius:8px;background:#35DBC0;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:9px"><div style="width:16px;height:16px;border-radius:999px;border:2px solid rgba(6,38,33,.3);border-top-color:#062621;animation:spin .8s linear infinite"></div><div style="font:600 15px/1 'IBM Plex Sans',sans-serif;color:#062621">Confirmation…</div></div>
+              <div style="font:400 11px/1.5 'IBM Plex Sans',sans-serif;color:#6F7A7F">Le bouton porte son propre chargement : pas de recouvrement plein écran sur une action de 400 ms.</div>
+            </div>
+            <div style="flex:1"></div>
+          </div>
+        </div>
+        <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#5C574F;width:390px">05d · erreur · créneau perdu, reprise immédiate</div>
+      </div>
+
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+      <div style="font:600 15px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#171410">06 · Code de retrait</div>
+      <div style="flex:1;height:1px;background:#C9C5BE"></div>
+    </div>
+    <div style="font:400 13px/1.6 'IBM Plex Sans',sans-serif;color:#5C574F;max-width:860px">Écran hors thème : blanc pur sur noir pur, sans gris sur les éléments porteurs, sans ombre, sans opacité. Luminosité forcée au maximum, veille désactivée. Quatre caractères en 76 px, alphabet sans O, 0, I ni 1.</div>
+    <div style="display:flex;flex-direction:row;gap:20px;flex-wrap:wrap;align-items:flex-start">
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div data-screen-label="06a" style="display:flex;flex-direction:column;width:390px;height:800px;border-radius:26px;overflow:hidden;background:#FFFFFF;border:1px solid #2E363B">
+          <div style="display:flex;flex-direction:row;justify-content:space-between;padding:14px 22px 0;font:500 12px/1 'IBM Plex Mono',monospace;color:#000000"><div>14:26</div><div>100 %</div></div>
+          <div style="display:flex;flex-direction:column;gap:4px;padding:16px 20px 0;flex-shrink:0">
+            <div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#000000">Little Havana Nails</div>
+            <div style="font:400 14px/1.3 'IBM Plex Sans',sans-serif;color:#2E2E2E">Pose gel, mains · 45 min · 14:30</div>
+          </div>
+          <div style="display:flex;flex-direction:column;flex:1;align-items:center;justify-content:center;gap:20px;padding:20px">
+            <div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#000000;letter-spacing:.12em;text-transform:uppercase">Montre ce code</div>
+            <div style="font:600 76px/1 'IBM Plex Mono',monospace;color:#000000;letter-spacing:.04em">8F42</div>
+            <div style="width:100%;height:2px;background:#000000"></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+              <div style="font:600 46px/1 'IBM Plex Mono',monospace;color:#000000">04:57</div>
+              <div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#000000">Valide encore 4 min 57 s</div>
+            </div>
+            <div style="width:170px;height:170px;background:#FFFFFF;border:2px solid #000000;display:flex;align-items:center;justify-content:center"><div style="width:140px;height:140px;background:repeating-linear-gradient(90deg,#000 0 7px,#FFF 7px 14px)"></div></div>
+            <div style="font:400 13px/1.4 'IBM Plex Sans',sans-serif;color:#2E2E2E">Le salon peut aussi scanner</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;padding:0 20px 20px;flex-shrink:0">
+            <div style="height:56px;flex-shrink:0;border-radius:8px;background:#000000;display:flex;align-items:center;justify-content:center;font:600 16px/1 'IBM Plex Sans',sans-serif;color:#FFFFFF">Le salon a validé</div>
+            <div style="font:400 12px/1.45 'IBM Plex Sans',sans-serif;color:#2E2E2E;text-align:center">Hors ligne, le code reste affiché et valide : sa vérification se fait côté salon.</div>
+          </div>
+        </div>
+        <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#5C574F;width:390px">06a · nominal · 21:1, lisible à 1,20 m</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div data-screen-label="06b" style="display:flex;flex-direction:column;width:390px;height:800px;border-radius:26px;overflow:hidden;background:#FFFFFF;border:1px solid #2E363B">
+          <div style="display:flex;flex-direction:row;justify-content:space-between;padding:14px 22px 0;font:500 12px/1 'IBM Plex Mono',monospace;color:#000000"><div>14:34</div><div>100 %</div></div>
+          <div style="display:flex;flex-direction:column;gap:4px;padding:16px 20px 0;flex-shrink:0">
+            <div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#000000">Little Havana Nails</div>
+            <div style="font:400 14px/1.3 'IBM Plex Sans',sans-serif;color:#2E2E2E">Pose gel, mains · 45 min · 14:30</div>
+          </div>
+          <div style="display:flex;flex-direction:column;flex:1;align-items:center;justify-content:center;gap:20px;padding:20px">
+            <div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#000000;letter-spacing:.12em;text-transform:uppercase">Montre ce code</div>
+            <div style="font:600 76px/1 'IBM Plex Mono',monospace;color:#000000;letter-spacing:.04em">8F42</div>
+            <div style="width:100%;height:2px;background:#000000"></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 22px;background:#000000;border-radius:8px">
+              <div style="font:600 60px/1 'IBM Plex Mono',monospace;color:#FFFFFF">0:42</div>
+              <div style="font:600 16px/1.2 'IBM Plex Sans',sans-serif;color:#FFFFFF">Encore 42 s</div>
+            </div>
+            <div style="font:400 14px/1.45 'IBM Plex Sans',sans-serif;color:#000000;text-align:center">Passé ce délai, demande simplement un nouveau code : ta réservation reste valable.</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;padding:0 20px 20px;flex-shrink:0">
+            <div style="height:56px;flex-shrink:0;border-radius:8px;background:#000000;display:flex;align-items:center;justify-content:center;font:600 16px/1 'IBM Plex Sans',sans-serif;color:#FFFFFF">Le salon a validé</div>
+          </div>
+        </div>
+        <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#5C574F;width:390px">06b · dernière minute · inversion du compteur, QR retiré</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div data-screen-label="06c" style="display:flex;flex-direction:column;width:390px;height:800px;border-radius:26px;overflow:hidden;background:#FFFFFF;border:1px solid #2E363B">
+          <div style="display:flex;flex-direction:row;justify-content:space-between;padding:14px 22px 0;font:500 12px/1 'IBM Plex Mono',monospace;color:#000000"><div>14:36</div><div>100 %</div></div>
+          <div style="display:flex;flex-direction:column;gap:4px;padding:16px 20px 0;flex-shrink:0">
+            <div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#000000">Little Havana Nails</div>
+            <div style="font:400 14px/1.3 'IBM Plex Sans',sans-serif;color:#2E2E2E">Pose gel, mains · 45 min · 14:30</div>
+          </div>
+          <div style="display:flex;flex-direction:column;flex:1;align-items:center;justify-content:center;gap:22px;padding:20px">
+            <div style="position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;height:76px">
+              <div style="font:600 76px/1 'IBM Plex Mono',monospace;color:#000000;letter-spacing:.04em">8F42</div>
+              <div style="position:absolute;top:36px;width:230px;height:4px;background:#000000"></div>
+            </div>
+            <div style="font:600 22px/1.25 'IBM Plex Sans',sans-serif;color:#000000;text-align:center">Ce code a expiré</div>
+            <div style="font:400 15px/1.5 'IBM Plex Sans',sans-serif;color:#000000;text-align:center">Ta réservation de 14:30 est toujours enregistrée. Demande un nouveau code, il s'affiche immédiatement.</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;padding:0 20px 20px;flex-shrink:0">
+            <div style="height:56px;flex-shrink:0;border-radius:8px;background:#000000;display:flex;align-items:center;justify-content:center;font:600 16px/1 'IBM Plex Sans',sans-serif;color:#FFFFFF">Demander un nouveau code</div>
+            <div style="font:400 12px/1.45 'IBM Plex Sans',sans-serif;color:#2E2E2E;text-align:center">Action unique. Aucun autre bouton sur cet écran.</div>
+          </div>
+        </div>
+        <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#5C574F;width:390px">06c · expiré · code barré, une seule issue</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div data-screen-label="06d" style="display:flex;flex-direction:column;width:390px;height:800px;border-radius:26px;overflow:hidden;background:#FFFFFF;border:1px solid #2E363B">
+          <div style="display:flex;flex-direction:row;justify-content:space-between;padding:14px 22px 0;font:500 12px/1 'IBM Plex Mono',monospace;color:#000000"><div>14:31</div><div>100 %</div></div>
+          <div style="display:flex;flex-direction:column;flex:1;align-items:center;justify-content:center;gap:22px;padding:24px">
+            <div style="width:88px;height:88px;border-radius:999px;background:#000000;display:flex;align-items:center;justify-content:center;font:600 40px/1 'IBM Plex Sans',sans-serif;color:#FFFFFF">✓</div>
+            <div style="font:600 26px/1.2 'IBM Plex Sans',sans-serif;color:#000000;text-align:center">Retrait validé à 14:31</div>
+            <div style="font:400 15px/1.5 'IBM Plex Sans',sans-serif;color:#000000;text-align:center">Little Havana Nails · Pose gel, mains. Bonne séance.</div>
+            <div style="width:100%;height:2px;background:#000000"></div>
+            <div style="display:flex;flex-direction:column;gap:8px;width:100%">
+              <div style="font:600 15px/1.3 'IBM Plex Sans',sans-serif;color:#000000">Ta contrepartie</div>
+              <div style="font:400 14px/1.5 'IBM Plex Sans',sans-serif;color:#2E2E2E">Une story avant vendredi 8 août, 16:31. On te rappellera 12 h avant l'échéance.</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;padding:0 20px 20px;flex-shrink:0">
+            <div style="height:56px;flex-shrink:0;border-radius:8px;background:#000000;display:flex;align-items:center;justify-content:center;font:600 16px/1 'IBM Plex Sans',sans-serif;color:#FFFFFF">Terminé</div>
+            <div style="font:400 12px/1.45 'IBM Plex Sans',sans-serif;color:#2E2E2E;text-align:center">L'écran revient au thème sombre en quittant.</div>
+          </div>
+        </div>
+        <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#5C574F;width:390px">06d · validé · confirmation puis rappel de l'échéance</div>
+      </div>
+
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+      <div style="font:600 15px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#171410">07 · Soumission de preuve</div>
+      <div style="flex:1;height:1px;background:#C9C5BE"></div>
+    </div>
+    <div style="display:flex;flex-direction:row;gap:20px;flex-wrap:wrap;align-items:flex-start">
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div data-screen-label="07a" style="display:flex;flex-direction:column;width:390px;height:800px;border-radius:26px;overflow:hidden;background:#0C0F11;border:1px solid #2E363B">
+          <div style="display:flex;flex-direction:row;justify-content:space-between;padding:14px 22px 0;font:500 12px/1 'IBM Plex Mono',monospace;color:#6F7A7F"><div>9:41</div><div>Miami</div></div>
+          <div style="display:flex;flex-direction:column;flex:1;gap:14px;padding:18px 20px 20px">
+            <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+              <div style="font:600 24px/1.15 'Familjen Grotesk',sans-serif;color:#F2F5F4">Ta preuve de publication</div>
+              <div style="font:400 13px/1.5 'IBM Plex Sans',sans-serif;color:#A7B0B4">Little Havana Nails · Pose gel, mains · retiré le 6 août</div>
+            </div>
+            <div style="display:flex;flex-direction:row;gap:10px;padding:12px 14px;border-radius:12px;background:#211A0C;border:1px solid #4A3A18;flex-shrink:0">
+              <div style="width:14px;height:14px;border-radius:999px;background:#F5A524;flex-shrink:0;margin-top:2px"></div>
+              <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#F2F5F4">Il te reste 11 h sur les 48 h. Échéance vendredi 8 août à 16:31.</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;flex-shrink:0">
+              <div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#F2F5F4">Ce qui était attendu</div>
+              <div style="display:flex;flex-direction:row;gap:10px;align-items:center;padding:12px 14px;border-radius:12px;background:#15191C;border:1px solid #23292E">
+                <div style="display:flex;flex-direction:row;gap:7px;align-items:center;padding:4px 10px 4px 8px;border-radius:999px;border:1px solid #C3CDD2"><div style="display:flex;flex-direction:row;gap:2px;align-items:flex-end"><div style="width:3px;height:6px;background:#C3CDD2"></div><div style="width:3px;height:9px;background:transparent"></div><div style="width:3px;height:12px;background:transparent"></div></div><div style="font:600 10px/1.4 'IBM Plex Mono',monospace;color:#C3CDD2;letter-spacing:.06em">STORY</div></div>
+                <div style="font:400 12px/1.4 'IBM Plex Sans',sans-serif;color:#A7B0B4;flex:1">Une story avec mention du salon</div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;flex-shrink:0">
+              <div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#F2F5F4">Comment tu la soumets</div>
+              <div style="display:flex;flex-direction:row;gap:10px;align-items:center;padding:14px;border-radius:12px;background:#0C2A27;border:1px solid #35DBC0">
+                <div style="width:18px;height:18px;border-radius:999px;border:2px solid #35DBC0;flex-shrink:0"></div>
+                <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#F2F5F4">Capture de ta story</div><div style="font:400 12px/1.4 'IBM Plex Sans',sans-serif;color:#9FD9CF">Une story disparaît au bout de 24 h : la capture est le chemin normal.</div></div>
+              </div>
+              <div style="display:flex;flex-direction:row;gap:10px;align-items:center;padding:14px;border-radius:12px;background:#15191C;border:1px solid #23292E">
+                <div style="width:18px;height:18px;border-radius:999px;border:1px solid #4A5459;flex-shrink:0"></div>
+                <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#F2F5F4">Détection par la mention</div><div style="font:400 12px/1.4 'IBM Plex Sans',sans-serif;color:#A7B0B4">Possible si ta story est encore en ligne au moment de l'envoi.</div></div>
+              </div>
+              <div style="font:400 11px/1.5 'IBM Plex Sans',sans-serif;color:#6F7A7F">Sur un post ou un reel, l'ordre s'inverse : la détection automatique est proposée en premier, la capture reste disponible.</div>
+            </div>
+            <div style="display:flex;flex-direction:row;gap:10px;align-items:center;padding:12px;border-radius:12px;background:#15191C;border:1px dashed #2E363B;flex-shrink:0">
+              <div style="width:56px;height:76px;border-radius:6px;background:repeating-linear-gradient(135deg,#2A3236 0 6px,#222A2E 6px 12px);flex-shrink:0"></div>
+              <div style="display:flex;flex-direction:column;gap:3px;flex:1"><div style="font:600 13px/1.3 'IBM Plex Sans',sans-serif;color:#F2F5F4">story-06-08.png</div><div style="font:400 11px/1.4 'IBM Plex Sans',sans-serif;color:#A7B0B4">1,2 Mo · ajoutée</div></div>
+              <div style="font:600 12px/1.3 'IBM Plex Sans',sans-serif;color:#FF6B5E">Retirer</div>
+            </div>
+            <div style="flex:1"></div>
+            <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0">
+              <div style="height:56px;flex-shrink:0;border-radius:8px;background:#35DBC0;display:flex;align-items:center;justify-content:center;font:600 16px/1 'IBM Plex Sans',sans-serif;color:#062621">Envoyer ma preuve</div>
+              <div style="font:400 11px/1.5 'IBM Plex Sans',sans-serif;color:#6F7A7F;text-align:center">Le salon voit la publication, jamais tes statistiques privées.</div>
+            </div>
+          </div>
+        </div>
+        <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#5C574F;width:390px">07a · nominal · détection auto par défaut, capture en secours</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div data-screen-label="07b" style="display:flex;flex-direction:column;width:390px;height:800px;border-radius:26px;overflow:hidden;background:#0C0F11;border:1px solid #2E363B">
+          <div style="display:flex;flex-direction:row;justify-content:space-between;padding:14px 22px 0;font:500 12px/1 'IBM Plex Mono',monospace;color:#6F7A7F"><div>9:41</div><div>Miami</div></div>
+          <div style="display:flex;flex-direction:column;flex:1;gap:14px;padding:22px 20px 20px">
+            <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+              <div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#35DBC0">PREUVE REÇUE</div>
+              <div style="font:600 24px/1.15 'Familjen Grotesk',sans-serif;color:#F2F5F4">En cours de vérification</div>
+              <div style="font:400 13px/1.5 'IBM Plex Sans',sans-serif;color:#A7B0B4">Envoyée hier à 21:14. Le contrôle peut prendre un peu de temps. Tu reçois une notification dès qu'il aboutit, tu n'as rien à relancer.</div>
+            </div>
+            <div style="display:flex;flex-direction:row;gap:12px;align-items:center;padding:12px;border-radius:12px;background:#15191C;border:1px solid #23292E;flex-shrink:0">
+              <div style="width:56px;height:76px;border-radius:6px;background:repeating-linear-gradient(135deg,#2A3236 0 6px,#222A2E 6px 12px);flex-shrink:0"></div>
+              <div style="display:flex;flex-direction:column;gap:3px;flex:1"><div style="font:600 13px/1.3 'IBM Plex Sans',sans-serif;color:#F2F5F4">Story du 6 août</div><div style="font:400 11px/1.4 'IBM Plex Sans',sans-serif;color:#A7B0B4">Mention @littlehavananails détectée</div></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px;padding:14px;border-radius:12px;background:#15191C;border:1px solid #23292E;flex-shrink:0">
+              <div style="display:flex;flex-direction:row;gap:10px;align-items:center"><div style="width:16px;height:16px;border-radius:999px;background:#34C88A;flex-shrink:0"></div><div style="font:400 13px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Publication trouvée</div></div>
+              <div style="display:flex;flex-direction:row;gap:10px;align-items:center"><div style="width:16px;height:16px;border-radius:999px;background:#34C88A;flex-shrink:0"></div><div style="font:400 13px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Délai de 48 h respecté</div></div>
+              <div style="display:flex;flex-direction:row;gap:10px;align-items:center"><div style="width:16px;height:16px;border-radius:4px;background:#F5A524;flex-shrink:0"></div><div style="font:400 13px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Contrôle de conformité en cours</div></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:12px;background:#15191C;border:1px solid #23292E;flex-shrink:0">
+              <div style="font:600 13px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Deux suites possibles</div>
+              <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#A7B0B4">Conforme : la contrepartie est honorée, c'est terminé. Non conforme : on te demande une nouvelle soumission, avec une nouvelle date limite. Aucune validation ne se fait par défaut ou par silence.</div>
+              <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#A7B0B4">Tu peux réserver ailleurs pendant ce temps : une preuve en contrôle ne bloque rien.</div>
+            </div>
+            <div style="flex:1"></div>
+            <div style="height:52px;flex-shrink:0;border-radius:8px;border:1px solid #2E363B;display:flex;align-items:center;justify-content:center;font:600 15px/1 'IBM Plex Sans',sans-serif;color:#F2F5F4">Voir mon historique</div>
+          </div>
+        </div>
+        <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#5C574F;width:390px">07b · en attente · validation automatique si le salon ne répond pas</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div data-screen-label="07c" style="display:flex;flex-direction:column;width:390px;height:800px;border-radius:26px;overflow:hidden;background:#0C0F11;border:1px solid #2E363B">
+          <div style="display:flex;flex-direction:row;justify-content:space-between;padding:14px 22px 0;font:500 12px/1 'IBM Plex Mono',monospace;color:#6F7A7F"><div>9:41</div><div>Miami</div></div>
+          <div style="display:flex;flex-direction:column;flex:1;gap:14px;padding:22px 20px 20px">
+            <div style="font:600 24px/1.15 'Familjen Grotesk',sans-serif;color:#F2F5F4">Nouvelle soumission attendue</div>
+            <div style="display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:12px;background:#211A0C;border:1px solid #4A3A18;flex-shrink:0">
+              <div style="font:600 14px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Avant dimanche 10 août, 18:00</div>
+              <div style="font:400 13px/1.5 'IBM Plex Sans',sans-serif;color:#A7B0B4">Passé cette date sans nouvelle soumission, la contrepartie est enregistrée comme non honorée. Il te reste 2 jours 8 h.</div>
+            </div>
+            <div style="display:flex;flex-direction:row;gap:10px;padding:14px;border-radius:12px;background:#15191C;border:1px solid #2E363B;flex-shrink:0">
+              <div style="width:16px;height:16px;border-radius:999px;background:#F5A524;flex-shrink:0;margin-top:2px"></div>
+              <div style="display:flex;flex-direction:column;gap:4px"><div style="font:600 14px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Motif : la mention du salon n'apparaît pas</div><div style="font:400 13px/1.5 'IBM Plex Sans',sans-serif;color:#A7B0B4">Transmis par Little Havana Nails. Le reste est conforme : story publiée dans les délais, prestation bien identifiée.</div></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:12px;background:#15191C;border:1px solid #23292E;flex-shrink:0">
+              <div style="font:600 13px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Deux façons de la rendre conforme</div>
+              <div style="display:flex;flex-direction:row;gap:8px"><div style="font:500 12px/1.6 'IBM Plex Mono',monospace;color:#35DBC0">1</div><div style="font:400 13px/1.5 'IBM Plex Sans',sans-serif;color:#A7B0B4">Republier avec la mention @littlehavananails, puis envoyer la capture</div></div>
+              <div style="display:flex;flex-direction:row;gap:8px"><div style="font:500 12px/1.6 'IBM Plex Mono',monospace;color:#35DBC0">2</div><div style="font:400 13px/1.5 'IBM Plex Sans',sans-serif;color:#A7B0B4">Envoyer une capture où la mention est visible, si elle y figurait bien</div></div>
+              <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#6F7A7F">Tentative 2 sur 3. À la troisième, un membre de l'équipe BIND regarde le dossier lui-même et tranche.</div>
+            </div>
+            <div style="height:52px;flex-shrink:0;border-radius:8px;background:#35DBC0;display:flex;align-items:center;justify-content:center;font:600 15px/1 'IBM Plex Sans',sans-serif;color:#062621">Soumettre à nouveau</div>
+            <div style="height:48px;flex-shrink:0;border-radius:8px;border:1px solid #2E363B;display:flex;align-items:center;justify-content:center;font:600 14px/1 'IBM Plex Sans',sans-serif;color:#F2F5F4">Contester auprès de BIND</div>
+            <div style="display:flex;flex-direction:row;gap:10px;padding:12px;border-radius:12px;background:#1D2226;flex-shrink:0">
+              <div style="width:14px;height:14px;border-radius:999px;background:#6F7A7F;flex-shrink:0;margin-top:2px"></div>
+              <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#A7B0B4">Un refus ne retire aucun badge et n'apparaît pas sur ton profil. Il ne compte pas comme une absence.</div>
+            </div>
+            <div style="font:400 11px/1.5 'IBM Plex Sans',sans-serif;color:#6F7A7F">Délai dépassé sans nouvelle soumission : la contrepartie passe en non honorée, l'écran l'annonce une fois, sans badge ni mention permanente sur le profil. Autre état : échec d'envoi, la capture est gardée en local et réessayée automatiquement.</div>
+            <div style="flex:1"></div>
+          </div>
+        </div>
+        <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#5C574F;width:390px">07c · refus expliqué · motif, deux issues, aucune sanction</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div data-screen-label="07d" style="display:flex;flex-direction:column;width:390px;height:800px;border-radius:26px;overflow:hidden;background:#0C0F11;border:1px solid #2E363B">
+          <div style="display:flex;flex-direction:row;justify-content:space-between;padding:14px 22px 0;font:500 12px/1 'IBM Plex Mono',monospace;color:#6F7A7F"><div>9:41</div><div>Miami</div></div>
+          <div style="display:flex;flex-direction:column;flex:1;gap:14px;padding:22px 20px 20px">
+            <div style="font:600 24px/1.15 'Familjen Grotesk',sans-serif;color:#F2F5F4">Ta preuve de publication</div>
+            <div style="width:80%;height:12px;border-radius:4px;background:#1D2226;animation:pulse 1.4s ease-in-out infinite;flex-shrink:0"></div>
+            <div style="display:flex;flex-direction:row;gap:12px;align-items:center;padding:12px;border-radius:12px;background:#15191C;border:1px solid #23292E;flex-shrink:0">
+              <div style="width:56px;height:76px;border-radius:6px;background:#1D2226;animation:pulse 1.4s ease-in-out infinite;flex-shrink:0"></div>
+              <div style="display:flex;flex-direction:column;gap:8px;flex:1"><div style="width:60%;height:12px;border-radius:4px;background:#1D2226;animation:pulse 1.4s ease-in-out .1s infinite"></div><div style="width:76%;height:10px;border-radius:4px;background:#1D2226;animation:pulse 1.4s ease-in-out .2s infinite"></div><div style="width:100%;height:6px;border-radius:3px;background:#1D2226;display:flex;flex-direction:row"><div style="width:64%;background:#35DBC0;border-radius:3px"></div></div><div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#35DBC0">envoi 64 %</div></div>
+            </div>
+            <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#A7B0B4;flex-shrink:0">L'envoi continue si tu quittes l'écran. Tu peux fermer l'app.</div>
+            <div style="height:1px;background:#23292E;flex-shrink:0"></div>
+            <div style="display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:12px;background:#15191C;border:1px solid #23292E;flex-shrink:0">
+              <div style="font:600 13px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Aucune preuve à soumettre</div>
+              <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#A7B0B4">État vide de cet écran : « Rien en attente. Ta dernière preuve a été validée le 2 août. » Suivi d'un accès au fil, pas d'un écran mort.</div>
+              <div style="height:44px;flex-shrink:0;border-radius:8px;border:1px solid #2E363B;display:flex;align-items:center;justify-content:center;font:600 14px/1 'IBM Plex Sans',sans-serif;color:#F2F5F4">Voir les salons autour de moi</div>
+            </div>
+            <div style="display:flex;flex-direction:row;gap:10px;padding:12px;border-radius:12px;background:#20100F;border:1px solid #4A2321;flex-shrink:0">
+              <div style="width:14px;height:14px;border-radius:999px;background:#FF6B5E;flex-shrink:0;margin-top:2px"></div>
+              <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#A7B0B4">Échec d'envoi : « La capture n'est pas partie. Elle est gardée sur ton téléphone, on réessaie automatiquement. » L'échéance est suspendue le temps du réessai.</div>
+            </div>
+            <div style="flex:1"></div>
+          </div>
+        </div>
+        <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#5C574F;width:390px">07d · envoi, vide, échec · l'échéance se suspend pendant le réessai</div>
+      </div>
+
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+      <div style="font:600 15px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#171410">08 · Historique</div>
+      <div style="flex:1;height:1px;background:#C9C5BE"></div>
+    </div>
+    <div style="display:flex;flex-direction:row;gap:20px;flex-wrap:wrap;align-items:flex-start">
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div data-screen-label="08a" style="display:flex;flex-direction:column;width:390px;height:800px;border-radius:26px;overflow:hidden;background:#0C0F11;border:1px solid #2E363B">
+          <div style="display:flex;flex-direction:row;justify-content:space-between;padding:14px 22px 0;font:500 12px/1 'IBM Plex Mono',monospace;color:#6F7A7F"><div>9:41</div><div>Miami</div></div>
+          <div style="display:flex;flex-direction:column;gap:12px;padding:18px 20px 12px;flex-shrink:0">
+            <div style="font:600 24px/1.15 'Familjen Grotesk',sans-serif;color:#F2F5F4">Mon activité</div>
+            <div style="display:flex;flex-direction:row;gap:1px;border-radius:8px;overflow:hidden;background:#23292E">
+              <div style="flex:1;padding:8px 0;text-align:center;background:#1D2226;font:600 12px/1 'IBM Plex Sans',sans-serif;color:#F2F5F4">À venir · 1</div>
+              <div style="flex:1;padding:8px 0;text-align:center;font:600 12px/1 'IBM Plex Sans',sans-serif;color:#A7B0B4">En attente · 1</div>
+              <div style="flex:1;padding:8px 0;text-align:center;font:600 12px/1 'IBM Plex Sans',sans-serif;color:#A7B0B4">Terminées · 9</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;padding:0 20px 20px;flex:1">
+            <div style="display:flex;flex-direction:row;gap:12px;align-items:center;padding:12px;border-radius:12px;background:#15191C;border:1px solid #35DBC0">
+              <div style="width:48px;height:48px;border-radius:8px;background:#0C2A27;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0"><div style="font:600 13px/1 'IBM Plex Mono',monospace;color:#35DBC0">14:30</div></div>
+              <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#F2F5F4">Pose gel, mains</div><div style="font:400 11px/1.35 'IBM Plex Sans',sans-serif;color:#A7B0B4">Little Havana Nails · aujourd'hui</div></div>
+              <div style="padding:5px 10px;border-radius:6px;background:#35DBC0;font:600 11px/1.3 'IBM Plex Sans',sans-serif;color:#062621">Code</div>
+            </div>
+            <div style="display:flex;flex-direction:row;gap:12px;align-items:center;padding:12px;border-radius:12px;background:#15191C;border:1px solid #23292E">
+              <div style="width:48px;height:48px;border-radius:8px;background:#211A0C;display:flex;align-items:center;justify-content:center;flex-shrink:0"><div style="width:14px;height:14px;border-radius:999px;background:#F5A524"></div></div>
+              <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#F2F5F4">Soin hydratant visage</div><div style="font:400 11px/1.35 'IBM Plex Sans',sans-serif;color:#F5A524">Preuve à envoyer · 11 h restantes</div></div>
+              <div style="padding:5px 10px;border-radius:6px;border:1px solid #2E363B;font:600 11px/1.3 'IBM Plex Sans',sans-serif;color:#F2F5F4">Preuve</div>
+            </div>
+            <div style="height:1px;background:#23292E;margin:4px 0"></div>
+            <div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#6F7A7F">TERMINÉES</div>
+            <div style="display:flex;flex-direction:row;gap:12px;align-items:center;padding:12px;border-radius:12px;background:#15191C;border:1px solid #23292E">
+              <div style="width:48px;height:48px;border-radius:8px;background:repeating-linear-gradient(135deg,#2A3236 0 6px,#222A2E 6px 12px);flex-shrink:0"></div>
+              <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#F2F5F4">Rehaussement de cils</div><div style="font:400 11px/1.35 'IBM Plex Sans',sans-serif;color:#A7B0B4">Sunset Brow Bar · 2 août</div></div>
+              <div style="font:600 11px/1.3 'IBM Plex Sans',sans-serif;color:#34C88A">Publiée</div>
+            </div>
+            <div style="display:flex;flex-direction:row;gap:12px;align-items:center;padding:12px;border-radius:12px;background:#15191C;border:1px solid #23292E">
+              <div style="width:48px;height:48px;border-radius:8px;background:#252D31;display:flex;align-items:center;justify-content:center;font:600 13px/1 'Familjen Grotesk',sans-serif;color:#35DBC0;flex-shrink:0">OC</div>
+              <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#F2F5F4">Massage 30 min</div><div style="font:400 11px/1.35 'IBM Plex Sans',sans-serif;color:#A7B0B4">Ocean Calm Spa · 28 juillet</div></div>
+              <div style="font:600 11px/1.3 'IBM Plex Sans',sans-serif;color:#34C88A">Publiée</div>
+            </div>
+            <div style="display:flex;flex-direction:row;gap:12px;align-items:center;padding:12px;border-radius:12px;background:#15191C;border:1px solid #23292E">
+              <div style="width:48px;height:48px;border-radius:8px;background:#1D2226;display:flex;align-items:center;justify-content:center;font:600 11px/1 'IBM Plex Mono',monospace;color:#6F7A7F;flex-shrink:0">—</div>
+              <div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font:600 14px/1.3 'IBM Plex Sans',sans-serif;color:#F2F5F4">Manucure express</div><div style="font:400 11px/1.35 'IBM Plex Sans',sans-serif;color:#A7B0B4">Wynwood Nail Lab · 19 juillet · annulée par toi</div></div>
+            </div>
+            <div style="font:400 11px/1.5 'IBM Plex Sans',sans-serif;color:#6F7A7F">Aucun total, aucun cumul de valeur : une liste de prestations et de publications, datées.</div>
+          </div>
+        </div>
+        <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#5C574F;width:390px">08a · nominal · à venir, en attente, terminées</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div data-screen-label="08b" style="display:flex;flex-direction:column;width:390px;height:800px;border-radius:26px;overflow:hidden;background:#0C0F11;border:1px solid #2E363B">
+          <div style="display:flex;flex-direction:row;justify-content:space-between;padding:14px 22px 0;font:500 12px/1 'IBM Plex Mono',monospace;color:#6F7A7F"><div>9:41</div><div>Miami</div></div>
+          <div style="display:flex;flex-direction:column;gap:12px;padding:18px 20px 12px;flex-shrink:0">
+            <div style="font:600 24px/1.15 'Familjen Grotesk',sans-serif;color:#F2F5F4">Mon activité</div>
+            <div style="display:flex;flex-direction:row;gap:1px;border-radius:8px;overflow:hidden;background:#23292E">
+              <div style="flex:1;padding:8px 0;text-align:center;background:#1D2226;font:600 12px/1 'IBM Plex Sans',sans-serif;color:#F2F5F4">À venir</div>
+              <div style="flex:1;padding:8px 0;text-align:center;font:600 12px/1 'IBM Plex Sans',sans-serif;color:#A7B0B4">En attente</div>
+              <div style="flex:1;padding:8px 0;text-align:center;font:600 12px/1 'IBM Plex Sans',sans-serif;color:#A7B0B4">Terminées</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:14px;padding:26px 20px 20px;align-items:center;flex:1">
+            <div style="width:56px;height:56px;border-radius:999px;background:#15191C;border:1px solid #2E363B"></div>
+            <div style="font:600 19px/1.3 'Familjen Grotesk',sans-serif;color:#F2F5F4;text-align:center">Rien de prévu pour l'instant</div>
+            <div style="font:400 13px/1.55 'IBM Plex Sans',sans-serif;color:#A7B0B4;text-align:center">Tes deux paliers sont ouverts et 45 prestations sont réservables autour de toi aujourd'hui.</div>
+            <div style="height:52px;flex-shrink:0;width:100%;border-radius:8px;background:#35DBC0;display:flex;align-items:center;justify-content:center;font:600 15px/1 'IBM Plex Sans',sans-serif;color:#062621">Voir les 45 prestations</div>
+            <div style="height:1px;width:100%;background:#23292E;margin-top:4px"></div>
+            <div style="display:flex;flex-direction:column;gap:8px;width:100%">
+              <div style="font:600 13px/1.4 'IBM Plex Sans',sans-serif;color:#F2F5F4">Tes 9 dernières sont dans « Terminées »</div>
+              <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#A7B0B4">Un historique vide n'est jamais total : on renvoie vers l'onglet qui contient quelque chose, et on chiffre ce que l'action rapporte.</div>
+            </div>
+            <div style="flex:1"></div>
+          </div>
+        </div>
+        <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#5C574F;width:390px">08b · vide · renvoi vers l'onglet non vide</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div data-screen-label="08c" style="display:flex;flex-direction:column;width:390px;height:800px;border-radius:26px;overflow:hidden;background:#0C0F11;border:1px solid #2E363B">
+          <div style="display:flex;flex-direction:row;justify-content:space-between;padding:14px 22px 0;font:500 12px/1 'IBM Plex Mono',monospace;color:#6F7A7F"><div>9:41</div><div>Miami</div></div>
+          <div style="display:flex;flex-direction:column;gap:12px;padding:18px 20px 12px;flex-shrink:0">
+            <div style="font:600 24px/1.15 'Familjen Grotesk',sans-serif;color:#F2F5F4">Mon activité</div>
+            <div style="display:flex;flex-direction:row;gap:1px;border-radius:8px;overflow:hidden;background:#23292E">
+              <div style="flex:1;padding:8px 0;text-align:center;background:#1D2226;font:600 12px/1 'IBM Plex Sans',sans-serif;color:#F2F5F4">À venir</div>
+              <div style="flex:1;padding:8px 0;text-align:center;font:600 12px/1 'IBM Plex Sans',sans-serif;color:#A7B0B4">En attente</div>
+              <div style="flex:1;padding:8px 0;text-align:center;font:600 12px/1 'IBM Plex Sans',sans-serif;color:#A7B0B4">Terminées</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;padding:0 20px 20px;flex:1">
+            <div style="display:flex;flex-direction:row;gap:12px;align-items:center;padding:12px;border-radius:12px;background:#15191C;border:1px solid #23292E">
+              <div style="width:48px;height:48px;border-radius:8px;background:#1D2226;animation:pulse 1.4s ease-in-out infinite;flex-shrink:0"></div>
+              <div style="display:flex;flex-direction:column;gap:6px;flex:1"><div style="width:58%;height:13px;border-radius:4px;background:#1D2226;animation:pulse 1.4s ease-in-out .1s infinite"></div><div style="width:44%;height:10px;border-radius:4px;background:#1D2226;animation:pulse 1.4s ease-in-out .2s infinite"></div></div>
+            </div>
+            <div style="display:flex;flex-direction:row;gap:12px;align-items:center;padding:12px;border-radius:12px;background:#15191C;border:1px solid #23292E">
+              <div style="width:48px;height:48px;border-radius:8px;background:#1D2226;animation:pulse 1.4s ease-in-out .15s infinite;flex-shrink:0"></div>
+              <div style="display:flex;flex-direction:column;gap:6px;flex:1"><div style="width:48%;height:13px;border-radius:4px;background:#1D2226;animation:pulse 1.4s ease-in-out .25s infinite"></div><div style="width:40%;height:10px;border-radius:4px;background:#1D2226;animation:pulse 1.4s ease-in-out .3s infinite"></div></div>
+            </div>
+            <div style="display:flex;flex-direction:row;gap:12px;align-items:center;padding:12px;border-radius:12px;background:#15191C;border:1px solid #23292E">
+              <div style="width:48px;height:48px;border-radius:8px;background:#1D2226;animation:pulse 1.4s ease-in-out .2s infinite;flex-shrink:0"></div>
+              <div style="display:flex;flex-direction:column;gap:6px;flex:1"><div style="width:62%;height:13px;border-radius:4px;background:#1D2226;animation:pulse 1.4s ease-in-out .35s infinite"></div><div style="width:36%;height:10px;border-radius:4px;background:#1D2226;animation:pulse 1.4s ease-in-out .4s infinite"></div></div>
+            </div>
+            <div style="height:1px;background:#23292E;margin:6px 0"></div>
+            <div style="display:flex;flex-direction:row;gap:10px;padding:12px;border-radius:12px;background:#1D2226">
+              <div style="width:14px;height:14px;border-radius:999px;background:#6F7A7F;flex-shrink:0;margin-top:2px"></div>
+              <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#A7B0B4">Variante hors ligne : l'historique s'affiche depuis le cache, marqué « à jour il y a 2 h », et l'onglet « En attente » reste ouvrable. Seul l'envoi de preuve attend le réseau.</div>
+            </div>
+            <div style="font:400 11px/1.5 'IBM Plex Sans',sans-serif;color:#6F7A7F">Les onglets et leurs compteurs se chargent avant la liste : la navigation est utilisable immédiatement.</div>
+            <div style="flex:1"></div>
+          </div>
+        </div>
+        <div style="font:400 11px/1.4 'IBM Plex Mono',monospace;color:#5C574F;width:390px">08c · chargement et hors ligne · navigation d'abord</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:8px;padding:18px;border-radius:12px;background:#FFFFFF;border:1px solid #C9C5BE;max-width:920px">
+    <div style="font:600 13px/1.4 'IBM Plex Sans',sans-serif;color:#171410">Ce que ce lot ajoute aux règles</div>
+    <div style="font:400 12px/1.7 'IBM Plex Sans',sans-serif;color:#5C574F">Un délai qui court est toujours affiché en temps restant, jamais en date seule, et il se suspend pendant un réessai technique. Une action perdue à cause d'un autre utilisateur (créneau pris) n'annule rien de ton côté et propose immédiatement le repli. Le code de retrait est le seul écran hors thème et n'a jamais plus d'une action visible. Aucune preuve n'est validée par défaut ni par silence : un contrôle aboutit à conforme, ou à une demande de nouvelle soumission datée, et la troisième tentative passe en revue humaine. Un délai dépassé enregistre la contrepartie comme non honorée, sans badge ni marque permanente sur le profil. L'historique n'agrège rien : ni total, ni valeur cumulée, ni score.</div>
+  </div>
+</section>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=Outfit:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #EDE6DE; }
+  a { color: #A83E06; text-decoration: none; }
+  a:hover { color: #5E2204; }
+</style>
+</helmet>
+
+<section style="display:flex; flex-direction:column; gap:40px; padding:56px 56px 0; font-family:'Outfit',sans-serif;">
+
+  <div style="background:#17120E; padding:48px 52px; display:flex; flex-direction:column; gap:28px;">
+    <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:40px;">
+      <div style="display:flex; align-items:baseline; font-size:32px; line-height:32px; font-weight:300; letter-spacing:1px;"><span style="color:#FFFFFF;">B</span><span style="color:#FF5E00;">!</span><span style="color:#FFFFFF;">ND</span></div>
+      <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:1.4px; color:#9A8D80;">LE MUR · v2.1 · SPÉCIFICATION COMPLÈTE</div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:16px; max-width:900px;">
+      <div style="display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 14px;">
+        <span style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:46px; line-height:56px; font-weight:400; color:#FFFFFF;">Un cycle de six, qui ne se</span>
+        <span style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-style:italic; font-size:46px; line-height:56px; font-weight:500; color:#F58A4A;">devine pas</span>
+      </div>
+      <div style="font-size:17px; line-height:27px; color:#CFC3B6; max-width:780px; text-wrap:pretty;">L'alternance de la première passe était une intention. Ici elle devient une règle : <span style="font-weight:600;">six positions, un ordre fixe, qui se répète</span>. Le pouce apprend le rythme sans le remarquer, et personne n'a à décider quel salon mérite le grand format — la position le décide.</div>
+      <div style="font-size:15px; line-height:24px; color:#9A8D80; max-width:780px; text-wrap:pretty;">Six cadres : chargement, haut du fil, le cycle complet en deux écrans, la respiration, le vide, et le bas des vingt.</div>
+    </div>
+
+    <div style="display:flex; gap:0; flex-wrap:wrap; border:1px solid #3A3128;">
+      <div style="flex:1; min-width:280px; box-sizing:border-box; border-right:1px solid #3A3128; padding:22px 24px; display:flex; flex-direction:column; gap:8px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#F58A4A;">LA RÈGLE</div>
+        <div style="font-size:16px; line-height:24px; font-weight:600; color:#FFFFFF;">Huit salons, puis une respiration</div>
+        <div style="font-size:14px; line-height:21px; color:#9A8D80; text-wrap:pretty;">Un cycle porte huit salons répartis sur cinq blocs, et se referme sur un panneau os. Vingt salons font donc deux cycles pleins et un dernier partiel — le fil se termine sur un bloc complet, jamais sur une moitié orpheline.</div>
+      </div>
+      <div style="flex:1; min-width:280px; box-sizing:border-box; border-right:1px solid #3A3128; padding:22px 24px; display:flex; flex-direction:column; gap:8px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#F58A4A;">LE TRI, ET CE QU'IL DEVIENT</div>
+        <div style="font-size:16px; line-height:24px; font-weight:600; color:#FFFFFF;">La distance ordonne, la position met en valeur</div>
+        <div style="font-size:14px; line-height:21px; color:#9A8D80; text-wrap:pretty;">Les salons arrivent par distance croissante et se posent dans les positions du cycle. Le plus proche tombe donc en position 1, la plus grande — c'est un effet du tri, pas une mise en avant à décider. Aucun classement éditorial, aucun salon promu.</div>
+      </div>
+      <div style="flex:1; min-width:280px; box-sizing:border-box; padding:22px 24px; display:flex; flex-direction:column; gap:8px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#F58A4A;">LE DIDONE</div>
+        <div style="font-size:16px; line-height:24px; font-weight:600; color:#FFFFFF;">Une fois tous les huit salons</div>
+        <div style="font-size:14px; line-height:21px; color:#9A8D80; text-wrap:pretty;">Il n'apparaît que sur le panneau de respiration et sur le bas du fil. Sur environ trois hauteurs d'écran de photos, on en croise un. C'est l'intensité que je propose pour un écran ouvert dix fois par jour.</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex; flex-direction:column; gap:16px;">
+    <div style="display:flex; flex-direction:column; gap:6px; max-width:840px;">
+      <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:1.4px; color:#6B5F54;">LE CYCLE</div>
+      <div style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:32px; line-height:40px; font-weight:400; color:#17120E;">Six positions, dans cet ordre</div>
+    </div>
+
+    <div style="display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap;">
+      <div style="display:flex; flex-direction:column; gap:8px; width:158px;">
+        <div style="box-sizing:border-box; width:158px; height:210px; background:#9A8D80; border:1px solid #E2D9CF; display:flex; align-items:flex-end; padding:8px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.8px; color:#FFFFFF;">1 SALON</span></div>
+        <div style="display:flex; flex-direction:column; gap:1px;"><span style="font-size:14px; line-height:19px; font-weight:600; color:#17120E;">1 · Héros</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#6B5F54;">520 PX</span></div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px; width:158px;">
+        <div style="box-sizing:border-box; width:158px; height:96px; display:flex; gap:3px;">
+          <div style="flex:1; background:#B8AA9C; border:1px solid #E2D9CF;"></div>
+          <div style="flex:1; background:#B8AA9C; border:1px solid #E2D9CF;"></div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:1px;"><span style="font-size:14px; line-height:19px; font-weight:600; color:#17120E;">2 · Duo</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#6B5F54;">238 PX · 2 SALONS</span></div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px; width:158px;">
+        <div style="box-sizing:border-box; width:158px; height:60px; background:#C4B6A8; border:1px solid #E2D9CF; display:flex; align-items:center; padding:8px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.8px; color:#17120E;">1 SALON</span></div>
+        <div style="display:flex; flex-direction:column; gap:1px;"><span style="font-size:14px; line-height:19px; font-weight:600; color:#17120E;">3 · Bande</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#6B5F54;">150 PX</span></div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px; width:158px;">
+        <div style="box-sizing:border-box; width:158px; height:190px; background:#8A7C6E; border:1px solid #E2D9CF; display:flex; align-items:flex-end; padding:8px; gap:3px;">
+          <div style="width:16px; height:16px; background:rgba(255,255,255,0.4);"></div>
+          <div style="width:16px; height:16px; background:rgba(255,255,255,0.4);"></div>
+          <div style="width:16px; height:16px; background:rgba(255,255,255,0.4);"></div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:1px;"><span style="font-size:14px; line-height:19px; font-weight:600; color:#17120E;">4 · Héros galerie</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#6B5F54;">470 PX</span></div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px; width:158px;">
+        <div style="box-sizing:border-box; width:158px; height:64px; display:flex; gap:3px;">
+          <div style="flex:1; background:#CFC3B6; border:1px solid #E2D9CF;"></div>
+          <div style="flex:1; background:#CFC3B6; border:1px solid #E2D9CF;"></div>
+          <div style="flex:1; background:#CFC3B6; border:1px solid #E2D9CF;"></div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:1px;"><span style="font-size:14px; line-height:19px; font-weight:600; color:#17120E;">5 · Triptyque</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#6B5F54;">158 PX · 3 SALONS</span></div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px; width:158px;">
+        <div style="box-sizing:border-box; width:158px; height:86px; background:#EDE6DE; border:1px solid #CFC3B6; display:flex; align-items:center; padding:10px;"><span style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:19px; line-height:22px; color:#17120E;">Aa</span></div>
+        <div style="display:flex; flex-direction:column; gap:1px;"><span style="font-size:14px; line-height:19px; font-weight:600; color:#17120E;">6 · Respiration</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#6B5F54;">212 PX · 0 SALON</span></div>
+      </div>
+    </div>
+    <div style="max-width:840px; font-size:14px; line-height:21px; color:#6B5F54; text-wrap:pretty;">Trois pixels séparent toujours deux photos, à l'horizontale comme à la verticale. C'est la seule constante de l'écran, et c'est elle qui fait tenir six formats ensemble sans qu'aucun ne ressemble à une carte.</div>
+  </div>
+</section>
+
+
+<section style="display:flex; flex-direction:column; gap:24px; padding:56px 56px 0; font-family:'Outfit',sans-serif;">
+  <div style="display:flex; flex-direction:column; gap:6px; max-width:840px;">
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:1.4px; color:#6B5F54;">LES SIX CADRES</div>
+    <div style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:32px; line-height:40px; font-weight:400; color:#17120E;">Le cycle, et ce qui l'encadre</div>
+  </div>
+
+  <div style="display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start;">
+
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#6B5F54;">A · CHARGEMENT</div>
+      <div data-screen-label="A" style="width:390px; height:844px; overflow:hidden; background:#F7F3EF; border:1px solid #E2D9CF; display:flex; flex-direction:column;">
+        <div style="flex:none; height:46px;"></div>
+        <div style="box-sizing:border-box; flex:none; height:40px; padding:0 18px; display:flex; align-items:center; gap:8px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style="flex:none;"><path d="M12 21.5c4.4-4.6 6.6-8.2 6.6-11a6.6 6.6 0 10-13.2 0c0 2.8 2.2 6.4 6.6 11zM12 12.6a2.6 2.6 0 100-5.2 2.6 2.6 0 000 5.2z" stroke="#17120E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          <span style="font-size:14px; line-height:19px; font-weight:600; color:#17120E;">Wynwood</span>
+          <div style="width:64px; height:11px; background:#E2D9CF;"></div>
+          <div style="flex:1;"></div>
+          <div style="display:flex; align-items:baseline; font-size:17px; line-height:17px; font-weight:300; letter-spacing:0.4px;"><span style="color:#17120E;">B</span><span style="color:#FF5E00;">!</span><span style="color:#17120E;">ND</span></div>
+        </div>
+        <div style="box-sizing:border-box; flex:none; height:64px; padding:0 18px 14px; display:flex; gap:6px; overflow:hidden;">
+          <div style="box-sizing:border-box; flex:none; height:34px; padding:0 11px; background:#17120E; display:flex; align-items:center;"><span style="font-size:13px; line-height:18px; font-weight:600; color:#FFFFFF;">All</span></div>
+          <div style="flex:none; width:74px; height:34px; background:#E2D9CF;"></div>
+          <div style="flex:none; width:66px; height:34px; background:#E2D9CF;"></div>
+          <div style="flex:none; width:84px; height:34px; background:#E2D9CF;"></div>
+          <div style="flex:none; width:62px; height:34px; background:#E2D9CF;"></div>
+        </div>
+        <div style="flex:1; min-height:0; overflow:hidden; display:flex; flex-direction:column; gap:3px;">
+          <div style="flex:none; height:520px; background:#E2D9CF; position:relative;">
+            <div style="position:absolute; left:18px; bottom:18px; display:flex; flex-direction:column; gap:8px;">
+              <div style="width:96px; height:9px; background:#CFC3B6;"></div>
+              <div style="width:210px; height:26px; background:#CFC3B6;"></div>
+              <div style="width:158px; height:13px; background:#CFC3B6;"></div>
+            </div>
+          </div>
+          <div style="flex:none; height:238px; display:flex; gap:3px;">
+            <div style="flex:1; background:#E2D9CF;"></div>
+            <div style="flex:1; background:#E2D9CF;"></div>
+          </div>
+        </div>
+        <div style="box-sizing:border-box; flex:none; height:66px; background:#FFFFFF; border-top:1px solid #E2D9CF; display:flex;">
+          <div style="flex:1; position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;">
+            <div style="position:absolute; top:0; left:26px; right:26px; height:3px; background:#FF5E00;"></div>
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M12 21.5c4.4-4.6 6.6-8.2 6.6-11a6.6 6.6 0 10-13.2 0c0 2.8 2.2 6.4 6.6 11zM12 12.6a2.6 2.6 0 100-5.2 2.6 2.6 0 000 5.2z" stroke="#17120E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span style="font-size:10px; line-height:13px; font-weight:600; color:#17120E;">Nearby</span>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M5.5 20v-5M12 20V9M18.5 20V4" stroke="#6B5F54" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span style="font-size:10px; line-height:13px; color:#6B5F54;">Tiers</span>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M4 6.5h16v14H4zM4 11h16M8.5 3.5v4M15.5 3.5v4" stroke="#6B5F54" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span style="font-size:10px; line-height:13px; color:#6B5F54;">Bookings</span>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M12 12.2a4 4 0 100-8 4 4 0 000 8zM4.8 20.5a7.2 7.2 0 0114.4 0" stroke="#6B5F54" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span style="font-size:10px; line-height:13px; color:#6B5F54;">Audience</span>
+          </div>
+        </div>
+      </div>
+      <div style="width:390px; font-size:13px; line-height:19px; color:#6B5F54; text-wrap:pretty;">Le quartier, l'onglet « All » et la barre du bas arrivent avant les photos : la navigation n'attend jamais la donnée. Les blocs gris ont la géométrie exacte du cycle, donc rien ne saute quand les images arrivent. Aucune animation de pulsation — sur des aplats de cette taille elle donne le tournis.</div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#6B5F54;">B · HAUT DU FIL · POSITIONS 1 ET 2</div>
+      <div data-screen-label="B" style="width:390px; height:844px; overflow:hidden; background:#F7F3EF; border:1px solid #E2D9CF; display:flex; flex-direction:column;">
+        <div style="flex:none; height:46px;"></div>
+        <div style="box-sizing:border-box; flex:none; height:40px; padding:0 18px; display:flex; align-items:center; gap:8px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style="flex:none;"><path d="M12 21.5c4.4-4.6 6.6-8.2 6.6-11a6.6 6.6 0 10-13.2 0c0 2.8 2.2 6.4 6.6 11zM12 12.6a2.6 2.6 0 100-5.2 2.6 2.6 0 000 5.2z" stroke="#17120E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          <span style="font-size:14px; line-height:19px; font-weight:600; color:#17120E;">Wynwood</span>
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.8px; color:#6B5F54;">15 KM · 20</span>
+          <div style="flex:1;"></div>
+          <div style="display:flex; align-items:baseline; font-size:17px; line-height:17px; font-weight:300; letter-spacing:0.4px;"><span style="color:#17120E;">B</span><span style="color:#FF5E00;">!</span><span style="color:#17120E;">ND</span></div>
+        </div>
+        <div style="box-sizing:border-box; flex:none; height:64px; padding:0 18px 14px; display:flex; gap:6px; overflow:hidden;">
+          <div style="box-sizing:border-box; flex:none; height:34px; padding:0 11px; background:#17120E; display:flex; align-items:center;"><span style="font-size:13px; line-height:18px; font-weight:600; color:#FFFFFF;">All</span></div>
+          <div style="box-sizing:border-box; flex:none; height:34px; padding:0 11px; border:1px solid #E2D9CF; background:#FFFFFF; display:flex; align-items:center; gap:6px;"><span style="font-size:13px; line-height:18px; color:#3A3128;">Nails</span><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#6B5F54;">5</span></div>
+          <div style="box-sizing:border-box; flex:none; height:34px; padding:0 11px; border:1px solid #E2D9CF; background:#FFFFFF; display:flex; align-items:center; gap:6px;"><span style="font-size:13px; line-height:18px; color:#3A3128;">Hair</span><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#6B5F54;">4</span></div>
+          <div style="box-sizing:border-box; flex:none; height:34px; padding:0 11px; border:1px solid #E2D9CF; background:#FFFFFF; display:flex; align-items:center; gap:6px;"><span style="font-size:13px; line-height:18px; color:#3A3128;">Facials</span><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#6B5F54;">3</span></div>
+          <div style="box-sizing:border-box; flex:none; height:34px; padding:0 11px; border:1px solid #E2D9CF; background:#FFFFFF; display:flex; align-items:center; gap:6px;"><span style="font-size:13px; line-height:18px; color:#3A3128;">Spa</span><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#6B5F54;">4</span></div>
+        </div>
+        <div style="flex:1; min-height:0; overflow:hidden; display:flex; flex-direction:column; gap:3px;">
+          <div style="flex:none; height:520px; position:relative; background:linear-gradient(158deg,#FFFFFF 0%,#EDE6DE 34%,#B8AA9C 68%,#6B5F54 100%);">
+            <div style="position:absolute; inset:auto 0 0 0; height:58%; background:linear-gradient(to bottom, rgba(23,18,14,0) 0%, rgba(23,18,14,0.44) 52%, rgba(23,18,14,0.86) 100%);"></div>
+            <div style="position:absolute; top:14px; left:14px; background:#FF5E00; padding:3px 9px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.8px; color:#17120E;">320 M</span></div>
+            <div style="position:absolute; top:14px; right:14px; background:rgba(247,243,239,0.94); padding:4px 8px; display:flex; align-items:center; gap:5px;">
+              <div style="display:flex; align-items:flex-end; gap:2px; height:10px;"><div style="width:2px; height:4px; background:#A83E06;"></div><div style="width:2px; height:7px; background:#F9BC97;"></div><div style="width:2px; height:10px; background:#F9BC97;"></div></div>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:1px; color:#A83E06;">STORY</span>
+            </div>
+            <div style="position:absolute; inset:auto 0 0 0; padding:18px; display:flex; flex-direction:column; gap:5px;">
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.4px; color:#F9BC97;">NAILS · WYNWOOD</span>
+              <span style="font-size:28px; line-height:33px; font-weight:600; letter-spacing:-0.5px; color:#FFFFFF;">Vela Nail Studio</span>
+              <span style="font-size:14px; line-height:20px; color:#EDE6DE;">Gel manicure · 45 min · one story</span>
+            </div>
+          </div>
+          <div style="flex:none; height:238px; display:flex; gap:3px;">
+            <div style="flex:1; position:relative; background:linear-gradient(200deg,#F7F3EF 0%,#CFC3B6 44%,#7C6E60 100%);">
+              <div style="position:absolute; inset:auto 0 0 0; height:64%; background:linear-gradient(to bottom, rgba(23,18,14,0) 0%, rgba(23,18,14,0.5) 55%, rgba(23,18,14,0.88) 100%);"></div>
+              <div style="position:absolute; top:10px; left:10px; background:#FF5E00; padding:2px 7px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.6px; color:#17120E;">540 M</span></div>
+              <div style="position:absolute; inset:auto 0 0 0; padding:12px; display:flex; flex-direction:column; gap:3px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:1.3px; color:#F9BC97;">HAIR</span>
+                <span style="font-size:19px; line-height:23px; font-weight:600; letter-spacing:-0.3px; color:#FFFFFF;">Rótulo Hair</span>
+                <span style="font-size:12px; line-height:17px; color:#EDE6DE;">Balayage · 120 min</span>
+              </div>
+            </div>
+            <div style="flex:1; position:relative; background:linear-gradient(126deg,#EDE6DE 0%,#C4B6A8 46%,#4A4038 100%);">
+              <div style="position:absolute; inset:auto 0 0 0; height:64%; background:linear-gradient(to bottom, rgba(23,18,14,0) 0%, rgba(23,18,14,0.5) 55%, rgba(23,18,14,0.88) 100%);"></div>
+              <div style="position:absolute; top:10px; left:10px; background:#FF5E00; padding:2px 7px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.6px; color:#17120E;">780 M</span></div>
+              <div style="position:absolute; top:10px; right:10px; background:#FF5E00; padding:3px 7px; display:flex; align-items:center; gap:4px;">
+                <div style="display:flex; align-items:flex-end; gap:2px; height:9px;"><div style="width:2px; height:4px; background:#17120E;"></div><div style="width:2px; height:6px; background:#17120E;"></div><div style="width:2px; height:9px; background:#17120E;"></div></div>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:1px; color:#17120E;">REEL</span>
+              </div>
+              <div style="position:absolute; inset:auto 0 0 0; padding:12px; display:flex; flex-direction:column; gap:3px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:1.3px; color:#F9BC97;">FACIALS</span>
+                <span style="font-size:19px; line-height:23px; font-weight:600; letter-spacing:-0.3px; color:#FFFFFF;">Lume Skin</span>
+                <span style="font-size:12px; line-height:17px; color:#EDE6DE;">Hydrafacial · 60 min</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="box-sizing:border-box; flex:none; height:66px; background:#FFFFFF; border-top:1px solid #E2D9CF; display:flex;">
+          <div style="flex:1; position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;">
+            <div style="position:absolute; top:0; left:26px; right:26px; height:3px; background:#FF5E00;"></div>
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M12 21.5c4.4-4.6 6.6-8.2 6.6-11a6.6 6.6 0 10-13.2 0c0 2.8 2.2 6.4 6.6 11zM12 12.6a2.6 2.6 0 100-5.2 2.6 2.6 0 000 5.2z" stroke="#17120E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span style="font-size:10px; line-height:13px; font-weight:600; color:#17120E;">Nearby</span>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M5.5 20v-5M12 20V9M18.5 20V4" stroke="#6B5F54" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span style="font-size:10px; line-height:13px; color:#6B5F54;">Tiers</span>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M4 6.5h16v14H4zM4 11h16M8.5 3.5v4M15.5 3.5v4" stroke="#6B5F54" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span style="font-size:10px; line-height:13px; color:#6B5F54;">Bookings</span>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M12 12.2a4 4 0 100-8 4 4 0 000 8zM4.8 20.5a7.2 7.2 0 0114.4 0" stroke="#6B5F54" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span style="font-size:10px; line-height:13px; color:#6B5F54;">Audience</span>
+          </div>
+        </div>
+      </div>
+      <div style="width:390px; font-size:13px; line-height:19px; color:#6B5F54; text-wrap:pretty;">Le premier écran ne montre que deux positions du cycle. C'est voulu : trois formats visibles d'un coup annonceraient un catalogue, deux annoncent un fil.</div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#6B5F54;">C · POSITIONS 3, 4 ET 5</div>
+      <div data-screen-label="C" style="width:390px; height:844px; overflow:hidden; background:#F7F3EF; border:1px solid #E2D9CF; display:flex; flex-direction:column;">
+        <div style="flex:none; height:46px;"></div>
+        <div style="box-sizing:border-box; flex:none; height:38px; padding:0 18px; background:rgba(247,243,239,0.96); border-bottom:1px solid #E2D9CF; display:flex; align-items:center; gap:8px;">
+          <span style="font-size:13px; line-height:18px; font-weight:600; color:#17120E;">Wynwood</span>
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.8px; color:#6B5F54;">4 / 20</span>
+          <div style="flex:1;"></div>
+          <span style="font-size:13px; line-height:18px; font-weight:600; color:#A83E06;">Filters</span>
+        </div>
+        <div style="flex:1; min-height:0; overflow:hidden; display:flex; flex-direction:column; gap:3px;">
+          <div style="flex:none; height:150px; position:relative; background:linear-gradient(172deg,#FFFFFF 0%,#E0D6CA 40%,#8A7C6E 100%);">
+            <div style="position:absolute; inset:0; background:linear-gradient(to right, rgba(23,18,14,0.82) 0%, rgba(23,18,14,0.34) 58%, rgba(23,18,14,0) 100%);"></div>
+            <div style="position:absolute; inset:0; padding:16px; display:flex; flex-direction:column; justify-content:center; gap:4px;">
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:1.3px; color:#F9BC97;">MASSAGE · WYNWOOD</span>
+              <span style="font-size:22px; line-height:26px; font-weight:600; letter-spacing:-0.4px; color:#FFFFFF;">Cáñamo Massage</span>
+              <span style="font-size:12px; line-height:17px; color:#EDE6DE;">Deep tissue · 60 min · 910 m</span>
+            </div>
+          </div>
+          <div style="flex:none; height:470px; position:relative; background:linear-gradient(148deg,#F7F3EF 0%,#D8CCC0 32%,#9A8D80 62%,#3A3128 100%);">
+            <div style="position:absolute; inset:auto 0 0 0; height:58%; background:linear-gradient(to bottom, rgba(23,18,14,0) 0%, rgba(23,18,14,0.44) 52%, rgba(23,18,14,0.86) 100%);"></div>
+            <div style="position:absolute; top:14px; left:14px; background:#FF5E00; padding:3px 9px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.8px; color:#17120E;">1,4 KM</span></div>
+            <div style="position:absolute; top:14px; right:14px; background:rgba(247,243,239,0.94); border-left:3px solid #FF5E00; padding:4px 8px; display:flex; align-items:center; gap:5px;">
+              <div style="display:flex; align-items:flex-end; gap:2px; height:10px;"><div style="width:2px; height:4px; background:#A83E06;"></div><div style="width:2px; height:7px; background:#A83E06;"></div><div style="width:2px; height:10px; background:#F9BC97;"></div></div>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:1px; color:#A83E06;">POST</span>
+            </div>
+            <div style="position:absolute; inset:auto 0 0 0; padding:18px; display:flex; flex-direction:column; gap:5px;">
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.4px; color:#F9BC97;">SPA · MIAMI BEACH</span>
+              <span style="font-size:28px; line-height:33px; font-weight:600; letter-spacing:-0.5px; color:#FFFFFF;">Casa Bruma Spa</span>
+              <span style="font-size:14px; line-height:20px; color:#EDE6DE;">Signature facial · 60 min · one post</span>
+              <div style="display:flex; gap:5px; padding-top:6px;">
+                <div style="width:44px; height:44px; background:linear-gradient(150deg,#EDE6DE 0%,#A89A8C 100%);"></div>
+                <div style="width:44px; height:44px; background:linear-gradient(150deg,#F7F3EF 0%,#8A7C6E 100%);"></div>
+                <div style="width:44px; height:44px; background:linear-gradient(150deg,#D8CCC0 0%,#5A4E44 100%);"></div>
+                <div style="width:44px; height:44px; background:rgba(247,243,239,0.18); display:flex; align-items:center; justify-content:center;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#FFFFFF;">+9</span></div>
+              </div>
+            </div>
+          </div>
+          <div style="flex:none; height:158px; display:flex; gap:3px;">
+            <div style="flex:1; position:relative; background:linear-gradient(190deg,#EDE6DE 0%,#B8AA9C 50%,#6B5F54 100%);">
+              <div style="position:absolute; inset:auto 0 0 0; height:70%; background:linear-gradient(to bottom, rgba(23,18,14,0) 0%, rgba(23,18,14,0.86) 100%);"></div>
+              <div style="position:absolute; inset:auto 0 0 0; padding:10px; display:flex; flex-direction:column; gap:2px;">
+                <span style="font-size:15px; line-height:19px; font-weight:600; color:#FFFFFF;">Soleil Braids</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:1px; color:#EDE6DE;">LITTLE HAITI · 2,6 KM</span>
+              </div>
+            </div>
+            <div style="flex:1; position:relative; background:linear-gradient(140deg,#FFFFFF 0%,#C4B6A8 52%,#4A4038 100%);">
+              <div style="position:absolute; inset:auto 0 0 0; height:70%; background:linear-gradient(to bottom, rgba(23,18,14,0) 0%, rgba(23,18,14,0.86) 100%);"></div>
+              <div style="position:absolute; inset:auto 0 0 0; padding:10px; display:flex; flex-direction:column; gap:2px;">
+                <span style="font-size:15px; line-height:19px; font-weight:600; color:#FFFFFF;">Aurora Brow Bar</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:1px; color:#EDE6DE;">LITTLE HAVANA · 3,1 KM</span>
+              </div>
+            </div>
+            <div style="flex:1; position:relative; background:linear-gradient(206deg,#F7F3EF 0%,#A89A8C 48%,#3A3128 100%);">
+              <div style="position:absolute; inset:auto 0 0 0; height:70%; background:linear-gradient(to bottom, rgba(23,18,14,0) 0%, rgba(23,18,14,0.86) 100%);"></div>
+              <div style="position:absolute; inset:auto 0 0 0; padding:10px; display:flex; flex-direction:column; gap:2px;">
+                <span style="font-size:15px; line-height:19px; font-weight:600; color:#FFFFFF;">Torre Nails</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:1px; color:#EDE6DE;">BRICKELL · 4,2 KM</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="box-sizing:border-box; flex:none; height:66px; background:#FFFFFF; border-top:1px solid #E2D9CF;"></div>
+      </div>
+      <div style="width:390px; font-size:13px; line-height:19px; color:#6B5F54; text-wrap:pretty;">La bande de 150 a son voile à l'horizontale et non du bas : c'est le seul format assez court pour que le texte doive vivre à côté de l'image plutôt que dessous. Le héros de position 4 porte l'aperçu de galerie ; celui de position 1 ne l'a pas, sinon les deux héros se confondraient.</div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#6B5F54;">D · POSITION 6 · LA RESPIRATION</div>
+      <div data-screen-label="D" style="width:390px; height:844px; overflow:hidden; background:#F7F3EF; border:1px solid #E2D9CF; display:flex; flex-direction:column;">
+        <div style="flex:none; height:46px;"></div>
+        <div style="box-sizing:border-box; flex:none; height:38px; padding:0 18px; background:rgba(247,243,239,0.96); border-bottom:1px solid #E2D9CF; display:flex; align-items:center; gap:8px;">
+          <span style="font-size:13px; line-height:18px; font-weight:600; color:#17120E;">Wynwood</span>
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.8px; color:#6B5F54;">8 / 20</span>
+          <div style="flex:1;"></div>
+          <span style="font-size:13px; line-height:18px; font-weight:600; color:#A83E06;">Filters</span>
+        </div>
+        <div style="flex:1; min-height:0; overflow:hidden; display:flex; flex-direction:column; gap:3px;">
+          <div style="flex:none; height:196px; position:relative; background:linear-gradient(166deg,#FFFFFF 0%,#D8CCC0 42%,#7C6E60 100%);">
+            <div style="position:absolute; inset:auto 0 0 0; height:66%; background:linear-gradient(to bottom, rgba(23,18,14,0) 0%, rgba(23,18,14,0.5) 55%, rgba(23,18,14,0.88) 100%);"></div>
+            <div style="position:absolute; inset:auto 0 0 0; padding:14px; display:flex; flex-direction:column; gap:3px;">
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:1.3px; color:#F9BC97;">HAIR · DESIGN DISTRICT</span>
+              <span style="font-size:22px; line-height:26px; font-weight:600; letter-spacing:-0.4px; color:#FFFFFF;">Atelier Ocre</span>
+              <span style="font-size:12px; line-height:17px; color:#EDE6DE;">Cut and finish · 75 min · 5,4 km</span>
+            </div>
+          </div>
+
+          <div style="box-sizing:border-box; flex:none; height:212px; background:#EDE6DE; padding:24px 22px; display:flex; flex-direction:column; justify-content:center; gap:13px;">
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.4px; color:#6B5F54;">TU N'AS RIEN VU DANS</span>
+            <span style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:38px; line-height:42px; font-weight:400; color:#17120E;">Coral Gables</span>
+            <div style="display:flex; align-items:center; gap:14px;">
+              <div style="box-sizing:border-box; height:44px; background:#FF5E00; padding:0 16px; display:flex; align-items:center;"><span style="font-size:15px; line-height:20px; font-weight:600; color:#17120E;">Voir les 3 salons</span></div>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.8px; color:#6B5F54;">9,8 KM</span>
+            </div>
+          </div>
+
+          <div style="flex:none; height:388px; position:relative; background:linear-gradient(152deg,#F7F3EF 0%,#CFC3B6 36%,#8A7C6E 66%,#2E2620 100%);">
+            <div style="position:absolute; inset:auto 0 0 0; height:58%; background:linear-gradient(to bottom, rgba(23,18,14,0) 0%, rgba(23,18,14,0.44) 52%, rgba(23,18,14,0.86) 100%);"></div>
+            <div style="position:absolute; top:14px; left:14px; background:#FF5E00; padding:3px 9px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.8px; color:#17120E;">6,1 KM</span></div>
+            <div style="position:absolute; inset:auto 0 0 0; padding:18px; display:flex; flex-direction:column; gap:5px;">
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.4px; color:#F9BC97;">BROWS &amp; LASHES · CORAL GABLES</span>
+              <span style="font-size:28px; line-height:33px; font-weight:600; letter-spacing:-0.5px; color:#FFFFFF;">Lash Theory</span>
+              <span style="font-size:14px; line-height:20px; color:#EDE6DE;">Lash lift · 55 min · one story</span>
+            </div>
+          </div>
+        </div>
+        <div style="box-sizing:border-box; flex:none; height:66px; background:#FFFFFF; border-top:1px solid #E2D9CF;"></div>
+      </div>
+      <div style="width:390px; font-size:13px; line-height:19px; color:#6B5F54; text-wrap:pretty;">Le panneau n'interrompt pas pour parler : il tient une <span style="font-weight:600;">promesse chiffrée</span> — trois salons, dix kilomètres — et le salon juste dessous en vient. La respiration est la porte du quartier qu'elle annonce, pas une bannière.</div>
+    </div>
+
+  </div>
+</section>
+
+<section style="display:flex; flex-direction:column; gap:24px; padding:40px 56px 0; font-family:'Outfit',sans-serif;">
+  <div style="display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start;">
+
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#6B5F54;">E · LE VIDE · RIEN DANS 15 KM</div>
+      <div data-screen-label="E" style="width:390px; height:844px; overflow:hidden; background:#F7F3EF; border:1px solid #E2D9CF; display:flex; flex-direction:column;">
+        <div style="flex:none; height:46px;"></div>
+        <div style="box-sizing:border-box; flex:none; height:40px; padding:0 18px; display:flex; align-items:center; gap:8px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style="flex:none;"><path d="M12 21.5c4.4-4.6 6.6-8.2 6.6-11a6.6 6.6 0 10-13.2 0c0 2.8 2.2 6.4 6.6 11zM12 12.6a2.6 2.6 0 100-5.2 2.6 2.6 0 000 5.2z" stroke="#17120E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          <span style="font-size:14px; line-height:19px; font-weight:600; color:#17120E;">Key Biscayne</span>
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.8px; color:#6B5F54;">15 KM · 0</span>
+          <div style="flex:1;"></div>
+          <div style="display:flex; align-items:baseline; font-size:17px; line-height:17px; font-weight:300; letter-spacing:0.4px;"><span style="color:#17120E;">B</span><span style="color:#FF5E00;">!</span><span style="color:#17120E;">ND</span></div>
+        </div>
+        <div style="box-sizing:border-box; flex:none; height:64px; padding:0 18px 14px; display:flex; gap:6px; overflow:hidden;">
+          <div style="box-sizing:border-box; flex:none; height:34px; padding:0 11px; background:#17120E; display:flex; align-items:center;"><span style="font-size:13px; line-height:18px; font-weight:600; color:#FFFFFF;">All</span></div>
+          <div style="box-sizing:border-box; flex:none; height:34px; padding:0 11px; border:1px solid #E2D9CF; background:#FFFFFF; display:flex; align-items:center;"><span style="font-size:13px; line-height:18px; color:#3A3128;">Nails</span></div>
+          <div style="box-sizing:border-box; flex:none; height:34px; padding:0 11px; border:1px solid #E2D9CF; background:#FFFFFF; display:flex; align-items:center;"><span style="font-size:13px; line-height:18px; color:#3A3128;">Hair</span></div>
+          <div style="box-sizing:border-box; flex:none; height:34px; padding:0 11px; border:1px solid #E2D9CF; background:#FFFFFF; display:flex; align-items:center;"><span style="font-size:13px; line-height:18px; color:#3A3128;">Facials</span></div>
+          <div style="box-sizing:border-box; flex:none; height:34px; padding:0 11px; border:1px solid #E2D9CF; background:#FFFFFF; display:flex; align-items:center;"><span style="font-size:13px; line-height:18px; color:#3A3128;">Spa</span></div>
+        </div>
+
+        <div style="flex:1; min-height:0; overflow:hidden; display:flex; flex-direction:column; gap:3px;">
+          <div style="box-sizing:border-box; flex:none; height:296px; background:#EDE6DE; padding:26px 22px; display:flex; flex-direction:column; justify-content:center; gap:14px;">
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.4px; color:#6B5F54;">KEY BISCAYNE · 15 KM</span>
+            <span style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:40px; line-height:46px; font-weight:400; color:#17120E; text-wrap:pretty;">Nothing this close</span>
+            <span style="font-size:15px; line-height:23px; color:#3A3128; text-wrap:pretty;">Your tiers are open. There is simply no business offering them within 15 km.</span>
+            <div style="display:flex; flex-direction:column; gap:8px; padding-top:2px;">
+              <div style="box-sizing:border-box; height:48px; background:#FF5E00; padding:0 16px; display:flex; align-items:center; justify-content:space-between;">
+                <span style="font-size:15px; line-height:20px; font-weight:600; color:#17120E;">Widen to 30 km</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:14px; letter-spacing:0.8px; color:#17120E;">9</span>
+              </div>
+              <div style="box-sizing:border-box; height:48px; border:1px solid #17120E; padding:0 16px; display:flex; align-items:center; justify-content:space-between;">
+                <span style="font-size:15px; line-height:20px; font-weight:600; color:#17120E;">Widen to 50 km</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:14px; letter-spacing:0.8px; color:#17120E;">24</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="box-sizing:border-box; flex:none; height:34px; padding:0 18px; display:flex; align-items:center;">
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.4px; color:#6B5F54;">CE QUE TU VERRAIS À 30 KM</span>
+          </div>
+
+          <div style="flex:none; height:296px; position:relative; background:linear-gradient(158deg,#FFFFFF 0%,#E0D6CA 36%,#8A7C6E 70%,#4A4038 100%);">
+            <div style="position:absolute; inset:auto 0 0 0; height:60%; background:linear-gradient(to bottom, rgba(23,18,14,0) 0%, rgba(23,18,14,0.46) 54%, rgba(23,18,14,0.86) 100%);"></div>
+            <div style="position:absolute; top:12px; left:12px; background:#FF5E00; padding:3px 9px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.8px; color:#17120E;">22 KM</span></div>
+            <div style="position:absolute; inset:auto 0 0 0; padding:16px; display:flex; flex-direction:column; gap:4px;">
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.4px; color:#F9BC97;">BROWS &amp; LASHES · CORAL GABLES</span>
+              <span style="font-size:26px; line-height:31px; font-weight:600; letter-spacing:-0.5px; color:#FFFFFF;">Lash Theory</span>
+              <span style="font-size:14px; line-height:20px; color:#EDE6DE;">Lash lift · 55 min · one story</span>
+            </div>
+          </div>
+
+          <div style="flex:none; height:158px; display:flex; gap:3px;">
+            <div style="flex:1; position:relative; background:linear-gradient(190deg,#EDE6DE 0%,#B8AA9C 50%,#6B5F54 100%);">
+              <div style="position:absolute; inset:auto 0 0 0; height:70%; background:linear-gradient(to bottom, rgba(23,18,14,0) 0%, rgba(23,18,14,0.86) 100%);"></div>
+              <div style="position:absolute; inset:auto 0 0 0; padding:10px;"><span style="font-size:15px; line-height:19px; font-weight:600; color:#FFFFFF;">Villa Sereno</span></div>
+            </div>
+            <div style="flex:1; position:relative; background:linear-gradient(140deg,#FFFFFF 0%,#C4B6A8 52%,#4A4038 100%);">
+              <div style="position:absolute; inset:auto 0 0 0; height:70%; background:linear-gradient(to bottom, rgba(23,18,14,0) 0%, rgba(23,18,14,0.86) 100%);"></div>
+              <div style="position:absolute; inset:auto 0 0 0; padding:10px;"><span style="font-size:15px; line-height:19px; font-weight:600; color:#FFFFFF;">Banyan Brow</span></div>
+            </div>
+          </div>
+        </div>
+        <div style="box-sizing:border-box; flex:none; height:66px; background:#FFFFFF; border-top:1px solid #E2D9CF;"></div>
+      </div>
+      <div style="width:390px; font-size:13px; line-height:19px; color:#6B5F54; text-wrap:pretty;">Le vide n'est pas une page d'excuse : il tient la position 6 du cycle, puis <span style="font-weight:600;">montre déjà</span> ce que l'élargissement donnerait. Un aperçu vaut mieux qu'une promesse — et les deux issues portent leur nombre. Les catégories gardent leur encre pleine et perdent seulement leur compte : elles restent touchables, et griser un libellé encore actif serait le bouton grisé que le système refuse.</div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#6B5F54;">F · LE BAS DES VINGT</div>
+      <div data-screen-label="F" style="width:390px; height:844px; overflow:hidden; background:#F7F3EF; border:1px solid #E2D9CF; display:flex; flex-direction:column;">
+        <div style="flex:none; height:46px;"></div>
+        <div style="box-sizing:border-box; flex:none; height:38px; padding:0 18px; background:rgba(247,243,239,0.96); border-bottom:1px solid #E2D9CF; display:flex; align-items:center; gap:8px;">
+          <span style="font-size:13px; line-height:18px; font-weight:600; color:#17120E;">Wynwood</span>
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.8px; color:#6B5F54;">20 / 20</span>
+          <div style="flex:1;"></div>
+          <span style="font-size:13px; line-height:18px; font-weight:600; color:#A83E06;">Filters</span>
+        </div>
+
+        <div style="flex:1; min-height:0; overflow:hidden; display:flex; flex-direction:column; gap:3px;">
+          <div style="flex:none; height:158px; display:flex; gap:3px;">
+            <div style="flex:1; position:relative; background:linear-gradient(196deg,#EDE6DE 0%,#B8AA9C 50%,#5A4E44 100%);">
+              <div style="position:absolute; inset:auto 0 0 0; height:70%; background:linear-gradient(to bottom, rgba(23,18,14,0) 0%, rgba(23,18,14,0.86) 100%);"></div>
+              <div style="position:absolute; inset:auto 0 0 0; padding:10px; display:flex; flex-direction:column; gap:2px;">
+                <span style="font-size:15px; line-height:19px; font-weight:600; color:#FFFFFF;">Grove Massage</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:1px; color:#EDE6DE;">COCONUT GROVE · 11 KM</span>
+              </div>
+            </div>
+            <div style="flex:1; position:relative; background:linear-gradient(136deg,#FFFFFF 0%,#C4B6A8 52%,#3A3128 100%);">
+              <div style="position:absolute; inset:auto 0 0 0; height:70%; background:linear-gradient(to bottom, rgba(23,18,14,0) 0%, rgba(23,18,14,0.86) 100%);"></div>
+              <div style="position:absolute; inset:auto 0 0 0; padding:10px; display:flex; flex-direction:column; gap:2px;">
+                <span style="font-size:15px; line-height:19px; font-weight:600; color:#FFFFFF;">Duna Facials</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:1px; color:#EDE6DE;">MIAMI BEACH · 12 KM</span>
+              </div>
+            </div>
+            <div style="flex:1; position:relative; background:linear-gradient(210deg,#F7F3EF 0%,#A89A8C 48%,#2E2620 100%);">
+              <div style="position:absolute; inset:auto 0 0 0; height:70%; background:linear-gradient(to bottom, rgba(23,18,14,0) 0%, rgba(23,18,14,0.86) 100%);"></div>
+              <div style="position:absolute; inset:auto 0 0 0; padding:10px; display:flex; flex-direction:column; gap:2px;">
+                <span style="font-size:15px; line-height:19px; font-weight:600; color:#FFFFFF;">Sal &amp; Sol Spa</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:1px; color:#EDE6DE;">MIAMI BEACH · 14 KM</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="box-sizing:border-box; flex:none; height:520px; background:#17120E; padding:34px 24px; display:flex; flex-direction:column; gap:22px;">
+            <div style="display:flex; flex-direction:column; gap:11px;">
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.4px; color:#9A8D80;">TU AS TOUT VU DANS 15 KM</span>
+              <div style="display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 10px;">
+                <span style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:40px; line-height:46px; font-weight:400; color:#FFFFFF;">Vingt salons,</span>
+                <span style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-style:italic; font-size:40px; line-height:46px; font-weight:500; color:#F58A4A;">huit quartiers</span>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:0; border-top:1px solid #3A3128; border-bottom:1px solid #3A3128;">
+              <div style="box-sizing:border-box; flex:1; border-right:1px solid #3A3128; padding:14px 0; display:flex; flex-direction:column; gap:3px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:26px; line-height:30px; font-weight:600; color:#FFFFFF;">12</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:1.1px; color:#9A8D80;">STORY</span>
+              </div>
+              <div style="box-sizing:border-box; flex:1; border-right:1px solid #3A3128; padding:14px 0 14px 16px; display:flex; flex-direction:column; gap:3px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:26px; line-height:30px; font-weight:600; color:#FFFFFF;">6</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:1.1px; color:#9A8D80;">POST</span>
+              </div>
+              <div style="box-sizing:border-box; flex:1; padding:14px 0 14px 16px; display:flex; flex-direction:column; gap:3px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:26px; line-height:30px; font-weight:600; color:#FFFFFF;">2</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:1.1px; color:#9A8D80;">REEL</span>
+              </div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <div style="box-sizing:border-box; height:52px; background:#FF5E00; padding:0 18px; display:flex; align-items:center; justify-content:space-between;">
+                <span style="font-size:16px; line-height:22px; font-weight:600; color:#17120E;">Élargir à 30 km</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:14px; letter-spacing:0.8px; color:#17120E;">+14</span>
+              </div>
+              <div style="box-sizing:border-box; height:52px; border:1px solid #4F4034; padding:0 18px; display:flex; align-items:center; justify-content:space-between;">
+                <span style="font-size:16px; line-height:22px; font-weight:600; color:#FFFFFF;">Repartir du haut</span>
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" style="transform:rotate(-90deg);"><path d="M4.5 12h15M13.5 6l6 6-6 6" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              </div>
+            </div>
+
+            <div style="display:flex; align-items:flex-start; gap:11px; border-top:1px solid #3A3128; padding-top:18px;">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" style="flex:none; margin-top:2px;"><path d="M5.5 20v-5M12 20V9M18.5 20V4" stroke="#F58A4A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              <div style="flex:1; display:flex; flex-direction:column; gap:3px;">
+                <span style="font-size:15px; line-height:21px; font-weight:600; color:#FFFFFF;">Le palier post t'ouvrirait 6 salons de plus</span>
+                <span style="font-size:13px; line-height:19px; color:#9A8D80; text-wrap:pretty;">2 400 abonnés à atteindre sur 10 000.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="box-sizing:border-box; flex:none; height:66px; background:#FFFFFF; border-top:1px solid #E2D9CF;"></div>
+      </div>
+      <div style="width:390px; font-size:13px; line-height:19px; color:#6B5F54; text-wrap:pretty;">Le fond d'encre est le seul du fil : il ferme, là où l'os des respirations ouvrait. Il compte ce qui a été vu par palier, offre deux sorties chiffrées, et rappelle en pied ce que le prochain palier ouvrirait — la seule fois où le fil parle des paliers, et le seul endroit où c'est utile.</div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:14px; width:390px;">
+      <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#6B5F54;">CE QUI TIENT L'ENSEMBLE</div>
+      <div style="box-sizing:border-box; background:#FFFFFF; border:1px solid #E2D9CF; padding:22px 24px; display:flex; flex-direction:column; gap:9px;">
+        <span style="font-size:16px; line-height:23px; font-weight:600; color:#17120E;">Trois pixels, partout</span>
+        <span style="font-size:14px; line-height:21px; color:#3A3128; text-wrap:pretty;">Entre deux photos, à l'horizontale comme à la verticale, y compris de part et d'autre d'une respiration. C'est la seule mesure constante de l'écran.</span>
+      </div>
+      <div style="box-sizing:border-box; background:#FFFFFF; border:1px solid #E2D9CF; padding:22px 24px; display:flex; flex-direction:column; gap:9px;">
+        <span style="font-size:16px; line-height:23px; font-weight:600; color:#17120E;">Une seule chose orange par photo</span>
+        <span style="font-size:14px; line-height:21px; color:#3A3128; text-wrap:pretty;">La pastille de distance, ou le badge reel quand il y en a un. Jamais les deux en plein orange : le badge reel prend alors le pas et la distance passe en voile clair.</span>
+      </div>
+      <div style="box-sizing:border-box; background:#FFFFFF; border:1px solid #E2D9CF; padding:22px 24px; display:flex; flex-direction:column; gap:9px;">
+        <span style="font-size:16px; line-height:23px; font-weight:600; color:#17120E;">Le texte descend avec le format</span>
+        <span style="font-size:14px; line-height:21px; color:#3A3128; text-wrap:pretty;">Nom en 28 sur un héros, 22 sur une bande, 19 sur un duo, 15 sur un triptyque. En dessous de 15, le nom seul reste et la prestation tombe — un triptyque ne porte jamais trois lignes.</span>
+      </div>
+      <div style="box-sizing:border-box; background:#EDE6DE; border-left:3px solid #17120E; padding:22px 24px; display:flex; flex-direction:column; gap:9px;">
+        <span style="font-size:16px; line-height:23px; font-weight:600; color:#17120E;">Aucune valeur en argent</span>
+        <span style="font-size:14px; line-height:21px; color:#3A3128; text-wrap:pretty;">Dans les six cadres. Ce qui tiendrait la place d'un prix ailleurs est ici la durée et la contrepartie : « 45 min · one story ». C'est ce qu'une créatrice engage, et la seule grandeur comparable du produit.</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+</x-dc>
+</body>
+</html>

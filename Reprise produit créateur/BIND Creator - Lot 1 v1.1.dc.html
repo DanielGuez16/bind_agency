@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=Outfit:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #EDE6DE; }
+  a { color: #A83E06; text-decoration: none; }
+  a:hover { color: #5E2204; }
+</style>
+</helmet>
+
+<section style="display:flex; flex-direction:column; gap:0; font-family:'Outfit',sans-serif;">
+  <div style="background:#17120E; padding:64px 56px 56px; display:flex; flex-direction:column; gap:32px;">
+    <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:48px;">
+      <div style="display:flex; flex-direction:column; gap:8px; align-items:center;">
+        <svg viewBox="50 26 1991 682" style="height:28px; width:82px; display:block; flex:none;" role="img" aria-label="B!ND"><g transform="translate(0,760) scale(0.1,-0.1)" fill-rule="evenodd"><path fill="#FFFFFF" d="M6460 7290 c19 -1773 58 -4792 63 -4796 3 -4 168 -9 366 -12 l360 -5 5 34 c6 41 159 4810 154 4814 -2 2 -216 5 -476 7 l-472 3 0 -45z M8830 3925 l0 -3385 440 0 440 0 2 2685 3 2685 1770 -2685 1770 -2685 1865 0 c1860 0 2059 3 2335 36 396 47 784 144 1095 276 265 112 551 281 760 449 540 433 904 1072 1044 1829 51 277 61 399 61 775 0 276 -4 381 -18 495 -60 480 -164 841 -350 1205 -75 147 -226 381 -322 500 -396 492 -957 848 -1628 1035 -290 80 -607 130 -952 150 -118 6 -892 11 -2038 13 l-1847 2 0 -2679 c0 -1873 -3 -2677 -11 -2669 -5 5 -803 1211 -1773 2679 l-1763 2669 -442 3 -441 2 0 -3385z m8516 2627 c554 -79 957 -240 1305 -520 97 -78 278 -266 355 -368 267 -355 426 -782 491 -1314 24 -205 24 -678 0 -880 -69 -563 -236 -991 -530 -1355 -84 -104 -249 -263 -360 -346 -373 -280 -865 -445 -1452 -489 -87 -6 -683 -10 -1577 -10 l-1438 0 0 2655 0 2656 1528 -4 c1505 -3 1529 -3 1678 -25z M500 3920 l0 -3381 1408 4 c1519 4 1471 2 1747 58 454 91 866 311 1129 601 198 218 338 492 396 770 84 407 33 809 -146 1159 -226 442 -598 756 -1024 865 -58 14 -106 27 -107 29 -2 1 36 16 85 35 197 74 410 201 567 337 256 223 418 508 481 848 15 80 19 147 19 340 -1 211 -3 253 -23 345 -60 276 -170 501 -345 708 -227 268 -629 495 -1039 586 -148 32 -293 54 -452 66 -77 6 -648 10 -1412 10 l-1284 0 0 -3380z m2725 2622 c125 -24 297 -77 376 -117 364 -184 559 -512 559 -941 0 -278 -69 -497 -215 -682 -157 -198 -404 -332 -729 -394 -106 -20 -146 -21 -973 -25 l-863 -4 0 1096 0 1096 868 -4 c832 -3 871 -4 977 -25z m-34 -2907 c492 -65 848 -291 1025 -650 137 -278 159 -633 58 -945 -115 -358 -400 -605 -823 -711 -220 -56 -283 -59 -1218 -59 l-853 0 0 1190 0 1190 853 0 c677 0 874 -3 958 -15z"></path><path fill="#FF5E00" d="M6835 1714 c-11 -2 -45 -9 -75 -15 -117 -24 -249 -110 -326 -213 -96 -127 -119 -200 -119 -371 0 -109 4 -140 23 -196 65 -188 224 -336 415 -386 35 -9 102 -16 157 -16 165 0 288 51 405 168 121 120 175 255 175 435 0 108 -21 194 -67 283 -69 131 -190 237 -322 283 -64 22 -220 39 -266 28z"></path></g></svg>
+        <div style="font-size:9px; line-height:11px; font-weight:300; letter-spacing:7px; color:#FFFFFF; padding-left:7px;">AGENCY</div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:1.4px; color:#9A8D80;">LOT 1 · RÔLE CRÉATEUR</div>
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:1.4px; color:#9A8D80;">SYSTÈME v1.0 · ÉCRANS v1.1</div>
+      </div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:18px; max-width:900px;">
+      <div style="display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 14px;">
+        <span style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:52px; line-height:62px; font-weight:400; color:#FFFFFF;">Quatre écrans, et ce que l'API</span>
+        <span style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-style:italic; font-size:52px; line-height:62px; font-weight:500; color:#F58A4A;">autorise</span>
+      </div>
+      <div style="font-size:17px; line-height:27px; color:#CFC3B6; max-width:740px; text-wrap:pretty;">Le fil, les réservations, les paliers et l'audience, dans le système orange. La correspondance écran ↔ API que vous m'avez envoyée contredit trois choses que la passation v0.5 tenait pour acquises : je les ai retirées plutôt que de dessiner sur du vide.</div>
+      <div style="font-size:15px; line-height:24px; color:#9A8D80; max-width:740px; text-wrap:pretty;">Aucun de ces quatre écrans ne porte de bloc orange. Ce sont les écrans qu'on ouvre tous les jours, et la règle du système leur en interdit un. La marque y passe par le titre en Didone, le filet actif et le bouton.</div>
+    </div>
+
+    <div style="display:flex; gap:0; flex-wrap:wrap; border:1px solid #3A3128;">
+      <div style="flex:1; min-width:300px; border-right:1px solid #3A3128; padding:22px 24px; display:flex; flex-direction:column; gap:8px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#A31B2F;">RETIRÉ · PAS DE DONNÉE</div>
+        <div style="font-size:16px; line-height:24px; font-weight:600; color:#FFFFFF;">La rangée « il reste de la place aujourd'hui »</div>
+        <div style="font-size:14px; line-height:21px; color:#9A8D80; text-wrap:pretty;">Les créneaux ne vivent que sur la fiche, par <span style="font-family:'IBM Plex Mono',monospace; font-size:12px;">/businesses/{id}/availability</span>. Le fil ne sait pas s'il reste une place, et l'apprendre coûterait un appel par carte.</div>
+      </div>
+      <div style="flex:1; min-width:300px; border-right:1px solid #3A3128; padding:22px 24px; display:flex; flex-direction:column; gap:8px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#A31B2F;">RETIRÉ · PAS DE DONNÉE</div>
+        <div style="font-size:16px; line-height:24px; font-weight:600; color:#FFFFFF;">« Nouveaux salons » et la recherche</div>
+        <div style="font-size:14px; line-height:21px; color:#9A8D80; text-wrap:pretty;">Rien ne date l'arrivée d'un commerce, et <span style="font-family:'IBM Plex Mono',monospace; font-size:12px;">/businesses</span> n'accepte aucun texte. Quatre rangées thématiques deviennent donc une composition par distance.</div>
+      </div>
+      <div style="flex:1; min-width:300px; padding:22px 24px; display:flex; flex-direction:column; gap:8px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#F58A4A;">RÉDUIT AU RÉEL</div>
+        <div style="font-size:16px; line-height:24px; font-weight:600; color:#FFFFFF;">Deux filtres, pas quatre</div>
+        <div style="font-size:14px; line-height:21px; color:#9A8D80; text-wrap:pretty;">La route ne prend que <span style="font-family:'IBM Plex Mono',monospace; font-size:12px;">rayon_metres</span> et <span style="font-family:'IBM Plex Mono',monospace; font-size:12px;">categorie</span>. Le palier n'a pas à être un filtre : le serveur ne renvoie jamais une prestation fermée dans le fil.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="display:flex; flex-direction:column; gap:28px; padding:56px; font-family:'Outfit',sans-serif;">
+  <div style="display:flex; flex-direction:column; gap:8px; max-width:820px;">
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:1.4px; color:#6B5F54;">03 · LE FIL</div>
+    <div style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:36px; line-height:44px; font-weight:400; color:#17120E;">Une composition par distance</div>
+    <div style="font-size:16px; line-height:25px; color:#3A3128; max-width:700px; text-wrap:pretty;">Six catégories en tête, avec leur compte. Le rayon en pilules. Puis le plus proche en grand, et le reste en grille, séparé par une bande de distance. Ce qui donne envie d'ouvrir une fiche, ici, c'est la photo en grand et le fait de savoir que c'est à trois cents mètres.</div>
+    <div style="font-size:15px; line-height:23px; color:#6B5F54; max-width:700px; text-wrap:pretty;">Les vignettes de catégorie sont carrées et non rondes : le système v1.0 met les rayons à zéro, et une pastille ronde y devient le seul objet arrondi de l'écran.</div>
+  </div>
+
+  <div style="display:flex; flex-wrap:wrap; gap:36px; align-items:flex-start;">
+
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="display:flex; gap:10px; align-items:baseline;"><div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#A83E06;">03a</div><div style="font-size:13px; line-height:18px; font-weight:600; color:#17120E;">Fil · nominal</div></div>
+      <div data-screen-label="03a" style="width:390px; height:844px; overflow:hidden; background:#F7F3EF; border:1px solid #E2D9CF; display:flex; flex-direction:column;">
+        <div style="height:50px; flex:none;"></div>
+
+        <div style="flex:none; padding:0 20px 14px; display:flex; align-items:flex-end; justify-content:space-between; gap:12px;">
+          <div style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:34px; line-height:40px; font-weight:400; color:#17120E;">Nearby</div>
+          <div style="display:flex; align-items:center; gap:5px; padding-bottom:6px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 21.5c4.4-4.6 6.6-8.2 6.6-11a6.6 6.6 0 10-13.2 0c0 2.8 2.2 6.4 6.6 11zM12 12.6a2.6 2.6 0 100-5.2 2.6 2.6 0 000 5.2z" stroke="#6B5F54" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#6B5F54;">MIAMI</span>
+          </div>
+        </div>
+
+        <div style="flex:none; display:flex; gap:8px; padding:0 20px 16px; overflow:hidden;">
+          <div style="width:56px; flex:none; display:flex; flex-direction:column; gap:6px;">
+            <div style="width:56px; height:56px; border-radius:2px; background:linear-gradient(150deg,#FFFFFF 0%,#EDE6DE 45%,#CFC3B6 100%); border-bottom:3px solid #FF5E00;"></div>
+            <div style="font-size:12px; line-height:15px; font-weight:600; color:#17120E;">Nails</div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.6px; color:#6B5F54;">34</div>
+          </div>
+          <div style="width:56px; flex:none; display:flex; flex-direction:column; gap:6px;">
+            <div style="width:56px; height:56px; border-radius:2px; background:linear-gradient(150deg,#FFFFFF 0%,#EDE6DE 45%,#CFC3B6 100%);"></div>
+            <div style="font-size:12px; line-height:15px; color:#3A3128;">Hair</div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.6px; color:#6B5F54;">21</div>
+          </div>
+          <div style="width:56px; flex:none; display:flex; flex-direction:column; gap:6px;">
+            <div style="width:56px; height:56px; border-radius:2px; background:linear-gradient(150deg,#FFFFFF 0%,#EDE6DE 45%,#CFC3B6 100%);"></div>
+            <div style="font-size:12px; line-height:15px; color:#3A3128;">Facials</div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.6px; color:#6B5F54;">18</div>
+          </div>
+          <div style="width:56px; flex:none; display:flex; flex-direction:column; gap:6px;">
+            <div style="width:56px; height:56px; border-radius:2px; background:linear-gradient(150deg,#FFFFFF 0%,#EDE6DE 45%,#CFC3B6 100%);"></div>
+            <div style="font-size:12px; line-height:15px; color:#3A3128;">Spa</div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.6px; color:#6B5F54;">9</div>
+          </div>
+          <div style="width:56px; flex:none; display:flex; flex-direction:column; gap:6px;">
+            <div style="width:56px; height:56px; border-radius:2px; background:linear-gradient(150deg,#FFFFFF 0%,#EDE6DE 45%,#CFC3B6 100%);"></div>
+            <div style="font-size:12px; line-height:15px; color:#3A3128;">Brows &amp; lashes</div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.6px; color:#6B5F54;">12</div>
+          </div>
+          <div style="width:56px; flex:none; display:flex; flex-direction:column; gap:6px;">
+            <div style="width:56px; height:56px; border-radius:2px; background:linear-gradient(150deg,#FFFFFF 0%,#EDE6DE 45%,#CFC3B6 100%);"></div>
+            <div style="font-size:12px; line-height:15px; color:#3A3128;">Massage</div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.6px; color:#6B5F54;">7</div>
+          </div>
+        </div>
+
+        <div style="flex:none; display:flex; gap:8px; padding:0 20px 16px; align-items:center;">
+          <div style="min-height:34px; display:flex; align-items:center; padding:0 12px; border-radius:999px; border:1px solid #E2D9CF; background:#FFFFFF;"><span style="font-size:13px; line-height:18px; font-weight:600; color:#3A3128;">5 km</span></div>
+          <div style="min-height:34px; display:flex; align-items:center; padding:0 12px; border-radius:999px; background:#17120E;"><span style="font-size:13px; line-height:18px; font-weight:600; color:#FFFFFF;">15 km</span></div>
+          <div style="min-height:34px; display:flex; align-items:center; padding:0 12px; border-radius:999px; border:1px solid #E2D9CF; background:#FFFFFF;"><span style="font-size:13px; line-height:18px; font-weight:600; color:#3A3128;">30 km</span></div>
+          <div style="flex:1;"></div>
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#6B5F54;">94</span>
+        </div>
+
+        <div style="flex:1; overflow:hidden; display:flex; flex-direction:column; gap:16px;">
+          <div style="padding:0 20px; display:flex; flex-direction:column; gap:8px;">
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#6B5F54;">CLOSEST TO YOU</div>
+            <div style="background:#FFFFFF; border:1px solid #E2D9CF;">
+              <div style="height:240px; position:relative; display:flex; flex-direction:column; justify-content:flex-end; background:linear-gradient(150deg,#FFFFFF 0%,#EDE6DE 40%,#9A8D80 100%);">
+                <div style="position:absolute; inset:auto 0 0 0; height:62%; background:linear-gradient(to bottom, rgba(23,18,14,0) 0%, rgba(23,18,14,0.42) 55%, rgba(23,18,14,0.86) 100%);"></div>
+                <div style="position:absolute; top:12px; left:12px; background:#FF5E00; padding:3px 9px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.8px; color:#17120E;">320 M</span></div>
+                <div style="position:relative; padding:16px; display:flex flex-direction:column;">
+                  <div style="display:flex; flex-direction:column; gap:3px;">
+                    <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#FFFFFF;">NAILS</span>
+                    <span style="font-size:24px; line-height:30px; font-weight:600; letter-spacing:-0.4px; color:#FFFFFF;">Vela Nail Studio</span>
+                    <span style="font-size:13px; line-height:19px; color:#EDE6DE;">120 NE 41st St</span>
+                  </div>
+                </div>
+              </div>
+              <div style="padding:14px 16px; display:flex; align-items:center; gap:12px;">
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                  <span style="font-size:16px; line-height:23px; font-weight:600; color:#17120E;">Gel manicure</span>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#6B5F54;">45 MIN</span>
+                </div>
+                <div style="flex:none; display:flex; align-items:center; gap:6px; padding:4px 9px; border:1.5px solid #A83E06;">
+                  <div style="display:flex; align-items:flex-end; gap:2px; height:11px;"><div style="width:3px; height:5px; background:#A83E06;"></div><div style="width:3px; height:8px; background:#F9BC97;"></div><div style="width:3px; height:11px; background:#F9BC97;"></div></div>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#A83E06;">STORY</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="padding:0 20px; display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#6B5F54;">UNDER 2 KM</span>
+              <div style="flex:1; height:1px; background:#E2D9CF;"></div>
+            </div>
+            <div style="display:flex; gap:12px;">
+              <div style="flex:1; background:#FFFFFF; border:1px solid #E2D9CF;">
+                <div style="height:120px; position:relative; background:linear-gradient(150deg,#FFFFFF 0%,#EDE6DE 45%,#CFC3B6 100%);">
+                  <div style="position:absolute; top:8px; left:8px; background:#FF5E00; padding:2px 7px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.6px; color:#17120E;">900 M</span></div>
+                </div>
+                <div style="padding:10px 12px; display:flex; flex-direction:column; gap:3px;">
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#6B5F54;">FACIALS</span>
+                  <span style="font-size:15px; line-height:20px; font-weight:600; color:#17120E;">Casa Bruma</span>
+                  <span style="font-size:12px; line-height:17px; color:#6B5F54;">Signature facial</span>
+                </div>
+              </div>
+              <div style="flex:1; background:#FFFFFF; border:1px solid #E2D9CF;">
+                <div style="height:120px; position:relative; background:linear-gradient(150deg,#FFFFFF 0%,#EDE6DE 45%,#CFC3B6 100%);">
+                  <div style="position:absolute; top:8px; left:8px; background:#FF5E00; padding:2px 7px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.6px; color:#17120E;">1,4 KM</span></div>
+                </div>
+                <div style="padding:10px 12px; display:flex; flex-direction:column; gap:3px;">
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#6B5F54;">HAIR</span>
+                  <span style="font-size:15px; line-height:20px; font-weight:600; color:#17120E;">Rótulo Hair</span>
+                  <span style="font-size:12px; line-height:17px; color:#6B5F54;">Balayage</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="flex:none; height:72px; display:flex; background:#FFFFFF; border-top:1px solid #E2D9CF;">
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; position:relative; padding-top:9px;">
+            <div style="position:absolute; top:0; left:22px; right:22px; height:3px; background:#FF5E00;"></div>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 21.5c4.4-4.6 6.6-8.2 6.6-11a6.6 6.6 0 10-13.2 0c0 2.8 2.2 6.4 6.6 11zM12 12.6a2.6 2.6 0 100-5.2 2.6 2.6 0 000 5.2z" stroke="#17120E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <div style="font-size:11px; line-height:15px; margin-top:4px; font-weight:600; color:#17120E;">Nearby</div>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; padding-top:9px;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5.5 20v-5M12 20V9M18.5 20V4" stroke="#6B5F54" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <div style="font-size:11px; line-height:15px; margin-top:4px; color:#6B5F54;">Tiers</div>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; padding-top:9px;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 6.5h16v14H4zM4 11h16M8.5 3.5v4M15.5 3.5v4" stroke="#6B5F54" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <div style="font-size:11px; line-height:15px; margin-top:4px; color:#6B5F54;">Bookings</div>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; padding-top:9px;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 12.2a4 4 0 100-8 4 4 0 000 8zM4.8 20.5a7.2 7.2 0 0114.4 0" stroke="#6B5F54" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <div style="font-size:11px; line-height:15px; margin-top:4px; color:#6B5F54;">Audience</div>
+          </div>
+        </div>
+      </div>
+      <div style="width:390px; font-size:13px; line-height:19px; color:#6B5F54; text-wrap:pretty;">La pastille de distance est le seul objet orange de la carte — un accent coloré par photo, comme le veut le système. Le compte à droite du rayon est celui de la requête en cours.</div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="display:flex; gap:10px; align-items:baseline;"><div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#A83E06;">03b</div><div style="font-size:13px; line-height:18px; font-weight:600; color:#17120E;">Fil · catégorie active</div></div>
+      <div data-screen-label="03b" style="width:390px; height:844px; overflow:hidden; background:#F7F3EF; border:1px solid #E2D9CF; display:flex; flex-direction:column;">
+        <div style="height:50px; flex:none;"></div>
+        <div style="flex:none; padding:0 20px 14px; display:flex; align-items:flex-end; justify-content:space-between; gap:12px;">
+          <div style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:34px; line-height:40px; font-weight:400; color:#17120E;">Nails</div>
+          <div style="display:flex; align-items:center; gap:6px; padding-bottom:8px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="#A83E06" stroke-width="2" stroke-linecap="round"></path></svg>
+            <span style="font-size:13px; line-height:18px; font-weight:600; color:#A83E06;">Clear</span>
+          </div>
+        </div>
+
+        <div style="flex:none; display:flex; gap:8px; padding:0 20px 16px; overflow:hidden;">
+          <div style="width:56px; flex:none; display:flex; flex-direction:column; gap:6px;">
+            <div style="width:56px; height:56px; border-radius:2px; background:linear-gradient(150deg,#FFFFFF 0%,#EDE6DE 45%,#CFC3B6 100%); border-bottom:3px solid #FF5E00;"></div>
+            <div style="font-size:12px; line-height:15px; font-weight:600; color:#17120E;">Nails</div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.6px; color:#A83E06;">34</div>
+          </div>
+          <div style="width:56px; flex:none; display:flex; flex-direction:column; gap:6px; opacity:0.55;">
+            <div style="width:56px; height:56px; border-radius:2px; background:linear-gradient(150deg,#FFFFFF 0%,#EDE6DE 45%,#CFC3B6 100%);"></div>
+            <div style="font-size:12px; line-height:15px; color:#3A3128;">Hair</div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.6px; color:#6B5F54;">21</div>
+          </div>
+          <div style="width:56px; flex:none; display:flex; flex-direction:column; gap:6px; opacity:0.55;">
+            <div style="width:56px; height:56px; border-radius:2px; background:linear-gradient(150deg,#FFFFFF 0%,#EDE6DE 45%,#CFC3B6 100%);"></div>
+            <div style="font-size:12px; line-height:15px; color:#3A3128;">Facials</div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.6px; color:#6B5F54;">18</div>
+          </div>
+          <div style="width:56px; flex:none; display:flex; flex-direction:column; gap:6px; opacity:0.55;">
+            <div style="width:56px; height:56px; border-radius:2px; background:linear-gradient(150deg,#FFFFFF 0%,#EDE6DE 45%,#CFC3B6 100%);"></div>
+            <div style="font-size:12px; line-height:15px; color:#3A3128;">Spa</div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.6px; color:#6B5F54;">9</div>
+          </div>
+          <div style="width:56px; flex:none; display:flex; flex-direction:column; gap:6px; opacity:0.55;">
+            <div style="width:56px; height:56px; border-radius:2px; background:linear-gradient(150deg,#FFFFFF 0%,#EDE6DE 45%,#CFC3B6 100%);"></div>
+            <div style="font-size:12px; line-height:15px; color:#3A3128;">Brows &amp; lashes</div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.6px; color:#6B5F54;">12</div>
+          </div>
+          <div style="width:56px; flex:none; display:flex; flex-direction:column; gap:6px; opacity:0.55;">
+            <div style="width:56px; height:56px; border-radius:2px; background:linear-gradient(150deg,#FFFFFF 0%,#EDE6DE 45%,#CFC3B6 100%);"></div>
+            <div style="font-size:12px; line-height:15px; color:#3A3128;">Massage</div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.6px; color:#6B5F54;">7</div>
+          </div>
+        </div>
+
+        <div style="flex:none; display:flex; gap:8px; padding:0 20px 16px; align-items:center;">
+          <div style="min-height:34px; display:flex; align-items:center; padding:0 12px; border-radius:999px; border:1px solid #E2D9CF; background:#FFFFFF;"><span style="font-size:13px; line-height:18px; font-weight:600; color:#3A3128;">5 km</span></div>
+          <div style="min-height:34px; display:flex; align-items:center; padding:0 12px; border-radius:999px; background:#17120E;"><span style="font-size:13px; line-height:18px; font-weight:600; color:#FFFFFF;">15 km</span></div>
+          <div style="min-height:34px; display:flex; align-items:center; padding:0 12px; border-radius:999px; border:1px solid #E2D9CF; background:#FFFFFF;"><span style="font-size:13px; line-height:18px; font-weight:600; color:#3A3128;">30 km</span></div>
+          <div style="flex:1;"></div>
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#6B5F54;">34</span>
+        </div>
+
+        <div style="flex:1; overflow:hidden; padding:0 20px; display:flex; flex-direction:column; gap:12px;">
+          <div style="display:flex; gap:12px;">
+            <div style="flex:1; background:#FFFFFF; border:1px solid #E2D9CF;">
+              <div style="height:150px; position:relative; background:linear-gradient(150deg,#FFFFFF 0%,#EDE6DE 45%,#CFC3B6 100%);">
+                <div style="position:absolute; top:8px; left:8px; background:#FF5E00; padding:2px 7px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.6px; color:#17120E;">320 M</span></div>
+              </div>
+              <div style="padding:11px 12px; display:flex; flex-direction:column; gap:4px;">
+                <span style="font-size:15px; line-height:20px; font-weight:600; color:#17120E;">Vela Nail Studio</span>
+                <span style="font-size:12px; line-height:17px; color:#6B5F54;">Gel manicure · 45 min</span>
+                <div style="align-self:flex-start; display:flex; align-items:center; gap:5px; padding:3px 7px; border:1.5px solid #A83E06; margin-top:2px;">
+                  <div style="display:flex; align-items:flex-end; gap:2px; height:9px;"><div style="width:2px; height:4px; background:#A83E06;"></div><div style="width:2px; height:6px; background:#F9BC97;"></div><div style="width:2px; height:9px; background:#F9BC97;"></div></div>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:1px; color:#A83E06;">STORY</span>
+                </div>
+              </div>
+            </div>
+            <div style="flex:1; background:#FFFFFF; border:1px solid #E2D9CF;">
+              <div style="height:150px; position:relative; background:linear-gradient(150deg,#FFFFFF 0%,#EDE6DE 45%,#CFC3B6 100%);">
+                <div style="position:absolute; top:8px; left:8px; background:#FF5E00; padding:2px 7px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.6px; color:#17120E;">900 M</span></div>
+              </div>
+              <div style="padding:11px 12px; display:flex; flex-direction:column; gap:4px;">
+                <span style="font-size:15px; line-height:20px; font-weight:600; color:#17120E;">Gelateria Nails</span>
+                <span style="font-size:12px; line-height:17px; color:#6B5F54;">Full set · 90 min</span>
+                <div style="align-self:flex-start; display:flex; align-items:center; gap:5px; padding:3px 7px; background:#FCDCC7; border:1px solid #FF5E00; margin-top:2px;">
+                  <div style="display:flex; align-items:flex-end; gap:2px; height:9px;"><div style="width:2px; height:4px; background:#A83E06;"></div><div style="width:2px; height:6px; background:#A83E06;"></div><div style="width:2px; height:9px; background:#F9BC97;"></div></div>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:1px; color:#A83E06;">POST</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex; gap:12px;">
+            <div style="flex:1; background:#FFFFFF; border:1px solid #E2D9CF;">
+              <div style="height:150px; position:relative; background:linear-gradient(150deg,#FFFFFF 0%,#EDE6DE 45%,#CFC3B6 100%);">
+                <div style="position:absolute; top:8px; left:8px; background:#FF5E00; padding:2px 7px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.6px; color:#17120E;">2,1 KM</span></div>
+              </div>
+              <div style="padding:11px 12px; display:flex; flex-direction:column; gap:4px;">
+                <span style="font-size:15px; line-height:20px; font-weight:600; color:#17120E;">Nail Atelier</span>
+                <span style="font-size:12px; line-height:17px; color:#6B5F54;">Classic pedicure · 50 min</span>
+              </div>
+            </div>
+            <div style="flex:1; background:#FFFFFF; border:1px solid #E2D9CF;">
+              <div style="height:150px; background:linear-gradient(150deg,#FFFFFF 0%,#EDE6DE 45%,#CFC3B6 100%);"></div>
+            </div>
+          </div>
+        </div>
+        <div style="flex:none; height:72px; background:#FFFFFF; border-top:1px solid #E2D9CF;"></div>
+      </div>
+      <div style="width:390px; font-size:13px; line-height:19px; color:#6B5F54; text-wrap:pretty;">La catégorie choisie devient le titre de l'écran, en Didone. Les cinq autres restent atteignables, atténuées — un filtre qui masque ses alternatives se transforme en cul-de-sac.</div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="display:flex; gap:10px; align-items:baseline;"><div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#A83E06;">03c</div><div style="font-size:13px; line-height:18px; font-weight:600; color:#17120E;">Fil · vide, les obstacles disent pourquoi</div></div>
+      <div data-screen-label="03c" style="width:390px; height:844px; overflow:hidden; background:#F7F3EF; border:1px solid #E2D9CF; display:flex; flex-direction:column;">
+        <div style="height:50px; flex:none;"></div>
+        <div style="flex:none; padding:0 20px 14px; display:flex; align-items:flex-end; justify-content:space-between; gap:12px;">
+          <div style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:34px; line-height:40px; font-weight:400; color:#17120E;">Nearby</div>
+          <div style="display:flex; align-items:center; gap:5px; padding-bottom:6px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 21.5c4.4-4.6 6.6-8.2 6.6-11a6.6 6.6 0 10-13.2 0c0 2.8 2.2 6.4 6.6 11zM12 12.6a2.6 2.6 0 100-5.2 2.6 2.6 0 000 5.2z" stroke="#6B5F54" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#6B5F54;">KEY BISCAYNE</span>
+          </div>
+        </div>
+        <div style="flex:none; display:flex; gap:8px; padding:0 20px 16px; overflow:hidden;">
+          <div style="width:56px; flex:none; display:flex; flex-direction:column; gap:6px; opacity:0.55;"><div style="width:56px; height:56px; border-radius:2px; background:linear-gradient(150deg,#FFFFFF 0%,#EDE6DE 45%,#CFC3B6 100%);"></div><div style="font-size:12px; line-height:15px; color:#3A3128;">Nails</div><div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.6px; color:#CFC3B6;">—</div></div>
+          <div style="width:56px; flex:none; display:flex; flex-direction:column; gap:6px; opacity:0.55;"><div style="width:56px; height:56px; border-radius:2px; background:linear-gradient(150deg,#FFFFFF 0%,#EDE6DE 45%,#CFC3B6 100%);"></div><div style="font-size:12px; line-height:15px; color:#3A3128;">Hair</div><div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.6px; color:#CFC3B6;">—</div></div>
+          <div style="width:56px; flex:none; display:flex; flex-direction:column; gap:6px; opacity:0.55;"><div style="width:56px; height:56px; border-radius:2px; background:linear-gradient(150deg,#FFFFFF 0%,#EDE6DE 45%,#CFC3B6 100%);"></div><div style="font-size:12px; line-height:15px; color:#3A3128;">Facials</div><div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.6px; color:#CFC3B6;">—</div></div>
+          <div style="width:56px; flex:none; display:flex; flex-direction:column; gap:6px; opacity:0.55;"><div style="width:56px; height:56px; border-radius:2px; background:linear-gradient(150deg,#FFFFFF 0%,#EDE6DE 45%,#CFC3B6 100%);"></div><div style="font-size:12px; line-height:15px; color:#3A3128;">Spa</div><div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.6px; color:#CFC3B6;">—</div></div>
+          <div style="width:56px; flex:none; display:flex; flex-direction:column; gap:6px; opacity:0.55;"><div style="width:56px; height:56px; border-radius:2px; background:linear-gradient(150deg,#FFFFFF 0%,#EDE6DE 45%,#CFC3B6 100%);"></div><div style="font-size:12px; line-height:15px; color:#3A3128;">Brows &amp; lashes</div><div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.6px; color:#CFC3B6;">—</div></div>
+          <div style="width:56px; flex:none; display:flex; flex-direction:column; gap:6px; opacity:0.55;"><div style="width:56px; height:56px; border-radius:2px; background:linear-gradient(150deg,#FFFFFF 0%,#EDE6DE 45%,#CFC3B6 100%);"></div><div style="font-size:12px; line-height:15px; color:#3A3128;">Massage</div><div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.6px; color:#CFC3B6;">—</div></div>
+        </div>
+
+        <div style="flex:1; min-height:0; overflow:hidden; padding:8px 20px 0; display:flex; flex-direction:column; gap:20px;">
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:40px; line-height:48px; font-weight:400; color:#17120E; text-wrap:pretty;">Nothing within 15 km</div>
+            <div style="font-size:17px; line-height:26px; color:#3A3128; text-wrap:pretty;">Your tiers are open. There is simply no business offering them this close.</div>
+          </div>
+
+          <div style="background:#FFFFFF; border:1px solid #E2D9CF;">
+            <div style="padding:12px 16px; border-bottom:1px solid #E2D9CF;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#6B5F54;">WHAT THE SERVER SAYS</span></div>
+            <div style="padding:14px 16px; display:flex; align-items:flex-start; gap:10px; border-bottom:1px solid #E2D9CF;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="flex:none; margin-top:2px;"><path d="M12 3.5L21.5 20H2.5z" stroke="#17120E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M12 9.5v4.2" stroke="#17120E" stroke-width="2" stroke-linecap="round"></path><circle cx="12" cy="16.6" r="1.1" fill="#17120E"></circle></svg>
+              <div style="flex:1; display:flex; flex-direction:column; gap:2px;">
+                <span style="font-size:15px; line-height:22px; font-weight:600; color:#17120E;">No business within the radius</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#6B5F54;">no_business_in_radius</span>
+              </div>
+            </div>
+            <div style="padding:14px 16px; display:flex; flex-direction:column; gap:10px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                <span style="font-size:15px; line-height:22px; color:#3A3128;">Widen to 30 km</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:14px; letter-spacing:0.8px; color:#17120E;">9</span>
+              </div>
+              <div style="min-height:50px; background:#FF5E00; display:flex; align-items:center; justify-content:center;"><span style="font-size:16px; line-height:23px; font-weight:600; color:#17120E;">See the 9 salons at 30 km</span></div>
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding-top:4px;">
+                <span style="font-size:15px; line-height:22px; color:#3A3128;">Widen to 50 km</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:14px; letter-spacing:0.8px; color:#17120E;">24</span>
+              </div>
+              <div style="min-height:50px; border:1px solid #17120E; display:flex; align-items:center; justify-content:center;"><span style="font-size:16px; line-height:23px; font-weight:600; color:#17120E;">See the 24 salons at 50 km</span></div>
+            </div>
+          </div>
+
+        </div>
+        <div style="flex:none; height:72px; background:#FFFFFF; border-top:1px solid #E2D9CF;"></div>
+      </div>
+      <div style="width:390px; font-size:13px; line-height:19px; color:#6B5F54; text-wrap:pretty;">Chaque issue porte le nombre qu'elle va montrer ; une issue sans nombre demande d'essayer pour voir, et personne n'essaie deux fois. Les six catégories restent listées sans compte : dire « 0 » affirmerait une mesure là où le serveur n'a rien renvoyé. Le code serveur sous le libellé traduit est le seul du produit créateur — sans lui, un vide inexpliqué devient un ticket de support.</div>
+    </div>
+
+  </div>
+</section>
+
+
+<section style="display:flex; flex-direction:column; gap:28px; padding:0 56px 56px; font-family:'Outfit',sans-serif;">
+  <div style="display:flex; flex-direction:column; gap:8px; max-width:820px;">
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:1.4px; color:#6B5F54;">08 · LES RÉSERVATIONS</div>
+    <div style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:36px; line-height:44px; font-weight:400; color:#17120E;">Chaque ligne dit ce qu'elle attend de toi</div>
+    <div style="font-size:16px; line-height:25px; color:#3A3128; max-width:700px; text-wrap:pretty;">Trois onglets, chacun portant son compte réel — <span style="font-family:'IBM Plex Mono',monospace; font-size:14px;">compteurs</span> est calculé sur tout l'historique, pas sur la page affichée. La densité tombe parce qu'une ligne ne répète plus ce que l'onglet a déjà dit.</div>
+    <div style="font-size:15px; line-height:23px; color:#6B5F54; max-width:700px; text-wrap:pretty;">L'onglet « en cours » est le seul qui porte une action, et c'est là que je réponds en partie à votre remarque sur l'écran d'envoi de preuve : l'action part d'ici.</div>
+  </div>
+
+  <div style="display:flex; flex-wrap:wrap; gap:36px; align-items:flex-start;">
+
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="display:flex; gap:10px; align-items:baseline;"><div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#A83E06;">08a</div><div style="font-size:13px; line-height:18px; font-weight:600; color:#17120E;">À venir</div></div>
+      <div data-screen-label="08a" style="width:390px; height:844px; overflow:hidden; background:#F7F3EF; border:1px solid #E2D9CF; display:flex; flex-direction:column;">
+        <div style="height:50px; flex:none;"></div>
+        <div style="flex:none; padding:0 20px 16px;"><div style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:34px; line-height:40px; font-weight:400; color:#17120E;">Bookings</div></div>
+        <div style="flex:none; display:flex; gap:0; padding:0 20px; border-bottom:1px solid #E2D9CF;">
+          <div style="flex:1; padding:0 4px 11px; display:flex; flex-direction:column; align-items:center; gap:3px; border-bottom:3px solid #FF5E00; margin-bottom:-1px;">
+            <span style="font-size:14px; line-height:19px; font-weight:600; color:#17120E;">Upcoming</span>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#A83E06;">2</span>
+          </div>
+          <div style="flex:1; padding:0 4px 11px; display:flex; flex-direction:column; align-items:center; gap:3px;">
+            <span style="font-size:14px; line-height:19px; color:#6B5F54;">In progress</span>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#6B5F54;">3</span>
+          </div>
+          <div style="flex:1; padding:0 4px 11px; display:flex; flex-direction:column; align-items:center; gap:3px;">
+            <span style="font-size:14px; line-height:19px; color:#6B5F54;">Done</span>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#6B5F54;">12</span>
+          </div>
+        </div>
+
+        <div style="flex:1; overflow:hidden; padding:16px 20px 0; display:flex; flex-direction:column; gap:14px;">
+          <div style="background:#FFFFFF; border:1px solid #E2D9CF;">
+            <div style="padding:14px 16px; display:flex; gap:14px; align-items:flex-start; border-bottom:1px solid #E2D9CF;">
+              <div style="width:56px; flex:none; display:flex; flex-direction:column; align-items:center; gap:1px; padding-top:2px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1px; color:#6B5F54;">AUG</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:26px; line-height:28px; font-weight:600; color:#17120E;">16</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#17120E;">14:30</span>
+              </div>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+                <span style="font-size:17px; line-height:24px; font-weight:600; color:#17120E;">Gel manicure</span>
+                <span style="font-size:14px; line-height:20px; color:#3A3128;">Vela Nail Studio</span>
+                <span style="font-size:13px; line-height:19px; color:#6B5F54;">120 NE 41st St · 320 m</span>
+                <div style="align-self:flex-start; display:flex; align-items:center; gap:6px; padding:4px 9px; border:1.5px solid #A83E06; margin-top:4px;">
+                  <div style="display:flex; align-items:flex-end; gap:2px; height:11px;"><div style="width:3px; height:5px; background:#A83E06;"></div><div style="width:3px; height:8px; background:#F9BC97;"></div><div style="width:3px; height:11px; background:#F9BC97;"></div></div>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#A83E06;">STORY · INSTAGRAM</span>
+                </div>
+              </div>
+            </div>
+            <div style="padding:12px 16px; display:flex; align-items:center; gap:12px;">
+              <span style="flex:1; font-size:13px; line-height:19px; color:#6B5F54; text-wrap:pretty;">Your code appears on the spot, it rotates on its own.</span>
+              <div style="flex:none; min-height:44px; background:#FF5E00; display:flex; align-items:center; padding:0 16px;"><span style="font-size:15px; line-height:22px; font-weight:600; color:#17120E;">Show code</span></div>
+            </div>
+          </div>
+
+          <div style="background:#FFFFFF; border:1px solid #E2D9CF;">
+            <div style="padding:14px 16px; display:flex; gap:14px; align-items:flex-start;">
+              <div style="width:56px; flex:none; display:flex; flex-direction:column; align-items:center; gap:1px; padding-top:2px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1px; color:#6B5F54;">AUG</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:26px; line-height:28px; font-weight:600; color:#17120E;">21</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#17120E;">10:00</span>
+              </div>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+                <span style="font-size:17px; line-height:24px; font-weight:600; color:#17120E;">Signature facial</span>
+                <span style="font-size:14px; line-height:20px; color:#3A3128;">Casa Bruma Spa</span>
+                <span style="font-size:13px; line-height:19px; color:#6B5F54;">88 Collins Ave · 1,4 km</span>
+                <div style="align-self:flex-start; display:flex; align-items:center; gap:6px; padding:4px 9px; background:#FCDCC7; border:1px solid #FF5E00; margin-top:4px;">
+                  <div style="display:flex; align-items:flex-end; gap:2px; height:11px;"><div style="width:3px; height:5px; background:#A83E06;"></div><div style="width:3px; height:8px; background:#A83E06;"></div><div style="width:3px; height:11px; background:#F9BC97;"></div></div>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#A83E06;">POST · INSTAGRAM</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="flex:none; height:72px; background:#FFFFFF; border-top:1px solid #E2D9CF;"></div>
+      </div>
+      <div style="width:390px; font-size:13px; line-height:19px; color:#6B5F54; text-wrap:pretty;">La date en bloc mono à gauche remplace une ligne de texte : elle se balaie du regard sur dix lignes. Le badge porte le palier <span style="font-weight:600;">et</span> le réseau, parce que la même prestation peut exister sur deux comptes.</div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="display:flex; gap:10px; align-items:baseline;"><div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#A83E06;">08b</div><div style="font-size:13px; line-height:18px; font-weight:600; color:#17120E;">En cours · le seul onglet qui agit</div></div>
+      <div data-screen-label="08b" style="width:390px; height:844px; overflow:hidden; background:#F7F3EF; border:1px solid #E2D9CF; display:flex; flex-direction:column;">
+        <div style="height:50px; flex:none;"></div>
+        <div style="flex:none; padding:0 20px 16px;"><div style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:34px; line-height:40px; font-weight:400; color:#17120E;">Bookings</div></div>
+        <div style="flex:none; display:flex; gap:0; padding:0 20px; border-bottom:1px solid #E2D9CF;">
+          <div style="flex:1; padding:0 4px 11px; display:flex; flex-direction:column; align-items:center; gap:3px;">
+            <span style="font-size:14px; line-height:19px; color:#6B5F54;">Upcoming</span>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#6B5F54;">2</span>
+          </div>
+          <div style="flex:1; padding:0 4px 11px; display:flex; flex-direction:column; align-items:center; gap:3px; border-bottom:3px solid #FF5E00; margin-bottom:-1px;">
+            <span style="font-size:14px; line-height:19px; font-weight:600; color:#17120E;">In progress</span>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#A83E06;">3</span>
+          </div>
+          <div style="flex:1; padding:0 4px 11px; display:flex; flex-direction:column; align-items:center; gap:3px;">
+            <span style="font-size:14px; line-height:19px; color:#6B5F54;">Done</span>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#6B5F54;">12</span>
+          </div>
+        </div>
+
+        <div style="flex:1; overflow:hidden; padding:16px 20px 0; display:flex; flex-direction:column; gap:14px;">
+          <div style="background:#FFFFFF; border:1px solid #E2D9CF; border-left:3px solid #17120E;">
+            <div style="padding:14px 16px; display:flex; flex-direction:column; gap:8px;">
+              <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px;">
+                <span style="font-size:17px; line-height:24px; font-weight:600; color:#17120E;">Gel manicure</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#17120E;">31 H LEFT</span>
+              </div>
+              <span style="font-size:14px; line-height:20px; color:#3A3128;">Vela Nail Studio · served Aug 14</span>
+              <div style="display:flex; flex-direction:column; gap:3px; padding-top:2px;">
+                <span style="font-size:13px; line-height:19px; color:#3A3128;">One story, mention <span style="font-family:'IBM Plex Mono',monospace; font-size:12px;">@velanailstudio</span></span>
+                <span style="font-size:13px; line-height:19px; color:#3A3128;">Location tag: Vela Nail Studio</span>
+              </div>
+              <div style="height:6px; background:#EDE6DE; margin-top:4px;"><div style="width:35%; height:6px; background:#17120E;"></div></div>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.8px; color:#6B5F54;">DUE AUG 16, 14:30</span>
+            </div>
+            <div style="padding:0 16px 14px;">
+              <div style="min-height:50px; background:#FF5E00; display:flex; align-items:center; justify-content:center;"><span style="font-size:16px; line-height:23px; font-weight:600; color:#17120E;">Send your story</span></div>
+            </div>
+          </div>
+
+          <div style="background:#FFFFFF; border:1px solid #E2D9CF;">
+            <div style="padding:14px 16px; display:flex; flex-direction:column; gap:8px;">
+              <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px;">
+                <span style="font-size:17px; line-height:24px; font-weight:600; color:#17120E;">Signature facial</span>
+                <span style="font-size:13px; line-height:19px; font-weight:600; color:#6B5F54;">Under review</span>
+              </div>
+              <span style="font-size:14px; line-height:20px; color:#3A3128;">Casa Bruma Spa</span>
+              <span style="font-size:13px; line-height:19px; color:#6B5F54; text-wrap:pretty;">Sent Aug 12, 19:41. The salon is checking it — nothing to do on your side.</span>
+            </div>
+          </div>
+
+          <div style="background:#FFFFFF; border:1px solid #E2D9CF; border-left:3px solid #17120E;">
+            <div style="padding:14px 16px; display:flex; flex-direction:column; gap:8px;">
+              <div style="display:flex; align-items:flex-start; gap:9px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="flex:none; margin-top:2px;"><path d="M12 3.5L21.5 20H2.5z" stroke="#17120E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M12 9.5v4.2" stroke="#17120E" stroke-width="2" stroke-linecap="round"></path><circle cx="12" cy="16.6" r="1.1" fill="#17120E"></circle></svg>
+                <div style="flex:1; display:flex; flex-direction:column; gap:3px;">
+                  <span style="font-size:17px; line-height:24px; font-weight:600; color:#17120E;">Balayage, mid-length</span>
+                  <span style="font-size:14px; line-height:20px; color:#3A3128;">Rótulo Hair · attempt 2 of 3</span>
+                </div>
+              </div>
+              <div style="background:#EDE6DE; padding:11px 13px; display:flex; flex-direction:column; gap:3px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#6B5F54;">WHAT WAS MISSING</span>
+                <span style="font-size:14px; line-height:21px; color:#17120E;">The location tag was missing.</span>
+              </div>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.8px; color:#6B5F54;">NEW DEADLINE AUG 17, 12:00</span>
+            </div>
+            <div style="padding:0 16px 14px;">
+              <div style="min-height:50px; border:1px solid #17120E; display:flex; align-items:center; justify-content:center;"><span style="font-size:16px; line-height:23px; font-weight:600; color:#17120E;">Send it again</span></div>
+            </div>
+          </div>
+        </div>
+        <div style="flex:none; height:72px; background:#FFFFFF; border-top:1px solid #E2D9CF;"></div>
+      </div>
+      <div style="width:390px; font-size:13px; line-height:19px; color:#6B5F54; text-wrap:pretty;">Une ligne qui attend quelque chose de la créatrice porte un filet d'encre à gauche et un bouton. Une ligne en contrôle n'en a pas et le dit en mots : rien à faire. L'avertissement de reprise est neutre à glyphe, jamais ambre — l'ambre serait lu comme la marque.</div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="display:flex; gap:10px; align-items:baseline;"><div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#A83E06;">08c</div><div style="font-size:13px; line-height:18px; font-weight:600; color:#17120E;">Terminées</div></div>
+      <div data-screen-label="08c" style="width:390px; height:844px; overflow:hidden; background:#F7F3EF; border:1px solid #E2D9CF; display:flex; flex-direction:column;">
+        <div style="height:50px; flex:none;"></div>
+        <div style="flex:none; padding:0 20px 16px;"><div style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:34px; line-height:40px; font-weight:400; color:#17120E;">Bookings</div></div>
+        <div style="flex:none; display:flex; gap:0; padding:0 20px; border-bottom:1px solid #E2D9CF;">
+          <div style="flex:1; padding:0 4px 11px; display:flex; flex-direction:column; align-items:center; gap:3px;">
+            <span style="font-size:14px; line-height:19px; color:#6B5F54;">Upcoming</span>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#6B5F54;">2</span>
+          </div>
+          <div style="flex:1; padding:0 4px 11px; display:flex; flex-direction:column; align-items:center; gap:3px;">
+            <span style="font-size:14px; line-height:19px; color:#6B5F54;">In progress</span>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#6B5F54;">3</span>
+          </div>
+          <div style="flex:1; padding:0 4px 11px; display:flex; flex-direction:column; align-items:center; gap:3px; border-bottom:3px solid #FF5E00; margin-bottom:-1px;">
+            <span style="font-size:14px; line-height:19px; font-weight:600; color:#17120E;">Done</span>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#A83E06;">12</span>
+          </div>
+        </div>
+
+        <div style="flex:1; overflow:hidden; display:flex; flex-direction:column;">
+          <div style="padding:14px 20px 12px; display:flex; align-items:center; gap:10px;">
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#6B5F54;">AUGUST</span>
+            <div style="flex:1; height:1px; background:#E2D9CF;"></div>
+          </div>
+          <div style="padding:0 20px; display:flex; flex-direction:column;">
+            <div style="padding:14px 0; border-bottom:1px solid #E2D9CF; display:flex; gap:12px; align-items:flex-start;">
+              <div style="width:44px; flex:none; display:flex; flex-direction:column; align-items:center; padding-top:2px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:20px; line-height:22px; font-weight:600; color:#6B5F54;">08</span>
+              </div>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                <span style="font-size:16px; line-height:22px; font-weight:600; color:#17120E;">Classic pedicure</span>
+                <span style="font-size:13px; line-height:19px; color:#6B5F54;">Vela Nail Studio · story, Instagram</span>
+              </div>
+              <div style="flex:none; display:flex; align-items:center; gap:6px; padding-top:2px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#1F6B4A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                <span style="font-size:13px; line-height:19px; font-weight:600; color:#1F6B4A;">Approved</span>
+              </div>
+            </div>
+            <div style="padding:14px 0; border-bottom:1px solid #E2D9CF; display:flex; gap:12px; align-items:flex-start;">
+              <div style="width:44px; flex:none; display:flex; flex-direction:column; align-items:center; padding-top:2px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:20px; line-height:22px; font-weight:600; color:#6B5F54;">02</span>
+              </div>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                <span style="font-size:16px; line-height:22px; font-weight:600; color:#17120E;">Deep tissue, 60 min</span>
+                <span style="font-size:13px; line-height:19px; color:#6B5F54;">Sable Massage · post, Instagram</span>
+              </div>
+              <div style="flex:none; display:flex; align-items:center; gap:6px; padding-top:2px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="#A31B2F" stroke-width="2.2" stroke-linecap="round"></path></svg>
+                <span style="font-size:13px; line-height:19px; font-weight:600; color:#A31B2F;">Not fulfilled</span>
+              </div>
+            </div>
+          </div>
+          <div style="padding:18px 20px 12px; display:flex; align-items:center; gap:10px;">
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#6B5F54;">JULY</span>
+            <div style="flex:1; height:1px; background:#E2D9CF;"></div>
+          </div>
+          <div style="padding:0 20px; display:flex; flex-direction:column;">
+            <div style="padding:14px 0; border-bottom:1px solid #E2D9CF; display:flex; gap:12px; align-items:flex-start;">
+              <div style="width:44px; flex:none; display:flex; align-items:flex-start; justify-content:center; padding-top:2px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:20px; line-height:22px; font-weight:600; color:#6B5F54;">28</span>
+              </div>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                <span style="font-size:16px; line-height:22px; font-weight:600; color:#17120E;">Brow lamination</span>
+                <span style="font-size:13px; line-height:19px; color:#6B5F54;">Aurora Brow Bar · story, TikTok</span>
+              </div>
+              <div style="flex:none; display:flex; align-items:center; gap:6px; padding-top:2px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#1F6B4A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                <span style="font-size:13px; line-height:19px; font-weight:600; color:#1F6B4A;">Approved</span>
+              </div>
+            </div>
+            <div style="padding:14px 0; display:flex; gap:12px; align-items:flex-start;">
+              <div style="width:44px; flex:none; display:flex; align-items:flex-start; justify-content:center; padding-top:2px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:20px; line-height:22px; font-weight:600; color:#6B5F54;">19</span>
+              </div>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                <span style="font-size:16px; line-height:22px; font-weight:600; color:#17120E;">Gel manicure</span>
+                <span style="font-size:13px; line-height:19px; color:#6B5F54;">Gelateria Nails · story, Instagram</span>
+              </div>
+              <div style="flex:none; display:flex; align-items:center; gap:6px; padding-top:2px;">
+                <span style="font-size:13px; line-height:19px; font-weight:600; color:#6B5F54;">No-show</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="flex:none; height:72px; background:#FFFFFF; border-top:1px solid #E2D9CF;"></div>
+      </div>
+      <div style="width:390px; font-size:13px; line-height:19px; color:#6B5F54; text-wrap:pretty;">L'historique perd la carte : une ligne de 60 suffit quand il n'y a plus rien à décider. Regroupé par mois, avec le jour seul à gauche.</div>
+    </div>
+
+  </div>
+</section>
+
+<section style="display:flex; flex-direction:column; gap:28px; padding:0 56px 56px; font-family:'Outfit',sans-serif;">
+  <div style="display:flex; flex-direction:column; gap:8px; max-width:820px;">
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:1.4px; color:#6B5F54;">02 · LES PALIERS</div>
+    <div style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:36px; line-height:44px; font-weight:400; color:#17120E;">La v0.7 dans le nouveau système</div>
+    <div style="font-size:16px; line-height:25px; color:#3A3128; max-width:700px; text-wrap:pretty;">L'échelle d'échange ne change pas : ce que je donne à gauche, ce que j'obtiens à droite, et la progression portée par la matière — contour, teinte, aplat. Elle gagne ce que le système lui donne : l'angle droit, le Didone, et les trois teintes de palier fondues dans une seule.</div>
+    <div style="background:#EDE6DE; border-left:3px solid #17120E; padding:16px 20px; max-width:820px; display:flex; align-items:flex-start; gap:10px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="flex:none; margin-top:3px;"><path d="M12 3.5L21.5 20H2.5z" stroke="#17120E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M12 9.5v4.2" stroke="#17120E" stroke-width="2" stroke-linecap="round"></path><circle cx="12" cy="16.6" r="1.1" fill="#17120E"></circle></svg>
+      <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+        <span style="font-size:16px; line-height:24px; font-weight:600; color:#17120E;">Un palier fermé a perdu son argument, et c'est ma demande n° 1 à l'API</span>
+        <span style="font-size:15px; line-height:23px; color:#3A3128; text-wrap:pretty;"><span style="font-family:'IBM Plex Mono',monospace; font-size:13px;">GET /me/tiers</span> ne renvoie que <span style="font-family:'IBM Plex Mono',monospace; font-size:13px;">tier_id</span>, <span style="font-family:'IBM Plex Mono',monospace; font-size:13px;">accessible</span> et <span style="font-family:'IBM Plex Mono',monospace; font-size:13px;">obstacles[]</span>. Aucun compte de prestations. Pour le palier ouvert je le dérive du fil, qui ne renvoie que de l'accessible — d'où « 34 prestations dans 15 km », borné au rayon et annoncé comme tel. Pour un palier fermé, rien : le fil ne le voit pas. La carte fermée ne peut donc pas dire ce qu'elle ouvrirait, ce qui était tout son intérêt.</span>
+        <span style="font-size:15px; line-height:23px; color:#3A3128; text-wrap:pretty;">Il manque un <span style="font-family:'IBM Plex Mono',monospace; font-size:13px;">offres_disponibles</span> par palier sur <span style="font-family:'IBM Plex Mono',monospace; font-size:13px;">/me/tiers</span>. Je n'ai pas inventé le nombre.</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex; flex-wrap:wrap; gap:36px; align-items:flex-start;">
+
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="display:flex; gap:10px; align-items:baseline;"><div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#A83E06;">02a</div><div style="font-size:13px; line-height:18px; font-weight:600; color:#17120E;">Paliers · ouvert et prochain</div></div>
+      <div data-screen-label="02a" style="width:390px; height:844px; overflow:hidden; background:#F7F3EF; border:1px solid #E2D9CF; display:flex; flex-direction:column;">
+        <div style="height:50px; flex:none;"></div>
+        <div style="flex:none; padding:0 20px 16px; display:flex; flex-direction:column; gap:12px;">
+          <div style="display:flex; flex-wrap:wrap; align-items:baseline; gap:0 9px;">
+            <span style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:34px; line-height:42px; font-weight:400; color:#17120E;">Your</span>
+            <span style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-style:italic; font-size:34px; line-height:42px; font-weight:500; color:#17120E;">tiers</span>
+          </div>
+          <div style="background:#17120E; padding:16px; display:flex; flex-direction:column; gap:14px;">
+            <span style="font-size:15px; line-height:23px; color:#FFFFFF; text-wrap:pretty;">The more demanding the format you commit to, the more generous the services it opens.</span>
+            <div style="display:flex; align-items:flex-end; gap:10px;">
+              <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+                <div style="height:16px; border:1.5px solid #F58A4A; box-sizing:border-box;"></div>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#9A8D80;">STORY</span>
+              </div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+                <div style="height:30px; background:#5E2204; border:1px solid #FF5E00; box-sizing:border-box;"></div>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#9A8D80;">POST</span>
+              </div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+                <div style="height:46px; background:#FF5E00;"></div>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#9A8D80;">REEL</span>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <div style="flex:1; min-height:38px; background:#17120E; display:flex; align-items:center; justify-content:center; gap:8px;">
+              <span style="font-size:13px; line-height:18px; font-weight:600; color:#FFFFFF;">Instagram</span>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.6px; color:#9A8D80;">1 OPEN</span>
+            </div>
+            <div style="flex:1; min-height:38px; border:1px solid #E2D9CF; background:#FFFFFF; display:flex; align-items:center; justify-content:center; gap:8px;">
+              <span style="font-size:13px; line-height:18px; font-weight:600; color:#3A3128;">TikTok</span>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.6px; color:#6B5F54;">0 OPEN</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="flex:1; overflow:hidden; padding:0 20px; display:flex; flex-direction:column; gap:14px;">
+          <div style="background:#FFFFFF; border:1.5px solid #A83E06;">
+            <div style="padding:10px 14px; display:flex; align-items:center; gap:10px; border-bottom:1px solid #E2D9CF;">
+              <div style="display:flex; align-items:center; gap:6px; padding:4px 9px; border:1.5px solid #A83E06;">
+                <div style="display:flex; align-items:flex-end; gap:2px; height:11px;"><div style="width:3px; height:5px; background:#A83E06;"></div><div style="width:3px; height:8px; background:#F9BC97;"></div><div style="width:3px; height:11px; background:#F9BC97;"></div></div>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#A83E06;">STORY</span>
+              </div>
+              <div style="flex:1;"></div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#1F6B4A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                <span style="font-size:12px; line-height:17px; font-weight:600; color:#1F6B4A;">Open to you</span>
+              </div>
+            </div>
+            <div style="padding:14px; display:flex; align-items:stretch; gap:14px;">
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#6B5F54;">YOU GIVE</span>
+                <span style="font-size:15px; line-height:21px; font-weight:600; color:#17120E; text-wrap:pretty;">One story within 48 h</span>
+              </div>
+              <div style="width:1px; background:#E2D9CF; flex:none;"></div>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#6B5F54;">YOU GET</span>
+                <div style="display:flex; align-items:baseline; gap:5px;">
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:28px; line-height:30px; font-weight:600; color:#17120E;">34</span>
+                  <span style="font-size:12px; line-height:17px; color:#3A3128;">services</span>
+                </div>
+                <span style="font-size:12px; line-height:17px; color:#6B5F54;">within 15 km of you</span>
+              </div>
+            </div>
+            <div style="min-height:48px; border-top:1px solid #E2D9CF; display:flex; align-items:center; gap:8px; padding:0 14px;">
+              <span style="flex:1; font-size:15px; line-height:22px; font-weight:600; color:#A83E06;">See the 34 services</span>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9.5 5.5L16 12l-6.5 6.5" stroke="#A83E06" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            </div>
+          </div>
+
+          <div style="background:#FFFFFF; border:1px solid #FF5E00; border-left:3px solid #17120E;">
+            <div style="padding:10px 14px; display:flex; align-items:center; gap:10px; background:#FCDCC7; border-bottom:1px solid #F9BC97;">
+              <div style="display:flex; align-items:center; gap:6px; padding:4px 9px; background:#FCDCC7; border:1px solid #FF5E00;">
+                <div style="display:flex; align-items:flex-end; gap:2px; height:11px;"><div style="width:3px; height:5px; background:#A83E06;"></div><div style="width:3px; height:8px; background:#A83E06;"></div><div style="width:3px; height:11px; background:#F9BC97;"></div></div>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#A83E06;">POST</span>
+              </div>
+              <div style="flex:1;"></div>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#17120E;">NEXT FOR YOU</span>
+            </div>
+            <div style="padding:14px; display:flex; align-items:stretch; gap:14px;">
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#6B5F54;">YOU WOULD GIVE</span>
+                <span style="font-size:15px; line-height:21px; font-weight:600; color:#17120E; text-wrap:pretty;">One feed post within 48 h</span>
+              </div>
+              <div style="width:1px; background:#E2D9CF; flex:none;"></div>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#6B5F54;">YOU WOULD GET</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:28px; line-height:30px; font-weight:600; color:#CFC3B6;">—</span>
+              </div>
+            </div>
+            <div style="padding:0 14px 14px; display:flex; flex-direction:column; gap:9px;">
+              <div style="height:1px; background:#E2D9CF;"></div>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#6B5F54;">TO OPEN IT</span>
+              <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+                <span style="font-size:14px; line-height:20px; color:#17120E;">Followers</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:13px; letter-spacing:0.8px; color:#17120E;">7,600 / 10,000</span>
+              </div>
+              <div style="height:10px; background:#EDE6DE;"><div style="width:76%; height:10px; background:#FF5E00;"></div></div>
+              <span style="font-size:13px; line-height:19px; color:#3A3128;">2,400 to go out of 10,000.</span>
+            </div>
+          </div>
+        </div>
+        <div style="flex:none; height:72px; background:#FFFFFF; border-top:1px solid #E2D9CF;"></div>
+      </div>
+      <div style="width:390px; font-size:13px; line-height:19px; color:#6B5F54; text-wrap:pretty;">Le tiret cadratin dit l'absence de relevé, jamais un zéro. La barre d'écart est orange parce qu'elle ne porte aucun texte ; le prochain palier est désigné par un filet d'encre à gauche, pas par un second orange.</div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="display:flex; gap:10px; align-items:baseline;"><div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#A83E06;">02b</div><div style="font-size:13px; line-height:18px; font-weight:600; color:#17120E;">Paliers · l'horizon, sous 60 %</div></div>
+      <div data-screen-label="02b" style="width:390px; height:844px; overflow:hidden; background:#F7F3EF; border:1px solid #E2D9CF; display:flex; flex-direction:column;">
+        <div style="height:50px; flex:none;"></div>
+        <div style="flex:none; height:44px; display:flex; align-items:center; padding:0 20px; border-bottom:1px solid #E2D9CF;">
+          <span style="flex:1; font-size:15px; line-height:22px; font-weight:600; color:#17120E;">Your tiers</span>
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#6B5F54;">INSTAGRAM</span>
+        </div>
+        <div style="flex:1; overflow:hidden; padding:16px 20px 0; display:flex; flex-direction:column; gap:14px;">
+          <div style="background:#FFFFFF; border:1px solid #FF5E00;">
+            <div style="padding:10px 14px; display:flex; align-items:center; gap:10px; background:#FF5E00;">
+              <div style="display:flex; align-items:center; gap:6px; padding:4px 9px; background:rgba(23,18,14,0.12);">
+                <div style="display:flex; align-items:flex-end; gap:2px; height:11px;"><div style="width:3px; height:5px; background:#17120E;"></div><div style="width:3px; height:8px; background:#17120E;"></div><div style="width:3px; height:11px; background:#17120E;"></div></div>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#17120E;">REEL</span>
+              </div>
+              <div style="flex:1;"></div>
+              <span style="font-size:12px; line-height:17px; font-weight:600; color:#17120E;">Further ahead</span>
+            </div>
+            <div style="padding:14px; display:flex; align-items:stretch; gap:14px;">
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#6B5F54;">YOU WOULD GIVE</span>
+                <span style="font-size:15px; line-height:21px; font-weight:600; color:#17120E; text-wrap:pretty;">One dedicated reel within 72 h</span>
+              </div>
+              <div style="width:1px; background:#E2D9CF; flex:none;"></div>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#6B5F54;">YOU WOULD GET</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:28px; line-height:30px; font-weight:600; color:#CFC3B6;">—</span>
+              </div>
+            </div>
+            <div style="padding:0 14px 14px; display:flex; flex-direction:column; gap:10px;">
+              <div style="height:1px; background:#E2D9CF;"></div>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#6B5F54;">TO OPEN IT</span>
+              <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+                <span style="font-size:14px; line-height:20px; color:#17120E;">Followers</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:13px; letter-spacing:0.8px; color:#17120E;">50,000</span>
+              </div>
+              <span style="font-size:13px; line-height:19px; color:#3A3128; text-wrap:pretty;">Unlocks at 50,000. We will let you know as you get close.</span>
+              <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; padding-top:2px;">
+                <span style="font-size:14px; line-height:20px; color:#17120E;">Completed collaborations</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:13px; letter-spacing:0.8px; color:#17120E;">10</span>
+              </div>
+              <span style="font-size:13px; line-height:19px; color:#3A3128; text-wrap:pretty;">Unlocks at 10. We will let you know as you get close.</span>
+            </div>
+          </div>
+
+          <div style="background:#FFFFFF; border:1px solid #E2D9CF; padding:16px; display:flex; align-items:center; gap:12px;">
+            <div style="flex:1; display:flex; flex-direction:column; gap:2px;">
+              <span style="font-size:15px; line-height:22px; font-weight:600; color:#17120E;">How tiers work</span>
+              <span style="font-size:13px; line-height:19px; color:#6B5F54; text-wrap:pretty;">What lifts you, what sets you back, and what reliability means.</span>
+            </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="flex:none;"><path d="M9.5 5.5L16 12l-6.5 6.5" stroke="#A83E06" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          </div>
+
+        </div>
+        <div style="flex:none; height:72px; background:#FFFFFF; border-top:1px solid #E2D9CF;"></div>
+      </div>
+      <div style="width:390px; font-size:13px; line-height:19px; color:#6B5F54; text-wrap:pretty;">Aucune barre et aucun délai sous 60 % du seuil : le seuil, et la phrase d'horizon. Les deux obstacles sont rendus, dans l'ordre du serveur. L'aplat plein du palier reel est par ailleurs le seul endroit du produit où un fond orange porte un badge — texte en encre, jamais en blanc, parce qu'il fait 10 px.</div>
+    </div>
+
+  </div>
+</section>
+
+<section style="display:flex; flex-direction:column; gap:28px; padding:0 56px 56px; font-family:'Outfit',sans-serif;">
+  <div style="display:flex; flex-direction:column; gap:8px; max-width:820px;">
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:1.4px; color:#6B5F54;">01 · L'AUDIENCE</div>
+    <div style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:36px; line-height:44px; font-weight:400; color:#17120E;">Un chiffre appartient à un compte, et à une date</div>
+    <div style="font-size:16px; line-height:25px; color:#3A3128; max-width:700px; text-wrap:pretty;">Les chiffres nus deviennent des chiffres attribués : un bloc par compte connecté, la marque du réseau en tête, et <span style="font-family:'IBM Plex Mono',monospace; font-size:14px;">captured_at</span> écrit sous chaque valeur. Les deux boutons blancs identiques disparaissent — un compte connecté et un compte à connecter n'ont ni la même forme ni la même action.</div>
+    <div style="font-size:15px; line-height:23px; color:#6B5F54; max-width:700px; text-wrap:pretty;">Le badge de vague est retiré, comme le demande la correspondance API. Sans relevé, la valeur est un tiret cadratin : <span style="font-weight:600;">nul n'est pas zéro</span>, et afficher 0 abonné à quelqu'un qui en a douze mille est la pire chose que cet écran puisse faire.</div>
+  </div>
+
+  <div style="display:flex; flex-wrap:wrap; gap:36px; align-items:flex-start;">
+
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="display:flex; gap:10px; align-items:baseline;"><div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#A83E06;">01c</div><div style="font-size:13px; line-height:18px; font-weight:600; color:#17120E;">Audience · certifiée</div></div>
+      <div data-screen-label="01c" style="width:390px; height:844px; overflow:hidden; background:#F7F3EF; border:1px solid #E2D9CF; display:flex; flex-direction:column;">
+        <div style="height:50px; flex:none;"></div>
+        <div style="flex:none; padding:0 20px 16px; display:flex; flex-wrap:wrap; align-items:baseline; gap:0 9px;">
+          <span style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:34px; line-height:42px; font-weight:400; color:#17120E;">Your</span>
+          <span style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-style:italic; font-size:34px; line-height:42px; font-weight:500; color:#17120E;">audience</span>
+        </div>
+
+        <div style="flex:1; overflow:hidden; padding:0 20px; display:flex; flex-direction:column; gap:14px;">
+          <div style="background:#FFFFFF; border:1px solid #E2D9CF;">
+            <div style="padding:14px 16px; display:flex; align-items:center; gap:11px; border-bottom:1px solid #E2D9CF;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="flex:none;"><rect x="2.9" y="2.9" width="18.2" height="18.2" rx="5.4" stroke="#17120E" stroke-width="2"></rect><circle cx="12" cy="12" r="4.2" stroke="#17120E" stroke-width="2"></circle><circle cx="17.4" cy="6.6" r="1.2" fill="#17120E"></circle></svg>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:1px;">
+                <span style="font-size:15px; line-height:21px; font-weight:600; color:#17120E;">Instagram</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#6B5F54;">@lea.mrl</span>
+              </div>
+              <div style="flex:none; display:flex; align-items:center; gap:6px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#1F6B4A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                <span style="font-size:12px; line-height:17px; font-weight:600; color:#1F6B4A;">Certified</span>
+              </div>
+            </div>
+            <div style="padding:18px 16px; display:flex; gap:16px;">
+              <div style="flex:1; display:flex; flex-direction:column; gap:3px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#6B5F54;">FOLLOWERS</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:38px; line-height:42px; font-weight:600; color:#17120E;">7,600</span>
+              </div>
+              <div style="width:1px; background:#E2D9CF;"></div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:3px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#6B5F54;">ENGAGEMENT</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:38px; line-height:42px; font-weight:600; color:#17120E;">4.2 %</span>
+              </div>
+            </div>
+            <div style="padding:0 16px 14px; display:flex; align-items:center; gap:12px;">
+              <span style="flex:1; font-family:'IBM Plex Mono',monospace; font-size:11px; line-height:16px; letter-spacing:0.8px; color:#6B5F54;">READING FROM AUG 14, 09:12</span>
+              <div style="flex:none; min-height:40px; border:1px solid #17120E; display:flex; align-items:center; gap:7px; padding:0 13px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M20 5.5v5h-5M4 18.5v-5h5" stroke="#17120E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M19.3 14a7.6 7.6 0 01-12.6 3M4.7 10a7.6 7.6 0 0112.6-3" stroke="#17120E" stroke-width="2" stroke-linecap="round"></path></svg>
+                <span style="font-size:14px; line-height:20px; font-weight:600; color:#17120E;">Refresh</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="background:#FFFFFF; border:1px solid #E2D9CF; padding:14px 16px; display:flex; align-items:center; gap:11px;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="flex:none;"><path d="M14.2 3v10.9a3.6 3.6 0 11-3-3.55" stroke="#17120E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M14.2 3.4c.5 2.3 2.1 3.9 4.6 4.2" stroke="#17120E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:1px;">
+              <span style="font-size:15px; line-height:21px; font-weight:600; color:#17120E;">TikTok</span>
+              <span style="font-size:13px; line-height:19px; color:#6B5F54;">Not connected</span>
+            </div>
+            <div style="flex:none; min-height:44px; background:#FF5E00; display:flex; align-items:center; padding:0 16px;"><span style="font-size:15px; line-height:22px; font-weight:600; color:#17120E;">Connect</span></div>
+          </div>
+
+          <div style="background:#FFFFFF; border:1px solid #E2D9CF;">
+            <div style="padding:13px 16px; border-bottom:1px solid #E2D9CF;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#6B5F54;">WHAT COUNTS TOWARD TIERS</span></div>
+            <div style="min-height:46px; padding:11px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px; border-bottom:1px solid #E2D9CF;">
+              <span style="font-size:14px; line-height:20px; color:#3A3128;">Completed collaborations</span>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:15px; letter-spacing:0.8px; color:#17120E;">12</span>
+            </div>
+            <div style="min-height:46px; padding:11px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+              <span style="font-size:14px; line-height:20px; color:#3A3128;">Reliability score</span>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:15px; letter-spacing:0.8px; color:#17120E;">92 / 100</span>
+            </div>
+          </div>
+        </div>
+        <div style="flex:none; height:72px; background:#FFFFFF; border-top:1px solid #E2D9CF;"></div>
+      </div>
+      <div style="width:390px; font-size:13px; line-height:19px; color:#6B5F54; text-wrap:pretty;">Un compte connecté est une carte, un compte à connecter est une ligne : la forme dit l'état avant le mot. Le seul orange de l'écran est le bouton « Connect », parce que c'est la seule action.</div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="display:flex; gap:10px; align-items:baseline;"><div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#A83E06;">01d</div><div style="font-size:13px; line-height:18px; font-weight:600; color:#17120E;">Audience · en vérification, sans relevé</div></div>
+      <div data-screen-label="01d" style="width:390px; height:844px; overflow:hidden; background:#F7F3EF; border:1px solid #E2D9CF; display:flex; flex-direction:column;">
+        <div style="height:50px; flex:none;"></div>
+        <div style="flex:none; padding:0 20px 16px; display:flex; flex-wrap:wrap; align-items:baseline; gap:0 9px;">
+          <span style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:34px; line-height:42px; font-weight:400; color:#17120E;">Your</span>
+          <span style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-style:italic; font-size:34px; line-height:42px; font-weight:500; color:#17120E;">audience</span>
+        </div>
+
+        <div style="flex:1; overflow:hidden; padding:0 20px; display:flex; flex-direction:column; gap:14px;">
+          <div style="background:#FFFFFF; border:1px solid #E2D9CF;">
+            <div style="padding:14px 16px; display:flex; align-items:center; gap:11px; border-bottom:1px solid #E2D9CF;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="flex:none;"><rect x="2.9" y="2.9" width="18.2" height="18.2" rx="5.4" stroke="#17120E" stroke-width="2"></rect><circle cx="12" cy="12" r="4.2" stroke="#17120E" stroke-width="2"></circle><circle cx="17.4" cy="6.6" r="1.2" fill="#17120E"></circle></svg>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:1px;">
+                <span style="font-size:15px; line-height:21px; font-weight:600; color:#17120E;">Instagram</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#6B5F54;">@lea.mrl</span>
+              </div>
+              <div style="flex:none; display:flex; align-items:center; gap:6px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 21a9 9 0 100-18 9 9 0 000 18zM12 7.5V12l3.2 2" stroke="#6B5F54" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                <span style="font-size:12px; line-height:17px; font-weight:600; color:#6B5F54;">Day 3</span>
+              </div>
+            </div>
+            <div style="padding:18px 16px; display:flex; gap:16px;">
+              <div style="flex:1; display:flex; flex-direction:column; gap:3px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#6B5F54;">FOLLOWERS</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:38px; line-height:42px; font-weight:600; color:#CFC3B6;">—</span>
+              </div>
+              <div style="width:1px; background:#E2D9CF;"></div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:3px;">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.1px; color:#6B5F54;">ENGAGEMENT</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:38px; line-height:42px; font-weight:600; color:#CFC3B6;">—</span>
+              </div>
+            </div>
+            <div style="padding:0 16px 16px;">
+              <span style="font-size:13px; line-height:19px; color:#3A3128; text-wrap:pretty;">No reading yet. This is not zero: the reading has not happened.</span>
+            </div>
+          </div>
+
+          <div style="background:#EDE6DE; border-left:3px solid #17120E; padding:16px; display:flex; flex-direction:column; gap:9px;">
+            <div style="display:flex; align-items:flex-start; gap:10px;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="flex:none; margin-top:2px;"><path d="M12 3.5L21.5 20H2.5z" stroke="#17120E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M12 9.5v4.2" stroke="#17120E" stroke-width="2" stroke-linecap="round"></path><circle cx="12" cy="16.6" r="1.1" fill="#17120E"></circle></svg>
+              <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
+                <span style="font-size:16px; line-height:23px; font-weight:600; color:#17120E;">Your account is being verified</span>
+                <span style="font-size:14px; line-height:21px; color:#3A3128; text-wrap:pretty;">Linked 3 days ago. We do not promise you a timeframe, because we do not keep one.</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="background:#FFFFFF; border:1px solid #E2D9CF;">
+            <div style="padding:13px 16px; border-bottom:1px solid #E2D9CF;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#6B5F54;">ALREADY VERIFIED</span></div>
+            <div style="padding:12px 16px; display:flex; align-items:center; gap:11px; border-bottom:1px solid #E2D9CF;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="flex:none;"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#1F6B4A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              <span style="flex:1; font-size:14px; line-height:20px; color:#17120E;">Public account</span>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#6B5F54;">OK</span>
+            </div>
+            <div style="padding:12px 16px; display:flex; align-items:center; gap:11px; border-bottom:1px solid #E2D9CF;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="flex:none;"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#1F6B4A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              <span style="flex:1; font-size:14px; line-height:20px; color:#17120E;">Account age</span>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#6B5F54;">4 YRS / 1 YR</span>
+            </div>
+            <div style="padding:12px 16px; display:flex; align-items:center; gap:11px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="flex:none;"><path d="M12 21a9 9 0 100-18 9 9 0 000 18zM12 7.5V12l3.2 2" stroke="#6B5F54" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              <span style="flex:1; font-size:14px; line-height:20px; color:#3A3128;">Posting regularity</span>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.8px; color:#6B5F54;">IN PROGRESS</span>
+            </div>
+          </div>
+
+        </div>
+        <div style="flex:none; height:72px; background:#FFFFFF; border-top:1px solid #E2D9CF;"></div>
+      </div>
+      <div style="width:390px; font-size:13px; line-height:19px; color:#6B5F54; text-wrap:pretty;">Les signaux viennent de <span style="font-family:'IBM Plex Mono',monospace; font-size:12px;">/me/verification</span>, avec leur constaté et leur requis : montrer ce qui est déjà acquis vaut mieux qu'une roue qui tourne. Le jour n s'affiche sans objectif annoncé, et aucun écran de ce lot ne promet de délai.</div>
+    </div>
+
+  </div>
+</section>
+
+<section style="display:flex; flex-direction:column; gap:24px; padding:0 56px 72px; font-family:'Outfit',sans-serif;">
+  <div style="background:#17120E; padding:40px 44px; display:flex; flex-direction:column; gap:28px;">
+    <div style="display:flex; flex-direction:column; gap:10px; max-width:800px;">
+      <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:1.4px; color:#9A8D80;">VOTRE QUESTION · L'ÉCRAN D'ENVOI DE PREUVE</div>
+      <div style="display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 12px;">
+        <span style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-size:36px; line-height:46px; font-weight:400; color:#FFFFFF;">Plus tard, mais l'action</span>
+        <span style="font-family:'Bodoni Moda',Didot,'Playfair Display',Georgia,serif; font-style:italic; font-size:36px; line-height:46px; font-weight:500; color:#F58A4A;">part déjà d'ici</span>
+      </div>
+      <div style="font-size:16px; line-height:25px; color:#CFC3B6; max-width:720px; text-wrap:pretty;">Le prendre dans ce lot obligerait à traiter d'un coup l'envoi multipart, l'envoi progressif, la file locale en cas d'échec, la reprise après le motif du commerce et la troisième tentative. C'est un lot à lui seul, et il touche <span style="font-family:'IBM Plex Mono',monospace; font-size:14px;">07a</span> à <span style="font-family:'IBM Plex Mono',monospace; font-size:14px;">07d</span>, soit quatre états.</div>
+      <div style="font-size:16px; line-height:25px; color:#CFC3B6; max-width:720px; text-wrap:pretty;">Ce que j'ai corrigé tout de suite : le manque d'action n'était pas seulement dans cet écran, il était dans le chemin qui y mène. L'onglet « en cours » porte maintenant le bouton, l'échéance et le motif de reprise. Une créatrice qui ouvre l'application sait quoi faire avant d'être arrivée sur l'écran d'envoi.</div>
+    </div>
+
+    <div style="display:flex; gap:0; flex-wrap:wrap; border:1px solid #3A3128;">
+      <div style="flex:1; min-width:290px; border-right:1px solid #3A3128; padding:20px 22px; display:flex; flex-direction:column; gap:7px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#F58A4A;">DEMANDE N° 1</div>
+        <div style="font-size:15px; line-height:22px; font-weight:600; color:#FFFFFF;">offres_disponibles par palier</div>
+        <div style="font-size:14px; line-height:21px; color:#9A8D80; text-wrap:pretty;">Sur <span style="font-family:'IBM Plex Mono',monospace; font-size:12px;">/me/tiers</span>. Sans lui, une carte de palier fermé ne peut pas dire ce qu'elle ouvrirait — c'était l'argument de tout l'écran.</div>
+      </div>
+      <div style="flex:1; min-width:290px; border-right:1px solid #3A3128; padding:20px 22px; display:flex; flex-direction:column; gap:7px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#F58A4A;">À CONFIRMER</div>
+        <div style="font-size:15px; line-height:22px; font-weight:600; color:#FFFFFF;">Le compte par catégorie</div>
+        <div style="font-size:14px; line-height:21px; color:#9A8D80; text-wrap:pretty;">Vous me l'annoncez, la correspondance API ne le documente pas sur <span style="font-family:'IBM Plex Mono',monospace; font-size:12px;">/businesses</span>. S'il n'existe pas, les comptes tombent et la rangée reste : c'est déjà ce que fait <span style="font-family:'IBM Plex Mono',monospace; font-size:12px;">03c</span>, où aucun compte n'est affirmé.</div>
+      </div>
+      <div style="flex:1; min-width:290px; padding:20px 22px; display:flex; flex-direction:column; gap:7px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:1.2px; color:#F58A4A;">À CONFIRMER</div>
+        <div style="font-size:15px; line-height:22px; font-weight:600; color:#FFFFFF;">Une audience par compte</div>
+        <div style="font-size:14px; line-height:21px; color:#9A8D80; text-wrap:pretty;"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px;">/me/audience</span> se lit au singulier. L'écran suppose un relevé et une date <span style="font-weight:600;">par compte connecté</span> — sinon deux réseaux partageraient un chiffre, ce qui est le défaut d'aujourd'hui.</div>
+      </div>
+    </div>
+  </div>
+</section>
+</x-dc>
+</body>
+</html>
