@@ -5964,16 +5964,27 @@ modifier seul doit réveiller `api` ; et le test des catalogues lit
 `api/app/core/errors.py`, donc un code d'erreur ajouté côté serveur doit
 réveiller `app`.
 
-### La garde de durée, et ce qu'elle ne peut pas attraper
+### La garde de durée : le test, et non le fichier
 
-Généralisée depuis le cas trouvé : dix fois la médiane des fichiers, avec un
-plancher de cinq secondes — relatif, parce qu'une durée absolue dit surtout à
-quel point le runner était chargé.
+Écrite d'abord sur les **fichiers**, à dix fois la médiane — et **elle a échoué
+en intégration continue sur trois fichiers parfaitement sains**.
+`ecrans-commerce` met huit secondes parce qu'il porte cent vingt-quatre tests à
+soixante-cinq millisecondes. Un fichier n'est pas lent parce qu'il contient un
+défaut, il est long parce qu'il contient beaucoup — et un faux positif sur une
+vérification requise est la manière dont un garde-fou finit par être désactivé.
 
-**Elle attrape deux formes sur trois, et c'est écrit dans le fichier.** Une
-attente réelle qu'on regarde passer, et un `waitFor` qui va au bout de son
-délai : vérifiés tous les deux en les fabriquant. **Le cas qui l'a motivée lui
-échappe** — les dix-sept secondes étaient du démontage, et Jest ne les compte
+L'unité est donc le **test**. Le rapport à la médiane est tombé avec : la
+médiane d'un test est de quatorze millisecondes, donc dix fois la médiane vaut
+cent quarante, et le plancher domine toujours. Un rapport qui ne décide jamais
+rien est une décoration qui donne l'air d'un seuil réfléchi.
+
+Reste un plafond, **mesuré** : le test légitime le plus lourd met 1,5 s, les
+défauts fabriqués pour l'éprouver en mettaient onze. Cinq secondes laissent
+trois fois la marge d'un côté et deux de l'autre.
+
+**Trois formes fabriquées, trois attrapées** : une attente réelle qu'on regarde
+passer, un `waitFor` qui va au bout de son délai, un intervalle non avancé.
+**Le cas qui l'a motivée lui échappe** — les dix-sept secondes étaient du démontage, et Jest ne les compte
 pas dans la durée du fichier. Vérifié en rejouant le défaut : le fichier fautif
 ne ressort même pas parmi les cinq plus lents d'une exécution complète.
 

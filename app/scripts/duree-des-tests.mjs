@@ -1,58 +1,77 @@
 /**
- * Un fichier de test qui coûte dix fois ses voisins porte un défaut.
+ * Un test qui met plusieurs secondes attend quelque chose qui ne vient pas.
  *
  * **Trouvé sur un cas réel, et le coût était invisible.** `entete-du-mur`
  * mettait 17,4 secondes quand ses voisins en prenaient 1,7. Rien n'échouait :
- * la suite passait, la CI était verte, et les dix-sept secondes tombaient dans
- * chaque boucle de mutation. La cause était un test qui laissait une promesse
- * pendante pour observer l'état de chargement — Jest attendait le handle ouvert
- * jusqu'à sa temporisation. Relâcher la requête à la fin du test : 2,5 s.
+ * la suite passait, la CI restait verte, et les dix-sept secondes retombaient
+ * dans chaque boucle de mutation. La cause était un test qui laissait une
+ * requête pendante pour observer l'état de chargement. Relâcher la requête à la
+ * fin du test : 2,5 s.
  *
- * Ce qu'il attrape, et aucun de ces deux-là ne fait échouer quoi que ce soit :
+ * ---
  *
- * — une attente réelle plutôt que simulée, du genre `setTimeout` qu'on regarde
- *   passer ;
- * — un `waitFor` sur une condition qui n'arrive jamais et qui va au bout de son
- *   délai avant qu'une autre assertion ne sauve le test.
+ * ## Le test, et non le fichier
  *
- * **Ce qu'il n'attrape pas, et il faut le dire ici plutôt que de laisser croire
- * que la question est réglée.** Le cas qui l'a motivé — la promesse pendante —
- * lui échappe : les dix-sept secondes étaient du **démontage**, et Jest ne les
- * compte pas dans la durée du fichier. Vérifié en rejouant le défaut : le
- * fichier fautif ne ressort même pas parmi les cinq plus lents d'une exécution
- * complète, où le parallélisme absorbe l'attente. Il ne se voyait qu'en lançant
- * le fichier seul.
+ * La première version de ce garde-fou mesurait les **fichiers**, à dix fois la
+ * médiane. Elle a échoué en intégration continue sur trois fichiers parfaitement
+ * sains : `ecrans-commerce` met huit secondes parce qu'il porte **cent
+ * vingt-quatre tests à soixante-cinq millisecondes**. Un fichier n'est pas lent
+ * parce qu'il contient un défaut, il est long parce qu'il contient beaucoup.
  *
- * L'outil pour cette classe-là est `jest --detectOpenHandles`, qui nomme le
- * fichier **et** le handle. On ne peut pas encore l'exiger : il signale déjà
- * quelque chose sur l'arbre propre — la suite force la sortie d'un worker à
- * chaque exécution, avant comme après cette correction. La fuite est ailleurs,
- * elle n'est pas identifiée, et c'est une tâche à part dans `TASKS.md`.
+ * Confondre les deux produit des faux positifs, et un faux positif sur une
+ * vérification requise est la manière dont un garde-fou finit par être
+ * désactivé. L'unité est donc le test.
  *
- * **Le seuil est relatif, et il porte un plancher.** Relatif, parce qu'une
- * durée absolue dit surtout à quel point le runner était chargé ; dix fois la
- * médiane des fichiers reste vrai sur une machine deux fois plus lente. Et un
- * plancher, parce que sur des fichiers à cent millisecondes, dix fois la
- * médiane est du bruit de mesure et non un défaut.
+ * ## Un plafond, et pas un rapport à la médiane
+ *
+ * Le rapport a été essayé puis retiré : la médiane d'un test est de quatorze
+ * millisecondes, donc dix fois la médiane vaut cent quarante — des dizaines de
+ * tests honnêtes la dépassent, et le plancher domine toujours. Un rapport qui ne
+ * décide jamais rien est une décoration qui donne l'air d'un seuil réfléchi.
+ *
+ * **Le plafond est mesuré.** Le test légitime le plus lourd de la suite met
+ * 1,5 s — il fait tourner un code de retrait sur des minuteries. Cinq secondes
+ * laissent trois fois cette marge, et les deux formes de défaut fabriquées pour
+ * éprouver ce fichier mettaient onze secondes.
+ *
+ * ## Ce qu'il attrape, et ce qu'il ne peut pas attraper
+ *
+ * Il attrape, et aucune des deux ne fait échouer quoi que ce soit : une attente
+ * réelle plutôt que simulée, du genre `setTimeout` qu'on regarde passer ; et un
+ * `waitFor` sur une condition qui n'arrive jamais et qui va au bout de son délai
+ * avant qu'une autre assertion ne sauve le test. Les deux ont été fabriquées et
+ * vérifiées.
+ *
+ * **Le cas qui l'a motivé lui échappe, et il faut le dire ici plutôt que de
+ * laisser croire que la question est réglée.** Les dix-sept secondes étaient du
+ * **démontage**, et Jest ne les compte ni dans la durée du test ni dans celle du
+ * fichier. Vérifié en rejouant le défaut : le fichier fautif ne ressort même pas
+ * parmi les cinq plus lents d'une exécution complète, où le parallélisme absorbe
+ * l'attente. Il ne se voyait qu'en lançant le fichier seul.
+ *
+ * L'outil de cette classe-là est `jest --detectOpenHandles`, qui nomme le
+ * fichier **et** le handle. On ne peut pas encore l'exiger : la suite force la
+ * sortie d'un worker à chaque exécution sur l'arbre propre, avant comme après
+ * cette correction. La fuite est ailleurs, elle n'est pas identifiée, et c'est
+ * une tâche à part dans `TASKS.md`.
  *
  * Il se lit sur le rapport que Jest écrit lui-même : mesurer depuis un
  * rapporteur maison reviendrait à chronométrer notre propre chronomètre.
  */
 import { readFileSync } from 'node:fs';
-import { relative } from 'node:path';
-
-/** Dix fois la médiane. C'est l'ordre de grandeur du cas qui l'a motivé. */
-const FACTEUR = 10;
 
 /**
- * En dessous, on ne dit rien.
+ * Au-dessus, un test attend quelque chose.
  *
- * Cinq secondes : au-dessus de tout ce que la suite contient aujourd'hui hors
- * le cas trouvé — le plus lourd des fichiers sains tourne autour de trois — et
- * assez bas pour que le prochain se signale. Un fichier qui les dépasse a fait
- * quelque chose de plus que rendre des composants.
+ * Cinq secondes, mesurées et non choisies : le test légitime le plus lourd de
+ * la suite met 1,5 s, et les défauts fabriqués pour éprouver ce fichier en
+ * mettaient onze. La marge est de trois fois dans un sens et de deux dans
+ * l'autre.
  */
-const PLANCHER_MS = 5_000;
+const PLAFOND_MS = 5_000;
+
+/** Ce qu'on affiche toujours, pour que la dérive se voie avant le seuil. */
+const A_MONTRER = 3;
 
 const chemin = process.argv[2];
 if (!chemin) {
@@ -61,44 +80,36 @@ if (!chemin) {
 }
 
 const rapport = JSON.parse(readFileSync(chemin, 'utf-8'));
-const fichiers = (rapport.testResults ?? [])
-  .map((resultat) => ({
-    nom: relative(process.cwd(), resultat.name ?? resultat.testFilePath ?? '?'),
-    ms: (resultat.endTime ?? 0) - (resultat.startTime ?? 0),
-  }))
-  .filter((fichier) => fichier.ms > 0);
-
-if (fichiers.length < 4) {
-  // Une médiane sur trois fichiers ne dit rien. Se taire vaut mieux
-  // qu'accuser au hasard — et ce cas n'arrive que sur une exécution ciblée,
-  // où la question ne se pose pas.
-  console.log(`durée des tests : ${fichiers.length} fichiers, trop peu pour une médiane`);
-  process.exit(0);
-}
-
-const triees = fichiers.map((f) => f.ms).sort((a, b) => a - b);
-const mediane = triees[Math.floor(triees.length / 2)];
-const seuil = Math.max(mediane * FACTEUR, PLANCHER_MS);
-
-const lents = fichiers
-  .filter((fichier) => fichier.ms > seuil)
+const tests = (rapport.testResults ?? [])
+  .flatMap((fichier) =>
+    (fichier.assertionResults ?? []).map((test) => ({
+      fichier: (fichier.name ?? '?').split('/').pop(),
+      nom: test.fullName ?? test.title ?? '?',
+      ms: test.duration ?? 0,
+    })),
+  )
   .sort((a, b) => b.ms - a.ms);
 
-const s = (ms) => `${(ms / 1000).toFixed(1)} s`;
-console.log(
-  `durée des tests : ${fichiers.length} fichiers, médiane ${s(mediane)}, seuil ${s(seuil)}`,
-);
+if (tests.length === 0) {
+  console.error('::error::aucun test dans le rapport — le rapport est-il le bon fichier ?');
+  process.exit(2);
+}
 
+const s = (ms) => `${(ms / 1000).toFixed(1)} s`;
+console.log(`durée des tests : ${tests.length} tests, plafond ${s(PLAFOND_MS)}. Les plus lents :`);
+for (const test of tests.slice(0, A_MONTRER)) {
+  console.log(`  ${s(test.ms).padStart(7)}  ${test.fichier} › ${test.nom}`);
+}
+
+const lents = tests.filter((test) => test.ms > PLAFOND_MS);
 if (lents.length === 0) process.exit(0);
 
-for (const fichier of lents) {
-  const fois = (fichier.ms / mediane).toFixed(0);
+for (const test of lents) {
   console.log(
-    `::error file=${fichier.nom}::${fichier.nom} met ${s(fichier.ms)}, ` +
-      `soit ${fois} fois la médiane (${s(mediane)}). ` +
-      "Cherchez une promesse jamais résolue, une minuterie non annulée, ou un " +
-      "`waitFor` qui va au bout de son délai — un fichier n'est pas lent, il " +
-      'attend quelque chose qui ne vient pas.',
+    `::error file=app/__tests__/${test.fichier}::« ${test.nom} » met ${s(test.ms)}. ` +
+      'Un test ne devient pas lent, il attend : cherchez une attente réelle plutôt ' +
+      "que simulée, ou un `waitFor` sur une condition qui n'arrive jamais et qui va " +
+      'au bout de son délai.',
   );
 }
 process.exit(1);
