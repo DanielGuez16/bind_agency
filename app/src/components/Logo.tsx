@@ -56,11 +56,13 @@
  * `produit.json` — la largeur d'une lettre dans la fonte, et le minimum de
  * pixels par lettre.
  *
- * **Ceci reste une approximation, et elle est nommée.** Les lettres du logo de
- * l'agence sont dessinées à la main — le D porte une coupe oblique qu'aucune
- * fonte ne donne. Le rendu dans la fonte fonctionnelle du système s'en écarte.
- * Le vectoriel est réclamé ; d'ici là `tokens.json` porte ce manque dans
- * `$meta.unconfirmed`, plutôt que de laisser croire que la question est réglée.
+ * **Ce n'est plus une approximation.** Ce paragraphe disait le contraire : que
+ * les lettres étaient composées dans la fonte fonctionnelle, que le D y perdait
+ * sa coupe oblique, et que le manque attendait dans `$meta.unconfirmed`. Les
+ * trois sont faux depuis que le PNG de la fondatrice est vectorisé — les tracés
+ * sont dans `logotype.ts`, mesurés contre la source, et le jeton est tombé. Une
+ * raison écrite qui a cessé d'être vraie est pire qu'une absence de raison :
+ * elle fait renoncer à chercher.
  */
 import Svg, { G, Path } from 'react-native-svg';
 
