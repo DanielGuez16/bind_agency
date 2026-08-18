@@ -120,49 +120,24 @@ async def test_un_compte_actif_recoit(session: AsyncSession) -> None:
     assert len(espion.envois) == 1
 
 
-async def test_une_preference_coupee_fait_taire_ce_genre_seul(session: AsyncSession) -> None:
-    """Couper un genre n'en coupe pas sept.
+async def test_tous_les_genres_partent(session: AsyncSession) -> None:
+    """**Le réglage par genre a été retiré : tout ce que le produit a à dire, il
+    le dit.**
 
-    C'est le sens même d'une préférence par genre : quelqu'un qui ne veut plus
-    de rappels veut toujours savoir qu'une réservation est acceptée.
+    Deux tests vivaient ici — couper un genre n'en coupe pas sept, et une
+    préférence absente vaut oui. Ils éprouvaient une fonction qui n'existe plus.
+    Ce qui la remplace est plus simple et se vérifie sur **les sept genres** :
+    aucun ne se tait. Une garde qui n'en regarderait qu'un laisserait passer un
+    filtre posé sur les six autres.
     """
     user = await createur(session)
     await avec_un_terminal(session, user)
-    await service.regler(
-        session, user_id=user.id, kind=NotificationKind.PUBLICATION_REMINDER, enabled=False
-    )
-    await session.flush()
 
     espion = Espion()
-    coupe = await service.envoyer(
-        session,
-        user_id=user.id,
-        kind=NotificationKind.PUBLICATION_REMINDER,
-        sender=espion,
-        cle="collaboration.reminder",
-    )
-    ouvert = await service.envoyer(
-        session, user_id=user.id, kind=GENRE, sender=espion, cle="booking.approved"
-    )
-
-    assert coupe is False
-    assert ouvert is True
-
-
-async def test_une_preference_absente_vaut_oui(session: AsyncSession) -> None:
-    """Quelqu'un qui vient d'installer l'application reçoit.
-
-    La table ne porte que les refus explicites ; l'interpréter autrement
-    rendrait le produit muet pour tous ceux qui n'ont jamais ouvert leurs
-    réglages, c'est-à-dire presque tout le monde.
-    """
-    user = await createur(session)
-    await avec_un_terminal(session, user)
-
-    etats = await service.preferences(session, user_id=user.id)
-
-    assert len(etats) == len(list(NotificationKind)), "les sept genres, pas seulement les écrits"
-    assert all(etats.values())
+    for genre in NotificationKind:
+        assert await service.envoyer(
+            session, user_id=user.id, kind=genre, sender=espion, cle="booking.approved"
+        ), f"le genre {genre.value} ne part pas"
 
 
 async def test_sans_terminal_il_n_y_a_rien_a_envoyer(session: AsyncSession) -> None:
@@ -434,40 +409,6 @@ async def test_l_enregistrement_est_idempotent(client: AsyncClient, session: Asy
     assert une.status_code == 200
     assert deux.status_code == 200
     assert une.json()["id"] == deux.json()["id"]
-
-
-async def test_les_preferences_se_lisent_et_se_reglent(
-    client: AsyncClient, session: AsyncSession
-) -> None:
-    entetes = await connecte(client, session)
-
-    avant = await client.get(f"{PREFIX}/me/notification-preferences", **entetes)
-    assert avant.status_code == 200
-    assert avant.json()["preferences"]["publication_reminder"] is True
-
-    apres = await client.put(
-        f"{PREFIX}/me/notification-preferences/publication_reminder",
-        json={"enabled": False},
-        **entetes,
-    )
-
-    assert apres.status_code == 200
-    assert apres.json()["preferences"]["publication_reminder"] is False
-    # Les six autres n'ont pas bougé.
-    assert apres.json()["preferences"]["booking_approved"] is True
-
-
-async def test_un_genre_inconnu_est_refuse(client: AsyncClient, session: AsyncSession) -> None:
-    """Avec un 422 nommé, plutôt qu'une ligne que personne ne lira jamais."""
-    entetes = await connecte(client, session)
-
-    reponse = await client.put(
-        f"{PREFIX}/me/notification-preferences/inconnu",
-        json={"enabled": False},
-        **entetes,
-    )
-
-    assert reponse.status_code == 422
 
 
 async def test_la_revocation_ne_dit_pas_si_le_jeton_existait(
