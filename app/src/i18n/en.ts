@@ -448,6 +448,8 @@ export const en = {
       'A no-show cannot be undone, and it lowers the creator’s reliability score. If they turned up and something else went wrong, cancel the booking instead.',
     absenceConfirmer: 'Yes, they did not turn up',
     absencePasEncore: 'You can report a no-show from',
+    absencePasEncorePourquoi:
+      'Until then the creator can still report that she came and found you closed. Once that window shuts, the no-show is yours to report.',
     envoyerLeMotif: 'Send',
     statut_held: 'held',
     statut_awaiting_business: 'waiting for you',

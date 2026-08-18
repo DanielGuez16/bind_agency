@@ -303,14 +303,20 @@ async def test_une_absence_au_delai_exact_passe(session: AsyncSession) -> None:
     """
     ligne, decor = await reservation(session)
     await service.confirmer(session, booking=ligne, creator_id=decor["createur"].id)
-    delai = get_settings().no_show_delai_minutes
+    # **L'ouverture n'est plus le seul délai de retard.** Elle est le plus tard
+    # des deux — retard tenu et fenêtre de signalement fermée — et c'est cette
+    # borne-là qui doit être inclusive. La lire du service plutôt que de la
+    # recalculer ici : un test qui recopie la formule ne vérifie que sa propre
+    # arithmétique.
+    ouverture = service.absence_signalable_a(ligne)
+    assert ouverture is not None
 
     await service.marquer_absent(
         session,
         booking=ligne,
         actor=acteur(decor),
         reason="pas là",
-        maintenant=ligne.starts_at + timedelta(minutes=delai),
+        maintenant=ouverture,
     )
 
     assert ligne.status is BookingStatus.NO_SHOW
@@ -320,26 +326,34 @@ async def test_le_delai_vient_de_la_configuration_et_non_du_code(
     session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Un seuil recopié en dur se découvre le jour où on l'ajuste et où rien ne
-    bouge. On le déplace, et le comportement doit suivre."""
+    bouge. On le déplace, et le comportement doit suivre.
+
+    **C'est la fenêtre de signalement qu'on déplace, et non le délai de
+    retard.** Depuis que l'ouverture est le plus tard des deux, allonger le seul
+    délai de retard ne change plus rien tant qu'il reste sous la fenêtre — ce
+    test passait alors sans éprouver quoi que ce soit d'utile. On déplace donc
+    celui des deux qui décide, et le second est éprouvé à part, sur le cas où il
+    reprend la main.
+    """
     from app.services import booking_states as module
 
-    reglages = get_settings().model_copy(update={"no_show_delai_minutes": 90})
+    reglages = get_settings().model_copy(update={"venue_report_window_seconds": 6 * 3600})
     monkeypatch.setattr(module, "get_settings", lambda: reglages)
 
     ligne, decor = await reservation(session)
     await service.confirmer(session, booking=ligne, creator_id=decor["createur"].id)
 
-    # Vingt minutes suffisaient avant : avec le nouveau réglage, plus.
+    # Quatre heures suffisaient avant : avec le nouveau réglage, plus.
     with pytest.raises(service.AbsenceTropTot):
         await service.marquer_absent(
             session,
             booking=ligne,
             actor=acteur(decor),
             reason="pas là",
-            maintenant=ligne.starts_at + timedelta(minutes=20),
+            maintenant=ligne.starts_at + timedelta(hours=4),
         )
 
-    assert service.absence_signalable_a(ligne) == ligne.starts_at + timedelta(minutes=90)
+    assert service.absence_signalable_a(ligne) == ligne.starts_at + timedelta(hours=6)
 
 
 async def test_un_item_sans_creneau_n_ouvre_jamais_l_absence(session: AsyncSession) -> None:
@@ -950,3 +964,111 @@ class TestUnDossierSousArbitrageEtUneAbsence:
             )
 
         assert await session.scalar(sa.select(sa.literal(1))) == 1
+
+
+class TestLaPorteDeLaRepresaille:
+    """**Fermée dans les deux sens, et c'est le second qui manquait.**
+
+    Le premier sens était tenu : une créatrice qui signale s'être déplacée pour
+    rien voit sa réservation passer en `cancelled`, terminal, donc le salon ne
+    peut plus la marquer absente.
+
+    Le second ne l'était pas. `signaler` exige `confirmed` et `no_show` est
+    terminal : il suffisait au salon de marquer l'absence **avant** qu'elle ne
+    signale pour lui fermer sa seule porte — en lui coûtant vingt-cinq points au
+    passage. Et les vingt premières minutes, celles où l'absence s'ouvrait déjà
+    et où elle est encore sur la route, étaient exactement les siennes.
+
+    L'absence ne s'ouvre donc plus qu'à la fermeture de la fenêtre de
+    signalement. Le coût pour un salon honnête est d'attendre ; le coût pour une
+    créatrice était son recours.
+    """
+
+    async def _confirmee(self, session: AsyncSession):
+        decor = await monter_le_decor(session)
+        ligne = await reserver(session, decor, starts_at=await premier_creneau(session, decor))
+        await service.confirmer(session, booking=ligne, creator_id=decor["createur"].id)
+        return ligne, decor
+
+    async def test_l_absence_est_refusee_tant_que_le_signalement_est_ouvert(
+        self, session: AsyncSession
+    ) -> None:
+        """Le cœur de la correction, à l'instant précis où le trou existait."""
+        ligne, decor = await self._confirmee(session)
+        reglages = get_settings()
+
+        # Vingt minutes après le créneau : l'ancien seuil d'absence est passé,
+        # la fenêtre de signalement est grande ouverte.
+        pendant = ligne.starts_at + timedelta(minutes=reglages.no_show_delai_minutes)
+
+        with pytest.raises(service.AbsenceTropTot):
+            await service.marquer_absent(
+                session,
+                booking=ligne,
+                actor=Actor.from_user(decor["proprietaire"]),
+                reason="elle n'est pas venue",
+                maintenant=pendant,
+            )
+
+        assert ligne.status is BookingStatus.CONFIRMED
+        assert await session.scalar(sa.select(sa.literal(1))) == 1
+
+    async def test_l_absence_s_ouvre_quand_le_signalement_se_ferme(
+        self, session: AsyncSession
+    ) -> None:
+        """L'autre sens : la porte se ferme, elle ne se condamne pas.
+
+        Une règle qui refuserait toujours passerait le test ci-dessus sans rien
+        garantir — c'est le cas que le dépôt s'impose de vérifier des deux côtés.
+        """
+        ligne, decor = await self._confirmee(session)
+        reglages = get_settings()
+
+        apres = ligne.starts_at + timedelta(seconds=reglages.venue_report_window_seconds + 1)
+        await service.marquer_absent(
+            session,
+            booking=ligne,
+            actor=Actor.from_user(decor["proprietaire"]),
+            reason="elle n'est pas venue",
+            maintenant=apres,
+        )
+
+        assert ligne.status is BookingStatus.NO_SHOW
+
+    async def test_l_ouverture_de_l_absence_est_la_fermeture_du_signalement(
+        self, session: AsyncSession
+    ) -> None:
+        """**Les deux règles vivent dans deux modules, et doivent s'accorder.**
+
+        `booking_states` ne peut pas importer `venue_report`, qui dépend déjà de
+        lui : il relit le même réglage. Un commentaire ne tiendrait pas cet
+        accord — celui-ci le fait, et tombe le jour où l'un des deux dérive.
+        """
+        from app.services import venue_report
+
+        ligne, _ = await self._confirmee(session)
+        ouverture = service.absence_signalable_a(ligne)
+        assert ouverture is not None
+
+        # Juste avant, la fenêtre est encore ouverte ; à l'ouverture, elle est
+        # fermée. C'est la même frontière, lue des deux côtés.
+        assert venue_report.fenetre_ouverte(ligne, ouverture - timedelta(seconds=1))
+        assert not venue_report.fenetre_ouverte(ligne, ouverture)
+
+    async def test_le_retard_reste_un_plancher_si_la_fenetre_raccourcit(
+        self, session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Les deux délais ne protègent pas la même chose, et le `max` le dit.
+
+        Si la fenêtre de signalement passait sous le délai de retard, une
+        créatrice de trois minutes en retard redeviendrait absente. Le plancher
+        tient ce cas, et sans lui le `max` serait décoratif.
+        """
+        ligne, _ = await self._confirmee(session)
+        reglages = get_settings()
+
+        court = reglages.model_copy(update={"venue_report_window_seconds": 60})
+        monkeypatch.setattr("app.services.booking_states.get_settings", lambda: court)
+
+        ouverture = service.absence_signalable_a(ligne)
+        assert ouverture == ligne.starts_at + timedelta(minutes=court.no_show_delai_minutes)

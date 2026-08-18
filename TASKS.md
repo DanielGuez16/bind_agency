@@ -445,6 +445,28 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       qui recopierait le réglage calculerait — la mutation qui remplace le champ
       par ce calcul passait tous les tests. Deux cas où les deux lectures se
       contredisent l'ont réparé. 10 tests neufs, 8 mutations*
+- [x] **La porte de la représaille, fermée dans les deux sens**
+      *Un sens était tenu : signaler un déplacement pour rien annule la
+      réservation, donc le salon ne peut plus marquer absente celle qu'il n'a
+      pas reçue. L'autre ne l'était pas — `signaler` exige `confirmed` et
+      `no_show` est terminal, si bien qu'il suffisait de marquer l'absence
+      **avant** qu'elle ne signale pour lui fermer son seul recours. Et la
+      fenêtre où c'était possible s'ouvrait vingt minutes après le créneau,
+      c'est-à-dire pendant qu'elle était sur la route.
+      Fin : l'absence ne s'ouvre qu'à la fermeture de la fenêtre de
+      signalement — **le plus tard des deux délais**, quatre heures aujourd'hui.
+      Un `max` et non un troisième réglage : deux nombres à tenir d'accord à la
+      main rouvriraient la porte le jour où l'on allonge la fenêtre, sans que
+      personne ne s'en aperçoive. Le plancher de vingt minutes reste et protège
+      autre chose — une créatrice en retard n'est pas absente — et il reprend la
+      main si la fenêtre passait sous lui.
+      Deux trouvailles au passage. La règle était **écrite deux fois**, dans
+      `booking_states` et `booking_history` : la première modification de l'une
+      aurait fait mentir l'écran sur ce que le serveur accepte. Et la fenêtre de
+      signalement était fermée à droite, laissant un instant où le signalement
+      et l'absence étaient possibles tous les deux — semi-ouverte, les deux
+      règles partitionnent le temps. 6 tests neufs, 2 repris sur le fond,
+      6 mutations*
 - [x] **La règle de l'arbitre ne s'applique pas à l'absence, et c'est prouvé**
       *Demandée par analogie avec les décisions de contrepartie, elle donnerait
       ici une condition qui ne peut jamais être vraie. `no_show` n'est

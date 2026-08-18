@@ -532,15 +532,27 @@ function Gestes({
             onFait={onFait}
           />
         ) : (
-          /* **Avant l'heure, on dit laquelle.** Un bouton absent sans
-             explication se lit comme une fonction manquante ; l'heure, elle,
-             dit qu'il faut attendre et jusqu'à quand. Dans le fuseau du
+          /* **Avant l'heure, on dit laquelle — et pourquoi.** Un bouton absent
+             sans explication se lit comme une fonction manquante ; l'heure
+             seule, elle, se lit comme une lenteur arbitraire. Depuis que
+             l'absence attend la fermeture de la fenêtre de recours, ce sont
+             plusieurs heures, et un commerçant honnête a le droit de savoir ce
+             qu'il attend plutôt que de conclure à un défaut. Dans le fuseau du
              commerce, comme tout le reste de cet écran. */
-          <DataRow
-            label={t('commerce.absencePasEncore')}
-            value={formatDateTime(ouvertureDeLAbsence, locale, timezone)}
-            testID={`absence-pas-encore-${reservation.booking_id}`}
-          />
+          <View style={{ gap: 4 }}>
+            <DataRow
+              label={t('commerce.absencePasEncore')}
+              value={formatDateTime(ouvertureDeLAbsence, locale, timezone)}
+              testID={`absence-pas-encore-${reservation.booking_id}`}
+            />
+            <Texte
+              variante="type.caption"
+              couleur="ink.mute"
+              testID={`absence-pourquoi-${reservation.booking_id}`}
+            >
+              {t('commerce.absencePasEncorePourquoi')}
+            </Texte>
+          </View>
         )}
       </View>
     );

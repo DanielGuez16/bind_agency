@@ -96,6 +96,16 @@ class LigneDeSignalement:
 def fenetre_ouverte(booking: Booking, maintenant: datetime) -> bool:
     """La fenêtre s'ouvre au créneau et se ferme quelques heures après.
 
+    **Semi-ouverte, et la borne compte.** Elle se lisait `<= fin`, si bien qu'à
+    l'instant exact de la fermeture le signalement était encore possible **et**
+    l'absence venait de s'ouvrir : les deux vrais en même temps, sur le seul
+    instant que cette correction avait pour objet de départager. Le trou est
+    infinitésimal et n'aurait sans doute jamais fait de victime ; il n'en est
+    pas moins la seule chose qui empêchait les deux règles de partitionner le
+    temps. Un intervalle fermé à droite et une ouverture au même instant ne se
+    recollent pas — il fallait choisir, et une seconde d'epsilon aurait été un
+    nombre inventé pour masquer le choix.
+
     **Un item sans créneau n'a pas de fenêtre.** Il n'y a pas d'heure à
     laquelle on l'attendait : le créateur se présente quand il veut avant
     l'échéance, et « c'était fermé » ne se rattache alors à aucun rendez-vous
@@ -105,7 +115,7 @@ def fenetre_ouverte(booking: Booking, maintenant: datetime) -> bool:
     if booking.starts_at is None:
         return False
     fin = booking.starts_at + timedelta(seconds=get_settings().venue_report_window_seconds)
-    return booking.starts_at <= maintenant <= fin
+    return booking.starts_at <= maintenant < fin
 
 
 async def signaler(
