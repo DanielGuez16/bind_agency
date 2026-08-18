@@ -67,6 +67,14 @@ export const en = {
     rien_autourCorps: 'Your tiers are open — there is simply no business offering them this close. Try a wider radius.',
   },
   tiers: {
+    // 11c · les prestations d'un palier. Deux nombres dans la même phrase,
+    // et ils comptent tous deux des prestations.
+    prestationsTitre: 'Open to you',
+    prestationsOuvertes: '{{count}} services open to you',
+    prestationsPartout: 'Across every business on BIND.',
+    prestationsDontProches: '{{count}} of them are near you.',
+    prestationsProches: 'Near you first',
+    prestationsToutes: 'All',
     seeShort: 'See them',
     principe: 'The more demanding the format you commit to, the more generous the services it opens.',
     greeting: 'Hi {{prenom}}',

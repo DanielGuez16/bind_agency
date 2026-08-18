@@ -96,6 +96,15 @@ export type PalierAccessible = {
   obstacles: Obstacle[];
   /** Ce que le palier ouvre, tous commerces confondus. Zéro est une réponse. */
   offres_disponibles: number;
+  /**
+   * La même grandeur, restreinte au rayon. **`null` n'est pas zéro** : c'est
+   * « aucune position n'a été fournie ». Zéro dirait « aucun salon autour de
+   * vous », ce qui est faux et décourageant — l'écran tait alors la phrase
+   * entière plutôt que d'afficher 0.
+   */
+  offres_dans_le_rayon: number | null;
+  /** Chez combien de salons, dans le rayon. Même règle pour le `null`. */
+  commerces_dans_le_rayon: number | null;
 };
 
 /**
@@ -108,6 +117,35 @@ export type PalierAccessible = {
 export type FiabiliteDuCreateur = {
   reliability_score: string | null;
   completed_collabs_count: number;
+};
+
+/**
+ * Une prestation ouverte à un palier, où qu'elle soit.
+ *
+ * **Sans borne de distance, et c'est tout son intérêt.** Le fil est borné par un
+ * rayon par construction ; la bascule « près de vous / les douze » a besoin des
+ * objets, pas d'un nombre. L'ordre vient du serveur — par quartier, puis par nom
+ * de prestation — et ne se rejoue pas ici : c'est le seul axe que le produit
+ * connaît et qui ne classe personne.
+ */
+export type OffreDuPalier = {
+  tier_offer_id: string;
+  catalog_item_id: string;
+  business_id: string;
+  nom: string;
+  nom_du_commerce: string;
+  neighborhood: Neighborhood | null;
+  price_cents: number;
+  currency: string;
+  duration_minutes: number | null;
+  photo_key: string | null;
+  /**
+   * La distance, quand une position a été fournie.
+   *
+   * `null` sinon, et ce n'est pas « loin » : c'est « on ne sait pas d'où ». La
+   * confondre avec zéro placerait toutes les prestations à vos pieds.
+   */
+  distance_metres: number | null;
 };
 
 export type VueDesPaliers = {

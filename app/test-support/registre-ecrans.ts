@@ -16,6 +16,7 @@ export const ECRANS_CREATEUR = [
   'FilScreen.tsx',
   'HistoriqueScreen.tsx',
   'PaliersScreen.tsx',
+  'PrestationsDuPalierScreen.tsx',
   'PreuveScreen.tsx',
   'ReglesScreen.tsx',
 ] as const;

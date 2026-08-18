@@ -94,6 +94,9 @@ const BLOCS: Record<string, number> = {
   FilScreen: 0,
   FicheScreen: 0,
   AudienceScreen: 0,
+  // La liste de ce qu'un palier ouvre : de l'information, pas une
+  // présentation de la marque. Le badge de palier y porte la seule matière.
+  PrestationsDuPalierScreen: 0,
   CarteDuCommerce: 0,
   GalerieDuCommerce: 0,
   // Les deux visionneuses plein écran. Zéro par nature : ce qu'on y regarde

@@ -64,6 +64,12 @@ export const es: Catalogue = {
     rien_autourCorps: 'Tus niveles están abiertos: simplemente no hay negocios que los ofrezcan tan cerca. Prueba con un radio mayor.',
   },
   tiers: {
+    prestationsTitre: 'Abierto para ti',
+    prestationsOuvertes: '{{count}} servicios abiertos para ti',
+    prestationsPartout: 'En todos los locales de BIND.',
+    prestationsDontProches: '{{count}} de ellos están cerca de ti.',
+    prestationsProches: 'Cerca primero',
+    prestationsToutes: 'Todos',
     seeShort: 'Verlas',
     principe: 'Cuanto más exigente es el formato al que te comprometes, más generosas son las prestaciones que abre.',
     greeting: 'Hola {{prenom}}',

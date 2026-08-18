@@ -6281,3 +6281,42 @@ l'action, `[data-testid^="agir-"]`, et part de l'écran plutôt que de la page.
 Les deux clés `ouvrir_code` et `ouvrir_preuve` sont mortes avec le changement et
 retirées : une clé qui ne commande plus rien fait douter de celles qui
 commandent quelque chose.
+
+---
+
+## 2026-08-18 — Le cadre 11c, et la porte qui ouvrait dans le vide
+
+`onVoirLesPrestations` existait depuis la refonte v0.7 et personne ne le
+passait — délibérément, et c'était le bon choix : une porte qui annonce
+trente-quatre prestations et ouvre sur autre chose ment plus qu'elle ne rend
+service. Ce qui manquait était une lecture **non bornée par la distance**.
+`/businesses` ne peut pas la rendre : il est borné par un rayon par
+construction, exige une position, et trie par distance — ce qui n'a aucun sens
+pour « tout BIND ».
+
+**L'ordre a été tranché avant la route, et c'était le bon ordre de décision.**
+Par quartier puis par nom : le seul axe que le produit connaît et qui ne classe
+personne. Trier par palier hiérarchiserait des prestations qu'on peut toutes
+réserver ; trier par salon supposerait un ordre entre eux. C'est aussi l'axe des
+rangées du fil — le même des deux côtés, ce qui vaut mieux qu'une coïncidence.
+
+**Deux nombres dans la même phrase, et ils comptent la même chose.** Le champ du
+proche a failli compter des salons quand la phrase compte des prestations : deux
+grandeurs différentes dans une ligne où les deux restent plausibles, donc où
+personne ne l'aurait jamais remarqué. C'est le genre de défaut qu'on n'attrape
+qu'en lisant le nom du champ à côté de la phrase qu'il sert.
+
+**`null` n'est pas zéro, et la conséquence va plus loin que le texte.** Sans
+position, la moitié de la phrase se tait — « aucune à moins de quinze
+kilomètres » serait faux et décourageant — **et la bascule disparaît avec elle**,
+parce qu'il n'y a rien à basculer quand on ignore où l'on est. Elle disparaît
+aussi quand tout est dans le rayon : les deux états montreraient la même liste,
+la faute que le produit a déjà retirée deux fois.
+
+**Une prestation sans distance n'est pas loin, elle est d'origine inconnue.**
+Elle sort du « près de vous » sans être écartée du total.
+
+**Quatre tables exhaustives ont fait tomber la suite à l'arrivée de l'écran** —
+blocs orange, couverture des écrans, squelettes, et les quatre états. Aucune
+n'était un obstacle : chacune a demandé une décision écrite sur un écran neuf,
+ce qui est précisément le prix qu'elles existent pour faire payer.

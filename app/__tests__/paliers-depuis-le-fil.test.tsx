@@ -10,6 +10,9 @@
  * La ligne dit donc le nombre d'abord, et l'explication s'ouvre depuis elle.
  * L'information reste, elle arrive au moment où elle sert.
  */
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
 import { ApiClient, ApiProvider, type Fil } from '../src/api';
@@ -82,6 +85,26 @@ async function monter(fil: Partial<Fil>, onVoirMesPaliers?: () => void) {
     </I18nProvider>,
   );
 }
+
+describe('la porte du cadre 11c', () => {
+  it('la navigation passe enfin « voir les prestations »', async () => {
+    // **Elle ouvrait dans le vide.** `onVoirLesPrestations` existait sur
+    // l'écran des paliers et `porteOuverte` en dépendait ; personne ne le
+    // passait, délibérément — une porte qui annonce trente-quatre prestations
+    // et ouvre sur autre chose ment plus qu'elle ne rend service. Il manquait
+    // une lecture non bornée par la distance, qui n'existait pas.
+    //
+    // Lu sur la source : monter la pile entière pour éprouver un câblage
+    // reviendrait à monter six écrans pour vérifier une ligne.
+    const source = readFileSync(
+      join(__dirname, '..', 'src', 'shell', 'Navigation.tsx'),
+      'utf-8',
+    );
+
+    expect(source).toMatch(/onVoirLesPrestations=\{/);
+    expect(source).toMatch(/navigate\('PrestationsDuPalier'/);
+  });
+});
 
 describe('la ligne qui répond, et l’explication qu’elle ouvre', () => {
   it('annonce ce qui est ouvert, avec le nombre', async () => {

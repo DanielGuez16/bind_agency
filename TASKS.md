@@ -779,108 +779,29 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       par appareil dans un stockage simulé qui survit d'un test à l'autre.
       6 tests neufs, 9 mutations vérifiées — dont une qui n'a rien cassé et a
       fait écrire le cas manquant*
-- [ ] **Le cadre 11c des paliers : il manque une liste, pas un nombre**
-      *L'écran qui liste les prestations d'un palier, avec sa bascule « Near you
-      first » / « All 12 ». Repris ici parce que le manque avait été nommé de
-      travers : ce n'est pas le compte total qui manque —
-      `PalierAccessible.offres_disponibles` le porte depuis toujours, tous
-      commerces confondus — c'est **le second état de la bascule**. « All 12 »
-      doit lister les douze prestations, dont trois sont hors du rayon, et
-      `GET /businesses` est borné par la distance par construction. Il faut une
-      lecture des offres d'un palier non bornée, ou un rayon qui accepte de ne
-      pas borner. Composer la bascule sans elle donnerait deux états montrant la
-      même liste. `onVoirLesPrestations` attend déjà sur `PaliersScreen`, et la
-      navigation ne le passe toujours pas — délibérément.*
-      *Le compte du proche arrive : la conversation fonctionnelle ajoute
-      `commerces_dans_le_rayon` à `GET /me/tiers`, `null` valant « on n'a pas
-      demandé » et non zéro. **Il compte des salons, la phrase compte des
-      prestations** — « douze prestations, dont neuf à moins de quinze
-      kilomètres » comparerait alors deux grandeurs dans la même ligne, et
-      personne ne s'en apercevrait. La question lui est posée.*
-- [x] **Le mur et les rangées vont à fond perdu**
-      *Tranché : c'est un écart à la planche, et le mur perd la moitié de son
-      effet si les images ne touchent pas les bords. `Ecran` sait rendre sa
-      marge latérale à l'appelant, et la règle qui en sort est plus utile que le
-      réglage : **`Ecran` marge ce qu'il compose, l'appelant marge ce qu'il
-      fournit** — le bandeau d'erreur et le squelette par défaut sont écrits
-      dans `Ecran`, donc ils la gardent ; l'en-tête, le corps, l'état vide et un
-      squelette fourni viennent de l'écran, qui seul sait lesquels de ses blocs
-      touchent le bord. **Pas une marge négative** : elle se serait fait rogner
-      par le défileur sur un téléphone, où le conteneur occupe déjà toute la
-      largeur, et serait passée sur grand écran — un défaut qui n'apparaît que
-      sous un seuil de largeur*
-- [x] **Le plancher du Didone tient à 34**
-      *Tranché. La raison de Design est bonne — cinq salons ne méritent pas
-      l'emphase de vingt — mais **une exception qui n'est pas écrite dans les
-      jetons est une violation** : si elle la veut, elle la déclare. Les titres
-      de quartier restent à `type.heading`. Rien à changer : c'est ce qui est
-      livré*
-- [x] **Le quartier où l'on est : on ne le nomme pas**
-      *Tranché par Daniel. La planche veut le quartier de la position — son
-      cadre du vide affiche « Key Biscayne » alors qu'aucun salon n'y répond,
-      donc le nom ne vient pas du fil. Rien ne sait le résoudre : pas de
-      géocodage inverse, et la ville du profil est un champ libre qui dit où
-      l'on habite. Le quartier du salon le plus proche avait été rendu à sa
-      place ; il tombe. **Annoncer un lieu qu'on ne peut pas vérifier est la
-      classe de défaut que ce dépôt passe ses journées à corriger** — plausible,
-      invérifiable de l'autre côté, donc jamais relevé. L'en-tête porte le
-      rayon, le compte et les catégories, et rien qui situe*
-- [x] **Le rayon se règle de nouveau dans les deux sens**
-      *Tranché : c'est une régression, pas une simplification. Sa place est la
-      feuille de filtres, qui n'existe pas encore ; en attendant, le bas du mur
-      porte un retour au rayon de départ, qui n'apparaît que si l'on a élargi.
-      **C'est une annulation, pas une issue chiffrée** — les deux autres
-      sorties portent leur nombre parce qu'elles promettent un gain qu'on ne
-      peut pas deviner ; celle-ci ramène à l'état d'où l'on vient, qu'on a vu, et
-      lui coller un compte demanderait une requête pour dire ce qu'on savait
-      déjà. Un seul objet porte le geste et sa cible, plutôt qu'un rappel et un
-      nombre qu'il aurait fallu garder l'un contre l'autre*
-- [x] **Les catégories sont les six du modèle, et c'est le bon axe**
-      *Tranché. Design a dessiné « Nails, Hair, Facials, Spa » quand le produit
-      était beauté seule ; il y a maintenant des restaurants, des salles de
-      sport et des musées, et les six catégories de commerce sont l'axe qui
-      trie réellement. Rien à changer : c'est ce qui est livré. La taxinomie de
-      prestation ne se rouvre que si le produit redevient mono-catégorie*
-- [x] **`Lot 1 v1.1` · 01 · l'audience, confrontée à ses cadres**
-      *L'écran que Daniel a qualifié deux fois de plus faible du produit, et le
-      registre en donne la raison : `Lot 1 v1.1` était la seule planche sans
-      entrée nulle part, ses écrans employant les bons jetons — donc rien ne
-      signalait qu'ils n'avaient jamais été comparés cadre par cadre.
-      **Repeint n'est pas passé.** Ce qui change : un bloc par compte, avec son
-      réseau, son identifiant et son relevé daté — l'écran empilait des lignes
-      sans dire à qui elles étaient, et deux réseaux y auraient partagé un
-      chiffre. **Un compte connecté est une carte, un réseau à connecter est une
-      ligne** : l'écran rendait deux boutons blancs identiques, l'un sous
-      l'autre, **y compris pour un réseau déjà rattaché**. Le tiret cadratin
-      remplace « pas encore mesuré », avec la phrase qui dit ce qu'il veut dire —
-      un tiret seul se lit comme une panne. Et deux blocs manquaient : « ce qui
-      compte pour les paliers », parce que les abonnés n'ouvrent pas un palier
-      seuls, et **les termes du contrôle** — `SignalJuge` porte `constate` et
-      `requis` depuis toujours, l'écran n'affichait que le verdict, si bien
-      qu'« ancienneté : insuffisante » ne disait ni de combien ni depuis quand.
-      Un test qui bannissait le mot « day » a été repris : ce n'est pas le mot
-      qui promet un délai, c'est la forme — « jour 3 » dit ce qui s'est passé,
-      « sous 3 jours » ce qui va se passer. 6 tests neufs, 8 mutations vérifiées*
-- [x] **`Lot 1 v1.1` · 08 · les réservations, confrontées à leurs cadres**
-      *« Chaque ligne dit ce qu'elle attend de toi » : trois lignes se
-      ressemblaient — celle qui demande un geste, celle qui attend un contrôle,
-      celle qui est close — et on relisait les trois pour trouver laquelle
-      agissait. La règle sort du rendu et s'éprouve seule : `attenteDe` rend
-      `creatrice`, `controle` ou rien. Une ligne qui attend un geste porte un
-      **filet d'encre** et un bouton ; une ligne en contrôle le dit **en mots**,
-      parce qu'un bouton grisé se presse quand même et ne répond pas. La ligne
-      cesse d'être pressable quand elle n'attend rien : elle ouvrait l'écran de
-      preuve tout en affichant « rien à faire de votre côté ». **Deux champs
-      servis et rendus nulle part** — `deadline_at`, la seule chose qui décide
-      s'il faut agir ce soir ou la semaine prochaine, et `attempts_count`, qui
-      n'apparaît qu'à partir de la seconde tentative. La prestation passe devant
-      le salon, la date devient un bloc mono, et le badge porte le palier **et**
-      le réseau : la même prestation peut exister sur deux comptes, et publier
-      sur le mauvais ne compte pas. 10 tests neufs, 8 mutations vérifiées*
-      *Reste hors de portée sans le serveur : les exigences de la contrepartie —
-      mention, géotag — et le motif de reprise, que le cadre 08b affiche en
-      ligne. `ContrepartieBreve` ne les porte pas, et les chercher ferait un
-      appel par ligne*
+- [x] **Le cadre 11c des paliers : la porte qui ouvrait dans le vide**
+      *« Voir les 34 prestations » existait sur l'écran des paliers et
+      `porteOuverte` en dépendait ; la navigation ne le passait pas,
+      délibérément — une porte qui annonce trente-quatre prestations et ouvre
+      sur autre chose ment plus qu'elle ne rend service. Il manquait une lecture
+      **non bornée par la distance**, que `/businesses` ne peut pas rendre par
+      construction : `GET /me/tiers/{tier_id}/offres` l'apporte, triée par
+      quartier puis par nom — le seul axe qui ne classe personne, et celui des
+      rangées du fil.*
+      *La phrase porte deux nombres et **ils comptent la même chose** :
+      `offres_disponibles` et `offres_dans_le_rayon`. Le second a failli compter
+      des salons, ce qui aurait mis deux grandeurs dans une phrase où les deux
+      restent plausibles — donc où personne ne l'aurait remarqué. **`null` n'est
+      pas zéro** : sans position, la moitié de la phrase se tait et la bascule
+      disparaît, parce qu'il n'y a rien à basculer quand on ignore où l'on est.
+      Et la bascule disparaît aussi quand tout est dans le rayon : les deux
+      états montreraient la même liste. L'ordre du serveur ne se rejoue pas ici.
+      **Une prestation sans distance n'est pas loin, elle est d'origine
+      inconnue** — elle sort du « proche » sans être écartée du total. 8 tests
+      neufs plus 1 sur le câblage, 8 mutations vérifiées.*
+      *Trois tables exhaustives ont fait tomber la suite à l'arrivée de l'écran —
+      blocs orange, couverture, squelettes — et une quatrième a exigé ses quatre
+      états. C'est exactement ce pour quoi elles existent.*
 - [ ] **Quatorze champs servis et rendus nulle part, à instruire un par un**
       *Trouvés par la garde en une minute, et inscrits dans sa table sous
       `a-instruire` — ce ne sont pas des exemptions, ce sont des constats en

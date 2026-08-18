@@ -115,6 +115,7 @@ const DOIVENT_AVOIR_LEUR_SQUELETTE = [
   'HorairesScreen.tsx',
   'JourneeScreen.tsx',
   'PaliersScreen.tsx',
+  'PrestationsDuPalierScreen.tsx',
   'PlansScreen.tsx',
   'PreuveScreen.tsx',
   'PublicationsScreen.tsx',
