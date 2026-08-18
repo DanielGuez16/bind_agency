@@ -6269,3 +6269,15 @@ aurait ici **retiré** une information.
 Reste une seule chose de ce cadre : « See the 34 services » est la porte du
 cadre 11c. `onVoirLesPrestations` existe sur l'écran et `porteOuverte` en
 dépend ; la navigation ne le passe pas. Les deux se prennent ensemble.
+
+**Et la e2e est tombée sur cette PR, pour la bonne raison.** Elle visait le
+texte « Show code › ». La ligne porte maintenant un vrai bouton, dont le libellé
+a changé : le test est tombé sur un écran parfaitement fonctionnel. C'est le cas
+que `CLAUDE.md` enregistre déjà — « un test asservi à un `testID` retiré par la
+PR elle-même » — dans sa variante libellé, qui est pire : un libellé est une
+décision de composition, et il changera encore. Le sélecteur porte désormais sur
+l'action, `[data-testid^="agir-"]`, et part de l'écran plutôt que de la page.
+
+Les deux clés `ouvrir_code` et `ouvrir_preuve` sont mortes avec le changement et
+retirées : une clé qui ne commande plus rien fait douter de celles qui
+commandent quelque chose.

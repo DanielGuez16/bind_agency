@@ -329,8 +329,6 @@ export const en = {
     action_preuve: 'Send your post',
     enAttenteDuSalon: 'Waiting for the salon to confirm. Your pickup code appears once they do.',
     enAttenteJusquA: 'They have until {{quand}} to answer. After that the booking expires and your slot is free again.',
-    ouvrir_code: 'Show code ›',
-    ouvrir_preuve: 'Send proof ›',
     codeTitre: 'Show this code',
     codeIndisponible: 'No pickup code right now',
     codeSecours: 'Or read this out',

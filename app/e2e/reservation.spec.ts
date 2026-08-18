@@ -70,7 +70,16 @@ test('une réservation confirmée mène à son code', async ({ page }) => {
   await page.getByText('Bookings', { exact: true }).first().click();
   await expect(page.getByTestId('ecran-historique')).toBeVisible();
 
-  const ouvrable = page.getByText('Show code ›', { exact: true }).first();
+  // **Le sélecteur porte sur l'action, pas sur son libellé.** Il visait
+  // « Show code › », un texte : le jour où la ligne a porté un vrai bouton, ce
+  // test est tombé sur un écran parfaitement fonctionnel. Un libellé est une
+  // décision de composition et il changera encore ; l'action, elle, est ce que
+  // le parcours éprouve. Et il part de l'écran plutôt que de la page, comme le
+  // reste de cette suite depuis #137.
+  const ouvrable = page
+    .getByTestId('ecran-historique')
+    .locator('[data-testid^="agir-"]')
+    .first();
   await expect(ouvrable, 'aucune réservation confirmée dans le jeu de données').toBeVisible();
   await ouvrable.click();
 

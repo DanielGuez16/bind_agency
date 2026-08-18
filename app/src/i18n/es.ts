@@ -315,8 +315,6 @@ export const es: Catalogue = {
     action_preuve: 'Enviar tu publicación',
     enAttenteDuSalon: 'Esperando la confirmación del salón. Tu código de retiro aparece en cuanto respondan.',
     enAttenteJusquA: 'Tienen hasta el {{quand}} para responder. Después la reserva caduca y tu hueco queda libre.',
-    ouvrir_code: 'Ver código ›',
-    ouvrir_preuve: 'Enviar comprobante ›',
     codeTitre: 'Muestra este código',
     codeIndisponible: 'Ningún código de retiro ahora mismo',
     codeSecours: 'O dicta este',
