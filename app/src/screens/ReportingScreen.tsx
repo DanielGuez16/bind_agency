@@ -126,6 +126,16 @@ export function ReportingScreen({ businessId }: { businessId: string }) {
             />
             <DataRow label={t('reporting.absences')} value={String(vue.absences)} chiffre />
             <DataRow label={t('reporting.annulations')} value={String(vue.annulations)} chiffre />
+            {/* **Toute une tâche a été construite pour ce chiffre**, et le
+                salon ne le voyait nulle part : les créatrices qui se sont
+                déplacées pour rien. C'est le pendant de l'absence, et le seul
+                que le salon ne pouvait pas lire. */}
+            <DataRow
+              label={t('reporting.deplacementsPourRien')}
+              value={String(vue.deplacements_pour_rien)}
+              chiffre
+              testID="deplacements-pour-rien"
+            />
           </Section>
 
           <Section titre={t('reporting.sectionPublications')}>

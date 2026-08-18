@@ -36,6 +36,25 @@ function verdictDe(contrepartie: Collaboration): boolean | null {
   return derniere ? derniere.verifiee : null;
 }
 
+/** Ce que la dernière preuve a produit, pour la contrepartie. */
+function raisonsDe(contrepartie: Collaboration): string[] {
+  return contrepartie.proofs?.at(-1)?.raisons_de_non_verification ?? [];
+}
+
+/**
+ * Les trois états de la vérification, nommés.
+ *
+ * **Nul n'est pas faux.** Nul veut dire que la question ne s'est pas posée —
+ * une preuve de niveau 2 ou 3 — et faux qu'elle s'est posée et que la réponse
+ * est non. Les rendre identiques faisait croire à une vérification passée là où
+ * elle avait échoué.
+ */
+function etatDeLaVerification(verifiee: boolean | null): 'verifiee' | 'ecart' | 'attestee' {
+  if (verifiee === true) return 'verifiee';
+  if (verifiee === false) return 'ecart';
+  return 'attestee';
+}
+
 /**
  * La borne de la note, telle que le serveur la pose.
  *
@@ -79,7 +98,7 @@ type Etat =
    * 3 — et non « la vérification a échoué ». Les deux se disent autrement, et
    * les confondre accuserait la créatrice d'un silence de la plateforme.
    */
-  | { etat: 'rendu'; media: Choisi; verifiee: boolean | null };
+  | { etat: 'rendu'; media: Choisi; verifiee: boolean | null; raisons: string[] };
 
 export function EnvoiDePreuve({
   collaborationId,
@@ -165,7 +184,12 @@ export function EnvoiDePreuve({
       // **Le résultat se montre avant de quitter l'écran.** Il répond à la
       // question que l'incitation vient de poser, et l'annoncer ailleurs — ou
       // pas du tout — ferait de l'incitation une phrase sans suite.
-      setVue({ etat: 'rendu', media, verifiee: verdictDe(contrepartie) });
+      setVue({
+        etat: 'rendu',
+        media,
+        verifiee: verdictDe(contrepartie),
+        raisons: raisonsDe(contrepartie),
+      });
     } catch (erreur) {
       vibration.echec();
       setVue({ etat: 'echec', media, message: messageDErreur(erreur) });
@@ -226,14 +250,28 @@ export function EnvoiDePreuve({
           l'incitation vient de poser. */}
       {vue.etat === 'rendu' ? (
         <StatusMessage
-          // Neutre dans les deux cas : une contrepartie attestée n'est pas
-          // un avertissement, et une vérifiée n'est pas encore approuvée — le
-          // commerce doit toujours la contrôler. Le titre porte la différence.
+          // **Trois états, et l'écran n'en distinguait que deux.** `verifiee`
+          // vaut vrai, faux, ou nul — et nul veut dire « la question ne s'est
+          // pas posée », pas « la réponse est non ». Le type le disait déjà :
+          // « les deux se disent autrement — attestée d'un côté, ne correspond
+          // pas de l'autre ». Rendus identiques, ils faisaient croire à une
+          // vérification passée là où elle avait échoué.
+          //
+          // Neutre dans les trois cas : une contrepartie attestée n'est pas un
+          // avertissement, une vérifiée n'est pas encore approuvée, et un écart
+          // constaté n'est pas un refus — le commerce tranche.
           level="neutral"
-          title={t(vue.verifiee ? 'parcours.preuveVerifiee' : 'parcours.preuveAttestee')}
-          body={t(vue.verifiee ? 'parcours.preuveVerifieeAide' : 'parcours.preuveAttesteeAide')}
+          title={t(`parcours.preuve_${etatDeLaVerification(vue.verifiee)}`)}
+          body={
+            // **Les raisons, quand il y en a.** « Ne correspond pas » sans ses
+            // termes se subit : c'est le verdict sans ses termes, la faute
+            // corrigée le matin même sur les signaux de l'audience.
+            vue.verifiee === false && vue.raisons.length > 0
+              ? `${t('parcours.preuve_ecart_aide')}\n\n${vue.raisons.join('\n')}`
+              : t(`parcours.preuve_${etatDeLaVerification(vue.verifiee)}_aide`)
+          }
           action={{ label: t('common.retour'), onPress: onEnvoye, variant: 'secondary' }}
-          testID={vue.verifiee ? 'preuve-verifiee' : 'preuve-attestee'}
+          testID={`preuve-${etatDeLaVerification(vue.verifiee)}`}
         />
       ) : null}
 

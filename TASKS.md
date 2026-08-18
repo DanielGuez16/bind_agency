@@ -929,6 +929,31 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       celle-ci est « le serveur rend, l'écran lit, et personne ne demande » — le
       champ est lu, donc la garde ne peut pas le voir. Seul un test sur l'URL
       réellement appelée l'attrape. 2 tests neufs plus 1 repris, 5 mutations*
+- [x] **Les quatorze champs servis et rendus nulle part, tranchés**
+      *`rotation_seconds` d'abord : **le code ne se désynchronise pas**, le
+      compte à rebours étant piloté par `seconds_remaining`. Le vrai défaut est
+      le seuil d'urgence, fixé à dix secondes quelle que soit la cadence — à
+      quinze secondes de rotation, rouge les deux tiers du temps, et un signal
+      permanent cesse d'être un signal. Il devient une part de la cadence.*
+      *Quatre des cinq défauts corrigés : l'adresse sur la ligne, les trois
+      `needs_human_review` rendus des deux côtés — et côté commerce **un dossier
+      sous arbitrage n'est plus décidable** — et les déplacements pour rien dans
+      le rapport. `avg_views` ajouté, `media_count` retiré, six en `contrat`.*
+      *Deux défauts sortis de la liste sans être cherchés : `verifiee === false`
+      et `=== null` rendaient **le même écran**, si bien qu'une preuve refusée
+      s'affichait « attestée, non vérifiée » — le type disait pourtant que les
+      deux se disent autrement. Et un montage de test portait
+      `needs_human_review: true`, donc tous les tests de décision du commerce
+      s'exerçaient sur le cas où il ne doit plus décider. 3 tests neufs plus 2
+      repris, 6 mutations vérifiées*
+- [ ] **Le commerce ne peut pas signaler une absence depuis l'application**
+      *Diagnostic corrigé : `absence_signalable_a` n'est pas un champ non
+      affiché, **c'est une route absente du client**. Le serveur a
+      `mark_no_show`, l'app ne l'appelle nulle part. Il faut l'entrée de route,
+      la méthode, et l'action sur la journée — ouverte par
+      `absence_signalable_a`, qui dit aussi à quelle heure elle s'ouvre, et
+      c'est le serveur qui refuse, jamais l'horloge du téléphone. Une tranche,
+      pas un rendu de champ*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire
 
 ---

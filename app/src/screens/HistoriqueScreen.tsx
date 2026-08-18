@@ -188,7 +188,11 @@ function LigneDeReservation({
       <View style={{ flex: 1, gap: 4 }}>
         <Texte variante="type.bodyStrong">{reservation.item_name}</Texte>
         <Texte variante="type.caption" couleur="ink.soft">
-          {reservation.business_name}
+          {/* **L'adresse, que le cadre 08a affiche et que l'écran taisait.**
+              Une réservation dont on ne sait pas où aller ne se tient pas. */}
+          {[reservation.business_name, reservation.business_address]
+            .filter(Boolean)
+            .join(' · ')}
         </Texte>
         {/* Le palier **et** le réseau : la même prestation peut exister sur
             deux comptes, et publier sur le mauvais ne compte pas. */}
@@ -235,6 +239,19 @@ function LigneDeReservation({
             </Texte>
             {/* La tentative, à partir de la seconde : « 2 sur 3 » dit ce qui
                 reste, et la troisième lève une revue humaine. */}
+            {/* **L'attente change de nature, et personne ne le disait.** Passé
+                en revue humaine, le dossier n'attend plus le salon mais un
+                arbitre : le délai n'a plus le même sens, et relancer le salon
+                ne sert à rien. Le champ était rendu depuis toujours. */}
+            {contrepartie.needs_human_review ? (
+              <Texte
+                variante="type.caption"
+                couleur="ink.soft"
+                testID={`en-arbitrage-${reservation.booking_id}`}
+              >
+                {t('parcours.contrepartieEnArbitrage')}
+              </Texte>
+            ) : null}
             {contrepartie.attempts_count > 1 ? (
               <Texte
                 variante="type.caption"

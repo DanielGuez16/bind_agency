@@ -138,7 +138,12 @@ function Controle({ ligne, onDecide }: { ligne: LigneDeFile; onDecide: () => voi
     }
   }
 
-  const aDecider = ligne.status === 'submitted' || ligne.status === 'under_review';
+  // **Un dossier qu'un arbitre a en main ne se décide plus ici.** Le champ
+  // était rendu et lu nulle part : deux décisions pouvaient partir sur le même
+  // dossier, celle du salon et celle de l'arbitrage.
+  const aDecider =
+    (ligne.status === 'submitted' || ligne.status === 'under_review') &&
+    !ligne.needs_human_review;
 
   return (
     <View testID={`controle-${ligne.collaboration_id}`} style={{ gap: 6, paddingVertical: 8 }}>
@@ -178,6 +183,13 @@ function Controle({ ligne, onDecide }: { ligne: LigneDeFile; onDecide: () => voi
         </Texte>
       ) : null}
 
+      {ligne.needs_human_review ? (
+        <StatusMessage
+          level="neutral"
+          body={t('commerce.enArbitrage')}
+          testID={`en-arbitrage-${ligne.collaboration_id}`}
+        />
+      ) : null}
       {echec ? <StatusMessage level="danger" body={echec} testID="echec" /> : null}
 
       {aDecider ? (

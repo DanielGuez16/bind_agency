@@ -228,6 +228,16 @@ function CarteDuCompte({
           etiquette={t('parcours.engagement')}
           valeur={compte.engagement_rate ?? TIRET}
         />
+        {/* **La seule mesure d'audience réelle plutôt que déclarée**, et c'est
+            exactement ce que le produit cherche à valoriser : des abonnés se
+            gonflent, des vues se constatent. Servie depuis toujours, affichée
+            nulle part. */}
+        <Valeur
+          etiquette={t('parcours.vuesMoyennes')}
+          valeur={
+            compte.avg_views === null ? TIRET : formatNumber(compte.avg_views, locale)
+          }
+        />
       </View>
 
       {/* **Le relevé, ou son absence dite comme telle.** « Pas encore mesuré »
