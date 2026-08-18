@@ -26,12 +26,13 @@ import {
 import {
   Apparition,
   EmptyState,
+  Button,
   SegmentedTabs,
-  ServiceRow,
   SkeletonLignes,
   StatusMessage,
   Texte,
 } from '../components';
+import { useColors } from '../theme';
 import { useI18n, type SupportedLocale } from '../i18n';
 import { formatDateTime } from '../format';
 import { Ecran } from './Ecran';
@@ -110,7 +111,11 @@ export function HistoriqueScreen({
         <View style={{ gap: 12 }}>
           <Onglets index={index} onChange={setIndex} compteurs={compteurs} />
           {vue.items.map((reservation, rang) => {
-            const ouvrable = destination(reservation) !== null;
+            // **Pressable exactement quand la ligne attend un geste.** Une
+            // ligne en contrôle ouvrait l'écran de preuve alors qu'elle dit
+            // « rien à faire de votre côté » : la ligne et son texte se
+            // contredisaient, et c'est le texte qui a raison.
+            const ouvrable = attenteDe(reservation) === 'creatrice';
             return (
               <Apparition key={reservation.booking_id} rang={rang}>
               <Pressable
@@ -124,54 +129,7 @@ export function HistoriqueScreen({
                 onPress={() => onOuvrir(reservation)}
                 style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
               >
-                <ServiceRow
-                  name={reservation.business_name}
-                  meta={heureLocaleDuCommerce(reservation, locale)}
-                  tier={reservation.content_format}
-                  right={
-                    <Texte variante="type.caption" couleur="ink.soft">
-                      {ouvrable ? t(`parcours.ouvrir_${destination(reservation)}`) : ''}
-                    </Texte>
-                  }
-                />
-                {/* L'attente se dit, avec ce qu'elle implique. Une ligne muette
-                    entre « réservé » et « code disponible » se lit comme une
-                    panne, et c'est le moment où l'on écrit au support. */}
-                {reservation.status === 'awaiting_business' ? (
-                  <StatusMessage
-                    level="neutral"
-                    body={
-                      // **Jusqu'à quand, et pas seulement « on attend ».**
-                      // « En attente » sans terme se lit comme une file sans
-                      // fin : on ne sait pas s'il faut relancer, réserver
-                      // ailleurs, ou ne rien faire. L'heure vient du serveur —
-                      // c'est exactement celle que le salon voit de son côté —
-                      // et s'affiche dans le fuseau du salon, comme le reste.
-                      reservation.approval_expires_at
-                        ? `${t('parcours.enAttenteDuSalon')} ${t('parcours.enAttenteJusquA', {
-                            quand: formatDateTime(
-                              reservation.approval_expires_at,
-                              locale,
-                              reservation.business_timezone,
-                            ),
-                          })}`
-                        : t('parcours.enAttenteDuSalon')
-                    }
-                    testID={`en-attente-${reservation.booking_id}`}
-                  />
-                ) : null}
-                <Texte variante="type.caption" couleur="ink.soft">
-                  {reservation.item_name}
-                </Texte>
-                {reservation.contrepartie ? (
-                  <Texte
-                    variante="type.caption"
-                    couleur="ink.soft"
-                    testID={`contrepartie-${reservation.booking_id}`}
-                  >
-                    {t(`contrepartie.${reservation.contrepartie.status}`)}
-                  </Texte>
-                ) : null}
+                <LigneDeReservation reservation={reservation} onOuvrir={onOuvrir} />
               </Pressable>
               </Apparition>
             );
@@ -179,6 +137,138 @@ export function HistoriqueScreen({
         </View>
       )}
     </Ecran>
+  );
+}
+
+/**
+ * Une ligne de réservation, dans l'ordre du cadre 08.
+ *
+ * **La prestation d'abord, le salon ensuite.** L'écran mettait le nom du salon
+ * en tête : c'est ce dont on se souvient le moins. Ce qu'on cherche dans une
+ * liste de dix lignes est ce qu'on a réservé.
+ *
+ * **La date est un bloc mono à gauche, pas une ligne de texte.** Elle se balaie
+ * du regard sur dix lignes ; en texte, il faut lire chacune.
+ *
+ * **Le badge porte le palier et le réseau**, parce que la même prestation peut
+ * exister sur deux comptes — « one story » ne dit pas sur lequel publier.
+ */
+function LigneDeReservation({
+  reservation,
+  onOuvrir,
+}: {
+  reservation: ReservationDuCreateur;
+  onOuvrir: (reservation: ReservationDuCreateur) => void;
+}) {
+  const { t, locale } = useI18n();
+  const c = useColors();
+  const attente = attenteDe(reservation);
+  const contrepartie = reservation.contrepartie;
+  const quand = reservation.starts_at ?? reservation.valid_until;
+
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        gap: 12,
+        // **Le filet d'encre à gauche des lignes qui attendent un geste.** Il
+        // n'y a pas de couleur ici : la matière suffit, et l'ambre serait lu
+        // comme la marque.
+        borderLeftWidth: 3,
+        borderLeftColor: attente === 'creatrice' ? c['line.ink'] : 'transparent',
+        paddingLeft: 12,
+      }}
+    >
+      <View style={{ width: 52, gap: 2 }} testID={`quand-${reservation.booking_id}`}>
+        <Texte variante="type.monoSmall" couleur="ink.mute">
+          {formatDateTime(quand, locale, reservation.business_timezone)}
+        </Texte>
+      </View>
+
+      <View style={{ flex: 1, gap: 4 }}>
+        <Texte variante="type.bodyStrong">{reservation.item_name}</Texte>
+        <Texte variante="type.caption" couleur="ink.soft">
+          {reservation.business_name}
+        </Texte>
+        {/* Le palier **et** le réseau : la même prestation peut exister sur
+            deux comptes, et publier sur le mauvais ne compte pas. */}
+        <Texte variante="type.monoSmall" couleur="ink.mute" testID={`palier-${reservation.booking_id}`}>
+          {`${reservation.content_format} · ${reservation.platform}`.toUpperCase()}
+        </Texte>
+
+        {reservation.status === 'awaiting_business' ? (
+          <StatusMessage
+            level="neutral"
+            body={
+              reservation.approval_expires_at
+                ? `${t('parcours.enAttenteDuSalon')} ${t('parcours.enAttenteJusquA', {
+                    quand: formatDateTime(
+                      reservation.approval_expires_at,
+                      locale,
+                      reservation.business_timezone,
+                    ),
+                  })}`
+                : t('parcours.enAttenteDuSalon')
+            }
+            testID={`en-attente-${reservation.booking_id}`}
+          />
+        ) : null}
+
+        {contrepartie ? (
+          <>
+            {/* **L'échéance était servie et rendue nulle part.** Le statut
+                seul — « en attente de votre publication » — ne dit pas jusqu'à
+                quand, et c'est la seule chose qui décide s'il faut agir ce
+                soir ou la semaine prochaine. */}
+            <Texte
+              variante="type.monoSmall"
+              couleur="ink.soft"
+              testID={`echeance-${reservation.booking_id}`}
+            >
+              {t('parcours.contrepartieEcheance', {
+                quand: formatDateTime(
+                  contrepartie.deadline_at,
+                  locale,
+                  reservation.business_timezone,
+                ),
+              }).toUpperCase()}
+            </Texte>
+            {/* La tentative, à partir de la seconde : « 2 sur 3 » dit ce qui
+                reste, et la troisième lève une revue humaine. */}
+            {contrepartie.attempts_count > 1 ? (
+              <Texte
+                variante="type.caption"
+                couleur="ink.soft"
+                testID={`tentative-${reservation.booking_id}`}
+              >
+                {t('parcours.contrepartieTentative', {
+                  n: String(contrepartie.attempts_count),
+                })}
+              </Texte>
+            ) : null}
+          </>
+        ) : null}
+
+        {/* **Le seul onglet qui agit porte son bouton ici.** Une ligne en
+            contrôle le dit en mots plutôt que de griser une action : un bouton
+            gris se presse quand même, et ne répond pas. */}
+        {attente === 'creatrice' ? (
+          <Button
+            label={t(`parcours.action_${destination(reservation)}`)}
+            onPress={() => onOuvrir(reservation)}
+            testID={`agir-${reservation.booking_id}`}
+          />
+        ) : attente === 'controle' ? (
+          <Texte
+            variante="type.caption"
+            couleur="ink.soft"
+            testID={`rien-a-faire-${reservation.booking_id}`}
+          >
+            {t('parcours.contrepartieRienAFaire')}
+          </Texte>
+        ) : null}
+      </View>
+    </View>
   );
 }
 
@@ -219,6 +309,35 @@ function Onglets({
  * salon n'a pas encore acceptée non plus — le serveur refuse dans les deux cas.
  * La ligne proposait « voir le code » sur une réservation qui n'en avait aucun.
  */
+/**
+ * Ce que la ligne attend, et de qui.
+ *
+ * **C'est la règle du cadre 08b, et elle décide de la forme.** Une ligne qui
+ * attend quelque chose de la créatrice porte un filet d'encre à gauche et un
+ * bouton ; une ligne en contrôle n'en a pas et le dit en mots — « rien à faire
+ * de votre côté ». Sans cette distinction, trois lignes se ressemblent et on
+ * relit les trois pour trouver laquelle demande un geste.
+ *
+ * Isolée du rendu pour la même raison que le cycle du mur : ce qui se promet
+ * s'éprouve sans monter un écran.
+ */
+export function attenteDe(
+  reservation: ReservationDuCreateur,
+): 'creatrice' | 'controle' | null {
+  // Le code de retrait est un geste, au comptoir : la ligne le porte.
+  if (reservation.status === 'confirmed') return 'creatrice';
+  const contrepartie = reservation.contrepartie;
+  if (!contrepartie) return null;
+  if (contrepartie.status === 'pending' || contrepartie.status === 'resubmit_requested') {
+    return 'creatrice';
+  }
+  if (contrepartie.status === 'submitted' || contrepartie.status === 'under_review') {
+    return 'controle';
+  }
+  // Approuvée ou non honorée : la ligne est close, elle n'attend plus personne.
+  return null;
+}
+
 export function destination(
   reservation: ReservationDuCreateur,
 ): 'code' | 'preuve' | null {

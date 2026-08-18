@@ -6166,3 +6166,118 @@ interdit désormais les formes de promesse et **exige** le compteur d'écoulé.
 
 **Une clé de traduction est morte avec le changement** et a été retirée :
 `jamaisMesure` ne commandait plus rien.
+
+---
+
+## 2026-08-17 — Les réservations : chaque ligne dit ce qu'elle attend
+
+Le deuxième écran du trou trouvé par le registre. Trois lignes se
+ressemblaient — celle qui demande un geste, celle qui attend un contrôle, celle
+qui est close — et il fallait lire les trois pour trouver laquelle agissait.
+
+**La règle sort du rendu.** `attenteDe` rend `creatrice`, `controle` ou rien, et
+s'éprouve sans monter un écran — même découpage que le cycle du mur. Ce qui en
+découle : filet d'encre et bouton pour la première, **des mots** pour la
+seconde. Un bouton grisé se presse quand même et ne répond pas ; l'action
+impossible se retire, c'est déjà la règle de la bibliothèque et cet écran ne la
+tenait pas.
+
+**Une contradiction interne, corrigée.** La ligne était pressable dès qu'une
+contrepartie existait : une ligne affichant « rien à faire de votre côté »
+ouvrait l'écran de preuve. La ligne et son texte se contredisaient, et c'est le
+texte qui avait raison.
+
+**Deux champs servis et rendus nulle part**, la troisième fois cette session
+après `categorie` et `constate`/`requis` : `deadline_at`, qui est la seule chose
+décidant s'il faut agir ce soir ou la semaine prochaine, et `attempts_count`,
+qui ne s'affiche qu'à partir de la seconde — « tentative 1 sur 3 » sur une
+première publication annoncerait un échec qui n'a pas eu lieu.
+
+**Le badge porte le palier et le réseau.** La même prestation peut exister sur
+deux comptes : « one story » ne dit pas sur lequel publier, et publier sur le
+mauvais ne compte pas.
+
+**Ce qui reste hors de portée sans le serveur** : les exigences de la
+contrepartie — mention attendue, géotag — et le motif de reprise, que le cadre
+08b affiche en ligne. `ContrepartieBreve` ne les porte pas, et les chercher
+demanderait un appel par ligne.
+
+---
+
+## 2026-08-17 — La garde des champs servis et rendus nulle part
+
+Trois fois dans une session, et aucune n'a échoué : le paramètre `categorie`
+que le fil acceptait et que personne n'envoyait ; `constate` et `requis` sur les
+signaux de vérification ; `deadline_at` et `attempts_count` sur la contrepartie.
+Daniel l'a nommé mieux que moi — **trois fois n'est plus une série de
+distractions, c'est un défaut de méthode**, et c'est le même que celui de
+l'audit des planches : ce qui existe mais que personne ne branche.
+
+Le mode d'échec est toujours identique et c'est ce qui le rend invisible : rien
+ne tombe, l'écran paraît complet, les jetons sont les bons, et l'information qui
+décide du geste suivant n'est pas à l'écran.
+
+**La garde.** Chaque champ déclaré dans `types.ts` est soit lu quelque part dans
+`src/`, soit inscrit dans une table avec sa raison. Trois raisons seulement, et
+la troisième est une dette nommée : `contrat` — servi pour une autre façade ;
+`technique` — consommé par le client d'API ; `a-instruire` — **rien ne dit que
+c'est délibéré**. Cette troisième catégorie est la partie honnête du dispositif :
+mettre quatorze champs sous « contrat » sans le vérifier aurait fait de la table
+un tapis.
+
+**Elle tient dans les deux sens.** Un champ inscrit qui se met à être lu fait
+tomber le test : sans quoi la table vieillit, se remplit de lignes fausses, et
+cesse de dire quoi que ce soit — ce qui est arrivé à `$meta.unconfirmed`, gardé
+longtemps après que le manque a été comblé.
+
+**Ce qu'elle ne fait pas, écrit plutôt que laissé croire.** Elle lit du texte,
+pas un arbre syntaxique : un champ au nom commun — `status`, `name`, `id` — sera
+trouvé quelque part même s'il n'est jamais lu *sur ce type-là*. Faux négatifs,
+aucun faux positif. C'est le bon sens de l'erreur pour une vérification requise.
+
+**Elle a payé en une minute.** 53 champs sur 430 ne sont lus nulle part.
+Quatorze sont suspects et partent dans `TASKS.md` — dont
+`ReservationDuCreateur.business_address`, que le cadre 08a affiche et que je
+venais moi-même de ne pas rendre en composant cet écran. La garde a trouvé un
+quatrième cas du défaut dans le commit qui la précède.
+
+---
+
+## 2026-08-17 — Le cadre 02 était déjà passé, et le registre le surestimait
+
+Confronté cadre par cadre, il n'y avait presque rien à faire, pour une raison
+qui vaut d'être écrite : **le cadre 02 de `Lot 1 v1.1` est la planche
+`Tiers v0.7`, restylée.** Il le dit lui-même en sous-titre — « la v0.7 dans le
+nouveau système ». Cette planche-là a eu sa propre tâche, livrée et éprouvée à
+douze mutations.
+
+Le registre l'avait comptée comme jamais confrontée parce qu'il regardait
+`Lot 1 v1.1` **en bloc**. C'est la limite d'un registre par planche dès que deux
+planches se recouvrent, et elle entre dans sa règle : l'état se lit par cadre
+quand un cadre a déjà sa propre planche. Un registre qui surestime le manque
+coûte moins cher qu'un registre qui le sous-estime — mais il coûte quand même,
+et le dire évite de refaire ce qui est fait.
+
+**Un cas où la planche est périmée et non l'écran.** Le cadre 02a affiche un
+tiret cadratin sur ce qu'un palier fermé ouvrirait, avec un encadré qui explique
+pourquoi : `offres_disponibles` n'existait pas, « je n'ai pas inventé le
+nombre ». Le champ existe depuis, pour les paliers fermés aussi, et son contrat
+dit « zéro est une réponse ». Rendre le vrai nombre vaut donc mieux que le
+tiret, qui ne signalait qu'une donnée absente. Suivre la planche à la lettre
+aurait ici **retiré** une information.
+
+Reste une seule chose de ce cadre : « See the 34 services » est la porte du
+cadre 11c. `onVoirLesPrestations` existe sur l'écran et `porteOuverte` en
+dépend ; la navigation ne le passe pas. Les deux se prennent ensemble.
+
+**Et la e2e est tombée sur cette PR, pour la bonne raison.** Elle visait le
+texte « Show code › ». La ligne porte maintenant un vrai bouton, dont le libellé
+a changé : le test est tombé sur un écran parfaitement fonctionnel. C'est le cas
+que `CLAUDE.md` enregistre déjà — « un test asservi à un `testID` retiré par la
+PR elle-même » — dans sa variante libellé, qui est pire : un libellé est une
+décision de composition, et il changera encore. Le sélecteur porte désormais sur
+l'action, `[data-testid^="agir-"]`, et part de l'écran plutôt que de la page.
+
+Les deux clés `ouvrir_code` et `ouvrir_preuve` sont mortes avec le changement et
+retirées : une clé qui ne commande plus rien fait douter de celles qui
+commandent quelque chose.
