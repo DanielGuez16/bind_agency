@@ -894,10 +894,26 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       `needs_human_review` sur trois types, c'est-à-dire l'escalade de la
       troisième tentative, invisible partout. Chacun se tranche : rendu, ou
       passé en `contrat` avec sa raison*
-- [ ] **`Lot 1 v1.1` · 02 · les paliers**
-      *Le dernier écran du trou trouvé par le registre. Même méthode : le
-      confronter cadre par cadre, et non vérifier qu'il emploie les bons jetons —
-      il les emploie déjà, c'est précisément ce qui a masqué le manque*
+- [x] **`Lot 1 v1.1` · 02 · les paliers : déjà passé, et le registre le surestimait**
+      *Confronté cadre par cadre, et il n'y avait presque rien à faire — pour
+      une raison qui vaut d'être écrite : **le cadre 02 est la planche
+      `Tiers v0.7`, restylée**. Il le dit lui-même en sous-titre, « la v0.7 dans
+      le nouveau système ». Cette planche-là a eu sa propre tâche, livrée et
+      éprouvée à douze mutations : l'échelle d'échange, la progression en
+      matière, l'écart chiffré à 60 %, la cause commune devant. Le registre
+      l'avait comptée comme jamais confrontée parce qu'il regardait
+      `Lot 1 v1.1` **en bloc**.*
+      *Deux détails vérifiés. Le filet d'encre à gauche du prochain palier et
+      l'orange réservé à la barre d'écart : tenus, `line.ink` contre
+      `brand.500`. Et le tiret cadratin d'un palier fermé : **la planche est
+      périmée, pas l'écran**. Elle écrivait « — » parce que `offres_disponibles`
+      n'existait pas encore — « je n'ai pas inventé le nombre », dit son
+      encadré. Le champ existe depuis, pour les paliers fermés aussi, et son
+      contrat dit « zéro est une réponse ». Rendre le vrai nombre vaut mieux
+      qu'un tiret qui ne signalait qu'une donnée absente.*
+      *Reste **une seule chose** : « See the 34 services » est la porte du cadre
+      11c. `onVoirLesPrestations` existe sur l'écran, `porteOuverte` en dépend,
+      et la navigation ne le passe toujours pas. Les deux se prennent ensemble*
 - [ ] **`pytest -n auto`, avec une base par worker**
       *Mesuré : le job `api` prend 754 s, dont **704 dans `pytest` seul** —
       l'installation en fait 22, le reste est du bruit. C'est 93 % du job et
@@ -942,6 +958,12 @@ redessiné ».
 tiennent sur la ligne, sinon le report n'est qu'un oubli qu'on a eu l'air de
 décider.
 
+**Et deux planches peuvent se recouvrir.** Le cadre 02 de `Lot 1 v1.1` est la
+planche `Tiers v0.7` restylée — il le dit en sous-titre — et le registre l'avait
+comptée comme jamais confrontée parce qu'il regardait `Lot 1 v1.1` en bloc. Un
+registre par planche **surestime** le manque dès qu'une planche en reprend une
+autre : l'état se lit par cadre quand un cadre a déjà sa propre planche.
+
 | Planche | État |
 | --- | --- |
 | `BIND Creator - Current UI (recreation)` | **Hors registre.** Ce n'est pas une spécification mais un état des lieux de l'existant, qui a servi de point de départ. Rien à implémenter. |
@@ -955,7 +977,7 @@ décider.
 | `BIND Mark - Favicon 16` | **Passée.** Le 16 est un dessin distinct, et aucun fichier cuit ne porte plus le logotype. |
 | `BIND Creator - Fil v2` | **Partiellement passée, et le reste est sans objet.** La direction 1b — les rangées par quartier — est branchée là où Design l'a elle-même placée : ce que montre une catégorie choisie (#141). La direction 1a a été remplacée par `Le mur v2.1`. |
 | `BIND Creator - Le mur v2.1` | **Passée, et ses cinq réserves sont tranchées** (#131, #132, #140, #141, #145). Trois écarts à la planche sont assumés et écrits : le quartier de la position n'est pas nommé — rien ne sait le résoudre ; le Didone reste à son plancher de 34, une exception non déclarée dans les jetons étant une violation ; et les catégories sont les six du modèle, celles de la planche datant du produit mono-catégorie. Deux étaient des défauts et sont corrigés : le rayon se règle de nouveau dans les deux sens, et le mur va à fond perdu. |
-| `BIND Creator - Lot 1 v1.1` | **Partiellement passée.** Le cadre 01, l'audience, est confronté à sa planche (#149) — c'était l'écran nommé deux fois comme le plus faible du produit. Les cadres 01 (l'audience, #149) et 08 (les réservations, #150) sont confrontés à leurs planches. Reste 02, les paliers. Son fil a été remplacé par le mur, et son cadre 03b a servi à composer le filtre par catégorie. |
+| `BIND Creator - Lot 1 v1.1` | **Passée.** Le cadre 01, l'audience (#149) — l'écran nommé deux fois comme le plus faible du produit — et le cadre 08, les réservations (#150), sont confrontés à leurs planches. Le cadre 02 l'était déjà : c'est `Tiers v0.7` restylée, livrée sous sa propre tâche, et le registre le surestimait en lisant la planche en bloc. Son fil a été remplacé par le mur, et son cadre 03b a servi à composer le filtre par catégorie. **Reste la porte du cadre 11c**, que 02a ouvre et que la navigation ne passe pas. |
 
 **Ce que cette liste a trouvé en étant écrite :** `Lot 1 v1.1` était la seule
 planche sans entrée nulle part, alors que les lots 2, 3 et 4 en avaient chacun

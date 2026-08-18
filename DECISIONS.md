@@ -6240,3 +6240,32 @@ Quatorze sont suspects et partent dans `TASKS.md` — dont
 `ReservationDuCreateur.business_address`, que le cadre 08a affiche et que je
 venais moi-même de ne pas rendre en composant cet écran. La garde a trouvé un
 quatrième cas du défaut dans le commit qui la précède.
+
+---
+
+## 2026-08-17 — Le cadre 02 était déjà passé, et le registre le surestimait
+
+Confronté cadre par cadre, il n'y avait presque rien à faire, pour une raison
+qui vaut d'être écrite : **le cadre 02 de `Lot 1 v1.1` est la planche
+`Tiers v0.7`, restylée.** Il le dit lui-même en sous-titre — « la v0.7 dans le
+nouveau système ». Cette planche-là a eu sa propre tâche, livrée et éprouvée à
+douze mutations.
+
+Le registre l'avait comptée comme jamais confrontée parce qu'il regardait
+`Lot 1 v1.1` **en bloc**. C'est la limite d'un registre par planche dès que deux
+planches se recouvrent, et elle entre dans sa règle : l'état se lit par cadre
+quand un cadre a déjà sa propre planche. Un registre qui surestime le manque
+coûte moins cher qu'un registre qui le sous-estime — mais il coûte quand même,
+et le dire évite de refaire ce qui est fait.
+
+**Un cas où la planche est périmée et non l'écran.** Le cadre 02a affiche un
+tiret cadratin sur ce qu'un palier fermé ouvrirait, avec un encadré qui explique
+pourquoi : `offres_disponibles` n'existait pas, « je n'ai pas inventé le
+nombre ». Le champ existe depuis, pour les paliers fermés aussi, et son contrat
+dit « zéro est une réponse ». Rendre le vrai nombre vaut donc mieux que le
+tiret, qui ne signalait qu'une donnée absente. Suivre la planche à la lettre
+aurait ici **retiré** une information.
+
+Reste une seule chose de ce cadre : « See the 34 services » est la porte du
+cadre 11c. `onVoirLesPrestations` existe sur l'écran et `porteOuverte` en
+dépend ; la navigation ne le passe pas. Les deux se prennent ensemble.
