@@ -275,12 +275,49 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       `changements`, et je l'ai abandonné au rebase. Le travail en double a
       coûté une demi-heure : ce qui touche `.github/` mérite d'être annoncé
       avant d'être écrit, comme on le fait déjà pour les fichiers d'écran*
-- [x] **Garde sur les fichiers de test dix fois plus lents que leurs voisins**
-      *Un rapport à la médiane, jamais un seuil en secondes — un plafond absolu
-      mesurerait le matériel. Un avertissement et non un échec : faire tomber la
-      suite sur une mesure de temps la rendrait instable là où elle doit être
-      l'inverse. `test_seed.py` est déclaré avec sa raison ; il pèse 21 fois la
-      médiane, et c'est le prix de semer vingt commerces quatre fois*
+- [x] **Garde de durée côté Jest** — `app/scripts/duree-des-tests.mjs`
+      *Livrée par la conversation produit en #146, avec le court-circuit. Elle
+      part d'un cas réel : `entete-du-mur` mettait 17,4 s quand ses voisins en
+      prenaient 1,7, sans que rien n'échoue*
+- [x] **Garde de durée côté Python** — dans `tests/conftest.py`
+      *Cette ligne a été cochée une première fois pour un travail qui n'était
+      dans aucun commit : la garde décrite — un rapport à la médiane, un simple
+      avertissement — n'a jamais existé dans le dépôt. Elle existe maintenant, et
+      **sous une autre forme, parce que la médiane est le mauvais outil ici**.
+      Mesuré sur la suite entière : la médiane d'un test est de 0,24 s et le 99e
+      centile de 0,96 s, donc dix fois la médiane vaut 2,4 s — et le test
+      légitime le plus lourd en met 3,7 à lui seul. Un rapport qui accuse un test
+      sain est un rapport qui sera retiré au premier rouge. C'est la conclusion
+      à laquelle la garde Jest était déjà arrivée, mesures à l'appui, et il a
+      fallu la retrouver faute de l'avoir lue.
+      Donc : le **test** et non le fichier — un fichier n'est pas lent parce
+      qu'il porte un défaut, il est long parce qu'il porte beaucoup ; un
+      **plafond mesuré** de 10 s, 2,7 fois le plus lourd des tests honnêtes ; un
+      **échec** et non un avertissement, comme côté Jest ; et des dispenses
+      déclarées avec leur raison, `@pytest.mark.lent("…")`, sur le modèle de
+      `ecrit_pour_de_bon`. Quatre mutations : un test de douze secondes non
+      déclaré, une dispense retirée, une dispense sans raison, et le contrefait
+      de la garde anti-fuite*
+- [x] **Le semis était lancé cinq fois, il l'est trois**
+      *Ce que la garde ci-dessus a trouvé le jour où elle a été posée. Trois
+      tests lançaient chacun le semis complet — vingt salons, leurs photos,
+      leurs vignettes — pour lire trois lignes du **même** résumé : 34, 41 et
+      31 secondes pour trois assertions sur un texte identique. Une fixture de
+      module les sert toutes les trois. Restent séparés le refus hors
+      environnement jetable, et le double passage qui éprouve la rejouabilité —
+      deux questions différentes, pas deux lectures d'une même sortie.
+      Suite complète : **568 s → 485 s**, à nombre de tests égal (1561)*
+- [x] **La garde anti-fuite couvrait sept tables sur trente-six**
+      *Elle existe pour nommer le test qui laisse une écriture derrière lui —
+      la cause exacte d'une suite non déterministe — et elle en laissait passer
+      les quatre cinquièmes : la boîte d'envoi, les profils créateur, les codes
+      de retrait, les jetons de rafraîchissement, les préférences de
+      notification. Déduite du schéma moins une dispense d'une seule table, une
+      table neuve est surveillée le jour où elle est créée. Le commentaire qui
+      dispensait « `tier`, `subscription_plan` et consorts » était faux :
+      compté, `subscription_plan` est vide. Vérifié dans les deux sens — une
+      écriture validée dans `link_click_salt` fait tomber la garde neuve et
+      passe inaperçue de l'ancienne*
 - [ ] **`pytest -n auto`, une base par worker**
       *La suite entière prend dix minutes ; huit workers la ramèneraient sous
       deux. Deux obstacles mesurés : les workers visent tous la **même** base —
@@ -290,13 +327,24 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       concurrence — verrou consultatif, deux réservations simultanées sur la
       dernière place — deviendraient douteux si l'isolation par worker était
       imparfaite, et c'est trop cher payé*
-- [ ] **La suite complète est instable, deux exécutions sur quatre**
-      *Deux jeux de tests différents ont échoué sur deux exécutions complètes —
-      `test_emails.py` une fois, `test_balayage`/`place_expiree` une autre — et
-      **tous passent isolément et par paire**. Ce ne sont donc ni des
-      régressions ni des défauts de leur code : ce sont des tests sensibles au
-      temps qui dérivent quand la suite met dix minutes. À reprendre avec la
-      tâche ci-dessus, dont ils sont le symptôme*
+- [ ] **La suite complète a échoué une fois sans explication** — non reproduit
+      *L'entrée qui tenait ici disait « instable, deux exécutions sur quatre »,
+      avec un diagnostic assuré — des tests sensibles au temps qui dérivent sur
+      dix minutes. Repris à zéro, le décompte ne tient pas. Sur les quatre
+      exécutions, **trois avaient une cause connue** : deux sessions pytest sur
+      la même base, ce qui était ma faute et non celle de la suite ; le garde-fou
+      de la carte des routes, qui signalait une entrée réellement manquante ;
+      et une passée sans rien. Il **reste une seule** exécution inexpliquée, cinq
+      échecs dont deux dans `test_emails.py`, et la sortie n'a pas retenu les
+      trois autres noms. Compter une faute connue comme une instabilité fabrique
+      un fantôme, et un fantôme se cherche indéfiniment.
+      **Trois exécutions complètes depuis, toutes à 1561 tests verts** — dont
+      une avec la garde anti-fuite élargie à trente-cinq tables, qui n'a rien
+      trouvé : à l'exception des deux tests qui écrivent pour de bon et le
+      déclarent, aucun test ne laisse rien derrière lui.
+      Non reproduit ne veut pas dire inexistant. Ce qui manque pour trancher est
+      la sortie complète du jour où ça retombera : lancer avec `-p no:randomly`
+      et **garder le fichier entier**, pas un `tail`*
 
 ---
 

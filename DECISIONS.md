@@ -6355,3 +6355,69 @@ depuis l'union TypeScript pour en faire un oracle. Le compte est plafonné : si
 elles se multipliaient, la garde couvrirait de moins en moins **sans le dire**.
 
 521 clés littérales, toutes résolues dans les deux langues.
+## 2026-08-17 — Une garde qui couvrait un cinquième du schéma, et une instabilité qui n'en était qu'à moitié une
+
+**Ce qui est parti d'une fausse piste.** La suite `api` était inscrite comme
+instable, « deux exécutions sur quatre », avec un diagnostic assuré : des tests
+sensibles au temps qui dérivent quand la suite met dix minutes. Repris à zéro,
+le décompte ne tient pas. Trois des quatre exécutions avaient une cause connue —
+deux sessions pytest sur la même base, un garde-fou qui signalait une entrée
+réellement manquante, et une exécution entièrement verte. Il reste **une** seule
+exécution inexpliquée, dont la sortie avait été tronquée par un `tail` et dont
+trois noms sur cinq sont perdus.
+
+Trois exécutions complètes depuis, toutes à 1561 tests verts. Non reproduit ne
+veut pas dire inexistant, et la tâche reste ouverte — mais avec l'instruction de
+garder le fichier de sortie entier le jour où ça retombera, ce qui aurait suffi
+la première fois.
+
+**Ce que la fausse piste a trouvé, qui n'était pas cherché.** La garde
+anti-fuite — celle dont la docstring décrit exactement le symptôme qu'on
+poursuivait — surveillait **sept tables sur trente-six**. La boîte d'envoi, les
+profils créateur, les codes de retrait, les jetons de rafraîchissement, les
+préférences de notification : aucune n'était regardée. Une écriture qui y
+survivait à la transaction d'un test ne faisait rien tomber, et le symptôme
+serait apparu ailleurs, sous un nom qui n'aurait rien dit.
+
+La liste était énumérée à la main. Elle est maintenant **déduite du schéma**,
+moins une dispense d'une seule table : une table neuve est surveillée le jour où
+elle est créée, sans que personne ait à y penser. Le commentaire qui accordait
+la dispense à « `tier`, `subscription_plan` et consorts » était faux — compté
+sur une base fraîchement migrée, `subscription_plan` est vide et l'a toujours
+été. Une dispense accordée de mémoire retire une table de la surveillance sans
+que personne ne s'en aperçoive ; la liste des dispenses est donc vérifiée au
+chargement contre le schéma réel.
+
+Vérifié dans les deux sens, ce qui est la seule façon de le vérifier : une
+écriture réellement validée dans `link_click_salt` fait tomber la garde neuve
+et **passe inaperçue de l'ancienne**.
+
+**La garde de durée, et pourquoi elle ne ressemble pas à ce qui était demandé.**
+Le rapport à la médiane a été écarté sur mesure, pas par goût : la médiane d'un
+test est de 0,24 s et le 99e centile de 0,96 s, donc dix fois la médiane vaut
+2,4 s — quand le test légitime le plus lourd en met 3,7 à lui seul. Un rapport
+qui accuse un test sain est un rapport qui sera retiré au premier rouge, et un
+garde-fou retiré ne garde plus rien.
+
+C'est exactement la conclusion à laquelle la garde Jest livrée en #146 était
+déjà arrivée, mesures à l'appui, jusqu'au même plafond en secondes et à la même
+unité — le test et non le fichier. Elle était écrite dans le dépôt et il a fallu
+la retrouver. **Lire ce que l'autre moitié du projet a livré coûte moins cher
+que de mesurer deux fois la même chose** ; c'est la seconde fois en deux jours,
+après le court-circuit de la CI écrit en double.
+
+**Ce que la garde a trouvé le jour où elle a été posée.** Le semis était lancé
+**cinq fois**. Trois de ces lancements — 34, 41 et 31 secondes — exécutaient le
+jeu de démonstration entier pour lire trois lignes du **même** résumé. Une
+fixture de module les sert toutes les trois et dit rigoureusement la même chose,
+puisque c'est la même commande sur la même base. Suite complète : **568 s →
+485 s**, à nombre de tests égal.
+
+**La règle `mergeable` change de fichier.** Elle vivait dans ce journal, écrite
+le 16 août après trois quarts d'heure perdus sur la PR #126. Deux conversations
+s'y sont fait prendre le lendemain, sur la #149 et de mon côté. Le texte était
+juste ; il était rangé dans le journal des décisions, que personne ne lit avant
+de travailler. Il passe dans `CLAUDE.md`, **avant** les commandes d'attente : on
+ne peut pas attendre l'exécution d'une CI qui n'existe pas. Une règle rangée là
+où on ne la cherche pas ne protège personne, et le défaut n'était pas dans son
+énoncé.
