@@ -96,24 +96,26 @@ const NON_RENDUS: Record<string, string> = {
   // --- technique : lu par le client d'API, jamais par un écran ---
   'Jetons.token_type': 'technique',
 
-  // --- à instruire : la dette que cette garde a trouvée ---
+  // --- tranché : rendu inutile, avec sa raison ---
+  //
+  // Les six premiers sont du contrat pur. Les deux suivants sont des choix de
+  // composition, tranchés par Daniel plutôt que subis.
+  'ReservationDuCreateur.business_category': 'contrat',
+  'ReservationDuCreateur.item_photo_key': 'contrat',
+  'AudienceDuCompte.following_count': 'contrat',
+  // Le cadre 01c ne montre que les abonnés, l'engagement et les vues : un
+  // nombre de publications ne dit rien à une créatrice sur ce qu'elle peut
+  // réserver.
+  'AudienceDuCompte.media_count': 'contrat',
+  // La date en bloc mono tient le rôle de repère sur la ligne ; une vignette de
+  // salon par ligne alourdirait une liste qu'on parcourt.
+  'ReservationDuCreateur.business_cover_photo_key': 'contrat',
+
+  // --- à instruire : ce qui reste ---
   //
   // Chacune est reprise dans `TASKS.md`. Ce ne sont pas des exemptions, ce sont
   // des constats en attente de décision.
-  'ReservationDuCreateur.business_address': 'a-instruire',
-  'ReservationDuCreateur.business_cover_photo_key': 'a-instruire',
-  'ReservationDuCreateur.business_category': 'a-instruire',
-  'ReservationDuCreateur.item_photo_key': 'a-instruire',
-  'ContrepartieBreve.needs_human_review': 'a-instruire',
-  'Collaboration.needs_human_review': 'a-instruire',
-  'DroitDeLecture.needs_human_review': 'a-instruire',
-  'Preuve.raisons_de_non_verification': 'a-instruire',
-  'CodeDeRetrait.rotation_seconds': 'a-instruire',
-  'Reporting.deplacements_pour_rien': 'a-instruire',
   'ReservationDuCommerce.absence_signalable_a': 'a-instruire',
-  'AudienceDuCompte.following_count': 'a-instruire',
-  'AudienceDuCompte.media_count': 'a-instruire',
-  'AudienceDuCompte.avg_views': 'a-instruire',
 };
 
 const RAISONS = new Set(['contrat', 'technique', 'a-instruire']);

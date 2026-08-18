@@ -63,6 +63,16 @@ export function PreuveScreen({
             })}
           </Texte>
 
+          {/* **Un arbitre a la main, et l'attente change de nature.** Le champ
+              était rendu depuis toujours et affiché nulle part : on attendait
+              le salon sans savoir qu'il ne décidait plus. */}
+          {contrepartie.needs_human_review ? (
+            <StatusMessage
+              level="neutral"
+              body={t('parcours.contrepartieEnArbitrage')}
+              testID="en-arbitrage"
+            />
+          ) : null}
           {contrepartie.status === 'under_review' || contrepartie.status === 'submitted' ? (
             // Aucune promesse de délai : on dit que c'est en cours, pas quand
             // ce sera fini.

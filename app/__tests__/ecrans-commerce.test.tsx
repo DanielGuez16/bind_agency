@@ -135,7 +135,11 @@ const LIGNE_DE_FILE = {
   required_geotag: true,
   deadline_at: '2026-08-09T14:00:00Z',
   attempts_count: 2,
-  needs_human_review: true,
+  // **Faux, et c'est le cas courant.** Il valait `true`, si bien que tous les
+  // tests de décision du commerce s'exerçaient sur un dossier **qu'un arbitre
+  // a en main** — c'est-à-dire précisément celui où le salon ne doit plus
+  // décider. Le montage encodait le défaut.
+  needs_human_review: false,
   created_at: '2026-08-07T09:00:00Z',
   business_id: 'b1',
   business_name: 'Salón Ocean',
@@ -1954,5 +1958,21 @@ describe('le mode terrain dit son avancement sans l’écrire', () => {
     // feraient de la progression une décoration.
     expect(segment(1)).toBe(eteint);
     expect(segment(2)).toBe(eteint);
+  });
+});
+
+describe('un dossier qu’un arbitre a en main', () => {
+  it('ne se décide plus au comptoir, et le dit', async () => {
+    // **Deux décisions pouvaient partir sur le même dossier** : celle du salon
+    // et celle de l'arbitrage. Le champ était rendu par le serveur et lu nulle
+    // part — la troisième fois de la journée dans cette famille.
+    await monter(
+      <PublicationsScreen businessId="b1" />,
+      clientDe({ '/collaborations': [{ ...LIGNE_DE_FILE, needs_human_review: true }] }),
+    );
+    await waitFor(() => expect(screen.getByTestId('en-arbitrage-k1')).toBeTruthy());
+
+    // Aucune des trois issues : ni approuver, ni redemander, ni refuser.
+    expect(screen.queryByTestId('motif-obligatoire')).toBeNull();
   });
 });

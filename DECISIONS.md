@@ -6450,3 +6450,41 @@ réellement appelée, comme pour `categorie`.
 Le rayon des paliers est le même que celui d'où part le fil, et c'est écrit :
 deux valeurs différentes feraient dire « neuf à moins de quinze kilomètres » ici
 et en montreraient douze là-bas.
+
+---
+
+## 2026-08-18 — Les quatorze champs, tranchés — et deux défauts que la liste a fait sortir
+
+**`rotation_seconds` d'abord, et je m'étais alarmé pour la mauvaise raison.** Le
+code **ne se désynchronise pas** : le compte à rebours est piloté par
+`seconds_remaining` du serveur, pas par une constante. La crainte annoncée était
+fausse, et vérifiée avant d'agir.
+
+Le vrai défaut est adjacent et plus discret. Le seuil d'urgence était **un
+nombre de secondes fixe**, dix. À trente secondes de rotation il alerte au
+dernier tiers ; à quinze, le compte à rebours serait rouge **les deux tiers du
+temps**, et un signal d'urgence permanent cesse d'être un signal. Le seuil est
+une **part de la cadence**, calée pour reproduire exactement le comportement
+d'aujourd'hui. Le commentaire qui disait « toutes les 30 secondes » est corrigé
+avec : il était vrai de la configuration du jour, faux le lendemain d'un réglage.
+
+**Le défaut que la liste a fait sortir, et que personne ne cherchait.** En
+rendant `raisons_de_non_verification`, on découvre que `verifiee === false` et
+`=== null` rendaient **le même écran**. Le type le disait pourtant mot pour
+mot — « les deux se disent autrement, attestée d'un côté, ne correspond pas de
+l'autre ». Une preuve **refusée** s'affichait « attestée, non vérifiée »,
+c'est-à-dire comme une preuve que la plateforme n'avait pas pu contrôler. Trois
+états maintenant, et les raisons listées : « ne correspond pas » sans ses termes
+se subit, exactement comme le verdict sans ses termes corrigé le matin même.
+
+**Un montage de test encodait le défaut.** Le fixture de la file du commerce
+portait `needs_human_review: true` : tous les tests de décision s'exerçaient donc
+sur un dossier **qu'un arbitre a en main** — précisément celui où le salon ne
+doit plus décider. Corrigé côté montage, et le cas dédié écrit.
+
+**`absence_signalable_a` est plus gros que la liste ne le laissait croire.** Ce
+n'est pas un champ non affiché : **le client n'a aucune route de signalement
+d'absence.** Le serveur a `mark_no_show`, l'app ne l'appelle nulle part, et le
+commerce ne peut pas marquer une absence depuis l'application. C'est une tranche
+entière, pas un rendu de champ — elle reste seule sous `a-instruire`, avec le
+bon diagnostic cette fois.

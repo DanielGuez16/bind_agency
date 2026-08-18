@@ -7,7 +7,9 @@
  * illisible une fois sur deux. Les deux couleurs viennent de `codeColors`,
  * le seul endroit du code autorisé à porter un littéral.
  *
- * **Le code tourne de lui-même toutes les 30 secondes.** Il n'existe donc ni
+ * **Le code tourne de lui-même, à la cadence que le serveur fixe.** Ce
+ * paragraphe disait « toutes les 30 secondes » : c'était vrai de la
+ * configuration du jour, et faux le lendemain d'un réglage. Il n'existe donc ni
  * bouton de renouvellement — en proposer un donnerait à croire qu'il faut agir,
  * et laisserait quelqu'un attendre devant un écran qui se met déjà à jour — ni
  * état « expiré » : un code périmé est remplacé par le suivant. Ce qui expire
@@ -98,12 +100,21 @@ export function CodeGlyphs({ code, testID }: { code: string; testID?: string }) 
  */
 export function Countdown({
   secondes,
+  rotationSecondes,
   testID,
 }: {
   secondes: number;
+  /**
+   * La cadence du serveur, pour situer les secondes qui restent.
+   *
+   * **L'urgence est une part, pas un nombre de secondes.** Dix secondes sur
+   * trente alertent ; dix secondes sur quinze seraient rouges les deux tiers du
+   * temps, et un signal permanent cesse d'être un signal.
+   */
+  rotationSecondes: number;
   testID?: string;
 }) {
-  const urgent = secondes < CONFIG.countdownUrgentBelowSeconds;
+  const urgent = secondes / Math.max(1, rotationSecondes) < CONFIG.countdownUrgentPart;
   const reduit = useMouvementReduit();
   const battement = useRef(new Animated.Value(1)).current;
 

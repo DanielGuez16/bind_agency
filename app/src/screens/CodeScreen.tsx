@@ -199,7 +199,15 @@ export function CodeScreen({
 
               Le QR le porte déjà. Ce qui reste à montrer, c'est que le code est
               **vivant** — et le décompte le dit sans ressembler à une saisie. */}
-          <Countdown secondes={restant} testID="compte-a-rebours" />
+          <Countdown
+            secondes={restant}
+            // **`rotation_seconds` était servi et lu nulle part.** Sans lui, le
+            // seuil d'urgence était un nombre de secondes fixe : le serveur
+            // pouvait changer de cadence et le compte à rebours virer au rouge
+            // en permanence, ou jamais.
+            rotationSecondes={code.rotation_seconds}
+            testID="compte-a-rebours"
+          />
           {/* `code.payload` et non une composition locale : l'identifiant est
               celui du code, pas celui de la réservation, et l'API le forme
               déjà. Deux façons de l'assembler finissent par diverger — c'est

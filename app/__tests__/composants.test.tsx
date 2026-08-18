@@ -516,14 +516,23 @@ describe('code de retrait', () => {
     expect(couleur(enClair)).toBe(codeColors.fg);
   });
 
-  it("s'inverse sous dix secondes, pas sous soixante", async () => {
-    // Le seuil de 60 s valait pour un code qui expirait. Celui-ci tourne.
-    const onze = await monter(<Countdown secondes={11} testID="c" />);
+  it("s'inverse au dernier tiers, pas à un nombre de secondes", async () => {
+    // Le seuil de 60 s valait pour un code qui expirait. Celui-ci tourne — et
+    // **l'urgence est une part de la cadence, pas un nombre de secondes** : à
+    // trente secondes de rotation, le comportement est exactement celui d'hier.
+    const onze = await monter(<Countdown secondes={11} rotationSecondes={30} testID="c" />);
     expect(style(screen.getByTestId('c')).backgroundColor).toBe(codeColors.bg);
     await onze.unmount();
 
-    await monter(<Countdown secondes={9} testID="c" />);
+    const neuf = await monter(<Countdown secondes={9} rotationSecondes={30} testID="c" />);
     expect(style(screen.getByTestId('c')).backgroundColor).toBe(codeColors.fg);
+    await neuf.unmount();
+
+    // **Et le seuil suit le serveur.** Neuf secondes sur quinze sont plus de la
+    // moitié du tour : rouge en permanence, un signal d'urgence permanent
+    // cesse d'être un signal. Le seuil absolu se retournait exactement ainsi.
+    await monter(<Countdown secondes={9} rotationSecondes={15} testID="c" />);
+    expect(style(screen.getByTestId('c')).backgroundColor).toBe(codeColors.bg);
   });
 
   it('groupe le code de secours trois par trois', async () => {
