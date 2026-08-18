@@ -30,7 +30,6 @@ from zoneinfo import ZoneInfo
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import get_settings
 from app.models import (
     Booking,
     Business,
@@ -48,6 +47,12 @@ from app.models.enums import (
     ContentFormat,
     Platform,
 )
+
+# **La règle vient d'un seul endroit.** Elle était écrite deux fois — ici et
+# dans `booking_states` — avec la même formule ; la première modification de
+# l'une aurait fait mentir l'écran sur ce que le serveur accepte, et le défaut
+# se serait lu comme un bouton ouvert qui se fait refuser.
+from app.services.booking_states import ouverture_de_l_absence
 
 #: Une page d'historique. Au-delà, l'app pagine par `avant`.
 PAGE_PAR_DEFAUT = 50
@@ -317,22 +322,8 @@ def _lire(ligne) -> ReservationDuCommerce:
         required_mention=ligne.required_mention,
         required_geotag=ligne.required_geotag,
         contrepartie=_contrepartie(ligne),
-        absence_signalable_a=_absence_signalable_a(ligne.starts_at),
+        absence_signalable_a=ouverture_de_l_absence(ligne.starts_at),
     )
-
-
-def _absence_signalable_a(starts_at: datetime | None) -> datetime | None:
-    """L'ouverture du bouton « signaler une absence », lue sur l'heure du rendez-vous.
-
-    `starts_at` seul suffit à décider, et ce n'est pas un raccourci : une
-    contrainte de base — `slot_matches_requires_booking` — garantit que les deux
-    vont toujours ensemble. Un item sans créneau n'a pas d'heure à laquelle ne
-    pas se présenter, et `SPEC.md` §4.1 dit que `no_show` n'existe pas dans ce
-    cas.
-    """
-    if starts_at is None:
-        return None
-    return starts_at + timedelta(minutes=get_settings().no_show_delai_minutes)
 
 
 async def journee_du_commerce(

@@ -374,21 +374,63 @@ async def annuler(session: AsyncSession, *, booking: Booking, creator_id: uuid.U
     )
 
 
-def absence_signalable_a(booking: Booking) -> datetime | None:
-    """L'instant à partir duquel l'absence peut être constatée.
+def ouverture_de_l_absence(starts_at: datetime | None) -> datetime | None:
+    """L'instant à partir duquel l'absence peut être constatée, sur l'heure du créneau.
 
-    `None` quand elle ne le sera jamais : un item sans créneau n'a pas d'heure à
-    laquelle ne pas se présenter, et `SPEC.md` §4.1 dit que `no_show` n'existe
-    pas dans ce cas — l'expiration suffit.
+    **Deux délais, et c'est le plus tardif qui décide.** Ils ne protègent pas la
+    même chose, et prendre l'un sans l'autre laisse un trou :
+
+    — `no_show_delai_minutes` dit qu'**une créatrice en retard n'est pas
+      absente**. Vingt minutes, parce que l'événement de fiabilité qu'une
+      absence écrit ne se retire pas.
+    — `venue_report_window_seconds` dit qu'**une créatrice qui s'est déplacée
+      garde son recours**. Tant que sa fenêtre de signalement est ouverte, le
+      salon ne peut pas la marquer absente : ce serait effacer le recours de
+      celle qui est venue, par la main de celui qui a oublié le rendez-vous.
+
+    **L'asymétrie que ce `max` referme était réelle et mesurable.** Le
+    signalement s'ouvrait à l'heure du créneau, l'absence vingt minutes plus
+    tard, et la fenêtre se fermait quatre heures après. Il restait donc trois
+    heures quarante pendant lesquelles un salon fermé pouvait marquer absente
+    celle qu'il n'avait pas reçue — et lui fermer sa seule porte en même temps
+    qu'il lui coûtait vingt-cinq points. Les vingt premières minutes, celles où
+    elle est encore sur la route, étaient précisément les siennes.
+
+    **Un `max` plutôt qu'un troisième réglage.** Poser un délai propre à cette
+    règle créerait deux nombres à tenir d'accord à la main, et le jour où l'on
+    allongerait la fenêtre de signalement la porte se rouvrirait sans que
+    personne ne s'en aperçoive. Ici la garantie suit la fenêtre par
+    construction ; et si la fenêtre passait un jour sous vingt minutes, le
+    plancher du retard tiendrait toujours.
+
+    `None` quand l'absence ne se constatera jamais : un item sans créneau n'a
+    pas d'heure à laquelle ne pas se présenter, et `SPEC.md` §4.1 dit que
+    `no_show` n'existe pas dans ce cas — l'expiration suffit.
+    """
+    if starts_at is None:
+        return None
+    settings = get_settings()
+    return starts_at + max(
+        timedelta(minutes=settings.no_show_delai_minutes),
+        # La fin de la fenêtre de `venue_report.fenetre_ouverte`, lue sur le
+        # même réglage. Elle n'est pas importée : `venue_report` dépend déjà de
+        # ce module, et l'inverse fermerait le cycle. Un test tient les deux
+        # d'accord, ce qu'un commentaire seul ne ferait pas.
+        timedelta(seconds=settings.venue_report_window_seconds),
+    )
+
+
+def absence_signalable_a(booking: Booking) -> datetime | None:
+    """La même chose, sur une réservation.
 
     Rendue au client pour qu'il sache **quand** ouvrir le bouton, et calculée
-    ici pour que l'écran n'ait pas à connaître le délai. Un seuil recopié dans
+    ici pour que l'écran n'ait pas à connaître les délais. Un seuil recopié dans
     l'application dérive du jour où on l'ajuste côté serveur, et cette dérive-là
-    se lit comme un bouton grisé qui devrait être actif.
+    se lit comme un bouton fermé qui devrait être ouvert.
     """
-    if not booking.requires_booking or booking.starts_at is None:
+    if not booking.requires_booking:
         return None
-    return booking.starts_at + timedelta(minutes=get_settings().no_show_delai_minutes)
+    return ouverture_de_l_absence(booking.starts_at)
 
 
 async def marquer_absent(
