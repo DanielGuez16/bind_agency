@@ -1034,6 +1034,38 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       la prise en main d'une fiche. Et une qui saute aux yeux : **le créateur ne
       peut pas annuler sa réservation**. Chacune se tranche : branchée, ou
       passée en `contrat` avec sa raison*
+- [x] **Trois bloquants trouvés en campagne, et deux ajouts**
+      *Le produit a été monté localement sur le jeu de démonstration pour
+      chacun des trois : lu dans le code, aucun n'était visible.
+      **Le code de retrait.** `confirmed` ne veut pas dire consommable : le
+      diagramme n'a pas de flèche vers `expired`, donc une réservation que
+      personne n'a servie garde son statut pour toujours. Passé `valid_until`
+      le serveur refuse le code, et l'écran le proposait quand même — un
+      message d'erreur à la place du QR, au comptoir, le jour du rendez-vous.
+      L'écran cesse de proposer et dit pourquoi. **Deux décors de test
+      l'encodaient** : une date figée au 16 août, et un `valid_until` omis.
+      **Les réseaux en 503.** Sept intégrations refusent de démarrer mal
+      configurées ; la sociale était la seule à ne pas l'être, et levait à la
+      première requête. Les deux façons d'obtenir un 503 ont été reproduites, et
+      une seule donne **les deux** plateformes : `SOCIAL_PROVIDER=demo` sans
+      `API_PUBLIC_BASE_URL`. C'est la configuration de la campagne, et à poser
+      chez Render — le code, lui, refuse maintenant de démarrer sans elle.
+      **L'annuaire.** Le semis abonnait `actifs[:2]`, écrit quand le jeu comptait
+      trois salons ; passé à vingt, il a désigné deux salons du marché et laissé
+      Ocean Beauty Studio — celui avec lequel on ouvre le produit — sans
+      abonnement. La route répondait 402 et l'écran le disait exactement. Les
+      abonnés sont nommés.
+      **Le pseudonyme mène au profil** sur le réseau de la demande, par la même
+      dérivation que l'annuaire — jamais stockée.
+      **Le réglage des notifications est retiré** : écran, deux routes, table,
+      modèle. Les sept genres restent. Six tests qui ne parlaient que du réglage
+      sont partis ; deux qui éprouvaient aussi « on relit au moment de sortir »
+      portent maintenant sur la suspension. 12 tests neufs, 5 mutations*
+- [ ] **`SOCIAL_PROVIDER` et `API_PUBLIC_BASE_URL` à poser chez Render**
+      *Le seul des trois bloquants que le code ne peut pas corriger seul. Depuis
+      cette tranche, l'API refuse de démarrer sans elles plutôt que de répondre
+      503 à la première créatrice — ce qui rend le manque visible au déploiement
+      et non une inscription à la fois*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire
 
 ---
