@@ -841,6 +841,31 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       sport et des musées, et les six catégories de commerce sont l'axe qui
       trie réellement. Rien à changer : c'est ce qui est livré. La taxinomie de
       prestation ne se rouvre que si le produit redevient mono-catégorie*
+- [x] **`Lot 1 v1.1` · 01 · l'audience, confrontée à ses cadres**
+      *L'écran que Daniel a qualifié deux fois de plus faible du produit, et le
+      registre en donne la raison : `Lot 1 v1.1` était la seule planche sans
+      entrée nulle part, ses écrans employant les bons jetons — donc rien ne
+      signalait qu'ils n'avaient jamais été comparés cadre par cadre.
+      **Repeint n'est pas passé.** Ce qui change : un bloc par compte, avec son
+      réseau, son identifiant et son relevé daté — l'écran empilait des lignes
+      sans dire à qui elles étaient, et deux réseaux y auraient partagé un
+      chiffre. **Un compte connecté est une carte, un réseau à connecter est une
+      ligne** : l'écran rendait deux boutons blancs identiques, l'un sous
+      l'autre, **y compris pour un réseau déjà rattaché**. Le tiret cadratin
+      remplace « pas encore mesuré », avec la phrase qui dit ce qu'il veut dire —
+      un tiret seul se lit comme une panne. Et deux blocs manquaient : « ce qui
+      compte pour les paliers », parce que les abonnés n'ouvrent pas un palier
+      seuls, et **les termes du contrôle** — `SignalJuge` porte `constate` et
+      `requis` depuis toujours, l'écran n'affichait que le verdict, si bien
+      qu'« ancienneté : insuffisante » ne disait ni de combien ni depuis quand.
+      Un test qui bannissait le mot « day » a été repris : ce n'est pas le mot
+      qui promet un délai, c'est la forme — « jour 3 » dit ce qui s'est passé,
+      « sous 3 jours » ce qui va se passer. 6 tests neufs, 8 mutations vérifiées*
+- [ ] **`Lot 1 v1.1` · 08 · les réservations, et 02 · les paliers**
+      *Les deux écrans qui restent du même trou. Même méthode : les confronter
+      cadre par cadre, et non vérifier qu'ils emploient les bons jetons — ils
+      les emploient déjà, c'est précisément ce qui a masqué le manque pendant
+      trois campagnes*
 - [ ] **`pytest -n auto`, avec une base par worker**
       *Mesuré : le job `api` prend 754 s, dont **704 dans `pytest` seul** —
       l'installation en fait 22, le reste est du bruit. C'est 93 % du job et
@@ -898,7 +923,7 @@ décider.
 | `BIND Mark - Favicon 16` | **Passée.** Le 16 est un dessin distinct, et aucun fichier cuit ne porte plus le logotype. |
 | `BIND Creator - Fil v2` | **Partiellement passée, et le reste est sans objet.** La direction 1b — les rangées par quartier — est branchée là où Design l'a elle-même placée : ce que montre une catégorie choisie (#141). La direction 1a a été remplacée par `Le mur v2.1`. |
 | `BIND Creator - Le mur v2.1` | **Passée, et ses cinq réserves sont tranchées** (#131, #132, #140, #141, #145). Trois écarts à la planche sont assumés et écrits : le quartier de la position n'est pas nommé — rien ne sait le résoudre ; le Didone reste à son plancher de 34, une exception non déclarée dans les jetons étant une violation ; et les catégories sont les six du modèle, celles de la planche datant du produit mono-catégorie. Deux étaient des défauts et sont corrigés : le rayon se règle de nouveau dans les deux sens, et le mur va à fond perdu. |
-| `BIND Creator - Lot 1 v1.1` | **Repeinte, jamais confrontée à sa planche.** Les réservations, les paliers et l'audience emploient les jetons de la v1.0 — ils ont traversé la migration — mais aucune trace ne dit qu'ils ont été comparés cadre par cadre à cette planche. Son fil a depuis été remplacé par le mur, et son cadre 03b a servi à composer le filtre par catégorie. Les trois écrans restants sont à reprendre ou à reporter explicitement. |
+| `BIND Creator - Lot 1 v1.1` | **Partiellement passée.** Le cadre 01, l'audience, est confronté à sa planche (#149) — c'était l'écran nommé deux fois comme le plus faible du produit. Restent 08, les réservations, et 02, les paliers : ils emploient les jetons de la v1.0, ce qui est précisément ce qui a masqué le manque, et aucune trace ne dit qu'ils ont été comparés cadre par cadre. Son fil a été remplacé par le mur, et son cadre 03b a servi à composer le filtre par catégorie. |
 
 **Ce que cette liste a trouvé en étant écrite :** `Lot 1 v1.1` était la seule
 planche sans entrée nulle part, alors que les lots 2, 3 et 4 en avaient chacun

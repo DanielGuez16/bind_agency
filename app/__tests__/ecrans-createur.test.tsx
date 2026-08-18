@@ -264,8 +264,10 @@ const ECRANS = [
   {
     nom: 'audience',
     noeud: <AudienceScreen />,
-    plein: { '/me/audience': [COMPTE], '/me/verification': [] },
-    vide: { '/me/audience': [], '/me/verification': [] },
+    // `/me/tiers` accompagne toujours : l'écran y lit les collaborations et le
+    // score, qui comptent pour les paliers autant que les abonnés.
+    plein: { '/me/audience': [COMPTE], '/me/verification': [], '/me/tiers': VUE },
+    vide: { '/me/audience': [], '/me/verification': [], '/me/tiers': VUE },
   },
   {
     nom: 'paliers',
@@ -504,7 +506,10 @@ describe('obstacles', () => {
 
 describe('audience et vérification', () => {
   it('date le chiffre d’abonnés, et le sépare par milliers', async () => {
-    await monter(<AudienceScreen />, clientDe({ '/me/audience': [COMPTE], '/me/verification': [] }));
+    await monter(
+      <AudienceScreen />,
+      clientDe({ '/me/audience': [COMPTE], '/me/verification': [], '/me/tiers': VUE }),
+    );
     await waitFor(() => expect(screen.getByTestId('date-du-releve')).toBeTruthy());
     // « 24000 » se compte à la main, chiffre par chiffre, sur le nombre qui
     // est la raison d'être de l'écran.
@@ -512,17 +517,23 @@ describe('audience et vérification', () => {
     expect(screen.queryByText('24000')).toBeNull();
   });
 
-  it('écrit « pas encore mesuré » plutôt que zéro', async () => {
-    // Afficher zéro à quelqu'un qui a douze mille abonnés est un défaut qu'il
-    // signalera avant nous.
+  it('écrit un tiret cadratin plutôt que zéro, et dit ce qu’il veut dire', async () => {
+    // **Afficher zéro à quelqu'un qui a douze mille abonnés est la pire chose
+    // que cet écran puisse faire.** Le tiret ne se lit pas comme une quantité,
+    // ce qui est sa fonction — mais un tiret seul se lit aussi comme une
+    // panne, d'où la phrase qui l'accompagne.
     await monter(
       <AudienceScreen />,
       clientDe({
         '/me/audience': [{ ...COMPTE, followers_count: null, media_count: null, captured_at: null }],
         '/me/verification': [],
+        '/me/tiers': VUE,
       }),
     );
-    await waitFor(() => expect(screen.getAllByText(en.parcours.jamaisMesure).length).toBeGreaterThan(0));
+    await waitFor(() => expect(screen.getByTestId('aucun-releve')).toBeTruthy());
+
+    expect(screen.getAllByText('—').length).toBeGreaterThan(0);
+    expect(screen.getByTestId('aucun-releve')).toHaveTextContent(en.parcours.audienceAucunReleve);
     expect(screen.queryByText('0')).toBeNull();
   });
 
@@ -530,6 +541,7 @@ describe('audience et vérification', () => {
     await monter(
       <AudienceScreen />,
       clientDe({
+        '/me/tiers': VUE,
         '/me/audience': [{ ...COMPTE, verification_status: 'needs_review' }],
         '/me/verification': [
           {
@@ -546,8 +558,15 @@ describe('audience et vérification', () => {
     );
     await waitFor(() => expect(screen.getByTestId('controle-en-cours')).toBeTruthy());
 
-    // Aucune durée annoncée nulle part sur cet écran.
-    for (const promesse of [/72\s*h/i, /\bdays?\b/i, /within/i, /soon/i]) {
+    // **Le jour écoulé s'affiche, l'objectif jamais.** La liste interdisait
+    // auparavant le mot « day » tout court, ce qui était un raccourci : ce
+    // n'est pas le mot qui promet, c'est la forme. « Jour 3 » dit ce qui s'est
+    // passé, « sous 3 jours » dit ce qui va se passer, et seule la seconde se
+    // brise le premier jour de charge, auprès de gens qui n'ont rien fait de
+    // mal. Bannir le mot aurait interdit le compteur que la planche demande.
+    expect(screen.getByTestId('etat-c1')).toHaveTextContent(/day \d+/i);
+
+    for (const promesse of [/72\s*h/i, /within/i, /soon/i, /in \d+ days?/i, /under \d+/i]) {
       expect(screen.queryByText(promesse)).toBeNull();
     }
   });
