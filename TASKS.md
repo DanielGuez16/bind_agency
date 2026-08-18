@@ -981,6 +981,26 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       l'appelant manquait — une méthode d'API sans appelant, c'est-à-dire du
       code mort qui a l'air d'une fonctionnalité, et qui a tenu seize PR parce
       que chercher `no-show` dans le dépôt donnait quatre résultats rassurants*
+- [ ] **Le commerce ne peut pas signaler une absence depuis l'application**
+      *Diagnostic corrigé : `absence_signalable_a` n'est pas un champ non
+      affiché, **c'est une route absente du client**. Le serveur a
+      `mark_no_show`, l'app ne l'appelle nulle part. Il faut l'entrée de route,
+      la méthode, et l'action sur la journée — ouverte par
+      `absence_signalable_a`, qui dit aussi à quelle heure elle s'ouvre, et
+      c'est le serveur qui refuse, jamais l'horloge du téléphone. Une tranche,
+      pas un rendu de champ*
+- [x] **Un plafond de durée sur chaque job de la CI**
+      *Le pas `Navigateur` de la e2e est resté cinquante minutes puis vingt-cinq
+      sans finir, sur deux exécutions consécutives, **sans échouer**. Le défaut
+      de GitHub est de six heures. Ce qui rend la chose coûteuse est ce qu'on
+      voit pendant : run `in_progress`, PR `BLOCKED` en attente d'une
+      vérification requise — **un état qui se lit comme de la patience**, comme
+      le run jamais dispatché. Les bornes viennent de quatorze exécutions
+      vertes — 9 s, 62 s, 308 s, 632 s au pire — et sont larges à dessein : une
+      borne serrée rend rouge du bon code un jour de runner lent, ce qui apprend
+      à relancer sans lire. Un plafond par pas a été écarté (le blocage se
+      déplace), le cache Playwright aussi (une minute sur cinq, contre une clé à
+      tenir et un mode d'échec de plus)*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire
 
 ---

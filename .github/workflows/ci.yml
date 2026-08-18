@@ -38,6 +38,20 @@ jobs:
   # exactement ce qu'il prétend vérifier, et personne ne le saurait.
   perimetre:
     runs-on: ubuntu-latest
+    # **Un plafond, parce que le défaut de GitHub est six heures.** Le pas
+    # `Navigateur` de la e2e est resté cinquante minutes puis vingt-cinq sans
+    # finir, sur deux exécutions consécutives — **sans échouer** : il
+    # n'aboutissait pas. Rien ne distingue alors « ça installe » de « c'est
+    # bloqué » : le run est `in_progress`, la PR `BLOCKED` en attente d'une
+    # vérification requise, et tout se lit comme de la patience. C'est le
+    # pendant exact du run jamais dispatché.
+    #
+    # Les bornes viennent de quatorze exécutions vertes, pas d'une intuition, et
+    # elles sont **larges** : une borne trop serrée rend rouge du bon code un
+    # jour où le runner traîne, ce qui est le défaut qu'on cherche à éviter, en
+    # pire. Ce qu'on achète ici n'est pas de la vitesse, c'est qu'un blocage
+    # devienne un échec net au lieu d'un runner immobilisé six heures.
+    timeout-minutes: 10  # 9 s au pire sur quatorze exécutions : il ne fait que lire un diff
     outputs:
       api: ${{ steps.decider.outputs.api }}
       app: ${{ steps.decider.outputs.app }}
@@ -94,6 +108,7 @@ jobs:
   api:
     needs: perimetre
     runs-on: ubuntu-latest
+    timeout-minutes: 30  # 632 s au pire — c'est le plus long des quatre, et il vient d'être raccourci
 
     services:
       db:
@@ -174,6 +189,7 @@ jobs:
   app:
     needs: perimetre
     runs-on: ubuntu-latest
+    timeout-minutes: 15  # 62 s au pire
 
     steps:
       - uses: actions/checkout@v4
@@ -225,6 +241,7 @@ jobs:
   e2e:
     needs: perimetre
     runs-on: ubuntu-latest
+    timeout-minutes: 25  # 308 s au pire, et c'est lui qui a bloqué deux fois
 
     services:
       db:
