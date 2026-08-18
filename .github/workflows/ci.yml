@@ -38,6 +38,20 @@ jobs:
   # exactement ce qu'il prétend vérifier, et personne ne le saurait.
   perimetre:
     runs-on: ubuntu-latest
+    # **Un plafond, parce que le défaut de GitHub est six heures.** Le pas
+    # `Navigateur` de la e2e est resté cinquante minutes puis vingt-cinq sans
+    # finir, sur deux exécutions consécutives — **sans échouer** : il
+    # n'aboutissait pas. Rien ne distingue alors « ça installe » de « c'est
+    # bloqué » : le run est `in_progress`, la PR `BLOCKED` en attente d'une
+    # vérification requise, et tout se lit comme de la patience. C'est le
+    # pendant exact du run jamais dispatché.
+    #
+    # Les bornes viennent de quatorze exécutions vertes, pas d'une intuition, et
+    # elles sont **larges** : une borne trop serrée rend rouge du bon code un
+    # jour où le runner traîne, ce qui est le défaut qu'on cherche à éviter, en
+    # pire. Ce qu'on achète ici n'est pas de la vitesse, c'est qu'un blocage
+    # devienne un échec net au lieu d'un runner immobilisé six heures.
+    timeout-minutes: 10  # 9 s au pire sur quatorze exécutions : il ne fait que lire un diff
     outputs:
       api: ${{ steps.decider.outputs.api }}
       app: ${{ steps.decider.outputs.app }}
@@ -94,6 +108,7 @@ jobs:
   api:
     needs: perimetre
     runs-on: ubuntu-latest
+    timeout-minutes: 30  # 632 s au pire — c'est le plus long des quatre, et il vient d'être raccourci
 
     services:
       db:
@@ -174,6 +189,7 @@ jobs:
   app:
     needs: perimetre
     runs-on: ubuntu-latest
+    timeout-minutes: 15  # 62 s au pire
 
     steps:
       - uses: actions/checkout@v4
@@ -225,6 +241,7 @@ jobs:
   e2e:
     needs: perimetre
     runs-on: ubuntu-latest
+    timeout-minutes: 25  # 308 s au pire, et c'est lui qui a bloqué deux fois
 
     services:
       db:
@@ -341,10 +358,39 @@ jobs:
           EXPO_PUBLIC_API_URL: http://127.0.0.1:8010/api/v1
         run: npx expo export --platform web --output-dir dist-e2e
 
+      # **Le pas qui bloque, et le cache que j'avais écarté à tort.** Mesuré :
+      # il a tenu 1360 s puis 1515 s sur deux exécutions consécutives de cette
+      # PR même, tué chaque fois par le plafond qu'elle ajoute — pendant que
+      # tout le reste du job tient en 150 s. J'avais refusé le cache sur le
+      # gain de temps, « une minute sur cinq » : le calcul était juste et la
+      # question était fausse. Ce qu'on achète n'est pas une minute, c'est de ne
+      # pas dépendre d'un téléchargement à chaque exécution.
+      #
+      # La clé porte la version de Playwright : les binaires lui sont liés, et
+      # un cache qui survivrait à une montée de version servirait un navigateur
+      # que la bibliothèque ne sait plus piloter.
+      - name: Cache du navigateur
+        if: needs.perimetre.outputs.e2e == 'oui'
+        id: cache-navigateur
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('app/package-lock.json') }}
+
+      # **`--with-deps` reste, et il passe par apt.** C'est lui qui installe les
+      # bibliothèques système, que le cache ne porte pas ; il est rapide quand
+      # il n'a rien à télécharger. Le pas complet ne tourne qu'au défaut de
+      # cache — et s'il bloque alors, le plafond du job le tue en vingt-cinq
+      # minutes au lieu de six heures.
       - name: Navigateur
         if: needs.perimetre.outputs.e2e == 'oui'
         working-directory: app
-        run: npx playwright install --with-deps chrome
+        run: |
+          if [ "${{ steps.cache-navigateur.outputs.cache-hit }}" = "true" ]; then
+            npx playwright install-deps chrome
+          else
+            npx playwright install --with-deps chrome
+          fi
 
       - name: Playwright
         if: needs.perimetre.outputs.e2e == 'oui'

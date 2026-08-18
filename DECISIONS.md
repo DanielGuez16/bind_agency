@@ -6547,3 +6547,51 @@ des fenêtres : le signalement s'ouvre à l'heure du créneau, l'absence vingt
 minutes plus tard. Vingt minutes pendant lesquelles la créatrice est le plus
 souvent sur la route. C'est une question de politique produit et non un défaut
 d'implémentation, donc elle est posée et non tranchée.
+## 2026-08-18 — Un plafond de durée sur chaque job, parce que le défaut est six heures
+
+Signalé par la conversation fonctionnelle, **mesuré ici avant d'être cru** — la
+leçon du jour sur les diagnostics relayés sans vérification. Le pas `Navigateur`
+de la e2e est resté cinquante minutes, puis vingt-cinq, sans finir, sur deux
+exécutions consécutives. **Aucune n'a échoué** : elles n'aboutissaient pas.
+
+**Ce qui rend ce défaut coûteux est ce qu'on voit pendant.** Le run est
+`in_progress`, `mergeable` vaut `MERGEABLE`, la PR est `BLOCKED` en attente
+d'une vérification requise. Tout est normal. Rien ne distingue « ça installe »
+de « c'est bloqué » sans aller lire l'horodatage du pas et le comparer à une
+exécution saine. C'est le pendant exact du run jamais dispatché : **un état qui
+se lit comme de la patience.**
+
+**Les bornes viennent de la mesure, pas d'une intuition.** Quatorze exécutions
+vertes : `perimetre` 9 s au pire, `app` 62 s, `e2e` 308 s, `api` 632 s. Les
+plafonds posés — 10, 15, 25 et 30 minutes — laissent entre deux et soixante fois
+la marge.
+
+**Et ils sont délibérément larges.** Une borne serrée rend rouge du bon code le
+jour où le runner traîne : c'est le défaut qu'on cherche à éviter, en pire,
+puisqu'il apprend à relancer sans lire. Ce qu'on achète n'est pas de la vitesse,
+c'est qu'un blocage devienne **un échec net** au lieu d'un runner immobilisé six
+heures.
+
+**Un plafond par pas a été écarté**, et l'argument est celui de la conversation
+fonctionnelle : le blocage peut se déplacer sur `npm ci` ou sur `expo export`,
+et un plafond posé sur le seul pas qu'on avait en tête ne garde que celui-là.
+C'est la même faute que la garde qui ne cherchait l'appel qu'en début de ligne.
+
+**Le cache de Playwright a d'abord été écarté sur les chiffres, et c'était une
+erreur de question.** `playwright install` met 33 à 121 secondes sur un job qui
+en met 212 à 308 : le cache gagnerait une minute sur cinq, au prix d'une clé à
+tenir. Le calcul était juste ; la question était fausse.
+
+**Le plafond a rendu son verdict sur la PR qui l'ajoute.** Le pas `Navigateur` a
+tenu **1360 s puis 1515 s sur deux exécutions consécutives**, tué chaque fois,
+pendant que tout le reste du job tenait en 150 s. Le blocage n'est donc ni
+occasionnel ni propre à un arbre : il est reproductible, et la PR ne pouvait pas
+fusionner. « Le plafond traite déjà le dommage » était faux — il rend le dommage
+lisible, il ne l'enlève pas.
+
+Le cache est donc posé, clé sur la version de Playwright : les binaires lui sont
+liés, et un cache qui survivrait à une montée de version servirait un navigateur
+que la bibliothèque ne sait plus piloter. `--with-deps` reste au défaut de
+cache ; sur une touche, seul `install-deps` tourne. Et si ce pas bloque encore,
+le plafond le tue en vingt-cinq minutes — les deux se complètent au lieu de se
+remplacer.
