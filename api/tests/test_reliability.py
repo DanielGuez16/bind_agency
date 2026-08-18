@@ -256,8 +256,6 @@ async def test_une_contrepartie_non_honoree_produit_son_evenement(
 async def test_une_absence_produit_son_evenement(session: AsyncSession) -> None:
     """L'événement naît de la transition, pas d'un appel qu'on pourrait oublier.
     Une absence non enregistrée serait une absence gratuite."""
-    from datetime import timedelta
-
     from tests.test_booking_create import monter_le_decor, premier_creneau, reserver
 
     decor = await monter_le_decor(session)
@@ -271,9 +269,14 @@ async def test_une_absence_produit_son_evenement(session: AsyncSession) -> None:
         actor=Actor.system(),
         reason="ne s'est pas présenté",
         # Ce test porte sur l'événement de fiabilité, pas sur le délai : l'heure
-        # est posée après l'ouverture pour que les deux règles restent
-        # éprouvées séparément. Le délai a ses propres tests.
-        maintenant=booking.starts_at + timedelta(hours=1),
+        # est posée à l'ouverture pour que les deux règles restent éprouvées
+        # séparément. Le délai a ses propres tests.
+        #
+        # **Lue du service et non recopiée.** Une heure fixe valait tant que
+        # l'absence s'ouvrait vingt minutes après le créneau ; elle est tombée
+        # dès que l'ouverture a reculé, et ce test-ci n'a rien à dire sur le
+        # délai. Demander l'ouverture le rend indifférent au réglage.
+        maintenant=booking_states.absence_signalable_a(booking),
     )
 
     assert booking.status is BookingStatus.NO_SHOW

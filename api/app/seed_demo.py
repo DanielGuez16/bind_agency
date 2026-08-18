@@ -848,7 +848,18 @@ async def composer_les_parcours(session: AsyncSession, createurs: dict) -> tuple
         # recalcule depuis la durée figée, jamais choisie au jugé : une
         # contrainte de base vérifie que les trois façons de dire la même chose
         # coïncident.
-        debut = datetime.now(UTC) - timedelta(hours=3)
+        #
+        # **De combien reculer se demande au service, jamais au souvenir.** Ces
+        # lignes reculaient de trois heures, ce qui a suffi tant que l'absence
+        # s'ouvrait vingt minutes après le créneau. Depuis qu'elle attend la
+        # fermeture de la fenêtre de recours, trois heures ne suffisent plus et
+        # le semis entier tombait — quarante-cinq erreurs pour un nombre écrit
+        # une fois. Le recul se déduit maintenant de la règle : il suivra le
+        # prochain ajustement sans que personne y pense.
+        maintenant = datetime.now(UTC)
+        ouverture = booking_states.ouverture_de_l_absence(maintenant)
+        assert ouverture is not None
+        debut = maintenant - (ouverture - maintenant) - timedelta(minutes=5)
         await session.execute(
             sa.update(Booking)
             .where(Booking.id == booking.id)
