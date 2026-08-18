@@ -143,9 +143,42 @@ PR a été fusionnée sur une e2e rouge — un test asservi à un `testID` retir
 la PR elle-même — sans que rien ne s'y oppose. Une règle écrite en dessous de ce
 qu'on attend réellement ne protège que ce qu'elle écrit.
 
-L'état d'une exécution se lit sur **sa conclusion**, jamais sur un décompte de
-lignes. `gh pr checks` liste des vérifications sans les résumer : y compter les
-`pass` a laissé fusionner sept PR sur une CI rouge. Attendre et conclure :
+**La première question est « la branche est-elle fusionnable », pas « où en est
+la CI ».** Une PR en conflit ne reçoit **aucune** exécution : GitHub construit
+les runs de `pull_request` sur le commit de fusion, et quand il ne peut pas le
+calculer il ne dispatche rien. Rien n'est en attente, rien n'a démarré, et rien
+ne le dit.
+
+```
+gh pr view <n> --json mergeable,mergeStateStatus
+```
+
+`CONFLICTING` explique toute CI qui ne démarre pas — rebaser, l'exécution part
+dans la seconde. `UNKNOWN` veut dire « redemande » et non « inconnu » : le
+commit de fusion se calcule en tâche de fond et la première réponse arrive
+souvent avant lui.
+
+**Cette règle vivait dans `DECISIONS.md`, et deux conversations s'y sont fait
+prendre le même jour** — trois quarts d'heure sur la PR #126, puis une seconde
+sur la #149, à chercher pourquoi une CI était lente alors qu'aucune n'existait.
+Le texte était juste ; il était dans le journal des décisions, que personne ne
+lit avant de travailler, et non dans le fichier qu'on lit toujours. Une règle
+rangée là où on ne la cherche pas ne protège personne. Elle est donc ici, et
+avant les commandes d'attente : on ne peut pas attendre un run qui n'existe pas.
+
+Ce qui la rend coûteuse est ce qu'on voit à la place. `gh pr checks` n'affiche
+alors qu'un contrôle tiers absent ou en `skipping`, ce qui se lit comme « en
+attente » et non comme « rien n'a tourné ». Le réflexe est de patienter, et
+c'est exactement ce qu'il ne faut pas faire.
+
+Le moment où le conflit naît est connu : c'est `main` qui avance sous la
+branche. Après chaque `git push --force`, et avant toute attente, poser la
+question ci-dessus.
+
+Une fois qu'un run existe, l'état se lit sur **sa conclusion**, jamais sur un
+décompte de lignes. `gh pr checks` liste des vérifications sans les résumer : y
+compter les `pass` a laissé fusionner sept PR sur une CI rouge. Attendre et
+conclure :
 
 ```
 gh run watch <id> --exit-status

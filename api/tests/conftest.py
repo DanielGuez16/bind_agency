@@ -32,6 +32,7 @@ from alembic import command
 from app.core.config import API_ROOT, get_settings
 from app.core.db import get_engine, get_session
 from app.main import create_app
+from app.models import Base
 from tests.protected_routes import router as probe_router
 
 
@@ -96,20 +97,45 @@ def _managed_test_database(test_database_url: str) -> Iterator[None]:
         connection.execute(drop)
 
 
-#: Tables qu'aucune migration ne peuple : à la fin d'un test, elles doivent être
-#: vides. `tier`, `subscription_plan` et consorts en sont exclues, leurs lignes
-#: de référence étant posées par les migrations et donc légitimement présentes.
+#: Les seules tables qu'une migration peuple. Tout le reste doit être vide à la
+#: fin d'un test.
 #:
-#: Le journal d'audit y figure : c'est souvent lui qui reste seul debout quand
-#: une écriture a fui, parce qu'aucun test ne pense à le regarder.
-TABLES_QUI_DOIVENT_RESTER_VIDES = (
-    "app_user",
-    "business",
-    "catalog_item",
-    "booking",
-    "collaboration",
-    "audit_log",
-    "platform_asset",
+#: **Une seule, et vérifiée plutôt que crue.** Le commentaire qui tenait ici
+#: disait « `tier`, `subscription_plan` et consorts » ; compté sur une base
+#: fraîchement migrée, `subscription_plan` est vide et l'a toujours été. Une
+#: dispense accordée de mémoire retire une table de la surveillance sans que
+#: personne ne s'en aperçoive.
+TABLES_DE_REFERENCE = frozenset({"tier"})
+
+#: Tables surveillées : **toutes celles du schéma**, moins les tables de
+#: référence.
+#:
+#: **Énumérée à la main, elle en couvrait sept sur trente-six.** Les vingt-neuf
+#: autres — dont la boîte d'envoi, les profils créateur, les codes de retrait,
+#: les jetons de rafraîchissement, les préférences de notification — pouvaient
+#: recevoir une écriture qui survivait à la transaction du test sans que rien ne
+#: le dise. C'est la classe de défaut que cette garde existe pour nommer, et
+#: elle en laissait passer les quatre cinquièmes. Une garde partielle est pire
+#: qu'aucune : elle fait croire que la question est réglée.
+#:
+#: Déduite du schéma, une table neuve est surveillée le jour où elle est créée,
+#: sans que personne ait à y penser. C'est l'inverse d'une liste, qui vieillit
+#: en silence à chaque migration.
+#:
+#: Le journal d'audit en fait partie : c'est souvent lui qui reste seul debout
+#: quand une écriture a fui, parce qu'aucun test ne pense à le regarder.
+TABLES_QUI_DOIVENT_RESTER_VIDES = tuple(sorted(set(Base.metadata.tables) - TABLES_DE_REFERENCE))
+
+# Une dispense qui ne désigne plus rien est une dispense qui s'élargit : le jour
+# où `tier` est renommée, la ligne ci-dessus retirerait un nom absent et la
+# table neuve entrerait sous surveillance — ce qui est le bon sens. L'inverse,
+# une faute de frappe dans la dispense, passerait inaperçu de la même façon.
+# On refuse au chargement plutôt que de le découvrir sur un test qui ne fuit pas.
+_inconnues = TABLES_DE_REFERENCE - set(Base.metadata.tables)
+assert not _inconnues, (
+    f"TABLES_DE_REFERENCE nomme des tables qui n'existent pas : {sorted(_inconnues)}. "
+    "Une dispense qui ne désigne rien ne dispense rien — elle laisse seulement "
+    "croire qu'une table est exclue pour une raison."
 )
 
 
@@ -179,6 +205,99 @@ def _aucune_ecriture_ne_survit(test_database_url: str, request: pytest.FixtureRe
         "sans la valider. Si l'écriture doit vraiment survivre, la déclarer "
         'avec @pytest.mark.ecrit_pour_de_bon("raison").'
     )
+
+
+# --------------------------------------------------------------------------
+# Un test qui met plusieurs secondes attend quelque chose
+# --------------------------------------------------------------------------
+#
+# **Le test, et non le fichier.** La première idée était de comparer les
+# fichiers entre eux, à dix fois la médiane. Le garde-fou équivalent côté Jest
+# l'avait déjà essayé et retiré, mesures à l'appui : un fichier n'est pas lent
+# parce qu'il porte un défaut, il est long parce qu'il porte beaucoup de tests.
+# Confondre les deux produit des faux positifs, et un faux positif sur une
+# vérification requise est la manière dont un garde-fou finit par être désactivé.
+#
+# **Un plafond, et pas un rapport à la médiane.** Mesuré sur la suite entière :
+# la médiane d'un test est de 0,24 s et le 99e centile de 0,96 s, donc dix fois
+# la médiane vaut 2,4 s — le test légitime le plus lourd, qui supprime une plage
+# de capacité, en met 3,7 à lui seul. Un rapport qui accuse un test sain est un
+# rapport qui sera retiré au premier rouge. Dix secondes laissent 2,7 fois de
+# marge au plus lourd des tests honnêtes, et les quatre du semis qui dépassent
+# aujourd'hui en mettent de 31 à 68.
+#
+# **Ce qu'il ne peut pas attraper, et il vaut mieux l'écrire que de laisser
+# croire la question réglée.** La durée d'un montage partagé — une fixture de
+# module ou de session — est portée par le premier test qui s'en sert, qui n'y
+# est pour rien. C'est exactement ce qui se passe pour `test_seed.py` : ses
+# 68 secondes sont un montage, pas un corps de test. Le garde-fou nomme donc un
+# test là où il faudra parfois regarder sa fixture.
+#: Au-dessus, un test attend au lieu de faire. Mesuré, non choisi.
+PLAFOND_DE_DUREE = 10.0
+
+#: Ce qu'on affiche toujours, pour que la dérive se voie avant le seuil.
+DUREES_A_MONTRER = 3
+
+_durees: dict[str, float] = {}
+_dispenses: dict[str, str] = {}
+
+
+def pytest_itemcollected(item: pytest.Item) -> None:
+    """Retient les dispenses au moment de la collecte, seul endroit qui voit les marques."""
+    marque = item.get_closest_marker("lent")
+    if marque is None:
+        return
+    raison = marque.args[0] if marque.args else ""
+    if not raison:
+        raise pytest.UsageError(
+            f"{item.nodeid} porte @pytest.mark.lent sans raison. Une dispense sans "
+            "motif ne se relit pas : elle devient un contournement permanent."
+        )
+    _dispenses[item.nodeid] = raison
+
+
+def pytest_runtest_logreport(report: pytest.TestReport) -> None:
+    """La durée d'un test est la somme de ses trois phases.
+
+    Le montage compte : une attente y coûte le même temps que dans le corps, et
+    ne la compter nulle part est précisément ce qui a rendu invisible le seul
+    cas réel qu'on ait eu à traiter jusqu'ici.
+    """
+    _durees[report.nodeid] = _durees.get(report.nodeid, 0.0) + report.duration
+
+
+def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
+    """Affiche les plus lents, et refuse ceux qui dépassent sans l'avoir déclaré."""
+    if not _durees:
+        return
+
+    rapporteur = session.config.pluginmanager.get_plugin("terminalreporter")
+    if rapporteur is None:
+        return
+
+    classes = sorted(_durees.items(), key=lambda paire: -paire[1])
+    rapporteur.write_sep("-", f"durée des tests — plafond {PLAFOND_DE_DUREE:.0f} s")
+    for nodeid, duree in classes[:DUREES_A_MONTRER]:
+        note = f"  (dispensé : {_dispenses[nodeid]})" if nodeid in _dispenses else ""
+        rapporteur.write_line(f"  {duree:6.1f} s  {nodeid}{note}")
+
+    depassements = [
+        (nodeid, duree)
+        for nodeid, duree in classes
+        if duree > PLAFOND_DE_DUREE and nodeid not in _dispenses
+    ]
+    if not depassements:
+        return
+
+    for nodeid, duree in depassements:
+        rapporteur.write_line(
+            f"{nodeid} met {duree:.1f} s. Un test ne devient pas lent, il attend : "
+            "chercher une attente réelle plutôt que simulée, ou un montage refait "
+            "à chaque test là où il tiendrait dans une fixture de module. Si la "
+            'durée est justifiée, la déclarer avec @pytest.mark.lent("raison").',
+            red=True,
+        )
+    session.exitstatus = 1
 
 
 @pytest.fixture

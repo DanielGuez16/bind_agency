@@ -144,6 +144,28 @@ def jeu_pose(base_jetable: str) -> str:
     return base_jetable
 
 
+@pytest.fixture(scope="module")
+def resume_du_semis(base_jetable: str) -> subprocess.CompletedProcess:
+    """La sortie d'**un** passage du semis, relue par tous ceux qui l'inspectent.
+
+    Trois tests lisaient chacun leur propre lancement pour éprouver trois lignes
+    du même résumé : le décompte, la distinction entre photos fournies et
+    dégradés, et le signalement des médias lourds. Trois exécutions complètes du
+    semis — vingt salons, leurs photos, leurs vignettes — pour lire trois lignes
+    d'un texte identique, mesurées à 34, 41 et 31 secondes, soit **106 des 568
+    secondes de la suite**. Un seul passage les sert toutes les trois et dit
+    exactement la même chose, puisque c'est la même commande sur la même base.
+
+    Ce qui reste séparé, et doit le rester : le refus hors environnement jetable
+    lance la commande avec un autre environnement, et la fixture `jeu_pose` la
+    lance deux fois de suite pour éprouver qu'elle est rejouable. Ce sont deux
+    questions différentes, pas deux lectures de la même sortie.
+    """
+    resultat = _lancer(base_jetable)
+    assert resultat.returncode == 0, resultat.stderr
+    return resultat
+
+
 @pytest.fixture
 async def seed_conn(jeu_pose: str) -> AsyncConnection:
     engine = create_async_engine(jeu_pose, poolclass=NullPool)
@@ -166,13 +188,23 @@ def test_la_commande_refuse_hors_environnement_jetable(base_jetable: str) -> Non
     assert SeedRefused.__name__ in resultat.stderr
 
 
+@pytest.mark.lent(
+    "les deux passages du semis que ce test éprouve, portés par la fixture "
+    "`jeu_pose` : poser vingt salons, leurs catalogues, leurs photos et leurs "
+    "vignettes prend le temps que ça prend, et le faire deux fois est "
+    "précisément ce qui est vérifié"
+)
 def test_la_commande_est_rejouable(jeu_pose: str) -> None:
     """Le double passage de la fixture suffit : elle repart d'une base propre."""
     assert jeu_pose
 
 
-def test_elle_annonce_ce_qu_elle_a_pose(base_jetable: str) -> None:
-    resultat = _lancer(base_jetable)
+@pytest.mark.lent(
+    "le passage unique du semis que les trois tests de résumé se partagent, "
+    "porté par la fixture `resume_du_semis` et facturé au premier d'entre eux"
+)
+def test_elle_annonce_ce_qu_elle_a_pose(resume_du_semis: subprocess.CompletedProcess) -> None:
+    resultat = resume_du_semis
 
     assert f"{COMMERCES} commerces" in resultat.stdout
     assert f"{OFFRES} offres" in resultat.stdout
@@ -183,7 +215,9 @@ def test_elle_annonce_ce_qu_elle_a_pose(base_jetable: str) -> None:
     assert MOT_DE_PASSE in resultat.stdout
 
 
-def test_elle_distingue_les_vraies_photos_des_degrades(base_jetable: str) -> None:
+def test_elle_distingue_les_vraies_photos_des_degrades(
+    resume_du_semis: subprocess.CompletedProcess,
+) -> None:
     """Le décompte des deux, et les chemins de ce qui manque.
 
     Ce test tient dans les deux situations, et c'est voulu : ici les photos
@@ -191,7 +225,7 @@ def test_elle_distingue_les_vraies_photos_des_degrades(base_jetable: str) -> Non
     Ce qu'il vérifie, c'est que le semis **dit** dans quel cas il est — sans
     quoi personne ne saurait qu'il regarde des dégradés.
     """
-    resultat = _lancer(base_jetable)
+    resultat = resume_du_semis
 
     assert "fournies" in resultat.stdout
     assert "générées faute de fichier" in resultat.stdout
@@ -204,14 +238,14 @@ def test_elle_distingue_les_vraies_photos_des_degrades(base_jetable: str) -> Non
         assert ".jpg" in resultat.stdout
 
 
-def test_aucun_media_n_est_trop_lourd(base_jetable: str) -> None:
+def test_aucun_media_n_est_trop_lourd(resume_du_semis: subprocess.CompletedProcess) -> None:
     """Un média de quarante mégaoctets laisse l'écran vide sur un réseau mobile.
 
     Le semis ne refuse rien — il n'a pas à décider qu'une démonstration ne peut
     pas avoir lieu — mais il le dit, et ce test fait de ce signalement une
     condition et non une remarque à lire dans un journal.
     """
-    resultat = _lancer(base_jetable)
+    resultat = resume_du_semis
 
     assert "Médias lourds" not in resultat.stdout, resultat.stdout
 
