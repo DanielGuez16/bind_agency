@@ -6488,3 +6488,62 @@ d'absence.** Le serveur a `mark_no_show`, l'app ne l'appelle nulle part, et le
 commerce ne peut pas marquer une absence depuis l'application. C'est une tranche
 entière, pas un rendu de champ — elle reste seule sous `a-instruire`, avec le
 bon diagnostic cette fois.
+## 2026-08-18 — Une méthode d'API sans appelant, et une règle qui ne pouvait pas s'appliquer
+
+**Le diagnostic était à moitié juste, et la moitié fausse coûtait le plus.** Il
+était écrit que « le client n'a aucune route de signalement d'absence » et qu'il
+fallait « l'entrée de route, la méthode, et l'action ». En réalité l'entrée et
+la méthode existaient depuis la #115, documentées, correctes, appelant le bon
+chemin. **Seul l'appelant manquait**, et depuis assez longtemps pour que la
+recherche du mot `no-show` dans le dépôt donne quatre résultats rassurants et
+zéro geste possible pour un commerçant.
+
+C'est la forme exacte que la conversation produit s'interdit en refusant
+d'écrire les types d'un écran avant l'écran : une méthode sans appelant est du
+code mort qui a l'air d'une fonctionnalité. Ici elle a tenu seize PR.
+
+**L'heure vient du serveur, et le décor de test l'avait effacé.** Le champ
+`absence_signalable_a` existe précisément pour que l'écran n'ait pas à connaître
+le délai — un seuil recopié dérive au premier ajustement, et la dérive se lit
+comme un bouton fermé qui devrait être ouvert. Les tests écrits pour le prouver
+posaient pourtant `absence_signalable_a` à `starts_at + 20 min`, c'est-à-dire à
+la valeur qu'un écran fautif aurait calculée lui-même : les deux lectures
+rendaient le même verdict, et la mutation qui remplace le champ par le calcul
+local **passait les six tests**.
+
+Réparé par deux cas où les deux se contredisent — un créneau ouvert plus tôt que
+le délai d'usage, un autre plus tard. C'est le troisième montage de test en deux
+jours qui encodait le défaut qu'il devait attraper, après celui de la file du
+commerce. La règle qui en sort : **un décor qui pourrait être produit par le code
+fautif ne prouve rien** ; il faut au moins un cas où les deux implémentations
+divergent.
+
+**Et une règle qui ne pouvait pas s'appliquer.** La consigne était « un dossier
+qu'un arbitre a en main ne se décide plus côté commerce », par analogie avec les
+décisions de contrepartie où elle vient d'être posée. Portée au bouton
+d'absence, elle donne une condition qui ne peut jamais être vraie : `no_show`
+n'est atteignable que depuis `confirmed` ; une contrepartie — le seul objet qui
+porte `needs_human_review` — n'est créée qu'à la consommation ; et `consumed`
+est terminal. Une réservation marquable absente n'a jamais de contrepartie,
+donc jamais d'arbitre.
+
+Un garde-fou qui ne peut pas se déclencher est pire qu'aucun : il fait croire
+que la question est réglée, et il survit à toutes les mutations. Plutôt que de
+l'écrire dans l'écran, la conclusion est tenue par quatre tests côté serveur qui
+gardent les deux prémisses — deux sur la table des transitions, deux par le
+produit. Ils tombent le jour où quelqu'un ajoute une flèche vers `no_show` ou
+ouvre une contrepartie plus tôt, ce qui est le moment exact où la règle
+deviendrait nécessaire.
+
+**Ce que la vérification a trouvé au passage, et qui n'est pas corrigé.** La
+porte de la représaille est fermée dans un sens et pas dans l'autre. Un
+signalement de déplacement pour rien annule la réservation dans la même
+transaction, donc le salon ne peut plus marquer absent celui qu'il n'a pas reçu.
+Mais l'inverse tient aussi : `signaler` exige `confirmed`, et `no_show` est
+terminal — un salon qui a oublié un rendez-vous peut marquer la créatrice
+absente **avant** qu'elle ne signale, et lui fermer son seul recours en même
+temps qu'il lui coûte 25 points de fiabilité. La seule protection est l'écart
+des fenêtres : le signalement s'ouvre à l'heure du créneau, l'absence vingt
+minutes plus tard. Vingt minutes pendant lesquelles la créatrice est le plus
+souvent sur la route. C'est une question de politique produit et non un défaut
+d'implémentation, donc elle est posée et non tranchée.
