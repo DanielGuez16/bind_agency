@@ -279,6 +279,17 @@ jobs:
       # processus qui se passent des fichiers ont besoin d'un endroit commun.
       OBJECT_STORE_PROVIDER: local
       OBJECT_STORE_LOCAL_ROOT: /tmp/bind-objets-e2e
+      # **Le parcours d'autorisation de démonstration renvoie ici.** Sans elle,
+      # l'API refuse de démarrer depuis que la configuration sociale est
+      # vérifiée au démarrage comme les sept autres intégrations.
+      #
+      # Ce job avait donc exactement la configuration qui a bloqué la campagne :
+      # mode démonstration, aucune adresse publique, et les deux plateformes en
+      # 503 à la première créatrice. La e2e ne l'attrapait pas — elle ne
+      # rattache aucun réseau — et c'est la garde neuve qui l'a fait tomber, sur
+      # sa propre PR. C'est le comportement voulu : un manque de configuration
+      # se voit au démarrage, pas une inscription à la fois.
+      API_PUBLIC_BASE_URL: http://127.0.0.1:8010
 
     steps:
       - uses: actions/checkout@v4
