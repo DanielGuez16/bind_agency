@@ -6638,3 +6638,59 @@ les deux implémentations divergent.
 C'est la généralisation de la mutation qui a sauvé la garde des clés — résolution
 par feuille contre chemin entier, où le catalogue « d'accord avec lui-même »
 validait le défaut. Même idée, énoncée mieux.
+## 2026-08-18 — Quatre heures, et pourquoi ce n'est pas un nombre de plus
+
+**La décision.** L'absence ne se constate qu'à la fermeture de la fenêtre de
+signalement : `starts_at + max(no_show_delai_minutes, venue_report_window_seconds)`,
+soit quatre heures aujourd'hui contre vingt minutes avant.
+
+**Pourquoi cette durée-là et pas une autre.** Parce que c'en est déjà une. Toute
+valeur inférieure à la fenêtre de signalement laisse un intervalle où le salon
+peut effacer le recours de la créatrice ; l'intervalle rétrécit, l'injustice
+reste entière pour qui y tombe. Et poser un troisième réglage — un « délai avant
+absence » propre à cette règle — créerait deux nombres à tenir d'accord à la
+main : le jour où l'on allongerait la fenêtre de signalement, la porte se
+rouvrirait sans que rien ne le dise. Écrite en `max`, la garantie suit la
+fenêtre par construction.
+
+Les quatre heures ne sont donc pas choisies ici. Elles sont celles de
+`venue_report_window_seconds`, dont la raison est écrite depuis sa création :
+« assez pour rentrer chez soi et y penser, trop court pour que le souvenir se
+reconstruise ». La décision d'aujourd'hui est de **s'y adosser**, pas d'inventer
+un seuil.
+
+**Le plancher de vingt minutes reste, et il n'est pas décoratif.** Les deux
+délais ne protègent pas la même chose : vingt minutes disent qu'une créatrice
+en retard de trois minutes n'est pas absente ; quatre heures disent que celle
+qui s'est déplacée garde son recours. Si la fenêtre passait un jour sous vingt
+minutes, le plancher reprendrait la main. Un test le tient, sans quoi le `max`
+aurait un membre mort.
+
+**Ce que ça coûte, des deux côtés, et c'est ce qui tranche.** Pour un salon
+honnête : attendre. La réservation reste `confirmed` l'après-midi, aucune place
+n'est bloquée puisque le créneau est passé, aucun argent n'est en jeu, et
+l'événement de fiabilité arrive plus tard. Pour une créatrice : vingt-cinq
+points et sa seule porte. Les deux ne sont pas commensurables.
+
+**Ce que la correction a fait sortir.** La règle était **écrite deux fois** —
+`booking_states.absence_signalable_a` et `booking_history._absence_signalable_a`
+— avec la même formule. Tant qu'elles étaient identiques, rien ne se voyait ;
+la première modification de l'une aurait fait mentir l'écran sur ce que le
+serveur accepte, et le défaut se serait lu comme un bouton ouvert qui se fait
+refuser. Réunies. `booking_history` importe désormais `booking_states`, et non
+l'inverse : `venue_report` dépend déjà de `booking_states`, qui ne peut donc pas
+l'importer en retour — il relit le même réglage, et **un test tient les deux
+frontières d'accord**, ce qu'un commentaire n'aurait pas fait.
+
+**Et une borne d'un instant.** `fenetre_ouverte` se lisait `<= fin` : à
+l'instant exact de la fermeture, le signalement était encore possible et
+l'absence venait de s'ouvrir. Les deux vrais en même temps, sur le seul instant
+que cette correction avait pour objet de départager. Semi-ouverte, les deux
+règles partitionnent le temps. Une seconde d'epsilon aurait été un nombre
+inventé pour masquer le choix qu'il fallait faire.
+
+**Ce qu'il fallait ajouter à l'écran.** Quatre heures d'attente sans explication
+se lisent comme un défaut, et un commerçant qui conclut au défaut écrit au
+support. La ligne dit maintenant ce qu'elle attend : que la créatrice puisse
+encore signaler être venue et avoir trouvé fermé. Un délai qu'on subit sans le
+comprendre est un délai qu'on cherche à contourner.
