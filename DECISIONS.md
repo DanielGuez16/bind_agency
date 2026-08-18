@@ -6595,3 +6595,46 @@ que la bibliothèque ne sait plus piloter. `--with-deps` reste au défaut de
 cache ; sur une touche, seul `install-deps` tourne. Et si ce pas bloque encore,
 le plafond le tue en vingt-cinq minutes — les deux se complètent au lieu de se
 remplacer.
+
+---
+
+## 2026-08-18 — Une méthode d'API que personne n'appelle
+
+**Née d'une erreur à moi.** J'ai écrit qu'il n'existait aucune route de
+signalement d'absence et conclu qu'il fallait « l'entrée de route, la méthode,
+et l'action ». `marquerAbsent` existait **depuis seize PR**, documentée,
+appelant le bon chemin : seul l'appelant manquait. Ma recherche cherchait
+`no_show` et `absent` quand le dépôt écrit `marquerAbsent` sur le chemin
+`no-show` — deux motifs faux d'un caractère chacun.
+
+**Une recherche textuelle qui rate ne rend pas « rien », elle rend un silence
+rassurant.** C'est ce qui rend ce genre d'erreur plus coûteux qu'une absence de
+recherche : on conclut, et on conclut avec assurance.
+
+**La garde est le pendant exact de celle des champs**, et il manquait. Celle-là
+attrape « le serveur rend, l'écran ignore » ; celle-ci attrape « le client sait
+demander, et personne ne demande ». Une méthode d'API sans appelant est du code
+mort **qui a l'air d'une fonctionnalité**, et qui vieillit sans qu'aucun test ne
+la touche — c'est ma propre règle, écrite le matin même pour refuser d'ajouter
+des types avant leur écran, et jamais vérifiée sur l'existant.
+
+**Quatorze méthodes.** Plusieurs appartiennent à des tâches cochées : la reprise
+de compte en entier, l'abonnement, les repères du voisinage, la correction du
+catalogue. Deux sautent aux yeux — **le créateur ne peut pas annuler sa
+réservation**, le commerce ne peut pas signaler une absence.
+
+**Toutes sous `a-instruire`**, comme les quatorze champs : les ranger sous
+« contrat » sans les instruire ferait de la table le tapis qu'elle existe pour
+retirer.
+
+### La règle que la conversation fonctionnelle en tire, et qui vaut ici aussi
+
+**Un décor qui pourrait être produit par le code fautif ne prouve rien.** Ses
+montages posaient `absence_signalable_a` à exactement ce qu'un écran qui
+recopierait le réglage aurait calculé : la mutation qui remplace le champ du
+serveur par le calcul local passait ses six tests. Il faut au moins un cas où
+les deux implémentations divergent.
+
+C'est la généralisation de la mutation qui a sauvé la garde des clés — résolution
+par feuille contre chemin entier, où le catalogue « d'accord avec lui-même »
+validait le défaut. Même idée, énoncée mieux.
