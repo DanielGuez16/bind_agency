@@ -973,14 +973,14 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       `needs_human_review: true`, donc tous les tests de décision du commerce
       s'exerçaient sur le cas où il ne doit plus décider. 3 tests neufs plus 2
       repris, 6 mutations vérifiées*
-- [ ] **Le commerce ne peut pas signaler une absence depuis l'application**
-      *Diagnostic corrigé : `absence_signalable_a` n'est pas un champ non
-      affiché, **c'est une route absente du client**. Le serveur a
-      `mark_no_show`, l'app ne l'appelle nulle part. Il faut l'entrée de route,
-      la méthode, et l'action sur la journée — ouverte par
-      `absence_signalable_a`, qui dit aussi à quelle heure elle s'ouvre, et
-      c'est le serveur qui refuse, jamais l'horloge du téléphone. Une tranche,
-      pas un rendu de champ*
+- [x] **Le commerce ne peut pas signaler une absence depuis l'application**
+      *Fait, et repris plus haut sous « Le commerce peut enfin constater une
+      absence ». Le diagnostic était juste sur la conséquence et faux sur la
+      cause : l'entrée de route `marquerAbsent` **et sa méthode de client**
+      existaient depuis la #115, documentées et appelant le bon chemin. Seul
+      l'appelant manquait — une méthode d'API sans appelant, c'est-à-dire du
+      code mort qui a l'air d'une fonctionnalité, et qui a tenu seize PR parce
+      que chercher `no-show` dans le dépôt donnait quatre résultats rassurants*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire
 
 ---
