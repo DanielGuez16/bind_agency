@@ -1001,6 +1001,17 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       à relancer sans lire. Un plafond par pas a été écarté (le blocage se
       déplace), le cache Playwright aussi (une minute sur cinq, contre une clé à
       tenir et un mode d'échec de plus)*
+- [ ] **Treize méthodes d'API que personne n'appelle**
+      *Trouvées par la garde neuve, née de mon erreur sur l'absence — dont la
+      quatorzième vient d'être branchée par la conversation fonctionnelle. Ce
+      sont des capacités que le produit sait demander au serveur et qu'aucun
+      écran n'offre : du code mort **qui a l'air d'une fonctionnalité**.
+      Plusieurs appartiennent à des tâches cochées — la reprise de compte en
+      entier (trois méthodes), l'abonnement (trois), les repères du voisinage,
+      la modification et la suppression d'un item, la réouverture d'une offre,
+      la prise en main d'une fiche. Et une qui saute aux yeux : **le créateur ne
+      peut pas annuler sa réservation**. Chacune se tranche : branchée, ou
+      passée en `contrat` avec sa raison*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire
 
 ---
