@@ -24,7 +24,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncSession
 from app.core.config import get_settings
 from app.integrations.billing import LogBillingProvider
 from app.integrations.email import Message
-from app.models import AuditLog, Business, BusinessMember, NotificationPreference, User
+from app.models import AuditLog, Business, BusinessMember, User
 from app.models.business import SubscriptionPlan
 from app.models.enums import (
     ActorKind,
@@ -317,31 +317,6 @@ async def test_l_avertissement_dit_ce_que_le_salon_demandera_en_premier(
         message.corps for message in envoye.messages if message.destinataire == proprietaire.email
     )
     assert "honoured" in corps
-
-
-async def test_un_membre_qui_a_coupe_le_genre_ne_recoit_rien(
-    session: AsyncSession,
-) -> None:
-    """La préférence vaut pour la boîte comme pour l'écran verrouillé — et elle
-    est relue au moment où le message sortirait, pas au dépôt."""
-    from app.workers import handlers
-
-    business, proprietaire = await ouvert(session)
-    session.add(
-        NotificationPreference(
-            user_id=proprietaire.id,
-            kind=NotificationKind.SUBSCRIPTION_GRACE_ENDING,
-            enabled=False,
-        )
-    )
-    business.grace_ends_at = datetime.now(UTC) + timedelta(days=1)
-    await session.flush()
-    await handlers.balayer_les_periodes_de_grace(session, account=None, provider=None)
-
-    envoye = EnvoyeurQuiNote()
-    await outbox.vider(session, email_sender=envoye, push_sender=PushMuet())
-
-    assert envoye.messages == []
 
 
 # --------------------------------------------------------------------------

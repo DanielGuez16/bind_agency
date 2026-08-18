@@ -970,6 +970,51 @@ async def test_des_plans_d_abonnement_existent(seed_conn: AsyncConnection) -> No
     assert intervalles == {BillingInterval.MONTHLY, BillingInterval.YEARLY}
 
 
+async def test_le_salon_de_la_demonstration_est_abonne(seed_conn: AsyncConnection) -> None:
+    """**L'annuaire est ce que BIND vend, et le compte de démonstration ne le
+    voyait pas.**
+
+    Le semis abonnait `actifs[:2]`, écrit quand le jeu comptait trois salons.
+    Passé à vingt, les deux premiers dans l'ordre alphabétique sont deux salons
+    du marché, et Ocean Beauty Studio — celui avec lequel on ouvre le produit —
+    se retrouvait sans abonnement. La route de l'annuaire répondait 402, l'écran
+    affichait « l'annuaire vient avec l'abonnement », et c'était exact : rien
+    n'échouait, et personne ne pouvait le voir autrement qu'en campagne.
+
+    Nommé plutôt que compté : un test qui vérifierait « au moins deux
+    abonnements » repasserait au vert avec exactement le défaut d'origine.
+    """
+    from app.models import Subscription
+
+    abonnes = set(
+        (
+            await seed_conn.execute(
+                sa.select(Business.name)
+                .join(Subscription, Subscription.business_id == Business.id)
+                .where(Subscription.status.in_(("active", "trialing")))
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+    assert "Ocean Beauty Studio" in abonnes, f"abonnés : {sorted(abonnes)}"
+
+
+async def test_un_salon_au_moins_reste_sans_abonnement(seed_conn: AsyncConnection) -> None:
+    """L'autre sens. Abonner tout le monde ferait un écran de plans où chaque
+    ligne est prise, et la question qu'on se pose devant cet écran — quel plan
+    personne ne choisit — n'aurait plus de réponse."""
+    from app.models import Subscription
+
+    total = await seed_conn.scalar(sa.select(sa.func.count()).select_from(Business))
+    abonnes = await seed_conn.scalar(
+        sa.select(sa.func.count(sa.distinct(Subscription.business_id))).select_from(Subscription)
+    )
+
+    assert abonnes < total, "tous les commerces sont abonnés"
+
+
 async def test_une_reservation_attend_le_commerce(seed_conn: AsyncConnection) -> None:
     """L'état neuf de la v0.5 doit être visible à la démonstration.
 
