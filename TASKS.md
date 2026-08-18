@@ -881,6 +881,19 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       mention, géotag — et le motif de reprise, que le cadre 08b affiche en
       ligne. `ContrepartieBreve` ne les porte pas, et les chercher ferait un
       appel par ligne*
+- [ ] **Quatorze champs servis et rendus nulle part, à instruire un par un**
+      *Trouvés par la garde en une minute, et inscrits dans sa table sous
+      `a-instruire` — ce ne sont pas des exemptions, ce sont des constats en
+      attente de décision. Quelques-uns sautent aux yeux :
+      `ReservationDuCreateur.business_address`, que le cadre 08a affiche
+      pourtant — « 120 NE 41st St · 320 m » — et que je n'ai pas rendu en le
+      composant ; `Preuve.raisons_de_non_verification`, qui dit pourquoi une
+      preuve n'a pas été retenue ; `Reporting.deplacements_pour_rien`, dont la
+      tâche entière a été construite ; `CodeDeRetrait.rotation_seconds`, quand
+      l'écran de code compte probablement trente secondes en dur ;
+      `needs_human_review` sur trois types, c'est-à-dire l'escalade de la
+      troisième tentative, invisible partout. Chacun se tranche : rendu, ou
+      passé en `contrat` avec sa raison*
 - [ ] **`Lot 1 v1.1` · 02 · les paliers**
       *Le dernier écran du trou trouvé par le registre. Même méthode : le
       confronter cadre par cadre, et non vérifier qu'il emploie les bons jetons —

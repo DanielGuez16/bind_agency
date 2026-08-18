@@ -6201,3 +6201,42 @@ mauvais ne compte pas.
 contrepartie — mention attendue, géotag — et le motif de reprise, que le cadre
 08b affiche en ligne. `ContrepartieBreve` ne les porte pas, et les chercher
 demanderait un appel par ligne.
+
+---
+
+## 2026-08-17 — La garde des champs servis et rendus nulle part
+
+Trois fois dans une session, et aucune n'a échoué : le paramètre `categorie`
+que le fil acceptait et que personne n'envoyait ; `constate` et `requis` sur les
+signaux de vérification ; `deadline_at` et `attempts_count` sur la contrepartie.
+Daniel l'a nommé mieux que moi — **trois fois n'est plus une série de
+distractions, c'est un défaut de méthode**, et c'est le même que celui de
+l'audit des planches : ce qui existe mais que personne ne branche.
+
+Le mode d'échec est toujours identique et c'est ce qui le rend invisible : rien
+ne tombe, l'écran paraît complet, les jetons sont les bons, et l'information qui
+décide du geste suivant n'est pas à l'écran.
+
+**La garde.** Chaque champ déclaré dans `types.ts` est soit lu quelque part dans
+`src/`, soit inscrit dans une table avec sa raison. Trois raisons seulement, et
+la troisième est une dette nommée : `contrat` — servi pour une autre façade ;
+`technique` — consommé par le client d'API ; `a-instruire` — **rien ne dit que
+c'est délibéré**. Cette troisième catégorie est la partie honnête du dispositif :
+mettre quatorze champs sous « contrat » sans le vérifier aurait fait de la table
+un tapis.
+
+**Elle tient dans les deux sens.** Un champ inscrit qui se met à être lu fait
+tomber le test : sans quoi la table vieillit, se remplit de lignes fausses, et
+cesse de dire quoi que ce soit — ce qui est arrivé à `$meta.unconfirmed`, gardé
+longtemps après que le manque a été comblé.
+
+**Ce qu'elle ne fait pas, écrit plutôt que laissé croire.** Elle lit du texte,
+pas un arbre syntaxique : un champ au nom commun — `status`, `name`, `id` — sera
+trouvé quelque part même s'il n'est jamais lu *sur ce type-là*. Faux négatifs,
+aucun faux positif. C'est le bon sens de l'erreur pour une vérification requise.
+
+**Elle a payé en une minute.** 53 champs sur 430 ne sont lus nulle part.
+Quatorze sont suspects et partent dans `TASKS.md` — dont
+`ReservationDuCreateur.business_address`, que le cadre 08a affiche et que je
+venais moi-même de ne pas rendre en composant cet écran. La garde a trouvé un
+quatrième cas du défaut dans le commit qui la précède.
