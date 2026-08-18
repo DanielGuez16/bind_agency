@@ -77,6 +77,7 @@ async function monter(
           <PrestationsDuPalierScreen
             palier={palier(extra as never)}
             position={position as never}
+            rayonKm={15}
             onRetour={() => {}}
           />
         </ApiProvider>
@@ -87,12 +88,19 @@ async function monter(
 }
 
 describe('la phrase compte deux fois des prestations', () => {
-  it('le total, puis combien sont près', async () => {
+  it('le total, puis combien sont près et chez combien de salons', async () => {
+    // **Neuf prestations chez un seul salon et neuf chez six sont deux offres
+    // très différentes**, et le compte de prestations seul ne le dit pas. Les
+    // deux grandeurs sont dans la même phrase, chacune nommée : elles ne se
+    // comparent pas, elles se complètent.
     await monter();
     await waitFor(() => expect(screen.getByTestId('compte-ouvert')).toBeTruthy());
 
     expect(screen.getByTestId('compte-ouvert')).toHaveTextContent(/\b12\b/);
-    expect(screen.getByTestId('ou-elles-sont')).toHaveTextContent(/\b9\b/);
+    const ou = screen.getByTestId('ou-elles-sont');
+    expect(ou).toHaveTextContent(/\b9\b/);
+    expect(ou).toHaveTextContent(/\b15\b/);
+    expect(ou).toHaveTextContent(/\b4\b/);
   });
 
   it('sans position, la moitié de la phrase se tait plutôt que d’écrire zéro', async () => {

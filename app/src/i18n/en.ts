@@ -72,7 +72,9 @@ export const en = {
     prestationsTitre: 'Open to you',
     prestationsOuvertes: '{{count}} services open to you',
     prestationsPartout: 'Across every business on BIND.',
-    prestationsDontProches: '{{count}} of them are near you.',
+    // Deux grandeurs, chacune nommée : neuf prestations chez un seul salon et
+    // neuf chez six sont deux offres très différentes.
+    prestationsDontProches: '{{count}} of them are within {{rayon}} km, at {{salons}} businesses.',
     prestationsProches: 'Near you first',
     prestationsToutes: 'All',
     seeShort: 'See them',

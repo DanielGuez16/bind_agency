@@ -114,12 +114,6 @@ const NON_RENDUS: Record<string, string> = {
   'AudienceDuCompte.following_count': 'a-instruire',
   'AudienceDuCompte.media_count': 'a-instruire',
   'AudienceDuCompte.avg_views': 'a-instruire',
-  // Rendu par le serveur pour que la phrase puisse dire « douze prestations
-  // chez quatre salons ». Le cadre 11c ne le demande pas — il compte des
-  // prestations, deux fois — et l'ajouter serait une troisième grandeur dans
-  // une phrase qui en porte déjà deux. À trancher, pas à ranger sous
-  // « contrat » : l'app pourrait s'en servir demain.
-  'PalierAccessible.commerces_dans_le_rayon': 'a-instruire',
 };
 
 const RAISONS = new Set(['contrat', 'technique', 'a-instruire']);

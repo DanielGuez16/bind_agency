@@ -43,7 +43,7 @@ import { FicheScreen } from '../screens/FicheScreen';
 import { FilScreen } from '../screens/FilScreen';
 import { HistoriqueScreen, destination } from '../screens/HistoriqueScreen';
 import { JourneeScreen } from '../screens/JourneeScreen';
-import { PaliersScreen } from '../screens/PaliersScreen';
+import { PaliersScreen, RAYON_DES_PALIERS_KM } from '../screens/PaliersScreen';
 import { PrestationsDuPalierScreen } from '../screens/PrestationsDuPalierScreen';
 import { ReglesScreen } from '../screens/ReglesScreen';
 import { PlansScreen } from '../screens/PlansScreen';
@@ -297,6 +297,9 @@ function ParcoursCreateur({
         {({ navigation }) => (
           <PaliersScreen
             prenom={prenom}
+            // Sans elle, « neuf prestations chez six salons » ne s'écrit
+            // jamais : le serveur rend des comptes nuls faute de savoir d'où.
+            position={position}
             onRetour={() => navigation.goBack()}
             onConnecterUnReseau={onConnecterUnReseau}
             onVoirMonAudience={onVoirMonAudience}
@@ -317,6 +320,7 @@ function ParcoursCreateur({
         {({ navigation, route }) => (
           <PrestationsDuPalierScreen
             palier={route.params.palier}
+            rayonKm={RAYON_DES_PALIERS_KM}
             // La position vient de la coquille, comme pour le fil : on lit
             // d'où l'on est, pas d'où l'on habite. Nulle, l'écran rend la
             // liste entière et tait la moitié de sa phrase.

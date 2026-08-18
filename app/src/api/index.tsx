@@ -116,8 +116,29 @@ export class Api {
 
   // ---- créateur ----
 
-  mesPaliers(signal?: AbortSignal) {
-    return this.client.request<VueDesPaliers>(routes.mesPaliers(), { signal });
+  /**
+   * Les paliers, et ce que chacun ouvre.
+   *
+   * **Sans position, les comptes de proximité sont nuls** — et ils l'étaient
+   * partout, parce que personne ne les demandait : le champ était rendu par le
+   * serveur, lu par l'écran, et jamais alimenté. Les deux coordonnées ensemble
+   * ou aucune, le serveur refusant une moitié en 422.
+   */
+  mesPaliers(
+    options: {
+      autourDe?: { longitude: number; latitude: number } | null;
+      rayonMetres?: number;
+    } = {},
+    signal?: AbortSignal,
+  ) {
+    return this.client.request<VueDesPaliers>(routes.mesPaliers(), {
+      query: {
+        longitude: options.autourDe?.longitude,
+        latitude: options.autourDe?.latitude,
+        rayon_metres: options.autourDe ? options.rayonMetres : undefined,
+      },
+      signal,
+    });
   }
 
   /**

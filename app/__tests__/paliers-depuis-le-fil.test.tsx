@@ -19,6 +19,7 @@ import { ApiClient, ApiProvider, type Fil } from '../src/api';
 import { I18nProvider } from '../src/i18n';
 import { en } from '../src/i18n/en';
 import { FilScreen } from '../src/screens/FilScreen';
+import { PaliersScreen } from '../src/screens/PaliersScreen';
 import { ThemeProvider } from '../src/theme';
 
 const COMMERCE = {
@@ -182,5 +183,88 @@ describe('la ligne qui répond, et l’explication qu’elle ouvre', () => {
     expect(elargir).toHaveTextContent(/\b9\b/);
     // Celui qui n'ouvre rien n'est pas là.
     expect(elargir).not.toHaveTextContent(/50/);
+  });
+});
+
+describe('les comptes de proximité sont réellement demandés', () => {
+  it('l’écran des paliers envoie la position et le rayon', async () => {
+    // **Ils étaient nuls partout.** Le serveur rend `offres_dans_le_rayon` et
+    // `commerces_dans_le_rayon`, l'écran des prestations les lit, et personne
+    // n'envoyait de coordonnées : « neuf prestations chez six salons » ne
+    // pouvait jamais s'écrire. Le champ existait, il était lu, et rien ne
+    // l'alimentait — la garde des champs ne pouvait pas le voir, puisqu'il
+    // *était* lu.
+    const appels: string[] = [];
+    const api = new ApiClient({
+      baseUrl: 'https://api.test',
+      coffre: { lire: async () => null, ecrire: async () => {} },
+      fetchImpl: async (url: RequestInfo | URL) => {
+        appels.push(String(url));
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            creator_id: 'u1',
+            is_new_creator: false,
+            fiabilite: { reliability_score: '92', completed_collabs_count: 12 },
+            paliers: [],
+          }),
+        } as Response;
+      },
+    });
+
+    await render(
+      <I18nProvider initialLocale="en">
+        <ThemeProvider role="creator">
+          <ApiProvider client={api}>
+            <PaliersScreen position={{ longitude: -80.19, latitude: 25.76 }} />
+          </ApiProvider>
+        </ThemeProvider>
+      </I18nProvider>,
+    );
+
+    await waitFor(() => expect(appels.some((u) => u.includes('/me/tiers'))).toBe(true));
+    const url = appels.find((u) => u.includes('/me/tiers'))!;
+    expect(url).toContain('longitude=');
+    expect(url).toContain('latitude=');
+    expect(url).toContain('rayon_metres=');
+  });
+
+  it('et n’envoie rien du tout sans position', async () => {
+    // Le sens inverse : une seule coordonnée est refusée en 422, et un rayon
+    // sans point ne veut rien dire.
+    const appels: string[] = [];
+    const api = new ApiClient({
+      baseUrl: 'https://api.test',
+      coffre: { lire: async () => null, ecrire: async () => {} },
+      fetchImpl: async (url: RequestInfo | URL) => {
+        appels.push(String(url));
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            creator_id: 'u1',
+            is_new_creator: false,
+            fiabilite: { reliability_score: null, completed_collabs_count: 0 },
+            paliers: [],
+          }),
+        } as Response;
+      },
+    });
+
+    await render(
+      <I18nProvider initialLocale="en">
+        <ThemeProvider role="creator">
+          <ApiProvider client={api}>
+            <PaliersScreen position={null} />
+          </ApiProvider>
+        </ThemeProvider>
+      </I18nProvider>,
+    );
+
+    await waitFor(() => expect(appels.some((u) => u.includes('/me/tiers'))).toBe(true));
+    const url = appels.find((u) => u.includes('/me/tiers'))!;
+    expect(url).not.toContain('longitude=');
+    expect(url).not.toContain('rayon_metres=');
   });
 });

@@ -67,7 +67,7 @@ export const es: Catalogue = {
     prestationsTitre: 'Abierto para ti',
     prestationsOuvertes: '{{count}} servicios abiertos para ti',
     prestationsPartout: 'En todos los locales de BIND.',
-    prestationsDontProches: '{{count}} de ellos están cerca de ti.',
+    prestationsDontProches: '{{count}} a menos de {{rayon}} km, en {{salons}} locales.',
     prestationsProches: 'Cerca primero',
     prestationsToutes: 'Todos',
     seeShort: 'Verlas',
