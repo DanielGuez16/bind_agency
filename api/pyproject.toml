@@ -71,6 +71,7 @@ asyncio_default_fixture_loop_scope = "function"
 addopts = "--strict-markers"
 markers = [
     "ecrit_pour_de_bon(raison): le test valide ses écritures et les nettoie lui-même. Réservé à ce qui ne peut pas vivre dans une transaction annulée — deux transactions réellement concurrentes, un verrou consultatif. Dispense de la garde anti-fuite, et la raison est obligatoire",
+    "lent(raison): le test dépasse le plafond de durée et c'est justifié. Réservé à ce qui fait réellement le travail long qu'il annonce — poser le jeu de démonstration entier. Dispense de la garde de durée, et la raison est obligatoire",
 ]
 
 [tool.setuptools.package-data]
