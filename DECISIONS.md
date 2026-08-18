@@ -6320,3 +6320,38 @@ Elle sort du « près de vous » sans être écartée du total.
 blocs orange, couverture des écrans, squelettes, et les quatre états. Aucune
 n'était un obstacle : chacune a demandé une décision écrite sur un écran neuf,
 ce qui est précisément le prix qu'elles existent pour faire payer.
+
+---
+
+## 2026-08-18 — Une garde de parité qui ne regardait jamais les appels
+
+La conversation fonctionnelle a trouvé côté serveur une garde anti-fuite qui
+surveillait sept tables sur trente-six, et suggère de chercher l'équivalent
+ici : une liste énumérée à la main là où le schéma pourrait la déduire. Elle
+avait raison, et le cas était plus près qu'attendu.
+
+**La parité des traductions compare les deux catalogues l'un à l'autre.** Elle
+attrape une clé traduite d'un seul côté, et laisse passer une clé absente des
+deux. Elle n'a jamais regardé les **appels**.
+
+Le défaut s'est produit deux fois dans la même journée, et la seconde fois sur
+six clés : le cadre 11c les lisait sous `tiers`, elles étaient tombées dans
+`parcours`. Parité intacte, catalogues d'accord, et l'écran affichait
+`[missing "en.tiers.prestationsOuvertes" translation]` **en clair, à la place du
+titre**. C'est une assertion de texte dans un test d'écran qui l'a trouvé, par
+accident.
+
+**La clé se résout par son chemin entier, jamais par sa feuille**, et c'est tout
+le dispositif. La première version cherchait `prestationsOuvertes` quelque part
+dans le catalogue : elle aurait trouvé celle de `parcours` et déclaré la garde
+satisfaite — c'est-à-dire reproduit exactement le défaut qu'elle prétend
+interdire. Vérifié par mutation : avec la résolution par feuille, le vrai défaut
+du jour **passe au vert**. Les catalogues sont donc importés et parcourus.
+
+**Les clés composées sont hors de portée, et dénombrées plutôt que passées sous
+silence.** Vingt-deux appels en gabarit ne se résolvent pas sans exécuter le
+code ; leurs domaines ont leur propre garde, qui recopie la liste à la main
+depuis l'union TypeScript pour en faire un oracle. Le compte est plafonné : si
+elles se multipliaient, la garde couvrirait de moins en moins **sans le dire**.
+
+521 clés littérales, toutes résolues dans les deux langues.

@@ -855,6 +855,18 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       durée ne peut pas attraper : le coût est dans le démontage, et Jest ne le
       compte pas dans la durée du fichier. Fin : `--detectOpenHandles` sort
       propre, et devient une étape de la CI*
+- [x] **Une garde de parité qui ne regardait jamais les appels**
+      *La parité des traductions comparait les deux catalogues l'un à l'autre :
+      elle attrapait une clé traduite d'un seul côté et laissait passer une clé
+      absente des deux. Le défaut s'est produit deux fois dans la journée — six
+      clés du cadre 11c lues sous `tiers` et posées dans `parcours`, parité
+      intacte, et l'écran affichant `[missing … translation]` en clair à la
+      place du titre. **La clé se résout par son chemin entier, jamais par sa
+      feuille** : la première version aurait trouvé l'homonyme de `parcours` et
+      déclaré la garde satisfaite, ce qui est reproduire le défaut qu'elle
+      interdit — vérifié par mutation, elle passe au vert sur le vrai cas. Les
+      vingt-deux clés composées sont hors de portée, dénombrées et plafonnées
+      plutôt que passées sous silence. 4 tests neufs, 4 mutations vérifiées*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire
 
 ---
