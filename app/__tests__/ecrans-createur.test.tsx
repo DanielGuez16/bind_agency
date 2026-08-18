@@ -25,6 +25,7 @@ import { FicheScreen } from '../src/screens/FicheScreen';
 import { FilScreen } from '../src/screens/FilScreen';
 import { HistoriqueScreen } from '../src/screens/HistoriqueScreen';
 import { PaliersScreen } from '../src/screens/PaliersScreen';
+import { PrestationsDuPalierScreen } from '../src/screens/PrestationsDuPalierScreen';
 import { ReglesScreen } from '../src/screens/ReglesScreen';
 import { PreuveScreen } from '../src/screens/PreuveScreen';
 import { PART_POUR_CHIFFRER, formeDe } from '../src/screens/obstacle';
@@ -119,6 +120,23 @@ const PALIER = {
   accessible: true,
   social_account_id: 'c1',
   obstacles: [],
+  offres_disponibles: 12,
+  offres_dans_le_rayon: 9,
+  commerces_dans_le_rayon: 4,
+};
+
+const OFFRE_DU_PALIER = {
+  tier_offer_id: 'o1',
+  catalog_item_id: 'i1',
+  business_id: 'b1',
+  nom: 'Gel manicure',
+  nom_du_commerce: 'Vela Nail Studio',
+  neighborhood: 'wynwood',
+  price_cents: 4500,
+  currency: 'USD',
+  duration_minutes: 45,
+  photo_key: null,
+  distance_metres: 320,
 };
 
 const FIABILITE = { reliability_score: '92.00', completed_collabs_count: 12 };
@@ -276,6 +294,20 @@ const ECRANS = [
     vide: { '/me/tiers': { ...VUE, is_new_creator: true, paliers: [] } },
   },
   {
+    nom: 'prestations du palier',
+    noeud: (
+      <PrestationsDuPalierScreen
+        palier={PALIER as never}
+        position={{ longitude: -80.19, latitude: 25.76 }}
+        onRetour={() => {}}
+      />
+    ),
+    plein: { '/offres': [OFFRE_DU_PALIER] },
+    // Un palier sans une seule prestation : l'état existe, c'est celui d'un
+    // palier ouvert dans une ville où personne n'a encore composé.
+    vide: { '/offres': [] },
+  },
+  {
     nom: 'regles',
     noeud: <ReglesScreen />,
     // Les règles n'ont pas d'état vide : elles existent même sans un seul
@@ -407,6 +439,7 @@ describe('quatre états', () => {
 const FICHIERS: Record<string, string> = {
   audience: 'AudienceScreen.tsx',
   paliers: 'PaliersScreen.tsx',
+  'prestations du palier': 'PrestationsDuPalierScreen.tsx',
   regles: 'ReglesScreen.tsx',
   fil: 'FilScreen.tsx',
   fiche: 'FicheScreen.tsx',

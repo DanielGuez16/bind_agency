@@ -28,7 +28,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import type { FichePublique, OffreDeLaFiche } from '../api';
+import type { FichePublique, OffreDeLaFiche, PalierAccessible } from '../api';
 import { Icone, type NomIcone } from '../components';
 import { useI18n } from '../i18n';
 import { useSession } from '../session';
@@ -44,6 +44,7 @@ import { FilScreen } from '../screens/FilScreen';
 import { HistoriqueScreen, destination } from '../screens/HistoriqueScreen';
 import { JourneeScreen } from '../screens/JourneeScreen';
 import { PaliersScreen } from '../screens/PaliersScreen';
+import { PrestationsDuPalierScreen } from '../screens/PrestationsDuPalierScreen';
 import { ReglesScreen } from '../screens/ReglesScreen';
 import { PlansScreen } from '../screens/PlansScreen';
 import { TerrainScreen } from '../screens/TerrainScreen';
@@ -78,6 +79,12 @@ export type PileCreateurParams = {
    * d'une ligne du fil et y revient.
    */
   Paliers: undefined;
+  /**
+   * Les prestations d'un palier. Le palier voyage en paramètre plutôt que
+   * d'être relu : l'écran d'où l'on vient l'a déjà, et le redemander ferait
+   * deux vérités sur ce qu'il ouvre.
+   */
+  PrestationsDuPalier: { palier: PalierAccessible };
   Regles: undefined;
 };
 
@@ -294,6 +301,27 @@ function ParcoursCreateur({
             onConnecterUnReseau={onConnecterUnReseau}
             onVoirMonAudience={onVoirMonAudience}
             onLireLesRegles={() => navigation.navigate('Regles')}
+            // **La porte que le cadre 02a ouvrait dans le vide.**
+            // `onVoirLesPrestations` existait sur l'écran, `porteOuverte` en
+            // dépendait, et personne ne le passait : « voir les 34 prestations »
+            // ne menait nulle part. Il fallait une lecture non bornée par le
+            // rayon, qui n'existait pas.
+            onVoirLesPrestations={(palier) =>
+              navigation.navigate('PrestationsDuPalier', { palier })
+            }
+          />
+        )}
+      </PileCreateur.Screen>
+
+      <PileCreateur.Screen name="PrestationsDuPalier">
+        {({ navigation, route }) => (
+          <PrestationsDuPalierScreen
+            palier={route.params.palier}
+            // La position vient de la coquille, comme pour le fil : on lit
+            // d'où l'on est, pas d'où l'on habite. Nulle, l'écran rend la
+            // liste entière et tait la moitié de sa phrase.
+            position={position}
+            onRetour={() => navigation.goBack()}
           />
         )}
       </PileCreateur.Screen>

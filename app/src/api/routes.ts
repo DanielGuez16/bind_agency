@@ -31,6 +31,7 @@ export const routes = {
   rafraichirLesMetriques: (compteId: string) =>
     chemin(`/me/social-accounts/${compteId}/metrics/refresh`),
   mesPaliers: () => chemin('/me/tiers'),
+  offresDuPalier: (tierId: string) => chemin(`/me/tiers/${tierId}/offres`),
   monAudience: () => chemin('/me/audience'),
   maVerification: () => chemin('/me/verification'),
   mesReservations: () => chemin('/me/bookings'),
@@ -181,6 +182,7 @@ export const METHODES: Record<keyof typeof routes, ('GET' | 'POST' | 'PATCH' | '
     connecterInstagram: ['POST'],
     rafraichirLesMetriques: ['POST'],
     mesPaliers: ['GET'],
+    offresDuPalier: ['GET'],
     monAudience: ['GET'],
     maVerification: ['GET'],
     mesReservations: ['GET'],

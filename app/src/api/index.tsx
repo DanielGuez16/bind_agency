@@ -48,6 +48,7 @@ import type {
   ItemDuCatalogue,
   NouvelItem,
   OffreDePalier,
+  OffreDuPalier,
   PalierOffrable,
   RegleDeCapacite,
   Reporting,
@@ -117,6 +118,24 @@ export class Api {
 
   mesPaliers(signal?: AbortSignal) {
     return this.client.request<VueDesPaliers>(routes.mesPaliers(), { signal });
+  }
+
+  /**
+   * Toutes les prestations d'un palier, sans borne de distance.
+   *
+   * La position est facultative et **ne borne rien** : elle ajoute seulement la
+   * distance à chaque ligne. Les deux coordonnées ensemble ou aucune — le
+   * serveur refuse une moitié en 422, et c'est mieux qu'un silence.
+   */
+  offresDuPalier(
+    tierId: string,
+    autourDe?: { longitude: number; latitude: number } | null,
+    signal?: AbortSignal,
+  ) {
+    return this.client.request<OffreDuPalier[]>(routes.offresDuPalier(tierId), {
+      query: { longitude: autourDe?.longitude, latitude: autourDe?.latitude },
+      signal,
+    });
   }
 
   monAudience(signal?: AbortSignal) {
