@@ -111,7 +111,7 @@ export function AudienceScreen() {
       // écran sous « ce qui compte pour les paliers », parce que ce sont les
       // deux autres grandeurs qui ouvrent une prestation. Les laisser sur le
       // seul écran des paliers obligeait à les découvrir en cherchant.
-      fiabilite: (await api.mesPaliers(signal)).fiabilite,
+      fiabilite: (await api.mesPaliers({}, signal)).fiabilite,
     }),
     { estVide: (v) => v.audience.length === 0 },
   );

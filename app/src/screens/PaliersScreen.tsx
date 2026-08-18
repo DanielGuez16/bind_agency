@@ -97,11 +97,26 @@ const LARGEUR_DE_L_ECHELLE = 720;
 const LARGEUR_DES_REGLES = 360;
 /** Le bandeau de format, sur grand écran : à gauche, en colonne. */
 const LARGEUR_DU_BANDEAU = 150;
+/**
+ * Le rayon sur lequel se comptent les prestations proches.
+ *
+ * Le même que celui d'où part le fil : deux valeurs différentes feraient dire
+ * « neuf à moins de quinze kilomètres » ici et en montreraient douze là-bas.
+ */
+export const RAYON_DES_PALIERS_KM = 15;
+
 /** La colonne « ce que je donne » en bureau. Fixe, pour aligner les barreaux. */
 const LARGEUR_DU_DON = 210;
 
 export function PaliersScreen({
   prenom = null,
+  /**
+   * D'où l'on est. Nulle, les comptes de proximité restent nuls et l'écran
+   * n'écrit que le total — « on ne sait pas où vous êtes » ne se dit pas
+   * « aucune près de chez vous ».
+   */
+  position = null,
+  rayonKm = RAYON_DES_PALIERS_KM,
   onRetour,
   onConnecterUnReseau,
   onVoirMonAudience,
@@ -116,6 +131,8 @@ export function PaliersScreen({
    * écran au suivant jusqu'à ce que plus rien ne se teste isolément.
    */
   prenom?: string | null;
+  position?: { longitude: number; latitude: number } | null;
+  rayonKm?: number;
   /** Mène là où l'on rattache un réseau. Absent chez qui n'y a pas accès. */
   onConnecterUnReseau?: () => void;
   onVoirMonAudience?: () => void;
@@ -144,12 +161,20 @@ export function PaliersScreen({
   const { t, locale } = useI18n();
   const { large } = useGabarit();
 
-  const requete = useRequete<VueDesPaliers>((signal) => api.mesPaliers(signal), {
+  // **Les comptes de proximité étaient nuls partout**, parce que personne ne
+  // les demandait : le serveur les rend, l'écran les lit, et aucune coordonnée
+  // ne partait. « Neuf prestations chez six salons » ne pouvait donc jamais
+  // s'écrire.
+  const requete = useRequete<VueDesPaliers>(
+    (signal) => api.mesPaliers({ autourDe: position, rayonMetres: rayonKm * 1000 }, signal),
+    {
     // Vide veut dire « aucun palier configuré », un cas de plateforme. Un
     // créateur sans accès n'est **pas** vide : il a des paliers à lire, tous
     // fermés, et c'est justement l'écran qui doit le lui expliquer.
     estVide: (vue) => vue.paliers.length === 0,
-  });
+    dependances: [position?.longitude, position?.latitude],
+  },
+  );
 
   return (
     <Ecran

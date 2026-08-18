@@ -23,7 +23,7 @@ export function ReglesScreen({ onRetour }: { onRetour?: () => void }) {
   const { api } = useApi();
   const { t } = useI18n();
 
-  const requete = useRequete<VueDesPaliers>((signal) => api.mesPaliers(signal), {
+  const requete = useRequete<VueDesPaliers>((signal) => api.mesPaliers({}, signal), {
     // **Jamais vide.** Les règles existent même sans un seul palier configuré :
     // ce sont elles qu'on vient lire quand rien ne s'ouvre. Un état vide ici
     // renverrait « rien à afficher » à la question « pourquoi rien ne s'ouvre ».

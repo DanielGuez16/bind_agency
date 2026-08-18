@@ -915,6 +915,20 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       interdit — vérifié par mutation, elle passe au vert sur le vrai cas. Les
       vingt-deux clés composées sont hors de portée, dénombrées et plafonnées
       plutôt que passées sous silence. 4 tests neufs, 4 mutations vérifiées*
+- [x] **Les deux grandeurs de la phrase du 11c, et le champ que personne n'alimentait**
+      *Tranché par Daniel : « neuf prestations à moins de quinze kilomètres, chez
+      six salons » dit ce que le seul compte de prestations ne dit pas — neuf
+      chez un salon et neuf chez six sont deux offres très différentes. Les deux
+      sont dans la phrase, chacune nommée.*
+      *L'implémenter a révélé que **ni l'un ni l'autre n'était jamais
+      alimenté** : `mesPaliers()` n'envoyait aucune coordonnée, le serveur
+      rendait `null` pour les deux, et la seconde moitié de la phrase comme la
+      bascule ne fonctionnaient que dans les tests. Cinquième cas du jour dans
+      cette famille, et une variante neuve : les quatre premières étaient « le
+      serveur rend, l'écran ignore », que la garde des champs attrape ;
+      celle-ci est « le serveur rend, l'écran lit, et personne ne demande » — le
+      champ est lu, donc la garde ne peut pas le voir. Seul un test sur l'URL
+      réellement appelée l'attrape. 2 tests neufs plus 1 repris, 5 mutations*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire
 
 ---

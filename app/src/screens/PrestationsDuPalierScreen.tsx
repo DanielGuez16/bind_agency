@@ -41,11 +41,14 @@ type Vue = (typeof VUES)[number];
 export function PrestationsDuPalierScreen({
   palier,
   position,
+  rayonKm,
   onRetour,
 }: {
   palier: PalierAccessible;
   /** Nulle : le serveur ne rend aucune distance, et la bascule disparaît. */
   position: { longitude: number; latitude: number } | null;
+  /** Celui sur lequel les comptes de proximité ont été faits. La phrase le dit. */
+  rayonKm: number;
   onRetour: () => void;
 }) {
   const { api } = useApi();
@@ -62,6 +65,7 @@ export function PrestationsDuPalierScreen({
   // la même liste — un interrupteur qui ne commande rien, la faute que le
   // produit a déjà retirée deux fois.
   const proche = palier.offres_dans_le_rayon;
+  const salons = palier.commerces_dans_le_rayon;
   const bascule = proche !== null && proche < palier.offres_disponibles;
   const montreesToutes = !bascule || vue === 'tout';
 
@@ -83,11 +87,22 @@ export function PrestationsDuPalierScreen({
           {/* La seconde moitié de la phrase n'existe que si le compte de
               proximité existe : « on ne sait pas où vous êtes » ne s'écrit pas
               « zéro à moins de quinze kilomètres ». */}
+          {/* **Neuf prestations chez un seul salon et neuf chez six sont deux
+              offres très différentes.** Le compte de prestations seul ne le
+              dit pas — d'où les deux grandeurs dans la même phrase, chacune
+              nommée. Elles ne se comparent pas, elles se complètent : c'est ce
+              qui distingue « deux nombres » de « deux grandeurs confondues ».
+
+              Les deux comptes sont nuls ensemble ou pleins ensemble — le
+              serveur les rend depuis la même position. Le second n'est donc pas
+              gardé séparément : une garde qui ne peut pas tomber. */}
           <Texte variante="type.caption" couleur="ink.soft" testID="ou-elles-sont">
-            {proche === null
+            {proche === null || salons === null
               ? t('tiers.prestationsPartout')
               : `${t('tiers.prestationsPartout')} ${t('tiers.prestationsDontProches', {
                   count: formatNumber(proche, locale),
+                  rayon: formatNumber(rayonKm, locale),
+                  salons: formatNumber(salons, locale),
                 })}`}
           </Texte>
           {bascule ? (

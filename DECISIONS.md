@@ -6421,3 +6421,32 @@ de travailler. Il passe dans `CLAUDE.md`, **avant** les commandes d'attente : on
 ne peut pas attendre l'exécution d'une CI qui n'existe pas. Une règle rangée là
 où on ne la cherche pas ne protège personne, et le défaut n'était pas dans son
 énoncé.
+
+---
+
+## 2026-08-18 — Deux grandeurs dans la phrase, et un champ que personne n'alimentait
+
+**L'arbitrage de Daniel :** « neuf prestations à moins de quinze kilomètres,
+chez six salons » dit quelque chose que le seul compte de prestations ne dit
+pas — neuf prestations chez un seul salon et neuf chez six sont deux offres très
+différentes. Les deux grandeurs sont donc dans la même phrase, **chacune
+nommée** : elles ne se comparent pas, elles se complètent. C'est ce qui les
+distingue de deux grandeurs confondues, le défaut qu'on avait évité de justesse
+en séparant `offres_dans_le_rayon` de `commerces_dans_le_rayon`.
+
+**Et l'implémenter a révélé que ni l'un ni l'autre n'était jamais alimenté.**
+`mesPaliers()` n'envoyait aucune coordonnée : le serveur rendait `null` pour les
+deux comptes, l'écran des prestations les lisait, et la seconde moitié de sa
+phrase comme sa bascule ne fonctionnaient **que dans les tests**, où le palier
+était construit à la main.
+
+C'est la cinquième fois de la journée dans cette famille, et c'est une variante
+que les précédentes n'annonçaient pas. Les quatre premières étaient « le serveur
+rend, l'écran ignore » — la garde des champs les attrape. Celle-ci est « le
+serveur rend, l'écran lit, **et personne ne demande** » : le champ *est* lu,
+donc la garde ne peut pas le voir. Ce qui l'attrape est un test sur l'URL
+réellement appelée, comme pour `categorie`.
+
+Le rayon des paliers est le même que celui d'où part le fil, et c'est écrit :
+deux valeurs différentes feraient dire « neuf à moins de quinze kilomètres » ici
+et en montreraient douze là-bas.
