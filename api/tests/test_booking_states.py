@@ -857,3 +857,96 @@ class TestUneAttenteDepassee:
 
         assert await service.expirer_les_attentes_depassees(session) == 0
         assert ligne.status is BookingStatus.AWAITING_BUSINESS
+
+
+class TestUnDossierSousArbitrageEtUneAbsence:
+    """**Les deux ne peuvent pas coexister, et c'est structurel.**
+
+    La règle demandée était « un dossier qu'un arbitre a en main ne se décide
+    plus côté commerce », telle qu'elle vient d'être posée sur les décisions de
+    contrepartie. Portée au bouton d'absence, elle donnerait une condition qui
+    ne peut jamais être vraie — un garde-fou décoratif, c'est-à-dire un
+    garde-fou qui fait croire que la question est réglée.
+
+    La démonstration tient en deux maillons, et ces tests les tiennent chacun :
+
+    1. `no_show` n'est atteignable que depuis `confirmed` ;
+    2. une contrepartie — le seul objet qui porte `needs_human_review` — n'est
+       créée qu'à la consommation, et `consumed` est terminal.
+
+    Une réservation qu'on peut marquer absente n'a donc **jamais** de
+    contrepartie, donc jamais d'arbitre. Ces tests existent pour que la
+    conclusion tombe le jour où l'une des deux prémisses change : ajouter une
+    flèche vers `no_show` depuis un état consommé, ou ouvrir une contrepartie
+    plus tôt, les fait échouer tous les deux.
+    """
+
+    def test_l_absence_ne_s_atteint_que_depuis_une_place_confirmee(self) -> None:
+        depuis = {
+            etat for etat, vers in service.TRANSITIONS.items() if BookingStatus.NO_SHOW in vers
+        }
+
+        assert depuis == {BookingStatus.CONFIRMED}
+
+    def test_une_place_consommee_ne_devient_jamais_une_absence(self) -> None:
+        """Le maillon qui compte : c'est `consumed` qui porte la contrepartie."""
+        assert service.TRANSITIONS[BookingStatus.CONSUMED] == frozenset()
+
+    async def test_une_contrepartie_ouverte_ferme_l_absence(self, session: AsyncSession) -> None:
+        """Le même énoncé, éprouvé par le produit et non par sa table.
+
+        Une table relue par un test qui la recopie ne prouve rien ; celui-ci
+        passe par le service, sur une vraie réservation consommée.
+        """
+        decor = await monter_le_decor(session)
+        ligne = await reserver(session, decor, starts_at=await premier_creneau(session, decor))
+        await service.confirmer(session, booking=ligne, creator_id=decor["createur"].id)
+        await service.consommer(
+            session, booking=ligne, actor=Actor.from_user(decor["proprietaire"])
+        )
+        assert ligne.status is BookingStatus.CONSUMED
+
+        with pytest.raises(service.TransitionNotAllowed):
+            await service.marquer_absent(
+                session,
+                booking=ligne,
+                actor=Actor.from_user(decor["proprietaire"]),
+                reason="elle n'est pas venue",
+            )
+
+        # La session reste saine : un refus attrapé hors point de sauvegarde la
+        # laisserait inutilisable, et le défaut n'apparaîtrait qu'ailleurs.
+        assert await session.scalar(sa.select(sa.literal(1))) == 1
+
+    async def test_un_deplacement_signale_ferme_l_absence(self, session: AsyncSession) -> None:
+        """L'autre porte, et c'est celle de la représaille.
+
+        Un créateur qui signale s'être déplacé pour rien voit sa réservation
+        passer en `cancelled` dans la même transaction. Sans cela, le salon
+        pourrait répondre au signalement en marquant absent celui qu'il n'a pas
+        reçu — et le recours coûterait un événement de fiabilité à qui l'exerce.
+        """
+        from app.services import venue_report
+
+        decor = await monter_le_decor(session)
+        ligne = await reserver(session, decor, starts_at=await premier_creneau(session, decor))
+        await service.confirmer(session, booking=ligne, creator_id=decor["createur"].id)
+
+        await venue_report.signaler(
+            session,
+            booking=ligne,
+            creator_id=decor["createur"].id,
+            note="c'était fermé",
+            maintenant=ligne.starts_at + timedelta(minutes=5),
+        )
+        assert ligne.status is BookingStatus.CANCELLED
+
+        with pytest.raises(service.TransitionNotAllowed):
+            await service.marquer_absent(
+                session,
+                booking=ligne,
+                actor=Actor.from_user(decor["proprietaire"]),
+                reason="elle n'est pas venue",
+            )
+
+        assert await session.scalar(sa.select(sa.literal(1))) == 1

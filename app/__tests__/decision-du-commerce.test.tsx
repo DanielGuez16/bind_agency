@@ -88,6 +88,27 @@ const ABSENCE_OUVERTE = {
   creator_handle: 'camila.wynwood',
 };
 
+/**
+ * **Le cas qui distingue l'heure du serveur d'un délai recopié.**
+ *
+ * Le reste du décor posait `absence_signalable_a` à `starts_at + 20 min` — la
+ * valeur qu'un écran qui recopierait le réglage calculerait lui-même. Les deux
+ * rendaient donc le même verdict, et la mutation qui remplace le champ par un
+ * calcul local **passait tous les tests**. Le décor encodait ce qu'il devait
+ * éprouver.
+ *
+ * Ici le créneau a commencé il y a dix minutes et le serveur ouvre l'absence
+ * depuis cinq : un délai de vingt recopié dans l'écran la dirait fermée pour dix
+ * minutes encore. Les deux lectures se contredisent, et c'est la seule forme qui
+ * prouve laquelle l'écran suit.
+ */
+const DELAI_PLUS_COURT = {
+  ...ABSENCE_OUVERTE,
+  booking_id: 'delai-court-1',
+  starts_at: new Date(Date.now() - 10 * 60_000).toISOString(),
+  absence_signalable_a: new Date(Date.now() - 5 * 60_000).toISOString(),
+};
+
 /** Un droit sans créneau : il n'y a pas d'heure à laquelle ne pas se présenter. */
 const SANS_CRENEAU = {
   ...ABSENCE_OUVERTE,
@@ -438,6 +459,10 @@ it("n'ouvre pas l'absence avant l'heure, et dit à partir de quand", async () =>
   await monter();
 
   expect(screen.queryByTestId('absence-confirmee-1')).toBeNull();
+  // **Et elle dit quelque chose.** La présence de la ligne ne suffit pas :
+  // vidée de son libellé, elle passait le test tout en n'apprenant plus rien —
+  // c'est-à-dire en redevenant le bouton absent qu'elle remplace.
+  expect(screen.getByText(en.commerce.absencePasEncore)).toBeTruthy();
   expect(screen.getByTestId('absence-pas-encore-confirmee-1')).toBeTruthy();
 });
 
@@ -532,4 +557,38 @@ it('ne demande aucune confirmation pour se désister', async () => {
 
   await waitFor(() => expect(envois).toHaveLength(1));
   expect(screen.queryByTestId('desister-confirmee-1-avertissement')).toBeNull();
+});
+
+/**
+ * **La garde du champ contre le délai recopié.**
+ *
+ * Écrite après coup : la mutation qui remplace `absence_signalable_a` par
+ * `starts_at + 20 min` survivait à tous les tests ci-dessus, parce que le décor
+ * posait précisément cette valeur. Un test qui ne peut pas distinguer les deux
+ * lectures ne prouve rien de celle qui est suivie.
+ */
+it("suit l'heure du serveur, même quand elle contredit le délai d'usage", async () => {
+  await monterPlanning([DELAI_PLUS_COURT]);
+
+  // Le serveur ouvre depuis cinq minutes ; vingt minutes après le créneau, ce
+  // serait fermé pour dix minutes encore.
+  expect(screen.getByTestId('absence-delai-court-1')).toBeTruthy();
+  expect(screen.queryByTestId('absence-pas-encore-delai-court-1')).toBeNull();
+});
+
+/** Le même écart, dans l'autre sens : le serveur ferme là où le délai ouvrirait. */
+it("respecte une heure d'ouverture plus tardive que le délai d'usage", async () => {
+  await monterPlanning([
+    {
+      ...ABSENCE_OUVERTE,
+      booking_id: 'delai-long-1',
+      // Le créneau est passé depuis une heure — un délai de vingt minutes
+      // recopié ouvrirait le geste — mais le serveur ne l'ouvre que dans dix.
+      starts_at: new Date(Date.now() - 3_600_000).toISOString(),
+      absence_signalable_a: new Date(Date.now() + 10 * 60_000).toISOString(),
+    },
+  ]);
+
+  expect(screen.queryByTestId('absence-delai-long-1')).toBeNull();
+  expect(screen.getByTestId('absence-pas-encore-delai-long-1')).toBeTruthy();
 });
