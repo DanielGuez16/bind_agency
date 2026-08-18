@@ -6166,3 +6166,38 @@ interdit désormais les formes de promesse et **exige** le compteur d'écoulé.
 
 **Une clé de traduction est morte avec le changement** et a été retirée :
 `jamaisMesure` ne commandait plus rien.
+
+---
+
+## 2026-08-17 — Les réservations : chaque ligne dit ce qu'elle attend
+
+Le deuxième écran du trou trouvé par le registre. Trois lignes se
+ressemblaient — celle qui demande un geste, celle qui attend un contrôle, celle
+qui est close — et il fallait lire les trois pour trouver laquelle agissait.
+
+**La règle sort du rendu.** `attenteDe` rend `creatrice`, `controle` ou rien, et
+s'éprouve sans monter un écran — même découpage que le cycle du mur. Ce qui en
+découle : filet d'encre et bouton pour la première, **des mots** pour la
+seconde. Un bouton grisé se presse quand même et ne répond pas ; l'action
+impossible se retire, c'est déjà la règle de la bibliothèque et cet écran ne la
+tenait pas.
+
+**Une contradiction interne, corrigée.** La ligne était pressable dès qu'une
+contrepartie existait : une ligne affichant « rien à faire de votre côté »
+ouvrait l'écran de preuve. La ligne et son texte se contredisaient, et c'est le
+texte qui avait raison.
+
+**Deux champs servis et rendus nulle part**, la troisième fois cette session
+après `categorie` et `constate`/`requis` : `deadline_at`, qui est la seule chose
+décidant s'il faut agir ce soir ou la semaine prochaine, et `attempts_count`,
+qui ne s'affiche qu'à partir de la seconde — « tentative 1 sur 3 » sur une
+première publication annoncerait un échec qui n'a pas eu lieu.
+
+**Le badge porte le palier et le réseau.** La même prestation peut exister sur
+deux comptes : « one story » ne dit pas sur lequel publier, et publier sur le
+mauvais ne compte pas.
+
+**Ce qui reste hors de portée sans le serveur** : les exigences de la
+contrepartie — mention attendue, géotag — et le motif de reprise, que le cadre
+08b affiche en ligne. `ContrepartieBreve` ne les porte pas, et les chercher
+demanderait un appel par ligne.

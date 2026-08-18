@@ -321,6 +321,12 @@ export const en = {
     reserver: 'Book this',
     reservationFaite: 'Booked',
     confirmer: 'Confirm booking',
+    // L'échéance et la tentative : servies depuis toujours, rendues nulle part.
+    contrepartieEcheance: 'Due {{quand}}',
+    contrepartieTentative: 'Attempt {{n}} of 3',
+    contrepartieRienAFaire: 'The salon is checking it — nothing to do on your side.',
+    action_code: 'Show code',
+    action_preuve: 'Send your post',
     enAttenteDuSalon: 'Waiting for the salon to confirm. Your pickup code appears once they do.',
     enAttenteJusquA: 'They have until {{quand}} to answer. After that the booking expires and your slot is free again.',
     ouvrir_code: 'Show code ›',

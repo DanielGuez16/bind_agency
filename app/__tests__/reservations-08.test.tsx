@@ -1,0 +1,177 @@
+/**
+ * Les réservations, contre leurs cadres 08a et 08b.
+ *
+ * Le deuxième écran du trou trouvé par le registre : `Lot 1 v1.1` employait les
+ * jetons de la v1.0 sans avoir jamais été comparée cadre par cadre. **Repeint
+ * n'est pas passé.**
+ *
+ * **La phrase du cadre est « chaque ligne dit ce qu'elle attend de toi ».** Trois
+ * lignes se ressemblaient : celle qui demande un geste, celle qui attend un
+ * contrôle, celle qui est close. On relisait les trois pour trouver laquelle
+ * agissait — et l'écran d'envoi de preuve paraissait sans action parce que le
+ * chemin qui y mène n'en portait pas.
+ *
+ * La règle est éprouvée en deux endroits : sur `attenteDe`, qui la décide sans
+ * un pixel, et sur le rendu, qui doit s'y tenir.
+ */
+import { render, screen, waitFor, within } from '@testing-library/react-native';
+
+import { ApiClient, ApiProvider, type ReservationDuCreateur } from '../src/api';
+import { I18nProvider } from '../src/i18n';
+import { en } from '../src/i18n/en';
+import { HistoriqueScreen, attenteDe } from '../src/screens/HistoriqueScreen';
+import { ThemeProvider } from '../src/theme';
+
+function reservation(extra: Partial<ReservationDuCreateur> = {}): ReservationDuCreateur {
+  return {
+    booking_id: 'r1',
+    status: 'consumed',
+    starts_at: '2026-08-16T14:30:00Z',
+    ends_at: '2026-08-16T15:15:00Z',
+    valid_until: '2026-08-16T18:00:00Z',
+    approval_expires_at: null,
+    created_at: '2026-08-14T09:00:00Z',
+    business_id: 'b1',
+    business_name: 'Vela Nail Studio',
+    business_category: 'beauty',
+    business_address: '120 NE 41st St',
+    business_timezone: 'America/New_York',
+    business_cover_photo_key: null,
+    item_name: 'Gel manicure',
+    item_photo_key: null,
+    duration_minutes: 45,
+    platform: 'instagram',
+    content_format: 'story',
+    contrepartie: null,
+    ...extra,
+  } as unknown as ReservationDuCreateur;
+}
+
+function contrepartie(statut: string, extra: Record<string, unknown> = {}) {
+  return {
+    collaboration_id: 'k1',
+    status: statut,
+    deadline_at: '2026-08-16T14:30:00Z',
+    attempts_count: 1,
+    needs_human_review: false,
+    ...extra,
+  };
+}
+
+async function monter(items: ReservationDuCreateur[]) {
+  const api = new ApiClient({
+    baseUrl: 'https://api.test',
+    coffre: { lire: async () => null, ecrire: async () => {} },
+    fetchImpl: async () =>
+      ({
+        ok: true,
+        status: 200,
+        json: async () => ({ items, compteurs: { consumed: items.length } }),
+      }) as Response,
+  });
+  return await render(
+    <I18nProvider initialLocale="en">
+      <ThemeProvider role="creator">
+        <ApiProvider client={api}>
+          <HistoriqueScreen onOuvrir={() => {}} />
+        </ApiProvider>
+      </ThemeProvider>
+    </I18nProvider>,
+  );
+}
+
+describe('la règle : ce que la ligne attend, et de qui', () => {
+  it('un code de retrait attend la créatrice, au comptoir', async () => {
+    expect(attenteDe(reservation({ status: 'confirmed' }))).toBe('creatrice');
+  });
+
+  it('une publication demandée aussi, y compris à la reprise', async () => {
+    for (const statut of ['pending', 'resubmit_requested']) {
+      expect(attenteDe(reservation({ contrepartie: contrepartie(statut) as never }))).toBe(
+        'creatrice',
+      );
+    }
+  });
+
+  it('une publication envoyée attend le contrôle, pas elle', async () => {
+    for (const statut of ['submitted', 'under_review']) {
+      expect(attenteDe(reservation({ contrepartie: contrepartie(statut) as never }))).toBe(
+        'controle',
+      );
+    }
+  });
+
+  it('et une contrepartie close n’attend plus personne', async () => {
+    // Le sens inverse : sans lui, une règle qui rendrait « créatrice » partout
+    // passerait les trois tests précédents.
+    for (const statut of ['approved', 'unfulfilled']) {
+      expect(attenteDe(reservation({ contrepartie: contrepartie(statut) as never }))).toBeNull();
+    }
+  });
+});
+
+describe('chaque ligne dit ce qu’elle attend de toi', () => {
+  it('celle qui demande un geste porte un bouton', async () => {
+    await monter([reservation({ contrepartie: contrepartie('pending') as never })]);
+    await waitFor(() => expect(screen.getByTestId('agir-r1')).toBeTruthy());
+
+    expect(screen.queryByTestId('rien-a-faire-r1')).toBeNull();
+  });
+
+  it('celle qui attend un contrôle le dit en mots, sans bouton grisé', async () => {
+    // **Un bouton gris se presse quand même, et ne répond pas.** L'action
+    // impossible se retire, elle ne se grise pas — c'est déjà la règle de la
+    // bibliothèque, et cet écran ne la tenait pas.
+    await monter([reservation({ contrepartie: contrepartie('submitted') as never })]);
+    await waitFor(() => expect(screen.getByTestId('rien-a-faire-r1')).toBeTruthy());
+
+    expect(screen.queryByTestId('agir-r1')).toBeNull();
+    expect(screen.getByTestId('reservation-r1').props.accessibilityRole).toBeUndefined();
+  });
+
+  it('l’échéance s’affiche, elle était servie et rendue nulle part', async () => {
+    // Le statut seul ne dit pas jusqu'à quand, et c'est la seule chose qui
+    // décide s'il faut agir ce soir ou la semaine prochaine.
+    await monter([reservation({ contrepartie: contrepartie('pending') as never })]);
+    await waitFor(() => expect(screen.getByTestId('echeance-r1')).toBeTruthy());
+
+    expect(screen.getByTestId('echeance-r1')).toHaveTextContent(/16/);
+  });
+
+  it('la tentative n’apparaît qu’à partir de la seconde', async () => {
+    // « Tentative 1 sur 3 » sur une première publication annonce un échec
+    // qui n'a pas eu lieu.
+    await monter([reservation({ contrepartie: contrepartie('pending') as never })]);
+    await waitFor(() => expect(screen.getByTestId('agir-r1')).toBeTruthy());
+    expect(screen.queryByTestId('tentative-r1')).toBeNull();
+
+    await monter([
+      reservation({ contrepartie: contrepartie('resubmit_requested', { attempts_count: 2 }) as never }),
+    ]);
+    await waitFor(() => expect(screen.getByTestId('tentative-r1')).toBeTruthy());
+    expect(screen.getByTestId('tentative-r1')).toHaveTextContent(/\b2\b/);
+  });
+
+  it('le badge porte le palier et le réseau', async () => {
+    // La même prestation peut exister sur deux comptes : « one story » ne dit
+    // pas sur lequel publier, et publier sur le mauvais ne compte pas.
+    await monter([reservation({ contrepartie: contrepartie('pending') as never })]);
+    await waitFor(() => expect(screen.getByTestId('palier-r1')).toBeTruthy());
+
+    const badge = screen.getByTestId('palier-r1');
+    expect(badge).toHaveTextContent(/STORY/);
+    expect(badge).toHaveTextContent(/INSTAGRAM/);
+  });
+
+  it('la prestation passe devant le salon', async () => {
+    // L'écran mettait le nom du salon en tête : c'est ce dont on se souvient
+    // le moins. Ce qu'on cherche dans dix lignes est ce qu'on a réservé.
+    await monter([reservation({ contrepartie: contrepartie('pending') as never })]);
+    await waitFor(() => expect(screen.getByTestId('reservation-r1')).toBeTruthy());
+
+    const textes = screen
+      .getAllByText(/Gel manicure|Vela Nail Studio/)
+      .map((n) => String(n.props.children));
+    expect(textes[0]).toContain('Gel manicure');
+  });
+});

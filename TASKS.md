@@ -861,11 +861,30 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       Un test qui bannissait le mot « day » a été repris : ce n'est pas le mot
       qui promet un délai, c'est la forme — « jour 3 » dit ce qui s'est passé,
       « sous 3 jours » ce qui va se passer. 6 tests neufs, 8 mutations vérifiées*
-- [ ] **`Lot 1 v1.1` · 08 · les réservations, et 02 · les paliers**
-      *Les deux écrans qui restent du même trou. Même méthode : les confronter
-      cadre par cadre, et non vérifier qu'ils emploient les bons jetons — ils
-      les emploient déjà, c'est précisément ce qui a masqué le manque pendant
-      trois campagnes*
+- [x] **`Lot 1 v1.1` · 08 · les réservations, confrontées à leurs cadres**
+      *« Chaque ligne dit ce qu'elle attend de toi » : trois lignes se
+      ressemblaient — celle qui demande un geste, celle qui attend un contrôle,
+      celle qui est close — et on relisait les trois pour trouver laquelle
+      agissait. La règle sort du rendu et s'éprouve seule : `attenteDe` rend
+      `creatrice`, `controle` ou rien. Une ligne qui attend un geste porte un
+      **filet d'encre** et un bouton ; une ligne en contrôle le dit **en mots**,
+      parce qu'un bouton grisé se presse quand même et ne répond pas. La ligne
+      cesse d'être pressable quand elle n'attend rien : elle ouvrait l'écran de
+      preuve tout en affichant « rien à faire de votre côté ». **Deux champs
+      servis et rendus nulle part** — `deadline_at`, la seule chose qui décide
+      s'il faut agir ce soir ou la semaine prochaine, et `attempts_count`, qui
+      n'apparaît qu'à partir de la seconde tentative. La prestation passe devant
+      le salon, la date devient un bloc mono, et le badge porte le palier **et**
+      le réseau : la même prestation peut exister sur deux comptes, et publier
+      sur le mauvais ne compte pas. 10 tests neufs, 8 mutations vérifiées*
+      *Reste hors de portée sans le serveur : les exigences de la contrepartie —
+      mention, géotag — et le motif de reprise, que le cadre 08b affiche en
+      ligne. `ContrepartieBreve` ne les porte pas, et les chercher ferait un
+      appel par ligne*
+- [ ] **`Lot 1 v1.1` · 02 · les paliers**
+      *Le dernier écran du trou trouvé par le registre. Même méthode : le
+      confronter cadre par cadre, et non vérifier qu'il emploie les bons jetons —
+      il les emploie déjà, c'est précisément ce qui a masqué le manque*
 - [ ] **`pytest -n auto`, avec une base par worker**
       *Mesuré : le job `api` prend 754 s, dont **704 dans `pytest` seul** —
       l'installation en fait 22, le reste est du bruit. C'est 93 % du job et
@@ -923,7 +942,7 @@ décider.
 | `BIND Mark - Favicon 16` | **Passée.** Le 16 est un dessin distinct, et aucun fichier cuit ne porte plus le logotype. |
 | `BIND Creator - Fil v2` | **Partiellement passée, et le reste est sans objet.** La direction 1b — les rangées par quartier — est branchée là où Design l'a elle-même placée : ce que montre une catégorie choisie (#141). La direction 1a a été remplacée par `Le mur v2.1`. |
 | `BIND Creator - Le mur v2.1` | **Passée, et ses cinq réserves sont tranchées** (#131, #132, #140, #141, #145). Trois écarts à la planche sont assumés et écrits : le quartier de la position n'est pas nommé — rien ne sait le résoudre ; le Didone reste à son plancher de 34, une exception non déclarée dans les jetons étant une violation ; et les catégories sont les six du modèle, celles de la planche datant du produit mono-catégorie. Deux étaient des défauts et sont corrigés : le rayon se règle de nouveau dans les deux sens, et le mur va à fond perdu. |
-| `BIND Creator - Lot 1 v1.1` | **Partiellement passée.** Le cadre 01, l'audience, est confronté à sa planche (#149) — c'était l'écran nommé deux fois comme le plus faible du produit. Restent 08, les réservations, et 02, les paliers : ils emploient les jetons de la v1.0, ce qui est précisément ce qui a masqué le manque, et aucune trace ne dit qu'ils ont été comparés cadre par cadre. Son fil a été remplacé par le mur, et son cadre 03b a servi à composer le filtre par catégorie. |
+| `BIND Creator - Lot 1 v1.1` | **Partiellement passée.** Le cadre 01, l'audience, est confronté à sa planche (#149) — c'était l'écran nommé deux fois comme le plus faible du produit. Les cadres 01 (l'audience, #149) et 08 (les réservations, #150) sont confrontés à leurs planches. Reste 02, les paliers. Son fil a été remplacé par le mur, et son cadre 03b a servi à composer le filtre par catégorie. |
 
 **Ce que cette liste a trouvé en étant écrite :** `Lot 1 v1.1` était la seule
 planche sans entrée nulle part, alors que les lots 2, 3 et 4 en avaient chacun
