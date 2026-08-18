@@ -358,10 +358,39 @@ jobs:
           EXPO_PUBLIC_API_URL: http://127.0.0.1:8010/api/v1
         run: npx expo export --platform web --output-dir dist-e2e
 
+      # **Le pas qui bloque, et le cache que j'avais écarté à tort.** Mesuré :
+      # il a tenu 1360 s puis 1515 s sur deux exécutions consécutives de cette
+      # PR même, tué chaque fois par le plafond qu'elle ajoute — pendant que
+      # tout le reste du job tient en 150 s. J'avais refusé le cache sur le
+      # gain de temps, « une minute sur cinq » : le calcul était juste et la
+      # question était fausse. Ce qu'on achète n'est pas une minute, c'est de ne
+      # pas dépendre d'un téléchargement à chaque exécution.
+      #
+      # La clé porte la version de Playwright : les binaires lui sont liés, et
+      # un cache qui survivrait à une montée de version servirait un navigateur
+      # que la bibliothèque ne sait plus piloter.
+      - name: Cache du navigateur
+        if: needs.perimetre.outputs.e2e == 'oui'
+        id: cache-navigateur
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('app/package-lock.json') }}
+
+      # **`--with-deps` reste, et il passe par apt.** C'est lui qui installe les
+      # bibliothèques système, que le cache ne porte pas ; il est rapide quand
+      # il n'a rien à télécharger. Le pas complet ne tourne qu'au défaut de
+      # cache — et s'il bloque alors, le plafond du job le tue en vingt-cinq
+      # minutes au lieu de six heures.
       - name: Navigateur
         if: needs.perimetre.outputs.e2e == 'oui'
         working-directory: app
-        run: npx playwright install --with-deps chrome
+        run: |
+          if [ "${{ steps.cache-navigateur.outputs.cache-hit }}" = "true" ]; then
+            npx playwright install-deps chrome
+          else
+            npx playwright install --with-deps chrome
+          fi
 
       - name: Playwright
         if: needs.perimetre.outputs.e2e == 'oui'

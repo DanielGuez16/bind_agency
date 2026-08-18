@@ -6577,9 +6577,21 @@ fonctionnelle : le blocage peut se déplacer sur `npm ci` ou sur `expo export`,
 et un plafond posé sur le seul pas qu'on avait en tête ne garde que celui-là.
 C'est la même faute que la garde qui ne cherchait l'appel qu'en début de ligne.
 
-**Le cache de Playwright a été écarté aussi, sur les chiffres.** `playwright
-install` met 33 à 121 secondes sur un job qui en met 212 à 308 : le cache
-gagnerait une minute sur cinq, au prix d'une clé à tenir et d'un mode d'échec de
-plus. Il fermerait la fenêtre où le pas peut bloquer — mais le plafond traite
-déjà le dommage, et fermer une fenêtre sur les quatre que le job compte n'est
-pas une garde, c'est une préférence.
+**Le cache de Playwright a d'abord été écarté sur les chiffres, et c'était une
+erreur de question.** `playwright install` met 33 à 121 secondes sur un job qui
+en met 212 à 308 : le cache gagnerait une minute sur cinq, au prix d'une clé à
+tenir. Le calcul était juste ; la question était fausse.
+
+**Le plafond a rendu son verdict sur la PR qui l'ajoute.** Le pas `Navigateur` a
+tenu **1360 s puis 1515 s sur deux exécutions consécutives**, tué chaque fois,
+pendant que tout le reste du job tenait en 150 s. Le blocage n'est donc ni
+occasionnel ni propre à un arbre : il est reproductible, et la PR ne pouvait pas
+fusionner. « Le plafond traite déjà le dommage » était faux — il rend le dommage
+lisible, il ne l'enlève pas.
+
+Le cache est donc posé, clé sur la version de Playwright : les binaires lui sont
+liés, et un cache qui survivrait à une montée de version servirait un navigateur
+que la bibliothèque ne sait plus piloter. `--with-deps` reste au défaut de
+cache ; sur une touche, seul `install-deps` tourne. Et si ce pas bloque encore,
+le plafond le tue en vingt-cinq minutes — les deux se complètent au lieu de se
+remplacer.
