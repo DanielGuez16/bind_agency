@@ -111,11 +111,14 @@ const NON_RENDUS: Record<string, string> = {
   // salon par ligne alourdirait une liste qu'on parcourt.
   'ReservationDuCreateur.business_cover_photo_key': 'contrat',
 
-  // --- à instruire : ce qui reste ---
+  // --- à instruire : plus rien ---
   //
-  // Chacune est reprise dans `TASKS.md`. Ce ne sont pas des exemptions, ce sont
-  // des constats en attente de décision.
-  'ReservationDuCommerce.absence_signalable_a': 'a-instruire',
+  // La section est vide, et c'est le but. La dernière ligne qui y restait —
+  // `ReservationDuCommerce.absence_signalable_a` — n'était pas un champ non
+  // affiché : c'était une route sans appelant, donc un geste qui n'existait pas
+  // dans l'application. Elle est partie en étant branchée, pas en étant
+  // requalifiée. Une entrée qu'on déplace vers `contrat` faute de savoir quoi
+  // en faire est exactement ce que cette section refusait d'être.
 };
 
 const RAISONS = new Set(['contrat', 'technique', 'a-instruire']);

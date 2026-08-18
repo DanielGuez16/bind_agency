@@ -442,6 +442,12 @@ export const en = {
     refuserAide: 'The creator reads this. Say what got in the way.',
     seDesister: 'Cancel this booking',
     seDesisterAide: 'The creator reads this. Their reliability is not affected.',
+    constaterLAbsence: 'Report a no-show',
+    constaterLAbsenceAide: 'The creator reads this. Say what happened.',
+    absenceEstDefinitive:
+      'A no-show cannot be undone, and it lowers the creator’s reliability score. If they turned up and something else went wrong, cancel the booking instead.',
+    absenceConfirmer: 'Yes, they did not turn up',
+    absencePasEncore: 'You can report a no-show from',
     envoyerLeMotif: 'Send',
     statut_held: 'held',
     statut_awaiting_business: 'waiting for you',

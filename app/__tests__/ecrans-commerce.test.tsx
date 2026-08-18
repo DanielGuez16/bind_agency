@@ -92,6 +92,7 @@ const JOURNEE = {
       booking_id: 'r1',
       status: 'confirmed',
       starts_at: '2026-08-08T14:00:00Z',
+      absence_signalable_a: '2026-08-08T14:20:00Z',
       ends_at: '2026-08-08T14:45:00Z',
       valid_until: '2026-08-09T04:00:00Z',
       creator_id: 'u1',
@@ -109,6 +110,9 @@ const JOURNEE = {
       status: 'confirmed',
       starts_at: null,
       ends_at: null,
+      // Un droit sans créneau : pas d'heure à laquelle ne pas se présenter,
+      // donc aucune absence à constater. `SPEC.md` §4.1.
+      absence_signalable_a: null,
       valid_until: '2026-08-09T04:00:00Z',
       creator_id: 'u2',
       creator_first_name: null,
