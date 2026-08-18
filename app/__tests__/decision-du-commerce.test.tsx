@@ -459,6 +459,12 @@ it("n'ouvre pas l'absence avant l'heure, et dit à partir de quand", async () =>
   await monter();
 
   expect(screen.queryByTestId('absence-confirmee-1')).toBeNull();
+  // **Et elle dit pourquoi.** Depuis que l'absence attend la fermeture de la
+  // fenêtre de recours, l'attente se compte en heures : l'heure seule se
+  // lirait comme une lenteur arbitraire, et un commerçant honnête conclurait
+  // à un défaut plutôt qu'à une protection.
+  expect(screen.getByTestId('absence-pourquoi-confirmee-1')).toBeTruthy();
+  expect(screen.getByText(en.commerce.absencePasEncorePourquoi)).toBeTruthy();
   // **Et elle dit quelque chose.** La présence de la ligne ne suffit pas :
   // vidée de son libellé, elle passait le test tout en n'apprenant plus rien —
   // c'est-à-dire en redevenant le bouton absent qu'elle remplace.

@@ -427,6 +427,8 @@ export const es: Catalogue = {
       'Una ausencia no se puede deshacer, y baja la puntuación de fiabilidad de la creadora. Si vino y falló otra cosa, cancela la reserva en su lugar.',
     absenceConfirmer: 'Sí, no se presentó',
     absencePasEncore: 'Podrás registrar la ausencia a partir de las',
+    absencePasEncorePourquoi:
+      'Hasta entonces la creadora aún puede avisar de que vino y te encontró cerrado. Cuando esa ventana se cierre, podrás registrar la ausencia.',
     envoyerLeMotif: 'Enviar',
     statut_held: 'retenida',
     statut_awaiting_business: 'esperándote',
