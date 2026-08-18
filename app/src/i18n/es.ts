@@ -421,6 +421,12 @@ export const es: Catalogue = {
     refuserAide: 'La creadora lo lee. Di qué lo impidió.',
     seDesister: 'Cancelar esta reserva',
     seDesisterAide: 'La creadora lo lee. Su fiabilidad no se ve afectada.',
+    constaterLAbsence: 'Registrar una ausencia',
+    constaterLAbsenceAide: 'La creadora lo lee. Di qué pasó.',
+    absenceEstDefinitive:
+      'Una ausencia no se puede deshacer, y baja la puntuación de fiabilidad de la creadora. Si vino y falló otra cosa, cancela la reserva en su lugar.',
+    absenceConfirmer: 'Sí, no se presentó',
+    absencePasEncore: 'Podrás registrar la ausencia a partir de las',
     envoyerLeMotif: 'Enviar',
     statut_held: 'retenida',
     statut_awaiting_business: 'esperándote',

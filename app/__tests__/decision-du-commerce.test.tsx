@@ -45,6 +45,10 @@ const RESERVATIONS = [
     // L'échéance d'accord vaut le délai plein **borné par le créneau** : avec
     // un rendez-vous dans une heure, c'est l'heure du rendez-vous.
     approval_expires_at: dansUneHeure,
+    // Le serveur le calcule sur le créneau, quel que soit le statut : une
+    // demande encore en attente en porte une, et l'omettre du décor rendrait la
+    // fabrique moins fidèle que le serveur qu'elle imite.
+    absence_signalable_a: new Date(Date.now() + 3_600_000 + 20 * 60_000).toISOString(),
     item_name: 'Gel manicure',
     creator_first_name: 'Rebecca',
     creator_last_name: null,
@@ -55,12 +59,63 @@ const RESERVATIONS = [
     status: 'confirmed',
     starts_at: dansUneHeure,
     valid_until: dansUneHeure,
+    // Le rendez-vous est devant nous : l'absence ne se constate pas encore, et
+    // l'écran doit dire à partir de quand plutôt que de taire le geste.
+    absence_signalable_a: new Date(Date.now() + 3_600_000 + 20 * 60_000).toISOString(),
     item_name: 'Brushing',
     creator_first_name: 'Sofia',
     creator_last_name: null,
     creator_handle: 'sofia.brickell',
   },
 ];
+
+/**
+ * Le planning que le serveur rendra, quand un cas a besoin d'autre chose que le
+ * décor. Comme `fileDuJour` : remonter tout le montage pour une heure serait le
+ * recopier à côté de lui-même.
+ */
+const ABSENCE_OUVERTE = {
+  booking_id: 'passee-1',
+  status: 'confirmed',
+  starts_at: ilYAUneHeure,
+  valid_until: dansUneHeure,
+  // Le délai est écoulé : le geste est ouvert. L'heure vient du serveur, et
+  // c'est tout l'objet de ces tests — l'écran ne recopie aucun délai.
+  absence_signalable_a: ilYAUneHeure,
+  item_name: 'Balayage',
+  creator_first_name: 'Camila',
+  creator_last_name: null,
+  creator_handle: 'camila.wynwood',
+};
+
+/**
+ * **Le cas qui distingue l'heure du serveur d'un délai recopié.**
+ *
+ * Le reste du décor posait `absence_signalable_a` à `starts_at + 20 min` — la
+ * valeur qu'un écran qui recopierait le réglage calculerait lui-même. Les deux
+ * rendaient donc le même verdict, et la mutation qui remplace le champ par un
+ * calcul local **passait tous les tests**. Le décor encodait ce qu'il devait
+ * éprouver.
+ *
+ * Ici le créneau a commencé il y a dix minutes et le serveur ouvre l'absence
+ * depuis cinq : un délai de vingt recopié dans l'écran la dirait fermée pour dix
+ * minutes encore. Les deux lectures se contredisent, et c'est la seule forme qui
+ * prouve laquelle l'écran suit.
+ */
+const DELAI_PLUS_COURT = {
+  ...ABSENCE_OUVERTE,
+  booking_id: 'delai-court-1',
+  starts_at: new Date(Date.now() - 10 * 60_000).toISOString(),
+  absence_signalable_a: new Date(Date.now() - 5 * 60_000).toISOString(),
+};
+
+/** Un droit sans créneau : il n'y a pas d'heure à laquelle ne pas se présenter. */
+const SANS_CRENEAU = {
+  ...ABSENCE_OUVERTE,
+  booking_id: 'sans-creneau-1',
+  starts_at: null,
+  absence_signalable_a: null,
+};
 
 /**
  * La file que le serveur rendra au prochain montage.
@@ -70,6 +125,9 @@ const RESERVATIONS = [
  * recopier le montage à côté de lui-même.
  */
 let fileDuJour: (typeof RESERVATIONS)[number][] = [];
+
+/** Le planning du jour. Le décor par défaut, sauf quand un cas demande mieux. */
+let planningDuJour: unknown[] = [];
 
 function client() {
   return new ApiClient({
@@ -89,7 +147,7 @@ function client() {
           timezone: 'America/New_York',
           debut: '2026-08-08T12:00:00Z',
           fin: '2026-08-09T00:00:00Z',
-          items: RESERVATIONS.filter((r) => r.status !== 'awaiting_business'),
+          items: planningDuJour,
           // La file vient du serveur, toutes dates confondues.
           a_trancher: fileDuJour,
         }),
@@ -121,7 +179,14 @@ async function monterAvec(file: (typeof RESERVATIONS)[number][]) {
 beforeEach(() => {
   envois.length = 0;
   fileDuJour = RESERVATIONS.filter((r) => r.status === 'awaiting_business');
+  planningDuJour = RESERVATIONS.filter((r) => r.status !== 'awaiting_business');
 });
+
+/** Monte l'écran avec un planning choisi. La file reste celle du décor. */
+async function monterPlanning(items: unknown[]) {
+  planningDuJour = items;
+  return monter();
+}
 
 it('met ce qui attend une décision devant le planning', async () => {
   await monter();
@@ -380,4 +445,150 @@ it("ferme la décision quand le délai est passé, même si le créneau est loin
 
   expect(screen.getByTestId('depassee-attente-1')).toBeTruthy();
   expect(screen.queryByTestId('accorder-attente-1')).toBeNull();
+});
+
+// --------------------------------------------------------------------------
+// constater une absence
+// --------------------------------------------------------------------------
+
+it("n'ouvre pas l'absence avant l'heure, et dit à partir de quand", async () => {
+  // Le décor par défaut porte une réservation confirmée dont le rendez-vous est
+  // dans une heure : rien à constater, et l'écran doit le dire plutôt que de
+  // taire le geste — un bouton absent sans explication se lit comme une
+  // fonction manquante.
+  await monter();
+
+  expect(screen.queryByTestId('absence-confirmee-1')).toBeNull();
+  // **Et elle dit quelque chose.** La présence de la ligne ne suffit pas :
+  // vidée de son libellé, elle passait le test tout en n'apprenant plus rien —
+  // c'est-à-dire en redevenant le bouton absent qu'elle remplace.
+  expect(screen.getByText(en.commerce.absencePasEncore)).toBeTruthy();
+  expect(screen.getByTestId('absence-pas-encore-confirmee-1')).toBeTruthy();
+});
+
+it("n'offre jamais l'absence sur un droit sans créneau", async () => {
+  // `SPEC.md` §4.1 : pas d'heure à laquelle ne pas se présenter, donc pas
+  // d'absence. Ni le bouton, ni l'heure d'ouverture — il n'y en a pas.
+  await monterPlanning([SANS_CRENEAU]);
+
+  expect(screen.queryByTestId('absence-sans-creneau-1')).toBeNull();
+  expect(screen.queryByTestId('absence-pas-encore-sans-creneau-1')).toBeNull();
+});
+
+it("ouvre l'absence sur l'heure que le serveur donne, jamais sur un délai recopié", async () => {
+  await monterPlanning([ABSENCE_OUVERTE]);
+
+  expect(screen.getByTestId('absence-passee-1')).toBeTruthy();
+  expect(screen.queryByTestId('absence-pas-encore-passee-1')).toBeNull();
+});
+
+it('marque absent par sa propre route, et non par celle du désistement', async () => {
+  await monterPlanning([ABSENCE_OUVERTE]);
+
+  await act(async () => {
+    await fireEvent.press(screen.getByTestId('absence-passee-1'));
+  });
+  await act(async () => {
+    await fireEvent.changeText(
+      screen.getByTestId('absence-passee-1-champ'),
+      'ne s’est pas présentée',
+    );
+  });
+  // Premier appui : il arme. Second : il envoie.
+  await act(async () => {
+    await fireEvent.press(screen.getByTestId('absence-passee-1-valider'));
+  });
+  await act(async () => {
+    await fireEvent.press(screen.getByTestId('absence-passee-1-confirmer'));
+  });
+
+  await waitFor(() => expect(envois).toHaveLength(1));
+  expect(envois[0].chemin).toContain('/bookings/passee-1/no-show');
+  expect(envois[0].chemin).not.toContain('cancel-by-business');
+  // Détouré, jamais reformulé : la créatrice le lit, et il motive une pénalité.
+  expect(envois[0].corps).toEqual({ reason: 'ne s’est pas présentée' });
+});
+
+/**
+ * **Le test qui garde la confirmation.**
+ *
+ * Une confirmation décorative — un second bouton qui envoie au premier appui —
+ * passerait tous les tests ci-dessus sans rien confirmer du tout. Celui-ci
+ * s'arrête après le premier appui et vérifie que **rien n'est parti**. C'est la
+ * seule forme qui distingue une confirmation d'un libellé.
+ */
+it("n'envoie rien au premier appui : l'absence est irréversible, elle se confirme", async () => {
+  await monterPlanning([ABSENCE_OUVERTE]);
+
+  await act(async () => {
+    await fireEvent.press(screen.getByTestId('absence-passee-1'));
+  });
+  await act(async () => {
+    await fireEvent.changeText(screen.getByTestId('absence-passee-1-champ'), 'absente');
+  });
+  await act(async () => {
+    await fireEvent.press(screen.getByTestId('absence-passee-1-valider'));
+  });
+
+  expect(envois).toHaveLength(0);
+  // Et la conséquence est annoncée avant le second appui, pas après.
+  expect(screen.getByTestId('absence-passee-1-avertissement')).toBeTruthy();
+  expect(screen.getByTestId('absence-passee-1-confirmer')).toBeTruthy();
+});
+
+/**
+ * Le désistement, lui, n'a rien d'irréversible et ne se confirme pas.
+ *
+ * Sans ce test, poser la confirmation sur les deux gestes — ce qui est le
+ * réflexe — ajouterait un appui à l'action qu'on veut justement facile.
+ */
+it('ne demande aucune confirmation pour se désister', async () => {
+  await monter();
+
+  await act(async () => {
+    await fireEvent.press(screen.getByTestId('desister-confirmee-1'));
+  });
+  await act(async () => {
+    await fireEvent.changeText(screen.getByTestId('desister-confirmee-1-champ'), 'fermeture');
+  });
+  await act(async () => {
+    await fireEvent.press(screen.getByTestId('desister-confirmee-1-valider'));
+  });
+
+  await waitFor(() => expect(envois).toHaveLength(1));
+  expect(screen.queryByTestId('desister-confirmee-1-avertissement')).toBeNull();
+});
+
+/**
+ * **La garde du champ contre le délai recopié.**
+ *
+ * Écrite après coup : la mutation qui remplace `absence_signalable_a` par
+ * `starts_at + 20 min` survivait à tous les tests ci-dessus, parce que le décor
+ * posait précisément cette valeur. Un test qui ne peut pas distinguer les deux
+ * lectures ne prouve rien de celle qui est suivie.
+ */
+it("suit l'heure du serveur, même quand elle contredit le délai d'usage", async () => {
+  await monterPlanning([DELAI_PLUS_COURT]);
+
+  // Le serveur ouvre depuis cinq minutes ; vingt minutes après le créneau, ce
+  // serait fermé pour dix minutes encore.
+  expect(screen.getByTestId('absence-delai-court-1')).toBeTruthy();
+  expect(screen.queryByTestId('absence-pas-encore-delai-court-1')).toBeNull();
+});
+
+/** Le même écart, dans l'autre sens : le serveur ferme là où le délai ouvrirait. */
+it("respecte une heure d'ouverture plus tardive que le délai d'usage", async () => {
+  await monterPlanning([
+    {
+      ...ABSENCE_OUVERTE,
+      booking_id: 'delai-long-1',
+      // Le créneau est passé depuis une heure — un délai de vingt minutes
+      // recopié ouvrirait le geste — mais le serveur ne l'ouvre que dans dix.
+      starts_at: new Date(Date.now() - 3_600_000).toISOString(),
+      absence_signalable_a: new Date(Date.now() + 10 * 60_000).toISOString(),
+    },
+  ]);
+
+  expect(screen.queryByTestId('absence-delai-long-1')).toBeNull();
+  expect(screen.getByTestId('absence-pas-encore-delai-long-1')).toBeTruthy();
 });

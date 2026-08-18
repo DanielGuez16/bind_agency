@@ -478,17 +478,71 @@ function Gestes({
   }
 
   if (reservation.status === 'confirmed') {
+    /**
+     * **L'heure d'ouverture vient du serveur, jamais d'un délai recopié.**
+     * `absence_signalable_a` est l'instant à partir duquel l'absence se
+     * constate. Le recopier ici — « vingt minutes après l'heure » — le ferait
+     * dériver le jour où le réglage bouge côté serveur, et cette dérive se lit
+     * comme un bouton fermé qui devrait être ouvert.
+     *
+     * `null` veut dire **jamais** : un droit sans créneau n'a pas d'heure à
+     * laquelle ne pas se présenter, et `SPEC.md` §4.1 dit que `no_show`
+     * n'existe pas dans ce cas. On ne propose donc rien du tout, plutôt qu'un
+     * bouton qui se ferait refuser.
+     *
+     * La comparaison ci-dessous **n'autorise rien** : elle décide de ce qu'on
+     * affiche. C'est le serveur qui refuse avant l'heure, et l'horloge du
+     * téléphone n'est pas une preuve — elle sert seulement à ne pas faire
+     * appuyer sur un bouton pour apprendre qu'il ne servait à rien.
+     */
+    const ouvertureDeLAbsence = reservation.absence_signalable_a;
+    const absenceOuverte =
+      ouvertureDeLAbsence !== null && new Date(ouvertureDeLAbsence) <= new Date();
+
     return (
-      <MotifPuisAction
-        libelle={t('commerce.seDesister')}
-        aide={t('commerce.seDesisterAide')}
-        variante="danger"
-        testID={`desister-${reservation.booking_id}`}
-        onValider={(motif, client) =>
-          client.seDesisterDeLaReservation(reservation.booking_id, motif)
-        }
-        onFait={onFait}
-      />
+      <View style={{ gap: 10 }}>
+        <MotifPuisAction
+          libelle={t('commerce.seDesister')}
+          aide={t('commerce.seDesisterAide')}
+          variante="danger"
+          testID={`desister-${reservation.booking_id}`}
+          onValider={(motif, client) =>
+            client.seDesisterDeLaReservation(reservation.booking_id, motif)
+          }
+          onFait={onFait}
+        />
+
+        {/* **Se désister n'est pas constater une absence**, et les deux ne se
+            confondent pas sous un même bouton : l'un ne pénalise personne,
+            l'autre inscrit un événement négatif au dossier de la créatrice.
+            Ils sont donc voisins et nommés séparément. */}
+        {ouvertureDeLAbsence === null ? null : absenceOuverte ? (
+          <MotifPuisAction
+            libelle={t('commerce.constaterLAbsence')}
+            aide={t('commerce.constaterLAbsenceAide')}
+            variante="danger"
+            testID={`absence-${reservation.booking_id}`}
+            // **Irréversible, donc confirmée.** `no_show` est un état terminal
+            // et l'événement de fiabilité qu'il écrit ne se retire pas. Un
+            // motif suffisant ne vaut pas accord : on nomme la conséquence,
+            // puis on la fait confirmer par un second geste.
+            avertissement={t('commerce.absenceEstDefinitive')}
+            confirmation={t('commerce.absenceConfirmer')}
+            onValider={(motif, client) => client.marquerAbsent(reservation.booking_id, motif)}
+            onFait={onFait}
+          />
+        ) : (
+          /* **Avant l'heure, on dit laquelle.** Un bouton absent sans
+             explication se lit comme une fonction manquante ; l'heure, elle,
+             dit qu'il faut attendre et jusqu'à quand. Dans le fuseau du
+             commerce, comme tout le reste de cet écran. */
+          <DataRow
+            label={t('commerce.absencePasEncore')}
+            value={formatDateTime(ouvertureDeLAbsence, locale, timezone)}
+            testID={`absence-pas-encore-${reservation.booking_id}`}
+          />
+        )}
+      </View>
     );
   }
 
@@ -624,6 +678,8 @@ function MotifPuisAction({
   aide,
   variante,
   testID,
+  avertissement,
+  confirmation,
   onValider,
   onFait,
 }: {
@@ -631,6 +687,17 @@ function MotifPuisAction({
   aide: string;
   variante: 'secondary' | 'danger';
   testID: string;
+  /**
+   * Ce que le geste fait de définitif, dit avant de le faire. Absent quand il
+   * n'y a rien d'irréversible à annoncer — un refus ou un désistement se
+   * regrettent, ils ne s'inscrivent au dossier de personne.
+   */
+  avertissement?: string;
+  /**
+   * Le libellé du second geste. **Sa présence est ce qui rend l'action
+   * confirmée** : sans lui, un motif suffisant mène directement à l'envoi.
+   */
+  confirmation?: string;
   onValider: (motif: string, api: ReturnType<typeof useApi>['api']) => Promise<unknown>;
   onFait: () => void;
 }) {
@@ -641,6 +708,14 @@ function MotifPuisAction({
   const [motif, setMotif] = useState('');
   const [envoi, setEnvoi] = useState(false);
   const [echec, setEchec] = useState<string | null>(null);
+  /**
+   * Armé : le motif est écrit, la conséquence est lue, il reste à confirmer.
+   *
+   * **Deux gestes et non une case à cocher.** Une case se coche sans lire, et
+   * se retrouve cochée par la paume sur un comptoir. Un second bouton, qui dit
+   * ce qu'il fait, demande de viser une seconde fois.
+   */
+  const [arme, setArme] = useState(false);
 
   /** Trois caractères : le serveur exige la même chose, et refuse « no ». */
   const suffisant = motif.trim().length >= 3;
@@ -654,13 +729,25 @@ function MotifPuisAction({
       vibration.reussite();
       setOuvert(false);
       setMotif('');
+      setArme(false);
       onFait();
     } catch (erreur) {
       vibration.echec();
       setEchec(messageDErreur(erreur));
+      // **Désarmé après un échec.** Le refus vient souvent du serveur — trop
+      // tôt, état changé sous nos pieds — et laisser le bouton de confirmation
+      // en place inviterait à le represser jusqu'à ce que ça passe.
+      setArme(false);
     } finally {
       setEnvoi(false);
     }
+  }
+
+  function refermer() {
+    setOuvert(false);
+    setMotif('');
+    setEchec(null);
+    setArme(false);
   }
 
   if (!ouvert) {
@@ -683,24 +770,33 @@ function MotifPuisAction({
         helpText={aide}
         testID={`${testID}-champ`}
       />
+      {/* La conséquence se lit **au-dessus** du bouton qui la produit, et dès
+          l'ouverture du champ : la mettre après reviendrait à l'annoncer à
+          quelqu'un qui a déjà décidé. */}
+      {avertissement ? (
+        <StatusMessage
+          level="warning"
+          body={avertissement}
+          testID={`${testID}-avertissement`}
+        />
+      ) : null}
       {echec ? <StatusMessage level="danger" body={echec} testID="echec-decision" /> : null}
       {suffisant ? (
         <Button
-          label={t('commerce.envoyerLeMotif')}
+          label={confirmation && arme ? confirmation : t('commerce.envoyerLeMotif')}
           variant={variante}
           loading={envoi}
-          onPress={() => void valider()}
-          testID={`${testID}-valider`}
+          // Sans `confirmation`, le premier appui envoie — c'est le
+          // comportement de toujours pour un refus ou un désistement. Avec
+          // elle, le premier appui arme et le second envoie.
+          onPress={() => (confirmation && !arme ? setArme(true) : void valider())}
+          testID={arme ? `${testID}-confirmer` : `${testID}-valider`}
         />
       ) : null}
       <Button
         label={t('common.annuler')}
         variant="ghost"
-        onPress={() => {
-          setOuvert(false);
-          setMotif('');
-          setEchec(null);
-        }}
+        onPress={refermer}
         testID={`${testID}-renoncer`}
       />
     </View>

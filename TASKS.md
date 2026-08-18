@@ -427,6 +427,33 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       signalement est une allégation qui ne compte contre le salon qu'une fois
       arbitrée ; l'arbitre voit combien de signalements de ce créateur ont déjà
       été écartés et combien de ce salon ont été retenus. 18 tests, 4 mutations*
+- [x] **Le commerce peut enfin constater une absence depuis l'application**
+      *Le serveur avait `mark_no_show` depuis toujours, le client avait sa route
+      **et sa méthode** depuis la #115, et rien ne les appelait : une méthode
+      d'API sans appelant, c'est-à-dire du code mort qui a l'air d'une
+      fonctionnalité. Seul l'appel manquait, et c'est ce qui rendait le geste
+      introuvable pour un commerçant.
+      Fin : le bouton s'ouvre sur `absence_signalable_a`, rendu par le serveur.
+      Avant l'heure, l'écran **dit à partir de quand** — un bouton absent sans
+      explication se lit comme une fonction manquante. Sans créneau, rien n'est
+      proposé (`SPEC.md` §4.1). L'absence étant irréversible, elle se confirme
+      d'un second appui sur un bouton qui nomme ce qu'il fait, après un
+      avertissement placé **avant** et non après ; le désistement, lui, ne se
+      confirme pas, et un test l'exige.
+      **Le décor encodait ce qu'il devait éprouver** : il posait
+      `absence_signalable_a` à `starts_at + 20 min`, exactement ce qu'un écran
+      qui recopierait le réglage calculerait — la mutation qui remplace le champ
+      par ce calcul passait tous les tests. Deux cas où les deux lectures se
+      contredisent l'ont réparé. 10 tests neufs, 8 mutations*
+- [x] **La règle de l'arbitre ne s'applique pas à l'absence, et c'est prouvé**
+      *Demandée par analogie avec les décisions de contrepartie, elle donnerait
+      ici une condition qui ne peut jamais être vraie. `no_show` n'est
+      atteignable que depuis `confirmed` ; une contrepartie — seul objet qui
+      porte `needs_human_review` — n'est créée qu'à la consommation, et
+      `consumed` est terminal. Une réservation marquable absente n'a donc jamais
+      d'arbitre. Plutôt qu'un garde-fou décoratif dans l'écran, quatre tests
+      côté serveur tiennent les deux prémisses : ils tombent le jour où l'une
+      change*
 - [x] Capture de preuve niveau 1
       *Fin : `fetch_media` sur l'interface, le fournisseur de démonstration et Instagram ; trois colonnes sur `proof` — identifiant du média, auteur, type dans le vocabulaire de la plateforme — et un index unique partiel, parce qu'une publication ne règle qu'une contrepartie ; la règle des quatre conditions isolée dans `verification`, pure et éprouvée sur les cas qui comptent ; la vérification tentée **à la soumission**, jamais par balayage. Le relevé des publications n'a pas fait une tranche à part : le déclencheur étant la soumission, il se réduisait à `fetch_media`. Quinze mutations vérifiées*
 - [x] Tests de bout en bout dans un vrai navigateur
@@ -946,14 +973,14 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       `needs_human_review: true`, donc tous les tests de décision du commerce
       s'exerçaient sur le cas où il ne doit plus décider. 3 tests neufs plus 2
       repris, 6 mutations vérifiées*
-- [ ] **Le commerce ne peut pas signaler une absence depuis l'application**
-      *Diagnostic corrigé : `absence_signalable_a` n'est pas un champ non
-      affiché, **c'est une route absente du client**. Le serveur a
-      `mark_no_show`, l'app ne l'appelle nulle part. Il faut l'entrée de route,
-      la méthode, et l'action sur la journée — ouverte par
-      `absence_signalable_a`, qui dit aussi à quelle heure elle s'ouvre, et
-      c'est le serveur qui refuse, jamais l'horloge du téléphone. Une tranche,
-      pas un rendu de champ*
+- [x] **Le commerce ne peut pas signaler une absence depuis l'application**
+      *Fait, et repris plus haut sous « Le commerce peut enfin constater une
+      absence ». Le diagnostic était juste sur la conséquence et faux sur la
+      cause : l'entrée de route `marquerAbsent` **et sa méthode de client**
+      existaient depuis la #115, documentées et appelant le bon chemin. Seul
+      l'appelant manquait — une méthode d'API sans appelant, c'est-à-dire du
+      code mort qui a l'air d'une fonctionnalité, et qui a tenu seize PR parce
+      que chercher `no-show` dans le dépôt donnait quatre résultats rassurants*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire
 
 ---
