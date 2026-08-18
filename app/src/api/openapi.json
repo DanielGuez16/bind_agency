@@ -912,23 +912,6 @@
         ]
       }
     },
-    "/api/v1/me/notification-preferences": {
-      "get": {
-        "operationId": "read_preferences_api_v1_me_notification_preferences_get",
-        "responses": [
-          "200"
-        ]
-      }
-    },
-    "/api/v1/me/notification-preferences/{kind}": {
-      "put": {
-        "operationId": "set_preference_api_v1_me_notification_preferences__kind__put",
-        "responses": [
-          "200",
-          "422"
-        ]
-      }
-    },
     "/api/v1/me/profile": {
       "get": {
         "operationId": "read_profile_api_v1_me_profile_get",

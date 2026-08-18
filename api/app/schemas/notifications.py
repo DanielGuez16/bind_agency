@@ -5,7 +5,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.enums import DevicePlatform, DeviceTokenStatus, NotificationKind
+from app.models.enums import DevicePlatform, DeviceTokenStatus
 
 
 class TerminalEnregistre(BaseModel):
@@ -28,20 +28,3 @@ class TerminalRead(BaseModel):
     platform: DevicePlatform
     status: DeviceTokenStatus
     last_seen_at: datetime
-
-
-class PreferenceEcrite(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    enabled: bool
-
-
-class PreferencesRead(BaseModel):
-    """Les sept genres et leur état.
-
-    Un dictionnaire complet plutôt qu'une liste de refus : l'app dessine ses
-    sept lignes sans connaître la liste, et une absence ne se lit pas comme un
-    genre inexistant.
-    """
-
-    preferences: dict[NotificationKind, bool]

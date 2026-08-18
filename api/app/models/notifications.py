@@ -27,7 +27,7 @@ import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, CreatedAt, UUIDPrimaryKey, enum_column
-from app.models.enums import DevicePlatform, DeviceTokenStatus, NotificationKind
+from app.models.enums import DevicePlatform, DeviceTokenStatus
 
 
 class DeviceToken(UUIDPrimaryKey, CreatedAt, Base):
@@ -74,26 +74,4 @@ class DeviceToken(UUIDPrimaryKey, CreatedAt, Base):
             "(status = 'revoked') = (revoked_at IS NOT NULL)",
             name="revoked_has_date",
         ),
-    )
-
-
-class NotificationPreference(Base):
-    """Ce que quelqu'un a explicitement refusé. **Rien d'autre.**
-
-    Une ligne n'existe que pour dire « non ». L'absence vaut « oui », et c'est
-    le service qui l'interprète : la table ne se remplit pas à l'inscription,
-    et une personne qui n'a jamais touché à ses réglages n'y a aucune ligne.
-    """
-
-    __tablename__ = "notification_preference"
-
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        sa.ForeignKey("app_user.id", ondelete="CASCADE"), primary_key=True
-    )
-    kind: Mapped[NotificationKind] = mapped_column(
-        enum_column(NotificationKind, "notification_kind"), primary_key=True
-    )
-    enabled: Mapped[bool] = mapped_column(sa.Boolean, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(
-        sa.DateTime(timezone=True), nullable=False, server_default=sa.text("clock_timestamp()")
     )

@@ -1,20 +1,20 @@
-"""Enregistrer un terminal, le révoquer, régler ses préférences.
+"""Enregistrer un terminal, et le révoquer.
 
-Quatre routes, toutes sur `/me` : ce sont **ses** terminaux et **ses**
-préférences. Aucune ne prend d'identifiant d'utilisateur — le porter dans le
-chemin ouvrirait la question de qui a le droit de le lire, alors que la réponse
-est « personne d'autre ».
+Deux routes, toutes deux sur `/me` : ce sont **ses** terminaux. Aucune ne prend
+d'identifiant d'utilisateur — le porter dans le chemin ouvrirait la question de
+qui a le droit de le lire, alors que la réponse est « personne d'autre ».
+
+**Les deux routes de préférences ont été retirées.** Le produit n'a plus de
+réglage par genre : tout ce qu'il a à dire, il le dit. Ce qui reste ici n'est
+pas une préférence mais un fait — un terminal existe ou non, et il se révoque
+comme un jeton social.
 """
 
-from typing import Annotated
-
-from fastapi import APIRouter, Body
+from fastapi import APIRouter
 
 from app.core.dependencies import CurrentUser, SessionDep
-from app.models.enums import DevicePlatform, NotificationKind
+from app.models.enums import DevicePlatform
 from app.schemas.notifications import (
-    PreferenceEcrite,
-    PreferencesRead,
     TerminalEnregistre,
     TerminalRead,
 )
@@ -51,34 +51,6 @@ async def revoke_device(token: str, user: CurrentUser, session: SessionDep) -> N
     """
     await service.revoquer_un_terminal(session, user_id=user.id, token=token)
     await session.commit()
-
-
-@router.get("/notification-preferences", response_model=PreferencesRead)
-async def read_preferences(user: CurrentUser, session: SessionDep) -> PreferencesRead:
-    """Les sept genres et leur état.
-
-    Tous les sept, y compris ceux que personne n'a touchés : un écran de
-    réglages doit pouvoir se dessiner sans connaître la liste.
-    """
-    return PreferencesRead(preferences=await service.preferences(session, user_id=user.id))
-
-
-@router.put("/notification-preferences/{kind}", response_model=PreferencesRead)
-async def set_preference(
-    kind: NotificationKind,
-    payload: Annotated[PreferenceEcrite, Body()],
-    user: CurrentUser,
-    session: SessionDep,
-) -> PreferencesRead:
-    """Coupe ou rouvre un genre.
-
-    Le genre est un membre de l'énumération : un genre inconnu est refusé par
-    la validation, avec un 422 nommé, plutôt que d'écrire une ligne que
-    personne ne lira jamais.
-    """
-    await service.regler(session, user_id=user.id, kind=kind, enabled=payload.enabled)
-    await session.commit()
-    return PreferencesRead(preferences=await service.preferences(session, user_id=user.id))
 
 
 __all__ = ["router", "DevicePlatform"]

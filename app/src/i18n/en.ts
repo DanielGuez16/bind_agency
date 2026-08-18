@@ -342,6 +342,8 @@ export const en = {
     enAttenteJusquA: 'They have until {{quand}} to answer. After that the booking expires and your slot is free again.',
     codeTitre: 'Show this code',
     codeIndisponible: 'No pickup code right now',
+    droitPerime:
+      'This booking has run out. The service was not taken in time, so there is no code to show. Book it again when you are ready.',
     codeSecours: 'Or read this out',
     codeSecoursAide: 'This is the code to read out if the scan fails.',
     preuveTitre: 'Send your proof',

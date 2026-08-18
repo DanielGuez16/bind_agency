@@ -17,6 +17,7 @@ from app.integrations.geocoding import check_geocoder_configuration
 from app.integrations.geoip import check_geoip_configuration
 from app.integrations.menu_extraction import check_extraction_configuration
 from app.integrations.object_store import check_object_store_configuration
+from app.integrations.providers import check_social_configuration
 from app.integrations.push import check_push_configuration
 from app.routers import (
     account_verification,
@@ -136,6 +137,7 @@ def create_app() -> FastAPI:
     check_billing_configuration()
     check_geoip_configuration()
     check_push_configuration()
+    check_social_configuration()
 
     application = FastAPI(
         title="BIND API",

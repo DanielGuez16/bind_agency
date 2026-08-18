@@ -95,6 +95,10 @@ class ReservationDuCommerceRead(BaseModel):
     creator_first_name: str | None
     creator_last_name: str | None
     creator_handle: str | None
+    #: L'adresse du profil, dérivée du pseudonyme et du réseau de la demande.
+    #: C'est la première chose qu'un salon cherche avant d'accorder : un
+    #: pseudonyme sans lien oblige à le recopier dans une barre d'adresse.
+    creator_profil_url: str | None
     item_name: str
     duration_minutes: int | None
     platform: Platform

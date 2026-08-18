@@ -38,7 +38,7 @@
  * relief ; les gestes et le contexte à droite, où il y a la place de les poser.
  */
 import { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Linking, Pressable, View } from 'react-native';
 
 import { useApi, type JourneeDuCommerce, type ReservationDuCommerce } from '../api';
 import {
@@ -345,7 +345,24 @@ function Detail({
           </Texte>
         </View>
         <Texte variante="type.bodyStrong">{nomDe(reservation)}</Texte>
-        {reservation.creator_handle ? (
+        {/* **Le pseudonyme mène au profil.** Un salon qui décide d'accorder
+            regarde d'abord ce que la créatrice publie ; un pseudonyme sans lien
+            l'oblige à le recopier dans une barre d'adresse, et c'est le geste
+            qu'on abandonne. L'adresse vient du serveur, dérivée du réseau de
+            cette demande : elle est nulle quand la plateforme n'a pas de profil
+            public connu, et on n'affiche alors rien plutôt qu'un lien mort. */}
+        {reservation.creator_handle && reservation.creator_profil_url ? (
+          <Pressable
+            accessibilityRole="link"
+            onPress={() => void Linking.openURL(reservation.creator_profil_url as string)}
+            testID={`profil-${reservation.booking_id}`}
+            style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+          >
+            <Texte variante="type.caption" couleur="brand.700">
+              {reservation.creator_handle}
+            </Texte>
+          </Pressable>
+        ) : reservation.creator_handle ? (
           <Texte variante="type.caption" couleur="ink.mute">
             {reservation.creator_handle}
           </Texte>

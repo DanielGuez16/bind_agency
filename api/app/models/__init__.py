@@ -22,7 +22,7 @@ from app.models.config_journal import ConfigurationChange
 from app.models.handover import BusinessHandover
 from app.models.identity import CreatorProfile, SocialAccount, SocialMetricsSnapshot, User
 from app.models.jobs import Job
-from app.models.notifications import DeviceToken, NotificationPreference
+from app.models.notifications import DeviceToken
 from app.models.oauth import OAuthState
 from app.models.outbox import OutboundMessage
 from app.models.platform_asset import PlatformAsset
@@ -51,7 +51,6 @@ __all__ = [
     "CreatorProfile",
     "DeviceToken",
     "MenuImport",
-    "NotificationPreference",
     "OAuthState",
     "OutboundMessage",
     "PlatformAsset",
