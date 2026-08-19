@@ -7070,3 +7070,51 @@ par un **inventaire exact** : ajouter une carte oblige à toucher la liste, donc
 se demander si elle se pose ou si elle flotte. Sans lui, la règle s'effriterait
 surface par surface sans qu'aucun test ne bouge — ce qui est exactement comment
 elle avait disparu la première fois.
+---
+
+## 2026-08-19 — Trois champs sans lecteur, et où ils vivent maintenant
+
+Trois champs avaient perdu leur lecteur avec la refonte du fil. Les ranger sous
+« contrat » aurait fait passer un déménagement pour une intention.
+
+**`prochain_palier` et `commerces_de_plus` suivent leur sujet.** L'écran qui les
+montre lit `mesPaliers` depuis la refonte, plus le fil ; les champs étaient
+servis à chaque chargement du fil et lus nulle part. Ils passent donc sur
+`/me/tiers`, qui portait **déjà** tout ce qu'ils transportent — obstacles par
+palier, compte de commerces dans le rayon — sauf le classement.
+
+**Seul le classement a vraiment déménagé**, et il reste au serveur : c'est une
+règle de produit — on classe sur le **nombre** de conditions qui manquent,
+jamais sur leur ampleur — et la recopier dans l'écran en ferait une seconde
+vérité. Aucune requête de plus : le calcul porte sur des paliers déjà évalués.
+
+**`commerces_de_plus` ne suit pas, il disparaît.** Sur le fil, le compte excluait
+les commerces déjà listés — « combien de salons **en plus** de ceux que vous
+voyez ». Hors du fil il n'y a rien à exclure : garder le mot promettrait une
+soustraction sans opérande. Le palier porte déjà `commerces_dans_le_rayon`, qui
+est la grandeur juste, et l'écran d'audience ne l'affiche pas — il n'envoie
+aucune position, la valeur y est nulle par construction, et écrire zéro dirait
+« aucun salon autour de vous », ce qui est faux et décourageant. Ce qui reste
+affiché est l'obstacle : il ne dépend d'aucune position, et c'est la seule chose
+actionnable.
+
+**`cover_portrait_key` quitte le fil et rien d'autre.** Le produit ne rend
+qu'une forme de couverture — 16:9, avec sa raison mesurée dans `Cards.tsx` : une
+boîte de hauteur fixe rogne l'enseigne sur un iPhone. Aucune surface portrait
+n'existe, et aucun écran ne permet d'en déposer une : seul le semis remplit le
+champ. Le servir sur chaque ligne du fil était donc du poids sans lecteur.
+
+**La colonne et les vingt images restent.** Elles ne coûtent rien, elles ont été
+produites, et une surface portrait les retrouverait en une ligne. Supprimer la
+colonne jetterait des assets sur une question de composition qui n'est pas
+tranchée — et ce n'est pas à moi de la trancher pendant que l'autre conversation
+refait ces écrans.
+
+**Une redondance gardée, et dite.** Le filtre du classement écarte les paliers
+sur deux conditions : `not accessible` et `obstacles`. La mutation montre que la
+première ne change aucun verdict — un palier accessible ne porte jamais
+d'obstacle. Elles ne disent pourtant pas la même chose : l'une est la règle,
+l'autre empêche un `obstacles[0]` de lever. Fabriquer un décor qui les
+distinguerait éprouverait un état que l'éligibilité ne produit pas ; la
+redondance est donc documentée des deux côtés plutôt qu'éprouvée sur un cas
+impossible.

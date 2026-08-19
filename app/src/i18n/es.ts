@@ -212,6 +212,7 @@ export const es: Catalogue = {
     audienceReleveDu: 'Medido el {{date}}',
     audienceDejaAcquis: 'Ya verificado',
     audienceCeQuiCompte: 'Lo que cuenta para los niveles',
+    audienceProchainPalier: 'Siguiente: {{format}} en {{reseau}}',
     audienceVoirMesPaliers: 'Ver lo que abre cada nivel',
     audienceCollaborations: 'Colaboraciones cumplidas',
     audienceScore: 'Puntuación de fiabilidad',

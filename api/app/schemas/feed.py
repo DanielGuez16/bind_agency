@@ -15,7 +15,6 @@ __all__ = [
     "CompteParQuartierRead",
     "CompteParRayonRead",
     "OrigineDesSuggestions",
-    "ProchainPalierRead",
     "SuggestionsRead",
     "FilRead",
     "ItemDuFilRead",
@@ -55,8 +54,6 @@ class CommerceDuFilRead(BaseModel):
     #: Le quartier déclaré par le commerce. `null` hors des quartiers ouverts.
     neighborhood: Neighborhood | None
     cover_photo_key: str | None
-    #: La couverture verticale du mur. `null` : le mur retombe sur la paysage.
-    cover_portrait_key: str | None
     distance_metres: float
     items: list[ItemDuFilRead]
 
@@ -85,23 +82,6 @@ class CompteParQuartierRead(BaseModel):
     commerces: int
     prestations: int
     distance_metres: float
-
-
-class ProchainPalierRead(BaseModel):
-    """Le palier le plus proche d'être atteint, et ce qu'il ouvrirait.
-
-    Classé sur l'écart qui reste à combler, jamais sur le nombre de salons
-    gagnés : le palier le plus rémunérateur est souvent le plus lointain, et le
-    proposer enverrait chercher ce qui décourage.
-    """
-
-    model_config = ConfigDict(from_attributes=True)
-
-    tier_id: uuid.UUID
-    platform: Platform
-    content_format: ContentFormat
-    commerces_de_plus: int
-    obstacle: ObstacleRead
 
 
 class CompteParRayonRead(BaseModel):
@@ -141,7 +121,6 @@ class FilRead(BaseModel):
     quartiers: list[CompteParQuartierRead]
     #: Le palier le plus proche, et ce qu'il ouvrirait. `null` quand tout est
     #: ouvert, qu'aucun n'est atteignable, ou qu'il n'ouvrirait aucun salon.
-    prochain_palier: ProchainPalierRead | None
 
 
 class SuggestionDePrestationRead(BaseModel):

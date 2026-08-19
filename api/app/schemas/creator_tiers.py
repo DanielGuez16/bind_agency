@@ -49,6 +49,26 @@ class FiabiliteRead(BaseModel):
     completed_collabs_count: int
 
 
+class ProchainPalierRead(BaseModel):
+    """Le palier fermé le plus proche.
+
+    Le classement est fait par le serveur — on classe sur le **nombre** de
+    conditions qui manquent, jamais sur leur ampleur — parce que le recopier
+    côté écran en ferait une seconde vérité.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    tier_id: uuid.UUID
+    platform: Platform
+    content_format: ContentFormat
+    #: Le premier obstacle, celui que l'écran affiche.
+    obstacle: ObstacleRead
+    #: Combien de commerces le proposent à portée. `null` sans position — une
+    #: absence, jamais un zéro.
+    commerces_dans_le_rayon: int | None
+
+
 class VueDesPaliersRead(BaseModel):
     """Tous les paliers actifs, accessibles ou non.
 
@@ -67,6 +87,10 @@ class VueDesPaliersRead(BaseModel):
     #: pouvait comparer à rien.
     fiabilite: FiabiliteRead
     paliers: list[PalierAccessibleRead]
+    #: Le palier fermé le plus proche, et ce qu'il ouvrirait. **Venu du fil**,
+    #: où il était servi à chaque chargement et lu nulle part depuis que
+    #: l'écran qui le montre consulte cette route-ci.
+    prochain_palier: ProchainPalierRead | None
 
 
 class OffreDuPalierRead(BaseModel):

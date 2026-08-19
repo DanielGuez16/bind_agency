@@ -125,14 +125,11 @@ const NON_RENDUS: Record<string, string> = {
   // quartier est un carré de 44, et aucune de ces trois surfaces n'est un
   // portrait. Soit le serveur cesse de la produire — c'est un rendu de plus par
   // salon —, soit un écran à venir en a l'usage. À trancher, pas à ranger.
-  'CommerceDuFil.cover_portrait_key': 'a-instruire',
   // Le prochain palier était le pied du mur, « la seule fois où le fil parle
   // des paliers ». La revue v3 déplace ce sujet vers Audience, qui ne consulte
   // pas le fil mais `mesPaliers` : le champ reste calculé et n'a plus de
   // lecteur. Deux issues, et c'est une question de route plutôt que d'écran —
   // le servir depuis `mesPaliers`, ou cesser de le calculer sur le fil.
-  'Fil.prochain_palier': 'a-instruire',
-  'ProchainPalier.commerces_de_plus': 'a-instruire',
 };
 
 const RAISONS = new Set(['contrat', 'technique', 'a-instruire']);
