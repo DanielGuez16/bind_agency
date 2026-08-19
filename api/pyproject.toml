@@ -39,6 +39,10 @@ dependencies = [
 dev = [
     "pytest>=8.3",
     "pytest-asyncio>=0.24",
+    # Le parallélisme de la suite. `loadgroup` est ce qui le rend possible ici :
+    # il permet d'épingler un groupe de tests sur un même worker, et c'est ce
+    # qui préserve les tests de concurrence — voir `xdist_group` dans conftest.
+    "pytest-xdist>=3.6",
     "ruff>=0.8",
 ]
 
@@ -68,9 +72,17 @@ asyncio_default_fixture_loop_scope = "function"
 # `--strict-markers` : une marque mal orthographiée devient une erreur au lieu
 # d'un avertissement. Sans elle, `@pytest.mark.ecrit_pour_de_bonn` désactiverait
 # silencieusement rien du tout, et la garde passerait pour capricieuse.
-addopts = "--strict-markers"
+# `-n auto` : un worker par cœur moins deux, ce que xdist calcule lui-même.
+# `--dist loadgroup` : les tests d'un même `xdist_group` atterrissent sur le
+# même worker. C'est ce qui rend le parallélisme possible ici — sans lui, deux
+# tests de verrou consultatif partiraient sur deux bases différentes et
+# n'auraient plus rien à sérialiser.
+#
+# Se désactive par `-p no:xdist` quand on veut lire une trace sans entrelacement.
+addopts = "--strict-markers -n auto --dist loadgroup"
 markers = [
     "ecrit_pour_de_bon(raison): le test valide ses écritures et les nettoie lui-même. Réservé à ce qui ne peut pas vivre dans une transaction annulée — deux transactions réellement concurrentes, un verrou consultatif. Dispense de la garde anti-fuite, et la raison est obligatoire",
+    "xdist_group(nom): épingle le test sur un worker. Les tests qui écrivent pour de bon partagent le groupe `concurrence` : ils restent sériels entre eux, et le reste de la suite se parallélise",
     "lent(raison): le test dépasse le plafond de durée et c'est justifié. Réservé à ce qui fait réellement le travail long qu'il annonce — poser le jeu de démonstration entier. Dispense de la garde de durée, et la raison est obligatoire",
 ]
 

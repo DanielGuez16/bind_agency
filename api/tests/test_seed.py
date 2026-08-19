@@ -88,6 +88,13 @@ OFFRES = 10 + sum(len(fiche.offres) for fiche in seed.MARCHE)
 COMPTES = 1 + COMMERCES + 5
 
 
+#: **Tout le fichier sur un seul worker.** Ses fixtures de module lancent le
+#: semis — vingt salons, leurs photos, leurs vignettes — et un fichier réparti
+#: ferait payer ce montage à chaque worker qui en reçoit un morceau. Groupé, il
+#: est semé une fois ; réparti, il l'était quatre fois pour le même résultat.
+pytestmark = pytest.mark.xdist_group("semis")
+
+
 @pytest.fixture(scope="module")
 def base_jetable(test_database_url: str) -> str:
     """Une base à part, créée et détruite ici. Surtout pas celle de la suite.

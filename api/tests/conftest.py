@@ -9,6 +9,20 @@ Le schéma est posé par `alembic upgrade head`, jamais par `create_all` : c'est
 la migration réelle qui est testée, pas les modèles.
 """
 
+import os
+
+# **Le dépôt d'objets suit le worker, comme la base.** Posé ici, avant tout
+# import qui construirait la configuration : `get_settings` est mis en cache au
+# premier appel, et une fixture arriverait trop tard.
+#
+# Deux workers qui sèment en même temps écrivent la **même** clé — le nom est
+# l'empreinte du contenu, donc identique d'un processus à l'autre. L'un renomme
+# `X.partiel` en `X`, l'autre ne retrouve plus le sien : `FileNotFoundError` sur
+# trente-six tests du semis, et rien dans le message ne parle de parallélisme.
+if os.environ.get("PYTEST_XDIST_WORKER"):
+    _racine = os.environ.get("OBJECT_STORE_LOCAL_ROOT", "/tmp/bind-objets")
+    os.environ["OBJECT_STORE_LOCAL_ROOT"] = f"{_racine}-{os.environ['PYTEST_XDIST_WORKER']}"
+
 from collections.abc import AsyncIterator, Iterator
 
 import httpx
@@ -70,7 +84,36 @@ def test_database_url() -> str:
     ):
         pytest.exit("TEST_DATABASE_URL désigne la base de développement.", returncode=1)
 
-    return str(settings.test_database_url)
+    return _base_du_worker(test).render_as_string(hide_password=False)
+
+
+def _base_du_worker(url: URL) -> URL:
+    """Une base par worker, dérivée de son nom.
+
+    **C'est ce qui rend le parallélisme possible.** Chaque worker crée, migre et
+    détruit *sa* base au démarrage ; sur un nom commun, ils se la détruisaient
+    l'un l'autre — la seconde exécution emportait la base de la première entre
+    sa création et son premier appel, et l'échec ressortait en « database does
+    not exist » sur du code qui n'avait pas bougé.
+
+    `PYTEST_XDIST_WORKER` vaut `gw0`, `gw1`… sous xdist, et est absente en série.
+    Le nom est donc **inchangé** hors parallélisme : une exécution simple garde
+    exactement la base qu'elle avait, et rien de ce qui dépend du nom ne bouge.
+
+    **Et le rendu se fait avec `render_as_string(hide_password=False)`.** C'est
+    le détail qui a fait échouer la première tentative de parallélisme, il y a
+    une semaine, sous un message qui n'en disait rien : « password
+    authentication failed for user "bind" », les 1604 tests en erreur. `str()`
+    sur un `URL` SQLAlchemy **masque le mot de passe** — il rend `***`. Tant que
+    la fixture renvoyait la chaîne de configuration telle quelle, la question ne
+    se posait pas ; dès qu'elle est passée par un objet `URL` pour en changer le
+    nom, elle a rendu une adresse sans mot de passe. Le parallélisme n'y était
+    pour rien.
+    """
+    worker = os.environ.get("PYTEST_XDIST_WORKER")
+    if not worker:
+        return url
+    return url.set(database=f"{url.database}_{worker}")
 
 
 @pytest.fixture(scope="session", autouse=True)
