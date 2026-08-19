@@ -6,18 +6,18 @@
  * proches », « on ouvre sur un jour qui a de la place » — se vérifie sur des
  * objets.
  *
- * **Ce que ces tests ne peuvent pas éprouver, ils le nomment.** Le quatrième
- * état — le jour écoulé — n'est pas servi : à 20 h, le jour même rend
- * `ouvert: true, creneaux_libres: 0`, indistinguable d'un jour complet. Un test
- * qui l'exigerait échouerait sur une donnée qui n'existe pas ; un test qui
- * l'ignorerait laisserait croire que la question est réglée. Il est donc écrit
- * en creux, et `TASKS.md` le porte.
+ * **Le quatrième état est arrivé pendant l'écriture de ces tests.** Il manquait
+ * — à 20 h, le jour même se lisait « complet » — et il était consigné en creux
+ * plutôt que replié en silence. Le serveur rend maintenant `revolu`, et le cas
+ * du soir a son mot. C'est le montage ci-dessous qui le sépare des trois
+ * autres : sans un jour révolu **et** un jour complet dans la même bande, les
+ * deux mots resteraient interchangeables.
  */
 import { etatDuJour, joursProches, premierJourUtile } from '../src/screens/creneau/bande';
 
 /** Un jour de la bande, réduit à ce qui décide. */
-function jour(date: string, ouvert: boolean, libres: number) {
-  return { jour: date, ouvert, creneaux_libres: libres };
+function jour(date: string, ouvert: boolean, libres: number, revolu = false) {
+  return { jour: date, ouvert, revolu, creneaux_libres: libres };
 }
 
 /**
@@ -30,7 +30,9 @@ function jour(date: string, ouvert: boolean, libres: number) {
  * mots resteraient interchangeables — ce que la planche interdit.
  */
 const BANDE = [
-  jour('2026-08-19', true, 3),
+  // Révolu : le salon ouvrait, ses dernières heures sont passées. C'est le
+  // premier jour de la bande, seul endroit où cet état peut se produire.
+  jour('2026-08-19', true, 0, true),
   jour('2026-08-20', false, 0),
   jour('2026-08-21', true, 0),
   jour('2026-08-22', true, 2),
@@ -45,7 +47,20 @@ describe('trois états, et ils ne se confondent pas', () => {
     // personne croirait le salon fermé un jour où il déborde.
     expect(etatDuJour(BANDE[1])).toBe('ferme');
     expect(etatDuJour(BANDE[2])).toBe('complet');
-    expect(etatDuJour(BANDE[0])).toBe('ouvert');
+    expect(etatDuJour(BANDE[0])).toBe('revolu');
+    expect(etatDuJour(BANDE[3])).toBe('ouvert');
+  });
+
+  it('et l’ordre des trois questions n’est pas indifférent', () => {
+    // **Fermé l'emporte sur révolu** : un salon qui n'ouvre pas aujourd'hui n'a
+    // pas de dernière plage à clore, et le serveur peut très bien rendre les
+    // deux drapeaux. **Révolu l'emporte sur complet**, sans quoi le cas du soir
+    // retombe dans le mot qu'on vient de lui retirer.
+    expect(etatDuJour(jour('2026-08-19', false, 0, true))).toBe('ferme');
+    expect(etatDuJour(jour('2026-08-19', true, 0, true))).toBe('revolu');
+    // Et un jour révolu qui aurait encore un compte — cas que le serveur ne
+    // produit pas, mais que le client ne doit pas peindre « ouvert ».
+    expect(etatDuJour(jour('2026-08-19', true, 2, true))).toBe('revolu');
   });
 
   it('et un jour ouvert à zéro n’est jamais « fermé »', () => {
@@ -53,6 +68,8 @@ describe('trois états, et ils ne se confondent pas', () => {
     // une fermeture, parce que les deux se rendent « sans place ».
     expect(etatDuJour(jour('2026-08-21', true, 0))).not.toBe('ferme');
     expect(etatDuJour(jour('2026-08-20', false, 0))).not.toBe('complet');
+    // Et le soir n'est ni l'un ni l'autre.
+    expect(etatDuJour(jour('2026-08-19', true, 0, true))).not.toBe('complet');
   });
 });
 
@@ -106,8 +123,10 @@ describe('le jour sur lequel l’écran s’ouvre', () => {
     // Ouvrir sur un jour sans place demanderait un geste avant de voir quoi
     // que ce soit. Le montage commence par un jour fermé : sans la règle, on
     // ouvrirait dessus.
-    const commenceFerme = [jour('2026-08-19', false, 0), ...BANDE.slice(1)];
-    expect(premierJourUtile(commenceFerme)).toBe('2026-08-22');
+    // Le premier jour de `BANDE` est révolu, le deuxième fermé, le troisième
+    // complet : trois façons différentes de n'avoir pas de place, et l'écran
+    // doit les franchir toutes les trois.
+    expect(premierJourUtile(BANDE)).toBe('2026-08-22');
   });
 
   it('et le premier de la bande quand aucun n’a de place', () => {

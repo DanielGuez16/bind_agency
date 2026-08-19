@@ -140,7 +140,7 @@ function serveur() {
     // L'ordre compte deux fois : « /availability/summary » contient
     // « /availability », qui contient lui-même « /businesses/b1 ».
     if (chemin.includes('/availability/summary')) {
-      return rendre([{ jour: JOUR_DE_LA_BANDE, ouvert: true, creneaux_libres: 1 }]);
+      return rendre([{ jour: JOUR_DE_LA_BANDE, ouvert: true, revolu: false, creneaux_libres: 1 }]);
     }
     if (chemin.includes('/availability')) {
       return rendre([

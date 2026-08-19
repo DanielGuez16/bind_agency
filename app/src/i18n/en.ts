@@ -351,14 +351,17 @@ export const en = {
     creneauxEtatCourt: {
       ferme: 'Closed',
       complet: 'Full',
+      revolu: 'Over',
     },
     creneauxSansPlaceTitre: {
       ferme: 'Closed on {{jour}}',
       complet: 'Fully booked on {{jour}}',
+      revolu: 'No more slots today',
     },
     creneauxSansPlaceCorps: {
       ferme: '{{salon}} is not open on {{jour}}.',
       complet: '{{salon}} is open on {{jour}}, but every slot is taken.',
+      revolu: '{{salon}} is open today, but the last slot has passed.',
     },
     creneauxToutesLesDates: 'All dates',
     creneauxAucunJourProche: 'No room in the next {{count}} days.',

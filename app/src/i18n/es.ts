@@ -325,14 +325,17 @@ export const es: Catalogue = {
     creneauxEtatCourt: {
       ferme: 'Cerrado',
       complet: 'Lleno',
+      revolu: 'Pasado',
     },
     creneauxSansPlaceTitre: {
       ferme: 'Cerrado el {{jour}}',
       complet: 'Sin plazas el {{jour}}',
+      revolu: 'No quedan horas hoy',
     },
     creneauxSansPlaceCorps: {
       ferme: '{{salon}} no abre el {{jour}}.',
       complet: '{{salon}} abre el {{jour}}, pero todas las horas están tomadas.',
+      revolu: '{{salon}} abre hoy, pero la última hora ya pasó.',
     },
     creneauxToutesLesDates: 'Todas las fechas',
     creneauxAucunJourProche: 'Sin plazas en los próximos {{count}} días.',

@@ -60,17 +60,22 @@ export function joursProches(
  * déborde. La déduction vit ici et non dans le rendu — c'est une règle, et elle
  * s'éprouve sans monter un composant.
  *
- * **Il manque un quatrième état, et il est nommé plutôt que caché.** À 20 h, le
- * jour même rend `ouvert: true, creneaux_libres: 0` : indistinguable de
- * « complet », alors que le salon n'a pas été pris d'assaut — ses dernières
- * heures sont simplement passées. C'est l'état le plus fréquent des quatre,
- * puisque tout le monde ouvre l'application le soir. Le serveur ne le distingue
- * pas encore ; la demande est faite, et `TASKS.md` la porte. En attendant il se
- * lit « complet », **sciemment** — et non par une omission qu'on découvrirait
- * dans six mois.
+ * **Le quatrième état est arrivé, et il était le plus fréquent.** À 20 h, le
+ * jour même ouvre bien et n'a plus de début libre : sans `revolu`, il se lisait
+ * « complet », c'est-à-dire « pris d'assaut » — et l'on renonce au lieu de
+ * revenir demain matin. Il avait été consigné ici comme manquant plutôt que
+ * replié en silence ; il se remplace par une ligne, comme prévu.
+ *
+ * **L'ordre des trois questions n'est pas indifférent.** Fermé l'emporte sur
+ * révolu — un salon qui n'ouvre pas aujourd'hui n'a pas de dernière plage à
+ * clore — et révolu l'emporte sur complet, sans quoi le cas du soir retombe
+ * dans le mot qu'on vient de lui retirer.
  */
-export function etatDuJour(jour: JourDeDisponibilite): 'ouvert' | 'ferme' | 'complet' {
+export function etatDuJour(
+  jour: JourDeDisponibilite,
+): 'ouvert' | 'ferme' | 'revolu' | 'complet' {
   if (!jour.ouvert) return 'ferme';
+  if (jour.revolu) return 'revolu';
   return jour.creneaux_libres > 0 ? 'ouvert' : 'complet';
 }
 

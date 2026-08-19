@@ -140,7 +140,7 @@ function client(reserve: () => void) {
         status: 200,
         json: async () =>
           resume
-            ? [{ jour: JOUR, ouvert: true, creneaux_libres: 1 }]
+            ? [{ jour: JOUR, ouvert: true, revolu: false, creneaux_libres: 1 }]
             : [
                 {
                   starts_at: `${JOUR}T14:00:00Z`,

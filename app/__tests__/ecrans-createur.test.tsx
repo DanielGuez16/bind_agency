@@ -381,7 +381,7 @@ const ECRANS = [
     // donnait une bande dont les jours n'avaient pas de date.
     plein: {
       '/availability/summary': [
-        { jour: JOUR_DE_LA_BANDE, ouvert: true, creneaux_libres: 1 },
+        { jour: JOUR_DE_LA_BANDE, ouvert: true, revolu: false, creneaux_libres: 1 },
       ],
       '/availability': [
         {

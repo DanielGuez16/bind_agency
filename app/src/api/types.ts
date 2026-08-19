@@ -487,6 +487,19 @@ export type JourDeDisponibilite = {
   jour: string;
   /** L'horaire du salon, indépendant de la prestation demandée. */
   ouvert: boolean;
+  /**
+   * Le jour est-il derrière nous : **vrai dès que sa dernière plage est
+   * close**, pas à minuit.
+   *
+   * Sans lui, à 20 h, aujourd'hui se lit « complet » — le salon ouvre bien
+   * aujourd'hui et il ne reste aucun début. C'est l'état le plus fréquent des
+   * quatre, puisque tout le monde ouvre l'application le soir, et le pire à
+   * peindre en « pris d'assaut » : on renonce au lieu de revenir demain matin.
+   *
+   * Le quantificateur est `all()` sur les plages du jour, donc un salon qui
+   * ferme le midi n'est pas révolu à 13 h.
+   */
+  revolu: boolean;
   /** Les débuts encore libres pour cet item, ce jour-là. */
   creneaux_libres: number;
 };
