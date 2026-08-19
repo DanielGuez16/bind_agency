@@ -31,6 +31,7 @@ import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import (
+    AuditLog,
     Booking,
     Business,
     CatalogItem,
@@ -53,6 +54,7 @@ from app.models.enums import (
 # l'une aurait fait mentir l'écran sur ce que le serveur accepte, et le défaut
 # se serait lu comme un bouton ouvert qui se fait refuser.
 from app.services import directory
+from app.services.audit import AuditedEntity
 from app.services.booking_states import ouverture_de_l_absence
 
 #: Une page d'historique. Au-delà, l'app pagine par `avant`.
@@ -69,6 +71,19 @@ class LigneDeContrepartie:
     deadline_at: datetime
     attempts_count: int
     needs_human_review: bool
+    #: Ce que le salon a reproché à la dernière soumission. **Nul quand rien
+    #: n'a été refusé.**
+    #:
+    #: Une créatrice invitée à resoumettre sans qu'on lui dise ce qui manquait
+    #: ne peut pas corriger : elle renvoie la même chose, se fait refuser une
+    #: seconde fois, et le dossier part en arbitrage sans qu'aucune phrase ait
+    #: été échangée. Le motif existait depuis toujours sur la file
+    #: d'arbitrage ; il ne descendait simplement pas jusqu'à elle.
+    #:
+    #: **Dérivé du journal d'audit, jamais stocké en double.** C'est la règle
+    #: que la file d'arbitrage s'est donnée, pour la même raison : le journal
+    #: est immuable, une colonne recopiée peut diverger sous un `UPDATE`.
+    dernier_motif: str | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -208,7 +223,15 @@ def _jointures_communes(requete):
     )
 
 
-def _contrepartie(ligne) -> LigneDeContrepartie | None:
+def _contrepartie(ligne, motifs: dict[uuid.UUID, str] | None = None) -> LigneDeContrepartie | None:
+    """`motifs` nul veut dire **« pas chargés »**, jamais « aucun refus ».
+
+    La journée du commerce ne les charge pas, et c'est délibéré : le salon est
+    l'auteur du motif, il n'a pas à se le faire relire au comptoir. Le distinguer
+    d'un dossier sans refus tient au fait que la table est nulle et non vide —
+    sans quoi ajouter un appelant qui oublie de charger ferait taire un reproche
+    au lieu de lever une erreur.
+    """
     if ligne.collaboration_id is None:
         return None
     return LigneDeContrepartie(
@@ -217,7 +240,45 @@ def _contrepartie(ligne) -> LigneDeContrepartie | None:
         deadline_at=ligne.deadline_at,
         attempts_count=ligne.attempts_count,
         needs_human_review=ligne.needs_human_review,
+        dernier_motif=(motifs or {}).get(ligne.collaboration_id),
     )
+
+
+async def _derniers_motifs(
+    session: AsyncSession, collaboration_ids: list[uuid.UUID | None]
+) -> dict[uuid.UUID, str]:
+    """Le motif de la **dernière** demande de nouvelle soumission, par dossier.
+
+    Lu dans le journal d'audit, comme la file d'arbitrage le lit : rien n'est
+    stocké ailleurs, et le recopier sur la contrepartie créerait une seconde
+    vérité qu'un `UPDATE` pourrait faire diverger du journal — lequel, lui, est
+    immuable.
+
+    **Le dernier seulement, et c'est la différence avec l'arbitrage.** Là-bas
+    la répétition justifie l'escalade, et l'historique entier compte. Ici la
+    créatrice a une chose à corriger : lui montrer les trois reproches
+    précédents la ferait corriger ce qui l'est déjà.
+    """
+    ids = [identifiant for identifiant in collaboration_ids if identifiant is not None]
+    if not ids:
+        return {}
+
+    motifs: dict[uuid.UUID, str] = {}
+    # Trié du plus ancien au plus récent : la dernière écriture pour un dossier
+    # écrase les précédentes, et c'est celle-là qu'on garde.
+    for entity_id, reason in await session.execute(
+        sa.select(AuditLog.entity_id, AuditLog.reason)
+        .where(
+            AuditLog.entity_type == AuditedEntity.COLLABORATION.value,
+            AuditLog.entity_id.in_(ids),
+            AuditLog.to_status == CollaborationStatus.RESUBMIT_REQUESTED.value,
+            AuditLog.reason.is_not(None),
+        )
+        .order_by(AuditLog.occurred_at)
+    ):
+        motifs[entity_id] = reason
+
+    return motifs
 
 
 async def historique_du_createur(
@@ -260,6 +321,11 @@ async def historique_du_createur(
 
     # Les compteurs ignorent `statuts` et `avant` : ce sont ceux des onglets,
     # et un onglet ne se compte pas depuis le filtre d'un autre.
+    # **Un seul aller-retour pour toute la page.** Le motif se lit dans le
+    # journal d'audit ; le demander par ligne ferait une requête par
+    # réservation, sur un écran qui en affiche vingt.
+    motifs = await _derniers_motifs(session, [ligne.collaboration_id for ligne in lignes])
+
     compteurs = dict.fromkeys(BookingStatus, 0)
     for status, nombre in await session.execute(
         sa.select(Booking.status, sa.func.count())
@@ -289,7 +355,7 @@ async def historique_du_createur(
                 duration_minutes=ligne.duration_minutes,
                 platform=ligne.platform,
                 content_format=ligne.content_format,
-                contrepartie=_contrepartie(ligne),
+                contrepartie=_contrepartie(ligne, motifs),
             )
             for ligne in lignes
         ),
