@@ -168,7 +168,7 @@ async def test_la_reservation_d_un_autre_ne_se_confirme_pas(session: AsyncSessio
     autre = await auth_service.register(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.CREATOR,
     )
 
@@ -502,7 +502,7 @@ class TestValidationParLeCommerce:
         proprietaire = await auth_service.register(
             session,
             email=f"{uuid.uuid4()}@example.com",
-            password="un-mot-de-passe-solide-42",
+            password="tourbillon-cactus-91-vermeil",
             role=UserRole.BUSINESS_MEMBER,
         )
         business = await business_service.create_business(

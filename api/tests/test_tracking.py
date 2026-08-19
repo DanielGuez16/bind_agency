@@ -777,7 +777,7 @@ async def connecter(client: AsyncClient, session: AsyncSession, role) -> dict:
     from app.models.enums import UserRole
     from app.services import auth as auth_service
 
-    email, motdepasse = f"{uuid.uuid4()}@example.com", "un-mot-de-passe-solide-42"
+    email, motdepasse = f"{uuid.uuid4()}@example.com", "tourbillon-cactus-91-vermeil"
     await auth_service.register(session, email=email, password=motdepasse, role=UserRole(role))
     await session.commit()
     jetons = (
@@ -847,7 +847,7 @@ async def test_un_salon_ne_lit_pas_l_audience_d_un_autre(
     _, salon_a = await contrepartie_avec_lien(session)
     _, salon_b = await contrepartie_avec_lien(session)
 
-    email, motdepasse = f"{uuid.uuid4()}@example.com", "un-mot-de-passe-solide-42"
+    email, motdepasse = f"{uuid.uuid4()}@example.com", "tourbillon-cactus-91-vermeil"
     membre = await auth_service.register(
         session, email=email, password=motdepasse, role=UserRole.BUSINESS_MEMBER
     )
@@ -885,7 +885,7 @@ async def test_le_createur_recoit_une_adresse_complete_a_coller(
     jetons = (
         await client.post(
             f"{PREFIX}/auth/login",
-            json={"email": decor["createur"].email, "password": "un-mot-de-passe-solide-42"},
+            json={"email": decor["createur"].email, "password": "tourbillon-cactus-91-vermeil"},
         )
     ).json()
     entetes = {"Authorization": f"Bearer {jetons['access_token']}"}

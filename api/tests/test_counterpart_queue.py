@@ -36,7 +36,7 @@ PREFIX = get_settings().api_v1_prefix
 #: Trois reproches **différents**, et non trois fois le même : l'ordre et la
 #: variété sont précisément ce que l'historique doit rendre lisible.
 MOTIFS_D_ESSAI = ("missing_mention", "missing_location", "wrong_format", "low_quality")
-MOT_DE_PASSE = "un-mot-de-passe-solide-42"
+MOT_DE_PASSE = "tourbillon-cactus-91-vermeil"
 
 
 async def statut(session: AsyncSession, ligne: Collaboration, vers: CollaborationStatus) -> None:

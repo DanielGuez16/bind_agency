@@ -61,7 +61,7 @@ async def commerce(session: AsyncSession, *, longitude: float, latitude: float, 
     proprietaire = await auth_service.register(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.BUSINESS_MEMBER,
     )
     payload = BusinessCreate(
@@ -114,7 +114,7 @@ async def createur(session: AsyncSession, *, followers: int = 24_000):
     user = await auth_service.register(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.CREATOR,
     )
     compte = SocialAccount(
@@ -261,7 +261,7 @@ async def test_un_item_desactive_n_apparait_pas(session: AsyncSession) -> None:
     membre = await auth_service.register(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.BUSINESS_MEMBER,
     )
     await capacity_service.set_availability(
@@ -290,7 +290,7 @@ async def test_un_item_dont_le_parent_est_desactive_n_apparait_pas(
     membre = await auth_service.register(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.BUSINESS_MEMBER,
     )
     await capacity_service.set_availability(
@@ -318,7 +318,7 @@ async def test_un_commerce_en_onboarding_n_apparait_pas(session: AsyncSession) -
     proprietaire = await auth_service.register(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.BUSINESS_MEMBER,
     )
     b = await business_service.create_business(
@@ -407,7 +407,7 @@ async def test_un_createur_sans_compte_social_a_un_fil_vide_et_explique(
     user = await auth_service.register(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.CREATOR,
     )
 
@@ -654,7 +654,7 @@ async def test_un_fil_sans_compte_social_ne_propose_aucune_issue(
     user = await auth_service.register(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.CREATOR,
     )
 
@@ -672,7 +672,7 @@ async def test_un_fil_sans_compte_social_ne_propose_aucune_issue(
 
 async def test_la_route_est_reservee_aux_createurs(client: AsyncClient) -> None:
     async def connecte(role: UserRole) -> dict:
-        email, password = f"{uuid.uuid4()}@example.com", "un-mot-de-passe-solide-42"
+        email, password = f"{uuid.uuid4()}@example.com", "tourbillon-cactus-91-vermeil"
         await client.post(
             f"{PREFIX}/auth/register",
             json={"email": email, "password": password, "role": role.value},
@@ -709,7 +709,7 @@ async def test_la_route_est_reservee_aux_createurs(client: AsyncClient) -> None:
 async def test_des_coordonnees_invalides_sont_refusees(
     parametres: dict, client: AsyncClient
 ) -> None:
-    email, password = f"{uuid.uuid4()}@example.com", "un-mot-de-passe-solide-42"
+    email, password = f"{uuid.uuid4()}@example.com", "tourbillon-cactus-91-vermeil"
     await client.post(
         f"{PREFIX}/auth/register",
         json={"email": email, "password": password, "role": UserRole.CREATOR.value},

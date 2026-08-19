@@ -40,7 +40,7 @@ from app.services.audit import Actor
 from tests.factories import PASSWORD_HASH, new_business, new_user
 
 PREFIX = get_settings().api_v1_prefix
-MOT_DE_PASSE = "un-mot-de-passe-solide-42"
+MOT_DE_PASSE = "tourbillon-cactus-91-vermeil"
 MIAMI = CoordinatesPayload(longitude=-80.1918, latitude=25.7617)
 
 

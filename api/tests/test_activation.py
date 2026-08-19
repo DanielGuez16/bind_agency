@@ -35,7 +35,7 @@ from app.services.audit import Actor
 from tests.test_feed import STORY
 
 PREFIX = get_settings().api_v1_prefix
-MOT_DE_PASSE = "un-mot-de-passe-solide-42"
+MOT_DE_PASSE = "tourbillon-cactus-91-vermeil"
 
 
 async def commerce_en_cours(session: AsyncSession, **overrides):

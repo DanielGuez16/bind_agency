@@ -104,7 +104,7 @@ async def compte_actif(session: AsyncSession, **overrides) -> SocialAccount:
     user = await auth_service.register(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.CREATOR,
     )
 
@@ -528,7 +528,7 @@ async def test_le_reseau_coupe_ne_traverse_pas_le_fournisseur(instagram_configur
 
 
 async def _createur_connecte(client: AsyncClient) -> dict:
-    email, password = f"{uuid.uuid4()}@example.com", "un-mot-de-passe-solide-42"
+    email, password = f"{uuid.uuid4()}@example.com", "tourbillon-cactus-91-vermeil"
     cree = await client.post(
         f"{PREFIX}/auth/register",
         json={"email": email, "password": password, "role": UserRole.CREATOR.value},

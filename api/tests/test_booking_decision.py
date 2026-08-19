@@ -31,7 +31,7 @@ from app.services import booking_states, outbox, redemption
 from tests.test_booking_create import monter_le_decor, premier_creneau, reserver
 
 PREFIX = get_settings().api_v1_prefix
-MOT_DE_PASSE = "un-mot-de-passe-solide-42"
+MOT_DE_PASSE = "tourbillon-cactus-91-vermeil"
 
 
 async def en_attente(session: AsyncSession) -> dict:

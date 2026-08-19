@@ -37,7 +37,7 @@ def payload_commerce(**overrides) -> dict:
 
 async def compte(client: AsyncClient, role: UserRole = UserRole.BUSINESS_MEMBER) -> dict:
     email = f"{uuid.uuid4()}@example.com"
-    password = "un-mot-de-passe-solide-42"
+    password = "tourbillon-cactus-91-vermeil"
     created = await client.post(
         f"{PREFIX}/auth/register",
         json={"email": email, "password": password, "role": role.value},

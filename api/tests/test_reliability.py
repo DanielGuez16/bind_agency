@@ -37,7 +37,7 @@ async def createur_nu(session: AsyncSession):
     return await auth_service.register(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.CREATOR,
     )
 

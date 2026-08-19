@@ -82,7 +82,7 @@ async def membre(session: AsyncSession):
     return await auth_service.register(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.BUSINESS_MEMBER,
     )
 
@@ -590,7 +590,7 @@ async def entetes_du_commerce(session, client: AsyncClient, business) -> dict[st
     jetons = (
         await client.post(
             f"{PREFIX}/auth/login",
-            json={"email": membre.email, "password": "un-mot-de-passe-solide-42"},
+            json={"email": membre.email, "password": "tourbillon-cactus-91-vermeil"},
         )
     ).json()
     return {"Authorization": f"Bearer {jetons['access_token']}"}

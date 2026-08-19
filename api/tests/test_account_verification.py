@@ -53,7 +53,7 @@ async def creer_compte(session: AsyncSession, **overrides) -> SocialAccount:
     user = await auth_service.register(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.CREATOR,
     )
     valeurs = {
@@ -483,7 +483,7 @@ async def test_l_administrateur_prononce_rejected_et_la_transition_est_journalis
     admin = await auth_service.register(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.ADMIN,
     )
 
@@ -520,7 +520,7 @@ async def test_l_administrateur_peut_redescendre_un_compte_verified(
     admin = await auth_service.register(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.ADMIN,
     )
 
@@ -542,7 +542,7 @@ async def test_prononcer_le_statut_courant_est_refuse(session: AsyncSession) -> 
     admin = await auth_service.register(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.ADMIN,
     )
 
@@ -581,7 +581,7 @@ async def test_un_compte_rejected_n_est_pas_relève_par_une_reexecution(
 
 
 async def _connecte(client: AsyncClient, role: UserRole) -> dict:
-    email, password = f"{uuid.uuid4()}@example.com", "un-mot-de-passe-solide-42"
+    email, password = f"{uuid.uuid4()}@example.com", "tourbillon-cactus-91-vermeil"
     cree = await client.post(
         f"{PREFIX}/auth/register",
         json={"email": email, "password": password, "role": role.value},

@@ -38,7 +38,7 @@ async def journal(conn: AsyncConnection, entity: str | None = None) -> list:
 
 async def register_and_login(client: AsyncClient, role: UserRole = UserRole.CREATOR) -> dict:
     email = f"{uuid.uuid4()}@example.com"
-    password = "un-mot-de-passe-solide-42"
+    password = "tourbillon-cactus-91-vermeil"
     created = await client.post(
         f"{PREFIX}/auth/register",
         json={"email": email, "password": password, "role": role.value},
@@ -61,7 +61,7 @@ async def test_l_inscription_ecrit_sa_ligne_de_journal(
 
     response = await client.post(
         f"{PREFIX}/auth/register",
-        json={"email": email, "password": "un-mot-de-passe-solide-42", "role": "creator"},
+        json={"email": email, "password": "tourbillon-cactus-91-vermeil", "role": "creator"},
     )
     assert response.status_code == 201
 
@@ -158,7 +158,7 @@ async def test_une_ligne_par_jeton_coupe_et_non_une_seule_pour_le_lot(
     await client.post(f"{PREFIX}/auth/refresh", json={"refresh_token": tokens_a["refresh_token"]})
     await client.post(
         f"{PREFIX}/auth/login",
-        json={"email": tokens_a["email"], "password": "un-mot-de-passe-solide-42"},
+        json={"email": tokens_a["email"], "password": "tourbillon-cactus-91-vermeil"},
     )
 
     encore_actifs = await conn.scalar(
@@ -194,7 +194,7 @@ async def test_un_rollback_ne_laisse_aucune_ligne_orpheline(
     await auth_service.register(
         session,
         email="annule@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.CREATOR,
     )
     assert len(await journal(conn, entity="app_user")) == 1
@@ -210,7 +210,7 @@ async def test_une_inscription_refusee_ne_laisse_aucune_ligne(
 ) -> None:
     payload = {
         "email": "doublon@example.com",
-        "password": "un-mot-de-passe-solide-42",
+        "password": "tourbillon-cactus-91-vermeil",
         "role": "creator",
     }
     await client.post(f"{PREFIX}/auth/register", json=payload)

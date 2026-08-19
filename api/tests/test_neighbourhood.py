@@ -48,7 +48,7 @@ async def salon(
     proprietaire = await auth_service.register(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.BUSINESS_MEMBER,
     )
     business = await business_service.create_business(
@@ -200,7 +200,7 @@ async def test_un_commerce_sans_point_n_a_pas_de_voisinage(session: AsyncSession
     proprietaire = await auth_service.register(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.BUSINESS_MEMBER,
     )
     sans_point = await business_service.create_business(

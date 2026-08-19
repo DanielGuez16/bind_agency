@@ -78,7 +78,7 @@ from app.services import social_accounts as social_account_service
 from app.services.audit import Actor
 from app.services.storage import archiver_la_publication
 
-MOT_DE_PASSE = "bind-donnees-de-depart-2026"
+MOT_DE_PASSE = "orchidee-cuivre-2026"
 
 
 @dataclass(frozen=True, slots=True)

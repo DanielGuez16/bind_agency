@@ -36,7 +36,7 @@ from tests.test_feed import createur
 from tests.test_social_metrics import FauxFournisseur, metriques
 
 PREFIX = get_settings().api_v1_prefix
-MOT_DE_PASSE = "un-mot-de-passe-solide-42"
+MOT_DE_PASSE = "tourbillon-cactus-91-vermeil"
 
 
 # --------------------------------------------------------------------------

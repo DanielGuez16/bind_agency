@@ -46,7 +46,7 @@ from app.services.audit import Actor
 from tests.factories import new_business
 from tests.test_activation import commerce_en_cours
 
-MOT_DE_PASSE = "un-mot-de-passe-solide-42"
+MOT_DE_PASSE = "tourbillon-cactus-91-vermeil"
 
 
 class EnvoyeurQuiNote:

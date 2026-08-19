@@ -71,7 +71,7 @@ HOTES_LOCAUX = frozenset({"", "localhost", "127.0.0.1", "::1", "0.0.0.0", "host.
 
 #: Mot de passe unique et connu pour tous les comptes du jeu. Il n'a de sens que
 #: sur une base jetable, ce que le garde-fou ci-dessus impose.
-MOT_DE_PASSE = "bind-donnees-de-depart-2026"
+MOT_DE_PASSE = "orchidee-cuivre-2026"
 
 #: Le domaine des comptes du jeu. `.example` est réservé par la RFC 2606 —
 #: personne ne le possédera jamais — et il passe la validation d'adresse.

@@ -33,7 +33,7 @@ async def register_and_login(
     client: AsyncClient, *, role: UserRole = UserRole.CREATOR, email: str | None = None
 ) -> dict:
     email = email or f"{uuid.uuid4()}@example.com"
-    password = "un-mot-de-passe-solide-42"
+    password = "tourbillon-cactus-91-vermeil"
 
     created = await client.post(
         f"{PREFIX}/auth/register",
@@ -56,7 +56,7 @@ async def test_inscription_stocke_une_empreinte_argon2id_et_jamais_le_mot_de_pas
     client: AsyncClient, conn: AsyncConnection
 ) -> None:
     email = "createur@example.com"
-    password = "un-mot-de-passe-solide-42"
+    password = "tourbillon-cactus-91-vermeil"
 
     response = await client.post(
         f"{PREFIX}/auth/register",
@@ -76,7 +76,7 @@ async def test_inscription_refuse_une_adresse_deja_prise_meme_casse_differente(
 ) -> None:
     payload = {
         "email": "Rebecca@Example.com",
-        "password": "un-mot-de-passe-solide-42",
+        "password": "tourbillon-cactus-91-vermeil",
         "role": UserRole.ADMIN.value,
     }
     first = await client.post(f"{PREFIX}/auth/register", json=payload)
@@ -160,7 +160,7 @@ async def test_connexion_refusee_avec_un_mauvais_mot_de_passe(
 async def test_connexion_refusee_pour_une_adresse_inconnue(client: AsyncClient) -> None:
     response = await client.post(
         f"{PREFIX}/auth/login",
-        json={"email": "personne@example.com", "password": "un-mot-de-passe-solide-42"},
+        json={"email": "personne@example.com", "password": "tourbillon-cactus-91-vermeil"},
     )
     assert response.status_code == 401
     assert response.json()["detail"] == "invalid_credentials"

@@ -31,7 +31,7 @@ from app.services.audit import Actor
 from tests.test_collaboration import capture, contrepartie
 
 PREFIX = get_settings().api_v1_prefix
-MOT_DE_PASSE = "un-mot-de-passe-solide-42"
+MOT_DE_PASSE = "tourbillon-cactus-91-vermeil"
 
 
 # --------------------------------------------------------------------------

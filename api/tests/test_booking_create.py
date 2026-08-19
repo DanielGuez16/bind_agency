@@ -68,7 +68,7 @@ async def monter_le_decor(
     proprietaire = await auth_service.register(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.BUSINESS_MEMBER,
     )
     business = await business_service.create_business(
@@ -127,7 +127,7 @@ async def monter_le_decor(
     createur = await auth_service.register(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.CREATOR,
     )
     if avec_nom:
@@ -324,7 +324,7 @@ async def test_un_item_desactive_est_refuse(session: AsyncSession) -> None:
     membre = await auth_service.register(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.BUSINESS_MEMBER,
     )
     await capacity_service.set_availability(
@@ -393,7 +393,7 @@ async def test_deux_reservations_simultanees_sur_la_derniere_place(
         second = await auth_service.register(
             amorce,
             email=f"{uuid.uuid4()}@example.com",
-            password="un-mot-de-passe-solide-42",
+            password="tourbillon-cactus-91-vermeil",
             role=UserRole.CREATOR,
         )
         await profile_service.update_profile(

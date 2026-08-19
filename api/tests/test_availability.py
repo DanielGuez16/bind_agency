@@ -37,7 +37,7 @@ async def commerce(session: AsyncSession, **overrides):
     proprietaire = await auth_service.register(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.BUSINESS_MEMBER,
     )
     payload = BusinessCreate(
@@ -100,7 +100,7 @@ async def reserver(
     createur = await auth_service.register(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.CREATOR,
     )
     from tests.factories import new_social_account, new_tier, new_tier_offer
@@ -145,7 +145,7 @@ async def acteur(session: AsyncSession) -> Actor:
     user = await auth_service.register(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.BUSINESS_MEMBER,
     )
     return Actor.from_user(user)

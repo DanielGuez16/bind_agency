@@ -29,7 +29,7 @@ from app.services.audit import Actor
 from tests.test_booking_create import monter_le_decor, premier_creneau, reserver
 
 PREFIX = get_settings().api_v1_prefix
-MOT_DE_PASSE = "un-mot-de-passe-solide-42"
+MOT_DE_PASSE = "tourbillon-cactus-91-vermeil"
 
 
 async def _membre(session: AsyncSession, business):

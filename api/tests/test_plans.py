@@ -22,7 +22,7 @@ from app.services import auth as auth_service
 from app.services import plans as service
 
 PREFIX = get_settings().api_v1_prefix
-MOT_DE_PASSE = "un-mot-de-passe-solide-42"
+MOT_DE_PASSE = "tourbillon-cactus-91-vermeil"
 
 
 async def plan(session: AsyncSession, **overrides) -> SubscriptionPlan:

@@ -40,7 +40,7 @@ from app.services import auth as auth_service
 from app.services import outbox
 from tests.factories import PASSWORD_HASH, new_user
 
-MOT_DE_PASSE = "un-mot-de-passe-solide-42"
+MOT_DE_PASSE = "tourbillon-cactus-91-vermeil"
 CLE = "collaboration.reminder"
 GENRE = NotificationKind.PUBLICATION_REMINDER
 

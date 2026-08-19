@@ -58,7 +58,7 @@ async def creer_createur(session: AsyncSession, **profil) -> CreatorProfile:
     user = await auth_service.register(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.CREATOR,
     )
     if profil:
@@ -67,7 +67,7 @@ async def creer_createur(session: AsyncSession, **profil) -> CreatorProfile:
 
 
 async def connecte(client: AsyncClient, role: UserRole = UserRole.CREATOR) -> dict:
-    email, password = f"{uuid.uuid4()}@example.com", "un-mot-de-passe-solide-42"
+    email, password = f"{uuid.uuid4()}@example.com", "tourbillon-cactus-91-vermeil"
     cree = await client.post(
         f"{PREFIX}/auth/register",
         json={"email": email, "password": password, "role": role.value},

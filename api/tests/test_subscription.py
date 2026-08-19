@@ -36,7 +36,7 @@ from app.services import subscription as service
 from tests.test_activation import commerce_en_cours
 
 PREFIX = get_settings().api_v1_prefix
-MOT_DE_PASSE = "un-mot-de-passe-solide-42"
+MOT_DE_PASSE = "tourbillon-cactus-91-vermeil"
 
 
 async def _plan(session: AsyncSession, **overrides) -> SubscriptionPlan:

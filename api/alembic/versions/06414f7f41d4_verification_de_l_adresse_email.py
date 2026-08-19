@@ -73,12 +73,69 @@ def upgrade() -> None:
         "app_user", sa.Column("email_verified_at", sa.DateTime(timezone=True), nullable=True)
     )
 
+    # **Le genre neuf entre dans la contrainte.** `notification_kind` est un
+    # VARCHAR + CHECK et non un enum natif — altérer un enum natif en migration
+    # est le piège qu'on s'évite — mais la contrainte, elle, énumère les valeurs
+    # et doit donc être refaite. Sans ça, la première inscription échoue en 500
+    # sur une violation de contrainte, ce qui est exactement ce qui s'est passé.
+    for table in ("outbound_message",):
+        op.drop_constraint("notification_kind", table, type_="check")
+        op.create_check_constraint(
+            # Le nom **sans préfixe** : la convention de nommage ajoute
+            # `ck_<table>_`, et le donner en entier produit
+            # `ck_outbound_message_ck_outbound_message_notification_kind`.
+            "notification_kind",
+            table,
+            sa.column("kind").in_(
+                [
+                    "booking_approved",
+                    "booking_declined",
+                    "booking_cancelled_by_business",
+                    "publication_reminder",
+                    "publication_approved",
+                    "publication_resubmit",
+                    "collaboration_opened",
+                    "collaboration_unfulfilled",
+                    "account_verification",
+                    "booking_to_review",
+                    "subscription_grace_ending",
+                    "subscription_ended",
+                    "support_access_started",
+                ]
+            ),
+        )
+
     # Les comptes déjà en base gardent leur accès : voir l'en-tête.
     op.execute("UPDATE app_user SET email_verified_at = now() WHERE email IS NOT NULL")
 
 
 def downgrade() -> None:
     """Downgrade schema."""
+    for table in ("outbound_message",):
+        op.drop_constraint("notification_kind", table, type_="check")
+        op.create_check_constraint(
+            # Le nom **sans préfixe** : la convention de nommage ajoute
+            # `ck_<table>_`, et le donner en entier produit
+            # `ck_outbound_message_ck_outbound_message_notification_kind`.
+            "notification_kind",
+            table,
+            sa.column("kind").in_(
+                [
+                    "booking_approved",
+                    "booking_declined",
+                    "booking_cancelled_by_business",
+                    "publication_reminder",
+                    "publication_approved",
+                    "publication_resubmit",
+                    "collaboration_opened",
+                    "collaboration_unfulfilled",
+                    "booking_to_review",
+                    "subscription_grace_ending",
+                    "subscription_ended",
+                    "support_access_started",
+                ]
+            ),
+        )
     op.drop_column("app_user", "email_verified_at")
     op.drop_index("ix_email_verification_user_id_issued_at", table_name="email_verification")
     op.drop_table("email_verification")
