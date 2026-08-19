@@ -1,11 +1,18 @@
 /**
  * 05a · Choix du créneau, 05b · confirmation.
  *
- * **Un jour d'abord, puis ses créneaux.** L'API rend l'horizon entier — trente
- * jours, plusieurs centaines de départs possibles. Les empiler dans une seule
- * liste donnait un écran qu'on fait défiler sans savoir quel jour on regarde,
- * et un bouton de confirmation hors de vue. On choisit un jour, on ne voit que
- * lui.
+ * **Une bande de quatorze jours, pas une grille de trente.** La grille serait
+ * vide aux trois quarts, et un calendrier vide ne dit pas « tu regardes trop
+ * loin », il dit « ce salon n'a rien ». À 64 points, chaque jour porte son
+ * compte de créneaux ou le mot qui dit qu'il n'y en a pas : on choisit sans
+ * ouvrir.
+ *
+ * **Les jours sans place gardent leur place.** La version précédente listait
+ * les jours **qui avaient des créneaux** : un salon fermé le jeudi voyait son
+ * jeudi disparaître, et la bande passait du mercredi au vendredi sans rien
+ * dire. Ils se sélectionnent, et répondent — ils disent ce qu'ils ont à dire,
+ * puis proposent les deux jours ouverts les plus proches. Refuser l'appui sans
+ * rien dire était l'autre façon de les faire disparaître.
  *
  * **Matin et après-midi, séparés.** Midi est la coupure que tout le monde a en
  * tête quand il choisit une heure ; deux groupes courts se lisent d'un coup
@@ -18,13 +25,18 @@
  * l'écran, et la faire descendre avec la liste oblige à défiler pour valider ce
  * qu'on vient de choisir.
  */
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
-import { useApi, type Creneau as CreneauApi, type FichePublique, type OffreDeLaFiche } from '../api';
+import {
+  useApi,
+  type Creneau as CreneauApi,
+  type FichePublique,
+  type JourDeDisponibilite,
+  type OffreDeLaFiche,
+} from '../api';
 import {
   Button,
-  DayPicker,
   EmptyState,
   SkeletonGrille,
   SlotPicker,
@@ -32,13 +44,19 @@ import {
   Texte,
   vibration,
 } from '../components';
+import { formatHeure, formatNumber, jourCivil, nomDeJour } from '../format';
 import { useI18n } from '../i18n';
 import { Ecran } from './Ecran';
 import { useRequete } from './useRequete';
-import { useTheme } from '../theme';
-
-/** Le nombre de jours proposés à la fois. Au-delà, la rangée ne tient plus. */
-const JOURS_VISIBLES = 7;
+import { elevationDeCarte, radius, useTheme } from '../theme';
+import { BandeDeJours } from './creneau/BandeDeJours';
+import { Engagement } from './creneau/Engagement';
+import {
+  etatDuJour,
+  JOURS_DE_LA_BANDE,
+  joursProches,
+  premierJourUtile,
+} from './creneau/bande';
 
 /** Ce qui sépare le matin de l'après-midi, dans le fuseau du commerce. */
 const MIDI = 12;
@@ -46,22 +64,12 @@ const MIDI = 12;
 type Jour = { cle: string; jourCourt: string; numero: string; disponible: boolean };
 
 /**
- * Regroupe les départs par journée **du commerce**, pas du téléphone.
- *
- * Un créneau de 23 h à Miami tombe le lendemain en UTC : classer sur la date
- * brute placerait des rendez-vous du soir au jour suivant, et le salon ne les
- * verrait pas où il les attend.
+ * **Le regroupement par journée a quitté ce fichier.** Il classait les départs
+ * sur le fuseau du commerce — un créneau de 23 h à Miami tombe le lendemain en
+ * UTC — et c'était juste, mais c'était au serveur de le faire : lui seul sait
+ * distinguer un jour fermé d'un jour complet, et il fallait de toute façon
+ * qu'il rende les journées entières pour ça.
  */
-function parJour(creneaux: CreneauApi[], timezone: string) {
-  const jours = new Map<string, CreneauApi[]>();
-  for (const creneau of creneaux) {
-    const cle = new Date(creneau.starts_at).toLocaleDateString('en-CA', { timeZone: timezone });
-    const liste = jours.get(cle);
-    if (liste) liste.push(creneau);
-    else jours.set(cle, [creneau]);
-  }
-  return jours;
-}
 
 function heureLocale(iso: string, timezone: string): number {
   return Number(
@@ -88,41 +96,44 @@ export function CreneauxScreen({
 
   const [jourChoisi, setJourChoisi] = useState<string | null>(null);
   const [choisi, setChoisi] = useState<string | undefined>();
+  const [feuilleOuverte, setFeuilleOuverte] = useState(false);
   const [envoi, setEnvoi] = useState(false);
   const [echec, setEchec] = useState<string | null>(null);
 
-  const requete = useRequete<CreneauApi[]>(
-    (signal) => api.disponibilite(fiche.business_id, offre.catalog_item_id, signal),
-    { estVide: (creneaux) => creneaux.length === 0, dependances: [offre.catalog_item_id] },
+  /**
+   * **Deux lectures, et elles ne demandent pas la même chose.** La bande veut
+   * un état et un compte par journée — quatorze lignes. Les heures du jour
+   * choisi veulent les instants. Les fondre dans une seule route ferait payer
+   * le parcours complet des règles de capacité pour dessiner des chiffres.
+   *
+   * Elles partent ensemble : l'écran n'a rien à montrer sans les deux, et les
+   * enchaîner doublerait l'attente sur le geste le plus fréquent du parcours.
+   */
+  const requete = useRequete<{ bande: JourDeDisponibilite[]; creneaux: CreneauApi[] }>(
+    async (signal) => {
+      const [bande, creneaux] = await Promise.all([
+        api.resumeDeLaBande(fiche.business_id, offre.catalog_item_id, JOURS_DE_LA_BANDE, signal),
+        api.disponibilite(fiche.business_id, offre.catalog_item_id, signal, JOURS_DE_LA_BANDE),
+      ]);
+      return { bande, creneaux };
+    },
+    // **Vide veut dire « cet item ne se propose plus »**, jamais « aucune
+    // place ». La bande rend toujours ses quatorze journées, fermées comprises.
+    { estVide: ({ bande }) => bande.length === 0, dependances: [offre.catalog_item_id] },
   );
 
-  const creneaux = requete.etat === 'pret' ? requete.donnees : [];
+  const jours = requete.etat === 'pret' ? requete.donnees.bande : [];
+  const creneaux = requete.etat === 'pret' ? requete.donnees.creneaux : [];
 
-  const groupes = useMemo(() => parJour(creneaux, fiche.timezone), [creneaux, fiche.timezone]);
-
-  const jours: Jour[] = useMemo(
-    () =>
-      [...groupes.keys()]
-        .sort()
-        .slice(0, JOURS_VISIBLES)
-        .map((cle) => {
-          // `cle` est une date nue ; on la lit à midi UTC pour que le nom du
-          // jour ne bascule pas d'un fuseau à l'autre.
-          const date = new Date(`${cle}T12:00:00Z`);
-          return {
-            cle,
-            jourCourt: date.toLocaleDateString(locale, { weekday: 'short' }),
-            numero: String(date.getUTCDate()),
-            disponible: (groupes.get(cle) ?? []).some((x) => x.places_restantes > 0),
-          };
-        }),
-    [groupes, locale],
-  );
-
-  // Le premier jour qui a encore une place. Ouvrir sur un jour complet
-  // demanderait un geste avant de voir quoi que ce soit.
-  const jour = jourChoisi ?? jours.find((j) => j.disponible)?.cle ?? jours[0]?.cle ?? null;
-  const duJour = jour ? (groupes.get(jour) ?? []) : [];
+  const jour = jourChoisi ?? premierJourUtile(jours);
+  const jourCourant = jours.find((j) => j.jour === jour) ?? null;
+  // Les heures du jour choisi, prises dans la liste complète. Le regroupement
+  // se fait sur la date **locale du commerce** : un créneau de 23 h à Miami
+  // tombe le lendemain en UTC, et le classer sur la date brute le placerait un
+  // jour trop loin.
+  const duJour = jour
+    ? creneaux.filter((creneau) => jourCivil(creneau.starts_at, fiche.timezone) === jour)
+    : [];
 
   const matin = duJour.filter((x) => heureLocale(x.starts_at, fiche.timezone) < MIDI);
   const apresMidi = duJour.filter((x) => heureLocale(x.starts_at, fiche.timezone) >= MIDI);
@@ -182,17 +193,30 @@ export function CreneauxScreen({
           <View style={{ gap: 16 }}>
             <Texte variante="type.bodyStrong">{offre.name}</Texte>
 
-            <DayPicker
-              testID="jours"
+            <BandeDeJours
               jours={jours}
-              selection={jour ?? ''}
-              onChange={(cle) => {
+              selection={jour}
+              onChoisir={(cle: string) => {
                 setJourChoisi(cle);
                 // Le créneau choisi appartenait au jour précédent : le garder
                 // ferait confirmer une heure qu'on ne voit plus.
                 setChoisi(undefined);
               }}
+              onToutesLesDates={() => setFeuilleOuverte(true)}
+              testID="jours"
             />
+
+            {jourCourant && etatDuJour(jourCourant) !== 'ouvert' ? (
+              <JourSansPlace
+                jour={jourCourant}
+                proches={joursProches(jours, jourCourant.jour)}
+                nomDuSalon={fiche.name}
+                onChoisir={(cle: string) => {
+                  setJourChoisi(cle);
+                  setChoisi(undefined);
+                }}
+              />
+            ) : null}
 
             <Groupe
               titre={t('parcours.creneauxMatin')}
@@ -211,10 +235,17 @@ export function CreneauxScreen({
               testID="apres-midi"
             />
 
-            {duJour.length === 0 ? (
-              <Texte variante="type.caption" couleur="ink.soft" testID="jour-vide">
-                {t('parcours.creneauxJourVide')}
-              </Texte>
+            {/* **L'engagement, au-dessus du bouton et non derrière un lien.**
+                C'est le seul moment du parcours où il peut être dit avant
+                d'être pris. Il n'apparaît qu'une fois l'heure choisie : avant,
+                il annoncerait une échéance qu'on ne peut pas calculer. */}
+            {pretAReserver ? (
+              <Engagement
+                offre={offre}
+                quand={choisi ?? null}
+                nomDuSalon={fiche.name}
+                timezone={fiche.timezone}
+              />
             ) : null}
 
             {echec ? (
@@ -226,7 +257,14 @@ export function CreneauxScreen({
 
       {/* Fixé sous la liste, hors du défilement. Retiré tant qu'aucun créneau
           n'est choisi : le griser demanderait de deviner ce qui manque. */}
-      {requete.etat === 'pret' && pretAReserver ? (
+      {/* **La barre reste, le bouton s'éteint.** Elle disparaissait tant
+          qu'aucune heure n'était choisie : l'écran changeait alors de hauteur
+          au premier appui, et rien ne disait ce qu'il fallait faire pour la
+          faire venir. La planche la montre toujours, avec l'indication à
+          gauche — et c'est l'exception nommée à « le bouton impossible est
+          retiré, jamais grisé » : celui-ci redevient possible d'un geste, et
+          la phrase dit lequel. */}
+      {requete.etat === 'pret' ? (
         <View
           testID="barre-de-confirmation"
           style={{
@@ -237,13 +275,45 @@ export function CreneauxScreen({
             backgroundColor: c['bg.surface'],
           }}
         >
-          <Button
-            label={t('parcours.confirmer')}
-            size="lg"
-            loading={envoi}
-            onPress={reserver}
-            testID="confirmer"
-          />
+          {/* **La barre porte ce qu'on réserve, pas seulement le bouton.** Un
+              aplat orange sur toute la largeur ne dit pas ce qu'il valide ; la
+              phrase à gauche le dit, et le bouton cesse d'être la surface
+              dominante — même correction que sur la fiche. */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+            <View style={{ flex: 1, minWidth: 0, gap: 1 }}>
+              {pretAReserver ? (
+                <>
+                  <Texte variante="type.bodyStrong" testID="ce-qu-on-reserve">
+                    {choisi && jour
+                      ? t('parcours.creneauxRecapitulatif', {
+                          jour: nomDeJour(jour, locale, 'long'),
+                          heure: formatHeure(choisi, locale, fiche.timezone),
+                        })
+                      : offre.name}
+                  </Texte>
+                  {offre.duration_minutes === null ? null : (
+                    <Texte variante="type.caption" couleur="ink.mute">
+                      {t('parcours.ficheDuree', {
+                        count: formatNumber(offre.duration_minutes, locale),
+                      })}
+                    </Texte>
+                  )}
+                </>
+              ) : (
+                <Texte variante="type.caption" couleur="ink.mute" testID="quoi-faire">
+                  {t('parcours.creneauxChoisirPourContinuer')}
+                </Texte>
+              )}
+            </View>
+            <Button
+              label={t('parcours.confirmer')}
+              loading={envoi}
+              disabled={!pretAReserver}
+              fullWidth={false}
+              onPress={reserver}
+              testID="confirmer"
+            />
+          </View>
         </View>
       ) : null}
     </View>
@@ -292,6 +362,100 @@ function Groupe({
         selection={selection}
         onChange={onChange}
       />
+    </View>
+  );
+}
+
+/**
+ * Un jour sans place, qui répond au lieu de refuser l'appui.
+ *
+ * **C'est la moitié de la correction que la planche demande.** Un jour grisé et
+ * inerte fait deviner pourquoi ; il disparaît de l'écran sans quitter la bande.
+ * Celui-ci dit ce qu'il sait, puis propose les deux jours ouverts les plus
+ * proches — un geste au lieu d'un retour en arrière.
+ *
+ * **Il ne dit pas « fermé », et c'est délibéré.** La planche distingue « ouvert
+ * mais complet » de « fermé », et elle a raison de le faire : les deux mots ne
+ * sont pas interchangeables. Le serveur ne rend que les créneaux **libres**, et
+ * leur absence ne dit pas sa cause. Écrire l'un des deux serait affirmer ce
+ * qu'on ne sait pas — annoncer un salon fermé qui ouvre est exactement la
+ * classe de défaut que ce dépôt poursuit. La phrase employée est vraie des deux
+ * cas, et elle se scindera le jour où l'état du jour sera servi.
+ */
+function JourSansPlace({
+  jour,
+  proches,
+  nomDuSalon,
+  onChoisir,
+}: {
+  jour: JourDeDisponibilite;
+  proches: JourDeDisponibilite[];
+  nomDuSalon: string;
+  onChoisir: (cle: string) => void;
+}) {
+  const { t, locale } = useI18n();
+  const { color: c } = useTheme();
+  const etat = etatDuJour(jour);
+
+  const nomDuJour = (cle: string) => nomDeJour(cle, locale, 'long');
+
+  return (
+    <View
+      testID="jour-sans-place"
+      style={{
+        borderRadius: radius['radius.lg'],
+        backgroundColor: c['bg.surface'],
+        borderWidth: 1,
+        borderColor: c['line.default'],
+        padding: 20,
+        gap: 14,
+        // « Un coin de 18 px sans ombre flotte au lieu de se poser » : passation §2.
+        ...elevationDeCarte(),
+      }}
+    >
+      <View style={{ gap: 6 }}>
+        {/* **Une phrase par état, et c'est le cœur de la correction.**
+            « Fermé » n'est pas « complet », et « écoulé » n'est ni l'un ni
+            l'autre : à 20 h, aujourd'hui n'a plus de créneau sans que le salon
+            ait été pris d'assaut, et lire « complet » ferait renoncer quelqu'un
+            qui devrait revenir demain matin. */}
+        <Texte variante="type.section" testID={`sans-place-${etat}`}>
+          {t(`parcours.creneauxSansPlaceTitre.${etat}`, { jour: nomDuJour(jour.jour) })}
+        </Texte>
+        <Texte variante="type.body" couleur="ink.soft">
+          {t(`parcours.creneauxSansPlaceCorps.${etat}`, {
+            salon: nomDuSalon,
+            jour: nomDuJour(jour.jour),
+          })}
+        </Texte>
+      </View>
+
+      {/* **Les propositions n'existent que s'il y en a.** Une rangée de boutons
+          vide sous « aucune place » serait une promesse de plus qui ne mène
+          nulle part, sur l'écran qui vient précisément d'en refuser une. */}
+      {proches.length ? (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+          {proches.map((proche, rang) => (
+            <Button
+              key={proche.jour}
+              label={nomDuJour(proche.jour)}
+              // Le plus proche porte l'aplat, le second le contour : deux
+              // aplats côte à côte demanderaient de choisir entre deux
+              // recommandations, alors qu'il n'y en a qu'une.
+              variant={rang === 0 ? 'primary' : 'secondary'}
+              fullWidth={false}
+              onPress={() => onChoisir(proche.jour)}
+              testID={`proche-${proche.jour}`}
+            />
+          ))}
+        </View>
+      ) : (
+        <Texte variante="type.caption" couleur="ink.mute" testID="aucun-jour-proche">
+          {t('parcours.creneauxAucunJourProche', {
+            count: formatNumber(JOURS_DE_LA_BANDE, locale),
+          })}
+        </Texte>
+      )}
     </View>
   );
 }
