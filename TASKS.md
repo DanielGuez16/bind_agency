@@ -1249,6 +1249,15 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       c'est l'empilement qui les autorise à être gros. Le bloc noir de la
       connexion part sans être remplacé. `mediasPlateforme` et
       `MediasPlateforme.home` restent servis sans lecteur : à trancher*
+- [ ] **La preuve v3 attend quatre champs sur `Collaboration`**
+      *Le contrat est posé — format, mention copiable, échéance en jour nommé —
+      et quatre choses manquent au serveur : le **temps restant dans la fenêtre
+      de vérification**, calculé serveur et jamais déduit d'une horloge locale ;
+      `dernier_motif`, aujourd'hui sur `LigneDeFile` seulement, pour la carte
+      « ce qui manquait » — et il doit dire aussi ce qui allait ; le **nom du
+      salon**, sans lequel la ligne du lieu n'a rien à copier ; et la
+      **plateforme**, sans laquelle « une story sur Instagram » ne peut pas
+      s'écrire. Demandés. Un test dit chacun en creux plutôt qu'en commentaire*
 - [ ] **L'inventaire des cartes ne voit pas les surfaces sans filet**
       *Sa définition est « fond de surface + rayon de 18 + filet ». Les deux
       portes de l'accueil et le panneau `reconnu` de `RedemptionScreen` ont le

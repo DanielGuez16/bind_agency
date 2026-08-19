@@ -21,12 +21,25 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { useApi, type Collaboration } from '../api';
-import { Button, SkeletonFiche, StatusMessage, Texte, TierBadge } from '../components';
-import { formatDateTime } from '../format';
+import { Button, SkeletonFiche, StatusMessage, Texte } from '../components';
 import { useI18n } from '../i18n';
 import { Ecran } from './Ecran';
+import { ContratDeLaPreuve } from './preuve/ContratDeLaPreuve';
 import { EnvoiDePreuve } from './EnvoiDePreuve';
 import { useRequete } from './useRequete';
+
+/**
+ * Le fuseau dans lequel s'écrit une échéance de publication.
+ *
+ * **Celui du produit, faute de mieux, et c'est dit plutôt que caché.** Le bon
+ * fuseau est celui du commerce — une échéance se compte depuis un service rendu
+ * quelque part — et `Collaboration` ne le porte pas plus qu'il ne porte le nom
+ * du salon. L'écran affichait `UTC`, c'est-à-dire le fuseau de personne, ce qui
+ * décalait l'heure de quatre heures à Miami. Le marché est unique au
+ * lancement ; le jour où il ne l'est plus, ce constant devient le champ qui
+ * manque.
+ */
+const FUSEAU_DU_PRODUIT = 'America/New_York';
 
 export function PreuveScreen({
   collaborationId,
@@ -51,17 +64,20 @@ export function PreuveScreen({
       onRetour={onRetour} requete={requete} titre={t('parcours.preuveTitre')} squelette={<SkeletonFiche testID="squelette-preuve" />} testID="ecran-preuve">
       {(contrepartie) => (
         <View style={{ gap: 12 }}>
-          <TierBadge tier={contrepartie.required_format} />
-
-          {/* Le délai qui court s'affiche en date d'échéance ; le temps restant
-              se calcule à l'affichage, il ne se stocke pas. */}
-          <Texte variante="type.mono" testID="echeance">
-            {t('parcours.preuveEcheance', {
-              // Sans secondes, et le mois en lettres : une échéance de
-              // publication se lit, elle ne se décode pas.
-              date: formatDateTime(contrepartie.deadline_at, locale, 'UTC'),
-            })}
-          </Texte>
+          {/* **Le badge et l'échéance nue sont remplacés par le contrat.** Le
+              badge disait le palier en trois barres — la même chose codée que
+              la fiche v3 a retirée — et l'échéance s'écrivait en date de
+              machine sur `UTC`, c'est-à-dire dans le fuseau de personne. Le
+              panneau dit les deux en toutes lettres, et il porte en plus ce que
+              la liste des réservations laisse tomber : le format exact, la
+              mention et le lieu, copiables. */}
+          <ContratDeLaPreuve
+            contrepartie={contrepartie}
+            plateforme={null}
+            timezone={FUSEAU_DU_PRODUIT}
+            nomDuSalon={null}
+            nomDeLaPrestation={null}
+          />
 
           {/* **Un arbitre a la main, et l'attente change de nature.** Le champ
               était rendu depuis toujours et affiché nulle part : on attendait

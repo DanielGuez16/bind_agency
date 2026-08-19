@@ -642,6 +642,9 @@ describe('les surfaces de la v1.1', () => {
       // la règle des rayons est catégorique, et un écart par écran est
       // exactement ce que l'inventaire existe pour empêcher.
       'src/screens/creneau/Engagement.tsx',
+      // Le panneau du contrat de la preuve v3 : ce que le commerce attend,
+      // posé sur l'écran où l'on publie.
+      'src/screens/preuve/ContratDeLaPreuve.tsx',
     ];
 
     // **La fenêtre est à 900 et non à 600, et ce n'est pas un réglage.** Un
