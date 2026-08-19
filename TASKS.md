@@ -1134,7 +1134,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       composition, et l'autre conversation refait les écrans. Le contrat est
       dans `api-map.md`, `email_verified_at` est sur `/me`, et le code d'erreur
       `email_not_verified` est traduit dans les deux langues*
-- [x] **La suite en parallèle** — 651 s à 400 s, mesuré
+- [x] **La suite en parallèle** — 651 s à 300 s, mesuré
       *`pytest-xdist` avec `--dist loadgroup`. Les deux tests de concurrence
       partagent `xdist_group("concurrence")` : même worker, sériels entre eux, et
       le verrou consultatif reste éprouvé. `test_seed.py` est groupé aussi — le
@@ -1147,9 +1147,15 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       SQLAlchemy masque le mot de passe. Le message disait « password
       authentication failed for user bind » et le parallélisme n'y était pour
       rien.
-      **Le plafond n'est plus les cœurs mais Postgres** : 217 % de processeur sur
-      dix cœurs, les workers attendent la base. Aller plus loin demanderait
-      plusieurs instances, ce qui coûterait plus que les quatre minutes gagnées*
+      **Le chemin critique est **, épinglé sur un worker : les
+      neuf autres finissent et l'attendent. Il est passé de 164 s à 116 s en
+      cessant de rejouer le semis une troisième fois pour lire un résumé que le
+      second passage avait déjà produit.
+      **Les cent secondes qui restent ne se clonent pas** : ce sont les deux
+      passages qui éprouvent la rejouabilité. Une base modèle les remplacerait
+      par un , qui prouverait qu'on sait copier une
+      base — pas que la commande repart d'un état rempli. C'est le plancher, et
+      il est le sujet d'un test, pas son coût*
 - [ ] **`SOCIAL_PROVIDER` et `API_PUBLIC_BASE_URL` à poser chez Render**
       *Le seul des trois bloquants que le code ne peut pas corriger seul. Depuis
       cette tranche, l'API refuse de démarrer sans elles plutôt que de répondre
