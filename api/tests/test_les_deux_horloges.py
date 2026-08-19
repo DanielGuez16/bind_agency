@@ -33,6 +33,23 @@ RACINE = pathlib.Path(__file__).resolve().parents[1] / "app"
 ECHEANCES = ("run_after",)
 
 
+def _acceptable(ligne: str) -> bool:
+    """Une comparaison acceptable, et **pourquoi la présence de `maintenant` ne
+    suffit pas**.
+
+    La première version passait toute ligne contenant `maintenant`. Elle laissait
+    donc passer `maintenant or datetime.now(UTC)` — la forme exacte du défaut,
+    puisque c'est le repli qui décide quand l'appelant ne fournit rien. La
+    mutation l'a montré : elle survivait à la garde censée l'attraper.
+
+    L'horloge du processus est donc **disqualifiante en elle-même**, quel que
+    soit ce qu'il y a autour.
+    """
+    if "datetime.now" in ligne or "utcnow" in ligne:
+        return False
+    return "clock_timestamp" in ligne or "maintenant" in ligne
+
+
 def test_aucune_echeance_ne_se_compare_a_l_horloge_du_processus() -> None:
     """**Le cas où l'écart peut être nul**, et le seul qui compte.
 
@@ -45,7 +62,7 @@ def test_aucune_echeance_ne_se_compare_a_l_horloge_du_processus() -> None:
         source = fichier.read_text(encoding="utf-8")
         for colonne in ECHEANCES:
             for ligne in re.findall(rf"^.*\.{colonne}\s*<=.*$", source, re.M):
-                if "clock_timestamp" in ligne or "maintenant" in ligne:
+                if _acceptable(ligne):
                     continue
                 fautes.append(f"{fichier.relative_to(RACINE.parent)} : {ligne.strip()}")
 
@@ -68,10 +85,15 @@ def test_la_garde_attrape_bien_la_forme_qu_elle_vise() -> None:
     )
     jobs = "Job.run_after <= sa.func.clock_timestamp()"
 
+    #: La forme que la première version laissait passer : elle contient
+    #: `maintenant`, et pourtant le repli est l'horloge du processus.
+    sournois = "OutboundMessage.run_after <= (maintenant or datetime.now(UTC)),"
+
     motif = re.compile(r"^.*\.run_after\s*<=.*$", re.M)
 
-    assert motif.search(fautif), "la forme fautive n'est pas reconnue"
-    assert "clock_timestamp" not in fautif and "maintenant" not in fautif
-    # Et les deux écritures acceptables le sont pour la bonne raison.
-    assert "maintenant" in correct
-    assert "clock_timestamp" in jobs
+    for forme in (fautif, sournois):
+        assert motif.search(forme), f"forme non reconnue : {forme}"
+        assert not _acceptable(forme), f"forme fautive acceptée : {forme}"
+
+    for forme in (correct, jobs):
+        assert _acceptable(forme), f"forme correcte refusée : {forme}"
