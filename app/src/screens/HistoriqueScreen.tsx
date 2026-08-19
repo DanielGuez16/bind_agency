@@ -88,6 +88,64 @@ export function tempsRestant(echeance: string, maintenant = Date.now()): string 
   return heures < 48 ? `${heures} h` : `${Math.floor(heures / 24)} j`;
 }
 
+/**
+ * Qui attend, sur une réservation à venir.
+ *
+ * **L'onglet mêlait deux choses sans le dire** : les réservations acceptées, où
+ * il faut venir, et celles qui attendent la décision du salon, où il faut
+ * attendre. Deux verbes différents dans une liste unique, et l'on ne savait pas
+ * en la parcourant s'il y avait quelque chose à faire.
+ *
+ * La coupure porte sur **qui est attendu**, pas sur le statut : c'est la seule
+ * question que la créatrice se pose en ouvrant l'écran.
+ */
+export function sectionAVenir(reservation: ReservationDuCreateur): 'moi' | 'salon' {
+  return reservation.status === 'awaiting_business' ? 'salon' : 'moi';
+}
+
+/**
+ * Le verbe d'une contrepartie en cours.
+ *
+ * **Le titre est le verbe**, et la prestation passe en attribution. La ligne
+ * disait « Gel manicure » — ce que c'était — là où la question est ce qu'on
+ * attend de moi. « Post a story » le dit en trois mots, et « Gel manicure ·
+ * Vela Nail Studio » vient dessous, en petit, parce qu'il faut bien savoir
+ * pour quoi.
+ *
+ * Nul quand la contrepartie est close : une ligne terminée n'attend aucun
+ * verbe, et lui en donner un la ferait paraître ouverte.
+ */
+export function verbeDeLaContrepartie(
+  reservation: ReservationDuCreateur,
+): 'publier' | 'corriger' | 'controle' | null {
+  const contrepartie = reservation.contrepartie;
+  if (!contrepartie) return null;
+  if (contrepartie.status === 'pending') return 'publier';
+  if (contrepartie.status === 'resubmit_requested') return 'corriger';
+  if (contrepartie.status === 'submitted' || contrepartie.status === 'under_review') {
+    return 'controle';
+  }
+  return null;
+}
+
+/**
+ * La grammaire des surfaces, et c'est elle qui remplace le fouillis.
+ *
+ * Une carte à ombre **demande quelque chose**, une carte à filet informe, une
+ * ligne nue est de l'histoire. Trois traitements pour trois rapports à
+ * l'action — et le « moche » de l'onglet des terminées venait précisément d'un
+ * traitement d'action appliqué à de l'histoire.
+ */
+export type Surface = 'demande' | 'informe' | 'histoire';
+
+export function surfaceDe(
+  reservation: ReservationDuCreateur,
+  onglet: string,
+): Surface {
+  if (onglet === 'terminees') return 'histoire';
+  return attenteDe(reservation) === 'creatrice' ? 'demande' : 'informe';
+}
+
 /** Les trois onglets, et les statuts que chacun couvre. */
 const ONGLETS: { cle: string; libelle: string; statuts: BookingStatus[] }[] = [
   {

@@ -569,3 +569,109 @@ async def test_une_reservation_confirmee_aujourd_hui_apparait_dans_la_journee(
         session, business=business, jour=jour + timedelta(days=1)
     )
     assert all(ligne.booking_id != booking.id for ligne in demain.items)
+
+
+# --------------------------------------------------------------------------
+# le motif du dernier refus, descendu jusqu'à la créatrice
+# --------------------------------------------------------------------------
+
+
+async def test_le_motif_du_refus_descend_jusqu_a_la_creatrice(session: AsyncSession) -> None:
+    """**Sans lui, elle renvoie la même chose.**
+
+    Une créatrice invitée à resoumettre sans qu'on lui dise ce qui manquait ne
+    peut pas corriger : elle se fait refuser une seconde fois, et le dossier
+    part en arbitrage sans qu'aucune phrase ait été échangée. Le motif existait
+    depuis toujours sur la file d'arbitrage ; il ne descendait pas jusqu'à elle.
+    """
+    from app.services import collaboration as collaboration_service
+    from app.services import proof as proof_service
+    from app.services.audit import Actor
+    from tests.test_collaboration import capture, contrepartie
+
+    ligne, decor = await contrepartie(session)
+    await proof_service.soumettre(
+        session, collaboration=ligne, capture=capture(), actor=Actor.from_user(decor["createur"])
+    )
+    await collaboration_service.demander_une_nouvelle_soumission(
+        session,
+        collaboration=ligne,
+        actor=Actor.from_user(decor["caissier"]),
+        reason="location_tag_missing",
+    )
+
+    historique = await service.historique_du_createur(session, creator_id=decor["createur"].id)
+    contre = historique.items[0].contrepartie
+
+    assert contre is not None
+    assert contre.dernier_motif == "location_tag_missing"
+
+
+async def test_le_motif_est_le_dernier_pas_le_premier(session: AsyncSession) -> None:
+    """Elle a une chose à corriger, pas trois.
+
+    C'est la différence avec l'arbitrage, qui garde l'historique entier parce
+    que la répétition y justifie l'escalade. Lui montrer les reproches
+    précédents la ferait corriger ce qui l'est déjà.
+    """
+    from app.services import collaboration as collaboration_service
+    from app.services import proof as proof_service
+    from app.services.audit import Actor
+    from tests.test_collaboration import capture, contrepartie
+
+    ligne, decor = await contrepartie(session)
+    for rang, motif in enumerate(("mention_missing", "location_tag_missing"), start=1):
+        await proof_service.soumettre(
+            session,
+            collaboration=ligne,
+            capture=capture(contenu=f"media {rang}".encode()),
+            actor=Actor.from_user(decor["createur"]),
+        )
+        await collaboration_service.demander_une_nouvelle_soumission(
+            session,
+            collaboration=ligne,
+            actor=Actor.from_user(decor["caissier"]),
+            reason=motif,
+        )
+
+    historique = await service.historique_du_createur(session, creator_id=decor["createur"].id)
+
+    assert historique.items[0].contrepartie.dernier_motif == "location_tag_missing"
+
+
+async def test_aucun_motif_quand_rien_n_a_ete_refuse(session: AsyncSession) -> None:
+    """Nul, et pas une chaîne vide : une soumission en cours de contrôle n'a
+    rien à corriger, et un encart vide ferait chercher un reproche."""
+    from tests.test_collaboration import contrepartie
+
+    _ligne, decor = await contrepartie(session)
+
+    historique = await service.historique_du_createur(session, creator_id=decor["createur"].id)
+
+    assert historique.items[0].contrepartie.dernier_motif is None
+
+
+async def test_le_motif_ne_coute_pas_une_requete_par_ligne(session: AsyncSession) -> None:
+    """Le journal se lit **une fois pour la page**. Une requête par réservation
+    sur un écran qui en affiche vingt se paie à chaque ouverture."""
+    from app.services import collaboration as collaboration_service
+    from app.services import proof as proof_service
+    from app.services.audit import Actor
+    from tests.test_collaboration import capture, contrepartie
+
+    ligne, decor = await contrepartie(session)
+    await proof_service.soumettre(
+        session, collaboration=ligne, capture=capture(), actor=Actor.from_user(decor["createur"])
+    )
+    await collaboration_service.demander_une_nouvelle_soumission(
+        session,
+        collaboration=ligne,
+        actor=Actor.from_user(decor["caissier"]),
+        reason="mention_missing",
+    )
+
+    # La fonction interne prend une liste et rend une table : c'est cette forme
+    # qui garantit l'appel unique, et elle se vérifie sans compter les requêtes.
+    motifs = await service._derniers_motifs(session, [ligne.id, None, ligne.id])
+    assert motifs == {ligne.id: "mention_missing"}
+    assert await service._derniers_motifs(session, [None]) == {}
