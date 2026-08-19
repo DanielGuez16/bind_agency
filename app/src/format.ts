@@ -161,3 +161,57 @@ export function repereDuCreneau(
   // ferait passer pour à venir. La date brute est alors la réponse honnête.
   return { quand: 'date', libelle: formatDate(isoUtc, locale, timeZone), heure };
 }
+
+/**
+ * La date civile d'un instant, dans le fuseau du commerce.
+ *
+ * « 2026-08-19 », qui se compare comme une chaîne et se rapproche d'une clé de
+ * journée sans traîner d'heure derrière elle. `en-CA` rend cette forme, et
+ * c'est le seul usage d'une locale figée dans ce fichier : ce n'est pas une
+ * date qu'on montre, c'est une clé qu'on compare.
+ *
+ * **Sur le fuseau du commerce, jamais celui du téléphone.** Un créneau de 23 h
+ * à Miami tombe le lendemain en UTC : le classer sur la date brute le placerait
+ * un jour trop loin, et le salon ne le verrait pas où il l'attend.
+ */
+export function jourCivil(instant: Date | string, timeZone: string): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone, dateStyle: 'short' }).format(
+    typeof instant === 'string' ? new Date(instant) : instant,
+  );
+}
+
+/**
+ * Le nom d'un jour, depuis une date nue.
+ *
+ * **Lue à midi UTC, et c'est indispensable.** `new Date('2026-08-19')` est lu
+ * comme minuit UTC : formaté dans un fuseau à l'ouest, le 19 devient le 18, et
+ * le mercredi devient mardi. Midi met douze heures de marge de chaque côté.
+ *
+ * `forme` choisit ce qu'on écrit : `court` pour la bande — « TUE » — et `long`
+ * pour une phrase — « Tuesday 19 ».
+ */
+export function nomDeJour(
+  dateNue: string,
+  locale: SupportedLocale,
+  forme: 'court' | 'long' = 'court',
+): string {
+  return new Date(`${dateNue}T12:00:00Z`).toLocaleDateString(
+    locale,
+    forme === 'court'
+      ? { weekday: 'short', timeZone: 'UTC' }
+      : { weekday: 'long', day: 'numeric', timeZone: 'UTC' },
+  );
+}
+
+/** Le mois d'une date nue, en toutes lettres. Même précaution de midi. */
+export function moisDeLaDate(dateNue: string, locale: SupportedLocale): string {
+  return new Date(`${dateNue}T12:00:00Z`).toLocaleDateString(locale, {
+    month: 'long',
+    timeZone: 'UTC',
+  });
+}
+
+/** Le quantième d'une date nue. Aucun fuseau : c'est une lecture de chaîne. */
+export function quantieme(dateNue: string): number {
+  return Number(dateNue.slice(8, 10));
+}

@@ -98,6 +98,18 @@ const OFFRE = {
   requires_booking: true,
 } as never;
 
+/**
+ * Le jour du montage, **calculé et non figé**.
+ *
+ * La bande commence aujourd'hui chez le commerce : une date en dur finirait
+ * hors de la fenêtre, et le seul créneau du montage deviendrait invisible. Ce
+ * dépôt a déjà payé ce défaut sur un `valid_until`.
+ */
+const JOUR = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'America/New_York',
+  dateStyle: 'short',
+}).format(new Date());
+
 function client(reserve: () => void) {
   return new ApiClient({
     baseUrl: 'https://api.test',
@@ -107,12 +119,24 @@ function client(reserve: () => void) {
         reserve();
         return { ok: true, status: 200, json: async () => ({ id: 'b-1' }) } as Response;
       }
+      // **Deux routes depuis la bande de quatorze jours**, et le montage doit
+      // les distinguer : le résumé rend les journées et leur état, la
+      // disponibilité rend les heures. Répondre la même chose aux deux donnait
+      // une bande dont les jours n'avaient pas de date.
+      const resume = String(url).includes('/availability/summary');
       return {
         ok: true,
         status: 200,
-        json: async () => [
-          { starts_at: '2026-08-08T14:00:00Z', ends_at: '2026-08-08T14:45:00Z', places_restantes: 2 },
-        ],
+        json: async () =>
+          resume
+            ? [{ jour: JOUR, ouvert: true, creneaux_libres: 1 }]
+            : [
+                {
+                  starts_at: `${JOUR}T14:00:00Z`,
+                  ends_at: `${JOUR}T14:45:00Z`,
+                  places_restantes: 2,
+                },
+              ],
       } as Response;
     },
   });
