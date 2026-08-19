@@ -17,6 +17,7 @@ from app.core.config import get_settings
 from app.integrations.geocoding import Coordinates
 from app.models import CreatorProfile, SocialAccount, Tier
 from app.models.enums import (
+    ContentFormat,
     Neighborhood,
     Platform,
     ReliabilityEventType,
@@ -564,3 +565,105 @@ async def test_une_prestation_desactivee_ne_figure_pas(session: AsyncSession) ->
     offres = await service.offres_du_palier(session, tier_id=STORY)
 
     assert [o.nom for o in offres] == ["Gardee"]
+
+
+class TestLeProchainPalier:
+    """**Venu du fil, où plus rien ne le lisait.**
+
+    Il y vivait parce que les paliers y vivaient ; ils sont partis sur l'écran
+    d'audience, qui consulte cette route-ci, et le champ était resté derrière —
+    servi à chaque chargement du fil, rendu nulle part.
+
+    Le classement reste au serveur : c'est une règle de produit, et la recopier
+    dans l'écran en ferait une seconde vérité.
+    """
+
+    async def test_il_classe_sur_le_nombre_de_conditions_pas_sur_leur_ampleur(
+        self, session: AsyncSession
+    ) -> None:
+        """**Le cœur de la règle, et le seul cas qui la distingue.**
+
+        Une première version triait sur l'écart brut : elle plaçait « une
+        collaboration de plus » devant « cinq mille abonnés de plus » parce que
+        1 < 5000. Ce sont deux grandeurs sans rapport.
+
+        Le décor donne donc à l'un **deux** obstacles de petite ampleur et à
+        l'autre **un seul** de grande : un tri sur l'ampleur les inverserait, un
+        tri sur le nombre les range comme il faut.
+        """
+        from app.services import creator_tiers as module
+
+        proche = _palier(obstacles=1, ecart=50_000, format_=ContentFormat.REEL)
+        loin = _palier(obstacles=2, ecart=1, format_=ContentFormat.STORY)
+
+        prochain = module._prochain_palier([loin, proche])
+
+        assert prochain is not None
+        assert prochain.tier_id == proche.tier_id
+
+    async def test_a_egalite_l_echelle_du_produit_tranche(self, session: AsyncSession) -> None:
+        """Story, puis post, puis reel. Sans ce départage, l'ordre viendrait de
+        celui des lignes en base, qui ne veut rien dire."""
+        from app.services import creator_tiers as module
+
+        reel = _palier(obstacles=1, ecart=10, format_=ContentFormat.REEL)
+        story = _palier(obstacles=1, ecart=10, format_=ContentFormat.STORY)
+
+        prochain = module._prochain_palier([reel, story])
+
+        assert prochain is not None
+        assert prochain.content_format is ContentFormat.STORY
+
+    async def test_un_palier_ouvert_n_est_jamais_le_prochain(self, session: AsyncSession) -> None:
+        """Le pendant. Sans lui, une règle qui rendrait le premier palier venu
+        passerait les deux tests précédents."""
+        from app.services import creator_tiers as module
+
+        ouvert = _palier(obstacles=0, ecart=0, format_=ContentFormat.STORY, accessible=True)
+
+        assert module._prochain_palier([ouvert]) is None
+
+    async def test_le_compte_dans_le_rayon_reste_nul_sans_position(
+        self, session: AsyncSession
+    ) -> None:
+        """`None` et non zéro : « aucun salon autour de vous » est faux quand on
+        n'a rien demandé, et c'est la phrase que l'écran tairait à tort."""
+        from app.services import creator_tiers as module
+
+        ferme = _palier(obstacles=1, ecart=10, format_=ContentFormat.STORY)
+
+        prochain = module._prochain_palier([ferme])
+
+        assert prochain is not None
+        assert prochain.commerces_dans_le_rayon is None
+
+
+def _palier(*, obstacles: int, ecart: int, format_, accessible: bool = False):
+    """Un palier vu, réduit à ce que le classement regarde."""
+    from app.services import creator_tiers as module
+    from app.services import eligibility
+
+    return module.PalierVu(
+        tier_id=uuid.uuid4(),
+        platform=Platform.INSTAGRAM,
+        content_format=format_,
+        min_followers=0,
+        min_completed_collabs=0,
+        min_reliability_score=None,
+        value_ratio_hint=None,
+        display_order=0,
+        accessible=accessible,
+        social_account_id=None,
+        obstacles=tuple(
+            eligibility.Obstacle(
+                raison=eligibility.RaisonRefus.NOT_ENOUGH_FOLLOWERS,
+                requis=ecart,
+                constate=0,
+                ecart=ecart,
+            )
+            for _ in range(obstacles)
+        ),
+        offres_disponibles=0,
+        offres_dans_le_rayon=None,
+        commerces_dans_le_rayon=None,
+    )
