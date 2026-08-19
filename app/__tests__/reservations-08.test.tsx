@@ -24,7 +24,10 @@ import {
   attenteDe,
   destination,
   grouperParMois,
+  sectionAVenir,
+  surfaceDe,
   tempsRestant,
+  verbeDeLaContrepartie,
 } from '../src/screens/HistoriqueScreen';
 import { ThemeProvider } from '../src/theme';
 
@@ -348,5 +351,62 @@ describe('08c · les terminées, groupées', () => {
     await waitFor(() => expect(screen.getByTestId('onglets')).toBeTruthy());
 
     expect(screen.queryByTestId(/^mois-/)).toBeNull();
+  });
+});
+
+// --------------------------------------------------------------------------
+// v3 · deux niveaux, trois verbes, une grammaire
+// --------------------------------------------------------------------------
+
+describe('à venir · deux sections nommées par leur verbe', () => {
+  it('sépare ce qu’on attend de moi de ce qu’on attend du salon', () => {
+    // L'onglet mêlait les deux sans le dire, et l'on ne savait pas en le
+    // parcourant s'il y avait quelque chose à faire.
+    expect(sectionAVenir(reservation({ status: 'confirmed' }))).toBe('moi');
+    expect(sectionAVenir(reservation({ status: 'awaiting_business' }))).toBe('salon');
+  });
+
+  it('range une garde du côté de la créatrice', () => {
+    // Une place tenue attend qu'elle confirme, pas que le salon tranche : la
+    // ranger sous « le salon décide » la ferait attendre pour rien.
+    expect(sectionAVenir(reservation({ status: 'held' }))).toBe('moi');
+  });
+});
+
+describe('en cours · le titre est le verbe', () => {
+  it('dit publier, corriger ou attendre, jamais la prestation', () => {
+    const avec = (statut: string) =>
+      verbeDeLaContrepartie(reservation({ contrepartie: contrepartie(statut) as never }));
+
+    expect(avec('pending')).toBe('publier');
+    expect(avec('resubmit_requested')).toBe('corriger');
+    expect(avec('submitted')).toBe('controle');
+    expect(avec('under_review')).toBe('controle');
+  });
+
+  it('ne donne aucun verbe à une contrepartie close', () => {
+    // Un verbe la ferait paraître ouverte.
+    expect(verbeDeLaContrepartie(reservation({ contrepartie: contrepartie('approved') as never }))).toBeNull();
+    expect(verbeDeLaContrepartie(reservation({ contrepartie: null }))).toBeNull();
+  });
+});
+
+describe('la grammaire des surfaces', () => {
+  it('donne l’ombre à ce qui demande, le filet à ce qui informe', () => {
+    const demande = reservation({ contrepartie: contrepartie('pending') as never });
+    const informe = reservation({ contrepartie: contrepartie('submitted') as never });
+
+    expect(surfaceDe(demande, 'en-cours')).toBe('demande');
+    expect(surfaceDe(informe, 'en-cours')).toBe('informe');
+  });
+
+  it('rend l’historique en ligne nue, quoi qu’il ait demandé autrefois', () => {
+    // Le « moche » venait d'un traitement d'action appliqué à de l'histoire :
+    // une carte à ombre pour une liste qui ne demande rien.
+    const close = reservation({ status: 'cancelled', contrepartie: null });
+    const jadis = reservation({ status: 'consumed', contrepartie: contrepartie('pending') as never });
+
+    expect(surfaceDe(close, 'terminees')).toBe('histoire');
+    expect(surfaceDe(jadis, 'terminees')).toBe('histoire');
   });
 });

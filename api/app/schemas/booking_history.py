@@ -27,6 +27,10 @@ class ContrepartieBreveRead(BaseModel):
     status: CollaborationStatus
     deadline_at: datetime
     attempts_count: int
+    #: Ce que le salon a reproché à la dernière soumission. Nul quand rien n'a
+    #: été refusé. Sans lui, une créatrice invitée à resoumettre renvoie la même
+    #: chose et se fait refuser une seconde fois.
+    dernier_motif: str | None
     needs_human_review: bool
 
 
