@@ -15,6 +15,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 
 import {
+  ApercuDePrestation,
   BadgesDeProfil,
   BusinessCard,
   Button,
@@ -748,6 +749,116 @@ describe('Texte', () => {
 // --------------------------------------------------------------------------
 // Ce qui n'existe pas
 // --------------------------------------------------------------------------
+
+/**
+ * L'aperçu de prestation : la hiérarchie, et la case qui tient la grille.
+ */
+describe('l’aperçu de prestation', () => {
+  it('donne le titre à la prestation et l’attribution au salon', async () => {
+    // C'est la correction entière de la revue, en deux nœuds : le nom de la
+    // prestation porte la variante de titre, le salon et la durée la légende.
+    // L'inverse est exactement ce que la v2.1 rendait.
+    await monter(
+      <ApercuDePrestation
+        nom="Gel manicure"
+        salon="Vela Nail Studio"
+        dureeMinutes={45}
+        contrepartie="story"
+        testID="apercu"
+      />,
+    );
+
+    expect(screen.getByTestId('apercu-nom')).toHaveTextContent('Gel manicure');
+    expect(screen.getByTestId('apercu-attribution')).toHaveTextContent(
+      'Vela Nail Studio · 45 min',
+    );
+    // Le titre est strictement plus gros que son attribution. Comparer aux deux
+    // nombres écrits en dur ferait passer le test le jour où l'échelle bouge
+    // sans que la hiérarchie tienne ; c'est le rapport qui est la règle.
+    expect(Number(style(screen.getByTestId('apercu-nom')).fontSize)).toBeGreaterThan(
+      Number(style(screen.getByTestId('apercu-attribution')).fontSize),
+    );
+  });
+
+  it('et « salon » seul quand le catalogue ne porte pas de durée', async () => {
+    // Le séparateur appartient à la jointure : un « · » orphelin en fin de ligne
+    // est le défaut qu'une concaténation produit et qu'aucun montage à durée
+    // pleine ne révèle.
+    await monter(
+      <ApercuDePrestation
+        nom="Balayage"
+        salon="Rótulo Hair"
+        dureeMinutes={null}
+        contrepartie={null}
+        testID="sans-duree"
+      />,
+    );
+
+    expect(screen.getByTestId('sans-duree-attribution')).toHaveTextContent('Rótulo Hair');
+    expect(screen.getByTestId('sans-duree-attribution')).not.toHaveTextContent('·');
+  });
+
+  it('garde la case de contrepartie à la même hauteur, occupée ou vide', async () => {
+    // **La règle de Design, et le montage qui la met en défaut.** « La case du
+    // badge a une hauteur fixe, occupée ou vide » : sans elle, une rangée dont
+    // les aperçus portent une contrepartie mesure plus haut que la même sans,
+    // les deux colonnes se décalent, et la hauteur du mur dépend de la donnée.
+    //
+    // **Il faut les deux dans le même rendu.** Un aperçu avec badge, seul,
+    // passerait aussi bien avec une case dimensionnée par son contenu — les
+    // deux implémentations rendent la même hauteur quand la case est pleine.
+    // C'est le couple plein/vide qui les sépare, et c'est donc lui qu'on écrit.
+    await monter(
+      <>
+        <ApercuDePrestation
+          nom="Gel manicure"
+          salon="Vela"
+          dureeMinutes={45}
+          contrepartie="story"
+          testID="avec"
+        />
+        <ApercuDePrestation
+          nom="Balayage"
+          salon="Rótulo"
+          dureeMinutes={120}
+          contrepartie={null}
+          testID="sans"
+        />
+      </>,
+    );
+
+    const pleine = style(screen.getByTestId('avec-case-contrepartie')).height;
+    const vide = style(screen.getByTestId('sans-case-contrepartie')).height;
+
+    expect(vide).toBe(pleine);
+    expect(Number(pleine)).toBeGreaterThan(0);
+    // Et la case vide l'est vraiment : une case qui garderait son badge à
+    // l'opacité nulle tiendrait la hauteur sans dire la vérité au lecteur
+    // d'écran.
+    expect(screen.queryByTestId('sans-contrepartie')).toBeNull();
+    expect(screen.getByTestId('avec-contrepartie')).toBeTruthy();
+  });
+
+  it('ne pose aucun chrome : ni fond, ni bordure, ni ombre', async () => {
+    // Ce que la carte perd, et ce qui permet d'en montrer deux par ligne. Les
+    // trois ensemble : retirer la bordure en gardant l'ombre laisserait une
+    // carte, et c'est la forme que la revue vise.
+    await monter(
+      <ApercuDePrestation
+        nom="Signature facial"
+        salon="Casa Bruma"
+        dureeMinutes={60}
+        contrepartie="post"
+        testID="nu"
+      />,
+    );
+
+    const pose = style(screen.getByTestId('nu'));
+    expect(pose.backgroundColor).toBeUndefined();
+    expect(pose.borderWidth ?? 0).toBe(0);
+    expect(pose.boxShadow ?? pose.shadowOpacity).toBeUndefined();
+  });
+});
 
 describe("ce que la bibliothèque n'a pas", () => {
   it("n'expose aucun composant de montant, de solde ou de progression", () => {
