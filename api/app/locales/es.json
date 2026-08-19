@@ -1,4 +1,6 @@
 {
+  "account.verification.body": "Bienvenida a BIND.\n\nConfirma tu dirección de correo para poder reservar prestaciones y publicar un negocio:\n\n{lien}\n\nEl enlace funciona durante {heures} horas. Si ha caducado, pide otro desde la aplicación.\n\nPuedes mirar sin confirmar — simplemente no puedes comprometer a nadie más hasta hacerlo.\n",
+  "account.verification.subject": "Confirma tu dirección de correo",
   "account.welcome.subject": "Te damos la bienvenida a BIND",
   "booking.approved.body": "Hola {creator}:\n\n{business} confirmó tu reserva de {item}{quand_phrase}.\n\nAbre la app para ver tu código de retiro. Muéstralo en el mostrador.\n",
   "booking.approved.subject": "{business} confirmó tu reserva",

@@ -2,15 +2,17 @@
 
 import uuid
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 
+from app.core import passwords
 from app.models.enums import Locale, UserRole, UserStatus
 
-# Longueur minimale seulement : imposer une composition pousse aux mots de passe
-# courts et prévisibles. La longueur maximale protège du déni de service par
-# hachage d'une entrée démesurée.
-PASSWORD_MIN_LENGTH = 12
-PASSWORD_MAX_LENGTH = 256
+# Les deux bornes restent ici pour les schémas ; la **force**, elle, vit dans
+# `app.core.passwords`. Une exigence de composition — majuscule, chiffre,
+# symbole — a été écartée et le reste : elle accepte `Password1!` et refuse une
+# phrase de passe longue, c'est-à-dire l'inverse de ce qu'on veut.
+PASSWORD_MIN_LENGTH = passwords.LONGUEUR_MINIMALE
+PASSWORD_MAX_LENGTH = passwords.LONGUEUR_MAXIMALE
 
 
 class RegisterRequest(BaseModel):
@@ -18,6 +20,21 @@ class RegisterRequest(BaseModel):
     password: str = Field(min_length=PASSWORD_MIN_LENGTH, max_length=PASSWORD_MAX_LENGTH)
     role: UserRole
     locale: Locale = Locale.EN
+
+    @model_validator(mode="after")
+    def _mot_de_passe_solide(self) -> "RegisterRequest":
+        """**Vérifié avec l'adresse**, et c'est pourquoi c'est un validateur de
+        modèle et non de champ : le refus le plus utile — « votre mot de passe
+        contient votre adresse » — ne se voit pas sur le seul mot de passe.
+
+        Le code du refus remonte tel quel dans le 422 : l'interface le traduit,
+        et une phrase écrite ici n'existerait qu'en anglais.
+        """
+        try:
+            passwords.verifier(self.password, email=self.email)
+        except passwords.MotDePasseFaible as faible:
+            raise ValueError(str(faible)) from faible
+        return self
 
 
 class LoginRequest(BaseModel):

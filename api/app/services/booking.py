@@ -35,7 +35,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.models import Booking, Business, CatalogItem, CreatorProfile, Tier, TierOffer
 from app.models.enums import BookingStatus, BusinessStatus
-from app.services import audit, availability, eligibility
+from app.services import audit, availability, eligibility, email_verification
 
 
 class BookingError(Exception):
@@ -48,6 +48,17 @@ class OfferNotBookable(BookingError):
 
 class TierNotAccessible(BookingError):
     """Ce compte n'ouvre pas ce palier."""
+
+
+class EmailNotVerified(BookingError):
+    """L'adresse du créateur n'est pas confirmée.
+
+    **Contrôlé ici et pas à la connexion.** Un compte non vérifié entre, regarde
+    le fil, connecte un réseau : rien de tout cela n'engage personne d'autre.
+    Réserver, si — le salon bloque une place pour quelqu'un qu'on ne sait pas
+    joindre. C'est le premier geste qui coûte à un tiers, donc le premier qui
+    demande une adresse qui existe.
+    """
 
 
 class NameRequired(BookingError):
@@ -84,6 +95,12 @@ async def creer(
 ) -> Booking:
     """Pose un `held` sur une place, ou refuse. Jamais entre les deux."""
     settings = get_settings()
+
+    # **Avant le nom, et avant le palier.** Le refus le plus structurant se dit
+    # en premier : compléter son profil puis découvrir qu'il fallait d'abord
+    # confirmer son adresse ferait faire deux fois le chemin.
+    if not await email_verification.a_verifie(session, creator_id):
+        raise EmailNotVerified(str(creator_id))
 
     profil = await session.get(CreatorProfile, creator_id)
     if profil is None or not profil.first_name or not profil.last_name:

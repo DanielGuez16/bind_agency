@@ -479,6 +479,11 @@ class Settings(BaseSettings):
     #: à un week-end. Au-delà, un lien qui traîne dans une boîte est une porte
     #: ouverte sur une fiche que plus personne ne surveille — et il se renvoie
     #: en un geste.
+    #: Durée de vie du lien de confirmation d'adresse. Vingt-quatre heures :
+    #: assez pour ouvrir sa boîte le lendemain matin, trop court pour qu'un
+    #: lien oublié dans une archive rouvre une porte des mois plus tard. Le
+    #: renvoi est là pour les cas plus longs, et il révoque le précédent.
+    email_verification_ttl_seconds: int = 24 * 3600
     handover_token_ttl_seconds: int = 7 * 24 * 3600
     #: Où pointe le lien remis au salon. Sans elle, l'émission refuse plutôt
     #: que de fabriquer une adresse — même règle que le lien traqué : une
