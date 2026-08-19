@@ -344,7 +344,14 @@ describe('brand.500 est une surface, jamais une encre', () => {
   it('`Texte` refuse la surface au lieu de la rendre en silence', async () => {
     // La garde statique attrape ce qui est écrit ; celle-ci attrape ce qui est
     // calculé — une couleur passée en variable ne se lit dans aucune source.
-    const { Texte } = require('../src/components');
+    // **Depuis son module et non depuis le baril.** `../src/components`
+    // réexporte la bibliothèque entière : demander `Texte` par là chargeait une
+    // trentaine de modules pour en utiliser un, et c'est le premier rendu du
+    // fichier qui payait la facture. Sur le poste ça se voit à peine — 286 ms —
+    // et en intégration continue, sous parallélisme, la garde de durée l'a
+    // relevé à 7,1 s. Le seuil n'était pas trop bas : le test faisait vraiment
+    // ce travail.
+    const { Texte } = require('../src/components/Texte');
     const silence = jest.spyOn(console, 'error').mockImplementation(() => {});
     const sonde = (
       <ThemeProvider role="creator">
