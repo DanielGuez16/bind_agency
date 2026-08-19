@@ -14,12 +14,18 @@
  * La règle est éprouvée en deux endroits : sur `attenteDe`, qui la décide sans
  * un pixel, et sur le rendu, qui doit s'y tenir.
  */
-import { render, screen, waitFor, within } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 
 import { ApiClient, ApiProvider, type ReservationDuCreateur } from '../src/api';
 import { I18nProvider } from '../src/i18n';
 import { en } from '../src/i18n/en';
-import { HistoriqueScreen, attenteDe, destination } from '../src/screens/HistoriqueScreen';
+import {
+  HistoriqueScreen,
+  attenteDe,
+  destination,
+  grouperParMois,
+  tempsRestant,
+} from '../src/screens/HistoriqueScreen';
 import { ThemeProvider } from '../src/theme';
 
 /**
@@ -241,5 +247,106 @@ describe('un droit périmé', () => {
 
     expect(await screen.findByTestId('droit-perime-r1')).toBeTruthy();
     expect(screen.queryByTestId('agir-r1')).toBeNull();
+  });
+});
+
+// --------------------------------------------------------------------------
+// 08b · ce qu'il reste, et 08c · les mois
+// --------------------------------------------------------------------------
+
+describe('le temps restant, isolé', () => {
+  const ECHEANCE = '2026-08-16T14:30:00Z';
+  const instant = (decalageHeures: number) =>
+    new Date(ECHEANCE).getTime() - decalageHeures * 3_600_000;
+
+  it('compte en heures sous deux jours', () => {
+    // « 31 H » se comprend sans calcul, et c'est lui qui décide si l'on publie
+    // ce soir ou demain.
+    expect(tempsRestant(ECHEANCE, instant(31))).toBe('31 h');
+  });
+
+  it('bascule en jours au-delà de deux', () => {
+    // « 71 H » est exact et illisible quand « 2 J » suffit à décider.
+    expect(tempsRestant(ECHEANCE, instant(71))).toBe('2 j');
+    expect(tempsRestant(ECHEANCE, instant(48))).toBe('2 j');
+    expect(tempsRestant(ECHEANCE, instant(47))).toBe('47 h');
+  });
+
+  it('ne rend rien quand l’échéance est passée', () => {
+    // Une contrepartie en retard est déjà close par le balayage ; « −3 H » sur
+    // une ligne encore ouverte se lirait comme une dette.
+    expect(tempsRestant(ECHEANCE, instant(-3))).toBeNull();
+  });
+});
+
+describe('les mois, isolés', () => {
+  it('groupe dans l’ordre reçu, sans retrier', () => {
+    // Le serveur a déjà décidé ; retrier ici ferait diverger l'écran de sa
+    // pagination.
+    const groupes = grouperParMois(
+      [
+        reservation({ booking_id: 'a', starts_at: '2026-08-08T14:00:00Z' }),
+        reservation({ booking_id: 'b', starts_at: '2026-08-02T14:00:00Z' }),
+        reservation({ booking_id: 'c', starts_at: '2026-07-28T14:00:00Z' }),
+      ],
+      'en',
+    );
+
+    expect(groupes.map((g) => g.mois)).toEqual(['AUGUST 2026', 'JULY 2026']);
+    expect(groupes[0].items.map((r) => r.booking_id)).toEqual(['a', 'b']);
+  });
+
+  it('range selon le fuseau du commerce, pas celui du lecteur', () => {
+    // **L'instant est choisi pour discriminer.** Le 1er août à 02 h UTC est le
+    // 31 juillet à 22 h à Miami : grouper sur le fuseau du lecteur rangerait la
+    // ligne en août, celui du commerce la range en juillet — et c'est le mois
+    // où la créatrice se souvient d'y être allée.
+    //
+    // Le premier essai portait 05 h UTC, qui est le 1er août des deux côtés :
+    // le test passait sans rien départager.
+    const groupes = grouperParMois(
+      [reservation({ starts_at: '2026-08-01T02:00:00Z' })],
+      'en',
+    );
+
+    expect(groupes[0].mois).toBe('JULY 2026');
+  });
+
+  it('sépare deux janviers consécutifs', () => {
+    // Sans l'année, « JANUARY » les confond, et l'historique d'une créatrice
+    // fidèle en compte deux avant sa deuxième année.
+    const groupes = grouperParMois(
+      [
+        reservation({ booking_id: 'a', starts_at: '2027-01-10T14:00:00Z' }),
+        reservation({ booking_id: 'b', starts_at: '2026-01-10T14:00:00Z' }),
+      ],
+      'en',
+    );
+
+    expect(groupes).toHaveLength(2);
+  });
+});
+
+describe('08c · les terminées, groupées', () => {
+  it('pose un intertitre par mois sur les terminées', async () => {
+    await monter([
+      reservation({ booking_id: 'a', status: 'cancelled', starts_at: '2026-08-08T14:00:00Z' }),
+      reservation({ booking_id: 'b', status: 'cancelled', starts_at: '2026-07-28T14:00:00Z' }),
+    ]);
+    await waitFor(() => expect(screen.getByTestId('onglets')).toBeTruthy());
+
+    await fireEvent.press(screen.getByLabelText(new RegExp(en.parcours.ongletTerminees)));
+
+    expect(screen.getByTestId('mois-AUGUST 2026')).toBeTruthy();
+    expect(screen.getByTestId('mois-JULY 2026')).toBeTruthy();
+  });
+
+  it('ne groupe pas les deux autres onglets', async () => {
+    // Ils portent deux ou trois lignes : un intertitre y coûterait plus qu'il
+    // ne rend, et découperait une liste qui se lit d'un coup.
+    await monter([reservation({ status: 'consumed' })]);
+    await waitFor(() => expect(screen.getByTestId('onglets')).toBeTruthy());
+
+    expect(screen.queryByTestId(/^mois-/)).toBeNull();
   });
 });
