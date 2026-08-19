@@ -317,9 +317,15 @@ export function ServiceRow({ name, meta, tier, thumbnail, right, testID }: Servi
     <View
       testID={testID}
       style={{
-        height: 64,
+        // **La hauteur suit le titre.** Elle valait 64 pour un nom de onze
+        // points ; à seize, le couple titre + durée mesure 45 et la vignette de
+        // 44 ne tient plus au centre d'un bloc trop court. `minHeight` et non
+        // `height` : un nom de prestation qui se replie sur deux lignes doit
+        // pousser la rangée plutôt que déborder d'elle.
+        minHeight: 72,
         flexDirection: 'row',
         alignItems: 'center',
+        paddingVertical: 8,
         gap: 10,
         paddingHorizontal: 12,
         borderBottomWidth: 1,
@@ -334,8 +340,15 @@ export function ServiceRow({ name, meta, tier, thumbnail, right, testID }: Servi
         )}
       </View>
       <View style={{ flex: 1, gap: 2 }}>
-        <Texte variante="type.label">{name}</Texte>
-        <Texte variante="type.mono" couleur="ink.soft" style={{ fontSize: 12 }}>
+        {/* **Le nom de la prestation prend le titre, et c'est la même
+            correction que sur le fil.** Il était en `type.label` — onze points,
+            la taille d'une étiquette — sous une durée en mono de douze : la
+            ligne se lisait comme un attribut du salon, pas comme la chose qu'on
+            réserve. La revue l'a signalé sur les deux écrans séparément ; c'est
+            un seul défaut, l'objet subordonné à son contexte, et il se corrige
+            avec la même variante. */}
+        <Texte variante="type.titreDApercu">{name}</Texte>
+        <Texte variante="type.caption" couleur="ink.soft">
           {meta}
         </Texte>
       </View>

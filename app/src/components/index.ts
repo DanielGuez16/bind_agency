@@ -33,6 +33,8 @@ export {
 export { EnTeteDEcran, Filet, prenomDe, type Compteur } from './EnTete';
 export { LigneDeContrepartie, TierBadge, type Palier, type TierBadgeProps } from './TierBadge';
 export { BadgesDeProfil, chipDeComportement, type BadgeDeProfil } from './Badges';
+export { ApercuDePrestation, CASE_DU_BADGE, IMAGE_DE_L_APERCU } from './ApercuDePrestation';
+export type { ApercuDePrestationProps } from './ApercuDePrestation';
 export {
   BusinessCard,
   DataRow,

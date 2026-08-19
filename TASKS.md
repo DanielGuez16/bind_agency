@@ -1084,10 +1084,34 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       écrite : le bloc doit le porter. De même `elevation.card`, déclarée et
       consommée nulle part, et la pose du point du logo, que la palette ne peut
       pas garantir. 1040 tests verts, 8 mutations vérifiées*
-- [ ] **Les treize planches d'écrans portent encore la v1.0**
-      *`PASSATION-v1.1.md` §6 les liste et donne l'ordre qui limite le travail
-      perdu : le fil d'abord, qui sert de référence aux autres ; la fiche de
-      salon, qui partage la carte et la visionneuse ; la journée du commerce,
+- [x] **Le fil créateur v3, sur les remarques de la revue**
+      *La prestation prend le titre, le salon passe en attribution : les
+      testeurs ne savaient pas s'ils regardaient un lieu ou une prestation, et
+      c'était une inversion de hiérarchie, pas un manque de catégorie. Même
+      correction sur la fiche, au même endroit, avec la même variante et un test
+      qui compare les deux. Le chrome disparaît, deux aperçus par ligne, case de
+      badge à hauteur fixe. Le quartier structure le mur en sections repliables
+      plutôt que d'ajouter une troisième bande. Partent avec : le mur en
+      mosaïque, cycle.ts, regles.ts, les rangées par quartier, le bilan du pied,
+      cinq fichiers de tests. Deux écarts instruits — le badge à `brand.900`
+      (4,19:1 mesuré sur la valeur de la planche) et pas de bouton de recherche,
+      faute d'écran à ouvrir. 980 tests verts, 13 mutations vérifiées*
+- [ ] **`BusinessCard` n'a plus aucun appelant dans le produit**
+      *Le fil rendait la carte à photo ; il rend maintenant des aperçus de
+      prestation. Elle survit dans la bibliothèque, dans quatre tests, et dans
+      `SkeletonCard` — le squelette par défaut de `Ecran`, c'est-à-dire la
+      silhouette d'un écran qui n'a pas déclaré la sienne, ce qu'une garde
+      interdit déjà. Trois issues : la retirer avec son squelette, la garder
+      pour un écran à venir en le nommant, ou constater qu'elle décrit encore la
+      ligne de la fiche. À trancher, pas à laisser dormir — c'est le motif de la
+      méthode sans appelant, et il a coûté seize PR ailleurs. À signaler
+      aussi : l'ombre de carte y a été branchée la veille de sa mise au chômage*
+- [ ] **Douze planches d'écrans portent encore la v1.0**
+      *Le fil est passé en v3, directement dans la palette Ambre. Les autres
+      suivent l'ordre du `PASSATION-v1.1.md` §6, qui limite le travail
+      perdu : la fiche de
+      salon d'abord — sa ligne de prestation a déjà la correction du fil, sa
+      planche non ; puis la journée du commerce,
       les rapports et l'annuaire ; l'arbitrage et les plans ; les écrans de
       marque. C'est du travail de Design, pas du produit*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire

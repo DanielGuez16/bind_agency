@@ -111,14 +111,28 @@ const NON_RENDUS: Record<string, string> = {
   // salon par ligne alourdirait une liste qu'on parcourt.
   'ReservationDuCreateur.business_cover_photo_key': 'contrat',
 
-  // --- à instruire : plus rien ---
+  // --- à instruire : trois, ouvertes par le fil v3 ---
   //
-  // La section est vide, et c'est le but. La dernière ligne qui y restait —
-  // `ReservationDuCommerce.absence_signalable_a` — n'était pas un champ non
-  // affiché : c'était une route sans appelant, donc un geste qui n'existait pas
-  // dans l'application. Elle est partie en étant branchée, pas en étant
-  // requalifiée. Une entrée qu'on déplace vers `contrat` faute de savoir quoi
-  // en faire est exactement ce que cette section refusait d'être.
+  // La section était vide et se remplit de nouveau, ce qui est son emploi. Les
+  // trois ci-dessous étaient **rendues hier** : elles ne sont pas du contrat,
+  // elles sont la trace d'un écran qui a changé et d'un serveur qui ne le sait
+  // pas encore. Les glisser en `contrat` fermerait la question au lieu de la
+  // poser, et c'est exactement ce que cette section refuse d'être.
+  //
+  // La couverture 4:5 était servie pour les deux héros du mur en mosaïque, à
+  // fond perdu et en portrait. La v3 n'a plus de héros : la grille pose des
+  // images de 100 points de haut sur des colonnes de 171, la vignette du
+  // quartier est un carré de 44, et aucune de ces trois surfaces n'est un
+  // portrait. Soit le serveur cesse de la produire — c'est un rendu de plus par
+  // salon —, soit un écran à venir en a l'usage. À trancher, pas à ranger.
+  'CommerceDuFil.cover_portrait_key': 'a-instruire',
+  // Le prochain palier était le pied du mur, « la seule fois où le fil parle
+  // des paliers ». La revue v3 déplace ce sujet vers Audience, qui ne consulte
+  // pas le fil mais `mesPaliers` : le champ reste calculé et n'a plus de
+  // lecteur. Deux issues, et c'est une question de route plutôt que d'écran —
+  // le servir depuis `mesPaliers`, ou cesser de le calculer sur le fil.
+  'Fil.prochain_palier': 'a-instruire',
+  'ProchainPalier.commerces_de_plus': 'a-instruire',
 };
 
 const RAISONS = new Set(['contrat', 'technique', 'a-instruire']);

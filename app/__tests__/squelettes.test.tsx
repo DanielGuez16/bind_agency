@@ -2,8 +2,10 @@
  * Le squelette dit la forme de ce qui arrive, ou il ne sert à rien.
  *
  * **Ce que ça répare.** `Ecran` rend par défaut trois cartes à photo de 150
- * pixels — la géométrie de `BusinessCard`. Elle est juste sur le fil et fausse
- * partout ailleurs : le reporting rend des chiffres et des barres, les horaires
+ * pixels — la géométrie de `BusinessCard`. Elle était juste sur le fil et
+ * fausse partout ailleurs ; depuis la v3 elle n'est juste **nulle part**, le
+ * fil rendant une grille de deux colonnes sans chrome. Le défaut ne change pas,
+ * seule sa portée s'élargit : le reporting rend des chiffres et des barres, les horaires
  * un tableau de sept lignes, les créneaux une grille, la fiche et la preuve un
  * objet unique et non une liste de trois. Le contenu chassait alors une
  * silhouette qui ne lui ressemblait pas, et toute la page se réorganisait au

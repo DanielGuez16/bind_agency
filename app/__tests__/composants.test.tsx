@@ -15,13 +15,15 @@ import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 
 import {
+  ApercuDePrestation,
   BadgesDeProfil,
+  BarresParPalier,
+  BarresParPeriode,
   BusinessCard,
   Button,
   Chip,
   CodeGlyphs,
   CodeInput,
-  groupesDeRangs,
   Countdown,
   DataRow,
   DayPicker,
@@ -30,18 +32,18 @@ import {
   ManualCode,
   MediaFallback,
   SegmentedTabs,
+  ServiceRow,
   SlotPicker,
   StatusMessage,
   Stepper,
   TableHeader,
   TableRow,
-  Texte,
   TextField,
+  Texte,
   TierBadge,
   Toggle,
   chipDeComportement,
-  BarresParPalier,
-  BarresParPeriode,
+  groupesDeRangs,
 } from '../src/components';
 import { I18nProvider } from '../src/i18n';
 import {
@@ -749,6 +751,172 @@ describe('Texte', () => {
 // Ce qui n'existe pas
 // --------------------------------------------------------------------------
 
+/**
+ * La ligne de prestation de la fiche : le même défaut, corrigé au même endroit.
+ */
+describe('la ligne de prestation de la fiche', () => {
+  it('donne au nom de la prestation la même variante que l’aperçu du fil', async () => {
+    // **La revue a signalé deux fois le même défaut.** Sur le fil, le salon
+    // portait le titre et la prestation la légende ; sur la fiche, le nom de la
+    // prestation était en `type.label` — onze points, la taille d'une étiquette
+    // — sous une durée en mono de douze, plus grosse que lui. Dans les deux
+    // cas, l'objet qu'on réserve était subordonné à ce qui l'entoure.
+    //
+    // **Le test compare les deux écrans plutôt que de figer un nombre.** C'est
+    // la même règle aux deux endroits, et l'écrire deux fois en points les
+    // laisserait diverger sans que rien ne le dise — c'est exactement comment
+    // le défaut est né.
+    await monter(
+      <>
+        <ServiceRow name="Manucure gel" meta="45 min" tier="story" testID="ligne" />
+        <ApercuDePrestation
+          nom="Gel manicure"
+          salon="Vela"
+          dureeMinutes={45}
+          contrepartie="story"
+          testID="apercu-fil"
+        />
+      </>,
+    );
+
+    // Deux libellés différents : le même sur les deux composants rendrait
+    // `getByText` ambigu, et le contourner par un index rendrait le test
+    // dépendant de l'ordre du montage.
+    const surLaFiche = screen.getByText('Manucure gel', { exact: true });
+    const nomDuFil = screen.getByTestId('apercu-fil-nom');
+    expect(style(surLaFiche).fontSize).toBe(style(nomDuFil).fontSize);
+    expect(style(surLaFiche).fontWeight ?? style(surLaFiche).fontFamily).toBe(
+      style(nomDuFil).fontWeight ?? style(nomDuFil).fontFamily,
+    );
+  });
+
+  it('et la durée redevient plus petite que le nom', async () => {
+    // Le sens qui manquait : la durée était en mono de douze **au-dessus** d'un
+    // nom de onze. Grossir le nom sans redescendre la durée aurait laissé deux
+    // lignes de même poids, c'est-à-dire aucune hiérarchie.
+    await monter(<ServiceRow name="Gel manicure" meta="45 min" tier="story" testID="ligne" />);
+
+    const nom = screen.getByText('Gel manicure', { exact: true });
+    const duree = screen.getByText('45 min', { exact: true });
+    expect(Number(style(nom).fontSize)).toBeGreaterThan(Number(style(duree).fontSize));
+  });
+});
+
+/**
+ * L'aperçu de prestation : la hiérarchie, et la case qui tient la grille.
+ */
+describe('l’aperçu de prestation', () => {
+  it('donne le titre à la prestation et l’attribution au salon', async () => {
+    // C'est la correction entière de la revue, en deux nœuds : le nom de la
+    // prestation porte la variante de titre, le salon et la durée la légende.
+    // L'inverse est exactement ce que la v2.1 rendait.
+    await monter(
+      <ApercuDePrestation
+        nom="Gel manicure"
+        salon="Vela Nail Studio"
+        dureeMinutes={45}
+        contrepartie="story"
+        testID="apercu"
+      />,
+    );
+
+    expect(screen.getByTestId('apercu-nom')).toHaveTextContent('Gel manicure');
+    expect(screen.getByTestId('apercu-attribution')).toHaveTextContent(
+      'Vela Nail Studio · 45 min',
+    );
+    // Le titre est strictement plus gros que son attribution. Comparer aux deux
+    // nombres écrits en dur ferait passer le test le jour où l'échelle bouge
+    // sans que la hiérarchie tienne ; c'est le rapport qui est la règle.
+    expect(Number(style(screen.getByTestId('apercu-nom')).fontSize)).toBeGreaterThan(
+      Number(style(screen.getByTestId('apercu-attribution')).fontSize),
+    );
+  });
+
+  it('et « salon » seul quand le catalogue ne porte pas de durée', async () => {
+    // Le séparateur appartient à la jointure : un « · » orphelin en fin de ligne
+    // est le défaut qu'une concaténation produit et qu'aucun montage à durée
+    // pleine ne révèle.
+    await monter(
+      <ApercuDePrestation
+        nom="Balayage"
+        salon="Rótulo Hair"
+        dureeMinutes={null}
+        contrepartie={null}
+        testID="sans-duree"
+      />,
+    );
+
+    // **La chaîne exacte pour le positif, l'expression régulière pour la
+    // négation.** `toHaveTextContent` compare le contenu entier quand on lui
+    // donne une chaîne : `not.toHaveTextContent('·')` aurait été vrai de toute
+    // ligne qui ne dit pas *uniquement* « · », c'est-à-dire de toutes. La
+    // négation qui compte est celle qui cherche le caractère où qu'il soit.
+    expect(screen.getByTestId('sans-duree-attribution')).toHaveTextContent('Rótulo Hair');
+    expect(screen.getByTestId('sans-duree-attribution')).not.toHaveTextContent(/·/);
+  });
+
+  it('garde la case de contrepartie à la même hauteur, occupée ou vide', async () => {
+    // **La règle de Design, et le montage qui la met en défaut.** « La case du
+    // badge a une hauteur fixe, occupée ou vide » : sans elle, une rangée dont
+    // les aperçus portent une contrepartie mesure plus haut que la même sans,
+    // les deux colonnes se décalent, et la hauteur du mur dépend de la donnée.
+    //
+    // **Il faut les deux dans le même rendu.** Un aperçu avec badge, seul,
+    // passerait aussi bien avec une case dimensionnée par son contenu — les
+    // deux implémentations rendent la même hauteur quand la case est pleine.
+    // C'est le couple plein/vide qui les sépare, et c'est donc lui qu'on écrit.
+    await monter(
+      <>
+        <ApercuDePrestation
+          nom="Gel manicure"
+          salon="Vela"
+          dureeMinutes={45}
+          contrepartie="story"
+          testID="avec"
+        />
+        <ApercuDePrestation
+          nom="Balayage"
+          salon="Rótulo"
+          dureeMinutes={120}
+          contrepartie={null}
+          testID="sans"
+        />
+      </>,
+    );
+
+    const pleine = style(screen.getByTestId('avec-case-contrepartie')).height;
+    const vide = style(screen.getByTestId('sans-case-contrepartie')).height;
+
+    expect(vide).toBe(pleine);
+    expect(Number(pleine)).toBeGreaterThan(0);
+    // Et la case vide l'est vraiment : une case qui garderait son badge à
+    // l'opacité nulle tiendrait la hauteur sans dire la vérité au lecteur
+    // d'écran.
+    expect(screen.queryByTestId('sans-contrepartie')).toBeNull();
+    expect(screen.getByTestId('avec-contrepartie')).toBeTruthy();
+  });
+
+  it('ne pose aucun chrome : ni fond, ni bordure, ni ombre', async () => {
+    // Ce que la carte perd, et ce qui permet d'en montrer deux par ligne. Les
+    // trois ensemble : retirer la bordure en gardant l'ombre laisserait une
+    // carte, et c'est la forme que la revue vise.
+    await monter(
+      <ApercuDePrestation
+        nom="Signature facial"
+        salon="Casa Bruma"
+        dureeMinutes={60}
+        contrepartie="post"
+        testID="nu"
+      />,
+    );
+
+    const pose = style(screen.getByTestId('nu'));
+    expect(pose.backgroundColor).toBeUndefined();
+    expect(pose.borderWidth ?? 0).toBe(0);
+    expect(pose.boxShadow ?? pose.shadowOpacity).toBeUndefined();
+  });
+});
+
 describe("ce que la bibliothèque n'a pas", () => {
   it("n'expose aucun composant de montant, de solde ou de progression", () => {
     const noms = Object.keys(require('../src/components') as object).join(' ').toLowerCase();
@@ -764,7 +932,12 @@ describe("ce que la bibliothèque n'a pas", () => {
     // le titre accentué, qui porte les règles du mot plutôt que de les laisser
     // à l'appelant, et le filet segmenté, repris des carrousels de la
     // fondatrice pour dire une progression sans écrire « 2 sur 4 ». Puis le
-    // satin, quand les trois images sont arrivées.
+    // satin, quand les trois images sont arrivées. Et l'aperçu de prestation,
+    // avec le fil v3 : la carte de fil montrait le salon en titre et la
+    // prestation dessous, ce que les testeurs lisaient comme « un lieu ». La
+    // famille existe pour porter la hiérarchie inverse au même endroit pour
+    // tout le monde — un aperçu écrit à la main dans un écran la respecterait
+    // le jour où on l'écrit, et plus le mois suivant.
     const { readdirSync } = require('fs') as typeof import('fs');
     const { join } = require('path') as typeof import('path');
     const fichiers = readdirSync(join(__dirname, '..', 'src', 'components'))
@@ -773,6 +946,7 @@ describe("ce que la bibliothèque n'a pas", () => {
 
     expect(fichiers).toEqual([
       'Admin.tsx',
+      'ApercuDePrestation.tsx',
       'Badges.tsx',
       'Button.tsx',
       'Cards.tsx',

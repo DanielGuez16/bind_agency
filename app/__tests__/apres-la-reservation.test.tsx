@@ -86,7 +86,13 @@ const COMMERCE_DU_FIL = {
   name: 'Salón Ocean',
   category: 'beauty',
   address: '1234 Ocean Dr',
+  // **Le quartier n'est plus décoratif depuis la v3 : il range le mur.** Un
+  // montage qui l'omet, avec `quartiers: []`, rend un mur vide — et le test
+  // n'aurait alors rien à appuyer. C'est le cas de tous les montages de fil
+  // écrits avant, qui déclaraient la clé sans jamais la peupler.
+  neighborhood: 'south_beach',
   cover_photo_key: null,
+  cover_portrait_key: null,
   distance_metres: 320,
   items: [{ ...OFFRE }],
 };
@@ -135,7 +141,9 @@ function serveur() {
         // Toujours rendues par le serveur : les omettre fabriquerait une
         // réponse qui n'existe pas.
         rayons: [],
-        quartiers: [],
+        quartiers: [
+          { quartier: 'south_beach', commerces: 1, prestations: 1, distance_metres: 320 },
+        ],
         prochain_palier: null,
         categories: [{ categorie: 'beauty', commerces: 1, prestations: 1 }],
       });
@@ -181,10 +189,12 @@ async function monterLeParcours() {
 it('atterrit sur la liste des réservations, pas sur le code', async () => {
   await monterLeParcours();
 
-  // `salon-…` et non `commerce-…` : la carte du fil n'existe plus, le mur pose
-  // des photos. Le parcours, lui, ne change pas — c'est ce que ce test vérifie.
-  await waitFor(() => expect(screen.getByTestId('salon-b1')).toBeTruthy());
-  await fireEvent.press(screen.getByTestId('salon-b1'));
+  // `apercu-…` et clé de l'offre : le fil rend des prestations, pas des
+  // salons. Le testID a changé trois fois — `commerce-b1`, puis `salon-b1`,
+  // maintenant `apercu-o1` — et le parcours qu'il éprouve, lui, n'a jamais
+  // bougé. C'est bien ce que ce test vérifie.
+  await waitFor(() => expect(screen.getByTestId('apercu-o1')).toBeTruthy());
+  await fireEvent.press(screen.getByTestId('apercu-o1'));
 
   await waitFor(() => expect(screen.getByTestId('offre-o1')).toBeTruthy());
   await fireEvent.press(screen.getByText(en.parcours.reserver));

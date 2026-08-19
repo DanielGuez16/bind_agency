@@ -188,7 +188,17 @@ export function SkeletonGrille({
   );
 }
 
-/** La géométrie de `BusinessCard`, à l'identique. */
+/**
+ * La géométrie de `BusinessCard`, à l'identique.
+ *
+ * **Aucun écran du produit ne rend plus cette forme.** `BusinessCard` n'a plus
+ * d'appelant depuis que le fil est passé aux aperçus de prestation, et ce
+ * squelette est le défaut de `Ecran` — c'est-à-dire la silhouette que reçoit un
+ * écran qui n'a pas déclaré la sienne. Une garde exige que chacun le fasse ;
+ * ce qui reste ici est donc le repli d'un cas qui ne devrait pas arriver, et
+ * pas une forme que quelqu'un attend. À retirer avec `BusinessCard` le jour où
+ * l'on tranche son sort — voir `TASKS.md`.
+ */
 export function SkeletonCard({ testID }: { testID?: string }) {
   const c = useColors();
   return (

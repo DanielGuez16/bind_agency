@@ -454,11 +454,16 @@ function OngletsCreateur({
         component={PileDesReservations}
         options={onglet(t('onglets.reservations'), 'calendrier')}
       />
-      <Onglets.Screen
-        name="audience"
-        component={AudienceScreen}
-        options={onglet(t('onglets.audience'), 'personne')}
-      />
+      {/* **L'entrée vers les paliers vit ici depuis le fil v3.** Elle était
+          sur le fil — « douze prestations vous sont ouvertes », qu'on appuyait
+          pour comprendre pourquoi. La revue l'en sort, et l'endroit est juste :
+          les abonnés et le score de fiabilité, les deux autres grandeurs qui
+          ouvrent une prestation, sont déjà sur cet écran. Sans ce passage, la
+          seule route vers les paliers serait l'état vide du fil — c'est-à-dire
+          accessible aux seuls créateurs qui n'ont rien à réserver. */}
+      <Onglets.Screen name="audience" options={onglet(t('onglets.audience'), 'personne')}>
+        {() => <AudienceScreen onVoirMesPaliers={onVoirMesPaliers} />}
+      </Onglets.Screen>
       <Onglets.Screen
         name="reglages"
         component={ReglagesScreen}
