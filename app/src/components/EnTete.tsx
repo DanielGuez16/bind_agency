@@ -84,7 +84,7 @@ export function EnTeteDEcran({
             testID="compteurs"
             style={{
               flexDirection: 'row',
-              borderRadius: radius['radius.none'],
+              borderRadius: radius['radius.lg'],
               backgroundColor: c['bg.surface'],
               borderWidth: 1,
               borderColor: c['line.default'],

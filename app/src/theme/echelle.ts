@@ -26,14 +26,49 @@ export const familles: Record<RoleDeFonte, string> = {
 };
 
 type VarianteBrute = {
-  family: string;
+  /** Absente sur tout ce qui n'est pas du mono : Design ne la nomme que là. */
+  family?: string;
   weight: number;
   size: number;
   lineHeight: number;
-  letterSpacing?: number;
-  style?: string;
+  /** L'approche, en vocabulaire CSS : « -0.02em », « 1.4px », « 0 ». */
+  tracking?: string;
   transform?: string;
 };
+
+/**
+ * L'approche, convertie en points.
+ *
+ * **Design l'écrit en unités CSS parce que c'est le vocabulaire d'une maquette**,
+ * et React Native veut des points. Un `em` dépend de la taille — −0,02 em vaut
+ * −0,88 à 44 px et −0,48 à 32 — donc la conversion ne peut se faire qu'ici, au
+ * seul endroit qui connaît les deux. La recopier en points dans les jetons
+ * créerait la seconde vérité que la garde de la passation existe pour interdire.
+ */
+function approcheEnPoints(tracking: string | undefined, taille: number): number | undefined {
+  if (tracking === undefined || tracking === '0') return undefined;
+  const em = /^(-?[\d.]+)em$/.exec(tracking);
+  if (em) return Number(em[1]) * taille;
+  const px = /^(-?[\d.]+)px$/.exec(tracking);
+  if (px) return Number(px[1]);
+  throw new Error(
+    `Approche « ${tracking} » non reconnue. Les jetons s'écrivent en em ou en px ; ` +
+      "une unité muette produirait un texte sans approche au lieu d'une erreur.",
+  );
+}
+
+/**
+ * Le rôle de fonte d'une variante.
+ *
+ * Design ne nomme la famille que sur le mono, parce que **tout le reste partage
+ * la même** : « une seule famille de texte, l'accent est une graisse ». Le rôle
+ * survit pourtant à la famille — le jour où une direction sépare à nouveau les
+ * titres du corps, c'est cette fonction qui change, pas douze variantes.
+ */
+function roleDe(nom: string, brute: VarianteBrute): RoleDeFonte {
+  if (brute.family === brut.font.mono) return 'mono';
+  return nom.startsWith('display') || nom.startsWith('heading') ? 'display' : 'sans';
+}
 
 /** La forme que React Native attend, dérivée du jeton sans rien y ajouter. */
 export type EchelleTypo = {
@@ -46,14 +81,14 @@ export type EchelleTypo = {
   textTransform?: 'uppercase';
 };
 
-function normaliser(brute: VarianteBrute): EchelleTypo {
+function normaliser(nom: string, brute: VarianteBrute): EchelleTypo {
+  const approche = approcheEnPoints(brute.tracking, brute.size);
   return {
-    fontFamily: brute.family as RoleDeFonte,
+    fontFamily: roleDe(nom, brute),
     fontWeight: String(brute.weight),
     fontSize: brute.size,
     lineHeight: brute.lineHeight,
-    ...(brute.letterSpacing === undefined ? {} : { letterSpacing: brute.letterSpacing }),
-    ...(brute.style === 'italic' ? { fontStyle: 'italic' as const } : {}),
+    ...(approche === undefined ? {} : { letterSpacing: approche }),
     ...(brute.transform === 'uppercase' ? { textTransform: 'uppercase' as const } : {}),
   };
 }
@@ -66,7 +101,7 @@ function normaliser(brute: VarianteBrute): EchelleTypo {
 const variantes = (source: object, prefixe: string) =>
   Object.entries(source)
     .filter(([nom]) => !nom.startsWith('$'))
-    .map(([nom, valeur]) => [`${prefixe}${nom}`, normaliser(valeur as VarianteBrute)] as const);
+    .map(([nom, valeur]) => [`${prefixe}${nom}`, normaliser(nom, valeur as VarianteBrute)] as const);
 
 /**
  * L'échelle complète, préfixée `type.`.

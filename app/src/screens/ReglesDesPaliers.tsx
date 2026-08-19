@@ -100,7 +100,7 @@ function BlocDeFiabilite({ fiabilite }: { fiabilite: FiabiliteDuCreateur | null 
     <View
       testID="bloc-fiabilite"
       style={{
-        borderRadius: radius['radius.none'],
+        borderRadius: radius['radius.lg'],
         borderWidth: 1,
         borderColor: c['line.default'],
         backgroundColor: c['bg.surface'],
@@ -162,7 +162,7 @@ function Bloc({
   return (
     <View
       style={{
-        borderRadius: radius['radius.none'],
+        borderRadius: radius['radius.lg'],
         borderWidth: 1,
         borderColor: c['line.default'],
         backgroundColor: c['bg.surface'],

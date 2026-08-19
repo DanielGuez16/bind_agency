@@ -88,7 +88,7 @@ export function PreuveSoumise({
       <View
         style={{
           height: APERCU,
-          borderRadius: radius['radius.none'],
+          borderRadius: radius['radius.lg'],
           overflow: 'hidden',
           backgroundColor: c['bg.sunken'],
           alignItems: 'center',

@@ -101,7 +101,7 @@ export function EmptyState({
         <View
           style={{
             alignSelf: 'stretch',
-            borderRadius: radius['radius.none'],
+            borderRadius: radius['radius.lg'],
             borderWidth: 1,
             borderColor: c['line.default'],
           }}

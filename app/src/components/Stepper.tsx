@@ -31,7 +31,7 @@ export function Stepper({ label, value, min = 0, max = 99, onChange, testID }: S
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        borderRadius: radius['radius.none'],
+        borderRadius: radius['radius.sm'],
         backgroundColor: c['bg.sunken'],
         paddingHorizontal: 12,
         gap: 8,
@@ -69,7 +69,7 @@ function Touche({
       style={({ pressed }) => ({
         width: 32,
         height: 32,
-        borderRadius: radius['radius.none'],
+        borderRadius: radius['radius.sm'],
         borderWidth: 1,
         borderColor: c['line.default'],
         alignItems: 'center',
@@ -119,7 +119,7 @@ export function RangeeDeValeurs({
               height: 40,
               alignItems: 'center',
               justifyContent: 'center',
-              borderRadius: radius['radius.none'],
+              borderRadius: radius['radius.sm'],
               borderWidth: choisi ? 2 : 1,
               borderColor: choisi
                 ? sousLeSeuil

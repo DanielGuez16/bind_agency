@@ -1066,6 +1066,24 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       cette tranche, l'API refuse de démarrer sans elles plutôt que de répondre
       503 à la première créatrice — ce qui rend le manque visible au déploiement
       et non une inscription à la fois*
+- [x] **La direction Ambre : jetons, typographie et formes**
+      *Les trois fichiers de Design importés depuis son projet. Les 31 valeurs
+      sont identiques à celles de l'artefact où la fondatrice a tranché — rien à
+      arbitrer, seulement à appliquer. La garde de la passation passe de
+      l'égalité à l'inclusion, avec son sens inverse : l'app n'invente aucune
+      valeur que Design ne déclare pas. **Trois secondes vérités supprimées** —
+      `color.tier` qui recopiait la rampe en hexadécimaux et serait restée à
+      l'orange brut, la liste des couleurs du sigle, et un drapeau booléen qui
+      disait sans sa raison ce que la règle dit en toutes lettres. Le bloc
+      accentué reste d'équerre et un test le tient, avec trois exceptions qui
+      portent chacune la leur. Les trois réserves de contraste de Design
+      deviennent quatre mesures. 1036 tests verts, 4 mutations vérifiées*
+- [ ] **Les treize planches d'écrans portent encore la v1.0**
+      *`PASSATION-v1.1.md` §6 les liste et donne l'ordre qui limite le travail
+      perdu : le fil d'abord, qui sert de référence aux autres ; la fiche de
+      salon, qui partage la carte et la visionneuse ; la journée du commerce,
+      les rapports et l'annuaire ; l'arbitrage et les plans ; les écrans de
+      marque. C'est du travail de Design, pas du produit*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire
 
 ---

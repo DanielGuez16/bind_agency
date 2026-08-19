@@ -80,7 +80,7 @@ export function ReglagesScreen() {
         </Texte>
         {/* L'écran de santé, relégué ici. Il n'a jamais eu sa place dans une
             navigation quotidienne. */}
-        <View style={{ borderRadius: radius['radius.none'], overflow: 'hidden' }} testID="diagnostic">
+        <View style={{ borderRadius: radius['radius.lg'], overflow: 'hidden' }} testID="diagnostic">
           <HealthScreen />
         </View>
       </View>

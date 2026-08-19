@@ -167,12 +167,65 @@
     "pixelsParLettreMinimum": 10,
     "$pourquoiLesEncres": "Les trois couleurs du logotype. `encre` et `point` doublent des jetons — un test le vérifie, elles ne sont pas une seconde source. `blanc` est le seul chiffre propre au logo : la passation dit #FFFFFF sur encre, satin et orange, et non `ink.onDark` (#F7F3EF), qui est l'encre claire du texte courant. Les faire coïncider ferait suivre le logo le jour où l'une des deux bougerait.",
     "encres": {
-      "encre": "#17120E",
+      "encre": "#17140F",
       "blanc": "#FFFFFF",
       "point": "#FF5E00"
     },
     "$pourquoiLeSigne": "Le logotype est désormais un tracé vectoriel, plus une composition en fonte : `signe` n'a plus d'objet et disparaît. Ce qui le remplace est le rapport de la boîte du mot, mesuré sur le fichier de la fondatrice — 1991 sur 682, soit 2,919. C'est lui qui donne la largeur d'une lettre à partir de la hauteur, et donc le plancher.",
-    "rapportDeLaBoite": 2.9194
+    "rapportDeLaBoite": 2.9194,
+    "$signature": "Le point du « ! » est #FF5E00 et **ne suit pas la palette**. C'est la couleur d'origine du logo de la fondatrice, et la seule chose de la marque qui ne bouge pas quand la direction change : elle a survécu au passage du vert à l'orange, puis de l'orange brut à l'ambre. Les lettres, elles, prennent l'encre du système — sans quoi le mot cesserait d'être lisible sur ses propres fonds.",
+    "sigle": {
+      "$doctrine": "Le logotype ne tient pas sous 128 : quatre lettres n'ont pas quatre pixels chacune. Le sigle des petites tailles est un DESSIN DISTINCT, pas une réduction — le « ! » seul, aux couleurs du logotype d'origine. Voir 'BIND Mark - Favicon 16.dc.html'.",
+      "grid": 16,
+      "tile": {
+        "size": "16 × 16, à fond perdu",
+        "fill": "#17140F"
+      },
+      "stem": {
+        "x": 6,
+        "y": 2,
+        "w": 4,
+        "h": 6,
+        "fill": "#FFFFFF"
+      },
+      "gap": 2,
+      "dot": {
+        "x": 6,
+        "y": 10,
+        "w": 4,
+        "h": 4,
+        "fill": "#FF5E00",
+        "$note": "carré, jamais rond : un disque de 4 px sans lissage est un carré à coins mordus, et il tremble d'une taille à l'autre"
+      },
+      "margin": {
+        "top": 2,
+        "bottom": 2,
+        "left": 6,
+        "right": 6
+      },
+      "sizes": [
+        16,
+        32,
+        64,
+        128
+      ],
+      "palette": [
+        "#17140F",
+        "#FFFFFF",
+        "#FF5E00"
+      ],
+      "$paletteNote": "TROIS couleurs, pas deux. La contrainte de palette à deux couleurs tombe avec la correction du 2026-08-14 : le sens du logotype EST le contraste lettres/point, il ne survit pas à une palette qui ne peut pas porter les deux. Un PNG indexé à 4 entrées ne coûte rien de plus.",
+      "$rules": [
+        "Trois couleurs exactes, aucun dégradé, aucun lissage : toutes les cotes tombent sur un pixel entier aux quatre tailles.",
+        "Le fût fait 6 sur 4 et non 4 pour 1 : c'est le rapport le plus élancé qui survive à 16, et la raison pour laquelle ce n'est pas une réduction.",
+        "Le point est la seule chose orange, exactement comme dans le logotype. C'est le rapport de couleur qui porte la reconnaissance, pas la silhouette.",
+        "Fond encre et non orange : sur une tuile orange le point disparaîtrait, et c'est lui la marque.",
+        "Un seul fichier, ni variante claire ni variante sombre : la tuile encre tient sur les deux.",
+        "Le signe est centré avec 2 unités de marge verticale, donc un masque arrondi mord le fond et jamais le dessin.",
+        "Au-delà de 128, c'est le logotype vectoriel qui reprend. Les deux ne coexistent jamais dans une même vue."
+      ],
+      "$ouEstIl": "La géométrie du sigle a quitté `tokens.json` avec la v1.1 : Design y a remplacé l'objet par la prose qui le décrit, parce qu'un dessin n'est pas un jeton de palette — il vient de sa propre planche, « BIND Mark - Favicon 16 ». Ce qui reste sous la main de Design est ce qu'il possède vraiment : les trois couleurs, reprises ici depuis les jetons et jamais écrites."
+    }
   },
   "repli": {
     "$pourquoi": "La pile de repli du web, corrigée par Design sur ses huit planches. Sur appareil, `fontFamily` désigne un fichier chargé et il n'y a pas de repli : ceci ne vaut que pour le build web, où le navigateur choisit seul tant que la fonte n'est pas là — ou si elle ne vient jamais. Sans pile, il atterrit sur sa fonte par défaut, un Times : un Didone du XVIIIe remplacé par une romaine de journal, c'est-à-dire le contraire de la direction. Les deux autres parts de la correction de Design ne s'appliquent pas au produit — il charge des TTF statiques par graisse, donc pas d'axe `opsz` et les graisses sont déjà épinglées.",

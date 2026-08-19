@@ -199,7 +199,7 @@ export function BusinessCard({
         onPressIn={enfoncement.onPressIn}
         onPressOut={enfoncement.onPressOut}
         style={{
-          borderRadius: radius['radius.none'],
+          borderRadius: radius['radius.lg'],
           borderWidth: 1,
           borderColor: c['line.default'],
           backgroundColor: c['bg.surface'],
@@ -316,7 +316,7 @@ export function ServiceRow({ name, meta, tier, thumbnail, right, testID }: Servi
         borderBottomColor: c['line.default'],
       }}
     >
-      <View style={{ width: 44, height: 44, borderRadius: radius['radius.none'], overflow: 'hidden' }}>
+      <View style={{ width: 44, height: 44, borderRadius: radius['radius.lg'], overflow: 'hidden' }}>
         {thumbnail ? (
           <Image source={thumbnail} style={{ width: 44, height: 44 }} resizeMode="cover" />
         ) : (

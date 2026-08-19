@@ -98,7 +98,7 @@ export function StatusMessage({ level, title, body, action, testID }: StatusMess
         // **là où l'œil descend**, au bord du texte.
         borderLeftWidth: 3,
         borderLeftColor: c[FILET[level]],
-        borderRadius: radius['radius.none'],
+        borderRadius: radius['radius.md'],
         backgroundColor: c[FOND[level]],
         gap: 8,
       }}

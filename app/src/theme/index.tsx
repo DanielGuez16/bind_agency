@@ -196,15 +196,30 @@ export const codeColors = { fg: produitBrut.code.fg, bg: produitBrut.code.bg } a
 // --------------------------------------------------------------------------
 
 /**
- * Les rayons, réduits à trois.
+ * Les rayons, par rôle.
  *
- * Les 6, 8, 12 et 16 de la v0.4 tombent à zéro : la mode ne s'arrondit pas, et
- * le bloc plein ne fonctionne que d'équerre. Restent 2 px sur les vignettes
- * photo — sans quoi un angle de photo paraît coupé — et la pilule sur les
- * seules chips de filtre.
+ * **La raison de la v1.0 est remplacée, pas conservée à côté de son contraire.**
+ * Elle disait « la mode ne s'arrondit pas, et le bloc plein ne fonctionne que
+ * d'équerre », et mettait les sept valeurs à zéro. Elle était vraie du bloc et
+ * fausse de tout le reste : d'une propriété d'un objet on avait fait une loi de
+ * système. La revue de campagne a nommé Uber Eats, et tout ce que les testeurs
+ * trouvaient trop carré est ici.
+ *
+ * Ce qui reste vrai : **`none` est réservé au bloc accentué.** Un aplat de
+ * marque aux angles arrondis devient un bouton, et la signature perd la raideur
+ * qui la fait lire comme une signature.
+ *
+ * Deux valeurs pour les images, et ce n'est pas une hésitation : `photo` (16)
+ * quand l'image est un objet dans une carte, `xl` (24) quand elle **est** la
+ * carte. Une image encadrée et une image qui touche les bords ne demandent pas
+ * le même arrondi optique.
  */
 export const radius = {
   'radius.none': brut.radius.none,
+  'radius.sm': brut.radius.sm,
+  'radius.md': brut.radius.md,
+  'radius.lg': brut.radius.lg,
+  'radius.xl': brut.radius.xl,
   'radius.photo': brut.radius.photo,
   'radius.pill': brut.radius.pill,
 } as const;
@@ -269,7 +284,8 @@ export function contraste(a: number, b: number): number {
  * celui du cas le plus défavorable, et il n'est pas si rare — les mosaïques de
  * la fondatrice alternent justement des ensembles presque blancs.
  *
- * Elle vaut 0,606 pour `ink.onScrim` et 0,733 pour `ink.onScrimMuted`.
+ * Elle vaut 0,606 pour `ink.onScrim` et 0,714 pour `ink.onScrimMuted` — l'ambre a
+ * légèrement éclairci l'encre sourde, donc il en faut un peu moins.
  * **Des trois arrêts du système, seul `scrim.photoBottom` (0,88) les
  * dépasse** : un texte posé ailleurs que sur cet arrêt-là n'est pas
  * démontrable. C'est ce qui a fait passer la sous-ligne de l'accueil au blanc,
@@ -322,7 +338,15 @@ export const tierTokens = produitBrut.tier;
  * lisible en niveaux de gris. Un rose, un vert et un violet ne disaient pas
  * lequel était le plus exigeant ; il fallait l'apprendre.
  */
-export const tierMatiere = brut.color.tier;
+/**
+ * **La table d'hexadécimaux a disparu, et c'est une seconde vérité en moins.**
+ * `color.tier` recopiait la rampe en valeurs — `#A83E06` pour le 700, `#F9BC97`
+ * pour le 200 — si bien qu'un changement de direction la laissait derrière : au
+ * passage à l'ambre, elle aurait encore porté l'orange brut. Design l'a
+ * supprimée du système, et ce qu'elle contenait d'irremplaçable était deux
+ * géométries, reprises ci-dessous depuis `components.md` §2.
+ */
+export const tierMatiere = null;
 
 export type MatiereDePalier = {
   /** Contour, teinte, aplat. De moins de matière à plus de matière. */
@@ -356,22 +380,22 @@ const MATIERE_DE_PALIER: Record<Palier, MatiereDePalier> = {
     matiere: 'outline',
     surface: 'bg.surface',
     bordure: 'brand.700',
-    epaisseur: brut.color.tier.story.borderWidth,
+    epaisseur: 1.5, // components.md §2
     texte: 'brand.700',
     glyphePlein: 'brand.700',
     glypheVide: 'brand.200',
-    barresPleines: brut.color.tier.story.glyphFilled,
+    barresPleines: 1,
   },
   // Teinte : la matière du milieu. Fond orange pâle, filet de marque.
   post: {
     matiere: 'tint',
     surface: 'brand.100',
     bordure: 'brand.500',
-    epaisseur: brut.color.tier.post.borderWidth,
+    epaisseur: 1, // components.md §2
     texte: 'brand.700',
     glyphePlein: 'brand.700',
     glypheVide: 'brand.200',
-    barresPleines: brut.color.tier.post.glyphFilled,
+    barresPleines: 2,
   },
   // Aplat : toute la matière. C'est le seul des trois qui porte le bloc plein,
   // et la seule surface `brand.500` que la règle de comptage laisse se répéter.
@@ -379,11 +403,11 @@ const MATIERE_DE_PALIER: Record<Palier, MatiereDePalier> = {
     matiere: 'solid',
     surface: 'brand.500',
     bordure: 'transparent',
-    epaisseur: brut.color.tier.reel.borderWidth,
+    epaisseur: 0, // components.md §2
     texte: 'ink.onBrand',
     glyphePlein: 'ink.onBrand',
     glypheVide: 'ink.onBrand',
-    barresPleines: brut.color.tier.reel.glyphFilled,
+    barresPleines: 3,
   },
 };
 
@@ -401,21 +425,21 @@ const MATIERE_SUR_ENCRE: Record<Palier, MatiereDePalier> = {
     // Le contour n'a pas de fond : sur l'encre, c'est l'encre qu'on voit.
     surface: 'bg.inverse',
     bordure: 'brand.400',
-    epaisseur: brut.color.tier.story.borderWidth,
+    epaisseur: 1.5,
     texte: 'brand.400',
     glyphePlein: 'brand.400',
     glypheVide: 'brand.900',
-    barresPleines: brut.color.tier.story.glyphFilled,
+    barresPleines: 1,
   },
   post: {
     matiere: 'tint',
     surface: 'brand.900',
     bordure: 'brand.500',
-    epaisseur: brut.color.tier.post.borderWidth,
+    epaisseur: 1,
     texte: 'brand.200',
     glyphePlein: 'brand.200',
     glypheVide: 'brand.700',
-    barresPleines: brut.color.tier.post.glyphFilled,
+    barresPleines: 2,
   },
   // L'aplat ne bouge pas. C'est ce qui garde l'ordre lisible d'un fond à
   // l'autre : le palier le plus exigeant est le seul dont la matière est la
@@ -424,11 +448,11 @@ const MATIERE_SUR_ENCRE: Record<Palier, MatiereDePalier> = {
     matiere: 'solid',
     surface: 'brand.500',
     bordure: 'transparent',
-    epaisseur: brut.color.tier.reel.borderWidth,
+    epaisseur: 0,
     texte: 'ink.onBrand',
     glyphePlein: 'ink.onBrand',
     glypheVide: 'ink.onBrand',
-    barresPleines: brut.color.tier.reel.glyphFilled,
+    barresPleines: 3,
   },
 };
 

@@ -70,7 +70,7 @@ export function TierBadge({ tier, size = 'md', onPhoto, testID }: TierBadgeProps
         gap: 5,
         paddingVertical: size === 'sm' ? 3 : 4,
         paddingHorizontal: size === 'sm' ? 6 : 8,
-        borderRadius: radius['radius.none'],
+        borderRadius: radius['radius.sm'],
         borderWidth: m.epaisseur,
         borderColor: bordure,
         backgroundColor: surface,

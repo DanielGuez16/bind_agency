@@ -243,7 +243,7 @@ function TableDArbitrage({
               style={({ pressed }) => ({
                 width: 18,
                 height: 18,
-                borderRadius: radius['radius.none'],
+                borderRadius: radius['radius.lg'],
                 borderWidth: 1,
                 borderColor: selection.includes(ligne.collaboration_id)
                   ? c['brand.700']

@@ -43,25 +43,31 @@ const SORTIE = join(ICI, '..', 'assets', 'satin');
 /**
  * Les trois recettes, recopiées de `BIND AGENCY - Design System v1.0.dc.html`.
  *
+ * **Les arrêts sont remappés sur la rampe Ambre, la structure ne bouge pas.**
+ * `tokens.json → satin.recette` donne trois recettes à un seul dégradé ; les
+ * suivre à la lettre ferait de chaque satin une pente, c'est-à-dire exactement
+ * ce que les radiales croisées existent pour éviter. Ce que Design y nomme sont
+ * les couleurs, et ce sont elles qui ont été reprises.
+ *
  * Des bandes claires et sombres qui se croisent, **sans direction unique** :
  * c'est ce qui distingue un satin d'une pente. Chaque déclaration se termine
  * par le fond plein sur lequel les radiales se posent.
  */
 const RECETTES = {
   'satin-drape':
-    'radial-gradient(120% 80% at 15% 10%, #FEF1E9 0%, rgba(254,241,233,0) 42%), ' +
-    'radial-gradient(90% 120% at 88% 30%, #F9BC97 0%, rgba(249,188,151,0) 55%), ' +
-    'radial-gradient(140% 100% at 30% 105%, #5E2204 0%, rgba(94,34,4,0) 60%), ' +
-    'radial-gradient(80% 60% at 70% 85%, #D2500F 0%, rgba(210,80,15,0) 65%), #FF5E00',
+    'radial-gradient(120% 80% at 15% 10%, #F8F4EF 0%, rgba(248,244,239,0) 42%), ' +
+    'radial-gradient(90% 120% at 88% 30%, #EBC9A3 0%, rgba(235,201,163,0) 55%), ' +
+    'radial-gradient(140% 100% at 30% 105%, #5C300A 0%, rgba(92,48,10,0) 60%), ' +
+    'radial-gradient(80% 60% at 70% 85%, #D5770B 0%, rgba(213,119,11,0) 65%), #F39120',
   'satin-fold':
-    'radial-gradient(100% 140% at 80% 0%, #FEF1E9 0%, rgba(254,241,233,0) 38%), ' +
-    'radial-gradient(120% 90% at 0% 55%, #D2500F 0%, rgba(210,80,15,0) 58%), ' +
-    'radial-gradient(90% 70% at 55% 100%, #5E2204 0%, rgba(94,34,4,0) 62%), ' +
-    'radial-gradient(70% 90% at 35% 25%, #F58A4A 0%, rgba(245,138,74,0) 60%), #FF5E00',
+    'radial-gradient(100% 140% at 80% 0%, #F8F4EF 0%, rgba(248,244,239,0) 38%), ' +
+    'radial-gradient(120% 90% at 0% 55%, #D5770B 0%, rgba(213,119,11,0) 58%), ' +
+    'radial-gradient(90% 70% at 55% 100%, #5C300A 0%, rgba(92,48,10,0) 62%), ' +
+    'radial-gradient(70% 90% at 35% 25%, #F2A855 0%, rgba(242,168,85,0) 60%), #F39120',
   'satin-ember':
-    'radial-gradient(110% 70% at 50% 0%, #F9BC97 0%, rgba(249,188,151,0) 45%), ' +
-    'radial-gradient(130% 110% at 10% 90%, #17120E 0%, rgba(23,18,14,0) 55%), ' +
-    'radial-gradient(90% 80% at 95% 60%, #A83E06 0%, rgba(168,62,6,0) 60%), #5E2204',
+    'radial-gradient(110% 70% at 50% 0%, #EBC9A3 0%, rgba(235,201,163,0) 45%), ' +
+    'radial-gradient(130% 110% at 10% 90%, #17140F 0%, rgba(23,20,15,0) 55%), ' +
+    'radial-gradient(90% 80% at 95% 60%, #A55709 0%, rgba(165,87,9,0) 60%), #5C300A',
 };
 
 /**
@@ -80,7 +86,7 @@ const BASE = { width: 390, height: 320 };
  * Le blanc pur n'en fait pas partie : le système n'en a pas. `ink.onDark` est
  * son clair, et c'est lui qu'il faut mesurer, pas une valeur idéale.
  */
-const ENCRES = { 'ink.default': '#17120E', 'ink.onDark': '#F7F3EF' };
+const ENCRES = { 'ink.default': '#17140F', 'ink.onDark': '#F5F4F2' };
 
 const navigateur = await chromium.launch();
 await mkdir(SORTIE, { recursive: true });

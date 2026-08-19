@@ -217,7 +217,7 @@ export function BarreLaterale({
                 marginHorizontal: spacing['space.2'],
                 paddingLeft: replie ? 0 : spacing['space.3'],
                 justifyContent: replie ? 'center' : 'flex-start',
-                borderRadius: radius['radius.none'],
+                borderRadius: radius['radius.md'],
                 // `brand.50` est une nappe orange très claire : elle se lit
                 // sur le papier et sur l'os, et disparaît sur l'encre de
                 // l'administration, où c'est le contraire qui marque — un cran
@@ -279,7 +279,7 @@ export function BarreLaterale({
             justifyContent: 'center',
             paddingHorizontal: spacing['space.3'],
             backgroundColor: c['bg.inverse'],
-            borderRadius: radius['radius.none'],
+            borderRadius: radius['radius.md'],
             // La barre est rendue avant le contenu dans la rangée de la
             // coquille : sans cela, l'étiquette passerait dessous.
             zIndex: 1,

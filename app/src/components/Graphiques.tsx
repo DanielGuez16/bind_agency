@@ -110,8 +110,8 @@ export function BarresParPeriode({
                   // qui n'est pas la même chose que « pas de donnée ».
                   height: Math.max(1, (point.valeur / sommet) * HAUTEUR),
                   backgroundColor: c['brand.700'],
-                  borderTopLeftRadius: radius['radius.none'],
-                  borderTopRightRadius: radius['radius.none'],
+                  borderTopLeftRadius: radius['radius.sm'],
+                  borderTopRightRadius: radius['radius.sm'],
                 }}
               />
             ))}
@@ -178,7 +178,7 @@ export function BarresParPalier({
                 width: `${Math.max(1, (ligne.valeur / sommet) * 100)}%`,
                 height: 20,
                 backgroundColor: c[`tier.${ligne.palier}` as ColorName],
-                borderRadius: radius['radius.none'],
+                borderRadius: radius['radius.sm'],
               }}
             />
           </View>

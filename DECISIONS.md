@@ -6760,3 +6760,83 @@ réglage : ils sont partis avec lui.
 faire mieux, et le dire vaut mieux que de laisser croire qu'il restaure quelque
 chose : les refus ne sont copiés nulle part. Les archiver serait garder la
 donnée qu'on a décidé de ne plus avoir.
+
+---
+
+## 2026-08-18 — La direction Ambre, importée de Design et appliquée au produit
+
+Les trois fichiers de Design — `tokens.json`, `components.md`,
+`PASSATION-v1.1.md` — importés depuis son projet et posés dans la passation.
+**Les 31 valeurs de rampe, de rayons et d'échelle sont identiques** à celles de
+l'artefact où la fondatrice a tranché : Design les a transcrites, il n'y avait
+rien à arbitrer.
+
+**La garde de la passation passe de l'égalité à l'inclusion, et il faut dire
+pourquoi.** Le fichier de Design décrit un système ; celui de l'app fait tourner
+un produit et porte six sections dont Design ne parle pas — `theme`, `font`,
+`space`, `motion`, `pattern`, `blockRule`. Exiger l'égalité revenait à demander
+au designer de maintenir des durées d'animation. Ce qui est gardé est ce qui
+comptait : **toute valeur que Design énonce est celle de l'app**, plus le sens
+inverse — l'app n'invente aucune couleur, aucun rayon ni aucune variante que la
+passation ne déclare. Sans ce second test, un `brand.550` ajouté côté produit
+passerait, la passation restant incluse.
+
+### Trois secondes vérités supprimées au passage
+
+**`color.tier`** recopiait la rampe en hexadécimaux — `#A83E06` pour le 700,
+`#F9BC97` pour le 200. Au changement de direction elle serait restée à l'orange
+brut, et le test qui la comparait à la table de matières aurait constaté que les
+deux mensonges concordaient. Design la supprime ; ce qu'elle avait
+d'irremplaçable était deux géométries, reprises depuis `components.md` §2. Le
+test change donc d'oracle : il compare désormais à la table du document, recopiée
+à la main — la dériver des jetons la rendrait d'accord avec eux quoi qu'ils
+disent.
+
+**La liste `logo.mark16.palette`** énumérait trois couleurs à côté d'une prose
+qui nommait trois jetons. Elle est dérivée, dans le test comme dans le script de
+cuisson.
+
+**Le drapeau `logo.monochrome: false`** disait en booléen ce que la règle dit en
+toutes lettres. Un booléen ne porte pas sa raison ; ce qui le remplace est le
+fait — deux encres distinctes, dont l'une est la signature.
+
+### Ce que Design retire et que le produit doit porter
+
+`mark16` devient une prose : la géométrie du sigle n'est plus un jeton, parce
+qu'un dessin vient de sa propre planche. Elle passe dans `produit.json`, ses
+trois couleurs restant dérivées des jetons. Même chose pour trois arrêts de voile
+et le mot de la marque, que Design ne nomme pas et que le mur emploie : **dérivés
+de son encre plutôt qu'écrits**, sans quoi ils resteraient à l'orange brut au
+prochain changement, exactement comme la table des paliers l'a fait.
+
+### L'approche, convertie et non recopiée
+
+Design écrit l'approche en unités CSS — « -0.02em », « 1.4px » — parce que c'est
+le vocabulaire d'une maquette. React Native veut des points, et un `em` dépend de
+la taille : −0,02 em vaut −0,88 à 44 px et −0,48 à 32. La conversion se fait dans
+`echelle.ts`, au seul endroit qui connaît les deux. La recopier en points dans
+les jetons aurait créé la seconde vérité que la garde existe pour interdire.
+
+### Les cinq règles, et celle que le produit a ajoutée
+
+Le bloc accentué reste d'équerre, et un test le tient : `radius.none` n'est
+employé nulle part ailleurs. **Trois exceptions portent leur raison** — le bloc,
+le thème qui déclare le jeton, et les deux surfaces que `components.md` §10 met
+explicitement hors système, la galerie et la visionneuse : ce qu'on y regarde est
+la photo, et un cadre arrondi par-dessus le travail d'un salon est une opinion de
+plus.
+
+`elevation.card` revient. L'avertissement reste sans teinte. Les trois satins
+sont recuits — **et leur structure n'a pas suivi la recette à la lettre** :
+Design donne un dégradé unique par satin, le script en croise plusieurs, et sa
+raison écrite est que c'est précisément ce qui distingue un satin d'une pente.
+Ce que Design y nomme sont les couleurs ; ce sont elles qui ont été reprises.
+
+### Les trois réserves deviennent des mesures
+
+Une réserve écrite dans un fichier de jetons ne protège rien. `ink.mute` échoue
+sur `bg.deep` et le repli sur `ink.soft` tient ; `brand.700` sur `bg.deep` passe
+entre 4,5 et 5, donc s'évite sous 13 px ; le point du logo est admis sur la page
+et **invisible sur l'orange**, à 1,30:1. Quatre gardes, quatre mutations
+vérifiées — rampe éclaircie, signature alignée sur la marque, orange assombri,
+appui confondu : chacune fait tomber la sienne.

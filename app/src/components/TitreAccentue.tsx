@@ -131,7 +131,7 @@ export function TitreAccentue({
           testID="bloc-accentue"
           style={{
             backgroundColor: c['brand.500'],
-            borderRadius: radius['radius.none'],
+            borderRadius: radius['radius.lg'],
             paddingHorizontal: 10,
             paddingBottom: 2,
           }}

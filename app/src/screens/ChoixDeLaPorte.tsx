@@ -164,7 +164,7 @@ export function ChoixDeLaPorte({
               minWidth: large ? LARGEUR_DE_PORTE : undefined,
               gap: spacing['space.4'],
               padding: spacing['space.5'],
-              borderRadius: radius['radius.none'],
+              borderRadius: radius['radius.lg'],
               borderWidth: 1,
               borderColor: c['line.default'],
               backgroundColor: c['bg.surface'],

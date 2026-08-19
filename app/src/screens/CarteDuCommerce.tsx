@@ -214,7 +214,7 @@ export function CarteDuCommerce({
             alignItems: 'center',
             gap: 12,
             padding: 8,
-            borderRadius: radius['radius.none'],
+            borderRadius: radius['radius.lg'],
             borderWidth: 1,
             borderColor: c['line.default'],
             backgroundColor: c['bg.surface'],
@@ -223,7 +223,7 @@ export function CarteDuCommerce({
           <Image
             // La vignette : cette ligne vérifie un ordre, elle ne se lit pas.
             source={{ uri: api.urlDeLaVignette(page.storage_key) ?? undefined }}
-            style={{ width: 56, height: 56, borderRadius: radius['radius.none'] }}
+            style={{ width: 56, height: 56, borderRadius: radius['radius.lg'] }}
             resizeMode="cover"
           />
 

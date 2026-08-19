@@ -154,7 +154,7 @@ export function RedemptionScreen({
         justifyContent: 'space-between',
         gap: spacing['space.4'],
         padding: spacing['space.5'],
-        borderRadius: radius['radius.none'],
+        borderRadius: radius['radius.lg'],
         backgroundColor: c['bg.inverse'],
       }}
     >
@@ -265,7 +265,7 @@ export function RedemptionScreen({
           style={{
             gap: spacing['space.1'],
             padding: spacing['space.4'],
-            borderRadius: radius['radius.none'],
+            borderRadius: radius['radius.lg'],
             backgroundColor: c['status.danger.surface'],
           }}
         >
@@ -286,7 +286,7 @@ export function RedemptionScreen({
           style={{
             gap: spacing['space.3'],
             padding: spacing['space.4'],
-            borderRadius: radius['radius.none'],
+            borderRadius: radius['radius.lg'],
             backgroundColor: c['bg.surface'],
           }}
         >
@@ -316,7 +316,7 @@ export function RedemptionScreen({
           testID="servi"
           style={{
             padding: spacing['space.4'],
-            borderRadius: radius['radius.none'],
+            borderRadius: radius['radius.lg'],
             backgroundColor: c['status.success.surface'],
           }}
         >
@@ -392,7 +392,7 @@ function ServisDuJour({ businessId, depuis }: { businessId: string; depuis: stri
           style={{
             gap: 4,
             padding: spacing['space.4'],
-            borderRadius: radius['radius.none'],
+            borderRadius: radius['radius.lg'],
             // La plus récente se distingue : c'est celle dont on vient de
             // s'occuper, et celle dont l'échéance compte encore.
             backgroundColor: rang === 0 ? c['status.success.surface'] : c['bg.surface'],
