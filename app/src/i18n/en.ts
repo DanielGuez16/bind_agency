@@ -338,6 +338,7 @@ export const en = {
     ficheMention: 'a mention of {{mention}}',
     ficheLieu: 'a location tag',
     creneauxTitre: 'Pick a time',
+    creneauxChoisirPourContinuer: 'Pick a day with room to continue',
     creneauxEngagementTitre: 'What you commit to',
     creneauxEngagementCiter: 'Tag and mention {{quoi}}',
     creneauxEngagementPublierAvant: 'Publish by ',

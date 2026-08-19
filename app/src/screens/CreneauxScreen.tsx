@@ -257,7 +257,14 @@ export function CreneauxScreen({
 
       {/* Fixé sous la liste, hors du défilement. Retiré tant qu'aucun créneau
           n'est choisi : le griser demanderait de deviner ce qui manque. */}
-      {requete.etat === 'pret' && pretAReserver ? (
+      {/* **La barre reste, le bouton s'éteint.** Elle disparaissait tant
+          qu'aucune heure n'était choisie : l'écran changeait alors de hauteur
+          au premier appui, et rien ne disait ce qu'il fallait faire pour la
+          faire venir. La planche la montre toujours, avec l'indication à
+          gauche — et c'est l'exception nommée à « le bouton impossible est
+          retiré, jamais grisé » : celui-ci redevient possible d'un geste, et
+          la phrase dit lequel. */}
+      {requete.etat === 'pret' ? (
         <View
           testID="barre-de-confirmation"
           style={{
@@ -274,25 +281,34 @@ export function CreneauxScreen({
               dominante — même correction que sur la fiche. */}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
             <View style={{ flex: 1, minWidth: 0, gap: 1 }}>
-              <Texte variante="type.bodyStrong" testID="ce-qu-on-reserve">
-                {choisi && jour
-                  ? t('parcours.creneauxRecapitulatif', {
-                      jour: nomDeJour(jour, locale, 'long'),
-                      heure: formatHeure(choisi, locale, fiche.timezone),
-                    })
-                  : offre.name}
-              </Texte>
-              {offre.duration_minutes === null ? null : (
-                <Texte variante="type.caption" couleur="ink.mute">
-                  {t('parcours.ficheDuree', {
-                    count: formatNumber(offre.duration_minutes, locale),
-                  })}
+              {pretAReserver ? (
+                <>
+                  <Texte variante="type.bodyStrong" testID="ce-qu-on-reserve">
+                    {choisi && jour
+                      ? t('parcours.creneauxRecapitulatif', {
+                          jour: nomDeJour(jour, locale, 'long'),
+                          heure: formatHeure(choisi, locale, fiche.timezone),
+                        })
+                      : offre.name}
+                  </Texte>
+                  {offre.duration_minutes === null ? null : (
+                    <Texte variante="type.caption" couleur="ink.mute">
+                      {t('parcours.ficheDuree', {
+                        count: formatNumber(offre.duration_minutes, locale),
+                      })}
+                    </Texte>
+                  )}
+                </>
+              ) : (
+                <Texte variante="type.caption" couleur="ink.mute" testID="quoi-faire">
+                  {t('parcours.creneauxChoisirPourContinuer')}
                 </Texte>
               )}
             </View>
             <Button
               label={t('parcours.confirmer')}
               loading={envoi}
+              disabled={!pretAReserver}
               fullWidth={false}
               onPress={reserver}
               testID="confirmer"

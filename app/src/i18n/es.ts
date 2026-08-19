@@ -315,6 +315,7 @@ export const es: Catalogue = {
     ficheMention: 'una mención a {{mention}}',
     ficheLieu: 'una etiqueta de ubicación',
     creneauxTitre: 'Elige una hora',
+    creneauxChoisirPourContinuer: 'Elige un día con plazas para continuar',
     creneauxEngagementTitre: 'A qué te comprometes',
     creneauxEngagementCiter: 'Etiqueta y menciona a {{quoi}}',
     creneauxEngagementPublierAvant: 'Publica antes del ',
