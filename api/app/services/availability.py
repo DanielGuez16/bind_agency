@@ -463,6 +463,16 @@ class JourDeDisponibilite:
     #: Le commerce ouvre-t-il ce jour-là ? **Indépendant de l'item** : c'est
     #: l'horaire du salon, pas la disponibilité de la prestation.
     ouvert: bool
+    #: Le jour est-il derrière nous ? **Vrai dès que sa dernière plage est
+    #: close**, pas à minuit.
+    #:
+    #: **Sans lui, le soir, aujourd'hui se lit « complet ».** À 20 h, le salon
+    #: ouvre bien aujourd'hui — `ouvert` est vrai — et il ne reste aucun début
+    #: possible. Un écran qui n'aurait que les deux premiers champs écrirait
+    #: donc « complet » sur le cas le plus fréquent des quatre, et un créateur
+    #: qui lit ça le soir croit que le salon a été pris d'assaut au lieu de
+    #: revenir demain matin.
+    revolu: bool
     #: Combien de débuts possibles restent pour cet item.
     #:
     #: **Zéro sur un jour ouvert n'est pas la même chose qu'un jour fermé**, et
@@ -497,6 +507,22 @@ async def disponibilite_par_jour(
     règles. Ici, deux requêtes de plus que pour un seul jour.
     """
     depuis = depuis or datetime.now(UTC)
+
+    # **Un item qui ne se propose plus n'a pas de bande.** `creneaux_libres`
+    # rend une liste vide pour un item désactivé, directement ou par son
+    # parent ; la bande, elle, aurait gardé `ouvert` vrai et compté zéro sur
+    # quatorze jours — ce qui se lit « complet pendant deux semaines » pour une
+    # prestation qui n'existe plus. Une bande vide est sans ambiguïté : il n'y a
+    # aucun jour où choisir cet item.
+    item = await session.scalar(
+        sa.select(CatalogItem).where(
+            CatalogItem.id == catalog_item_id, CatalogItem.business_id == business_id
+        )
+    )
+    if item is None:
+        raise ItemNotFound(str(catalog_item_id))
+    if not await _est_proposable(session, item):
+        return []
 
     business = await session.get(Business, business_id)
     if business is None:
@@ -546,10 +572,16 @@ async def disponibilite_par_jour(
     # `jours` jours à partir d'aujourd'hui, bornes comprises côté départ : une
     # bande de quatorze commence aujourd'hui et finit dans treize jours.
     for _ in range(jours):
+        fenetres = fenetres_du_jour(jour, regles, exceptions.get(jour))
         bande.append(
             JourDeDisponibilite(
                 jour=jour,
-                ouvert=bool(fenetres_du_jour(jour, regles, exceptions.get(jour))),
+                ouvert=bool(fenetres),
+                # Révolu quand la dernière plage est close. Sur les jours à
+                # venir, `depuis` est avant toutes les fins : la comparaison
+                # rend faux sans qu'il faille distinguer aujourd'hui du reste.
+                revolu=bool(fenetres)
+                and all(_instant(jour, f.fin, fuseau) <= depuis for f in fenetres),
                 creneaux_libres=comptes.get(jour, 0),
             )
         )

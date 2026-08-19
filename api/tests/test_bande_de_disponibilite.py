@@ -185,3 +185,78 @@ async def test_un_jour_ouvert_sans_creneau_reste_ouvert(session: AsyncSession) -
 
     assert ce_jour.creneaux_libres == 0
     assert ce_jour.ouvert is True, "un salon ouvert dont la plage est trop courte reste ouvert"
+
+
+async def test_un_jour_revolu_ne_se_lit_pas_complet(session: AsyncSession) -> None:
+    """**Le cas le plus fréquent des quatre, et le pire à peindre en « complet ».**
+
+    À 20 h, le salon ouvre bien aujourd'hui — `ouvert` est vrai — et il ne reste
+    aucun début possible. Sans `revolu`, l'écran écrit « complet », et un
+    créateur qui lit ça le soir croit que le salon a été pris d'assaut au lieu de
+    revenir demain matin.
+    """
+    decor = await monter_le_decor(session)
+    fuseau = ZoneInfo(decor["business"].timezone)
+    creneau = await premier_creneau(session, decor)
+    jour = creneau.astimezone(fuseau).date()
+
+    # Après la fermeture, dans le fuseau du salon.
+    tard = datetime.combine(jour, dt_time(23, 30), tzinfo=fuseau)
+
+    bande = await service.disponibilite_par_jour(
+        session,
+        business_id=decor["business"].id,
+        catalog_item_id=decor["item"].id,
+        depuis=tard,
+        jours=2,
+    )
+    aujourdhui = next(j for j in bande if j.jour == jour)
+
+    assert aujourdhui.ouvert is True, "le salon ouvre bien ce jour-là"
+    assert aujourdhui.creneaux_libres == 0
+    assert aujourdhui.revolu is True
+
+    # Et demain ne l'est pas : un `revolu` toujours vrai passerait ce test-ci
+    # en fermant toute la bande.
+    demain = next(j for j in bande if j.jour != jour)
+    assert demain.revolu is False
+
+
+async def test_un_jour_a_venir_n_est_jamais_revolu(session: AsyncSession) -> None:
+    """L'autre sens, sur la bande entière : au matin, rien n'est derrière nous."""
+    decor = await monter_le_decor(session)
+    fuseau = ZoneInfo(decor["business"].timezone)
+    jour = (await premier_creneau(session, decor)).astimezone(fuseau).date()
+    tot = datetime.combine(jour, dt_time(0, 1), tzinfo=fuseau)
+
+    bande = await service.disponibilite_par_jour(
+        session,
+        business_id=decor["business"].id,
+        catalog_item_id=decor["item"].id,
+        depuis=tot,
+        jours=14,
+    )
+
+    assert all(not j.revolu for j in bande)
+
+
+async def test_un_item_desactive_ne_rend_aucune_bande(session: AsyncSession) -> None:
+    """**Une bande vide, et non quatorze jours « complets ».**
+
+    `creneaux_libres` rend déjà une liste vide pour un item désactivé. La bande
+    aurait gardé `ouvert` vrai et compté zéro sur quatorze jours — ce qui se lit
+    « complet pendant deux semaines » pour une prestation qui n'existe plus.
+    """
+    from app.models import CatalogItem
+
+    decor = await monter_le_decor(session)
+    await session.execute(
+        sa.update(CatalogItem).where(CatalogItem.id == decor["item"].id).values(is_available=False)
+    )
+    await session.flush()
+
+    bande = await service.disponibilite_par_jour(
+        session, business_id=decor["business"].id, catalog_item_id=decor["item"].id, jours=14
+    )
+
+    assert bande == []
