@@ -260,3 +260,62 @@ async def test_un_item_desactive_ne_rend_aucune_bande(session: AsyncSession) -> 
     )
 
     assert bande == []
+
+
+async def test_une_coupure_du_midi_ne_rend_pas_la_journee_revolue(
+    session: AsyncSession,
+) -> None:
+    """**Le cas qu'un `any()` passerait sans être vu.**
+
+    Un salon qui ferme le midi a deux plages. À 13 h, la première est close et
+    la seconde n'a pas commencé : `any(fin <= maintenant)` rendrait `revolu`
+    vrai, et l'écran écrirait « c'est fini pour aujourd'hui » à midi.
+
+    Aucun de mes autres décors ne distingue les deux quantificateurs — ils n'ont
+    qu'une plage par jour. Celui-ci est le seul qui les sépare.
+    """
+    decor = await monter_le_decor(session)
+    fuseau = ZoneInfo(decor["business"].timezone)
+    jour = (await premier_creneau(session, decor)).astimezone(fuseau).date()
+
+    # **Deux règles et non une exception.** Une exception ne porte qu'une plage
+    # et **remplace** la règle du jour : elle ne peut pas décrire une coupure.
+    # C'est par deux règles hebdomadaires que le produit exprime un midi fermé,
+    # et c'est donc là qu'il faut aller le chercher.
+    await session.execute(
+        sa.delete(CapacityRule).where(
+            CapacityRule.business_id == decor["business"].id,
+            CapacityRule.weekday == jour.weekday(),
+        )
+    )
+    session.add_all(
+        [
+            CapacityRule(
+                business_id=decor["business"].id,
+                weekday=jour.weekday(),
+                start_time=dt_time(9, 0),
+                end_time=dt_time(12, 0),
+                concurrent_slots=1,
+            ),
+            CapacityRule(
+                business_id=decor["business"].id,
+                weekday=jour.weekday(),
+                start_time=dt_time(14, 0),
+                end_time=dt_time(19, 0),
+                concurrent_slots=1,
+            ),
+        ]
+    )
+    await session.flush()
+
+    midi = datetime.combine(jour, dt_time(13, 0), tzinfo=fuseau)
+    bande = await service.disponibilite_par_jour(
+        session,
+        business_id=decor["business"].id,
+        catalog_item_id=decor["item"].id,
+        depuis=midi,
+        jours=1,
+    )
+
+    assert bande[0].ouvert is True
+    assert bande[0].revolu is False, "la pause déjeuner n'est pas la fin de la journée"
