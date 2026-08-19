@@ -217,13 +217,16 @@ chose de ce qu'on vient d'écrire. La suite entière répond à une autre questi
 « ai-je cassé ailleurs », et cette question ne se pose qu'une fois, au moment de
 pousser.
 
-**Une garde de durée se calibre sur la machine la plus lente où elle tourne,
-jamais sur la sienne.** Le plafond a été posé à dix secondes sur des mesures
-locales, avec 2,7 fois de marge ; il a fait échouer l'intégration continue sur
-un test à 10,2 s qui en met 1,5 ici. Le runner est six fois plus lent, et la
-garde mesurait donc le matériel au lieu du test. C'est la façon dont un
-garde-fou finit par être désactivé : un faux positif sur une vérification
-requise, et quelqu'un le retire.
+**Un garde-fou qui coûte plus que ce qu'il protège se retire.** La garde de
+durée en est l'exemple, et elle a été retirée : quatre CI rouges en une soirée,
+deux heures d'attente, et rien trouvé d'autre qu'elle-même. D'abord calibrée sur
+ma machine — dix secondes de plafond, un runner six fois plus lent, un test à
+10,2 s qui en met 1,5 ici ; puis incapable de traverser les processus sous xdist,
+où la collecte a lieu dans le worker et le bilan dans le contrôleur.
+
+Ce qu'elle devait attraper — un test qui **attend** au lieu de faire — se voit
+dans `--durations`, sans faire échouer personne. Une vérification requise qui se
+trompe est pire qu'une vérification absente : elle apprend à ignorer le rouge.
 
 Ne pas réécrire un fichier entier pour changer trois lignes. Modifications ciblées.
 

@@ -83,7 +83,7 @@ addopts = "--strict-markers -n auto --dist loadgroup"
 markers = [
     "ecrit_pour_de_bon(raison): le test valide ses écritures et les nettoie lui-même. Réservé à ce qui ne peut pas vivre dans une transaction annulée — deux transactions réellement concurrentes, un verrou consultatif. Dispense de la garde anti-fuite, et la raison est obligatoire",
     "xdist_group(nom): épingle le test sur un worker. Les tests qui écrivent pour de bon partagent le groupe `concurrence` : ils restent sériels entre eux, et le reste de la suite se parallélise",
-    "lent(raison): le test dépasse le plafond de durée et c'est justifié. Réservé à ce qui fait réellement le travail long qu'il annonce — poser le jeu de démonstration entier. Dispense de la garde de durée, et la raison est obligatoire",
+    "lent(raison): déclare qu'un test est long et pourquoi. **La garde qui s'en servait a été retirée** : elle a fait échouer l'intégration continue quatre fois en une soirée — calibrée sur ma machine, puis incapable de traverser les processus sous xdist — sans jamais trouver autre chose qu'elle-même. La marque reste, inerte : elle documente les deux tests du semis, et la retirer ferait échouer `--strict-markers` sur des décorateurs qu'il n'y a aucune raison de toucher",
 ]
 
 [tool.setuptools.package-data]
