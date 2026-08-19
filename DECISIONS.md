@@ -7345,3 +7345,58 @@ Et un troisième, qui n'a rien à voir avec git : `git add -A` dans un arbre
 partagé ramasse le travail des autres. Il a emporté une fonction d'une autre
 session dans un de mes commits, sous un message qui parlait d'autre chose. Les
 chemins explicites n'ont pas suffi — nous éditions le même fichier.
+
+## 2026-08-19 — L'accueil v3 : la vidéo part, et emporte six mécanismes
+
+Elle servait à donner envie sur un écran dont le seul travail est de faire
+**choisir un rôle**. Ce qui donne envie est le fil derrière, et personne n'y
+arrive plus vite parce qu'un fond bouge.
+
+**Ce qu'elle emporte est le vrai gain** : le repli sur l'affiche, le choix
+d'orientation entre une 16:9 et une 9:16 mesuré sur la forme du conteneur, le
+cas « pas de réseau », la reprise après un retour au premier plan, la relance
+après le montage — Safari refuse une lecture demandée avant que l'élément existe
+— et la boucle garantie deux fois. Six mécanismes pour un fond, et six blocs de
+tests qui n'ont plus d'objet.
+
+**Le satin part avec elle**, et le défilement aussi. Le satin était la couche du
+dessous, posée pour que la composition ne change pas entre la première image et
+l'arrivée du manifeste ; sans manifeste, il n'y a plus rien qui arrive. Le
+défilement existait parce que deux cartes **empilées** dépassaient la hauteur
+d'un iPhone : côte à côte, elles tiennent dans les 728 points qui restent.
+
+**Les intitulés sur deux lignes sont ce qui les autorise à être gros.** Deux
+colonnes de 171 points ne portent pas « CREATOR ACCOUNT » sur une ligne au-delà
+de 13 points, ce qui n'est pas « en gros ». Empilé, chaque mot tient à 22 en
+graisse 800, et le second porte le rôle en `brand.700` — le seul endroit de
+l'écran où l'orange s'écrit.
+
+**Le bloc noir de la connexion part sans être remplacé.** Il donnait un contexte
+au formulaire : sur la connexion, il expliquait donc le produit à quelqu'un qui a
+déjà un compte, c'est-à-dire à la seule personne qui n'a pas besoin qu'on le lui
+explique. Rien ne le remplace — le vide qu'on lui reprochait venait de la largeur
+de la colonne, pas de son absence de voisin.
+
+**Deux orphelins consignés plutôt que supprimés** : `mediasPlateforme` et
+`MediasPlateforme.home` restent servis sans lecteur. Soit la route part, soit un
+écran à venir en a l'usage.
+
+## 2026-08-19 — Une garde élargie puis remise, et le trou écrit
+
+L'inventaire des cartes définit une carte par trois marqueurs : fond de surface,
+rayon de 18, filet. Les deux portes de l'accueil v3 ont perdu leur filet — deux
+cartes voisines à filet donnent une couture au milieu de l'écran — et sont donc
+**sorties de l'inventaire en silence**, alors qu'elles sont exactement ce que la
+règle vise : un coin de 18 px sur une surface.
+
+La définition a été élargie, puis remise. Sans le filet, une carte enveloppée
+compte pour deux blocs — la vue extérieure qui porte l'ombre, la vue intérieure
+qui clippe — et le comptage d'égalité devient faux sur les trois surfaces qui
+clippent. Le rendre juste demanderait de savoir lequel des deux blocs est le
+parent de l'autre, ce qu'une expression régulière ne sait pas.
+
+**Plutôt qu'une garde plus large et plus molle, la définition reste étroite et le
+trou est écrit.** C'est la décision inverse de celle prise sur la fenêtre du
+détecteur, qui était passée de 600 à 900 caractères — et la différence tient à ce
+qu'on y gagnait : là, la garde retrouvait ce qu'elle prétendait couvrir ; ici,
+elle aurait cessé de compter juste.

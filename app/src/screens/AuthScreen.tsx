@@ -138,79 +138,17 @@ export function AuthScreen({ motif }: { motif: MotifDeSortie | null }) {
   }
 
   /**
-   * Le panneau d'encre : la promesse franchie, et ce qui vient ensuite.
+   * **Le panneau d'encre est parti, sans être remplacé.**
    *
-   * **Il vaut aussi pour la connexion.** Il était conditionné à l'inscription,
-   * et l'écran le plus visité du produit restait donc une colonne de 480
-   * centrée dans du vide — exactement le défaut de fond que la v0.6 devait
-   * corriger, laissé sur la première chose qu'on voit. Se connecter n'a pas de
-   * porte à rappeler ; le panneau y porte alors la promesse commune, celle qui
-   * vaut pour les deux côtés du produit.
+   * Il existait pour donner un contexte au formulaire : il reprenait la
+   * promesse de la porte franchie et ses trois étapes. Sur la connexion, il
+   * expliquait donc le produit à quelqu'un **qui a déjà un compte** —
+   * c'est-à-dire à la seule personne qui n'a pas besoin qu'on le lui explique.
+   *
+   * Et rien ne le remplace : une colonne de 420 centrée dans du blanc est ce
+   * qu'un formulaire de connexion doit être. Le vide qu'on lui reprochait
+   * venait de sa largeur, pas de son absence de voisin.
    */
-  const suffixe = role === 'creator' ? 'Createur' : 'Commerce';
-  const panneau = (
-    <View
-      testID="panneau-de-promesse"
-      style={{
-        width: PANNEAU,
-        padding: spacing['space.8'],
-        gap: spacing['space.6'],
-        borderRadius: radius['radius.lg'],
-        backgroundColor: c['bg.inverse'],
-        justifyContent: 'center',
-      }}
-    >
-      {inscription ? (
-        <Texte variante="type.label" style={{ color: c['ink.onDark'] }}>
-          {(role === 'creator' ? t('auth.roleCreator') : t('auth.roleMerchant')).toUpperCase()}
-        </Texte>
-      ) : (
-        <Marque taille={18} variante="blanc" />
-      )}
-      <Texte variante="type.bodyStrong" style={{ color: c['ink.onDark'] }}>
-        {inscription
-          ? t(role === 'creator' ? 'auth.porteCreateur' : 'auth.porteCommerce')
-          : t('auth.accroche')}
-      </Texte>
-      {inscription ? null : (
-        <Texte style={{ color: c['ink.onDark'] }}>{t('auth.sousAccroche')}</Texte>
-      )}
-      {/* **Le panneau de connexion avait trois lignes sur 604 d'encre**
-          (campagne 2) : un grand aplat noir presque vide, sur l'écran le plus
-          vu du produit. L'inscription y déroule les trois étapes de la porte
-          franchie ; la connexion n'a pas de porte à rappeler, mais elle a de
-          quoi remplir — ce que le produit est, pour qui revient.
-
-          Numéroté à l'inscription, où les trois points sont une suite ; non
-          numéroté au retour, où ce sont trois faits. « 01 02 03 » à quelqu'un
-          qui a déjà un compte se lirait comme une mise en route à refaire. */}
-      <View style={{ gap: spacing['space.4'] }} testID="points-du-panneau">
-        {(inscription ? [1, 2, 3] : []).map((rang) => (
-          <View key={rang} style={{ flexDirection: 'row', gap: spacing['space.3'] }}>
-            <Texte variante="type.mono" style={{ color: c['brand.700'] }}>
-              {String(rang).padStart(2, '0')}
-            </Texte>
-            <Texte style={{ color: c['ink.onDark'], flex: 1 }}>
-              {t(`auth.etape${suffixe}${rang}`)}
-            </Texte>
-          </View>
-        ))}
-        {(inscription ? [] : ['A', 'B', 'C']).map((lettre) => (
-          <View key={lettre} style={{ flexDirection: 'row', gap: spacing['space.3'] }}>
-            <Texte variante="type.mono" style={{ color: c['brand.700'] }}>
-              ·
-            </Texte>
-            <Texte
-              style={{ color: c['ink.onDark'], flex: 1 }}
-              testID={`point-de-retour-${lettre}`}
-            >
-              {t(`auth.retour${lettre}`)}
-            </Texte>
-          </View>
-        ))}
-      </View>
-    </View>
-  );
 
   return (
     <ScrollView
@@ -225,23 +163,15 @@ export function AuthScreen({ motif }: { motif: MotifDeSortie | null }) {
       }}
       keyboardShouldPersistTaps="handled"
     >
-      <View
-        style={{
-          flexDirection: 'row',
-          gap: spacing['space.8'],
-          alignItems: 'stretch',
-        }}
-      >
-        {/* Le panneau n'existe qu'en grand : en compact il prendrait toute la
-            première page et repousserait les champs sous la ligne de flottaison. */}
-        {large ? panneau : null}
-
+      <View>
         <View style={{ width: large ? FORMULAIRE : undefined, gap: 16, justifyContent: 'center' }}>
           <Apparition>
-            <View style={{ alignItems: 'flex-start', gap: 18, paddingBottom: 6 }}>
-              {/* La marque en grand : c'est le premier écran, et le seul où
-                  l'on a la place de la montrer. Ailleurs, le signe suffit. */}
-              {large ? null : <Marque taille={26} />}
+            <View style={{ alignItems: large ? 'flex-start' : 'center', gap: 18, paddingBottom: 6 }}>
+              {/* **La marque ouvre l'écran, et elle est centrée en compact.**
+                  C'est elle qui dit où l'on est, à la place du titre. En grand,
+                  la colonne est déjà centrée dans la page et la marque revient
+                  à gauche, alignée sur les champs. */}
+              <Marque taille={26} />
               {inscription ? (
                 <Button
                   label={t('common.retour')}
@@ -251,9 +181,16 @@ export function AuthScreen({ motif }: { motif: MotifDeSortie | null }) {
                   testID="revenir-aux-portes"
                 />
               ) : null}
-              <Texte variante="type.screenTitle">
-                {inscription ? t('auth.titreInscription') : t('auth.titreConnexion')}
-              </Texte>
+              {/* **Le titre disparaît en compact.** Deux champs nommés et un
+                  bouton disent déjà où l'on est ; la marque juste au-dessus le
+                  confirme. En grand, la colonne flotte au milieu d'une page
+                  vide et le titre lui rend un point d'entrée — c'est ce que la
+                  planche montre, et la différence tient à la place. */}
+              {large ? (
+                <Texte variante="type.screenTitle">
+                  {inscription ? t('auth.titreInscription') : t('auth.titreConnexion')}
+                </Texte>
+              ) : null}
             </View>
           </Apparition>
 

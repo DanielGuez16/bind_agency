@@ -1241,6 +1241,21 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       serveur a ajouté en cours de route. L'étiquette d'horaires de la fiche est
       débloquée, croisée avec une preuve d'ouverture prise sur les créneaux déjà
       servis. 1030 tests verts, 10 mutations vérifiées*
+- [x] **L'accueil et la connexion v3 — le premier écran, repris en dernier**
+      *La vidéo part et emporte six mécanismes : repli sur l'affiche, choix
+      d'orientation, hors-ligne, reprise au premier plan, relance après montage,
+      boucle garantie deux fois. Le satin et le défilement partent avec. Les
+      deux portes passent côte à côte, intitulés empilés à 22 en graisse 800 —
+      c'est l'empilement qui les autorise à être gros. Le bloc noir de la
+      connexion part sans être remplacé. `mediasPlateforme` et
+      `MediasPlateforme.home` restent servis sans lecteur : à trancher*
+- [ ] **L'inventaire des cartes ne voit pas les surfaces sans filet**
+      *Sa définition est « fond de surface + rayon de 18 + filet ». Les deux
+      portes de l'accueil et le panneau `reconnu` de `RedemptionScreen` ont le
+      rayon et le fond sans le filet : ils lui échappent. L'élargir casse le
+      comptage sur les trois surfaces qui clippent, où une carte est deux blocs.
+      Ce qu'il faudrait est un détecteur qui sache lequel des deux blocs est le
+      parent — ou une convention qui nomme les vues enveloppantes*
 - [ ] **Dix planches d'écrans portent encore la v1.0**
       *Le fil est passé en v3, directement dans la palette Ambre. Les autres
       suivent l'ordre du `PASSATION-v1.1.md` §6, qui limite le travail
