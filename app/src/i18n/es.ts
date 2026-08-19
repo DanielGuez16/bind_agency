@@ -314,6 +314,20 @@ export const es: Catalogue = {
     ficheMention: 'una mención a {{mention}}',
     ficheLieu: 'una etiqueta de ubicación',
     creneauxTitre: 'Elige una hora',
+    creneauxEtatCourt: {
+      ferme: 'Cerrado',
+      complet: 'Lleno',
+    },
+    creneauxSansPlaceTitre: {
+      ferme: 'Cerrado el {{jour}}',
+      complet: 'Sin plazas el {{jour}}',
+    },
+    creneauxSansPlaceCorps: {
+      ferme: '{{salon}} no abre el {{jour}}.',
+      complet: '{{salon}} abre el {{jour}}, pero todas las horas están tomadas.',
+    },
+    creneauxToutesLesDates: 'Todas las fechas',
+    creneauxAucunJourProche: 'Sin plazas en los próximos {{count}} días.',
     creneauxVide: 'No queda nada este día.',
     creneauxMatin: 'Mañana',
     creneauxApresMidi: 'Tarde',

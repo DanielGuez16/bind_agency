@@ -458,6 +458,8 @@ export type FichePublique = {
    * perdre le fil à qui revient.
    */
   menu_url: string | null;
+  /** Les plages d'ouverture, du lundi au dimanche, en heures locales. */
+  horaires: PlageHebdomadaire[];
   offres: OffreDeLaFiche[];
 };
 
@@ -467,9 +469,44 @@ export type Creneau = {
   places_restantes: number;
 };
 
-// --------------------------------------------------------------------------
-// réservation
-// --------------------------------------------------------------------------
+/**
+ * Un jour de la bande, tel que `/availability/summary` le rend.
+ *
+ * **Les deux champs, et non le seul compte.** Zéro créneau sur un jour ouvert
+ * n'est pas un jour fermé : « complet » invite à regarder le lendemain,
+ * « fermé » se grise. Un écran qui n'aurait que le compte peindrait les deux de
+ * la même façon, et la personne croirait le salon fermé un jour où il déborde.
+ *
+ * **`ouvert` connaît les exceptions de capacité**, qui *remplacent* la règle
+ * hebdomadaire au lieu de s'y ajouter : un jour férié rend `false` alors que
+ * l'horaire hebdomadaire du salon dit le contraire. C'est la raison pour
+ * laquelle ce champ ne se déduit pas côté client.
+ */
+export type JourDeDisponibilite = {
+  /** La date **locale** du commerce, « 2026-08-19 ». */
+  jour: string;
+  /** L'horaire du salon, indépendant de la prestation demandée. */
+  ouvert: boolean;
+  /** Les débuts encore libres pour cet item, ce jour-là. */
+  creneaux_libres: number;
+};
+
+/**
+ * Une plage d'ouverture hebdomadaire. Lundi vaut 0.
+ *
+ * Heures **locales du commerce** : un salon ouvre à 9 h chez lui, pas à 9 h
+ * chez vous, et convertir une heure d'ouverture n'a pas de sens.
+ *
+ * **Les exceptions ne sont pas appliquées ici, et c'est délibéré côté
+ * serveur** : mêler une fermeture ponctuelle au tableau hebdomadaire ferait
+ * lire « fermé le mardi » à qui regarde un mardi férié. La conséquence pour
+ * l'écran est écrite là où l'étiquette se compose.
+ */
+export type PlageHebdomadaire = {
+  weekday: number;
+  start_time: string;
+  end_time: string;
+};
 
 export type Booking = {
   id: string;

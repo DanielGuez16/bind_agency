@@ -337,6 +337,23 @@ export const en = {
     ficheMention: 'a mention of {{mention}}',
     ficheLieu: 'a location tag',
     creneauxTitre: 'Pick a time',
+    // **Trois états distincts, et non un mot pour trois.** « Fermé » n'est pas
+    // « complet », et « écoulé » n'est ni l'un ni l'autre : à 20 h, aujourd'hui
+    // n'a plus de créneau sans que le salon ait été pris d'assaut.
+    creneauxEtatCourt: {
+      ferme: 'Closed',
+      complet: 'Full',
+    },
+    creneauxSansPlaceTitre: {
+      ferme: 'Closed on {{jour}}',
+      complet: 'Fully booked on {{jour}}',
+    },
+    creneauxSansPlaceCorps: {
+      ferme: '{{salon}} is not open on {{jour}}.',
+      complet: '{{salon}} is open on {{jour}}, but every slot is taken.',
+    },
+    creneauxToutesLesDates: 'All dates',
+    creneauxAucunJourProche: 'No room in the next {{count}} days.',
     creneauxVide: 'Nothing left this day.',
     creneauxMatin: 'Morning',
     creneauxApresMidi: 'Afternoon',
