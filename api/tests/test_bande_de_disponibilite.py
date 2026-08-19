@@ -9,6 +9,7 @@ Un écran qui n'aurait que le compte peindrait les deux de la même façon.
 """
 
 from datetime import UTC, datetime, timedelta
+from datetime import time as dt_time
 from zoneinfo import ZoneInfo
 
 import sqlalchemy as sa
@@ -143,3 +144,44 @@ async def test_la_bande_dit_la_meme_chose_que_le_detail(session: AsyncSession) -
     ]
 
     assert sum(jour.creneaux_libres for jour in bande) == len(dans_la_bande)
+
+
+async def test_un_jour_ouvert_sans_creneau_reste_ouvert(session: AsyncSession) -> None:
+    """**Le cas qui sépare les deux champs, et le seul.**
+
+    Les autres tests ferment un jour qui a zéro créneau : « fermé » et « zéro »
+    y disent la même chose, et une implémentation qui déduirait `ouvert` du
+    compte les passerait tous. Vérifié par mutation — elle survivait.
+
+    Ici le salon **ouvre** une plage plus courte que la prestation : la journée
+    est ouverte, et aucun début n'y tient. C'est exactement ce qu'un écran doit
+    peindre « complet » et non « fermé ».
+    """
+    decor = await monter_le_decor(session, postes=1)
+    creneau = await premier_creneau(session, decor)
+    jour = creneau.astimezone(ZoneInfo(decor["business"].timezone)).date()
+
+    # Quinze minutes, pour une prestation qui en dure quarante-cinq.
+    session.add(
+        CapacityException(
+            business_id=decor["business"].id,
+            date=jour,
+            is_closed=False,
+            start_time=dt_time(10, 0),
+            end_time=dt_time(10, 15),
+            concurrent_slots=1,
+        )
+    )
+    await session.flush()
+
+    bande = await service.disponibilite_par_jour(
+        session,
+        business_id=decor["business"].id,
+        catalog_item_id=decor["item"].id,
+        depuis=datetime.combine(jour, datetime.min.time(), tzinfo=UTC),
+        jours=2,
+    )
+    ce_jour = next(j for j in bande if j.jour == jour)
+
+    assert ce_jour.creneaux_libres == 0
+    assert ce_jour.ouvert is True, "un salon ouvert dont la plage est trop courte reste ouvert"
