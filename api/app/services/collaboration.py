@@ -591,6 +591,38 @@ class LigneDeFile:
         return self.tentatives[-1].motif if self.tentatives else None
 
 
+async def derniere_tentative(session, collaboration_id: uuid.UUID) -> Tentative | None:
+    """La demande de nouvelle soumission la plus récente, ou rien.
+
+    **Le même journal que la file du commerce, jamais une seconde vérité.**
+    `LigneDeFile.dernier_motif` dérive déjà des `tentatives` relues ici ; poser
+    le motif sur `collaboration` en colonne créerait une copie qu'un `UPDATE`
+    ferait diverger de l'audit — lequel, lui, est immuable. Deux lecteurs, une
+    source.
+
+    Le tri est sur `occurred_at`, qui vient de `clock_timestamp()` : deux
+    demandes écrites dans la même transaction s'ordonnent, ce que `now()`
+    n'aurait pas permis.
+    """
+    ligne = (
+        await session.execute(
+            sa.select(AuditLog.reason, AuditLog.note, AuditLog.occurred_at, AuditLog.actor_kind)
+            .where(
+                AuditLog.entity_type == AuditedEntity.COLLABORATION.value,
+                AuditLog.entity_id == collaboration_id,
+                AuditLog.to_status == CollaborationStatus.RESUBMIT_REQUESTED.value,
+                AuditLog.reason.is_not(None),
+            )
+            .order_by(AuditLog.occurred_at.desc())
+            .limit(1)
+        )
+    ).first()
+    if ligne is None:
+        return None
+    reason, note, occurred_at, actor_kind = ligne
+    return Tentative(motif=reason, note=note, demandee_le=occurred_at, par=actor_kind)
+
+
 def _requete_de_file():
     return (
         sa.select(

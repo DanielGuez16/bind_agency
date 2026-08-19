@@ -124,4 +124,9 @@ async def arbitrer(
 
     await session.commit()
     await session.refresh(ligne)
-    return CollaborationRead.assembler(ligne, await proof_service.preuves_de(session, ligne.id))
+    tentative = await service.derniere_tentative(session, ligne.id)
+    return CollaborationRead.assembler(
+        ligne,
+        await proof_service.preuves_de(session, ligne.id),
+        dernier_motif=tentative.motif if tentative else None,
+    )

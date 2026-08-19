@@ -68,7 +68,18 @@ async def _sienne(session, collaboration_id: uuid.UUID, creator_id: uuid.UUID) -
 
 
 async def _lire(session, ligne: Collaboration) -> CollaborationRead:
-    return CollaborationRead.assembler(ligne, await proof_service.preuves_de(session, ligne.id))
+    """La lecture complète d'un dossier, pour le créateur comme pour le commerce.
+
+    Le dernier motif est relu du journal ici et non porté par le modèle : c'est
+    ce qui garantit que les deux façades disent la même chose, la file du
+    commerce le dérivant déjà de la même source.
+    """
+    tentative = await service.derniere_tentative(session, ligne.id)
+    return CollaborationRead.assembler(
+        ligne,
+        await proof_service.preuves_de(session, ligne.id),
+        dernier_motif=tentative.motif if tentative else None,
+    )
 
 
 @router.get("/collaborations/{collaboration_id}", response_model=CollaborationRead)

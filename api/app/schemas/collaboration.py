@@ -1,7 +1,7 @@
 """Schémas de la contrepartie."""
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -66,14 +66,44 @@ class CollaborationRead(BaseModel):
     required_mention: str | None
     required_geotag: bool
     deadline_at: datetime
+    #: Ce qu'il reste avant `deadline_at`, **compté par le serveur**.
+    #:
+    #: L'écran ne le calcule pas lui-même, et ce n'est pas du confort : une
+    #: horloge de terminal peut avoir des heures d'écart, et un compte à rebours
+    #: faux sur la seule chose qui ferme un dossier vaut moins que pas de compte
+    #: à rebours du tout. Même règle que partout ailleurs — le temps du client
+    #: n'est jamais une preuve.
+    #:
+    #: **Zéro quand l'échéance est passée, jamais négatif.** L'écran affiche une
+    #: durée, pas une dette : « il reste −3 h » ne veut rien dire. Ce qui s'est
+    #: passé se lit sur `status`, qui est la donnée faite pour ça.
+    #:
+    #: L'échéance elle-même reste servie à côté : le compte à rebours vieillit
+    #: dès qu'il est rendu, l'instant absolu non — un écran laissé ouvert peut
+    #: se recaler dessus sans redemander la route.
+    secondes_avant_echeance: int
     status: CollaborationStatus
     attempts_count: int
     needs_human_review: bool
     approved_at: datetime | None
+    #: Le code du dernier refus, quand il y en a eu un. `None` avant toute
+    #: demande de nouvelle soumission.
+    #:
+    #: **Un code fermé de `MotifDeDecision`, jamais une phrase** : il se traduit
+    #: à l'affichage, et c'est toute la raison pour laquelle le motif a cessé
+    #: d'être du texte libre. Il est relu du journal d'audit, la même source que
+    #: `LigneDeFile.dernier_motif` côté commerce — deux lecteurs, une vérité.
+    #:
+    #: Sans lui, l'écran créateur invitait à resoumettre sans dire ce qui
+    #: manquait : le seul écran qui doit porter le reproche était le seul à ne
+    #: pas l'avoir.
+    dernier_motif: str | None
     proofs: list[PreuveRead]
 
     @classmethod
-    def assembler(cls, ligne, preuves) -> "CollaborationRead":
+    def assembler(
+        cls, ligne, preuves, *, dernier_motif=None, maintenant=None
+    ) -> "CollaborationRead":
         """La même lecture pour le commerce et pour l'arbitre.
 
         Elle vit ici plutôt que dans un routeur : deux routeurs en ont besoin,
@@ -88,12 +118,25 @@ class CollaborationRead(BaseModel):
             required_mention=ligne.required_mention,
             required_geotag=ligne.required_geotag,
             deadline_at=ligne.deadline_at,
+            secondes_avant_echeance=_restant(ligne.deadline_at, maintenant),
             status=ligne.status,
             attempts_count=ligne.attempts_count,
             needs_human_review=ligne.needs_human_review,
             approved_at=ligne.approved_at,
+            dernier_motif=dernier_motif,
             proofs=[PreuveRead.model_validate(p) for p in preuves],
         )
+
+
+def _restant(echeance: datetime, maintenant: datetime | None) -> int:
+    """Les secondes qui restent, plancher à zéro.
+
+    `maintenant` n'existe que pour les tests : un compte à rebours ne s'éprouve
+    pas sans pouvoir choisir l'heure, et figer l'échéance à la place ferait un
+    décor qui vieillit — celui d'un `valid_until` posé à une date qui a fini par
+    passer, déjà payé une fois sur ce dépôt.
+    """
+    return max(0, int((echeance - (maintenant or datetime.now(UTC))).total_seconds()))
 
 
 class MotifDeDecision(StrEnum):

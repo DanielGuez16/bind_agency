@@ -133,16 +133,22 @@ Ce qui ne se regroupe jamais : une PR qui ne compile pas, et une migration
 laissée à moitié. Le regroupement réduit l'attente, il ne réduit pas ce qui doit
 être vrai à chaque fusion.
 
-`main` est protégée : fusion par PR uniquement, **les trois jobs verts** — `api`,
-`app` et `e2e` — et à jour, sans contournement administrateur. La règle est dans
-le dépôt, pas dans la vigilance.
+`main` est protégée : fusion par PR uniquement, **les quatre jobs verts** —
+`api`, `app`, `e2e` et `perimetre` — et à jour, sans contournement
+administrateur. La règle est dans le dépôt, pas dans la vigilance.
 
-**Les trois, et `e2e` a été ajoutée après les deux autres.** Cette phrase disait
-« `api` et `app` » longtemps après l'arrivée de la e2e : elle attrapait déjà ce
-que les deux autres ne voient pas, et rien ne l'empêchait de rester rouge. Une
-PR a été fusionnée sur une e2e rouge — un test asservi à un `testID` retiré par
-la PR elle-même — sans que rien ne s'y oppose. Une règle écrite en dessous de ce
-qu'on attend réellement ne protège que ce qu'elle écrit.
+**Quatre, et le compte a déjà été faux deux fois.** Cette phrase a dit « `api`
+et `app` » longtemps après l'arrivée de la e2e, puis « les trois » après celle
+de `perimetre`. La première fois a coûté une PR fusionnée sur une e2e rouge —
+un test asservi à un `testID` retiré par la PR elle-même — sans que rien ne s'y
+oppose. La seconde s'est vue autrement : `gh pr merge` a refusé avec « 4 of 4
+required status checks are expected » alors que ce fichier en annonçait trois,
+et il a fallu interroger la protection pour savoir lequel manquait.
+
+Une règle écrite en dessous de ce qu'on attend réellement ne protège que ce
+qu'elle écrit — et une règle écrite **au-dessus** de ce qui existe fait chercher
+un job qui n'est pas là. Le compte ne se retient donc pas, il se demande : la
+commande est plus bas, sous « ce que la protection exige se vérifie ».
 
 **La première question est « la branche est-elle fusionnable », pas « où en est
 la CI ».** Une PR en conflit ne reçoit **aucune** exécution : GitHub construit
@@ -194,7 +200,9 @@ gh run view <id> --json jobs -q '.jobs[] | "\(.name): \(.conclusion)"'
 
 **Ce que la protection exige se vérifie, il ne se suppose pas.** Un job ajouté à
 la CI n'entre pas de lui-même dans les vérifications requises, et la fusion
-automatique ne l'attend alors pas :
+automatique ne l'attend alors pas. C'est aussi la seule réponse à « 4 of 4
+required status checks are expected » quand ce fichier en annonce un autre
+nombre — le dépôt a raison, le texte vieillit :
 
 ```
 gh api repos/DanielGuez16/bind_agency/branches/main/protection \
