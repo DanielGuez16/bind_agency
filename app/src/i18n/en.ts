@@ -316,10 +316,22 @@ export const en = {
       'We are still waiting for an answer. If your browser is asking, choose “Allow” — otherwise try again.',
     filReessayer: 'Try again',
     ficheOffres: 'What they offer',
+    ficheDuree: '{{count}} minutes',
+    fichePhotosCompte: '{{count}} photos',
+    fichePasEncore: 'Not open to you yet',
+    ficheAussiLibre: 'Free at {{heures}} too',
+    // Quatre repères pour un créneau, et non une phrase à trou : l'ordre
+    // des mots n'est pas le même d'une langue à l'autre, et « demain » ne
+    // se glisse pas là où « mardi » va.
+    ficheProchainAujourdhui: 'Next today at ',
+    ficheProchainDemain: 'Next tomorrow at ',
+    ficheProchainJour: 'Next {{jour}} at ',
+    ficheProchainDate: 'Next {{jour}} at ',
+    contrepartieAvant: 'One ',
+    contrepartieApres: ' on {{plateforme}}, within {{heures}} h',
     // Dit seulement quand le lien est la seule forme : sur un téléphone,
     // « revenir » n'est pas toujours un geste évident.
     ficheFerme: 'Not open to you yet',
-    ficheProchain: 'Next: {{heure}}',
     ficheComplet: 'Fully booked for now',
     ficheAttendu: 'They expect: {{quoi}}',
     ficheMention: 'a mention of {{mention}}',
@@ -332,7 +344,6 @@ export const en = {
     carteTitre: 'Menu',
     galerieTitre: 'Photos',
     cartePage: 'Page {{rang}}',
-    fichePhotos: 'Photos',
     fichePhotosDetail: '{{count}} · the room and the plates',
     ficheCarte: 'Menu',
     ficheCartePages: '{{count}} pages · read before you book',

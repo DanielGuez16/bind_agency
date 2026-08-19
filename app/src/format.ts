@@ -80,3 +80,65 @@ export function formatJour(isoDate: string, locale: SupportedLocale): string {
     new Date(annee, mois - 1, jour),
   );
 }
+
+/**
+ * Le repère d'un créneau : aujourd'hui, demain, un jour nommé, ou sa date.
+ *
+ * **« 08/08/2026, 14:30 » demandait de calculer.** C'est la remarque de la
+ * revue, et elle vise le seul endroit du produit où la date arrive avant la
+ * décision : « est-ce loin ? » se répond en soustrayant deux dates de tête,
+ * pendant qu'on essaie de choisir une prestation.
+ *
+ * **La fenêtre nommée s'arrête à sept jours.** Au-delà, « mardi » est ambigu —
+ * lequel — et la date complète redevient le repère le plus court. En deçà, elle
+ * est toujours plus longue à lire que le mot.
+ *
+ * **Le jour se calcule dans le fuseau du salon, jamais dans celui du
+ * téléphone.** Un créneau de 23 h à Miami est encore « aujourd'hui » pour qui
+ * réserve depuis Madrid, où il est déjà 5 h du matin le lendemain : le repère
+ * décrit le moment où l'on se présente au comptoir. Comparer deux instants
+ * suffirait à trouver l'écart en heures, jamais à trouver le jour.
+ *
+ * Rend la forme et ses morceaux, pas une phrase : c'est l'écran qui choisit sa
+ * clé de traduction, l'ordre des mots n'étant pas le même d'une langue à
+ * l'autre.
+ */
+export function repereDuCreneau(
+  isoUtc: string,
+  locale: SupportedLocale,
+  timeZone: string,
+  maintenant: Date = new Date(),
+): { quand: 'aujourdhui' | 'demain' | 'jour' | 'date'; libelle: string; heure: string } {
+  const heure = formatHeure(isoUtc, locale, timeZone);
+
+  // La date **civile** dans le fuseau du salon, en morceaux : `en-CA` rend
+  // « 2026-08-08 », qui se compare comme une chaîne et se soustrait comme une
+  // date sans traîner d'heure derrière elle.
+  const jourCivil = (quand: Date) =>
+    new Intl.DateTimeFormat('en-CA', { timeZone, dateStyle: 'short' }).format(quand);
+
+  const duCreneau = jourCivil(new Date(isoUtc));
+  const duJour = jourCivil(maintenant);
+
+  const enJours = (iso: string) => {
+    const [a, m, j] = iso.split('-').map(Number);
+    return Date.UTC(a, m - 1, j) / 86_400_000;
+  };
+  const ecart = enJours(duCreneau) - enJours(duJour);
+
+  if (ecart === 0) return { quand: 'aujourdhui', libelle: '', heure };
+  if (ecart === 1) return { quand: 'demain', libelle: '', heure };
+  if (ecart > 1 && ecart < 7) {
+    return {
+      quand: 'jour',
+      libelle: new Intl.DateTimeFormat(locale, { weekday: 'long', timeZone }).format(
+        new Date(isoUtc),
+      ),
+      heure,
+    };
+  }
+  // Au-delà d'une semaine, et **aussi en arrière** : un créneau qui serait dans
+  // le passé n'a pas de repère humain, et lui en donner un — « lundi » — le
+  // ferait passer pour à venir. La date brute est alors la réponse honnête.
+  return { quand: 'date', libelle: formatDate(isoUtc, locale, timeZone), heure };
+}

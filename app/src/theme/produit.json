@@ -116,7 +116,8 @@
       "counterpart": {
         "en": "One story within 48 h",
         "es": "Una historia en 48 h"
-      }
+      },
+      "delaiHeures": 48
     },
     "post": {
       "level": 2,
@@ -129,7 +130,8 @@
       "counterpart": {
         "en": "One feed post within 48 h",
         "es": "Una publicación en 48 h"
-      }
+      },
+      "delaiHeures": 48
     },
     "reel": {
       "level": 3,
@@ -142,7 +144,8 @@
       "counterpart": {
         "en": "One dedicated reel within 72 h",
         "es": "Un reel dedicado en 72 h"
-      }
+      },
+      "delaiHeures": 72
     },
     "rules": [
       "mot toujours écrit, jamais abrégé",
@@ -150,7 +153,8 @@
       "badge sur photo posé sur scrim.badge",
       "la matière porte le sens, jamais la teinte seule",
       "jamais de chiffre de niveau dans le badge"
-    ]
+    ],
+    "$delai": "Le délai était dans la prose de `counterpart` — « One story within 48 h » — et la fiche v3 a besoin de le composer autrement : « une story sur Instagram, sous 48 h », le palier en gras et le réseau nommé. Un nombre extrait d'une phrase, et non une seconde vérité : les deux formes vivent côte à côte parce que deux écrans les demandent différemment, et un test vérifie qu'elles s'accordent. Ce n'est pas une échéance servie — celle-là arrive avec la réservation, en `deadline_at` — c'est la promesse du palier, qui est une donnée de produit."
   },
   "badge": {
     "$pourquoi": "Copie de produit, arbitrée avec la fondatrice, et sans rapport avec la direction artistique. La v1.0 ne la mentionne pas parce qu'elle n'a rien à en dire.",

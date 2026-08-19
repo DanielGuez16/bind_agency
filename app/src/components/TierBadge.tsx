@@ -126,13 +126,56 @@ function Glyphe({ tier }: { tier: Palier }) {
  * C'est elle qui informe, pas le badge. Le badge situe, la phrase dit ce qu'on
  * s'engage à faire et sous quel délai — et elle accompagne toujours le badge
  * sur une carte.
+ *
+ * **Avec `plateforme`, elle nomme le réseau et met le palier en gras.** C'est
+ * la forme de la fiche v3 : les testeurs cherchaient le réseau dans le badge à
+ * trois barres, qui n'a jamais porté que le palier. Les deux sont maintenant
+ * écrits côte à côte — « One story on Instagram, within 48 h » ne se décode
+ * pas. Sans `plateforme`, c'est la phrase courte, celle des écrans où la place
+ * manque et où le badge est à côté pour situer.
+ *
+ * **Deux formes et non une, assumées.** La phrase courte vit dans
+ * `produit.json` en toutes lettres ; la longue se compose de trois morceaux. Un
+ * test vérifie qu'elles s'accordent sur le délai — c'est le seul endroit où
+ * elles pourraient diverger sans qu'on le voie.
  */
-export function LigneDeContrepartie({ tier }: { tier: Palier }) {
-  const { locale } = useI18n();
+export function LigneDeContrepartie({
+  tier,
+  plateforme,
+  testID,
+}: {
+  tier: Palier;
+  /** Le réseau, quand l'écran a la place de l'écrire. */
+  plateforme?: string;
+  testID?: string;
+}) {
+  const { t, locale } = useI18n();
   const config = tierTokens[tier];
+
+  if (plateforme === undefined) {
+    return (
+      <Texte variante="type.caption" couleur="ink.soft" testID={testID}>
+        {config.counterpart[locale] ?? config.counterpart.en}
+      </Texte>
+    );
+  }
+
+  // Le mot du palier en minuscules : `label` le porte en capitales, qui sont
+  // la forme du badge et non celle d'une phrase. `toLocaleLowerCase` et non
+  // `toLowerCase` — le turc n'est pas dans les langues du produit, mais la
+  // règle ne coûte rien et ne se remarque qu'une fois qu'elle a manqué.
+  const mot = (config.label[locale] ?? config.label.en).toLocaleLowerCase(locale);
+
   return (
-    <Texte variante="type.caption" couleur="ink.soft">
-      {config.counterpart[locale] ?? config.counterpart.en}
+    <Texte variante="type.body" couleur="ink.soft" testID={testID}>
+      {t('parcours.contrepartieAvant')}
+      <Texte variante="type.bodyStrong" couleur="ink.default">
+        {mot}
+      </Texte>
+      {t('parcours.contrepartieApres', {
+        plateforme,
+        heures: String(config.delaiHeures),
+      })}
     </Texte>
   );
 }

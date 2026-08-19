@@ -23,23 +23,50 @@ import {
   Button,
   Icone,
   LigneDeContrepartie,
-  ServiceRow,
+  MediaFallback,
   SkeletonFiche,
-  StatusMessage,
   Texte,
   type NomIcone,
 } from '../components';
-import { formatDateTime, formatNumber } from '../format';
+import { formatHeure, formatNumber, repereDuCreneau } from '../format';
 import { useI18n } from '../i18n';
 import { urlImage } from './FilScreen';
-import { en } from '../i18n/en';
 import { elevationDeCarte, elevationFlottante, radius, useTheme } from '../theme';
 import { Ecran } from './Ecran';
-import { messageDObstacle } from './obstacle';
+import { EcartAuSeuil } from './PaliersScreen';
+import { nomDePlateforme } from './obstacle';
 import { useRequete } from './useRequete';
 import { VisionneuseDeCarte, VisionneuseDeGalerie } from './Visionneuses';
 
-const CODES_CONNUS = new Set(Object.keys(en.errors));
+/**
+ * La vignette d'une prestation : 64 points, comme la planche.
+ *
+ * Elle a doublé — 44 auparavant — parce qu'elle a changé de rôle : elle
+ * illustrait une ligne de liste, elle accompagne maintenant un bloc dont le
+ * titre fait 22 points. À 44 sous un titre de cette taille, elle passait pour
+ * une puce.
+ */
+const VIGNETTE_DE_L_OFFRE = 64;
+
+/**
+ * Ce qui s'atténue sur une prestation fermée : l'image, et rien d'autre.
+ *
+ * Le bloc entier était à 75 %, ce qui effaçait **l'explication** en même temps
+ * que la prestation — c'est-à-dire le seul élément utile d'un bloc fermé.
+ */
+const OPACITE_FERMEE = 0.6;
+
+/**
+ * Combien de créneaux suivants s'écrivent à côté du bouton.
+ *
+ * Deux : ils disent qu'il y a un choix, ce qu'un bouton seul ne dit pas. Trois
+ * commencerait à être une liste, et une liste appartient à l'écran des
+ * créneaux.
+ */
+const AUTRES_CRENEAUX = 2;
+
+/** La hauteur de la couverture, relevée sur la planche. */
+const HAUTEUR_DE_COUVERTURE = 270;
 
 export function FicheScreen({
   businessId,
@@ -72,25 +99,51 @@ export function FicheScreen({
   return (
     <Ecran
       onRetour={onRetour} requete={requete} squelette={<SkeletonFiche testID="squelette-fiche" />} testID="ecran-fiche">
-      {(fiche) => (
-        <View style={{ gap: 12 }}>
-          <Texte variante="type.screenTitle" ellipseSurNomPropre>
-            {fiche.name}
-          </Texte>
-          {fiche.address ? (
-            <Texte variante="type.caption" couleur="ink.soft">
-              {fiche.address}
-            </Texte>
-          ) : null}
-
-          {/* **La carte a son propre accès, avant les offres.** Elle se
-              consulte, la galerie se fait défiler : les ranger ensemble ferait
-              chercher un plat entre deux photos de salle. Et elle vient avant,
-              parce qu'une offre qui laisse un choix ne se décide pas sans
-              elle. */}
-          <AccesALaCarte
+      {(fiche) => {
+        // Le serveur rend les offres dans son ordre ; on ne le rejoue pas, on
+        // le partitionne. Un tri refait ici déciderait quelle prestation passe
+        // devant, ce que le produit ne fait jamais.
+        const ouvertes = fiche.offres.filter((offre) => offre.accessible);
+        const fermees = fiche.offres.filter((offre) => !offre.accessible);
+        return (
+        <View style={{ gap: 18 }}>
+          {/* **La galerie s'ouvre depuis la couverture elle-même.** Elle
+              n'avait pas été mentionnée dans la revue, et c'était le signe
+              qu'elle ne se voyait pas : une ligne « 12 photos » sous l'adresse
+              se lit comme une rubrique, un compte posé sur l'image se lit comme
+              la promesse que l'objet en cache onze autres. */}
+          <Couverture
             fiche={fiche}
             onOuvrirLaGalerie={() => setOuvert('galerie')}
+          />
+
+          <View style={{ gap: 10 }}>
+            <View style={{ gap: 3 }}>
+              <Texte variante="type.screenTitle" ellipseSurNomPropre>
+                {fiche.name}
+              </Texte>
+              {fiche.address ? (
+                <Texte variante="type.body" couleur="ink.soft">
+                  {fiche.address}
+                </Texte>
+              ) : null}
+            </View>
+            {/* **La catégorie, et elle seule.** La planche pose deux étiquettes,
+                dont « OPEN UNTIL 19:00 » : les horaires ne sont pas servis sur
+                la fiche publique, et les deviner depuis autre chose serait
+                annoncer une fermeture qu'on ne peut pas vérifier. L'étiquette
+                reviendra avec le champ. */}
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <Etiquette texte={t(`categories.${fiche.category}`)} testID="categorie" />
+            </View>
+          </View>
+
+          {/* **La carte devient une ligne nommée, entre l'identité et les
+              prestations.** C'est là qu'on la cherche : avant de choisir, pas
+              après. Elle se consulte, la galerie se fait défiler — les ranger
+              ensemble ferait chercher un plat entre deux photos de salle. */}
+          <AccesALaCarte
+            fiche={fiche}
             onOuvrirLaCarte={() => setOuvert('carte')}
             onSortirVersLeLien={() => setOuvert('sortie')}
           />
@@ -148,19 +201,38 @@ export function FicheScreen({
             </Voile>
           </Modal>
 
-          <Texte variante="type.bodyStrong">{t('parcours.ficheOffres')}</Texte>
-          {fiche.offres.map((offre) => (
-            <Offre
-              key={offre.tier_offer_id}
-              offre={offre}
-              // Le fuseau du salon : un « prochain créneau » se lit là où il a
-              // lieu, jamais dans le fuseau du téléphone.
-              timezone={fiche.timezone}
-              onReserver={() => onReserver(offre, fiche)}
-            />
-          ))}
+          <View style={{ gap: 12 }}>
+            <Texte variante="type.section">{t('parcours.ficheOffres')}</Texte>
+            {/* **Les ouvertes d'abord, les fermées ensuite, séparées par un
+                titre.** Mêlées, une prestation fermée se lisait comme une
+                erreur d'affichage ; le séparateur dit ce qui commence, et la
+                règle du produit — visible ici, jamais dans le fil — cesse
+                d'être un mystère. */}
+            {ouvertes.map((offre) => (
+              <Offre
+                key={offre.tier_offer_id}
+                offre={offre}
+                // Le fuseau du salon : un « prochain créneau » se lit là où il
+                // a lieu, jamais dans le fuseau du téléphone.
+                timezone={fiche.timezone}
+                onReserver={() => onReserver(offre, fiche)}
+              />
+            ))}
+            {fermees.length ? (
+              <SeparateurNomme texte={t('parcours.fichePasEncore')} testID="pas-encore-ouvert" />
+            ) : null}
+            {fermees.map((offre) => (
+              <Offre
+                key={offre.tier_offer_id}
+                offre={offre}
+                timezone={fiche.timezone}
+                onReserver={() => onReserver(offre, fiche)}
+              />
+            ))}
+          </View>
         </View>
-      )}
+        );
+      }}
     </Ecran>
   );
 }
@@ -190,12 +262,10 @@ export function FicheScreen({
  */
 function AccesALaCarte({
   fiche,
-  onOuvrirLaGalerie,
   onOuvrirLaCarte,
   onSortirVersLeLien,
 }: {
   fiche: FichePublique;
-  onOuvrirLaGalerie: () => void;
   onOuvrirLaCarte: () => void;
   onSortirVersLeLien: () => void;
 }) {
@@ -204,56 +274,138 @@ function AccesALaCarte({
 
   const aDesPages = fiche.menu_pages.length > 0;
   const aUnLien = Boolean(fiche.menu_url);
-  const aUneCarte = aDesPages || aUnLien;
-  const aDesPhotos = fiche.photos.length > 0;
 
-  if (!aUneCarte && !aDesPhotos) return null;
+  // Rien du tout quand il n'y a rien. Un salon de beauté n'a pas de carte, et
+  // une ligne vide serait un cul-de-sac de plus.
+  if (!aDesPages && !aUnLien) return null;
 
   return (
-    <View
-      testID="acces-a-la-carte"
-      style={{
-        borderWidth: 1,
-        borderColor: c['line.default'],
-        borderRadius: radius['radius.lg'],
-        backgroundColor: c['bg.surface'],
-        // « Un coin de 18 px sans ombre flotte au lieu de se poser » : passation §2.
-        ...elevationDeCarte(),
-      }}
-    >
-      {aDesPhotos ? (
-        <LigneDAcces
-          glyphe="image"
-          titre={t('parcours.fichePhotos')}
-          detail={t('parcours.fichePhotosDetail', {
-            count: formatNumber(fiche.photos.length, locale),
+    <LigneDAcces
+      glyphe="carte"
+      // Le glyphe de sortie **remplace** le chevron quand la carte n'existe
+      // qu'ailleurs. Deux flèches différentes pour deux destinations, et la
+      // seconde se lit sans avoir été apprise.
+      sortie={!aDesPages}
+      titre={t('parcours.ficheCarte')}
+      detail={
+        aDesPages
+          ? t('parcours.ficheCartePages', {
+              count: formatNumber(fiche.menu_pages.length, locale),
+            })
+          : t('parcours.ficheCarteSurLeurSite')
+      }
+      onPress={aDesPages ? onOuvrirLaCarte : onSortirVersLeLien}
+      testID="acces-carte"
+    />
+  );
+}
+
+/**
+ * La couverture, et le compte de photos posé dessus.
+ *
+ * **La galerie n'avait pas été mentionnée dans la revue**, et c'était le signe
+ * qu'elle ne se voyait pas : une ligne « 12 photos » sous l'adresse se lit
+ * comme une rubrique parmi d'autres. Posé **sur** l'image, le compte annonce
+ * que l'objet lui-même en cache onze autres — c'est l'image qui invite, pas
+ * une entrée de liste.
+ *
+ * **Sans photo, pas de couverture.** Un aplat gris de 270 points en tête d'une
+ * fiche serait une absence qui prend plus de place que ce qu'elle remplace ;
+ * l'identité remonte alors d'elle-même.
+ */
+function Couverture({
+  fiche,
+  onOuvrirLaGalerie,
+}: {
+  fiche: FichePublique;
+  onOuvrirLaGalerie: () => void;
+}) {
+  const { api } = useApi();
+  const { t, locale } = useI18n();
+  const { color: c } = useTheme();
+
+  // **La première photo de la galerie sert de couverture par défaut.** Sans ce
+  // repli, un salon qui a douze photos et pas de couverture déclarée perdait
+  // l'entrée de sa galerie tout entière : elle vit maintenant sur l'image, et
+  // sans image il n'y a plus de porte. La première photo est une photo du lieu
+  // — c'est ce que la galerie contient — donc elle tient ce rôle sans mentir.
+  const source = urlImage(api.urlDuMedia(fiche.cover_photo_key ?? fiche.photos[0] ?? null));
+  if (!source) return null;
+
+  const compte = fiche.photos.length;
+
+  return (
+    <View testID="couverture" style={{ height: HAUTEUR_DE_COUVERTURE }}>
+      <Image source={source} resizeMode="cover" style={{ width: '100%', height: '100%' }} />
+      {compte > 0 ? (
+        <Pressable
+          testID="acces-galerie"
+          accessibilityRole="button"
+          accessibilityLabel={t('parcours.fichePhotosDetail', {
+            count: formatNumber(compte, locale),
           })}
           onPress={onOuvrirLaGalerie}
-          avecFilet={aUneCarte}
-          testID="acces-galerie"
-        />
+          style={{
+            position: 'absolute',
+            right: 18,
+            bottom: 16,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 7,
+            paddingHorizontal: 14,
+            paddingVertical: 7,
+            borderRadius: radius['radius.pill'],
+            // Le voile de badge, et non un blanc écrit ici : c'est le jeton du
+            // système pour ce qui se pose sur une image dont on ne sait rien.
+            backgroundColor: c['scrim.badge'],
+          }}
+        >
+          <Icone nom="image" couleur="ink.default" taille={16} />
+          <Texte variante="type.label">
+            {t('parcours.fichePhotosCompte', { count: formatNumber(compte, locale) })}
+          </Texte>
+        </Pressable>
       ) : null}
+    </View>
+  );
+}
 
-      {aUneCarte ? (
-        <LigneDAcces
-          glyphe="carte"
-          teinte
-          // Le glyphe de sortie **remplace** le chevron quand la carte n'existe
-          // qu'ailleurs. Deux flèches différentes pour deux destinations
-          // différentes, et la seconde se lit sans avoir été apprise.
-          sortie={!aDesPages}
-          titre={t('parcours.ficheCarte')}
-          detail={
-            aDesPages
-              ? t('parcours.ficheCartePages', {
-                  count: formatNumber(fiche.menu_pages.length, locale),
-                })
-              : t('parcours.ficheCarteSurLeurSite')
-          }
-          onPress={aDesPages ? onOuvrirLaCarte : onSortirVersLeLien}
-          testID="acces-carte"
-        />
-      ) : null}
+/** Une étiquette de la fiche : un fait, jamais une action. */
+function Etiquette({ texte, testID }: { texte: string; testID?: string }) {
+  const { color: c } = useTheme();
+  return (
+    <View
+      testID={testID}
+      style={{
+        borderRadius: radius['radius.sm'],
+        backgroundColor: c['bg.deep'],
+        paddingHorizontal: 11,
+        paddingVertical: 6,
+      }}
+    >
+      <Texte variante="type.label">{texte.toUpperCase()}</Texte>
+    </View>
+  );
+}
+
+/**
+ * Un titre de section entre deux filets.
+ *
+ * Il dit **ce qui commence**, et c'est ce qui manquait : mêlée aux autres, une
+ * prestation fermée se lisait comme une erreur d'affichage.
+ */
+function SeparateurNomme({ texte, testID }: { texte: string; testID: string }) {
+  const { color: c } = useTheme();
+  return (
+    <View
+      testID={testID}
+      style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 4 }}
+    >
+      <View style={{ flex: 1, height: 1, backgroundColor: c['line.default'] }} />
+      <Texte variante="type.monoSmall" couleur="ink.mute">
+        {texte.toUpperCase()}
+      </Texte>
+      <View style={{ flex: 1, height: 1, backgroundColor: c['line.default'] }} />
     </View>
   );
 }
@@ -394,6 +546,29 @@ export function domaineDe(lien: string): string {
 
 
 
+/**
+ * Une prestation, et les deux questions qu'elle pose.
+ *
+ * **La cause trouvée par Design.** Une ligne portait cinq informations de
+ * nature différente — le nom, la durée, un badge à trois barres, une date brute
+ * et un bouton — dont deux codées. Elle pose en fait deux questions :
+ * **qu'est-ce que je donne** et **quand je viens**. Une ligne chacune, un
+ * glyphe chacune, le mot qui décide en gras. Le reste était du remplissage.
+ *
+ * **Le badge codé disparaît d'ici.** Il disait le palier ; les testeurs y
+ * cherchaient le réseau, qu'il n'a jamais porté. Les deux sont maintenant
+ * écrits côte à côte. Il survit sur le fil, où une carte n'a pas la place d'une
+ * phrase, et sur l'écran des paliers, où il est le sujet.
+ *
+ * **Le bouton passe de 316 à 89 points.** Trois aplats orange pleine largeur
+ * empilés faisaient trois promotions. Il est maintenant dimensionné sur son
+ * texte, et l'orange cesse d'être la surface dominante sans disparaître.
+ *
+ * **Une prestation fermée garde son opacité pleine.** À 75 %, l'explication
+ * devenait illisible en même temps que la prestation — c'est-à-dire que le seul
+ * élément utile d'un bloc fermé était celui qu'on effaçait. Seule la vignette
+ * s'atténue, et l'obstacle prend un encart à lui.
+ */
 function Offre({
   offre,
   timezone,
@@ -412,83 +587,267 @@ function Offre({
     offre.required_geotag ? t('parcours.ficheLieu') : null,
   ].filter(Boolean);
 
+  const vignette = urlImage(api.urlDeLaVignette(offre.photo_key));
+  const creneaux = offre.prochains_creneaux;
+
   return (
     <View
       testID={`offre-${offre.tier_offer_id}`}
       style={{
         borderRadius: radius['radius.lg'],
-        borderWidth: 1,
-        borderColor: c['line.default'],
-        overflow: 'hidden',
-        // Une offre fermée est visiblement en retrait. Le mot et l'obstacle
-        // disent le reste ; la couleur seule ne porte rien.
-        opacity: offre.accessible ? 1 : 0.75,
+        backgroundColor: c['bg.surface'],
+        padding: 18,
+        gap: 14,
+        // **Le filet remplace l'ombre sur ce qui est fermé, et c'est la
+        // distinction qui reste quand l'opacité s'en va.** Une prestation
+        // ouverte se pose sur la page ; une fermée est décrite, pas offerte.
+        ...(offre.accessible
+          ? elevationDeCarte()
+          : { borderWidth: 1, borderColor: c['line.default'] }),
       }}
     >
-      <ServiceRow
-        name={offre.name}
-        meta={offre.duration_minutes === null ? '' : `${offre.duration_minutes} min`}
-        tier={offre.content_format}
-        // Une vignette dans une liste d'offres. Le détail, lui, garde
-        // l'original.
-        thumbnail={urlImage(api.urlDeLaVignette(offre.photo_key))}
-      />
-      <View style={{ padding: 12, gap: 6 }}>
-        {/* **La raison d'ouvrir la carte avant de réserver.** Sans cette ligne,
-            « Menu du jour » se réserve comme une manucure : on croit savoir ce
-            qu'on prend. En mono et sous le nom, là où l'œil descend après
-            l'avoir lu — pas dans une note d'aide en bas de l'écran, qui arrive
-            après la décision. */}
-        {offre.leaves_choice ? (
-          <Texte variante="type.monoSmall" couleur="ink.soft" testID="laisse-un-choix">
-            {t('parcours.offreLaisseUnChoix')}
+      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 14 }}>
+        <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+          <Texte variante="type.section" testID="offre-nom">
+            {offre.name}
           </Texte>
-        ) : null}
-        <LigneDeContrepartie tier={offre.content_format} />
-        {attendu.length ? (
-          <Texte variante="type.caption" couleur="ink.soft" testID="attendu">
-            {t('parcours.ficheAttendu', { quoi: attendu.join(' · ') })}
-          </Texte>
-        ) : null}
-
-        {offre.accessible ? (
-          <>
-            <Texte variante="type.mono" couleur="ink.soft" testID="prochain-creneau">
-              {offre.prochains_creneaux.length
-                ? t('parcours.ficheProchain', {
-                    // Dans le fuseau du salon, mois en lettres, sans
-                    // secondes : « Next: 11/08/2026 16:45:00 » était la forme
-                    // brute de `toLocaleString`.
-                    heure: formatDateTime(offre.prochains_creneaux[0], locale, timezone),
-                  })
-                : t('parcours.ficheComplet')}
+          {offre.duration_minutes === null ? null : (
+            <Texte variante="type.caption" couleur="ink.mute">
+              {t('parcours.ficheDuree', {
+                count: formatNumber(offre.duration_minutes, locale),
+              })}
             </Texte>
-            {/* Retiré, pas grisé, quand il ne reste plus rien à prendre. */}
-            {offre.prochains_creneaux.length || !offre.requires_booking ? (
-              <Button label={t('parcours.reserver')} onPress={onReserver} />
-            ) : null}
-          </>
-        ) : (
-          <View style={{ gap: 4 }} testID="offre-fermee">
-            <StatusMessage
-              level="neutral"
-              body={t('parcours.ficheFerme')}
-            />
-            {/* Les mêmes codes que sur l'écran des paliers. Deux vocabulaires
-                pour un même refus feraient croire à deux causes. */}
-            {offre.obstacles.map((obstacle, index) => (
-              <Texte
-                key={`${obstacle.raison}-${index}`}
-                variante="type.caption"
-                couleur="ink.soft"
-                testID={`obstacle-${obstacle.raison}`}
-              >
-                {messageDObstacle(t, obstacle, CODES_CONNUS, offre.platform, locale)}
-              </Texte>
-            ))}
-          </View>
-        )}
+          )}
+        </View>
+        <View
+          testID="offre-vignette"
+          style={{
+            width: VIGNETTE_DE_L_OFFRE,
+            height: VIGNETTE_DE_L_OFFRE,
+            borderRadius: radius['radius.photo'],
+            overflow: 'hidden',
+            // **La seule chose qui s'atténue sur une prestation fermée.**
+            // L'image n'informe pas, elle attire ; la retirer entièrement
+            // ferait un trou, la laisser pleine ferait une promesse.
+            opacity: offre.accessible ? 1 : OPACITE_FERMEE,
+          }}
+        >
+          {vignette ? (
+            <Image source={vignette} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+          ) : (
+            <MediaFallback monogramme={offre.name} height={VIGNETTE_DE_L_OFFRE} />
+          )}
+        </View>
       </View>
+
+      <View style={{ gap: 8 }}>
+        {/* **Ce que je donne.** Le palier en gras dans la phrase, le réseau par
+            sa marque : c'est la correction entière du badge codé. */}
+        <LigneAGlyphe glyphe="paliers" testID="ligne-contrepartie">
+          <LigneDeContrepartie
+            tier={offre.content_format}
+            plateforme={nomDePlateforme(offre.platform)}
+          />
+        </LigneAGlyphe>
+
+        {/* **Quand je viens.** Absente d'une prestation fermée : il n'y a pas
+            de créneau à annoncer pour ce qu'on ne peut pas prendre, et en
+            montrer un ferait de l'obstacle une formalité. */}
+        {offre.accessible ? (
+          <LigneAGlyphe glyphe="horloge" testID="prochain-creneau">
+            <ProchainCreneau creneaux={creneaux} timezone={timezone} />
+          </LigneAGlyphe>
+        ) : null}
+      </View>
+
+      {/* **La raison d'ouvrir la carte avant de réserver.** Sans cette ligne,
+          « Menu du jour » se réserve comme une manucure : on croit savoir ce
+          qu'on prend. */}
+      {offre.leaves_choice ? (
+        <Texte variante="type.caption" couleur="ink.mute" testID="laisse-un-choix">
+          {t('parcours.offreLaisseUnChoix')}
+        </Texte>
+      ) : null}
+      {attendu.length ? (
+        <Texte variante="type.caption" couleur="ink.mute" testID="attendu">
+          {t('parcours.ficheAttendu', { quoi: attendu.join(' · ') })}
+        </Texte>
+      ) : null}
+
+      {offre.accessible ? (
+        <ActionDeLOffre
+          creneaux={creneaux}
+          requiertReservation={offre.requires_booking}
+          timezone={timezone}
+          onReserver={onReserver}
+        />
+      ) : (
+        <ObstacleDeLOffre offre={offre} />
+      )}
+    </View>
+  );
+}
+
+/** Une ligne de la prestation : son glyphe, et ce qu'elle dit. */
+function LigneAGlyphe({
+  glyphe,
+  children,
+  testID,
+}: {
+  glyphe: NomIcone;
+  children: ReactNode;
+  testID: string;
+}) {
+  return (
+    <View testID={testID} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 9 }}>
+      {/* Deux points de retrait : le glyphe s'aligne sur la hauteur d'x de la
+          première ligne et non sur le haut de sa boîte, faute de quoi il
+          flotte au-dessus du texte qu'il désigne. */}
+      <View style={{ marginTop: 2 }}>
+        <Icone nom={glyphe} couleur="ink.soft" taille={18} />
+      </View>
+      <View style={{ flex: 1, minWidth: 0 }}>{children}</View>
+    </View>
+  );
+}
+
+/**
+ * Le prochain créneau, en repère humain.
+ *
+ * « 08/08/2026, 14:30 » demandait de calculer. Au-delà d'une semaine la date
+ * complète revient : « mardi » y devient ambigu, et le mot cesse d'être plus
+ * court que la date.
+ */
+function ProchainCreneau({ creneaux, timezone }: { creneaux: string[]; timezone: string }) {
+  const { t, locale } = useI18n();
+
+  if (creneaux.length === 0) {
+    return (
+      <Texte variante="type.body" couleur="ink.soft">
+        {t('parcours.ficheComplet')}
+      </Texte>
+    );
+  }
+
+  const repere = repereDuCreneau(creneaux[0], locale, timezone);
+  const cle =
+    repere.quand === 'aujourdhui'
+      ? 'parcours.ficheProchainAujourdhui'
+      : repere.quand === 'demain'
+        ? 'parcours.ficheProchainDemain'
+        : repere.quand === 'jour'
+          ? 'parcours.ficheProchainJour'
+          : 'parcours.ficheProchainDate';
+
+  // La phrase se coupe sur l'heure, qui est le mot qui décide : elle est en
+  // gras, le reste ne l'est pas. Deux clés plutôt qu'un balisage dans la
+  // traduction — une traductrice ne doit pas avoir à placer une balise.
+  return (
+    <Texte variante="type.body" couleur="ink.soft">
+      {t(cle, { jour: repere.libelle })}
+      <Texte variante="type.bodyStrong" couleur="ink.default">
+        {repere.heure}
+      </Texte>
+    </Texte>
+  );
+}
+
+/**
+ * Le bouton et ce qui l'accompagne.
+ *
+ * **Une pilule dimensionnée sur son texte**, et non un aplat pleine largeur.
+ * Trois aplats orange empilés faisaient trois promotions ; l'orange reste, il
+ * cesse d'être la surface dominante.
+ *
+ * **Les créneaux suivants tiennent à côté du bouton.** Ils occupent la place
+ * que le bouton libère, et disent qu'il y a un choix — ce qu'un bouton seul ne
+ * dit pas. Absents quand il n'y en a qu'un : « et aussi » suivi de rien serait
+ * pire que le silence.
+ */
+function ActionDeLOffre({
+  creneaux,
+  requiertReservation,
+  timezone,
+  onReserver,
+}: {
+  creneaux: string[];
+  requiertReservation: boolean;
+  timezone: string;
+  onReserver: () => void;
+}) {
+  const { t, locale } = useI18n();
+
+  // Retiré, pas grisé, quand il ne reste plus rien à prendre.
+  if (creneaux.length === 0 && requiertReservation) return null;
+
+  const autres = creneaux.slice(1, 1 + AUTRES_CRENEAUX);
+
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+      {/* **`fullWidth={false}`, et c'est tout ce qu'il fallait.** Le bouton du
+          système est déjà une pilule ; il s'étirait parce que `fullWidth` vaut
+          `true` par défaut, et personne ne l'avait dit non. Les 316 points
+          venaient de là. La largeur exacte reste celle que l'écart intérieur du
+          système donne — la planche en mesure 89 avec un écart de 24, le nôtre
+          est à 16 : c'est un réglage de jeton, pas de cet écran. */}
+      <Button
+        label={t('parcours.reserver')}
+        onPress={onReserver}
+        fullWidth={false}
+        testID="reserver"
+      />
+      {autres.length ? (
+        <Texte variante="type.caption" couleur="ink.mute" style={{ flex: 1 }} testID="autres-creneaux">
+          {t('parcours.ficheAussiLibre', {
+            heures: autres.map((iso) => formatHeure(iso, locale, timezone)).join(', '),
+          })}
+        </Texte>
+      ) : null}
+    </View>
+  );
+}
+
+/**
+ * Ce qui manque, dans un encart à lui.
+ *
+ * **« Pas assez visible » venait d'une ligne de légende sous un bloc à 75 %
+ * d'opacité.** L'obstacle passe de treize points en gris à seize en gras, avec
+ * son chiffre dans la phrase, et l'encart le sépare de la prestation qu'il
+ * ferme au lieu de le noyer dedans.
+ *
+ * **Les mêmes codes que sur l'écran des paliers**, et le même composant : deux
+ * vocabulaires pour un même refus feraient croire à deux causes. C'est aussi
+ * lui qui porte la règle des 60 % — l'écart se chiffre et la barre se dessine
+ * au-dessus, en dessous il ne reste que le seuil.
+ */
+function ObstacleDeLOffre({ offre }: { offre: OffreDeLaFiche }) {
+  const { t } = useI18n();
+  const { color: c } = useTheme();
+
+  return (
+    <View
+      testID="offre-fermee"
+      style={{
+        borderRadius: radius['radius.md'],
+        backgroundColor: c['bg.deep'],
+        padding: 14,
+        gap: 9,
+      }}
+    >
+      {offre.obstacles.map((obstacle, index) => (
+        <EcartAuSeuil
+          key={`${obstacle.raison}-${index}`}
+          obstacle={obstacle}
+          platform={offre.platform}
+          teinte="brand.500"
+        />
+      ))}
+      {/* **La règle du produit, dite par l'écran lui-même.** Une prestation
+          fermée reste visible sur la fiche et n'apparaît jamais dans le fil ;
+          sans cette phrase, sa présence ici se lit comme une erreur. */}
+      <Texte variante="type.caption" couleur="ink.soft" testID="pourquoi-visible">
+        {t('parcours.ficheFerme')}
+      </Texte>
     </View>
   );
 }
