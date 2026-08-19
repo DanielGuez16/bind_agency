@@ -338,6 +338,12 @@ export const en = {
     ficheMention: 'a mention of {{mention}}',
     ficheLieu: 'a location tag',
     creneauxTitre: 'Pick a time',
+    creneauxEngagementTitre: 'What you commit to',
+    creneauxEngagementCiter: 'Tag and mention {{quoi}}',
+    creneauxEngagementPublierAvant: 'Publish by ',
+    creneauxAnnulationTitre: 'If you cannot come',
+    creneauxAnnulationCorps: 'Cancel free up to {{heures}} h before. After that, or if you do not show up, it counts against your reliability score.',
+    creneauxAnnulationScore: 'The score is gradual and recovers as you honour the next ones.',
     creneauxRecapitulatif: '{{jour}}, {{heure}}',
     // **Trois états distincts, et non un mot pour trois.** « Fermé » n'est pas
     // « complet », et « écoulé » n'est ni l'un ni l'autre : à 20 h, aujourd'hui

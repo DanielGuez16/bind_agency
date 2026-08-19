@@ -50,6 +50,7 @@ import { Ecran } from './Ecran';
 import { useRequete } from './useRequete';
 import { elevationDeCarte, radius, useTheme } from '../theme';
 import { BandeDeJours } from './creneau/BandeDeJours';
+import { Engagement } from './creneau/Engagement';
 import {
   etatDuJour,
   JOURS_DE_LA_BANDE,
@@ -233,6 +234,19 @@ export function CreneauxScreen({
               onChange={choisir}
               testID="apres-midi"
             />
+
+            {/* **L'engagement, au-dessus du bouton et non derrière un lien.**
+                C'est le seul moment du parcours où il peut être dit avant
+                d'être pris. Il n'apparaît qu'une fois l'heure choisie : avant,
+                il annoncerait une échéance qu'on ne peut pas calculer. */}
+            {pretAReserver ? (
+              <Engagement
+                offre={offre}
+                quand={choisi ?? null}
+                nomDuSalon={fiche.name}
+                timezone={fiche.timezone}
+              />
+            ) : null}
 
             {echec ? (
               <StatusMessage level="danger" body={echec} testID="echec-reservation" />

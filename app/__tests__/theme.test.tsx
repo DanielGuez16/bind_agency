@@ -639,6 +639,10 @@ describe('les surfaces de la v1.1', () => {
       'src/screens/RedemptionScreen.tsx',
       'src/screens/ReglesDesPaliers.tsx',
       'src/screens/TerrainScreen.tsx',
+      // Le bloc d'engagement du créneau v3. La planche le dessine sans ombre ;
+      // la règle des rayons est catégorique, et un écart par écran est
+      // exactement ce que l'inventaire existe pour empêcher.
+      'src/screens/creneau/Engagement.tsx',
     ];
 
     // **La fenêtre est à 900 et non à 600, et ce n'est pas un réglage.** Un

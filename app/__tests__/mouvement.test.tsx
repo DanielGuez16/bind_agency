@@ -90,12 +90,23 @@ const FICHE = {
   timezone: 'America/New_York',
 } as never;
 
+/**
+ * **Le montage porte maintenant le palier et le réseau**, parce que l'écran les
+ * lit : depuis le créneau v3, l'engagement s'écrit au-dessus du bouton — « une
+ * story sur Instagram, sous 48 h » — et un montage qui les omet fait tomber
+ * l'écran sur un champ absent. Un `as never` cache le manque au compilateur,
+ * pas au rendu.
+ */
 const OFFRE = {
   tier_offer_id: 'o1',
   social_account_id: 's1',
   catalog_item_id: 'i1',
   name: 'Gel nails',
   requires_booking: true,
+  content_format: 'story',
+  platform: 'instagram',
+  required_mention: null,
+  required_geotag: false,
 } as never;
 
 /**

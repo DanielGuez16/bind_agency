@@ -315,6 +315,12 @@ export const es: Catalogue = {
     ficheMention: 'una mención a {{mention}}',
     ficheLieu: 'una etiqueta de ubicación',
     creneauxTitre: 'Elige una hora',
+    creneauxEngagementTitre: 'A qué te comprometes',
+    creneauxEngagementCiter: 'Etiqueta y menciona a {{quoi}}',
+    creneauxEngagementPublierAvant: 'Publica antes del ',
+    creneauxAnnulationTitre: 'Si no puedes venir',
+    creneauxAnnulationCorps: 'Cancela gratis hasta {{heures}} h antes. Después, o si no te presentas, cuenta en tu puntuación de fiabilidad.',
+    creneauxAnnulationScore: 'La puntuación es gradual y se recupera al cumplir las siguientes.',
     creneauxRecapitulatif: '{{jour}}, {{heure}}',
     creneauxEtatCourt: {
       ferme: 'Cerrado',
