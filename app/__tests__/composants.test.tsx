@@ -794,8 +794,13 @@ describe('l’aperçu de prestation', () => {
       />,
     );
 
+    // **La chaîne exacte pour le positif, l'expression régulière pour la
+    // négation.** `toHaveTextContent` compare le contenu entier quand on lui
+    // donne une chaîne : `not.toHaveTextContent('·')` aurait été vrai de toute
+    // ligne qui ne dit pas *uniquement* « · », c'est-à-dire de toutes. La
+    // négation qui compte est celle qui cherche le caractère où qu'il soit.
     expect(screen.getByTestId('sans-duree-attribution')).toHaveTextContent('Rótulo Hair');
-    expect(screen.getByTestId('sans-duree-attribution')).not.toHaveTextContent('·');
+    expect(screen.getByTestId('sans-duree-attribution')).not.toHaveTextContent(/·/);
   });
 
   it('garde la case de contrepartie à la même hauteur, occupée ou vide', async () => {
