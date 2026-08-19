@@ -44,7 +44,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.i18n import translate
 from app.integrations.push import Envoi, PushSender, Verdict
-from app.models import DeviceToken, NotificationPreference, User
+from app.models import DeviceToken, User
 from app.models.enums import (
     DevicePlatform,
     DeviceTokenStatus,
@@ -141,62 +141,23 @@ async def revoquer_les_terminaux(session: AsyncSession, *, user_id: uuid.UUID) -
     return resultat.rowcount or 0
 
 
-async def preferences(session: AsyncSession, *, user_id: uuid.UUID) -> dict[NotificationKind, bool]:
-    """Les sept genres et leur état, complétés par « oui ».
-
-    Rendus tous les sept plutôt que les seules lignes stockées : un écran de
-    réglages doit pouvoir se dessiner sans connaître la liste, et il ne doit
-    pas déduire d'une absence que le genre n'existe pas.
-    """
-    refus = {
-        ligne.kind: ligne.enabled
-        for ligne in await session.scalars(
-            sa.select(NotificationPreference).where(NotificationPreference.user_id == user_id)
-        )
-    }
-    return {genre: refus.get(genre, True) for genre in NotificationKind}
-
-
-async def regler(
-    session: AsyncSession, *, user_id: uuid.UUID, kind: NotificationKind, enabled: bool
-) -> None:
-    """Pose une préférence. Écrit aussi les « oui » explicites.
-
-    On pourrait n'écrire que les refus et supprimer la ligne au retour à
-    « oui ». On ne le fait pas : l'écrit dit « cette personne a regardé ce
-    réglage », ce qu'une absence ne dit pas, et c'est utile le jour où l'on
-    ajoute un genre — on saura qui n'a jamais rien décidé.
-    """
-    await session.execute(
-        pg_insert(NotificationPreference)
-        .values(user_id=user_id, kind=kind, enabled=enabled, updated_at=datetime.now(UTC))
-        .on_conflict_do_update(
-            index_elements=["user_id", "kind"],
-            set_={"enabled": enabled, "updated_at": datetime.now(UTC)},
-        )
-    )
-
-
 async def destinataire(
     session: AsyncSession, *, user_id: uuid.UUID, kind: NotificationKind
 ) -> Destinataire | None:
     """Où joindre quelqu'un pour ce genre — ou `None`, et le silence.
 
-    Les trois filtres, dans l'ordre qui compte : le compte, la préférence, les
-    jetons. Rend `None` dès le premier qui ferme, sans interroger les suivants.
+    **Deux filtres, et non trois.** Le réglage par genre a été retiré : tout ce
+    que le produit a à dire, il le dit. Restent le compte et les jetons, qui ne
+    sont pas des préférences mais des faits — un compte suspendu n'a personne au
+    bout, un compte sans terminal n'a nulle part où recevoir.
+
+    `kind` demeure dans la signature : les sept genres restent, ils portent le
+    gabarit et la langue. C'est le **réglage** qui part, pas le genre.
     """
     utilisateur = await session.get(User, user_id)
     if utilisateur is None or utilisateur.status not in STATUTS_JOIGNABLES:
-        # Suspendu ou anonymisé. **Aucune notification, jamais** : ni ses
-        # préférences ni ses terminaux n'ont à être consultés.
-        return None
-
-    refus = await session.scalar(
-        sa.select(NotificationPreference.enabled).where(
-            NotificationPreference.user_id == user_id, NotificationPreference.kind == kind
-        )
-    )
-    if refus is False:
+        # Suspendu ou anonymisé. **Aucune notification, jamais** : ses terminaux
+        # n'ont même pas à être consultés.
         return None
 
     tokens = tuple(

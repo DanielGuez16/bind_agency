@@ -35,7 +35,6 @@ from app.models import (
     CatalogItem,
     Collaboration,
     CreatorProfile,
-    NotificationPreference,
     User,
 )
 from app.models.enums import CollaborationStatus, Locale, NotificationKind, UserStatus
@@ -81,28 +80,20 @@ def genre_de(cle: str) -> NotificationKind:
 
 
 async def joignable(session: AsyncSession, *, user_id: uuid.UUID, kind: NotificationKind) -> bool:
-    """Peut-on écrire à cette personne pour ce genre ?
+    """Peut-on écrire à cette personne ?
 
-    **Les deux mêmes règles que le push, et c'est le point.** Un compte
-    suspendu ou anonymisé ne reçoit rien, jamais ; un genre explicitement
-    refusé n'arrive pas davantage par la boîte que par l'écran verrouillé.
-    Écrites deux fois, elles auraient divergé — elles l'avaient déjà fait, dans
-    le sens le plus désagréable pour l'utilisateur.
+    **Une seule règle depuis que le réglage par genre a été retiré.** Un compte
+    suspendu ou anonymisé ne reçoit rien, jamais. Il n'y a plus de genre refusé :
+    tout ce que le produit a à dire, il le dit.
 
-    Une préférence absente vaut accord : c'est le défaut du produit, et il est
-    le même côté serveur.
+    `kind` demeure dans la signature. Ce n'est pas un vestige : la boîte d'envoi
+    appelle cette fonction avec le genre de chaque ligne, et le jour où une
+    règle dépendra du genre — un plafond, une fenêtre horaire — c'est ici
+    qu'elle vivra. Le retirer obligerait à retoucher tous les appelants pour le
+    remettre.
     """
     utilisateur = await session.get(User, user_id)
-    if utilisateur is None or utilisateur.status is not UserStatus.ACTIVE:
-        return False
-
-    refus = await session.scalar(
-        sa.select(NotificationPreference.enabled).where(
-            NotificationPreference.user_id == user_id,
-            NotificationPreference.kind == kind,
-        )
-    )
-    return refus is not False
+    return utilisateur is not None and utilisateur.status is UserStatus.ACTIVE
 
 
 def rendre(cle: str, locale: Locale, **valeurs: Any) -> str:

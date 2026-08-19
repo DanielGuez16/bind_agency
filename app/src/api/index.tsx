@@ -28,7 +28,6 @@ import type {
   Collaboration,
   GenreDeNotification,
   PlateformeDeTerminal,
-  PreferencesDeNotification,
   TerminalEnregistre,
   Creneau,
   DroitDeLecture,
@@ -457,20 +456,6 @@ export class Api {
 
   revoquerUnTerminal(token: string) {
     return this.client.request<void>(routes.revoquerUnTerminal(token), { methode: 'DELETE' });
-  }
-
-  mesPreferencesDeNotification(signal?: AbortSignal) {
-    return this.client.request<PreferencesDeNotification>(
-      routes.mesPreferencesDeNotification(),
-      { signal },
-    );
-  }
-
-  reglerUnePreference(genre: GenreDeNotification, enabled: boolean) {
-    return this.client.request<PreferencesDeNotification>(routes.reglerUnePreference(genre), {
-      methode: 'PUT',
-      corps: { enabled },
-    });
   }
 
   // ---- inscription sur le terrain ----

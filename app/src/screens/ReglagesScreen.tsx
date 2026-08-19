@@ -26,7 +26,6 @@ import { useI18n, type SupportedLocale } from '../i18n';
 import { useSession } from '../session';
 import { radius, useTheme } from '../theme';
 import { HealthScreen } from './HealthScreen';
-import { PreferencesDeNotification } from './PreferencesDeNotification';
 
 export function ReglagesScreen() {
   const { t, locale, setLocale } = useI18n();
@@ -53,12 +52,6 @@ export function ReglagesScreen() {
             d'un commerçant est une chaîne oubliée — c'en était une. */}
         <DataRow label={t('auth.role')} value={role ? t(`roles.${role}`) : ''} />
       </View>
-
-      {/* **Les notifications se règlent ici**, à côté de la langue et du
-          thème : ce sont les trois choses qu'on vient chercher dans un écran
-          de réglages. Le composant ne rend rien pour un rôle qui n'a aucun
-          genre — l'administration n'en reçoit pas. */}
-      <PreferencesDeNotification role={role} />
 
       <View style={{ gap: 8 }}>
         <Texte variante="type.label" couleur="ink.soft">

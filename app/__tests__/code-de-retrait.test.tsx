@@ -239,8 +239,21 @@ describe('quand le serveur refuse', () => {
 });
 
 describe('ce qu’une ligne de réservation ouvre', () => {
-  const ligne = (status: string, contrepartie: unknown = null) =>
-    ({ status, contrepartie }) as never;
+  /**
+   * **`valid_until` fait partie de la ligne, et le décor l'omettait.**
+   *
+   * Le serveur le rend sur chaque réservation ; l'omettre ici rendait la
+   * fabrique moins fidèle que ce qu'elle imite, et la règle du droit périmé
+   * n'était éprouvée sur rien. Il est donc porté, et loin devant par défaut :
+   * un cas qui veut un droit échu le dit.
+   */
+  const DANS_DEUX_HEURES = new Date(Date.now() + 2 * 3_600_000).toISOString();
+  const IL_Y_A_DEUX_HEURES = new Date(Date.now() - 2 * 3_600_000).toISOString();
+  const ligne = (
+    status: string,
+    contrepartie: unknown = null,
+    valid_until: string = DANS_DEUX_HEURES,
+  ) => ({ status, contrepartie, valid_until }) as never;
 
   it('mène au code une fois confirmée, jamais pendant qu’elle est retenue', () => {
     expect(destination(ligne('confirmed'))).toBe('code');
@@ -248,6 +261,13 @@ describe('ce qu’une ligne de réservation ouvre', () => {
     // retenue, où le serveur refuse : le geste principal du produit menait à
     // un écran qui ne pouvait rien afficher.
     expect(destination(ligne('held'))).toBeNull();
+  });
+
+  it('ne mène nulle part quand le droit est échu', () => {
+    // Le même défaut, un cran plus loin : `confirmed` ne veut pas dire
+    // consommable. Rien ne fait sortir de `confirmed` une réservation que
+    // personne n'a servie, et le serveur refuse alors le code.
+    expect(destination(ligne('confirmed', null, IL_Y_A_DEUX_HEURES))).toBeNull();
   });
 
   it('mène à la preuve quand la contrepartie existe, et nulle part sinon', () => {

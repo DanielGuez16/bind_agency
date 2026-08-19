@@ -1367,12 +1367,23 @@ async def poser_les_plans(session: AsyncSession) -> int:
 
 
 async def abonner_les_commerces(session: AsyncSession) -> int:
-    """Deux commerces abonnés, un non. Par le service, avec le fournisseur du mode.
+    """Des commerces abonnés, d'autres non. Par le service, avec le fournisseur du mode.
 
     Sans abonnement, l'écran d'administration des plans affiche trois lignes à
-    zéro et un revenu nul : il existe, il ne montre rien. Deux abonnés sur trois
-    donnent un chiffre à lire **et** un plan que personne n'a pris, ce qui est
-    la vraie question qu'on se pose devant cet écran.
+    zéro et un revenu nul : il existe, il ne montre rien. Des abonnés **et** un
+    plan que personne n'a pris donnent un chiffre à lire et la vraie question
+    qu'on se pose devant cet écran.
+
+    **Nommés, et non pris dans l'ordre alphabétique.** Ces lignes prenaient
+    `actifs[:2]` : écrit quand le jeu comptait trois salons, où les deux
+    premiers étaient forcément ceux qu'on regarde. Passé à vingt, `[:2]` a
+    désigné « Bayside Play Loft » et « Brickell Highball » — deux salons du
+    marché, tirés par leur initiale — et **Ocean Beauty Studio, le salon de la
+    démonstration, s'est retrouvé sans abonnement**. L'annuaire des créateurs,
+    qui est ce que BIND vend, répondait donc 402 au compte avec lequel on montre
+    le produit. Trouvé en campagne, et personne ne l'aurait vu autrement : rien
+    n'échoue, l'écran affiche « l'annuaire vient avec l'abonnement », et c'est
+    exact.
 
     Le fournisseur est celui que la configuration déclare — `log` par défaut.
     Aucune clé, aucun appel réseau, et le même chemin qu'en production.
@@ -1400,9 +1411,18 @@ async def abonner_les_commerces(session: AsyncSession) -> int:
         ).all()
     )
 
+    #: Les salons qui portent un abonnement dans la démonstration. Nommés :
+    #: c'est avec `OCEAN` qu'on ouvre le produit, et un abonnement tiré au rang
+    #: se déplace chaque fois que le jeu de données grandit.
+    #:
+    #: Les autres n'en ont pas, et c'est voulu — l'écran des plans doit montrer
+    #: un plan que personne n'a pris.
+    abonnes = [b for b in actifs if b.name == OCEAN]
+    abonnes += [b for b in actifs if b.name != OCEAN][:1]
+
     provider = get_billing_provider()
     poses = 0
-    for rang, business in enumerate(actifs[:2]):
+    for rang, business in enumerate(abonnes):
         membre = await session.scalar(
             sa.select(BusinessMember).where(BusinessMember.business_id == business.id).limit(1)
         )

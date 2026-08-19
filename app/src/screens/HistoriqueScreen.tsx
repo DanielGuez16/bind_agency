@@ -218,6 +218,20 @@ function LigneDeReservation({
           />
         ) : null}
 
+        {/* **Un droit périmé se dit, il ne se tait pas.** Une réservation
+            confirmée que personne n'a servie garde son statut pour toujours :
+            la ligne restait identique à celle d'un rendez-vous à venir, avec
+            son bouton, et le code répondait par une erreur. La dire close vaut
+            mieux qu'un bouton qui ne mène nulle part — et mieux qu'un silence,
+            qui laisserait chercher où est passé le bouton. */}
+        {reservation.status === 'confirmed' && !droitEncoreValide(reservation) ? (
+          <StatusMessage
+            level="neutral"
+            body={t('parcours.droitPerime')}
+            testID={`droit-perime-${reservation.booking_id}`}
+          />
+        ) : null}
+
         {contrepartie ? (
           <>
             {/* **L'échéance était servie et rendue nulle part.** Le statut
@@ -341,8 +355,9 @@ function Onglets({
 export function attenteDe(
   reservation: ReservationDuCreateur,
 ): 'creatrice' | 'controle' | null {
-  // Le code de retrait est un geste, au comptoir : la ligne le porte.
-  if (reservation.status === 'confirmed') return 'creatrice';
+  // Le code de retrait est un geste, au comptoir : la ligne le porte — tant
+  // que le droit court. Périmé, elle n'attend plus personne.
+  if (reservation.status === 'confirmed') return droitEncoreValide(reservation) ? 'creatrice' : null;
   const contrepartie = reservation.contrepartie;
   if (!contrepartie) return null;
   if (contrepartie.status === 'pending' || contrepartie.status === 'resubmit_requested') {
@@ -355,10 +370,41 @@ export function attenteDe(
   return null;
 }
 
+/**
+ * Le droit court-il encore ?
+ *
+ * **`confirmed` ne veut pas dire consommable.** Une réservation confirmée que
+ * personne n'a servie garde son statut pour toujours : le diagramme n'a pas de
+ * flèche de `confirmed` vers `expired`, et rien ne la déplace. Passé
+ * `valid_until`, le serveur refuse le code — `redemption_booking_not_redeemable`
+ * — et l'écran continuait de proposer « Voir le code ».
+ *
+ * C'est ce qui a été trouvé en campagne, et c'est le pire endroit possible pour
+ * ce défaut : le code est la seule chose à montrer au comptoir, et le message
+ * d'erreur qui s'affichait à sa place — « aucun code de retrait pour l'instant »
+ * — se lit comme une panne de la plateforme le jour du rendez-vous.
+ *
+ * **La comparaison sert à ne pas proposer, jamais à autoriser.** C'est le
+ * serveur qui refuse, et l'horloge du téléphone n'est pas une preuve : elle
+ * évite seulement d'appuyer sur un bouton pour apprendre qu'il ne servait à
+ * rien. Le même partage que pour l'échéance d'accord côté commerce.
+ */
+export function droitEncoreValide(
+  reservation: ReservationDuCreateur,
+  maintenant: number = Date.now(),
+): boolean {
+  return new Date(reservation.valid_until).getTime() > maintenant;
+}
+
 export function destination(
   reservation: ReservationDuCreateur,
 ): 'code' | 'preuve' | null {
-  if (reservation.status === 'confirmed') return 'code';
+  if (reservation.status === 'confirmed') {
+    // Le droit périmé n'ouvre rien. La contrepartie, elle, garde sa porte :
+    // une publication reste à envoyer même si le rendez-vous est passé.
+    if (droitEncoreValide(reservation)) return 'code';
+    return reservation.contrepartie ? 'preuve' : null;
+  }
   if (reservation.contrepartie) return 'preuve';
   return null;
 }

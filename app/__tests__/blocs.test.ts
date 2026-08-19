@@ -107,7 +107,6 @@ const BLOCS: Record<string, number> = {
   EnvoiDePreuve: 0,
   Preuve: 0,
   ReglagesScreen: 0,
-  PreferencesDeNotification: 0,
   ReglesScreen: 0,
   ReglesDesPaliers: 0,
   RaisonDuVide: 0,

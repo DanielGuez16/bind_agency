@@ -21,7 +21,7 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import API_ROOT, get_settings
-from app.models import AuditLog, Collaboration, NotificationPreference, Proof, TierOffer
+from app.models import AuditLog, Collaboration, Proof, TierOffer
 from app.models.enums import (
     ActorKind,
     CaptureMethod,
@@ -768,27 +768,22 @@ async def test_couper_les_rappels_ne_coupe_pas_la_non_honoration(
 ) -> None:
     """**La raison pour laquelle ces deux messages ont leur propre genre.**
 
-    Les rattacher au rappel d'échéance aurait fait taire « votre contrepartie
-    n'a pas été honorée » pour qui coupe les rappels — c'est-à-dire au moment
-    où l'information compte le plus.
+    Écrit du temps où le produit avait un réglage par genre : couper les rappels
+    d'échéance ne devait pas faire taire « votre contrepartie n'a pas été
+    honorée ». Le réglage est parti, la raison demeure — un genre nomme un
+    message, et deux messages qui n'annoncent pas la même chose n'en partagent
+    pas un. Ce qui s'éprouve ici est donc que la non-honoration dépose **son**
+    genre, et non celui du rappel : c'est la clé qui le décide, et une table qui
+    en porterait un second finirait par mentir.
     """
 
     from app.services import outbox
 
     ligne, decor = await contrepartie(session)
-    session.add(
-        NotificationPreference(
-            user_id=decor["createur"].id,
-            kind=NotificationKind.PUBLICATION_REMINDER,
-            enabled=False,
-        )
-    )
     ligne.deadline_at = datetime.now(UTC) - timedelta(seconds=1)
     await session.flush()
     await service.expirer_les_echeances(session)
 
-    # Le genre déposé, et non celui qu'on espérait : c'est la clé qui le
-    # décide, et une table qui en porterait un second finirait par mentir.
     lignes = await outbox.pour(
         session,
         user_id=decor["createur"].id,

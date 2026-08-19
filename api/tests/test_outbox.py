@@ -27,7 +27,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncSession
 from app.core.config import get_settings
 from app.integrations.email import EmailError, Message
 from app.integrations.push import Verdict
-from app.models import DeviceToken, NotificationPreference, OutboundMessage, User
+from app.models import DeviceToken, OutboundMessage, User
 from app.models.enums import (
     DeviceTokenStatus,
     Locale,
@@ -197,16 +197,23 @@ async def test_le_message_est_rendu_dans_la_langue_du_destinataire(
 # --------------------------------------------------------------------------
 
 
-async def test_un_genre_coupe_apres_le_depot_ne_part_pas(session: AsyncSession) -> None:
-    """**La raison pour laquelle la préférence n'est pas figée au dépôt.**
+async def test_un_compte_ferme_apres_le_depot_ne_recoit_pas(session: AsyncSession) -> None:
+    """**La raison pour laquelle la joignabilité n'est pas figée au dépôt.**
 
     Le message est écrit à l'instant de la décision et part une minute plus
-    tard ; entre les deux, quelqu'un peut avoir coupé. C'est le moment où le
-    message arriverait qui compte.
+    tard ; entre les deux, un compte peut avoir été suspendu. C'est le moment
+    où le message arriverait qui compte, pas celui où il a été écrit.
+
+    Ce test éprouvait la même chose sur un genre coupé, du temps où le produit
+    avait un réglage par genre. Le réglage est parti ; la propriété — on relit
+    au moment de sortir — n'a pas bougé de sens, et la suspension la porte
+    aussi bien.
     """
     utilisateur = await destinataire(session)
     lignes = await depose(session, utilisateur)
-    session.add(NotificationPreference(user_id=utilisateur.id, kind=GENRE, enabled=False))
+    await session.execute(
+        sa.update(User).where(User.id == utilisateur.id).values(status=UserStatus.SUSPENDED)
+    )
     await session.flush()
 
     courriel = FauxCourriel()
@@ -223,7 +230,9 @@ async def test_un_message_ecarte_n_est_jamais_repris(session: AsyncSession) -> N
     marteler un compte suspendu."""
     utilisateur = await destinataire(session)
     await depose(session, utilisateur)
-    session.add(NotificationPreference(user_id=utilisateur.id, kind=GENRE, enabled=False))
+    await session.execute(
+        sa.update(User).where(User.id == utilisateur.id).values(status=UserStatus.SUSPENDED)
+    )
     await session.flush()
     await outbox.vider(session, email_sender=FauxCourriel(), push_sender=FauxPush())
 
@@ -425,3 +434,47 @@ async def test_la_base_refuse_les_lignes_incoherentes(
 
     # La transaction reste utilisable après le refus.
     assert await conn.scalar(sa.select(sa.literal(1))) == 1
+
+
+# --------------------------------------------------------------------------
+# le réglage retiré
+# --------------------------------------------------------------------------
+
+
+async def test_plus_aucun_genre_ne_se_coupe(session: AsyncSession) -> None:
+    """**Les sept genres restent, le réglage part.**
+
+    Le produit n'a plus de choix par personne : tout ce qu'il a à dire, il le
+    dit. Ce test tient la décision — si un filtre par genre revenait sans qu'on
+    le décide, il tomberait.
+
+    Éprouvé sur **les sept genres** et non sur un seul : une garde qui n'en
+    regarderait qu'un laisserait passer un filtre posé sur les six autres.
+    """
+    from app.models.enums import NotificationKind
+    from app.services import notifications
+
+    utilisateur = await destinataire(session)
+
+    for genre in NotificationKind:
+        assert await notifications.joignable(session, user_id=utilisateur.id, kind=genre)
+
+
+async def test_la_suspension_ferme_toujours_tous_les_genres(session: AsyncSession) -> None:
+    """L'autre sens, et c'est la garantie qui devait survivre au retrait.
+
+    Une joignabilité qui rendrait toujours vrai passerait le test ci-dessus sans
+    rien garantir — et un compte suspendu recevrait, ce qui est exactement ce
+    que le produit promet de ne jamais faire.
+    """
+    from app.models.enums import NotificationKind
+    from app.services import notifications
+
+    utilisateur = await destinataire(session)
+    await session.execute(
+        sa.update(User).where(User.id == utilisateur.id).values(status=UserStatus.SUSPENDED)
+    )
+    await session.flush()
+
+    for genre in NotificationKind:
+        assert not await notifications.joignable(session, user_id=utilisateur.id, kind=genre)

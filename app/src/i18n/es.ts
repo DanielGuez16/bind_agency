@@ -324,6 +324,8 @@ export const es: Catalogue = {
     enAttenteJusquA: 'Tienen hasta el {{quand}} para responder. Después la reserva caduca y tu hueco queda libre.',
     codeTitre: 'Muestra este código',
     codeIndisponible: 'Ningún código de retiro ahora mismo',
+    droitPerime:
+      'Esta reserva ha caducado. La prestación no se recogió a tiempo, así que no hay código que mostrar. Vuelve a reservarla cuando quieras.',
     codeSecours: 'O dicta este',
     codeSecoursAide: 'Este es el código que hay que dictar si el escaneo falla.',
     preuveTitre: 'Envía tu comprobante',

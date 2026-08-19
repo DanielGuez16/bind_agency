@@ -40,8 +40,6 @@ export const routes = {
   // ---- notifications ----
   enregistrerUnTerminal: () => chemin('/me/devices'),
   revoquerUnTerminal: (token: string) => chemin(`/me/devices/${encodeURIComponent(token)}`),
-  mesPreferencesDeNotification: () => chemin('/me/notification-preferences'),
-  reglerUnePreference: (genre: string) => chemin(`/me/notification-preferences/${genre}`),
 
   // ---- découverte ----
   fil: () => chemin('/businesses'),
@@ -190,8 +188,6 @@ export const METHODES: Record<keyof typeof routes, ('GET' | 'POST' | 'PATCH' | '
 
     enregistrerUnTerminal: ['PUT'],
     revoquerUnTerminal: ['DELETE'],
-    mesPreferencesDeNotification: ['GET'],
-    reglerUnePreference: ['PUT'],
 
     fil: ['GET'],
     fichePublique: ['GET'],

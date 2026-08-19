@@ -189,16 +189,6 @@ export type TerminalEnregistre = {
   last_seen_at: string;
 };
 
-/**
- * Les sept genres et leur état.
- *
- * Toujours les sept, y compris ceux que personne n'a touchés : l'écran de
- * réglages se dessine sans connaître la liste, et une absence ne se lit pas
- * comme un genre inexistant.
- */
-export type PreferencesDeNotification = {
-  preferences: Record<GenreDeNotification, boolean>;
-};
 
 /** Les plateformes que le produit sait rattacher. Snapchat n'en est pas. */
 export type PlateformeConnectable = 'instagram' | 'tiktok';
@@ -566,6 +556,15 @@ export type ReservationDuCommerce = {
   creator_first_name: string | null;
   creator_last_name: string | null;
   creator_handle: string | null;
+  /**
+   * L'adresse du profil, sur le réseau de cette demande.
+   *
+   * Dérivée côté serveur du pseudonyme et de la plateforme, jamais stockée :
+   * la fabriquer ici ferait deux vérités, et c'est celle qu'on ne rafraîchit
+   * pas qui vieillirait. `null` quand la plateforme n'a pas d'adresse publique
+   * connue — on n'affiche alors aucun lien plutôt qu'un lien mort.
+   */
+  creator_profil_url: string | null;
   item_name: string;
   duration_minutes: number | null;
   platform: Platform;

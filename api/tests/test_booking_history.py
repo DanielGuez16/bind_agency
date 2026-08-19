@@ -261,6 +261,52 @@ async def test_la_journee_rend_la_creatrice_et_son_compte(session: AsyncSession)
     assert ligne.item_name == "Soin visage"
 
 
+async def test_la_journee_mene_au_profil_de_la_creatrice(session: AsyncSession) -> None:
+    """**Le pseudonyme sans lien oblige à le recopier dans une barre
+    d'adresse**, et c'est le geste qu'on abandonne — alors qu'un salon qui
+    décide d'accorder regarde d'abord ce qu'elle publie.
+
+    L'adresse est dérivée du pseudonyme et du réseau de **cette** demande, par
+    la même fonction que l'annuaire. Dérivée et non rangée à côté : deux vérités
+    dont une qu'on ne rafraîchit pas laisseraient un lien mort au premier
+    changement de pseudonyme.
+    """
+    decor = await monter_le_decor(session, postes=2)
+    creneau = await premier_creneau(session, decor)
+    await reserver(session, decor, starts_at=creneau)
+
+    jour = creneau.astimezone(ZoneInfo("America/New_York")).date()
+    journee = await service.journee_du_commerce(session, business=decor["business"], jour=jour)
+
+    ligne = journee.items[0]
+    assert ligne.creator_profil_url == "https://www.instagram.com/rebecca.miami/"
+
+
+async def test_le_lien_du_profil_suit_la_meme_regle_que_l_annuaire(
+    session: AsyncSession,
+) -> None:
+    """La même fonction des deux côtés, et le test le tient.
+
+    Deux dérivations écrites séparément finiraient par diverger — un `@` retiré
+    d'un côté et pas de l'autre suffit à faire une page d'erreur, que le salon
+    lit comme un compte supprimé.
+    """
+    from app.models.enums import Platform
+    from app.services import directory
+
+    decor = await monter_le_decor(session, postes=2)
+    creneau = await premier_creneau(session, decor)
+    await reserver(session, decor, starts_at=creneau)
+
+    jour = creneau.astimezone(ZoneInfo("America/New_York")).date()
+    journee = await service.journee_du_commerce(session, business=decor["business"], jour=jour)
+    ligne = journee.items[0]
+
+    assert ligne.creator_profil_url == directory.lien_public(
+        Platform.INSTAGRAM, ligne.creator_handle
+    )
+
+
 async def test_un_droit_sans_creneau_figure_dans_la_journee(session: AsyncSession) -> None:
     """Il se présente au comptoir ce jour-là comme les autres.
 

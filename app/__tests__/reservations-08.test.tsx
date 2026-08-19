@@ -19,16 +19,32 @@ import { render, screen, waitFor, within } from '@testing-library/react-native';
 import { ApiClient, ApiProvider, type ReservationDuCreateur } from '../src/api';
 import { I18nProvider } from '../src/i18n';
 import { en } from '../src/i18n/en';
-import { HistoriqueScreen, attenteDe } from '../src/screens/HistoriqueScreen';
+import { HistoriqueScreen, attenteDe, destination } from '../src/screens/HistoriqueScreen';
 import { ThemeProvider } from '../src/theme';
+
+/**
+ * **Les heures sont relatives à maintenant, pas écrites en dur.**
+ *
+ * Ce décor portait `valid_until: '2026-08-16T18:00:00Z'`. Tant que cette date
+ * était devant nous, il ne disait rien de faux ; passée, il affirmait qu'un
+ * droit **périmé** ouvre encore le code de retrait — c'est-à-dire exactement le
+ * défaut trouvé en campagne, inscrit dans le montage qui devait le surveiller.
+ *
+ * La règle existait déjà dans le fichier voisin, écrite après le même
+ * accident : « une date figée finit par passer, et le jour où elle passe c'est
+ * l'écran qui paraît cassé ». Elle vaut ici aussi.
+ */
+const DANS_TROIS_HEURES = new Date(Date.now() + 3 * 3_600_000).toISOString();
+const IL_Y_A_UNE_HEURE = new Date(Date.now() - 3_600_000).toISOString();
+const IL_Y_A_DEUX_HEURES = new Date(Date.now() - 2 * 3_600_000).toISOString();
 
 function reservation(extra: Partial<ReservationDuCreateur> = {}): ReservationDuCreateur {
   return {
     booking_id: 'r1',
     status: 'consumed',
-    starts_at: '2026-08-16T14:30:00Z',
-    ends_at: '2026-08-16T15:15:00Z',
-    valid_until: '2026-08-16T18:00:00Z',
+    starts_at: IL_Y_A_DEUX_HEURES,
+    ends_at: IL_Y_A_UNE_HEURE,
+    valid_until: DANS_TROIS_HEURES,
     approval_expires_at: null,
     created_at: '2026-08-14T09:00:00Z',
     business_id: 'b1',
@@ -173,5 +189,57 @@ describe('chaque ligne dit ce qu’elle attend de toi', () => {
       .getAllByText(/Gel manicure|Vela Nail Studio/)
       .map((n) => String(n.props.children));
     expect(textes[0]).toContain('Gel manicure');
+  });
+});
+
+
+// --------------------------------------------------------------------------
+// le droit périmé
+// --------------------------------------------------------------------------
+
+/**
+ * **Le bloquant de campagne, et il n'était visible que là.**
+ *
+ * Une réservation confirmée que personne n'a servie garde son statut pour
+ * toujours : le diagramme n'a pas de flèche de `confirmed` vers `expired`. Passé
+ * `valid_until`, le serveur refuse le code — `redemption_booking_not_redeemable`
+ * — et l'écran continuait de proposer « Voir le code ». Le message d'erreur
+ * s'affichait à la place du QR, au comptoir, le jour du rendez-vous.
+ */
+describe('un droit périmé', () => {
+  it("n'ouvre plus le code de retrait", async () => {
+    const perimee = reservation({ status: 'confirmed', valid_until: IL_Y_A_UNE_HEURE });
+
+    expect(destination(perimee)).toBeNull();
+    expect(attenteDe(perimee)).toBeNull();
+  });
+
+  it('ouvre encore le code tant qu’il court', async () => {
+    // L'autre sens. Une règle qui fermerait toujours passerait le test
+    // précédent sans rien garantir, et le code deviendrait inatteignable.
+    const vivante = reservation({ status: 'confirmed', valid_until: DANS_TROIS_HEURES });
+
+    expect(destination(vivante)).toBe('code');
+    expect(attenteDe(vivante)).toBe('creatrice');
+  });
+
+  it('garde la porte de la publication si une contrepartie court', async () => {
+    // Le rendez-vous est passé, la prestation a été servie : la publication
+    // reste due. Fermer les deux portes ferait perdre la contrepartie avec le
+    // code.
+    const perimee = reservation({
+      status: 'confirmed',
+      valid_until: IL_Y_A_UNE_HEURE,
+      contrepartie: contrepartie('pending'),
+    } as never);
+
+    expect(destination(perimee)).toBe('preuve');
+  });
+
+  it('le dit à la créatrice au lieu de retirer le bouton en silence', async () => {
+    await monter([reservation({ status: 'confirmed', valid_until: IL_Y_A_UNE_HEURE })]);
+
+    expect(await screen.findByTestId('droit-perime-r1')).toBeTruthy();
+    expect(screen.queryByTestId('agir-r1')).toBeNull();
   });
 });

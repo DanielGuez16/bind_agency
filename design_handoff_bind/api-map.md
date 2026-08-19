@@ -67,8 +67,7 @@ Le rafraîchissement se fait **à l'ouverture d'écran et sur geste**. Il n'exis
 | — envoyer la preuve | `POST /me/proof-uploads` (multipart `fichier`) → `{screenshot_key}` puis `POST /collaborations/{id}/proof {source_url, screenshot_key, note}` | **deux appels** : le fichier d'abord, la soumission ensuite | file locale sur échec d'envoi |
 | Lien traqué | `GET /me/collaborations/{id}/link` | `slug`, `url`, `is_active` | **un seul lien par contrepartie, pour toute sa vie** — il vit dans le sticker déjà publié |
 | Portée mesurée | `GET /me/link-clicks` | `clics, clics_locaux, part_locale, par_pays, par_ville, par_terminal, par_referent, ecartes` | aucune adresse IP n'existe nulle part |
-| Notifications | `GET /me/notification-preferences`, `PUT /me/notification-preferences/{kind} {enabled}` | `preferences {genre: bool}` — **douze genres**, huit créateur, quatre commerce | absente = acceptée |
-| Terminal | `PUT /me/devices {token, platform}`, `DELETE /me/devices/{token}` | `id, platform, status, last_seen_at` | se révoque comme un jeton social |
+| Terminal | `PUT /me/devices {token, platform}`, `DELETE /me/devices/{token}` | `id, platform, status, last_seen_at` | se révoque comme un jeton social. **Plus de réglage par genre** : les sept genres restent, le choix par personne a été retiré |
 
 ---
 
@@ -90,7 +89,7 @@ Le rafraîchissement se fait **à l'ouverture d'écran et sur geste**. Il n'exis
 | Exceptions | `GET`/`POST /business/{id}/capacity-exceptions` ; `DELETE /business/{id}/capacity-exceptions/{exception_id}` | `date, is_closed, start_time, end_time, concurrent_slots` | réservations déjà prises conservées |
 | Galerie | `POST /business/{id}/photos/uploads` (multipart) → `POST /business/{id}/photos {storage_key, alt_text}` ; `GET /business/{id}/photos` ; `PUT /business/{id}/photos/order {photos}` ; `DELETE /business/{id}/photos/{photo_id}` | `id, storage_key, position, alt_text` | **l'ordre s'envoie en entier**, pas par déplacement |
 | Carte du commerce | `POST /business/{id}/menu/uploads` (multipart) → `POST /business/{id}/menu {storage_key, alt_text}` ; `GET /business/{id}/menu` ; `PUT /business/{id}/menu/order {pages}` ; `DELETE /business/{id}/menu/{page_id}` | `id, storage_key, position, alt_text` | **mécanisme identique à la galerie, entrée différente.** Plusieurs pages, parce qu'une carte tient rarement sur une — entrées et plats d'un côté, desserts de l'autre. Plafond de huit. Le lien vers la carte en ligne n'est pas ici : c'est `menu_url`, un champ du commerce, changé par `PATCH /business/{id}` |
-| Journée | `GET /business/{id}/bookings?jour=` | `jour, timezone, debut, fin, items[], a_trancher` | découpée dans le **fuseau du commerce** |
+| Journée | `GET /business/{id}/bookings?jour=` | `jour, timezone, debut, fin, items[], a_trancher` — chaque ligne porte `creator_profil_url` | découpée dans le **fuseau du commerce**. Le lien du profil est **dérivé** du pseudonyme et du réseau de la demande, jamais stocké ; nul si la plateforme n'a pas d'adresse publique connue |
 | — trancher | `POST /bookings/{id}/approve` ; `POST /bookings/{id}/decline {reason}` ; `POST /bookings/{id}/cancel-by-business {reason}` ; `POST /bookings/{id}/no-show {reason}` | la réservation | `a_trancher` compte ce qui attend une décision |
 | Caisse | `POST /redemptions/verify {code}` → `POST /redemptions/consume {redemption_code_id}` | `creator_name, item_name, item_photo_key, starts_at, valid_until, status, par_secours` | `code_unknown`, `code_expired`, `already_redeemed`. **`par_secours` dit lequel des deux codes a servi** |
 | Publications | `GET /business/{id}/collaborations?filtre&limite` | mêmes colonnes que la file d'arbitrage | `filtre` facultatif ; sans lui, `unfulfilled` apparaît aussi |

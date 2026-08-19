@@ -52,6 +52,7 @@ from app.models.enums import (
 # dans `booking_states` — avec la même formule ; la première modification de
 # l'une aurait fait mentir l'écran sur ce que le serveur accepte, et le défaut
 # se serait lu comme un bouton ouvert qui se fait refuser.
+from app.services import directory
 from app.services.booking_states import ouverture_de_l_absence
 
 #: Une page d'historique. Au-delà, l'app pagine par `avant`.
@@ -119,6 +120,13 @@ class ReservationDuCommerce:
     creator_first_name: str | None
     creator_last_name: str | None
     creator_handle: str | None
+    #: Où le commerce va regarder la créatrice, sur le réseau de **cette**
+    #: demande. Dérivé du pseudonyme, jamais stocké : deux vérités dont une
+    #: qu'on ne rafraîchit pas laisseraient un lien mort au premier changement
+    #: de pseudonyme. Nul quand la plateforme n'a pas d'adresse publique connue
+    #: — mieux qu'un lien qui mène à une page d'erreur, que le salon lirait
+    #: comme un compte supprimé.
+    creator_profil_url: str | None
     item_name: str
     duration_minutes: int | None
     platform: Platform
@@ -315,6 +323,7 @@ def _lire(ligne) -> ReservationDuCommerce:
         creator_first_name=ligne.first_name,
         creator_last_name=ligne.last_name,
         creator_handle=ligne.handle,
+        creator_profil_url=directory.lien_public(ligne.platform, ligne.handle),
         item_name=ligne.item_name,
         duration_minutes=ligne.duration_minutes,
         platform=ligne.platform,

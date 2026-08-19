@@ -69,6 +69,42 @@ def creer(platform: Platform, client: httpx.AsyncClient) -> SocialProvider:
     return TikTokProvider(client)
 
 
+def check_social_configuration() -> None:
+    """Appelé au démarrage. **La seule intégration qui n'était pas vérifiée là.**
+
+    Le géocodeur, le courriel, l'extraction, le dépôt objet, la facturation, la
+    géolocalisation et les notifications refusent tous de démarrer mal
+    configurés. Les plateformes sociales, non : la fabrique levait à la première
+    requête, le routeur traduisait en 503, et l'app affichait « réseau
+    indisponible ». Personne ne l'apprenait avant qu'une créatrice essaie.
+
+    **Et c'est la panne la plus chère du produit.** Sans réseau rattaché, aucun
+    relevé d'audience ; sans relevé, aucun palier ; sans palier, un fil vide.
+    Une inscription qui ne mène nulle part, découverte une inscription à la
+    fois. C'est ce qui s'est produit en campagne : `SOCIAL_PROVIDER=demo` sans
+    `API_PUBLIC_BASE_URL`, les deux plateformes en 503, et rien nulle part pour
+    le dire.
+
+    On éprouve **chaque plateforme branchée**, et non la première : Instagram
+    peut être configurée quand TikTok ne l'est pas, et un contrôle qui s'arrête
+    au premier succès laisserait passer exactement la moitié du défaut.
+
+    Le client HTTP passé aux constructeurs n'est pas utilisé par eux — ils
+    valident et retiennent la configuration. On en fabrique un plutôt que de
+    passer `None` : le jour où un constructeur s'en servirait, un `None` se
+    découvrirait en production et non ici.
+    """
+    with httpx.Client() as sonde:
+        client = httpx.AsyncClient()
+        try:
+            for platform in sorted(PLATEFORMES_BRANCHEES, key=lambda p: p.value):
+                creer(platform, client)
+        finally:
+            # Ni l'un ni l'autre n'a servi : on les referme sans await, la
+            # fermeture d'un client neuf ne fait rien d'asynchrone.
+            del sonde, client
+
+
 async def fournisseur_de(platform: Platform) -> AsyncIterator[SocialProvider]:
     """Un client HTTP par requête : pas d'état partagé entre parcours.
 

@@ -6694,3 +6694,69 @@ se lisent comme un défaut, et un commerçant qui conclut au défaut écrit au
 support. La ligne dit maintenant ce qu'elle attend : que la créatrice puisse
 encore signaler être venue et avoir trouvé fermé. Un délai qu'on subit sans le
 comprendre est un délai qu'on cherche à contourner.
+
+---
+
+## 2026-08-18 — Trois bloquants de campagne, et ce que chacun disait de plus
+
+Le produit a été monté localement sur le jeu de démonstration pour chacun des
+trois : lu dans le code, aucun des trois n'était visible.
+
+**Le code de retrait, et le trou du diagramme.** `confirmed` ne veut pas dire
+consommable. Une réservation confirmée que personne n'a servie garde son statut
+**pour toujours** — le diagramme n'a pas de flèche de `confirmed` vers
+`expired`, et rien ne la déplace. Passé `valid_until`, le serveur refuse le code
+et l'écran continuait de le proposer : au comptoir, le jour du rendez-vous, un
+message d'erreur à la place du QR. Reproduit en reculant `valid_until` d'une
+réservation du semis : statut inchangé, route en 409.
+
+Corrigé côté écran, qui cesse de proposer et **dit pourquoi**. La question plus
+profonde — faut-il une flèche vers `expired` ? — touche la machine à états et
+n'est pas tranchée ici.
+
+**Deux décors de test l'encodaient.** L'un portait `valid_until` figé au 16
+août : tant que la date était devant nous il ne disait rien de faux, passée il
+affirmait qu'un droit périmé ouvre le code. L'autre omettait complètement
+`valid_until`. La règle « les heures sont relatives à maintenant » existait déjà
+dans le fichier voisin, écrite après le même accident.
+
+**Les réseaux en 503 : la seule intégration qu'on ne vérifiait pas au
+démarrage.** Le géocodeur, le courriel, l'extraction, le dépôt objet, la
+facturation, la géolocalisation et les notifications refusent tous de démarrer
+mal configurés. Les plateformes sociales levaient à la première requête, le
+routeur traduisait en 503, et l'app affichait « réseau indisponible ».
+
+Reproduit les deux façons d'y arriver, et une seule donne **les deux
+plateformes** en 503 : `SOCIAL_PROVIDER=demo` sans `API_PUBLIC_BASE_URL`. C'est
+donc la configuration de la campagne. La panne est la plus chère du produit —
+sans réseau, pas de relevé ; sans relevé, pas de palier ; sans palier, un fil
+vide — et elle se découvrait une inscription à la fois.
+
+**L'annuaire : un `[:2]` écrit pour trois salons.** Le semis abonnait
+`actifs[:2]`, trié par nom. À trois commerces, les deux premiers étaient
+forcément ceux qu'on regarde. Passé à vingt, `[:2]` a désigné « Bayside Play
+Loft » et « Brickell Highball », et **Ocean Beauty Studio — le salon avec lequel
+on ouvre le produit — s'est retrouvé sans abonnement**. La route répondait 402,
+l'écran affichait « l'annuaire vient avec l'abonnement », et c'était exact :
+rien n'échouait.
+
+Les abonnés sont maintenant **nommés**. Un test qui vérifierait « au moins deux
+abonnements » repasserait au vert avec exactement le défaut d'origine ; celui
+qui est écrit nomme Ocean, et un second exige qu'un salon reste sans abonnement.
+
+**Le réglage des notifications retiré.** Écran, deux routes, table, modèle. Les
+sept genres restent : ils portent le gabarit et la langue. `kind` demeure dans
+la signature de `joignable` — ce n'est pas un vestige, c'est là que vivra une
+règle qui dépendrait du genre, et le retirer obligerait à retoucher tous les
+appelants pour le remettre.
+
+**Ce qui a survécu au retrait, et pourquoi.** Deux tests éprouvaient la
+préférence *et* une propriété plus générale : que la joignabilité est relue au
+moment de sortir, pas figée au dépôt. La propriété n'a pas bougé de sens ; ils
+la portent maintenant sur la suspension. Deux autres ne parlaient que du
+réglage : ils sont partis avec lui.
+
+**Le retour arrière de la migration recrée la table, vide.** Il ne peut pas
+faire mieux, et le dire vaut mieux que de laisser croire qu'il restaure quelque
+chose : les refus ne sont copiés nulle part. Les archiver serait garder la
+donnée qu'on a décidé de ne plus avoir.
