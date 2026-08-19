@@ -45,6 +45,18 @@ const IPHONE = {
   insets: { top: 47, left: 0, right: 0, bottom: 34 },
 };
 
+/**
+ * Le jour du montage, **calculé et non figé**.
+ *
+ * La bande de quatorze jours commence aujourd'hui chez le commerce : une date
+ * en dur en sortirait au fil des semaines, et le créneau du montage
+ * deviendrait invisible sans que rien ne le dise.
+ */
+const JOUR_DE_LA_BANDE = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'America/New_York',
+  dateStyle: 'short',
+}).format(new Date());
+
 const OFFRE = {
   tier_offer_id: 'o1',
   catalog_item_id: 'i1',
@@ -125,10 +137,18 @@ function serveur() {
     const rendre = (corps: unknown) =>
       ({ ok: true, status: 200, json: async () => corps }) as Response;
 
-    // L'ordre compte : « /businesses/b1/availability » contient « /businesses/b1 ».
+    // L'ordre compte deux fois : « /availability/summary » contient
+    // « /availability », qui contient lui-même « /businesses/b1 ».
+    if (chemin.includes('/availability/summary')) {
+      return rendre([{ jour: JOUR_DE_LA_BANDE, ouvert: true, revolu: false, creneaux_libres: 1 }]);
+    }
     if (chemin.includes('/availability')) {
       return rendre([
-        { starts_at: '2026-08-08T14:00:00Z', ends_at: '2026-08-08T14:45:00Z', places_restantes: 2 },
+        {
+          starts_at: `${JOUR_DE_LA_BANDE}T14:00:00Z`,
+          ends_at: `${JOUR_DE_LA_BANDE}T14:45:00Z`,
+          places_restantes: 2,
+        },
       ]);
     }
     if (chemin.includes('/businesses/b1')) return rendre(FICHE);

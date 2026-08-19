@@ -28,7 +28,8 @@ import {
   Texte,
   type NomIcone,
 } from '../components';
-import { formatHeure, formatNumber, repereDuCreneau } from '../format';
+import { formatHeure, formatNumber, jourCivil, repereDuCreneau } from '../format';
+import { fermeAujourdhui } from './horaires';
 import { useI18n } from '../i18n';
 import { urlImage } from './FilScreen';
 import { elevationDeCarte, elevationFlottante, radius, useTheme } from '../theme';
@@ -103,6 +104,16 @@ export function FicheScreen({
         // Le serveur rend les offres dans son ordre ; on ne le rejoue pas, on
         // le partitionne. Un tri refait ici déciderait quelle prestation passe
         // devant, ce que le produit ne fait jamais.
+        // **La preuve d'ouverture, prise sur ce qui est déjà servi.** Un
+        // créneau aujourd'hui sort du calcul de capacité réel, exceptions
+        // comprises : il prouve que le salon ouvre. L'absence ne prouve rien.
+        const ouvreAujourdhui = fiche.offres.some((offre) =>
+          offre.prochains_creneaux.some(
+            (creneau) => jourCivil(creneau, fiche.timezone) === jourCivil(new Date(), fiche.timezone),
+          ),
+        );
+        const fermeture = fermeAujourdhui(fiche.horaires, fiche.timezone, ouvreAujourdhui);
+
         const ouvertes = fiche.offres.filter((offre) => offre.accessible);
         const fermees = fiche.offres.filter((offre) => !offre.accessible);
         return (
@@ -128,12 +139,20 @@ export function FicheScreen({
                 </Texte>
               ) : null}
             </View>
-            {/* **La catégorie, et elle seule.** La planche pose deux étiquettes,
-                dont « OPEN UNTIL 19:00 » : les horaires ne sont pas servis sur
-                la fiche publique, et les deviner depuis autre chose serait
-                annoncer une fermeture qu'on ne peut pas vérifier. L'étiquette
-                reviendra avec le champ. */}
+            {/* **Les deux étiquettes de la planche, dont l'horaire.** Il
+                manquait faute de champ ; le champ est arrivé. Il est
+                hebdomadaire et ignore les exceptions, donc il se croise avec
+                une preuve d'ouverture prise sur les créneaux du jour — voir
+                `horaires.ts`. Absent quand rien ne le prouve : cacher une
+                information vraie coûte moins qu'envoyer quelqu'un devant une
+                porte close. */}
             <View style={{ flexDirection: 'row', gap: 8 }}>
+              {fermeture ? (
+                <Etiquette
+                  texte={t('parcours.ficheOuvertJusqua', { heure: fermeture })}
+                  testID="horaire-du-jour"
+                />
+              ) : null}
               <Etiquette texte={t(`categories.${fiche.category}`)} testID="categorie" />
             </View>
           </View>

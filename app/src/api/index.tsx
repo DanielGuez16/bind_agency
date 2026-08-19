@@ -30,6 +30,7 @@ import type {
   PlateformeDeTerminal,
   TerminalEnregistre,
   Creneau,
+  JourDeDisponibilite,
   DroitDeLecture,
   EtapeActivation,
   VueDActivation,
@@ -223,9 +224,46 @@ export class Api {
     return this.client.request<FichePublique>(routes.fichePublique(businessId), { signal });
   }
 
-  disponibilite(businessId: string, catalogItemId: string, signal?: AbortSignal) {
+  /**
+   * Les débuts possibles, sur l'horizon demandé.
+   *
+   * **`jours` existait sur la route et personne ne le passait.** La bande de
+   * quatorze jours a été annoncée comme coûtant quatorze appels ; elle en coûte
+   * un. Le serveur borne à 90, et l'appel sans borne prend l'horizon de
+   * réservation configuré.
+   *
+   * Elle rend les **heures**. L'état des jours vient de `resumeDeLaBande`, à
+   * côté : une route qui rendrait les deux ferait payer le parcours complet des
+   * règles de capacité pour une bande qui n'a besoin que de comptes.
+   */
+  disponibilite(
+    businessId: string,
+    catalogItemId: string,
+    signal?: AbortSignal,
+    jours?: number,
+  ) {
     return this.client.request<Creneau[]>(routes.disponibilite(businessId), {
-      query: { catalog_item_id: catalogItemId },
+      query: { catalog_item_id: catalogItemId, ...(jours ? { jours: String(jours) } : {}) },
+      signal,
+    });
+  }
+
+  /**
+   * La bande de quatorze jours : un état et un compte par journée locale.
+   *
+   * **Une route, pas quatorze appels à la précédente.** L'écran dessine la
+   * bande avant qu'on choisisse un jour ; la demander jour par jour ferait
+   * quatorze parcours des mêmes règles de capacité pour un écran qu'on ouvre à
+   * chaque réservation.
+   */
+  resumeDeLaBande(
+    businessId: string,
+    catalogItemId: string,
+    jours: number,
+    signal?: AbortSignal,
+  ) {
+    return this.client.request<JourDeDisponibilite[]>(routes.resumeDeLaBande(businessId), {
+      query: { catalog_item_id: catalogItemId, jours: String(jours) },
       signal,
     });
   }
