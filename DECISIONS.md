@@ -7434,3 +7434,52 @@ réclame « le résultat de la lecture automatique, mention et lieu séparément
 réuni ; fausse, les raisons disent ce qui a manqué et le reste est passé ; nulle,
 la question ne s'est pas posée — c'est « attestée ». Signalé avant qu'une route
 soit écrite pour rien.
+
+---
+
+## 2026-08-19 — Les réglages du créateur : deux natures, un seul cramoisi
+
+La revue a rendu trois reproches sur cet écran — « c'est moche, il y a trop de
+réglages, les boutons sont colorés pour rien » — et les trois avaient la même
+cause. Une colonne unique présentait au même poids une préférence qu'on change
+sans conséquence et une sortie de l'application ; la couleur des boutons tenait
+lieu de hiérarchie, faute d'en avoir une. **Deux régions séparées par un filet**
+remplacent les quatre boutons peints : ce qu'on règle, puis ce qui met fin.
+
+**La suppression est cramoisie, mais sur le bloc et non sur le bouton.** C'est
+la seule décision du produit qui ne se rouvre pas, donc la seule teintée — un
+seul cramoisi par écran. La porter sur la commande aurait reproduit le défaut
+même que la revue signale : un bouton coloré qui crie sans rien dire de plus. Le
+bloc porte la nature de la décision, le bouton porte l'action. La déconnexion,
+qui se défait en se reconnectant, redevient neutre : la peindre en `danger`
+mettait la fin de séance et la suppression définitive au même niveau d'alarme.
+
+**La bascule de thème ne revient pas, et la question est close.** La v1.0
+l'avait retirée — un seul jeu de couleurs, `theme.$userOverrideRetire` dans les
+jetons en garde la trace. Un interrupteur qui ne commande rien fait douter des
+réglages voisins, ce qui est précisément le doute exprimé en revue : la remettre
+aurait recréé la cause du reproche en croyant le corriger. Un test l'interdit,
+et il cherche l'interrupteur par son rôle autant que par son libellé — une
+bascule muette repassait sous une garde qui ne lisait que les mots.
+
+**Le diagnostic de connexion n'est plus un réglage.** Outil de développement, il
+occupait à lui seul plus de place que les préférences qu'une créatrice vient
+réellement changer : une bonne moitié du « trop de réglages » tenait là. Il
+passe derrière un appui long sur la ligne de stockage, en pied d'écran — non
+découvrable, non perdu, parce qu'il sert le jour où un écran reste vide. Il
+garde son retour au toucher : ce qui le cache est l'apparence au repos d'une
+ligne d'encre pâle, pas l'absence de réponse au doigt.
+
+**La suppression de compte est composée sans sa route, et inactive plutôt que
+fausse.** `anonymization.anonymize_account` existe ; aucun routeur ne l'expose.
+Le bouton est donc `disabled`, ce que `Button` réserve aux actions qui
+redeviendront possibles — sa réserve tenant à ce qu'un bouton grisé fasse
+deviner ce qui le débloque, une phrase le dit à côté. **Les quatre règles sont
+écrites maintenant, pour la route à venir** : la suppression *anonymise et ne
+détruit pas*, parce que le journal d'audit est immuable et qu'une contrepartie
+engagée concerne un salon qui n'a rien demandé ; elle est *différée de trente
+jours*, avec retour possible pendant ce délai ; elle est *refusée tant qu'une
+contrepartie court*, qui doit être honorée ou close avant ; et le commerce *ne
+voit jamais un compte anonymisé* dans son historique, il voit une créatrice
+partie. Elles sont dans le texte de l'écran parce qu'une décision irréversible
+se lit avant d'être prise, pas dans la boîte de confirmation qui la suit.
