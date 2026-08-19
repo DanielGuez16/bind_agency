@@ -37,8 +37,12 @@ test("l'écran tient sans défiler sur un téléphone", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
 
-  await expect(page.getByTestId('ecran-accueil')).toBeVisible();
-  await expect(page.getByTestId('vers-connexion')).toBeVisible();
+  // Depuis l'écran et non depuis la page : sur le web, les autres écrans
+  // restent montés dans le document, et un sélecteur global finit par trouver
+  // le bon nom sur le mauvais écran.
+  const accueil = page.getByTestId('ecran-accueil');
+  await expect(accueil).toBeVisible();
+  await expect(accueil.getByTestId('vers-connexion')).toBeVisible();
 
   const deborde = await page.evaluate(
     () => document.documentElement.scrollHeight > window.innerHeight + 1,
