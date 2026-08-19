@@ -341,3 +341,28 @@ describe('la galerie et la carte cessent d’être invisibles', () => {
     await vue.unmount();
   });
 });
+
+describe('les deux formes de la contrepartie s’accordent', () => {
+  it('le délai composé est celui que la phrase courte écrit déjà', async () => {
+    // **Deux vérités qui pourraient diverger sans qu'on le voie.** La phrase
+    // courte vit dans `produit.json` en toutes lettres — « One story within
+    // 48 h » — et la longue se compose de trois morceaux, dont `delaiHeures`.
+    // Rien d'autre ne les rapproche : un jour où le délai d'un palier change,
+    // il changera dans l'une et pas dans l'autre, et les deux écrans qui les
+    // rendent diront deux choses.
+    //
+    // Le test lit le nombre **dans la prose** plutôt que de le recopier ici :
+    // une constante écrite dans le test serait une troisième vérité.
+    const produit = require('../src/theme/produit.json');
+
+    for (const palier of produit.tier.order as string[]) {
+      const config = produit.tier[palier];
+      const dansLaProse = /(\d+)\s*h/.exec(config.counterpart.en);
+      expect({ palier, trouve: dansLaProse !== null }).toEqual({ palier, trouve: true });
+      expect({ palier, heures: Number(dansLaProse![1]) }).toEqual({
+        palier,
+        heures: config.delaiHeures,
+      });
+    }
+  });
+});

@@ -91,7 +91,12 @@ it('ne montre aucun accès quand il n’y a ni pages ni lien', async () => {
   await monter(ecran, clientDe(FICHE));
 
   await waitFor(() => expect(screen.getByText('Le Comptoir')).toBeTruthy());
-  expect(screen.queryByTestId('acces-a-la-carte')).toBeNull();
+  // **Sur les deux portes, et par leurs identifiants d'aujourd'hui.** Le test
+  // interrogeait `acces-a-la-carte`, le conteneur des deux lignes jumelles de
+  // la v1.1 : il n'existe plus, et l'assertion était donc vraie sans rien
+  // lire. Une négation qui porte sur un nœud disparu est verte pour toujours.
+  expect(screen.queryByTestId('acces-carte')).toBeNull();
+  expect(screen.queryByTestId('acces-galerie')).toBeNull();
 });
 
 it('ouvre la carte en plein écran, en pleine résolution', async () => {

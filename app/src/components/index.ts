@@ -38,12 +38,10 @@ export type { ApercuDePrestationProps } from './ApercuDePrestation';
 export {
   DataRow,
   MediaFallback,
-  ServiceRow,
   BandeDeTexteSurPhoto,
   VoileDeLisibilite,
   type DataRowProps,
   type MediaFallbackProps,
-  type ServiceRowProps,
 } from './Cards';
 export { StatusMessage, type Niveau, type StatusMessageProps } from './StatusMessage';
 export { TitreAccentue, type TitreAccentueProps } from './TitreAccentue';
