@@ -1074,10 +1074,16 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       valeur que Design ne déclare pas. **Trois secondes vérités supprimées** —
       `color.tier` qui recopiait la rampe en hexadécimaux et serait restée à
       l'orange brut, la liste des couleurs du sigle, et un drapeau booléen qui
-      disait sans sa raison ce que la règle dit en toutes lettres. Le bloc
-      accentué reste d'équerre et un test le tient, avec trois exceptions qui
-      portent chacune la leur. Les trois réserves de contraste de Design
-      deviennent quatre mesures. 1036 tests verts, 4 mutations vérifiées*
+      disait sans sa raison ce que la règle dit en toutes lettres. Les trois
+      réserves de contraste de Design deviennent quatre mesures.
+      **Cette ligne a d'abord affirmé que le bloc accentué restait d'équerre et
+      qu'un test le tenait ; c'était faux des deux moitiés.** La bascule l'avait
+      arrondi avec les 65 autres sites, et les deux gardes qui parlaient de
+      `radius.none` sont restées vertes — l'une vérifiait la valeur du jeton,
+      l'autre que personne d'autre ne s'en servait. La direction manquante est
+      écrite : le bloc doit le porter. De même `elevation.card`, déclarée et
+      consommée nulle part, et la pose du point du logo, que la palette ne peut
+      pas garantir. 1040 tests verts, 8 mutations vérifiées*
 - [ ] **Les treize planches d'écrans portent encore la v1.0**
       *`PASSATION-v1.1.md` §6 les liste et donne l'ordre qui limite le travail
       perdu : le fil d'abord, qui sert de référence aux autres ; la fiche de
