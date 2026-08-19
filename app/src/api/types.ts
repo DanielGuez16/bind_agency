@@ -148,11 +148,40 @@ export type OffreDuPalier = {
   distance_metres: number | null;
 };
 
+/**
+ * Le palier fermé le plus proche, et ce qu'il ouvrirait.
+ *
+ * **Il vivait sur le fil.** L'écran qui le montre lit `mesPaliers` depuis la
+ * refonte : le champ était servi à chaque chargement du fil et lu nulle part.
+ *
+ * Le classement est fait par le serveur — sur le **nombre** de conditions qui
+ * manquent, jamais sur leur ampleur — parce que le refaire ici en ferait une
+ * seconde vérité, et que comparer un écart d'abonnés à un nombre de
+ * collaborations revient à inventer un ordre.
+ */
+export type ProchainPalier = {
+  tier_id: string;
+  platform: Platform;
+  content_format: ContentFormat;
+  /** Le premier obstacle, celui qu'on affiche. */
+  obstacle: Obstacle;
+  /**
+   * Combien de commerces le proposent à portée. `null` sans position — une
+   * absence, jamais un zéro.
+   *
+   * **Ce n'est plus « de plus ».** Sur le fil, le compte excluait les commerces
+   * déjà listés ; hors du fil il n'y a rien à exclure, et garder le mot ferait
+   * promettre une soustraction qui n'a plus d'opérande.
+   */
+  commerces_dans_le_rayon: number | null;
+};
+
 export type VueDesPaliers = {
   creator_id: string;
   is_new_creator: boolean;
   fiabilite: FiabiliteDuCreateur;
   paliers: PalierAccessible[];
+  prochain_palier: ProchainPalier | null;
 };
 
 /** Ce que rend l'ouverture d'une autorisation : où envoyer la personne. */
@@ -285,7 +314,6 @@ export type CommerceDuFil = {
    * recadré vaut mieux qu'un monogramme. Le serveur ne recopie pas l'une dans
    * l'autre, sinon les deux ne se distinguent plus le jour où l'une change.
    */
-  cover_portrait_key: string | null;
   /**
    * **Et le mur en sert l'original, jamais la vignette.** Celle-ci est bornée à
    * 480 px sur le grand côté : sur un héros de 520 points à fond perdu, elle
@@ -324,22 +352,6 @@ export type Neighborhood =
  * quartier se choisit pour s'y rendre, et une moyenne ne désignerait aucun
  * salon existant.
  */
-/**
- * Le palier le plus proche, et ce qu'il ouvrirait.
- *
- * Classé sur le **nombre de conditions qui manquent**, jamais sur leur ampleur :
- * « une collaboration » et « cinq mille abonnés » sont deux grandeurs sans
- * rapport, et les comparer reviendrait à inventer un ordre.
- */
-export type ProchainPalier = {
-  tier_id: string;
-  platform: Platform;
-  content_format: ContentFormat;
-  /** Les salons que ce palier ouvrirait en plus de ceux déjà rendus. */
-  commerces_de_plus: number;
-  obstacle: Obstacle;
-};
-
 export type CompteParQuartier = {
   quartier: Neighborhood;
   commerces: number;
@@ -392,7 +404,6 @@ export type Fil = {
    * n'ouvrirait aucun salon dans le rayon — promettre un palier qui n'apporte
    * rien serait pire que se taire, et le pied disparaît alors.
    */
-  prochain_palier: ProchainPalier | null;
 };
 
 export type OffreDeLaFiche = {

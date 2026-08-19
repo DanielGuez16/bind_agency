@@ -98,6 +98,44 @@ class Fiabilite:
 
 
 @dataclass(frozen=True, slots=True)
+class ProchainPalier:
+    """Le palier fermé le plus proche, et ce qu'il ouvrirait.
+
+    **Il vivait sur le fil, et son sujet est parti sans lui.** L'écran qui le
+    montre lit `mesPaliers` depuis la refonte, pas le fil : le champ était
+    servi à chaque chargement du fil et lu nulle part. Le ranger en « contrat »
+    aurait fait passer un déménagement pour une intention.
+
+    **Le classement est ici et non dans l'écran.** C'est une règle de produit —
+    on classe sur le **nombre** de conditions qui manquent, jamais sur leur
+    ampleur — et la recopier côté client en ferait une seconde vérité. Une
+    première version triait sur l'écart brut : elle plaçait « une collaboration
+    de plus » devant « cinq mille abonnés de plus » parce que 1 < 5000, ce qui
+    revient à comparer deux grandeurs sans rapport. À égalité, l'échelle du
+    produit tranche — story, puis post, puis reel.
+
+    **Rien n'est recalculé.** Tout vient des paliers déjà évalués au-dessus :
+    aucune requête de plus, et le compte dans le rayon est celui que le palier
+    porte déjà.
+    """
+
+    tier_id: uuid.UUID
+    platform: Platform
+    content_format: ContentFormat
+    #: Le premier obstacle, celui que l'écran affiche. Les autres restent
+    #: lisibles sur le palier lui-même.
+    obstacle: eligibility.Obstacle
+    #: Combien de commerces le proposent à portée. `None` sans position — la
+    #: même absence que sur le palier, et pour la même raison.
+    #:
+    #: **Ce n'est plus « de plus ».** Sur le fil, le compte excluait les
+    #: commerces déjà listés — « combien de salons en plus de ceux que vous
+    #: voyez ». Hors du fil il n'y a rien à exclure, et garder le mot ferait
+    #: promettre une soustraction qui n'a plus d'opérande.
+    commerces_dans_le_rayon: int | None
+
+
+@dataclass(frozen=True, slots=True)
 class VueDesPaliers:
     creator_id: uuid.UUID
     #: Le badge : aucun historique de fiabilité, donc jugé sur son volume seul.
@@ -105,6 +143,9 @@ class VueDesPaliers:
     is_new_creator: bool
     fiabilite: Fiabilite
     paliers: tuple[PalierVu, ...]
+    #: Le palier fermé le plus proche. `None` quand ils sont tous ouverts, ou
+    #: qu'aucun de ceux qui restent ne porte d'obstacle nommable.
+    prochain_palier: ProchainPalier | None
 
 
 def _le_plus_proche(acces: list[eligibility.AccesPalier]) -> eligibility.AccesPalier:
@@ -399,6 +440,7 @@ async def vue_des_paliers(
         )
 
     return VueDesPaliers(
+        prochain_palier=_prochain_palier(vus),
         creator_id=creator_id,
         # Sans profil, aucun historique : c'est exactement l'état d'un nouveau
         # créateur, et non une erreur à remonter sur un écran de lecture.
@@ -408,4 +450,36 @@ async def vue_des_paliers(
             completed_collabs_count=profil.completed_collabs_count if profil else 0,
         ),
         paliers=tuple(vus),
+    )
+
+
+#: L'échelle du produit, du moins au plus exigeant. Elle départage deux paliers
+#: à qui il manque le même nombre de conditions.
+_ECHELLE = {ContentFormat.STORY: 0, ContentFormat.POST: 1, ContentFormat.REEL: 2}
+
+
+def _prochain_palier(vus: list[PalierVu]) -> ProchainPalier | None:
+    """Le plus proche des paliers fermés, sur les paliers déjà évalués.
+
+    **Classé sur le nombre de conditions qui manquent, pas sur leur ampleur.**
+    Voir `ProchainPalier` : comparer un écart d'abonnés à un nombre de
+    collaborations revient à inventer un ordre.
+
+    Un palier fermé sans obstacle nommable est écarté : il n'y aurait rien à
+    afficher, et « il vous manque quelque chose » n'aide personne.
+    """
+    fermes = sorted(
+        (palier for palier in vus if not palier.accessible and palier.obstacles),
+        key=lambda p: (len(p.obstacles), _ECHELLE.get(p.content_format, 9)),
+    )
+    if not fermes:
+        return None
+
+    plus_proche = fermes[0]
+    return ProchainPalier(
+        tier_id=plus_proche.tier_id,
+        platform=plus_proche.platform,
+        content_format=plus_proche.content_format,
+        obstacle=plus_proche.obstacles[0],
+        commerces_dans_le_rayon=plus_proche.commerces_dans_le_rayon,
     )

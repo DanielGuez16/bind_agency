@@ -220,6 +220,7 @@ export const en = {
     audienceReleveDu: 'Reading from {{date}}',
     audienceDejaAcquis: 'Already verified',
     audienceCeQuiCompte: 'What counts toward tiers',
+    audienceProchainPalier: 'Next: {{format}} on {{reseau}}',
     audienceVoirMesPaliers: 'See what each tier opens',
     audienceCollaborations: 'Completed collaborations',
     audienceScore: 'Reliability score',

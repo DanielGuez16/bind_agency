@@ -51,8 +51,10 @@ import {
   type AudienceDuCompte,
   type FiabiliteDuCreateur,
   type PlateformeConnectable,
+  type ProchainPalier,
   type SignalJuge,
   type VerificationDuCompte,
+  type VueDesPaliers,
 } from '../api';
 import {
   Apparition,
@@ -65,12 +67,16 @@ import {
 } from '../components';
 import { formatDate, formatDateTime, formatNumber } from '../format';
 import { useI18n, type SupportedLocale } from '../i18n';
+import { en } from '../i18n/en';
 import { translateErrorCode } from '../i18n/errors';
 import { useRattachement } from '../shell/rattacherUnReseau';
 import { useColors } from '../theme';
 import { Ecran } from './Ecran';
-import { nomDePlateforme } from './obstacle';
+import { messageDObstacle, nomDePlateforme } from './obstacle';
 import { useRequete } from './useRequete';
+
+/** Les codes que l'interface sait traduire. Un code inconnu se dit tel quel. */
+const CODES_CONNUS = new Set(Object.keys(en.errors));
 
 /** Les réseaux branchés. Snapchat n'a pas d'accès partenaire. */
 const RESEAUX: PlateformeConnectable[] = ['instagram', 'tiktok'];
@@ -90,7 +96,7 @@ type Vue = {
   audience: AudienceDuCompte[];
   verification: VerificationDuCompte[];
   /** Ce qui compte pour les paliers, et qui ne vient pas de l'audience. */
-  fiabilite: FiabiliteDuCreateur;
+  paliers: VueDesPaliers;
 };
 
 /** Depuis combien de jours le contrôle dure. Jamais un délai promis. */
@@ -111,7 +117,10 @@ export function AudienceScreen({ onVoirMesPaliers }: { onVoirMesPaliers?: () => 
       // écran sous « ce qui compte pour les paliers », parce que ce sont les
       // deux autres grandeurs qui ouvrent une prestation. Les laisser sur le
       // seul écran des paliers obligeait à les découvrir en cherchant.
-      fiabilite: (await api.mesPaliers({}, signal)).fiabilite,
+      // Un seul appel pour les deux : la fiabilité et le palier suivant
+      // viennent de la même vue, et la demander deux fois donnerait deux
+      // lectures d'un même état à deux instants.
+      paliers: await api.mesPaliers({}, signal),
     }),
     { estVide: (v) => v.audience.length === 0 },
   );
@@ -134,7 +143,7 @@ export function AudienceScreen({ onVoirMesPaliers }: { onVoirMesPaliers?: () => 
         </View>
       }
     >
-      {({ audience, verification, fiabilite }) => {
+      {({ audience, verification, paliers }) => {
         const connectes = new Set(audience.map((compte) => compte.platform));
         return (
           <View style={{ gap: 16 }}>
@@ -160,7 +169,8 @@ export function AudienceScreen({ onVoirMesPaliers }: { onVoirMesPaliers?: () => 
             />
 
             <CeQuiComptePourLesPaliers
-              fiabilite={fiabilite}
+              fiabilite={paliers.fiabilite}
+              prochain={paliers.prochain_palier}
               onVoirMesPaliers={onVoirMesPaliers}
             />
           </View>
@@ -345,9 +355,21 @@ function SignalAcquis({ signal, locale }: { signal: SignalJuge; locale: Supporte
  */
 function CeQuiComptePourLesPaliers({
   fiabilite,
+  prochain,
   onVoirMesPaliers,
 }: {
   fiabilite: FiabiliteDuCreateur;
+  /**
+   * Le palier fermé le plus proche, et ce qui manque pour l'ouvrir.
+   *
+   * **Venu du fil, où plus personne ne le lisait.** Il y vivait parce que les
+   * paliers y vivaient ; ils sont partis sur cet écran, et le champ était resté
+   * derrière — servi à chaque chargement du fil, rendu nulle part.
+   *
+   * `null` quand tous les paliers sont ouverts : il n'y a alors rien à viser, et
+   * une ligne vide vaut moins que pas de ligne.
+   */
+  prochain: ProchainPalier | null;
   /**
    * L'accès aux paliers, **arrivé du fil avec la v3**.
    *
@@ -381,6 +403,26 @@ function CeQuiComptePourLesPaliers({
         chiffre={fiabilite.reliability_score !== null}
         testID="score-de-fiabilite"
       />
+      {/* **Ce qui manque pour le palier suivant, et non combien il ouvrirait.**
+          Le compte de commerces n'est pas rendu ici, et c'est la même raison qui
+          retient déjà le nombre de prestations sur la ligne d'en dessous : cet
+          écran n'envoie aucune position, `commerces_dans_le_rayon` y est donc
+          nul par construction. Afficher un zéro à sa place dirait « aucun salon
+          autour de vous », ce qui est faux et décourageant.
+
+          Ce qui reste est l'obstacle, qui ne dépend d'aucune position et qui est
+          la seule chose actionnable : c'est ce qu'il faut faire pour ouvrir. */}
+      {prochain ? (
+        <DataRow
+          label={t('parcours.audienceProchainPalier', {
+            format: prochain.content_format.toUpperCase(),
+            reseau: nomDePlateforme(prochain.platform),
+          })}
+          value={messageDObstacle(t, prochain.obstacle, CODES_CONNUS, prochain.platform, locale)}
+          testID="prochain-palier"
+        />
+      ) : null}
+
       {/* **Le passage vers les paliers, sorti du fil.** Il y annonçait un
           nombre de prestations ; ici il n'en annonce aucun, et c'est voulu : le
           compte du fil était borné au rayon, et le répéter sur un écran qui ne

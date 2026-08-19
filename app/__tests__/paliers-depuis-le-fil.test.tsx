@@ -60,7 +60,6 @@ function filAvec(total: number, commerces = 1): Partial<Fil> {
     rayons: [],
     quartiers: [],
     categories: [],
-    prochain_palier: null,
   };
 }
 
