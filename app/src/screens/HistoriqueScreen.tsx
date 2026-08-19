@@ -34,9 +34,59 @@ import {
 } from '../components';
 import { useColors } from '../theme';
 import { useI18n, type SupportedLocale } from '../i18n';
-import { formatDateTime } from '../format';
+import { formatDateTime, formatMois } from '../format';
 import { Ecran } from './Ecran';
 import { useRequete } from './useRequete';
+
+/**
+ * Les mois d'une liste, dans son ordre.
+ *
+ * **Le cadre 08c groupe les réservations terminées par mois**, et l'écran les
+ * empilait à plat. Sur douze lignes, une date par ligne oblige à lire chaque
+ * date pour savoir où l'on en est ; un intertitre le dit une fois pour cinq
+ * lignes. Les deux autres onglets ne sont pas groupés — ils portent deux ou
+ * trois lignes, et un intertitre y coûterait plus qu'il ne rend.
+ *
+ * Le regroupement suit l'ordre **reçu**, il ne trie pas : le serveur a déjà
+ * décidé, et retrier ici ferait diverger l'écran de sa pagination.
+ */
+export function grouperParMois(
+  items: ReservationDuCreateur[],
+  locale: SupportedLocale,
+): { mois: string; items: ReservationDuCreateur[] }[] {
+  const groupes: { mois: string; items: ReservationDuCreateur[] }[] = [];
+
+  for (const item of items) {
+    const quand = item.starts_at ?? item.valid_until;
+    // Le fuseau du commerce, pas celui du téléphone : une réservation du
+    // 1er août à Miami ne bascule pas en juillet parce qu'on la lit d'ailleurs.
+    const mois = formatMois(quand, locale, item.business_timezone).toUpperCase();
+
+    const dernier = groupes.at(-1);
+    if (dernier?.mois === mois) dernier.items.push(item);
+    else groupes.push({ mois, items: [item] });
+  }
+
+  return groupes;
+}
+
+/**
+ * Ce qu'il reste avant l'échéance, en heures ou en jours.
+ *
+ * **Nul quand l'échéance est passée.** Une contrepartie en retard est déjà
+ * close par le balayage, et « −3 H » sur une ligne encore ouverte se lirait
+ * comme une dette. Le cas se produit dans la seconde qui sépare l'échéance du
+ * passage du balayage : rien à afficher vaut mieux qu'un nombre négatif.
+ *
+ * En heures sous deux jours, en jours au-delà. « 47 H » est exact et illisible
+ * quand « 2 J » suffit à décider ; l'inverse est vrai à six heures près de la
+ * fin, où le jour arrondi ferait manquer la soirée.
+ */
+export function tempsRestant(echeance: string, maintenant = Date.now()): string | null {
+  const heures = Math.floor((new Date(echeance).getTime() - maintenant) / 3_600_000);
+  if (heures < 0) return null;
+  return heures < 48 ? `${heures} h` : `${Math.floor(heures / 24)} j`;
+}
 
 /** Les trois onglets, et les statuts que chacun couvre. */
 const ONGLETS: { cle: string; libelle: string; statuts: BookingStatus[] }[] = [
@@ -110,7 +160,25 @@ export function HistoriqueScreen({
       {(vue) => (
         <View style={{ gap: 12 }}>
           <Onglets index={index} onChange={setIndex} compteurs={compteurs} />
-          {vue.items.map((reservation, rang) => {
+          {/* **Seul l'onglet des terminées est groupé** (cadre 08c). Les deux
+              autres portent deux ou trois lignes : un intertitre y coûterait
+              plus qu'il ne rend, et découperait une liste qui se lit d'un
+              coup. */}
+          {ONGLETS[index].cle === 'terminees'
+            ? grouperParMois(vue.items, locale).map((groupe) => (
+                <View key={groupe.mois} style={{ gap: 12 }} testID={`mois-${groupe.mois}`}>
+                  <Texte variante="type.monoSmall" couleur="ink.mute">
+                    {groupe.mois}
+                  </Texte>
+                  {groupe.items.map((reservation, rang) => (
+                    <Apparition key={reservation.booking_id} rang={rang}>
+                      <LigneDeReservation reservation={reservation} onOuvrir={onOuvrir} />
+                    </Apparition>
+                  ))}
+                </View>
+              ))
+            : null}
+          {ONGLETS[index].cle === 'terminees' ? null : vue.items.map((reservation, rang) => {
             // **Pressable exactement quand la ligne attend un geste.** Une
             // ligne en contrôle ouvrait l'écran de preuve alors qu'elle dit
             // « rien à faire de votre côté » : la ligne et son texte se
@@ -238,6 +306,22 @@ function LigneDeReservation({
                 seul — « en attente de votre publication » — ne dit pas jusqu'à
                 quand, et c'est la seule chose qui décide s'il faut agir ce
                 soir ou la semaine prochaine. */}
+            {/* **Ce qui reste, avant la date à laquelle cela finit.** Le cadre
+                08b porte « 31 H LEFT » à côté du nom, et l'écran ne donnait
+                que la date d'échéance. Une date demande de compter ; un temps
+                restant se comprend sans calcul, et c'est lui qui décide si
+                l'on publie ce soir ou demain. La date reste dessous — elle
+                seule dit *quand*, à l'heure du salon. */}
+            {tempsRestant(contrepartie.deadline_at) ? (
+              <Texte
+                variante="type.monoSmall"
+                testID={`reste-${reservation.booking_id}`}
+              >
+                {t('parcours.contrepartieReste', {
+                  reste: tempsRestant(contrepartie.deadline_at),
+                }).toUpperCase()}
+              </Texte>
+            ) : null}
             <Texte
               variante="type.monoSmall"
               couleur="ink.soft"

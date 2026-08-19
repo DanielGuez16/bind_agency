@@ -82,6 +82,25 @@ export function formatJour(isoDate: string, locale: SupportedLocale): string {
 }
 
 /**
+ * Le mois d'un instant, dans le fuseau du commerce. « AUGUST 2026 ».
+ *
+ * **Le fuseau, et pas celui du téléphone.** Une réservation du 1er août à
+ * 02 h UTC est le 31 juillet à Miami : l'intertitre la rangerait dans le mois
+ * suivant, sous les yeux de quelqu'un qui sait très bien quand il y est allé.
+ *
+ * L'année accompagne le mois. Sans elle, « JANUARY » confond deux janviers
+ * consécutifs, et l'historique d'une créatrice fidèle en compte deux avant sa
+ * deuxième année.
+ */
+export function formatMois(isoUtc: string, locale: SupportedLocale, timeZone: string): string {
+  return new Intl.DateTimeFormat(locale, {
+    month: 'long',
+    year: 'numeric',
+    timeZone,
+  }).format(new Date(isoUtc));
+}
+
+/**
  * Le repère d'un créneau : aujourd'hui, demain, un jour nommé, ou sa date.
  *
  * **« 08/08/2026, 14:30 » demandait de calculer.** C'est la remarque de la
