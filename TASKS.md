@@ -1093,6 +1093,20 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       Postgres **derrière** Python. Elle est ici mesurée sous charge, et dans
       l'autre sens. **Reste à passer le même peigne** sur les autres colonnes
       qui comparent une heure Python à une heure écrite par la base*
+- [x] **Les trois champs sans lecteur, tranchés plutôt que rangés**
+      *`prochain_palier` et `commerces_de_plus` passent du fil à `/me/tiers`,
+      où leur sujet est parti. La route portait déjà les obstacles et le compte
+      dans le rayon par palier ; seul le **classement** a déménagé, et il reste
+      au serveur — le recopier dans l'écran en ferait une seconde vérité.
+      `commerces_de_plus` ne suit pas : hors du fil il n'y a rien à exclure, et
+      garder le mot promettrait une soustraction sans opérande.
+      `cover_portrait_key` quitte le fil. Le produit ne rend qu'une forme de
+      couverture, 16:9, avec sa raison mesurée ; aucune surface portrait
+      n'existe et aucun écran n'en dépose. La colonne et les vingt images
+      restent — elles ne coûtent rien, et la question de composition n'est pas
+      à moi pendant que l'autre conversation refait ces écrans.
+      La section « à instruire » de la garde des champs est de nouveau **vide**.
+      4 tests neufs, 2 mutations dont une survivante documentée*
 - [ ] **`SOCIAL_PROVIDER` et `API_PUBLIC_BASE_URL` à poser chez Render**
       *Le seul des trois bloquants que le code ne peut pas corriger seul. Depuis
       cette tranche, l'API refuse de démarrer sans elles plutôt que de répondre
