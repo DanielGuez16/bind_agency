@@ -338,6 +338,7 @@ export const en = {
     ficheMention: 'a mention of {{mention}}',
     ficheLieu: 'a location tag',
     creneauxTitre: 'Pick a time',
+    creneauxRecapitulatif: '{{jour}}, {{heure}}',
     // **Trois états distincts, et non un mot pour trois.** « Fermé » n'est pas
     // « complet », et « écoulé » n'est ni l'un ni l'autre : à 20 h, aujourd'hui
     // n'a plus de créneau sans que le salon ait été pris d'assaut.

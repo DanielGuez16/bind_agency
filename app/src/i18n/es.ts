@@ -315,6 +315,7 @@ export const es: Catalogue = {
     ficheMention: 'una mención a {{mention}}',
     ficheLieu: 'una etiqueta de ubicación',
     creneauxTitre: 'Elige una hora',
+    creneauxRecapitulatif: '{{jour}}, {{heure}}',
     creneauxEtatCourt: {
       ferme: 'Cerrado',
       complet: 'Lleno',

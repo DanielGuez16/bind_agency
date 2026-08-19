@@ -81,6 +81,7 @@ export function formatJour(isoDate: string, locale: SupportedLocale): string {
   );
 }
 
+
 /**
  * Le mois d'un instant, dans le fuseau du commerce. « AUGUST 2026 ».
  *
