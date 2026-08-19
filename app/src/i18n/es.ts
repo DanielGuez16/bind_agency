@@ -358,6 +358,9 @@ export const es: Catalogue = {
     preuve_ecart: 'Todavía no coincide',
     preuve_ecart_aide: 'La plataforma lo comprobó y encontró esto:',
     contrepartieEnArbitrage: 'Un árbitro se ha hecho cargo — el local ya no decide.',
+    preuveAdresse: 'Enlace a tu publicación',
+    preuveAdresseAide:
+      'Pega el enlace de la publicación. El negocio lo abre para comprobar que sigue en línea — con una captura sola, tiene que creerte.',
     preuveNote: '¿Algo que añadir?',
     preuveNoteAide: 'Opcional. El salón lo lee junto a tu prueba — útil si algo no salió según lo previsto.',
     preuveCommentFaire: 'Una captura de tu publicación. Las historias se capturan a mano: desaparecen en 24 h y no tienen enlace estable.',
@@ -458,7 +461,7 @@ export const es: Catalogue = {
     publicationsTitre: 'Publicaciones',
     publicationsVide: 'Nada que revisar.',
     filtreAControler: 'Por revisar',
-    filtreAttendue: 'Esperadas',
+    filtreAttendue: 'Falta su publicación',
     filtreApprouvee: 'Aprobadas',
     approuver: 'Aprobar la publicación',
     redemander: 'Pedir una nueva publicación',

@@ -11,6 +11,22 @@
  * rien du tout — c'est exactement ce qui a été relevé — et le remède n'est pas
  * de le presser plus fort, c'est d'aller lever le refus. Le message le dit, à
  * l'endroit près, parce que « dans les réglages » n'aide personne.
+ *
+ * **Et il n'y a plus de première demande à proposer.** Un écran qui demandait
+ * « partagez votre position », suivi du système qui demande la même chose,
+ * faisait deux questions pour une : la première n'apprenait rien que la seconde
+ * ne dise mieux, et elle ajoutait un geste avant le geste. Le fil déclenche
+ * maintenant la demande système à l'arrivée ; `jamais_demandee` est donc un état
+ * qui ne dure qu'un rendu, et il se dit comme une attente, pas comme une
+ * question.
+ *
+ * **Ce qui reste après un refus gagne un « réessayer », et ce n'est pas un
+ * retour en arrière.** Le bouton retiré promettait de reposer la question au
+ * système, ce que le système refuse. Celui-ci ne promet que de **relire**
+ * l'autorisation : quelqu'un qui vient de la rétablir dans ses réglages n'a
+ * alors pas à recharger la page pour que le fil s'en aperçoive. `demander` lit
+ * l'état avant de demander — si le refus tient toujours, on retombe sur le même
+ * message, et rien n'a été promis qui ne soit tenu.
  */
 import type { EtatDePosition, OuReactiver } from './usePosition';
 
@@ -35,11 +51,11 @@ export function messageDePosition(etat: EtatDePosition): MessageDePosition | nul
       return null;
 
     case 'jamais_demandee':
-      return {
-        corps: 'parcours.filSansPosition',
-        ouReactiver: null,
-        action: { cle: 'parcours.filAutoriser' },
-      };
+      // **Aucune action.** Le fil demande de lui-même en arrivant : proposer un
+      // bouton ici ferait la première des deux questions qu'on vient de
+      // supprimer. L'état ne dure qu'un rendu, et il se lit comme l'attente
+      // qu'il est.
+      return { corps: 'parcours.filPositionEnCours', ouReactiver: null, action: null };
 
     case 'en_cours':
       // Aucune action : la fenêtre système est ouverte, ou le relevé court.
@@ -47,13 +63,15 @@ export function messageDePosition(etat: EtatDePosition): MessageDePosition | nul
       return { corps: 'parcours.filPositionEnCours', ouReactiver: null, action: null };
 
     case 'refusee':
-      // **Pas de bouton.** Le redemander ne rouvre rien, et un bouton qui ne
-      // fait rien est pire que pas de bouton : c'est ce défaut-là qu'on
-      // répare. Le chemin vers le réglage prend sa place.
+      // **Le chemin vers le réglage d'abord, le bouton après.** L'ordre est la
+      // règle : « réessayer » seul rejouerait la demande muette qu'on a
+      // corrigée. Placé sous l'explication, il ne dit plus « je repose la
+      // question » mais « j'ai rétabli, relis » — et `demander` relit
+      // effectivement l'autorisation avant de demander quoi que ce soit.
       return {
         corps: 'parcours.filPositionRefusee',
         ouReactiver: REACTIVER[etat.ouReactiver],
-        action: null,
+        action: { cle: 'parcours.filReessayer' },
       };
 
     case 'indisponible':

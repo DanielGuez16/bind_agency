@@ -126,7 +126,7 @@ async def archiver_la_publication(
     if capture is not None:
         return capture
 
-    return await _par_capture_ecran(screenshot_key)
+    return await _par_capture_ecran(screenshot_key, source_url)
 
 
 async def _par_api(
@@ -153,11 +153,28 @@ async def _par_api(
     ):
         return None
 
+    # **`fournisseur_de` est une dépendance FastAPI, pas un gestionnaire de
+    # contexte.** Elle était utilisée en `async with`, ce qui lève
+    # `TypeError: 'async_generator' object does not support the asynchronous
+    # context manager protocol` — à la première ligne du niveau 1, avant tout
+    # appel réseau. Le chemin n'avait donc **jamais** tourné : il n'est atteint
+    # que si une adresse est fournie, et rien dans le produit n'en fournissait —
+    # l'écran de soumission n'avait pas le champ, et le semis posait `None`. Les
+    # trois manques se cachaient l'un l'autre : on ne pouvait pas découvrir la
+    # panne du niveau 1 tant qu'aucune adresse ne l'atteignait.
+    #
+    # `anext` prend le premier élément du fabrique — le fournisseur — et la
+    # fermeture du client HTTP se fait à la sortie de la fonction, comme pour
+    # une dépendance.
     try:
-        async with fournisseur_de(compte.platform) as provider:
+        fabrique = fournisseur_de(compte.platform)
+        try:
+            provider = await anext(fabrique)
             publication = await provider.fetch_media(
                 compte.access_token_encrypted, permalink=source_url
             )
+        finally:
+            await fabrique.aclose()
     except SocialProviderError:
         # `PublicationIntrouvable` et `SocialAuthError` en héritent toutes deux.
         # Aucune n'est un défaut du créateur, et aucune ne justifie de refuser
@@ -219,12 +236,27 @@ async def _par_url(source_url: str | None) -> MediaCapture | None:
     )
 
 
-async def _par_capture_ecran(screenshot_key: str | None) -> MediaCapture | None:
+async def _par_capture_ecran(
+    screenshot_key: str | None, source_url: str | None = None
+) -> MediaCapture | None:
     """Niveau 3 : ce que le créateur a envoyé.
 
     Le seul niveau réellement disponible aujourd'hui. La capture est déjà
     déposée — le téléversement est un flux à part — et on n'en retient ici que
     la clé et de quoi calculer l'empreinte.
+
+    **L'adresse fournie est retenue, elle n'est plus jetée.** Les niveaux 1 et 2
+    posaient `source_url` depuis ce qu'ils avaient réellement téléchargé ;
+    celui-ci ne posait rien, si bien qu'une adresse collée par la créatrice
+    disparaissait dès que la publication n'était pas récupérable — c'est-à-dire
+    toujours, aujourd'hui. Le commerce n'avait que la capture, et « ouvrir la
+    publication » n'apparaissait jamais.
+
+    **Elle n'est pas pour autant une vérification, et rien ne le prétend.**
+    `capture_method` vaut `UPLOAD` : l'interface sait qu'on est au niveau 3, et
+    le champ de vérification reste nul. C'est une adresse déclarée, exactement
+    comme la note — du contenu saisi, utile parce que c'est là que le commerce
+    va regarder.
     """
     if not screenshot_key:
         return None
@@ -239,4 +271,5 @@ async def _par_capture_ecran(screenshot_key: str | None) -> MediaCapture | None:
         capture_method=CaptureMethod.UPLOAD,
         contenu=contenu if contenu is not None else screenshot_key.encode(),
         screenshot_key=screenshot_key,
+        source_url=source_url,
     )

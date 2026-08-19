@@ -21,11 +21,18 @@
  * l'état `en_cours` n'en propose pas, à raison. Le rôle créateur en devenait
  * intestable.
  */
-import { act, renderHook, waitFor } from '@testing-library/react-native';
+import { act, render, renderHook, screen, waitFor } from '@testing-library/react-native';
 import * as Location from 'expo-location';
 import { Platform } from 'react-native';
 
+import { ApiClient, ApiProvider } from '../src/api';
+import { I18nProvider } from '../src/i18n';
+import { en } from '../src/i18n/en';
+import { FilScreen } from '../src/screens/FilScreen';
 import { messageDePosition } from '../src/shell/messageDePosition';
+import { ThemeProvider } from '../src/theme';
+
+const coffre = { lire: async () => null, ecrire: async () => {} };
 import { usePosition, type EtatDePosition } from '../src/shell/usePosition';
 
 jest.mock('expo-location', () => ({
@@ -220,21 +227,55 @@ describe('la demande de position', () => {
 });
 
 describe('ce que l’écran dit de chaque état', () => {
-  it('ne propose de redemander que là où la fenêtre s’ouvrira', () => {
-    // La règle, en une assertion. Un bouton sur `refusee` serait un bouton qui
-    // ne fait rien — le défaut qu'on répare.
-    const avecBouton: EtatDePosition['etat'][] = ['jamais_demandee', 'indisponible'];
-    const sansBouton: EtatDePosition['etat'][] = ['refusee', 'en_cours'];
+  it('ne propose une action que là où elle produit quelque chose', () => {
+    /**
+     * **La règle a changé de bord sur deux états, et pour deux raisons
+     * différentes.**
+     *
+     * `jamais_demandee` **perd** son bouton : le fil déclenche maintenant la
+     * demande système en arrivant, et proposer « partagez votre position » juste
+     * avant que le système pose la même question faisait deux demandes pour une.
+     *
+     * `refusee` **gagne** un « réessayer », et ce n'est pas le retour du bouton
+     * qui ne faisait rien. Celui-là promettait de reposer la question au
+     * système ; celui-ci ne promet que de relire l'autorisation, pour qui vient
+     * de la rétablir dans ses réglages. `demander` lit avant de demander, donc
+     * la promesse est tenable — et si le refus tient, on retombe sur le même
+     * message.
+     *
+     * Ce qui n'a pas changé : `en_cours` n'a rien à presser, et le chemin vers
+     * le réglage reste sur `refusee`.
+     */
+    const avecAction: EtatDePosition['etat'][] = ['indisponible', 'sans_reponse'];
+    const sansAction: EtatDePosition['etat'][] = ['jamais_demandee', 'en_cours'];
 
-    for (const etat of avecBouton) {
+    for (const etat of avecAction) {
       expect(messageDePosition({ etat } as EtatDePosition)?.action).not.toBeNull();
     }
-    for (const etat of sansBouton) {
-      const message = messageDePosition(
-        etat === 'refusee' ? { etat, ouReactiver: 'navigateur' } : ({ etat } as EtatDePosition),
-      );
-      expect(message?.action).toBeNull();
+    for (const etat of sansAction) {
+      expect(messageDePosition({ etat } as EtatDePosition)?.action).toBeNull();
     }
+
+    // Le refus porte les deux : le chemin d'abord, le bouton ensuite.
+    const refus = messageDePosition({ etat: 'refusee', ouReactiver: 'navigateur' });
+    expect(refus?.ouReactiver).not.toBeNull();
+    expect(refus?.action?.cle).toBe('parcours.filReessayer');
+  });
+
+  it('ne propose jamais la première demande, puisque le fil la déclenche', () => {
+    /**
+     * **Le cœur du point relevé en campagne**, isolé de tout écran : deux
+     * demandes pour une seule question. Celle-ci est celle qui n'apprenait
+     * rien — le système nomme l'application et porte les conséquences bien mieux
+     * qu'une phrase de notre part.
+     *
+     * Vérifié sur la clé et pas seulement sur `action === null` : un bouton qui
+     * reviendrait sous un autre libellé serait la même faute.
+     */
+    const message = messageDePosition({ etat: 'jamais_demandee' });
+
+    expect(message?.action).toBeNull();
+    expect(JSON.stringify(message)).not.toContain('filAutoriser');
   });
 
   it('dit où réactiver, et l’endroit dépend de la plateforme', () => {
@@ -287,5 +328,65 @@ describe('ce que l’écran dit de chaque état', () => {
     expect(suriOS.result.current.etat).toEqual({ etat: 'refusee', ouReactiver: 'ios' });
 
     Object.defineProperty(Platform, 'OS', { value: original, configurable: true });
+  });
+});
+
+// --------------------------------------------------------------------------
+// la demande part du fil, et une seule fois
+// --------------------------------------------------------------------------
+
+/**
+ * **Deux demandes pour une seule question, relevé en campagne.**
+ *
+ * Un écran demandait « partagez votre position », puis le système demandait la
+ * même chose. Le fil déclenche maintenant la demande système en arrivant.
+ *
+ * Éprouvé sur l'écran et non sur le hook : c'est l'écran qui a la règle — le
+ * hook ne demande toujours rien de lui-même, et c'est voulu.
+ */
+describe('le fil demande la position en arrivant', () => {
+  const cadre = (etat: EtatDePosition, demander: () => void) => (
+    <I18nProvider initialLocale="en">
+      <ThemeProvider role="creator">
+        <ApiProvider client={new ApiClient({ baseUrl: 'https://api.test', coffre, fetchImpl: async () => ({ ok: true, status: 200, json: async () => ({}) }) as Response })}>
+          <FilScreen
+            position={null}
+            etatDeLaPosition={etat}
+            onDemanderLaPosition={demander}
+            onOuvrirLeCommerce={() => {}}
+          />
+        </ApiProvider>
+      </ThemeProvider>
+    </I18nProvider>
+  );
+
+  it('la déclenche sans qu’on ait rien à presser', async () => {
+    const demander = jest.fn();
+
+    render(cadre({ etat: 'jamais_demandee' }, demander));
+
+    await waitFor(() => expect(demander).toHaveBeenCalledTimes(1));
+    // Et il n'y a pas de bouton : la question du système est la seule posée.
+    expect(screen.queryByText(en.parcours.filAutoriser)).toBeNull();
+  });
+
+  it('ne la redéclenche sur aucun autre état', async () => {
+    /**
+     * **Le pendant, et c'est lui qui compte.** Un effet qui partirait sur
+     * `refusee` rejouerait une demande que le système ne rouvre pas, à chaque
+     * rendu — le défaut qu'on avait corrigé une première fois, revenu par
+     * l'automatisme. Et sur `en_cours`, il doublerait une demande en vol.
+     */
+    for (const etat of [
+      { etat: 'en_cours' },
+      { etat: 'refusee', ouReactiver: 'navigateur' },
+      { etat: 'indisponible' },
+      { etat: 'sans_reponse' },
+    ] as EtatDePosition[]) {
+      const demander = jest.fn();
+      render(cadre(etat, demander));
+      await waitFor(() => expect(screen.getByTestId('fil-sans-position')).toBeTruthy());
+      expect(demander).not.toHaveBeenCalled();
+    }
   });
 });

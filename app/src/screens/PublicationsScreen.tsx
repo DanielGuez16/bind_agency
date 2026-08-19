@@ -43,10 +43,25 @@ import { Ecran } from './Ecran';
 import { PreuveSoumise, SqueletteDePreuve } from './Preuve';
 import { useRequete } from './useRequete';
 
+/**
+ * Les trois onglets, **dans l'ordre où l'on s'en sert**.
+ *
+ * Ce qui demande un geste vient d'abord ; ce qui est réglé ensuite ; ce qui
+ * n'attend personne en dernier. « Attendues » se trouvait au milieu, entre les
+ * deux seuls onglets où le salon a quelque chose à faire ou à vérifier — il
+ * fallait le traverser pour aller de l'un à l'autre, alors qu'il ne demande
+ * rien.
+ *
+ * `expected` porte le libellé « en attente de sa publication » et non
+ * « attendues » : le premier mot ne disait ni de qui ni de quoi. Ce sont des
+ * contreparties engagées dont la publication n'est pas encore arrivée, et le
+ * salon n'a rien à y faire — ce qui est précisément la raison de les mettre en
+ * dernier.
+ */
 const ONGLETS: { filtre: FiltreDeContrepartie; libelle: string }[] = [
   { filtre: 'to_review', libelle: 'commerce.filtreAControler' },
-  { filtre: 'expected', libelle: 'commerce.filtreAttendue' },
   { filtre: 'approved', libelle: 'commerce.filtreApprouvee' },
+  { filtre: 'expected', libelle: 'commerce.filtreAttendue' },
 ];
 
 export function PublicationsScreen({ businessId }: { businessId: string }) {

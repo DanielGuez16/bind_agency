@@ -63,6 +63,9 @@ function etatDeLaVerification(verifiee: boolean | null): 'verifiee' | 'ecart' | 
  * de laisser écrire une phrase qui sera coupée à l'envoi.
  */
 const LONGUEUR_DE_LA_NOTE = 500;
+
+/** La borne du serveur sur `source_url`, recopiée — un test compare les deux. */
+const LONGUEUR_DE_L_ADRESSE = 1000;
 import { Image, Linking, View } from 'react-native';
 
 import * as ImagePicker from 'expo-image-picker';
@@ -112,6 +115,21 @@ export function EnvoiDePreuve({
   const { color: c } = useTheme();
   const [vue, setVue] = useState<Etat>({ etat: 'repos' });
   const [note, setNote] = useState('');
+  /**
+   * **L'adresse de la publication, et elle n'était demandée nulle part.**
+   *
+   * Le schéma l'accepte, la méthode de client la transporte, l'écran du
+   * commerce sait l'ouvrir — et aucun écran ne la remplissait. Le salon n'avait
+   * donc jamais que la capture, alors que c'est le lien qui permet de vérifier
+   * que la publication est en ligne et qu'elle y est restée.
+   *
+   * **Demandée, pas exigée.** Une story n'a pas toujours d'adresse publique, et
+   * bloquer l'envoi sur ce champ ferait perdre une contrepartie pour un détail
+   * de forme — alors que la capture seule est déjà une preuve valable, de
+   * niveau 3. Elle sert aussi à tenter le niveau 2, ce qui est l'autre raison de
+   * la demander plutôt que de s'en passer.
+   */
+  const [adresse, setAdresse] = useState('');
 
   const media = 'media' in vue ? vue.media : null;
 
@@ -176,8 +194,12 @@ export function EnvoiDePreuve({
       // elle arriverait sur un dossier déjà refusé, et le commerce l'aurait
       // lue une fois sa décision prise.
       const propre = note.trim();
+      const lien = adresse.trim();
       const contrepartie = await api.soumettreLaPreuve(collaborationId, {
         screenshot_key,
+        // Vide, elle ne part pas : le serveur distingue « pas d'adresse » d'une
+        // chaîne vide, et une chaîne vide s'écrirait en base comme une adresse.
+        ...(lien ? { source_url: lien } : {}),
         ...(propre ? { note: propre } : {}),
       });
       vibration.reussite();
@@ -284,6 +306,19 @@ export function EnvoiDePreuve({
           level="neutral"
           body={t('parcours.preuveVite')}
           testID="incitation-a-soumettre-vite"
+        />
+      ) : null}
+
+      {/* **Avant la note.** C'est le champ qui décide de ce que le salon
+          pourra vérifier ; la note explique, l'adresse prouve. */}
+      {media && vue.etat !== 'rendu' ? (
+        <TextField
+          label={t('parcours.preuveAdresse')}
+          value={adresse}
+          onChangeText={setAdresse}
+          helpText={t('parcours.preuveAdresseAide')}
+          maxLength={LONGUEUR_DE_L_ADRESSE}
+          testID="adresse-de-la-publication"
         />
       ) : null}
 
