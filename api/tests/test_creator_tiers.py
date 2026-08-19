@@ -616,7 +616,16 @@ class TestLeProchainPalier:
 
     async def test_un_palier_ouvert_n_est_jamais_le_prochain(self, session: AsyncSession) -> None:
         """Le pendant. Sans lui, une règle qui rendrait le premier palier venu
-        passerait les deux tests précédents."""
+        passerait les deux tests précédents.
+
+        **Ce test ne distingue pas les deux conditions du filtre, et c'est écrit
+        plutôt que masqué.** Retirer `not palier.accessible` le laisse passer :
+        un palier accessible ne porte pas d'obstacle, et la seconde condition
+        l'écarte déjà. Fabriquer un palier accessible **avec** obstacles
+        éprouverait un état que l'éligibilité ne produit pas — un décor qui ne
+        prouve rien du produit d'aujourd'hui. La redondance est donc gardée et
+        documentée dans le service, pas éprouvée ici.
+        """
         from app.services import creator_tiers as module
 
         ouvert = _palier(obstacles=0, ecart=0, format_=ContentFormat.STORY, accessible=True)

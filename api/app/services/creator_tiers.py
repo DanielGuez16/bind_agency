@@ -467,6 +467,19 @@ def _prochain_palier(vus: list[PalierVu]) -> ProchainPalier | None:
 
     Un palier fermé sans obstacle nommable est écarté : il n'y aurait rien à
     afficher, et « il vous manque quelque chose » n'aide personne.
+
+    **Les deux conditions du filtre sont aujourd'hui redondantes, et gardées.**
+    Retirer `not palier.accessible` ne change aucun verdict — vérifié par
+    mutation — parce qu'un palier accessible ne porte jamais d'obstacle : la
+    seconde condition l'écarte déjà. Elles ne disent pourtant pas la même chose.
+    `not accessible` est la règle : on ne propose pas de viser ce qui est
+    ouvert. `obstacles` est une sûreté : `obstacles[0]`, deux lignes plus bas,
+    lèverait sur une liste vide.
+
+    Le jour où l'éligibilité rendrait un palier accessible **avec** une réserve
+    — un plafond de score, une condition en sursis — la première reprendrait
+    seule le travail. Écrire la règle et compter sur la sûreté pour l'appliquer
+    marcherait, jusqu'à ce que ça cesse.
     """
     fermes = sorted(
         (palier for palier in vus if not palier.accessible and palier.obstacles),
