@@ -16,7 +16,7 @@
  */
 import { View } from 'react-native';
 
-import { radius, useColors, useTheme, type ColorName } from '../theme';
+import { type ColorName, elevationDeCarte, radius, useColors, useTheme } from '../theme';
 import { Apparition } from './Mouvement';
 import { Texte } from './Texte';
 
@@ -89,6 +89,8 @@ export function EnTeteDEcran({
               borderWidth: 1,
               borderColor: c['line.default'],
               paddingVertical: 10,
+              // « Un coin de 18 px sans ombre flotte au lieu de se poser » : passation §2.
+              ...elevationDeCarte(),
             }}
           >
             {compteurs.map((compteur, index) => (

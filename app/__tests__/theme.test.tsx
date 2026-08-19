@@ -18,6 +18,7 @@ import { render, waitFor } from '@testing-library/react-native';
 import { Text } from 'react-native';
 
 import { I18nProvider } from '../src/i18n';
+import { ReglesDesPaliers } from '../src/screens/ReglesDesPaliers';
 import { TitreAccentue } from '../src/components/TitreAccentue';
 
 import {
@@ -596,17 +597,10 @@ describe('les surfaces de la v1.1', () => {
     expect(style.backgroundColor).toBe(tokens.color.brand['500']);
   });
 
-  it('`elevation.card` lit son jeton, et personne ne la consomme encore', async () => {
-    // **Le jeton est juste, et il n'a plus d'appelant.** Il en avait un —
-    // `BusinessCard`, la carte du fil — retirée avec la refonte v3 : le fil rend
-    // des aperçus sans chrome. La fonction reste parce que la règle de la
-    // direction reste : « un coin de 18 px sans ombre flotte au lieu de se
-    // poser ». Ce qui manque est son application aux surfaces qui en ont besoin,
-    // et c'est écrit dans `TASKS.md` plutôt que caché ici.
-    //
-    // Ce que ce test garde vivant : la lecture du jeton. La valeur est relue
-    // depuis la déclaration CSS, ici et non empruntée à la fonction — comparer
-    // la fonction à elle-même les laisserait se tromper ensemble.
+  it('`elevation.card` lit son jeton, et les valeurs sortent de la déclaration', () => {
+    // La lecture, séparée de la pose. La valeur est relue ici depuis la
+    // déclaration CSS et non empruntée à la fonction : comparer la fonction à
+    // elle-même les laisserait se tromper ensemble.
     const attendue = elevationDeCarte() as Record<string, unknown>;
     const [, hauteur, flou, opacite] =
       /^0 (\d+)px (\d+)px rgba\([^)]*,\s*([\d.]+)\)$/.exec(tokens.elevation.card)!;
@@ -620,16 +614,18 @@ describe('les surfaces de la v1.1', () => {
     }
   });
 
-  it('et l’inventaire des surfaces de carte est exact, pour qu’on ne l’oublie pas', () => {
-    // **La garde qui remplace le composant disparu.** Une carte, ici, c'est
-    // trois choses ensemble : un fond de surface, un rayon de 18 et un filet.
-    // Treize en portent, aucune ne porte l'ombre. L'inventaire est **exact** et
-    // non un plafond : ajouter une carte oblige à toucher cette liste, donc à
-    // se demander si elle se pose ou si elle flotte. Sans ça, la règle de la
-    // direction s'effriterait surface par surface sans qu'aucun test ne bouge.
+  it('et les douze cartes du produit la portent, sans exception', () => {
+    // **La règle vient avec les rayons, elle ne se décide pas par écran.** « Un
+    // coin de 18 px sans ombre flotte au lieu de se poser » vaut des douze
+    // surfaces qui portent ce rayon, pas d'une seule. Une carte, ici, c'est
+    // trois choses ensemble : un fond de surface, un rayon de 18, un filet.
     //
-    // Le jour où l'ombre est appliquée, c'est cette liste qui rétrécit.
-    const CARTES_SANS_OMBRE = [
+    // **L'inventaire est exact, et c'est tout son emploi.** Une carte de plus
+    // oblige à toucher cette liste, donc à se demander si elle se pose ou si
+    // elle flotte. Sans lui, la règle s'effriterait surface par surface sans
+    // qu'aucun test ne bouge — c'est exactement comment elle avait disparu la
+    // première fois, quand le seul composant qui la portait a été retiré.
+    const CARTES = [
       'src/components/EnTete.tsx',
       'src/screens/AnnuaireScreen.tsx',
       'src/screens/CarteDuCommerce.tsx',
@@ -642,33 +638,76 @@ describe('les surfaces de la v1.1', () => {
       'src/screens/TerrainScreen.tsx',
     ];
 
+    // **La fenêtre est à 900 et non à 600, et ce n'est pas un réglage.** Un
+    // bloc de style porte des commentaires, des ternaires et des valeurs
+    // conditionnelles ; deux des douze dépassaient six cents caractères et
+    // sortaient de l'inventaire en silence — la liste rétrécissait toute seule,
+    // ce qui est le contraire de ce qu'elle sert à faire. Le plus long des
+    // douze en fait 780. Une garde qui ne voit qu'une partie de ce qu'elle
+    // prétend couvrir est pire qu'aucune.
+    const bloc = /style=\{\{[\s\S]{0,900}?\}\}/g;
+    const estUneCarte = (b: string) =>
+      b.includes('radius.lg') && b.includes('bg.surface') && b.includes('borderWidth');
+
     const trouves = new Set<string>();
     for (const chemin of sources(RACINE)) {
       const relatif = chemin.slice(chemin.indexOf('src/'));
       const source = readFileSync(chemin, 'utf-8');
-      // Les trois marqueurs dans un même bloc de style. Les chercher dans le
-      // fichier entier compterait un écran qui pose un filet ici et un fond
-      // de surface trente lignes plus bas, ce qui n'est pas une carte.
-      for (const bloc of source.match(/style=\{\{[\s\S]{0,600}?\}\}/g) ?? []) {
-        if (
-          bloc.includes("radius.lg") &&
-          bloc.includes("bg.surface") &&
-          bloc.includes('borderWidth')
-        ) {
-          trouves.add(relatif);
-        }
-      }
+      if ((source.match(bloc) ?? []).some(estUneCarte)) trouves.add(relatif);
     }
 
-    expect([...trouves].sort()).toEqual(CARTES_SANS_OMBRE);
-    // Et aucune ne consomme l'ombre : le jour où l'une le fait, elle sort de
-    // la liste, et ce test le dit.
-    for (const relatif of CARTES_SANS_OMBRE) {
-      expect({
-        relatif,
-        ombre: readFileSync(join(RACINE, '..', relatif), 'utf-8').includes('elevationDeCarte'),
-      }).toEqual({ relatif, ombre: false });
+    expect([...trouves].sort()).toEqual(CARTES);
+
+    // **Et chacune la consomme, comptée et non cherchée.** La première version
+    // demandait si le fichier *contenait* `elevationDeCarte` : la ligne
+    // d'import suffisait à la satisfaire, et retirer l'ombre de la carte
+    // laissait la garde verte. La mutation l'a dit, la relecture non.
+    //
+    // On compte donc les poses et les cartes, et on exige l'égalité. Une pose
+    // qui disparaît fait un compte de moins ; une carte ajoutée sans ombre fait
+    // un compte de plus. Les trois surfaces qui clippent posent leur ombre sur
+    // une vue extérieure qui n'est pas une carte — un appel, une carte : le
+    // compte tient aussi pour elles.
+    for (const relatif of CARTES) {
+      const source = readFileSync(join(RACINE, '..', relatif), 'utf-8');
+      const poses = (source.match(/\.\.\.elevationDeCarte\(\)/g) ?? []).length;
+      const cartes = (source.match(bloc) ?? []).filter(estUneCarte).length;
+      expect({ relatif, poses, cartes }).toEqual({ relatif, poses: cartes, cartes });
     }
+  });
+
+  it('et celles qui clippent la portent sur la vue du dessus', async () => {
+    // **La moitié que le texte du fichier ne peut pas dire.** Les trois
+    // surfaces qui clippent — la carte de palier et les deux blocs des règles —
+    // ne peuvent pas porter leur propre ombre : sur iOS, une vue qui clippe la
+    // coupe au même bord. Le fichier contient bien `elevationDeCarte`, et le
+    // test au-dessus est satisfait, y compris si l'ombre est posée sur le
+    // mauvais nœud. C'est un rendu qui le dit.
+    const vue = await render(
+      <I18nProvider initialLocale="en">
+        <ThemeProvider role="creator">
+          {/* L'écran entier plutôt que le bloc : celui-ci n'est pas exporté,
+              et l'exporter pour un test ouvrirait la bibliothèque sur un
+              détail interne. La composition réelle est ce qu'on veut lire. */}
+          <ReglesDesPaliers
+            fiabilite={{ reliability_score: '82', completed_collabs_count: 4 }}
+          />
+        </ThemeProvider>
+      </I18nProvider>,
+    );
+
+    const aplati = (style: unknown): Record<string, unknown> =>
+      Array.isArray(style)
+        ? Object.assign({}, ...style.map(aplati))
+        : ((style ?? {}) as Record<string, unknown>);
+
+    const carte = vue.getByTestId('bloc-fiabilite');
+    const dehors = aplati(carte.parent?.props?.style);
+    const dedans = aplati(carte.props.style);
+
+    expect(dehors).toMatchObject(elevationDeCarte() as Record<string, unknown>);
+    expect(dedans.overflow).toBe('hidden');
+    expect(dedans.shadowOpacity ?? dedans.boxShadow).toBeUndefined();
   });
 
   it('aucun rayon écrit en dur dans une source', () => {

@@ -33,7 +33,7 @@ import { formatDateTime, formatNumber } from '../format';
 import { useI18n } from '../i18n';
 import { urlImage } from './FilScreen';
 import { en } from '../i18n/en';
-import { elevationFlottante, radius, useTheme } from '../theme';
+import { elevationDeCarte, elevationFlottante, radius, useTheme } from '../theme';
 import { Ecran } from './Ecran';
 import { messageDObstacle } from './obstacle';
 import { useRequete } from './useRequete';
@@ -217,6 +217,8 @@ function AccesALaCarte({
         borderColor: c['line.default'],
         borderRadius: radius['radius.lg'],
         backgroundColor: c['bg.surface'],
+        // « Un coin de 18 px sans ombre flotte au lieu de se poser » : passation §2.
+        ...elevationDeCarte(),
       }}
     >
       {aDesPhotos ? (

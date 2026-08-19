@@ -22,7 +22,7 @@ import type { ReactNode } from 'react';
 import { BandeDeTexteSurPhoto, Button, Icone, Marque, Texte, TitreAccentue } from '../components';
 import { useI18n } from '../i18n';
 import { useGabarit } from '../shell/gabarit';
-import { breakpoint, radius, spacing, useColors, type ColorName } from '../theme';
+import { breakpoint, type ColorName, elevationDeCarte, radius, spacing, useColors } from '../theme';
 import type { RoleInscriptible } from '../session';
 
 /** La largeur d'une porte. La passation la fixe, et elle ne s'étire pas. */
@@ -168,6 +168,8 @@ export function ChoixDeLaPorte({
               borderWidth: 1,
               borderColor: c['line.default'],
               backgroundColor: c['bg.surface'],
+              // « Un coin de 18 px sans ombre flotte au lieu de se poser » : passation §2.
+              ...elevationDeCarte(),
             }}
           >
             {/* **Les deux portes ne se distinguent plus par une teinte.** La

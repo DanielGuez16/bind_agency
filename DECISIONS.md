@@ -7118,3 +7118,31 @@ l'autre empêche un `obstacles[0]` de lever. Fabriquer un décor qui les
 distinguerait éprouverait un état que l'éligibilité ne produit pas ; la
 redondance est donc documentée des deux côtés plutôt qu'éprouvée sur un cas
 impossible.
+
+## 2026-08-19 — L'ombre de carte posée sur les douze, et la garde qui lisait l'import
+
+« Un coin de 18 px sans ombre flotte au lieu de se poser » est une règle qui
+**vient avec les rayons**, pas une décision par écran : elle vaut des douze
+surfaces du produit qui portent ce rayon. Une carte, ici, c'est trois choses
+ensemble — un fond de surface, un rayon de 18, un filet.
+
+**Trois des douze clippent leur contenu et ne peuvent pas porter leur propre
+ombre** : sur iOS, une vue qui clippe la coupe au même bord. Leur ombre vit sur
+une vue extérieure qui reprend le rayon et le fond, parce qu'iOS calcule l'ombre
+depuis la couche opaque. Un rendu l'éprouve — le texte du fichier ne peut pas
+dire sur quel nœud l'ombre est posée.
+
+**La garde comptait mal, et la mutation l'a dit.** Sa première version demandait
+si le fichier *contenait* `elevationDeCarte` : la ligne d'import suffisait à la
+satisfaire, et retirer l'ombre de la carte laissait le test vert. Elle compte
+maintenant les poses et les cartes et exige l'égalité — une pose qui disparaît
+fait un compte de moins, une carte ajoutée sans ombre un compte de plus. Aucune
+relecture n'aurait vu la première version : elle affirmait la bonne chose et
+mesurait la mauvaise.
+
+**Et la fenêtre du détecteur est passée de 600 à 900 caractères, pour la même
+raison.** Un commentaire de quatre lignes ajouté dans deux blocs de style les
+faisait dépasser six cents caractères : ils sortaient de l'inventaire **en
+silence**, la liste rétrécissait toute seule, et c'est le contraire de son
+emploi. Le pavé est devenu une ligne, la raison longue vivant déjà sur
+`elevationDeCarte`, et la fenêtre a été mesurée sur le plus long des douze — 780.

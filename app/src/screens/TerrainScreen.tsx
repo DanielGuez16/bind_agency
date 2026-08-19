@@ -48,7 +48,7 @@ import {
 } from '../components';
 import { formatDate } from '../format';
 import { useI18n } from '../i18n';
-import { codeColors, radius, useColors } from '../theme';
+import { codeColors, elevationDeCarte, radius, useColors } from '../theme';
 import { Ecran } from './Ecran';
 import { useRequete } from './useRequete';
 
@@ -236,6 +236,8 @@ export function TerrainScreen() {
                 backgroundColor: c['bg.surface'],
                 borderWidth: 1,
                 borderColor: c['line.strong'],
+                // « Un coin de 18 px sans ombre flotte au lieu de se poser » : passation §2.
+                ...elevationDeCarte(),
               }}
             >
               <Texte variante="type.label" couleur="ink.soft">
@@ -321,6 +323,8 @@ function LigneDeFiche({
         backgroundColor: c['bg.surface'],
         borderWidth: 1,
         borderColor: c['line.default'],
+        // « Un coin de 18 px sans ombre flotte au lieu de se poser » : passation §2.
+        ...elevationDeCarte(),
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>

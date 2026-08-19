@@ -50,7 +50,7 @@ import { Image, Pressable, View } from 'react-native';
 import { useApi, type PageDeLaCarte } from '../api';
 import { Button, Icone, StatusMessage, TextField, Texte, vibration } from '../components';
 import { useI18n } from '../i18n';
-import { radius, useColors } from '../theme';
+import { elevationDeCarte, radius, useColors } from '../theme';
 
 /** Huit pages au plus. La borne est du serveur ; l'écran la dit avant de la subir. */
 const PAGES_AU_MAXIMUM = 8;
@@ -218,6 +218,8 @@ export function CarteDuCommerce({
             borderWidth: 1,
             borderColor: c['line.default'],
             backgroundColor: c['bg.surface'],
+            // « Un coin de 18 px sans ombre flotte au lieu de se poser » : passation §2.
+            ...elevationDeCarte(),
           }}
         >
           <Image

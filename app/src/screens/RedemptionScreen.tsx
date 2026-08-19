@@ -35,7 +35,7 @@ import {
 } from '../api';
 import { formatDateTime } from '../format';
 import { useGabarit } from '../shell/gabarit';
-import { radius, spacing, useColors } from '../theme';
+import { elevationDeCarte, radius, spacing, useColors } from '../theme';
 import { useRequete } from './useRequete';
 
 export type { Verification } from '../api';
@@ -398,6 +398,8 @@ function ServisDuJour({ businessId, depuis }: { businessId: string; depuis: stri
             backgroundColor: rang === 0 ? c['status.success.surface'] : c['bg.surface'],
             borderWidth: 1,
             borderColor: rang === 0 ? c['status.success.surface'] : c['line.default'],
+            // « Un coin de 18 px sans ombre flotte au lieu de se poser » : passation §2.
+            ...elevationDeCarte(),
           }}
         >
           {rang === 0 ? (
