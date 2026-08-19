@@ -160,10 +160,8 @@ def test_l_heure_injectee_gouverne_le_compte() -> None:
     ).secondes_avant_echeance == 7200
 
     une_heure_apres = datetime(2026, 8, 20, 13, 0, tzinfo=UTC)
-    assert (
-        CollaborationRead.assembler(_Ligne(), [], maintenant=une_heure_apres).secondes_avant_echeance
-        == 0
-    )
+    apres = CollaborationRead.assembler(_Ligne(), [], maintenant=une_heure_apres)
+    assert apres.secondes_avant_echeance == 0
 
 
 # --------------------------------------------------------------------------
