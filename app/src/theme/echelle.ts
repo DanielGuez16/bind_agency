@@ -121,12 +121,3 @@ export const typography: Record<string, EchelleTypo> = Object.fromEntries([
 
 export type Variante = keyof typeof typography;
 
-/**
- * Le plancher du Didone : 34 px, bloc ou pas.
- *
- * En dessous, Outfit, toujours. C'est ce qui empêche le serif de se répandre
- * dans une interface où il n'a rien à faire — et un serif de 22 px est un bug
- * visible en revue, mais seulement pour qui sait qu'il en est un. Un test le
- * sait à notre place.
- */
-export const PLANCHER_DIDONE = 34;

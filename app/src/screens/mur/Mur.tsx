@@ -238,9 +238,13 @@ function Respiration({
           <Texte variante="type.monoSmall" couleur="ink.mute">
             {t('parcours.murRienVuDans').toUpperCase()}
           </Texte>
-          {/* Le Didone, une fois tous les huit salons. Sur environ trois
-              hauteurs d'écran de photos, on en croise un — c'est l'intensité
-              que la direction propose pour un écran ouvert dix fois par jour. */}
+          {/* Le titre de respiration, une fois tous les huit salons. Sur
+              environ trois hauteurs d'écran de photos, on en croise un —
+              c'est l'intensité que la direction propose pour un écran ouvert
+              dix fois par jour. Sa rareté était portée par la famille en v1.0 ;
+              elle est maintenant portée par ce comptage seul, et c'est plus
+              fragile : rien dans le dessin ne s'oppose plus à en poser un
+              troisième. */}
           <Texte variante="type.heading" testID={`${testID}-quartier`}>
             {quartier}
           </Texte>
@@ -450,9 +454,9 @@ export function BasDuMur({
         }).toUpperCase()}
       </Texte>
 
-      {/* Le Didone, une seconde et dernière fois. Il n'apparaît que sur les
-          respirations et ici : sur trois hauteurs d'écran de photos, on en
-          croise un. */}
+      {/* Le titre de respiration, une seconde et dernière fois. Il n'apparaît
+          que sur les respirations et ici : sur trois hauteurs d'écran de
+          photos, on en croise un. */}
       <View>
         <Texte variante="type.heading" style={{ color: c['ink.onDark'] }} testID="bilan-salons">
           {t('parcours.murBilanSalons', { count: formatNumber(fil.commerces.length, locale) })}

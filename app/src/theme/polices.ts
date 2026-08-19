@@ -27,12 +27,16 @@
  *
  * **Et pourquoi l'italique est un nom, pas un attribut.** Même raison, même
  * conséquence, en pire : `fontStyle: 'italic'` sur une face romaine produit un
- * *oblique synthétique*, c'est-à-dire la romaine penchée. Sur un Didone, dont
- * l'italique est un dessin entièrement différent — axes, empattements, ductus —
- * l'écart entre le vrai italique et la romaine penchée est celui qui distingue
- * la direction artistique de son imitation. La v1.0 fait de l'accent un
- * changement de **voix** à l'intérieur d'une famille : cette voix doit être un
- * fichier.
+ * *oblique synthétique*, c'est-à-dire la romaine penchée, là où une vraie
+ * italique est un autre dessin — axes, ductus, parfois d'autres lettres.
+ *
+ * **Le mécanisme survit à son motif, et c'est délibéré.** La v1.0 faisait de
+ * l'accent une seconde voix, qui devait être un fichier ; la v1.1 en fait une
+ * graisse et ne charge plus aucune italique. Rien n'oblige à retirer la voix du
+ * modèle pour autant : elle ne coûte qu'un paramètre par défaut, et la retirer
+ * signifierait la réécrire entièrement le jour où une direction en redemande
+ * une. Ce qui est retiré, ce sont les fichiers — une garde vérifie qu'aucun
+ * italique n'est chargé, pas que le code serait incapable d'en charger un.
  */
 import { Platform } from 'react-native';
 
@@ -121,9 +125,9 @@ const REPLI: Graisse[] = ['600', '500', '400', '700', '800'];
  * Sur appareil, `fontFamily` désigne un fichier chargé : il n'y a pas de repli
  * et une famille inconnue ne rend rien de bon. Sur le web, le navigateur
  * choisit seul tant que la fonte n'est pas arrivée — ou si elle ne vient
- * jamais — et sans pile il atterrit sur sa fonte par défaut, un Times. Un
- * Didone du XVIIIe remplacé par une romaine de journal est le contraire de la
- * direction, et ça se voit sur le premier écran.
+ * jamais — et sans pile il atterrit sur sa fonte par défaut, un Times. Une
+ * romaine de journal sous une direction géométrique est le contraire de ce
+ * qu'elle dit, et ça se voit sur le premier écran.
  *
  * C'est la seule part de la correction de fonte de Design qui s'applique ici :
  * le produit charge des TTF statiques par graisse, donc il n'a ni axe `opsz` à
@@ -132,7 +136,7 @@ const REPLI: Graisse[] = ['600', '500', '400', '700', '800'];
  * **Séparée de `nomDeFonte`, et il a fallu le payer pour le comprendre.** Ce
  * nom sert deux choses : écrire un style, et **enregistrer** la face auprès
  * d'`expo-font`. Composer la pile dans `nomDeFonte` a donc enregistré une
- * famille appelée « BodoniModa_400Regular, Didot, … » — plus aucune face posée,
+ * famille appelée « PlusJakartaSans_400Regular, Avenir Next, … » — plus aucune face posée,
  * et toutes les fontes du web perdues. Les tests unitaires n'ont rien vu : ils
  * lisent le nom rendu, pas ce que le navigateur enregistre. C'est la suite de
  * bout en bout qui l'a dit.

@@ -94,7 +94,6 @@ export { nomDeFonte, pileDeFontes, policesAcharger, type Graisse, type Voix } fr
 export {
   familles,
   typography,
-  PLANCHER_DIDONE,
   type EchelleTypo,
   type RoleDeFonte,
   type Variante,

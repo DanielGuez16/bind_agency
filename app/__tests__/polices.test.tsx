@@ -18,7 +18,7 @@ import { Texte } from '../src/components';
 import { familles, nomDeFonte, policesAcharger, typography } from '../src/theme';
 import { ThemeProvider } from '../src/theme';
 
-describe('la direction v1.0 a bien remplacé les familles', () => {
+describe('la direction v1.1 a bien remplacé les familles', () => {
   it('nomme une seule famille de texte, et le mono ne bouge pas', () => {
     // **Le Didone est retiré, et avec lui la seconde famille.** La revue de
     // campagne l'a nommé en premier : un Bodoni à 34 px sur chaque écran fait

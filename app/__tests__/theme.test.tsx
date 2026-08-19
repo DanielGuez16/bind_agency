@@ -17,13 +17,14 @@ import { join } from 'path';
 import { render, waitFor } from '@testing-library/react-native';
 import { Text } from 'react-native';
 
+import { TitreAccentue } from '../src/components/TitreAccentue';
+
 import {
   ThemeProvider,
   codeColors,
   couleurs,
   matiereDePalier,
   matiereDeRole,
-  PLANCHER_DIDONE,
   produit,
   tokens,
   typography,
@@ -518,7 +519,7 @@ describe('rôle et densité', () => {
 // surfaces
 // --------------------------------------------------------------------------
 
-describe('les surfaces de la v1.0', () => {
+describe('les surfaces de la v1.1', () => {
   it('l’échelle des rayons est par rôle, et `none` est réservé au bloc', () => {
     // **La raison de la v1.0 est remplacée, pas conservée à côté de son
     // contraire.** « Le bloc plein ne fonctionne que d'équerre » était vrai du
@@ -561,6 +562,29 @@ describe('les surfaces de la v1.0', () => {
       });
     }
     expect(fautifs).toEqual([]);
+  });
+
+  it('et le bloc accentué, lui, le porte vraiment', async () => {
+    // **La direction qui manquait, et qui a coûté l'arrondi du bloc.** Les deux
+    // tests au-dessus disent « none vaut 0 » et « personne d'autre ne s'en
+    // sert » ; aucun ne dit que le bloc s'en sert. La bascule Ambre a arrondi
+    // les 66 sites du produit, celui-ci compris, et les deux gardes sont
+    // restées vertes — la première parce que le jeton existait toujours, la
+    // seconde parce qu'elle ne sait qu'interdire. Une contrainte se teste dans
+    // les deux sens : celle qui n'interdit que le mauvais côté laisse passer
+    // l'oubli du bon.
+    //
+    // Sur le rendu et non sur le texte du fichier : une recherche de
+    // `radius.none` dans `TitreAccentue.tsx` passerait sur le commentaire qui
+    // en parle. C'est ce que le style calculé porte qui décide.
+    const vue = await render(
+      <ThemeProvider role="creator">
+        <TitreAccentue texte="Talent by Bind" motAccentue="Bind" bloc />
+      </ThemeProvider>,
+    );
+    const style = vue.getByTestId('bloc-accentue').props.style;
+    expect(style.borderRadius).toBe(0);
+    expect(style.backgroundColor).toBe(tokens.color.brand['500']);
   });
 
   it('aucun rayon écrit en dur dans une source', () => {

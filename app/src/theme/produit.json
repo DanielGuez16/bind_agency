@@ -5,7 +5,7 @@
     "regle": "Rien n'entre ici qui existe dans tokens.json. Un test le vérifie dans les deux sens : une clé présente des deux côtés est une seconde vérité, et c'est la seconde qu'on oublie de mettre à jour."
   },
   "type": {
-    "$pourquoi": "Six variantes que l'échelle v1.0 n'énumère pas et que le produit ne peut pas perdre. Le code de retrait et son compte à rebours appartiennent à un écran que la passation déclare hors système (§11) : il n'a donc aucune raison d'apparaître dans une échelle de marque. Les deux repères chiffrés servent les deux graphiques autorisés et les états vides, et c'est précisément parce qu'ils étaient écrits en dur dans cinq composants qu'ils ont été remontés en jetons. Les deux dernières portent le sigle et sa signature : tokens.json décrit le logo — trait fin, monoline, AGENCY centré à 12 d'interlettrage — sans en donner de variante typographique, parce qu'il attend un vectoriel qui n'est pas arrivé. En attendant, la reconstruction en Outfit 300 est nommée ici comme l'approximation qu'elle est.",
+    "$pourquoi": "Six variantes que l'échelle v1.0 n'énumère pas et que le produit ne peut pas perdre. Le code de retrait et son compte à rebours appartiennent à un écran que la passation déclare hors système (§11) : il n'a donc aucune raison d'apparaître dans une échelle de marque. Les deux repères chiffrés servent les deux graphiques autorisés et les états vides, et c'est précisément parce qu'ils étaient écrits en dur dans cinq composants qu'ils ont été remontés en jetons. Les deux dernières portaient le sigle reconstruit en fonte, faute de vectoriel. Le vectoriel est arrivé depuis, mesuré contre la source, et le logotype ne se compose plus : il se trace. Ce qui reste ici est la lisibilité — combien de pixels par lettre avant que la marque compacte prenne le relais.",
     "type.code": {
       "family": "mono",
       "weight": 600,
@@ -228,12 +228,12 @@
     }
   },
   "repli": {
-    "$pourquoi": "La pile de repli du web, corrigée par Design sur ses huit planches. Sur appareil, `fontFamily` désigne un fichier chargé et il n'y a pas de repli : ceci ne vaut que pour le build web, où le navigateur choisit seul tant que la fonte n'est pas là — ou si elle ne vient jamais. Sans pile, il atterrit sur sa fonte par défaut, un Times : un Didone du XVIIIe remplacé par une romaine de journal, c'est-à-dire le contraire de la direction. Les deux autres parts de la correction de Design ne s'appliquent pas au produit — il charge des TTF statiques par graisse, donc pas d'axe `opsz` et les graisses sont déjà épinglées.",
+    "$pourquoi": "La pile de repli du web. Sur appareil, `fontFamily` désigne un fichier chargé et il n'y a pas de repli : ceci ne vaut que pour le build web, où le navigateur choisit seul tant que la fonte n'est pas là — ou si elle ne vient jamais. Sans pile, il atterrit sur sa fonte par défaut, un Times, c'est-à-dire une romaine de journal là où la direction pose un géométrique. **`display` et `sans` répliquent la même pile depuis la v1.1**, et c'est la correction d'un défaut, pas une simplification : `display` gardait Didot, Playfair, Georgia, serif — la pile de l'ancienne voix. La famille d'accent a changé, sa pile ne l'avait pas suivie, et le premier écran d'un web au réseau lent rendait un serif du XVIIIe sous une direction qui n'en a plus. Les deux rôles restent deux clés parce que rien ne garantit qu'ils resteront la même fonte ; ils portent aujourd'hui la même valeur. Les deux autres parts de la correction de Design ne s'appliquent pas au produit — il charge des TTF statiques par graisse, donc pas d'axe `opsz` et les graisses sont déjà épinglées.",
     "display": [
-      "Didot",
-      "Playfair Display",
-      "Georgia",
-      "serif"
+      "Avenir Next",
+      "Segoe UI",
+      "Helvetica Neue",
+      "sans-serif"
     ],
     "sans": [
       "Avenir Next",

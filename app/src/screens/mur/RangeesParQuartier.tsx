@@ -18,11 +18,13 @@
  * droit, ce qui annonce le glissement sans flèche — une flèche dirait qu'il y a
  * un bouton, alors qu'il y a un geste.
  *
- * **Le Didone reste à son plancher.** La planche descend le titre de quartier à
- * 28 px sur ce seul écran, et `type.heading` déclare 34 comme « plancher du
- * Didone ». Deux sources validées se contredisent ; le jeton est celle qui se
- * vérifie mécaniquement, donc c'est elle qui est suivie, et l'écart est écrit
- * dans `TASKS.md` au lieu d'être tranché ici.
+ * **Le titre de quartier reste au jeton.** La planche descend le titre de
+ * quartier à 28 px sur ce seul écran, contre 34 pour `type.heading`. La raison
+ * de trancher pour le jeton a changé sans que la décision change : c'était le
+ * plancher d'un serif, tombé avec lui ; c'est maintenant que la planche est
+ * une v1.0 et que Design n'a pas réédité les treize. Suivre un écart relevé
+ * sur une planche périmée serait figer une valeur que personne n'a revue sous
+ * la nouvelle direction. L'écart reste écrit dans `TASKS.md`.
  */
 import { Image, Pressable, ScrollView, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';

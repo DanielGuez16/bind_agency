@@ -1,12 +1,18 @@
 /**
  * Le titre, et son mot accentué.
  *
- * **L'accent est un changement de voix, pas de famille.** Sur les visuels de la
- * fondatrice, « L'accompagnement / Talent by *Bind* » est écrit d'un seul
- * Didone : romain pour la ligne, italique pour le mot. La première lecture du
- * brief avait compris deux familles dans le même titre — un serif pour l'accent,
- * un sans pour le reste — et c'était faux. C'est plus juste et plus simple :
- * il n'y a plus de raccord entre deux fontes à réussir.
+ * **L'accent est un changement de graisse, pas de famille.** Sur les visuels de
+ * la fondatrice, « L'accompagnement / Talent by *Bind* » est écrit d'une seule
+ * fonte, l'accent portant la variation. La première lecture du brief avait
+ * compris deux familles dans le même titre, et c'était faux : il n'y a pas de
+ * raccord entre deux fontes à réussir.
+ *
+ * **En v1.0 l'accent était une italique ; en v1.1 c'est la graisse haute.** Le
+ * composant ne change pas pour autant — il demande `type.displayAccent`, et
+ * c'est l'échelle qui dit ce que l'accent est aujourd'hui. C'est exactement ce
+ * que le composant existe pour absorber. La famille n'est pas nommée ici, et
+ * une garde s'en assure : un nom de fonte écrit dans un écran est la première
+ * chose qui reste vraie après que la direction a changé.
  *
  * **Les règles vivent dans ce composant, jamais chez l'appelant.** C'est toute
  * la raison de son existence : un titre accentué écrit à la main dans un écran
@@ -14,9 +20,10 @@
  *
  * - **Un seul mot.** Deux annulent l'accent — un accent qui porte sur une
  *   moitié de phrase n'accentue rien.
- * - **Rien sous le plancher du Didone.** Un serif de 22 px perd ses déliés et
- *   devient sale ; en dessous, c'est `screenTitle` en fonte fonctionnelle, et
- *   l'accent disparaît avec la famille qui le portait.
+ * - **Rien sous `ecran`.** Le plancher de 34 px protégeait les déliés d'un
+ *   serif ; il est tombé avec lui. Ce qui reste est une règle de composition et
+ *   non de dessin : un titre d'écran de travail ne s'accentue pas, sinon
+ *   l'accent devient la norme et n'accentue plus rien.
  * - **Le bloc ouvre sa ligne.** Posé au milieu d'une phrase, un retour à la
  *   ligne peut le couper en deux et la ponctuation qui suit s'en détache. Il
  *   pend donc sous la ligne du dessus, comme sur ses visuels.
@@ -46,8 +53,8 @@ export type TitreAccentueProps = {
    */
   bloc?: boolean;
   /**
-   * `display` pour un écran de seuil qui se présente, `heading` — le plancher —
-   * partout ailleurs. `ecran` descend sous le plancher et sort du Didone.
+   * `display` pour un écran de seuil qui se présente, `heading` partout
+   * ailleurs. `ecran` est le titre de travail : pas d'accent.
    */
   taille?: 'display' | 'heading' | 'ecran';
   /** L'encre du bloc. Blanc par défaut ; l'encre est une variante admise. */
@@ -79,9 +86,9 @@ export function TitreAccentue({
   const accentValide =
     mot !== undefined && mot.length > 0 && !/\s/.test(mot) && texte.includes(mot);
 
-  // Sous le plancher, il n'y a plus de Didone, donc plus de voix à changer.
-  // L'accent n'y survit pas, et c'est la règle : ce qui l'empêche de se
-  // répandre dans l'interface est une taille, pas une intention.
+  // Un titre de travail ne s'accentue pas. La règle est portée par la taille
+  // et non par une intention de l'appelant : c'est ce qui l'empêche de se
+  // répandre écran par écran.
   if (taille === 'ecran' || !accentValide) {
     return (
       <Texte
@@ -102,7 +109,7 @@ export function TitreAccentue({
   const apres = texte.slice(coupure + mot!.length);
 
   if (!bloc) {
-    // Sans bloc, le mot s'insère dans la phrase : l'italique suffit à le
+    // Sans bloc, le mot s'insère dans la phrase : la graisse suffit à le
     // détacher, et le texte reste un seul flux que la mise en page peut couper
     // où elle veut.
     return (
@@ -131,7 +138,13 @@ export function TitreAccentue({
           testID="bloc-accentue"
           style={{
             backgroundColor: c['brand.500'],
-            borderRadius: radius['radius.lg'],
+            // **D'équerre, et c'est le seul aplat du produit qui le reste.**
+            // La v1.1 arrondit tout le reste ; `radius.none` est réservé à ce
+            // bloc. Un aplat de marque aux angles arrondis devient un bouton,
+            // et la signature perd la raideur qui la fait lire comme une
+            // signature. La bascule Ambre l'avait arrondi avec les 65 autres
+            // sites — l'exception ne se déduit pas d'une recherche.
+            borderRadius: radius['radius.none'],
             paddingHorizontal: 10,
             paddingBottom: 2,
           }}
