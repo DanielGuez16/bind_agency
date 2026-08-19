@@ -45,6 +45,8 @@ export const routes = {
   fil: () => chemin('/businesses'),
   fichePublique: (businessId: string) => chemin(`/businesses/${businessId}`),
   disponibilite: (businessId: string) => chemin(`/businesses/${businessId}/availability`),
+  resumeDeLaBande: (businessId: string) =>
+    chemin(`/businesses/${businessId}/availability/summary`),
 
   // ---- réservation ----
   reserver: () => chemin('/bookings'),
@@ -192,6 +194,7 @@ export const METHODES: Record<keyof typeof routes, ('GET' | 'POST' | 'PATCH' | '
     fil: ['GET'],
     fichePublique: ['GET'],
     disponibilite: ['GET'],
+    resumeDeLaBande: ['GET'],
 
     reserver: ['POST'],
     confirmerLaReservation: ['POST'],

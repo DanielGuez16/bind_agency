@@ -1213,7 +1213,16 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       part avec l'écran qu'elle servait. Deux écarts écrits : pas d'étiquette
       d'horaires, faute d'un champ servi, et les glyphes du jeu existant plutôt
       que deux marques relevées et une inventée. 998 tests verts, 11 mutations*
-- [ ] **Onze planches d'écrans portent encore la v1.0**
+- [x] **Le choix du créneau v3 — point 3 du §6**
+      *Une bande de quatorze jours plutôt qu'une grille de trente : la grille
+      serait vide aux trois quarts et dirait « ce salon n'a rien ». Les jours
+      sans place gardent leur place et répondent — ils disent pourquoi et
+      proposent les deux jours ouverts les plus proches — au lieu d'être
+      `disabled`. Quatre états servis, dont `revolu` qui manquait et que le
+      serveur a ajouté en cours de route. L'étiquette d'horaires de la fiche est
+      débloquée, croisée avec une preuve d'ouverture prise sur les créneaux déjà
+      servis. 1030 tests verts, 10 mutations vérifiées*
+- [ ] **Dix planches d'écrans portent encore la v1.0**
       *Le fil est passé en v3, directement dans la palette Ambre. Les autres
       suivent l'ordre du `PASSATION-v1.1.md` §6, qui limite le travail
       perdu : la fiche de

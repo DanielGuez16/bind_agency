@@ -184,6 +184,18 @@ const OFFRE = {
   prochains_creneaux: ['2026-08-08T14:00:00Z'],
 };
 
+/**
+ * Le jour du montage, **calculé et non figé**.
+ *
+ * La bande de quatorze jours commence aujourd'hui chez le commerce : une date
+ * en dur en sortirait au fil des semaines, et le créneau du montage
+ * deviendrait invisible sans que rien ne le dise.
+ */
+const JOUR_DE_LA_BANDE = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'America/New_York',
+  dateStyle: 'short',
+}).format(new Date());
+
 const FICHE = {
   business_id: 'b1',
   name: 'Salón Ocean',
@@ -364,12 +376,24 @@ const ECRANS = [
         onReserve={jest.fn()}
       />
     ),
+    // **Les deux routes, distinctes.** Le résumé rend les journées et leur
+    // état, la disponibilité rend les heures : répondre la même chose aux deux
+    // donnait une bande dont les jours n'avaient pas de date.
     plein: {
+      '/availability/summary': [
+        { jour: JOUR_DE_LA_BANDE, ouvert: true, revolu: false, creneaux_libres: 1 },
+      ],
       '/availability': [
-        { starts_at: '2026-08-08T14:00:00Z', ends_at: '2026-08-08T14:45:00Z', places_restantes: 2 },
+        {
+          starts_at: `${JOUR_DE_LA_BANDE}T14:00:00Z`,
+          ends_at: `${JOUR_DE_LA_BANDE}T14:45:00Z`,
+          places_restantes: 2,
+        },
       ],
     },
-    vide: { '/availability': [] },
+    // Vide veut dire « l'item ne se propose plus », et c'est la bande qui le
+    // dit : une bande peuplée de jours fermés n'est pas un écran vide.
+    vide: { '/availability/summary': [], '/availability': [] },
   },
   {
     nom: 'preuve',
