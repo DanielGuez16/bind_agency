@@ -191,19 +191,36 @@ async def test_une_ligne_par_jeton_coupe_et_non_une_seule_pour_le_lot(
 async def test_un_rollback_ne_laisse_aucune_ligne_orpheline(
     session: AsyncSession, conn: AsyncConnection
 ) -> None:
-    """La ligne de journal vit dans la transaction de la transition qu'elle décrit."""
+    """La ligne de journal vit dans la transaction de la transition qu'elle décrit.
+
+    **Compté en écart, jamais en absolu.** Ce test lisait le journal entier et
+    exigeait une ligne : il ne passait que parce qu'il s'exécutait avant les deux
+    tests qui écrivent pour de bon, dans l'ordre alphabétique des fichiers. En
+    parallèle, l'ordre n'est plus garanti — il a vu sept lignes et en attendait
+    une. C'est la même règle que la garde anti-fuite, qui compare un avant et un
+    après pour ne désigner que celui qui a écrit.
+    """
+    avant = len(await journal(conn, entity="app_user"))
+
     await inscrire_verifie(
         session,
         email="annule@example.com",
         password="tourbillon-cactus-91-vermeil",
         role=UserRole.CREATOR,
     )
-    assert len(await journal(conn, entity="app_user")) == 1
+    assert len(await journal(conn, entity="app_user")) == avant + 1
 
     await session.rollback()
 
-    assert await journal(conn, entity="app_user") == []
-    assert await conn.scalar(sa.select(sa.func.count()).select_from(User)) == 0
+    assert len(await journal(conn, entity="app_user")) == avant
+    # Les comptes que les tests d'écriture réelle laissent derrière eux ne sont
+    # pas les nôtres : on vérifie que **le nôtre** est parti.
+    assert (
+        await conn.scalar(
+            sa.select(sa.func.count()).select_from(User).where(User.email == "annule@example.com")
+        )
+        == 0
+    )
 
 
 async def test_une_inscription_refusee_ne_laisse_aucune_ligne(
