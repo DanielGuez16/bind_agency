@@ -107,61 +107,23 @@ describe('la porte du cadre 11c', () => {
   });
 });
 
-describe('la ligne qui répond, et l’explication qu’elle ouvre', () => {
-  it('annonce ce qui est ouvert, avec le nombre', async () => {
-    await monter(filAvec(12));
-    await waitFor(() => expect(screen.getByTestId('prestations-ouvertes')).toBeTruthy());
-
-    expect(screen.getByTestId('prestations-ouvertes')).toHaveTextContent(/\b12\b/);
-  });
-
-  it('ouvre les paliers quand on l’appuie', async () => {
-    // C'est tout le déplacement : l'explication naît d'une question posée, pas
-    // d'un onglet qu'on visite une fois et plus jamais.
-    const ouvrir = jest.fn();
-    await monter(filAvec(12), ouvrir);
-    await waitFor(() => expect(screen.getByTestId('prestations-ouvertes')).toBeTruthy());
-
-    await fireEvent.press(screen.getByTestId('prestations-ouvertes'));
-    expect(ouvrir).toHaveBeenCalledTimes(1);
-  });
-
-  it('dit « une prestation » au singulier', async () => {
-    // Le cas du premier jour, pas le cas limite : le produit n'a pas de
-    // machinerie de pluriel, il choisit entre deux clés là où ça compte.
-    await monter(filAvec(1));
-    await waitFor(() => expect(screen.getByTestId('prestations-ouvertes')).toBeTruthy());
-
-    expect(screen.getByTestId('prestations-ouvertes')).toHaveTextContent(
-      en.parcours.filPrestationsOuverteUne,
-    );
-    expect(screen.getByTestId('prestations-ouvertes')).not.toHaveTextContent(/^1 /);
-  });
-
-  it('cède la place à l’état vide, qui dit mieux que zéro', async () => {
-    // **Il n'y a pas de cas zéro à traiter.** Côté serveur, `total_prestations`
-    // vaut `sum(len(commerce.items))` : il est nul exactement quand le fil est
-    // vide, et un fil vide rend `RaisonDuVide` à la place de ce corps. Une
-    // garde `total <= 0` dans le composant protégerait un état qu'aucun appel
-    // n'atteint — et ce test, écrit d'abord avec un fil peuplé à total nul,
-    // fabriquait une réponse que le serveur ne produit pas : il passait sans
-    // rien couvrir. Ce qui se vérifie ici est le vrai chemin.
-    await monter({ ...filAvec(0), commerces: [] });
-    await waitFor(() => expect(screen.getByTestId('fil-vide')).toBeTruthy());
-
-    expect(screen.queryByTestId('prestations-ouvertes')).toBeNull();
-  });
-
-  it('reste une phrase quand aucune issue n’est fournie', async () => {
-    // Le sens inverse : sans chemin vers l'explication, la ligne informe
-    // toujours. Un appui qui ne mène nulle part vaut moins que pas d'appui.
-    await monter(filAvec(12));
-    await waitFor(() => expect(screen.getByTestId('prestations-ouvertes')).toBeTruthy());
-
-    expect(screen.getByTestId('prestations-ouvertes')).toHaveTextContent(/\b12\b/);
-    expect(screen.queryByTestId('prestations-ouvertes-issue')).toBeNull();
-  });
-
+/**
+ * **La ligne a quitté le fil, et cinq tests sont partis avec elle.**
+ *
+ * Ils éprouvaient « douze prestations vous sont ouvertes » : le nombre, le
+ * singulier du premier jour, l'appui qui ouvre les paliers, la phrase sans
+ * issue, et l'effacement devant l'état vide. La revue v3 déplace ce sujet vers
+ * Audience, où vivent déjà les abonnés et le score de fiabilité.
+ *
+ * **Trois d'entre eux n'ont plus d'objet, et un seul a déménagé.** Le compte
+ * n'est pas reconduit sur Audience : celui du fil était borné au rayon, et un
+ * écran qui ne connaît pas la position en aurait donné un autre pour la même
+ * phrase — deux nombres pour une question. Ce qui déménage est le **chemin**,
+ * et il est éprouvé dans `paliers-depuis-audience`.
+ *
+ * Ce qui reste ici concerne le fil vide, qui n'a pas bougé.
+ */
+describe('les issues du fil vide portent leur nombre', () => {
   it('les élargissements portent leur nombre, et aucun n’en promet zéro', async () => {
     // **Une issue à zéro est un cul-de-sac chiffré**, pire qu'une issue
     // absente : elle promet un geste dont on revient bredouille. Le fil vide

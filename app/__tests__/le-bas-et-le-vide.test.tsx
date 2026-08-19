@@ -9,7 +9,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react-nativ
 
 import { ApiClient, ApiProvider, type CommerceDuFil, type Fil } from '../src/api';
 import { I18nProvider } from '../src/i18n';
-import { BasDuMur } from '../src/screens/mur/Mur';
+import { BasDuMur } from '../src/screens/mur/BasDuMur';
 import { ThemeProvider } from '../src/theme';
 
 function salon(rang: number, format = 'story'): CommerceDuFil {
@@ -77,41 +77,20 @@ async function monter(donnees: Fil, props: Record<string, unknown> = {}) {
   );
 }
 
-describe('le bas du mur compte ce qui a été vu', () => {
-  it('les salons et les quartiers, tels que le fil les rend', async () => {
-    // **Pas « vingt » parce que la planche l'illustre.** Le compte vient de ce
-    // qui est rendu : le jeu de démonstration en a dix-neuf visibles, et le
-    // pied doit dire dix-neuf.
-    await monter(fil());
-    await waitFor(() => expect(screen.getByTestId('bas-du-mur')).toBeTruthy());
-
-    expect(screen.getByTestId('bilan-salons')).toHaveTextContent(/\b3\b/);
-    expect(screen.getByTestId('bilan-quartiers')).toHaveTextContent(/\b2\b/);
-  });
-
-  it('et la répartition par contrepartie, comptée ici', async () => {
-    // « Il compte ce qui a été **vu** par palier » : c'est un décompte des
-    // salons rendus, pas une statistique du serveur.
-    await monter(fil());
-    await waitFor(() => expect(screen.getByTestId('par-contrepartie')).toBeTruthy());
-
-    for (const format of ['story', 'post', 'reel']) {
-      expect(screen.getByTestId(`vu-${format}`)).toHaveTextContent(new RegExp('^1' + format.toUpperCase()));
-    }
-  });
-
-  it('et ne montre pas une contrepartie que personne n’a croisée', async () => {
-    // Le sens inverse : un « 0 REEL » sur un fil sans reel occuperait la place
-    // d'une information pour dire une absence que personne n'a cherchée.
-    await monter(fil({ commerces: [salon(1), salon(2)] }));
-    await waitFor(() => expect(screen.getByTestId('par-contrepartie')).toBeTruthy());
-
-    expect(screen.getByTestId('vu-story')).toBeTruthy();
-    expect(screen.queryByTestId('vu-post')).toBeNull();
-    expect(screen.queryByTestId('vu-reel')).toBeNull();
-  });
-});
-
+/**
+ * **Le bilan est supprimé, et ce n'est pas un test à mettre à jour.**
+ *
+ * Les trois tests qui vivaient ici comptaient les salons, les quartiers et la
+ * répartition par contrepartie, sous « you have seen everything within 3 km ».
+ * La revue v3 supprime le pied : la fin d'une liste se voit, et la dire sur un
+ * aplat d'encre en faisait un événement. Ce qu'ils protégeaient — « le compte
+ * vient d'ici et non du serveur » — n'a plus d'objet puisqu'il n'y a plus de
+ * compte. Les tordre pour qu'ils passent aurait fait croire que le bilan tient
+ * encore quelque part.
+ *
+ * **La ligne du prochain palier est partie vers Audience**, et son test avec
+ * elle : voir `paliers-depuis-audience`.
+ */
 describe('les deux sorties portent leur nombre', () => {
   it('l’élargissement dit ce qu’il ouvrirait', async () => {
     await monter(
@@ -166,34 +145,3 @@ describe('les deux sorties portent leur nombre', () => {
   });
 });
 
-describe('la seule fois où le fil parle des paliers', () => {
-  const PROCHAIN = {
-    tier_id: 't2',
-    content_format: 'post',
-    commerces_de_plus: 6,
-    obstacle: { raison: 'not_enough_followers', requis: 10000, constate: 7600, ecart: 2400, depuis: null },
-  };
-
-  it('nomme le palier, ce qu’il ouvrirait, et ce qui manque', async () => {
-    // Depuis que les paliers ont quitté les onglets, c'est le seul endroit du
-    // produit où une créatrice croise ce qui lui manque sans l'avoir cherché.
-    await monter(fil({ prochain_palier: PROCHAIN as unknown as Fil['prochain_palier'] }));
-    await waitFor(() => expect(screen.getByTestId('prochain-palier')).toBeTruthy());
-
-    const pied = screen.getByTestId('prochain-palier');
-    expect(pied).toHaveTextContent(/post/);
-    expect(pied).toHaveTextContent(/\b6\b/);
-    expect(pied).toHaveTextContent(/2400|2 400/);
-    expect(pied).toHaveTextContent(/10000|10 000/);
-  });
-
-  it('et se tait quand il n’y a pas de palier suivant', async () => {
-    // **Ce n'est pas un repli défensif, c'est un état que le produit atteint :**
-    // tout ouvert, ou aucun palier atteignable. Promettre un palier qui n'existe
-    // pas serait pire que se taire.
-    await monter(fil({ prochain_palier: null }));
-    await waitFor(() => expect(screen.getByTestId('bas-du-mur')).toBeTruthy());
-
-    expect(screen.queryByTestId('prochain-palier')).toBeNull();
-  });
-});

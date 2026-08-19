@@ -126,15 +126,22 @@ describe('le fil rend ses marges, et les repose lui-même', () => {
 
   it('mais le texte du fil garde la sienne', async () => {
     // La contrepartie du fond perdu : les blocs de texte portent leur marge,
-    // et elle se voit là où elle est. Sans elle, « douze prestations vous sont
-    // ouvertes » commencerait au ras du verre.
+    // et elle se voit là où elle est. Sans elle, le nom du quartier commencerait
+    // au ras du verre.
+    //
+    // **La cible a changé avec la v3.** Le test lisait « douze prestations vous
+    // sont ouvertes », qui a quitté le fil pour Audience. Le repère est
+    // maintenant la tête de section, qui est le premier texte du mur — et c'est
+    // un meilleur repère : cette ligne-là est **dans** le mur, alors que
+    // l'ancienne était au-dessus de lui. C'est la marge du mur qu'on veut
+    // éprouver, pas celle d'un bloc posé avant.
     await monter({ ok: true, corps: FIL });
-    await waitFor(() => expect(screen.getByTestId('prestations-ouvertes')).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId('quartier-ouvert-nom')).toBeTruthy());
 
     let marge = 0;
     for (
       let noeud: ReturnType<typeof screen.getByTestId> | null =
-        screen.getByTestId('prestations-ouvertes');
+        screen.getByTestId('quartier-ouvert-nom');
       noeud;
       noeud = noeud.parent
     ) {

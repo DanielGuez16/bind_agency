@@ -30,7 +30,12 @@ function commerce(id: string) {
     name: `Salon ${id}`,
     category: 'beauty',
     address: '100 Ocean Dr',
+    // Le quartier n'est plus décoratif : c'est lui qui range le mur. Un
+    // montage qui l'omettrait rendrait un mur vide et ferait passer ce test
+    // sur un écran sans contenu.
+    neighborhood: 'wynwood',
     cover_photo_key: null,
+    cover_portrait_key: null,
     distance_metres: 420,
     items: [
       {
@@ -61,8 +66,11 @@ function monter(nombre: number) {
     // montage qui les omet fabrique une réponse qui n'existe pas, et rendrait
     // le composant défensif contre un cas qu'aucun appel n'atteint.
     rayons: [],
-    quartiers: [],
+    quartiers: [
+      { quartier: 'wynwood', commerces: nombre, prestations: nombre, distance_metres: 420 },
+    ],
     categories: [],
+    total_prestations: nombre,
     prochain_palier: null,
   };
   const api = new ApiClient({
@@ -90,37 +98,52 @@ function monter(nombre: number) {
 }
 
 /**
- * **La grille de cartes n'existe plus.** Le fil est devenu le mur : six
- * positions dans un ordre fixe, un salon qui occupe l'écran, et plus aucune
- * rangée à compléter. Les quatre tests qui vivaient ici décrivaient une
- * composition retirée — ils ne sont pas « à mettre à jour », ils n'ont plus
- * d'objet, et les garder en les tordant aurait fait croire que la grille tient
- * encore quelque part.
+ * **Deux colonnes, à toutes les largeurs.**
  *
- * Ce qui les remplace : `le-cycle-du-mur` pour le placement, `les-regles-du-mur`
- * pour les trois arbitrages, et le bloc ci-dessous pour ce que le grand écran
- * change — c'est-à-dire rien. Le mur est vertical par construction : il ne se
- * réorganise pas en colonnes, et c'est une propriété qui mérite d'être tenue.
+ * La v3 range le mur en grille de deux, et Design écrit pourquoi pas trois : à
+ * trois, la colonne tombe à 111 points et « Brow lamination » passe sur trois
+ * lignes. C'est un arbitrage sur la lisibilité d'un nom de prestation, pas sur
+ * la place disponible — il ne se relâche donc pas parce que l'écran s'élargit.
+ *
+ * Le fichier a porté trois compositions successives : une grille de cartes de
+ * trois à quatre, puis un mur de six formats, maintenant la grille de deux. Ce
+ * qui survit d'une à l'autre est la question, et elle est bonne : est-ce que le
+ * grand écran change la composition ? La réponse a toujours été non.
  */
-describe('le mur ne devient pas une grille sur grand écran', () => {
-  it('rend les mêmes blocs, dans le même ordre, quelle que soit la largeur', async () => {
-    // Un mur qui passerait en trois colonnes au-delà d'un seuil redeviendrait
-    // un catalogue — ce que le cycle existe pour éviter.
+describe('le mur garde ses deux colonnes sur grand écran', () => {
+  it('rend les mêmes aperçus, dans le même ordre, quelle que soit la largeur', async () => {
     const vus: string[][] = [];
+    const parRangee: number[][] = [];
+
     for (const largeur of [390, 1120, 1512]) {
       mockLargeur = largeur;
-      const vue = await monter(8);
+      const vue = await monter(5);
       await waitFor(() => expect(screen.getByTestId('le-mur')).toBeTruthy());
-      vus.push(
-        screen
-          .getAllByTestId(/^bloc-\d+-/)
-          .map((noeud) => String(noeud.props.testID).replace(/^bloc-\d+-/, '')),
+
+      vus.push(screen.getAllByTestId(/^apercu-o-b\d+$/).map((n) => String(n.props.testID)));
+
+      // Le nombre d'aperçus par rangée, rangée par rangée. C'est la seule
+      // mesure qui distingue « deux colonnes » de « autant que ça rentre » —
+      // compter les aperçus de l'écran donnerait cinq dans les deux cas.
+      const grille = screen.getByTestId('grille-des-prestations');
+      parRangee.push(
+        (grille.props.children as unknown[])
+          .flat()
+          .map((rangee) => {
+            const enfants = (rangee as { props: { children: unknown[] } }).props.children;
+            return enfants.flat().filter(Boolean).length;
+          }),
       );
       await vue.unmount();
     }
 
-    expect(vus[0]).toEqual(['heros', 'duo', 'bande', 'herosGalerie', 'triptyque']);
+    // Cinq prestations : deux, deux, et une seule accompagnée de sa colonne
+    // vide — c'est elle qui empêche le dernier aperçu de s'étaler.
+    expect(vus[0]).toEqual(['apercu-o-b0', 'apercu-o-b1', 'apercu-o-b2', 'apercu-o-b3', 'apercu-o-b4']);
     expect(vus[1]).toEqual(vus[0]);
     expect(vus[2]).toEqual(vus[0]);
+    expect(parRangee[0]).toEqual([2, 2, 2]);
+    expect(parRangee[1]).toEqual(parRangee[0]);
+    expect(parRangee[2]).toEqual(parRangee[0]);
   });
 });

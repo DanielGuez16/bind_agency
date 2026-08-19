@@ -12,7 +12,7 @@
  * client sait l'envoyer, le serveur rend les comptes — et rien ne les appelait :
  * c'est précisément le genre de manque qu'aucune assertion visuelle ne trouve.
  */
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 
 import { ApiClient, ApiProvider, type Fil } from '../src/api';
 import { I18nProvider } from '../src/i18n';
@@ -105,34 +105,63 @@ async function monter(donnees: Fil = fil()) {
 }
 
 describe('ce que l’en-tête dit', () => {
-  it('ne nomme aucun lieu, quoi que le fil sache de ses quartiers', async () => {
-    // **Tranché : on ne nomme pas le quartier.** La planche veut celui où l'on
-    // est, et rien ne sait le résoudre — pas de géocodage inverse, et la ville
-    // du profil dit où l'on habite. Le quartier du salon le plus proche avait
-    // été rendu à sa place : plausible, invérifiable de l'autre côté, donc
-    // jamais relevé. C'est la classe de défaut que ce dépôt poursuit.
+  it('nomme le marché et non le lieu où l’on est', async () => {
+    // **La règle tient, et la v3 en déplace la frontière d'un cran.** On ne
+    // nomme toujours pas le quartier **où l'on est** : rien ne sait le
+    // résoudre — pas de géocodage inverse, et la ville du profil dit où l'on
+    // habite. Le quartier du salon le plus proche avait été rendu à sa place,
+    // et c'était plausible, invérifiable de l'autre côté, donc jamais relevé.
     //
-    // Le montage porte deux quartiers **nommables** : un fil sans quartier
-    // ferait passer ce test sans rien vérifier.
+    // Ce que la v3 écrit est le **marché** : BIND ouvre à Miami, entière. Ce
+    // n'est pas une position résolue, c'est une donnée du produit — et
+    // l'en-tête ne prétend donc rien savoir de l'endroit où se trouve la
+    // personne. Le mur, lui, nomme les quartiers en tête de ses sections :
+    // ceux-là sont ceux **des salons**, et le serveur les déclare.
+    //
+    // Le montage porte deux quartiers nommables : sans eux, ce test passerait
+    // sans rien vérifier.
     await monter();
-    await waitFor(() => expect(screen.getByTestId('entete-rayon')).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId('entete-marche')).toBeTruthy());
 
-    const entete = screen.getByTestId('entete-du-mur');
-    expect(entete).not.toHaveTextContent(en.quartiers.wynwood);
-    expect(entete).not.toHaveTextContent(en.quartiers.brickell);
+    // **Sur le nœud qui porte le texte, et par `queryByText` pour l'absence.**
+    // `toHaveTextContent` sur le conteneur de l'en-tête rend une chaîne vide —
+    // il n'agrège pas ses descendants — et les trois négations passaient donc
+    // sans rien lire. Le défaut était déjà là avant la v3 : un test qui
+    // n'interroge rien ne tombe jamais. `queryByText` cherche dans tout l'arbre
+    // rendu, ce qui est précisément ce qu'on veut dire par « nulle part ».
+    expect(screen.getByTestId('entete-marche')).toHaveTextContent(
+      en.parcours.filMarche.toUpperCase(),
+    );
+    // **Borné à l'en-tête, et c'est la moitié utile de la règle.** Le mur
+    // nomme ses quartiers en tête de section — ceux des salons, que le serveur
+    // déclare — et le chercher dans tout l'écran ferait tomber ce test sur la
+    // seule chose qui a le droit de les nommer.
+    const dansLEntete = within(screen.getByTestId('entete-du-mur'));
+    expect(dansLEntete.queryByText(en.quartiers.wynwood)).toBeNull();
+    expect(dansLEntete.queryByText(en.quartiers.brickell)).toBeNull();
     expect(screen.queryByTestId('entete-quartier')).toBeNull();
   });
 
-  it('écrit le rayon avec ce qu’il ouvre', async () => {
+  it('titre « Discover » sans filtre, et la catégorie une fois filtré', async () => {
+    // **Le titre nomme ce qu'on regarde.** Il nommait l'écran — « Near you » —
+    // puis plus rien du tout, l'en-tête ne portant que le rayon. La v3 lui rend
+    // un titre, et le fait dépendre du filtre : c'est le seul endroit où la
+    // catégorie choisie s'écrit en toutes lettres.
     await monter();
     await waitFor(() => expect(screen.getByTestId('categorie-beauty')).toBeTruthy());
+    expect(screen.getByTestId('entete-titre')).toHaveTextContent(en.parcours.filDecouvrir);
+    // Sans filtre, aucun compte : le total d'une ville ne se compare à rien.
+    expect(screen.getByTestId('entete-marche')).not.toHaveTextContent(/\d/);
 
-    const rayon = screen.getByTestId('entete-rayon');
-    expect(rayon).toHaveTextContent(/\b15\b/);
-    expect(rayon).toHaveTextContent(/\b3\b/);
+    await fireEvent.press(screen.getByTestId('categorie-beauty-mot'));
+    await waitFor(() =>
+      expect(screen.getByTestId('entete-titre')).toHaveTextContent(en.categories.beauty),
+    );
+    // Filtré, le compte apparaît et dit ce que le filtre ouvre.
+    expect(screen.getByTestId('entete-marche')).toHaveTextContent(/\d/);
   });
 
-  it('et le porte déjà avant que le fil réponde, sans son compte', async () => {
+  it('et les porte déjà avant que le fil réponde, sans son compte', async () => {
     // **La navigation n'attend pas la donnée.** Le rayon est un état local : le
     // taire jusqu'à la réponse ferait apparaître l'en-tête d'un coup, ce qui
     // est le défaut que l'accueil a déjà coûté.
@@ -164,22 +193,45 @@ describe('ce que l’en-tête dit', () => {
     );
 
     await waitFor(() => expect(screen.getByTestId('etat-chargement')).toBeTruthy());
-    expect(screen.getByTestId('entete-rayon')).toHaveTextContent(/\b15\b/);
-    expect(screen.getByTestId('entete-marque')).toBeTruthy();
+    // **Ce qui ne dépend pas de la donnée est déjà là.** Le marché et le titre
+    // sont connus avant le premier appel ; le compte, lui, n'apparaît qu'avec
+    // la réponse et seulement une fois filtré. Le logotype a quitté l'en-tête
+    // avec la v3 : la planche pose le titre à sa place.
+    expect(screen.getByTestId('entete-marche')).toHaveTextContent(
+      en.parcours.filMarche.toUpperCase(),
+    );
+    expect(screen.getByTestId('entete-titre')).toHaveTextContent(en.parcours.filDecouvrir);
 
     relacher({ ok: true, status: 200, json: async () => fil() } as Response);
     await waitFor(() => expect(screen.getByTestId('etat-nominal')).toBeTruthy());
   });
 
-  it('donne à chaque catégorie ce qu’elle ouvrirait', async () => {
+  it('les catégories sont du texte, et une seule porte le soulignement', async () => {
+    // **Les comptes par catégorie ont disparu avec les pastilles.** Une
+    // pastille chiffrée pèse autant que le contenu qu'elle filtre, et c'est ce
+    // que la revue signalait. Ce qui reste dit lequel des sept mots est en
+    // vigueur, et rien d'autre : la graisse et le soulignement.
+    //
+    // Le test vérifie **l'unicité** et pas seulement la présence : deux mots
+    // soulignés à la fois est l'état que produirait une comparaison fautive, et
+    // « le bon est souligné » ne l'attraperait pas.
     await monter();
     await waitFor(() => expect(screen.getByTestId('categorie-beauty')).toBeTruthy());
 
-    expect(screen.getByTestId('categorie-beauty-compte')).toHaveTextContent(/^5$/);
-    expect(screen.getByTestId('categorie-fitness-compte')).toHaveTextContent(/^4$/);
-    // « All » ne porte pas de nombre : il ne retire rien de ce qui est compté,
-    // il retire le filtre.
-    expect(screen.queryByTestId('categorie-toutes-compte')).toBeNull();
+    const souligne = (id: string) =>
+      Number(screen.getByTestId(id).props.style?.borderBottomWidth ?? 0) > 0;
+
+    expect(souligne('categorie-toutes')).toBe(true);
+    expect(souligne('categorie-beauty')).toBe(false);
+    expect(souligne('categorie-fitness')).toBe(false);
+
+    await fireEvent.press(screen.getByTestId('categorie-beauty-mot'));
+    await waitFor(() => expect(souligne('categorie-beauty')).toBe(true));
+    expect(souligne('categorie-toutes')).toBe(false);
+    expect(souligne('categorie-fitness')).toBe(false);
+
+    // Et aucun compte nulle part : c'est ce qu'on a retiré.
+    expect(screen.queryByTestId('categorie-beauty-compte')).toBeNull();
   });
 
   it('retire la rangée entière quand il n’y a qu’une catégorie', async () => {

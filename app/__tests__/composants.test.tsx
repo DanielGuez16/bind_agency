@@ -764,7 +764,12 @@ describe("ce que la bibliothèque n'a pas", () => {
     // le titre accentué, qui porte les règles du mot plutôt que de les laisser
     // à l'appelant, et le filet segmenté, repris des carrousels de la
     // fondatrice pour dire une progression sans écrire « 2 sur 4 ». Puis le
-    // satin, quand les trois images sont arrivées.
+    // satin, quand les trois images sont arrivées. Et l'aperçu de prestation,
+    // avec le fil v3 : la carte de fil montrait le salon en titre et la
+    // prestation dessous, ce que les testeurs lisaient comme « un lieu ». La
+    // famille existe pour porter la hiérarchie inverse au même endroit pour
+    // tout le monde — un aperçu écrit à la main dans un écran la respecterait
+    // le jour où on l'écrit, et plus le mois suivant.
     const { readdirSync } = require('fs') as typeof import('fs');
     const { join } = require('path') as typeof import('path');
     const fichiers = readdirSync(join(__dirname, '..', 'src', 'components'))
@@ -773,6 +778,7 @@ describe("ce que la bibliothèque n'a pas", () => {
 
     expect(fichiers).toEqual([
       'Admin.tsx',
+      'ApercuDePrestation.tsx',
       'Badges.tsx',
       'Button.tsx',
       'Cards.tsx',

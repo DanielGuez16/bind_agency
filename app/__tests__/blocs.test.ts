@@ -232,14 +232,15 @@ describe('un écran ne peint jamais la teinte de marque lui-même', () => {
    * fil et la pastille de statut que le §5 refuse : elles n'arriveraient pas
    * sous la forme d'un bloc, mais sous celle d'un `backgroundColor` écrit à la
    * main dans un écran.
+   *
+   * **Il n'y en a plus qu'une, et la seconde est partie avec ce qu'elle
+   * couvrait.** Le mur en mosaïque posait une pastille de distance et un badge
+   * en aplat de marque sur ses photos ; la v3 n'a plus ni voile ni pastille sur
+   * l'image, et sa contrepartie est de l'ambre clair à encre ambre foncé. Une
+   * tolérance qui survit à son motif est une permission qu'on ne relit plus —
+   * c'est le test du dessous qui l'a dit, pas une relecture.
    */
   const TOLERES: Record<string, string> = {
-    'src/screens/mur/Mur.tsx':
-      "la pastille de distance et le badge reel : le mur pose sa propre borne, " +
-      "« une seule chose orange par photo », et un test l'éprouve dans les deux " +
-      "sens — jamais deux aplats de marque sur la même image, jamais aucun. " +
-      "C'est la règle du bloc accentué transposée à la photo, sans quoi un mur " +
-      "de vingt salons en porterait vingt.",
     'src/screens/PaliersScreen.tsx':
       "la pastille « next for you » : components.md §3 la prescrit en brand.500 à texte encre. " +
       "C'est une désignation — le prochain palier — et non un état : le §5 ne bannit le bloc " +
