@@ -65,7 +65,7 @@ import { formatNumber } from '../format';
 import { useI18n } from '../i18n';
 import { en } from '../i18n/en';
 import { useGabarit } from '../shell/gabarit';
-import { matiereDePalier, radius, tierTokens, useColors, useTheme, type ColorName } from '../theme';
+import { type ColorName, elevationDeCarte, matiereDePalier, radius, tierTokens, useColors, useTheme } from '../theme';
 import { Ecran } from './Ecran';
 import { Jauge, ReglesDesPaliers } from './ReglesDesPaliers';
 import { RaisonDuVide } from './RaisonDuVide';
@@ -623,70 +623,84 @@ export function BarreauDePalier({
     </View>
   );
 
+  // **L'ombre est portée par la vue extérieure, et c'est obligatoire.** Celle
+  // du dessous clippe son contenu — c'est ce qui fait épouser le coin de 18 px
+  // à ses bandes internes — et sur iOS une vue qui clippe coupe sa propre ombre
+  // au même bord. Les deux ne peuvent pas vivre sur le même nœud. La vue
+  // extérieure reprend le rayon et le fond, parce qu'iOS calcule l'ombre depuis
+  // la couche opaque : sans fond, il n'y a rien dont projeter la silhouette.
   return (
     <View
-      testID={`palier-${palier.tier_id}`}
       style={{
         borderRadius: radius['radius.lg'],
-        // Le prochain palier porte deux pixels. C'est le seul objectif de
-        // l'écran, et l'épaisseur le dit sans couleur.
-        borderWidth: etat === 'prochain' ? 2 : 1,
-        // Le prochain palier porte deux pixels d'encre et non d'orange : un filet
-        // orange de 2 px posé contre un bandeau orange ne se voyait plus.
-        borderColor: etat === 'prochain' ? c['line.ink'] : c[bordureDeCarte],
         backgroundColor: c['bg.surface'],
-        overflow: 'hidden',
-        flexDirection: large ? 'row' : 'column',
+        ...elevationDeCarte(),
       }}
     >
-      {bandeau}
-      <View style={{ flex: large ? 1 : undefined, minWidth: 0 }}>
-        {echange}
+      <View
+        testID={`palier-${palier.tier_id}`}
+        style={{
+          borderRadius: radius['radius.lg'],
+          // Le prochain palier porte deux pixels. C'est le seul objectif de
+          // l'écran, et l'épaisseur le dit sans couleur.
+          borderWidth: etat === 'prochain' ? 2 : 1,
+          // Le prochain palier porte deux pixels d'encre et non d'orange : un filet
+          // orange de 2 px posé contre un bandeau orange ne se voyait plus.
+          borderColor: etat === 'prochain' ? c['line.ink'] : c[bordureDeCarte],
+          backgroundColor: c['bg.surface'],
+          overflow: 'hidden',
+          flexDirection: large ? 'row' : 'column',
+        }}
+      >
+        {bandeau}
+        <View style={{ flex: large ? 1 : undefined, minWidth: 0 }}>
+          {echange}
 
-        {obstacles.length > 0 ? (
-          <View style={{ paddingHorizontal: large ? 16 : 14, paddingBottom: large ? 16 : 14, gap: 10 }}>
-            <Filet />
-            <Texte variante="type.label" couleur="ink.soft">
-              {t('tiers.toUnlock')}
-            </Texte>
-            {/* Tous les obstacles, dans l'ordre du serveur. N'en montrer qu'un
-                ferait combler le premier pour découvrir le second, puis le
-                troisième. */}
-            {obstacles.map((obstacle, index) => (
-              <EcartAuSeuil
-                key={`${obstacle.raison}-${index}`}
-                obstacle={obstacle}
-                platform={palier.platform}
-                teinte={encre}
-              />
-            ))}
-          </View>
-        ) : null}
+          {obstacles.length > 0 ? (
+            <View style={{ paddingHorizontal: large ? 16 : 14, paddingBottom: large ? 16 : 14, gap: 10 }}>
+              <Filet />
+              <Texte variante="type.label" couleur="ink.soft">
+                {t('tiers.toUnlock')}
+              </Texte>
+              {/* Tous les obstacles, dans l'ordre du serveur. N'en montrer qu'un
+                  ferait combler le premier pour découvrir le second, puis le
+                  troisième. */}
+              {obstacles.map((obstacle, index) => (
+                <EcartAuSeuil
+                  key={`${obstacle.raison}-${index}`}
+                  obstacle={obstacle}
+                  platform={palier.platform}
+                  teinte={encre}
+                />
+              ))}
+            </View>
+          ) : null}
 
-        {/* Sur un palier fermé le compte n'est pas cliquable — il n'y a rien à
-            réserver. Il reste affiché : c'est l'argument. */}
-        {!large && porteOuverte ? (
-          <Pressable
-            testID={`vers-prestations-${palier.tier_id}`}
-            accessibilityRole="button"
-            onPress={() => onVoirLesPrestations?.(palier)}
-            style={({ pressed }) => ({
-              minHeight: 48,
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 8,
-              paddingHorizontal: 14,
-              borderTopWidth: 1,
-              borderTopColor: c['line.default'],
-          opacity: pressed ? 0.7 : 1,
-        })}
-          >
-            <Texte variante="type.bodyStrong" couleur={encre} style={{ flex: 1 }}>
-              {t('tiers.seeServices', { count: palier.offres_disponibles })}
-            </Texte>
-            <Icone nom="chevron" couleur={encre} taille={20} />
-          </Pressable>
-        ) : null}
+          {/* Sur un palier fermé le compte n'est pas cliquable — il n'y a rien à
+              réserver. Il reste affiché : c'est l'argument. */}
+          {!large && porteOuverte ? (
+            <Pressable
+              testID={`vers-prestations-${palier.tier_id}`}
+              accessibilityRole="button"
+              onPress={() => onVoirLesPrestations?.(palier)}
+              style={({ pressed }) => ({
+                minHeight: 48,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 8,
+                paddingHorizontal: 14,
+                borderTopWidth: 1,
+                borderTopColor: c['line.default'],
+            opacity: pressed ? 0.7 : 1,
+          })}
+            >
+              <Texte variante="type.bodyStrong" couleur={encre} style={{ flex: 1 }}>
+                {t('tiers.seeServices', { count: palier.offres_disponibles })}
+              </Texte>
+              <Icone nom="chevron" couleur={encre} taille={20} />
+            </Pressable>
+          ) : null}
+        </View>
       </View>
     </View>
   );

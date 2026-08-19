@@ -33,7 +33,7 @@ import {
 import { formatNumber } from '../format';
 import { useI18n } from '../i18n';
 import { useGabarit } from '../shell/gabarit';
-import { radius, useColors } from '../theme';
+import { elevationDeCarte, radius, useColors } from '../theme';
 import { Ecran } from './Ecran';
 import { useRequete } from './useRequete';
 
@@ -169,6 +169,8 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
         backgroundColor: c['bg.surface'],
         flexDirection: large ? 'row' : 'column',
         alignItems: large ? 'center' : undefined,
+        // « Un coin de 18 px sans ombre flotte au lieu de se poser » : passation §2.
+        ...elevationDeCarte(),
       }}
     >
       <View style={{ flex: large ? 1 : undefined, gap: 2, minWidth: 0 }}>

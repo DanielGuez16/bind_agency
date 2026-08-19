@@ -27,7 +27,7 @@ import { ScrollView, View } from 'react-native';
 import { useApi, type ApercuDeLaFiche } from '../api';
 import { Button, Marque, StatusMessage, TextField, Texte, Toggle } from '../components';
 import { useI18n } from '../i18n';
-import { radius, useColors } from '../theme';
+import { elevationDeCarte, radius, useColors } from '../theme';
 import { useRequete } from './useRequete';
 
 /** Le minimum imposé par l'API. */
@@ -138,6 +138,8 @@ export function PriseEnMainScreen({
             backgroundColor: c['bg.surface'],
             borderWidth: 1,
             borderColor: c['line.default'],
+            // « Un coin de 18 px sans ombre flotte au lieu de se poser » : passation §2.
+            ...elevationDeCarte(),
           }}
         >
           <Texte variante="type.label" couleur="ink.soft">

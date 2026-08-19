@@ -27,7 +27,7 @@ import { View } from 'react-native';
 import type { FiabiliteDuCreateur } from '../api';
 import { Filet, Icone, Texte } from '../components';
 import { useI18n } from '../i18n';
-import { radius, useColors, type ColorName } from '../theme';
+import { type ColorName, elevationDeCarte, radius, useColors } from '../theme';
 
 /** La borne du score. Cent, comme côté serveur — jamais recalculée ici. */
 const MAXIMUM = 100;
@@ -96,51 +96,63 @@ function BlocDeFiabilite({ fiabilite }: { fiabilite: FiabiliteDuCreateur | null 
   // retombe sur « pas encore de score » plutôt que d'afficher `NaN / 100`.
   const chiffrable = score !== null && Number.isFinite(score);
 
+  // **L'ombre est portée par la vue extérieure, et c'est obligatoire.** Celle
+  // du dessous clippe son contenu — c'est ce qui fait épouser le coin de 18 px
+  // à ses bandes internes — et sur iOS une vue qui clippe coupe sa propre ombre
+  // au même bord. Les deux ne peuvent pas vivre sur le même nœud.
   return (
     <View
-      testID="bloc-fiabilite"
       style={{
         borderRadius: radius['radius.lg'],
-        borderWidth: 1,
-        borderColor: c['line.default'],
         backgroundColor: c['bg.surface'],
-        overflow: 'hidden',
+        ...elevationDeCarte(),
       }}
     >
-      <View style={{ padding: 14, borderBottomWidth: 1, borderBottomColor: c['line.default'] }}>
-        <Texte variante="type.bodyStrong">{t('tiers.reliabilityTitle')}</Texte>
-      </View>
+      <View
+        testID="bloc-fiabilite"
+        style={{
+          borderRadius: radius['radius.lg'],
+          borderWidth: 1,
+          borderColor: c['line.default'],
+          backgroundColor: c['bg.surface'],
+          overflow: 'hidden',
+        }}
+      >
+        <View style={{ padding: 14, borderBottomWidth: 1, borderBottomColor: c['line.default'] }}>
+          <Texte variante="type.bodyStrong">{t('tiers.reliabilityTitle')}</Texte>
+        </View>
 
-      <View style={{ padding: 14, gap: 10 }}>
-        {chiffrable ? (
-          <>
-            <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
-              <Texte variante="type.figure" testID="score-de-fiabilite">
-                {String(Math.round(score))}
+        <View style={{ padding: 14, gap: 10 }}>
+          {chiffrable ? (
+            <>
+              <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
+                <Texte variante="type.figure" testID="score-de-fiabilite">
+                  {String(Math.round(score))}
+                </Texte>
+                <Texte variante="type.mono" couleur="ink.mute">
+                  {t('tiers.reliabilityOutOf')}
+                </Texte>
+              </View>
+              <Jauge part={score / MAXIMUM} teinte="status.success.text" hauteur={10} />
+              <Texte variante="type.label" couleur="ink.soft" style={{ fontWeight: '400' }}>
+                {t('tiers.reliabilityMeaning', { count: fiabilite?.completed_collabs_count ?? 0 })}
               </Texte>
-              <Texte variante="type.mono" couleur="ink.mute">
-                {t('tiers.reliabilityOutOf')}
-              </Texte>
-            </View>
-            <Jauge part={score / MAXIMUM} teinte="status.success.text" hauteur={10} />
-            <Texte variante="type.label" couleur="ink.soft" style={{ fontWeight: '400' }}>
-              {t('tiers.reliabilityMeaning', { count: fiabilite?.completed_collabs_count ?? 0 })}
+            </>
+          ) : (
+            // Ni chiffre ni barre. Une barre vide se lit comme un zéro, et zéro
+            // n'est pas ce que dit l'absence d'historique.
+            <Texte variante="type.label" couleur="ink.soft" testID="fiabilite-sans-score" style={{ fontWeight: '400' }}>
+              {t('tiers.reliabilityNone')}
             </Texte>
-          </>
-        ) : (
-          // Ni chiffre ni barre. Une barre vide se lit comme un zéro, et zéro
-          // n'est pas ce que dit l'absence d'historique.
-          <Texte variante="type.label" couleur="ink.soft" testID="fiabilite-sans-score" style={{ fontWeight: '400' }}>
-            {t('tiers.reliabilityNone')}
-          </Texte>
-        )}
+          )}
 
-        {/* Les deux garanties. Elles ne sont pas décoratives : sans elles, le
-            score se lit comme une note publique, et c'est la crainte
-            spontanée de toutes celles à qui on l'a montré. */}
-        <Texte variante="type.caption" couleur="ink.mute" testID="garanties-du-score">
-          {t('tiers.reliabilityGuarantee')}
-        </Texte>
+          {/* Les deux garanties. Elles ne sont pas décoratives : sans elles, le
+              score se lit comme une note publique, et c'est la crainte
+              spontanée de toutes celles à qui on l'a montré. */}
+          <Texte variante="type.caption" couleur="ink.mute" testID="garanties-du-score">
+            {t('tiers.reliabilityGuarantee')}
+          </Texte>
+        </View>
       </View>
     </View>
   );
@@ -159,33 +171,45 @@ function Bloc({
 }) {
   const c = useColors();
 
+  // **L'ombre est portée par la vue extérieure, et c'est obligatoire.** Celle
+  // du dessous clippe son contenu — c'est ce qui fait épouser le coin de 18 px
+  // à ses bandes internes — et sur iOS une vue qui clippe coupe sa propre ombre
+  // au même bord. Les deux ne peuvent pas vivre sur le même nœud.
   return (
     <View
       style={{
         borderRadius: radius['radius.lg'],
-        borderWidth: 1,
-        borderColor: c['line.default'],
         backgroundColor: c['bg.surface'],
-        overflow: 'hidden',
+        ...elevationDeCarte(),
       }}
     >
       <View
         style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 8,
-          padding: 12,
-          borderBottomWidth: 1,
-          borderBottomColor: c['line.default'],
-          backgroundColor: c[`${teinte}.subtle` as ColorName],
+          borderRadius: radius['radius.lg'],
+          borderWidth: 1,
+          borderColor: c['line.default'],
+          backgroundColor: c['bg.surface'],
+          overflow: 'hidden',
         }}
       >
-        <Icone nom={icone} couleur={teinte} taille={18} />
-        <Texte variante="type.bodyStrong" couleur={teinte}>
-          {titre}
-        </Texte>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 8,
+            padding: 12,
+            borderBottomWidth: 1,
+            borderBottomColor: c['line.default'],
+            backgroundColor: c[`${teinte}.subtle` as ColorName],
+          }}
+        >
+          <Icone nom={icone} couleur={teinte} taille={18} />
+          <Texte variante="type.bodyStrong" couleur={teinte}>
+            {titre}
+          </Texte>
+        </View>
+        <View style={{ padding: 12, gap: 10 }}>{children}</View>
       </View>
-      <View style={{ padding: 12, gap: 10 }}>{children}</View>
     </View>
   );
 }
