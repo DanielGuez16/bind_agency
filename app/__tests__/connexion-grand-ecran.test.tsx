@@ -73,25 +73,28 @@ describe('l’entrée du produit, grand écran', () => {
     expect(screen.queryByTestId('champ-email')).toBeNull();
   });
 
-  it('donne au formulaire de connexion la même mise en page qu’à l’inscription', async () => {
-    // Le panneau était conditionné à l'inscription : « Sign in » restait une
-    // colonne de 480 dans du vide, sur l'écran le plus visité du produit.
+  /**
+   * **Le panneau d'encre est parti, et quatre tests avec lui.**
+   *
+   * Ils disaient qu'il se rendait aussi à la connexion, qu'il portait la
+   * promesse de la porte franchie, qu'il ne faisait plus trois lignes sur 604,
+   * et qu'il ne numérotait pas des faits comme une mise en route. Chacun
+   * corrigeait un vrai défaut **du panneau**. La planche v3 le retire sans le
+   * remplacer : il expliquait le produit à quelqu'un qui a déjà un compte,
+   * c'est-à-dire à la seule personne qui n'a pas besoin qu'on le lui explique.
+   *
+   * Ce qui reste ici est ce qui ne dépendait pas de lui : que les portes soient
+   * l'entrée, et qu'on ne repose pas la question du rôle à qui revient.
+   */
+  it('ne rend plus le panneau d’encre, sur aucune des deux étapes', async () => {
+    // **Les deux étapes, et c'est ce qui compte.** Il était conditionné à
+    // l'inscription avant de valoir partout ; ne vérifier que la connexion
+    // laisserait revenir la moitié qu'on vient de retirer.
     await afficher();
-    await fireEvent.press(screen.getByTestId('vers-connexion'));
+    expect(screen.queryByTestId('panneau-de-promesse')).toBeNull();
 
-    expect(screen.getByTestId('champ-email')).toBeTruthy();
-    expect(screen.getByTestId('panneau-de-promesse')).toBeTruthy();
-    // Sans porte franchie, le panneau porte la promesse commune.
-    expect(screen.getByText(en.auth.accroche)).toBeTruthy();
-  });
-
-  it('garde le panneau après une porte, avec la promesse choisie', async () => {
-    await afficher();
-    await fireEvent.press(screen.getByTestId('choisir-business_member'));
-
-    const panneau = screen.getByTestId('panneau-de-promesse');
-    expect(panneau).toHaveTextContent(new RegExp(en.auth.porteCommerce));
-    expect(panneau).toHaveTextContent(new RegExp(en.auth.etapeCommerce1));
+    await fireEvent.press(screen.getByTestId('choisir-creator'));
+    expect(screen.queryByTestId('panneau-de-promesse')).toBeNull();
   });
 
   it('ne repose pas la question du rôle à qui revient d’une session expirée', async () => {
@@ -109,29 +112,11 @@ describe('l’entrée du produit, grand écran', () => {
 // campagne 2 : un grand aplat noir presque vide
 // --------------------------------------------------------------------------
 
-describe('le panneau d’encre, après la campagne 2', () => {
-  it('n’est plus trois lignes sur 604 à la connexion', async () => {
-    // C'est l'écran le plus vu du produit. L'inscription y déroule les trois
-    // étapes de la porte franchie ; la connexion n'avait rien, donc un aplat.
-    await afficher();
-    await fireEvent.press(screen.getByTestId('vers-connexion'));
-
-    for (const lettre of ['A', 'B', 'C']) {
-      expect(screen.getByTestId(`point-de-retour-${lettre}`)).toBeTruthy();
-    }
-  });
-
-  it('ne numérote pas des faits comme une mise en route', async () => {
-    // « 01 02 03 » à quelqu'un qui a déjà un compte se lit comme des étapes à
-    // refaire. Les numéros restent à l'inscription, où ils sont une suite.
-    await afficher();
-    await fireEvent.press(screen.getByTestId('vers-connexion'));
-    expect(screen.queryByText('01')).toBeNull();
-
-    // Et à l'inscription, l'inverse : les numéros, pas les faits.
-    await afficher();
-    await fireEvent.press(screen.getByTestId('choisir-creator'));
-    expect(screen.getByText('01')).toBeTruthy();
-    expect(screen.queryByTestId('point-de-retour-A')).toBeNull();
-  });
-});
+/**
+ * **Le bloc du panneau d'encre est retiré en entier.**
+ *
+ * Ses deux tests corrigeaient de vrais défauts — trois lignes sur 604 à la
+ * connexion, et des faits numérotés comme une mise en route. Ils portaient sur
+ * un panneau que la planche v3 supprime : les garder demanderait de le
+ * remettre pour les faire passer.
+ */
