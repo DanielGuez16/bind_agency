@@ -10,7 +10,7 @@ import pytest
 import sqlalchemy as sa
 from httpx import AsyncClient
 from sqlalchemy.exc import IntegrityError, InternalError
-from sqlalchemy.ext.asyncio import AsyncConnection
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncSession
 
 from app.core.config import get_settings
 from app.integrations.geocoding import Coordinates, ManualGeocoder
@@ -35,14 +35,39 @@ def payload_commerce(**overrides) -> dict:
     } | overrides
 
 
-async def compte(client: AsyncClient, role: UserRole = UserRole.BUSINESS_MEMBER) -> dict:
+async def compte(
+    client: AsyncClient,
+    role: UserRole = UserRole.BUSINESS_MEMBER,
+    session=None,
+) -> dict:
+    """Un compte inscrit par la route.
+
+    **La confirmation d'adresse est facultative, et sur demande.** Elle ne sert
+    qu'aux tests qui mettent un commerce en ligne — les autres n'en ont pas
+    besoin, et l'imposer partout ferait passer chaque décor par une émission de
+    jeton pour rien.
+
+    Le jeton n'est rendu par aucune réponse : c'est le sens du dispositif. On en
+    émet donc un par le service — ce que fait un renvoi — et on ouvre le lien
+    par la route, qui est le chemin réel.
+    """
     email = f"{uuid.uuid4()}@example.com"
-    password = "un-mot-de-passe-solide-42"
+    password = "tourbillon-cactus-91-vermeil"
     created = await client.post(
         f"{PREFIX}/auth/register",
         json={"email": email, "password": password, "role": role.value},
     )
     assert created.status_code == 201, created.text
+    if session is not None:
+        from app.models import User
+        from app.services import email_verification as _verif
+
+        utilisateur = await session.get(User, uuid.UUID(created.json()["id"]))
+        jeton = await _verif.emettre(session, user=utilisateur)
+        await session.commit()
+        ouvert = await client.get(f"{PREFIX}/auth/verify-email", params={"token": jeton})
+        assert ouvert.status_code == 200, ouvert.text
+
     tokens = (
         await client.post(f"{PREFIX}/auth/login", json={"email": email, "password": password})
     ).json()
@@ -315,8 +340,10 @@ async def test_les_coordonnees_peuvent_etre_ajoutees_apres_coup(client: AsyncCli
 # --------------------------------------------------------------------------
 
 
-async def test_l_activation_refuse_un_commerce_sans_coordonnees(client: AsyncClient) -> None:
-    membre = await compte(client)
+async def test_l_activation_refuse_un_commerce_sans_coordonnees(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    membre = await compte(client, session=session)
     cree = await commerce(client, membre, coordinates=None)
 
     response = await client.post(
@@ -327,8 +354,10 @@ async def test_l_activation_refuse_un_commerce_sans_coordonnees(client: AsyncCli
     assert response.json()["detail"] == "business_missing_coordinates"
 
 
-async def test_l_activation_refuse_un_commerce_sans_adresse(client: AsyncClient) -> None:
-    membre = await compte(client)
+async def test_l_activation_refuse_un_commerce_sans_adresse(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    membre = await compte(client, session=session)
     cree = await commerce(client, membre, address=None)
 
     response = await client.post(
@@ -340,9 +369,9 @@ async def test_l_activation_refuse_un_commerce_sans_adresse(client: AsyncClient)
 
 
 async def test_l_activation_reussie_journalise_sa_transition(
-    client: AsyncClient, conn: AsyncConnection
+    client: AsyncClient, conn: AsyncConnection, session: AsyncSession
 ) -> None:
-    membre = await compte(client)
+    membre = await compte(client, session=session)
     cree = await commerce(client, membre)
 
     response = await client.post(
@@ -366,8 +395,8 @@ async def test_l_activation_reussie_journalise_sa_transition(
     assert ligne.reason == business_service.REASON_ACTIVATION
 
 
-async def test_activer_deux_fois_est_refuse(client: AsyncClient) -> None:
-    membre = await compte(client)
+async def test_activer_deux_fois_est_refuse(client: AsyncClient, session: AsyncSession) -> None:
+    membre = await compte(client, session=session)
     cree = await commerce(client, membre)
     await client.post(f"{PREFIX}/business/{cree['id']}/activate", headers=membre["headers"])
 
@@ -384,10 +413,10 @@ async def test_activer_deux_fois_est_refuse(client: AsyncClient) -> None:
 
 
 async def test_un_commerce_actif_ne_peut_pas_perdre_ses_coordonnees(
-    client: AsyncClient, conn: AsyncConnection
+    client: AsyncClient, conn: AsyncConnection, session: AsyncSession
 ) -> None:
     """La contrainte de complétude conditionnelle tient aussi après activation."""
-    membre = await compte(client)
+    membre = await compte(client, session=session)
     cree = await commerce(client, membre)
     await client.post(f"{PREFIX}/business/{cree['id']}/activate", headers=membre["headers"])
 

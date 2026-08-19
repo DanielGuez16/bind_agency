@@ -78,7 +78,25 @@ from app.services import social_accounts as social_account_service
 from app.services.audit import Actor
 from app.services.storage import archiver_la_publication
 
-MOT_DE_PASSE = "bind-donnees-de-depart-2026"
+
+async def _inscrire_verifie(session, **kwargs):
+    """Un compte du jeu de démonstration, **adresse confirmée par le vrai chemin**.
+
+    Sans confirmation, aucun de ces comptes ne peut réserver ni mettre son salon
+    en ligne : le jeu entier s'arrêterait à la première réservation. Le jeton est
+    émis et consommé plutôt que la date posée à la main — un semis qui écrirait
+    `email_verified_at` directement produirait le même état sans jamais éprouver
+    le mécanisme qui doit le produire.
+    """
+    from app.services import email_verification as _verif
+
+    user = await auth_service.register(session, **kwargs)
+    jeton = await _verif.emettre(session, user=user)
+    await _verif.confirmer(session, jeton=jeton)
+    return user
+
+
+MOT_DE_PASSE = "orchidee-cuivre-2026"
 
 
 @dataclass(frozen=True, slots=True)
@@ -483,7 +501,7 @@ async def _creer(
     token_ttl: timedelta = timedelta(days=60),
 ) -> tuple[User, SocialAccount]:
     """Un créateur, par le parcours complet : inscription, OAuth, relevé."""
-    user = await auth_service.register(
+    user = await _inscrire_verifie(
         session, email=email, password=MOT_DE_PASSE, role=UserRole.CREATOR, locale=locale
     )
     if prenom or nom:

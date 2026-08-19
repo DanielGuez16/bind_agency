@@ -47,6 +47,16 @@ class User(UUIDPrimaryKey, CreatedAt, Base):
     last_login_at: Mapped[datetime | None] = mapped_column(
         sa.DateTime(timezone=True), nullable=True
     )
+    #: Quand l'adresse a été confirmée. **Nulle veut dire « pas encore », jamais
+    #: « refusée »** : un compte non vérifié entre et se sert du produit, il ne
+    #: peut simplement pas engager quelqu'un d'autre — réserver une place chez un
+    #: commerce, ou mettre un commerce en ligne.
+    #:
+    #: Une date et non un booléen : « il a vérifié » ne dit pas quand, et
+    #: c'est la première question du support quand une adresse est contestée.
+    email_verified_at: Mapped[datetime | None] = mapped_column(
+        sa.DateTime(timezone=True), nullable=True
+    )
 
     __table_args__ = (
         # `email` n'est nullable que pour permettre l'anonymisation : hors ce

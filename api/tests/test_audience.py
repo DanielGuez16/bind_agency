@@ -29,14 +29,14 @@ from app.models.enums import (
 )
 from app.services import account_verification, eligibility
 from app.services import audience as service
-from app.services import auth as auth_service
 from app.services import metrics as metrics_service
 from app.services.eligibility import RaisonRefus
+from tests.conftest import inscrire_verifie
 from tests.test_feed import createur
 from tests.test_social_metrics import FauxFournisseur, metriques
 
 PREFIX = get_settings().api_v1_prefix
-MOT_DE_PASSE = "un-mot-de-passe-solide-42"
+MOT_DE_PASSE = "tourbillon-cactus-91-vermeil"
 
 
 # --------------------------------------------------------------------------
@@ -63,7 +63,7 @@ async def test_un_compte_sans_releve_rend_nul_et_non_zero(session: AsyncSession)
     Afficher zéro à quelqu'un qui en a douze mille est un défaut qu'il
     signalerait avant nous.
     """
-    user = await auth_service.register(
+    user = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
         password=MOT_DE_PASSE,
@@ -281,7 +281,7 @@ async def test_les_routes_sont_reservees_aux_createurs(
     client: AsyncClient, session: AsyncSession
 ) -> None:
     user, _ = await createur(session, followers=1_800)
-    commercant = await auth_service.register(
+    commercant = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
         password=MOT_DE_PASSE,

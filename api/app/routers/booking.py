@@ -17,6 +17,10 @@ router = APIRouter(
 _CODES = {
     service.OfferNotBookable: (status.HTTP_404_NOT_FOUND, ErrorCode.BOOKING_OFFER_NOT_BOOKABLE),
     service.TierNotAccessible: (status.HTTP_403_FORBIDDEN, ErrorCode.BOOKING_TIER_NOT_ACCESSIBLE),
+    # 403 et non 409 : ce n'est pas un état à compléter sur la réservation,
+    # c'est un droit qui manque au compte. L'écran doit envoyer vers la
+    # confirmation d'adresse, pas vers le formulaire.
+    service.EmailNotVerified: (status.HTTP_403_FORBIDDEN, ErrorCode.EMAIL_NOT_VERIFIED),
     service.NameRequired: (status.HTTP_409_CONFLICT, ErrorCode.BOOKING_NAME_REQUIRED),
     service.SlotRequired: (status.HTTP_422_UNPROCESSABLE_CONTENT, ErrorCode.BOOKING_SLOT_REQUIRED),
     service.SlotNotAllowed: (

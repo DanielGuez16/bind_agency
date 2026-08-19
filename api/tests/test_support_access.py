@@ -24,17 +24,17 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncSession
 from app.core.config import get_settings
 from app.models import AuditLog, BusinessSupportAccess, User
 from app.models.enums import ActorKind, UserRole
-from app.services import auth as auth_service
 from app.services import support as service
+from tests.conftest import inscrire_verifie
 from tests.factories import PASSWORD_HASH, new_business, new_user
 from tests.test_activation import commerce_en_cours
 
 PREFIX = get_settings().api_v1_prefix
-MOT_DE_PASSE = "un-mot-de-passe-solide-42"
+MOT_DE_PASSE = "tourbillon-cactus-91-vermeil"
 
 
 async def administrateur(session: AsyncSession) -> User:
-    return await auth_service.register(
+    return await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
         password=MOT_DE_PASSE,

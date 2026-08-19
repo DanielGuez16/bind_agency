@@ -22,6 +22,16 @@ class ErrorCode(StrEnum):
     ACCOUNT_NOT_ACTIVE = "account_not_active"
     INVALID_REFRESH_TOKEN = "invalid_refresh_token"
     EMAIL_ALREADY_USED = "email_already_used"
+    #: L'adresse n'est pas confirmée. **Ce n'est pas un refus d'authentification**
+    #: — le compte est bien connecté — mais un refus d'engager quelqu'un d'autre.
+    EMAIL_NOT_VERIFIED = "email_not_verified"
+    #: Lien de confirmation inconnu, expiré, déjà utilisé ou remplacé par un
+    #: renvoi. **Un seul code pour les quatre** : les distinguer dirait à qui
+    #: essaie des jetons lesquels ont existé, et le geste à faire est le même.
+    EMAIL_VERIFICATION_INVALID = "email_verification_invalid"
+    #: L'adresse est déjà confirmée. Rendu sur un renvoi, et ce n'est pas un
+    #: échec : il n'y a simplement rien à envoyer.
+    EMAIL_ALREADY_VERIFIED = "email_already_verified"
 
     # Autorisation
     INSUFFICIENT_ROLE = "insufficient_role"

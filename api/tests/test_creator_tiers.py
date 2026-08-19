@@ -25,12 +25,12 @@ from app.models.enums import (
     UserRole,
     VerificationStatus,
 )
-from app.services import auth as auth_service
 from app.services import creator_tiers as service
 from app.services import metrics as metrics_service
 from app.services import reliability
 from app.services.audit import Actor
 from app.services.eligibility import RaisonRefus
+from tests.conftest import inscrire_verifie
 from tests.test_social_metrics import FauxFournisseur, metriques
 
 PREFIX = get_settings().api_v1_prefix
@@ -40,10 +40,10 @@ REEL = uuid.UUID("a839969b-3965-4c7e-92b1-b6274f899162")  # instagram/reel, 1000
 
 
 async def createur(session: AsyncSession):
-    return await auth_service.register(
+    return await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.CREATOR,
     )
 
@@ -206,7 +206,7 @@ async def test_un_palier_inactif_n_est_pas_rendu(session: AsyncSession) -> None:
 
 async def test_la_route_est_reservee_aux_createurs(client: AsyncClient) -> None:
     async def connecte(role: UserRole) -> dict:
-        email, password = f"{uuid.uuid4()}@example.com", "un-mot-de-passe-solide-42"
+        email, password = f"{uuid.uuid4()}@example.com", "tourbillon-cactus-91-vermeil"
         await client.post(
             f"{PREFIX}/auth/register",
             json={"email": email, "password": password, "role": role.value},
@@ -269,7 +269,7 @@ async def test_la_route_rend_la_fiabilite(client: AsyncClient, session: AsyncSes
     Le schéma est le seul endroit où un champ se perd en silence : l'appelant
     reçoit un 200 et un objet sans la clé.
     """
-    email, password = f"{uuid.uuid4()}@example.com", "un-mot-de-passe-solide-42"
+    email, password = f"{uuid.uuid4()}@example.com", "tourbillon-cactus-91-vermeil"
     await client.post(
         f"{PREFIX}/auth/register",
         json={"email": email, "password": password, "role": UserRole.CREATOR.value},
@@ -350,10 +350,10 @@ async def test_une_prestation_retiree_ne_compte_plus(session: AsyncSession) -> N
     }
     # Un acteur humain : une transition décidée par le système doit dire
     # pourquoi, et retirer une prestation est une décision du commerce.
-    membre = await auth_service.register(
+    membre = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.BUSINESS_MEMBER,
     )
     await capacity_service.set_availability(
@@ -457,12 +457,12 @@ async def test_une_seule_coordonnee_est_refusee(client: AsyncClient) -> None:
     email = f"{uuid.uuid4()}@example.com"
     await client.post(
         f"{PREFIX}/auth/register",
-        json={"email": email, "password": "un-mot-de-passe-solide-42", "role": "creator"},
+        json={"email": email, "password": "tourbillon-cactus-91-vermeil", "role": "creator"},
     )
     jetons = (
         await client.post(
             f"{PREFIX}/auth/login",
-            json={"email": email, "password": "un-mot-de-passe-solide-42"},
+            json={"email": email, "password": "tourbillon-cactus-91-vermeil"},
         )
     ).json()
     entetes = {"Authorization": f"Bearer {jetons['access_token']}"}

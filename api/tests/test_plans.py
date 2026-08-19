@@ -18,11 +18,11 @@ from app.models.enums import (
     SubscriptionStatus,
     UserRole,
 )
-from app.services import auth as auth_service
 from app.services import plans as service
+from tests.conftest import inscrire_verifie
 
 PREFIX = get_settings().api_v1_prefix
-MOT_DE_PASSE = "un-mot-de-passe-solide-42"
+MOT_DE_PASSE = "tourbillon-cactus-91-vermeil"
 
 
 async def plan(session: AsyncSession, **overrides) -> SubscriptionPlan:
@@ -138,7 +138,7 @@ async def test_la_route_est_reservee_aux_administrateurs(
     await plan(session)
     comptes = {}
     for role in (UserRole.CREATOR, UserRole.BUSINESS_MEMBER, UserRole.ADMIN):
-        comptes[role] = await auth_service.register(
+        comptes[role] = await inscrire_verifie(
             session,
             email=f"{uuid.uuid4()}@example.com",
             password=MOT_DE_PASSE,

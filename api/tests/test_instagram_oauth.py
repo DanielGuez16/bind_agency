@@ -84,7 +84,7 @@ async def client_ig(client: AsyncClient, instagram: FauxInstagram) -> AsyncClien
 
 async def createur(client: AsyncClient) -> dict:
     email = f"{uuid.uuid4()}@example.com"
-    password = "un-mot-de-passe-solide-42"
+    password = "tourbillon-cactus-91-vermeil"
     created = await client.post(
         f"{PREFIX}/auth/register",
         json={"email": email, "password": password, "role": UserRole.CREATOR.value},
@@ -360,7 +360,7 @@ async def test_un_compte_lie_a_un_autre_createur_ne_se_reprend_pas(
 
 async def test_seul_un_createur_demarre_un_parcours(client_ig: AsyncClient) -> None:
     email = f"{uuid.uuid4()}@example.com"
-    password = "un-mot-de-passe-solide-42"
+    password = "tourbillon-cactus-91-vermeil"
     await client_ig.post(
         f"{PREFIX}/auth/register",
         json={"email": email, "password": password, "role": UserRole.BUSINESS_MEMBER.value},

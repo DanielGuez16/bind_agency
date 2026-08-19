@@ -35,9 +35,9 @@ from app.models.enums import (
     UserRole,
     VerificationStatus,
 )
-from app.services import auth as auth_service
 from app.services import jobs as service
 from app.workers import handlers, runner, scheduler
+from tests.conftest import inscrire_verifie
 from tests.factories import new_creator, new_social_account
 from tests.test_social_metrics import FauxFournisseur, metriques
 
@@ -76,10 +76,10 @@ def toujours(provider) -> runner.FournisseurPour:
 
 
 async def creer_compte(session: AsyncSession, **overrides) -> SocialAccount:
-    user = await auth_service.register(
+    user = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.CREATOR,
     )
     valeurs = {
@@ -623,7 +623,7 @@ async def test_la_file_des_jobs_epuises_est_reservee_aux_administrateurs(
     client: AsyncClient,
 ) -> None:
     async def connecte(role: UserRole) -> dict:
-        email, password = f"{uuid.uuid4()}@example.com", "un-mot-de-passe-solide-42"
+        email, password = f"{uuid.uuid4()}@example.com", "tourbillon-cactus-91-vermeil"
         await client.post(
             f"{PREFIX}/auth/register",
             json={"email": email, "password": password, "role": role.value},
@@ -647,7 +647,7 @@ async def test_la_route_de_reprise_refuse_un_job_en_attente(
     job = await job_de(session, compte, JobType.TOKEN_REFRESH)
     await session.commit()
 
-    email, password = f"{uuid.uuid4()}@example.com", "un-mot-de-passe-solide-42"
+    email, password = f"{uuid.uuid4()}@example.com", "tourbillon-cactus-91-vermeil"
     await client.post(
         f"{PREFIX}/auth/register",
         json={"email": email, "password": password, "role": UserRole.ADMIN.value},

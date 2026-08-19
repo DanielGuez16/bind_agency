@@ -37,16 +37,16 @@ from app.models.enums import (
     SuspensionReason,
     UserRole,
 )
-from app.services import auth as auth_service
 from app.services import booking_states, outbox
 from app.services import business as business_service
 from app.services import grace as service
 from app.services import subscription as subscription_service
 from app.services.audit import Actor
+from tests.conftest import inscrire_verifie
 from tests.factories import new_business
 from tests.test_activation import commerce_en_cours
 
-MOT_DE_PASSE = "un-mot-de-passe-solide-42"
+MOT_DE_PASSE = "tourbillon-cactus-91-vermeil"
 
 
 class EnvoyeurQuiNote:
@@ -274,7 +274,7 @@ async def test_l_avertissement_est_depose_pour_tous_les_membres(
     from app.workers import handlers
 
     business, proprietaire = await ouvert(session)
-    second = await auth_service.register(
+    second = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
         password=MOT_DE_PASSE,

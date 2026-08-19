@@ -26,21 +26,21 @@ from app.schemas.business import BusinessCreate, CoordinatesPayload
 from app.schemas.capacity import CapacityRuleCreate
 from app.schemas.catalog import CatalogItemCreate
 from app.schemas.tier_offers import TierOfferCreate
-from app.services import auth as auth_service
 from app.services import business as service
 from app.services import capacity as capacity_service
 from app.services import catalog as catalog_service
 from app.services import tier_offers as tier_offer_service
 from app.services.audit import Actor
+from tests.conftest import inscrire_verifie
 from tests.test_feed import STORY
 
 PREFIX = get_settings().api_v1_prefix
-MOT_DE_PASSE = "un-mot-de-passe-solide-42"
+MOT_DE_PASSE = "tourbillon-cactus-91-vermeil"
 
 
 async def commerce_en_cours(session: AsyncSession, **overrides):
     """Un commerce créé mais pas activé, sans catalogue ni horaires."""
-    proprietaire = await auth_service.register(
+    proprietaire = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
         password=MOT_DE_PASSE,

@@ -227,6 +227,8 @@ async def activate(
         raise api_error(status.HTTP_409_CONFLICT, ErrorCode.BUSINESS_ALREADY_ACTIVE) from error
     except business_service.NotClaimed as error:
         raise api_error(status.HTTP_409_CONFLICT, ErrorCode.BUSINESS_NOT_CLAIMED) from error
+    except business_service.EmailNotVerified as error:
+        raise api_error(status.HTTP_403_FORBIDDEN, ErrorCode.EMAIL_NOT_VERIFIED) from error
     except business_service.MissingAddress as error:
         raise api_error(
             status.HTTP_422_UNPROCESSABLE_CONTENT, ErrorCode.BUSINESS_MISSING_ADDRESS

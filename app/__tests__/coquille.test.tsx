@@ -293,6 +293,41 @@ describe('connexion', () => {
     expect(screen.getByTestId('valider').props.accessibilityState.disabled).toBe(false);
   });
 
+  it('exige la confirmation du mot de passe, à l’inscription seulement', async () => {
+    /**
+     * **Un mot de passe masqué se saisit à l'aveugle.** Une faute de frappe
+     * crée un compte auquel personne ne peut se connecter, et le seul recours
+     * est de recommencer avec une autre adresse.
+     *
+     * Éprouvé dans les deux sens : le bouton reste fermé tant que les deux
+     * saisies diffèrent, et s'ouvre quand elles se rejoignent. Une garde qui
+     * refuserait toujours passerait la première moitié sans rien garantir.
+     */
+    await monterConnexion(serveur({}) as typeof fetch);
+    await fireEvent.press(screen.getByTestId('basculer'));
+    await fireEvent.press(screen.getByTestId('choisir-creator'));
+
+    await fireEvent.changeText(screen.getByTestId('champ-email'), 'a@b.example');
+    await fireEvent.changeText(screen.getByTestId('champ-mot-de-passe'), 'douze-caracteres');
+    // Le mot de passe est complet, la confirmation est vide : rien ne part.
+    expect(screen.getByTestId('valider').props.accessibilityState.disabled).toBe(true);
+
+    await fireEvent.changeText(screen.getByTestId('champ-confirmation'), 'douze-caracteree');
+    expect(screen.getByTestId('valider').props.accessibilityState.disabled).toBe(true);
+    expect(screen.getByText(en.auth.confirmationDiscordante)).toBeTruthy();
+
+    await fireEvent.changeText(screen.getByTestId('champ-confirmation'), 'douze-caracteres');
+    expect(screen.getByTestId('valider').props.accessibilityState.disabled).toBe(false);
+  });
+
+  it('ne demande aucune confirmation à la connexion', async () => {
+    // Elle n'y a aucun sens : le serveur dit déjà si c'est le bon. L'exiger
+    // ferait taper deux fois un mot de passe qu'on connaît.
+    await monterConnexion(serveur({}) as typeof fetch);
+
+    expect(screen.queryByTestId('champ-confirmation')).toBeNull();
+  });
+
   it('dit ce qui manque au mot de passe, en clair et en chiffres', async () => {
     // Un bouton grisé sans explication ne vaut pas mieux qu'un bouton absent.
     await monterConnexion(serveur({}) as typeof fetch);

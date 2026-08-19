@@ -17,6 +17,7 @@ from app.schemas.auth import (
     UserRead,
 )
 from app.services import auth as auth_service
+from app.services import email_verification as verification_service
 
 router = APIRouter(tags=["auth"])
 
@@ -42,8 +43,52 @@ async def register(payload: RegisterRequest, session: SessionDep) -> UserRead:
     except auth_service.EmailAlreadyUsed as error:
         raise api_error(status.HTTP_409_CONFLICT, ErrorCode.EMAIL_ALREADY_USED) from error
 
+    # **Le lien part dans la transaction de l'inscription.** Ou les deux
+    # existent, ou aucun : un compte créé sans son courriel de confirmation
+    # attendrait un message qui ne viendrait jamais, et personne ne le saurait.
+    await verification_service.emettre(session, user=user)
+
     await session.commit()
     return UserRead.model_validate(user)
+
+
+@router.get("/auth/verify-email", response_model=UserRead)
+async def verify_email(token: str, session: SessionDep) -> UserRead:
+    """Consomme le lien reçu par courriel.
+
+    **En `GET`, parce qu'un lien de courriel s'ouvre dans un navigateur.**
+    Exiger un `POST` obligerait à monter une page qui reposte, c'est-à-dire à
+    dépendre de l'application pour valider une adresse dont on a justement
+    besoin avant que l'application serve à quoi que ce soit.
+
+    Le jeton est à usage unique : le second passage répond le même refus que
+    n'importe quel jeton inconnu, ce qui est exact — il a été consommé.
+    """
+    try:
+        user = await verification_service.confirmer(session, jeton=token)
+    except verification_service.JetonInconnu as error:
+        raise api_error(
+            status.HTTP_400_BAD_REQUEST, ErrorCode.EMAIL_VERIFICATION_INVALID
+        ) from error
+
+    await session.commit()
+    return UserRead.model_validate(user)
+
+
+@router.post("/me/verify-email/resend", status_code=status.HTTP_204_NO_CONTENT)
+async def resend_verification(user: CurrentUser, session: SessionDep) -> None:
+    """Renvoie un lien, et **révoque le précédent**.
+
+    Sur `/me` et non sur `/auth` : il faut être connecté pour en demander un.
+    Une route ouverte prendrait une adresse en clair et deviendrait un moyen
+    d'envoyer du courrier à n'importe qui depuis notre domaine.
+    """
+    try:
+        await verification_service.emettre(session, user=user)
+    except verification_service.DejaVerifiee as error:
+        raise api_error(status.HTTP_409_CONFLICT, ErrorCode.EMAIL_ALREADY_VERIFIED) from error
+
+    await session.commit()
 
 
 @router.post("/auth/login", response_model=TokenPair)

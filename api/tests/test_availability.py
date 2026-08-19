@@ -20,12 +20,12 @@ from app.models.enums import BookingStatus, BusinessCategory, UserRole
 from app.schemas.business import BusinessCreate, CoordinatesPayload
 from app.schemas.capacity import CapacityExceptionCreate, CapacityRuleCreate
 from app.schemas.catalog import CatalogItemCreate
-from app.services import auth as auth_service
 from app.services import availability as service
 from app.services import business as business_service
 from app.services import capacity as capacity_service
 from app.services import catalog as catalog_service
 from app.services.audit import Actor
+from tests.conftest import inscrire_verifie
 
 MIAMI = ZoneInfo("America/New_York")
 
@@ -34,10 +34,10 @@ LUNDI = date(2026, 9, 7)
 
 
 async def commerce(session: AsyncSession, **overrides):
-    proprietaire = await auth_service.register(
+    proprietaire = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.BUSINESS_MEMBER,
     )
     payload = BusinessCreate(
@@ -97,10 +97,10 @@ async def reserver(
 ):
     """Une réservation posée en direct : ce fichier éprouve le calcul, pas la
     création — qui a sa propre tâche et son propre verrou."""
-    createur = await auth_service.register(
+    createur = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.CREATOR,
     )
     from tests.factories import new_social_account, new_tier, new_tier_offer
@@ -142,10 +142,10 @@ async def reserver(
 async def acteur(session: AsyncSession) -> Actor:
     """Un membre de commerce quelconque : la bascule de disponibilité est un
     geste humain, le journal exige de dire qui."""
-    user = await auth_service.register(
+    user = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.BUSINESS_MEMBER,
     )
     return Actor.from_user(user)

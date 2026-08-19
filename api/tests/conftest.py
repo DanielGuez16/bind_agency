@@ -418,3 +418,40 @@ def transport_meta():
         return transport
 
     return fabriquer
+
+
+async def inscrire_verifie(session, **kwargs):
+    """Inscrit un compte **et confirme son adresse par le vrai chemin**.
+
+    `register` ne vérifie rien, et c'est voulu : une adresse se confirme en
+    ouvrant un lien. Mais presque tous les décors ont besoin d'un compte qui
+    peut réserver ou mettre un commerce en ligne, et ces deux gestes exigent
+    désormais une adresse confirmée.
+
+    **Le jeton est émis et consommé, pas posé à la main.** `email_verified_at`
+    écrit directement produirait le même état sans jamais éprouver le mécanisme
+    qui doit le produire — et le jour où l'émission casse, les décors
+    continueraient de marcher. C'est la règle du dépôt sur les jeux de données,
+    appliquée à ce qui est devenu une étape du parcours.
+    """
+    from app.services import auth as auth_service
+    from app.services import email_verification, outbox
+
+    user = await auth_service.register(session, **kwargs)
+    jeton = await email_verification.emettre(session, user=user)
+    await email_verification.confirmer(session, jeton=jeton)
+
+    # **La boîte est rendue comme elle a été trouvée.** Confirmer ne retire pas
+    # le courriel de bienvenue : il resterait en attente, et chaque test qui
+    # compte ce qui sort de la boîte compterait un message par compte de son
+    # décor. Le vider ici plutôt que dans chaque test — un décor ne doit pas
+    # laisser derrière lui ce que personne n'a demandé.
+    await outbox.vider(session, email_sender=_Muet(), push_sender=_Muet())
+    return user
+
+
+class _Muet:
+    """Ne joint personne, et le dit en ne gardant rien."""
+
+    async def envoyer(self, *args, **kwargs):
+        return []

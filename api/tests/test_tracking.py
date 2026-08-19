@@ -29,6 +29,7 @@ from app.models import Business, CollaborationLink, LinkClick, LinkClickSalt
 from app.models.enums import ClickOutcome, DeviceFamily
 from app.services import impact as impact_service
 from app.services import tracking as service
+from tests.conftest import inscrire_verifie
 
 PREFIX = get_settings().api_v1_prefix
 
@@ -775,10 +776,9 @@ async def test_une_adresse_inconnue_rend_404(client: AsyncClient, monkeypatch) -
 async def connecter(client: AsyncClient, session: AsyncSession, role) -> dict:
     """Un compte du rôle demandé, et ses en-têtes."""
     from app.models.enums import UserRole
-    from app.services import auth as auth_service
 
-    email, motdepasse = f"{uuid.uuid4()}@example.com", "un-mot-de-passe-solide-42"
-    await auth_service.register(session, email=email, password=motdepasse, role=UserRole(role))
+    email, motdepasse = f"{uuid.uuid4()}@example.com", "tourbillon-cactus-91-vermeil"
+    await inscrire_verifie(session, email=email, password=motdepasse, role=UserRole(role))
     await session.commit()
     jetons = (
         await client.post(f"{PREFIX}/auth/login", json={"email": email, "password": motdepasse})
@@ -842,13 +842,12 @@ async def test_un_salon_ne_lit_pas_l_audience_d_un_autre(
     """L'isolation vient du résolveur d'appartenance, pas d'un filtre écrit ici."""
     from app.models import BusinessMember
     from app.models.enums import BusinessMemberRole, UserRole
-    from app.services import auth as auth_service
 
     _, salon_a = await contrepartie_avec_lien(session)
     _, salon_b = await contrepartie_avec_lien(session)
 
-    email, motdepasse = f"{uuid.uuid4()}@example.com", "un-mot-de-passe-solide-42"
-    membre = await auth_service.register(
+    email, motdepasse = f"{uuid.uuid4()}@example.com", "tourbillon-cactus-91-vermeil"
+    membre = await inscrire_verifie(
         session, email=email, password=motdepasse, role=UserRole.BUSINESS_MEMBER
     )
     session.add(
@@ -885,7 +884,7 @@ async def test_le_createur_recoit_une_adresse_complete_a_coller(
     jetons = (
         await client.post(
             f"{PREFIX}/auth/login",
-            json={"email": decor["createur"].email, "password": "un-mot-de-passe-solide-42"},
+            json={"email": decor["createur"].email, "password": "tourbillon-cactus-91-vermeil"},
         )
     ).json()
     entetes = {"Authorization": f"Bearer {jetons['access_token']}"}

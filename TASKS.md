@@ -1107,6 +1107,33 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       à moi pendant que l'autre conversation refait ces écrans.
       La section « à instruire » de la garde des champs est de nouveau **vide**.
       4 tests neufs, 2 mutations dont une survivante documentée*
+- [x] **Le peigne des horloges** — dernier morceau de l'instabilité
+      *Quatorze colonnes écrites par la base, confrontées à leurs comparaisons.
+      Une seule était comparée à une heure Python sur un écart qui peut être
+      nul, et son jumeau avait la bonne écriture depuis le début. Une garde
+      empêche le motif de revenir — elle était d'abord partielle, et la mutation
+      l'a montré*
+- [x] **La confirmation d'adresse, la chaîne complète**
+      *Envoi à l'inscription dans la même transaction, jeton borné à 24 h et à
+      usage unique, route de confirmation en `GET` — un lien de courriel s'ouvre
+      dans un navigateur — et renvoi qui révoque le précédent. Un compte non
+      confirmé entre et se sert du produit ; il ne peut ni réserver ni mettre un
+      commerce en ligne. Les comptes existants sont datés par la migration.
+      11 tests neufs*
+- [x] **La force du mot de passe, et la validation des champs**
+      *Pas de règle de composition — elle accepte `Password1!` et refuse une
+      phrase de passe. Liste de refus, adresse interdite dans le mot de passe,
+      variété minimale, rangées de clavier. Confirmation à l'inscription.
+      Téléphone au format international, normalisé avant validation ; nom
+      dépouillé de ses espaces avant d'être compté ; adresse d'au moins dix
+      caractères. 13 tests neufs*
+- [ ] **L'écran de validation d'adresse, côté app**
+      *Le serveur est complet et la route de renvoi existe. Ce qui manque est un
+      écran : la bannière « confirmez votre adresse » avec son bouton de renvoi,
+      et l'accueil du retour de lien. **Non fait ici délibérément** — c'est de la
+      composition, et l'autre conversation refait les écrans. Le contrat est
+      dans `api-map.md`, `email_verified_at` est sur `/me`, et le code d'erreur
+      `email_not_verified` est traduit dans les deux langues*
 - [ ] **`SOCIAL_PROVIDER` et `API_PUBLIC_BASE_URL` à poser chez Render**
       *Le seul des trois bloquants que le code ne peut pas corriger seul. Depuis
       cette tranche, l'API refuse de démarrer sans elles plutôt que de répondre

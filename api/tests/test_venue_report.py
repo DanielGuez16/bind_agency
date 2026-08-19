@@ -27,14 +27,14 @@ from app.models.enums import (
     UserRole,
     VenueReportStatus,
 )
-from app.services import auth as auth_service
 from app.services import booking_states, reliability
 from app.services import venue_report as service
 from app.services.audit import Actor
+from tests.conftest import inscrire_verifie
 from tests.test_booking_create import monter_le_decor, premier_creneau, reserver
 
 PREFIX = get_settings().api_v1_prefix
-MOT_DE_PASSE = "un-mot-de-passe-solide-42"
+MOT_DE_PASSE = "tourbillon-cactus-91-vermeil"
 
 
 async def confirmee(session: AsyncSession) -> tuple:
@@ -58,7 +58,7 @@ async def confirmee(session: AsyncSession) -> tuple:
 
 
 async def administrateur(session: AsyncSession) -> User:
-    return await auth_service.register(
+    return await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
         password=MOT_DE_PASSE,

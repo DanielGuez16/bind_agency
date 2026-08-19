@@ -24,7 +24,7 @@ from app.models import (
 )
 from app.models.enums import BusinessMemberRole, BusinessStatus, SuspensionReason
 from app.schemas.business import BusinessCreate, BusinessUpdate, CoordinatesPayload
-from app.services import grace
+from app.services import email_verification, grace
 from app.services.audit import Actor, AuditedEntity, record_transition
 
 REASON_ACTIVATION = "business_activated"
@@ -39,6 +39,10 @@ class BusinessError(Exception):
 
 class NotActive(BusinessError):
     """Mettre en pause ce qui n'est pas ouvert n'a pas de sens."""
+
+
+class EmailNotVerified(BusinessError):
+    """L'adresse de celui qui active n'est pas confirmée."""
 
 
 class AlreadyActive(BusinessError):
@@ -206,6 +210,13 @@ async def activate_business(session: AsyncSession, *, business: Business, actor:
     # prise en main, qui la fait sortir de `draft`.
     if business.status is BusinessStatus.DRAFT:
         raise NotClaimed(business.id)
+
+    # **L'adresse de qui active, confirmée.** Mettre un salon en ligne l'expose
+    # à des créatrices qui vont s'y déplacer : le minimum est de pouvoir joindre
+    # celui qui l'assume. La même frontière que la réservation — ce qui engage
+    # quelqu'un d'autre demande une adresse qui existe.
+    if actor.user_id is None or not await email_verification.a_verifie(session, actor.user_id):
+        raise EmailNotVerified(business.id)
 
     # La même liste que celle rendue par `etapes_activation`. Réécrire les
     # conditions ici en ferait deux, et l'écran finirait par annoncer « prêt »

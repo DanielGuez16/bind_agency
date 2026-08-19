@@ -53,6 +53,7 @@ from app.models.enums import CollaborationStatus, Locale, NotificationKind, User
 #: rétablirait exactement le défaut qu'on répare. Ajouter un message oblige
 #: donc à dire quelle préférence le commande.
 GENRE_PAR_CLE: dict[str, NotificationKind] = {
+    "account.verification": NotificationKind.ACCOUNT_VERIFICATION,
     "booking.approved": NotificationKind.BOOKING_APPROVED,
     "booking.declined": NotificationKind.BOOKING_DECLINED,
     "booking.cancelledByBusiness": NotificationKind.BOOKING_CANCELLED_BY_BUSINESS,

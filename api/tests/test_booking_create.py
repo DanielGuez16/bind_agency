@@ -32,7 +32,6 @@ from app.schemas.business import BusinessCreate, CoordinatesPayload
 from app.schemas.capacity import CapacityRuleCreate
 from app.schemas.catalog import CatalogItemCreate
 from app.schemas.tier_offers import TierOfferCreate
-from app.services import auth as auth_service
 from app.services import availability as availability_service
 from app.services import booking as service
 from app.services import business as business_service
@@ -42,6 +41,7 @@ from app.services import creator_profile as profile_service
 from app.services import metrics as metrics_service
 from app.services import tier_offers as tier_offer_service
 from app.services.audit import Actor
+from tests.conftest import inscrire_verifie
 from tests.test_social_metrics import FauxFournisseur, metriques
 
 MIAMI = ZoneInfo("America/New_York")
@@ -65,10 +65,10 @@ async def monter_le_decor(
     requires_booking_approval: bool = False,
 ) -> dict:
     """Un commerce ouvert, un item offert, un créateur éligible."""
-    proprietaire = await auth_service.register(
+    proprietaire = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.BUSINESS_MEMBER,
     )
     business = await business_service.create_business(
@@ -124,10 +124,10 @@ async def monter_le_decor(
         payload=TierOfferCreate(tier_id=tier_id, catalog_item_id=item.id),
     )
 
-    createur = await auth_service.register(
+    createur = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.CREATOR,
     )
     if avec_nom:
@@ -321,10 +321,10 @@ async def test_un_item_desactive_est_refuse(session: AsyncSession) -> None:
     decor = await monter_le_decor(session)
     creneau = await premier_creneau(session, decor)
 
-    membre = await auth_service.register(
+    membre = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.BUSINESS_MEMBER,
     )
     await capacity_service.set_availability(
@@ -390,10 +390,10 @@ async def test_deux_reservations_simultanees_sur_la_derniere_place(
 
     async with sessions() as amorce, amorce.begin():
         decor = await monter_le_decor(amorce, postes=1)
-        second = await auth_service.register(
+        second = await inscrire_verifie(
             amorce,
             email=f"{uuid.uuid4()}@example.com",
-            password="un-mot-de-passe-solide-42",
+            password="tourbillon-cactus-91-vermeil",
             role=UserRole.CREATOR,
         )
         await profile_service.update_profile(

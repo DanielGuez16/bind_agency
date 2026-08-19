@@ -100,15 +100,34 @@ async def en_attente(
 
     Le plus ancien d'abord : c'est celui qui attend depuis le plus longtemps, et
     une boîte lue dans l'autre sens laisse le premier arrivé au fond.
+
+    **L'échéance se compare à l'horloge de la base, pas à celle du processus.**
+    `run_after` est écrit par `clock_timestamp()`, côté Postgres ; la comparaison
+    se faisait contre `datetime.now(UTC)`, côté Python. Deux horloges, et un
+    message déposé puis balayé dans la foulée tombe dans l'écart : si celle de la
+    base est en avance de quelques millisecondes, la ligne est **dans le futur**
+    pour la requête qui la cherche, et le passage ne la voit pas.
+
+    Ce n'est pas une hypothèse : la contrainte `close_apres_ouverture` a rejeté
+    une reprise de compte sur **2,7 millisecondes** d'écart, mesurées dans la
+    trace. Ici l'effet est plus discret — un message sauté d'une passe, repris à
+    la suivante — mais c'est le même mécanisme, et c'est ce qui rendait la suite
+    instable sur les tests qui déposent puis vident.
+
+    `jobs.selectionner` compare déjà à `clock_timestamp()` : les deux balayages
+    sont jumeaux, et l'un des deux avait la bonne écriture depuis le début.
+
+    `maintenant` reste prioritaire. Un appelant qui pose une heure éprouve une
+    règle de temps — le report croissant, une échéance dépassée — et lui imposer
+    l'horloge de la base lui retirerait ce qu'il vérifie.
     """
-    instant = maintenant or datetime.now(UTC)
     return list(
         await session.scalars(
             sa.select(OutboundMessage)
             .where(
                 OutboundMessage.sent_at.is_(None),
                 OutboundMessage.skipped_reason.is_(None),
-                OutboundMessage.run_after <= instant,
+                OutboundMessage.run_after <= (maintenant or sa.func.clock_timestamp()),
             )
             .order_by(OutboundMessage.run_after.asc())
             .limit(limite)
@@ -149,7 +168,14 @@ async def vider(
     instant = maintenant or datetime.now(UTC)
     envoyes = ecartes = reportes = 0
 
-    for ligne in await en_attente(session, maintenant=instant, limite=limite):
+    # **`maintenant` passe tel quel, y compris nul.** Poser ici une heure Python
+    # et la transmettre aurait rendu la comparaison à l'horloge de la base
+    # inerte : `en_attente` aurait toujours reçu une valeur, et n'aurait jamais
+    # emprunté le chemin qu'on vient de corriger. `instant` reste pour les
+    # **écritures** — l'heure d'envoi, le report croissant — où l'écart entre les
+    # deux horloges ne décide de rien : ces valeurs sont comparées à des heures
+    # posées par le même processus, ou à rien du tout.
+    for ligne in await en_attente(session, maintenant=maintenant, limite=limite):
         if not await notifications.joignable(session, user_id=ligne.user_id, kind=ligne.kind):
             await _ecarter(session, ligne, ECARTE_INJOIGNABLE)
             ecartes += 1

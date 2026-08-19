@@ -415,7 +415,7 @@ describe('session', () => {
       fetchImpl: async () => reponse(200, { access_token: 'a', refresh_token: 'r' }),
     });
 
-    await client.connecter('rebecca@example.com', 'un-mot-de-passe-solide-42');
+    await client.connecter('rebecca@example.com', 'tourbillon-cactus-91-vermeil');
     expect(c.contenu).toEqual({ access_token: 'a', refresh_token: 'r' });
   });
 

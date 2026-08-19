@@ -29,9 +29,9 @@ from app.models.enums import (
     VerificationStatus,
 )
 from app.services import account_verification as service
-from app.services import auth as auth_service
 from app.services import metrics as metrics_service
 from app.services.audit import Actor
+from tests.conftest import inscrire_verifie
 from tests.test_social_metrics import FauxFournisseur, metriques
 
 PREFIX = get_settings().api_v1_prefix
@@ -50,10 +50,10 @@ ACHETE = {"followers_count": 90_000, "media_count": 14}
 
 
 async def creer_compte(session: AsyncSession, **overrides) -> SocialAccount:
-    user = await auth_service.register(
+    user = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.CREATOR,
     )
     valeurs = {
@@ -480,10 +480,10 @@ async def test_l_administrateur_prononce_rejected_et_la_transition_est_journalis
     compte = await creer_compte(session)
     await relever(session, compte, **ACHETE)
 
-    admin = await auth_service.register(
+    admin = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.ADMIN,
     )
 
@@ -517,10 +517,10 @@ async def test_l_administrateur_peut_redescendre_un_compte_verified(
     await relever(session, compte, **SAIN)
     assert compte.verification_status is VerificationStatus.VERIFIED
 
-    admin = await auth_service.register(
+    admin = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.ADMIN,
     )
 
@@ -539,10 +539,10 @@ async def test_l_administrateur_peut_redescendre_un_compte_verified(
 
 async def test_prononcer_le_statut_courant_est_refuse(session: AsyncSession) -> None:
     compte = await creer_compte(session)
-    admin = await auth_service.register(
+    admin = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.ADMIN,
     )
 
@@ -581,7 +581,7 @@ async def test_un_compte_rejected_n_est_pas_relève_par_une_reexecution(
 
 
 async def _connecte(client: AsyncClient, role: UserRole) -> dict:
-    email, password = f"{uuid.uuid4()}@example.com", "un-mot-de-passe-solide-42"
+    email, password = f"{uuid.uuid4()}@example.com", "tourbillon-cactus-91-vermeil"
     cree = await client.post(
         f"{PREFIX}/auth/register",
         json={"email": email, "password": password, "role": role.value},

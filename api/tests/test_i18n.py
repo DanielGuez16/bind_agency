@@ -179,7 +179,7 @@ async def test_la_locale_est_posee_a_l_inscription(client: AsyncClient) -> None:
         f"{PREFIX}/auth/register",
         json={
             "email": "espagnol@example.com",
-            "password": "un-mot-de-passe-solide-42",
+            "password": "tourbillon-cactus-91-vermeil",
             "role": "creator",
             "locale": "es",
         },
@@ -194,7 +194,7 @@ async def test_la_locale_par_defaut_est_l_anglais(client: AsyncClient) -> None:
         f"{PREFIX}/auth/register",
         json={
             "email": "defaut@example.com",
-            "password": "un-mot-de-passe-solide-42",
+            "password": "tourbillon-cactus-91-vermeil",
             "role": "creator",
         },
     )
@@ -204,7 +204,7 @@ async def test_la_locale_par_defaut_est_l_anglais(client: AsyncClient) -> None:
 
 async def test_la_locale_est_modifiable_par_le_compte(client: AsyncClient) -> None:
     email = "bascule@example.com"
-    password = "un-mot-de-passe-solide-42"
+    password = "tourbillon-cactus-91-vermeil"
     await client.post(
         f"{PREFIX}/auth/register",
         json={"email": email, "password": password, "role": "creator"},
@@ -227,7 +227,7 @@ async def test_une_locale_inconnue_est_refusee(client: AsyncClient) -> None:
         f"{PREFIX}/auth/register",
         json={
             "email": "klingon@example.com",
-            "password": "un-mot-de-passe-solide-42",
+            "password": "tourbillon-cactus-91-vermeil",
             "role": "creator",
             "locale": "kl",
         },

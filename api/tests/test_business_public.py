@@ -170,7 +170,7 @@ async def test_la_fiche_ne_rend_ni_reservation_ni_membre_ni_montant_de_commerce(
 
 async def test_la_route_est_reservee_aux_createurs(client: AsyncClient) -> None:
     async def connecte(role: UserRole) -> dict:
-        email, password = f"{uuid.uuid4()}@example.com", "un-mot-de-passe-solide-42"
+        email, password = f"{uuid.uuid4()}@example.com", "tourbillon-cactus-91-vermeil"
         await client.post(
             f"{PREFIX}/auth/register",
             json={"email": email, "password": password, "role": role.value},

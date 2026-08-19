@@ -77,6 +77,15 @@ export function AuthScreen({ motif }: { motif: MotifDeSortie | null }) {
   const [inscription, setInscription] = useState(!revient);
   const [email, setEmail] = useState('');
   const [motDePasse, setMotDePasse] = useState('');
+  /**
+   * La confirmation, **à l'inscription seulement**.
+   *
+   * Un mot de passe masqué se saisit à l'aveugle : une faute de frappe crée un
+   * compte auquel personne ne peut se connecter, et le seul recours est de
+   * recommencer avec une autre adresse. À la connexion elle n'a aucun sens — le
+   * serveur dit déjà si c'est le bon.
+   */
+  const [confirmation, setConfirmation] = useState('');
   const [role, setRole] = useState<RoleInscriptible>('creator');
   const [envoi, setEnvoi] = useState(false);
   const [echec, setEchec] = useState<string | null>(null);
@@ -98,7 +107,17 @@ export function AuthScreen({ motif }: { motif: MotifDeSortie | null }) {
 
   const sortie = motif ? MESSAGE_DE_SORTIE[motif] : null;
   const reste = Math.max(0, CARACTERES_REQUIS - motDePasse.length);
-  const complet = email.includes('@') && reste === 0;
+  /**
+   * **Comparée seulement une fois la seconde saisie commencée.** Annoncer
+   * « elles ne correspondent pas » sur un champ vide est un reproche avant
+   * d'avoir rien fait — la même raison qui retient la jauge.
+   */
+  const discordent = inscription && confirmation.length > 0 && confirmation !== motDePasse;
+  // À l'inscription, la confirmation fait partie de « complet » : le bouton
+  // reste fermé tant que les deux saisies diffèrent, plutôt que de créer un
+  // compte dont le mot de passe n'est pas celui qu'on croit avoir tapé.
+  const complet =
+    email.includes('@') && reste === 0 && (!inscription || confirmation === motDePasse);
 
   if (inscription && etape === 'choix') {
     // **L'accueil occupe l'écran.** Il ne s'inscrit pas dans le conteneur
@@ -270,6 +289,21 @@ export function AuthScreen({ motif }: { motif: MotifDeSortie | null }) {
             }
             testID="champ-mot-de-passe"
           />
+
+          {inscription ? (
+            <TextField
+              label={t('auth.confirmation')}
+              value={confirmation}
+              onChangeText={setConfirmation}
+              secret
+              labelRevelation={{
+                montrer: t('auth.montrerLeMotDePasse'),
+                masquer: t('auth.masquerLeMotDePasse'),
+              }}
+              helpText={discordent ? t('auth.confirmationDiscordante') : undefined}
+              testID="champ-confirmation"
+            />
+          ) : null}
 
           {/* La jauge dit ce qui manque, en clair. Elle n'apparaît qu'une fois
               la saisie commencée : « 0 / 12 » devant un champ vide sonne comme

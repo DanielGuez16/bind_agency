@@ -8,7 +8,7 @@
 import { expect, type Page } from '@playwright/test';
 
 /** Le mot de passe de tous les comptes du jeu de données. */
-export const MOT_DE_PASSE = 'bind-donnees-de-depart-2026';
+export const MOT_DE_PASSE = 'orchidee-cuivre-2026';
 
 /**
  * Une créatrice à soixante-quatre mille abonnés : ses paliers sont ouverts, et

@@ -26,12 +26,12 @@ from app.models.enums import (
     NotificationKind,
     UserRole,
 )
-from app.services import auth as auth_service
 from app.services import booking_states, outbox, redemption
+from tests.conftest import inscrire_verifie
 from tests.test_booking_create import monter_le_decor, premier_creneau, reserver
 
 PREFIX = get_settings().api_v1_prefix
-MOT_DE_PASSE = "un-mot-de-passe-solide-42"
+MOT_DE_PASSE = "tourbillon-cactus-91-vermeil"
 
 
 async def en_attente(session: AsyncSession) -> dict:
@@ -41,7 +41,7 @@ async def en_attente(session: AsyncSession) -> dict:
     await booking_states.confirmer(session, booking=booking, creator_id=decor["createur"].id)
     assert booking.status is BookingStatus.AWAITING_BUSINESS
 
-    membre = await auth_service.register(
+    membre = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
         password=MOT_DE_PASSE,
@@ -161,7 +161,7 @@ async def test_le_desistement_n_est_pas_une_absence(
     decor = await monter_le_decor(session)
     booking = await reserver(session, decor, starts_at=await premier_creneau(session, decor))
     await booking_states.confirmer(session, booking=booking, creator_id=decor["createur"].id)
-    membre = await auth_service.register(
+    membre = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
         password=MOT_DE_PASSE,

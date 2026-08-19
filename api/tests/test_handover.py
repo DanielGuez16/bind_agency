@@ -37,10 +37,11 @@ from app.services import auth as auth_service
 from app.services import business as business_service
 from app.services import handover as service
 from app.services.audit import Actor
+from tests.conftest import inscrire_verifie
 from tests.factories import PASSWORD_HASH, new_business, new_user
 
 PREFIX = get_settings().api_v1_prefix
-MOT_DE_PASSE = "un-mot-de-passe-solide-42"
+MOT_DE_PASSE = "tourbillon-cactus-91-vermeil"
 MIAMI = CoordinatesPayload(longitude=-80.1918, latitude=25.7617)
 
 
@@ -57,7 +58,7 @@ def fiche(**overrides) -> BusinessCreate:
 
 
 async def fondatrice(session: AsyncSession) -> User:
-    return await auth_service.register(
+    return await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
         password=MOT_DE_PASSE,
@@ -369,7 +370,7 @@ async def test_un_compte_existant_peut_assumer_la_fiche(session: AsyncSession) -
         session, business=business, emis_par=admin, canal=HandoverChannel.QR
     )
     lien = await service.resoudre(session, jeton=emis.jeton)
-    deja = await auth_service.register(
+    deja = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
         password=MOT_DE_PASSE,

@@ -40,7 +40,7 @@ from app.services import auth as auth_service
 from app.services import outbox
 from tests.factories import PASSWORD_HASH, new_user
 
-MOT_DE_PASSE = "un-mot-de-passe-solide-42"
+MOT_DE_PASSE = "tourbillon-cactus-91-vermeil"
 CLE = "collaboration.reminder"
 GENRE = NotificationKind.PUBLICATION_REMINDER
 
@@ -71,6 +71,13 @@ class FauxPush:
 
 
 async def destinataire(session: AsyncSession, **overrides) -> User:
+    """**Inscrit sans confirmer**, et c'est délibéré.
+
+    Ces comptes-ci ne réservent rien : ils reçoivent. Passer par la confirmation
+    déposerait le courriel de bienvenue dans la boîte, et chaque test qui compte
+    ce qui en sort compterait un message de plus — la boîte de ce fichier doit
+    contenir ce que le test y met, et rien d'autre.
+    """
     return await auth_service.register(
         session,
         email=overrides.pop("email", f"{uuid.uuid4()}@example.com"),

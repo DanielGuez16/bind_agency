@@ -176,7 +176,7 @@ async def test_un_createur_ne_passe_pas_par_cette_porte(
     ne doit pas lui ouvrir par accident."""
     a = await ressources(conn)
 
-    email, password = f"{uuid.uuid4()}@example.com", "un-mot-de-passe-solide-42"
+    email, password = f"{uuid.uuid4()}@example.com", "tourbillon-cactus-91-vermeil"
     await client.post(
         f"{PREFIX}/auth/register",
         json={"email": email, "password": password, "role": UserRole.CREATOR.value},

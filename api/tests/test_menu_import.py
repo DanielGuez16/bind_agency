@@ -30,8 +30,8 @@ from app.integrations.menu_extraction import (
 )
 from app.models import CatalogItem, MenuImport
 from app.models.enums import CatalogItemSource, MenuImportStatus, UserRole
-from app.services import auth as auth_service
 from app.services import menu_import as service
+from tests.conftest import inscrire_verifie
 from tests.test_availability import commerce
 
 PREFIX = get_settings().api_v1_prefix
@@ -79,10 +79,10 @@ async def import_extrait(session: AsyncSession, *lignes) -> tuple[MenuImport, ob
 
 
 async def membre(session: AsyncSession):
-    return await auth_service.register(
+    return await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
-        password="un-mot-de-passe-solide-42",
+        password="tourbillon-cactus-91-vermeil",
         role=UserRole.BUSINESS_MEMBER,
     )
 
@@ -590,7 +590,7 @@ async def entetes_du_commerce(session, client: AsyncClient, business) -> dict[st
     jetons = (
         await client.post(
             f"{PREFIX}/auth/login",
-            json={"email": membre.email, "password": "un-mot-de-passe-solide-42"},
+            json={"email": membre.email, "password": "tourbillon-cactus-91-vermeil"},
         )
     ).json()
     return {"Authorization": f"Bearer {jetons['access_token']}"}

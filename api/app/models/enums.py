@@ -444,6 +444,11 @@ class NotificationKind(StrEnum):
     #: rappels ne doit pas cesser d'apprendre qu'une contrepartie n'a pas été
     #: honorée.
     COLLABORATION_UNFULFILLED = "collaboration_unfulfilled"
+    #: **Des deux côtés, et le seul qui ne se coupe pas dans les faits** :
+    #: sans adresse confirmée, un compte ne réserve pas et ne met rien en
+    #: ligne. Le message qui porte le lien est donc la porte d'entrée, pas une
+    #: notification d'agrément.
+    ACCOUNT_VERIFICATION = "account_verification"
     #: **Côté commerce.** Une réservation attend sa décision.
     BOOKING_TO_REVIEW = "booking_to_review"
     #: **Côté commerce.** La période d'essai se termine bientôt. Prévenir

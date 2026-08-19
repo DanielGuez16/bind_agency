@@ -31,12 +31,12 @@ from app.models.enums import (
     SubscriptionStatus,
     UserRole,
 )
-from app.services import auth as auth_service
 from app.services import subscription as service
+from tests.conftest import inscrire_verifie
 from tests.test_activation import commerce_en_cours
 
 PREFIX = get_settings().api_v1_prefix
-MOT_DE_PASSE = "un-mot-de-passe-solide-42"
+MOT_DE_PASSE = "tourbillon-cactus-91-vermeil"
 
 
 async def _plan(session: AsyncSession, **overrides) -> SubscriptionPlan:
@@ -304,7 +304,7 @@ async def test_un_createur_n_atteint_pas_l_abonnement(
     client: AsyncClient, session: AsyncSession
 ) -> None:
     business, _ = await commerce_en_cours(session)
-    createur = await auth_service.register(
+    createur = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
         password=MOT_DE_PASSE,

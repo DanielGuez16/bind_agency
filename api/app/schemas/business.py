@@ -1,5 +1,6 @@
 """Schémas du profil commerce."""
 
+import re
 import uuid
 from datetime import datetime
 from zoneinfo import available_timezones
@@ -41,15 +42,63 @@ class CoordinatesPayload(BaseModel):
     latitude: float = Field(ge=LATITUDE_RANGE[0], le=LATITUDE_RANGE[1])
 
 
+#: Le format international, dit E.164 : un `+`, un indicatif, le numéro. Entre
+#: huit et quinze chiffres — l'Union internationale des télécommunications borne
+#: à quinze, et rien d'utile ne descend sous huit.
+#:
+#: **Un motif et non une bibliothèque.** Valider qu'un numéro *existe* demande
+#: une table des plans de numérotation qui se périme ; ce qu'on veut ici est
+#: qu'il soit **composable** depuis n'importe où, ce qui est exactement ce que
+#: le `+` et l'indicatif garantissent. Le reste se découvre en appelant, et
+#: aucune bibliothèque ne l'évite.
+TELEPHONE = r"^\+[1-9]\d{7,14}$"
+
+
+def _normaliser_le_telephone(valeur: str | None) -> str | None:
+    """Retire ce qu'on tape pour lire, garde ce qui compose.
+
+    **Un humain écrit `+1 (305) 555-0123`.** Refuser cette forme reviendrait à
+    exiger une saisie de machine sur un formulaire d'inscription, et la première
+    chose qu'on ferait serait de la contourner en retirant le `+`. On enlève donc
+    les espaces, tirets, points et parenthèses, puis on exige ce qui reste :
+    un `+`, un indicatif, huit à quinze chiffres.
+    """
+    if valeur is None:
+        return None
+    compact = re.sub(r"[\s().-]", "", valeur)
+    if not re.match(TELEPHONE, compact):
+        raise ValueError("phone_invalid")
+    return compact
+
+
+def _nom_non_vide(valeur: str) -> str:
+    """**Espaces retirés avant de compter.** `min_length` compte les caractères,
+    espaces compris : « &nbsp;&nbsp; » passait pour un nom de deux caractères, et
+    un salon nommé de deux espaces se retrouve dans le fil sans qu'on puisse le
+    nommer autrement qu'en base."""
+    propre = valeur.strip()
+    if len(propre) < 2:
+        raise ValueError("name_too_short")
+    return propre
+
+
 class BusinessCreate(BaseModel):
     """`extra="forbid"` : un champ inconnu est refusé plutôt qu'ignoré en silence."""
 
     model_config = ConfigDict(extra="forbid")
 
-    name: str = Field(min_length=1, max_length=200)
+    #: **Deux caractères au moins, et pas seulement des espaces.** `min_length=1`
+    #: acceptait « . » et « &nbsp; » : un salon nommé d'un point apparaît dans le
+    #: fil, et le seul moyen de le corriger est de le retrouver en base.
+    name: str = Field(min_length=2, max_length=200)
     category: BusinessCategory
     currency: str = Field(min_length=3, max_length=3)
-    address: str | None = Field(default=None, max_length=500)
+    #: L'adresse postale. **Dix caractères au moins** : « 12 » n'est pas une
+    #: adresse, et une créatrice qui se déplace la lit avant de partir. Elle
+    #: reste facultative à la création — une fiche préparée au comptoir n'a
+    #: parfois que le nom — et devient obligatoire à la mise en ligne, que
+    #: `etapes_activation` refuse sans elle.
+    address: str | None = Field(default=None, min_length=10, max_length=500)
     #: Le quartier, choisi dans une liste fermée. `None` pour un salon hors
     #: des quartiers ouverts : il reste réservable, il n'apparaît simplement
     #: dans aucun groupe du fil.
@@ -57,7 +106,10 @@ class BusinessCreate(BaseModel):
     coordinates: CoordinatesPayload | None = None
     timezone: str = DEFAULT_TIMEZONE
     default_locale: Locale = Locale.EN
-    phone: str | None = Field(default=None, max_length=40)
+    #: Le téléphone, **au format international**. Voir `TELEPHONE` : sans
+    #: indicatif, un numéro composé depuis un autre pays ne joint personne, et
+    #: la moitié du marché de Miami appelle depuis l'étranger.
+    phone: str | None = Field(default=None, max_length=25)
     #: Clé de stockage objet, jamais une URL : une URL signée expire, une URL
     #: publique fuit, et les deux se figeraient en base au changement de
     #: fournisseur. Envoyer `null` la retire.
@@ -83,6 +135,16 @@ class BusinessCreate(BaseModel):
     def _timezone_exists(cls, value: str) -> str:
         return _check_timezone(value)  # type: ignore[return-value]
 
+    @field_validator("phone")
+    @classmethod
+    def _telephone_composable(cls, value: str | None) -> str | None:
+        return _normaliser_le_telephone(value)
+
+    @field_validator("name")
+    @classmethod
+    def _nom_reel(cls, value: str) -> str:
+        return _nom_non_vide(value)
+
 
 class BusinessUpdate(BaseModel):
     """La devise n'y figure pas, et `extra="forbid"` fait que l'envoyer est une erreur.
@@ -103,7 +165,10 @@ class BusinessUpdate(BaseModel):
     coordinates: CoordinatesPayload | None = None
     timezone: str | None = None
     default_locale: Locale | None = None
-    phone: str | None = Field(default=None, max_length=40)
+    #: Le téléphone, **au format international**. Voir `TELEPHONE` : sans
+    #: indicatif, un numéro composé depuis un autre pays ne joint personne, et
+    #: la moitié du marché de Miami appelle depuis l'étranger.
+    phone: str | None = Field(default=None, max_length=25)
     #: Clé de stockage objet, jamais une URL : une URL signée expire, une URL
     #: publique fuit, et les deux se figeraient en base au changement de
     #: fournisseur. Envoyer `null` la retire.

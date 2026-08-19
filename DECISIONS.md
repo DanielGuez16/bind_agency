@@ -7197,3 +7197,74 @@ lieu, c'est ce que la galerie contient.
 le conteneur des deux lignes jumelles de la v1.1 : il n'existe plus, et
 l'assertion était vraie sans rien lire. C'est la troisième de cette forme en deux
 jours — une négation qui porte sur un nœud disparu est verte pour toujours.
+---
+
+## 2026-08-19 — Le peigne des horloges, la confirmation d'adresse, et un mot de passe qu'on ne devine pas
+
+**Le peigne : quatorze colonnes, un seul endroit.** Toutes les colonnes écrites
+par `clock_timestamp()` ont été confrontées à leurs comparaisons. Une seule était
+comparée à une heure Python sur un écart qui peut être nul —
+`outbound_message.run_after` — et son jumeau, `job.run_after`, avait la bonne
+écriture depuis le début. Les autres comparaisons portent sur des fenêtres de
+plusieurs heures ou sur des bornes fournies par l'appelant : quelques
+millisecondes n'y décident de rien.
+
+`vider()` reposait une heure Python et la transmettait à `en_attente` : la
+correction serait restée inerte. C'est le genre de détail qui fait qu'un
+correctif « appliqué » ne s'applique pas, et seule la lecture du chemin complet
+le montre.
+
+**La garde qui empêche le motif de revenir a d'abord été partielle.** Elle
+acceptait toute ligne contenant `maintenant`, donc `maintenant or
+datetime.now(UTC)` — la forme exacte du défaut, puisque c'est le repli qui décide
+quand l'appelant ne fournit rien. La mutation l'a montré : elle survivait à la
+garde censée l'attraper. L'horloge du processus est désormais disqualifiante en
+elle-même.
+
+---
+
+**La confirmation d'adresse, et où la frontière est posée.** Un compte non
+confirmé **entre et se sert du produit** : il regarde le fil, connecte un réseau,
+prépare son profil. Il ne peut pas **engager quelqu'un d'autre** — réserver une
+place, ou mettre un commerce en ligne.
+
+Fermer la porte d'entrée transformerait une adresse mal saisie en compte perdu.
+Ne rien fermer laisserait un salon bloquer une place pour quelqu'un qu'on ne sait
+pas joindre. La frontière est donc au premier geste qui coûte à un tiers.
+
+**Le lien s'ouvre en `GET`, dans un navigateur.** Exiger un `POST` obligerait à
+monter une page qui reposte, c'est-à-dire à dépendre de l'application pour
+valider une adresse dont on a besoin *avant* que l'application serve. La route
+est donc publique, et c'est le jeton qui fait l'autorisation.
+
+**Les comptes existants sont réputés confirmés.** `email_verified_at` arrive
+nulle et fermerait la réservation à tout le monde du jour au lendemain, pour une
+adresse que personne ne leur a demandé de confirmer. La migration les date à
+l'instant du déploiement.
+
+**Les décors et le semis parcourent la vraie chaîne** — jeton émis puis
+consommé — plutôt que d'écrire la date à la main. Un jeu de données qui poserait
+`email_verified_at` produirait le même état sans jamais éprouver le mécanisme qui
+doit le produire.
+
+---
+
+**Le mot de passe : pas de règle de composition, et c'est le point.** La demande
+était « une exigence de complexité réelle ». Une règle de classes — majuscule,
+chiffre, symbole — accepte `Password1!` et refuse `cheval correct pile agrafe` :
+elle mesure la présence de symboles, pas la difficulté à deviner. C'est aussi ce
+que le NIST recommande d'abandonner depuis 2017, et le code portait déjà cette
+décision en commentaire.
+
+Ce qui la remplace refuse ce qu'une classe accepterait : les mots de passe
+connus, ceux qui contiennent l'adresse ou le nom du produit, ceux qui n'ont
+presque pas de variété, et les rangées de clavier. Chaque cas de test est un mot
+de passe **qu'une règle de composition validerait** — c'est la seule façon de
+montrer que le remplacement vaut mieux que ce qu'il remplace.
+
+**Les deux mots de passe partagés du dépôt étaient refusés, à juste titre** :
+l'un contenait « motdepasse », l'autre le nom du produit. Ils ont changé.
+
+**Le téléphone est normalisé avant d'être validé.** `+1 (305) 555-0123` est ce
+qu'un humain écrit ; le refuser exigerait une saisie de machine sur un formulaire
+d'inscription, et la première chose qu'on ferait serait de retirer le `+`.

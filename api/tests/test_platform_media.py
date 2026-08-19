@@ -21,7 +21,7 @@ PREFIX = get_settings().api_v1_prefix
 
 
 async def entetes(client: AsyncClient, role: UserRole = UserRole.CREATOR) -> dict:
-    email, password = f"{uuid.uuid4()}@example.com", "un-mot-de-passe-solide-42"
+    email, password = f"{uuid.uuid4()}@example.com", "tourbillon-cactus-91-vermeil"
     await client.post(
         f"{PREFIX}/auth/register",
         json={"email": email, "password": password, "role": role.value},
