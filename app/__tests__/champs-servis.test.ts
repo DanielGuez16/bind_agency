@@ -130,6 +130,14 @@ const NON_RENDUS: Record<string, string> = {
   // pas le fil mais `mesPaliers` : le champ reste calculé et n'a plus de
   // lecteur. Deux issues, et c'est une question de route plutôt que d'écran —
   // le servir depuis `mesPaliers`, ou cesser de le calculer sur le fil.
+  //
+  // La vidéo de fond de l'accueil est retirée par la planche v3 : elle servait
+  // à donner envie sur un écran dont le seul travail est de faire choisir un
+  // rôle, et elle coûtait six mécanismes — repli sur l'affiche, choix
+  // d'orientation, hors-ligne, reprise au premier plan, relance après montage,
+  // boucle garantie deux fois. Le manifeste reste servi et n'a plus de lecteur
+  // pour sa partie `home`. Les catégories, elles, sont toujours lues.
+  'MediasPlateforme.home': 'a-instruire',
 };
 
 const RAISONS = new Set(['contrat', 'technique', 'a-instruire']);

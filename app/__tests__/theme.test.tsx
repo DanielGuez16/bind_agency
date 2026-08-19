@@ -629,7 +629,6 @@ describe('les surfaces de la v1.1', () => {
       'src/components/EnTete.tsx',
       'src/screens/AnnuaireScreen.tsx',
       'src/screens/CarteDuCommerce.tsx',
-      'src/screens/ChoixDeLaPorte.tsx',
       // Le panneau du jour sans place, arrivé avec le créneau v3. Il se pose
       // sur la page comme une carte, donc il porte l'ombre comme une carte.
       'src/screens/CreneauxScreen.tsx',
@@ -653,6 +652,26 @@ describe('les surfaces de la v1.1', () => {
     // douze en fait 780. Une garde qui ne voit qu'une partie de ce qu'elle
     // prétend couvrir est pire qu'aucune.
     const bloc = /style=\{\{[\s\S]{0,900}?\}\}/g;
+
+    /**
+     * **Le filet fait partie de la définition, et il laisse un trou connu.**
+     *
+     * Une carte est ici « fond de surface + rayon de 18 + filet ». Les deux
+     * portes de l'accueil v3 ont perdu leur filet — deux cartes voisines à
+     * filet donnent une couture au milieu de l'écran — et sont donc sorties de
+     * cet inventaire, alors qu'elles sont exactement ce que la règle vise.
+     *
+     * **La définition a été élargie, puis remise.** Sans le filet, une carte
+     * enveloppée compte pour deux blocs : la vue extérieure qui porte l'ombre
+     * et la vue intérieure qui clippe. Le comptage d'égalité — autant de poses
+     * que de cartes — devient alors faux sur les trois surfaces qui clippent, et
+     * le rendre juste demanderait de savoir lequel des deux blocs est le
+     * parent de l'autre, ce qu'une expression régulière ne sait pas.
+     *
+     * Plutôt qu'une garde plus large et plus molle, la définition reste étroite
+     * et **le trou est écrit** : les surfaces à rayon de 18 sans filet lui
+     * échappent. `TASKS.md` les nomme.
+     */
     const estUneCarte = (b: string) =>
       b.includes('radius.lg') && b.includes('bg.surface') && b.includes('borderWidth');
 

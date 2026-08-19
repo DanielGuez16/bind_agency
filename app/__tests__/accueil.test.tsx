@@ -1,103 +1,53 @@
 /**
- * L'accueil : la vidéo choisie sur le format réel.
+ * Le premier écran du produit : deux portes, et rien derrière elles.
  *
- * **La forme est mesurée, pas simulée.** L'écran envoie sa propre disposition,
- * comme la plateforme la lui donne, et c'est de cette mesure que sort
- * l'orientation. Remplacer le calcul par une valeur fixe prouverait que l'écran
- * sait afficher la vidéo qu'on lui désigne — jamais qu'il désigne la bonne.
+ * **Ce fichier a beaucoup rétréci, et c'est ce que la planche v3 fait.** Il
+ * portait huit blocs, dont six sur la vidéo de fond : l'orientation mesurée sur
+ * la forme du conteneur, les replis quand un média manque, le retour au premier
+ * plan, la composition qui ne devait pas changer à l'arrivée du manifeste, et
+ * les fonds que chaque texte devait porter pour survivre à ce qu'il y avait
+ * dessous. La vidéo part ; ces six n'ont plus d'objet, et les garder en les
+ * tordant aurait fait croire qu'un fond tient encore quelque part.
  *
- * `expo-video` est remplacé : un lecteur ne démarre pas dans un environnement
- * de test, et ce qu'on vérifie ici n'est pas qu'il lit, c'est **ce qu'on lui
- * demande de lire**. Le remplacement expose la source, et rien d'autre.
+ * **Ce qui survit ne survit pas par hasard.** La marque une fois et une seule,
+ * et le chemin vers la connexion atteignable : les deux étaient des défauts
+ * rapportés, pas des propriétés décoratives, et ils valent encore sur un écran
+ * sans média.
  */
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
-import { AppState, type AppStateStatus } from 'react-native';
+import { render, screen, waitFor } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ApiClient, ApiProvider } from '../src/api';
 import { I18nProvider } from '../src/i18n';
 import { en } from '../src/i18n/en';
-import { AccueilScreen, fondDAccueil } from '../src/screens/AccueilScreen';
+import { AccueilScreen } from '../src/screens/AccueilScreen';
 import { ThemeProvider } from '../src/theme';
 
-/** Les marges d'un iPhone 13. Le bas est ce qui nous intéresse ici. */
-const IPHONE_A_ENCOCHE = {
+/** Un iPhone à encoche : 47 points en haut, 34 en bas. */
+const IPHONE = {
   frame: { x: 0, y: 0, width: 390, height: 844 },
   insets: { top: 47, left: 0, right: 0, bottom: 34 },
 };
 
-function styleAplati(valeur: unknown): Record<string, unknown> {
-  return Array.isArray(valeur)
-    ? Object.assign({}, ...valeur.map(styleAplati))
-    : ((valeur as Record<string, unknown>) ?? {});
-}
-
-/**
- * Le double est **une seule instance**, comme le vrai `useVideoPlayer` : il rend
- * le même lecteur d'un rendu à l'autre et n'en remplace que la source. Un objet
- * neuf à chaque rendu ferait rejouer à chaque image les effets qui en dépendent
- * — la reprise partirait alors toute seule, et le test ne prouverait plus que
- * l'écran écoute le retour au premier plan.
- */
-const mockLecteur = {
-  source: null as string | null,
-  loop: false,
-  muted: false,
-  playing: false,
-  currentTime: 0,
-  play: jest.fn(),
-  // `useEvent` s'abonne au lecteur : sans émetteur, le rendu lève. Il ne
-  // diffuse rien — la vidéo ne joue pas en test, et c'est le cas qu'on veut
-  // éprouver, celui où l'affiche reste en place.
-  addListener: () => ({ remove: () => {} }),
-  removeListener: () => {},
-  removeAllListeners: () => {},
-};
-
-jest.mock('expo-video', () => {
-  const { View } = require('react-native');
-  return {
-    useVideoPlayer: (source: string | null) => {
-      mockLecteur.source = source;
-      return mockLecteur;
-    },
-    VideoView: ({ player, testID }: { player: { source: string | null }; testID?: string }) => (
-      <View testID={testID} accessibilityLabel={player?.source ?? 'aucune'} />
-    ),
-  };
-});
-
-beforeEach(() => {
-  mockLecteur.playing = false;
-  mockLecteur.play.mockClear();
-});
-
-const TOUT = {
-  categories: [],
-  home: {
-    video_key: 'photos/home/paysage.mp4',
-    poster_key: 'photos/home/paysage.jpg',
-    video_portrait_key: 'photos/home/vertical.mp4',
-    poster_portrait_key: 'photos/home/vertical.jpg',
-  },
-};
-
-const TELEPHONE = { width: 390, height: 844 };
-const BUREAU = { width: 1512, height: 982 };
-
-async function afficher(medias: unknown = TOUT) {
+async function accueil(onSeConnecter = () => {}) {
   const api = new ApiClient({
     baseUrl: 'https://api.test',
     coffre: { lire: async () => null, ecrire: async () => {} },
-    fetchImpl: async () => ({ ok: true, status: 200, json: async () => medias }) as Response,
+    // **Aucun appel n'est attendu, et c'est le sujet.** L'écran interrogeait le
+    // manifeste des médias au montage ; il ne le fait plus. Un client qui
+    // échoue à toute requête est donc le bon montage : si l'écran se remet à
+    // appeler, il tombera ici plutôt que de continuer en silence.
+    fetchImpl: (async () => {
+      throw new Error('aucune requête ne doit partir de cet écran');
+    }) as unknown as typeof fetch,
   });
 
   return render(
-    <SafeAreaProvider initialMetrics={IPHONE_A_ENCOCHE}>
+    <SafeAreaProvider initialMetrics={IPHONE}>
       <ThemeProvider role="creator">
         <I18nProvider initialLocale="en">
           <ApiProvider client={api}>
-            <AccueilScreen onChoisir={() => {}} onSeConnecter={() => {}} />
+            <AccueilScreen onChoisir={() => {}} onSeConnecter={onSeConnecter} />
           </ApiProvider>
         </I18nProvider>
       </ThemeProvider>
@@ -105,646 +55,132 @@ async function afficher(medias: unknown = TOUT) {
   );
 }
 
-/** Ce que la plateforme envoie quand elle a posé la vue. */
-async function poser({ width, height }: { width: number; height: number }) {
-  await fireEvent(screen.getByTestId('ecran-accueil'), 'layout', {
-    nativeEvent: { layout: { x: 0, y: 0, width, height } },
-  });
-}
+describe('l’écran ne porte plus de média', () => {
+  it('ni vidéo, ni affiche, ni voile, ni satin', async () => {
+    // **Les quatre ensemble.** Retirer la vidéo en laissant le satin et son
+    // voile laisserait un fond de marque sous des cartes blanches — la moitié
+    // d'un écran que la planche veut plat. Chacun est nommé pour que sa
+    // réapparition tombe ici.
+    const vue = await accueil();
+    await waitFor(() => expect(screen.getByTestId('ecran-accueil')).toBeTruthy());
 
-/** L'adresse réellement confiée au lecteur. */
-function sourceJouee(): string {
-  return screen.getByTestId('video-accueil').props.accessibilityLabel as string;
-}
-
-describe('accueil, orientation mesurée', () => {
-  it('prend la verticale sur un téléphone tenu droit', async () => {
-    // Une vidéo paysage y donnerait des bandes noires ou couperait le sujet.
-    await afficher();
-    await poser(TELEPHONE);
-
-    await waitFor(() => expect(sourceJouee()).toContain('vertical.mp4'));
-  });
-
-  it('prend la paysage sur un grand écran', async () => {
-    await afficher();
-    await poser(BUREAU);
-
-    await waitFor(() => expect(sourceJouee()).toContain('paysage.mp4'));
-  });
-
-  it('suit le format et non l’appareil, quand la fenêtre change', async () => {
-    // Un iPad en paysage n'est pas un téléphone, et une fenêtre de navigateur
-    // étroite n'est pas un écran de bureau.
-    await afficher();
-    await poser(BUREAU);
-    await waitFor(() => expect(sourceJouee()).toContain('paysage.mp4'));
-
-    await poser(TELEPHONE);
-    await waitFor(() => expect(sourceJouee()).toContain('vertical.mp4'));
-  });
-});
-
-describe('accueil, ce qui manque', () => {
-  it('se replie sur l’autre orientation plutôt que de n’afficher aucune vidéo', async () => {
-    await afficher({ ...TOUT, home: { ...TOUT.home, video_portrait_key: null } });
-    await poser(TELEPHONE);
-
-    // Mal cadrée vaut mieux qu'absente : le recadrage est centré.
-    await waitFor(() => expect(sourceJouee()).toContain('paysage.mp4'));
-  });
-
-  it('garde l’affiche seule quand aucune vidéo n’existe', async () => {
-    await afficher({
-      ...TOUT,
-      home: { ...TOUT.home, video_key: null, video_portrait_key: null },
-    });
-    await poser(BUREAU);
-
-    await waitFor(() => expect(screen.getByTestId('affiche-accueil')).toBeTruthy());
     expect(screen.queryByTestId('video-accueil')).toBeNull();
-  });
-
-  it('rend l’entrée sans fond plutôt qu’un écran vide', async () => {
-    // C'est la première chose qu'on voit du produit : un rectangle noir y
-    // ressemblerait à une panne.
-    await afficher({
-      categories: [],
-      home: {
-        video_key: null,
-        poster_key: null,
-        video_portrait_key: null,
-        poster_portrait_key: null,
-      },
-    });
-    await poser(BUREAU);
-
-    await waitFor(() => expect(screen.getByTestId('porte-createur')).toBeTruthy());
-    expect(screen.getByTestId('porte-commerce')).toBeTruthy();
-    // Le satin et son voile restent : ce ne sont pas des accompagnements du
-    // média, c'est le fond de l'écran. Sans eux, « pas de vidéo » redeviendrait
-    // une composition à part.
-    expect(screen.getByTestId('satin-accueil', { includeHiddenElements: true })).toBeTruthy();
-    expect(screen.getByTestId('voile-accueil')).toBeTruthy();
-  });
-
-  it('rend les portes même si la route échoue', async () => {
-    const api = new ApiClient({
-      baseUrl: 'https://api.test',
-      coffre: { lire: async () => null, ecrire: async () => {} },
-      fetchImpl: async () => {
-        throw new Error('hors ligne');
-      },
-    });
-    await render(
-      <SafeAreaProvider initialMetrics={IPHONE_A_ENCOCHE}>
-        <ThemeProvider role="creator">
-          <I18nProvider initialLocale="en">
-            <ApiProvider client={api}>
-              <AccueilScreen onChoisir={() => {}} onSeConnecter={() => {}} />
-            </ApiProvider>
-          </I18nProvider>
-        </ThemeProvider>
-      </SafeAreaProvider>,
-    );
-
-    expect(screen.getByTestId('porte-createur')).toBeTruthy();
-  });
-
-  it('porte le mot accentué sous son propre point d’accroche', async () => {
-    // **La suite de bout en bout lit la fonte sur ce nœud-là.** Un titre à bloc
-    // est une pile de vues dont un seul enfant porte du texte ; interroger le
-    // conteneur rendait la pile système — aucune famille n'y est déclarée — et
-    // le test de fonte tombait sur la structure au lieu de la police. Ce test
-    // garde le point d'accroche : le renommer ici casse la suite ailleurs, et
-    // il vaut mieux l'apprendre en trois secondes qu'en dix minutes de CI.
-    const api = new ApiClient({
-      baseUrl: 'https://api.test',
-      coffre: { lire: async () => null, ecrire: async () => {} },
-      fetchImpl: async () => {
-        throw new Error('hors ligne');
-      },
-    });
-    await render(
-      <SafeAreaProvider initialMetrics={IPHONE_A_ENCOCHE}>
-        <ThemeProvider role="creator">
-          <I18nProvider initialLocale="en">
-            <ApiProvider client={api}>
-              <AccueilScreen onChoisir={() => {}} onSeConnecter={() => {}} />
-            </ApiProvider>
-          </I18nProvider>
-        </ThemeProvider>
-      </SafeAreaProvider>,
-    );
-
-    expect(screen.getByTestId('promesse-accueil-mot')).toBeTruthy();
-    // Et le mot est bien celui de la clé d'accent, pas le titre entier.
-    expect(screen.getByTestId('promesse-accueil-mot').props.children).toBe(en.auth.accrocheAccent);
-  });
-});
-
-// --------------------------------------------------------------------------
-// ce qui dépasse de l'écran
-// --------------------------------------------------------------------------
-
-describe('accueil, atteindre le bas de la page', () => {
-  /**
-   * Le contenu tenait dans un `View` centré en `flex: 1`. Sur un iPhone, les
-   * deux cartes empilées dépassent la hauteur de l'écran : le titre sortait
-   * par le haut, et « Already have an account? Sign in » par le bas — hors
-   * d'atteinte, sans contournement, l'app n'ayant qu'une adresse et aucune
-   * route web. Un créateur déjà inscrit n'avait plus de chemin vers son compte
-   * depuis son téléphone.
-   */
-  it('laisse défiler le contenu au lieu de le couper', async () => {
-    await afficher();
-    await poser(TELEPHONE);
-
-    const defilant = screen.getByTestId('accueil-defilant');
-    // Un `View` ne défile pas. C'est bien une vue défilante qu'on veut ici,
-    // pas une boîte dont on aurait seulement changé les marges.
-    expect(defilant.props.scrollEnabled ?? true).toBe(true);
-    expect(typeof defilant.props.onScroll === 'function' || defilant.props.horizontal !== true).toBe(
-      true,
-    );
-
-    const contenu = styleAplati(defilant.props.contentContainerStyle);
-    // `flexGrow` et non `flex` : le premier centre tant que la place suffit et
-    // laisse déborder ensuite, le second borne le contenu à la fenêtre et
-    // rendrait le défilement inutile.
-    expect(contenu.flexGrow).toBe(1);
-    expect(contenu.flex).toBeUndefined();
-    expect(contenu.justifyContent).toBe('center');
-  });
-
-  it('pose la marge du bas que la barre d’onglets ne pose pas ici', async () => {
-    // `ZoneSure` laisse le bas à la barre d'onglets — qui n'existe pas avant
-    // la connexion. Sans cette marge, le lien de connexion se termine sous la
-    // barre d'accueil de l'iPhone : visible en fin de défilement, impressable.
-    await afficher();
-    await poser(TELEPHONE);
-
-    const contenu = styleAplati(
-      screen.getByTestId('accueil-defilant').props.contentContainerStyle,
-    );
-    expect(contenu.paddingBottom).toBe(24 + IPHONE_A_ENCOCHE.insets.bottom);
-  });
-
-  it('fait défiler les portes, pas le fond', async () => {
-    // Le lien de connexion doit défiler — c'est le défaut qu'on répare. La
-    // vidéo, l'affiche et le voile non : un fond qui remonte avec le contenu
-    // laisserait le bas de la page sur du vide, et le voile cesserait de
-    // protéger le texte qu'il couvre.
-    await afficher();
-    await poser(TELEPHONE);
-
-    const defilant = screen.getByTestId('accueil-defilant');
-    expect(defilant).toContainElement(screen.getByTestId('vers-connexion'));
-    expect(defilant).not.toContainElement(screen.getByTestId('video-accueil'));
-    expect(defilant).not.toContainElement(screen.getByTestId('voile-accueil'));
-  });
-});
-
-describe('le choix du fond, isolé', () => {
-  const home = TOUT.home;
-
-  it('accorde l’affiche à la vidéo retenue, pas à l’orientation demandée', async () => {
-    // Une affiche verticale sous une vidéo paysage recadre au chargement, puis
-    // la vidéo démarre sur un autre cadrage : le saut se voit.
-    const sansVerticale = { ...home, video_portrait_key: null };
-    expect(fondDAccueil(sansVerticale, true)).toEqual({
-      video: 'photos/home/paysage.mp4',
-      affiche: 'photos/home/paysage.jpg',
-    });
-  });
-
-  it('ne rend rien quand rien n’est encore chargé', async () => {
-    expect(fondDAccueil(null, true)).toEqual({ video: null, affiche: null });
-  });
-});
-
-describe('accueil, le retour au premier plan', () => {
-  /**
-   * Le retour d'onglet, tel que la plateforme l'annonce. `AppState` est le seul
-   * chemin à écouter : sur le web, `react-native-web` l'adosse à
-   * `visibilitychange`, et sur mobile il porte déjà la mise en arrière-plan.
-   */
-  function revenirAuPremierPlan(etat: AppStateStatus = 'active') {
-    const abonnements = (AppState.addEventListener as jest.Mock).mock.calls
-      .filter(([type]) => type === 'change')
-      .map(([, ecouteur]) => ecouteur as (e: AppStateStatus) => void);
-    // Sans abonnement, rien ne peut reprendre : l'absence est le défaut même.
-    expect(abonnements.length).toBeGreaterThan(0);
-    abonnements.forEach((ecouteur) => ecouteur(etat));
-  }
-
-  beforeEach(() => {
-    jest.spyOn(AppState, 'addEventListener').mockReturnValue({ remove: () => {} } as never);
-  });
-
-  afterEach(() => jest.restoreAllMocks());
-
-  it('relance la vidéo mise en pause par le navigateur', async () => {
-    // Un onglet quitté suspend la lecture, et rien ne la reprenait au retour :
-    // il fallait recharger la page pour retrouver le fond animé.
-    await afficher();
-    await poser(BUREAU);
-    await waitFor(() => expect(sourceJouee()).toContain('paysage.mp4'));
-
-    mockLecteur.play.mockClear();
-    revenirAuPremierPlan();
-
-    expect(mockLecteur.play).toHaveBeenCalled();
-  });
-
-  it('ne redemande rien à une vidéo qui joue déjà', async () => {
-    await afficher();
-    await poser(BUREAU);
-    await waitFor(() => expect(sourceJouee()).toContain('paysage.mp4'));
-
-    mockLecteur.playing = true;
-    mockLecteur.play.mockClear();
-    revenirAuPremierPlan();
-
-    expect(mockLecteur.play).not.toHaveBeenCalled();
-  });
-
-  it('laisse l’écran tranquille tant qu’on n’est pas revenu', async () => {
-    // Le passage en arrière-plan n'est pas un retour : relancer là relancerait
-    // sur un onglet qu'on vient tout juste de quitter.
-    await afficher();
-    await poser(BUREAU);
-    await waitFor(() => expect(sourceJouee()).toContain('paysage.mp4'));
-
-    mockLecteur.play.mockClear();
-    revenirAuPremierPlan('background');
-
-    expect(mockLecteur.play).not.toHaveBeenCalled();
-  });
-
-  it('garde l’affiche sans la faire clignoter chez qui refuse la lecture automatique', async () => {
-    // `play()` y reste refusé, donc `playing` reste faux : c'est l'état réel du
-    // lecteur qui commande l'affiche, jamais la demande qu'on vient de faire.
-    // Si la reprise l'effaçait pour la remettre, l'écran clignoterait à chaque
-    // retour d'onglet.
-    await afficher();
-    await poser(BUREAU);
-    await waitFor(() => expect(screen.getByTestId('affiche-accueil')).toBeTruthy());
-
-    revenirAuPremierPlan();
-
-    expect(screen.getByTestId('affiche-accueil')).toBeTruthy();
-  });
-});
-
-// --------------------------------------------------------------------------
-// le satin, et le bloc unique
-// --------------------------------------------------------------------------
-
-describe('la marque se présente une fois, et une seule', () => {
-  async function accueil(medias: unknown) {
-    const api = new ApiClient({
-      baseUrl: 'https://api.test',
-      coffre: { lire: async () => null, ecrire: async () => {} },
-      fetchImpl: async () => ({ ok: true, status: 200, json: async () => medias }) as Response,
-    });
-    return render(
-      <SafeAreaProvider initialMetrics={IPHONE_A_ENCOCHE}>
-        <ThemeProvider role="creator">
-          <I18nProvider initialLocale="en">
-            <ApiProvider client={api}>
-              <AccueilScreen onChoisir={() => {}} onSeConnecter={() => {}} />
-            </ApiProvider>
-          </I18nProvider>
-        </ThemeProvider>
-      </SafeAreaProvider>,
-    );
-  }
-
-  // La clé est `home`, comme la carte d'API la nomme : `accueil` ici aurait
-  // rendu les deux branches identiques et le test se serait cru vert.
-  const SANS_MEDIA = {
-    categories: [],
-    home: {
-      video_key: null,
-      poster_key: null,
-      video_portrait_key: null,
-      poster_portrait_key: null,
-    },
-  };
-  const AVEC_VIDEO = {
-    categories: [],
-    home: {
-      video_key: 'photos/accueil/video.mp4',
-      poster_key: 'photos/accueil/poster.jpg',
-      video_portrait_key: null,
-      poster_portrait_key: null,
-    },
-  };
-
-  it('sans média, elle se présente sur un satin plutôt que de s’excuser', async () => {
-    // L'écran annonçait « aucun fond » sous les portes : une phrase d'excuse à
-    // l'endroit exact où le produit se montre pour la première fois.
-    await accueil(SANS_MEDIA);
-    await waitFor(() => expect(screen.getByTestId('porte-createur')).toBeTruthy());
-    expect(
-      screen.getByTestId('satin-accueil', { includeHiddenElements: true }),
-    ).toBeTruthy();
-    expect(screen.queryByTestId('accueil-sans-fond')).toBeNull();
-  });
-
-  it('avec un média, le satin reste dessous', async () => {
-    // **Il ne s'efface pas quand la vidéo arrive.** C'est le fond de l'écran,
-    // pas une composition de repli : ce qui arrive ensuite s'intercale, ça ne
-    // remplace rien.
-    await accueil(AVEC_VIDEO);
-    await waitFor(() => expect(screen.getByTestId('video-accueil')).toBeTruthy());
-    expect(
-      screen.getByTestId('satin-accueil', { includeHiddenElements: true }),
-    ).toBeTruthy();
-  });
-
-  it.each([
-    ['sans média', SANS_MEDIA],
-    ['avec un média', AVEC_VIDEO],
-  ])('%s, l’écran porte exactement un bloc accentué', async (_nom, medias) => {
-    // **La garde statique ne peut pas voir ça.** Elle lit un fichier à la fois
-    // et ne sait pas qu'un composant s'efface quand un autre parle : l'accueil
-    // et les portes déclarent chacun leur bloc, et c'est à l'exécution que la
-    // règle « un par écran » se joue. Le comptage, ici, est réel.
-    await accueil(medias);
-    await waitFor(() => expect(screen.getByTestId('promesse-accueil')).toBeTruthy());
-
-    expect(screen.getAllByTestId('bloc-accentue')).toHaveLength(1);
-    // Et la marque non plus ne se présente pas deux fois. L'ancre était la
-    // signature, qui a disparu avec la correction du logotype — c'est le
-    // logotype lui-même qui la remplace, et il dit la même chose.
-    expect(screen.getAllByTestId('logotype')).toHaveLength(1);
-  });
-});
-
-// --------------------------------------------------------------------------
-// la page ne se refait pas sous les yeux
-// --------------------------------------------------------------------------
-
-describe('la composition ne change pas quand le manifeste arrive', () => {
-  /**
-   * Ce que l'écran montre, en une liste de noms.
-   *
-   * **C'est la mesure du défaut**, et elle vaut mieux qu'une capture : le
-   * testeur avait rapporté « la vidéo met plusieurs secondes à démarrer », et
-   * la vidéo n'était pas en cause. Le manifeste des médias arrive par un
-   * aller-retour ; tant qu'il n'était pas là, l'écran rendait une composition
-   * entièrement différente — satin dans le flux, portes sans en-tête — puis
-   * basculait. Ce qu'on voyait n'était pas un délai, c'était la première chose
-   * que montre le produit qui se réorganisait.
-   *
-   * Ce qui a le droit d'apparaître ensuite est l'affiche et la vidéo, et rien
-   * d'autre : elles s'intercalent entre le satin et le voile.
-   */
-  const REPERES = [
-    'satin-accueil',
-    'bande-de-l-entete',
-    'voile-accueil',
-    'accueil-defilant',
-    'choix-de-la-porte',
-    'promesse-accueil',
-    'logotype',
-    'porte-createur',
-    'porte-commerce',
-  ];
-
-  const presents = () =>
-    REPERES.filter(
-      (nom) => screen.queryAllByTestId(nom, { includeHiddenElements: true }).length > 0,
-    );
-
-  it('rend la même composition avant et après la réponse', async () => {
-    // Une promesse qu'on tient à la main : entre le montage et sa résolution,
-    // l'écran est exactement dans l'état où le testeur l'a vu.
-    let repondre: (m: unknown) => void = () => {};
-    const attendue = new Promise((ok) => {
-      repondre = ok;
-    });
-    const api = new ApiClient({
-      baseUrl: 'https://api.test',
-      coffre: { lire: async () => null, ecrire: async () => {} },
-      fetchImpl: async () =>
-        ({ ok: true, status: 200, json: async () => await attendue }) as Response,
-    });
-
-    await render(
-      <SafeAreaProvider initialMetrics={IPHONE_A_ENCOCHE}>
-        <ThemeProvider role="creator">
-          <I18nProvider initialLocale="en">
-            <ApiProvider client={api}>
-              <AccueilScreen onChoisir={() => {}} onSeConnecter={() => {}} />
-            </ApiProvider>
-          </I18nProvider>
-        </ThemeProvider>
-      </SafeAreaProvider>,
-    );
-
-    // Manifeste inconnu : tout est déjà là.
-    await waitFor(() => expect(screen.getByTestId('porte-createur')).toBeTruthy());
-    const avant = presents();
-    expect(avant).toEqual(REPERES);
-
-    repondre({
-      categories: [],
-      home: {
-        video_key: 'photos/accueil/video.mp4',
-        poster_key: 'photos/accueil/poster.jpg',
-        video_portrait_key: null,
-        poster_portrait_key: null,
-      },
-    });
-
-    // Manifeste arrivé : la vidéo s'est intercalée, et rien d'autre n'a bougé.
-    await waitFor(() => expect(screen.getByTestId('video-accueil')).toBeTruthy());
-    expect(presents()).toEqual(avant);
-  });
-
-  it('et la même encore quand le manifeste dit qu’il n’y a pas de média', async () => {
-    // « Manifeste inconnu » et « manifeste connu et vide » donnaient tous deux
-    // `null`, et appelaient pourtant deux rendus différents. Ils n'en appellent
-    // plus qu'un : il n'y a plus de bascule à distinguer.
-    await accueilAvec({
-      categories: [],
-      home: {
-        video_key: null,
-        poster_key: null,
-        video_portrait_key: null,
-        poster_portrait_key: null,
-      },
-    });
-    await waitFor(() => expect(screen.getByTestId('porte-createur')).toBeTruthy());
-    expect(presents()).toEqual(REPERES);
-  });
-
-  async function accueilAvec(medias: unknown) {
-    const api = new ApiClient({
-      baseUrl: 'https://api.test',
-      coffre: { lire: async () => null, ecrire: async () => {} },
-      fetchImpl: async () => ({ ok: true, status: 200, json: async () => medias }) as Response,
-    });
-    return render(
-      <SafeAreaProvider initialMetrics={IPHONE_A_ENCOCHE}>
-        <ThemeProvider role="creator">
-          <I18nProvider initialLocale="en">
-            <ApiProvider client={api}>
-              <AccueilScreen onChoisir={() => {}} onSeConnecter={() => {}} />
-            </ApiProvider>
-          </I18nProvider>
-        </ThemeProvider>
-      </SafeAreaProvider>,
-    );
-  }
-});
-
-describe('sur un média, chaque texte porte son propre fond', () => {
-  it('sur une vidéo comme sur le satin, et avec le même fond', async () => {
-    // **Le voile ne suffit pas ici, et c'est mesuré.** Il descend à 0,55 en son
-    // milieu, et l'en-tête tombe entre le tiers et la moitié de l'écran selon
-    // la hauteur du contenu : sur une vidéo claire, cela fait entre 5,48:1 et
-    // 3,72:1 — au-dessus du seuil ou en dessous selon le terminal. Une
-    // garantie qui varie avec le terminal n'en est pas une.
-    //
-    // Sur le satin seul on est à 6,00:1 ; mais le satin n'est là que tant
-    // qu'aucune vidéo ne le couvre, et une garantie qui dépend de ce qui a fini
-    // de charger n'en est pas une non plus.
-    const { couleurs, opaciteMinimaleDuVoile } = require('../src/theme');
-    const opacite = Number(/,\s*([\d.]+)\)/.exec(couleurs['scrim.photoBottom'])![1]);
-
-    for (const medias of [SANS_MEDIA_HAUT, AVEC_VIDEO_HAUT]) {
-      const vue = await accueilBrut(medias);
-      await waitFor(() => expect(screen.getByTestId('bande-de-l-entete')).toBeTruthy());
-      expect(styleAplati(screen.getByTestId('bande-de-l-entete')).backgroundColor).toBe(
-        couleurs['scrim.photoBottom'],
-      );
-      expect(opacite).toBeGreaterThanOrEqual(opaciteMinimaleDuVoile('ink.onScrim'));
-      await vue.unmount();
-    }
-  });
-
-  it('et le point du logo n’est jamais sur le satin : il est dans la bande', async () => {
-    // **La règle de pose, celle que la palette ne peut pas porter.** Le point
-    // du logotype vaut 1,30:1 sur un aplat de marque — il y disparaît. Les
-    // jetons le mesurent déjà ; ce qu'ils ne peuvent pas dire, c'est où le
-    // logotype est posé. Ici il l'est au-dessus d'un satin, et la seule chose
-    // qui l'en sépare est la bande.
-    //
-    // Le test remonte les parents plutôt que de vérifier la présence des deux
-    // nœuds : les trouver tous les deux dans l'écran ne dit pas que l'un
-    // contient l'autre, et sortir la marque de l'enveloppe est exactement le
-    // geste qui laisserait les deux présents.
-    const vue = await accueilBrut(SANS_MEDIA_HAUT);
-    await waitFor(() => expect(screen.getByTestId('logotype')).toBeTruthy());
-
-    let noeud = screen.getByTestId('logotype').parent;
-    const remontee: string[] = [];
-    while (noeud) {
-      const id = noeud.props?.testID;
-      if (id) remontee.push(id);
-      if (id === 'bande-de-l-entete') break;
-      noeud = noeud.parent;
-    }
-    expect(remontee).toContain('bande-de-l-entete');
+    expect(screen.queryByTestId('affiche-accueil')).toBeNull();
+    expect(screen.queryByTestId('voile-accueil')).toBeNull();
+    expect(screen.queryByTestId('satin-accueil')).toBeNull();
     await vue.unmount();
   });
 
-  /**
-   * **Le défaut rapporté comme « la vidéo n'apparaît plus ».** Elle
-   * apparaissait : elle jouait, elle était bien au-dessus du satin, et le voile
-   * n'en laissait passer que 18 % en haut et 48 % au mieux — mesuré au
-   * navigateur sur une vidéo unie, un bleu vif arrivait à l'œil en gris
-   * d'ardoise.
-   *
-   * Le voile valait `photoBottom` aux deux bouts et `modal` au milieu parce
-   * qu'il était, à l'époque, la seule protection du texte. Depuis, chaque ligne
-   * de cet écran a reçu son propre fond — c'est le sujet de ce bloc. Il ne
-   * protégeait donc plus rien, et le prix qu'il faisait payer à l'image comme
-   * au satin n'achetait plus rien.
-   */
-  it('le voile adoucit, et ne cache plus ce qu’il couvre', async () => {
-    const { couleurs } = require('../src/theme');
-    await accueilBrut(AVEC_VIDEO_HAUT);
-    await waitFor(() => expect(screen.getByTestId('voile-accueil')).toBeTruthy());
+  it('et ne défile plus, parce qu’il n’a plus besoin de défiler', async () => {
+    // Le défilement existait parce que deux cartes **empilées** dépassaient la
+    // hauteur d'un iPhone. Côte à côte, elles tiennent : sur 390 × 844, barre
+    // d'état et marge basse retirées, il reste 728 points.
+    const vue = await accueil();
+    await waitFor(() => expect(screen.getByTestId('ecran-accueil')).toBeTruthy());
 
-    const fond = styleAplati(screen.getByTestId('voile-accueil')).backgroundColor;
-    expect(fond).toBe(couleurs['scrim.photoTop']);
-    // Les deux valeurs dont il sortait. Un voile qui y retourne rend la vidéo
-    // invisible, et c'est très exactement ce qui s'est produit.
-    expect(fond).not.toBe(couleurs['scrim.photoBottom']);
-    expect(fond).not.toBe(couleurs['scrim.modal']);
+    expect(screen.queryByTestId('accueil-defilant')).toBeNull();
+    await vue.unmount();
+  });
+});
 
-    // Et il laisse passer plus de la moitié. Le seuil est une décision de
-    // composition — un fond doit rester un fond — pas une propriété du système,
-    // donc il s'écrit ici plutôt que de se déduire d'un jeton.
-    const opacite = Number(/,\s*([\d.]+)\)/.exec(couleurs['scrim.photoTop'])![1]);
-    expect(1 - opacite).toBeGreaterThan(0.5);
+describe('les deux portes', () => {
+  it('sont côte à côte, et de largeur égale', async () => {
+    // **La contrainte qui dessine tout.** Empilées, il faut défiler ; côte à
+    // côte, l'écran tient. Le test lit la direction de la rangée et le `flex`
+    // des deux cartes : une colonne, ou une carte plus large que l'autre,
+    // ramènerait le défilement ou romprait la comparaison d'un regard.
+    const vue = await accueil();
+    await waitFor(() => expect(screen.getByTestId('porte-createur')).toBeTruthy());
+
+    const aplati = (style: unknown): Record<string, unknown> =>
+      Array.isArray(style)
+        ? Object.assign({}, ...style.map(aplati))
+        : ((style ?? {}) as Record<string, unknown>);
+
+    const createur = screen.getByTestId('porte-createur');
+    const commerce = screen.getByTestId('porte-commerce');
+    expect(aplati(createur.parent?.props?.style).flexDirection).toBe('row');
+    expect(aplati(createur.props.style).flex).toBe(1);
+    expect(aplati(commerce.props.style).flex).toBe(1);
+    await vue.unmount();
   });
 
-  it('le lien de connexion porte sa bande et passe à l’encre claire', async () => {
-    // **Le seul texte de l'écran qui touchait le média.** En `brand.700`, une
-    // encre foncée calibrée pour du papier : 2,14:1 au pire. Le voile ne l'a
-    // jamais sauvé et ne pouvait pas — il assombrit l'encre autant que le fond,
-    // et c'est pourquoi l'alléger ne change rien à ce défaut-là.
-    const { couleurs } = require('../src/theme');
-    await accueilBrut(AVEC_VIDEO_HAUT);
+  it('portent leur intitulé sur deux lignes, en gros', async () => {
+    // **Deux colonnes de 171 points ne portent pas « CREATOR ACCOUNT » sur une
+    // ligne au-delà de 13 points**, ce qui n'est pas « en gros ». Empilé,
+    // chaque mot tient à 22. Le test lit la taille rendue : c'est elle qui
+    // décide, et une variante renommée sans changer de taille passerait un test
+    // qui ne lirait que le nom.
+    const vue = await accueil();
+    await waitFor(() => expect(screen.getByTestId('porte-createur-role')).toBeTruthy());
+
+    const aplati = (style: unknown): Record<string, unknown> =>
+      Array.isArray(style)
+        ? Object.assign({}, ...style.map(aplati))
+        : ((style ?? {}) as Record<string, unknown>);
+
+    const role = screen.getByTestId('porte-createur-role');
+    expect(role).toHaveTextContent(en.auth.porteRoleCreateur.toUpperCase());
+    expect(Number(aplati(role.props.style).fontSize)).toBeGreaterThanOrEqual(22);
+    // **Deux fois, une par porte**, et chacun sur son propre nœud : c'est ce
+    // qui met le mot sur sa ligne, et ce qui lui permet de porter l'orange sans
+    // le donner au premier. Un seul nœud « CREATOR ACCOUNT » passerait un test
+    // qui ne chercherait que la présence du mot.
+    expect(screen.getAllByText(en.auth.porteCompte.toUpperCase())).toHaveLength(2);
+    await vue.unmount();
+  });
+
+  it('et un seul aplat orange pour deux portes de poids égal', async () => {
+    // Le rôle créateur est celui qu'on attend en masse ; la porte commerce a le
+    // même intitulé, la même taille et un contour d'encre. C'est un ordre de
+    // fréquence, pas de valeur — et deux aplats côte à côte ne diraient ni
+    // l'un ni l'autre.
+    const vue = await accueil();
+    await waitFor(() => expect(screen.getByTestId('choisir-creator')).toBeTruthy());
+
+    const aplati = (style: unknown): Record<string, unknown> =>
+      Array.isArray(style)
+        ? Object.assign({}, ...style.map(aplati))
+        : ((style ?? {}) as Record<string, unknown>);
+
+    const fond = (id: string) => aplati(screen.getByTestId(id).props.style).backgroundColor;
+    expect(fond('choisir-creator')).not.toBe(fond('choisir-business_member'));
+    await vue.unmount();
+  });
+});
+
+describe('ce qui survit de l’ancien écran', () => {
+  it('la marque se présente une fois, et une seule', async () => {
+    // Elle a été rendue deux fois — une dans l'en-tête, une dans le fond — et
+    // un logotype qui apparaît deux fois sur le premier écran se lit comme un
+    // défaut d'assemblage.
+    const vue = await accueil();
+    await waitFor(() => expect(screen.getByTestId('logotype')).toBeTruthy());
+
+    expect(screen.getAllByTestId('logotype')).toHaveLength(1);
+    await vue.unmount();
+  });
+
+  it('et le chemin vers la connexion reste atteignable', async () => {
+    // **Un défaut rapporté, pas une propriété décorative.** Le lien sortait par
+    // le bas d'un conteneur qui coupait, et l'app n'ayant qu'une adresse et
+    // aucune route web, un créateur déjà inscrit n'avait plus aucun chemin vers
+    // son compte depuis son téléphone.
+    const vue = await accueil();
     await waitFor(() => expect(screen.getByTestId('vers-connexion')).toBeTruthy());
 
-    expect(styleAplati(screen.getByTestId('bande-de-la-connexion')).backgroundColor).toBe(
-      couleurs['scrim.photoBottom'],
-    );
-    expect(styleAplati(screen.getByText(en.auth.versConnexion)).color).toBe(
-      couleurs['ink.onScrim'],
-    );
+    expect(screen.getByTestId('vers-connexion')).toHaveTextContent(en.auth.versConnexion);
+    await vue.unmount();
   });
 
-  const SANS_MEDIA_HAUT = {
-    categories: [],
-    home: {
-      video_key: null,
-      poster_key: null,
-      video_portrait_key: null,
-      poster_portrait_key: null,
-    },
-  };
-  const AVEC_VIDEO_HAUT = {
-    categories: [],
-    home: {
-      video_key: 'photos/accueil/video.mp4',
-      poster_key: 'photos/accueil/poster.jpg',
-      video_portrait_key: null,
-      poster_portrait_key: null,
-    },
-  };
+  it('et la sous-ligne du titre est partie', async () => {
+    // Ce qu'elle disait — l'échange, l'absence d'argent — est déjà dit par les
+    // puces des deux portes, mieux et deux fois. Un premier écran qui dit deux
+    // fois la même chose la dit une fois de trop.
+    const vue = await accueil();
+    await waitFor(() => expect(screen.getByTestId('promesse-accueil')).toBeTruthy());
 
-  function styleAplati(element: { props: { style?: unknown } }): Record<string, unknown> {
-    const empile = (valeur: unknown): Record<string, unknown> =>
-      Array.isArray(valeur)
-        ? Object.assign({}, ...valeur.map(empile))
-        : ((valeur as Record<string, unknown>) ?? {});
-    return empile(element.props.style);
-  }
-
-  async function accueilBrut(medias: unknown) {
-    const api = new ApiClient({
-      baseUrl: 'https://api.test',
-      coffre: { lire: async () => null, ecrire: async () => {} },
-      fetchImpl: async () => ({ ok: true, status: 200, json: async () => medias }) as Response,
-    });
-    return render(
-      <SafeAreaProvider initialMetrics={IPHONE_A_ENCOCHE}>
-        <ThemeProvider role="creator">
-          <I18nProvider initialLocale="en">
-            <ApiProvider client={api}>
-              <AccueilScreen onChoisir={() => {}} onSeConnecter={() => {}} />
-            </ApiProvider>
-          </I18nProvider>
-        </ThemeProvider>
-      </SafeAreaProvider>,
-    );
-  }
+    expect(screen.queryByText(en.auth.sousAccroche)).toBeNull();
+    await vue.unmount();
+  });
 });
