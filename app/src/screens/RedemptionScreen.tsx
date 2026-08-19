@@ -1,12 +1,17 @@
 /**
  * Caisse : reconnaître un code, puis le servir.
  *
- * **La saisie manuelle est le chemin de premier rang**, pas un secours dégradé.
- * Dans un salon, une caméra sale, un écran fissuré ou une lumière rasante
- * arrivent tous les jours ; un écran qui met le scanner au centre et la saisie
- * derrière un lien fait perdre du temps à la caisse précisément les jours où
- * elle en a le moins. Le champ est donc visible et utilisable d'emblée, et le
- * scanner est l'autre onglet.
+ * **Le scan est le chemin de premier rang**, la saisie son secours.
+ *
+ * L'inverse avait été retenu, et l'argument tenait : une caméra sale, un écran
+ * fissuré, une lumière rasante arrivent dans un salon. Mais ce sont les mauvais
+ * jours, et le geste ordinaire est de présenter un téléphone à un autre. Mettre
+ * le secours au centre faisait taper six caractères à chaque passage pour se
+ * prémunir d'un cas rare — et un scan qui échoue laisse toujours l'onglet
+ * d'à côté, à un geste.
+ *
+ * Le secours reste donc **visible et à un seul geste** : c'est ce qui rend la
+ * bascule acceptable. Ce n'est pas le scan seul avec un lien caché.
  *
  * **Vérifier et servir sont deux gestes.** La caisse voit ce qu'elle doit
  * servir, sert, puis confirme. Les fondre ferait déclarer servi ce qui ne l'est
@@ -75,7 +80,9 @@ export function RedemptionScreen({
 
   const [etat, setEtat] = useState<Etat>({ state: 'saisie' });
   const [saisi, setSaisi] = useState('');
-  const [ongletScan, setOngletScan] = useState(false);
+  // Le scan par défaut : c'est le geste ordinaire de la caisse. La saisie reste
+  // l'onglet d'à côté, à un seul geste, pour les jours où la caméra ne suit pas.
+  const [ongletScan, setOngletScan] = useState(true);
 
   const monte = useRef(true);
   useEffect(() => {
@@ -186,12 +193,12 @@ export function RedemptionScreen({
       <View style={{ flexDirection: large ? 'row' : 'column', gap: spacing['space.6'] }}>
       <View style={{ flex: 1, minWidth: 0, gap: spacing['space.4'] }}>
 
-      {/* La saisie d'abord, et sélectionnée par défaut. L'ordre n'est pas
+      {/* Le scan d'abord, et sélectionné par défaut. L'ordre n'est pas
           cosmétique : c'est lui qui dit quel chemin est le principal. */}
       <SegmentedTabs
-        items={[{ label: t('redemption.manualTab') }, { label: t('redemption.scanTab') }]}
-        index={ongletScan ? 1 : 0}
-        onChange={(i) => setOngletScan(i === 1)}
+        items={[{ label: t('redemption.scanTab') }, { label: t('redemption.manualTab') }]}
+        index={ongletScan ? 0 : 1}
+        onChange={(i) => setOngletScan(i === 0)}
         testID="onglets-caisse"
       />
 
