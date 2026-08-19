@@ -749,6 +749,29 @@ describe('les réserves de la v1.1', () => {
     expect(rapport(signature, couleurs['brand.500'])).toBeLessThan(1.5);
   });
 
+  it('l’avertissement n’a pas de teinte : ce sont les neutres du système', () => {
+    // **La règle survit au changement de palette, et le changement la rend plus
+    // nécessaire.** Un ambre d'alerte dans un système ambre se lit comme une
+    // mise en avant de marque, pas comme une alerte — c'est le seul des trois
+    // niveaux dont la couleur habituelle est devenue la couleur de la marque.
+    //
+    // Le test ne mesure pas une saturation, il vérifie une **identité** : les
+    // trois valeurs sont des jetons neutres du système, pas des teintes
+    // proches. Une mesure de saturation laisserait passer un ambre désaturé,
+    // qui est exactement la façon dont la teinte reviendrait.
+    expect(tokens.color.status.warning).toEqual({
+      surface: tokens.color.bg.deep,
+      rule: tokens.color.ink.default,
+      text: tokens.color.ink.default,
+    });
+
+    // Et les deux autres niveaux gardent la leur : « sans teinte » est une
+    // règle de l'avertissement, pas du bloc de statut. Le vérifier ici empêche
+    // de « corriger » les trois d'un coup.
+    expect(tokens.color.status.danger.text).not.toBe(tokens.color.ink.default);
+    expect(tokens.color.status.success.text).not.toBe(tokens.color.ink.default);
+  });
+
   it('et le bouton porte l’encre, jamais le blanc, à toute taille', () => {
     // La mesure qui survit à la palette : les quatre oranges de ce projet se
     // comportent pareil. Un orange assez sombre pour porter du blanc n'est plus

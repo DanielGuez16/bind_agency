@@ -627,6 +627,32 @@ describe('sur un média, chaque texte porte son propre fond', () => {
     }
   });
 
+  it('et le point du logo n’est jamais sur le satin : il est dans la bande', async () => {
+    // **La règle de pose, celle que la palette ne peut pas porter.** Le point
+    // du logotype vaut 1,30:1 sur un aplat de marque — il y disparaît. Les
+    // jetons le mesurent déjà ; ce qu'ils ne peuvent pas dire, c'est où le
+    // logotype est posé. Ici il l'est au-dessus d'un satin, et la seule chose
+    // qui l'en sépare est la bande.
+    //
+    // Le test remonte les parents plutôt que de vérifier la présence des deux
+    // nœuds : les trouver tous les deux dans l'écran ne dit pas que l'un
+    // contient l'autre, et sortir la marque de l'enveloppe est exactement le
+    // geste qui laisserait les deux présents.
+    const vue = await accueilBrut(SANS_MEDIA_HAUT);
+    await waitFor(() => expect(screen.getByTestId('logotype')).toBeTruthy());
+
+    let noeud = screen.getByTestId('logotype').parent;
+    const remontee: string[] = [];
+    while (noeud) {
+      const id = noeud.props?.testID;
+      if (id) remontee.push(id);
+      if (id === 'bande-de-l-entete') break;
+      noeud = noeud.parent;
+    }
+    expect(remontee).toContain('bande-de-l-entete');
+    await vue.unmount();
+  });
+
   /**
    * **Le défaut rapporté comme « la vidéo n'apparaît plus ».** Elle
    * apparaissait : elle jouait, elle était bien au-dessus du satin, et le voile
