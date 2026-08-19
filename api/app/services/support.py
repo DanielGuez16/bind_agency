@@ -141,12 +141,35 @@ async def fermer(
     admin: User,
     maintenant: datetime | None = None,
 ) -> BusinessSupportAccess:
-    """Referme une reprise avant son terme. Sans effet si elle est déjà close."""
+    """Referme une reprise avant son terme. Sans effet si elle est déjà close.
+
+    **L'heure de fermeture vient de la base, comme celle d'ouverture.**
+    `started_at` est écrit par `clock_timestamp()`, côté Postgres ; `ended_at`
+    l'était par `datetime.now(UTC)`, côté Python. Deux horloges, et la
+    contrainte `close_apres_ouverture` compare les deux : il suffit que celle de
+    la base soit en avance de quelques millisecondes pour qu'une reprise ouverte
+    puis refermée dans la foulée paraisse s'être fermée avant de s'ouvrir.
+
+    Vu, avec les chiffres : ouverture à `04:23:03.465808`, fermeture à
+    `04:23:03.463118` — **2,7 millisecondes** d'écart, et la contrainte rejette.
+    Un échec intermittent, qui ne se produit que lorsque les deux gestes se
+    suivent d'assez près et que la machine est chargée.
+
+    `maintenant` reste prioritaire : les tests qui posent une heure explicite
+    éprouvent une règle de temps, et leur imposer l'horloge de la base leur
+    retirerait ce qu'ils vérifient.
+    """
     if acces.ended_at is not None:
         return acces
 
-    acces.ended_at = maintenant or datetime.now(UTC)
+    # `clock_timestamp()` et non `now()` : refermer une reprise et en ouvrir une
+    # autre dans la même transaction leur donnerait sinon le même instant, ce
+    # que `started_at` prend déjà soin d'éviter.
+    acces.ended_at = maintenant or sa.func.clock_timestamp()
     await session.flush()
+    # L'attribut porte l'expression SQL tant qu'il n'est pas relu : le
+    # rafraîchir rend l'heure réellement écrite, que l'appelant affiche.
+    await session.refresh(acces, ["ended_at"])
 
     await record_transition(
         session,
