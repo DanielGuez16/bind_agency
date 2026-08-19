@@ -670,7 +670,13 @@ describe('les surfaces de la v1.1', () => {
     // compte tient aussi pour elles.
     for (const relatif of CARTES) {
       const source = readFileSync(join(RACINE, '..', relatif), 'utf-8');
-      const poses = (source.match(/\.\.\.elevationDeCarte\(\)/g) ?? []).length;
+      // **L'appel, et non l'étalement.** La première version cherchait
+      // `...elevationDeCarte()` : la fiche pose son ombre dans un ternaire —
+      // une prestation ouverte se pose, une fermée porte un filet — et l'appel
+      // n'y est pas précédé de trois points. Il était compté zéro sur une carte
+      // qui la porte. Chercher l'appel couvre les deux formes, et la ligne
+      // d'import ne le mime pas : elle n'a pas de parenthèses.
+      const poses = (source.match(/elevationDeCarte\(\)/g) ?? []).length;
       const cartes = (source.match(bloc) ?? []).filter(estUneCarte).length;
       expect({ relatif, poses, cartes }).toEqual({ relatif, poses: cartes, cartes });
     }

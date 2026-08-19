@@ -91,7 +91,12 @@ it('ne montre aucun accès quand il n’y a ni pages ni lien', async () => {
   await monter(ecran, clientDe(FICHE));
 
   await waitFor(() => expect(screen.getByText('Le Comptoir')).toBeTruthy());
-  expect(screen.queryByTestId('acces-a-la-carte')).toBeNull();
+  // **Sur les deux portes, et par leurs identifiants d'aujourd'hui.** Le test
+  // interrogeait `acces-a-la-carte`, le conteneur des deux lignes jumelles de
+  // la v1.1 : il n'existe plus, et l'assertion était donc vraie sans rien
+  // lire. Une négation qui porte sur un nœud disparu est verte pour toujours.
+  expect(screen.queryByTestId('acces-carte')).toBeNull();
+  expect(screen.queryByTestId('acces-galerie')).toBeNull();
 });
 
 it('ouvre la carte en plein écran, en pleine résolution', async () => {
@@ -134,9 +139,15 @@ it('annonce la sortie de l’application quand le lien est seul', async () => {
 it('sépare les deux accès, et n’en montre que ceux qui existent', async () => {
   // **Une galerie et une carte ne sont pas la même chose.** Les fondre dans un
   // seul bouton « Photos » est la faute que le lot corrige : on fait défiler
-  // des photos de salle, on s'arrête sur une carte. Deux lignes de la même
-  // hauteur, et chacune n'existe que si son contenu existe — sinon le créateur
-  // appuie sur une porte fermée, ce qui est pire que pas de porte.
+  // des photos de salle, on s'arrête sur une carte. Chacun n'existe que si son
+  // contenu existe — sinon le créateur appuie sur une porte fermée, ce qui est
+  // pire que pas de porte.
+  //
+  // **Ils ne sont plus deux lignes jumelles depuis la v3.** La galerie s'ouvre
+  // depuis la couverture, où le compte de photos est posé sur l'image ; la
+  // carte est une ligne nommée entre l'identité et les prestations. Ce que ce
+  // test protège n'a pas changé — deux gestes, deux portes, aucune qui ouvre
+  // sur l'autre.
   await monter(
     ecran,
     clientDe({
@@ -146,7 +157,7 @@ it('sépare les deux accès, et n’en montre que ceux qui existent', async () =
     }),
   );
 
-  await waitFor(() => expect(screen.getByTestId('acces-a-la-carte')).toBeTruthy());
+  await waitFor(() => expect(screen.getByTestId('couverture')).toBeTruthy());
   expect(screen.getByTestId('acces-galerie')).toBeTruthy();
   expect(screen.getByTestId('acces-carte')).toBeTruthy();
 
@@ -160,6 +171,12 @@ it('sépare les deux accès, et n’en montre que ceux qui existent', async () =
 it('ne montre que la galerie quand le commerce n’a pas de carte', async () => {
   // Le sens inverse. Un salon de beauté a des photos et pas de carte ; la ligne
   // de carte doit disparaître, pas se griser.
+  //
+  // **Le montage n'a pas de couverture déclarée, et c'est le cas qui compte.**
+  // La galerie s'ouvrant depuis l'image, un salon sans couverture perdait sa
+  // porte entière — la première photo sert donc de couverture. Un montage qui
+  // aurait posé `cover_photo_key` aurait passé ce test sans jamais éprouver ce
+  // repli.
   await monter(ecran, clientDe({ ...FICHE, photos: ['photos/b1/salle'] }));
 
   await waitFor(() => expect(screen.getByTestId('acces-galerie')).toBeTruthy());

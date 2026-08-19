@@ -1159,12 +1159,22 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       change de sens : il liste les cartes qui la portent, compte les poses, et
       exige l'égalité. Sa première version lisait l'import et restait verte quand
       on retirait l'ombre ; la mutation l'a dit, la relecture non*
-- [ ] **Douze planches d'écrans portent encore la v1.0**
+- [x] **La fiche de salon v3 — point 2 du §6**
+      *Une ligne portait cinq informations dont deux codées ; elle pose deux
+      questions, et c'est une ligne chacune. Le badge codé quitte cet écran et
+      survit sur le fil et les paliers. Le bouton cesse de s'étirer —
+      `fullWidth` valait `true` par défaut, d'où les 316 points. Le bloc fermé
+      reprend son opacité pleine, seule la vignette s'atténue, et l'obstacle
+      emprunte `EcartAuSeuil` aux paliers avec sa règle des 60 %. La couverture
+      porte le compte de photos, la carte devient une ligne nommée. `ServiceRow`
+      part avec l'écran qu'elle servait. Deux écarts écrits : pas d'étiquette
+      d'horaires, faute d'un champ servi, et les glyphes du jeu existant plutôt
+      que deux marques relevées et une inventée. 998 tests verts, 11 mutations*
+- [ ] **Onze planches d'écrans portent encore la v1.0**
       *Le fil est passé en v3, directement dans la palette Ambre. Les autres
       suivent l'ordre du `PASSATION-v1.1.md` §6, qui limite le travail
       perdu : la fiche de
-      salon d'abord — sa ligne de prestation a déjà la correction du fil, sa
-      planche non ; puis la journée du commerce,
+      journée du commerce d'abord,
       les rapports et l'annuaire ; l'arbitrage et les plans ; les écrans de
       marque. C'est du travail de Design, pas du produit*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire

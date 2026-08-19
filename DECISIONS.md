@@ -7146,3 +7146,54 @@ faisait dépasser six cents caractères : ils sortaient de l'inventaire **en
 silence**, la liste rétrécissait toute seule, et c'est le contraire de son
 emploi. Le pavé est devenu une ligne, la raison longue vivant déjà sur
 `elevationDeCarte`, et la fenêtre a été mesurée sur le plus long des douze — 780.
+
+## 2026-08-19 — La fiche v3 : une ligne portait cinq informations, dont deux codées
+
+La cause trouvée par Design est plus étroite que la remarque : « la manière dont
+les prestations sont affichées ne se comprend pas » venait d'une ligne qui
+portait le nom, la durée, un badge à trois barres, une date brute et un bouton.
+Elle pose en fait **deux questions** — qu'est-ce que je donne, quand je viens —
+et c'est une ligne chacune, un glyphe chacune, le mot qui décide en gras.
+
+**Le badge codé quitte cet écran.** Il disait le palier, les testeurs y
+cherchaient le réseau, qu'il n'a jamais porté. Les deux sont maintenant écrits :
+« une story sur Instagram, sous 48 h » ne se décode pas. Il survit sur le fil, où
+une carte n'a pas la place d'une phrase, et sur l'écran des paliers, où il est le
+sujet.
+
+**Le délai devient un nombre à côté de sa prose, et un test tient les deux.**
+`counterpart` porte la phrase courte en toutes lettres ; la phrase longue se
+compose de trois morceaux, dont `delaiHeures`. Rien d'autre ne les rapproche : le
+jour où le délai d'un palier change, il changerait dans l'une et pas dans
+l'autre. Le test lit le nombre **dans la prose** plutôt que de le recopier — une
+constante écrite dans le test aurait été une troisième vérité.
+
+**Le bouton passait de 316 à 89 points, et il n'a fallu qu'un mot.** Le bouton du
+système est déjà une pilule dimensionnée sur son texte ; il s'étirait parce que
+`fullWidth` vaut `true` par défaut et que personne ne lui avait dit non. Trois
+aplats orange pleine largeur empilés faisaient trois promotions.
+
+**Le bloc fermé reprend son opacité pleine.** À 75 %, l'explication devenait
+illisible en même temps que la prestation — c'est-à-dire que le seul élément
+utile d'un bloc fermé était celui qu'on effaçait. Seule la vignette s'atténue,
+l'obstacle prend un encart, et il emprunte `EcartAuSeuil` à l'écran des paliers :
+deux vocabulaires pour un même refus feraient croire à deux causes, et la règle
+des 60 % s'applique sans exception.
+
+**Deux écarts à la planche.** L'étiquette « OPEN UNTIL 19:00 » n'est pas rendue :
+les horaires ne sont pas servis sur la fiche publique, et les deviner serait
+annoncer une fermeture invérifiable. Et les deux lignes à glyphe empruntent des
+icônes du jeu existant plutôt que les marques de réseau que la planche dessine :
+Design en trace deux sur trois, la troisième aurait été inventée, et un jeu où
+une marque est relevée et l'autre imaginée vaut moins qu'un glyphe neutre —
+d'autant que la correction est précisément que le réseau s'**écrit**.
+
+**Un défaut trouvé en écrivant les tests** : la galerie s'ouvrant désormais
+depuis la couverture, un salon qui a des photos et pas de couverture déclarée
+perdait sa porte entière. La première photo tient ce rôle — c'est une photo du
+lieu, c'est ce que la galerie contient.
+
+**Et une négation devenue vide.** `queryByTestId('acces-a-la-carte')` interrogeait
+le conteneur des deux lignes jumelles de la v1.1 : il n'existe plus, et
+l'assertion était vraie sans rien lire. C'est la troisième de cette forme en deux
+jours — une négation qui porte sur un nœud disparu est verte pour toujours.

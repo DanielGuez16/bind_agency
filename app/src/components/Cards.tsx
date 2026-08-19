@@ -19,17 +19,22 @@
  * photo lisible et le texte détaché, quelle que soit la photo dessous. Ses
  * trois arrêts viennent des jetons.
  *
+ * **La rangée de prestation est partie avec la fiche v3.** Elle portait cinq
+ * informations sur une ligne, dont deux codées — c'est la cause que Design a
+ * trouvée, et la fiche pose maintenant deux questions en deux lignes. Elle
+ * n'avait plus d'appelant : une rangée qui survit sans écran finit par
+ * resservir en portant une composition périmée.
+ *
  * **Le repli d'image ne se commente pas côté créateur.** Un monogramme neutre.
  * Côté commerce, il devient une tâche — « Photo manquante · ajouter » — parce
  * que c'est quelqu'un qui peut la faire qui la lit.
  */
 import type { ReactNode } from 'react';
-import { Image, View, type ImageSourcePropType } from 'react-native';
+import { View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { radius, useColors } from '../theme';
+import { useColors } from '../theme';
 import { Texte } from './Texte';
-import { TierBadge, type Palier } from './TierBadge';
 
 /**
  * Le voile de lisibilité posé sur une photo.
@@ -138,64 +143,6 @@ export function MediaFallback({
 }
 
 // --------------------------------------------------------------------------
-
-// --------------------------------------------------------------------------
-
-export type ServiceRowProps = {
-  name: string;
-  meta: string;
-  tier: Palier;
-  thumbnail?: ImageSourcePropType;
-  right?: React.ReactNode;
-  testID?: string;
-};
-
-export function ServiceRow({ name, meta, tier, thumbnail, right, testID }: ServiceRowProps) {
-  const c = useColors();
-  return (
-    <View
-      testID={testID}
-      style={{
-        // **La hauteur suit le titre.** Elle valait 64 pour un nom de onze
-        // points ; à seize, le couple titre + durée mesure 45 et la vignette de
-        // 44 ne tient plus au centre d'un bloc trop court. `minHeight` et non
-        // `height` : un nom de prestation qui se replie sur deux lignes doit
-        // pousser la rangée plutôt que déborder d'elle.
-        minHeight: 72,
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 8,
-        gap: 10,
-        paddingHorizontal: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: c['line.default'],
-      }}
-    >
-      <View style={{ width: 44, height: 44, borderRadius: radius['radius.lg'], overflow: 'hidden' }}>
-        {thumbnail ? (
-          <Image source={thumbnail} style={{ width: 44, height: 44 }} resizeMode="cover" />
-        ) : (
-          <MediaFallback monogramme={name} height={44} />
-        )}
-      </View>
-      <View style={{ flex: 1, gap: 2 }}>
-        {/* **Le nom de la prestation prend le titre, et c'est la même
-            correction que sur le fil.** Il était en `type.label` — onze points,
-            la taille d'une étiquette — sous une durée en mono de douze : la
-            ligne se lisait comme un attribut du salon, pas comme la chose qu'on
-            réserve. La revue l'a signalé sur les deux écrans séparément ; c'est
-            un seul défaut, l'objet subordonné à son contexte, et il se corrige
-            avec la même variante. */}
-        <Texte variante="type.titreDApercu">{name}</Texte>
-        <Texte variante="type.caption" couleur="ink.soft">
-          {meta}
-        </Texte>
-      </View>
-      <TierBadge tier={tier} size="sm" />
-      {right}
-    </View>
-  );
-}
 
 // --------------------------------------------------------------------------
 
