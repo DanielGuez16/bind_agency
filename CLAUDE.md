@@ -209,6 +209,22 @@ seulement parce qu'une garde restait rouge. Une mutation se prépare donc en deu
 temps : on commite ce qu'on vient d'écrire, **puis** on casse. Le `git checkout`
 retrouve alors exactement ce qu'on voulait retrouver.
 
+**La suite complète une fois, avant de pousser. Pas douze.** Elle coûte sept
+minutes ; la lancer à chaque étape d'une tranche en coûtait une heure et demie,
+la moitié du temps total mesuré sur une session. Pendant le travail, les
+fichiers touchés suffisent — ils tournent en quelques secondes et disent la même
+chose de ce qu'on vient d'écrire. La suite entière répond à une autre question :
+« ai-je cassé ailleurs », et cette question ne se pose qu'une fois, au moment de
+pousser.
+
+**Une garde de durée se calibre sur la machine la plus lente où elle tourne,
+jamais sur la sienne.** Le plafond a été posé à dix secondes sur des mesures
+locales, avec 2,7 fois de marge ; il a fait échouer l'intégration continue sur
+un test à 10,2 s qui en met 1,5 ici. Le runner est six fois plus lent, et la
+garde mesurait donc le matériel au lieu du test. C'est la façon dont un
+garde-fou finit par être désactivé : un faux positif sur une vérification
+requise, et quelqu'un le retire.
+
 Ne pas réécrire un fichier entier pour changer trois lignes. Modifications ciblées.
 
 Ne pas anticiper les phases suivantes. Si une tâche future rend l'implémentation actuelle plus simple, le signaler plutôt que de l'implémenter en avance.

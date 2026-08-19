@@ -1134,6 +1134,22 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       composition, et l'autre conversation refait les écrans. Le contrat est
       dans `api-map.md`, `email_verified_at` est sur `/me`, et le code d'erreur
       `email_not_verified` est traduit dans les deux langues*
+- [x] **La suite en parallèle** — 651 s à 400 s, mesuré
+      *`pytest-xdist` avec `--dist loadgroup`. Les deux tests de concurrence
+      partagent `xdist_group("concurrence")` : même worker, sériels entre eux, et
+      le verrou consultatif reste éprouvé. `test_seed.py` est groupé aussi — le
+      répartir faisait payer son montage à chaque worker qui en recevait un
+      morceau.
+      Une base par worker, dérivée de `PYTEST_XDIST_WORKER`, et le dépôt d'objets
+      avec : deux semis concurrents écrivent la **même** clé — c'est l'empreinte
+      du contenu — et se volaient leur fichier `.partiel`.
+      **Ce qui avait bloqué la première tentative** : `str()` sur un `URL`
+      SQLAlchemy masque le mot de passe. Le message disait « password
+      authentication failed for user bind » et le parallélisme n'y était pour
+      rien.
+      **Le plafond n'est plus les cœurs mais Postgres** : 217 % de processeur sur
+      dix cœurs, les workers attendent la base. Aller plus loin demanderait
+      plusieurs instances, ce qui coûterait plus que les quatre minutes gagnées*
 - [ ] **`SOCIAL_PROVIDER` et `API_PUBLIC_BASE_URL` à poser chez Render**
       *Le seul des trois bloquants que le code ne peut pas corriger seul. Depuis
       cette tranche, l'API refuse de démarrer sans elles plutôt que de répondre
