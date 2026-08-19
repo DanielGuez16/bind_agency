@@ -1,11 +1,13 @@
 /**
  * Le squelette dit la forme de ce qui arrive, ou il ne sert à rien.
  *
- * **Ce que ça répare.** `Ecran` rend par défaut trois cartes à photo de 150
- * pixels — la géométrie de `BusinessCard`. Elle était juste sur le fil et
- * fausse partout ailleurs ; depuis la v3 elle n'est juste **nulle part**, le
- * fil rendant une grille de deux colonnes sans chrome. Le défaut ne change pas,
- * seule sa portée s'élargit : le reporting rend des chiffres et des barres, les horaires
+ * **Ce que ça répare.** `Ecran` rendait par défaut trois cartes à photo de 150
+ * pixels — la géométrie de la carte du fil. Elle était juste sur le fil et
+ * fausse partout ailleurs ; la v3 l'a rendue fausse **partout**, le fil ne
+ * rendant plus de cartes. Le défaut est maintenant une liste de lignes, qui ne
+ * ressemble à rien en particulier. La garde ne change pas pour autant : un
+ * défaut neutre reste un défaut, et un écran qui rend un tableau ou une grille
+ * doit toujours déclarer sa silhouette. Ce que le défaut promettait à tort : le reporting rend des chiffres et des barres, les horaires
  * un tableau de sept lignes, les créneaux une grille, la fiche et la preuve un
  * objet unique et non une liste de trois. Le contenu chassait alors une
  * silhouette qui ne lui ressemblait pas, et toute la page se réorganisait au
@@ -192,4 +194,33 @@ describe('le squelette a la forme de ce qui arrive', () => {
       expect(screen.queryByTestId('squelette-par-defaut', cache)).toBeNull();
     },
   );
+});
+
+describe('et le défaut lui-même ne promet aucune forme', () => {
+  it('c’est une liste de lignes, jamais une carte, une fiche ou une grille', async () => {
+    // **La règle que ce fichier énonce, appliquée au défaut.** Les deux tests
+    // au-dessus vérifient que six écrans déclarent leur silhouette ; aucun ne
+    // dit ce que reçoit le septième, celui qui l'oublie. Le défaut a été une
+    // carte à photo pendant tout ce temps — la forme la plus affirmative du
+    // produit — et personne ne l'aurait vu changer.
+    //
+    // **Une liste de lignes est le bon défaut parce qu'elle n'affirme rien.**
+    // Une fiche promet un objet unique, une grille promet des colonnes, une
+    // carte promet une image : chacune fait sauter la page si elle se trompe.
+    // Des lignes de texte ressemblent à ce qu'on sait d'un écran dont on ne
+    // sait rien.
+    //
+    // Le test lit la source plutôt que de monter un écran sans squelette : il
+    // n'y en a pas, et en fabriquer un pour l'occasion créerait exactement le
+    // cas que la garde d'à côté interdit.
+    const { readFileSync } = require('node:fs') as typeof import('node:fs');
+    const { join } = require('node:path') as typeof import('node:path');
+    const source = readFileSync(join(__dirname, '..', 'src', 'screens', 'Ecran.tsx'), 'utf-8');
+
+    const defaut = /<(Skeleton\w+) testID="squelette-par-defaut"/.exec(source);
+    expect(defaut?.[1]).toBe('SkeletonLignes');
+    // Et il n'est rendu qu'une fois : trois cartes empilées étaient une
+    // promesse de liste en plus d'une promesse de forme.
+    expect(source.match(/squelette-par-defaut/g)).toHaveLength(1);
+  });
 });

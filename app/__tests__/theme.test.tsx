@@ -17,7 +17,6 @@ import { join } from 'path';
 import { render, waitFor } from '@testing-library/react-native';
 import { Text } from 'react-native';
 
-import { BusinessCard } from '../src/components/Cards';
 import { I18nProvider } from '../src/i18n';
 import { TitreAccentue } from '../src/components/TitreAccentue';
 
@@ -345,7 +344,14 @@ describe('brand.500 est une surface, jamais une encre', () => {
   it('`Texte` refuse la surface au lieu de la rendre en silence', async () => {
     // La garde statique attrape ce qui est écrit ; celle-ci attrape ce qui est
     // calculé — une couleur passée en variable ne se lit dans aucune source.
-    const { Texte } = require('../src/components');
+    // **Depuis son module et non depuis le baril.** `../src/components`
+    // réexporte la bibliothèque entière : demander `Texte` par là chargeait une
+    // trentaine de modules pour en utiliser un, et c'est le premier rendu du
+    // fichier qui payait la facture. Sur le poste ça se voit à peine — 286 ms —
+    // et en intégration continue, sous parallélisme, la garde de durée l'a
+    // relevé à 7,1 s. Le seuil n'était pas trop bas : le test faisait vraiment
+    // ce travail.
+    const { Texte } = require('../src/components/Texte');
     const silence = jest.spyOn(console, 'error').mockImplementation(() => {});
     const sonde = (
       <ThemeProvider role="creator">
@@ -590,54 +596,21 @@ describe('les surfaces de la v1.1', () => {
     expect(style.backgroundColor).toBe(tokens.color.brand['500']);
   });
 
-  it('la carte se pose : elle porte l’ombre de carte, et sur une vue qui ne clippe pas', async () => {
-    // **La règle 2 de la v1.1, et elle ne se vérifie pas dans les jetons.**
-    // `elevation.card` y était déjà présente et personne ne la lisait : la
-    // bibliothèque n'exposait que l'ombre flottante, et la carte arrondie à
-    // 18 px n'avait rien sous elle. Un jeton déclaré et jamais consommé passe
-    // toutes les gardes de jetons du monde.
+  it('`elevation.card` lit son jeton, et personne ne la consomme encore', async () => {
+    // **Le jeton est juste, et il n'a plus d'appelant.** Il en avait un —
+    // `BusinessCard`, la carte du fil — retirée avec la refonte v3 : le fil rend
+    // des aperçus sans chrome. La fonction reste parce que la règle de la
+    // direction reste : « un coin de 18 px sans ombre flotte au lieu de se
+    // poser ». Ce qui manque est son application aux surfaces qui en ont besoin,
+    // et c'est écrit dans `TASKS.md` plutôt que caché ici.
     //
-    // **Et l'ombre est lue sur la vue extérieure.** Celle du dessous clippe son
-    // contenu ; sur iOS, une vue qui clippe coupe sa propre ombre au même bord.
-    // Vérifier « la carte a une ombre » sans regarder lequel des deux nœuds la
-    // porte laisserait passer une carte sans ombre sur téléphone et avec ombre
-    // sur le web — c'est-à-dire le défaut que personne ne voit en CI.
-    const vue = await render(
-      <I18nProvider initialLocale="en">
-        <ThemeProvider role="creator">
-          <BusinessCard
-            name="Salon"
-            meta="Wynwood"
-            serviceName="Balayage"
-            serviceDuration="90 min"
-            tier="story"
-            testID="carte"
-          />
-        </ThemeProvider>
-      </I18nProvider>,
-    );
-    const carte = vue.getByTestId('carte');
-    const dehors = carte.parent;
-
-    const aplati = (style: unknown): Record<string, unknown> =>
-      Array.isArray(style)
-        ? Object.assign({}, ...style.map(aplati))
-        : ((style ?? {}) as Record<string, unknown>);
-
-    // **Deux assertions, et il en faut deux.** La première dit que la vue
-    // extérieure porte exactement ce que la bibliothèque produit — donc que la
-    // carte consomme le jeton, sur le nœud qui ne clippe pas. Elle ne dit rien
-    // de la valeur : comparer le composant à la fonction laisserait les deux se
-    // tromper ensemble. La seconde relit le jeton et vérifie que la fonction en
-    // sort les bons nombres, la lecture étant écrite ici et non empruntée.
+    // Ce que ce test garde vivant : la lecture du jeton. La valeur est relue
+    // depuis la déclaration CSS, ici et non empruntée à la fonction — comparer
+    // la fonction à elle-même les laisserait se tromper ensemble.
     const attendue = elevationDeCarte() as Record<string, unknown>;
-    expect(aplati(dehors?.props?.style)).toMatchObject(attendue);
-
     const [, hauteur, flou, opacite] =
       /^0 (\d+)px (\d+)px rgba\([^)]*,\s*([\d.]+)\)$/.exec(tokens.elevation.card)!;
-    // La plateforme décide de la forme : le web reçoit la déclaration CSS
-    // telle quelle, le natif quatre propriétés. Les deux disent la même ombre,
-    // et le test suit celle sur laquelle il tourne au lieu d'en supposer une.
+
     if ('boxShadow' in attendue) {
       expect(attendue.boxShadow).toBe(tokens.elevation.card);
     } else {
@@ -645,12 +618,57 @@ describe('les surfaces de la v1.1', () => {
       expect(attendue.shadowRadius).toBe(Number(flou));
       expect(attendue.shadowOpacity).toBe(Number(opacite));
     }
+  });
 
-    // Et l'ombre n'est pas aussi sur la vue qui clippe : l'y trouver voudrait
-    // dire qu'elle est coupée sur téléphone, ce qui ne se voit pas d'ici.
-    const dedans = aplati(carte.props.style);
-    expect(dedans.shadowOpacity ?? dedans.boxShadow).toBeUndefined();
-    expect(dedans.overflow).toBe('hidden');
+  it('et l’inventaire des surfaces de carte est exact, pour qu’on ne l’oublie pas', () => {
+    // **La garde qui remplace le composant disparu.** Une carte, ici, c'est
+    // trois choses ensemble : un fond de surface, un rayon de 18 et un filet.
+    // Treize en portent, aucune ne porte l'ombre. L'inventaire est **exact** et
+    // non un plafond : ajouter une carte oblige à toucher cette liste, donc à
+    // se demander si elle se pose ou si elle flotte. Sans ça, la règle de la
+    // direction s'effriterait surface par surface sans qu'aucun test ne bouge.
+    //
+    // Le jour où l'ombre est appliquée, c'est cette liste qui rétrécit.
+    const CARTES_SANS_OMBRE = [
+      'src/components/EnTete.tsx',
+      'src/screens/AnnuaireScreen.tsx',
+      'src/screens/CarteDuCommerce.tsx',
+      'src/screens/ChoixDeLaPorte.tsx',
+      'src/screens/FicheScreen.tsx',
+      'src/screens/PaliersScreen.tsx',
+      'src/screens/PriseEnMainScreen.tsx',
+      'src/screens/RedemptionScreen.tsx',
+      'src/screens/ReglesDesPaliers.tsx',
+      'src/screens/TerrainScreen.tsx',
+    ];
+
+    const trouves = new Set<string>();
+    for (const chemin of sources(RACINE)) {
+      const relatif = chemin.slice(chemin.indexOf('src/'));
+      const source = readFileSync(chemin, 'utf-8');
+      // Les trois marqueurs dans un même bloc de style. Les chercher dans le
+      // fichier entier compterait un écran qui pose un filet ici et un fond
+      // de surface trente lignes plus bas, ce qui n'est pas une carte.
+      for (const bloc of source.match(/style=\{\{[\s\S]{0,600}?\}\}/g) ?? []) {
+        if (
+          bloc.includes("radius.lg") &&
+          bloc.includes("bg.surface") &&
+          bloc.includes('borderWidth')
+        ) {
+          trouves.add(relatif);
+        }
+      }
+    }
+
+    expect([...trouves].sort()).toEqual(CARTES_SANS_OMBRE);
+    // Et aucune ne consomme l'ombre : le jour où l'une le fait, elle sort de
+    // la liste, et ce test le dit.
+    for (const relatif of CARTES_SANS_OMBRE) {
+      expect({
+        relatif,
+        ombre: readFileSync(join(RACINE, '..', relatif), 'utf-8').includes('elevationDeCarte'),
+      }).toEqual({ relatif, ombre: false });
+    }
   });
 
   it('aucun rayon écrit en dur dans une source', () => {

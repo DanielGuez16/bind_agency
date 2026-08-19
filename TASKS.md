@@ -1128,16 +1128,24 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       cinq fichiers de tests. Deux écarts instruits — le badge à `brand.900`
       (4,19:1 mesuré sur la valeur de la planche) et pas de bouton de recherche,
       faute d'écran à ouvrir. 980 tests verts, 13 mutations vérifiées*
-- [ ] **`BusinessCard` n'a plus aucun appelant dans le produit**
-      *Le fil rendait la carte à photo ; il rend maintenant des aperçus de
-      prestation. Elle survit dans la bibliothèque, dans quatre tests, et dans
-      `SkeletonCard` — le squelette par défaut de `Ecran`, c'est-à-dire la
-      silhouette d'un écran qui n'a pas déclaré la sienne, ce qu'une garde
-      interdit déjà. Trois issues : la retirer avec son squelette, la garder
-      pour un écran à venir en le nommant, ou constater qu'elle décrit encore la
-      ligne de la fiche. À trancher, pas à laisser dormir — c'est le motif de la
-      méthode sans appelant, et il a coûté seize PR ailleurs. À signaler
-      aussi : l'ombre de carte y a été branchée la veille de sa mise au chômage*
+- [x] **`BusinessCard` retirée, avec ses tests et son squelette**
+      *Une carte qui survit sans écran finit par resservir en portant une
+      composition périmée — c'est ce qui est arrivé au monogramme vert, qui a
+      traversé un remplacement complet du système en gardant sa forme. Partent
+      avec elle : `SkeletonCard`, le rapport de couverture 16:9, deux tests qui
+      décrivaient sa composition, et quatre raisons écrites devenues fausses. Le
+      squelette par défaut d'`Ecran` devient une liste de lignes — une forme qui
+      n'affirme rien — et une garde neuve le fixe : rien ne disait ce que reçoit
+      l'écran qui oublie de déclarer sa silhouette*
+- [ ] **`elevation.card` n'a plus de consommateur, et treize surfaces en ont besoin**
+      *La carte du fil était la seule à la porter. La règle de la direction
+      tient — « un coin de 18 px sans ombre flotte au lieu de se poser » — et
+      treize surfaces du produit sont des cartes au sens strict : fond de
+      surface, rayon de 18, filet. Aucune n'a d'ombre. Un inventaire exact les
+      liste dans `theme.test.tsx` : en ajouter une oblige à toucher la liste,
+      donc à se demander si elle se pose ou si elle flotte. Ce qui manque est
+      une décision de composition sur onze écrans, et les planches sont encore
+      en v1.0 — c'est pour cela que ce n'est pas fait dans la foulée*
 - [ ] **Douze planches d'écrans portent encore la v1.0**
       *Le fil est passé en v3, directement dans la palette Ambre. Les autres
       suivent l'ordre du `PASSATION-v1.1.md` §6, qui limite le travail
