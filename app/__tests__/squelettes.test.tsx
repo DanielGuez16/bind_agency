@@ -195,3 +195,32 @@ describe('le squelette a la forme de ce qui arrive', () => {
     },
   );
 });
+
+describe('et le défaut lui-même ne promet aucune forme', () => {
+  it('c’est une liste de lignes, jamais une carte, une fiche ou une grille', async () => {
+    // **La règle que ce fichier énonce, appliquée au défaut.** Les deux tests
+    // au-dessus vérifient que six écrans déclarent leur silhouette ; aucun ne
+    // dit ce que reçoit le septième, celui qui l'oublie. Le défaut a été une
+    // carte à photo pendant tout ce temps — la forme la plus affirmative du
+    // produit — et personne ne l'aurait vu changer.
+    //
+    // **Une liste de lignes est le bon défaut parce qu'elle n'affirme rien.**
+    // Une fiche promet un objet unique, une grille promet des colonnes, une
+    // carte promet une image : chacune fait sauter la page si elle se trompe.
+    // Des lignes de texte ressemblent à ce qu'on sait d'un écran dont on ne
+    // sait rien.
+    //
+    // Le test lit la source plutôt que de monter un écran sans squelette : il
+    // n'y en a pas, et en fabriquer un pour l'occasion créerait exactement le
+    // cas que la garde d'à côté interdit.
+    const { readFileSync } = require('node:fs') as typeof import('node:fs');
+    const { join } = require('node:path') as typeof import('node:path');
+    const source = readFileSync(join(__dirname, '..', 'src', 'screens', 'Ecran.tsx'), 'utf-8');
+
+    const defaut = /<(Skeleton\w+) testID="squelette-par-defaut"/.exec(source);
+    expect(defaut?.[1]).toBe('SkeletonLignes');
+    // Et il n'est rendu qu'une fois : trois cartes empilées étaient une
+    // promesse de liste en plus d'une promesse de forme.
+    expect(source.match(/squelette-par-defaut/g)).toHaveLength(1);
+  });
+});

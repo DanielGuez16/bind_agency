@@ -7034,3 +7034,39 @@ démonstration doit montrer, après l'abonnement pris par rang alphabétique. La
 règle qui s'en dégage : **un jeu de démonstration se vérifie sur le compte avec
 lequel on démontre**, pas sur l'ensemble. « Au moins un quelque part » est
 toujours vrai et ne prouve rien.
+
+## 2026-08-19 — La carte du fil retirée, et l'ombre qu'elle portait seule
+
+`BusinessCard` n'avait plus d'appelant depuis que le fil rend des aperçus de
+prestation. **Elle est partie plutôt que d'attendre** : une carte qui survit sans
+écran finit par resservir en portant une composition périmée, et le dépôt en a
+déjà l'exemple — le monogramme vert a traversé un remplacement complet du
+système en gardant sa forme, et se trouvait encore en tête de l'accueil quand
+tout le reste avait changé.
+
+Ce qui part avec : `SkeletonCard`, le rapport de couverture 16:9, deux tests qui
+décrivaient sa composition — le rapport de la photo et le badge accompagné de sa
+phrase, c'est-à-dire précisément la hiérarchie que la v3 corrige. Un troisième
+test a changé de sujet sans changer de règle : « le nom vit sur une bande, pas
+sur une queue de dégradé » vaut maintenant pour `BandeDeTexteSurPhoto`, que
+l'accueil pose sur son satin.
+
+**Le squelette par défaut d'`Ecran` devient une liste de lignes.** Il était une
+carte à photo de 150 pixels — la forme la plus affirmative du produit — juste sur
+le fil et fausse partout ailleurs, puis fausse partout. Une fiche promet un objet
+unique, une grille promet des colonnes, une carte promet une image : chacune fait
+sauter la page si elle se trompe. Des lignes ne promettent rien, ce qui est
+exactement ce qu'on sait d'un écran qui n'a pas déclaré sa silhouette. **Une
+garde neuve fixe cette forme** : les tests existants vérifiaient que six écrans
+déclarent la leur, aucun ne disait ce que reçoit le septième — le défaut a pu
+rester une carte pendant tout ce temps sans qu'aucun test ne bouge.
+
+**`elevation.card` perd son unique consommateur, et ce n'est pas réglé.** La
+règle de la direction tient, et treize surfaces du produit sont des cartes au
+sens strict — fond de surface, rayon de 18, filet — dont aucune ne porte d'ombre.
+Les leur donner est une décision de composition sur onze écrans dont les planches
+sont encore en v1.0. En attendant, la garde du composant disparu est remplacée
+par un **inventaire exact** : ajouter une carte oblige à toucher la liste, donc à
+se demander si elle se pose ou si elle flotte. Sans lui, la règle s'effriterait
+surface par surface sans qu'aucun test ne bouge — ce qui est exactement comment
+elle avait disparu la première fois.
