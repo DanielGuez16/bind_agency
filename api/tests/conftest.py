@@ -328,6 +328,26 @@ def _sans_groupe(nodeid: str) -> str:
     return nodeid.split("@", 1)[0]
 
 
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item: pytest.Item, call):  # noqa: ANN001, ANN201
+    """Fait voyager la dispense **avec le rapport**.
+
+    Sous xdist, la collecte a lieu dans le worker et le bilan dans le
+    contrôleur : deux processus. Le dictionnaire des dispenses, rempli à la
+    collecte, était donc vide là où on le lisait — et les deux tests du semis
+    déclarés `lent` faisaient échouer l'intégration continue à 380 secondes,
+    avec leur dispense écrite trois lignes plus haut dans le fichier.
+
+    `user_properties` est le canal prévu pour ça : xdist le sérialise et le
+    contrôleur le retrouve intact.
+    """
+    rapport = yield
+    if call.when == "setup":
+        marque = item.get_closest_marker("lent")
+        if marque is not None and marque.args:
+            rapport.get_result().user_properties.append(("lent", marque.args[0]))
+
+
 def pytest_runtest_logreport(report: pytest.TestReport) -> None:
     """La durée d'un test est la somme de ses trois phases.
 
@@ -336,6 +356,9 @@ def pytest_runtest_logreport(report: pytest.TestReport) -> None:
     cas réel qu'on ait eu à traiter jusqu'ici.
     """
     _durees[report.nodeid] = _durees.get(report.nodeid, 0.0) + report.duration
+    for cle, valeur in report.user_properties:
+        if cle == "lent":
+            _dispenses[_sans_groupe(report.nodeid)] = valeur
 
 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
