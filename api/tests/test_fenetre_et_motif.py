@@ -155,9 +155,12 @@ def test_l_heure_injectee_gouverne_le_compte() -> None:
         approved_at = None
 
     deux_heures_avant = datetime(2026, 8, 20, 10, 0, tzinfo=UTC)
-    assert CollaborationRead.assembler(
-        _Ligne(), [], maintenant=deux_heures_avant
-    ).secondes_avant_echeance == 7200
+    assert (
+        CollaborationRead.assembler(
+            _Ligne(), [], maintenant=deux_heures_avant
+        ).secondes_avant_echeance
+        == 7200
+    )
 
     une_heure_apres = datetime(2026, 8, 20, 13, 0, tzinfo=UTC)
     apres = CollaborationRead.assembler(_Ligne(), [], maintenant=une_heure_apres)
@@ -233,9 +236,7 @@ async def test_les_deux_facades_disent_le_meme_motif(session: AsyncSession) -> N
     )
     await session.flush()
 
-    cote_commerce = await service.lister_pour_le_commerce(
-        session, business_id=s["business"].id
-    )
+    cote_commerce = await service.lister_pour_le_commerce(session, business_id=s["business"].id)
     de_la_file = next(f for f in cote_commerce if f.collaboration_id == ligne.id)
 
     tentative = await service.derniere_tentative(session, ligne.id)
