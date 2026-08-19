@@ -453,3 +453,137 @@ async def _est_proposable(session: AsyncSession, item: CatalogItem) -> bool:
             sa.select(CatalogItem.is_available).where(CatalogItem.id == item.parent_item_id)
         )
     )
+
+
+@dataclass(frozen=True, slots=True)
+class JourDeDisponibilite:
+    """Un jour de la bande, tel que l'écran des créneaux le dessine."""
+
+    jour: date
+    #: Le commerce ouvre-t-il ce jour-là ? **Indépendant de l'item** : c'est
+    #: l'horaire du salon, pas la disponibilité de la prestation.
+    ouvert: bool
+    #: Le jour est-il derrière nous ? **Vrai dès que sa dernière plage est
+    #: close**, pas à minuit.
+    #:
+    #: **Sans lui, le soir, aujourd'hui se lit « complet ».** À 20 h, le salon
+    #: ouvre bien aujourd'hui — `ouvert` est vrai — et il ne reste aucun début
+    #: possible. Un écran qui n'aurait que les deux premiers champs écrirait
+    #: donc « complet » sur le cas le plus fréquent des quatre, et un créateur
+    #: qui lit ça le soir croit que le salon a été pris d'assaut au lieu de
+    #: revenir demain matin.
+    revolu: bool
+    #: Combien de débuts possibles restent pour cet item.
+    #:
+    #: **Zéro sur un jour ouvert n'est pas la même chose qu'un jour fermé**, et
+    #: c'est toute la raison de rendre les deux. « Complet » se dit et invite à
+    #: regarder le lendemain ; « fermé » se grise. Un écran qui n'aurait que le
+    #: compte peindrait les deux de la même façon, et la personne croirait le
+    #: salon fermé un jour où il déborde.
+    creneaux_libres: int
+
+
+async def disponibilite_par_jour(
+    session: AsyncSession,
+    *,
+    business_id: uuid.UUID,
+    catalog_item_id: uuid.UUID,
+    depuis: datetime | None = None,
+    jours: int = 14,
+) -> list[JourDeDisponibilite]:
+    """La bande de quatorze jours, en un appel.
+
+    **Le même algorithme, pas un second.** Les créneaux viennent de
+    `creneaux_libres`, qui parcourt déjà jour par jour ; on les groupe par date
+    locale. Recompter ici ferait deux vérités sur ce qui est libre, et c'est
+    celle qu'on ne relit pas qui finirait par mentir — le même piège que la règle
+    de l'absence écrite deux fois.
+
+    **Un jour sans créneau n'est pas forcément fermé**, d'où la seconde lecture :
+    les règles et les exceptions disent l'ouverture, `fenetres_du_jour` les
+    interprète, et c'est la fonction que le reste du calcul emploie déjà.
+
+    Quatorze appels devenaient quatorze parcours complets de la même base de
+    règles. Ici, deux requêtes de plus que pour un seul jour.
+    """
+    depuis = depuis or datetime.now(UTC)
+
+    # **Un item qui ne se propose plus n'a pas de bande.** `creneaux_libres`
+    # rend une liste vide pour un item désactivé, directement ou par son
+    # parent ; la bande, elle, aurait gardé `ouvert` vrai et compté zéro sur
+    # quatorze jours — ce qui se lit « complet pendant deux semaines » pour une
+    # prestation qui n'existe plus. Une bande vide est sans ambiguïté : il n'y a
+    # aucun jour où choisir cet item.
+    item = await session.scalar(
+        sa.select(CatalogItem).where(
+            CatalogItem.id == catalog_item_id, CatalogItem.business_id == business_id
+        )
+    )
+    if item is None:
+        raise ItemNotFound(str(catalog_item_id))
+    if not await _est_proposable(session, item):
+        return []
+
+    business = await session.get(Business, business_id)
+    if business is None:
+        raise ItemNotFound(str(catalog_item_id))
+    fuseau = ZoneInfo(business.timezone)
+
+    # **L'horizon s'arrête à la fin du dernier jour de la bande, heure locale.**
+    # `depuis + 14 jours` tombe au milieu du quinzième jour local : les créneaux
+    # de ce matin-là étaient comptés par le parcours et n'avaient aucune ligne
+    # où se poser. La bande annonçait alors moins que le détail, pour des
+    # créneaux qu'elle ne montrait pas — deux réponses différentes à la même
+    # question, ce qui est précisément ce qu'une vue agrégée ne doit pas faire.
+    premier = depuis.astimezone(fuseau).date()
+    dernier = premier + timedelta(days=jours - 1)
+    fin = datetime.combine(dernier + timedelta(days=1), time.min, tzinfo=fuseau)
+
+    creneaux = await creneaux_libres(
+        session,
+        business_id=business_id,
+        catalog_item_id=catalog_item_id,
+        depuis=depuis,
+        horizon=fin - depuis,
+    )
+
+    regles = list(
+        await session.scalars(
+            sa.select(CapacityRule).where(CapacityRule.business_id == business_id)
+        )
+    )
+    exceptions = {
+        e.date: e
+        for e in await session.scalars(
+            sa.select(CapacityException).where(
+                CapacityException.business_id == business_id,
+                CapacityException.date.between(premier, dernier),
+            )
+        )
+    }
+
+    comptes: dict[date, int] = {}
+    for creneau in creneaux:
+        local = creneau.starts_at.astimezone(fuseau).date()
+        comptes[local] = comptes.get(local, 0) + 1
+
+    bande: list[JourDeDisponibilite] = []
+    jour = premier
+    # `jours` jours à partir d'aujourd'hui, bornes comprises côté départ : une
+    # bande de quatorze commence aujourd'hui et finit dans treize jours.
+    for _ in range(jours):
+        fenetres = fenetres_du_jour(jour, regles, exceptions.get(jour))
+        bande.append(
+            JourDeDisponibilite(
+                jour=jour,
+                ouvert=bool(fenetres),
+                # Révolu quand la dernière plage est close. Sur les jours à
+                # venir, `depuis` est avant toutes les fins : la comparaison
+                # rend faux sans qu'il faille distinguer aujourd'hui du reste.
+                revolu=bool(fenetres)
+                and all(_instant(jour, f.fin, fuseau) <= depuis for f in fenetres),
+                creneaux_libres=comptes.get(jour, 0),
+            )
+        )
+        jour += timedelta(days=1)
+    return bande

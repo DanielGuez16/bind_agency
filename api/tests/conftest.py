@@ -222,9 +222,20 @@ def _aucune_ecriture_ne_survit(test_database_url: str, request: pytest.FixtureRe
 # la médiane d'un test est de 0,24 s et le 99e centile de 0,96 s, donc dix fois
 # la médiane vaut 2,4 s — le test légitime le plus lourd, qui supprime une plage
 # de capacité, en met 3,7 à lui seul. Un rapport qui accuse un test sain est un
-# rapport qui sera retiré au premier rouge. Dix secondes laissent 2,7 fois de
-# marge au plus lourd des tests honnêtes, et les quatre du semis qui dépassent
-# aujourd'hui en mettent de 31 à 68.
+# rapport qui sera retiré au premier rouge.
+#
+# **Et calibré sur la machine la plus lente, pas sur la mienne.** Le plafond a
+# d'abord été posé à dix secondes, sur des mesures locales : 2,7 fois de marge
+# au plus lourd des tests honnêtes. Il a fait échouer l'intégration continue sur
+# `test_les_cinq_signaux_sont_tous_rendus`, à **10,2 s** — un test qui en met
+# **1,5 chez moi**. Le runner est six fois plus lent, et la garde mesurait donc
+# le matériel au lieu du test.
+#
+# C'est précisément la façon dont un garde-fou finit par être désactivé : un
+# faux positif sur une vérification requise, et quelqu'un le retire.
+# Vingt-cinq secondes tiennent là-bas, et laissent passer ce qui compte : les
+# quatre tests du semis, à 31 à 68 secondes, et la classe de défaut qui a motivé
+# la garde — un test qui **attend** au lieu de faire.
 #
 # **Ce qu'il ne peut pas attraper, et il vaut mieux l'écrire que de laisser
 # croire la question réglée.** La durée d'un montage partagé — une fixture de
@@ -233,7 +244,7 @@ def _aucune_ecriture_ne_survit(test_database_url: str, request: pytest.FixtureRe
 # 68 secondes sont un montage, pas un corps de test. Le garde-fou nomme donc un
 # test là où il faudra parfois regarder sa fixture.
 #: Au-dessus, un test attend au lieu de faire. Mesuré, non choisi.
-PLAFOND_DE_DUREE = 10.0
+PLAFOND_DE_DUREE = 25.0
 
 #: Ce qu'on affiche toujours, pour que la dérive se voie avant le seuil.
 DUREES_A_MONTRER = 3

@@ -792,6 +792,15 @@
         ]
       }
     },
+    "/api/v1/businesses/{business_id}/availability/summary": {
+      "get": {
+        "operationId": "read_availability_summary_api_v1_businesses__business_id__availability_summary_get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/api/v1/collaborations/{collaboration_id}": {
       "get": {
         "operationId": "read_collaboration_api_v1_collaborations__collaboration_id__get",

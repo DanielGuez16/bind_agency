@@ -1,7 +1,7 @@
 """Schémas de la fiche publique d'un commerce."""
 
 import uuid
-from datetime import datetime
+from datetime import datetime, time
 from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict
@@ -40,6 +40,16 @@ class OffreDeLaFicheRead(BaseModel):
     prochains_creneaux: list[datetime]
 
 
+class PlageHebdomadaireRead(BaseModel):
+    """Une plage d'ouverture. Lundi vaut 0, comme partout ailleurs."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    weekday: int
+    start_time: time
+    end_time: time
+
+
 class FichePubliqueRead(BaseModel):
     """Profil, photos, offres, disponibilités. Rien d'autre.
 
@@ -66,4 +76,9 @@ class FichePubliqueRead(BaseModel):
     #: celle-ci est renseignée, l'écran doit **dire qu'on sortira de
     #: l'application** avant d'ouvrir le lien.
     menu_url: str | None
+    #: Les plages d'ouverture, du lundi au dimanche. Heures **locales du
+    #: commerce** : le fuseau est déjà sur la fiche, et le répéter ici
+    #: inviterait à convertir des heures qui ne se convertissent pas — un salon
+    #: ouvre à 9 h chez lui, pas à 9 h chez vous.
+    horaires: list[PlageHebdomadaireRead]
     offres: list[OffreDeLaFicheRead]

@@ -26,13 +26,13 @@ commerce absent.
 
 import uuid
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, time
 from decimal import Decimal
 
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Business, CatalogItem, Tier, TierOffer
+from app.models import Business, CapacityRule, CatalogItem, Tier, TierOffer
 from app.models.enums import BusinessCategory, BusinessStatus, ContentFormat, Platform
 from app.services import availability, business_menu, business_photos, eligibility
 from app.services.feed import ratio_de_valeur
@@ -89,6 +89,22 @@ class OffreDeLaFiche:
 
 
 @dataclass(frozen=True, slots=True)
+class PlageHebdomadaire:
+    """Une plage d'ouverture, telle que le commerce l'a réglée.
+
+    **Les heures locales, sans fuseau collé dessus.** « 9 h – 19 h » est ce que
+    le salon affiche sur sa porte ; le fuseau est déjà sur la fiche, et le
+    répéter sur chaque plage inviterait à les convertir. Une prestation se
+    réserve à l'heure du salon, pas à celle du téléphone.
+    """
+
+    #: Lundi vaut 0, comme `date.weekday()`. Le même que partout ailleurs.
+    weekday: int
+    start_time: time
+    end_time: time
+
+
+@dataclass(frozen=True, slots=True)
 class FichePublique:
     business_id: uuid.UUID
     name: str
@@ -112,6 +128,17 @@ class FichePublique:
     #: s'ouvre sans prévenir, au milieu d'un parcours de réservation, fait
     #: perdre le fil à qui revient.
     menu_url: str | None
+    #: Les plages d'ouverture, du lundi au dimanche, dans l'ordre.
+    #:
+    #: **Elles n'étaient servies nulle part**, et l'écran ne pouvait donc pas
+    #: dire « ouvert jusqu'à 19 h » — l'information la plus regardée d'une fiche
+    #: de salon, et la seule que la disponibilité ne remplace pas : savoir qu'il
+    #: reste un créneau à 15 h ne dit pas si l'on peut passer sans rendez-vous.
+    #:
+    #: **Les règles, pas les exceptions.** Une fermeture ponctuelle appartient à
+    #: la disponibilité, qui la porte déjà ; la mêler aux horaires ferait lire
+    #: « fermé le mardi » à quelqu'un qui regarde un mardi férié.
+    horaires: tuple[PlageHebdomadaire, ...]
     offres: tuple[OffreDeLaFiche, ...]
 
 
@@ -261,5 +288,16 @@ async def fiche(
             page.storage_key for page in await business_menu.lister(session, business.id)
         ),
         menu_url=business.menu_url,
+        horaires=tuple(
+            PlageHebdomadaire(
+                weekday=regle.weekday, start_time=regle.start_time, end_time=regle.end_time
+            )
+            for regle in sorted(
+                await session.scalars(
+                    sa.select(CapacityRule).where(CapacityRule.business_id == business.id)
+                ),
+                key=lambda r: (r.weekday, r.start_time),
+            )
+        ),
         offres=tuple(offres),
     )
