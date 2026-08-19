@@ -334,6 +334,7 @@ export const es: Catalogue = {
     reserver: 'Reservar',
     reservationFaite: 'Reservado',
     confirmer: 'Confirmar reserva',
+    contrepartieReste: 'Quedan {{reste}}',
     contrepartieEcheance: 'Antes del {{quand}}',
     contrepartieTentative: 'Intento {{n}} de 3',
     contrepartieRienAFaire: 'El local lo está revisando — nada que hacer de tu lado.',
