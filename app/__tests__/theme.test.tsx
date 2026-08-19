@@ -658,16 +658,21 @@ describe('les surfaces de la v1.1', () => {
 
     expect([...trouves].sort()).toEqual(CARTES);
 
-    // **Et chacune la consomme.** Le sens inverse, celui qui manquait : sans
-    // lui, la liste ne dirait que « voilà où sont les cartes », ce qui ne
-    // protège rien. Sur le texte du fichier et non sur un rendu : trois de ces
-    // douze surfaces clippent leur contenu, et leur ombre vit donc sur une vue
-    // extérieure qu'aucun `testID` ne nomme.
+    // **Et chacune la consomme, comptée et non cherchée.** La première version
+    // demandait si le fichier *contenait* `elevationDeCarte` : la ligne
+    // d'import suffisait à la satisfaire, et retirer l'ombre de la carte
+    // laissait la garde verte. La mutation l'a dit, la relecture non.
+    //
+    // On compte donc les poses et les cartes, et on exige l'égalité. Une pose
+    // qui disparaît fait un compte de moins ; une carte ajoutée sans ombre fait
+    // un compte de plus. Les trois surfaces qui clippent posent leur ombre sur
+    // une vue extérieure qui n'est pas une carte — un appel, une carte : le
+    // compte tient aussi pour elles.
     for (const relatif of CARTES) {
-      expect({
-        relatif,
-        ombre: readFileSync(join(RACINE, '..', relatif), 'utf-8').includes('elevationDeCarte'),
-      }).toEqual({ relatif, ombre: true });
+      const source = readFileSync(join(RACINE, '..', relatif), 'utf-8');
+      const poses = (source.match(/\.\.\.elevationDeCarte\(\)/g) ?? []).length;
+      const cartes = (source.match(bloc) ?? []).filter(estUneCarte).length;
+      expect({ relatif, poses, cartes }).toEqual({ relatif, poses: cartes, cartes });
     }
   });
 

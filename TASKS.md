@@ -1151,15 +1151,14 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       squelette par défaut d'`Ecran` devient une liste de lignes — une forme qui
       n'affirme rien — et une garde neuve le fixe : rien ne disait ce que reçoit
       l'écran qui oublie de déclarer sa silhouette*
-- [ ] **`elevation.card` n'a plus de consommateur, et treize surfaces en ont besoin**
-      *La carte du fil était la seule à la porter. La règle de la direction
-      tient — « un coin de 18 px sans ombre flotte au lieu de se poser » — et
-      treize surfaces du produit sont des cartes au sens strict : fond de
-      surface, rayon de 18, filet. Aucune n'a d'ombre. Un inventaire exact les
-      liste dans `theme.test.tsx` : en ajouter une oblige à toucher la liste,
-      donc à se demander si elle se pose ou si elle flotte. Ce qui manque est
-      une décision de composition sur onze écrans, et les planches sont encore
-      en v1.0 — c'est pour cela que ce n'est pas fait dans la foulée*
+- [x] **`elevation.card` posée sur les douze cartes du produit**
+      *La règle vient avec les rayons et non par écran : « un coin de 18 px sans
+      ombre flotte au lieu de se poser » vaut des douze surfaces qui portent ce
+      rayon. Trois clippent leur contenu et portent leur ombre sur une vue
+      extérieure — sur iOS, une vue qui clippe coupe sa propre ombre. L'inventaire
+      change de sens : il liste les cartes qui la portent, compte les poses, et
+      exige l'égalité. Sa première version lisait l'import et restait verte quand
+      on retirait l'ombre ; la mutation l'a dit, la relecture non*
 - [ ] **Douze planches d'écrans portent encore la v1.0**
       *Le fil est passé en v3, directement dans la palette Ambre. Les autres
       suivent l'ordre du `PASSATION-v1.1.md` §6, qui limite le travail
