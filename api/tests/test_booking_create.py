@@ -365,6 +365,12 @@ async def test_un_creneau_deja_pris_est_refuse(session: AsyncSession) -> None:
 # --------------------------------------------------------------------------
 
 
+# **Épinglé sur un worker, avec l'autre test de concurrence.** Ces deux-là
+# écrivent pour de bon et ouvrent leurs propres connexions : les laisser
+# répartir les mettrait sur deux bases différentes, où ils n'auraient plus rien
+# à sérialiser — le verrou consultatif et le `UPDATE … WHERE consumed_at IS
+# NULL` cesseraient d'être éprouvés sans que rien ne le dise.
+@pytest.mark.xdist_group("concurrence")
 @pytest.mark.ecrit_pour_de_bon(
     "deux transactions réellement concurrentes sur un verrou consultatif : la "
     "transaction annulée des autres tests les rendrait invisibles l'une à "

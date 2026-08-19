@@ -9,6 +9,20 @@ Le schéma est posé par `alembic upgrade head`, jamais par `create_all` : c'est
 la migration réelle qui est testée, pas les modèles.
 """
 
+import os
+
+# **Le dépôt d'objets suit le worker, comme la base.** Posé ici, avant tout
+# import qui construirait la configuration : `get_settings` est mis en cache au
+# premier appel, et une fixture arriverait trop tard.
+#
+# Deux workers qui sèment en même temps écrivent la **même** clé — le nom est
+# l'empreinte du contenu, donc identique d'un processus à l'autre. L'un renomme
+# `X.partiel` en `X`, l'autre ne retrouve plus le sien : `FileNotFoundError` sur
+# trente-six tests du semis, et rien dans le message ne parle de parallélisme.
+if os.environ.get("PYTEST_XDIST_WORKER"):
+    _racine = os.environ.get("OBJECT_STORE_LOCAL_ROOT", "/tmp/bind-objets")
+    os.environ["OBJECT_STORE_LOCAL_ROOT"] = f"{_racine}-{os.environ['PYTEST_XDIST_WORKER']}"
+
 from collections.abc import AsyncIterator, Iterator
 
 import httpx
@@ -70,7 +84,36 @@ def test_database_url() -> str:
     ):
         pytest.exit("TEST_DATABASE_URL désigne la base de développement.", returncode=1)
 
-    return str(settings.test_database_url)
+    return _base_du_worker(test).render_as_string(hide_password=False)
+
+
+def _base_du_worker(url: URL) -> URL:
+    """Une base par worker, dérivée de son nom.
+
+    **C'est ce qui rend le parallélisme possible.** Chaque worker crée, migre et
+    détruit *sa* base au démarrage ; sur un nom commun, ils se la détruisaient
+    l'un l'autre — la seconde exécution emportait la base de la première entre
+    sa création et son premier appel, et l'échec ressortait en « database does
+    not exist » sur du code qui n'avait pas bougé.
+
+    `PYTEST_XDIST_WORKER` vaut `gw0`, `gw1`… sous xdist, et est absente en série.
+    Le nom est donc **inchangé** hors parallélisme : une exécution simple garde
+    exactement la base qu'elle avait, et rien de ce qui dépend du nom ne bouge.
+
+    **Et le rendu se fait avec `render_as_string(hide_password=False)`.** C'est
+    le détail qui a fait échouer la première tentative de parallélisme, il y a
+    une semaine, sous un message qui n'en disait rien : « password
+    authentication failed for user "bind" », les 1604 tests en erreur. `str()`
+    sur un `URL` SQLAlchemy **masque le mot de passe** — il rend `***`. Tant que
+    la fixture renvoyait la chaîne de configuration telle quelle, la question ne
+    se posait pas ; dès qu'elle est passée par un objet `URL` pour en changer le
+    nom, elle a rendu une adresse sans mot de passe. Le parallélisme n'y était
+    pour rien.
+    """
+    worker = os.environ.get("PYTEST_XDIST_WORKER")
+    if not worker:
+        return url
+    return url.set(database=f"{url.database}_{worker}")
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -205,110 +248,6 @@ def _aucune_ecriture_ne_survit(test_database_url: str, request: pytest.FixtureRe
         "sans la valider. Si l'écriture doit vraiment survivre, la déclarer "
         'avec @pytest.mark.ecrit_pour_de_bon("raison").'
     )
-
-
-# --------------------------------------------------------------------------
-# Un test qui met plusieurs secondes attend quelque chose
-# --------------------------------------------------------------------------
-#
-# **Le test, et non le fichier.** La première idée était de comparer les
-# fichiers entre eux, à dix fois la médiane. Le garde-fou équivalent côté Jest
-# l'avait déjà essayé et retiré, mesures à l'appui : un fichier n'est pas lent
-# parce qu'il porte un défaut, il est long parce qu'il porte beaucoup de tests.
-# Confondre les deux produit des faux positifs, et un faux positif sur une
-# vérification requise est la manière dont un garde-fou finit par être désactivé.
-#
-# **Un plafond, et pas un rapport à la médiane.** Mesuré sur la suite entière :
-# la médiane d'un test est de 0,24 s et le 99e centile de 0,96 s, donc dix fois
-# la médiane vaut 2,4 s — le test légitime le plus lourd, qui supprime une plage
-# de capacité, en met 3,7 à lui seul. Un rapport qui accuse un test sain est un
-# rapport qui sera retiré au premier rouge.
-#
-# **Et calibré sur la machine la plus lente, pas sur la mienne.** Le plafond a
-# d'abord été posé à dix secondes, sur des mesures locales : 2,7 fois de marge
-# au plus lourd des tests honnêtes. Il a fait échouer l'intégration continue sur
-# `test_les_cinq_signaux_sont_tous_rendus`, à **10,2 s** — un test qui en met
-# **1,5 chez moi**. Le runner est six fois plus lent, et la garde mesurait donc
-# le matériel au lieu du test.
-#
-# C'est précisément la façon dont un garde-fou finit par être désactivé : un
-# faux positif sur une vérification requise, et quelqu'un le retire.
-# Vingt-cinq secondes tiennent là-bas, et laissent passer ce qui compte : les
-# quatre tests du semis, à 31 à 68 secondes, et la classe de défaut qui a motivé
-# la garde — un test qui **attend** au lieu de faire.
-#
-# **Ce qu'il ne peut pas attraper, et il vaut mieux l'écrire que de laisser
-# croire la question réglée.** La durée d'un montage partagé — une fixture de
-# module ou de session — est portée par le premier test qui s'en sert, qui n'y
-# est pour rien. C'est exactement ce qui se passe pour `test_seed.py` : ses
-# 68 secondes sont un montage, pas un corps de test. Le garde-fou nomme donc un
-# test là où il faudra parfois regarder sa fixture.
-#: Au-dessus, un test attend au lieu de faire. Mesuré, non choisi.
-PLAFOND_DE_DUREE = 25.0
-
-#: Ce qu'on affiche toujours, pour que la dérive se voie avant le seuil.
-DUREES_A_MONTRER = 3
-
-_durees: dict[str, float] = {}
-_dispenses: dict[str, str] = {}
-
-
-def pytest_itemcollected(item: pytest.Item) -> None:
-    """Retient les dispenses au moment de la collecte, seul endroit qui voit les marques."""
-    marque = item.get_closest_marker("lent")
-    if marque is None:
-        return
-    raison = marque.args[0] if marque.args else ""
-    if not raison:
-        raise pytest.UsageError(
-            f"{item.nodeid} porte @pytest.mark.lent sans raison. Une dispense sans "
-            "motif ne se relit pas : elle devient un contournement permanent."
-        )
-    _dispenses[item.nodeid] = raison
-
-
-def pytest_runtest_logreport(report: pytest.TestReport) -> None:
-    """La durée d'un test est la somme de ses trois phases.
-
-    Le montage compte : une attente y coûte le même temps que dans le corps, et
-    ne la compter nulle part est précisément ce qui a rendu invisible le seul
-    cas réel qu'on ait eu à traiter jusqu'ici.
-    """
-    _durees[report.nodeid] = _durees.get(report.nodeid, 0.0) + report.duration
-
-
-def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
-    """Affiche les plus lents, et refuse ceux qui dépassent sans l'avoir déclaré."""
-    if not _durees:
-        return
-
-    rapporteur = session.config.pluginmanager.get_plugin("terminalreporter")
-    if rapporteur is None:
-        return
-
-    classes = sorted(_durees.items(), key=lambda paire: -paire[1])
-    rapporteur.write_sep("-", f"durée des tests — plafond {PLAFOND_DE_DUREE:.0f} s")
-    for nodeid, duree in classes[:DUREES_A_MONTRER]:
-        note = f"  (dispensé : {_dispenses[nodeid]})" if nodeid in _dispenses else ""
-        rapporteur.write_line(f"  {duree:6.1f} s  {nodeid}{note}")
-
-    depassements = [
-        (nodeid, duree)
-        for nodeid, duree in classes
-        if duree > PLAFOND_DE_DUREE and nodeid not in _dispenses
-    ]
-    if not depassements:
-        return
-
-    for nodeid, duree in depassements:
-        rapporteur.write_line(
-            f"{nodeid} met {duree:.1f} s. Un test ne devient pas lent, il attend : "
-            "chercher une attente réelle plutôt que simulée, ou un montage refait "
-            "à chaque test là où il tiendrait dans une fixture de module. Si la "
-            'durée est justifiée, la déclarer avec @pytest.mark.lent("raison").',
-            red=True,
-        )
-    session.exitstatus = 1
 
 
 @pytest.fixture

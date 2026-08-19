@@ -25,15 +25,30 @@ from tests.factories import new_user
 PREFIX = get_settings().api_v1_prefix
 
 
-async def journal(conn: AsyncConnection, entity: str | None = None) -> list:
+async def journal(
+    conn: AsyncConnection, entity: str | None = None, entity_id: object = None
+) -> list:
     """Lignes de journal, dans l'ordre où elles ont été écrites.
 
     `select(AuditLog.__table__)` et non `select(AuditLog)` : sur une connexion
     Core, la seconde forme renvoie des colonnes et non une entité.
+
+    **`entity_id` restreint à ce que le test vient d'écrire, et ce n'est pas un
+    confort.** Le journal d'audit est immuable : les deux tests qui écrivent pour
+    de bon y laissent leurs lignes, et le nettoyage ne les retire pas — c'est
+    écrit dans leur dérogation. Lire la table entière ne marchait donc que par
+    l'ordre alphabétique des fichiers, qui plaçait ce fichier-ci avant eux.
+
+    En parallèle, cet ordre n'existe plus : sept lignes là où le test en
+    attendait une, et la première n'était pas la sienne. La règle est la même
+    que celle de la garde anti-fuite — ne désigner que ce qu'on a soi-même
+    écrit.
     """
     statement = sa.select(AuditLog.__table__).order_by(AuditLog.occurred_at)
     if entity is not None:
         statement = statement.where(AuditLog.entity_type == entity)
+    if entity_id is not None:
+        statement = statement.where(AuditLog.entity_id == entity_id)
     return (await conn.execute(statement)).all()
 
 
@@ -66,7 +81,7 @@ async def test_l_inscription_ecrit_sa_ligne_de_journal(
     )
     assert response.status_code == 201
 
-    lignes = await journal(conn, entity="app_user")
+    lignes = await journal(conn, entity="app_user", entity_id=uuid.UUID(response.json()["id"]))
     assert len(lignes) == 1
     ligne = lignes[0]
     assert ligne.entity_id == uuid.UUID(response.json()["id"])
@@ -191,19 +206,36 @@ async def test_une_ligne_par_jeton_coupe_et_non_une_seule_pour_le_lot(
 async def test_un_rollback_ne_laisse_aucune_ligne_orpheline(
     session: AsyncSession, conn: AsyncConnection
 ) -> None:
-    """La ligne de journal vit dans la transaction de la transition qu'elle décrit."""
+    """La ligne de journal vit dans la transaction de la transition qu'elle décrit.
+
+    **Compté en écart, jamais en absolu.** Ce test lisait le journal entier et
+    exigeait une ligne : il ne passait que parce qu'il s'exécutait avant les deux
+    tests qui écrivent pour de bon, dans l'ordre alphabétique des fichiers. En
+    parallèle, l'ordre n'est plus garanti — il a vu sept lignes et en attendait
+    une. C'est la même règle que la garde anti-fuite, qui compare un avant et un
+    après pour ne désigner que celui qui a écrit.
+    """
+    avant = len(await journal(conn, entity="app_user"))
+
     await inscrire_verifie(
         session,
         email="annule@example.com",
         password="tourbillon-cactus-91-vermeil",
         role=UserRole.CREATOR,
     )
-    assert len(await journal(conn, entity="app_user")) == 1
+    assert len(await journal(conn, entity="app_user")) == avant + 1
 
     await session.rollback()
 
-    assert await journal(conn, entity="app_user") == []
-    assert await conn.scalar(sa.select(sa.func.count()).select_from(User)) == 0
+    assert len(await journal(conn, entity="app_user")) == avant
+    # Les comptes que les tests d'écriture réelle laissent derrière eux ne sont
+    # pas les nôtres : on vérifie que **le nôtre** est parti.
+    assert (
+        await conn.scalar(
+            sa.select(sa.func.count()).select_from(User).where(User.email == "annule@example.com")
+        )
+        == 0
+    )
 
 
 async def test_une_inscription_refusee_ne_laisse_aucune_ligne(
@@ -214,10 +246,13 @@ async def test_une_inscription_refusee_ne_laisse_aucune_ligne(
         "password": "tourbillon-cactus-91-vermeil",
         "role": "creator",
     }
+    avant = len(await journal(conn, entity="app_user"))
+
     await client.post(f"{PREFIX}/auth/register", json=payload)
     await client.post(f"{PREFIX}/auth/register", json=payload)
 
-    assert len(await journal(conn, entity="app_user")) == 1
+    # Une seule ligne de plus : le doublon n'en écrit aucune.
+    assert len(await journal(conn, entity="app_user")) == avant + 1
 
 
 # --------------------------------------------------------------------------
@@ -229,8 +264,8 @@ async def test_une_inscription_refusee_ne_laisse_aucune_ligne(
 async def test_une_ligne_ecrite_ne_peut_plus_bouger(
     client: AsyncClient, conn: AsyncConnection, operation: str
 ) -> None:
-    await register_and_login(client)
-    ligne = (await journal(conn, entity="app_user"))[0]
+    jetons = await register_and_login(client)
+    ligne = (await journal(conn, entity="app_user", entity_id=uuid.UUID(jetons["user_id"])))[0]
 
     statements = {
         "update": sa.update(AuditLog).where(AuditLog.id == ligne.id).values(to_status="suspended"),
@@ -312,7 +347,10 @@ async def test_un_acteur_humain_sans_utilisateur_est_refuse_en_base(
 async def test_le_role_determine_la_nature_de_l_acteur(
     client: AsyncClient, conn: AsyncConnection, role: UserRole, attendu: ActorKind
 ) -> None:
-    await register_and_login(client, role=role)
+    jetons = await register_and_login(client, role=role)
 
-    ligne = (await journal(conn, entity="app_user"))[0]
+    # **Sa propre ligne, pas la première de la table.** Trois rôles, trois
+    # comptes : lire la première rendait celle du cas précédent, et le
+    # paramétrage passait par accident tant que l'ordre était garanti.
+    ligne = (await journal(conn, entity="app_user", entity_id=uuid.UUID(jetons["user_id"])))[0]
     assert ligne.actor_kind == attendu

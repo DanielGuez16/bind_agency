@@ -88,6 +88,13 @@ OFFRES = 10 + sum(len(fiche.offres) for fiche in seed.MARCHE)
 COMPTES = 1 + COMMERCES + 5
 
 
+#: **Tout le fichier sur un seul worker.** Ses fixtures de module lancent le
+#: semis — vingt salons, leurs photos, leurs vignettes — et un fichier réparti
+#: ferait payer ce montage à chaque worker qui en reçoit un morceau. Groupé, il
+#: est semé une fois ; réparti, il l'était quatre fois pour le même résultat.
+pytestmark = pytest.mark.xdist_group("semis")
+
+
 @pytest.fixture(scope="module")
 def base_jetable(test_database_url: str) -> str:
     """Une base à part, créée et détruite ici. Surtout pas celle de la suite.
@@ -135,36 +142,44 @@ def _lancer(database_url: str, *, environnement: str = "test") -> subprocess.Com
 
 @pytest.fixture(scope="module")
 def jeu_pose(base_jetable: str) -> str:
-    """La commande est lancée deux fois : la seconde prouve qu'elle est rejouable."""
+    """**Le semis est joué deux fois, et une seule fois pour tout le fichier.**
+
+    Deux passages, parce que c'est la rejouabilité qu'on éprouve : la seconde
+    exécution repart d'une base que la première a remplie, et doit rendre le
+    même état. C'est le sujet de `test_la_commande_est_rejouable`, et rien ne
+    peut le remplacer — un clone prouverait qu'on sait copier une base.
+
+    **Ce qui a disparu, c'est le troisième passage.** `resume_du_semis` relançait
+    la commande pour lire son résumé ; il lit maintenant la sortie du second
+    passage, qui dit exactement la même chose puisque c'est la même commande sur
+    la même base. Cinquante secondes de moins, sans rien perdre.
+    """
     premier = _lancer(base_jetable)
     assert premier.returncode == 0, premier.stderr
 
     second = _lancer(base_jetable)
     assert second.returncode == 0, second.stderr
 
+    # La sortie du second passage, gardée pour les tests de résumé.
+    _SORTIES["resume"] = second
     return base_jetable
 
 
+#: Ce que le semis a écrit sur sa sortie, retenu pour n'avoir pas à le relancer.
+_SORTIES: dict[str, subprocess.CompletedProcess] = {}
+
+
 @pytest.fixture(scope="module")
-def resume_du_semis(base_jetable: str) -> subprocess.CompletedProcess:
-    """La sortie d'**un** passage du semis, relue par tous ceux qui l'inspectent.
+def resume_du_semis(jeu_pose: str) -> subprocess.CompletedProcess:
+    """La sortie du semis, **relue et non rejouée**.
 
-    Trois tests lisaient chacun leur propre lancement pour éprouver trois lignes
-    du même résumé : le décompte, la distinction entre photos fournies et
-    dégradés, et le signalement des médias lourds. Trois exécutions complètes du
-    semis — vingt salons, leurs photos, leurs vignettes — pour lire trois lignes
-    d'un texte identique, mesurées à 34, 41 et 31 secondes, soit **106 des 568
-    secondes de la suite**. Un seul passage les sert toutes les trois et dit
-    exactement la même chose, puisque c'est la même commande sur la même base.
-
-    Ce qui reste séparé, et doit le rester : le refus hors environnement jetable
-    lance la commande avec un autre environnement, et la fixture `jeu_pose` la
-    lance deux fois de suite pour éprouver qu'elle est rejouable. Ce sont deux
-    questions différentes, pas deux lectures de la même sortie.
+    Trois tests inspectent trois lignes du même résumé. Ils lançaient chacun le
+    semis complet — vingt salons, leurs photos, leurs vignettes — puis un seul
+    après regroupement. Ce dernier passage disparaît à son tour : la sortie du
+    second passage de `jeu_pose` dit rigoureusement la même chose, puisque c'est
+    la même commande sur la même base.
     """
-    resultat = _lancer(base_jetable)
-    assert resultat.returncode == 0, resultat.stderr
-    return resultat
+    return _SORTIES["resume"]
 
 
 @pytest.fixture

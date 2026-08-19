@@ -209,6 +209,25 @@ seulement parce qu'une garde restait rouge. Une mutation se prépare donc en deu
 temps : on commite ce qu'on vient d'écrire, **puis** on casse. Le `git checkout`
 retrouve alors exactement ce qu'on voulait retrouver.
 
+**La suite complète une fois, avant de pousser. Pas douze.** Elle coûte sept
+minutes ; la lancer à chaque étape d'une tranche en coûtait une heure et demie,
+la moitié du temps total mesuré sur une session. Pendant le travail, les
+fichiers touchés suffisent — ils tournent en quelques secondes et disent la même
+chose de ce qu'on vient d'écrire. La suite entière répond à une autre question :
+« ai-je cassé ailleurs », et cette question ne se pose qu'une fois, au moment de
+pousser.
+
+**Un garde-fou qui coûte plus que ce qu'il protège se retire.** La garde de
+durée en est l'exemple, et elle a été retirée : quatre CI rouges en une soirée,
+deux heures d'attente, et rien trouvé d'autre qu'elle-même. D'abord calibrée sur
+ma machine — dix secondes de plafond, un runner six fois plus lent, un test à
+10,2 s qui en met 1,5 ici ; puis incapable de traverser les processus sous xdist,
+où la collecte a lieu dans le worker et le bilan dans le contrôleur.
+
+Ce qu'elle devait attraper — un test qui **attend** au lieu de faire — se voit
+dans `--durations`, sans faire échouer personne. Une vérification requise qui se
+trompe est pire qu'une vérification absente : elle apprend à ignorer le rouge.
+
 Ne pas réécrire un fichier entier pour changer trois lignes. Modifications ciblées.
 
 Ne pas anticiper les phases suivantes. Si une tâche future rend l'implémentation actuelle plus simple, le signaler plutôt que de l'implémenter en avance.
