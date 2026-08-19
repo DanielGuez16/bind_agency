@@ -497,23 +497,29 @@ async def disponibilite_par_jour(
     règles. Ici, deux requêtes de plus que pour un seul jour.
     """
     depuis = depuis or datetime.now(UTC)
-    horizon = timedelta(days=jours)
-
-    creneaux = await creneaux_libres(
-        session,
-        business_id=business_id,
-        catalog_item_id=catalog_item_id,
-        depuis=depuis,
-        horizon=horizon,
-    )
 
     business = await session.get(Business, business_id)
     if business is None:
         raise ItemNotFound(str(catalog_item_id))
     fuseau = ZoneInfo(business.timezone)
 
+    # **L'horizon s'arrête à la fin du dernier jour de la bande, heure locale.**
+    # `depuis + 14 jours` tombe au milieu du quinzième jour local : les créneaux
+    # de ce matin-là étaient comptés par le parcours et n'avaient aucune ligne
+    # où se poser. La bande annonçait alors moins que le détail, pour des
+    # créneaux qu'elle ne montrait pas — deux réponses différentes à la même
+    # question, ce qui est précisément ce qu'une vue agrégée ne doit pas faire.
     premier = depuis.astimezone(fuseau).date()
-    dernier = (depuis + horizon).astimezone(fuseau).date()
+    dernier = premier + timedelta(days=jours - 1)
+    fin = datetime.combine(dernier + timedelta(days=1), time.min, tzinfo=fuseau)
+
+    creneaux = await creneaux_libres(
+        session,
+        business_id=business_id,
+        catalog_item_id=catalog_item_id,
+        depuis=depuis,
+        horizon=fin - depuis,
+    )
 
     regles = list(
         await session.scalars(
@@ -532,7 +538,7 @@ async def disponibilite_par_jour(
 
     comptes: dict[date, int] = {}
     for creneau in creneaux:
-        local = creneau.debut.astimezone(fuseau).date()
+        local = creneau.starts_at.astimezone(fuseau).date()
         comptes[local] = comptes.get(local, 0) + 1
 
     bande: list[JourDeDisponibilite] = []
