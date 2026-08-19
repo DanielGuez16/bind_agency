@@ -17,6 +17,8 @@ import { join } from 'path';
 import { render, waitFor } from '@testing-library/react-native';
 import { Text } from 'react-native';
 
+import { BusinessCard } from '../src/components/Cards';
+import { I18nProvider } from '../src/i18n';
 import { TitreAccentue } from '../src/components/TitreAccentue';
 
 import {
@@ -32,6 +34,7 @@ import {
   type ColorName,
   type Palier,
   contraste,
+  elevationDeCarte,
   luminance,
 } from '../src/theme';
 
@@ -585,6 +588,69 @@ describe('les surfaces de la v1.1', () => {
     const style = vue.getByTestId('bloc-accentue').props.style;
     expect(style.borderRadius).toBe(0);
     expect(style.backgroundColor).toBe(tokens.color.brand['500']);
+  });
+
+  it('la carte se pose : elle porte l’ombre de carte, et sur une vue qui ne clippe pas', async () => {
+    // **La règle 2 de la v1.1, et elle ne se vérifie pas dans les jetons.**
+    // `elevation.card` y était déjà présente et personne ne la lisait : la
+    // bibliothèque n'exposait que l'ombre flottante, et la carte arrondie à
+    // 18 px n'avait rien sous elle. Un jeton déclaré et jamais consommé passe
+    // toutes les gardes de jetons du monde.
+    //
+    // **Et l'ombre est lue sur la vue extérieure.** Celle du dessous clippe son
+    // contenu ; sur iOS, une vue qui clippe coupe sa propre ombre au même bord.
+    // Vérifier « la carte a une ombre » sans regarder lequel des deux nœuds la
+    // porte laisserait passer une carte sans ombre sur téléphone et avec ombre
+    // sur le web — c'est-à-dire le défaut que personne ne voit en CI.
+    const vue = await render(
+      <I18nProvider initialLocale="en">
+        <ThemeProvider role="creator">
+          <BusinessCard
+            name="Salon"
+            meta="Wynwood"
+            serviceName="Balayage"
+            serviceDuration="90 min"
+            tier="story"
+            testID="carte"
+          />
+        </ThemeProvider>
+      </I18nProvider>,
+    );
+    const carte = vue.getByTestId('carte');
+    const dehors = carte.parent;
+
+    const aplati = (style: unknown): Record<string, unknown> =>
+      Array.isArray(style)
+        ? Object.assign({}, ...style.map(aplati))
+        : ((style ?? {}) as Record<string, unknown>);
+
+    // **Deux assertions, et il en faut deux.** La première dit que la vue
+    // extérieure porte exactement ce que la bibliothèque produit — donc que la
+    // carte consomme le jeton, sur le nœud qui ne clippe pas. Elle ne dit rien
+    // de la valeur : comparer le composant à la fonction laisserait les deux se
+    // tromper ensemble. La seconde relit le jeton et vérifie que la fonction en
+    // sort les bons nombres, la lecture étant écrite ici et non empruntée.
+    const attendue = elevationDeCarte() as Record<string, unknown>;
+    expect(aplati(dehors?.props?.style)).toMatchObject(attendue);
+
+    const [, hauteur, flou, opacite] =
+      /^0 (\d+)px (\d+)px rgba\([^)]*,\s*([\d.]+)\)$/.exec(tokens.elevation.card)!;
+    // La plateforme décide de la forme : le web reçoit la déclaration CSS
+    // telle quelle, le natif quatre propriétés. Les deux disent la même ombre,
+    // et le test suit celle sur laquelle il tourne au lieu d'en supposer une.
+    if ('boxShadow' in attendue) {
+      expect(attendue.boxShadow).toBe(tokens.elevation.card);
+    } else {
+      expect(attendue.shadowOffset).toEqual({ width: 0, height: Number(hauteur) });
+      expect(attendue.shadowRadius).toBe(Number(flou));
+      expect(attendue.shadowOpacity).toBe(Number(opacite));
+    }
+
+    // Et l'ombre n'est pas aussi sur la vue qui clippe : l'y trouver voudrait
+    // dire qu'elle est coupée sur téléphone, ce qui ne se voit pas d'ici.
+    const dedans = aplati(carte.props.style);
+    expect(dedans.shadowOpacity ?? dedans.boxShadow).toBeUndefined();
+    expect(dedans.overflow).toBe('hidden');
   });
 
   it('aucun rayon écrit en dur dans une source', () => {

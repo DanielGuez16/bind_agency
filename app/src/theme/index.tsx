@@ -598,33 +598,59 @@ export function useColors(): ColorTokens {
 }
 
 /**
- * L'unique ombre du système, pour ce qui flotte réellement.
+ * Les deux ombres du système.
  *
- * **`elevation.1` est supprimé.** Une carte se tient à son filet de 1 px ; une
- * ombre sous chaque carte d'un fil produisait une nappe grise, et c'est
- * précisément ce que la v1.0 refuse — le filet remplace l'ombre. Ce qui reste
- * est réservé à ce qui flotte au-dessus du contenu : feuille, menu, dialogue.
+ * **`elevation.card` revient, et la raison de la v1.0 est renversée.** Elle
+ * disait « une carte se tient à son filet de 1 px » — c'était vrai d'une carte
+ * d'équerre, et la v1.0 n'en avait pas d'autre. La v1.1 arrondit à 18 px, et un
+ * coin de 18 px sans ombre ne se pose pas sur la page, il flotte au-dessus sans
+ * dire à quelle hauteur. L'ombre est minuscule — 7 % d'encre à 10 px de flou —
+ * et c'est le point : elle ne creuse pas, elle appuie.
  *
- * **Une seule fonction pour les trois plateformes.** iOS veut quatre
- * propriétés `shadow*`, Android un `elevation`, et le web un `boxShadow` — les
- * écrire à la main dans chaque composant produirait trois vérités.
+ * La crainte de la v1.0 tenait toujours : une ombre sous chaque carte d'un fil
+ * produit une nappe grise. C'est ce qui décide de la valeur, pas de l'absence.
+ *
+ * **Une seule fonction par ombre, pour les trois plateformes.** iOS veut quatre
+ * propriétés `shadow*`, Android un `elevation`, et le web un `boxShadow` —
+ * les écrire à la main dans chaque composant produirait trois vérités.
  */
-export function elevationFlottante() {
-  // Le jeton est écrit en CSS — « 0 12px 32px rgba(...) » — parce que c'est la
-  // forme dans laquelle un designer le donne. Les trois nombres en sont
-  // extraits une fois, ici, plutôt que recopiés en quatre propriétés.
-  const [, decalage, rayon] = /^0 (\d+)px (\d+)px/.exec(brut.elevation.float) ?? ['', '12', '32'];
-  const hauteur = Number(decalage);
-  const flou = Number(rayon);
+function ombreDe(jeton: string, elevationAndroid: number) {
+  // Le jeton est écrit en CSS — « 0 2px 10px rgba(23,20,15,0.07) » — parce que
+  // c'est la forme dans laquelle un designer le donne. Les quatre nombres en
+  // sont extraits une fois, ici, plutôt que recopiés en quatre propriétés dans
+  // chaque composant.
+  const lu = /^0 (\d+)px (\d+)px rgba\([^)]*,\s*([\d.]+)\)$/.exec(jeton);
+  if (!lu) {
+    // Pas de repli silencieux : une ombre qui retombe sur des valeurs inventées
+    // se voit à l'œil et jamais en revue. Le jeton vient de Design et sa forme
+    // est stable ; si elle change, c'est ici qu'il faut le savoir.
+    throw new Error(`elevation illisible : « ${jeton} »`);
+  }
+  const [, hauteur, flou, opacite] = lu;
 
   return Platform.select({
-    web: { boxShadow: brut.elevation.float },
-    android: { elevation: 12 },
+    web: { boxShadow: jeton },
+    android: { elevation: elevationAndroid },
     default: {
       shadowColor: COULEURS['ink.default'],
-      shadowOffset: { width: 0, height: hauteur },
-      shadowOpacity: 0.14,
-      shadowRadius: flou,
+      shadowOffset: { width: 0, height: Number(hauteur) },
+      shadowOpacity: Number(opacite),
+      shadowRadius: Number(flou),
     },
   }) as object;
+}
+
+/** Ce qui flotte au-dessus du contenu : feuille, menu, dialogue. */
+export function elevationFlottante() {
+  return ombreDe(brut.elevation.float, 12);
+}
+
+/**
+ * Ce qui se pose sur la page : une carte, et rien d'autre.
+ *
+ * Android reçoit 1 et non 2 : son `elevation` dessine aussi un contour, et à 2
+ * il double le filet de la carte au lieu de l'ombrer.
+ */
+export function elevationDeCarte() {
+  return ombreDe(brut.elevation.card, 1);
 }
