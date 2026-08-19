@@ -18,9 +18,9 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 from app.core.config import get_settings
 from app.models import Booking, BusinessMember, RedemptionCode
 from app.models.enums import BookingStatus, BusinessMemberRole, UserRole
-from app.services import auth as auth_service
 from app.services import booking_states
 from app.services import redemption as service
+from tests.conftest import inscrire_verifie
 from tests.test_booking_create import monter_le_decor, premier_creneau, reserver
 
 PREFIX = get_settings().api_v1_prefix
@@ -37,7 +37,7 @@ async def scene(session: AsyncSession, **kwargs) -> dict:
     await booking_states.confirmer(session, booking=booking, creator_id=decor["createur"].id)
     code = await service.code_du_booking(session, booking=booking)
 
-    caissier = await auth_service.register(
+    caissier = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
         password=MOT_DE_PASSE,

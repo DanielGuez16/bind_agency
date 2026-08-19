@@ -36,8 +36,8 @@ from app.models.enums import (
     UserRole,
     UserStatus,
 )
-from app.services import auth as auth_service
 from app.services import outbox
+from tests.conftest import inscrire_verifie
 from tests.factories import PASSWORD_HASH, new_user
 
 MOT_DE_PASSE = "tourbillon-cactus-91-vermeil"
@@ -71,7 +71,7 @@ class FauxPush:
 
 
 async def destinataire(session: AsyncSession, **overrides) -> User:
-    return await auth_service.register(
+    return await inscrire_verifie(
         session,
         email=overrides.pop("email", f"{uuid.uuid4()}@example.com"),
         password=MOT_DE_PASSE,

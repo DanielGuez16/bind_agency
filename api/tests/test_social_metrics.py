@@ -30,9 +30,9 @@ from app.integrations.social import (
 from app.models import SocialAccount, SocialMetricsSnapshot
 from app.models.enums import Platform, SocialAccountStatus, UserRole, VerificationStatus
 from app.routers.social_accounts import get_instagram_provider
-from app.services import auth as auth_service
 from app.services import eligibility
 from app.services import metrics as service
+from tests.conftest import inscrire_verifie
 
 PREFIX = get_settings().api_v1_prefix
 
@@ -101,7 +101,7 @@ async def compte_actif(session: AsyncSession, **overrides) -> SocialAccount:
     pas un jeu de données — la règle sur les valeurs posées à la main vise ce
     dernier.
     """
-    user = await auth_service.register(
+    user = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
         password="tourbillon-cactus-91-vermeil",

@@ -35,9 +35,9 @@ from app.models.enums import (
     UserRole,
     VerificationStatus,
 )
-from app.services import auth as auth_service
 from app.services import jobs as service
 from app.workers import handlers, runner, scheduler
+from tests.conftest import inscrire_verifie
 from tests.factories import new_creator, new_social_account
 from tests.test_social_metrics import FauxFournisseur, metriques
 
@@ -76,7 +76,7 @@ def toujours(provider) -> runner.FournisseurPour:
 
 
 async def creer_compte(session: AsyncSession, **overrides) -> SocialAccount:
-    user = await auth_service.register(
+    user = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
         password="tourbillon-cactus-91-vermeil",

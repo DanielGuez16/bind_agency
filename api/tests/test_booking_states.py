@@ -22,11 +22,11 @@ from app.integrations.geocoding import ManualGeocoder
 from app.models import AuditLog, Booking, ReliabilityEvent
 from app.models.enums import ActorKind, BookingStatus, BusinessCategory, UserRole
 from app.schemas.business import BusinessCreate, CoordinatesPayload
-from app.services import auth as auth_service
 from app.services import availability, redemption
 from app.services import booking_states as service
 from app.services import business as business_service
 from app.services.audit import Actor
+from tests.conftest import inscrire_verifie
 from tests.test_booking_create import monter_le_decor, premier_creneau, reserver
 
 #: Le diagramme de SPEC.md §4.1, recopié à la main **exprès**. Il sert d'oracle
@@ -165,7 +165,7 @@ async def test_un_garde_expire_ne_se_confirme_plus(session: AsyncSession) -> Non
 
 async def test_la_reservation_d_un_autre_ne_se_confirme_pas(session: AsyncSession) -> None:
     ligne, _ = await reservation(session)
-    autre = await auth_service.register(
+    autre = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
         password="tourbillon-cactus-91-vermeil",
@@ -499,7 +499,7 @@ class TestValidationParLeCommerce:
         version de ce test faisait exactement cela, et elle survivait à
         l'inversion du défaut.
         """
-        proprietaire = await auth_service.register(
+        proprietaire = await inscrire_verifie(
             session,
             email=f"{uuid.uuid4()}@example.com",
             password="tourbillon-cactus-91-vermeil",

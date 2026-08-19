@@ -36,8 +36,8 @@ from app.models.enums import (
     UserRole,
     UserStatus,
 )
-from app.services import auth as auth_service
 from app.services import push as service
+from tests.conftest import inscrire_verifie
 
 PREFIX = get_settings().api_v1_prefix
 MOT_DE_PASSE = "tourbillon-cactus-91-vermeil"
@@ -57,7 +57,7 @@ class Espion:
 
 
 async def createur(session: AsyncSession, **champs) -> User:
-    user = await auth_service.register(
+    user = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
         password=MOT_DE_PASSE,

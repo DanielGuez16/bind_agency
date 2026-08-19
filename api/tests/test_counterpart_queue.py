@@ -26,10 +26,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.models import Collaboration
 from app.models.enums import CollaborationStatus, ReliabilityEventType, UserRole
-from app.services import auth as auth_service
 from app.services import collaboration as service
 from app.services import proof as proof_service
 from app.services.audit import Actor
+from tests.conftest import inscrire_verifie
 from tests.test_collaboration import capture, contrepartie
 
 PREFIX = get_settings().api_v1_prefix
@@ -247,7 +247,7 @@ async def test_la_file_d_arbitrage_est_reservee_aux_administrateurs(
     client: AsyncClient, session: AsyncSession
 ) -> None:
     _, s = await contrepartie(session)
-    admin = await auth_service.register(
+    admin = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
         password=MOT_DE_PASSE,
@@ -281,7 +281,7 @@ async def test_la_file_d_arbitrage_est_reservee_aux_administrateurs(
 
 
 async def _admin_connecte(client: AsyncClient, session: AsyncSession) -> dict:
-    admin = await auth_service.register(
+    admin = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
         password=MOT_DE_PASSE,

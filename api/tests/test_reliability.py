@@ -24,17 +24,17 @@ from app.models.enums import (
     ReliabilityEventType,
     UserRole,
 )
-from app.services import auth as auth_service
 from app.services import booking_states, collaboration
 from app.services import proof as proof_service
 from app.services import reliability as service
 from app.services.audit import Actor
 from app.services.eligibility import RaisonRefus
+from tests.conftest import inscrire_verifie
 from tests.test_collaboration import capture, contrepartie
 
 
 async def createur_nu(session: AsyncSession):
-    return await auth_service.register(
+    return await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
         password="tourbillon-cactus-91-vermeil",

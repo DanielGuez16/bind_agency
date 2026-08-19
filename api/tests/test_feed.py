@@ -35,7 +35,6 @@ from app.schemas.business import BusinessCreate, CoordinatesPayload
 from app.schemas.capacity import CapacityRuleCreate
 from app.schemas.catalog import CatalogItemCreate
 from app.schemas.tier_offers import TierOfferCreate
-from app.services import auth as auth_service
 from app.services import business as business_service
 from app.services import capacity as capacity_service
 from app.services import catalog as catalog_service
@@ -45,6 +44,7 @@ from app.services import metrics as metrics_service
 from app.services import tier_offers as tier_offer_service
 from app.services.audit import Actor
 from app.services.eligibility import RaisonRefus
+from tests.conftest import inscrire_verifie
 from tests.test_social_metrics import FauxFournisseur, metriques
 
 PREFIX = get_settings().api_v1_prefix
@@ -58,7 +58,7 @@ POST = uuid.UUID("a0ee68db-f167-4af3-ba72-e3149469da4a")  # instagram/post
 
 
 async def commerce(session: AsyncSession, *, longitude: float, latitude: float, **overrides):
-    proprietaire = await auth_service.register(
+    proprietaire = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
         password="tourbillon-cactus-91-vermeil",
@@ -111,7 +111,7 @@ async def offre(session: AsyncSession, business, *, tier_id=STORY, prix=8000, **
 
 
 async def createur(session: AsyncSession, *, followers: int = 24_000):
-    user = await auth_service.register(
+    user = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
         password="tourbillon-cactus-91-vermeil",
@@ -258,7 +258,7 @@ async def test_un_item_desactive_n_apparait_pas(session: AsyncSession) -> None:
     await offre(session, b, name="Visible")
     user, _ = await createur(session)
 
-    membre = await auth_service.register(
+    membre = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
         password="tourbillon-cactus-91-vermeil",
@@ -287,7 +287,7 @@ async def test_un_item_dont_le_parent_est_desactive_n_apparait_pas(
 
     assert (await fil(session, user)).commerces
 
-    membre = await auth_service.register(
+    membre = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
         password="tourbillon-cactus-91-vermeil",
@@ -315,7 +315,7 @@ async def test_un_item_sans_creneau_libre_n_apparait_pas(session: AsyncSession) 
 
 
 async def test_un_commerce_en_onboarding_n_apparait_pas(session: AsyncSession) -> None:
-    proprietaire = await auth_service.register(
+    proprietaire = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
         password="tourbillon-cactus-91-vermeil",
@@ -404,7 +404,7 @@ async def test_un_createur_sans_compte_social_a_un_fil_vide_et_explique(
 ) -> None:
     b = await commerce(session, longitude=-80.1305, latitude=25.7907)
     await offre(session, b)
-    user = await auth_service.register(
+    user = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
         password="tourbillon-cactus-91-vermeil",
@@ -651,7 +651,7 @@ async def test_un_fil_sans_compte_social_ne_propose_aucune_issue(
     """
     b = await commerce(session, longitude=-80.1305, latitude=25.7907)
     await offre(session, b)
-    user = await auth_service.register(
+    user = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
         password="tourbillon-cactus-91-vermeil",

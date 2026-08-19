@@ -27,10 +27,10 @@ from app.models.enums import (
 )
 from app.services import account_verification as verification
 from app.services import anonymization as anonymization_service
-from app.services import auth as auth_service
 from app.services import creator_profile as service
 from app.services import metrics as metrics_service
 from app.services.audit import Actor
+from tests.conftest import inscrire_verifie
 from tests.test_social_metrics import FauxFournisseur, metriques
 
 PREFIX = get_settings().api_v1_prefix
@@ -55,7 +55,7 @@ NON_PERSONNEL = {
 
 
 async def creer_createur(session: AsyncSession, **profil) -> CreatorProfile:
-    user = await auth_service.register(
+    user = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
         password="tourbillon-cactus-91-vermeil",

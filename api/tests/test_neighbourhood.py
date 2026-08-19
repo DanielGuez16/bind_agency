@@ -24,12 +24,12 @@ from app.models.enums import BusinessCategory, UserRole
 from app.schemas.business import BusinessCreate, CoordinatesPayload
 from app.schemas.capacity import CapacityRuleCreate
 from app.schemas.catalog import CatalogItemCreate
-from app.services import auth as auth_service
 from app.services import business as business_service
 from app.services import capacity as capacity_service
 from app.services import catalog as catalog_service
 from app.services import neighbourhood
 from app.services.audit import Actor
+from tests.conftest import inscrire_verifie
 
 #: Ocean Drive. Le voisinage se dessine en décalant la longitude : à cette
 #: latitude, un dix-millième de degré vaut une dizaine de mètres.
@@ -45,7 +45,7 @@ async def salon(
     actif: bool = True,
 ):
     """Un salon à `decalage` degrés de l'ancre, avec ce qu'il publie."""
-    proprietaire = await auth_service.register(
+    proprietaire = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
         password="tourbillon-cactus-91-vermeil",
@@ -197,7 +197,7 @@ async def test_un_commerce_sans_point_n_a_pas_de_voisinage(session: AsyncSession
     plancher = get_settings().neighbourhood_minimum_businesses
     await voisinage(session, combien=plancher, prestations=5, postes=2)
 
-    proprietaire = await auth_service.register(
+    proprietaire = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
         password="tourbillon-cactus-91-vermeil",

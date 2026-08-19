@@ -52,6 +52,24 @@ from app.services import social_accounts as social_account_service
 from app.services import tier_offers as tier_offer_service
 from app.services.audit import Actor
 
+
+async def _inscrire_verifie(session, **kwargs):
+    """Un compte du jeu de démonstration, **adresse confirmée par le vrai chemin**.
+
+    Sans confirmation, aucun de ces comptes ne peut réserver ni mettre son salon
+    en ligne : le jeu entier s'arrêterait à la première réservation. Le jeton est
+    émis et consommé plutôt que la date posée à la main — un semis qui écrirait
+    `email_verified_at` directement produirait le même état sans jamais éprouver
+    le mécanisme qui doit le produire.
+    """
+    from app.services import email_verification as _verif
+
+    user = await auth_service.register(session, **kwargs)
+    jeton = await _verif.emettre(session, user=user)
+    await _verif.confirmer(session, jeton=jeton)
+    return user
+
+
 #: Environnements où l'effacement de la base est acceptable. Ailleurs, la
 #: commande refuse : elle détruit tout avant d'écrire.
 #:
@@ -930,7 +948,7 @@ async def _creator(
     ni score de fiabilité, ni compteur de collaborations, ni nom. Voir la liste
     des trous dans `DECISIONS.md`.
     """
-    user = await auth_service.register(
+    user = await _inscrire_verifie(
         session, email=email, password=MOT_DE_PASSE, role=UserRole.CREATOR, locale=locale
     )
 
@@ -1000,7 +1018,7 @@ async def populate() -> Resume:
 
     try:
         async with factory() as session:
-            await auth_service.register(
+            await _inscrire_verifie(
                 session,
                 email="admin@bind.example",
                 password=MOT_DE_PASSE,
@@ -1009,7 +1027,7 @@ async def populate() -> Resume:
             )
 
             proprietaires = [
-                await auth_service.register(
+                await _inscrire_verifie(
                     session,
                     email=email,
                     password=MOT_DE_PASSE,
@@ -1035,7 +1053,7 @@ async def populate() -> Resume:
             # partager un compte entre plusieurs commerces ferait de la
             # démonstration un cas que le produit ne connaît pas encore.
             for fiche in MARCHE:
-                gerant = await auth_service.register(
+                gerant = await _inscrire_verifie(
                     session,
                     email=courriel_du_gerant(fiche),
                     password=MOT_DE_PASSE,

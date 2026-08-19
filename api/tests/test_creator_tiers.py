@@ -25,12 +25,12 @@ from app.models.enums import (
     UserRole,
     VerificationStatus,
 )
-from app.services import auth as auth_service
 from app.services import creator_tiers as service
 from app.services import metrics as metrics_service
 from app.services import reliability
 from app.services.audit import Actor
 from app.services.eligibility import RaisonRefus
+from tests.conftest import inscrire_verifie
 from tests.test_social_metrics import FauxFournisseur, metriques
 
 PREFIX = get_settings().api_v1_prefix
@@ -40,7 +40,7 @@ REEL = uuid.UUID("a839969b-3965-4c7e-92b1-b6274f899162")  # instagram/reel, 1000
 
 
 async def createur(session: AsyncSession):
-    return await auth_service.register(
+    return await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
         password="tourbillon-cactus-91-vermeil",
@@ -350,7 +350,7 @@ async def test_une_prestation_retiree_ne_compte_plus(session: AsyncSession) -> N
     }
     # Un acteur humain : une transition décidée par le système doit dire
     # pourquoi, et retirer une prestation est une décision du commerce.
-    membre = await auth_service.register(
+    membre = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
         password="tourbillon-cactus-91-vermeil",

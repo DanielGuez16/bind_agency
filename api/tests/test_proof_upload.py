@@ -15,7 +15,7 @@ from httpx import AsyncClient
 
 from app.core.config import get_settings
 from app.models.enums import UserRole
-from app.services import auth as auth_service
+from tests.conftest import inscrire_verifie
 
 PREFIX = get_settings().api_v1_prefix
 MOT_DE_PASSE = "tourbillon-cactus-91-vermeil"
@@ -28,7 +28,7 @@ PNG = (
 
 
 async def creatrice(client: AsyncClient, session) -> dict:
-    user = await auth_service.register(
+    user = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
         password=MOT_DE_PASSE,
@@ -113,7 +113,7 @@ async def test_un_fichier_vide_est_refuse(client: AsyncClient, session) -> None:
 
 async def test_seule_une_creatrice_televerse(client: AsyncClient, session) -> None:
     """Un commerce n'a pas de preuve à envoyer, il en reçoit."""
-    user = await auth_service.register(
+    user = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
         password=MOT_DE_PASSE,

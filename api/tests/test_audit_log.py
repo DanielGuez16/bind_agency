@@ -19,6 +19,7 @@ from app.models import AuditLog, RefreshToken, User
 from app.models.enums import ActorKind, RefreshTokenState, UserRole, UserStatus
 from app.services import audit as audit_service
 from app.services import auth as auth_service
+from tests.conftest import inscrire_verifie
 from tests.factories import new_user
 
 PREFIX = get_settings().api_v1_prefix
@@ -191,7 +192,7 @@ async def test_un_rollback_ne_laisse_aucune_ligne_orpheline(
     session: AsyncSession, conn: AsyncConnection
 ) -> None:
     """La ligne de journal vit dans la transaction de la transition qu'elle décrit."""
-    await auth_service.register(
+    await inscrire_verifie(
         session,
         email="annule@example.com",
         password="tourbillon-cactus-91-vermeil",

@@ -22,9 +22,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.models import Booking, BusinessMember, TierOffer
 from app.models.enums import BookingStatus, BusinessMemberRole, UserRole
-from app.services import auth as auth_service
 from app.services import booking_history as service
 from app.services import booking_states
+from tests.conftest import inscrire_verifie
 from tests.test_booking_create import monter_le_decor, premier_creneau, reserver
 
 PREFIX = get_settings().api_v1_prefix
@@ -32,7 +32,7 @@ MOT_DE_PASSE = "tourbillon-cactus-91-vermeil"
 
 
 async def caissier(session: AsyncSession, business) -> object:
-    membre = await auth_service.register(
+    membre = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
         password=MOT_DE_PASSE,
