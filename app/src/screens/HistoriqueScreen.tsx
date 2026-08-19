@@ -32,9 +32,9 @@ import {
   StatusMessage,
   Texte,
 } from '../components';
-import { useColors } from '../theme';
+import { elevationDeCarte, radius, useColors, type ColorName } from '../theme';
 import { useI18n, type SupportedLocale } from '../i18n';
-import { formatDateTime, formatMois } from '../format';
+import { formatDateTime, formatMois, formatQuantieme } from '../format';
 import { Ecran } from './Ecran';
 import { useRequete } from './useRequete';
 
@@ -222,21 +222,58 @@ export function HistoriqueScreen({
               autres portent deux ou trois lignes : un intertitre y coûterait
               plus qu'il ne rend, et découperait une liste qui se lit d'un
               coup. */}
+          {/* **Terminées : des lignes nues.** Le « moche » venait d'un
+              traitement d'action appliqué à de l'histoire — des cartes à ombre
+              pour une liste qui ne demande rien. Le quantième à gauche, le mois
+              en séparateur, le résultat en pastille : un historique se balaie,
+              il ne se lit pas. */}
           {ONGLETS[index].cle === 'terminees'
             ? grouperParMois(vue.items, locale).map((groupe) => (
-                <View key={groupe.mois} style={{ gap: 12 }} testID={`mois-${groupe.mois}`}>
-                  <Texte variante="type.monoSmall" couleur="ink.mute">
+                <View key={groupe.mois} style={{ gap: 0 }} testID={`mois-${groupe.mois}`}>
+                  <Texte
+                    variante="type.monoSmall"
+                    couleur="ink.mute"
+                    style={{ paddingBottom: 10 }}
+                  >
                     {groupe.mois}
                   </Texte>
                   {groupe.items.map((reservation, rang) => (
                     <Apparition key={reservation.booking_id} rang={rang}>
-                      <LigneDeReservation reservation={reservation} onOuvrir={onOuvrir} />
+                      <LigneNue reservation={reservation} />
                     </Apparition>
                   ))}
                 </View>
               ))
             : null}
-          {ONGLETS[index].cle === 'terminees' ? null : vue.items.map((reservation, rang) => {
+
+          {/* **À venir : deux sections nommées par leur verbe.** L'onglet
+              mêlait les réservations acceptées, où il faut venir, et celles qui
+              attendent la décision du salon, où il faut attendre. Deux verbes
+              dans une liste unique, et l'on ne savait pas en la parcourant s'il
+              y avait quelque chose à faire. */}
+          {ONGLETS[index].cle === 'a-venir'
+            ? (['moi', 'salon'] as const).map((qui) => {
+                const lignes = vue.items.filter((r) => sectionAVenir(r) === qui);
+                if (lignes.length === 0) return null;
+                return (
+                  <View key={qui} style={{ gap: 11 }} testID={`section-${qui}`}>
+                    <Texte variante="type.monoSmall" couleur="ink.mute">
+                      {t(qui === 'moi' ? 'parcours.sectionMontreTonCode' : 'parcours.sectionLeSalonDecide')}
+                    </Texte>
+                    {lignes.map((reservation, rang) => (
+                      <Apparition key={reservation.booking_id} rang={rang}>
+                        <CarteDeReservation
+                          reservation={reservation}
+                          onglet="a-venir"
+                          onOuvrir={onOuvrir}
+                        />
+                      </Apparition>
+                    ))}
+                  </View>
+                );
+              })
+            : null}
+          {ONGLETS[index].cle !== 'en-cours' ? null : vue.items.map((reservation, rang) => {
             // **Pressable exactement quand la ligne attend un geste.** Une
             // ligne en contrôle ouvrait l'écran de preuve alors qu'elle dit
             // « rien à faire de votre côté » : la ligne et son texte se
@@ -244,19 +281,11 @@ export function HistoriqueScreen({
             const ouvrable = attenteDe(reservation) === 'creatrice';
             return (
               <Apparition key={reservation.booking_id} rang={rang}>
-              <Pressable
-                testID={`reservation-${reservation.booking_id}`}
-                accessibilityRole={ouvrable ? 'button' : undefined}
-                accessibilityLabel={ouvrable ? reservation.business_name : undefined}
-                // Pressable seulement quand il y a quelque chose derrière. Une
-                // ligne qui répond au doigt sans rien ouvrir apprend à ne plus
-                // essayer, et c'est tout l'écran qui devient inerte.
-                disabled={!ouvrable}
-                onPress={() => onOuvrir(reservation)}
-                style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
-              >
-                <LigneDeReservation reservation={reservation} onOuvrir={onOuvrir} />
-              </Pressable>
+              <CarteDeReservation
+                reservation={reservation}
+                onglet="en-cours"
+                onOuvrir={onOuvrir}
+              />
               </Apparition>
             );
           })}
@@ -264,6 +293,94 @@ export function HistoriqueScreen({
       )}
     </Ecran>
   );
+}
+
+/**
+ * Une ligne nue : l'historique, qui ne demande rien.
+ *
+ * Le quantième à gauche en mono, la prestation et son attribution au milieu, le
+ * résultat en pastille à droite. Aucune ombre, aucun filet de carte : un seul
+ * trait qui sépare des lignes, comme un relevé.
+ *
+ * **La pastille dit le résultat, jamais l'état technique.** « Honoured » et
+ * « Not honoured » sont ce qui compte pour elle ; `no_show` et `expired` sont
+ * des mots de machine, et la créatrice n'a pas à traduire.
+ */
+function LigneNue({ reservation }: { reservation: ReservationDuCreateur }) {
+  const { t, locale } = useI18n();
+  const c = useColors();
+  const quand = reservation.starts_at ?? reservation.valid_until;
+  const issue = issueDe(reservation);
+
+  return (
+    <View
+      testID={`reservation-${reservation.booking_id}`}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        paddingVertical: 13,
+        borderTopWidth: 1,
+        borderTopColor: c['line.default'],
+      }}
+    >
+      <Texte
+        variante="type.monoSmall"
+        couleur="ink.mute"
+        style={{ width: 26 }}
+        testID={`quand-${reservation.booking_id}`}
+      >
+        {formatQuantieme(quand, locale, reservation.business_timezone)}
+      </Texte>
+
+      <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+        <Texte variante="type.bodyStrong">{reservation.item_name}</Texte>
+        <Texte variante="type.caption" couleur="ink.soft">
+          {`${reservation.business_name} · ${t(`parcours.format_${reservation.content_format}`)}`}
+        </Texte>
+      </View>
+
+      <View
+        testID={`issue-${reservation.booking_id}`}
+        style={{
+          paddingVertical: 5,
+          paddingHorizontal: 10,
+          borderRadius: radius['radius.sm'],
+          backgroundColor: c[issue.fond],
+        }}
+      >
+        <Texte variante="type.monoSmall" couleur={issue.encre}>
+          {t(issue.libelle).toUpperCase()}
+        </Texte>
+      </View>
+    </View>
+  );
+}
+
+/** Ce qu'une réservation close a produit, du point de vue de la créatrice. */
+function issueDe(reservation: ReservationDuCreateur): {
+  libelle: string;
+  fond: ColorName;
+  encre: ColorName;
+} {
+  const contrepartie = reservation.contrepartie;
+  if (contrepartie?.status === 'approved') {
+    return {
+      libelle: 'parcours.issueHonoree',
+      fond: 'status.success.surface',
+      encre: 'status.success.text',
+    };
+  }
+  if (contrepartie?.status === 'unfulfilled' || reservation.status === 'no_show') {
+    return {
+      libelle: 'parcours.issueNonHonoree',
+      fond: 'status.danger.surface',
+      encre: 'status.danger.text',
+    };
+  }
+  // Annulée, expirée : ni tenue ni manquée. La ranger en « non honorée »
+  // l'inscrirait au passif d'une créatrice qui n'a rien fait de mal.
+  return { libelle: 'parcours.issueAnnulee', fond: 'bg.deep', encre: 'ink.soft' };
 }
 
 /**
@@ -279,6 +396,49 @@ export function HistoriqueScreen({
  * **Le badge porte le palier et le réseau**, parce que la même prestation peut
  * exister sur deux comptes — « one story » ne dit pas sur lequel publier.
  */
+function CarteDeReservation({
+  reservation,
+  onglet,
+  onOuvrir,
+}: {
+  reservation: ReservationDuCreateur;
+  /** Décide la surface : une carte demande ou informe selon son onglet. */
+  onglet: string;
+  onOuvrir: (reservation: ReservationDuCreateur) => void;
+}) {
+  const c = useColors();
+  const surface = surfaceDe(reservation, onglet);
+
+  const ouvrable = attenteDe(reservation) === 'creatrice';
+
+  return (
+    <Pressable
+      testID={`reservation-${reservation.booking_id}`}
+      accessibilityRole={ouvrable ? 'button' : undefined}
+      accessibilityLabel={ouvrable ? reservation.business_name : undefined}
+      // Pressable seulement quand il y a quelque chose derrière : une carte qui
+      // répond au doigt sans rien ouvrir apprend à ne plus essayer.
+      disabled={!ouvrable}
+      onPress={() => onOuvrir(reservation)}
+      style={({ pressed }) => ({
+        opacity: pressed ? 0.7 : 1,
+        borderRadius: radius['radius.lg'],
+        backgroundColor: c['bg.surface'],
+        padding: 16,
+        // **La grammaire, posée ici et nulle part ailleurs.** Une carte à ombre
+        // demande quelque chose, une carte à filet informe. Les deux ne se
+        // cumulent jamais : une ombre sous un filet fort les annule l'une
+        // l'autre et rend la hiérarchie illisible.
+        ...(surface === 'demande'
+          ? elevationDeCarte()
+          : { borderWidth: 1, borderColor: c['line.default'] }),
+      })}
+    >
+      <LigneDeReservation reservation={reservation} onOuvrir={onOuvrir} />
+    </Pressable>
+  );
+}
+
 function LigneDeReservation({
   reservation,
   onOuvrir,

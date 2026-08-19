@@ -83,6 +83,17 @@ export function formatJour(isoDate: string, locale: SupportedLocale): string {
 
 
 /**
+ * Le quantième seul, sur deux chiffres. « 08 ».
+ *
+ * Le mois est porté par l'intertitre : le répéter sur chaque ligne remplirait
+ * la colonne de gauche d'une information déjà donnée cinq lignes plus haut.
+ * Deux chiffres et non un, pour que la colonne reste droite.
+ */
+export function formatQuantieme(isoUtc: string, locale: SupportedLocale, timeZone: string): string {
+  return new Intl.DateTimeFormat(locale, { day: '2-digit', timeZone }).format(new Date(isoUtc));
+}
+
+/**
  * Le mois d'un instant, dans le fuseau du commerce. « AUGUST 2026 ».
  *
  * **Le fuseau, et pas celui du téléphone.** Une réservation du 1er août à
