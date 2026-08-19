@@ -28,6 +28,7 @@ import { PriseEnMainScreen } from './src/screens/PriseEnMainScreen';
 import { SessionProvider, coffreSecurise, themeDuRole, useSession } from './src/session';
 import { FrontiereDErreur } from './src/shell/FrontiereDErreur';
 import { Fondu, prenomDe } from './src/components';
+import { BanniereDeVerification } from './src/shell/BanniereDeVerification';
 import { brancheDeLaRacine } from './src/shell/brancheDeLaRacine';
 import { BienvenueScreen } from './src/screens/BienvenueScreen';
 import { Navigation } from './src/shell/Navigation';
@@ -120,10 +121,19 @@ function Coquille() {
               // avant qu'on ait pu croire le produit cassé.
               <BienvenueScreen onPlusTard={session.accueilVu} onRattache={session.accueilVu} />
             ) : (
-              <Navigation
-                role={session.utilisateur.role}
-                prenom={prenomDe(session.utilisateur.email)}
-              />
+              /* **La bannière au-dessus de la navigation, jamais dedans.** Un
+                 compte non confirmé l'est sur tous les onglets : la poser dans
+                 un écran la ferait disparaître au premier changement d'onglet,
+                 c'est-à-dire au moment précis où l'on va se heurter au refus
+                 qu'elle annonce. Elle ne rend rien quand il n'y a rien à dire,
+                 et l'application reprend alors toute la hauteur. */
+              <View style={{ flex: 1 }}>
+                <BanniereDeVerification />
+                <Navigation
+                  role={session.utilisateur.role}
+                  prenom={prenomDe(session.utilisateur.email)}
+                />
+              </View>
             )}
             </Fondu>
             </FrontiereDErreur>

@@ -34,6 +34,7 @@ import {
 } from 'react';
 
 import { ApiClient, ApiError, NetworkError, type CoffreDeJetons } from '../api';
+import { routes } from '../api/routes';
 import type { Role } from '../theme';
 
 /**
@@ -66,6 +67,16 @@ export type Utilisateur = {
   role: RoleApi;
   status: 'active' | 'suspended' | 'deleted';
   locale: 'en' | 'es';
+  /**
+   * Quand l'adresse a été confirmée. **Nulle veut dire « pas encore », jamais
+   * « refusée »** : le compte entre et se sert du produit, il ne peut
+   * simplement ni réserver ni mettre un commerce en ligne.
+   *
+   * C'est la session qui la porte, et non l'écran qui la demande : la bannière
+   * vit dans la coquille, au-dessus de tous les écrans, et un état lu par
+   * chacun d'eux se contredirait d'un onglet à l'autre.
+   */
+  email_verified_at: string | null;
 };
 
 export type EtatDeSession =
@@ -102,6 +113,24 @@ type SessionValue = EtatDeSession & {
    */
   vientDeSInscrire: boolean;
   accueilVu: () => void;
+  /**
+   * Relit `/me` et repose l'utilisateur de la session.
+   *
+   * **Ne déconnecte jamais**, quoi qu'il arrive : elle est appelée sur des
+   * gestes de fond — un retour au premier plan, un bouton « c'est fait » —, et
+   * jeter quelqu'un dehors parce que son réseau a hoqueté pendant qu'il
+   * revenait de sa boîte mail serait une punition pour rien. Un échec laisse
+   * l'état exactement où il était.
+   */
+  relireLeCompte: () => Promise<void>;
+  /**
+   * Redemande un lien de confirmation, et relit la session ensuite.
+   *
+   * Le relire sert au cas où l'adresse venait justement d'être confirmée : le
+   * serveur répond alors 409, la bannière disparaît, et personne ne reste
+   * devant un message d'erreur qui décrit une bonne nouvelle.
+   */
+  renvoyerLaVerification: () => Promise<void>;
   deconnecter: () => Promise<void>;
   /** Le client, déjà porteur du coffre. Les écrans passent par `useApi`. */
   client: ApiClient;
@@ -233,6 +262,31 @@ export function SessionProvider({
     };
   }, [coffre, etat]);
 
+  const relireLeCompte = useCallback(async () => {
+    try {
+      const utilisateur = await relireLUtilisateur();
+      // `etat` n'est pas dans les dépendances à dessein : la relecture ne doit
+      // pas se recréer à chaque changement de session, sans quoi l'effet qui
+      // écoute le premier plan se démonterait et se remonterait sans fin. La
+      // forme fonctionnelle lit l'état courant sans en dépendre.
+      setEtat((precedent) =>
+        precedent.etat === 'connecte' ? { etat: 'connecte', utilisateur } : precedent,
+      );
+    } catch {
+      // Voir le contrat : un échec ne change rien.
+    }
+  }, [relireLUtilisateur]);
+
+  const renvoyerLaVerification = useCallback(async () => {
+    try {
+      await client.request(routes.renvoyerLaVerification(), { methode: 'POST' });
+    } finally {
+      // Dans les deux cas : un envoi réussi ne change pas l'état, mais un 409
+      // « déjà vérifiée » veut dire que la session est en retard sur la vérité.
+      await relireLeCompte();
+    }
+  }, [client, relireLeCompte]);
+
   const deconnecter = useCallback(async () => {
     await client.deconnecter();
     setEtat({ etat: 'anonyme', motif: 'deconnexion' });
@@ -248,8 +302,21 @@ export function SessionProvider({
       client,
       vientDeSInscrire,
       accueilVu,
+      relireLeCompte,
+      renvoyerLaVerification,
     }),
-    [etat, jetonDAcces, connecter, inscrire, deconnecter, client, vientDeSInscrire, accueilVu],
+    [
+      etat,
+      jetonDAcces,
+      connecter,
+      inscrire,
+      deconnecter,
+      client,
+      vientDeSInscrire,
+      accueilVu,
+      relireLeCompte,
+      renvoyerLaVerification,
+    ],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

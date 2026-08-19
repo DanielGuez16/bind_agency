@@ -1127,13 +1127,17 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       Téléphone au format international, normalisé avant validation ; nom
       dépouillé de ses espaces avant d'être compté ; adresse d'au moins dix
       caractères. 13 tests neufs*
-- [ ] **L'écran de validation d'adresse, côté app**
-      *Le serveur est complet et la route de renvoi existe. Ce qui manque est un
-      écran : la bannière « confirmez votre adresse » avec son bouton de renvoi,
-      et l'accueil du retour de lien. **Non fait ici délibérément** — c'est de la
-      composition, et l'autre conversation refait les écrans. Le contrat est
-      dans `api-map.md`, `email_verified_at` est sur `/me`, et le code d'erreur
-      `email_not_verified` est traduit dans les deux langues*
+- [x] **L'écran de validation d'adresse, côté app**
+      *Une bannière dans la coquille plutôt qu'un écran, et c'est le point : le
+      compte non confirmé suit la personne d'un onglet à l'autre, un écran
+      dédié serait absent de celui où le refus tombe. `email_verified_at` entre
+      dans la session ; `relireLeCompte` et `renvoyerLaVerification` s'ajoutent
+      à ses gestes. **L'accueil du retour de lien est le retour au premier
+      plan** — le lien vise l'API et s'ouvre dans un navigateur, l'application
+      n'est jamais rappelée, elle revient : `AppState` relit alors le compte et
+      la bannière part d'elle-même. Le renvoi relit le compte même en échec,
+      sans quoi le 409 « déjà vérifiée » afficherait une erreur pour annoncer
+      une réussite. 5 tests neufs, 4 mutations vérifiées*
 - [x] **La suite en parallèle** — 651 s à 300 s, mesuré
       *`pytest-xdist` avec `--dist loadgroup`. Les deux tests de concurrence
       partagent `xdist_group("concurrence")` : même worker, sériels entre eux, et

@@ -642,6 +642,16 @@ export const en = {
   },
   accueil: {
   },
+  verification: {
+    titre: 'Confirm your email address',
+    corps:
+      'We sent a link to {{email}}. Until you open it, you can browse but you cannot book — and a business cannot go live.',
+    renvoyer: 'Send the link again',
+    renvoyerEncore: 'Send another one',
+    envoiEnCours: 'Sending',
+    envoye: 'A new link is on its way to {{email}}. Open it, then come back here.',
+    echec: 'The link could not be sent. Check your connection and try again.',
+  },
   auth: {
     retourA: 'Your tiers, your bookings and your history are where you left them.',
     retourB: 'A service in exchange for a publication. No money ever changes hands.',
