@@ -363,7 +363,7 @@ describe('le fil demande la position en arrivant', () => {
   it('la déclenche sans qu’on ait rien à presser', async () => {
     const demander = jest.fn();
 
-    render(cadre({ etat: 'jamais_demandee' }, demander));
+    await render(cadre({ etat: 'jamais_demandee' }, demander));
 
     await waitFor(() => expect(demander).toHaveBeenCalledTimes(1));
     // Et il n'y a pas de bouton : la question du système est la seule posée.
@@ -384,7 +384,7 @@ describe('le fil demande la position en arrivant', () => {
       { etat: 'sans_reponse' },
     ] as EtatDePosition[]) {
       const demander = jest.fn();
-      render(cadre(etat, demander));
+      await render(cadre(etat, demander));
       await waitFor(() => expect(screen.getByTestId('fil-sans-position')).toBeTruthy());
       expect(demander).not.toHaveBeenCalled();
     }
