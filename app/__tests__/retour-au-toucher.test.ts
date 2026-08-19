@@ -23,9 +23,11 @@
  * 5. `onPressIn={enfoncement.onPressIn}` — la paire câblée à la main.
  *
  * **La cinquième a été ajoutée après coup, et c'est la démonstration.** La
- * première version en connaissait quatre et déclarait `BusinessCard` sans
- * retour — la carte du fil, le composant le plus pressé du produit, qui a un
- * ressort depuis toujours. Une garde qui accuse à tort se fait désactiver.
+ * première version en connaissait quatre et accusait à tort la carte du fil —
+ * le composant le plus pressé du produit, qui avait un ressort depuis toujours,
+ * câblé sous la cinquième forme. Une garde qui accuse à tort se fait désactiver.
+ * (Cette carte a depuis été retirée ; l'exemple vaut pour la forme, pas pour
+ * le composant.)
  *
  * C'est la leçon du garde-fou des rendus asynchrones, qui ne cherchait l'appel
  * qu'en début de ligne et a laissé passer `const vue = render(…)` pendant des

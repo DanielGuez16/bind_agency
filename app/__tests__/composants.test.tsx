@@ -16,10 +16,10 @@ import type { ReactNode } from 'react';
 
 import {
   ApercuDePrestation,
+  BandeDeTexteSurPhoto,
   BadgesDeProfil,
   BarresParPalier,
   BarresParPeriode,
-  BusinessCard,
   Button,
   Chip,
   CodeGlyphs,
@@ -386,49 +386,18 @@ describe('badges de profil', () => {
 // Cartes
 // --------------------------------------------------------------------------
 
-describe('cartes', () => {
-  it('cadre la couverture au rapport des photos, avec ou sans image', async () => {
-    const props = {
-      name: 'Salón Ocean',
-      meta: 'Beauty · 320 m',
-      serviceName: 'Gel nails',
-      serviceDuration: '45 min',
-      tier: 'story' as const,
-    };
-    const sans = await monter(<BusinessCard {...props} testID="carte" />);
-    const rapportSans = style(screen.getByTestId('couverture')).aspectRatio;
-    await sans.unmount();
-
-    await monter(
-      <BusinessCard {...props} cover={{ uri: 'https://exemple/1.jpg' }} testID="carte" />,
-    );
-    const rapportAvec = style(screen.getByTestId('couverture')).aspectRatio;
-
-    // Un rapport, et non une hauteur fixe. Les couvertures sont déposées en
-    // 16:9 ; une boîte de hauteur fixe ne retombe sur ce rapport qu'à une seule
-    // largeur d'écran, et partout ailleurs « cover » rogne le sujet — sur un
-    // iPhone, la devanture perdait son enseigne.
-    //
-    // La carte garde par ailleurs la même hauteur avec ou sans photo : elle
-    // découle de la largeur, qui est la même pour toutes.
-    expect(rapportSans).toBe(rapportAvec);
-    expect(rapportAvec).toBeCloseTo(16 / 9, 3);
-  });
-
-  it('accompagne toujours le badge de la phrase de contrepartie', async () => {
-    await monter(
-      <BusinessCard
-        name="Salón Ocean"
-        meta="Beauty"
-        serviceName="Gel nails"
-        serviceDuration="45 min"
-        tier="story"
-      />,
-    );
-    // C'est la phrase qui informe, pas le badge.
-    expect(screen.getByText(produit.tier.story.counterpart.en)).toBeTruthy();
-  });
-
+/**
+ * **La carte de salon est retirée, et deux de ses tests avec elle.**
+ *
+ * « Le rapport de couverture 16:9 » et « le badge s'accompagne de sa phrase »
+ * décrivaient sa composition : une photo pleine largeur, le nom du salon
+ * dessus, la prestation en légende. C'est précisément la hiérarchie que la
+ * revue v3 a désignée comme le défaut. Les garder en les tordant aurait fait
+ * croire que cette forme tient encore quelque part.
+ *
+ * Ce qui reste ici vaut pour des composants que le produit rend toujours.
+ */
+describe('rangées et replis', () => {
   it("ne commente pas l'absence de photo côté créateur, et la commente côté commerce", async () => {
     const createur = await monter(
       <MediaFallback monogramme="Salón" height={150} labelTache="Photo manquante · ajouter" />,
@@ -1236,7 +1205,7 @@ describe('le satin, et ses trois refus', () => {
   });
 });
 
-describe('le nom d’une carte est sur une bande, pas sur une queue de dégradé', () => {
+describe('un texte sur une photo vit sur une bande, pas sur une queue de dégradé', () => {
   it('porte le plus opaque des arrêts, et non une opacité de hasard', async () => {
     // **Le défaut que ça ferme.** Sur un dégradé, l'opacité sous un texte
     // dépend de l'endroit exact où ce texte tombe — donc de la hauteur de la
@@ -1246,15 +1215,17 @@ describe('le nom d’une carte est sur une bande, pas sur une queue de dégradé
     //
     // Sur une bande, les deux nombres sont fixes : 12,10:1 et 7,72:1 sur une
     // photo blanche, sur n'importe quel écran.
+    //
+    // **Le sujet a changé, la règle non.** Le test lisait la bande de la carte
+    // de salon ; la carte est retirée, et la bande vit maintenant dans
+    // `BandeDeTexteSurPhoto`, que l'accueil et le choix de la porte posent sur
+    // leur satin. C'est la même surface avec le même métier — porter du texte
+    // par-dessus une image dont on ne sait rien.
     const { couleurs, opaciteMinimaleDuVoile } = require('../src/theme');
     await monter(
-      <BusinessCard
-        name="Salón Ocean"
-        meta="Beauty · 1,2 km"
-        serviceName="Gel nails"
-        serviceDuration="45 min"
-        tier="story"
-      />,
+      <BandeDeTexteSurPhoto testID="bande-du-nom">
+        <Texte variante="type.caption">Salón Ocean</Texte>
+      </BandeDeTexteSurPhoto>,
     );
 
     expect(style(screen.getByTestId('bande-du-nom')).backgroundColor).toBe(

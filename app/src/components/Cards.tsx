@@ -1,48 +1,35 @@
 /**
- * Cartes et rangées.
+ * Rangées de liste, et les deux surfaces qu'une photo demande.
  *
- * **La photo est le contenu, pas une vignette.** Une carte de salon occupe la
- * largeur et donne à la couverture la moitié de sa hauteur ; le nom se pose
- * dessus, sur un voile de lisibilité. Des images de la taille d'un timbre
- * faisaient d'un fil de salons de beauté une liste de texte.
+ * **La carte de salon a été retirée**, et ce fichier ne décrit plus qu'un
+ * voile, un repli d'image et deux rangées. Elle occupait la largeur, donnait à
+ * la couverture la moitié de la hauteur, et posait le nom du salon dessus —
+ * c'est-à-dire la composition que la revue v3 a désignée comme le défaut : le
+ * lieu en titre, la prestation en légende. Le fil rend maintenant des aperçus
+ * de prestation sans chrome, et la carte n'avait plus aucun appelant.
  *
- * **Le voile est un dégradé, pas un rectangle.** Un aplat sombre sur le bas de
- * l'image la salit ; un dégradé qui part de rien et finit opaque garde la photo
- * lisible et le texte détaché, quelle que soit la photo dessous. Ses trois
- * arrêts viennent des jetons.
+ * **Elle est partie plutôt que d'attendre.** Une carte qui survit sans écran
+ * finit par resservir en portant une composition périmée ; c'est arrivé au
+ * monogramme vert, qui a traversé un remplacement complet du système en gardant
+ * sa forme et se trouvait encore en tête de l'accueil quand tout le reste avait
+ * changé.
  *
- * **La hauteur d'une carte ne change jamais selon la présence d'une photo.**
- * Un fil dont les cartes se déforment selon les images est illisible au
- * défilement, et un salon sans photo paraîtrait puni.
+ * **Le voile est un dégradé, pas un rectangle.** Un aplat sombre sur le bas
+ * d'une image la salit ; un dégradé qui part de rien et finit opaque garde la
+ * photo lisible et le texte détaché, quelle que soit la photo dessous. Ses
+ * trois arrêts viennent des jetons.
  *
  * **Le repli d'image ne se commente pas côté créateur.** Un monogramme neutre.
  * Côté commerce, il devient une tâche — « Photo manquante · ajouter » — parce
  * que c'est quelqu'un qui peut la faire qui la lit.
  */
 import type { ReactNode } from 'react';
-import { Animated, Image, Pressable, View, type ImageSourcePropType } from 'react-native';
+import { Image, View, type ImageSourcePropType } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { elevationDeCarte, radius, useColors, useTheme } from '../theme';
-import { Button } from './Button';
-import { useEnfoncement } from './Mouvement';
+import { radius, useColors } from '../theme';
 import { Texte } from './Texte';
-import { TierBadge, LigneDeContrepartie, type Palier } from './TierBadge';
-
-/**
- * Le **rapport** de la couverture d'une carte, et non sa hauteur.
- *
- * Les couvertures sont déposées en 16:9 — c'est ce que demande `A-FOURNIR.md`
- * et ce que le semis range. Une boîte de hauteur fixe ne retombe sur ce rapport
- * qu'à une seule largeur d'écran : partout ailleurs, `resizeMode="cover"` rogne
- * pour remplir, et ce qu'il rogne est le sujet. Sur un iPhone, la devanture
- * perdait son enseigne.
- *
- * Le rapport, lui, tient à toutes les largeurs : la boîte suit l'image au lieu
- * que l'image suive la boîte. La hauteur reste identique d'une carte à l'autre
- * — c'est la largeur qui la fixe, et elle est la même pour toutes.
- */
-const RAPPORT_COUVERTURE = 16 / 9;
+import { TierBadge, type Palier } from './TierBadge';
 
 /**
  * Le voile de lisibilité posé sur une photo.
@@ -151,154 +138,6 @@ export function MediaFallback({
 }
 
 // --------------------------------------------------------------------------
-
-export type BusinessCardProps = {
-  name: string;
-  meta: string;
-  serviceName: string;
-  /** Déjà mise en forme par l'appelant : « 45 min ». Jamais un nombre nu. */
-  serviceDuration: string;
-  tier: Palier;
-  /** Déjà mise en forme : « 320 m ». */
-  distance?: string;
-  cover?: ImageSourcePropType;
-  labelPhotoManquante?: string;
-  action?: { label: string; onPress: () => void };
-  onPress?: () => void;
-  testID?: string;
-};
-
-export function BusinessCard({
-  name,
-  meta,
-  serviceName,
-  serviceDuration,
-  tier,
-  distance,
-  cover,
-  labelPhotoManquante,
-  action,
-  onPress,
-  testID,
-}: BusinessCardProps) {
-  const { color: c, role } = useTheme();
-  const enfoncement = useEnfoncement(Boolean(onPress));
-  // **L'ombre est portée par la vue extérieure, et c'est obligatoire.** La
-  // carte clippe son contenu — `overflow: 'hidden'`, pour que la couverture
-  // épouse le coin de 18 px — et sur iOS une vue qui clippe ne peut pas porter
-  // d'ombre : elle la coupe au même bord. Les deux ne peuvent donc pas vivre
-  // sur le même nœud. La vue extérieure reprend aussi le fond et le rayon,
-  // parce qu'iOS calcule l'ombre depuis la couche opaque : sans fond, il n'y a
-  // rien dont projeter la silhouette et l'ombre ne sort pas.
-  return (
-    <Animated.View
-      style={[
-        enfoncement.style,
-        {
-          borderRadius: radius['radius.lg'],
-          backgroundColor: c['bg.surface'],
-          ...elevationDeCarte(),
-        },
-      ]}
-    >
-      <Pressable
-        testID={testID}
-        accessibilityRole={onPress ? 'button' : undefined}
-        accessibilityLabel={onPress ? name : undefined}
-        onPress={onPress}
-        onPressIn={enfoncement.onPressIn}
-        onPressOut={enfoncement.onPressOut}
-        style={{
-          borderRadius: radius['radius.lg'],
-          borderWidth: 1,
-          borderColor: c['line.default'],
-          backgroundColor: c['bg.surface'],
-          overflow: 'hidden',
-        }}
-      >
-        <View
-          testID="couverture"
-          style={{ aspectRatio: RAPPORT_COUVERTURE, justifyContent: 'flex-end' }}
-        >
-          {cover ? (
-            <Image
-              source={cover}
-              // La boîte est au rapport de l'image : « cover » ne rogne donc
-              // rien, il remplit. Le voile et le nom se posent par-dessus sans
-              // rien retrancher au cadre.
-              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-              resizeMode="cover"
-            />
-          ) : (
-            <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
-              <MediaFallback
-                monogramme={name}
-                height="100%"
-                commeTache={role === 'merchant'}
-                labelTache={labelPhotoManquante}
-              />
-            </View>
-          )}
-
-          <VoileDeLisibilite />
-
-          <View style={{ position: 'absolute', top: 10, right: 10 }}>
-            <TierBadge tier={tier} size="sm" onPhoto />
-          </View>
-          {distance ? (
-            <View
-              style={{
-                position: 'absolute',
-                top: 10,
-                left: 10,
-                paddingVertical: 3,
-                paddingHorizontal: 8,
-                borderRadius: radius['radius.pill'],
-                backgroundColor: c['scrim.badge'],
-              }}
-            >
-              <Texte variante="type.mono" couleur="ink.default" style={{ fontSize: 11 }}>
-                {distance}
-              </Texte>
-            </View>
-          ) : null}
-
-          {/* Le nom sur la photo. C'est lui qu'on cherche en faisant défiler,
-              et le mettre sous l'image le renvoyait à la troisième ligne.
-
-              **Sur sa propre bande, pas sur la queue du dégradé.** Les deux
-              lignes tombaient à 0,65 et 0,76 d'opacité selon la hauteur de la
-              carte — au-dessus du seuil pour l'une, en dessous pour l'autre, et
-              impossible à prouver dans les deux cas. */}
-          <BandeDeTexteSurPhoto testID="bande-du-nom">
-            <Texte
-              variante="type.section"
-              ellipseSurNomPropre
-              // Le texte est posé sur le voile, pas sur une surface : sa
-              // couleur ne suit pas le fond de l'écran mais celui de la bande.
-              couleur="ink.onScrim"
-            >
-              {name}
-            </Texte>
-            <Texte variante="type.caption" couleur="ink.onScrimMuted">
-              {meta}
-            </Texte>
-          </BandeDeTexteSurPhoto>
-        </View>
-
-        <View style={{ padding: 14, gap: 6 }}>
-          <Texte variante="type.bodyStrong">{`${serviceName} · ${serviceDuration}`}</Texte>
-          <LigneDeContrepartie tier={tier} />
-          {action ? (
-            <View style={{ marginTop: 6 }}>
-              <Button label={action.label} onPress={action.onPress} />
-            </View>
-          ) : null}
-        </View>
-      </Pressable>
-    </Animated.View>
-  );
-}
 
 // --------------------------------------------------------------------------
 

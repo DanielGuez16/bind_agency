@@ -105,13 +105,17 @@ export function SkeletonLine({
 /**
  * Une liste de lignes de texte : un libellé, une valeur.
  *
- * **La forme la plus répandue du produit, et celle qui manquait.** Le défaut
- * d'`Ecran` est `SkeletonCard`, c'est-à-dire une carte à photo de 150 pixels.
- * Il est juste sur le fil et faux partout ailleurs : l'annuaire, l'audience, le
- * reporting, les plans, l'arbitrage rendent des lignes. Promettre une image qui
- * n'arrive jamais fait sauter la page entière au moment précis où quelqu'un
- * commençait à lire — le squelette ne servait alors qu'à rendre le saut plus
- * spectaculaire.
+ * **La forme la plus répandue du produit, et devenue le défaut d'`Ecran`.** Ce
+ * défaut était une carte à photo de 150 pixels — juste sur le fil, faux partout
+ * ailleurs : l'annuaire, l'audience, le reporting, les plans, l'arbitrage
+ * rendent des lignes. Promettre une image qui n'arrive jamais fait sauter la
+ * page entière au moment précis où quelqu'un commençait à lire ; le squelette ne
+ * servait alors qu'à rendre le saut plus spectaculaire.
+ *
+ * Le fil ne rend plus de cartes et la carte est retirée. Des lignes de texte ne
+ * ressemblent à rien en particulier, ce qui est exactement ce qu'on sait d'un
+ * écran qui n'a pas déclaré sa silhouette — et une garde exige que chacun la
+ * déclare, ce défaut n'étant qu'un filet de sécurité.
  */
 export function SkeletonLignes({ combien = 5, testID }: { combien?: number; testID?: string }) {
   return (
@@ -188,35 +192,3 @@ export function SkeletonGrille({
   );
 }
 
-/**
- * La géométrie de `BusinessCard`, à l'identique.
- *
- * **Aucun écran du produit ne rend plus cette forme.** `BusinessCard` n'a plus
- * d'appelant depuis que le fil est passé aux aperçus de prestation, et ce
- * squelette est le défaut de `Ecran` — c'est-à-dire la silhouette que reçoit un
- * écran qui n'a pas déclaré la sienne. Une garde exige que chacun le fasse ;
- * ce qui reste ici est donc le repli d'un cas qui ne devrait pas arriver, et
- * pas une forme que quelqu'un attend. À retirer avec `BusinessCard` le jour où
- * l'on tranche son sort — voir `TASKS.md`.
- */
-export function SkeletonCard({ testID }: { testID?: string }) {
-  const c = useColors();
-  return (
-    <View
-      testID={testID}
-      style={{
-        borderRadius: radius['radius.md'],
-        borderWidth: 1,
-        borderColor: c['line.default'],
-        overflow: 'hidden',
-      }}
-    >
-      <SkeletonBox height={150} rayon={0} />
-      <View style={{ padding: 12, gap: 8 }}>
-        <SkeletonLine width="60%" decalage={100} />
-        <SkeletonLine width="40%" decalage={200} />
-        <SkeletonLine width="80%" decalage={300} />
-      </View>
-    </View>
-  );
-}

@@ -24,7 +24,7 @@
 import type { ReactNode } from 'react';
 import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 
-import { Button, EmptyState, Icone, SkeletonCard, StatusMessage, Texte } from '../components';
+import { Button, EmptyState, Icone, SkeletonLignes, StatusMessage, Texte } from '../components';
 import { useI18n, type SupportedLocale } from '../i18n';
 import { formatDate } from '../format';
 import { BarreDeTitre } from '../shell/BarreDeTitre';
@@ -112,17 +112,19 @@ export function Ecran<T>({
       return (
         <View testID="etat-chargement" style={[{ gap: density.gap }, squelette ? null : margeDeSecours]}>
           {squelette ?? (
-            // **Le défaut promet une carte à photo, et il n'a raison que sur le
-            // fil.** Nommé pour qu'une garde puisse vérifier qu'il ne sert pas
-            // là où l'écran rend des lignes, un tableau, une grille ou une
-            // fiche unique : le squelette de la mauvaise forme fait sauter la
-            // page entière à l'arrivée des données, exactement au moment où on
-            // commençait à lire.
-            <>
-              <SkeletonCard testID="squelette-par-defaut" />
-              <SkeletonCard />
-              <SkeletonCard />
-            </>
+            // **Le défaut ne promet plus rien de précis, et c'est le progrès.**
+            // Il promettait une carte à photo — la géométrie de `BusinessCard`,
+            // juste sur le fil et fausse partout ailleurs. Le fil ne rend plus
+            // de cartes et `BusinessCard` est retirée : un défaut qui aurait
+            // continué d'annoncer sa forme aurait annoncé une composition que
+            // plus aucun écran ne porte. Des lignes de texte ne ressemblent à
+            // rien en particulier, ce qui est exactement ce qu'on sait d'un
+            // écran qui n'a pas déclaré sa silhouette.
+            //
+            // Nommé quand même : une garde vérifie que chaque écran déclare la
+            // sienne, et elle a besoin de reconnaître le défaut pour dire qu'il
+            // ne sert nulle part.
+            <SkeletonLignes testID="squelette-par-defaut" />
           )}
         </View>
       );

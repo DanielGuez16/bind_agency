@@ -36,13 +36,11 @@ export { BadgesDeProfil, chipDeComportement, type BadgeDeProfil } from './Badges
 export { ApercuDePrestation, CASE_DU_BADGE, IMAGE_DE_L_APERCU } from './ApercuDePrestation';
 export type { ApercuDePrestationProps } from './ApercuDePrestation';
 export {
-  BusinessCard,
   DataRow,
   MediaFallback,
   ServiceRow,
   BandeDeTexteSurPhoto,
   VoileDeLisibilite,
-  type BusinessCardProps,
   type DataRowProps,
   type MediaFallbackProps,
   type ServiceRowProps,
@@ -63,7 +61,6 @@ export {
 export { EmptyState, type EmptyStateProps } from './EmptyState';
 export {
   SkeletonBox,
-  SkeletonCard,
   SkeletonFiche,
   SkeletonGrille,
   SkeletonLignes,
