@@ -1127,6 +1127,15 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       Téléphone au format international, normalisé avant validation ; nom
       dépouillé de ses espaces avant d'être compté ; adresse d'au moins dix
       caractères. 13 tests neufs*
+- [x] **Le temps restant et le dernier motif, pour l'écran d'envoi de preuve**
+      *`secondes_avant_echeance` compté par le serveur — l'horloge d'un terminal
+      n'est pas une preuve — plancher à zéro, `deadline_at` servi à côté pour
+      qu'un écran resté ouvert se recale sans redemander la route.
+      `dernier_motif` relu du journal d'audit, la même source que
+      `LigneDeFile.dernier_motif` : deux façades, une vérité. 7 tests neufs,
+      5 mutations vérifiées. **Contradiction signalée** — il n'existe qu'une
+      fenêtre, `deadline_at`, à 24 h de la consommation puis 12 h par refus ; ni
+      le code ni `SPEC.md` ne portent de délai de 48/72 h par palier*
 - [x] **L'écran de validation d'adresse, côté app**
       *Une bannière dans la coquille plutôt qu'un écran, et c'est le point : le
       compte non confirmé suit la personne d'un onglet à l'autre, un écran
