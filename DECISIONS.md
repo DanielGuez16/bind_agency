@@ -6895,3 +6895,67 @@ voit**, et c'est la deuxième fois que cette frontière laisse passer un test
 périmé. La liste des familles retirées ne se vide pas d'une direction à l'autre,
 elle s'allonge : sinon une famille abandonnée deux directions plus tôt revient
 par une dépendance transitive.
+
+## 2026-08-19 — Le fil v3 : une inversion de hiérarchie, pas une catégorie de plus
+
+Les testeurs ne savaient pas s'ils regardaient un lieu ou une prestation, et la
+revue proposait d'ajouter une catégorie « activités ». **Ce n'était pas le
+défaut.** Chaque carte du fil est déjà une prestation : une catégorie qui les
+rassemblerait toutes rassemblerait tout le fil, et la confusion resterait entière
+à l'intérieur de chacune. La carte montrait le salon à 22 points sur la photo et
+la prestation à 16 en dessous — l'objet de la réservation était **subordonné au
+lieu qui l'héberge**. La prestation prend donc le titre, le salon passe en
+attribution avec la durée.
+
+**Le même défaut existait sur la fiche**, où le nom de la prestation était en
+`type.label` — onze points, la taille d'une étiquette — sous une durée en mono de
+douze, plus grosse que lui. Les deux corrections partagent une variante et un
+test qui les compare : les écrire séparément en points les laisserait diverger,
+et c'est exactement ainsi que le défaut est né.
+
+**Le chrome de carte disparaît entièrement**, ce qui permet deux aperçus par
+ligne. Deux et non trois : à trois, la colonne tombe à 111 points et un nom de
+prestation passe sur trois lignes — on aurait densifié l'écran en cassant la
+correction qu'il porte. La case du badge garde une **hauteur fixe, occupée ou
+vide** ; sans elle, la hauteur d'une rangée dépend de la donnée et deux colonnes
+côte à côte se décalent.
+
+**Le quartier n'est pas une troisième bande de navigation.** Empiler catégories,
+quartiers et filtres aurait reproduit le défaut signalé. Il structure le mur
+lui-même : le plus proche est ouvert, les autres sont des carrés au pied. La
+distance ordonne les sections **sans jamais s'écrire** — le tri survit donc à la
+disparition de son affichage, et il est servi plutôt que dérivé carte par carte.
+
+**Deux compositions pour un même contenu, supprimées.** Le fil rendait un mur de
+six formats sans filtre et des rangées par quartier avec — arbitrage écrit par
+Design au bas de la planche v2, et la seconde composition n'apparaissait qu'à
+ceux qui filtraient. La v3 n'en a qu'une. Partent avec elle : `cycle.ts`,
+`regles.ts`, `RangeesParQuartier`, le bilan du pied, et cinq fichiers de tests
+qui n'ont plus d'objet.
+
+**Deux écarts à la planche, tous deux instruits.** Le badge passe de `brand.700`
+à `brand.900` sur `brand.100` : l'ambre moyen sur l'ambre clair donne 4,19:1,
+sous le 4,5 qu'un texte de cette taille demande, et le dernier cran de la rampe
+donne 8,84 en gardant l'ambre sur ambre. Et le bouton de recherche n'est pas
+rendu : aucun écran ne le sert, et la passation §7 tranche — « le bouton
+impossible est retiré, jamais grisé ».
+
+**Trois champs servis n'ont plus de lecteur**, et la garde des champs les a dits
+plutôt qu'une relecture : `CommerceDuFil.cover_portrait_key`, servi pour les
+héros à fond perdu que la v3 n'a plus ; `Fil.prochain_palier` et
+`ProchainPalier.commerces_de_plus`, dont le sujet est parti vers Audience — qui
+consulte `mesPaliers` et non le fil. Ils sont en `a-instruire` et non en
+`contrat` : ils étaient rendus hier, et les ranger fermerait la question au lieu
+de la poser.
+
+## 2026-08-19 — Deux tests qui n'interrogeaient rien, trouvés en en écrivant d'autres
+
+`toHaveTextContent` compare le contenu **entier** quand on lui passe une chaîne.
+Deux assertions en profitaient sans le savoir : `not.toHaveTextContent('·')`
+était vraie de toute ligne ne disant pas *uniquement* « · », et
+`toHaveTextContent` sur le conteneur de l'en-tête lisait une chaîne vide — il
+n'agrège pas ses descendants — si bien que les trois négations sur les noms de
+quartier passaient sans rien lire. Aucune n'a été trouvée par relecture : la
+première par une mutation, la seconde parce que le conteneur a cessé d'exister
+sous cette forme. **Une négation qui porte sur un nœud vide est verte pour
+toujours.**
