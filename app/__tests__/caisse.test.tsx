@@ -261,3 +261,23 @@ describe('écran de caisse', () => {
     await waitFor(() => expect(perdue).toHaveBeenCalled());
   });
 });
+
+it('ouvre sur le scan, et laisse la saisie à un geste', async () => {
+  /**
+   * **L'ordre dit quel chemin est le principal.** La saisie était devant, et
+   * l'argument tenait : une caméra sale arrive dans un salon. Mais ce sont les
+   * mauvais jours, et le geste ordinaire est de présenter un téléphone à un
+   * autre — six caractères tapés à chaque passage pour se prémunir d'un cas
+   * rare, c'est le cas rare qui décidait de l'écran.
+   *
+   * Vérifié dans les deux sens : le scanner est là d'emblée, et la saisie reste
+   * accessible d'un seul geste. Un test qui ne regarderait que le premier
+   * laisserait passer un écran où le secours a disparu.
+   */
+  const vue = await afficher({ scanner: scannerFactice });
+
+  expect(vue.getByText('scanner-factice')).toBeTruthy();
+
+  await fireEvent.press(vue.getByText(en.redemption.manualTab));
+  expect(vue.getByText(en.redemption.manualSubmit)).toBeTruthy();
+});

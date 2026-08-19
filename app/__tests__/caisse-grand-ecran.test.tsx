@@ -154,12 +154,21 @@ describe('caisse, grand écran', () => {
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
-  it('garde la saisie manuelle au premier rang, scanner ou non', async () => {
-    // Dans un salon, une caméra sale ou une lumière rasante arrivent tous les
-    // jours. Le champ est utilisable d'emblée.
+  it('ouvre sur le scan et garde la saisie à un geste', async () => {
+    // **L'ordre s'est inversé, et l'ancien argument tenait pourtant** : une
+    // caméra sale ou une lumière rasante arrivent dans un salon. Mais ce sont
+    // les mauvais jours, et le geste ordinaire est de présenter un téléphone à
+    // un autre — taper six caractères à chaque passage pour se prémunir d'un
+    // cas rare, c'était le cas rare qui décidait de l'écran.
+    //
+    // Le secours ne disparaît pas : il est l'onglet d'à côté, et c'est ce qui
+    // rend la bascule acceptable.
     repond([]);
     await afficher(scannerFactice);
 
+    expect(screen.getByText('scanner-factice')).toBeTruthy();
+
+    await fireEvent.press(screen.getByText(en.redemption.manualTab));
     expect(screen.getByTestId('champ-code')).toBeTruthy();
     expect(screen.getByText(en.redemption.manualHint)).toBeTruthy();
   });
