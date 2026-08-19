@@ -44,7 +44,7 @@ import {
   Texte,
   vibration,
 } from '../components';
-import { formatNumber, jourCivil, nomDeJour } from '../format';
+import { formatHeure, formatNumber, jourCivil, nomDeJour } from '../format';
 import { useI18n } from '../i18n';
 import { Ecran } from './Ecran';
 import { useRequete } from './useRequete';
@@ -254,13 +254,36 @@ export function CreneauxScreen({
             backgroundColor: c['bg.surface'],
           }}
         >
-          <Button
-            label={t('parcours.confirmer')}
-            size="lg"
-            loading={envoi}
-            onPress={reserver}
-            testID="confirmer"
-          />
+          {/* **La barre porte ce qu'on réserve, pas seulement le bouton.** Un
+              aplat orange sur toute la largeur ne dit pas ce qu'il valide ; la
+              phrase à gauche le dit, et le bouton cesse d'être la surface
+              dominante — même correction que sur la fiche. */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+            <View style={{ flex: 1, minWidth: 0, gap: 1 }}>
+              <Texte variante="type.bodyStrong" testID="ce-qu-on-reserve">
+                {choisi && jour
+                  ? t('parcours.creneauxRecapitulatif', {
+                      jour: nomDeJour(jour, locale, 'long'),
+                      heure: formatHeure(choisi, locale, fiche.timezone),
+                    })
+                  : offre.name}
+              </Texte>
+              {offre.duration_minutes === null ? null : (
+                <Texte variante="type.caption" couleur="ink.mute">
+                  {t('parcours.ficheDuree', {
+                    count: formatNumber(offre.duration_minutes, locale),
+                  })}
+                </Texte>
+              )}
+            </View>
+            <Button
+              label={t('parcours.confirmer')}
+              loading={envoi}
+              fullWidth={false}
+              onPress={reserver}
+              testID="confirmer"
+            />
+          </View>
         </View>
       ) : null}
     </View>

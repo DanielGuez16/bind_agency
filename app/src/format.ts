@@ -81,6 +81,7 @@ export function formatJour(isoDate: string, locale: SupportedLocale): string {
   );
 }
 
+
 /**
  * Le repère d'un créneau : aujourd'hui, demain, un jour nommé, ou sa date.
  *

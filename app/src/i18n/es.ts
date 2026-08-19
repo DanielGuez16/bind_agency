@@ -315,6 +315,7 @@ export const es: Catalogue = {
     ficheMention: 'una mención a {{mention}}',
     ficheLieu: 'una etiqueta de ubicación',
     creneauxTitre: 'Elige una hora',
+    creneauxRecapitulatif: '{{jour}}, {{heure}}',
     creneauxEtatCourt: {
       ferme: 'Cerrado',
       complet: 'Lleno',
@@ -349,6 +350,7 @@ export const es: Catalogue = {
     reserver: 'Reservar',
     reservationFaite: 'Reservado',
     confirmer: 'Confirmar reserva',
+    contrepartieReste: 'Quedan {{reste}}',
     contrepartieEcheance: 'Antes del {{quand}}',
     contrepartieTentative: 'Intento {{n}} de 3',
     contrepartieRienAFaire: 'El local lo está revisando — nada que hacer de tu lado.',
