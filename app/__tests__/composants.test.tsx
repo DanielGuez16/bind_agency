@@ -17,12 +17,13 @@ import type { ReactNode } from 'react';
 import {
   ApercuDePrestation,
   BadgesDeProfil,
+  BarresParPalier,
+  BarresParPeriode,
   BusinessCard,
   Button,
   Chip,
   CodeGlyphs,
   CodeInput,
-  groupesDeRangs,
   Countdown,
   DataRow,
   DayPicker,
@@ -31,18 +32,18 @@ import {
   ManualCode,
   MediaFallback,
   SegmentedTabs,
+  ServiceRow,
   SlotPicker,
   StatusMessage,
   Stepper,
   TableHeader,
   TableRow,
-  Texte,
   TextField,
+  Texte,
   TierBadge,
   Toggle,
   chipDeComportement,
-  BarresParPalier,
-  BarresParPeriode,
+  groupesDeRangs,
 } from '../src/components';
 import { I18nProvider } from '../src/i18n';
 import {
@@ -749,6 +750,57 @@ describe('Texte', () => {
 // --------------------------------------------------------------------------
 // Ce qui n'existe pas
 // --------------------------------------------------------------------------
+
+/**
+ * La ligne de prestation de la fiche : le même défaut, corrigé au même endroit.
+ */
+describe('la ligne de prestation de la fiche', () => {
+  it('donne au nom de la prestation la même variante que l’aperçu du fil', async () => {
+    // **La revue a signalé deux fois le même défaut.** Sur le fil, le salon
+    // portait le titre et la prestation la légende ; sur la fiche, le nom de la
+    // prestation était en `type.label` — onze points, la taille d'une étiquette
+    // — sous une durée en mono de douze, plus grosse que lui. Dans les deux
+    // cas, l'objet qu'on réserve était subordonné à ce qui l'entoure.
+    //
+    // **Le test compare les deux écrans plutôt que de figer un nombre.** C'est
+    // la même règle aux deux endroits, et l'écrire deux fois en points les
+    // laisserait diverger sans que rien ne le dise — c'est exactement comment
+    // le défaut est né.
+    await monter(
+      <>
+        <ServiceRow name="Manucure gel" meta="45 min" tier="story" testID="ligne" />
+        <ApercuDePrestation
+          nom="Gel manicure"
+          salon="Vela"
+          dureeMinutes={45}
+          contrepartie="story"
+          testID="apercu-fil"
+        />
+      </>,
+    );
+
+    // Deux libellés différents : le même sur les deux composants rendrait
+    // `getByText` ambigu, et le contourner par un index rendrait le test
+    // dépendant de l'ordre du montage.
+    const surLaFiche = screen.getByText('Manucure gel', { exact: true });
+    const nomDuFil = screen.getByTestId('apercu-fil-nom');
+    expect(style(surLaFiche).fontSize).toBe(style(nomDuFil).fontSize);
+    expect(style(surLaFiche).fontWeight ?? style(surLaFiche).fontFamily).toBe(
+      style(nomDuFil).fontWeight ?? style(nomDuFil).fontFamily,
+    );
+  });
+
+  it('et la durée redevient plus petite que le nom', async () => {
+    // Le sens qui manquait : la durée était en mono de douze **au-dessus** d'un
+    // nom de onze. Grossir le nom sans redescendre la durée aurait laissé deux
+    // lignes de même poids, c'est-à-dire aucune hiérarchie.
+    await monter(<ServiceRow name="Gel manicure" meta="45 min" tier="story" testID="ligne" />);
+
+    const nom = screen.getByText('Gel manicure', { exact: true });
+    const duree = screen.getByText('45 min', { exact: true });
+    expect(Number(style(nom).fontSize)).toBeGreaterThan(Number(style(duree).fontSize));
+  });
+});
 
 /**
  * L'aperçu de prestation : la hiérarchie, et la case qui tient la grille.
