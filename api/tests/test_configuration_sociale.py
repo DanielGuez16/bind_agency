@@ -27,11 +27,27 @@ BASE = {
 
 @pytest.fixture
 def reglages(monkeypatch: pytest.MonkeyPatch):
-    """Pose une configuration complète, sans lire le `.env` de la machine."""
+    """Pose une configuration, **sans laisser entrer celle de la machine**.
+
+    Deux précautions, et il a fallu les deux :
+
+    `_env_file=None` — sinon `build_settings` lit le `.env` du poste, et le test
+    éprouve les identifiants de celui qui le lance. En intégration continue il
+    n'y en a pas, et le résultat change de machine à machine.
+
+    Les trois `get_settings`, et non celui de la fabrique seul. `instagram.py`
+    et `tiktok.py` importent la fonction **directement** : patcher
+    `providers.get_settings` laissait les constructeurs lire la vraie
+    configuration. Le test passait sur mon poste — où le `.env` porte des
+    identifiants Instagram — et tombait en intégration continue, où il n'y en a
+    pas. Il ne prouvait donc rien de ce qu'il annonçait.
+    """
+    from app.integrations import instagram, tiktok
 
     def poser(**extra):
-        valeurs = build_settings(**{**BASE, **extra})
-        monkeypatch.setattr(providers, "get_settings", lambda: valeurs)
+        valeurs = build_settings(_env_file=None, **{**BASE, **extra})
+        for module in (providers, instagram, tiktok):
+            monkeypatch.setattr(module, "get_settings", lambda: valeurs)
         return valeurs
 
     return poser
