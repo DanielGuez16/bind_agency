@@ -1,6 +1,7 @@
 """Schémas d'entrée et de sortie de l'authentification."""
 
 import uuid
+from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 
@@ -67,3 +68,8 @@ class UserRead(BaseModel):
     role: UserRole
     status: UserStatus
     locale: Locale
+    #: Quand l'adresse a été confirmée. **Nulle veut dire « pas encore »**, et
+    #: l'écran doit le dire : sans elle, réserver et mettre un commerce en ligne
+    #: sont refusés, et découvrir le refus au moment de réserver serait le pire
+    #: endroit pour l'apprendre.
+    email_verified_at: datetime | None
