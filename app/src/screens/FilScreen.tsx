@@ -52,8 +52,8 @@ import type { EtatDePosition } from '../shell/usePosition';
 import { en } from '../i18n/en';
 import { Ecran } from './Ecran';
 import { EnTeteDuMur } from './mur/EnTeteDuMur';
-import { BasDuMur, Mur, MurEnChargement } from './mur/Mur';
-import { RangeesParQuartier } from './mur/RangeesParQuartier';
+import { BasDuMur } from './mur/BasDuMur';
+import { MurEnChargement, SectionsParQuartier } from './mur/SectionsParQuartier';
 import { RaisonDuVide } from './RaisonDuVide';
 import { messageDObstacle } from './obstacle';
 import { useRequete } from './useRequete';
@@ -223,12 +223,7 @@ export function FilScreen({
       // l'état vide aussi — c'est de là qu'on relâche un filtre trop étroit.
       entete={
         <View style={{ paddingHorizontal: MARGE }}>
-          <EnTeteDuMur
-            fil={filPret}
-            rayonKm={rayonKm}
-            categorie={categorie}
-            onCategorie={setCategorie}
-          />
+          <EnTeteDuMur fil={filPret} categorie={categorie} onCategorie={setCategorie} />
         </View>
       }
       vide={
@@ -244,46 +239,32 @@ export function FilScreen({
     >
       {(fil) => (
         <View style={{ gap: 16 }}>
-          {/* **Les chips de rayon ont laissé la place aux catégories**, et le
-              rayon a quitté le corps pour l'en-tête, où il se lit sans se
-              régler. Ce qui l'élargit est ailleurs et porte son nombre : le bas
-              du mur, et l'état vide. Ce qui le resserre n'existe plus — voir
-              `TASKS.md`, c'est une question pour Design et non un oubli. */}
+          {/* **La ligne des paliers est partie vers Audience.** « Douze
+              prestations vous sont ouvertes » et l'accès aux paliers vivent
+              maintenant là où sont déjà les abonnés et le score de fiabilité :
+              c'est le même sujet, et il était ici parce que le fil était le
+              seul écran qu'on ouvrait. Ce que le fil garde du compte est le
+              surtitre de l'en-tête, une fois filtré. */}
 
-          {/* **La réponse, puis la raison.** Le nombre est ce que la créatrice
-              est venue chercher ; les paliers sont ce qui l'explique, et ils
-              s'ouvrent d'ici plutôt que d'occuper un onglet. */}
-          {/* Le texte porte sa marge, les photos n'en ont pas : c'est la
-              contrepartie du fond perdu, et elle se voit là où elle est. */}
-          <View style={{ paddingHorizontal: MARGE, gap: 16 }}>
-            <PrestationsOuvertes total={fil.total_prestations} onOuvrir={onVoirMesPaliers} />
-
-            {/* Rendus même quand le fil n'est pas vide : un créateur qui accède
-                au palier story mais pas au reel doit savoir ce qui lui manque,
-                sinon il croit avoir tout vu. */}
+          {/* Rendus même quand le fil n'est pas vide : un créateur qui accède
+              au palier story mais pas au reel doit savoir ce qui lui manque,
+              sinon il croit avoir tout vu. */}
+          <View style={{ paddingHorizontal: MARGE }}>
             <Obstacles fil={fil} />
           </View>
-          {/* **Deux rendus, et c'est la question posée qui les sépare.**
-              Sans filtre, le mur : un salon occupe l'écran, six positions dans
-              un ordre fixe, huit salons puis une respiration — on y descend
-              sans intention. Avec une catégorie, les rangées par quartier : on
-              vient de dire ce qu'on cherche, et deux axes valent mieux qu'un
-              seul pour le trouver. C'est l'arbitrage que Design a écrit
-              lui-même au bas de la planche « Fil v2 », et non un choix de
-              composition pris ici. */}
-          {categorie === null ? (
-            <Mur fil={fil} onOuvrir={onOuvrirLeCommerce} />
-          ) : (
-            <RangeesParQuartier fil={fil} onOuvrir={onOuvrirLeCommerce} />
-          )}
 
-          {/* Le seul fond d'encre du fil : il ferme, là où l'os des
-              respirations ouvrait. */}
-          {/* **Élargir avait cessé d'avoir un retour.** Le serveur ne propose
-              jamais un rayon plus étroit que celui en vigueur, et les chips de
-              rayon sont parties avec leur ligne : sans cette sortie, on partait
-              à 30 km pour la session entière. Provisoire — le rayon appartient
-              à la feuille de filtres, qui n'existe pas encore. */}
+          {/* **Un seul rendu, et c'est la correction de la revue.** Le fil
+              montrait un mur de six formats sans filtre et des rangées par
+              quartier avec — deux compositions pour un même contenu, et la
+              seconde n'apparaissait qu'à ceux qui filtraient. La v3 n'en a
+              qu'une : le quartier structure le mur dans les deux états, et le
+              filtre ne change que ce qu'il y a dedans. */}
+          <SectionsParQuartier
+            fil={fil}
+            categorie={categorie}
+            onOuvrir={onOuvrirLeCommerce}
+          />
+
           <BasDuMur
             fil={fil}
             rayonKm={rayonKm}

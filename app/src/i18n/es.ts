@@ -212,6 +212,7 @@ export const es: Catalogue = {
     audienceReleveDu: 'Medido el {{date}}',
     audienceDejaAcquis: 'Ya verificado',
     audienceCeQuiCompte: 'Lo que cuenta para los niveles',
+    audienceVoirMesPaliers: 'Ver lo que abre cada nivel',
     audienceCollaborations: 'Colaboraciones cumplidas',
     audienceScore: 'Puntuación de fiabilidad',
     audienceScoreSur: '{{score}} / 100',
@@ -265,6 +266,15 @@ export const es: Catalogue = {
     murEcartAbonnes: '{{ecart}} seguidores por alcanzar, de {{requis}}',
     murRayonEtCompte: '{{rayon}} km · {{count}}',
     murToutesLesCategories: 'Todo',
+    filMarche: 'Miami',
+    filMarcheEtCompte: '{{marche}} · {{count}} servicios',
+    filDecouvrir: 'Descubrir',
+    // « servicios de uñas » et non « uñas servicios » : la catégorie suit le
+    // nom commun en espagnol. C'est pour cela que les deux phrases sont deux
+    // clés et non une seule avec un mot en plus.
+    murServicesOuverts: '{{count}} servicios abiertos para ti',
+    murServicesDeCategorie: '{{count}} servicios de {{categorie}}',
+    murAutresQuartiers: 'Otros barrios',
     rangeeAilleurs: 'En otros barrios',
     rangeeSuite: '{{count}} más, un poco más lejos.',
     rangeeSuiteUn: 'Uno más, un poco más lejos.',

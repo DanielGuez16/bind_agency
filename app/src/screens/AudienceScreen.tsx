@@ -98,7 +98,7 @@ function joursDepuis(debut: string): number {
   return Math.max(1, Math.floor((Date.now() - new Date(debut).getTime()) / 86_400_000) + 1);
 }
 
-export function AudienceScreen() {
+export function AudienceScreen({ onVoirMesPaliers }: { onVoirMesPaliers?: () => void } = {}) {
   const { api, messageDErreur } = useApi();
   const { t, locale } = useI18n();
 
@@ -159,7 +159,10 @@ export function AudienceScreen() {
               onFait={requete.recharger}
             />
 
-            <CeQuiComptePourLesPaliers fiabilite={fiabilite} />
+            <CeQuiComptePourLesPaliers
+              fiabilite={fiabilite}
+              onVoirMesPaliers={onVoirMesPaliers}
+            />
           </View>
         );
       }}
@@ -340,7 +343,21 @@ function SignalAcquis({ signal, locale }: { signal: SignalJuge; locale: Supporte
  * la distinction sépare un débutant de quelqu'un de peu fiable, et l'inverser
  * accuserait exactement celui qui n'a rien fait.
  */
-function CeQuiComptePourLesPaliers({ fiabilite }: { fiabilite: FiabiliteDuCreateur }) {
+function CeQuiComptePourLesPaliers({
+  fiabilite,
+  onVoirMesPaliers,
+}: {
+  fiabilite: FiabiliteDuCreateur;
+  /**
+   * L'accès aux paliers, **arrivé du fil avec la v3**.
+   *
+   * Optionnel parce que l'écran se monte aussi sans navigation dans les tests
+   * et dans la revue de composants. Absent, la ligne ne se rend pas : un lien
+   * qui ne mène nulle part vaut moins que pas de lien, et c'est la règle que
+   * la même ligne appliquait déjà sur le fil.
+   */
+  onVoirMesPaliers?: () => void;
+}) {
   const { t, locale } = useI18n();
 
   return (
@@ -364,6 +381,21 @@ function CeQuiComptePourLesPaliers({ fiabilite }: { fiabilite: FiabiliteDuCreate
         chiffre={fiabilite.reliability_score !== null}
         testID="score-de-fiabilite"
       />
+      {/* **Le passage vers les paliers, sorti du fil.** Il y annonçait un
+          nombre de prestations ; ici il n'en annonce aucun, et c'est voulu : le
+          compte du fil était borné au rayon, et le répéter sur un écran qui ne
+          connaît pas la position aurait donné deux nombres différents pour la
+          même phrase. Ce qui est utile est le chemin, pas le chiffre. */}
+      {onVoirMesPaliers ? (
+        <Texte
+          variante="type.body"
+          couleur="brand.700"
+          onPress={onVoirMesPaliers}
+          testID="voir-mes-paliers"
+        >
+          {t('parcours.audienceVoirMesPaliers')}
+        </Texte>
+      ) : null}
     </View>
   );
 }

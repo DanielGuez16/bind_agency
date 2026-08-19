@@ -220,6 +220,7 @@ export const en = {
     audienceReleveDu: 'Reading from {{date}}',
     audienceDejaAcquis: 'Already verified',
     audienceCeQuiCompte: 'What counts toward tiers',
+    audienceVoirMesPaliers: 'See what each tier opens',
     audienceCollaborations: 'Completed collaborations',
     audienceScore: 'Reliability score',
     audienceScoreSur: '{{score}} / 100',
@@ -277,6 +278,18 @@ export const en = {
     // que le fil réponde et « 15 km · 20 » après ne sont pas la même phrase.
     murRayonEtCompte: '{{rayon}} km · {{count}}',
     murToutesLesCategories: 'All',
+    // **Le marché, pas une position.** « MIAMI » est la ville que BIND dessert
+    // entière ; ce n'est pas le quartier où l'on est, que rien ne sait
+    // résoudre. Une clé et non une constante : le jour où un second marché
+    // ouvre, c'est ici que ça se voit.
+    filMarche: 'Miami',
+    filMarcheEtCompte: '{{marche}} · {{count}} services',
+    filDecouvrir: 'Discover',
+    // Deux phrases distinctes et non une à trou : « 6 nail services » place la
+    // catégorie avant le nom commun, ce que l'espagnol n'ordonne pas ainsi.
+    murServicesOuverts: '{{count}} services open to you',
+    murServicesDeCategorie: '{{count}} {{categorie}} services',
+    murAutresQuartiers: 'Other neighbourhoods',
     // Les rangées par quartier. La carte d'os ferme une rangée courte et dit
     // ce qu'il y a plus loin : sans elle, une rangée de deux cartes ressemble
     // à un chargement qui a échoué.
