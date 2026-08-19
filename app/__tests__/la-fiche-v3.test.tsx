@@ -29,6 +29,14 @@ function dansNHeures(n: number): string {
   return new Date(Date.now() + n * 3_600_000).toISOString();
 }
 
+/** Le jour de la semaine chez le commerce, lundi valant 0. */
+const JOUR_DE_LA_SEMAINE = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(
+  new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    weekday: 'short',
+  }).format(new Date()),
+);
+
 const OFFRE = {
   tier_offer_id: 'o1',
   catalog_item_id: 'i1',
@@ -66,6 +74,16 @@ const FICHE = {
   photos: ['photos/b1/salle', 'photos/b1/vitrine'],
   menu_pages: [] as string[],
   menu_url: null as string | null,
+  // **Les sept plages, servies depuis peu.** Le montage les porte parce que la
+  // fiche les lit : les omettre ferait tomber l'écran sur un champ absent, et
+  // c'est exactement ce qu'un montage qui fabrique une réponse que le serveur
+  // ne produit pas laisse passer.
+  horaires: [
+    // Le jour d'aujourd'hui chez le commerce, pour que l'étiquette ait une
+    // ligne à trouver quelle que soit la date d'exécution.
+    { weekday: JOUR_DE_LA_SEMAINE, start_time: '09:00:00', end_time: '13:00:00' },
+    { weekday: JOUR_DE_LA_SEMAINE, start_time: '14:30:00', end_time: '19:00:00' },
+  ],
   offres: [OFFRE],
 } as unknown as FichePublique;
 

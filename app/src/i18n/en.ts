@@ -316,6 +316,7 @@ export const en = {
       'We are still waiting for an answer. If your browser is asking, choose “Allow” — otherwise try again.',
     filReessayer: 'Try again',
     ficheOffres: 'What they offer',
+    ficheOuvertJusqua: 'Open until {{heure}}',
     ficheDuree: '{{count}} minutes',
     fichePhotosCompte: '{{count}} photos',
     fichePasEncore: 'Not open to you yet',

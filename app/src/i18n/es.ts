@@ -298,6 +298,7 @@ export const es: Catalogue = {
       'Seguimos esperando una respuesta. Si tu navegador te lo está pidiendo, elige «Permitir»; si no, vuelve a intentarlo.',
     filReessayer: 'Reintentar',
     ficheOffres: 'Lo que ofrecen',
+    ficheOuvertJusqua: 'Abierto hasta las {{heure}}',
     ficheDuree: '{{count}} minutos',
     fichePhotosCompte: '{{count}} fotos',
     fichePasEncore: 'Aún no disponible para ti',
