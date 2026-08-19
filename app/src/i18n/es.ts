@@ -613,6 +613,16 @@ export const es: Catalogue = {
   },
   accueil: {
   },
+  verification: {
+    titre: 'Confirma tu correo electrónico',
+    corps:
+      'Enviamos un enlace a {{email}}. Hasta que lo abras puedes mirar, pero no reservar — y un negocio no puede publicarse.',
+    renvoyer: 'Enviar el enlace de nuevo',
+    renvoyerEncore: 'Enviar otro',
+    envoiEnCours: 'Enviando',
+    envoye: 'Un nuevo enlace va camino a {{email}}. Ábrelo y vuelve aquí.',
+    echec: 'No se pudo enviar el enlace. Revisa tu conexión e inténtalo de nuevo.',
+  },
   auth: {
     retourA: 'Tus niveles, tus reservas y tu historial siguen donde los dejaste.',
     retourB: 'Una prestación a cambio de una publicación. Nunca hay dinero de por medio.',

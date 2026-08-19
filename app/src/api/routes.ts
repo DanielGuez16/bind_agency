@@ -25,6 +25,7 @@ export const routes = {
 
   // ---- créateur ----
   moi: () => chemin('/me'),
+  renvoyerLaVerification: () => chemin('/me/verify-email/resend'),
   monProfil: () => chemin('/me/profile'),
   mesComptesSociaux: () => chemin('/me/social-accounts'),
   connecterInstagram: () => chemin('/me/social-accounts/instagram/connect'),
@@ -177,6 +178,7 @@ export const METHODES: Record<keyof typeof routes, ('GET' | 'POST' | 'PATCH' | '
     deconnexion: ['POST'],
 
     moi: ['GET', 'PATCH'],
+    renvoyerLaVerification: ['POST'],
     monProfil: ['GET', 'PATCH'],
     mesComptesSociaux: ['GET'],
     connecterInstagram: ['POST'],

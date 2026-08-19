@@ -51,6 +51,7 @@ const UTILISATEUR: Utilisateur = {
   role: 'creator',
   status: 'active',
   locale: 'en',
+  email_verified_at: '2026-08-01T10:00:00Z',
 };
 
 /** Un serveur simulé, route par route. */
