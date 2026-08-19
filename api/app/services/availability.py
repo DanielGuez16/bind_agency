@@ -453,3 +453,99 @@ async def _est_proposable(session: AsyncSession, item: CatalogItem) -> bool:
             sa.select(CatalogItem.is_available).where(CatalogItem.id == item.parent_item_id)
         )
     )
+
+
+@dataclass(frozen=True, slots=True)
+class JourDeDisponibilite:
+    """Un jour de la bande, tel que l'écran des créneaux le dessine."""
+
+    jour: date
+    #: Le commerce ouvre-t-il ce jour-là ? **Indépendant de l'item** : c'est
+    #: l'horaire du salon, pas la disponibilité de la prestation.
+    ouvert: bool
+    #: Combien de débuts possibles restent pour cet item.
+    #:
+    #: **Zéro sur un jour ouvert n'est pas la même chose qu'un jour fermé**, et
+    #: c'est toute la raison de rendre les deux. « Complet » se dit et invite à
+    #: regarder le lendemain ; « fermé » se grise. Un écran qui n'aurait que le
+    #: compte peindrait les deux de la même façon, et la personne croirait le
+    #: salon fermé un jour où il déborde.
+    creneaux_libres: int
+
+
+async def disponibilite_par_jour(
+    session: AsyncSession,
+    *,
+    business_id: uuid.UUID,
+    catalog_item_id: uuid.UUID,
+    depuis: datetime | None = None,
+    jours: int = 14,
+) -> list[JourDeDisponibilite]:
+    """La bande de quatorze jours, en un appel.
+
+    **Le même algorithme, pas un second.** Les créneaux viennent de
+    `creneaux_libres`, qui parcourt déjà jour par jour ; on les groupe par date
+    locale. Recompter ici ferait deux vérités sur ce qui est libre, et c'est
+    celle qu'on ne relit pas qui finirait par mentir — le même piège que la règle
+    de l'absence écrite deux fois.
+
+    **Un jour sans créneau n'est pas forcément fermé**, d'où la seconde lecture :
+    les règles et les exceptions disent l'ouverture, `fenetres_du_jour` les
+    interprète, et c'est la fonction que le reste du calcul emploie déjà.
+
+    Quatorze appels devenaient quatorze parcours complets de la même base de
+    règles. Ici, deux requêtes de plus que pour un seul jour.
+    """
+    depuis = depuis or datetime.now(UTC)
+    horizon = timedelta(days=jours)
+
+    creneaux = await creneaux_libres(
+        session,
+        business_id=business_id,
+        catalog_item_id=catalog_item_id,
+        depuis=depuis,
+        horizon=horizon,
+    )
+
+    business = await session.get(Business, business_id)
+    if business is None:
+        raise ItemNotFound(str(catalog_item_id))
+    fuseau = ZoneInfo(business.timezone)
+
+    premier = depuis.astimezone(fuseau).date()
+    dernier = (depuis + horizon).astimezone(fuseau).date()
+
+    regles = list(
+        await session.scalars(
+            sa.select(CapacityRule).where(CapacityRule.business_id == business_id)
+        )
+    )
+    exceptions = {
+        e.date: e
+        for e in await session.scalars(
+            sa.select(CapacityException).where(
+                CapacityException.business_id == business_id,
+                CapacityException.date.between(premier, dernier),
+            )
+        )
+    }
+
+    comptes: dict[date, int] = {}
+    for creneau in creneaux:
+        local = creneau.debut.astimezone(fuseau).date()
+        comptes[local] = comptes.get(local, 0) + 1
+
+    bande: list[JourDeDisponibilite] = []
+    jour = premier
+    # `jours` jours à partir d'aujourd'hui, bornes comprises côté départ : une
+    # bande de quatorze commence aujourd'hui et finit dans treize jours.
+    for _ in range(jours):
+        bande.append(
+            JourDeDisponibilite(
+                jour=jour,
+                ouvert=bool(fenetres_du_jour(jour, regles, exceptions.get(jour))),
+                creneaux_libres=comptes.get(jour, 0),
+            )
+        )
+        jour += timedelta(days=1)
+    return bande
