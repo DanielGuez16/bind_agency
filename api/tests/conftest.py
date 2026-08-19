@@ -307,7 +307,25 @@ def pytest_itemcollected(item: pytest.Item) -> None:
             f"{item.nodeid} porte @pytest.mark.lent sans raison. Une dispense sans "
             "motif ne se relit pas : elle devient un contournement permanent."
         )
-    _dispenses[item.nodeid] = raison
+    # Normalisé des deux côtés : selon le moment, le nodeid porte ou non son
+    # suffixe de groupe. Ne le retirer qu'à la lecture laissait la moitié des
+    # correspondances échouer.
+    _dispenses[_sans_groupe(item.nodeid)] = raison
+
+
+def _sans_groupe(nodeid: str) -> str:
+    """Le nodeid sans son suffixe de groupe xdist.
+
+    Sous `--dist loadgroup`, un test épinglé s'appelle
+    `tests/test_seed.py::test_x@semis` — le groupe est collé au nom. Les
+    dispenses, elles, sont retenues à la collecte, où le suffixe n'existe pas :
+    la correspondance échouait, et les deux tests du semis déclarés `lent`
+    faisaient échouer l'intégration continue à 308 et 92 secondes.
+
+    Le défaut ne se voyait qu'en parallèle, et la garde disait exactement ce
+    qu'il fallait — sans que la dispense écrite juste au-dessus soit lue.
+    """
+    return nodeid.split("@", 1)[0]
 
 
 def pytest_runtest_logreport(report: pytest.TestReport) -> None:
@@ -332,13 +350,14 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     classes = sorted(_durees.items(), key=lambda paire: -paire[1])
     rapporteur.write_sep("-", f"durée des tests — plafond {PLAFOND_DE_DUREE:.0f} s")
     for nodeid, duree in classes[:DUREES_A_MONTRER]:
-        note = f"  (dispensé : {_dispenses[nodeid]})" if nodeid in _dispenses else ""
+        dispense = _dispenses.get(_sans_groupe(nodeid))
+        note = f"  (dispensé : {dispense})" if dispense else ""
         rapporteur.write_line(f"  {duree:6.1f} s  {nodeid}{note}")
 
     depassements = [
         (nodeid, duree)
         for nodeid, duree in classes
-        if duree > PLAFOND_DE_DUREE and nodeid not in _dispenses
+        if duree > PLAFOND_DE_DUREE and _sans_groupe(nodeid) not in _dispenses
     ]
     if not depassements:
         return
