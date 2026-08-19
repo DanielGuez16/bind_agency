@@ -6840,3 +6840,58 @@ entre 4,5 et 5, donc s'évite sous 13 px ; le point du logo est admis sur la pag
 et **invisible sur l'orange**, à 1,30:1. Quatre gardes, quatre mutations
 vérifiées — rampe éclaircie, signature alignée sur la marque, orange assombri,
 appui confondu : chacune fait tomber la sienne.
+
+## 2026-08-18 — Cinq règles de pose, et ce qu'un jeton ne peut pas protéger
+
+La bascule Ambre a arrondi 66 sites de rayon, dont un qui ne devait pas l'être :
+**le bloc orange accentué**. `radius.none` lui est réservé — un aplat de marque
+aux angles arrondis devient un bouton, et la signature perd la raideur qui la
+fait lire comme une signature. Les deux gardes existantes sont restées vertes
+pendant tout ce temps : l'une vérifiait que le jeton valait toujours 0, l'autre
+qu'aucun autre fichier ne s'en servait. Aucune ne disait que le bloc s'en sert.
+**Une contrainte se teste dans les deux sens, et celle qui n'interdit que le
+mauvais côté laisse passer l'oubli du bon.**
+
+**`elevation.card` était déclarée et personne ne la lisait.** La bibliothèque
+n'exposait que l'ombre flottante. Un jeton présent dans le fichier et consommé
+nulle part passe toutes les gardes de jetons du monde — celle qui existait
+comptait les clés. Elle est portée par la vue extérieure et non par la carte :
+la carte clippe son contenu pour que la couverture épouse son coin, et sur iOS
+une vue qui clippe coupe sa propre ombre au même bord. Une garde qui aurait
+seulement demandé « la carte a une ombre » aurait laissé passer une carte ombrée
+sur le web et plate sur téléphone, c'est-à-dire le défaut que la CI ne voit pas.
+
+**Le point du logo : une règle de pose, que la palette ne peut pas porter.** Il
+vaut 1,30:1 sur un aplat de marque. Les jetons le mesuraient déjà ; ce qu'ils ne
+peuvent pas dire, c'est où le logotype est posé. Sur l'accueil il l'est au-dessus
+d'un satin, et la seule chose qui l'en sépare est la bande de l'en-tête. La
+garde remonte les parents plutôt que de constater la présence des deux nœuds :
+les trouver tous les deux dans l'écran ne dit pas que l'un contient l'autre, et
+sortir la marque de l'enveloppe est exactement le geste qui laisserait les deux
+présents.
+
+**L'avertissement sans teinte devient une identité, pas une mesure.** Ses trois
+valeurs sont des jetons neutres du système. Une mesure de saturation laisserait
+passer un ambre désaturé, qui est la façon dont la teinte reviendrait.
+
+## 2026-08-18 — Les raisons écrites survivent à ce qu'elles expliquent
+
+Le Didone est retiré ; six raisons qui s'appuyaient sur lui ne l'étaient pas, et
+l'une portait un défaut visible. **La pile de repli du web gardait Didot,
+Playfair, Georgia pour le rôle `display`** : sur un réseau lent, le premier écran
+rendait un serif du XVIIIe sous une direction géométrique — l'inverse exact de la
+raison écrite trois lignes au-dessus. `display` et `sans` répliquent maintenant
+la même pile, en restant deux clés parce que rien ne garantit qu'ils resteront la
+même fonte.
+
+`PLANCHER_DIDONE` est **supprimé plutôt qu'annulé**. Il n'avait plus ni serif à
+garder ni assertion pour l'éprouver : son import dans les tests ne servait rien.
+Une constante exportée sans appelant et sans garde est le motif qui a coûté seize
+PR ailleurs dans ce dépôt.
+
+Deux tests Playwright énonçaient encore les familles de la v1.0. Ils étaient
+verts en jest parce qu'ils ne sont pas en jest — **`e2e` est le seul job qui les
+voit**, et c'est la deuxième fois que cette frontière laisse passer un test
+périmé. La liste des familles retirées ne se vide pas d'une direction à l'autre,
+elle s'allonge : sinon une famille abandonnée deux directions plus tôt revient
+par une dépendance transitive.
