@@ -215,7 +215,7 @@ function AccesALaCarte({
       style={{
         borderWidth: 1,
         borderColor: c['line.default'],
-        borderRadius: radius['radius.none'],
+        borderRadius: radius['radius.lg'],
         backgroundColor: c['bg.surface'],
       }}
     >
@@ -414,7 +414,7 @@ function Offre({
     <View
       testID={`offre-${offre.tier_offer_id}`}
       style={{
-        borderRadius: radius['radius.none'],
+        borderRadius: radius['radius.lg'],
         borderWidth: 1,
         borderColor: c['line.default'],
         overflow: 'hidden',

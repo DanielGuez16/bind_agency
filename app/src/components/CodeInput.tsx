@@ -86,7 +86,7 @@ export function CodeInput({
           height: 72,
           borderWidth: 2,
           borderColor: c['ink.default'],
-          borderRadius: radius['radius.none'],
+          borderRadius: radius['radius.md'],
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'center',
@@ -163,7 +163,7 @@ function Touche({
         height: 56,
         alignItems: 'center',
         justifyContent: 'center',
-        borderRadius: radius['radius.none'],
+        borderRadius: radius['radius.md'],
         backgroundColor: c['bg.surface'],
         opacity: pressed ? 0.7 : 1,
       })}

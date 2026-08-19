@@ -17,19 +17,25 @@ import { join } from 'path';
 import { render, waitFor } from '@testing-library/react-native';
 import { Text } from 'react-native';
 
+import { BusinessCard } from '../src/components/Cards';
+import { I18nProvider } from '../src/i18n';
+import { TitreAccentue } from '../src/components/TitreAccentue';
+
 import {
   ThemeProvider,
   codeColors,
   couleurs,
   matiereDePalier,
   matiereDeRole,
-  PLANCHER_DIDONE,
   produit,
   tokens,
   typography,
   useTheme,
   type ColorName,
   type Palier,
+  contraste,
+  elevationDeCarte,
+  luminance,
 } from '../src/theme';
 
 const RACINE = join(__dirname, '..', 'src');
@@ -74,20 +80,58 @@ function Sonde() {
 }
 
 describe('jetons', () => {
-  it('le fichier de l’app est celui de la passation, sans retouche', () => {
-    // Le retranscrire aurait créé une seconde vérité, et c'est la seconde
-    // qu'on oublie de mettre à jour quand le design bouge.
-    const app = readFileSync(join(RACINE, 'theme', 'tokens.json'), 'utf-8');
-    const passation = readFileSync(PASSATION, 'utf-8');
+  it('chaque valeur de la passation est celle de l’app, sans retouche', () => {
+    // **L'égalité profonde a cédé à l'inclusion, et il faut dire pourquoi.**
+    // Le fichier de Design décrit un système ; celui de l'app fait tourner un
+    // produit, et il porte six sections dont Design ne parle pas — `theme`,
+    // `font`, `space`, `motion`, `pattern`, `blockRule`. Exiger l'égalité
+    // obligeait à faire entrer ces sections dans la passation, c'est-à-dire à
+    // demander au designer de maintenir des durées d'animation.
+    //
+    // Ce qui est gardé est ce qui comptait : **toute valeur que Design énonce
+    // est celle de l'app.** Le retranscrire créerait une seconde vérité, et
+    // c'est la seconde qu'on oublie de mettre à jour.
+    const app = JSON.parse(readFileSync(join(RACINE, 'theme', 'tokens.json'), 'utf-8'));
+    const passation = JSON.parse(readFileSync(PASSATION, 'utf-8'));
 
-    expect(JSON.parse(app)).toEqual(JSON.parse(passation));
+    const ecarts: string[] = [];
+    const comparer = (attendu: unknown, obtenu: unknown, chemin: string) => {
+      // Les clés en `$` documentent ; elles se relisent, elles ne s'exécutent pas.
+      if (chemin.split('.').some((part) => part.startsWith('$'))) return;
+      if (attendu !== null && typeof attendu === 'object') {
+        if (obtenu === undefined) return void ecarts.push(`${chemin} : absent de l'app`);
+        for (const [cle, valeur] of Object.entries(attendu)) {
+          comparer(valeur, (obtenu as Record<string, unknown>)[cle], `${chemin}.${cle}`);
+        }
+        return;
+      }
+      if (obtenu !== attendu) ecarts.push(`${chemin} : passation ${attendu}, app ${obtenu}`);
+    };
+    comparer(passation, app, 'tokens');
+
+    expect(ecarts).toEqual([]);
   });
 
-  it('c’est bien la v1.0 qui est en place', () => {
+  it('et l’app n’invente aucune couleur que la passation ne déclare pas', () => {
+    // **Le sens inverse, sans lequel l'inclusion ne vaudrait rien.** Sans lui,
+    // un `brand.550` ajouté côté produit passerait : la passation resterait
+    // incluse, et le système aurait gagné une valeur que personne n'a dessinée.
+    const app = JSON.parse(readFileSync(join(RACINE, 'theme', 'tokens.json'), 'utf-8'));
+    const passation = JSON.parse(readFileSync(PASSATION, 'utf-8'));
+    const sansDoc = (o: object) => Object.keys(o).filter((k) => !k.startsWith('$'));
+
+    for (const famille of ['brand', 'bg', 'ink', 'line'] as const) {
+      expect(sansDoc(app.color[famille])).toEqual(sansDoc(passation.color[famille]));
+    }
+    expect(sansDoc(app.radius)).toEqual(sansDoc(passation.radius));
+    expect(sansDoc(app.type)).toEqual(sansDoc(passation.type));
+  });
+
+  it('c’est bien la v1.1 · Ambre qui est en place', () => {
     // Une assertion de volume, comme sur l'inventaire des routes publiques :
     // sans elle, un fichier vidé des deux côtés passerait le test précédent
     // sans rien prouver.
-    expect(tokens.$meta.name).toBe('BIND AGENCY (v1.0)');
+    expect(tokens.$meta.name).toBe('BIND · direction B · Ambre (v1.1)');
     expect(Object.keys(tokens.color.brand)).toContain('500');
     expect(Object.keys(couleurs).length).toBeGreaterThan(30);
   });
@@ -111,39 +155,39 @@ describe('jetons', () => {
     expect(doublons).toEqual([]);
   });
 
-  it('les tables de matière disent la même chose que les jetons', () => {
-    // `matiereDePalier` lit les hexadécimaux de `tokens.color.tier` dans le
-    // vocabulaire du système — `brand.700` plutôt que `#A83E06`. C'est une
-    // lecture, pas une seconde vérité, et c'est ce test qui fait la différence
-    // entre les deux : les valeurs résolues doivent retomber sur celles de la
-    // passation, sans quoi la table dérive en silence.
+  it('la matière des paliers est celle de `components.md` §2', () => {
+    // **La table d'hexadécimaux a disparu, et ce test change donc d'oracle.**
+    // Il comparait `matiereDePalier` à `tokens.color.tier`, qui recopiait la
+    // rampe en valeurs — `#A83E06` pour le 700. Cette recopie était une seconde
+    // vérité : au passage à l'ambre elle serait restée à l'orange brut, et le
+    // test aurait constaté que les deux mensonges concordaient.
+    //
+    // L'oracle est maintenant la table de `components.md` §2, recopiée ici à la
+    // main. C'est ce qui en fait un oracle : la dériver des jetons qu'elle
+    // vérifie la rendrait d'accord avec eux quoi qu'ils disent.
     const attendu: Record<Palier, { surface: string; texte: string; barres: number }> = {
-      story: {
-        surface: tokens.color.tier.story.surface,
-        texte: tokens.color.tier.story.text,
-        barres: tokens.color.tier.story.glyphFilled,
-      },
-      post: {
-        surface: tokens.color.tier.post.surface,
-        texte: tokens.color.tier.post.text,
-        barres: tokens.color.tier.post.glyphFilled,
-      },
-      reel: {
-        surface: tokens.color.tier.reel.surface,
-        texte: tokens.color.tier.reel.text,
-        barres: tokens.color.tier.reel.glyphFilled,
-      },
+      story: { surface: 'bg.surface', texte: 'brand.700', barres: 1 },
+      post: { surface: 'brand.100', texte: 'brand.700', barres: 2 },
+      reel: { surface: 'brand.500', texte: 'ink.onBrand', barres: 3 },
     };
 
     for (const palier of ['story', 'post', 'reel'] as Palier[]) {
       const m = matiereDePalier(palier);
-      expect({
+      expect({ palier, surface: m.surface, texte: m.texte, barres: m.barresPleines }).toEqual({
         palier,
-        surface: couleurs[m.surface],
-        texte: couleurs[m.texte],
-        barres: m.barresPleines,
-      }).toEqual({ palier, ...attendu[palier] });
+        ...attendu[palier],
+      });
     }
+  });
+
+  it('et les trois restent distinctes en niveaux de gris', () => {
+    // Le sens inverse, et la seule propriété qui compte vraiment : la
+    // progression est ordinale. Trois surfaces de luminance croissante — papier,
+    // teinte, aplat — se lisent sans couleur. C'est ce qu'aucune palette ne doit
+    // casser, et ce qu'une rampe mal choisie casserait en silence.
+    const gris = (nom: Palier) => luminance(couleurs[matiereDePalier(nom).surface]);
+    expect(gris('story')).toBeGreaterThan(gris('post'));
+    expect(gris('post')).toBeGreaterThan(gris('reel'));
   });
 
   it('la progression des matières est ordinale, et le reste sur l’encre', () => {
@@ -344,7 +388,7 @@ describe('un texte sur une photo ne tient que sur le plus opaque des arrêts', (
     // d'école : les mosaïques de la fondatrice alternent justement des
     // ensembles presque blancs.
     expect(opaciteMinimaleDuVoile('ink.onScrim')).toBeCloseTo(0.606, 2);
-    expect(opaciteMinimaleDuVoile('ink.onScrimMuted')).toBeCloseTo(0.733, 2);
+    expect(opaciteMinimaleDuVoile('ink.onScrimMuted')).toBeCloseTo(0.714, 2);
     // La sourde en demande plus que la claire : c'est ce qui rend l'ordre
     // vérifiable plutôt que su.
     expect(opaciteMinimaleDuVoile('ink.onScrimMuted')).toBeGreaterThan(
@@ -364,25 +408,35 @@ describe('un texte sur une photo ne tient que sur le plus opaque des arrêts', (
 });
 
 describe('le Didone ne descend jamais sous son plancher', () => {
-  it('toutes les variantes en serif sont à 34 px ou au-dessus', () => {
-    // « Un serif de 22 px est un bug visible » — pour qui sait qu'il en est un.
-    // Ce test le sait à notre place, et il tombe le jour où quelqu'un ajoute un
-    // sous-titre en Bodoni parce que ça faisait joli sur la maquette.
+  it('aucune variante ne demande une famille que le système ne charge pas', () => {
+    // **Le plancher du Didone n'existe plus, et ce test le remplace.** Il
+    // vérifiait qu'aucun serif ne descendait sous 34 px ; il n'y a plus de
+    // serif, donc il ne pouvait plus tomber — un test qui ne peut plus échouer
+    // est un test qui a fini de servir. Ce qui reste vrai est ailleurs : une
+    // variante ne peut demander qu'un rôle que `polices.ts` sait charger.
+    const roles = new Set(['display', 'sans', 'mono']);
     const fautives = Object.entries(typography)
-      .filter(([, echelle]) => echelle.fontFamily === 'display')
-      .filter(([, echelle]) => echelle.fontSize < PLANCHER_DIDONE)
-      .map(([nom, echelle]) => `${nom} → ${echelle.fontSize}`);
+      .filter(([, echelle]) => !roles.has(echelle.fontFamily))
+      .map(([nom, echelle]) => `${nom} → ${echelle.fontFamily}`);
 
     expect(fautives).toEqual([]);
   });
 
-  it('et le plancher est bien celui de la passation', () => {
-    expect(PLANCHER_DIDONE).toBe(34);
-    // Le titre d'écran est juste en dessous, en Outfit : c'est la frontière
-    // elle-même, et elle sépare deux familles et non deux rôles.
-    expect(typography['type.screenTitle'].fontFamily).toBe('sans');
-    expect(typography['type.heading'].fontFamily).toBe('display');
-    expect(typography['type.heading'].fontSize).toBe(PLANCHER_DIDONE);
+  it('et l’accent est disponible à toutes les tailles, ce qui est le gain', () => {
+    // La v1.0 devait refuser l'accent sous 34 px et retomber sur une autre
+    // fonte : l'accent était un changement de FAMILLE. Il est devenu une
+    // GRAISSE, donc il tient partout — et les deux paires le prouvent en
+    // partageant taille et famille, et en ne différant que par le poids.
+    for (const [base, accent] of [
+      ['type.display', 'type.displayAccent'],
+      ['type.heading', 'type.headingAccent'],
+    ] as const) {
+      expect(typography[accent].fontSize).toBe(typography[base].fontSize);
+      expect(typography[accent].fontFamily).toBe(typography[base].fontFamily);
+      expect(Number(typography[accent].fontWeight)).toBeGreaterThan(
+        Number(typography[base].fontWeight),
+      );
+    }
   });
 });
 
@@ -419,7 +473,11 @@ describe('matière du rôle', () => {
     // `role.creator` et `role.merchant` sont supprimés. Le fichier de jetons
     // garde une note à leur place : elle dit pourquoi, et où retrouver
     // l'alternative.
-    expect(Object.keys(tokens.color.role)).toEqual(['$removed']);
+    // La v1.0 gardait une section `color.role` réduite à une note. La v1.1 de
+    // Design ne la porte plus du tout : la note a fini par ne plus être lue, et
+    // une section vide finit toujours par se remplir. Ce qui est gardé est le
+    // fait, pas le mémorial.
+    expect(tokens.color).not.toHaveProperty('role');
     expect(couleurs).not.toHaveProperty('role.creator');
     expect(couleurs).not.toHaveProperty('role.merchant');
   });
@@ -464,13 +522,135 @@ describe('rôle et densité', () => {
 // surfaces
 // --------------------------------------------------------------------------
 
-describe('les surfaces de la v1.0', () => {
-  it('les rayons sont tombés à trois, et le défaut est l’angle droit', () => {
-    // « La mode ne s'arrondit pas, et le bloc plein ne fonctionne que
-    // d'équerre. » Restent la vignette photo et la pilule des chips de filtre.
-    expect(tokens.radius.none).toBe(0);
-    expect(tokens.radius.photo).toBe(2);
-    expect(tokens.radius.pill).toBe(999);
+describe('les surfaces de la v1.1', () => {
+  it('l’échelle des rayons est par rôle, et `none` est réservé au bloc', () => {
+    // **La raison de la v1.0 est remplacée, pas conservée à côté de son
+    // contraire.** « Le bloc plein ne fonctionne que d'équerre » était vrai du
+    // bloc et faux du reste ; elle avait été généralisée à tort. Le bloc orange
+    // reste d'équerre — un aplat de marque arrondi devient un bouton — et tout
+    // le reste s'arrondit.
+    expect(tokens.radius).toMatchObject({
+      none: 0, sm: 10, md: 14, lg: 18, xl: 24, photo: 16, pill: 999,
+    });
+    // La vignette photo passe de 2 à 16 : ce n'était pas un adoucissement, le 2
+    // servait seulement à ne pas avoir l'air d'un accident.
+    expect(tokens.radius.photo).toBeGreaterThan(tokens.radius.sm);
+  });
+
+  it('et `radius.none` n’est employé que par le bloc accentué', () => {
+    // Le sens inverse. Sans lui, « none est réservé au bloc » serait une phrase
+    // dans un fichier de jetons — la seule chose qui l'empêche d'être reprise
+    // ailleurs par commodité est ce test.
+    const fautifs: string[] = [];
+    for (const chemin of sources(RACINE)) {
+      const relatif = chemin.slice(chemin.indexOf('src/'));
+      // **Trois exceptions, et chacune porte sa raison.** Le bloc accentué,
+      // parce qu'un aplat de marque arrondi devient un bouton. Le thème,
+      // parce qu'il déclare le jeton. Et les deux surfaces que
+      // `components.md` §10 met **explicitement hors système** — la galerie et
+      // la visionneuse : ce qu'on y regarde est la photo, et un cadre arrondi
+      // par-dessus le travail d'un salon est une opinion de plus.
+      const horsSysteme = ['GalerieDuCommerce', 'Visionneuses'];
+      if (
+        relatif.includes('TitreAccentue') ||
+        relatif.includes('src/theme/') ||
+        horsSysteme.some((nom) => relatif.includes(nom))
+      ) {
+        continue;
+      }
+      readFileSync(chemin, 'utf-8').split('\n').forEach((ligne, i) => {
+        if (/radius\['radius\.none'\]|radius\.none/.test(ligne)) {
+          fautifs.push(`${relatif}:${i + 1}`);
+        }
+      });
+    }
+    expect(fautifs).toEqual([]);
+  });
+
+  it('et le bloc accentué, lui, le porte vraiment', async () => {
+    // **La direction qui manquait, et qui a coûté l'arrondi du bloc.** Les deux
+    // tests au-dessus disent « none vaut 0 » et « personne d'autre ne s'en
+    // sert » ; aucun ne dit que le bloc s'en sert. La bascule Ambre a arrondi
+    // les 66 sites du produit, celui-ci compris, et les deux gardes sont
+    // restées vertes — la première parce que le jeton existait toujours, la
+    // seconde parce qu'elle ne sait qu'interdire. Une contrainte se teste dans
+    // les deux sens : celle qui n'interdit que le mauvais côté laisse passer
+    // l'oubli du bon.
+    //
+    // Sur le rendu et non sur le texte du fichier : une recherche de
+    // `radius.none` dans `TitreAccentue.tsx` passerait sur le commentaire qui
+    // en parle. C'est ce que le style calculé porte qui décide.
+    const vue = await render(
+      <ThemeProvider role="creator">
+        <TitreAccentue texte="Talent by Bind" motAccentue="Bind" bloc />
+      </ThemeProvider>,
+    );
+    const style = vue.getByTestId('bloc-accentue').props.style;
+    expect(style.borderRadius).toBe(0);
+    expect(style.backgroundColor).toBe(tokens.color.brand['500']);
+  });
+
+  it('la carte se pose : elle porte l’ombre de carte, et sur une vue qui ne clippe pas', async () => {
+    // **La règle 2 de la v1.1, et elle ne se vérifie pas dans les jetons.**
+    // `elevation.card` y était déjà présente et personne ne la lisait : la
+    // bibliothèque n'exposait que l'ombre flottante, et la carte arrondie à
+    // 18 px n'avait rien sous elle. Un jeton déclaré et jamais consommé passe
+    // toutes les gardes de jetons du monde.
+    //
+    // **Et l'ombre est lue sur la vue extérieure.** Celle du dessous clippe son
+    // contenu ; sur iOS, une vue qui clippe coupe sa propre ombre au même bord.
+    // Vérifier « la carte a une ombre » sans regarder lequel des deux nœuds la
+    // porte laisserait passer une carte sans ombre sur téléphone et avec ombre
+    // sur le web — c'est-à-dire le défaut que personne ne voit en CI.
+    const vue = await render(
+      <I18nProvider initialLocale="en">
+        <ThemeProvider role="creator">
+          <BusinessCard
+            name="Salon"
+            meta="Wynwood"
+            serviceName="Balayage"
+            serviceDuration="90 min"
+            tier="story"
+            testID="carte"
+          />
+        </ThemeProvider>
+      </I18nProvider>,
+    );
+    const carte = vue.getByTestId('carte');
+    const dehors = carte.parent;
+
+    const aplati = (style: unknown): Record<string, unknown> =>
+      Array.isArray(style)
+        ? Object.assign({}, ...style.map(aplati))
+        : ((style ?? {}) as Record<string, unknown>);
+
+    // **Deux assertions, et il en faut deux.** La première dit que la vue
+    // extérieure porte exactement ce que la bibliothèque produit — donc que la
+    // carte consomme le jeton, sur le nœud qui ne clippe pas. Elle ne dit rien
+    // de la valeur : comparer le composant à la fonction laisserait les deux se
+    // tromper ensemble. La seconde relit le jeton et vérifie que la fonction en
+    // sort les bons nombres, la lecture étant écrite ici et non empruntée.
+    const attendue = elevationDeCarte() as Record<string, unknown>;
+    expect(aplati(dehors?.props?.style)).toMatchObject(attendue);
+
+    const [, hauteur, flou, opacite] =
+      /^0 (\d+)px (\d+)px rgba\([^)]*,\s*([\d.]+)\)$/.exec(tokens.elevation.card)!;
+    // La plateforme décide de la forme : le web reçoit la déclaration CSS
+    // telle quelle, le natif quatre propriétés. Les deux disent la même ombre,
+    // et le test suit celle sur laquelle il tourne au lieu d'en supposer une.
+    if ('boxShadow' in attendue) {
+      expect(attendue.boxShadow).toBe(tokens.elevation.card);
+    } else {
+      expect(attendue.shadowOffset).toEqual({ width: 0, height: Number(hauteur) });
+      expect(attendue.shadowRadius).toBe(Number(flou));
+      expect(attendue.shadowOpacity).toBe(Number(opacite));
+    }
+
+    // Et l'ombre n'est pas aussi sur la vue qui clippe : l'y trouver voudrait
+    // dire qu'elle est coupée sur téléphone, ce qui ne se voit pas d'ici.
+    const dedans = aplati(carte.props.style);
+    expect(dedans.shadowOpacity ?? dedans.boxShadow).toBeUndefined();
+    expect(dedans.overflow).toBe('hidden');
   });
 
   it('aucun rayon écrit en dur dans une source', () => {
@@ -496,12 +676,14 @@ describe('les surfaces de la v1.0', () => {
     expect(fautifs).toEqual([]);
   });
 
-  it('l’ombre de carte n’existe plus, et une seule ombre subsiste', () => {
-    // `elevation.1` est supprimé : une carte se tient à son filet de 1 px.
-    // Répétée sous chaque carte d'un fil, l'ombre faisait une nappe grise.
+  it('l’ombre de carte est revenue, et il y en a deux', () => {
+    // **La suppression de la v1.0 est annulée, et sa raison avec.** « Une carte
+    // se tient à son filet » était vrai à l'angle droit et faux à 18 px : un
+    // coin arrondi sans ombre flotte au lieu de se poser. Une seule valeur, et
+    // jamais cumulée avec un filet fort.
     expect(Object.keys(tokens.elevation).filter((cle) => !cle.startsWith('$'))).toEqual([
-      '0',
       'float',
+      'card',
     ]);
 
     const fautifs = sources(RACINE)
@@ -516,5 +698,89 @@ describe('les surfaces de la v1.0', () => {
       );
 
     expect(fautifs).toEqual([]);
+  });
+});
+
+// --------------------------------------------------------------------------
+// les trois réserves mesurées de la v1.1
+// --------------------------------------------------------------------------
+
+/**
+ * Design en nomme trois, et une phrase dans un fichier de jetons ne protège
+ * rien. Chacune devient ici une mesure, recalculée depuis les hexadécimaux :
+ * si la rampe bouge, c'est le test qui le dit, pas la relecture.
+ */
+describe('les réserves de la v1.1', () => {
+  const rapport = (devant: string, derriere: string) =>
+    contraste(luminance(devant), luminance(derriere));
+
+  it('`ink.mute` passe sur la page et la surface, et échoue sur le creux', () => {
+    // **La seule paire de la table qui passe sur deux fonds et tombe sur le
+    // troisième.** C'est ce qui la rend dangereuse : elle marche partout où on
+    // l'essaie d'abord. Sur `bg.deep`, on descend à `ink.soft`.
+    expect(rapport(couleurs['ink.mute'], couleurs['bg.page'])).toBeGreaterThanOrEqual(4.5);
+    expect(rapport(couleurs['ink.mute'], couleurs['bg.surface'])).toBeGreaterThanOrEqual(4.5);
+    expect(rapport(couleurs['ink.mute'], couleurs['bg.deep'])).toBeLessThan(4.5);
+
+    // Et le repli tient, sans quoi la réserve n'aurait pas d'issue.
+    expect(rapport(couleurs['ink.soft'], couleurs['bg.deep'])).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('`brand.700` passe de peu sur le creux, et pas assez pour 11 px', () => {
+    // 4,56:1 — au-dessus du seuil, avec 1,3 % de marge. Admis en corps normal,
+    // évité sous 13 px : c'est la réserve écrite, et elle vaut pour le badge de
+    // palier comme pour l'étiquette.
+    const surCreux = rapport(couleurs['brand.700'], couleurs['bg.deep']);
+    expect(surCreux).toBeGreaterThanOrEqual(4.5);
+    expect(surCreux).toBeLessThan(5);
+
+    // Là où il a de la marge, il en a vraiment : la réserve est propre au creux.
+    expect(rapport(couleurs['brand.700'], couleurs['bg.surface'])).toBeGreaterThan(5);
+  });
+
+  it('le point du logo est admis sur la page, et invisible sur l’orange', () => {
+    // **Une règle de pose, pas de palette.** 2,89:1 sur la page est trois
+    // centièmes sous le 3,00 d'un élément graphique : admis parce que le point
+    // n'est jamais seul — les lettres portent 17:1 et donnent la forme. Sur un
+    // aplat de marque, en revanche, il disparaît.
+    const signature = tokens.logo.signature;
+    expect(rapport(signature, couleurs['bg.page'])).toBeGreaterThan(2.8);
+    expect(rapport(signature, couleurs['bg.surface'])).toBeGreaterThanOrEqual(3);
+    expect(rapport(signature, couleurs['brand.500'])).toBeLessThan(1.5);
+  });
+
+  it('l’avertissement n’a pas de teinte : ce sont les neutres du système', () => {
+    // **La règle survit au changement de palette, et le changement la rend plus
+    // nécessaire.** Un ambre d'alerte dans un système ambre se lit comme une
+    // mise en avant de marque, pas comme une alerte — c'est le seul des trois
+    // niveaux dont la couleur habituelle est devenue la couleur de la marque.
+    //
+    // Le test ne mesure pas une saturation, il vérifie une **identité** : les
+    // trois valeurs sont des jetons neutres du système, pas des teintes
+    // proches. Une mesure de saturation laisserait passer un ambre désaturé,
+    // qui est exactement la façon dont la teinte reviendrait.
+    expect(tokens.color.status.warning).toEqual({
+      surface: tokens.color.bg.deep,
+      rule: tokens.color.ink.default,
+      text: tokens.color.ink.default,
+    });
+
+    // Et les deux autres niveaux gardent la leur : « sans teinte » est une
+    // règle de l'avertissement, pas du bloc de statut. Le vérifier ici empêche
+    // de « corriger » les trois d'un coup.
+    expect(tokens.color.status.danger.text).not.toBe(tokens.color.ink.default);
+    expect(tokens.color.status.success.text).not.toBe(tokens.color.ink.default);
+  });
+
+  it('et le bouton porte l’encre, jamais le blanc, à toute taille', () => {
+    // La mesure qui survit à la palette : les quatre oranges de ce projet se
+    // comportent pareil. Un orange assez sombre pour porter du blanc n'est plus
+    // un orange de marque.
+    expect(rapport(couleurs['ink.onBrand'], couleurs['brand.500'])).toBeGreaterThanOrEqual(4.5);
+    expect(rapport('#FFFFFF', couleurs['brand.500'])).toBeLessThan(3);
+
+    // L'appui est lisible ET visible — c'est ce qui a fait retenir l'ambre.
+    expect(rapport(couleurs['ink.onBrand'], couleurs['brand.600'])).toBeGreaterThanOrEqual(4.5);
+    expect(rapport(couleurs['brand.500'], couleurs['brand.600'])).toBeGreaterThan(1.2);
   });
 });

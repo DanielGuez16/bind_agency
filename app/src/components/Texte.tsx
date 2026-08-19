@@ -38,8 +38,9 @@ export type { Variante };
  * attributs.** Sur iOS et Android, `fontWeight` ne choisit pas un fichier :
  * une graisse absente est synthétisée par le moteur, ce qui donne un gras
  * baveux au lieu du dessin voulu. `fontStyle: 'italic'` fait pire encore — il
- * penche la romaine, alors que l'italique d'un Didone est un autre dessin.
- * Chaque couple graisse × voix est enregistré sous son propre nom, et c'est ce
+ * penche la romaine, alors qu'une vraie italique est un autre dessin. Le
+ * système n'en charge plus aucune depuis la v1.1, mais le mécanisme reste :
+ * chaque couple graisse × voix est enregistré sous son propre nom, et c'est ce
  * nom qu'on demande.
  *
  * **Ni `fontWeight` ni `fontStyle` ne sont posés du tout.** Chaque fichier est

@@ -405,7 +405,7 @@ function BandeauDePrincipe() {
       <View
         testID="bandeau-de-principe"
         style={{
-          borderRadius: radius['radius.none'],
+          borderRadius: radius['radius.lg'],
           backgroundColor: c['bg.inverse'],
           padding: large ? 20 : 16,
           gap: large ? 0 : 12,
@@ -472,7 +472,7 @@ function PorteDesRegles({ onPress }: { onPress: () => void }) {
         alignItems: 'center',
         gap: 12,
         padding: 16,
-        borderRadius: radius['radius.none'],
+        borderRadius: radius['radius.lg'],
         borderWidth: 1,
         borderColor: c['line.default'],
         backgroundColor: c['bg.surface'],
@@ -609,7 +609,7 @@ export function BarreauDePalier({
             minHeight: 40,
             justifyContent: 'center',
             paddingHorizontal: 14,
-            borderRadius: radius['radius.none'],
+            borderRadius: radius['radius.lg'],
             borderWidth: 1,
             borderColor: c[bordureDeCarte],
           opacity: pressed ? 0.7 : 1,
@@ -627,7 +627,7 @@ export function BarreauDePalier({
     <View
       testID={`palier-${palier.tier_id}`}
       style={{
-        borderRadius: radius['radius.none'],
+        borderRadius: radius['radius.lg'],
         // Le prochain palier porte deux pixels. C'est le seul objectif de
         // l'écran, et l'épaisseur le dit sans couleur.
         borderWidth: etat === 'prochain' ? 2 : 1,

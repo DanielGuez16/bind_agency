@@ -31,7 +31,7 @@ export function SegmentedTabs({ items, index, onChange, testID }: SegmentedTabsP
         flexDirection: 'row',
         gap: 1,
         backgroundColor: c['line.default'],
-        borderRadius: radius['radius.none'],
+        borderRadius: radius['radius.md'],
         overflow: 'hidden',
       }}
     >

@@ -53,7 +53,7 @@ export function DayPicker({
               alignItems: 'center',
               justifyContent: 'center',
               gap: 2,
-              borderRadius: radius['radius.none'],
+              borderRadius: radius['radius.lg'],
               borderWidth: 1,
               borderColor: choisi ? c['bg.inverse'] : c['line.default'],
               backgroundColor: choisi
@@ -121,7 +121,7 @@ export function SlotPicker({
               minHeight: 44,
               paddingVertical: 11,
               paddingHorizontal: 16,
-              borderRadius: radius['radius.none'],
+              borderRadius: radius['radius.lg'],
               borderWidth: 1,
               borderColor: choisi ? c['brand.700'] : c['line.default'],
               backgroundColor: choisi

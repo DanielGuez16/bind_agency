@@ -63,7 +63,7 @@ function useBoucleDOpacite(decalage: number) {
 export function SkeletonBox({
   width,
   height,
-  rayon = radius['radius.none'],
+  rayon = radius['radius.md'],
   decalage = 0,
   testID,
 }: {
@@ -99,7 +99,7 @@ export function SkeletonLine({
   width?: number | `${number}%`;
   decalage?: number;
 }) {
-  return <SkeletonBox width={width} height={14} rayon={radius['radius.none']} decalage={decalage} />;
+  return <SkeletonBox width={width} height={14} rayon={radius['radius.md']} decalage={decalage} />;
 }
 
 /**
@@ -147,7 +147,7 @@ export function SkeletonLignes({ combien = 5, testID }: { combien?: number; test
 export function SkeletonFiche({ testID }: { testID?: string }) {
   return (
     <View testID={testID} style={{ gap: 16 }}>
-      <SkeletonBox height={150} rayon={radius['radius.none']} />
+      <SkeletonBox height={150} rayon={radius['radius.md']} />
       <View style={{ gap: 10 }}>
         <SkeletonLine width="70%" decalage={100} />
         <SkeletonLine width="40%" decalage={180} />
@@ -195,7 +195,7 @@ export function SkeletonCard({ testID }: { testID?: string }) {
     <View
       testID={testID}
       style={{
-        borderRadius: radius['radius.none'],
+        borderRadius: radius['radius.md'],
         borderWidth: 1,
         borderColor: c['line.default'],
         overflow: 'hidden',

@@ -166,7 +166,7 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
                     accessibilityRole={large ? 'button' : undefined}
                     testID={`ligne-${reservation.booking_id}`}
                     style={({ pressed }) => ({
-                      borderRadius: radius['radius.none'],
+                      borderRadius: radius['radius.lg'],
                       // La ligne ouverte porte deux marques, comme dans la
                       // barre latérale : un fond et une barre. Jamais la
                       // couleur seule.
@@ -657,7 +657,7 @@ function Ligne({
         gap: 2,
         paddingVertical: 8,
         paddingHorizontal: 12,
-        borderRadius: radius['radius.none'],
+        borderRadius: radius['radius.lg'],
         // **Un seul registre.** La ligne portait un fond et une bordure tant
         // qu'elle n'était pas passée : dans une colonne où le bloc « à
         // trancher » était déjà en relief, cela faisait trois épaisseurs pour

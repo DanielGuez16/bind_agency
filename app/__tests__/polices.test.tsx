@@ -18,15 +18,18 @@ import { Texte } from '../src/components';
 import { familles, nomDeFonte, policesAcharger, typography } from '../src/theme';
 import { ThemeProvider } from '../src/theme';
 
-describe('la direction v1.0 a bien remplacé les familles', () => {
-  it('nomme Bodoni Moda et Outfit, et plus les deux retirées', () => {
-    // Première tranche de BIND AGENCY. Le titre passe au Didone, le
-    // fonctionnel au géométrique, le mono ne bouge pas — c'est lui qui porte
-    // les chiffres, les codes et les horaires, et rien dans la nouvelle
-    // direction ne le concerne.
+describe('la direction v1.1 a bien remplacé les familles', () => {
+  it('nomme une seule famille de texte, et le mono ne bouge pas', () => {
+    // **Le Didone est retiré, et avec lui la seconde famille.** La revue de
+    // campagne l'a nommé en premier : un Bodoni à 34 px sur chaque écran fait
+    // magazine, sur une application qu'on ouvre dix fois par jour.
+    //
+    // `display` et `sans` désignent désormais la même fonte, et ce n'est pas
+    // une redondance : le rôle survit à la famille. Le jour où une direction
+    // sépare à nouveau les titres du corps, seule cette table change.
     expect(familles).toEqual({
-      display: 'Bodoni Moda',
-      sans: 'Outfit',
+      display: 'Plus Jakarta Sans',
+      sans: 'Plus Jakarta Sans',
       mono: 'IBM Plex Mono',
     });
   });
@@ -37,7 +40,7 @@ describe('la direction v1.0 a bien remplacé les familles', () => {
     // pile système sans erreur et sans test rouge — le défaut d'origine, à
     // l'identique. On regarde ce qui est réellement posé, pas ce qui est écrit.
     const retirees = Object.keys(policesAcharger()).filter((nom) =>
-      /^(FamiljenGrotesk|IBMPlexSans)_/.test(nom),
+      /^(FamiljenGrotesk|IBMPlexSans|BodoniModa|Outfit)_/.test(nom),
     );
 
     expect(retirees).toEqual([]);
@@ -56,9 +59,8 @@ describe('la direction v1.0 a bien remplacé les familles', () => {
     );
 
     expect(polices.sort()).toEqual([
-      '@expo-google-fonts/bodoni-moda',
       '@expo-google-fonts/ibm-plex-mono',
-      '@expo-google-fonts/outfit',
+      '@expo-google-fonts/plus-jakarta-sans',
     ]);
   });
 });
@@ -123,9 +125,9 @@ describe('les fontes du système', () => {
 
     const style = screen.getByTestId('titre').props.style;
     const aplati = Array.isArray(style) ? Object.assign({}, ...style.filter(Boolean)) : style;
-    // `type.screenTitle` est en Outfit : sous le plancher de 34 px, le Didone
-    // n'a rien à faire dans une interface.
-    expect(aplati.fontFamily).toBe(nomDeFonte('sans', '600'));
+    // `type.screenTitle` passe de 600 à 700 avec la v1.1 : la hiérarchie est
+    // désormais portée par la graisse, puisqu'il n'y a plus qu'une famille.
+    expect(aplati.fontFamily).toBe(nomDeFonte('sans', '700'));
   });
 
   it('garde les familles dans les jetons, et nulle part ailleurs', async () => {
@@ -158,21 +160,22 @@ describe('les fontes du système', () => {
     expect(fautifs).toEqual([]);
   });
 
-  it('donne à l’italique son propre fichier, jamais une romaine penchée', async () => {
-    // **La v1.0 fait de l'accent un changement de voix dans une famille.** Sur
-    // un Didone, l'italique n'est pas la romaine inclinée : c'est un autre
-    // dessin — autres axes, autres empattements. `fontStyle: 'italic'` sur une
-    // face romaine produit un oblique **synthétique**, et l'écart entre les
-    // deux est exactement ce qui distingue la direction de son imitation.
-    const roman = nomDeFonte('display', '500');
-    const italique = nomDeFonte('display', '500', 'italic');
+  it('ne charge aucun italique, parce que le système n’en demande aucun', async () => {
+    // **Ce test disait l'inverse, et il avait raison de le dire.** En v1.0
+    // l'accent était un changement de voix dans un Didone, où l'italique est un
+    // autre dessin — et un `fontStyle: 'italic'` sur une romaine aurait produit
+    // un oblique synthétique.
+    //
+    // L'accent est devenu une **graisse**, 800 contre 700, dans la seule
+    // famille du système. Il n'y a donc plus de seconde voix à charger, et une
+    // face italique posée au démarrage serait un fichier que rien ne demande.
+    const italiques = Object.keys(policesAcharger()).filter((nom) => nom.endsWith('Italic'));
+    expect(italiques).toEqual([]);
 
-    expect(italique).not.toBe(roman);
-    expect(italique.endsWith('Italic')).toBe(true);
-
-    // Et le fichier existe vraiment : un nom qui n'est enregistré nulle part
-    // ramène la police système sans rien signaler.
-    expect(policesAcharger()).toBeDefined();
+    // Et le sens inverse : la graisse d'accent, elle, est bien posée. Sans
+    // elle, `displayAccent` retomberait sur la graisse voisine et l'accent
+    // cesserait d'exister sans que rien ne tombe.
+    expect(nomDeFonte('display', '800') in policesAcharger()).toBe(true);
   });
 
   it('retombe sur la romaine quand la famille n’a pas d’italique', async () => {

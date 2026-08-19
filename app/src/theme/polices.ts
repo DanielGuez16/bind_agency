@@ -13,7 +13,7 @@
  * pas : il les lit, et se contente de dire quel fichier correspond à quelle
  * graisse. Changer de direction artistique, c'est changer la ligne du jeton et
  * l'entrée correspondante ici — deux endroits adjacents, jamais un écran.
- * C'est ce qui rend la bascule v1.0 tenable : Bodoni Moda et Outfit entrent en
+ * C'est ce qui rend une bascule de direction tenable : une famille entre en
  * remplacement de Familjen Grotesk et d'IBM Plex Sans sans qu'un seul écran
  * change de ligne.
  *
@@ -27,40 +27,36 @@
  *
  * **Et pourquoi l'italique est un nom, pas un attribut.** Même raison, même
  * conséquence, en pire : `fontStyle: 'italic'` sur une face romaine produit un
- * *oblique synthétique*, c'est-à-dire la romaine penchée. Sur un Didone, dont
- * l'italique est un dessin entièrement différent — axes, empattements, ductus —
- * l'écart entre le vrai italique et la romaine penchée est celui qui distingue
- * la direction artistique de son imitation. La v1.0 fait de l'accent un
- * changement de **voix** à l'intérieur d'une famille : cette voix doit être un
- * fichier.
+ * *oblique synthétique*, c'est-à-dire la romaine penchée, là où une vraie
+ * italique est un autre dessin — axes, ductus, parfois d'autres lettres.
+ *
+ * **Le mécanisme survit à son motif, et c'est délibéré.** La v1.0 faisait de
+ * l'accent une seconde voix, qui devait être un fichier ; la v1.1 en fait une
+ * graisse et ne charge plus aucune italique. Rien n'oblige à retirer la voix du
+ * modèle pour autant : elle ne coûte qu'un paramètre par défaut, et la retirer
+ * signifierait la réécrire entièrement le jour où une direction en redemande
+ * une. Ce qui est retiré, ce sont les fichiers — une garde vérifie qu'aucun
+ * italique n'est chargé, pas que le code serait incapable d'en charger un.
  */
 import { Platform } from 'react-native';
 
 import produit from './produit.json';
 
-import { BodoniModa_400Regular } from '@expo-google-fonts/bodoni-moda/400Regular';
-import { BodoniModa_400Regular_Italic } from '@expo-google-fonts/bodoni-moda/400Regular_Italic';
-import { BodoniModa_500Medium } from '@expo-google-fonts/bodoni-moda/500Medium';
-import { BodoniModa_500Medium_Italic } from '@expo-google-fonts/bodoni-moda/500Medium_Italic';
-import { BodoniModa_600SemiBold } from '@expo-google-fonts/bodoni-moda/600SemiBold';
-import { BodoniModa_600SemiBold_Italic } from '@expo-google-fonts/bodoni-moda/600SemiBold_Italic';
-import { BodoniModa_700Bold } from '@expo-google-fonts/bodoni-moda/700Bold';
-import { BodoniModa_700Bold_Italic } from '@expo-google-fonts/bodoni-moda/700Bold_Italic';
 import { IBMPlexMono_400Regular } from '@expo-google-fonts/ibm-plex-mono/400Regular';
 import { IBMPlexMono_500Medium } from '@expo-google-fonts/ibm-plex-mono/500Medium';
 import { IBMPlexMono_600SemiBold } from '@expo-google-fonts/ibm-plex-mono/600SemiBold';
-import { Outfit_300Light } from '@expo-google-fonts/outfit/300Light';
-import { Outfit_400Regular } from '@expo-google-fonts/outfit/400Regular';
-import { Outfit_500Medium } from '@expo-google-fonts/outfit/500Medium';
-import { Outfit_600SemiBold } from '@expo-google-fonts/outfit/600SemiBold';
-import { Outfit_700Bold } from '@expo-google-fonts/outfit/700Bold';
+import { PlusJakartaSans_400Regular } from '@expo-google-fonts/plus-jakarta-sans/400Regular';
+import { PlusJakartaSans_500Medium } from '@expo-google-fonts/plus-jakarta-sans/500Medium';
+import { PlusJakartaSans_600SemiBold } from '@expo-google-fonts/plus-jakarta-sans/600SemiBold';
+import { PlusJakartaSans_700Bold } from '@expo-google-fonts/plus-jakarta-sans/700Bold';
+import { PlusJakartaSans_800ExtraBold } from '@expo-google-fonts/plus-jakarta-sans/800ExtraBold';
 
 import { familles, type RoleDeFonte, typography } from './echelle';
 
 export type { RoleDeFonte };
 
 /** Les graisses du système, en clair. */
-export type Graisse = '300' | '400' | '500' | '600' | '700';
+export type Graisse = '400' | '500' | '600' | '700' | '800';
 
 /** Les deux voix d'une famille. Un fichier chacune, jamais une synthèse. */
 export type Voix = 'normal' | 'italic';
@@ -74,38 +70,23 @@ type Faces = Partial<Record<Graisse, unknown>>;
  * fonte — c'est le cas courant quand une direction artistique n'en retient que
  * deux — et le fichier ne doit alors être chargé qu'une fois.
  *
- * L'italique n'est déclaré que là où il existe et où le système s'en sert :
- * Bodoni Moda, qui porte le mot accentué. Outfit et IBM Plex Mono n'en ont
- * aucun emploi, et en charger un coûterait un fichier au démarrage pour rien.
+ * **Plus aucun italique, et ce paragraphe disait le contraire.** Il expliquait
+ * que Bodoni Moda portait le mot accentué en italique. Le Didone est retiré et
+ * l'accent est devenu une graisse dans la seule famille du système : il n'y a
+ * plus de seconde voix à charger.
  */
 const FICHIERS: Record<string, Record<Voix, Faces>> = {
-  'Bodoni Moda': {
+  'Plus Jakarta Sans': {
     normal: {
-      '400': BodoniModa_400Regular,
-      '500': BodoniModa_500Medium,
-      '600': BodoniModa_600SemiBold,
-      '700': BodoniModa_700Bold,
+      '400': PlusJakartaSans_400Regular,
+      '500': PlusJakartaSans_500Medium,
+      '600': PlusJakartaSans_600SemiBold,
+      '700': PlusJakartaSans_700Bold,
+      '800': PlusJakartaSans_800ExtraBold,
     },
-    italic: {
-      '400': BodoniModa_400Regular_Italic,
-      '500': BodoniModa_500Medium_Italic,
-      '600': BodoniModa_600SemiBold_Italic,
-      '700': BodoniModa_700Bold_Italic,
-    },
-  },
-  Outfit: {
-    normal: {
-      // Le 300 n'est encore demandé par aucune variante de l'échelle : il est
-      // déclaré parce que le sigle B!ND de la v1.0 est « trait fin, monoline »
-      // et qu'un moteur ne sait pas amaigrir une face. Il ne coûte rien tant
-      // que rien ne le demande : `policesAcharger` ne pose que ce que
-      // l'échelle nomme, sans exception.
-      '300': Outfit_300Light,
-      '400': Outfit_400Regular,
-      '500': Outfit_500Medium,
-      '600': Outfit_600SemiBold,
-      '700': Outfit_700Bold,
-    },
+    // **Aucun italique, et c'est un choix du système.** L'accent était un
+    // italique d'une autre famille ; il est devenu une graisse de celle-ci.
+    // Charger une face que rien ne demande coûte un fichier au démarrage.
     italic: {},
   },
   'IBM Plex Mono': {
@@ -119,7 +100,7 @@ const FICHIERS: Record<string, Record<Voix, Faces>> = {
 };
 
 /** L'ordre de repli : on préfère toujours une graisse réelle à une synthèse. */
-const REPLI: Graisse[] = ['600', '500', '400', '700', '300'];
+const REPLI: Graisse[] = ['600', '500', '400', '700', '800'];
 
 /**
  * Le nom sous lequel une graisse est enregistrée. « Outfit_600 », «
@@ -144,9 +125,9 @@ const REPLI: Graisse[] = ['600', '500', '400', '700', '300'];
  * Sur appareil, `fontFamily` désigne un fichier chargé : il n'y a pas de repli
  * et une famille inconnue ne rend rien de bon. Sur le web, le navigateur
  * choisit seul tant que la fonte n'est pas arrivée — ou si elle ne vient
- * jamais — et sans pile il atterrit sur sa fonte par défaut, un Times. Un
- * Didone du XVIIIe remplacé par une romaine de journal est le contraire de la
- * direction, et ça se voit sur le premier écran.
+ * jamais — et sans pile il atterrit sur sa fonte par défaut, un Times. Une
+ * romaine de journal sous une direction géométrique est le contraire de ce
+ * qu'elle dit, et ça se voit sur le premier écran.
  *
  * C'est la seule part de la correction de fonte de Design qui s'applique ici :
  * le produit charge des TTF statiques par graisse, donc il n'a ni axe `opsz` à
@@ -155,7 +136,7 @@ const REPLI: Graisse[] = ['600', '500', '400', '700', '300'];
  * **Séparée de `nomDeFonte`, et il a fallu le payer pour le comprendre.** Ce
  * nom sert deux choses : écrire un style, et **enregistrer** la face auprès
  * d'`expo-font`. Composer la pile dans `nomDeFonte` a donc enregistré une
- * famille appelée « BodoniModa_400Regular, Didot, … » — plus aucune face posée,
+ * famille appelée « PlusJakartaSans_400Regular, Avenir Next, … » — plus aucune face posée,
  * et toutes les fontes du web perdues. Les tests unitaires n'ont rien vu : ils
  * lisent le nom rendu, pas ce que le navigateur enregistre. C'est la suite de
  * bout en bout qui l'a dit.

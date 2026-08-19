@@ -128,7 +128,7 @@ export function Button({
         minHeight: Math.max(HAUTEURS[taille], size.hit),
         paddingHorizontal: 16,
         paddingVertical: 8,
-        borderRadius: radius['radius.none'],
+        borderRadius: radius['radius.pill'],
         borderWidth: bordure[variant] ? 1 : 0,
         borderColor: bordure[variant],
         backgroundColor: disabled

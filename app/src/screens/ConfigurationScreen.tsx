@@ -80,7 +80,7 @@ export function ConfigurationScreen({
               alignItems: 'center',
               gap: 12,
               padding: 16,
-              borderRadius: radius['radius.none'],
+              borderRadius: radius['radius.lg'],
               backgroundColor: c['bg.surface'],
               borderWidth: 1,
               borderColor: c['line.default'],
@@ -246,7 +246,7 @@ function ColonneDesSections({
             style={({ pressed }) => ({
               gap: 2,
               padding: 12,
-              borderRadius: radius['radius.none'],
+              borderRadius: radius['radius.lg'],
               // Deux marques, comme partout ailleurs dans la coquille : un fond
               // et une barre. Jamais la couleur seule.
               backgroundColor: active ? c['brand.50'] : 'transparent',

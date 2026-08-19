@@ -129,7 +129,7 @@ export function AnnuaireScreen({ businessId }: { businessId: string }) {
             testID="ce-que-le-palier-dit"
             style={{
               padding: 14,
-              borderRadius: radius['radius.none'],
+              borderRadius: radius['radius.lg'],
               backgroundColor: c['bg.sunken'],
             }}
           >
@@ -163,7 +163,7 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
       style={{
         gap: 12,
         padding: 16,
-        borderRadius: radius['radius.none'],
+        borderRadius: radius['radius.lg'],
         borderWidth: 1,
         borderColor: c['line.default'],
         backgroundColor: c['bg.surface'],

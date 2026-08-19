@@ -94,7 +94,6 @@ export { nomDeFonte, pileDeFontes, policesAcharger, type Graisse, type Voix } fr
 export {
   familles,
   typography,
-  PLANCHER_DIDONE,
   type EchelleTypo,
   type RoleDeFonte,
   type Variante,
@@ -196,15 +195,30 @@ export const codeColors = { fg: produitBrut.code.fg, bg: produitBrut.code.bg } a
 // --------------------------------------------------------------------------
 
 /**
- * Les rayons, réduits à trois.
+ * Les rayons, par rôle.
  *
- * Les 6, 8, 12 et 16 de la v0.4 tombent à zéro : la mode ne s'arrondit pas, et
- * le bloc plein ne fonctionne que d'équerre. Restent 2 px sur les vignettes
- * photo — sans quoi un angle de photo paraît coupé — et la pilule sur les
- * seules chips de filtre.
+ * **La raison de la v1.0 est remplacée, pas conservée à côté de son contraire.**
+ * Elle disait « la mode ne s'arrondit pas, et le bloc plein ne fonctionne que
+ * d'équerre », et mettait les sept valeurs à zéro. Elle était vraie du bloc et
+ * fausse de tout le reste : d'une propriété d'un objet on avait fait une loi de
+ * système. La revue de campagne a nommé Uber Eats, et tout ce que les testeurs
+ * trouvaient trop carré est ici.
+ *
+ * Ce qui reste vrai : **`none` est réservé au bloc accentué.** Un aplat de
+ * marque aux angles arrondis devient un bouton, et la signature perd la raideur
+ * qui la fait lire comme une signature.
+ *
+ * Deux valeurs pour les images, et ce n'est pas une hésitation : `photo` (16)
+ * quand l'image est un objet dans une carte, `xl` (24) quand elle **est** la
+ * carte. Une image encadrée et une image qui touche les bords ne demandent pas
+ * le même arrondi optique.
  */
 export const radius = {
   'radius.none': brut.radius.none,
+  'radius.sm': brut.radius.sm,
+  'radius.md': brut.radius.md,
+  'radius.lg': brut.radius.lg,
+  'radius.xl': brut.radius.xl,
   'radius.photo': brut.radius.photo,
   'radius.pill': brut.radius.pill,
 } as const;
@@ -269,7 +283,8 @@ export function contraste(a: number, b: number): number {
  * celui du cas le plus défavorable, et il n'est pas si rare — les mosaïques de
  * la fondatrice alternent justement des ensembles presque blancs.
  *
- * Elle vaut 0,606 pour `ink.onScrim` et 0,733 pour `ink.onScrimMuted`.
+ * Elle vaut 0,606 pour `ink.onScrim` et 0,714 pour `ink.onScrimMuted` — l'ambre a
+ * légèrement éclairci l'encre sourde, donc il en faut un peu moins.
  * **Des trois arrêts du système, seul `scrim.photoBottom` (0,88) les
  * dépasse** : un texte posé ailleurs que sur cet arrêt-là n'est pas
  * démontrable. C'est ce qui a fait passer la sous-ligne de l'accueil au blanc,
@@ -322,7 +337,15 @@ export const tierTokens = produitBrut.tier;
  * lisible en niveaux de gris. Un rose, un vert et un violet ne disaient pas
  * lequel était le plus exigeant ; il fallait l'apprendre.
  */
-export const tierMatiere = brut.color.tier;
+/**
+ * **La table d'hexadécimaux a disparu, et c'est une seconde vérité en moins.**
+ * `color.tier` recopiait la rampe en valeurs — `#A83E06` pour le 700, `#F9BC97`
+ * pour le 200 — si bien qu'un changement de direction la laissait derrière : au
+ * passage à l'ambre, elle aurait encore porté l'orange brut. Design l'a
+ * supprimée du système, et ce qu'elle contenait d'irremplaçable était deux
+ * géométries, reprises ci-dessous depuis `components.md` §2.
+ */
+export const tierMatiere = null;
 
 export type MatiereDePalier = {
   /** Contour, teinte, aplat. De moins de matière à plus de matière. */
@@ -356,22 +379,22 @@ const MATIERE_DE_PALIER: Record<Palier, MatiereDePalier> = {
     matiere: 'outline',
     surface: 'bg.surface',
     bordure: 'brand.700',
-    epaisseur: brut.color.tier.story.borderWidth,
+    epaisseur: 1.5, // components.md §2
     texte: 'brand.700',
     glyphePlein: 'brand.700',
     glypheVide: 'brand.200',
-    barresPleines: brut.color.tier.story.glyphFilled,
+    barresPleines: 1,
   },
   // Teinte : la matière du milieu. Fond orange pâle, filet de marque.
   post: {
     matiere: 'tint',
     surface: 'brand.100',
     bordure: 'brand.500',
-    epaisseur: brut.color.tier.post.borderWidth,
+    epaisseur: 1, // components.md §2
     texte: 'brand.700',
     glyphePlein: 'brand.700',
     glypheVide: 'brand.200',
-    barresPleines: brut.color.tier.post.glyphFilled,
+    barresPleines: 2,
   },
   // Aplat : toute la matière. C'est le seul des trois qui porte le bloc plein,
   // et la seule surface `brand.500` que la règle de comptage laisse se répéter.
@@ -379,11 +402,11 @@ const MATIERE_DE_PALIER: Record<Palier, MatiereDePalier> = {
     matiere: 'solid',
     surface: 'brand.500',
     bordure: 'transparent',
-    epaisseur: brut.color.tier.reel.borderWidth,
+    epaisseur: 0, // components.md §2
     texte: 'ink.onBrand',
     glyphePlein: 'ink.onBrand',
     glypheVide: 'ink.onBrand',
-    barresPleines: brut.color.tier.reel.glyphFilled,
+    barresPleines: 3,
   },
 };
 
@@ -401,21 +424,21 @@ const MATIERE_SUR_ENCRE: Record<Palier, MatiereDePalier> = {
     // Le contour n'a pas de fond : sur l'encre, c'est l'encre qu'on voit.
     surface: 'bg.inverse',
     bordure: 'brand.400',
-    epaisseur: brut.color.tier.story.borderWidth,
+    epaisseur: 1.5,
     texte: 'brand.400',
     glyphePlein: 'brand.400',
     glypheVide: 'brand.900',
-    barresPleines: brut.color.tier.story.glyphFilled,
+    barresPleines: 1,
   },
   post: {
     matiere: 'tint',
     surface: 'brand.900',
     bordure: 'brand.500',
-    epaisseur: brut.color.tier.post.borderWidth,
+    epaisseur: 1,
     texte: 'brand.200',
     glyphePlein: 'brand.200',
     glypheVide: 'brand.700',
-    barresPleines: brut.color.tier.post.glyphFilled,
+    barresPleines: 2,
   },
   // L'aplat ne bouge pas. C'est ce qui garde l'ordre lisible d'un fond à
   // l'autre : le palier le plus exigeant est le seul dont la matière est la
@@ -424,11 +447,11 @@ const MATIERE_SUR_ENCRE: Record<Palier, MatiereDePalier> = {
     matiere: 'solid',
     surface: 'brand.500',
     bordure: 'transparent',
-    epaisseur: brut.color.tier.reel.borderWidth,
+    epaisseur: 0,
     texte: 'ink.onBrand',
     glyphePlein: 'ink.onBrand',
     glypheVide: 'ink.onBrand',
-    barresPleines: brut.color.tier.reel.glyphFilled,
+    barresPleines: 3,
   },
 };
 
@@ -575,33 +598,59 @@ export function useColors(): ColorTokens {
 }
 
 /**
- * L'unique ombre du système, pour ce qui flotte réellement.
+ * Les deux ombres du système.
  *
- * **`elevation.1` est supprimé.** Une carte se tient à son filet de 1 px ; une
- * ombre sous chaque carte d'un fil produisait une nappe grise, et c'est
- * précisément ce que la v1.0 refuse — le filet remplace l'ombre. Ce qui reste
- * est réservé à ce qui flotte au-dessus du contenu : feuille, menu, dialogue.
+ * **`elevation.card` revient, et la raison de la v1.0 est renversée.** Elle
+ * disait « une carte se tient à son filet de 1 px » — c'était vrai d'une carte
+ * d'équerre, et la v1.0 n'en avait pas d'autre. La v1.1 arrondit à 18 px, et un
+ * coin de 18 px sans ombre ne se pose pas sur la page, il flotte au-dessus sans
+ * dire à quelle hauteur. L'ombre est minuscule — 7 % d'encre à 10 px de flou —
+ * et c'est le point : elle ne creuse pas, elle appuie.
  *
- * **Une seule fonction pour les trois plateformes.** iOS veut quatre
- * propriétés `shadow*`, Android un `elevation`, et le web un `boxShadow` — les
- * écrire à la main dans chaque composant produirait trois vérités.
+ * La crainte de la v1.0 tenait toujours : une ombre sous chaque carte d'un fil
+ * produit une nappe grise. C'est ce qui décide de la valeur, pas de l'absence.
+ *
+ * **Une seule fonction par ombre, pour les trois plateformes.** iOS veut quatre
+ * propriétés `shadow*`, Android un `elevation`, et le web un `boxShadow` —
+ * les écrire à la main dans chaque composant produirait trois vérités.
  */
-export function elevationFlottante() {
-  // Le jeton est écrit en CSS — « 0 12px 32px rgba(...) » — parce que c'est la
-  // forme dans laquelle un designer le donne. Les trois nombres en sont
-  // extraits une fois, ici, plutôt que recopiés en quatre propriétés.
-  const [, decalage, rayon] = /^0 (\d+)px (\d+)px/.exec(brut.elevation.float) ?? ['', '12', '32'];
-  const hauteur = Number(decalage);
-  const flou = Number(rayon);
+function ombreDe(jeton: string, elevationAndroid: number) {
+  // Le jeton est écrit en CSS — « 0 2px 10px rgba(23,20,15,0.07) » — parce que
+  // c'est la forme dans laquelle un designer le donne. Les quatre nombres en
+  // sont extraits une fois, ici, plutôt que recopiés en quatre propriétés dans
+  // chaque composant.
+  const lu = /^0 (\d+)px (\d+)px rgba\([^)]*,\s*([\d.]+)\)$/.exec(jeton);
+  if (!lu) {
+    // Pas de repli silencieux : une ombre qui retombe sur des valeurs inventées
+    // se voit à l'œil et jamais en revue. Le jeton vient de Design et sa forme
+    // est stable ; si elle change, c'est ici qu'il faut le savoir.
+    throw new Error(`elevation illisible : « ${jeton} »`);
+  }
+  const [, hauteur, flou, opacite] = lu;
 
   return Platform.select({
-    web: { boxShadow: brut.elevation.float },
-    android: { elevation: 12 },
+    web: { boxShadow: jeton },
+    android: { elevation: elevationAndroid },
     default: {
       shadowColor: COULEURS['ink.default'],
-      shadowOffset: { width: 0, height: hauteur },
-      shadowOpacity: 0.14,
-      shadowRadius: flou,
+      shadowOffset: { width: 0, height: Number(hauteur) },
+      shadowOpacity: Number(opacite),
+      shadowRadius: Number(flou),
     },
   }) as object;
+}
+
+/** Ce qui flotte au-dessus du contenu : feuille, menu, dialogue. */
+export function elevationFlottante() {
+  return ombreDe(brut.elevation.float, 12);
+}
+
+/**
+ * Ce qui se pose sur la page : une carte, et rien d'autre.
+ *
+ * Android reçoit 1 et non 2 : son `elevation` dessine aussi un contour, et à 2
+ * il double le filet de la carte au lieu de l'ombrer.
+ */
+export function elevationDeCarte() {
+  return ombreDe(brut.elevation.card, 1);
 }

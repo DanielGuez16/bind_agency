@@ -136,7 +136,7 @@ export function AuthScreen({ motif }: { motif: MotifDeSortie | null }) {
         width: PANNEAU,
         padding: spacing['space.8'],
         gap: spacing['space.6'],
-        borderRadius: radius['radius.none'],
+        borderRadius: radius['radius.lg'],
         backgroundColor: c['bg.inverse'],
         justifyContent: 'center',
       }}

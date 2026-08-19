@@ -232,7 +232,7 @@ export function TerrainScreen() {
                 alignItems: 'center',
                 gap: 12,
                 padding: 20,
-                borderRadius: radius['radius.none'],
+                borderRadius: radius['radius.lg'],
                 backgroundColor: c['bg.surface'],
                 borderWidth: 1,
                 borderColor: c['line.strong'],
@@ -250,7 +250,7 @@ export function TerrainScreen() {
                 style={{
                   padding: 12,
                   backgroundColor: codeColors.fg,
-                  borderRadius: radius['radius.none'],
+                  borderRadius: radius['radius.lg'],
                 }}
               >
                 <QRCode
@@ -317,7 +317,7 @@ function LigneDeFiche({
       style={{
         gap: 8,
         padding: 16,
-        borderRadius: radius['radius.none'],
+        borderRadius: radius['radius.lg'],
         backgroundColor: c['bg.surface'],
         borderWidth: 1,
         borderColor: c['line.default'],

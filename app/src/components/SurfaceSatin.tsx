@@ -175,7 +175,7 @@ export function SurfaceSatin({
         // clairs, dont le tiers haut porte l'encre, `flex-end` sur la variante
         // sombre, qui ne se lit que par le bas.
         justifyContent: POSE_DU_SATIN[variante].ancrage === 'haut' ? 'flex-start' : 'flex-end',
-        borderRadius: radius['radius.none'],
+        borderRadius: radius['radius.xl'],
         overflow: 'hidden',
       }}
     >

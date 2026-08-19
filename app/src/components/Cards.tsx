@@ -23,7 +23,7 @@ import type { ReactNode } from 'react';
 import { Animated, Image, Pressable, View, type ImageSourcePropType } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { radius, useColors, useTheme } from '../theme';
+import { elevationDeCarte, radius, useColors, useTheme } from '../theme';
 import { Button } from './Button';
 import { useEnfoncement } from './Mouvement';
 import { Texte } from './Texte';
@@ -183,14 +183,24 @@ export function BusinessCard({
 }: BusinessCardProps) {
   const { color: c, role } = useTheme();
   const enfoncement = useEnfoncement(Boolean(onPress));
-  // **Plus d'ombre sous une carte.** La v1.0 supprime `elevation.1` : une
-  // carte se tient à son filet de 1 px. Répétée sous chaque carte d'un fil,
-  // l'ombre faisait une nappe grise, et c'est exactement ce que le filet
-  // remplace. La seule ombre qui reste est celle de ce qui flotte vraiment —
-  // feuille, menu, dialogue.
-
+  // **L'ombre est portée par la vue extérieure, et c'est obligatoire.** La
+  // carte clippe son contenu — `overflow: 'hidden'`, pour que la couverture
+  // épouse le coin de 18 px — et sur iOS une vue qui clippe ne peut pas porter
+  // d'ombre : elle la coupe au même bord. Les deux ne peuvent donc pas vivre
+  // sur le même nœud. La vue extérieure reprend aussi le fond et le rayon,
+  // parce qu'iOS calcule l'ombre depuis la couche opaque : sans fond, il n'y a
+  // rien dont projeter la silhouette et l'ombre ne sort pas.
   return (
-    <Animated.View style={enfoncement.style}>
+    <Animated.View
+      style={[
+        enfoncement.style,
+        {
+          borderRadius: radius['radius.lg'],
+          backgroundColor: c['bg.surface'],
+          ...elevationDeCarte(),
+        },
+      ]}
+    >
       <Pressable
         testID={testID}
         accessibilityRole={onPress ? 'button' : undefined}
@@ -199,7 +209,7 @@ export function BusinessCard({
         onPressIn={enfoncement.onPressIn}
         onPressOut={enfoncement.onPressOut}
         style={{
-          borderRadius: radius['radius.none'],
+          borderRadius: radius['radius.lg'],
           borderWidth: 1,
           borderColor: c['line.default'],
           backgroundColor: c['bg.surface'],
@@ -316,7 +326,7 @@ export function ServiceRow({ name, meta, tier, thumbnail, right, testID }: Servi
         borderBottomColor: c['line.default'],
       }}
     >
-      <View style={{ width: 44, height: 44, borderRadius: radius['radius.none'], overflow: 'hidden' }}>
+      <View style={{ width: 44, height: 44, borderRadius: radius['radius.lg'], overflow: 'hidden' }}>
         {thumbnail ? (
           <Image source={thumbnail} style={{ width: 44, height: 44 }} resizeMode="cover" />
         ) : (

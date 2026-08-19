@@ -3,32 +3,32 @@
   "mesures": {
     "satin-drape": {
       "haut": {
-        "ink.default": 6.94,
-        "ink.onDark": 1.01
+        "ink.default": 8.55,
+        "ink.onDark": 1
       },
       "bas": {
-        "ink.default": 1.7,
-        "ink.onDark": 2.31
+        "ink.default": 1.89,
+        "ink.onDark": 1.92
       }
     },
     "satin-fold": {
       "haut": {
-        "ink.default": 5.05,
+        "ink.default": 6.52,
         "ink.onDark": 1
       },
       "bas": {
-        "ink.default": 1.52,
-        "ink.onDark": 2.78
+        "ink.default": 1.66,
+        "ink.onDark": 2.15
       }
     },
     "satin-ember": {
       "haut": {
-        "ink.default": 1.46,
-        "ink.onDark": 1.5
+        "ink.default": 1.58,
+        "ink.onDark": 1.42
       },
       "bas": {
         "ink.default": 1,
-        "ink.onDark": 6.21
+        "ink.onDark": 5.3
       }
     }
   }

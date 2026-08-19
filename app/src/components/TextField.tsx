@@ -101,7 +101,7 @@ export function TextField({
       <View
         style={{
           minHeight: lignes ? 24 * lignes + 20 : size.field,
-          borderRadius: radius['radius.none'],
+          borderRadius: radius['radius.md'],
           // L'erreur prime sur le focus : un champ refusé qu'on rouvre doit
           // continuer de dire qu'il est refusé.
           borderWidth: enErreur || enFocus ? 2 : 1,

@@ -263,7 +263,11 @@ describe('les fichiers de la marque', () => {
     const jetons = JSON.parse(
       readFileSync(join(__dirname, '..', 'src', 'theme', 'tokens.json'), 'utf-8'),
     );
-    const BORNE = Math.min(...(jetons.logo.mark16.sizes as number[]).slice(-1), 128);
+    // **Design écrit la borne en prose désormais**, pas en tableau de tailles :
+    // « sous 128 px de large, le logotype cède au sigle ». Le 128 est donc
+    // recopié ici à la main, et c'est ce qui en fait un oracle — le lire dans
+    // les jetons le rendrait d'accord avec eux quoi qu'ils disent.
+    const BORNE = 128;
 
     for (const fichier of declare.fichiers) {
       expect({ nom: fichier.nom, marque: fichier.marque }).toEqual({
@@ -304,12 +308,21 @@ describe('les fichiers de la marque', () => {
     expect(declare.couleurs).toEqual({
       tuile: jetons.color.ink.default,
       fut: '#FFFFFF',
-      point: jetons.color.brand['500'],
+      point: jetons.logo.signature,
     });
     // Et la palette du dessin est bien celle que les jetons déclarent : trois
     // couleurs, pas deux. La contrainte à deux est tombée avec la correction —
     // le sens du sigle **est** le contraste entre le fût et le point.
-    expect(declare.palette).toEqual(jetons.logo.mark16.palette);
+    // **La liste a disparu du système, et c'est un progrès.** Elle énumérait
+    // trois hexadécimaux à côté d'une prose qui nommait trois jetons : deux
+    // vérités pour une seule chose, dont l'une serait restée à l'orange brut au
+    // changement de direction. La palette permise se dérive maintenant de ce que
+    // la prose désigne — tuile d'encre, fût blanc, point de signature.
+    expect(declare.palette).toEqual([
+      jetons.color.ink.default,
+      '#FFFFFF',
+      jetons.logo.signature,
+    ]);
     expect(declare.palette).toHaveLength(3);
     expect(declare.mot).toBe(jetons.logo.wordmark.text);
   });
@@ -407,7 +420,12 @@ describe('la marque compacte', () => {
 
     // Au cœur du fût, et au cœur du point.
     expect({ fut: au(8, 4), point: au(8, 12) }).toEqual({ fut: 'fut', point: 'point' });
-    expect(declare.couleurs.point).toBe(jetons.color.brand['500']);
+    // **La signature, et non la rampe.** Le point était rattaché à `brand.500` :
+    // il suivait donc la palette, et il a failli passer à l'ambre avec elle.
+    // C'est exactement ce qu'une signature ne doit pas faire — celle-ci a
+    // traversé le vert, l'orange brut et l'ambre sans changer.
+    expect(declare.couleurs.point).toBe(jetons.logo.signature);
+    expect(jetons.logo.signature).not.toBe(jetons.color.brand['500']);
     expect(declare.couleurs.fut).not.toBe(declare.couleurs.point);
   });
 
@@ -649,9 +667,16 @@ describe('le logotype porte son point', () => {
       lire(chemin(__dirname, '..', 'src', 'theme', 'tokens.json'), 'utf-8'),
     );
     expect(produit.marque.encres.encre).toBe(jetons.color.ink.default);
-    expect(produit.marque.encres.point).toBe(jetons.color.brand['500']);
+    expect(produit.marque.encres.point).toBe(jetons.logo.signature);
+    // Le sens inverse : le jour où quelqu'un « harmonise » la signature avec la
+    // rampe, ce test tombe. C'est la seule chose qui l'en empêche.
+    expect(jetons.logo.signature).not.toBe(jetons.color.brand['500']);
     expect(produit.marque.encres.blanc).not.toBe(jetons.color.ink.onDark);
-    expect(jetons.logo.monochrome).toBe(false);
+    // Le drapeau `monochrome: false` a disparu du système : il disait en
+    // booléen ce que la règle dit en toutes lettres, et un booléen ne porte pas
+    // sa raison. Ce qui le remplace est le fait lui-même, vérifié plus haut :
+    // deux couleurs distinctes, dont l'une est la signature.
+    expect(produit.marque.encres.encre).not.toBe(produit.marque.encres.point);
   });
 
   it('et le logo n’est plus une approximation déclarée', () => {

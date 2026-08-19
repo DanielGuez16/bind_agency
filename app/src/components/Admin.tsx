@@ -123,7 +123,7 @@ export function KeyHint({ touche }: { touche: string }) {
       style={{
         paddingHorizontal: 5,
         paddingVertical: 1,
-        borderRadius: radius['radius.none'],
+        borderRadius: radius['radius.lg'],
         backgroundColor: c['bg.surface'],
       }}
     >
@@ -244,7 +244,7 @@ export function DecisionBar({
               alignItems: 'center',
               justifyContent: 'center',
               gap: 6,
-              borderRadius: radius['radius.none'],
+              borderRadius: radius['radius.lg'],
               borderWidth: 1,
               borderColor: c['line.default'],
               opacity: pressed ? 0.7 : 1,

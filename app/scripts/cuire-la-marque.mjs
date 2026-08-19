@@ -75,7 +75,11 @@ const produit = JSON.parse(await readFile(join(RACINE, 'src/theme/produit.json')
  * marque : le sens du sigle est le rapport entre le fût et le point, pas la
  * silhouette.
  */
-const PALETTE = jetons.logo.mark16.palette;
+// **Dérivée, plus lue.** Design a retiré la liste de `tokens.json` en v1.1 :
+// elle énumérait trois hexadécimaux à côté d'une prose qui nommait trois
+// jetons, et c'est la liste qui serait restée à l'orange brut. L'ordre est
+// celui du dessin — tuile, fût, point.
+const PALETTE = [jetons.color.ink.default, '#FFFFFF', jetons.logo.signature];
 
 /**
  * Le gabarit d'Android, et sa zone sûre.

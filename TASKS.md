@@ -1066,6 +1066,30 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       cette tranche, l'API refuse de démarrer sans elles plutôt que de répondre
       503 à la première créatrice — ce qui rend le manque visible au déploiement
       et non une inscription à la fois*
+- [x] **La direction Ambre : jetons, typographie et formes**
+      *Les trois fichiers de Design importés depuis son projet. Les 31 valeurs
+      sont identiques à celles de l'artefact où la fondatrice a tranché — rien à
+      arbitrer, seulement à appliquer. La garde de la passation passe de
+      l'égalité à l'inclusion, avec son sens inverse : l'app n'invente aucune
+      valeur que Design ne déclare pas. **Trois secondes vérités supprimées** —
+      `color.tier` qui recopiait la rampe en hexadécimaux et serait restée à
+      l'orange brut, la liste des couleurs du sigle, et un drapeau booléen qui
+      disait sans sa raison ce que la règle dit en toutes lettres. Les trois
+      réserves de contraste de Design deviennent quatre mesures.
+      **Cette ligne a d'abord affirmé que le bloc accentué restait d'équerre et
+      qu'un test le tenait ; c'était faux des deux moitiés.** La bascule l'avait
+      arrondi avec les 65 autres sites, et les deux gardes qui parlaient de
+      `radius.none` sont restées vertes — l'une vérifiait la valeur du jeton,
+      l'autre que personne d'autre ne s'en servait. La direction manquante est
+      écrite : le bloc doit le porter. De même `elevation.card`, déclarée et
+      consommée nulle part, et la pose du point du logo, que la palette ne peut
+      pas garantir. 1040 tests verts, 8 mutations vérifiées*
+- [ ] **Les treize planches d'écrans portent encore la v1.0**
+      *`PASSATION-v1.1.md` §6 les liste et donne l'ordre qui limite le travail
+      perdu : le fil d'abord, qui sert de référence aux autres ; la fiche de
+      salon, qui partage la carte et la visionneuse ; la journée du commerce,
+      les rapports et l'annuaire ; l'arbitrage et les plans ; les écrans de
+      marque. C'est du travail de Design, pas du produit*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire
 
 ---
@@ -1108,7 +1132,7 @@ autre : l'état se lit par cadre quand un cadre a déjà sa propre planche.
 | `BIND Menu - Lot 4 v1.1` | **Passée** (#123). |
 | `BIND Mark - Favicon 16` | **Passée.** Le 16 est un dessin distinct, et aucun fichier cuit ne porte plus le logotype. |
 | `BIND Creator - Fil v2` | **Partiellement passée, et le reste est sans objet.** La direction 1b — les rangées par quartier — est branchée là où Design l'a elle-même placée : ce que montre une catégorie choisie (#141). La direction 1a a été remplacée par `Le mur v2.1`. |
-| `BIND Creator - Le mur v2.1` | **Passée, et ses cinq réserves sont tranchées** (#131, #132, #140, #141, #145). Trois écarts à la planche sont assumés et écrits : le quartier de la position n'est pas nommé — rien ne sait le résoudre ; le Didone reste à son plancher de 34, une exception non déclarée dans les jetons étant une violation ; et les catégories sont les six du modèle, celles de la planche datant du produit mono-catégorie. Deux étaient des défauts et sont corrigés : le rayon se règle de nouveau dans les deux sens, et le mur va à fond perdu. |
+| `BIND Creator - Le mur v2.1` | **Passée, et ses cinq réserves sont tranchées** (#131, #132, #140, #141, #145). Trois écarts à la planche sont assumés et écrits : le quartier de la position n'est pas nommé — rien ne sait le résoudre ; le titre de quartier reste à 34 contre 28 sur la planche — la raison a changé sans que la décision change : c'était le plancher du Didone, tombé avec lui en v1.1, c'est maintenant que la planche est une v1.0 non rééditée ; et les catégories sont les six du modèle, celles de la planche datant du produit mono-catégorie. Deux étaient des défauts et sont corrigés : le rayon se règle de nouveau dans les deux sens, et le mur va à fond perdu. |
 | `BIND Creator - Lot 1 v1.1` | **Passée.** Le cadre 01, l'audience (#149) — l'écran nommé deux fois comme le plus faible du produit — et le cadre 08, les réservations (#150), sont confrontés à leurs planches. Le cadre 02 l'était déjà : c'est `Tiers v0.7` restylée, livrée sous sa propre tâche, et le registre le surestimait en lisant la planche en bloc. Son fil a été remplacé par le mur, et son cadre 03b a servi à composer le filtre par catégorie. **Reste la porte du cadre 11c**, que 02a ouvre et que la navigation ne passe pas. |
 
 **Ce que cette liste a trouvé en étant écrite :** `Lot 1 v1.1` était la seule

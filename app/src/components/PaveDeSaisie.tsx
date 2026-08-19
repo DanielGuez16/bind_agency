@@ -70,7 +70,7 @@ export function PaveDeSaisie({
             height: TOUCHE,
             alignItems: 'center',
             justifyContent: 'center',
-            borderRadius: radius['radius.none'],
+            borderRadius: radius['radius.md'],
             borderWidth: 1,
             borderColor: c['line.default'],
             backgroundColor: c['bg.surface'],

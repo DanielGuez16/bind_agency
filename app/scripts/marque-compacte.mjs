@@ -34,12 +34,16 @@ import { PNG } from 'pngjs';
 /**
  * La géométrie et les couleurs viennent des jetons, **jamais recopiées ici**.
  *
- * `logo.mark16` porte le dessin complet : la grille, la tuile, le fût, le
- * point, les marges, la palette. Ce fichier ne fait que le tracer.
+ * `produit.marque.sigle` porte le dessin complet : la grille, la tuile, le fût,
+ * le point, les marges, la palette. Ce fichier ne fait que le tracer.
+ *
+ * **Il a quitté `tokens.json` avec la v1.1** : Design y a remplacé l'objet par
+ * la prose qui le décrit, un dessin n'étant pas un jeton de palette. Ses trois
+ * couleurs, elles, restent dérivées des jetons.
  */
 const MARK16 = JSON.parse(
-  readFileSync(new URL('../src/theme/tokens.json', import.meta.url), 'utf-8'),
-).logo.mark16;
+  readFileSync(new URL('../src/theme/produit.json', import.meta.url), 'utf-8'),
+).marque.sigle;
 
 /** La grille. Toutes les cotes ci-dessous sont dans cette unité. */
 export const GRILLE = MARK16.grid;
