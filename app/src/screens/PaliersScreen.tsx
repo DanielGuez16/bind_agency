@@ -476,6 +476,10 @@ function PorteDesRegles({ onPress }: { onPress: () => void }) {
         borderWidth: 1,
         borderColor: c['line.default'],
         backgroundColor: c['bg.surface'],
+        // La porte des règles est une carte : elle se pose, elle ne flotte
+        // pas. Elle échappait à l'inventaire parce que la garde ne lisait pas
+        // les styles fonctionnels, et une carte pressable en écrit un.
+        ...elevationDeCarte(),
           opacity: pressed ? 0.7 : 1,
         })}
     >

@@ -26,7 +26,7 @@ import { Icone, Texte } from '../components';
 import { formatDate } from '../format';
 import { useI18n } from '../i18n';
 import { ECART_DES_COLONNES } from '../shell/gabarit';
-import { radius, useColors, useTheme } from '../theme';
+import { elevationDeCarte, radius, useColors, useTheme } from '../theme';
 import { ActivationScreen } from './ActivationScreen';
 import { CatalogueScreen } from './CatalogueScreen';
 import { HorairesScreen } from './HorairesScreen';
@@ -84,6 +84,11 @@ export function ConfigurationScreen({
               backgroundColor: c['bg.surface'],
               borderWidth: 1,
               borderColor: c['line.default'],
+              // La règle des rayons : un coin de 18 px sans ombre flotte au
+              // lieu de se poser. Cette carte y échappait depuis toujours, non
+              // par décision mais parce que la garde ne voyait pas les styles
+              // fonctionnels — et une carte pressable en écrit un.
+              ...elevationDeCarte(),
           opacity: pressed ? 0.7 : 1,
         })}
             testID={`ouvrir-${porte.cle}`}

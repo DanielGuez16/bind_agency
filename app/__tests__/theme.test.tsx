@@ -630,10 +630,15 @@ describe('les surfaces de la v1.1', () => {
       'src/screens/AnnuaireScreen.tsx',
       'src/screens/CarteDuCommerce.tsx',
       'src/screens/ChoixDeLaPorte.tsx',
+      // Les deux que la garde ne voyait pas tant qu'elle ignorait les styles
+      // fonctionnels. Toutes deux sont pressables — d'où la fonction, pour le
+      // retour au toucher — et toutes deux se posent sur la page.
+      'src/screens/ConfigurationScreen.tsx',
       // Le panneau du jour sans place, arrivé avec le créneau v3. Il se pose
       // sur la page comme une carte, donc il porte l'ombre comme une carte.
       'src/screens/CreneauxScreen.tsx',
       'src/screens/FicheScreen.tsx',
+      'src/screens/HistoriqueScreen.tsx',
       'src/screens/PaliersScreen.tsx',
       'src/screens/PriseEnMainScreen.tsx',
       'src/screens/RedemptionScreen.tsx',
@@ -652,7 +657,19 @@ describe('les surfaces de la v1.1', () => {
     // ce qui est le contraire de ce qu'elle sert à faire. Le plus long des
     // douze en fait 780. Une garde qui ne voit qu'une partie de ce qu'elle
     // prétend couvrir est pire qu'aucune.
-    const bloc = /style=\{\{[\s\S]{0,900}?\}\}/g;
+    // **Les deux formes de style, et la seconde a coûté une carte.** La garde
+    // ne voyait que `style={{…}}`. Une carte pressable écrit
+    // `style={({ pressed }) => ({…})}` — une fonction, pour le retour au
+    // toucher — et passait donc à travers l'inventaire **par un accident de
+    // syntaxe**, pas par une décision. C'est précisément l'érosion que cette
+    // liste existe pour empêcher : la règle s'effritait surface par surface
+    // sans qu'aucun test ne bouge.
+    const blocObjet = /style=\{\{[\s\S]{0,900}?\}\}/g;
+    const blocFonction = /style=\{\([^)]*\)\s*=>\s*\(\{[\s\S]{0,900}?\}\)\}/g;
+    const blocsDe = (source: string) => [
+      ...(source.match(blocObjet) ?? []),
+      ...(source.match(blocFonction) ?? []),
+    ];
     const estUneCarte = (b: string) =>
       b.includes('radius.lg') && b.includes('bg.surface') && b.includes('borderWidth');
 
@@ -660,7 +677,7 @@ describe('les surfaces de la v1.1', () => {
     for (const chemin of sources(RACINE)) {
       const relatif = chemin.slice(chemin.indexOf('src/'));
       const source = readFileSync(chemin, 'utf-8');
-      if ((source.match(bloc) ?? []).some(estUneCarte)) trouves.add(relatif);
+      if (blocsDe(source).some(estUneCarte)) trouves.add(relatif);
     }
 
     expect([...trouves].sort()).toEqual(CARTES);
@@ -684,7 +701,7 @@ describe('les surfaces de la v1.1', () => {
       // qui la porte. Chercher l'appel couvre les deux formes, et la ligne
       // d'import ne le mime pas : elle n'a pas de parenthèses.
       const poses = (source.match(/elevationDeCarte\(\)/g) ?? []).length;
-      const cartes = (source.match(bloc) ?? []).filter(estUneCarte).length;
+      const cartes = blocsDe(source).filter(estUneCarte).length;
       expect({ relatif, poses, cartes }).toEqual({ relatif, poses: cartes, cartes });
     }
   });
