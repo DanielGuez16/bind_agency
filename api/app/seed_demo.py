@@ -941,6 +941,14 @@ async def composer_les_parcours(session: AsyncSession, createurs: dict) -> tuple
         ("approuvee", timedelta(days=4), "confirmee", OCEAN),
         ("attendue", timedelta(days=1), "confirmee", BRICKELL),
         ("soumise", timedelta(hours=6), "confirmee", WYNWOOD),
+        # **Une preuve à contrôler chez OCEAN, et c'est le point.** Il n'y en
+        # avait qu'une dans tout le jeu, chez Wynwood. L'onglet « à examiner »
+        # d'Ocean — le salon avec lequel on ouvre le produit — était donc vide
+        # pendant que « attendues » portait deux lignes, ce qui se lit comme un
+        # filtre cassé alors que le filtre est juste. Le même défaut que
+        # l'abonnement pris par rang : le jeu de données place ailleurs l'état
+        # que l'écran de démonstration doit montrer.
+        ("soumise", timedelta(hours=3), "confirmee", OCEAN),
     )
     for issue, age, qui, commerce in issues:
         createur, compte = createurs[qui]
@@ -1212,14 +1220,29 @@ async def _soumettre(
     La capture est réellement déposée dans le dépôt d'objets, et le service
     d'archivage la relit pour calculer son empreinte. C'est le chemin de
     niveau 3, celui qui fonctionne aujourd'hui.
+
+    **Avec l'adresse de la publication, qui manquait.** Le semis posait
+    `source_url=None` sur toutes ses preuves : le commerce n'avait jamais que
+    la capture, et le lien qu'il ouvre pour vérifier que la publication est en
+    ligne n'existait dans aucune démonstration. Le champ était pourtant accepté
+    du schéma jusqu'à l'écran — seul l'endroit qui le remplit manquait, des deux
+    côtés.
+
+    L'adresse est fabriquée depuis la contrepartie et porte le pseudonyme du
+    compte : elle ne mène nulle part, comme le reste du jeu de démonstration,
+    mais elle a la forme de ce qu'un créateur colle et le commerce voit ce qu'il
+    verra en production.
     """
     cle = await get_object_store().deposer(
         image(f"preuve-{contrepartie.id}-{marque}", PRESTATION), prefixe="proofs/upload"
     )
+    compte_id = await _compte_du_booking(session, contrepartie.booking_id)
+    compte = await session.get(SocialAccount, compte_id)
+    pseudonyme = (compte.handle if compte else None) or "bind.creator"
     capture = await archiver_la_publication(
         session,
-        social_account_id=(await _compte_du_booking(session, contrepartie.booking_id)),
-        source_url=None,
+        social_account_id=compte_id,
+        source_url=f"https://www.instagram.com/p/{str(contrepartie.id)[:11]}/?taken-by={pseudonyme}",
         screenshot_key=cle,
     )
     if capture is None:

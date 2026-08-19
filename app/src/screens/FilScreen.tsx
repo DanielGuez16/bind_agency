@@ -38,7 +38,7 @@
  * ici elle attend qu'on la pose. L'information ne disparaît pas, elle arrive au
  * moment où elle sert.
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Animated, Pressable, View } from 'react-native';
 
 import { useApi, type BusinessCategory, type Fil } from '../api';
@@ -129,6 +129,30 @@ export function FilScreen({
    */
   const [categorie, setCategorie] = useState<BusinessCategory | null>(null);
 
+  /**
+   * **La demande part à l'arrivée, et il n'y a plus qu'une question.**
+   *
+   * Un écran demandait « partagez votre position », puis le système demandait
+   * la même chose : deux demandes pour une, dont la première n'apprenait rien
+   * que la seconde ne dise mieux — c'est le système qui nomme l'application et
+   * qui porte les conséquences. Elle ajoutait seulement un geste avant le geste,
+   * et un endroit de plus où abandonner.
+   *
+   * **`jamais_demandee` est le seul état qui déclenche.** Un refus ne se
+   * redemande pas — le système ne rouvrirait rien — et une demande en vol ne se
+   * double pas. La condition est donc l'état lui-même et non un drapeau de
+   * montage : elle cesse d'être vraie dès que `demander` pose `en_cours`, ce qui
+   * arrive avant tout appel réseau.
+   *
+   * **Le hook garde sa règle et ne demande toujours rien de lui-même.** Elle
+   * était bonne : une autorisation réclamée avant d'avoir montré à quoi elle
+   * sert se refuse. C'est l'écran qui sait qu'il en a besoin, et le fil est
+   * précisément l'écran qui ne peut rien montrer sans elle.
+   */
+  useEffect(() => {
+    if (etatDeLaPosition.etat === 'jamais_demandee') onDemanderLaPosition();
+  }, [etatDeLaPosition.etat, onDemanderLaPosition]);
+
   const requete = useRequete<Fil>(
     (signal) =>
       api.fil(position!, { rayonMetres: rayonKm * 1000, categorie: categorie ?? undefined }, signal),
@@ -150,9 +174,9 @@ export function FilScreen({
     // Jamais nul ici : `messageDePosition` ne rend `null` que sur `accordee`,
     // qui porte une position et ne passe donc pas par cette branche.
     const message = messageDePosition(etatDeLaPosition) ?? {
-      corps: 'parcours.filSansPosition',
+      corps: 'parcours.filPositionEnCours',
       ouReactiver: null,
-      action: { cle: 'parcours.filAutoriser' },
+      action: null,
     };
     return (
       <View testID="ecran-fil" style={{ flex: 1, padding: 20, gap: 12 }}>

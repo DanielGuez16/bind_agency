@@ -336,3 +336,46 @@ async def test_la_base_refuse_les_reprises_incoherentes(
 
     # La transaction reste utilisable après le refus.
     assert await conn.scalar(sa.select(sa.literal(1))) == 1
+
+
+async def test_la_fermeture_ne_compare_pas_deux_horloges(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """**Deux horloges, et une contrainte qui les compare.**
+
+    `started_at` est écrit par `clock_timestamp()`, côté Postgres. `ended_at`
+    l'était par `datetime.now(UTC)`, côté Python. La contrainte
+    `close_apres_ouverture` compare les deux : il suffit que l'horloge de la
+    base soit en avance de quelques millisecondes pour qu'une reprise ouverte
+    puis refermée dans la foulée paraisse s'être fermée avant de s'ouvrir.
+
+    Vu en intégration continue avec les chiffres — 2,7 millisecondes d'écart —
+    et sur trois tests d'un coup.
+
+    **Le sabotage est une horloge Python en retard**, ce qui est exactement la
+    forme du défaut. Avec l'ancienne écriture il produit la violation à tous les
+    coups ; avec la nouvelle il ne change rien, puisque l'heure ne vient plus de
+    là. Un test qui se contenterait de vérifier `ended_at >= started_at` sur
+    l'horloge du jour passerait dans les deux cas — c'est le décor qui pourrait
+    être produit par le code fautif.
+    """
+    business, _ = await commerce_en_cours(session)
+    admin = await administrateur(session)
+    acces = await service.ouvrir(
+        session, business=business, admin=admin, motif="débloquer les horaires"
+    )
+
+    class HorlogeEnRetard(datetime):
+        @classmethod
+        def now(cls, tz=None):  # noqa: ANN001, ANN206 - signature de datetime
+            return datetime.now(tz) - timedelta(seconds=1)
+
+    monkeypatch.setattr(service, "datetime", HorlogeEnRetard)
+
+    ferme = await service.fermer(session, acces=acces, admin=admin)
+
+    assert ferme.ended_at is not None
+    assert ferme.ended_at >= ferme.started_at
+    # La session reste saine : une violation attrapée hors point de sauvegarde
+    # la laisserait inutilisable, et le défaut ressortirait ailleurs.
+    assert await session.scalar(sa.select(sa.literal(1))) == 1

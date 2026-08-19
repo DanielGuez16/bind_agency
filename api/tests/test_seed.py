@@ -40,6 +40,7 @@ from app.models import (
     CreatorProfile,
     Job,
     PlatformAsset,
+    Proof,
     SocialAccount,
     SocialMetricsSnapshot,
     SubscriptionPlan,
@@ -968,6 +969,49 @@ async def test_des_plans_d_abonnement_existent(seed_conn: AsyncConnection) -> No
     )
     # Les deux intervalles, pour que la mensualisation se voie à l'écran.
     assert intervalles == {BillingInterval.MONTHLY, BillingInterval.YEARLY}
+
+
+async def test_le_salon_de_la_demonstration_a_une_preuve_a_controler(
+    seed_conn: AsyncConnection,
+) -> None:
+    """**L'onglet « à examiner » d'Ocean était vide, et le filtre était juste.**
+
+    La seule contrepartie `submitted` du jeu était chez Wynwood. Sur le salon
+    avec lequel on ouvre le produit, « à examiner » ne montrait rien pendant que
+    « en attente de sa publication » portait deux lignes — ce qui se lit comme un
+    filtre cassé. Même forme que l'abonnement pris par rang : le jeu de données
+    plaçait ailleurs l'état que l'écran de démonstration doit montrer.
+
+    Nommé plutôt que compté : « au moins une preuve à contrôler quelque part »
+    repasserait au vert avec exactement le défaut d'origine.
+    """
+    lignes = (
+        await seed_conn.execute(
+            sa.select(Business.name)
+            .select_from(Collaboration)
+            .join(Booking, Booking.id == Collaboration.booking_id)
+            .join(Business, Business.id == Booking.business_id)
+            .where(Collaboration.status == CollaborationStatus.SUBMITTED)
+        )
+    ).scalars()
+
+    assert "Ocean Beauty Studio" in set(lignes)
+
+
+async def test_chaque_preuve_porte_l_adresse_de_sa_publication(
+    seed_conn: AsyncConnection,
+) -> None:
+    """Sans elle, « ouvrir la publication » n'apparaît sur aucune démonstration.
+
+    Le semis posait `source_url=None` sur toutes ses preuves : le commerce
+    n'avait que la capture, et le lien qu'il ouvre pour vérifier que la
+    publication est en ligne n'existait nulle part.
+    """
+    sans_adresse = await seed_conn.scalar(
+        sa.select(sa.func.count()).select_from(Proof).where(Proof.source_url.is_(None))
+    )
+
+    assert sans_adresse == 0
 
 
 async def test_le_salon_de_la_demonstration_est_abonne(seed_conn: AsyncConnection) -> None:

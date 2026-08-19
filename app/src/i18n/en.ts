@@ -382,6 +382,9 @@ export const en = {
     preuve_ecart: 'Does not match yet',
     preuve_ecart_aide: 'The platform checked and found this:',
     contrepartieEnArbitrage: 'A reviewer has taken this over — the salon is no longer the one deciding.',
+    preuveAdresse: 'Link to your post',
+    preuveAdresseAide:
+      'Paste the link to the post. The business opens it to check that it is live — with only a screenshot, they have to take your word for it.',
     preuveNote: 'Anything to add?',
     preuveNoteAide: 'Optional. The salon reads this with your proof — useful if something did not go to plan.',
     preuveCommentFaire: 'A screenshot of your published post. Stories are captured by hand — they disappear after 24 h and have no stable link.',
@@ -482,7 +485,10 @@ export const en = {
     publicationsTitre: 'Publications',
     publicationsVide: 'Nothing to review.',
     filtreAControler: 'To review',
-    filtreAttendue: 'Expected',
+    // « Expected » ne disait pas de quoi : attendu de qui, et quoi au juste.
+    // Ce sont des contreparties engagées dont la publication n'est pas encore
+    // arrivée — le salon n'a rien à y faire, et c'est ce qu'il doit lire.
+    filtreAttendue: 'Awaiting her post',
     filtreApprouvee: 'Approved',
     approuver: 'Approve the publication',
     redemander: 'Ask for a new publication',

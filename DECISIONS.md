@@ -6959,3 +6959,78 @@ quartier passaient sans rien lire. Aucune n'a été trouvée par relecture : la
 première par une mutation, la seconde parce que le conteneur a cessé d'exister
 sous cette forme. **Une négation qui porte sur un nœud vide est verte pour
 toujours.**
+---
+
+## 2026-08-19 — Deux horloges, et trois manques qui se cachaient l'un l'autre
+
+**La cause de l'instabilité est trouvée, et elle n'était pas où je l'avais
+cherchée.** Il y a deux jours, la boîte d'envoi échouait par intermittence et
+j'avais avancé une hypothèse : `run_after` est écrit par `clock_timestamp()`
+côté Postgres, `en_attente` compare à `datetime.now(UTC)` côté Python, deux
+horloges non synchronisées. Ma mesure au repos ne la confirmait pas — Postgres
+était **derrière** Python de 0,35 ms, jamais devant sur vingt mesures — et je
+l'avais transmise en disant ce qui l'affaiblissait.
+
+Elle est confirmée aujourd'hui, sous charge et dans l'autre sens, sur une autre
+table. Trois tests de reprise de compte sont tombés d'un coup avec les chiffres
+dans la trace : ouverture à `04:23:03.465808`, fermeture à `04:23:03.463118`.
+**2,7 millisecondes** — la base en avance, la contrainte
+`close_apres_ouverture` rejette, et une reprise ouverte puis refermée dans la
+foulée paraît s'être fermée avant de s'ouvrir.
+
+Ce que ça apprend sur la mesure de l'autre jour : elle n'était pas fausse, elle
+était prise au mauvais moment. Un écart d'horloge de quelques millisecondes ne
+se voit pas sur une machine au repos ; il se voit sous une suite de huit minutes
+qui sature le processeur, et c'est exactement quand les tests tombent.
+
+**Le correctif est la règle du dépôt, appliquée là où elle ne l'était pas** :
+seul le temps serveur fait foi. Vis-à-vis de Postgres, le processus Python est
+un client. `ended_at` vient donc de `clock_timestamp()`, comme `started_at`.
+`maintenant` reste prioritaire — les tests qui posent une heure explicite
+éprouvent une règle de temps, et leur imposer l'horloge de la base leur
+retirerait ce qu'ils vérifient.
+
+**Ce qui reste à faire, et qui est plus large que ce correctif** : passer le même
+peigne sur toutes les colonnes qui comparent une heure Python à une heure écrite
+par la base. Il y en a d'autres — la boîte d'envoi en est une.
+
+---
+
+**Trois manques qui se cachaient l'un l'autre.** Le commerce devait avoir le lien
+vers la publication. Le champ traverse tout le produit : le schéma l'accepte, la
+méthode de client le transporte, l'écran du commerce sait l'ouvrir. Trois
+endroits le vidaient, et chacun rendait les deux autres invisibles :
+
+- l'écran de soumission n'avait pas de champ pour l'adresse ;
+- le semis posait `source_url=None` sur toutes ses preuves ;
+- le niveau 3 — le seul qui fonctionne aujourd'hui — ne reportait pas l'adresse
+  reçue dans la capture qu'il produit.
+
+Corriger l'un seul n'aurait rien montré. C'est la même forme que la méthode
+`marquerAbsent` sans appelant, en trois exemplaires.
+
+**Et un quatrième, que les trois premiers protégeaient.** Le niveau 1 lève à sa
+première ligne : `fournisseur_de` est une dépendance FastAPI — un générateur
+asynchrone — et elle était employée en `async with`. Le chemin n'est atteint que
+si une adresse est fournie ; comme aucune ne l'était jamais, la panne ne pouvait
+pas se découvrir. Elle s'est révélée à la seconde où le semis a commencé à en
+fournir une.
+
+**Ce que je n'ai pas fait.** Rendre l'adresse obligatoire à la soumission. Une
+story n'a pas toujours d'adresse publique, et bloquer l'envoi ferait perdre une
+contrepartie pour un détail de forme — alors que la capture seule est déjà une
+preuve valable de niveau 3. Le champ est demandé, expliqué, et facultatif.
+
+---
+
+**« À examiner » était vide, et le filtre était juste.** Compté par commerce :
+la seule contrepartie `submitted` du jeu de démonstration était chez Wynwood.
+Sur Ocean — le salon avec lequel on ouvre le produit — l'onglet ne montrait rien
+pendant que « attendues » portait deux lignes, ce qui se lit comme un filtre
+cassé.
+
+Troisième fois que le jeu de données place ailleurs l'état que l'écran de
+démonstration doit montrer, après l'abonnement pris par rang alphabétique. La
+règle qui s'en dégage : **un jeu de démonstration se vérifie sur le compte avec
+lequel on démontre**, pas sur l'ensemble. « Au moins un quelque part » est
+toujours vrai et ne prouve rien.

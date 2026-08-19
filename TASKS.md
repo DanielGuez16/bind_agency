@@ -1061,6 +1061,38 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       modèle. Les sept genres restent. Six tests qui ne parlaient que du réglage
       sont partis ; deux qui éprouvaient aussi « on relit au moment de sortir »
       portent maintenant sur la suspension. 12 tests neufs, 5 mutations*
+- [x] **Trois points du journal de campagne**
+      *La **demande de position** part à l'arrivée sur le fil : une seule
+      question au lieu de deux. La première n'apprenait rien que le système ne
+      dise mieux — c'est lui qui nomme l'application et porte les conséquences —
+      et elle ajoutait un geste avant le geste. L'écran ne reste que pour le
+      refus, où il gagne un « réessayer » qui **relit** l'autorisation au lieu de
+      promettre de la redemander.
+      **« À examiner » vide : défaut de données, pas de filtre.** Vérifié en
+      comptant par commerce : la seule contrepartie `submitted` du jeu était chez
+      Wynwood, et Ocean — le salon de démonstration — n'en avait aucune, pendant
+      que « attendues » en portait deux. Même forme que l'abonnement pris par
+      rang. « Expected » devient « en attente de sa publication », et les trois
+      onglets suivent l'ordre d'usage : à examiner, approuvées, en attente.
+      **Le lien de publication : trois manques qui se cachaient l'un l'autre.**
+      L'écran de soumission n'avait pas de champ, le semis posait `None`, et le
+      niveau 3 — le seul qui fonctionne aujourd'hui — jetait l'adresse reçue.
+      Aucun ne pouvait se découvrir sans les deux autres. Et **le niveau 1 levait
+      à sa première ligne** : `fournisseur_de` est une dépendance FastAPI, elle
+      était employée en `async with`. Ce chemin n'est atteint que si une adresse
+      est fournie, donc il n'avait jamais tourné.
+      9 tests neufs, 5 mutations*
+- [x] **Deux horloges comparées par une contrainte** — reprise de compte
+      *`started_at` écrit par `clock_timestamp()` côté Postgres, `ended_at` par
+      `datetime.now(UTC)` côté Python, et `close_apres_ouverture` compare les
+      deux. **2,7 millisecondes** d'avance de la base suffisent à fermer avant
+      d'ouvrir : trois tests tombés d'un coup en suite complète, avec les
+      chiffres dans la trace.
+      C'est la cause que j'avais avancée il y a deux jours sur l'instabilité de
+      la boîte d'envoi sans pouvoir la confirmer — ma mesure au repos montrait
+      Postgres **derrière** Python. Elle est ici mesurée sous charge, et dans
+      l'autre sens. **Reste à passer le même peigne** sur les autres colonnes
+      qui comparent une heure Python à une heure écrite par la base*
 - [ ] **`SOCIAL_PROVIDER` et `API_PUBLIC_BASE_URL` à poser chez Render**
       *Le seul des trois bloquants que le code ne peut pas corriger seul. Depuis
       cette tranche, l'API refuse de démarrer sans elles plutôt que de répondre
