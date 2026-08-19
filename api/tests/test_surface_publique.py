@@ -45,6 +45,12 @@ PUBLIQUES: dict[tuple[str, str], str] = {
     ("POST", "/api/v1/auth/register"): "on ne demande pas de compte pour en créer un",
     ("POST", "/api/v1/auth/login"): "idem",
     ("POST", "/api/v1/auth/refresh"): "le jeton de rafraîchissement fait l'autorisation",
+    ("GET", "/api/v1/auth/verify-email"): (
+        "le lien s'ouvre depuis une boîte mail, dans un navigateur qui n'a "
+        "aucune session. C'est le jeton du courriel qui fait l'autorisation, "
+        "et il est à usage unique — exiger un compte connecté pour confirmer "
+        "une adresse demanderait de se connecter avant de pouvoir se servir"
+    ),
     ("POST", "/api/v1/auth/logout"): (
         "se déconnecter doit marcher même avec un jeton d'accès expiré ; "
         "l'inverse laisserait quelqu'un connecté sur un téléphone rendu"
