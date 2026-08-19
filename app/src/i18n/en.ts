@@ -358,6 +358,7 @@ export const en = {
     reservationFaite: 'Booked',
     confirmer: 'Confirm booking',
     // L'échéance et la tentative : servies depuis toujours, rendues nulle part.
+    contrepartieReste: '{{reste}} left',
     contrepartieEcheance: 'Due {{quand}}',
     contrepartieTentative: 'Attempt {{n}} of 3',
     contrepartieRienAFaire: 'The salon is checking it — nothing to do on your side.',
