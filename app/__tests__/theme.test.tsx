@@ -630,6 +630,9 @@ describe('les surfaces de la v1.1', () => {
       'src/screens/AnnuaireScreen.tsx',
       'src/screens/CarteDuCommerce.tsx',
       'src/screens/ChoixDeLaPorte.tsx',
+      // Le panneau du jour sans place, arrivé avec le créneau v3. Il se pose
+      // sur la page comme une carte, donc il porte l'ombre comme une carte.
+      'src/screens/CreneauxScreen.tsx',
       'src/screens/FicheScreen.tsx',
       'src/screens/PaliersScreen.tsx',
       'src/screens/PriseEnMainScreen.tsx',

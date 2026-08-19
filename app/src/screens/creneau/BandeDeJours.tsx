@@ -14,7 +14,7 @@
 import { Pressable, ScrollView, View } from 'react-native';
 
 import { Texte } from '../../components';
-import { formatNumber } from '../../format';
+import { formatNumber, moisDeLaDate, nomDeJour, quantieme } from '../../format';
 import { useI18n } from '../../i18n';
 import { radius, useColors } from '../../theme';
 import type { JourDeDisponibilite } from '../../api';
@@ -44,12 +44,7 @@ export function BandeDeJours({
   // plutôt qu'un seul mois qui serait faux la moitié du temps.
   const mois = [
     ...new Set(
-      jours.map((jour) =>
-        new Date(`${jour.jour}T12:00:00Z`).toLocaleDateString(locale, {
-          month: 'long',
-          timeZone: 'UTC',
-        }),
-      ),
+      jours.map((jour) => moisDeLaDate(jour.jour, locale)),
     ),
   ].join(' · ');
 
@@ -99,7 +94,7 @@ export function BandeDeJours({
               testID={`jour-${jour.jour}`}
               accessibilityRole="button"
               accessibilityState={{ selected: choisi }}
-              accessibilityLabel={`${nomCourt(jour.jour, locale)} ${quantieme(jour.jour)}`}
+              accessibilityLabel={`${nomDeJour(jour.jour, locale)} ${quantieme(jour.jour)}`}
               onPress={() => onChoisir(jour.jour)}
               style={({ pressed }) => ({
                 width: LARGEUR_DU_JOUR,
@@ -123,7 +118,7 @@ export function BandeDeJours({
                 variante="type.monoSmall"
                 couleur={choisi ? 'ink.faint' : ouvert ? 'ink.mute' : 'ink.soft'}
               >
-                {nomCourt(jour.jour, locale).toUpperCase()}
+                {nomDeJour(jour.jour, locale).toUpperCase()}
               </Texte>
               <Texte
                 variante="type.section"
@@ -150,22 +145,4 @@ export function BandeDeJours({
       </ScrollView>
     </View>
   );
-}
-
-/** Le quantième d'une date nue, sans passer par un fuseau. */
-function quantieme(date: string): number {
-  return Number(date.slice(8, 10));
-}
-
-/**
- * Le nom court du jour.
- *
- * Lu à midi UTC : une date nue lue à minuit bascule d'un jour en arrière dès
- * qu'on la formate dans un fuseau à l'ouest, et le lundi devient dimanche.
- */
-function nomCourt(date: string, locale: string): string {
-  return new Date(`${date}T12:00:00Z`).toLocaleDateString(locale, {
-    weekday: 'short',
-    timeZone: 'UTC',
-  });
 }

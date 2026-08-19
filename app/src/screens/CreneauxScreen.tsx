@@ -44,11 +44,11 @@ import {
   Texte,
   vibration,
 } from '../components';
-import { formatNumber } from '../format';
+import { formatNumber, jourCivil, nomDeJour } from '../format';
 import { useI18n } from '../i18n';
 import { Ecran } from './Ecran';
 import { useRequete } from './useRequete';
-import { radius, useTheme } from '../theme';
+import { elevationDeCarte, radius, useTheme } from '../theme';
 import { BandeDeJours } from './creneau/BandeDeJours';
 import {
   etatDuJour,
@@ -131,13 +131,7 @@ export function CreneauxScreen({
   // tombe le lendemain en UTC, et le classer sur la date brute le placerait un
   // jour trop loin.
   const duJour = jour
-    ? creneaux.filter(
-        (creneau) =>
-          new Intl.DateTimeFormat('en-CA', {
-            timeZone: fiche.timezone,
-            dateStyle: 'short',
-          }).format(new Date(creneau.starts_at)) === jour,
-      )
+    ? creneaux.filter((creneau) => jourCivil(creneau.starts_at, fiche.timezone) === jour)
     : [];
 
   const matin = duJour.filter((x) => heureLocale(x.starts_at, fiche.timezone) < MIDI);
@@ -350,12 +344,7 @@ function JourSansPlace({
   const { color: c } = useTheme();
   const etat = etatDuJour(jour);
 
-  const nomDuJour = (cle: string) =>
-    new Date(`${cle}T12:00:00Z`).toLocaleDateString(locale, {
-      weekday: 'long',
-      day: 'numeric',
-      timeZone: 'UTC',
-    });
+  const nomDuJour = (cle: string) => nomDeJour(cle, locale, 'long');
 
   return (
     <View
@@ -367,6 +356,8 @@ function JourSansPlace({
         borderColor: c['line.default'],
         padding: 20,
         gap: 14,
+        // « Un coin de 18 px sans ombre flotte au lieu de se poser » : passation §2.
+        ...elevationDeCarte(),
       }}
     >
       <View style={{ gap: 6 }}>
