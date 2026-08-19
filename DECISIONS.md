@@ -7400,3 +7400,37 @@ trou est écrit.** C'est la décision inverse de celle prise sur la fenêtre du
 détecteur, qui était passée de 600 à 900 caractères — et la différence tient à ce
 qu'on y gagnait : là, la garde retrouvait ce qu'elle prétendait couvrir ; ici,
 elle aurait cessé de compter juste.
+## 2026-08-19 — La preuve v3 : le contrat descend là où l'on publie
+
+La liste des réservations sert à décider d'agir, le détail sert à agir. Le
+format, la mention et le lieu ne servent qu'au moment où l'on compose la
+publication : les lire trois écrans plus tôt, c'est les avoir oubliés en
+arrivant. Ils descendent donc sur l'écran d'envoi, par passation avec la session
+qui tient la liste.
+
+**La mention et le lieu se copient, et c'est la correction la moins visible de
+cet écran.** Le premier motif de reprise du produit est une mention manquante ou
+mal écrite ; un bouton de copie retire la faute de frappe du chemin. Le bouton
+dit ce qui vient de se passer puis revient : une copie ne produit rien de
+visible, et un bouton qui ne change pas laisse appuyer trois fois.
+
+**Deux défauts corrigés au passage, tous deux dans l'ancien écran.** Le badge à
+trois barres disait le palier en codé — la même chose que la fiche v3 a retirée.
+Et l'échéance s'écrivait sur `UTC`, c'est-à-dire dans le fuseau de personne :
+quatre heures d'écart à Miami, sur la seule date que la créatrice doit tenir.
+
+**Quatre champs manquent, et l'écran se tait plutôt que de les inventer.**
+`Collaboration` ne porte ni le temps restant dans la fenêtre de vérification, ni
+`dernier_motif`, ni le nom du salon et de la prestation, ni la plateforme. Le
+plus gênant est le nom du salon : `required_geotag` dit qu'il faut identifier un
+lieu, mais **ce qu'on tape dans la plateforme est le nom de l'établissement**, et
+une ligne « identifiez le lieu » sans rien à copier raterait exactement ce que
+cette planche corrige. La ligne ne se rend donc pas, et un test le dit — il
+tombera le jour où le champ arrivera, ce qui est voulu.
+
+**Et une demande de Design plus large que le besoin, la troisième.** La planche
+réclame « le résultat de la lecture automatique, mention et lieu séparément » :
+`Preuve.verifiee` et `raisons_de_non_verification` suffisent. Vraie, tout est
+réuni ; fausse, les raisons disent ce qui a manqué et le reste est passé ; nulle,
+la question ne s'est pas posée — c'est « attestée ». Signalé avant qu'une route
+soit écrite pour rien.
