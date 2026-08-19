@@ -7268,3 +7268,80 @@ l'un contenait « motdepasse », l'autre le nom du produit. Ils ont changé.
 **Le téléphone est normalisé avant d'être validé.** `+1 (305) 555-0123` est ce
 qu'un humain écrit ; le refuser exigerait une saisie de machine sur un formulaire
 d'inscription, et la première chose qu'on ferait serait de retirer le `+`.
+
+## 2026-08-19 — Le créneau v3 : une bande de quatorze jours, pas une grille de trente
+
+Design a répondu à la demande de calendrier plutôt que de l'exécuter, et la
+réponse tient : une grille mensuelle serait **vide aux trois quarts**, et un
+calendrier vide ne dit pas « tu regardes trop loin », il dit « ce salon n'a
+rien ». Sept colonnes tiennent en 46 points sur 390 — assez pour un quantième,
+pas pour un compte — donc il faudrait appuyer sur chaque jour pour savoir ce
+qu'il contient, c'est-à-dire tâtonner. À 64 points, chaque jour porte son compte
+ou le mot de son état : on choisit sans ouvrir.
+
+**Les jours sans place gardent leur place, et répondent.** L'écran listait les
+jours *qui avaient des créneaux* : un salon fermé le jeudi voyait son jeudi
+disparaître, et la bande passait du mercredi au vendredi sans rien dire. Le
+sélecteur précédent les rendait `disabled` — refuser l'appui sans rien dire était
+l'autre façon de les faire disparaître. Ils disent maintenant pourquoi, et
+proposent les deux jours ouverts les plus proches.
+
+**Quatre états, et aucun n'est interchangeable.** Fermé, complet, révolu, ouvert.
+Le troisième a failli manquer : à 20 h, le jour même ouvre bien et n'a plus de
+début libre, donc il se lisait « complet » — un salon pris d'assaut — alors qu'il
+suffit de revenir demain matin. C'est l'état le plus fréquent des quatre, puisque
+tout le monde ouvre l'application le soir. Il a été **consigné en creux dans
+`etatDuJour()` plutôt que replié en silence**, le temps que le serveur le rende ;
+il s'est remplacé par une ligne, comme prévu.
+
+**L'ordre des trois questions n'est pas indifférent** : fermé l'emporte sur
+révolu — un salon qui n'ouvre pas n'a pas de dernière plage à clore — et révolu
+l'emporte sur complet, sans quoi le cas du soir retombe dans le mot qu'on vient
+de lui retirer.
+
+**Une prémisse fausse corrigée avant qu'elle coûte une route.** Design écrivait
+que `/availability` rend un jour à la fois et que la bande coûterait quatorze
+appels. La route acceptait `jours` depuis toujours. Ce qui manquait réellement
+était plus petit et impossible à déduire côté client : *pourquoi* un jour est
+vide. Une exception de capacité **remplace** la règle hebdomadaire au lieu de s'y
+ajouter, donc un jour férié se serait lu « complet » ; et « complet » n'est même
+pas une propriété du jour, puisqu'il reste de la place pour un soin de 30 min et
+plus rien pour un de 120.
+
+**L'étiquette d'horaires de la fiche, et la preuve qui ne va que dans un sens.**
+Les horaires servis sont hebdomadaires, exceptions non appliquées — un choix
+argumenté côté serveur. L'étiquette serait donc fausse un jour d'exception. Le
+rattrapage n'a coûté aucun appel : les prestations de la fiche portent leurs
+prochains créneaux, qui sortent du calcul de capacité réel. **Un créneau
+aujourd'hui prouve que le salon ouvre aujourd'hui ; l'absence ne prouve rien** —
+le salon peut être fermé, ou plein. L'étiquette se tait alors. Un faux négatif
+cache une information vraie, un faux positif envoie quelqu'un devant une porte
+close.
+
+## 2026-08-19 — J'ai vérifié un arbre en croyant vérifier une branche
+
+Le dépôt porte quatre entrées sur des tests qui passaient sans rien prouver.
+Celle-ci est d'une espèce nouvelle : **le test prouvait quelque chose de vrai,
+sur un objet qui n'était pas celui qui part en revue.**
+
+Trois sessions ont travaillé le même dépôt le même jour, deux dans le worktree
+principal. Une autre session y a créé sa branche depuis la mienne ; à partir de
+là j'ai commité sur la sienne sans le voir. J'ai annoncé « 1018 tests verts »
+trois fois. Ils l'étaient — dans l'arbre de travail, qui contenait des
+modifications non commitées d'une autre session, sur une branche qui n'était pas
+la mienne.
+
+Deux gestes auraient tout montré, et je les ai recommandés aux autres une heure
+avant de ne pas les taper moi-même :
+
+- **`git branch --show-current` avant de commiter.** Mon propre `git worktree
+  list` affichait la mauvaise branche ; je ne l'ai pas lu ;
+- **la mesure d'une branche se prend dans un `checkout` propre**, pas dans
+  l'arbre. `git worktree add --detach <sha>` dans un répertoire jetable coûte
+  vingt secondes et répond à la seule question qui compte : *ce qui part en revue
+  est-il vert ?*
+
+Et un troisième, qui n'a rien à voir avec git : `git add -A` dans un arbre
+partagé ramasse le travail des autres. Il a emporté une fonction d'une autre
+session dans un de mes commits, sous un message qui parlait d'autre chose. Les
+chemins explicites n'ont pas suffi — nous éditions le même fichier.
