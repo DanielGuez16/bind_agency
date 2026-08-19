@@ -1096,6 +1096,16 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       cinq fichiers de tests. Deux écarts instruits — le badge à `brand.900`
       (4,19:1 mesuré sur la valeur de la planche) et pas de bouton de recherche,
       faute d'écran à ouvrir. 980 tests verts, 13 mutations vérifiées*
+- [ ] **`BusinessCard` n'a plus aucun appelant dans le produit**
+      *Le fil rendait la carte à photo ; il rend maintenant des aperçus de
+      prestation. Elle survit dans la bibliothèque, dans quatre tests, et dans
+      `SkeletonCard` — le squelette par défaut de `Ecran`, c'est-à-dire la
+      silhouette d'un écran qui n'a pas déclaré la sienne, ce qu'une garde
+      interdit déjà. Trois issues : la retirer avec son squelette, la garder
+      pour un écran à venir en le nommant, ou constater qu'elle décrit encore la
+      ligne de la fiche. À trancher, pas à laisser dormir — c'est le motif de la
+      méthode sans appelant, et il a coûté seize PR ailleurs. À signaler
+      aussi : l'ombre de carte y a été branchée la veille de sa mise au chômage*
 - [ ] **Douze planches d'écrans portent encore la v1.0**
       *Le fil est passé en v3, directement dans la palette Ambre. Les autres
       suivent l'ordre du `PASSATION-v1.1.md` §6, qui limite le travail
