@@ -44,7 +44,7 @@
  * pourtant « reconnecter », et le faire créerait un **autre** compte en
  * laissant celui-ci mort à côté. La ligne le dit ici, où le geste se ferait.
  */
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import {
   useApi,
@@ -60,19 +60,22 @@ import {
   Apparition,
   Button,
   DataRow,
+  Icone,
+  Jauge,
   SkeletonLignes,
   StatusMessage,
   Texte,
-  vibration,
 } from '../components';
 import { formatDate, formatDateTime, formatNumber } from '../format';
 import { useI18n, type SupportedLocale } from '../i18n';
 import { en } from '../i18n/en';
 import { translateErrorCode } from '../i18n/errors';
 import { useRattachement } from '../shell/rattacherUnReseau';
-import { useColors } from '../theme';
+import { elevationDeCarte, radius, size, useColors } from '../theme';
 import { Ecran } from './Ecran';
 import { messageDObstacle, nomDePlateforme } from './obstacle';
+import { etatDuCompte, type EtatDuCompte } from './audience/etat';
+import { seuilDesAbonnes } from './audience/seuil';
 import { useRequete } from './useRequete';
 
 /** Les codes que l'interface sait traduire. Un code inconnu se dit tel quel. */
@@ -104,26 +107,39 @@ function joursDepuis(debut: string): number {
   return Math.max(1, Math.floor((Date.now() - new Date(debut).getTime()) / 86_400_000) + 1);
 }
 
-export function AudienceScreen({ onVoirMesPaliers }: { onVoirMesPaliers?: () => void } = {}) {
+export function AudienceScreen({
+  onVoirMesPaliers,
+  onVoirLeScore,
+}: { onVoirMesPaliers?: () => void; onVoirLeScore?: () => void } = {}) {
   const { api, messageDErreur } = useApi();
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
+  const c = useColors();
 
   const requete = useRequete<Vue>(
     async (signal) => ({
       audience: await api.monAudience(signal),
       verification: await api.maVerification(signal),
-      // **Le score et les collaborations ne sont pas de l'audience**, et c'est
-      // pourtant ici qu'on vient les chercher : la planche les met sur cet
-      // écran sous « ce qui compte pour les paliers », parce que ce sont les
-      // deux autres grandeurs qui ouvrent une prestation. Les laisser sur le
-      // seul écran des paliers obligeait à les découvrir en cherchant.
-      // Un seul appel pour les deux : la fiabilité et le palier suivant
-      // viennent de la même vue, et la demander deux fois donnerait deux
-      // lectures d'un même état à deux instants.
+      // **Le score et le palier suivant ne sont pas de l'audience**, et c'est
+      // pourtant ici qu'on vient les chercher : ce sont les deux autres
+      // grandeurs qui ouvrent une prestation. Un seul appel pour les deux —
+      // les demander séparément donnerait deux lectures d'un même état à deux
+      // instants.
       paliers: await api.mesPaliers({}, signal),
     }),
     { estVide: (v) => v.audience.length === 0 },
   );
+
+  // **Le rattachement vit au niveau de l'écran, pas dans la liste.** Il sert
+  // deux gestes qui sont le même appel : connecter un réseau qui manque, et
+  // réautoriser un compte dont le jeton est tombé. Deux exemplaires du crochet
+  // donneraient deux états de chargement, et l'un des deux tournerait dans le
+  // vide pendant que l'autre travaille.
+  const { ouverture, echec, connecter } = useRattachement({
+    api,
+    traduire: (code) => translateErrorCode(t, code),
+    messageDErreur,
+    onRattache: requete.recharger,
+  });
 
   return (
     <Ecran
@@ -136,9 +152,9 @@ export function AudienceScreen({ onVoirMesPaliers }: { onVoirMesPaliers?: () => 
           <StatusMessage level="neutral" body={t('parcours.audienceVide')} testID="audience-vide" />
           <ARattacher
             reseaux={RESEAUX}
-            api={api}
-            messageDErreur={messageDErreur}
-            onFait={requete.recharger}
+            ouverture={ouverture}
+            echec={echec}
+            connecter={connecter}
           />
         </View>
       }
@@ -146,7 +162,7 @@ export function AudienceScreen({ onVoirMesPaliers }: { onVoirMesPaliers?: () => 
       {({ audience, verification, paliers }) => {
         const connectes = new Set(audience.map((compte) => compte.platform));
         return (
-          <View style={{ gap: 16 }}>
+          <View style={{ gap: 13 }}>
             {audience.map((compte) => (
               <CarteDuCompte
                 key={compte.social_account_id}
@@ -154,6 +170,9 @@ export function AudienceScreen({ onVoirMesPaliers }: { onVoirMesPaliers?: () => 
                 controle={verification.find(
                   (v) => v.social_account_id === compte.social_account_id,
                 )}
+                prochain={paliers.prochain_palier}
+                onReconnecter={() => void connecter(compte.platform as PlateformeConnectable)}
+                reconnexionEnCours={ouverture === compte.platform}
               />
             ))}
 
@@ -163,16 +182,38 @@ export function AudienceScreen({ onVoirMesPaliers }: { onVoirMesPaliers?: () => 
                 Ce qui reste est ce qu'on peut encore faire. */}
             <ARattacher
               reseaux={RESEAUX.filter((reseau) => !connectes.has(reseau))}
-              api={api}
-              messageDErreur={messageDErreur}
-              onFait={requete.recharger}
+              ouverture={ouverture}
+              echec={echec}
+              connecter={connecter}
             />
 
-            <CeQuiComptePourLesPaliers
-              fiabilite={paliers.fiabilite}
-              prochain={paliers.prochain_palier}
-              onVoirMesPaliers={onVoirMesPaliers}
-            />
+            <CarteDuScore fiabilite={paliers.fiabilite} onVoirLeDetail={onVoirLeScore} />
+
+            {/* **Le passage vers les paliers, sorti du fil.** Il y annonçait un
+                nombre de prestations ; ici il n'en annonce aucun, et c'est
+                voulu : le compte du fil était borné au rayon, et le répéter sur
+                un écran qui ne connaît pas la position aurait donné deux
+                nombres différents pour la même phrase. */}
+            {onVoirMesPaliers ? (
+              <View
+                style={{
+                  paddingHorizontal: 16,
+                  paddingVertical: 3,
+                  borderRadius: radius['radius.lg'],
+                  backgroundColor: c['bg.surface'],
+                  borderWidth: 1,
+                  borderColor: c['line.default'],
+                  ...elevationDeCarte(),
+                }}
+              >
+                <Ligne
+                  titre={t('parcours.audienceVoirMesPaliers')}
+                  sous={t('parcours.audienceVoirMesPaliersSous')}
+                  onPress={onVoirMesPaliers}
+                  testID="voir-mes-paliers"
+                />
+              </View>
+            ) : null}
           </View>
         );
       }}
@@ -181,93 +222,228 @@ export function AudienceScreen({ onVoirMesPaliers }: { onVoirMesPaliers?: () => 
 }
 
 /**
- * Un compte connecté : une carte, son réseau en tête, ses valeurs datées.
+ * Un compte connecté : une carte, sa marque en tête, ses chiffres situés.
  *
- * **La date est sous les valeurs et non ailleurs.** Un chiffre sans date passe
- * pour celui d'aujourd'hui alors qu'il peut avoir une semaine, et c'est sur ce
- * chiffre qu'un palier s'ouvre ou se ferme.
+ * **Le logo manquait entièrement**, et c'est la première chose qu'on cherche du
+ * regard sur un écran de comptes. « Instagram » et « TikTok » en toutes lettres
+ * donnaient deux lignes identiques à l'œil.
+ *
+ * **Aucun nombre n'apparaît seul**, et c'est la correction de fond. L'écran
+ * portait trois chiffres qui décrivent une créatrice sans lui dire quoi en
+ * faire — « c'est pas très joli » et « on sait pas ce que c'est » sont le même
+ * défaut vu de deux côtés. Les abonnés portent le seuil qu'ils visent,
+ * l'engagement et les vues sont regroupés sous la phrase qui dit à quoi ils
+ * servent : ce qu'un salon regarde en ouvrant le profil.
+ *
+ * **La date reste sous les valeurs.** Un chiffre sans date passe pour celui
+ * d'aujourd'hui alors qu'il peut avoir une semaine, et c'est sur ce chiffre
+ * qu'un palier s'ouvre ou se ferme.
  */
 function CarteDuCompte({
   compte,
   controle,
+  prochain,
+  onReconnecter,
+  reconnexionEnCours,
 }: {
   compte: AudienceDuCompte;
   controle: VerificationDuCompte | undefined;
+  /** Le palier fermé le plus proche, pour le seuil des abonnés. Voir `seuil.ts`
+   * pour les trois conditions qui décident s'il concerne cette carte. */
+  prochain: ProchainPalier | null;
+  onReconnecter: () => void;
+  reconnexionEnCours: boolean;
 }) {
   const { t, locale } = useI18n();
   const c = useColors();
   const enRevue = compte.verification_status === 'needs_review';
+  const etat = etatDuCompte(compte);
+  const seuil = seuilDesAbonnes(compte, prochain);
 
   return (
     <View
       testID={`compte-${compte.social_account_id}`}
       style={{
-        gap: 10,
+        gap: 14,
         padding: 16,
+        borderRadius: radius['radius.lg'],
         backgroundColor: c['bg.surface'],
         borderWidth: 1,
         borderColor: c['line.default'],
+        // « Un coin de 18 px sans ombre flotte au lieu de se poser » : §2.
+        ...elevationDeCarte(),
       }}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <View style={{ flex: 1 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <Icone nom={compte.platform === 'tiktok' ? 'tiktok' : 'instagram'} taille={26} />
+        <View style={{ flex: 1, minWidth: 0 }}>
           <Texte variante="type.bodyStrong">{nomDePlateforme(compte.platform)}</Texte>
           {compte.handle ? (
-            <Texte variante="type.caption" couleur="ink.soft" ellipseSurNomPropre>
+            <Texte variante="type.mono" couleur="ink.mute" ellipseSurNomPropre>
               {compte.handle}
             </Texte>
           ) : null}
         </View>
-        {/* Le jour n, sans objectif annoncé : aucun écran de ce lot ne promet
-            de délai, parce qu'une promesse tenue par une file d'attente
-            humaine se brise le premier jour de charge. */}
-        <Texte variante="type.monoSmall" couleur="ink.soft" testID={`etat-${compte.social_account_id}`}>
-          {enRevue && controle
-            ? t('parcours.audienceJourN', { n: String(joursDepuis(controle.started_at)) })
-            : t('parcours.audienceCertifie').toUpperCase()}
-        </Texte>
+        <Pastille etat={etat} testID={`etat-${compte.social_account_id}`} />
       </View>
 
-      <View style={{ flexDirection: 'row', gap: 24 }}>
-        <Valeur
-          etiquette={t('parcours.followers')}
-          valeur={
-            compte.followers_count === null
+      {/* **Ce que l'autorisation tombée change vraiment.** La planche écrivait
+          « les paliers restent où ils étaient » : c'est faux, et vérifié dans
+          `eligibility.py` — un compte qui n'est plus actif porte
+          `account_token_invalid` sur **chaque** palier, donc ils se ferment
+          tous. Ce qui est vrai est l'autre moitié : l'éligibilité n'est
+          évaluée qu'à la création d'une réservation, jamais ensuite, donc ce
+          qui est engagé n'est pas touché. La phrase dit les deux. */}
+      {etat === 'suspendu' ? (
+        <View
+          testID="autorisation-suspendue"
+          style={{
+            gap: 7,
+            padding: 16,
+            borderRadius: radius['radius.md'],
+            backgroundColor: c['bg.deep'],
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+            <View style={{ marginTop: 4 }}>
+              <Icone nom="alerte" taille={18} />
+            </View>
+            <Texte variante="type.bodyStrong" style={{ flex: 1 }}>
+              {t('parcours.audienceAutorisationFinie', {
+                reseau: nomDePlateforme(compte.platform),
+              })}
+            </Texte>
+          </View>
+          <Texte variante="type.body" couleur="ink.soft">
+            {compte.captured_at
+              ? t('parcours.audienceGeleAu', {
+                  date: formatDate(compte.captured_at, locale, 'UTC'),
+                })
+              : t('parcours.audienceGeleSansReleve')}
+          </Texte>
+          {compte.reconnectable ? (
+            <View style={{ alignSelf: 'flex-start', marginTop: 3 }}>
+              <Button
+                label={t('parcours.audienceReconnecter')}
+                loading={reconnexionEnCours}
+                onPress={onReconnecter}
+                testID={`reconnecter-${compte.platform}`}
+              />
+            </View>
+          ) : null}
+        </View>
+      ) : null}
+
+      {/* **Le cartouche des abonnés : le chiffre, son seuil, et ce qu'il
+          ouvre.** L'aplat clair de marque l'isole des deux mesures d'en
+          dessous, qui ne visent aucun seuil et n'ouvrent rien. */}
+      <View
+        testID="cartouche-abonnes"
+        style={{
+          gap: 5,
+          padding: 14,
+          paddingHorizontal: 16,
+          borderRadius: radius['radius.md'],
+          backgroundColor: c['brand.50'],
+        }}
+      >
+        <Texte variante="type.label" couleur="ink.mute">
+          {etat === 'suspendu'
+            ? t('parcours.audienceAbonnesDernierReleve')
+            : t('parcours.followers')}
+        </Texte>
+        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 10 }}>
+          {/* Le chiffre gelé passe en encre douce : il est vrai, il n'est plus
+              courant. Et le tiret est la valeur quand il n'y a pas de relevé,
+              donc il se lit — ink.mute, jamais ink.faint. */}
+          <Texte
+            variante="type.monoFigure"
+            couleur={etat === 'a-jour' ? 'ink.default' : 'ink.mute'}
+            testID="abonnes"
+          >
+            {compte.followers_count === null
               ? TIRET
-              : formatNumber(compte.followers_count, locale)
-          }
-        />
-        <Valeur
-          etiquette={t('parcours.engagement')}
-          valeur={compte.engagement_rate ?? TIRET}
-        />
-        {/* **La seule mesure d'audience réelle plutôt que déclarée**, et c'est
-            exactement ce que le produit cherche à valoriser : des abonnés se
-            gonflent, des vues se constatent. Servie depuis toujours, affichée
-            nulle part. */}
-        <Valeur
-          etiquette={t('parcours.vuesMoyennes')}
-          valeur={
-            compte.avg_views === null ? TIRET : formatNumber(compte.avg_views, locale)
-          }
-        />
+              : formatNumber(compte.followers_count, locale)}
+          </Texte>
+          {seuil ? (
+            <Texte variante="type.caption" couleur="ink.soft" testID="abonnes-seuil">
+              {t('parcours.audienceSurSeuil', { seuil: formatNumber(seuil.requis, locale) })}
+            </Texte>
+          ) : null}
+        </View>
+
+        {seuil ? (
+          <>
+            <Jauge fraction={seuil.fraction} piste="brand.100" testID="abonnes-jauge" />
+            <Texte variante="type.caption" couleur="ink.soft" testID="abonnes-ouvre">
+              {t('parcours.audienceOuvreLePalier', {
+                manque: formatNumber(seuil.ecart, locale),
+                format: seuil.format.toUpperCase(),
+              })}
+            </Texte>
+          </>
+        ) : null}
+
+        {/* **Le palier suivant ne disparaît pas quand ce n'est pas d'abonnés
+            qu'il s'agit.** Sans cette ligne, un palier fermé pour un score
+            trop bas ou un relevé périmé cesserait d'être dit sur cet écran :
+            la jauge est muette, et le silence se lirait comme « rien à
+            viser ». */}
+        {!seuil && prochain && prochain.platform === compte.platform ? (
+          <Texte variante="type.caption" couleur="ink.soft" testID="prochain-palier">
+            {messageDObstacle(t, prochain.obstacle, CODES_CONNUS, prochain.platform, locale)}
+          </Texte>
+        ) : null}
+
+        {/* **La phrase du dépôt, pas celle de la planche.** Design écrit
+            « first reading within a day of connecting » : c'est une promesse de
+            délai, et la cadence du relevé est de la configuration. La phrase
+            existante dit ce qui compte vraiment — que le tiret n'est pas un
+            zéro — sans promettre une heure que personne ne tient. */}
+        {etat === 'premiere-lecture' ? (
+          <Texte variante="type.caption" couleur="ink.soft" testID="aucun-releve">
+            {t('parcours.audienceAucunReleve')}
+          </Texte>
+        ) : null}
+        {etat === 'suspendu' && compte.captured_at ? (
+          <Texte variante="type.caption" couleur="ink.soft" testID="abonnes-date-du-gel">
+            {t('parcours.audienceLeJour', {
+              date: formatDate(compte.captured_at, locale, 'UTC'),
+            })}
+          </Texte>
+        ) : null}
       </View>
 
-      {/* **Le relevé, ou son absence dite comme telle.** « Pas encore mesuré »
-          en toutes lettres plutôt qu'un vide : c'est la seule façon de
-          distinguer une valeur nulle d'une valeur non relevée, et la
-          confusion entre les deux est le défaut que cet écran doit éviter. */}
-      {compte.captured_at ? (
-        <Texte variante="type.monoSmall" couleur="ink.mute" testID="date-du-releve">
-          {t('parcours.audienceReleveDu', {
-            date: formatDateTime(compte.captured_at, locale, 'UTC'),
-          }).toUpperCase()}
-        </Texte>
-      ) : (
-        <Texte variante="type.caption" couleur="ink.soft" testID="aucun-releve">
-          {t('parcours.audienceAucunReleve')}
-        </Texte>
-      )}
+      {/* **Les deux mesures que le commerce regarde, sous la phrase qui le
+          dit.** Elles étaient deux nombres orphelins à côté des abonnés, au
+          même poids qu'eux, alors qu'elles n'ouvrent aucun palier : elles
+          servent à convaincre, pas à débloquer. Les taire serait pire — les
+          vues sont la seule mesure d'audience constatée plutôt que déclarée. */}
+      {etat !== 'suspendu' ? (
+        <View style={{ gap: 8 }} testID="ce-que-voit-un-salon">
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <Mesure
+              etiquette={t('parcours.engagement')}
+              valeur={compte.engagement_rate ?? TIRET}
+              testID="engagement"
+            />
+            <Mesure
+              etiquette={t('parcours.vuesMoyennes')}
+              valeur={
+                compte.avg_views === null ? TIRET : formatNumber(compte.avg_views, locale)
+              }
+              testID="vues-moyennes"
+            />
+          </View>
+          <Texte variante="type.caption" couleur="ink.mute">
+            {compte.captured_at
+              ? `${t('parcours.audienceCeQueVoitUnSalon')} ${t('parcours.audienceReleveDu', {
+                  date: formatDateTime(compte.captured_at, locale, 'UTC'),
+                })}`
+              : t('parcours.audienceCeQueVoitUnSalon')}
+          </Texte>
+        </View>
+      ) : null}
 
       {!compte.reconnectable ? (
         <StatusMessage
@@ -294,20 +470,65 @@ function CarteDuCompte({
           {controle.signaux.map((signal) => (
             <SignalAcquis key={signal.signal} signal={signal} locale={locale} />
           ))}
+          <Texte variante="type.monoSmall" couleur="ink.mute" testID="jour-du-controle">
+            {t('parcours.audienceJourN', { n: String(joursDepuis(controle.started_at)) })}
+          </Texte>
         </View>
       ) : null}
     </View>
   );
 }
 
-/** Une valeur et son étiquette. La valeur d'abord à l'œil, l'étiquette dessus. */
-function Valeur({ etiquette, valeur }: { etiquette: string; valeur: string }) {
+/**
+ * Le mot d'état, en pastille.
+ *
+ * **Aucun n'est en rouge.** Une autorisation qui expire est un fait de la
+ * plateforme et non un manquement ; le vert de « à jour » est le seul état qui
+ * mérite une teinte, parce qu'il est le seul à dire qu'il n'y a rien à faire.
+ */
+function Pastille({ etat, testID }: { etat: EtatDuCompte; testID: string }) {
+  const { t } = useI18n();
+  const c = useColors();
+  const vivant = etat === 'a-jour';
+  const mot = {
+    'a-jour': 'parcours.audienceEtatAJour',
+    suspendu: 'parcours.audienceEtatSuspendu',
+    'premiere-lecture': 'parcours.audienceEtatPremiereLecture',
+  }[etat];
+
   return (
-    <View style={{ gap: 2 }}>
-      <Texte variante="type.monoSmall" couleur="ink.mute">
-        {etiquette.toUpperCase()}
+    <View
+      testID={testID}
+      style={{
+        borderRadius: radius['radius.sm'],
+        backgroundColor: vivant ? c['status.success.surface'] : c['bg.deep'],
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+      }}
+    >
+      <Texte variante="type.label" couleur={vivant ? 'status.success.text' : 'ink.soft'}>
+        {t(mot)}
       </Texte>
-      <Texte variante="type.section">{valeur}</Texte>
+    </View>
+  );
+}
+
+/** Une mesure et son étiquette, à poids égal de sa voisine. */
+function Mesure({
+  etiquette,
+  valeur,
+  testID,
+}: {
+  etiquette: string;
+  valeur: string;
+  testID: string;
+}) {
+  return (
+    <View style={{ flex: 1, minWidth: 0, gap: 2 }} testID={testID}>
+      <Texte variante="type.label" couleur="ink.mute">
+        {etiquette}
+      </Texte>
+      <Texte variante="type.mono">{valeur}</Texte>
     </View>
   );
 }
@@ -345,100 +566,141 @@ function SignalAcquis({ signal, locale }: { signal: SignalJuge; locale: Supporte
 }
 
 /**
- * Ce qui compte pour les paliers, en dehors de l'audience.
+ * Le score, en deux niveaux : son chiffre ici, sa mécanique un écran plus loin.
  *
- * Les abonnés ouvrent des paliers, mais pas seuls : les collaborations tenues
- * et le score de fiabilité en ouvrent aussi, et personne ne va les chercher sur
- * un autre écran. **Le score nul se dit « pas encore de score »**, jamais zéro :
- * la distinction sépare un débutant de quelqu'un de peu fiable, et l'inverser
- * accuserait exactement celui qui n'a rien fait.
+ * **Le bloc répétait en détail ce que la ligne annonçait.** Il posait le score,
+ * les collaborations tenues et l'obstacle du palier suivant les uns sous les
+ * autres, au même poids, sur un écran dont c'est déjà le troisième sujet. Ce
+ * qui a une conséquence tient en deux lignes ; le reste — ce qui le monte, ce
+ * qui le descend, et les deux choses qu'il ne fait jamais — est une lecture, et
+ * une lecture se range derrière un chevron.
+ *
+ * **Sa barre est en brand.500.** Deux barres identiques en tout sauf la teinte
+ * promettraient que la teinte porte un sens, et le système n'a aucune couleur
+ * pour « le score est bas » : l'avertissement n'a pas de teinte et le danger est
+ * réservé à ce qui est cassé. Une barre unique, dans la seule couleur de
+ * surface de marque, ne promet rien qu'elle ne tienne.
+ *
+ * **Sans historique, un tiret et une phrase, jamais un zéro.** Afficher 0 sur
+ * 100 à une nouvelle créatrice serait la pénaliser d'être nouvelle. Et la
+ * phrase dit explicitement que cela ne coûte rien : sans elle, un tiret à côté
+ * de « ouvre les paliers hauts » se lit comme une porte fermée.
  */
-function CeQuiComptePourLesPaliers({
+function CarteDuScore({
   fiabilite,
-  prochain,
-  onVoirMesPaliers,
+  onVoirLeDetail,
 }: {
   fiabilite: FiabiliteDuCreateur;
-  /**
-   * Le palier fermé le plus proche, et ce qui manque pour l'ouvrir.
-   *
-   * **Venu du fil, où plus personne ne le lisait.** Il y vivait parce que les
-   * paliers y vivaient ; ils sont partis sur cet écran, et le champ était resté
-   * derrière — servi à chaque chargement du fil, rendu nulle part.
-   *
-   * `null` quand tous les paliers sont ouverts : il n'y a alors rien à viser, et
-   * une ligne vide vaut moins que pas de ligne.
-   */
-  prochain: ProchainPalier | null;
-  /**
-   * L'accès aux paliers, **arrivé du fil avec la v3**.
-   *
-   * Optionnel parce que l'écran se monte aussi sans navigation dans les tests
-   * et dans la revue de composants. Absent, la ligne ne se rend pas : un lien
-   * qui ne mène nulle part vaut moins que pas de lien, et c'est la règle que
-   * la même ligne appliquait déjà sur le fil.
-   */
-  onVoirMesPaliers?: () => void;
+  onVoirLeDetail?: () => void;
 }) {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
+  const c = useColors();
+  const brut = fiabilite.reliability_score;
+  const score = brut === null ? null : Number(brut);
+  const lisible = score !== null && Number.isFinite(score);
 
   return (
-    <View style={{ gap: 6 }} testID="ce-qui-compte">
-      <Texte variante="type.label" couleur="ink.soft">
-        {t('parcours.audienceCeQuiCompte')}
-      </Texte>
-      <DataRow
-        label={t('parcours.audienceCollaborations')}
-        value={formatNumber(fiabilite.completed_collabs_count, locale)}
-        chiffre
-        testID="collaborations-tenues"
-      />
-      <DataRow
-        label={t('parcours.audienceScore')}
-        value={
-          fiabilite.reliability_score === null
-            ? t('parcours.audiencePasEncoreDeScore')
-            : t('parcours.audienceScoreSur', { score: fiabilite.reliability_score })
-        }
-        chiffre={fiabilite.reliability_score !== null}
-        testID="score-de-fiabilite"
-      />
-      {/* **Ce qui manque pour le palier suivant, et non combien il ouvrirait.**
-          Le compte de commerces n'est pas rendu ici, et c'est la même raison qui
-          retient déjà le nombre de prestations sur la ligne d'en dessous : cet
-          écran n'envoie aucune position, `commerces_dans_le_rayon` y est donc
-          nul par construction. Afficher un zéro à sa place dirait « aucun salon
-          autour de vous », ce qui est faux et décourageant.
+    <View
+      testID="carte-du-score"
+      style={{
+        gap: 12,
+        padding: 16,
+        borderRadius: radius['radius.lg'],
+        backgroundColor: c['bg.surface'],
+        borderWidth: 1,
+        borderColor: c['line.default'],
+        ...elevationDeCarte(),
+      }}
+    >
+      <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 12 }}>
+        <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+          <Texte variante="type.bodyStrong">{t('parcours.audienceScore')}</Texte>
+          <Texte variante="type.caption" couleur="ink.mute">
+            {t('parcours.audienceScoreOuvre')}
+          </Texte>
+        </View>
+        <Texte
+          variante="type.monoFigure"
+          couleur={lisible ? 'ink.default' : 'ink.mute'}
+          testID="score-de-fiabilite"
+        >
+          {lisible ? String(score) : TIRET}
+        </Texte>
+      </View>
 
-          Ce qui reste est l'obstacle, qui ne dépend d'aucune position et qui est
-          la seule chose actionnable : c'est ce qu'il faut faire pour ouvrir. */}
-      {prochain ? (
-        <DataRow
-          label={t('parcours.audienceProchainPalier', {
-            format: prochain.content_format.toUpperCase(),
-            reseau: nomDePlateforme(prochain.platform),
-          })}
-          value={messageDObstacle(t, prochain.obstacle, CODES_CONNUS, prochain.platform, locale)}
-          testID="prochain-palier"
+      {lisible ? (
+        <Jauge fraction={score / 100} testID="score-jauge" />
+      ) : (
+        <View
+          testID="score-pas-encore"
+          style={{
+            gap: 4,
+            padding: 12,
+            paddingHorizontal: 14,
+            borderRadius: radius['radius.md'],
+            backgroundColor: c['bg.deep'],
+          }}
+        >
+          <Texte variante="type.bodyStrong">{t('parcours.audiencePasEncoreDeScore')}</Texte>
+          <Texte variante="type.caption" couleur="ink.soft">
+            {t('parcours.audiencePasEncoreDeScoreDetail')}
+          </Texte>
+        </View>
+      )}
+
+      {onVoirLeDetail ? (
+        <Ligne
+          titre={t('parcours.audienceScoreCeQuiLeFait')}
+          onPress={onVoirLeDetail}
+          testID="voir-le-score"
         />
       ) : null}
-
-      {/* **Le passage vers les paliers, sorti du fil.** Il y annonçait un
-          nombre de prestations ; ici il n'en annonce aucun, et c'est voulu : le
-          compte du fil était borné au rayon, et le répéter sur un écran qui ne
-          connaît pas la position aurait donné deux nombres différents pour la
-          même phrase. Ce qui est utile est le chemin, pas le chiffre. */}
-      {onVoirMesPaliers ? (
-        <Texte
-          variante="type.body"
-          couleur="brand.700"
-          onPress={onVoirMesPaliers}
-          testID="voir-mes-paliers"
-        >
-          {t('parcours.audienceVoirMesPaliers')}
-        </Texte>
-      ) : null}
     </View>
+  );
+}
+
+/**
+ * Une ligne qui mène ailleurs : son mot, et le chevron qui dit qu'elle mène.
+ *
+ * Quarante-quatre points de haut au minimum — c'est la cible tactile du
+ * système, et une ligne de 13 px sans hauteur imposée tombe en dessous.
+ */
+function Ligne({
+  titre,
+  sous,
+  onPress,
+  testID,
+}: {
+  titre: string;
+  sous?: string;
+  onPress: () => void;
+  testID: string;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      testID={testID}
+      accessibilityRole="button"
+      style={({ pressed }) => ({
+        minHeight: size.touchMin,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        opacity: pressed ? 0.6 : 1,
+      })}
+    >
+      <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+        <Texte variante={sous ? 'type.bodyStrong' : 'type.caption'} couleur="ink.soft">
+          {titre}
+        </Texte>
+        {sous ? (
+          <Texte variante="type.caption" couleur="ink.mute">
+            {sous}
+          </Texte>
+        ) : null}
+      </View>
+      <Icone nom="chevron" couleur="brand.700" taille={20} />
+    </Pressable>
   );
 }
 
@@ -459,23 +721,18 @@ function CeQuiComptePourLesPaliers({
  */
 function ARattacher({
   reseaux,
-  api,
-  messageDErreur,
-  onFait,
+  ouverture,
+  echec,
+  connecter,
 }: {
   reseaux: PlateformeConnectable[];
-  api: ReturnType<typeof useApi>['api'];
-  messageDErreur: (erreur: unknown) => string;
-  /** Le compte existe côté serveur : on relit plutôt que de le croire. */
-  onFait: () => void;
+  /** Le réseau dont l'autorisation est en cours d'ouverture, s'il y en a un. */
+  ouverture: PlateformeConnectable | null;
+  echec: string | null;
+  connecter: (reseau: PlateformeConnectable) => void | Promise<unknown>;
 }) {
   const { t } = useI18n();
-  const { ouverture, echec, connecter } = useRattachement({
-    api,
-    traduire: (code) => translateErrorCode(t, code),
-    messageDErreur,
-    onRattache: onFait,
-  });
+  const c = useColors();
 
   if (reseaux.length === 0) return null;
 
@@ -489,10 +746,34 @@ function ARattacher({
         {reseaux.map((reseau) => (
           <View
             key={reseau}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 12,
+              paddingHorizontal: 16,
+              paddingVertical: 14,
+              borderRadius: radius['radius.lg'],
+              // **Creusée, quand la carte est surélevée.** La planche oppose
+              // « une carte à ombre » à « une ligne à filet » — la forme disant
+              // l'état avant le mot — mais dessine sa ligne en blanc à filet,
+              // c'est-à-dire avec les trois marques d'une carte. Deux surfaces
+              // blanches à filet ne se distinguent plus, et la règle des rayons
+              // les obligerait toutes deux à porter l'ombre. Le neutre en
+              // retrait dit la même chose sans rien contredire : ce qui est
+              // posé et blanc est à vous, ce qui est creusé ne l'est pas encore.
+              backgroundColor: c['bg.deep'],
+            }}
             testID={`ligne-${reseau}`}
           >
-            <View style={{ flex: 1 }}>
+            {/* **En ink.mute, quand celui d'un compte connecté est en encre
+                pleine.** La marque est là dans les deux cas ; c'est son poids
+                qui dit lequel des deux est à vous. */}
+            <Icone
+              nom={reseau === 'tiktok' ? 'tiktok' : 'instagram'}
+              couleur="ink.mute"
+              taille={26}
+            />
+            <View style={{ flex: 1, minWidth: 0 }}>
               <Texte variante="type.bodyStrong">{nomDePlateforme(reseau)}</Texte>
               <Texte variante="type.caption" couleur="ink.mute">
                 {t('parcours.audienceNonConnecte')}

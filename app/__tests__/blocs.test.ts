@@ -94,6 +94,9 @@ const BLOCS: Record<string, number> = {
   FilScreen: 0,
   FicheScreen: 0,
   AudienceScreen: 0,
+  // Le score en détail : que de l'explication, et deux garanties. Aucune
+  // matière de marque n'a rien à y faire.
+  FiabiliteScreen: 0,
   // La liste de ce qu'un palier ouvre : de l'information, pas une
   // présentation de la marque. Le badge de palier y porte la seule matière.
   PrestationsDuPalierScreen: 0,

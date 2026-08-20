@@ -213,6 +213,49 @@ export const en = {
     depuis: 'Last checked {{date}}.',
   },
   parcours: {
+    // --- L'audience v3 : chaque chiffre dit ce qu'il ouvre ---
+    audienceEtatAJour: 'Live',
+    // « Paused » et non « expired » : c'est le réseau qui redemande, pas la
+    // créatrice qui a fauté, et la nuance dit à qui revient le geste.
+    audienceEtatSuspendu: 'Paused',
+    audienceEtatPremiereLecture: 'Reading',
+    audienceAutorisationFinie: '{{reseau}} needs you to authorise again',
+    // **Ce qui est vrai, vérifié dans le service d'éligibilité.** La planche
+    // écrivait « les paliers restent où ils étaient » ; un compte inactif porte
+    // un obstacle sur chacun d'eux, donc ils se ferment. Ce qui tient, c'est
+    // l'autre moitié : l'éligibilité n'est évaluée qu'à la réservation.
+    audienceGeleAu:
+      'Your figures are frozen at {{date}}, and new bookings are on hold until you authorise again. What you have already booked is unaffected.',
+    audienceGeleSansReleve:
+      'New bookings are on hold until you authorise again. What you have already booked is unaffected.',
+    audienceReconnecter: 'Reconnect',
+    audienceAbonnesDernierReleve: 'Followers · last read',
+    audienceSurSeuil: 'of {{seuil}}',
+    audienceOuvreLePalier: '{{manque}} more opens the {{format}} tier',
+    audienceLeJour: 'on {{date}}',
+    audienceCeQueVoitUnSalon: 'What a salon sees when it opens your profile.',
+    audienceScoreOuvre: 'Opens the higher tiers',
+    audienceScoreCeQuiLeFait: 'What raises it, what lowers it, and what it never does',
+    audiencePasEncoreDeScoreDetail:
+      'It starts after your first collaboration. Until then the story tier is open to you like everyone else.',
+    audienceVoirMesPaliersSous: 'What is open, and what comes next',
+    // --- Le score, en détail ---
+    scoreTitre: 'Reliability',
+    scoreSur: 'out of 100',
+    scoreDefinition: 'It measures whether you do what you said you would',
+    scoreCeQuiMonte: 'What raises it',
+    scoreCeQuiDescend: 'What lowers it',
+    scoreMonteCollaboration: 'A collaboration honoured',
+    scoreMonteDansLesTemps: 'Publishing before the deadline',
+    scoreMonteDuPremierCoup: 'Getting it right the first time',
+    scoreDescendAbsence: 'Not showing up',
+    scoreDescendNonHonoree: 'A publication never delivered',
+    scoreDescendEnRetard: 'Publishing after the deadline',
+    scoreDescendReprise: 'Being asked to send it again',
+    scoreSeRepare: 'It recovers as you honour the next ones. Nothing is permanent.',
+    scoreJamais: 'Two things it never does',
+    scoreJamaisCompare: 'It is never compared to other creators',
+    scoreJamaisMontre: 'It is never shown to a salon',
     audienceCertifie: 'Certified',
     audienceJourN: 'Day {{n}}',
     // Le tiret cadratin ne suffit pas : il faut dire ce qu'il veut dire.

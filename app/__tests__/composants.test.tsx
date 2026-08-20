@@ -886,6 +886,11 @@ describe("ce que la bibliothèque n'a pas", () => {
       // seulement — des barres, et une évolution dans le temps.
       'Graphiques.tsx',
       'Icone.tsx',
+      // La barre de progression, arrivée avec l'audience v3. Elle vit dans la
+      // bibliothèque et non dans l'écran parce qu'un écran ne peint pas la
+      // teinte de marque : deux jauges écrites sur place auraient demandé
+      // d'exempter le fichier entier de cette garde-là.
+      'Jauge.tsx',
       'Logo.tsx',
       'Mouvement.tsx',
       'PaveDeSaisie.tsx',

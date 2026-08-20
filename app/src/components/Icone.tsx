@@ -63,7 +63,15 @@ export type NomIcone =
   | 'carte'
   // Ce qui sort de l'application. Il remplace le chevron sur une ligne qui
   // mène dehors : la différence se voit **avant** l'appui, pas après.
-  | 'sortie';
+  | 'sortie'
+  // **Les deux réseaux, et ils manquaient entièrement.** L'écran d'audience
+  // nommait « Instagram » et « TikTok » en toutes lettres sans rien montrer :
+  // deux lignes identiques à l'œil, alors que c'est la marque qu'on cherche du
+  // regard sur un écran de comptes. Tracés monochromes dans le trait du
+  // système — les deux chartes fournissent des fichiers officiels, qui les
+  // remplaceront à l'intégration.
+  | 'instagram'
+  | 'tiktok';
 
 const CHEMINS: Record<NomIcone, string> = {
   chevron: 'M9.5 5.5L16 12l-6.5 6.5',
@@ -105,6 +113,13 @@ const CHEMINS: Record<NomIcone, string> = {
   // Un cadre échancré et une flèche qui en sort. L'échancrure est ce qui fait
   // lire « sortir » plutôt que « agrandir ».
   sortie: 'M10 4.5H5.5v15h15V15M14 4.5h5.5V10M19 5L11 13',
+  // Le cadre arrondi, l'objectif, et le témoin. Le témoin est un arc de 0,6 de
+  // rayon : à 2 de trait il se remplit tout seul, ce qui est exactement ce
+  // qu'on veut d'un point dans un jeu sans remplissage.
+  instagram:
+    'M8.4 3h7.2a5.4 5.4 0 015.4 5.4v7.2a5.4 5.4 0 01-5.4 5.4H8.4A5.4 5.4 0 013 15.6V8.4A5.4 5.4 0 018.4 3zM12 7.8a4.2 4.2 0 110 8.4 4.2 4.2 0 010-8.4zM17.4 6.1a.6.6 0 110 1.2.6.6 0 010-1.2z',
+  // La hampe, sa boucle, et le drapeau qui s'en détache.
+  tiktok: 'M14.2 3v10.9a3.6 3.6 0 11-3-3.55M14.2 3.4c.5 2.3 2.1 3.9 4.6 4.2',
 };
 
 export function Icone({
