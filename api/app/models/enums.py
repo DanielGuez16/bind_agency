@@ -328,6 +328,10 @@ class JobType(StrEnum):
     #: casserait l'invariant « une ligne par travail, pour toujours » — un
     #: message est une occurrence, pas un travail récurrent.
     OUTBOX_SWEEP = "outbox_sweep"
+    #: Applique les suppressions de compte dont le délai est écoulé. Balayage
+    #: global : trente jours séparent la demande de l'effet, et un job par
+    #: compte tiendrait une ligne un mois pour un seul réveil.
+    ACCOUNT_DELETION_SWEEP = "account_deletion_sweep"
 
 
 class JobStatus(StrEnum):

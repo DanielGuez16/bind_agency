@@ -571,6 +571,10 @@ class LigneDeFile:
     creator_first_name: str | None
     creator_last_name: str | None
     creator_handle: str | None
+    #: La créatrice a fermé son compte. Un drapeau, jamais une phrase : le
+    #: texte se traduit côté écran. Même raison que sur l'historique — un nom
+    #: vide se lit comme un défaut d'affichage, pas comme un départ.
+    creator_partie: bool
     platform: Platform
     item_name: str
     #: Chaque demande de nouvelle soumission, dans l'ordre, relue dans le
@@ -686,6 +690,7 @@ def _requete_de_file():
             CreatorProfile.first_name,
             CreatorProfile.last_name,
             SocialAccount.handle,
+            CreatorProfile.anonymized_at,
             Tier.platform,
             CatalogItem.name.label("item_name"),
         )
@@ -780,6 +785,7 @@ async def _completer(session: AsyncSession, lignes) -> tuple[LigneDeFile, ...]:
             creator_first_name=ligne.first_name,
             creator_last_name=ligne.last_name,
             creator_handle=ligne.handle,
+            creator_partie=ligne.anonymized_at is not None,
             platform=ligne.platform,
             item_name=ligne.item_name,
             tentatives=tuple(tentatives.get(ligne.collaboration_id, ())),

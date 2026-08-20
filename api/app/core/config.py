@@ -265,6 +265,16 @@ class Settings(BaseSettings):
     #: à temps ne doit pas tomber pour un balayage trop paresseux.
     collaboration_sweep_interval_seconds: int = 300
 
+    #: Délai avant qu'une suppression demandée prenne effet. Trente jours :
+    #: assez long pour qu'un départ sur un coup de tête se rattrape, assez
+    #: court pour que le droit exercé ne devienne pas théorique. Le retour est
+    #: possible pendant tout ce délai, et lui seul.
+    account_deletion_delay_seconds: int = 30 * 86_400
+    #: Période du balayage des suppressions échues. Une heure : une
+    #: anonymisation qui arrive soixante minutes après la date promise ne lèse
+    #: personne, et un balayage plus serré n'achèterait rien.
+    account_deletion_sweep_interval_seconds: int = 3_600
+
     # Emails transactionnels. `log` n'envoie rien et trace : c'est le mode du
     # développement et des tests. `resend` exige clé et expéditeur, vérifiés au
     # démarrage — pas de repli silencieux.

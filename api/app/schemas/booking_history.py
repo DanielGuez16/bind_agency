@@ -99,6 +99,9 @@ class ReservationDuCommerceRead(BaseModel):
     creator_first_name: str | None
     creator_last_name: str | None
     creator_handle: str | None
+    #: La créatrice a fermé son compte. Un drapeau, pas une phrase : le texte
+    #: se traduit côté écran, et un nom vide se lisait comme un bug.
+    creator_partie: bool
     #: L'adresse du profil, dérivée du pseudonyme et du réseau de la demande.
     #: C'est la première chose qu'un salon cherche avant d'accorder : un
     #: pseudonyme sans lien oblige à le recopier dans une barre d'adresse.

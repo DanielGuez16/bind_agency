@@ -58,7 +58,31 @@ class User(UUIDPrimaryKey, CreatedAt, Base):
         sa.DateTime(timezone=True), nullable=True
     )
 
+    #: Quand la suppression a été demandée, et quand elle prendra effet.
+    #:
+    #: **Les deux, et non l'une plus un délai calculé.** Ce qui a été promis à
+    #: la personne est une date, pas une formule : si le délai de configuration
+    #: change pendant qu'un compte attend, la promesse déjà faite doit tenir.
+    #: Recalculer à la volée la déplacerait sans que personne l'ait décidé.
+    #:
+    #: Nulles ensemble ou pleines ensemble — une contrainte le tient. Un compte
+    #: qui aurait une demande sans échéance n'expirerait jamais, et le droit
+    #: exercé resterait lettre morte sans que rien ne le signale.
+    deletion_requested_at: Mapped[datetime | None] = mapped_column(
+        sa.DateTime(timezone=True), nullable=True
+    )
+    deletion_effective_at: Mapped[datetime | None] = mapped_column(
+        sa.DateTime(timezone=True), nullable=True
+    )
+
     __table_args__ = (
+        # Les deux dates de la suppression différée vont ensemble. Une demande
+        # sans échéance n'expire jamais ; une échéance sans demande n'a pas
+        # d'origine à montrer à qui la conteste.
+        sa.CheckConstraint(
+            "(deletion_requested_at IS NULL) = (deletion_effective_at IS NULL)",
+            name="deletion_dates_together",
+        ),
         # `email` n'est nullable que pour permettre l'anonymisation : hors ce
         # cas, un compte sans adresse serait un compte sans moyen de connexion.
         sa.CheckConstraint(

@@ -904,6 +904,20 @@
         ]
       }
     },
+    "/api/v1/me/deletion": {
+      "delete": {
+        "operationId": "cancel_deletion_api_v1_me_deletion_delete",
+        "responses": [
+          "200"
+        ]
+      },
+      "post": {
+        "operationId": "request_deletion_api_v1_me_deletion_post",
+        "responses": [
+          "202"
+        ]
+      }
+    },
     "/api/v1/me/devices": {
       "put": {
         "operationId": "register_device_api_v1_me_devices_put",

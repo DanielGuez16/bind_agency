@@ -68,6 +68,7 @@ Le rafraîchissement se fait **à l'ouverture d'écran et sur geste**. Il n'exis
 | Lien traqué | `GET /me/collaborations/{id}/link` | `slug`, `url`, `is_active` | **un seul lien par contrepartie, pour toute sa vie** — il vit dans le sticker déjà publié |
 | Portée mesurée | `GET /me/link-clicks` | `clics, clics_locaux, part_locale, par_pays, par_ville, par_terminal, par_referent, ecartes` | aucune adresse IP n'existe nulle part |
 | Confirmation d'adresse | `GET /auth/verify-email?token=`, `POST /me/verify-email/resend` | le compte, `email_verified_at` daté | le lien s'ouvre **dans un navigateur**, pas dans l'app : à usage unique, borné à 24 h, et un renvoi révoque le précédent. Un compte non confirmé entre et se sert du produit — il ne peut ni réserver ni mettre un commerce en ligne |
+| Fermer son compte | `POST /me/deletion`, `DELETE /me/deletion` | le compte, `deletion_effective_at` daté | **anonymise, ne détruit pas** — le journal est immuable et une contrepartie engagée concerne un salon qui n'a rien demandé. Différée de trente jours, retour possible pendant tout le délai. Refusée en 409 `deletion_blocked_by_collaboration` tant qu'une contrepartie est en cours : il faut l'honorer ou la clore. Côté commerce, l'historique reste et porte `creator_partie` — jamais un nom vide |
 | Terminal | `PUT /me/devices {token, platform}`, `DELETE /me/devices/{token}` | `id, platform, status, last_seen_at` | se révoque comme un jeton social. **Plus de réglage par genre** : les sept genres restent, le choix par personne a été retiré |
 
 ---

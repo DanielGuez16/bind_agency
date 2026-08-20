@@ -73,3 +73,13 @@ class UserRead(BaseModel):
     #: sont refusés, et découvrir le refus au moment de réserver serait le pire
     #: endroit pour l'apprendre.
     email_verified_at: datetime | None
+    #: Quand la suppression demandée prendra effet, nulle si aucune ne court.
+    #:
+    #: **Servie sur `/me` et non sur une route à part** : c'est un état du
+    #: compte, et l'écran qui l'affiche est celui des réglages, qui lit déjà
+    #: `/me`. Une seconde route ferait un second appel pour un champ.
+    #:
+    #: L'échéance et non le temps restant : elle ne bouge pas, un compte à
+    #: rebours de trente jours n'a pas besoin d'être compté à la seconde, et un
+    #: écran laissé ouvert se recale dessus tout seul.
+    deletion_effective_at: datetime | None

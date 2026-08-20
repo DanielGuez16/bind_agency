@@ -16,8 +16,10 @@ from app.schemas.auth import (
     UpdateMeRequest,
     UserRead,
 )
+from app.services import account_deletion as deletion_service
 from app.services import auth as auth_service
 from app.services import email_verification as verification_service
+from app.services.audit import Actor
 
 router = APIRouter(tags=["auth"])
 
@@ -142,5 +144,53 @@ async def read_me(user: CurrentUser) -> UserRead:
 async def update_me(payload: UpdateMeRequest, user: CurrentUser, session: SessionDep) -> UserRead:
     """La langue du compte : celle dans laquelle le serveur s'adressera à lui."""
     user.locale = payload.locale
+    await session.commit()
+    return UserRead.model_validate(user)
+
+
+@router.post("/me/deletion", response_model=UserRead, status_code=status.HTTP_202_ACCEPTED)
+async def request_deletion(user: CurrentUser, session: SessionDep) -> UserRead:
+    """Ouvre le délai de trente jours. **202, et non 204.**
+
+    Rien n'est fait au moment où l'on répond : une date est posée, et c'est
+    exactement ce que « accepté, pas encore appliqué » veut dire. Un 204
+    laisserait croire que le compte est parti.
+
+    Le corps est le compte relu, avec son échéance : l'écran l'affiche sans
+    redemander `/me`.
+    """
+    try:
+        await deletion_service.demander(session, user=user, actor=Actor.from_user(user))
+    except deletion_service.ContrepartieEnCours as error:
+        # Le code seul, sans le nombre. `api_error` ne porte pas de détail, et
+        # l'étendre pour un compteur serait payer une fabrique d'erreurs pour
+        # une phrase : l'application liste déjà les contreparties du créateur
+        # sur son historique, et sait donc les compter sans qu'on le lui dise.
+        raise api_error(
+            status.HTTP_409_CONFLICT, ErrorCode.DELETION_BLOCKED_BY_COLLABORATION
+        ) from error
+    except deletion_service.DejaDemandee as error:
+        raise api_error(status.HTTP_409_CONFLICT, ErrorCode.DELETION_ALREADY_REQUESTED) from error
+    except deletion_service.CompteAnonymise as error:
+        raise api_error(status.HTTP_403_FORBIDDEN, ErrorCode.ACCOUNT_NOT_ACTIVE) from error
+
+    await session.commit()
+    return UserRead.model_validate(user)
+
+
+@router.delete("/me/deletion", response_model=UserRead)
+async def cancel_deletion(user: CurrentUser, session: SessionDep) -> UserRead:
+    """Le retour, possible pendant le délai et lui seul.
+
+    `DELETE` sur la demande, et non `POST /me/deletion/cancel` : ce qu'on retire
+    est la demande, qui est bien la ressource créée juste au-dessus.
+    """
+    try:
+        await deletion_service.annuler(session, user=user, actor=Actor.from_user(user))
+    except deletion_service.AucuneDemande as error:
+        raise api_error(status.HTTP_409_CONFLICT, ErrorCode.DELETION_NOT_REQUESTED) from error
+    except deletion_service.CompteAnonymise as error:
+        raise api_error(status.HTTP_403_FORBIDDEN, ErrorCode.ACCOUNT_NOT_ACTIVE) from error
+
     await session.commit()
     return UserRead.model_validate(user)
