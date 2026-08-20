@@ -7483,3 +7483,79 @@ contrepartie court*, qui doit être honorée ou close avant ; et le commerce *ne
 voit jamais un compte anonymisé* dans son historique, il voit une créatrice
 partie. Elles sont dans le texte de l'écran parce qu'une décision irréversible
 se lit avant d'être prise, pas dans la boîte de confirmation qui la suit.
+## 2026-08-19 — Ce qui allait se déduit du contrat, jamais du motif seul
+
+La planche v3 exige qu'une reprise dise **ce qui allait** en plus de ce qui
+manque : « the mention was there. Add the tag and send it again ». La raison est
+juste — un manque non borné se lit comme un tout à refaire, et « la mention
+manque » sur une story tournée, montée et publiée laisse croire qu'il faut la
+retourner.
+
+**La phrase se déduit, et c'est là qu'elle peut mentir.** Le commerce choisit un
+motif dans une liste fermée ; le reproche enregistré est donc entier, et les
+autres exigences n'ont pas bloqué. Mais **les autres exigences du contrat**, pas
+toutes celles qu'on pourrait nommer : sur une contrepartie sans mention exigée,
+« la mention y était » invente une conformité sur une exigence qui n'a jamais
+existé, et le fait au moment précis où la créatrice cherche ce qu'elle a raté.
+Le rendu croise donc le motif avec `required_mention` et `required_geotag`, et
+quand il ne reste rien à rassurer la ligne ne s'écrit pas.
+
+C'est le décor de test qui l'a imposé : recopier l'exemple de la planche
+— motif « lieu », réassurance « mention » — laissait passer une implémentation
+qui rassure toujours sur la mention. Le cas écrit en premier est donc l'inverse,
+puis celui où la mention n'est pas exigée. Quatre mutations, quatre chutes.
+
+**Et le plafond de tentatives reste hors de l'écran.** La planche écrit
+« attempt 2 of 3 » ; `collaboration_max_attempts` est un seuil de configuration
+que l'API ne sert pas, et l'écrire en dur est ce que `CLAUDE.md` interdit. Le
+rang seul est affiché — vrai, mais incomplet — et le manque est consigné.
+
+**`secondes_avant_echeance`, servi par #181, n'est pas l'horloge demandée.** Il
+compte jusqu'à `deadline_at`, l'échéance de publication. La jauge de la planche
+mesure la fenêtre de vérification : 24 h depuis la publication. Deux horloges sur
+le même écran, et l'une pour l'autre annoncerait « 21 h » quand il en reste 45.
+Le champ est consigné `a-instruire` plutôt que rangé en `contrat` : il pose une
+question de route, il ne la ferme pas.
+
+
+---
+
+## 2026-08-19 — L'audience v3, et trois écarts avec la planche
+
+**« Les paliers restent où ils étaient » est faux.** La planche rassure ainsi
+quand l'autorisation d'un réseau tombe. `eligibility.py` dit l'inverse : un
+compte qui n'est plus actif porte `account_token_invalid` sur **chaque** palier,
+donc ils se ferment tous. Ce qui est vrai est l'autre moitié, et elle est
+vérifiée : `evaluer_createur` n'est appelé qu'à la création d'une réservation,
+jamais ensuite, donc ce qui est déjà engagé n'est pas touché. La carte dit les
+deux — les nouvelles réservations attendent, les anciennes tiennent — parce que
+la seconde moitié est ce qui inquiète vraiment, et la première ce qui est utile.
+
+**Sept événements bougent le score, la planche en nomme quatre.** La grille de
+pondération compte trois hausses et quatre baisses, dont « publier en retard »
+et « une reprise demandée ». Une liste qui promet de dire ce qui affecte le
+score et en tait deux se retourne contre elle le jour où il baisse pour une
+raison absente de l'écran. Les mots de Design sont gardés pour les quatre
+qu'elle nomme, l'ordre aussi ; les trois autres suivent. Reste que l'écran
+**récite** cette grille au lieu de la lire — consigné.
+
+**« First reading within a day of connecting » promet un délai.** La cadence du
+relevé est de la configuration, et le dépôt interdit d'écrire un délai en dur.
+La phrase existante est gardée : elle dit ce qui compte vraiment — que le tiret
+n'est pas un zéro — sans promettre une heure que personne ne tient.
+
+**Et une contradiction interne à la planche, tranchée.** Elle oppose « une carte
+à ombre » pour un compte connecté à « une ligne à filet » pour un compte à
+connecter, la forme disant l'état avant le mot ; puis dessine cette ligne en
+blanc à filet et rayon de 18, c'est-à-dire avec les trois marques d'une carte —
+que la règle des rayons oblige alors à porter l'ombre elle aussi. Deux surfaces
+blanches surélevées ne se distinguent plus. La ligne est donc creusée dans le
+neutre : ce qui est posé et blanc est à vous, ce qui est creusé ne l'est pas
+encore. La distinction de la planche est tenue, et aucune exception par écran
+n'est ouverte dans l'inventaire des cartes.
+
+**La jauge est un composant, pas deux blocs de style.** Un écran ne peint jamais
+la teinte de marque, et la tolérance de cette garde est par fichier : écrire les
+deux barres sur place aurait exempté `AudienceScreen.tsx` en entier, donc laissé
+passer la pastille orange du mois suivant. `components/Jauge.tsx` est le lieu
+légitime de la teinte, et la garde garde toute sa force.

@@ -1265,10 +1265,35 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       comptage sur les trois surfaces qui clippent, où une carte est deux blocs.
       Ce qu'il faudrait est un détecteur qui sache lequel des deux blocs est le
       parent — ou une convention qui nomme les vues enveloppantes*
-- [ ] **Dix planches d'écrans portent encore la v1.0**
-      *Le fil est passé en v3, directement dans la palette Ambre. Les autres
-      suivent l'ordre du `PASSATION-v1.1.md` §6, qui limite le travail
-      perdu : la fiche de
+- [x] **L'audience v3 — l'écran le plus faible, signalé sur trois campagnes**
+      *Les logos de réseau manquaient entièrement, et un compte connecté ne se
+      distinguait pas d'un compte à connecter. Aucun nombre n'apparaît plus
+      seul : les abonnés portent le seuil qu'ils visent et le palier qu'ils
+      ouvrent, l'engagement et les vues passent sous la phrase qui dit à quoi
+      ils servent. Le score passe en deux niveaux, sa barre en `brand.500` — le
+      système n'a aucune couleur pour « le score est bas ». `monoDisplay` et
+      `monoFigure` entrent dans les jetons, synchronisés depuis la passation.
+      Trois écarts avec la planche, chacun écrit dans `DECISIONS.md` : les
+      paliers ne « restent » pas quand l'autorisation tombe, sept événements
+      bougent le score et non quatre, et « first reading within a day » promet
+      un délai que la configuration décide. 1065 tests verts, 6 mutations*
+- [ ] **Le score récite sa mécanique au lieu de la lire**
+      *Les sept événements et leur sens viennent de `reliability_weights`, qui
+      est de la configuration : un exploitant qui inverserait un poids rendrait
+      l'écran faux sans qu'aucun test ne tombe. La planche le demande d'ailleurs
+      à l'API — « le score et ses deux composantes, pour que l'écran nomme ce
+      qui monte et ce qui descend sans les déduire ». Il ne les déduit pas, il
+      les récite, ce qui est le même risque sous un autre nom*
+- [ ] **La période de réautorisation n'est pas servie**
+      *La planche écrit « Instagram asks you again every 60 days ».
+      `token_expires_at` existe sur le modèle et ne sort que par
+      `Obstacle.depuis` d'un `account_token_invalid` ; `AudienceDuCompte` ne le
+      porte pas. La carte dit donc que l'autorisation est finie, sans dire pour
+      combien de temps elle vaut ni quand elle est tombée*
+- [ ] **Neuf planches d'écrans portent encore la v1.0**
+      *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
+      passés en v3, dans la palette Ambre. Les autres suivent l'ordre du
+      `PASSATION-v1.1.md` §6, qui limite le travail perdu : la fiche de
       journée du commerce d'abord,
       les rapports et l'annuaire ; l'arbitrage et les plans ; les écrans de
       marque. C'est du travail de Design, pas du produit*
