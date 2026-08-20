@@ -213,6 +213,49 @@ export const en = {
     depuis: 'Last checked {{date}}.',
   },
   parcours: {
+    // --- L'audience v3 : chaque chiffre dit ce qu'il ouvre ---
+    audienceEtatAJour: 'Live',
+    // « Paused » et non « expired » : c'est le réseau qui redemande, pas la
+    // créatrice qui a fauté, et la nuance dit à qui revient le geste.
+    audienceEtatSuspendu: 'Paused',
+    audienceEtatPremiereLecture: 'Reading',
+    audienceAutorisationFinie: '{{reseau}} needs you to authorise again',
+    // **Ce qui est vrai, vérifié dans le service d'éligibilité.** La planche
+    // écrivait « les paliers restent où ils étaient » ; un compte inactif porte
+    // un obstacle sur chacun d'eux, donc ils se ferment. Ce qui tient, c'est
+    // l'autre moitié : l'éligibilité n'est évaluée qu'à la réservation.
+    audienceGeleAu:
+      'Your figures are frozen at {{date}}, and new bookings are on hold until you authorise again. What you have already booked is unaffected.',
+    audienceGeleSansReleve:
+      'New bookings are on hold until you authorise again. What you have already booked is unaffected.',
+    audienceReconnecter: 'Reconnect',
+    audienceAbonnesDernierReleve: 'Followers · last read',
+    audienceSurSeuil: 'of {{seuil}}',
+    audienceOuvreLePalier: '{{manque}} more opens the {{format}} tier',
+    audienceLeJour: 'on {{date}}',
+    audienceCeQueVoitUnSalon: 'What a salon sees when it opens your profile.',
+    audienceScoreOuvre: 'Opens the higher tiers',
+    audienceScoreCeQuiLeFait: 'What raises it, what lowers it, and what it never does',
+    audiencePasEncoreDeScoreDetail:
+      'It starts after your first collaboration. Until then the story tier is open to you like everyone else.',
+    audienceVoirMesPaliersSous: 'What is open, and what comes next',
+    // --- Le score, en détail ---
+    scoreTitre: 'Reliability',
+    scoreSur: 'out of 100',
+    scoreDefinition: 'It measures whether you do what you said you would',
+    scoreCeQuiMonte: 'What raises it',
+    scoreCeQuiDescend: 'What lowers it',
+    scoreMonteCollaboration: 'A collaboration honoured',
+    scoreMonteDansLesTemps: 'Publishing before the deadline',
+    scoreMonteDuPremierCoup: 'Getting it right the first time',
+    scoreDescendAbsence: 'Not showing up',
+    scoreDescendNonHonoree: 'A publication never delivered',
+    scoreDescendEnRetard: 'Publishing after the deadline',
+    scoreDescendReprise: 'Being asked to send it again',
+    scoreSeRepare: 'It recovers as you honour the next ones. Nothing is permanent.',
+    scoreJamais: 'Two things it never does',
+    scoreJamaisCompare: 'It is never compared to other creators',
+    scoreJamaisMontre: 'It is never shown to a salon',
     audienceCertifie: 'Certified',
     audienceJourN: 'Day {{n}}',
     // Le tiret cadratin ne suffit pas : il faut dire ce qu'il veut dire.
@@ -446,6 +489,20 @@ export const en = {
     preuveEnControle: 'We are checking your proof.',
     preuveANouveau: 'A new submission was requested.',
     preuveNonHonoree: 'This counterpart was not fulfilled.',
+    repriseTitre: 'The salon asks for one change',
+    repriseCeQuiManquait: 'What was missing',
+    repriseManqueMention: 'The mention',
+    repriseManqueLieu: 'The location tag',
+    repriseManqueFormat: 'The right format',
+    repriseManqueQualite: 'A readable capture',
+    repriseIntacteMention: 'The mention was there.',
+    repriseIntacteLieu: 'The location tag was there.',
+    repriseIntactesLesDeux: 'The mention and the location tag were both there.',
+    repriseActionMention: 'Add the mention and send it again.',
+    repriseActionLieu: 'Add the tag and send it again.',
+    repriseActionFormat: 'Send it again in the format they asked for.',
+    repriseActionQualite: 'Send a sharper capture.',
+    repriseTentative: 'Attempt {{n}}',
     historiqueTitre: 'Your bookings',
     historiqueVide: 'Nothing here yet.',
     ongletAVenir: 'Upcoming',
@@ -723,19 +780,28 @@ export const en = {
     motDePasseComplet: 'At least {{requis}} characters.',
   },
   reglages: {
-    notifications: 'Notifications',
-    notificationsAide: 'Turn off anything you would rather not be interrupted by. Emails keep coming either way.',
     titre: 'Settings',
     compte: 'Account',
+    preferences: 'Preferences',
     langue: 'Language',
     langueEn: 'English',
     langueEs: 'Español',
+    // Le titre de la region qui met fin. « Account actions » ne disait pas
+    // laquelle est definitive ; « Leaving » couvre les deux sorties, celle
+    // dont on revient et celle dont on ne revient pas.
+    partir: 'Leaving',
     seDeconnecter: 'Sign out',
+    supprimerTitre: 'Delete my account',
+    // Les trois regles, dans l'ordre ou elles comptent pour qui decide :
+    // ce qui reste, le delai de retour, ce qui bloque.
+    supprimerCorps: 'Your account is anonymised, not erased. Reviews you took part in belong to the salons that wrote them, and the audit trail cannot be rewritten. You have thirty days to come back before it becomes final. A booking still open has to be honoured or cancelled first.',
+    supprimerAction: 'Delete my account',
+    supprimerBientot: 'Not available yet. It is being built.',
     diagnostic: 'Connection check',
     diagnosticAide: 'Tells you whether this device can reach BIND. Useful when a screen stays empty.',
     stockage: 'Token storage',
     stockageSecurise: 'Device keychain',
-    stockageWeb: 'Browser storage — development only',
+    stockageWeb: 'Browser storage - development only',
   },
   composition: {
     carteTitre: 'Menu',

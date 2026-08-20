@@ -78,7 +78,11 @@ describe('un chiffre appartient à un compte, et à une date', () => {
     expect(carte.getByText('@lea.mrl')).toBeTruthy();
     expect(carte.getByText('7,600')).toBeTruthy();
     expect(carte.getByText('4.2 %')).toBeTruthy();
-    expect(carte.getByTestId('date-du-releve')).toBeTruthy();
+    // **La date a changé de place, pas de raison d'être.** Elle fermait une
+    // ligne à elle ; elle ferme maintenant la phrase qui dit à quoi servent
+    // l'engagement et les vues. Un chiffre sans date passe toujours pour
+    // celui d'aujourd'hui, et c'est encore sur lui qu'un palier s'ouvre.
+    expect(carte.getByTestId('ce-que-voit-un-salon')).toHaveTextContent(/2026/);
   });
 });
 
@@ -146,14 +150,20 @@ describe('le contrôle montre ses termes, pas son verdict seul', () => {
 });
 
 describe('ce qui compte pour les paliers, en dehors des abonnés', () => {
-  it('les collaborations tenues et le score, sur cet écran', async () => {
-    // Les abonnés ouvrent des paliers, mais pas seuls, et personne ne va
-    // chercher les deux autres grandeurs sur un écran séparé.
+  it('le score donne son chiffre et sa conséquence, et rien de plus', async () => {
+    // **Deux niveaux, et c'est la correction de la planche v3.** Le bloc
+    // posait le score, les collaborations tenues et l'obstacle du palier
+    // suivant au même poids, sur un écran qui a déjà deux sujets. Ce qui a
+    // une conséquence reste ; la mécanique passe derrière un chevron.
     await monter(NOMINAL);
-    await waitFor(() => expect(screen.getByTestId('ce-qui-compte')).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId('carte-du-score')).toBeTruthy());
 
-    expect(within(screen.getByTestId('collaborations-tenues')).getByText('12')).toBeTruthy();
-    expect(within(screen.getByTestId('score-de-fiabilite')).getByText(/92/)).toBeTruthy();
+    expect(screen.getByTestId('score-de-fiabilite')).toHaveTextContent('92');
+    const carte = within(screen.getByTestId('carte-du-score'));
+    expect(carte.getByText(en.parcours.audienceScoreOuvre)).toBeTruthy();
+    // La jauge est là, et elle est unique : une seconde barre de couleur
+    // différente promettrait que la couleur porte un sens.
+    expect(carte.getByTestId('score-jauge')).toBeTruthy();
   });
 
   it('et un score nul se dit « pas encore », jamais zéro', async () => {
@@ -164,10 +174,16 @@ describe('ce qui compte pour les paliers, en dehors des abonnés', () => {
       ...NOMINAL,
       '/me/tiers': { ...PALIERS, fiabilite: { reliability_score: null, completed_collabs_count: 0 } },
     });
-    await waitFor(() => expect(screen.getByTestId('score-de-fiabilite')).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId('score-pas-encore')).toBeTruthy());
 
-    const score = within(screen.getByTestId('score-de-fiabilite'));
-    expect(score.getByText(en.parcours.audiencePasEncoreDeScore)).toBeTruthy();
-    expect(score.queryByText(/\b0\s*\/\s*100\b/)).toBeNull();
+    const carte = within(screen.getByTestId('carte-du-score'));
+    expect(carte.getByText(en.parcours.audiencePasEncoreDeScore)).toBeTruthy();
+    // **Et la phrase qui dit que cela ne coûte rien.** Sans elle, un tiret à
+    // côté de « ouvre les paliers hauts » se lit comme une porte fermée.
+    expect(carte.getByText(en.parcours.audiencePasEncoreDeScoreDetail)).toBeTruthy();
+    expect(screen.getByTestId('score-de-fiabilite')).toHaveTextContent('—');
+    expect(carte.queryByText(/\b0\s*\/\s*100\b/)).toBeNull();
+    // La jauge disparaît avec le chiffre : une barre vide dirait zéro.
+    expect(carte.queryByTestId('score-jauge')).toBeNull();
   });
 });

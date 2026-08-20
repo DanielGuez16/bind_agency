@@ -20,6 +20,7 @@ import { I18nProvider } from '../src/i18n';
 import { en } from '../src/i18n/en';
 import { ThemeProvider } from '../src/theme';
 import { AudienceScreen } from '../src/screens/AudienceScreen';
+import { FiabiliteScreen } from '../src/screens/FiabiliteScreen';
 import { CreneauxScreen } from '../src/screens/CreneauxScreen';
 import { FicheScreen } from '../src/screens/FicheScreen';
 import { FilScreen } from '../src/screens/FilScreen';
@@ -300,6 +301,18 @@ const ECRANS = [
     vide: { '/me/audience': [], '/me/verification': [], '/me/tiers': VUE },
   },
   {
+    // Le score en détail, ouvert depuis l'audience. Il ne lit que
+    // `/me/tiers` : sa matière est la fiabilité, et le reste de la vue lui
+    // est inutile.
+    nom: 'fiabilite',
+    noeud: <FiabiliteScreen />,
+    plein: { '/me/tiers': VUE },
+    // Jamais vide, et le registre le dit plutôt que de forcer un cas faux : un
+    // score absent n'est pas un écran vide, c'est un tiret et la phrase qui dit
+    // que cela ne coûte rien.
+    vide: null,
+  },
+  {
     nom: 'paliers',
     noeud: <PaliersScreen />,
     plein: { '/me/tiers': VUE },
@@ -463,6 +476,7 @@ describe('quatre états', () => {
 /** Le fichier de chaque entrée du registre. */
 const FICHIERS: Record<string, string> = {
   audience: 'AudienceScreen.tsx',
+  fiabilite: 'FiabiliteScreen.tsx',
   paliers: 'PaliersScreen.tsx',
   'prestations du palier': 'PrestationsDuPalierScreen.tsx',
   regles: 'ReglesScreen.tsx',
@@ -568,7 +582,9 @@ describe('audience et vérification', () => {
       <AudienceScreen />,
       clientDe({ '/me/audience': [COMPTE], '/me/verification': [], '/me/tiers': VUE }),
     );
-    await waitFor(() => expect(screen.getByTestId('date-du-releve')).toBeTruthy());
+    // La date ferme désormais la phrase qui dit à quoi servent l'engagement
+    // et les vues, au lieu d'avoir une ligne à elle.
+    await waitFor(() => expect(screen.getByTestId('ce-que-voit-un-salon')).toBeTruthy());
     // « 24000 » se compte à la main, chiffre par chiffre, sur le nombre qui
     // est la raison d'être de l'écran.
     expect(screen.getByText('24,000')).toBeTruthy();
@@ -622,7 +638,10 @@ describe('audience et vérification', () => {
     // passé, « sous 3 jours » dit ce qui va se passer, et seule la seconde se
     // brise le premier jour de charge, auprès de gens qui n'ont rien fait de
     // mal. Bannir le mot aurait interdit le compteur que la planche demande.
-    expect(screen.getByTestId('etat-c1')).toHaveTextContent(/day \d+/i);
+    // Le compteur vit dans le bloc du contrôle, où il a un sujet. La
+    // pastille d'en haut dit l'état de la lecture, qui est une autre
+    // question — un compte peut être lu et en contrôle en même temps.
+    expect(screen.getByTestId('jour-du-controle')).toHaveTextContent(/day \d+/i);
 
     for (const promesse of [/72\s*h/i, /within/i, /soon/i, /in \d+ days?/i, /under \d+/i]) {
       expect(screen.queryByText(promesse)).toBeNull();

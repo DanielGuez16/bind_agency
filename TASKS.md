@@ -1256,15 +1256,30 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       c'est l'empilement qui les autorise à être gros. Le bloc noir de la
       connexion part sans être remplacé. `mediasPlateforme` et
       `MediasPlateforme.home` restent servis sans lecteur : à trancher*
-- [ ] **La preuve v3 attend quatre champs sur `Collaboration`**
-      *Le contrat est posé — format, mention copiable, échéance en jour nommé —
-      et quatre choses manquent au serveur : le **temps restant dans la fenêtre
-      de vérification**, calculé serveur et jamais déduit d'une horloge locale ;
-      `dernier_motif`, aujourd'hui sur `LigneDeFile` seulement, pour la carte
-      « ce qui manquait » — et il doit dire aussi ce qui allait ; le **nom du
-      salon**, sans lequel la ligne du lieu n'a rien à copier ; et la
-      **plateforme**, sans laquelle « une story sur Instagram » ne peut pas
-      s'écrire. Demandés. Un test dit chacun en creux plutôt qu'en commentaire*
+- [x] **La reprise dit ce qu'elle reproche — `dernier_motif` consomme**
+      *L'écran renvoyait recommencer sans dire quoi corriger. La carte nomme le
+      manque en toutes lettres, jamais par son code, et dit aussi **ce qui
+      allait** : un manque non borné se lit comme un tout à refaire. Ce qui
+      allait se déduit du contrat et de rien d'autre — une exigence jamais
+      posée n'était pas « là ». Le fond est neutre, pas une alerte : un refus
+      rouvre. Quatre mutations vérifiées, dont celle qui recopie la phrase de
+      la planche et rassure toujours sur la mention*
+- [ ] **La preuve v3 attend trois champs, et une horloge qui n'est pas celle-là**
+      *`dernier_motif` est arrivé et se lit. Restent : le **temps restant dans
+      la fenêtre de vérification**, calculé serveur ; le **nom du salon**, sans
+      lequel la ligne du lieu n'a rien à copier ; et la **plateforme**, sans
+      laquelle « une story sur Instagram » ne peut pas s'écrire.
+      `secondes_avant_echeance`, servi par #181, **n'est pas** la fenêtre : il
+      compte jusqu'à l'échéance de publication — 48 ou 72 h — quand la fenêtre
+      court depuis la publication et vaut 24 h. Deux horloges sur le même
+      écran ; l'une pour l'autre annoncerait « 21 h » quand il en reste 45. Il
+      est consigné `a-instruire` faute de lecteur*
+- [ ] **Le plafond de tentatives n'est pas servi**
+      *La planche écrit « attempt 2 of 3 ». `collaboration_max_attempts` vit
+      dans la configuration de l'API et n'est servi nulle part ; l'écrire en
+      dur dans l'écran est ce que le dépôt interdit. La carte de reprise porte
+      donc le rang seul, qui reste vrai — mais c'est le plafond qui dit combien
+      de chances restent*
 - [ ] **L'inventaire des cartes ne voit pas les surfaces sans filet**
       *Sa définition est « fond de surface + rayon de 18 + filet ». Les deux
       portes de l'accueil et le panneau `reconnu` de `RedemptionScreen` ont le
@@ -1272,10 +1287,35 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       comptage sur les trois surfaces qui clippent, où une carte est deux blocs.
       Ce qu'il faudrait est un détecteur qui sache lequel des deux blocs est le
       parent — ou une convention qui nomme les vues enveloppantes*
-- [ ] **Dix planches d'écrans portent encore la v1.0**
-      *Le fil est passé en v3, directement dans la palette Ambre. Les autres
-      suivent l'ordre du `PASSATION-v1.1.md` §6, qui limite le travail
-      perdu : la fiche de
+- [x] **L'audience v3 — l'écran le plus faible, signalé sur trois campagnes**
+      *Les logos de réseau manquaient entièrement, et un compte connecté ne se
+      distinguait pas d'un compte à connecter. Aucun nombre n'apparaît plus
+      seul : les abonnés portent le seuil qu'ils visent et le palier qu'ils
+      ouvrent, l'engagement et les vues passent sous la phrase qui dit à quoi
+      ils servent. Le score passe en deux niveaux, sa barre en `brand.500` — le
+      système n'a aucune couleur pour « le score est bas ». `monoDisplay` et
+      `monoFigure` entrent dans les jetons, synchronisés depuis la passation.
+      Trois écarts avec la planche, chacun écrit dans `DECISIONS.md` : les
+      paliers ne « restent » pas quand l'autorisation tombe, sept événements
+      bougent le score et non quatre, et « first reading within a day » promet
+      un délai que la configuration décide. 1065 tests verts, 6 mutations*
+- [ ] **Le score récite sa mécanique au lieu de la lire**
+      *Les sept événements et leur sens viennent de `reliability_weights`, qui
+      est de la configuration : un exploitant qui inverserait un poids rendrait
+      l'écran faux sans qu'aucun test ne tombe. La planche le demande d'ailleurs
+      à l'API — « le score et ses deux composantes, pour que l'écran nomme ce
+      qui monte et ce qui descend sans les déduire ». Il ne les déduit pas, il
+      les récite, ce qui est le même risque sous un autre nom*
+- [ ] **La période de réautorisation n'est pas servie**
+      *La planche écrit « Instagram asks you again every 60 days ».
+      `token_expires_at` existe sur le modèle et ne sort que par
+      `Obstacle.depuis` d'un `account_token_invalid` ; `AudienceDuCompte` ne le
+      porte pas. La carte dit donc que l'autorisation est finie, sans dire pour
+      combien de temps elle vaut ni quand elle est tombée*
+- [ ] **Neuf planches d'écrans portent encore la v1.0**
+      *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
+      passés en v3, dans la palette Ambre. Les autres suivent l'ordre du
+      `PASSATION-v1.1.md` §6, qui limite le travail perdu : la fiche de
       journée du commerce d'abord,
       les rapports et l'annuaire ; l'arbitrage et les plans ; les écrans de
       marque. C'est du travail de Design, pas du produit*

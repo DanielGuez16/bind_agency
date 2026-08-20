@@ -24,6 +24,7 @@ import { useApi, type Collaboration } from '../api';
 import { Button, SkeletonFiche, StatusMessage, Texte } from '../components';
 import { useI18n } from '../i18n';
 import { Ecran } from './Ecran';
+import { CeQuiManquait } from './preuve/CeQuiManquait';
 import { ContratDeLaPreuve } from './preuve/ContratDeLaPreuve';
 import { EnvoiDePreuve } from './EnvoiDePreuve';
 import { useRequete } from './useRequete';
@@ -99,12 +100,26 @@ export function PreuveScreen({
             />
           ) : null}
 
+          {/* **Une reprise dit ce qu'elle reproche, ou elle n'apprend rien.**
+              Le bandeau ne disait que « une nouvelle soumission a été
+              demandée » : il renvoyait recommencer sans dire quoi corriger,
+              sur le seul écran qui devait porter le reproche. La carte le
+              porte, et dit aussi ce qui allait.
+
+              **Le bandeau reste en second**, pour les dossiers sans motif
+              codé : le motif est obligatoire depuis que le vocabulaire est
+              fermé, mais une reprise demandée avant ne le porte pas, et un
+              écran muet vaudrait moins que la phrase générique. */}
           {contrepartie.status === 'resubmit_requested' ? (
-            <StatusMessage
-              level="warning"
-              body={t('parcours.preuveANouveau')}
-              testID="nouvelle-soumission"
-            />
+            contrepartie.dernier_motif ? (
+              <CeQuiManquait contrepartie={contrepartie} />
+            ) : (
+              <StatusMessage
+                level="warning"
+                body={t('parcours.preuveANouveau')}
+                testID="nouvelle-soumission"
+              />
+            )
           ) : null}
 
           {contrepartie.status === 'unfulfilled' ? (

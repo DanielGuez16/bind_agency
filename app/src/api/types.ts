@@ -695,10 +695,35 @@ export type Collaboration = {
   required_mention: string | null;
   required_geotag: boolean;
   deadline_at: string;
+  /**
+   * Les secondes qui restent avant `deadline_at`, plancher à zéro, calculées
+   * serveur.
+   *
+   * **Ce n'est pas la fenêtre de vérification**, et les confondre serait le
+   * défaut le plus coûteux de cet écran : celle-ci compte jusqu'à l'échéance
+   * de publication — 48 ou 72 h selon le palier — quand la fenêtre court
+   * depuis la publication et vaut 24 h. Afficher l'une pour l'autre
+   * annoncerait « 21 h » quand il en reste 45.
+   *
+   * L'instant absolu reste servi à côté parce qu'un compte à rebours vieillit
+   * dès qu'il est rendu : un écran laissé ouvert se recale sur `deadline_at`
+   * sans redemander la route.
+   */
+  secondes_avant_echeance: number;
   status: CollaborationStatus;
   attempts_count: number;
   needs_human_review: boolean;
   approved_at: string | null;
+  /**
+   * Le code du dernier refus, quand il y en a eu un. `null` avant toute
+   * demande de nouvelle soumission.
+   *
+   * **Un code fermé, jamais une phrase** — les valeurs sont celles de `MOTIFS`.
+   * Le repli sur une phrase existe encore pour les motifs écrits avant le
+   * vocabulaire fermé, qui dorment dans le journal. Relu de la même source que
+   * `LigneDeFile.dernier_motif` côté commerce : deux lecteurs, une vérité.
+   */
+  dernier_motif: string | null;
   proofs: Preuve[];
 };
 

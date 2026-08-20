@@ -37,6 +37,7 @@ import { AnnuaireScreen } from '../screens/AnnuaireScreen';
 import { ActivationScreen } from '../screens/ActivationScreen';
 import { ArbitrageScreen } from '../screens/ArbitrageScreen';
 import { AudienceScreen } from '../screens/AudienceScreen';
+import { FiabiliteScreen } from '../screens/FiabiliteScreen';
 import { CodeScreen } from '../screens/CodeScreen';
 import { CreneauxScreen } from '../screens/CreneauxScreen';
 import { FicheScreen } from '../screens/FicheScreen';
@@ -103,6 +104,20 @@ export type PileReservationsParams = {
   Preuve: { collaborationId: string };
 };
 
+/**
+ * L'audience, et le score en détail.
+ *
+ * **Une pile pour un seul détail, et c'est la planche v3 qui l'impose.** Le
+ * score passe en deux niveaux : son chiffre et sa conséquence sur l'écran,
+ * sa mécanique et ses deux garanties derrière un chevron. Un bloc qui répétait
+ * le détail sur place faisait de la fiabilité le troisième sujet d'un écran qui
+ * en a déjà deux.
+ */
+export type PileAudienceParams = {
+  Audience: undefined;
+  Fiabilite: undefined;
+};
+
 export type PileCommerceParams = {
   Journee: { businessId: string };
   Caisse: undefined;
@@ -120,6 +135,7 @@ const PileCreateur = createNativeStackNavigator<PileCreateurParams>();
 const PileReservations = createNativeStackNavigator<PileReservationsParams>();
 const PileCommerce = createNativeStackNavigator<PileCommerceParams>();
 const PileConfiguration = createNativeStackNavigator<PileConfigurationParams>();
+const PileAudience = createNativeStackNavigator<PileAudienceParams>();
 const Onglets = createBottomTabNavigator();
 
 /**
@@ -408,6 +424,25 @@ function PileDesReservations() {
   );
 }
 
+/** L'audience, et le score qu'on ouvre depuis elle. */
+function PileDeLAudience({ onVoirMesPaliers }: { onVoirMesPaliers: () => void }) {
+  return (
+    <PileAudience.Navigator screenOptions={OPTIONS_DE_PILE}>
+      <PileAudience.Screen name="Audience">
+        {({ navigation }) => (
+          <AudienceScreen
+            onVoirMesPaliers={onVoirMesPaliers}
+            onVoirLeScore={() => navigation.navigate('Fiabilite')}
+          />
+        )}
+      </PileAudience.Screen>
+      <PileAudience.Screen name="Fiabilite">
+        {({ navigation }) => <FiabiliteScreen onRetour={() => navigation.goBack()} />}
+      </PileAudience.Screen>
+    </PileAudience.Navigator>
+  );
+}
+
 function OngletsCreateur({
   prenom,
   onConnecterUnReseau,
@@ -462,7 +497,7 @@ function OngletsCreateur({
           seule route vers les paliers serait l'état vide du fil — c'est-à-dire
           accessible aux seuls créateurs qui n'ont rien à réserver. */}
       <Onglets.Screen name="audience" options={onglet(t('onglets.audience'), 'personne')}>
-        {() => <AudienceScreen onVoirMesPaliers={onVoirMesPaliers} />}
+        {() => <PileDeLAudience onVoirMesPaliers={onVoirMesPaliers} />}
       </Onglets.Screen>
       <Onglets.Screen
         name="reglages"

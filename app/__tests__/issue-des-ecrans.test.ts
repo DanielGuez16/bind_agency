@@ -30,7 +30,17 @@ const NAVIGATION = join(__dirname, '..', 'src', 'shell', 'Navigation.tsx');
  * commerce, pas un empilement. `Paliers` a gagné une pile en v0.7 : les règles
  * s'y empilent en compact, mais l'échelle reste la racine de l'onglet.
  */
-const RACINES = ['Fil', 'Historique', 'Journee', 'Caisse', 'Configuration', 'Paliers'];
+const RACINES = [
+  'Fil',
+  'Historique',
+  'Journee',
+  'Caisse',
+  'Configuration',
+  'Paliers',
+  // `Audience` a gagné une pile avec la v3 : le score s'y empile, mais
+  // l'audience reste la racine de son onglet.
+  'Audience',
+];
 
 /** Les écrans déclarés dans une pile, et le bloc JSX qui les monte. */
 function ecransEmpiles(source: string): { nom: string; bloc: string }[] {
