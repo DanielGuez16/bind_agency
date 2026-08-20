@@ -6,7 +6,8 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.enums import CaptureMethod, CollaborationStatus, ContentFormat
+from app.core.config import get_settings
+from app.models.enums import CaptureMethod, CollaborationStatus, ContentFormat, Platform
 
 
 class PreuveSoumise(BaseModel):
@@ -98,11 +99,29 @@ class CollaborationRead(BaseModel):
     #: manquait : le seul écran qui doit porter le reproche était le seul à ne
     #: pas l'avoir.
     dernier_motif: str | None
+    #: Le plafond de tentatives, servi à côté du rang.
+    #:
+    #: L'écran veut écrire « tentative 2 sur 3 » et n'avait que le 2. Le 3 est
+    #: en configuration — `collaboration_max_attempts` — précisément pour qu'il
+    #: change sans redéploiement ; le recopier dans l'application le figerait au
+    #: jour de la compilation, et le premier ajustement rendrait l'écran
+    #: menteur sans que rien ne tombe.
+    max_attempts: int
+    #: Le salon, la prestation et le réseau. Trois noms qui vivent sur
+    #: `booking`, `business`, `catalog_item` et `tier` ; la contrepartie ne les
+    #: duplique pas, la lecture les joint.
+    #:
+    #: **Le nom du salon est celui qui manquait le plus** : c'est le mot que la
+    #: créatrice recopie dans le lieu de sa publication, et `required_geotag`
+    #: ne veut rien dire sans lui.
+    business_name: str | None
+    item_name: str | None
+    platform: Platform | None
     proofs: list[PreuveRead]
 
     @classmethod
     def assembler(
-        cls, ligne, preuves, *, dernier_motif=None, maintenant=None
+        cls, ligne, preuves, *, dernier_motif=None, maintenant=None, contexte=None
     ) -> "CollaborationRead":
         """La même lecture pour le commerce et pour l'arbitre.
 
@@ -124,6 +143,10 @@ class CollaborationRead(BaseModel):
             needs_human_review=ligne.needs_human_review,
             approved_at=ligne.approved_at,
             dernier_motif=dernier_motif,
+            max_attempts=get_settings().collaboration_max_attempts,
+            business_name=contexte.business_name if contexte else None,
+            item_name=contexte.item_name if contexte else None,
+            platform=contexte.platform if contexte else None,
             proofs=[PreuveRead.model_validate(p) for p in preuves],
         )
 

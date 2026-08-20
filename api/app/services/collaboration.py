@@ -623,6 +623,50 @@ async def derniere_tentative(session, collaboration_id: uuid.UUID) -> Tentative 
     return Tentative(motif=reason, note=note, demandee_le=occurred_at, par=actor_kind)
 
 
+@dataclass(frozen=True, slots=True)
+class ContexteDuDossier:
+    """De quoi parle la contrepartie, en trois noms.
+
+    Ils vivent sur `booking`, `business`, `catalog_item` et `tier`, et la
+    contrepartie n'en porte aucun — ce qui est juste, elle ne doit pas les
+    dupliquer. L'écran d'envoi de preuve, lui, en a besoin des trois, et les
+    demander en trois routes ferait trois allers-retours pour composer une
+    phrase.
+
+    **Le nom du salon est le plus utile des trois** : c'est lui que la créatrice
+    recopie dans le lieu de sa publication, et l'exigence de géotag ne veut rien
+    dire sans le mot à poser. Le format et la mention étaient servis, le lieu
+    ne l'était pas.
+    """
+
+    business_name: str
+    item_name: str
+    platform: Platform
+
+
+async def contexte_de(session, collaboration_id: uuid.UUID) -> ContexteDuDossier | None:
+    """Les trois noms, en une requête.
+
+    Nul si la contrepartie n'existe pas — jamais des chaînes vides : un écran
+    qui reçoit « » ne peut pas distinguer un salon sans nom d'un dossier
+    introuvable, et les jointures sont obligatoires des deux côtés.
+    """
+    ligne = (
+        await session.execute(
+            sa.select(Business.name, CatalogItem.name, Tier.platform)
+            .join(Booking, Booking.business_id == Business.id)
+            .join(CatalogItem, CatalogItem.id == Booking.catalog_item_id)
+            .join(Collaboration, Collaboration.booking_id == Booking.id)
+            .join(Tier, Tier.id == Collaboration.tier_id)
+            .where(Collaboration.id == collaboration_id)
+        )
+    ).first()
+    if ligne is None:
+        return None
+    business_name, item_name, platform = ligne
+    return ContexteDuDossier(business_name=business_name, item_name=item_name, platform=platform)
+
+
 def _requete_de_file():
     return (
         sa.select(

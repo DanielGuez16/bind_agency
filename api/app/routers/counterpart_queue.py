@@ -129,4 +129,5 @@ async def arbitrer(
         ligne,
         await proof_service.preuves_de(session, ligne.id),
         dernier_motif=tentative.motif if tentative else None,
+        contexte=await service.contexte_de(session, ligne.id),
     )

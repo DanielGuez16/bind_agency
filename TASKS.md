@@ -1127,6 +1127,13 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       Téléphone au format international, normalisé avant validation ; nom
       dépouillé de ses espaces avant d'être compté ; adresse d'au moins dix
       caractères. 13 tests neufs*
+- [x] **Le salon, la prestation, le réseau et le plafond de tentatives**
+      *`business_name`, `item_name` et `platform` joints à la lecture — la
+      contrepartie ne les duplique pas. Le nom du salon est celui qui manquait
+      le plus : `required_geotag` était servi sans le mot à recopier.
+      `max_attempts` vient de `collaboration_max_attempts`, servi et non figé
+      dans l'app, pour que « tentative 2 sur 3 » ne mente pas au premier
+      ajustement. 4 tests neufs, 3 mutations vérifiées*
 - [x] **Le temps restant et le dernier motif, pour l'écran d'envoi de preuve**
       *`secondes_avant_echeance` compté par le serveur — l'horloge d'un terminal
       n'est pas une preuve — plancher à zéro, `deadline_at` servi à côté pour

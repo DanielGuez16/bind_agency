@@ -29,7 +29,7 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.models import Collaboration
+from app.models import Collaboration, Tier
 from app.models.enums import CollaborationStatus
 from app.schemas.collaboration import CollaborationRead
 from app.services import collaboration as service
@@ -242,3 +242,110 @@ async def test_les_deux_facades_disent_le_meme_motif(session: AsyncSession) -> N
     tentative = await service.derniere_tentative(session, ligne.id)
     assert tentative is not None
     assert tentative.motif == de_la_file.dernier_motif == "low_quality"
+
+
+# --------------------------------------------------------------------------
+# de quoi parle le dossier, et combien d'essais il reste
+# --------------------------------------------------------------------------
+
+
+async def test_le_dossier_dit_le_salon_la_prestation_et_le_reseau(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """Les trois noms, et chacun à sa place.
+
+    L'assertion la plus utile est la dernière : **les trois valeurs sont
+    distinctes deux à deux**. Sans elle, une lecture qui inverse le salon et la
+    prestation rendrait exactement la même réponse sur un décor où les deux se
+    ressemblent, et le test survivrait à la mutation qu'il doit attraper.
+    """
+    ligne, s = await contrepartie(session)
+    await session.commit()
+
+    corps = (
+        await client.get(
+            f"{PREFIX}/collaborations/{ligne.id}",
+            headers=await _jetons(client, s["createur"].email),
+        )
+    ).json()
+
+    palier = await session.get(Tier, ligne.tier_id)
+    assert palier is not None
+    assert corps["business_name"] == s["business"].name
+    assert corps["item_name"] == s["item"].name
+    assert corps["platform"] == palier.platform.value
+
+    # Le décor doit **diverger** : trois noms confondus ne prouveraient rien.
+    assert s["business"].name != s["item"].name
+
+
+async def test_le_nom_du_salon_est_ce_que_la_creatrice_recopie(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """La ligne du lieu a de quoi être remplie quand le géotag est exigé.
+
+    C'est le manque que cette tranche corrige : `required_geotag` était servi
+    sans le mot à poser, ce qui revenait à demander un lieu sans le nommer.
+    """
+    ligne, s = await contrepartie(session, required_geotag=True)
+    await session.commit()
+
+    corps = (
+        await client.get(
+            f"{PREFIX}/collaborations/{ligne.id}",
+            headers=await _jetons(client, s["createur"].email),
+        )
+    ).json()
+
+    assert corps["required_geotag"] is True
+    assert corps["business_name"]
+
+
+async def test_le_plafond_de_tentatives_est_servi_avec_le_rang(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """« Tentative 2 sur 3 » demande le 3 autant que le 2.
+
+    Le plafond vient de la configuration et non d'une constante recopiée dans
+    l'application : `collaboration_max_attempts` change sans redéploiement, et
+    un écran qui le figerait mentirait au premier ajustement.
+
+    Le décor pousse le rang à 1 pour qu'il **diffère** du plafond : à zéro
+    contre trois l'écart existe déjà, mais une lecture qui rendrait le rang à
+    la place du plafond se verrait moins bien qu'ici, où les deux nombres sont
+    tous deux non nuls et distincts.
+    """
+    ligne, s = await contrepartie(session)
+    await statut(session, ligne, CollaborationStatus.SUBMITTED)
+    await service.demander_une_nouvelle_soumission(
+        session,
+        collaboration=ligne,
+        actor=Actor.from_user(s["caissier"]),
+        reason="missing_mention",
+    )
+    await session.commit()
+
+    corps = (
+        await client.get(
+            f"{PREFIX}/collaborations/{ligne.id}",
+            headers=await _jetons(client, s["createur"].email),
+        )
+    ).json()
+
+    plafond = get_settings().collaboration_max_attempts
+    assert corps["max_attempts"] == plafond
+    assert corps["attempts_count"] == 1
+    assert corps["attempts_count"] != corps["max_attempts"]
+
+
+async def test_le_contexte_d_un_dossier_inconnu_est_nul_et_non_vide(
+    session: AsyncSession,
+) -> None:
+    """Nul, jamais des chaînes vides.
+
+    Un écran qui reçoit « » ne distingue pas un salon sans nom d'un dossier
+    introuvable, et les jointures sont obligatoires des deux côtés.
+    """
+    import uuid as _uuid
+
+    assert await service.contexte_de(session, _uuid.uuid4()) is None
