@@ -5,8 +5,9 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict
 
-from app.models.enums import ContentFormat, Neighborhood, Platform
+from app.models.enums import ContentFormat, Neighborhood, Platform, ReliabilityEventType
 from app.schemas.obstacle import ObstacleRead
+from app.services.reliability import SensDuScore
 
 
 class PalierAccessibleRead(BaseModel):
@@ -35,6 +36,15 @@ class PalierAccessibleRead(BaseModel):
     commerces_dans_le_rayon: int | None
 
 
+class ComposanteDuScore(BaseModel):
+    """Un événement du score, et ce qu'il lui fait."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    evenement: ReliabilityEventType
+    sens: SensDuScore
+
+
 class FiabiliteRead(BaseModel):
     """Le score, et de combien de collaborations il est tiré.
 
@@ -47,6 +57,15 @@ class FiabiliteRead(BaseModel):
 
     reliability_score: Decimal | None
     completed_collabs_count: int
+    #: Les neuf événements du produit, chacun avec son sens — `up`, `down` ou
+    #: `neutral`. **Le sens, jamais le poids** : l'écran nomme ce qui monte et
+    #: ce qui descend, il n'a pas d'usage du nombre, et « −25 » ne veut rien
+    #: dire à qui ne connaît pas l'échelle.
+    #:
+    #: `neutral` est une valeur et non un trou : un signalement écarté ne coûte
+    #: rien, délibérément, et une liste qui tairait les poids nuls mentirait par
+    #: omission le jour où l'un d'eux redevient non nul.
+    composantes: list[ComposanteDuScore]
 
 
 class ProchainPalierRead(BaseModel):

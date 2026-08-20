@@ -36,7 +36,7 @@ from app.core.config import get_settings
 from app.integrations.geocoding import Coordinates
 from app.models import Business, CatalogItem, CreatorProfile, Tier, TierOffer
 from app.models.enums import BusinessStatus, ContentFormat, Neighborhood, Platform
-from app.services import eligibility
+from app.services import eligibility, reliability
 
 
 @dataclass(frozen=True, slots=True)
@@ -95,6 +95,15 @@ class Fiabilite:
     #: Le second terme, celui qui donne au score son assise : sans lui, « 92 »
     #: ne dit pas s'il est tiré de douze collaborations ou d'une seule.
     completed_collabs_count: int
+    #: Ce qui monte, ce qui descend, et ce qui ne fait rien.
+    #:
+    #: **Dérivé de `reliability_weights`, jamais récité.** L'écran listait les
+    #: sept événements et leur sens depuis du texte figé : un poids inversé en
+    #: exploitation l'aurait rendu faux sans qu'aucun test ne tombe. Le sens
+    #: vient maintenant du signe du poids du jour.
+    #:
+    #: Les poids eux-mêmes ne sortent pas. L'écran nomme, il ne barème pas.
+    composantes: tuple[reliability.Composante, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -448,6 +457,11 @@ async def vue_des_paliers(
         fiabilite=Fiabilite(
             reliability_score=profil.reliability_score if profil else None,
             completed_collabs_count=profil.completed_collabs_count if profil else 0,
+            # Les mêmes pour tout le monde : ce sont les règles du produit, pas
+            # l'historique de quelqu'un. Elles accompagnent le score parce que
+            # c'est là qu'on les lit — un second appel pour neuf lignes qui ne
+            # changent jamais serait payer un aller-retour pour rien.
+            composantes=reliability.composantes(),
         ),
         paliers=tuple(vus),
     )
