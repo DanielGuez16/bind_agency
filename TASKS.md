@@ -1127,6 +1127,15 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       Téléphone au format international, normalisé avant validation ; nom
       dépouillé de ses espaces avant d'être compté ; adresse d'au moins dix
       caractères. 13 tests neufs*
+- [x] **La suppression de compte, ouverte enfin**
+      *`anonymize_account` existait sans porte. `POST /me/deletion` et
+      `DELETE /me/deletion`, `deletion_effective_at` sur `/me`. Anonymise et ne
+      détruit pas ; différée de trente jours avec retour possible pendant tout
+      le délai ; refusée tant qu'une contrepartie est en cours, **et la garde
+      est rejouée au balayage** — trente jours suffisent à en faire naître une.
+      Côté commerce, `creator_partie` sur la file et sur la journée : un drapeau
+      traduit à l'écran, jamais un nom vide qui se lit comme un bug.
+      17 tests neufs, 5 mutations vérifiées*
 - [x] **Le salon, la prestation, le réseau et le plafond de tentatives**
       *`business_name`, `item_name` et `platform` joints à la lecture — la
       contrepartie ne les duplique pas. Le nom du salon est celui qui manquait

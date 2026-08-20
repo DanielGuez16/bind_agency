@@ -32,6 +32,15 @@ class ErrorCode(StrEnum):
     #: L'adresse est déjà confirmée. Rendu sur un renvoi, et ce n'est pas un
     #: échec : il n'y a simplement rien à envoyer.
     EMAIL_ALREADY_VERIFIED = "email_already_verified"
+    #: Une suppression court déjà. La redemander ne repousse pas l'échéance —
+    #: sans quoi il suffirait de rappuyer pour ne jamais partir.
+    DELETION_ALREADY_REQUESTED = "deletion_already_requested"
+    #: Rien à annuler : aucune suppression en cours sur ce compte.
+    DELETION_NOT_REQUESTED = "deletion_not_requested"
+    #: Il reste une publication due. **Le seul refus de cette tranche**, et il
+    #: protège un tiers : un salon qui attend une contrepartie ne doit pas voir
+    #: la personne disparaître sans qu'il puisse ni relancer ni clore.
+    DELETION_BLOCKED_BY_COLLABORATION = "deletion_blocked_by_collaboration"
 
     # Autorisation
     INSUFFICIENT_ROLE = "insufficient_role"

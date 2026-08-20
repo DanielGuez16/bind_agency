@@ -28,7 +28,15 @@ from app.integrations.push import get_push_sender
 from app.integrations.social import SocialAuthError, SocialProvider, SocialProviderError
 from app.models import Business, Collaboration, Job, SocialAccount
 from app.models.enums import JobType, Platform, SocialAccountStatus
-from app.services import booking_states, collaboration, grace, notifications, outbox, tracking
+from app.services import (
+    account_deletion,
+    booking_states,
+    collaboration,
+    grace,
+    notifications,
+    outbox,
+    tracking,
+)
 from app.services import metrics as metrics_service
 
 logger = logging.getLogger(__name__)
@@ -165,6 +173,18 @@ async def expirer_les_echeances(session: AsyncSession, *, account, provider) -> 
     """
     await collaboration.expirer_les_echeances(session)
     return Fait(prochain=timedelta(seconds=get_settings().collaboration_sweep_interval_seconds))
+
+
+async def appliquer_les_suppressions(session: AsyncSession, *, account, provider) -> Issue:
+    """Anonymise les comptes dont le délai de trente jours est écoulé.
+
+    Le service rejoue la garde des contreparties : un compte qui en a une
+    ouverte est laissé en attente et revu au balayage suivant. C'est voulu —
+    rien ne doit faire disparaître quelqu'un en laissant une publication due, et
+    rien ne doit non plus annuler sa demande à sa place.
+    """
+    await account_deletion.appliquer_les_echeances(session)
+    return Fait(prochain=timedelta(seconds=get_settings().account_deletion_sweep_interval_seconds))
 
 
 async def rappeler_les_echeances(session: AsyncSession, *, account, provider) -> Issue:
@@ -340,6 +360,7 @@ TRAITEMENTS = {
     JobType.METRICS_REFRESH: relever_les_metriques,
     JobType.BOOKING_HOLD_SWEEP: expirer_les_gardes,
     JobType.COLLABORATION_DEADLINE_SWEEP: expirer_les_echeances,
+    JobType.ACCOUNT_DELETION_SWEEP: appliquer_les_suppressions,
     JobType.COLLABORATION_REMINDER_SWEEP: rappeler_les_echeances,
     JobType.LINK_CLICK_PURGE_SWEEP: purger_les_clics,
     JobType.SUBSCRIPTION_GRACE_SWEEP: balayer_les_periodes_de_grace,

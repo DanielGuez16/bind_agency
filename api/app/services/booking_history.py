@@ -135,6 +135,18 @@ class ReservationDuCommerce:
     creator_first_name: str | None
     creator_last_name: str | None
     creator_handle: str | None
+    #: La créatrice a fermé son compte.
+    #:
+    #: **Un drapeau, jamais une phrase.** Le serveur ne compose pas de texte
+    #: d'interface : « créatrice partie » se traduit dans les deux langues côté
+    #: écran, et une chaîne posée ici arriverait en français au milieu d'une
+    #: interface en espagnol.
+    #:
+    #: Et un drapeau plutôt qu'un nom vide, qui est ce que le commerce voyait :
+    #: une ligne sans nom se lit comme un défaut d'affichage, pas comme un
+    #: départ. L'historique reste — le salon ne perd pas ce qui a eu lieu — mais
+    #: il dit ce qui s'est passé au lieu de le laisser deviner.
+    creator_partie: bool
     #: Où le commerce va regarder la créatrice, sur le réseau de **cette**
     #: demande. Dérivé du pseudonyme, jamais stocké : deux vérités dont une
     #: qu'on ne rafraîchit pas laisseraient un lien mort au premier changement
@@ -389,6 +401,7 @@ def _lire(ligne) -> ReservationDuCommerce:
         creator_first_name=ligne.first_name,
         creator_last_name=ligne.last_name,
         creator_handle=ligne.handle,
+        creator_partie=ligne.anonymized_at is not None,
         creator_profil_url=directory.lien_public(ligne.platform, ligne.handle),
         item_name=ligne.item_name,
         duration_minutes=ligne.duration_minutes,
@@ -421,6 +434,7 @@ async def journee_du_commerce(
             CreatorProfile.user_id.label("creator_id"),
             CreatorProfile.first_name,
             CreatorProfile.last_name,
+            CreatorProfile.anonymized_at,
             SocialAccount.handle,
         )
         .join(CreatorProfile, CreatorProfile.user_id == Booking.creator_id)
@@ -453,6 +467,7 @@ async def journee_du_commerce(
                     CreatorProfile.user_id.label("creator_id"),
                     CreatorProfile.first_name,
                     CreatorProfile.last_name,
+                    CreatorProfile.anonymized_at,
                     SocialAccount.handle,
                 )
                 .join(CreatorProfile, CreatorProfile.user_id == Booking.creator_id)
