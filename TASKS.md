@@ -1249,15 +1249,30 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       c'est l'empilement qui les autorise à être gros. Le bloc noir de la
       connexion part sans être remplacé. `mediasPlateforme` et
       `MediasPlateforme.home` restent servis sans lecteur : à trancher*
-- [ ] **La preuve v3 attend quatre champs sur `Collaboration`**
-      *Le contrat est posé — format, mention copiable, échéance en jour nommé —
-      et quatre choses manquent au serveur : le **temps restant dans la fenêtre
-      de vérification**, calculé serveur et jamais déduit d'une horloge locale ;
-      `dernier_motif`, aujourd'hui sur `LigneDeFile` seulement, pour la carte
-      « ce qui manquait » — et il doit dire aussi ce qui allait ; le **nom du
-      salon**, sans lequel la ligne du lieu n'a rien à copier ; et la
-      **plateforme**, sans laquelle « une story sur Instagram » ne peut pas
-      s'écrire. Demandés. Un test dit chacun en creux plutôt qu'en commentaire*
+- [x] **La reprise dit ce qu'elle reproche — `dernier_motif` consomme**
+      *L'écran renvoyait recommencer sans dire quoi corriger. La carte nomme le
+      manque en toutes lettres, jamais par son code, et dit aussi **ce qui
+      allait** : un manque non borné se lit comme un tout à refaire. Ce qui
+      allait se déduit du contrat et de rien d'autre — une exigence jamais
+      posée n'était pas « là ». Le fond est neutre, pas une alerte : un refus
+      rouvre. Quatre mutations vérifiées, dont celle qui recopie la phrase de
+      la planche et rassure toujours sur la mention*
+- [ ] **La preuve v3 attend trois champs, et une horloge qui n'est pas celle-là**
+      *`dernier_motif` est arrivé et se lit. Restent : le **temps restant dans
+      la fenêtre de vérification**, calculé serveur ; le **nom du salon**, sans
+      lequel la ligne du lieu n'a rien à copier ; et la **plateforme**, sans
+      laquelle « une story sur Instagram » ne peut pas s'écrire.
+      `secondes_avant_echeance`, servi par #181, **n'est pas** la fenêtre : il
+      compte jusqu'à l'échéance de publication — 48 ou 72 h — quand la fenêtre
+      court depuis la publication et vaut 24 h. Deux horloges sur le même
+      écran ; l'une pour l'autre annoncerait « 21 h » quand il en reste 45. Il
+      est consigné `a-instruire` faute de lecteur*
+- [ ] **Le plafond de tentatives n'est pas servi**
+      *La planche écrit « attempt 2 of 3 ». `collaboration_max_attempts` vit
+      dans la configuration de l'API et n'est servi nulle part ; l'écrire en
+      dur dans l'écran est ce que le dépôt interdit. La carte de reprise porte
+      donc le rang seul, qui reste vrai — mais c'est le plafond qui dit combien
+      de chances restent*
 - [ ] **L'inventaire des cartes ne voit pas les surfaces sans filet**
       *Sa définition est « fond de surface + rayon de 18 + filet ». Les deux
       portes de l'accueil et le panneau `reconnu` de `RedemptionScreen` ont le
