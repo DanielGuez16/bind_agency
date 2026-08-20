@@ -960,6 +960,11 @@ export const es: Catalogue = {
     email_verification_invalid:
       'Este enlace ya no funciona. Pide otro y ábrelo antes de 24 horas.',
     email_already_verified: 'Tu dirección ya está confirmada.',
+    deletion_already_requested:
+      'Tu cuenta ya está programada para eliminarse. Puedes cancelarlo desde tus ajustes.',
+    deletion_not_requested: 'No hay ninguna eliminación en curso en esta cuenta.',
+    deletion_blocked_by_collaboration:
+      'Todavía debes una publicación. Publícala, o deja que el negocio cierre la contrapartida, y vuelve a intentarlo.',
     password_too_short: 'Usa al menos 12 caracteres.',
     password_too_long: 'Demasiado larga — 256 caracteres como máximo.',
     password_too_common: 'Esa se adivina todos los días. Prueba con varias palabras sin relación.',

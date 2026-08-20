@@ -1029,6 +1029,11 @@ export const en = {
     email_verification_invalid:
       'This link no longer works. Ask for a new one and open it within 24 hours.',
     email_already_verified: 'Your address is already confirmed.',
+    deletion_already_requested:
+      'Your account is already scheduled for deletion. You can cancel it from your settings.',
+    deletion_not_requested: 'No deletion is under way on this account.',
+    deletion_blocked_by_collaboration:
+      'You still owe a post. Publish it, or let the business close the counterpart, then try again.',
     password_too_short: 'Use at least 12 characters.',
     password_too_long: 'That is too long — 256 characters at most.',
     password_too_common: 'That one is guessed every day. Try a few unrelated words instead.',
