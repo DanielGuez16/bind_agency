@@ -723,19 +723,28 @@ export const en = {
     motDePasseComplet: 'At least {{requis}} characters.',
   },
   reglages: {
-    notifications: 'Notifications',
-    notificationsAide: 'Turn off anything you would rather not be interrupted by. Emails keep coming either way.',
     titre: 'Settings',
     compte: 'Account',
+    preferences: 'Preferences',
     langue: 'Language',
     langueEn: 'English',
     langueEs: 'Español',
+    // Le titre de la region qui met fin. « Account actions » ne disait pas
+    // laquelle est definitive ; « Leaving » couvre les deux sorties, celle
+    // dont on revient et celle dont on ne revient pas.
+    partir: 'Leaving',
     seDeconnecter: 'Sign out',
+    supprimerTitre: 'Delete my account',
+    // Les trois regles, dans l'ordre ou elles comptent pour qui decide :
+    // ce qui reste, le delai de retour, ce qui bloque.
+    supprimerCorps: 'Your account is anonymised, not erased. Reviews you took part in belong to the salons that wrote them, and the audit trail cannot be rewritten. You have thirty days to come back before it becomes final. A booking still open has to be honoured or cancelled first.',
+    supprimerAction: 'Delete my account',
+    supprimerBientot: 'Not available yet. It is being built.',
     diagnostic: 'Connection check',
     diagnosticAide: 'Tells you whether this device can reach BIND. Useful when a screen stays empty.',
     stockage: 'Token storage',
     stockageSecurise: 'Device keychain',
-    stockageWeb: 'Browser storage — development only',
+    stockageWeb: 'Browser storage - development only',
   },
   composition: {
     carteTitre: 'Menu',
