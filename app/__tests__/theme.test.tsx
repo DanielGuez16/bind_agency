@@ -628,10 +628,23 @@ describe('les surfaces de la v1.1', () => {
     const CARTES = [
       'src/components/EnTete.tsx',
       'src/screens/AnnuaireScreen.tsx',
+      // **Les deux surfaces de l'audience v3, et une contradiction tranchée
+      // ici.** La planche oppose « une carte à ombre » pour un compte
+      // connecté à « une ligne à filet » pour un compte à connecter, la forme
+      // disant l'état avant le mot. Mais la ligne qu'elle dessine porte les
+      // trois marques d'une carte — fond de surface, rayon de 18, filet — et
+      // la règle des rayons ne souffre pas d'exception par écran : c'est
+      // exactement ainsi qu'elle avait disparu la première fois. L'ombre est
+      // donc posée sur les deux, et la distinction tient à ce qui reste et qui
+      // suffit : la carte fait cinq blocs de haut et porte un chiffre de 32,
+      // la ligne fait quarante-quatre points et porte un bouton.
+      'src/screens/AudienceScreen.tsx',
+
       'src/screens/CarteDuCommerce.tsx',
       // Le panneau du jour sans place, arrivé avec le créneau v3. Il se pose
       // sur la page comme une carte, donc il porte l'ombre comme une carte.
       'src/screens/CreneauxScreen.tsx',
+      'src/screens/FiabiliteScreen.tsx',
       'src/screens/FicheScreen.tsx',
       'src/screens/PaliersScreen.tsx',
       'src/screens/PriseEnMainScreen.tsx',

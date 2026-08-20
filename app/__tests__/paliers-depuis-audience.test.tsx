@@ -97,7 +97,7 @@ describe('les paliers s’ouvrent depuis Audience', () => {
     // ligne restait une phrase — ici elle disparaît, parce qu'elle n'apporte
     // rien d'autre que le chemin.
     const vue = await monter();
-    await waitFor(() => expect(screen.getByTestId('ce-qui-compte')).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId('carte-du-score')).toBeTruthy());
 
     expect(screen.queryByTestId('voir-mes-paliers')).toBeNull();
     await vue.unmount();
@@ -115,6 +115,8 @@ describe('les paliers s’ouvrent depuis Audience', () => {
       'utf-8',
     );
 
-    expect(source).toMatch(/<AudienceScreen onVoirMesPaliers=\{onVoirMesPaliers\} \/>/);
+    // L'écran est monté dans sa pile depuis la v3 — le score s'y empile —
+    // et le passage vers les paliers lui arrive toujours de l'onglet.
+    expect(source).toMatch(/<AudienceScreen\s+onVoirMesPaliers=\{onVoirMesPaliers\}/);
   });
 });
