@@ -7,7 +7,7 @@ de caisse.
 """
 
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, time
 
 from pydantic import BaseModel, ConfigDict
 
@@ -80,6 +80,17 @@ class HistoriqueDuCreateurRead(BaseModel):
     compteurs: dict[BookingStatus, int]
 
 
+class CompteDeLaCreatriceRead(BaseModel):
+    """Un réseau rattaché, tel que le salon le voit sur une demande."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    platform: Platform
+    handle: str | None
+    #: Nul quand aucun relevé n'existe. Zéro serait un chiffre, et faux.
+    followers: int | None
+
+
 class ReservationDuCommerceRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -114,6 +125,10 @@ class ReservationDuCommerceRead(BaseModel):
     #: et c'est le seul écran où on le vérifie au moment de servir.
     required_mention: str | None
     required_geotag: bool
+    #: Tous les réseaux de la créatrice, pas seulement celui de cette demande.
+    #: **L'absence est une information** : savoir qu'il n'y a pas de TikTok fait
+    #: partie de la décision autant que le nombre d'abonnés Instagram.
+    comptes: list[CompteDeLaCreatriceRead]
     contrepartie: ContrepartieBreveRead | None
     #: Quand le bouton « signaler une absence » s'ouvre. `None` : jamais — un
     #: item sans créneau n'a pas d'heure à laquelle ne pas se présenter.
@@ -125,6 +140,22 @@ class ReservationDuCommerceRead(BaseModel):
     absence_signalable_a: datetime | None
 
 
+class PlageDuJourRead(BaseModel):
+    """Une plage d'ouverture de ce jour-là, en heures locales.
+
+    Le fuseau est déjà sur la journée : le répéter ici inviterait à convertir,
+    alors que « 9 h – 19 h » est ce que le salon affiche sur sa porte.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    debut: time
+    fin: time
+    #: Combien de prestations en parallèle. Rendu parce que la sous-ligne peut
+    #: le vouloir, et qu'il vient sans coût — la fenêtre le porte déjà.
+    postes: int
+
+
 class JourneeDuCommerceRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -134,6 +165,10 @@ class JourneeDuCommerceRead(BaseModel):
     #: puisse vérifier ce qui a été compté comme « sa » journée.
     debut: datetime
     fin: datetime
+    #: Les plages d'ouverture de ce jour, exceptions comprises. **Vide veut dire
+    #: fermé**, et c'est une information : une journée sans réservation ne se lit
+    #: pas pareil selon qu'on était fermé ou que personne n'est venu.
+    horaires: list[PlageDuJourRead]
     items: list[ReservationDuCommerceRead]
     #: Ce qui attend une décision, toutes dates confondues — pas seulement ce
     #: jour-là. Une réservation à trancher pour après-demain n'apparaîtrait
