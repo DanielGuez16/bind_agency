@@ -15,6 +15,7 @@ import type { ReactElement, ReactNode } from 'react';
 import { ApiClient, ApiProvider, PREFIXE } from '../src/api';
 import { I18nProvider } from '../src/i18n';
 import { en } from '../src/i18n/en';
+import { nomDuCreateur } from '../src/screens/nomDuCreateur';
 import { ThemeProvider, type Role } from '../src/theme';
 import { ActivationScreen } from '../src/screens/ActivationScreen';
 import { ArbitrageScreen } from '../src/screens/ArbitrageScreen';
@@ -284,7 +285,15 @@ const CREATEUR_DE_L_ANNUAIRE = {
   last_name: 'Moreau',
   city: 'Miami',
   bio: 'Nails and skin, Wynwood.',
-  comptes: [{ platform: 'instagram', handle: 'lea.mrl', followers: 24_000 }],
+  comptes: [
+    {
+      platform: 'instagram',
+      handle: 'lea.mrl',
+      followers: 24_000,
+      avatar_key: 'photos/creatrices/lea.jpg',
+      profil_url: 'https://instagram.com/lea.mrl',
+    },
+  ],
   paliers_ouverts: ['story', 'post'],
   audience_totale: 24_000,
 };
@@ -1618,11 +1627,40 @@ describe('le conseil de palier', () => {
 // --------------------------------------------------------------------------
 
 describe('l’annuaire des créateurs', () => {
-  it('ne montre aucun score, et le dit', async () => {
-    // Le produit promet à la créatrice, sur son écran, que son score n'est
-    // « jamais comparé entre créatrices, jamais montré à un commerce ». Sans la
-    // ligne d'explication, un salon cherche une note, ne la trouve pas, et
-    // conclut à un oubli — puis la réclame.
+  it('ne montre aucun score, et n’en parle pas non plus', async () => {
+    // **Un renversement, et il est délibéré.** L'écran portait une ligne qui
+    // expliquait l'absence de note. Écrire « nous ne vous montrons pas la
+    // note » apprend qu'une note existe, et installe un salon à la chercher
+    // ailleurs — chez la créatrice, ou en la réclamant. Le silence est le seul
+    // endroit du produit où l'on préfère taire une absence.
+    await monter(
+      <AnnuaireScreen businessId="b1" />,
+      clientDe({ '/creators': [CREATEUR_DE_L_ANNUAIRE] }),
+      'merchant',
+    );
+    // Rendu d'abord : sans cette attente, un écran qui n'affiche rien du tout
+    // passerait toutes les assertions d'absence qui suivent.
+    await waitFor(() => expect(screen.getByTestId('createur-c1')).toBeTruthy());
+
+    // Ni le nombre, ni le mot. La forme d'un score — « 87 / 100 » — et le
+    // vocabulaire qui l'annonce, y compris pour le nier.
+    expect(screen.queryByText(/\/\s*100/)).toBeNull();
+    expect(screen.queryByText(/rating|score|rank/i)).toBeNull();
+
+    // Et la divergence qui donne sa valeur au test : l'écran **parle** bien,
+    // il ne se tait pas partout. L'absence de contact, elle, est écrite —
+    // parce qu'un salon la cherche, là où personne ne cherche une note.
+    expect(screen.getByTestId('pas-de-contact-c1')).toHaveTextContent(
+      en.annuaire.pasDeContact,
+    );
+  });
+
+  it('titre la fiche du pseudonyme, et jamais du nom civil', async () => {
+    // **La divergence est dans la fabrique** : la créatrice a un pseudonyme
+    // *et* un nom civil. Un décor qui n'aurait que l'un des deux laisserait
+    // passer l'implémentation inverse. Ce que le salon reconnaît est le compte
+    // qu'il ira voir ; l'identité d'état civil de cent vingt-huit personnes n'a
+    // rien à faire sur un écran d'abonné qui ne les a jamais rencontrées.
     await monter(
       <AnnuaireScreen businessId="b1" />,
       clientDe({ '/creators': [CREATEUR_DE_L_ANNUAIRE] }),
@@ -1630,10 +1668,81 @@ describe('l’annuaire des créateurs', () => {
     );
     await waitFor(() => expect(screen.getByTestId('createur-c1')).toBeTruthy());
 
-    expect(screen.getByTestId('ce-que-le-palier-dit')).toHaveTextContent(/never show you a rating/i);
-    expect(screen.getByTestId('ce-que-le-palier-dit')).toHaveTextContent(/never rank/i);
-    // Aucun nombre sur cent nulle part : c'est la forme qu'aurait un score.
-    expect(screen.queryByText(/\/\s*100/)).toBeNull();
+    expect(screen.getByText('lea.mrl')).toBeTruthy();
+    expect(screen.queryByText(/Moreau/)).toBeNull();
+    expect(screen.queryByText(/Lea Moreau/)).toBeNull();
+  });
+
+  it('mène au profil public, le seul geste que l’annuaire propose', async () => {
+    // `profil_url` était servi par le serveur et absent du type de l'app : les
+    // pseudonymes s'affichaient sans mener nulle part. La planche v3 en fait le
+    // seul geste de l'écran — on sort du produit pour voir son travail.
+    await monter(
+      <AnnuaireScreen businessId="b1" />,
+      clientDe({ '/creators': [CREATEUR_DE_L_ANNUAIRE] }),
+      'merchant',
+    );
+    await waitFor(() => expect(screen.getByTestId('createur-c1')).toBeTruthy());
+
+    const lien = screen.getByTestId('profil-c1-instagram');
+    expect(lien.props.accessibilityRole).toBe('link');
+  });
+
+  it('ne prétend pas mener quelque part quand il n’y a pas d’adresse', async () => {
+    // Un lien mort vaut moins qu'un texte : il apprend à ne plus cliquer.
+    const sansProfil = {
+      ...CREATEUR_DE_L_ANNUAIRE,
+      comptes: [{ ...CREATEUR_DE_L_ANNUAIRE.comptes[0], profil_url: null }],
+    };
+
+    await monter(
+      <AnnuaireScreen businessId="b1" />,
+      clientDe({ '/creators': [sansProfil] }),
+      'merchant',
+    );
+    await waitFor(() => expect(screen.getByTestId('createur-c1')).toBeTruthy());
+
+    // Le pseudonyme reste lisible, il ne devient simplement pas pressable.
+    expect(screen.getByText('lea.mrl')).toBeTruthy();
+    expect(screen.queryByTestId('profil-c1-instagram')).toBeNull();
+  });
+
+  it('montre le portrait, et garde son cadre quand il n’y en a pas', async () => {
+    // `avatar_key` était servi et jeté par le type de l'app : l'annuaire rendait
+    // des fiches sans visage. Le cadre vide n'est pas un cas limite — la même
+    // clé sert l'aperçu flouté au salon sans abonnement, et les photos déposées
+    // avant cet aperçu répondront 404 plutôt que de retomber sur l'original.
+    await monter(
+      <AnnuaireScreen businessId="b1" />,
+      clientDe({ '/creators': [CREATEUR_DE_L_ANNUAIRE] }),
+      'merchant',
+    );
+    await waitFor(() => expect(screen.getByTestId('createur-c1')).toBeTruthy());
+
+    expect(screen.getByTestId('portrait-c1')).toBeTruthy();
+    expect(String(screen.getByTestId('photo-c1').props.source.uri)).toContain(
+      'photos/creatrices/lea.jpg',
+    );
+  });
+
+  it('garde le cadre du portrait quand la photo manque', async () => {
+    // La divergence : sans clé, le cadre reste et **aucune** image n'est
+    // montée. Une balise pointant sur une adresse vide rendrait un carré cassé
+    // plutôt qu'un aplat, et c'est ce qu'un 404 produirait à grande échelle.
+    const sansPhoto = {
+      ...CREATEUR_DE_L_ANNUAIRE,
+      comptes: [{ ...CREATEUR_DE_L_ANNUAIRE.comptes[0], avatar_key: null }],
+    };
+
+    await monter(
+      <AnnuaireScreen businessId="b1" />,
+      clientDe({ '/creators': [sansPhoto] }),
+      'merchant',
+    );
+    await waitFor(() => expect(screen.getByTestId('createur-c1')).toBeTruthy());
+
+    expect(screen.getByTestId('portrait-c1')).toBeTruthy();
+    expect(screen.queryByTestId('photo-c1')).toBeNull();
   });
 
   it('montre les paliers ouverts, qui portent l’information à sa place', async () => {
@@ -1955,12 +2064,37 @@ describe('l’annuaire est en lecture seule', () => {
       'utf-8',
     );
 
-    for (const interdit of [/<Button/, /onPress/, /accessibilityRole="button"/]) {
+    // **Ce que la règle interdit, c'est d'agir sur une créatrice dans BIND** :
+    // un bouton, une invitation, un message. Elle n'interdit pas de sortir du
+    // produit pour aller voir son travail chez elle — c'est ce que la planche
+    // v3 appelle le lien de profil, et c'est le seul geste offert.
+    //
+    // La version précédente cherchait `onPress` tout court. Elle attrapait donc
+    // le lien de profil au même titre qu'un bouton de contact, alors que les
+    // deux ne disent pas la même chose : l'un reste dedans, l'autre s'en va.
+    // Une garde qui confond les deux force à l'exempter, et une garde exemptée
+    // ne garde plus rien.
+    for (const interdit of [/<Button/, /accessibilityRole="button"/, /api\.\w*(?:nvit|ontact|essage)/]) {
       expect({ interdit: String(interdit), present: interdit.test(source) }).toEqual({
         interdit: String(interdit),
         present: false,
       });
     }
+
+    // Et tout `onPress` de cet écran est un lien qui sort : autant de
+    // `Linking.openURL` que de `onPress`, et un `accessibilityRole="link"`
+    // pour chacun. Sans ce compte, la garde ci-dessus laisserait passer
+    // n'importe quelle action tant qu'elle évite le mot « bouton ».
+    const combien = (motif: RegExp) => (source.match(motif) ?? []).length;
+    expect({
+      onPress: combien(/onPress=/g),
+      sorties: combien(/Linking\.openURL/g),
+      liens: combien(/accessibilityRole="link"/g),
+    }).toEqual({
+      onPress: combien(/onPress=/g),
+      sorties: combien(/onPress=/g),
+      liens: combien(/onPress=/g),
+    });
   });
 
   it('et l’API ne lui en offre aucune', () => {
@@ -2078,5 +2212,59 @@ describe('un dossier qu’un arbitre a en main', () => {
 
     // Aucune des trois issues : ni approuver, ni redemander, ni refuser.
     expect(screen.queryByTestId('motif-obligatoire')).toBeNull();
+  });
+});
+
+/**
+ * Nommer la créatrice, partout de la même façon.
+ *
+ * Trois replis coexistaient — chaîne vide, tiret, chaîne vide — pour une seule
+ * question. La fonction est éprouvée seule : c'est une règle, et une règle ne
+ * demande pas qu'on monte trois écrans pour savoir ce qu'elle dit.
+ */
+describe('le nom d’une créatrice partie', () => {
+  const t = ((cle: string) => (cle === 'commerce.creatricePartie' ? 'PARTIE' : cle)) as never;
+
+  it('dit qu’elle est partie plutôt que de laisser un trou', () => {
+    expect(
+      nomDuCreateur(
+        { creator_partie: true, creator_handle: null, creator_first_name: null },
+        t,
+        '—',
+      ),
+    ).toBe('PARTIE');
+  });
+
+  it('ne confond pas « partie » avec « pas de nom »', () => {
+    // La divergence qui fait le test : un compte sans pseudonyme **existe
+    // encore**, et le tiret y est juste. Sans ce cas, une implémentation qui
+    // rendrait « partie » dès qu'un nom manque passerait le test ci-dessus.
+    expect(
+      nomDuCreateur(
+        { creator_partie: false, creator_handle: null, creator_first_name: null },
+        t,
+        '—',
+      ),
+    ).toBe('—');
+
+    // Et un départ l'emporte sur un nom qui traînerait encore : c'est le
+    // serveur qui décide qu'elle est partie, pas la présence d'un pseudonyme.
+    expect(
+      nomDuCreateur(
+        { creator_partie: true, creator_handle: 'rebecca.miami', creator_first_name: null },
+        t,
+        '—',
+      ),
+    ).toBe('PARTIE');
+  });
+
+  it('rend le pseudonyme quand il y en a un', () => {
+    expect(
+      nomDuCreateur(
+        { creator_partie: false, creator_handle: 'rebecca.miami', creator_first_name: 'Rebecca' },
+        t,
+        '—',
+      ),
+    ).toBe('rebecca.miami');
   });
 });
