@@ -29,7 +29,12 @@
  */
 import { Image, Linking, Pressable, View } from 'react-native';
 
-import { useApi, type CreateurDeLAnnuaire } from '../api';
+import {
+  useApi,
+  type AnnuaireDuCommerce,
+  type CreateurDeLAnnuaire,
+  type PorteeLocale,
+} from '../api';
 import {
   Apparition,
   EmptyState,
@@ -68,9 +73,9 @@ export function AnnuaireScreen({ businessId }: { businessId: string }) {
   // appelé hors de son propre composant.
   const c = useColors();
 
-  const requete = useRequete<CreateurDeLAnnuaire[]>(
+  const requete = useRequete<AnnuaireDuCommerce>(
     (signal) => api.annuaireDesCreateurs(businessId, signal),
-    { estVide: (createurs) => createurs.length === 0, dependances: [businessId] },
+    { estVide: (annuaire) => annuaire.createurs.length === 0, dependances: [businessId] },
   );
 
   // **Le refus d'abonnement n'est pas une panne.** L'écran d'erreur générique
@@ -91,7 +96,7 @@ export function AnnuaireScreen({ businessId }: { businessId: string }) {
       <Ecran
         requete={{
           etat: 'pret',
-          donnees: [],
+          donnees: { portee: PORTEE_INCONNUE, createurs: [] },
           vide: false,
           rechargement: false,
           vuA: DEJA_SU,
@@ -128,13 +133,19 @@ export function AnnuaireScreen({ businessId }: { businessId: string }) {
         />
       }
     >
-      {(createurs) => (
+      {(annuaire) => (
         <View style={{ gap: 16 }}>
+          {/* **Le compte, avant la liste.** C'est le renversement de la v3 : à
+              deux mille créatrices un salon ne cherche pas, il ne connaît aucun
+              nom. Le chiffre est ce qu'il répétera à son associé, et le seul qui
+              justifie l'abonnement à lui seul. */}
+          <Portee portee={annuaire.portee} />
+
           <Texte variante="type.body" couleur="ink.soft" testID="annuaire-sous-titre">
             {t('annuaire.sousTitre')}
           </Texte>
 
-          {createurs.map((createur, rang) => (
+          {annuaire.createurs.map((createur, rang) => (
             <Apparition key={createur.creator_id} rang={rang}>
               <FicheDeCreateur createur={createur} />
             </Apparition>
@@ -142,6 +153,97 @@ export function AnnuaireScreen({ businessId }: { businessId: string }) {
         </View>
       )}
     </Ecran>
+  );
+}
+
+/**
+ * Ce que le refus d'abonnement laisse comme portée : rien de chiffrable.
+ *
+ * Zéro partout **n'est pas un compte à zéro** — c'est l'absence de compte. La
+ * carte ne se rend pas dans ce cas, et ces valeurs ne sont jamais lues ; elles
+ * existent pour que la réponse simulée ait la forme d'une réponse.
+ */
+const PORTEE_INCONNUE: PorteeLocale = {
+  createurs: 0,
+  peuvent_reserver: 0,
+  rayon_metres: 0,
+  gains_par_palier: [],
+};
+
+/**
+ * Le compte, et ce qu'un palier de plus ouvrirait.
+ *
+ * **C'est par là que l'écran commence, et c'est la décision de la v3.** Un champ
+ * de recherche ne sert qu'à qui sait déjà quoi taper — c'est-à-dire à personne,
+ * ici. Ce qu'un salon veut savoir tient en une question : combien de gens
+ * peuvent réserver ce que j'ai ouvert, et est-ce que j'en aurais plus en
+ * ouvrant davantage.
+ *
+ * **Le gain n'est pas un total, et c'est la faute à ne pas commettre.**
+ * `createurs_en_plus` compte ce que l'ouverture *ajoute* : les populations se
+ * recouvrent — une créatrice qui ouvre le reel ouvre le story — et additionner
+ * des totaux par palier annoncerait un marché qui n'existe pas. La phrase se
+ * compose donc `peuvent_reserver + createurs_en_plus`.
+ *
+ * **Jamais « 128 créatrices » tout court.** Celles qui n'ont pas renseigné de
+ * position ne sont comptées nulle part : le nombre est celui des créatrices
+ * dont on peut affirmer qu'elles sont dans le rayon. « Autour de vous » est
+ * donc obligatoire dans la phrase, pas décoratif.
+ */
+function Portee({ portee }: { portee: PorteeLocale }) {
+  const { t, locale } = useI18n();
+  const c = useColors();
+
+  // Rien autour : la carte se tait plutôt que d'afficher « 0 des 0 ». L'écran
+  // a déjà son état vide, qui dit la même chose en mieux.
+  if (portee.createurs === 0) return null;
+
+  // Le meilleur candidat, un seul. La planche montre une phrase, pas une liste
+  // de paliers à comparer — et un gain nul ne se propose pas.
+  const meilleur = portee.gains_par_palier.reduce<PorteeLocale['gains_par_palier'][number] | null>(
+    (garde, gain) =>
+      gain.createurs_en_plus > 0 && (garde === null || gain.createurs_en_plus > garde.createurs_en_plus)
+        ? gain
+        : garde,
+    null,
+  );
+
+  return (
+    <View
+      testID="portee-du-salon"
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 18,
+        padding: 18,
+        borderRadius: radius['radius.lg'],
+        backgroundColor: c['brand.100'],
+      }}
+    >
+      <View style={{ gap: 2 }}>
+        <Texte variante="type.figure" testID="peuvent-reserver">
+          {formatNumber(portee.peuvent_reserver, locale)}
+        </Texte>
+        <Texte variante="type.caption" couleur="ink.soft">
+          {t('annuaire.porteeSur', {
+            total: formatNumber(portee.createurs, locale),
+            km: String(Math.round(portee.rayon_metres / 1000)),
+          })}
+        </Texte>
+      </View>
+
+      <View style={{ flex: 1, gap: 4 }}>
+        <Texte variante="type.body">{t('annuaire.porteePeuvent')}</Texte>
+        {meilleur ? (
+          <Texte variante="type.body" testID="gain-de-palier">
+            {t('annuaire.porteeGain', {
+              palier: t(`parcours.format_${meilleur.content_format}`),
+              total: formatNumber(portee.peuvent_reserver + meilleur.createurs_en_plus, locale),
+            })}
+          </Texte>
+        ) : null}
+      </View>
+    </View>
   );
 }
 
@@ -165,7 +267,12 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
 
   // La vignette du premier compte qui en a une. La liste n'a jamais eu besoin
   // de l'original, et le détail n'existe pas encore sur cet écran.
-  const portrait = api.urlDeLaVignette(
+  // **Telle quelle, jamais suffixée.** `urlDeLaVignette` ajoute `@vignette` ;
+  // sans abonnement la clé est déjà celle d'un aperçu — suffixe `@apercu` — et
+  // la suffixer une seconde fois ne rendrait rien. Le cadre serait vide et on
+  // l'aurait pris pour le 404 prévu, ce qui est la façon la plus sûre de ne
+  // jamais trouver le défaut.
+  const portrait = api.urlDuMedia(
     createur.comptes.find((compte) => compte.avatar_key)?.avatar_key ?? null,
   );
 

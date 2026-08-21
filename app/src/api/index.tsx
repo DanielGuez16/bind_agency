@@ -55,6 +55,7 @@ import type {
   Verification,
   VerificationDuCompte,
   VueDesPaliers,
+  AnnuaireDuCommerce,
   CreateurDeLAnnuaire,
   PageDeLaCarte,
   PhotoDuCommerce,
@@ -653,7 +654,7 @@ export class Api {
   }
 
   annuaireDesCreateurs(businessId: string, signal?: AbortSignal) {
-    return this.client.request<CreateurDeLAnnuaire[]>(routes.annuaireDesCreateurs(businessId), {
+    return this.client.request<AnnuaireDuCommerce>(routes.annuaireDesCreateurs(businessId), {
       signal,
     });
   }

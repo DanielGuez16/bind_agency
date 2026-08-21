@@ -7892,3 +7892,41 @@ le contre-factuel, le tri accès-puis-proximité, la distance. Aucun n'est
 dérivable côté écran — `annuaire()` ne prend pas de commerce, et son
 `paliers_ouverts` répond « elle se qualifie quelque part », pas « elle peut
 réserver ici ».
+
+---
+
+## 2026-08-20 — L'annuaire commence par le compte, et le gain n'est pas un total
+
+La route rend désormais une **enveloppe** — `{ portee, createurs }` — et non
+plus une liste nue. L'écran compose dessus : le compte d'abord, la grille
+ensuite. C'est le renversement de la v3, et sa raison est que la recherche par
+pseudonyme ne sert qu'à qui sait déjà quoi taper, c'est-à-dire à personne sur un
+écran où un salon ne connaît aucun nom.
+
+**`createurs_en_plus` est un gain, jamais un total.** Les paliers déjà ouverts
+n'y figurent pas, et une créatrice qui peut déjà réserver n'est comptée dans
+aucun gain : les populations se recouvrent — qui ouvre le reel ouvre le story —
+et additionner des totaux par palier annoncerait un marché qui n'existe pas. La
+phrase se compose donc `peuvent_reserver + createurs_en_plus`. Rendre le gain
+tel quel aurait affiché « porterait ce chiffre à 62 » là où le salon en a déjà
+41 : une phrase qui passe la relecture et se voit en démonstration. Un test la
+tient, et sa mutation tombe.
+
+**Un seul candidat, celui qui rapporte le plus, et jamais un gain nul.** La
+planche montre une phrase, pas une liste de paliers à comparer ; et « ouvrir le
+post porterait ce chiffre à 41 » invite à un geste qui ne change rien.
+
+**« 128 » ne se dit jamais seul.** Les créatrices sans position renseignée ne
+sont comptées nulle part : le nombre est celui de celles dont on peut affirmer
+qu'elles sont dans le rayon. « Autour de vous » est donc obligatoire dans la
+phrase, et le rayon vient du serveur — la planche écrit 15 km, la configuration
+en dit 10.
+
+**La clé d'image se sert telle quelle, et le test a dû être resserré pour le
+prouver.** L'écran passait par `urlDeLaVignette`, qui suffixe `@vignette` ; sans
+abonnement la clé porte déjà `@apercu`, et la suffixer deux fois n'aurait rien
+rendu. Le cadre serait resté vide et on l'aurait pris pour le 404 prévu sur les
+photos d'avant l'aperçu — **le défaut se serait caché derrière un cas limite
+légitime**. La première assertion vérifiait que l'adresse *contient* la clé, ce
+que la vignette fait aussi : la mutation passait au vert. C'est la terminaison
+qui distingue les deux, et un second test sert une clé déjà en `@apercu`.
