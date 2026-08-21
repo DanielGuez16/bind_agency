@@ -7813,3 +7813,33 @@ pas servie et ne se déduit pas des deux nombres.
 **Et l'absence ne se remplace pas par zéro.** Sans portée servie, le point garde
 sa phrase générale : écrire « 0 créatrices ne peuvent pas réserver » à la place
 d'une donnée manquante dirait exactement le contraire de la vérité.
+
+
+---
+
+## 2026-08-20 — Les horaires, les deux réseaux, et une distinction qui s'est payée cinq fois
+
+**La sous-ligne de la journée prend ses horaires sur `horaires`, jamais sur
+`debut` et `fin`.** Ces deux-là sont les bornes de la journée *comptée* — minuit
+à minuit dans le fuseau du salon — et c'est en les prenant pour des heures
+d'ouverture que la ligne serait restée fausse en annonçant « de 00:00 à 00:00 ».
+Le test le tient en faisant diverger les deux lectures : le décor pose les
+bornes à minuit et les horaires à neuf heures.
+
+**Vide veut dire fermé, et se dit.** Une journée sans réservation ne se lit pas
+pareil selon qu'on était fermé ou que personne n'est venu, et c'est exactement
+la question qu'un gérant se pose en ouvrant l'écran un jour creux.
+
+**Le réseau absent reste affiché.** Savoir qu'il n'y a pas de TikTok fait partie
+de la décision autant que le nombre d'abonnés Instagram : un réseau simplement
+omis se lit comme un oubli de l'écran, pas comme une absence. Il porte l'encre
+douce et aucune action — le lien sortant est réservé à celui qui a un profil
+public, et il porte le glyphe de sortie parce que c'est le seul endroit du
+produit où l'on quitte l'application.
+
+**Cinquième fois aujourd'hui que `undefined` n'est pas `null`.** La nullité est
+portée par le contrat, l'absence par l'appelant : `horaires` manquant faisait
+tomber l'écran entier là où « pas d'horaires » est la bonne réponse. Les cinq
+fois, la garde falsy a suffi ; les cinq fois, c'est un test qui l'a trouvée. La
+leçon n'est pas la garde, c'est que **tout champ neuf lu par l'app doit être lu
+en falsy tant que des décors et des réponses d'avant le champ circulent**.

@@ -1353,19 +1353,18 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       au cas le plus courant, et une journée sans rendez-vous mais avec des
       demandes en attente qui s'affichait vide — la seule chose urgente du
       produit, invisible. 1084 tests verts, 6 mutations*
-- [ ] **L'audience de la créatrice n'est pas servie sur la demande**
-      *La planche pose « 7 600 abonnés · 4,2 % d'engagement · 2 140 vues
-      moyennes » à côté du pseudonyme, et le second réseau en `ink.mute` sans
-      action — savoir qu'il n'y a pas de TikTok fait partie de la décision.
-      `ReservationDuCommerce` ne porte qu'un `platform` et aucun chiffre.
-      `CompteVuParLeCommerce` existe déjà dans les types : c'est la forme à
-      servir, par demande*
-- [ ] **Les horaires d'ouverture ne sont pas dans la journée**
-      *La planche écrit « open 09:00 to 19:00 » en sous-ligne. `debut` et `fin`
-      sont les bornes de la journée **comptée**, pas les heures d'ouverture :
-      les rendre comme telles annoncerait « de 00:00 à 00:00 ». Les horaires
-      vivent sur une autre ressource, et une seconde requête sur l'écran le plus
-      ouvert du produit ne se paie pas pour une ligne qui situe*
+- [x] **La demande montre les deux réseaux de la créatrice**
+      *`comptes` arrive sur la réservation. Celui qui est rattaché porte son
+      chiffre et mène au profil — le seul lien sortant du produit, donc le
+      glyphe de sortie ; celui qui manque reste affiché en encre douce et sans
+      action, parce que savoir qu'il n'y a pas de TikTok fait partie de la
+      décision. Un compte sans relevé n'affiche pas zéro*
+- [x] **La sous-ligne de la journée dit les horaires**
+      *`horaires` arrive sur la journée, avec ses exceptions. Vide veut dire
+      fermé, et se dit : un jour creux ne se lit pas pareil selon qu'on était
+      fermé ou que personne n'est venu. À ne pas confondre avec `debut` et
+      `fin`, qui sont les bornes de la journée comptée — c'est en les prenant
+      pour des horaires que la ligne serait restée fausse*
 - [x] **Les rapports v3 — à zéro donnée, l'écran change de nature**
       *Un salon qui vient de s'inscrire n'a pas besoin d'un rapport vide : il a
       besoin de savoir pourquoi rien ne s'est passé et quoi faire. Quatre points
