@@ -7682,3 +7682,33 @@ nullité est portée par le contrat, l'absence par l'appelant : `composantes`
 manquant faisait tomber l'écran entier là où la bonne réponse est « aucune
 section ». Les trois fois, la garde falsy a suffi ; les trois fois, c'est un
 test qui l'a trouvée, jamais une relecture.
+
+---
+
+## 2026-08-20 — Les réservations : la pilule, et le contour de la reprise
+
+Les deux points que Design réclamait et que l'écran n'avait pas.
+
+**La pilule était une pilule étirée.** `fullWidth` vaut `true` par défaut ;
+personne ne l'avait dit non, et le bouton d'action prenait toute la largeur de
+la carte. Même correction qu'à la fiche. **La rangée n'est pas décorative** : en
+colonne, `alignSelf` non posé retombe sur l'étirement du parent, et le bouton
+reprendrait toute la largeur avec exactement le style qu'on vient de corriger.
+
+**Une reprise n'est pas une demande de plus.** Le salon a regardé, refusé, et dit
+pourquoi : c'est la seule ligne de l'écran qui porte un reproche, et sous le même
+traitement que les autres elle se perd dans une pile où tout demande également.
+`Surface` gagne donc `reprise`, qui prend le contour d'encre — le trait le plus
+fort du système. Le contour **remplace** l'ombre au lieu de s'y ajouter : la
+règle qui interdit déjà de cumuler l'ombre et le filet clair vaut pour le
+troisième traitement, une exception ici abîmerait les deux.
+
+L'onglet garde le dernier mot : une reprise close est de l'histoire, pas un
+reproche qu'on ressort.
+
+**Et une garde qui ne prouvait rien, trouvée par mutation.** Le test de la
+pilule ne lisait que `alignSelf` du bouton : retirer la rangée le laissait vert,
+puisque `alignSelf` reste absent dans les deux cas et que c'est le parent qui
+décide. Le décor ne distinguait pas les deux implémentations — exactement le
+défaut que le fichier de contexte décrit. Il regarde maintenant l'axe du parent,
+et les deux mutations tombent.

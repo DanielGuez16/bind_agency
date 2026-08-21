@@ -29,7 +29,7 @@ import {
   tempsRestant,
   verbeDeLaContrepartie,
 } from '../src/screens/HistoriqueScreen';
-import { ThemeProvider } from '../src/theme';
+import { couleurs, ThemeProvider } from '../src/theme';
 
 /**
  * **Les heures sont relatives à maintenant, pas écrites en dur.**
@@ -400,6 +400,21 @@ describe('la grammaire des surfaces', () => {
     expect(surfaceDe(informe, 'en-cours')).toBe('informe');
   });
 
+  it('donne le contour d’encre à ce qui revient', () => {
+    // Une reprise demande, comme la publication attendue — et le test doit
+    // donc les faire **diverger** : une implémentation qui rendrait « demande »
+    // pour les deux passerait un décor qui ne montre que la reprise.
+    const reprise = reservation({ contrepartie: contrepartie('resubmit_requested') as never });
+    const premiere = reservation({ contrepartie: contrepartie('pending') as never });
+
+    expect(surfaceDe(reprise, 'en-cours')).toBe('reprise');
+    expect(surfaceDe(premiere, 'en-cours')).toBe('demande');
+
+    // Et l'onglet garde le dernier mot : une reprise close est de l'histoire,
+    // pas un reproche qu'on ressort.
+    expect(surfaceDe(reprise, 'terminees')).toBe('histoire');
+  });
+
   it('rend l’historique en ligne nue, quoi qu’il ait demandé autrefois', () => {
     // Le « moche » venait d'un traitement d'action appliqué à de l'histoire :
     // une carte à ombre pour une liste qui ne demande rien.
@@ -408,5 +423,74 @@ describe('la grammaire des surfaces', () => {
 
     expect(surfaceDe(close, 'terminees')).toBe('histoire');
     expect(surfaceDe(jadis, 'terminees')).toBe('histoire');
+  });
+});
+
+/**
+ * Ce que la carte peint, et ce que le bouton mesure.
+ *
+ * Les deux points que Design réclamait et que l'écran n'avait pas : la pilule
+ * dimensionnée sur son texte, et le contour d'encre pour la reprise. Éprouvés
+ * sur le rendu et non sur la fonction pure — `surfaceDe` peut rendre le bon mot
+ * pendant que la carte l'ignore, et c'est arrivé ailleurs.
+ */
+describe('ce que la carte peint', () => {
+  const styleDe = (element: { props: { style?: unknown } }): Record<string, unknown> => {
+    const brut = element.props.style;
+    const pile = Array.isArray(brut) ? brut.flat(Infinity) : [brut];
+    return Object.assign({}, ...pile.filter(Boolean));
+  };
+
+  it('borde d’encre la reprise, et laisse l’ombre à la première demande', async () => {
+    const reprise = reservation({
+      booking_id: 'reprise',
+      status: 'consumed',
+      contrepartie: contrepartie('resubmit_requested') as never,
+    });
+    const premiere = reservation({
+      booking_id: 'premiere',
+      status: 'consumed',
+      contrepartie: contrepartie('pending') as never,
+    });
+
+    await monter([reprise, premiere]);
+
+    const carteReprise = styleDe(screen.getByTestId('reservation-reprise'));
+    const cartePremiere = styleDe(screen.getByTestId('reservation-premiere'));
+
+    expect(carteReprise.borderColor).toBe(couleurs['line.ink']);
+    // **Et l'ombre ne s'y ajoute pas.** Un filet fort sous une ombre les annule
+    // l'une l'autre : c'est la règle qui vaut déjà entre l'ombre et le filet
+    // clair, et le test la tient pour le troisième traitement aussi.
+    expect(carteReprise.shadowOpacity ?? 0).toBe(0);
+
+    // La divergence, sans laquelle le test ne dit rien : la première demande
+    // garde l'ombre et n'a pas de contour d'encre.
+    expect(cartePremiere.borderColor).not.toBe(couleurs['line.ink']);
+    expect(cartePremiere.shadowOpacity ?? 0).toBeGreaterThan(0);
+  });
+
+  it('dimensionne le bouton d’action sur son texte', async () => {
+    const aPublier = reservation({
+      booking_id: 'agir',
+      status: 'consumed',
+      contrepartie: contrepartie('pending') as never,
+    });
+
+    await monter([aPublier]);
+
+    // `fullWidth` vaut `true` par défaut et pose `alignSelf: 'stretch'` : c'est
+    // ce qui étirait la pilule sur toute la carte.
+    const bouton = screen.getByTestId('agir-agir');
+    expect(styleDe(bouton).alignSelf).not.toBe('stretch');
+
+    // **Et il faut la rangée, sinon le `false` ne se voit pas.** En colonne,
+    // `alignSelf` non posé retombe sur l'étirement du parent : le bouton
+    // reprendrait toute la largeur avec exactement ce style-là. La première
+    // version de ce test s'arrêtait à l'assertion ci-dessus, et la mutation qui
+    // retirait la rangée passait au vert — le décor ne distinguait pas les deux
+    // implémentations. C'est donc l'axe du parent qu'on regarde.
+    const rangee = bouton.parent?.parent;
+    expect(styleDe(rangee as never).flexDirection).toBe('row');
   });
 });
