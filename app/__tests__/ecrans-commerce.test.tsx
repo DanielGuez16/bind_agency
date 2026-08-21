@@ -1409,18 +1409,58 @@ describe('les rapports, après la campagne 2', () => {
     expect(screen.getAllByText(en.reporting.publications)).toHaveLength(1);
   });
 
-  it('dit à un salon sans histoire qu’il n’y a rien à régler', async () => {
-    // « Rien dans cette fenêtre » se lisait comme une panne de filtre. Il n'y
-    // a pas de fenêtre à corriger : il n'y a pas encore d'histoire.
+  it('change de nature quand il n’y a rien à rapporter', async () => {
+    // **« Rien à régler » était la mauvaise phrase**, et c'est la décision de
+    // la v3 : un salon sans histoire n'a pas besoin d'un rapport vide, il a
+    // besoin de savoir pourquoi rien ne s'est passé et quoi faire. Il y a donc
+    // bien quelque chose à régler, et l'écran le liste.
     await monter(
       <ReportingScreen businessId="b1" />,
-      clientDe({ '/reporting': { ...REPORTING, reservations: 0, par_semaine: [] } }),
+      clientDe({
+        '/reporting': { ...REPORTING, reservations: 0, par_semaine: [] },
+        // **Un décor où chacun des quatre points a une réponse.** Deux
+        // prestations ouvertes dont une sans photo, un seul format offert, et
+        // cinq jours d'ouverture sur sept : les quatre lignes disent alors
+        // quelque chose de différent, ce qu'un décor vide ne prouverait pas.
+        '/catalog-items': [
+          { ...ITEM, id: 'i1', photo_key: 'a.jpg', is_effectively_available: true },
+          { ...ITEM, id: 'i2', photo_key: null, is_effectively_available: true },
+        ],
+        '/tier-offers': [
+          {
+            id: 'o1',
+            business_id: 'b1',
+            tier_id: 't1',
+            catalog_item_id: 'i1',
+            platform: 'instagram',
+            content_format: 'story',
+            item_name: 'Gel manicure',
+            is_active: true,
+            is_effectively_offered: true,
+            created_at: '2026-08-01T00:00:00Z',
+          },
+        ],
+        '/capacity-rules': [0, 1, 2, 3, 4].map((weekday) => ({
+          id: `r${weekday}`,
+          business_id: 'b1',
+          weekday,
+          start_time: '09:00',
+          end_time: '19:00',
+          concurrent_slots: 1,
+        })),
+      }),
     );
-    await waitFor(() => expect(screen.getByTestId('reporting-vide')).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId('premiers-pas')).toBeTruthy());
 
     expect(screen.getByText(en.reporting.videTitre)).toBeTruthy();
-    expect(screen.getByTestId('reporting-vide')).toHaveTextContent(/nothing to set up/i);
+    // Les quatre points sont là, et le sélecteur de période n'y est pas : il
+    // n'y a aucune période à comparer.
+    for (const cle of ['catalogue', 'photos', 'paliers', 'horaires']) {
+      expect(screen.getByTestId(`pas-${cle}`)).toBeTruthy();
+    }
+    expect(screen.queryByTestId('fenetre')).toBeNull();
   });
+
 });
 
 // --------------------------------------------------------------------------

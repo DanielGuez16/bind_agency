@@ -7743,3 +7743,44 @@ ici, cet écran n'était pas dans la demande.
 que lisent quatre salons, à propos de gens qu'ils n'ont pas choisis. L'espagnol
 était déjà neutre — `Falta su publicación` — donc seul l'anglais portait
 l'affirmation. Un test refuse désormais le pronom genré dans ce libellé.
+
+---
+
+## 2026-08-20 — Les rapports : un écran qui change de nature, et des barres qui n'existaient plus
+
+**Les barres par palier n'avaient aucun remplissage, et personne ne le savait.**
+Elles empruntaient les teintes de palier — `tier.story`, `tier.post`,
+`tier.reel` — supprimées au passage à l'ambre. `useColors()` rendait
+`undefined`, la barre recevait `backgroundColor: undefined`, et le graphique
+était invisible depuis. Le test qui le couvrait regardait la **présence** de
+l'élément et jamais sa couleur : il est resté vert tout du long.
+
+Et même vivante, la teinte se lisait à l'envers : sur une barre, la densité
+encode l'ampleur, alors que la matière du `TierBadge` va du contour clair au
+plein — le palier le plus fourni était le plus vide. Un seul remplissage, donc,
+et la matière descend dans le badge, où elle encode le palier et rien d'autre.
+
+**`toEqual([])` accepte un tableau d'`undefined`.** La garde que j'ai écrite
+pour attraper ce défaut a d'abord survécu à sa propre mutation : Jest ignore les
+`undefined` dans un tableau, si bien que `[undefined, undefined, undefined]`
+**égale** `[]`. Troisième assertion vide de la série, après `toHaveTextContent`
+sur une chaîne. La règle qui s'en dégage : une assertion qui compare à du vide
+doit être éprouvée sur le cas non vide, sinon elle ne prouve que sa propre
+syntaxe.
+
+**Deux mutations ont survécu, et elles ne disaient pas la même chose.** La
+première a révélé une **clause morte** dans mon code : `ouverts.length === 0 ||`
+ne pouvait rien changer, puisque `sansPhoto` se compte déjà sur `ouverts`. La
+seconde a révélé un **décor non divergent** : mon montage avait `catalogue`
+déjà fait, c'est-à-dire déjà trié, et la mutation qui retire le tri y survivait
+sans rien changer. Le code a été simplifié dans un cas, le décor refait dans
+l'autre — ce ne sont pas les mêmes corrections.
+
+**Le rayon de 7 px de la planche devient `radius.sm`.** Aucun rayon ne s'écrit
+en dur, et l'échelle n'a rien entre 0 et 10. Trois pixels d'écart valent mieux
+qu'une valeur hors système, qui se recopierait ailleurs sans qu'on la voie.
+
+**Et l'échec de la composition se dit.** Une première version rendait `null`
+quand une des trois listes manquait : le salon voyait alors un écran
+entièrement vide, sans titre ni explication — pire que l'état vide qu'on venait
+de remplacer.
