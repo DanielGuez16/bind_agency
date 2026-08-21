@@ -139,16 +139,20 @@ describe('les places du jour, et le repère de la semaine', () => {
     expect(etat).toMatchObject({ ferme: true, exceptionId: 'e1' });
   });
 
-  it('et le jour de la semaine se lit à midi, jamais à minuit', () => {
-    // Une date nue rendue à minuit bascule d'un jour selon le fuseau de la
-    // machine : le mardi d'un salon de Miami deviendrait un lundi.
+  it('et le jour de la semaine se lit en UTC, jamais sur l’horloge locale', () => {
+    // **Ce que ce test garde vraiment.** J'avais d'abord écrit qu'il protégeait
+    // le passage de minuit à midi ; la mutation a montré que non — les deux
+    // tombent dans la même journée UTC, `getUTCDay` ignorant le fuseau. Ce
+    // qu'il attrape est `getDay()` à la place de `getUTCDay()`, et le décor est
+    // choisi pour ça : sur une machine à décalage négatif, minuit UTC le
+    // 1er mars est encore le 28 février au soir — un samedi, pas un dimanche.
     const etat = placesDuJour({
       jour: '2026-03-01',
+      // Dimanche est le jour 0 ; samedi serait 6, et n'a pas de règle ici.
       regles: [REGLE(0, 2)],
       exceptions: [],
       postesEffectifs: null,
     });
-    // Le 1er mars 2026 est un dimanche — jour 0.
     expect(etat).toMatchObject({ dansLaSemaine: 2 });
   });
 });

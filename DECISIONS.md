@@ -7974,3 +7974,42 @@ désynchronisait sur tout le reste, la garde lisait des fragments qui ne sont le
 chaînes de personne, et la mutation qui remettait « her » dans un libellé
 passait au vert. Elle parcourt maintenant l'objet rendu, et compte les chaînes
 visitées pour qu'un import cassé ne rende pas un vert vide.
+
+---
+
+## 2026-08-20 — Un état n'est pas un écran, et midi ne protégeait de rien
+
+**La mise en ligne quitte la configuration pour la journée.** Elle n'était pas
+une section : ce qu'elle portait est une liste de ce qui manque, qui n'a
+d'utilité que là où le salon regarde déjà et qui doit disparaître une fois
+remplie. La transformer en page a produit exactement ce que les testeurs ont dit
+— un onglet dont on ne comprend pas l'objet.
+
+Le bandeau n'énumère que ce qui manque. Ce qui est fait se **compte** — « 4 sur
+6 » — parce que quatre coches au-dessus de deux manques diluent ce qu'on vient
+lire.
+
+**Publier reste un appel explicite, et la planche l'ignore.** Elle écrit que le
+bandeau « s'efface au dernier point coché » ; `activerLeCommerce` existe et rien
+ne l'appelle tout seul. Le dernier point coché ne publie donc pas, il rend la
+publication *possible* : le bandeau porte le geste, sous un nom qui n'est pas
+« go live » — le mot part, l'acte reste. Rendre la publication automatique est
+une décision serveur.
+
+**Le nombre vient du calcul, pas de la maquette.** « Two things left » est vrai
+de la planche et faux à trois manques. Le singulier a sa propre clé, pour la même
+raison que sur le titre de la journée : `count` traverse `formaterLesNombres` et
+la pluralisation de la bibliothèque ne le voit plus comme un nombre.
+
+**Et midi ne protégeait de rien.** J'avais écrit que lire une date nue à midi
+mettait à l'abri du fuseau de la machine ; la mutation a montré que non — minuit
+et midi tombent dans la même journée UTC, et c'est `getUTCDay` qui ignore le
+fuseau, pas l'heure choisie. Le commentaire décrivait un risque inexistant et le
+test prétendait le garder. Les deux sont corrigés : le code dit la vraie raison,
+et le test attrape ce qu'il peut réellement attraper — `getDay()` à la place de
+`getUTCDay()`, éprouvé sous `TZ=America/New_York`.
+
+C'est la seconde fois de la journée qu'une mutation révèle du code inutile
+plutôt qu'un test faible. La question à se poser quand une mutation survit n'est
+donc pas seulement « mon décor est-il divergent ? » mais aussi « cette ligne
+sert-elle à quelque chose ? ».
