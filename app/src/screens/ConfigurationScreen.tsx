@@ -27,11 +27,19 @@ import { formatDate } from '../format';
 import { useI18n } from '../i18n';
 import { ECART_DES_COLONNES } from '../shell/gabarit';
 import { radius, useColors, useTheme } from '../theme';
-import { ActivationScreen } from './ActivationScreen';
 import { CatalogueScreen } from './CatalogueScreen';
 import { HorairesScreen } from './HorairesScreen';
 
-export type PorteDeConfiguration = 'catalogue' | 'horaires' | 'activation';
+/**
+ * **Deux portes, et non trois.** « Profil et mise en ligne » n'était pas une
+ * section : ce qu'elle portait est un état, qui vit désormais en bandeau sur la
+ * journée et s'efface à la publication. Un onglet dont on ne comprend pas
+ * l'objet est ce que les testeurs ont dit, et la raison en était structurelle.
+ *
+ * Ce qui reste se compose à l'inscription puis se revoit quelques fois par an :
+ * c'est ce qui mérite une place et du détail.
+ */
+export type PorteDeConfiguration = 'catalogue' | 'horaires';
 
 const PORTES: { cle: PorteDeConfiguration; titre: string; corps: string }[] = [
   {
@@ -43,11 +51,6 @@ const PORTES: { cle: PorteDeConfiguration; titre: string; corps: string }[] = [
     cle: 'horaires',
     titre: 'composition.entreeHoraires',
     corps: 'composition.entreeHorairesCorps',
-  },
-  {
-    cle: 'activation',
-    titre: 'composition.entreeActivation',
-    corps: 'composition.entreeActivationCorps',
   },
 ];
 
@@ -154,9 +157,6 @@ export function CompositionDuCommerce({ businessId }: { businessId: string }) {
       <View style={{ flex: 1, minWidth: 0 }}>
         {porte === 'catalogue' ? <CatalogueScreen businessId={businessId} /> : null}
         {porte === 'horaires' ? <HorairesScreen businessId={businessId} /> : null}
-        {porte === 'activation' ? (
-          <ActivationScreen businessId={businessId} onActive={() => {}} />
-        ) : null}
       </View>
     </View>
   );

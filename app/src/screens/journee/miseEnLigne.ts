@@ -15,6 +15,17 @@ import type { VueDActivation } from '../../api';
 
 export type MiseEnLigne =
   | { forme: 'publie' }
+  /**
+   * Publié, et pourtant absent des murs.
+   *
+   * **Le cas que j'ai failli perdre en retirant l'écran.** Les étapes non
+   * bloquantes ne retiennent pas la publication mais décident de la visibilité :
+   * un salon en ligne sans photo de couverture n'apparaît dans aucun mur, et
+   * rien d'autre ne le lui dirait. Ce n'est pas une liste de tâches qui traîne
+   * après avoir été remplie — c'est un état non résolu, et il a le droit de
+   * rester à l'écran tant qu'il dure.
+   */
+  | { forme: 'publie-mais-invisible'; manquantes: string[] }
   /** Il reste des étapes bloquantes : le salon ne peut pas encore paraître. */
   | { forme: 'incomplet'; manquantes: string[]; faites: number; total: number }
   /** Tout est fait, la publication reste à demander. */
@@ -26,17 +37,24 @@ export function miseEnLigne(vue: VueDActivation | null | undefined): MiseEnLigne
   // ne sait pas si le salon est publié — et un bandeau posé au hasard vaut
   // moins que pas de bandeau.
   if (!vue || !vue.etapes) return null;
-  if (vue.status === 'active') return { forme: 'publie' };
-
-  const faites = vue.etapes.filter((etape) => etape.done).length;
-  const total = vue.etapes.length;
-
   // **Seules les bloquantes retiennent la publication.** Les autres pèsent sur
   // la visibilité une fois publié — les mêler ferait attendre le salon derrière
   // une condition qui ne le retient pas.
   const manquantes = vue.etapes
     .filter((etape) => etape.blocking && !etape.done)
     .map((etape) => etape.cle);
+  const invisibles = vue.etapes
+    .filter((etape) => !etape.blocking && !etape.done)
+    .map((etape) => etape.cle);
+
+  if (vue.status === 'active') {
+    return invisibles.length === 0
+      ? { forme: 'publie' }
+      : { forme: 'publie-mais-invisible', manquantes: invisibles };
+  }
+
+  const faites = vue.etapes.filter((etape) => etape.done).length;
+  const total = vue.etapes.length;
 
   return manquantes.length === 0
     ? { forme: 'prete', faites, total }

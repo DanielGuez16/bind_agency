@@ -1434,10 +1434,23 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       l'appelle tout seul : le bandeau porte donc le geste sous un nom qui n'est
       pas « go live ». Si la publication doit devenir automatique, c'est une
       décision serveur, pas un habillage*
-- [ ] **La mise en pause n'aura plus de toit**
-      *Elle vit sur `ActivationScreen`, que la v3 retire de la configuration.
-      Avant de supprimer la section, lui donner une place — les réglages du
-      commerce sont l'endroit naturel*
+- [x] **La configuration passe à deux portes, et la pause a un toit**
+      *`ActivationScreen` est supprimé, avec ses tests et ses onze chaînes
+      devenues orphelines : le bandeau porte ce qui manque et la publication,
+      les réglages portent la pause. Le cas « publié mais invisible » a failli
+      partir avec l'écran — une étape non bloquante manquante garde le salon
+      hors des murs, et rien d'autre ne le lui disait*
+- [ ] **Le nombre de créatrices par palier n'est pas servi**
+      *La planche veut « 103 créatrices deviennent 12 » à côté du choix de
+      palier. En attendant, l'avertissement garde l'argument qu'il a — les
+      seuils d'abonnés, qui disent la même chose dans le même sens : « 50 000
+      abonnés au lieu de 1 000 » se mesure, « moins de créatrices » non. C'est
+      aussi le calcul que demande le contre-factuel de l'annuaire : une seule
+      forme pour les deux écrans*
+- [ ] **L'engagement et les vues moyennes manquent sur la demande**
+      *`CompteDeLaCreatriceRead` sert le pseudonyme et les abonnés ; la planche
+      de la journée pose aussi « 4,2 % d'engagement · 2 140 vues moyennes » sur
+      le panneau. Deux champs sur le même objet*
 - [ ] **Neuf planches d'écrans portent encore la v1.0**
       *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
       passés en v3, dans la palette Ambre. Les autres suivent l'ordre du

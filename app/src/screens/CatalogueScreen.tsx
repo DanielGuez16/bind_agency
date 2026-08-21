@@ -36,6 +36,7 @@ import {
   Button,
   EmptyState,
   Filet,
+  Icone,
   SegmentedTabs,
   SkeletonLignes,
   StatusMessage,
@@ -49,6 +50,7 @@ import {
 import { CarteDuCommerce } from './CarteDuCommerce';
 import { GalerieDuCommerce } from './GalerieDuCommerce';
 import { useI18n } from '../i18n';
+import { radius, useColors } from '../theme';
 import {
   ecartAuConseil,
   motDuPalier,
@@ -400,6 +402,7 @@ function LignePrestation({
 }) {
   const { api, messageDErreur } = useApi();
   const { t, locale } = useI18n();
+  const c = useColors();
   const [echec, setEchec] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
 
@@ -455,26 +458,64 @@ function LignePrestation({
           le catalogue ; rien ne bascule, rien n'est écrit. Un commerce qui
           s'écarte lit ce que cela lui coûte, et s'écarte quand même s'il le
           veut — c'est son catalogue. */}
+      {/* **L'écart se montre avant de s'expliquer.** Deux badges reliés par un
+          chevron : d'où la plateforme partait, où le salon est allé. Une phrase
+          seule oblige à reconstituer la comparaison de tête, à l'endroit précis
+          où le choix se fait. */}
       {ecart.forme === 'conforme' || ecart.forme === 'sans-avis' ? null : (
-        <Texte
-          variante="type.caption"
-          couleur="ink.soft"
-          testID={`conseil-${item.id}`}
-        >
-          {ecart.forme === 'plus-exigeant'
-            ? // Le coût est chiffré : « moins de créatrices » ne se mesure pas,
-              // « 10 000 abonnés au lieu de 1 000 » se mesure.
-              t('composition.palierPlusExigeant', {
-                retenu: motDuPalier(ecart.retenu, locale),
-                propose: motDuPalier(ecart.propose, locale),
-                abonnes: abonnesDe(ecart.retenu),
-                proposeAbonnes: abonnesDe(ecart.propose),
-              })
-            : t('composition.palierMoinsExigeant', {
-                retenu: motDuPalier(ecart.retenu, locale),
-                propose: motDuPalier(ecart.propose, locale),
-              })}
-        </Texte>
+        <View style={{ gap: 6 }} testID={`conseil-${item.id}`}>
+          <View
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+            testID={`ecart-${item.id}`}
+          >
+            <TierBadge tier={ecart.propose} size="sm" testID={`badge-propose-${item.id}`} />
+            <Icone nom="chevron" couleur="ink.mute" taille={16} />
+            <TierBadge tier={ecart.retenu} size="sm" testID={`badge-retenu-${item.id}`} />
+            <Texte variante="type.caption" couleur="ink.mute" style={{ flex: 1 }}>
+              {t('composition.palierSuggere')}
+            </Texte>
+          </View>
+
+          {/* **Neutre à glyphe, jamais ambre.** Dans ce système l'ambre est la
+              marque : un avertissement en ambre se lit comme une mise en avant.
+              C'est la même règle que l'avertissement sans teinte du système, et
+              le glyphe est alors son seul marqueur. */}
+          <View
+            testID={`avertissement-${item.id}`}
+            style={{
+              gap: 6,
+              padding: 12,
+              paddingHorizontal: 14,
+              borderRadius: radius['radius.md'],
+              backgroundColor: c['bg.deep'],
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 9 }}>
+              <View style={{ marginTop: 3 }}>
+                <Icone nom="alerte" taille={16} />
+              </View>
+              <Texte variante="type.caption" couleur="ink.soft" style={{ flex: 1 }}>
+                {ecart.forme === 'plus-exigeant'
+                  ? // **Le coût est chiffré avec ce qu'on a.** La planche veut
+                    // « 103 créatrices deviennent 12 » ; ce compte par palier
+                    // n'est pas servi. Les seuils d'abonnés le sont, et disent
+                    // la même chose dans le même sens : « 10 000 abonnés au
+                    // lieu de 1 000 » se mesure, « moins de créatrices » non.
+                    // Voir `TASKS.md`.
+                    t('composition.palierPlusExigeant', {
+                      retenu: motDuPalier(ecart.retenu, locale),
+                      propose: motDuPalier(ecart.propose, locale),
+                      abonnes: abonnesDe(ecart.retenu),
+                      proposeAbonnes: abonnesDe(ecart.propose),
+                    })
+                  : t('composition.palierMoinsExigeant', {
+                      retenu: motDuPalier(ecart.retenu, locale),
+                      propose: motDuPalier(ecart.propose, locale),
+                    })}
+              </Texte>
+            </View>
+          </View>
+        </View>
       )}
       {/* Une prestation sans palier : la proposition est alors la seule chose
           à dire, et elle a d'autant plus de valeur qu'il n'y a rien d'autre. */}
