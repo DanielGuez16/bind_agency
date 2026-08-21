@@ -83,7 +83,12 @@ async def test_la_caisse_voit_ce_qu_elle_doit_servir(
     corps = reponse.json()
     assert corps["booking_id"] == str(s["booking"].id)
     assert corps["item_name"] == "Soin visage"
-    assert corps["creator_name"] == "Rebecca Alvarez"
+    # **Le pseudonyme, et le nom civil nulle part dans le corps.** Le décor
+    # porte « Rebecca Alvarez » sur le profil : sans ce nom, l'absence ne
+    # prouverait rien — il n'y aurait rien à ne pas trouver.
+    assert corps["creator_handle"] == "rebecca.miami"
+    assert "Alvarez" not in reponse.text
+    assert "creator_name" not in corps
     assert corps["par_secours"] is False
 
     # Rien n'a été consommé : c'est tout l'intérêt de séparer les deux routes.

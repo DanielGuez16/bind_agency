@@ -290,25 +290,40 @@ async def test_l_annuaire_ne_livre_jamais_le_nom_civil(
     assert "last_name" not in ligne
 
 
-async def test_le_nom_reste_sur_une_reservation(session: AsyncSession) -> None:
-    """**Le sens inverse, et il n'est pas décoratif.**
+async def test_aucune_reponse_a_un_commerce_ne_porte_d_etat_civil(
+    session: AsyncSession,
+) -> None:
+    """**Le peigne, et il va plus loin que l'annuaire.**
 
-    Retirer le nom de l'annuaire ne doit pas le retirer de la journée du
-    comptoir : là, la créatrice a choisi ce salon et s'y présente. Un test qui
-    ne vérifierait que l'absence transformerait une règle de proportion en
-    effacement.
+    Cette assertion disait l'inverse il y a un jour : le nom survivait sur la
+    journée du comptoir, au motif que la créatrice y a rendez-vous. C'était
+    trop peu — la journée et la caisse ne se contentaient pas de le porter,
+    elles le **préféraient** au pseudonyme et n'affichaient `@rebecca.miami`
+    qu'à défaut. Un salon n'a aucune raison de connaître le nom légal de
+    quelqu'un ; il sert une prestation à un compte qui publiera.
+
+    Le décor porte « Rebecca Alvarez » de bout en bout : sans un nom à ne pas
+    trouver, l'absence ne prouverait rien.
     """
+    from app.services import booking_history, collaboration
     from tests.test_booking_create import monter_le_decor, premier_creneau, reserver
 
     decor = await monter_le_decor(session)
     creneau = await premier_creneau(session, decor)
     await reserver(session, decor, starts_at=creneau)
 
-    from app.services import booking_history
-
     journee = await booking_history.journee_du_commerce(
         session, business=decor["business"], jour=creneau.date()
     )
     lignes = [*journee.items, *journee.a_trancher]
+    assert lignes, "un décor vide passerait cette garde sans rien inspecter"
 
-    assert any(r.creator_first_name for r in lignes)
+    for ligne in lignes:
+        assert not hasattr(ligne, "creator_first_name")
+        assert not hasattr(ligne, "creator_last_name")
+        # Et le pseudonyme est bien là : le retrait n'est pas un effacement.
+        assert ligne.creator_handle == "rebecca.miami"
+
+    file = await collaboration.lister_pour_le_commerce(session, business_id=decor["business"].id)
+    for ligne in file:
+        assert not hasattr(ligne, "creator_first_name")

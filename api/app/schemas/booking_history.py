@@ -107,8 +107,6 @@ class ReservationDuCommerceRead(BaseModel):
     #: au lieu de deux comptes à rebours calculés séparément.
     approval_expires_at: datetime | None
     creator_id: uuid.UUID
-    creator_first_name: str | None
-    creator_last_name: str | None
     creator_handle: str | None
     #: La créatrice a fermé son compte. Un drapeau, pas une phrase : le texte
     #: se traduit côté écran, et un nom vide se lisait comme un bug.

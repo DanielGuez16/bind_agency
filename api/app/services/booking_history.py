@@ -151,8 +151,14 @@ class ReservationDuCommerce:
     #: Jusqu'à quand le commerce peut trancher. Nulle hors d'`awaiting_business`.
     approval_expires_at: datetime | None
     creator_id: uuid.UUID
-    creator_first_name: str | None
-    creator_last_name: str | None
+    #: **Le pseudonyme, jamais l'état civil.** Un salon n'a aucune raison de
+    #: connaître le nom légal de quelqu'un : il sert une prestation à un compte
+    #: qui publiera, et c'est le pseudonyme qui nomme ce compte partout — au
+    #: comptoir, dans la journée, sur le réseau où la publication paraîtra.
+    #:
+    #: Le nom civil était servi *et préféré* à l'écran : la journée et la caisse
+    #: affichaient « Léa Moreau » et ne retombaient sur `@lea.mrl` qu'à défaut.
+    #: L'inverse exact de ce que le produit promet.
     creator_handle: str | None
     #: La créatrice a fermé son compte.
     #:
@@ -446,8 +452,6 @@ def _lire(ligne, comptes=None) -> ReservationDuCommerce:
         valid_until=ligne.valid_until,
         approval_expires_at=ligne.approval_expires_at,
         creator_id=ligne.creator_id,
-        creator_first_name=ligne.first_name,
-        creator_last_name=ligne.last_name,
         creator_handle=ligne.handle,
         creator_partie=ligne.anonymized_at is not None,
         creator_profil_url=directory.lien_public(ligne.platform, ligne.handle),
@@ -481,8 +485,6 @@ async def journee_du_commerce(
         sa.select(
             *_colonnes_communes(),
             CreatorProfile.user_id.label("creator_id"),
-            CreatorProfile.first_name,
-            CreatorProfile.last_name,
             CreatorProfile.anonymized_at,
             SocialAccount.handle,
         )
@@ -514,8 +516,6 @@ async def journee_du_commerce(
                 sa.select(
                     *_colonnes_communes(),
                     CreatorProfile.user_id.label("creator_id"),
-                    CreatorProfile.first_name,
-                    CreatorProfile.last_name,
                     CreatorProfile.anonymized_at,
                     SocialAccount.handle,
                 )

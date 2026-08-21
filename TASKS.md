@@ -1127,6 +1127,16 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       Téléphone au format international, normalisé avant validation ; nom
       dépouillé de ses espaces avant d'être compté ; adresse d'au moins dix
       caractères. 13 tests neufs*
+- [x] **Un salon voit un pseudonyme, jamais un état civil**
+      *Le peigne complet, et il était plus large que l'annuaire : la journée du
+      comptoir et la caisse **préféraient** « Rebecca Alvarez » au pseudonyme
+      et ne retombaient sur `@rebecca.miami` qu'à défaut. `creator_first_name`
+      et `creator_last_name` retirés de la journée et de la file des
+      contreparties ; `creator_name`, que la caisse composait depuis le profil,
+      devient `creator_handle` — le compte **de cette réservation**, celui qui
+      publiera. Trois écrans basculés. Après ce passage, aucun schéma
+      destiné à un commerce ne porte de nom civil. 1 test neuf, 5 repris,
+      2 mutations vérifiées*
 - [x] **Le pseudonyme est l'identité de l'annuaire**
       *`first_name` et `last_name` retirés de l'annuaire, **dans les deux états
       d'abonnement** : ils ne s'achètent pas, l'écran ne les montre nulle part.

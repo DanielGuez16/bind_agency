@@ -2337,7 +2337,7 @@ describe('le nom d’une créatrice partie', () => {
   it('dit qu’elle est partie plutôt que de laisser un trou', () => {
     expect(
       nomDuCreateur(
-        { creator_partie: true, creator_handle: null, creator_first_name: null },
+        { creator_partie: true, creator_handle: null },
         t,
         '—',
       ),
@@ -2350,7 +2350,7 @@ describe('le nom d’une créatrice partie', () => {
     // rendrait « partie » dès qu'un nom manque passerait le test ci-dessus.
     expect(
       nomDuCreateur(
-        { creator_partie: false, creator_handle: null, creator_first_name: null },
+        { creator_partie: false, creator_handle: null },
         t,
         '—',
       ),
@@ -2360,7 +2360,7 @@ describe('le nom d’une créatrice partie', () => {
     // serveur qui décide qu'elle est partie, pas la présence d'un pseudonyme.
     expect(
       nomDuCreateur(
-        { creator_partie: true, creator_handle: 'rebecca.miami', creator_first_name: null },
+        { creator_partie: true, creator_handle: 'rebecca.miami' },
         t,
         '—',
       ),
@@ -2370,7 +2370,7 @@ describe('le nom d’une créatrice partie', () => {
   it('rend le pseudonyme quand il y en a un', () => {
     expect(
       nomDuCreateur(
-        { creator_partie: false, creator_handle: 'rebecca.miami', creator_first_name: 'Rebecca' },
+        { creator_partie: false, creator_handle: 'rebecca.miami' },
         t,
         '—',
       ),

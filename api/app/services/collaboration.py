@@ -568,8 +568,8 @@ class LigneDeFile:
     business_id: uuid.UUID
     business_name: str
     creator_id: uuid.UUID
-    creator_first_name: str | None
-    creator_last_name: str | None
+    #: Le pseudonyme, jamais l'état civil : un salon n'a aucune raison de
+    #: connaître le nom légal de quelqu'un.
     creator_handle: str | None
     #: La créatrice a fermé son compte. Un drapeau, jamais une phrase : le
     #: texte se traduit côté écran. Même raison que sur l'historique — un nom
@@ -687,8 +687,6 @@ def _requete_de_file():
             Business.id.label("business_id"),
             Business.name.label("business_name"),
             CreatorProfile.user_id.label("creator_id"),
-            CreatorProfile.first_name,
-            CreatorProfile.last_name,
             SocialAccount.handle,
             CreatorProfile.anonymized_at,
             Tier.platform,
@@ -782,8 +780,6 @@ async def _completer(session: AsyncSession, lignes) -> tuple[LigneDeFile, ...]:
             business_id=ligne.business_id,
             business_name=ligne.business_name,
             creator_id=ligne.creator_id,
-            creator_first_name=ligne.first_name,
-            creator_last_name=ligne.last_name,
             creator_handle=ligne.handle,
             creator_partie=ligne.anonymized_at is not None,
             platform=ligne.platform,

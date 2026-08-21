@@ -310,8 +310,9 @@ async def test_le_commerce_voit_une_creatrice_partie_et_non_une_ligne_vide(
     )
     ligne_apres = next(f for f in apres if f.collaboration_id == ligne.id)
     assert ligne_apres.creator_partie is True
-    # Et le nom est bien parti : le drapeau ne masque pas un nom resté en base.
-    assert ligne_apres.creator_first_name is None
+    # Et le pseudonyme est bien parti : le drapeau ne masque pas un nom resté
+    # en base. Le prénom n'est plus vérifié ici parce qu'il n'est plus servi du
+    # tout — un salon voit un pseudonyme, jamais un état civil.
     assert ligne_apres.creator_handle is None
 
 
@@ -338,4 +339,4 @@ async def test_la_journee_du_commerce_dit_aussi_le_depart(session: AsyncSession)
     lignes = [*journee.items, *journee.a_trancher]
     la_notre = next(r for r in lignes if r.booking_id == booking.id)
     assert la_notre.creator_partie is True
-    assert la_notre.creator_first_name is None
+    assert la_notre.creator_handle is None
