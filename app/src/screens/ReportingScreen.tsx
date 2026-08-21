@@ -59,9 +59,16 @@ function jourLisible(instant: string, locale: SupportedLocale): string {
   return formatDate(instant, locale, 'UTC');
 }
 import { Ecran } from './Ecran';
+import { PremiersPas, type PorteDeComposition } from './rapports/PremiersPas';
 import { useRequete } from './useRequete';
 
-export function ReportingScreen({ businessId }: { businessId: string }) {
+export function ReportingScreen({
+  businessId,
+  onOuvrirLaComposition,
+}: {
+  businessId: string;
+  onOuvrirLaComposition?: (porte: PorteDeComposition) => void;
+}) {
   const { api } = useApi();
   const { t, locale } = useI18n();
 
@@ -79,15 +86,11 @@ export function ReportingScreen({ businessId }: { businessId: string }) {
       squelette={<SkeletonLignes combien={7} testID="squelette-reporting" />}
       testID="ecran-reporting"
       vide={
-        // **Le cas de tout salon qui s'inscrit**, et le premier qu'il voit de
-        // cette page. « Rien dans cette fenêtre » se lisait comme une panne de
-        // filtre ; il n'y a pas de fenêtre à corriger, il n'y a pas encore
-        // d'histoire — et il n'y a rien à régler pour qu'elle commence.
-        <EmptyState
-          title={t('reporting.videTitre')}
-          body={`${t('reporting.vide')} ${t('reporting.videSuite')}`}
-          testID="reporting-vide"
-        />
+        // **À zéro donnée, ce n'est plus un écran de rapports.** Un état vide
+        // disait « rien dans cette fenêtre » : il n'y a pas de fenêtre à
+        // corriger, il n'y a pas encore d'histoire, et surtout il y a quelque
+        // chose à faire pour qu'elle commence. L'écran change donc de nature.
+        <PremiersPas businessId={businessId} onOuvrir={onOuvrirLaComposition} />
       }
     >
       {(vue) => (

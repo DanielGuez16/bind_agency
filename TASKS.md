@@ -1354,6 +1354,25 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       les rendre comme telles annoncerait « de 00:00 à 00:00 ». Les horaires
       vivent sur une autre ressource, et une seconde requête sur l'écran le plus
       ouvert du produit ne se paie pas pour une ligne qui situe*
+- [x] **Les rapports v3 — à zéro donnée, l'écran change de nature**
+      *Un salon qui vient de s'inscrire n'a pas besoin d'un rapport vide : il a
+      besoin de savoir pourquoi rien ne s'est passé et quoi faire. Quatre points
+      calculés sur sa propre composition — catalogue, photos, paliers, jours
+      d'ouverture — chacun avec son nombre, ce qui est fait en tête. Et un
+      défaut vivant réparé au passage : les barres par palier n'avaient plus
+      aucun remplissage depuis le passage à l'ambre. 1098 tests verts,
+      6 mutations*
+- [ ] **Le compte de créatrices atteignables n'est pas servi**
+      *Deux nombres : les créatrices dans le rayon, et celles dont le palier
+      ouvre au moins une prestation du salon. C'est le seul chiffre de l'écran
+      vide qui ne parle pas du salon lui-même, et c'est ce qui rend les quatre
+      points dignes d'être faits. Sans lui, le point des paliers cite ce qu'il
+      sait — combien sont ouverts — au lieu du gain qu'il ouvrirait*
+- [ ] **La semaine de première activité n'est pas sur l'agrégat de reporting**
+      *Sans elle l'échelle du graphique ne peut pas commencer à la première
+      semaine où quelque chose s'est passé, et le sélecteur de période ne peut
+      pas offrir « depuis le début » : il faudrait inventer une date de départ.
+      Le sélecteur reste donc à deux positions au lieu de trois*
 - [ ] **Neuf planches d'écrans portent encore la v1.0**
       *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
       passés en v3, dans la palette Ambre. Les autres suivent l'ordre du
