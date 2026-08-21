@@ -195,11 +195,12 @@ it('met ce qui attend une décision devant le planning', async () => {
   // peut rien faire d'autre que patienter. La laisser dans l'ordre des heures
   // la ferait découvrir en la cherchant.
   //
-  // Vérifié sur **la place** et non plus sur une carte distincte : depuis la
-  // campagne 2, la colonne n'a qu'un registre, et ce qui attend se signale par
-  // sa section et sa pastille, pas par un relief propre.
+  // Vérifié sur **la carte** : la v3 rend à la première section un relief que
+  // la campagne 2 lui avait retiré. Une demande se soupèse — de quoi il
+  // s'agit, avec qui, jusqu'à quand — et les trois faits doivent tenir
+  // ensemble ; les deux autres sections se parcourent.
   const file = screen.getByTestId('a-trancher');
-  expect(file).toContainElement(screen.getByTestId('reservation-attente-1'));
+  expect(file).toContainElement(screen.getByTestId('demande-attente-1'));
   // Et la confirmée reste dans le planning, pas dans la file.
   expect(file).not.toContainElement(screen.getByTestId('reservation-confirmee-1'));
   expect(screen.getByTestId('planning')).toContainElement(

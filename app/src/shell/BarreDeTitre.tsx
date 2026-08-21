@@ -28,6 +28,17 @@ import { breakpoint, spacing, useColors } from '../theme';
 
 export type BarreDeTitreProps = {
   titre: string;
+  /**
+   * La seconde ligne, sous le titre.
+   *
+   * **Elle existe pour que le titre puisse cesser de nommer l'écran.** La
+   * journée du commerce s'appelait « Aujourd'hui » et listait des heures : un
+   * inventaire, dont la revue a dit « on ne comprend même pas à quoi sert cette
+   * page ». Le titre compte maintenant ce qui attend une réponse ; le jour et
+   * les horaires, qui étaient tout ce que la barre disait, descendent ici — ils
+   * situent, ils ne convoquent pas.
+   */
+  sousTitre?: string | null;
   /** Rendu tel quel — « il y a 2 h ». Jamais une date brute. */
   fraicheur?: string | null;
   onRetour?: () => void;
@@ -38,6 +49,7 @@ export type BarreDeTitreProps = {
 
 export function BarreDeTitre({
   titre,
+  sousTitre,
   fraicheur,
   onRetour,
   actions,
@@ -51,7 +63,11 @@ export function BarreDeTitre({
       testID={testID}
       accessibilityRole="header"
       style={{
-        height: breakpoint.topBarHeight,
+        // **La barre grandit avec sa seconde ligne, elle ne la comprime pas.**
+        // Deux lignes dans 56 points obligeraient à rogner l'interligne du
+        // titre, et un titre resserré se lit comme une étiquette.
+        minHeight: breakpoint.topBarHeight,
+        paddingVertical: sousTitre ? spacing['space.2'] : 0,
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing['space.3'],
@@ -76,9 +92,16 @@ export function BarreDeTitre({
         </Pressable>
       ) : null}
 
-      <Texte variante="type.section" ellipseSurNomPropre style={{ flexShrink: 1 }}>
-        {titre}
-      </Texte>
+      <View style={{ flexShrink: 1, gap: 2 }}>
+        <Texte variante="type.section" ellipseSurNomPropre>
+          {titre}
+        </Texte>
+        {sousTitre ? (
+          <Texte variante="type.caption" couleur="ink.mute" testID="sous-titre">
+            {sousTitre}
+          </Texte>
+        ) : null}
+      </View>
 
       {fraicheur ? (
         <Texte variante="type.caption" couleur="ink.mute" testID="fraicheur">
