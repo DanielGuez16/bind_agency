@@ -27,6 +27,7 @@ import { ActivityIndicator, ScrollView, View } from 'react-native';
 import { Button } from '../components/Button';
 import { PaveDeSaisie } from '../components/PaveDeSaisie';
 import { SegmentedTabs } from '../components/SegmentedTabs';
+import { EnTeteDEcran } from '../components';
 import { Texte } from '../components/Texte';
 import { TextField } from '../components/TextField';
 import { useI18n } from '../i18n';
@@ -165,8 +166,12 @@ export function RedemptionScreen({
         backgroundColor: c['bg.inverse'],
       }}
     >
+      {/* **La bande ne répète pas le titre, elle dit le moment.** Elle se lit
+          debout à un mètre, entre deux clientes : ce qui sert à cette distance
+          n'est pas le nom de la page — on est dessus — mais le geste qui
+          commence. Le titre, lui, est au-dessus et répond à « où suis-je ». */}
       <Texte variante="type.bodyStrong" style={{ color: c['ink.onDark'] }}>
-        {t('redemption.title')}
+        {t('redemption.aLArrivee')}
       </Texte>
       {Scan ? (
         <Button
@@ -185,7 +190,19 @@ export function RedemptionScreen({
       style={{ flex: 1, backgroundColor: c['bg.page'] }}
       contentContainerStyle={{ padding: spacing['space.6'], gap: spacing['space.4'] }}
     >
-      {large ? barreDeCaisse : <Texte variante="type.bodyStrong">{t('redemption.title')}</Texte>}
+      {/* **Un titre, et ce que la page sert à faire.** La revue n'arrivait pas
+          à dire si l'écran était l'arrivée ou le départ — « redeem a booking »
+          nomme une mécanique interne, pas un moment du comptoir, et l'onglet
+          disait « checkout », le mot qui en anglais veut dire *partir*. Les
+          deux ensemble décrivaient la fin d'une visite là où c'est le début.
+          Le titre dit maintenant le moment, et la ligne dessous dit les trois
+          gestes dans leur ordre. */}
+      <EnTeteDEcran titre={t('redemption.title')} testID="entete-caisse" />
+      <Texte variante="type.body" couleur="ink.soft" testID="a-quoi-sert-la-caisse">
+        {t('redemption.aQuoiSertCettePage')}
+      </Texte>
+
+      {large ? barreDeCaisse : null}
 
       {/* En grand écran, la caisse et son journal côte à côte. Le pavé occupait
           le tiers gauche et le reste était vide : la passation prévoyait ce

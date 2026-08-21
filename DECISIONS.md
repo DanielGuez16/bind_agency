@@ -7930,3 +7930,47 @@ photos d'avant l'aperçu — **le défaut se serait caché derrière un cas limi
 légitime**. La première assertion vérifiait que l'adresse *contient* la clé, ce
 que la vignette fait aussi : la mutation passait au vert. C'est la terminaison
 qui distingue les deux, et un second test sert une clé déjà en `@apercu`.
+
+---
+
+## 2026-08-20 — La caisse dit à quoi elle sert, et le produit cesse de genrer
+
+**La revue ne savait pas si l'écran était l'arrivée ou le départ.** Deux mots y
+menaient. Le titre disait « redeem a booking » — une mécanique interne, aucun
+moment du comptoir. Et l'onglet disait « Checkout », qui en anglais de commerce
+veut dire *payer et partir*. Ensemble ils décrivaient la fin d'une visite là où
+c'est le début.
+
+L'écran porte maintenant un vrai titre — **« Check a creator in »** — et une
+ligne qui dit les trois gestes dans leur ordre : elle présente un code en
+arrivant, on le vérifie, on sert, on marque servi. L'onglet devient
+**« Register »**, le mot de la planche v3 : la caisse comme meuble, qui ne prend
+parti ni pour l'entrée ni pour la sortie. L'espagnol disait déjà « Caja », qui
+n'avait pas l'ambiguïté.
+
+**La bande de comptoir ne répète pas le titre.** Elle se lit debout à un mètre :
+ce qui sert à cette distance n'est pas le nom de la page — on est dessus — mais
+le geste qui commence. Elle dit donc le moment, le titre dit le lieu.
+
+**Le libellé de l'e2e a été corrigé avec.** `ongletsVisibles` recopie les
+libellés d'onglets ; « Checkout » y serait resté sans faire échouer quoi que ce
+soit — c'est une liste de candidats, un candidat introuvable est simplement
+absent — et la couverture aurait baissé en silence. C'est la façon la moins
+visible de casser un test.
+
+**Trois fois le même défaut en une journée : le produit genrait ses
+créatrices.** « Awaiting her post » sur la file du commerce, « she came and
+found you closed » sur le délai d'absence, « she needs to read your menu » sur
+la carte. Tous côté anglais ; l'espagnol était neutre à chaque fois — `su`, `la
+creadora` — donc la comparaison entre les deux langues ne révélait rien. Ces
+phrases parlent de créatrices à des salons qui ne les ont pas choisies et
+affirment leur genre à leur place.
+
+Une garde refuse désormais tout pronom de troisième personne genré dans les
+chaînes anglaises. **Elle a dû être réécrite pour prouver quelque chose** : la
+première version appariait les apostrophes du fichier source, et les
+commentaires français en contiennent — « l'écran », « qu'on ». L'appariement se
+désynchronisait sur tout le reste, la garde lisait des fragments qui ne sont les
+chaînes de personne, et la mutation qui remettait « her » dans un libellé
+passait au vert. Elle parcourt maintenant l'objet rendu, et compte les chaînes
+visitées pour qu'un import cassé ne rende pas un vert vide.

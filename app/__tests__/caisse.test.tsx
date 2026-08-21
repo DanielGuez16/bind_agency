@@ -286,3 +286,41 @@ it('ouvre sur le scan, et laisse la saisie à un geste', async () => {
   await fireEvent.press(vue.getByText(en.redemption.manualTab));
   expect(vue.getByText(en.redemption.manualSubmit)).toBeTruthy();
 });
+
+/**
+ * Ce que la page dit d'elle-même.
+ *
+ * **La revue ne savait pas si l'écran était l'arrivée ou le départ.** Deux mots
+ * y menaient : le titre disait « redeem a booking », qui nomme une mécanique
+ * interne et aucun moment du comptoir ; et l'onglet disait « checkout », qui en
+ * anglais de commerce veut dire *payer et partir*. Ensemble ils décrivaient la
+ * fin d'une visite là où c'est le début.
+ */
+describe('à quoi sert la caisse', () => {
+  it('dit le moment, et les trois gestes dans leur ordre', async () => {
+    repond([]);
+    const vue = await afficher();
+
+    expect(vue.getByTestId('entete-caisse')).toBeTruthy();
+    expect(vue.getByText(en.redemption.title)).toBeTruthy();
+
+    // La phrase porte les trois gestes. Vérifier le titre seul laisserait
+    // passer un titre juste au-dessus d'un écran toujours muet — c'est
+    // exactement ce que la revue reprochait.
+    const explication = vue.getByTestId('a-quoi-sert-la-caisse');
+    expect(explication).toHaveTextContent(/on arrival/i);
+    expect(explication).toHaveTextContent(/check it/i);
+    expect(explication).toHaveTextContent(/mark it served/i);
+  });
+
+  it('ne dit plus « checkout », qui annonçait la sortie', async () => {
+    repond([]);
+    const vue = await afficher();
+
+    // La divergence qui fait le test : l'écran **parle** du comptoir, il ne
+    // s'est pas tu. Ce qui a disparu est le mot qui décrivait le contraire.
+    expect(vue.queryByText(/checkout/i)).toBeNull();
+    expect(en.onglets.caisse).not.toMatch(/checkout/i);
+    expect(vue.getByTestId('a-quoi-sert-la-caisse')).toBeTruthy();
+  });
+});
