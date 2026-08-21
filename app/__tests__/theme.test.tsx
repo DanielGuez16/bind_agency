@@ -646,6 +646,10 @@ describe('les surfaces de la v1.1', () => {
       'src/screens/CreneauxScreen.tsx',
       'src/screens/FiabiliteScreen.tsx',
       'src/screens/FicheScreen.tsx',
+      // La carte de demande de la journée v3. La première section reprend le
+      // relief que la campagne 2 avait retiré à toute la colonne : une demande
+      // se soupèse, le planning se parcourt.
+      'src/screens/JourneeScreen.tsx',
       'src/screens/PaliersScreen.tsx',
       'src/screens/PriseEnMainScreen.tsx',
       'src/screens/RedemptionScreen.tsx',

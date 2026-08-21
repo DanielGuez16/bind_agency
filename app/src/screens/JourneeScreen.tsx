@@ -47,6 +47,7 @@ import {
   DataRow,
   EmptyState,
   Filet,
+  Icone,
   LigneDeContrepartie,
   SkeletonLignes,
   StatusMessage,
@@ -57,14 +58,15 @@ import {
 } from '../components';
 import { formatDateTime, formatHeure } from '../format';
 import { useI18n, type SupportedLocale } from '../i18n';
-import { breakpoint, radius, useTheme, type ColorName } from '../theme';
+import { breakpoint, elevationDeCarte, radius, useTheme, type ColorName } from '../theme';
 import { ECART_DES_COLONNES, useGabarit } from '../shell/gabarit';
 import { Ecran } from './Ecran';
+import { jourEnToutesLettres, limiteTombeAujourdhui } from './journee/entete';
 import { useRequete } from './useRequete';
 
 export function JourneeScreen({ businessId, jour }: { businessId: string; jour?: string }) {
   const { api } = useApi();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { color: c } = useTheme();
   const { large } = useGabarit();
   // La ligne que l'on a **touchée**. Nulle tant qu'on n'a rien touché : le
@@ -74,13 +76,46 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
 
   const requete = useRequete<JourneeDuCommerce>(
     (signal) => api.journeeDuCommerce(businessId, jour, signal),
-    { estVide: (journee) => journee.items.length === 0, dependances: [businessId, jour] },
+    {
+      // **Vide veut dire « rien du tout », et les demandes en font partie.**
+      // Le vide ne regardait que les rendez-vous du jour ; or `a_trancher` est
+      // servi toutes dates confondues, précisément pour qu'une décision à
+      // prendre pour après-demain ne se perde pas. Un salon sans rendez-vous
+      // aujourd'hui et deux demandes en attente voyait donc « aucun
+      // rendez-vous » — la seule chose urgente du produit, invisible.
+      estVide: (journee) => journee.items.length === 0 && journee.a_trancher.length === 0,
+      dependances: [businessId, jour],
+    },
   );
+
+  // **Le titre compte les décisions, et il se lit avant les données.** Il vient
+  // donc de la requête directement plutôt que du rendu : la barre est posée
+  // hors des quatre états — c'est ce qui empêche la page de sauter à chaque
+  // rafraîchissement — et un titre calculé dans le corps n'y arriverait jamais.
+  const chargee = requete.etat === 'pret' ? requete.donnees : null;
+  const enAttente = chargee?.a_trancher.length ?? 0;
 
   return (
     <Ecran
       requete={requete}
-      titre={t('commerce.journeeTitre')}
+      // **Deux clés plutôt qu'un pluriel de bibliothèque.** `count` traverse
+      // `formaterLesNombres`, qui le rend en chaîne pour le séparateur de
+      // milliers : i18n-js ne le voit plus comme un nombre et sa pluralisation
+      // ne se déclenche pas. Le choix se fait donc ici, où il se lit.
+      titre={
+        enAttente === 0
+          ? t('commerce.journeeRienAAnswer')
+          : enAttente === 1
+            ? t('commerce.journeeDecisionUne')
+            : t('commerce.journeeDecisions', { count: enAttente })
+      }
+      // **Le jour descend, et les horaires n'y sont pas.** La planche écrit
+      // « open 09:00 to 19:00 » ; `debut` et `fin` sont les bornes de la
+      // journée *comptée*, pas les heures d'ouverture — les rendre comme telles
+      // annoncerait « de 00:00 à 00:00 ». Les horaires vivent sur une autre
+      // ressource, et les chercher ici coûterait une seconde requête à l'écran
+      // le plus ouvert du produit pour une ligne qui situe. Voir `TASKS.md`.
+      sousTitre={chargee ? jourEnToutesLettres(chargee.jour, locale) : null}
       nature="merchantListeDetail"
       squelette={<SkeletonLignes combien={6} testID="squelette-journee" />}
       testID="ecran-journee"
@@ -116,9 +151,22 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
          * attend sa publication et n'attend rien du salon. Ce qui est clos ne
          * se rouvre pas.
          */
-        const servies = planning.filter((r) => r.status === 'consumed');
-        const closes = planning.filter((r) => TERMINES.has(r.status) && r.status !== 'consumed');
+        /**
+         * **Trois natures, du plus urgent au plus froid.** Le tri par statut
+         * mélangeait ce qui attend une action et ce qui n'en attend plus : une
+         * absence à constater et une prestation servie la veille se lisaient
+         * dans la même colonne, au même poids. Un statut ne devient une section
+         * que **s'il change ce que la vendeuse doit faire** — sinon c'est une
+         * nuance, et elle vit dans la ligne.
+         *
+         * **Servi et clos n'en font plus qu'un**, et c'est la v3 qui les
+         * rassemble. Ils étaient séparés parce qu'une contrepartie court encore
+         * dans un cas et plus dans l'autre — vrai, mais c'est une différence
+         * pour la créatrice, pas pour le comptoir : des deux côtés il n'y a
+         * plus rien à faire aujourd'hui. La nuance reste écrite sur la ligne.
+         */
         const attendues = planning.filter((r) => !TERMINES.has(r.status));
+        const finies = planning.filter((r) => TERMINES.has(r.status));
         /**
          * Ce que le panneau montre à l'ouverture.
          *
@@ -137,62 +185,75 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
           [...aTrancher, ...planning].find((r) => r.booking_id === (choisie ?? parDefaut)) ?? null;
 
         /**
-         * Une section de la liste. Deux au plus : ce qui attend, puis le jour.
+         * Une section de la liste, et sa forme dit sa nature.
          *
-         * **Le même registre pour les deux.** Ce qui attend une décision se
-         * signale par une pastille et sa place en tête, jamais par un relief
-         * qui en ferait un autre type d'objet. Deux formes physiques pour deux
-         * états de la même chose obligent à réapprendre la lecture à chaque
-         * section.
+         * **Seule la première porte des cartes.** Une demande est un objet
+         * qu'on soupèse — de quoi il s'agit, avec qui, jusqu'à quand — et les
+         * trois faits doivent tenir ensemble sous les yeux. Les deux autres
+         * sections se parcourent : une heure, un nom, on passe. Donner le
+         * relief aux trois aurait rendu la colonne uniformément dense, ce qui
+         * revient à ne rien mettre en avant.
          */
         const section = (
           titre: string,
           lignes: ReservationDuCommerce[],
           nom: string,
+          forme: 'carte' | 'ligne' = 'ligne',
         ) =>
           lignes.length === 0 ? null : (
-            <View style={{ gap: 4 }} testID={nom}>
+            <View style={{ gap: forme === 'carte' ? 10 : 4 }} testID={nom}>
               <Texte
                 variante="type.label"
-                couleur="ink.soft"
+                couleur={forme === 'carte' ? 'brand.700' : 'ink.soft'}
                 style={{ paddingHorizontal: 12, paddingBottom: 4 }}
               >
                 {titre}
               </Texte>
-              {lignes.map((reservation, rang) => (
-                <Apparition key={reservation.booking_id} rang={rang}>
-                  <Pressable
-                    onPress={large ? () => setChoisie(reservation.booking_id) : undefined}
-                    accessibilityRole={large ? 'button' : undefined}
-                    testID={`ligne-${reservation.booking_id}`}
-                    style={({ pressed }) => ({
-                      borderRadius: radius['radius.lg'],
-                      // La ligne ouverte porte deux marques, comme dans la
-                      // barre latérale : un fond et une barre. Jamais la
-                      // couleur seule.
-                      backgroundColor:
-                        large && reservation.booking_id === ouverte?.booking_id
-                          ? c['brand.50']
-                          : 'transparent',
-                      borderLeftWidth: 3,
-                      borderLeftColor:
-                        large && reservation.booking_id === ouverte?.booking_id
-                          ? c['brand.700']
-                          : 'transparent',
-          opacity: pressed ? 0.7 : 1,
-        })}
-                  >
-                    <Ligne
-                      reservation={reservation}
-                      timezone={journee.timezone}
-                      onFait={requete.recharger}
-                      // En grand écran la ligne ne fait que désigner : les
-                      // gestes vivent dans le panneau, une seule fois.
-                      avecGestes={!large}
-                    />
-                  </Pressable>
-                </Apparition>
-              ))}
+              {lignes.map((reservation, rang) => {
+                const active = large && reservation.booking_id === ouverte?.booking_id;
+                return (
+                  <Apparition key={reservation.booking_id} rang={rang}>
+                    <Pressable
+                      onPress={large ? () => setChoisie(reservation.booking_id) : undefined}
+                      accessibilityRole={large ? 'button' : undefined}
+                      testID={`ligne-${reservation.booking_id}`}
+                      style={({ pressed }) =>
+                        forme === 'carte'
+                          ? { opacity: pressed ? 0.7 : 1 }
+                          : {
+                              borderRadius: radius['radius.lg'],
+                              // La ligne ouverte porte deux marques, comme dans
+                              // la barre latérale : un fond et une barre.
+                              // Jamais la couleur seule.
+                              backgroundColor: active ? c['brand.50'] : 'transparent',
+                              borderLeftWidth: 3,
+                              borderLeftColor: active ? c['brand.700'] : 'transparent',
+                              opacity: pressed ? 0.7 : 1,
+                            }
+                      }
+                    >
+                      {forme === 'carte' ? (
+                        <CarteDeDemande
+                          reservation={reservation}
+                          timezone={journee.timezone}
+                          active={active}
+                          onFait={requete.recharger}
+                          avecGestes={!large}
+                        />
+                      ) : (
+                        <Ligne
+                          reservation={reservation}
+                          timezone={journee.timezone}
+                          onFait={requete.recharger}
+                          // En grand écran la ligne ne fait que désigner : les
+                          // gestes vivent dans le panneau, une seule fois.
+                          avecGestes={!large}
+                        />
+                      )}
+                    </Pressable>
+                  </Apparition>
+                );
+              })}
             </View>
           );
 
@@ -201,24 +262,24 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
             testID="colonne-liste"
             style={{ gap: 16, width: large ? breakpoint.listWidthMerchant : undefined }}
           >
-            {/* Ce qui attend quelqu'un. La décision à prendre d'abord — c'est
-                la seule chose que personne d'autre ne peut faire — puis les
-                arrivées de la journée. */}
-            {section(t('commerce.aTrancher', { count: aTrancher.length }), aTrancher, 'a-trancher')}
+            {/* Ce que personne d'autre ne peut faire, et rien d'autre en tête. */}
+            {section(
+              t('commerce.aTrancher', { count: aTrancher.length }),
+              aTrancher,
+              'a-trancher',
+              'carte',
+            )}
             {section(
               t('commerce.journeeAttendues', { count: attendues.length }),
               attendues,
               'planning',
             )}
-            {servies.length > 0 && (aTrancher.length > 0 || attendues.length > 0) ? (
+            {finies.length > 0 && (aTrancher.length > 0 || attendues.length > 0) ? (
               <Filet marge={4} />
             ) : null}
-            {/* Servi : la contrepartie court, et le salon n'a plus rien à
-                faire. La ligne dit quand la publication est due. */}
-            {section(t('commerce.journeeServies', { count: servies.length }), servies, 'servies')}
-            {closes.length > 0 ? <Filet marge={4} /> : null}
-            {/* Clos : ni absence à constater, ni geste à reprendre. */}
-            {section(t('commerce.journeeCloses', { count: closes.length }), closes, 'closes')}
+            {/* Ce dont il n'y a plus rien à faire aujourd'hui : servi, annulé,
+                manqué. La nuance est sur la ligne. */}
+            {section(t('commerce.journeeFinies', { count: finies.length }), finies, 'finies')}
           </View>
         );
 
@@ -635,6 +696,112 @@ function Gestes({
   );
 }
 
+/**
+ * Une demande qui attend une réponse : de quoi il s'agit, avec qui, jusqu'à quand.
+ *
+ * **Une carte et non une ligne, parce qu'on la soupèse.** Les trois faits
+ * décident ensemble : une prestation de quarante-cinq minutes vendredi
+ * après-midi, pour quelqu'un dont on va regarder le profil, avec une réponse
+ * due avant ce soir. Empilés sur trois lignes plates au milieu du planning, ils
+ * se lisaient comme trois lignes de plus.
+ *
+ * **Le contour ambre ne se donne qu'à la limite du jour**, et il est le seul de
+ * l'écran. Voir `entete.ts` : il dit « répondez aujourd'hui », ce qui est le
+ * seul fait qui change la conduite de la journée. En donner à toutes les
+ * demandes reviendrait à n'en donner à aucune.
+ *
+ * **Ce que la planche met ici et que le serveur ne sert pas** : le nombre
+ * d'abonnés de la créatrice, à côté de son pseudonyme.
+ * `ReservationDuCommerce` ne le porte pas, et il n'est pas inventé. Voir
+ * `TASKS.md`.
+ */
+function CarteDeDemande({
+  reservation,
+  timezone,
+  active,
+  onFait,
+  avecGestes,
+}: {
+  reservation: ReservationDuCommerce;
+  timezone: string;
+  /** La carte ouverte dans le panneau, en grand écran. */
+  active: boolean;
+  onFait: () => void;
+  /**
+   * Les deux gestes, dans la carte elle-même.
+   *
+   * **Vrai en compact, et c'est une correction attrapée par les tests.** En
+   * grand écran le panneau les porte, une seule fois ; en compact il n'y a pas
+   * de panneau, et une carte sans boutons rendait la décision *injoignable* —
+   * la seule chose que cet écran existe pour faire.
+   */
+  avecGestes: boolean;
+}) {
+  const { t, locale } = useI18n();
+  const { color: c } = useTheme();
+  const urgente = limiteTombeAujourdhui(reservation.approval_expires_at, timezone);
+
+  return (
+    <View
+      testID={`demande-${reservation.booking_id}`}
+      style={{
+        gap: 7,
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+        borderRadius: radius['radius.lg'],
+        backgroundColor: urgente || active ? c['brand.50'] : c['bg.surface'],
+        borderWidth: 1,
+        borderColor: urgente ? c['brand.500'] : c['line.default'],
+        // « Un coin de 18 px sans ombre flotte au lieu de se poser » : §2.
+        ...elevationDeCarte(),
+      }}
+    >
+      <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 12 }}>
+        <Texte variante="type.bodyStrong" style={{ flex: 1 }} ellipseSurNomPropre>
+          {reservation.item_name}
+        </Texte>
+        <Texte variante="type.mono">
+          {reservation.starts_at
+            ? formatDateTime(reservation.starts_at, locale, timezone)
+            : t('commerce.journeeSansCreneau')}
+        </Texte>
+      </View>
+
+      <Texte variante="type.caption" couleur="ink.soft" ellipseSurNomPropre>
+        {reservation.creator_handle ?? nomDe(reservation)}
+      </Texte>
+
+      {/* **La limite, écrite en heure et jamais en règle.** Elle est double
+          côté serveur — vingt-quatre heures, ou l'heure du créneau si elle
+          arrive avant — et l'écran n'a pas à l'expliquer : ce qui sert est
+          l'instant, pas la façon dont il a été obtenu. */}
+      {reservation.approval_expires_at ? (
+        <View
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+          testID={`limite-${reservation.booking_id}`}
+        >
+          <Icone nom="horloge" couleur={urgente ? 'brand.700' : 'ink.mute'} taille={16} />
+          <Texte
+            variante={urgente ? 'type.captionStrong' : 'type.caption'}
+            couleur={urgente ? 'brand.700' : 'ink.soft'}
+            style={{ flex: 1 }}
+          >
+            {t('commerce.repondreAvant', {
+              quand: formatDateTime(reservation.approval_expires_at, locale, timezone),
+            })}
+          </Texte>
+        </View>
+      ) : null}
+
+      {avecGestes ? (
+        <View style={{ paddingTop: 4 }}>
+          <Gestes reservation={reservation} timezone={timezone} onFait={onFait} />
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 function Ligne({
   reservation,
   timezone,
@@ -667,13 +834,26 @@ function Ligne({
         opacity: passe ? 0.62 : 1,
       }}
     >
-      <DataRow
-        label={heureDe(reservation, timezone, t('commerce.journeeSansCreneau'), locale)}
-        value={nomDe(reservation)}
-      />
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-        <Texte variante="type.caption" couleur="ink.soft" style={{ flexShrink: 1 }}>
+      {/* **L'heure, la prestation, la personne — dans cet ordre.** La ligne
+          portait le nom de la créatrice en tête et la prestation en dessous :
+          on parcourt cette colonne pour savoir *ce qui* arrive et quand, et le
+          nom sert à reconnaître qui entre, pas à trouver la ligne. */}
+      <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 14 }}>
+        <Texte variante="type.mono" couleur={passe ? 'ink.mute' : 'ink.default'}>
+          {heureDe(reservation, timezone, t('commerce.journeeSansCreneau'), locale)}
+        </Texte>
+        <Texte variante="type.body" style={{ flex: 1 }} ellipseSurNomPropre>
           {reservation.item_name}
+        </Texte>
+      </View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <Texte
+          variante="type.caption"
+          couleur="ink.mute"
+          style={{ flexShrink: 1 }}
+          ellipseSurNomPropre
+        >
+          {reservation.creator_handle ?? nomDe(reservation)}
         </Texte>
         {/* Le statut traduit, jamais son code. `awaiting_business` affiché tel
             quel se lisait comme une chaîne oubliée — parce que c'en était une. */}

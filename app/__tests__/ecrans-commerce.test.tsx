@@ -1895,11 +1895,15 @@ describe('la journée se coupe par ce qu’elle demande', () => {
     status,
   });
 
-  it('sépare ce qui attend, ce qui est servi et ce qui est clos', async () => {
-    // **Le tri par statut mélangeait deux choses.** Une absence à constater et
-    // une prestation servie la veille se lisaient dans la même colonne, au même
-    // poids. Un statut ne devient une section que s'il change ce que la
-    // vendeuse doit faire.
+  it('sépare ce qui attend une décision, ce qui arrive, et ce qui est fini', async () => {
+    // **Trois natures, du plus urgent au plus froid.** Un statut ne devient une
+    // section que s'il change ce que la vendeuse doit faire.
+    //
+    // **Servi et clos n'en font plus qu'un depuis la v3.** Ils étaient séparés
+    // parce qu'une contrepartie court encore dans un cas et plus dans l'autre :
+    // vrai, mais c'est une différence pour la créatrice, pas pour le comptoir —
+    // des deux côtés il n'y a plus rien à faire aujourd'hui. La nuance reste
+    // écrite sur la ligne, et le test du dessous la vérifie encore.
     const journee = {
       ...JOURNEE,
       a_trancher: [],
@@ -1912,14 +1916,18 @@ describe('la journée se coupe par ce qu’elle demande', () => {
     await monter(<JourneeScreen businessId="b1" />, clientDe({ '/bookings': journee }));
     await waitFor(() => expect(screen.getByTestId('planning')).toBeTruthy());
 
-    expect(screen.getByTestId('servies')).toBeTruthy();
-    expect(screen.getByTestId('closes')).toBeTruthy();
+    expect(screen.getByTestId('finies')).toBeTruthy();
+    // Les deux anciennes sections ont disparu, et non pas seulement changé de
+    // nom : sans cette moitié, un écran qui rendrait les quatre passerait.
+    expect(screen.queryByTestId('servies')).toBeNull();
+    expect(screen.queryByTestId('closes')).toBeNull();
 
     // Et chaque ligne est dans la bonne : c'est le rangement qui est le test,
-    // pas la présence des trois titres.
+    // pas la présence des titres.
     expect(screen.getByTestId('planning')).toContainElement(screen.getByTestId('ligne-b-attendue'));
-    expect(screen.getByTestId('servies')).toContainElement(screen.getByTestId('ligne-b-servie'));
-    expect(screen.getByTestId('closes')).toContainElement(screen.getByTestId('ligne-b-close'));
+    const finies = screen.getByTestId('finies');
+    expect(finies).toContainElement(screen.getByTestId('ligne-b-servie'));
+    expect(finies).toContainElement(screen.getByTestId('ligne-b-close'));
   });
 
   it('n’ouvre pas une section vide', async () => {

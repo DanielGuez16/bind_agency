@@ -20,7 +20,7 @@
  * atteindre les autres.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -186,11 +186,20 @@ describe('la coquille, mesurée', () => {
 
     await waitFor(() => expect(screen.getByTestId('barre-de-titre')).toBeTruthy());
 
-    // **Deux, et pas trois.** La ligne de la barre latérale nomme l'onglet, la
-    // barre de titre nomme l'écran : la maquette porte les deux, et ils ne
-    // disent pas la même chose. Le troisième était le titre laissé dans le
-    // flux sous la barre — « Today » au-dessus de « Today ».
-    expect(screen.queryAllByText(en.onglets.journee)).toHaveLength(2);
+    // **Une seule, depuis la v3 : celle de la barre latérale.** La barre de
+    // titre ne nomme plus l'écran, elle compte ce qu'il attend de vous —
+    // « on ne comprend même pas à quoi sert cette page » ne se corrigeait pas
+    // autrement. Le nom du jour descend en sous-ligne, où il situe sans
+    // convoquer.
+    expect(screen.queryAllByText(en.onglets.journee)).toHaveLength(1);
+    // **Vérifié sur la barre elle-même, et sans dépendre du compte.** Le
+    // décor de ce fichier n'a aucune décision en attente ; asserter le libellé
+    // « 2 demandes » l'aurait fait porter sur un cas que le montage ne produit
+    // pas. Ce qui se tient à tout compte est la règle : le nom de l'écran a
+    // quitté la barre, et la sous-ligne l'a remplacé.
+    const barre = within(screen.getByTestId('barre-de-titre'));
+    expect(barre.queryByText(en.onglets.journee)).toBeNull();
+    expect(barre.getByTestId('sous-titre')).toBeTruthy();
   });
 
   it('donne à chaque colonne la largeur que la passation lui fixe', async () => {
