@@ -105,14 +105,20 @@ describe('la composition du commerce, grand écran', () => {
     expect(screen.queryByTestId('ecran-configuration')).toBeNull();
   });
 
-  it('garde les trois sections visibles à côté de celle qu’on lit', async () => {
+  it('garde les deux sections visibles à côté de celle qu’on lit', async () => {
     // C'est ce qui distingue une colonne d'une page de garde : elle sert à
     // changer de section, pas à être traversée une fois.
+    //
+    // **Deux et non trois depuis la v3.** « Profil et mise en ligne » n'était
+    // pas une section : ce qu'elle portait est un état, qui vit en bandeau sur
+    // la journée. La garde le vérifie dans les deux sens — les deux qui
+    // restent sont là, et la troisième n'y est plus.
     await monter(<CompositionDuCommerce businessId="b1" />);
 
-    for (const section of ['catalogue', 'horaires', 'activation']) {
+    for (const section of ['catalogue', 'horaires']) {
       expect(screen.getByTestId(`section-${section}`)).toBeTruthy();
     }
+    expect(screen.queryByTestId('section-activation')).toBeNull();
   });
 
   it('change de section sans quitter la colonne', async () => {
@@ -147,9 +153,10 @@ describe('la table des matières, en compact', () => {
     await monter(<ConfigurationScreen onOuvrir={jest.fn()} />);
 
     expect(screen.getByTestId('ecran-configuration')).toBeTruthy();
-    for (const porte of ['catalogue', 'horaires', 'activation']) {
+    for (const porte of ['catalogue', 'horaires']) {
       expect(screen.getByTestId(`ouvrir-${porte}`)).toBeTruthy();
     }
+    expect(screen.queryByTestId('ouvrir-activation')).toBeNull();
     expect(screen.getByText(en.composition.titre)).toBeTruthy();
   });
 });
@@ -168,7 +175,6 @@ describe('l’état des sections', () => {
     );
     expect(screen.getByTestId('etat-catalogue')).toHaveTextContent(/3 hidden/);
     expect(screen.getByTestId('etat-horaires')).toHaveTextContent(/6 days/);
-    expect(screen.getByTestId('etat-activation')).toHaveTextContent(/Live since/);
   });
 
   it('ne demande qu’une seule fois ces trois nombres', async () => {
@@ -179,29 +185,6 @@ describe('l’état des sections', () => {
     await waitFor(() => expect(screen.getByTestId('etat-catalogue')).toBeTruthy());
 
     expect(appels.filter((c) => c.includes('/composition'))).toHaveLength(1);
-  });
-
-  it('dit « pas encore en ligne » à qui ne l’a jamais été', async () => {
-    // Jamais en ligne attend un premier geste ; retiré du fil en attend un
-    // autre. Les dire pareil ferait chercher le mauvais bouton.
-    await monter(<CompositionDuCommerce businessId="b1" />, undefined, {
-      '/composition': { ...COMPOSITION, en_ligne_depuis: null, status: 'onboarding' },
-    });
-
-    await waitFor(() =>
-      expect(screen.getByTestId('etat-activation')).toHaveTextContent(/Not live yet/),
-    );
-  });
-
-  it('dit « retiré du fil » à qui l’a été puis s’est mis en pause', async () => {
-    // La date existe — il a bien été en ligne — mais il ne l'est plus.
-    await monter(<CompositionDuCommerce businessId="b1" />, undefined, {
-      '/composition': { ...COMPOSITION, status: 'paused' },
-    });
-
-    await waitFor(() =>
-      expect(screen.getByTestId('etat-activation')).toHaveTextContent(/Withdrawn/),
-    );
   });
 
   it('tait les masquées quand il n’y en a pas', async () => {
@@ -232,7 +215,7 @@ describe('l’état des sections', () => {
 // --------------------------------------------------------------------------
 
 describe('la place que prend une section', () => {
-  it('déclare les trois sections comme telles', () => {
+  it('déclare les deux sections comme telles', () => {
     // Le défaut de fond de la campagne 2 : « le contenu flotte dans de grandes
     // surfaces ». Les trois écrans se bornaient à 720 **à l'intérieur** de la
     // colonne du menu, qui avait déjà retiré la barre latérale et le rail — une
@@ -241,7 +224,7 @@ describe('la place que prend une section', () => {
     // Vérifié sur la source et non sur le rendu : ce qui doit tenir est qu'un
     // quatrième écran ajouté à la configuration le déclare aussi, et cela ne se
     // voit pas en montant les trois qui existent.
-    for (const fichier of ['CatalogueScreen', 'HorairesScreen', 'ActivationScreen']) {
+    for (const fichier of ['CatalogueScreen', 'HorairesScreen']) {
       const source = readFileSync(
         join(__dirname, '..', 'src', 'screens', `${fichier}.tsx`),
         'utf-8',

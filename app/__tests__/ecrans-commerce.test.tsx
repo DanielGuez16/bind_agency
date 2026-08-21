@@ -17,7 +17,6 @@ import { I18nProvider } from '../src/i18n';
 import { en } from '../src/i18n/en';
 import { nomDuCreateur } from '../src/screens/nomDuCreateur';
 import { ThemeProvider, type Role } from '../src/theme';
-import { ActivationScreen } from '../src/screens/ActivationScreen';
 import { ArbitrageScreen } from '../src/screens/ArbitrageScreen';
 import { AnnuaireScreen } from '../src/screens/AnnuaireScreen';
 import { CatalogueScreen } from '../src/screens/CatalogueScreen';
@@ -393,14 +392,6 @@ const ECRANS = [
     role: 'merchant' as Role,
     plein: { '/collaborations': [LIGNE_DE_FILE] },
     vide: { '/collaborations': [] },
-  },
-  {
-    nom: 'activation',
-    noeud: <ActivationScreen businessId="b1" onActive={jest.fn()} />,
-    role: 'merchant' as Role,
-    plein: { '/activation': vueDActivation(ETAPES) },
-    // Une liste d'étapes vide n'arrive pas : le serveur en rend toujours six.
-    vide: null,
   },
   {
     nom: 'terrain',
@@ -884,78 +875,6 @@ describe('contrôle des publications', () => {
     // « Awaiting her post » supposait le genre de toute créatrice sur un écran
     // que lisent quatre salons. L'espagnol était déjà neutre.
     expect(en.commerce.filtreAttendue).not.toMatch(/\bher\b|\bhis\b/i);
-  });
-});
-
-// --------------------------------------------------------------------------
-// activation
-// --------------------------------------------------------------------------
-
-describe('activation', () => {
-  it('sépare le bloquant de la visibilité', async () => {
-    await monter(<ActivationScreen businessId="b1" onActive={jest.fn()} />, clientDe({ '/activation': vueDActivation(ETAPES) }));
-    await waitFor(() => expect(screen.getByTestId('etape-address')).toBeTruthy());
-
-    expect(screen.getByText(en.commerce.activationBloquant)).toBeTruthy();
-    expect(screen.getByText(en.commerce.activationVisibilite)).toBeTruthy();
-    // Les six étapes sont rendues, y compris celles qui ne bloquent pas : les
-    // taire produirait un commerce « activé » que personne ne voit.
-    for (const etape of ETAPES) {
-      expect(screen.getByTestId(`etape-${etape.cle}`)).toBeTruthy();
-    }
-  });
-
-  it('compte les étapes sans pourcentage', async () => {
-    // « 2 étapes sur 6 » se comprend ; « 33 % » ne dit pas laquelle manque.
-    await monter(<ActivationScreen businessId="b1" onActive={jest.fn()} />, clientDe({ '/activation': vueDActivation(ETAPES) }));
-    await waitFor(() => expect(screen.getByTestId('compte-etapes')).toBeTruthy());
-    expect(screen.queryByText(/%/)).toBeNull();
-  });
-
-  it('offre l’ouverture quand les deux bloquantes sont faites', async () => {
-    await monter(<ActivationScreen businessId="b1" onActive={jest.fn()} />, clientDe({ '/activation': vueDActivation(ETAPES) }));
-    await waitFor(() => expect(screen.getByTestId('ouvrir')).toBeTruthy());
-  });
-
-  it('retire l’ouverture quand une bloquante manque', async () => {
-    // Retirée et non grisée : elle redeviendra possible, mais le griser
-    // demanderait de deviner laquelle manque.
-    const incomplete = ETAPES.map((e) => (e.cle === 'address' ? { ...e, done: false } : e));
-    await monter(
-      <ActivationScreen businessId="b1" onActive={jest.fn()} />,
-      clientDe({ '/activation': vueDActivation(incomplete) }),
-    );
-    await waitFor(() => expect(screen.getByTestId('etape-address')).toBeTruthy());
-    expect(screen.queryByTestId('ouvrir')).toBeNull();
-  });
-
-  it('ne propose pas d’ouvrir un commerce déjà ouvert', async () => {
-    // L'écran ne lisait que les étapes : six faites, donc « ouvrir mon
-    // commerce » — à un salon ouvert depuis des semaines. Les étapes disent ce
-    // qui est prêt, pas ce qui a été décidé.
-    const toutes = ETAPES.map((e) => ({ ...e, done: true }));
-    await monter(
-      <ActivationScreen businessId="b1" onActive={jest.fn()} />,
-      clientDe({ '/activation': vueDActivation(toutes, 'active') }),
-    );
-
-    await waitFor(() => expect(screen.getByTestId('deja-ouvert')).toBeTruthy());
-    expect(screen.queryByTestId('ouvrir')).toBeNull();
-    // Et la seule action qui reste a du sens : se retirer du fil.
-    expect(screen.getByTestId('mettre-en-pause')).toBeTruthy();
-  });
-
-  it('dit qu’un commerce ouvert reste invisible s’il manque une étape', async () => {
-    // Ouvert et introuvable est le pire des deux : rien ne le signale, et le
-    // commerce attend des réservations qui ne peuvent pas venir.
-    const sansOffre = ETAPES.map((e) => ({ ...e, done: e.cle !== 'tier_offer' }));
-    await monter(
-      <ActivationScreen businessId="b1" onActive={jest.fn()} />,
-      clientDe({ '/activation': vueDActivation(sansOffre, 'active') }),
-    );
-
-    await waitFor(() => expect(screen.getByTestId('deja-ouvert')).toBeTruthy());
-    expect(screen.getByText(en.commerce.activationOuvertMaisInvisible)).toBeTruthy();
   });
 });
 
@@ -1542,6 +1461,53 @@ describe('le conseil de palier', () => {
 
     expect(screen.getByTestId('propose-haut')).toHaveTextContent(/REEL/);
     expect(screen.getByTestId('propose-bas')).toHaveTextContent(/STORY/);
+  });
+
+  it('montre l’écart en deux badges avant de l’expliquer', async () => {
+    // **« Tu refais tout » disait autre chose.** Il ne manquait pas un écran :
+    // il manquait la conséquence, chiffrée, à côté du choix. Deux badges reliés
+    // par un chevron — d'où la plateforme partait, où le salon est allé — parce
+    // qu'une phrase seule oblige à reconstituer la comparaison de tête, à
+    // l'endroit précis où le choix se fait.
+    await monter(
+      <CatalogueScreen businessId="b1" />,
+      // La prestation la moins chère, poussée au palier le plus exigeant.
+      catalogueDe([
+        { ...OFFRE, id: 'o1', tier_id: 't3', catalog_item_id: 'bas', content_format: 'reel' },
+      ]),
+      'merchant',
+    );
+    await waitFor(() => expect(screen.getByTestId('ecart-bas')).toBeTruthy());
+
+    const ecart = within(screen.getByTestId('ecart-bas'));
+    expect(ecart.getByTestId('badge-propose-bas')).toHaveTextContent(/STORY/);
+    expect(ecart.getByTestId('badge-retenu-bas')).toHaveTextContent(/REEL/);
+  });
+
+  it('et l’avertissement porte son glyphe, jamais l’ambre de la marque', async () => {
+    // Dans ce système l'ambre **est** la marque : un avertissement en ambre se
+    // lit comme une mise en avant. Le glyphe est alors son seul marqueur, et
+    // c'est la règle du système — pas un choix d'écran.
+    await monter(
+      <CatalogueScreen businessId="b1" />,
+      catalogueDe([
+        { ...OFFRE, id: 'o1', tier_id: 't3', catalog_item_id: 'bas', content_format: 'reel' },
+      ]),
+      'merchant',
+    );
+    await waitFor(() => expect(screen.getByTestId('avertissement-bas')).toBeTruthy());
+
+    // **Sur l'avertissement seul, et c'est ce qui rend la garde juste.** Ma
+    // première version lisait tout le bloc `conseil-`, badges compris : le
+    // badge REEL porte l'aplat de marque, l'assertion tombait sur lui et
+    // n'aurait jamais rien dit de l'avertissement.
+    const rendu = JSON.stringify(screen.getByTestId('avertissement-bas').toJSON());
+    expect(rendu).not.toContain('#F39120');
+    // Le glyphe est obligatoire : c'est le seul marqueur qui reste à un
+    // avertissement sans teinte.
+    expect(rendu).toContain('RNSVGPath');
+    // Et le chiffre reste : « moins de créatrices » ne se mesure pas.
+    expect(screen.getByTestId('avertissement-bas')).toHaveTextContent(/50,?000/);
   });
 
   it('se tait quand le commerce suit le conseil', async () => {

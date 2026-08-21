@@ -227,7 +227,34 @@ describe('le bandeau, à l’écran', () => {
     expect(screen.queryByText(/go live/i)).toBeNull();
   });
 
-  it('et publié, il n’existe plus', async () => {
+  it('compte les étapes, sans pourcentage', async () => {
+    // Un compte, pas un pourcentage : « 67 % » ne dit pas ce qu'il reste à
+    // faire, et il reste toujours quelque chose à faire.
+    await monter({ status: 'draft', etapes: [ETAPE('address', true), ETAPE('coordinates', false)] });
+    await waitFor(() => expect(screen.getByTestId('compte-mise-en-ligne')).toBeTruthy());
+
+    expect(screen.queryByText(/%/)).toBeNull();
+  });
+
+  it('publié mais invisible : il reste, et il le dit', async () => {
+    // **Le cas que la suppression de l'écran a failli emporter.** Les étapes
+    // non bloquantes ne retiennent pas la publication mais décident de la
+    // visibilité : un salon en ligne sans photo de couverture n'apparaît dans
+    // aucun mur, et rien d'autre ne le lui dirait.
+    await monter({
+      status: 'active',
+      etapes: [ETAPE('address', true), ETAPE('cover_photo', false, false)],
+    });
+    await waitFor(() => expect(screen.getByTestId('bandeau-mise-en-ligne')).toBeTruthy());
+
+    expect(screen.getByTestId('manque-cover_photo')).toBeTruthy();
+    // Le compte disparaît : après publication ce n'est plus une progression,
+    // c'est un manque.
+    expect(screen.queryByTestId('compte-mise-en-ligne')).toBeNull();
+    expect(screen.queryByTestId('publier-le-commerce')).toBeNull();
+  });
+
+  it('et publié sans rien qui manque, il n’existe plus', async () => {
     // Une liste de tâches qui reste après avoir été remplie est la définition
     // d'un écran dont on ne comprend plus l'objet.
     await monter({ status: 'active', etapes: [ETAPE('address', true)] });

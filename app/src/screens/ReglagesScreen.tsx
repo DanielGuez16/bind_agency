@@ -55,6 +55,7 @@ import { HealthScreen } from './HealthScreen';
 
 /** Le fuseau du téléphone, résolu une fois. */
 const FUSEAU_DE_L_APPAREIL = Intl.DateTimeFormat().resolvedOptions().timeZone;
+import { PauseDuCommerce } from './reglages/PauseDuCommerce';
 import { compterOuRien, PAGE } from './reglages/suppression';
 
 export function ReglagesScreen() {
@@ -107,6 +108,12 @@ export function ReglagesScreen() {
       </View>
 
       <Filet />
+
+      {/* **La vitrine, et rien d'autre du commerce.** Composer son offre reste
+          dans la configuration ; fermer sa vitrine appartient à la famille des
+          gestes qui engagent le compte, avec la déconnexion et la suppression.
+          Elle a atterri ici parce que la v3 retire la section qui la portait. */}
+      {role === 'business_member' ? <PauseDuCommerce /> : null}
 
       <View style={{ gap: 14 }} testID="partir">
         <Texte variante="type.label" couleur="ink.soft">

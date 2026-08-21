@@ -103,7 +103,6 @@ const CAS = [
  * bien à l'écran — les deux ensemble couvrent la chaîne.
  */
 const DOIVENT_AVOIR_LEUR_SQUELETTE = [
-  'ActivationScreen.tsx',
   // Le fil était la seule exception : son contenu était bien une liste de
   // cartes à photo, et le défaut y était juste. Il ne l'est plus — le fil est
   // devenu le mur, six formats dans un ordre fixe, et le squelette du système
