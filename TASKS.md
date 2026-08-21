@@ -1321,6 +1321,29 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       `Obstacle.depuis` d'un `account_token_invalid` ; `AudienceDuCompte` ne le
       porte pas. La carte dit donc que l'autorisation est finie, sans dire pour
       combien de temps elle vaut ni quand elle est tombée*
+- [x] **La journée du commerce v3 — l'écran le plus utilisé, et le plus mal compris**
+      *« On ne comprend même pas à quoi sert cette page » était la remarque la
+      plus grave de la revue. La barre de titre compte les décisions et le nom
+      du jour descend en sous-ligne ; trois natures du plus urgent au plus
+      froid, dont seule la première porte des cartes ; un contour ambre sur la
+      demande dont la limite tombe aujourd'hui, dans le fuseau du salon. Deux
+      défauts trouvés par les tests en chemin : « 1 requests need your answer »
+      au cas le plus courant, et une journée sans rendez-vous mais avec des
+      demandes en attente qui s'affichait vide — la seule chose urgente du
+      produit, invisible. 1084 tests verts, 6 mutations*
+- [ ] **L'audience de la créatrice n'est pas servie sur la demande**
+      *La planche pose « 7 600 abonnés · 4,2 % d'engagement · 2 140 vues
+      moyennes » à côté du pseudonyme, et le second réseau en `ink.mute` sans
+      action — savoir qu'il n'y a pas de TikTok fait partie de la décision.
+      `ReservationDuCommerce` ne porte qu'un `platform` et aucun chiffre.
+      `CompteVuParLeCommerce` existe déjà dans les types : c'est la forme à
+      servir, par demande*
+- [ ] **Les horaires d'ouverture ne sont pas dans la journée**
+      *La planche écrit « open 09:00 to 19:00 » en sous-ligne. `debut` et `fin`
+      sont les bornes de la journée **comptée**, pas les heures d'ouverture :
+      les rendre comme telles annoncerait « de 00:00 à 00:00 ». Les horaires
+      vivent sur une autre ressource, et une seconde requête sur l'écran le plus
+      ouvert du produit ne se paie pas pour une ligne qui situe*
 - [ ] **Neuf planches d'écrans portent encore la v1.0**
       *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
       passés en v3, dans la palette Ambre. Les autres suivent l'ordre du

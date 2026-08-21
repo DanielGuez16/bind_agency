@@ -7601,3 +7601,47 @@ demandées ; si la page est pleine elle peut en cacher, et un nombre trop bas
 tromperait dans le sens qui fait croire qu'on a fini. La règle vit dans l'aide
 pure et non dans le composant — posée dans l'écran, elle ne s'éprouvait qu'en
 montant cent réservations, et la mutation qui la retirait passait au vert.
+
+---
+
+## 2026-08-20 — La journée v3, et le relief rendu à ce qui attend
+
+**La campagne 2 avait aplati toute la colonne, la v3 lui rend un relief.** La
+raison d'alors était bonne et elle est remplacée, pas conservée à côté de son
+contraire : « deux formes physiques pour deux états de la même chose obligent à
+réapprendre la lecture à chaque section ». C'était vrai de deux **états** ; ce
+ne sont pas deux états, ce sont deux **gestes**. Une demande se soupèse — de
+quoi il s'agit, avec qui, jusqu'à quand, et les trois faits décident ensemble ;
+le planning se parcourt. Le relief distingue ce qu'on lit de ce qu'on survole,
+et le donner aux trois sections revient à ne rien mettre en avant.
+
+**Servi et clos n'en font plus qu'un.** Ils étaient séparés parce qu'une
+contrepartie court encore dans un cas et plus dans l'autre. C'est vrai, et c'est
+une différence pour la créatrice, pas pour le comptoir : des deux côtés il n'y a
+plus rien à faire aujourd'hui. La nuance reste écrite sur la ligne.
+
+**Le contour ambre se décide sur le fuseau du salon, et jamais sur une limite
+passée.** Une limite à 22 h à Miami tombe le lendemain en temps universel : lue
+sur le fuseau de la machine, elle cesserait d'être « aujourd'hui » pour la
+personne qui est au comptoir. Et une limite dépassée tombe bien aujourd'hui sans
+qu'il reste rien à faire — le bandeau de dépassement le dit, un contour d'appel
+par-dessus ferait espérer une action qui n'existe plus.
+
+**Deux défauts trouvés par les tests, pas par relecture.** Le titre rendait
+« 1 requests need your answer » au cas le plus courant de tous, parce que la
+première version n'avait que deux branches — zéro et « n ». Et le vide de
+l'écran ne regardait que les rendez-vous du jour, alors qu'`a_trancher` est
+servi toutes dates confondues : un salon sans rendez-vous aujourd'hui et deux
+demandes en attente voyait « aucun rendez-vous », c'est-à-dire l'inverse exact
+de ce que la v3 existe pour corriger.
+
+**Et le 18 août 2026 est un mardi.** La planche écrit « Monday 18 August ».
+Recopier le libellé de la maquette dans le test aurait fait passer une
+implémentation qui renvoie un jour fixe — c'est le décor qui aurait été faux,
+pas le code.
+
+**`type.captionStrong` entre dans `produit.json`.** L'échelle de la passation
+n'a que `caption` en 400 et `bodyStrong` en 16 : entre les deux, rien. Une seule
+phrase en a besoin — la limite qui tombe aujourd'hui — où la graisse fait la
+moitié du travail et l'ambre l'autre. Il vit dans le fichier du produit et non
+dans la passation : Design ne l'a pas nommé, et la passation reste sa copie.

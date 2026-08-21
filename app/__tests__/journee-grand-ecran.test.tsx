@@ -232,14 +232,32 @@ describe('la journée, après la campagne 2', () => {
     );
   });
 
-  it('donne un seul registre visuel à la colonne de gauche', async () => {
-    // Des cartes en relief pour ce qui attend, des lignes plates pour le
-    // planning : deux formes physiques pour deux états de la même chose.
+  it('donne le relief à ce qui attend une décision, et à lui seul', async () => {
+    // **La v3 renverse la règle de la campagne 2**, qui avait aplati toute la
+    // colonne au motif que deux formes physiques pour deux états de la même
+    // chose obligent à réapprendre la lecture. C'était vrai de deux états ;
+    // ce ne sont pas deux états, ce sont deux gestes. Une demande se soupèse,
+    // le planning se parcourt. Le relief distingue ce qu'on lit de ce qu'on
+    // survole — et le donner aux trois sections revient à ne rien mettre en
+    // avant.
     await monter(JOURNEE_COMPLETE);
-    await waitFor(() => expect(screen.getByTestId('reservation-b-3')).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId('demande-b-3')).toBeTruthy());
 
-    for (const id of ['b-1', 'b-2', 'b-3', 'b-4']) {
-      const style = screen.getByTestId(`reservation-${id}`).props.style;
+    const aplati = (style: unknown): Record<string, unknown> =>
+      Array.isArray(style)
+        ? Object.assign({}, ...style.map(aplati))
+        : ((style ?? {}) as Record<string, unknown>);
+
+    // La demande porte un fond, un filet et un rayon : c'est une carte.
+    const carte = aplati(screen.getByTestId('demande-b-3').props.style);
+    expect(carte.borderWidth).toBe(1);
+    expect(carte.backgroundColor).toBeTruthy();
+
+    // Les lignes du planning et des journées finies restent plates. Sans cette
+    // moitié, la garde passerait sur un écran qui aurait donné le relief à
+    // tout le monde — ce qui est exactement la faute qu'elle doit attraper.
+    for (const id of ['b-1', 'b-2', 'b-4']) {
+      const style = aplati(screen.getByTestId(`reservation-${id}`).props.style);
       expect({ id, bord: style.borderWidth ?? 0, fond: style.backgroundColor }).toEqual({
         id,
         bord: 0,

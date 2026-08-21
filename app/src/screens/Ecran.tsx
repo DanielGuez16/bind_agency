@@ -38,6 +38,14 @@ export type EcranProps<T> = {
   /** Le titre, déjà traduit par l'appelant. Ignoré si `entete` est fourni. */
   titre?: string;
   /**
+   * La seconde ligne de la barre de titre, quand le titre ne nomme plus
+   * l'écran mais compte ce qu'il attend de vous. Voir `BarreDeTitre`.
+   *
+   * Rendue seulement en grand écran, comme le titre : en compact, le titre
+   * vit dans le flux et une sous-ligne s'y ajouterait à la place du contenu.
+   */
+  sousTitre?: string | null;
+  /**
    * L'en-tête complet, quand l'écran a mieux à offrir qu'un titre : une
    * salutation, des compteurs, la marque. Il est rendu avant le corps et **hors
    * des quatre états** — un écran en chargement garde son en-tête, sinon la
@@ -88,6 +96,7 @@ export type EcranProps<T> = {
 export function Ecran<T>({
   requete,
   titre,
+  sousTitre,
   entete,
   onRetour,
   fraicheur,
@@ -180,7 +189,12 @@ export function Ecran<T>({
         />
       )}
       {large ? (
-        <BarreDeTitre titre={titre ?? ''} onRetour={onRetour} fraicheur={fraicheur} />
+        <BarreDeTitre
+          titre={titre ?? ''}
+          sousTitre={sousTitre}
+          onRetour={onRetour}
+          fraicheur={fraicheur}
+        />
       ) : null}
       <ScrollView
         contentContainerStyle={{
