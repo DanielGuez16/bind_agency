@@ -49,7 +49,7 @@ function clientDeTest() {
 const VERIFICATION = {
   booking_id: 'b1',
   redemption_code_id: 'c1',
-  creator_name: 'Rebecca Alvarez',
+  creator_handle: 'rebecca.miami',
   item_name: 'Soin visage',
   item_photo_key: null,
   starts_at: null,
@@ -106,7 +106,12 @@ describe('écran de caisse', () => {
     await fireEvent.press(vue.getByText(en.redemption.manualSubmit));
 
     await waitFor(() => expect(vue.getByText('Soin visage')).toBeTruthy());
-    expect(vue.getByText(/Rebecca Alvarez/)).toBeTruthy();
+    // **Le pseudonyme, jamais l'état civil.** La caisse affichait « Rebecca
+    // Alvarez » : le nom légal de quelqu'un, au comptoir d'un salon qui n'a
+    // aucune raison de le connaître. Ce n'est pas le nom qui autorise le
+    // retrait, c'est le code.
+    expect(vue.getByText(/rebecca.miami/)).toBeTruthy();
+    expect(vue.queryByText(/Alvarez/)).toBeNull();
     // La caisse sait qu'elle n'a pas scanné : c'est le chemin le moins fort.
     expect(vue.getByText(en.redemption.usedManualCode)).toBeTruthy();
   });

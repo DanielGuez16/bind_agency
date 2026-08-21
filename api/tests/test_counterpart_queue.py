@@ -104,7 +104,7 @@ async def test_la_ligne_porte_la_creatrice_l_item_et_le_critere(session: AsyncSe
 
     assert len(lignes) == 1
     lue = lignes[0]
-    assert lue.creator_first_name == "Rebecca"
+    assert not hasattr(lue, "creator_first_name")
     assert lue.creator_handle == "rebecca.miami"
     assert lue.item_name == "Soin visage"
     assert lue.required_format == ligne.required_format

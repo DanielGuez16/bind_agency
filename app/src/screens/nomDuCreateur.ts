@@ -14,17 +14,22 @@
  * d'affichage, c'est une erreur sur ce qu'il arbitre.
  *
  * Le repli vide reste pour le cas qui n'est ni l'un ni l'autre : un compte sans
- * pseudonyme ni prénom, qui existe encore. Rare, et ce n'est pas à cette
- * fonction de l'inventer.
+ * pseudonyme, qui existe encore. Rare, et ce n'est pas à cette fonction de
+ * l'inventer.
+ *
+ * **Le prénom a disparu du repli parce qu'il a disparu de la réponse.** Un
+ * salon voit un pseudonyme, jamais un état civil : il n'a aucune raison de
+ * connaître le nom légal de quelqu'un. Le repli qui allait le chercher n'était
+ * pas un filet, c'était la porte par laquelle le nom sortait.
  */
 import type { LigneDeFile } from '../api';
 
 export function nomDuCreateur(
-  ligne: Pick<LigneDeFile, 'creator_partie' | 'creator_handle' | 'creator_first_name'>,
+  ligne: Pick<LigneDeFile, 'creator_partie' | 'creator_handle'>,
   t: (cle: string) => string,
   /** Ce qu'on écrit quand il n'y a ni départ ni nom. Vide en ligne, `—` en tableau. */
   absent = '',
 ): string {
   if (ligne.creator_partie) return t('commerce.creatricePartie');
-  return ligne.creator_handle ?? ligne.creator_first_name ?? absent;
+  return ligne.creator_handle ?? absent;
 }

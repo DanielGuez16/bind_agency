@@ -298,9 +298,9 @@ export function RedemptionScreen({
           }}
         >
           <Texte variante="type.section">{etat.verification.item_name}</Texte>
-          {etat.verification.creator_name ? (
+          {etat.verification.creator_handle ? (
             <Texte couleur="ink.soft">
-              {t('redemption.creator')} : {etat.verification.creator_name}
+              {t('redemption.creator')} : {etat.verification.creator_handle}
             </Texte>
           ) : null}
           {/* La caisse a le droit de savoir qu'elle n'a pas scanné : c'est le
@@ -416,9 +416,10 @@ function ServisDuJour({ businessId, depuis }: { businessId: string; depuis: stri
           ) : null}
           <Texte variante="type.bodyStrong">{reservation.item_name}</Texte>
           <Texte variante="type.caption" couleur="ink.soft">
-            {[reservation.creator_first_name, reservation.creator_last_name]
-              .filter(Boolean)
-              .join(' ') || reservation.creator_handle}
+            {/* Le pseudonyme, jamais l'état civil. Au comptoir comme
+                ailleurs : c'est le code de retrait qui autorise, pas le nom,
+                et le compte qui publiera est celui que le pseudonyme nomme. */}
+            {reservation.creator_handle}
           </Texte>
           <Texte variante="type.caption" couleur="ink.mute">
             {reservation.contrepartie

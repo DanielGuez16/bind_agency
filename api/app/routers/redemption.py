@@ -21,7 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import CurrentUser, SessionDep, require_role
 from app.core.errors import ErrorCode, api_error
-from app.models import Booking, BusinessMember, CatalogItem, CreatorProfile, User
+from app.models import Booking, BusinessMember, CatalogItem, SocialAccount, User
 from app.models.enums import UserRole
 from app.schemas.redemption import (
     CodeAffiche,
@@ -138,13 +138,21 @@ async def verify(
         raise _traduire(error) from error
 
     item = await session.get(CatalogItem, booking.catalog_item_id)
-    profil = await session.get(CreatorProfile, booking.creator_id)
-    nom = " ".join(filter(None, [profil.first_name, profil.last_name])) if profil else None
+    # **Le pseudonyme du compte de cette réservation, jamais l'état civil.**
+    # La caisse composait « Rebecca Alvarez » depuis le profil : le nom légal de
+    # quelqu'un, affiché au comptoir d'un salon qui n'a aucune raison de le
+    # connaître. Ce n'est pas le nom qui autorise — c'est le code — et le compte
+    # qui publiera est celui que le pseudonyme nomme.
+    #
+    # Le compte de la réservation et non un compte quelconque de la créatrice :
+    # c'est celui-là qui portera la publication, et c'est celui-là que le salon
+    # ira regarder.
+    compte = await session.get(SocialAccount, booking.social_account_id)
 
     return VerificationRead(
         booking_id=booking.id,
         redemption_code_id=verifie.redemption_code_id,
-        creator_name=nom or None,
+        creator_handle=compte.handle if compte else None,
         item_name=item.name,
         item_photo_key=item.photo_key,
         starts_at=booking.starts_at,

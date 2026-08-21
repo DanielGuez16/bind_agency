@@ -256,8 +256,12 @@ async def test_la_journee_rend_la_creatrice_et_son_compte(session: AsyncSession)
 
     assert len(journee.items) == 1
     ligne = journee.items[0]
-    assert ligne.creator_first_name == "Rebecca"
+    # **Le pseudonyme, et rien de civil.** Le décor porte « Rebecca Alvarez » :
+    # sans ce nom au décor, l'absence ne prouverait rien — il n'y aurait rien à
+    # ne pas trouver.
     assert ligne.creator_handle == "rebecca.miami"
+    assert not hasattr(ligne, "creator_first_name")
+    assert not hasattr(ligne, "creator_last_name")
     assert ligne.item_name == "Soin visage"
 
 

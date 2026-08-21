@@ -344,12 +344,14 @@ function heureDe(
     : sansCreneau;
 }
 
+/**
+ * **Le pseudonyme, et lui seul.** Cette fonction composait « Léa Moreau » et ne
+ * retombait sur `@lea.mrl` qu'à défaut : le salon lisait donc l'état civil de
+ * quelqu'un à qui il rend un service, ce que le produit ne promet nulle part.
+ * Le serveur ne sert plus le nom ; l'écran ne le compose plus.
+ */
 function nomDe(reservation: ReservationDuCommerce) {
-  return (
-    [reservation.creator_first_name, reservation.creator_last_name].filter(Boolean).join(' ') ||
-    reservation.creator_handle ||
-    ''
-  );
+  return reservation.creator_handle ?? '';
 }
 
 /**

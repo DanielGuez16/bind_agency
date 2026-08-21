@@ -297,7 +297,13 @@ export type SignalJuge = {
 export type Verification = {
   booking_id: string;
   redemption_code_id: string;
-  creator_name: string | null;
+  /**
+   * Le pseudonyme du compte de cette réservation. **Jamais un nom civil** : la
+   * caisse composait « Rebecca Alvarez » depuis le profil, et un salon n'a
+   * aucune raison de connaître le nom légal de quelqu'un. Ce n'est pas le nom
+   * qui autorise le retrait, c'est le code.
+   */
+  creator_handle: string | null;
   item_name: string;
   item_photo_key: string | null;
   starts_at: string | null;
@@ -674,8 +680,6 @@ export type ReservationDuCommerce = {
    */
   approval_expires_at: string | null;
   creator_id: string;
-  creator_first_name: string | null;
-  creator_last_name: string | null;
   creator_handle: string | null;
   /**
    * L'adresse du profil, sur le réseau de cette demande.
@@ -834,8 +838,6 @@ export type LigneDeFile = {
   business_id: string;
   business_name: string;
   creator_id: string;
-  creator_first_name: string | null;
-  creator_last_name: string | null;
   creator_handle: string | null;
   /**
    * La créatrice a supprimé son compte, et l'anonymisation est passée.

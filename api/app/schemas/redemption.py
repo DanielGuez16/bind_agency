@@ -37,7 +37,11 @@ class VerificationRead(BaseModel):
 
     booking_id: uuid.UUID
     redemption_code_id: uuid.UUID
-    creator_name: str | None
+    #: Le pseudonyme du compte de cette réservation. **Jamais un nom civil** :
+    #: la caisse composait « Rebecca Alvarez » depuis le profil, et un salon n'a
+    #: aucune raison de connaître le nom légal de quelqu'un. Ce n'est pas le nom
+    #: qui autorise le retrait, c'est le code.
+    creator_handle: str | None
     item_name: str
     item_photo_key: str | None
     starts_at: datetime | None
