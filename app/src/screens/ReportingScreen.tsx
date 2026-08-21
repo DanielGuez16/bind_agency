@@ -32,6 +32,7 @@
  * grand ; les onze restent, groupés et nommés, parce qu'un salon qui doute
  * veut pouvoir vérifier.
  */
+import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
 import { useApi, type Reporting } from '../api';
@@ -40,6 +41,7 @@ import {
   BarresParPeriode,
   DataRow,
   EmptyState,
+  SegmentedTabs,
   SkeletonLignes,
   Texte,
   type BarreVerticale,
@@ -60,6 +62,7 @@ function jourLisible(instant: string, locale: SupportedLocale): string {
 }
 import { Ecran } from './Ecran';
 import { PremiersPas, type PorteDeComposition } from './rapports/PremiersPas';
+import { depuisPour, periodesOffertes, type Periode } from './rapports/fenetre';
 import { useRequete } from './useRequete';
 
 export function ReportingScreen({
@@ -72,12 +75,41 @@ export function ReportingScreen({
   const { api } = useApi();
   const { t, locale } = useI18n();
 
-  const requete = useRequete<Reporting>((signal) => api.reporting(businessId, {}, signal), {
+  // **La période choisie, et la fenêtre déjà servie qui lui sert de repère.**
+  // La borne de fin vient du serveur : c'est l'instant qu'il a retenu pour
+  // « maintenant », dans le fuseau du salon. Un calcul sur l'horloge locale
+  // décalerait la borne d'un jour à chaque bord de fuseau.
+  const [periode, setPeriode] = useState<Periode>('trenteJours');
+  const [repere, setRepere] = useState<{ fin: string; premiere: string | null } | null>(null);
+
+  const requete = useRequete<Reporting>(
+    (signal) =>
+      api.reporting(
+        businessId,
+        {
+          depuis: repere
+            ? depuisPour(periode, repere.fin, repere.premiere)
+            : undefined,
+        },
+        signal,
+      ),
+    {
     // Une fenêtre sans réservation n'est pas une erreur : c'est un commerce qui
     // débute, ou un mois calme. L'écran doit le dire, pas proposer de réessayer.
-    estVide: (vue) => vue.reservations === 0,
-    dependances: [businessId],
-  });
+      estVide: (vue) => vue.reservations === 0,
+      dependances: [businessId, periode],
+    },
+  );
+
+  // Le repère se prend sur la première réponse et ne bouge plus : le relire à
+  // chaque changement de période ferait glisser la borne de fin d'un cran à
+  // chaque clic, et « douze semaines » ne montrerait jamais les mêmes douze.
+  const servie = requete.etat === 'pret' ? requete.donnees : null;
+  useEffect(() => {
+    if (servie && repere === null) {
+      setRepere({ fin: servie.fin, premiere: servie.premiere_semaine });
+    }
+  }, [servie, repere]);
 
   return (
     <Ecran
@@ -90,11 +122,35 @@ export function ReportingScreen({
         // disait « rien dans cette fenêtre » : il n'y a pas de fenêtre à
         // corriger, il n'y a pas encore d'histoire, et surtout il y a quelque
         // chose à faire pour qu'elle commence. L'écran change donc de nature.
-        <PremiersPas businessId={businessId} onOuvrir={onOuvrirLaComposition} />
+        <PremiersPas
+          businessId={businessId}
+          // La portée vient de la réponse des rapports, que l'écran a déjà.
+          portee={requete.etat === 'pret' ? requete.donnees.portee_locale : undefined}
+          onOuvrir={onOuvrirLaComposition}
+        />
       }
     >
       {(vue) => (
         <View style={{ gap: 16 }}>
+          {/* **Le sélecteur ne se rend qu'avec de quoi comparer.** Sur l'écran
+              vide il n'apparaît pas du tout — c'est la planche qui le dit, et
+              elle a raison : il n'y a aucune période à sélectionner. Et sa
+              troisième position n'existe que s'il y a un début : sans la
+              première semaine, il faudrait inventer une date de départ, et un
+              onglet qui rendrait la même chose que son voisin ferait douter des
+              deux. */}
+          {(() => {
+            const offertes = periodesOffertes(repere?.premiere ?? vue.premiere_semaine);
+            return offertes.length > 1 ? (
+              <SegmentedTabs
+                testID="periodes"
+                items={offertes.map((p) => ({ label: t(`reporting.periode.${p}`) }))}
+                index={Math.max(0, offertes.indexOf(periode))}
+                onChange={(rang) => setPeriode(offertes[rang])}
+              />
+            ) : null;
+          })()}
+
           <Texte variante="type.caption" couleur="ink.mute" testID="fenetre">
             {t('reporting.fenetre', {
               // Le mois en lettres : « 10/07/2026 » se lit octobre à Miami et

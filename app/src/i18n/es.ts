@@ -654,6 +654,13 @@ export const es: Catalogue = {
     tempsIndisponible: 'Aún no disponible',
     heures: '{{heures}} horas',
     phrase: 'Diste {{prestations}} prestaciones y recibiste {{publications}} publicaciones.',
+    porteeCreateurs: 'creadoras en {{rayon}} km',
+    porteePeuventReserver: 'De ellas, {{compte}} ya pueden reservar lo que tienes abierto. Es el único número de esta página que no habla de ti, y la razón por la que vale la pena hacer lo de arriba.',
+    periode: {
+      trenteJours: '30 días',
+      douzeSemaines: '12 semanas',
+      depuisLeDebut: 'Desde el inicio',
+    },
     videAmorce: 'Tu primera reserva pondrá en marcha esta página. Mientras tanto, esto es lo que te separa de ser encontrada.',
     pas: {
       catalogue: {
@@ -673,6 +680,7 @@ export const es: Catalogue = {
         aFaire: 'Solo hay un nivel abierto',
         pourquoi: 'Cada nivel que abres trae a las creadoras cuya audiencia le corresponde.',
         geste: 'Abrir un nivel',
+        levier: '{{compte}} creadoras cerca no pueden reservar nada de lo que tienes abierto.',
       },
       horaires: {
         fait: 'Abres todos los días de la semana',
