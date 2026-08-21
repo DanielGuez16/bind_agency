@@ -853,6 +853,7 @@ export const es: Catalogue = {
     galerieRang: 'Foto {{rang}} de {{total}}',
     palierPropose: 'Sugerido: {{palier}}',
     palierProposeAide: 'A partir del precio de esta prestación y de su lugar en tu catálogo. Tú decides.',
+    palierSuggere: 'sugerido → el tuyo',
     palierPlusExigeant: 'Pides {{retenu}} donde se sugería {{propose}}. Menos creadoras cumplen — {{abonnes}} seguidores en vez de {{proposeAbonnes}}.',
     palierMoinsExigeant: 'Pides {{retenu}} donde se sugería {{propose}}. Una de tus prestaciones más caras por tu compromiso más ligero.',
     palierSansAvis: 'Añade un tercer precio a tu catálogo y BIND sugerirá un nivel para cada prestación.',
