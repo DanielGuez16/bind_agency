@@ -76,7 +76,16 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
 
   const requete = useRequete<JourneeDuCommerce>(
     (signal) => api.journeeDuCommerce(businessId, jour, signal),
-    { estVide: (journee) => journee.items.length === 0, dependances: [businessId, jour] },
+    {
+      // **Vide veut dire « rien du tout », et les demandes en font partie.**
+      // Le vide ne regardait que les rendez-vous du jour ; or `a_trancher` est
+      // servi toutes dates confondues, précisément pour qu'une décision à
+      // prendre pour après-demain ne se perde pas. Un salon sans rendez-vous
+      // aujourd'hui et deux demandes en attente voyait donc « aucun
+      // rendez-vous » — la seule chose urgente du produit, invisible.
+      estVide: (journee) => journee.items.length === 0 && journee.a_trancher.length === 0,
+      dependances: [businessId, jour],
+    },
   );
 
   // **Le titre compte les décisions, et il se lit avant les données.** Il vient
