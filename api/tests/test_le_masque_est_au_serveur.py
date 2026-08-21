@@ -1,5 +1,11 @@
 """Ce qu'un écran prétend cacher doit être absent de la réponse.
 
+**Le mode dégradé de l'annuaire a existé et a été retiré** — la route refuse de
+nouveau en 402 — et les tests qui l'éprouvaient sont partis avec lui. Ce qui
+reste ici est la machinerie de floutage, gardée exprès pour le jour où un écran
+montrera un aperçu, et le peigne des noms civils, qui lui n'a rien à voir avec
+l'abonnement.
+
 **Un masque visuel n'est pas un contrôle d'accès.** React Native n'a pas de
 `filter` CSS : un flou s'y pose par-dessus une image bel et bien téléchargée, et
 la photo est sur l'appareil du commerce qui n'a pas payé, à un inspecteur près.
@@ -28,7 +34,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.integrations import images
 from app.integrations.object_store import MemoryObjectStore
-from app.services import directory, storage
+from app.services import storage
 from tests.test_activation import MOT_DE_PASSE, commerce_en_cours
 from tests.test_creator_tiers import compte, createur
 
@@ -135,117 +141,6 @@ async def test_la_route_des_medias_ne_retombe_pas_de_l_apercu_vers_l_original(
 # --------------------------------------------------------------------------
 
 
-async def _annuaire(client: AsyncClient, session: AsyncSession, *, abonne: bool):
-    business, proprietaire = await commerce_en_cours(session)
-    elle = await createur(session)
-    await compte(session, elle, followers=48_213, handle="rebecca.miami")
-
-    if abonne:
-        from app.integrations.billing import LogBillingProvider
-        from app.services import subscription as subscription_service
-        from tests.test_grace import plan
-
-        await subscription_service.souscrire(
-            session,
-            business=business,
-            plan_id=(await plan(session)).id,
-            actor=proprietaire,
-            provider=LogBillingProvider(),
-        )
-    await session.commit()
-
-    jetons = (
-        await client.post(
-            f"{PREFIX}/auth/login",
-            json={"email": proprietaire.email, "password": MOT_DE_PASSE},
-        )
-    ).json()
-    return await client.get(
-        f"{PREFIX}/business/{business.id}/creators",
-        headers={"Authorization": f"Bearer {jetons['access_token']}"},
-    )
-
-
-async def test_avec_abonnement_tout_est_la(client: AsyncClient, session: AsyncSession) -> None:
-    """**Le sens inverse, et il compte autant.**
-
-    Une route qui masquerait toujours passerait le test d'absence sans rien
-    garantir de ce que l'abonnement achète.
-    """
-    reponse = await _annuaire(client, session, abonne=True)
-
-    assert reponse.status_code == 200, reponse.text
-    assert "rebecca.miami" in reponse.text
-    ligne = reponse.json()["createurs"][0]
-    assert ligne["comptes"][0]["followers"] == 48_213
-    assert ligne["comptes"][0]["profil_url"]
-    assert ligne["audience_totale"] == 48_213
-
-
-async def test_la_biographie_ne_sort_pas_non_plus(
-    client: AsyncClient, session: AsyncSession
-) -> None:
-    """Du texte libre est une porte de sortie pour le pseudonyme.
-
-    « écris-moi sur @rebecca.miami » tient très bien dans une bio. Fermer le
-    champ `handle` en laissant passer la bio rendrait le pseudonyme par l'autre
-    porte, et la règle ne protégerait que ce qu'elle a nommé.
-    """
-    from app.services import creator_profile as profile_service
-
-    business, proprietaire = await commerce_en_cours(session)
-    elle = await createur(session)
-    await compte(session, elle, followers=1_000, handle="rebecca.miami")
-    await profile_service.update_profile(
-        session,
-        user_id=elle.id,
-        modifications={"bio": "Miami. Écris-moi sur @rebecca.miami"},
-    )
-    await session.commit()
-
-    jetons = (
-        await client.post(
-            f"{PREFIX}/auth/login",
-            json={"email": proprietaire.email, "password": MOT_DE_PASSE},
-        )
-    ).json()
-    reponse = await client.get(
-        f"{PREFIX}/business/{business.id}/creators",
-        headers={"Authorization": f"Bearer {jetons['access_token']}"},
-    )
-
-    assert "rebecca.miami" not in reponse.text
-    assert reponse.json()["createurs"][0]["bio"] is None
-
-
-async def test_l_apercu_remplace_la_photo_et_non_l_inverse(session: AsyncSession) -> None:
-    """La clé servie sans abonnement est celle de l'aperçu, jamais l'originale."""
-    elle = await createur(session)
-    await compte(session, elle, followers=1_000, avatar_key="avatars/xyz")
-
-    sans = {v.creator_id: v for v in await directory.annuaire(session, abonne=False)}[elle.id]
-    avec = {v.creator_id: v for v in await directory.annuaire(session, abonne=True)}[elle.id]
-
-    assert avec.comptes[0].avatar_key == "avatars/xyz"
-    assert sans.comptes[0].avatar_key == storage.cle_d_apercu("avatars/xyz")
-    assert sans.comptes[0].avatar_key != avec.comptes[0].avatar_key
-
-
-async def test_sans_photo_il_n_y_a_pas_d_apercu(session: AsyncSession) -> None:
-    """Nul reste nul : on n'invente pas une clé pour une image qui n'existe pas."""
-    elle = await createur(session)
-    await compte(session, elle, followers=1_000, avatar_key=None)
-
-    vue = {v.creator_id: v for v in await directory.annuaire(session, abonne=False)}[elle.id]
-
-    assert vue.comptes[0].avatar_key is None
-
-
-# --------------------------------------------------------------------------
-# le nom d'état civil ne sort pas de l'annuaire, abonné ou non
-# --------------------------------------------------------------------------
-
-
 async def test_l_annuaire_ne_livre_jamais_le_nom_civil(
     client: AsyncClient, session: AsyncSession
 ) -> None:
@@ -257,9 +152,22 @@ async def test_l_annuaire_ne_livre_jamais_le_nom_civil(
     ne regarderait que l'état non abonné laisserait l'identité de cent
     vingt-huit personnes chez tout salon qui paie.
     """
+    from app.integrations.billing import LogBillingProvider
     from app.services import creator_profile as profile_service
+    from app.services import subscription as subscription_service
+    from tests.test_grace import plan
 
     business, proprietaire = await commerce_en_cours(session)
+    # **Abonné, et c'est le point.** Sans abonnement la route refuse en 402 et
+    # ne prouverait rien : le nom civil doit être absent de la réponse que le
+    # salon a payée, pas seulement de celle qu'il n'a pas.
+    await subscription_service.souscrire(
+        session,
+        business=business,
+        plan_id=(await plan(session)).id,
+        actor=proprietaire,
+        provider=LogBillingProvider(),
+    )
     elle = await createur(session)
     await compte(session, elle, followers=1_000, handle="lea.mrl")
     await profile_service.update_profile(

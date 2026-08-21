@@ -1127,6 +1127,15 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       Téléphone au format international, normalisé avant validation ; nom
       dépouillé de ses espaces avant d'être compté ; adresse d'au moins dix
       caractères. 13 tests neufs*
+- [x] **Le 402 revient sur l'annuaire**
+      *Le mode dégradé de la #199 est retiré : il n'avait aucun écran pour
+      l'accompagner. L'écran n'affiche « l'annuaire vient avec un abonnement »
+      que sur un 402 ; avec le 200 dégradé, un salon non abonné voyait une
+      grille de cartes sans nom ni visage sans une ligne qui explique pourquoi
+      — le chemin qui vend l'abonnement était mort. **La machinerie du floutage
+      reste** : `apercu_floute`, la clé `@apercu` et son repli qui échoue plutôt
+      que de servir la photo nette, tous éprouvés, pour le jour où un écran
+      montrera un aperçu. 1 test repris, 1 mutation vérifiée*
 - [x] **Un salon voit un pseudonyme, jamais un état civil**
       *Le peigne complet, et il était plus large que l'annuaire : la journée du
       comptoir et la caisse **préféraient** « Rebecca Alvarez » au pseudonyme
