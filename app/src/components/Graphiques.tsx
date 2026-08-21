@@ -18,7 +18,7 @@
  */
 import { View } from 'react-native';
 
-import { radius, spacing, tierTokens, useColors, type ColorName } from '../theme';
+import { radius, spacing, tierTokens, useColors } from '../theme';
 import { Texte } from './Texte';
 import { TierBadge, type Palier } from './TierBadge';
 
@@ -139,12 +139,20 @@ export function BarresParPeriode({
 export type BarreDePalier = { palier: Palier; valeur: number };
 
 /**
- * La répartition par palier : trois barres horizontales.
+ * La répartition par palier : trois barres horizontales, un seul remplissage.
  *
- * **La seule série colorée du produit.** La couleur y porte déjà un sens
- * ailleurs — story, post, reel ont leur teinte partout — et l'emprunter ici ne
- * crée pas un code de plus, il en réutilise un que tout le monde connaît. Le
- * `TierBadge` l'accompagne : la couleur ne porte jamais seule.
+ * **La raison d'hier est remplacée, et le code qui la portait était mort.** Ces
+ * barres empruntaient les teintes de palier — « la couleur y porte déjà un sens
+ * ailleurs » — mais les trois jeux de teintes de palier ont été supprimés au
+ * passage à l'ambre. `tier.story` ne résout plus rien : la barre recevait
+ * `backgroundColor: undefined` et **ne se voyait pas du tout**. Aucun test n'a
+ * bougé, parce qu'aucun ne regardait la couleur.
+ *
+ * **Et même vivante, la teinte se lisait à l'envers.** Sur une barre, la
+ * densité encode l'ampleur ; la matière du `TierBadge` va du contour clair au
+ * plein, si bien que le palier le plus fourni était le plus vide. Un seul
+ * remplissage, donc, et la matière descend dans le badge posé à côté du
+ * chiffre, où elle encode le palier et rien d'autre.
  */
 export function BarresParPalier({
   series,
@@ -170,19 +178,30 @@ export function BarresParPalier({
           <View style={{ width: 76 }}>
             <TierBadge tier={ligne.palier} size="sm" testID={`badge-${ligne.palier}`} />
           </View>
-          <View style={{ flex: 1, height: 20, justifyContent: 'center' }}>
+          {/* La piste sous la barre : sans elle, une barre à 3 % se lit comme
+              une barre absente, et « presque rien » n'est pas « rien ». */}
+          <View
+            style={{
+              flex: 1,
+              height: 10,
+              justifyContent: 'center',
+              backgroundColor: c['bg.deep'],
+              borderRadius: radius['radius.pill'],
+              overflow: 'hidden',
+            }}
+          >
             <View
               testID={`barre-${ligne.palier}`}
               accessibilityLabel={`${ligne.palier} : ${ligne.valeur}`}
               style={{
                 width: `${Math.max(1, (ligne.valeur / sommet) * 100)}%`,
-                height: 20,
-                backgroundColor: c[`tier.${ligne.palier}` as ColorName],
-                borderRadius: radius['radius.sm'],
+                height: 10,
+                backgroundColor: c['brand.500'],
+                borderRadius: radius['radius.pill'],
               }}
             />
           </View>
-          <Texte variante="type.mono" couleur="ink.soft" style={{ width: 36 }}>
+          <Texte variante="type.mono" style={{ width: 36 }} align="right">
             {ligne.valeur}
           </Texte>
         </View>

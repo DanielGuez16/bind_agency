@@ -976,25 +976,51 @@ describe('graphiques', () => {
     expect(Number.isFinite(style(screen.getByTestId('barre-W30')).height as number)).toBe(true);
   });
 
-  it('accompagne chaque palier de son badge, jamais la couleur seule', async () => {
-    // C'est la seule série colorée du produit : la couleur y porte déjà un
-    // sens ailleurs, et elle ne porte jamais seule.
+  it('remplit chaque barre, et du même remplissage pour les trois', async () => {
+    // **La garde qui manquait, et le défaut qu'elle aurait attrapé.** Ces
+    // barres empruntaient les teintes de palier ; les trois jeux ont été
+    // supprimés au passage à l'ambre, `tier.story` ne résout plus rien, et la
+    // barre recevait `backgroundColor: undefined` — elle ne se voyait pas du
+    // tout. Le test d'alors regardait la présence de l'élément et jamais sa
+    // couleur : il est resté vert sur un graphique invisible.
+    //
+    // **Un seul remplissage, et c'est la seconde moitié.** Sur une barre, la
+    // densité encode l'ampleur ; trois matières différentes la faisaient lire
+    // à l'envers, le palier le plus fourni étant le plus vide. La matière
+    // descend dans le badge, où elle encode le palier et rien d'autre.
     await monter(
       <BarresParPalier
         titre="Par palier"
         series={[
           { palier: 'story', valeur: 34 },
           { palier: 'post', valeur: 21 },
+          { palier: 'reel', valeur: 7 },
         ]}
         testID="graphique"
       />,
     );
 
-    expect(screen.getByTestId('barre-story')).toBeTruthy();
+    const aplati = (style: unknown): Record<string, unknown> =>
+      Array.isArray(style)
+        ? Object.assign({}, ...style.map(aplati))
+        : ((style ?? {}) as Record<string, unknown>);
+
+    const fonds = ['story', 'post', 'reel'].map(
+      (palier) => aplati(screen.getByTestId(`barre-${palier}`).props.style).backgroundColor,
+    );
+    // Aucun n'est absent : c'est exactement ce qui était arrivé.
+    expect(fonds.filter((fond) => !fond)).toEqual([]);
+    // Et les trois sont le même : un seul remplissage.
+    expect(new Set(fonds).size).toBe(1);
+
+    // Le badge reste, et il porte le palier. La couleur ne dit plus lequel —
+    // c'est lui qui le dit, et c'est tout son emploi.
     expect(screen.getByText(/34/)).toBeTruthy();
     expect(screen.getByTestId('badge-story')).toBeTruthy();
     expect(screen.getByTestId('badge-post')).toBeTruthy();
+    expect(screen.getByTestId('badge-reel')).toBeTruthy();
   });
+
 });
 
 describe('état vide, v0.6', () => {
