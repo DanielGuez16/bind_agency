@@ -1009,9 +1009,15 @@ describe('graphiques', () => {
       (palier) => aplati(screen.getByTestId(`barre-${palier}`).props.style).backgroundColor,
     );
     // Aucun n'est absent : c'est exactement ce qui était arrivé.
-    expect(fonds.filter((fond) => !fond)).toEqual([]);
+    // **Pas `expect(fonds.filter((f) => !f)).toEqual([])`.** C'est ce que
+    // j'avais écrit d'abord, et la mutation l'a dit sans détour : `toEqual`
+    // ignore les `undefined` d'un tableau, si bien que `[undefined, undefined,
+    // undefined]` **égale** `[]`. La garde restait verte sur exactement le
+    // défaut qu'elle existe pour attraper.
+    const remplissage = fonds[0];
+    expect(remplissage).toBeTruthy();
     // Et les trois sont le même : un seul remplissage.
-    expect(new Set(fonds).size).toBe(1);
+    expect(fonds).toEqual([remplissage, remplissage, remplissage]);
 
     // Le badge reste, et il porte le palier. La couleur ne dit plus lequel —
     // c'est lui qui le dit, et c'est tout son emploi.
