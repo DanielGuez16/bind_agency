@@ -52,6 +52,7 @@ const UTILISATEUR: Utilisateur = {
   status: 'active',
   locale: 'en',
   email_verified_at: '2026-08-01T10:00:00Z',
+  deletion_effective_at: null,
 };
 
 /** Un serveur simulé, route par route. */
