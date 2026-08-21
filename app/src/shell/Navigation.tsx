@@ -34,7 +34,6 @@ import { useI18n } from '../i18n';
 import { useSession } from '../session';
 import { useTheme } from '../theme';
 import { AnnuaireScreen } from '../screens/AnnuaireScreen';
-import { ActivationScreen } from '../screens/ActivationScreen';
 import { ArbitrageScreen } from '../screens/ArbitrageScreen';
 import { AudienceScreen } from '../screens/AudienceScreen';
 import { FiabiliteScreen } from '../screens/FiabiliteScreen';
@@ -128,7 +127,6 @@ export type PileConfigurationParams = {
   Configuration: undefined;
   Catalogue: undefined;
   Horaires: undefined;
-  Activation: undefined;
 };
 
 const PileCreateur = createNativeStackNavigator<PileCreateurParams>();
@@ -573,13 +571,7 @@ function PileDeConfiguration({ businessId }: { businessId: string }) {
         {({ navigation }) => (
           <ConfigurationScreen
             onOuvrir={(porte) =>
-              navigation.navigate(
-                porte === 'catalogue'
-                  ? 'Catalogue'
-                  : porte === 'horaires'
-                    ? 'Horaires'
-                    : 'Activation',
-              )
+              navigation.navigate(porte === 'catalogue' ? 'Catalogue' : 'Horaires')
             }
           />
         )}
@@ -597,15 +589,6 @@ function PileDeConfiguration({ businessId }: { businessId: string }) {
         )}
       </PileConfiguration.Screen>
 
-      <PileConfiguration.Screen name="Activation">
-        {({ navigation }) => (
-          <ActivationScreen
-            businessId={businessId}
-            onActive={() => {}}
-            onRetour={() => navigation.goBack()}
-          />
-        )}
-      </PileConfiguration.Screen>
     </PileConfiguration.Navigator>
   );
 }

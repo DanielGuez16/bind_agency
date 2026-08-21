@@ -63,8 +63,9 @@ export function BandeauDeMiseEnLigne({
   const [envoi, setEnvoi] = useState(false);
   const [echec, setEchec] = useState<string | null>(null);
 
-  // Publié, ou état inconnu : rien. Une liste de tâches qui reste après avoir
-  // été remplie est la définition d'un écran dont on ne comprend plus l'objet.
+  // Publié et complet, ou état inconnu : rien. Une liste de tâches qui reste
+  // après avoir été remplie est la définition d'un écran dont on ne comprend
+  // plus l'objet — mais « publié et invisible » n'est pas rempli.
   if (etat === null || etat.forme === 'publie') return null;
 
   async function publier() {
@@ -93,7 +94,9 @@ export function BandeauDeMiseEnLigne({
       <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 16 }}>
         <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
           <Texte variante="type.section" couleur="ink.onDark">
-            {etat.forme === 'prete'
+            {etat.forme === 'publie-mais-invisible'
+              ? t('commerce.miseEnLigneInvisibleTitre')
+              : etat.forme === 'prete'
               ? t('commerce.miseEnLignePrete')
               : // **Le nombre, pas le mot.** La planche écrit « two things
                 // left » parce que sa maquette en a deux ; à trois manques la
@@ -105,16 +108,20 @@ export function BandeauDeMiseEnLigne({
                 ? t('commerce.miseEnLigneRestantUn')
                 : t('commerce.miseEnLigneRestant', { count: etat.manquantes.length })}
           </Texte>
-          <Texte variante="type.monoSmall" couleur="ink.onDark" testID="compte-mise-en-ligne">
-            {t('commerce.activationCompte', { faites: etat.faites, total: etat.total })}
-          </Texte>
+          {/* Le compte n'a de sens qu'avant la publication : après, ce n'est
+              plus une progression, c'est un manque. */}
+          {etat.forme !== 'publie-mais-invisible' ? (
+            <Texte variante="type.monoSmall" couleur="ink.onDark" testID="compte-mise-en-ligne">
+              {t('commerce.activationCompte', { faites: etat.faites, total: etat.total })}
+            </Texte>
+          ) : null}
         </View>
       </View>
 
       {/* **Seulement ce qui manque.** Les points faits se comptent, ils ne
           s'énumèrent pas : quatre coches au-dessus de deux manques diluent
           exactement ce qu'on vient lire. */}
-      {etat.forme === 'incomplet' ? (
+      {etat.forme === 'incomplet' || etat.forme === 'publie-mais-invisible' ? (
         <View style={{ gap: 6 }}>
           {etat.manquantes.map((cle) => (
             <View
@@ -153,7 +160,7 @@ export function BandeauDeMiseEnLigne({
             testID="publier-le-commerce"
           />
         </View>
-      ) : (
+      ) : etat.forme === 'publie-mais-invisible' ? null : (
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
           <View style={{ marginTop: 3 }}>
             <Icone nom="alerte" teinte={c['ink.onDark']} taille={16} />

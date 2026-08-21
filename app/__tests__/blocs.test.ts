@@ -83,7 +83,6 @@ const BLOCS: Record<string, number> = {
   TerrainScreen: 0,
   ReportingScreen: 0,
   PlansScreen: 0,
-  ActivationScreen: 0,
   MenuReviewScreen: 0,
   CameraScanner: 0,
 
