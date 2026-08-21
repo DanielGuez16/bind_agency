@@ -15,6 +15,9 @@
  * du compte au lieu du constat du palier. Chaque cas ci-dessous est choisi pour
  * **diverger** de l'une d'elles.
  */
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
 import { render, screen, waitFor, within } from '@testing-library/react-native';
 
 import { ApiClient, ApiProvider } from '../src/api';
@@ -22,7 +25,7 @@ import { I18nProvider } from '../src/i18n';
 import { en } from '../src/i18n/en';
 import { AudienceScreen } from '../src/screens/AudienceScreen';
 import { FiabiliteScreen } from '../src/screens/FiabiliteScreen';
-import { etatDuCompte } from '../src/screens/audience/etat';
+import { etatDuCompte, tombeeLe } from '../src/screens/audience/etat';
 import { seuilDesAbonnes } from '../src/screens/audience/seuil';
 import { ThemeProvider } from '../src/theme';
 
@@ -59,7 +62,22 @@ const PROCHAIN = {
 const VUE = {
   creator_id: 'u1',
   is_new_creator: false,
-  fiabilite: { reliability_score: '92', completed_collabs_count: 12 },
+  fiabilite: {
+    reliability_score: '92',
+    completed_collabs_count: 12,
+    // Les neuf du serveur, dans son ordre — du plus favorable au plus coûteux.
+    composantes: [
+      { evenement: 'collab_completed', sens: 'up' },
+      { evenement: 'published_on_time', sens: 'up' },
+      { evenement: 'published_late', sens: 'down' },
+      { evenement: 'first_pass_compliant', sens: 'up' },
+      { evenement: 'resubmit_required', sens: 'down' },
+      { evenement: 'no_show', sens: 'down' },
+      { evenement: 'unfulfilled', sens: 'down' },
+      { evenement: 'business_rating', sens: 'neutral' },
+      { evenement: 'abusive_report', sens: 'neutral' },
+    ],
+  },
   paliers: [],
   prochain_palier: PROCHAIN,
 };
@@ -216,6 +234,47 @@ describe('la carte de compte porte ce que la planche demande', () => {
     expect(carte.queryByTestId('ce-que-voit-un-salon')).toBeNull();
   });
 
+  it('et elle dit depuis quand elle est tombée', async () => {
+    // « Expirée il y a trois jours » et « expirée en mars » n'appellent pas la
+    // même réaction : la première se répare d'un geste, la seconde explique
+    // pourquoi plus rien ne s'ouvre depuis des mois.
+    await monter({
+      ...NOMINAL,
+      '/me/audience': [
+        { ...COMPTE, status: 'expired', token_expires_at: '2026-08-04T09:00:00Z' },
+      ],
+    });
+    await waitFor(() => expect(screen.getByTestId('autorisation-tombee-le')).toBeTruthy());
+
+    expect(screen.getByTestId('autorisation-tombee-le')).toHaveTextContent(/2026/);
+  });
+
+  it('mais se tait quand la date est à venir', async () => {
+    // **Le cas qui diverge de « rends la date dès qu'elle existe ».** Un compte
+    // révoqué avant l'échéance de son jeton porte une date **future** : écrire
+    // « expire le 3 octobre » sous « il faut réautoriser » dirait le contraire
+    // du bloc qui la porte. C'est le décor que la planche ne montre pas et que
+    // le serveur produit.
+    await monter({
+      ...NOMINAL,
+      '/me/audience': [
+        { ...COMPTE, status: 'revoked', token_expires_at: '2099-01-01T00:00:00Z' },
+      ],
+    });
+    await waitFor(() => expect(screen.getByTestId('autorisation-suspendue')).toBeTruthy());
+
+    expect(screen.queryByTestId('autorisation-tombee-le')).toBeNull();
+  });
+
+  it('la date de chute, en pur : passée oui, future non, absente non', () => {
+    const maintenant = new Date('2026-08-20T12:00:00Z');
+    expect(tombeeLe('2026-08-04T09:00:00Z', maintenant)).toBe('2026-08-04T09:00:00Z');
+    expect(tombeeLe('2026-09-04T09:00:00Z', maintenant)).toBeNull();
+    expect(tombeeLe(null, maintenant)).toBeNull();
+    expect(tombeeLe(undefined, maintenant)).toBeNull();
+    expect(tombeeLe('pas une date', maintenant)).toBeNull();
+  });
+
   it('sans relevé, un tiret et sa phrase, jamais un zéro', async () => {
     await monter({
       ...NOMINAL,
@@ -254,31 +313,107 @@ describe('le score, un écran plus loin', () => {
     expect(screen.getByText(en.parcours.scoreJamaisMontre)).toBeTruthy();
   });
 
-  it('nomme les sept événements qui le bougent, pas les quatre de la planche', async () => {
-    // **Un écart assumé.** La grille de pondération compte sept événements de
-    // poids non nul, dont « publier en retard » et « une reprise demandée ».
-    // Une liste qui promet de dire ce qui affecte le score et en tait deux se
-    // retourne contre elle le jour où il baisse pour une raison absente.
-    await monter({ '/me/tiers': VUE }, <FiabiliteScreen />);
+  it('range les événements par le sens que le serveur donne, pas par le sien', async () => {
+    // **Le cas qui diverge d'une liste récitée.** Le décor sert `no_show` en
+    // hausse — ce qu'il n'est pas dans la grille d'aujourd'hui. Un écran qui
+    // porterait ses sept événements en dur le rangerait en baisse et rendrait
+    // exactement le même écran que la planche : le test survivrait à la
+    // mutation sans avoir rien éprouvé. Ici les deux divergent, et c'est le
+    // serveur qui décide.
+    await monter(
+      {
+        '/me/tiers': {
+          ...VUE,
+          fiabilite: {
+            ...VUE.fiabilite,
+            composantes: [
+              { evenement: 'no_show', sens: 'up' },
+              { evenement: 'collab_completed', sens: 'down' },
+            ],
+          },
+        },
+      },
+      <FiabiliteScreen />,
+    );
     await waitFor(() => expect(screen.getByTestId('ce-qui-monte')).toBeTruthy());
 
-    const monte = within(screen.getByTestId('ce-qui-monte'));
-    const descend = within(screen.getByTestId('ce-qui-descend'));
-    for (const mot of [
-      en.parcours.scoreMonteCollaboration,
-      en.parcours.scoreMonteDansLesTemps,
-      en.parcours.scoreMonteDuPremierCoup,
-    ]) {
-      expect(monte.getByText(mot)).toBeTruthy();
-    }
-    for (const mot of [
-      en.parcours.scoreDescendAbsence,
-      en.parcours.scoreDescendNonHonoree,
-      en.parcours.scoreDescendEnRetard,
-      en.parcours.scoreDescendReprise,
-    ]) {
-      expect(descend.getByText(mot)).toBeTruthy();
-    }
+    expect(screen.getByTestId('ce-qui-monte-no_show')).toBeTruthy();
+    expect(screen.getByTestId('ce-qui-descend-collab_completed')).toBeTruthy();
+  });
+
+  it('donne une section aux neutres, parce qu’ils existent', async () => {
+    // « Ce qui affecte le score » doit pouvoir dire « ceci ne l'affecte pas ».
+    // Taire les poids nuls ferait disparaître de l'écran quelque chose qui peut
+    // réapparaître au premier réglage.
+    await monter({ '/me/tiers': VUE }, <FiabiliteScreen />);
+    await waitFor(() => expect(screen.getByTestId('sans-effet')).toBeTruthy());
+
+    expect(screen.getByTestId('sans-effet-abusive_report')).toBeTruthy();
+    expect(screen.getByText(en.parcours.evenementsDuScore.abusive_report)).toBeTruthy();
+  });
+
+  it('et une section vide ne se rend pas du tout', async () => {
+    // Sans cette moitié, la garde du dessus passerait sur un écran qui poserait
+    // les trois intitulés quoi qu'il arrive — un titre au-dessus du vide.
+    await monter(
+      {
+        '/me/tiers': {
+          ...VUE,
+          fiabilite: { ...VUE.fiabilite, composantes: [{ evenement: 'no_show', sens: 'down' }] },
+        },
+      },
+      <FiabiliteScreen />,
+    );
+    await waitFor(() => expect(screen.getByTestId('ce-qui-descend')).toBeTruthy());
+
+    expect(screen.queryByTestId('ce-qui-monte')).toBeNull();
+    expect(screen.queryByTestId('sans-effet')).toBeNull();
+  });
+
+  it('un code que l’interface ne sait pas dire ne s’affiche pas brut', async () => {
+    // « resubmit_required » posé tel quel sur un écran d'explication se lit
+    // comme une chaîne oubliée, parce que c'en serait une. Le silence n'est pas
+    // la bonne réponse non plus — c'est la garde du dessous qui doit tomber.
+    await monter(
+      {
+        '/me/tiers': {
+          ...VUE,
+          fiabilite: {
+            ...VUE.fiabilite,
+            composantes: [
+              { evenement: 'un_evenement_de_demain', sens: 'down' },
+              { evenement: 'no_show', sens: 'down' },
+            ],
+          },
+        },
+      },
+      <FiabiliteScreen />,
+    );
+    await waitFor(() => expect(screen.getByTestId('ce-qui-descend')).toBeTruthy());
+
+    expect(screen.queryByText(/un_evenement_de_demain/)).toBeNull();
+    expect(screen.getByTestId('ce-qui-descend-no_show')).toBeTruthy();
+  });
+
+  it('et les neuf codes du serveur ont tous leur phrase', () => {
+    // **La garde qui doit tomber le jour où un dixième arrive.** Le silence de
+    // l'écran sur un code inconnu est un repli, pas une réponse : sans ce test,
+    // un événement ajouté côté serveur disparaîtrait de la liste sans que rien
+    // ne le signale, et « ce qui affecte votre score » en tairait un.
+    //
+    // Lu dans l'énumération Python, et non recopié : une liste tenue à la main
+    // ici serait exactement le décor que le code fautif produit.
+    const source = readFileSync(
+      join(__dirname, '..', '..', 'api', 'app', 'models', 'enums.py'),
+      'utf-8',
+    );
+    const bloc = source.slice(source.indexOf('class ReliabilityEventType'));
+    const codes = [...bloc.slice(0, bloc.indexOf('\nclass ')).matchAll(/^\s+\w+ = "(\w+)"$/gm)].map(
+      (m) => m[1],
+    );
+
+    expect(codes.length).toBeGreaterThanOrEqual(9);
+    expect(codes.filter((code) => !(code in en.parcours.evenementsDuScore))).toEqual([]);
   });
 
   it('sans historique, un tiret et la phrase qui dit que ça ne coûte rien', async () => {

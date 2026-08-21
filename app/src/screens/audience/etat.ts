@@ -27,3 +27,28 @@ export function etatDuCompte(
   if (compte.captured_at === null) return 'premiere-lecture';
   return 'a-jour';
 }
+
+/**
+ * Depuis quand l'autorisation est tombée — et rien quand elle ne l'est pas.
+ *
+ * **La carte disait « finie » sans dire quand.** « Expirée il y a trois jours »
+ * et « expirée en mars » n'appellent pas la même réaction : la première se
+ * répare d'un geste, la seconde explique pourquoi plus rien ne s'ouvre depuis
+ * des mois.
+ *
+ * **Une date à venir ne se rend pas ici.** Un compte peut être révoqué avant
+ * l'échéance de son jeton : la date existe alors et elle est dans le futur.
+ * Écrire « expire le 3 octobre » sous « il faut réautoriser » dirait le
+ * contraire du bloc qui la porte. Le serveur le dit aussi à sa façon — une
+ * date absente veut dire « on ne sait pas », jamais « c'est bon », et c'est
+ * `status` qui tranche.
+ */
+export function tombeeLe(
+  tokenExpiresAt: string | null | undefined,
+  maintenant: Date = new Date(),
+): string | null {
+  if (!tokenExpiresAt) return null;
+  const quand = new Date(tokenExpiresAt);
+  if (Number.isNaN(quand.getTime())) return null;
+  return quand.getTime() <= maintenant.getTime() ? tokenExpiresAt : null;
+}

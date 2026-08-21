@@ -13,27 +13,30 @@
  * protéger ni le réparer, et commencer par les pénalités transforme une
  * explication en avertissement.
  *
- * **Sept événements et non quatre, et c'est un écart assumé avec la planche.**
- * Design en nomme deux par côté ; la grille de pondération en compte sept qui
- * bougent le score, dont « publier en retard » et « une reprise demandée » du
- * côté qui descend. Une liste qui promet de dire ce qui affecte le score et en
- * tait deux se retourne contre elle le jour où il baisse pour une raison
- * absente de l'écran. Les mots de Design sont gardés pour les quatre qu'elle
- * nomme, l'ordre aussi ; les trois autres suivent.
+ * **Neuf événements, lus et non récités.** L'écran portait sa liste en dur : la
+ * planche en nommait quatre, la grille de pondération en comptait sept qui
+ * bougeaient le score, et les signes venaient de `reliability_weights`, qui est
+ * de la configuration. Un poids inversé en exploitation aurait rendu l'écran
+ * faux sans qu'aucun test ne tombe. Le serveur sert désormais les neuf
+ * événements avec le sens du jour ; l'écran les range par sens et les nomme.
  *
- * **Ce que l'écran ne sait pas, et qui est écrit dans `TASKS.md`.** Les signes
- * viennent de `reliability_weights`, qui est de la configuration : un
- * exploitant qui inverserait un poids rendrait cette liste fausse sans qu'aucun
- * test ne tombe. La planche demande d'ailleurs à l'API de servir les
- * composantes du score « pour que l'écran nomme ce qui monte et ce qui descend
- * sans les déduire ». Il ne les déduit pas — il les récite, ce qui est le même
- * risque sous un autre nom.
+ * **Y compris les neutres, et c'est une section à part entière.** Un
+ * signalement écarté ne coûte rien, délibérément. Taire les poids nuls ferait
+ * disparaître de l'écran quelque chose qui existe et qui peut réapparaître au
+ * premier réglage : « ce qui affecte le score » doit pouvoir dire « ceci ne
+ * l'affecte pas », sans quoi la liste ment par omission le jour où elle est la
+ * plus utile.
+ *
+ * **L'ordre vient du serveur**, qui va du plus favorable au plus coûteux.
+ * L'écran regroupe, il ne retrie pas : un second tri ici et le jour où le
+ * produit change l'ordre des événements, deux endroits en décideraient.
  */
 import { View } from 'react-native';
 
-import { useApi, type VueDesPaliers } from '../api';
+import { useApi, type SensDuScore, type VueDesPaliers } from '../api';
 import { Icone, SkeletonLignes, Texte } from '../components';
 import { useI18n } from '../i18n';
+import { en } from '../i18n/en';
 import { Ecran } from './Ecran';
 import { useRequete } from './useRequete';
 import { elevationDeCarte, radius, useColors } from '../theme';
@@ -41,18 +44,16 @@ import { elevationDeCarte, radius, useColors } from '../theme';
 /** Le tiret cadratin des valeurs qui n'existent pas encore. Jamais un zéro. */
 const TIRET = '—';
 
-const MONTE = [
-  'parcours.scoreMonteCollaboration',
-  'parcours.scoreMonteDansLesTemps',
-  'parcours.scoreMonteDuPremierCoup',
-] as const;
-
-const DESCEND = [
-  'parcours.scoreDescendAbsence',
-  'parcours.scoreDescendNonHonoree',
-  'parcours.scoreDescendEnRetard',
-  'parcours.scoreDescendReprise',
-] as const;
+/**
+ * Les libellés que l'interface sait écrire.
+ *
+ * **Un code sans libellé ne s'affiche pas brut.** « resubmit_required » posé
+ * tel quel sur un écran d'explication se lit comme une chaîne oubliée — parce
+ * que c'en serait une. Il ne se tait pas non plus en silence : une garde
+ * éprouve que les neuf codes du serveur ont tous leur phrase, et c'est elle qui
+ * doit tomber le jour où un dixième arrive.
+ */
+const LIBELLES = new Set(Object.keys(en.parcours.evenementsDuScore));
 
 export function FiabiliteScreen({ onRetour }: { onRetour?: () => void }) {
   const { api } = useApi();
@@ -122,21 +123,44 @@ export function FiabiliteScreen({ onRetour }: { onRetour?: () => void }) {
               </View>
             )}
 
-            <Bloc titre={t('parcours.scoreCeQuiMonte')} testID="ce-qui-monte">
-              {MONTE.map((cle) => (
-                <LigneDeCause key={cle} sens="monte" texte={t(cle)} testID={`monte-${cle}`} />
-              ))}
-            </Bloc>
+            {(
+              [
+                ['up', t('parcours.scoreCeQuiMonte'), 'ce-qui-monte'],
+                ['down', t('parcours.scoreCeQuiDescend'), 'ce-qui-descend'],
+                ['neutral', t('parcours.scoreSansEffet'), 'sans-effet'],
+              ] as const
+            ).map(([sens, titre, id]) => {
+              // **`?? []` et non une lecture directe.** Une réponse d'avant
+              // le champ, ou un décor qui ne le pose pas, le laisse absent :
+              // `undefined.filter` fait tomber l'écran entier là où la bonne
+              // réponse est « aucune section ». Troisième fois que la même
+              // distinction se paie — la nullité est portée par le contrat,
+              // l'absence par l'appelant.
+              const causes = (vue.fiabilite.composantes ?? []).filter(
+                (composante) => composante.sens === sens && LIBELLES.has(composante.evenement),
+              );
+              // Une section vide ne se rend pas : un intitulé au-dessus du vide
+              // est une promesse qui ne mène nulle part, et le jour où le
+              // produit n'a plus aucun événement neutre, la section doit
+              // disparaître d'elle-même.
+              if (causes.length === 0) return null;
+              return (
+                <Bloc key={id} titre={titre} testID={id}>
+                  {causes.map((composante) => (
+                    <LigneDeCause
+                      key={composante.evenement}
+                      sens={sens}
+                      texte={t(`parcours.evenementsDuScore.${composante.evenement}`)}
+                      testID={`${id}-${composante.evenement}`}
+                    />
+                  ))}
+                </Bloc>
+              );
+            })}
 
-            <Bloc titre={t('parcours.scoreCeQuiDescend')} testID="ce-qui-descend">
-              {DESCEND.map((cle) => (
-                <LigneDeCause key={cle} sens="descend" texte={t(cle)} testID={`descend-${cle}`} />
-              ))}
-            </Bloc>
-
-            {/* **Rien n'est permanent, et c'est dit sous les pénalités.** Une
-                liste de ce qui fait baisser, laissée seule, se lit comme un
-                casier. */}
+            {/* **Rien n'est permanent, et c'est dit sous les listes.** Une
+                énumération de ce qui fait baisser, laissée seule, se lit comme
+                un casier. */}
             <Texte variante="type.caption" couleur="ink.soft" testID="score-se-repare">
               {t('parcours.scoreSeRepare')}
             </Texte>
@@ -220,7 +244,7 @@ function LigneDeCause({
   texte,
   testID,
 }: {
-  sens: 'monte' | 'descend';
+  sens: SensDuScore;
   texte: string;
   testID: string;
 }) {
@@ -240,8 +264,14 @@ function LigneDeCause({
     >
       <View style={{ marginTop: 4 }}>
         <Icone
-          nom={sens === 'monte' ? 'monte' : 'descend'}
-          couleur={sens === 'monte' ? 'status.success.text' : 'status.danger.text'}
+          nom={sens === 'up' ? 'monte' : sens === 'down' ? 'descend' : 'croix'}
+          couleur={
+            sens === 'up'
+              ? 'status.success.text'
+              : sens === 'down'
+                ? 'status.danger.text'
+                : 'ink.mute'
+          }
           taille={18}
         />
       </View>

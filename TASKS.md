@@ -1319,19 +1319,18 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       paliers ne « restent » pas quand l'autorisation tombe, sept événements
       bougent le score et non quatre, et « first reading within a day » promet
       un délai que la configuration décide. 1065 tests verts, 6 mutations*
-- [ ] **Le score récite sa mécanique au lieu de la lire**
-      *Les sept événements et leur sens viennent de `reliability_weights`, qui
-      est de la configuration : un exploitant qui inverserait un poids rendrait
-      l'écran faux sans qu'aucun test ne tombe. La planche le demande d'ailleurs
-      à l'API — « le score et ses deux composantes, pour que l'écran nomme ce
-      qui monte et ce qui descend sans les déduire ». Il ne les déduit pas, il
-      les récite, ce qui est le même risque sous un autre nom*
-- [ ] **La période de réautorisation n'est pas servie**
-      *La planche écrit « Instagram asks you again every 60 days ».
-      `token_expires_at` existe sur le modèle et ne sort que par
-      `Obstacle.depuis` d'un `account_token_invalid` ; `AudienceDuCompte` ne le
-      porte pas. La carte dit donc que l'autorisation est finie, sans dire pour
-      combien de temps elle vaut ni quand elle est tombée*
+- [x] **Le score lit sa mécanique au lieu de la réciter**
+      *Les neuf événements arrivent avec leur sens, dérivé du signe du poids du
+      jour ; l'écran les range et les nomme. Les neutres ont leur section — « ce
+      qui affecte le score » doit pouvoir dire « ceci ne l'affecte pas ». Un code
+      sans libellé ne s'affiche pas brut, et une garde lit l'énumération Python
+      pour tomber le jour où un dixième arrive*
+- [x] **La carte dit depuis quand l'autorisation est tombée**
+      *`token_expires_at` est servi. Une date à venir ne se rend pas : un compte
+      révoqué avant l'échéance de son jeton en porte une, et « expire le 3
+      octobre » sous « il faut réautoriser » dirait le contraire du bloc qui la
+      porte. La période de renouvellement elle-même — « tous les 60 jours » —
+      reste hors du produit : c'est une règle de plateforme, pas une donnée*
 - [x] **La journée du commerce v3 — l'écran le plus utilisé, et le plus mal compris**
       *« On ne comprend même pas à quoi sert cette page » était la remarque la
       plus grave de la revue. La barre de titre compte les décisions et le nom

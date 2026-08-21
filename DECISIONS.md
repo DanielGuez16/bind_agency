@@ -7645,3 +7645,40 @@ n'a que `caption` en 400 et `bodyStrong` en 16 : entre les deux, rien. Une seule
 phrase en a besoin — la limite qui tombe aujourd'hui — où la graisse fait la
 moitié du travail et l'ambre l'autre. Il vit dans le fichier du produit et non
 dans la passation : Design ne l'a pas nommé, et la passation reste sa copie.
+
+
+---
+
+## 2026-08-20 — Le score se lit, il ne se récite plus
+
+**La liste en dur est partie, et c'est le défaut que j'avais consigné la veille
+plutôt que corrigé.** L'écran nommait sept événements et leur sens depuis du
+texte figé ; les sens viennent de `reliability_weights`, qui est de la
+configuration, et un poids inversé en exploitation aurait rendu l'écran faux
+sans qu'aucun test ne tombe. Les neuf arrivent maintenant avec le sens du jour.
+
+**Le test qui le prouve sert `no_show` en hausse.** C'est le seul décor qui
+diverge : un écran qui porterait sa liste en dur rendrait exactement la même
+chose que la planche sur un décor conforme, et le test aurait survécu à la
+mutation sans rien éprouver.
+
+**Les neutres ont leur section.** Un signalement écarté ne coûte rien,
+délibérément. Taire les poids nuls ferait disparaître de l'écran quelque chose
+qui existe et qui peut réapparaître au premier réglage.
+
+**Un code inconnu ne s'affiche pas brut, et le silence n'est pas la réponse.**
+« resubmit_required » posé tel quel se lirait comme une chaîne oubliée. Mais se
+taire ferait disparaître un événement sans que rien ne le signale : une garde lit
+l'énumération Python et exige une phrase pour chaque code. Elle est écrite là
+plutôt que recopiée à la main — une liste tenue à la main dans le test serait
+exactement le décor que le code fautif produit.
+
+**Une date d'expiration à venir ne se rend pas.** Un compte révoqué avant
+l'échéance de son jeton en porte une : écrire « expire le 3 octobre » sous « il
+faut réautoriser » dirait le contraire du bloc qui la porte.
+
+**Et pour la troisième fois en deux jours, `undefined` n'est pas `null`.** La
+nullité est portée par le contrat, l'absence par l'appelant : `composantes`
+manquant faisait tomber l'écran entier là où la bonne réponse est « aucune
+section ». Les trois fois, la garde falsy a suffi ; les trois fois, c'est un
+test qui l'a trouvée, jamais une relecture.
