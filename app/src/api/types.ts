@@ -951,6 +951,28 @@ export type PorteeLocale = {
   peuvent_reserver: number;
   /** « 12 créatrices » ne veut rien dire sans « dans 10 km ». */
   rayon_metres: number;
+  /**
+   * Les paliers **fermés**, et ce que chacun ajouterait.
+   *
+   * **Un gain, jamais un total** — et c'est la faute qu'il faut ne pas
+   * commettre en le rendant. Les paliers déjà ouverts n'y figurent pas, et une
+   * créatrice qui peut déjà réserver n'est comptée dans aucun gain : les
+   * populations se recouvrent largement, une créatrice qui ouvre le reel ouvre
+   * le story. La phrase de la planche — « ouvrir le post porterait ce chiffre
+   * à 103 » — se compose donc `peuvent_reserver + createurs_en_plus`, jamais
+   * `createurs_en_plus` seul.
+   */
+  gains_par_palier: GainDePalier[];
+};
+
+/** Un palier fermé, et combien de créatrices son ouverture atteindrait. */
+export type GainDePalier = {
+  tier_id: string;
+  /** Rendus avec l'identifiant, pour écrire « le palier post » sans recharger
+   *  la grille des paliers. */
+  platform: Platform;
+  content_format: ContentFormat;
+  createurs_en_plus: number;
 };
 // --------------------------------------------------------------------------
 
@@ -1259,6 +1281,19 @@ export type CompteVuParLeCommerce = {
  * jamais montré à un commerce ». Le palier ouvert porte la même information sans
  * la livrer : un score dégradé la plafonnerait à un palier plus bas.
  */
+/**
+ * L'annuaire, et le compte qui le précède.
+ *
+ * **Une enveloppe, et non plus une liste nue.** À deux mille créatrices, un
+ * salon ne cherche pas : il ne connaît aucun nom, donc il n'a rien à taper. Ce
+ * qu'il lit d'abord est le compte. La liste seule ne pouvait porter aucun
+ * total, d'où le changement de forme.
+ */
+export type AnnuaireDuCommerce = {
+  portee: PorteeLocale;
+  createurs: CreateurDeLAnnuaire[];
+};
+
 export type CreateurDeLAnnuaire = {
   creator_id: string;
   /**

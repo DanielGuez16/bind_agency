@@ -15,6 +15,7 @@
 import { render, screen, waitFor } from '@testing-library/react-native';
 
 import { ApiClient, ApiProvider, type ContentFormat } from '../src/api';
+import type { PorteeLocale } from '../src/api';
 import { I18nProvider } from '../src/i18n';
 import { en } from '../src/i18n/en';
 import { depuisPour, periodesOffertes } from '../src/screens/rapports/fenetre';
@@ -168,7 +169,7 @@ describe('l’écran, quand il n’y a rien à rapporter', () => {
   async function monter(
     reponses: Record<string, unknown>,
     onOuvrir?: () => void,
-    portee?: { createurs: number; peuvent_reserver: number; rayon_metres: number },
+    portee?: PorteeLocale,
   ) {
     const api = new ApiClient({
       baseUrl: 'https://api.test',
@@ -241,6 +242,7 @@ describe('l’écran, quand il n’y a rien à rapporter', () => {
       createurs: 128,
       peuvent_reserver: 41,
       rayon_metres: 15_000,
+      gains_par_palier: [],
     });
     await waitFor(() => expect(screen.getByTestId('portee-locale')).toBeTruthy());
 
@@ -260,6 +262,7 @@ describe('l’écran, quand il n’y a rien à rapporter', () => {
       createurs: 128,
       peuvent_reserver: 41,
       rayon_metres: 15_000,
+      gains_par_palier: [],
     });
     await waitFor(() => expect(screen.getByTestId('pas-paliers')).toBeTruthy());
 

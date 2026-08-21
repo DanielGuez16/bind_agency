@@ -281,6 +281,11 @@ const ITEM = {
 
 const CREATEUR_DE_L_ANNUAIRE = {
   creator_id: 'c1',
+  // **Gardés dans le décor alors que la route ne les sert plus** (#201), et
+  // c'est délibéré : le test qui refuse « Moreau » à l'écran doit continuer
+  // d'avoir quelque chose à refuser. Les retirer d'ici le rendrait vert sans
+  // rien éprouver, et le jour où quelqu'un remet le nom civil dans la réponse,
+  // c'est cet écran qu'il faut voir tomber.
   first_name: 'Lea',
   last_name: 'Moreau',
   city: 'Miami',
@@ -297,6 +302,35 @@ const CREATEUR_DE_L_ANNUAIRE = {
   paliers_ouverts: ['story', 'post'],
   audience_totale: 24_000,
 };
+
+/**
+ * L'annuaire tel que la route le rend : une **enveloppe**, jamais une liste.
+ *
+ * La portée par défaut est plausible et non ronde — 41 sur 128 — pour qu'un
+ * test qui lit un chiffre lise celui qu'il attend et non un zéro qui passerait
+ * pour n'importe quoi. Le gain est vide par défaut : la phrase du
+ * contre-factuel ne se rend que là où un test l'installe.
+ */
+function annuaireDe(
+  createurs: unknown[],
+  portee: Partial<{
+    createurs: number;
+    peuvent_reserver: number;
+    rayon_metres: number;
+    gains_par_palier: unknown[];
+  }> = {},
+) {
+  return {
+    portee: {
+      createurs: 128,
+      peuvent_reserver: 41,
+      rayon_metres: 15_000,
+      gains_par_palier: [],
+      ...portee,
+    },
+    createurs,
+  };
+}
 
 const PALIER = {
   id: 't1',
@@ -379,8 +413,9 @@ const ECRANS = [
     nom: 'annuaire',
     noeud: <AnnuaireScreen businessId="b1" />,
     role: 'merchant' as Role,
-    plein: { '/creators': [CREATEUR_DE_L_ANNUAIRE] },
-    vide: { '/creators': [] },
+    plein: { '/creators': annuaireDe([CREATEUR_DE_L_ANNUAIRE]) },
+    // Aucune créatrice autour : la carte de portée se tait, l'état vide parle.
+    vide: { '/creators': annuaireDe([], { createurs: 0, peuvent_reserver: 0 }) },
   },
   {
     nom: 'catalogue',
@@ -1635,7 +1670,7 @@ describe('l’annuaire des créateurs', () => {
     // endroit du produit où l'on préfère taire une absence.
     await monter(
       <AnnuaireScreen businessId="b1" />,
-      clientDe({ '/creators': [CREATEUR_DE_L_ANNUAIRE] }),
+      clientDe({ '/creators': annuaireDe([CREATEUR_DE_L_ANNUAIRE]) }),
       'merchant',
     );
     // Rendu d'abord : sans cette attente, un écran qui n'affiche rien du tout
@@ -1655,6 +1690,87 @@ describe('l’annuaire des créateurs', () => {
     );
   });
 
+  it('commence par le compte, avant toute liste', async () => {
+    // La décision de la v3 : à deux mille créatrices un salon ne cherche pas,
+    // il ne connaît aucun nom. Le chiffre est ce qu'il répétera à son associé.
+    await monter(
+      <AnnuaireScreen businessId="b1" />,
+      clientDe({ '/creators': annuaireDe([CREATEUR_DE_L_ANNUAIRE]) }),
+      'merchant',
+    );
+    await waitFor(() => expect(screen.getByTestId('portee-du-salon')).toBeTruthy());
+
+    expect(screen.getByTestId('peuvent-reserver')).toHaveTextContent(/^41$/);
+    // **« 128 » ne se dit jamais seul.** Les créatrices sans position ne sont
+    // comptées nulle part : le nombre est celui de celles dont on peut affirmer
+    // qu'elles sont dans le rayon. Le rayon est donc dans la phrase, et il vient
+    // du serveur — la planche écrit 15 km, la configuration en dit 10.
+    expect(screen.getByTestId('portee-du-salon')).toHaveTextContent(/of 128 within 15 km/);
+  });
+
+  it('compose le contre-factuel comme un total, jamais comme le gain seul', async () => {
+    // **La faute que ce test existe pour attraper.** `createurs_en_plus` est ce
+    // que l'ouverture *ajoute* — 62 — et la phrase annonce où l'on arriverait,
+    // 41 + 62 = 103. Rendre le gain tel quel afficherait « porterait ce chiffre
+    // à 62 », c'est-à-dire moins que ce qu'on a déjà : une phrase qui passe la
+    // relecture et se voit en démonstration.
+    await monter(
+      <AnnuaireScreen businessId="b1" />,
+      clientDe({
+        '/creators': annuaireDe([CREATEUR_DE_L_ANNUAIRE], {
+          gains_par_palier: [
+            { tier_id: 't9', platform: 'instagram', content_format: 'post', createurs_en_plus: 62 },
+          ],
+        }),
+      }),
+      'merchant',
+    );
+    await waitFor(() => expect(screen.getByTestId('gain-de-palier')).toBeTruthy());
+
+    expect(screen.getByTestId('gain-de-palier')).toHaveTextContent(/\b103\b/);
+    expect(screen.getByTestId('gain-de-palier')).not.toHaveTextContent(/\b62\b/);
+  });
+
+  it('propose le palier qui rapporte le plus, et un seul', async () => {
+    // La planche montre une phrase, pas une liste de paliers à comparer. Deux
+    // gains dans la réponse : celui qui se dit est le plus grand.
+    await monter(
+      <AnnuaireScreen businessId="b1" />,
+      clientDe({
+        '/creators': annuaireDe([CREATEUR_DE_L_ANNUAIRE], {
+          gains_par_palier: [
+            { tier_id: 't1', platform: 'instagram', content_format: 'reel', createurs_en_plus: 9 },
+            { tier_id: 't2', platform: 'instagram', content_format: 'post', createurs_en_plus: 62 },
+          ],
+        }),
+      }),
+      'merchant',
+    );
+    await waitFor(() => expect(screen.getByTestId('gain-de-palier')).toBeTruthy());
+
+    expect(screen.getByTestId('gain-de-palier')).toHaveTextContent(/\b103\b/);
+    expect(screen.getByTestId('gain-de-palier')).not.toHaveTextContent(/\b50\b/);
+  });
+
+  it('ne propose rien quand aucun palier fermé n’ajouterait personne', async () => {
+    // Un gain nul ne se propose pas : « ouvrir le post porterait ce chiffre à
+    // 41 » invite à un geste qui ne change rien, et fait douter du reste.
+    await monter(
+      <AnnuaireScreen businessId="b1" />,
+      clientDe({
+        '/creators': annuaireDe([CREATEUR_DE_L_ANNUAIRE], {
+          gains_par_palier: [
+            { tier_id: 't1', platform: 'instagram', content_format: 'reel', createurs_en_plus: 0 },
+          ],
+        }),
+      }),
+      'merchant',
+    );
+    await waitFor(() => expect(screen.getByTestId('portee-du-salon')).toBeTruthy());
+
+    expect(screen.queryByTestId('gain-de-palier')).toBeNull();
+  });
+
   it('titre la fiche du pseudonyme, et jamais du nom civil', async () => {
     // **La divergence est dans la fabrique** : la créatrice a un pseudonyme
     // *et* un nom civil. Un décor qui n'aurait que l'un des deux laisserait
@@ -1663,7 +1779,7 @@ describe('l’annuaire des créateurs', () => {
     // rien à faire sur un écran d'abonné qui ne les a jamais rencontrées.
     await monter(
       <AnnuaireScreen businessId="b1" />,
-      clientDe({ '/creators': [CREATEUR_DE_L_ANNUAIRE] }),
+      clientDe({ '/creators': annuaireDe([CREATEUR_DE_L_ANNUAIRE]) }),
       'merchant',
     );
     await waitFor(() => expect(screen.getByTestId('createur-c1')).toBeTruthy());
@@ -1679,7 +1795,7 @@ describe('l’annuaire des créateurs', () => {
     // seul geste de l'écran — on sort du produit pour voir son travail.
     await monter(
       <AnnuaireScreen businessId="b1" />,
-      clientDe({ '/creators': [CREATEUR_DE_L_ANNUAIRE] }),
+      clientDe({ '/creators': annuaireDe([CREATEUR_DE_L_ANNUAIRE]) }),
       'merchant',
     );
     await waitFor(() => expect(screen.getByTestId('createur-c1')).toBeTruthy());
@@ -1697,7 +1813,7 @@ describe('l’annuaire des créateurs', () => {
 
     await monter(
       <AnnuaireScreen businessId="b1" />,
-      clientDe({ '/creators': [sansProfil] }),
+      clientDe({ '/creators': annuaireDe([sansProfil]) }),
       'merchant',
     );
     await waitFor(() => expect(screen.getByTestId('createur-c1')).toBeTruthy());
@@ -1714,15 +1830,42 @@ describe('l’annuaire des créateurs', () => {
     // avant cet aperçu répondront 404 plutôt que de retomber sur l'original.
     await monter(
       <AnnuaireScreen businessId="b1" />,
-      clientDe({ '/creators': [CREATEUR_DE_L_ANNUAIRE] }),
+      clientDe({ '/creators': annuaireDe([CREATEUR_DE_L_ANNUAIRE]) }),
       'merchant',
     );
     await waitFor(() => expect(screen.getByTestId('createur-c1')).toBeTruthy());
 
     expect(screen.getByTestId('portrait-c1')).toBeTruthy();
-    expect(String(screen.getByTestId('photo-c1').props.source.uri)).toContain(
-      'photos/creatrices/lea.jpg',
+    // **La clé se sert telle quelle, et c'est la fin de l'adresse.** « Contient
+    // la clé » ne suffisait pas : `urlDeLaVignette` suffixe `@vignette` et
+    // contient la clé lui aussi, si bien que la mutation qui remettait la
+    // vignette passait au vert. C'est la terminaison qui distingue les deux.
+    expect(String(screen.getByTestId('photo-c1').props.source.uri)).toMatch(
+      /photos\/creatrices\/lea\.jpg$/,
     );
+  });
+
+  it('sert une clé d’aperçu sans la resuffixer', async () => {
+    // Sans abonnement, `avatar_key` porte déjà l'aperçu flouté — suffixe
+    // `@apercu`, produit par le serveur. Y ajouter `@vignette` ne rendrait
+    // rien, et le cadre vide se serait confondu avec le 404 prévu pour les
+    // photos d'avant l'aperçu : le défaut se serait caché derrière un cas
+    // limite légitime.
+    const floutee = {
+      ...CREATEUR_DE_L_ANNUAIRE,
+      comptes: [
+        { ...CREATEUR_DE_L_ANNUAIRE.comptes[0], avatar_key: 'photos/creatrices/lea.jpg@apercu' },
+      ],
+    };
+
+    await monter(
+      <AnnuaireScreen businessId="b1" />,
+      clientDe({ '/creators': annuaireDe([floutee]) }),
+      'merchant',
+    );
+    await waitFor(() => expect(screen.getByTestId('createur-c1')).toBeTruthy());
+
+    expect(String(screen.getByTestId('photo-c1').props.source.uri)).toMatch(/@apercu$/);
   });
 
   it('garde le cadre du portrait quand la photo manque', async () => {
@@ -1736,7 +1879,7 @@ describe('l’annuaire des créateurs', () => {
 
     await monter(
       <AnnuaireScreen businessId="b1" />,
-      clientDe({ '/creators': [sansPhoto] }),
+      clientDe({ '/creators': annuaireDe([sansPhoto]) }),
       'merchant',
     );
     await waitFor(() => expect(screen.getByTestId('createur-c1')).toBeTruthy());
@@ -1748,7 +1891,7 @@ describe('l’annuaire des créateurs', () => {
   it('montre les paliers ouverts, qui portent l’information à sa place', async () => {
     await monter(
       <AnnuaireScreen businessId="b1" />,
-      clientDe({ '/creators': [CREATEUR_DE_L_ANNUAIRE] }),
+      clientDe({ '/creators': annuaireDe([CREATEUR_DE_L_ANNUAIRE]) }),
       'merchant',
     );
     await waitFor(() => expect(screen.getByTestId('createur-c1')).toBeTruthy());
@@ -1764,7 +1907,7 @@ describe('l’annuaire des créateurs', () => {
     // et l'annuaire ne doit pas se lire comme un jugement.
     await monter(
       <AnnuaireScreen businessId="b1" />,
-      clientDe({ '/creators': [{ ...CREATEUR_DE_L_ANNUAIRE, paliers_ouverts: [] }] }),
+      clientDe({ '/creators': annuaireDe([{ ...CREATEUR_DE_L_ANNUAIRE, paliers_ouverts: [] }]) }),
       'merchant',
     );
     await waitFor(() => expect(screen.getByTestId('sans-palier-c1')).toBeTruthy());
