@@ -99,9 +99,20 @@ class CompteVu:
 
 @dataclass(frozen=True, slots=True)
 class CreateurVu:
+    """Ce qu'un salon voit d'une créatrice dans l'annuaire.
+
+    **Aucun nom d'état civil, et c'est un retrait.** L'écran titrait « Léa
+    Martel » ; il titre `@lea.mrl`. Le pseudonyme est l'identité de cet écran —
+    il suffit à ce que l'annuaire sert, reconnaître un compte et aller voir son
+    travail — et le nom civil de cent vingt-huit personnes n'a rien à faire chez
+    un salon qui ne les a jamais rencontrées.
+
+    Le nom arrive à la réservation, quand une créatrice a choisi ce salon. Pas
+    avant, et pas à tout le monde. C'est la même règle que le reste : ce qu'un
+    écran ne montre pas ne doit pas partir.
+    """
+
     creator_id: uuid.UUID
-    first_name: str | None
-    last_name: str | None
     city: str | None
     bio: str | None
     comptes: tuple[CompteVu, ...]
@@ -146,8 +157,6 @@ async def annuaire(
         await session.execute(
             sa.select(
                 CreatorProfile.user_id,
-                CreatorProfile.first_name,
-                CreatorProfile.last_name,
                 CreatorProfile.city,
                 CreatorProfile.bio,
                 CreatorProfile.reliability_score,
@@ -251,8 +260,6 @@ async def annuaire(
         vus.append(
             CreateurVu(
                 creator_id=profil.user_id,
-                first_name=profil.first_name,
-                last_name=profil.last_name,
                 city=profil.city,
                 # **La biographie part avec le reste, et ce n'est pas de
                 # l'excès de zèle.** C'est du texte libre : « écris-moi sur

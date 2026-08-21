@@ -1261,8 +1261,13 @@ export type CompteVuParLeCommerce = {
  */
 export type CreateurDeLAnnuaire = {
   creator_id: string;
-  first_name: string | null;
-  last_name: string | null;
+  /**
+   * **Aucun nom d'état civil, et c'est un retrait du serveur.** L'annuaire
+   * titrait « Léa Martel » — l'identité de cent vingt-huit personnes chez un
+   * salon qui ne les a jamais rencontrées. Le pseudonyme est l'identité de cet
+   * écran ; le nom arrive à la réservation, quand une créatrice a choisi ce
+   * salon.
+   */
   city: string | null;
   bio: string | null;
   comptes: CompteVuParLeCommerce[];

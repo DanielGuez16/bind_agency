@@ -34,6 +34,9 @@ class CompteVuRead(BaseModel):
 class CreateurVuRead(BaseModel):
     """Ce qu'un salon abonné voit d'une créatrice.
 
+    **Ni nom, ni prénom.** Le pseudonyme est l'identité de cet écran ; l'état
+    civil arrive à la réservation, quand une créatrice a choisi ce salon.
+
     Ni score de fiabilité, ni compteur de collaborations, ni historique de
     manquements. Le palier ouvert dit déjà qu'elle tient ses engagements — un
     score dégradé la plafonnerait à un palier plus bas — et il le dit sans
@@ -43,8 +46,6 @@ class CreateurVuRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     creator_id: uuid.UUID
-    first_name: str | None
-    last_name: str | None
     city: str | None
     bio: str | None
     comptes: list[CompteVuRead]

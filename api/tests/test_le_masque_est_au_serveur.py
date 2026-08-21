@@ -239,3 +239,76 @@ async def test_sans_photo_il_n_y_a_pas_d_apercu(session: AsyncSession) -> None:
     vue = {v.creator_id: v for v in await directory.annuaire(session, abonne=False)}[elle.id]
 
     assert vue.comptes[0].avatar_key is None
+
+
+# --------------------------------------------------------------------------
+# le nom d'état civil ne sort pas de l'annuaire, abonné ou non
+# --------------------------------------------------------------------------
+
+
+async def test_l_annuaire_ne_livre_jamais_le_nom_civil(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """**Dans les deux états, et c'est ce qui le distingue du reste.**
+
+    Le pseudonyme, le volume et la photo dépendent de l'abonnement : ils sont ce
+    qu'on achète. Le nom civil, lui, ne s'achète pas — l'écran ne le montre
+    nulle part, et il n'a donc aucune raison de traverser la route. Un test qui
+    ne regarderait que l'état non abonné laisserait l'identité de cent
+    vingt-huit personnes chez tout salon qui paie.
+    """
+    from app.services import creator_profile as profile_service
+
+    business, proprietaire = await commerce_en_cours(session)
+    elle = await createur(session)
+    await compte(session, elle, followers=1_000, handle="lea.mrl")
+    await profile_service.update_profile(
+        session,
+        user_id=elle.id,
+        modifications={"first_name": "Léa", "last_name": "Martel"},
+    )
+    await session.commit()
+
+    jetons = (
+        await client.post(
+            f"{PREFIX}/auth/login",
+            json={"email": proprietaire.email, "password": MOT_DE_PASSE},
+        )
+    ).json()
+    reponse = await client.get(
+        f"{PREFIX}/business/{business.id}/creators",
+        headers={"Authorization": f"Bearer {jetons['access_token']}"},
+    )
+
+    assert "Martel" not in reponse.text
+    assert "Léa" not in reponse.text
+    # Et le pseudonyme est bien là quand on paie : le nom part, l'identité de
+    # l'écran reste. Sans cette moitié, une route qui ne rendrait rien du tout
+    # passerait aussi.
+    ligne = reponse.json()["createurs"][0]
+    assert "first_name" not in ligne
+    assert "last_name" not in ligne
+
+
+async def test_le_nom_reste_sur_une_reservation(session: AsyncSession) -> None:
+    """**Le sens inverse, et il n'est pas décoratif.**
+
+    Retirer le nom de l'annuaire ne doit pas le retirer de la journée du
+    comptoir : là, la créatrice a choisi ce salon et s'y présente. Un test qui
+    ne vérifierait que l'absence transformerait une règle de proportion en
+    effacement.
+    """
+    from tests.test_booking_create import monter_le_decor, premier_creneau, reserver
+
+    decor = await monter_le_decor(session)
+    creneau = await premier_creneau(session, decor)
+    await reserver(session, decor, starts_at=creneau)
+
+    from app.services import booking_history
+
+    journee = await booking_history.journee_du_commerce(
+        session, business=decor["business"], jour=creneau.date()
+    )
+    lignes = [*journee.items, *journee.a_trancher]
+
+    assert any(r.creator_first_name for r in lignes)
