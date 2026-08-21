@@ -9,7 +9,7 @@
  * de décision sans motif, un rejet définitif offert au commerce, un pourcentage
  * sur l'activation, une clôture proposée à qui n'y a pas droit.
  */
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import type { ReactElement, ReactNode } from 'react';
 
 import { ApiClient, ApiProvider, PREFIXE } from '../src/api';
@@ -151,6 +151,10 @@ const LIGNE_DE_FILE = {
   creator_first_name: 'Rebecca',
   creator_last_name: 'Alvarez',
   creator_handle: 'rebecca.miami',
+  // Servi par le serveur sur chaque ligne : le poser ici plutôt que de le
+  // laisser absent, sinon le cas courant s'éprouve sur `undefined` et non sur
+  // ce que la file rend vraiment.
+  creator_partie: false,
   platform: 'instagram',
   item_name: 'Gel nails',
   dernier_motif: 'missing_mention',
@@ -788,6 +792,54 @@ describe('contrôle des publications', () => {
     );
 
     await waitFor(() => expect(screen.getByTestId('preuve-soumise')).toBeTruthy());
+
+    // **Et l'adresse d'origine avec.** L'aperçu est une archive ; la
+    // publication se vérifie chez la plateforme, et sans le lien le commerce
+    // approuve sur une image qu'il ne peut pas recouper.
+    expect(screen.getByTestId('ouvrir-la-publication')).toBeTruthy();
+  });
+
+  it('dit qu’une créatrice est partie, au lieu d’une ligne sans personne', async () => {
+    // Les trois champs de nom sont nuls après anonymisation, et la chaîne de
+    // `??` finissait sur une chaîne vide : une contrepartie sans créatrice, que
+    // le commerce lit comme une panne. La divergence est écrite ici : le même
+    // dossier avec `creator_partie: false` et des noms nuls resterait vide, et
+    // c'est bien le booléen qu'on éprouve, pas l'absence de nom.
+    const partie = {
+      ...LIGNE_DE_FILE,
+      creator_first_name: null,
+      creator_last_name: null,
+      creator_handle: null,
+      creator_partie: true,
+    };
+
+    await monter(<PublicationsScreen businessId="b1" />, clientDe({ '/collaborations': [partie] }));
+
+    await waitFor(() =>
+      expect(screen.getByTestId('createur-k1')).toHaveTextContent(en.commerce.creatricePartie),
+    );
+  });
+
+  it('range les onglets dans l’ordre de l’usage, et ne genre personne', async () => {
+    await monter(
+      <PublicationsScreen businessId="b1" />,
+      clientDe({ '/collaborations': [LIGNE_DE_FILE] }),
+    );
+
+    const onglets = await screen.findByTestId('onglets');
+    // Ce qui demande un geste, ce qui est réglé, ce qui n'attend personne.
+    const libelles = within(onglets)
+      .getAllByRole('tab')
+      .map((tab) => within(tab).getByText(/./).props.children);
+    expect(libelles).toEqual([
+      en.commerce.filtreAControler,
+      en.commerce.filtreApprouvee,
+      en.commerce.filtreAttendue,
+    ]);
+
+    // « Awaiting her post » supposait le genre de toute créatrice sur un écran
+    // que lisent quatre salons. L'espagnol était déjà neutre.
+    expect(en.commerce.filtreAttendue).not.toMatch(/\bher\b|\bhis\b/i);
   });
 });
 

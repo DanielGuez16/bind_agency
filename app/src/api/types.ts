@@ -798,6 +798,16 @@ export type LigneDeFile = {
   creator_first_name: string | null;
   creator_last_name: string | null;
   creator_handle: string | null;
+  /**
+   * La créatrice a supprimé son compte, et l'anonymisation est passée.
+   *
+   * **Le commerce ne voit jamais un compte anonymisé, il voit une créatrice
+   * partie.** Les trois champs de nom sont alors nuls, et l'écran qui les
+   * enchaînait en `??` finissait sur une chaîne vide : une ligne sans personne,
+   * qu'on lit comme un bug du produit. Ce booléen dit la différence entre « on
+   * ne sait pas qui » et « elle n'est plus là ».
+   */
+  creator_partie: boolean;
   platform: Platform;
   item_name: string;
   dernier_motif: string | null;

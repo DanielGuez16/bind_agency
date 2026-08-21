@@ -575,6 +575,7 @@ export const es: Catalogue = {
     filtreAControler: 'Por revisar',
     filtreAttendue: 'Falta su publicación',
     filtreApprouvee: 'Aprobadas',
+    creatricePartie: 'La creadora ya no está en BIND',
     approuver: 'Aprobar la publicación',
     redemander: 'Pedir una nueva publicación',
     noteLabel: 'Añadir una nota (opcional)',

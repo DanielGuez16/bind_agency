@@ -7712,3 +7712,34 @@ puisque `alignSelf` reste absent dans les deux cas et que c'est le parent qui
 décide. Le décor ne distinguait pas les deux implémentations — exactement le
 défaut que le fichier de contexte décrit. Il regarde maintenant l'axe du parent,
 et les deux mutations tombent.
+## 2026-08-20 — Les publications du commerce : ce que la revue demandait, et deux défauts trouvés en le faisant
+
+La revue posait trois points. **Deux étaient déjà réglés** par la conversation
+des données — l'onglet `expected` porte désormais un libellé qui dit de qui et
+de quoi on parle, et l'ordre suit l'usage : à examiner, approuvées, attendues.
+Ce qui demande un geste vient d'abord, ce qui n'attend personne en dernier.
+Les deux sont maintenant tenus par un test : l'ordre se relit sur le rendu, pas
+sur la constante.
+
+Le troisième — les liens et l'aperçu dans « à examiner » — était réglé aussi,
+mais **rien ne l'attestait**. L'aperçu avait sa garde, l'adresse d'origine non ;
+or c'est elle qui compte le plus, l'archive n'étant que la trace. Sans le lien,
+le commerce approuve sur une image qu'il ne peut pas recouper. La mutation qui
+retire le lien fait maintenant tomber la suite.
+
+**Une ligne sans personne, et c'est la promesse de la suppression de compte.**
+`creator_partie` est servi par le serveur depuis l'ouverture de la route ;
+l'application ne le lisait pas. Les trois champs de nom étant nuls après
+anonymisation, la chaîne de `??` finissait sur une **chaîne vide** : une
+contrepartie sans créatrice, que le commerce lit comme une panne du produit.
+Elle n'est pas inconnue, elle est partie — c'est exactement ce que la décision
+du 19 août promettait de lui montrer, et l'écran ne le montrait pas.
+
+Le même défaut existe sur `ArbitrageScreen`, qui replie sur `—` à trois
+endroits. Moins faux qu'une chaîne vide, faux quand même : signalé, pas corrigé
+ici, cet écran n'était pas dans la demande.
+
+**« Awaiting her post » supposait le genre de toute créatrice.** Sur un écran
+que lisent quatre salons, à propos de gens qu'ils n'ont pas choisis. L'espagnol
+était déjà neutre — `Falta su publicación` — donc seul l'anglais portait
+l'affirmation. Un test refuse désormais le pronom genré dans ce libellé.
