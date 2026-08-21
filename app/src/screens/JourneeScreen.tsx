@@ -56,12 +56,13 @@ import {
   TierBadge,
   vibration,
 } from '../components';
-import { formatDateTime, formatHeure } from '../format';
+import { formatDateTime, formatHeure, formatNumber } from '../format';
 import { useI18n, type SupportedLocale } from '../i18n';
-import { breakpoint, elevationDeCarte, radius, useTheme, type ColorName } from '../theme';
+import { breakpoint, elevationDeCarte, radius, size, useTheme, type ColorName } from '../theme';
 import { ECART_DES_COLONNES, useGabarit } from '../shell/gabarit';
 import { Ecran } from './Ecran';
-import { jourEnToutesLettres, limiteTombeAujourdhui } from './journee/entete';
+import { nomDePlateforme } from './obstacle';
+import { horairesDuJour, jourEnToutesLettres, limiteTombeAujourdhui } from './journee/entete';
 import { useRequete } from './useRequete';
 
 export function JourneeScreen({ businessId, jour }: { businessId: string; jour?: string }) {
@@ -115,7 +116,22 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
       // annoncerait « de 00:00 à 00:00 ». Les horaires vivent sur une autre
       // ressource, et les chercher ici coûterait une seconde requête à l'écran
       // le plus ouvert du produit pour une ligne qui situe. Voir `TASKS.md`.
-      sousTitre={chargee ? jourEnToutesLettres(chargee.jour, locale) : null}
+      sousTitre={
+        chargee
+          ? [
+              jourEnToutesLettres(chargee.jour, locale),
+              // **Les horaires, enfin, et ils viennent de leur propre champ.**
+              // Cette ligne est restée muette une version durant parce que
+              // `debut` et `fin` de la journée passaient pour des heures
+              // d'ouverture : ce sont les bornes de la journée comptée, et les
+              // écrire aurait annoncé « de 00:00 à 00:00 ».
+              horairesDuJour(chargee.horaires) ??
+                // Fermé se dit : un jour creux ne se lit pas pareil selon qu'on
+                // était fermé ou que personne n'est venu.
+                t('commerce.journeeFerme'),
+            ].join(' · ')
+          : null
+      }
       nature="merchantListeDetail"
       squelette={<SkeletonLignes combien={6} testID="squelette-journee" />}
       testID="ecran-journee"
@@ -406,28 +422,7 @@ function Detail({
           </Texte>
         </View>
         <Texte variante="type.bodyStrong">{nomDe(reservation)}</Texte>
-        {/* **Le pseudonyme mène au profil.** Un salon qui décide d'accorder
-            regarde d'abord ce que la créatrice publie ; un pseudonyme sans lien
-            l'oblige à le recopier dans une barre d'adresse, et c'est le geste
-            qu'on abandonne. L'adresse vient du serveur, dérivée du réseau de
-            cette demande : elle est nulle quand la plateforme n'a pas de profil
-            public connu, et on n'affiche alors rien plutôt qu'un lien mort. */}
-        {reservation.creator_handle && reservation.creator_profil_url ? (
-          <Pressable
-            accessibilityRole="link"
-            onPress={() => void Linking.openURL(reservation.creator_profil_url as string)}
-            testID={`profil-${reservation.booking_id}`}
-            style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
-          >
-            <Texte variante="type.caption" couleur="brand.700">
-              {reservation.creator_handle}
-            </Texte>
-          </Pressable>
-        ) : reservation.creator_handle ? (
-          <Texte variante="type.caption" couleur="ink.mute">
-            {reservation.creator_handle}
-          </Texte>
-        ) : null}
+        <ReseauxDeLaCreatrice reservation={reservation} />
       </View>
 
       <View style={{ gap: 8 }}>
@@ -500,6 +495,109 @@ function Detail({
           </Texte>
         )}
       </View>
+    </View>
+  );
+}
+
+/**
+ * Les réseaux de la créatrice, celui qui manque compris.
+ *
+ * **L'absence est une information.** Savoir qu'il n'y a pas de TikTok fait
+ * partie de la décision autant que le nombre d'abonnés Instagram : un salon qui
+ * cherche une portée sur une plateforme précise a besoin de le lire, et un
+ * réseau simplement omis se lit comme un oubli de l'écran.
+ *
+ * **Celui qui a un profil public y mène, et il est le seul lien sortant du
+ * produit.** Il porte donc le glyphe de sortie : la différence se voit avant
+ * l'appui, pas après. L'adresse vient du serveur — nulle quand la plateforme
+ * n'a pas de profil public connu, et on n'affiche alors pas de lien plutôt
+ * qu'un lien mort.
+ *
+ * **Un compte sans relevé n'affiche pas zéro.** « 0 abonné » à quelqu'un qui en
+ * a douze mille est la pire chose que cet écran puisse dire au moment où le
+ * salon décide.
+ */
+function ReseauxDeLaCreatrice({ reservation }: { reservation: ReservationDuCommerce }) {
+  const { t, locale } = useI18n();
+  const { color: c } = useTheme();
+
+  // Les réseaux servis, et à défaut celui de la demande seule : une réponse
+  // d'avant le champ ne doit pas faire disparaître le pseudonyme.
+  const comptes =
+    reservation.comptes?.length > 0
+      ? reservation.comptes
+      : reservation.creator_handle
+        ? [
+            {
+              platform: reservation.platform,
+              handle: reservation.creator_handle,
+              followers: null,
+            },
+          ]
+        : [];
+
+  if (comptes.length === 0) return null;
+
+  return (
+    <View
+      style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingTop: 2 }}
+      testID={`reseaux-${reservation.booking_id}`}
+    >
+      {comptes.map((compte) => {
+        const rattache = compte.handle !== null;
+        const mene = rattache && reservation.creator_profil_url !== null
+          && compte.platform === reservation.platform;
+        const corps = (
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 9,
+              minHeight: size.touchMin,
+              paddingHorizontal: 16,
+              borderRadius: radius['radius.pill'],
+              borderWidth: rattache ? 1.5 : 1,
+              borderColor: rattache ? c['line.ink'] : c['line.default'],
+            }}
+          >
+            <Icone
+              nom={compte.platform === 'tiktok' ? 'tiktok' : 'instagram'}
+              couleur={rattache ? 'ink.default' : 'ink.mute'}
+              taille={18}
+            />
+            <Texte
+              variante={rattache ? 'type.bodyStrong' : 'type.body'}
+              couleur={rattache ? 'ink.default' : 'ink.mute'}
+            >
+              {rattache
+                ? compte.followers === null
+                  ? nomDePlateforme(compte.platform)
+                  : t('commerce.reseauAvecAbonnes', {
+                      reseau: nomDePlateforme(compte.platform),
+                      abonnes: formatNumber(compte.followers, locale),
+                    })
+                : t('commerce.reseauAbsent', { reseau: nomDePlateforme(compte.platform) })}
+            </Texte>
+            {mene ? <Icone nom="sortie" taille={15} /> : null}
+          </View>
+        );
+
+        return mene ? (
+          <Pressable
+            key={compte.platform}
+            accessibilityRole="link"
+            onPress={() => void Linking.openURL(reservation.creator_profil_url as string)}
+            testID={`profil-${reservation.booking_id}`}
+            style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+          >
+            {corps}
+          </Pressable>
+        ) : (
+          <View key={compte.platform} testID={`reseau-${compte.platform}`}>
+            {corps}
+          </View>
+        );
+      })}
     </View>
   );
 }

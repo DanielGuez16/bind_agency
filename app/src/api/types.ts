@@ -637,6 +637,27 @@ export type HistoriqueDuCreateur = {
   compteurs: Record<BookingStatus, number>;
 };
 
+/**
+ * Un réseau rattaché, tel que le salon le voit sur une demande.
+ *
+ * **L'absence est une information** : savoir qu'il n'y a pas de TikTok fait
+ * partie de la décision autant que le nombre d'abonnés Instagram. Le compte
+ * absent reste donc affiché, en encre douce et sans action.
+ */
+export type CompteDeLaCreatrice = {
+  platform: Platform;
+  handle: string | null;
+  /** Nul quand aucun relevé n'existe. Zéro serait un chiffre, et faux. */
+  followers: number | null;
+};
+
+/** Une plage d'ouverture du jour. Vide veut dire fermé. */
+export type PlageDuJour = {
+  debut: string;
+  fin: string;
+  postes: number;
+};
+
 export type ReservationDuCommerce = {
   booking_id: string;
   status: BookingStatus;
@@ -683,6 +704,14 @@ export type ReservationDuCommerce = {
    * serveur qui refuse, jamais l'horloge du téléphone.
    */
   absence_signalable_a: string | null;
+  /**
+   * Tous les réseaux de la créatrice, pas seulement celui de cette demande.
+   *
+   * La planche les pose côte à côte sur le panneau : celui qui a un relevé
+   * porte son chiffre et mène au profil, celui qui manque reste affiché sans
+   * action. Un salon qui décide regarde les deux.
+   */
+  comptes: CompteDeLaCreatrice[];
 };
 
 export type JourneeDuCommerce = {
@@ -698,6 +727,16 @@ export type JourneeDuCommerce = {
    * n'apparaîtrait dans aucune journée qu'on ouvre.
    */
   a_trancher: ReservationDuCommerce[];
+  /**
+   * Les plages d'ouverture de ce jour, exceptions comprises.
+   *
+   * **Vide veut dire fermé**, et c'est une information : une journée sans
+   * réservation ne se lit pas pareil selon qu'on était fermé ou que personne
+   * n'est venu. À ne pas confondre avec `debut` et `fin`, qui sont les bornes
+   * de la journée **comptée** — c'est en les prenant pour des horaires que la
+   * sous-ligne aurait annoncé « de 00:00 à 00:00 ».
+   */
+  horaires: PlageDuJour[];
 };
 
 // --------------------------------------------------------------------------
