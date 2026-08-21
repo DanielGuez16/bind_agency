@@ -96,3 +96,76 @@ describe('les clés de traduction', () => {
     expect(composees).toBeLessThan(40);
   });
 });
+
+/**
+ * Le produit ne genre personne.
+ *
+ * **Trois fois le même défaut en une journée**, tous côté anglais : un onglet
+ * qui disait « Awaiting her post », une explication de retard qui disait
+ * « she came and found you closed », une aide de carte qui disait « she needs
+ * to read your menu ». L'espagnol était neutre à chaque fois — `su`, `la
+ * creadora` — donc rien ne se voyait en comparant les deux langues.
+ *
+ * Ce n'est pas une question de style. Ces phrases parlent de créatrices à des
+ * salons qui ne les ont pas choisies, et affirment leur genre à leur place ;
+ * et elles vieillissent mal le jour où un créateur lit son propre écran. La
+ * deuxième personne — « you » — couvre presque tout le produit, et là où il
+ * faut une troisième, « they » ne coûte rien.
+ *
+ * **La garde cherche les quatre formes, pas seulement celle qui a motivé la
+ * règle.** Trouvée par relecture d'un libellé, elle en a dénoncé deux autres
+ * que personne n'avait vues — c'est exactement ce qu'une garde partielle,
+ * calée sur « her », aurait raté.
+ */
+describe('les libellés ne genrent personne', () => {
+  it('aucun pronom de troisième personne genré dans les chaînes anglaises', () => {
+    // **L'objet, pas le fichier**, et c'est une correction. La première
+    // version appariait les apostrophes du source : les commentaires français
+    // en contiennent — « l'écran », « qu'on » — et l'appariement se
+    // désynchronisait sur tout le reste du fichier. La garde lisait alors des
+    // fragments qui ne sont les chaînes de personne, et la mutation qui
+    // remettait « her » dans un libellé passait au vert. Lire les valeurs
+    // rendues supprime la question du parsing.
+    const fautifs: string[] = [];
+    const parcourir = (noeud: unknown, chemin: string) => {
+      if (typeof noeud === 'string') {
+        if (/\b(she|he|her|his|hers|him)\b/i.test(noeud)) fautifs.push(`${chemin} — ${noeud}`);
+        return;
+      }
+      if (noeud && typeof noeud === 'object') {
+        for (const [cle, valeur] of Object.entries(noeud)) parcourir(valeur, `${chemin}.${cle}`);
+      }
+    };
+    parcourir(en, 'en');
+
+    // La garde regarde bien quelque chose : sans ce compte, un `en` vide ou
+    // mal importé rendrait zéro fautif et zéro chaîne, donc un vert vide.
+    let combien = 0;
+    const compter = (noeud: unknown) => {
+      if (typeof noeud === 'string') combien += 1;
+      else if (noeud && typeof noeud === 'object') Object.values(noeud).forEach(compter);
+    };
+    compter(en);
+    expect(combien).toBeGreaterThan(500);
+
+    expect(fautifs).toEqual([]);
+  });
+
+  it('et la garde attrape bien les quatre formes qu’elle vise', () => {
+    // Une garde qui ne cherche que le mot qui l'a motivée fait croire que la
+    // question est réglée. On l'éprouve donc sur les autres façons d'écrire la
+    // même faute, y compris capitalisée et en fin de phrase.
+    const attrape = (phrase: string) => /\b(she|he|her|his|hers|him)\b/i.test(phrase);
+
+    expect(attrape('Awaiting her post')).toBe(true);
+    expect(attrape('She came and found you closed')).toBe(true);
+    expect(attrape('Read his profile')).toBe(true);
+    expect(attrape('The booking is hers')).toBe(true);
+
+    // Et elle ne se déclenche pas sur les mots qui les contiennent : « the »,
+    // « share », « other », « chez » n'ont rien à voir. Sans ce contre-exemple,
+    // la garde refuserait la moitié du catalogue et se ferait désactiver.
+    expect(attrape('Share the other booking')).toBe(false);
+    expect(attrape('Here is where they check in')).toBe(false);
+  });
+});
