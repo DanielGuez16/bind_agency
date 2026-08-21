@@ -77,6 +77,18 @@ export type Utilisateur = {
    * chacun d'eux se contredirait d'un onglet à l'autre.
    */
   email_verified_at: string | null;
+  /**
+   * Quand la suppression demandée prendra effet, nulle si aucune ne court.
+   *
+   * **L'échéance et non le temps restant.** Elle ne bouge pas ; un écran
+   * laissé ouvert se recale dessus tout seul, là où un compte à rebours
+   * calculé au chargement vieillirait en silence.
+   *
+   * Sur la session parce qu'elle vit sur `/me`, avec le reste du compte.
+   * Le compte **reste actif** pendant le délai : c'est ce qui rend le
+   * retour possible, et rien d'autre dans l'application ne change.
+   */
+  deletion_effective_at: string | null;
 };
 
 export type EtatDeSession =
@@ -131,6 +143,17 @@ type SessionValue = EtatDeSession & {
    * devant un message d'erreur qui décrit une bonne nouvelle.
    */
   renvoyerLaVerification: () => Promise<void>;
+  /**
+   * Ouvre le délai de suppression, et relit le compte.
+   *
+   * **Laisse remonter son erreur**, à la différence du renvoi de
+   * vérification : un 409 dit ici qu'il reste une contrepartie à honorer,
+   * et c'est l'écran qui sait la compter et le dire. L'avaler rendrait un
+   * bouton qui ne fait rien sans jamais expliquer pourquoi.
+   */
+  demanderLaSuppression: () => Promise<void>;
+  /** Le retour, pendant le délai. Même règle : l'erreur remonte. */
+  annulerLaSuppression: () => Promise<void>;
   deconnecter: () => Promise<void>;
   /** Le client, déjà porteur du coffre. Les écrans passent par `useApi`. */
   client: ApiClient;
@@ -287,6 +310,16 @@ export function SessionProvider({
     }
   }, [client, relireLeCompte]);
 
+  const demanderLaSuppression = useCallback(async () => {
+    await client.request(routes.maSuppression(), { methode: 'POST' });
+    await relireLeCompte();
+  }, [client, relireLeCompte]);
+
+  const annulerLaSuppression = useCallback(async () => {
+    await client.request(routes.maSuppression(), { methode: 'DELETE' });
+    await relireLeCompte();
+  }, [client, relireLeCompte]);
+
   const deconnecter = useCallback(async () => {
     await client.deconnecter();
     setEtat({ etat: 'anonyme', motif: 'deconnexion' });
@@ -304,6 +337,8 @@ export function SessionProvider({
       accueilVu,
       relireLeCompte,
       renvoyerLaVerification,
+      demanderLaSuppression,
+      annulerLaSuppression,
     }),
     [
       etat,
@@ -316,6 +351,8 @@ export function SessionProvider({
       accueilVu,
       relireLeCompte,
       renvoyerLaVerification,
+      demanderLaSuppression,
+      annulerLaSuppression,
     ],
   );
 

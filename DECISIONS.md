@@ -7559,3 +7559,45 @@ la teinte de marque, et la tolérance de cette garde est par fichier : écrire l
 deux barres sur place aurait exempté `AudienceScreen.tsx` en entier, donc laissé
 passer la pastille orange du mois suivant. `components/Jauge.tsx` est le lieu
 légitime de la teinte, et la garde garde toute sa force.
+
+---
+
+## 2026-08-20 — La suppression de compte, branchée sur ses trois routes
+
+`POST /me/deletion` ouvre le délai, `DELETE /me/deletion` le retire, et
+`deletion_effective_at` vit sur `/me`. Le bloc cramoisi composé la veille passe
+donc de deux textes à **deux états** : aucune demande — les conséquences, puis
+le bouton ; une demande ouverte — l'échéance datée, et de quoi revenir. Le
+second n'est pas une variante du premier : le compte reste actif, tout marche
+encore, et c'est exactement ce que les trente jours existent pour offrir.
+
+**Rien ne demande de confirmer, et c'est le report qui l'autorise.** Une boîte
+« êtes-vous sûre ? » par-dessus une décision réversible pendant un mois
+ajouterait une friction là où la garantie est ailleurs : les conséquences se
+lisent au-dessus du bouton, et le retour reste ouvert jusqu'à l'échéance.
+
+**L'échéance se lit dans le fuseau de l'appareil, pas dans celui d'un salon.**
+La règle du produit convertit sur le commerce parce que tout le reste s'y passe ;
+cette date-là n'appartient à aucun commerce, elle appartient au compte. La rendre
+à Miami pour quelqu'un à Madrid la ferait tomber un jour à côté.
+
+**Le 409 ne porte pas le nombre, et l'application le compte.** Étendre la
+fabrique d'erreurs pour un compteur aurait coûté un détail structuré à toutes
+les erreurs du produit pour une phrase d'un seul écran ; l'app liste déjà les
+réservations, donc elle sait compter. « Il vous reste deux publications » se
+traite, « vous avez des contreparties » se subit.
+
+**Ce comptage recopie une constante du serveur, donc une garde la lit.**
+`CONTREPARTIES_EN_COURS` doit valoir `account_deletion.EN_COURS` — quatre
+statuts, deux langages, deux dossiers. Le jour où le serveur en ajoute un,
+l'écran annoncerait une contrepartie là où le refus en compte deux. Le test lit
+le bloc `frozenset` dans le fichier Python et compare ; la dérive casse la
+suite au lieu de se découvrir sur un écran. Il cible le bloc `EN_COURS` et non
+le fichier entier : `CollaborationStatus` y apparaît ailleurs, et prendre tout
+le fichier aurait fait passer la garde pour n'importe quelle liste.
+
+**Une page pleine se tait plutôt que de sous-compter.** Cent réservations
+demandées ; si la page est pleine elle peut en cacher, et un nombre trop bas
+tromperait dans le sens qui fait croire qu'on a fini. La règle vit dans l'aide
+pure et non dans le composant — posée dans l'écran, elle ne s'éprouvait qu'en
+montant cent réservations, et la mutation qui la retirait passait au vert.

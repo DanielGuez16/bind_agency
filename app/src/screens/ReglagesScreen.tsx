@@ -45,11 +45,17 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 
+import { ApiError, useApi } from '../api';
 import { Button, Chip, DataRow, Filet, RangeeDeChips, Texte } from '../components';
+import { formatDate } from '../format';
 import { useI18n, type SupportedLocale } from '../i18n';
 import { trousseauDisponible, useSession } from '../session';
 import { useTheme } from '../theme';
 import { HealthScreen } from './HealthScreen';
+
+/** Le fuseau du téléphone, résolu une fois. */
+const FUSEAU_DE_L_APPAREIL = Intl.DateTimeFormat().resolvedOptions().timeZone;
+import { compterOuRien, PAGE } from './reglages/suppression';
 
 export function ReglagesScreen() {
   const { t, locale, setLocale } = useI18n();
@@ -154,25 +160,72 @@ export function ReglagesScreen() {
 }
 
 /**
- * La suppression de compte.
+ * La suppression de compte, branchée.
  *
- * **Le bouton est inactif parce que la route n'existe pas encore.** Le service
- * d'anonymisation est écrit ; aucun routeur ne l'expose. `Button` réserve
- * `disabled` aux actions qui redeviendront possibles, et c'est le cas ici —
- * mais sa réserve tient à ce qu'un bouton grisé demande de deviner ce qui le
- * débloque. La phrase au-dessous supprime la devinette : elle dit que l'action
- * arrive. Sans elle, retirer le bouton vaudrait mieux que le griser.
+ * **Deux états, et le second n'est pas un message d'erreur.** Aucune demande en
+ * cours : les conséquences, puis le bouton. Une demande ouverte : l'échéance, et
+ * de quoi revenir. Le second n'est pas une variante du premier — le compte est
+ * toujours actif, tout marche encore, et c'est précisément ce que le délai de
+ * trente jours existe pour offrir.
  *
- * **Ce que la suppression fera est écrit maintenant**, avant d'être branché.
- * Une décision irréversible se lit avant d'être prise, pas dans la boîte de
- * confirmation qui la suit ; et les trois règles — anonymiser plutôt que
- * détruire, trente jours pour revenir, refus tant qu'une contrepartie court —
- * sont ce que la créatrice a besoin de savoir pour décider, pas des détails
- * d'implémentation.
+ * **Rien ne demande de confirmer, et c'est le délai qui le permet.** Une boîte
+ * « êtes-vous sûre ? » par-dessus une décision déjà réversible pendant un mois
+ * ajouterait une friction là où la vraie garantie est ailleurs : les
+ * conséquences se lisent au-dessus du bouton, et le retour reste ouvert
+ * jusqu'à l'échéance. C'est le report qui tient lieu de confirmation.
+ *
+ * **Le refus dit combien il en reste.** Le 409 porte le code seul ; l'écran
+ * compte les contreparties depuis la liste qu'il sait déjà lire. « Il vous
+ * reste deux publications » se traite ; « vous avez des contreparties » se
+ * subit. Quand la page est pleine — donc possiblement tronquée — on retombe sur
+ * la phrase du catalogue plutôt que d'annoncer un nombre faux.
  */
 function BlocDeSuppression() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { color: c } = useTheme();
+  const session = useSession();
+  const { api, messageDErreur } = useApi();
+
+  const [enCours, setEnCours] = useState(false);
+  const [echec, setEchec] = useState<string | null>(null);
+
+  const echeance = session.etat === 'connecte' ? session.utilisateur.deletion_effective_at : null;
+
+  /**
+   * Ce que le 409 ne dit pas. Nul quand on ne peut pas l'affirmer : une page
+   * pleine peut en cacher d'autres, et un nombre faux vaut moins que pas de
+   * nombre.
+   */
+  const compterLesRestantes = async (): Promise<number | null> => {
+    try {
+      const historique = await api.mesReservations({ limite: PAGE });
+      return compterOuRien(historique.items);
+    } catch {
+      return null;
+    }
+  };
+
+  const agir = async (quoi: 'demander' | 'annuler') => {
+    setEchec(null);
+    setEnCours(true);
+    try {
+      if (quoi === 'demander') await session.demanderLaSuppression();
+      else await session.annulerLaSuppression();
+    } catch (cause) {
+      const bloquee =
+        cause instanceof ApiError && cause.code === 'deletion_blocked_by_collaboration';
+      const restantes = bloquee ? await compterLesRestantes() : null;
+      setEchec(
+        restantes === null
+          ? messageDErreur(cause)
+          : restantes === 1
+            ? t('reglages.supprimerBloqueUne')
+            : t('reglages.supprimerBloque', { count: restantes }),
+      );
+    } finally {
+      setEnCours(false);
+    }
+  };
 
   return (
     <View
@@ -186,24 +239,47 @@ function BlocDeSuppression() {
       }}
     >
       <Texte variante="type.bodyStrong" couleur="status.danger.text">
-        {t('reglages.supprimerTitre')}
+        {t(echeance ? 'reglages.supprimerEnCoursTitre' : 'reglages.supprimerTitre')}
       </Texte>
 
       <Texte variante="type.caption" couleur="ink.soft" testID="suppression-consequences">
-        {t('reglages.supprimerCorps')}
+        {echeance
+          ? t('reglages.supprimerEnCoursCorps', {
+              // **Le fuseau de l'appareil, et non celui d'un commerce.** La
+              // règle du produit convertit sur le fuseau du salon parce que
+              // tout le reste s'y passe ; cette échéance-ci n'appartient à
+              // aucun salon, elle appartient au compte. La lire à Miami quand
+              // on est à Madrid ferait tomber la date un jour à côté.
+              quand: formatDate(echeance, locale, FUSEAU_DE_L_APPAREIL),
+            })
+          : t('reglages.supprimerCorps')}
       </Texte>
 
-      <Button
-        label={t('reglages.supprimerAction')}
-        variant="danger"
-        disabled
-        onPress={() => undefined}
-        testID="supprimer-mon-compte"
-      />
+      {echeance ? (
+        // Le retour est neutre : c'est la commande qui **ne** supprime pas, et
+        // la peindre en cramoisi mettrait la même alarme sur les deux gestes.
+        <Button
+          label={t('reglages.supprimerAnnuler')}
+          variant="secondary"
+          loading={enCours}
+          onPress={() => void agir('annuler')}
+          testID="annuler-la-suppression"
+        />
+      ) : (
+        <Button
+          label={t('reglages.supprimerAction')}
+          variant="danger"
+          loading={enCours}
+          onPress={() => void agir('demander')}
+          testID="supprimer-mon-compte"
+        />
+      )}
 
-      <Texte variante="type.caption" couleur="ink.mute" testID="suppression-indisponible">
-        {t('reglages.supprimerBientot')}
-      </Texte>
+      {echec ? (
+        <Texte variante="type.caption" couleur="status.danger.text" testID="suppression-echec">
+          {echec}
+        </Texte>
+      ) : null}
     </View>
   );
 }

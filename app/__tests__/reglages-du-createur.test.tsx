@@ -14,12 +14,16 @@
  * Chacune a sa garde.
  */
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import type { ReactNode } from 'react';
 
+import { ApiProvider, type CollaborationStatus } from '../src/api';
 import { I18nProvider } from '../src/i18n';
 import { en } from '../src/i18n/en';
 import { ReglagesScreen } from '../src/screens/ReglagesScreen';
 import { SessionProvider, themeDuRole, useSession, type Utilisateur } from '../src/session';
+import { compterOuRien, CONTREPARTIES_EN_COURS, PAGE } from '../src/screens/reglages/suppression';
 import { couleurs, ThemeProvider } from '../src/theme';
 
 const UTILISATEUR: Utilisateur = {
@@ -29,6 +33,7 @@ const UTILISATEUR: Utilisateur = {
   status: 'active',
   locale: 'en',
   email_verified_at: '2026-08-01T10:00:00Z',
+  deletion_effective_at: null,
 };
 
 function coffreDeTest() {
@@ -44,24 +49,59 @@ function coffreDeTest() {
   };
 }
 
-const serveur = (async (url: RequestInfo | URL) => {
-  if (String(url).includes('/me')) {
-    return { ok: true, status: 200, json: async () => UTILISATEUR } as Response;
-  }
-  throw new TypeError(`route non simulée : ${String(url)}`);
-}) as unknown as typeof fetch;
+/**
+ * Un serveur simulé, route par route, avec `/me` par défaut.
+ *
+ * `/me` est relu après chaque geste : les tests qui font avancer l'état le
+ * changent en cours de route, comme le vrai serveur.
+ */
+function serveurDe(
+  table: Record<string, (init?: RequestInit) => { status: number; corps: unknown }> = {},
+): typeof fetch {
+  return (async (url: RequestInfo | URL, init?: RequestInit) => {
+    const chemin = String(url);
+    const trouve = Object.entries(table).find(([fragment]) => chemin.includes(fragment));
+    if (trouve) {
+      const { status, corps } = trouve[1](init);
+      return { ok: status >= 200 && status < 300, status, json: async () => corps } as Response;
+    }
+    if (chemin.includes('/me')) {
+      return { ok: true, status: 200, json: async () => moi } as Response;
+    }
+    throw new TypeError(`route non simulée : ${chemin}`);
+  }) as unknown as typeof fetch;
+}
+
+/** Une réservation réduite à ce que le comptage lit : le statut de sa contrepartie. */
+function reservationAvec(status: CollaborationStatus) {
+  return {
+    booking_id: `b-${status}`,
+    contrepartie: { collaboration_id: `c-${status}`, status, deadline_at: '2026-09-01T12:00:00Z', attempts_count: 1, needs_human_review: false },
+  };
+}
+
+/** Le compte tel que le serveur le rend, mutable au fil d'un test. */
+let moi: Utilisateur = UTILISATEUR;
+
+beforeEach(() => {
+  moi = UTILISATEUR;
+});
 
 function Sous({ children }: { children: ReactNode }) {
   const session = useSession();
   const role = session.etat === 'connecte' ? session.utilisateur.role : 'creator';
-  return <ThemeProvider role={themeDuRole(role)}>{children}</ThemeProvider>;
+  return (
+    <ThemeProvider role={themeDuRole(role)}>
+      <ApiProvider client={session.client}>{children}</ApiProvider>
+    </ThemeProvider>
+  );
 }
 
 /** L'écran monté comme dans l'application : session, langue, thème du rôle. */
-async function poser() {
+async function poser(fetchImpl: typeof fetch = serveurDe()) {
   await render(
     <I18nProvider initialLocale="en">
-      <SessionProvider baseUrl="https://api.test" coffre={coffreDeTest()} fetchImpl={serveur}>
+      <SessionProvider baseUrl="https://api.test" coffre={coffreDeTest()} fetchImpl={fetchImpl}>
         <Sous>
           <ReglagesScreen />
         </Sous>
@@ -114,24 +154,116 @@ describe('les réglages du créateur', () => {
     expect(Object.values(style)).not.toContain(couleurs['status.danger.surface']);
   });
 
-  it('propose la suppression sans la promettre : inactive, et elle dit pourquoi', async () => {
-    await poser();
+  it('ouvre le délai, et bascule sur l’échéance et le retour', async () => {
+    const dans30Jours = '2026-09-19T12:00:00Z';
+    let demandes = 0;
 
-    const bouton = screen.getByTestId('supprimer-mon-compte');
-    // La route n'existe pas encore. Un bouton qui appelle dans le vide serait
-    // pire que pas de bouton : il rendrait 200 dans la tête de la lectrice.
-    expect(bouton.props.accessibilityState?.disabled).toBe(true);
-
-    // Et il ne laisse pas deviner ce qui le débloque — c'est la seule chose
-    // qui autorise un bouton grisé plutôt que son retrait.
-    expect(screen.getByTestId('suppression-indisponible')).toHaveTextContent(
-      en.reglages.supprimerBientot,
+    await poser(
+      serveurDe({
+        '/me/deletion': () => {
+          demandes += 1;
+          moi = { ...UTILISATEUR, deletion_effective_at: dans30Jours };
+          return { status: 202, corps: moi };
+        },
+      }),
     );
 
-    // Les conséquences sont lisibles avant la décision, pas après. Le texte
-    // exact, sinon un libellé vidé de ses trois règles passerait.
-    expect(screen.getByTestId('suppression-consequences')).toHaveTextContent(
-      en.reglages.supprimerCorps,
+    await fireEvent.press(screen.getByTestId('supprimer-mon-compte'));
+
+    // Le bouton de suppression cède la place au retour : le bloc n'est plus
+    // une proposition, il est un état du compte.
+    await waitFor(() => expect(screen.getByTestId('annuler-la-suppression')).toBeTruthy());
+    expect(demandes).toBe(1);
+    expect(screen.queryByTestId('supprimer-mon-compte')).toBeNull();
+
+    // Et l'échéance est datée. Sans elle, « éliminación en curso » ne dit pas
+    // combien de temps il reste pour changer d'avis.
+    expect(screen.getByTestId('suppression-consequences')).toHaveTextContent(/Sep 19, 2026/);
+  });
+
+  it('annule la demande et redonne le bouton', async () => {
+    moi = { ...UTILISATEUR, deletion_effective_at: '2026-09-19T12:00:00Z' };
+    let methode: string | undefined;
+
+    await poser(
+      serveurDe({
+        '/me/deletion': (init) => {
+          methode = init?.method;
+          moi = UTILISATEUR;
+          return { status: 200, corps: moi };
+        },
+      }),
+    );
+
+    await waitFor(() => expect(screen.getByTestId('annuler-la-suppression')).toBeTruthy());
+    await fireEvent.press(screen.getByTestId('annuler-la-suppression'));
+
+    await waitFor(() => expect(screen.getByTestId('supprimer-mon-compte')).toBeTruthy());
+    // `DELETE` sur la demande, pas un `POST` sur un chemin d'annulation : ce
+    // qu'on retire est la ressource créée par le geste précédent.
+    expect(methode).toBe('DELETE');
+  });
+
+  it('dit combien de contreparties bloquent, en les comptant lui-même', async () => {
+    // Le 409 porte le code seul. Trois réservations dont **deux** engagent
+    // encore : une approuvée ne compte pas, et c'est tout l'intérêt du test —
+    // un comptage qui prendrait la liste entière rendrait trois.
+    await poser(
+      serveurDe({
+        '/me/deletion': () => ({
+          status: 409,
+          // `detail` est une chaîne, pas un objet : c'est la forme que
+          // `errorCodeFromResponse` lit, et un objet y vaut « pas de code ».
+          corps: { detail: 'deletion_blocked_by_collaboration' },
+        }),
+        '/me/bookings': () => ({
+          status: 200,
+          corps: {
+            items: [
+              reservationAvec('pending'),
+              reservationAvec('resubmit_requested'),
+              reservationAvec('approved'),
+            ],
+            compteurs: {},
+          },
+        }),
+      }),
+    );
+
+    await fireEvent.press(screen.getByTestId('supprimer-mon-compte'));
+
+    await waitFor(() =>
+      expect(screen.getByTestId('suppression-echec')).toHaveTextContent(
+        en.reglages.supprimerBloque.replace('{{count}}', '2'),
+      ),
+    );
+
+    // Et le bloc reste une proposition : rien n'a été ouvert.
+    expect(screen.getByTestId('supprimer-mon-compte')).toBeTruthy();
+    expect(screen.queryByTestId('annuler-la-suppression')).toBeNull();
+  });
+
+  it('retombe sur la phrase du catalogue quand il ne peut pas compter', async () => {
+    // La liste ne répond pas : annoncer « zéro contrepartie » sur un refus qui
+    // en invoque une serait pire que la phrase générique.
+    await poser(
+      serveurDe({
+        '/me/deletion': () => ({
+          status: 409,
+          // `detail` est une chaîne, pas un objet : c'est la forme que
+          // `errorCodeFromResponse` lit, et un objet y vaut « pas de code ».
+          corps: { detail: 'deletion_blocked_by_collaboration' },
+        }),
+        '/me/bookings': () => ({ status: 500, corps: { detail: 'internal_error' } }),
+      }),
+    );
+
+    await fireEvent.press(screen.getByTestId('supprimer-mon-compte'));
+
+    await waitFor(() =>
+      expect(screen.getByTestId('suppression-echec')).toHaveTextContent(
+        en.errors.deletion_blocked_by_collaboration,
+      ),
     );
   });
 
@@ -162,5 +294,63 @@ describe('les réglages du créateur', () => {
     await waitFor(() => expect(screen.queryByTestId('diagnostic')).toBeNull());
     await fireEvent.press(screen.getByTestId('ligne-stockage'));
     expect(screen.queryByTestId('diagnostic')).toBeNull();
+  });
+});
+
+/**
+ * Le comptage des contreparties tient une liste que le serveur tient aussi.
+ *
+ * **Deux langages, deux fichiers, une seule vérité.** Le 409 ne porte pas le
+ * nombre — c'est une décision assumée côté serveur — donc l'application compte.
+ * Compter veut dire recopier `account_deletion.EN_COURS`, et une copie dérive :
+ * le jour où un statut s'ajoute là-bas, l'écran annoncerait « une contrepartie »
+ * quand le serveur en refuse deux, et le refus deviendrait incompréhensible.
+ *
+ * La garde lit la constante Python plutôt que de la redire : redire une liste
+ * dans un test, c'est en tenir trois au lieu de deux.
+ */
+describe('les statuts qui engagent, des deux côtés', () => {
+  it('la liste de l’app est celle du serveur', () => {
+    const source = readFileSync(
+      join(__dirname, '..', '..', 'api', 'app', 'services', 'account_deletion.py'),
+      'utf8',
+    );
+
+    // Le bloc `EN_COURS = frozenset({ … })`, et lui seul : `CollaborationStatus`
+    // apparaît ailleurs dans le fichier, et prendre tout le fichier ferait
+    // passer la garde pour n'importe quelle liste.
+    const bloc = /EN_COURS\s*=\s*frozenset\(\s*\{([\s\S]*?)\}\s*\)/.exec(source);
+    expect(bloc).not.toBeNull();
+
+    const duServeur = [...bloc![1].matchAll(/CollaborationStatus\.([A-Z_]+)/g)]
+      .map((m) => m[1].toLowerCase())
+      .sort();
+
+    expect(duServeur.length).toBeGreaterThan(0);
+    expect([...CONTREPARTIES_EN_COURS].sort()).toEqual(duServeur);
+  });
+});
+
+describe('compter, ou se taire', () => {
+  const enCours = () => reservationAvec('pending');
+
+  it('compte les contreparties qui engagent encore, et elles seules', () => {
+    expect(
+      compterOuRien([
+        reservationAvec('pending'),
+        reservationAvec('under_review'),
+        reservationAvec('approved'),
+        reservationAvec('unfulfilled'),
+        { booking_id: 'sans', contrepartie: null },
+      ] as never),
+    ).toBe(2);
+  });
+
+  it('se tait dès que la page est pleine, car elle peut en cacher', () => {
+    // Le cas où les deux implémentations divergent : à `PAGE - 1` on répond un
+    // nombre, à `PAGE` on refuse. Sans ce couple, une version qui compte
+    // toujours rendrait la même chose que la bonne sur toute liste courte.
+    expect(compterOuRien(Array.from({ length: PAGE - 1 }, enCours) as never)).toBe(PAGE - 1);
+    expect(compterOuRien(Array.from({ length: PAGE }, enCours) as never)).toBeNull();
   });
 });

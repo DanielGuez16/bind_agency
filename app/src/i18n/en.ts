@@ -796,7 +796,11 @@ export const en = {
     // ce qui reste, le delai de retour, ce qui bloque.
     supprimerCorps: 'Your account is anonymised, not erased. Reviews you took part in belong to the salons that wrote them, and the audit trail cannot be rewritten. You have thirty days to come back before it becomes final. A booking still open has to be honoured or cancelled first.',
     supprimerAction: 'Delete my account',
-    supprimerBientot: 'Not available yet. It is being built.',
+    supprimerEnCoursTitre: 'Deletion under way',
+    supprimerEnCoursCorps: 'Your account will be anonymised on {{quand}}. Until then nothing changes — you can keep booking, and you can still change your mind.',
+    supprimerAnnuler: 'Keep my account',
+    supprimerBloqueUne: 'You still owe one post. Publish it, or let the business close the counterpart, then try again.',
+    supprimerBloque: 'You still owe {{count}} posts. Publish them, or let the businesses close the counterparts, then try again.',
     diagnostic: 'Connection check',
     diagnosticAide: 'Tells you whether this device can reach BIND. Useful when a screen stays empty.',
     stockage: 'Token storage',
