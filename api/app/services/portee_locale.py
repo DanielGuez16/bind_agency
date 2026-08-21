@@ -48,8 +48,26 @@ from app.models import (
     TierOffer,
     User,
 )
-from app.models.enums import UserStatus
+from app.models.enums import ContentFormat, Platform, UserStatus
 from app.services import eligibility
+
+
+@dataclass(frozen=True, slots=True)
+class GainDePalier:
+    """Un palier fermé, et combien de créatrices son ouverture atteindrait.
+
+    Le format et la plateforme accompagnent l'identifiant : l'écran écrit « le
+    palier post » et non un UUID, et il ne doit pas avoir à recharger la grille
+    des paliers pour composer une phrase.
+    """
+
+    tier_id: uuid.UUID
+    platform: Platform
+    content_format: ContentFormat
+    #: Combien de créatrices du rayon deviendraient joignables **en plus** de
+    #: celles qui le sont déjà. Jamais négatif : ouvrir un palier n'en ferme
+    #: aucun.
+    createurs_en_plus: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -72,6 +90,22 @@ class PorteeLocale:
     #: elle dit que les paliers sont trop hauts pour le quartier.
     peuvent_reserver: int
     rayon_metres: int
+    #: Ce que chaque palier **non encore ouvert** ajouterait.
+    #:
+    #: « Ouvrir le palier post toucherait 62 créatrices de plus » : c'est le
+    #: chiffre qui transforme un conseil en argument, et il n'existait pas. Sans
+    #: lui, l'écran se rabattait sur l'écart global — « il y a 128 créatrices et
+    #: 41 peuvent réserver » — qui dit qu'il manque quelque chose sans dire
+    #: quoi faire.
+    #:
+    #: **Le gain, pas le total.** Un total par palier se lirait comme des
+    #: populations à additionner, alors qu'elles se recouvrent largement : une
+    #: créatrice qui ouvre le reel ouvre le story. Ce qui décide est ce que
+    #: l'ouverture **ajoute**, et lui seul se pose dans une phrase.
+    #:
+    #: Les paliers déjà ouverts n'y figurent pas : leur gain est nul par
+    #: construction, et une ligne à zéro se lirait comme un conseil inutile.
+    gains_par_palier: tuple[GainDePalier, ...] = ()
 
 
 async def autour_du_commerce(
@@ -150,31 +184,104 @@ async def autour_du_commerce(
 
     paliers = await _paliers_ouverts(session, business_id=business.id)
 
+    fermes = await _paliers_fermes(session, ouverts=paliers)
+    age_max = timedelta(seconds=settings.metrics_max_age_seconds)
+
     createurs = 0
     peuvent = 0
+    #: Une créatrice par palier fermé qu'elle ouvrirait, et **seulement si elle
+    #: ne peut pas déjà réserver** : celle qui passe déjà par le story n'est pas
+    #: un gain quand on ouvre le reel, elle est déjà là.
+    gains: dict[uuid.UUID, int] = {palier.tier_id: 0 for palier in fermes}
+
     for ligne in proches:
         comptes = comptes_par_createur.get(ligne.user_id)
         if not comptes:
             continue
         createurs += 1
 
-        if not paliers:
-            continue
-        verdict = eligibility.evaluer(
-            eligibility.CreateurEvalue(
-                creator_id=ligne.user_id,
-                reliability_score=ligne.reliability_score,
-                completed_collabs=ligne.completed_collabs_count,
-            ),
-            comptes,
-            paliers,
-            maintenant=maintenant,
-            age_max=timedelta(seconds=settings.metrics_max_age_seconds),
+        createur = eligibility.CreateurEvalue(
+            creator_id=ligne.user_id,
+            reliability_score=ligne.reliability_score,
+            completed_collabs=ligne.completed_collabs_count,
         )
-        if any(acces.accessible for acces in verdict.acces):
-            peuvent += 1
 
-    return PorteeLocale(createurs=createurs, peuvent_reserver=peuvent, rayon_metres=rayon)
+        deja = False
+        if paliers:
+            verdict = eligibility.evaluer(
+                createur, comptes, paliers, maintenant=maintenant, age_max=age_max
+            )
+            deja = any(acces.accessible for acces in verdict.acces)
+            if deja:
+                peuvent += 1
+
+        if deja or not fermes:
+            continue
+
+        # **Un palier à la fois**, et non tous ensemble : la question posée est
+        # « qu'apporterait celui-ci », pas « qu'apporteraient-ils tous ». Les
+        # évaluer d'un bloc rendrait une créatrice éligible à trois d'entre eux
+        # comptée une fois, sans dire lequel l'a amenée.
+        for palier in fermes:
+            contre_factuel = eligibility.evaluer(
+                createur, comptes, [palier], maintenant=maintenant, age_max=age_max
+            )
+            if any(acces.accessible for acces in contre_factuel.acces):
+                gains[palier.tier_id] += 1
+
+    return PorteeLocale(
+        createurs=createurs,
+        peuvent_reserver=peuvent,
+        rayon_metres=rayon,
+        gains_par_palier=tuple(
+            GainDePalier(
+                tier_id=palier.tier_id,
+                platform=palier.platform,
+                content_format=palier.content_format,
+                createurs_en_plus=gains[palier.tier_id],
+            )
+            for palier in fermes
+        ),
+    )
+
+
+async def _paliers_fermes(
+    session: AsyncSession, *, ouverts: list[eligibility.PalierEvalue]
+) -> list[eligibility.PalierEvalue]:
+    """Les paliers actifs du produit que ce salon n'offre pas encore.
+
+    Ce sont eux, et eux seuls, qui peuvent apporter quelqu'un : le gain d'un
+    palier déjà ouvert est nul par construction, et une ligne à zéro se lirait
+    comme un conseil inutile.
+    """
+    deja = {palier.tier_id for palier in ouverts}
+    lignes = (
+        await session.execute(
+            sa.select(
+                Tier.id,
+                Tier.platform,
+                Tier.content_format,
+                Tier.min_followers,
+                Tier.min_completed_collabs,
+                Tier.min_reliability_score,
+            )
+            .where(Tier.is_active.is_(True))
+            .order_by(Tier.display_order)
+        )
+    ).all()
+
+    return [
+        eligibility.PalierEvalue(
+            tier_id=ligne.id,
+            platform=ligne.platform,
+            content_format=ligne.content_format,
+            min_followers=ligne.min_followers,
+            min_completed_collabs=ligne.min_completed_collabs,
+            min_reliability_score=ligne.min_reliability_score,
+        )
+        for ligne in lignes
+        if ligne.id not in deja
+    ]
 
 
 async def _paliers_ouverts(

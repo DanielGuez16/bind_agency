@@ -36,7 +36,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.models import CreatorProfile, SocialAccount, Tier, User
 from app.models.enums import ContentFormat, Platform, SocialAccountStatus
-from app.services import eligibility
+from app.services import eligibility, storage
 
 #: Où mène un pseudonyme, par plateforme.
 #:
@@ -52,6 +52,19 @@ PROFIL_PUBLIC = {
     Platform.INSTAGRAM: "https://www.instagram.com/{handle}/",
     Platform.TIKTOK: "https://www.tiktok.com/@{handle}",
 }
+
+
+def _apercu(avatar_key: str | None) -> str | None:
+    """La clé de l'aperçu flouté, ou rien.
+
+    Rien quand il n'y a pas de photo — et rien de plus à dire. Quand la photo
+    existe mais que son aperçu n'a jamais été produit (une image d'avant ce
+    changement), la clé est rendue quand même : la route des médias répondra
+    404 et l'écran montrera un cadre vide. **C'est le bon sens de l'échec** —
+    elle ne retombe pas sur l'original, et un aperçu manquant ne peut donc pas
+    devenir une photo nette.
+    """
+    return storage.cle_d_apercu(avatar_key) if avatar_key else None
 
 
 def lien_public(platform: Platform, handle: str | None) -> str | None:
@@ -104,8 +117,22 @@ class CreateurVu:
 ORDRE_DES_FORMATS = (ContentFormat.STORY, ContentFormat.POST, ContentFormat.REEL)
 
 
-async def annuaire(session: AsyncSession, *, limite: int = 200) -> tuple[CreateurVu, ...]:
-    """Les créateurs qu'un salon abonné peut atteindre.
+async def annuaire(
+    session: AsyncSession, *, abonne: bool, limite: int = 200
+) -> tuple[CreateurVu, ...]:
+    """Les créateurs qu'un salon peut atteindre, complets ou en aperçu.
+
+    **`abonne` change ce qui est lu, pas ce qui est affiché.** C'est toute la
+    règle : ce qu'un écran prétend cacher doit être absent de la réponse. Un
+    masque visuel n'est pas un contrôle d'accès — la donnée est partie, et il
+    suffit d'ouvrir l'outil de développement, ou de rappeler la route sans
+    l'application.
+
+    Sans abonnement, la ligne perd le pseudonyme, le volume, le lien vers le
+    profil et la photo nette. Restent les formes : la ville, les paliers
+    ouverts, les réseaux rattachés et un aperçu flouté dont on ne peut plus
+    tirer un visage. C'est assez pour donner envie, jamais assez pour se passer
+    de payer — ce qui est exactement ce qu'un aperçu doit être.
 
     **Seulement ceux qui ont un compte rattaché.** Un profil sans réseau n'offre
     rien à un commerce : ni volume, ni palier, ni publication possible. L'y
@@ -227,21 +254,36 @@ async def annuaire(session: AsyncSession, *, limite: int = 200) -> tuple[Createu
                 first_name=profil.first_name,
                 last_name=profil.last_name,
                 city=profil.city,
-                bio=profil.bio,
+                # **La biographie part avec le reste, et ce n'est pas de
+                # l'excès de zèle.** C'est du texte libre : « écris-moi sur
+                # @rebecca.miami » y tient très bien, et masquer le champ
+                # `handle` en laissant passer la bio rendrait le pseudonyme par
+                # l'autre porte. Une règle qui ferme les champs qu'on a nommés
+                # et laisse ouverte la seule zone où l'utilisateur écrit ce
+                # qu'il veut ne protège rien.
+                bio=profil.bio if abonne else None,
                 comptes=tuple(
                     CompteVu(
                         platform=ligne.platform,
-                        handle=ligne.handle,
-                        followers=ligne.followers_count,
-                        avatar_key=ligne.avatar_key,
-                        profil_url=lien_public(ligne.platform, ligne.handle),
+                        # Le réseau reste, ce qui l'identifie part. Savoir
+                        # qu'elle est sur TikTok ne dit pas qui elle est.
+                        handle=ligne.handle if abonne else None,
+                        followers=ligne.followers_count if abonne else None,
+                        avatar_key=(ligne.avatar_key if abonne else _apercu(ligne.avatar_key)),
+                        profil_url=(lien_public(ligne.platform, ligne.handle) if abonne else None),
                     )
                     for ligne in lignes
                     # Un compte révoqué ou refusé n'est pas un réseau atteignable.
                     if ligne.status is SocialAccountStatus.ACTIVE
                 ),
                 paliers_ouverts=tuple(f for f in ORDRE_DES_FORMATS if f in ouverts),
-                audience_totale=sum(ligne.followers_count or 0 for ligne in lignes),
+                # **Zéro plutôt qu'une somme.** Le volume est ce qui se vend :
+                # le rendre à qui n'a pas payé viderait l'abonnement de sa
+                # raison d'être, et l'écran qui le masque ne masquerait qu'aux
+                # honnêtes.
+                audience_totale=(
+                    sum(ligne.followers_count or 0 for ligne in lignes) if abonne else 0
+                ),
             )
         )
 

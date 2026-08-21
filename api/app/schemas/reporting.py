@@ -41,6 +41,26 @@ class LigneDItemRead(BaseModel):
     valeur_offerte_cents: int
 
 
+class GainDePalierRead(BaseModel):
+    """Un palier fermé, et combien de créatrices son ouverture atteindrait.
+
+    **Le gain, pas le total.** Des totaux par palier se liraient comme des
+    populations à additionner, alors qu'elles se recouvrent largement : une
+    créatrice qui ouvre le reel ouvre le story. Ce qui décide est ce que
+    l'ouverture ajoute — « ouvrir le palier post toucherait 62 créatrices de
+    plus » — et lui seul se pose dans une phrase.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    tier_id: uuid.UUID
+    #: Rendus avec l'identifiant : l'écran écrit « le palier post » et non un
+    #: UUID, et il ne doit pas recharger la grille des paliers pour une phrase.
+    platform: Platform
+    content_format: ContentFormat
+    createurs_en_plus: int
+
+
 class PorteeLocaleRead(BaseModel):
     """Qui est autour du salon, et qui peut déjà réserver chez lui."""
 
@@ -58,6 +78,9 @@ class PorteeLocaleRead(BaseModel):
     #: Rendu avec les deux nombres : « 12 créatrices » ne veut rien dire sans
     #: « dans 10 km », et l'écran n'a pas à connaître un réglage du serveur.
     rayon_metres: int
+    #: Ce que chaque palier non encore ouvert ajouterait. Les paliers déjà
+    #: ouverts n'y figurent pas : leur gain est nul par construction.
+    gains_par_palier: list[GainDePalierRead]
 
 
 class ReportingRead(BaseModel):

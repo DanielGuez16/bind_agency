@@ -32,11 +32,10 @@ import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.integrations.object_store import get_object_store
 from app.integrations.social import SocialAuthError, SocialProvider, SocialProviderError
 from app.models import SocialAccount, SocialMetricsSnapshot
 from app.models.enums import SocialAccountStatus
-from app.services import account_verification, social_accounts
+from app.services import account_verification, social_accounts, storage
 
 logger = logging.getLogger(__name__)
 
@@ -252,7 +251,10 @@ async def _ranger_l_avatar(
         return
 
     try:
-        account.avatar_key = await get_object_store().deposer(contenu, prefixe=PREFIXE_AVATAR)
+        # **Par le dépôt d'avatar et non par le dépôt brut** : c'est lui qui
+        # produit l'aperçu flouté, sans lequel un salon non abonné n'aurait
+        # rien à voir — ou pire, verrait la photo nette.
+        account.avatar_key = await storage.deposer_un_avatar(contenu, prefixe=PREFIXE_AVATAR)
         await session.flush()
     except Exception:
         logger.warning("photo de profil non rangée", extra={"social_account_id": str(account.id)})
