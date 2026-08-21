@@ -133,14 +133,33 @@ describe('les quatre points se calculent, ils ne se récitent pas', () => {
     // **L'ordre n'est pas cosmétique.** Une liste qui ouvre sur quatre manques
     // se lit comme un reproche adressé à quelqu'un qui vient d'arriver, et
     // c'est le moment du produit où il est le plus facile de partir.
+    //
+    // **Le décor est choisi pour que l'ordre naturel soit le mauvais.** Un
+    // catalogue vide met `catalogue` à faire et `photos` fait — dans l'ordre
+    // d'écriture, un manque arrive donc en tête. Mon premier décor avait
+    // `catalogue` déjà fait, c'est-à-dire déjà trié : la mutation qui retire le
+    // tri y survivait sans rien changer.
+    const points = premiersPas({ items: [], offres: [], regles: [] });
+    expect(points[0]).toMatchObject({ cle: 'photos', fait: true });
+
+    const faits = points.map((point) => point.fait);
+    expect(faits).toEqual([...faits].sort((a, b) => Number(b) - Number(a)));
+  });
+
+  it('et le tri est stable : deux manques gardent leur ordre', () => {
+    // La liste ne se réorganise pas sous les yeux du gérant quand il vient d'en
+    // régler un ; elle remonte seulement celui qu'il vient de faire.
     const points = premiersPas({
       items: [ITEM('i1'), ITEM('i2', { photo_key: null })],
       offres: [OFFRE('story')],
       regles: [0, 1, 2, 3, 4].map(REGLE),
     });
-    const faits = points.map((point) => point.fait);
-    expect(faits).toEqual([...faits].sort((a, b) => Number(b) - Number(a)));
-    expect(points[0]).toMatchObject({ cle: 'catalogue', fait: true });
+    expect(points.map((point) => point.cle)).toEqual([
+      'catalogue',
+      'photos',
+      'paliers',
+      'horaires',
+    ]);
   });
 });
 
