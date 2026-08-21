@@ -41,6 +41,25 @@ class LigneDItemRead(BaseModel):
     valeur_offerte_cents: int
 
 
+class PorteeLocaleRead(BaseModel):
+    """Qui est autour du salon, et qui peut déjà réserver chez lui."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    #: Créatrices dans le rayon, avec au moins un réseau rattaché. Celles qui
+    #: n'ont pas renseigné de position n'y sont pas : les compter ferait passer
+    #: pour « autour de vous » quelqu'un qui est peut-être ailleurs.
+    createurs: int
+    #: Parmi elles, celles qui ouvrent au moins un palier du salon. **Jamais
+    #: plus grand que `createurs`** — c'est la même population, filtrée. Zéro
+    #: sur un total non nul dit que les paliers sont trop hauts, pas que le
+    #: quartier est vide.
+    peuvent_reserver: int
+    #: Rendu avec les deux nombres : « 12 créatrices » ne veut rien dire sans
+    #: « dans 10 km », et l'écran n'a pas à connaître un réglage du serveur.
+    rayon_metres: int
+
+
 class ReportingRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -79,3 +98,12 @@ class ReportingRead(BaseModel):
     #: L'évolution, semaine par semaine. Un total ne dit pas s'il a été atteint
     #: régulièrement ou d'un seul coup.
     par_semaine: list[LigneDeSemaineRead]
+    #: Le lundi de la semaine de la première réservation du salon, en date
+    #: locale. **Calculé hors de la fenêtre demandée** : c'est une propriété du
+    #: salon, et l'échelle du graphique peut commencer là plutôt que d'aligner
+    #: trente jours de vide devant un compte ouvert la semaine dernière.
+    #:
+    #: Nul tant que rien ne s'est passé — et l'écran vide est alors le bon
+    #: écran.
+    premiere_semaine: date | None
+    portee_locale: PorteeLocaleRead

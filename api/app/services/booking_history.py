@@ -34,6 +34,8 @@ from app.models import (
     AuditLog,
     Booking,
     Business,
+    CapacityException,
+    CapacityRule,
     CatalogItem,
     Collaboration,
     CreatorProfile,
@@ -53,13 +55,30 @@ from app.models.enums import (
 # dans `booking_states` — avec la même formule ; la première modification de
 # l'une aurait fait mentir l'écran sur ce que le serveur accepte, et le défaut
 # se serait lu comme un bouton ouvert qui se fait refuser.
-from app.services import directory
+from app.services import availability, directory, eligibility
 from app.services.audit import AuditedEntity
 from app.services.booking_states import ouverture_de_l_absence
 
 #: Une page d'historique. Au-delà, l'app pagine par `avant`.
 PAGE_PAR_DEFAUT = 50
 PAGE_MAXIMUM = 200
+
+
+@dataclass(frozen=True, slots=True)
+class CompteDeLaCreatrice:
+    """Un réseau rattaché, tel que le salon le voit sur une demande.
+
+    La même forme que dans l'annuaire — plateforme, poignée, volume — parce
+    qu'un salon qui a vu une créatrice dans l'annuaire doit la retrouver
+    identique sur sa demande. Aucun jeton, aucun état technique.
+    """
+
+    platform: Platform
+    handle: str | None
+    #: Nul quand aucun relevé n'existe. **Zéro serait un chiffre, et faux** :
+    #: un compte tout juste rattaché n'a pas zéro abonné, il n'a pas encore été
+    #: mesuré.
+    followers: int | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -162,6 +181,18 @@ class ReservationDuCommerce:
     #: lui qui le vérifiera.
     required_mention: str | None
     required_geotag: bool
+    #: Tous les réseaux de la créatrice, pas seulement celui de cette demande.
+    #:
+    #: **L'absence est une information.** Une demande porte un compte et un
+    #: seul ; la décision, elle, se prend sur ce que la personne pèse en entier
+    #: — et savoir qu'il n'y a pas de TikTok en fait partie autant que le nombre
+    #: d'abonnés Instagram. Ne servir que le compte de la demande obligeait à
+    #: ouvrir l'annuaire pour le savoir, ou à ne pas le savoir.
+    #:
+    #: Les comptes rattachés uniquement : une ligne par réseau du produit, dont
+    #: certains ne seront jamais offerts, remplirait chaque demande de vides.
+    #: C'est l'écran qui sait quels réseaux il propose, et qui lit le manque.
+    comptes: tuple[CompteDeLaCreatrice, ...]
     contrepartie: LigneDeContrepartie | None
     #: L'instant à partir duquel l'absence peut être constatée, `None` quand
     #: elle ne le pourra jamais. Calculé ici pour que l'écran n'ait pas à
@@ -187,6 +218,19 @@ class JourneeDuCommerce:
     #: une file, pas un planning : elle se lit là où le commerce regarde, et il
     #: regarde sa journée.
     a_trancher: tuple[ReservationDuCommerce, ...]
+    #: Les plages d'ouverture **de ce jour-là**, en heures locales.
+    #:
+    #: La sous-ligne de la date : « 9 h – 19 h », ou rien du tout quand le salon
+    #: est fermé. Une journée vide n'a pas la même lecture selon qu'on était
+    #: fermé ou que personne n'est venu, et l'écran ne pouvait pas les
+    #: distinguer.
+    #:
+    #: **Les fenêtres réelles, exceptions comprises** : c'est
+    #: `availability.fenetres_du_jour` qui les produit, la même fonction qui
+    #: décide des créneaux. Relire les règles hebdomadaires ici afficherait
+    #: l'horaire habituel un jour férié aménagé — et le salon lirait sur son
+    #: propre écran qu'il est ouvert alors qu'il a fermé.
+    horaires: tuple[availability.Fenetre, ...]
 
 
 def _colonnes_communes() -> tuple:
@@ -384,11 +428,15 @@ def aujourd_hui(business: Business) -> date:
     return datetime.now(ZoneInfo(business.timezone)).date()
 
 
-def _lire(ligne) -> ReservationDuCommerce:
+def _lire(ligne, comptes=None) -> ReservationDuCommerce:
     """Une ligne de requête en réservation du commerce.
 
     Écrit une fois : la journée et la file à trancher lisent les mêmes colonnes,
     et deux copies divergeraient au premier champ ajouté.
+
+    `comptes` arrive du dehors parce qu'il se lit **en une requête pour tout le
+    monde** : le chercher ici en ferait une par ligne, et une journée chargée
+    paierait sa charge en allers-retours.
     """
     return ReservationDuCommerce(
         booking_id=ligne.booking_id,
@@ -409,6 +457,7 @@ def _lire(ligne) -> ReservationDuCommerce:
         content_format=ligne.content_format,
         required_mention=ligne.required_mention,
         required_geotag=ligne.required_geotag,
+        comptes=tuple((comptes or {}).get(ligne.creator_id, ())),
         contrepartie=_contrepartie(ligne),
         absence_signalable_a=ouverture_de_l_absence(ligne.starts_at),
     )
@@ -484,11 +533,80 @@ async def journee_du_commerce(
         )
     ).all()
 
+    comptes = await _comptes_des_creatrices(
+        session, [ligne.creator_id for ligne in (*lignes, *en_attente)]
+    )
+
     return JourneeDuCommerce(
         jour=jour,
         timezone=business.timezone,
         debut=debut,
         fin=fin,
-        a_trancher=tuple(_lire(ligne) for ligne in en_attente),
-        items=tuple(_lire(ligne) for ligne in lignes),
+        a_trancher=tuple(_lire(ligne, comptes) for ligne in en_attente),
+        items=tuple(_lire(ligne, comptes) for ligne in lignes),
+        horaires=tuple(await _horaires_du_jour(session, business_id=business.id, jour=jour)),
     )
+
+
+async def _comptes_des_creatrices(
+    session: AsyncSession, creator_ids: list[uuid.UUID]
+) -> dict[uuid.UUID, list[CompteDeLaCreatrice]]:
+    """Tous les réseaux de toutes les créatrices de la journée, en une requête.
+
+    Le relevé le plus récent par compte, par la même sous-requête que
+    l'éligibilité : deux façons de dire « le dernier relevé » finiraient par
+    donner deux chiffres différents pour la même créatrice sur deux écrans.
+
+    Les comptes révoqués restent : le salon a devant lui une demande faite
+    quand le compte vivait, et le faire disparaître de l'écran ferait croire à
+    une créatrice sans réseau.
+    """
+    if not creator_ids:
+        return {}
+
+    releve = eligibility._dernier_releve()
+    par_createur: dict[uuid.UUID, list[CompteDeLaCreatrice]] = {}
+    for ligne in (
+        await session.execute(
+            sa.select(
+                SocialAccount.creator_id,
+                SocialAccount.platform,
+                SocialAccount.handle,
+                releve.c.followers_count,
+            )
+            .outerjoin(releve, releve.c.social_account_id == SocialAccount.id)
+            .where(SocialAccount.creator_id.in_(set(creator_ids)))
+            .order_by(SocialAccount.creator_id, SocialAccount.platform)
+        )
+    ).all():
+        par_createur.setdefault(ligne.creator_id, []).append(
+            CompteDeLaCreatrice(
+                platform=ligne.platform,
+                handle=ligne.handle,
+                followers=ligne.followers_count,
+            )
+        )
+    return par_createur
+
+
+async def _horaires_du_jour(
+    session: AsyncSession, *, business_id: uuid.UUID, jour: date
+) -> list[availability.Fenetre]:
+    """Les plages de ce jour, exception comprise.
+
+    Deux lectures, et pas de calcul : la règle appartient à `availability`, qui
+    l'applique déjà pour les créneaux. En écrire une seconde ici ferait diverger
+    la sous-ligne de ce que la disponibilité propose réellement.
+    """
+    regles = list(
+        await session.scalars(
+            sa.select(CapacityRule).where(CapacityRule.business_id == business_id)
+        )
+    )
+    exception = await session.scalar(
+        sa.select(CapacityException).where(
+            CapacityException.business_id == business_id,
+            CapacityException.date == jour,
+        )
+    )
+    return availability.fenetres_du_jour(jour, regles, exception)

@@ -1127,6 +1127,18 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       Téléphone au format international, normalisé avant validation ; nom
       dépouillé de ses espaces avant d'être compté ; adresse d'au moins dix
       caractères. 13 tests neufs*
+- [x] **Qui est là, depuis quand, et avec quoi elle frappe**
+      *Quatre données pour des écrans en composition. `portee_locale` sur le
+      reporting : combien de créatrices dans le rayon, combien peuvent déjà
+      réserver aux paliers ouverts — le seul chiffre de l'écran vide qui ne
+      parle pas du salon. La règle d'éligibilité n'est pas réécrite, les
+      lectures sont faites en gros et passées à `evaluer`. `premiere_semaine`,
+      **calculée hors de la fenêtre** : bornée par elle, elle rendrait le début
+      de la fenêtre. `comptes` sur chaque demande de réservation — tous les
+      réseaux, pas seulement celui de la demande, parce que l'absence de TikTok
+      fait partie de la décision. `horaires` sur la journée, par
+      `availability.fenetres_du_jour` : exceptions comprises, vide veut dire
+      fermé. 13 tests neufs, 5 mutations vérifiées*
 - [x] **Le sens des événements du score, et la fin d'une autorisation**
       *`fiabilite.composantes` : les neuf événements avec `up`, `down` ou
       `neutral`, **dérivés du signe de `reliability_weights`** et non récités.

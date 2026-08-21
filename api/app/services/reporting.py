@@ -48,6 +48,7 @@ from app.models import (
     TierOffer,
 )
 from app.models.enums import BookingStatus, CollaborationStatus, ContentFormat, Platform
+from app.services import portee_locale as portee_locale_service
 from app.services import venue_report
 
 #: Fenêtre par défaut. Trente jours : assez long pour qu'un commerce à faible
@@ -133,6 +134,29 @@ class Reporting:
     #: « 62 publications » se lit pareil qu'on en ait fait cinq par semaine ou
     #: soixante en une.
     par_semaine: tuple[LigneDeSemaine, ...]
+
+    #: Le lundi de la semaine où ce salon a eu sa première réservation, en date
+    #: locale. Nul tant que rien ne s'est passé.
+    #:
+    #: **Calculée hors de la fenêtre, et c'est tout son intérêt.** Bornée par
+    #: elle, elle rendrait le début de la fenêtre — c'est-à-dire rien. L'échelle
+    #: du graphique peut ainsi commencer là où le salon a commencé, au lieu
+    #: d'aligner trente jours de vide devant un compte ouvert la semaine
+    #: dernière.
+    #:
+    #: La première **réservation** et non la première publication : c'est le
+    #: moment où quelqu'un a répondu à l'offre, et une semaine d'activité qui ne
+    #: commencerait qu'à la première publication tairait le temps qu'il a fallu
+    #: pour l'obtenir.
+    premiere_semaine: date | None
+
+    #: Qui est autour du salon, et qui peut déjà réserver chez lui.
+    #:
+    #: **Le seul chiffre de cet écran qui ne parle pas du salon.** Un écran vide
+    #: qui n'affiche que les zéros de votre propre inaction ne dit pas si le
+    #: produit a une chance de marcher chez vous ; celui-ci répond à la première
+    #: question de qui vient de s'inscrire — est-ce qu'il y a quelqu'un.
+    portee_locale: portee_locale_service.PorteeLocale
 
     @property
     def taux_d_honoration(self) -> float | None:
@@ -238,7 +262,32 @@ async def pour_le_commerce(
         par_palier=await _par_palier(session, fenetre),
         par_semaine=await _par_semaine(session, fenetre, fuseau),
         par_item=await _par_item(session, fenetre),
+        premiere_semaine=await _premiere_semaine(session, business_id=business.id, fuseau=fuseau),
+        portee_locale=await portee_locale_service.autour_du_commerce(session, business=business),
     )
+
+
+async def _premiere_semaine(
+    session: AsyncSession, *, business_id: uuid.UUID, fuseau
+) -> date | None:
+    """Le lundi de la première semaine d'activité, en date locale.
+
+    **Sans la fenêtre**, délibérément : c'est une propriété du salon et non de
+    la période qu'on regarde. La borner par la fenêtre rendrait le début de la
+    fenêtre, ce que l'appelant connaît déjà.
+
+    `date_trunc` sur l'horodatage converti dans le fuseau du commerce, comme
+    `_par_semaine` : les deux étiquettes doivent tomber sur le même lundi, sans
+    quoi l'échelle commencerait une semaine à côté de sa première barre.
+    """
+    locale = sa.func.timezone(str(fuseau), Booking.created_at)
+    premiere = await session.scalar(
+        sa.select(sa.func.date_trunc("week", locale))
+        .where(Booking.business_id == business_id)
+        .order_by(Booking.created_at)
+        .limit(1)
+    )
+    return premiere.date() if premiere is not None else None
 
 
 async def _portee(session: AsyncSession, fenetre) -> int:
