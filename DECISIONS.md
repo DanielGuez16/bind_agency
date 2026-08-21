@@ -7784,3 +7784,32 @@ qu'une valeur hors système, qui se recopierait ailleurs sans qu'on la voie.
 quand une des trois listes manquait : le salon voyait alors un écran
 entièrement vide, sans titre ni explication — pire que l'état vide qu'on venait
 de remplacer.
+
+
+---
+
+## 2026-08-20 — La portée locale, et la borne qui vient du serveur
+
+**La fenêtre se compte depuis la borne servie, jamais depuis l'horloge locale.**
+Le serveur découpe dans le fuseau du salon — « du 1er au 31 » contient le 31, et
+le mois d'un salon de Miami ne commence pas à 20 h la veille. Un client qui
+calculerait « aujourd'hui moins 84 jours » décalerait la borne d'un jour à
+chaque bord de fuseau, et le décalage ne se verrait que sur les rapports de fin
+de mois. Le repère se prend en outre sur la **première** réponse et ne bouge
+plus : le relire à chaque changement de période ferait glisser la borne de fin
+d'un cran à chaque clic, et « douze semaines » ne montrerait jamais les mêmes
+douze.
+
+**« Depuis le début » n'apparaît que s'il y a un début.** Sans `premiere_semaine`
+l'onglet retomberait sur la fenêtre par défaut : deux positions rendant la même
+chose font douter des deux.
+
+**Le point des paliers cite l'écart, pas le gain d'un palier précis.** Ce que le
+serveur sait dire est le nombre de créatrices du rayon qui ne peuvent rien
+réserver de ce qui est ouvert. La planche écrit « ouvrir le palier post
+toucherait 62 créatrices de plus » — c'est une portée **par palier**, qui n'est
+pas servie et ne se déduit pas des deux nombres.
+
+**Et l'absence ne se remplace pas par zéro.** Sans portée servie, le point garde
+sa phrase générale : écrire « 0 créatrices ne peuvent pas réserver » à la place
+d'une donnée manquante dirait exactement le contraire de la vérité.

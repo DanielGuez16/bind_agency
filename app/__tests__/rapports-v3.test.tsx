@@ -17,6 +17,7 @@ import { render, screen, waitFor } from '@testing-library/react-native';
 import { ApiClient, ApiProvider, type ContentFormat } from '../src/api';
 import { I18nProvider } from '../src/i18n';
 import { en } from '../src/i18n/en';
+import { depuisPour, periodesOffertes } from '../src/screens/rapports/fenetre';
 import { premiersPas } from '../src/screens/rapports/pointsDePremierPas';
 import { PremiersPas } from '../src/screens/rapports/PremiersPas';
 import { ThemeProvider } from '../src/theme';
@@ -164,7 +165,11 @@ describe('les quatre points se calculent, ils ne se récitent pas', () => {
 });
 
 describe('l’écran, quand il n’y a rien à rapporter', () => {
-  async function monter(reponses: Record<string, unknown>, onOuvrir?: () => void) {
+  async function monter(
+    reponses: Record<string, unknown>,
+    onOuvrir?: () => void,
+    portee?: { createurs: number; peuvent_reserver: number; rayon_metres: number },
+  ) {
     const api = new ApiClient({
       baseUrl: 'https://api.test',
       coffre: { lire: async () => null, ecrire: async () => {} },
@@ -179,7 +184,7 @@ describe('l’écran, quand il n’y a rien à rapporter', () => {
       <I18nProvider initialLocale="en">
         <ThemeProvider role="merchant">
           <ApiProvider client={api}>
-            <PremiersPas businessId="b1" onOuvrir={onOuvrir} />
+            <PremiersPas businessId="b1" portee={portee} onOuvrir={onOuvrir} />
           </ApiProvider>
         </ThemeProvider>
       </I18nProvider>,
@@ -228,6 +233,53 @@ describe('l’écran, quand il n’y a rien à rapporter', () => {
     expect(screen.queryByTestId('geste-photos')).toBeNull();
   });
 
+  it('le panneau de portée cite les deux nombres et son rayon', async () => {
+    // **Le seul chiffre de la page qui ne parle pas du salon.** « 128
+    // créatrices » ne veut rien dire sans « dans 15 km », et le rayon vient du
+    // serveur : l'écran n'a pas à connaître un réglage de la plateforme.
+    await monter(COMPOSITION, undefined, {
+      createurs: 128,
+      peuvent_reserver: 41,
+      rayon_metres: 15_000,
+    });
+    await waitFor(() => expect(screen.getByTestId('portee-locale')).toBeTruthy());
+
+    expect(screen.getByTestId('portee-createurs')).toHaveTextContent('128');
+    const panneau = screen.getByTestId('portee-locale');
+    expect(panneau).toHaveTextContent(/15 km/);
+    expect(panneau).toHaveTextContent(/41/);
+  });
+
+  it('et le point des paliers cite l’écart, pas un encouragement', async () => {
+    // **Ce que le serveur sait dire est le gain d'ouvrir des paliers pris
+    // ensemble** : 128 dans le rayon, 41 qui peuvent réserver, donc 87 qui ne
+    // peuvent rien. Le gain d'un palier **précis** n'est pas servi, et
+    // « ouvrir le palier post toucherait 62 créatrices de plus » ne s'invente
+    // pas.
+    await monter(COMPOSITION, undefined, {
+      createurs: 128,
+      peuvent_reserver: 41,
+      rayon_metres: 15_000,
+    });
+    await waitFor(() => expect(screen.getByTestId('pas-paliers')).toBeTruthy());
+
+    expect(screen.getByTestId('pas-paliers')).toHaveTextContent(/87/);
+  });
+
+  it('sans portée servie, le point garde sa phrase générale', async () => {
+    // Sans cette moitié, la garde du dessus passerait sur un écran qui écrirait
+    // « 0 créatrices » quand la portée manque — un zéro inventé à la place
+    // d'une absence.
+    await monter(COMPOSITION);
+    await waitFor(() => expect(screen.getByTestId('pas-paliers')).toBeTruthy());
+
+    expect(screen.queryByTestId('portee-locale')).toBeNull();
+    // **En `queryByText` et non `toHaveTextContent`.** Sur une chaîne, celui-ci
+    // compare le contenu **entier** du nœud, qui porte aussi le titre du point :
+    // l'assertion était vide, et elle l'aurait été dans les deux sens.
+    expect(screen.getByText(en.reporting.pas.paliers.pourquoi)).toBeTruthy();
+  });
+
   it('et une composition illisible se dit, au lieu de laisser une page blanche', async () => {
     // **Une première version rendait `null`.** Le salon voyait alors un écran
     // entièrement vide, sans titre ni explication — pire que l'état vide qu'on
@@ -237,5 +289,34 @@ describe('l’écran, quand il n’y a rien à rapporter', () => {
 
     // La phrase d'accueil reste : elle ne dépend d'aucune des trois requêtes.
     expect(screen.getByText(en.reporting.videTitre)).toBeTruthy();
+  });
+});
+
+describe('la fenêtre, et d’où part son échelle', () => {
+  it('trente jours ne demande rien : c’est déjà la fenêtre du serveur', () => {
+    // Recalculer ici ferait deux sources pour une seule règle, et c'est celle
+    // du serveur qui découpe dans le fuseau du salon.
+    expect(depuisPour('trenteJours', '2026-08-20T04:00:00Z', '2026-06-01')).toBeUndefined();
+  });
+
+  it('douze semaines se comptent depuis la borne servie, jamais depuis l’horloge locale', () => {
+    // **Le cas qui diverge de « aujourd'hui moins 84 jours ».** La borne de fin
+    // vient du serveur : c'est l'instant qu'il a retenu pour « maintenant »,
+    // dans le fuseau qu'il a retenu. Un calcul local décalerait la borne d'un
+    // jour à chaque bord de fuseau, et le décalage ne se verrait que sur les
+    // rapports de fin de mois.
+    expect(depuisPour('douzeSemaines', '2026-08-20T04:00:00Z', null)).toBe('2026-05-29');
+  });
+
+  it('depuis le début part de la première semaine, telle qu’elle est servie', () => {
+    expect(depuisPour('depuisLeDebut', '2026-08-20T04:00:00Z', '2026-06-01')).toBe('2026-06-01');
+  });
+
+  it('et sans première semaine, la position n’est pas offerte', () => {
+    // **Un onglet qui rendrait la même chose que son voisin ferait douter des
+    // deux.** Sans début connu, « depuis le début » ne peut que retomber sur la
+    // fenêtre par défaut.
+    expect(periodesOffertes(null)).not.toContain('depuisLeDebut');
+    expect(periodesOffertes('2026-06-01')).toContain('depuisLeDebut');
   });
 });

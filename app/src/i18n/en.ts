@@ -700,6 +700,13 @@ export const en = {
     tempsIndisponible: 'Not available yet',
     heures: '{{heures}} hours',
     phrase: 'You gave {{prestations}} services and received {{publications}} publications.',
+    porteeCreateurs: 'creators within {{rayon}} km',
+    porteePeuventReserver: 'Of those, {{compte}} can already book what you have open. It is the only number on this page that is not about you — and the reason the points above are worth doing.',
+    periode: {
+      trenteJours: '30 days',
+      douzeSemaines: '12 weeks',
+      depuisLeDebut: 'Since the start',
+    },
     videAmorce: 'Your first booking will start this page. In the meantime, here is what stands between you and being found.',
     pas: {
       catalogue: {
@@ -719,6 +726,7 @@ export const en = {
         aFaire: 'Only one tier is open',
         pourquoi: 'Each tier you open brings in the creators whose audience matches it.',
         geste: 'Open a tier',
+        levier: '{{compte}} creators nearby cannot book anything you have open.',
       },
       horaires: {
         fait: 'You are open every day of the week',

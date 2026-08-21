@@ -11,18 +11,17 @@
  * les rapports et ne sont demandées que dans ce cas. Un salon qui a de
  * l'histoire ne paie pas ces trois appels.
  *
- * **Ce qui manque encore ici, et qui n'est pas inventé** : le compte de
- * créatrices atteignables, que Design pose en bas de page — « 128 dans le
- * rayon, dont 41 peuvent déjà réserver ». C'est le seul chiffre de cette page
- * qui ne parle pas du salon lui-même, et c'est ce qui rend les quatre points
- * au-dessus dignes d'être faits. Il n'est pas servi ; le point des paliers cite
- * donc ce qu'il sait — combien sont ouverts — au lieu du gain qu'il ouvrirait.
- * Voir `TASKS.md`.
+ * **Le panneau du bas est le seul chiffre qui ne parle pas du salon.** « 128
+ * dans le rayon, dont 41 peuvent déjà réserver » répond à la question que le
+ * gérant se pose vraiment à ce moment-là — est-ce qu'il y a quelqu'un ? — et
+ * c'est ce qui rend les quatre points au-dessus dignes d'être faits. Il arrive
+ * avec la réponse des rapports, sans appel de plus.
  */
 import { View } from 'react-native';
 
-import { useApi } from '../../api';
+import { useApi, type PorteeLocale } from '../../api';
 import { Button, Icone, SkeletonLignes, StatusMessage, Texte } from '../../components';
+import { formatNumber } from '../../format';
 import { useI18n } from '../../i18n';
 import { elevationDeCarte, radius, useColors } from '../../theme';
 import { useRequete } from '../useRequete';
@@ -36,9 +35,16 @@ export type PorteDeComposition = 'catalogue' | 'paliers' | 'horaires';
 
 export function PremiersPas({
   businessId,
+  portee,
   onOuvrir,
 }: {
   businessId: string;
+  /**
+   * Qui est autour, et qui peut déjà réserver. Vient de la réponse des
+   * rapports, que l'écran a déjà : le redemander ici ferait un second appel
+   * pour une donnée déjà sur la table.
+   */
+  portee?: PorteeLocale;
   /**
    * Le passage vers la composition. Absent, le point garde son libellé et perd
    * son bouton : un bouton qui ne mène nulle part vaut moins que pas de bouton,
@@ -47,8 +53,12 @@ export function PremiersPas({
   onOuvrir?: (porte: PorteDeComposition) => void;
 }) {
   const { api } = useApi();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const c = useColors();
+
+  // Les créatrices du rayon qui ne peuvent rien réserver de ce qui est ouvert.
+  // Nul quand la portée n'est pas là : le point garde alors sa phrase générale.
+  const manquants = portee ? portee.createurs - portee.peuvent_reserver : null;
 
   const requete = useRequete<Composition>(
     async (signal) => {
@@ -152,7 +162,16 @@ export function PremiersPas({
                 })}
               </Texte>
               <Texte variante="type.caption" couleur="ink.soft">
-                {t(`reporting.pas.${point.cle}.pourquoi`)}
+                {/* **Le levier chiffré quand il est connu, et jamais un
+                    encouragement.** Ce que le serveur sait dire est l'écart
+                    entre les créatrices du rayon et celles qui peuvent déjà
+                    réserver : c'est le gain d'ouvrir des paliers, pris
+                    ensemble. Le gain d'un palier **précis** n'est pas servi, et
+                    « ouvrir le palier post toucherait 62 créatrices de plus »
+                    ne s'invente pas. */}
+                {point.cle === 'paliers' && !point.fait && manquants !== null
+                  ? t('reporting.pas.paliers.levier', { compte: manquants })
+                  : t(`reporting.pas.${point.cle}.pourquoi`)}
               </Texte>
             </View>
 
@@ -175,6 +194,41 @@ export function PremiersPas({
         ))}
       </View>
       )}
+
+      {/* **Le seul chiffre qui ne parle pas du salon.** Il ferme la page parce
+          qu'il répond à la question qui a fait ouvrir les quatre points
+          au-dessus : est-ce qu'il y a quelqu'un ? Un zéro sur un total non nul
+          dit que les paliers sont trop hauts, pas que le quartier est vide —
+          c'est la même population, filtrée, et la phrase le dit ainsi. */}
+      {portee ? (
+        <View
+          testID="portee-locale"
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 22,
+            padding: 20,
+            paddingHorizontal: 24,
+            borderRadius: radius['radius.lg'],
+            backgroundColor: c['brand.50'],
+          }}
+        >
+          <View style={{ gap: 2 }}>
+            <Texte variante="type.monoFigure" testID="portee-createurs">
+              {formatNumber(portee.createurs, locale)}
+            </Texte>
+            <Texte variante="type.caption" couleur="ink.soft">
+              {t('reporting.porteeCreateurs', {
+                rayon: Math.round(portee.rayon_metres / 1000),
+              })}
+            </Texte>
+          </View>
+          <View style={{ width: 1, height: 44, backgroundColor: c['brand.200'] }} />
+          <Texte variante="type.body" couleur="ink.soft" style={{ flex: 1 }}>
+            {t('reporting.porteePeuventReserver', { compte: portee.peuvent_reserver })}
+          </Texte>
+        </View>
+      ) : null}
     </View>
   );
 }

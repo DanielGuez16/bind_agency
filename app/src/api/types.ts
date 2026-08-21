@@ -891,6 +891,28 @@ export type Jetons = {
 
 // --------------------------------------------------------------------------
 // reporting commerce
+
+/**
+ * Qui est autour du salon, et qui peut déjà réserver chez lui.
+ *
+ * **Le seul chiffre de l'écran vide qui ne parle pas du salon lui-même**, et
+ * c'est ce qui rend les quatre points au-dessus dignes d'être faits. La question
+ * que le gérant se pose vraiment à ce moment-là n'est pas « comment vais-je ? »,
+ * c'est « est-ce qu'il y a quelqu'un ? ».
+ */
+export type PorteeLocale = {
+  /** Créatrices dans le rayon, avec au moins un réseau rattaché. */
+  createurs: number;
+  /**
+   * Parmi elles, celles qui ouvrent au moins un palier du salon. Jamais plus
+   * grand que `createurs` : c'est la même population, filtrée. Zéro sur un
+   * total non nul dit que les paliers sont trop hauts, pas que le quartier est
+   * vide.
+   */
+  peuvent_reserver: number;
+  /** « 12 créatrices » ne veut rien dire sans « dans 10 km ». */
+  rayon_metres: number;
+};
 // --------------------------------------------------------------------------
 
 export type LigneDePalier = {
@@ -961,6 +983,15 @@ export type Reporting = {
   /** L'évolution, semaine par semaine. Un total ne dit pas s'il a été atteint
    *  régulièrement ou d'un seul coup. */
   par_semaine: LigneDeSemaine[];
+  /**
+   * La semaine où quelque chose s'est passé pour la première fois.
+   *
+   * **Sans elle, l'échelle du graphique ne peut pas commencer là**, et
+   * « depuis le début » demanderait d'inventer une date de départ. Nulle quand
+   * rien ne s'est jamais passé — et l'écran a alors changé de nature.
+   */
+  premiere_semaine: string | null;
+  portee_locale: PorteeLocale;
 };
 
 export type LigneDeSemaine = {

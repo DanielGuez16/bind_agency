@@ -1374,17 +1374,18 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       défaut vivant réparé au passage : les barres par palier n'avaient plus
       aucun remplissage depuis le passage à l'ambre. 1098 tests verts,
       6 mutations*
-- [ ] **Le compte de créatrices atteignables n'est pas servi**
-      *Deux nombres : les créatrices dans le rayon, et celles dont le palier
-      ouvre au moins une prestation du salon. C'est le seul chiffre de l'écran
-      vide qui ne parle pas du salon lui-même, et c'est ce qui rend les quatre
-      points dignes d'être faits. Sans lui, le point des paliers cite ce qu'il
-      sait — combien sont ouverts — au lieu du gain qu'il ouvrirait*
-- [ ] **La semaine de première activité n'est pas sur l'agrégat de reporting**
-      *Sans elle l'échelle du graphique ne peut pas commencer à la première
-      semaine où quelque chose s'est passé, et le sélecteur de période ne peut
-      pas offrir « depuis le début » : il faudrait inventer une date de départ.
-      Le sélecteur reste donc à deux positions au lieu de trois*
+- [x] **Le compte de créatrices atteignables est rendu**
+      *`portee_locale` arrive sur la réponse des rapports — aucun appel de plus.
+      Le panneau ferme l'écran vide avec les deux nombres et son rayon, et le
+      point des paliers cite l'écart entre les deux : ce que le serveur sait
+      dire est le gain d'ouvrir des paliers pris ensemble. Le gain d'un palier
+      **précis** n'est pas servi et ne s'invente pas*
+- [x] **Le sélecteur de période a ses trois positions**
+      *`premiere_semaine` est servie. « Depuis le début » n'apparaît que s'il y
+      a un début : sans elle, l'onglet retomberait sur la fenêtre par défaut et
+      rendrait la même chose que son voisin. Les douze semaines se comptent
+      depuis la borne de fin **servie**, jamais depuis l'horloge locale — un
+      calcul local décalerait la borne d'un jour à chaque bord de fuseau*
 - [ ] **Neuf planches d'écrans portent encore la v1.0**
       *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
       passés en v3, dans la palette Ambre. Les autres suivent l'ordre du
