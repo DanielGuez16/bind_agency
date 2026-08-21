@@ -742,7 +742,7 @@ describe('les surfaces de la v1.1', () => {
               et l'exporter pour un test ouvrirait la bibliothèque sur un
               détail interne. La composition réelle est ce qu'on veut lire. */}
           <ReglesDesPaliers
-            fiabilite={{ reliability_score: '82', completed_collabs_count: 4 }}
+            fiabilite={{ reliability_score: '82', completed_collabs_count: 4, composantes: [] }}
           />
         </ThemeProvider>
       </I18nProvider>,

@@ -74,7 +74,7 @@ import { useRattachement } from '../shell/rattacherUnReseau';
 import { elevationDeCarte, radius, size, useColors } from '../theme';
 import { Ecran } from './Ecran';
 import { messageDObstacle, nomDePlateforme } from './obstacle';
-import { etatDuCompte, type EtatDuCompte } from './audience/etat';
+import { etatDuCompte, tombeeLe, type EtatDuCompte } from './audience/etat';
 import { seuilDesAbonnes } from './audience/seuil';
 import { useRequete } from './useRequete';
 
@@ -321,6 +321,16 @@ function CarteDuCompte({
                 })
               : t('parcours.audienceGeleSansReleve')}
           </Texte>
+          {/* **Depuis quand, et pas seulement « finie ».** Sans cette date, la
+              seule façon de le savoir était de heurter l'obstacle d'un palier —
+              c'est-à-dire de découvrir la panne au moment de réserver. */}
+          {tombeeLe(compte.token_expires_at) ? (
+            <Texte variante="type.caption" couleur="ink.mute" testID="autorisation-tombee-le">
+              {t('parcours.audienceAutorisationTombeeLe', {
+                date: formatDate(compte.token_expires_at as string, locale, 'UTC'),
+              })}
+            </Texte>
+          ) : null}
           {compte.reconnectable ? (
             <View style={{ alignSelf: 'flex-start', marginTop: 3 }}>
               <Button

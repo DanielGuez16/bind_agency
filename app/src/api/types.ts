@@ -114,9 +114,37 @@ export type PalierAccessible = {
  * de score » de « score bas » : deux écrans différents, et répondre zéro au
  * premier ferait d'un débutant quelqu'un de peu fiable.
  */
+/** Ce qu'un événement fait au score. Trois valeurs, et la troisième compte. */
+export type SensDuScore = 'up' | 'down' | 'neutral';
+
+/**
+ * Un événement du score, et ce qu'il lui fait.
+ *
+ * **Le sens, jamais le poids.** L'écran nomme ce qui monte et ce qui descend ;
+ * « −25 » ne veut rien dire à qui ne connaît pas l'échelle, et le servir
+ * inviterait à faire le calcul plutôt qu'à tenir sa parole.
+ */
+export type ComposanteDuScore = {
+  evenement: string;
+  sens: SensDuScore;
+};
+
 export type FiabiliteDuCreateur = {
   reliability_score: string | null;
   completed_collabs_count: number;
+  /**
+   * Ce qui monte, ce qui descend, et ce qui ne fait rien.
+   *
+   * **Lu, jamais récité.** L'écran de détail portait sa liste en dur : les
+   * sens viennent de `reliability_weights`, qui est de la configuration, et un
+   * poids inversé en exploitation aurait rendu l'écran faux sans qu'aucun test
+   * ne tombe. Les neuf événements arrivent désormais avec le sens du jour.
+   *
+   * Les neutres en font partie : « ce qui affecte le score » doit pouvoir dire
+   * « ceci ne l'affecte pas », sans quoi la liste ment par omission le jour où
+   * l'un d'eux redevient non nul.
+   */
+  composantes: ComposanteDuScore[];
 };
 
 /**
@@ -240,6 +268,17 @@ export type AudienceDuCompte = {
    * n'existe chez personne, et aucune reconnexion ne le récupérera.
    */
   reconnectable: boolean;
+  /**
+   * Quand l'autorisation est tombée, ou tombera.
+   *
+   * **La carte disait « finie » sans dire quand.** « Expirée il y a trois
+   * jours » et « expirée en mars » n'appellent pas la même réaction.
+   *
+   * Nulle veut dire « on ne sait pas » — plateforme qui ne borne pas ses
+   * jetons, compte révoqué dont le jeton a été effacé — jamais « c'est bon ».
+   * C'est `status` qui tranche, et lui seul.
+   */
+  token_expires_at: string | null;
 };
 
 export type SignalJuge = {
