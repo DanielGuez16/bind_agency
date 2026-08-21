@@ -53,6 +53,18 @@ class AudienceDuCompte:
     #: n'existe alors chez personne : ni relevé, ni renouvellement, ni
     #: reconnexion. Rendu à l'app pour qu'elle le dise, au lieu de proposer un
     #: geste qui ne mène nulle part.
+    #: Quand l'autorisation est tombée, ou tombera.
+    #:
+    #: **La carte disait « finie » sans dire quand.** `status` porte le verdict,
+    #: cette date porte le fait : « expirée il y a trois jours » et « expirée en
+    #: mars » n'appellent pas la même réaction, et sans elle la seule façon de
+    #: le savoir était de heurter l'obstacle d'un palier — c'est-à-dire de
+    #: découvrir la panne au moment de réserver.
+    #:
+    #: Nulle quand la plateforme ne borne pas ses jetons, et nulle sur un compte
+    #: révoqué dont on a effacé le jeton. Une date absente veut donc dire « on
+    #: ne sait pas », jamais « c'est bon » : c'est `status` qui tranche.
+    token_expires_at: datetime | None
     reconnectable: bool
 
 
@@ -114,6 +126,7 @@ async def audience(session: AsyncSession, *, creator_id: uuid.UUID) -> tuple[Aud
                 releve.c.avg_views,
                 releve.c.engagement_rate,
                 releve.c.captured_at,
+                SocialAccount.token_expires_at,
                 SocialAccount.provider_mode,
             )
             .outerjoin(releve, releve.c.social_account_id == SocialAccount.id)
@@ -135,6 +148,7 @@ async def audience(session: AsyncSession, *, creator_id: uuid.UUID) -> tuple[Aud
             avg_views=ligne.avg_views,
             engagement_rate=ligne.engagement_rate,
             captured_at=ligne.captured_at,
+            token_expires_at=ligne.token_expires_at,
             reconnectable=(
                 ligne.provider_mode is None or ligne.provider_mode == get_settings().social_provider
             ),

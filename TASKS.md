@@ -1127,6 +1127,17 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       Téléphone au format international, normalisé avant validation ; nom
       dépouillé de ses espaces avant d'être compté ; adresse d'au moins dix
       caractères. 13 tests neufs*
+- [x] **Le sens des événements du score, et la fin d'une autorisation**
+      *`fiabilite.composantes` : les neuf événements avec `up`, `down` ou
+      `neutral`, **dérivés du signe de `reliability_weights`** et non récités.
+      L'écran listait les sept événements depuis du texte figé ; un poids
+      inversé l'aurait rendu faux sans qu'aucun test ne tombe. Les poids
+      eux-mêmes ne sortent pas — l'écran nomme, il ne barème pas.
+      `token_expires_at` sur la carte d'audience : `status` disait « finie »
+      sans dire quand, et la seule façon de l'apprendre était l'obstacle d'un
+      palier. `reliability.Fiabilite` renommée `CachesDeFiabilite` — la garde
+      des schémas lus a vu la collision de noms avant qu'elle coûte un 500.
+      7 tests neufs, 5 mutations vérifiées*
 - [x] **La suppression de compte, ouverte enfin**
       *`anonymize_account` existait sans porte. `POST /me/deletion` et
       `DELETE /me/deletion`, `deletion_effective_at` sur `/me`. Anonymise et ne

@@ -22,6 +22,7 @@ quelqu'un de peu fiable.
 import uuid
 from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal
+from enum import StrEnum
 
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -42,8 +43,20 @@ SCORE_MAX = Decimal("100")
 
 
 @dataclass(frozen=True, slots=True)
-class Fiabilite:
-    """Ce qu'un recalcul produit. Les deux caches d'un coup."""
+class CachesDeFiabilite:
+    """Ce qu'un recalcul produit. Les deux caches d'un coup.
+
+    **Nommée ainsi et non `Fiabilite`, qui était son nom.** Une autre structure
+    porte ce nom dans `creator_tiers` — celle que l'API sert — et une garde du
+    dépôt apparie par le nom : `X` dans un service, `XRead` dans un schéma. Tant
+    que les deux étaient identiques champ pour champ, la collision ne coûtait
+    rien ; le jour où l'une a gagné les composantes du score, valider la réponse
+    depuis celle-ci aurait rendu un 500 sur chaque appel.
+
+    La garde l'a dit avant qu'on l'écrive, ce qui est exactement son emploi.
+    Deux structures voisines qui portent le même nom finissent par être
+    confondues à l'appel — le renommage est la correction, pas l'exception.
+    """
 
     reliability_score: Decimal | None
     completed_collabs_count: int
@@ -57,6 +70,68 @@ def poids(type_: ReliabilityEventType) -> Decimal:
     redémarrage.
     """
     return get_settings().reliability_weights[type_.value]
+
+
+class SensDuScore(StrEnum):
+    """Ce qu'un événement fait au score. Trois valeurs, et la troisième compte.
+
+    `neutre` n'est pas « sans effet aujourd'hui par hasard » : c'est un poids
+    nul, et le signalement écarté en est un exemplaire délibéré. Le confondre
+    avec « descend » ferait afficher une pénalité qui n'existe pas, et le
+    ranger avec « monte » serait pire encore.
+    """
+
+    MONTE = "up"
+    DESCEND = "down"
+    NEUTRE = "neutral"
+
+
+@dataclass(frozen=True, slots=True)
+class Composante:
+    """Un événement et son sens. **Jamais son poids.**
+
+    L'écran nomme ce qui monte et ce qui descend ; il n'a aucun usage du nombre,
+    et le servir inviterait à l'afficher — « −25 » sur un écran ne veut rien
+    dire à qui ne connaît pas l'échelle, et lire « une absence coûte vingt-cinq
+    points » sur cent transformerait une explication en barème.
+
+    Ce qui est servi, en revanche, est **dérivé de la configuration** et non
+    récité : c'était tout le défaut. L'écran listait les sept événements et leur
+    sens depuis du texte figé, et un poids inversé en exploitation l'aurait
+    rendu faux sans qu'aucun test ne tombe.
+    """
+
+    evenement: ReliabilityEventType
+    sens: SensDuScore
+
+
+def sens(type_: ReliabilityEventType) -> SensDuScore:
+    """Le signe du poids du jour, jamais une table écrite à côté.
+
+    Une seconde table divergerait de la configuration au premier ajustement, ce
+    qui est exactement le défaut qu'on corrige.
+    """
+    valeur = poids(type_)
+    if valeur > 0:
+        return SensDuScore.MONTE
+    if valeur < 0:
+        return SensDuScore.DESCEND
+    return SensDuScore.NEUTRE
+
+
+def composantes() -> tuple[Composante, ...]:
+    """Les événements du produit, chacun avec son sens.
+
+    **Tous, y compris les neutres.** Taire un événement à poids nul ferait
+    disparaître de l'écran quelque chose qui existe et qui peut réapparaître au
+    premier réglage : « ce qui affecte le score » doit pouvoir dire « ceci ne
+    l'affecte pas », sans quoi la liste ment par omission le jour où elle est
+    la plus utile.
+
+    L'ordre est celui de l'énumération, qui va du plus favorable au plus
+    coûteux. L'écran regroupe par sens ; il n'a pas à réinventer un tri.
+    """
+    return tuple(Composante(evenement=type_, sens=sens(type_)) for type_ in ReliabilityEventType)
 
 
 async def enregistrer(
@@ -85,7 +160,7 @@ async def enregistrer(
     return evenement
 
 
-def evaluer(evenements: list[tuple[ReliabilityEventType, Decimal]]) -> Fiabilite:
+def evaluer(evenements: list[tuple[ReliabilityEventType, Decimal]]) -> CachesDeFiabilite:
     """La règle, sans base de données.
 
     Le score part du neutre et bouge avec les pondérations, borné à zéro et
@@ -93,7 +168,7 @@ def evaluer(evenements: list[tuple[ReliabilityEventType, Decimal]]) -> Fiabilite
     d'historique, ce qui n'est pas la même chose qu'un mauvais historique.
     """
     if not evenements:
-        return Fiabilite(reliability_score=None, completed_collabs_count=0)
+        return CachesDeFiabilite(reliability_score=None, completed_collabs_count=0)
 
     settings = get_settings()
     score = Decimal(settings.reliability_base_score)
@@ -106,10 +181,10 @@ def evaluer(evenements: list[tuple[ReliabilityEventType, Decimal]]) -> Fiabilite
     score = min(max(score, SCORE_MIN), SCORE_MAX).quantize(Decimal("0.01"), ROUND_HALF_UP)
     collabs = sum(1 for type_, _ in evenements if type_ in COMPTENT_UNE_COLLABORATION)
 
-    return Fiabilite(reliability_score=score, completed_collabs_count=collabs)
+    return CachesDeFiabilite(reliability_score=score, completed_collabs_count=collabs)
 
 
-async def recalculer(session: AsyncSession, creator_id: uuid.UUID) -> Fiabilite:
+async def recalculer(session: AsyncSession, creator_id: uuid.UUID) -> CachesDeFiabilite:
     """Reconstruit les deux caches depuis les événements. Sans rien écrire.
 
     Séparé de `rafraichir` exprès : c'est cette fonction que le test de
@@ -124,7 +199,7 @@ async def recalculer(session: AsyncSession, creator_id: uuid.UUID) -> Fiabilite:
     return evaluer([(ligne.type, ligne.weight) for ligne in lignes.all()])
 
 
-async def rafraichir(session: AsyncSession, *, creator_id: uuid.UUID) -> Fiabilite:
+async def rafraichir(session: AsyncSession, *, creator_id: uuid.UUID) -> CachesDeFiabilite:
     """Recalcule et écrit les caches."""
     fiabilite = await recalculer(session, creator_id)
 

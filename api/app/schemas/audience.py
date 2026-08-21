@@ -32,6 +32,14 @@ class AudienceDuCompteRead(BaseModel):
     #: Nulle quand aucun relevé n'existe. Un chiffre sans date serait pris pour
     #: celui d'aujourd'hui.
     captured_at: datetime | None
+    #: Quand l'autorisation est tombée, ou tombera. `status` porte le verdict,
+    #: celle-ci porte le fait : « expirée il y a trois jours » et « expirée en
+    #: mars » n'appellent pas la même réaction.
+    #:
+    #: Nulle veut dire « on ne sait pas » — plateforme qui ne borne pas ses
+    #: jetons, ou compte révoqué dont le jeton a été effacé — jamais « c'est
+    #: bon ». C'est `status` qui tranche, et lui seul.
+    token_expires_at: datetime | None
     #: Faux quand le compte vient d'un autre fournisseur que celui en service :
     #: rien ne le récupérera, et l'app doit le dire plutôt que de proposer une
     #: reconnexion qui créerait un autre compte à côté.

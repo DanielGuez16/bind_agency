@@ -282,7 +282,13 @@ async def test_la_route_rend_la_fiabilite(client: AsyncClient, session: AsyncSes
     corps = (await client.get(f"{PREFIX}/me/tiers", headers=entetes)).json()
 
     assert "fiabilite" in corps, "le champ se perd entre le service et la route"
-    assert corps["fiabilite"] == {"reliability_score": None, "completed_collabs_count": 0}
+    # **Le score nul et le compteur à zéro sont assertés champ par champ**, et
+    # non par égalité du dictionnaire entier : la fiabilité a gagné les
+    # composantes, et une égalité stricte ferait tomber ce test à chaque ajout
+    # sans jamais rien dire de ce qu'il prétend garder — que le score traverse
+    # la route.
+    assert corps["fiabilite"]["reliability_score"] is None
+    assert corps["fiabilite"]["completed_collabs_count"] == 0
 
 
 # --------------------------------------------------------------------------
