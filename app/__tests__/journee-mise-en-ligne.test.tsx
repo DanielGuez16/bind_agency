@@ -14,7 +14,7 @@
  */
 import { render, screen, waitFor, within } from '@testing-library/react-native';
 
-import { ApiClient, ApiProvider } from '../src/api';
+import { ApiClient, ApiProvider, type EtapeActivation } from '../src/api';
 import { I18nProvider } from '../src/i18n';
 import { en } from '../src/i18n/en';
 import { BandeauDeMiseEnLigne } from '../src/screens/journee/BandeauDeMiseEnLigne';
@@ -22,7 +22,11 @@ import { placesDuJour } from '../src/screens/journee/exception';
 import { miseEnLigne } from '../src/screens/journee/miseEnLigne';
 import { ThemeProvider } from '../src/theme';
 
-const ETAPE = (cle: string, done: boolean, blocking = true) => ({ cle, done, blocking });
+const ETAPE = (cle: EtapeActivation['cle'], done: boolean, blocking = true): EtapeActivation => ({
+  cle,
+  done,
+  blocking,
+});
 
 describe('ce qui manque avant que les créatrices voient le salon', () => {
   it('publié : plus rien à dire', () => {
