@@ -135,15 +135,27 @@ export function verbeDeLaContrepartie(
  * ligne nue est de l'histoire. Trois traitements pour trois rapports à
  * l'action — et le « moche » de l'onglet des terminées venait précisément d'un
  * traitement d'action appliqué à de l'histoire.
+ *
+ * **Et une quatrième, pour ce qui revient.** Une reprise n'est pas une demande
+ * de plus : le salon a regardé, refusé, et dit pourquoi. Sous le même traitement
+ * que les autres, elle se perd dans une pile où tout demande également — alors
+ * que c'est la seule ligne de l'écran qui porte un reproche. Elle prend le
+ * contour d'encre, qui est le trait le plus fort du système.
+ *
+ * **Le contour remplace l'ombre, il ne s'y ajoute pas.** Une ombre sous un filet
+ * fort les annule l'une l'autre et rend la hiérarchie illisible ; c'est la règle
+ * qui vaut déjà entre l'ombre et le filet clair, et une reprise ne mérite pas
+ * une exception qui abîmerait les deux.
  */
-export type Surface = 'demande' | 'informe' | 'histoire';
+export type Surface = 'demande' | 'reprise' | 'informe' | 'histoire';
 
 export function surfaceDe(
   reservation: ReservationDuCreateur,
   onglet: string,
 ): Surface {
   if (onglet === 'terminees') return 'histoire';
-  return attenteDe(reservation) === 'creatrice' ? 'demande' : 'informe';
+  if (attenteDe(reservation) !== 'creatrice') return 'informe';
+  return verbeDeLaContrepartie(reservation) === 'corriger' ? 'reprise' : 'demande';
 }
 
 /** Les trois onglets, et les statuts que chacun couvre. */
@@ -426,12 +438,15 @@ function CarteDeReservation({
         backgroundColor: c['bg.surface'],
         padding: 16,
         // **La grammaire, posée ici et nulle part ailleurs.** Une carte à ombre
-        // demande quelque chose, une carte à filet informe. Les deux ne se
-        // cumulent jamais : une ombre sous un filet fort les annule l'une
-        // l'autre et rend la hiérarchie illisible.
-        ...(surface === 'demande'
-          ? elevationDeCarte()
-          : { borderWidth: 1, borderColor: c['line.default'] }),
+        // demande quelque chose, un contour d'encre dit qu'on lui reproche
+        // quelque chose, une carte à filet informe. Aucun des trois ne se
+        // cumule : une ombre sous un filet fort les annule l'une l'autre et
+        // rend la hiérarchie illisible.
+        ...(surface === 'reprise'
+          ? { borderWidth: 1, borderColor: c['line.ink'] }
+          : surface === 'demande'
+            ? elevationDeCarte()
+            : { borderWidth: 1, borderColor: c['line.default'] }),
       })}
     >
       <LigneDeReservation reservation={reservation} onOuvrir={onOuvrir} />
@@ -586,11 +601,20 @@ function LigneDeReservation({
             contrôle le dit en mots plutôt que de griser une action : un bouton
             gris se presse quand même, et ne répond pas. */}
         {attente === 'creatrice' ? (
-          <Button
-            label={t(`parcours.action_${destination(reservation)}`)}
-            onPress={() => onOuvrir(reservation)}
-            testID={`agir-${reservation.booking_id}`}
-          />
+          // **`fullWidth={false}`, dans une rangée.** Le bouton du système est
+          // déjà une pilule ; il s'étirait sur toute la carte parce que
+          // `fullWidth` vaut `true` par défaut et que personne ne l'avait dit
+          // non. Même correction qu'à la fiche. La rangée est nécessaire : en
+          // colonne, `alignSelf` non posé retombe sur l'étirement du parent, et
+          // le bouton reprendrait toute la largeur sans que le `false` se voie.
+          <View style={{ flexDirection: 'row' }}>
+            <Button
+              label={t(`parcours.action_${destination(reservation)}`)}
+              onPress={() => onOuvrir(reservation)}
+              fullWidth={false}
+              testID={`agir-${reservation.booking_id}`}
+            />
+          </View>
         ) : attente === 'controle' ? (
           <Texte
             variante="type.caption"
