@@ -158,9 +158,9 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
   // et aller voir son travail. Le nom civil arrive à la réservation, quand une
   // créatrice a choisi ce salon — pas avant, et pas à tout le monde.
   //
-  // La route continue de servir `first_name` et `last_name` : ce type ne peut
-  // pas les refuser, l'écran peut ne pas les lire. Retirer les champs de la
-  // réponse est instruit à part.
+  // La route ne les sert plus du tout : ils sont sortis du schéma, pas
+  // seulement de l'écran. Un champ qu'on cesse d'afficher et qu'on continue
+  // d'envoyer n'est pas retiré, il est caché.
   const nom = createur.comptes.find((compte) => compte.handle)?.handle ?? t('annuaire.sansNom');
 
   // La vignette du premier compte qui en a une. La liste n'a jamais eu besoin

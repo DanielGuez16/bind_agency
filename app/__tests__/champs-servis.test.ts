@@ -62,8 +62,6 @@ const NON_RENDUS: Record<string, string> = {
   // jamais rencontrées — elle arrive à la réservation, quand une créatrice a
   // choisi ce salon. L'écran a cessé de les lire ; **la donnée part toujours
   // sur le réseau**, et c'est là qu'il faut la retirer. Instruit dans TASKS.md.
-  'CreateurDeLAnnuaire.first_name': 'a-instruire',
-  'CreateurDeLAnnuaire.last_name': 'a-instruire',
 
   // --- contrat : servis pour une autre façade, ou moitié d'une paire ---
   'PalierAccessible.min_completed_collabs': 'contrat',

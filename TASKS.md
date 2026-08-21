@@ -1127,6 +1127,15 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       Téléphone au format international, normalisé avant validation ; nom
       dépouillé de ses espaces avant d'être compté ; adresse d'au moins dix
       caractères. 13 tests neufs*
+- [x] **Le pseudonyme est l'identité de l'annuaire**
+      *`first_name` et `last_name` retirés de l'annuaire, **dans les deux états
+      d'abonnement** : ils ne s'achètent pas, l'écran ne les montre nulle part.
+      L'annuaire titrait « Léa Martel », c'est-à-dire l'état civil de cent
+      vingt-huit personnes chez tout salon abonné qui ne les a jamais
+      rencontrées. Le nom reste sur la journée du comptoir, où la créatrice a
+      choisi ce salon et s'y présente. Trouvé par la garde des champs servis de
+      l'autre conversation, qui les avait dénoncés comme orphelins. 2 tests
+      neufs, 1 mutation vérifiée*
 - [x] **Le masque est au serveur, et le contre-factuel par palier**
       *Sans abonnement, l'annuaire ne renvoie plus ni pseudonyme, ni volume, ni
       lien de profil, ni photo nette — **ni biographie**, qui est du texte libre
