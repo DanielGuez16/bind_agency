@@ -14,7 +14,7 @@
  */
 import { render, screen, waitFor } from '@testing-library/react-native';
 
-import { ApiClient, ApiProvider } from '../src/api';
+import { ApiClient, ApiProvider, type ContentFormat } from '../src/api';
 import { I18nProvider } from '../src/i18n';
 import { en } from '../src/i18n/en';
 import { premiersPas } from '../src/screens/rapports/pointsDePremierPas';
@@ -40,7 +40,7 @@ const ITEM = (id: string, extra: Record<string, unknown> = {}) => ({
   ...extra,
 });
 
-const OFFRE = (format: string, extra: Record<string, unknown> = {}) => ({
+const OFFRE = (format: ContentFormat, extra: Record<string, unknown> = {}) => ({
   id: `o-${format}`,
   business_id: 'b1',
   tier_id: `t-${format}`,
