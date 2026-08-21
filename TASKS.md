@@ -1454,3 +1454,55 @@ planche sans entrée nulle part, alors que les lots 2, 3 et 4 en avaient chacun
 une. Ses écrans emploient les bons jetons, donc rien ne signalait le manque —
 ni un test, ni une revue, ni un écran visiblement faux. C'est exactement le cas
 que la règle ci-dessus existe pour attraper.
+
+---
+
+## `BIND Merchant - L annuaire v3` — la route commerce-scopée
+
+**Partiellement passée.** Les deux décisions de Design qui ne dépendent d'aucune
+donnée sont livrées : l'absence de score n'est plus expliquée, l'absence de
+contact l'est, et la fiche titre le pseudonyme. Ce qui suit manque encore, et
+l'écran ne peut pas l'inventer.
+
+**Le compte, avant la liste.** Design a tranché : à deux mille créatrices, un
+salon ne cherche pas, il ne connaît aucun nom. L'écran doit commencer par « 41
+des 128 dans 15 km peuvent réserver ce que vous avez ouvert ». Le calcul existe
+— `portee_locale.autour_du_commerce` rend `createurs` / `peuvent_reserver` /
+`rayon_metres` — mais n'est exposé que sur les rapports. **Reprendre les trois
+noms tels quels** : deux noms pour le même nombre sur deux écrans divergent au
+premier ajustement.
+
+**Le contre-factuel.** « Ouvrir le palier post porterait ce chiffre à 103 » est
+la phrase qui justifie l'abonnement. `eligibility.evaluer` est pure et la boucle
+est déjà en mémoire, donc le calcul ne coûte pas d'aller-retour. Deux réserves :
+un palier ne s'ouvre pas dans l'abstrait — `TierOffer` le lie à un item de
+catalogue, donc sur un catalogue vide la carte ne se rend pas ; et un seul
+candidat, celui au plus grand écart, parce que la planche montre une phrase.
+
+**Le tri, accès d'abord et proximité ensuite — le point dur.** `annuaire()` ne
+prend aucun commerce : tri par `user_id`, et `paliers_ouverts` calculé sur
+**tous** les paliers actifs. Le champ répond donc « elle se qualifie quelque
+part », pas « elle peut réserver ici ». Ni `peut_reserver_ici` ni le tri ne sont
+dérivables côté écran. `portee_locale._paliers_ouverts` fait déjà la requête
+juste — les quatre conditions d'`is_effectively_offered` — à réutiliser, pas à
+réécrire. Pour la distance, `ST_Distance` sur les deux `Geography` **sans
+`cast`**, qui perd le SRID.
+
+Décision à prendre avec : `portee_locale` **exclut** les créatrices sans
+position. Si l'annuaire les liste avec une distance nulle, « 41 des 128 »
+surplombera une liste de 137 lignes. Même population que le compte.
+
+**Ce que l'écran attend par créatrice** : distance, palier accessible **chez ce
+salon**, nombre de prestations réservables, et par réseau l'engagement et la
+date du dernier relevé — tous dérivables, aucun servi. Les collaborations
+passées avec ce salon passent par `Booking`, `Collaboration` n'ayant pas de
+`business_id`.
+
+**Ce qui n'existe pas et qu'il ne faut pas fabriquer** : le quartier. Aucune
+colonne, aucune source entre `city` et `geo`. L'écran retombe sur `city`.
+
+**Et un défaut à instruire à part, plus grave que celui qu'on corrige.** La
+route sert `first_name` et `last_name` — le nom d'état civil de chaque
+créatrice, à tout salon abonné qui ne l'a jamais rencontrée. L'écran a cessé de
+les lire, mais la donnée part toujours sur le réseau. Le schéma est la dernière
+barrière avant le réseau, et c'est là qu'il faut la poser.

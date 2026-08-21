@@ -53,6 +53,18 @@ const TYPES = join(SRC, 'api', 'types.ts');
  *   table un tapis.
  */
 const NON_RENDUS: Record<string, string> = {
+  // --- a-instruire : servi, et l'écran refuse délibérément de le lire ---
+  //
+  // **Le nom civil des créatrices, servi à tout salon abonné.** L'annuaire v3
+  // titre chaque fiche du pseudonyme : c'est ce qu'un salon reconnaît, et c'est
+  // ce qui suffit pour aller voir son travail. L'identité d'état civil de cent
+  // vingt-huit personnes n'a rien à faire sur l'écran de quelqu'un qui ne les a
+  // jamais rencontrées — elle arrive à la réservation, quand une créatrice a
+  // choisi ce salon. L'écran a cessé de les lire ; **la donnée part toujours
+  // sur le réseau**, et c'est là qu'il faut la retirer. Instruit dans TASKS.md.
+  'CreateurDeLAnnuaire.first_name': 'a-instruire',
+  'CreateurDeLAnnuaire.last_name': 'a-instruire',
+
   // --- contrat : servis pour une autre façade, ou moitié d'une paire ---
   'PalierAccessible.min_completed_collabs': 'contrat',
   'PalierAccessible.min_reliability_score': 'contrat',

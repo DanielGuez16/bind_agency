@@ -56,6 +56,7 @@ import { PreuveSoumise } from './Preuve';
 import { MOTIFS, libelleDApprobation, libelleDuMotif, type MotifDeDecision } from './motifs';
 import { NOTE_MAXIMUM } from './PublicationsScreen';
 import { useRequete } from './useRequete';
+import { nomDuCreateur } from './nomDuCreateur';
 
 export function ArbitrageScreen() {
   const { api } = useApi();
@@ -262,7 +263,7 @@ function TableDArbitrage({
             testID={`ligne-${ligne.collaboration_id}`}
             valeurs={{
               commerce: ligne.business_name,
-              createur: ligne.creator_handle ?? '—',
+              createur: nomDuCreateur(ligne, t, '—'),
               prestation: ligne.item_name,
               palier: ligne.required_format.toUpperCase(),
               tentatives: String(ligne.attempts_count),
@@ -417,7 +418,7 @@ export function surCeDossier(
 ): string {
   return t('admin.issueSurDossier', {
     issue,
-    createur: ligne.creator_handle ?? ligne.creator_first_name ?? '—',
+    createur: nomDuCreateur(ligne, t, '—'),
     prestation: ligne.item_name,
     commerce: ligne.business_name,
   });
@@ -469,7 +470,7 @@ function Dossier({ ligne, onTranche }: { ligne: LigneDeFile; onTranche: () => vo
         {ligne.business_name}
       </Texte>
       <Texte variante="type.caption" couleur="ink.soft">
-        {ligne.creator_handle ?? ''} · {ligne.item_name} ·{' '}
+        {nomDuCreateur(ligne, t)} · {ligne.item_name} ·{' '}
         {t('commerce.tentative', { n: ligne.attempts_count })}
       </Texte>
 

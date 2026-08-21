@@ -41,6 +41,7 @@ import { MOTIFS, libelleDuMotif, type MotifDeDecision } from './motifs';
 export const NOTE_MAXIMUM = 500;
 import { Ecran } from './Ecran';
 import { PreuveSoumise, SqueletteDePreuve } from './Preuve';
+import { nomDuCreateur } from './nomDuCreateur';
 import { useRequete } from './useRequete';
 
 /**
@@ -173,9 +174,7 @@ function Controle({ ligne, onDecide }: { ligne: LigneDeFile; onDecide: () => voi
         ellipseSurNomPropre={!ligne.creator_partie}
         testID={`createur-${ligne.collaboration_id}`}
       >
-        {ligne.creator_partie
-          ? t('commerce.creatricePartie')
-          : (ligne.creator_handle ?? ligne.creator_first_name ?? '')}
+        {nomDuCreateur(ligne, t)}
       </Texte>
       <Texte variante="type.caption" couleur="ink.soft">
         {ligne.item_name} · {t('commerce.tentative', { n: ligne.attempts_count + 1 })}

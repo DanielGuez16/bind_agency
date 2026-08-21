@@ -7843,3 +7843,52 @@ tomber l'écran entier là où « pas d'horaires » est la bonne réponse. Les c
 fois, la garde falsy a suffi ; les cinq fois, c'est un test qui l'a trouvée. La
 leçon n'est pas la garde, c'est que **tout champ neuf lu par l'app doit être lu
 en falsy tant que des décors et des réponses d'avant le champ circulent**.
+
+---
+
+## 2026-08-20 — L'annuaire v3 : le silence sur la note, et le nom civil qui n'avait rien à faire là
+
+**Un renversement, écrit comme tel.** L'annuaire portait une ligne qui
+expliquait l'absence de score : « nous ne vous montrons jamais de note, et nous
+ne classons jamais les créatrices entre elles ». L'intention était bonne et
+l'effet inverse — **écrire qu'on ne montre pas la note apprend qu'une note
+existe**, et installe un salon à la chercher ailleurs, chez la créatrice ou en
+la réclamant. La ligne est retirée. Ce qui rend le silence tenable : le palier
+accessible **est** le signal, puisqu'un score dégradé plafonne mécaniquement.
+
+**L'absence de contact, elle, s'explique**, et c'est l'exact inverse. Un salon
+**cherchera** ce bouton — tous les annuaires qu'il connaît en ont un — et ne rien
+dire le laisse conclure au défaut. La règle qui sort des deux : une absence
+qu'on ne cherche pas se tait, une absence qu'on cherche se dit.
+
+**La fiche titre le pseudonyme, plus le nom civil.** L'écran affichait « Léa
+Moreau » : l'identité d'état civil de cent vingt-huit personnes, sur l'écran de
+tout salon abonné qui ne les a jamais rencontrées. Le pseudonyme suffit à ce que
+l'annuaire sert — reconnaître un compte, aller voir son travail — et le nom
+civil arrive à la réservation, quand une créatrice a choisi ce salon.
+**La donnée part toujours sur le réseau** : l'écran a cessé de la lire, le
+schéma doit cesser de la servir. Instruit dans `TASKS.md`, et les deux champs
+sont inscrits `a-instruire` dans la table des champs servis — ce qui empêche
+qu'on les croie simplement oubliés.
+
+**Deux champs servis et jetés par le type de l'app.** `avatar_key` et
+`profil_url` arrivaient dans la réponse depuis l'ouverture de la route : les
+fiches n'avaient pas de visage, et les pseudonymes ne menaient nulle part. Le
+portrait garde son cadre quand la photo manque, et ce n'est pas un cas limite —
+la même clé servira l'aperçu flouté au salon sans abonnement, et les photos
+déposées avant cet aperçu répondront 404 plutôt que de retomber sur l'original.
+
+**Le garde-fou de lecture seule est affiné, pas excepté.** Il interdisait tout
+`onPress` dans cet écran. Il attrapait donc le lien de profil au même titre
+qu'un bouton de contact, alors que les deux ne disent pas la même chose : l'un
+agit sur une créatrice dans BIND, l'autre sort du produit pour aller voir son
+travail. Il interdit maintenant le bouton, le rôle « button » et tout appel
+d'API d'invitation — et vérifie en plus que **chaque** `onPress` de l'écran est
+un `Linking.openURL` portant `accessibilityRole="link"`, sans quoi il aurait
+suffi d'éviter le mot « bouton ».
+
+**Ce qui manque encore est écrit dans `TASKS.md`** : le compte avant la liste,
+le contre-factuel, le tri accès-puis-proximité, la distance. Aucun n'est
+dérivable côté écran — `annuaire()` ne prend pas de commerce, et son
+`paliers_ouverts` répond « elle se qualifie quelque part », pas « elle peut
+réserver ici ».

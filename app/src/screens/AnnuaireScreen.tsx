@@ -5,26 +5,36 @@
  * écran, il ne voit que ce qui est déjà réservable autour de lui, et
  * l'abonnement n'a rien à montrer avant la première collaboration.
  *
- * **Aucun score de fiabilité, et la ligne qui l'explique.** Le produit promet à
- * la créatrice que son score n'est « jamais comparé entre créatrices, jamais
- * montré à un commerce ». Le palier ouvert porte pourtant la même information :
- * un score dégradé la plafonne à un palier inférieur, si bien qu'un salon qui
- * lit « ouvert au palier reel » sait qu'elle tient ses engagements — sans le
- * nombre, et sans pouvoir classer. Encore faut-il le dire : sinon un salon
- * cherche une note qu'il ne trouvera pas, et conclut qu'elle manque.
+ * **Aucun score de fiabilité, et l'écran n'en parle pas — c'est un
+ * renversement.** Cet écran portait une ligne qui expliquait l'absence de note :
+ * « nous ne vous montrons jamais de note, et nous ne classons jamais les
+ * créatrices entre elles ». L'intention était bonne et l'effet inverse.
+ * **Écrire qu'on ne montre pas la note apprend qu'une note existe**, et installe
+ * un salon à la chercher ailleurs — chez la créatrice, ou en la demandant. La
+ * ligne est retirée, et l'absence de mention est délibérée.
  *
- * **Lecture seule.** Aucun bouton de contact, aucune invitation directe. On
- * atteint une créatrice en ouvrant une prestation à son palier — c'est le
- * mécanisme du produit, et un raccourci ici en créerait un second, hors du
- * système de paliers.
+ * Ce qui rend le silence tenable : le palier accessible **est** le signal. Un
+ * score dégradé plafonne mécaniquement, donc une créatrice ouverte au palier
+ * reel tient ses engagements — l'information passe sans être nommée, et sans
+ * qu'un nombre permette de classer.
+ *
+ * **L'absence de contact, elle, s'explique**, et c'est l'exact inverse du cas
+ * précédent. Un salon **cherchera** ce bouton, parce que tous les annuaires
+ * qu'il connaît en ont un ; ne rien dire le laisse conclure au défaut. Une
+ * absence qu'on ne cherche pas se tait, une absence qu'on cherche se dit.
+ *
+ * **Lecture seule.** On atteint une créatrice en ouvrant une prestation à son
+ * palier — c'est le mécanisme du produit, et un raccourci ici en créerait un
+ * second, hors du système de paliers.
  */
-import { View } from 'react-native';
+import { Image, Linking, Pressable, View } from 'react-native';
 
 import { useApi, type CreateurDeLAnnuaire } from '../api';
 import {
   Apparition,
   EmptyState,
   Filet,
+  Icone,
   SkeletonLignes,
   StatusMessage,
   Texte,
@@ -35,6 +45,7 @@ import { useI18n } from '../i18n';
 import { useGabarit } from '../shell/gabarit';
 import { elevationDeCarte, radius, useColors } from '../theme';
 import { Ecran } from './Ecran';
+import { nomDePlateforme } from './obstacle';
 import { useRequete } from './useRequete';
 
 /** Le code que le serveur rend à un commerce sans abonnement vivant. */
@@ -123,21 +134,6 @@ export function AnnuaireScreen({ businessId }: { businessId: string }) {
             {t('annuaire.sousTitre')}
           </Texte>
 
-          {/* La ligne qui remplace le score. Sans elle, un salon cherche une
-              note, ne la trouve pas, et croit à un oubli. */}
-          <View
-            testID="ce-que-le-palier-dit"
-            style={{
-              padding: 14,
-              borderRadius: radius['radius.lg'],
-              backgroundColor: c['bg.sunken'],
-            }}
-          >
-            <Texte variante="type.caption" couleur="ink.soft">
-              {t('annuaire.ceQueLePalierDit')}
-            </Texte>
-          </View>
-
           {createurs.map((createur, rang) => (
             <Apparition key={createur.creator_id} rang={rang}>
               <FicheDeCreateur createur={createur} />
@@ -150,12 +146,28 @@ export function AnnuaireScreen({ businessId }: { businessId: string }) {
 }
 
 function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
+  const { api } = useApi();
   const { t, locale } = useI18n();
   const c = useColors();
   const { large } = useGabarit();
 
-  const nom =
-    [createur.first_name, createur.last_name].filter(Boolean).join(' ') || t('annuaire.sansNom');
+  // **Le pseudonyme, jamais le nom civil.** La planche v3 titre chaque fiche
+  // `@lea.mrl` ; l'écran titrait « Léa Martel », c'est-à-dire l'identité d'état
+  // civil de cent vingt-huit personnes affichée à un salon qui ne les connaît
+  // pas. Le pseudonyme suffit à ce que l'annuaire sert : reconnaître un compte
+  // et aller voir son travail. Le nom civil arrive à la réservation, quand une
+  // créatrice a choisi ce salon — pas avant, et pas à tout le monde.
+  //
+  // La route continue de servir `first_name` et `last_name` : ce type ne peut
+  // pas les refuser, l'écran peut ne pas les lire. Retirer les champs de la
+  // réponse est instruit à part.
+  const nom = createur.comptes.find((compte) => compte.handle)?.handle ?? t('annuaire.sansNom');
+
+  // La vignette du premier compte qui en a une. La liste n'a jamais eu besoin
+  // de l'original, et le détail n'existe pas encore sur cet écran.
+  const portrait = api.urlDeLaVignette(
+    createur.comptes.find((compte) => compte.avatar_key)?.avatar_key ?? null,
+  );
 
   return (
     <View
@@ -173,6 +185,32 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
         ...elevationDeCarte(),
       }}
     >
+      {/* **La photo, et le cadre qui reste quand elle manque.** `avatar_key`
+          était servi par le serveur et jeté par le type de l'app : l'annuaire
+          rendait des fiches sans visage alors que la donnée arrivait. Le cadre
+          vide n'est pas un cas limite — la même clé sert l'aperçu flouté au
+          salon sans abonnement, et les photos déposées avant cet aperçu
+          répondront 404 plutôt que de retomber sur l'original. */}
+      <View
+        testID={`portrait-${createur.creator_id}`}
+        style={{
+          width: 56,
+          height: 56,
+          borderRadius: radius['radius.photo'],
+          backgroundColor: c['bg.sunken'],
+          overflow: 'hidden',
+        }}
+      >
+        {portrait ? (
+          <Image
+            source={{ uri: portrait }}
+            style={{ width: 56, height: 56 }}
+            resizeMode="cover"
+            testID={`photo-${createur.creator_id}`}
+          />
+        ) : null}
+      </View>
+
       <View style={{ flex: large ? 1 : undefined, gap: 2, minWidth: 0 }}>
         <Texte variante="type.bodyStrong">{nom}</Texte>
         {createur.city ? (
@@ -195,23 +233,64 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
         <Texte variante="type.figureSmall" testID={`audience-${createur.creator_id}`}>
           {formatNumber(createur.audience_totale, locale)}
         </Texte>
+        {/* **Le cumul se légende par le nombre de réseaux, pas par le volume.**
+            La légende répétait « 24 000 followers » juste sous le chiffre, et
+            les lignes de réseau le redisaient une troisième fois. Ce que le
+            chiffre ne dit pas tout seul, c'est de combien de comptes il vient. */}
         <Texte variante="type.caption" couleur="ink.soft">
           {createur.comptes.length === 1
-            ? t('annuaire.audienceUnReseau', { count: createur.audience_totale })
-            : t('annuaire.audience', {
-                count: createur.audience_totale,
-                reseaux: createur.comptes.length,
-              })}
+            ? t('annuaire.audienceUnReseau')
+            : t('annuaire.audience', { reseaux: createur.comptes.length })}
         </Texte>
-        {createur.comptes.map((compte) => (
-          <Texte
-            key={`${compte.platform}-${compte.handle}`}
-            variante="type.caption"
-            couleur="ink.mute"
-          >
-            {compte.handle ?? compte.platform}
-          </Texte>
-        ))}
+        {/* **Le pseudonyme mène au profil public, et c'est le seul geste que
+            l'annuaire propose.** Le lien sort du produit : on va voir son
+            travail chez elle. `profil_url` était servi et jeté par le type de
+            l'app, si bien que l'écran rendait des pseudonymes morts. */}
+        {createur.comptes.map((compte) => {
+          // Le réseau et son volume, jamais le pseudonyme — il titre déjà la
+          // fiche, et le répéter ici faisait lire deux fois la même chose. La
+          // formulation est celle de la journée : une seule grammaire pour la
+          // ligne de réseau côté commerce.
+          const ligne = (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Texte variante="type.caption" couleur={compte.profil_url ? 'brand.700' : 'ink.mute'}>
+                {compte.followers === null
+                  ? nomDePlateforme(compte.platform)
+                  : t('commerce.reseauAvecAbonnes', {
+                      reseau: nomDePlateforme(compte.platform),
+                      abonnes: formatNumber(compte.followers, locale),
+                    })}
+              </Texte>
+              {compte.profil_url ? <Icone nom="sortie" taille={13} couleur="brand.700" /> : null}
+            </View>
+          );
+
+          return compte.profil_url ? (
+            <Pressable
+              key={`${compte.platform}-${compte.handle}`}
+              accessibilityRole="link"
+              onPress={() => void Linking.openURL(compte.profil_url as string)}
+              testID={`profil-${createur.creator_id}-${compte.platform}`}
+              style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+            >
+              {ligne}
+            </Pressable>
+          ) : (
+            <View key={`${compte.platform}-${compte.handle}`}>{ligne}</View>
+          );
+        })}
+
+        {/* **L'absence de contact se dit, elle.** Un salon cherchera ce bouton
+            — tous les annuaires qu'il connaît en ont un — et ne rien dire le
+            laisse conclure au défaut. C'est l'inverse du score, qu'on tait
+            justement parce que personne ne le cherche. */}
+        <Texte
+          variante="type.caption"
+          couleur="ink.mute"
+          testID={`pas-de-contact-${createur.creator_id}`}
+        >
+          {t('annuaire.pasDeContact')}
+        </Texte>
       </View>
 
       <View style={{ width: large ? 220 : undefined, gap: 6 }}>

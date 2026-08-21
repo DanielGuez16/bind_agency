@@ -1231,6 +1231,24 @@ export type CompteVuParLeCommerce = {
   handle: string | null;
   /** Nul quand aucun relevé n'existe. Zéro serait un chiffre, et faux. */
   followers: number | null;
+  /**
+   * La photo, **par sa clé** — servie par `GET /media/{cle}`, jamais l'adresse
+   * de la plateforme, qui expire.
+   *
+   * Servi par le serveur depuis l'ouverture de la route, et absent de ce type
+   * jusqu'ici : l'annuaire rendait des fiches sans visage alors que la donnée
+   * arrivait dans la réponse.
+   */
+  avatar_key: string | null;
+  /**
+   * Le profil public, dérivé du pseudonyme.
+   *
+   * Nul sur une plateforme qu'on ne sait pas rattacher, ou sans pseudonyme —
+   * un lien qui mène à une page d'erreur est pire qu'un lien absent. C'est le
+   * seul geste que l'annuaire propose vers une créatrice, et il sort du
+   * produit : on va voir son travail chez elle.
+   */
+  profil_url: string | null;
 };
 
 /**
