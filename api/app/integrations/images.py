@@ -42,6 +42,22 @@ from types import ModuleType
 #: plusieurs milliers.
 COTE_VIGNETTE = 480
 
+#: Le côté le plus long d'un aperçu flouté, en pixels.
+#:
+#: **Trente-deux, et c'est petit exprès.** L'aperçu remplace la photo pour qui
+#: n'a pas payé : ce qui compte n'est pas qu'il soit joli mais qu'il ne
+#: contienne plus le visage. À trente-deux pixels, il n'y a plus de visage dans
+#: le fichier — pas caché, absent.
+COTE_APERCU = 32
+
+#: Le rayon du flou appliqué après la réduction, en pixels de l'image réduite.
+#:
+#: Deux sur trente-deux : de quoi effacer l'escalier des blocs sans faire un
+#: aplat gris, qui ne dirait plus rien du tout. Le flou n'est pas ce qui
+#: protège — la réduction l'a déjà fait — il rend seulement le résultat
+#: regardable.
+RAYON_FLOU = 2
+
 #: Le côté le plus long d'un original rangé, en pixels.
 #:
 #: **L'original n'était pas borné du tout** : on rangeait ce qu'on recevait,
@@ -135,6 +151,50 @@ def vignette(brut: bytes, *, cote: int = COTE_VIGNETTE) -> bytes | None:
         return _reduire(brut, cote=cote, module=module)
     except OSError:
         # `UnidentifiedImageError` en hérite, comme les lectures tronquées.
+        return None
+
+
+def apercu_floute(brut: bytes, *, cote: int = COTE_APERCU) -> bytes | None:
+    """Un aperçu dont on ne peut plus tirer le visage. `None` si on ne sait pas.
+
+    **Ce n'est pas un flou d'affichage, c'est une destruction d'information.**
+    Un masque posé par l'écran n'est pas un contrôle d'accès : la photo est
+    partie, et il suffit d'ouvrir l'outil de développement. Un flou appliqué à
+    une image pleine taille ne vaut guère mieux — un flou gaussien léger se
+    retire, et il reste toujours plus de pixels qu'il n'en faut pour reconnaître
+    quelqu'un.
+
+    L'aperçu est donc **réduit d'abord**, à une trentaine de pixels de côté, et
+    flouté ensuite. Ce qui a été jeté à la réduction n'existe plus dans le
+    fichier servi ; le flou ne fait qu'adoucir l'escalier des blocs. Ce qui
+    reste est une tache de couleurs — assez pour qu'une liste ait des formes et
+    des teintes, jamais assez pour reconnaître un visage.
+
+    Le résultat pèse quelques centaines d'octets, ce qui est un effet de bord
+    heureux : la liste d'un salon non abonné coûte moins cher que celle d'un
+    abonné.
+    """
+    module = _pillow()
+    if module is None:
+        return None
+
+    try:
+        from PIL import ImageFilter, ImageOps
+
+        with module.open(io.BytesIO(brut)) as source:
+            redressee = ImageOps.exif_transpose(source) or source
+            if redressee.mode != "RGB":
+                redressee = redressee.convert("RGB")
+
+            # **La réduction d'abord.** C'est elle qui détruit ; le flou seul
+            # laisserait dans le fichier tous les pixels d'origine, atténués.
+            redressee.thumbnail((cote, cote), module.LANCZOS)
+            floutee = redressee.filter(ImageFilter.GaussianBlur(radius=RAYON_FLOU))
+
+            sortie = io.BytesIO()
+            floutee.save(sortie, format="JPEG", quality=QUALITE, optimize=True)
+            return sortie.getvalue()
+    except OSError:
         return None
 
 

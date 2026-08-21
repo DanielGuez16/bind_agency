@@ -49,9 +49,50 @@ def cle_de_vignette(cle: str) -> str:
     return f"{cle}{SUFFIXE_VIGNETTE}"
 
 
+#: Le suffixe d'un aperçu flouté, accolé à la clé de son original.
+#:
+#: **Un suffixe à part, et non la vignette.** La route des médias retombe sur
+#: l'original quand une vignette manque — c'est ce qui a sauvé les images
+#: d'avant. Le même repli sur un aperçu servirait la photo nette à qui n'a pas
+#: le droit de la voir : exactement ce que l'aperçu existe pour empêcher. Deux
+#: suffixes distincts, donc, et un repli qui n'attrape que le premier.
+SUFFIXE_APERCU = "@apercu"
+
+
+def cle_d_apercu(cle: str) -> str:
+    """La clé de l'aperçu flouté d'une image. Pure, comme sa voisine."""
+    return f"{cle}{SUFFIXE_APERCU}"
+
+
 def cle_d_origine(cle: str) -> str:
     """L'inverse. Rend la clé telle quelle quand ce n'en est pas une vignette."""
     return cle.removesuffix(SUFFIXE_VIGNETTE)
+
+
+async def deposer_un_avatar(contenu: bytes, *, prefixe: str) -> str:
+    """Range une photo de profil, sa vignette **et son aperçu flouté**.
+
+    Les trois d'un coup, au dépôt : dériver l'aperçu au moment de servir
+    demanderait de relire et de décoder une image par créatrice à chaque
+    ouverture de l'annuaire, c'est-à-dire de payer le chemin le plus chaud du
+    produit pour une donnée qui ne change jamais.
+
+    **L'aperçu manquant n'échoue pas non plus**, et le repli est le bon sens :
+    aucune image servie plutôt qu'une image nette. La route des médias ne
+    retombe pas de l'aperçu vers l'original, et un salon non abonné voit alors
+    un cadre vide — moins joli, jamais indiscret.
+    """
+    cle = await deposer_une_image(contenu, prefixe=prefixe)
+
+    apercu = images.apercu_floute(contenu)
+    if apercu is None:
+        return cle
+
+    try:
+        await get_object_store().deposer_sous(apercu, cle=cle_d_apercu(cle))
+    except ObjectStoreError:
+        logger.warning("aperçu flouté non rangé", extra={"cle": cle})
+    return cle
 
 
 async def deposer(contenu: bytes, *, prefixe: str) -> str:

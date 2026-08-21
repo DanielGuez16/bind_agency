@@ -12,6 +12,7 @@ import uuid
 from pydantic import BaseModel, ConfigDict
 
 from app.models.enums import ContentFormat, Platform
+from app.schemas.reporting import PorteeLocaleRead
 
 
 class CompteVuRead(BaseModel):
@@ -49,3 +50,22 @@ class CreateurVuRead(BaseModel):
     comptes: list[CompteVuRead]
     paliers_ouverts: list[ContentFormat]
     audience_totale: int
+
+
+class AnnuaireRead(BaseModel):
+    """L'annuaire, et le compte qui le précède.
+
+    **Le compte avant la liste.** À deux mille créatrices, un salon ne cherche
+    pas et ne connaît aucun nom : ce qu'il lit d'abord est « 41 des 128 dans
+    15 km peuvent réserver ce que vous avez ouvert ». Servi ici plutôt que sur
+    une seconde route, parce qu'un écran qui ouvre deux appels pour une phrase
+    en affiche la moitié pendant que l'autre charge.
+
+    Une enveloppe et non une liste nue : c'est un changement de forme pour
+    l'appelant, et il est assumé — la liste seule ne pouvait porter aucun total.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    portee: PorteeLocaleRead
+    createurs: list[CreateurVuRead]

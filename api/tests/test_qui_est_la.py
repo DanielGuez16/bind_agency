@@ -362,3 +362,97 @@ async def test_un_jour_ferme_n_a_aucune_plage(session: AsyncSession) -> None:
     assert journee.horaires == ()
     # Et la journée existe toujours : « fermé » n'est pas « pas de journée ».
     assert journee.jour == jour
+
+
+# --------------------------------------------------------------------------
+# ce qu'ouvrir un palier apporterait
+# --------------------------------------------------------------------------
+
+
+async def test_le_gain_d_un_palier_ferme_compte_qui_il_apporterait(
+    session: AsyncSession,
+) -> None:
+    """« Ouvrir le palier post toucherait 62 créatrices de plus. »
+
+    Le décor pose un salon qui n'offre que le reel — dix mille abonnés — et
+    deux créatrices à cinq mille, qui n'atteignent donc personne aujourd'hui.
+    Le story, lui, s'ouvre à mille : c'est le chiffre que la phrase attend.
+    """
+    decor = await monter_le_decor(session, tier_id=REEL)
+    await _createur_situe(session, ou=TOUT_PRES, followers=5_000)
+    await _createur_situe(session, ou=TOUT_PRES, followers=5_000)
+
+    portee = await portee_locale.autour_du_commerce(session, business=decor["business"])
+
+    assert portee.peuvent_reserver == 0
+    gains = {g.tier_id: g.createurs_en_plus for g in portee.gains_par_palier}
+    assert gains[STORY] == 2
+
+
+async def test_un_palier_deja_ouvert_n_a_pas_de_gain(session: AsyncSession) -> None:
+    """Il n'apparaît pas du tout : son gain est nul par construction, et une
+    ligne à zéro se lirait comme un conseil inutile."""
+    decor = await monter_le_decor(session, tier_id=STORY)
+    await _createur_situe(session, ou=TOUT_PRES, followers=5_000)
+
+    portee = await portee_locale.autour_du_commerce(session, business=decor["business"])
+
+    assert STORY not in {g.tier_id for g in portee.gains_par_palier}
+    assert REEL in {g.tier_id for g in portee.gains_par_palier}
+
+
+async def test_celle_qui_peut_deja_reserver_n_est_pas_un_gain(
+    session: AsyncSession,
+) -> None:
+    """**Le test qui distingue le gain du total.**
+
+    La créatrice à cinquante mille abonnés passe déjà par le story que le salon
+    offre. Ouvrir le reel ne l'apporterait pas : elle est là. Compter les
+    totaux par palier la compterait deux fois, et la phrase promettrait
+    quelqu'un qu'on a déjà.
+    """
+    decor = await monter_le_decor(session, tier_id=STORY)
+    await _createur_situe(session, ou=TOUT_PRES, followers=50_000)
+
+    portee = await portee_locale.autour_du_commerce(session, business=decor["business"])
+
+    assert portee.peuvent_reserver == 1
+    gains = {g.tier_id: g.createurs_en_plus for g in portee.gains_par_palier}
+    assert gains[REEL] == 0
+
+
+async def test_un_palier_hors_de_portee_n_apporte_personne(session: AsyncSession) -> None:
+    """**Le sens inverse.**
+
+    Un compteur qui rendrait toujours le nombre de créatrices du rayon
+    passerait les tests précédents. Ici le reel exige dix mille abonnés et la
+    créatrice en a cinq mille : l'ouvrir n'apporterait rien, et le dire est
+    aussi utile que l'inverse.
+    """
+    decor = await monter_le_decor(session, tier_id=STORY)
+    await _createur_situe(session, ou=TOUT_PRES, followers=5_000)
+
+    portee = await portee_locale.autour_du_commerce(session, business=decor["business"])
+
+    gains = {g.tier_id: g.createurs_en_plus for g in portee.gains_par_palier}
+    assert gains[REEL] == 0
+    # Et elle réserve bien par le story : le décor n'est pas vide.
+    assert portee.peuvent_reserver == 1
+
+
+async def test_le_gain_porte_le_format_et_non_un_identifiant_seul(
+    session: AsyncSession,
+) -> None:
+    """L'écran écrit « le palier post », pas un UUID.
+
+    Sans le format, il devrait recharger la grille des paliers pour composer
+    une phrase — un second appel pour un mot.
+    """
+    decor = await monter_le_decor(session, tier_id=REEL)
+    await _createur_situe(session, ou=TOUT_PRES, followers=5_000)
+
+    portee = await portee_locale.autour_du_commerce(session, business=decor["business"])
+    story = next(g for g in portee.gains_par_palier if g.tier_id == STORY)
+
+    assert story.content_format is not None
+    assert story.platform is not None
