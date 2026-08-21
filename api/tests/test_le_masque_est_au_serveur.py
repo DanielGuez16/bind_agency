@@ -112,7 +112,12 @@ async def test_la_route_des_medias_ne_retombe_pas_de_l_apercu_vers_l_original(
 
     depot = MemoryObjectStore()
     original = _photographie()
-    cle = await depot.deposer(original, prefixe="avatars")
+    # **`photos/` et non `avatars/`.** La route refuse tout ce qui ne commence
+    # pas par un préfixe public, *avant* de toucher au dépôt : un décor sous un
+    # autre préfixe rendait 404 sans jamais éprouver le repli, et le test
+    # passait sur l'implémentation qu'il devait écarter. Trouvé par mutation,
+    # jamais par relecture.
+    cle = await depot.deposer(original, prefixe="photos/avatars")
     monkeypatch.setattr(routeur_media, "get_object_store", lambda: depot)
 
     # L'original **est** dans le dépôt : c'est tout l'intérêt du décor. Un dépôt

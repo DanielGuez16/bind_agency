@@ -27,13 +27,15 @@ from app.core.config import get_settings
 from app.models import Booking, CapacityException, CreatorProfile, SocialAccount
 from app.models.enums import (
     Platform,
+    ReliabilityEventType,
     SocialAccountStatus,
     UserRole,
     VerificationStatus,
 )
-from app.services import booking_history, portee_locale, reporting
+from app.services import booking_history, portee_locale, reliability, reporting
 from tests.conftest import inscrire_verifie
 from tests.test_booking_create import REEL, STORY, monter_le_decor, premier_creneau, reserver
+from tests.test_feed import POST
 from tests.test_social_metrics import FauxFournisseur, metriques
 
 #: Le salon du décor. Tout se mesure depuis là.
@@ -388,6 +390,13 @@ async def test_le_gain_d_un_palier_ferme_compte_qui_il_apporterait(
     gains = {g.tier_id: g.createurs_en_plus for g in portee.gains_par_palier}
     assert gains[STORY] == 2
 
+    # **Et le post reste à zéro, ce qui est l'assertion qui distingue.**
+    # Il exige une collaboration terminée, que ces deux créatrices n'ont pas.
+    # Évaluer tous les paliers fermés d'un bloc au lieu d'un par un créditerait
+    # le post des créatrices que le story a rendues joignables : la phrase
+    # promettrait alors du monde qu'ouvrir le post n'apporterait pas.
+    assert gains[POST] == 0
+
 
 async def test_un_palier_deja_ouvert_n_a_pas_de_gain(session: AsyncSession) -> None:
     """Il n'apparaît pas du tout : son gain est nul par construction, et une
@@ -412,7 +421,22 @@ async def test_celle_qui_peut_deja_reserver_n_est_pas_un_gain(
     quelqu'un qu'on a déjà.
     """
     decor = await monter_le_decor(session, tier_id=STORY)
-    await _createur_situe(session, ou=TOUT_PRES, followers=50_000)
+    elle, _ = await _createur_situe(session, ou=TOUT_PRES, followers=50_000)
+
+    # **Elle doit être éligible au reel sur tous les autres critères**, sinon le
+    # décor ne diverge pas : une créatrice neuve n'a aucune collaboration
+    # terminée, le reel en exige deux, et le gain serait nul quelle que soit
+    # l'implémentation. Trouvé par mutation — le test passait au vert en
+    # n'éprouvant rien.
+    #
+    # Le compteur est produit par le mécanisme du produit, jamais posé à la
+    # main : c'est `reliability.rafraichir` qui l'écrit depuis les événements.
+    for _ in range(2):
+        await reliability.enregistrer(
+            session,
+            creator_id=elle.id,
+            type_=ReliabilityEventType.COLLAB_COMPLETED,
+        )
 
     portee = await portee_locale.autour_du_commerce(session, business=decor["business"])
 

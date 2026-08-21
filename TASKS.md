@@ -1127,6 +1127,18 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       Téléphone au format international, normalisé avant validation ; nom
       dépouillé de ses espaces avant d'être compté ; adresse d'au moins dix
       caractères. 13 tests neufs*
+- [x] **Le masque est au serveur, et le contre-factuel par palier**
+      *Sans abonnement, l'annuaire ne renvoie plus ni pseudonyme, ni volume, ni
+      lien de profil, ni photo nette — **ni biographie**, qui est du texte libre
+      où le pseudonyme reparaît. À la place, un aperçu réduit à 32 px **avant**
+      d'être flouté : ce qui est jeté n'est plus dans le fichier servi.
+      `@apercu` est un suffixe distinct de `@vignette` pour que le repli de la
+      route des médias ne le rattrape pas — il servirait la photo nette. La
+      route ne refuse plus en 402, elle sert en deux qualités, dans une
+      enveloppe qui porte aussi la portée locale. `gains_par_palier` : ce que
+      chaque palier fermé ajouterait, évalué **un palier à la fois** et
+      seulement pour qui ne peut pas déjà réserver. 14 tests neufs, 9 mutations
+      vérifiées dont 3 qui ont trouvé des décors qui ne prouvaient rien*
 - [x] **Qui est là, depuis quand, et avec quoi elle frappe**
       *Quatre données pour des écrans en composition. `portee_locale` sur le
       reporting : combien de créatrices dans le rayon, combien peuvent déjà
