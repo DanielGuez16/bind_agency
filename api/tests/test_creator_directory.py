@@ -65,7 +65,7 @@ async def test_le_palier_ouvert_remplace_le_score(session: AsyncSession) -> None
             session, creator_id=user.id, type_=ReliabilityEventType.COLLAB_COMPLETED
         )
 
-    avant = {v.creator_id: v.paliers_ouverts for v in await service.annuaire(session, abonne=True)}
+    avant = {v.creator_id: v.paliers_ouverts for v in await service.annuaire(session)}
     assert ContentFormat.REEL in avant[user.id], "le jeu de départ n'ouvre pas le haut"
 
     # Des manquements réels, par le service — jamais un score écrit à la main.
@@ -74,7 +74,7 @@ async def test_le_palier_ouvert_remplace_le_score(session: AsyncSession) -> None
             session, creator_id=user.id, type_=ReliabilityEventType.UNFULFILLED
         )
 
-    apres = {v.creator_id: v.paliers_ouverts for v in await service.annuaire(session, abonne=True)}
+    apres = {v.creator_id: v.paliers_ouverts for v in await service.annuaire(session)}
     assert len(apres[user.id]) < len(avant[user.id]), (
         "le score dégradé n'a fermé aucun palier : l'annuaire ne dirait plus rien "
         "de la fiabilité, et retirer le score deviendrait une perte sèche"
@@ -85,7 +85,7 @@ async def test_un_profil_sans_reseau_n_encombre_pas_l_annuaire(session: AsyncSes
     """Ni volume, ni palier, ni publication possible : une ligne vide."""
     sans_reseau = await createur(session)
 
-    identifiants = {v.creator_id for v in await service.annuaire(session, abonne=True)}
+    identifiants = {v.creator_id for v in await service.annuaire(session)}
     assert sans_reseau.id not in identifiants
 
 
@@ -103,7 +103,7 @@ async def test_un_compte_revoque_n_est_pas_un_reseau_atteignable(
     )
     await session.flush()
 
-    vus = {v.creator_id: v for v in await service.annuaire(session, abonne=True)}
+    vus = {v.creator_id: v for v in await service.annuaire(session)}
     assert vus[user.id].comptes == ()
 
 
@@ -124,7 +124,7 @@ async def test_l_annuaire_ne_fait_pas_une_requete_par_createur(session: AsyncSes
         compteur["n"] += 1
 
     try:
-        vus = await service.annuaire(session, abonne=True)
+        vus = await service.annuaire(session)
     finally:
         sa.event.remove(session.sync_session, "do_orm_execute", _compter)
 
@@ -133,20 +133,19 @@ async def test_l_annuaire_ne_fait_pas_une_requete_par_createur(session: AsyncSes
     assert compteur["n"] <= 5, f"{compteur['n']} requêtes pour {len(vus)} créateurs"
 
 
-async def test_sans_abonnement_la_route_ne_livre_rien_d_identifiant(
-    client: AsyncClient, session: AsyncSession
-) -> None:
-    """**Ce que l'écran prétend cacher est absent de la réponse.**
+async def test_sans_abonnement_la_route_refuse(client: AsyncClient, session: AsyncSession) -> None:
+    """**Rien ne part, donc rien ne fuit.**
 
-    Ni refus sec, ni liste vide — le vide se lit « aucun créateur », ce qui est
-    faux et fait un argument contre le produit. La liste part, dépouillée de ce
-    qui identifie.
+    Un refus, pas une liste vide — le vide se lit « aucun créateur », ce qui est
+    faux et fait un argument contre le produit. Et pas une liste dégradée non
+    plus : elle a existé un jour, sans écran pour l'accompagner, et un salon
+    non abonné recevait alors une grille de cartes sans nom ni visage sans une
+    ligne qui explique pourquoi.
 
-    L'assertion porte sur le **corps entier**, pas sur les champs qu'on a pensé
-    à regarder : un masque posé par l'écran laisserait le pseudonyme voyager, et
-    c'est exactement ce que cette garde doit voir. Le décor porte donc un
-    pseudonyme reconnaissable et un volume qui ne peut pas apparaître par
-    hasard.
+    Le décor porte un pseudonyme et un volume reconnaissables, et l'assertion
+    regarde le **corps entier** : un refus qui laisserait quand même partir
+    quelque chose se verrait ici, et pas dans un champ qu'on aurait pensé à
+    vérifier.
     """
     business, proprietaire = await commerce_en_cours(session)
     elle = await createur(session)
@@ -163,32 +162,10 @@ async def test_sans_abonnement_la_route_ne_livre_rien_d_identifiant(
 
     reponse = await client.get(f"{PREFIX}/business/{business.id}/creators", headers=entetes)
 
-    assert reponse.status_code == 200
-    corps = reponse.text
-    assert "rebecca.miami" not in corps
-    assert "48213" not in corps
-    assert "instagram.com/rebecca" not in corps
-
-    lignes = reponse.json()["createurs"]
-    assert lignes, "une liste vide se lirait « aucun créateur »"
-    for ligne in lignes:
-        assert ligne["audience_totale"] == 0
-        for reseau in ligne["comptes"]:
-            assert reseau["handle"] is None
-            assert reseau["followers"] is None
-            assert reseau["profil_url"] is None
-            # Le réseau reste : savoir qu'elle est sur Instagram ne dit pas
-            # qui elle est, et c'est ce qui donne envie de payer.
-            assert reseau["platform"]
-
-
-# --------------------------------------------------------------------------
-# le visage et le lien
-# --------------------------------------------------------------------------
-#
-# **Les deux premières choses qu'un salon cherche**, et l'annuaire n'en donnait
-# aucune : il listait des pseudonymes qu'il fallait recopier dans une barre
-# d'adresse pour voir de qui l'on parlait.
+    assert reponse.status_code == 402
+    assert reponse.json()["detail"] == "subscription_required"
+    assert "rebecca.miami" not in reponse.text
+    assert "48213" not in reponse.text
 
 
 async def test_le_lien_public_se_derive_du_pseudonyme(session: AsyncSession) -> None:
@@ -233,7 +210,7 @@ async def test_l_annuaire_rend_le_visage_et_le_lien(session: AsyncSession) -> No
     ligne.avatar_key = "photos/avatars/abcdef"
     await session.flush()
 
-    lignes = await service.annuaire(session, abonne=True)
+    lignes = await service.annuaire(session)
 
     vu = next(c for c in lignes if c.creator_id == user.id)
     assert vu.comptes[0].avatar_key == "photos/avatars/abcdef"
@@ -247,7 +224,7 @@ async def test_un_compte_sans_photo_ne_ment_pas(session: AsyncSession) -> None:
     user = await createur(session)
     await compte(session, user, followers=12_000)
 
-    lignes = await service.annuaire(session, abonne=True)
+    lignes = await service.annuaire(session)
 
     vu = next(c for c in lignes if c.creator_id == user.id)
     assert vu.comptes[0].avatar_key is None

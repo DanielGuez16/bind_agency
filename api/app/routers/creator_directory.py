@@ -4,9 +4,10 @@ C'est ce que BIND vend : l'accès à un réseau. La barrière est donc la même 
 la vente — un abonnement vivant — et non le simple fait d'être un commerce.
 """
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.dependencies import CurrentBusiness, SessionDep, require_role
+from app.core.errors import ErrorCode
 from app.models.enums import UserRole
 from app.schemas.directory import AnnuaireRead, CreateurVuRead
 from app.schemas.reporting import PorteeLocaleRead
@@ -23,34 +24,41 @@ router = APIRouter(
 
 @router.get("", response_model=AnnuaireRead)
 async def read_directory(business: CurrentBusiness, session: SessionDep) -> AnnuaireRead:
-    """**L'abonnement décide de ce qui part, pas de ce qui s'affiche.**
+    """**Sans abonnement, rien ne part.**
 
-    Un refus sec fermait la porte sans rien montrer, et une liste vide se lit
-    « aucun créateur » — un mensonge et un argument contre le produit. La
-    réponse est donc toujours servie, en deux qualités.
+    Un refus, et non une liste dégradée. La différence n'est pas de sécurité —
+    la donnée était déjà retenue par le service — elle est d'expérience : un
+    salon non abonné recevait une grille de cartes sans nom et sans visage,
+    sans une ligne qui explique pourquoi, parce que l'écran n'affiche son état
+    « l'annuaire vient avec un abonnement » que sur un 402. Le chemin qui vend
+    l'abonnement était mort.
 
-    Sans abonnement : ni pseudonyme, ni volume, ni lien de profil, ni photo
-    nette. Un aperçu flouté **produit par le serveur**, les réseaux rattachés,
-    la ville et les paliers ouverts. Ce qu'un écran prétend cacher doit être
-    absent de la réponse — un masque visuel n'est pas un contrôle d'accès, et
-    celui qui rappelle la route sans l'application ne doit rien gagner à le
-    faire.
+    Une liste vidée que n'accompagne aucun écran ne vend rien et ne protège
+    rien de plus qu'un refus. Le jour où l'état sans abonnement sera composé —
+    le compte en grand, quelques aperçus floutés, ce que l'abonnement ouvre —
+    la question se reposera, et la machinerie l'attend : le floutage serveur,
+    la clé `@apercu` et son repli qui échoue plutôt que de servir la photo
+    nette restent en place et éprouvés.
 
-    Le drapeau est calculé ici et nulle part ailleurs : laisser l'écran décider
-    mettrait la vente derrière une condition d'affichage.
+    **Un refus et non une liste vide** : le vide se lit « aucun créateur », ce
+    qui est un mensonge et un argument contre le produit.
+
+    L'abonnement est vérifié ici et nulle part ailleurs : laisser l'écran
+    décider mettrait la vente derrière une condition d'affichage, et il
+    suffirait de rappeler la route.
     """
     abonnement = await subscription_service.courant(session, business_id=business.id)
+    if abonnement is None:
+        raise HTTPException(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+            detail=ErrorCode.SUBSCRIPTION_REQUIRED.value,
+        )
 
     return AnnuaireRead(
-        # Le compte est servi dans les deux cas : il n'identifie personne, et
-        # c'est justement lui qui donne envie de payer. « 128 créatrices
-        # autour de vous, 41 peuvent déjà réserver » est un argument ; une
-        # liste de silhouettes sans nombre n'en est pas un.
         portee=PorteeLocaleRead.model_validate(
             await portee_locale.autour_du_commerce(session, business=business)
         ),
         createurs=[
-            CreateurVuRead.model_validate(createur)
-            for createur in await service.annuaire(session, abonne=abonnement is not None)
+            CreateurVuRead.model_validate(createur) for createur in await service.annuaire(session)
         ],
     )
