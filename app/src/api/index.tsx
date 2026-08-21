@@ -926,6 +926,20 @@ export class Api {
     });
   }
 
+  /**
+   * Limiter les places d'un jour précis, sans toucher à la semaine type.
+   *
+   * **La même donnée que la semaine, pas un second modèle.** Une exception est
+   * une ligne d'exception sur une date ; l'écran de la journée y écrit comme
+   * l'écran des horaires, et rien ne se duplique.
+   */
+  limiterLesPlaces(businessId: string, date: string, places: number) {
+    return this.client.request<ExceptionDeCapacite>(routes.exceptionsDeCapacite(businessId), {
+      methode: 'POST',
+      corps: { date, is_closed: false, concurrent_slots: places },
+    });
+  }
+
   supprimerUneException(businessId: string, exceptionId: string) {
     return this.client.request<void>(routes.exceptionDeCapacite(businessId, exceptionId), {
       methode: 'DELETE',
