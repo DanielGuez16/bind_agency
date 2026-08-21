@@ -8013,3 +8013,36 @@ C'est la seconde fois de la journée qu'une mutation révèle du code inutile
 plutôt qu'un test faible. La question à se poser quand une mutation survit n'est
 donc pas seulement « mon décor est-il divergent ? » mais aussi « cette ligne
 sert-elle à quelque chose ? ».
+
+
+---
+
+## 2026-08-20 — Deux portes, et ce qu'une suppression d'écran a failli emporter
+
+**`ActivationScreen` est supprimé.** Ses deux fonctions ont trouvé leur place :
+ce qui manque et la publication vivent en bandeau sur la journée, la pause vit
+dans les réglages, avec les gestes qui engagent le compte. Le garder monté
+nulle part l'aurait laissé resservir un jour en portant une composition
+périmée — c'est ce qui était arrivé au logo vert et à `BusinessCard`.
+
+**Onze chaînes de traduction sont parties avec lui.** Une chaîne orpheline ne
+coûte rien à laisser, et c'est précisément ce qui la fait resservir ailleurs,
+mal. La vérification est mécanique : une clé dont les seuls fichiers porteurs
+sont `en.ts` et `es.ts` n'a plus de lecteur.
+
+**Le cas « publié mais invisible » a failli partir avec l'écran.** Les étapes non
+bloquantes ne retiennent pas la publication mais décident de la visibilité : un
+salon en ligne sans photo de couverture n'apparaît dans aucun mur. L'ancien
+écran le disait ; le bandeau, qui s'efface à la publication, ne le disait plus.
+Il reste donc affiché dans ce cas — ce n'est pas une liste de tâches qui traîne
+après avoir été remplie, c'est un état non résolu.
+
+**La pause ne pouvait pas aller sur le bandeau.** Les deux gestes sont
+symétriques dans le mot et opposés dans le moment : le bandeau s'efface à la
+publication, or la pause n'a de sens qu'une fois publié.
+
+**Et une assertion trop large ne dit rien de ce qu'elle vise.** Ma garde sur
+« l'avertissement n'est pas ambre » lisait tout le bloc, badges compris ; le
+badge REEL porte l'aplat de marque, et l'assertion tombait sur lui. Elle serait
+restée rouge quoi que fasse l'avertissement. Resserrée sur l'avertissement seul,
+elle éprouve enfin ce qu'elle annonce.
