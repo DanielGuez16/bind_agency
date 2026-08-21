@@ -7682,3 +7682,64 @@ nullité est portée par le contrat, l'absence par l'appelant : `composantes`
 manquant faisait tomber l'écran entier là où la bonne réponse est « aucune
 section ». Les trois fois, la garde falsy a suffi ; les trois fois, c'est un
 test qui l'a trouvée, jamais une relecture.
+
+---
+
+## 2026-08-20 — Les réservations : la pilule, et le contour de la reprise
+
+Les deux points que Design réclamait et que l'écran n'avait pas.
+
+**La pilule était une pilule étirée.** `fullWidth` vaut `true` par défaut ;
+personne ne l'avait dit non, et le bouton d'action prenait toute la largeur de
+la carte. Même correction qu'à la fiche. **La rangée n'est pas décorative** : en
+colonne, `alignSelf` non posé retombe sur l'étirement du parent, et le bouton
+reprendrait toute la largeur avec exactement le style qu'on vient de corriger.
+
+**Une reprise n'est pas une demande de plus.** Le salon a regardé, refusé, et dit
+pourquoi : c'est la seule ligne de l'écran qui porte un reproche, et sous le même
+traitement que les autres elle se perd dans une pile où tout demande également.
+`Surface` gagne donc `reprise`, qui prend le contour d'encre — le trait le plus
+fort du système. Le contour **remplace** l'ombre au lieu de s'y ajouter : la
+règle qui interdit déjà de cumuler l'ombre et le filet clair vaut pour le
+troisième traitement, une exception ici abîmerait les deux.
+
+L'onglet garde le dernier mot : une reprise close est de l'histoire, pas un
+reproche qu'on ressort.
+
+**Et une garde qui ne prouvait rien, trouvée par mutation.** Le test de la
+pilule ne lisait que `alignSelf` du bouton : retirer la rangée le laissait vert,
+puisque `alignSelf` reste absent dans les deux cas et que c'est le parent qui
+décide. Le décor ne distinguait pas les deux implémentations — exactement le
+défaut que le fichier de contexte décrit. Il regarde maintenant l'axe du parent,
+et les deux mutations tombent.
+## 2026-08-20 — Les publications du commerce : ce que la revue demandait, et deux défauts trouvés en le faisant
+
+La revue posait trois points. **Deux étaient déjà réglés** par la conversation
+des données — l'onglet `expected` porte désormais un libellé qui dit de qui et
+de quoi on parle, et l'ordre suit l'usage : à examiner, approuvées, attendues.
+Ce qui demande un geste vient d'abord, ce qui n'attend personne en dernier.
+Les deux sont maintenant tenus par un test : l'ordre se relit sur le rendu, pas
+sur la constante.
+
+Le troisième — les liens et l'aperçu dans « à examiner » — était réglé aussi,
+mais **rien ne l'attestait**. L'aperçu avait sa garde, l'adresse d'origine non ;
+or c'est elle qui compte le plus, l'archive n'étant que la trace. Sans le lien,
+le commerce approuve sur une image qu'il ne peut pas recouper. La mutation qui
+retire le lien fait maintenant tomber la suite.
+
+**Une ligne sans personne, et c'est la promesse de la suppression de compte.**
+`creator_partie` est servi par le serveur depuis l'ouverture de la route ;
+l'application ne le lisait pas. Les trois champs de nom étant nuls après
+anonymisation, la chaîne de `??` finissait sur une **chaîne vide** : une
+contrepartie sans créatrice, que le commerce lit comme une panne du produit.
+Elle n'est pas inconnue, elle est partie — c'est exactement ce que la décision
+du 19 août promettait de lui montrer, et l'écran ne le montrait pas.
+
+Le même défaut existe sur `ArbitrageScreen`, qui replie sur `—` à trois
+endroits. Moins faux qu'une chaîne vide, faux quand même : signalé, pas corrigé
+ici, cet écran n'était pas dans la demande.
+
+**« Awaiting her post » supposait le genre de toute créatrice.** Sur un écran
+que lisent quatre salons, à propos de gens qu'ils n'ont pas choisis. L'espagnol
+était déjà neutre — `Falta su publicación` — donc seul l'anglais portait
+l'affirmation. Un test refuse désormais le pronom genré dans ce libellé.
