@@ -20,7 +20,11 @@ import { ApiClient, ApiProvider } from '../src/api';
 import { I18nProvider } from '../src/i18n';
 import { en } from '../src/i18n/en';
 import { JourneeScreen } from '../src/screens/JourneeScreen';
-import { jourEnToutesLettres, limiteTombeAujourdhui } from '../src/screens/journee/entete';
+import {
+  horairesDuJour,
+  jourEnToutesLettres,
+  limiteTombeAujourdhui,
+} from '../src/screens/journee/entete';
 import { ThemeProvider } from '../src/theme';
 
 const RESERVATION = (
@@ -200,3 +204,23 @@ describe('la carte de demande porte les trois faits qui décident', () => {
     expect(screen.queryByTestId('limite-d-1')).toBeNull();
   });
 });
+
+describe('les horaires du jour, et ce que « vide » veut dire', () => {
+  it('deux plages se lisent d’affilée, sans secondes', () => {
+    expect(
+      horairesDuJour([
+        { debut: '09:00:00', fin: '12:30:00', postes: 2 },
+        { debut: '14:00:00', fin: '19:00:00', postes: 2 },
+      ]),
+    ).toBe('09:00–12:30, 14:00–19:00');
+  });
+
+  it('et fermé se dit, au lieu de se taire', () => {
+    // **Le cas qui diverge de « rends la chaîne vide ».** Une journée sans
+    // réservation ne se lit pas pareil selon qu'on était fermé ou que personne
+    // n'est venu, et c'est la question qu'un gérant se pose un jour creux.
+    expect(horairesDuJour([])).toBeNull();
+  });
+
+});
+

@@ -10,7 +10,7 @@
  * panneau n'ouvre rien tant qu'on n'a pas choisi, il ouvre la ligne qu'on
  * touche, et la liste garde sa largeur de 400.
  */
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 
 import { ApiClient, ApiProvider } from '../src/api';
 import { I18nProvider } from '../src/i18n';
@@ -30,6 +30,8 @@ const JOURNEE: {
   fin: string;
   a_trancher: Record<string, unknown>[];
   items: Record<string, unknown>[];
+  /** Les plages d'ouverture. Vide veut dire fermé, absent veut dire pas servi. */
+  horaires?: Record<string, unknown>[];
 } = {
   jour: '2026-08-10',
   timezone: 'America/New_York',
@@ -274,5 +276,97 @@ describe('la journée, après la campagne 2', () => {
 
     await fireEvent.press(screen.getByTestId('ligne-b-4'));
     expect(screen.getByTestId('detail-sans-geste')).toBeTruthy();
+  });
+});
+
+describe('la sous-ligne dit le jour, puis les horaires', () => {
+  it('les horaires viennent de leur champ, jamais des bornes de la journée', async () => {
+    // **`debut` et `fin` sont les bornes de la journée comptée**, pas des
+    // heures d'ouverture : les prendre pour telles aurait annoncé « de 00:00 à
+    // 00:00 ». C'est cette confusion qui a laissé la sous-ligne muette une
+    // version durant. Le décor fait diverger les deux lectures.
+    await monter({
+      ...JOURNEE,
+      debut: '2026-08-10T04:00:00Z',
+      fin: '2026-08-11T04:00:00Z',
+      horaires: [{ debut: '09:00:00', fin: '19:00:00', postes: 2 }],
+    });
+    await waitFor(() => expect(screen.getByTestId('sous-titre')).toBeTruthy());
+
+    expect(screen.getByTestId('sous-titre')).toHaveTextContent(/09:00–19:00/);
+    expect(screen.getByTestId('sous-titre')).not.toHaveTextContent(/00:00/);
+  });
+
+  it('et un jour fermé le dit, au lieu de se taire', async () => {
+    // Une journée sans réservation ne se lit pas pareil selon qu'on était fermé
+    // ou que personne n'est venu.
+    await monter({ ...JOURNEE, horaires: [] });
+    await waitFor(() => expect(screen.getByTestId('sous-titre')).toBeTruthy());
+
+    expect(screen.getByTestId('sous-titre')).toHaveTextContent(
+      new RegExp(en.commerce.journeeFerme),
+    );
+  });
+});
+
+describe('les réseaux de la créatrice, sur la demande', () => {
+  const DEMANDE = {
+    ...JOURNEE,
+    a_trancher: [
+      {
+        ...JOURNEE.items[0],
+        booking_id: 'd-1',
+        status: 'awaiting_business',
+        creator_profil_url: 'https://instagram.com/lea.mrl',
+        comptes: [
+          { platform: 'instagram', handle: '@lea.mrl', followers: 7600 },
+          { platform: 'tiktok', handle: null, followers: null },
+        ],
+      },
+    ],
+  };
+
+  it('celui qui est rattaché porte son chiffre et mène au profil', async () => {
+    await monter(DEMANDE);
+    await waitFor(() => expect(screen.getByTestId('reseaux-d-1')).toBeTruthy());
+
+    const rangee = within(screen.getByTestId('reseaux-d-1'));
+    expect(rangee.getByText(/7,600/)).toBeTruthy();
+    expect(rangee.getByTestId('profil-d-1')).toBeTruthy();
+  });
+
+  it('et celui qui manque reste affiché, sans action', async () => {
+    // **L'absence est une information.** Savoir qu'il n'y a pas de TikTok fait
+    // partie de la décision autant que le nombre d'abonnés Instagram, et un
+    // réseau simplement omis se lit comme un oubli de l'écran.
+    await monter(DEMANDE);
+    await waitFor(() => expect(screen.getByTestId('reseaux-d-1')).toBeTruthy());
+
+    expect(
+      within(screen.getByTestId('reseau-tiktok')).getByText(
+        en.commerce.reseauAbsent.replace('{{reseau}}', 'TikTok'),
+      ),
+    ).toBeTruthy();
+    // Et il ne mène nulle part : un réseau non rattaché n'a pas de profil.
+    expect(within(screen.getByTestId('reseau-tiktok')).queryByTestId('profil-d-1')).toBeNull();
+  });
+
+  it('un compte sans relevé n’affiche pas zéro', async () => {
+    // « 0 abonné » à quelqu'un qui en a douze mille est la pire chose que cet
+    // écran puisse dire au moment où le salon décide.
+    await monter({
+      ...JOURNEE,
+      a_trancher: [
+        {
+          ...JOURNEE.items[0],
+          booking_id: 'd-1',
+          status: 'awaiting_business',
+          comptes: [{ platform: 'instagram', handle: '@lea.mrl', followers: null }],
+        },
+      ],
+    });
+    await waitFor(() => expect(screen.getByTestId('reseaux-d-1')).toBeTruthy());
+
+    expect(within(screen.getByTestId('reseaux-d-1')).queryByText(/\b0\b/)).toBeNull();
   });
 });
