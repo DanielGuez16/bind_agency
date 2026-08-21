@@ -1463,6 +1463,53 @@ describe('le conseil de palier', () => {
     expect(screen.getByTestId('propose-bas')).toHaveTextContent(/STORY/);
   });
 
+  it('montre l’écart en deux badges avant de l’expliquer', async () => {
+    // **« Tu refais tout » disait autre chose.** Il ne manquait pas un écran :
+    // il manquait la conséquence, chiffrée, à côté du choix. Deux badges reliés
+    // par un chevron — d'où la plateforme partait, où le salon est allé — parce
+    // qu'une phrase seule oblige à reconstituer la comparaison de tête, à
+    // l'endroit précis où le choix se fait.
+    await monter(
+      <CatalogueScreen businessId="b1" />,
+      // La prestation la moins chère, poussée au palier le plus exigeant.
+      catalogueDe([
+        { ...OFFRE, id: 'o1', tier_id: 't3', catalog_item_id: 'bas', content_format: 'reel' },
+      ]),
+      'merchant',
+    );
+    await waitFor(() => expect(screen.getByTestId('ecart-bas')).toBeTruthy());
+
+    const ecart = within(screen.getByTestId('ecart-bas'));
+    expect(ecart.getByTestId('badge-propose-bas')).toHaveTextContent(/STORY/);
+    expect(ecart.getByTestId('badge-retenu-bas')).toHaveTextContent(/REEL/);
+  });
+
+  it('et l’avertissement porte son glyphe, jamais l’ambre de la marque', async () => {
+    // Dans ce système l'ambre **est** la marque : un avertissement en ambre se
+    // lit comme une mise en avant. Le glyphe est alors son seul marqueur, et
+    // c'est la règle du système — pas un choix d'écran.
+    await monter(
+      <CatalogueScreen businessId="b1" />,
+      catalogueDe([
+        { ...OFFRE, id: 'o1', tier_id: 't3', catalog_item_id: 'bas', content_format: 'reel' },
+      ]),
+      'merchant',
+    );
+    await waitFor(() => expect(screen.getByTestId('avertissement-bas')).toBeTruthy());
+
+    // **Sur l'avertissement seul, et c'est ce qui rend la garde juste.** Ma
+    // première version lisait tout le bloc `conseil-`, badges compris : le
+    // badge REEL porte l'aplat de marque, l'assertion tombait sur lui et
+    // n'aurait jamais rien dit de l'avertissement.
+    const rendu = JSON.stringify(screen.getByTestId('avertissement-bas').toJSON());
+    expect(rendu).not.toContain('#F39120');
+    // Le glyphe est obligatoire : c'est le seul marqueur qui reste à un
+    // avertissement sans teinte.
+    expect(rendu).toContain('RNSVGPath');
+    // Et le chiffre reste : « moins de créatrices » ne se mesure pas.
+    expect(screen.getByTestId('avertissement-bas')).toHaveTextContent(/50,?000/);
+  });
+
   it('se tait quand le commerce suit le conseil', async () => {
     // Un message qui approuve chaque ligne devient un bruit qu'on n'écoute
     // plus, et le jour où il alerte vraiment, il est déjà invisible.

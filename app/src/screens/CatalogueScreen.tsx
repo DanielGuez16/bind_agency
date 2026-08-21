@@ -481,6 +481,7 @@ function LignePrestation({
               C'est la même règle que l'avertissement sans teinte du système, et
               le glyphe est alors son seul marqueur. */}
           <View
+            testID={`avertissement-${item.id}`}
             style={{
               gap: 6,
               padding: 12,
