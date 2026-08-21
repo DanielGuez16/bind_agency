@@ -26,6 +26,13 @@ export const routes = {
   // ---- créateur ----
   moi: () => chemin('/me'),
   renvoyerLaVerification: () => chemin('/me/verify-email/resend'),
+  /**
+   * La demande de suppression, comme ressource.
+   *
+   * Un seul chemin pour les deux gestes : `POST` l'ouvre, `DELETE` la
+   * retire. Ce qu'on annule est bien la demande, et non le compte.
+   */
+  maSuppression: () => chemin('/me/deletion'),
   monProfil: () => chemin('/me/profile'),
   mesComptesSociaux: () => chemin('/me/social-accounts'),
   connecterInstagram: () => chemin('/me/social-accounts/instagram/connect'),
@@ -179,6 +186,7 @@ export const METHODES: Record<keyof typeof routes, ('GET' | 'POST' | 'PATCH' | '
 
     moi: ['GET', 'PATCH'],
     renvoyerLaVerification: ['POST'],
+    maSuppression: ['POST', 'DELETE'],
     monProfil: ['GET', 'PATCH'],
     mesComptesSociaux: ['GET'],
     connecterInstagram: ['POST'],
