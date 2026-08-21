@@ -57,7 +57,12 @@ export async function seConnecter(page: Page, email: string): Promise<void> {
  * bas ou la latérale, il faut qu'un chemin existe.
  */
 export async function ongletsVisibles(page: Page): Promise<string[]> {
-  const candidats = ['Nearby', 'Tiers', 'Bookings', 'Audience', 'Settings', 'Today', 'Checkout'];
+  // **Recopiés des libellés, donc ils vieillissent avec eux.** « Checkout » est
+  // devenu « Register » quand la caisse a été renommée ; laisser l'ancien mot
+  // ici n'aurait fait échouer aucun test — la liste est une liste de candidats,
+  // un candidat introuvable est simplement absent — et la couverture aurait
+  // baissé en silence. C'est la façon la moins visible de casser un test.
+  const candidats = ['Nearby', 'Tiers', 'Bookings', 'Audience', 'Settings', 'Today', 'Register'];
   const vus: string[] = [];
   for (const libelle of candidats) {
     if (await page.getByText(libelle, { exact: true }).first().isVisible().catch(() => false)) {

@@ -159,7 +159,9 @@ export const en = {
     servisDernier: 'Just served',
     servisEcheance: 'Publication due {{quand}}',
     servisSansEcheance: 'Waiting for the counterpart to open',
-    title: 'Redeem a booking',
+    title: 'Check a creator in',
+    aQuoiSertCettePage: 'A creator shows you a code on arrival. Check it, serve the booking, then mark it served.',
+    aLArrivee: 'A creator at the counter?',
     manualLabel: 'Enter the code',
     manualHint: 'Six characters, shown on the creator’s screen.',
     manualSubmit: 'Check code',
@@ -600,7 +602,7 @@ export const en = {
     absenceConfirmer: 'Yes, they did not turn up',
     absencePasEncore: 'You can report a no-show from',
     absencePasEncorePourquoi:
-      'Until then the creator can still report that she came and found you closed. Once that window shuts, the no-show is yours to report.',
+      'Until then the creator can still report that they came and found you closed. Once that window shuts, the no-show is yours to report.',
     envoyerLeMotif: 'Send',
     statut_held: 'held',
     statut_awaiting_business: 'waiting for you',
@@ -873,7 +875,7 @@ export const en = {
     // fréquent, pas le cas limite.
     carteBloqueUne: 'One service cannot be published yet',
     carteBloqueTitre: '{{count}} services cannot be published yet',
-    carteBloqueCorps: 'They let the creator choose, so she needs to read your menu before she books. Add pages or a link and they open.',
+    carteBloqueCorps: 'They let the creator choose, so they need to read your menu before booking. Add pages or a link and they open.',
     carteLUnOuLAutre: 'Either one is enough',
     carteVide: 'No menu page yet. Photograph it, or paste the link below — either one is enough.',
     carteAjouter: 'Add a menu page',
@@ -1055,7 +1057,12 @@ export const en = {
     reglages: 'Settings',
     journee: 'Today',
     publications: 'Publications',
-    caisse: 'Checkout',
+    // **« Checkout » disait le contraire de ce que l'écran fait.** En anglais
+    // de commerce, c'est le moment où l'on paie et où l'on part ; ici c'est
+    // celui où une créatrice arrive et présente son code. Le mot de la planche
+    // v3 est « Register » — la caisse comme meuble, pas comme sortie — et il a
+    // l'avantage de ne prendre parti ni pour l'entrée ni pour la sortie.
+    caisse: 'Register',
     reporting: 'Reports',
     configuration: 'Setup',
     arbitrage: 'Reviews',
