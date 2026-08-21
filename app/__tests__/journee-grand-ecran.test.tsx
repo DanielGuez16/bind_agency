@@ -243,8 +243,10 @@ describe('la journée, après la campagne 2', () => {
     await monter(JOURNEE_COMPLETE);
     await waitFor(() => expect(screen.getByTestId('demande-b-3')).toBeTruthy());
 
-    const aplati = (style) =>
-      Array.isArray(style) ? Object.assign({}, ...style.map(aplati)) : (style ?? {});
+    const aplati = (style: unknown): Record<string, unknown> =>
+      Array.isArray(style)
+        ? Object.assign({}, ...style.map(aplati))
+        : ((style ?? {}) as Record<string, unknown>);
 
     // La demande porte un fond, un filet et un rayon : c'est une carte.
     const carte = aplati(screen.getByTestId('demande-b-3').props.style);
