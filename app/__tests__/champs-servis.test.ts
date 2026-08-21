@@ -88,7 +88,6 @@ const NON_RENDUS: Record<string, string> = {
   'Fourchette.prestations_publiees': 'contrat',
   'Fourchette.places_par_jour': 'contrat',
   'Fourchette.palier_le_plus_offert': 'contrat',
-  'OffreDePalier.is_effectively_offered': 'contrat',
   'LigneDePalier.valeur_offerte_cents': 'contrat',
   'LigneDItem.valeur_offerte_cents': 'contrat',
   'Reporting.valeur_offerte_cents': 'contrat',

@@ -662,6 +662,9 @@ describe('les surfaces de la v1.1', () => {
       // Le panneau du contrat de la preuve v3 : ce que le commerce attend,
       // posé sur l'écran où l'on publie.
       'src/screens/preuve/ContratDeLaPreuve.tsx',
+      // La liste des premiers pas, quand les rapports n'ont rien à rapporter :
+      // l'écran change de nature, et sa liste est une carte.
+      'src/screens/rapports/PremiersPas.tsx',
     ];
 
     // **La fenêtre est à 900 et non à 600, et ce n'est pas un réglage.** Un
