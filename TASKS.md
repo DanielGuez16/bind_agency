@@ -1416,6 +1416,28 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       rendrait la même chose que son voisin. Les douze semaines se comptent
       depuis la borne de fin **servie**, jamais depuis l'horloge locale — un
       calcul local décalerait la borne d'un jour à chaque bord de fuseau*
+- [x] **La mise en ligne devient un état, et l'exception remonte sur la journée**
+      *« Profil et mise en ligne » n'était pas une section : un bandeau sur la
+      journée porte ce qui manque et son compte, et disparaît à la publication.
+      L'exception du jour — couper une place, fermer — vit sur l'écran du matin
+      et écrit dans la même donnée que la semaine type, sans second modèle.
+      1142 tests verts, 5 mutations*
+- [ ] **Le bandeau ne devient pas une ligne de confirmation**
+      *La planche veut qu'il devienne « vous êtes en ligne · 41 créatrices
+      peuvent vous réserver », puis disparaisse au bout de sept jours. Deux
+      choses manquent : une **date de publication** pour la règle des sept
+      jours, et la **portée locale sur la journée** — elle n'est servie que sur
+      les rapports. En attendant, le bandeau s'efface simplement*
+- [ ] **Publier reste un appel explicite, et la planche l'ignore**
+      *Elle écrit que le bandeau « s'efface au dernier point coché », ce qui
+      suppose une publication automatique. `activerLeCommerce` existe et rien ne
+      l'appelle tout seul : le bandeau porte donc le geste sous un nom qui n'est
+      pas « go live ». Si la publication doit devenir automatique, c'est une
+      décision serveur, pas un habillage*
+- [ ] **La mise en pause n'aura plus de toit**
+      *Elle vit sur `ActivationScreen`, que la v3 retire de la configuration.
+      Avant de supprimer la section, lui donner une place — les réglages du
+      commerce sont l'endroit naturel*
 - [ ] **Neuf planches d'écrans portent encore la v1.0**
       *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
       passés en v3, dans la palette Ambre. Les autres suivent l'ordre du

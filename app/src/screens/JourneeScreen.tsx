@@ -40,7 +40,12 @@
 import { useState } from 'react';
 import { Linking, Pressable, View } from 'react-native';
 
-import { useApi, type JourneeDuCommerce, type ReservationDuCommerce } from '../api';
+import {
+  useApi,
+  type JourneeDuCommerce,
+  type ReservationDuCommerce,
+  type VueDActivation,
+} from '../api';
 import {
   Apparition,
   Button,
@@ -56,12 +61,14 @@ import {
   TierBadge,
   vibration,
 } from '../components';
-import { formatDateTime, formatHeure, formatNumber } from '../format';
+import { formatDateTime, formatHeure, formatNumber, jourCivil } from '../format';
 import { useI18n, type SupportedLocale } from '../i18n';
 import { breakpoint, elevationDeCarte, radius, size, useTheme, type ColorName } from '../theme';
 import { ECART_DES_COLONNES, useGabarit } from '../shell/gabarit';
 import { Ecran } from './Ecran';
 import { nomDePlateforme } from './obstacle';
+import { BandeauDeMiseEnLigne } from './journee/BandeauDeMiseEnLigne';
+import { ExceptionDuJour } from './journee/ExceptionDuJour';
 import { horairesDuJour, jourEnToutesLettres, limiteTombeAujourdhui } from './journee/entete';
 import { useRequete } from './useRequete';
 
@@ -75,8 +82,22 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
   // première ligne du jour.
   const [choisie, setChoisie] = useState<string | null>(null);
 
-  const requete = useRequete<JourneeDuCommerce>(
-    (signal) => api.journeeDuCommerce(businessId, jour, signal),
+  const requete = useRequete<JourneeDuCommerce & { activation: VueDActivation | null }>(
+    async (signal) => {
+      const [journee, activation] = await Promise.all([
+        api.journeeDuCommerce(businessId, jour, signal),
+        // **L'état de publication, avec la journée.** Il ne concerne pas la
+        // journée et c'est pourtant ici qu'il doit se voir : c'est l'écran du
+        // matin, et un salon invisible n'a aucune raison d'aller le chercher
+        // dans un onglet dont les testeurs ne comprenaient pas l'objet.
+        //
+        // Un échec ne remonte pas : l'état de publication qui manque ne doit
+        // pas empêcher la journée de s'afficher. Le bandeau se tait alors,
+        // ce qui est le bon défaut — voir `miseEnLigne`.
+        api.etapesDActivation(businessId, signal).catch(() => null),
+      ]);
+      return { ...journee, activation };
+    },
     {
       // **Vide veut dire « rien du tout », et les demandes en font partie.**
       // Le vide ne regardait que les rendez-vous du jour ; or `a_trancher` est
@@ -299,14 +320,55 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
           </View>
         );
 
+        // **Le bandeau passe avant tout, dans les deux dispositions.** C'est
+        // la seule chose de l'écran qui empêche le salon d'exister ; le poser
+        // sous la liste le ferait lire après ce qu'il rend impossible.
+        // **L'exception ne vaut que pour aujourd'hui.** Sur un jour passé le
+        // geste n'a rien à couper, et sur un jour à venir il se prendra le
+        // matin venu — c'est la définition même d'une exception décidée en
+        // marchant. La date du salon vient du serveur, jamais de l'horloge de
+        // la machine : à Miami, minuit UTC est encore la veille.
+        const aujourdhui = jourCivil(new Date(), journee.timezone) === journee.jour.slice(0, 10);
+
+        const bandeau = (
+          <BandeauDeMiseEnLigne
+            businessId={businessId}
+            activation={journee.activation}
+            onPublie={requete.recharger}
+          />
+        );
+
+        const exception = aujourdhui ? (
+          <ExceptionDuJour
+            businessId={businessId}
+            jour={journee.jour.slice(0, 10)}
+            // Les postes réellement ouverts, tels que le serveur les a calculés.
+            postesEffectifs={journee.horaires?.[0]?.postes ?? null}
+            onFait={requete.recharger}
+          />
+        ) : null;
+
         // En compact, une seule colonne : la liste, comme avant. Le détail y
         // vit déjà dans la ligne elle-même, et une seconde colonne de 720 ne
         // tiendrait nulle part.
-        if (!large) return colonneListe;
+        if (!large) {
+          return (
+            <View style={{ gap: 16 }}>
+              {bandeau}
+              {exception}
+              {colonneListe}
+            </View>
+          );
+        }
 
         return (
-          <View style={{ flexDirection: 'row', gap: ECART_DES_COLONNES }}>
-            {colonneListe}
+          <View style={{ gap: 16 }}>
+            {bandeau}
+            <View style={{ flexDirection: 'row', gap: ECART_DES_COLONNES }}>
+              <View style={{ gap: 16, width: breakpoint.listWidthMerchant }}>
+                {exception}
+                {colonneListe}
+              </View>
             <View style={{ flex: 1, maxWidth: breakpoint.contentMaxMerchant }}>
               {ouverte ? (
                 <Detail
@@ -319,6 +381,7 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
                   {t('commerce.choisirUneLigne')}
                 </Texte>
               )}
+              </View>
             </View>
           </View>
         );
