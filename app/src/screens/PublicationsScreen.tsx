@@ -162,8 +162,20 @@ function Controle({ ligne, onDecide }: { ligne: LigneDeFile; onDecide: () => voi
 
   return (
     <View testID={`controle-${ligne.collaboration_id}`} style={{ gap: 6, paddingVertical: 8 }}>
-      <Texte variante="type.label" ellipseSurNomPropre>
-        {ligne.creator_handle ?? ligne.creator_first_name ?? ''}
+      {/* **Une ligne sans personne se lit comme une panne.** Les trois champs
+          de nom sont nuls quand le compte a été anonymisé, et la chaîne de `??`
+          finissait sur une chaîne vide : le commerce voyait une contrepartie
+          sans créatrice. Elle n'est pas inconnue, elle est partie — et c'est ce
+          que la suppression de compte a promis de lui montrer. */}
+      <Texte
+        variante="type.label"
+        couleur={ligne.creator_partie ? 'ink.mute' : 'ink.default'}
+        ellipseSurNomPropre={!ligne.creator_partie}
+        testID={`createur-${ligne.collaboration_id}`}
+      >
+        {ligne.creator_partie
+          ? t('commerce.creatricePartie')
+          : (ligne.creator_handle ?? ligne.creator_first_name ?? '')}
       </Texte>
       <Texte variante="type.caption" couleur="ink.soft">
         {ligne.item_name} · {t('commerce.tentative', { n: ligne.attempts_count + 1 })}

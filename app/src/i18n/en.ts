@@ -615,8 +615,9 @@ export const en = {
     // « Expected » ne disait pas de quoi : attendu de qui, et quoi au juste.
     // Ce sont des contreparties engagées dont la publication n'est pas encore
     // arrivée — le salon n'a rien à y faire, et c'est ce qu'il doit lire.
-    filtreAttendue: 'Awaiting her post',
+    filtreAttendue: 'Awaiting their post',
     filtreApprouvee: 'Approved',
+    creatricePartie: 'Creator has left BIND',
     approuver: 'Approve the publication',
     redemander: 'Ask for a new publication',
     noteLabel: 'Add a note (optional)',
