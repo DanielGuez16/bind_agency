@@ -53,6 +53,19 @@ const TYPES = join(SRC, 'api', 'types.ts');
  *   table un tapis.
  */
 const NON_RENDUS: Record<string, string> = {
+  // --- a-instruire : servis, et la grille v3 ne les lit plus ---
+  //
+  // **Trois champs que le contrat commerce-scopé a rendus redondants.** La
+  // grille montre le palier accessible **chez ce salon** (`palier_accessible`)
+  // et le volume du réseau porté par la carte ; `paliers_ouverts` répétait le
+  // premier en liste, et `audience_totale` le second en cumul. La bio, elle,
+  // n'a jamais eu de place sur une vignette — et c'est du texte libre, dont on
+  // a déjà vu qu'il peut porter un pseudonyme que la paroi payante retient
+  // ailleurs. Les trois sont candidats au retrait de la réponse ; d'ici là,
+  // leur absence de lecteur est écrite plutôt que subie.
+  'CreateurDeLAnnuaire.bio': 'a-instruire',
+  'CreateurDeLAnnuaire.paliers_ouverts': 'a-instruire',
+  'CreateurDeLAnnuaire.audience_totale': 'a-instruire',
   // --- a-instruire : servi, et l'écran refuse délibérément de le lire ---
   //
   // **Le nom civil des créatrices, servi à tout salon abonné.** L'annuaire v3

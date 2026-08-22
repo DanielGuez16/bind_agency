@@ -666,8 +666,21 @@ export class Api {
     return cle ? this.client.urlComplete(routes.media(`${cle}@vignette`)) : undefined;
   }
 
-  annuaireDesCreateurs(businessId: string, signal?: AbortSignal) {
+  /**
+   * L'annuaire d'un salon, page par page.
+   *
+   * Le décalage plutôt qu'un curseur : le tri est stable — accès, puis
+   * distance, puis identifiant — et la liste ne bouge pas sous la pagination
+   * à l'échelle d'une consultation. Un curseur coûterait un champ opaque à
+   * transporter pour un gain qui ne se voit pas ici.
+   */
+  annuaireDesCreateurs(
+    businessId: string,
+    options: { limite?: number; decalage?: number } = {},
+    signal?: AbortSignal,
+  ) {
     return this.client.request<AnnuaireDuCommerce>(routes.annuaireDesCreateurs(businessId), {
+      query: { limite: options.limite, decalage: options.decalage },
       signal,
     });
   }

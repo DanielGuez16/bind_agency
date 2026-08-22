@@ -1729,3 +1729,11 @@ route sert `first_name` et `last_name` — le nom d'état civil de chaque
 créatrice, à tout salon abonné qui ne l'a jamais rencontrée. L'écran a cessé de
 les lire, mais la donnée part toujours sur le réseau. Le schéma est la dernière
 barrière avant le réseau, et c'est là qu'il faut la poser.
+
+- [ ] **Les filtres de l'annuaire : palier, réseau, distance**
+      *La planche v3 en pose trois plus « can book here », et aucun n'existe :
+      la route ne prend que `limite` et `decalage`. Les poser côté écran
+      filtrerait **une page** et non la liste — la même faute que rejouer le
+      tri, et elle se voit dès la seconde page. Ce sont les trois seules choses
+      qu'un salon sache formuler avant d'avoir vu qui que ce soit ; la recherche
+      par pseudonyme, elle, arrive plus tard, quand il a des noms en tête*
