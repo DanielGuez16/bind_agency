@@ -25,7 +25,7 @@ import { CreationDuCommerceScreen } from '../screens/CreationDuCommerceScreen';
 import { Ecran } from '../screens/Ecran';
 import { useRequete } from '../screens/useRequete';
 
-type Commerce = { id: string; name: string };
+type Commerce = { id: string; name: string; timezone: string };
 
 export function useMonCommerce() {
   const { api } = useApi();
@@ -43,6 +43,15 @@ export function useMonCommerce() {
     businessId,
     /** Le nom, pour la barre latérale : c'est lui qui situe la session. */
     nom: requete.etat === 'pret' && !requete.vide ? requete.donnees[0].name : null,
+    /**
+     * Le fuseau du salon, pour tout ce qui s'affiche en heure locale.
+     *
+     * **Servi depuis toujours et lu nulle part.** La règle du produit convertit
+     * sur le fuseau du commerce parce que tout ce qu'il lit s'y passe ; sans
+     * lui, chaque écran retombait sur celui de l'appareil, ce qui n'a de
+     * conséquence visible que le jour où le gérant voyage.
+     */
+    timezone: requete.etat === 'pret' && !requete.vide ? requete.donnees[0].timezone : null,
     /**
      * Ce qu'on montre tant qu'il n'y a pas de commerce : le chargement,
      * l'erreur, ou **le formulaire de création**. `Ecran` rend les quatre états

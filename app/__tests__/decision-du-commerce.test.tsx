@@ -139,6 +139,11 @@ function client() {
         envois.push({ chemin, corps: JSON.parse(String(init.body ?? '{}')) });
         return { ok: true, status: 200, json: async () => ({}) } as Response;
       }
+      // La route de reprise répond une liste. Ce décor rendait la journée à
+      // tout le monde — un montage qui ne prouve rien de ce qu'il monte.
+      if (chemin.includes('/support-access')) {
+        return { ok: true, status: 200, json: async () => [] } as Response;
+      }
       return {
         ok: true,
         status: 200,
@@ -350,8 +355,13 @@ it('donne un vrai état vide à une journée sans rendez-vous', async () => {
   const vide = new ApiClient({
     baseUrl: 'https://api.test',
     coffre,
-    fetchImpl: async () =>
-      ({
+    fetchImpl: async (url) => {
+      // La route de reprise répond une liste, pas la journée : un décor qui
+      // rend le même objet partout ne prouve rien de ce qu'il monte.
+      if (String(url).includes('/support-access')) {
+        return { ok: true, status: 200, json: async () => [] } as Response;
+      }
+      return {
         ok: true,
         status: 200,
         json: async () => ({
@@ -362,7 +372,8 @@ it('donne un vrai état vide à une journée sans rendez-vous', async () => {
           items: [],
           a_trancher: [],
         }),
-      }) as Response,
+      } as Response;
+    },
   });
 
   await render(

@@ -57,6 +57,7 @@ import { HealthScreen } from './HealthScreen';
 const FUSEAU_DE_L_APPAREIL = Intl.DateTimeFormat().resolvedOptions().timeZone;
 import { NotificationsDeCetAppareil } from './reglages/NotificationsDeCetAppareil';
 import { PauseDuCommerce } from './reglages/PauseDuCommerce';
+import { RepriseDuCompte } from './reglages/RepriseDuCompte';
 import { compterOuRien, PAGE } from './reglages/suppression';
 
 export function ReglagesScreen() {
@@ -120,6 +121,11 @@ export function ReglagesScreen() {
       <NotificationsDeCetAppareil />
 
       {role === 'business_member' ? <PauseDuCommerce /> : null}
+
+      {/* **Ce que le salon lit des reprises faites chez lui.** La route
+          existait, personne ne l'appelait, et la promesse « le salon en est
+          prévenu » ne se vérifiait nulle part. */}
+      {role === 'business_member' ? <RepriseDuCompte /> : null}
 
       <View style={{ gap: 14 }} testID="partir">
         <Texte variante="type.label" couleur="ink.soft">

@@ -68,6 +68,7 @@ import { ECART_DES_COLONNES, useGabarit } from '../shell/gabarit';
 import { Ecran } from './Ecran';
 import { nomDePlateforme } from './obstacle';
 import { BandeauDeMiseEnLigne } from './journee/BandeauDeMiseEnLigne';
+import { BandeauDeReprise } from './journee/BandeauDeReprise';
 import { ExceptionDuJour } from './journee/ExceptionDuJour';
 import { horairesDuJour, jourEnToutesLettres, limiteTombeAujourdhui } from './journee/entete';
 import { useRequete } from './useRequete';
@@ -117,6 +118,15 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
   const chargee = requete.etat === 'pret' ? requete.donnees : null;
   const enAttente = chargee?.a_trancher.length ?? 0;
 
+  // **Le bandeau de reprise se pose hors des quatre états**, comme le titre.
+  // Une journée sans rendez-vous rend l'état vide, qui ne rend pas ses enfants
+  // — et c'est précisément le jour où une reprise est la plus probable : on
+  // entre dans un compte pour débloquer une configuration, pas un jour chargé.
+  // Le laisser dans le corps l'aurait éteint le seul jour qui compte.
+  const repriseEnCours = chargee ? (
+    <BandeauDeReprise businessId={businessId} timezone={chargee.timezone} />
+  ) : null;
+
   return (
     <Ecran
       requete={requete}
@@ -157,14 +167,17 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
       squelette={<SkeletonLignes combien={6} testID="squelette-journee" />}
       testID="ecran-journee"
       vide={
-        // **Plus de cercle.** Il ne disait rien et occupait la place du titre.
-        // Une journée sans rendez-vous est une information, pas une page qui
-        // n'a pas chargé — et c'est le titre qui doit le dire.
+        <>
+        {repriseEnCours}
+        {/* **Plus de cercle.** Il ne disait rien et occupait la place du titre.
+            Une journée sans rendez-vous est une information, pas une page qui
+            n'a pas chargé — et c'est le titre qui doit le dire. */}
         <EmptyState
           title={t('commerce.journeeVideTitre')}
           body={t('commerce.journeeVide')}
           testID="journee-vide"
         />
+        </>
       }
     >
       {(journee) => {
@@ -354,6 +367,7 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
         if (!large) {
           return (
             <View style={{ gap: 16 }}>
+              {repriseEnCours}
               {bandeau}
               {exception}
               {colonneListe}
@@ -363,6 +377,7 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
 
         return (
           <View style={{ gap: 16 }}>
+            {repriseEnCours}
             {bandeau}
             <View style={{ flexDirection: 'row', gap: ECART_DES_COLONNES }}>
               <View style={{ gap: 16, width: breakpoint.listWidthMerchant }}>

@@ -572,7 +572,16 @@ describe('aiguillage par rôle', () => {
     // Certaines routes rendent une liste, d'autres un objet. Servir la
     // mauvaise forme ferait tomber un écran et le test accuserait la
     // navigation d'un défaut qui serait le sien.
-    const LISTES = ['/me/audience', '/me/verification', '/admin/', '/collaborations'];
+    // `/support-access` rend une liste, comme `/creators` trois lignes plus
+    // bas : deuxième fois que le repli générique de ce double — un objet vide —
+    // fait tomber une garde sur un défaut du double et non du produit.
+    const LISTES = [
+      '/me/audience',
+      '/me/verification',
+      '/admin/',
+      '/collaborations',
+      '/support-access',
+    ];
     const OBJETS: Record<string, unknown> = {
       '/me/tiers': { creator_id: 'u1', is_new_creator: true, paliers: [] },
       '/me/bookings': { items: [], compteurs: {} },

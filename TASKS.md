@@ -1782,6 +1782,63 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       serveur, **nul** quand l'annulation est toujours libre — un instant posé
       là ferait croire à une limite qui n'existe pas. Même forme
       qu'`absence_signalable_a`, qui a réglé le même problème sur la journée*
+- [x] **Le salon lit les reprises faites chez lui**
+      *`mesReprises` existait, la promesse « le salon en est prévenu » aussi, et
+      rien ne la vérifiait : la reprise s'ouvrait, les horaires changeaient sous
+      les yeux du gérant, et aucun écran ne disait qui ni pourquoi. Un bandeau
+      d'encre sur la journée tant qu'une reprise court, et la liste complète
+      dans les réglages.*
+      *Le motif est cité **mot pour mot**, entre guillemets, jamais reformulé :
+      c'est le mécanisme lui-même, pas sa présentation. Et « expirée toute
+      seule » se distingue de « refermée » — le service écrit que c'est la
+      seconde qui devrait gêner. 1292 tests, 3 mutations*
+- [ ] **La portée d'une reprise n'existe pas, et sans elle l'écran d'administration ne peut pas se composer**
+      *Design tranche : la portée, pas la durée. « Une durée est une horloge, et
+      une horloge se renouvelle » — ce qui borne vraiment est l'ensemble
+      d'écrans ouverts. « Configurer les horaires » n'ouvre que les horaires ;
+      un administrateur qui veut tout doit demander tout, et « accès complet »
+      se lit très mal dans la liste que le gérant consulte.*
+      *Rien ne borne aujourd'hui : `ouvrirUneReprise` ne prend qu'un motif.
+      Sans portée, « tout » est le seul mode possible et l'écran perd son
+      mécanisme principal — c'est pourquoi il n'est pas livré. La durée reste,
+      comme plafond. Demandé à `bind-agency-1a`*
+- [ ] **Le compte des reprises de celui qui demande n'est pas servi**
+      *« C'est ta quatrième ce mois-ci. Tu en as fait une en juillet. » Se
+      comparer à soi-même est la seule comparaison qui change un comportement
+      sans accuser, et c'est le seul chiffre de l'écran qui retienne vraiment.
+      Il ne se déduit pas d'une liste par salon : il faut compter les reprises
+      de **l'appelant**, tous salons confondus, sur une fenêtre glissante*
+- [ ] **Une reprise spontanée ne se distingue pas d'une reprise demandée**
+      *Une reprise sans message entrant du salon est permise — le gérant a pu
+      téléphoner — mais elle doit porter ce mot dans sa liste, définitivement.
+      « Aucune interdiction ne travaille aussi bien qu'un adjectif que le gérant
+      relira. » Rien ne le sert, et l'inventer accuserait au hasard*
+- [ ] **Le salon ne peut pas refermer une reprise ouverte chez lui**
+      *La planche pose un bouton « End it » sur le bandeau : « l'accès s'ouvre
+      sans permission et se ferme sans discussion ». La fermeture est
+      aujourd'hui une route d'administration — `DELETE` sur `admin_router`. Le
+      bouton n'est donc pas dessiné : un bouton qui ne coupe rien serait pire
+      que son absence sur cet écran-là. Il faudrait la même fermeture sur
+      `business_router`, réservée aux membres du commerce*
+- [ ] **L'administrateur n'est pas nommé dans ce que le salon lit**
+      *`BusinessSupportAccessRead` ne porte qu'`admin_user_id`. La planche écrit
+      « Amélie R. ». Afficher un identifiant technique à un gérant ne nomme
+      personne — et ne nommer personne retire la moitié de ce qui retient*
+- [ ] **La liste des terminaux, et la révocation par identité**
+      *La planche des appareils ne peut pas se composer : `GET /me/devices`
+      n'existe pas, et la révocation exige de **posséder** le jeton, qu'on n'a
+      que sur l'appareil perdu. C'est un cercle. Déjà demandé avec la réponse
+      sur le jeton — un identifiant opaque suffit à désigner, et rendre les
+      jetons de tous les appareils crée une cible qui n'existait pas.*
+      *Ce que la planche ajoute et qui est décisif : l'appareil courant porte
+      « celui-ci » et **n'a pas de bouton pour se couper**. Se couper soi-même
+      est une déconnexion, un autre geste — les confondre fait perdre l'accès à
+      quelqu'un qui voulait le garder*
+- [ ] **La journée demande une seconde requête pour son bandeau de reprise**
+      *`BandeauDeReprise` appelle `mesReprises` lui-même, sur l'écran le plus
+      ouvert du produit, pour une réponse presque toujours vide. Le replier dans
+      la charge de la journée — un objet nul, ou la reprise en cours — coûterait
+      une requête de moins par ouverture. Non bloquant*
 - [ ] **Neuf planches d'écrans portent encore la v1.0**
       *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
       passés en v3, dans la palette Ambre. Les autres suivent l'ordre du
