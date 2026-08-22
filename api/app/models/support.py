@@ -66,11 +66,27 @@ class BusinessSupportAccess(UUIDPrimaryKey, Base):
     #: même façon, et confondre les deux ferait passer la seconde pour la
     #: première.
     #:
-    #: Déclaré par l'administration, faute d'un canal par lequel le salon
-    #: écrive — il n'en existe aucun aujourd'hui. Le défaut est donc `true` :
-    #: le silence vaut « de ma propre initiative », et c'est celui qui affirme
-    #: avoir été appelé qui doit le dire. L'inverse laisserait toute reprise
-    #: se présenter comme sollicitée sans que personne ne l'ait sollicitée.
+    #: **Déclaré par l'administration, et il doit le rester.** Aucun canal ne
+    #: permet à un salon d'écrire — ni ticket, ni message entrant, ni trace
+    #: d'un appel. Le calculer sur ce qui existe rendrait `true` pour tout le
+    #: monde, y compris pour les salons qui ont téléphoné : un mot qui accuse,
+    #: posé au hasard, et dont le gérant ne pourrait rien faire.
+    #:
+    #: Le défaut est donc `true` : le silence vaut « de ma propre initiative »,
+    #: et c'est celui qui affirme avoir été appelé qui doit le dire. L'inverse
+    #: laisserait toute reprise se présenter comme sollicitée sans que personne
+    #: ne l'ait sollicitée.
+    #:
+    #: **Ce qui rend cette déclaration sérieuse n'est pas le champ, c'est le
+    #: lecteur.** Le gérant lit ce mot dans sa liste, et lui seul sait s'il a
+    #: appelé. Une déclaration qu'un tiers peut contredire n'est pas une preuve,
+    #: mais ce n'est plus une affirmation gratuite : l'administrateur qui coche
+    #: « le salon a demandé » sait que le salon le lira.
+    #:
+    #: **Ne pas chercher à le calculer avant qu'un canal entrant existe.** Le
+    #: jour où le salon pourra écrire, ce champ se déduira de ses messages et
+    #: cessera d'être déclaré ; d'ici là, toute déduction serait une invention
+    #: présentée comme un fait.
     spontaneous: Mapped[bool] = mapped_column(
         sa.Boolean, nullable=False, server_default=sa.text("true")
     )

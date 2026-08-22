@@ -1128,14 +1128,19 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       dépouillé de ses espaces avant d'être compté ; adresse d'au moins dix
       caractères. 13 tests neufs*
 - [x] **Prévenir doit coûter moins que disparaître**
-      *`cancelled_late`, troisième événement de fiabilité, poids `-10` en
+      *`cancelled_late`, troisième événement de fiabilité, poids `-5` en
       configuration contre `-25` pour l'absence. Les deux coûtaient pareil,
       donc rien n'incitait à prévenir. **Le dossier arrive en `cancelled`** —
       elle a annulé, pas disparu — et c'est l'événement qui porte la nuance ;
       `no_show` reste ce que le commerce constate. `SPEC.md` §4.1 mis à jour.
-      Un test épingle l'arithmétique du seuil : 70 − 10 = 60, et le reel en
-      demande 60 — elle passe **exactement**, et le jour où l'un des trois
-      réglages bouge d'un point, quelqu'un décide. 5 tests neufs, 1 repris*
+      5 tests neufs, 1 repris*
+      ***Le poids a bougé, et c'est le test d'équilibre qui l'a fait bouger.**
+      Livré à -10, il posait 70 − 10 = 60 : exactement le minimum du reel, où
+      l'on ne passe que parce que la comparaison est `>=`. Prévenir tard coûtait
+      donc le haut de l'échelle à un point près — l'inverse de ce que
+      l'événement existe pour faire. Descendu à -5, cinq points de marge, et le
+      test les affirme en toutes lettres pour le prochain réglage. Une
+      annulation tardive est une faute légère, pas une demi-absence.*
 - [x] **Annuler ce que le salon n'a pas accepté, et couper l'appareil perdu**
       *Trois tranches. Le **défaut** d'abord : `annuler` visait `no_show` sans
       regarder d'où elle partait, et `awaiting_business` n'a pas cette flèche —

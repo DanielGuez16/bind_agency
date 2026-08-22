@@ -184,6 +184,10 @@ async def ouvrir(
     admin: User,
     motif: str,
     portee: Sequence[PorteeDeReprise],
+    # **Déclaré, jamais déduit.** Aucun canal ne permet au salon d'écrire ; le
+    # calculer rendrait « spontanée » y compris pour ceux qui ont téléphoné. Ce
+    # qui rend la déclaration sérieuse est que le gérant la lit et peut la
+    # contredire. Voir `BusinessSupportAccess.spontaneous`.
     spontanee: bool = True,
     maintenant: datetime | None = None,
 ) -> BusinessSupportAccess:
