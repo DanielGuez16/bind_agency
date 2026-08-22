@@ -607,6 +607,7 @@ export const en = {
     ignore_historique_insuffisant: 'Not enough history',
   },
   commerce: {
+    selecteurTitre: 'Which salon',
     // **Le motif entre guillemets, dans la chaîne.** Les chevrons font partie
     // de la phrase : l'espagnol ne cite pas comme l'anglais, et les coller
     // dans l'écran les figerait sur une seule langue.

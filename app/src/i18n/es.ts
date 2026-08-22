@@ -553,6 +553,7 @@ export const es: Catalogue = {
     ignore_historique_insuffisant: 'Historial insuficiente',
   },
   commerce: {
+    selecteurTitre: 'Qué salón',
     repriseEnCours: 'Alguien de BIND está en tu cuenta',
     repriseMotif: '«{{motif}}»',
     repriseDepuisJusqua: 'Desde {{debut}} · hasta {{fin}}',

@@ -1980,7 +1980,7 @@ barrière avant le réseau, et c'est là qu'il faut la poser.
       qu'un salon sache formuler avant d'avoir vu qui que ce soit ; la recherche
       par pseudonyme, elle, arrive plus tard, quand il a des noms en tête*
 
-- [ ] **Le sélecteur de salon, pour un gérant qui en a deux**
+- [x] **Le sélecteur de salon, pour un gérant qui en a deux**
       *`useMonCommerce` prend `mesCommerces[0]` et la coquille n'offre aucun
       moyen de changer. Depuis que le rattachement d'une fiche existe, un gérant
       peut avoir deux salons — le second est réservable par les créatrices, et
