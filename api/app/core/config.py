@@ -529,6 +529,14 @@ class Settings(BaseSettings):
     #: dispositif refuse, et c'est ce délai qui l'en empêche.
     support_access_ttl_seconds: int = 2 * 3600
 
+    #: La fenêtre glissante sur laquelle on compte les reprises d'un même
+    #: administrateur, **tous salons confondus**. Sept jours : assez pour qu'une
+    #: habitude se voie, assez court pour qu'une semaine chargée ne pèse pas sur
+    #: le mois suivant. Ce compte ne refuse rien — il se lit à l'ouverture, et
+    #: c'est le seul chiffre qui dise « tu es entré quatorze fois cette
+    #: semaine » à quelqu'un qui ne compte que la fois où il est.
+    support_access_recent_window_seconds: int = 7 * 24 * 3600
+
     #: Période du vidage de la boîte d'envoi. Une minute : un message annonce
     #: une décision que quelqu'un attend, et le faire attendre l'intervalle
     #: d'un balayage horaire reviendrait à ne pas l'envoyer.

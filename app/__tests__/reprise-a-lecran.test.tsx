@@ -8,11 +8,13 @@
  * exacte sera lue. Le motif du décor est donc long, ponctué, et vérifié **mot
  * pour mot**.
  */
-import { render, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
 import { ApiClient, ApiProvider, type RepriseDuCompte } from '../src/api';
 import { I18nProvider } from '../src/i18n';
 import { JourneeScreen } from '../src/screens/JourneeScreen';
+import { RepriseDuCompte as SectionDesReprises } from '../src/screens/reglages/RepriseDuCompte';
+import { CommerceProvider } from '../src/shell/useMonCommerce';
 import { ThemeProvider } from '../src/theme';
 
 const MOTIF =
@@ -25,8 +27,13 @@ function reprise(extra: Partial<RepriseDuCompte> = {}): RepriseDuCompte {
   return {
     id: 'r1',
     business_id: 'b1',
-    admin_user_id: 'a1',
+    admin_name: 'Amélie R.',
     reason: MOTIF,
+    // **Une seule portée dans le décor par défaut.** Toutes les sept feraient
+    // passer un écran qui affiche la liste entière quoi qu'il arrive aussi bien
+    // qu'un écran qui lit celle de la reprise.
+    scope: ['fiche'],
+    spontaneous: true,
     started_at: IL_Y_A_UNE_HEURE,
     expires_at: DANS_UNE_HEURE,
     ended_at: null,
@@ -97,5 +104,118 @@ describe('le bandeau de reprise, sur la journée du salon', () => {
 
     await waitFor(() => expect(screen.queryByTestId('journee-vide')).toBeTruthy());
     expect(screen.queryByTestId('bandeau-reprise')).toBeNull();
+  });
+});
+
+
+// --------------------------------------------------------------------------
+// la section des réglages : qui est entré, ce qu'il ouvrait, et la sortie
+// --------------------------------------------------------------------------
+
+const MES_COMMERCES = [{ id: 'b1', name: 'Salon Ocean', timezone: 'America/New_York' }];
+
+/** Monte la section, sous le fournisseur qui porte le salon regardé. */
+async function monterLesReglages(
+  reprises: RepriseDuCompte[],
+  envois: { chemin: string; methode: string }[] = [],
+) {
+  const api = new ApiClient({
+    baseUrl: 'https://api.test',
+    coffre: { lire: async () => null, ecrire: async () => {} },
+    fetchImpl: (async (url: RequestInfo | URL, init?: RequestInit) => {
+      const chemin = String(url);
+      const methode = init?.method ?? 'GET';
+      envois.push({ chemin, methode });
+      if (chemin.includes('/me/businesses')) {
+        return { ok: true, status: 200, json: async () => MES_COMMERCES } as Response;
+      }
+      if (methode === 'DELETE') {
+        return { ok: true, status: 204, json: async () => null } as Response;
+      }
+      return { ok: true, status: 200, json: async () => reprises } as Response;
+    }) as unknown as typeof fetch,
+  });
+  return await render(
+    <I18nProvider initialLocale="en">
+      <ThemeProvider role="merchant">
+        <ApiProvider client={api}>
+          <CommerceProvider>
+            <SectionDesReprises />
+          </CommerceProvider>
+        </ApiProvider>
+      </ThemeProvider>
+    </I18nProvider>,
+  );
+}
+
+describe('ce que le salon lit de chaque reprise', () => {
+  it('nomme celui qui est entré, et dit qu’il est venu tout seul', async () => {
+    await monterLesReglages([reprise()]);
+
+    const qui = await screen.findByTestId('reprise-qui-r1');
+    expect(qui).toHaveTextContent('Amélie R.', { exact: false });
+    expect(qui).toHaveTextContent('own initiative', { exact: false });
+  });
+
+  it('et dit l’inverse quand le salon avait demandé', async () => {
+    // **Le décor divergent.** Sans ce second cas, un écran qui écrirait « de sa
+    // propre initiative » sur toutes les reprises passerait le premier test —
+    // et c'est précisément la phrase qu'il ne faut pas poser au hasard, puisque
+    // celle-là accuse.
+    await monterLesReglages([reprise({ spontaneous: false })]);
+
+    const qui = await screen.findByTestId('reprise-qui-r1');
+    expect(qui).toHaveTextContent('after you asked', { exact: false });
+    expect(qui).not.toHaveTextContent('own initiative', { exact: false });
+  });
+
+  it('nomme les écrans que la reprise ouvrait, et pas les autres', async () => {
+    await monterLesReglages([reprise({ scope: ['catalogue', 'chiffres'] })]);
+
+    const portee = await screen.findByTestId('reprise-portee-r1');
+    expect(portee).toHaveTextContent('your services', { exact: false });
+    expect(portee).toHaveTextContent('your numbers', { exact: false });
+    // Ce qu'elle n'ouvrait pas ne doit pas y figurer : une liste qui montre
+    // tout ne borne rien, et se lirait comme un accès complet.
+    expect(portee).not.toHaveTextContent('your page', { exact: false });
+  });
+});
+
+describe('le salon referme la porte lui-même', () => {
+  it('propose de refermer quand quelqu’un est dedans, et appelle la route', async () => {
+    const envois: { chemin: string; methode: string }[] = [];
+    await monterLesReglages([reprise()], envois);
+
+    const bouton = await screen.findByTestId('reprise-refermer');
+    await fireEvent.press(bouton);
+
+    await waitFor(() =>
+      expect(
+        envois.some(
+          (envoi) =>
+            envoi.methode === 'DELETE' &&
+            envoi.chemin.includes('/business/b1/support-access') &&
+            !envoi.chemin.includes('/admin/'),
+        ),
+      ).toBe(true),
+    );
+  });
+
+  it('ne le propose pas quand la porte est déjà close', async () => {
+    // **Le sens qui manquait.** Un bouton qui paraît toujours ferait douter le
+    // gérant que la porte soit close, ce qui est exactement ce qu'il vient
+    // vérifier. Le décor garde une reprise — sans elle, la section entière ne
+    // se rend pas et le test passerait pour la mauvaise raison.
+    await monterLesReglages([reprise({ ended_at: IL_Y_A_UNE_HEURE })]);
+
+    await screen.findByTestId('reprise-r1');
+    expect(screen.queryByTestId('reprise-refermer')).toBeNull();
+  });
+
+  it('et pas davantage quand la dernière a expiré toute seule', async () => {
+    await monterLesReglages([reprise({ expires_at: IL_Y_A_UNE_HEURE, ended_at: null })]);
+
+    await screen.findByTestId('reprise-r1');
+    expect(screen.queryByTestId('reprise-refermer')).toBeNull();
   });
 });

@@ -23,7 +23,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncSession
 
 from app.core.config import get_settings
 from app.models import AuditLog, BusinessSupportAccess, User
-from app.models.enums import ActorKind, UserRole
+from app.models.enums import ActorKind, PorteeDeReprise, UserRole
 from app.services import support as service
 from tests.conftest import inscrire_verifie
 from tests.factories import PASSWORD_HASH, new_business, new_user
@@ -31,6 +31,15 @@ from tests.test_activation import commerce_en_cours
 
 PREFIX = get_settings().api_v1_prefix
 MOT_DE_PASSE = "tourbillon-cactus-91-vermeil"
+
+#: La portée des décors qui n'éprouvent pas la portée elle-même.
+#:
+#: **Un seul écran, et jamais tous.** Ouvrir la portée entière partout ferait
+#: passer un service qui l'ignore aussi bien qu'un service qui l'applique :
+#: aucun de ces décors ne divergerait plus, et la portée ne serait éprouvée
+#: nulle part. Avec un seul écran, les tests qui touchent un autre écran
+#: tombent — ce qui est exactement le point.
+PORTEE = [PorteeDeReprise.FICHE]
 
 
 async def administrateur(session: AsyncSession) -> User:
@@ -75,7 +84,9 @@ async def test_pendant_une_reprise_l_administrateur_agit_au_nom_du_salon(
     """La reprise ouvre la porte — c'est ce à quoi elle sert."""
     business, _ = await commerce_en_cours(session)
     admin = await administrateur(session)
-    await service.ouvrir(session, business=business, admin=admin, motif="débloquer les horaires")
+    await service.ouvrir(
+        session, business=business, admin=admin, motif="débloquer les horaires", portee=PORTEE
+    )
     await session.commit()
 
     jetons = (
@@ -98,7 +109,7 @@ async def test_une_reprise_expiree_ne_donne_plus_rien(session: AsyncSession) -> 
     business, _ = await commerce_en_cours(session)
     admin = await administrateur(session)
     acces = await service.ouvrir(
-        session, business=business, admin=admin, motif="comprendre un refus"
+        session, business=business, admin=admin, motif="comprendre un refus", portee=PORTEE
     )
 
     apres = acces.expires_at + timedelta(seconds=1)
@@ -115,10 +126,10 @@ async def test_une_reprise_fermee_ne_donne_plus_rien(session: AsyncSession) -> N
     business, _ = await commerce_en_cours(session)
     admin = await administrateur(session)
     acces = await service.ouvrir(
-        session, business=business, admin=admin, motif="débloquer les horaires"
+        session, business=business, admin=admin, motif="débloquer les horaires", portee=PORTEE
     )
 
-    await service.fermer(session, acces=acces, admin=admin)
+    await service.fermer(session, acces=acces, acteur=admin)
 
     assert acces.ended_at is not None
     assert await service.en_cours(session, business_id=business.id, admin_user_id=admin.id) is None
@@ -131,7 +142,9 @@ async def test_la_reprise_d_un_administrateur_n_ouvre_rien_a_un_autre(
     business, _ = await commerce_en_cours(session)
     premier = await administrateur(session)
     second = await administrateur(session)
-    await service.ouvrir(session, business=business, admin=premier, motif="débloquer les horaires")
+    await service.ouvrir(
+        session, business=business, admin=premier, motif="débloquer les horaires", portee=PORTEE
+    )
 
     assert await service.en_cours(session, business_id=business.id, admin_user_id=second.id) is None
 
@@ -142,7 +155,7 @@ async def test_la_reprise_ne_vaut_que_pour_ce_commerce(session: AsyncSession) ->
     chez_a, _ = await commerce_en_cours(session)
     chez_b, _ = await commerce_en_cours(session)
     admin = await administrateur(session)
-    await service.ouvrir(session, business=chez_a, admin=admin, motif="un motif")
+    await service.ouvrir(session, business=chez_a, admin=admin, motif="un motif", portee=PORTEE)
 
     assert await service.en_cours(session, business_id=chez_b.id, admin_user_id=admin.id) is None
 
@@ -158,7 +171,7 @@ async def test_un_motif_vide_est_refuse(session: AsyncSession) -> None:
     admin = await administrateur(session)
 
     with pytest.raises(service.ReasonRequired):
-        await service.ouvrir(session, business=business, admin=admin, motif="   ")
+        await service.ouvrir(session, business=business, admin=admin, motif="   ", portee=PORTEE)
 
     assert await service.en_cours(session, business_id=business.id, admin_user_id=admin.id) is None
 
@@ -167,7 +180,9 @@ async def test_seul_un_administrateur_reprend(session: AsyncSession) -> None:
     business, proprietaire = await commerce_en_cours(session)
 
     with pytest.raises(service.NotAnAdmin):
-        await service.ouvrir(session, business=business, admin=proprietaire, motif="un motif")
+        await service.ouvrir(
+            session, business=business, admin=proprietaire, motif="un motif", portee=PORTEE
+        )
 
 
 async def test_on_n_ouvre_pas_deux_reprises_a_la_fois(session: AsyncSession) -> None:
@@ -175,10 +190,14 @@ async def test_on_n_ouvre_pas_deux_reprises_a_la_fois(session: AsyncSession) -> 
     liste du salon là où il ne s'est rien passé de plus."""
     business, _ = await commerce_en_cours(session)
     admin = await administrateur(session)
-    await service.ouvrir(session, business=business, admin=admin, motif="premier motif")
+    await service.ouvrir(
+        session, business=business, admin=admin, motif="premier motif", portee=PORTEE
+    )
 
     with pytest.raises(service.AlreadyOpen):
-        await service.ouvrir(session, business=business, admin=admin, motif="second motif")
+        await service.ouvrir(
+            session, business=business, admin=admin, motif="second motif", portee=PORTEE
+        )
 
 
 async def test_l_ouverture_ecrit_son_motif_au_journal(session: AsyncSession) -> None:
@@ -187,7 +206,9 @@ async def test_l_ouverture_ecrit_son_motif_au_journal(session: AsyncSession) -> 
     business, _ = await commerce_en_cours(session)
     admin = await administrateur(session)
 
-    await service.ouvrir(session, business=business, admin=admin, motif="débloquer les horaires")
+    await service.ouvrir(
+        session, business=business, admin=admin, motif="débloquer les horaires", portee=PORTEE
+    )
 
     entree = await session.scalar(
         sa.select(AuditLog).where(
@@ -213,9 +234,9 @@ async def test_le_salon_lit_les_reprises_passees(
     business, proprietaire = await commerce_en_cours(session)
     admin = await administrateur(session)
     acces = await service.ouvrir(
-        session, business=business, admin=admin, motif="débloquer les horaires"
+        session, business=business, admin=admin, motif="débloquer les horaires", portee=PORTEE
     )
-    await service.fermer(session, acces=acces, admin=admin)
+    await service.fermer(session, acces=acces, acteur=admin)
     await session.commit()
 
     jetons = (
@@ -243,7 +264,7 @@ async def test_un_salon_ne_lit_pas_les_reprises_d_un_autre(
     chez_a, _ = await commerce_en_cours(session)
     chez_b, proprietaire_b = await commerce_en_cours(session)
     admin = await administrateur(session)
-    await service.ouvrir(session, business=chez_a, admin=admin, motif="un motif")
+    await service.ouvrir(session, business=chez_a, admin=admin, motif="un motif", portee=PORTEE)
     await session.commit()
 
     jetons = (
@@ -267,8 +288,10 @@ async def test_l_historique_garde_les_reprises_closes(session: AsyncSession) -> 
     business, _ = await commerce_en_cours(session)
     admin = await administrateur(session)
     for motif in ("première", "deuxième"):
-        acces = await service.ouvrir(session, business=business, admin=admin, motif=motif)
-        await service.fermer(session, acces=acces, admin=admin)
+        acces = await service.ouvrir(
+            session, business=business, admin=admin, motif=motif, portee=PORTEE
+        )
+        await service.fermer(session, acces=acces, acteur=admin)
 
     lignes = await service.historique(session, business_id=business.id)
 
@@ -287,7 +310,9 @@ async def _insertion(conn: AsyncConnection, **overrides):
     valeurs = {
         "business_id": business_id,
         "admin_user_id": admin_id,
+        "admin_name": "Amélie R.",
         "reason": "un motif",
+        "scope": [PorteeDeReprise.FICHE.value],
         "expires_at": instant + timedelta(hours=2),
     } | overrides
     return sa.insert(BusinessSupportAccess).values(**valeurs)
@@ -321,6 +346,25 @@ async def test_la_base_accepte_une_reprise_bien_formee(conn: AsyncConnection) ->
             {"ended_at": datetime.now(UTC) - timedelta(hours=1)},
             "ck_business_support_access_close_apres_ouverture",
             id="close avant d'être ouverte",
+        ),
+        pytest.param(
+            {"scope": []},
+            "ck_business_support_access_portee_non_vide",
+            id="portée vide",
+        ),
+        pytest.param(
+            # **Une valeur inventée, et non une valeur oubliée.** Sans cette
+            # contrainte elle s'insérerait, ne correspondrait à aucun écran, et
+            # la reprise serait refusée partout : ce qui se lit comme une panne
+            # du support plutôt que comme une faute de frappe.
+            {"scope": ["comptabilite"]},
+            "ck_business_support_access_portee_connue",
+            id="portée inconnue",
+        ),
+        pytest.param(
+            {"admin_name": "  "},
+            "ck_business_support_access_nom_non_vide",
+            id="nom vide",
         ),
     ],
 )
@@ -362,7 +406,7 @@ async def test_la_fermeture_ne_compare_pas_deux_horloges(
     business, _ = await commerce_en_cours(session)
     admin = await administrateur(session)
     acces = await service.ouvrir(
-        session, business=business, admin=admin, motif="débloquer les horaires"
+        session, business=business, admin=admin, motif="débloquer les horaires", portee=PORTEE
     )
 
     class HorlogeEnRetard(datetime):
@@ -372,10 +416,436 @@ async def test_la_fermeture_ne_compare_pas_deux_horloges(
 
     monkeypatch.setattr(service, "datetime", HorlogeEnRetard)
 
-    ferme = await service.fermer(session, acces=acces, admin=admin)
+    ferme = await service.fermer(session, acces=acces, acteur=admin)
 
     assert ferme.ended_at is not None
     assert ferme.ended_at >= ferme.started_at
     # La session reste saine : une violation attrapée hors point de sauvegarde
     # la laisserait inutilisable, et le défaut ressortirait ailleurs.
     assert await session.scalar(sa.select(sa.literal(1))) == 1
+
+
+# --------------------------------------------------------------------------
+# la portée : ce que la reprise ouvre, et rien d'autre
+# --------------------------------------------------------------------------
+
+
+async def _jetons(client: AsyncClient, user: User) -> dict[str, str]:
+    reponse = await client.post(
+        f"{PREFIX}/auth/login", json={"email": user.email, "password": MOT_DE_PASSE}
+    )
+    jetons = reponse.json()
+    return {"Authorization": f"Bearer {jetons['access_token']}"}
+
+
+async def test_la_portee_ouvre_un_ecran_et_ferme_les_autres(
+    session: AsyncSession, client: AsyncClient
+) -> None:
+    """**Le test qui fait la différence entre une portée et une phrase.**
+
+    La reprise est ouverte sur le catalogue seul. La même requête sur la fiche
+    du salon est refusée, et sur le catalogue elle passe. Un service qui
+    enregistrerait la portée sans la vérifier rendrait 200 aux deux — c'est
+    précisément l'implémentation qu'on redoute, et c'est ce décor-là qui la
+    sépare de la bonne.
+
+    Le code d'erreur est distinct du refus ordinaire : celui qui le reçoit a
+    déjà prouvé son accès, et sans ce code il chercherait une panne là où il
+    n'a qu'à déclarer la bonne portée.
+    """
+    business, _ = await commerce_en_cours(session)
+    admin = await administrateur(session)
+    await service.ouvrir(
+        session,
+        business=business,
+        admin=admin,
+        motif="corriger une prestation",
+        portee=[PorteeDeReprise.CATALOGUE],
+    )
+    await session.commit()
+    entete = await _jetons(client, admin)
+
+    fiche = await client.get(f"{PREFIX}/business/{business.id}", headers=entete)
+    assert fiche.status_code == 403, fiche.text
+    assert fiche.json()["detail"] == "support_access_out_of_scope"
+
+    catalogue = await client.get(f"{PREFIX}/business/{business.id}/catalog-items", headers=entete)
+    assert catalogue.status_code == 200, catalogue.text
+
+
+async def test_un_ecran_qu_aucune_portee_ne_nomme_reste_ferme(
+    session: AsyncSession, client: AsyncClient
+) -> None:
+    """**Le sens du refus quand on n'a rien classé.**
+
+    La reprise est ouverte sur *toutes* les portées qui existent, et la requête
+    est refusée quand même : la liste des reprises du salon ne relève d'aucun
+    écran déclaré. C'est le sens qui refuse, et il se voit — un écran neuf que
+    personne n'a classé bloque le support à la première tentative. Le sens
+    inverse ouvrirait une porte que personne n'a déclarée, et rien ne le dirait
+    jamais.
+
+    **La portée entière est ce qui rend ce décor divergent** : avec une portée
+    étroite, un service qui laisse passer l'inclassable et un service qui le
+    refuse rendraient tous deux 403, pour deux raisons différentes.
+    """
+    business, _ = await commerce_en_cours(session)
+    admin = await administrateur(session)
+    await service.ouvrir(
+        session,
+        business=business,
+        admin=admin,
+        motif="tout ouvrir",
+        portee=list(PorteeDeReprise),
+    )
+    await session.commit()
+    entete = await _jetons(client, admin)
+
+    reponse = await client.get(f"{PREFIX}/business/{business.id}/support-access", headers=entete)
+
+    assert reponse.status_code == 403, reponse.text
+    assert reponse.json()["detail"] == "support_access_out_of_scope"
+
+
+async def test_une_portee_vide_est_refusee(session: AsyncSession) -> None:
+    """Une portée vide ouvrirait tout ou rien, et les deux sont mauvais."""
+    business, _ = await commerce_en_cours(session)
+    admin = await administrateur(session)
+
+    with pytest.raises(service.ScopeRequired):
+        await service.ouvrir(session, business=business, admin=admin, motif="un motif", portee=[])
+
+    assert await session.scalar(sa.select(sa.literal(1))) == 1
+
+
+async def test_la_portee_declaree_est_celle_qu_on_relit(
+    session: AsyncSession, client: AsyncClient
+) -> None:
+    """Ce que le salon lit est ce qui a été déclaré — dédoublonné et ordonné.
+
+    L'ordre des cases cochées ne doit pas changer ce que le gérant lit d'une
+    reprise à l'autre.
+    """
+    business, proprietaire = await commerce_en_cours(session)
+    admin = await administrateur(session)
+    await service.ouvrir(
+        session,
+        business=business,
+        admin=admin,
+        motif="deux écrans",
+        portee=[
+            PorteeDeReprise.CHIFFRES,
+            PorteeDeReprise.AGENDA,
+            PorteeDeReprise.CHIFFRES,
+        ],
+    )
+    await session.commit()
+
+    reponse = await client.get(
+        f"{PREFIX}/business/{business.id}/support-access",
+        headers=await _jetons(client, proprietaire),
+    )
+
+    assert reponse.status_code == 200, reponse.text
+    assert reponse.json()[0]["scope"] == ["agenda", "chiffres"]
+
+
+# --------------------------------------------------------------------------
+# le nom, la spontanéité, le compte
+# --------------------------------------------------------------------------
+
+
+async def test_le_nom_est_celui_du_jour_de_la_reprise(
+    session: AsyncSession, client: AsyncClient
+) -> None:
+    """**Recopié, pas joint.** Le gérant qui relit une reprise de mars doit lire
+    le nom qu'il a lu en mars.
+
+    Le sabotage est un renommage après coup : une lecture par jointure suivrait
+    le nouveau nom, une copie non. Sans ce décor, les deux implémentations
+    rendraient la même chose et le test ne prouverait rien.
+    """
+    business, proprietaire = await commerce_en_cours(session)
+    admin = await administrateur(session)
+    admin.display_name = "Amélie R."
+    await session.flush()
+    await service.ouvrir(session, business=business, admin=admin, motif="un motif", portee=PORTEE)
+    admin.display_name = "Amélie Rousseau"
+    await session.commit()
+
+    reponse = await client.get(
+        f"{PREFIX}/business/{business.id}/support-access",
+        headers=await _jetons(client, proprietaire),
+    )
+
+    assert reponse.status_code == 200, reponse.text
+    ligne = reponse.json()[0]
+    assert ligne["admin_name"] == "Amélie R."
+    # **Et l'identifiant ne sort plus.** Un UUID affiché à un gérant ne nomme
+    # personne, et le servir à côté du nom inviterait à le montrer.
+    assert "admin_user_id" not in ligne
+
+
+async def test_un_administrateur_sans_nom_ne_laisse_pas_un_vide(
+    session: AsyncSession, client: AsyncClient
+) -> None:
+    """Le repli neutre dit au moins de qui il s'agit — de nous."""
+    business, proprietaire = await commerce_en_cours(session)
+    admin = await administrateur(session)
+    await service.ouvrir(session, business=business, admin=admin, motif="un motif", portee=PORTEE)
+    await session.commit()
+
+    reponse = await client.get(
+        f"{PREFIX}/business/{business.id}/support-access",
+        headers=await _jetons(client, proprietaire),
+    )
+
+    assert reponse.json()[0]["admin_name"] == service.NOM_PAR_DEFAUT
+
+
+async def test_le_silence_vaut_de_ma_propre_initiative(
+    session: AsyncSession, client: AsyncClient
+) -> None:
+    """**Le défaut est le sens inconfortable.**
+
+    Aucun canal ne permet au salon d'écrire, donc rien ne prouve qu'il a
+    demandé. Le défaut est `spontaneous`, et c'est celui qui affirme avoir été
+    appelé qui doit le dire. L'inverse laisserait toute reprise se présenter
+    comme sollicitée sans que personne ne l'ait sollicitée.
+    """
+    business, _ = await commerce_en_cours(session)
+    admin = await administrateur(session)
+    await session.commit()
+    entete = await _jetons(client, admin)
+
+    tue = await client.post(
+        f"{PREFIX}/admin/businesses/{business.id}/support-access",
+        headers=entete,
+        json={"reason": "personne ne m'a rien demandé", "scope": ["fiche"]},
+    )
+    assert tue.status_code == 201, tue.text
+    assert tue.json()["spontaneous"] is True
+
+    await client.delete(f"{PREFIX}/admin/businesses/{business.id}/support-access", headers=entete)
+    appele = await client.post(
+        f"{PREFIX}/admin/businesses/{business.id}/support-access",
+        headers=entete,
+        json={"reason": "le salon a appelé", "scope": ["fiche"], "spontaneous": False},
+    )
+    assert appele.status_code == 201, appele.text
+    assert appele.json()["spontaneous"] is False
+
+
+async def test_le_compte_des_reprises_traverse_les_salons_et_s_arrete_a_la_fenetre(
+    session: AsyncSession,
+) -> None:
+    """**Tous salons confondus, et sur la fenêtre seulement.**
+
+    Trois reprises : deux chez des salons différents cette semaine, une
+    troisième posée avant la fenêtre. Le décor diverge des deux implémentations
+    fautives à la fois — celle qui ne compterait que le salon courant rendrait
+    un, celle qui ignorerait la fenêtre rendrait trois.
+
+    Les closes comptent : ce qu'on mesure est le geste, pas la porte encore
+    ouverte. N'additionner que les vivantes rendrait toujours un ou zéro, et ne
+    mesurerait plus rien.
+    """
+    chez_a, _ = await commerce_en_cours(session)
+    chez_b, _ = await commerce_en_cours(session)
+    chez_c, _ = await commerce_en_cours(session)
+    admin = await administrateur(session)
+
+    premiere = await service.ouvrir(
+        session, business=chez_a, admin=admin, motif="premier", portee=PORTEE
+    )
+    await service.fermer(session, acces=premiere, acteur=admin)
+    await service.ouvrir(session, business=chez_b, admin=admin, motif="second", portee=PORTEE)
+
+    fenetre = get_settings().support_access_recent_window_seconds
+    ancienne = await service.ouvrir(
+        session, business=chez_c, admin=admin, motif="le mois dernier", portee=PORTEE
+    )
+    # **Reculée après coup, et par une écriture directe.** `started_at` vient de
+    # `clock_timestamp()` et la contrainte exige `expires_at > started_at` :
+    # ouvrir avec une heure passée ferait échouer l'insertion elle-même, ce qui
+    # éprouverait la contrainte et non la fenêtre.
+    await session.execute(
+        sa.update(BusinessSupportAccess)
+        .where(BusinessSupportAccess.id == ancienne.id)
+        .values(started_at=datetime.now(UTC) - timedelta(seconds=fenetre + 3600))
+    )
+
+    assert await service.reprises_recentes(session, admin_user_id=admin.id) == 2
+
+
+async def test_l_ouverture_rend_le_compte_de_l_appelant(
+    session: AsyncSession, client: AsyncClient
+) -> None:
+    """Celui qui ouvre la deuxième de la journée le lit en ouvrant la deuxième.
+
+    Une reprise se justifie une par une, et c'est ce qui empêche d'en voir
+    l'ensemble. Celle qu'on vient d'ouvrir compte dans le total : la lire à zéro
+    le jour de la première serait exact et inutile.
+    """
+    chez_a, _ = await commerce_en_cours(session)
+    chez_b, _ = await commerce_en_cours(session)
+    admin = await administrateur(session)
+    await session.commit()
+    entete = await _jetons(client, admin)
+
+    for business in (chez_a, chez_b):
+        reponse = await client.post(
+            f"{PREFIX}/admin/businesses/{business.id}/support-access",
+            headers=entete,
+            json={"reason": "un motif", "scope": ["fiche"]},
+        )
+        assert reponse.status_code == 201, reponse.text
+
+    assert reponse.json()["reprises_recentes_de_l_appelant"] == 2
+    assert reponse.json()["fenetre_en_jours"] == (
+        get_settings().support_access_recent_window_seconds // 86_400
+    )
+
+
+# --------------------------------------------------------------------------
+# le salon referme
+# --------------------------------------------------------------------------
+
+
+async def test_le_salon_referme_et_la_porte_tombe_dans_la_seconde(
+    session: AsyncSession, client: AsyncClient
+) -> None:
+    """**« L'accès se ferme sans discussion » ne tenait pas.**
+
+    Seule la porte d'administration savait se refermer : le gérant qui n'était
+    pas d'accord n'avait qu'un numéro à appeler. Une garantie qui suppose qu'on
+    décroche n'est pas une garantie.
+
+    Le décor le prouve dans les deux sens : l'administrateur passe avant, il ne
+    passe plus après. Ne vérifier que le 204 laisserait passer une route qui
+    écrit `ended_at` sans que le résolveur en tienne compte.
+    """
+    business, proprietaire = await commerce_en_cours(session)
+    admin = await administrateur(session)
+    await service.ouvrir(session, business=business, admin=admin, motif="un motif", portee=PORTEE)
+    await session.commit()
+    cote_admin = await _jetons(client, admin)
+
+    avant = await client.get(f"{PREFIX}/business/{business.id}", headers=cote_admin)
+    assert avant.status_code == 200, avant.text
+
+    ferme = await client.delete(
+        f"{PREFIX}/business/{business.id}/support-access",
+        headers=await _jetons(client, proprietaire),
+    )
+    assert ferme.status_code == 204, ferme.text
+
+    apres = await client.get(f"{PREFIX}/business/{business.id}", headers=cote_admin)
+    assert apres.status_code == 403, apres.text
+
+
+async def test_le_salon_referme_toutes_les_reprises_pas_une(
+    session: AsyncSession, client: AsyncClient
+) -> None:
+    """Lui demander laquelle serait lui demander de savoir combien sont entrés.
+
+    Deux administrateurs, deux reprises vivantes. Une implémentation qui n'en
+    fermerait qu'une — la plus récente, la sienne — laisserait la seconde
+    ouverte, et le gérant croirait la porte close.
+    """
+    business, proprietaire = await commerce_en_cours(session)
+    premier = await administrateur(session)
+    second = await administrateur(session)
+    for admin in (premier, second):
+        await service.ouvrir(
+            session, business=business, admin=admin, motif="un motif", portee=PORTEE
+        )
+    await session.commit()
+
+    reponse = await client.delete(
+        f"{PREFIX}/business/{business.id}/support-access",
+        headers=await _jetons(client, proprietaire),
+    )
+    assert reponse.status_code == 204, reponse.text
+
+    # **Relu en base, et non sur les objets de la session.** Ceux-ci portent
+    # encore l'état d'avant la requête HTTP, qui a écrit dans une autre session
+    # — les interroger dirait « toujours ouvertes » quoi qu'il arrive.
+    business_id = business.id
+    session.expire_all()
+    assert await service.toutes_en_cours(session, business_id=business_id) == ()
+    closes = await session.scalars(
+        sa.select(BusinessSupportAccess.ended_at).where(
+            BusinessSupportAccess.business_id == business_id
+        )
+    )
+    assert all(fin is not None for fin in closes)
+
+
+async def test_le_journal_dit_lequel_des_deux_a_referme(session: AsyncSession) -> None:
+    """« Je suis ressorti » et « on m'a mis dehors » ne se relisent pas pareil.
+
+    C'est le second qui devrait faire réfléchir à ce qu'on était venu faire, et
+    un journal qui les confondrait effacerait exactement cela.
+    """
+    business, proprietaire = await commerce_en_cours(session)
+    admin = await administrateur(session)
+    sienne = await service.ouvrir(
+        session, business=business, admin=admin, motif="la mienne", portee=PORTEE
+    )
+    await service.fermer(session, acces=sienne, acteur=admin)
+
+    subie = await service.ouvrir(
+        session, business=business, admin=admin, motif="l'autre", portee=PORTEE
+    )
+    await service.fermer(session, acces=subie, acteur=proprietaire)
+
+    motifs = list(
+        await session.scalars(
+            sa.select(AuditLog.reason)
+            .where(AuditLog.reason.in_([service.REASON_FERMEE, service.REASON_FERMEE_PAR_LE_SALON]))
+            .order_by(AuditLog.occurred_at)
+        )
+    )
+    assert motifs == [service.REASON_FERMEE, service.REASON_FERMEE_PAR_LE_SALON]
+
+
+async def test_un_salon_ne_referme_pas_la_reprise_d_un_autre(
+    session: AsyncSession, client: AsyncClient
+) -> None:
+    """La même fuite entre locataires, sur la route neuve."""
+    chez_a, _ = await commerce_en_cours(session)
+    _, proprietaire_b = await commerce_en_cours(session)
+    admin = await administrateur(session)
+    await service.ouvrir(session, business=chez_a, admin=admin, motif="un motif", portee=PORTEE)
+    await session.commit()
+
+    reponse = await client.delete(
+        f"{PREFIX}/business/{chez_a.id}/support-access",
+        headers=await _jetons(client, proprietaire_b),
+    )
+
+    assert reponse.status_code == 403, reponse.text
+    # **L'identifiant est lu avant d'expirer la session.** `expire_all` rend
+    # chaque attribut rechargeable, et le relire depuis un objet expiré déclenche
+    # une lecture synchrone au milieu d'un test asynchrone — une panne qui ne
+    # parle pas du sujet.
+    chez_a_id = chez_a.id
+    session.expire_all()
+    assert len(await service.toutes_en_cours(session, business_id=chez_a_id)) == 1
+
+
+async def test_refermer_quand_il_n_y_a_rien_ne_se_plaint_pas(
+    session: AsyncSession, client: AsyncClient
+) -> None:
+    """« Il n'y avait rien à fermer » est le résultat voulu par quelqu'un qui
+    veut être sûr que la porte est close."""
+    business, proprietaire = await commerce_en_cours(session)
+    await session.commit()
+
+    reponse = await client.delete(
+        f"{PREFIX}/business/{business.id}/support-access",
+        headers=await _jetons(client, proprietaire),
+    )
+
+    assert reponse.status_code == 204, reponse.text

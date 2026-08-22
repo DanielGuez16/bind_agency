@@ -89,6 +89,14 @@ class ErrorCode(StrEnum):
     SUPPORT_REASON_REQUIRED = "support_reason_required"
     #: Une reprise est déjà ouverte sur ce commerce par cet administrateur.
     SUPPORT_ACCESS_ALREADY_OPEN = "support_access_already_open"
+    #: La reprise existe, mais elle n'ouvre pas cet écran-là. **Un code à part
+    #: et non le refus ordinaire** : celui qui le reçoit a déjà prouvé son
+    #: accès, il n'apprend donc rien qu'il ne sache — et sans ce code il
+    #: chercherait une panne là où il n'a qu'à déclarer la bonne portée.
+    SUPPORT_ACCESS_OUT_OF_SCOPE = "support_access_out_of_scope"
+    #: Une reprise s'ouvre sur quelque chose. Une portée vide ouvrirait tout ou
+    #: rien, et les deux réponses sont mauvaises.
+    SUPPORT_SCOPE_REQUIRED = "support_scope_required"
 
     # Catalogue
     CATALOG_ITEM_NOT_FOUND = "catalog_item_not_found"

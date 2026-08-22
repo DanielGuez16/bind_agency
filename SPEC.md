@@ -52,7 +52,7 @@ Historisé, jamais écrasé. L'éligibilité lit toujours le dernier snapshot va
 `id, business_id, user_id, role (owner | staff)`
 
 **business_support_access**
-`id, business_id, admin_user_id, reason, started_at, expires_at, ended_at`
+`id, business_id, admin_user_id, admin_name, reason, scope, spontaneous, started_at, expires_at, ended_at`
 
 **Reprise d'un compte commerce**
 
@@ -61,12 +61,19 @@ Après l'activation, **l'administration n'a aucun accès au compte d'un salon**.
 Quand il faut entrer, une reprise s'ouvre, et elle est :
 
 - **explicite** — un geste, avec un motif écrit à la main. Un motif en liste déroulante se choisit sans réfléchir ; une phrase demande de savoir ce qu'on va faire ;
-- **bornée** — sa durée est en configuration. Une reprise qu'on oublie de fermer redeviendrait un accès permanent ;
+- **bornée par une portée** — un ensemble d'écrans déclaré à l'ouverture, vérifié à **chaque** requête. C'est la borne qui tient : une durée est une horloge, et une horloge se renouvelle — il suffit de rouvrir quand la précédente s'éteint. Une portée non : celui qui est venu pour la carte n'entrera pas dans les chiffres, quel que soit le temps qu'il y passe. Une requête qui ne relève d'aucun écran déclaré n'est ouverte par aucune reprise : c'est le sens qui refuse, et un écran neuf que personne n'a classé bloque le support à la première tentative ;
+- **bornée aussi dans le temps** — sa durée est en configuration, comme plafond. Une reprise qu'on oublie de fermer redeviendrait un accès permanent ;
+- **nommée** — le salon lit un nom, pas un identifiant. Recopié à l'ouverture, donc figé : il lira en octobre ce qu'il a lu en mars ;
+- **qualifiée** — `spontaneous` dit qu'aucune demande du salon ne l'a précédée. Déclaré par l'administration, faute d'un canal par lequel le salon écrive ; le défaut est `true`, et c'est celui qui affirme avoir été appelé qui doit le dire ;
 - **nominative** — elle vaut pour un administrateur et un commerce, jamais pour l'un ou l'autre en général ;
 - **tracée** — l'ouverture écrit son motif au journal d'audit, en note libre. Ce qui est fait pendant l'est déjà : chaque transition porte `actor_kind = admin` ;
 - **visible du salon** — il est prévenu à l'ouverture, et il lit la liste des reprises passées, dans la même forme que l'administration. Un accès de support silencieux est un accès dont personne ne peut demander compte.
 
 La dérogation vaut sur **les deux résolveurs d'appartenance** : n'ouvrir que la fiche du commerce et pas ses réservations ferait un support qui voit le salon sans pouvoir toucher à ce qui coince. L'appartenance rendue à l'administrateur n'est **pas écrite en base** — elle ne vit que le temps de la requête, sans quoi elle survivrait à la reprise.
+
+**Le salon referme, et n'a personne à convaincre.** Il coupe toutes les reprises vivantes chez lui d'un geste — lui demander laquelle serait lui demander de savoir combien de personnes sont entrées. « L'accès s'ouvre sans permission et se ferme sans discussion » : une garantie qui suppose qu'on décroche n'est pas une garantie. Rien n'est effacé pour autant — la liste garde ce qui s'est passé, avec son motif et son auteur.
+
+**Ce que l'administration lit d'elle-même en ouvrant.** Le compte de ses propres reprises sur une fenêtre glissante, **tous salons confondus**. Une reprise se justifie une par une, et c'est précisément ce qui empêche d'en voir l'ensemble : celui qui ouvre la quinzième de la semaine a une bonne raison pour celle-là aussi. Ce compte ne refuse rien — un seuil se contournerait en attendant un jour, et transformerait une mesure honnête en formalité à franchir.
 
 Hors reprise, un administrateur reçoit sur une route commerce exactement le même refus que n'importe qui.
 

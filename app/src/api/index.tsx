@@ -64,6 +64,7 @@ import type {
   ApercuDeLaFiche,
   FichePreparee,
   LienRemis,
+  PorteeDeReprise,
   RepriseDuCompte,
   StatutDuCommerce,
 } from './types';
@@ -586,15 +587,32 @@ export class Api {
     return this.client.request<RepriseDuCompte[]>(routes.mesReprises(businessId), { signal });
   }
 
-  ouvrirUneReprise(businessId: string, motif: string) {
+  ouvrirUneReprise(
+    businessId: string,
+    motif: string,
+    portee: PorteeDeReprise[],
+    spontanee = true,
+  ) {
     return this.client.request<RepriseDuCompte>(routes.repriseAdmin(businessId), {
       methode: 'POST',
-      corps: { reason: motif },
+      corps: { reason: motif, scope: portee, spontaneous: spontanee },
     });
   }
 
   fermerLaReprise(businessId: string) {
     return this.client.request<void>(routes.repriseAdmin(businessId), { methode: 'DELETE' });
+  }
+
+  /**
+   * **Le salon met dehors, et n'a personne à convaincre.**
+   *
+   * Toutes les reprises qui courent chez lui, pas une : lui demander laquelle
+   * serait lui demander de savoir combien de personnes sont entrées. Sans
+   * erreur quand il n'y en avait aucune — « il n'y avait rien à fermer » est
+   * le résultat voulu par quelqu'un qui veut être sûr que la porte est close.
+   */
+  refermerLaReprise(businessId: string) {
+    return this.client.request<void>(routes.mesReprises(businessId), { methode: 'DELETE' });
   }
 
   reporting(

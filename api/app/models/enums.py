@@ -493,3 +493,40 @@ class NotificationKind(StrEnum):
     #: peut demander compte : c'est cette notification qui fait la différence
     #: entre un accès déclaré et un accès qu'on découvre.
     SUPPORT_ACCESS_STARTED = "support_access_started"
+
+
+class PorteeDeReprise(StrEnum):
+    """Ce qu'une reprise ouvre, et rien d'autre.
+
+    **Une durée ne borne pas, une portée si.** Une reprise bornée par le seul
+    temps se renouvelle : il suffit d'en rouvrir une quand la précédente
+    s'éteint, et l'accès redevient permanent en trois gestes espacés. Ce qu'on
+    déclare ici ne se renouvelle pas — un administrateur venu débloquer une
+    carte n'entre pas dans les chiffres du salon, quel que soit le temps qu'il
+    y passe.
+
+    **Les valeurs sont des écrans, pas des routes.** Le salon lira cette liste :
+    « la carte et les prestations » se comprend, `POST /catalog/items` non. Et
+    un découpage par route ferait une déclaration de trente cases que personne
+    ne remplirait honnêtement.
+
+    Une requête qui ne relève d'aucune portée n'est couverte par aucune reprise.
+    C'est le sens qui refuse plutôt que celui qui laisse passer : un écran neuf
+    dont personne n'a dit à quelle portée il appartient bloque le support, et se
+    voit tout de suite. L'inverse ouvrirait une porte que personne n'a déclarée.
+    """
+
+    #: La fiche : identité, adresse, horaires, photos, carte importée.
+    FICHE = "fiche"
+    #: Les prestations offertes, leurs paliers et leurs contreparties.
+    CATALOGUE = "catalogue"
+    #: Les réservations et la capacité — ce qui se passe aujourd'hui.
+    AGENDA = "agenda"
+    #: Les contreparties : preuves, décisions, file d'attente.
+    CONTREPARTIES = "contreparties"
+    #: L'annuaire des créatrices atteignables depuis ce salon.
+    ANNUAIRE = "annuaire"
+    #: L'abonnement, son plan et son échéance.
+    ABONNEMENT = "abonnement"
+    #: Les chiffres : rapports, liens suivis, audience.
+    CHIFFRES = "chiffres"

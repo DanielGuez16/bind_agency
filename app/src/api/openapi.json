@@ -722,6 +722,13 @@
       }
     },
     "/api/v1/business/{business_id}/support-access": {
+      "delete": {
+        "operationId": "revoke_support_access_api_v1_business__business_id__support_access_delete",
+        "responses": [
+          "204",
+          "422"
+        ]
+      },
       "get": {
         "operationId": "list_my_support_accesses_api_v1_business__business_id__support_access_get",
         "responses": [

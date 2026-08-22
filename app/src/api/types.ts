@@ -1507,12 +1507,40 @@ export type FichePreparee = {
   remis_par: string | null;
 };
 
+/**
+ * Ce qu'une reprise ouvre, et rien d'autre.
+ *
+ * **Une durée ne borne pas, une portée si.** Une reprise bornée par le seul
+ * temps se renouvelle — il suffit d'en rouvrir une quand la précédente
+ * s'éteint. Ce qui est déclaré ici ne se renouvelle pas : celui qui est venu
+ * pour la carte n'entrera pas dans les chiffres, quel que soit le temps qu'il
+ * y passe. Le serveur vérifie chaque requête contre cette liste ; ce que le
+ * salon lit est donc vrai, pas affiché.
+ */
+export type PorteeDeReprise =
+  | 'fiche'
+  | 'catalogue'
+  | 'agenda'
+  | 'contreparties'
+  | 'annuaire'
+  | 'abonnement'
+  | 'chiffres';
+
 /** Une reprise du compte par l'administration, telle que le salon la lit. */
 export type RepriseDuCompte = {
   id: string;
   business_id: string;
-  admin_user_id: string;
+  /** **Le nom, et non l'identifiant.** Un UUID ne nomme personne, et un gérant
+   *  qui lit qu'on est entré chez lui doit pouvoir dire qui. Recopié à
+   *  l'ouverture : il lira en octobre ce qu'il a lu en mars. */
+  admin_name: string;
   reason: string;
+  /** Les écrans ouverts. Au moins un, toujours. */
+  scope: PorteeDeReprise[];
+  /** Vrai quand aucune demande du salon ne l'a précédée. **C'est ce que le
+   *  gérant lit en premier** : être entré parce qu'il l'a demandé et être
+   *  entré de sa propre initiative ne se défendent pas de la même façon. */
+  spontaneous: boolean;
   started_at: string;
   expires_at: string;
   /** Nulle quand personne n'a refermé : une reprise échue n'est pas une

@@ -277,6 +277,6 @@ export const METHODES: Record<keyof typeof routes, ('GET' | 'POST' | 'PATCH' | '
     fichesPreparees: ['GET', 'POST'],
     lienDePriseEnMain: ['POST', 'DELETE'],
     repriseAdmin: ['GET', 'POST', 'DELETE'],
-    mesReprises: ['GET'],
+    mesReprises: ['GET', 'DELETE'],
     relancerLeJob: ['POST'],
   };
