@@ -142,10 +142,14 @@ describe('une photo n’agrandit pas sa carte', () => {
     // Le parent animé de l'image porte l'opacité. À zéro tant que `onLoad`
     // n'a pas répondu — une photo qui apparaît d'un coup est un clignotement,
     // quelle que soit sa vitesse.
+    //
+    // **Le nombre, pas sa chaîne.** La première écriture comparait `String()`
+    // de la valeur animée à « 0 » : `Animated.Value(1)` rendait la même chose,
+    // et la mutation qui posait l'opacité à un survivait sans rien casser. Le
+    // rendu résout la valeur en nombre, et c'est lui qui distingue les deux.
     const image = screen.getByTestId('zone-image');
     const anime = image.parent as unknown as { props: { style: unknown } };
-    const style = aplat(anime);
-    expect(String(style.opacity)).toBe('0');
+    expect(aplat(anime).opacity).toBe(0);
   });
 
   it('et elle ne se déplace ni ne change d’échelle', async () => {

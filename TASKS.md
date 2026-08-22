@@ -1895,6 +1895,43 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       place est mauvaise et se dit dans le code : un administrateur qui cherche
       à débloquer un salon ne pense pas « tournée ». La planche dessine un
       onglet « Accounts » ; aucune route ne permet de le composer*
+- [x] **L'attente : le seuil, et la photo qui ne pousse plus rien**
+      *« Lent » veut dire « je ne sais pas si ça marche ». Les quatre durées
+      sont des jetons — appui 100, état 160, fondu 220, seuil 400 — et aucune
+      n'est écrite dans un écran.*
+      *Rien ne clignote sous 400 ms : le squelette ne part plus au premier
+      instant. La vue reste montée et vide pendant le seuil, ce qui n'est pas un
+      blanc — c'est ce qu'il y avait déjà. Et `Photo` réserve sa hauteur sur un
+      aplat `bg.deep`, puis fond l'image en 220 ms sans échelle ni translation :
+      le défaut n'était pas la lenteur, c'était la carte qui grandit et pousse
+      ce qu'on lisait. La règle 2 — l'appui en 100 ms — existait déjà.
+      1348 tests, 3 mutations*
+- [ ] **`Photo` n'est branchée que sur l'aperçu de prestation**
+      *Reste le fil et ses quartiers, la fiche de salon et sa galerie,
+      l'annuaire, le catalogue, le suivi de tournée. C'est le changement qui
+      touche le plus d'écrans, et le seul que les testeurs nommaient
+      directement — les sites restants sont mécaniques, pas décisionnels*
+- [ ] **La liste qui se recompose ne s'atténue pas encore**
+      *L'ancienne doit descendre à 25 % **sans se vider**, dès l'appui et sans
+      attendre le seuil : ce n'est pas un indicateur d'attente, c'est un
+      remplacement. La nouvelle monte par-dessus, décalée de 30 ms par ligne et
+      de 4 px au plus. Et l'aller-retour tient ses 220 ms même si la donnée
+      revient en 40 ms, sans quoi l'atténuation deviendrait un voyant qui
+      clignote. Concerne le fil, la bande de créneaux, les trois onglets des
+      réservations, la file d'arbitrage, l'annuaire*
+- [ ] **La règle 3 : la réussite ne s'annonce pas**
+      *Un résultat qui apparaît **est** la confirmation. Il reste des bandeaux
+      de réussite à retirer, et une garde à écrire pour qu'ils ne reviennent
+      pas — c'est une règle qui retire, donc elle se défait toute seule si rien
+      ne la tient*
+- [ ] **Ce qui raccourcirait vraiment l'attente, et qui n'est pas de composition**
+      *Design le dit sans détour : ces règles rendent l'attente lisible, elles
+      ne la raccourcissent pas. Trois choses la raccourciraient — les dérivées
+      d'image servies à la taille d'affichage plutôt qu'en pleine résolution,
+      qui sont probablement l'essentiel de la lenteur réelle du fil ; les
+      agrégats du §6 quinquies ; et un cache local qui affiche la liste d'hier
+      pendant qu'on charge celle d'aujourd'hui — ce dernier rendrait la règle 1
+      vraie partout au lieu d'être vraie au second lancement*
 - [ ] **Neuf planches d'écrans portent encore la v1.0**
       *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
       passés en v3, dans la palette Ambre. Les autres suivent l'ordre du
