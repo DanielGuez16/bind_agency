@@ -238,6 +238,18 @@ export const motion = {
   default: brut.motion.default,
   slow: brut.motion.slow,
   animatable: brut.motion.animatable,
+  /**
+   * Les quatre durées de l'attente. Elles disent **quand on montre**, pas
+   * comment on décore — deux des trois règles retirent quelque chose.
+   *
+   * « Lent » veut dire « je ne sais pas si ça marche » : ce qui produit la
+   * sensation n'est pas la durée mais l'incertitude. Rien n'a bougé, donc on
+   * appuie une seconde fois, et la lenteur perçue devient mesurée.
+   */
+  appui: produit.motion.appui,
+  etat: produit.motion.etat,
+  fondu: produit.motion.fondu,
+  seuilDAttente: produit.motion.seuilDAttente,
   skeletonLoop: produitBrut.motion.skeletonLoop,
   easing: produitBrut.motion.easing,
 } as const;

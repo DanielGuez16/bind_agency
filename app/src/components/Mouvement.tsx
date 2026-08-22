@@ -15,7 +15,7 @@
  * vertiges vestibulaires, une cascade est un symptôme. Dans ce cas l'élément
  * apparaît, simplement, à sa place définitive.
  */
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
   Animated,
@@ -228,3 +228,35 @@ export const vibration = {
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
   },
 };
+
+/**
+ * Vrai seulement quand l'attente dure assez pour mériter d'être montrée.
+ *
+ * **Rien ne clignote sous quatre cents millisecondes.** Un indicateur qui
+ * apparaît et disparaît en deux cents millisecondes est un défaut visuel, pas
+ * une information — et il produit exactement ce qu'il prétend soigner : l'écran
+ * saute, donc on doute de ce qu'on vient de faire.
+ *
+ * **Elle ne gouverne que les indicateurs d'attente.** Une réponse à un geste
+ * part tout de suite : l'enfoncement d'un bouton ne l'attend pas, et une liste
+ * qui se recompose s'atténue dès l'appui — ce n'est pas une attente, c'est un
+ * remplacement.
+ *
+ * **Le minuteur se replace à chaque reprise d'attente**, et se coupe dès que
+ * l'attente cesse. Sans cela, une seconde requête héritait du seuil déjà
+ * franchi par la première et son squelette apparaissait instantanément.
+ */
+export function useAttenteVisible(enAttente: boolean): boolean {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (!enAttente) {
+      setVisible(false);
+      return;
+    }
+    const minuteur = setTimeout(() => setVisible(true), MOTION.seuilDAttente);
+    return () => clearTimeout(minuteur);
+  }, [enAttente]);
+
+  return visible;
+}

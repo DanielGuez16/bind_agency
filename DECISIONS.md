@@ -9153,3 +9153,47 @@ Aucune route ne liste les commerces côté administration ; c'est le seul endroi
 du produit où un salon nommé est sous les yeux d'un administrateur. La place est
 mauvaise — on ne pense pas « tournée » quand on cherche à débloquer un salon —
 et le code le dit là où quelqu'un le lira.
+
+---
+
+## 2026-08-22 — L'attente : deux règles sur trois retirent quelque chose
+
+**« Lent » veut dire « je ne sais pas si ça marche ».** Une partie de la lenteur
+est réelle et se corrige en code ; le mot que les testeurs emploient couvre
+autre chose. Ce qui produit la sensation n'est pas la durée mais l'incertitude :
+rien n'a bougé, donc on appuie une seconde fois — et la lenteur perçue devient
+mesurée.
+
+**Les quatre durées sont des jetons, pas des nombres dans un écran.** Appui 100,
+état 160, fondu 220, seuil 400. Elles disent *quand on montre*, pas comment on
+décore.
+
+**Rien ne clignote sous quatre cents millisecondes.** Le squelette ne part plus
+au premier instant. La vue reste montée et vide pendant le seuil — ce n'est pas
+un blanc, c'est ce qu'il y avait déjà, et sur une seconde ouverture il y a même
+l'en-tête, qui vit hors des quatre états.
+
+Le seuil ne gouverne **que** les indicateurs d'attente. Une réponse à un geste
+part tout de suite ; l'enfoncement d'un bouton ne l'attend pas, et l'atténuation
+d'une liste qui se recompose part à l'appui — ce n'est pas une attente, c'est un
+remplacement.
+
+**La photo réserve sa place avant d'arriver.** Le défaut n'était pas la lenteur
+de l'image : c'était que la carte grandissait et poussait le texte qu'on lisait.
+Une image lente dans une place réservée se remarque à peine ; une image rapide
+qui redimensionne sa carte fait sauter la liste entière. Le fond est un aplat
+`bg.deep` et non un blanc, qui se confondrait avec la surface de la carte.
+
+Opacité seule, jamais d'échelle ni de translation : une photo qui glisse déplace
+le texte voisin dans le regard, ce qui est exactement le défaut qu'on répare.
+
+**La garde des squelettes attend maintenant le seuil.** Elle vérifie toujours la
+même chose — chaque écran déclare sa silhouette — mais son `getByTestId` est
+devenu un `findByTestId`. La règle a changé le moment, pas l'exigence.
+
+**Une mutation a survécu, et elle avait raison de survivre.** Poser l'opacité
+initiale à un ne changeait rien : un effet la remet à zéro à chaque source, ce
+qui est le vrai mécanisme — sans lui, une vignette recyclée par une liste
+montrerait la photo précédente à pleine opacité pendant que la suivante charge.
+Il a fallu casser les deux pour que le test tombe, et c'est ce qui prouve
+qu'il éprouve le mécanisme et non son écriture.

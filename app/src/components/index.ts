@@ -17,6 +17,7 @@ export { Icone, type NomIcone } from './Icone';
 export { Jauge } from './Jauge';
 export { Marque, PLANCHER_DU_LOGOTYPE } from './Logo';
 export { PaveDeSaisie, TOUCHES } from './PaveDeSaisie';
+export { Photo } from './Photo';
 export {
   BarresParPalier,
   BarresParPeriode,
@@ -24,13 +25,7 @@ export {
   type BarreDePalier,
   type BarreVerticale,
 } from './Graphiques';
-export {
-  Apparition,
-  Fondu,
-  useEnfoncement,
-  useMouvementReduit,
-  vibration,
-} from './Mouvement';
+export { Apparition, Fondu, useAttenteVisible, useEnfoncement, useMouvementReduit, vibration } from './Mouvement';
 export { EnTeteDEcran, Filet, prenomDe, type Compteur } from './EnTete';
 export { LigneDeContrepartie, TierBadge, type Palier, type TierBadgeProps } from './TierBadge';
 export { BadgesDeProfil, chipDeComportement, type BadgeDeProfil } from './Badges';

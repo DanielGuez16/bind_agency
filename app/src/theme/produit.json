@@ -199,9 +199,17 @@
     "negativeBadges": "aucun"
   },
   "motion": {
-    "$pourquoi": "tokens.json donne les trois durées et la liste des propriétés animables. La pulsation du squelette n'y est pas : elle appartient à l'écriture des états, pas à la marque.",
+    "$pourquoi": "tokens.json donne les trois durées de la marque et la liste des propriétés animables. Ce qui est ici appartient à l'écriture des états, pas à la marque : la pulsation du squelette, et les quatre durées de l'attente. **Elles disent quand on montre, pas comment on décore** — deux des trois règles de l'attente retirent quelque chose.",
     "skeletonLoop": 1400,
-    "easing": "ease-out"
+    "easing": "ease-out",
+    "appui": 100,
+    "$appui": "L'accusé de réception du geste, et il ne dépend d'aucun réseau. Jamais négociable : c'est ce qui empêche d'appuyer une seconde fois, et un second appui allonge vraiment l'attente — la lenteur perçue devient alors mesurée.",
+    "etat": 160,
+    "$etat": "Un état qui change sur place, sans que rien ne se déplace.",
+    "fondu": 220,
+    "$fondu": "Une image qui se fond, une liste qui se recompose. Un seul aller-retour, jamais interrompu : une liste qui revient en 40 ms tient quand même ses 220 ms, sans quoi l'atténuation deviendrait un voyant qui clignote.",
+    "seuilDAttente": 400,
+    "$seuilDAttente": "Le seuil sous lequel aucun indicateur d'attente n'apparaît. Un indicateur qui vient et s'en va en 200 ms est un défaut visuel, pas une information. Il ne gouverne **que** les indicateurs : une réponse à un geste part tout de suite, et l'atténuation d'une liste qui se recompose part à l'appui — ce n'est pas une attente, c'est un remplacement."
   },
   "marque": {
     "$pourquoi": "Le seuil qui décide entre le logotype et la marque compacte. La règle : le logotype partout où on a la place de le lire, la marque compacte partout ailleurs — le seuil est la lisibilité des quatre lettres, pas le support. `largeurParLettre` est mesuré dans la fonte du produit : « B!ND » occupe 2,368 fois le corps pour quatre lettres. `pixelsParLettreMinimum` est encadré par deux mesures et non choisi : 6,75 px par lettre au lanceur Android à 48 dp, dont la capture est illisible ; 11,1 px au plus petit usage in-app, qui se lit. Lu par components/Logo.tsx, qui refuse de rendre en dessous, et par scripts/cuire-la-marque.mjs.",
