@@ -1015,6 +1015,9 @@ export const en = {
     stockageWeb: 'Browser storage - development only',
   },
   composition: {
+    fermerLOffre: 'Stop offering at this tier',
+    rouvrirLOffre: 'Offer at this tier again',
+    offreFermeeCorps: 'Not offered at this tier. Past bookings still show it — closing changes nothing behind you.',
     corriger: 'Correct',
     retirerLaPrestation: 'Remove',
     remplacer: 'Change duration or tier',

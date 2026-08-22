@@ -52,12 +52,6 @@ const SANS_APPELANT: Record<string, string> = {
   // protège personne, et donnerait à croire que la porte reste ouverte tant
   // qu'on ne l'a pas pressé.
   fermerLaReprise: 'a-instruire',
-  // **Le catalogue se compose et ne se corrige pas**, et ça ne tient pas.
-  // Les trois restent : ce qui manque est un écran, pas une raison. La
-  // suppression attend une réponse de Design — ce qu'elle doit faire quand des
-  // réservations passées citent la prestation — et c'est une question de
-  // produit, pas de code mort.
-  activerUneOffre: 'a-instruire',
 };
 
 const RAISONS = new Set(['contrat', 'technique', 'a-instruire']);
