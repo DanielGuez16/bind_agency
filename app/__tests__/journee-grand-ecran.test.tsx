@@ -84,8 +84,16 @@ function monter(journee: typeof JOURNEE = JOURNEE) {
   const api = new ApiClient({
     baseUrl: 'https://api.test',
     coffre: { lire: async () => null, ecrire: async () => {} },
-    fetchImpl: async () =>
-      ({ ok: true, status: 200, json: async () => journee }) as Response,
+    fetchImpl: (async (url: RequestInfo | URL) => {
+      // **La route de reprise répond une liste, pas la journée.** Ce décor
+      // répondait le même objet à toutes les routes : c'est un montage qui ne
+      // prouve rien, et il a fallu qu'un second appel apparaisse pour que ça
+      // se voie. Chaque chemin rend maintenant sa forme.
+      if (String(url).includes('/support-access')) {
+        return { ok: true, status: 200, json: async () => [] } as Response;
+      }
+      return { ok: true, status: 200, json: async () => journee } as Response;
+    }) as unknown as typeof fetch,
   });
 
   return render(

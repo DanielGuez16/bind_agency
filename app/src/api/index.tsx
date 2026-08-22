@@ -449,10 +449,20 @@ export class Api {
   }
 
   /** Les commerces dont l'appelant est membre. Une liste, jamais un objet. */
+  /**
+   * Les commerces dont je suis membre.
+   *
+   * **Le fuseau est servi depuis toujours et n'était pas déclaré ici.** Sans
+   * lui, chaque écran retombait sur celui de l'appareil, ce qui n'a de
+   * conséquence visible que le jour où le gérant voyage — et la règle du
+   * produit convertit sur le fuseau du commerce, parce que tout ce qu'il lit
+   * s'y passe.
+   */
   mesCommerces(signal?: AbortSignal) {
-    return this.client.request<{ id: string; name: string }[]>(routes.mesCommerces(), {
-      signal,
-    });
+    return this.client.request<{ id: string; name: string; timezone: string }[]>(
+      routes.mesCommerces(),
+      { signal },
+    );
   }
 
   /**
