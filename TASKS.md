@@ -1127,6 +1127,15 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       Téléphone au format international, normalisé avant validation ; nom
       dépouillé de ses espaces avant d'être compté ; adresse d'au moins dix
       caractères. 13 tests neufs*
+- [x] **La grâce a trois états, et le voisinage part**
+      *`grace_ends_at` sur le commerce, et non sur l'abonnement : la route de
+      l'abonnement rend `null` quand il n'y en a pas, c'est-à-dire exactement
+      dans les deux états où le bandeau a quelque chose à dire. `status` ne les
+      distingue pas — un salon en grâce et un salon abonné sont tous deux
+      `active`. `reperesDuVoisinage` retirée de bout en bout, `portee_locale`
+      l'a remplacée : route, schéma, service, deux réglages, ses tests et deux
+      lignes de la carte. `revoquerUnTerminal`, `modifierUnItem` et
+      `supprimerUnItem` restent, avec leur raison écrite. 2 tests neufs*
 - [x] **Trois dettes nommées retirées, et deux chiffres ajoutés**
       *`engagement_rate` et `avg_views` sur le compte d'une demande : le second
       chiffre de la décision, souvent le premier regardé. **Aucun mécanisme ne

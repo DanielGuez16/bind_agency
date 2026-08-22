@@ -200,6 +200,23 @@ class BusinessRead(BaseModel):
     cover_photo_key: str | None
     menu_url: str | None
     status: BusinessStatus
+    #: Quand la période de grâce se ferme, et le salon quitte le fil.
+    #:
+    #: **Sans elle le bandeau n'a qu'un état au lieu de trois.** Abonné, il ne
+    #: s'affiche pas ; en grâce, il dit combien de jours restent ; la grâce
+    #: passée, il dit que le salon n'est plus visible et pourquoi. `status`
+    #: seul ne les distingue pas : un salon en grâce et un salon abonné sont
+    #: tous deux `active`.
+    #:
+    #: **Nulle quand un abonnement vivant existe** : il n'y a alors plus
+    #: d'échéance à surveiller, et c'est le premier des trois états. Nulle aussi
+    #: sur une fiche qui n'a jamais été activée — la grâce s'ouvre à
+    #: l'activation, pas à la préparation.
+    #:
+    #: Servie ici et non sur l'abonnement, parce que la route de l'abonnement
+    #: rend `null` quand il n'y en a pas — c'est-à-dire exactement dans les deux
+    #: états où le bandeau a quelque chose à dire.
+    grace_ends_at: datetime | None
     created_at: datetime
 
 
@@ -223,42 +240,8 @@ class EtatDeLaCompositionRead(BaseModel):
     status: BusinessStatus
 
 
-class FourchetteRead(BaseModel):
-    """La moitié centrale du voisinage, jamais ses extrêmes.
-
-    Deux entiers et pas une moyenne : « 4 à 6 » se lit comme un repère, « 5,2 »
-    se lit comme une note.
-    """
-
-    model_config = ConfigDict(from_attributes=True)
-
-    bas: int
-    haut: int
-
-
 class PalierLePlusOffertRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     platform: Platform
     content_format: ContentFormat
-
-
-class ReperesDuVoisinageRead(BaseModel):
-    """Ce que font les salons d'à côté, pour l'état vide du commerce.
-
-    **Les fourchettes sont nulles sous le plancher d'effectif**, et `commerces`
-    est rendu quand même : l'écran doit pouvoir écrire « quatre salons autour de
-    vous, pas encore assez pour se comparer » plutôt qu'afficher un vide qu'on
-    prendrait pour une panne.
-    """
-
-    model_config = ConfigDict(from_attributes=True)
-
-    #: Le rayon retenu, en mètres. Rendu parce que l'écran l'écrit : « les
-    #: salons dans 2 km » situe le repère, « le quartier » ne situe rien.
-    rayon_metres: int
-    commerces: int
-    prestations_publiees: FourchetteRead | None
-    places_par_jour: FourchetteRead | None
-    #: Le palier le plus offert autour, ou `None` si personne n'offre rien.
-    palier_le_plus_offert: PalierLePlusOffertRead | None

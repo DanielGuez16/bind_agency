@@ -798,18 +798,6 @@ export class Api {
     });
   }
 
-  /**
-   * Ce que font les salons d'à côté. Pour les états vides du commerce.
-   *
-   * Des fourchettes, jamais des chiffres exacts, et rien sous cinq salons
-   * alentour : un commerce ne doit pas pouvoir lire le catalogue de son voisin
-   * en s'inscrivant à côté de lui.
-   */
-  reperesDuVoisinage(businessId: string, signal?: AbortSignal) {
-    return this.client.request<ReperesDuVoisinage>(routes.reperesDuVoisinage(businessId), {
-      signal,
-    });
-  }
 
   /**
    * Le commerce constate une absence. **Motif obligatoire** : il pénalise

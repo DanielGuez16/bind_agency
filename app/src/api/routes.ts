@@ -110,7 +110,6 @@ export const routes = {
     chemin(`/business/${businessId}/photos/${photoId}`),
   modifierLeCommerce: (businessId: string) => chemin(`/business/${businessId}`),
   compositionDuCommerce: (businessId: string) => chemin(`/business/${businessId}/composition`),
-  reperesDuVoisinage: (businessId: string) => chemin(`/business/${businessId}/neighbourhood`),
   etapesDActivation: (businessId: string) => chemin(`/business/${businessId}/activation`),
   journeeDuCommerce: (businessId: string) => chemin(`/business/${businessId}/bookings`),
   contrepartiesDuCommerce: (businessId: string) =>
@@ -239,7 +238,6 @@ export const METHODES: Record<keyof typeof routes, ('GET' | 'POST' | 'PATCH' | '
     retirerUnePhoto: ['DELETE'],
     modifierLeCommerce: ['GET', 'PATCH'],
     compositionDuCommerce: ['GET'],
-    reperesDuVoisinage: ['GET'],
     etapesDActivation: ['GET'],
     journeeDuCommerce: ['GET'],
     contrepartiesDuCommerce: ['GET'],

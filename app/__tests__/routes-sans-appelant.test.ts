@@ -57,16 +57,20 @@ const SANS_APPELANT: Record<string, string> = {
   mesReprises: 'a-instruire',
   ouvrirUneReprise: 'a-instruire',
   fermerLaReprise: 'a-instruire',
-  // Les trois repères du voisinage, écrits pour l'état vide du commerce.
-  reperesDuVoisinage: 'a-instruire',
-  // Le catalogue se compose mais ne se corrige pas : ni modifier, ni
-  // supprimer, ni rouvrir une offre.
+  // **Le catalogue se compose et ne se corrige pas**, et ça ne tient pas.
+  // Les trois restent : ce qui manque est un écran, pas une raison. La
+  // suppression attend une réponse de Design — ce qu'elle doit faire quand des
+  // réservations passées citent la prestation — et c'est une question de
+  // produit, pas de code mort.
   modifierUnItem: 'a-instruire',
   supprimerUnItem: 'a-instruire',
   activerUneOffre: 'a-instruire',
   // La prise en main d'une fiche préparée sur le terrain.
   rattacherLaFiche: 'a-instruire',
-  // Révoquer un terminal de notification.
+  // **Révoquer un terminal : une capacité de sécurité à qui il manque son
+  // écran.** Elle reste, et c'est une décision : un jeton de terminal se
+  // révoque comme un jeton social, et retirer la méthode retirerait le geste
+  // avec elle. L'écran viendra.
   revoquerUnTerminal: 'a-instruire',
 };
 

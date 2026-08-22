@@ -18,6 +18,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 import sqlalchemy as sa
+from httpx import AsyncClient
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncSession
 
@@ -64,6 +65,9 @@ class PushMuet:
 
     async def envoyer(self, envois):
         return []
+
+
+PREFIX = get_settings().api_v1_prefix
 
 
 async def ouvert(session: AsyncSession) -> tuple[Business, User]:
@@ -548,3 +552,75 @@ async def test_l_ouverture_ne_se_confond_pas_avec_l_activation(
     assert list(vers_actif) == [business_service.REASON_ACTIVATION]
     assert ouverture is not None
     assert ouverture.extra["grace_ends_at"] == business.grace_ends_at.isoformat()
+
+
+# --------------------------------------------------------------------------
+# les trois états du bandeau
+# --------------------------------------------------------------------------
+
+
+async def test_l_echeance_de_grace_est_servie_sur_le_commerce(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """**Trois états, et `status` n'en distingue qu'un.**
+
+    Un salon en grâce et un salon abonné sont tous deux `active` : sans
+    l'échéance, le bandeau ne peut pas dire lequel des deux il regarde, ni
+    combien de jours restent.
+    """
+    business, proprietaire = await commerce_en_cours(session)
+    await business_service.activate_business(
+        session, business=business, actor=Actor.from_user(proprietaire)
+    )
+    await session.commit()
+
+    entetes = await _entetes(client, proprietaire)
+    lu = (await client.get(f"{PREFIX}/business/{business.id}", headers=entetes)).json()
+
+    assert lu["status"] == BusinessStatus.ACTIVE.value
+    assert lu["grace_ends_at"] is not None
+    # L'échéance est bien celle de la grâce, et pas une date quelconque : elle
+    # tombe à la durée configurée, pas aujourd'hui.
+    echeance = datetime.fromisoformat(lu["grace_ends_at"])
+    attendue = datetime.now(UTC) + timedelta(
+        seconds=get_settings().subscription_grace_period_seconds
+    )
+    assert abs((echeance - attendue).total_seconds()) < 120
+
+
+async def test_un_commerce_qui_paie_n_a_plus_d_echeance_servie(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """**Le sens inverse, et sans lui le premier ne prouverait rien.**
+
+    Une route qui rendrait toujours une échéance passerait le test précédent.
+    Ici l'abonnement referme la grâce, et le bandeau ne doit plus s'afficher.
+    """
+    business, proprietaire = await commerce_en_cours(session)
+    tarif = await plan(session)
+    await subscription_service.souscrire(
+        session,
+        business=business,
+        plan_id=tarif.id,
+        actor=proprietaire,
+        provider=LogBillingProvider(),
+    )
+    await business_service.activate_business(
+        session, business=business, actor=Actor.from_user(proprietaire)
+    )
+    await session.commit()
+
+    entetes = await _entetes(client, proprietaire)
+    lu = (await client.get(f"{PREFIX}/business/{business.id}", headers=entetes)).json()
+
+    assert lu["grace_ends_at"] is None
+
+
+async def _entetes(client: AsyncClient, proprietaire) -> dict[str, str]:
+    jetons = (
+        await client.post(
+            f"{PREFIX}/auth/login",
+            json={"email": proprietaire.email, "password": MOT_DE_PASSE},
+        )
+    ).json()
+    return {"Authorization": f"Bearer {jetons['access_token']}"}
