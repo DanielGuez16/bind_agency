@@ -64,6 +64,52 @@ jobs:
           # plutôt qu'une erreur.
           fetch-depth: 0
 
+      # ------------------------------------------------------------------
+      # Ce qu'une PR retire sans le dire
+      # ------------------------------------------------------------------
+      #
+      # **Trois PR ont supprimé du travail qu'elles ne touchaient pas** — un
+      # fichier de tâches, des clés de traduction, et trois fichiers source
+      # livrés deux heures plus tôt par une autre session. **Rien ne l'a
+      # signalé** : la suite était verte, parce que les tests étaient partis
+      # avec le code qu'ils éprouvaient. Une suppression complète et cohérente
+      # ne casse rien, et c'est ce qui la rend invisible.
+      #
+      # **Ce pas nomme, il n'interdit pas.** Une suppression délibérée est un
+      # geste normal ; ce qui manquait n'était pas une interdiction mais un
+      # endroit où la voir. Il sort donc toujours à zéro, et annote — une
+      # annotation se lit sur l'onglet des fichiers, là où le relecteur est
+      # déjà, plutôt que dans un journal que personne n'ouvre.
+      - name: Suppressions non annoncées
+        if: github.event_name == 'pull_request'
+        env:
+          CIBLE: ${{ github.base_ref }}
+        run: |
+          set -u
+
+          # **La garde s'éprouve avant de servir**, sur un dépôt fabriqué pour
+          # elle : une suppression dans le premier commit d'une branche à deux,
+          # un renommage pur, et un fichier réécrit. Les trois cas où une
+          # implémentation fautive diverge de la bonne — les témoins réels, eux,
+          # sont des commits de squash dont le parent est la cible, et ne
+          # distinguent donc pas la base de fusion du parent.
+          ./scripts/suppressions.sh --epreuve \
+            || { echo "::error::la garde des suppressions ne tient plus ses trois cas"; exit 1; }
+
+          git fetch -q origin "$CIBLE" || { echo "::notice::cible $CIBLE injoignable"; exit 0; }
+          PERDUS=$(./scripts/suppressions.sh "origin/$CIBLE" HEAD)
+          [ -n "$PERDUS" ] || { echo "Aucun fichier en pure suppression."; exit 0; }
+
+          echo "### Fichiers dont cette PR retire des lignes sans en ajouter" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Si c'est voulu, il n'y a rien à faire. Sinon, la cause habituelle est une" >> "$GITHUB_STEP_SUMMARY"
+          echo "mise au propre qui repart de \`origin/main\` au lieu de la base de fusion." >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          while IFS=$'\t' read -r lignes fichier; do
+            echo "- \`$fichier\` — $lignes lignes retirées, aucune ajoutée" >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning file=$fichier::$lignes lignes retirées et aucune ajoutée. Voulu ?"
+          done <<< "$PERDUS"
+
       - id: decider
         env:
           BASE: ${{ github.event.pull_request.base.sha || github.event.before }}

@@ -8452,3 +8452,54 @@ part, et elles reviennent ici.
 sur « himself » : `\bhim\b` s'arrête à une frontière de mot que les lettres
 suivantes suppriment. La forme réfléchie était la quatrième façon d'écrire la
 même faute.
+
+---
+
+## 2026-08-22 — La garde qui manquait : nommer ce qu'une PR retire sans le dire
+
+Trois PR ont supprimé du travail qu'elles ne touchaient pas, et **rien ne l'a
+signalé** — la suite était verte parce que les tests étaient partis avec le code
+qu'ils éprouvaient. Une suppression complète et cohérente ne casse rien, et
+c'est ce qui la rend invisible.
+
+`scripts/suppressions.sh` nomme désormais tout fichier dont une branche retire
+des lignes sans en ajouter. **Il nomme, il n'interdit pas** : une suppression
+délibérée est un geste normal, ce qui manquait n'était pas une interdiction mais
+un endroit où la voir. Le pas de CI annote la PR — l'annotation se lit sur
+l'onglet des fichiers, là où le relecteur est déjà, plutôt que dans un journal
+que personne n'ouvre — et sort toujours à zéro.
+
+**La comparaison se fait à trois points depuis la cible, jamais sur le parent du
+commit.** Le parent peut être n'importe quel point de l'histoire ; c'est même la
+cause du défaut d'origine. La forme `main...HEAD` demande « qu'est-ce que cette
+branche change », qui est la question du relecteur — et elle évite le faux
+positif de la comparaison à deux points, qui accuse toute branche en retard de
+supprimer ce que `main` a gagné depuis.
+
+## Ce que la garde a coûté à écrire, et pourquoi c'était le plus instructif
+
+**Le premier décor était deux PR réelles**, la coupable et la saine. Il semblait
+idéal — de vraies données, une divergence des deux côtés. Il ne prouvait rien
+contre deux sabotages sur quatre : remplacer la base de fusion par le parent, et
+retirer le suivi des renommages. La raison est que ces témoins sont des commits
+de **squash**, dont le parent *est* la cible. Une branche à un seul commit ne
+distingue pas les deux comparaisons.
+
+Le décor est donc un dépôt fabriqué, qui monte les trois cas où une
+implémentation fautive **diverge** de la bonne : une suppression dans le premier
+commit d'une branche à deux — le parent de la tête ne la voit pas ; un
+renommage pur ; un fichier réécrit, qui ne doit jamais être nommé.
+
+**Et l'épreuve éprouvait un double.** Elle réécrivait la commande `git diff` à
+l'identique au lieu d'appeler la fonction : elle passait donc au vert quand on
+sabotait celle-ci. Une épreuve qui éprouve une copie de ce qu'elle surveille ne
+surveille rien — c'est la même faute que les deux dérivations d'un même état
+trouvées le même jour, sous une autre forme.
+
+**Le suivi des renommages n'était pas éprouvable non plus** : git le fait par
+défaut depuis 2.9, donc le retirer ne changeait rien. Le décor le désactive
+localement, ce qui est le seul cas où le drapeau porte quelque chose — et ce
+cas existe, un runner n'ayant pas forcément la configuration qu'on croit.
+
+Cinq mutations, cinq chutes, après trois décors successifs. Aucune n'aurait été
+trouvée par relecture.
