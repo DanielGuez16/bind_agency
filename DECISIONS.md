@@ -8311,3 +8311,68 @@ passait sur les vignettes de la visionneuse de carte, où l'opacité de l'appui
 était écrasée deux lignes plus bas par celle du rang — les deux se multiplient
 maintenant. La garde exige donc un emploi, et la forme non déstructurée
 `(etat) => etat.pressed` reste admise.
+
+---
+
+## 2026-08-22 — Une méthode de mise au propre qui effaçait le travail des autres
+
+**Trois PR ont supprimé du travail qu'elles ne touchaient pas.** #212 a effacé
+vingt-six lignes de `TASKS.md` — dont deux demandes de champs en attente à l'API.
+#217 a fait pire : trente et une lignes de `TASKS.md`, six clés de traduction
+dans chaque langue, et **trois fichiers source entiers** — `tournee.ts`,
+`etatDeLaFiche.ts` et leur suite de tests. La tournée d'une session voisine,
+livrée deux heures plus tôt, disparue.
+
+**Rien ne l'a signalé.** La suite était verte : les tests partaient avec le code
+qu'ils éprouvaient. Aucun écran ne s'est cassé, aucun type n'a manqué. C'est une
+session voisine qui a vu ses lignes de `TASKS.md` manquer, et l'inventaire des
+suppressions a montré que le reste était pire.
+
+**La cause est une commande, et elle est mécanique.** Ma mise au propre était :
+
+```
+git checkout -B branche origin/main     # à T1
+… travail, commits …
+git reset --soft origin/main            # à T2
+git add -A && git commit
+```
+
+`git reset --soft` déplace HEAD sur le **nouveau** `origin/main` en gardant
+l'arbre de travail — lequel porte encore l'état T1 des fichiers que je n'ai pas
+touchés. `git add -A` enregistre alors la différence, c'est-à-dire **le retrait
+de tout ce qui a été fusionné entre T1 et T2**. Plus une session voisine livre
+vite, plus la fenêtre est grande.
+
+**La correction tient en un mot :** on se remet à la **base de fusion**, pas à
+la tête qui bouge.
+
+```
+git reset --soft "$(git merge-base HEAD origin/main)"
+```
+
+La base de fusion est le point d'où la branche est partie ; l'arbre de travail
+lui correspond exactement, et `git add -A` n'enregistre plus que mon travail.
+Rebaser d'abord marche aussi, et fusionne correctement les deux côtés.
+
+**Et une vérification avant de pousser**, parce qu'une règle qu'on doit se
+rappeler ne protège personne :
+
+```
+git show --numstat HEAD | awk '$1==0 && $2>0 {print "  suppression pure :", $3}'
+```
+
+Un fichier en pure suppression dans une PR qui prétend ajouter quelque chose est
+presque toujours un accident. Trois l'étaient.
+
+**Ce que `TASKS.md` méritait d'être dit en plus** — et la session voisine l'a
+écrit avant moi : ce fichier est une **liste**, pas un état. Deux sessions y
+ajoutent des lignes différentes, et aucune n'a de raison d'écraser l'autre. Un
+conflit s'y résout en gardant les deux côtés ; `--ours` et `--theirs` y sont
+presque toujours le mauvais geste. C'est le canal qui a livré quatre rondes de
+champs en deux jours, et une demande effacée est une demande qui ne revient pas.
+
+**Un défaut trouvé en restaurant, et c'est la seule bonne nouvelle.** La garde
+des pronoms genrés ne mordait pas sur « himself » : `\bhim\b` s'arrête à la
+frontière de mot, que les lettres suivantes suppriment. La forme réfléchie était
+la quatrième façon d'écrire la même faute, et le libellé restauré la portait.
+Garde élargie, libellé corrigé.

@@ -1127,27 +1127,6 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       Téléphone au format international, normalisé avant validation ; nom
       dépouillé de ses espaces avant d'être compté ; adresse d'au moins dix
       caractères. 13 tests neufs*
-- [x] **Le suivi de tournée : trois états, pas un**
-      *`opened_at` posé au premier aperçu, `blocked_at` à chaque prise en main
-      refusée. **Les deux premiers états étaient indistinguables** — un lien
-      jamais vu et un lien vu puis abandonné rendaient la même ligne, et ce sont
-      précisément les deux cas où la conduite diffère : revisiter, ou relancer.
-      Le troisième — arrêté sur l'engagement — se lit **sans que l'écran ait
-      rien à rapporter** : une tentative refusée est quelqu'un arrivé jusqu'au
-      mot de passe et bloqué là. `etat` dérivé des dates, jamais stocké.
-      `channel` était déjà servi. 8 tests neufs, 5 mutations vérifiées*
-- [x] **Ce qui informe un prix : la durée, la catégorie, la portée**
-      *`subscription` n'avait **aucune date** — ni ouverture ni fin, seulement
-      `current_period_end` — donc aucune durée n'était calculable. Deux colonnes,
-      reprises du journal d'audit **seulement quand un commerce n'a souscrit
-      qu'une fois**, nulles sinon : deviner rendrait une médiane que personne ne
-      sait lire. **Deux médianes servies séparément**, terminée et en cours,
-      chacune avec son effectif — la censure à droite ne se résout pas en
-      moyennant les deux, elle se cache. `abonnes_par_categorie` sert la
-      catégorie des **abonnés**, distincte de celle du plan.
-      `GET /business/{id}/tier-offers/creatrices-par-palier?catalog_item_id`
-      rend un **total** par palier, ce qu'aucune composition de
-      `gains_par_palier` ne donne. 9 tests neufs, 5 mutations vérifiées*
 - [x] **L'annuaire est celui d'un salon, pas celui du produit**
       *`annuaire()` prend le commerce : `paliers_ouverts` dit « elle peut
       réserver ce que vous avez ouvert » et non « elle se qualifie quelque
@@ -1541,6 +1520,37 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       pas été transmise, et cette route dit lesquelles reviennent —
       `dossiers_touches` départage un motif difficile d'un motif
       incompréhensible. Aucun écran ne la lit encore*
+- [x] **Le bilan de tournée : l'écart entre les deux voies de remise**
+      *Trois compteurs, le délai médian entre remise et activation, et le taux
+      d'activation **par voie** — dérivés de la liste complète des fiches. Le
+      chiffre décisif n'est pas le taux global mais l'écart : il ne dit pas
+      d'abandonner le lien, il dit qu'un second passage pour attraper le
+      décideur rapporte plus qu'une relance. Et une garde tient la règle
+      centrale du mode terrain : aucun champ de mot de passe, aucune case de
+      conditions, aucune mise en ligne. 1189 tests verts, 4 mutations*
+- [ ] **L'ouverture du lien de prise en main n'est enregistrée nulle part**
+      *`GET /handover/{jeton}` rend l'aperçu sans rien écrire. Un lien jamais vu
+      et un lien vu puis abandonné rendent donc exactement la même ligne — et ce
+      sont les deux cas où la conduite diffère : l'un se **revisite**, l'autre
+      se **relance**. Il faut un `opened_at` posé au premier appel de l'aperçu.*
+      *En attendant, l'état `remis` couvre les deux et ne prétend pas les
+      distinguer : écrire « jamais ouvert » sur cette base enverrait quelqu'un
+      refaire une visite là où un message aurait suffi. Demandé à
+      `bind-agency-1a`*
+- [ ] **`prepared_by` manque sur la ligne de suivi**
+      *La planche a une colonne « prepared by ». Sur une tournée à deux
+      personnes, c'est ce qui permet de comparer les méthodes. Un nom et non un
+      identifiant, sinon l'écran devra recharger les comptes pour une colonne*
+- [ ] **Le troisième état — « arrêté sur l'engagement » — n'est pas connaissable**
+      *Distinguer « ouvert et abandonné en route » de « ouvert et arrêté sur le
+      mot de passe » suppose que la prise en main rapporte où elle s'est
+      arrêtée, donc un appel de plus depuis un écran qui n'en fait aucun.
+      Demandé en dernier et sans y tenir : deux états suffisent déjà à décider
+      entre revisiter et relancer, qui est la question qui se pose*
+- [ ] **`HandoverChannel` n'a pas de valeur pour le SMS**
+      *Il vaut `qr` ou `email`, et la planche montre aussi « by text ». Le
+      ranger sous `email` ferait mentir la colonne qui compare justement les
+      voies. Rien à faire tant que l'envoi par SMS n'existe pas*
 - [ ] **Neuf planches d'écrans portent encore la v1.0**
       *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
       passés en v3, dans la palette Ambre. Les autres suivent l'ordre du
