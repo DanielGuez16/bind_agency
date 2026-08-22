@@ -1370,6 +1370,15 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       comptage sur les trois surfaces qui clippent, où une carte est deux blocs.
       Ce qu'il faudrait est un détecteur qui sache lequel des deux blocs est le
       parent — ou une convention qui nomme les vues enveloppantes*
+      *Ce trou n'est pas celui que #208 a bouché, et la distinction vaut d'être
+      retenue : #208 a élargi **l'ensemble des formes de style lues** — les
+      styles fonctionnels des cartes pressables — en gardant la définition
+      intacte, et n'a donc rien changé aux cartes qui enveloppent. Mon
+      élargissement portait sur **la définition elle-même**, en retirant le
+      filet des marques exigées : c'est lui qui fait compter deux fois une carte
+      enveloppée, puisque l'extérieur et l'intérieur la satisfont alors tous les
+      deux. Élargir ce qu'on lit et élargir ce qu'on cherche n'ont pas les mêmes
+      conséquences*
 - [x] **L'audience v3 — l'écran le plus faible, signalé sur trois campagnes**
       *Les logos de réseau manquaient entièrement, et un compte connecté ne se
       distinguait pas d'un compte à connecter. Aucun nombre n'apparaît plus
@@ -1460,17 +1469,44 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       les réglages portent la pause. Le cas « publié mais invisible » a failli
       partir avec l'écran — une étape non bloquante manquante garde le salon
       hors des murs, et rien d'autre ne le lui disait*
-- [ ] **Le nombre de créatrices par palier n'est pas servi**
-      *La planche veut « 103 créatrices deviennent 12 » à côté du choix de
-      palier. En attendant, l'avertissement garde l'argument qu'il a — les
-      seuils d'abonnés, qui disent la même chose dans le même sens : « 50 000
-      abonnés au lieu de 1 000 » se mesure, « moins de créatrices » non. C'est
-      aussi le calcul que demande le contre-factuel de l'annuaire : une seule
-      forme pour les deux écrans*
+- [ ] **Le nombre de créatrices éligibles par palier, pour une prestation**
+      *La planche du catalogue veut « 103 créatrices deviennent 12 » quand un
+      salon monte une prestation de story à reel. C'est un compte **par palier**,
+      dans les deux sens, pour des paliers l'un et l'autre **ouverts**.*
+      *À ne pas confondre avec `portee.gains_par_palier`, qui existe déjà et
+      répond à une autre question : un gain marginal sur un palier **fermé**,
+      pour le contre-factuel de l'annuaire. Les paliers ouverts n'y figurent pas
+      par construction, et `peuvent_reserver` est « peut réserver ce qui est
+      ouvert », tous paliers confondus — aucune composition des deux ne donne le
+      nombre du catalogue. Le composer quand même produirait un chiffre faux, et
+      c'est un chiffre sur lequel un salon décide.*
+      *En attendant, l'avertissement garde l'argument qu'il a : les seuils
+      d'abonnés, qui disent la même chose dans le même sens.*
 - [ ] **L'engagement et les vues moyennes manquent sur la demande**
       *`CompteDeLaCreatriceRead` sert le pseudonyme et les abonnés ; la planche
       de la journée pose aussi « 4,2 % d'engagement · 2 140 vues moyennes » sur
       le panneau. Deux champs sur le même objet*
+- [x] **L'arbitrage v3 — la forme du malentendu, pas la conversation**
+      *La colonne « Reasons » distingue « 3 · same » de « 3 · mixed », et un
+      filtre sépare les deux files : trois refus pour le même motif disent que
+      la demande n'a jamais été comprise, trois motifs différents disent
+      l'inverse. Le dossier nomme la forme en une phrase avant tout journal, et
+      les notes sont repliées — un arbitre qui les lit toutes avant de regarder
+      la preuve juge une correspondance au lieu d'un fait. 1161 tests verts,
+      5 mutations*
+- [ ] **La quatrième issue d'arbitrage n'existe pas**
+      *« Clore sans faute » : quand le motif se répète trois fois, ni approuver
+      ni refuser n'est juste — c'est le produit qui a échoué à transmettre une
+      demande, et la trancher comme une faute la met au débit de la mauvaise
+      personne. Il faut une issue de plus à côté d'`approve` / `resubmit` /
+      `unfulfilled`, qui ferme le dossier sans toucher au score, et un événement
+      de fiabilité neutre du même genre qu'`abusive_report` — présent dans la
+      grille, de poids nul, et listé plutôt que tu.*
+      *Demandé à `bind-agency-1a`. Côté écran tout est prêt : dès que le code
+      existe, le bouton prend la première place sur un dossier « same », et
+      « approve » la reprend sur un « mixed ». `fiabilite.composantes` sert déjà
+      les neuf événements avec leur sens, et un dixième tombera sur la garde qui
+      lit l'énumération Python — il faudra sa phrase.*
 - [ ] **Neuf planches d'écrans portent encore la v1.0**
       *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
       passés en v3, dans la palette Ambre. Les autres suivent l'ordre du

@@ -643,15 +643,22 @@ describe('les surfaces de la v1.1', () => {
       'src/screens/CarteDuCommerce.tsx',
       // Le panneau du jour sans place, arrivé avec le créneau v3. Il se pose
       // sur la page comme une carte, donc il porte l'ombre comme une carte.
+      // Les trois entrées ci-dessous sont arrivées avec l'élargissement de la
+      // garde aux styles fonction : leurs cartes sont pressables, donc elles
+      // lui échappaient. Elles portaient l'ombre depuis toujours ; ce n'est pas
+      // une correction de rendu, c'est une correction d'inventaire.
+      'src/screens/ConfigurationScreen.tsx',
       'src/screens/CreneauxScreen.tsx',
       'src/screens/FiabiliteScreen.tsx',
       'src/screens/FicheScreen.tsx',
+      'src/screens/HistoriqueScreen.tsx',
       // La carte de demande de la journée v3. La première section reprend le
       // relief que la campagne 2 avait retiré à toute la colonne : une demande
       // se soupèse, le planning se parcourt.
       'src/screens/JourneeScreen.tsx',
       'src/screens/PaliersScreen.tsx',
       'src/screens/PriseEnMainScreen.tsx',
+      'src/screens/PublicationsScreen.tsx',
       'src/screens/RedemptionScreen.tsx',
       'src/screens/ReglesDesPaliers.tsx',
       'src/screens/TerrainScreen.tsx',
@@ -677,7 +684,23 @@ describe('les surfaces de la v1.1', () => {
     // ce qui est le contraire de ce qu'elle sert à faire. Le plus long des
     // douze en fait 780. Une garde qui ne voit qu'une partie de ce qu'elle
     // prétend couvrir est pire qu'aucune.
-    const bloc = /style=\{\{[\s\S]{0,900}?\}\}/g;
+    // **Les deux formes d'un style, et la seconde manquait.** La garde ne
+    // lisait que `style={{ … }}`. Or une carte pressable s'écrit
+    // `style={({ pressed }) => ({ … })}` — c'est la forme canonique du retour
+    // au toucher — et trois cartes du produit lui échappaient en silence : les
+    // réservations, les paliers, et le contrôle des publications qui vient de
+    // s'y ajouter. Une garde d'inventaire qui ne voit pas les cartes pressables
+    // ne protège que les cartes inertes, c'est-à-dire les moins nombreuses.
+    //
+    // Élargir plutôt qu'inscrire l'exception : ajouter le fichier à la liste
+    // aurait ajusté la règle à la première carte qu'elle rencontre, ce qui est
+    // exactement l'érosion que l'inventaire existe pour empêcher.
+    const blocObjet = /style=\{\{[\s\S]{0,900}?\}\}/g;
+    const blocFonction = /style=\{\([^)]*\)\s*=>\s*\(\{[\s\S]{0,900}?\}\)\}/g;
+    const blocsDe = (source: string) => [
+      ...(source.match(blocObjet) ?? []),
+      ...(source.match(blocFonction) ?? []),
+    ];
 
     /**
      * **Le filet fait partie de la définition, et il laisse un trou connu.**
@@ -705,7 +728,7 @@ describe('les surfaces de la v1.1', () => {
     for (const chemin of sources(RACINE)) {
       const relatif = chemin.slice(chemin.indexOf('src/'));
       const source = readFileSync(chemin, 'utf-8');
-      if ((source.match(bloc) ?? []).some(estUneCarte)) trouves.add(relatif);
+      if (blocsDe(source).some(estUneCarte)) trouves.add(relatif);
     }
 
     expect([...trouves].sort()).toEqual(CARTES);
@@ -729,7 +752,7 @@ describe('les surfaces de la v1.1', () => {
       // qui la porte. Chercher l'appel couvre les deux formes, et la ligne
       // d'import ne le mime pas : elle n'a pas de parenthèses.
       const poses = (source.match(/elevationDeCarte\(\)/g) ?? []).length;
-      const cartes = (source.match(bloc) ?? []).filter(estUneCarte).length;
+      const cartes = blocsDe(source).filter(estUneCarte).length;
       expect({ relatif, poses, cartes }).toEqual({ relatif, poses: cartes, cartes });
     }
   });

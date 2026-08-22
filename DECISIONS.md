@@ -8046,3 +8046,84 @@ publication, or la pause n'a de sens qu'une fois publié.
 badge REEL porte l'aplat de marque, et l'assertion tombait sur lui. Elle serait
 restée rouge quoi que fasse l'avertissement. Resserrée sur l'avertissement seul,
 elle éprouve enfin ce qu'elle annonce.
+
+---
+
+## 2026-08-20 — La file des publications, composée — et l'inventaire des cartes qui ne voyait pas la moitié du produit
+
+**La file était une pile plate.** Chaque dossier était un `View` à `gap: 6`,
+sans surface ni séparation : cinq contrôles se suivaient sans que rien dise où
+l'un finissait. Et tout s'y présentait au même poids — le pseudonyme, la preuve,
+les quatre motifs de refus, les deux boutons — de sorte qu'on ne distinguait pas
+ce qu'on juge de ce avec quoi on tranche. C'est une bonne part du « on ne
+comprend pas à quoi sert la page ».
+
+**La grammaire des surfaces s'applique ici comme aux réservations.** Une carte à
+ombre demande une décision, une carte à filet informe. Un dossier qu'un arbitre
+a en main informe : `needs_human_review` portait déjà la distinction dans les
+données, elle devient visible.
+
+**Une seule décision ouverte à la fois, et c'est ce qui rend l'orange tenable.**
+Le bloc de marque est un signe de ponctuation ; cinq boutons pleins dans une
+colonne n'en sont plus un. La file d'arbitrage avait tranché la même question et
+son argument vaut ici. **La preuve, elle, reste visible sur tous les dossiers** :
+c'est ce qu'on vient lire, et la cacher ferait payer un clic pour voir avant de
+décider. Seule la décision se déplace. Le premier dossier à trancher est ouvert
+d'emblée — un écran qui n'ouvre rien ne sert qu'à ceux qui savent déjà qu'il y a
+quelque chose à ouvrir, défaut relevé sur l'arbitrage en campagne 2.
+
+**L'inventaire des cartes ne lisait que les styles objet.** `style={{ … }}` était
+la seule forme cherchée. Or une carte pressable s'écrit
+`style={({ pressed }) => ({ … })}` — la forme canonique du retour au toucher — et
+**aucune carte pressable du produit n'était donc comptée**. Élargi plutôt
+qu'assorti d'une exception : inscrire le fichier aurait ajusté la règle à la
+première carte qu'elle rencontre, ce qui est exactement l'érosion que
+l'inventaire existe pour empêcher.
+
+**L'élargissement a trouvé deux défauts de rendu que personne ne voyait.** La
+carte de section de `ConfigurationScreen` et la porte des règles de
+`PaliersScreen` portaient un coin de 18 px sans ombre — « un coin de 18 px sans
+ombre flotte au lieu de se poser », passation §2. Les deux sont pressables, donc
+les deux étaient invisibles à la garde depuis qu'elle existe. Une ligne chacune.
+
+C'est la troisième fois en deux jours qu'une garde partielle laisse passer
+précisément ce qu'elle prétend surveiller : le rendu asynchrone qui ne cherchait
+qu'en début de ligne, le pronom genré cherché par appariement d'apostrophes, et
+maintenant les cartes cherchées sous une seule forme de style. La question à
+poser à chaque garde reste la même : *quelles autres façons d'écrire la même
+chose existe-t-il ?*
+
+---
+
+## 2026-08-20 — L'arbitrage montre une forme, pas une correspondance
+
+**Ce qui doit se voir n'est pas la conversation absente, c'est sa forme.** Rendre
+visible ce qui n'a pas été dit est le travail de cet écran — sinon l'arbitre
+tranche sur la dernière tentative comme si les deux précédentes n'existaient
+pas. Mais pas en affichant des notes libres l'une sous l'autre : cela ferait
+juger un ton, et un arbitre qui lit deux paragraphes se met à arbitrer la
+politesse.
+
+Ce qui est lisible et décisif est la **répétition du motif**. La colonne écrit
+« 3 · same » ou « 3 · mixed », un filtre sépare les deux files, et le dossier
+nomme la forme en une phrase avant tout journal.
+
+**Deux tentatives au moins, sinon ce n'est pas une répétition.** Un motif unique
+n'est pas « le même motif répété » : écrire « 1 · same » ferait lire une
+répétition là où il n'y a qu'un premier refus, et proposerait plus tard la
+clôture sans faute avant qu'on ait pu se tromper deux fois.
+
+**Et deux sur trois ne suffisent pas.** Deux fois la mention et une fois le lieu
+est un mélange : la créatrice a corrigé quelque chose entre-temps. Le test qui
+le tient est celui qui diverge — un décor recopié de la planche, trois fois le
+même motif, ne distingue pas une implémentation qui compare les motifs d'une qui
+répond toujours « same ».
+
+**Un sélecteur ancré sur un libellé traduit se casse dès que le mot apparaît deux
+fois.** Les motifs s'alignent désormais sans leur numéro, donc le même mot vit
+dans la colonne et dans la pastille : trois tests cherchaient le texte et
+trouvaient les deux. Les pastilles portent maintenant leur code en identifiant.
+
+**La quatrième issue reste à construire, et elle touche le modèle** — consigné
+dans `TASKS.md`, demandé à la session des routes. Rien n'est inventé côté client
+en attendant : un statut que le serveur ne connaît pas ne se simule pas.

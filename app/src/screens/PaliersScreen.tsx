@@ -477,6 +477,10 @@ function PorteDesRegles({ onPress }: { onPress: () => void }) {
         borderColor: c['line.default'],
         backgroundColor: c['bg.surface'],
           opacity: pressed ? 0.7 : 1,
+          // Même défaut que la carte de configuration, et même raison de ne pas
+          // l'avoir vu : l'inventaire ne lisait pas les styles fonction, donc
+          // aucune carte pressable n'était comptée.
+          ...elevationDeCarte(),
         })}
     >
       <View style={{ flex: 1, gap: 2 }}>
