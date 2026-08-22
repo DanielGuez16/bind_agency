@@ -9197,3 +9197,42 @@ qui est le vrai mécanisme — sans lui, une vignette recyclée par une liste
 montrerait la photo précédente à pleine opacité pendant que la suivante charge.
 Il a fallu casser les deux pour que le test tombe, et c'est ce qui prouve
 qu'il éprouve le mécanisme et non son écriture.
+
+## 2026-08-22 — Le mur sert la vignette, et la vignette descend à 320
+
+**Mesuré avant de décider.** Un fil de vingt salons à quatre prestations charge
+quatre-vingts images d'un coup — la grille du mur est un `ScrollView` et un
+`.map`, rien n'y est virtualisé. Photographies déjà réduites : 10,5 Mo. Photos
+sorties d'un téléphone : 52 Mo. Le JSON qui les nomme : 50 Ko.
+
+Autrement dit, **les images sont 99,5 % de ce qui part sur le réseau**, et toute
+optimisation du JSON aurait été du temps perdu.
+
+**Deux défauts distincts, et le premier annulait le second.** Le mur appelait
+`urlDuMedia` — l'original, borné à 2000 pixels — et non `urlDeLaVignette`. La
+dérivée existait, elle était réglée, et personne ne la demandait. Puis la
+vignette elle-même valait 480 pixels, calibrés sur des cartes de 150 points que
+la grille v3 ne rend plus.
+
+Les cinq cadres qui lisent une vignette ont été mesurés : 100 points sur le mur,
+64 sur la fiche, 56 dans la galerie et dans la carte, 40 × 52 dans la bande de
+la visionneuse. Le plus grand demande 300 pixels à densité triple. **320 les
+couvre tous, et rien de plus.**
+
+**L'argument qui protégeait l'original ne tenait pas.** Le contrat disait « le
+mur sert l'original » pour éviter deux cadrages du même salon selon sa position.
+Or les deux dérivées bornent le grand côté **sans recadrer** : elles rendent le
+même cadre, avec moins de pixels. Le commentaire décrivait aussi un héros de
+520 points à fond perdu que la grille v3 ne rend plus. La fiche de salon, elle,
+continue de demander l'original — c'est le seul endroit où une vignette serait
+agrandie.
+
+**La mémoire compte autant que les octets.** `Image` décode avant de réduire :
+une image de 2000 × 2000 occupe seize mégaoctets quel que soit le cadre où on la
+pose. Quatre-vingts d'un coup expliquent le défilement qui accroche avant même
+que le réseau soit en cause.
+
+**Le nouveau plafond ne se relit pas sur l'existant.** Une vignette déposée hier
+reste à 480 : plus lourde que nécessaire, parfaitement correcte. Regénérer
+demanderait un balayage de tout le dépôt pour un gain qui se réalise de lui-même
+à mesure que les photos se remplacent.

@@ -225,3 +225,65 @@ describe('un fil sans quartier ne rend pas un mur vide en silence', () => {
     await vue.unmount();
   });
 });
+
+/**
+ * Ce que le mur tire réellement du réseau.
+ *
+ * **Le mur demandait l'original, et c'était l'essentiel de sa lenteur.** Ses
+ * trois cadres font 100, 52 et 44 points ; l'original est borné à 2000 pixels.
+ * Mesuré sur un fil de vingt salons — quatre-vingts images, et la grille ne
+ * virtualise pas : 10,5 Mo de photographies déjà réduites, 52 Mo de photos
+ * sorties d'un téléphone, contre 50 Ko pour le JSON qui les nomme.
+ *
+ * **Le décor porte des clés distinctes par cadre.** Sans cela, un mur qui
+ * demanderait la vignette pour l'aperçu et l'original pour l'en-tête passerait
+ * la moitié du test sans qu'on le voie — et c'est précisément l'état d'avant,
+ * où une seule des trois images était réglée.
+ */
+const CLE_PRESTATION = 'photos/aaaa1111';
+const CLE_COUVERTURE = 'photos/bbbb2222';
+
+const FIL_AVEC_PHOTOS = {
+  ...FIL,
+  commerces: [
+    {
+      ...commerce('b1', 'Vela Nail Studio', 'wynwood', [
+        { ...item('o1', 'Gel manicure', 45, 'story'), photo_key: CLE_PRESTATION },
+      ]),
+      cover_photo_key: CLE_COUVERTURE,
+    },
+    FIL.commerces[2],
+  ],
+  quartiers: [
+    { quartier: 'wynwood', commerces: 1, prestations: 1, distance_metres: 320 },
+    { quartier: 'brickell', commerces: 1, prestations: 1, distance_metres: 4100 },
+  ],
+} as unknown as Fil;
+
+describe('le mur ne tire jamais un original', () => {
+  it('demande la vignette pour la photo d’une prestation', async () => {
+    const vue = await monter(FIL_AVEC_PHOTOS);
+    // Le composant `Photo` porte le cadre, et son `Image` le suffixe `-image` :
+    // c'est celle-là qui tient l'adresse réellement demandée.
+    await waitFor(() => expect(screen.getByTestId('apercu-o1-photo-image')).toBeTruthy());
+
+    const uri = String(screen.getByTestId('apercu-o1-photo-image').props.source.uri);
+    expect(uri).toContain(CLE_PRESTATION);
+    // **L'assertion qui sépare les deux implémentations.** `toContain(cle)`
+    // seule passerait avec l'original, puisque les deux URL portent la clé :
+    // c'est le suffixe qui dit laquelle des deux dérivées part sur le réseau.
+    expect(uri).toContain('@vignette');
+    await vue.unmount();
+  });
+
+  it('et pour la couverture qui illustre le quartier ouvert', async () => {
+    const vue = await monter(FIL_AVEC_PHOTOS);
+    await waitFor(() => expect(screen.getByTestId('quartier-ouvert')).toBeTruthy());
+
+    const uri = String(screen.getByTestId('quartier-ouvert-photo').props.source.uri);
+
+    expect(uri).toContain(CLE_COUVERTURE);
+    expect(uri).toContain('@vignette');
+    await vue.unmount();
+  });
+});

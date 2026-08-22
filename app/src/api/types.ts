@@ -354,12 +354,16 @@ export type CommerceDuFil = {
   neighborhood: Neighborhood | null;
   cover_photo_key: string | null;
   /**
-   * **Et le mur en sert l'original, jamais la vignette.** Celle-ci est bornée à
-   * 480 px sur le grand côté : sur un héros de 520 points à fond perdu, elle
-   * serait agrandie trois fois. Une seule source pour tous les formats, même là
-   * où un triptyque de 158 points s'en contenterait — deux sources donneraient
-   * deux cadrages du même salon selon sa position dans le cycle, ce que le mur
-   * existe précisément pour éviter.
+   * **Le mur en sert la vignette, la fiche l'original.** Ce commentaire disait
+   * l'inverse, et il décrivait un héros de 520 points à fond perdu que la
+   * grille v3 ne rend plus : les trois cadres du mur font 100, 52 et 44 points.
+   * Servir l'original y coûtait 10,5 Mo par fil de vingt salons, mesurés,
+   * contre 0,8 avec la vignette.
+   *
+   * L'argument des deux cadrages ne s'appliquait pas : les deux dérivées bornent
+   * le grand côté sans recadrer, donc elles rendent le même cadre. La fiche, où
+   * la couverture occupe toute la largeur, continue de demander l'original —
+   * c'est là, et seulement là, qu'une vignette serait agrandie.
    */
   distance_metres: number;
   items: ItemDuFil[];
