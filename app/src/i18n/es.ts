@@ -268,6 +268,7 @@ export const es: Catalogue = {
       published_late: 'Publicar después del plazo',
       resubmit_required: 'Que te pidan enviarlo de nuevo',
       no_show: 'No presentarte',
+      cancelled_late: 'Cancelar a última hora',
       unfulfilled: 'Una publicación nunca entregada',
       business_rating: 'Una valoración dejada por un local',
       abusive_report: 'Un aviso tuyo que quedó descartado',

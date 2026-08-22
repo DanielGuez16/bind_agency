@@ -403,6 +403,12 @@ class Settings(BaseSettings):
             "first_pass_compliant": Decimal("2"),
             "resubmit_required": Decimal("-3"),
             "no_show": Decimal("-25"),
+            # **Entre le retard de publication et l'absence.** Prévenir tard
+            # coûte — le salon a perdu son créneau — mais moins que disparaître,
+            # sans quoi rien n'inciterait à prévenir. L'écart avec `no_show` est
+            # ce qui porte l'incitation : le réduire l'affaiblit, l'annuler la
+            # supprime.
+            "cancelled_late": Decimal("-10"),
             "unfulfilled": Decimal("-30"),
             "business_rating": Decimal("0"),
             # **Zéro, et il le reste** tant qu'aucun abus réel n'a été observé.
