@@ -26,7 +26,6 @@ from app.models.jobs import Job
 from app.models.notifications import DeviceToken
 from app.models.oauth import OAuthState
 from app.models.outbox import OutboundMessage
-from app.models.platform_asset import PlatformAsset
 from app.models.reliability import ReliabilityEvent
 from app.models.support import BusinessSupportAccess
 from app.models.tiers import Tier, TierOffer
@@ -55,7 +54,6 @@ __all__ = [
     "MenuImport",
     "OAuthState",
     "OutboundMessage",
-    "PlatformAsset",
     "Proof",
     "RedemptionCode",
     "RefreshToken",
