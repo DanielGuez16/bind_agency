@@ -50,11 +50,12 @@ import {
 import { formatDate } from '../format';
 import { useI18n } from '../i18n';
 import { ECART_DES_COLONNES, useGabarit } from '../shell/gabarit';
-import { radius, tierTokens, useColors } from '../theme';
+import { radius, tierTokens, useColors, size } from '../theme';
 import { Ecran } from './Ecran';
 import { PreuveSoumise } from './Preuve';
 import { MOTIFS, libelleDApprobation, libelleDuMotif, type MotifDeDecision } from './motifs';
 import { NOTE_MAXIMUM } from './PublicationsScreen';
+import { formeDuMalentendu, motDeLaForme } from './arbitrage/formeDuMalentendu';
 import { useRequete } from './useRequete';
 import { nomDuCreateur } from './nomDuCreateur';
 
@@ -103,9 +104,28 @@ const COLONNES: Colonne[] = [
   { cle: 'createur', label: 'Creator', largeur: 128 },
   { cle: 'prestation', label: 'Service', largeur: 176 },
   { cle: 'palier', label: 'Tier', largeur: 76 },
-  { cle: 'tentatives', label: 'Attempts', largeur: 84, chiffre: true },
+  // **« 3 · same » et non « 3 ».** Le nombre seul mettait deux dossiers très
+  // différents sur la même ligne : trois refus pour le même motif disent que la
+  // demande n'a jamais été comprise, trois motifs différents disent l'inverse.
+  // Même nombre de pixels, décision opposée.
+  { cle: 'tentatives', label: 'Reasons', largeur: 104 },
   { cle: 'echeance', label: 'Flagged', largeur: 84, chiffre: true },
 ];
+
+/**
+ * Ce que la colonne « Reasons » écrit : « 3 · same », « 3 · mixed », ou le
+ * nombre seul.
+ *
+ * **Le mot n'apparaît qu'à partir de deux reproches.** Un motif unique n'est pas
+ * « le même motif répété », et écrire « 1 · same » ferait lire une répétition là
+ * où il n'y a qu'un premier refus.
+ */
+function colonneDesMotifs(ligne: LigneDeFile, t: (cle: string) => string): string {
+  const forme = formeDuMalentendu(ligne.tentatives);
+  const mot = motDeLaForme(forme);
+  if (mot === null) return String(forme.compte || ligne.attempts_count);
+  return `${forme.compte} · ${t(mot === 'meme' ? 'admin.formeMeme' : 'admin.formeMelange')}`;
+}
 
 /**
  * La file en tableau, et le dossier ouvert à droite.
@@ -133,12 +153,20 @@ function TableDArbitrage({
   const [ouvert, setOuvert] = useState<string | null>(null);
   const [selection, setSelection] = useState<string[]>([]);
   const [format, setFormat] = useState<string | null>(null);
+  const [memeMotif, setMemeMotif] = useState(false);
   const [enCours, setEnCours] = useState(false);
 
   // Filtré à l'écran, sur ce qui est déjà chargé : la file d'arbitrage tient
   // en quelques dizaines de dossiers, et un aller-retour serveur pour trois
   // chips coûterait plus que le tri lui-même.
-  const visibles = format ? lignes.filter((l) => l.required_format === format) : lignes;
+  const visibles = lignes.filter((ligne) => {
+    if (format && ligne.required_format !== format) return false;
+    // **Le filtre porte sur la forme, pas sur le nombre.** C'est la seule
+    // distinction qui change l'arbitre à convoquer, et la file d'un jour chargé
+    // mélange les deux sans qu'on puisse les séparer de l'œil.
+    if (memeMotif && motDeLaForme(formeDuMalentendu(ligne.tentatives)) !== 'meme') return false;
+    return true;
+  });
 
   /**
    * Le dossier ouvert, et à défaut le premier de la file.
@@ -209,6 +237,16 @@ function TableDArbitrage({
             selected={format === null}
             testID="filtre-tous"
           />
+          {/* **La forme du malentendu, en filtre.** Une file de trente dossiers
+              mêle ceux que le produit a ratés et ceux où la créatrice n'a pas
+              suivi : ce ne sont pas les mêmes décisions, et les séparer d'un
+              appui vaut mieux que de les lire un par un. */}
+          <Chip
+            label={t('admin.filtreMemeMotif')}
+            onPress={() => setMemeMotif((avant) => !avant)}
+            selected={memeMotif}
+            testID="filtre-meme-motif"
+          />
           {PALIERS.map((palier) => (
             <Chip
               key={palier}
@@ -266,7 +304,7 @@ function TableDArbitrage({
               createur: nomDuCreateur(ligne, t, '—'),
               prestation: ligne.item_name,
               palier: ligne.required_format.toUpperCase(),
-              tentatives: String(ligne.attempts_count),
+              tentatives: colonneDesMotifs(ligne, t),
               echeance: quandRestant(ligne.deadline_at),
             }}
           />
@@ -437,6 +475,9 @@ function Dossier({ ligne, onTranche }: { ligne: LigneDeFile; onTranche: () => vo
   const [motif, setMotif] = useState<MotifDeDecision | null>(null);
   const [note, setNote] = useState('');
   const [echec, setEchec] = useState<string | null>(null);
+  const [notesOuvertes, setNotesOuvertes] = useState(false);
+
+  const forme = formeDuMalentendu(ligne.tentatives);
 
   // **Le reproche qui a mis ce dossier là.** C'est lui que l'approbation
   // accepte, et c'est donc lui que le bouton doit nommer.
@@ -486,37 +527,82 @@ function Dossier({ ligne, onTranche }: { ligne: LigneDeFile; onTranche: () => vo
 
       <AttenduEtConstate ligne={ligne} dernierMotif={dernierMotif} />
 
-      {/* **Les demandes précédentes, dans l'ordre.** C'est l'historique qui
-          justifie l'escalade. */}
-      {ligne.tentatives.length > 0 ? (
-        <View style={{ gap: 2 }} testID="historique">
-          {ligne.tentatives.map((tentative, rang) => (
-            <Texte
-              key={`${tentative.demandee_le}-${rang}`}
-              variante="type.caption"
-              couleur="status.warning.text"
-              testID={rang === ligne.tentatives.length - 1 ? 'dernier-motif' : undefined}
-            >
-              {t('commerce.tentative', { n: rang + 1 })} · {libelleDuMotif(t, tentative.motif)}
-              {tentative.par === 'admin' ? ` · ${t('admin.arbitrageParLAdministration')}` : ''}
+      {/* **Les trois motifs alignés, et rien de plus par défaut.** C'est une
+          phrase de six mots au lieu d'un journal, et elle suffit à savoir de
+          quel côté est l'incompréhension : trois fois le même motif disent que
+          la demande n'a jamais été comprise, trois motifs différents disent
+          l'inverse. */}
+      {forme.compte > 0 ? (
+        <View style={{ gap: 6 }} testID="historique">
+          {forme.compte > 1 ? (
+            <Texte variante="type.bodyStrong" testID="forme-du-malentendu">
+              {forme.meme
+                ? t('admin.formeMemeChose', { n: forme.compte })
+                : t('admin.formeChosesDifferentes', { n: forme.compte })}
             </Texte>
-          ))}
-          {/* **Les notes, sous leur motif.** C'est la répétition qui justifie
-              l'escalade, et trois fois le même code avec trois explications
-              différentes ne se lit pas comme trois fois la même chose. Rendues
-              telles quelles : c'est du contenu saisi, jamais traduit. */}
-          {ligne.tentatives.map((tentative, rang) =>
-            tentative.note ? (
-              <Texte
-                key={`note-${tentative.demandee_le}-${rang}`}
-                variante="type.caption"
-                couleur="ink.soft"
-                testID={`note-tentative-${rang}`}
+          ) : null}
+
+          <View style={{ gap: 2 }}>
+            {ligne.tentatives.map((tentative, rang) => (
+              <View
+                key={`${tentative.demandee_le}-${rang}`}
+                style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}
               >
-                {t('commerce.tentative', { n: rang + 1 })} · {tentative.note}
+                <Texte variante="type.mono" couleur="ink.mute">
+                  {rang + 1}
+                </Texte>
+                <Texte
+                  variante="type.caption"
+                  couleur="status.warning.text"
+                  style={{ flex: 1 }}
+                  testID={rang === ligne.tentatives.length - 1 ? 'dernier-motif' : undefined}
+                >
+                  {libelleDuMotif(t, tentative.motif)}
+                  {tentative.par === 'admin' ? ` · ${t('admin.arbitrageParLAdministration')}` : ''}
+                </Texte>
+              </View>
+            ))}
+          </View>
+
+          {/* **Les notes existent, et elles sont repliées.** Un arbitre qui les
+              lit toutes avant de regarder la preuve juge une correspondance au
+              lieu d'un fait — il se met à arbitrer la politesse. Elles s'ouvrent
+              à la demande, et le bouton dit combien il en ouvre. */}
+          {ligne.tentatives.some((tentative) => tentative.note) ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => setNotesOuvertes((avant) => !avant)}
+              testID="lire-les-notes"
+              style={({ pressed }) => ({
+                minHeight: size.touchMin,
+                justifyContent: 'center',
+                opacity: pressed ? 0.7 : 1,
+              })}
+            >
+              <Texte variante="type.caption" couleur="brand.700">
+                {notesOuvertes
+                  ? t('admin.replierLesNotes')
+                  : t('admin.lireLesNotes', {
+                      n: ligne.tentatives.filter((tentative) => tentative.note).length,
+                    })}
               </Texte>
-            ) : null,
-          )}
+            </Pressable>
+          ) : null}
+
+          {notesOuvertes
+            ? ligne.tentatives.map((tentative, rang) =>
+                tentative.note ? (
+                  <Texte
+                    key={`note-${tentative.demandee_le}-${rang}`}
+                    variante="type.caption"
+                    couleur="ink.soft"
+                    testID={`note-tentative-${rang}`}
+                  >
+                    {t('commerce.tentative', { n: rang + 1 })} · {tentative.note}
+                  </Texte>
+                ) : null,
+              )
+            : null}
         </View>
       ) : null}
 
@@ -536,6 +622,11 @@ function Dossier({ ligne, onTranche }: { ligne: LigneDeFile; onTranche: () => vo
             label={libelleDuMotif(t, cle)}
             selected={motif === cle}
             onPress={() => setMotif(motif === cle ? null : cle)}
+            // **Ancré sur le code, pas sur le libellé.** Depuis que les motifs
+            // s'alignent au-dessus sans leur numéro, le même mot apparaît deux
+            // fois dans le panneau : un sélecteur de test qui cherche le texte
+            // trouve les deux et ne dit plus lequel il presse.
+            testID={`motif-${cle}`}
           />
         ))}
       </RangeeDeChips>

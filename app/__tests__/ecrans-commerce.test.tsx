@@ -939,7 +939,7 @@ describe('arbitrage', () => {
     );
     await waitFor(() => expect(screen.getByTestId('dossier-k1')).toBeTruthy());
 
-    await fireEvent.press(screen.getByText(en.commerce.motifMention));
+    await fireEvent.press(screen.getByTestId('motif-missing_mention'));
 
     expect(screen.getByLabelText(surLeDossier(en.admin.issueResubmit))).toBeTruthy();
     // La clôture n'existe que là. Le commerce ne la voit nulle part.
@@ -1014,7 +1014,7 @@ describe('arbitrage', () => {
     );
     await waitFor(() => expect(screen.getByTestId('dossier-k1')).toBeTruthy());
 
-    await fireEvent.press(screen.getByText(en.commerce.motifMention));
+    await fireEvent.press(screen.getByTestId('motif-missing_mention'));
     await fireEvent.press(screen.getByLabelText(surLeDossier(en.admin.issueResubmit)));
 
     await waitFor(() => expect(envois).toHaveLength(1));
@@ -2016,10 +2016,11 @@ describe('la note libre à l’arbitrage', () => {
       .replace('{{prestation}}', DOSSIER_EN_ARBITRAGE.item_name)
       .replace('{{commerce}}', DOSSIER_EN_ARBITRAGE.business_name);
 
-  it('montre les notes de chaque demande, sous leur motif', async () => {
-    // C'est la répétition qui justifie l'escalade, et trois fois le même code
-    // avec trois explications différentes ne se lit pas comme trois fois la
-    // même chose.
+  it('replie les notes, et les ouvre à la demande', async () => {
+    // **Elles existent, et elles sont repliées.** Un arbitre qui les lit toutes
+    // avant de regarder la preuve juge une correspondance au lieu d'un fait —
+    // il se met à arbitrer la politesse. Ce qui est lisible et décisif est la
+    // répétition du motif, pas le ton des explications.
     const avecNotes = {
       ...DOSSIER_EN_ARBITRAGE,
       tentatives: [
@@ -2044,6 +2045,12 @@ describe('la note libre à l’arbitrage', () => {
     );
     await waitFor(() => expect(screen.getByTestId('dossier-k1')).toBeTruthy());
 
+    // Repliées : la garde vaut dans les deux sens, sinon un écran qui les
+    // afficherait toujours passerait la moitié qui compte.
+    expect(screen.queryByTestId('note-tentative-0')).toBeNull();
+
+    await fireEvent.press(screen.getByTestId('lire-les-notes'));
+
     expect(screen.getByTestId('note-tentative-0')).toHaveTextContent(/La mention est absente/);
     expect(screen.getByTestId('note-tentative-1')).toHaveTextContent(/la story a changé/);
   });
@@ -2059,7 +2066,7 @@ describe('la note libre à l’arbitrage', () => {
     );
     await waitFor(() => expect(screen.getByTestId('dossier-k1')).toBeTruthy());
 
-    await fireEvent.press(screen.getByText(en.commerce.motifMention));
+    await fireEvent.press(screen.getByTestId('motif-missing_mention'));
     await fireEvent.changeText(screen.getByTestId('note'), 'Trois fois le même reproche.');
     await fireEvent.press(screen.getByLabelText(surLeDossier(en.admin.issueResubmit)));
 
