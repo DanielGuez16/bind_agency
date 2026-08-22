@@ -65,11 +65,6 @@ const SANS_APPELANT: Record<string, string> = {
   activerUneOffre: 'a-instruire',
   // La prise en main d'une fiche préparée sur le terrain.
   rattacherLaFiche: 'a-instruire',
-  // **Révoquer un terminal : une capacité de sécurité à qui il manque son
-  // écran.** Elle reste, et c'est une décision : un jeton de terminal se
-  // révoque comme un jeton social, et retirer la méthode retirerait le geste
-  // avec elle. L'écran viendra.
-  revoquerUnTerminal: 'a-instruire',
 };
 
 const RAISONS = new Set(['contrat', 'technique', 'a-instruire']);

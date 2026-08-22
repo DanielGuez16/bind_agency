@@ -55,6 +55,7 @@ import { HealthScreen } from './HealthScreen';
 
 /** Le fuseau du téléphone, résolu une fois. */
 const FUSEAU_DE_L_APPAREIL = Intl.DateTimeFormat().resolvedOptions().timeZone;
+import { NotificationsDeCetAppareil } from './reglages/NotificationsDeCetAppareil';
 import { PauseDuCommerce } from './reglages/PauseDuCommerce';
 import { compterOuRien, PAGE } from './reglages/suppression';
 
@@ -113,6 +114,11 @@ export function ReglagesScreen() {
           dans la configuration ; fermer sa vitrine appartient à la famille des
           gestes qui engagent le compte, avec la déconnexion et la suppression.
           Elle a atterri ici parce que la v3 retire la section qui la portait. */}
+      {/* **Les notifications de cet appareil, pour tout le monde.** Créatrice
+          ou salon, c'est le même téléphone et le même besoin : pouvoir les
+          couper sans passer par les réglages du système. */}
+      <NotificationsDeCetAppareil />
+
       {role === 'business_member' ? <PauseDuCommerce /> : null}
 
       <View style={{ gap: 14 }} testID="partir">

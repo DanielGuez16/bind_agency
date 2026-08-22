@@ -8763,3 +8763,30 @@ et se tromperait au premier écart.
 le même drapeau aujourd'hui ; sortir de la liste de travail une prestation
 saisonnière que le gérant compte rouvrir serait pire que d'y laisser une archive.
 Le manque est demandé plutôt que contourné.
+## 2026-08-22 — Révoquer ne suffisait pas
+
+**Le geste s'annulait tout seul.** `revoquerUnTerminal` coupe le jeton côté
+serveur ; le crochet le réenregistre à chaque session connectée. Un interrupteur
+qui ne survit pas au lancement suivant est un bouton qui ment, et c'est ce qu'on
+aurait livré en branchant la méthode telle quelle. Le refus est donc gardé sur
+l'appareil et relu **avant** tout enregistrement.
+
+**Le serveur d'abord, la mémoire ensuite.** Si la révocation échoue, noter le
+refus ferait croire que c'est coupé alors que le serveur continue d'envoyer.
+
+**Et « refusé ici » n'est pas « refusé par le système ».** Les deux se lèvent à
+des endroits différents — les réglages de l'application, ceux du téléphone — et
+les confondre enverrait quelqu'un chercher au mauvais endroit.
+
+**Ce que l'écran ne fait pas est écrit sur l'écran.** Couper les notifications
+d'un téléphone perdu depuis un autre appareil demande de les énumérer, et aucune
+route ne liste les terminaux : révoquer exige de posséder le jeton, qu'on n'a que
+sur le téléphone lui-même. La capacité n'était donc pas complète côté serveur,
+contrairement à ce qu'on pouvait croire en voyant la méthode sans appelant.
+Quelqu'un qui vient de perdre son téléphone est la dernière personne à qui l'on
+doit une demi-vérité.
+
+**Et la garde du thème a été affinée, pas exemptée.** Elle cherchait `switch`
+tout court : elle attrapait les notifications au même titre qu'un réglage de
+couleurs, alors que l'un commande quelque chose et l'autre ne commandait rien.
+Elle vise maintenant le libellé.

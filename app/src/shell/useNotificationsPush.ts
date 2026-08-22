@@ -25,6 +25,7 @@ import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 
 import type { Api, PlateformeDeTerminal } from '../api';
+import { refuseesSurCetAppareil } from './notificationsDeCetAppareil';
 
 /** Ce qu'on a pu faire. Rendu pour les tests ; l'app n'en affiche rien. */
 export type IssueDuJeton =
@@ -33,6 +34,14 @@ export type IssueDuJeton =
   | { issue: 'refusee' }
   /** Simulateur, navigateur : Expo n'y délivre pas de jeton distant. */
   | { issue: 'indisponible' }
+  /**
+   * L'appareil a demandé qu'on le laisse tranquille, dans les réglages.
+   *
+   * **Distinct de `refusee`**, qui est le refus du système : celui-ci se lève
+   * dans les réglages de l'application, l'autre dans ceux du téléphone. Les
+   * confondre enverrait quelqu'un chercher au mauvais endroit.
+   */
+  | { issue: 'refusee-ici' }
   /** Le serveur n'a pas voulu, ou le réseau manquait. Sans conséquence. */
   | { issue: 'echec' };
 
@@ -52,6 +61,11 @@ export async function enregistrerCeTerminal(api: Api): Promise<IssueDuJeton> {
   // Un simulateur n'a pas de jeton distant, et le demander lève.
   if (!Device.isDevice) return { issue: 'indisponible' };
 
+  // **Le refus de l'appareil se relit avant de repartir.** Sans cette lecture,
+  // couper les notifications dans les réglages serait défait au lancement
+  // suivant — un geste qui s'annule tout seul est un bouton qui ment.
+  if (await refuseesSurCetAppareil()) return { issue: 'refusee-ici' };
+
   try {
     const actuel = await Notifications.getPermissionsAsync();
     // **On ne redemande que si le système accepte encore de poser la
@@ -70,6 +84,26 @@ export async function enregistrerCeTerminal(api: Api): Promise<IssueDuJeton> {
     // fonctionne sans notifications. Lever ferait tomber la frontière
     // d'erreur sur un manque parfaitement supportable.
     return { issue: 'echec' };
+  }
+}
+
+/**
+ * Le jeton de cet appareil, sans l'enregistrer.
+ *
+ * **Séparé de l'enregistrement**, parce que révoquer et enregistrer sont deux
+ * gestes opposés qui ont besoin de la même chose : couper suppose de connaître
+ * le jeton, et le demander en passant par l'enregistrement le réinscrirait
+ * juste avant de le retirer.
+ */
+export async function jetonDeCetAppareil(): Promise<string | null> {
+  if (!Device.isDevice) return null;
+  try {
+    const { data } = await Notifications.getExpoPushTokenAsync();
+    return data;
+  } catch {
+    // Sans jeton, il n'y a rien à révoquer côté serveur — et le refus local
+    // suffit à ce que rien ne se réenregistre.
+    return null;
   }
 }
 
