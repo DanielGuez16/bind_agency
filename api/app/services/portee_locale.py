@@ -182,7 +182,7 @@ async def autour_du_commerce(
             )
         )
 
-    paliers = await _paliers_ouverts(session, business_id=business.id)
+    paliers = await paliers_ouverts_du_commerce(session, business_id=business.id)
 
     fermes = await _paliers_fermes(session, ouverts=paliers)
     age_max = timedelta(seconds=settings.metrics_max_age_seconds)
@@ -284,10 +284,15 @@ async def _paliers_fermes(
     ]
 
 
-async def _paliers_ouverts(
+async def paliers_ouverts_du_commerce(
     session: AsyncSession, *, business_id: uuid.UUID
 ) -> list[eligibility.PalierEvalue]:
     """Les paliers que le salon offre **réellement**.
+
+    Publique parce que deux modules la lisent : le compte de portée et
+    l'annuaire. Deux lectures de « ce que ce commerce offre » finiraient par ne
+    plus dire la même chose, et l'écart se lirait comme une ligne d'annuaire
+    qui promet un palier qu'on ne peut pas réserver.
 
     Les quatre conditions de `is_effectively_offered`, et non la seule case de
     l'offre : un palier désactivé, un item retiré du catalogue ou un item parent

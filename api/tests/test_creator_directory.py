@@ -33,6 +33,30 @@ from tests.test_creator_tiers import compte, createur
 PREFIX = get_settings().api_v1_prefix
 
 
+async def salon_qui_offre_tout(session: AsyncSession):
+    """Un salon qui offre les trois paliers Instagram sur un même item.
+
+    **L'annuaire est désormais celui d'un salon** : `paliers_ouverts` répond
+    « elle peut réserver ce que vous avez ouvert », et non plus « elle se
+    qualifie quelque part ». Les tests qui éprouvent l'échelle des paliers
+    doivent donc s'appuyer sur un salon qui offre toute l'échelle, sans quoi ils
+    mesureraient la maigreur du décor et non la règle.
+    """
+    from app.schemas.tier_offers import TierOfferCreate
+    from app.services import tier_offers as tier_offer_service
+    from tests.test_booking_create import REEL, monter_le_decor
+    from tests.test_feed import POST
+
+    decor = await monter_le_decor(session)
+    for tier_id in (POST, REEL):
+        await tier_offer_service.create_offer(
+            session,
+            business_id=decor["business"].id,
+            payload=TierOfferCreate(tier_id=tier_id, catalog_item_id=decor["item"].id),
+        )
+    return decor["business"]
+
+
 async def test_le_score_n_apparait_jamais_dans_l_annuaire(session: AsyncSession) -> None:
     """La promesse est tenue **par le schéma**, pas par la discipline d'un écran.
 
@@ -65,7 +89,11 @@ async def test_le_palier_ouvert_remplace_le_score(session: AsyncSession) -> None
             session, creator_id=user.id, type_=ReliabilityEventType.COLLAB_COMPLETED
         )
 
-    avant = {v.creator_id: v.paliers_ouverts for v in await service.annuaire(session)}
+    salon = await salon_qui_offre_tout(session)
+    avant = {
+        v.creator_id: v.paliers_ouverts
+        for v in (await service.annuaire(session, business=salon)).createurs
+    }
     assert ContentFormat.REEL in avant[user.id], "le jeu de départ n'ouvre pas le haut"
 
     # Des manquements réels, par le service — jamais un score écrit à la main.
@@ -74,7 +102,11 @@ async def test_le_palier_ouvert_remplace_le_score(session: AsyncSession) -> None
             session, creator_id=user.id, type_=ReliabilityEventType.UNFULFILLED
         )
 
-    apres = {v.creator_id: v.paliers_ouverts for v in await service.annuaire(session)}
+    salon = await salon_qui_offre_tout(session)
+    apres = {
+        v.creator_id: v.paliers_ouverts
+        for v in (await service.annuaire(session, business=salon)).createurs
+    }
     assert len(apres[user.id]) < len(avant[user.id]), (
         "le score dégradé n'a fermé aucun palier : l'annuaire ne dirait plus rien "
         "de la fiabilité, et retirer le score deviendrait une perte sèche"
@@ -85,7 +117,10 @@ async def test_un_profil_sans_reseau_n_encombre_pas_l_annuaire(session: AsyncSes
     """Ni volume, ni palier, ni publication possible : une ligne vide."""
     sans_reseau = await createur(session)
 
-    identifiants = {v.creator_id for v in await service.annuaire(session)}
+    salon = await salon_qui_offre_tout(session)
+    identifiants = {
+        v.creator_id for v in (await service.annuaire(session, business=salon)).createurs
+    }
     assert sans_reseau.id not in identifiants
 
 
@@ -103,7 +138,8 @@ async def test_un_compte_revoque_n_est_pas_un_reseau_atteignable(
     )
     await session.flush()
 
-    vus = {v.creator_id: v for v in await service.annuaire(session)}
+    salon = await salon_qui_offre_tout(session)
+    vus = {v.creator_id: v for v in (await service.annuaire(session, business=salon)).createurs}
     assert vus[user.id].comptes == ()
 
 
@@ -113,6 +149,7 @@ async def test_l_annuaire_ne_fait_pas_une_requete_par_createur(session: AsyncSes
     Une boucle sur `evaluer_createur` aurait donné trois requêtes par ligne — un
     N+1 invisible à dix créatrices et fatal à trois cents.
     """
+    salon = await salon_qui_offre_tout(session)
     for _ in range(4):
         user = await createur(session)
         await compte(session, user, followers=24_000)
@@ -124,7 +161,7 @@ async def test_l_annuaire_ne_fait_pas_une_requete_par_createur(session: AsyncSes
         compteur["n"] += 1
 
     try:
-        vus = await service.annuaire(session)
+        vus = (await service.annuaire(session, business=salon)).createurs
     finally:
         sa.event.remove(session.sync_session, "do_orm_execute", _compter)
 
@@ -210,7 +247,8 @@ async def test_l_annuaire_rend_le_visage_et_le_lien(session: AsyncSession) -> No
     ligne.avatar_key = "photos/avatars/abcdef"
     await session.flush()
 
-    lignes = await service.annuaire(session)
+    salon = await salon_qui_offre_tout(session)
+    lignes = (await service.annuaire(session, business=salon)).createurs
 
     vu = next(c for c in lignes if c.creator_id == user.id)
     assert vu.comptes[0].avatar_key == "photos/avatars/abcdef"
@@ -224,7 +262,8 @@ async def test_un_compte_sans_photo_ne_ment_pas(session: AsyncSession) -> None:
     user = await createur(session)
     await compte(session, user, followers=12_000)
 
-    lignes = await service.annuaire(session)
+    salon = await salon_qui_offre_tout(session)
+    lignes = (await service.annuaire(session, business=salon)).createurs
 
     vu = next(c for c in lignes if c.creator_id == user.id)
     assert vu.comptes[0].avatar_key is None

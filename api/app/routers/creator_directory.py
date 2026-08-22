@@ -4,7 +4,9 @@ C'est ce que BIND vend : l'accès à un réseau. La barrière est donc la même 
 la vente — un abonnement vivant — et non le simple fait d'être un commerce.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.core.dependencies import CurrentBusiness, SessionDep, require_role
 from app.core.errors import ErrorCode
@@ -23,7 +25,12 @@ router = APIRouter(
 
 
 @router.get("", response_model=AnnuaireRead)
-async def read_directory(business: CurrentBusiness, session: SessionDep) -> AnnuaireRead:
+async def read_directory(
+    business: CurrentBusiness,
+    session: SessionDep,
+    limite: Annotated[int, Query(ge=1, le=200)] = 50,
+    decalage: Annotated[int, Query(ge=0)] = 0,
+) -> AnnuaireRead:
     """**Sans abonnement, rien ne part.**
 
     Un refus, et non une liste dégradée. La différence n'est pas de sécurité —
@@ -54,11 +61,11 @@ async def read_directory(business: CurrentBusiness, session: SessionDep) -> Annu
             detail=ErrorCode.SUBSCRIPTION_REQUIRED.value,
         )
 
+    page = await service.annuaire(session, business=business, limite=limite, decalage=decalage)
     return AnnuaireRead(
         portee=PorteeLocaleRead.model_validate(
             await portee_locale.autour_du_commerce(session, business=business)
         ),
-        createurs=[
-            CreateurVuRead.model_validate(createur) for createur in await service.annuaire(session)
-        ],
+        createurs=[CreateurVuRead.model_validate(vu) for vu in page.createurs],
+        total=page.total,
     )
