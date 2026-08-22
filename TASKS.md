@@ -1127,6 +1127,13 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       Téléphone au format international, normalisé avant validation ; nom
       dépouillé de ses espaces avant d'être compté ; adresse d'au moins dix
       caractères. 13 tests neufs*
+- [x] **Les photos de plateforme partent, avec leur table**
+      *Vérifié avant de retirer : les pastilles du fil sont des **mots
+      traduits**, leurs comptes viennent de la route du fil, et aucun écran ne
+      lit `photo_key` d'une catégorie. La vidéo d'accueil était déjà partie avec
+      la v3. Route, schéma, service, modèle, semis, deux tests de semis, la
+      garde de surface publique, la carte, la méthode du client, ses types — et
+      la table. Une capacité retirée à moitié repousse*
 - [x] **Archiver plutôt qu'effacer, et remplacer plutôt que réécrire**
       *La donnée décide, pas le geste : jamais réservée → suppression vraie,
       déjà réservée → archive et jamais de suppression. **`archived_at` distinct

@@ -41,8 +41,7 @@ Le rafraîchissement se fait **à l'ouverture d'écran et sur geste**. Il n'exis
 
 | Écran | Route | Données | États |
 |---|---|---|---|
-| Entrée | `GET /platform-media` | `home {video_key, video_portrait_key, poster_key, poster_portrait_key}`, `categories` | **Public**, avant toute connexion. Sans fond : les portes restent |
-| Inscription / connexion | `POST /auth/register {email, password, role, locale}`, `POST /auth/login` | `access_token`, `refresh_token`, `token_type`, `expires_in` | `email_already_used`, `invalid_credentials` |
+| Entrée | Inscription / connexion | `POST /auth/register {email, password, role, locale}`, `POST /auth/login` | `access_token`, `refresh_token`, `token_type`, `expires_in` | `email_already_used`, `invalid_credentials` |
 | — session | `POST /auth/refresh {refresh_token}` → un couple neuf ; `POST /auth/logout {refresh_token}` | l'ancien jeton est révoqué à chaque rotation | **Les deux marchent sans jeton d'accès valide** : se déconnecter doit rester possible depuis un téléphone qu'on rend, et rafraîchir sert précisément quand l'accès a expiré |
 | Connexion réseau | `POST /me/social-accounts/instagram/connect` **ou** `POST /me/social-accounts/tiktok/connect` → `{authorization_url}` | puis `GET /me/verification` → `[] {social_account_id, platform, handle, verification_status, started_at, reviewed_at, signaux[]}` | **Aucune promesse de délai.** `oauth_denied`, `social_provider_unavailable` |
 | Comptes rattachés | `GET /me/social-accounts` | `[] {id, platform, handle, status, verification_status, token_expires_at, connected_at}` | jeton expiré → reconnecter |

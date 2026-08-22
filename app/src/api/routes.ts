@@ -125,7 +125,6 @@ export const routes = {
     chemin(`/business/${businessId}/tier-offers/${offreId}/activation`),
   reporting: (businessId: string) => chemin(`/business/${businessId}/reporting`),
   /** Les médias qui n'appartiennent à aucun commerce : pastilles et accueil. */
-  mediasPlateforme: () => chemin('/platform-media'),
   plansSouscriptibles: (businessId: string) => chemin(`/business/${businessId}/plans`),
   abonnement: (businessId: string) => chemin(`/business/${businessId}/subscription`),
   media: (cle: string) => chemin(`/media/${cle}`),
@@ -248,7 +247,6 @@ export const METHODES: Record<keyof typeof routes, ('GET' | 'POST' | 'PATCH' | '
     offresDePalier: ['GET', 'POST'],
     activationDUneOffre: ['PUT'],
     reporting: ['GET'],
-    mediasPlateforme: ['GET'],
     plansSouscriptibles: ['GET'],
     abonnement: ['GET', 'POST', 'DELETE'],
     media: ['GET'],

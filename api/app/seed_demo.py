@@ -70,7 +70,6 @@ from app.services import booking_states, business_menu, eligibility
 from app.services import collaboration as collaboration_service
 from app.services import creator_profile as profile_service
 from app.services import metrics as metrics_service
-from app.services import platform_assets as platform_asset_service
 from app.services import proof as proof_service
 from app.services import redemption as redemption_service
 from app.services import reliability as reliability_service
@@ -399,79 +398,6 @@ async def poser_les_photos(session: AsyncSession) -> ResumePhotos:
             famille="item",
         )
         compter(trouvee, chemin, poids)
-
-    # --- pastilles de catégorie
-    #
-    # Elles n'appartiennent à aucun commerce : leur clé se range dans
-    # `platform_asset`, la seule table qui porte ce qui est à la plateforme.
-    for categorie in BusinessCategory:
-        chemin = f"categories/{categorie.value}.jpg"
-        cle, trouvee, poids = await _deposer_photo(
-            depot,
-            chemin=chemin,
-            taille_reelle=photos_reelles.CATEGORIE,
-            graine=f"categorie-{categorie.value}",
-            taille_generee=PRESTATION,
-            famille="category",
-        )
-        await platform_asset_service.poser(
-            session, slug=platform_asset_service.slug_de_categorie(categorie), object_key=cle
-        )
-        compter(trouvee, chemin, poids)
-
-    # --- accueil, deux orientations
-    #
-    # L'écran d'accueil est en plein écran : une vidéo paysage sur un téléphone
-    # tenu droit ne peut donner que des bandes noires ou un recadrage qui coupe
-    # le sujet. Chaque orientation a donc la sienne, et son affiche — une
-    # affiche 16:9 sous une vidéo 9:16 recadre au chargement, puis la vidéo
-    # démarre sur un autre cadrage, et le saut se voit.
-    #
-    # Les affiches suivent le chemin des photos, redimensionnées comme elles.
-    # Les vidéos se déposent telles quelles : les réencoder demanderait
-    # `ffmpeg`, d'un autre ordre que Pillow pour deux fichiers.
-    for chemin_affiche, slug, taille in (
-        (
-            "accueil/video-poster.jpg",
-            platform_asset_service.AFFICHE_VIDEO,
-            photos_reelles.COUVERTURE,
-        ),
-        (
-            "accueil/video-portrait-poster.jpg",
-            platform_asset_service.AFFICHE_PORTRAIT,
-            photos_reelles.AFFICHE_PORTRAIT,
-        ),
-    ):
-        cle, trouvee, poids = await _deposer_photo(
-            depot,
-            chemin=chemin_affiche,
-            taille_reelle=taille,
-            graine=f"accueil-{slug}",
-            taille_generee=COUVERTURE,
-            famille="home",
-        )
-        await platform_asset_service.poser(session, slug=slug, object_key=cle)
-        compter(trouvee, chemin_affiche, poids)
-
-    for chemin_video, slug in (
-        ("accueil/video.mp4", platform_asset_service.VIDEO),
-        ("accueil/video-portrait.mp4", platform_asset_service.VIDEO_PORTRAIT),
-    ):
-        video = photos_reelles.lire_telle_quelle(chemin_video)
-        if video is None:
-            # Aucune clé posée : l'app n'a pas cette orientation à jouer et se
-            # replie sur l'autre. Une clé vers un objet absent ferait un lecteur
-            # qui ne démarre jamais, ce qui se diagnostique bien plus mal.
-            manquantes.append(chemin_video)
-            continue
-        await platform_asset_service.poser(
-            session,
-            slug=slug,
-            object_key=await depot.deposer(video, prefixe="photos/home"),
-        )
-        reelles += 1
-        if len(video) > SEUIL_DE_POIDS:
-            trop_lourds.append((chemin_video, len(video)))
 
     await session.flush()
     return ResumePhotos(

@@ -39,7 +39,6 @@ from app.models import (
     Collaboration,
     CreatorProfile,
     Job,
-    PlatformAsset,
     Proof,
     SocialAccount,
     SocialMetricsSnapshot,
@@ -52,7 +51,6 @@ from app.models.enums import (
     ActorKind,
     BillingInterval,
     BookingStatus,
-    BusinessCategory,
     BusinessMemberRole,
     BusinessStatus,
     CollaborationStatus,
@@ -882,36 +880,6 @@ async def test_seule_la_gamme_parente_reste_sans_photo(seed_conn: AsyncConnectio
     )
     assert gammes, "le jeu n'a plus de gamme à variantes"
     assert all(cle is None for cle in gammes), "un parent de gamme a reçu une image invisible"
-
-
-async def test_les_six_categories_ont_leur_pastille(seed_conn: AsyncConnection) -> None:
-    """Elles n'appartiennent à aucun commerce : sans elles, Discovery n'a pas d'en-tête.
-
-    Les six, et pas seulement celles du lancement : une catégorie sans commerce
-    reste un filtre que l'écran propose.
-    """
-    posees = dict(
-        (
-            await seed_conn.execute(
-                sa.select(PlatformAsset.slug, PlatformAsset.object_key).where(
-                    PlatformAsset.slug.startswith("category/")
-                )
-            )
-        ).all()
-    )
-
-    assert set(posees) == {f"category/{categorie.value}" for categorie in BusinessCategory}
-    assert all(_clef_de_photo(cle, "category") for cle in posees.values())
-
-
-async def test_l_accueil_a_au_moins_son_affiche(seed_conn: AsyncConnection) -> None:
-    """La vidéo peut manquer, l'affiche jamais — c'est elle le substitut."""
-    affiche = await seed_conn.scalar(
-        sa.select(PlatformAsset.object_key).where(PlatformAsset.slug == "home/video-poster")
-    )
-
-    assert affiche is not None
-    assert _clef_de_photo(affiche, "home")
 
 
 async def test_un_commerce_n_a_rien_compose(seed_conn: AsyncConnection) -> None:

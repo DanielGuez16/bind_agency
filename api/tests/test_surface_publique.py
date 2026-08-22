@@ -55,10 +55,6 @@ PUBLIQUES: dict[tuple[str, str], str] = {
         "se déconnecter doit marcher même avec un jeton d'accès expiré ; "
         "l'inverse laisserait quelqu'un connecté sur un téléphone rendu"
     ),
-    ("GET", "/api/v1/platform-media"): (
-        "les médias de l'écran d'accueil, qui est la première chose qu'on voit "
-        "du produit et qui s'affiche avant toute connexion"
-    ),
     ("GET", "/api/v1/media/{cle:path}"): (
         "les photos publiques des salons, servies à une balise d'image, "
         "laquelle ne porte pas d'en-tête d'autorisation"
