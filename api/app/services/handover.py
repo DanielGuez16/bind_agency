@@ -34,6 +34,7 @@ import secrets
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from enum import StrEnum
 
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -128,6 +129,27 @@ class LienRemis:
     url: str
 
 
+class EtatDeLaTournee(StrEnum):
+    """Où en est une fiche préparée, du point de vue de la tournée.
+
+    Le vocabulaire est celui de la conduite à tenir, pas celui de la base : ce
+    que le démarcheur lit doit lui dire quoi faire, pas quel champ est nul.
+    """
+
+    #: Préparée, jamais remise. Il reste à passer.
+    PREPAREE = "prepared"
+    #: Remise, jamais ouverte. **Revisiter** : personne n'a rien vu, et une
+    #: relance s'adresserait à un lien que nul ne regarde.
+    JAMAIS_OUVERTE = "never_opened"
+    #: Ouverte, abandonnée en route. **Relancer** : quelqu'un a regardé.
+    ABANDONNEE = "opened_not_claimed"
+    #: Ouverte, arrêtée sur l'engagement. Ni l'un ni l'autre : c'est le produit
+    #: qui coince, et le démarchage n'y peut rien.
+    BLOQUEE = "blocked_on_commitment"
+    #: Assumée. La tournée a porté.
+    ACTIVEE = "claimed"
+
+
 @dataclass(frozen=True, slots=True)
 class LigneDeSuivi:
     """Une fiche préparée et où elle en est.
@@ -147,7 +169,40 @@ class LigneDeSuivi:
     expires_at: datetime | None
     used_at: datetime | None
     revoked_at: datetime | None
+    #: Par où le lien est parvenu au salon : le QR de la tablette — le décideur
+    #: était là — ou un envoi, quand il ne l'était pas. C'est ce qui départage
+    #: les deux méthodes de démarchage.
     channel: HandoverChannel | None
+    #: Quand quelqu'un a ouvert le lien pour la première fois. Nulle : personne
+    #: ne l'a jamais vu.
+    opened_at: datetime | None
+    #: Quand une prise en main a été tentée et refusée pour la dernière fois.
+    blocked_at: datetime | None
+
+    @property
+    def etat(self) -> "EtatDeLaTournee":
+        """Où en est cette fiche, en un mot qui commande une conduite.
+
+        **Trois états et non deux, parce qu'ils appellent trois gestes.** Une
+        fiche jamais ouverte se **revisite** — personne n'a rien vu, et une
+        relance par courriel s'adresse à un lien que nul ne regarde. Une fiche
+        ouverte puis abandonnée se **relance** — quelqu'un a regardé et s'est
+        arrêté. Une fiche bloquée sur l'engagement ne se règle par aucun des
+        deux : c'est le produit qui coince, mot de passe ou conditions, et le
+        démarchage n'y peut rien.
+
+        Dérivé plutôt que stocké : trois dates disent déjà tout, et une colonne
+        d'état finirait par les contredire.
+        """
+        if self.used_at is not None:
+            return EtatDeLaTournee.ACTIVEE
+        if self.issued_at is None:
+            return EtatDeLaTournee.PREPAREE
+        if self.blocked_at is not None:
+            return EtatDeLaTournee.BLOQUEE
+        if self.opened_at is None:
+            return EtatDeLaTournee.JAMAIS_OUVERTE
+        return EtatDeLaTournee.ABANDONNEE
 
 
 def _empreinte(jeton: str) -> bytes:
@@ -336,6 +391,43 @@ async def resoudre(
     ):
         raise HandoverUnknown("jeton de prise en main invalide")
     return ligne
+
+
+async def marquer_ouvert(session: AsyncSession, *, handover: BusinessHandover) -> None:
+    """Note la première ouverture du lien. Idempotente.
+
+    **La première et non la dernière.** Ce qu'on mesure est « quelqu'un
+    a-t-il regardé », pas « quand pour la dernière fois » : un démarcheur qui
+    rouvre le lien pour vérifier ne doit pas effacer la trace de la vraie
+    visite, ni faire passer pour récent un intérêt qui date de trois semaines.
+
+    Écrite depuis l'aperçu, qui est une lecture — et c'est assumé. Une route qui
+    n'écrit rien ne peut pas dire qu'on l'a appelée, et c'est justement ce qu'on
+    a besoin de savoir.
+    """
+    if handover.opened_at is not None:
+        return
+    handover.opened_at = sa.func.clock_timestamp()
+    await session.flush()
+    await session.refresh(handover, ["opened_at"])
+
+
+async def marquer_bloque(session: AsyncSession, *, handover: BusinessHandover) -> None:
+    """Note qu'une prise en main a été tentée et refusée.
+
+    **La dernière et non la première** : ce qu'on veut savoir est si le blocage
+    dure encore.
+
+    C'est le troisième état de la tournée, et il se lit sans que l'écran ait
+    rien à rapporter. Quelqu'un qui échoue à prendre la main est arrivé jusqu'à
+    l'engagement — mot de passe, conditions — et s'est arrêté là. Ce n'est pas
+    un problème de tournée, c'est un problème de produit : une fiche jamais
+    ouverte se revisite, une fiche abandonnée en route se relance, et celle-ci
+    ne se règle par aucun des deux.
+    """
+    handover.blocked_at = sa.func.clock_timestamp()
+    await session.flush()
+    await session.refresh(handover, ["blocked_at"])
 
 
 @dataclass(frozen=True, slots=True)
@@ -562,6 +654,8 @@ async def suivi(
             used_at=lien.used_at if lien else None,
             revoked_at=lien.revoked_at if lien else None,
             channel=lien.channel if lien else None,
+            opened_at=lien.opened_at if lien else None,
+            blocked_at=lien.blocked_at if lien else None,
         )
         for business, lien in lignes
     )

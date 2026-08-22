@@ -1127,6 +1127,15 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       Téléphone au format international, normalisé avant validation ; nom
       dépouillé de ses espaces avant d'être compté ; adresse d'au moins dix
       caractères. 13 tests neufs*
+- [x] **Le suivi de tournée : trois états, pas un**
+      *`opened_at` posé au premier aperçu, `blocked_at` à chaque prise en main
+      refusée. **Les deux premiers états étaient indistinguables** — un lien
+      jamais vu et un lien vu puis abandonné rendaient la même ligne, et ce sont
+      précisément les deux cas où la conduite diffère : revisiter, ou relancer.
+      Le troisième — arrêté sur l'engagement — se lit **sans que l'écran ait
+      rien à rapporter** : une tentative refusée est quelqu'un arrivé jusqu'au
+      mot de passe et bloqué là. `etat` dérivé des dates, jamais stocké.
+      `channel` était déjà servi. 8 tests neufs, 5 mutations vérifiées*
 - [x] **Ce qui informe un prix : la durée, la catégorie, la portée**
       *`subscription` n'avait **aucune date** — ni ouverture ni fin, seulement
       `current_period_end` — donc aucune durée n'était calculable. Deux colonnes,
