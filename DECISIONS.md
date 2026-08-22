@@ -9046,3 +9046,61 @@ la liste comme « les autres », et on ne saurait plus lequel on regarde en
 l'ouvrant. Le test porte sur `accessibilityState.selected` et non sur la coche :
 c'est ce qu'un lecteur d'écran annonce, et vérifier le glyphe éprouverait le
 dessin plutôt que ce que l'écran affirme.
+
+---
+
+## 2026-08-22 — La portée d'une reprise se lit sur l'étiquette du routeur
+
+**Le problème.** Une reprise déclare ce qu'elle ouvre ; encore faut-il, à chaque
+requête, savoir de quel écran cette requête relève. Le résolveur d'appartenance
+ne connaît qu'un identifiant de commerce — il ne sait pas qu'il garde la carte
+plutôt que les chiffres.
+
+**Trois façons de le lui dire, et une seule tient.** Un paramètre à chaque route
+serait exact et se perdrait : trente-sept routeurs, et celui qu'on oublie
+s'ouvre en silence. Une correspondance par chemin demanderait un motif par
+route, se déferait au premier renommage, et personne ne verrait qu'elle s'est
+défaite. Les étiquettes existent déjà, sont posées une fois par routeur, et
+regroupent naturellement ce qui fait un écran.
+
+**Ce qui n'est pas dans la table n'est ouvert par aucune reprise.** Un routeur
+neuf, une étiquette oubliée : le support est refusé et le voit à la première
+tentative. Le sens inverse — laisser passer l'inclassable — ouvrirait une porte
+que personne n'a déclarée, et rien ne le dirait jamais. C'est le seul point de
+ce dispositif où l'erreur coûte cher, donc c'est là qu'elle penche du bon côté.
+
+**`support` est absent de la table, volontairement.** La liste des reprises
+faites chez un salon est ce que *le salon* lit de nous ; l'administration a sa
+propre route pour la même chose. Une reprise ne sert donc jamais à relire ses
+propres traces depuis la porte du commerce.
+
+## 2026-08-22 — `spontaneous` est déclaré, faute d'un canal entrant
+
+La spécification demande qu'une reprise porte « spontanée » quand aucune demande
+du salon ne l'a précédée. **Aucun canal ne permet à un salon d'écrire** : il n'y
+a ni ticket, ni message entrant, ni trace d'un appel. Le calculer rendrait
+`true` pour tout le monde, y compris pour les salons qui ont téléphoné — un mot
+qui accuse, posé au hasard.
+
+Le champ est donc **déclaré par l'administration**, et son défaut est `true` :
+le silence vaut « de ma propre initiative », et c'est celui qui affirme avoir
+été appelé qui doit le dire. L'inverse laisserait toute reprise se présenter
+comme sollicitée sans que personne ne l'ait sollicitée.
+
+Ce que cela vaut ne tient qu'à une chose : **le gérant le lit**, et il sait, lui,
+s'il a appelé. Une déclaration qu'un tiers peut contredire n'est pas une preuve,
+mais ce n'est plus une affirmation gratuite. Le jour où un canal entrant
+existera, le champ se calculera et cette ligne tombera.
+
+## 2026-08-22 — Une annulation tardive coûte moins qu'une absence
+
+Les deux valaient `no_show`, donc rien n'incitait à prévenir plutôt qu'à
+disparaître — alors qu'un salon prévenu à onze heures remplit son créneau de
+quatorze heures trente. `cancelled_late` porte la différence, à `-10` contre
+`-25`, et **le dossier arrive en `cancelled`** : elle a annulé, pas disparu.
+
+L'arithmétique du seuil est mince et c'est noté ici pour qu'elle se voie : base
+`70`, moins `10`, minimum du reel `60`. Une créatrice dont c'est le seul
+événement passe **exactement**, et seulement parce que la comparaison est `>=`.
+Un test l'épingle : le jour où l'un des trois réglages bouge d'un point,
+quelqu'un décidera au lieu de le découvrir.

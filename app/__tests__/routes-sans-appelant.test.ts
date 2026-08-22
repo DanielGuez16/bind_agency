@@ -45,11 +45,11 @@ const CLIENT = join(SRC, 'api', 'index.tsx');
  * ferait de cette table le tapis qu'elle existe pour retirer.
  */
 const SANS_APPELANT: Record<string, string> = {
-  // **La reprise de compte, côté administration.** `mesReprises` a maintenant
-  // son écran — le salon lit ce qui s'est passé chez lui. Les deux autres
-  // attendent l'écran d'administration, qui ne peut pas se composer avant que
-  // la portée existe : sans elle « accès complet » est le seul mode possible,
-  // et l'écran perdrait le mécanisme qui le retient. Voir `TASKS.md`.
+  // **La reprise de compte, côté administration.** Le salon a tout ce qui le
+  // concerne : il lit ce qui s'est passé chez lui et il referme lui-même. Ces
+  // deux-là sont l'autre bout — ouvrir et se retirer — et ils attendent l'écran
+  // d'administration, qui n'appartient pas à cette application. La portée
+  // existe maintenant, donc plus rien ne le retient côté serveur.
   ouvrirUneReprise: 'a-instruire',
   fermerLaReprise: 'a-instruire',
   // **Le catalogue se compose et ne se corrige pas**, et ça ne tient pas.

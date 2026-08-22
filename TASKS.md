@@ -1801,38 +1801,29 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       c'est le mécanisme lui-même, pas sa présentation. Et « expirée toute
       seule » se distingue de « refermée » — le service écrit que c'est la
       seconde qui devrait gêner. 1292 tests, 3 mutations*
-- [ ] **La portée d'une reprise n'existe pas, et sans elle l'écran d'administration ne peut pas se composer**
-      *Design tranche : la portée, pas la durée. « Une durée est une horloge, et
-      une horloge se renouvelle » — ce qui borne vraiment est l'ensemble
-      d'écrans ouverts. « Configurer les horaires » n'ouvre que les horaires ;
-      un administrateur qui veut tout doit demander tout, et « accès complet »
-      se lit très mal dans la liste que le gérant consulte.*
-      *Rien ne borne aujourd'hui : `ouvrirUneReprise` ne prend qu'un motif.
-      Sans portée, « tout » est le seul mode possible et l'écran perd son
-      mécanisme principal — c'est pourquoi il n'est pas livré. La durée reste,
-      comme plafond. Demandé à `bind-agency-1a`*
-- [ ] **Le compte des reprises de celui qui demande n'est pas servi**
-      *« C'est ta quatrième ce mois-ci. Tu en as fait une en juillet. » Se
-      comparer à soi-même est la seule comparaison qui change un comportement
-      sans accuser, et c'est le seul chiffre de l'écran qui retienne vraiment.
-      Il ne se déduit pas d'une liste par salon : il faut compter les reprises
-      de **l'appelant**, tous salons confondus, sur une fenêtre glissante*
-- [ ] **Une reprise spontanée ne se distingue pas d'une reprise demandée**
-      *Une reprise sans message entrant du salon est permise — le gérant a pu
-      téléphoner — mais elle doit porter ce mot dans sa liste, définitivement.
-      « Aucune interdiction ne travaille aussi bien qu'un adjectif que le gérant
-      relira. » Rien ne le sert, et l'inventer accuserait au hasard*
-- [ ] **Le salon ne peut pas refermer une reprise ouverte chez lui**
-      *La planche pose un bouton « End it » sur le bandeau : « l'accès s'ouvre
-      sans permission et se ferme sans discussion ». La fermeture est
-      aujourd'hui une route d'administration — `DELETE` sur `admin_router`. Le
-      bouton n'est donc pas dessiné : un bouton qui ne coupe rien serait pire
-      que son absence sur cet écran-là. Il faudrait la même fermeture sur
-      `business_router`, réservée aux membres du commerce*
-- [ ] **L'administrateur n'est pas nommé dans ce que le salon lit**
-      *`BusinessSupportAccessRead` ne porte qu'`admin_user_id`. La planche écrit
-      « Amélie R. ». Afficher un identifiant technique à un gérant ne nomme
-      personne — et ne nommer personne retire la moitié de ce qui retient*
+- [x] **La portée borne la reprise, et le salon met dehors**
+      *Les cinq manques de la reprise, pris ensemble parce qu'ils ne se
+      tiennent qu'ensemble : un nom sans portée nomme quelqu'un qui peut tout,
+      et une portée sans bouton de sortie reste une phrase.*
+      ***La portée est la borne, la durée n'est qu'un plafond.** Un ensemble
+      d'écrans déclaré à l'ouverture et vérifié à chaque requête, par
+      l'étiquette du routeur. Une horloge se renouvelle — il suffit de rouvrir
+      quand la précédente s'éteint — une portée non. Ce qui n'est classé nulle
+      part n'est ouvert par personne : un écran neuf bloque le support à la
+      première tentative, ce qui est le bon sens de l'erreur.*
+      *`admin_name` est **recopié** à l'ouverture, jamais joint : le gérant
+      relira en octobre le nom qu'il a lu en mars. `spontaneous` est déclaré,
+      faute d'un canal entrant — le défaut est le sens inconfortable, et c'est
+      celui qui affirme avoir été appelé qui doit le dire. Le compte des
+      reprises de l'appelant, tous salons confondus sur sept jours glissants,
+      est rendu à l'ouverture et ne refuse rien.*
+      *Et `DELETE /business/{id}/support-access` : le salon coupe **toutes**
+      les reprises vivantes chez lui, sans avoir personne à convaincre. Le
+      journal distingue « je suis ressorti » de « on m'a mis dehors ».
+      36 tests d'API, 10 d'écran, 11 mutations*
+      *Reste à composer : le bouton du bandeau de la journée, que la planche
+      dessine. La route existe et le client l'appelle depuis les réglages —
+      c'est une pose, pas un mécanisme.*
 - [ ] **La liste des terminaux, et la révocation par identité**
       *La planche des appareils ne peut pas se composer : `GET /me/devices`
       n'existe pas, et la révocation exige de **posséder** le jeton, qu'on n'a

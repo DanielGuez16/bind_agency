@@ -187,7 +187,7 @@ describe('le salon referme la porte lui-même', () => {
     await monterLesReglages([reprise()], envois);
 
     const bouton = await screen.findByTestId('reprise-refermer');
-    fireEvent.press(bouton);
+    await fireEvent.press(bouton);
 
     await waitFor(() =>
       expect(
