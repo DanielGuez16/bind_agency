@@ -8092,3 +8092,38 @@ qu'en début de ligne, le pronom genré cherché par appariement d'apostrophes, 
 maintenant les cartes cherchées sous une seule forme de style. La question à
 poser à chaque garde reste la même : *quelles autres façons d'écrire la même
 chose existe-t-il ?*
+
+---
+
+## 2026-08-20 — L'arbitrage montre une forme, pas une correspondance
+
+**Ce qui doit se voir n'est pas la conversation absente, c'est sa forme.** Rendre
+visible ce qui n'a pas été dit est le travail de cet écran — sinon l'arbitre
+tranche sur la dernière tentative comme si les deux précédentes n'existaient
+pas. Mais pas en affichant des notes libres l'une sous l'autre : cela ferait
+juger un ton, et un arbitre qui lit deux paragraphes se met à arbitrer la
+politesse.
+
+Ce qui est lisible et décisif est la **répétition du motif**. La colonne écrit
+« 3 · same » ou « 3 · mixed », un filtre sépare les deux files, et le dossier
+nomme la forme en une phrase avant tout journal.
+
+**Deux tentatives au moins, sinon ce n'est pas une répétition.** Un motif unique
+n'est pas « le même motif répété » : écrire « 1 · same » ferait lire une
+répétition là où il n'y a qu'un premier refus, et proposerait plus tard la
+clôture sans faute avant qu'on ait pu se tromper deux fois.
+
+**Et deux sur trois ne suffisent pas.** Deux fois la mention et une fois le lieu
+est un mélange : la créatrice a corrigé quelque chose entre-temps. Le test qui
+le tient est celui qui diverge — un décor recopié de la planche, trois fois le
+même motif, ne distingue pas une implémentation qui compare les motifs d'une qui
+répond toujours « same ».
+
+**Un sélecteur ancré sur un libellé traduit se casse dès que le mot apparaît deux
+fois.** Les motifs s'alignent désormais sans leur numéro, donc le même mot vit
+dans la colonne et dans la pastille : trois tests cherchaient le texte et
+trouvaient les deux. Les pastilles portent maintenant leur code en identifiant.
+
+**La quatrième issue reste à construire, et elle touche le modèle** — consigné
+dans `TASKS.md`, demandé à la session des routes. Rien n'est inventé côté client
+en attendant : un statut que le serveur ne connaît pas ne se simule pas.
