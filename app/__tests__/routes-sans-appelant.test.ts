@@ -62,8 +62,6 @@ const SANS_APPELANT: Record<string, string> = {
   // suppression attend une réponse de Design — ce qu'elle doit faire quand des
   // réservations passées citent la prestation — et c'est une question de
   // produit, pas de code mort.
-  modifierUnItem: 'a-instruire',
-  supprimerUnItem: 'a-instruire',
   activerUneOffre: 'a-instruire',
   // La prise en main d'une fiche préparée sur le terrain.
   rattacherLaFiche: 'a-instruire',
