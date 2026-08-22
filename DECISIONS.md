@@ -8347,8 +8347,19 @@ Un conflit sur ce fichier se résout en gardant les deux côtés.
 
 **#217 a supprimé 435 lignes de #215**, fusionnée quatre heures plus tôt : le
 bilan de tournée, ses deux modules, son test et ses six chaînes de traduction.
-C'était une PR sur la fiche et la galerie ; elle partait d'une branche antérieure
-et a résolu le conflit en gardant son côté.
+C'était une PR sur la fiche et la galerie, et **la cause n'est pas une
+résolution de conflit** — c'est ce que j'avais supposé, et c'était faux.
+`git reset --soft origin/main` suivi de `git add -A` suffit : le reset déplace
+HEAD sur le **nouveau** `origin/main` en gardant l'arbre de travail, lequel porte
+encore l'état d'avant pour tout ce qu'on n'a pas touché ; `git add -A` enregistre
+alors le retrait de tout ce qui a été fusionné entre-temps. Cela touche donc des
+fichiers qu'on n'a jamais ouverts, et plus on livre vite plus la fenêtre est
+large. La forme juste est
+`git reset --soft "$(git merge-base HEAD origin/main)"`.
+
+Et la vérification qui attrape les trois cas, à passer avant de pousser :
+`git show --numstat HEAD | awk '$1==0 && $2>0 {print $3}'` — un fichier en pure
+suppression dans une PR qui prétend ajouter est presque toujours un accident.
 
 **La CI n'a rien dit, et ne pouvait rien dire.** Un test supprimé ne rougit pas —
 il disparaît. Les 1175 tests restants passaient, et `main` était verte sur un
