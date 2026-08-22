@@ -1623,6 +1623,25 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       réseau rapide, et celui qu'on casserait sans y penser. 7 tests, 7
       mutations. Le vidage n'emporte que nos clés : le salon choisi et les
       préférences d'appareil ne sont pas des réponses.*
+- [x] **Le mur montait quatre-vingts images d'un coup**
+      ***Le plafond suivant, et il ne se voyait pas dans les octets.** La
+      vignette a ramené le fil de 10,5 Mo à 0,8 ; mais `Image` décode avant de
+      réduire, et le coût du décodage ne dépend pas du cadre où on pose la
+      photo. Une grille en `ScrollView` et `.map` montait donc toutes ses
+      rangées à la première image — vingt salons, quatre-vingts `Image`.*
+      *`Ecran` prend un mode **liste** : le corps nominal passe en `FlatList`,
+      les trois autres états restent dans le défileur ordinaire — ils tiennent
+      en un écran et n'ont rien à virtualiser. Additif : aucun écran ne change
+      tant qu'il ne le demande pas, et le fil est seul à le demander.*
+      ***Une seule construction du contenu, pas deux.** `useMur` produit
+      l'en-tête, les rangées et le pied ; `SectionsParQuartier` les pose dans un
+      bloc, le fil les confie au défileur. Deux constructions du même mur
+      finiraient par diverger — c'est la faute déjà vue ailleurs dans ce dépôt.
+      Les marges vivent donc sur la rangée, seule écriture qui rende la même
+      chose des deux côtés.*
+      *Le bloc reste utile : il sert quand aucun quartier n'est déclaré — des
+      salons réservables mais non situés — et dans les décors de test.
+      1 test neuf, 4 mutations*
 - [ ] **Le bandeau ne devient pas une ligne de confirmation**
       *La planche veut qu'il devienne « vous êtes en ligne · 41 créatrices
       peuvent vous réserver », puis disparaisse au bout de sept jours. Deux
