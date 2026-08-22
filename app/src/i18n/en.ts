@@ -916,6 +916,14 @@ export const en = {
     stockageWeb: 'Browser storage - development only',
   },
   composition: {
+    corriger: 'Correct',
+    retirerLaPrestation: 'Remove',
+    corrigerPortee: 'The photo, the spelling and the description are corrected here. Changing the duration, the tier or what you ask in return makes a different service — the bookings already made keep citing the one they had.',
+    retraitRefuse: 'Bookings cite this service, so it cannot be removed. Closing it stops new bookings and keeps the old ones readable.',
+    fermerPlutot: 'Close it instead',
+    enregistrerLaCorrection: 'Save',
+    nom: 'Name',
+    description: 'Description',
     carteTitre: 'Menu',
     // La distinction avec la galerie. C'est la seule chose que cet écran a
     // vraiment à expliquer : les deux se déposent pareil et ne servent pas à

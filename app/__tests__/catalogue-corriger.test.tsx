@@ -1,0 +1,152 @@
+/**
+ * Corriger une prestation, et le refus de la supprimer.
+ *
+ * **La règle vient de ce qu'une réservation raconte.** Douze réservations
+ * passées citent une prestation de quarante-cinq minutes ; la passer à
+ * soixante-quinze réécrirait leur histoire. La photo, l'orthographe et la
+ * description ne racontent rien de ce qui s'est passé.
+ *
+ * **Ce que ces tests éprouvent est le refus**, parce que c'est là que l'écran
+ * peut mentir : une prestation réservée qui disparaîtrait laisserait douze
+ * réservations pointer vers rien.
+ */
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+
+import { ApiClient, ApiProvider } from '../src/api';
+import { I18nProvider } from '../src/i18n';
+import { en } from '../src/i18n/en';
+import { CatalogueScreen } from '../src/screens/CatalogueScreen';
+import { CORRIGEABLES, DEMANDENT_UNE_AUTRE, suiteDuRefus } from '../src/screens/catalogue/corriger';
+import { ThemeProvider } from '../src/theme';
+
+const ITEM = {
+  id: 'i1',
+  business_id: 'b1',
+  parent_item_id: null,
+  name: 'Gel manicure',
+  description: null,
+  price_cents: 4_000,
+  duration_minutes: 45,
+  requires_booking: true,
+  photo_key: null,
+  leaves_choice: false,
+  source: 'manual' as const,
+  is_available: true,
+  is_effectively_available: true,
+  created_at: '2026-08-01T00:00:00Z',
+  updated_at: '2026-08-01T00:00:00Z',
+};
+
+describe('ce qui se corrige, et ce qui demande une autre prestation', () => {
+  it('les deux listes ne se recouvrent jamais', () => {
+    // **Un champ dans les deux serait une règle qui se contredit** : il
+    // s'éditerait en place *et* créerait une nouvelle prestation, et le premier
+    // des deux gestes écrit gagnerait.
+    const communs = CORRIGEABLES.filter((champ) =>
+      (DEMANDENT_UNE_AUTRE as readonly string[]).includes(champ),
+    );
+    expect(communs).toEqual([]);
+  });
+
+  it('la durée n’est pas corrigeable, et c’est tout le sujet', () => {
+    expect(CORRIGEABLES as readonly string[]).not.toContain('duration_minutes');
+    expect(DEMANDENT_UNE_AUTRE as readonly string[]).toContain('duration_minutes');
+  });
+
+  it('le refus de suppression se lit sur son code, pas sur son message', () => {
+    // Un message dépend de la langue ; un code ne dépend de rien. Et tout autre
+    // échec reste un échec — le traiter comme un refus proposerait de fermer
+    // une prestation sur une panne de réseau.
+    expect(suiteDuRefus('catalog_item_has_bookings')).toBe('fermer');
+    expect(suiteDuRefus('internal_error')).toBeNull();
+    expect(suiteDuRefus(null)).toBeNull();
+  });
+});
+
+describe('à l’écran', () => {
+  async function monter(surSuppression: () => Response) {
+    const api = new ApiClient({
+      baseUrl: 'https://api.test',
+      coffre: { lire: async () => null, ecrire: async () => {} },
+      fetchImpl: (async (url: RequestInfo | URL, init?: RequestInit) => {
+        const chemin = String(url);
+        if (init?.method === 'DELETE') return surSuppression();
+        if (chemin.includes('/catalog-items')) {
+          return { ok: true, status: 200, json: async () => [ITEM] } as Response;
+        }
+        return { ok: true, status: 200, json: async () => [] } as Response;
+      }) as unknown as typeof fetch,
+    });
+    return await render(
+      <I18nProvider initialLocale="en">
+        <ThemeProvider role="merchant">
+          <ApiProvider client={api}>
+            <CatalogueScreen businessId="b1" />
+          </ApiProvider>
+        </ThemeProvider>
+      </I18nProvider>,
+    );
+  }
+
+  const ACCEPTE = () => ({ ok: true, status: 204, json: async () => null }) as Response;
+  const REFUSE = () =>
+    ({
+      ok: false,
+      status: 409,
+      json: async () => ({ detail: 'catalog_item_has_bookings' }),
+    }) as Response;
+
+  it('le refus dit pourquoi, et propose le geste qui reste', async () => {
+    // **Douze réservations citent cette prestation.** Les laisser pointer vers
+    // rien réécrirait une histoire ; fermer arrête les nouvelles et garde les
+    // anciennes lisibles.
+    await monter(REFUSE);
+    await waitFor(() => expect(screen.getByTestId('retirer-i1')).toBeTruthy());
+
+    await fireEvent.press(screen.getByTestId('retirer-i1'));
+
+    await waitFor(() => expect(screen.getByTestId('refus-suppression-i1')).toBeTruthy());
+    expect(screen.getByTestId('fermer-plutot-i1')).toBeTruthy();
+  });
+
+  it('et rien de tout cela n’apparaît quand la suppression passe', async () => {
+    // Sans cette moitié, la garde passerait sur un écran qui afficherait le
+    // refus quoi qu'il arrive.
+    await monter(ACCEPTE);
+    await waitFor(() => expect(screen.getByTestId('retirer-i1')).toBeTruthy());
+
+    await fireEvent.press(screen.getByTestId('retirer-i1'));
+
+    await waitFor(() => expect(screen.queryByTestId('refus-suppression-i1')).toBeNull());
+  });
+
+  it('la correction n’offre ni durée ni palier, et dit pourquoi', async () => {
+    // Sans la phrase, un gérant cherche la durée, ne la trouve pas, et conclut
+    // que l'écran est incomplet — au lieu d'apprendre la règle.
+    await monter(ACCEPTE);
+    await waitFor(() => expect(screen.getByTestId('corriger-i1')).toBeTruthy());
+
+    await fireEvent.press(screen.getByTestId('corriger-i1'));
+
+    await waitFor(() => expect(screen.getByTestId('correction-i1')).toBeTruthy());
+    expect(screen.getByTestId('corriger-nom-i1')).toBeTruthy();
+    expect(screen.getByTestId('corriger-description-i1')).toBeTruthy();
+    expect(screen.getByText(en.composition.corrigerPortee)).toBeTruthy();
+    // Ni durée, ni palier, ni contrepartie.
+    expect(screen.queryByTestId('corriger-duree-i1')).toBeNull();
+  });
+
+  it('et le bouton d’enregistrement reste absent tant que rien ne change', async () => {
+    // Retiré, jamais grisé : c'est la règle du dépôt, et un bouton grisé n'est
+    // pas une information.
+    await monter(ACCEPTE);
+    await waitFor(() => expect(screen.getByTestId('corriger-i1')).toBeTruthy());
+    await fireEvent.press(screen.getByTestId('corriger-i1'));
+    await waitFor(() => expect(screen.getByTestId('correction-i1')).toBeTruthy());
+
+    expect(screen.queryByTestId('enregistrer-correction-i1')).toBeNull();
+
+    await fireEvent.changeText(screen.getByTestId('corriger-nom-i1'), 'Gel manicure, long');
+    await waitFor(() => expect(screen.getByTestId('enregistrer-correction-i1')).toBeTruthy());
+  });
+});
