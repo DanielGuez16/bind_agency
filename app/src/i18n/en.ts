@@ -934,6 +934,22 @@ export const en = {
     // **« Expirée » n'est pas « refermée ».** Personne n'a refermé : l'accès a
     // couru jusqu'au bout de son plafond, et c'est ce qui devrait gêner.
     repriseExpiree: 'Ran to its limit. Nobody closed it.',
+    // **Le nom, et qui a commencé.** Deux phrases plutôt qu'une avec un
+    // marqueur : « nobody asked » posé à côté d'un nom accuse ; dit dans la
+    // phrase, c'est un fait daté que le gérant peut contredire.
+    repriseParSpontanee: '{{qui}}, on their own initiative.',
+    repriseParDemandee: '{{qui}}, after you asked.',
+    repriseEcrans: 'Could open: {{ecrans}}',
+    porteeSeparateur: ', ',
+    porteeFiche: 'your page',
+    porteeCatalogue: 'your services',
+    porteeAgenda: "the day's bookings",
+    porteeContreparties: 'posts and proofs',
+    porteeAnnuaire: 'the creator directory',
+    porteeAbonnement: 'your subscription',
+    porteeChiffres: 'your numbers',
+    repriseRefermerAction: 'Close this access now',
+    repriseRefermerEnCours: 'Closing',
     titre: 'Settings',
     compte: 'Account',
     preferences: 'Preferences',
@@ -1268,6 +1284,8 @@ export const en = {
     handover_not_a_draft: 'This page already has an owner.',
     support_reason_required: 'Say why you are opening this account.',
     support_access_already_open: 'You already have an open access on this account.',
+    support_scope_required: 'Say which screens this access opens.',
+    support_access_out_of_scope: 'This access does not open that screen. Open one that does.',
     handover_terms_outdated:
       'The terms have changed since this page was opened. Reload and read them again.',
     catalog_duration_mismatch:
