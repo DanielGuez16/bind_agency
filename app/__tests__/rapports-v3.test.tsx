@@ -37,6 +37,8 @@ const ITEM = (id: string, extra: Record<string, unknown> = {}) => ({
   source: 'manual' as const,
   is_available: true,
   is_effectively_available: true,
+  archived_at: null,
+  reservations_count: 0,
   created_at: '2026-08-01T00:00:00Z',
   updated_at: '2026-08-01T00:00:00Z',
   ...extra,

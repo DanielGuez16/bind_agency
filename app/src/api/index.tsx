@@ -832,8 +832,19 @@ export class Api {
 
   // ---- composition : catalogue, paliers offerts, horaires ----
 
-  itemsDuCatalogue(businessId: string, signal?: AbortSignal) {
-    return this.client.request<ItemDuCatalogue[]>(routes.itemsDuCatalogue(businessId), { signal });
+  /**
+   * La liste que le salon travaille — **sans les archives**, par défaut.
+   *
+   * Une archive n'a plus rien à recevoir : la laisser ferait grossir l'écran
+   * de prestations qu'on ne refera pas. `avecArchives` la ramène pour l'écran
+   * qui les montre exprès.
+   */
+  itemsDuCatalogue(businessId: string, signal?: AbortSignal, avecArchives = false) {
+    const chemin = routes.itemsDuCatalogue(businessId);
+    return this.client.request<ItemDuCatalogue[]>(
+      avecArchives ? `${chemin}?avec_archives=true` : chemin,
+      { signal },
+    );
   }
 
   creerUnItem(businessId: string, item: NouvelItem) {
@@ -867,6 +878,38 @@ export class Api {
   supprimerUnItem(businessId: string, itemId: string) {
     return this.client.request<void>(routes.itemDuCatalogue(businessId, itemId), {
       methode: 'DELETE',
+    });
+  }
+
+  /**
+   * Retirer une prestation pour de bon.
+   *
+   * **Archiver n'est pas fermer, et ce n'est pas supprimer non plus.** Fermer
+   * dit « pas en ce moment » et se rouvre ; archiver dit « plus jamais » et ne
+   * se rouvre pas — le serveur refuse par `catalog_item_already_archived`.
+   * Supprimer n'existe qu'à zéro réservation : au-delà, laisser les
+   * réservations pointer vers rien réécrirait leur histoire.
+   */
+  archiverUnItem(businessId: string, itemId: string) {
+    return this.client.request<ItemDuCatalogue>(routes.archiverUnItem(businessId, itemId), {
+      methode: 'POST',
+    });
+  }
+
+  /**
+   * Créer la remplaçante et archiver l'ancienne, dans la même transaction.
+   *
+   * Pour ce qui ne se corrige pas en place : durée, palier, contrepartie.
+   * Douze réservations citent une prestation de quarante-cinq minutes, et la
+   * passer à soixante-quinze réécrirait leur histoire — la neuve porte le
+   * changement, l'ancienne garde la sienne.
+   *
+   * Rend la **nouvelle** : c'est celle sur laquelle on continue.
+   */
+  remplacerUnItem(businessId: string, itemId: string, item: NouvelItem) {
+    return this.client.request<ItemDuCatalogue>(routes.remplacerUnItem(businessId, itemId), {
+      methode: 'POST',
+      corps: item,
     });
   }
 

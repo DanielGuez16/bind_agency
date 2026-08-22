@@ -51,7 +51,7 @@ import {
 import { CarteDuCommerce } from './CarteDuCommerce';
 import { GalerieDuCommerce } from './GalerieDuCommerce';
 import { useI18n } from '../i18n';
-import { suiteDuRefus } from './catalogue/corriger';
+import { gesteDeRetrait, suiteDuRefus } from './catalogue/corriger';
 import { radius, useColors } from '../theme';
 import {
   ecartAuConseil,
@@ -512,14 +512,29 @@ function LignePrestation({
   const [echec, setEchec] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
   const [correction, setCorrection] = useState(false);
+  const [remplacement, setRemplacement] = useState(false);
   const [refusDeSuppression, setRefus] = useState(false);
 
+  const retrait = gesteDeRetrait(item);
+
+  /**
+   * Retirer, et le mot dépend de ce que la prestation a derrière elle.
+   *
+   * **Jamais réservée : elle se supprime vraiment.** Rien ne la cite, rien ne
+   * se réécrit. **Déjà réservée : elle s'archive et ne se supprime jamais** —
+   * les réservations continuent de citer ce qu'elles ont eu.
+   *
+   * Le refus reste lu après coup. Il ne devrait plus arriver, puisque le compte
+   * décide avant ; il tient la porte si les deux divergent, et c'est justement
+   * quand ils divergent qu'on veut une phrase plutôt qu'une erreur nue.
+   */
   async function retirer() {
     setEchec(null);
     setRefus(false);
     setEnvoi(true);
     try {
-      await api.supprimerUnItem(businessId, item.id);
+      if (retrait.geste === 'archiver') await api.archiverUnItem(businessId, item.id);
+      else await api.supprimerUnItem(businessId, item.id);
       vibration.action();
       onChange();
     } catch (erreur) {
@@ -596,15 +611,48 @@ function LignePrestation({
           onPress={() => setCorrection(true)}
           testID={`corriger-${item.id}`}
         />
-        <Button
-          label={t('composition.retirerLaPrestation')}
-          size="sm"
-          variant="ghost"
-          fullWidth={false}
-          loading={envoi}
-          onPress={() => void retirer()}
-          testID={`retirer-${item.id}`}
-        />
+        {/* **La phrase disait déjà que la durée ne se corrige pas ici ; elle
+            dit maintenant où.** Un écran qui explique une impossibilité sans
+            donner la suite laisse chercher — et l'on cherche dans la
+            suppression, qui est justement le geste qu'on ne veut pas. */}
+        {retrait.geste === 'aucun' ? null : (
+          <Button
+            label={t('composition.remplacer')}
+            size="sm"
+            variant="ghost"
+            fullWidth={false}
+            onPress={() => setRemplacement(true)}
+            testID={`ouvrir-remplacement-${item.id}`}
+          />
+        )}
+        {/* **Le bouton nomme son écart.** « Archiver » ne se décide pas ;
+            « archiver, douze réservations citent cette prestation » se décide.
+            Sans le nombre, le gérant ne sait pas ce qu'il déplace — et il n'y a
+            jamais les deux gestes : offrir une suppression pour la voir refusée
+            apprend que l'écran propose des actions qui échouent. */}
+        {retrait.geste === 'aucun' ? null : (
+          <Button
+            label={
+              retrait.geste !== 'archiver'
+                ? t('composition.retirerLaPrestation')
+                : // Deux branches écrites à la main : `formaterLesNombres` rend
+                  // `count` en chaîne, et la pluralisation d'i18n-js ne part
+                  // donc jamais. « 1 bookings cite this » est déjà passé une
+                  // fois par cet écran.
+                  retrait.reservations === 1
+                  ? t('composition.archiverUneReservation')
+                  : t('composition.archiverAvecReservations', {
+                      n: String(retrait.reservations),
+                    })
+            }
+            size="sm"
+            variant="ghost"
+            fullWidth={false}
+            loading={envoi}
+            onPress={() => void retirer()}
+            testID={`retirer-${item.id}`}
+          />
+        )}
       </View>
 
       {/* **Le refus se lit comme la réponse qu'il est.** Une prestation déjà
@@ -647,6 +695,19 @@ function LignePrestation({
             onChange();
           }}
           onRenoncer={() => setCorrection(false)}
+        />
+      ) : null}
+
+      {remplacement ? (
+        <NouvellePrestation
+          businessId={businessId}
+          paliers={paliers ?? []}
+          remplace={item}
+          onPublie={() => {
+            setRemplacement(false);
+            onChange();
+          }}
+          onAnnuler={() => setRemplacement(false)}
         />
       ) : null}
       {/* **Le conseil, et jamais la décision.** La plateforme dit ce qu'elle
@@ -736,17 +797,35 @@ function NouvellePrestation({
   paliers,
   onPublie,
   onAnnuler,
+  remplace,
 }: {
   businessId: string;
   paliers: PalierOffrable[];
   onPublie: () => void;
   onAnnuler: () => void;
+  /**
+   * La prestation que celle-ci remplace, s'il y en a une.
+   *
+   * **Le même formulaire, parce que c'est le même geste.** Changer une durée
+   * *est* composer une autre prestation : la neuve part des valeurs de
+   * l'ancienne, qu'on modifie, et l'ancienne s'archive dans la même
+   * transaction. En faire deux écrans dirait que ce sont deux choses.
+   *
+   * **Le palier ne suit pas, et c'est voulu.** Recopier l'offre poserait un
+   * accord que personne n'a conclu : une créatrice a accepté un palier sur une
+   * prestation de quarante-cinq minutes, et l'offre recopiée la ferait
+   * consentir à soixante-quinze. Même principe que `value_cents_snapshot`,
+   * appliqué à l'accord au lieu du prix.
+   */
+  remplace?: ItemDuCatalogue;
 }) {
   const { api, messageDErreur } = useApi();
   const { t } = useI18n();
-  const [nom, setNom] = useState('');
-  const [duree, setDuree] = useState(45);
-  const [prix, setPrix] = useState('');
+  const [nom, setNom] = useState(remplace?.name ?? '');
+  const [duree, setDuree] = useState(remplace?.duration_minutes ?? 45);
+  const [prix, setPrix] = useState(
+    remplace ? String(remplace.price_cents / 100) : '',
+  );
   const [palierId, setPalierId] = useState<string | null>(paliers[0]?.id ?? null);
   const [echec, setEchec] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
@@ -758,11 +837,17 @@ function NouvellePrestation({
     setEchec(null);
     setEnvoi(true);
     try {
-      const item = await api.creerUnItem(businessId, {
+      const champs = {
         name: nom.trim(),
         price_cents: prixEnCentimes,
         duration_minutes: duree,
-      });
+      };
+      // Remplacer, et non créer puis archiver en deux appels : le serveur fait
+      // les deux dans la même transaction. En deux temps, une panne entre les
+      // deux laisserait le catalogue avec les deux prestations, ou avec aucune.
+      const item = remplace
+        ? await api.remplacerUnItem(businessId, remplace.id, champs)
+        : await api.creerUnItem(businessId, champs);
       if (palierId) await api.offrirAuPalier(businessId, palierId, item.id);
       vibration.reussite();
       onPublie();
@@ -777,7 +862,17 @@ function NouvellePrestation({
   const choisi = paliers.find((p) => p.id === palierId) ?? null;
 
   return (
-    <View style={{ gap: 12 }} testID="nouvelle-prestation">
+    <View
+      style={{ gap: 12 }}
+      testID={remplace ? `remplacer-${remplace.id}` : 'nouvelle-prestation'}
+    >
+      {remplace ? (
+        <StatusMessage
+          level="neutral"
+          body={t('composition.remplaceExplication', { nom: remplace.name })}
+          testID={`remplace-explication-${remplace.id}`}
+        />
+      ) : null}
       <TextField
         label={t('composition.champNom')}
         value={nom}

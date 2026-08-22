@@ -8826,3 +8826,39 @@ moins de 24 h du rendez-vous ne s'annule pas du tout. Les deux tests existants
 confirmaient d'abord, donc aucun n'exerçait cet état — la forme la plus
 courante cachait la seule qui casse. Marqué `xfail(strict=True)` : la CI rougira
 le jour de la correction si le marqueur reste.
+
+---
+
+## 2026-08-22 — Le catalogue : archiver, et le bouton qui nomme son écart
+
+**`archived_at` distinct de `is_available`, et l'écran en dépend.** Les deux
+valaient le même drapeau : sortir les archives de la liste de travail sortait
+aussi les prestations saisonnières qu'un salon compte rouvrir en septembre.
+La distinction vient du serveur (#238), l'écran ne la reconstruit pas.
+
+**Il n'y a jamais les deux gestes.** À zéro réservation la suppression est
+vraie ; au-delà, elle n'existe pas et le bouton dit « archiver, douze
+réservations citent cette prestation ». Offrir une suppression pour la voir
+refusée apprend à un gérant que l'écran propose des actions qui échouent — et
+le nombre est ce qui distingue un bouton qu'on presse par habitude d'un bouton
+qu'on presse en sachant ce qu'on déplace.
+
+Le refus par code reste lu. Il ne devrait plus survenir, puisque le compte
+décide avant ; il tient la porte si les deux divergent, et c'est justement
+quand ils divergent qu'on veut une phrase plutôt qu'une erreur nue.
+
+**`reservations_count` est lu faux, jamais comparé à zéro.** Sixième fois sur
+ce projet qu'un champ neuf arrive : les réponses en vol et les décors écrits
+avant lui ne le portent pas. `!== 0` sur `undefined` proposerait d'archiver une
+prestation vierge. La mutation le dit sans détour.
+
+**Remplacer est le même formulaire que composer, parce que c'est le même
+geste.** Changer une durée *est* composer une autre prestation. Un seul appel à
+`/replace` : en deux temps, une panne entre les deux laisserait le catalogue
+avec les deux prestations, ou avec aucune.
+
+**Le palier ne suit pas la remplaçante**, et la raison est plus forte que le
+doublon : recopier l'offre poserait **un accord que personne n'a conclu**. Une
+créatrice a accepté un palier sur une prestation de quarante-cinq minutes ;
+l'offre recopiée la ferait consentir à soixante-quinze. C'est le principe de
+`value_cents_snapshot`, appliqué à l'accord au lieu du prix.

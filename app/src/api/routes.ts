@@ -119,6 +119,10 @@ export const routes = {
     chemin(`/business/${businessId}/catalog-items/${itemId}`),
   disponibiliteDUnItem: (businessId: string, itemId: string) =>
     chemin(`/business/${businessId}/catalog-items/${itemId}/availability`),
+  archiverUnItem: (businessId: string, itemId: string) =>
+    chemin(`/business/${businessId}/catalog-items/${itemId}/archive`),
+  remplacerUnItem: (businessId: string, itemId: string) =>
+    chemin(`/business/${businessId}/catalog-items/${itemId}/replace`),
   paliersDuCommerce: (businessId: string) => chemin(`/business/${businessId}/tiers`),
   offresDePalier: (businessId: string) => chemin(`/business/${businessId}/tier-offers`),
   activationDUneOffre: (businessId: string, offreId: string) =>
@@ -242,6 +246,8 @@ export const METHODES: Record<keyof typeof routes, ('GET' | 'POST' | 'PATCH' | '
     contrepartiesDuCommerce: ['GET'],
     itemsDuCatalogue: ['GET', 'POST'],
     itemDuCatalogue: ['GET', 'PATCH', 'DELETE'],
+    archiverUnItem: ['POST'],
+    remplacerUnItem: ['POST'],
     disponibiliteDUnItem: ['PUT'],
     paliersDuCommerce: ['GET'],
     offresDePalier: ['GET', 'POST'],

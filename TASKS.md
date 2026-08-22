@@ -1685,18 +1685,30 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       réécrirait leur histoire.*
       *Le refus de suppression se lit sur son **code** et non son message, et
       propose le geste qui reste. 1245 tests verts, 3 mutations*
-- [ ] **Archiver n'est pas fermer, et rien ne les distingue**
+- [x] **Le catalogue tient les quatre règles de Design**
+      *`archived_at`, `reservations_count` et `/replace` sont arrivés par
+      `bind-agency-1a` (#238) ; l'écran s'en sert. Le bouton nomme son écart —
+      « archiver, douze réservations citent cette prestation » — et **il n'y a
+      jamais les deux gestes** : à zéro la suppression est vraie, au-delà elle
+      n'existe pas. Offrir une suppression pour la voir refusée apprend qu'un
+      écran propose des actions qui échouent.*
+      *Durée et palier ouvrent le même formulaire que la création, pré-rempli,
+      et appellent `/replace` — un seul appel, parce qu'une panne entre deux
+      laisserait le catalogue avec les deux prestations ou avec aucune. Le
+      palier ne suit pas la neuve : recopier l'offre poserait un accord que
+      personne n'a conclu. 4 mutations*
+- [x] **Archiver n'est pas fermer, et rien ne les distinguait**
       *Un salon ferme une prestation pour l'été et la rouvre en septembre ; il
       archive celle qu'il ne refera plus. Les deux valent `is_available: false`,
       donc l'écran ne peut pas sortir les archives de la liste de travail sans
       en sortir aussi les saisonnières. Il faudrait un état distinct —
       `archived_at`, ou une transition propre qui laisse sa trace au journal.
       Demandé à `bind-agency-1a`*
-- [ ] **Le compte de réservations qui citent une prestation n'est pas servi**
+- [x] **Le compte de réservations qui citent une prestation**
       *Le bouton doit nommer son écart : « archiver, douze réservations citent
       cette prestation ». Sans le nombre il dit « archiver », et le gérant ne
       sait pas ce qu'il déplace. Un entier sur `CatalogItemRead` suffit*
-- [ ] **Changer la durée d'un item réservé reste possible côté serveur**
+- [x] **Changer la durée d'un item réservé est refusé par le service**
       *`CatalogItemUpdate` accepte `duration_minutes`. L'écran ne l'offre pas,
       mais **une discipline d'écran finit par céder** : la règle doit descendre
       dans la route — refus sur un item déjà réservé, ou une route de

@@ -931,6 +931,16 @@ export const en = {
   composition: {
     corriger: 'Correct',
     retirerLaPrestation: 'Remove',
+    remplacer: 'Change duration or tier',
+    remplaceExplication:
+      'This creates a new service and archives “{{nom}}”. Bookings already made keep citing the one they had. Pick the tier again — the old offer does not carry over, because nobody agreed to it on these terms.',
+    // **Le nombre, dans le bouton.** « Archive » ne se décide pas ; « archive,
+    // 12 bookings cite this service » se décide. Les trois branches sont
+    // écrites à la main : `formaterLesNombres` rend `count` en chaîne, et la
+    // pluralisation d'i18n-js ne se déclenche donc jamais.
+    archiverAvecReservations: 'Archive · {{n}} bookings cite this',
+    archiverUneReservation: 'Archive · 1 booking cites this',
+    archivee: 'Archived. Still readable from the bookings that cite it.',
     corrigerPortee: 'The photo, the spelling and the description are corrected here. Changing the duration, the tier or what you ask in return makes a different service — the bookings already made keep citing the one they had.',
     retraitRefuse: 'Bookings cite this service, so it cannot be removed. Closing it stops new bookings and keeps the old ones readable.',
     fermerPlutot: 'Close it instead',
