@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.core.dependencies import CurrentBusiness, SessionDep, require_role
 from app.core.errors import ErrorCode
-from app.models.enums import UserRole
+from app.models.enums import ContentFormat, Platform, UserRole
 from app.schemas.directory import AnnuaireRead, CreateurVuRead
 from app.schemas.reporting import PorteeLocaleRead
 from app.services import directory as service
@@ -30,6 +30,9 @@ async def read_directory(
     session: SessionDep,
     limite: Annotated[int, Query(ge=1, le=200)] = 50,
     decalage: Annotated[int, Query(ge=0)] = 0,
+    palier: Annotated[list[ContentFormat] | None, Query()] = None,
+    reseau: Annotated[Platform | None, Query()] = None,
+    distance_max_metres: Annotated[int | None, Query(ge=0)] = None,
 ) -> AnnuaireRead:
     """**Sans abonnement, rien ne part.**
 
@@ -61,7 +64,17 @@ async def read_directory(
             detail=ErrorCode.SUBSCRIPTION_REQUIRED.value,
         )
 
-    page = await service.annuaire(session, business=business, limite=limite, decalage=decalage)
+    page = await service.annuaire(
+        session,
+        business=business,
+        filtre=service.FiltreDAnnuaire(
+            paliers=frozenset(palier or ()),
+            reseau=reseau,
+            distance_max_metres=distance_max_metres,
+        ),
+        limite=limite,
+        decalage=decalage,
+    )
     return AnnuaireRead(
         portee=PorteeLocaleRead.model_validate(
             await portee_locale.autour_du_commerce(session, business=business)

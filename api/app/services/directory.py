@@ -161,10 +161,66 @@ class PageDAnnuaire:
     total: int
 
 
+@dataclass(frozen=True, slots=True)
+class FiltreDAnnuaire:
+    """Ce que l'écran demande de retenir. Tout est facultatif.
+
+    **Un objet plutôt que quatre paramètres** : ils voyagent ensemble depuis la
+    route jusqu'au compte, et les passer un par un ferait que l'un d'eux serait
+    oublié quelque part — c'est-à-dire que le total et la liste ne diraient plus
+    la même chose.
+    """
+
+    #: Les formats retenus. Vide veut dire « tous », jamais « aucun ».
+    #:
+    #: Une créatrice est retenue si **au moins un** des formats demandés lui est
+    #: accessible chez ce salon. Exiger qu'elle les ouvre tous répondrait à une
+    #: autre question, et ce n'est pas celle que la planche pose.
+    paliers: frozenset[ContentFormat] = frozenset()
+    #: Le réseau retenu. Nul veut dire « tous ».
+    #:
+    #: Elle est retenue si elle a un compte **actif** sur ce réseau. Un compte
+    #: révoqué n'est pas un réseau atteignable — même règle que la liste de ses
+    #: comptes, et deux règles différentes se contrediraient à l'écran.
+    reseau: Platform | None = None
+    #: La distance maximale, en mètres. Nulle veut dire « le rayon entier ».
+    #:
+    #: **Une créatrice sans position est écartée dès que ce filtre est posé.**
+    #: C'est le seul endroit où l'inconnue se traite ainsi, et c'est justifié :
+    #: le filtre demande « à moins de trois kilomètres », et on ne peut pas
+    #: l'affirmer d'elle. Sans filtre elle reste, en fin de tri — l'inconnue
+    #: n'est écartée que lorsqu'on demande une garantie qu'elle ne peut pas
+    #: donner.
+    distance_max_metres: int | None = None
+
+    def __bool__(self) -> bool:
+        return bool(self.paliers or self.reseau or self.distance_max_metres)
+
+
+def _retenue(vu: CreateurVu, filtre: FiltreDAnnuaire) -> bool:
+    """Cette créatrice passe-t-elle le filtre.
+
+    Écrite en Python et non en SQL : l'accès à un palier se calcule par
+    `eligibility.evaluer`, qui est pure et ne se traduit pas en clause. Le
+    filtre s'applique donc sur ce qui a déjà été évalué — ce qui est aussi ce
+    qui garantit que le total et la liste sortent du même calcul.
+    """
+    if filtre.paliers and not (set(vu.paliers_ouverts) & filtre.paliers):
+        return False
+    if filtre.reseau and not any(compte.platform is filtre.reseau for compte in vu.comptes):
+        return False
+    # Inconnue écartée : le filtre demande une garantie qu'on ne peut pas donner
+    # d'elle. Sans filtre, elle reste et passe en fin de tri.
+    return filtre.distance_max_metres is None or (
+        vu.distance_metres is not None and vu.distance_metres <= filtre.distance_max_metres
+    )
+
+
 async def annuaire(
     session: AsyncSession,
     *,
     business: Business,
+    filtre: FiltreDAnnuaire | None = None,
     limite: int = 50,
     decalage: int = 0,
 ) -> PageDAnnuaire:
@@ -201,6 +257,17 @@ async def annuaire(
     **Trié par le serveur, et c'est structurel** : une liste paginée qu'on
     trierait dans le client se réordonne à chaque page, puisque chaque page
     n'a que ses propres lignes à comparer.
+
+    ## Le filtre, et le total qui va avec
+
+    **Le total est recalculé sur le filtre**, et c'est le champ sans lequel les
+    trois autres induisent en erreur : « 20 sur 128 » ment dès qu'un filtre est
+    posé, et l'écran annoncerait un marché qui n'existe pas.
+
+    Le filtre s'applique **avant** la page et après le tri, pour la même raison
+    que le tri est ici : filtrer une page n'est pas filtrer la liste. La page
+    suivante rendrait un autre sous-ensemble, et une créatrice se retrouverait
+    deux fois ou jamais.
 
     ## Le rayon
 
@@ -380,6 +447,9 @@ async def annuaire(
     #
     # `float("inf")` pour une distance inconnue : elle passe derrière tout ce
     # qu'on sait, sans être écartée.
+    if filtre:
+        vus = [vu for vu in vus if _retenue(vu, filtre)]
+
     vus.sort(
         key=lambda vu: (
             not vu.peut_reserver_ici,
