@@ -79,6 +79,140 @@ function Sonde() {
   );
 }
 
+/**
+ * Les blocs `style={…}` d'une source, découpés sur leurs accolades.
+ *
+ * **Il y avait une fenêtre, et elle a fini par coûter quelque chose.** La garde
+ * lisait un bloc sur neuf cents caractères — d'abord six cents, relevé une fois
+ * quand deux cartes sont sorties de l'inventaire en silence. Le compte n'est
+ * pas le bon réglage : c'est le principe qui est faux. Un bloc de style porte
+ * des commentaires, des ternaires et des valeurs conditionnelles, et sa
+ * longueur n'est bornée par rien. Quatre lignes de prose ajoutées dans le style
+ * d'une carte de l'annuaire ont suffi à la faire disparaître de l'inventaire —
+ * **sans erreur, sans avertissement**, la garde cessant simplement de la voir.
+ *
+ * Le découpage suit donc l'imbrication, comme celui des balises `Pressable` du
+ * garde-fou du retour au toucher, et n'a plus de longueur maximale. Les deux
+ * formes se traitent d'un coup : `style={{ … }}` referme sa paire d'accolades,
+ * `style={({ pressed }) => ({ … })}` referme la sienne au même endroit — celle
+ * ouverte juste après `style=`.
+ *
+ * **Les chaînes et les commentaires sont traversés sans être comptés**, et
+ * l'ordre des deux importe. Une accolade dans un littéral décalerait le compte
+ * et couperait le bloc au mauvais endroit. Mais la première version ne
+ * traversait que les chaînes, et **une apostrophe française de commentaire —
+ * « qu'elle se presse » — la faisait entrer en mode chaîne** : tout le reste du
+ * bloc était alors avalé, et deux cartes du produit disparaissaient de
+ * l'inventaire. C'est exactement le défaut que la garde des pronoms genrés a
+ * eu la veille, où l'appariement des apostrophes du source se désynchronisait
+ * sur les mêmes commentaires. Un commentaire se saute donc avant qu'on
+ * regarde ses guillemets.
+ */
+export function blocsDeStyle(source: string): string[] {
+  const blocs: string[] = [];
+  const MARQUE = 'style={';
+
+  for (let depart = source.indexOf(MARQUE); depart !== -1; depart = source.indexOf(MARQUE, depart + 1)) {
+    let profondeur = 0;
+    let citation: string | null = null;
+    let i = depart + MARQUE.length - 1;
+
+    for (; i < source.length; i += 1) {
+      const car = source[i];
+
+      if (citation) {
+        if (car === '\\') i += 1;
+        else if (car === citation) citation = null;
+        continue;
+      }
+
+      // Les commentaires d'abord : leur contenu n'est ni du code ni une
+      // chaîne, et une apostrophe française y est une lettre.
+      if (car === '/' && source[i + 1] === '/') {
+        const finDeLigne = source.indexOf('\n', i);
+        i = finDeLigne === -1 ? source.length : finDeLigne;
+        continue;
+      }
+      if (car === '/' && source[i + 1] === '*') {
+        const fin = source.indexOf('*/', i + 2);
+        i = fin === -1 ? source.length : fin + 1;
+        continue;
+      }
+
+      if (car === "'" || car === '"' || car === '`') {
+        citation = car;
+        continue;
+      }
+      if (car === '{') profondeur += 1;
+      else if (car === '}') {
+        profondeur -= 1;
+        if (profondeur === 0) break;
+      }
+    }
+
+    if (profondeur === 0) blocs.push(source.slice(depart, i + 1));
+  }
+
+  return blocs;
+}
+
+describe('le découpage des blocs de style', () => {
+  /** Une carte, avec de quoi faire dérailler un découpage naïf. */
+  const carte = (interieur: string) =>
+    `<View style={{ borderRadius: radius['radius.lg'], backgroundColor: c['bg.surface'], borderWidth: 1,${interieur} }}>`;
+
+  const estUneCarte = (b: string) =>
+    b.includes('radius.lg') && b.includes('bg.surface') && b.includes('borderWidth');
+
+  it('voit une carte que la fenêtre de neuf cents caractères manquait', () => {
+    // **Le cas qui a coûté quelque chose.** Quatre lignes de prose dans le
+    // style d'une carte de l'annuaire l'ont fait sortir de l'inventaire, sans
+    // erreur ni avertissement. La divergence est écrite ici : la même carte,
+    // avec un commentaire assez long pour dépasser l'ancienne borne.
+    const longue = carte(`\n// ${'x'.repeat(1200)}\n`);
+
+    expect(longue.length).toBeGreaterThan(900);
+    expect(/style=\{\{[\s\S]{0,900}?\}\}/.test(longue)).toBe(false);
+    expect(blocsDeStyle(longue).filter(estUneCarte)).toHaveLength(1);
+  });
+
+  it('ne se laisse pas ouvrir par une apostrophe de commentaire', () => {
+    // **La faute de ma première version**, et la même que celle de la garde des
+    // pronoms la veille : traverser les chaînes sans traverser les commentaires
+    // fait entrer en mode chaîne sur « qu'elle », et tout le bloc est avalé.
+    const avecApostrophe = carte("\n// le style fonction, parce qu'elle se presse\n");
+
+    expect(blocsDeStyle(avecApostrophe).filter(estUneCarte)).toHaveLength(1);
+  });
+
+  it('compte les accolades imbriquées jusqu’à la bonne', () => {
+    // Un `shadowOffset` referme une accolade au milieu : couper là rendrait un
+    // fragment sans `borderWidth`, donc une carte invisible.
+    const imbrique =
+      "<View style={{ borderRadius: radius['radius.lg'], shadowOffset: { width: 0, height: 2 }, backgroundColor: c['bg.surface'], borderWidth: 1 }}>";
+
+    const [vu] = blocsDeStyle(imbrique);
+    expect(estUneCarte(vu)).toBe(true);
+    expect(vu.endsWith('}}')).toBe(true);
+  });
+
+  it('ne compte pas une accolade prise dans une chaîne', () => {
+    // Une accolade littérale fermerait le bloc trop tôt et couperait la carte
+    // en deux — la façon silencieuse de refaire le défaut qu'on corrige.
+    const avecLitteral = carte(" alt: '}', ");
+
+    expect(blocsDeStyle(avecLitteral).filter(estUneCarte)).toHaveLength(1);
+  });
+
+  it('prend les deux formes de style, objet et fonction', () => {
+    const fonction =
+      "<Pressable style={({ pressed }) => ({ borderRadius: radius['radius.lg'], backgroundColor: c['bg.surface'], borderWidth: 1, opacity: pressed ? 0.7 : 1 })}>";
+
+    expect(blocsDeStyle(fonction).filter(estUneCarte)).toHaveLength(1);
+    expect(blocsDeStyle(carte('')).filter(estUneCarte)).toHaveLength(1);
+  });
+});
+
 describe('jetons', () => {
   it('chaque valeur de la passation est celle de l’app, sans retouche', () => {
     // **L'égalité profonde a cédé à l'inclusion, et il faut dire pourquoi.**
@@ -698,12 +832,7 @@ describe('les surfaces de la v1.1', () => {
     // Élargir plutôt qu'inscrire l'exception : ajouter le fichier à la liste
     // aurait ajusté la règle à la première carte qu'elle rencontre, ce qui est
     // exactement l'érosion que l'inventaire existe pour empêcher.
-    const blocObjet = /style=\{\{[\s\S]{0,900}?\}\}/g;
-    const blocFonction = /style=\{\([^)]*\)\s*=>\s*\(\{[\s\S]{0,900}?\}\)\}/g;
-    const blocsDe = (source: string) => [
-      ...(source.match(blocObjet) ?? []),
-      ...(source.match(blocFonction) ?? []),
-    ];
+    const blocsDe = blocsDeStyle;
 
     /**
      * **Le filet fait partie de la définition, et il laisse un trou connu.**
