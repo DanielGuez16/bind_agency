@@ -31,6 +31,16 @@ class CompteVuRead(BaseModel):
     profil_url: str | None
 
 
+class PalierAccessibleIciRead(BaseModel):
+    """Le meilleur palier qu'elle ouvre chez ce salon."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    tier_id: uuid.UUID
+    platform: Platform
+    content_format: ContentFormat
+
+
 class CreateurVuRead(BaseModel):
     """Ce qu'un salon abonné voit d'une créatrice.
 
@@ -49,7 +59,17 @@ class CreateurVuRead(BaseModel):
     city: str | None
     bio: str | None
     comptes: list[CompteVuRead]
+    #: Les formats qu'elle ouvre **chez ce salon**. L'annuaire évaluait
+    #: l'éligibilité contre tous les paliers du produit : la liste répondait
+    #: « elle se qualifie quelque part », ce dont un salon ne peut rien faire.
     paliers_ouverts: list[ContentFormat]
+    #: Vrai quand au moins un palier de ce salon lui est accessible. Premier
+    #: critère du tri, avant la distance.
+    peut_reserver_ici: bool
+    palier_accessible: PalierAccessibleIciRead | None
+    #: Distance au salon, en mètres. **Nulle veut dire « on ne sait pas »**,
+    #: jamais « loin » : elle passe en fin de tri sans être écartée.
+    distance_metres: int | None
     audience_totale: int
 
 
@@ -69,4 +89,10 @@ class AnnuaireRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     portee: PorteeLocaleRead
+    #: Triés par le serveur : accès d'abord, proximité ensuite. Une liste
+    #: paginée qu'on trierait dans le client se réordonne à chaque page,
+    #: puisque chaque page n'a que ses propres lignes à comparer.
     createurs: list[CreateurVuRead]
+    #: Combien il y en a en tout, dans le rayon. « 20 sur 128 » demande de le
+    #: savoir : une page pleine ne dit pas s'il en reste.
+    total: int

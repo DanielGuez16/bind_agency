@@ -34,9 +34,9 @@ import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.models import CreatorProfile, SocialAccount, Tier, User
-from app.models.enums import ContentFormat, Platform, SocialAccountStatus
-from app.services import eligibility
+from app.models import Business, CreatorProfile, SocialAccount, User
+from app.models.enums import ContentFormat, Platform, SocialAccountStatus, UserStatus
+from app.services import eligibility, portee_locale
 
 #: Où mène un pseudonyme, par plateforme.
 #:
@@ -85,6 +85,20 @@ class CompteVu:
 
 
 @dataclass(frozen=True, slots=True)
+class PalierAccessibleIci:
+    """Le meilleur palier qu'elle ouvre **chez ce salon**.
+
+    Le meilleur et non la liste : l'écran écrit « elle ouvre le reel » sur une
+    ligne de grille, et une énumération y tiendrait mal. La liste complète reste
+    dans `paliers_ouverts`, juste à côté.
+    """
+
+    tier_id: uuid.UUID
+    platform: Platform
+    content_format: ContentFormat
+
+
+@dataclass(frozen=True, slots=True)
 class CreateurVu:
     """Ce qu'un salon voit d'une créatrice dans l'annuaire.
 
@@ -105,7 +119,26 @@ class CreateurVu:
     comptes: tuple[CompteVu, ...]
     #: Les formats ouverts, du moins au plus exigeant. C'est ce qui remplace le
     #: score : un palier haut ne s'obtient pas sans tenir ses engagements.
+    #: Les formats qu'elle ouvre **chez ce salon**, du moins au plus exigeant.
+    #:
+    #: **Chez ce salon, et c'est un changement de sens.** L'annuaire évaluait
+    #: l'éligibilité contre tous les paliers actifs du produit : la liste
+    #: répondait « elle se qualifie quelque part », ce qu'un salon ne peut rien
+    #: faire. Elle répond maintenant « elle peut réserver ce que vous avez
+    #: ouvert », ce qui est la seule question qu'il se pose.
     paliers_ouverts: tuple[ContentFormat, ...]
+    #: Vrai quand au moins un palier de ce salon lui est accessible. C'est le
+    #: premier critère du tri, avant la distance : une créatrice joignable à
+    #: douze kilomètres vaut mieux qu'une créatrice hors de portée d'en face.
+    peut_reserver_ici: bool
+    #: Le meilleur des paliers qu'elle ouvre ici. Nul quand elle n'en ouvre
+    #: aucun — et l'écran a alors `peut_reserver_ici` à faux pour le dire.
+    palier_accessible: PalierAccessibleIci | None
+    #: Sa distance au salon, en mètres. **Nulle veut dire « on ne sait pas »**,
+    #: jamais « loin » : une créatrice sans position renseignée existe, elle
+    #: peut réserver, et le rayon ne peut rien dire d'elle. Elle passe en fin de
+    #: tri plutôt que d'être écartée.
+    distance_metres: int | None
     #: Le volume cumulé des comptes rattachés. Un ordre de grandeur d'audience,
     #: jamais une portée atteinte — la même précaution que sur les rapports.
     audience_totale: int
@@ -115,7 +148,26 @@ class CreateurVu:
 ORDRE_DES_FORMATS = (ContentFormat.STORY, ContentFormat.POST, ContentFormat.REEL)
 
 
-async def annuaire(session: AsyncSession, *, limite: int = 200) -> tuple[CreateurVu, ...]:
+@dataclass(frozen=True, slots=True)
+class PageDAnnuaire:
+    """Une page de l'annuaire, et de quoi savoir qu'il y en a d'autres.
+
+    Le total accompagne la page parce qu'un écran qui pagine doit dire « 20 sur
+    128 » : sans lui, il ne sait pas s'il montre tout ou le début, et une
+    dernière page pleine se lit comme une liste tronquée.
+    """
+
+    createurs: tuple[CreateurVu, ...]
+    total: int
+
+
+async def annuaire(
+    session: AsyncSession,
+    *,
+    business: Business,
+    limite: int = 50,
+    decalage: int = 0,
+) -> PageDAnnuaire:
     """Les créateurs qu'un salon peut atteindre, complets ou en aperçu.
 
     **Elle ne sert qu'un salon abonné.** La route refuse avant d'arriver ici, et
@@ -132,9 +184,56 @@ async def annuaire(session: AsyncSession, *, limite: int = 200) -> tuple[Createu
     rien à un commerce : ni volume, ni palier, ni publication possible. L'y
     faire figurer gonflerait l'annuaire de lignes vides, ce qui est exactement
     la mauvaise façon de vendre un réseau.
+
+    ## L'annuaire de **ce** salon
+
+    Les paliers évalués sont ceux que ce commerce offre réellement, pas tous
+    ceux du produit. C'est ce qui fait dire à `paliers_ouverts` « elle peut
+    réserver ce que vous avez ouvert » au lieu de « elle se qualifie quelque
+    part » — la seconde phrase n'appelle aucun geste.
+
+    ## Le tri, et pourquoi il est ici
+
+    Accès d'abord, proximité ensuite. Une créatrice joignable à douze
+    kilomètres vaut mieux qu'une créatrice hors de portée d'en face, et c'est
+    l'ordre que la planche demande.
+
+    **Trié par le serveur, et c'est structurel** : une liste paginée qu'on
+    trierait dans le client se réordonne à chaque page, puisque chaque page
+    n'a que ses propres lignes à comparer.
+
+    ## Le rayon
+
+    La même borne que le compte qui précède la liste — `feed_radius_metres`.
+    Sans elle, l'écran annoncerait « 128 créatrices autour de vous » au-dessus
+    d'une liste qui en contient deux mille.
     """
     settings = get_settings()
     maintenant = datetime.now(UTC)
+
+    # La distance en mètres, calculée par la base. Nulle quand l'une des deux
+    # positions manque — une fiche en préparation n'a pas de rayon, et une
+    # créatrice sans position n'a pas de distance.
+    distance = (
+        sa.func.ST_Distance(CreatorProfile.geo, business.geo)
+        if business.geo is not None
+        else sa.literal(None)
+    )
+
+    conditions = [CreatorProfile.anonymized_at.is_(None), User.status == UserStatus.ACTIVE]
+    if business.geo is not None:
+        # **Le rayon, et il n'écarte pas les sans-position.** Elles n'ont pas de
+        # distance, donc pas de preuve d'être loin : les jeter serait décider à
+        # leur place. Elles passent en fin de tri, ce qui est le bon traitement
+        # d'une inconnue — visible, et jamais devant ce qu'on sait.
+        conditions.append(
+            sa.or_(
+                CreatorProfile.geo.is_(None),
+                sa.func.ST_DWithin(
+                    CreatorProfile.geo, business.geo, get_settings().feed_radius_metres
+                ),
+            )
+        )
 
     profils = (
         await session.execute(
@@ -144,13 +243,14 @@ async def annuaire(session: AsyncSession, *, limite: int = 200) -> tuple[Createu
                 CreatorProfile.bio,
                 CreatorProfile.reliability_score,
                 CreatorProfile.completed_collabs_count,
+                distance.label("distance_metres"),
             )
             .join(User, User.id == CreatorProfile.user_id)
-            # Un compte fermé ou anonymisé ne se propose pas : il n'y a personne
-            # au bout.
-            .where(CreatorProfile.anonymized_at.is_(None))
+            .where(*conditions)
+            # Le tri final se fait en Python — l'accès ne se calcule pas en SQL
+            # — mais l'ordre de lecture doit rester déterministe : deux appels
+            # sur la même page doivent rendre les mêmes lignes.
             .order_by(CreatorProfile.user_id)
-            .limit(limite)
         )
     ).all()
 
@@ -175,28 +275,11 @@ async def annuaire(session: AsyncSession, *, limite: int = 200) -> tuple[Createu
         )
     ).all()
 
-    paliers = [
-        eligibility.PalierEvalue(
-            tier_id=ligne.id,
-            platform=ligne.platform,
-            content_format=ligne.content_format,
-            min_followers=ligne.min_followers,
-            min_completed_collabs=ligne.min_completed_collabs,
-            min_reliability_score=ligne.min_reliability_score,
-        )
-        for ligne in (
-            await session.execute(
-                sa.select(
-                    Tier.id,
-                    Tier.platform,
-                    Tier.content_format,
-                    Tier.min_followers,
-                    Tier.min_completed_collabs,
-                    Tier.min_reliability_score,
-                ).where(Tier.is_active.is_(True))
-            )
-        ).all()
-    ]
+    # **Les paliers de ce salon, pas ceux du produit.** Relus par la fonction
+    # qui sert déjà le compte qui précède la liste : deux lectures de « ce que
+    # ce commerce offre » finiraient par ne plus dire la même chose, et l'écart
+    # se lirait comme une ligne qui promet un palier qu'on ne peut pas réserver.
+    paliers = await portee_locale.paliers_ouverts_du_commerce(session, business_id=business.id)
 
     par_createur: dict[uuid.UUID, list] = {}
     for ligne in comptes:
@@ -234,11 +317,17 @@ async def annuaire(session: AsyncSession, *, limite: int = 200) -> tuple[Createu
             age_max=timedelta(seconds=settings.metrics_max_age_seconds),
         )
 
-        ouverts = {
-            palier.content_format
-            for palier in paliers
-            if palier.tier_id in verdict.paliers_accessibles
-        }
+        accessibles = [
+            palier for palier in paliers if palier.tier_id in verdict.paliers_accessibles
+        ]
+        ouverts = {palier.content_format for palier in accessibles}
+        # Le plus exigeant des paliers ouverts : c'est celui qui décrit le
+        # mieux ce qu'elle peut faire ici, et le seul qui tienne sur une ligne.
+        meilleur = max(
+            accessibles,
+            key=lambda palier: ORDRE_DES_FORMATS.index(palier.content_format),
+            default=None,
+        )
 
         vus.append(
             CreateurVu(
@@ -267,8 +356,40 @@ async def annuaire(session: AsyncSession, *, limite: int = 200) -> tuple[Createu
                     if ligne.status is SocialAccountStatus.ACTIVE
                 ),
                 paliers_ouverts=tuple(f for f in ORDRE_DES_FORMATS if f in ouverts),
+                peut_reserver_ici=bool(accessibles),
+                palier_accessible=(
+                    PalierAccessibleIci(
+                        tier_id=meilleur.tier_id,
+                        platform=meilleur.platform,
+                        content_format=meilleur.content_format,
+                    )
+                    if meilleur is not None
+                    else None
+                ),
+                distance_metres=(
+                    int(profil.distance_metres) if profil.distance_metres is not None else None
+                ),
                 audience_totale=sum(ligne.followers_count or 0 for ligne in lignes),
             )
         )
 
-    return tuple(vus)
+    # **Le tri, puis la page.** Accès d'abord, proximité ensuite, identifiant en
+    # dernier — sans ce troisième critère, deux créatrices à égalité pourraient
+    # changer de place entre deux appels et l'une des deux manquerait à la
+    # page suivante.
+    #
+    # `float("inf")` pour une distance inconnue : elle passe derrière tout ce
+    # qu'on sait, sans être écartée.
+    vus.sort(
+        key=lambda vu: (
+            not vu.peut_reserver_ici,
+            vu.distance_metres if vu.distance_metres is not None else float("inf"),
+            str(vu.creator_id),
+        )
+    )
+    return PageDAnnuaire(
+        createurs=tuple(vus[decalage : decalage + limite]),
+        # Le total avant la page : « 20 sur 128 » demande de savoir combien il y
+        # en a, et une page pleine ne dit pas s'il en reste.
+        total=len(vus),
+    )

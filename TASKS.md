@@ -1127,6 +1127,15 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       Téléphone au format international, normalisé avant validation ; nom
       dépouillé de ses espaces avant d'être compté ; adresse d'au moins dix
       caractères. 13 tests neufs*
+- [x] **L'annuaire est celui d'un salon, pas celui du produit**
+      *`annuaire()` prend le commerce : `paliers_ouverts` dit « elle peut
+      réserver ce que vous avez ouvert » et non « elle se qualifie quelque
+      part » — le manque qui comptait le plus. Plus `peut_reserver_ici`,
+      `palier_accessible` (le plus exigeant des ouverts), `distance_metres`, le
+      tri **accès d'abord puis proximité** côté serveur, la pagination et le
+      `total`. Les paliers du salon sont relus par la fonction qui sert déjà le
+      compte de portée — deux lectures de « ce que ce commerce offre »
+      finiraient par diverger. 9 tests neufs, 6 mutations vérifiées*
 - [x] **Fermer sans faute : la quatrième issue de l'arbitrage**
       *`closed_no_fault`, terminale, **sans aucun événement de fiabilité** — ni
       positif ni négatif. Un événement neutre de poids nul aurait presque suffi

@@ -193,6 +193,7 @@ async def test_l_annuaire_ne_livre_jamais_le_nom_civil(
     # Et le pseudonyme est bien là quand on paie : le nom part, l'identité de
     # l'écran reste. Sans cette moitié, une route qui ne rendrait rien du tout
     # passerait aussi.
+    assert reponse.status_code == 200, reponse.text
     ligne = reponse.json()["createurs"][0]
     assert "first_name" not in ligne
     assert "last_name" not in ligne
