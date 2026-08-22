@@ -19,8 +19,19 @@
  * **Une donnée périmée s'affiche datée plutôt que masquée.** `vuA` porte
  * l'instant du dernier chargement réussi : pendant un rechargement, l'écran
  * continue de montrer ce qu'il avait, marqué de sa date.
+ *
+ * **Et ce qu'on a déjà vu s'affiche avant que le réseau réponde**, quand
+ * l'appelant a inscrit une clé de cache. La règle des 400 ms n'était vraie
+ * qu'au second lancement : un fil consulté hier repartait d'un écran de
+ * chargement, alors que la réponse d'hier est presque toujours la bonne.
+ *
+ * L'inscription est **au cas par cas** et jamais par défaut : un cache posé
+ * partout finirait par couvrir une route qui décide d'un geste. Voir
+ * `cacheDesReponses.ts` pour ce qui s'y range et ce qui n'y entre jamais.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
+
+import { ecrireAuCache, lireDuCache } from './cacheDesReponses';
 
 export type EtatDeRequete<T> =
   | { etat: 'chargement' }
@@ -46,11 +57,24 @@ export type OptionsDeRequete<T> = {
   dependances?: readonly unknown[];
   /** Ne lance rien tant que c'est faux. Pour un écran qui attend une position. */
   actif?: boolean;
+  /**
+   * Où ranger la dernière réponse réussie, et jusqu'à quel âge la montrer.
+   *
+   * **Omis par défaut, et c'est la bonne valeur.** Une route qui décide d'un
+   * geste — une disponibilité, une journée, un code de retrait — ne s'inscrit
+   * pas ici : une réponse d'il y a dix minutes y ferait tenir un créneau déjà
+   * pris. Voir `cacheDesReponses.ts`.
+   *
+   * `cle` doit désigner la requête **et ses paramètres** : deux salons sous la
+   * même clé se montreraient l'un pour l'autre, ce qui est pire qu'un écran de
+   * chargement.
+   */
+  cache?: { cle: string; ageMax: number };
 };
 
 export function useRequete<T>(
   charger: (signal: AbortSignal) => Promise<T>,
-  { estVide, dependances = [], actif = true }: OptionsDeRequete<T>,
+  { estVide, dependances = [], actif = true, cache }: OptionsDeRequete<T>,
 ): Requete<T> {
   const [etat, setEtat] = useState<EtatDeRequete<T>>({ etat: 'chargement' });
   const [tour, setTour] = useState(0);
@@ -77,17 +101,49 @@ export function useRequete<T>(
       precedent.etat === 'pret' ? { ...precedent, rechargement: true } : precedent,
     );
 
+    // **Le cache ne court jamais après la requête.** Il est lu en parallèle, et
+    // il ne s'installe que si rien n'est encore arrivé : une réponse fraîche
+    // qui reviendrait avant la lecture du stockage ne doit pas se faire
+    // remplacer par ce qu'on avait hier. C'est le cas du réseau rapide, et
+    // c'est celui qu'on casserait sans y penser.
+    if (cache) {
+      void (async () => {
+        const entree = await lireDuCache<T>(cache.cle);
+        if (!vivant || entree === null) return;
+        if (Date.now() - entree.vuA > cache.ageMax) return;
+        setEtat((precedent) =>
+          precedent.etat === 'chargement'
+            ? {
+                etat: 'pret',
+                donnees: entree.donnees,
+                vide: estVideRef.current(entree.donnees),
+                vuA: entree.vuA,
+                // **Marqué en rechargement, parce qu'il l'est.** L'écran sait
+                // déjà rendre cet état — c'est celui du geste de rafraîchir —
+                // et il porte la date, donc rien ne se présente comme frais.
+                rechargement: true,
+              }
+            : precedent,
+        );
+      })();
+    }
+
     chargerRef
       .current(horloge.signal)
       .then((donnees) => {
         if (!vivant) return;
+        const vuA = Date.now();
         setEtat({
           etat: 'pret',
           donnees,
           vide: estVideRef.current(donnees),
-          vuA: Date.now(),
+          vuA,
           rechargement: false,
         });
+        // Après l'affichage, jamais avant : l'écriture est asynchrone, et la
+        // faire attendre à l'écran paierait le cache au moment précis où il
+        // devait faire gagner du temps.
+        if (cache) void ecrireAuCache(cache.cle, donnees, vuA);
       })
       .catch((erreur: unknown) => {
         if (!vivant || horloge.signal.aborted) return;
@@ -106,7 +162,7 @@ export function useRequete<T>(
       horloge.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tour, actif, ...dependances]);
+  }, [tour, actif, cache?.cle, cache?.ageMax, ...dependances]);
 
   const recharger = useCallback(() => setTour((n) => n + 1), []);
 

@@ -60,6 +60,7 @@ import {
   propositionsDuCatalogue,
 } from './propositionDePalier';
 import { Ecran } from './Ecran';
+import { AGES } from './cacheDesReponses';
 import { useRequete } from './useRequete';
 
 /** Ce que l'écran charge d'un coup : les trois listes se lisent ensemble. */
@@ -117,6 +118,10 @@ export function CatalogueScreen({
   );
 
   const requete = useRequete<Composition>(charger, {
+    // Le catalogue d'un salon change quand le salon le change, c'est-à-dire
+    // rarement et de son propre fait. La clé porte l'identifiant : deux salons
+    // sous la même clé se montreraient l'un pour l'autre.
+    cache: { cle: `catalogue.${businessId}`, ageMax: AGES.contenu },
     // **Un catalogue vide n'est plus un écran vide.** La galerie vit ici : un
     // commerce qui n'a pas encore composé de prestation peut vouloir commencer
     // par ses photos, et l'état vide lui retirerait la seule chose qu'il peut

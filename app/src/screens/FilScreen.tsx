@@ -56,6 +56,7 @@ import { BasDuMur } from './mur/BasDuMur';
 import { MurEnChargement, SectionsParQuartier } from './mur/SectionsParQuartier';
 import { RaisonDuVide } from './RaisonDuVide';
 import { messageDObstacle } from './obstacle';
+import { AGES } from './cacheDesReponses';
 import { useRequete } from './useRequete';
 
 const CODES_CONNUS = new Set(Object.keys(en.errors));
@@ -163,6 +164,15 @@ export function FilScreen({
       // renverrait pas « rien près de toi », elle renverrait une erreur de
       // validation que l'écran traduirait mal.
       actif: position !== null,
+      // **La clé porte le rayon et la catégorie, pas la position.** Les deux
+      // premiers changent par un geste et se retrouvent au lancement suivant ;
+      // la position, elle, bouge de quelques mètres à chaque relevé, et la
+      // mettre dans la clé donnerait un cache qui ne se relit jamais. Un fil
+      // d'il y a six heures pris trois rues plus loin reste le bon fil.
+      cache: {
+        cle: `fil.${rayonKm}.${categorie ?? 'toutes'}`,
+        ageMax: AGES.contenu,
+      },
     },
   );
 

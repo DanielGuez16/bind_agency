@@ -11,11 +11,13 @@
  * de sécurité — l'API refuse, et c'est elle qui décide — mais un onglet qui
  * répondrait 403 est pire qu'un onglet absent.
  */
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 import { Text, View } from 'react-native';
 
 import { ApiProvider } from '../src/api';
+import { ecrireAuCache, lireDuCache } from '../src/screens/cacheDesReponses';
 import { I18nProvider } from '../src/i18n';
 import { en } from '../src/i18n/en';
 import { AuthScreen } from '../src/screens/AuthScreen';
@@ -460,6 +462,44 @@ describe('déconnexion', () => {
     await waitFor(() => expect(screen.getByTestId('etat')).toHaveTextContent('anonyme'));
     expect(screen.getByTestId('motif')).toHaveTextContent('deconnexion');
     expect(coffre.contenu).toBeNull();
+  });
+
+  it('et les réponses en cache partent avec elle', async () => {
+    // **Une réponse en cache est de la donnée personnelle.** Un fil, une
+    // appartenance, un catalogue : les laisser survivre à une déconnexion les
+    // rendrait lisibles au suivant, sur un téléphone prêté comme sur un poste
+    // partagé. Le décor pose une entrée **et** une préférence d'appareil : sans
+    // la seconde, une purge qui viderait tout le stockage passerait ce test en
+    // dépréglant l'application de quelqu'un qui se contente de sortir.
+    await ecrireAuCache('fil.10.toutes', { rien: true }, Date.now());
+    await AsyncStorage.setItem('bind.commerce.choisi', 'b1');
+
+    const coffre = coffreDeTest({ access_token: 'a', refresh_token: 'r' });
+    let premierAppel = true;
+    await render(
+      <Cadre
+        coffre={coffre}
+        fetchImpl={
+          (async (url: RequestInfo | URL) => {
+            if (String(url).includes('/me') && premierAppel) {
+              premierAppel = false;
+              return { ok: true, status: 200, json: async () => UTILISATEUR } as Response;
+            }
+            throw new TypeError('offline');
+          }) as unknown as typeof fetch
+        }
+      >
+        <Sonde />
+        <ReglagesScreen />
+      </Cadre>,
+    );
+
+    await waitFor(() => expect(screen.getByTestId('etat')).toHaveTextContent('connecte'));
+    await fireEvent.press(screen.getByTestId('se-deconnecter'));
+
+    await waitFor(() => expect(screen.getByTestId('etat')).toHaveTextContent('anonyme'));
+    expect(await lireDuCache('fil.10.toutes')).toBeNull();
+    expect(await AsyncStorage.getItem('bind.commerce.choisi')).toBe('b1');
   });
 });
 

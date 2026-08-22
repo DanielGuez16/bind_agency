@@ -35,6 +35,7 @@ import {
 
 import { ApiClient, ApiError, NetworkError, type CoffreDeJetons } from '../api';
 import { routes } from '../api/routes';
+import { viderLeCache } from '../screens/cacheDesReponses';
 import type { Role } from '../theme';
 
 /**
@@ -223,6 +224,10 @@ export function SessionProvider({
           return;
         }
         await coffre.ecrire(null);
+        // Même raison qu'à la déconnexion : une session expirée est une session
+        // fermée, et ce qui reste en cache appartient à quelqu'un qui n'est
+        // plus là.
+        await viderLeCache();
         setEtat({ etat: 'anonyme', motif: 'session_expiree' });
       }
     })();
@@ -245,6 +250,12 @@ export function SessionProvider({
         }
         throw erreur;
       }
+      // **Et à l'entrée aussi, pas seulement à la sortie.** Une application
+      // tuée sans déconnexion laisse son cache en place ; la personne suivante
+      // qui se connecte sur le même appareil verrait le fil, l'appartenance et
+      // le catalogue de la précédente le temps d'un aller-retour. Purger ici
+      // ferme ce cas, et ne coûte qu'un chargement de plus au premier écran.
+      await viderLeCache();
       setEtat({ etat: 'connecte', utilisateur: await relireLUtilisateur() });
     },
     [client, relireLUtilisateur],
@@ -322,6 +333,12 @@ export function SessionProvider({
 
   const deconnecter = useCallback(async () => {
     await client.deconnecter();
+    // **Les réponses en cache partent avec la session.** Ce sont des données
+    // personnelles — un fil, une appartenance, un catalogue — et les laisser
+    // survivre les rendrait lisibles au suivant, sur un téléphone prêté comme
+    // sur un poste partagé. Avant le changement d'état, pour qu'aucun écran
+    // remonté ne relise ce qu'on est en train d'effacer.
+    await viderLeCache();
     setEtat({ etat: 'anonyme', motif: 'deconnexion' });
   }, [client]);
 

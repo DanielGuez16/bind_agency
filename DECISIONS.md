@@ -9412,3 +9412,48 @@ troublerait ce qui lit vraiment les codes.
 `openapi.json` ferait croire à un client qu'il peut en lire la réponse. Elle
 reste dans l'inventaire des routes publiques — celui-ci parcourt les routes de
 l'application, pas le schéma, et une page publique doit continuer d'y figurer.
+
+## 2026-08-22 — Un cache local, inscrit route par route
+
+**Le cache est une option d'appel, jamais un défaut.** `useRequete` prend une
+clé et un âge maximum ; sans eux, rien n'est rangé ni relu. Un cache posé par
+défaut aurait fini par couvrir une route qui décide d'un geste, et le défaut se
+serait vu chez un salon, pas chez nous.
+
+Ce qui s'y range change en heures ou en jours : l'appartenance, le fil, la fiche
+d'un salon, son catalogue, les paliers, les plans. **Ce qui n'y entre jamais est
+la moitié qui compte** — disponibilité, journée du commerce, réservations,
+contreparties, codes de retrait, reprises de compte. Une réponse d'il y a dix
+minutes y ferait tenir un créneau déjà pris, ou dirait « personne n'est dans
+votre compte » à quelqu'un chez qui on est entré.
+
+**La clé porte une version.** Un champ retiré du contrat rendrait une réponse
+d'hier incompatible avec l'écran d'aujourd'hui, et le défaut n'apparaîtrait que
+chez ceux qui avaient déjà ouvert l'application — c'est-à-dire jamais en
+développement. La version se change à la main ; c'est plus grossier qu'une
+invalidation par champ, et c'est voulu : une invalidation fine se trompe en
+silence, celle-ci jette tout et l'écran repart d'une requête.
+
+**Tout part à la fermeture de session, et aussi à l'ouverture.** Une réponse en
+cache est de la donnée personnelle. La purge à la déconnexion couvre le cas
+normal ; celle à la connexion couvre l'application tuée sans déconnexion, où la
+personne suivante verrait le fil et l'appartenance de la précédente le temps
+d'un aller-retour.
+
+Le vidage n'emporte que nos clés. `AsyncStorage.clear()` emporterait le salon
+choisi, le repli de la barre et la préférence de notifications, qui ne sont pas
+des réponses : quelqu'un qui se déconnecte retrouverait une application
+dépréglée.
+
+**Le cache ne remplace jamais une réponse déjà arrivée.** Il est lu en parallèle
+de la requête et ne s'installe que si rien n'est encore là. Sur un réseau
+rapide, la réponse revient avant que le stockage rende la main — et une
+implémentation qui poserait le cache sans regarder l'état ferait reculer l'écran
+d'un jour sous les yeux de quelqu'un qui lisait déjà la bonne réponse.
+
+**Les tests partent d'un appareil neuf.** `AsyncStorage` est simulé par un objet
+de module partagé par tous les tests d'un fichier : le premier qui charge un fil
+range sa réponse, et le suivant — celui qui vérifie l'état de chargement —
+trouve des données. Cinq tests sont tombés d'un coup à l'arrivée du cache, tous
+pour cette raison, et aucun ne parlait de cache. Le vidage est donc dans
+`jest.setup.js`.
