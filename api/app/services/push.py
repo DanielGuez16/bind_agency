@@ -109,16 +109,50 @@ async def enregistrer_un_terminal(
     return resultat.scalar_one()
 
 
-async def revoquer_un_terminal(session: AsyncSession, *, user_id: uuid.UUID, token: str) -> bool:
-    """Révoque **son** terminal. Rend faux si le jeton n'était pas le sien.
+async def lister_les_terminaux(
+    session: AsyncSession, *, user_id: uuid.UUID
+) -> tuple[DeviceToken, ...]:
+    """Les terminaux d'une personne, le plus récemment vu en tête.
+
+    **Sans elle, on ne coupe que l'appareil qu'on tient.** La révocation exige
+    de désigner un terminal, et depuis un autre appareil on n'avait aucun moyen
+    d'énumérer les siens : couper celui qu'on a en main est un confort, couper
+    celui qu'on a perdu est la raison d'être de la fonction.
+
+    Les révoqués restent dans la liste : « cet appareil ne reçoit plus rien »
+    est une réponse, et le faire disparaître laisserait croire qu'on a oublié
+    de le couper.
+
+    **Le jeton n'en fait pas partie**, et c'est délibéré : un identifiant
+    opaque suffit à désigner, et rendre les jetons de tous les appareils d'un
+    compte sur une seule réponse créerait une cible qui n'existait pas.
+    """
+    return tuple(
+        await session.scalars(
+            sa.select(DeviceToken)
+            .where(DeviceToken.user_id == user_id)
+            .order_by(DeviceToken.last_seen_at.desc(), DeviceToken.id)
+        )
+    )
+
+
+async def revoquer_un_terminal(
+    session: AsyncSession, *, user_id: uuid.UUID, device_id: uuid.UUID
+) -> bool:
+    """Révoque **son** terminal, par son identifiant. Faux s'il n'était pas le sien.
+
+    **Par l'identifiant et non par le jeton.** Le jeton est un secret : le faire
+    voyager dans une URL le dépose dans les journaux du serveur, ceux du
+    mandataire et l'historique du client, pour désigner un objet qui a déjà un
+    nom. Et surtout, on ne l'a pas — c'est tout le problème du téléphone perdu.
 
     L'appartenance est vérifiée ici plutôt qu'au-dessus : sans elle, connaître
-    un jeton suffirait à couper les notifications de quelqu'un d'autre.
+    un identifiant suffirait à couper les notifications de quelqu'un d'autre.
     """
     resultat = await session.execute(
         sa.update(DeviceToken)
         .where(
-            DeviceToken.token == token,
+            DeviceToken.id == device_id,
             DeviceToken.user_id == user_id,
             DeviceToken.status == DeviceTokenStatus.ACTIVE,
         )

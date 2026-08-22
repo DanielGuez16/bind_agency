@@ -1127,6 +1127,16 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       Téléphone au format international, normalisé avant validation ; nom
       dépouillé de ses espaces avant d'être compté ; adresse d'au moins dix
       caractères. 13 tests neufs*
+- [x] **Annuler ce que le salon n'a pas accepté, et couper l'appareil perdu**
+      *Trois tranches. Le **défaut** d'abord : `annuler` visait `no_show` sans
+      regarder d'où elle partait, et `awaiting_business` n'a pas cette flèche —
+      les deux délais valant 24 h, toute demande en validation à moins d'un jour
+      levait au lieu de s'annuler. `SPEC.md` §4.1 mis à jour avec la raison, et
+      le `xfail(strict)` retiré : il a fait exactement ce pour quoi il était
+      strict. Puis `annulation_sans_frais_jusqu_a`, nulle quand l'annulation est
+      toujours libre. Puis `GET /me/devices` et la révocation **par
+      identifiant** : le jeton est un secret, et on ne l'a pas quand l'appareil
+      est perdu. 11 tests neufs, 6 mutations vérifiées*
 - [x] **Les photos de plateforme partent, avec leur table**
       *Vérifié avant de retirer : les pastilles du fil sont des **mots
       traduits**, leurs comptes viennent de la route du fil, et aucun écran ne

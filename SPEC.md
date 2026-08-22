@@ -302,6 +302,7 @@ held ──┬─confirmation créateur, commerce en automatique────> co
                                      │                          │
                                      ├──accord du commerce───────┘
                                      ├──refus du commerce, avec motif──> cancelled
+                                     ├──annulation créateur, sans délai──> cancelled
                                      └──sans réponse dans le délai─────> expired
 
 confirmed ──scan du code──> consumed
@@ -321,6 +322,10 @@ held ──délai de garde dépassé──> expired
 `awaiting_business` **occupe la place** comme `confirmed`. La relâcher pendant que le commerce regarde permettrait de vendre deux fois le même créneau, et de lui faire accepter une réservation qui n'a plus de place.
 
 **Le code de retrait naît à l'arrivée dans `confirmed`**, quelle que soit la porte empruntée — confirmation directe ou accord du commerce. Aucun code n'existe donc pour une réservation que le commerce n'a pas acceptée.
+
+**Une réservation que le commerce n'a pas acceptée s'annule sans condition et sans coût.** La fenêtre de vingt-quatre heures ne s'applique pas à `awaiting_business`, et c'est une correction : les deux délais par défaut valant vingt-quatre heures chacun, toute demande en validation pour un rendez-vous à moins d'un jour visait `no_show` — une flèche que ce diagramme n'a pas depuis cet état. La créatrice ne recevait pas une pénalité, elle recevait un refus, et restait coincée sur un rendez-vous que le salon n'avait même pas accepté.
+
+La bonne issue n'était pas d'ajouter la flèche. `no_show` existe parce que le commerce a bloqué un poste qu'il ne remplira plus ; une place jamais acceptée n'a ni créneau tenu ni capacité réservée, et la faire payer reviendrait à punir quelqu'un de l'indécision d'un autre. `awaiting_business` occupe la place, mais il l'occupe **pour le commerce qui n'a pas répondu** — pas pour la créatrice qui attend.
 
 **Une annulation par le commerce ne dégrade jamais le score du créateur.** Elle mène à `cancelled`, jamais à `no_show`, et sans regarder l'heure : la fenêtre de vingt-quatre heures départage un créateur qui prévient d'un créateur qui ne vient pas, elle n'a rien à dire quand c'est le commerce qui se désiste. Le motif est obligatoire, côté refus comme côté annulation — le créateur le lit, et une décision sans raison ne se conteste pas.
 

@@ -193,6 +193,18 @@ async def test_un_held_s_annule_toujours_sans_penalite(session: AsyncSession) ->
 
     assert ligne.status is BookingStatus.CANCELLED
 
+    # **Et sans coût.** L'annulation est libre, pas seulement possible : un
+    # `cancelled` qui écrirait quand même un événement de fiabilité
+    # satisferait l'assertion ci-dessus en punissant la créatrice.
+    evenements = list(
+        await session.scalars(
+            sa.select(ReliabilityEvent.type).where(
+                ReliabilityEvent.creator_id == decor["createur"].id
+            )
+        )
+    )
+    assert evenements == []
+
 
 async def test_une_annulation_a_temps_est_sans_penalite(session: AsyncSession) -> None:
     ligne, decor = await reservation(session)
@@ -206,6 +218,18 @@ async def test_une_annulation_a_temps_est_sans_penalite(session: AsyncSession) -
     await service.annuler(session, booking=ligne, creator_id=decor["createur"].id)
 
     assert ligne.status is BookingStatus.CANCELLED
+
+    # **Et sans coût.** L'annulation est libre, pas seulement possible : un
+    # `cancelled` qui écrirait quand même un événement de fiabilité
+    # satisferait l'assertion ci-dessus en punissant la créatrice.
+    evenements = list(
+        await session.scalars(
+            sa.select(ReliabilityEvent.type).where(
+                ReliabilityEvent.creator_id == decor["createur"].id
+            )
+        )
+    )
+    assert evenements == []
     assert ligne.cancelled_at is not None
 
 
@@ -243,6 +267,18 @@ async def test_un_item_sans_creneau_s_annule_toujours_sans_penalite(
     await service.annuler(session, booking=ligne, creator_id=decor["createur"].id)
 
     assert ligne.status is BookingStatus.CANCELLED
+
+    # **Et sans coût.** L'annulation est libre, pas seulement possible : un
+    # `cancelled` qui écrirait quand même un événement de fiabilité
+    # satisferait l'assertion ci-dessus en punissant la créatrice.
+    evenements = list(
+        await session.scalars(
+            sa.select(ReliabilityEvent.type).where(
+                ReliabilityEvent.creator_id == decor["createur"].id
+            )
+        )
+    )
+    assert evenements == []
 
 
 async def test_une_absence_sur_un_item_sans_creneau_est_refusee(
@@ -1074,26 +1110,22 @@ class TestLaPorteDeLaRepresaille:
         assert ouverture == ligne.starts_at + timedelta(minutes=court.no_show_delai_minutes)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "Défaut ouvert : `annuler` vise `no_show` sans regarder d'où elle part, "
-        "et `no_show` n'est pas dans le diagramme d'`awaiting_business`. Avec les "
-        "valeurs par défaut — accord et annulation libre à 86 400 s chacun — toute "
-        "réservation chez un salon en validation à moins de 24 h du rendez-vous "
-        "lève au lieu de s'annuler. Marqué strict : le jour où c'est corrigé, "
-        "ce test passe au vert et le `strict` rend la CI rouge tant que ce "
-        "marqueur reste. Demandé à la conversation des routes"
-    ),
-)
 async def test_annuler_pendant_que_le_salon_reflechit_et_pres_de_l_heure(
     session: AsyncSession,
 ) -> None:
-    """Le salon n'a pas tranché, et le rendez-vous approche.
+    """Le salon n'a pas tranché, et le rendez-vous approche. **Annulation libre.**
 
     Les deux tests d'annulation ci-dessus confirment d'abord, donc aucun
-    n'exerce `awaiting_business` — la forme la plus courante cachait la seule
-    qui casse.
+    n'exerçait `awaiting_business` — la forme la plus courante cachait la seule
+    qui cassait. Le défaut était atteignable tous les jours : accord et
+    annulation libre valent vingt-quatre heures l'un et l'autre, donc toute
+    demande en validation pour un rendez-vous à moins d'un jour visait une
+    flèche que le diagramme n'a pas, et levait.
+
+    **Et l'issue est `cancelled`, pas une flèche de plus vers `no_show`.** Une
+    place que le salon n'a jamais acceptée n'a pas de créneau tenu ni de
+    capacité réservée : la faire payer reviendrait à punir quelqu'un de
+    l'indécision d'un autre.
     """
     ligne, decor = await reservation(session, requires_booking_approval=True)
     await service.confirmer(session, booking=ligne, creator_id=decor["createur"].id)
@@ -1107,3 +1139,15 @@ async def test_annuler_pendant_que_le_salon_reflechit_et_pres_de_l_heure(
     await service.annuler(session, booking=ligne, creator_id=decor["createur"].id)
 
     assert ligne.status is BookingStatus.CANCELLED
+
+    # **Et sans coût.** L'annulation est libre, pas seulement possible : un
+    # `cancelled` qui écrirait quand même un événement de fiabilité
+    # satisferait l'assertion ci-dessus en punissant la créatrice.
+    evenements = list(
+        await session.scalars(
+            sa.select(ReliabilityEvent.type).where(
+                ReliabilityEvent.creator_id == decor["createur"].id
+            )
+        )
+    )
+    assert evenements == []

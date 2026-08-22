@@ -70,10 +70,12 @@ async def createur(session: AsyncSession, **champs) -> User:
 
 
 async def avec_un_terminal(session: AsyncSession, user: User, token: str = "ExponentPushToken[x]"):
-    await service.enregistrer_un_terminal(
+    """Rend la ligne : la révocation désigne un terminal par son identifiant."""
+    terminal = await service.enregistrer_un_terminal(
         session, user_id=user.id, token=token, platform=DevicePlatform.IOS
     )
     await session.flush()
+    return terminal
 
 
 # --------------------------------------------------------------------------
@@ -256,17 +258,26 @@ async def test_un_terminal_se_reinscrit_apres_avoir_ete_revoque(session: AsyncSe
     une conduite que personne ne devinerait.
     """
     user = await createur(session)
-    await avec_un_terminal(session, user, token="ExponentPushToken[revenu]")
-    await service.revoquer_un_terminal(session, user_id=user.id, token="ExponentPushToken[revenu]")
+    terminal = await avec_un_terminal(session, user, token="ExponentPushToken[revenu]")
+    await service.revoquer_un_terminal(session, user_id=user.id, device_id=terminal.id)
     await session.flush()
 
     await avec_un_terminal(session, user, token="ExponentPushToken[revenu]")
 
-    ligne = await session.scalar(
-        sa.select(DeviceToken).where(DeviceToken.token == "ExponentPushToken[revenu]")
-    )
-    assert ligne.status is DeviceTokenStatus.ACTIVE
-    assert ligne.revoked_at is None, "la date de révocation part avec la révocation"
+    # **Relu depuis la base, pas depuis la session.** La révocation est un
+    # `UPDATE` de bas niveau : il ne touche pas l'objet déjà chargé, qui
+    # continue d'annoncer l'état d'avant. Interroger la session rendrait donc
+    # « actif » quoi qu'il arrive — le test passait au vert sans rien éprouver.
+    session.expire_all()
+    statut, revoque_le = (
+        await session.execute(
+            sa.select(DeviceToken.status, DeviceToken.revoked_at).where(
+                DeviceToken.token == "ExponentPushToken[revenu]"
+            )
+        )
+    ).one()
+    assert statut is DeviceTokenStatus.ACTIVE
+    assert revoque_le is None, "la date de révocation part avec la révocation"
 
 
 async def test_un_jeton_change_de_main_sans_doubler(session: AsyncSession) -> None:
@@ -290,15 +301,13 @@ async def test_un_jeton_change_de_main_sans_doubler(session: AsyncSession) -> No
 
 
 async def test_on_ne_revoque_pas_le_terminal_d_un_autre(session: AsyncSession) -> None:
-    """Sans la vérification d'appartenance, connaître un jeton suffirait à
+    """Sans la vérification d'appartenance, connaître un identifiant suffirait à
     couper les notifications de quelqu'un d'autre."""
     une = await createur(session)
     autre = await createur(session)
-    await avec_un_terminal(session, une, token="ExponentPushToken[sien]")
+    terminal = await avec_un_terminal(session, une, token="ExponentPushToken[sien]")
 
-    revoque = await service.revoquer_un_terminal(
-        session, user_id=autre.id, token="ExponentPushToken[sien]"
-    )
+    revoque = await service.revoquer_un_terminal(session, user_id=autre.id, device_id=terminal.id)
 
     assert revoque is False
     statut = await session.scalar(
@@ -411,13 +420,109 @@ async def test_l_enregistrement_est_idempotent(client: AsyncClient, session: Asy
     assert une.json()["id"] == deux.json()["id"]
 
 
-async def test_la_revocation_ne_dit_pas_si_le_jeton_existait(
+async def test_la_revocation_ne_dit_pas_si_le_terminal_existait(
     client: AsyncClient, session: AsyncSession
 ) -> None:
-    """Distinguer « révoqué » de « pas à vous » dirait à qui essaie des jetons
-    lesquels existent."""
+    """Distinguer « révoqué » de « pas à vous » dirait à qui essaie des
+    identifiants lesquels existent."""
     entetes = await connecte(client, session)
 
-    inconnu = await client.delete(f"{PREFIX}/me/devices/ExponentPushToken[jamais-vu]", **entetes)
+    inconnu = await client.delete(f"{PREFIX}/me/devices/{uuid.uuid4()}", **entetes)
 
     assert inconnu.status_code == 204
+
+
+# --------------------------------------------------------------------------
+# couper l'appareil qu'on n'a plus
+# --------------------------------------------------------------------------
+
+
+async def test_la_liste_rend_ses_terminaux_sans_aucun_jeton(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """**Aucun jeton n'en sort**, et le décor le prouve sur le corps entier.
+
+    Un identifiant opaque suffit à désigner ; rendre les jetons de tous les
+    appareils d'un compte sur une seule réponse créerait une cible qui
+    n'existait pas.
+    """
+    entetes = await connecte(client, session)
+    await client.put(
+        f"{PREFIX}/me/devices",
+        json={"token": "ExponentPushToken[le-secret]", "platform": "ios"},
+        **entetes,
+    )
+
+    reponse = await client.get(f"{PREFIX}/me/devices", **entetes)
+
+    assert reponse.status_code == 200
+    assert "le-secret" not in reponse.text
+    ligne = reponse.json()[0]
+    assert set(ligne) == {"id", "platform", "status", "last_seen_at"}
+
+
+async def test_on_coupe_le_terminal_qu_on_n_a_plus(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """**Le cas qui justifie la fonction**, et celui qu'on ne pouvait pas traiter.
+
+    Le décor pose deux appareils et en coupe un **par son identifiant**, tel
+    que la liste le donne — sans jamais manipuler son jeton, qu'on n'a plus.
+    Avec un seul appareil au décor, couper « le bon » et couper « tout » se
+    ressembleraient.
+    """
+    entetes = await connecte(client, session)
+    for jeton in ("ExponentPushToken[garde]", "ExponentPushToken[perdu]"):
+        await client.put(
+            f"{PREFIX}/me/devices", json={"token": jeton, "platform": "ios"}, **entetes
+        )
+
+    liste = (await client.get(f"{PREFIX}/me/devices", **entetes)).json()
+    perdu = liste[0]["id"]
+
+    coupe = await client.delete(f"{PREFIX}/me/devices/{perdu}", **entetes)
+    assert coupe.status_code == 204
+
+    apres = {
+        t["id"]: t["status"] for t in (await client.get(f"{PREFIX}/me/devices", **entetes)).json()
+    }
+    assert apres[perdu] == "revoked"
+    # L'autre continue de recevoir : couper l'un n'est pas couper tout.
+    assert [s for i, s in apres.items() if i != perdu] == ["active"]
+
+
+async def test_un_terminal_revoque_reste_dans_la_liste(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """« Cet appareil ne reçoit plus rien » est une réponse.
+
+    Le faire disparaître laisserait croire qu'on a oublié de le couper, et
+    on recommencerait.
+    """
+    entetes = await connecte(client, session)
+    await client.put(
+        f"{PREFIX}/me/devices",
+        json={"token": "ExponentPushToken[coupe]", "platform": "android"},
+        **entetes,
+    )
+    identifiant = (await client.get(f"{PREFIX}/me/devices", **entetes)).json()[0]["id"]
+    await client.delete(f"{PREFIX}/me/devices/{identifiant}", **entetes)
+
+    liste = (await client.get(f"{PREFIX}/me/devices", **entetes)).json()
+
+    assert [t["id"] for t in liste] == [identifiant]
+    assert liste[0]["status"] == "revoked"
+
+
+async def test_on_ne_voit_pas_les_terminaux_d_un_autre(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """La liste est la sienne, et rien d'autre."""
+    autre = await createur(session)
+    await avec_un_terminal(session, autre, token="ExponentPushToken[ailleurs]")
+    await session.commit()
+
+    entetes = await connecte(client, session)
+    liste = (await client.get(f"{PREFIX}/me/devices", **entetes)).json()
+
+    assert liste == []
