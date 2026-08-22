@@ -12,6 +12,13 @@ réglage qu'on touche.
 cinquante points. Le gâchis se paie à chaque affichage, pour tout le monde, et il
 se paie deux fois sur un réseau de salon.
 
+**Et une dérivée ne sert à rien tant que l'écran demande l'original.** Le mur
+appelait `urlDuMedia` et non `urlDeLaVignette` : il tirait donc l'original borné
+à 2000 pixels pour le poser dans un cadre de 100 points. Mesuré sur un fil de
+vingt salons — quatre-vingts images, la grille ne virtualise pas — 10,5 Mo de
+photographies Instagram, 52 Mo de photos de téléphone, contre 50 Ko de JSON. Le
+réglage de la vignette ne valait rien tant que personne ne la demandait.
+
 **Au dépôt plutôt qu'à la lecture, et c'est une décision.** Le stockage est ce
 qui coûte le moins cher de la pile ; une clé dérivée n'a ni cache à invalider ni
 coût à l'exécution, et la route des médias continue de ne faire que servir des
@@ -36,11 +43,23 @@ from types import ModuleType
 
 #: Le côté le plus long d'une vignette, en pixels.
 #:
-#: Les cartes du fil font cent cinquante points de haut ; à densité triple, on
-#: en est à quatre cent cinquante. Quatre cent quatre-vingts couvre les deux avec
-#: une marge, et pèse une trentaine de kilooctets là où l'original en pèse
-#: plusieurs milliers.
-COTE_VIGNETTE = 480
+#: **Trois cent vingt, et le nombre vient des écrans, pas d'une habitude.** Les
+#: cinq cadres qui lisent une vignette sont mesurés : 100 points sur le mur —
+#: le plus grand — puis 64 sur la fiche, 56 dans la galerie et dans la carte,
+#: 40 × 52 dans la bande de la visionneuse. À densité triple, le plus grand
+#: demande 300 pixels. 320 le couvre, et rien de plus.
+#:
+#: Elle valait 480, calibrée sur des cartes de 150 points que la grille v3 ne
+#: rend plus. Mesuré sur onze photographies réelles : 19 Ko à 480, 10 Ko à 320 ;
+#: sur une photo de téléphone de 4032 × 3024, 48 Ko contre 23. Sur un fil de
+#: vingt salons — quatre-vingts images chargées d'un coup, la grille du mur ne
+#: virtualise pas — cela fait 1,5 Mo contre 0,8.
+#:
+#: **Le plafond ne se relit pas sur les images déjà rangées.** Une vignette
+#: déposée hier reste à 480 : elle est plus lourde que nécessaire et parfaitement
+#: correcte, et la regénérer coûterait un balayage de tout le dépôt pour un
+#: gain qui se réalise de lui-même à mesure que les photos se remplacent.
+COTE_VIGNETTE = 320
 
 #: Le côté le plus long d'un aperçu flouté, en pixels.
 #:

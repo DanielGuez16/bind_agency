@@ -77,15 +77,36 @@ type Prestation = {
 };
 
 /**
- * L'URL d'un média, ou `null`.
+ * L'URL de la **vignette** d'un média, ou `null`.
  *
- * `urlDuMedia` rend `undefined` quand la clé est nulle ; les composants
+ * **Le mur demandait l'original, et c'était l'essentiel de sa lenteur.** Les
+ * trois cadres de cet écran font 100, 52 et 44 points ; l'original est borné à
+ * 2000 pixels. Mesuré sur un fil de vingt salons — quatre-vingts images, la
+ * grille ci-dessous ne virtualise pas et les charge toutes d'un coup : 10,5 Mo
+ * de photographies déjà réduites, 52 Mo de photos sorties d'un téléphone,
+ * contre 50 Ko pour le JSON qui les nomme. La vignette ramène le premier chiffre
+ * à 0,8 Mo.
+ *
+ * Le poids n'est même pas le pire : `Image` décode avant de réduire, et une
+ * image de 2000 × 2000 occupe seize mégaoctets en mémoire quel que soit le
+ * cadre où on la pose. Quatre-vingts d'un coup, c'est ce qui fait ramer le
+ * défilement sur un téléphone modeste.
+ *
+ * **Aucun cadrage ne change.** Vignette et original bornent tous deux le grand
+ * côté sans recadrer — c'est écrit dans `images.py` — donc la même photo garde
+ * le même cadre, seulement moins de pixels. Ce qui aurait fait deux cadrages,
+ * ce serait deux dérivées de rapports différents ; il n'y en a pas.
+ *
+ * `urlDeLaVignette` rend `undefined` quand la clé est nulle ; les composants
  * demandent `null`. La conversion se fait ici, une fois : la répéter à chaque
  * appel laisserait passer celui qu'on oublie, et un `undefined` sur un prop
  * optionnel ne se distingue pas d'un prop absent.
  */
-function media(api: { urlDuMedia: (cle: string | null) => string | undefined }, cle: string | null) {
-  return api.urlDuMedia(cle) ?? null;
+function media(
+  api: { urlDeLaVignette: (cle: string | null) => string | undefined },
+  cle: string | null,
+) {
+  return api.urlDeLaVignette(cle) ?? null;
 }
 
 /** Les prestations d'un quartier, dans l'ordre où le serveur les rend. */
@@ -285,7 +306,12 @@ function EnTeteDeSection({
         }}
       >
         {photo ? (
-          <Image source={{ uri: photo }} resizeMode="cover" style={{ width: '100%', height: '100%' }} />
+          <Image
+            testID="quartier-ouvert-photo"
+            source={{ uri: photo }}
+            resizeMode="cover"
+            style={{ width: '100%', height: '100%' }}
+          />
         ) : null}
       </View>
       <View style={{ flex: 1, minWidth: 0, gap: 1 }}>
