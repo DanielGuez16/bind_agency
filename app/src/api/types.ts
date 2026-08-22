@@ -1275,56 +1275,6 @@ export type EtatDeLaComposition = {
   status: 'onboarding' | 'active' | 'paused' | 'suspended';
 };
 
-/** La moitié centrale du voisinage. Jamais ses extrêmes. */
-export type Fourchette = { bas: number; haut: number };
-
-/**
- * Ce que font les salons d'à côté, pour les états vides du commerce.
- *
- * **Les deux fourchettes sont nulles sous cinq salons alentour**, et `commerces`
- * est rendu quand même : l'écran écrit alors « pas encore assez de salons autour
- * de vous » plutôt qu'un vide qu'on prendrait pour une panne.
- *
- * `rayon_metres` s'écrit : « les salons dans 2 km » situe le repère, « votre
- * quartier » serait un découpage que le modèle n'a pas.
- */
-export type ReperesDuVoisinage = {
-  rayon_metres: number;
-  commerces: number;
-  prestations_publiees: Fourchette | null;
-  places_par_jour: Fourchette | null;
-  palier_le_plus_offert: { platform: Platform; content_format: ContentFormat } | null;
-};
-
-// --------------------------------------------------------------------------
-// annuaire des créateurs
-// --------------------------------------------------------------------------
-
-export type CompteVuParLeCommerce = {
-  platform: Platform;
-  handle: string | null;
-  /** Nul quand aucun relevé n'existe. Zéro serait un chiffre, et faux. */
-  followers: number | null;
-  /**
-   * La photo, **par sa clé** — servie par `GET /media/{cle}`, jamais l'adresse
-   * de la plateforme, qui expire.
-   *
-   * Servi par le serveur depuis l'ouverture de la route, et absent de ce type
-   * jusqu'ici : l'annuaire rendait des fiches sans visage alors que la donnée
-   * arrivait dans la réponse.
-   */
-  avatar_key: string | null;
-  /**
-   * Le profil public, dérivé du pseudonyme.
-   *
-   * Nul sur une plateforme qu'on ne sait pas rattacher, ou sans pseudonyme —
-   * un lien qui mène à une page d'erreur est pire qu'un lien absent. C'est le
-   * seul geste que l'annuaire propose vers une créatrice, et il sort du
-   * produit : on va voir son travail chez elle.
-   */
-  profil_url: string | null;
-};
-
 /**
  * Ce qu'un salon abonné voit d'une créatrice.
  *
@@ -1359,6 +1309,31 @@ export type AnnuaireDuCommerce = {
    * reste, et sans ce nombre l'écran ne peut ni le dire ni s'arrêter.
    */
   total: number;
+};
+
+export type CompteVuParLeCommerce = {
+  platform: Platform;
+  handle: string | null;
+  /** Nul quand aucun relevé n'existe. Zéro serait un chiffre, et faux. */
+  followers: number | null;
+  /**
+   * La photo, **par sa clé** — servie par `GET /media/{cle}`, jamais l'adresse
+   * de la plateforme, qui expire.
+   *
+   * Servi par le serveur depuis l'ouverture de la route, et absent de ce type
+   * jusqu'ici : l'annuaire rendait des fiches sans visage alors que la donnée
+   * arrivait dans la réponse.
+   */
+  avatar_key: string | null;
+  /**
+   * Le profil public, dérivé du pseudonyme.
+   *
+   * Nul sur une plateforme qu'on ne sait pas rattacher, ou sans pseudonyme —
+   * un lien qui mène à une page d'erreur est pire qu'un lien absent. C'est le
+   * seul geste que l'annuaire propose vers une créatrice, et il sort du
+   * produit : on va voir son travail chez elle.
+   */
+  profil_url: string | null;
 };
 
 /** Le meilleur palier qu'une créatrice ouvre **chez ce salon**. */

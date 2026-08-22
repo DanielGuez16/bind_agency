@@ -192,17 +192,6 @@ class Settings(BaseSettings):
     #: Rayon du fil, en mètres. Dix kilomètres : au-delà, un créateur de Miami
     #: ne se déplace pas pour un soin, et le fil se remplit de bruit.
     feed_radius_metres: int = 10_000
-    #: Rayon des repères de voisinage montrés au commerce dans ses états vides.
-    #: Deux kilomètres : « le quartier » n'existe pas dans le modèle — la ville
-    #: d'un créateur est déjà un champ libre pour cette raison (SPEC §5.2) — et
-    #: un rayon court en est l'approximation honnête. Plus large, on compare un
-    #: salon de Wynwood à South Beach.
-    neighbourhood_radius_metres: int = 2_000
-    #: Effectif minimum sous lequel aucune fourchette n'est rendue. Cinq : une
-    #: fourchette sur trois salons désigne des salons précis, et un commerce ne
-    #: doit pas pouvoir lire le catalogue d'un concurrent en s'inscrivant à côté
-    #: de lui. Le compte, lui, est rendu quand même.
-    neighbourhood_minimum_businesses: int = 5
     #: Les élargissements proposés quand le fil est maigre, en mètres.
     #:
     #: En configuration, comme tout seuil. Le fil ne les propose que s'ils sont
