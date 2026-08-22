@@ -626,6 +626,8 @@ export const es: Catalogue = {
     plansMensuel: 'Mensual',
     plansAnnuel: 'Anual',
     plansTotal: 'Total',
+    plansTotalMensuel: 'Mensual, planes en {{devise}}',
+    plansTotalAnnuel: 'Anual, planes en {{devise}}',
     plansMrrTotal: 'Ingresos por mes, todos los planes',
     plansSalonsAbonnes: 'Negocios abonados',
     plansSansPreneur: 'Sin contratar',
