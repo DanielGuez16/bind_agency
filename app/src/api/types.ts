@@ -1435,6 +1435,19 @@ export type FichePreparee = {
    * diverger, et c'est celle de l'écran qui aurait tort.
    */
   etat: EtatDeLaTournee;
+  /**
+   * Qui a préparé la fiche.
+   *
+   * **Une adresse et non un nom** : un compte d'équipe n'en a pas. Les noms
+   * vivent sur le profil créateur, et cet écran est interne.
+   */
+  prepared_by: string | null;
+  /**
+   * Qui a remis le lien. Nulle tant que rien n'a été remis, et **distincte de
+   * la précédente** : préparer quarante fiches au bureau et en remettre vingt
+   * en tournée sont deux gestes.
+   */
+  remis_par: string | null;
 };
 
 /** Une reprise du compte par l'administration, telle que le salon la lit. */

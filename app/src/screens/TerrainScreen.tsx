@@ -55,6 +55,7 @@ import { formatDate, formatNumber } from '../format';
 import { useI18n } from '../i18n';
 import { codeColors, elevationDeCarte, radius, useColors } from '../theme';
 import { Ecran } from './Ecran';
+import { mainsDeLaFiche } from './terrain/mains';
 import { bilanDeTournee } from './terrain/tournee';
 import { useRequete } from './useRequete';
 
@@ -407,6 +408,7 @@ function LigneDeFiche({
   const { t, locale } = useI18n();
   const c = useColors();
   const etat = fiche.etat;
+  const mains = mainsDeLaFiche(fiche);
 
   return (
     <View
@@ -436,9 +438,29 @@ function LigneDeFiche({
           {fiche.address}
         </Texte>
       ) : null}
-      <Texte variante="type.caption" couleur="ink.mute">
-        {t('terrain.preparee', { quand: formatDate(fiche.prepared_at, locale, FUSEAU) })}
+      <Texte variante="type.caption" couleur="ink.mute" ellipseSurNomPropre>
+        {mains.preparee
+          ? t('terrain.prepareePar', {
+              quand: formatDate(fiche.prepared_at, locale, FUSEAU),
+              par: mains.preparee,
+            })
+          : t('terrain.preparee', { quand: formatDate(fiche.prepared_at, locale, FUSEAU) })}
       </Texte>
+
+      {/* **La seconde main ne paraît que si c'en est une autre.** Le cas
+          courant est que la même personne prépare et remet ; écrire son adresse
+          deux fois sur la même ligne n'ajoute rien et allonge une liste qu'on
+          parcourt. */}
+      {mains.remiseParUnAutre ? (
+        <Texte
+          variante="type.caption"
+          couleur="ink.mute"
+          ellipseSurNomPropre
+          testID={`remise-par-${fiche.business_id}`}
+        >
+          {t('terrain.remisePar', { par: mains.remiseParUnAutre })}
+        </Texte>
+      ) : null}
 
       {/* **Rien à faire sur une fiche assumée.** Le salon en est propriétaire ;
           lui rouvrir un lien de prise en main n'aurait aucun sens, et le
