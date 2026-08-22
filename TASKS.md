@@ -1127,6 +1127,14 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       Téléphone au format international, normalisé avant validation ; nom
       dépouillé de ses espaces avant d'être compté ; adresse d'au moins dix
       caractères. 13 tests neufs*
+- [x] **Le filtrage de l'annuaire, et le total qui va avec**
+      *Palier — répétable, au moins un des formats —, réseau, distance
+      maximale. **`total` recalculé sur le filtre** : sans lui « 20 sur 128 »
+      ment dès qu'un filtre est posé. Le filtre s'applique **avant la page**,
+      pour la même raison que le tri : filtrer une page n'est pas filtrer la
+      liste, et la page suivante rendrait un autre sous-ensemble. Une position
+      inconnue n'est écartée que par le filtre de distance — le seul qui demande
+      une garantie qu'on ne peut pas donner d'elle. 7 tests neufs, 4 mutations*
 - [x] **La grâce a trois états, et le voisinage part**
       *`grace_ends_at` sur le commerce, et non sur l'abonnement : la route de
       l'abonnement rend `null` quand il n'y en a pas, c'est-à-dire exactement
