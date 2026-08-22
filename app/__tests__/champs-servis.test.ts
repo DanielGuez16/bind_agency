@@ -63,6 +63,16 @@ const NON_RENDUS: Record<string, string> = {
   // choisi ce salon. L'écran a cessé de les lire ; **la donnée part toujours
   // sur le réseau**, et c'est là qu'il faut la retirer. Instruit dans TASKS.md.
 
+  // **Les trois dates de la tournée, dont `etat` est le lecteur.** Le serveur
+  // en dérive l'état — jamais ouverte, abandonnée, bloquée, assumée — et c'est
+  // lui que l'écran lit. Les rendre en plus dupliquerait le calcul, et c'est
+  // exactement ce qu'on vient de retirer : deux dérivations du même état
+  // finissent par diverger, et l'ordre y est délicat — une fiche bloquée puis
+  // assumée est assumée.
+  'FichePreparee.revoked_at': 'contrat',
+  'FichePreparee.opened_at': 'contrat',
+  'FichePreparee.blocked_at': 'contrat',
+
   // --- contrat : servis pour une autre façade, ou moitié d'une paire ---
   'PalierAccessible.min_completed_collabs': 'contrat',
   'PalierAccessible.min_reliability_score': 'contrat',

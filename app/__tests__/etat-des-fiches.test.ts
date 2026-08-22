@@ -1,89 +1,49 @@
 /**
- * Où en est une fiche préparée, lu sur ses dates.
+ * L'état d'une fiche préparée vient du serveur, et l'écran ne le dérive plus.
  *
- * Une fonction pure, dans son propre fichier : elle n'a besoin ni d'un rendu ni
- * d'un client, et la mêler aux tests d'écran ferait porter à quatre assertions
- * de logique le coût d'un arbre React.
+ * **Deux dérivations sont mortes ici, dont une que j'avais ajoutée la veille.**
+ * L'écran en portait une depuis le premier lot ; j'en ai posé une seconde dans
+ * son propre module, sans voir la première. Le serveur sert désormais `etat`, et
+ * les deux sont retirées — deux calculs de la même chose finissent par diverger,
+ * et c'est celui de l'écran qui aurait tort.
  *
- * **Ce qu'elle garde : l'ordre des conditions.** « Assumée » l'emporte sur tout
- * le reste — une fiche prise en main la veille de l'expiration se lirait
- * « lien expiré » si l'ordre était inversé, et la mesure du démarchage
- * compterait un échec là où il y a eu une signature.
+ * **L'ordre y est plus délicat qu'il n'y paraît.** Une fiche bloquée sur
+ * l'engagement puis assumée est **assumée** : regarder `blocked_at` avant
+ * `used_at` afficherait « bloquée » pour toujours sur un salon qui travaille
+ * depuis un mois, et la tournée compterait un échec là où elle a réussi. C'est
+ * exactement le genre d'ordre qu'un second calcul se trompe à reproduire.
  */
-import { etatDeLaFiche } from '../src/screens/TerrainScreen';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
-// --------------------------------------------------------------------------
-// l'état d'une fiche, lu sur ses dates
-// --------------------------------------------------------------------------
+const SOURCE = readFileSync(
+  join(__dirname, '..', 'src', 'screens', 'TerrainScreen.tsx'),
+  'utf-8',
+);
 
-describe('état d’une fiche préparée', () => {
-  const base = {
-    business_id: 'p1',
-    name: 'Salon Ocean',
-    status: 'draft' as const,
-    address: null,
-    prepared_at: '2026-08-01T10:00:00Z',
-    issued_at: null,
-    expires_at: null,
-    used_at: null,
-    revoked_at: null,
-    channel: null,
-  };
-  const maintenant = new Date('2026-08-13T12:00:00Z');
+/** Le code sans ses commentaires : ils parlent justement de ce qu'on interdit. */
+const CODE = SOURCE.split('\n')
+  .filter((ligne) => !/^\s*(\/\/|\*|\/\*)/.test(ligne))
+  .join('\n');
 
-  it('préparée tant qu’aucun lien n’est parti', () => {
-    expect(etatDeLaFiche(base, maintenant)).toBe('preparee');
+describe('l’état vient du serveur', () => {
+  it('l’écran lit `etat` et ne le recalcule pas', () => {
+    expect(CODE).toContain('fiche.etat');
   });
 
-  it('lien ouvert quand il est émis et pas encore échu', () => {
-    expect(
-      etatDeLaFiche(
-        { ...base, issued_at: '2026-08-12T10:00:00Z', expires_at: '2026-08-20T10:00:00Z' },
-        maintenant,
-      ),
-    ).toBe('lien-ouvert');
+  it('et ne dérive plus rien des dates', () => {
+    // **La garde vise les quatre champs, pas le nom de la fonction.** Une
+    // dérivation réécrite sous un autre nom passerait une garde qui ne
+    // chercherait que `etatDeLaFiche` ; ce qu'on interdit est de regarder ces
+    // dates pour décider d'un état, quel que soit l'emballage.
+    for (const date of ['used_at', 'revoked_at', 'expires_at', 'blocked_at']) {
+      expect({ date, lu: CODE.includes(`fiche.${date}`) }).toEqual({ date, lu: false });
+    }
   });
 
-  it('lien expiré passé son terme', () => {
-    expect(
-      etatDeLaFiche(
-        { ...base, issued_at: '2026-08-01T10:00:00Z', expires_at: '2026-08-08T10:00:00Z' },
-        maintenant,
-      ),
-    ).toBe('lien-expire');
-  });
-
-  it('revient à « préparée » quand le lien a été révoqué', () => {
-    // Révoquer ne recule pas la fiche : elle attend toujours, et le geste qui
-    // s'offre est bien d'en émettre un nouveau.
-    expect(
-      etatDeLaFiche(
-        {
-          ...base,
-          issued_at: '2026-08-12T10:00:00Z',
-          expires_at: '2026-08-20T10:00:00Z',
-          revoked_at: '2026-08-12T11:00:00Z',
-        },
-        maintenant,
-      ),
-    ).toBe('preparee');
-  });
-
-  it('assumée l’emporte sur tout le reste', () => {
-    // **Y compris sur un lien expiré.** Une fiche prise en main la veille de
-    // l'expiration se lirait « lien expiré » si l'ordre des conditions était
-    // inversé — et la mesure du démarchage compterait un échec là où il y a eu
-    // une signature.
-    expect(
-      etatDeLaFiche(
-        {
-          ...base,
-          issued_at: '2026-08-01T10:00:00Z',
-          expires_at: '2026-08-08T10:00:00Z',
-          used_at: '2026-08-02T10:00:00Z',
-        },
-        maintenant,
-      ),
-    ).toBe('assumee');
+  it('et la fonction qui le dérivait n’est plus exportée', () => {
+    // Sur la source : un import dynamique demande un drapeau de module que la
+    // suite n'a pas, et l'exportation se lit très bien ici.
+    expect(SOURCE).not.toMatch(/export function etatDeLaFiche/);
   });
 });

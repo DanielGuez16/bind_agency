@@ -1556,13 +1556,26 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       souscrit — c'est l'écart qui fait l'argument. Une catégorie à zéro garde sa
       ligne : « ce plan n'a jamais séduit un salon d'ongles » est ce qu'on vient
       lire. 1188 tests verts, 8 mutations sur les deux moitiés*
-- [ ] **`TASKS.md` a perdu trois entrées dans une résolution de conflit**
-      *#212 en a effacé vingt-sept lignes sans rien mettre à la place — les trois
-      demandes des plans, dont deux qui attendaient l'API. Elles ont fini par
-      être livrées, donc rien n'a été perdu cette fois ; mais ce fichier est le
-      canal qui a livré quatre rondes de champs aujourd'hui, et une demande
-      effacée est une demande qui ne revient pas. Un conflit sur ce fichier se
-      résout en **gardant les deux côtés**, jamais en prenant le sien*
+- [ ] **Deux PR fusionnées en ont effacé d'autres, et la CI est restée verte**
+      *#212 a retiré vingt-six lignes de `TASKS.md` ; #217 a supprimé 435 lignes
+      de #215 — le bilan de tournée, ses deux modules, son test et ses six
+      chaînes — quatre heures après sa fusion.*
+      *La cause n'est pas une résolution de conflit, contrairement à ce que
+      j'avais supposé : c'est `git reset --soft origin/main` suivi de
+      `git add -A`. Le reset déplace HEAD sur le **nouveau** `origin/main` en
+      gardant l'arbre de travail, lequel porte encore l'état d'avant pour tout ce
+      qu'on n'a pas touché ; `git add -A` enregistre alors le retrait de tout ce
+      qui a été fusionné entre-temps. Plus on livre vite, plus la fenêtre est
+      large. La forme juste est
+      `git reset --soft "$(git merge-base HEAD origin/main)"`.*
+      *Rien ne l'a signalé, et rien ne pouvait : **un test supprimé ne rougit
+      pas**, il disparaît avec le code qu'il éprouvait. Une vérification avant
+      de pousser attrape les trois cas :*
+      *`git show --numstat HEAD | awk '$1==0 && $2>0 {print $3}'` — un fichier en
+      pure suppression dans une PR qui prétend ajouter est presque toujours un
+      accident. Trouvée par `bind-agency-1b`, qui a inventorié ses onze PR après
+      le signalement*
+
 - [ ] **Neuf planches d'écrans portent encore la v1.0**
       *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
       passés en v3, dans la palette Ambre. Les autres suivent l'ordre du
