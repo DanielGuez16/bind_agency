@@ -401,9 +401,15 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
 
   const nom = createur.comptes.find((compte) => compte.handle)?.handle ?? t('annuaire.sansNom');
 
-  // Telle quelle, jamais suffixée : sans abonnement la clé porte déjà l'aperçu
-  // flouté, et la resuffixer ne rendrait rien.
-  const portrait = api.urlDuMedia(
+  // **La vignette, sauf sur un aperçu flouté.** L'original partait pour tous, et
+  // `Image` décode avant de réduire : vingt portraits de pleine taille tenaient
+  // leur pleine taille en mémoire dans des cadres de 132 points.
+  //
+  // La clé nue n'était pas un choix contre la vignette — celle-ci existait
+  // depuis la veille et le repli de la route depuis huit jours quand cette
+  // grille a été écrite. C'était la forme juste dans le cas dangereux, prise
+  // faute de séparer les deux. `urlDuPortrait` les sépare.
+  const portrait = api.urlDuPortrait(
     createur.comptes.find((compte) => compte.avatar_key)?.avatar_key ?? null,
   );
 

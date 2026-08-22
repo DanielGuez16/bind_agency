@@ -1859,12 +1859,18 @@ describe('l’annuaire des créateurs', () => {
     await waitFor(() => expect(screen.getByTestId('createur-c1')).toBeTruthy());
 
     expect(screen.getByTestId('portrait-c1')).toBeTruthy();
-    // **La clé se sert telle quelle, et c'est la fin de l'adresse.** « Contient
-    // la clé » ne suffisait pas : `urlDeLaVignette` suffixe `@vignette` et
-    // contient la clé lui aussi, si bien que la mutation qui remettait la
-    // vignette passait au vert. C'est la terminaison qui distingue les deux.
+    // **La vignette, et c'est la fin de l'adresse.** « Contient la clé » ne
+    // suffit pas — l'original et la vignette contiennent tous deux la clé, et
+    // une assertion faible laisserait passer l'un pour l'autre. La terminaison
+    // est ce qui les distingue, et elle reste ce que ce test regarde.
+    //
+    // **Ce qu'elle attend a changé, et pas par confort.** La clé partait nue
+    // parce qu'un aperçu flouté ne se resuffixe pas ; c'était vrai de ce
+    // cas-là seulement, et l'autre le payait. `Image` décode avant de réduire,
+    // donc vingt portraits d'origine tenaient leur pleine taille en mémoire
+    // dans des cadres de 132 points.
     expect(String(screen.getByTestId('photo-c1-image').props.source.uri)).toMatch(
-      /photos\/creatrices\/lea\.jpg$/,
+      /photos\/creatrices\/lea\.jpg@vignette$/,
     );
   });
 
