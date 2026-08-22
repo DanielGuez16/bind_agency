@@ -11,7 +11,7 @@
  * recopié de la planche — trois fois le même motif — ne distingue pas une
  * implémentation qui compare les motifs d'une qui répond toujours « same ».
  */
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 
 // **La file en tableau n'existe qu'en grand écran.** En compact l'arbitrage
 // empile ses dossiers : c'est la colonne « Reasons » qu'on éprouve ici, et elle
@@ -22,6 +22,7 @@ jest.mock('../src/shell/gabarit', () => ({
 }));
 
 import { ApiClient, ApiProvider } from '../src/api';
+import { en } from '../src/i18n/en';
 import { I18nProvider } from '../src/i18n';
 import { ArbitrageScreen } from '../src/screens/ArbitrageScreen';
 import { formeDuMalentendu, motDeLaForme } from '../src/screens/arbitrage/formeDuMalentendu';
@@ -88,6 +89,38 @@ describe('la forme du malentendu', () => {
     expect(forme.meme).toBe(false);
     expect(formeDuMalentendu({} as never)).toMatchObject({ compte: 0, meme: false });
   });
+});
+
+const DOSSIER_POUR_CLOTURE = (
+  id: string,
+  motifs: string[],
+  memeMotifRepete: boolean,
+  suite?: number,
+) => ({
+  collaboration_id: id,
+  booking_id: `b-${id}`,
+  status: 'under_review',
+  required_format: 'story',
+  required_mention: '@vela',
+  required_geotag: false,
+  deadline_at: '2026-08-25T12:00:00Z',
+  attempts_count: motifs.length,
+  needs_human_review: true,
+  created_at: '2026-08-18T09:00:00Z',
+  business_id: 'b1',
+  business_name: 'Vela Nail Studio',
+  creator_id: 'u1',
+  creator_first_name: null,
+  creator_last_name: null,
+  creator_handle: '@lea.mrl',
+  creator_partie: false,
+  platform: 'instagram',
+  item_name: 'Gel manicure',
+  dernier_motif: motifs.at(-1) ?? null,
+  tentatives: motifs.map((motif) => T(motif)),
+  repetitions_du_dernier_motif: suite ?? (memeMotifRepete ? motifs.length : 1),
+  meme_motif_repete: memeMotifRepete,
+  derniere_soumission: null,
 });
 
 describe('la file distingue les deux dossiers', () => {
@@ -179,5 +212,102 @@ describe('la file distingue les deux dossiers', () => {
     await waitFor(() => expect(screen.getByTestId('forme-du-malentendu')).toBeTruthy());
 
     expect(screen.getByTestId('forme-du-malentendu')).toHaveTextContent(/3 different things/);
+  });
+});
+
+describe('clore sans faute', () => {
+  async function monterDossier(lignes: unknown[]) {
+    const api = new ApiClient({
+      baseUrl: 'https://api.test',
+      coffre: { lire: async () => null, ecrire: async () => {} },
+      fetchImpl: (async (url: RequestInfo | URL, init?: RequestInit) => {
+        if (init?.method === 'POST') envois.push(JSON.parse(String(init.body)));
+        return { ok: true, status: 200, json: async () => lignes } as Response;
+      }) as unknown as typeof fetch,
+    });
+    return await render(
+      <I18nProvider initialLocale="en">
+        <ThemeProvider role="admin">
+          <ApiProvider client={api}>
+            <ArbitrageScreen />
+          </ApiProvider>
+        </ThemeProvider>
+      </I18nProvider>,
+    );
+  }
+  let envois: unknown[] = [];
+  beforeEach(() => {
+    envois = [];
+  });
+
+  const MEME = () =>
+    DOSSIER_POUR_CLOTURE('k1', ['missing_mention', 'missing_mention', 'missing_mention'], true);
+  const MELANGE = () =>
+    DOSSIER_POUR_CLOTURE('k1', ['missing_mention', 'wrong_format', 'missing_location'], false);
+
+  it('passe devant quand le même motif boucle', async () => {
+    // **Ni approuver ni refuser n'est juste** : le produit a échoué à
+    // transmettre une demande, et la trancher comme une faute la met au débit
+    // de la mauvaise personne. L'arbitre qui tranche vingt dossiers à la chaîne
+    // appuie sur le premier bouton — c'est là que l'ordre décide.
+    await monterDossier([MEME()]);
+    await waitFor(() => expect(screen.getByTestId('decisions-k1')).toBeTruthy());
+
+    // **En régex : le bouton porte aussi son raccourci clavier.** Sur une
+    // chaîne, `toHaveTextContent` compare le contenu entier, et « CClose it, no
+    // fault » n'est pas « Close it, no fault ».
+    const boutons = within(screen.getByTestId('decisions-k1')).getAllByRole('button');
+    expect(boutons[0]).toHaveTextContent(new RegExp(en.admin.issueCloreSansFaute));
+  });
+
+  it('et repasse derrière quand les motifs diffèrent', async () => {
+    // Sans cette moitié, la garde passerait sur un écran qui la mettrait
+    // toujours en tête — c'est-à-dire qui proposerait de fermer sans faute un
+    // dossier où deux choses clochaient réellement.
+    await monterDossier([MELANGE()]);
+    await waitFor(() => expect(screen.getByTestId('decisions-k1')).toBeTruthy());
+
+    const boutons = within(screen.getByTestId('decisions-k1')).getAllByRole('button');
+    expect(boutons[0]).not.toHaveTextContent(new RegExp(en.admin.issueCloreSansFaute));
+    // Elle reste offerte : un arbitre peut juger que la demande n'est pas
+    // passée même sur des motifs mélangés. C'est l'ordre qui conseille, pas la
+    // présence.
+    expect(
+      within(screen.getByTestId('decisions-k1')).getByText(en.admin.issueCloreSansFaute),
+    ).toBeTruthy();
+  });
+
+  it('envoie l’issue du serveur, et sans motif', async () => {
+    // Les trois autres décisions exigent un motif parce qu'elles reprochent
+    // quelque chose ; celle-ci ne reproche rien, et demander de nommer un tort
+    // avant de dire qu'il n'y en a pas la contredirait.
+    await monterDossier([MEME()]);
+    await waitFor(() => expect(screen.getByTestId('decisions-k1')).toBeTruthy());
+
+    await fireEvent.press(
+      within(screen.getByTestId('decisions-k1')).getByText(en.admin.issueCloreSansFaute),
+    );
+
+    expect(envois).toEqual([{ issue: 'close_no_fault' }]);
+  });
+
+  it('la phrase compte la suite, pas les reproches', async () => {
+    // **Elle affirme une répétition, donc elle doit dire combien de fois de
+    // suite.** Quatre reproches dont trois identiques à la fin : écrire quatre
+    // serait faux, et c'est le décor qui fait diverger les deux nombres.
+    await monterDossier([
+      DOSSIER_POUR_CLOTURE(
+        'k1',
+        ['wrong_format', 'missing_mention', 'missing_mention', 'missing_mention'],
+        true,
+        3,
+      ),
+    ]);
+    await waitFor(() => expect(screen.getByTestId('forme-du-malentendu')).toBeTruthy());
+
+    expect(screen.getByTestId('forme-du-malentendu')).toHaveTextContent(/asked 3 times/);
+    // Et la colonne garde le compte des reproches : les deux nombres ne disent
+    // pas la même chose.
+    expect(screen.getByTestId('ligne-k1')).toHaveTextContent(/4 · same/);
   });
 });
