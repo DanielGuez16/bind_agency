@@ -9096,11 +9096,20 @@ existera, le champ se calculera et cette ligne tombera.
 
 Les deux valaient `no_show`, donc rien n'incitait à prévenir plutôt qu'à
 disparaître — alors qu'un salon prévenu à onze heures remplit son créneau de
-quatorze heures trente. `cancelled_late` porte la différence, à `-10` contre
+quatorze heures trente. `cancelled_late` porte la différence, à `-5` contre
 `-25`, et **le dossier arrive en `cancelled`** : elle a annulé, pas disparu.
 
-L'arithmétique du seuil est mince et c'est noté ici pour qu'elle se voie : base
-`70`, moins `10`, minimum du reel `60`. Une créatrice dont c'est le seul
-événement passe **exactement**, et seulement parce que la comparaison est `>=`.
-Un test l'épingle : le jour où l'un des trois réglages bouge d'un point,
-quelqu'un décidera au lieu de le découvrir.
+**Le poids a été livré à -10 et corrigé le lendemain, sur le chiffre du test
+d'équilibre.** À -10 : base `70`, minimum du reel `60`, et une créatrice dont
+c'était le seul écart tombait **exactement** sur le seuil — elle n'y passait que
+parce que la comparaison est `>=`, et un point sur n'importe lequel des trois
+réglages lui fermait le haut de l'échelle. Prévenir tard lui coûtait donc ce que
+cet événement existe pour lui épargner.
+
+À `-5`, cinq points de marge, et le test les affirme au lieu de les laisser
+déduire. **Une annulation tardive est une faute légère, pas une demi-absence** :
+c'est cette phrase qui fixe l'ordre de grandeur, pas l'écart avec `no_show`.
+
+Le test n'a rien empêché — le poids était déjà en production. Il a rendu un
+nombre lisible, et c'est le nombre qui a tranché. C'est tout ce qu'on demande à
+un test d'équilibre, et c'est pour cela qu'il reste.

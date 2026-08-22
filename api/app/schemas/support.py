@@ -26,6 +26,12 @@ class RepriseDemandee(BaseModel):
     #: initiative »**, faute d'un canal par lequel le salon écrive : c'est celui
     #: qui affirme avoir été appelé qui doit le dire, sans quoi toute reprise se
     #: présenterait comme sollicitée sans que personne ne l'ait sollicitée.
+    #:
+    #: **Une déclaration, et elle tient parce que le gérant la lit.** Il est le
+    #: seul à savoir s'il a appelé, et il lit ce mot dans sa liste : cocher « le
+    #: salon a demandé » quand personne n'a rien demandé se fait devant celui
+    #: qui peut le démentir. Voir le modèle pour pourquoi ce champ ne se
+    #: calcule pas.
     spontaneous: bool = True
 
 

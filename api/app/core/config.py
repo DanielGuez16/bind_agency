@@ -403,12 +403,20 @@ class Settings(BaseSettings):
             "first_pass_compliant": Decimal("2"),
             "resubmit_required": Decimal("-3"),
             "no_show": Decimal("-25"),
-            # **Entre le retard de publication et l'absence.** Prévenir tard
-            # coûte — le salon a perdu son créneau — mais moins que disparaître,
-            # sans quoi rien n'inciterait à prévenir. L'écart avec `no_show` est
-            # ce qui porte l'incitation : le réduire l'affaiblit, l'annuler la
+            # **Une faute légère, pas une demi-absence.** Prévenir tard coûte
+            # — le salon a perdu son créneau — mais moins que disparaître, sans
+            # quoi rien n'inciterait à prévenir. L'écart avec `no_show` est ce
+            # qui porte l'incitation : le réduire l'affaiblit, l'annuler la
             # supprime.
-            "cancelled_late": Decimal("-10"),
+            #
+            # **Descendu de -10 à -5, et pour une raison chiffrée.** À -10, une
+            # créatrice dont c'était le seul écart tombait sur 60 — exactement
+            # le minimum du reel — et n'y passait que parce que la comparaison
+            # est `>=`. Prévenir tard lui coûtait donc le haut de l'échelle à un
+            # point près, ce qui est précisément ce que cet événement existe
+            # pour éviter. À -5 il reste cinq points de marge, et la faute reste
+            # visiblement plus lourde qu'un retard de publication.
+            "cancelled_late": Decimal("-5"),
             "unfulfilled": Decimal("-30"),
             "business_rating": Decimal("0"),
             # **Zéro, et il le reste** tant qu'aucun abus réel n'a été observé.

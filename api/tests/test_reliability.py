@@ -470,23 +470,28 @@ def test_l_annulation_tardive_coute_moins_que_l_absence() -> None:
 
 
 def test_une_seule_annulation_tardive_laisse_le_haut_de_l_echelle_ouvert() -> None:
-    """**Le cas que le seuil frôle, et il vaut d'être écrit.**
+    """**Le cas que le seuil frôlait, et c'est ce test qui l'a fait bouger.**
 
-    Le score part de 70, le reel en demande 60, et une annulation tardive en
-    coûte 10 : une créatrice dont c'est le seul événement tombe **exactement**
-    sur le seuil, et n'y passe que parce que la comparaison est `>=`.
+    À -10, le compte tombait sur 70 - 10 = 60, c'est-à-dire **exactement** le
+    minimum du reel : une créatrice qui avait prévenu n'y passait que parce que
+    la comparaison est `>=`, et un point sur n'importe lequel des trois réglages
+    lui fermait le haut de l'échelle. C'était l'inverse de ce que cet événement
+    existe pour faire.
 
-    Ce test n'approuve pas cet équilibre, il le rend visible : le jour où l'un
-    des trois réglages bouge d'un point, il tombe et quelqu'un décide. Sans
-    lui, une créatrice qui a prévenu perdrait le haut de l'échelle sans que
-    personne ne l'ait voulu.
+    Le poids est donc descendu à -5. La marge est écrite en toutes lettres
+    ci-dessous, et non déduite : le prochain réglage se décidera sur un nombre
+    qu'on lit, pas sur un souvenir.
     """
     from app.services.eligibility import VerdictScore, evaluer_score
 
     caches = service.evaluer([(ReliabilityEventType.CANCELLED_LATE, Decimal("0"))])
 
-    assert caches.reliability_score == Decimal("60.00")
+    assert caches.reliability_score == Decimal("65.00")
     assert evaluer_score(Decimal("60.00"), caches.reliability_score) is VerdictScore.TENUE
+    # **Cinq points de marge, affirmés.** Sans cette ligne le test resterait
+    # vert à 60,01 comme à 65, et ne dirait plus rien de ce qui reste avant le
+    # seuil — c'est-à-dire plus rien du tout.
+    assert caches.reliability_score - Decimal("60") == Decimal("5.00")
     # Et une absence, elle, ferme : c'est la différence qu'on achète.
     absente = service.evaluer([(ReliabilityEventType.NO_SHOW, Decimal("0"))])
     assert evaluer_score(Decimal("60.00"), absente.reliability_score) is VerdictScore.MANQUEE
