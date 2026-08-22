@@ -9342,3 +9342,44 @@ La garde `routes-sans-appelant` ne porte plus que `ouvrirUneReprise` et
 `fermerLaReprise` : l'autre bout de la reprise de compte, qui attend l'écran
 d'administration — **un produit différent de celui-ci**. Côté commerce et côté
 créateur, plus aucune capacité du client n'est sans écran.
+## 2026-08-22 — L'attente, la suite : la liste, la règle 3, et une garde qui a dû être refaite deux fois
+
+**La liste qui se recompose s'atténue sans se vider**, et ça se pose une fois
+dans `Ecran` plutôt que cinq fois dans cinq écrans. `useRequete` gardait déjà
+les données pendant un rechargement et le signalait — il ne manquait que de le
+montrer.
+
+**Le seuil des quatre cents millisecondes ne s'applique pas à cette
+atténuation.** Ce n'est pas un indicateur d'attente, c'est la réponse au geste,
+au même titre que l'enfoncement d'un bouton. L'attendre ferait exactement ce que
+la règle 1 veut éviter : un écran qui ne répond pas, donc un doute, donc un
+second appui.
+
+**Le test lit le départ de l'aller-retour, pas la valeur interpolée.** Les
+animations de React Native sont pilotées par les images de rendu et non par les
+minuteurs : avancer l'horloge de Jest ne déplace aucune opacité, et une
+assertion sur la valeur affichée resterait à un en accusant le composant.
+
+**La règle 3 n'avait rien à supprimer** — le produit la respecte déjà, et
+`StatusMessage` n'a même pas de niveau `success`. La tranche est donc
+entièrement la garde : une règle qui retire se défait toute seule, et une règle
+écrite dans une note de composant est une intention qui ne survit pas à la
+personne qui l'a écrite.
+
+**Cette garde a été fausse deux fois, et les deux fois une mutation l'a dit.**
+D'abord six participes fixes — « saved, sent, updated, created, added,
+recorded » — et « Your booking has been cancelled » passait au vert. Puis, une
+fois élargie à tout participe, elle attrapait deux messages d'erreur du
+produit : « This account has been closed » n'annonce aucune réussite, il
+explique un refus.
+
+Ce qui distingue une confirmation d'un état est **la deuxième personne**. « Your
+X has been … » félicite ; « This account has been … » constate. La garde est
+donc scopée là-dessus, et la liste des innocentes porte les deux messages qui
+l'avaient fait crier au loup.
+
+**Un test échouait déjà sur `main`, et pas de mon fait.** `/2:04 AM/` trouve
+« 12:04 AM » : l'assertion des créneaux suivants n'était pas ancrée, et elle ne
+rougissait qu'aux heures où les deux formes se chevauchent. La suite passait le
+jour et tombait la nuit sans que rien n'ait changé dans le code. Ancrée sur
+« aucun chiffre devant », et vérifiée sous quatre fuseaux.

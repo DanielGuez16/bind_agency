@@ -30,14 +30,33 @@ import { es } from '../src/i18n/es';
  */
 const CONFIRMATIONS: { nom: string; motif: RegExp }[] = [
   { nom: 'la réussite nue', motif: /\b(success|successful|successfully)\b/i },
-  { nom: 'le point d’exclamation de joie', motif: /\b(done|saved|sent|updated|created|added)\s*!/i },
+  {
+    // **Le participe suffit quand il porte le point d'exclamation.** C'est la
+    // forme la plus courte d'une félicitation, et la plus tentante.
+    nom: 'le point d’exclamation de joie',
+    motif:
+      /\b(done|saved|sent|updated|created|added|cancelled|canceled|published|archived|submitted|confirmed)\s*!/i,
+  },
   { nom: 'les félicitations', motif: /\b(well done|nice work|great job|all set)\b/i },
   {
-    nom: 'le passé composé de confirmation',
-    motif: /\b(has been|have been)\s+(saved|sent|updated|created|added|recorded)\b/i,
+    // **La deuxième personne est ce qui fait la confirmation.** « Your booking
+    // has been cancelled » annonce une réussite ; « This account has been
+    // closed » explique un refus, et c'est un état, pas une félicitation.
+    //
+    // La première version ne regardait ni l'un ni l'autre : six participes
+    // fixes, dont « cancelled » ne faisait pas partie. Une mutation l'a dit
+    // tout de suite. La deuxième version, elle, attrapait les deux messages
+    // d'erreur du produit — une garde qui se trompe apprend à ignorer le rouge.
+    nom: 'le passé composé à la deuxième personne',
+    motif: /\byour\b[^.!?]{0,40}?\b(has|have|was|were)\s+been\s+\w+/i,
+  },
+  {
+    nom: 'le « c’est fait » au présent',
+    motif:
+      /\b(is|are)\s+now\s+(saved|sent|published|live|active|confirmed|cancelled|archived|booked)\b/i,
   },
   { nom: 'les changements enregistrés', motif: /\bchanges (were |have been )?saved\b/i },
-  { nom: 'l’équivalent espagnol', motif: /\b(guardado con éxito|hecho!|listo!|éxito)\b/i },
+  { nom: 'l’équivalent espagnol', motif: /\b(con éxito|hecho!|listo!|éxito)\b/i },
 ];
 
 /** Toutes les chaînes d'un dictionnaire, chemin compris pour nommer la fautive. */
@@ -78,7 +97,8 @@ describe('la réussite ne s’annonce pas', () => {
         'la réussite nue': 'x = Booking created successfully',
         'le point d’exclamation de joie': 'x = Saved!',
         'les félicitations': 'x = Nice work, you are all set',
-        'le passé composé de confirmation': 'x = Your photo has been added',
+        'le passé composé à la deuxième personne': 'x = Your photo has been added',
+        'le « c’est fait » au présent': 'x = Your service is now published',
         'les changements enregistrés': 'x = Changes saved',
         'l’équivalent espagnol': 'x = Guardado con éxito',
       };
@@ -90,6 +110,26 @@ describe('la réussite ne s’annonce pas', () => {
     },
   );
 
+  it('et le passé composé, sur les formes qu’on écrira vraiment', () => {
+    // La première version ne connaissait que six participes, et « has been
+    // cancelled » lui échappait. Écrire l'exemple qui a motivé la garde, puis
+    // les autres façons d'écrire la même faute — c'est la règle du dépôt, et
+    // c'est une mutation qui l'a rappelée ici.
+    for (const phrase of [
+      'x = Your booking has been cancelled',
+      'x = Your service has been archived',
+      'x = Your proof has been submitted',
+      'x = Changes saved',
+      'x = Your service is now published',
+      'x = Published!',
+    ]) {
+      expect({ phrase, prise: CONFIRMATIONS.some((c) => c.motif.test(phrase)) }).toEqual({
+        phrase,
+        prise: true,
+      });
+    }
+  });
+
   it('mais laisse passer ce qui décrit un état, pas une félicitation', () => {
     // « Honoured » sur une réservation tenue est un **résultat**, pas une
     // confirmation d'action : il reste affiché pour toujours et ne suit aucun
@@ -100,6 +140,12 @@ describe('la réussite ne s’annonce pas', () => {
       'commerce.repriseRefermee = Closed 12 Aug',
       'terrain.etat.claimed = Activated',
       'composition.archivee = Archived. Still readable from the bookings that cite it.',
+      // **Deux messages de refus, et ils décrivent un état.** La deuxième
+      // version de cette garde les prenait pour des félicitations : « has been
+      // closed » sur un compte qu'on ne peut plus ouvrir n'annonce aucune
+      // réussite. C'est la deuxième personne qui fait la différence.
+      'errors.account_not_active = This account has been closed.',
+      'errors.creator_profile_anonymized = This profile has been anonymized and can no longer be edited.',
     ];
     for (const phrase of innocentes) {
       expect({ phrase, prise: CONFIRMATIONS.some(({ motif }) => motif.test(phrase)) }).toEqual({
