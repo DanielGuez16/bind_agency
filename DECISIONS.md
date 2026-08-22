@@ -9113,3 +9113,43 @@ c'est cette phrase qui fixe l'ordre de grandeur, pas l'écart avec `no_show`.
 Le test n'a rien empêché — le poids était déjà en production. Il a rendu un
 nombre lisible, et c'est le nombre qui a tranché. C'est tout ce qu'on demande à
 un test d'équilibre, et c'est pour cela qu'il reste.
+L'arithmétique du seuil est mince et c'est noté ici pour qu'elle se voie : base
+`70`, moins `10`, minimum du reel `60`. Une créatrice dont c'est le seul
+événement passe **exactement**, et seulement parce que la comparaison est `>=`.
+Un test l'épingle : le jour où l'un des trois réglages bouge d'un point,
+quelqu'un décidera au lieu de le découvrir.
+
+---
+
+## 2026-08-22 — La reprise : les freins existent, et deux d'entre eux tiennent
+
+**Le salon referme depuis la journée, en un appui, sans confirmation.** Le
+bouton vivait dans les réglages ; il est là où le salon regarde chaque matin.
+Et il ne demande rien : une question de plus entre le gérant et sa porte est une
+négociation, et il n'a personne à convaincre. Le geste se répare tout seul —
+rien n'est effacé, l'administration peut rouvrir en le disant.
+
+**La portée s'écrit au présent sur le bandeau.** La liste des réglages dit
+« could open » d'une porte déjà close ; la journée parle d'une porte ouverte
+pendant qu'on lit, et le temps du verbe est ce qui distingue un fait passé d'une
+chose qui se produit. Les mots viennent du même aiguillage que la liste : deux
+jeux pour les mêmes écrans finiraient par se contredire, et c'est le gérant qui
+lirait la contradiction.
+
+**« Tout » n'est pas interdit, il est écrit.** Le serveur n'a pas de valeur
+« tout » : demander tout, c'est cocher les sept, et le gérant lit alors les sept
+dans sa liste. Une valeur unique aurait été plus courte à écrire et plus facile
+à lire pour l'administrateur — c'est exactement ce qu'on ne veut pas.
+
+**Le troisième frein ne tient qu'à moitié, et il faut le dire.** Le compte des
+reprises de l'appelant est servi sur la *réponse* à l'ouverture, donc après
+l'appui. La planche le veut au moment de la demande : lu après coup, il retient
+pour la suivante et non pour celle-ci — c'est-à-dire exactement le journal que
+Design écarte, qui enregistre sans empêcher. Il est rendu là où il arrive, et le
+manque est demandé plutôt que masqué.
+
+**L'écran est monté sur la fiche de tournée assumée, et c'est provisoire.**
+Aucune route ne liste les commerces côté administration ; c'est le seul endroit
+du produit où un salon nommé est sous les yeux d'un administrateur. La place est
+mauvaise — on ne pense pas « tournée » quand on cherche à débloquer un salon —
+et le code le dit là où quelqu'un le lira.
