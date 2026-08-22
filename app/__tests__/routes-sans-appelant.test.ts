@@ -56,8 +56,6 @@ const SANS_APPELANT: Record<string, string> = {
   // réservations passées citent la prestation — et c'est une question de
   // produit, pas de code mort.
   activerUneOffre: 'a-instruire',
-  // La prise en main d'une fiche préparée sur le terrain.
-  rattacherLaFiche: 'a-instruire',
 };
 
 const RAISONS = new Set(['contrat', 'technique', 'a-instruire']);
