@@ -35,51 +35,58 @@ const T = (motif: string, note: string | null = null) => ({
 });
 
 describe('la forme du malentendu', () => {
-  it('trois fois le même motif : le produit n’a pas su transmettre', () => {
-    const forme = formeDuMalentendu([T('missing_mention'), T('missing_mention'), T('missing_mention')]);
-    expect(forme).toMatchObject({ compte: 3, meme: true });
+  /** Le décor minimal : des tentatives, et le verdict du serveur. */
+  const F = (motifs: string[], memeMotifRepete: boolean) =>
+    formeDuMalentendu({ tentatives: motifs.map((motif) => T(motif)), meme_motif_repete: memeMotifRepete });
+
+  it('le verdict vient du serveur, jamais d’une comparaison locale', () => {
+    // **Le cas qui diverge de « tous les motifs identiques ».** C'est la
+    // dérivation que je portais, et elle était subtilement fausse : ici les
+    // trois derniers refus portent sur la même chose, la demande n'a jamais été
+    // comprise, et le serveur le dit — alors qu'une comparaison de l'ensemble
+    // répondrait « mélangé » à cause du premier.
+    const forme = F(['wrong_format', 'missing_mention', 'missing_mention', 'missing_mention'], true);
+    expect(forme.meme).toBe(true);
     expect(motDeLaForme(forme)).toBe('meme');
   });
 
-  it('trois motifs différents : ce n’est pas le même dossier', () => {
-    // **Le cas qui diverge de « réponds toujours same ».** Un décor recopié de
-    // la maquette ne les sépare pas : la planche ne dessine qu'un dossier
-    // « same », et un écran qui écrirait « same » partout lui ressemblerait
-    // trait pour trait.
-    const forme = formeDuMalentendu([T('missing_mention'), T('missing_location'), T('wrong_format')]);
-    expect(forme).toMatchObject({ compte: 3, meme: false });
+  it('et l’inverse aussi : trois fois le même motif, mais pas de suite', () => {
+    // Mention, format, mention fait deux occurrences et une seule suite.
+    // Compter les occurrences proposerait « fermer sans faute » sur un dossier
+    // où deux choses clochaient réellement — là où il faut trancher.
+    const forme = F(['missing_mention', 'wrong_format', 'missing_mention'], false);
+    expect(forme.meme).toBe(false);
     expect(motDeLaForme(forme)).toBe('melange');
   });
 
-  it('et deux sur trois ne suffisent pas', () => {
-    // **Le cas qui diverge de « le premier motif revient quelque part ».** Deux
-    // fois la mention et une fois le lieu, c'est un mélange : la créatrice a
-    // corrigé quelque chose entre-temps, et la clôture sans faute ne s'y
-    // applique pas.
-    const forme = formeDuMalentendu([T('missing_mention'), T('missing_mention'), T('missing_location')]);
-    expect(forme.meme).toBe(false);
-  });
-
-  it('un motif unique n’est pas un motif répété', () => {
-    // Écrire « 1 · same » ferait lire une répétition là où il n'y a qu'un
-    // premier refus — et proposerait la clôture sans faute avant même qu'on
-    // ait pu se tromper deux fois.
-    const forme = formeDuMalentendu([T('missing_mention')]);
-    expect(forme.meme).toBe(false);
-    expect(motDeLaForme(forme)).toBeNull();
+  it('le compte porte sur les reproches, pas sur la suite', () => {
+    // La colonne écrit « 4 · same » : le nombre dit combien de fois on a
+    // refusé, le mot dit si le dernier reproche boucle. Les confondre ferait
+    // écrire « 3 · same » sur un dossier qui a quatre refus.
+    expect(F(['wrong_format', 'missing_mention', 'missing_mention', 'missing_mention'], true).compte).toBe(4);
   });
 
   it('une tentative sans motif ne compte pas', () => {
-    // `par` dit qui a demandé la reprise ; une tentative sans reproche n'en est
-    // pas un, et la compter gonflerait le nombre que l'arbitre lit pour décider.
-    const forme = formeDuMalentendu([T('missing_mention'), T('')]);
-    expect(forme.compte).toBe(1);
+    // Une tentative sans reproche n'en est pas un, et la compter gonflerait le
+    // nombre que l'arbitre lit pour décider.
+    expect(F(['missing_mention', ''], false).compte).toBe(1);
   });
 
-  it('et l’absence du champ se traite comme son absence de valeur', () => {
-    expect(formeDuMalentendu(null)).toMatchObject({ compte: 0, meme: false });
-    expect(formeDuMalentendu(undefined)).toMatchObject({ compte: 0, meme: false });
-    expect(motDeLaForme(formeDuMalentendu([]))).toBeNull();
+  it('un seul reproche ne porte aucun mot', () => {
+    // Écrire « 1 · same » ferait lire une répétition là où il n'y a qu'un
+    // premier refus.
+    expect(motDeLaForme(F(['missing_mention'], false))).toBeNull();
+  });
+
+  it('et le champ absent se lit « pas de répétition », jamais l’inverse', () => {
+    // **Sous-proposer est le bon défaut.** Une réponse d'avant le champ ne doit
+    // pas faire clore un dossier sans faute : sur-proposer fermerait là où il
+    // fallait trancher.
+    const forme = formeDuMalentendu({
+      tentatives: [T('missing_mention'), T('missing_mention')],
+    } as never);
+    expect(forme.meme).toBe(false);
+    expect(formeDuMalentendu({} as never)).toMatchObject({ compte: 0, meme: false });
   });
 });
 
@@ -102,7 +109,7 @@ describe('la file distingue les deux dossiers', () => {
     );
   }
 
-  const DOSSIER = (id: string, motifs: string[]) => ({
+  const DOSSIER = (id: string, motifs: string[], memeMotifRepete = false) => ({
     collaboration_id: id,
     booking_id: `b-${id}`,
     status: 'under_review',
@@ -124,12 +131,15 @@ describe('la file distingue les deux dossiers', () => {
     item_name: 'Gel manicure',
     dernier_motif: motifs.at(-1) ?? null,
     tentatives: motifs.map((motif) => T(motif)),
+    // Le verdict du serveur, qui est ce que l'écran lit.
+    repetitions_du_dernier_motif: memeMotifRepete ? motifs.length : 1,
+    meme_motif_repete: memeMotifRepete,
     derniere_soumission: null,
   });
 
   it('écrit « 3 · same » et « 3 · mixed » dans la colonne', async () => {
     await monter([
-      DOSSIER('k1', ['missing_mention', 'missing_mention', 'missing_mention']),
+      DOSSIER('k1', ['missing_mention', 'missing_mention', 'missing_mention'], true),
       DOSSIER('k2', ['missing_mention', 'missing_location', 'wrong_format']),
     ]);
     await waitFor(() => expect(screen.getByTestId('ligne-k1')).toBeTruthy());
@@ -142,7 +152,7 @@ describe('la file distingue les deux dossiers', () => {
     // Une file de trente dossiers mêle ceux que le produit a ratés et ceux où
     // la créatrice n'a pas suivi : ce ne sont pas les mêmes décisions.
     await monter([
-      DOSSIER('k1', ['missing_mention', 'missing_mention', 'missing_mention']),
+      DOSSIER('k1', ['missing_mention', 'missing_mention', 'missing_mention'], true),
       DOSSIER('k2', ['missing_mention', 'missing_location', 'wrong_format']),
     ]);
     await waitFor(() => expect(screen.getByTestId('ligne-k2')).toBeTruthy());
@@ -156,7 +166,7 @@ describe('la file distingue les deux dossiers', () => {
   it('le dossier nomme la forme en une phrase, avant tout journal', async () => {
     // Une phrase de six mots au lieu d'un journal, et elle suffit à savoir de
     // quel côté est l'incompréhension.
-    await monter([DOSSIER('k1', ['missing_mention', 'missing_mention', 'missing_mention'])]);
+    await monter([DOSSIER('k1', ['missing_mention', 'missing_mention', 'missing_mention'], true)]);
     await waitFor(() => expect(screen.getByTestId('forme-du-malentendu')).toBeTruthy());
 
     expect(screen.getByTestId('forme-du-malentendu')).toHaveTextContent(/same thing was asked 3/);

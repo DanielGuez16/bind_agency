@@ -121,7 +121,7 @@ const COLONNES: Colonne[] = [
  * où il n'y a qu'un premier refus.
  */
 function colonneDesMotifs(ligne: LigneDeFile, t: (cle: string) => string): string {
-  const forme = formeDuMalentendu(ligne.tentatives);
+  const forme = formeDuMalentendu(ligne);
   const mot = motDeLaForme(forme);
   if (mot === null) return String(forme.compte || ligne.attempts_count);
   return `${forme.compte} · ${t(mot === 'meme' ? 'admin.formeMeme' : 'admin.formeMelange')}`;
@@ -164,7 +164,7 @@ function TableDArbitrage({
     // **Le filtre porte sur la forme, pas sur le nombre.** C'est la seule
     // distinction qui change l'arbitre à convoquer, et la file d'un jour chargé
     // mélange les deux sans qu'on puisse les séparer de l'œil.
-    if (memeMotif && motDeLaForme(formeDuMalentendu(ligne.tentatives)) !== 'meme') return false;
+    if (memeMotif && motDeLaForme(formeDuMalentendu(ligne)) !== 'meme') return false;
     return true;
   });
 
@@ -477,12 +477,38 @@ function Dossier({ ligne, onTranche }: { ligne: LigneDeFile; onTranche: () => vo
   const [echec, setEchec] = useState<string | null>(null);
   const [notesOuvertes, setNotesOuvertes] = useState(false);
 
-  const forme = formeDuMalentendu(ligne.tentatives);
+  const forme = formeDuMalentendu(ligne);
 
   // **Le reproche qui a mis ce dossier là.** C'est lui que l'approbation
   // accepte, et c'est donc lui que le bouton doit nommer.
   const dernierMotif = ligne.tentatives.at(-1)?.motif ?? null;
   const approbation = libelleDApprobation(t, dernierMotif);
+
+  /**
+   * Fermer sans faute : le produit n'a pas su transmettre la demande.
+   *
+   * **Elle ne demande pas de motif.** Les trois autres décisions en exigent un
+   * parce qu'elles reprochent quelque chose ; celle-ci ne reproche rien, et
+   * demander de nommer un tort avant de dire qu'il n'y en a pas serait la
+   * contredire.
+   *
+   * **Et elle ne touche pas au score, sans même écrire un événement neutre.**
+   * C'était ma demande, et la session des routes l'a refusée avec un meilleur
+   * argument : un score nul est ignoré comme condition de palier, alors qu'un
+   * score qui existe est comparé à un seuil. Un événement de poids nul ne
+   * bougerait pas le score — il le ferait **exister**, et une créatrice dont
+   * ce serait le premier événement perdrait un palier pour un dossier qu'on
+   * ferme précisément sans lui rien reprocher.
+   */
+  const clotureSansFaute = {
+    cle: 'close_no_fault' as const,
+    label: t('admin.issueCloreSansFaute'),
+    accessibilityLabel: surCeDossier(t, ligne, t('admin.issueCloreSansFaute')),
+    touche: 'C',
+    // Comme l'approbation : offerte sans motif, parce qu'elle n'en reproche pas.
+    approbation: true,
+    onPress: () => void arbitrer('close_no_fault'),
+  };
 
   async function arbitrer(issue: IssueDArbitrage) {
     setEchec(null);
@@ -536,8 +562,14 @@ function Dossier({ ligne, onTranche }: { ligne: LigneDeFile; onTranche: () => vo
         <View style={{ gap: 6 }} testID="historique">
           {forme.compte > 1 ? (
             <Texte variante="type.bodyStrong" testID="forme-du-malentendu">
+              {/* **La phrase compte la suite, la colonne compte les
+                  reproches.** Elle affirme une répétition : elle doit donc
+                  dire combien de fois **de suite**, pas combien de refus en
+                  tout. « Format, mention, mention, mention » fait quatre
+                  reproches et trois fois la même chose, et écrire quatre ici
+                  serait faux. */}
               {forme.meme
-                ? t('admin.formeMemeChose', { n: forme.compte })
+                ? t('admin.formeMemeChose', { n: ligne.repetitions_du_dernier_motif })
                 : t('admin.formeChosesDifferentes', { n: forme.compte })}
             </Texte>
           ) : null}
@@ -657,10 +689,27 @@ function Dossier({ ligne, onTranche }: { ligne: LigneDeFile; onTranche: () => vo
           boutons identiques d'un dossier à l'autre ne se distinguent plus. Le
           libellé nomme donc la publication, et le nom accessible ajoute de qui
           et de quelle prestation il s'agit. */}
+      {/* **Ce que « fermer sans faute » veut dire, là où on hésite.** Un
+          arbitre qui découvre une quatrième issue au moment de trancher a
+          besoin de savoir ce qu'elle coûte à qui — et la réponse est : à
+          personne. Sous les boutons et nulle part ailleurs : dans une page
+          d'aide, personne ne la lirait. */}
+      {forme.meme ? (
+        <Texte variante="type.caption" couleur="ink.soft" testID="clore-sans-faute-aide">
+          {t('admin.issueCloreSansFauteAide')}
+        </Texte>
+      ) : null}
+
       <DecisionBar
         testID={`decisions-${ligne.collaboration_id}`}
         motif={motif ?? undefined}
         decisions={[
+          // **L'ordre suit la forme du dossier, et c'est tout son objet.** Sur
+          // un dossier où le même motif boucle, « fermer sans faute » passe
+          // devant : ni approuver ni refuser n'est juste, et l'arbitre qui
+          // tranche vingt dossiers à la chaîne appuie sur le premier. Sur un
+          // dossier à motifs mélangés, « approuver » reprend la première place.
+          ...(forme.meme ? [clotureSansFaute] : []),
           {
             cle: 'approve',
             // **Le bouton nomme son écart.** « Approve » seul ne disait pas ce
@@ -688,6 +737,7 @@ function Dossier({ ligne, onTranche }: { ligne: LigneDeFile; onTranche: () => vo
             touche: 'N',
             onPress: () => void arbitrer('unfulfilled'),
           },
+          ...(forme.meme ? [] : [clotureSansFaute]),
         ]}
       />
     </View>

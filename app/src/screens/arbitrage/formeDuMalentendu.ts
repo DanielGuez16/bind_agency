@@ -14,7 +14,7 @@
  * motifs n'a pas su la porter. Trois motifs différents disent l'inverse. C'est
  * le même nombre de pixels et ce n'est pas la même décision.
  */
-import type { Tentative } from '../../api';
+import type { LigneDeFile } from '../../api';
 
 export type FormeDuMalentendu = {
   /** Combien de reproches ont été formulés. */
@@ -22,28 +22,40 @@ export type FormeDuMalentendu = {
   /**
    * Vrai quand tous les motifs sont le même.
    *
-   * **Faux sur une seule tentative**, et c'est délibéré : un motif unique n'est
-   * pas « le même motif répété ». Le dire vrai ferait proposer la clôture sans
-   * faute au premier refus, avant même qu'on ait pu se tromper deux fois.
+   * **Il vient du serveur.** Le seuil est `collaboration_max_attempts`, qui vit
+   * en configuration, et la répétition se compte **de suite** et non en tout :
+   * mention, format, mention fait deux occurrences et une seule suite. Compter
+   * les occurrences proposerait « fermer sans faute » sur un dossier où deux
+   * choses clochaient réellement — c'est-à-dire là où il faut trancher.
    */
   meme: boolean;
   /** Les motifs dans l'ordre, pour la ligne des trois. */
   motifs: string[];
 };
 
-export function formeDuMalentendu(tentatives: Tentative[] | null | undefined): FormeDuMalentendu {
+export function formeDuMalentendu(
+  ligne: Pick<LigneDeFile, 'tentatives' | 'meme_motif_repete'>,
+): FormeDuMalentendu {
   // Falsy plutôt que `=== null` : une réponse d'avant le champ, ou un décor qui
   // ne le pose pas, le laisse absent — et « aucune tentative » est alors la
   // bonne réponse, pas une chute.
-  const liste = tentatives ?? [];
-  // **Seuls les reproches comptent.** `par` dit qui a demandé la reprise ; une
-  // tentative sans motif n'en est pas un, et la compter gonflerait le nombre
-  // que l'arbitre lit pour décider.
+  const liste = ligne.tentatives ?? [];
+  // **Seuls les reproches comptent.** Une tentative sans motif n'en est pas un,
+  // et la compter gonflerait le nombre que l'arbitre lit pour décider.
   const motifs = liste.map((tentative) => tentative.motif).filter((motif) => Boolean(motif));
 
   return {
     compte: motifs.length,
-    meme: motifs.length > 1 && new Set(motifs).size === 1,
+    // **Servi, plus dérivé.** Je comparais l'ensemble des motifs et exigeais
+    // qu'ils soient tous identiques ; le serveur compte la **suite** du dernier
+    // contre un seuil de configuration. « Format, mention, mention, mention »
+    // faisait diverger les deux, et c'est le serveur qui a raison : les trois
+    // derniers refus portent bien sur la même chose. Un écran qui écrirait le
+    // seuil en dur mentirait au premier ajustement.
+    //
+    // Absent, on répond faux : sous-proposer « fermer sans faute » est le bon
+    // défaut — sur-proposer ferait clore un dossier où il fallait trancher.
+    meme: ligne.meme_motif_repete === true,
     motifs,
   };
 }
