@@ -8503,3 +8503,42 @@ cas existe, un runner n'ayant pas forcément la configuration qu'on croit.
 
 Cinq mutations, cinq chutes, après trois décors successifs. Aucune n'aurait été
 trouvée par relecture.
+
+
+---
+
+## 2026-08-22 — Le point tombe, et c'est un choix de marque
+
+**Direction A, parce que la signature sert ailleurs.** Entre A et B, l'écart
+n'était pas de qualité mais d'ambition : A veut dire quelque chose, B veut
+disparaître, et sur un écran vu trois fois par jour disparaître est une ambition
+suffisante. Le cas qui fait pencher pour A est celui-ci : le point orange sert au
+favicon, à l'icône et aux visuels de l'agence — le voir arriver en dernier, mille
+fois, l'installe mieux que n'importe quelle note de passation.
+
+**L'alignement est structurel, et c'est ce qui rend la direction tenable.** Les
+deux `Marque` superposées partagent la `viewBox` et le repère du fichier : elles
+retombent l'une sur l'autre sans qu'aucune constante ne l'organise, à n'importe
+quelle taille. Une position du point mesurée en points d'écran aurait dérivé au
+premier changement d'échelle, et personne ne l'aurait vu avant une capture.
+
+**La chute s'exprime en hauteurs de logotype**, pas en pixels : à une autre
+taille le point tombe d'aussi loin *relativement*, et la chute garde son poids.
+
+**Aucun rebond, et c'est la seule contrainte d'assouplissement.** Un ressort
+dépasse sa cible : le point remonterait, et un point qui remonte est un
+personnage. `Easing.out(Easing.cubic)` s'arrête sur sa valeur.
+
+**Le plafond est un plafond, pas une cible.** Si l'application est prête à trois
+cents millisecondes, l'écran part à trois cents : une animation qui retient la
+main pour finir sa phrase vole du temps.
+
+**Et l'attente ne ressemble pas à la marque.** C'est toute la raison du filet :
+si l'attente se dessinait dans le vocabulaire de l'entrée, on ne distinguerait
+plus « ça s'ouvre » de « ça bloque ». Il n'apparaît qu'au-delà du plafond —
+le montrer d'emblée ferait de chaque ouverture une attente — et sous mouvement
+réduit il ne parcourt pas : ce qui compte est que l'état soit marqué, pas qu'il
+bouge.
+
+**`Fond` est supprimé avec son indicateur.** Une vue qui survit sans appelant
+finit par resservir en portant une composition périmée.
