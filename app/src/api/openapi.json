@@ -737,6 +737,15 @@
         ]
       }
     },
+    "/api/v1/business/{business_id}/tier-offers/creatrices-par-palier": {
+      "get": {
+        "operationId": "read_reach_by_tier_api_v1_business__business_id__tier_offers_creatrices_par_palier_get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/api/v1/business/{business_id}/tier-offers/{offer_id}": {
       "delete": {
         "operationId": "delete_offer_api_v1_business__business_id__tier_offers__offer_id__delete",

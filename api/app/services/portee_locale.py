@@ -126,61 +126,9 @@ async def autour_du_commerce(
         # fiche est en préparation, et l'écran doit pouvoir s'afficher.
         return PorteeLocale(createurs=0, peuvent_reserver=0, rayon_metres=rayon)
 
-    proches = (
-        await session.execute(
-            sa.select(
-                CreatorProfile.user_id,
-                CreatorProfile.reliability_score,
-                CreatorProfile.completed_collabs_count,
-            )
-            .join(User, User.id == CreatorProfile.user_id)
-            .where(
-                CreatorProfile.geo.is_not(None),
-                CreatorProfile.anonymized_at.is_(None),
-                User.status == UserStatus.ACTIVE,
-                # Les deux colonnes sont déjà des `Geography` : les comparer
-                # telles quelles, sans `cast`. Un `cast` explicite perd le SRID
-                # en route — `geography(GEOMETRY,-1)` — et Postgres refuse.
-                sa.func.ST_DWithin(CreatorProfile.geo, business.geo, rayon),
-            )
-        )
-    ).all()
-
+    proches, comptes_par_createur = await _le_quartier(session, business=business)
     if not proches:
         return PorteeLocale(createurs=0, peuvent_reserver=0, rayon_metres=rayon)
-
-    identifiants = [ligne.user_id for ligne in proches]
-    releve = eligibility._dernier_releve()
-    comptes_par_createur: dict[uuid.UUID, list[eligibility.CompteEvalue]] = {}
-    for ligne in (
-        await session.execute(
-            sa.select(
-                SocialAccount.id,
-                SocialAccount.creator_id,
-                SocialAccount.platform,
-                SocialAccount.status,
-                SocialAccount.verification_status,
-                SocialAccount.connected_at,
-                SocialAccount.token_expires_at,
-                releve.c.followers_count,
-                releve.c.captured_at,
-            )
-            .outerjoin(releve, releve.c.social_account_id == SocialAccount.id)
-            .where(SocialAccount.creator_id.in_(identifiants))
-        )
-    ).all():
-        comptes_par_createur.setdefault(ligne.creator_id, []).append(
-            eligibility.CompteEvalue(
-                social_account_id=ligne.id,
-                platform=ligne.platform,
-                status=ligne.status,
-                verification_status=ligne.verification_status,
-                followers=ligne.followers_count,
-                captured_at=ligne.captured_at,
-                connected_at=ligne.connected_at,
-                token_expires_at=ligne.token_expires_at,
-            )
-        )
 
     paliers = await paliers_ouverts_du_commerce(session, business_id=business.id)
 
@@ -281,6 +229,187 @@ async def _paliers_fermes(
         )
         for ligne in lignes
         if ligne.id not in deja
+    ]
+
+
+async def _le_quartier(session: AsyncSession, *, business: Business):
+    """Les créatrices du rayon, et leurs comptes sociaux, en deux requêtes.
+
+    Extraite parce que deux lectures s'en servent — le compte de portée et le
+    compte par palier — et qu'une seconde copie de « qui est autour » finirait
+    par ne plus dire la même chose que la première.
+
+    Rend un couple vide quand la fiche n'a pas de position : une fiche en
+    préparation n'a pas de rayon, et ce n'est pas une erreur.
+    """
+    if business.geo is None:
+        return [], {}
+
+    proches = (
+        await session.execute(
+            sa.select(
+                CreatorProfile.user_id,
+                CreatorProfile.reliability_score,
+                CreatorProfile.completed_collabs_count,
+            )
+            .join(User, User.id == CreatorProfile.user_id)
+            .where(
+                CreatorProfile.geo.is_not(None),
+                CreatorProfile.anonymized_at.is_(None),
+                User.status == UserStatus.ACTIVE,
+                # Les deux colonnes sont déjà des `Geography` : les comparer
+                # telles quelles, sans `cast`. Un `cast` explicite perd le SRID
+                # en route — `geography(GEOMETRY,-1)` — et Postgres refuse.
+                sa.func.ST_DWithin(
+                    CreatorProfile.geo, business.geo, get_settings().feed_radius_metres
+                ),
+            )
+        )
+    ).all()
+
+    if not proches:
+        return [], {}
+
+    identifiants = [ligne.user_id for ligne in proches]
+    releve = eligibility._dernier_releve()
+    comptes_par_createur: dict[uuid.UUID, list[eligibility.CompteEvalue]] = {}
+    for ligne in (
+        await session.execute(
+            sa.select(
+                SocialAccount.id,
+                SocialAccount.creator_id,
+                SocialAccount.platform,
+                SocialAccount.status,
+                SocialAccount.verification_status,
+                SocialAccount.connected_at,
+                SocialAccount.token_expires_at,
+                releve.c.followers_count,
+                releve.c.captured_at,
+            )
+            .outerjoin(releve, releve.c.social_account_id == SocialAccount.id)
+            .where(SocialAccount.creator_id.in_(identifiants))
+        )
+    ).all():
+        comptes_par_createur.setdefault(ligne.creator_id, []).append(
+            eligibility.CompteEvalue(
+                social_account_id=ligne.id,
+                platform=ligne.platform,
+                status=ligne.status,
+                verification_status=ligne.verification_status,
+                followers=ligne.followers_count,
+                captured_at=ligne.captured_at,
+                connected_at=ligne.connected_at,
+                token_expires_at=ligne.token_expires_at,
+            )
+        )
+
+    return proches, comptes_par_createur
+
+
+@dataclass(frozen=True, slots=True)
+class CreatricesDUnPalier:
+    """Combien de créatrices du rayon ouvrent ce palier. Un total, pas un gain.
+
+    **Distinct de `GainDePalier`, et les deux sont nécessaires.** Le gain
+    répond « combien en plus si j'ouvre ce palier » et ne concerne que les
+    paliers fermés. Celui-ci répond « combien à ce palier-là », pour tous les
+    paliers, ouverts compris.
+
+    C'est ce qui permet la phrase que Design demande sur une prestation :
+    « ces 103 créatrices deviennent 12 si je monte cette prestation d'un
+    palier ». Les deux paliers sont ouverts chez ce salon, donc leur gain est
+    nul à tous les deux, et aucune composition des gains ne rend ces deux
+    nombres.
+
+    **Le compte ne dépend pas de l'item**, et c'est une propriété du produit :
+    l'éligibilité regarde une créatrice et un palier, jamais la prestation. Ce
+    qui dépend de l'item, c'est `deja_offert` — savoir si cette prestation
+    porte déjà ce palier.
+    """
+
+    tier_id: uuid.UUID
+    platform: Platform
+    content_format: ContentFormat
+    creatrices: int
+
+
+async def creatrices_par_palier(
+    session: AsyncSession, *, business: Business, maintenant: datetime | None = None
+) -> tuple[CreatricesDUnPalier, ...]:
+    """Pour chaque palier actif, combien de créatrices du rayon l'ouvrent.
+
+    Tous les paliers, pas seulement ceux que le salon offre : la question posée
+    est « et si je montais cette prestation d'un palier », qui porte sur un
+    palier qu'on n'offre peut-être pas encore — ou qu'on offre déjà ailleurs.
+
+    Une lecture en masse, comme le compte de portée, puis la règle pure appliquée
+    en mémoire. Une boucle par palier ferait autant de balayages du quartier
+    qu'il y a de paliers.
+    """
+    settings = get_settings()
+    maintenant = maintenant or datetime.now(UTC)
+    proches, comptes_par_createur = await _le_quartier(session, business=business)
+    if not proches:
+        return ()
+
+    tous = await _tous_les_paliers(session)
+    age_max = timedelta(seconds=settings.metrics_max_age_seconds)
+    comptes: dict[uuid.UUID, int] = {palier.tier_id: 0 for palier in tous}
+
+    for ligne in proches:
+        evalues = comptes_par_createur.get(ligne.user_id)
+        if not evalues:
+            continue
+        verdict = eligibility.evaluer(
+            eligibility.CreateurEvalue(
+                creator_id=ligne.user_id,
+                reliability_score=ligne.reliability_score,
+                completed_collabs=ligne.completed_collabs_count,
+            ),
+            evalues,
+            tous,
+            maintenant=maintenant,
+            age_max=age_max,
+        )
+        for tier_id in verdict.paliers_accessibles:
+            comptes[tier_id] += 1
+
+    return tuple(
+        CreatricesDUnPalier(
+            tier_id=palier.tier_id,
+            platform=palier.platform,
+            content_format=palier.content_format,
+            creatrices=comptes[palier.tier_id],
+        )
+        for palier in tous
+    )
+
+
+async def _tous_les_paliers(session: AsyncSession) -> list[eligibility.PalierEvalue]:
+    """Les paliers actifs du produit, dans l'ordre d'affichage."""
+    return [
+        eligibility.PalierEvalue(
+            tier_id=ligne.id,
+            platform=ligne.platform,
+            content_format=ligne.content_format,
+            min_followers=ligne.min_followers,
+            min_completed_collabs=ligne.min_completed_collabs,
+            min_reliability_score=ligne.min_reliability_score,
+        )
+        for ligne in (
+            await session.execute(
+                sa.select(
+                    Tier.id,
+                    Tier.platform,
+                    Tier.content_format,
+                    Tier.min_followers,
+                    Tier.min_completed_collabs,
+                    Tier.min_reliability_score,
+                )
+                .where(Tier.is_active.is_(True))
+                .order_by(Tier.display_order)
+            )
+        ).all()
     ]
 
 

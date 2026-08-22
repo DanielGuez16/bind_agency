@@ -1,14 +1,21 @@
 """Composition des offres d'un commerce."""
 
 import uuid
+from typing import Annotated
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import CurrentBusiness, CurrentUser, SessionDep
 from app.core.errors import ErrorCode, api_error
 from app.models import TierOffer
-from app.schemas.tier_offers import TierOfferActivation, TierOfferCreate, TierOfferRead
+from app.schemas.tier_offers import (
+    PalierPourUnePrestationRead,
+    TierOfferActivation,
+    TierOfferCreate,
+    TierOfferRead,
+)
+from app.services import portee_locale
 from app.services import tier_offers as offer_service
 from app.services.audit import Actor
 
@@ -67,6 +74,48 @@ async def _read(session: AsyncSession, offers: list[TierOffer]) -> list[TierOffe
 async def list_offers(business: CurrentBusiness, session: SessionDep) -> list[TierOfferRead]:
     offers = await offer_service.list_offers(session, business.id)
     return await _read(session, offers)
+
+
+@router.get(
+    "/creatrices-par-palier",
+    response_model=list[PalierPourUnePrestationRead],
+)
+async def read_reach_by_tier(
+    business: CurrentBusiness,
+    session: SessionDep,
+    catalog_item_id: Annotated[uuid.UUID, Query()],
+) -> list[PalierPourUnePrestationRead]:
+    """« Ces 103 créatrices deviennent 12 si je monte cette prestation d'un palier. »
+
+    **Distinct de `portee.gains_par_palier`, et les deux sont nécessaires.** Le
+    gain répond « combien en plus si j'ouvre ce palier » et ne concerne que les
+    paliers fermés. Sur une prestation dont les deux paliers sont déjà ouverts,
+    tous les gains valent zéro, et aucune composition d'entre eux ne rend les
+    deux nombres que la phrase demande.
+
+    Déclarée avant `POST ""` et surtout avant tout chemin à paramètre : un
+    `/{offer_id}` déclaré plus haut attraperait `creatrices-par-palier` comme
+    s'il s'agissait d'un identifiant.
+
+    L'item n'entre pas dans le compte — l'éligibilité regarde une créatrice et
+    un palier, jamais une prestation — mais il décide de `deja_offert`, qui est
+    ce qui dit lequel de ces nombres est celui d'aujourd'hui.
+    """
+    offres = {
+        offre.tier_id
+        for offre in await offer_service.list_offers(session, business.id)
+        if offre.catalog_item_id == catalog_item_id and offre.is_active
+    }
+    return [
+        PalierPourUnePrestationRead(
+            tier_id=ligne.tier_id,
+            platform=ligne.platform,
+            content_format=ligne.content_format,
+            creatrices=ligne.creatrices,
+            deja_offert=ligne.tier_id in offres,
+        )
+        for ligne in await portee_locale.creatrices_par_palier(session, business=business)
+    ]
 
 
 @router.post("", response_model=TierOfferRead, status_code=status.HTTP_201_CREATED)
