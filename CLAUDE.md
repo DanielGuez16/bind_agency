@@ -229,8 +229,17 @@ pousser.
 coûte une seconde :
 
 ```
-git show --numstat HEAD | awk '$1==0 && $2>0 {print "  supprimé :", $3}'
+git diff --diff-filter=D --name-only origin/main...HEAD
 ```
+
+**Et non `--numstat` avec un filtre sur les lignes.** C'était la première forme
+écrite ici, et elle est fausse : « zéro ligne ajoutée, des lignes retirées »
+attrape aussi bien un fichier supprimé qu'un commit qui **ne fait que retirer des
+lignes** — un nettoyage de table de garde, une clé de traduction devenue
+orpheline. Elle a crié au loup sur deux commits légitimes dans l'heure qui a
+suivi son écriture. `--diff-filter=D` ne nomme que ce qui n'existe plus, et une
+vérification qui se trompe est pire qu'une vérification absente : elle apprend à
+ignorer le rouge.
 
 Un fichier entièrement retiré par une PR qui prétend ajouter est presque
 toujours un accident, et **rien d'autre ne le dira**. Un test supprimé ne rougit
