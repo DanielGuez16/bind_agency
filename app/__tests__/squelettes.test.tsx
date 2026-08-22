@@ -108,6 +108,7 @@ const DOIVENT_AVOIR_LEUR_SQUELETTE = [
   // devenu le mur, six formats dans un ordre fixe, et le squelette du système
   // promettrait trois cartes là où arrivent un héros, un duo et un triptyque.
   'FilScreen.tsx',
+  'AbonnementScreen.tsx',
   'AnnuaireScreen.tsx',
   'ArbitrageScreen.tsx',
   'AudienceScreen.tsx',

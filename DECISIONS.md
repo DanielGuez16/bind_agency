@@ -8542,3 +8542,33 @@ bouge.
 
 **`Fond` est supprimé avec son indicateur.** Une vue qui survit sans appelant
 finit par resservir en portant une composition périmée.
+## 2026-08-22 — L'abonnement, et le refus qui menait nulle part
+
+**Le produit vendait quelque chose qu'on ne pouvait pas acheter.** L'annuaire
+interceptait proprement le 402, expliquait qu'un abonnement manque, et
+s'arrêtait là. Les quatre routes existaient, le client savait les appeler, et
+trois de ses méthodes n'avaient aucun appelant — la garde les portait, nommées,
+depuis des semaines.
+
+**Un statut inconnu ne s'invente ni dans un sens ni dans l'autre.** Stripe ajoute
+des statuts. Le traiter comme actif ouvrirait l'annuaire à qui ne paie pas ; le
+traiter comme résilié fermerait la porte à qui paie. « Le paiement n'est pas
+terminé » n'affirme aucun accès et propose de rouvrir l'adresse : c'est le seul
+repli qui ne ment dans aucune des deux directions.
+
+**L'adresse de paiement ne se rouvre pas sur un abonnement en cours**, même
+quand le serveur la sert encore : rouvrir une page de paiement à quelqu'un qui
+paie déjà lui ferait craindre un second prélèvement.
+
+**Et un paiement inachevé se reprend, il ne se recommence pas.** Souscrire de
+nouveau créerait un second abonnement à côté du premier.
+
+**`resilier` était la moitié manquante d'une paire.** Souscrire sans pouvoir
+arrêter enferme, et c'est la moitié qui rassure au moment de commencer. La route
+existait ; seul le client ne la couvrait pas.
+
+**La garde de lecture seule de l'annuaire a été affinée, pas exemptée.** Elle
+interdit d'agir sur une créatrice ; le bouton qui mène à l'abonnement vit dans la
+branche du refus, qui rend zéro créatrice par construction. Une garde exemptée ne
+garde plus rien — c'est le geste que la session voisine avait employé sur les
+`onPress`, et il vaut ici.

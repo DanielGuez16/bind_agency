@@ -33,6 +33,7 @@ import { Icone, type NomIcone } from '../components';
 import { useI18n } from '../i18n';
 import { useSession } from '../session';
 import { useTheme } from '../theme';
+import { AbonnementScreen } from '../screens/AbonnementScreen';
 import { AnnuaireScreen } from '../screens/AnnuaireScreen';
 import { ArbitrageScreen } from '../screens/ArbitrageScreen';
 import { AudienceScreen } from '../screens/AudienceScreen';
@@ -123,6 +124,20 @@ export type PileCommerceParams = {
 };
 
 /** La composition du commerce : ce qu'il offre, quand, et à quel palier. */
+/**
+ * L'annuaire, et l'abonnement qu'il réclame.
+ *
+ * **Une pile pour donner une issue au refus.** L'annuaire interceptait le 402 et
+ * expliquait qu'un abonnement manque, puis s'arrêtait là : c'est ce que BIND
+ * vend, et le seul endroit où un commerce le rencontre. L'abonnement s'y empile
+ * plutôt que d'ouvrir un huitième onglet — la barre du commerce en compte déjà
+ * deux de plus que ce que le système recommande.
+ */
+export type PileAnnuaireParams = {
+  Annuaire: undefined;
+  Abonnement: undefined;
+};
+
 export type PileConfigurationParams = {
   Configuration: undefined;
   Catalogue: undefined;
@@ -134,6 +149,7 @@ const PileReservations = createNativeStackNavigator<PileReservationsParams>();
 const PileCommerce = createNativeStackNavigator<PileCommerceParams>();
 const PileConfiguration = createNativeStackNavigator<PileConfigurationParams>();
 const PileAudience = createNativeStackNavigator<PileAudienceParams>();
+const PileAnnuaire = createNativeStackNavigator<PileAnnuaireParams>();
 const Onglets = createBottomTabNavigator();
 
 /**
@@ -593,6 +609,27 @@ function PileDeConfiguration({ businessId }: { businessId: string }) {
   );
 }
 
+/** L'annuaire, et l'abonnement qu'on atteint depuis son refus. */
+function PileDeLAnnuaire({ businessId }: { businessId: string }) {
+  return (
+    <PileAnnuaire.Navigator screenOptions={OPTIONS_DE_PILE}>
+      <PileAnnuaire.Screen name="Annuaire">
+        {({ navigation }) => (
+          <AnnuaireScreen
+            businessId={businessId}
+            onVoirLAbonnement={() => navigation.navigate('Abonnement')}
+          />
+        )}
+      </PileAnnuaire.Screen>
+      <PileAnnuaire.Screen name="Abonnement">
+        {({ navigation }) => (
+          <AbonnementScreen businessId={businessId} onRetour={() => navigation.goBack()} />
+        )}
+      </PileAnnuaire.Screen>
+    </PileAnnuaire.Navigator>
+  );
+}
+
 function OngletsCommerce() {
   const { t } = useI18n();
   const { businessId, nom, ecranDAttente } = useMonCommerce();
@@ -646,7 +683,7 @@ function OngletsCommerce() {
           latérale de bureau les tient sans effort, la barre du bas est
           serrée. À arbitrer avec Design si un huitième se présente. */}
       <Onglets.Screen name="annuaire" options={onglet(t('onglets.annuaire'), 'personne')}>
-        {() => <AnnuaireScreen businessId={businessId} />}
+        {() => <PileDeLAnnuaire businessId={businessId} />}
       </Onglets.Screen>
       <Onglets.Screen name="configuration" options={onglet(t('onglets.configuration'), 'coche')}>
         {() => <PileDeConfiguration businessId={businessId} />}
