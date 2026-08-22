@@ -1520,6 +1520,32 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       pas été transmise, et cette route dit lesquelles reviennent —
       `dossiers_touches` départage un motif difficile d'un motif
       incompréhensible. Aucun écran ne la lit encore*
+- [x] **Les plans : deux totaux plutôt qu'un tiret**
+      *`totaliser` rendait « — » dès que deux devises se croisaient — le seul
+      chiffre d'argent de l'écran était alors un tiret, dans le cas même qu'il
+      existe pour traiter. Un total par groupe de devise **et** de périodicité :
+      additionner un mensuel et un annuel de la même devise donnerait un nombre
+      qui n'est ni l'un ni l'autre, et qui aurait l'air juste. Aucun taux de
+      change n'est stocké, aucun montant converti ne sort de cet écran*
+- [ ] **La durée médiane d'abonnement, par plan**
+      *Ce qui manque le plus à l'écran des plans : sept mois pour un plan contre
+      onze pour un autre à prix double dit que le second n'est pas trop cher, et
+      aucun total ne le disait. Médiane et non moyenne — un seul abonné parti au
+      bout d'un an fausse une moyenne sur douze souscriptions.*
+      *La question ouverte, et elle doit être **écrite dans le schéma** : les
+      abonnements encore actifs comptent-ils ? Les exclure ne mesure que ceux
+      qui sont partis, c'est-à-dire les mécontents ; les inclure avec leur durée
+      courue sous-estime les fidèles. L'écran affichera « 7 mois » sans pouvoir
+      dire lequel des deux nombres c'est. Demandé à `bind-agency-1a`*
+- [ ] **La répartition des abonnés par catégorie, sous chaque plan**
+      *Un prix unique pour un salon d'ongles et un musée n'est pas un prix,
+      c'est une moyenne — et la moyenne se voit dans les chiffres : une
+      catégorie qui souscrit peu et part vite dit que le plan est trop cher pour
+      elle. C'est l'argument pour construire la tarification par catégorie.*
+      *À ne pas confondre avec `PlanAdministrateur.category`, qui existe et dit
+      **à quelle catégorie le plan s'adresse**. Ce qu'il faut est la catégorie
+      des **abonnés** — la planche montre un plan qui n'a jamais séduit un seul
+      salon d'ongles. Une liste `{categorie, abonnes}` par plan suffit*
 - [ ] **Neuf planches d'écrans portent encore la v1.0**
       *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
       passés en v3, dans la palette Ambre. Les autres suivent l'ordre du

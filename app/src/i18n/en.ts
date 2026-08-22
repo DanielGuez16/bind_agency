@@ -668,6 +668,8 @@ export const en = {
     plansMensuel: 'Monthly',
     plansAnnuel: 'Yearly',
     plansTotal: 'Total',
+    plansTotalMensuel: 'Monthly, {{devise}} plans',
+    plansTotalAnnuel: 'Yearly, {{devise}} plans',
     plansMrrTotal: 'Revenue per month, all plans',
     plansSalonsAbonnes: 'Businesses subscribed',
     plansSansPreneur: 'Not taken yet',
