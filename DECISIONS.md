@@ -8736,3 +8736,30 @@ Les trois se ressemblent assez pour qu'on les confonde, et la confusion a déjà
 coûté : un élargissement de ce qu'on **lit** a été pris pour un élargissement de
 ce qu'on **cherche**, ce qui a fait croire une fois que la question était réglée.
 Élargir l'un n'élargit pas les autres.
+
+---
+
+## 2026-08-22 — Ce qu'une réservation raconte décide de ce qui se corrige
+
+**La règle n'est pas « quels champs sont techniques ».** Douze réservations
+passées citent une prestation de quarante-cinq minutes : la passer à
+soixante-quinze ferait lire, dans l'historique de quelqu'un, avoir reçu une
+prestation qu'il n'a pas reçue. La photo, l'orthographe et la description ne
+racontent rien de ce qui s'est passé — les corriger ne touche à aucune
+réservation.
+
+**Le refus se lit sur son code, jamais sur son message.** Un refus de suppression
+n'est pas une panne : c'est la règle du produit qui répond, et elle appelle un
+autre geste. Le lire au message le rendrait dépendant de la langue, et traiter
+toute panne comme un refus proposerait de fermer une prestation sur une coupure
+de réseau.
+
+**L'écran ne devine pas à la place du serveur.** Il aurait pu compter les
+réservations pour savoir si la suppression est permise — il propose, et lit le
+refus comme la réponse qu'il est. Deviner demanderait un compte que rien ne sert,
+et se tromperait au premier écart.
+
+**Et fermer n'est pas archiver**, ce que l'écran ne prétend pas. Les deux valent
+le même drapeau aujourd'hui ; sortir de la liste de travail une prestation
+saisonnière que le gérant compte rouvrir serait pire que d'y laisser une archive.
+Le manque est demandé plutôt que contourné.

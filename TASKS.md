@@ -1659,6 +1659,37 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       client gagne `resilier`, la moitié manquante de la paire : souscrire sans
       pouvoir arrêter enferme, et c'est celle qui rassure au moment de
       commencer. 1212 tests verts, 3 mutations*
+- [x] **Le catalogue se corrige et se retire**
+      *Il se composait sans se corriger : une faute d'orthographe demandait de
+      supprimer et de recommencer, ce qu'un item déjà réservé refuse de toute
+      façon. La photo, le nom et la description s'éditent en place ; la durée,
+      le palier et la contrepartie n'y sont pas — douze réservations citent une
+      prestation de quarante-cinq minutes, et la passer à soixante-quinze
+      réécrirait leur histoire.*
+      *Le refus de suppression se lit sur son **code** et non son message, et
+      propose le geste qui reste. 1245 tests verts, 3 mutations*
+- [ ] **Archiver n'est pas fermer, et rien ne les distingue**
+      *Un salon ferme une prestation pour l'été et la rouvre en septembre ; il
+      archive celle qu'il ne refera plus. Les deux valent `is_available: false`,
+      donc l'écran ne peut pas sortir les archives de la liste de travail sans
+      en sortir aussi les saisonnières. Il faudrait un état distinct —
+      `archived_at`, ou une transition propre qui laisse sa trace au journal.
+      Demandé à `bind-agency-1a`*
+- [ ] **Le compte de réservations qui citent une prestation n'est pas servi**
+      *Le bouton doit nommer son écart : « archiver, douze réservations citent
+      cette prestation ». Sans le nombre il dit « archiver », et le gérant ne
+      sait pas ce qu'il déplace. Un entier sur `CatalogItemRead` suffit*
+- [ ] **Changer la durée d'un item réservé reste possible côté serveur**
+      *`CatalogItemUpdate` accepte `duration_minutes`. L'écran ne l'offre pas,
+      mais **une discipline d'écran finit par céder** : la règle doit descendre
+      dans la route — refus sur un item déjà réservé, ou une route de
+      remplacement qui crée la nouvelle prestation et archive l'ancienne dans
+      la même transaction*
+- [ ] **Le prix : ni corrigeable, ni créateur d'une nouvelle prestation**
+      *Design ne le range dans aucune des deux listes. Il ne réécrit l'histoire
+      d'aucune réservation — le prix est du reporting ici — mais il déplace le
+      palier suggéré, qui se calcule sur le rang du prix dans le catalogue. Non
+      offert en attendant, plutôt que tranché seul*
 - [ ] **Neuf planches d'écrans portent encore la v1.0**
       *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
       passés en v3, dans la palette Ambre. Les autres suivent l'ordre du
