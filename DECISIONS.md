@@ -8211,3 +8211,35 @@ pas le seul cas, et le test de la porte reste comme garde de non-régression.
 La bascule proche/total de la liste des prestations est en place elle aussi
 (`VUES = ['proche', 'tout']`), et la cause commune est bien annoncée une fois en
 tête et retirée de chaque barreau.
+
+---
+
+## 2026-08-20 — L'annuaire : le champ a changé de sens, la phrase suivait l'ancien
+
+`paliers_ouverts` répondait « elle se qualifie quelque part ». Il répond
+maintenant « elle peut réserver ce que **vous** avez ouvert » — c'est le manque
+que l'écran signalait, et il est comblé côté serveur.
+
+**La conséquence était dans la copie, et elle allait contre le produit.** Quand
+la liste répondait sur tout BIND, une liste vide ne pouvait venir que de son
+audience, et la phrase le disait sans rien reprocher à personne. Depuis que le
+champ est scopé au salon, le vide a **deux** causes : son audience, ou des
+paliers que ce salon n'a pas ouverts. « No tier open right now » désignait donc
+la créatrice là où le lecteur pouvait être en cause — sur un écran où le produit
+se donne précisément du mal à n'accuser personne.
+
+La phrase énonce désormais ce qui est certain, du côté du salon : « nothing you
+have opened, for now ». Et le titre de section reprend les mots de la planche —
+« can book at your salon » — qui disent la portée au lieu de la laisser deviner.
+Le levier, lui, est déjà en tête d'écran : « ouvrir le palier post porterait ce
+chiffre à 103 ».
+
+**Un défaut qu'aucune relecture n'aurait trouvé**, parce que le code et la
+donnée sont restés justes : seul le rapport entre les deux avait changé. C'est
+une session voisine qui l'a vu en lisant le commentaire.
+
+**Et une arête de la garde des couleurs en dur, notée sur place.** Un numéro de
+PR écrit `#213` est un hexadécimal à trois chiffres valide : la garde le refuse,
+à raison — elle ne peut pas distinguer un renvoi d'une couleur. Les références
+s'écrivent donc sans dièse dans les sources ; `DECISIONS.md` et `TASKS.md` ne
+sont pas balayés et gardent la forme habituelle.

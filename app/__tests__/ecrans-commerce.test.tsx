@@ -1737,6 +1737,31 @@ describe('l’annuaire des créateurs', () => {
     expect(screen.queryByTestId('gain-de-palier')).toBeNull();
   });
 
+  it('parle du salon quand rien n’est ouvert, et n’accuse personne', async () => {
+    // **Le champ a changé de sens (#213) et la phrase suivait l'ancien.**
+    // `paliers_ouverts` répondait « elle se qualifie quelque part » : une liste
+    // vide ne pouvait venir que de son audience. Elle répond maintenant « elle
+    // peut réserver ce que *vous* avez ouvert », et le vide a deux causes — son
+    // audience, ou des paliers que ce salon n'a pas ouverts. « No tier open
+    // right now » désignait donc la créatrice là où le salon pouvait être en
+    // cause, sur un écran où le produit se donne du mal à ne rien reprocher.
+    await monter(
+      <AnnuaireScreen businessId="b1" />,
+      clientDe({ '/creators': annuaireDe([{ ...CREATEUR_DE_L_ANNUAIRE, paliers_ouverts: [] }]) }),
+      'merchant',
+    );
+    await waitFor(() => expect(screen.getByTestId('sans-palier-c1')).toBeTruthy());
+
+    expect(screen.getByTestId('sans-palier-c1')).toHaveTextContent(en.annuaire.aucunPalier);
+
+    // Les deux phrases se placent du côté du salon. C'est l'assertion qui
+    // tombe si l'on revient à « No tier open right now » : elle est vraie de la
+    // nouvelle formulation et fausse de l'ancienne, là où vérifier la seule
+    // présence du nœud aurait passé dans les deux cas.
+    expect(en.annuaire.aucunPalier).toMatch(/\byou\b|\byour\b/i);
+    expect(en.annuaire.paliersOuverts).toMatch(/\byou\b|\byour\b/i);
+  });
+
   it('titre la fiche du pseudonyme, et jamais du nom civil', async () => {
     // **La divergence est dans la fabrique** : la créatrice a un pseudonyme
     // *et* un nom civil. Un décor qui n'aurait que l'un des deux laisserait
