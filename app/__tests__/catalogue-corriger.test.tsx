@@ -16,7 +16,12 @@ import { ApiClient, ApiProvider } from '../src/api';
 import { I18nProvider } from '../src/i18n';
 import { en } from '../src/i18n/en';
 import { CatalogueScreen } from '../src/screens/CatalogueScreen';
-import { CORRIGEABLES, DEMANDENT_UNE_AUTRE, suiteDuRefus } from '../src/screens/catalogue/corriger';
+import {
+  CORRIGEABLES,
+  DEMANDENT_UNE_AUTRE,
+  gesteDeRetrait,
+  suiteDuRefus,
+} from '../src/screens/catalogue/corriger';
 import { ThemeProvider } from '../src/theme';
 
 const ITEM = {
@@ -148,5 +153,136 @@ describe('à l’écran', () => {
 
     await fireEvent.changeText(screen.getByTestId('corriger-nom-i1'), 'Gel manicure, long');
     await waitFor(() => expect(screen.getByTestId('enregistrer-correction-i1')).toBeTruthy());
+  });
+});
+
+
+/**
+ * **Le décor qui compte est celui du champ absent.** `reservations_count` est
+ * neuf : les réponses en vol, les décors écrits avant lui et les caches ne le
+ * portent pas. Une implémentation qui écrit `item.reservations_count > 0`
+ * rend `undefined > 0` — c'est-à-dire `false` — et tombe donc juste par
+ * accident ici ; mais la même écriture avec `!== 0` proposerait d'archiver une
+ * prestation vierge. Les deux cas sont écrits, et le premier est celui d'où
+ * part la sixième leçon du dépôt : lire un champ neuf **faux**, jamais égal.
+ */
+describe('lequel des deux gestes une prestation offre', () => {
+  it('jamais réservée : elle se supprime vraiment', () => {
+    expect(gesteDeRetrait({ archived_at: null, reservations_count: 0 })).toEqual({
+      geste: 'supprimer',
+    });
+  });
+
+  it('déjà réservée : elle s’archive, et le bouton porte le nombre', () => {
+    expect(gesteDeRetrait({ archived_at: null, reservations_count: 12 })).toEqual({
+      geste: 'archiver',
+      reservations: 12,
+    });
+  });
+
+  it('jamais les deux : archiver et supprimer ne coexistent pas', () => {
+    for (const n of [0, 1, 12]) {
+      const { geste } = gesteDeRetrait({ archived_at: null, reservations_count: n });
+      expect(['supprimer', 'archiver']).toContain(geste);
+    }
+  });
+
+  it('le champ absent vaut « aucune réservation », pas « une »', () => {
+    expect(gesteDeRetrait({}).geste).toBe('supprimer');
+    expect(gesteDeRetrait({ reservations_count: null }).geste).toBe('supprimer');
+  });
+
+  it('déjà archivée : elle n’offre plus rien, l’archivage ne se rejoue pas', () => {
+    expect(gesteDeRetrait({ archived_at: '2026-08-01T00:00:00Z', reservations_count: 12 })).toEqual({
+      geste: 'aucun',
+    });
+    // Y compris à zéro réservation : ce n'est pas le compte qui décide ici.
+    expect(gesteDeRetrait({ archived_at: '2026-08-01T00:00:00Z', reservations_count: 0 })).toEqual({
+      geste: 'aucun',
+    });
+  });
+});
+
+
+/**
+ * Le bouton, à l'écran, quand la prestation a une histoire.
+ *
+ * **Le décor divergent est la route, pas le mot.** Une implémentation qui
+ * change le libellé et continue d'appeler `DELETE` passerait un test qui ne
+ * lit que le texte : elle afficherait « archive, 12 bookings cite this » et
+ * supprimerait — ou plutôt se ferait refuser, et le gérant verrait un échec
+ * après avoir lu une promesse. Ce qui est vérifié ici est donc **ce qui part
+ * sur le réseau**.
+ */
+describe('archiver, à l’écran', () => {
+  async function monterAvec(item: Record<string, unknown>) {
+    const envois: { url: string; method: string }[] = [];
+    const api = new ApiClient({
+      baseUrl: 'https://api.test',
+      coffre: { lire: async () => null, ecrire: async () => {} },
+      fetchImpl: (async (url: RequestInfo | URL, init?: RequestInit) => {
+        const chemin = String(url);
+        envois.push({ url: chemin, method: (init?.method ?? 'GET').toUpperCase() });
+        const methode = (init?.method ?? 'GET').toUpperCase();
+        if (methode !== 'GET') {
+          return { ok: true, status: 200, json: async () => null } as Response;
+        }
+        if (chemin.includes('/catalog-items')) {
+          return { ok: true, status: 200, json: async () => [item] } as Response;
+        }
+        // Les paliers et les offres : des listes, comme le décor du dessus.
+        return { ok: true, status: 200, json: async () => [] } as Response;
+      }) as unknown as typeof fetch,
+    });
+    const vue = await render(
+      <I18nProvider initialLocale="en">
+        <ThemeProvider role="merchant">
+          <ApiProvider client={api}>
+            <CatalogueScreen businessId="b1" />
+          </ApiProvider>
+        </ThemeProvider>
+      </I18nProvider>,
+    );
+    return { vue, envois };
+  }
+
+  it('le bouton porte le nombre, et appelle la route d’archive', async () => {
+    const { envois } = await monterAvec({ ...ITEM, reservations_count: 12, archived_at: null });
+
+    const bouton = await screen.findByTestId('retirer-i1');
+    expect(bouton).toHaveTextContent(/12 bookings cite this/i);
+
+    await fireEvent.press(bouton);
+
+    await waitFor(() =>
+      expect(envois.some((e) => e.method === 'POST' && e.url.includes('/archive'))).toBe(true),
+    );
+    // Et surtout : rien n'a été supprimé.
+    expect(envois.filter((e) => e.method === 'DELETE')).toEqual([]);
+  });
+
+  it('une seule réservation ne dit pas « 1 bookings »', async () => {
+    await monterAvec({ ...ITEM, reservations_count: 1, archived_at: null });
+
+    expect(await screen.findByTestId('retirer-i1')).toHaveTextContent(/1 booking cites this/i);
+  });
+
+  it('jamais réservée : le bouton supprime, et le dit sans nombre', async () => {
+    const { envois } = await monterAvec({ ...ITEM, reservations_count: 0, archived_at: null });
+
+    const bouton = await screen.findByTestId('retirer-i1');
+    expect(bouton).toHaveTextContent(/remove/i);
+
+    await fireEvent.press(bouton);
+
+    await waitFor(() => expect(envois.some((e) => e.method === 'DELETE')).toBe(true));
+    expect(envois.filter((e) => e.url.includes('/archive'))).toEqual([]);
+  });
+
+  it('déjà archivée : plus de bouton du tout', async () => {
+    await monterAvec({ ...ITEM, reservations_count: 12, archived_at: '2026-08-01T00:00:00Z' });
+
+    await waitFor(() => expect(screen.queryByTestId('corriger-i1')).toBeTruthy());
+    expect(screen.queryByTestId('retirer-i1')).toBeNull();
   });
 });

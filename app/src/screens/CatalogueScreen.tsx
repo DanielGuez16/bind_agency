@@ -51,7 +51,7 @@ import {
 import { CarteDuCommerce } from './CarteDuCommerce';
 import { GalerieDuCommerce } from './GalerieDuCommerce';
 import { useI18n } from '../i18n';
-import { suiteDuRefus } from './catalogue/corriger';
+import { gesteDeRetrait, suiteDuRefus } from './catalogue/corriger';
 import { radius, useColors } from '../theme';
 import {
   ecartAuConseil,
@@ -514,12 +514,26 @@ function LignePrestation({
   const [correction, setCorrection] = useState(false);
   const [refusDeSuppression, setRefus] = useState(false);
 
+  const retrait = gesteDeRetrait(item);
+
+  /**
+   * Retirer, et le mot dépend de ce que la prestation a derrière elle.
+   *
+   * **Jamais réservée : elle se supprime vraiment.** Rien ne la cite, rien ne
+   * se réécrit. **Déjà réservée : elle s'archive et ne se supprime jamais** —
+   * les réservations continuent de citer ce qu'elles ont eu.
+   *
+   * Le refus reste lu après coup. Il ne devrait plus arriver, puisque le compte
+   * décide avant ; il tient la porte si les deux divergent, et c'est justement
+   * quand ils divergent qu'on veut une phrase plutôt qu'une erreur nue.
+   */
   async function retirer() {
     setEchec(null);
     setRefus(false);
     setEnvoi(true);
     try {
-      await api.supprimerUnItem(businessId, item.id);
+      if (retrait.geste === 'archiver') await api.archiverUnItem(businessId, item.id);
+      else await api.supprimerUnItem(businessId, item.id);
       vibration.action();
       onChange();
     } catch (erreur) {
@@ -596,15 +610,34 @@ function LignePrestation({
           onPress={() => setCorrection(true)}
           testID={`corriger-${item.id}`}
         />
-        <Button
-          label={t('composition.retirerLaPrestation')}
-          size="sm"
-          variant="ghost"
-          fullWidth={false}
-          loading={envoi}
-          onPress={() => void retirer()}
-          testID={`retirer-${item.id}`}
-        />
+        {/* **Le bouton nomme son écart.** « Archiver » ne se décide pas ;
+            « archiver, douze réservations citent cette prestation » se décide.
+            Sans le nombre, le gérant ne sait pas ce qu'il déplace — et il n'y a
+            jamais les deux gestes : offrir une suppression pour la voir refusée
+            apprend que l'écran propose des actions qui échouent. */}
+        {retrait.geste === 'aucun' ? null : (
+          <Button
+            label={
+              retrait.geste !== 'archiver'
+                ? t('composition.retirerLaPrestation')
+                : // Deux branches écrites à la main : `formaterLesNombres` rend
+                  // `count` en chaîne, et la pluralisation d'i18n-js ne part
+                  // donc jamais. « 1 bookings cite this » est déjà passé une
+                  // fois par cet écran.
+                  retrait.reservations === 1
+                  ? t('composition.archiverUneReservation')
+                  : t('composition.archiverAvecReservations', {
+                      n: String(retrait.reservations),
+                    })
+            }
+            size="sm"
+            variant="ghost"
+            fullWidth={false}
+            loading={envoi}
+            onPress={() => void retirer()}
+            testID={`retirer-${item.id}`}
+          />
+        )}
       </View>
 
       {/* **Le refus se lit comme la réponse qu'il est.** Une prestation déjà

@@ -876,6 +876,9 @@ export const es: Catalogue = {
   composition: {
     corriger: 'Corregir',
     retirerLaPrestation: 'Quitar',
+    archiverAvecReservations: 'Archivar · {{n}} reservas la citan',
+    archiverUneReservation: 'Archivar · 1 reserva la cita',
+    archivee: 'Archivada. Sigue siendo legible desde las reservas que la citan.',
     corrigerPortee: 'Aquí se corrigen la foto, la ortografía y la descripción. Cambiar la duración, el nivel o lo que pides a cambio crea otro servicio — las reservas ya hechas siguen citando el que tuvieron.',
     retraitRefuse: 'Hay reservas que citan este servicio, así que no se puede quitar. Cerrarlo detiene las nuevas reservas y mantiene legibles las antiguas.',
     fermerPlutot: 'Cerrarlo en su lugar',
