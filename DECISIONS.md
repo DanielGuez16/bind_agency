@@ -8862,3 +8862,52 @@ doublon : recopier l'offre poserait **un accord que personne n'a conclu**. Une
 créatrice a accepté un palier sur une prestation de quarante-cinq minutes ;
 l'offre recopiée la ferait consentir à soixante-quinze. C'est le principe de
 `value_cents_snapshot`, appliqué à l'accord au lieu du prix.
+
+---
+
+## 2026-08-22 — Le gérant de deux salons n'a plus à s'inventer un second compte
+
+`rattacherLaFiche` — `POST /handover/{jeton}/attach` — existait depuis le début
+et n'avait aucun appelant. Ce n'était pas une capacité à écrire, **c'était un
+écran à brancher**.
+
+**Le cas est celui du propriétaire de deux adresses**, nommé dans le docstring de
+la route : « lui refuser le lien parce que son adresse électronique est connue
+l'obligerait à s'en inventer une seconde ». Or la branche du jeton se rend
+**avant** la porte d'authentification, quelle que soit la session : un gérant
+déjà connecté qui ouvrait le lien de son second salon recevait le formulaire de
+création de compte. Le produit lui demandait exactement ce que la route existait
+pour lui éviter.
+
+**Trois cas, et ils s'excluent.** Session de commerce : la fiche préparée, puis
+le rattachement. Anonyme : le formulaire d'origine, inchangé. Un autre rôle : le
+message qui dit que le lien est fait pour un salon, **et rien d'autre** — la
+première version montrait le message *au-dessus* du formulaire de création, ce
+qui laissait croire qu'on pouvait passer outre.
+
+**Le compte est nommé.** « Rattacher à mon compte » sans dire lequel demande de
+deviner, et c'est précisément la situation de quelqu'un qui en a deux.
+
+**Les conditions restent exigées**, et la version envoyée est celle que l'écran a
+montrée — pas celle en vigueur au moment de l'envoi. Un lien ouvert la semaine
+dernière montre les conditions de la semaine dernière, et le serveur refuse
+l'écart.
+
+**Un rôle qui ne convient pas le lit plutôt que de découvrir un 403.** Le serveur
+refuse tout ce qui n'est pas un membre de commerce ; offrir le bouton quand même
+ferait découvrir le refus après le geste.
+
+## Ce que ce lot laisse ouvert
+
+**Un gérant qui rattache un second salon ne peut pas encore l'ouvrir.**
+`useMonCommerce` prend `mesCommerces[0]` et la coquille n'offre aucun sélecteur :
+le second salon existe, il est réservable par les créatrices, mais son gérant
+verra toujours le premier. Rien ne se casse — c'est incomplet, pas faux — et
+c'est vraisemblablement pourquoi cette route n'avait jamais eu d'écran. Le
+sélecteur de salon est le lot suivant naturel, et il est inscrit dans `TASKS.md`.
+
+**La garde des méthodes sans appelant a fait son travail dans les deux sens.**
+Elle avait signalé `rattacherLaFiche` comme capacité sans écran ; elle a fait
+tomber la suite dès que l'appelant est arrivé, parce que sa ligne d'exception
+était devenue fausse. Une table qui ne tient que dans un sens finit par décrire
+un état ancien.

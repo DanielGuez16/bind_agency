@@ -991,6 +991,11 @@ export const es: Catalogue = {
     deplier: 'Desplegar',
   },
   priseEnMain: {
+    introductionRattachement: 'Ya estás en BIND. Añade este salón a la cuenta que usas, en vez de abrir una segunda.',
+    connecteEnTantQue: 'Conectado como {{email}}',
+    rattacher: 'Añadir a mi cuenta',
+    mauvaisRoleTitre: 'Este enlace es para un negocio',
+    mauvaisRoleCorps: 'Estás conectado con una cuenta de creadora. Cierra la sesión para abrirlo como negocio, o pide el enlace en la cuenta correcta.',
     chargement: 'Abriendo tu ficha…',
     lienMort: 'Este enlace ya no funciona',
     lienMortAide:

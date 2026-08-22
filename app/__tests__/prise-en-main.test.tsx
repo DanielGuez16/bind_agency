@@ -26,6 +26,7 @@ import type { ReactElement, ReactNode } from 'react';
 
 import { ApiClient, ApiProvider } from '../src/api';
 import { I18nProvider } from '../src/i18n';
+import { SessionProvider } from '../src/session';
 import { en } from '../src/i18n/en';
 import { PriseEnMainScreen } from '../src/screens/PriseEnMainScreen';
 import { ThemeProvider } from '../src/theme';
@@ -83,19 +84,68 @@ function clientQuiRefuseLeJeton() {
  * qui échoue, sur un écran parfaitement sain. Un garde-fou du dépôt cherche
  * précisément cette forme.
  */
-async function monter(noeud: ReactElement, client: ApiClient) {
+/**
+ * Le compte que `/me` rendra, ou `null` pour rester anonyme.
+ *
+ * **La session est fournie par son vrai fournisseur**, avec un coffre et une
+ * réponse à `/me` : exporter le contexte pour le poser à la main aurait fait
+ * fuir dans le code de production une prise réservée aux tests.
+ */
+type CompteSimule = { id: string; email: string; role: string } | null;
+
+/** Un gérant déjà connecté : celui qui ouvre le lien de son second salon. */
+const GERANT: CompteSimule = {
+  id: 'u1',
+  email: 'gerant@salon.example',
+  role: 'business_member',
+};
+
+/** Une créatrice : le rôle qui ne peut pas assumer une fiche. */
+const CREATRICE: CompteSimule = { id: 'u2', email: 'lea@bind.example', role: 'creator' };
+
+async function monter(noeud: ReactElement, client: ApiClient, compte: CompteSimule = null) {
+  const coffreDeSession = compte
+    ? { lire: async () => ({ access_token: 'a', refresh_token: 'r' }), ecrire: async () => {} }
+    : { lire: async () => null, ecrire: async () => {} };
+
+  const repondAuCompte = (async (url: RequestInfo | URL) => {
+    if (String(url).includes('/me')) {
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          ...compte,
+          status: 'active',
+          locale: 'en',
+          email_verified_at: '2026-08-01T10:00:00Z',
+          deletion_effective_at: null,
+        }),
+      } as Response;
+    }
+    throw new TypeError(`route de session non simulée : ${String(url)}`);
+  }) as unknown as typeof fetch;
+
   function Cadre({ children }: { children: ReactNode }) {
     return (
       <I18nProvider initialLocale="en">
         <ThemeProvider role="merchant">
-          <ApiProvider client={client}>{children}</ApiProvider>
+          {/* **L'écran lit la session, tout en se rendant avant la porte
+              d'authentification.** Un gérant déjà connecté qui ouvre le lien de
+              son second salon doit pouvoir le rattacher plutôt que d'inventer
+              un second compte. */}
+          <SessionProvider
+            baseUrl="https://api.test"
+            coffre={coffreDeSession}
+            fetchImpl={repondAuCompte}
+          >
+            <ApiProvider client={client}>{children}</ApiProvider>
+          </SessionProvider>
         </ThemeProvider>
       </I18nProvider>
     );
   }
   return render(<Cadre>{noeud}</Cadre>);
 }
-
 // --------------------------------------------------------------------------
 // on montre avant de demander
 // --------------------------------------------------------------------------
@@ -235,5 +285,88 @@ describe('l’écran ne dit jamais avoir lu ce qu’il n’a pas lu', () => {
 
     expect(screen.getByTestId('ce-qui-est-pret')).toHaveTextContent(/4/);
     expect(screen.queryByTestId('plages-pretes')).toBeNull();
+  });
+});
+
+/**
+ * Le gérant qui a déjà un compte.
+ *
+ * **C'est le propriétaire de deux adresses**, et l'écran le renvoyait s'inventer
+ * une seconde identité. La branche du jeton se rend avant la porte
+ * d'authentification, quelle que soit la session : un gérant déjà connecté qui
+ * ouvrait le lien de son second salon recevait le formulaire de création de
+ * compte. La route `attach` existait depuis le début et n'avait aucun appelant —
+ * ce n'était pas une capacité à écrire, c'était un écran à brancher.
+ */
+describe('rattacher à un compte qui existe', () => {
+  it('propose de rattacher, et ne redemande ni adresse ni mot de passe', async () => {
+    await monter(
+      <PriseEnMainScreen jeton="j1" onTermine={jest.fn()} />,
+      clientDe({ '/handover/j1': APERCU }),
+      GERANT,
+    );
+    await waitFor(() => expect(screen.getByTestId('rattacher-la-fiche')).toBeTruthy());
+
+    // **La divergence tient au même décor à une session près.** Sans elle, un
+    // écran qui n'afficherait jamais le formulaire passerait aussi.
+    expect(screen.queryByTestId('champ-email')).toBeNull();
+    expect(screen.queryByTestId('champ-mot-de-passe')).toBeNull();
+    expect(screen.queryByTestId('valider-prise-en-main')).toBeNull();
+
+    // Et la fiche préparée reste montrée : on assume ce qu'on a sous les yeux.
+    expect(screen.getByTestId('fiche-preparee')).toBeTruthy();
+  });
+
+  it('nomme le compte, parce qu’il peut y en avoir deux', async () => {
+    // « Rattacher à mon compte » sans dire lequel demande de deviner — et c'est
+    // exactement la situation de quelqu'un qui en a deux.
+    await monter(
+      <PriseEnMainScreen jeton="j1" onTermine={jest.fn()} />,
+      clientDe({ '/handover/j1': APERCU }),
+      GERANT,
+    );
+    await waitFor(() => expect(screen.getByTestId('compte-en-session')).toBeTruthy());
+
+    expect(screen.getByTestId('compte-en-session')).toHaveTextContent(/gerant@salon\.example/);
+  });
+
+  it('exige les conditions, et envoie la version montrée', async () => {
+    const envois: { chemin: string; corps: unknown }[] = [];
+    const api = clientDe({ '/handover/j1': APERCU, '/attach': { id: 'b9', name: 'Vela', status: 'draft' } }, (chemin, corps) =>
+      envois.push({ chemin, corps }),
+    );
+
+    await monter(<PriseEnMainScreen jeton="j1" onTermine={jest.fn()} />, api, GERANT);
+    await waitFor(() => expect(screen.getByTestId('rattacher-la-fiche')).toBeTruthy());
+
+    // Tant que la bascule est fermée, rien ne part : c'est le serveur qui
+    // exige la version, et une acceptation posée d'avance n'aurait aucune
+    // valeur le jour où on la produit.
+    await fireEvent.press(screen.getByTestId('rattacher-la-fiche'));
+    expect(envois).toHaveLength(0);
+
+    // `press` et non `valueChange` : la bascule porte son gestionnaire sur son
+    // propre `Pressable`, comme le note le test voisin.
+    await fireEvent(screen.getByTestId('bascule-conditions'), 'press');
+    await fireEvent(screen.getByTestId('rattacher-la-fiche'), 'press');
+
+    await waitFor(() => expect(envois).toHaveLength(1));
+    expect(envois[0].chemin).toContain('/attach');
+    // **La version que cet écran a montrée**, pas celle en vigueur à l'envoi.
+    expect(envois[0].corps).toEqual({ terms_version: APERCU.terms_version });
+  });
+
+  it('dit à une créatrice que le lien n’est pas pour elle, au lieu d’un 403', async () => {
+    // Le serveur refuse tout rôle qui n'est pas un commerce. Offrir le bouton
+    // quand même ferait découvrir le refus après le geste.
+    await monter(
+      <PriseEnMainScreen jeton="j1" onTermine={jest.fn()} />,
+      clientDe({ '/handover/j1': APERCU }),
+      CREATRICE,
+    );
+    await waitFor(() => expect(screen.getByTestId('mauvais-role')).toBeTruthy());
+
+    expect(screen.queryByTestId('rattacher-la-fiche')).toBeNull();
+    expect(screen.queryByTestId('valider-prise-en-main')).toBeNull();
   });
 });
