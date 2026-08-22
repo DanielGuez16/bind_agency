@@ -27,7 +27,7 @@
  * illisible. On aurait densifié l'écran en cassant la correction qu'il porte.
  */
 import { useState } from 'react';
-import { Image, Pressable, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import {
   useApi,
@@ -42,6 +42,7 @@ import {
   IMAGE_DE_L_APERCU,
   Texte,
 } from '../../components';
+import { Photo } from '../../components';
 import { useEnfoncement } from '../../components/Mouvement';
 import { formatNumber } from '../../format';
 import { useI18n } from '../../i18n';
@@ -305,14 +306,9 @@ function EnTeteDeSection({
           backgroundColor: c['media.placeholder'],
         }}
       >
-        {photo ? (
-          <Image
-            testID="quartier-ouvert-photo"
-            source={{ uri: photo }}
-            resizeMode="cover"
-            style={{ width: '100%', height: '100%' }}
-          />
-        ) : null}
+        {/* La place était déjà réservée ; il manquait le fondu. Une photo qui
+            apparaît d'un coup est un clignotement, quelle que soit sa vitesse. */}
+        <Photo uri={photo} style={{ flex: 1 }} testID="quartier-ouvert-photo" />
       </View>
       <View style={{ flex: 1, minWidth: 0, gap: 1 }}>
         <Texte variante="type.titreDApercu" testID="quartier-ouvert-nom">
@@ -377,9 +373,7 @@ function CarreDeQuartier({
           backgroundColor: c['media.placeholder'],
         }}
       >
-        {photo ? (
-          <Image source={{ uri: photo }} resizeMode="cover" style={{ width: '100%', height: '100%' }} />
-        ) : null}
+        <Photo uri={photo} style={{ ...StyleSheet.absoluteFillObject }} />
         {/* Le compte se pose sur la photo, dans un cartouche opaque : posé
             dessous, il ajouterait une ligne à quatre colonnes de 80 points et
             le nom du quartier n'aurait plus la place de s'écrire. */}

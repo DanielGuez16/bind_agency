@@ -45,10 +45,11 @@
  */
 import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
-import { Image, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { useApi, type PageDeLaCarte } from '../api';
 import { Button, Icone, StatusMessage, TextField, Texte, vibration } from '../components';
+import { Photo } from '../components';
 import { useI18n } from '../i18n';
 import { elevationDeCarte, radius, useColors } from '../theme';
 
@@ -222,11 +223,11 @@ export function CarteDuCommerce({
             ...elevationDeCarte(),
           }}
         >
-          <Image
-            // La vignette : cette ligne vérifie un ordre, elle ne se lit pas.
-            source={{ uri: api.urlDeLaVignette(page.storage_key) ?? undefined }}
-            style={{ width: 56, height: 56, borderRadius: radius['radius.lg'] }}
-            resizeMode="cover"
+          {/* La vignette : cette ligne vérifie un ordre, elle ne se lit pas. */}
+          <Photo
+            uri={api.urlDeLaVignette(page.storage_key)}
+            hauteur={56}
+            style={{ width: 56, borderRadius: radius['radius.lg'] }}
           />
 
           <View style={{ flex: 1 }}>

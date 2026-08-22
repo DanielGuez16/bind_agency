@@ -16,7 +16,7 @@
  */
 import type { ReactNode } from 'react';
 import { useState } from 'react';
-import { Image, Linking, Modal, Pressable, View } from 'react-native';
+import { Linking, Modal, Pressable, View } from 'react-native';
 
 import { useApi, type FichePublique, type OffreDeLaFiche } from '../api';
 import {
@@ -28,6 +28,7 @@ import {
   Texte,
   type NomIcone,
 } from '../components';
+import { Photo } from '../components';
 import { formatHeure, formatNumber, jourCivil, repereDuCreneau } from '../format';
 import { fermeAujourdhui } from './horaires';
 import { useI18n } from '../i18n';
@@ -355,7 +356,10 @@ function Couverture({
 
   return (
     <View testID="couverture" style={{ height: HAUTEUR_DE_COUVERTURE }}>
-      <Image source={source} resizeMode="cover" style={{ width: '100%', height: '100%' }} />
+      {/* **La couverture a déjà sa hauteur**, et c'est ce qui empêchait la
+          fiche entière de sauter. Il manquait le fondu — sur la plus grande
+          image du produit, une apparition d'un coup se voit le plus. */}
+      <Photo uri={source.uri} style={{ flex: 1 }} testID="couverture-photo" />
       {compte > 0 ? (
         <Pressable
           testID="acces-galerie"
@@ -658,11 +662,11 @@ function Offre({
             opacity: offre.accessible ? 1 : OPACITE_FERMEE,
           }}
         >
-          {vignette ? (
-            <Image source={vignette} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-          ) : (
-            <MediaFallback monogramme={offre.name} height={VIGNETTE_DE_L_OFFRE} />
-          )}
+          <Photo
+            uri={vignette?.uri}
+            style={{ flex: 1 }}
+            replit={<MediaFallback monogramme={offre.name} height={VIGNETTE_DE_L_OFFRE} />}
+          />
         </View>
       </View>
 

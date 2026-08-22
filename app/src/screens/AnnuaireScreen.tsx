@@ -29,7 +29,7 @@
  */
 import React, { useEffect, useState } from 'react';
 
-import { Image, Linking, Pressable, View } from 'react-native';
+import { Linking, Pressable, View } from 'react-native';
 
 import {
   useApi,
@@ -48,6 +48,7 @@ import {
   Texte,
   TierBadge,
 } from '../components';
+import { Photo } from '../components';
 import { formatDistance, formatNumber } from '../format';
 import { useI18n } from '../i18n';
 import { useGabarit } from '../shell/gabarit';
@@ -440,14 +441,11 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
         testID={`portrait-${createur.creator_id}`}
         style={{ height: 132, backgroundColor: c['bg.sunken'] }}
       >
-        {portrait ? (
-          <Image
-            source={{ uri: portrait }}
-            style={{ width: '100%', height: 132 }}
-            resizeMode="cover"
-            testID={`photo-${createur.creator_id}`}
-          />
-        ) : null}
+        <Photo
+          uri={portrait}
+          style={{ flex: 1 }}
+          testID={`photo-${createur.creator_id}`}
+        />
       </View>
 
       <View style={{ padding: 14, gap: 8 }}>

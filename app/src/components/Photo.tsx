@@ -90,7 +90,11 @@ export function Photo({
           // **L'aplat qui tient la place.** Il est visible avant la photo, et
           // reste derrière elle : une photo transparente ou plus étroite que sa
           // zone ne laisse pas voir la surface de la carte au travers.
-          backgroundColor: c['bg.deep'],
+          //
+          // `media.placeholder` et non `bg.deep`, dont il porte la valeur : le
+          // rôle nomme l'usage, et le jour où le fond des médias se distingue
+          // du fond profond, il n'y a qu'un endroit à changer.
+          backgroundColor: c['media.placeholder'],
           overflow: 'hidden',
         },
         style,
