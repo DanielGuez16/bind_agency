@@ -112,6 +112,24 @@ class LigneDeSuiviRead(BaseModel):
     opened_at: datetime | None
     #: Dernière prise en main tentée et refusée.
     blocked_at: datetime | None
+    #: Qui a préparé la fiche, par son adresse.
+    #:
+    #: **Sans elle, la comparaison des deux méthodes ne tient qu'à une
+    #: personne** : si toutes les fiches remises au comptoir viennent d'une
+    #: tournée et toutes celles envoyées d'une autre, le taux d'activation par
+    #: voie compare deux démarcheurs en croyant comparer deux méthodes.
+    #:
+    #: Relue du journal d'audit, donc présente pour **toutes** les fiches — y
+    #: compris celles qui n'ont encore rien reçu, c'est-à-dire précisément
+    #: celles dont on veut savoir de qui elles sont.
+    #:
+    #: Une adresse et non un nom : un compte d'équipe n'en a pas. Les noms
+    #: vivent sur le profil créateur, et cet écran est interne.
+    prepared_by: str | None
+    #: Qui a remis le lien. Nulle tant que rien n'a été remis, et **distincte de
+    #: la précédente** : préparer quarante fiches au bureau et en remettre vingt
+    #: en tournée sont deux gestes.
+    remis_par: str | None
     #: Où en est cette fiche, en un mot qui commande une conduite.
     #:
     #: **Trois états pour une fiche non activée, et non un seul.** Jamais

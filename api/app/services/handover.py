@@ -42,6 +42,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.integrations.geocoding import Geocoder
 from app.models import (
+    AuditLog,
     Business,
     BusinessHandover,
     BusinessMember,
@@ -178,6 +179,31 @@ class LigneDeSuivi:
     opened_at: datetime | None
     #: Quand une prise en main a été tentée et refusée pour la dernière fois.
     blocked_at: datetime | None
+    #: Qui a préparé la fiche, par son adresse.
+    #:
+    #: **Sans elle, la comparaison des deux méthodes ne tient qu'à une
+    #: personne.** Le taux d'activation par voie ne dit rien si toutes les
+    #: fiches remises au comptoir viennent d'une tournée et toutes celles
+    #: envoyées d'une autre : on comparerait deux démarcheurs en croyant
+    #: comparer deux méthodes.
+    #:
+    #: Relue du journal d'audit et non du lien, parce qu'elle existe pour
+    #: **toutes** les fiches. `issued_by_user_id` est nul tant que rien n'a été
+    #: remis, c'est-à-dire exactement sur les fiches préparées qui attendent
+    #: qu'on passe — celles dont on a le plus besoin de savoir de qui elles
+    #: sont.
+    #:
+    #: Une adresse et non un nom : un administrateur n'en a pas. Les noms
+    #: vivent sur le profil créateur, et un compte d'équipe n'en a aucun. C'est
+    #: un écran interne où chacun connaît déjà l'adresse des autres.
+    prepared_by: str | None
+    #: Qui a remis le lien, par son adresse. Nulle tant que rien n'a été remis.
+    #:
+    #: **Distincte de la précédente, et c'est le point.** La même personne fait
+    #: souvent les deux dans la même visite, mais pas toujours : préparer
+    #: quarante fiches au bureau et en remettre vingt en tournée sont deux
+    #: gestes, et les confondre ferait mentir la comparaison qu'on cherche.
+    remis_par: str | None
 
     @property
     def etat(self) -> "EtatDeLaTournee":
@@ -599,6 +625,45 @@ async def _assumer(
     )
 
 
+async def _adresses(session: AsyncSession, ids: list[uuid.UUID]) -> dict[uuid.UUID, str]:
+    """Les adresses de ces comptes, en une requête."""
+    if not ids:
+        return {}
+    return {
+        identifiant: email
+        for identifiant, email in await session.execute(
+            sa.select(User.id, User.email).where(User.id.in_(set(ids)))
+        )
+        if email is not None
+    }
+
+
+async def _preparateurs(
+    session: AsyncSession, business_ids: list[uuid.UUID]
+) -> dict[uuid.UUID, str]:
+    """Qui a préparé chaque fiche, par son adresse, depuis le journal d'audit.
+
+    Le journal est la seule source qui couvre **toutes** les fiches : la
+    préparation y est écrite avec son acteur, alors que rien ne la porte sur la
+    ligne du commerce. Le lien, lui, n'existe qu'une fois la fiche remise.
+    """
+    if not business_ids:
+        return {}
+    return {
+        entity_id: email
+        for entity_id, email in await session.execute(
+            sa.select(AuditLog.entity_id, User.email)
+            .join(User, User.id == AuditLog.actor_user_id)
+            .where(
+                AuditLog.entity_type == AuditedEntity.BUSINESS.value,
+                AuditLog.entity_id.in_(set(business_ids)),
+                AuditLog.reason == REASON_PREPAREE,
+            )
+        )
+        if email is not None
+    }
+
+
 async def suivi(
     session: AsyncSession, *, limite: int = 100, maintenant: datetime | None = None
 ) -> tuple[LigneDeSuivi, ...]:
@@ -642,6 +707,13 @@ async def suivi(
         )
     ).all()
 
+    # Deux lectures de plus, jamais une par fiche : les préparateurs viennent
+    # du journal en une requête, les adresses des remettants en une autre.
+    preparateurs = await _preparateurs(session, [b.id for b, _ in lignes])
+    adresses = await _adresses(
+        session, [lien.issued_by_user_id for _, lien in lignes if lien is not None]
+    )
+
     return tuple(
         LigneDeSuivi(
             business_id=business.id,
@@ -656,6 +728,8 @@ async def suivi(
             channel=lien.channel if lien else None,
             opened_at=lien.opened_at if lien else None,
             blocked_at=lien.blocked_at if lien else None,
+            prepared_by=preparateurs.get(business.id),
+            remis_par=adresses.get(lien.issued_by_user_id) if lien else None,
         )
         for business, lien in lignes
     )
