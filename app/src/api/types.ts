@@ -1411,6 +1411,23 @@ export type CreateurDeLAnnuaire = {
   audience_totale: number;
 };
 
+/**
+ * Un salon dont l'appelant est membre.
+ *
+ * **Le quartier identifie, le nom ne suffit plus.** Deux salons d'une enseigne
+ * portent le même nom : « Vela Nail Studio » deux fois ne distingue rien, et
+ * c'est le quartier qui dit lequel. Servi par `BusinessRead` depuis toujours,
+ * et jeté par ce type tant que personne n'avait deux salons.
+ */
+export type CommerceDeLUtilisateur = {
+  id: string;
+  name: string;
+  timezone: string;
+  /** Nul hors des quartiers ouverts : l'adresse prend alors le relais. */
+  neighborhood: Neighborhood | null;
+  address: string | null;
+};
+
 /** Une photo de la galerie d'un commerce. La clé, jamais une adresse. */
 export type PhotoDuCommerce = {
   id: string;

@@ -88,7 +88,25 @@ export function BarreLaterale({
   const { t } = useI18n();
   const [replie, basculer] = useRepli();
   const [deplie, setDeplie] = useState(false);
-  const choisissable = salons.length > 1 && Boolean(onChoisir);
+
+  /**
+   * **La caisse est le seul écran où le nom n'est pas un contrôle.**
+   *
+   * Pas grisé — la règle du produit l'interdit, un bouton grisé demande de
+   * deviner ce qui le débloque. Simplement pas un contrôle : il n'a donc rien à
+   * refuser. On ne change pas de salon en tenant un code ; on quitte la caisse,
+   * on change, on revient. Un geste de plus, et c'est le but.
+   *
+   * **Servir un code du mauvais salon est la seule erreur de ce parcours qu'on
+   * ne peut pas défaire** : elle consomme la réservation de quelqu'un d'autre,
+   * et `consumed` est terminal. Le serveur la refuse — l'appartenance est
+   * vérifiée sur la vérification comme sur la consommation, et deux tests le
+   * prouvent en constatant que la réservation reste `confirmed`. L'écran ne
+   * porte donc pas la protection ; il évite de proposer le geste qui la
+   * déclencherait, ce qui n'est pas la même chose et se cumule.
+   */
+  const surLaCaisse = state.routes[state.index]?.name === 'caisse';
+  const choisissable = salons.length > 1 && Boolean(onChoisir) && !surLaCaisse;
   /**
    * La ligne dont l'étiquette est visible, avec de quoi la placer.
    *

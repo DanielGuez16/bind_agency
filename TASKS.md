@@ -2096,3 +2096,12 @@ barrière avant le réseau, et c'est là qu'il faut la poser.
       c'est vraisemblablement pourquoi la route de rattachement n'avait jamais
       eu d'écran. Le nom du salon est déjà dans la barre latérale, c'est là que
       le choix se pose*
+
+- [ ] **Le compte de décisions du jour, par salon**
+      *La liste du sélecteur porte « 5 aujourd'hui » sur chaque ligne, et c'est
+      ce qui fait basculer un gérant qui ne savait pas qu'on l'attendait. Sans
+      lui la liste reste utilisable et perd sa raison d'être ouverte. La donnée
+      existe par salon — c'est le compteur que la journée affiche déjà — mais
+      `/me/businesses` ne rend que l'appartenance. Le porter là plutôt que
+      d'ouvrir une requête par salon depuis l'écran : deux salons feraient deux
+      appels, dix en feraient dix*
