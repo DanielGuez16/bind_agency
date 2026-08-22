@@ -25,6 +25,7 @@ l'année. Le fuseau du commerce fait foi, comme partout ailleurs.
 import uuid
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
+from decimal import Decimal
 from zoneinfo import ZoneInfo
 
 import sqlalchemy as sa
@@ -79,6 +80,21 @@ class CompteDeLaCreatrice:
     #: un compte tout juste rattaché n'a pas zéro abonné, il n'a pas encore été
     #: mesuré.
     followers: int | None
+    #: Le taux d'engagement du dernier relevé, en pourcentage.
+    #:
+    #: **Le second chiffre de la décision**, et souvent le premier des deux à
+    #: être regardé : cent mille abonnés à 0,4 % valent moins qu'un compte de
+    #: huit mille à 6 %, et un salon qui ne lit que le volume choisit mal.
+    #:
+    #: Nul quand aucun relevé n'existe, comme les abonnés — jamais zéro, qui
+    #: dirait « personne ne réagit » alors que personne n'a mesuré.
+    engagement_rate: Decimal | None
+    #: Les vues moyennes du dernier relevé.
+    #:
+    #: Ce qu'une publication touche réellement, quand la plateforme le dit. Nul
+    #: sur les réseaux qui ne le rendent pas et sur un compte jamais relevé :
+    #: l'absence de la mesure et l'absence de vues ne se confondent pas.
+    avg_views: int | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -573,6 +589,8 @@ async def _comptes_des_creatrices(
                 SocialAccount.platform,
                 SocialAccount.handle,
                 releve.c.followers_count,
+                releve.c.engagement_rate,
+                releve.c.avg_views,
             )
             .outerjoin(releve, releve.c.social_account_id == SocialAccount.id)
             .where(SocialAccount.creator_id.in_(set(creator_ids)))
@@ -584,6 +602,8 @@ async def _comptes_des_creatrices(
                 platform=ligne.platform,
                 handle=ligne.handle,
                 followers=ligne.followers_count,
+                engagement_rate=ligne.engagement_rate,
+                avg_views=ligne.avg_views,
             )
         )
     return par_createur

@@ -13,20 +13,18 @@ class CategoriePhotoRead(BaseModel):
     photo_key: str | None
 
 
-class AccueilRead(BaseModel):
-    """Les quatre médias de l'accueil, chacun pouvant manquer séparément.
+class MediasPlateformeRead(BaseModel):
+    """Les photos de catégorie, et rien d'autre.
 
-    L'app choisit l'orientation qui lui va et se replie sur l'autre : c'est elle
-    qui connaît son format, et rendre « la bonne » depuis le serveur reviendrait
-    à décider d'ici d'une chose qu'on ne peut pas y savoir.
+    **Le média d'accueil est parti avec l'écran qui le montrait.** La vidéo de
+    fond servait à donner envie sur un écran dont le seul travail est de faire
+    choisir un rôle, et elle coûtait six mécanismes — repli sur l'affiche,
+    choix d'orientation, hors-ligne, reprise au premier plan, relance après
+    montage, boucle garantie deux fois. La planche v3 l'a retirée ; le
+    manifeste continuait de la servir à personne.
+
+    Les fichiers restent dans le dépôt d'objets : ce qu'on retire ici est un
+    champ servi sans lecteur, pas des médias qu'on jette.
     """
 
-    video_key: str | None
-    poster_key: str | None
-    video_portrait_key: str | None
-    poster_portrait_key: str | None
-
-
-class MediasPlateformeRead(BaseModel):
     categories: list[CategoriePhotoRead]
-    home: AccueilRead

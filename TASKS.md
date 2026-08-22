@@ -1127,6 +1127,15 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       Téléphone au format international, normalisé avant validation ; nom
       dépouillé de ses espaces avant d'être compté ; adresse d'au moins dix
       caractères. 13 tests neufs*
+- [x] **Trois dettes nommées retirées, et deux chiffres ajoutés**
+      *`engagement_rate` et `avg_views` sur le compte d'une demande : le second
+      chiffre de la décision, souvent le premier regardé. **Aucun mécanisme ne
+      les remplit encore** — le relevé de profil pose `None` aux deux, ils se
+      calculent sur les publications et viendront avec `fetch_media`. Le contrat
+      est posé, la mesure suivra. Retirés : le média d'accueil de la v3, le
+      compte à rebours sans lecteur, et la couverture 4:5 du mur supprimé —
+      **la colonne et les vingt photos restent**, seul le contrat les quitte.
+      2 tests neufs, 7 retirés avec le code mort, 2 mutations vérifiées*
 - [x] **Qui a préparé quoi, et qui a remis**
       *`prepared_by` relu du **journal d'audit** et non de `issued_by_user_id` :
       le lien est nul tant que rien n'a été remis, c'est-à-dire exactement sur
@@ -1520,7 +1529,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       c'est un chiffre sur lequel un salon décide.*
       *En attendant, l'avertissement garde l'argument qu'il a : les seuils
       d'abonnés, qui disent la même chose dans le même sens.*
-- [ ] **L'engagement et les vues moyennes manquent sur la demande**
+- [x] **L'engagement et les vues moyennes manquent sur la demande**
       *`CompteDeLaCreatriceRead` sert le pseudonyme et les abonnés ; la planche
       de la journée pose aussi « 4,2 % d'engagement · 2 140 vues moyennes » sur
       le panneau. Deux champs sur le même objet*

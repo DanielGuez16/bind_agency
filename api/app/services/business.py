@@ -124,7 +124,6 @@ async def create_business(
         phone=payload.phone,
         currency=payload.currency,
         cover_photo_key=payload.cover_photo_key,
-        cover_portrait_key=payload.cover_portrait_key,
         menu_url=payload.menu_url,
         status=BusinessStatus.ONBOARDING,
     )
@@ -186,7 +185,6 @@ async def update_business(
         "default_locale",
         "phone",
         "cover_photo_key",
-        "cover_portrait_key",
         "menu_url",
     ):
         if name in fields:

@@ -77,6 +77,18 @@ class Business(UUIDPrimaryKey, CreatedAt, Base):
     #:
     #: Livrée en 1600 × 2000. Le dépôt borne le grand côté à 2000, donc ce
     #: format traverse sans rien perdre.
+    #: La couverture verticale 4:5, **qui n'est plus servie nulle part**.
+    #:
+    #: Elle existait pour les deux héros du mur en mosaïque, à fond perdu et en
+    #: portrait. La v3 n'a plus de héros : la grille pose des images de 100
+    #: points de haut sur des colonnes de 171, la vignette du quartier est un
+    #: carré de 44, et aucune de ces surfaces n'est un portrait. Le champ a donc
+    #: quitté les schémas — plus de lecture, plus d'écriture.
+    #:
+    #: **La colonne reste, et les vingt photos avec elle.** Les retirer serait
+    #: jeter des fichiers déposés à la main pour un mur qui peut revenir, et
+    #: c'est une décision d'une autre nature que celle de cesser de les servir.
+    #: Une migration les effacera le jour où quelqu'un le décidera.
     cover_portrait_key: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     #: L'adresse de la carte du commerce, quand elle existe déjà en ligne.
     #:
