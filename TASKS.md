@@ -1419,7 +1419,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       dur dans l'écran est ce que le dépôt interdit. La carte de reprise porte
       donc le rang seul, qui reste vrai — mais c'est le plafond qui dit combien
       de chances restent*
-- [ ] **L'inventaire des cartes ne voit pas les surfaces sans filet**
+- [x] **L'inventaire des cartes ne voit pas les surfaces sans filet**
       *Sa définition est « fond de surface + rayon de 18 + filet ». Les deux
       portes de l'accueil et le panneau `reconnu` de `RedemptionScreen` ont le
       rayon et le fond sans le filet : ils lui échappent. L'élargir casse le
@@ -1441,7 +1441,16 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       avertissement — quatre lignes de prose ont suffi, une fois. Le découpage
       suit maintenant l'imbrication des accolades et n'a plus de longueur
       maximale. **Trois trous distincts dans une seule garde** : ce qu'elle lit,
-      ce qu'elle cherche, et jusqu'où elle lit. Seul le deuxième reste ouvert*
+      ce qu'elle cherche, et jusqu'où elle lit*
+      *Le troisième est comblé à son tour. La bonne question n'était pas
+      « lequel des deux nœuds est le parent » mais **« lequel des deux porte
+      l'ombre »** : la moitié intérieure d'une carte enveloppée est celle qui
+      clippe **sans** porter d'élévation, et elle n'a pas à en réclamer une. Le
+      filet quitte donc la définition sans casser le comptage. Deux surfaces
+      pleines entrent à l'inventaire — les portes de l'accueil, le panneau
+      reconnu de la caisse, qui a reçu son ombre — et une pastille en sort :
+      `KeyHint` portait `radius.lg` sur quatorze points de haut, là où les
+      jetons réservent `sm` aux pastilles*
 - [x] **L'audience v3 — l'écran le plus faible, signalé sur trois campagnes**
       *Les logos de réseau manquaient entièrement, et un compte connecté ne se
       distinguait pas d'un compte à connecter. Aucun nombre n'apparaît plus

@@ -8684,3 +8684,55 @@ style, comblé —, jusqu'où elle lit — la fenêtre, comblée ici —, et ce 
 cherche — la définition d'une carte, qui laisse encore échapper les surfaces
 sans filet. Élargir l'un n'élargit pas les autres, et les confondre a déjà fait
 croire une fois que la question était réglée.
+
+---
+
+## 2026-08-22 — Une carte est une surface de 18 points, avec ou sans filet
+
+Le troisième trou de l'inventaire : sa définition exigeait **trois** marques —
+rayon, fond, filet — et le filet laissait passer tout ce qui est plein. Or une
+surface pleine est une carte tout autant qu'une surface cerclée ; c'est même la
+plus visible des deux, puisque rien d'autre que son ombre ne la détache du fond.
+
+**Le filet avait été exigé pour une raison, et elle avait une meilleure
+réponse.** Une carte qui clippe s'écrit en deux nœuds — l'extérieur porte
+l'ombre, l'intérieur découpe, parce que sur iOS une vue qui clippe coupe sa
+propre ombre. Sans discriminant, les deux satisfaisaient une définition élargie
+et une carte comptait pour deux : le comptage d'égalité devenait faux, et
+l'élargissement a été reculé **deux fois** pour ça, par deux sessions
+différentes.
+
+La bonne question n'était pas « lequel des deux nœuds est le parent » — ce
+qu'une expression régulière ne sait pas — mais **« lequel des deux porte
+l'ombre »**. La moitié intérieure est celle qui clippe **sans** porter
+d'élévation : la sienne vit sur son enveloppe, et elle n'a pas à en réclamer
+une. Un nœud unique qui clippe *et* porte son ombre reste une carte, ce qui est
+le cas courant hors iOS.
+
+## Ce que l'élargissement a trouvé
+
+**Le panneau reconnu de la caisse n'avait pas d'ombre.** C'est ce que le
+comptoir lit avant de servir — la réservation reconnue, et le geste qui la
+clôt — et il flottait sur la page. Il était invisible à l'inventaire parce
+qu'une surface pleine n'a pas de filet.
+
+**Et `KeyHint` portait un rayon de carte.** Une pastille de touche, cinq points
+de côté sur quatorze de haut, avec `radius.lg`. À cette taille les deux rayons
+se ressemblent à l'œil — c'est pourquoi le mauvais a survécu — mais les jetons
+réservent `sm` aux chips et aux pastilles, et l'inventaire le comptait comme une
+surface devant porter une ombre. Le jeton corrigé, il sort de lui-même : la
+garde n'a pas eu besoin d'une exception pour lui.
+
+**Les deux portes de l'accueil entrent à l'inventaire.** Ce sont les cartes les
+plus visibles du produit, et elles n'y figuraient pas.
+
+## Les trois trous, et pourquoi il fallait les tenir séparés
+
+Ce qu'elle **lit** — les formes de style, comblé en #208. **Jusqu'où** elle lit
+— la fenêtre de neuf cents caractères, comblée en #233. Ce qu'elle **cherche** —
+la définition d'une carte, comblé ici.
+
+Les trois se ressemblent assez pour qu'on les confonde, et la confusion a déjà
+coûté : un élargissement de ce qu'on **lit** a été pris pour un élargissement de
+ce qu'on **cherche**, ce qui a fait croire une fois que la question était réglée.
+Élargir l'un n'élargit pas les autres.
