@@ -613,6 +613,17 @@ export const en = {
     // de la phrase : l'espagnol ne cite pas comme l'anglais, et les coller
     // dans l'écran les figerait sur une seule langue.
     repriseEnCours: 'Someone from BIND is in your account',
+    // **Le salon met dehors, et n'a personne à convaincre.** Le bouton ne
+    // demande pas confirmation : une question de plus entre le gérant et la
+    // porte est une négociation. Les mots de la portée vivent dans `reglages`,
+    // posés par la liste — deux jeux pour les mêmes écrans finiraient par se
+    // contredire, et c'est le gérant qui lirait la contradiction.
+    repriseRefermer: 'End it',
+    // **Au présent, parce que c'est en cours.** La liste des réglages dit
+    // « could open » d'une porte déjà close ; sur la journée, la porte est
+    // ouverte pendant qu'on lit — et le temps du verbe est ce qui distingue un
+    // fait passé d'une chose qui se produit.
+    repriseOuvre: 'Open now: {{ecrans}}',
     repriseMotif: '“{{motif}}”',
     repriseDepuisJusqua: 'Started {{debut}} · ends {{fin}}',
     enArbitrage: 'A reviewer has taken this over — you no longer decide on it.',
@@ -923,6 +934,27 @@ export const en = {
     montrerLeMotDePasse: 'Show password',
     masquerLeMotDePasse: 'Hide password',
     motDePasseComplet: 'At least {{requis}} characters.',
+  },
+  reprise: {
+    // **Le motif part au salon mot pour mot.** Dit au-dessus du champ et non en
+    // note : un administrateur qui sait que le gérant lira sa phrase exacte
+    // l'écrit autrement, et c'est le mécanisme lui-même.
+    entrer: 'Take over this account',
+    motLeMot: '{{salon}} reads exactly what you write here, word for word, and can end the session at any moment.',
+    champMotif: 'Why you are going in',
+    porteeTitre: 'What opens — and nothing else',
+    // « Tout » n'est pas interdit, il est écrit.
+    toutEcrit: 'You are asking for everything. {{salon}} sees all seven listed, and it stays in their list.',
+    origineTitre: 'Who asked',
+    origineSpontanee: 'I am going in myself',
+    origineDemandee: '{{salon}} asked me to',
+    spontaneeNote: 'This is marked as unprompted in their list, permanently.',
+    ouvrir: 'Open, and tell {{salon}}',
+    ouverteTitre: 'You are in {{salon}}',
+    // Le compte se lit, il ne refuse rien. Un seuil qui refuserait se
+    // contournerait en attendant un jour.
+    compteDeLAppelant: 'That is {{n}} takeovers you have opened in {{jours}} days, across all salons.',
+    ouverteRappel: '{{salon}} can end it at any moment, from their own screen.',
   },
   reglages: {
     reprisesTitre: 'When BIND entered your account',

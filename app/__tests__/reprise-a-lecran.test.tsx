@@ -51,16 +51,28 @@ const JOURNEE = {
 };
 
 async function monter(reprises: RepriseDuCompte[]) {
+  const envois: { url: string; method: string }[] = [];
+  // La liste est relue après la fermeture : un 204 ne rend rien, et c'est la
+  // relecture qui éteint le bandeau. Un double qui rendrait toujours la même
+  // liste ferait passer une implémentation qui ne recharge pas.
+  let restantes = reprises;
   const api = new ApiClient({
     baseUrl: 'https://api.test',
     coffre: { lire: async () => null, ecrire: async () => {} },
-    fetchImpl: (async (url: RequestInfo | URL) => {
+    fetchImpl: (async (url: RequestInfo | URL, init?: RequestInit) => {
+      const methode = (init?.method ?? 'GET').toUpperCase();
+      envois.push({ url: String(url), method: methode });
       if (String(url).includes('/support-access')) {
-        return { ok: true, status: 200, json: async () => reprises } as Response;
+        if (methode === 'DELETE') {
+          restantes = [];
+          return { ok: true, status: 204, json: async () => null } as Response;
+        }
+        return { ok: true, status: 200, json: async () => restantes } as Response;
       }
       return { ok: true, status: 200, json: async () => JOURNEE } as Response;
     }) as unknown as typeof fetch,
   });
+  Object.assign(globalThis, { __envoisDeLaJournee: envois });
   return await render(
     <I18nProvider initialLocale="en">
       <ThemeProvider role="merchant">
@@ -217,5 +229,56 @@ describe('le salon referme la porte lui-même', () => {
 
     await screen.findByTestId('reprise-r1');
     expect(screen.queryByTestId('reprise-refermer')).toBeNull();
+  });
+});
+
+
+/**
+ * Refermer depuis la journée, là où le salon regarde chaque matin.
+ *
+ * **Le décor divergent est l'absence de question.** Une implémentation qui
+ * ouvre une confirmation rend un écran qui a l'air prudent et met une
+ * négociation entre le gérant et sa porte : le test presse **une fois** et
+ * exige que la fermeture soit partie. Le second décor est la relecture — un
+ * double qui rendrait toujours la même liste laisserait passer un bandeau qui
+ * ne s'éteint jamais.
+ */
+describe('refermer depuis la journée', () => {
+  const envois = () =>
+    (globalThis as unknown as { __envoisDeLaJournee: { url: string; method: string }[] })
+      .__envoisDeLaJournee;
+
+  it('un seul appui referme, et sur la route du salon', async () => {
+    await monter([reprise()]);
+
+    await fireEvent.press(await screen.findByTestId('reprise-refermer-journee'));
+
+    await waitFor(() =>
+      expect(envois().some((e) => e.method === 'DELETE')).toBe(true),
+    );
+    // Chez lui, jamais par la porte d'administration : le gérant ferme sa
+    // propre porte, il ne pilote pas l'administration.
+    const fermeture = envois().find((e) => e.method === 'DELETE');
+    expect(fermeture?.url).toContain('/business/');
+    expect(fermeture?.url).not.toContain('/admin/');
+  });
+
+  it('le bandeau s’éteint une fois la porte close', async () => {
+    await monter([reprise()]);
+
+    await fireEvent.press(await screen.findByTestId('reprise-refermer-journee'));
+
+    await waitFor(() => expect(screen.queryByTestId('bandeau-reprise')).toBeNull());
+  });
+
+  it('la portée est écrite sur le bandeau, dans les mots de la liste', async () => {
+    await monter([reprise({ scope: ['agenda', 'catalogue'] as never })]);
+
+    const portee = await screen.findByTestId('reprise-portee-journee');
+    // Les mots de la liste, par le même aiguillage — mais le verbe au présent :
+    // la porte est ouverte pendant qu'on lit.
+    expect(portee).toHaveTextContent(/open now/i);
+    expect(portee).toHaveTextContent(/the day's bookings/i);
+    expect(portee).toHaveTextContent(/your services/i);
   });
 });

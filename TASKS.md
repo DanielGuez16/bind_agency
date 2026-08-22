@@ -1867,6 +1867,34 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       prévenir maintenant vaut mieux », et c'est **la seule incitation réelle à
       prévenir**. Composé sans, exprès : la phrase s'ajoute, elle ne se
       remplace pas*
+- [x] **La reprise a ses trois freins, et le salon met dehors depuis la journée**
+      *Le bouton « End it » était dans les réglages ; il est maintenant sur le
+      bandeau de la journée, là où le salon regarde chaque matin. Un seul appui,
+      **sans confirmation** : une question de plus entre le gérant et sa porte
+      est une négociation, et il n'a personne à convaincre. La portée s'écrit
+      sur le bandeau, au présent — la liste des réglages dit « could open »
+      d'une porte close, la journée dit « open now » d'une porte ouverte.*
+      *L'écran d'administration existe : motif transmis mot pour mot, portée par
+      écrans qui borne réellement, « spontanée » par défaut. « Tout » n'est pas
+      interdit, il est écrit — le serveur n'a pas de valeur « tout », demander
+      tout c'est cocher les sept, et le gérant lit les sept. 1340 tests,
+      5 mutations*
+- [ ] **Le compte des reprises de l'appelant arrive après l'ouverture, pas avant**
+      *`reprises_recentes_de_l_appelant` est servi sur la **réponse** au `POST`.
+      La planche le veut au moment de la demande : « c'est ta quatrième ce
+      mois-ci, tu en as fait une en juillet ». Se comparer à soi-même est la
+      seule comparaison qui change un comportement sans accuser — et lu après
+      coup, il retient pour la suivante, pas pour celle-ci. C'est exactement le
+      journal que Design écarte : il enregistre, il n'empêche pas.*
+      *Il faudrait le même compte sur une lecture, avant l'appui — un `GET` sur
+      la reprise, ou le champ posé sur la liste d'administration. Demandé à
+      `bind-agency-1a`*
+- [ ] **Rien ne liste les commerces côté administration**
+      *L'écran de reprise est monté sur la fiche de tournée assumée, faute
+      d'autre endroit où l'administration ait un salon nommé sous les yeux. La
+      place est mauvaise et se dit dans le code : un administrateur qui cherche
+      à débloquer un salon ne pense pas « tournée ». La planche dessine un
+      onglet « Accounts » ; aucune route ne permet de le composer*
 - [ ] **Neuf planches d'écrans portent encore la v1.0**
       *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
       passés en v3, dans la palette Ambre. Les autres suivent l'ordre du

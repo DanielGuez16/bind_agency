@@ -1517,6 +1517,22 @@ export type FichePreparee = {
  * y passe. Le serveur vérifie chaque requête contre cette liste ; ce que le
  * salon lit est donc vrai, pas affiché.
  */
+/**
+ * Ce que l'administration lit **d'elle-même** en ouvrant une reprise.
+ *
+ * Une reprise se justifie une par une, et c'est précisément ce qui empêche d'en
+ * voir l'ensemble : celui qui ouvre la quinzième de la semaine a une bonne
+ * raison pour celle-là aussi. Le compte ne refuse rien, il se lit — un seuil
+ * qui refuserait se contournerait en attendant un jour, et transformerait une
+ * mesure honnête en formalité à franchir.
+ */
+export type RepriseOuverte = RepriseDuCompte & {
+  /** Tous salons confondus, closes et échues comprises : on mesure le geste. */
+  reprises_recentes_de_l_appelant: number;
+  /** La largeur de la fenêtre. Un nombre sans sa période ne veut rien dire. */
+  fenetre_en_jours: number;
+};
+
 export type PorteeDeReprise =
   | 'fiche'
   | 'catalogue'
