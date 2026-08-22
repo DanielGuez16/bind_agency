@@ -917,11 +917,11 @@ export const en = {
   },
   composition: {
     corriger: 'Correct',
-    retirer: 'Remove',
+    retirerLaPrestation: 'Remove',
     corrigerPortee: 'The photo, the spelling and the description are corrected here. Changing the duration, the tier or what you ask in return makes a different service — the bookings already made keep citing the one they had.',
     retraitRefuse: 'Bookings cite this service, so it cannot be removed. Closing it stops new bookings and keeps the old ones readable.',
     fermerPlutot: 'Close it instead',
-    enregistrer: 'Save',
+    enregistrerLaCorrection: 'Save',
     nom: 'Name',
     description: 'Description',
     carteTitre: 'Menu',

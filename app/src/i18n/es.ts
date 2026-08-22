@@ -866,11 +866,11 @@ export const es: Catalogue = {
   },
   composition: {
     corriger: 'Corregir',
-    retirer: 'Quitar',
+    retirerLaPrestation: 'Quitar',
     corrigerPortee: 'Aquí se corrigen la foto, la ortografía y la descripción. Cambiar la duración, el nivel o lo que pides a cambio crea otro servicio — las reservas ya hechas siguen citando el que tuvieron.',
     retraitRefuse: 'Hay reservas que citan este servicio, así que no se puede quitar. Cerrarlo detiene las nuevas reservas y mantiene legibles las antiguas.',
     fermerPlutot: 'Cerrarlo en su lugar',
-    enregistrer: 'Guardar',
+    enregistrerLaCorrection: 'Guardar',
     nom: 'Nombre',
     description: 'Descripción',
     carteTitre: 'Carta',

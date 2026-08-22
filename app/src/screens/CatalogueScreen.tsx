@@ -468,7 +468,7 @@ function CorrigerLaPrestation({
             retiré, jamais grisé : c'est la règle du dépôt. */}
         {change && nom.trim().length > 0 ? (
           <Button
-            label={t('composition.enregistrer')}
+            label={t('composition.enregistrerLaCorrection')}
             size="sm"
             fullWidth={false}
             loading={envoi}
@@ -597,7 +597,7 @@ function LignePrestation({
           testID={`corriger-${item.id}`}
         />
         <Button
-          label={t('composition.retirer')}
+          label={t('composition.retirerLaPrestation')}
           size="sm"
           variant="ghost"
           fullWidth={false}
