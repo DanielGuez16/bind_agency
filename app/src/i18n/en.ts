@@ -635,6 +635,7 @@ export const en = {
     noteDuCreateur: 'What the creator said',
     noteDeLArbitre: 'Note',
     motifObligatoire: 'Pick a reason before asking again.',
+    ouvrirPourTrancher: 'Open to review this one',
     motifMention: 'The mention is missing',
     motifLieu: 'The location tag is missing',
     motifFormat: 'Wrong format',

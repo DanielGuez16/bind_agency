@@ -593,6 +593,7 @@ export const es: Catalogue = {
     noteDuCreateur: 'Lo que dijo la creadora',
     noteDeLArbitre: 'Nota',
     motifObligatoire: 'Elige un motivo antes de solicitar de nuevo.',
+    ouvrirPourTrancher: 'Ábrelo para revisarlo',
     motifMention: 'Falta la mención',
     motifLieu: 'Falta la etiqueta de ubicación',
     motifFormat: 'Formato incorrecto',
