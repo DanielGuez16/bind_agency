@@ -197,9 +197,13 @@ describe('le découpage des blocs de style', () => {
   });
 
   it('ne compte pas une accolade prise dans une chaîne', () => {
-    // Une accolade littérale fermerait le bloc trop tôt et couperait la carte
-    // en deux — la façon silencieuse de refaire le défaut qu'on corrige.
-    const avecLitteral = carte(" alt: '}', ");
+    // **L'accolade littérale vient avant `borderWidth`, et c'est le décor qui
+    // compte.** Placée après les trois marques, la troncature les laisserait
+    // toutes dans le fragment : la carte resterait vue, et la mutation qui
+    // retire la traversée des chaînes survivrait. Il faut qu'elle coupe **entre**
+    // deux marques pour que les deux implémentations divergent.
+    const avecLitteral =
+      "<View style={{ borderRadius: radius['radius.lg'], alt: '}', backgroundColor: c['bg.surface'], borderWidth: 1 }}>";
 
     expect(blocsDeStyle(avecLitteral).filter(estUneCarte)).toHaveLength(1);
   });
