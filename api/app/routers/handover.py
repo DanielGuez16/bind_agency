@@ -166,13 +166,21 @@ async def revoke_handover(
 
 @public_router.get("/{jeton}", response_model=ApercuDeLaFiche)
 async def preview_handover(jeton: str, session: SessionDep) -> ApercuDeLaFiche:
-    """Ce qui a été préparé, avant de s'engager à quoi que ce soit."""
+    """Ce qui a été préparé, avant de s'engager à quoi que ce soit.
+
+    **Une lecture qui écrit une fois**, et c'est assumé : elle note la première
+    ouverture du lien. Une route qui n'écrirait rien ne pourrait pas dire qu'on
+    l'a appelée, et c'est exactement ce que la tournée a besoin de savoir — un
+    lien jamais vu se revisite, un lien vu puis abandonné se relance.
+    """
     try:
         lien = await service.resoudre(session, jeton=jeton)
         vue = await service.apercu(session, handover=lien)
+        await service.marquer_ouvert(session, handover=lien)
     except service.HandoverUnknown as erreur:
         raise _traduire(erreur) from erreur
 
+    await session.commit()
     return ApercuDeLaFiche(
         business_name=vue.business.name,
         address=vue.business.address,
@@ -211,6 +219,14 @@ async def claim_handover(
         service.TermsNotAccepted,
         auth_service.EmailAlreadyUsed,
     ) as erreur:
+        # **Le refus se note, et il note un état de tournée, pas une erreur.**
+        # Quelqu'un est arrivé jusqu'à l'engagement et s'est arrêté là : c'est
+        # un problème de produit, qui ne se règle ni en revisitant ni en
+        # relançant. `HandoverUnknown` est exclu — un jeton inconnu n'a pas de
+        # ligne à marquer, et une expiration n'est pas un blocage.
+        if not isinstance(erreur, service.HandoverUnknown):
+            await service.marquer_bloque(session, handover=lien)
+            await session.commit()
         raise _traduire(erreur) from erreur
 
     await session.commit()

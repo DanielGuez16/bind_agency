@@ -91,6 +91,29 @@ class BusinessHandover(UUIDPrimaryKey, Base):
     accepted_terms_version: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
 
     revoked_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
+    #: Quand quelqu'un a ouvert le lien pour la première fois.
+    #:
+    #: **La seule chose qui sépare deux conduites opposées.** Un lien jamais vu
+    #: et un lien vu puis abandonné rendaient exactement la même ligne de suivi,
+    #: et ce sont précisément les deux cas où l'on ne fait pas la même chose :
+    #: le premier se revisite — personne n'a rien vu — le second se relance.
+    #:
+    #: La première ouverture et non la dernière : ce qu'on mesure est « quelqu'un
+    #: a-t-il regardé », pas « quand pour la dernière fois ». Une visite du
+    #: démarcheur qui rouvre le lien pour vérifier ne doit pas effacer la trace
+    #: de la vraie.
+    opened_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
+    #: Quand la prise en main a été **tentée et refusée** pour la dernière fois.
+    #:
+    #: C'est le troisième état, et il se lit sans que l'écran ait rien à
+    #: rapporter : une tentative refusée est une personne arrivée jusqu'à
+    #: l'engagement — mot de passe, conditions — et bloquée là. Ce n'est pas un
+    #: problème de tournée, c'est un problème de produit, et les deux ne se
+    #: traitent pas pareil.
+    #:
+    #: La dernière et non la première : ce qu'on veut savoir est si le blocage
+    #: dure encore, pas quand il a commencé.
+    blocked_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
 
     __table_args__ = (
         sa.UniqueConstraint("token_hash"),

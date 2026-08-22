@@ -5,7 +5,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
-from app.models.enums import BusinessStatus, HandoverChannel, Locale
+from app.models.enums import BusinessStatus, HandoverChannel
+from app.services.handover import EtatDeLaTournee, Locale
 
 
 class JetonACreer(BaseModel):
@@ -102,4 +103,24 @@ class LigneDeSuiviRead(BaseModel):
     expires_at: datetime | None
     used_at: datetime | None
     revoked_at: datetime | None
+    #: Par où le lien est parvenu : le QR de la tablette — le décideur était
+    #: là — ou un envoi, quand il ne l'était pas. **C'est ce qui départage les
+    #: deux méthodes de démarchage**, et le taux d'activation par voie dit si un
+    #: second passage rapporte plus qu'une relance.
     channel: HandoverChannel | None
+    #: Première ouverture du lien. Nulle : personne ne l'a jamais vu.
+    opened_at: datetime | None
+    #: Dernière prise en main tentée et refusée.
+    blocked_at: datetime | None
+    #: Où en est cette fiche, en un mot qui commande une conduite.
+    #:
+    #: **Trois états pour une fiche non activée, et non un seul.** Jamais
+    #: ouverte → **revisiter**, personne n'a rien vu et une relance s'adresserait
+    #: à un lien que nul ne regarde. Ouverte et abandonnée → **relancer**,
+    #: quelqu'un a regardé et s'est arrêté. Ouverte et bloquée sur l'engagement
+    #: → ni l'un ni l'autre : c'est le produit qui coince, mot de passe ou
+    #: conditions, et le démarchage n'y peut rien.
+    #:
+    #: Dérivé des dates, jamais stocké : une colonne d'état finirait par les
+    #: contredire.
+    etat: EtatDeLaTournee
