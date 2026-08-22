@@ -1576,6 +1576,17 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       accident. Trouvée par `bind-agency-1b`, qui a inventorié ses onze PR après
       le signalement*
 
+- [ ] **`prepared_by` manque sur la ligne de suivi**
+      *La planche a une colonne « prepared by ». Sur une tournée à deux
+      personnes, c'est ce qui permet de comparer les méthodes. Un nom et non un
+      identifiant, sinon l'écran devra recharger les comptes pour une colonne.
+      Demande effacée par erreur en #217 et remise ici : aucune autre ligne du
+      fichier ne la portait*
+- [ ] **`HandoverChannel` n'a pas de valeur pour le SMS**
+      *Il vaut `qr` ou `email`, et la planche montre aussi « by text ». Le
+      ranger sous `email` ferait mentir la colonne qui compare justement les
+      voies. Rien à faire tant que l'envoi par SMS n'existe pas. Effacée par
+      erreur en #217, remise ici*
 - [ ] **Neuf planches d'écrans portent encore la v1.0**
       *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
       passés en v3, dans la palette Ambre. Les autres suivent l'ordre du

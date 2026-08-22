@@ -8378,3 +8378,77 @@ Le serveur sert `etat`, les deux sont retirées, et une garde vérifie que l'éc
 ne lit plus aucune des quatre dates pour décider d'un état. Elle vise les champs
 et non le nom de la fonction : une dérivation réécrite sous un autre nom
 passerait une garde qui ne chercherait que `etatDeLaFiche`.
+
+---
+
+## 2026-08-22 — Une mise au propre qui effaçait le travail des autres
+
+**Trois PR ont supprimé du travail qu'elles ne touchaient pas.** #212 a effacé
+vingt-six lignes de `TASKS.md` — dont deux demandes de champs en attente à
+l'API. #217 a fait pire : trente et une lignes de plus, six clés de traduction
+par langue, et **trois fichiers source** — la tournée d'une session voisine,
+livrée deux heures plus tôt.
+
+**Rien ne l'a signalé.** La suite était verte : les tests partaient avec le code
+qu'ils éprouvaient. Aucun type n'a manqué, aucun écran ne s'est cassé. Une
+suppression complète et cohérente ne casse rien, et c'est ce qui la rend
+invisible. C'est une session voisine qui a vu ses lignes de `TASKS.md` manquer.
+
+**La cause est une commande.** La mise au propre avant PR faisait :
+
+```
+git checkout -B branche origin/main     # à T1
+… travail …
+git reset --soft origin/main            # à T2
+git add -A && git commit
+```
+
+`git reset --soft` déplace HEAD sur le **nouveau** `origin/main` en gardant
+l'arbre de travail — lequel porte encore l'état T1 des fichiers non touchés.
+`git add -A` enregistre alors **le retrait de tout ce qui a été fusionné entre
+T1 et T2**. Plus les sessions voisines livrent vite, plus la fenêtre est large.
+
+La correction : on se remet à la **base de fusion**, pas à la tête qui bouge.
+
+```
+git reset --soft "$(git merge-base HEAD origin/main)"
+```
+
+**Et la vérification a dû être corrigée en s'en servant.** La première version
+comparait le commit à son parent :
+
+```
+git show --numstat HEAD | awk '$1==0 && $2>0 {print $3}'
+```
+
+Elle rend « rien à signaler » sur une branche dont la base a vieilli, puisque le
+parent est l'ancien `main`. Elle a laissé passer, dans la PR même qui corrigeait
+le défaut, la suppression de l'écran des plans. Ce qu'il faut comparer est
+`main` **d'aujourd'hui** :
+
+```
+git fetch -q origin
+git diff --numstat origin/main HEAD | awk '$1==0 && $2>0 {print "  perdu :", $3}'
+```
+
+Une garde éprouvée sur le cas qu'on avait en tête et non sur ceux qu'elle doit
+attraper : c'est le troisième exemplaire cette semaine, et celui-ci était le
+mien.
+
+**`TASKS.md` est une liste, pas un état** — la règle est de la session voisine et
+elle vaut d'être reprise. Deux sessions y ajoutent des lignes différentes et
+aucune n'a de raison d'écraser l'autre ; un conflit s'y résout en gardant les
+deux côtés, et `--ours` comme `--theirs` y sont presque toujours le mauvais
+geste. C'est le canal qui a livré quatre rondes de champs en deux jours.
+
+**Ce qui est remis ici, et ce qui ne l'est pas.** La tournée est restaurée par
+son autrice en #221, **sans sa dérivation d'état** : le serveur sert `etat`
+depuis #218, et un second calcul côté client divergerait — restaurer verbatim
+aurait réintroduit le défaut avec le code. La plupart des entrées de `TASKS.md`
+ont été réécrites entre-temps ; seules deux demandes n'existaient plus nulle
+part, et elles reviennent ici.
+
+**Un défaut trouvé en restaurant.** La garde des pronoms genrés ne mordait pas
+sur « himself » : `\bhim\b` s'arrête à une frontière de mot que les lettres
+suivantes suppriment. La forme réfléchie était la quatrième façon d'écrire la
+même faute.
