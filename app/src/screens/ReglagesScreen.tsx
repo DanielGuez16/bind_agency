@@ -51,6 +51,8 @@ import { formatDate } from '../format';
 import { useI18n, type SupportedLocale } from '../i18n';
 import { trousseauDisponible, useSession } from '../session';
 import { useTheme } from '../theme';
+import { SelecteurDeSalon } from '../shell/SelecteurDeSalon';
+import { useMonCommerce } from '../shell/useMonCommerce';
 import { HealthScreen } from './HealthScreen';
 
 /** Le fuseau du téléphone, résolu une fois. */
@@ -92,6 +94,13 @@ export function ReglagesScreen() {
             d'un commerçant est une chaîne oubliée — c'en était une. */}
         <DataRow label={t('auth.role')} value={role ? t(`roles.${role}`) : ''} />
       </View>
+
+      {/* **Le choix du salon, pour qui en a deux.** La barre latérale le porte
+          aussi, mais elle n'existe qu'en bureau : sur un téléphone, ce serait
+          le seul endroit où changer de salon. Un gérant qui rattache une
+          seconde adresse doit pouvoir l'ouvrir depuis l'appareil qu'il a en
+          main, et c'est le comptoir qui décide lequel. */}
+      <SelecteurDeSalonDeCeCompte />
 
       <View style={{ gap: 10 }} testID="preferences">
         <Texte variante="type.label" couleur="ink.soft">
@@ -175,6 +184,32 @@ export function ReglagesScreen() {
         ) : null}
       </View>
     </ScrollView>
+  );
+}
+
+/**
+ * Le choix du salon, quand la session est celle d'un commerce.
+ *
+ * **Rendu seulement là où il a un sens.** Une créatrice n'a pas de salon, et un
+ * gérant qui n'en a qu'un n'a rien à choisir — le sélecteur se tait de
+ * lui-même dans les deux cas, plutôt que d'occuper la place d'un réglage.
+ */
+function SelecteurDeSalonDeCeCompte() {
+  const session = useSession();
+  const commerce = session.etat === 'connecte' && session.utilisateur.role === 'business_member';
+  if (!commerce) return null;
+  return <SelecteurDansLesReglages />;
+}
+
+function SelecteurDansLesReglages() {
+  const { commerces, businessId, choisir } = useMonCommerce();
+  return (
+    <SelecteurDeSalon
+      commerces={commerces}
+      choisi={businessId}
+      onChoisir={choisir}
+      testID="selecteur-de-salon-reglages"
+    />
   );
 }
 

@@ -9002,3 +9002,47 @@ rabattre sur « libre ».
 implémentation qui rend la bonne feuille avec la mauvaise phrase passe tous les
 tests de structure — bouton présent, route correcte, feuille ouverte. C'est
 exactement l'écran que cette planche remplace.
+## 2026-08-22 — Le salon qu'on regarde vit dans un contexte, pas dans quatre requêtes
+
+Le rattachement d'une fiche a rendu le cas réel : un gérant peut avoir deux
+salons, le second est réservable par les créatrices, et la coquille prenait
+`mesCommerces[0]` sans offrir de choix.
+
+**La difficulté n'était pas le contrôle, c'était la source.** `useMonCommerce`
+est appelé par quatre endroits — la navigation, la pause du commerce, la reprise
+du compte — et chacun montait **sa propre requête**. Tant que la règle était « le
+premier de la liste », les quatre tombaient d'accord par hasard. Dès qu'un choix
+existe, quatre copies indépendantes divergent : la barre latérale afficherait un
+salon pendant qu'un autre écran en met un second en pause. Le fournisseur porte
+donc la liste **et** le choix, une fois pour toute la coquille, et le hook lève
+hors de lui — retomber sur une requête locale recréerait la seconde source de
+vérité qu'il existe pour empêcher.
+
+C'est le genre de divergence qui ne se voit pas en développement, où l'on n'a
+qu'un salon : elle n'apparaît que chez le seul utilisateur concerné.
+
+**Un identifiant retenu ne fait jamais autorité.** Il est confronté à la liste
+d'appartenance à chaque montage ; un salon qu'on a quitté ou dont l'accès a été
+révoqué ne reste pas choisi, et l'on retombe sur le premier — le comportement
+d'avant le sélecteur, donc rien ne s'aggrave si la mémoire ment. Le choix est
+retenu par appareil, comme le repli de la barre, et pour la même raison : un
+gérant ouvre l'application sur le salon où il travaille ce jour-là, et le lui
+faire rechoisir à chaque démarrage transformerait un choix rare en geste
+quotidien.
+
+**Le contrôle est à deux endroits, et ce n'est pas une redondance.** La barre
+latérale porte le nom, donc elle porte le choix — c'est là qu'on lit le nom,
+c'est là qu'on en change, et la liste se déplie sous lui plutôt que d'ouvrir un
+écran. Mais **la barre latérale n'existe qu'en bureau** : sur un téléphone, ce
+serait le seul endroit où changer de salon, et il n'y en aurait aucun. Les
+réglages portent donc le même sélecteur, pour les deux mises en page.
+
+**Il ne se rend qu'à partir de deux salons.** Un contrôle qui n'offre aucun choix
+occupe la place et fait douter — c'est la règle du bouton qu'on retire plutôt que
+de griser. Avec un seul salon, le nom reste ce qu'il a toujours été.
+
+**Le salon courant est marqué, pas retiré de la liste.** Le retirer ferait lire
+la liste comme « les autres », et on ne saurait plus lequel on regarde en
+l'ouvrant. Le test porte sur `accessibilityState.selected` et non sur la coche :
+c'est ce qu'un lecteur d'écran annonce, et vérifier le glyphe éprouverait le
+dessin plutôt que ce que l'écran affirme.

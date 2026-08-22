@@ -54,6 +54,7 @@ import { Texte } from '../components/Texte';
 import { useI18n } from '../i18n';
 import { breakpoint, radius, spacing, useColors, useTheme } from '../theme';
 import { useRepli } from './preferenceDeRepli';
+import { SelecteurDeSalon, type SalonAChoisir } from './SelecteurDeSalon';
 
 /** La hauteur d'une ligne de navigation. L'administration est plus dense. */
 const HAUTEUR_DE_LIGNE = { creator: 44, merchant: 44, admin: 38 } as const;
@@ -61,6 +62,16 @@ const HAUTEUR_DE_LIGNE = { creator: 44, merchant: 44, admin: 38 } as const;
 export type ContexteDeBarre = {
   /** Le nom du commerce, ou celui de la personne. Ce qui situe la session. */
   intitule?: string | null;
+  /**
+   * Les salons entre lesquels choisir, quand il y en a plus d'un.
+   *
+   * Vide ou à un seul élément, l'intitulé reste ce qu'il était : une ligne qui
+   * situe la session. Un contrôle qui n'offre aucun choix occupe la place et
+   * fait douter — c'est la règle du bouton qu'on retire plutôt que de griser.
+   */
+  salons?: readonly SalonAChoisir[];
+  choisi?: string | null;
+  onChoisir?: (id: string) => void;
 };
 
 export function BarreLaterale({
@@ -68,11 +79,16 @@ export function BarreLaterale({
   descriptors,
   navigation,
   intitule,
+  salons = [],
+  choisi = null,
+  onChoisir,
 }: BottomTabBarProps & ContexteDeBarre) {
   const c = useColors();
   const { role, matiere } = useTheme();
   const { t } = useI18n();
   const [replie, basculer] = useRepli();
+  const [deplie, setDeplie] = useState(false);
+  const choisissable = salons.length > 1 && Boolean(onChoisir);
   /**
    * La ligne dont l'étiquette est visible, avec de quoi la placer.
    *
@@ -149,16 +165,61 @@ export function BarreLaterale({
           // orange dans les deux cas : c'est la seule couleur du logotype.
           <Marque taille={15} variante={matiere.surface === 'bg.inverse' ? 'blanc' : 'encre'} />
         )}
+        {/* **Le nom devient une porte quand il y a un choix derrière.** Avec
+            un seul salon il reste ce qu'il a toujours été : une ligne qui situe
+            la session, et rien à presser. La liste se déplie sous lui plutôt
+            que d'ouvrir un écran — c'est ici qu'on lit le nom, c'est ici qu'on
+            en change. */}
         {!replie && intitule ? (
-          <Texte
-            variante='type.caption'
-            couleur={matiere.texteSourd}
-            ellipseSurNomPropre
-          >
-            {intitule}
-          </Texte>
+          choisissable ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ expanded: deplie }}
+              onPress={() => setDeplie((ouvert) => !ouvert)}
+              testID="changer-de-salon"
+              style={({ pressed }) => ({
+                opacity: pressed ? 0.7 : 1,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 6,
+                minHeight: 32,
+              })}
+            >
+              <Texte variante='type.caption' couleur={matiere.texteSourd} ellipseSurNomPropre>
+                {intitule}
+              </Texte>
+              {/* Un seul chevron dans le système, tourné : il n'y a pas de
+                  variante haut/bas, et en inventer une pour un état ouvert
+                  ajouterait un glyphe qu'aucun autre écran ne partagerait. */}
+              <View style={{ transform: [{ rotate: deplie ? '-90deg' : '90deg' }] }}>
+                <Icone nom="chevron" couleur={matiere.texteSourd} taille={14} />
+              </View>
+            </Pressable>
+          ) : (
+            <Texte
+              variante='type.caption'
+              couleur={matiere.texteSourd}
+              ellipseSurNomPropre
+            >
+              {intitule}
+            </Texte>
+          )
         ) : null}
       </View>
+
+      {!replie && choisissable && deplie ? (
+        <View style={{ paddingHorizontal: spacing['space.2'], paddingBottom: spacing['space.3'] }}>
+          <SelecteurDeSalon
+            commerces={salons}
+            choisi={choisi}
+            onChoisir={(id) => {
+              onChoisir?.(id);
+              setDeplie(false);
+            }}
+            testID="selecteur-de-salon-barre"
+          />
+        </View>
+      ) : null}
 
       <ScrollView
         style={{ flex: 1 }}
