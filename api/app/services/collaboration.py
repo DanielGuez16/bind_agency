@@ -81,6 +81,8 @@ TRANSITIONS: dict[CollaborationStatus, frozenset[CollaborationStatus]] = {
             # `demander_une_nouvelle_soumission` — ne peuvent la prendre. La
             # table dit ce qui est possible, l'appelant dit qui a le droit.
             CollaborationStatus.UNFULFILLED,
+            # Même réserve, même raison : seul `fermer_sans_faute` la prend.
+            CollaborationStatus.CLOSED_NO_FAULT,
         }
     ),
     # `under_review` figure dans les statuts de `SPEC.md` §2.6 mais pas dans le
@@ -95,12 +97,19 @@ TRANSITIONS: dict[CollaborationStatus, frozenset[CollaborationStatus]] = {
             CollaborationStatus.RESUBMIT_REQUESTED,
             # Même arbitrage, même réserve.
             CollaborationStatus.UNFULFILLED,
+            CollaborationStatus.CLOSED_NO_FAULT,
         }
     ),
     CollaborationStatus.RESUBMIT_REQUESTED: frozenset(
         {
             CollaborationStatus.SUBMITTED,
             CollaborationStatus.UNFULFILLED,
+            # **C'est ici qu'elle sert le plus.** Le drapeau de revue humaine se
+            # lève dans `demander_une_nouvelle_soumission`, qui laisse le
+            # dossier en `resubmit_requested` : un dossier refusé trois fois
+            # pour le même motif est exactement dans cet état-là quand
+            # l'arbitre l'ouvre.
+            CollaborationStatus.CLOSED_NO_FAULT,
             # **Les deux arrêtes de l'arbitrage manquaient ici**, et c'est le
             # seul état qui atteint réellement la revue humaine : le drapeau se
             # lève dans `demander_une_nouvelle_soumission`, qui laisse le
@@ -123,6 +132,7 @@ TRANSITIONS: dict[CollaborationStatus, frozenset[CollaborationStatus]] = {
     # « terminal » et « oublié » doit se voir.
     CollaborationStatus.APPROVED: frozenset(),
     CollaborationStatus.UNFULFILLED: frozenset(),
+    CollaborationStatus.CLOSED_NO_FAULT: frozenset(),
 }
 
 
@@ -245,6 +255,20 @@ EVENEMENTS_PAR_ISSUE: dict[CollaborationStatus, tuple[ReliabilityEventType, ...]
     ),
     CollaborationStatus.RESUBMIT_REQUESTED: (ReliabilityEventType.RESUBMIT_REQUIRED,),
     CollaborationStatus.UNFULFILLED: (ReliabilityEventType.UNFULFILLED,),
+    # **`closed_no_fault` n'y figure pas, et c'est le point de l'issue.** Aucun
+    # événement, ni positif ni négatif : le dossier se ferme sans être mis au
+    # débit de personne.
+    #
+    # Un événement neutre de poids nul serait presque la même chose, et pas
+    # tout à fait : `evaluer` rend un score **nul** tant qu'aucun événement
+    # n'existe, et un nombre dès qu'il y en a un. Une créatrice dont l'unique
+    # événement serait cette clôture passerait donc de « pas encore de score »
+    # — neutre, condition ignorée — à un score de départ comparable au seuil
+    # d'un palier. Ne rien écrire est la seule façon de ne rien changer.
+    #
+    # Le signal produit — un motif qui revient trois fois sur beaucoup de
+    # dossiers — vit ailleurs, dans le compte rendu à l'administration : c'est
+    # une question d'exigence mal formulée, pas de fiabilité de personne.
 }
 
 
@@ -266,6 +290,10 @@ NOTIFICATION_PAR_ISSUE = {
     CollaborationStatus.APPROVED: "collaboration.approved",
     CollaborationStatus.RESUBMIT_REQUESTED: "collaboration.resubmit",
     CollaborationStatus.UNFULFILLED: "collaboration.unfulfilled",
+    # **Elle est prévenue, et c'est une bonne nouvelle à annoncer.** Sans
+    # message, une créatrice qui a essayé trois fois attend une réponse qui ne
+    # viendra jamais et croit son dossier encore ouvert.
+    CollaborationStatus.CLOSED_NO_FAULT: "collaboration.closed_no_fault",
 }
 
 
@@ -437,6 +465,42 @@ async def constater_non_honoree(
     )
 
 
+async def fermer_sans_faute(
+    session: AsyncSession,
+    *,
+    collaboration: Collaboration,
+    actor: audit.Actor,
+    reason: str,
+    note: str | None = None,
+) -> Collaboration:
+    """Clore sans mettre le dossier au débit de personne. **Arbitrage seul.**
+
+    La quatrième issue, et la seule qui n'accuse pas. Trois refus pour le
+    **même** motif ne disent pas qu'une créatrice est de mauvaise foi : ils
+    disent que la demande n'a jamais été comprise, et que la liste fermée de
+    motifs n'a pas su la porter. Trois motifs différents disent l'inverse — et
+    c'est `unfulfilled` qui les tranche.
+
+    Refuser punirait quelqu'un pour un défaut du produit ; approuver ferait
+    payer au salon une publication qu'il n'a pas eue. Le dossier se ferme, le
+    salon garde la prestation telle qu'elle a été donnée, et **aucun événement
+    de fiabilité n'est écrit** — ni positif ni négatif. C'est
+    `EVENEMENTS_PAR_ISSUE` qui le garantit, en ne portant pas cette issue.
+
+    Le motif reste obligatoire. Une clôture sans motif est illisible pour les
+    deux parties, et celle-ci moins que toute autre : c'est précisément le
+    motif qui a échoué qu'il faut nommer, puisque c'est lui qu'on ira corriger.
+    """
+    return await transitionner(
+        session,
+        collaboration=collaboration,
+        vers=CollaborationStatus.CLOSED_NO_FAULT,
+        actor=actor,
+        reason=reason,
+        note=note,
+    )
+
+
 async def expirer_les_echeances(session: AsyncSession, *, limite: int = 500) -> int:
     """Fait tomber en `unfulfilled` ce qui a dépassé son échéance.
 
@@ -593,6 +657,45 @@ class LigneDeFile:
     def dernier_motif(self) -> str | None:
         """Le plus récent, dérivé et non stocké en double."""
         return self.tentatives[-1].motif if self.tentatives else None
+
+    @property
+    def repetitions_du_dernier_motif(self) -> int:
+        """Combien de fois **de suite** le dernier motif a été opposé.
+
+        **De suite, et non en tout.** Un dossier refusé pour la mention, puis
+        pour le format, puis de nouveau pour la mention n'est pas un dossier où
+        la mention n'a jamais été comprise : c'est un dossier où deux choses
+        clochaient. Compter les occurrences rendrait deux, et l'écran
+        proposerait de fermer sans faute là où il faut trancher.
+
+        Zéro quand aucun refus n'a eu lieu. Un quand il y en a eu un seul —
+        jamais zéro dans ce cas, sans quoi « aucune répétition » et « aucun
+        refus » se confondraient.
+        """
+        if not self.tentatives:
+            return 0
+        dernier = self.tentatives[-1].motif
+        compte = 0
+        for tentative in reversed(self.tentatives):
+            if tentative.motif != dernier:
+                break
+            compte += 1
+        return compte
+
+    @property
+    def meme_motif_repete(self) -> bool:
+        """Vrai quand le même motif a été opposé au moins trois fois de suite.
+
+        **Le seuil est celui du produit**, `collaboration_max_attempts` : c'est
+        le nombre de tentatives au bout duquel le dossier sort de la boucle
+        automatique, donc exactement le moment où un arbitre l'ouvre. Le
+        recopier ici en ferait deux, et l'un des deux vieillirait.
+
+        C'est ce drapeau que l'écran d'arbitrage trie : trois fois le même
+        reproche appelle « fermer sans faute », trois reproches différents
+        appellent une décision.
+        """
+        return self.repetitions_du_dernier_motif >= get_settings().collaboration_max_attempts
 
 
 async def derniere_tentative(session, collaboration_id: uuid.UUID) -> Tentative | None:
@@ -811,6 +914,84 @@ async def lister_pour_le_commerce(
         )
     ).all()
     return await _completer(session, lignes)
+
+
+@dataclass(frozen=True, slots=True)
+class MotifQuiRevient:
+    """Un motif, et combien de dossiers l'ont vu se répéter.
+
+    **C'est un signal sur nous, pas sur les créatrices.** Un motif opposé trois
+    fois de suite sur un dossier dit que la demande n'a pas été comprise ; le
+    même motif dans ce cas sur beaucoup de dossiers dit qu'une exigence est mal
+    formulée quelque part — dans le libellé du palier, dans la fiche d'un
+    salon, ou dans le vocabulaire fermé lui-même.
+
+    Deux nombres et non un : `dossiers` compte ceux où le motif s'est répété
+    jusqu'au seuil, `dossiers_touches` tous ceux où il a été opposé au moins
+    une fois. Le rapport entre les deux départage un motif difficile d'un motif
+    incompréhensible — « la mention manque » sur cent dossiers dont deux
+    bouclent n'est pas le même problème que sur douze dossiers dont dix.
+    """
+
+    motif: str
+    dossiers: int
+    dossiers_touches: int
+
+
+async def motifs_qui_reviennent(session: AsyncSession) -> tuple[MotifQuiRevient, ...]:
+    """Les motifs qui se répètent, du plus fréquent au moins fréquent.
+
+    Relu du journal d'audit comme le reste : c'est lui qui porte les demandes de
+    nouvelle soumission, et lui seul est immuable.
+
+    La répétition est comptée **de suite**, avec la même règle que
+    `LigneDeFile.repetitions_du_dernier_motif` — et par la même lecture, pour
+    qu'un chiffre affiché à l'administration ne puisse pas contredire le drapeau
+    affiché à l'arbitre. Deux calculs de la même chose finissent par diverger,
+    et c'est celui qu'on regarde le moins qui ment le plus longtemps.
+    """
+    seuil = get_settings().collaboration_max_attempts
+
+    par_dossier: dict[uuid.UUID, list[str]] = {}
+    for entity_id, reason in await session.execute(
+        sa.select(AuditLog.entity_id, AuditLog.reason)
+        .where(
+            AuditLog.entity_type == AuditedEntity.COLLABORATION.value,
+            AuditLog.to_status == CollaborationStatus.RESUBMIT_REQUESTED.value,
+            AuditLog.reason.is_not(None),
+        )
+        .order_by(AuditLog.occurred_at)
+    ):
+        par_dossier.setdefault(entity_id, []).append(reason)
+
+    boucles: dict[str, int] = {}
+    touches: dict[str, set[uuid.UUID]] = {}
+    for dossier, motifs in par_dossier.items():
+        for motif in set(motifs):
+            touches.setdefault(motif, set()).add(dossier)
+
+        # La plus longue suite d'un même motif, sur ce dossier. On compte le
+        # dossier une fois : c'est un dossier qui boucle, pas trois refus.
+        courant, longueur = None, 0
+        for motif in motifs:
+            longueur = longueur + 1 if motif == courant else 1
+            courant = motif
+            if longueur == seuil:
+                boucles[motif] = boucles.get(motif, 0) + 1
+
+    return tuple(
+        sorted(
+            (
+                MotifQuiRevient(
+                    motif=motif,
+                    dossiers=nombre,
+                    dossiers_touches=len(touches.get(motif, ())),
+                )
+                for motif, nombre in boucles.items()
+            ),
+            key=lambda ligne: (-ligne.dossiers, ligne.motif),
+        )
+    )
 
 
 async def file_de_revue_humaine(

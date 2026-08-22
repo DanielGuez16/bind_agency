@@ -61,6 +61,13 @@ DIAGRAMME = {
     # soumission, qui laisse le dossier en `resubmit_requested`.
     ("resubmit_requested", "approved"),
     ("resubmit_requested", "resubmit_requested"),
+    # La quatrième issue de l'arbitrage. Trois flèches, sur les trois états
+    # qu'un dossier peut occuper quand un arbitre l'ouvre — et celle qui part
+    # de `resubmit_requested` est celle qui sert, puisque c'est là que le
+    # drapeau de revue humaine se lève.
+    ("submitted", "closed_no_fault"),
+    ("under_review", "closed_no_fault"),
+    ("resubmit_requested", "closed_no_fault"),
 }
 
 #: Les seules flèches qu'un arbitre peut emprunter et personne d'autre.
@@ -69,6 +76,9 @@ ARBITRAGE_SEUL = {
     ("under_review", "unfulfilled"),
     ("resubmit_requested", "approved"),
     ("resubmit_requested", "resubmit_requested"),
+    ("submitted", "closed_no_fault"),
+    ("under_review", "closed_no_fault"),
+    ("resubmit_requested", "closed_no_fault"),
 }
 
 

@@ -74,8 +74,15 @@ async def test_les_trois_filtres_partitionnent_ce_qu_ils_couvrent(session: Async
     total = sum(len(s) for s in attendus.values())
     assert total == len(couverts)
 
-    # Et ce que les onglets ne couvrent pas est nommé, pas oublié.
-    assert set(CollaborationStatus) - couverts == {CollaborationStatus.UNFULFILLED}
+    # Et ce que les onglets ne couvrent pas est nommé, pas oublié. Les deux
+    # issues closes s'y trouvent : elles n'appellent plus aucun geste, et un
+    # onglet qui les porterait ferait croire qu'il reste quelque chose à faire.
+    # Elles restent lisibles sans filtre — c'est la raison d'être du filtre
+    # facultatif, éprouvée juste en dessous.
+    assert set(CollaborationStatus) - couverts == {
+        CollaborationStatus.UNFULFILLED,
+        CollaborationStatus.CLOSED_NO_FAULT,
+    }
 
 
 async def test_sans_filtre_la_liste_rend_aussi_le_non_honore(session: AsyncSession) -> None:

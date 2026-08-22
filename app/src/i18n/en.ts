@@ -536,6 +536,7 @@ export const en = {
     resubmit_requested: 'A new post was asked for',
     approved: 'Approved',
     unfulfilled: 'Not fulfilled',
+    closed_no_fault: 'Closed, no fault',
   },
   signaux: {
     anciennete: 'Account age',

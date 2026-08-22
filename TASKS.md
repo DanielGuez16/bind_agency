@@ -1127,6 +1127,17 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       Téléphone au format international, normalisé avant validation ; nom
       dépouillé de ses espaces avant d'être compté ; adresse d'au moins dix
       caractères. 13 tests neufs*
+- [x] **Fermer sans faute : la quatrième issue de l'arbitrage**
+      *`closed_no_fault`, terminale, **sans aucun événement de fiabilité** — ni
+      positif ni négatif. Un événement neutre de poids nul aurait presque suffi
+      et pas tout à fait : `evaluer` rend un score dès qu'un événement existe,
+      et la créatrice serait passée de « pas encore de score » — condition
+      ignorée par les paliers — à un nombre comparable à leur seuil. Ne rien
+      écrire est la seule façon de ne rien changer. `repetitions_du_dernier_
+      motif` et `meme_motif_repete` sur la file, comptés **de suite** et non en
+      tout. `GET /admin/collaborations/motifs-qui-reviennent` compte les
+      dossiers où un motif boucle : un signal sur le produit, pas sur les
+      créatrices. 13 tests neufs, 6 mutations vérifiées*
 - [x] **Le 402 revient sur l'annuaire**
       *Le mode dégradé de la #199 est retiré : il n'avait aucun écran pour
       l'accompagner. L'écran n'affiche « l'annuaire vient avec un abonnement »
