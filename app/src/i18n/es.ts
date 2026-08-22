@@ -998,7 +998,7 @@ export const es: Catalogue = {
     bilanActivees: 'activadas',
     bilanDelai: 'espera mediana hasta activar',
     bilanHeures: '{{n}} h',
-    bilanEcart: 'Entregadas en mano al responsable: {{enMain}} % se activan. Enviadas por enlace: {{parLien}} %. Conviene mantener las dos vías — un enlace vale más que una visita perdida — pero la diferencia dice que volver a pasar para encontrar al responsable rinde más que insistir.',
+    bilanEcart: 'Entregadas en persona: {{enMain}} % se activan. Enviadas por enlace: {{parLien}} %. Conviene mantener las dos vías — un enlace vale más que una visita perdida — pero la diferencia dice que volver a pasar para encontrar al responsable rinde más que insistir.',
     preparee: 'Preparada el {{quand}}',
     aScanner: 'Que el responsable escanee esto',
     expire: 'Sirve una vez, hasta el {{quand}}',

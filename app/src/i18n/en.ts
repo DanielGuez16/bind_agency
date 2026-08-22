@@ -1063,7 +1063,7 @@ export const en = {
     bilanActivees: 'activated',
     bilanDelai: 'median wait to activate',
     bilanHeures: '{{n}} h',
-    bilanEcart: 'Handed to the manager himself: {{enMain}} % activate. Sent by link: {{parLien}} %. Both routes are worth keeping — a link beats a lost visit — but the gap says a second pass to catch the manager pays more than a reminder.',
+    bilanEcart: 'Handed over in person: {{enMain}} % activate. Sent by link: {{parLien}} %. Both routes are worth keeping — a link beats a lost visit — but the gap says a second pass to catch the manager pays more than a reminder.',
     preparee: 'Prepared {{quand}}',
     aScanner: 'Have the manager scan this',
     expire: 'Works once, until {{quand}}',
