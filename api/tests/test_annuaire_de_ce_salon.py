@@ -32,6 +32,7 @@ from app.models.enums import (
     UserRole,
     VerificationStatus,
 )
+from app.schemas.directory import CreateurVuRead
 from app.schemas.tier_offers import TierOfferCreate
 from app.services import directory, reliability
 from app.services import metrics as metrics_service
@@ -505,3 +506,51 @@ async def test_le_filtre_s_applique_a_la_liste_et_non_a_la_page(
         "découpe, et il n'a vu que les créatrices que la page contenait"
     )
     assert all(ContentFormat.REEL in v.paliers_ouverts for v in page.createurs)
+
+
+# --------------------------------------------------------------------------
+# ce qui ne part jamais vers un salon
+# --------------------------------------------------------------------------
+
+
+async def test_l_etat_civil_ne_part_pas_vers_un_salon(session: AsyncSession) -> None:
+    """**La garantie était tenue par une absence, et rien ne la tenait.**
+
+    Le pseudonyme est l'identité de cet écran : c'est ce qu'un salon reconnaît,
+    et c'est ce qui suffit pour aller voir son travail. L'état civil de cent
+    vingt-huit personnes n'a rien à faire chez quelqu'un qui ne les a jamais
+    rencontrées — il arrive à la réservation, quand une créatrice a choisi ce
+    salon.
+
+    Le retrait a eu lieu ; **aucun test ne l'éprouvait**. Ajouter `first_name`
+    au schéma « pour la commodité de l'écran » aurait rendu la donnée à tout
+    salon abonné sans faire tomber quoi que ce soit.
+
+    **Le décor pose un vrai nom, et c'est ce qui le rend probant.** Un profil
+    sans prénom passerait ce test quelle que soit l'implémentation : c'est le
+    décor qui pourrait être produit par le code fautif, et il ne prouverait
+    rien. Le pseudonyme est distinct du nom pour la même raison — un handle qui
+    contiendrait le prénom rendrait les deux assertions indiscernables.
+    """
+    decor = await monter_le_decor(session, tier_id=STORY)
+    elle = await creatrice(session, ou=TOUT_PRES, followers=60_000, collabs=2)
+    await session.execute(
+        sa.update(CreatorProfile)
+        .where(CreatorProfile.user_id == elle.id)
+        .values(first_name="Amandine", last_name="Belrose")
+    )
+    await session.flush()
+
+    page = await directory.annuaire(session, business=decor["business"])
+
+    vue = next(v for v in page.createurs if v.creator_id == elle.id)
+    rendu = CreateurVuRead.model_validate(vue).model_dump_json()
+
+    assert "Amandine" not in rendu
+    assert "Belrose" not in rendu
+    # **Et le pseudonyme est bien là.** Sans cette ligne, un annuaire qui ne
+    # rendrait rien du tout — une fiche vide, un champ supprimé par erreur —
+    # passerait les deux assertions ci-dessus en ne garantissant rien.
+    handle = vue.comptes[0].handle
+    assert handle
+    assert handle in rendu

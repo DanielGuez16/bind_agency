@@ -1573,6 +1573,35 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       L'exception du jour — couper une place, fermer — vit sur l'écran du matin
       et écrit dans la même donnée que la semaine type, sans second modèle.
       1142 tests verts, 5 mutations*
+- [x] **La confirmation d'adresse rendait du JSON dans un navigateur**
+      *`{"id":"…","email":"…","role":"creator"}` sur le **tout premier geste**
+      que quelqu'un fait avec BIND, et sur le seul écran qui décide s'il
+      continue. La mécanique était juste — le jeton consommé, l'adresse
+      vérifiée — c'est ce qu'il voyait qui était faux.*
+      *Une page HTML sobre, sans rien d'extérieur : ni feuille de style
+      distante, ni police, ni image. Elle s'ouvre parfois dans le navigateur
+      intégré d'un client de messagerie, sur le réseau d'un salon, et une page
+      qui dépend d'un second aller-retour est une page qui reste blanche.*
+      ***Le refus reçoit le même soin, et c'est là que le gain est le plus
+      grand** : un jeton déjà consommé est presque toujours quelqu'un qui a
+      cliqué deux fois, et `{"detail":"email_verification_invalid"}` se lit
+      comme une panne. Le code reste 400 — le navigateur n'en fait rien, et
+      mentir sur le statut troublerait ce qui lit vraiment les codes.*
+      *La langue vient du compte quand on sait qui lit, de l'en-tête du
+      navigateur sinon : un jeton inconnu ne désigne personne, c'est même la
+      raison pour laquelle il est refusé. Les textes sont au catalogue serveur,
+      dans les deux langues. 4 tests, 3 mutations*
+- [x] **Le nom civil des créatrices : retiré depuis, et désormais éprouvé**
+      *Vérifié avant d'agir, et le constat était périmé : `CreateurVuRead` ne
+      porte ni prénom ni nom depuis la #201, et aucune autre réponse servie à
+      un commerce ne les porte — la file d'arbitrage montre `creator_handle`.
+      La donnée ne partait plus.*
+      ***Mais rien ne le tenait.** La garantie reposait sur une absence : ajouter
+      `first_name` au schéma « pour la commodité de l'écran » l'aurait rendue à
+      tout salon abonné sans faire tomber quoi que ce soit. Un test l'épingle
+      maintenant, sur un décor qui pose un vrai nom — un profil sans prénom
+      passerait quelle que soit l'implémentation. Mutation vérifiée sur la fuite
+      complète : colonne au select, champ au service, champ au schéma.*
 - [ ] **Le bandeau ne devient pas une ligne de confirmation**
       *La planche veut qu'il devienne « vous êtes en ligne · 41 créatrices
       peuvent vous réserver », puis disparaisse au bout de sept jours. Deux

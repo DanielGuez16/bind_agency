@@ -9383,3 +9383,32 @@ l'avaient fait crier au loup.
 rougissait qu'aux heures où les deux formes se chevauchent. La suite passait le
 jour et tombait la nuit sans que rien n'ait changé dans le code. Ancrée sur
 « aucun chiffre devant », et vérifiée sous quatre fuseaux.
+## 2026-08-22 — La confirmation d'adresse rend une page, pas du JSON
+
+Le lien vise l'API et non l'application : celle-ci n'est pas forcément
+installée, et aucun navigateur ne sait ouvrir un schéma privé à coup sûr. Cette
+décision-là était bonne et ne change pas. Ce qui change est ce que l'API répond.
+
+Elle rendait `UserRead`. Quelqu'un qui cliquait voyait
+`{"id":"…","email":"…","role":"creator"}` — sur le tout premier geste qu'il fait
+avec le produit, et sur le seul écran qui décide s'il continue.
+
+**Une page, pas une redirection.** La redirection était l'autre forme possible,
+et elle bute sur le cas de tout le monde à la première ouverture : l'application
+n'est pas installée. Ce qui a fait choisir l'API plutôt que l'app vaut ici aussi
+— la page répond toujours.
+
+**Rien d'extérieur dans cette page.** Elle s'ouvre parfois dans le navigateur
+intégré d'un client de messagerie, sur le réseau d'un salon : une feuille de
+style distante ou une police téléchargée en ferait une page blanche.
+
+**Le refus reçoit le même soin.** Un jeton déjà consommé est presque toujours
+quelqu'un qui a cliqué deux fois ; `{"detail":"email_verification_invalid"}` se
+lit comme une panne et fait renoncer quelqu'un dont l'adresse est confirmée. Le
+code HTTP reste 400 : le navigateur n'en fait rien, et mentir sur le statut
+troublerait ce qui lit vraiment les codes.
+
+**Hors du schéma public.** Une page n'a pas de contrat d'API, et la laisser dans
+`openapi.json` ferait croire à un client qu'il peut en lire la réponse. Elle
+reste dans l'inventaire des routes publiques — celui-ci parcourt les routes de
+l'application, pas le schéma, et une page publique doit continuer d'y figurer.
