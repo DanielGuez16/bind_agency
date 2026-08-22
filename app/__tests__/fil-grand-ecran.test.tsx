@@ -190,3 +190,66 @@ describe('le mur ne monte plus tout ce qu’il a', () => {
     await vue.unmount();
   });
 });
+
+
+/**
+ * Le fil traverse la bascule de la position sans se démonter.
+ *
+ * **Le défaut que ce test épingle a existé, et il a coûté deux exécutions
+ * d'intégration continue.** Le mur en liste a amené un crochet dans `FilScreen`,
+ * posé *après* le retour anticipé « pas de position ». Il n'existait donc pas
+ * tant qu'aucune position n'était accordée, puis apparaissait au premier
+ * relevé : React voyait plus de crochets qu'au rendu précédent, levait, et
+ * l'application entière disparaissait — barre d'onglets comprise, puisque rien
+ * ne rattrape une erreur de rendu à cet endroit.
+ *
+ * **Aucun décor d'ici ne le traversait** : ils partent tous d'une position
+ * accordée, et un composant dont les crochets sont mal ordonnés rend
+ * parfaitement bien tant qu'on ne change pas de branche. C'est l'e2e qui l'a
+ * dit, sur un écran qui ne montrait plus rien.
+ */
+describe('le fil traverse la bascule de la position', () => {
+  it('passe de « pas de position » au mur sans lever', async () => {
+    mockLargeur = 390;
+    const fil = {
+      commerces: [commerce('b1')],
+      obstacles: [],
+      rayons: [],
+      quartiers: [
+        { quartier: 'wynwood', commerces: 1, prestations: 1, distance_metres: 420 },
+      ],
+      categories: [],
+      total_prestations: 1,
+      prochain_palier: null,
+    };
+    const api = new ApiClient({
+      baseUrl: 'https://api.test',
+      coffre: { lire: async () => null, ecrire: async () => {} },
+      fetchImpl: async () => ({ ok: true, status: 200, json: async () => fil }) as Response,
+    });
+    const ecran = (position: { longitude: number; latitude: number } | null) => (
+      <I18nProvider initialLocale="en">
+        <ThemeProvider role="creator">
+          <ApiProvider client={api}>
+            <FilScreen
+              position={position}
+              onDemanderLaPosition={() => {}}
+              onOuvrirLeCommerce={() => {}}
+              onConnecterUnReseau={() => {}}
+              onVoirMonAudience={() => {}}
+              onVoirMesPaliers={() => {}}
+            />
+          </ApiProvider>
+        </ThemeProvider>
+      </I18nProvider>
+    );
+
+    // Sans position d'abord : c'est l'état où l'application s'ouvre.
+    const vue = await render(ecran(null));
+    // Puis le relevé arrive, et la branche change.
+    await vue.rerender(ecran({ longitude: -80.19, latitude: 25.76 }));
+
+    await waitFor(() => expect(screen.getByTestId('le-mur')).toBeTruthy());
+    await vue.unmount();
+  });
+});
