@@ -342,9 +342,14 @@ export function Ecran<T>({
       {enListe ? (
         // **L'état nominal garde son repère.** Il ne tient pas sur le défileur,
         // qui porte déjà celui de l'écran ; et sans lui, la table des quatre
-        // états ne verrait plus le fil en état nominal. Sans marge ni fond : ce
-        // nœud existe pour être nommé, pas pour se voir.
-        <View testID="etat-nominal" style={{ flex: 1 }}>
+        // états ne verrait plus le fil en état nominal.
+        //
+        // **`minHeight: 0` n'est pas décoratif.** Sans lui, ce conteneur prend
+        // la hauteur de son contenu au lieu de celle qui lui est donnée : la
+        // liste ne défile plus, elle s'allonge, et sur le web elle pousse la
+        // barre d'onglets hors de l'écran. Le défileur du bloc n'avait pas ce
+        // problème parce qu'il était l'enfant direct de la racine.
+        <View testID="etat-nominal" style={{ flex: 1, minHeight: 0 }}>
         <FlatList
           testID={enListe.testID ?? 'corps-en-liste'}
           data={enListe.elements}
@@ -364,9 +369,11 @@ export function Ecran<T>({
           // remplissent largement l'écran le plus haut, et en garder autant de
           // part et d'autre laisse le défilement rapide sans montrer de blanc.
           // Plus haut, on remonte vers le comportement d'avant.
+          // Elle remplit ce qu'on lui donne et ne le dépasse pas : c'est ce
+          // qui fait défiler plutôt que grandir.
+          style={{ flex: 1 }}
           initialNumToRender={6}
           windowSize={5}
-          removeClippedSubviews
         />
         </View>
       ) : (
