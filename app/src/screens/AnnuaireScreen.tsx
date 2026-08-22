@@ -37,6 +37,7 @@ import {
 } from '../api';
 import {
   Apparition,
+  Button,
   EmptyState,
   Filet,
   Icone,
@@ -65,7 +66,23 @@ const SANS_ABONNEMENT = 'subscription_required';
  */
 const DEJA_SU = 0;
 
-export function AnnuaireScreen({ businessId }: { businessId: string }) {
+export function AnnuaireScreen({
+  businessId,
+  onVoirLAbonnement,
+}: {
+  businessId: string;
+  /**
+   * Le chemin vers l'abonnement, depuis le mur qui le réclame.
+   *
+   * **Le refus menait nulle part.** L'écran interceptait bien le 402 et
+   * expliquait qu'un abonnement manque — puis s'arrêtait là. C'est ce que BIND
+   * vend, et le seul endroit où un commerce le rencontre.
+   *
+   * Optionnel : absent, la phrase reste et le bouton disparaît. Un bouton qui
+   * ne mène nulle part vaut moins que pas de bouton.
+   */
+  onVoirLAbonnement?: () => void;
+}) {
   const { api } = useApi();
   const { t } = useI18n();
   // Lu ici et non dans le corps de rendu d'`Ecran` : ce corps est une fonction
@@ -107,12 +124,23 @@ export function AnnuaireScreen({ businessId }: { businessId: string }) {
         testID="ecran-annuaire"
       >
         {() => (
-          <StatusMessage
-            level="neutral"
-            title={t('annuaire.abonnementRequis')}
-            body={t('annuaire.abonnementRequisAide')}
-            testID="annuaire-sans-abonnement"
-          />
+          <View style={{ gap: 12 }}>
+            <StatusMessage
+              level="neutral"
+              title={t('annuaire.abonnementRequis')}
+              body={t('annuaire.abonnementRequisAide')}
+              testID="annuaire-sans-abonnement"
+            />
+            {onVoirLAbonnement ? (
+              <View style={{ alignSelf: 'flex-start' }}>
+                <Button
+                  label={t('annuaire.voirLesPlans')}
+                  onPress={onVoirLAbonnement}
+                  testID="voir-les-plans"
+                />
+              </View>
+            ) : null}
+          </View>
         )}
       </Ecran>
     );
