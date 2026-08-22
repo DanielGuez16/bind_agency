@@ -16,7 +16,7 @@ import { ApiClient, ApiProvider, PREFIXE } from '../src/api';
 import { I18nProvider } from '../src/i18n';
 import { en } from '../src/i18n/en';
 import { nomDuCreateur } from '../src/screens/nomDuCreateur';
-import { ThemeProvider, type Role } from '../src/theme';
+import { couleurs, ThemeProvider, type Role } from '../src/theme';
 import { ArbitrageScreen } from '../src/screens/ArbitrageScreen';
 import { AbonnementScreen } from '../src/screens/AbonnementScreen';
 import { AnnuaireScreen } from '../src/screens/AnnuaireScreen';
@@ -300,6 +300,10 @@ const CREATEUR_DE_L_ANNUAIRE = {
     },
   ],
   paliers_ouverts: ['story', 'post'],
+  // Les trois champs de la v3 : ce qu'elle ouvre **ici**, et à quelle distance.
+  peut_reserver_ici: true,
+  palier_accessible: { tier_id: 't1', platform: 'instagram', content_format: 'story' },
+  distance_metres: 320,
   audience_totale: 24_000,
 };
 
@@ -321,6 +325,7 @@ function annuaireDe(
   }> = {},
 ) {
   return {
+    total: createurs.length,
     portee: {
       createurs: 128,
       peuvent_reserver: 41,
@@ -1763,7 +1768,18 @@ describe('l’annuaire des créateurs', () => {
     // cause, sur un écran où le produit se donne du mal à ne rien reprocher.
     await monter(
       <AnnuaireScreen businessId="b1" />,
-      clientDe({ '/creators': annuaireDe([{ ...CREATEUR_DE_L_ANNUAIRE, paliers_ouverts: [] }]) }),
+      clientDe({
+        '/creators': annuaireDe([
+          {
+            ...CREATEUR_DE_L_ANNUAIRE,
+            // Les trois disent la même chose, comme le serveur les rend : un
+            // décor qui n'en changerait qu'un éprouverait un état impossible.
+            paliers_ouverts: [],
+            peut_reserver_ici: false,
+            palier_accessible: null,
+          },
+        ]),
+      }),
       'merchant',
     );
     await waitFor(() => expect(screen.getByTestId('sans-palier-c1')).toBeTruthy());
@@ -1903,10 +1919,13 @@ describe('l’annuaire des créateurs', () => {
     );
     await waitFor(() => expect(screen.getByTestId('createur-c1')).toBeTruthy());
 
-    const fiche = screen.getByTestId('createur-c1');
-    expect(fiche).toHaveTextContent(/STORY/);
-    expect(fiche).toHaveTextContent(/POST/);
-    expect(fiche).not.toHaveTextContent(/REEL/);
+    // **Un seul badge, et c'est le palier accessible chez ce salon.** L'écran
+    // listait les formats qu'elle ouvre — trois badges pour dire une chose —
+    // alors que le serveur rend désormais `palier_accessible`, le meilleur
+    // palier qu'elle ouvre **ici**. La liste répondait « elle se qualifie
+    // quelque part », dont un salon ne peut rien faire.
+    expect(screen.getByTestId('palier-c1')).toHaveTextContent(/STORY/);
+    expect(screen.getByTestId('createur-c1')).not.toHaveTextContent(/REEL/);
   });
 
   it('dit qu’aucun palier n’est ouvert sans en faire un reproche', async () => {
@@ -1914,7 +1933,18 @@ describe('l’annuaire des créateurs', () => {
     // et l'annuaire ne doit pas se lire comme un jugement.
     await monter(
       <AnnuaireScreen businessId="b1" />,
-      clientDe({ '/creators': annuaireDe([{ ...CREATEUR_DE_L_ANNUAIRE, paliers_ouverts: [] }]) }),
+      clientDe({
+        '/creators': annuaireDe([
+          {
+            ...CREATEUR_DE_L_ANNUAIRE,
+            // Les trois disent la même chose, comme le serveur les rend : un
+            // décor qui n'en changerait qu'un éprouverait un état impossible.
+            paliers_ouverts: [],
+            peut_reserver_ici: false,
+            palier_accessible: null,
+          },
+        ]),
+      }),
       'merchant',
     );
     await waitFor(() => expect(screen.getByTestId('sans-palier-c1')).toBeTruthy());
@@ -2231,28 +2261,42 @@ describe('l’annuaire est en lecture seule', () => {
     // deux ne disent pas la même chose : l'un reste dedans, l'autre s'en va.
     // Une garde qui confond les deux force à l'exempter, et une garde exemptée
     // ne garde plus rien.
-    // **Une exception nommée, et elle ne porte sur aucune créatrice.** Le mur
-    // interceptait le refus d'abonnement, expliquait qu'il en manque un, et
-    // s'arrêtait là : c'est ce que BIND vend, et le seul endroit où un commerce
-    // le rencontre. Le bouton qui y mène vit dans la branche du refus, qui rend
-    // **zéro créatrice** par construction — il ne peut donc pas agir sur l'une
-    // d'elles, ce qui est tout ce que cette règle protège.
+    // **Deux contrôles nommés, et aucun ne porte sur une créatrice.**
     //
-    // Affinée plutôt qu'exemptée : une garde exemptée ne garde plus rien.
-    const horsPaywall = source.replace(/<Button[\s\S]*?testID="voir-les-plans"[\s\S]*?\/>/, '');
+    // Le premier mène aux offres : le mur intercepte le refus d'abonnement,
+    // explique qu'il en manque un, et s'arrête là. Ce bouton vit dans la
+    // branche du refus, qui rend **zéro créatrice** par construction — il ne
+    // peut donc pas agir sur l'une d'elles.
+    //
+    // Le second charge la page suivante. Il porte un rôle de bouton, et c'est
+    // juste : c'est un contrôle. Ce que la règle interdit est d'agir sur une
+    // créatrice — inviter, contacter, écrire — et lire la suite n'est aucun des
+    // trois. La garde vérifie plus bas qu'il appelle bien une lecture.
+    //
+    // Les deux sont retirés du texte examiné **par leur nom**, jamais par une
+    // dispense sur le fichier : une garde exemptée ne garde plus rien.
+    const lisibles = source
+      .replace(/<Button[\s\S]*?testID="voir-les-plans"[\s\S]*?\/>/, '')
+      .replace(/<Pressable[\s\S]*?testID="voir-plus"[\s\S]*?<\/Pressable>/, '');
 
     for (const interdit of [/<Button/, /accessibilityRole="button"/, /api\.\w*(?:nvit|ontact|essage)/]) {
-      expect({ interdit: String(interdit), present: interdit.test(horsPaywall) }).toEqual({
+      expect({ interdit: String(interdit), present: interdit.test(lisibles) }).toEqual({
         interdit: String(interdit),
         present: false,
       });
     }
 
+    // Le contrôle de pagination existe, et il **lit** : sans cette assertion,
+    // le retrait ci-dessus ouvrirait un trou où n'importe quoi passerait sous
+    // ce nom.
+    expect(source).toMatch(/testID="voir-plus"/);
+    expect(source).toMatch(/annuaireDesCreateurs\(/);
+
     // Et tout `onPress` de cet écran est un lien qui sort : autant de
     // `Linking.openURL` que de `onPress`, et un `accessibilityRole="link"`
     // pour chacun. Sans ce compte, la garde ci-dessus laisserait passer
     // n'importe quelle action tant qu'elle évite le mot « bouton ».
-    const combien = (motif: RegExp) => (horsPaywall.match(motif) ?? []).length;
+    const combien = (motif: RegExp) => (lisibles.match(motif) ?? []).length;
     expect({
       onPress: combien(/onPress=/g),
       sorties: combien(/Linking\.openURL/g),
@@ -2527,5 +2571,156 @@ describe('la file des publications, composée', () => {
     expect(screen.queryByTestId('approuver')).toBeNull();
     expect(screen.queryByTestId('a-trancher-k1')).toBeNull();
     expect(screen.getByTestId('en-arbitrage-k1')).toBeTruthy();
+  });
+});
+
+/**
+ * La grille v3, et ce qu'elle ne recalcule pas.
+ *
+ * Trois champs sont arrivés avec le contrat commerce-scopé — `peut_reserver_ici`,
+ * `palier_accessible`, `distance_metres` — plus le tri et la pagination. Ce qui
+ * s'éprouve ici est surtout ce que l'écran **s'interdit** : rejouer un tri qu'il
+ * ne peut pas faire juste, et inventer une distance qu'on ne connaît pas.
+ */
+/** Les testID cherchés, dans l'ordre où l'arbre les rend. */
+function ordreDesTestID(cherches: string[]): string[] {
+  const vus: string[] = [];
+  const parcourir = (noeud: unknown) => {
+    if (Array.isArray(noeud)) return noeud.forEach(parcourir);
+    if (!noeud || typeof noeud !== 'object') return;
+    const n = noeud as { props?: Record<string, unknown>; children?: unknown };
+    const id = n.props?.testID;
+    if (typeof id === 'string' && cherches.includes(id) && !vus.includes(id)) vus.push(id);
+    parcourir(n.children);
+  };
+  parcourir(screen.toJSON());
+  return vus;
+}
+
+describe('la grille de l’annuaire', () => {
+  const creatrice = (id: string, extra: Record<string, unknown> = {}) => ({
+    ...CREATEUR_DE_L_ANNUAIRE,
+    creator_id: id,
+    comptes: [{ ...CREATEUR_DE_L_ANNUAIRE.comptes[0], handle: id }],
+    ...extra,
+  });
+
+  it('garde l’ordre du serveur, sans le rejouer', async () => {
+    // **La divergence qui fait le test.** Le serveur rend « accès d'abord,
+    // proximité ensuite ». Ce décor viole les deux règles à la fois : la
+    // première ne peut pas réserver, et les distances décroissent. Un écran qui
+    // retrierait — sur l'accès ou sur la distance — produirait un autre ordre.
+    // Une liste paginée triée dans le client se réordonne à chaque page,
+    // puisque chaque page n'a que ses propres lignes à comparer.
+    await monter(
+      <AnnuaireScreen businessId="b1" />,
+      clientDe({
+        '/creators': annuaireDe([
+          creatrice('loin', { peut_reserver_ici: false, palier_accessible: null, distance_metres: 9000 }),
+          creatrice('proche', { distance_metres: 300 }),
+        ]),
+      }),
+      'merchant',
+    );
+    await waitFor(() => expect(screen.getByTestId('createur-loin')).toBeTruthy());
+
+    expect(ordreDesTestID(['createur-loin', 'createur-proche'])).toEqual([
+      'createur-loin',
+      'createur-proche',
+    ]);
+  });
+
+  it('dit la distance, et se tait quand on ne la connaît pas', async () => {
+    // **Nulle veut dire « on ne sait pas », jamais « loin ».** Un tiret se
+    // lirait comme une absence de proximité — le contraire de ce que le serveur
+    // dit en la laissant nulle.
+    await monter(
+      <AnnuaireScreen businessId="b1" />,
+      clientDe({
+        '/creators': annuaireDe([
+          creatrice('situee', { distance_metres: 320 }),
+          creatrice('inconnue', { distance_metres: null }),
+        ]),
+      }),
+      'merchant',
+    );
+    await waitFor(() => expect(screen.getByTestId('createur-situee')).toBeTruthy());
+
+    expect(screen.getByTestId('distance-situee')).toHaveTextContent('320 m');
+    expect(screen.queryByTestId('distance-inconnue')).toBeNull();
+  });
+
+  it('situe la créatrice : la ville avec la distance', async () => {
+    // **La ville manquait de ma première grille**, et c'est la garde des champs
+    // servis qui l'a dit — un champ que le serveur rend et que l'écran cesse de
+    // lire est un défaut, pas une simplification. « Wynwood · 320 m » situe ;
+    // la distance seule ne dit pas de quel côté.
+    //
+    // Éprouvé au rendu et non sur la source : la garde des champs servis se
+    // contente d'une mention du nom dans le fichier, donc elle reste verte si
+    // la ligne est rendue sous une condition toujours fausse.
+    await monter(
+      <AnnuaireScreen businessId="b1" />,
+      clientDe({
+        '/creators': annuaireDe([
+          creatrice('situee', { city: 'Wynwood' }),
+          creatrice('apatride', { city: null }),
+        ]),
+      }),
+      'merchant',
+    );
+    await waitFor(() => expect(screen.getByTestId('createur-situee')).toBeTruthy());
+
+    expect(screen.getByTestId('ville-situee')).toHaveTextContent('Wynwood');
+    // La divergence : sans ville, la ligne ne se rend pas — plutôt qu'un vide
+    // qui décalerait la carte d'à côté.
+    expect(screen.queryByTestId('ville-apatride')).toBeNull();
+  });
+
+  it('marque d’encre celles qui peuvent réserver ici, et elles seules', async () => {
+    await monter(
+      <AnnuaireScreen businessId="b1" />,
+      clientDe({
+        '/creators': annuaireDe([
+          creatrice('ouverte'),
+          creatrice('fermee', { peut_reserver_ici: false, palier_accessible: null }),
+        ]),
+      }),
+      'merchant',
+    );
+    await waitFor(() => expect(screen.getByTestId('createur-ouverte')).toBeTruthy());
+
+    const style = (id: string) => {
+      const brut = screen.getByTestId(id).props.style;
+      return Object.assign({}, ...(Array.isArray(brut) ? brut.flat(Infinity) : [brut]).filter(Boolean));
+    };
+    expect(style('createur-ouverte').borderColor).toBe(couleurs['line.ink']);
+    expect(style('createur-fermee').borderColor).not.toBe(couleurs['line.ink']);
+  });
+
+  it('dit combien sont affichées sur combien, et propose la suite', async () => {
+    // Une page pleine ne dit pas s'il en reste : sans le total, une grille qui
+    // s'arrête se lit comme la fin de l'annuaire.
+    await monter(
+      <AnnuaireScreen businessId="b1" />,
+      clientDe({ '/creators': { ...annuaireDe([creatrice('a'), creatrice('b')]), total: 128 } }),
+      'merchant',
+    );
+    await waitFor(() => expect(screen.getByTestId('compte-affiche')).toBeTruthy());
+
+    expect(screen.getByTestId('compte-affiche')).toHaveTextContent('2 of 128');
+    expect(screen.getByTestId('voir-plus')).toBeTruthy();
+  });
+
+  it('ne propose pas la suite quand tout est là', async () => {
+    // La divergence : même écran, même grille, et seul le total change.
+    await monter(
+      <AnnuaireScreen businessId="b1" />,
+      clientDe({ '/creators': { ...annuaireDe([creatrice('a'), creatrice('b')]), total: 2 } }),
+      'merchant',
+    );
+    await waitFor(() => expect(screen.getByTestId('compte-affiche')).toBeTruthy());
+
+    expect(screen.queryByTestId('voir-plus')).toBeNull();
   });
 });

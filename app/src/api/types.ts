@@ -1368,7 +1368,29 @@ export type CompteVuParLeCommerce = {
  */
 export type AnnuaireDuCommerce = {
   portee: PorteeLocale;
+  /**
+   * Triés **par le serveur** : accès d'abord, proximité ensuite.
+   *
+   * Le tri ne se rejoue pas ici, et ce n'est pas une paresse : une liste
+   * paginée triée dans le client se réordonne à chaque page, puisque chaque
+   * page n'a que ses propres lignes à comparer. Une créatrice s'y retrouverait
+   * deux fois ou jamais.
+   */
   createurs: CreateurDeLAnnuaire[];
+  /**
+   * Combien il y en a en tout dans le rayon.
+   *
+   * « 20 sur 128 » demande de le savoir : une page pleine ne dit pas s'il en
+   * reste, et sans ce nombre l'écran ne peut ni le dire ni s'arrêter.
+   */
+  total: number;
+};
+
+/** Le meilleur palier qu'une créatrice ouvre **chez ce salon**. */
+export type PalierAccessibleIci = {
+  tier_id: string;
+  platform: Platform;
+  content_format: ContentFormat;
 };
 
 export type CreateurDeLAnnuaire = {
@@ -1384,6 +1406,22 @@ export type CreateurDeLAnnuaire = {
   bio: string | null;
   comptes: CompteVuParLeCommerce[];
   paliers_ouverts: ContentFormat[];
+  /**
+   * Vrai quand au moins un palier de **ce salon** lui est accessible.
+   *
+   * Premier critère du tri, avant la distance : un créateur qui ne peut pas
+   * réserver ici n'a aucune valeur pour ce salon, quel que soit son volume.
+   */
+  peut_reserver_ici: boolean;
+  palier_accessible: PalierAccessibleIci | null;
+  /**
+   * Distance au salon, en mètres.
+   *
+   * **Nulle veut dire « on ne sait pas », jamais « loin ».** Elle passe en fin
+   * de tri sans être écartée, et l'écran tait la distance plutôt que d'écrire
+   * un tiret qui se lirait comme une absence de proximité.
+   */
+  distance_metres: number | null;
   audience_totale: number;
 };
 
