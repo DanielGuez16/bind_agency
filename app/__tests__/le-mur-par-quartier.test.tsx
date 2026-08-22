@@ -263,9 +263,11 @@ const FIL_AVEC_PHOTOS = {
 describe('le mur ne tire jamais un original', () => {
   it('demande la vignette pour la photo d’une prestation', async () => {
     const vue = await monter(FIL_AVEC_PHOTOS);
-    await waitFor(() => expect(screen.getByTestId('apercu-o1-photo')).toBeTruthy());
+    // Le composant `Photo` porte le cadre, et son `Image` le suffixe `-image` :
+    // c'est celle-là qui tient l'adresse réellement demandée.
+    await waitFor(() => expect(screen.getByTestId('apercu-o1-photo-image')).toBeTruthy());
 
-    const uri = String(screen.getByTestId('apercu-o1-photo').props.source.uri);
+    const uri = String(screen.getByTestId('apercu-o1-photo-image').props.source.uri);
     expect(uri).toContain(CLE_PRESTATION);
     // **L'assertion qui sépare les deux implémentations.** `toContain(cle)`
     // seule passerait avec l'original, puisque les deux URL portent la clé :
