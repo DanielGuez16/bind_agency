@@ -926,6 +926,9 @@ export const es: Catalogue = {
     stockageWeb: 'Almacenamiento del navegador - solo desarrollo',
   },
   composition: {
+    fermerLOffre: 'Dejar de ofrecer en este nivel',
+    rouvrirLOffre: 'Volver a ofrecer en este nivel',
+    offreFermeeCorps: 'No se ofrece en este nivel. Las reservas pasadas siguen mostrándola: cerrar no cambia nada de lo anterior.',
     corriger: 'Corregir',
     retirerLaPrestation: 'Quitar',
     remplacer: 'Cambiar duración o nivel',

@@ -353,6 +353,11 @@ function Groupes({
                 propose={propositions.get(item.id)}
                 retenu={retenus.get(item.id)}
                 paliers={composition.paliers}
+                // L'offre de **ce** palier : une prestation ouverte à deux
+                // paliers a deux offres, et fermer l'une ne ferme pas l'autre.
+                offre={composition.offres.find(
+                  (o) => o.catalog_item_id === item.id && o.tier_id === palier.id,
+                )}
               />
             ))}
           </View>
@@ -496,6 +501,7 @@ function LignePrestation({
   propose,
   retenu,
   paliers = [],
+  offre,
 }: {
   item: ItemDuCatalogue;
   businessId: string;
@@ -505,6 +511,13 @@ function LignePrestation({
   /** Le plus exigeant des paliers réellement ouverts sur cette prestation. */
   retenu?: ContentFormat;
   paliers?: PalierOffrable[];
+  /**
+   * L'offre de **ce** palier sur cette prestation, quand la ligne en est une.
+   *
+   * Absente sous « sans palier » : il n'y a rien à ouvrir ni à fermer là où
+   * aucune offre n'existe.
+   */
+  offre?: OffreDePalier;
 }) {
   const { api, messageDErreur } = useApi();
   const { t, locale } = useI18n();
@@ -516,6 +529,34 @@ function LignePrestation({
   const [refusDeSuppression, setRefus] = useState(false);
 
   const retrait = gesteDeRetrait(item);
+  const [bascule, setBascule] = useState(false);
+
+  /**
+   * Fermer une offre, et la rouvrir.
+   *
+   * **Retirer sans supprimer, et c'est la seule voie quand l'offre est
+   * réservée.** Supprimer une offre que des réservations citent réécrirait leur
+   * histoire ; le serveur le refuse, et il a raison. Fermer laisse tout en
+   * place et cesse simplement de la proposer.
+   *
+   * **Le catalogue se composait sans se corriger.** Un salon pouvait ouvrir une
+   * prestation à un palier et n'avait aucun moyen de revenir dessus : la route
+   * existait depuis la phase 2, aucun écran ne l'appelait. C'était le dernier
+   * geste manquant du produit.
+   */
+  async function basculerLOffre() {
+    if (!offre) return;
+    setEchec(null);
+    setBascule(true);
+    try {
+      await api.activerUneOffre(businessId, offre.id, !offre.is_active);
+      onChange();
+    } catch (erreur) {
+      setEchec(messageDErreur(erreur));
+    } finally {
+      setBascule(false);
+    }
+  }
 
   /**
    * Retirer, et le mot dépend de ce que la prestation a derrière elle.
@@ -696,6 +737,34 @@ function LignePrestation({
           }}
           onRenoncer={() => setCorrection(false)}
         />
+      ) : null}
+
+      {/* **Fermer sans supprimer.** Une offre fermée reste à sa place, et c'est
+          voulu : la retirer de la liste enlèverait le seul chemin pour la
+          rouvrir. Elle dit ce qu'elle est — plus proposée — et ce qu'elle n'a
+          pas fait : les réservations passées la citent toujours. */}
+      {offre ? (
+        <View style={{ gap: 6 }} testID={`offre-${offre.id}`}>
+          {offre.is_active ? null : (
+            <Texte
+              variante="type.caption"
+              couleur="ink.mute"
+              testID={`offre-fermee-${offre.id}`}
+            >
+              {t('composition.offreFermeeCorps')}
+            </Texte>
+          )}
+          <View style={{ flexDirection: 'row' }}>
+            <Button
+              label={t(offre.is_active ? 'composition.fermerLOffre' : 'composition.rouvrirLOffre')}
+              variant="secondary"
+              fullWidth={false}
+              loading={bascule}
+              onPress={() => void basculerLOffre()}
+              testID={`basculer-offre-${offre.id}`}
+            />
+          </View>
+        </View>
       ) : null}
 
       {remplacement ? (

@@ -9295,3 +9295,50 @@ Le compte de décisions du jour par salon — « 5 aujourd'hui » sur l'autre li
 Design le classe « souhaitable » et non « manquant », et le dit bien : sans lui
 la liste reste utilisable et **perd sa raison d'être ouverte**. C'est ce chiffre
 qui fait basculer un gérant qui ne savait pas qu'on l'attendait.
+
+---
+
+## 2026-08-22 — Fermer une offre : le dernier geste manquant du produit
+
+`activerUneOffre` existait depuis la phase 2 et n'avait aucun appelant. Un salon
+pouvait ouvrir une prestation à un palier et n'avait **aucun moyen de revenir
+dessus** — l'écran du catalogue le documentait pourtant : « ouvrir et fermer
+passe par sa propre route, c'est une transition d'état, elle laisse une trace au
+journal ». La route était là, la trace était prévue, le bouton n'existait pas.
+
+**Fermer n'est pas supprimer, et c'est toute la distinction.** Supprimer une
+offre que des réservations citent réécrirait leur histoire ; le serveur le
+refuse, et son commentaire le dit — « retirer sans supprimer : la seule voie
+possible quand l'offre est réservée ». Fermer laisse tout en place et cesse
+simplement de proposer.
+
+**Une offre fermée reste à sa place**, et c'est voulu : la retirer de la liste
+enlèverait le seul chemin pour la rouvrir. Elle dit ce qu'elle est — plus
+proposée — et ce qu'elle n'a pas fait : les réservations passées la citent
+toujours. C'est la phrase qui manque le plus à quiconque hésite à fermer.
+
+**L'offre est celle de son palier.** Une prestation ouverte à deux paliers a deux
+offres, et fermer l'une ne ferme pas l'autre. Le test le prouve sur un décor à
+deux paliers — avec un seul, chercher l'offre par prestation ou par
+(prestation, palier) rend la même chose, et la mutation survivait.
+
+## Un test qui ne tombait qu'à certaines heures
+
+`la-fiche-v3` vérifiait qu'un troisième créneau n'est **pas** annoncé, avec une
+expression construite depuis l'heure formatée : `2:05 AM`. Elle mord dans
+« 12:05 AM ». L'assertion d'absence échouait donc sur une heure bel et bien
+absente — mais seulement quand le second créneau du décor tombait sur un midi ou
+un minuit, c'est-à-dire à certaines heures de la journée et pas à d'autres.
+
+Trouvé en écartant mes propres changements pour savoir si l'échec venait d'eux ;
+il préexistait. `\b` n'aurait pas suffi — entre « 1 » et « 2 » il n'y a pas de
+frontière de mot — c'est le début de chaîne ou une espace qui borne un horaire.
+Un test qui ne casse qu'entre 21 h et 23 h passe des semaines à faire croire
+qu'il tient.
+
+## Ce qu'il reste après celui-ci
+
+La garde `routes-sans-appelant` ne porte plus que `ouvrirUneReprise` et
+`fermerLaReprise` : l'autre bout de la reprise de compte, qui attend l'écran
+d'administration — **un produit différent de celui-ci**. Côté commerce et côté
+créateur, plus aucune capacité du client n'est sans écran.

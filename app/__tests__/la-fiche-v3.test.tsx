@@ -176,14 +176,27 @@ describe('une prestation pose deux questions, une ligne chacune', () => {
     } as unknown as FichePublique);
     await waitFor(() => expect(screen.getByTestId('autres-creneaux')).toBeTruthy());
 
-    const heure = (iso: string) => formatHeure(iso, 'en', FICHE.timezone);
+    /**
+     * L'heure, **bornée à gauche**.
+     *
+     * `2:05 AM` mord dans « 12:05 AM » : l'assertion d'absence tombait alors
+     * sur une heure bel et bien absente, mais seulement quand la seconde heure
+     * du décor était un midi ou un minuit — c'est-à-dire à certaines heures de
+     * la journée et pas à d'autres. Un test qui ne casse qu'entre 21 h et
+     * 23 h passe des semaines à faire croire qu'il tient.
+     *
+     * `\b` ne suffit pas : entre « 1 » et « 2 » il n'y a pas de frontière de
+     * mot. C'est le début de la chaîne ou une espace qui borne un horaire.
+     */
+    const heure = (iso: string) =>
+      new RegExp(`(^|\\s)${formatHeure(iso, 'en', FICHE.timezone).replace(/\s/g, '\\s')}`);
     const ligne = screen.getByTestId('autres-creneaux');
-    expect(ligne).toHaveTextContent(new RegExp(heure(creneaux[1])));
-    expect(ligne).toHaveTextContent(new RegExp(heure(creneaux[2])));
-    expect(ligne).not.toHaveTextContent(new RegExp(heure(creneaux[3])));
+    expect(ligne).toHaveTextContent(heure(creneaux[1]));
+    expect(ligne).toHaveTextContent(heure(creneaux[2]));
+    expect(ligne).not.toHaveTextContent(heure(creneaux[3]));
     // Et le premier n'y est pas : il est déjà sur la ligne de l'horloge, et le
     // répéter ferait croire à un créneau de plus.
-    expect(ligne).not.toHaveTextContent(new RegExp(heure(creneaux[0])));
+    expect(ligne).not.toHaveTextContent(heure(creneaux[0]));
     await vue.unmount();
   });
 
