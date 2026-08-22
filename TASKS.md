@@ -1599,6 +1599,12 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       identifiant, sinon l'écran devra recharger les comptes pour une colonne.
       Demande effacée par erreur en #217 et remise ici : aucune autre ligne du
       fichier ne la portait*
+      *Servie en **deux** champs plutôt qu'un, et la distinction est juste :
+      préparer quarante fiches au bureau et en remettre vingt en tournée sont
+      deux gestes. L'écran ne les répète pas — la seconde main ne paraît que
+      lorsqu'elle diffère de la première, sauf quand le préparateur est inconnu,
+      où c'est la seule main qu'on ait. Une adresse et non un nom : un compte
+      d'équipe n'en a pas*
 - [ ] **`HandoverChannel` n'a pas de valeur pour le SMS**
       *Il vaut `qr` ou `email`, et la planche montre aussi « by text ». Le
       ranger sous `email` ferait mentir la colonne qui compare justement les
