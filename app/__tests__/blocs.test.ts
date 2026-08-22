@@ -92,6 +92,9 @@ const BLOCS: Record<string, number> = {
   // signature répétée y devient une nappe.
   FilScreen: 0,
   FicheScreen: 0,
+  // L'abonnement : le prix et ce qu'il ouvre. Aucune matière de marque —
+  // c'est un écran où l'on paie, pas où l'on se présente.
+  AbonnementScreen: 0,
   AudienceScreen: 0,
   // Le score en détail : que de l'explication, et deux garanties. Aucune
   // matière de marque n'a rien à y faire.

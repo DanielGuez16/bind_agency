@@ -37,6 +37,8 @@ const RACINES = [
   'Caisse',
   'Configuration',
   'Paliers',
+  // `Annuaire` a gagné une pile : l'abonnement s'y empile depuis son refus.
+  'Annuaire',
   // `Audience` a gagné une pile avec la v3 : le score s'y empile, mais
   // l'audience reste la racine de son onglet.
   'Audience',

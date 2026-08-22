@@ -23,6 +23,7 @@ export const ECRANS_CREATEUR = [
 ] as const;
 
 export const ECRANS_COMMERCE = [
+  'AbonnementScreen.tsx',
   'AnnuaireScreen.tsx',
   'CatalogueScreen.tsx',
   'HorairesScreen.tsx',

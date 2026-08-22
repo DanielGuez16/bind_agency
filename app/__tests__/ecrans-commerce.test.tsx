@@ -18,6 +18,7 @@ import { en } from '../src/i18n/en';
 import { nomDuCreateur } from '../src/screens/nomDuCreateur';
 import { ThemeProvider, type Role } from '../src/theme';
 import { ArbitrageScreen } from '../src/screens/ArbitrageScreen';
+import { AbonnementScreen } from '../src/screens/AbonnementScreen';
 import { AnnuaireScreen } from '../src/screens/AnnuaireScreen';
 import { CatalogueScreen } from '../src/screens/CatalogueScreen';
 import { HorairesScreen } from '../src/screens/HorairesScreen';
@@ -401,6 +402,20 @@ const ECRANS = [
     vide: { '/admin/prospects': [] },
   },
   {
+    nom: 'abonnement',
+    noeud: <AbonnementScreen businessId="b1" />,
+    role: 'merchant' as Role,
+    plein: {
+      '/subscription': { id: 'a1', plan_id: 'p1', status: 'active', current_period_end: null, checkout_url: null },
+      '/plans': [
+        { id: 'p1', name: 'Studio', price_cents: 9_900, currency: 'EUR', billing_interval: 'monthly', features: {} },
+      ],
+    },
+    // **Jamais vide.** Un commerce sans abonnement est le cas que cet écran
+    // existe pour traiter, pas une absence de contenu.
+    vide: null,
+  },
+  {
     nom: 'annuaire',
     noeud: <AnnuaireScreen businessId="b1" />,
     role: 'merchant' as Role,
@@ -711,6 +726,7 @@ describe('quatre états', () => {
       arbitrage: 'ArbitrageScreen.tsx',
       plans: 'PlansScreen.tsx',
       reporting: 'ReportingScreen.tsx',
+      abonnement: 'AbonnementScreen.tsx',
       annuaire: 'AnnuaireScreen.tsx',
       terrain: 'TerrainScreen.tsx',
   catalogue: 'CatalogueScreen.tsx',
@@ -2215,8 +2231,18 @@ describe('l’annuaire est en lecture seule', () => {
     // deux ne disent pas la même chose : l'un reste dedans, l'autre s'en va.
     // Une garde qui confond les deux force à l'exempter, et une garde exemptée
     // ne garde plus rien.
+    // **Une exception nommée, et elle ne porte sur aucune créatrice.** Le mur
+    // interceptait le refus d'abonnement, expliquait qu'il en manque un, et
+    // s'arrêtait là : c'est ce que BIND vend, et le seul endroit où un commerce
+    // le rencontre. Le bouton qui y mène vit dans la branche du refus, qui rend
+    // **zéro créatrice** par construction — il ne peut donc pas agir sur l'une
+    // d'elles, ce qui est tout ce que cette règle protège.
+    //
+    // Affinée plutôt qu'exemptée : une garde exemptée ne garde plus rien.
+    const horsPaywall = source.replace(/<Button[\s\S]*?testID="voir-les-plans"[\s\S]*?\/>/, '');
+
     for (const interdit of [/<Button/, /accessibilityRole="button"/, /api\.\w*(?:nvit|ontact|essage)/]) {
-      expect({ interdit: String(interdit), present: interdit.test(source) }).toEqual({
+      expect({ interdit: String(interdit), present: interdit.test(horsPaywall) }).toEqual({
         interdit: String(interdit),
         present: false,
       });
@@ -2226,7 +2252,7 @@ describe('l’annuaire est en lecture seule', () => {
     // `Linking.openURL` que de `onPress`, et un `accessibilityRole="link"`
     // pour chacun. Sans ce compte, la garde ci-dessus laisserait passer
     // n'importe quelle action tant qu'elle évite le mot « bouton ».
-    const combien = (motif: RegExp) => (source.match(motif) ?? []).length;
+    const combien = (motif: RegExp) => (horsPaywall.match(motif) ?? []).length;
     expect({
       onPress: combien(/onPress=/g),
       sorties: combien(/Linking\.openURL/g),

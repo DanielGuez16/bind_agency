@@ -103,8 +103,6 @@ const NON_RENDUS: Record<string, string> = {
   'Preuve.content_hash': 'contrat',
   'PlanAdministrateur.features': 'contrat',
   'PlanSouscriptible.features': 'contrat',
-  'Abonnement.current_period_end': 'contrat',
-  'Abonnement.checkout_url': 'contrat',
   'Fourchette.prestations_publiees': 'contrat',
   'Fourchette.places_par_jour': 'contrat',
   'Fourchette.palier_le_plus_offert': 'contrat',

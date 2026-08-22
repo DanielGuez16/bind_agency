@@ -96,13 +96,30 @@ export type VarianteDuLogotype = 'encre' | 'blanc';
  * couleur : un appelant qui choisit une encre choisit tôt ou tard celle du
  * point, et le logotype cesse d'avoir sa couleur.
  */
+/**
+ * Ce qu'on dessine du logotype.
+ *
+ * **Deux tracés, deux temps — et c'est le fichier qui le permet.** Le point est
+ * déjà un tracé distinct avec sa couleur propre ; découper les lettres pour les
+ * animer séparément demanderait de fabriquer un logo qui n'existe pas. La seule
+ * chose qui peut bouger seule est donc le point, et c'est la direction retenue.
+ *
+ * **L'alignement est structurel, pas mesuré.** Les deux parties gardent la même
+ * `viewBox` et le même repère : superposées, elles retombent l'une sur l'autre
+ * sans qu'aucune constante ne l'organise. Une position du point calculée en
+ * points d'écran dériverait au premier changement de taille.
+ */
+export type PartieDuLogotype = 'tout' | 'lettres' | 'point';
+
 export function Marque({
   taille = 23,
   variante = 'encre',
+  partie = 'tout',
   testID,
 }: {
   taille?: number;
   variante?: VarianteDuLogotype;
+  partie?: PartieDuLogotype;
   testID?: string;
 }) {
   if (taille < PLANCHER_DU_LOGOTYPE) {
@@ -128,13 +145,17 @@ export function Marque({
     >
       <G transform={REPERE}>
         {/* Les lettres et le fût suivent le fond. */}
-        <Path testID={testID ? `${testID}-lettres` : undefined} d={LETTRES} fill={encre} />
+        {partie === 'point' ? null : (
+          <Path testID={testID ? `${testID}-lettres` : undefined} d={LETTRES} fill={encre} />
+        )}
         {/* Le point ne les suit pas : c'est la seule couleur du logotype. */}
-        <Path
-          testID={testID ? `${testID}-point` : undefined}
-          d={POINT}
-          fill={ENCRES_DU_LOGOTYPE.point}
-        />
+        {partie === 'lettres' ? null : (
+          <Path
+            testID={testID ? `${testID}-point` : undefined}
+            d={POINT}
+            fill={ENCRES_DU_LOGOTYPE.point}
+          />
+        )}
       </G>
     </Svg>
   );

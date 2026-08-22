@@ -18,7 +18,7 @@
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { useState, type ReactNode } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ApiProvider, useApi } from './src/api';
@@ -36,8 +36,9 @@ import { adresseDeLApi } from './src/shell/adresseDeLApi';
 import { jetonDePriseEnMain, oublierLeJeton } from './src/shell/jetonDePriseEnMain';
 import { GabaritProvider } from './src/shell/gabarit';
 import { useNotificationsPush } from './src/shell/useNotificationsPush';
+import { Chargement } from './src/shell/Chargement';
 import { ZoneSure } from './src/shell/ZoneSure';
-import { ThemeProvider, policesAcharger, useColors } from './src/theme';
+import { ThemeProvider, policesAcharger } from './src/theme';
 
 /**
  * L'adresse de l'API, déduite du serveur qui a servi le bundle.
@@ -157,30 +158,23 @@ function JetonDeNotification({ actif }: { actif: boolean }) {
 }
 
 /** Le temps de lire le trousseau. Quelques dizaines de millisecondes. */
+/**
+ * Ce qu'on voit pendant que la session se rétablit.
+ *
+ * **La marque, et non un indicateur.** C'est le premier écran du produit à
+ * chaque ouverture — trois fois par jour — et il portait une roue grise. Le
+ * logotype s'y pose en moins de huit cents millisecondes, le point en dernier ;
+ * au-delà, un filet prend le relais et ne ressemble pas à la marque, pour qu'on
+ * distingue « ça s'ouvre » de « ça bloque ».
+ */
 function Patience() {
   return (
     <ThemeProvider role="creator">
-      <Fond />
+      <Chargement testID="ecran-retablissement" />
     </ThemeProvider>
   );
 }
 
-function Fond() {
-  const c = useColors();
-  return (
-    <View
-      testID="ecran-retablissement"
-      style={{
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: c['bg.page'],
-      }}
-    >
-      <ActivityIndicator color={c['ink.soft']} />
-    </View>
-  );
-}
 
 /**
  * L'écran de configuration manquante.

@@ -627,6 +627,9 @@ describe('les surfaces de la v1.1', () => {
     // première fois, quand le seul composant qui la portait a été retiré.
     const CARTES = [
       'src/components/EnTete.tsx',
+      // La carte d'un plan souscriptible : elle se pose sur la page comme
+      // une carte, donc elle porte l'ombre comme une carte.
+      'src/screens/AbonnementScreen.tsx',
       'src/screens/AnnuaireScreen.tsx',
       // **Les deux surfaces de l'audience v3, et une contradiction tranchée
       // ici.** La planche oppose « une carte à ombre » pour un compte

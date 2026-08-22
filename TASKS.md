@@ -1604,6 +1604,22 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       ranger sous `email` ferait mentir la colonne qui compare justement les
       voies. Rien à faire tant que l'envoi par SMS n'existe pas. Effacée par
       erreur en #217, remise ici*
+- [x] **L'écran de chargement — direction A, le point qui cale les lettres**
+      *Deux tracés superposés dans la même `viewBox` : l'alignement est
+      structurel et non mesuré, donc juste à toute échelle. La chute s'exprime en
+      hauteurs de logotype, sans rebond — un point qui rebondit devient un
+      personnage. Le plafond de huit cents millisecondes est un plafond et non
+      une cible. Au-delà, un filet en `brand.500` prend le relais et ne
+      ressemble pas à la marque : sinon on ne distingue plus « ça s'ouvre » de
+      « ça bloque ». 1202 tests verts, 3 mutations*
+- [x] **L'abonnement du commerce — le trou du produit, comblé**
+      *Quatre routes complètes, un client qui savait les appeler, et aucun
+      écran : le refus de l'annuaire menait nulle part. L'écran nomme ce que
+      l'abonnement ouvre — la visibilité, pas le contact — liste les plans,
+      reprend un paiement inachevé sans en créer un second, et résilie. Le
+      client gagne `resilier`, la moitié manquante de la paire : souscrire sans
+      pouvoir arrêter enferme, et c'est celle qui rassure au moment de
+      commencer. 1212 tests verts, 3 mutations*
 - [ ] **Neuf planches d'écrans portent encore la v1.0**
       *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
       passés en v3, dans la palette Ambre. Les autres suivent l'ordre du

@@ -617,6 +617,19 @@ export class Api {
     });
   }
 
+  /**
+   * Arrêter l'abonnement.
+   *
+   * **La route existait, le client ne la couvrait pas.** Souscrire sans pouvoir
+   * arrêter enferme : c'est la moitié d'une paire, et celle qui manquait est
+   * celle qui rassure au moment de commencer.
+   */
+  resilier(businessId: string) {
+    return this.client.request<Abonnement>(routes.abonnement(businessId), {
+      methode: 'DELETE',
+    });
+  }
+
   souscrire(businessId: string, planId: string) {
     return this.client.request<Abonnement>(routes.abonnement(businessId), {
       methode: 'POST',

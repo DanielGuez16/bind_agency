@@ -8503,3 +8503,72 @@ cas existe, un runner n'ayant pas forcément la configuration qu'on croit.
 
 Cinq mutations, cinq chutes, après trois décors successifs. Aucune n'aurait été
 trouvée par relecture.
+
+
+---
+
+## 2026-08-22 — Le point tombe, et c'est un choix de marque
+
+**Direction A, parce que la signature sert ailleurs.** Entre A et B, l'écart
+n'était pas de qualité mais d'ambition : A veut dire quelque chose, B veut
+disparaître, et sur un écran vu trois fois par jour disparaître est une ambition
+suffisante. Le cas qui fait pencher pour A est celui-ci : le point orange sert au
+favicon, à l'icône et aux visuels de l'agence — le voir arriver en dernier, mille
+fois, l'installe mieux que n'importe quelle note de passation.
+
+**L'alignement est structurel, et c'est ce qui rend la direction tenable.** Les
+deux `Marque` superposées partagent la `viewBox` et le repère du fichier : elles
+retombent l'une sur l'autre sans qu'aucune constante ne l'organise, à n'importe
+quelle taille. Une position du point mesurée en points d'écran aurait dérivé au
+premier changement d'échelle, et personne ne l'aurait vu avant une capture.
+
+**La chute s'exprime en hauteurs de logotype**, pas en pixels : à une autre
+taille le point tombe d'aussi loin *relativement*, et la chute garde son poids.
+
+**Aucun rebond, et c'est la seule contrainte d'assouplissement.** Un ressort
+dépasse sa cible : le point remonterait, et un point qui remonte est un
+personnage. `Easing.out(Easing.cubic)` s'arrête sur sa valeur.
+
+**Le plafond est un plafond, pas une cible.** Si l'application est prête à trois
+cents millisecondes, l'écran part à trois cents : une animation qui retient la
+main pour finir sa phrase vole du temps.
+
+**Et l'attente ne ressemble pas à la marque.** C'est toute la raison du filet :
+si l'attente se dessinait dans le vocabulaire de l'entrée, on ne distinguerait
+plus « ça s'ouvre » de « ça bloque ». Il n'apparaît qu'au-delà du plafond —
+le montrer d'emblée ferait de chaque ouverture une attente — et sous mouvement
+réduit il ne parcourt pas : ce qui compte est que l'état soit marqué, pas qu'il
+bouge.
+
+**`Fond` est supprimé avec son indicateur.** Une vue qui survit sans appelant
+finit par resservir en portant une composition périmée.
+## 2026-08-22 — L'abonnement, et le refus qui menait nulle part
+
+**Le produit vendait quelque chose qu'on ne pouvait pas acheter.** L'annuaire
+interceptait proprement le 402, expliquait qu'un abonnement manque, et
+s'arrêtait là. Les quatre routes existaient, le client savait les appeler, et
+trois de ses méthodes n'avaient aucun appelant — la garde les portait, nommées,
+depuis des semaines.
+
+**Un statut inconnu ne s'invente ni dans un sens ni dans l'autre.** Stripe ajoute
+des statuts. Le traiter comme actif ouvrirait l'annuaire à qui ne paie pas ; le
+traiter comme résilié fermerait la porte à qui paie. « Le paiement n'est pas
+terminé » n'affirme aucun accès et propose de rouvrir l'adresse : c'est le seul
+repli qui ne ment dans aucune des deux directions.
+
+**L'adresse de paiement ne se rouvre pas sur un abonnement en cours**, même
+quand le serveur la sert encore : rouvrir une page de paiement à quelqu'un qui
+paie déjà lui ferait craindre un second prélèvement.
+
+**Et un paiement inachevé se reprend, il ne se recommence pas.** Souscrire de
+nouveau créerait un second abonnement à côté du premier.
+
+**`resilier` était la moitié manquante d'une paire.** Souscrire sans pouvoir
+arrêter enferme, et c'est la moitié qui rassure au moment de commencer. La route
+existait ; seul le client ne la couvrait pas.
+
+**La garde de lecture seule de l'annuaire a été affinée, pas exemptée.** Elle
+interdit d'agir sur une créatrice ; le bouton qui mène à l'abonnement vit dans la
+branche du refus, qui rend zéro créatrice par construction. Une garde exemptée ne
+garde plus rien — c'est le geste que la session voisine avait employé sur les
+`onPress`, et il vaut ici.

@@ -57,10 +57,6 @@ const SANS_APPELANT: Record<string, string> = {
   mesReprises: 'a-instruire',
   ouvrirUneReprise: 'a-instruire',
   fermerLaReprise: 'a-instruire',
-  // L'abonnement Stripe : lire son état, lister les plans, souscrire.
-  abonnement: 'a-instruire',
-  plansSouscriptibles: 'a-instruire',
-  souscrire: 'a-instruire',
   // Les trois repères du voisinage, écrits pour l'état vide du commerce.
   reperesDuVoisinage: 'a-instruire',
   // Le catalogue se compose mais ne se corrige pas : ni modifier, ni
