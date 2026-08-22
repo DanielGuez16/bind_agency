@@ -1359,6 +1359,15 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       comptage sur les trois surfaces qui clippent, où une carte est deux blocs.
       Ce qu'il faudrait est un détecteur qui sache lequel des deux blocs est le
       parent — ou une convention qui nomme les vues enveloppantes*
+      *Ce trou n'est pas celui que #208 a bouché, et la distinction vaut d'être
+      retenue : #208 a élargi **l'ensemble des formes de style lues** — les
+      styles fonctionnels des cartes pressables — en gardant la définition
+      intacte, et n'a donc rien changé aux cartes qui enveloppent. Mon
+      élargissement portait sur **la définition elle-même**, en retirant le
+      filet des marques exigées : c'est lui qui fait compter deux fois une carte
+      enveloppée, puisque l'extérieur et l'intérieur la satisfont alors tous les
+      deux. Élargir ce qu'on lit et élargir ce qu'on cherche n'ont pas les mêmes
+      conséquences*
 - [x] **L'audience v3 — l'écran le plus faible, signalé sur trois campagnes**
       *Les logos de réseau manquaient entièrement, et un compte connecté ne se
       distinguait pas d'un compte à connecter. Aucun nombre n'apparaît plus
