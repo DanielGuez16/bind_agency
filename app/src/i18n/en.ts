@@ -474,6 +474,16 @@ export const en = {
     contrepartieReste: '{{reste}} left',
     sectionMontreTonCode: 'SHOW YOUR CODE',
     sectionLeSalonDecide: 'WAITING FOR THE SALON',
+    // **Annuler, en deux appuis, et la conséquence entre les deux.**
+    // « Cancelling close to the time » ne date rien : le seuil est un réglage
+    // et il n'est pas servi. Écrire une heure ici la ferait dériver au premier
+    // ajustement, et une heure fausse vaut moins que pas d'heure.
+    annuler: 'Cancel this booking',
+    annulerConfirmer: 'Yes, cancel it',
+    annulerGarder: 'Keep it',
+    annulerSansFrais: 'The place goes back to the salon. Nothing is held against you.',
+    annulerPeutCouter:
+      'Cancelling close to the time counts as a missed appointment: the salon held a place it can no longer fill, and your reliability score drops. Cancel now if you know you cannot come.',
     issueHonoree: 'Honoured',
     issueNonHonoree: 'Not honoured',
     issueAnnulee: 'Cancelled',

@@ -35,6 +35,7 @@ import {
 import { elevationDeCarte, radius, useColors, type ColorName } from '../theme';
 import { useI18n, type SupportedLocale } from '../i18n';
 import { formatDateTime, formatMois, formatQuantieme } from '../format';
+import { AnnulerLaReservation } from './reservations/AnnulerLaReservation';
 import { Ecran } from './Ecran';
 import { useRequete } from './useRequete';
 
@@ -278,6 +279,7 @@ export function HistoriqueScreen({
                           reservation={reservation}
                           onglet="a-venir"
                           onOuvrir={onOuvrir}
+                          onRelire={requete.recharger}
                         />
                       </Apparition>
                     ))}
@@ -297,6 +299,7 @@ export function HistoriqueScreen({
                 reservation={reservation}
                 onglet="en-cours"
                 onOuvrir={onOuvrir}
+                onRelire={requete.recharger}
               />
               </Apparition>
             );
@@ -412,11 +415,14 @@ function CarteDeReservation({
   reservation,
   onglet,
   onOuvrir,
+  onRelire,
 }: {
   reservation: ReservationDuCreateur;
   /** Décide la surface : une carte demande ou informe selon son onglet. */
   onglet: string;
   onOuvrir: (reservation: ReservationDuCreateur) => void;
+  /** Relit la liste : une réservation annulée quitte l'onglet « à venir ». */
+  onRelire: () => void;
 }) {
   const c = useColors();
   const surface = surfaceDe(reservation, onglet);
@@ -449,7 +455,11 @@ function CarteDeReservation({
             : { borderWidth: 1, borderColor: c['line.default'] }),
       })}
     >
-      <LigneDeReservation reservation={reservation} onOuvrir={onOuvrir} />
+      <LigneDeReservation
+        reservation={reservation}
+        onOuvrir={onOuvrir}
+        onRelire={onRelire}
+      />
     </Pressable>
   );
 }
@@ -457,9 +467,11 @@ function CarteDeReservation({
 function LigneDeReservation({
   reservation,
   onOuvrir,
+  onRelire,
 }: {
   reservation: ReservationDuCreateur;
   onOuvrir: (reservation: ReservationDuCreateur) => void;
+  onRelire: () => void;
 }) {
   const { t, locale } = useI18n();
   const c = useColors();
@@ -624,6 +636,14 @@ function LigneDeReservation({
             {t('parcours.contrepartieRienAFaire')}
           </Texte>
         ) : null}
+
+        {/* **Annuler est le geste qu'on ne peut pas faire depuis le salon.**
+            Il vivait dans le client d'API sans écran : la seule sortie d'une
+            réservation qu'on ne peut plus honorer était de ne pas venir, ce
+            que le produit compte comme une absence. Le composant se tait de
+            lui-même sur les états terminaux — il n'y a pas de condition à
+            écrire ici, et en écrire une la ferait diverger du diagramme. */}
+        <AnnulerLaReservation reservation={reservation} onAnnulee={onRelire} />
       </View>
     </View>
   );

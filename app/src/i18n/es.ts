@@ -438,6 +438,12 @@ export const es: Catalogue = {
     contrepartieReste: 'Quedan {{reste}}',
     sectionMontreTonCode: 'MUESTRA TU CÓDIGO',
     sectionLeSalonDecide: 'ESPERANDO AL SALÓN',
+    annuler: 'Anular esta reserva',
+    annulerConfirmer: 'Sí, anularla',
+    annulerGarder: 'Mantenerla',
+    annulerSansFrais: 'La plaza vuelve al salón. No se te reprocha nada.',
+    annulerPeutCouter:
+      'Anular cerca de la hora cuenta como una ausencia: el salón reservó una plaza que ya no podrá llenar, y tu puntuación de fiabilidad baja. Anula ahora si sabes que no podrás ir.',
     issueHonoree: 'Cumplida',
     issueNonHonoree: 'No cumplida',
     issueAnnulee: 'Cancelada',
