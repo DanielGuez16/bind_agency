@@ -22,7 +22,7 @@
  * la matière est le papier — c'est-à-dire l'absence de marque.
  */
 import type { ReactNode } from 'react';
-import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
+import { Animated, Pressable, RefreshControl, ScrollView, View } from 'react-native';
 
 import {
   Button,
@@ -32,6 +32,7 @@ import {
   StatusMessage,
   Texte,
   useAttenteVisible,
+  useRecomposition,
 } from '../components';
 import { useI18n, type SupportedLocale } from '../i18n';
 import { formatDate } from '../format';
@@ -121,6 +122,11 @@ export function Ecran<T>({
   const { messageDErreur } = useApi();
 
   const attenteVisible = useAttenteVisible(requete.etat === 'chargement');
+  // `useRequete` garde déjà les données pendant un rechargement et le signale :
+  // la liste reste montée, il ne manquait que de le montrer.
+  const recomposition = useRecomposition(
+    requete.etat === 'pret' && requete.rechargement === true,
+  );
 
   const margeLaterale = large ? density.screenPaddingLarge : density.screenPadding;
   /** Ce qu'`Ecran` compose lui-même garde sa marge, même à fond perdu. */
@@ -192,9 +198,19 @@ export function Ecran<T>({
     }
 
     return (
-      <View testID="etat-nominal" style={{ gap: density.gap }}>
+      // **L'ancienne liste s'atténue, elle ne se vide pas.** Vider avant de
+      // remplir fait clignoter l'écran et perdre le repère du doigt : à
+      // vingt-cinq pour cent elle reste lisible, et ce qu'on voit est une liste
+      // qui se remplace plutôt qu'un voyant qui s'allume.
+      //
+      // **Le seuil des quatre cents millisecondes ne s'applique pas ici.** Ce
+      // n'est pas un indicateur d'attente, c'est la réponse au geste — au même
+      // titre que l'enfoncement d'un bouton. L'attendre ferait exactement ce
+      // que la règle 1 veut éviter : un écran qui ne répond pas, donc un doute,
+      // donc un second appui.
+      <Animated.View testID="etat-nominal" style={[{ gap: density.gap }, recomposition.style]}>
         {children(requete.donnees)}
-      </View>
+      </Animated.View>
     );
   })();
 

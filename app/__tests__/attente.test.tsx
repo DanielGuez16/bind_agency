@@ -11,7 +11,7 @@
  * la distingue est le premier instant, et c'est celui qu'on écrit.
  */
 import { act, render, screen } from '@testing-library/react-native';
-import { View } from 'react-native';
+import { Animated, View } from 'react-native';
 
 import { ApiClient, ApiProvider } from '../src/api';
 import { Photo, SkeletonLignes } from '../src/components';
@@ -117,7 +117,7 @@ describe('une photo n’agrandit pas sa carte', () => {
     // photo et pousse le texte qu'on lisait ; sans aplat, on voit la surface de
     // la carte au travers et rien ne dit qu'une image est attendue.
     expect(style.height).toBe(96);
-    expect(style.backgroundColor).toBe(couleurs['bg.deep']);
+    expect(style.backgroundColor).toBe(couleurs['media.placeholder']);
   });
 
   it('la zone reste, et garde sa hauteur, quand il n’y a pas de photo', async () => {
@@ -165,6 +165,108 @@ describe('une photo n’agrandit pas sa carte', () => {
       props: { style: unknown };
     };
     expect(aplat(anime).transform).toBeUndefined();
+  });
+});
+
+/**
+ * Une liste qui se recompose ne se vide pas.
+ *
+ * **Le décor divergent est le contenu pendant l'attente.** Une implémentation
+ * qui repasse par l'état de chargement rend un écran qui a l'air de
+ * fonctionner : la nouvelle liste finit par arriver. Ce qu'elle détruit est le
+ * repère du doigt — l'écran clignote, et l'on ne sait plus où l'on était. Le
+ * test lit donc **ce qui est encore là** pendant la recomposition.
+ */
+describe('une liste qui se recompose ne se vide pas', () => {
+  const PRETE = {
+    etat: 'pret' as const,
+    donnees: ['un', 'deux'],
+    vide: false,
+    vuA: 0,
+    rechargement: false,
+    recharger: () => {},
+  };
+
+  it('l’ancienne reste montée et lisible pendant qu’on recharge', async () => {
+    const vue = await render(
+      <Cadre>
+        <Ecran requete={PRETE as never} titre="x">
+          {(lignes: string[]) => (
+            <View testID="liste">
+              {lignes.map((l) => (
+                <View key={l} testID={`ligne-${l}`} />
+              ))}
+            </View>
+          )}
+        </Ecran>
+      </Cadre>,
+    );
+
+    vue.rerender(
+      <Cadre>
+        <Ecran requete={{ ...PRETE, rechargement: true } as never} titre="x">
+          {(lignes: string[]) => (
+            <View testID="liste">
+              {lignes.map((l) => (
+                <View key={l} testID={`ligne-${l}`} />
+              ))}
+            </View>
+          )}
+        </Ecran>
+      </Cadre>,
+    );
+
+    // **Ni squelette ni vide.** Vider avant de remplir fait clignoter l'écran
+    // et perdre le repère du doigt.
+    expect(screen.getByTestId('ligne-un')).toBeTruthy();
+    expect(screen.getByTestId('ligne-deux')).toBeTruthy();
+    expect(screen.queryByTestId('etat-chargement')).toBeNull();
+  });
+
+  it('et elle s’atténue dès l’appui, sans attendre le seuil', async () => {
+    /**
+     * **On éprouve le départ de l'aller-retour, pas la valeur interpolée.**
+     * Les animations de React Native sont pilotées par les images de rendu et
+     * non par les minuteurs, donc avancer l'horloge de Jest ne déplace aucune
+     * opacité : une assertion sur la valeur affichée resterait à un et
+     * accuserait le composant. Ce qui se vérifie est que la descente vers
+     * vingt-cinq pour cent **part au rendu de la recomposition** — une
+     * implémentation qui attendrait le seuil n'aurait encore rien lancé.
+     */
+    const timing = jest.spyOn(Animated, 'timing');
+    try {
+      const corps = (lignes: string[]) => <View testID={`liste-${lignes.length}`} />;
+      const vue = await render(
+        <Cadre>
+          <Ecran requete={PRETE as never} titre="x">
+            {corps}
+          </Ecran>
+        </Cadre>,
+      );
+      timing.mockClear();
+
+      await act(async () => {
+        vue.rerender(
+          <Cadre>
+            <Ecran requete={{ ...PRETE, rechargement: true } as never} titre="x">
+              {corps}
+            </Ecran>
+          </Cadre>,
+        );
+      });
+
+      const versQuoi = timing.mock.calls.map((appel) => (appel[1] as { toValue: number }).toValue);
+      // La descente à vingt-cinq pour cent, puis la remontée : un seul
+      // aller-retour, déclaré d'un coup pour ne pas pouvoir être interrompu.
+      expect(versQuoi).toEqual([0.25, 1]);
+      // Et chaque moitié dure la moitié du fondu — la séquence entière tient
+      // ses deux cent vingt millisecondes même si la donnée revient en
+      // quarante, sans quoi l'atténuation deviendrait un clignotement.
+      const durees = timing.mock.calls.map((appel) => (appel[1] as { duration: number }).duration);
+      expect(durees).toEqual([motion.fondu / 2, motion.fondu / 2]);
+    } finally {
+      timing.mockRestore();
+    }
   });
 });
 

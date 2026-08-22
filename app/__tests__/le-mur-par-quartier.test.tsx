@@ -280,7 +280,10 @@ describe('le mur ne tire jamais un original', () => {
     const vue = await monter(FIL_AVEC_PHOTOS);
     await waitFor(() => expect(screen.getByTestId('quartier-ouvert')).toBeTruthy());
 
-    const uri = String(screen.getByTestId('quartier-ouvert-photo').props.source.uri);
+    // **Le testID nomme la zone, l'image porte le suffixe.** `Photo` réserve
+    // la place avant que la photo arrive : le nœud extérieur est l'aplat qui
+    // tient la hauteur, et c'est celui-là qu'on garde quand il n'y a rien.
+    const uri = String(screen.getByTestId('quartier-ouvert-photo-image').props.source.uri);
 
     expect(uri).toContain(CLE_COUVERTURE);
     expect(uri).toContain('@vignette');

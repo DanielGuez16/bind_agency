@@ -25,7 +25,7 @@ export {
   type BarreDePalier,
   type BarreVerticale,
 } from './Graphiques';
-export { Apparition, Fondu, useAttenteVisible, useEnfoncement, useMouvementReduit, vibration } from './Mouvement';
+export { Apparition, Fondu, useAttenteVisible, useEnfoncement, useMouvementReduit, useRecomposition, vibration } from './Mouvement';
 export { EnTeteDEcran, Filet, prenomDe, type Compteur } from './EnTete';
 export { LigneDeContrepartie, TierBadge, type Palier, type TierBadgeProps } from './TierBadge';
 export { BadgesDeProfil, chipDeComportement, type BadgeDeProfil } from './Badges';

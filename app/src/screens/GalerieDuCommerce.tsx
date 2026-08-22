@@ -19,10 +19,11 @@
  */
 import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
-import { Image, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { useApi, type PhotoDuCommerce } from '../api';
 import { Icone, StatusMessage, Texte, vibration } from '../components';
+import { Photo } from '../components';
 import { useI18n } from '../i18n';
 import { radius, useColors } from '../theme';
 
@@ -129,12 +130,12 @@ export function GalerieDuCommerce({
               backgroundColor: c['bg.surface'],
             }}
           >
-            <Image
-              // Une grille de vignettes : le commerce vérifie son ordre, il
-              // ne regarde pas ses photos en détail depuis cet écran.
-              source={{ uri: api.urlDeLaVignette(photo.storage_key) ?? undefined }}
-              style={{ width: 56, height: 56, borderRadius: radius['radius.none'] }}
-              resizeMode="cover"
+            {/* Une grille de vignettes : le commerce vérifie son ordre, il ne
+                regarde pas ses photos en détail depuis cet écran. */}
+            <Photo
+              uri={api.urlDeLaVignette(photo.storage_key)}
+              hauteur={56}
+              style={{ width: 56, borderRadius: radius['radius.none'] }}
             />
 
             <View style={{ flex: 1, gap: 2 }}>

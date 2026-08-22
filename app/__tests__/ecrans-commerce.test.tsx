@@ -1863,7 +1863,7 @@ describe('l’annuaire des créateurs', () => {
     // la clé » ne suffisait pas : `urlDeLaVignette` suffixe `@vignette` et
     // contient la clé lui aussi, si bien que la mutation qui remettait la
     // vignette passait au vert. C'est la terminaison qui distingue les deux.
-    expect(String(screen.getByTestId('photo-c1').props.source.uri)).toMatch(
+    expect(String(screen.getByTestId('photo-c1-image').props.source.uri)).toMatch(
       /photos\/creatrices\/lea\.jpg$/,
     );
   });
@@ -1888,7 +1888,7 @@ describe('l’annuaire des créateurs', () => {
     );
     await waitFor(() => expect(screen.getByTestId('createur-c1')).toBeTruthy());
 
-    expect(String(screen.getByTestId('photo-c1').props.source.uri)).toMatch(/@apercu$/);
+    expect(String(screen.getByTestId('photo-c1-image').props.source.uri)).toMatch(/@apercu$/);
   });
 
   it('garde le cadre du portrait quand la photo manque', async () => {
@@ -1908,7 +1908,11 @@ describe('l’annuaire des créateurs', () => {
     await waitFor(() => expect(screen.getByTestId('createur-c1')).toBeTruthy());
 
     expect(screen.getByTestId('portrait-c1')).toBeTruthy();
-    expect(screen.queryByTestId('photo-c1')).toBeNull();
+    // L'image manque, **la zone reste** : c'est exactement ce que ce test
+    // veut dire par « garde le cadre », et c'est maintenant vrai à deux
+    // niveaux — le cadre du portrait, et l'aplat qui tient sa hauteur.
+    expect(screen.queryByTestId('photo-c1-image')).toBeNull();
+    expect(screen.getByTestId('photo-c1')).toBeTruthy();
   });
 
   it('montre les paliers ouverts, qui portent l’information à sa place', async () => {

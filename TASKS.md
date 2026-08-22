@@ -1942,12 +1942,12 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       le défaut n'était pas la lenteur, c'était la carte qui grandit et pousse
       ce qu'on lisait. La règle 2 — l'appui en 100 ms — existait déjà.
       1348 tests, 3 mutations*
-- [ ] **`Photo` n'est branchée que sur l'aperçu de prestation**
+- [x] **`Photo` est branchée sur les six familles**
       *Reste le fil et ses quartiers, la fiche de salon et sa galerie,
       l'annuaire, le catalogue, le suivi de tournée. C'est le changement qui
       touche le plus d'écrans, et le seul que les testeurs nommaient
       directement — les sites restants sont mécaniques, pas décisionnels*
-- [ ] **La liste qui se recompose ne s'atténue pas encore**
+- [x] **La liste qui se recompose s'atténue sans se vider**
       *L'ancienne doit descendre à 25 % **sans se vider**, dès l'appui et sans
       attendre le seuil : ce n'est pas un indicateur d'attente, c'est un
       remplacement. La nouvelle monte par-dessus, décalée de 30 ms par ligne et
@@ -1955,7 +1955,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       revient en 40 ms, sans quoi l'atténuation deviendrait un voyant qui
       clignote. Concerne le fil, la bande de créneaux, les trois onglets des
       réservations, la file d'arbitrage, l'annuaire*
-- [ ] **La règle 3 : la réussite ne s'annonce pas**
+- [x] **La règle 3 : la réussite ne s'annonce pas, et une garde la tient**
       *Un résultat qui apparaît **est** la confirmation. Il reste des bandeaux
       de réussite à retirer, et une garde à écrire pour qu'ils ne reviennent
       pas — c'est une règle qui retire, donc elle se défait toute seule si rien
@@ -1968,6 +1968,14 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       agrégats du §6 quinquies ; et un cache local qui affiche la liste d'hier
       pendant qu'on charge celle d'aujourd'hui — ce dernier rendrait la règle 1
       vraie partout au lieu d'être vraie au second lancement*
+- [ ] **Deux images restent hors de `Photo` : la preuve et son envoi**
+      *Elles ne sont pas dans une liste et ne poussent rien — l'écran est fait
+      pour elles. Le fondu leur ferait du bien quand même, et il ne coûte qu'un
+      remplacement*
+- [ ] **Le compte des reprises de l'appelant doit se lire avant l'appui**
+      *Toujours servi sur la réponse au `POST`. Demandé une seconde fois à
+      `bind-agency-1a`, avec la forme : un `GET` indépendant du salon, parce que
+      le compte doit vivre avant même qu'un salon soit choisi*
 - [ ] **Neuf planches d'écrans portent encore la v1.0**
       *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
       passés en v3, dans la palette Ambre. Les autres suivent l'ordre du

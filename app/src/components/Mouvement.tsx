@@ -40,6 +40,14 @@ const CASCADE_MAX = 8;
 const MONTEE = 10;
 
 /**
+ * Ce à quoi descend une liste qu'on remplace.
+ *
+ * Vingt-cinq pour cent et non zéro : elle reste lisible, donc le doigt garde
+ * son repère. À zéro, l'écran clignote et l'on ne sait plus où l'on était.
+ */
+const ATTENUATION = 0.25;
+
+/**
  * L'état du réglage système « réduire les animations ».
  *
  * Lu une fois et suivi : quelqu'un peut l'activer pendant que l'app tourne, et
@@ -259,4 +267,57 @@ export function useAttenteVisible(enAttente: boolean): boolean {
   }, [enAttente]);
 
   return visible;
+}
+
+/**
+ * Une liste qui se recompose : l'ancienne s'atténue, elle ne disparaît pas.
+ *
+ * **Vider avant de remplir fait clignoter l'écran et perdre le repère du
+ * doigt.** L'ancienne descend donc à vingt-cinq pour cent et reste en place :
+ * elle est encore lisible, on sait toujours où l'on était, et ce qu'on voit est
+ * une liste qui se remplace — pas un voyant qui s'allume.
+ *
+ * **Ce n'est pas un indicateur d'attente, donc le seuil des quatre cents
+ * millisecondes ne s'applique pas.** L'atténuation part à l'appui : c'est la
+ * réponse au geste, au même titre que l'enfoncement d'un bouton. Attendre le
+ * seuil ferait exactement ce que la règle 1 veut éviter — un écran qui ne
+ * répond pas, donc un doute, donc un second appui.
+ *
+ * **Un seul aller-retour, jamais interrompu.** Si la donnée revient en quarante
+ * millisecondes, l'atténuation tient quand même ses deux cent vingt : coupée en
+ * chemin, elle deviendrait précisément le clignotement qu'on lui reproche. La
+ * remontée ne part donc qu'une fois la descente finie **et** la donnée arrivée.
+ */
+export function useRecomposition(enRecomposition: boolean): {
+  style: { opacity: Animated.Value };
+} {
+  const reduit = useMouvementReduit();
+  const opacite = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    // **Sur le front montant seulement.** L'aller-retour se déclenche quand la
+    // recomposition commence ; sa fin ne le relance pas, sans quoi une liste
+    // revenue en quarante millisecondes en jouerait deux à la suite.
+    if (!enRecomposition) return;
+    if (reduit) {
+      opacite.setValue(1);
+      return;
+    }
+    const sequence = Animated.sequence([
+      Animated.timing(opacite, {
+        toValue: ATTENUATION,
+        duration: MOTION.fondu / 2,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacite, {
+        toValue: 1,
+        duration: MOTION.fondu / 2,
+        useNativeDriver: true,
+      }),
+    ]);
+    sequence.start();
+    return () => sequence.stop();
+  }, [enRecomposition, opacite, reduit]);
+
+  return { style: { opacity: opacite } };
 }
