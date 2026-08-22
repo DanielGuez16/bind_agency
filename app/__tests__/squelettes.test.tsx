@@ -182,7 +182,12 @@ describe('le squelette a la forme de ce qui arrive', () => {
     await render(<Cadre role={cas.role}>{cas.noeud}</Cadre>);
 
     expect(screen.getByTestId('etat-chargement')).toBeTruthy();
-    expect(screen.getByTestId(cas.squelette, cache)).toBeTruthy();
+    // **Le squelette arrive après le seuil, et c'est la règle.** Rien ne
+    // clignote sous quatre cents millisecondes : un squelette qui apparaît et
+    // s'en va en deux cents millisecondes est un défaut visuel, pas une
+    // information. La garde vérifie toujours la même chose — chaque écran
+    // déclare sa silhouette — elle l'attend simplement.
+    expect(await screen.findByTestId(cas.squelette, cache)).toBeTruthy();
   });
 
   it.each(CAS.map((c) => [c.nom, c] as const))(

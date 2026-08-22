@@ -28,11 +28,12 @@
  * puisqu'il ordonne les sections. Retirer l'affichage n'a coûté le repère
  * géographique que le temps de le remettre au bon niveau.
  */
-import { Image, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { radius, useColors } from '../theme';
 import { useEnfoncement } from './Mouvement';
 import { MediaFallback } from './Cards';
+import { Photo } from './Photo';
 import { Texte } from './Texte';
 
 /**
@@ -101,25 +102,16 @@ export function ApercuDePrestation({
       // aucun des noms courts qu'on essaie d'abord.
       style={{ flex: 1, minWidth: 0, gap: 9 }}
     >
-      <View
-        style={{
-          height: IMAGE_DE_L_APERCU,
-          borderRadius: radius['radius.photo'],
-          overflow: 'hidden',
-          backgroundColor: c['media.placeholder'],
-        }}
-      >
-        {photo ? (
-          <Image
-            testID={testID ? `${testID}-photo` : undefined}
-            source={{ uri: photo }}
-            resizeMode="cover"
-            style={{ width: '100%', height: '100%' }}
-          />
-        ) : (
-          <MediaFallback monogramme={salon} height={IMAGE_DE_L_APERCU} />
-        )}
-      </View>
+      {/* **La hauteur est connue avant l'image.** C'était déjà le cas ici ; ce
+          qui manquait est le fondu — une photo qui apparaît d'un coup est un
+          clignotement, quelle que soit sa vitesse. */}
+      <Photo
+        uri={photo}
+        hauteur={IMAGE_DE_L_APERCU}
+        style={{ borderRadius: radius['radius.photo'] }}
+        testID={testID ? `${testID}-photo` : undefined}
+        replit={<MediaFallback monogramme={salon} height={IMAGE_DE_L_APERCU} />}
+      />
 
       <View style={{ gap: 4 }}>
         <Texte

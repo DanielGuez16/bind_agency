@@ -894,6 +894,9 @@ describe("ce que la bibliothèque n'a pas", () => {
       'Logo.tsx',
       'Mouvement.tsx',
       'PaveDeSaisie.tsx',
+      // La photo qui se fond dans une place déjà réservée. C'est le seul
+      // ajout de la planche de l'attente : les deux autres règles retirent.
+      'Photo.tsx',
       'PickupCode.tsx',
       'SegmentedTabs.tsx',
       'Skeleton.tsx',

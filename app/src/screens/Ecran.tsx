@@ -24,7 +24,15 @@
 import type { ReactNode } from 'react';
 import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 
-import { Button, EmptyState, Icone, SkeletonLignes, StatusMessage, Texte } from '../components';
+import {
+  Button,
+  EmptyState,
+  Icone,
+  SkeletonLignes,
+  StatusMessage,
+  Texte,
+  useAttenteVisible,
+} from '../components';
 import { useI18n, type SupportedLocale } from '../i18n';
 import { formatDate } from '../format';
 import { BarreDeTitre } from '../shell/BarreDeTitre';
@@ -112,12 +120,23 @@ export function Ecran<T>({
   const { t } = useI18n();
   const { messageDErreur } = useApi();
 
+  const attenteVisible = useAttenteVisible(requete.etat === 'chargement');
+
   const margeLaterale = large ? density.screenPaddingLarge : density.screenPadding;
   /** Ce qu'`Ecran` compose lui-même garde sa marge, même à fond perdu. */
   const margeDeSecours = bordAbord ? { paddingHorizontal: margeLaterale } : null;
 
   const corps = (() => {
     if (requete.etat === 'chargement') {
+      // **Rien ne clignote sous quatre cents millisecondes.** Un squelette qui
+      // apparaît et s'en va en deux cents millisecondes est un défaut visuel,
+      // pas une information — et il produit exactement ce qu'il prétend
+      // soigner : l'écran saute, donc on doute de ce qu'on vient de faire.
+      //
+      // La vue reste montée et vide pendant le seuil : ce n'est pas un blanc,
+      // c'est ce qu'il y avait déjà, et sur une seconde ouverture il y a même
+      // l'en-tête, qui vit hors des quatre états.
+      if (!attenteVisible) return <View testID="etat-chargement" />;
       return (
         <View testID="etat-chargement" style={[{ gap: density.gap }, squelette ? null : margeDeSecours]}>
           {squelette ?? (
