@@ -8166,3 +8166,25 @@ les confondre écrirait un chiffre faux dans l'un des deux.
 **Le champ absent se lit « pas de répétition », jamais l'inverse.**
 Sous-proposer la clôture est le bon défaut : sur-proposer fermerait un dossier
 où il fallait trancher.
+
+
+---
+
+## 2026-08-21 — Deux totaux valent mieux qu'un tiret
+
+**Le tiret était la seule chose que l'écran disait du revenu dans le cas qu'il
+existe pour traiter.** `totaliser` additionnait tout et rendait « — » dès que
+deux devises se croisaient. Le refus était juste — aucun taux de change n'est
+stocké, et c'est le seul écran du produit qui montre de l'argent — mais la
+conclusion ne l'était pas : deux totaux séparés sont chacun vrais, et leur
+juxtaposition dit ce qu'aucun total combiné ne pourrait dire.
+
+**Le groupe est la devise ET la périodicité.** Additionner un mensuel et un
+annuel de la même devise donnerait un nombre qui n'est ni l'un ni l'autre — et
+qui aurait l'air juste, ce qui est le pire des chiffres faux. C'est le cas que la
+mutation éprouve, et le décor qui le fait diverger est deux plans en dollars dont
+un annuel.
+
+**Le plan annuel affiche son revenu tel qu'il est facturé.** Aucun mensuel n'est
+calculé pour lui : un chiffre divisé, posé à côté de deux prix mensuels réels, se
+lit comme un troisième prix.
