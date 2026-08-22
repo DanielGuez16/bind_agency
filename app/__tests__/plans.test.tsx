@@ -15,6 +15,7 @@ import { ApiClient, ApiProvider } from '../src/api';
 import { I18nProvider } from '../src/i18n';
 import { en } from '../src/i18n/en';
 import { PlansScreen, totaliser } from '../src/screens/PlansScreen';
+import { dureeLisible, partsParCategorie } from '../src/screens/plans/duree';
 import { ThemeProvider } from '../src/theme';
 
 function plan(over: Record<string, unknown> = {}) {
@@ -145,5 +146,83 @@ describe('lecture seule, dite une fois', () => {
     await monter([plan()]);
     await waitFor(() => expect(screen.getByTestId('ecran-plans')).toBeTruthy());
     expect(screen.queryByTestId('note-annuel')).toBeNull();
+  });
+});
+
+describe('la durée médiane, et ce qu’on a le droit d’en dire', () => {
+  const AVEC = (extra: Record<string, unknown>) =>
+    ({
+      duree_mediane_terminee_jours: 213,
+      abonnements_termines: 12,
+      duree_mediane_en_cours_jours: 90,
+      abonnements_en_cours: 4,
+      abonnes_par_categorie: [],
+      ...extra,
+    }) as never;
+
+  it('rend les mois et l’effectif, jamais le nombre seul', () => {
+    // « 7 mois » sorti de trois départs se lit comme un fait ; l'effectif à
+    // côté est ce qui empêche de le croire.
+    expect(dureeLisible(AVEC({}))).toMatchObject({ mois: 7, sur: 12, minoritaire: false });
+  });
+
+  it('et signale quand la médiane parle au nom d’une minorité', () => {
+    // **Le cas qui diverge de « affiche le nombre ».** Trois départs contre
+    // trente-et-un abonnements qui courent : la médiane terminée ne mesure
+    // alors que les mécontents, et le dire vaut mieux que la corriger.
+    expect(
+      dureeLisible(AVEC({ abonnements_termines: 3, abonnements_en_cours: 31 })),
+    ).toMatchObject({ minoritaire: true, enCours: 31 });
+  });
+
+  it('nulle sans abonnement terminé, jamais zéro', () => {
+    // « 0 mois » se lirait « ils partent tout de suite », qui est le contraire
+    // de ce que dit l'absence de mesure.
+    expect(dureeLisible(AVEC({ duree_mediane_terminee_jours: null }))).toBeNull();
+    expect(dureeLisible(AVEC({ abonnements_termines: 0 }))).toBeNull();
+  });
+
+  it('et l’absence des champs ne fait pas tomber le calcul', () => {
+    expect(dureeLisible({} as never)).toBeNull();
+  });
+});
+
+describe('qui prend chaque plan', () => {
+  const PLAN = (lignes: { categorie: string; abonnes: number; abonnes_actifs: number }[]) =>
+    ({ abonnes_par_categorie: lignes }) as never;
+
+  it('la plus fournie donne l’échelle, pas le total', () => {
+    // **Le cas qui diverge de « rapporte au total ».** Une barre rapportée au
+    // total écraserait les quatre lignes d'un plan où une catégorie domine —
+    // et c'est précisément ce plan-là qu'on vient lire.
+    const parts = partsParCategorie(
+      PLAN([
+        { categorie: 'nails', abonnes: 61, abonnes_actifs: 54 },
+        { categorie: 'hair', abonnes: 43, abonnes_actifs: 40 },
+      ]),
+    );
+    expect(parts[0].fraction).toBe(1);
+    expect(parts[1].fraction).toBeCloseTo(43 / 61);
+  });
+
+  it('une catégorie à zéro garde sa ligne et sa barre vide', () => {
+    // « Ce plan n'a jamais séduit un salon d'ongles » est exactement ce qu'on
+    // vient lire, et une ligne retirée le tairait.
+    const parts = partsParCategorie(
+      PLAN([
+        { categorie: 'spa', abonnes: 8, abonnes_actifs: 8 },
+        { categorie: 'nails', abonnes: 0, abonnes_actifs: 0 },
+      ]),
+    );
+    expect(parts).toHaveLength(2);
+    expect(parts[1]).toMatchObject({ categorie: 'nails', abonnes: 0, fraction: 0 });
+  });
+
+  it('et porte combien restent, pas seulement combien ont souscrit', () => {
+    // C'est l'écart qui porte l'argument : souscrire peu et partir vite dit
+    // que le plan est trop cher ; souscrire massivement et rester dit qu'il est
+    // trop bas. Le seul total ne dirait ni l'un ni l'autre.
+    const parts = partsParCategorie(PLAN([{ categorie: 'nails', abonnes: 61, abonnes_actifs: 54 }]));
+    expect(parts[0]).toMatchObject({ abonnes: 61, actifs: 54 });
   });
 });
