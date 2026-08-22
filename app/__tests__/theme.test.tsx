@@ -873,6 +873,11 @@ describe('les surfaces de la v1.1', () => {
       // La liste des premiers pas, quand les rapports n'ont rien à rapporter :
       // l'écran change de nature, et sa liste est une carte.
       'src/screens/rapports/PremiersPas.tsx',
+      // La feuille d'annulation. Elle sort par le bas et non de la page, mais
+      // elle porte les trois marques d'une carte — et la règle des rayons ne
+      // souffre pas d'exception par écran, c'est ainsi qu'elle avait disparu
+      // la première fois. Au bord haut, l'ombre la détache du voile.
+      'src/screens/reservations/AnnulerLaReservation.tsx',
     ];
 
     // **La fenêtre est à 900 et non à 600, et ce n'est pas un réglage.** Un
