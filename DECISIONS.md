@@ -8343,3 +8343,38 @@ lignes effacées sans rien à la place. Elles ont fini par être livrées, donc 
 n'a manqué cette fois — mais ce fichier est le canal qui a livré quatre rondes de
 champs en deux jours, et une demande effacée est une demande qui ne revient pas.
 Un conflit sur ce fichier se résout en gardant les deux côtés.
+## 2026-08-22 — Une PR fusionnée peut en annuler une autre, sans que rien ne rougisse
+
+**#217 a supprimé 435 lignes de #215**, fusionnée quatre heures plus tôt : le
+bilan de tournée, ses deux modules, son test et ses six chaînes de traduction.
+C'était une PR sur la fiche et la galerie, et **la cause n'est pas une
+résolution de conflit** — c'est ce que j'avais supposé, et c'était faux.
+`git reset --soft origin/main` suivi de `git add -A` suffit : le reset déplace
+HEAD sur le **nouveau** `origin/main` en gardant l'arbre de travail, lequel porte
+encore l'état d'avant pour tout ce qu'on n'a pas touché ; `git add -A` enregistre
+alors le retrait de tout ce qui a été fusionné entre-temps. Cela touche donc des
+fichiers qu'on n'a jamais ouverts, et plus on livre vite plus la fenêtre est
+large. La forme juste est
+`git reset --soft "$(git merge-base HEAD origin/main)"`.
+
+Et la vérification qui attrape les trois cas, à passer avant de pousser :
+`git show --numstat HEAD | awk '$1==0 && $2>0 {print $3}'` — un fichier en pure
+suppression dans une PR qui prétend ajouter est presque toujours un accident.
+
+**La CI n'a rien dit, et ne pouvait rien dire.** Un test supprimé ne rougit pas —
+il disparaît. Les 1175 tests restants passaient, et `main` était verte sur un
+écran amputé. C'est la seconde perte de la journée après les vingt-sept lignes de
+`TASKS.md` effacées par #212 ; celle-ci portait du code livré.
+
+Ce qui la rend invisible est ce qui la rend dangereuse : rien dans le processus
+ne distingue « ce fichier n'a jamais existé » de « ce fichier a été supprimé par
+une résolution de conflit ». Le seul signal a été un `tsc` qui se plaignait d'un
+module absent, deux jours après.
+
+**Et l'état de la tournée n'est plus dérivé nulle part.** Deux dérivations
+coexistaient — celle du premier lot et celle que j'avais ajoutée sans voir la
+première, ce qui est le même défaut que la PR ci-dessus sous une autre forme.
+Le serveur sert `etat`, les deux sont retirées, et une garde vérifie que l'écran
+ne lit plus aucune des quatre dates pour décider d'un état. Elle vise les champs
+et non le nom de la fonction : une dérivation réécrite sous un autre nom
+passerait une garde qui ne chercherait que `etatDeLaFiche`.

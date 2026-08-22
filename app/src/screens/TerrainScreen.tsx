@@ -35,7 +35,12 @@ import { useState } from 'react';
 import { View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
-import { useApi, type FichePreparee, type LienRemis } from '../api';
+import {
+  useApi,
+  type EtatDeLaTournee,
+  type FichePreparee,
+  type LienRemis,
+} from '../api';
 import {
   Button,
   Chip,
@@ -46,10 +51,11 @@ import {
   Texte,
   TextField,
 } from '../components';
-import { formatDate } from '../format';
+import { formatDate, formatNumber } from '../format';
 import { useI18n } from '../i18n';
 import { codeColors, elevationDeCarte, radius, useColors } from '../theme';
 import { Ecran } from './Ecran';
+import { bilanDeTournee } from './terrain/tournee';
 import { useRequete } from './useRequete';
 
 const TAILLE_DU_QR = 220;
@@ -74,21 +80,30 @@ type Brouillon = {
 const VIDE: Brouillon = { nom: '', adresse: '', telephone: '' };
 
 /**
- * Où en est une fiche, en un mot.
+ * **L'état vient du serveur, et deux dérivations sont mortes ici.**
  *
- * Lu sur les dates et non sur le statut seul : « préparée » et « lien envoyé »
- * sont deux moments distincts d'un même `draft`, et c'est justement l'écart
- * entre les deux qui dit si la tournée a servi.
+ * Cet écran en portait une depuis le premier lot ; j'en avais ajouté une
+ * seconde la veille, dans son propre module. Le serveur sert désormais `etat`,
+ * et l'ordre y est plus délicat qu'il n'y paraît : une fiche **bloquée puis
+ * assumée est assumée**, et regarder `blocked_at` avant `used_at` afficherait
+ * « bloquée » pour toujours sur un salon qui travaille depuis un mois — la
+ * tournée compterait alors un échec là où elle a réussi.
+ *
+ * Le vocabulaire servi est celui de la conduite et non de la base : « jamais
+ * ouverte » se **revisite**, « abandonnée » se **relance**, « bloquée » ne se
+ * démarche pas du tout — c'est le produit qui coince.
  */
-export function etatDeLaFiche(
-  fiche: FichePreparee,
-  maintenant: Date,
-): 'assumee' | 'lien-ouvert' | 'lien-expire' | 'preparee' {
-  if (fiche.used_at) return 'assumee';
-  if (!fiche.issued_at || fiche.revoked_at) return 'preparee';
-  if (fiche.expires_at && new Date(fiche.expires_at) <= maintenant) return 'lien-expire';
-  return 'lien-ouvert';
-}
+
+/**
+ * Les états où un lien court encore : réémettre le remplace, révoquer le
+ * retire. Sur une fiche jamais remise il n'y a rien à révoquer, et sur une
+ * fiche expirée il n'y a plus rien à retirer.
+ */
+const EN_COURS = new Set<EtatDeLaTournee>([
+  'never_opened',
+  'opened_not_claimed',
+  'blocked_on_commitment',
+]);
 
 export function TerrainScreen() {
   const { t, locale } = useI18n();
@@ -282,6 +297,12 @@ export function TerrainScreen() {
 
           {saisie}
 
+          {/* **Le bilan de la tournée, avant sa liste.** Les autres blocs de
+              cet écran servent une visite ; celui-ci répond à une autre
+              question, et c'est la seule qui se lit assise : est-ce que la
+              tournée valait le déplacement ? */}
+          <BilanDeLaTournee fiches={fiches} />
+
           {/* Le suivi. Les fiches assumées y restent. */}
           <View style={{ gap: 12 }}>
             <Texte variante="type.bodyStrong">{t('terrain.suivi')}</Texte>
@@ -300,6 +321,80 @@ export function TerrainScreen() {
   );
 }
 
+/**
+ * Ce que la tournée a rapporté, et par quelle voie.
+ *
+ * **Le chiffre décisif n'est pas le taux d'activation, c'est l'écart entre les
+ * deux voies de remise.** Il ne dit pas d'abandonner le lien — un lien vaut
+ * mieux qu'une visite perdue — il dit qu'un second passage pour attraper le
+ * décideur rapporte plus qu'une relance. Un taux global mélangerait justement
+ * les deux méthodes qu'on cherche à comparer.
+ */
+function BilanDeLaTournee({ fiches }: { fiches: FichePreparee[] }) {
+  const { t, locale } = useI18n();
+  const bilan = bilanDeTournee(fiches);
+
+  // Rien à dire tant qu'aucune fiche n'est partie : trois zéros et un tiret
+  // n'aident personne, et l'écran a déjà son formulaire à montrer.
+  if (bilan.remises === 0) return null;
+
+  const nommees = bilan.voies.filter((voie) => voie.taux !== null);
+
+  return (
+    <View style={{ gap: 10 }} testID="bilan-de-tournee">
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 24 }}>
+        <Chiffre valeur={String(bilan.preparees)} legende={t('terrain.bilanPreparees')} testID="bilan-preparees" />
+        <Chiffre valeur={String(bilan.remises)} legende={t('terrain.bilanRemises')} testID="bilan-remises" />
+        <Chiffre valeur={String(bilan.activees)} legende={t('terrain.bilanActivees')} testID="bilan-activees" />
+        {/* **Le délai n'apparaît qu'avec une activation.** « — » à côté de
+            trois chiffres se lit comme une panne ; l'absence de délai n'en est
+            pas une, c'est que personne n'a encore repris sa fiche. */}
+        {bilan.delaiMedianHeures !== null ? (
+          <Chiffre
+            valeur={t('terrain.bilanHeures', {
+              n: formatNumber(Math.round(bilan.delaiMedianHeures), locale),
+            })}
+            legende={t('terrain.bilanDelai')}
+            testID="bilan-delai"
+          />
+        ) : null}
+      </View>
+
+      {/* **L'écart, en toutes lettres.** Deux pourcentages posés côte à côte
+          laisseraient à faire la soustraction ; la phrase dit ce qu'ils
+          impliquent, qui est le seul intérêt de les mesurer. */}
+      {nommees.length === 2 ? (
+        <Texte variante="type.caption" couleur="ink.soft" testID="ecart-des-voies">
+          {t('terrain.bilanEcart', {
+            enMain: Math.round((nommees.find((v) => v.voie === 'qr')?.taux ?? 0) * 100),
+            parLien: Math.round((nommees.find((v) => v.voie === 'email')?.taux ?? 0) * 100),
+          })}
+        </Texte>
+      ) : null}
+    </View>
+  );
+}
+
+/** Un nombre et ce qu'il compte. La légende sous le chiffre, jamais l'inverse. */
+function Chiffre({
+  valeur,
+  legende,
+  testID,
+}: {
+  valeur: string;
+  legende: string;
+  testID: string;
+}) {
+  return (
+    <View style={{ width: 150, gap: 2 }} testID={testID}>
+      <Texte variante="type.figure">{valeur}</Texte>
+      <Texte variante="type.caption" couleur="ink.soft">
+        {legende}
+      </Texte>
+    </View>
+  );
+}
+
 function LigneDeFiche({
   fiche,
   onEmettre,
@@ -311,7 +406,7 @@ function LigneDeFiche({
 }) {
   const { t, locale } = useI18n();
   const c = useColors();
-  const etat = etatDeLaFiche(fiche, new Date());
+  const etat = fiche.etat;
 
   return (
     <View
@@ -348,15 +443,15 @@ function LigneDeFiche({
       {/* **Rien à faire sur une fiche assumée.** Le salon en est propriétaire ;
           lui rouvrir un lien de prise en main n'aurait aucun sens, et le
           serveur le refuse. */}
-      {etat === 'assumee' ? null : (
+      {etat === 'claimed' ? null : (
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <Button
-            label={t(etat === 'lien-ouvert' ? 'terrain.reemettre' : 'terrain.emettre')}
+            label={t(EN_COURS.has(etat) ? 'terrain.reemettre' : 'terrain.emettre')}
             size="sm"
             onPress={onEmettre}
             testID={`emettre-${fiche.business_id}`}
           />
-          {etat === 'lien-ouvert' ? (
+          {EN_COURS.has(etat) ? (
             <Button
               label={t('terrain.revoquer')}
               size="sm"

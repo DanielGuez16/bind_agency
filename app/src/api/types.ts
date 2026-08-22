@@ -1426,6 +1426,27 @@ export type LienRemis = {
 };
 
 /** Une fiche préparée et où elle en est. La mesure du démarchage physique. */
+/**
+ * Où en est une fiche préparée, du point de vue de la tournée.
+ *
+ * **Le vocabulaire est celui de la conduite, pas celui de la base.** Ce que le
+ * démarcheur lit doit lui dire quoi faire, pas quel champ est nul — et les trois
+ * états d'une fiche non activée commandent trois conduites différentes.
+ */
+export type EtatDeLaTournee =
+  /** Préparée, jamais remise. Il reste à passer. */
+  | 'prepared'
+  /** Remise, jamais ouverte. **Revisiter** : une relance s'adresserait à un
+   * lien que personne ne regarde. */
+  | 'never_opened'
+  /** Ouverte, abandonnée en route. **Relancer** : quelqu'un a regardé. */
+  | 'opened_not_claimed'
+  /** Ouverte, arrêtée sur l'engagement. Ni l'un ni l'autre : c'est le produit
+   * qui coince, et le démarchage n'y peut rien. */
+  | 'blocked_on_commitment'
+  /** Assumée. La tournée a porté. */
+  | 'claimed';
+
 export type FichePreparee = {
   business_id: string;
   name: string;
@@ -1437,6 +1458,20 @@ export type FichePreparee = {
   used_at: string | null;
   revoked_at: string | null;
   channel: 'qr' | 'email' | null;
+  /** Première ouverture du lien. Nulle : personne ne l'a jamais vu. */
+  opened_at: string | null;
+  /** Dernière prise en main tentée et refusée. */
+  blocked_at: string | null;
+  /**
+   * L'état servi, et **jamais dérivé ici**.
+   *
+   * Je le calculais sur les dates ; le serveur le fait mieux et l'ordre y est
+   * délicat — une fiche bloquée puis assumée est **assumée**, et regarder
+   * `blocked_at` avant `used_at` afficherait « bloquée » pour toujours sur un
+   * salon qui travaille. Deux dérivations de la même chose finissent par
+   * diverger, et c'est celle de l'écran qui aurait tort.
+   */
+  etat: EtatDeLaTournee;
 };
 
 /** Une reprise du compte par l'administration, telle que le salon la lit. */
