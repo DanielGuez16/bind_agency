@@ -939,6 +939,22 @@ export type VueDActivation = {
   etapes: EtapeActivation[];
 };
 
+/**
+ * Qui a souscrit un plan, par catégorie de commerce.
+ *
+ * **À ne pas confondre avec `PlanAdministrateur.category`**, qui dit à quelle
+ * catégorie le plan *s'adresse*. Celle-ci dit qui a souscrit, et l'écart entre
+ * les deux est l'argument chiffré de la tarification par catégorie : un prix
+ * unique pour un salon d'ongles et un musée n'est pas un prix, c'est une
+ * moyenne — et la moyenne se voit dans les chiffres.
+ */
+export type AbonnesParCategorie = {
+  categorie: BusinessCategory;
+  /** Tous statuts confondus : une catégorie partie a quelque chose à dire. */
+  abonnes: number;
+  abonnes_actifs: number;
+};
+
 export type PlanAdministrateur = {
   plan_id: string;
   name: string;
@@ -951,6 +967,36 @@ export type PlanAdministrateur = {
   subscriptions_count: number;
   active_subscriptions_count: number;
   mrr_cents: number;
+  /**
+   * La médiane des abonnements **terminés**, en jours.
+   *
+   * **La question a été tranchée en ne la tranchant pas**, et c'est mieux que ce
+   * que je demandais. Une durée terminée est un fait, une durée courue est un
+   * minimum : les mélanger rendrait un nombre dont personne ne peut dire ce
+   * qu'il mesure. Les deux sont donc servies séparément, chacune avec son
+   * effectif, et l'écran dit laquelle il affiche.
+   *
+   * Nulle tant qu'aucun abonnement n'est fini — jamais zéro, qui se lirait
+   * « ils partent tout de suite ».
+   */
+  duree_mediane_terminee_jours: number | null;
+  /**
+   * Sur combien d'abonnements elle est calculée.
+   *
+   * **Sans lui, « 7 mois » se lit comme un fait quand il sort de trois
+   * départs.** Il dit aussi combien on a réellement mesuré : la table n'avait
+   * aucune date d'ouverture ni de fin, et les deux colonnes reprises du journal
+   * ne valent que pour les commerces qui n'ont souscrit qu'une fois.
+   */
+  abonnements_termines: number;
+  /** La médiane des durées courues des abonnements vivants. Un minimum,
+   * jamais une durée de vie. Elle rend visible le biais vers le bas de
+   * l'autre : on ne mesure là que ceux qui sont partis. */
+  duree_mediane_en_cours_jours: number | null;
+  abonnements_en_cours: number;
+  /** Vide quand personne n'a souscrit : une liste de zéros par catégorie ne se
+   * lit pas, et ferait croire à un échantillon là où il n'y a rien. */
+  abonnes_par_categorie: AbonnesParCategorie[];
 };
 
 export type Jetons = {
