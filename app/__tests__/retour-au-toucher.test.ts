@@ -86,6 +86,11 @@ const EXEMPTS: { fichier: string; testID: string; raison: string }[] = [
     testID: 'voile-de-la-feuille',
     raison: 'un voile de fermeture est invisible par construction',
   },
+  {
+    fichier: 'screens/reservations/AnnulerLaReservation.tsx',
+    testID: 'voile-de-la-feuille',
+    raison: 'un voile de fermeture est invisible par construction',
+  },
 ];
 
 function fichiers(dossier: string): string[] {

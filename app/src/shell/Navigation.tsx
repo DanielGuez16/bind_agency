@@ -58,10 +58,10 @@ import { CameraScanner } from '../screens/CameraScanner';
 import { RedemptionScreen } from '../screens/RedemptionScreen';
 import { ReglagesScreen } from '../screens/ReglagesScreen';
 import { ReportingScreen } from '../screens/ReportingScreen';
-import { BarreLaterale } from './BarreLaterale';
+import { BarreLaterale, type ContexteDeBarre } from './BarreLaterale';
 import { useGabarit } from './gabarit';
 import { usePosition } from './usePosition';
-import { useMonCommerce } from './useMonCommerce';
+import { CommerceProvider, useMonCommerce } from './useMonCommerce';
 
 // --------------------------------------------------------------------------
 // paramètres
@@ -171,10 +171,12 @@ const Onglets = createBottomTabNavigator();
  * est ignorée sans un mot : la barre latérale n'était jamais montée, et comme
  * la barre du bas était masquée par ailleurs, il ne restait aucune navigation.
  */
-function useBarreLaterale(intitule?: string | null) {
+function useBarreLaterale(intitule?: string | null, salon?: ContexteDeBarre) {
   const { large } = useGabarit();
   if (!large) return undefined;
-  return (props: BottomTabBarProps) => <BarreLaterale {...props} intitule={intitule} />;
+  return (props: BottomTabBarProps) => (
+    <BarreLaterale {...props} intitule={intitule} {...salon} />
+  );
 }
 
 function useOptionsDOnglets(intitule?: string | null) {
@@ -630,11 +632,29 @@ function PileDeLAnnuaire({ businessId }: { businessId: string }) {
   );
 }
 
+/**
+ * Les onglets du commerce, sous le fournisseur d'appartenance.
+ *
+ * Le fournisseur est posé **ici** et non plus haut : au-dessus, la session
+ * n'est pas encore établie et la requête partirait sans jeton. Plus bas, chaque
+ * écran remonterait la sienne — et c'est exactement ce qui rendait un choix de
+ * salon impossible à tenir.
+ */
 function OngletsCommerce() {
+  return (
+    <CommerceProvider>
+      <OngletsDuCommerceChoisi />
+    </CommerceProvider>
+  );
+}
+
+function OngletsDuCommerceChoisi() {
   const { t } = useI18n();
-  const { businessId, nom, ecranDAttente } = useMonCommerce();
+  const { businessId, nom, commerces, choisir, ecranDAttente } = useMonCommerce();
   const options = useOptionsDOnglets();
-  const barreLaterale = useBarreLaterale(nom);
+  // Le sélecteur vit là où le nom vit déjà. Il ne se rend qu'à partir de deux
+  // salons — la barre décide, parce qu'elle seule sait si elle est repliée.
+  const barreLaterale = useBarreLaterale(nom, { salons: commerces, choisi: businessId, onChoisir: choisir });
 
   // Pas de commerce rattaché : un onglet qui répondrait 403 partout ne dit
   // rien. On montre ce qu'il faut faire, et les réglages restent joignables.

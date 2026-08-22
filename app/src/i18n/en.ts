@@ -479,12 +479,31 @@ export const en = {
     // « Cancelling close to the time » ne date rien : le seuil est un réglage
     // et il n'est pas servi. Écrire une heure ici la ferait dériver au premier
     // ajustement, et une heure fausse vaut moins que pas d'heure.
-    annuler: 'Cancel this booking',
-    annulerConfirmer: 'Yes, cancel it',
-    annulerGarder: 'Keep it',
-    annulerSansFrais: 'The place goes back to the salon. Nothing is held against you.',
-    annulerPeutCouter:
-      'Cancelling close to the time counts as a missed appointment: the salon held a place it can no longer fill, and your reliability score drops. Cancel now if you know you cannot come.',
+    // **La formulation est le sujet.** Passé la fenêtre, annuler et ne pas
+    // venir coûtent la même chose au score : le mentionner ne fait que donner
+    // à croire qu'on peut encore l'éviter. Ce qui diffère est que la place
+    // repart et que le salon sait — et c'est tout ce qui est écrit ici.
+    annuler: 'Cancel',
+    // L'heure, jamais la durée : « until 11:00 » se vérifie d'un coup d'œil,
+    // « 24 h before » demande un calcul.
+    annulerLibreJusqua: 'Free to cancel until {{heure}}',
+    // Un fait au passé, sans conséquence annoncée. La conséquence appartient à
+    // la feuille, où la comparaison avec l'alternative existe.
+    annulerFenetreClose: 'Free cancellation ended at {{heure}}',
+    annulerTitre: 'Cancel {{quand}}?',
+    annulerCommeUneAbsence:
+      'It counts as an absence, like not showing up would — but {{salon}} can still give your slot to someone else.',
+    annulerRienARetenir:
+      'The slot goes back to {{salon}}, and nothing is held against you.',
+    annulerVautMieux: 'Telling them now is worth more than not coming',
+    // Le seul nombre de l'écran, et ce n'est pas le coût : il dit ce que
+    // prévenir donne au salon. Un fait, pas une promesse de remplissage.
+    annulerCaLeurLaisse: 'That gives them {{duree}} to fill it.',
+    annulerFiabiliteRemonte: 'Your reliability recovers as you honour the next ones.',
+    annulerEtPrevenir: 'Cancel and tell {{salon}}',
+    annulerGarder: 'Keep it, I am going',
+    dureeMinutes: '{{n}} min',
+    dureeHeuresMinutes: '{{h}} h {{m}}',
     issueHonoree: 'Honoured',
     issueNonHonoree: 'Not honoured',
     issueAnnulee: 'Cancelled',
@@ -589,6 +608,7 @@ export const en = {
     ignore_historique_insuffisant: 'Not enough history',
   },
   commerce: {
+    selecteurTitre: 'Which salon',
     // **Le motif entre guillemets, dans la chaîne.** Les chevrons font partie
     // de la phrase : l'espagnol ne cite pas comme l'anglais, et les coller
     // dans l'écran les figerait sur une seule langue.

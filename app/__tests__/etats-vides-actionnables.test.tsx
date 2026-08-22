@@ -33,7 +33,7 @@ import { en } from '../src/i18n/en';
 import { ThemeProvider } from '../src/theme';
 import { CreationDuCommerceScreen } from '../src/screens/CreationDuCommerceScreen';
 import { TerrainScreen } from '../src/screens/TerrainScreen';
-import { useMonCommerce } from '../src/shell/useMonCommerce';
+import { CommerceProvider, useMonCommerce } from '../src/shell/useMonCommerce';
 
 const coffre = { lire: async () => null, ecrire: async () => {} };
 
@@ -173,7 +173,22 @@ describe('création d’un commerce', () => {
  * reste verte pendant qu'aucun onglet ne le monte. Ce qu'on éprouve ici est le
  * chemin, pas l'écran.
  */
+/**
+ * L'onglet d'attente, sous son fournisseur.
+ *
+ * `useMonCommerce` lève désormais hors de `CommerceProvider` : le choix de
+ * salon vit dans un contexte, et une seconde source de vérité est exactement ce
+ * que ce fournisseur existe pour empêcher. Le monter ici reproduit la coquille.
+ */
 function OngletDAttente() {
+  return (
+    <CommerceProvider>
+      <CorpsDeLAttente />
+    </CommerceProvider>
+  );
+}
+
+function CorpsDeLAttente() {
   return useMonCommerce().ecranDAttente;
 }
 

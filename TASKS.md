@@ -1848,6 +1848,29 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       ouvert du produit, pour une réponse presque toujours vide. Le replier dans
       la charge de la journée — un objet nul, ou la reprise en cours — coûterait
       une requête de moins par ouverture. Non bloquant*
+- [x] **L'annulation v3 : passé la fenêtre, on arrête de parler du score**
+      *La formulation était le sujet, pas le mécanisme. L'écran écrivait « votre
+      score de fiabilité baisse » — exactement la phrase que Design interdit.
+      Passé la fenêtre, annuler et ne pas venir coûtent la même chose : le score
+      ne départage rien, et le mentionner donne à croire qu'on peut encore
+      l'éviter.*
+      *Ce qui diffère est ailleurs, et c'est tout ce que l'écran dit : la place
+      repart, et le salon sait. « Ça compte comme une absence, mais Vela peut
+      encore donner ta place » décrit les mêmes conséquences et fait annuler là
+      où l'autre fait renoncer.*
+      *La fenêtre se nomme par une **heure** — `annulation_sans_frais_jusqu_a`,
+      servi — jamais par une durée. Le bouton ne bouge ni de forme ni de place
+      à aucune heure : rendre l'annulation difficile produit des absences
+      silencieuses, pas des présences. 1314 tests, 3 mutations*
+- [ ] **Une annulation tardive doit coûter moins qu'une absence**
+      *Tranché côté produit, pas encore côté service. Tant que les deux coûtent
+      exactement pareil, rien n'incite à prévenir plutôt qu'à disparaître —
+      sauf la bonne volonté, qui n'est pas un mécanisme. Le jour où
+      `booking_states.annuler` porte un événement de fiabilité distinct du
+      `no_show`, l'écran l'écrit en une ligne de plus dans le bloc « les
+      prévenir maintenant vaut mieux », et c'est **la seule incitation réelle à
+      prévenir**. Composé sans, exprès : la phrase s'ajoute, elle ne se
+      remplace pas*
 - [ ] **Neuf planches d'écrans portent encore la v1.0**
       *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
       passés en v3, dans la palette Ambre. Les autres suivent l'ordre du
@@ -1966,7 +1989,7 @@ barrière avant le réseau, et c'est là qu'il faut la poser.
       qu'un salon sache formuler avant d'avoir vu qui que ce soit ; la recherche
       par pseudonyme, elle, arrive plus tard, quand il a des noms en tête*
 
-- [ ] **Le sélecteur de salon, pour un gérant qui en a deux**
+- [x] **Le sélecteur de salon, pour un gérant qui en a deux**
       *`useMonCommerce` prend `mesCommerces[0]` et la coquille n'offre aucun
       moyen de changer. Depuis que le rattachement d'une fiche existe, un gérant
       peut avoir deux salons — le second est réservable par les créatrices, et

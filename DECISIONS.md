@@ -8950,3 +8950,99 @@ réponse malformée coûterait la journée entière au salon, là où se taire n
 qu'un bandeau. Trois décors de test rendaient d'ailleurs le même objet à toutes
 les routes — un montage qui ne prouve rien, et qu'il a fallu un second appel
 pour révéler.
+
+---
+
+## 2026-08-22 — L'annulation : la formulation est le mécanisme
+
+**Passé la fenêtre, l'écran ne parle plus du score.** L'asymétrie était dans la
+règle depuis le début et l'écran ne la voyait pas : au-delà du seuil, annuler et
+ne pas venir coûtent la même chose — une absence dans les deux cas. Le score ne
+peut donc rien départager, et le mentionner ne fait qu'une chose, donner à
+croire qu'on peut encore l'éviter.
+
+Ce qui diffère est ailleurs, et c'est tout ce que l'écran a à dire : **la place
+repart, et le salon sait**. Un salon prévenu à 11 h peut remplir 14 h 30 ; un
+salon qui l'apprend à 14 h 45 a perdu son créneau et son après-midi.
+
+La version précédente écrivait « votre score de fiabilité baisse ». Les deux
+phrases décrivent exactement les mêmes conséquences ; la première fait renoncer,
+la seconde fait annuler.
+
+**Le coût ne se chiffre jamais.** « Tu perdras huit points » transforme une
+décision en calcul, et un calcul se reporte à demain. Le seul nombre de cet
+écran est le délai avant le créneau, et il n'est pas le coût : il dit ce que
+prévenir donne au salon.
+
+Rendu comme un fait, pas comme une promesse. « Trois heures leur suffisent pour
+la remplir » est vrai à trois heures et faux à cinq minutes ; « ça leur laisse
+trois heures » est vrai aux deux, et le nombre porte l'argument tout seul. Le
+seuil qui aurait départagé les deux formulations n'existe pas — et l'écrire en
+dur aurait été un délai de plus dans le code.
+
+**Le bouton ne bouge pas, à aucune heure.** Pas de bouton grisé, pas de bouton
+déplacé, pas de confirmation supplémentaire près de l'heure. Rendre
+l'annulation difficile ne produit pas des présences, ça produit des absences
+silencieuses — et une absence silencieuse coûte au salon *et* à la créatrice.
+
+**La fenêtre se nomme par une heure, jamais par une durée.** « Jusqu'à 11:00 »
+se vérifie d'un coup d'œil ; « 24 h avant » demande un calcul.
+`annulation_sans_frais_jusqu_a` est calculé serveur, et l'écran ne le
+recalcule pas : le seuil est un réglage, et un écran qui le déduirait d'une
+horloge locale fausse annoncerait « gratuit » sur une annulation qui coûte.
+C'est la deuxième mutation.
+
+**Deux sources qui ne se contredisent pas.** Le diagramme dit *si* une
+annulation peut coûter — `no_show` n'est atteignable que depuis `confirmed`.
+L'instant servi dit *quand*. Quand l'instant manque sur une réservation qui peut
+coûter, l'écran dit ce qu'il sait sans inventer d'heure, plutôt que de se
+rabattre sur « libre ».
+
+**La garde lit les mots.** C'est inhabituel et c'est nécessaire : une
+implémentation qui rend la bonne feuille avec la mauvaise phrase passe tous les
+tests de structure — bouton présent, route correcte, feuille ouverte. C'est
+exactement l'écran que cette planche remplace.
+## 2026-08-22 — Le salon qu'on regarde vit dans un contexte, pas dans quatre requêtes
+
+Le rattachement d'une fiche a rendu le cas réel : un gérant peut avoir deux
+salons, le second est réservable par les créatrices, et la coquille prenait
+`mesCommerces[0]` sans offrir de choix.
+
+**La difficulté n'était pas le contrôle, c'était la source.** `useMonCommerce`
+est appelé par quatre endroits — la navigation, la pause du commerce, la reprise
+du compte — et chacun montait **sa propre requête**. Tant que la règle était « le
+premier de la liste », les quatre tombaient d'accord par hasard. Dès qu'un choix
+existe, quatre copies indépendantes divergent : la barre latérale afficherait un
+salon pendant qu'un autre écran en met un second en pause. Le fournisseur porte
+donc la liste **et** le choix, une fois pour toute la coquille, et le hook lève
+hors de lui — retomber sur une requête locale recréerait la seconde source de
+vérité qu'il existe pour empêcher.
+
+C'est le genre de divergence qui ne se voit pas en développement, où l'on n'a
+qu'un salon : elle n'apparaît que chez le seul utilisateur concerné.
+
+**Un identifiant retenu ne fait jamais autorité.** Il est confronté à la liste
+d'appartenance à chaque montage ; un salon qu'on a quitté ou dont l'accès a été
+révoqué ne reste pas choisi, et l'on retombe sur le premier — le comportement
+d'avant le sélecteur, donc rien ne s'aggrave si la mémoire ment. Le choix est
+retenu par appareil, comme le repli de la barre, et pour la même raison : un
+gérant ouvre l'application sur le salon où il travaille ce jour-là, et le lui
+faire rechoisir à chaque démarrage transformerait un choix rare en geste
+quotidien.
+
+**Le contrôle est à deux endroits, et ce n'est pas une redondance.** La barre
+latérale porte le nom, donc elle porte le choix — c'est là qu'on lit le nom,
+c'est là qu'on en change, et la liste se déplie sous lui plutôt que d'ouvrir un
+écran. Mais **la barre latérale n'existe qu'en bureau** : sur un téléphone, ce
+serait le seul endroit où changer de salon, et il n'y en aurait aucun. Les
+réglages portent donc le même sélecteur, pour les deux mises en page.
+
+**Il ne se rend qu'à partir de deux salons.** Un contrôle qui n'offre aucun choix
+occupe la place et fait douter — c'est la règle du bouton qu'on retire plutôt que
+de griser. Avec un seul salon, le nom reste ce qu'il a toujours été.
+
+**Le salon courant est marqué, pas retiré de la liste.** Le retirer ferait lire
+la liste comme « les autres », et on ne saurait plus lequel on regarde en
+l'ouvrant. Le test porte sur `accessibilityState.selected` et non sur la coche :
+c'est ce qu'un lecteur d'écran annonce, et vérifier le glyphe éprouverait le
+dessin plutôt que ce que l'écran affirme.
