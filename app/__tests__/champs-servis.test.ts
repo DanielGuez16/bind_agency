@@ -111,7 +111,6 @@ const NON_RENDUS: Record<string, string> = {
   'Collaboration.approved_at': 'contrat',
   'DroitDeLecture.created_at': 'contrat',
   'RepriseDuCompte.admin_user_id': 'contrat',
-  'RepriseDuCompte.ended_at': 'contrat',
   'AutorisationDemarree.last_seen_at': 'contrat',
   'Preuve.content_hash': 'contrat',
   'PlanAdministrateur.features': 'contrat',

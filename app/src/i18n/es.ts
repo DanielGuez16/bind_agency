@@ -545,6 +545,9 @@ export const es: Catalogue = {
     ignore_historique_insuffisant: 'Historial insuficiente',
   },
   commerce: {
+    repriseEnCours: 'Alguien de BIND está en tu cuenta',
+    repriseMotif: '«{{motif}}»',
+    repriseDepuisJusqua: 'Desde {{debut}} · hasta {{fin}}',
     enArbitrage: 'Un árbitro se ha hecho cargo — ya no decides sobre esto.',
     mentionAttendue: 'Mención esperada',
     lieuAttendu: 'Ubicación esperada',
@@ -848,6 +851,13 @@ export const es: Catalogue = {
     motDePasseComplet: 'Al menos {{requis}} caracteres.',
   },
   reglages: {
+    reprisesTitre: 'Cuando BIND entró en tu cuenta',
+    reprisesAide:
+      'Cada vez que alguien de BIND abrió tu cuenta, con el motivo que escribió. De esta lista no se borra nada.',
+    repriseMotif: '«{{motif}}»',
+    repriseEnCours: 'Abierta ahora mismo',
+    repriseRefermee: 'Cerrada el {{quand}}',
+    repriseExpiree: 'Llegó a su límite. Nadie la cerró.',
     titre: 'Ajustes',
     compte: 'Cuenta',
     preferences: 'Preferencias',

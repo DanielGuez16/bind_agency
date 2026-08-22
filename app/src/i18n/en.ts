@@ -588,6 +588,12 @@ export const en = {
     ignore_historique_insuffisant: 'Not enough history',
   },
   commerce: {
+    // **Le motif entre guillemets, dans la chaîne.** Les chevrons font partie
+    // de la phrase : l'espagnol ne cite pas comme l'anglais, et les coller
+    // dans l'écran les figerait sur une seule langue.
+    repriseEnCours: 'Someone from BIND is in your account',
+    repriseMotif: '“{{motif}}”',
+    repriseDepuisJusqua: 'Started {{debut}} · ends {{fin}}',
     enArbitrage: 'A reviewer has taken this over — you no longer decide on it.',
     mentionAttendue: 'Expected mention',
     lieuAttendu: 'Expected location tag',
@@ -898,6 +904,15 @@ export const en = {
     motDePasseComplet: 'At least {{requis}} characters.',
   },
   reglages: {
+    reprisesTitre: 'When BIND entered your account',
+    reprisesAide:
+      'Every time someone from BIND opened your account, with the reason they wrote. Nothing is removed from this list.',
+    repriseMotif: '“{{motif}}”',
+    repriseEnCours: 'Open right now',
+    repriseRefermee: 'Closed {{quand}}',
+    // **« Expirée » n'est pas « refermée ».** Personne n'a refermé : l'accès a
+    // couru jusqu'au bout de son plafond, et c'est ce qui devrait gêner.
+    repriseExpiree: 'Ran to its limit. Nobody closed it.',
     titre: 'Settings',
     compte: 'Account',
     preferences: 'Preferences',

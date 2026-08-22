@@ -8911,3 +8911,42 @@ Elle avait signalé `rattacherLaFiche` comme capacité sans écran ; elle a fait
 tomber la suite dès que l'appelant est arrivé, parce que sa ligne d'exception
 était devenue fausse. Une table qui ne tient que dans un sens finit par décrire
 un état ancien.
+## 2026-08-22 — La reprise de compte : ce n'est pas la trace qui retient
+
+**Un journal enregistre un abus, il ne l'empêche pas.** Design répond à la
+question « qu'est-ce qui retient un administrateur » par trois mécanismes, dont
+aucun n'est un contrôle d'accès : le motif transmis au salon **mot pour mot**,
+le compte des reprises de celui qui les demande, et l'adjectif « spontanée »
+écrit pour toujours dans la liste que le gérant relit.
+
+**Un seul des trois est livrable aujourd'hui**, et c'est le premier. Le motif
+existe et se transmet ; l'écran le cite entre guillemets, intact. Le résumer ou
+le catégoriser aurait retiré précisément ce qui retient — quelqu'un qui sait que
+le gérant lira sa phrase exacte l'écrit autrement. Ce n'est pas un champ de
+journal, c'est une lettre.
+
+**L'écran d'administration n'est pas livré, et c'est la décision.** Sans portée,
+« accès complet » est le seul mode possible : livrer le formulaire aujourd'hui
+donnerait un bouton de reprise sans aucun des trois freins, ce qui est pire que
+son absence. Design le dit sans détour — « sans portée, l'écran perd son
+mécanisme principal ». La portée, le compte par administrateur et la distinction
+« spontanée » sont demandés.
+
+**« End it » n'est pas dessiné.** La planche pose ce bouton sur le bandeau du
+salon — « l'accès s'ouvre sans permission et se ferme sans discussion » — et la
+fermeture est aujourd'hui une route d'administration. Un bouton qui ne coupe
+rien, sur cet écran-là, serait pire que son absence.
+
+**Le bandeau se pose hors des quatre états de `Ecran`.** Une journée sans
+rendez-vous rend l'état vide, qui ne rend pas ses enfants — et c'est
+précisément le jour où une reprise est la plus probable : on entre dans un
+compte pour débloquer une configuration, pas un jour chargé. Le laisser dans le
+corps l'aurait éteint le seul jour qui compte.
+
+**`repriseEnCours` vérifie `Array.isArray` bien que le type l'affirme.** Le type
+est une déclaration sur le serveur, pas une garantie sur ce qui arrive. Ce
+bandeau vit sur l'écran le plus ouvert du produit : le faire tomber pour une
+réponse malformée coûterait la journée entière au salon, là où se taire ne coûte
+qu'un bandeau. Trois décors de test rendaient d'ailleurs le même objet à toutes
+les routes — un montage qui ne prouve rien, et qu'il a fallu un second appel
+pour révéler.
