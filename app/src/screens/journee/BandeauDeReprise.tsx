@@ -18,25 +18,33 @@
  * dessine trois ; en inventer deux ici les poserait hors du système, où rien
  * ne garantit plus leur contraste.
  *
- * **Ce que la planche demande et que le serveur ne permet pas encore.** Elle
- * pose un bouton « End it » sur ce bandeau — « l'accès s'ouvre sans permission
- * et se ferme sans discussion ». La fermeture est aujourd'hui une route
- * d'administration : le salon ne peut pas refermer ce qu'on a ouvert chez lui.
- * Le bouton n'est donc pas dessiné, parce qu'un bouton qui ne coupe rien serait
- * pire que son absence sur cet écran-là. Demandé, voir `TASKS.md`.
+ * **« L'accès s'ouvre sans permission et se ferme sans discussion. »** La
+ * seconde moitié ne tenait pas : seule la porte d'administration savait se
+ * refermer, si bien que le gérant qui n'était pas d'accord n'avait qu'un numéro
+ * à appeler. Une garantie qui suppose qu'on décroche n'en est pas une. Le
+ * bouton est là, il coupe **toutes** les reprises qui courent — lui demander
+ * laquelle serait lui demander de savoir combien de personnes sont entrées.
  *
- * La portée n'est pas rendue non plus — rien ne borne la reprise à un ensemble
- * d'écrans — donc le bandeau ne peut pas écrire « hours and capacity only ».
- * Il dit ce qu'il sait : qui, pourquoi, depuis quand, et jusqu'à quand.
+ * **Le bouton ne demande pas de confirmation**, et c'est délibéré. Une question
+ * de plus entre le gérant et la porte est une négociation, et il n'a personne à
+ * convaincre. Le geste se répare tout seul : rien n'est effacé, la liste garde
+ * les reprises avec leur motif, et l'administration peut en rouvrir une en le
+ * disant.
+ *
+ * **La portée est écrite**, parce qu'elle est vraie : une requête hors de ces
+ * écrans est refusée, pas seulement mal vue. Un gérant qui lit « la fiche et le
+ * catalogue » lit une borne, pas une intention.
  */
+import { useState } from 'react';
 import { View } from 'react-native';
 
 import { useApi, type RepriseDuCompte } from '../../api';
-import { Texte } from '../../components';
+import { Button, Texte } from '../../components';
 import { useI18n } from '../../i18n';
 import { formatDateTime } from '../../format';
 import { radius, useColors } from '../../theme';
 import { useRequete } from '../useRequete';
+import { nomDeLEcran } from '../reprise/portee';
 import { repriseEnCours } from './reprise';
 
 export function BandeauDeReprise({
@@ -46,9 +54,11 @@ export function BandeauDeReprise({
   businessId: string;
   timezone: string;
 }) {
-  const { api, } = useApi();
+  const { api, messageDErreur } = useApi();
   const { t, locale } = useI18n();
   const c = useColors();
+  const [envoi, setEnvoi] = useState(false);
+  const [echec, setEchec] = useState<string | null>(null);
 
   // Sa propre requête, comme la pause du commerce : la journée n'a pas de
   // raison de porter une donnée qui ne la concerne qu'à travers ce bandeau, et
@@ -64,6 +74,19 @@ export function BandeauDeReprise({
 
   const reprise = repriseEnCours(requete.donnees);
   if (reprise === null) return null;
+
+  async function refermer() {
+    setEchec(null);
+    setEnvoi(true);
+    try {
+      await api.refermerLaReprise(businessId);
+      requete.recharger();
+    } catch (erreur) {
+      setEchec(messageDErreur(erreur));
+    } finally {
+      setEnvoi(false);
+    }
+  }
 
   return (
     <View
@@ -86,12 +109,45 @@ export function BandeauDeReprise({
         {t('commerce.repriseMotif', { motif: reprise.reason })}
       </Texte>
 
-      <Texte variante="type.monoSmall" couleur="ink.onDark" testID="reprise-quand">
-        {t('commerce.repriseDepuisJusqua', {
-          debut: formatDateTime(reprise.started_at, locale, timezone),
-          fin: formatDateTime(reprise.expires_at, locale, timezone),
-        }).toUpperCase()}
-      </Texte>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+        <View style={{ flex: 1, minWidth: 0, gap: 1 }}>
+          {/* **La portée avant l'heure.** « Ce qui est ouvert » se lit avant
+              « jusqu'à quand » : un gérant qui apprend qu'on est chez lui
+              demande d'abord jusqu'où, pas jusqu'à quand. */}
+          <Texte variante="type.monoSmall" couleur="ink.onDark" testID="reprise-portee-journee">
+            {/* Les mêmes mots que la liste des réglages, par le même
+                aiguillage : deux jeux pour les mêmes écrans finiraient par se
+                contredire, et c'est le gérant qui lirait la contradiction. */}
+            {t('commerce.repriseOuvre', {
+              ecrans: (reprise.scope ?? [])
+                .map((ecran) => nomDeLEcran(ecran, t))
+                .join(t('reglages.porteeSeparateur')),
+            }).toUpperCase()}
+          </Texte>
+          <Texte variante="type.monoSmall" couleur="ink.onDark" testID="reprise-quand">
+            {t('commerce.repriseDepuisJusqua', {
+              debut: formatDateTime(reprise.started_at, locale, timezone),
+              fin: formatDateTime(reprise.expires_at, locale, timezone),
+            }).toUpperCase()}
+          </Texte>
+        </View>
+
+        {/* **Aucune confirmation.** Une question de plus entre le gérant et la
+            porte est une négociation, et il n'a personne à convaincre. */}
+        <Button
+          label={t('commerce.repriseRefermer')}
+          fullWidth={false}
+          loading={envoi}
+          onPress={() => void refermer()}
+          testID="reprise-refermer-journee"
+        />
+      </View>
+
+      {echec ? (
+        <Texte variante="type.caption" couleur="ink.onDark" testID="reprise-echec">
+          {echec}
+        </Texte>
+      ) : null}
     </View>
   );
 }

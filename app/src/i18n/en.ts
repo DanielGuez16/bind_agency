@@ -613,6 +613,17 @@ export const en = {
     // de la phrase : l'espagnol ne cite pas comme l'anglais, et les coller
     // dans l'écran les figerait sur une seule langue.
     repriseEnCours: 'Someone from BIND is in your account',
+    // **Le salon met dehors, et n'a personne à convaincre.** Le bouton ne
+    // demande pas confirmation : une question de plus entre le gérant et la
+    // porte est une négociation. Les mots de la portée vivent dans `reglages`,
+    // posés par la liste — deux jeux pour les mêmes écrans finiraient par se
+    // contredire, et c'est le gérant qui lirait la contradiction.
+    repriseRefermer: 'End it',
+    // **Au présent, parce que c'est en cours.** La liste des réglages dit
+    // « could open » d'une porte déjà close ; sur la journée, la porte est
+    // ouverte pendant qu'on lit — et le temps du verbe est ce qui distingue un
+    // fait passé d'une chose qui se produit.
+    repriseOuvre: 'Open now: {{ecrans}}',
     repriseMotif: '“{{motif}}”',
     repriseDepuisJusqua: 'Started {{debut}} · ends {{fin}}',
     enArbitrage: 'A reviewer has taken this over — you no longer decide on it.',

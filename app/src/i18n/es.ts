@@ -556,6 +556,8 @@ export const es: Catalogue = {
   commerce: {
     selecteurTitre: 'Qué salón',
     repriseEnCours: 'Alguien de BIND está en tu cuenta',
+    repriseRefermer: 'Cerrar el acceso',
+    repriseOuvre: 'Abierto ahora: {{ecrans}}',
     repriseMotif: '«{{motif}}»',
     repriseDepuisJusqua: 'Desde {{debut}} · hasta {{fin}}',
     enArbitrage: 'Un árbitro se ha hecho cargo — ya no decides sobre esto.',
