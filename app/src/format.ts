@@ -27,6 +27,34 @@ export function formatNumber(value: number, locale: SupportedLocale): string {
   return new Intl.NumberFormat(locale).format(value);
 }
 
+/**
+ * Une distance, dans l'unité que l'on emploie à cette échelle.
+ *
+ * **Sous le kilomètre, des mètres ronds.** « 0,3 km » demande une conversion de
+ * tête pour une distance qu'on parcourt à pied ; « 320 m » se comprend sans
+ * calcul. Au-delà, une décimale suffit — personne ne choisit un salon sur cent
+ * mètres à quatre kilomètres, et « 1,437 km » donne une précision que la
+ * position du téléphone n'a pas.
+ *
+ * **Arrondi à la dizaine sous le kilomètre**, pour la même raison : un mètre
+ * près serait une précision inventée, et « 317 m » a l'air mesuré alors qu'il
+ * ne l'est pas.
+ *
+ * La locale porte le séparateur décimal : la virgule en espagnol, le point en
+ * anglais. C'est la seule différence entre les deux, et l'écrire à la main
+ * aurait produit un « 1.4 km » espagnol qui se lit comme quatorze.
+ */
+export function formatDistance(metres: number, locale: SupportedLocale): string {
+  if (metres < 1000) {
+    return `${formatNumber(Math.round(metres / 10) * 10, locale)} m`;
+  }
+  const km = new Intl.NumberFormat(locale, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }).format(metres / 1000);
+  return `${km} km`;
+}
+
 export function formatDateTime(
   isoUtc: string,
   locale: SupportedLocale,

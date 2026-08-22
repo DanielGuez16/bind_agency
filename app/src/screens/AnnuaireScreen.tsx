@@ -27,6 +27,8 @@
  * palier — c'est le mécanisme du produit, et un raccourci ici en créerait un
  * second, hors du système de paliers.
  */
+import React, { useEffect, useState } from 'react';
+
 import { Image, Linking, Pressable, View } from 'react-native';
 
 import {
@@ -46,7 +48,7 @@ import {
   Texte,
   TierBadge,
 } from '../components';
-import { formatNumber } from '../format';
+import { formatDistance, formatNumber } from '../format';
 import { useI18n } from '../i18n';
 import { useGabarit } from '../shell/gabarit';
 import { elevationDeCarte, radius, useColors } from '../theme';
@@ -56,6 +58,16 @@ import { useRequete } from './useRequete';
 
 /** Le code que le serveur rend à un commerce sans abonnement vivant. */
 const SANS_ABONNEMENT = 'subscription_required';
+
+/**
+ * Combien de créatrices par page.
+ *
+ * Vingt : de quoi remplir plusieurs rangées de la grille sans faire attendre
+ * la première, et assez peu pour que « voir plus » reste un geste qui répond.
+ * Le serveur plafonne à deux cents ; demander tout d'un coup ferait payer le
+ * chargement de cent vingt-huit vignettes à qui n'en regarde que six.
+ */
+const PAGE = 20;
 
 /**
  * L'instant d'une réponse qui n'a rien à dater.
@@ -84,16 +96,28 @@ export function AnnuaireScreen({
   onVoirLAbonnement?: () => void;
 }) {
   const { api } = useApi();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   // Lu ici et non dans le corps de rendu d'`Ecran` : ce corps est une fonction
   // appelée pendant le rendu d'un **autre** composant, et un hook y serait
   // appelé hors de son propre composant.
   const c = useColors();
 
   const requete = useRequete<AnnuaireDuCommerce>(
-    (signal) => api.annuaireDesCreateurs(businessId, signal),
+    (signal) => api.annuaireDesCreateurs(businessId, { limite: PAGE }, signal),
     { estVide: (annuaire) => annuaire.createurs.length === 0, dependances: [businessId] },
   );
+
+  // Les pages suivantes vivent à côté de la première, et non dans la requête :
+  // recharger la requête entière pour une page de plus ferait clignoter tout
+  // l'écran, compte compris, alors que seul le bas s'allonge.
+  const [suite, setSuite] = useState<CreateurDeLAnnuaire[]>([]);
+  const [enCours, setEnCours] = useState(false);
+
+  // La première page change quand le salon change : la suite doit repartir de
+  // zéro, sinon les créatrices d'un autre salon restent collées dessous.
+  useEffect(() => {
+    setSuite([]);
+  }, [businessId]);
 
   // **Le refus d'abonnement n'est pas une panne.** L'écran d'erreur générique
   // proposerait « réessayer », ce qui ne mène nulle part : il n'y a rien à
@@ -113,7 +137,7 @@ export function AnnuaireScreen({
       <Ecran
         requete={{
           etat: 'pret',
-          donnees: { portee: PORTEE_INCONNUE, createurs: [] },
+          donnees: { portee: PORTEE_INCONNUE, createurs: [], total: 0 },
           vide: false,
           rechargement: false,
           vuA: DEJA_SU,
@@ -161,25 +185,75 @@ export function AnnuaireScreen({
         />
       }
     >
-      {(annuaire) => (
-        <View style={{ gap: 16 }}>
-          {/* **Le compte, avant la liste.** C'est le renversement de la v3 : à
-              deux mille créatrices un salon ne cherche pas, il ne connaît aucun
-              nom. Le chiffre est ce qu'il répétera à son associé, et le seul qui
-              justifie l'abonnement à lui seul. */}
-          <Portee portee={annuaire.portee} />
+      {(annuaire) => {
+        const createurs = [...annuaire.createurs, ...suite];
+        const reste = annuaire.total - createurs.length;
 
-          <Texte variante="type.body" couleur="ink.soft" testID="annuaire-sous-titre">
-            {t('annuaire.sousTitre')}
-          </Texte>
+        return (
+          <View style={{ gap: 16 }}>
+            {/* **Le compte, avant la liste.** C'est le renversement de la v3 : à
+                deux mille créatrices un salon ne cherche pas, il ne connaît
+                aucun nom. */}
+            <Portee portee={annuaire.portee} />
 
-          {annuaire.createurs.map((createur, rang) => (
-            <Apparition key={createur.creator_id} rang={rang}>
-              <FicheDeCreateur createur={createur} />
-            </Apparition>
-          ))}
-        </View>
-      )}
+            {/* **L'ordre se dit, il ne se devine pas.** Une grille triée sans
+                l'annoncer se lit comme un ordre arbitraire, et le premier
+                réflexe est de chercher un moyen de la trier — qui n'existe pas,
+                puisque le seul ordre utile est déjà celui-là. */}
+            <Texte variante="type.label" couleur="ink.mute" testID="ordre-de-la-grille">
+              {t('annuaire.trieePar')}
+            </Texte>
+
+            <Grille>
+              {createurs.map((createur) => (
+                <FicheDeCreateur key={createur.creator_id} createur={createur} />
+              ))}
+            </Grille>
+
+            {/* **« 20 sur 128 » demande de connaître le total.** Une page pleine
+                ne dit pas s'il en reste, et une grille qui s'arrête sans le dire
+                se lit comme la fin de l'annuaire. */}
+            <View style={{ gap: 8, alignItems: 'center' }}>
+              <Texte variante="type.caption" couleur="ink.mute" testID="compte-affiche">
+                {t('annuaire.affichees', {
+                  combien: formatNumber(createurs.length, locale),
+                  total: formatNumber(annuaire.total, locale),
+                })}
+              </Texte>
+              {reste > 0 ? (
+                <Pressable
+                  testID="voir-plus"
+                  accessibilityRole="button"
+                  disabled={enCours}
+                  onPress={() => {
+                    setEnCours(true);
+                    void api
+                      .annuaireDesCreateurs(businessId, {
+                        limite: PAGE,
+                        decalage: createurs.length,
+                      })
+                      .then((page) => setSuite((avant) => [...avant, ...page.createurs]))
+                      .finally(() => setEnCours(false));
+                  }}
+                  style={({ pressed }) => ({
+                    opacity: pressed || enCours ? 0.7 : 1,
+                    minHeight: 44,
+                    justifyContent: 'center',
+                    paddingHorizontal: 18,
+                    borderRadius: radius['radius.pill'],
+                    borderWidth: 1,
+                    borderColor: c['line.ink'],
+                  })}
+                >
+                  <Texte variante="type.label">
+                    {t(enCours ? 'annuaire.chargement' : 'annuaire.voirPlus')}
+                  </Texte>
+                </Pressable>
+              ) : null}
+            </View>
+          </View>
+        );
+      }}
     </Ecran>
   );
 }
@@ -275,178 +349,161 @@ function Portee({ portee }: { portee: PorteeLocale }) {
   );
 }
 
+/**
+ * La grille de la planche : trois par rangée en bureau, une colonne en compact.
+ *
+ * **`flexWrap` et non une liste à colonnes.** Le nombre de cartes varie, et un
+ * découpage en colonnes fixes laisse un trou au bout de la dernière rangée ou
+ * force à répartir soi-même — deux façons de se tromper pour un résultat que
+ * l'enroulement donne sans calcul. La largeur en pourcentage tient la rangée
+ * même quand la dernière est incomplète.
+ */
+function Grille({ children }: { children: React.ReactNode }) {
+  const { large } = useGabarit();
+
+  if (!large) return <View style={{ gap: 14 }}>{children}</View>;
+
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 14 }}>
+      {React.Children.map(children, (enfant) => (
+        <View style={{ width: `${100 / 3}%`, flexGrow: 1, flexBasis: 260, maxWidth: 420 }}>
+          {enfant}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/**
+ * Une fiche de la grille, dans l'ordre de la planche.
+ *
+ * **La photo d'abord, le pseudonyme ensuite, l'accès en dernier.** C'est
+ * l'ordre dans lequel un salon lit une carte : il reconnaît un compte à son
+ * image, il en note le nom, puis il regarde ce qu'il peut en faire. L'écran
+ * mettait le nom en tête d'une rangée horizontale, ce qui donnait trois
+ * colonnes de texte et une photo de cinquante-six points perdue à gauche.
+ *
+ * **La distance est sur la même ligne que le pseudonyme**, alignée à droite :
+ * c'est le second critère du tri, et le lire à côté du premier fait comprendre
+ * l'ordre de la grille sans qu'on l'explique.
+ *
+ * **Ce qu'elle ouvre ici, et rien de ce qu'elle ouvre ailleurs.** Le badge
+ * porte `palier_accessible`, servi par le serveur pour ce salon. Une créatrice
+ * qui n'ouvre rien ici garde sa carte entière — elle n'est pas atténuée, le tri
+ * l'a déjà mise en fin de liste, et l'effacer reviendrait à cacher la moitié du
+ * marché que l'abonnement fait voir.
+ */
 function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
   const { api } = useApi();
   const { t, locale } = useI18n();
   const c = useColors();
-  const { large } = useGabarit();
 
-  // **Le pseudonyme, jamais le nom civil.** La planche v3 titre chaque fiche
-  // `@lea.mrl` ; l'écran titrait « Léa Martel », c'est-à-dire l'identité d'état
-  // civil de cent vingt-huit personnes affichée à un salon qui ne les connaît
-  // pas. Le pseudonyme suffit à ce que l'annuaire sert : reconnaître un compte
-  // et aller voir son travail. Le nom civil arrive à la réservation, quand une
-  // créatrice a choisi ce salon — pas avant, et pas à tout le monde.
-  //
-  // La route ne les sert plus du tout : ils sont sortis du schéma, pas
-  // seulement de l'écran. Un champ qu'on cesse d'afficher et qu'on continue
-  // d'envoyer n'est pas retiré, il est caché.
   const nom = createur.comptes.find((compte) => compte.handle)?.handle ?? t('annuaire.sansNom');
 
-  // La vignette du premier compte qui en a une. La liste n'a jamais eu besoin
-  // de l'original, et le détail n'existe pas encore sur cet écran.
-  // **Telle quelle, jamais suffixée.** `urlDeLaVignette` ajoute `@vignette` ;
-  // sans abonnement la clé est déjà celle d'un aperçu — suffixe `@apercu` — et
-  // la suffixer une seconde fois ne rendrait rien. Le cadre serait vide et on
-  // l'aurait pris pour le 404 prévu, ce qui est la façon la plus sûre de ne
-  // jamais trouver le défaut.
+  // Telle quelle, jamais suffixée : sans abonnement la clé porte déjà l'aperçu
+  // flouté, et la resuffixer ne rendrait rien.
   const portrait = api.urlDuMedia(
     createur.comptes.find((compte) => compte.avatar_key)?.avatar_key ?? null,
   );
 
+  const compte = createur.comptes.find((c) => c.followers !== null) ?? createur.comptes[0];
+
   return (
+    // **Le contour d'encre dit « celle-ci peut réserver chez vous ».** C'est le
+    // seul trait de la grille, et il porte le premier critère du tri — la même
+    // grammaire qu'aux réservations, où l'encre marque ce qui engage. Les
+    // autres gardent le filet clair : présentes, pas mises en avant.
+    //
+    // L'ombre suit la règle du système : « un coin de 18 px sans ombre flotte
+    // au lieu de se poser », passation §2. La planche dessine les cartes à
+    // plat ; le produit ne le fait nulle part ailleurs, et une grille qui
+    // flotte au milieu d'écrans qui se posent se remarque plus que la fidélité.
+    //
+    // **Les commentaires sont ici et non dans le bloc de style, et ce n'est pas
+    // cosmétique.** L'inventaire des cartes lit un bloc sur neuf cents
+    // caractères ; quatre lignes de prose à l'intérieur ont suffi à faire
+    // sortir cette carte de l'inventaire — sans erreur, sans avertissement, la
+    // garde cessant simplement de la voir. Le trou est documenté dans
+    // `TASKS.md` ; en attendant, la prose reste dehors.
     <View
       testID={`createur-${createur.creator_id}`}
       style={{
-        gap: 12,
-        padding: 16,
         borderRadius: radius['radius.lg'],
-        borderWidth: 1,
-        borderColor: c['line.default'],
         backgroundColor: c['bg.surface'],
-        flexDirection: large ? 'row' : 'column',
-        alignItems: large ? 'center' : undefined,
-        // « Un coin de 18 px sans ombre flotte au lieu de se poser » : passation §2.
+        overflow: 'hidden',
+        borderWidth: createur.peut_reserver_ici ? 1.5 : 1,
+        borderColor: createur.peut_reserver_ici ? c['line.ink'] : c['line.default'],
         ...elevationDeCarte(),
       }}
     >
-      {/* **La photo, et le cadre qui reste quand elle manque.** `avatar_key`
-          était servi par le serveur et jeté par le type de l'app : l'annuaire
-          rendait des fiches sans visage alors que la donnée arrivait. Le cadre
-          vide n'est pas un cas limite — la même clé sert l'aperçu flouté au
-          salon sans abonnement, et les photos déposées avant cet aperçu
-          répondront 404 plutôt que de retomber sur l'original. */}
       <View
         testID={`portrait-${createur.creator_id}`}
-        style={{
-          width: 56,
-          height: 56,
-          borderRadius: radius['radius.photo'],
-          backgroundColor: c['bg.sunken'],
-          overflow: 'hidden',
-        }}
+        style={{ height: 132, backgroundColor: c['bg.sunken'] }}
       >
         {portrait ? (
           <Image
             source={{ uri: portrait }}
-            style={{ width: 56, height: 56 }}
+            style={{ width: '100%', height: 132 }}
             resizeMode="cover"
             testID={`photo-${createur.creator_id}`}
           />
         ) : null}
       </View>
 
-      <View style={{ flex: large ? 1 : undefined, gap: 2, minWidth: 0 }}>
-        <Texte variante="type.bodyStrong">{nom}</Texte>
+      <View style={{ padding: 14, gap: 8 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 10 }}>
+          <Texte variante="type.bodyStrong" style={{ flex: 1, minWidth: 0 }} ellipseSurNomPropre>
+            {nom}
+          </Texte>
+          {/* **Nulle veut dire « on ne sait pas », jamais « loin ».** Un tiret
+              se lirait comme une absence de proximité ; la ligne se tait. */}
+          {createur.distance_metres !== null ? (
+            <Texte
+              variante="type.monoSmall"
+              couleur="ink.mute"
+              testID={`distance-${createur.creator_id}`}
+            >
+              {formatDistance(createur.distance_metres, locale)}
+            </Texte>
+          ) : null}
+        </View>
+
+        {/* **La ville avec la distance, comme la planche les pose.** « Wynwood ·
+            320 m » situe ; la distance seule ne dit pas de quel côté. Elle
+            manquait de ma première grille, et c'est la garde des champs servis
+            qui l'a dit — un champ que le serveur rend et que l'écran cesse de
+            lire est un défaut, pas une simplification. */}
         {createur.city ? (
-          <Texte variante="type.caption" couleur="ink.mute">
+          <Texte
+            variante="type.caption"
+            couleur="ink.soft"
+            testID={`ville-${createur.creator_id}`}
+          >
             {createur.city}
           </Texte>
         ) : null}
-        {createur.bio ? (
-          <Texte variante="type.caption" couleur="ink.soft">
-            {createur.bio}
-          </Texte>
-        ) : null}
-      </View>
 
-      {large ? <View style={{ width: 1, alignSelf: 'stretch', backgroundColor: c['line.default'] }} /> : <Filet />}
-
-      <View style={{ width: large ? 260 : undefined, gap: 4 }}>
-        {/* L'audience, en volume cumulé. Un ordre de grandeur, jamais une
-            portée atteinte : la même précaution que sur les rapports. */}
-        <Texte variante="type.figureSmall" testID={`audience-${createur.creator_id}`}>
-          {formatNumber(createur.audience_totale, locale)}
-        </Texte>
-        {/* **Le cumul se légende par le nombre de réseaux, pas par le volume.**
-            La légende répétait « 24 000 followers » juste sous le chiffre, et
-            les lignes de réseau le redisaient une troisième fois. Ce que le
-            chiffre ne dit pas tout seul, c'est de combien de comptes il vient. */}
-        <Texte variante="type.caption" couleur="ink.soft">
-          {createur.comptes.length === 1
-            ? t('annuaire.audienceUnReseau')
-            : t('annuaire.audience', { reseaux: createur.comptes.length })}
-        </Texte>
-        {/* **Le pseudonyme mène au profil public, et c'est le seul geste que
-            l'annuaire propose.** Le lien sort du produit : on va voir son
-            travail chez elle. `profil_url` était servi et jeté par le type de
-            l'app, si bien que l'écran rendait des pseudonymes morts. */}
-        {createur.comptes.map((compte) => {
-          // Le réseau et son volume, jamais le pseudonyme — il titre déjà la
-          // fiche, et le répéter ici faisait lire deux fois la même chose. La
-          // formulation est celle de la journée : une seule grammaire pour la
-          // ligne de réseau côté commerce.
-          const ligne = (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Texte variante="type.caption" couleur={compte.profil_url ? 'brand.700' : 'ink.mute'}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
+          {compte ? (
+            <>
+              <Icone nom={compte.platform === 'tiktok' ? 'tiktok' : 'instagram'} taille={18} />
+              <Texte variante="type.monoSmall" style={{ flex: 1 }}>
                 {compte.followers === null
                   ? nomDePlateforme(compte.platform)
-                  : t('commerce.reseauAvecAbonnes', {
-                      reseau: nomDePlateforme(compte.platform),
-                      abonnes: formatNumber(compte.followers, locale),
-                    })}
+                  : formatNumber(compte.followers, locale)}
               </Texte>
-              {compte.profil_url ? <Icone nom="sortie" taille={13} couleur="brand.700" /> : null}
-            </View>
-          );
+            </>
+          ) : null}
+          {createur.palier_accessible ? (
+            <TierBadge
+              tier={createur.palier_accessible.content_format}
+              size="sm"
+              testID={`palier-${createur.creator_id}`}
+            />
+          ) : null}
+        </View>
 
-          return compte.profil_url ? (
-            <Pressable
-              key={`${compte.platform}-${compte.handle}`}
-              accessibilityRole="link"
-              onPress={() => void Linking.openURL(compte.profil_url as string)}
-              testID={`profil-${createur.creator_id}-${compte.platform}`}
-              style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
-            >
-              {ligne}
-            </Pressable>
-          ) : (
-            <View key={`${compte.platform}-${compte.handle}`}>{ligne}</View>
-          );
-        })}
-
-        {/* **L'absence de contact se dit, elle.** Un salon cherchera ce bouton
-            — tous les annuaires qu'il connaît en ont un — et ne rien dire le
-            laisse conclure au défaut. C'est l'inverse du score, qu'on tait
-            justement parce que personne ne le cherche. */}
-        <Texte
-          variante="type.caption"
-          couleur="ink.mute"
-          testID={`pas-de-contact-${createur.creator_id}`}
-        >
-          {t('annuaire.pasDeContact')}
-        </Texte>
-      </View>
-
-      <View style={{ width: large ? 220 : undefined, gap: 6 }}>
-        <Texte variante="type.label" couleur="ink.soft">
-          {t('annuaire.paliersOuverts')}
-        </Texte>
-        {createur.paliers_ouverts.length === 0 ? (
-          // **Le champ a changé de sens, et la phrase suivait l'ancien.**
-          // `paliers_ouverts` répondait « elle se qualifie quelque part » : une
-          // liste vide ne pouvait alors venir que de son audience, et la phrase
-          // le disait sans rien lui reprocher. Elle répond depuis la PR 213
-          // (numéro écrit sans dièse : trois chiffres précédés d'un dièse font
-          // un hexadécimal valide, que la garde des couleurs en dur refuse —
-          // à raison, elle ne peut pas distinguer un renvoi d'une couleur)
-          // « elle
-          // peut réserver ce que **vous** avez ouvert », et le vide a deux
-          // causes — son audience, ou des paliers que ce salon n'a pas ouverts.
-          //
-          // La phrase énonce donc ce qui est certain, du côté du salon, et
-          // n'attribue plus rien. Le levier, lui, est déjà en tête d'écran :
-          // « ouvrir le palier post porterait ce chiffre à 103 ».
+        {createur.peut_reserver_ici ? null : (
           <Texte
             variante="type.caption"
             couleur="ink.mute"
@@ -454,13 +511,43 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
           >
             {t('annuaire.aucunPalier')}
           </Texte>
-        ) : (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-            {createur.paliers_ouverts.map((format) => (
-              <TierBadge key={format} tier={format} size="sm" />
-            ))}
-          </View>
         )}
+
+        {/* Le pseudonyme mène au profil public : le seul geste de l'écran, et
+            il sort du produit — on va voir son travail chez elle. */}
+        {createur.comptes
+          .filter((c) => c.profil_url)
+          .map((c) => (
+            <Pressable
+              key={`${c.platform}-${c.handle}`}
+              accessibilityRole="link"
+              onPress={() => void Linking.openURL(c.profil_url as string)}
+              testID={`profil-${createur.creator_id}-${c.platform}`}
+              style={({ pressed }) => ({
+                opacity: pressed ? 0.7 : 1,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 6,
+              })}
+            >
+              <Texte variante="type.caption" couleur="brand.700">
+                {t('annuaire.voirLeProfil', { reseau: nomDePlateforme(c.platform) })}
+              </Texte>
+              <Icone nom="sortie" taille={13} couleur="brand.700" />
+            </Pressable>
+          ))}
+
+        {/* **L'absence de contact se dit.** Un salon cherchera ce bouton — tous
+            les annuaires qu'il connaît en ont un — et ne rien dire le laisse
+            conclure au défaut. C'est l'inverse du score, qu'on tait justement
+            parce que personne ne le cherche. */}
+        <Texte
+          variante="type.caption"
+          couleur="ink.mute"
+          testID={`pas-de-contact-${createur.creator_id}`}
+        >
+          {t('annuaire.pasDeContact')}
+        </Texte>
       </View>
     </View>
   );

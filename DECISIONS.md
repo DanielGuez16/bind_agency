@@ -8572,3 +8572,69 @@ interdit d'agir sur une créatrice ; le bouton qui mène à l'abonnement vit dan
 branche du refus, qui rend zéro créatrice par construction. Une garde exemptée ne
 garde plus rien — c'est le geste que la session voisine avait employé sur les
 `onPress`, et il vaut ici.
+---
+
+## 2026-08-22 — La grille de l'annuaire, sur le contrat commerce-scopé
+
+Le contrat livré apporte `peut_reserver_ici`, `palier_accessible`,
+`distance_metres`, le tri et la pagination. La grille se compose dessus, et ce
+qu'elle **ne fait pas** compte autant que ce qu'elle fait.
+
+**Le tri ne se rejoue pas.** Une liste paginée triée dans le client se réordonne
+à chaque page, puisque chaque page n'a que ses propres lignes à comparer : une
+créatrice s'y retrouve deux fois ou jamais. L'ordre se dit en revanche — « trié
+par accès, puis par proximité » — parce qu'une grille triée sans l'annoncer se
+lit comme un ordre arbitraire, et le premier réflexe est de chercher un moyen de
+la trier, qui n'existe pas.
+
+**Un seul badge, et c'est le palier accessible ici.** L'écran listait les formats
+qu'elle ouvre — plusieurs badges pour dire une chose — alors que le serveur rend
+le meilleur palier **chez ce salon**. La liste répondait « elle se qualifie
+quelque part », dont un salon ne peut rien faire.
+
+**Le contour d'encre marque celles qui peuvent réserver ici.** Même grammaire
+qu'aux réservations : l'encre marque ce qui engage. Les autres gardent le filet
+clair — présentes, pas mises en avant. Les effacer reviendrait à cacher la
+moitié du marché que l'abonnement fait voir.
+
+**Une distance nulle se tait.** Elle veut dire « on ne sait pas », jamais
+« loin » ; un tiret se lirait comme une absence de proximité, le contraire de ce
+que le serveur dit en la laissant nulle.
+
+**« 20 sur 128 », parce qu'une page pleine ne dit pas s'il en reste.** Sans le
+total, une grille qui s'arrête se lit comme la fin de l'annuaire.
+
+**Les filtres de la planche ne sont pas posés.** « Can book here », « all
+tiers », « any network », « 15 km » supposent un filtrage serveur qui n'existe
+pas ; les poser côté client filtrerait une page et non la liste, ce qui est la
+même faute que rejouer le tri. Inscrit dans `TASKS.md`.
+
+`formatDistance` entre dans `format.ts` plutôt que dans l'écran : le fil et les
+prestations affichent la même grandeur, et deux écritures de « 1,4 km »
+finiraient par diverger sur le séparateur décimal — que l'espagnol met en
+virgule, où un « 1.4 km » se lit comme quatorze.
+
+## Trois gardes ont trouvé ce que je n'avais pas vu
+
+**La ville avait disparu de la carte.** La garde des champs servis l'a dit : un
+champ que le serveur rend et que l'écran cesse de lire est un défaut, pas une
+simplification. La planche la pose à côté de la distance — « Wynwood · 320 m »
+situe, la distance seule ne dit pas de quel côté.
+
+**Ma carte n'avait pas d'ombre**, et la planche non plus — mais le produit ne
+dessine nulle part ailleurs un coin de 18 px à plat, et une grille qui flotte au
+milieu d'écrans qui se posent se remarque plus que la fidélité.
+
+**Et un commentaire de quatre lignes a fait sortir la carte de l'inventaire.**
+La garde lit un bloc de style sur neuf cents caractères ; la prose à l'intérieur
+a suffi à dépasser la fenêtre, et l'inventaire a cessé de voir la carte — sans
+erreur, sans avertissement. Le trou était documenté dans `TASKS.md` ; il vient
+de coûter quelque chose pour la première fois. Les commentaires de style se
+posent désormais au-dessus du nœud.
+
+**Le garde-fou de lecture seule a dû être affiné, pas excepté.** La pagination
+porte un rôle de bouton, et c'est juste : c'est un contrôle. Ce que la règle
+interdit est d'agir sur une créatrice — inviter, contacter, écrire. Le contrôle
+est donc retiré du texte examiné **par son nom**, et la garde vérifie en plus
+qu'il appelle bien une lecture : sans quoi le retrait ouvrirait un trou où
+n'importe quoi passerait sous ce nom.
