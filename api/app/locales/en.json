@@ -1,5 +1,9 @@
 {
   "account.verification.body": "Welcome to BIND.\n\nConfirm your email address so you can book services and put a business online:\n\n{lien}\n\nThe link works for {heures} hours. If it has expired, ask for a new one from the app.\n\nYou can look around without confirming — you just cannot commit anyone else until you do.\n",
+  "account.verification.page.confirmed.body": "You can go back to the BIND app now. Nothing else is needed here.",
+  "account.verification.page.confirmed.title": "Your email address is confirmed",
+  "account.verification.page.invalid.body": "It may already have been used, or a newer one may have replaced it. If your address is still unconfirmed, ask for a new link from the app.",
+  "account.verification.page.invalid.title": "This link no longer works",
   "account.verification.subject": "Confirm your email address",
   "account.welcome.subject": "Welcome to BIND",
   "booking.approved.body": "Hi {creator},\n\n{business} has confirmed your booking for {item}{quand_phrase}.\n\nOpen the app to see your pickup code. Show it at the counter.\n",

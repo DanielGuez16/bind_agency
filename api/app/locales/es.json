@@ -1,5 +1,9 @@
 {
   "account.verification.body": "Bienvenida a BIND.\n\nConfirma tu dirección de correo para poder reservar prestaciones y publicar un negocio:\n\n{lien}\n\nEl enlace funciona durante {heures} horas. Si ha caducado, pide otro desde la aplicación.\n\nPuedes mirar sin confirmar — simplemente no puedes comprometer a nadie más hasta hacerlo.\n",
+  "account.verification.page.confirmed.body": "Ya puedes volver a la aplicación BIND. Aquí no hace falta nada más.",
+  "account.verification.page.confirmed.title": "Tu correo está confirmado",
+  "account.verification.page.invalid.body": "Puede que ya se haya usado, o que otro más reciente lo haya sustituido. Si tu dirección sigue sin confirmar, pide un enlace nuevo desde la aplicación.",
+  "account.verification.page.invalid.title": "Este enlace ya no funciona",
   "account.verification.subject": "Confirma tu dirección de correo",
   "account.welcome.subject": "Te damos la bienvenida a BIND",
   "booking.approved.body": "Hola {creator}:\n\n{business} confirmó tu reserva de {item}{quand_phrase}.\n\nAbre la app para ver tu código de retiro. Muéstralo en el mostrador.\n",

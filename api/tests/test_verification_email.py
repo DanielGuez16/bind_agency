@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.models import EmailVerification, User
-from app.models.enums import UserRole, UserStatus
+from app.models.enums import Locale, UserRole, UserStatus
 from app.services import auth as auth_service
 from app.services import email_verification as service
 from app.services import outbox
@@ -27,12 +27,13 @@ PREFIX = get_settings().api_v1_prefix
 MOT_DE_PASSE = "tourbillon-cactus-91-vermeil"
 
 
-async def inscrit(session: AsyncSession) -> User:
+async def inscrit(session: AsyncSession, *, locale: Locale = Locale.EN) -> User:
     return await auth_service.register(
         session,
         email=f"{uuid.uuid4()}@example.com",
         password=MOT_DE_PASSE,
         role=UserRole.CREATOR,
+        locale=locale,
     )
 
 
@@ -155,7 +156,107 @@ async def test_la_route_confirme_et_refuse_un_jeton_inconnu(
 
     refus = await client.get(f"{PREFIX}/auth/verify-email", params={"token": "n-importe-quoi"})
     assert refus.status_code == 400
-    assert refus.json()["detail"] == "email_verification_invalid"
+
+
+# --------------------------------------------------------------------------
+# ce que voit celui qui clique
+# --------------------------------------------------------------------------
+
+
+async def test_le_lien_rend_une_page_et_non_du_json(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """**Le tout premier geste avec le produit, et il montrait du JSON.**
+
+    `{"id":"…","email":"…","role":"creator"}` dans un navigateur, sur le seul
+    écran qui décide si quelqu'un continue. La mécanique était juste — le jeton
+    consommé, l'adresse vérifiée — c'est ce qu'il voyait qui était faux.
+
+    Le décor éprouve les deux moitiés : le type de contenu, et le fait que rien
+    du compte ne paraisse. Vérifier le seul type laisserait passer une page qui
+    affiche l'adresse et l'identifiant dans du HTML — ce qui serait la même
+    faute, mieux habillée.
+    """
+    user = await inscrit(session)
+    adresse = user.email
+    identifiant = str(user.id)
+    jeton = await service.emettre(session, user=user)
+    await session.commit()
+
+    reponse = await client.get(f"{PREFIX}/auth/verify-email", params={"token": jeton})
+
+    assert reponse.status_code == 200, reponse.text
+    assert reponse.headers["content-type"].startswith("text/html")
+    assert "<html" in reponse.text
+    assert adresse not in reponse.text
+    assert identifiant not in reponse.text
+
+
+async def test_un_lien_deja_utilise_explique_au_lieu_de_paraitre_casse(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """**Presque toujours quelqu'un qui a cliqué deux fois.**
+
+    `{"detail":"email_verification_invalid"}` se lit comme une panne, et fait
+    renoncer quelqu'un dont l'adresse est déjà confirmée. Le code reste 400 : le
+    navigateur n'en fait rien, et mentir sur le statut troublerait ce qui lit
+    vraiment les codes.
+    """
+    user = await inscrit(session)
+    jeton = await service.emettre(session, user=user)
+    await session.commit()
+    await client.get(f"{PREFIX}/auth/verify-email", params={"token": jeton})
+
+    second = await client.get(f"{PREFIX}/auth/verify-email", params={"token": jeton})
+
+    assert second.status_code == 400
+    assert second.headers["content-type"].startswith("text/html")
+    assert "email_verification_invalid" not in second.text
+
+
+async def test_la_page_parle_la_langue_du_destinataire(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """**La langue du compte, et non celle du navigateur, quand on sait qui lit.**
+
+    Le décor pose un compte hispanophone **et** un en-tête anglais : c'est le
+    seul montage où les deux implémentations divergent. Sans l'en-tête
+    contraire, une page qui lirait le navigateur rendrait de l'espagnol par
+    hasard sur une machine espagnole, et par défaut de l'anglais partout
+    ailleurs — le test passerait sans rien éprouver.
+    """
+    from app.core.i18n import translate
+    from app.models.enums import Locale
+
+    user = await inscrit(session, locale=Locale.ES)
+    jeton = await service.emettre(session, user=user)
+    await session.commit()
+
+    reponse = await client.get(
+        f"{PREFIX}/auth/verify-email",
+        params={"token": jeton},
+        headers={"Accept-Language": "en-US,en;q=0.9"},
+    )
+
+    assert translate("account.verification.page.confirmed.title", Locale.ES) in reponse.text
+    assert translate("account.verification.page.confirmed.title", Locale.EN) not in reponse.text
+
+
+async def test_un_jeton_inconnu_ne_designe_personne_donc_on_lit_le_navigateur(
+    client: AsyncClient,
+) -> None:
+    """Le refus n'a pas d'utilisateur : c'est même la raison pour laquelle il
+    est refusé. L'en-tête du navigateur est la seule indication qui reste."""
+    from app.core.i18n import translate
+    from app.models.enums import Locale
+
+    reponse = await client.get(
+        f"{PREFIX}/auth/verify-email",
+        params={"token": "n-importe-quoi"},
+        headers={"Accept-Language": "es-ES,es;q=0.9"},
+    )
+
+    assert translate("account.verification.page.invalid.title", Locale.ES) in reponse.text
 
 
 # --------------------------------------------------------------------------

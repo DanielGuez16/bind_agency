@@ -4,8 +4,12 @@ Elles valident, appellent un service, traduisent ses erreurs en codes HTTP.
 Aucune requête base, aucune règle d'accès écrite ici.
 """
 
-from fastapi import APIRouter, status
+from typing import Annotated
 
+from fastapi import APIRouter, Header, status
+from fastapi.responses import HTMLResponse
+
+from app.core import pages
 from app.core.dependencies import CurrentUser, SessionDep
 from app.core.errors import ErrorCode, api_error
 from app.schemas.auth import (
@@ -54,27 +58,51 @@ async def register(payload: RegisterRequest, session: SessionDep) -> UserRead:
     return UserRead.model_validate(user)
 
 
-@router.get("/auth/verify-email", response_model=UserRead)
-async def verify_email(token: str, session: SessionDep) -> UserRead:
-    """Consomme le lien reçu par courriel.
+@router.get("/auth/verify-email", response_class=HTMLResponse, include_in_schema=False)
+async def verify_email(
+    token: str,
+    session: SessionDep,
+    accept_language: Annotated[str | None, Header()] = None,
+) -> HTMLResponse:
+    """Consomme le lien reçu par courriel, et **rend une page**.
 
     **En `GET`, parce qu'un lien de courriel s'ouvre dans un navigateur.**
     Exiger un `POST` obligerait à monter une page qui reposte, c'est-à-dire à
     dépendre de l'application pour valider une adresse dont on a justement
     besoin avant que l'application serve à quoi que ce soit.
 
-    Le jeton est à usage unique : le second passage répond le même refus que
-    n'importe quel jeton inconnu, ce qui est exact — il a été consommé.
+    **Donc une page, et non du JSON.** Cette route rendait `UserRead` : celui
+    qui cliquait dans son courriel voyait `{"id":"…","email":"…"}` sur le tout
+    premier geste qu'il fait avec le produit, et sur le seul écran qui décide
+    s'il continue. La mécanique était juste — le jeton consommé, l'adresse
+    vérifiée — c'est ce qu'il voyait qui était faux.
+
+    **Le refus reçoit le même soin, et c'est là que le gain est le plus
+    grand.** Un jeton déjà consommé est presque toujours quelqu'un qui a cliqué
+    deux fois ; `{"detail":"email_verification_invalid"}` se lit comme une
+    panne, et fait renoncer quelqu'un dont l'adresse est déjà confirmée. Le
+    code reste 400 — le navigateur n'en fait rien, et mentir sur le statut
+    troublerait ce qui lit vraiment les codes.
+
+    **La langue vient du destinataire quand on le connaît**, de l'en-tête du
+    navigateur sinon : un jeton inconnu ne désigne personne, c'est même la
+    raison pour laquelle il est refusé.
+
+    Hors du schéma public : une page n'a pas de contrat d'API, et la laisser
+    dans `openapi.json` ferait croire à un client qu'il peut en lire la réponse.
     """
     try:
         user = await verification_service.confirmer(session, jeton=token)
-    except verification_service.JetonInconnu as error:
-        raise api_error(
-            status.HTTP_400_BAD_REQUEST, ErrorCode.EMAIL_VERIFICATION_INVALID
-        ) from error
+    except verification_service.JetonInconnu:
+        return HTMLResponse(
+            pages.page_de_message(
+                "account.verification.page.invalid", pages.locale_demandee(accept_language)
+            ),
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
 
     await session.commit()
-    return UserRead.model_validate(user)
+    return HTMLResponse(pages.page_de_message("account.verification.page.confirmed", user.locale))
 
 
 @router.post("/me/verify-email/resend", status_code=status.HTTP_204_NO_CONTENT)
