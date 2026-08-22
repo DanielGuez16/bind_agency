@@ -33,6 +33,7 @@ import { useApi, type CommerceDeLUtilisateur } from '../api';
 import { useI18n } from '../i18n';
 import { CreationDuCommerceScreen } from '../screens/CreationDuCommerceScreen';
 import { Ecran } from '../screens/Ecran';
+import { AGES } from '../screens/cacheDesReponses';
 import { useRequete } from '../screens/useRequete';
 import { commerceRetenu, lireLeChoix, retenirLeChoix } from './commerceChoisi';
 
@@ -66,10 +67,14 @@ export function CommerceProvider({ children }: { children: React.ReactNode }) {
   const { api } = useApi();
   const [choisi, setChoisi] = useState<string | null>(null);
 
-  const requete = useRequete<Commerce[]>(
-    (signal) => api.mesCommerces(signal),
-    { estVide: (commerces) => commerces.length === 0 },
-  );
+  const requete = useRequete<Commerce[]>((signal) => api.mesCommerces(signal), {
+    estVide: (commerces) => commerces.length === 0,
+    // **La coquille entière attend cette réponse.** Tant qu'elle n'est pas là,
+    // aucun onglet commerce ne sait de quel salon il parle : c'est la requête
+    // qui retarde tout le reste à l'ouverture. Et elle ne change que lorsqu'on
+    // rejoint ou quitte un salon, ce qui arrive une fois par an.
+    cache: { cle: 'me.businesses', ageMax: AGES.appartenance },
+  });
 
   // Le choix retenu de l'appareil, lu une fois. Il ne fait pas autorité : la
   // liste tranche, et `commerceRetenu` retombe sur le premier s'il ment.

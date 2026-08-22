@@ -44,6 +44,7 @@ import { formatNumber } from '../format';
 import { useI18n } from '../i18n';
 import { Ecran } from './Ecran';
 import { dureeLisible, partsParCategorie } from './plans/duree';
+import { AGES } from './cacheDesReponses';
 import { useRequete } from './useRequete';
 
 export function PlansScreen() {
@@ -52,6 +53,8 @@ export function PlansScreen() {
 
   const requete = useRequete<PlanAdministrateur[]>((signal) => api.plans(signal), {
     estVide: (plans) => plans.length === 0,
+    // De la configuration : les plans changent quand nous les changeons.
+    cache: { cle: 'plans', ageMax: AGES.configuration },
   });
 
   const colonnes: Colonne[] = [

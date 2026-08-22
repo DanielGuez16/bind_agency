@@ -1602,6 +1602,27 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       maintenant, sur un décor qui pose un vrai nom — un profil sans prénom
       passerait quelle que soit l'implémentation. Mutation vérifiée sur la fuite
       complète : colonne au select, champ au service, champ au schéma.*
+- [x] **La règle des 400 ms n'était vraie qu'au second lancement**
+      *Un fil consulté hier repartait d'un écran de chargement, alors que la
+      réponse d'hier est presque toujours la bonne — des salons n'apparaissent
+      pas en une nuit. La dernière réponse réussie est rangée, et l'écran la
+      pose immédiatement pendant que la requête part quand même.*
+      ***L'inscription est au cas par cas, jamais par défaut.** Sept points
+      d'appel : l'appartenance, le fil, la fiche d'un salon, son catalogue, les
+      paliers du créateur, les plans. Ce qui n'y entre pas est la moitié qui
+      compte — disponibilité, journée, réservations, contreparties, codes de
+      retrait, reprises de compte : toutes décident d'un geste à l'instant où on
+      les lit, et une réponse d'il y a dix minutes y ferait tenir un créneau
+      déjà pris.*
+      *Trois règles. La clé porte une **version**, parce qu'un champ retiré du
+      contrat ne se verrait qu'en production. Tout est effacé à la fermeture de
+      session **et à l'ouverture** — une application tuée sans déconnexion
+      laisse son cache à la personne suivante. Et passé un âge on n'affiche plus
+      rien : un fil de la semaine dernière ment avec l'aplomb du frais.*
+      *Le cache ne remplace jamais une réponse déjà arrivée — c'est le cas du
+      réseau rapide, et celui qu'on casserait sans y penser. 7 tests, 7
+      mutations. Le vidage n'emporte que nos clés : le salon choisi et les
+      préférences d'appareil ne sont pas des réponses.*
 - [ ] **Le bandeau ne devient pas une ligne de confirmation**
       *La planche veut qu'il devienne « vous êtes en ligne · 41 créatrices
       peuvent vous réserver », puis disparaisse au bout de sept jours. Deux
