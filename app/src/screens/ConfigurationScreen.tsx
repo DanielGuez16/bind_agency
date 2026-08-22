@@ -26,7 +26,7 @@ import { Icone, Texte } from '../components';
 import { formatDate } from '../format';
 import { useI18n } from '../i18n';
 import { ECART_DES_COLONNES } from '../shell/gabarit';
-import { radius, useColors, useTheme } from '../theme';
+import { elevationDeCarte, radius, useColors, useTheme } from '../theme';
 import { CatalogueScreen } from './CatalogueScreen';
 import { HorairesScreen } from './HorairesScreen';
 
@@ -88,6 +88,11 @@ export function ConfigurationScreen({
               borderWidth: 1,
               borderColor: c['line.default'],
           opacity: pressed ? 0.7 : 1,
+          // **Un coin de 18 px sans ombre flotte au lieu de se poser** —
+          // passation §2. Cette carte n'en avait pas, et l'inventaire ne le
+          // voyait pas : il ne lisait que les styles objet, et celle-ci est un
+          // style fonction parce qu'elle se presse.
+          ...elevationDeCarte(),
         })}
             testID={`ouvrir-${porte.cle}`}
           >

@@ -12,15 +12,44 @@
  *
  * **Le filtre est facultatif.** Sans lui la liste rend tout, `unfulfilled`
  * compris, qu'aucun des trois onglets ne couvre.
+ *
+ * ## La composition, et ce qu'elle répare
+ *
+ * **La file était une pile plate.** Chaque dossier était un `View` à `gap: 6`,
+ * sans surface ni séparation : cinq contrôles se suivaient sans que rien dise
+ * où l'un finissait et où le suivant commençait. Pire, tout s'y présentait au
+ * même poids — le pseudonyme, la preuve, les quatre motifs de refus et les deux
+ * boutons — de sorte qu'on ne distinguait pas ce qu'on juge de ce avec quoi on
+ * tranche.
+ *
+ * **La grammaire des surfaces s'applique ici comme aux réservations.** Une
+ * carte à ombre demande une décision, une carte à filet informe. Un dossier
+ * qu'un arbitre a en main informe, il ne demande plus rien — c'est la même
+ * distinction que le champ `needs_human_review` porte déjà dans les données, et
+ * elle devient visible.
+ *
+ * **Une seule décision est ouverte à la fois, et c'est ce qui rend l'orange
+ * tenable.** Le bloc de marque est un signe de ponctuation : cinq boutons
+ * pleins dans une colonne n'en sont plus un. La file d'arbitrage a tranché la
+ * même question et son argument vaut ici — « on parcourt la file, on ouvre un
+ * dossier, on tranche, et le suivant est déjà sous les yeux ». La preuve, elle,
+ * reste visible sur **tous** les dossiers : c'est ce qu'on vient lire, et la
+ * cacher derrière un geste ferait payer un clic pour voir avant de décider.
+ *
+ * **Le premier dossier à trancher est ouvert d'emblée.** Un écran qui demande
+ * un clic avant de rien proposer ne sert que ceux qui savent déjà qu'il y a
+ * quelque chose à ouvrir — c'est le défaut que la campagne 2 avait relevé sur
+ * l'arbitrage, et il ne se répète pas ici.
  */
 import { useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { useApi, type FiltreDeContrepartie, type LigneDeFile } from '../api';
 import {
   Button,
   Chip,
   EmptyState,
+  Filet,
   RangeeDeChips,
   SegmentedTabs,
   SkeletonLine,
@@ -29,6 +58,7 @@ import {
   TextField,
 } from '../components';
 import { useI18n } from '../i18n';
+import { elevationDeCarte, radius, useColors } from '../theme';
 import { MOTIFS, libelleDuMotif, type MotifDeDecision } from './motifs';
 
 /**
@@ -65,10 +95,18 @@ const ONGLETS: { filtre: FiltreDeContrepartie; libelle: string }[] = [
   { filtre: 'expected', libelle: 'commerce.filtreAttendue' },
 ];
 
+/** Un dossier attend la décision du salon, et non celle d'un arbitre. */
+export function aTrancherParLeSalon(ligne: LigneDeFile): boolean {
+  return (
+    (ligne.status === 'submitted' || ligne.status === 'under_review') && !ligne.needs_human_review
+  );
+}
+
 export function PublicationsScreen({ businessId }: { businessId: string }) {
   const { api } = useApi();
   const { t } = useI18n();
   const [index, setIndex] = useState(0);
+  const [ouvert, setOuvert] = useState<string | null>(null);
 
   const requete = useRequete<LigneDeFile[]>(
     (signal) => api.contrepartiesDuCommerce(businessId, ONGLETS[index].filtre, signal),
@@ -115,21 +153,49 @@ export function PublicationsScreen({ businessId }: { businessId: string }) {
         </View>
       }
     >
-      {(lignes) => (
-        <View style={{ gap: 8 }}>
-          {onglets}
-          {lignes.map((ligne) => (
-            <Controle key={ligne.collaboration_id} ligne={ligne} onDecide={requete.recharger} />
-          ))}
-        </View>
-      )}
+      {(lignes) => {
+        // Le dossier ouvert, et à défaut le premier qui attend le salon. Jamais
+        // un dossier qui informe : ouvrir « approuvée » n'ouvre rien.
+        const aTrancher = lignes.filter(aTrancherParLeSalon);
+        const actif =
+          aTrancher.find((ligne) => ligne.collaboration_id === ouvert)?.collaboration_id ??
+          aTrancher[0]?.collaboration_id ??
+          null;
+
+        return (
+          <View style={{ gap: 12 }}>
+            {onglets}
+            {lignes.map((ligne) => (
+              <Controle
+                key={ligne.collaboration_id}
+                ligne={ligne}
+                ouvert={ligne.collaboration_id === actif}
+                onOuvrir={() => setOuvert(ligne.collaboration_id)}
+                onDecide={requete.recharger}
+              />
+            ))}
+          </View>
+        );
+      }}
     </Ecran>
   );
 }
 
-function Controle({ ligne, onDecide }: { ligne: LigneDeFile; onDecide: () => void }) {
+function Controle({
+  ligne,
+  ouvert,
+  onOuvrir,
+  onDecide,
+}: {
+  ligne: LigneDeFile;
+  /** Le dossier qui porte la décision. Un seul à la fois, donc un seul orange. */
+  ouvert: boolean;
+  onOuvrir: () => void;
+  onDecide: () => void;
+}) {
   const { api, messageDErreur } = useApi();
   const { t } = useI18n();
+  const c = useColors();
   const [motif, setMotif] = useState<MotifDeDecision | null>(null);
   const [note, setNote] = useState('');
   const [envoi, setEnvoi] = useState(false);
@@ -157,12 +223,30 @@ function Controle({ ligne, onDecide }: { ligne: LigneDeFile; onDecide: () => voi
   // **Un dossier qu'un arbitre a en main ne se décide plus ici.** Le champ
   // était rendu et lu nulle part : deux décisions pouvaient partir sur le même
   // dossier, celle du salon et celle de l'arbitrage.
-  const aDecider =
-    (ligne.status === 'submitted' || ligne.status === 'under_review') &&
-    !ligne.needs_human_review;
+  const aDecider = aTrancherParLeSalon(ligne);
 
   return (
-    <View testID={`controle-${ligne.collaboration_id}`} style={{ gap: 6, paddingVertical: 8 }}>
+    <Pressable
+      testID={`controle-${ligne.collaboration_id}`}
+      // Pressable seulement là où il y a une décision à déplacer. Une carte qui
+      // répond au doigt sans rien ouvrir apprend à ne plus essayer.
+      disabled={!aDecider || ouvert}
+      onPress={onOuvrir}
+      accessibilityRole={aDecider && !ouvert ? 'button' : undefined}
+      style={({ pressed }) => ({
+        opacity: pressed ? 0.7 : 1,
+        gap: 8,
+        padding: 16,
+        borderRadius: radius['radius.lg'],
+        backgroundColor: c['bg.surface'],
+        // **La grammaire des surfaces.** Une carte à ombre demande une
+        // décision, une carte à filet informe. Un dossier en arbitrage informe :
+        // le salon ne doit plus trancher, et sa carte cesse de le lui proposer.
+        ...(aDecider
+          ? elevationDeCarte()
+          : { borderWidth: 1, borderColor: c['line.default'] }),
+      })}
+    >
       {/* **Une ligne sans personne se lit comme une panne.** Les trois champs
           de nom sont nuls quand le compte a été anonymisé, et la chaîne de `??`
           finissait sur une chaîne vide : le commerce voyait une contrepartie
@@ -218,8 +302,12 @@ function Controle({ ligne, onDecide }: { ligne: LigneDeFile; onDecide: () => voi
       ) : null}
       {echec ? <StatusMessage level="danger" body={echec} testID="echec" /> : null}
 
-      {aDecider ? (
+      {aDecider && ouvert ? (
         <View style={{ gap: 8 }}>
+          {/* Ce qui est au-dessus est ce qu'on juge ; ce qui suit est ce avec
+              quoi l'on tranche. Sans ce trait, les quatre motifs de refus se
+              lisaient comme une donnée du dossier de plus. */}
+          <Filet />
           <RangeeDeChips>
             {MOTIFS.map((cle) => (
               <Chip
@@ -269,7 +357,14 @@ function Controle({ ligne, onDecide }: { ligne: LigneDeFile; onDecide: () => voi
             </Texte>
           )}
         </View>
+      ) : aDecider ? (
+        // **Le dossier suivant dit qu'il attend**, plutôt que de ne rien dire.
+        // Une carte à ombre sans un mot laisserait chercher pourquoi elle est
+        // en avant sans rien proposer.
+        <Texte variante="type.caption" couleur="brand.700" testID={`a-trancher-${ligne.collaboration_id}`}>
+          {t('commerce.ouvrirPourTrancher')}
+        </Texte>
       ) : null}
-    </View>
+    </Pressable>
   );
 }

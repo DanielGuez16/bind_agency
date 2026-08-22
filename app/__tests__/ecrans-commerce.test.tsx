@@ -2377,3 +2377,97 @@ describe('le nom d’une créatrice partie', () => {
     ).toBe('rebecca.miami');
   });
 });
+
+
+/**
+ * La composition de la file, sur le système Ambre.
+ *
+ * La revue reprochait de ne pas comprendre l'écran. Le rendu y était pour
+ * beaucoup : une pile plate où le pseudonyme, la preuve, les quatre motifs de
+ * refus et les deux boutons se présentaient au même poids, sans surface ni
+ * séparation entre deux dossiers.
+ */
+describe('la file des publications, composée', () => {
+  const dossier = (id: string, extra: Record<string, unknown> = {}) => ({
+    ...LIGNE_DE_FILE,
+    collaboration_id: id,
+    ...extra,
+  });
+
+  it('n’ouvre qu’une décision à la fois, donc un seul orange', async () => {
+    // **Le bloc de marque est un signe de ponctuation.** Trois boutons pleins
+    // dans une colonne n'en sont plus un — et trois formulaires ouverts
+    // demandent de choisir lequel on remplit avant de choisir quoi répondre.
+    await monter(
+      <PublicationsScreen businessId="b1" />,
+      clientDe({ '/collaborations': [dossier('k1'), dossier('k2'), dossier('k3')] }),
+    );
+    await waitFor(() => expect(screen.getByTestId('controle-k1')).toBeTruthy());
+
+    // Les trois dossiers sont là — ce n'est pas une liste tronquée.
+    expect(screen.getByTestId('controle-k2')).toBeTruthy();
+    expect(screen.getByTestId('controle-k3')).toBeTruthy();
+
+    // Un seul porte la décision. `getAllBy` lèverait s'il y en avait zéro, donc
+    // le compte à un est bien une mesure et non une absence.
+    expect(screen.getAllByTestId('approuver')).toHaveLength(1);
+    expect(screen.getAllByTestId('motif-obligatoire')).toHaveLength(1);
+  });
+
+  it('ouvre le premier dossier d’emblée, sans demander un clic', async () => {
+    // Le défaut relevé sur l'arbitrage en campagne 2 : un écran qui n'ouvre
+    // rien ne sert qu'à ceux qui savent déjà qu'il y a quelque chose à ouvrir.
+    await monter(
+      <PublicationsScreen businessId="b1" />,
+      clientDe({ '/collaborations': [dossier('k1'), dossier('k2')] }),
+    );
+    await waitFor(() => expect(screen.getByTestId('approuver')).toBeTruthy());
+
+    // Et c'est le premier, pas un autre : le second annonce qu'il attend.
+    expect(screen.getByTestId('a-trancher-k2')).toBeTruthy();
+    expect(screen.queryByTestId('a-trancher-k1')).toBeNull();
+  });
+
+  it('déplace la décision sur le dossier qu’on ouvre', async () => {
+    await monter(
+      <PublicationsScreen businessId="b1" />,
+      clientDe({ '/collaborations': [dossier('k1'), dossier('k2')] }),
+    );
+    await waitFor(() => expect(screen.getByTestId('a-trancher-k2')).toBeTruthy());
+
+    await fireEvent.press(screen.getByTestId('controle-k2'));
+
+    await waitFor(() => expect(screen.getByTestId('a-trancher-k1')).toBeTruthy());
+    expect(screen.queryByTestId('a-trancher-k2')).toBeNull();
+    // Toujours une seule décision ouverte après le déplacement.
+    expect(screen.getAllByTestId('approuver')).toHaveLength(1);
+  });
+
+  it('montre la preuve de tous les dossiers, pas seulement de l’ouvert', async () => {
+    // **La preuve n'est pas derrière le geste.** C'est ce qu'on vient lire, et
+    // la cacher ferait payer un clic pour voir avant de décider. Seule la
+    // décision se déplace.
+    await monter(
+      <PublicationsScreen businessId="b1" />,
+      clientDe({ '/collaborations': [dossier('k1'), dossier('k2')] }),
+    );
+    await waitFor(() => expect(screen.getByTestId('controle-k2')).toBeTruthy());
+
+    expect(screen.getAllByTestId('preuve-soumise')).toHaveLength(2);
+  });
+
+  it('ne propose rien à trancher sur un dossier qu’un arbitre a en main', async () => {
+    // La divergence qui donne sa valeur au test : le même décor, au même
+    // statut, et seul `needs_human_review` change. Un écran qui n'ouvrirait
+    // jamais rien passerait sans cette paire.
+    await monter(
+      <PublicationsScreen businessId="b1" />,
+      clientDe({ '/collaborations': [dossier('k1', { needs_human_review: true })] }),
+    );
+    await waitFor(() => expect(screen.getByTestId('controle-k1')).toBeTruthy());
+
+    expect(screen.queryByTestId('approuver')).toBeNull();
+    expect(screen.queryByTestId('a-trancher-k1')).toBeNull();
+    expect(screen.getByTestId('en-arbitrage-k1')).toBeTruthy();
+  });
+});
