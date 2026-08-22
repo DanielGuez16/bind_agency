@@ -405,8 +405,20 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
           {t('annuaire.paliersOuverts')}
         </Texte>
         {createur.paliers_ouverts.length === 0 ? (
-          // Aucun palier ouvert n'est pas un défaut de la créatrice : son
-          // audience peut simplement ne pas encore atteindre le premier seuil.
+          // **Le champ a changé de sens, et la phrase suivait l'ancien.**
+          // `paliers_ouverts` répondait « elle se qualifie quelque part » : une
+          // liste vide ne pouvait alors venir que de son audience, et la phrase
+          // le disait sans rien lui reprocher. Elle répond depuis la PR 213
+          // (numéro écrit sans dièse : trois chiffres précédés d'un dièse font
+          // un hexadécimal valide, que la garde des couleurs en dur refuse —
+          // à raison, elle ne peut pas distinguer un renvoi d'une couleur)
+          // « elle
+          // peut réserver ce que **vous** avez ouvert », et le vide a deux
+          // causes — son audience, ou des paliers que ce salon n'a pas ouverts.
+          //
+          // La phrase énonce donc ce qui est certain, du côté du salon, et
+          // n'attribue plus rien. Le levier, lui, est déjà en tête d'écran :
+          // « ouvrir le palier post porterait ce chiffre à 103 ».
           <Texte
             variante="type.caption"
             couleur="ink.mute"

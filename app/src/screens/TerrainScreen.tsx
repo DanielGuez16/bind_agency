@@ -46,10 +46,11 @@ import {
   Texte,
   TextField,
 } from '../components';
-import { formatDate } from '../format';
+import { formatDate, formatNumber } from '../format';
 import { useI18n } from '../i18n';
 import { codeColors, elevationDeCarte, radius, useColors } from '../theme';
 import { Ecran } from './Ecran';
+import { bilanDeTournee } from './terrain/tournee';
 import { useRequete } from './useRequete';
 
 const TAILLE_DU_QR = 220;
@@ -282,6 +283,12 @@ export function TerrainScreen() {
 
           {saisie}
 
+          {/* **Le bilan de la tournée, avant sa liste.** Les autres blocs de
+              cet écran servent une visite ; celui-ci répond à une autre
+              question, et c'est la seule qui se lit assise : est-ce que la
+              tournée valait le déplacement ? */}
+          <BilanDeLaTournee fiches={fiches} />
+
           {/* Le suivi. Les fiches assumées y restent. */}
           <View style={{ gap: 12 }}>
             <Texte variante="type.bodyStrong">{t('terrain.suivi')}</Texte>
@@ -297,6 +304,80 @@ export function TerrainScreen() {
         </View>
       )}
     </Ecran>
+  );
+}
+
+/**
+ * Ce que la tournée a rapporté, et par quelle voie.
+ *
+ * **Le chiffre décisif n'est pas le taux d'activation, c'est l'écart entre les
+ * deux voies de remise.** Il ne dit pas d'abandonner le lien — un lien vaut
+ * mieux qu'une visite perdue — il dit qu'un second passage pour attraper le
+ * décideur rapporte plus qu'une relance. Un taux global mélangerait justement
+ * les deux méthodes qu'on cherche à comparer.
+ */
+function BilanDeLaTournee({ fiches }: { fiches: FichePreparee[] }) {
+  const { t, locale } = useI18n();
+  const bilan = bilanDeTournee(fiches);
+
+  // Rien à dire tant qu'aucune fiche n'est partie : trois zéros et un tiret
+  // n'aident personne, et l'écran a déjà son formulaire à montrer.
+  if (bilan.remises === 0) return null;
+
+  const nommees = bilan.voies.filter((voie) => voie.taux !== null);
+
+  return (
+    <View style={{ gap: 10 }} testID="bilan-de-tournee">
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 24 }}>
+        <Chiffre valeur={String(bilan.preparees)} legende={t('terrain.bilanPreparees')} testID="bilan-preparees" />
+        <Chiffre valeur={String(bilan.remises)} legende={t('terrain.bilanRemises')} testID="bilan-remises" />
+        <Chiffre valeur={String(bilan.activees)} legende={t('terrain.bilanActivees')} testID="bilan-activees" />
+        {/* **Le délai n'apparaît qu'avec une activation.** « — » à côté de
+            trois chiffres se lit comme une panne ; l'absence de délai n'en est
+            pas une, c'est que personne n'a encore repris sa fiche. */}
+        {bilan.delaiMedianHeures !== null ? (
+          <Chiffre
+            valeur={t('terrain.bilanHeures', {
+              n: formatNumber(Math.round(bilan.delaiMedianHeures), locale),
+            })}
+            legende={t('terrain.bilanDelai')}
+            testID="bilan-delai"
+          />
+        ) : null}
+      </View>
+
+      {/* **L'écart, en toutes lettres.** Deux pourcentages posés côte à côte
+          laisseraient à faire la soustraction ; la phrase dit ce qu'ils
+          impliquent, qui est le seul intérêt de les mesurer. */}
+      {nommees.length === 2 ? (
+        <Texte variante="type.caption" couleur="ink.soft" testID="ecart-des-voies">
+          {t('terrain.bilanEcart', {
+            enMain: Math.round((nommees.find((v) => v.voie === 'qr')?.taux ?? 0) * 100),
+            parLien: Math.round((nommees.find((v) => v.voie === 'email')?.taux ?? 0) * 100),
+          })}
+        </Texte>
+      ) : null}
+    </View>
+  );
+}
+
+/** Un nombre et ce qu'il compte. La légende sous le chiffre, jamais l'inverse. */
+function Chiffre({
+  valeur,
+  legende,
+  testID,
+}: {
+  valeur: string;
+  legende: string;
+  testID: string;
+}) {
+  return (
+    <View style={{ width: 150, gap: 2 }} testID={testID}>
+      <Texte variante="type.figure">{valeur}</Texte>
+      <Texte variante="type.caption" couleur="ink.soft">
+        {legende}
+      </Texte>
+    </View>
   );
 }
 
