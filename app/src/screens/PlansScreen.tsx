@@ -105,20 +105,29 @@ export function PlansScreen() {
                   }}
                 />
               ))}
-              {/* La ligne de total. Elle manquait depuis la campagne 1 : un
-                  tableau de montants sans somme oblige à additionner de tête. */}
-              <TableRow
-                testID="plans-total"
-                colonnes={colonnes}
-                valeurs={{
-                  name: t('admin.plansTotal'),
-                  intervalle: '',
-                  prix: '',
-                  abonnes: String(totaux.abonnes),
-                  actifs: String(totaux.actifs),
-                  mrr: totaux.devise ? montant(totaux.mrrCents, totaux.devise) : '—',
-                }}
-              />
+              {/* **Un total par groupe qui s'additionne vraiment.** Une
+                  seule ligne de somme rendait « — » dès que deux devises se
+                  croisaient, et un tiret ne dit rien. */}
+              {totaux.map((groupe) => (
+                <TableRow
+                  key={`${groupe.devise}-${groupe.periodicite}`}
+                  testID={`plans-total-${groupe.devise}-${groupe.periodicite}`}
+                  colonnes={colonnes}
+                  valeurs={{
+                    name: t(
+                      groupe.periodicite === 'yearly'
+                        ? 'admin.plansTotalAnnuel'
+                        : 'admin.plansTotalMensuel',
+                      { devise: groupe.devise },
+                    ),
+                    intervalle: '',
+                    prix: '',
+                    abonnes: String(groupe.abonnes),
+                    actifs: String(groupe.actifs),
+                    mrr: montant(groupe.revenuCents, groupe.devise),
+                  }}
+                />
+              ))}
             </View>
 
             {/* **Un mensuel calculé n'est pas un prix mensuel.** Un plan
@@ -132,7 +141,10 @@ export function PlansScreen() {
               </Texte>
             ) : null}
 
-            {totaux.devise === null ? (
+            {/* **Pourquoi deux totaux et jamais un.** La règle se dit là où
+                elle s'applique : c'est le seul écran du produit qui montre de
+                l'argent, et aucun taux de change n'est stocké. */}
+            {totaux.length > 1 ? (
               <Texte variante="type.caption" couleur="ink.mute" testID="devises-melees">
                 {t('admin.plansDevisesMelees')}
               </Texte>
@@ -155,35 +167,71 @@ function montant(cents: number, devise: string): string {
   return `${(cents / 100).toFixed(2)} ${devise}`;
 }
 
-/** Ce que l'écran additionne, et la devise commune s'il y en a une. */
-type Totaux = { mrrCents: number; abonnes: number; actifs: number; devise: string | null };
+/**
+ * Un total, pour un groupe qui s'additionne vraiment.
+ *
+ * La devise **et** la périodicité : additionner un mensuel et un annuel dans la
+ * même devise donnerait un nombre qui n'est ni l'un ni l'autre.
+ */
+export type TotalDUnGroupe = {
+  devise: string;
+  periodicite: 'monthly' | 'yearly';
+  revenuCents: number;
+  abonnes: number;
+  actifs: number;
+};
 
 /**
  * Les sommes, et le refus d'additionner ce qui ne s'additionne pas.
  *
+ * **Deux totaux, jamais un seul — et jamais un tiret.** La version d'avant
+ * additionnait tout et rendait « — » dès que deux devises se croisaient : un
+ * tiret ne dit rien, et c'était la seule chose que l'écran affichait alors du
+ * revenu. Un groupe par devise et périodicité dit tout, et n'invente rien :
+ * **aucun taux de change n'est stocké**, donc un chiffre combiné serait un
+ * chiffre inventé — sur le seul écran du produit qui montre de l'argent.
+ *
  * Exporté pour être éprouvé sans écran : « ne pas totaliser deux devises » est
- * une règle, pas une mise en page — et c'est la seule de cet écran qui puisse
+ * une règle, pas une mise en page, et c'est la seule de cet écran qui puisse
  * produire un chiffre faux.
  */
-export function totaliser(plans: PlanAdministrateur[]): Totaux {
-  const devises = new Set(plans.map((plan) => plan.currency));
+export function totaliser(plans: PlanAdministrateur[]): TotalDUnGroupe[] {
+  const groupes = new Map<string, TotalDUnGroupe>();
 
-  return {
-    mrrCents: plans.reduce((somme, plan) => somme + plan.mrr_cents, 0),
-    abonnes: plans.reduce((somme, plan) => somme + plan.subscriptions_count, 0),
-    actifs: plans.reduce((somme, plan) => somme + plan.active_subscriptions_count, 0),
-    devise: devises.size === 1 ? [...devises][0] : null,
-  };
+  for (const plan of plans) {
+    const cle = `${plan.currency}·${plan.billing_interval}`;
+    const groupe = groupes.get(cle) ?? {
+      devise: plan.currency,
+      periodicite: plan.billing_interval,
+      revenuCents: 0,
+      abonnes: 0,
+      actifs: 0,
+    };
+    groupe.revenuCents += plan.mrr_cents;
+    groupe.abonnes += plan.subscriptions_count;
+    groupe.actifs += plan.active_subscriptions_count;
+    groupes.set(cle, groupe);
+  }
+
+  // L'ordre du serveur, stable : deux totaux qui changent de place d'un
+  // chargement à l'autre se relisent à chaque fois.
+  return [...groupes.values()];
 }
 
 /**
- * Les deux nombres qu'on vient chercher sur cet écran.
+ * Ce qu'on vient chercher avant de lire le détail.
  *
- * Un tableau de trois lignes au milieu du vide ne dit pas ce qu'il faut en
- * retenir. Le revenu mensuel et le nombre de salons abonnés le disent avant
- * qu'on lise le détail.
+ * **Un cartouche par groupe qui s'additionne, et pas un de plus.** La version
+ * d'avant posait un revenu unique et rendait « — » dès que deux devises se
+ * croisaient : le seul chiffre d'argent de l'écran était alors un tiret. Deux
+ * cartouches côte à côte disent chacun une vérité entière, et leur juxtaposition
+ * dit ce qu'aucun total combiné ne pourrait dire sans taux de change.
+ *
+ * **Le plan annuel affiche son revenu tel qu'il est facturé.** Aucun mensuel
+ * n'est calculé pour lui : un chiffre divisé, posé à côté de deux prix mensuels
+ * réels, se lit comme un troisième prix — et ce n'en est pas un.
  */
-function Totaux({ totaux }: { totaux: Totaux }) {
+function Totaux({ totaux }: { totaux: TotalDUnGroupe[] }) {
   const { t } = useI18n();
 
   return (
@@ -191,17 +239,26 @@ function Totaux({ totaux }: { totaux: Totaux }) {
       testID="totaux"
       style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 24, paddingBottom: 4 }}
     >
-      <View style={{ width: 260, gap: 2 }} testID="total-mrr">
-        <Texte variante="type.figure">
-          {totaux.devise ? montant(totaux.mrrCents, totaux.devise) : '—'}
-        </Texte>
-        <Texte variante="type.caption" couleur="ink.soft">
-          {t('admin.plansMrrTotal')}
-        </Texte>
-      </View>
+      {totaux.map((groupe) => (
+        <View
+          key={`${groupe.devise}-${groupe.periodicite}`}
+          style={{ width: 260, gap: 2 }}
+          testID={`total-${groupe.devise}-${groupe.periodicite}`}
+        >
+          <Texte variante="type.figure">{montant(groupe.revenuCents, groupe.devise)}</Texte>
+          <Texte variante="type.caption" couleur="ink.soft">
+            {t(
+              groupe.periodicite === 'yearly'
+                ? 'admin.plansTotalAnnuel'
+                : 'admin.plansTotalMensuel',
+              { devise: groupe.devise },
+            )}
+          </Texte>
+        </View>
+      ))}
       <View style={{ width: 260, gap: 2 }} testID="total-abonnes">
         <Texte variante="type.figure">
-          {String(totaux.actifs)}
+          {String(totaux.reduce((somme, groupe) => somme + groupe.actifs, 0))}
         </Texte>
         <Texte variante="type.caption" couleur="ink.soft">
           {t('admin.plansSalonsAbonnes')}

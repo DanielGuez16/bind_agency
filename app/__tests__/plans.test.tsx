@@ -52,20 +52,37 @@ async function monter(plans: unknown[]) {
 }
 
 describe('la somme, isolée', () => {
-  it('additionne ce qui partage une devise', () => {
+  it('additionne ce qui partage une devise et une périodicité', () => {
     expect(
       totaliser([
         plan({ mrr_cents: 19_800, subscriptions_count: 2, active_subscriptions_count: 2 }),
         plan({ plan_id: 'p2', mrr_cents: 8_908, subscriptions_count: 1, active_subscriptions_count: 1 }),
       ] as never),
-    ).toEqual({ mrrCents: 28_708, abonnes: 3, actifs: 3, devise: 'USD' });
+    ).toEqual([
+      { devise: 'USD', periodicite: 'monthly', revenuCents: 28_708, abonnes: 3, actifs: 3 },
+    ]);
   });
 
-  it('refuse d’additionner deux devises', () => {
-    // Un total faux est pire qu'un total absent, et il n'y a aucun taux de
-    // change dans ce produit pour en fabriquer un juste.
+  it('rend deux totaux plutôt qu’un tiret quand les devises diffèrent', () => {
+    // **Un tiret ne dit rien**, et c'était la seule chose que l'écran affichait
+    // alors du revenu. Aucun taux de change n'est stocké : un chiffre combiné
+    // serait inventé, deux chiffres séparés sont chacun vrais.
     const totaux = totaliser([plan(), plan({ plan_id: 'p2', currency: 'EUR' })] as never);
-    expect(totaux.devise).toBeNull();
+    expect(totaux.map((groupe) => groupe.devise).sort()).toEqual(['EUR', 'USD']);
+  });
+
+  it('et ne mélange pas un mensuel avec un annuel de la même devise', () => {
+    // **Le cas qui diverge de « groupe par devise ».** Additionner un mensuel
+    // et un annuel en dollars donnerait un nombre qui n'est ni l'un ni l'autre,
+    // et il aurait l'air juste — c'est le pire des chiffres faux.
+    const totaux = totaliser([
+      plan({ mrr_cents: 10_000 }),
+      plan({ plan_id: 'p2', mrr_cents: 240_000, billing_interval: 'yearly' }),
+    ] as never);
+    expect(totaux).toHaveLength(2);
+    expect(totaux.map((groupe) => groupe.revenuCents).sort((a, b) => a - b)).toEqual([
+      10_000, 240_000,
+    ]);
   });
 });
 
@@ -74,7 +91,9 @@ describe('l’écran des plans', () => {
     await monter([plan(), plan({ plan_id: 'p2', mrr_cents: 8_908, subscriptions_count: 1, active_subscriptions_count: 1 })]);
     await waitFor(() => expect(screen.getByTestId('totaux')).toBeTruthy());
 
-    expect(within(screen.getByTestId('total-mrr')).getByText('287.08 USD')).toBeTruthy();
+    expect(
+      within(screen.getByTestId('total-USD-monthly')).getByText('287.08 USD'),
+    ).toBeTruthy();
     expect(within(screen.getByTestId('total-abonnes')).getByText('3')).toBeTruthy();
   });
 
@@ -82,16 +101,24 @@ describe('l’écran des plans', () => {
     // Elle manquait depuis la campagne 1 : un tableau de montants sans somme
     // oblige à additionner de tête.
     await monter([plan()]);
-    await waitFor(() => expect(screen.getByTestId('plans-total')).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId('plans-total-USD-monthly')).toBeTruthy());
 
-    expect(within(screen.getByTestId('plans-total')).getByText('198.00 USD')).toBeTruthy();
+    expect(
+      within(screen.getByTestId('plans-total-USD-monthly')).getByText('198.00 USD'),
+    ).toBeTruthy();
   });
 
-  it('n’additionne pas deux devises, et le dit', async () => {
+  it('montre deux totaux plutôt qu’un tiret, et dit pourquoi', async () => {
+    // **Le tiret est parti.** Il était la seule chose que l'écran affichait du
+    // revenu dès que deux devises se croisaient — c'est-à-dire dans le cas
+    // qu'il existe pour traiter.
     await monter([plan(), plan({ plan_id: 'p2', currency: 'EUR' })]);
     await waitFor(() => expect(screen.getByTestId('devises-melees')).toBeTruthy());
 
-    expect(within(screen.getByTestId('total-mrr')).getByText('—')).toBeTruthy();
+    expect(screen.getByTestId('total-USD-monthly')).toBeTruthy();
+    expect(screen.getByTestId('total-EUR-monthly')).toBeTruthy();
+    expect(screen.queryByText('—')).toBeNull();
+    // La règle se dit là où elle s'applique : aucun taux de change n'est stocké.
     expect(screen.getByText(en.admin.plansDevisesMelees)).toBeTruthy();
   });
 
