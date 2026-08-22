@@ -156,6 +156,55 @@ export function blocsDeStyle(source: string): string[] {
   return blocs;
 }
 
+describe('la définition d’une carte', () => {
+  const estUneCarte = (b: string) =>
+    b.includes('radius.lg') &&
+    b.includes('bg.surface') &&
+    !(b.includes("overflow: 'hidden'") && !b.includes('elevationDeCarte()'));
+
+  const bloc = (interieur: string) => `style={{ ${interieur} }}`;
+  const SURFACE = "borderRadius: radius['radius.lg'], backgroundColor: c['bg.surface']";
+
+  it('prend une surface pleine, sans filet', () => {
+    // **Le trou que la définition laissait.** Elle exigeait rayon + fond +
+    // filet ; une surface pleine est une carte tout autant qu'une surface
+    // cerclée, et c'est même la plus visible des deux — rien d'autre que son
+    // ombre ne la détache du fond.
+    expect(estUneCarte(bloc(SURFACE))).toBe(true);
+    expect(estUneCarte(bloc(`${SURFACE}, borderWidth: 1`))).toBe(true);
+  });
+
+  it('ne compte pas deux fois une carte qui enveloppe', () => {
+    // **La raison pour laquelle le filet avait été exigé.** Une carte qui
+    // clippe s'écrit en deux nœuds : sur iOS, une vue qui clippe coupe sa
+    // propre ombre. Sans discriminant, les deux satisfaisaient la définition et
+    // une carte comptait pour deux — le comptage d'égalité devenait faux, et
+    // l'élargissement a été reculé deux fois pour ça.
+    const enveloppe = bloc(`${SURFACE}, ...elevationDeCarte()`);
+    const interieur = bloc(`${SURFACE}, borderWidth: 1, overflow: 'hidden'`);
+
+    expect(estUneCarte(enveloppe)).toBe(true);
+    // La moitié intérieure ne réclame pas d'ombre : la sienne vit sur son
+    // enveloppe. C'est la divergence qui fait tenir le comptage.
+    expect(estUneCarte(interieur)).toBe(false);
+  });
+
+  it('garde un nœud unique qui clippe et porte son ombre', () => {
+    // La question n'est pas « clippe-t-il » mais « porte-t-il l'ombre ». Hors
+    // iOS le cas courant est un seul nœud qui fait les deux, et l'exclure
+    // rendrait le compte faux dans l'autre sens.
+    expect(estUneCarte(bloc(`${SURFACE}, overflow: 'hidden', ...elevationDeCarte()`))).toBe(true);
+  });
+
+  it('ne prend pas une pastille qui porte un rayon de carte', () => {
+    // `KeyHint` portait `radius.lg` sur quatorze points de haut. À cette taille
+    // les deux rayons se ressemblent à l'œil, ce qui est pourquoi le mauvais a
+    // survécu — mais l'inventaire le comptait comme une surface devant porter
+    // une ombre. Le jeton corrigé, il sort de lui-même.
+    expect(estUneCarte(bloc("borderRadius: radius['radius.sm'], backgroundColor: c['bg.surface']"))).toBe(false);
+  });
+});
+
 describe('le découpage des blocs de style', () => {
   /** Une carte, avec de quoi faire dérailler un découpage naïf. */
   const carte = (interieur: string) =>
@@ -785,6 +834,11 @@ describe('les surfaces de la v1.1', () => {
       'src/screens/AudienceScreen.tsx',
 
       'src/screens/CarteDuCommerce.tsx',
+      // Les deux portes de l'accueil : des surfaces pleines, sans filet. Elles
+      // échappaient à l'inventaire tant qu'il exigeait le filet — et ce sont
+      // les cartes les plus visibles du produit, puisque rien d'autre que leur
+      // ombre ne les détache du fond.
+      'src/screens/ChoixDeLaPorte.tsx',
       // Le panneau du jour sans place, arrivé avec le créneau v3. Il se pose
       // sur la page comme une carte, donc il porte l'ombre comme une carte.
       // Les trois entrées ci-dessous sont arrivées avec l'élargissement de la
@@ -842,26 +896,31 @@ describe('les surfaces de la v1.1', () => {
     const blocsDe = blocsDeStyle;
 
     /**
-     * **Le filet fait partie de la définition, et il laisse un trou connu.**
+     * **Une carte est une surface de 18 points, avec ou sans filet.**
      *
-     * Une carte est ici « fond de surface + rayon de 18 + filet ». Les deux
-     * portes de l'accueil v3 ont perdu leur filet — deux cartes voisines à
-     * filet donnent une couture au milieu de l'écran — et sont donc sorties de
-     * cet inventaire, alors qu'elles sont exactement ce que la règle vise.
+     * La définition exigeait les trois marques — rayon, fond, **filet** — et le
+     * filet laissait passer tout ce qui est plein : les deux portes de
+     * l'accueil, le panneau reconnu de la caisse. Une surface pleine est une
+     * carte tout autant qu'une surface cerclée ; c'est même la plus visible des
+     * deux, puisque rien d'autre ne la détache du fond que son ombre.
      *
-     * **La définition a été élargie, puis remise.** Sans le filet, une carte
-     * enveloppée compte pour deux blocs : la vue extérieure qui porte l'ombre
-     * et la vue intérieure qui clippe. Le comptage d'égalité — autant de poses
-     * que de cartes — devient alors faux sur les trois surfaces qui clippent, et
-     * le rendre juste demanderait de savoir lequel des deux blocs est le
-     * parent de l'autre, ce qu'une expression régulière ne sait pas.
+     * **Le filet a été exigé pour une raison, et elle a une meilleure
+     * réponse.** Une carte qui clippe s'écrit en deux nœuds — l'extérieur porte
+     * l'ombre, l'intérieur découpe, parce que sur iOS une vue qui clippe coupe
+     * sa propre ombre. Sans le filet dans la définition, les deux nœuds la
+     * satisfaisaient et une carte comptait pour deux : le comptage d'égalité
+     * devenait faux, et l'élargissement a été reculé deux fois pour ça.
      *
-     * Plutôt qu'une garde plus large et plus molle, la définition reste étroite
-     * et **le trou est écrit** : les surfaces à rayon de 18 sans filet lui
-     * échappent. `TASKS.md` les nomme.
+     * La bonne question n'était pas « lequel des deux est le parent » mais
+     * **« lequel des deux porte l'ombre »**. La moitié intérieure est celle qui
+     * clippe **sans** porter d'élévation : son ombre vit sur son enveloppe, et
+     * elle n'a pas à en réclamer une. Un nœud unique qui clippe *et* porte son
+     * ombre reste une carte — c'est le cas courant hors iOS, et il compte.
      */
     const estUneCarte = (b: string) =>
-      b.includes('radius.lg') && b.includes('bg.surface') && b.includes('borderWidth');
+      b.includes('radius.lg') &&
+      b.includes('bg.surface') &&
+      !(b.includes("overflow: 'hidden'") && !b.includes('elevationDeCarte()'));
 
     const trouves = new Set<string>();
     for (const chemin of sources(RACINE)) {

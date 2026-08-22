@@ -122,8 +122,14 @@ export function KeyHint({ touche }: { touche: string }) {
     <View
       style={{
         paddingHorizontal: 5,
+        // **Un rayon de pastille, pas de carte.** Ce badge porte le nom d'une
+        // touche sur quatorze points de haut ; les jetons réservent `sm` aux
+        // chips et aux pastilles, et `lg` aux cartes, feuilles et panneaux. À
+        // cette taille les deux se ressemblent à l'œil, ce qui est exactement
+        // pourquoi le mauvais a survécu — mais l'inventaire des cartes le
+        // comptait comme une surface qui devait porter une ombre.
         paddingVertical: 1,
-        borderRadius: radius['radius.lg'],
+        borderRadius: radius['radius.sm'],
         backgroundColor: c['bg.surface'],
       }}
     >
