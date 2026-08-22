@@ -1056,6 +1056,11 @@ export const en = {
     deplier: 'Expand',
   },
   priseEnMain: {
+    introductionRattachement: 'You are already on BIND. Attach this salon to the account you use, rather than opening a second one.',
+    connecteEnTantQue: 'Signed in as {{email}}',
+    rattacher: 'Attach to my account',
+    mauvaisRoleTitre: 'This link is for a business',
+    mauvaisRoleCorps: 'You are signed in with a creator account. Sign out to open it as a business, or ask for the link on the right account.',
     chargement: 'Opening your page…',
     lienMort: 'This link no longer works',
     lienMortAide:

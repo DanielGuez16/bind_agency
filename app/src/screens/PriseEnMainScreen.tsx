@@ -20,6 +20,29 @@
  * session : un lien qui ouvrirait une session serait un mot de passe qui
  * circule dans un SMS. Il se connecte ensuite, avec ce qu'il vient de choisir —
  * et le premier geste dans l'application est celui qu'il refera tous les jours.
+ *
+ * ## Le gérant qui a déjà un compte
+ *
+ * **C'est le propriétaire de deux adresses, et l'écran le renvoyait s'inventer
+ * une seconde identité.** La branche du jeton se rend **avant** la porte
+ * d'authentification, quelle que soit la session : un gérant déjà connecté, qui
+ * ouvre le lien de son second salon, recevait le formulaire de création de
+ * compte. Lui refuser le lien parce que son adresse est connue l'obligeait à
+ * s'en trouver une autre, et à tenir deux comptes pour deux salons.
+ *
+ * La route existait depuis le début — `POST /handover/{jeton}/attach`, un
+ * compte commerce qui assume la fiche — et n'avait aucun appelant. Ce n'était
+ * pas une capacité à écrire, c'était un écran à brancher.
+ *
+ * **Le compte se lit, il ne se demande pas.** Quand la session est celle d'un
+ * commerce, l'écran montre la même fiche préparée et propose de la rattacher,
+ * en nommant le compte : sans le nom, « rattacher à mon compte » demande de
+ * deviner auquel. Les conditions restent — c'est le serveur qui les exige, et
+ * la version montrée est celle qu'on accepte.
+ *
+ * **Un créateur ou un administrateur ne voit pas ce chemin**, et l'écran le dit
+ * plutôt que d'offrir un bouton qui rendrait 403. Le lien est fait pour un
+ * salon ; se déconnecter est le geste qui reste, et il est nommé.
  */
 import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
@@ -27,6 +50,7 @@ import { ScrollView, View } from 'react-native';
 import { useApi, type ApercuDeLaFiche } from '../api';
 import { Button, Marque, StatusMessage, TextField, Texte, Toggle } from '../components';
 import { useI18n } from '../i18n';
+import { useSession } from '../session';
 import { elevationDeCarte, radius, useColors } from '../theme';
 import { useRequete } from './useRequete';
 
@@ -52,11 +76,43 @@ export function PriseEnMainScreen({
     { estVide: () => false, dependances: [jeton] },
   );
 
+  const session = useSession();
+
+  /**
+   * Le compte en session, quand c'en est un de commerce.
+   *
+   * Nul dans les deux autres cas — anonyme, ou connecté sous un rôle qui ne
+   * peut pas assumer une fiche. Les deux ne se traitent pas pareil : le premier
+   * crée un compte, le second n'a rien à faire ici.
+   */
+  const commerceEnSession =
+    session.etat === 'connecte' && session.utilisateur.role === 'business_member'
+      ? session.utilisateur
+      : null;
+  const autreRole =
+    session.etat === 'connecte' && session.utilisateur.role !== 'business_member';
+
   const [email, setEmail] = useState('');
   const [motDePasse, setMotDePasse] = useState('');
   const [accepte, setAccepte] = useState(false);
   const [enCours, setEnCours] = useState(false);
   const [echec, setEchec] = useState<string | null>(null);
+
+  /** Rattacher : le compte existe, il n'y a que les conditions à recueillir. */
+  async function rattacher(apercu: ApercuDeLaFiche) {
+    setEchec(null);
+    setEnCours(true);
+    try {
+      await api.rattacherLaFiche(jeton, apercu.terms_version);
+      // Pas d'adresse à transmettre : la session est déjà ouverte, et l'appelant
+      // ne fait qu'oublier le jeton pour laisser l'application reprendre.
+      onTermine('');
+    } catch (erreur) {
+      setEchec(messageDErreur(erreur));
+    } finally {
+      setEnCours(false);
+    }
+  }
 
   async function assumer(apercu: ApercuDeLaFiche) {
     setEchec(null);
@@ -176,14 +232,28 @@ export function PriseEnMainScreen({
           ) : null}
         </View>
 
+        {/* **Un rôle qui ne peut pas assumer une fiche le lit, plutôt que de
+            découvrir un 403.** Le lien est fait pour un salon ; se déconnecter
+            est le geste qui reste, et il est nommé plutôt que sous-entendu. */}
+        {autreRole ? (
+          <StatusMessage
+            level="neutral"
+            title={t('priseEnMain.mauvaisRoleTitre')}
+            body={t('priseEnMain.mauvaisRoleCorps')}
+            testID="mauvais-role"
+          />
+        ) : null}
+
         <Texte variante="type.body" couleur="ink.soft">
-          {t('priseEnMain.introduction')}
+          {commerceEnSession ? t('priseEnMain.introductionRattachement') : t('priseEnMain.introduction')}
         </Texte>
 
         {echec ? (
           <StatusMessage level="danger" body={echec} testID="echec-prise-en-main" />
         ) : null}
 
+        {commerceEnSession || autreRole ? null : (
+        <>
         <TextField
           label={t('auth.email')}
           value={email}
@@ -202,6 +272,8 @@ export function PriseEnMainScreen({
           helpText={t('priseEnMain.aideMotDePasse', { minimum: CARACTERES_REQUIS })}
           testID="champ-mot-de-passe"
         />
+        </>
+        )}
 
         {/* **Une bascule, pas une case pré-cochée.** Ce qui est accepté ici est
             écrit au journal avec la version et l'instant ; une acceptation
@@ -226,15 +298,40 @@ export function PriseEnMainScreen({
           />
         </View>
 
-        <Button
-          label={t('priseEnMain.assumer')}
-          onPress={() => void assumer(apercu)}
-          disabled={!complet}
-          loading={enCours}
-          loadingLabel={t('priseEnMain.enCours')}
-          fullWidth
-          testID="valider-prise-en-main"
-        />
+        {/* **Le compte est nommé.** « Rattacher à mon compte » sans dire lequel
+            demande de deviner — et c'est précisément la situation de quelqu'un
+            qui en a deux. */}
+        {commerceEnSession ? (
+          <>
+            <Texte variante="type.caption" couleur="ink.mute" testID="compte-en-session">
+              {t('priseEnMain.connecteEnTantQue', { email: commerceEnSession.email ?? '' })}
+            </Texte>
+            <Button
+              label={t('priseEnMain.rattacher')}
+              onPress={() => void rattacher(apercu)}
+              disabled={!accepte}
+              loading={enCours}
+              loadingLabel={t('priseEnMain.enCours')}
+              fullWidth
+              testID="rattacher-la-fiche"
+            />
+          </>
+        ) : autreRole ? (
+          // Ni l'un ni l'autre : le message ci-dessus dit ce qu'il faut faire,
+          // et un formulaire sous lui ferait croire qu'il y a un moyen de
+          // passer outre.
+          null
+        ) : (
+          <Button
+            label={t('priseEnMain.assumer')}
+            onPress={() => void assumer(apercu)}
+            disabled={!complet}
+            loading={enCours}
+            loadingLabel={t('priseEnMain.enCours')}
+            fullWidth
+            testID="valider-prise-en-main"
+          />
+        )}
 
         {/* Ce que la fiche ne fait **pas** encore. Un salon qui croirait être
             en ligne chercherait ses réservations pendant deux jours. */}

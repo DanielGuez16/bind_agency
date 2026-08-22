@@ -1899,3 +1899,12 @@ barrière avant le réseau, et c'est là qu'il faut la poser.
       tri, et elle se voit dès la seconde page. Ce sont les trois seules choses
       qu'un salon sache formuler avant d'avoir vu qui que ce soit ; la recherche
       par pseudonyme, elle, arrive plus tard, quand il a des noms en tête*
+
+- [ ] **Le sélecteur de salon, pour un gérant qui en a deux**
+      *`useMonCommerce` prend `mesCommerces[0]` et la coquille n'offre aucun
+      moyen de changer. Depuis que le rattachement d'une fiche existe, un gérant
+      peut avoir deux salons — le second est réservable par les créatrices, et
+      son gérant ne peut pas l'ouvrir. Rien n'est cassé : c'est incomplet, et
+      c'est vraisemblablement pourquoi la route de rattachement n'avait jamais
+      eu d'écran. Le nom du salon est déjà dans la barre latérale, c'est là que
+      le choix se pose*
