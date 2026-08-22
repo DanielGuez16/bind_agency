@@ -15,8 +15,9 @@ import { act, render, screen } from '@testing-library/react-native';
 import { Chargement, FiletDAttente, PLAFOND_MS } from '../src/shell/Chargement';
 import { ThemeProvider } from '../src/theme';
 
-const monter = (noeud: React.ReactElement) =>
-  render(<ThemeProvider role="creator">{noeud}</ThemeProvider>);
+async function monter(noeud: React.ReactElement) {
+  return await render(<ThemeProvider role="creator">{noeud}</ThemeProvider>);
+}
 
 /** Le style d'un nœud, tableau ou non. */
 const aplati = (style: unknown): Record<string, unknown> =>
@@ -56,8 +57,10 @@ describe('les deux tracés, et leur alignement', () => {
     // **On remonte jusqu'à la couche animée**, plutôt que de compter les
     // parents : `Svg` en insère un nombre qui lui appartient, et un compte figé
     // se casserait à la première version de la bibliothèque.
-    let noeud: { parent: unknown; props?: { style?: unknown } } | null =
-      screen.getByTestId('ecran-chargement-point-point') as never;
+    type Noeud = { parent: Noeud | null; props?: { style?: unknown } };
+    let noeud: Noeud | null = screen.getByTestId(
+      'ecran-chargement-point-point',
+    ) as unknown as Noeud;
     let couche: Record<string, unknown> = {};
     for (let i = 0; i < 8 && noeud; i += 1) {
       const style = aplati(noeud.props?.style);
@@ -65,7 +68,7 @@ describe('les deux tracés, et leur alignement', () => {
         couche = style;
         break;
       }
-      noeud = noeud.parent as never;
+      noeud = noeud.parent;
     }
 
     expect(couche.position).toBe('absolute');
