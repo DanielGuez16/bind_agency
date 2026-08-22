@@ -8736,3 +8736,57 @@ Les trois se ressemblent assez pour qu'on les confonde, et la confusion a déjà
 coûté : un élargissement de ce qu'on **lit** a été pris pour un élargissement de
 ce qu'on **cherche**, ce qui a fait croire une fois que la question était réglée.
 Élargir l'un n'élargit pas les autres.
+
+---
+
+## 2026-08-22 — Ce qu'une réservation raconte décide de ce qui se corrige
+
+**La règle n'est pas « quels champs sont techniques ».** Douze réservations
+passées citent une prestation de quarante-cinq minutes : la passer à
+soixante-quinze ferait lire, dans l'historique de quelqu'un, avoir reçu une
+prestation qu'il n'a pas reçue. La photo, l'orthographe et la description ne
+racontent rien de ce qui s'est passé — les corriger ne touche à aucune
+réservation.
+
+**Le refus se lit sur son code, jamais sur son message.** Un refus de suppression
+n'est pas une panne : c'est la règle du produit qui répond, et elle appelle un
+autre geste. Le lire au message le rendrait dépendant de la langue, et traiter
+toute panne comme un refus proposerait de fermer une prestation sur une coupure
+de réseau.
+
+**L'écran ne devine pas à la place du serveur.** Il aurait pu compter les
+réservations pour savoir si la suppression est permise — il propose, et lit le
+refus comme la réponse qu'il est. Deviner demanderait un compte que rien ne sert,
+et se tromperait au premier écart.
+
+**Et fermer n'est pas archiver**, ce que l'écran ne prétend pas. Les deux valent
+le même drapeau aujourd'hui ; sortir de la liste de travail une prestation
+saisonnière que le gérant compte rouvrir serait pire que d'y laisser une archive.
+Le manque est demandé plutôt que contourné.
+## 2026-08-22 — Révoquer ne suffisait pas
+
+**Le geste s'annulait tout seul.** `revoquerUnTerminal` coupe le jeton côté
+serveur ; le crochet le réenregistre à chaque session connectée. Un interrupteur
+qui ne survit pas au lancement suivant est un bouton qui ment, et c'est ce qu'on
+aurait livré en branchant la méthode telle quelle. Le refus est donc gardé sur
+l'appareil et relu **avant** tout enregistrement.
+
+**Le serveur d'abord, la mémoire ensuite.** Si la révocation échoue, noter le
+refus ferait croire que c'est coupé alors que le serveur continue d'envoyer.
+
+**Et « refusé ici » n'est pas « refusé par le système ».** Les deux se lèvent à
+des endroits différents — les réglages de l'application, ceux du téléphone — et
+les confondre enverrait quelqu'un chercher au mauvais endroit.
+
+**Ce que l'écran ne fait pas est écrit sur l'écran.** Couper les notifications
+d'un téléphone perdu depuis un autre appareil demande de les énumérer, et aucune
+route ne liste les terminaux : révoquer exige de posséder le jeton, qu'on n'a que
+sur le téléphone lui-même. La capacité n'était donc pas complète côté serveur,
+contrairement à ce qu'on pouvait croire en voyant la méthode sans appelant.
+Quelqu'un qui vient de perdre son téléphone est la dernière personne à qui l'on
+doit une demi-vérité.
+
+**Et la garde du thème a été affinée, pas exemptée.** Elle cherchait `switch`
+tout court : elle attrapait les notifications au même titre qu'un réglage de
+couleurs, alors que l'un commande quelque chose et l'autre ne commandait rien.
+Elle vise maintenant le libellé.

@@ -274,7 +274,16 @@ describe('les réglages du créateur', () => {
     // dans les jetons en garde la trace. Un interrupteur qui ne commande rien
     // fait douter des réglages voisins — c'est le reproche de la revue, et le
     // remettre « pour la symétrie » le recréerait.
-    expect(screen.queryByRole('switch')).toBeNull();
+    // **Ce qu'on interdit est la bascule de *thème*, pas tout interrupteur.**
+    // La première forme cherchait `switch` tout court : elle attrapait donc les
+    // notifications de cet appareil au même titre qu'un réglage de couleurs,
+    // alors que l'un commande quelque chose et l'autre ne commandait rien.
+    // Une garde qui confond les deux force à l'exempter, et une garde exemptée
+    // ne garde plus rien.
+    const interrupteurs = screen.queryAllByRole('switch');
+    for (const interrupteur of interrupteurs) {
+      expect(interrupteur.props.accessibilityLabel).not.toMatch(/theme|thème|dark|light/i);
+    }
     expect(screen.queryByText(/theme|thème|dark|light/i)).toBeNull();
   });
 

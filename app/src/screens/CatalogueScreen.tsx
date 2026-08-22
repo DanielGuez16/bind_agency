@@ -24,6 +24,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import {
+  ApiError,
   useApi,
   type ItemDuCatalogue,
   type OffreDePalier,
@@ -50,6 +51,7 @@ import {
 import { CarteDuCommerce } from './CarteDuCommerce';
 import { GalerieDuCommerce } from './GalerieDuCommerce';
 import { useI18n } from '../i18n';
+import { suiteDuRefus } from './catalogue/corriger';
 import { radius, useColors } from '../theme';
 import {
   ecartAuConseil,
@@ -383,6 +385,110 @@ function Groupes({
   );
 }
 
+/**
+ * Corriger une prestation : la photo, l'orthographe, la description.
+ *
+ * **Et rien d'autre, délibérément.** La durée, le palier et la contrepartie
+ * n'y sont pas : douze réservations passées citent une prestation de
+ * quarante-cinq minutes, et la passer à soixante-quinze réécrirait leur
+ * histoire — quelqu'un lirait, dans son historique, avoir reçu une prestation
+ * qu'il n'a pas reçue. Ces trois-là demandent une autre prestation, l'ancienne
+ * s'archivant.
+ *
+ * **Le prix n'y est pas non plus.** Design ne le range dans aucune des deux
+ * listes ; il ne réécrit l'histoire d'aucune réservation, mais il déplace le
+ * palier suggéré. La question est posée à l'API plutôt que tranchée ici.
+ */
+function CorrigerLaPrestation({
+  item,
+  businessId,
+  onFait,
+  onRenoncer,
+}: {
+  item: ItemDuCatalogue;
+  businessId: string;
+  onFait: () => void;
+  onRenoncer: () => void;
+}) {
+  const { api, messageDErreur } = useApi();
+  const { t } = useI18n();
+  const [nom, setNom] = useState(item.name);
+  const [description, setDescription] = useState(item.description ?? '');
+  const [envoi, setEnvoi] = useState(false);
+  const [echec, setEchec] = useState<string | null>(null);
+
+  const change = nom.trim() !== item.name || description.trim() !== (item.description ?? '');
+
+  async function enregistrer() {
+    setEchec(null);
+    setEnvoi(true);
+    try {
+      await api.modifierUnItem(businessId, item.id, {
+        name: nom.trim(),
+        // La chaîne vide efface la description : c'est le seul champ dont
+        // l'effacement a un sens ici, et le serveur l'accepte comme tel.
+        description: description.trim() || null,
+      });
+      vibration.action();
+      onFait();
+    } catch (erreur) {
+      vibration.echec();
+      setEchec(messageDErreur(erreur));
+    } finally {
+      setEnvoi(false);
+    }
+  }
+
+  return (
+    <View style={{ gap: 8 }} testID={`correction-${item.id}`}>
+      <TextField
+        label={t('composition.nom')}
+        value={nom}
+        onChangeText={setNom}
+        testID={`corriger-nom-${item.id}`}
+      />
+      <TextField
+        label={t('composition.description')}
+        value={description}
+        onChangeText={setDescription}
+        lignes={3}
+        testID={`corriger-description-${item.id}`}
+      />
+      {/* **Ce qui ne se corrige pas, dit là où on corrige.** Sans cette
+          phrase, un gérant cherche la durée, ne la trouve pas, et conclut que
+          l'écran est incomplet — au lieu d'apprendre la règle. */}
+      <Texte variante="type.caption" couleur="ink.soft" testID={`corriger-portee-${item.id}`}>
+        {t('composition.corrigerPortee')}
+      </Texte>
+
+      {echec ? <StatusMessage level="danger" body={echec} testID={`echec-correction-${item.id}`} /> : null}
+
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        {/* Le bouton d'enregistrement reste absent tant que rien n'a changé —
+            retiré, jamais grisé : c'est la règle du dépôt. */}
+        {change && nom.trim().length > 0 ? (
+          <Button
+            label={t('composition.enregistrerLaCorrection')}
+            size="sm"
+            fullWidth={false}
+            loading={envoi}
+            onPress={() => void enregistrer()}
+            testID={`enregistrer-correction-${item.id}`}
+          />
+        ) : null}
+        <Button
+          label={t('common.annuler')}
+          size="sm"
+          variant="ghost"
+          fullWidth={false}
+          onPress={onRenoncer}
+          testID={`renoncer-correction-${item.id}`}
+        />
+      </View>
+    </View>
+  );
+}
+
 function LignePrestation({
   item,
   businessId,
@@ -405,6 +511,29 @@ function LignePrestation({
   const c = useColors();
   const [echec, setEchec] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
+  const [correction, setCorrection] = useState(false);
+  const [refusDeSuppression, setRefus] = useState(false);
+
+  async function retirer() {
+    setEchec(null);
+    setRefus(false);
+    setEnvoi(true);
+    try {
+      await api.supprimerUnItem(businessId, item.id);
+      vibration.action();
+      onChange();
+    } catch (erreur) {
+      // **Le code plutôt que le message.** Un refus de suppression n'est pas une
+      // panne : c'est la règle du produit qui répond, et elle appelle un autre
+      // geste. Le lire au message le rendrait dépendant de la langue.
+      const code = erreur instanceof ApiError ? (erreur.code as string) : null;
+      if (suiteDuRefus(code) === 'fermer') setRefus(true);
+      else setEchec(messageDErreur(erreur));
+      vibration.echec();
+    } finally {
+      setEnvoi(false);
+    }
+  }
 
   async function basculer(ouvert: boolean) {
     setEchec(null);
@@ -452,6 +581,73 @@ function LignePrestation({
         <Texte variante="type.caption" couleur="ink.mute" testID={`ferme-par-parent-${item.id}`}>
           {t('composition.fermeeParSonParent')}
         </Texte>
+      ) : null}
+
+      {/* **Corriger et retirer, là où la prestation est.** Le catalogue se
+          composait sans se corriger : une faute d'orthographe ou une photo
+          manquante demandait de supprimer et de recommencer, ce qu'un item déjà
+          réservé refuse de toute façon. */}
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <Button
+          label={t('composition.corriger')}
+          size="sm"
+          variant="ghost"
+          fullWidth={false}
+          onPress={() => setCorrection(true)}
+          testID={`corriger-${item.id}`}
+        />
+        <Button
+          label={t('composition.retirerLaPrestation')}
+          size="sm"
+          variant="ghost"
+          fullWidth={false}
+          loading={envoi}
+          onPress={() => void retirer()}
+          testID={`retirer-${item.id}`}
+        />
+      </View>
+
+      {/* **Le refus se lit comme la réponse qu'il est.** Une prestation déjà
+          réservée ne se supprime pas : douze réservations la citent, et les
+          laisser pointer vers rien réécrirait une histoire. Le serveur le
+          refuse, l'écran le dit, et propose le geste qui reste. */}
+      {refusDeSuppression ? (
+        <View style={{ gap: 8 }} testID={`refus-suppression-${item.id}`}>
+          <StatusMessage
+            level="warning"
+            body={t('composition.retraitRefuse')}
+            testID={`refus-${item.id}`}
+          />
+          {item.is_available ? (
+            <View style={{ alignSelf: 'flex-start' }}>
+              <Button
+                label={t('composition.fermerPlutot')}
+                size="sm"
+                variant="secondary"
+                fullWidth={false}
+                loading={envoi}
+                onPress={() => void basculer(false)}
+                testID={`fermer-plutot-${item.id}`}
+              />
+            </View>
+          ) : null}
+        </View>
+      ) : null}
+
+      {/* **Ce qui se corrige, et rien d'autre.** La durée, le palier et la
+          contrepartie n'y sont pas : douze réservations citent une prestation
+          de quarante-cinq minutes, et la passer à soixante-quinze réécrirait
+          leur histoire. Elles demandent une autre prestation. */}
+      {correction ? (
+        <CorrigerLaPrestation
+          item={item}
+          businessId={businessId}
+          onFait={() => {
+            setCorrection(false);
+            onChange();
+          }}
+          onRenoncer={() => setCorrection(false)}
+        />
       ) : null}
       {/* **Le conseil, et jamais la décision.** La plateforme dit ce qu'elle
           aurait fait à partir du prix et de la place de cette prestation dans
