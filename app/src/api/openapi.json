@@ -477,11 +477,29 @@
         ]
       }
     },
+    "/api/v1/business/{business_id}/catalog-items/{item_id}/archive": {
+      "post": {
+        "operationId": "archive_item_api_v1_business__business_id__catalog_items__item_id__archive_post",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/api/v1/business/{business_id}/catalog-items/{item_id}/availability": {
       "put": {
         "operationId": "set_availability_api_v1_business__business_id__catalog_items__item_id__availability_put",
         "responses": [
           "204",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/business/{business_id}/catalog-items/{item_id}/replace": {
+      "post": {
+        "operationId": "replace_item_api_v1_business__business_id__catalog_items__item_id__replace_post",
+        "responses": [
+          "201",
           "422"
         ]
       }

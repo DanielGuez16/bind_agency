@@ -82,6 +82,20 @@ class CatalogItemRead(BaseModel):
     #: Calculé, jamais stocké : un parent désactivé rend ses variantes
     #: indisponibles sans que leur propre interrupteur ne bouge.
     is_effectively_available: bool
+    #: Quand la prestation a été retirée pour de bon. Nulle : elle est vivante.
+    #:
+    #: **À ne pas confondre avec `is_available` à faux.** Celui-ci dit « pas en
+    #: ce moment » — la prestation saisonnière qu'on rouvrira ; celle-là dit
+    #: « plus jamais ». Sans la distinction, l'écran sort de la liste de travail
+    #: ce qu'on comptait rouvrir, ou y laisse des archives pour toujours.
+    archived_at: datetime | None
+    #: Combien de réservations citent cette prestation.
+    #:
+    #: **Pour que le bouton nomme sa conséquence** : « archiver, douze
+    #: réservations citent cette prestation » se décide, « archiver » ne se
+    #: décide pas. C'est aussi ce qui dit lequel des deux gestes est offert —
+    #: à zéro, la suppression est vraie ; au-delà, elle n'existe pas.
+    reservations_count: int
 
     created_at: datetime
     updated_at: datetime

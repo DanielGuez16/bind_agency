@@ -28,6 +28,25 @@ class CatalogItem(UUIDPrimaryKey, CreatedAt, Base):
         sa.ForeignKey("business.id", ondelete="CASCADE"), nullable=False
     )
     parent_item_id: Mapped[uuid.UUID | None] = mapped_column(sa.Uuid, nullable=True)
+    #: Quand la prestation a été retirée du catalogue **pour de bon**.
+    #:
+    #: **Archiver n'est pas fermer, et `is_available` ne peut pas dire les
+    #: deux.** Un salon ferme une prestation pour l'été et la rouvre en
+    #: septembre ; il archive celle qu'il ne refera plus. Les deux valaient
+    #: `is_available = false`, et l'écran ne pouvait pas les distinguer : ou
+    #: bien il sortait de la liste de travail une prestation saisonnière que le
+    #: gérant compte rouvrir, ou bien il y laissait traîner des archives pour
+    #: toujours.
+    #:
+    #: **Une archive ne se supprime jamais et ne se rouvre jamais.** Supprimer
+    #: effacerait le texte d'un accord tenu — douze réservations citent cette
+    #: prestation, et leur histoire est écrite avec ses mots. Rouvrir ferait
+    #: d'une trace un objet vivant, et le salon en a un autre pour ça : la
+    #: prestation qui l'a remplacée.
+    #:
+    #: Elle quitte la liste que le salon travaille, reste atteignable depuis la
+    #: réservation qui la cite, et n'apparaît dans aucun fil.
+    archived_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
 
     name: Mapped[str] = mapped_column(sa.Text, nullable=False)
     description: Mapped[str | None] = mapped_column(sa.Text, nullable=True)

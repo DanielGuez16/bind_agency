@@ -389,6 +389,18 @@ async def fil_du_createur(
                 # peut pas réserver serait pire qu'aucun résultat.
                 *([condition_de_recherche(recherche)] if recherche and recherche.strip() else []),
                 CatalogItem.is_available.is_(True),
+                # **Une archive n'apparaît dans aucun fil**, et cette ligne est
+                # redondante aujourd'hui : `archiver` ferme aussi
+                # `is_available`, que la condition précédente attrape déjà.
+                #
+                # Elle reste parce qu'elle dit la **règle** là où l'autre dit un
+                # état. La mutation qui la retire ne casse aucun test, et c'est
+                # attendu : produire l'état qu'elle seule attrape — archivée
+                # mais disponible — demanderait de fabriquer une ligne que le
+                # produit ne sait pas écrire, et un décor impossible ne prouve
+                # rien. Le jour où un second chemin d'archivage existe, elle
+                # sera la seule à tenir.
+                CatalogItem.archived_at.is_(None),
                 sa.or_(parent.id.is_(None), parent.is_available.is_(True)),
                 # Le filtre de catégorie ne s'applique pas ici non plus : les
                 # pastilles annoncent ce que **les autres** catégories
@@ -620,6 +632,18 @@ async def suggestions_du_createur(
                 Tier.is_active.is_(True),
                 Tier.id.in_(paliers_ouverts),
                 CatalogItem.is_available.is_(True),
+                # **Une archive n'apparaît dans aucun fil**, et cette ligne est
+                # redondante aujourd'hui : `archiver` ferme aussi
+                # `is_available`, que la condition précédente attrape déjà.
+                #
+                # Elle reste parce qu'elle dit la **règle** là où l'autre dit un
+                # état. La mutation qui la retire ne casse aucun test, et c'est
+                # attendu : produire l'état qu'elle seule attrape — archivée
+                # mais disponible — demanderait de fabriquer une ligne que le
+                # produit ne sait pas écrire, et un décor impossible ne prouve
+                # rien. Le jour où un second chemin d'archivage existe, elle
+                # sera la seule à tenir.
+                CatalogItem.archived_at.is_(None),
                 sa.or_(parent.id.is_(None), parent.is_available.is_(True)),
             )
             .order_by(distance)

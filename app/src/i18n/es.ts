@@ -1120,6 +1120,8 @@ export const es: Catalogue = {
     catalog_item_not_bookable:
       'Este artículo no usa franjas horarias. Es válido durante un periodo.',
     catalog_item_not_found: 'Este artículo no está en tu catálogo.',
+    catalog_item_already_archived:
+      'Esta prestación ya está archivada. Un archivo no se reabre — crea una prestación nueva.',
     catalog_item_has_bookings:
       'Este artículo tiene reservas y no se puede eliminar. Desactívalo en su lugar.',
     catalog_item_locked_by_bookings:
