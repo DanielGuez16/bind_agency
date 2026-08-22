@@ -129,7 +129,7 @@ describe('les libellés ne genrent personne', () => {
     const fautifs: string[] = [];
     const parcourir = (noeud: unknown, chemin: string) => {
       if (typeof noeud === 'string') {
-        if (/\b(she|he|her|his|hers|him)\b/i.test(noeud)) fautifs.push(`${chemin} — ${noeud}`);
+        if (/\b(she|he|her|his|hers|him|himself|herself)\b/i.test(noeud)) fautifs.push(`${chemin} — ${noeud}`);
         return;
       }
       if (noeud && typeof noeud === 'object') {
@@ -155,12 +155,19 @@ describe('les libellés ne genrent personne', () => {
     // Une garde qui ne cherche que le mot qui l'a motivée fait croire que la
     // question est réglée. On l'éprouve donc sur les autres façons d'écrire la
     // même faute, y compris capitalisée et en fin de phrase.
-    const attrape = (phrase: string) => /\b(she|he|her|his|hers|him)\b/i.test(phrase);
+    const attrape = (phrase: string) => /\b(she|he|her|his|hers|him|himself|herself)\b/i.test(phrase);
 
     expect(attrape('Awaiting her post')).toBe(true);
     expect(attrape('She came and found you closed')).toBe(true);
     expect(attrape('Read his profile')).toBe(true);
     expect(attrape('The booking is hers')).toBe(true);
+    // **« himself » échappait à la garde**, et c'est une restauration qui l'a
+    // révélé : `\bhim\b` ne mord pas sur « himself », dont les lettres
+    // suivantes suppriment la frontière de mot. La forme réfléchie est la
+    // quatrième façon d'écrire la même faute, et la garde ne cherchait que les
+    // trois premières.
+    expect(attrape('Handed to the manager himself')).toBe(true);
+    expect(attrape('She did it herself')).toBe(true);
 
     // Et elle ne se déclenche pas sur les mots qui les contiennent : « the »,
     // « share », « other », « chez » n'ont rien à voir. Sans ce contre-exemple,
