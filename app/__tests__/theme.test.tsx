@@ -202,8 +202,11 @@ describe('le découpage des blocs de style', () => {
     // toutes dans le fragment : la carte resterait vue, et la mutation qui
     // retire la traversée des chaînes survivrait. Il faut qu'elle coupe **entre**
     // deux marques pour que les deux implémentations divergent.
+    // Deux accolades et non une : à l'intérieur de `style={{`, la profondeur
+    // vaut deux, et une seule fermante la ramène à un sans rien couper. Le
+    // décor doit refermer **jusqu'à zéro** pour que la troncature ait lieu.
     const avecLitteral =
-      "<View style={{ borderRadius: radius['radius.lg'], alt: '}', backgroundColor: c['bg.surface'], borderWidth: 1 }}>";
+      "<View style={{ borderRadius: radius['radius.lg'], alt: '}}', backgroundColor: c['bg.surface'], borderWidth: 1 }}>";
 
     expect(blocsDeStyle(avecLitteral).filter(estUneCarte)).toHaveLength(1);
   });
