@@ -50,6 +50,18 @@ class ReservationDuCreateurRead(BaseModel):
     #: aussi ce qui permet à la créatrice de lire la même heure que le commerce,
     #: au lieu de deux comptes à rebours calculés séparément.
     approval_expires_at: datetime | None
+    #: Jusqu'à quand l'annulation ne coûte rien.
+    #:
+    #: **Nulle veut dire « toujours libre »**, jamais « on ne sait pas » : un
+    #: garde, un droit sans créneau et une demande que le salon n'a pas
+    #: acceptée n'ont aucune échéance. Poser un instant sur l'un des trois
+    #: ferait renoncer quelqu'un qui n'avait rien à perdre.
+    #:
+    #: Calculée par le serveur, pour la raison de sa voisine : le seuil est un
+    #: réglage. Sans elle, l'écran peut avertir qu'annuler tard coûte mais pas
+    #: dire quand — et c'est l'heure qui décide entre annuler maintenant et
+    #: renoncer.
+    annulation_sans_frais_jusqu_a: datetime | None
     created_at: datetime
     business_id: uuid.UUID
     business_name: str

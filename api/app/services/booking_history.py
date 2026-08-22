@@ -58,7 +58,7 @@ from app.models.enums import (
 # se serait lu comme un bouton ouvert qui se fait refuser.
 from app.services import availability, directory, eligibility
 from app.services.audit import AuditedEntity
-from app.services.booking_states import ouverture_de_l_absence
+from app.services.booking_states import fin_de_l_annulation_libre, ouverture_de_l_absence
 
 #: Une page d'historique. Au-delà, l'app pagine par `avant`.
 PAGE_PAR_DEFAUT = 50
@@ -130,6 +130,18 @@ class ReservationDuCreateur:
     valid_until: datetime
     #: Jusqu'à quand le commerce peut trancher. Nulle hors d'`awaiting_business`.
     approval_expires_at: datetime | None
+    #: Jusqu'à quand l'annulation ne coûte rien. **Nulle veut dire « toujours
+    #: libre »**, jamais « on ne sait pas » : un garde, un droit sans créneau et
+    #: une demande que le salon n'a pas acceptée n'ont aucune échéance, et
+    #: poser un instant sur l'un des trois ferait renoncer quelqu'un qui
+    #: n'avait rien à perdre.
+    #:
+    #: Calculée par le serveur, comme `absence_signalable_a` et pour la même
+    #: raison : le seuil est un réglage, et le recopier côté écran le ferait
+    #: dériver au premier ajustement. Sans elle, l'écran peut avertir qu'annuler
+    #: tard coûte, mais pas dire quand — et c'est l'heure qui décide, entre
+    #: annuler maintenant et renoncer.
+    annulation_sans_frais_jusqu_a: datetime | None
     created_at: datetime
     business_id: uuid.UUID
     business_name: str
@@ -267,6 +279,9 @@ def _colonnes_communes() -> tuple:
         # jusqu'à quand elle attend. C'est la même donnée, et la servir d'un
         # seul côté laisserait l'autre deviner.
         Booking.approval_expires_at,
+        # Elle décide de l'échéance d'annulation libre : un droit sans créneau
+        # ne bloque aucun poste, donc ne coûte jamais rien.
+        Booking.requires_booking,
         Booking.created_at,
         CatalogItem.name.label("item_name"),
         CatalogItem.photo_key.label("item_photo_key"),
@@ -421,6 +436,9 @@ async def historique_du_createur(
                 ends_at=ligne.ends_at,
                 valid_until=ligne.valid_until,
                 approval_expires_at=ligne.approval_expires_at,
+                annulation_sans_frais_jusqu_a=fin_de_l_annulation_libre(
+                    ligne.starts_at, ligne.status, ligne.requires_booking
+                ),
                 created_at=ligne.created_at,
                 business_id=ligne.business_id,
                 business_name=ligne.business_name,

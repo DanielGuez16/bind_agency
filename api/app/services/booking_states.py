@@ -349,15 +349,40 @@ async def annuler(session: AsyncSession, *, booking: Booking, creator_id: uuid.U
     c'est une annulation sans pénalité — un créateur qui prévient à temps rend
     la place, ce qu'on veut encourager.
 
-    Un `held` s'annule toujours sans pénalité : rien n'a encore été promis, et
-    le garde serait de toute façon tombé tout seul.
+    **La pénalité ne concerne que ce que le salon a réellement tenu.** Trois
+    états s'annulent donc toujours sans coût :
+
+    — un `held`, où rien n'a été promis et où le garde serait tombé seul ;
+    — un droit sans créneau, qui ne bloque aucun poste ;
+    — une demande que le salon **n'a pas encore acceptée**.
+
+    Le troisième est arrivé après les deux autres, et il réparait un défaut
+    atteignable tous les jours. `booking_approval_seconds` et
+    `booking_free_cancellation_seconds` valent vingt-quatre heures l'un et
+    l'autre : toute demande chez un salon en validation, pour un rendez-vous à
+    moins d'un jour, visait donc `no_show` — une flèche que le diagramme n'a
+    pas depuis `awaiting_business`. La créatrice ne recevait pas une pénalité,
+    elle recevait un refus, et restait coincée sur un rendez-vous que le salon
+    n'avait même pas accepté.
+
+    **Et la bonne issue n'est pas d'ajouter la flèche.** Une place jamais
+    acceptée n'a pas de créneau tenu ni de capacité réservée : le salon n'a
+    rien à perdre, et faire payer une pénalité pour elle reviendrait à punir
+    quelqu'un de l'indécision d'un autre.
     """
     if booking.creator_id != creator_id:
         raise NotYours(str(booking.id))
 
     acteur = audit.Actor(kind=audit.ActorKind.CREATOR, user_id=creator_id)
 
-    if booking.status is BookingStatus.HELD or not booking.requires_booking:
+    # Les trois cas où rien n'a été tenu : le garde, le droit sans créneau, et
+    # la demande que le salon n'a pas acceptée. Voir le docstring — le troisième
+    # rendait une réservation impossible à annuler, faute de flèche.
+    if (
+        booking.status is BookingStatus.HELD
+        or booking.status is BookingStatus.AWAITING_BUSINESS
+        or not booking.requires_booking
+    ):
         return await transitionner(
             session, booking=booking, vers=BookingStatus.CANCELLED, actor=acteur
         )
@@ -372,6 +397,35 @@ async def annuler(session: AsyncSession, *, booking: Booking, creator_id: uuid.U
         actor=acteur,
         reason="annulation dans la fenêtre de pénalité" if tardive else None,
     )
+
+
+def fin_de_l_annulation_libre(
+    starts_at: datetime | None, statut: BookingStatus, requires_booking: bool
+) -> datetime | None:
+    """Jusqu'à quand l'annulation ne coûte rien. `None` quand elle est toujours libre.
+
+    **L'écran disait qu'annuler tard pouvait coûter, sans pouvoir dire quand.**
+    Le seuil vit en configuration, et le recopier côté écran le ferait mentir au
+    premier ajustement — la même raison qui a fait naître `absence_signalable_a`
+    sur la journée du commerce. Or c'est exactement l'heure qui change la
+    décision : « gratuit jusqu'à 14 h 30 » fait annuler maintenant, « annuler
+    tard coûte » fait renoncer ou fait annuler trop tard.
+
+    **`None` veut dire « toujours libre », jamais « on ne sait pas ».** Trois
+    cas le rendent : un `held`, où rien n'a été promis ; un droit sans créneau,
+    qui ne bloque aucun poste ; et une demande que le salon n'a pas acceptée.
+    Poser un instant sur l'un des trois ferait croire à une limite qui n'existe
+    pas, et ferait renoncer quelqu'un qui n'avait rien à perdre.
+
+    Calculée par le serveur, comme sa voisine : l'horloge d'un terminal n'est
+    pas une preuve, et un écran qui déduirait ce seuil d'une heure locale
+    fausse annoncerait « gratuit » sur une annulation qui coûte.
+    """
+    if starts_at is None or not requires_booking:
+        return None
+    if statut in (BookingStatus.HELD, BookingStatus.AWAITING_BUSINESS):
+        return None
+    return starts_at - timedelta(seconds=get_settings().booking_free_cancellation_seconds)
 
 
 def ouverture_de_l_absence(starts_at: datetime | None) -> datetime | None:
