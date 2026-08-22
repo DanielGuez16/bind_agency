@@ -40,3 +40,22 @@ jest.mock('expo-video', () => {
       }),
   };
 });
+
+/**
+ * Chaque test part d'un appareil sans cache.
+ *
+ * **Le cache des réponses est de l'état d'appareil, et il survit à un test.**
+ * `AsyncStorage` est simulé par un objet de module, partagé par tous les tests
+ * d'un même fichier : le premier qui charge un fil range sa réponse, et le
+ * suivant — celui qui vérifie l'état de chargement — trouve des données et ne
+ * voit jamais son écran de chargement. Cinq tests sont tombés d'un coup à
+ * l'arrivée du cache, tous pour cette raison, et aucun ne parlait de cache.
+ *
+ * Vider avant chaque test rend ce que le produit fait à l'installation : un
+ * appareil neuf. Un test qui veut éprouver le cache l'écrit lui-même, ce qui
+ * est aussi la seule façon de savoir ce qu'il y met.
+ */
+beforeEach(async () => {
+  const AsyncStorage = require('@react-native-async-storage/async-storage');
+  await (AsyncStorage.default ?? AsyncStorage).clear();
+});

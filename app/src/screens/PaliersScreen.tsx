@@ -70,6 +70,7 @@ import { Ecran } from './Ecran';
 import { Jauge, ReglesDesPaliers } from './ReglesDesPaliers';
 import { RaisonDuVide } from './RaisonDuVide';
 import { formeDe, messageDObstacle, nomDePlateforme } from './obstacle';
+import { AGES } from './cacheDesReponses';
 import { useRequete } from './useRequete';
 
 const CODES_CONNUS = new Set(Object.keys(en.errors));
@@ -173,6 +174,11 @@ export function PaliersScreen({
     // fermés, et c'est justement l'écran qui doit le lui expliquer.
     estVide: (vue) => vue.paliers.length === 0,
     dependances: [position?.longitude, position?.latitude],
+    // Les seuils sont de la configuration ; ce qui bouge dans cette réponse
+    // sont les comptes de proximité, et un compte d'hier vaut mieux qu'un
+    // écran vide pendant qu'on le recompte. Le rayon est dans la clé, la
+    // position non — elle change de quelques mètres à chaque relevé.
+    cache: { cle: `mes-paliers.${rayonKm}`, ageMax: AGES.configuration },
   },
   );
 

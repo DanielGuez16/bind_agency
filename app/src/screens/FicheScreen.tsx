@@ -37,6 +37,7 @@ import { elevationDeCarte, elevationFlottante, radius, useTheme } from '../theme
 import { Ecran } from './Ecran';
 import { EcartAuSeuil } from './PaliersScreen';
 import { nomDePlateforme } from './obstacle';
+import { AGES } from './cacheDesReponses';
 import { useRequete } from './useRequete';
 import { VisionneuseDeCarte, VisionneuseDeGalerie } from './Visionneuses';
 
@@ -87,6 +88,10 @@ export function FicheScreen({
   const requete = useRequete<FichePublique>((signal) => api.fichePublique(businessId, signal), {
     estVide: (fiche) => fiche.offres.length === 0,
     dependances: [businessId],
+    // **La clé porte l'identifiant du salon.** Sans lui, deux fiches se
+    // montreraient l'une pour l'autre le temps d'un aller-retour, ce qui est
+    // pire qu'un écran de chargement : on croirait avoir ouvert la bonne.
+    cache: { cle: `fiche.${businessId}`, ageMax: AGES.contenu },
   });
 
   /**
