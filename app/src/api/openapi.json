@@ -230,15 +230,6 @@
         ]
       }
     },
-    "/api/v1/auth/verify-email": {
-      "get": {
-        "operationId": "verify_email_api_v1_auth_verify_email_get",
-        "responses": [
-          "200",
-          "422"
-        ]
-      }
-    },
     "/api/v1/bookings": {
       "post": {
         "operationId": "create_booking_api_v1_bookings_post",
