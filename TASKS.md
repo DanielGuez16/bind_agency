@@ -1720,6 +1720,39 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       demi-vérité. Il faudrait un `GET /me/devices` rendant l'appareil, sa
       plateforme et sa dernière activité, plus une révocation par identifiant
       et non par jeton*
+- [x] **La créatrice peut annuler, et elle lit ce que ça coûte avant**
+      *`annulerLaReservation` existait dans le client, appelant la bonne route,
+      et personne ne l'appelait : la seule sortie d'un rendez-vous qu'on ne peut
+      plus honorer était de ne pas venir — ce que le produit compte comme une
+      absence. Deux appuis, et la conséquence est écrite entre les deux.*
+      *Ce qui décide n'est pas l'horloge mais le diagramme : `no_show` n'est
+      atteignable que depuis `confirmed`. Une place tenue ou en attente d'accord
+      ne peut pas y mener, quelle que soit la valeur du réglage. 1257 tests
+      verts, 3 mutations*
+- [ ] **`awaiting_business → no_show` est interdit, et `annuler` y va quand même**
+      *Défaut prouvé, pas déduit : `annuler` choisit son état d'arrivée sans
+      regarder d'où elle part. Avec les valeurs par défaut — accord et
+      annulation libre à 86 400 s chacun — toute réservation chez un salon en
+      validation à moins de 24 h du rendez-vous **ne s'annule pas du tout** :
+      la route lève `TransitionNotAllowed` au lieu d'annuler. La créatrice est
+      coincée sur un rendez-vous que le salon n'a même pas accepté.*
+      *Invisible parce que les deux tests d'annulation appellent `confirmer` sur
+      un décor sans validation : tous deux partent de `confirmed`, et la seule
+      forme qui casse n'était écrite nulle part.
+      `test_annuler_pendant_que_le_salon_reflechit_et_pres_de_l_heure` la porte
+      en `xfail(strict=True)` — le jour où c'est corrigé, la CI rougit tant que
+      le marqueur reste. Demandé à `bind-agency-1a`*
+- [ ] **L'instant où l'annulation cesse d'être libre n'est pas servi**
+      *L'écran dit « annuler près de l'heure compte comme une absence » sans
+      pouvoir dire **quand**, parce que `booking_free_cancellation_seconds` est
+      un réglage et que le dépôt interdit de le recopier — à raison, il
+      dériverait au premier ajustement. Or c'est la date qui change la
+      décision : « libre jusqu'à 14 h 30 » fait annuler maintenant, « annuler
+      tard coûte » fait renoncer ou fait annuler trop tard. Demandé :
+      `annulation_sans_frais_jusqu_a` sur `ReservationDuCreateur`, calculé
+      serveur, **nul** quand l'annulation est toujours libre — un instant posé
+      là ferait croire à une limite qui n'existe pas. Même forme
+      qu'`absence_signalable_a`, qui a réglé le même problème sur la journée*
 - [ ] **Neuf planches d'écrans portent encore la v1.0**
       *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
       passés en v3, dans la palette Ambre. Les autres suivent l'ordre du

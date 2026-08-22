@@ -45,8 +45,6 @@ const CLIENT = join(SRC, 'api', 'index.tsx');
  * ferait de cette table le tapis qu'elle existe pour retirer.
  */
 const SANS_APPELANT: Record<string, string> = {
-  // Le créateur ne peut pas annuler sa réservation depuis l'application.
-  annulerLaReservation: 'a-instruire',
   // Le manifeste des médias de plateforme. Sa partie `home` — la vidéo de fond
   // de l'accueil — est retirée par la planche v3, et les catégories qu'il porte
   // ne sont lues nulle part non plus. La route reste servie sans lecteur : soit

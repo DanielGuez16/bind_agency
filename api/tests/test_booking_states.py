@@ -1072,3 +1072,38 @@ class TestLaPorteDeLaRepresaille:
 
         ouverture = service.absence_signalable_a(ligne)
         assert ouverture == ligne.starts_at + timedelta(minutes=court.no_show_delai_minutes)
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason=(
+        "Défaut ouvert : `annuler` vise `no_show` sans regarder d'où elle part, "
+        "et `no_show` n'est pas dans le diagramme d'`awaiting_business`. Avec les "
+        "valeurs par défaut — accord et annulation libre à 86 400 s chacun — toute "
+        "réservation chez un salon en validation à moins de 24 h du rendez-vous "
+        "lève au lieu de s'annuler. Marqué strict : le jour où c'est corrigé, "
+        "ce test passe au vert et le `strict` rend la CI rouge tant que ce "
+        "marqueur reste. Demandé à la conversation des routes"
+    ),
+)
+async def test_annuler_pendant_que_le_salon_reflechit_et_pres_de_l_heure(
+    session: AsyncSession,
+) -> None:
+    """Le salon n'a pas tranché, et le rendez-vous approche.
+
+    Les deux tests d'annulation ci-dessus confirment d'abord, donc aucun
+    n'exerce `awaiting_business` — la forme la plus courante cachait la seule
+    qui casse.
+    """
+    ligne, decor = await reservation(session, requires_booking_approval=True)
+    await service.confirmer(session, booking=ligne, creator_id=decor["createur"].id)
+    assert ligne.status is BookingStatus.AWAITING_BUSINESS
+
+    fenetre = get_settings().booking_free_cancellation_seconds
+    ligne.starts_at = datetime.now(UTC) + timedelta(seconds=fenetre - 3600)
+    ligne.ends_at = ligne.starts_at + timedelta(minutes=60)
+    await session.flush()
+
+    await service.annuler(session, booking=ligne, creator_id=decor["createur"].id)
+
+    assert ligne.status is BookingStatus.CANCELLED
