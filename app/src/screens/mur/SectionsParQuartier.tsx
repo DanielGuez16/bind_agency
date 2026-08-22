@@ -147,6 +147,161 @@ function enRangeesDeDeux<T>(elements: T[]): T[][] {
   return rangees;
 }
 
+/**
+ * Le mur en trois morceaux, pour que la grille puisse être virtualisée.
+ *
+ * **Ce que ça répare.** Le mur était un bloc : un `.map` sur toutes les
+ * rangées, dans le défileur de l'écran. Un fil de vingt salons montait donc
+ * quatre-vingts `Image` à la première image, et `Image` décode avant de
+ * réduire — le coût ne dépend pas du cadre où on pose la photo. Le poids du
+ * réseau a été réglé en servant la vignette ; ce qui restait est le décodage.
+ *
+ * **Un crochet et non trois composants.** Les trois morceaux partagent le
+ * quartier ouvert, qui est un état : le couper en trois composants demanderait
+ * de le remonter d'un cran chez l'appelant, c'est-à-dire de rendre `FilScreen`
+ * responsable d'un état qui n'appartient qu'au mur.
+ *
+ * `SectionsParQuartier` reste et compose les trois morceaux dans un bloc : les
+ * écrans et les tests qui la montaient continuent de la monter, et le mur en
+ * bloc est exactement ce qu'il faut partout où il n'y a pas quatre-vingts
+ * images — à commencer par un décor de test.
+ */
+export function useMur(
+  fil: Fil | null,
+  categorie: BusinessCategory | null,
+  onOuvrir: (businessId: string) => void,
+): { entete: React.ReactNode; elements: { cle: string; rendu: React.ReactNode }[]; pied: React.ReactNode } | null {
+  const { api } = useApi();
+  const { t } = useI18n();
+  const c = useColors();
+
+  // **Le quartier ouvert est un état, pas une dérivation.** Le serveur rend la
+  // liste triée et le premier est le plus proche ; le garder en état est ce qui
+  // permet d'en ouvrir un autre. Il est réinitialisé par la clé de rendu quand
+  // le fil change de catégorie ou de rayon — voir `FilScreen`.
+  const [ouvert, setOuvert] = useState<Neighborhood | null>(
+    fil?.quartiers[0]?.quartier ?? null,
+  );
+
+  // Un quartier qui a disparu de la réponse — filtre resserré, rayon réduit —
+  // ne doit pas laisser le mur vide en gardant un état devenu faux. On retombe
+  // sur le plus proche, qui est toujours le premier rendu.
+  const quartierOuvert =
+    fil?.quartiers.find((compte) => compte.quartier === ouvert)?.quartier ??
+    fil?.quartiers[0]?.quartier ??
+    null;
+
+  if (fil === null || quartierOuvert === null) return null;
+
+  const compteOuvert = fil.quartiers.find((compte) => compte.quartier === quartierOuvert);
+  const prestations = prestationsDe(fil.commerces, quartierOuvert, (cle) => media(api, cle));
+  const autres = fil.quartiers.filter((compte) => compte.quartier !== quartierOuvert);
+
+  const entete = (
+    <EnTeteDeSection
+      quartier={quartierOuvert}
+      prestations={compteOuvert?.prestations ?? 0}
+      categorie={categorie}
+      photo={media(
+        api,
+        fil.commerces.find((commerce) => commerce.neighborhood === quartierOuvert)
+          ?.cover_photo_key ?? null,
+      )}
+    />
+  );
+
+  /**
+   * Une rangée par élément, et **la rangée porte ses marges**.
+   *
+   * En bloc, le conteneur pouvait les poser pour toutes ; en liste, il n'y a
+   * pas de conteneur — chaque rangée est posée seule par le défileur. Les
+   * mettre sur la rangée est donc la seule écriture qui rende la même chose des
+   * deux côtés, et c'est ce qui permet aux deux chemins de partager exactement
+   * ces éléments-ci plutôt que d'en avoir chacun une version.
+   */
+  const elements = enRangeesDeDeux(prestations).map((rangee) => ({
+    cle: rangee.map((prestation) => prestation.cle).join('+'),
+    rendu: (
+      <View
+        key={rangee.map((prestation) => prestation.cle).join('+')}
+        testID="rangee-du-mur"
+        style={{
+          flexDirection: 'row',
+          gap: GOUTTIERE,
+          paddingHorizontal: MARGE_DU_MUR,
+          paddingBottom: INTERLIGNE,
+        }}
+      >
+        {rangee.map((prestation) => (
+          <ApercuDePrestation
+            key={prestation.cle}
+            nom={prestation.nom}
+            salon={prestation.salon}
+            dureeMinutes={prestation.dureeMinutes}
+            contrepartie={prestation.contrepartie}
+            photo={prestation.photo}
+            onPress={() => onOuvrir(prestation.businessId)}
+            testID={`apercu-${prestation.cle}`}
+          />
+        ))}
+        {/* **La rangée impaire porte une colonne vide.** Sans elle, le dernier
+            aperçu s'étale sur toute la largeur et son image passe de 100 à 210
+            points de haut : la grille se termine sur une image deux fois plus
+            grande que les autres, ce qui se lit comme une mise en avant que
+            personne n'a décidée. */}
+        {rangee.length === 1 ? (
+          <View testID="colonne-vide" style={{ flex: 1, minWidth: 0 }} />
+        ) : null}
+      </View>
+    ),
+  }));
+
+  const pied =
+    autres.length > 0 ? (
+      <View
+        testID="autres-quartiers"
+        style={{
+          borderTopWidth: 1,
+          borderTopColor: c['line.default'],
+          paddingHorizontal: MARGE_DU_MUR,
+          paddingVertical: 10,
+          gap: 8,
+        }}
+      >
+        <Texte variante="type.monoSmall" couleur="ink.soft">
+          {t('parcours.murAutresQuartiers').toUpperCase()}
+        </Texte>
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          {autres.map((compte) => (
+            <CarreDeQuartier
+              key={compte.quartier}
+              quartier={compte.quartier}
+              prestations={compte.prestations}
+              photo={media(
+                api,
+                fil.commerces.find((commerce) => commerce.neighborhood === compte.quartier)
+                  ?.cover_photo_key ?? null,
+              )}
+              onPress={() => setOuvert(compte.quartier)}
+            />
+          ))}
+        </View>
+      </View>
+    ) : null;
+
+  return { entete, elements, pied };
+}
+
+/**
+ * Le mur en un bloc, pour les écrans qui n'ont pas quatre-vingts images.
+ *
+ * **Elle reste, et elle rend exactement les mêmes éléments.** Ce n'est pas une
+ * seconde version du mur : `useMur` produit les rangées, et cette fonction les
+ * pose dans un conteneur au lieu de les confier à un défileur. Deux
+ * constructions du même contenu finiraient par diverger — c'est la faute qu'on
+ * a déjà vue ailleurs dans ce dépôt, et la seule façon de ne pas la refaire est
+ * qu'il n'y ait qu'une construction.
+ */
 export function SectionsParQuartier({
   fil,
   categorie,
@@ -157,107 +312,16 @@ export function SectionsParQuartier({
   categorie: BusinessCategory | null;
   onOuvrir: (businessId: string) => void;
 }) {
-  const { api } = useApi();
-  const { t } = useI18n();
-  const c = useColors();
-
-  // **Le quartier ouvert est un état, pas une dérivation.** Le serveur rend la
-  // liste triée et le premier est le plus proche ; le garder en état est ce qui
-  // permet d'en ouvrir un autre. Il est réinitialisé par la clé de rendu quand
-  // le fil change de catégorie ou de rayon — voir `FilScreen`.
-  const [ouvert, setOuvert] = useState<Neighborhood | null>(
-    fil.quartiers[0]?.quartier ?? null,
-  );
-
-  // Un quartier qui a disparu de la réponse — filtre resserré, rayon réduit —
-  // ne doit pas laisser le mur vide en gardant un état devenu faux. On retombe
-  // sur le plus proche, qui est toujours le premier rendu.
-  const quartierOuvert =
-    fil.quartiers.find((compte) => compte.quartier === ouvert)?.quartier ??
-    fil.quartiers[0]?.quartier ??
-    null;
-
-  if (quartierOuvert === null) return null;
-
-  const compteOuvert = fil.quartiers.find((compte) => compte.quartier === quartierOuvert);
-  const prestations = prestationsDe(fil.commerces, quartierOuvert, (cle) => media(api, cle));
-  const autres = fil.quartiers.filter((compte) => compte.quartier !== quartierOuvert);
+  const mur = useMur(fil, categorie, onOuvrir);
+  if (mur === null) return null;
 
   return (
     <View testID="le-mur" style={{ gap: 8 }}>
-      <EnTeteDeSection
-        quartier={quartierOuvert}
-        prestations={compteOuvert?.prestations ?? 0}
-        categorie={categorie}
-        photo={media(
-          api,
-          fil.commerces.find((commerce) => commerce.neighborhood === quartierOuvert)
-            ?.cover_photo_key ?? null,
-        )}
-      />
-
-      <View
-        testID="grille-des-prestations"
-        style={{ paddingHorizontal: MARGE_DU_MUR, paddingBottom: 18, gap: INTERLIGNE }}
-      >
-        {enRangeesDeDeux(prestations).map((rangee, rang) => (
-          <View key={rang} style={{ flexDirection: 'row', gap: GOUTTIERE }}>
-            {rangee.map((prestation) => (
-              <ApercuDePrestation
-                key={prestation.cle}
-                nom={prestation.nom}
-                salon={prestation.salon}
-                dureeMinutes={prestation.dureeMinutes}
-                contrepartie={prestation.contrepartie}
-                photo={prestation.photo}
-                onPress={() => onOuvrir(prestation.businessId)}
-                testID={`apercu-${prestation.cle}`}
-              />
-            ))}
-            {/* **La rangée impaire porte une colonne vide.** Sans elle, le
-                dernier aperçu s'étale sur toute la largeur et son image passe
-                de 100 à 210 points de haut : la grille se termine sur une
-                image deux fois plus grande que les autres, ce qui se lit comme
-                une mise en avant que personne n'a décidée. */}
-            {rangee.length === 1 ? (
-              <View testID="colonne-vide" style={{ flex: 1, minWidth: 0 }} />
-            ) : null}
-          </View>
-        ))}
+      {mur.entete}
+      <View testID="grille-des-prestations">
+        {mur.elements.map((element) => element.rendu)}
       </View>
-
-      {autres.length > 0 ? (
-        <View
-          testID="autres-quartiers"
-          style={{
-            borderTopWidth: 1,
-            borderTopColor: c['line.default'],
-            paddingHorizontal: MARGE_DU_MUR,
-            paddingVertical: 10,
-            gap: 8,
-          }}
-        >
-          <Texte variante="type.monoSmall" couleur="ink.soft">
-            {t('parcours.murAutresQuartiers').toUpperCase()}
-          </Texte>
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            {autres.map((compte) => (
-              <CarreDeQuartier
-                key={compte.quartier}
-                quartier={compte.quartier}
-                prestations={compte.prestations}
-                photo={media(
-                  api,
-                  fil.commerces.find(
-                    (commerce) => commerce.neighborhood === compte.quartier,
-                  )?.cover_photo_key ?? null,
-                )}
-                onPress={() => setOuvert(compte.quartier)}
-              />
-            ))}
-          </View>
-        </View>
-      ) : null}
+      {mur.pied}
     </View>
   );
 }

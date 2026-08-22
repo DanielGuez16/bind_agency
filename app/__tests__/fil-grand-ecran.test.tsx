@@ -125,14 +125,19 @@ describe('le mur garde ses deux colonnes sur grand écran', () => {
       // Le nombre d'aperçus par rangée, rangée par rangée. C'est la seule
       // mesure qui distingue « deux colonnes » de « autant que ça rentre » —
       // compter les aperçus de l'écran donnerait cinq dans les deux cas.
-      const grille = screen.getByTestId('grille-des-prestations');
+      //
+      // **Compté sur les rangées rendues, et non sur les enfants d'un
+      // conteneur.** Le mur est une liste virtualisée depuis qu'il montait
+      // quatre-vingts images d'un coup : ses rangées sont posées une à une par
+      // le défileur, et il n'y a plus de nœud dont elles soient les enfants.
+      // Le décor tient en cinq prestations, donc tout est rendu.
       parRangee.push(
-        (grille.props.children as unknown[])
-          .flat()
-          .map((rangee) => {
-            const enfants = (rangee as { props: { children: unknown[] } }).props.children;
-            return enfants.flat().filter(Boolean).length;
-          }),
+        screen
+          .getAllByTestId('rangee-du-mur')
+          .map(
+            (rangee) =>
+              (rangee.props.children as unknown[]).flat().filter(Boolean).length,
+          ),
       );
       await vue.unmount();
     }
@@ -145,5 +150,43 @@ describe('le mur garde ses deux colonnes sur grand écran', () => {
     expect(parRangee[0]).toEqual([2, 2, 2]);
     expect(parRangee[1]).toEqual(parRangee[0]);
     expect(parRangee[2]).toEqual(parRangee[0]);
+  });
+});
+
+
+/**
+ * Le mur ne monte plus tout ce qu'il a.
+ *
+ * **Ce que ça répare, et le chiffre qui l'a décidé.** La grille était un
+ * `ScrollView` et un `.map` : un fil de vingt salons montait quatre-vingts
+ * `Image` à la première image. Le poids du réseau a été réglé en servant la
+ * vignette — 10,5 Mo devenus 0,8 — mais `Image` **décode avant de réduire**, et
+ * le coût du décodage ne dépend pas du cadre où on pose la photo. C'était donc
+ * le plafond suivant, et il ne se voyait pas dans les octets.
+ *
+ * **Le décor est ce qui sépare les deux implémentations.** Quarante salons font
+ * vingt rangées ; en bloc elles sont toutes rendues, en liste seules celles que
+ * le défileur juge utiles le sont. Avec cinq salons — le décor des autres tests
+ * ici — les deux rendraient exactement la même chose, et le test ne dirait rien.
+ */
+describe('le mur ne monte plus tout ce qu’il a', () => {
+  it('ne rend qu’une partie des rangées, et l’en-tête quand même', async () => {
+    mockLargeur = 390;
+    const vue = await monter(40);
+    await waitFor(() => expect(screen.getByTestId('le-mur')).toBeTruthy());
+
+    const rangees = screen.getAllByTestId('rangee-du-mur');
+
+    // Vingt rangées existent, moins sont montées. La borne haute est ce qui
+    // compte ; le nombre exact appartient au défileur et changerait avec ses
+    // réglages, l'asséner ferait un test qui casse sans rien apprendre.
+    expect(rangees.length).toBeGreaterThan(0);
+    expect(rangees.length).toBeLessThan(20);
+
+    // **Et l'en-tête est là.** Une liste qui virtualiserait aussi sa tête
+    // ferait disparaître le nom du quartier et son compte — c'est-à-dire ce
+    // qui dit où l'on est, au moment où l'écran s'ouvre.
+    expect(screen.getByTestId('quartier-ouvert-nom')).toBeTruthy();
+    await vue.unmount();
   });
 });

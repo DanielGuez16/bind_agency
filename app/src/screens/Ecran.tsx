@@ -22,7 +22,7 @@
  * la matière est le papier — c'est-à-dire l'absence de marque.
  */
 import type { ReactNode } from 'react';
-import { Animated, Pressable, RefreshControl, ScrollView, View } from 'react-native';
+import { Animated, FlatList, Pressable, RefreshControl, ScrollView, View } from 'react-native';
 
 import {
   Button,
@@ -78,6 +78,40 @@ export type EcranProps<T> = {
   nature?: NatureDeContenu;
   /** Ce que l'écran montre quand tout va bien. */
   children: (donnees: T) => ReactNode;
+  /**
+   * Le corps rendu en **liste virtualisée** plutôt qu'en bloc défilant.
+   *
+   * **Pour un écran dont le contenu monte des images par dizaines.** Le mur
+   * rendait toutes ses rangées d'un coup — un `ScrollView` et un `.map` — donc
+   * quatre-vingts `Image` montées à la première image du fil, sur un fil de
+   * vingt salons. Le poids du réseau a été réglé ailleurs ; ce qui reste est le
+   * décodage, que `Image` fait avant de réduire et qui ne dépend pas du cadre.
+   *
+   * **Le corps seul passe en liste.** Les états de chargement, d'erreur et de
+   * vide restent dans le défileur ordinaire : ils tiennent en un écran, et leur
+   * donner deux chemins de rendu doublerait ce qu'il faut vérifier pour rien.
+   *
+   * Les éléments portent un `ReactNode` déjà construit. C'est un **descripteur**,
+   * pas un rendu : la fonction du composant ne s'exécute — et son image ne se
+   * monte — que lorsque la liste décide d'afficher la rangée. Construire les
+   * descripteurs en avance ne coûte que leur allocation.
+   */
+  liste?: (donnees: T) => {
+    elements: readonly { cle: string; rendu: ReactNode }[];
+    /** Ce qui précède la liste et défile avec elle. */
+    entete?: ReactNode;
+    /** Ce qui la suit. */
+    pied?: ReactNode;
+    /**
+     * Le repère du défileur, quand l'écran en avait déjà un pour son bloc.
+     *
+     * Le mur portait `le-mur` sur le conteneur qui tenait ses rangées ; en
+     * liste, c'est le défileur qui les tient. Le lui donner garde le repère
+     * attaché à la même chose — et ce que les tests vérifient dessus, les
+     * marges à fond perdu par exemple, reste vrai du même nœud.
+     */
+    testID?: string;
+  };
   /** Le squelette. À défaut, trois cartes à la géométrie du contenu. */
   squelette?: ReactNode;
   /** L'état vide. Jamais un cul-de-sac : chaque issue annonce son gain. */
@@ -111,6 +145,7 @@ export function Ecran<T>({
   fraicheur,
   nature,
   children,
+  liste,
   squelette,
   vide,
   bordAbord = false,
@@ -214,6 +249,79 @@ export function Ecran<T>({
     );
   })();
 
+  /**
+   * Ce qui précède le corps et défile avec lui : le retour en compact, puis
+   * l'en-tête ou le titre. Écrit une fois, posé dans les deux chemins de rendu
+   * — sans quoi le mode liste perdrait son retour, et personne ne s'en
+   * apercevrait avant de s'y trouver coincé.
+   */
+  const enTeteDefilante = (
+    <>
+      {/* En grand, le retour vit dans la barre de titre, fixe : ici il
+          défilerait hors de l'écran dès la troisième ligne. */}
+      {onRetour && !large ? (
+        <Pressable
+          onPress={onRetour}
+          accessibilityRole="button"
+          accessibilityLabel={t('common.retour')}
+          hitSlop={12}
+          style={({ pressed }) => ({
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 4,
+            alignSelf: 'flex-start',
+            marginHorizontal: bordAbord ? margeLaterale : 0,
+            opacity: pressed ? 0.7 : 1,
+          })}
+          testID="retour"
+        >
+          <Icone nom="retour" couleur="ink.soft" taille={18} />
+          <Texte variante="type.label" couleur="ink.soft">
+            {t('common.retour')}
+          </Texte>
+        </Pressable>
+      ) : null}
+      {/* **Le titre ne s'écrit pas deux fois.** En grand il vit dans la barre
+          de titre, fixe ; le répéter dans le flux donnait « Today » au-dessus
+          de « Today ». Un en-tête fourni par l'écran, lui, reste : il porte
+          autre chose que le nom. */}
+      {entete ??
+        (titre && !large ? (
+          <Texte variante="type.screenTitle" style={margeDeSecours}>
+            {titre}
+          </Texte>
+        ) : null)}
+    </>
+  );
+
+  const conteneur = {
+    // **Un cran de densité en grand écran.** Le padding valait celui du
+    // téléphone à toute largeur, et le commerce — calibré pour un appareil posé
+    // au comptoir — était donc le plus serré des deux rôles sur un bureau de
+    // 1512. C'est l'inverse de ce qu'une grande surface demande.
+    paddingVertical: margeLaterale,
+    paddingHorizontal: bordAbord ? 0 : margeLaterale,
+    gap: large ? density.gapLarge : density.gap,
+    maxWidth: largeurMaximale(nature ?? (role === 'creator' ? 'creator' : 'merchant'), large),
+    width: '100%' as const,
+    alignSelf: 'center' as const,
+  };
+
+  const rafraichissement = (
+    <RefreshControl
+      refreshing={requete.etat === 'pret' && requete.rechargement}
+      onRefresh={requete.recharger}
+      tintColor={c['ink.soft']}
+    />
+  );
+
+  /**
+   * Le corps en liste, quand l'écran l'a demandé **et** que les données sont
+   * là. Les trois autres états restent dans le défileur : ils tiennent en un
+   * écran, et leur donner deux chemins doublerait ce qu'il faut vérifier.
+   */
+  const enListe = liste && requete.etat === 'pret' && !requete.vide ? liste(requete.donnees) : null;
+
   return (
     <View testID={testID} style={{ flex: 1, backgroundColor: c['bg.page'] }}>
       {/* Le liseré du rôle. Trois pixels, une seule fois, ici. */}
@@ -231,64 +339,45 @@ export function Ecran<T>({
           fraicheur={fraicheur}
         />
       ) : null}
+      {enListe ? (
+        // **L'état nominal garde son repère.** Il ne tient pas sur le défileur,
+        // qui porte déjà celui de l'écran ; et sans lui, la table des quatre
+        // états ne verrait plus le fil en état nominal. Sans marge ni fond : ce
+        // nœud existe pour être nommé, pas pour se voir.
+        <View testID="etat-nominal" style={{ flex: 1 }}>
+        <FlatList
+          testID={enListe.testID ?? 'corps-en-liste'}
+          data={enListe.elements}
+          keyExtractor={(element) => element.cle}
+          renderItem={({ item }) => <>{item.rendu}</>}
+          ListHeaderComponent={
+            <>
+              {enTeteDefilante}
+              {enListe.entete}
+            </>
+          }
+          ListFooterComponent={<>{enListe.pied}</>}
+          contentContainerStyle={conteneur}
+          refreshControl={rafraichissement}
+          // **Le nombre de rangées montées d'avance, et pourquoi celui-là.**
+          // Une rangée du mur fait deux aperçus de 100 points d'image ; dix
+          // remplissent largement l'écran le plus haut, et en garder autant de
+          // part et d'autre laisse le défilement rapide sans montrer de blanc.
+          // Plus haut, on remonte vers le comportement d'avant.
+          initialNumToRender={6}
+          windowSize={5}
+          removeClippedSubviews
+        />
+        </View>
+      ) : (
       <ScrollView
-        contentContainerStyle={{
-          // **Un cran de densité en grand écran.** Le padding valait celui du
-          // téléphone à toute largeur, et le commerce — calibré pour un
-          // appareil posé au comptoir — était donc le plus serré des deux rôles
-          // sur un bureau de 1512. C'est l'inverse de ce qu'une grande surface
-          // demande, et l'inverse de la maquette, qui donne 24 aux deux.
-          paddingVertical: margeLaterale,
-          paddingHorizontal: bordAbord ? 0 : margeLaterale,
-          gap: large ? density.gapLarge : density.gap,
-          // Grand écran : chaque nature d'écran a sa borne, tirée des jetons.
-          // Le créateur est passé de 760 à 1120 — 760 était exactement la
-          // colonne étroite perdue dans du vide relevée en campagne de test.
-          // Le vide à droite d'un détail commerce, lui, est voulu.
-          maxWidth: largeurMaximale(nature ?? (role === 'creator' ? 'creator' : 'merchant'), large),
-          width: '100%',
-          alignSelf: 'center',
-        }}
-        refreshControl={
-          <RefreshControl
-            refreshing={requete.etat === 'pret' && requete.rechargement}
-            onRefresh={requete.recharger}
-            tintColor={c['ink.soft']}
-          />
-        }
+        contentContainerStyle={conteneur}
+        refreshControl={rafraichissement}
       >
-        {/* En grand, le retour vit dans la barre de titre, fixe : ici il
-            défilerait hors de l'écran dès la troisième ligne. */}
-        {onRetour && !large ? (
-          <Pressable
-            onPress={onRetour}
-            accessibilityRole="button"
-            accessibilityLabel={t('common.retour')}
-            hitSlop={12}
-            style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start',
-              marginHorizontal: bordAbord ? margeLaterale : 0,
-              opacity: pressed ? 0.7 : 1,
-            })}
-            testID="retour"
-          >
-            <Icone nom="retour" couleur="ink.soft" taille={18} />
-            <Texte variante="type.label" couleur="ink.soft">
-              {t('common.retour')}
-            </Texte>
-          </Pressable>
-        ) : null}
-        {/* **Le titre ne s'écrit pas deux fois.** En grand il vit dans la
-            barre de titre, fixe ; le répéter dans le flux donnait « Today »
-            au-dessus de « Today ». Un en-tête fourni par l'écran, lui, reste :
-            il porte autre chose que le nom. */}
-        {entete ??
-          (titre && !large ? (
-            <Texte variante="type.screenTitle" style={margeDeSecours}>
-              {titre}
-            </Texte>
-          ) : null)}
+        {enTeteDefilante}
         {corps}
       </ScrollView>
+      )}
     </View>
   );
 }
