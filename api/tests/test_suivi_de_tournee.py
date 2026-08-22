@@ -21,6 +21,7 @@ n'éprouverait qu'un état passerait sur une implémentation qui les confond tou
 import uuid
 
 import pytest
+import sqlalchemy as sa
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -231,3 +232,105 @@ async def test_la_voie_de_remise_est_servie(session: AsyncSession) -> None:
 
     assert lignes[au_comptoir.id].channel is HandoverChannel.QR
     assert lignes[a_distance.id].channel is HandoverChannel.EMAIL
+
+
+# --------------------------------------------------------------------------
+# qui a préparé quoi
+# --------------------------------------------------------------------------
+
+
+async def test_le_preparateur_est_servi_meme_sans_lien_remis(
+    session: AsyncSession,
+) -> None:
+    """**Le cas où le lien ne peut pas répondre.**
+
+    Une fiche préparée et jamais remise n'a pas de `issued_by_user_id` — et
+    c'est précisément celle dont on veut savoir de qui elle est, puisqu'elle
+    attend qu'on passe. Le journal d'audit, lui, porte la préparation de toutes
+    les fiches.
+    """
+    business, admin = await preparee(session)
+    await session.commit()
+
+    lignes = {ligne.business_id: ligne for ligne in await service.suivi(session)}
+    lue = lignes[business.id]
+
+    assert lue.prepared_by == admin.email
+    assert lue.remis_par is None
+
+
+async def test_preparateur_et_remettant_se_distinguent(session: AsyncSession) -> None:
+    """**Le décor qui diverge : deux personnes, deux gestes.**
+
+    L'une prépare au bureau, l'autre remet en tournée. Servir la même adresse
+    pour les deux passerait un décor où c'est la même personne — et c'est le cas
+    le plus fréquent, donc celui qui aurait laissé le défaut vivre.
+    """
+    from tests.test_handover import fondatrice
+
+    business, celle_qui_prepare = await preparee(session)
+    celui_qui_remet = await fondatrice(session)
+    await service.emettre(
+        session, business=business, emis_par=celui_qui_remet, canal=HandoverChannel.QR
+    )
+    await session.commit()
+
+    lignes = {ligne.business_id: ligne for ligne in await service.suivi(session)}
+    lue = lignes[business.id]
+
+    assert lue.prepared_by == celle_qui_prepare.email
+    assert lue.remis_par == celui_qui_remet.email
+    assert lue.prepared_by != lue.remis_par
+
+
+async def test_deux_tournees_se_comparent_sans_se_confondre(
+    session: AsyncSession,
+) -> None:
+    """Ce que la colonne existe pour permettre.
+
+    Deux démarcheurs, deux voies : sans le préparateur, le taux d'activation
+    par voie comparerait deux personnes en croyant comparer deux méthodes.
+    """
+
+    alice_business, alice = await preparee(session, name="Salon d'Alice")
+    bob_business, bob = await preparee(session, name="Salon de Bob")
+    await service.emettre(
+        session, business=alice_business, emis_par=alice, canal=HandoverChannel.QR
+    )
+    await service.emettre(session, business=bob_business, emis_par=bob, canal=HandoverChannel.EMAIL)
+    await session.commit()
+
+    lignes = {ligne.business_id: ligne for ligne in await service.suivi(session)}
+
+    assert lignes[alice_business.id].prepared_by == alice.email
+    assert lignes[bob_business.id].prepared_by == bob.email
+    # Et les deux voies sont bien distinctes : le décor éprouve la confusion
+    # qu'on veut rendre visible, pas une seule tournée.
+    assert lignes[alice_business.id].channel is not lignes[bob_business.id].channel
+
+
+async def test_le_suivi_ne_fait_pas_une_requete_par_fiche(session: AsyncSession) -> None:
+    """Les préparateurs et les adresses se chargent en masse.
+
+    Une lecture par ligne serait un N+1 sur l'écran qui juge la tournée — celui
+    qu'on ouvre avec cent fiches devant soi.
+    """
+
+    for i in range(5):
+        business, admin = await preparee(session, name=f"Salon {i}")
+        await service.emettre(session, business=business, emis_par=admin, canal=HandoverChannel.QR)
+    await session.commit()
+
+    compteur = {"n": 0}
+
+    @sa.event.listens_for(session.sync_session, "do_orm_execute")
+    def _compter(_etat) -> None:
+        compteur["n"] += 1
+
+    try:
+        lignes = await service.suivi(session)
+    finally:
+        sa.event.remove(session.sync_session, "do_orm_execute", _compter)
+
+    assert len(lignes) >= 5
+    assert compteur["n"] <= 4, f"{compteur['n']} requêtes pour {len(lignes)} fiches"

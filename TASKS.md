@@ -318,7 +318,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       compté, `subscription_plan` est vide. Vérifié dans les deux sens — une
       écriture validée dans `link_click_salt` fait tomber la garde neuve et
       passe inaperçue de l'ancienne*
-- [ ] **`pytest -n auto`, une base par worker**
+- [x] **`pytest -n auto`, une base par worker**
       *La suite entière prend dix minutes ; huit workers la ramèneraient sous
       deux. Deux obstacles mesurés : les workers visent tous la **même** base —
       réparable en dérivant le nom de `PYTEST_XDIST_WORKER` — et un second, non
@@ -932,7 +932,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Reste **une seule chose** : « See the 34 services » est la porte du cadre
       11c. `onVoirLesPrestations` existe sur l'écran, `porteOuverte` en dépend,
       et la navigation ne le passe toujours pas. Les deux se prennent ensemble*
-- [ ] **`pytest -n auto`, avec une base par worker**
+- [x] **`pytest -n auto`, avec une base par worker**
       *Mesuré : le job `api` prend 754 s, dont **704 dans `pytest` seul** —
       l'installation en fait 22, le reste est du bruit. C'est 93 % du job et
       78 % de l'attente d'une exécution complète. Mais ce n'est pas un drapeau
@@ -1127,6 +1127,14 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       Téléphone au format international, normalisé avant validation ; nom
       dépouillé de ses espaces avant d'être compté ; adresse d'au moins dix
       caractères. 13 tests neufs*
+- [x] **Qui a préparé quoi, et qui a remis**
+      *`prepared_by` relu du **journal d'audit** et non de `issued_by_user_id` :
+      le lien est nul tant que rien n'a été remis, c'est-à-dire exactement sur
+      les fiches qui attendent qu'on passe. `remis_par` à côté, distinct — la
+      même personne fait souvent les deux, pas toujours, et les confondre ferait
+      mentir la comparaison. Sans eux, le taux d'activation par voie compare
+      deux démarcheurs en croyant comparer deux méthodes. Une adresse et non un
+      nom : un compte d'équipe n'en a pas. 4 tests neufs, 3 mutations vérifiées*
 - [x] **Le suivi de tournée : trois états, pas un**
       *`opened_at` posé au premier aperçu, `blocked_at` à chaque prise en main
       refusée. **Les deux premiers états étaient indistinguables** — un lien
@@ -1377,7 +1385,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       posée n'était pas « là ». Le fond est neutre, pas une alerte : un refus
       rouvre. Quatre mutations vérifiées, dont celle qui recopie la phrase de
       la planche et rassure toujours sur la mention*
-- [ ] **La preuve v3 attend trois champs, et une horloge qui n'est pas celle-là**
+- [x] **La preuve v3 attend trois champs, et une horloge qui n'est pas celle-là**
       *`dernier_motif` est arrivé et se lit. Restent : le **temps restant dans
       la fenêtre de vérification**, calculé serveur ; le **nom du salon**, sans
       lequel la ligne du lieu n'a rien à copier ; et la **plateforme**, sans
@@ -1387,7 +1395,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       court depuis la publication et vaut 24 h. Deux horloges sur le même
       écran ; l'une pour l'autre annoncerait « 21 h » quand il en reste 45. Il
       est consigné `a-instruire` faute de lecteur*
-- [ ] **Le plafond de tentatives n'est pas servi**
+- [x] **Le plafond de tentatives n'est pas servi**
       *La planche écrit « attempt 2 of 3 ». `collaboration_max_attempts` vit
       dans la configuration de l'API et n'est servi nulle part ; l'écrire en
       dur dans l'écran est ce que le dépôt interdit. La carte de reprise porte
@@ -1499,7 +1507,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       les réglages portent la pause. Le cas « publié mais invisible » a failli
       partir avec l'écran — une étape non bloquante manquante garde le salon
       hors des murs, et rien d'autre ne le lui disait*
-- [ ] **Le nombre de créatrices éligibles par palier, pour une prestation**
+- [x] **Le nombre de créatrices éligibles par palier, pour une prestation**
       *La planche du catalogue veut « 103 créatrices deviennent 12 » quand un
       salon monte une prestation de story à reel. C'est un compte **par palier**,
       dans les deux sens, pour des paliers l'un et l'autre **ouverts**.*
@@ -1576,7 +1584,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       accident. Trouvée par `bind-agency-1b`, qui a inventorié ses onze PR après
       le signalement*
 
-- [ ] **`prepared_by` manque sur la ligne de suivi**
+- [x] **`prepared_by` manque sur la ligne de suivi**
       *La planche a une colonne « prepared by ». Sur une tournée à deux
       personnes, c'est ce qui permet de comparer les méthodes. Un nom et non un
       identifiant, sinon l'écran devra recharger les comptes pour une colonne.
