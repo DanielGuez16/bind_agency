@@ -33,6 +33,8 @@
  */
 import { useState } from 'react';
 import { View } from 'react-native';
+
+import { ReprendreLeCompte } from './reprise/ReprendreLeCompte';
 import QRCode from 'react-native-qrcode-svg';
 
 import {
@@ -409,6 +411,7 @@ function LigneDeFiche({
   const c = useColors();
   const etat = fiche.etat;
   const mains = mainsDeLaFiche(fiche);
+  const [reprise, setReprise] = useState(false);
 
   return (
     <View
@@ -465,7 +468,31 @@ function LigneDeFiche({
       {/* **Rien à faire sur une fiche assumée.** Le salon en est propriétaire ;
           lui rouvrir un lien de prise en main n'aurait aucun sens, et le
           serveur le refuse. */}
-      {etat === 'claimed' ? null : (
+      {/* **Reprendre le compte n'existe que sur une fiche assumée**, et c'est
+          le seul endroit du produit où l'administration a un salon nommé sous
+          les yeux. Avant la prise en main, il n'y a pas de compte à reprendre :
+          la fiche n'a pas d'utilisateur, et il n'y a personne à prévenir.
+
+          **La place est provisoire et se dit.** Un administrateur qui cherche à
+          débloquer un salon ne pense pas « tournée » ; il faudrait un écran de
+          comptes, qu'aucune route ne permet de composer — rien ne liste les
+          commerces côté administration. Voir `TASKS.md`. */}
+      {etat === 'claimed' ? (
+        reprise ? (
+          <ReprendreLeCompte businessId={fiche.business_id} nomDuSalon={fiche.name} />
+        ) : (
+          <View style={{ flexDirection: 'row' }}>
+            <Button
+              label={t('reprise.entrer')}
+              size="sm"
+              variant="ghost"
+              fullWidth={false}
+              onPress={() => setReprise(true)}
+              testID={`reprendre-${fiche.business_id}`}
+            />
+          </View>
+        )
+      ) : (
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <Button
             label={t(EN_COURS.has(etat) ? 'terrain.reemettre' : 'terrain.emettre')}

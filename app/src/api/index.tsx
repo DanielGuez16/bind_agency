@@ -66,6 +66,7 @@ import type {
   LienRemis,
   PorteeDeReprise,
   RepriseDuCompte,
+  RepriseOuverte,
   StatutDuCommerce,
 } from './types';
 
@@ -593,7 +594,7 @@ export class Api {
     portee: PorteeDeReprise[],
     spontanee = true,
   ) {
-    return this.client.request<RepriseDuCompte>(routes.repriseAdmin(businessId), {
+    return this.client.request<RepriseOuverte>(routes.repriseAdmin(businessId), {
       methode: 'POST',
       corps: { reason: motif, scope: portee, spontaneous: spontanee },
     });

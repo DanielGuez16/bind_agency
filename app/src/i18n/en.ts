@@ -935,6 +935,27 @@ export const en = {
     masquerLeMotDePasse: 'Hide password',
     motDePasseComplet: 'At least {{requis}} characters.',
   },
+  reprise: {
+    // **Le motif part au salon mot pour mot.** Dit au-dessus du champ et non en
+    // note : un administrateur qui sait que le gérant lira sa phrase exacte
+    // l'écrit autrement, et c'est le mécanisme lui-même.
+    entrer: 'Take over this account',
+    motLeMot: '{{salon}} reads exactly what you write here, word for word, and can end the session at any moment.',
+    champMotif: 'Why you are going in',
+    porteeTitre: 'What opens — and nothing else',
+    // « Tout » n'est pas interdit, il est écrit.
+    toutEcrit: 'You are asking for everything. {{salon}} sees all seven listed, and it stays in their list.',
+    origineTitre: 'Who asked',
+    origineSpontanee: 'I am going in myself',
+    origineDemandee: '{{salon}} asked me to',
+    spontaneeNote: 'This is marked as unprompted in their list, permanently.',
+    ouvrir: 'Open, and tell {{salon}}',
+    ouverteTitre: 'You are in {{salon}}',
+    // Le compte se lit, il ne refuse rien. Un seuil qui refuserait se
+    // contournerait en attendant un jour.
+    compteDeLAppelant: 'That is {{n}} takeovers you have opened in {{jours}} days, across all salons.',
+    ouverteRappel: '{{salon}} can end it at any moment, from their own screen.',
+  },
   reglages: {
     reprisesTitre: 'When BIND entered your account',
     reprisesAide:

@@ -45,12 +45,12 @@ const CLIENT = join(SRC, 'api', 'index.tsx');
  * ferait de cette table le tapis qu'elle existe pour retirer.
  */
 const SANS_APPELANT: Record<string, string> = {
-  // **La reprise de compte, côté administration.** Le salon a tout ce qui le
-  // concerne : il lit ce qui s'est passé chez lui et il referme lui-même. Ces
-  // deux-là sont l'autre bout — ouvrir et se retirer — et ils attendent l'écran
-  // d'administration, qui n'appartient pas à cette application. La portée
-  // existe maintenant, donc plus rien ne le retient côté serveur.
-  ouvrirUneReprise: 'a-instruire',
+  // **La fermeture côté administration n'a pas d'écran, et c'est voulu.** Le
+  // salon referme depuis chez lui, en un appui, et c'est le seul geste qui
+  // compte. L'administration se retire en quittant : la reprise s'éteint à son
+  // plafond. Un bouton « je m'en vais » du côté de celui qui est entré ne
+  // protège personne, et donnerait à croire que la porte reste ouverte tant
+  // qu'on ne l'a pas pressé.
   fermerLaReprise: 'a-instruire',
   // **Le catalogue se compose et ne se corrige pas**, et ça ne tient pas.
   // Les trois restent : ce qui manque est un écran, pas une raison. La

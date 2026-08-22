@@ -862,6 +862,21 @@ export const es: Catalogue = {
     masquerLeMotDePasse: 'Ocultar contraseña',
     motDePasseComplet: 'Al menos {{requis}} caracteres.',
   },
+  reprise: {
+    entrer: 'Entrar en esta cuenta',
+    motLeMot: '{{salon}} lee exactamente lo que escribas aquí, palabra por palabra, y puede cerrar el acceso en cualquier momento.',
+    champMotif: 'Por qué entras',
+    porteeTitre: 'Lo que se abre — y nada más',
+    toutEcrit: 'Estás pidiendo todo. {{salon}} verá los siete en su lista, y ahí se queda.',
+    origineTitre: 'Quién lo pidió',
+    origineSpontanee: 'Entro por iniciativa propia',
+    origineDemandee: '{{salon}} me lo pidió',
+    spontaneeNote: 'Se marcará como no solicitada en su lista, para siempre.',
+    ouvrir: 'Abrir y avisar a {{salon}}',
+    ouverteTitre: 'Estás en {{salon}}',
+    compteDeLAppelant: 'Son {{n}} accesos que has abierto en {{jours}} días, en todos los salones.',
+    ouverteRappel: '{{salon}} puede cerrarlo cuando quiera, desde su propia pantalla.',
+  },
   reglages: {
     reprisesTitre: 'Cuando BIND entró en tu cuenta',
     reprisesAide:
