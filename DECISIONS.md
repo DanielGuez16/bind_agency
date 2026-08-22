@@ -8127,3 +8127,42 @@ trouvaient les deux. Les pastilles portent maintenant leur code en identifiant.
 **La quatrième issue reste à construire, et elle touche le modèle** — consigné
 dans `TASKS.md`, demandé à la session des routes. Rien n'est inventé côté client
 en attendant : un statut que le serveur ne connaît pas ne se simule pas.
+
+
+---
+
+## 2026-08-20 — L'événement neutre que je demandais aurait coûté un palier
+
+**Ma demande était fausse, et l'argument qui l'a réfutée mérite d'être gardé.**
+Je réclamais un événement de fiabilité neutre pour accompagner « clore sans
+faute », par symétrie avec `abusive_report`. La session des routes l'a refusé :
+`evaluer` rend un score **nul** tant qu'aucun événement n'existe, et un nombre
+dès qu'il y en a un. Un événement de poids nul ne bouge donc pas le score — il
+le fait **exister**. Une créatrice dont ce serait le premier événement passerait
+de « pas encore de score », que les paliers ignorent comme condition, à un score
+de départ comparé à leur seuil : la clôture sans faute lui coûterait un palier,
+c'est-à-dire exactement ce qu'elle existe pour éviter.
+
+La symétrie avec `abusive_report` ne tenait pas parce que celui-ci n'arrive
+jamais seul — un signalement écarté suppose un signalement, donc un historique.
+Une clôture sans faute peut être le tout premier événement d'un compte.
+
+**Aucun événement n'est donc écrit.** `fiabilite.composantes` en reste à neuf, et
+la garde qui exige une phrase par code n'a rien à absorber.
+
+**Et ma dérivation de « même motif » était subtilement fausse.** J'exigeais que
+*tous* les motifs soient identiques ; le serveur compte la **suite** du dernier
+contre `collaboration_max_attempts`. « Format, mention, mention, mention » les
+fait diverger : les trois derniers refus portent bien sur la même chose, la
+demande n'a jamais été comprise, et ma version répondait « mélangé » à cause du
+premier. Le seuil vit en configuration par-dessus le marché — un écran qui
+écrirait trois en dur mentirait au premier ajustement.
+
+**La phrase compte la suite, la colonne compte les reproches.** La phrase affirme
+une répétition : elle doit dire combien de fois **de suite**. La colonne dit
+combien de fois on a refusé. Les deux nombres diffèrent sur le même dossier, et
+les confondre écrirait un chiffre faux dans l'un des deux.
+
+**Le champ absent se lit « pas de répétition », jamais l'inverse.**
+Sous-proposer la clôture est le bon défaut : sur-proposer fermerait un dossier
+où il fallait trancher.
