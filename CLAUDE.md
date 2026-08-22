@@ -225,6 +225,40 @@ chose de ce qu'on vient d'écrire. La suite entière répond à une autre questi
 « ai-je cassé ailleurs », et cette question ne se pose qu'une fois, au moment de
 pousser.
 
+**Un fichier en pure suppression se regarde avant de pousser.** La commande
+coûte une seconde :
+
+```
+git show --numstat HEAD | awk '$1==0 && $2>0 {print "  supprimé :", $3}'
+```
+
+Un fichier entièrement retiré par une PR qui prétend ajouter est presque
+toujours un accident, et **rien d'autre ne le dira**. Un test supprimé ne rougit
+pas : il disparaît avec le code qu'il éprouvait, la suite reste verte, et `main`
+porte un écran amputé que personne ne voit. Mesuré deux fois en une journée —
+vingt-six lignes de `TASKS.md` effacées par une PR, puis quatre cent trente-cinq
+lignes d'une PR fusionnée quatre heures plus tôt : deux modules, leur test et
+leurs six chaînes de traduction. Découvert deux jours après, par un `tsc` qui
+réclamait un module absent.
+
+La cause n'est pas une résolution de conflit, contrairement à ce qu'on suppose
+d'abord. `git reset --soft origin/main` suivi de `git add -A` suffit : le reset
+déplace HEAD sur le **nouveau** `origin/main` en gardant l'arbre de travail,
+lequel porte encore l'état d'avant pour tout ce qu'on n'a pas touché — le
+`git add -A` enregistre alors le retrait de tout ce qui a été fusionné entre
+les deux. Cela emporte donc des fichiers qu'on n'a jamais ouverts, et plus on
+livre vite, plus la fenêtre est large. La forme juste :
+
+```
+git reset --soft "$(git merge-base HEAD origin/main)"
+```
+
+**Et un conflit sur `TASKS.md` se résout en gardant les deux côtés.** Le fichier
+est une liste, pas un état : deux sessions y ajoutent des lignes différentes, et
+aucune n'a de raison d'écraser l'autre. C'est le canal par lequel les demandes de
+champs passent d'une conversation à l'autre — une demande effacée ne revient pas,
+et personne ne s'aperçoit de son absence.
+
 **Un garde-fou qui coûte plus que ce qu'il protège se retire.** La garde de
 durée en est l'exemple, et elle a été retirée : quatre CI rouges en une soirée,
 deux heures d'attente, et rien trouvé d'autre qu'elle-même. D'abord calibrée sur
