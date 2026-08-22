@@ -307,11 +307,17 @@ export function RedemptionScreen({
       {etat.state === 'reconnu' ? (
         <View
           testID="reconnu"
+          // **Une carte, et elle demande quelque chose.** C'est ce que le
+          // comptoir lit avant de servir : la réservation reconnue, et le geste
+          // qui la clôt. Elle portait le rayon et le fond sans l'ombre —
+          // invisible à l'inventaire, dont la définition exigeait un filet
+          // qu'une surface pleine n'a pas.
           style={{
             gap: spacing['space.3'],
             padding: spacing['space.4'],
             borderRadius: radius['radius.lg'],
             backgroundColor: c['bg.surface'],
+            ...elevationDeCarte(),
           }}
         >
           <Texte variante="type.section">{etat.verification.item_name}</Texte>
