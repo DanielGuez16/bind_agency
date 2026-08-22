@@ -1449,13 +1449,19 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       les réglages portent la pause. Le cas « publié mais invisible » a failli
       partir avec l'écran — une étape non bloquante manquante garde le salon
       hors des murs, et rien d'autre ne le lui disait*
-- [ ] **Le nombre de créatrices par palier n'est pas servi**
-      *La planche veut « 103 créatrices deviennent 12 » à côté du choix de
-      palier. En attendant, l'avertissement garde l'argument qu'il a — les
-      seuils d'abonnés, qui disent la même chose dans le même sens : « 50 000
-      abonnés au lieu de 1 000 » se mesure, « moins de créatrices » non. C'est
-      aussi le calcul que demande le contre-factuel de l'annuaire : une seule
-      forme pour les deux écrans*
+- [ ] **Le nombre de créatrices éligibles par palier, pour une prestation**
+      *La planche du catalogue veut « 103 créatrices deviennent 12 » quand un
+      salon monte une prestation de story à reel. C'est un compte **par palier**,
+      dans les deux sens, pour des paliers l'un et l'autre **ouverts**.*
+      *À ne pas confondre avec `portee.gains_par_palier`, qui existe déjà et
+      répond à une autre question : un gain marginal sur un palier **fermé**,
+      pour le contre-factuel de l'annuaire. Les paliers ouverts n'y figurent pas
+      par construction, et `peuvent_reserver` est « peut réserver ce qui est
+      ouvert », tous paliers confondus — aucune composition des deux ne donne le
+      nombre du catalogue. Le composer quand même produirait un chiffre faux, et
+      c'est un chiffre sur lequel un salon décide.*
+      *En attendant, l'avertissement garde l'argument qu'il a : les seuils
+      d'abonnés, qui disent la même chose dans le même sens.*
 - [ ] **L'engagement et les vues moyennes manquent sur la demande**
       *`CompteDeLaCreatriceRead` sert le pseudonyme et les abonnés ; la planche
       de la journée pose aussi « 4,2 % d'engagement · 2 140 vues moyennes » sur
