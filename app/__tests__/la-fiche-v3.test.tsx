@@ -8,7 +8,10 @@
  * séparation, pas une mise en page : le jour où quelqu'un remet le badge sur
  * cet écran, ou recolle la date brute, c'est ici que ça tombe.
  */
-import { render, screen, waitFor } from '@testing-library/react-native';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
 import { ApiClient, ApiProvider, type FichePublique } from '../src/api';
 import { I18nProvider } from '../src/i18n';
@@ -380,6 +383,79 @@ describe('les deux formes de la contrepartie s’accordent', () => {
       expect({ palier, heures: Number(dansLaProse![1]) }).toEqual({
         palier,
         heures: config.delaiHeures,
+      });
+    }
+  });
+});
+
+/**
+ * Les deux portes de la fiche, et pourquoi elles passaient inaperçues.
+ *
+ * Les testeurs n'ont mentionné ni la galerie ni la carte. Elles existaient
+ * pourtant, bien placées : une pastille comptée sur la couverture, une ligne
+ * nommée entre l'identité et les prestations. Ce qui leur manquait est plus
+ * discret — **aucune des deux ne répondait au doigt**. Une dispense de la garde
+ * du retour au toucher, posée sur le fichier entier pour un voile de fermeture,
+ * les couvrait toutes les deux.
+ *
+ * Une pastille posée sur une photo ressemble déjà à une étiquette ; sans retour
+ * à l'appui, rien ne distingue le moment où on l'a pressée du moment où on a
+ * touché l'image. C'est ce qui la fait lire comme une légende.
+ */
+describe('la galerie et la carte se voient, et répondent', () => {
+  it('la pastille de la galerie ouvre la visionneuse', async () => {
+    const vue = await monter();
+    await waitFor(() => expect(screen.getByTestId('acces-galerie')).toBeTruthy());
+
+    await fireEvent.press(screen.getByTestId('acces-galerie'));
+
+    await waitFor(() => expect(screen.getByTestId('visionneuse-de-galerie')).toBeTruthy());
+    await vue.unmount();
+  });
+
+  it('la ligne de la carte ouvre ses pages', async () => {
+    const vue = await monter({
+      ...FICHE,
+      menu_pages: ['p1', 'p2'],
+    } as unknown as FichePublique);
+    await waitFor(() => expect(screen.getByTestId('acces-carte')).toBeTruthy());
+
+    await fireEvent.press(screen.getByTestId('acces-carte'));
+
+    await waitFor(() => expect(screen.getByTestId('visionneuse-de-carte')).toBeTruthy());
+    await vue.unmount();
+  });
+
+  it('et n’annonce pas de carte à un salon qui n’en a pas', async () => {
+    // La divergence : le décor de base n'a ni page ni lien, et la ligne ne se
+    // rend pas. Sans ce cas, un écran qui afficherait toujours la ligne
+    // passerait le test précédent — et mènerait à une visionneuse vide.
+    const vue = await monter();
+    await waitFor(() => expect(screen.getByTestId('couverture')).toBeTruthy());
+
+    expect(screen.queryByTestId('acces-carte')).toBeNull();
+    await vue.unmount();
+  });
+
+  it('les deux portes répondent à l’appui', () => {
+    // **Sur la source, et c'est délibéré.** L'état pressé d'un `Pressable` ne
+    // se rend pas dans l'arbre de test : ce qui se vérifie est que le style est
+    // une fonction de `pressed`, c'est-à-dire que la réponse existe. La garde
+    // générale dit la même chose pour tout le produit ; ce test la redit ici
+    // parce que ces deux nœuds ont vécu des mois sous une dispense.
+    const source = readFileSync(
+      join(__dirname, '..', 'src', 'screens', 'FicheScreen.tsx'),
+      'utf-8',
+    );
+
+    for (const marqueur of ['acces-galerie', 'onPress={onPress}']) {
+      const depuis = source.indexOf(marqueur);
+      expect({ marqueur, trouve: depuis !== -1 }).toEqual({ marqueur, trouve: true });
+      // Le style suit la balise de près : on lit la fenêtre qui la contient.
+      const fenetre = source.slice(depuis, depuis + 700);
+      expect({ marqueur, repond: /style=\{\(\{ pressed \}\)/.test(fenetre) }).toEqual({
+        marqueur,
+        repond: true,
       });
     }
   });

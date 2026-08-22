@@ -364,7 +364,13 @@ function Couverture({
             count: formatNumber(compte, locale),
           })}
           onPress={onOuvrirLaGalerie}
-          style={{
+          // **La seule porte vers la galerie, et elle ne répondait pas.** Une
+          // pastille posée sur une photo ressemble déjà à une étiquette ; sans
+          // retour à l'appui, rien ne distingue le moment où on l'a pressée du
+          // moment où on a touché l'image. C'est ce qui la faisait passer pour
+          // une légende.
+          style={({ pressed }) => ({
+            opacity: pressed ? 0.7 : 1,
             position: 'absolute',
             right: 18,
             bottom: 16,
@@ -377,7 +383,7 @@ function Couverture({
             // Le voile de badge, et non un blanc écrit ici : c'est le jeton du
             // système pour ce qui se pose sur une image dont on ne sait rien.
             backgroundColor: c['scrim.badge'],
-          }}
+          })}
         >
           <Icone nom="image" couleur="ink.default" taille={16} />
           <Texte variante="type.label">
@@ -458,7 +464,8 @@ function LigneDAcces({
       accessibilityRole="button"
       accessibilityLabel={`${titre} · ${detail}`}
       onPress={onPress}
-      style={{
+      style={({ pressed }) => ({
+        opacity: pressed ? 0.7 : 1,
         minHeight: 60,
         flexDirection: 'row',
         alignItems: 'center',
@@ -467,7 +474,7 @@ function LigneDAcces({
         backgroundColor: teinte ? c['brand.50'] : 'transparent',
         borderBottomWidth: avecFilet ? 1 : 0,
         borderBottomColor: c['line.default'],
-      }}
+      })}
     >
       <Icone nom={glyphe} couleur={encre} taille={22} />
       <View style={{ flex: 1, minWidth: 0, gap: 1 }}>

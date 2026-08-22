@@ -44,13 +44,33 @@ const RACINE = join(__dirname, '..', 'src');
  * `pressed` couvre le `style` fonction comme le rendu enfant fonction — les
  * deux passent l'état à l'appelant, et un composant qui le nomme s'en sert.
  */
-const RETOURS = [
-  /\bpressed\b/,
+/**
+ * `pressed` **employé**, et non seulement déclaré.
+ *
+ * La forme canonique déstructure le paramètre — `({ pressed }) => …` — donc le
+ * mot apparaît une fois sans que rien ne s'en serve. Un style qui reçoit
+ * `pressed` et l'ignore satisfaisait la garde tout en ne bougeant pas d'un
+ * pixel ; c'est arrivé sur les vignettes de la visionneuse de carte, où
+ * l'opacité de l'appui était écrasée par celle du rang deux lignes plus bas.
+ *
+ * Deux occurrences suffisent à distinguer les deux cas — le paramètre, puis son
+ * emploi — et l'accès par propriété couvre la forme non déstructurée
+ * `(etat) => etat.pressed`, qui n'en a qu'une et qui est juste.
+ */
+const pressedEmploye = (balise: string) =>
+  /\.pressed\b/.test(balise) || (balise.match(/\bpressed\b/g) ?? []).length >= 2;
+
+const RETOURS: (RegExp | ((b: string) => boolean))[] = [
+  pressedEmploye,
   /useEnfoncement/,
   /android_ripple/,
   /\benfoncement\./,
   /\.\.\.enfoncement/,
 ];
+
+/** La question posée à une balise, et le seul point où la liste se lit. */
+const repond = (balise: string) =>
+  RETOURS.some((forme) => (typeof forme === 'function' ? forme(balise) : forme.test(balise)));
 
 /**
  * Les `Pressable` qui n'ont légitimement rien à montrer.
@@ -60,14 +80,11 @@ const RETOURS = [
  * rectangle gris au milieu de l'écran. Une garde sans échappatoire se contourne
  * en désactivant la garde.
  */
-const EXEMPTS: { fichier: string; raison: string }[] = [
+const EXEMPTS: { fichier: string; testID: string; raison: string }[] = [
   {
     fichier: 'screens/FicheScreen.tsx',
-    raison: 'le voile de fermeture des feuilles est invisible par construction',
-  },
-  {
-    fichier: 'screens/Visionneuses.tsx',
-    raison: 'idem, le fond de la visionneuse se ferme au toucher sans se montrer',
+    testID: 'voile-de-la-feuille',
+    raison: 'un voile de fermeture est invisible par construction',
   },
 ];
 
@@ -111,13 +128,24 @@ describe('le retour au toucher', () => {
 
   for (const chemin of fichiers(RACINE)) {
     const relatif = chemin.slice(RACINE.length + 1);
-    if (EXEMPTS.some((e) => e.fichier === relatif)) continue;
 
     const source = readFileSync(chemin, 'utf8');
     for (const balise of balisesPressable(source)) {
+      // **L'exemption nomme un élément, plus un fichier.** Elle était posée par
+      // fichier, et elle a coûté cher : écrite pour le voile de fermeture de
+      // `FicheScreen`, elle couvrait aussi la porte de la galerie et la ligne
+      // de la carte — les deux seuls chemins vers ce que la fiche contient, et
+      // ni l'une ni l'autre ne répondait au doigt. Même chose sur les
+      // visionneuses, où elle couvrait le bouton de fermeture et les vignettes
+      // de page, tandis que le fond qui l'avait motivée n'existe plus.
+      //
+      // Une dispense large finit toujours par couvrir ce qu'elle ne visait
+      // pas ; celle-ci ne dispense que le nœud qu'elle nomme.
+      const id = /testID="([^"]+)"/.exec(balise)?.[1];
+      if (EXEMPTS.some((e) => e.fichier === relatif && e.testID === id)) continue;
       // `disabled` sans condition : l'élément ne se presse jamais.
       if (/disabled=\{true\}/.test(balise)) continue;
-      if (RETOURS.some((forme) => forme.test(balise))) continue;
+      if (repond(balise)) continue;
       const ligne = source.slice(0, source.indexOf(balise)).split('\n').length;
       sansRetour.push(`${relatif}:${ligne}`);
     }
@@ -139,11 +167,20 @@ describe('le retour au toucher', () => {
       '<Pressable onPressIn={enfoncement.onPressIn} onPressOut={enfoncement.onPressOut}>',
     ];
     for (const balise of avec) {
-      expect(RETOURS.some((forme) => forme.test(balise))).toBe(true);
+      expect(repond(balise)).toBe(true);
     }
 
+    // **Et `pressed` reçu puis ignoré ne compte pas.** C'est la forme qui a
+    // survécu à la mutation : un style qui déstructure l'état et ne s'en sert
+    // pas satisfaisait la garde sans bouger d'un pixel.
+    expect(repond('<Pressable style={({ pressed }) => ({ opacity: 0.5 })}>')).toBe(false);
+    // La forme non déstructurée n'a qu'une occurrence, et elle est juste.
+    expect(repond('<Pressable style={(etat) => ({ opacity: etat.pressed ? 0.7 : 1 })}>')).toBe(
+      true,
+    );
+
     // Et elle refuse ce qu'elle doit refuser.
-    expect(RETOURS.some((f) => f.test('<Pressable style={{ padding: 12 }}>'))).toBe(false);
+    expect(repond('<Pressable style={{ padding: 12 }}>')).toBe(false);
   });
 
   it('découpe la balise jusqu’au bon chevron', () => {
@@ -155,6 +192,32 @@ describe('le retour au toucher', () => {
     const [balise] = balisesPressable(source);
 
     expect(balise).toBe(source);
-    expect(RETOURS.some((forme) => forme.test(balise))).toBe(true);
+    expect(repond(balise)).toBe(true);
+  });
+});
+
+/**
+ * Une dispense doit désigner quelque chose qui existe.
+ *
+ * Une exemption qui nomme un nœud disparu ne dispense plus rien, mais elle
+ * continue de faire croire que la question a été tranchée — et c'est ainsi
+ * qu'elle survit à ce qui la justifiait. Celle des visionneuses était dans ce
+ * cas : elle parlait d'un fond qui se ferme au toucher, retiré depuis, et elle
+ * couvrait entre-temps le bouton de fermeture et les vignettes de page.
+ */
+describe('les dispenses de retour au toucher', () => {
+  it('chacune nomme un élément encore présent dans son fichier', () => {
+    expect(EXEMPTS.length).toBeGreaterThan(0);
+
+    for (const { fichier, testID, raison } of EXEMPTS) {
+      const source = readFileSync(join(RACINE, fichier), 'utf8');
+      expect({ fichier, testID, present: source.includes(`testID="${testID}"`) }).toEqual({
+        fichier,
+        testID,
+        present: true,
+      });
+      // Une raison trop courte est un « parce que » : elle ne se relit pas.
+      expect(raison.length).toBeGreaterThan(30);
+    }
   });
 });

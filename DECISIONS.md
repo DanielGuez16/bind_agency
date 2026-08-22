@@ -8246,29 +8246,68 @@ sont pas balayés et gardent la forme habituelle.
 
 ---
 
-## 2026-08-21 — La tournée : ce qui se dérive, et ce qui ne s'invente pas
+## 2026-08-20 — Règle de composition : on répond d'abord, on explique ensuite
 
-**L'écart entre les deux voies est dérivable, et c'est le chiffre qui décide.**
-`/admin/prospects` rend la liste complète — pas de pagination — donc le taux
-d'activation par `channel` se calcule honnêtement côté écran. Un taux global
-mélangerait justement les deux méthodes qu'on cherche à comparer.
+Les deux écrans que personne n'a compris — l'annuaire du commerce et les paliers
+du créateur — avaient le même défaut, et il s'est corrigé de la même façon le
+même jour. Ce n'est pas une coïncidence, c'est une règle, et elle s'écrit ici
+pour qu'on n'ait pas à la retrouver une troisième fois.
 
-**Un taux sur zéro remise n'existe pas.** « 0 % » se lit comme un échec ;
-l'absence de données n'en est pas un. Même règle que partout ailleurs dans ce
-produit : nul veut dire neutre, pas zéro.
+**Un écran ouvre par la réponse à la question qu'on vient poser. L'explication
+du mécanisme vient après, et jamais avant.**
 
-**Une fiche retirée compte dans les remises.** La visite a bien eu lieu, et
-l'oublier flatterait le taux d'activation — c'est-à-dire le chiffre sur lequel on
-décide de la méthode.
+L'annuaire ouvrait sur une liste de créatrices. La question d'un salon n'est pas
+« qui sont-elles » — à deux mille il n'en connaît aucune — mais « combien
+peuvent réserver ce que j'ai ouvert ». Il ouvre maintenant sur ce compte.
 
-**L'ordre des états va du plus définitif au plus ouvert.** Une fiche reprise dont
-le lien a expiré depuis reste reprise : l'expiration d'un lien déjà consommé ne
-dit rien, et afficher « expirée » sur un salon qui travaille depuis un mois
-enverrait quelqu'un le revisiter.
+Les paliers ouvraient sur le principe du système — « plus le format engage, plus
+il ouvre » — en bandeau d'encre avec un diagramme. La question d'une créatrice
+est « qu'est-ce que je peux réserver maintenant ». L'écran l'annonce désormais
+en titre, et le principe est descendu sous l'échelle.
 
-**Deux des trois états de la planche ne sont pas connaissables**, et l'écran ne
-fait pas semblant. Rien n'enregistre qu'un lien a été ouvert : un lien jamais vu
-et un lien vu puis abandonné rendent la même ligne. Ce sont pourtant les deux cas
-où la conduite diffère — l'un se revisite, l'autre se relance. L'état `remis`
-couvre les deux sans prétendre les séparer ; écrire « jamais ouvert » sur cette
-base enverrait quelqu'un refaire une visite là où un message aurait suffi.
+**Pourquoi l'erreur est si facile à commettre.** Les deux explications étaient
+justes, bien écrites, et utiles — c'est ce qui les rendait indéboulonnables.
+Une explication en tête d'écran ne se lit pas comme une aide : elle définit ce
+dont l'écran parle. Un écran qui commence par décrire son mécanisme **est** un
+écran sur le mécanisme, quelle que soit la qualité de ce qui suit.
+
+**Le signe qui doit alerter** : quand un écran est incompris deux fois de suite,
+regarder son premier bloc avant de retoucher le reste. Deux fois sur deux, la
+réponse y était et personne ne l'avait vue parce qu'elle arrivait en second.
+
+**Le corollaire, éprouvé le même jour :** ce qui n'est jamais mentionné en revue
+n'est pas forcément absent — c'est souvent ce qui ne se voit pas. La galerie et
+la carte de la fiche n'ont été citées par aucun testeur ; elles existaient, bien
+placées, et **ne répondaient pas au doigt**.
+
+---
+
+## 2026-08-20 — La fiche : deux portes muettes sous une dispense trop large
+
+Les testeurs n'ont mentionné ni la galerie ni la carte. Elles étaient pourtant
+là — une pastille comptée sur la couverture, une ligne nommée entre l'identité
+et les prestations, toutes deux placées où on les cherche. Ce qui leur manquait
+est plus discret : **aucune des deux ne réagissait à l'appui.**
+
+Une pastille posée sur une photo ressemble déjà à une étiquette ; sans retour à
+l'appui, rien ne distingue le moment où on l'a pressée du moment où on a touché
+l'image. C'est ce qui la fait lire comme une légende.
+
+**La cause est une dispense posée sur un fichier.** La garde du retour au
+toucher exemptait `FicheScreen` en entier, pour un voile de fermeture invisible
+par construction. Elle couvrait donc aussi la porte de la galerie et la ligne de
+la carte. Même chose sur `Visionneuses`, où elle couvrait le bouton de
+fermeture et les vignettes de page — tandis que le fond qui l'avait motivée
+n'existe plus.
+
+Les dispenses nomment désormais **un élément**, pas un fichier, et un test
+vérifie que chacune désigne un `testID` encore présent : une dispense qui ne
+dispense plus rien continue de faire croire que la question a été tranchée.
+
+**Et la garde elle-même comptait le mot plutôt que l'emploi.** `({ pressed }) =>`
+contient « pressed » par sa seule déstructuration : un style qui reçoit l'état et
+l'ignore la satisfaisait sans bouger d'un pixel. C'est exactement ce qui se
+passait sur les vignettes de la visionneuse de carte, où l'opacité de l'appui
+était écrasée deux lignes plus bas par celle du rang — les deux se multiplient
+maintenant. La garde exige donc un emploi, et la forme non déstructurée
+`(etat) => etat.pressed` reste admise.
