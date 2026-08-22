@@ -399,9 +399,7 @@ async def annuler(session: AsyncSession, *, booking: Booking, creator_id: uuid.U
     )
 
 
-def fin_de_l_annulation_libre(
-    starts_at: datetime | None, statut: BookingStatus, requires_booking: bool
-) -> datetime | None:
+def fin_de_l_annulation_libre(starts_at: datetime | None, statut: BookingStatus) -> datetime | None:
     """Jusqu'à quand l'annulation ne coûte rien. `None` quand elle est toujours libre.
 
     **L'écran disait qu'annuler tard pouvait coûter, sans pouvoir dire quand.**
@@ -417,11 +415,16 @@ def fin_de_l_annulation_libre(
     Poser un instant sur l'un des trois ferait croire à une limite qui n'existe
     pas, et ferait renoncer quelqu'un qui n'avait rien à perdre.
 
+    Le deuxième se lit sur `starts_at` seul, et il n'y a rien à ajouter : une
+    contrainte de `booking` impose déjà `NOT requires_booking` ⇒ `starts_at IS
+    NULL`. Redire la règle ici ferait deux endroits pour un invariant que la
+    base tient, et le second finirait par diverger du premier.
+
     Calculée par le serveur, comme sa voisine : l'horloge d'un terminal n'est
     pas une preuve, et un écran qui déduirait ce seuil d'une heure locale
     fausse annoncerait « gratuit » sur une annulation qui coûte.
     """
-    if starts_at is None or not requires_booking:
+    if starts_at is None:
         return None
     if statut in (BookingStatus.HELD, BookingStatus.AWAITING_BUSINESS):
         return None

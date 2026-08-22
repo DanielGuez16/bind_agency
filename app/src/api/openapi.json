@@ -945,6 +945,12 @@
       }
     },
     "/api/v1/me/devices": {
+      "get": {
+        "operationId": "list_devices_api_v1_me_devices_get",
+        "responses": [
+          "200"
+        ]
+      },
       "put": {
         "operationId": "register_device_api_v1_me_devices_put",
         "responses": [
@@ -953,9 +959,9 @@
         ]
       }
     },
-    "/api/v1/me/devices/{token}": {
+    "/api/v1/me/devices/{device_id}": {
       "delete": {
-        "operationId": "revoke_device_api_v1_me_devices__token__delete",
+        "operationId": "revoke_device_api_v1_me_devices__device_id__delete",
         "responses": [
           "204",
           "422"

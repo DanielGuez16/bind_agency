@@ -279,9 +279,6 @@ def _colonnes_communes() -> tuple:
         # jusqu'à quand elle attend. C'est la même donnée, et la servir d'un
         # seul côté laisserait l'autre deviner.
         Booking.approval_expires_at,
-        # Elle décide de l'échéance d'annulation libre : un droit sans créneau
-        # ne bloque aucun poste, donc ne coûte jamais rien.
-        Booking.requires_booking,
         Booking.created_at,
         CatalogItem.name.label("item_name"),
         CatalogItem.photo_key.label("item_photo_key"),
@@ -437,7 +434,7 @@ async def historique_du_createur(
                 valid_until=ligne.valid_until,
                 approval_expires_at=ligne.approval_expires_at,
                 annulation_sans_frais_jusqu_a=fin_de_l_annulation_libre(
-                    ligne.starts_at, ligne.status, ligne.requires_booking
+                    ligne.starts_at, ligne.status
                 ),
                 created_at=ligne.created_at,
                 business_id=ligne.business_id,
