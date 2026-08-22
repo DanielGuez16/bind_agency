@@ -1460,6 +1460,27 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *`CompteDeLaCreatriceRead` sert le pseudonyme et les abonnés ; la planche
       de la journée pose aussi « 4,2 % d'engagement · 2 140 vues moyennes » sur
       le panneau. Deux champs sur le même objet*
+- [x] **L'arbitrage v3 — la forme du malentendu, pas la conversation**
+      *La colonne « Reasons » distingue « 3 · same » de « 3 · mixed », et un
+      filtre sépare les deux files : trois refus pour le même motif disent que
+      la demande n'a jamais été comprise, trois motifs différents disent
+      l'inverse. Le dossier nomme la forme en une phrase avant tout journal, et
+      les notes sont repliées — un arbitre qui les lit toutes avant de regarder
+      la preuve juge une correspondance au lieu d'un fait. 1161 tests verts,
+      5 mutations*
+- [ ] **La quatrième issue d'arbitrage n'existe pas**
+      *« Clore sans faute » : quand le motif se répète trois fois, ni approuver
+      ni refuser n'est juste — c'est le produit qui a échoué à transmettre une
+      demande, et la trancher comme une faute la met au débit de la mauvaise
+      personne. Il faut une issue de plus à côté d'`approve` / `resubmit` /
+      `unfulfilled`, qui ferme le dossier sans toucher au score, et un événement
+      de fiabilité neutre du même genre qu'`abusive_report` — présent dans la
+      grille, de poids nul, et listé plutôt que tu.*
+      *Demandé à `bind-agency-1a`. Côté écran tout est prêt : dès que le code
+      existe, le bouton prend la première place sur un dossier « same », et
+      « approve » la reprend sur un « mixed ». `fiabilite.composantes` sert déjà
+      les neuf événements avec leur sens, et un dixième tombera sur la garde qui
+      lit l'énumération Python — il faudra sa phrase.*
 - [ ] **Neuf planches d'écrans portent encore la v1.0**
       *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
       passés en v3, dans la palette Ambre. Les autres suivent l'ordre du
