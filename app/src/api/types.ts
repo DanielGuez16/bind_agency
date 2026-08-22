@@ -43,7 +43,9 @@ export type CollaborationStatus =
   | 'under_review'
   | 'approved'
   | 'resubmit_requested'
-  | 'unfulfilled';
+  | 'unfulfilled'
+  /** Fermée sans faute : le produit n'a pas su transmettre la demande. */
+  | 'closed_no_fault';
 
 export type VerificationStatus = 'verified' | 'needs_review' | 'rejected';
 export type SocialAccountStatus = 'active' | 'expired' | 'revoked' | 'disabled';
@@ -856,6 +858,24 @@ export type LigneDeFile = {
    *  qui justifie l'escalade ; le seul dernier motif ne la montre pas. */
   tentatives: Tentative[];
   derniere_soumission: DerniereSoumission | null;
+  /**
+   * Combien de fois **de suite** le dernier motif a été opposé.
+   *
+   * De suite et non en tout : un dossier refusé pour la mention, puis pour le
+   * format, puis de nouveau pour la mention n'est pas un dossier où la mention
+   * n'a jamais été comprise.
+   */
+  repetitions_du_dernier_motif: number;
+  /**
+   * Vrai quand le même motif revient assez de fois de suite.
+   *
+   * **Servi et non déduit, et c'est une correction.** Je le dérivais côté écran
+   * en exigeant que *tous* les motifs soient identiques : « format, mention,
+   * mention, mention » y échappait, alors que les trois derniers refus portent
+   * bien sur la même chose. Et le seuil est en configuration — un écran qui
+   * écrirait trois en dur mentirait au premier ajustement.
+   */
+  meme_motif_repete: boolean;
 };
 
 /** Une demande de nouvelle soumission, telle que le journal l'a écrite. */
@@ -877,7 +897,16 @@ export type Tentative = {
 export type FiltreDeContrepartie = 'to_review' | 'expected' | 'approved';
 
 /** Le vocabulaire du commerce, plus l'issue qui n'est qu'à l'arbitre. */
-export type IssueDArbitrage = 'approve' | 'resubmit' | 'unfulfilled';
+/**
+ * Ce qu'un arbitre peut décider.
+ *
+ * **`close_no_fault` est la quatrième, et elle existe pour un cas précis.**
+ * Quand le même motif revient assez de fois, ni approuver ni refuser n'est
+ * juste : le produit a échoué à transmettre une demande, et la trancher comme
+ * une faute la met au débit de la mauvaise personne. Elle ferme le dossier et
+ * ne touche pas au score.
+ */
+export type IssueDArbitrage = 'approve' | 'resubmit' | 'unfulfilled' | 'close_no_fault';
 
 // --------------------------------------------------------------------------
 // commerce et back office

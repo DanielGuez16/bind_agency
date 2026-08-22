@@ -701,6 +701,8 @@ export const en = {
     issueApproveMalgreQualite: 'Approve despite the quality',
     issueResubmit: 'Ask for a new publication',
     issueUnfulfilled: 'Close as not fulfilled',
+    issueCloreSansFaute: 'Close it, no fault',
+    issueCloreSansFauteAide: 'The salon keeps the service as given, and the creator’s score is untouched. Use it when the ask never got through.',
     // Ce que la barre annonce à l'oreille : trois boutons identiques d'un
     // dossier à l'autre ne se distinguent que par ce qu'ils nomment.
     issueSurDossier: '{{issue}} — {{createur}}, {{prestation}}, {{commerce}}',

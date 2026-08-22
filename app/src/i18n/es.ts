@@ -659,6 +659,8 @@ export const es: Catalogue = {
     issueApproveMalgreQualite: 'Aprobar a pesar de la calidad',
     issueResubmit: 'Pedir una nueva publicación',
     issueUnfulfilled: 'Cerrar como no cumplida',
+    issueCloreSansFaute: 'Cerrar sin falta',
+    issueCloreSansFauteAide: 'El local conserva el servicio tal como se dio y su fiabilidad no se toca. Úsalo cuando la petición nunca llegó a entenderse.',
     issueSurDossier: '{{issue}} — {{createur}}, {{prestation}}, {{commerce}}',
     plansLectureSeule: 'Solo lectura · cifras mensuales calculadas en el servidor',
     plansNoteAnnuel: 'Un plan anual se factura una vez al año. Su cifra mensual es la división que hace el servidor: no es un precio y no debe leerse como tal.',

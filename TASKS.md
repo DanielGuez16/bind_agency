@@ -1494,19 +1494,23 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       les notes sont repliées — un arbitre qui les lit toutes avant de regarder
       la preuve juge une correspondance au lieu d'un fait. 1161 tests verts,
       5 mutations*
-- [ ] **La quatrième issue d'arbitrage n'existe pas**
-      *« Clore sans faute » : quand le motif se répète trois fois, ni approuver
-      ni refuser n'est juste — c'est le produit qui a échoué à transmettre une
-      demande, et la trancher comme une faute la met au débit de la mauvaise
-      personne. Il faut une issue de plus à côté d'`approve` / `resubmit` /
-      `unfulfilled`, qui ferme le dossier sans toucher au score, et un événement
-      de fiabilité neutre du même genre qu'`abusive_report` — présent dans la
-      grille, de poids nul, et listé plutôt que tu.*
-      *Demandé à `bind-agency-1a`. Côté écran tout est prêt : dès que le code
-      existe, le bouton prend la première place sur un dossier « same », et
-      « approve » la reprend sur un « mixed ». `fiabilite.composantes` sert déjà
-      les neuf événements avec leur sens, et un dixième tombera sur la garde qui
-      lit l'énumération Python — il faudra sa phrase.*
+- [x] **Clore sans faute, la quatrième issue**
+      *`close_no_fault` sur la décision d'arbitrage, statut terminal
+      `closed_no_fault`. Elle prend la première place quand le même motif
+      boucle — ni approuver ni refuser n'est juste — et repasse derrière sur un
+      dossier à motifs mélangés, sans jamais disparaître : c'est l'ordre qui
+      conseille, pas la présence.*
+      *`meme_motif_repete` et `repetitions_du_dernier_motif` sont servis, et ma
+      dérivation est retirée : elle exigeait que **tous** les motifs soient
+      identiques, le serveur compte la **suite** du dernier contre un seuil de
+      configuration. « Format, mention, mention, mention » les faisait diverger.*
+- [ ] **Les motifs qui reviennent, une route servie sans lecteur**
+      *`GET /admin/collaborations/motifs-qui-reviennent` rend `{motif, dossiers,
+      dossiers_touches}` : elle compte les **dossiers** où un motif boucle, pas
+      les refus. Chaque « fermer sans faute » est le constat qu'une demande n'a
+      pas été transmise, et cette route dit lesquelles reviennent —
+      `dossiers_touches` départage un motif difficile d'un motif
+      incompréhensible. Aucun écran ne la lit encore*
 - [ ] **Neuf planches d'écrans portent encore la v1.0**
       *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
       passés en v3, dans la palette Ambre. Les autres suivent l'ordre du
