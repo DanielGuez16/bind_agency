@@ -63,6 +63,12 @@ GENRE_PAR_CLE: dict[str, NotificationKind] = {
     "collaboration.resubmit": NotificationKind.PUBLICATION_RESUBMIT,
     "collaboration.opened": NotificationKind.COLLABORATION_OPENED,
     "collaboration.unfulfilled": NotificationKind.COLLABORATION_UNFULFILLED,
+    # **Le même genre que la non-honoration, et non un genre à part.** Les deux
+    # ferment un dossier et demandent la même chose au destinataire : cesser
+    # d'attendre. Un genre de plus lui offrirait de couper l'un et pas l'autre,
+    # ce qui n'a aucun sens — et surtout, celui qu'il couperait serait la bonne
+    # nouvelle des deux.
+    "collaboration.closed_no_fault": NotificationKind.COLLABORATION_UNFULFILLED,
     "subscription.graceEnding": NotificationKind.SUBSCRIPTION_GRACE_ENDING,
     "subscription.ended": NotificationKind.SUBSCRIPTION_ENDED,
     "support.accessOpened": NotificationKind.SUPPORT_ACCESS_STARTED,

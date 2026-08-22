@@ -206,6 +206,19 @@ class CollaborationStatus(StrEnum):
     APPROVED = "approved"
     RESUBMIT_REQUESTED = "resubmit_requested"
     UNFULFILLED = "unfulfilled"
+    #: Clos par l'arbitrage **sans faute de personne**.
+    #:
+    #: La quatrième issue, et la seule qui ne met le dossier au débit de
+    #: personne. Trois refus pour le **même** motif ne disent pas qu'une
+    #: créatrice est de mauvaise foi : ils disent que la demande n'a jamais été
+    #: comprise, et que la liste fermée de motifs n'a pas su la porter. Trois
+    #: motifs différents disent l'inverse.
+    #:
+    #: Dans le premier cas, ni approuver ni refuser n'est juste. Refuser
+    #: punirait quelqu'un pour un défaut du produit ; approuver ferait payer au
+    #: salon une publication qu'il n'a pas eue. Le dossier se ferme, et
+    #: personne ne perd rien de plus que ce qui est déjà arrivé.
+    CLOSED_NO_FAULT = "closed_no_fault"
 
 
 class CaptureMethod(StrEnum):

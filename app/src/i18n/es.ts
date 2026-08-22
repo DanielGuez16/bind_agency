@@ -497,6 +497,7 @@ export const es: Catalogue = {
     resubmit_requested: 'Se pidió una nueva publicación',
     approved: 'Aprobada',
     unfulfilled: 'No cumplida',
+    closed_no_fault: 'Cerrada, sin falta',
   },
   signaux: {
     anciennete: 'Antigüedad de la cuenta',

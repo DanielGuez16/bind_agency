@@ -208,11 +208,21 @@ class IssueDArbitrage(StrEnum):
     l'arbitre ne dispose pas d'un second langage, il tranche dans le premier.
     `unfulfilled` clôt, et c'est la seule décision du produit qui ne se rouvre
     pas — raison pour laquelle elle n'appartient à personne d'autre.
+    `close_no_fault` clôt aussi, et n'accuse pas : elle appartient à l'arbitre
+    pour la même raison, plus une — c'est le produit qu'elle met en cause, et
+    ce n'est pas au salon de faire ce constat.
     """
 
     APPROUVER = "approve"
     REDEMANDER = "resubmit"
     NON_HONOREE = "unfulfilled"
+    #: Clore sans mettre le dossier au débit de personne.
+    #:
+    #: **La quatrième issue, et la seule qui n'accuse pas.** Trois refus pour le
+    #: même motif ne disent pas qu'une créatrice est de mauvaise foi : ils
+    #: disent que la demande n'a jamais été comprise. Trois motifs différents
+    #: disent l'inverse, et `unfulfilled` les tranche.
+    FERMER_SANS_FAUTE = "close_no_fault"
 
 
 class DecisionAdministrateur(BaseModel):

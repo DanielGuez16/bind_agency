@@ -23,6 +23,14 @@
         ]
       }
     },
+    "/api/v1/admin/collaborations/motifs-qui-reviennent": {
+      "get": {
+        "operationId": "list_recurring_reasons_api_v1_admin_collaborations_motifs_qui_reviennent_get",
+        "responses": [
+          "200"
+        ]
+      }
+    },
     "/api/v1/admin/collaborations/review": {
       "get": {
         "operationId": "list_human_review_api_v1_admin_collaborations_review_get",

@@ -27,7 +27,7 @@ from app.schemas.collaboration import (
     DecisionAdministrateur,
     IssueDArbitrage,
 )
-from app.schemas.counterpart_queue import LigneDeFileRead
+from app.schemas.counterpart_queue import LigneDeFileRead, MotifQuiRevientRead
 from app.services import collaboration as service
 from app.services import proof as proof_service
 from app.services.audit import Actor
@@ -73,6 +73,27 @@ async def list_human_review(
     return [LigneDeFileRead.model_validate(ligne) for ligne in lignes]
 
 
+@admin_router.get("/motifs-qui-reviennent", response_model=list[MotifQuiRevientRead])
+async def list_recurring_reasons(session: SessionDep) -> list[MotifQuiRevientRead]:
+    """Les motifs qui bouclent, du plus fréquent au moins fréquent.
+
+    **Ce que l'arbitrage nous apprend sur nous.** Chaque « fermer sans faute »
+    est le constat qu'une demande n'a pas été transmise ; cette route dit
+    lesquelles, et combien de fois. Un motif qui revient sur beaucoup de
+    dossiers n'appelle pas un arbitrage de plus, il appelle une exigence
+    réécrite — dans le libellé d'un palier, dans la fiche d'un salon, ou dans le
+    vocabulaire fermé lui-même.
+
+    Déclarée avant la route de décision : `/{collaboration_id}/decision`
+    n'attraperait pas ce chemin — il ne finit pas par `/decision` — mais
+    l'ordre le rend évident au lecteur plutôt qu'au débogueur.
+    """
+    return [
+        MotifQuiRevientRead.model_validate(ligne)
+        for ligne in await service.motifs_qui_reviennent(session)
+    ]
+
+
 @admin_router.post("/{collaboration_id}/decision", response_model=CollaborationRead)
 async def arbitrer(
     collaboration_id: Annotated[uuid.UUID, Path()],
@@ -111,6 +132,10 @@ async def arbitrer(
             await service.approuver(session, collaboration=ligne, actor=acteur)
         elif payload.issue is IssueDArbitrage.REDEMANDER:
             await service.demander_une_nouvelle_soumission(
+                session, collaboration=ligne, actor=acteur, reason=motif, note=note
+            )
+        elif payload.issue is IssueDArbitrage.FERMER_SANS_FAUTE:
+            await service.fermer_sans_faute(
                 session, collaboration=ligne, actor=acteur, reason=motif, note=note
             )
         else:

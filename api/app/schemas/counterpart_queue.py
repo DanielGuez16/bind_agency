@@ -76,8 +76,41 @@ class LigneDeFileRead(BaseModel):
     #: Dérivé de `tentatives`, conservé pour l'écran du commerce qui n'affiche
     #: que la dernière demande.
     dernier_motif: str | None
+    #: Combien de fois **de suite** ce motif a été opposé. Zéro sans refus.
+    #:
+    #: De suite et non en tout : un dossier refusé pour la mention, puis pour le
+    #: format, puis de nouveau pour la mention n'est pas un dossier où la
+    #: mention n'a jamais été comprise.
+    repetitions_du_dernier_motif: int
+    #: Vrai quand le même motif revient au moins `collaboration_max_attempts`
+    #: fois de suite. **C'est le tri de l'écran d'arbitrage** : trois fois le
+    #: même reproche appelle « fermer sans faute », trois reproches différents
+    #: appellent une décision.
+    #:
+    #: Servi plutôt que déduit côté écran : le seuil est en configuration, et
+    #: un écran qui le recopierait mentirait au premier ajustement.
+    meme_motif_repete: bool
     #: **L'historique complet.** C'est la répétition qui justifie l'escalade :
     #: trois fois le même reproche et trois reproches différents n'appellent
     #: pas la même décision, et l'arbitre ne voyait que le dernier.
     tentatives: list[TentativeRead]
     derniere_soumission: DerniereSoumissionRead | None
+
+
+class MotifQuiRevientRead(BaseModel):
+    """Un motif qui se répète, et sur combien de dossiers.
+
+    **Un signal sur le produit, pas sur les créatrices.** Un motif opposé trois
+    fois de suite sur un dossier dit que la demande n'a pas été comprise ; le
+    même motif dans ce cas sur beaucoup de dossiers dit qu'une exigence est mal
+    formulée quelque part.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    motif: str
+    #: Dossiers où ce motif s'est répété jusqu'au seuil.
+    dossiers: int
+    #: Dossiers où il a été opposé au moins une fois. Le rapport entre les deux
+    #: départage un motif difficile d'un motif incompréhensible.
+    dossiers_touches: int
