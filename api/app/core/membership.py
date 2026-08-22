@@ -36,10 +36,11 @@ from collections.abc import Callable, Coroutine
 from typing import Annotated, Any
 
 import sqlalchemy as sa
-from fastapi import Depends, Path, status
+from fastapi import Depends, Path, Request, status
 
 from app.core.dependencies import CurrentUser, SessionDep, _reprise_ou_refus
 from app.core.errors import ErrorCode, api_error
+from app.core.portee import portee_de_la_requete
 from app.models import Booking, BusinessMember, Collaboration, Proof, RedemptionCode
 from app.models.enums import UserRole
 
@@ -79,6 +80,7 @@ def require_member_of(
     chemin = CHEMINS_VERS_LE_COMMERCE[ressource]
 
     async def dependency(
+        request: Request,
         user: CurrentUser,
         session: SessionDep,
         resource_id: Annotated[uuid.UUID, Path(alias=param)],
@@ -99,7 +101,9 @@ def require_member_of(
         # support à demander au salon de faire lui-même ce qu'on est venu faire
         # pour lui. Les deux résolveurs disent donc la même chose.
         if user.role is UserRole.ADMIN:
-            return await _reprise_ou_refus(session, user=user, business_id=business_id)
+            return await _reprise_ou_refus(
+                session, user=user, business_id=business_id, portee=portee_de_la_requete(request)
+            )
 
         membership = await session.scalar(
             sa.select(BusinessMember).where(

@@ -33,6 +33,12 @@ class User(UUIDPrimaryKey, CreatedAt, Base):
     role: Mapped[UserRole] = mapped_column(enum_column(UserRole, "user_role"), nullable=False)
     email: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     phone: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    #: Le nom sous lequel une personne se présente **à quelqu'un d'en face**.
+    #: Un identifiant technique ne nomme personne : un gérant qui lit qu'on est
+    #: entré chez lui doit pouvoir dire qui, et « 8f3c-… » ne se retient ni ne
+    #: se rappelle. Nullable comme l'adresse, et pour la même raison —
+    #: l'anonymisation doit pouvoir l'effacer.
+    display_name: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     # Empreinte argon2id complète, paramètres compris. Nullable pour la même
     # raison que l'email : l'anonymisation doit pouvoir l'effacer.
     password_hash: Mapped[str | None] = mapped_column(sa.Text, nullable=True)

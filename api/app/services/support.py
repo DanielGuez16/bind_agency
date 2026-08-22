@@ -21,6 +21,7 @@ c'est la seconde qui devrait gêner.
 """
 
 import uuid
+from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
 
 import sqlalchemy as sa
@@ -28,11 +29,22 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.models import Business, BusinessSupportAccess, User
-from app.models.enums import UserRole
+from app.models.enums import PorteeDeReprise, UserRole
 from app.services.audit import Actor, AuditedEntity, record_transition
 
 REASON_OUVERTE = "support_access_opened"
 REASON_FERMEE = "support_access_closed"
+#: **Refermée par le salon, et c'est un autre fait.** « Je suis ressorti » et
+#: « on m'a mis dehors » ne se relisent pas pareil trois mois plus tard, et
+#: c'est le second qui devrait faire réfléchir à ce qu'on était venu faire.
+REASON_FERMEE_PAR_LE_SALON = "support_access_revoked_by_business"
+
+#: Le nom montré au salon quand l'administrateur n'en a déclaré aucun. **Pas
+#: son identifiant, ni son adresse** : un UUID ne nomme personne, et une
+#: adresse de travail n'a pas à circuler chez cent commerces. Un repli neutre
+#: dit au moins de qui il s'agit — de nous — et l'absence de nom se voit dans
+#: la liste, ce qui est la seule chose qui poussera à en poser un.
+NOM_PAR_DEFAUT = "BIND"
 
 
 class SupportError(Exception):
@@ -48,6 +60,15 @@ class ReasonRequired(SupportError):
 
     Refusé ici et pas seulement en base : l'appelant doit lire une erreur de
     son geste, pas une violation de contrainte à la validation.
+    """
+
+
+class ScopeRequired(SupportError):
+    """Une reprise s'ouvre sur quelque chose.
+
+    Une portée vide ouvrirait tout ou rien. « Tout » est l'accès permanent
+    qu'on refuse ; « rien » serait une reprise qui n'ouvre pas, c'est-à-dire un
+    geste sans effet dont personne ne comprendrait le refus qui suit.
     """
 
 
@@ -88,19 +109,91 @@ async def en_cours(
     )
 
 
+def couvre(acces: BusinessSupportAccess, portee: PorteeDeReprise | None) -> bool:
+    """La reprise ouvre-t-elle cet écran ?
+
+    **`None` ne passe pas.** Une requête qu'on n'a pas su classer n'est couverte
+    par aucune reprise : c'est le sens qui refuse, et il se voit — un écran neuf
+    qu'on a oublié de classer bloque le support à la première tentative. Le sens
+    inverse ouvrirait une porte que personne n'a déclarée, et rien ne le dirait.
+    """
+    return portee is not None and portee.value in acces.scope
+
+
+async def reprises_recentes(
+    session: AsyncSession,
+    *,
+    admin_user_id: uuid.UUID,
+    maintenant: datetime | None = None,
+) -> int:
+    """Combien de reprises cet administrateur a ouvertes, **tous salons confondus**.
+
+    Sur une fenêtre glissante, et c'est le seul chiffre qui dise « quatorze
+    fois cette semaine » à quelqu'un qui ne compte que celle où il est. Rien
+    n'est refusé sur ce compte : un seuil se contournerait en attendant un jour,
+    et transformerait une mesure honnête en formalité à franchir.
+
+    Les closes et les échues comptent : ce qu'on mesure est **le geste**, pas la
+    porte encore ouverte. N'additionner que les vivantes rendrait toujours un ou
+    zéro, et ne mesurerait plus rien.
+    """
+    instant = maintenant or datetime.now(UTC)
+    debut = instant - timedelta(seconds=get_settings().support_access_recent_window_seconds)
+    return (
+        await session.scalar(
+            sa.select(sa.func.count())
+            .select_from(BusinessSupportAccess)
+            .where(
+                BusinessSupportAccess.admin_user_id == admin_user_id,
+                BusinessSupportAccess.started_at >= debut,
+            )
+        )
+    ) or 0
+
+
+async def toutes_en_cours(
+    session: AsyncSession,
+    *,
+    business_id: uuid.UUID,
+    maintenant: datetime | None = None,
+) -> tuple[BusinessSupportAccess, ...]:
+    """Toutes les reprises vivantes chez ce commerce, **quel que soit l'administrateur**.
+
+    C'est ce que le salon referme d'un geste. Lui demander de choisir laquelle
+    serait lui demander de savoir combien de personnes sont entrées — la seule
+    chose qu'il veuille est que plus personne n'y soit.
+    """
+    instant = maintenant or datetime.now(UTC)
+    return tuple(
+        await session.scalars(
+            sa.select(BusinessSupportAccess)
+            .where(
+                BusinessSupportAccess.business_id == business_id,
+                BusinessSupportAccess.ended_at.is_(None),
+                BusinessSupportAccess.expires_at > instant,
+            )
+            .order_by(BusinessSupportAccess.started_at.desc())
+        )
+    )
+
+
 async def ouvrir(
     session: AsyncSession,
     *,
     business: Business,
     admin: User,
     motif: str,
+    portee: Sequence[PorteeDeReprise],
+    spontanee: bool = True,
     maintenant: datetime | None = None,
 ) -> BusinessSupportAccess:
-    """Ouvre une reprise. Le motif est obligatoire et la durée vient de la configuration."""
+    """Ouvre une reprise. Le motif et la portée sont obligatoires."""
     if admin.role is not UserRole.ADMIN:
         raise NotAnAdmin(str(admin.id))
     if not motif.strip():
         raise ReasonRequired(str(business.id))
+    if not portee:
+        raise ScopeRequired(str(business.id))
 
     instant = maintenant or datetime.now(UTC)
     if (
@@ -112,7 +205,14 @@ async def ouvrir(
     acces = BusinessSupportAccess(
         business_id=business.id,
         admin_user_id=admin.id,
+        # **Recopié, pas joint.** Le gérant qui relit une reprise de mars doit
+        # lire le nom qu'il a lu en mars, même si son auteur s'est renommé.
+        admin_name=(admin.display_name or "").strip() or NOM_PAR_DEFAUT,
         reason=motif.strip(),
+        # Dédoublonnée et ordonnée : ce que le salon lit ne doit pas dépendre
+        # de l'ordre dans lequel une case a été cochée.
+        scope=sorted({p.value for p in portee}),
+        spontaneous=spontanee,
         expires_at=instant + timedelta(seconds=get_settings().support_access_ttl_seconds),
     )
     session.add(acces)
@@ -129,7 +229,11 @@ async def ouvrir(
         actor=Actor.from_user(admin),
         reason=REASON_OUVERTE,
         note=acces.reason,
-        extra={"expires_at": acces.expires_at.isoformat()},
+        extra={
+            "expires_at": acces.expires_at.isoformat(),
+            "scope": acces.scope,
+            "spontaneous": acces.spontaneous,
+        },
     )
     return acces
 
@@ -138,10 +242,16 @@ async def fermer(
     session: AsyncSession,
     *,
     acces: BusinessSupportAccess,
-    admin: User,
+    acteur: User,
     maintenant: datetime | None = None,
 ) -> BusinessSupportAccess:
     """Referme une reprise avant son terme. Sans effet si elle est déjà close.
+
+    **L'acteur n'est pas toujours l'administration.** Le salon referme aussi,
+    et sans avoir à demander : « l'accès se ferme sans discussion » ne tenait
+    pas tant que seule la porte d'administration savait se refermer. Le journal
+    garde lequel des deux l'a fait — c'est la seule chose qui distingue « je
+    suis ressorti » de « on m\'a mis dehors ».
 
     **L'heure de fermeture vient de la base, comme celle d'ouverture.**
     `started_at` est écrit par `clock_timestamp()`, côté Postgres ; `ended_at`
@@ -176,8 +286,8 @@ async def fermer(
         entity=AuditedEntity.BUSINESS,
         entity_id=acces.business_id,
         to_status="support_access:closed",
-        actor=Actor.from_user(admin),
-        reason=REASON_FERMEE,
+        actor=Actor.from_user(acteur),
+        reason=(REASON_FERMEE if acteur.id == acces.admin_user_id else REASON_FERMEE_PAR_LE_SALON),
     )
     return acces
 

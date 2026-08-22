@@ -13,11 +13,12 @@ from typing import Annotated
 import sqlalchemy as sa
 from fastapi import APIRouter, Depends, Path, status
 
+from app.core.config import get_settings
 from app.core.dependencies import BusinessMembership, CurrentUser, SessionDep, require_role
 from app.core.errors import ErrorCode, api_error
 from app.models import Business
 from app.models.enums import UserRole
-from app.schemas.support import BusinessSupportAccessRead, RepriseDemandee
+from app.schemas.support import BusinessSupportAccessRead, RepriseDemandee, RepriseOuverte
 from app.services import outbox
 from app.services import support as service
 
@@ -38,6 +39,10 @@ _CODES = {
         ErrorCode.SUPPORT_REASON_REQUIRED,
     ),
     service.AlreadyOpen: (status.HTTP_409_CONFLICT, ErrorCode.SUPPORT_ACCESS_ALREADY_OPEN),
+    service.ScopeRequired: (
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
+        ErrorCode.SUPPORT_SCOPE_REQUIRED,
+    ),
 }
 
 
@@ -48,7 +53,7 @@ def _traduire(erreur: Exception):
 
 @admin_router.post(
     "/{business_id}/support-access",
-    response_model=BusinessSupportAccessRead,
+    response_model=RepriseOuverte,
     status_code=status.HTTP_201_CREATED,
 )
 async def open_support_access(
@@ -56,7 +61,7 @@ async def open_support_access(
     payload: RepriseDemandee,
     user: CurrentUser,
     session: SessionDep,
-) -> BusinessSupportAccessRead:
+) -> RepriseOuverte:
     """Ouvre une reprise, et **prévient le salon**.
 
     L'avertissement est déposé dans la même transaction que la reprise : ou les
@@ -69,13 +74,37 @@ async def open_support_access(
         raise api_error(status.HTTP_404_NOT_FOUND, ErrorCode.BUSINESS_NOT_FOUND)
 
     try:
-        acces = await service.ouvrir(session, business=business, admin=user, motif=payload.reason)
-    except (service.NotAnAdmin, service.ReasonRequired, service.AlreadyOpen) as erreur:
+        acces = await service.ouvrir(
+            session,
+            business=business,
+            admin=user,
+            motif=payload.reason,
+            portee=payload.scope,
+            spontanee=payload.spontaneous,
+        )
+    except (
+        service.NotAnAdmin,
+        service.ReasonRequired,
+        service.ScopeRequired,
+        service.AlreadyOpen,
+    ) as erreur:
         raise _traduire(erreur) from erreur
 
     await _prevenir_le_salon(session, business=business, motif=acces.reason)
+
+    # Compté **avant** le commit et après le `flush` de l'ouverture : celle
+    # qu'on vient d'ouvrir compte dans le total. La lire à zéro le jour de la
+    # première serait exact et inutile — ce qu'on veut savoir est combien de
+    # fois on est entré, celle-ci comprise.
+    recentes = await service.reprises_recentes(session, admin_user_id=user.id)
     await session.commit()
-    return BusinessSupportAccessRead.model_validate(acces)
+
+    reglages = get_settings()
+    return RepriseOuverte(
+        **BusinessSupportAccessRead.model_validate(acces).model_dump(),
+        reprises_recentes_de_l_appelant=recentes,
+        fenetre_en_jours=reglages.support_access_recent_window_seconds // 86_400,
+    )
 
 
 @admin_router.delete("/{business_id}/support-access", status_code=status.HTTP_204_NO_CONTENT)
@@ -91,7 +120,7 @@ async def close_support_access(
     """
     acces = await service.en_cours(session, business_id=business_id, admin_user_id=user.id)
     if acces is not None:
-        await service.fermer(session, acces=acces, admin=user)
+        await service.fermer(session, acces=acces, acteur=user)
         await session.commit()
 
 
@@ -126,6 +155,37 @@ async def list_my_support_accesses(
         BusinessSupportAccessRead.model_validate(acces)
         for acces in await service.historique(session, business_id=business_id)
     ]
+
+
+@business_router.delete("/{business_id}/support-access", status_code=status.HTTP_204_NO_CONTENT)
+async def revoke_support_access(
+    business_id: Annotated[uuid.UUID, Path()],
+    membership: BusinessMembership,
+    user: CurrentUser,
+    session: SessionDep,
+) -> None:
+    """**Le salon met dehors, et n'a personne à convaincre.**
+
+    « L'accès se ferme sans discussion » ne tenait pas : seule la porte
+    d'administration savait se refermer, si bien que le gérant qui n'était pas
+    d'accord n'avait qu'un numéro à appeler. Une garantie qui suppose qu'on
+    décroche n'est pas une garantie.
+
+    **Toutes celles qui courent, pas une.** Lui demander laquelle serait lui
+    demander de savoir combien de personnes sont entrées ; la seule chose qu'il
+    veuille est que plus personne n'y soit.
+
+    Sans erreur quand il n'y en avait aucune : « il n'y avait rien à fermer »
+    est le résultat voulu par quelqu'un qui veut être sûr que la porte est
+    close. Et rien n'est effacé — la liste garde les reprises, avec leur motif
+    et le nom de qui est entré.
+    """
+    del membership  # l'appartenance est la condition, pas une donnée
+    ouvertes = await service.toutes_en_cours(session, business_id=business_id)
+    for acces in ouvertes:
+        await service.fermer(session, acces=acces, acteur=user)
+    if ouvertes:
+        await session.commit()
 
 
 async def _prevenir_le_salon(session, *, business: Business, motif: str) -> None:
