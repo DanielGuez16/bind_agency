@@ -1127,6 +1127,18 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       Téléphone au format international, normalisé avant validation ; nom
       dépouillé de ses espaces avant d'être compté ; adresse d'au moins dix
       caractères. 13 tests neufs*
+- [x] **Ce qui informe un prix : la durée, la catégorie, la portée**
+      *`subscription` n'avait **aucune date** — ni ouverture ni fin, seulement
+      `current_period_end` — donc aucune durée n'était calculable. Deux colonnes,
+      reprises du journal d'audit **seulement quand un commerce n'a souscrit
+      qu'une fois**, nulles sinon : deviner rendrait une médiane que personne ne
+      sait lire. **Deux médianes servies séparément**, terminée et en cours,
+      chacune avec son effectif — la censure à droite ne se résout pas en
+      moyennant les deux, elle se cache. `abonnes_par_categorie` sert la
+      catégorie des **abonnés**, distincte de celle du plan.
+      `GET /business/{id}/tier-offers/creatrices-par-palier?catalog_item_id`
+      rend un **total** par palier, ce qu'aucune composition de
+      `gains_par_palier` ne donne. 9 tests neufs, 5 mutations vérifiées*
 - [x] **L'annuaire est celui d'un salon, pas celui du produit**
       *`annuaire()` prend le commerce : `paliers_ouverts` dit « elle peut
       réserver ce que vous avez ouvert » et non « elle se qualifie quelque

@@ -219,9 +219,32 @@ class Subscription(UUIDPrimaryKey, Base):
     )
     stripe_customer_id: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     stripe_subscription_id: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    #: Quand l'abonnement a commencé, et quand il s'est arrêté.
+    #:
+    #: **La table n'avait aucune date.** Ni ouverture, ni fin : seulement
+    #: `current_period_end`, qui dit quand la prochaine facture tombe et non
+    #: depuis quand ce commerce paie. La durée d'un abonnement — la seule chose
+    #: qui dise si un prix est le bon — n'était donc calculable nulle part.
+    #:
+    #: **Nulles veut dire « on ne sait pas »**, et c'est un état réel : les
+    #: lignes antérieures à ces colonnes n'ont pas de date, et le journal
+    #: d'audit ne permet de la retrouver que lorsqu'un commerce n'a souscrit
+    #: qu'une fois. Une durée inconnue est écartée du calcul plutôt que
+    #: devinée ; c'est le nombre d'abonnements retenus, servi à côté de la
+    #: médiane, qui dit ce que le chiffre vaut.
+    started_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
+    #: Nulle tant que l'abonnement court. Ce n'est pas la même chose qu'une
+    #: durée inconnue, et les deux ne se mélangent pas dans un calcul.
+    ended_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
 
     __table_args__ = (
         sa.UniqueConstraint("stripe_subscription_id"),
+        # Une fin ne précède pas un début. La contrainte laisse passer les deux
+        # nulles — l'inconnu reste possible — et refuse l'ordre impossible.
+        sa.CheckConstraint(
+            "started_at IS NULL OR ended_at IS NULL OR ended_at >= started_at",
+            name="fin_apres_debut",
+        ),
         sa.Index("ix_subscription_business_id", "business_id"),
     )
 

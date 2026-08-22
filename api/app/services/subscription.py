@@ -127,6 +127,11 @@ async def souscrire(
         current_period_end=None,
         stripe_customer_id=client.external_id,
         stripe_subscription_id=distant.external_id,
+        # **L'heure d'écriture, pas celle de la transaction.** Deux
+        # souscriptions du même commerce dans une même transaction — une
+        # résiliation suivie d'une reprise — doivent s'ordonner ; `now()` leur
+        # donnerait le même instant et la première paraîtrait durer zéro.
+        started_at=sa.func.clock_timestamp(),
     )
     session.add(ligne)
     await session.flush()
@@ -167,7 +172,12 @@ async def resilier(
     distant = await provider.resilier(subscription_id=ligne.stripe_subscription_id or "")
     precedent = ligne.status
     ligne.status = _statut(distant.status)
+    # La fin, posée en même temps que le statut. Séparer les deux écritures
+    # laisserait un abonnement résilié sans date de fin si la seconde échoue,
+    # et il compterait alors pour toujours comme un abonnement en cours.
+    ligne.ended_at = sa.func.clock_timestamp()
     await session.flush()
+    await session.refresh(ligne, ["ended_at"])
 
     await audit.record_transition(
         session,
