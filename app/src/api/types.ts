@@ -608,6 +608,20 @@ export type ReservationDuCreateur = {
    * à rebours calculés séparément.
    */
   approval_expires_at: string | null;
+  /**
+   * L'instant où l'annulation cesse d'être libre — **calculé serveur**.
+   *
+   * **Nul quand annuler ne coûtera jamais** : une place seulement tenue, une
+   * demande que le salon n'a pas acceptée, un droit sans créneau. Poser un
+   * instant sur l'un des trois ferait croire à une limite qui n'existe pas, et
+   * ferait renoncer quelqu'un qui n'avait rien à perdre.
+   *
+   * L'écran le lit, il ne le recalcule pas : le seuil est un réglage, et
+   * l'horloge d'un terminal n'est pas une preuve. Un écran qui déduirait ce
+   * seuil d'une heure locale fausse annoncerait « gratuit » sur une annulation
+   * qui coûte.
+   */
+  annulation_sans_frais_jusqu_a: string | null;
   created_at: string;
   business_id: string;
   business_name: string;
