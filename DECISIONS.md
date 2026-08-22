@@ -9457,3 +9457,41 @@ range sa réponse, et le suivant — celui qui vérifie l'état de chargement �
 trouve des données. Cinq tests sont tombés d'un coup à l'arrivée du cache, tous
 pour cette raison, et aucun ne parlait de cache. Le vidage est donc dans
 `jest.setup.js`.
+
+## 2026-08-22 — Le mur est une liste, et `Ecran` sait en rendre une
+
+**Le plafond suivant, invisible dans les octets.** Servir la vignette a ramené
+un fil de vingt salons de 10,5 Mo à 0,8. Mais `Image` décode avant de réduire :
+le coût du décodage ne dépend pas du cadre où l'on pose la photo, et une grille
+en `ScrollView` + `.map` monte toutes ses rangées à la première image — quatre-
+vingts `Image` d'un coup.
+
+**Un mode `liste` sur `Ecran`, additif.** Le corps nominal passe en `FlatList`
+quand l'écran fournit `liste` ; sans elle, rien ne change. Les états de
+chargement, d'erreur et de vide restent dans le défileur ordinaire : ils
+tiennent en un écran, et leur donner deux chemins de rendu doublerait ce qu'il
+faut vérifier pour rien.
+
+Les éléments portent un `ReactNode` déjà construit. C'est un **descripteur**,
+pas un rendu : la fonction du composant ne s'exécute — et son image ne se monte
+— que lorsque la liste décide d'afficher la rangée.
+
+**Une seule construction du contenu.** `useMur` produit l'en-tête, les rangées
+et le pied ; `SectionsParQuartier` les pose dans un bloc, le fil les confie au
+défileur. Deux constructions du même mur finiraient par diverger, et c'est une
+faute que ce dépôt a déjà commise ailleurs. Conséquence directe : les marges
+vivent sur la rangée et non sur un conteneur, seule écriture qui rende la même
+chose des deux côtés.
+
+**Un crochet et non trois composants**, parce que les trois morceaux partagent
+le quartier ouvert, qui est un état. Le couper en trois demanderait de remonter
+cet état chez `FilScreen`, c'est-à-dire de le rendre responsable de quelque
+chose qui n'appartient qu'au mur.
+
+**Le rendu en bloc reste, et il sert.** Quand aucun quartier n'est déclaré — des
+salons réservables mais non situés — `useMur` rend `null` et l'écran retombe
+dessus. C'est aussi ce que montent les tests qui n'ont pas quatre-vingts images.
+
+Les repères ont suivi : `le-mur` est porté par le défileur, qui tient désormais
+les rangées, et `etat-nominal` enveloppe le tout pour que la table des quatre
+états continue de voir le fil.

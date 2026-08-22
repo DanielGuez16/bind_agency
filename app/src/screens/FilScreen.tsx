@@ -53,7 +53,7 @@ import { en } from '../i18n/en';
 import { Ecran } from './Ecran';
 import { EnTeteDuMur } from './mur/EnTeteDuMur';
 import { BasDuMur } from './mur/BasDuMur';
-import { MurEnChargement, SectionsParQuartier } from './mur/SectionsParQuartier';
+import { MurEnChargement, SectionsParQuartier, useMur } from './mur/SectionsParQuartier';
 import { RaisonDuVide } from './RaisonDuVide';
 import { messageDObstacle } from './obstacle';
 import { AGES } from './cacheDesReponses';
@@ -176,6 +176,30 @@ export function FilScreen({
     },
   );
 
+  const filPret = requete.etat === 'pret' ? requete.donnees : null;
+
+  /**
+   * Le mur en morceaux, pour que le défileur ne monte que ce qu'il montre.
+   *
+   * Appelé ici et non dans `liste` : c'est un crochet, et `liste` est une
+   * fonction que `Ecran` exécute pendant **son** rendu. L'appeler là violerait
+   * l'ordre des crochets à la première fois où le fil passerait de vide à
+   * plein.
+   *
+   * **Et appelé avant le retour anticipé de la position**, pour la même raison
+   * et à l'envers. Posé après, il n'existait pas tant qu'aucune position
+   * n'était accordée, puis apparaissait au premier relevé : React voyait plus
+   * de crochets qu'au rendu précédent, levait, et l'application entière
+   * disparaissait — barre d'onglets comprise, puisque rien ne rattrape une
+   * erreur de rendu ici. Vu en bout de chaîne seulement : les décors de test
+   * partent tous d'une position accordée, donc aucun ne traverse la bascule.
+   *
+   * **Nul quand aucun quartier n'est déclaré**, ce qui arrive : des salons
+   * réservables mais non situés. L'écran retombe alors sur le rendu en bloc,
+   * qui rend la même chose et n'a rien à virtualiser.
+   */
+  const mur = useMur(filPret, categorie, onOuvrirLeCommerce);
+
   if (position === null) {
     // Ce qu'on dit et ce qu'on propose dépendent de **pourquoi** il n'y a pas
     // de position. Le même message pour tous laissait un bouton « Share my
@@ -210,7 +234,6 @@ export function FilScreen({
     );
   }
 
-  const filPret = requete.etat === 'pret' ? requete.donnees : null;
 
   const issues = {
     onConnecterUnReseau,
@@ -241,6 +264,55 @@ export function FilScreen({
     <Ecran
       requete={requete}
       testID="ecran-fil"
+      /**
+       * **Le mur est une liste, pas un bloc.** Il rendait toutes ses rangées
+       * d'un coup — quatre-vingts `Image` montées à la première image sur un
+       * fil de vingt salons. Le poids du réseau a été réglé en servant la
+       * vignette ; ce qui restait est le décodage, que `Image` fait avant de
+       * réduire et qui ne dépend pas du cadre où on pose la photo.
+       *
+       * `liste` ne remplace `children` que sur l'état nominal : le chargement,
+       * l'erreur et le vide tiennent en un écran et n'ont rien à virtualiser.
+       */
+      liste={
+        mur === null
+          ? undefined
+          : () => ({
+              testID: 'le-mur',
+              // Ce qui précède les rangées et défile avec elles : les obstacles
+              // — rendus même quand le fil n'est pas vide, un créateur qui
+              // accède au story mais pas au reel doit savoir ce qui lui manque —
+              // puis la tête de la section ouverte.
+              entete: (
+                <>
+                  <View style={{ paddingHorizontal: MARGE, paddingBottom: 16 }}>
+                    <Obstacles fil={filPret!} />
+                  </View>
+                  {mur.entete}
+                </>
+              ),
+              elements: mur.elements,
+              pied: (
+                <>
+                  {mur.pied}
+                  <BasDuMur
+                    fil={filPret!}
+                    rayonKm={rayonKm}
+                    onElargir={setRayonKm}
+                    resserrer={
+                      rayonKm > RAYON_DE_DEPART_KM
+                        ? {
+                            versKm: RAYON_DE_DEPART_KM,
+                            onPress: () => setRayonKm(RAYON_DE_DEPART_KM),
+                          }
+                        : undefined
+                    }
+                    onRemonter={onRemonterEnHaut}
+                  />
+                </>
+              ),
+            })
+      }
       // **Le mur va au bord.** Encadré de vingt points, il perd la moitié de
       // son effet, et les cartes des rangées cessent de dépasser le bord droit —
       // c'est ce dépassement qui annonce le glissement, sans flèche. L'écran
