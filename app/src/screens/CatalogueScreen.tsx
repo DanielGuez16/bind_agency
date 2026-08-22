@@ -512,6 +512,7 @@ function LignePrestation({
   const [echec, setEchec] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
   const [correction, setCorrection] = useState(false);
+  const [remplacement, setRemplacement] = useState(false);
   const [refusDeSuppression, setRefus] = useState(false);
 
   const retrait = gesteDeRetrait(item);
@@ -610,6 +611,20 @@ function LignePrestation({
           onPress={() => setCorrection(true)}
           testID={`corriger-${item.id}`}
         />
+        {/* **La phrase disait déjà que la durée ne se corrige pas ici ; elle
+            dit maintenant où.** Un écran qui explique une impossibilité sans
+            donner la suite laisse chercher — et l'on cherche dans la
+            suppression, qui est justement le geste qu'on ne veut pas. */}
+        {retrait.geste === 'aucun' ? null : (
+          <Button
+            label={t('composition.remplacer')}
+            size="sm"
+            variant="ghost"
+            fullWidth={false}
+            onPress={() => setRemplacement(true)}
+            testID={`ouvrir-remplacement-${item.id}`}
+          />
+        )}
         {/* **Le bouton nomme son écart.** « Archiver » ne se décide pas ;
             « archiver, douze réservations citent cette prestation » se décide.
             Sans le nombre, le gérant ne sait pas ce qu'il déplace — et il n'y a
@@ -680,6 +695,19 @@ function LignePrestation({
             onChange();
           }}
           onRenoncer={() => setCorrection(false)}
+        />
+      ) : null}
+
+      {remplacement ? (
+        <NouvellePrestation
+          businessId={businessId}
+          paliers={paliers ?? []}
+          remplace={item}
+          onPublie={() => {
+            setRemplacement(false);
+            onChange();
+          }}
+          onAnnuler={() => setRemplacement(false)}
         />
       ) : null}
       {/* **Le conseil, et jamais la décision.** La plateforme dit ce qu'elle
@@ -769,17 +797,35 @@ function NouvellePrestation({
   paliers,
   onPublie,
   onAnnuler,
+  remplace,
 }: {
   businessId: string;
   paliers: PalierOffrable[];
   onPublie: () => void;
   onAnnuler: () => void;
+  /**
+   * La prestation que celle-ci remplace, s'il y en a une.
+   *
+   * **Le même formulaire, parce que c'est le même geste.** Changer une durée
+   * *est* composer une autre prestation : la neuve part des valeurs de
+   * l'ancienne, qu'on modifie, et l'ancienne s'archive dans la même
+   * transaction. En faire deux écrans dirait que ce sont deux choses.
+   *
+   * **Le palier ne suit pas, et c'est voulu.** Recopier l'offre poserait un
+   * accord que personne n'a conclu : une créatrice a accepté un palier sur une
+   * prestation de quarante-cinq minutes, et l'offre recopiée la ferait
+   * consentir à soixante-quinze. Même principe que `value_cents_snapshot`,
+   * appliqué à l'accord au lieu du prix.
+   */
+  remplace?: ItemDuCatalogue;
 }) {
   const { api, messageDErreur } = useApi();
   const { t } = useI18n();
-  const [nom, setNom] = useState('');
-  const [duree, setDuree] = useState(45);
-  const [prix, setPrix] = useState('');
+  const [nom, setNom] = useState(remplace?.name ?? '');
+  const [duree, setDuree] = useState(remplace?.duration_minutes ?? 45);
+  const [prix, setPrix] = useState(
+    remplace ? String(remplace.price_cents / 100) : '',
+  );
   const [palierId, setPalierId] = useState<string | null>(paliers[0]?.id ?? null);
   const [echec, setEchec] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
@@ -791,11 +837,17 @@ function NouvellePrestation({
     setEchec(null);
     setEnvoi(true);
     try {
-      const item = await api.creerUnItem(businessId, {
+      const champs = {
         name: nom.trim(),
         price_cents: prixEnCentimes,
         duration_minutes: duree,
-      });
+      };
+      // Remplacer, et non créer puis archiver en deux appels : le serveur fait
+      // les deux dans la même transaction. En deux temps, une panne entre les
+      // deux laisserait le catalogue avec les deux prestations, ou avec aucune.
+      const item = remplace
+        ? await api.remplacerUnItem(businessId, remplace.id, champs)
+        : await api.creerUnItem(businessId, champs);
       if (palierId) await api.offrirAuPalier(businessId, palierId, item.id);
       vibration.reussite();
       onPublie();
@@ -810,7 +862,17 @@ function NouvellePrestation({
   const choisi = paliers.find((p) => p.id === palierId) ?? null;
 
   return (
-    <View style={{ gap: 12 }} testID="nouvelle-prestation">
+    <View
+      style={{ gap: 12 }}
+      testID={remplace ? `remplacer-${remplace.id}` : 'nouvelle-prestation'}
+    >
+      {remplace ? (
+        <StatusMessage
+          level="neutral"
+          body={t('composition.remplaceExplication', { nom: remplace.name })}
+          testID={`remplace-explication-${remplace.id}`}
+        />
+      ) : null}
       <TextField
         label={t('composition.champNom')}
         value={nom}

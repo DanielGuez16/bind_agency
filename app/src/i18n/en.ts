@@ -931,6 +931,9 @@ export const en = {
   composition: {
     corriger: 'Correct',
     retirerLaPrestation: 'Remove',
+    remplacer: 'Change duration or tier',
+    remplaceExplication:
+      'This creates a new service and archives “{{nom}}”. Bookings already made keep citing the one they had. Pick the tier again — the old offer does not carry over, because nobody agreed to it on these terms.',
     // **Le nombre, dans le bouton.** « Archive » ne se décide pas ; « archive,
     // 12 bookings cite this service » se décide. Les trois branches sont
     // écrites à la main : `formaterLesNombres` rend `count` en chaîne, et la

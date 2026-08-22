@@ -876,6 +876,9 @@ export const es: Catalogue = {
   composition: {
     corriger: 'Corregir',
     retirerLaPrestation: 'Quitar',
+    remplacer: 'Cambiar duración o nivel',
+    remplaceExplication:
+      'Esto crea un servicio nuevo y archiva «{{nom}}». Las reservas ya hechas siguen citando el que tuvieron. Elige el nivel otra vez — la oferta anterior no se traslada, porque nadie la aceptó en estos términos.',
     archiverAvecReservations: 'Archivar · {{n}} reservas la citan',
     archiverUneReservation: 'Archivar · 1 reserva la cita',
     archivee: 'Archivada. Sigue siendo legible desde las reservas que la citan.',

@@ -279,10 +279,34 @@ describe('archiver, à l’écran', () => {
     expect(envois.filter((e) => e.url.includes('/archive'))).toEqual([]);
   });
 
+  it('remplacer crée la neuve et archive l’ancienne, en un seul appel', async () => {
+    // **Le décor divergent est le nombre d'appels.** Une implémentation qui
+    // crée puis archive en deux temps rend le même écran ; mais une panne
+    // entre les deux laisse le catalogue avec les deux prestations, ou avec
+    // aucune. Ce qui est vérifié est donc qu'il n'y a **pas** d'appel à
+    // `/archive` : le serveur fait les deux dans la même transaction.
+    const { envois } = await monterAvec({ ...ITEM, reservations_count: 12, archived_at: null });
+
+    await fireEvent.press(await screen.findByTestId('ouvrir-remplacement-i1'));
+    // Le formulaire part des valeurs de l'ancienne : rien à retaper.
+    expect(await screen.findByTestId('remplacer-i1')).toBeTruthy();
+
+    await fireEvent.press(await screen.findByTestId('publier-la-prestation'));
+
+    await waitFor(() =>
+      expect(envois.some((e) => e.method === 'POST' && e.url.includes('/replace'))).toBe(true),
+    );
+    expect(envois.filter((e) => e.url.includes('/archive'))).toEqual([]);
+    expect(envois.filter((e) => e.method === 'DELETE')).toEqual([]);
+  });
+
   it('déjà archivée : plus de bouton du tout', async () => {
     await monterAvec({ ...ITEM, reservations_count: 12, archived_at: '2026-08-01T00:00:00Z' });
 
     await waitFor(() => expect(screen.queryByTestId('corriger-i1')).toBeTruthy());
     expect(screen.queryByTestId('retirer-i1')).toBeNull();
+    // Et pas de remplacement non plus : une archive ne se remplace pas, elle
+    // a déjà cédé la place à ce qui la suit.
+    expect(screen.queryByTestId('ouvrir-remplacement-i1')).toBeNull();
   });
 });
