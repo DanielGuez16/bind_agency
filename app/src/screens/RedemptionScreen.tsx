@@ -27,7 +27,9 @@ import { ActivityIndicator, ScrollView, View } from 'react-native';
 import { Button } from '../components/Button';
 import { PaveDeSaisie } from '../components/PaveDeSaisie';
 import { SegmentedTabs } from '../components/SegmentedTabs';
-import { EnTeteDEcran } from '../components';
+import { EnTeteDEcran, Icone } from '../components';
+import { identiteDuSalon } from '../shell/SelecteurDeSalon';
+import { useMonCommerce } from '../shell/useMonCommerce';
 import { Texte } from '../components/Texte';
 import { TextField } from '../components/TextField';
 import { useI18n } from '../i18n';
@@ -197,10 +199,18 @@ export function RedemptionScreen({
           deux ensemble décrivaient la fin d'une visite là où c'est le début.
           Le titre dit maintenant le moment, et la ligne dessous dit les trois
           gestes dans leur ordre. */}
+      {/* **Le salon, nommé et sans chevron.** À la caisse le nom n'est pas un
+          contrôle : on ne change pas de salon en tenant un code. Il est
+          pourtant plus visible qu'ailleurs — c'est le seul écran où se tromper
+          consomme la réservation de quelqu'un d'autre. */}
+      <SalonDeLaCaisse />
+
       <EnTeteDEcran titre={t('redemption.title')} testID="entete-caisse" />
       <Texte variante="type.body" couleur="ink.soft" testID="a-quoi-sert-la-caisse">
         {t('redemption.aQuoiSertCettePage')}
       </Texte>
+
+      <CeQueLeCodeOuvre />
 
       {large ? barreDeCaisse : null}
 
@@ -383,6 +393,72 @@ const LARGEUR_DU_JOURNAL = 440;
  * elle vient du serveur — jamais recalculée ici, sinon deux dates coexisteraient
  * et l'une des deux serait fausse.
  */
+/**
+ * Le salon qu'on sert, à la caisse.
+ *
+ * **Nommé, et sans chevron.** Le quartier identifie — deux salons d'une
+ * enseigne portent le même nom — et il est ici plus visible que partout
+ * ailleurs, parce que c'est le seul écran où s'être trompé ne se répare pas.
+ * Rien à presser : on quitte la caisse, on change, on revient.
+ */
+function SalonDeLaCaisse() {
+  const { t } = useI18n();
+  const { commerces, businessId } = useMonCommerce();
+  const salon = commerces.find((commerce) => commerce.id === businessId);
+  if (!salon) return null;
+
+  return (
+    <View
+      testID="salon-de-la-caisse"
+      style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+    >
+      <Icone nom="lieu" couleur="brand.700" taille={16} />
+      <Texte variante="type.bodyStrong" couleur="brand.700">
+        {identiteDuSalon(salon, t).titre}
+      </Texte>
+    </View>
+  );
+}
+
+/**
+ * Ce qu'un code ouvre, et ce qu'il n'ouvre pas.
+ *
+ * **La phrase n'est vraie que parce que le serveur la tient.** L'appartenance
+ * est vérifiée sur la vérification comme sur la consommation, et deux tests le
+ * prouvent en constatant que la réservation d'un autre salon reste
+ * `confirmed` — pas seulement qu'un 403 revient. Sans ce contrôle, la phrase
+ * serait fausse et la protection purement visuelle ; c'est la question que
+ * Design a posée, et il fallait y répondre avant d'écrire la ligne.
+ *
+ * **La sortie est nommée sans être offerte.** Dire « pour servir Little Havana,
+ * quittez la caisse » donne le chemin sans mettre le geste à portée du doigt de
+ * quelqu'un qui tient un code. Elle ne se rend que s'il y a un second salon :
+ * pour un gérant qui n'en a qu'un, elle inventerait un risque qui n'existe pas.
+ */
+function CeQueLeCodeOuvre() {
+  const { t } = useI18n();
+  const c = useColors();
+  const { commerces, businessId } = useMonCommerce();
+
+  if (commerces.length < 2) return null;
+
+  const autre = commerces.find((commerce) => commerce.id !== businessId);
+
+  return (
+    <View
+      testID="codes-de-ce-salon"
+      style={{ gap: 4, paddingLeft: 12, borderLeftWidth: 3, borderLeftColor: c['line.ink'] }}
+    >
+      <Texte variante="type.body">{t('redemption.codesDeCeSalon')}</Texte>
+      {autre ? (
+        <Texte variante="type.caption" couleur="ink.mute" testID="pour-servir-l-autre">
+          {t('redemption.pourServirLAutre', { salon: identiteDuSalon(autre, t).titre })}
+        </Texte>
+      ) : null}
+    </View>
+  );
+}
+
 function ServisDuJour({ businessId, depuis }: { businessId: string; depuis: string }) {
   const { api } = useApi();
   const { t, locale } = useI18n();

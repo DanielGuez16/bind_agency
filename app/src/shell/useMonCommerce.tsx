@@ -29,14 +29,23 @@
  */
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
-import { useApi } from '../api';
+import { useApi, type CommerceDeLUtilisateur } from '../api';
 import { useI18n } from '../i18n';
 import { CreationDuCommerceScreen } from '../screens/CreationDuCommerceScreen';
 import { Ecran } from '../screens/Ecran';
 import { useRequete } from '../screens/useRequete';
 import { commerceRetenu, lireLeChoix, retenirLeChoix } from './commerceChoisi';
 
-type Commerce = { id: string; name: string; timezone: string };
+/**
+ * Un salon dont on est membre.
+ *
+ * **Le quartier et l'adresse étaient servis et jetés.** `BusinessRead` les rend
+ * depuis toujours ; ce type n'en gardait que le nom, ce qui suffisait tant que
+ * le nom identifiait. Il n'identifie plus dès qu'une enseigne a deux adresses —
+ * « Vela Nail Studio » deux fois ne distingue rien — et c'est précisément le
+ * cas que le sélecteur existe pour traiter.
+ */
+type Commerce = CommerceDeLUtilisateur;
 
 type ValeurDuCommerce = {
   commerces: readonly Commerce[];

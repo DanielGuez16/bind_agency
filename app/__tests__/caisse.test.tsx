@@ -13,6 +13,7 @@ import { Pressable, Text } from 'react-native';
 
 import { ApiClient, ApiProvider } from '../src/api';
 import { I18nProvider } from '../src/i18n';
+import { CommerceProvider } from '../src/shell/useMonCommerce';
 import { en } from '../src/i18n/en';
 import { es } from '../src/i18n/es';
 import { RedemptionScreen, type Scanner } from '../src/screens/RedemptionScreen';
@@ -58,12 +59,43 @@ const VERIFICATION = {
   par_secours: false,
 };
 
-function repond(reponses: Array<{ ok: boolean; corps: object }>) {
+/** Le salon de la caisse. Un seul : la phrase du comptoir ne se rend qu'à deux. */
+const SALON = {
+  id: 'b1',
+  name: 'Vela Nail Studio',
+  timezone: 'America/New_York',
+  neighborhood: 'wynwood',
+  address: '120 NE 41st St',
+};
+
+/**
+ * Les réponses, **routées par adresse et non servies à la file**.
+ *
+ * La caisse nomme désormais son salon, donc elle lit l'appartenance — dans
+ * l'application c'est le fournisseur de la coquille qui l'a déjà chargée, mais
+ * le décor la monte ici. Une file aveugle donnait alors la réponse de retrait à
+ * la requête d'appartenance, et l'ordre des appels décidait du résultat.
+ *
+ * Router par adresse rend le décor indépendant de l'ordre, ce qu'il aurait dû
+ * être depuis le début : un écran qui ajoute une lecture ne devrait pas
+ * décaler les réponses d'un test qui parle d'autre chose.
+ */
+function repond(reponses: Array<{ ok: boolean; corps: object }>, salons: unknown[] = [SALON]) {
   const file = [...reponses];
-  global.fetch = jest.fn().mockImplementation(async () => {
+  global.fetch = jest.fn().mockImplementation(async (url: RequestInfo | URL) => {
+    if (String(url).includes('/me/businesses')) {
+      return { ok: true, status: 200, json: async () => salons } as Response;
+    }
     const suivante = file.shift() ?? { ok: true, corps: {} };
     return { ok: suivante.ok, status: suivante.ok ? 200 : 409, json: async () => suivante.corps };
   }) as unknown as typeof fetch;
+}
+
+/** Les appels de retrait, sans les lectures d'appartenance de la coquille. */
+function appelsDeRetrait(): string[] {
+  return (global.fetch as jest.Mock).mock.calls
+    .map((appel) => String(appel[0]))
+    .filter((url) => url.includes('/redemptions/'));
 }
 
 /** Un scanner factice : un bouton qui rend un code, sans caméra. */
@@ -81,7 +113,13 @@ async function afficher(options: { scanner?: Scanner; locale?: 'en' | 'es' } = {
     <ThemeProvider role="merchant">
       <I18nProvider initialLocale={options.locale ?? 'en'}>
         <ApiProvider client={clientDeTest()}>
+          {/* **La caisse nomme son salon**, donc elle lit l'appartenance. Le
+              fournisseur est monté ici comme dans la coquille : le hook lève
+              hors de lui, et c'est voulu — une seconde source de vérité sur le
+              salon regardé est exactement ce qu'il existe pour empêcher. */}
+          <CommerceProvider>
           <RedemptionScreen scanner={options.scanner} />
+          </CommerceProvider>
         </ApiProvider>
       </I18nProvider>
     </ThemeProvider>,
@@ -125,8 +163,8 @@ describe('écran de caisse', () => {
     await waitFor(() => expect(vue.getByText(en.redemption.serve)).toBeTruthy());
 
     // Un seul appel : vérifier n'est pas consommer, et `consumed` ne se défait pas.
-    expect(global.fetch).toHaveBeenCalledTimes(1);
-    expect((global.fetch as jest.Mock).mock.calls[0][0]).toContain('/redemptions/verify');
+    expect(appelsDeRetrait()).toHaveLength(1);
+    expect(appelsDeRetrait()[0]).toContain('/redemptions/verify');
   });
 
   it('sert quand on le lui demande', async () => {
@@ -142,7 +180,7 @@ describe('écran de caisse', () => {
 
     await fireEvent.press(vue.getByText(en.redemption.serve));
     await waitFor(() => expect(vue.getByText(new RegExp(en.redemption.served))).toBeTruthy());
-    expect((global.fetch as jest.Mock).mock.calls[1][0]).toContain('/redemptions/consume');
+    expect(appelsDeRetrait()[1]).toContain('/redemptions/consume');
   });
 
   it('traduit le refus depuis son code', async () => {
@@ -254,7 +292,12 @@ describe('écran de caisse', () => {
       <ThemeProvider role="merchant">
         <I18nProvider initialLocale="en">
           <ApiProvider client={client}>
-            <RedemptionScreen />
+            {/* La caisse lit l'appartenance pour nommer son salon : le
+                fournisseur est monté ici comme dans la coquille. Sa requête
+                reçoit le même 401 que le reste, ce qui est le cas éprouvé. */}
+            <CommerceProvider>
+              <RedemptionScreen />
+            </CommerceProvider>
           </ApiProvider>
         </I18nProvider>
       </ThemeProvider>,
@@ -322,5 +365,64 @@ describe('à quoi sert la caisse', () => {
     expect(vue.queryByText(/checkout/i)).toBeNull();
     expect(en.onglets.caisse).not.toMatch(/checkout/i);
     expect(vue.getByTestId('a-quoi-sert-la-caisse')).toBeTruthy();
+  });
+});
+
+/**
+ * À la caisse, le nom n'est pas un contrôle.
+ *
+ * **Servir un code du mauvais salon est la seule erreur de ce parcours qu'on ne
+ * peut pas défaire** : elle consomme la réservation de quelqu'un d'autre, et
+ * `consumed` est terminal. Le serveur la refuse — l'appartenance est vérifiée
+ * sur la vérification comme sur la consommation, et deux tests d'API le prouvent
+ * en constatant que la réservation reste `confirmed`. L'écran ne porte donc pas
+ * la protection : il évite de proposer le geste qui la déclencherait.
+ */
+describe('le salon, à la caisse', () => {
+  it('nomme le salon par son quartier', async () => {
+    repond([]);
+    const vue = await afficher();
+
+    await waitFor(() => expect(vue.getByTestId('salon-de-la-caisse')).toBeTruthy());
+    // Le quartier et non l'enseigne : deux salons d'une même enseigne portent
+    // le même nom, et c'est le cas que tout ce lot existe pour traiter.
+    expect(vue.getByTestId('salon-de-la-caisse')).toHaveTextContent(/Wynwood/);
+    await vue.unmount();
+  });
+
+  it('ne dit rien des autres salons quand il n’y en a qu’un', async () => {
+    // La phrase inventerait un risque qui n'existe pas : un gérant qui n'a
+    // qu'un salon ne peut pas se tromper de salon.
+    repond([]);
+    const vue = await afficher();
+    await waitFor(() => expect(vue.getByTestId('salon-de-la-caisse')).toBeTruthy());
+
+    expect(vue.queryByTestId('codes-de-ce-salon')).toBeNull();
+    await vue.unmount();
+  });
+
+  it('dit ce qu’un code ouvre, et nomme la sortie sans l’offrir', async () => {
+    repond([], [
+      SALON,
+      {
+        id: 'b2',
+        name: 'Vela Nail Studio',
+        timezone: 'America/New_York',
+        neighborhood: 'little_havana',
+        address: '1450 SW 8th St',
+      },
+    ]);
+    const vue = await afficher();
+
+    await waitFor(() => expect(vue.getByTestId('codes-de-ce-salon')).toBeTruthy());
+    expect(vue.getByTestId('codes-de-ce-salon')).toHaveTextContent(/only work for bookings/i);
+
+    // **La sortie est nommée sans être offerte.** Le chemin est dit ; le geste
+    // n'est pas mis à portée du doigt de quelqu'un qui tient un code.
+    const sortie = vue.getByTestId('pour-servir-l-autre');
+    expect(sortie).toHaveTextContent(/Little Havana/);
+    expect(sortie.props.onPress).toBeUndefined();
+    expect(sortie.props.accessibilityRole).not.toBe('button');
+    await vue.unmount();
   });
 });

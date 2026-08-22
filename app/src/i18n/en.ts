@@ -180,6 +180,8 @@ export const en = {
     coconut_grove: 'Coconut Grove',
   },
   redemption: {
+    codesDeCeSalon: 'Codes only work for bookings made at this salon.',
+    pourServirLAutre: 'To serve {{salon}}, leave the register first.',
     servisDuJour: 'Served today',
     servisAucun: 'Nothing served yet today. The first code you check will appear here.',
     servisDernier: 'Just served',

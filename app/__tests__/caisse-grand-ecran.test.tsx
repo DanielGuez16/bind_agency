@@ -15,6 +15,7 @@ import { ApiClient, ApiProvider } from '../src/api';
 import { I18nProvider } from '../src/i18n';
 import { en } from '../src/i18n/en';
 import { RedemptionScreen, type Scanner } from '../src/screens/RedemptionScreen';
+import { CommerceProvider } from '../src/shell/useMonCommerce';
 import { ThemeProvider } from '../src/theme';
 
 jest.mock('../src/shell/gabarit', () => ({
@@ -80,6 +81,24 @@ function clientDeJournee(items: unknown[]) {
     },
     fetchImpl: async (url, init) => {
       if (String(url).includes('/redemptions/')) return global.fetch(url, init);
+      // L'appartenance, que la caisse lit pour nommer son salon. Un seul : la
+      // phrase du comptoir ne se rend qu'à partir de deux, et ce fichier
+      // éprouve la barre, pas le sélecteur.
+      if (String(url).includes('/me/businesses')) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => [
+            {
+              id: 'b1',
+              name: 'Vela Nail Studio',
+              timezone: 'America/New_York',
+              neighborhood: 'wynwood',
+              address: '120 NE 41st St',
+            },
+          ],
+        } as Response;
+      }
       return {
         ok: true,
         status: 200,
@@ -101,7 +120,11 @@ async function afficher(scanner?: Scanner, options: { items?: unknown[] } = {}) 
     <ThemeProvider role="merchant">
       <I18nProvider initialLocale="en">
         <ApiProvider client={clientDeJournee(options.items ?? [])}>
-          <RedemptionScreen scanner={scanner} businessId="b1" />
+          {/* La caisse nomme son salon : le fournisseur est monté comme dans
+              la coquille, où la requête est déjà faite pour la barre. */}
+          <CommerceProvider>
+            <RedemptionScreen scanner={scanner} businessId="b1" />
+          </CommerceProvider>
         </ApiProvider>
       </I18nProvider>
     </ThemeProvider>,

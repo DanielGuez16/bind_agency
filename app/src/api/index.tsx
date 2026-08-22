@@ -56,6 +56,7 @@ import type {
   VerificationDuCompte,
   VueDesPaliers,
   AnnuaireDuCommerce,
+  CommerceDeLUtilisateur,
   CreateurDeLAnnuaire,
   PageDeLaCarte,
   PhotoDuCommerce,
@@ -461,10 +462,7 @@ export class Api {
    * s'y passe.
    */
   mesCommerces(signal?: AbortSignal) {
-    return this.client.request<{ id: string; name: string; timezone: string }[]>(
-      routes.mesCommerces(),
-      { signal },
-    );
+    return this.client.request<CommerceDeLUtilisateur[]>(routes.mesCommerces(), { signal });
   }
 
   /**

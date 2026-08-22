@@ -173,6 +173,8 @@ export const es: Catalogue = {
     coconut_grove: 'Coconut Grove',
   },
   redemption: {
+    codesDeCeSalon: 'Los códigos solo funcionan para reservas hechas en este salón.',
+    pourServirLAutre: 'Para atender {{salon}}, sal primero de la caja.',
     servisDuJour: 'Atendidas hoy',
     servisAucun: 'Todavía nada hoy. El primer código que valides aparecerá aquí.',
     servisDernier: 'Recién atendida',

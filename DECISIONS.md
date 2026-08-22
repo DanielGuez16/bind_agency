@@ -9236,3 +9236,62 @@ que le réseau soit en cause.
 reste à 480 : plus lourde que nécessaire, parfaitement correcte. Regénérer
 demanderait un balayage de tout le dépôt pour un gain qui se réalise de lui-même
 à mesure que les photos se remplacent.
+## 2026-08-22 — Le sélecteur v3 : le nom devient un contrôle, sauf à la caisse
+
+**La question posée par Design a été vérifiée avant d'écrire la phrase, et la
+réponse est oui.** L'écran promet qu'un code d'un autre salon ne passera pas.
+`_exiger_appartenance` est appelée sur la vérification **et** sur la
+consommation, et deux tests d'API le prouvent — celui de la consommation ne
+s'arrête pas au 403, il constate que la réservation reste `confirmed`. La
+protection est réelle ; l'écran ne la porte pas, il évite de proposer le geste
+qui la déclencherait, et les deux se cumulent.
+
+**À la caisse, le nom n'est pas un contrôle.** Pas grisé — la règle du produit
+l'interdit, un bouton grisé demande de deviner ce qui le débloque. Pas un
+contrôle du tout, donc rien à refuser. On quitte la caisse, on change, on
+revient : un geste de plus, et c'est le but. Servir un code du mauvais salon est
+la seule erreur de ce parcours qu'on ne peut pas défaire — elle consomme la
+réservation de quelqu'un d'autre, et `consumed` est terminal.
+
+**Le quartier identifie, pas le nom.** Deux salons d'une enseigne portent le même
+nom : « Vela Nail Studio » deux fois ne distingue rien. Le quartier prend le gras
+et passe au-dessus, l'enseigne descend en second, l'adresse situe. Hors des
+quartiers ouverts il n'y en a pas — l'adresse prend alors le relais, mais elle ne
+titre pas : une rue en gras se lit comme une consigne, pas comme un lieu.
+
+**`neighborhood` et `address` étaient servis et jetés.** `BusinessRead` les rend
+depuis toujours ; le type de l'app n'en gardait que le nom, ce qui suffisait tant
+que le nom identifiait. C'est la même classe de défaut que `creator_partie`,
+`avatar_key` et `profil_url` — et la quatrième fois cette semaine.
+
+**La phrase du comptoir ne se rend qu'à deux salons.** Pour un gérant qui n'en a
+qu'un, elle inventerait un risque qui n'existe pas. La sortie est nommée sans
+être offerte : dire « pour servir Little Havana, quittez la caisse » donne le
+chemin sans mettre le geste à portée du doigt de quelqu'un qui tient un code.
+
+## Ce que les tests ont trouvé
+
+**Deux composants définis et jamais rendus.** Une insertion JSX perdue par une
+assertion Python : les fonctions existaient, rien ne les appelait, et la suite
+était verte. C'est le « tout passe » qui l'a dit — sur un lot qui ajoute deux
+blocs visibles, une suite qui ne bouge pas d'un test est un signal, pas un
+succès.
+
+**Et la mutation qui compte a survécu au premier passage.** Rien n'éprouvait que
+la barre retire l'affordance à la caisse : c'est la décision centrale de la
+planche, et elle n'était tenue par aucun test. Le décor la monte maintenant deux
+fois, même barre et mêmes salons, seule la route courante changeant — sans cette
+paire, une barre qui n'offrirait jamais le contrôle passerait aussi.
+
+**Un décor de test rendait ses réponses à la file.** La caisse lisant désormais
+l'appartenance, la première réponse de retrait partait à la requête
+d'appartenance et l'ordre des appels décidait du résultat. Il route par adresse,
+ce qu'il aurait dû faire depuis le début : un écran qui ajoute une lecture ne
+devrait pas décaler les réponses d'un test qui parle d'autre chose.
+
+## Ce qui manque, et qui est demandé
+
+Le compte de décisions du jour par salon — « 5 aujourd'hui » sur l'autre ligne.
+Design le classe « souhaitable » et non « manquant », et le dit bien : sans lui
+la liste reste utilisable et **perd sa raison d'être ouverte**. C'est ce chiffre
+qui fait basculer un gérant qui ne savait pas qu'on l'attendait.
