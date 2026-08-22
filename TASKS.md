@@ -1426,6 +1426,13 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       enveloppée, puisque l'extérieur et l'intérieur la satisfont alors tous les
       deux. Élargir ce qu'on lit et élargir ce qu'on cherche n'ont pas les mêmes
       conséquences*
+      *Et ce n'est pas non plus le troisième, comblé depuis : la **fenêtre de
+      lecture**. La garde découpait un bloc de style sur neuf cents caractères,
+      et une carte plus longue sortait de l'inventaire sans erreur ni
+      avertissement — quatre lignes de prose ont suffi, une fois. Le découpage
+      suit maintenant l'imbrication des accolades et n'a plus de longueur
+      maximale. **Trois trous distincts dans une seule garde** : ce qu'elle lit,
+      ce qu'elle cherche, et jusqu'où elle lit. Seul le deuxième reste ouvert*
 - [x] **L'audience v3 — l'écran le plus faible, signalé sur trois campagnes**
       *Les logos de réseau manquaient entièrement, et un compte connecté ne se
       distinguait pas d'un compte à connecter. Aucun nombre n'apparaît plus

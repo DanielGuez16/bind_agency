@@ -8638,3 +8638,49 @@ interdit est d'agir sur une créatrice — inviter, contacter, écrire. Le contr
 est donc retiré du texte examiné **par son nom**, et la garde vérifie en plus
 qu'il appelle bien une lecture : sans quoi le retrait ouvrirait un trou où
 n'importe quoi passerait sous ce nom.
+
+---
+
+## 2026-08-22 — L'inventaire des cartes lit un bloc entier, plus une fenêtre
+
+**La fenêtre a fini par coûter quelque chose.** La garde découpait un bloc de
+style sur neuf cents caractères — d'abord six cents, relevé une fois quand deux
+cartes en étaient sorties. Le compte n'était pas le mauvais réglage : c'est le
+principe qui était faux. Un bloc de style porte des commentaires, des ternaires
+et des valeurs conditionnelles, et sa longueur n'est bornée par rien. Quatre
+lignes de prose dans le style d'une carte de l'annuaire ont suffi à la faire
+disparaître de l'inventaire, **sans erreur et sans avertissement**.
+
+Le découpage suit désormais l'imbrication des accolades, comme celui des balises
+`Pressable` du garde-fou du retour au toucher, et n'a plus de longueur maximale.
+Les deux formes se traitent d'un coup, puisque `style={{ … }}` et
+`style={({ pressed }) => ({ … })}` referment toutes deux l'accolade ouverte
+juste après `style=`.
+
+**La fenêtre avait aussi des faux positifs, et personne ne les soupçonnait.**
+Elle coupait certains blocs à un `}}` qui n'était pas le leur, produisant un
+fragment qui portait les trois marques par hasard : `ConfigurationScreen` et
+`RedemptionScreen` figuraient à l'inventaire pour des cartes qu'ils n'ont pas.
+Une borne qui tronque ne fait pas que manquer des cas, elle en invente.
+
+**Et ma première correction avait la faute de la veille.** Le parcours traversait
+les chaînes sans traverser les commentaires : une apostrophe française — « le
+style fonction, parce **qu'elle** se presse » — le faisait entrer en mode chaîne
+et avalait tout le bloc. C'est exactement ce qui était arrivé à la garde des
+pronoms genrés, qui appariait les apostrophes du source et se désynchronisait
+sur les mêmes commentaires. **Deux gardes, deux jours, la même apostrophe.** Un
+commentaire se saute donc avant qu'on regarde ses guillemets.
+
+**Le décor a dû être refait trois fois pour que la mutation tombe.** Une
+accolade littérale placée après les trois marques ne prouve rien : la troncature
+les laisse toutes dans le fragment, la carte reste vue, et le sabotage survit.
+Une seule accolade fermante ne prouve rien non plus — à l'intérieur de
+`style={{` la profondeur vaut deux, et une fermante la ramène à un sans rien
+couper. Il faut une chaîne qui referme **jusqu'à zéro**, placée **entre** deux
+marques. Cinq mutations, cinq chutes.
+
+**Trois trous distincts dans une seule garde** : ce qu'elle lit — les formes de
+style, comblé —, jusqu'où elle lit — la fenêtre, comblée ici —, et ce qu'elle
+cherche — la définition d'une carte, qui laisse encore échapper les surfaces
+sans filet. Élargir l'un n'élargit pas les autres, et les confondre a déjà fait
+croire une fois que la question était réglée.
