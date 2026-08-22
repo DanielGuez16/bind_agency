@@ -354,14 +354,6 @@ export type CommerceDuFil = {
   neighborhood: Neighborhood | null;
   cover_photo_key: string | null;
   /**
-   * La couverture verticale du mur, livrée en 1600 × 2000 (4:5).
-   *
-   * Un champ à part, jamais un remplacement : la paysage sert encore la fiche
-   * et les listes. `null` : le mur retombe sur `cover_photo_key` — un 16:9
-   * recadré vaut mieux qu'un monogramme. Le serveur ne recopie pas l'une dans
-   * l'autre, sinon les deux ne se distinguent plus le jour où l'une change.
-   */
-  /**
    * **Et le mur en sert l'original, jamais la vignette.** Celle-ci est bornée à
    * 480 px sur le grand côté : sur un héros de 520 points à fond perdu, elle
    * serait agrandie trois fois. Une seule source pour tous les formats, même là
@@ -657,6 +649,17 @@ export type CompteDeLaCreatrice = {
   handle: string | null;
   /** Nul quand aucun relevé n'existe. Zéro serait un chiffre, et faux. */
   followers: number | null;
+  /**
+   * Le taux d'engagement du dernier relevé, en pourcentage.
+   *
+   * **Le second chiffre de la décision** : cent mille abonnés à 0,4 % valent
+   * moins qu'un compte de huit mille à 6 %, et un salon qui ne lit que le
+   * volume choisit mal.
+   */
+  engagement_rate: string | null;
+  /** Les vues moyennes du dernier relevé. Nul sur les réseaux qui ne les
+   * rendent pas : l'absence de la mesure n'est pas l'absence de vues. */
+  avg_views: number | null;
 };
 
 /** Une plage d'ouverture du jour. Vide veut dire fermé. */
@@ -779,21 +782,6 @@ export type Collaboration = {
   required_mention: string | null;
   required_geotag: boolean;
   deadline_at: string;
-  /**
-   * Les secondes qui restent avant `deadline_at`, plancher à zéro, calculées
-   * serveur.
-   *
-   * **Ce n'est pas la fenêtre de vérification**, et les confondre serait le
-   * défaut le plus coûteux de cet écran : celle-ci compte jusqu'à l'échéance
-   * de publication — 48 ou 72 h selon le palier — quand la fenêtre court
-   * depuis la publication et vaut 24 h. Afficher l'une pour l'autre
-   * annoncerait « 21 h » quand il en reste 45.
-   *
-   * L'instant absolu reste servi à côté parce qu'un compte à rebours vieillit
-   * dès qu'il est rendu : un écran laissé ouvert se recale sur `deadline_at`
-   * sans redemander la route.
-   */
-  secondes_avant_echeance: number;
   status: CollaborationStatus;
   attempts_count: number;
   needs_human_review: boolean;
@@ -1258,19 +1246,6 @@ export type NouvelItem = {
 /** Les médias de la plateforme : les pastilles de catégorie et l'accueil. */
 export type MediasPlateforme = {
   categories: { category: BusinessCategory; photo_key: string | null }[];
-  /**
-   * Les quatre médias de l'accueil, chacun pouvant manquer séparément.
-   *
-   * Deux orientations parce que l'écran est en plein écran : une vidéo 16:9 sur
-   * un téléphone tenu droit ne peut donner que des bandes noires ou un
-   * recadrage qui coupe le sujet.
-   */
-  home: {
-    video_key: string | null;
-    poster_key: string | null;
-    video_portrait_key: string | null;
-    poster_portrait_key: string | null;
-  };
 };
 
 /**

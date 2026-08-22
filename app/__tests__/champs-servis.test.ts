@@ -156,7 +156,6 @@ const NON_RENDUS: Record<string, string> = {
   // d'orientation, hors-ligne, reprise au premier plan, relance après montage,
   // boucle garantie deux fois. Le manifeste reste servi et n'a plus de lecteur
   // pour sa partie `home`. Les catégories, elles, sont toujours lues.
-  'MediasPlateforme.home': 'a-instruire',
   //
   // **Le compte à rebours de #181 n'est pas l'horloge que la planche demande.**
   // Il court jusqu'à `deadline_at`, l'échéance de publication — 48 ou 72 h
@@ -171,7 +170,6 @@ const NON_RENDUS: Record<string, string> = {
   // délai demande de compter depuis une date qu'on ne regarde plus. Deux
   // issues : la route sert la fenêtre de vérification et celui-ci reste sans
   // emploi, ou un écran à venir compte l'échéance en délai. À trancher.
-  'Collaboration.secondes_avant_echeance': 'a-instruire',
 };
 
 const RAISONS = new Set(['contrat', 'technique', 'a-instruire']);

@@ -334,6 +334,13 @@ def _dernier_releve() -> sa.Subquery:
         sa.select(
             SocialMetricsSnapshot.social_account_id,
             SocialMetricsSnapshot.followers_count,
+            # **Servis ici et pas ailleurs**, même si l'éligibilité n'en fait
+            # rien : trois lectures se partagent cette sous-requête, et deux
+            # façons de dire « le dernier relevé » finiraient par donner deux
+            # chiffres différents pour la même créatrice sur deux écrans. Deux
+            # colonnes de plus sur une ligne déjà lue ne coûtent rien.
+            SocialMetricsSnapshot.engagement_rate,
+            SocialMetricsSnapshot.avg_views,
             SocialMetricsSnapshot.captured_at,
         )
         .distinct(SocialMetricsSnapshot.social_account_id)

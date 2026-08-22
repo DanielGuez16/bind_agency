@@ -480,3 +480,87 @@ async def test_le_gain_porte_le_format_et_non_un_identifiant_seul(
 
     assert story.content_format is not None
     assert story.platform is not None
+
+
+# --------------------------------------------------------------------------
+# ce que la créatrice pèse, et pas seulement combien
+# --------------------------------------------------------------------------
+
+
+async def test_la_demande_porte_l_engagement_et_les_vues(session: AsyncSession) -> None:
+    """**Le second chiffre de la décision, et souvent le premier regardé.**
+
+    Cent mille abonnés à 0,4 % valent moins qu'un compte de huit mille à 6 %, et
+    un salon qui ne lit que le volume choisit mal. Le décor pose donc un
+    engagement et des vues **distincts du nombre d'abonnés** : servir le même
+    champ trois fois passerait un décor où ils se ressemblent.
+    """
+    from decimal import Decimal
+
+    from app.models import SocialMetricsSnapshot
+
+    decor = await monter_le_decor(session)
+    creneau = await premier_creneau(session, decor)
+    await reserver(session, decor, starts_at=creneau)
+
+    # **Le relevé est écrit à la main, et c'est le constat de la tranche.**
+    # Aucun mécanisme du produit ne remplit encore ces deux colonnes : le relevé
+    # de profil pose `None` aux deux, parce qu'ils se calculent sur les
+    # publications et non sur le profil. Le contrat est posé, la mesure viendra
+    # avec `fetch_media`.
+    #
+    # Passer par le service — la règle du dépôt — reviendrait ici à éprouver que
+    # `None` traverse, ce qui ne dit rien de ce que l'écran attend.
+    session.add(
+        SocialMetricsSnapshot(
+            social_account_id=decor["compte"].id,
+            followers_count=8_000,
+            following_count=310,
+            media_count=208,
+            engagement_rate=Decimal("6.1"),
+            avg_views=2_140,
+            raw_payload={},
+        )
+    )
+    await session.flush()
+
+    journee = await booking_history.journee_du_commerce(
+        session, business=decor["business"], jour=creneau.date()
+    )
+    lignes = [*journee.items, *journee.a_trancher]
+    compte = next(c for r in lignes for c in r.comptes if r.creator_id == decor["createur"].id)
+
+    assert compte.followers == 8_000
+    assert compte.engagement_rate == Decimal("6.1")
+    assert compte.avg_views == 2_140
+
+
+async def test_un_compte_jamais_releve_rend_nul_et_non_zero(session: AsyncSession) -> None:
+    """Nul, jamais zéro : « personne ne réagit » et « personne n'a mesuré » ne
+    se disent pas pareil, et le second n'est pas un reproche."""
+    decor = await monter_le_decor(session)
+    creneau = await premier_creneau(session, decor)
+    await reserver(session, decor, starts_at=creneau)
+
+    tiktok = SocialAccount(
+        creator_id=decor["createur"].id,
+        platform=Platform.TIKTOK,
+        external_id=f"tt{uuid.uuid4().int % 10**10}",
+        handle="rebecca.tt",
+        access_token_encrypted="TT-jeton",
+        status=SocialAccountStatus.ACTIVE,
+        verification_status=VerificationStatus.VERIFIED,
+    )
+    session.add(tiktok)
+    await session.flush()
+
+    journee = await booking_history.journee_du_commerce(
+        session, business=decor["business"], jour=creneau.date()
+    )
+    lignes = [*journee.items, *journee.a_trancher]
+    par_reseau = {
+        c.platform: c for r in lignes for c in r.comptes if r.creator_id == decor["createur"].id
+    }
+
+    assert par_reseau[Platform.TIKTOK].engagement_rate is None
+    assert par_reseau[Platform.TIKTOK].avg_views is None

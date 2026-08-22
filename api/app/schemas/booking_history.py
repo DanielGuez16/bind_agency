@@ -8,6 +8,7 @@ de caisse.
 
 import uuid
 from datetime import date, datetime, time
+from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict
 
@@ -89,6 +90,13 @@ class CompteDeLaCreatriceRead(BaseModel):
     handle: str | None
     #: Nul quand aucun relevé n'existe. Zéro serait un chiffre, et faux.
     followers: int | None
+    #: Le taux d'engagement du dernier relevé, en pourcentage. **Le second
+    #: chiffre de la décision** : cent mille abonnés à 0,4 % valent moins qu'un
+    #: compte de huit mille à 6 %.
+    engagement_rate: Decimal | None
+    #: Les vues moyennes du dernier relevé. Nul sur les réseaux qui ne les
+    #: rendent pas : l'absence de la mesure n'est pas l'absence de vues.
+    avg_views: int | None
 
 
 class ReservationDuCommerceRead(BaseModel):

@@ -116,7 +116,6 @@ class BusinessCreate(BaseModel):
     cover_photo_key: str | None = Field(default=None, max_length=500)
     #: La couverture verticale du mur. Un champ à part : la paysage sert
     #: encore la fiche et les listes. Envoyer `null` la retire.
-    cover_portrait_key: str | None = Field(default=None, max_length=500)
 
     #: L'adresse de la carte du commerce, quand elle existe déjà en ligne.
     #: Envoyer `null` la retire. Alternative ou complément aux pages déposées :
@@ -175,7 +174,6 @@ class BusinessUpdate(BaseModel):
     cover_photo_key: str | None = Field(default=None, max_length=500)
     #: La couverture verticale du mur. Un champ à part : la paysage sert
     #: encore la fiche et les listes. Envoyer `null` la retire.
-    cover_portrait_key: str | None = Field(default=None, max_length=500)
 
     #: L'adresse de la carte du commerce, quand elle existe déjà en ligne.
     #: Envoyer `null` la retire. Alternative ou complément aux pages déposées :
@@ -200,7 +198,6 @@ class BusinessRead(BaseModel):
     phone: str | None
     currency: str
     cover_photo_key: str | None
-    cover_portrait_key: str | None
     menu_url: str | None
     status: BusinessStatus
     created_at: datetime

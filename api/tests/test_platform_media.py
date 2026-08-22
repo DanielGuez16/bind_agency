@@ -45,12 +45,6 @@ async def test_les_six_categories_repondent_meme_sans_photo(client: AsyncClient)
     categories = reponse.json()["categories"]
     assert [ligne["category"] for ligne in categories] == [c.value for c in BusinessCategory]
     assert all(ligne["photo_key"] is None for ligne in categories)
-    assert reponse.json()["home"] == {
-        "video_key": None,
-        "poster_key": None,
-        "video_portrait_key": None,
-        "poster_portrait_key": None,
-    }
 
 
 async def test_une_photo_posee_ressort_sur_sa_categorie(
@@ -93,23 +87,6 @@ async def test_reposer_remplace_au_lieu_d_ajouter(
     assert par_categorie[BusinessCategory.MUSEUM.value] == "photos/category/2026-08-10/seconde"
 
 
-async def test_l_affiche_se_sert_sans_la_video(client: AsyncClient, session: AsyncSession) -> None:
-    """L'état tant qu'aucune vidéo n'est fournie : l'app s'en tient à l'affiche."""
-    await service.poser(session, slug=service.AFFICHE_VIDEO, object_key="photos/home/2026/aff")
-    await session.commit()
-
-    accueil = (await client.get(f"{PREFIX}/platform-media", headers=await entetes(client))).json()[
-        "home"
-    ]
-
-    assert accueil == {
-        "video_key": None,
-        "poster_key": "photos/home/2026/aff",
-        "video_portrait_key": None,
-        "poster_portrait_key": None,
-    }
-
-
 @pytest.mark.parametrize("role", [UserRole.CREATOR, UserRole.BUSINESS_MEMBER])
 async def test_les_deux_cotes_du_produit_y_ont_acces(client: AsyncClient, role: UserRole) -> None:
     """Une pastille de catégorie peut s'afficher côté commerce comme côté créateur."""
@@ -119,15 +96,16 @@ async def test_les_deux_cotes_du_produit_y_ont_acces(client: AsyncClient, role: 
 
 
 async def test_sans_jeton_la_route_repond_quand_meme(client: AsyncClient) -> None:
-    """**L'accueil s'affiche avant la connexion**, et il y prend son fond.
+    """**Les pastilles s'affichent avant la connexion**, et le choix de rôle
+    en a besoin.
 
     Elle était derrière un jeton, au motif qu'elle ne concerne personne qui ne
-    soit pas entré. C'était faux, et le fond de l'écran d'entrée ne chargeait
-    jamais — ni la vidéo, ni son affiche. Exiger un jeton pour voir la première
-    chose du produit est impossible par construction.
+    soit pas entré. C'était faux : exiger un jeton pour voir la première chose
+    du produit est impossible par construction. Le média d'accueil qui motivait
+    cette route à l'origine est parti avec la planche v3 ; les catégories
+    restent, et la règle avec elles.
     """
     anonyme = await client.get(f"{PREFIX}/platform-media")
 
     assert anonyme.status_code == 200
-    assert "home" in anonyme.json()
     assert len(anonyme.json()["categories"]) == len(BusinessCategory)
