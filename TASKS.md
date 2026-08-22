@@ -1003,7 +1003,8 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       l'appelant manquait — une méthode d'API sans appelant, c'est-à-dire du
       code mort qui a l'air d'une fonctionnalité, et qui a tenu seize PR parce
       que chercher `no-show` dans le dépôt donnait quatre résultats rassurants*
-- [ ] **Le commerce ne peut pas signaler une absence depuis l'application**
+- [x] **Le commerce ne peut pas signaler une absence depuis l'application**
+      *Fait : `marquerAbsent` existe et la journée l'appelle.*
       *Diagnostic corrigé : `absence_signalable_a` n'est pas un champ non
       affiché, **c'est une route absente du client**. Le serveur a
       `mark_no_show`, l'app ne l'appelle nulle part. Il faut l'entrée de route,
@@ -1738,7 +1739,9 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       dans la route — refus sur un item déjà réservé, ou une route de
       remplacement qui crée la nouvelle prestation et archive l'ancienne dans
       la même transaction*
-- [ ] **Le prix : ni corrigeable, ni créateur d'une nouvelle prestation**
+- [x] **Le prix : ni corrigeable, ni créateur d'une nouvelle prestation**
+      *Tranché : le prix s'édite en place, et le palier déjà choisi ne bouge
+      pas — `TierOffer.tier_id` est explicite.*
       *Design ne le range dans aucune des deux listes. Il ne réécrit l'histoire
       d'aucune réservation — le prix est du reporting ici — mais il déplace le
       palier suggéré, qui se calcule sur le rang du prix dans le catalogue. Non
@@ -1752,7 +1755,9 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       au lancement suivant. Le refus est gardé sur l'appareil et relu avant tout
       enregistrement. « Refusé ici » est distinct de « refusé par le système » :
       les deux se lèvent à des endroits différents*
-- [ ] **Aucune route ne liste les terminaux d'un compte**
+- [x] **Aucune route ne liste les terminaux d'un compte**
+      *Fait : `GET /me/devices` et la révocation par `device_id`. Voir « Annuler
+      ce que le salon n'a pas accepté, et couper l'appareil perdu ».*
       *`PUT /me/devices` et `DELETE /me/devices/{token}` existent, `GET` non.
       Révoquer exige donc de **posséder** le jeton, qu'on n'a que sur l'appareil
       lui-même : couper les notifications d'un **téléphone perdu** depuis un
@@ -1772,7 +1777,9 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       atteignable que depuis `confirmed`. Une place tenue ou en attente d'accord
       ne peut pas y mener, quelle que soit la valeur du réglage. 1257 tests
       verts, 3 mutations*
-- [ ] **`awaiting_business → no_show` est interdit, et `annuler` y va quand même**
+- [x] **`awaiting_business → no_show` est interdit, et `annuler` y va quand même**
+      *Corrigé : `annuler` vise `cancelled` et l'issue tardive passe par un
+      événement de fiabilité. `SPEC.md` §4.1 porte la flèche.*
       *Défaut prouvé, pas déduit : `annuler` choisit son état d'arrivée sans
       regarder d'où elle part. Avec les valeurs par défaut — accord et
       annulation libre à 86 400 s chacun — toute réservation chez un salon en
@@ -1785,7 +1792,9 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       `test_annuler_pendant_que_le_salon_reflechit_et_pres_de_l_heure` la porte
       en `xfail(strict=True)` — le jour où c'est corrigé, la CI rougit tant que
       le marqueur reste. Demandé à `bind-agency-1a`*
-- [ ] **L'instant où l'annulation cesse d'être libre n'est pas servi**
+- [x] **L'instant où l'annulation cesse d'être libre n'est pas servi**
+      *Servi : `annulation_sans_frais_jusqu_a`, calculé par
+      `fin_de_l_annulation_libre` et rendu sur l'historique de réservation.*
       *L'écran dit « annuler près de l'heure compte comme une absence » sans
       pouvoir dire **quand**, parce que `booking_free_cancellation_seconds` est
       un réglage et que le dépôt interdit de le recopier — à raison, il
@@ -1829,7 +1838,9 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Reste à composer : le bouton du bandeau de la journée, que la planche
       dessine. La route existe et le client l'appelle depuis les réglages —
       c'est une pose, pas un mécanisme.*
-- [ ] **La liste des terminaux, et la révocation par identité**
+- [x] **La liste des terminaux, et la révocation par identité**
+      *Fait, même tranche que ci-dessus : un identifiant opaque désigne, le
+      jeton n'est plus exigé.*
       *La planche des appareils ne peut pas se composer : `GET /me/devices`
       n'existe pas, et la révocation exige de **posséder** le jeton, qu'on n'a
       que sur l'appareil perdu. C'est un cercle. Déjà demandé avec la réponse
@@ -1839,6 +1850,29 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       « celui-ci » et **n'a pas de bouton pour se couper**. Se couper soi-même
       est une déconnexion, un autre geste — les confondre fait perdre l'accès à
       quelqu'un qui voulait le garder*
+- [x] **Le mur tirait des originaux de 2000 pixels dans des cadres de 100 points**
+      ***Mesuré avant de décider**, et le résultat ne laisse pas de doute : un
+      fil de vingt salons à quatre prestations charge quatre-vingts images d'un
+      coup — la grille est un `ScrollView` et un `.map`, rien n'y est
+      virtualisé. Photographies déjà réduites : **10,5 Mo**. Photos sorties d'un
+      téléphone : **52 Mo**. Le JSON qui les nomme : **50 Ko**, soit un demi
+      pour cent du total.*
+      *Le mur appelait `urlDuMedia` et non `urlDeLaVignette` : la dérivée
+      existait et personne ne la demandait. Ses trois cadres font 100, 52 et 44
+      points. Et le poids n'est pas le pire — `Image` décode avant de réduire,
+      donc une image de 2000 × 2000 occupe seize mégaoctets de mémoire quel que
+      soit le cadre. Quatre-vingts d'un coup, c'est ce qui fait ramer le
+      défilement avant même que le réseau soit en cause.*
+      ***Et la vignette elle-même n'était pas dimensionnée sur l'écran** : 480
+      pixels, calibrés sur des cartes de 150 points que la grille v3 ne rend
+      plus. Les cinq cadres qui la lisent sont mesurés — 100, 64, 56, 56,
+      40 × 52 — le plus grand demande 300 pixels à densité triple. Ramenée à
+      320. 10,5 Mo → 1,5 Mo par le seul changement d'appel, → **0,8 Mo** avec le
+      nouveau plafond ; 52 Mo → 1,8 Mo sur des photos de téléphone.*
+      *Le plafond ne se relit pas sur les images déjà rangées : une vignette
+      d'hier reste à 480, plus lourde que nécessaire et parfaitement correcte.
+      Un balayage du dépôt coûterait plus que le gain, qui se réalise de
+      lui-même à mesure que les photos se remplacent. 2 tests, 2 mutations*
 - [ ] **La journée demande une seconde requête pour son bandeau de reprise**
       *`BandeauDeReprise` appelle `mesReprises` lui-même, sur l'écran le plus
       ouvert du produit, pour une réponse presque toujours vide. Le replier dans
@@ -1858,7 +1892,9 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       servi — jamais par une durée. Le bouton ne bouge ni de forme ni de place
       à aucune heure : rendre l'annulation difficile produit des absences
       silencieuses, pas des présences. 1314 tests, 3 mutations*
-- [ ] **Une annulation tardive doit coûter moins qu'une absence**
+- [x] **Une annulation tardive doit coûter moins qu'une absence**
+      *Fait : `cancelled_late`, poids `-5`. Voir « Prévenir doit coûter moins
+      que disparaître » et « Une faute légère, pas une demi-absence ».*
       *Tranché côté produit, pas encore côté service. Tant que les deux coûtent
       exactement pareil, rien n'incite à prévenir plutôt qu'à disparaître —
       sauf la bonne volonté, qui n'est pas un mécanisme. Le jour où
@@ -2042,7 +2078,9 @@ créatrice, à tout salon abonné qui ne l'a jamais rencontrée. L'écran a cess
 les lire, mais la donnée part toujours sur le réseau. Le schéma est la dernière
 barrière avant le réseau, et c'est là qu'il faut la poser.
 
-- [ ] **Les filtres de l'annuaire : palier, réseau, distance**
+- [x] **Les filtres de l'annuaire : palier, réseau, distance**
+      *Fait : `FiltreDAnnuaire`, appliqué avant la page, total recalculé sur le
+      filtre.*
       *La planche v3 en pose trois plus « can book here », et aucun n'existe :
       la route ne prend que `limite` et `decalage`. Les poser côté écran
       filtrerait **une page** et non la liste — la même faute que rejouer le
