@@ -94,6 +94,10 @@ class ErrorCode(StrEnum):
     CATALOG_ITEM_NOT_FOUND = "catalog_item_not_found"
     CATALOG_DURATION_MISMATCH = "catalog_duration_mismatch"
     CATALOG_ITEM_HAS_BOOKINGS = "catalog_item_has_bookings"
+    #: L'archive est déjà faite. Elle ne se rouvre pas non plus : une archive
+    #: est une trace, et en faire un objet vivant ferait parler d'autre chose
+    #: aux réservations qui la citent.
+    CATALOG_ITEM_ALREADY_ARCHIVED = "catalog_item_already_archived"
     CATALOG_ITEM_LOCKED_BY_BOOKINGS = "catalog_item_locked_by_bookings"
     CATALOG_PARENT_NOT_FOUND = "catalog_parent_not_found"
     CATALOG_ITEM_NOT_BOOKABLE = "catalog_item_not_bookable"

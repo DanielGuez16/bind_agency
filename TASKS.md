@@ -1023,7 +1023,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       à relancer sans lire. Un plafond par pas a été écarté (le blocage se
       déplace), le cache Playwright aussi (une minute sur cinq, contre une clé à
       tenir et un mode d'échec de plus)*
-- [ ] **Treize méthodes d'API que personne n'appelle**
+- [x] **Treize méthodes d'API que personne n'appelle**
       *Trouvées par la garde neuve, née de mon erreur sur l'absence — dont la
       quatorzième vient d'être branchée par la conversation fonctionnelle. Ce
       sont des capacités que le produit sait demander au serveur et qu'aucun
@@ -1127,6 +1127,16 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       Téléphone au format international, normalisé avant validation ; nom
       dépouillé de ses espaces avant d'être compté ; adresse d'au moins dix
       caractères. 13 tests neufs*
+- [x] **Archiver plutôt qu'effacer, et remplacer plutôt que réécrire**
+      *La donnée décide, pas le geste : jamais réservée → suppression vraie,
+      déjà réservée → archive et jamais de suppression. **`archived_at` distinct
+      de `is_available`** — fermer pour l'été et retirer pour de bon valaient la
+      même chose, et l'écran devait choisir entre perdre la saisonnière et garder
+      les archives pour toujours. `reservations_count` fait dire au bouton ce
+      qu'il déplace. La modification se coupe en deux : présentation par `PATCH`,
+      accord par `POST /replace`, qui crée la neuve et archive l'ancienne dans
+      une transaction. 11 tests neufs, 5 mutations dont une conservée et
+      documentée*
 - [x] **Le filtrage de l'annuaire, et le total qui va avec**
       *Palier — répétable, au moins un des formats —, réseau, distance
       maximale. **`total` recalculé sur le filtre** : sans lui « 20 sur 128 »

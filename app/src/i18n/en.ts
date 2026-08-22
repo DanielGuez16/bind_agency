@@ -1214,6 +1214,8 @@ export const en = {
     catalog_item_not_bookable:
       'This item does not use time slots. It is valid for a period instead.',
     catalog_item_not_found: 'This item is not in your catalogue.',
+    catalog_item_already_archived:
+      'This service has already been archived. An archive cannot be reopened — create a new service instead.',
     catalog_item_has_bookings: 'This item has bookings and cannot be deleted. Turn it off instead.',
     catalog_item_locked_by_bookings:
       'This item already has bookings, so its type and duration can no longer change. Create a new item instead.',
