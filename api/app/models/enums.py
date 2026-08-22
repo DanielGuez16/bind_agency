@@ -236,6 +236,18 @@ class ReliabilityEventType(StrEnum):
     FIRST_PASS_COMPLIANT = "first_pass_compliant"
     RESUBMIT_REQUIRED = "resubmit_required"
     NO_SHOW = "no_show"
+    #: Annulation prévenue trop tard, mais prévenue.
+    #:
+    #: **Entre les deux, parce que les deux ne coûtent pas la même chose au
+    #: salon.** Prévenu à onze heures, il remplit son créneau de quatorze heures
+    #: trente ; s'il l'apprend à quatorze heures quarante-cinq, il a perdu son
+    #: après-midi. Faire payer les deux au même prix revenait à dire qu'il n'y a
+    #: aucun intérêt à prévenir — et quand prévenir ne rapporte rien, on
+    #: disparaît.
+    #:
+    #: Son poids vit en configuration comme les autres, et il est négatif :
+    #: annuler tard coûte, moins qu'une absence.
+    CANCELLED_LATE = "cancelled_late"
     UNFULFILLED = "unfulfilled"
     BUSINESS_RATING = "business_rating"
     #: Un signalement de déplacement pour rien, écarté par l'arbitrage.

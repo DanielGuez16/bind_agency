@@ -20,7 +20,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.integrations.geocoding import ManualGeocoder
 from app.models import AuditLog, Booking, ReliabilityEvent
-from app.models.enums import ActorKind, BookingStatus, BusinessCategory, UserRole
+from app.models.enums import (
+    ActorKind,
+    BookingStatus,
+    BusinessCategory,
+    ReliabilityEventType,
+    UserRole,
+)
 from app.schemas.business import BusinessCreate, CoordinatesPayload
 from app.services import availability, redemption
 from app.services import booking_states as service
@@ -233,8 +239,20 @@ async def test_une_annulation_a_temps_est_sans_penalite(session: AsyncSession) -
     assert ligne.cancelled_at is not None
 
 
-async def test_une_annulation_tardive_devient_une_absence(session: AsyncSession) -> None:
-    """Le commerce a bloqué un poste qu'il ne remplira plus."""
+async def test_une_annulation_tardive_coute_moins_qu_une_absence(
+    session: AsyncSession,
+) -> None:
+    """**Elle a prévenu, et ça vaut quelque chose.**
+
+    Le commerce a perdu son créneau, donc l'annulation tardive coûte. Mais un
+    salon prévenu à onze heures remplit son quatorze heures trente ; celui qui
+    l'apprend à quatorze heures quarante-cinq a perdu son après-midi. Faire
+    payer les deux au même prix revenait à dire qu'il n'y a aucun intérêt à
+    prévenir.
+
+    Le dossier arrive donc en `cancelled` — elle a annulé, pas disparu — et
+    c'est l'événement de fiabilité qui porte la nuance.
+    """
     ligne, decor = await reservation(session)
     await service.confirmer(session, booking=ligne, creator_id=decor["createur"].id)
 
@@ -245,16 +263,70 @@ async def test_une_annulation_tardive_devient_une_absence(session: AsyncSession)
 
     await service.annuler(session, booking=ligne, creator_id=decor["createur"].id)
 
-    assert ligne.status is BookingStatus.NO_SHOW
+    assert ligne.status is BookingStatus.CANCELLED
+    assert list(
+        await session.scalars(
+            sa.select(ReliabilityEvent.type).where(ReliabilityEvent.booking_id == ligne.id)
+        )
+    ) == [ReliabilityEventType.CANCELLED_LATE]
+
     # Et le journal dit pourquoi : la pénalité doit être explicable.
     ligne_journal = await session.scalar(
         sa.select(AuditLog).where(
             AuditLog.entity_id == ligne.id,
-            AuditLog.to_status == BookingStatus.NO_SHOW.value,
+            AuditLog.to_status == BookingStatus.CANCELLED.value,
         )
     )
     assert ligne_journal is not None
     assert ligne_journal.reason
+
+
+async def test_prevenir_a_temps_ne_coute_rien_du_tout(session: AsyncSession) -> None:
+    """**Le sens inverse, et c'est lui qui fait l'incitation.**
+
+    Sans ce test, un événement écrit sur toute annulation passerait le
+    précédent : « annuler tard coûte » et « annuler coûte » se ressemblent tant
+    qu'on ne regarde qu'un seul décor.
+    """
+    ligne, decor = await reservation(session)
+    await service.confirmer(session, booking=ligne, creator_id=decor["createur"].id)
+
+    fenetre = get_settings().booking_free_cancellation_seconds
+    ligne.starts_at = datetime.now(UTC) + timedelta(seconds=fenetre + 3600)
+    ligne.ends_at = ligne.starts_at + timedelta(minutes=60)
+    await session.flush()
+
+    await service.annuler(session, booking=ligne, creator_id=decor["createur"].id)
+
+    assert ligne.status is BookingStatus.CANCELLED
+    assert (
+        list(
+            await session.scalars(
+                sa.select(ReliabilityEvent.type).where(ReliabilityEvent.booking_id == ligne.id)
+            )
+        )
+        == []
+    )
+
+
+async def test_l_absence_coute_plus_cher_que_l_annulation_tardive(
+    session: AsyncSession,
+) -> None:
+    """**L'écart est ce qui porte l'incitation**, et il s'éprouve sur les poids.
+
+    Deux créatrices, deux conduites, deux scores. Sans cette comparaison, les
+    deux événements pourraient porter le même poids sans qu'aucun test ne
+    tombe — et l'incitation à prévenir disparaîtrait en silence.
+    """
+    from app.services import reliability
+
+    assert reliability.poids(ReliabilityEventType.CANCELLED_LATE) > reliability.poids(
+        ReliabilityEventType.NO_SHOW
+    )
+    assert reliability.poids(ReliabilityEventType.CANCELLED_LATE) < 0, (
+        "prévenir tard doit coûter : à zéro, l'annulation de dernière minute "
+        "deviendrait gratuite et le créneau perdu avec"
+    )
 
 
 async def test_un_item_sans_creneau_s_annule_toujours_sans_penalite(

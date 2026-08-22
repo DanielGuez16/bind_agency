@@ -284,6 +284,7 @@ export const en = {
       published_late: 'Publishing after the deadline',
       resubmit_required: 'Being asked to send it again',
       no_show: 'Not showing up',
+      cancelled_late: 'Cancelling at the last minute',
       unfulfilled: 'A publication never delivered',
       business_rating: 'A rating left by a salon',
       abusive_report: 'A report of yours that was set aside',

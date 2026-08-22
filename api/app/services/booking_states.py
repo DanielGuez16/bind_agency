@@ -164,6 +164,14 @@ def echeance_d_accord(booking: Booking, *, maintenant: datetime | None = None) -
     return min(plein, booking.starts_at) if booking.starts_at is not None else plein
 
 
+#: Ce que chaque issue produit comme événement de fiabilité, quand l'état
+#: d'arrivée suffit à le dire. Déclaré plutôt que dispersé dans les branches :
+#: une issue ajoutée sans son événement se verrait ici.
+EVENEMENT_PAR_ISSUE: dict[BookingStatus, ReliabilityEventType] = {
+    BookingStatus.NO_SHOW: ReliabilityEventType.NO_SHOW,
+}
+
+
 async def transitionner(
     session: AsyncSession,
     *,
@@ -171,8 +179,14 @@ async def transitionner(
     vers: BookingStatus,
     actor: audit.Actor,
     reason: str | None = None,
+    evenement: ReliabilityEventType | None = None,
 ) -> Booking:
-    """Le seul chemin. Vérifie la flèche, écrit l'état, écrit le journal."""
+    """Le seul chemin. Vérifie la flèche, écrit l'état, écrit le journal.
+
+    `evenement` nomme ce que l'état d'arrivée ne dit pas. Un seul appelant s'en
+    sert — l'annulation tardive, qui arrive en `cancelled` comme une annulation
+    à temps et n'est distinguée que par l'heure.
+    """
     depuis = booking.status
 
     if vers not in TRANSITIONS[depuis]:
@@ -223,11 +237,18 @@ async def transitionner(
 
     # L'événement naît de la transition, pas d'un appel que quelqu'un pourrait
     # oublier. Une absence non enregistrée serait une absence gratuite.
-    if vers is BookingStatus.NO_SHOW:
+    #
+    # **L'appelant peut en nommer un que l'état d'arrivée ne dit pas.** Une
+    # annulation tardive arrive en `cancelled` comme une annulation à temps —
+    # c'est la même chose du point de vue du dossier, elle a prévenu — et seule
+    # `annuler` sait qu'elle était tardive. La table couvre ce qui se déduit de
+    # l'état ; le paramètre couvre ce qui n'en dépend pas.
+    type_ = evenement or EVENEMENT_PAR_ISSUE.get(vers)
+    if type_ is not None:
         await reliability.enregistrer(
             session,
             creator_id=booking.creator_id,
-            type_=ReliabilityEventType.NO_SHOW,
+            type_=type_,
             booking_id=booking.id,
         )
 
@@ -390,12 +411,23 @@ async def annuler(session: AsyncSession, *, booking: Booking, creator_id: uuid.U
     fenetre = timedelta(seconds=get_settings().booking_free_cancellation_seconds)
     tardive = booking.starts_at is not None and datetime.now(UTC) > booking.starts_at - fenetre
 
+    # **L'état d'arrivée est le même, le coût non.** Elle a prévenu : le dossier
+    # est annulé, pas absent, et l'écran du salon doit lire « annulée » plutôt
+    # qu'une absence qui n'a pas eu lieu. Ce qui distingue les deux est un
+    # événement de fiabilité, plus léger que celui d'une absence.
+    #
+    # **Et l'écart entre les deux est ce qui porte l'incitation.** Tant qu'ils
+    # coûtaient pareil, rien ne poussait à prévenir plutôt qu'à disparaître —
+    # or un salon prévenu à onze heures remplit son créneau de quatorze heures
+    # trente, celui qui l'apprend à quatorze heures quarante-cinq a perdu son
+    # après-midi.
     return await transitionner(
         session,
         booking=booking,
-        vers=BookingStatus.NO_SHOW if tardive else BookingStatus.CANCELLED,
+        vers=BookingStatus.CANCELLED,
         actor=acteur,
         reason="annulation dans la fenêtre de pénalité" if tardive else None,
+        evenement=ReliabilityEventType.CANCELLED_LATE if tardive else None,
     )
 
 

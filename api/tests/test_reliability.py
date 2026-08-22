@@ -448,3 +448,56 @@ async def test_un_score_nul_n_est_pas_un_mauvais_score(session: AsyncSession) ->
 
     assert story.accessible is True
     assert vue.is_new_creator is True
+
+
+# --------------------------------------------------------------------------
+# prévenir coûte moins que disparaître
+# --------------------------------------------------------------------------
+
+
+def test_l_annulation_tardive_coute_moins_que_l_absence() -> None:
+    """**L'écart est l'incitation.** Le réduire l'affaiblit, l'annuler la supprime.
+
+    Éprouvé sur les poids et non sur un score : c'est la grille qui porte la
+    règle, et deux poids égaux la videraient sans qu'aucun scénario ne tombe.
+    """
+    assert service.poids(ReliabilityEventType.CANCELLED_LATE) > service.poids(
+        ReliabilityEventType.NO_SHOW
+    )
+    assert service.poids(ReliabilityEventType.CANCELLED_LATE) < 0, (
+        "à zéro, annuler à la dernière minute deviendrait gratuit"
+    )
+
+
+def test_une_seule_annulation_tardive_laisse_le_haut_de_l_echelle_ouvert() -> None:
+    """**Le cas que le seuil frôle, et il vaut d'être écrit.**
+
+    Le score part de 70, le reel en demande 60, et une annulation tardive en
+    coûte 10 : une créatrice dont c'est le seul événement tombe **exactement**
+    sur le seuil, et n'y passe que parce que la comparaison est `>=`.
+
+    Ce test n'approuve pas cet équilibre, il le rend visible : le jour où l'un
+    des trois réglages bouge d'un point, il tombe et quelqu'un décide. Sans
+    lui, une créatrice qui a prévenu perdrait le haut de l'échelle sans que
+    personne ne l'ait voulu.
+    """
+    from app.services.eligibility import VerdictScore, evaluer_score
+
+    caches = service.evaluer([(ReliabilityEventType.CANCELLED_LATE, Decimal("0"))])
+
+    assert caches.reliability_score == Decimal("60.00")
+    assert evaluer_score(Decimal("60.00"), caches.reliability_score) is VerdictScore.TENUE
+    # Et une absence, elle, ferme : c'est la différence qu'on achète.
+    absente = service.evaluer([(ReliabilityEventType.NO_SHOW, Decimal("0"))])
+    assert evaluer_score(Decimal("60.00"), absente.reliability_score) is VerdictScore.MANQUEE
+
+
+def test_une_creatrice_sans_evenement_garde_un_score_nul() -> None:
+    """**Le piège déjà nommé, revérifié.** Un événement fait exister un score.
+
+    Celui-ci n'est pas neutre, donc il doit en faire exister un — mais la
+    créatrice qui n'a rien fait ne doit toujours pas en avoir : un score nul est
+    une condition ignorée, un score bas est une condition manquée, et les deux
+    ne ferment pas les mêmes paliers.
+    """
+    assert service.evaluer([]).reliability_score is None

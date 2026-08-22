@@ -308,7 +308,8 @@ held ──┬─confirmation créateur, commerce en automatique────> co
 confirmed ──scan du code──> consumed
  │
  ├──annulation créateur > 24h avant──> cancelled
- ├──annulation créateur < 24h ou absence──> no_show
+ ├──annulation créateur < 24h──> cancelled, avec un événement `cancelled_late`
+ ├──absence constatée par le commerce──> no_show
  └──annulation par le commerce, avec motif──> cancelled
 
 held ──délai de garde dépassé──> expired
@@ -316,6 +317,8 @@ held ──délai de garde dépassé──> expired
 
 `consumed` est le seul état qui crée la `collaboration` et démarre le délai de publication.
 `no_show` génère un `reliability_event` négatif.
+
+**Une annulation tardive coûte moins qu'une absence, et c'est ce qui incite à prévenir.** Les deux coûtaient le même prix, donc rien ne poussait à prévenir plutôt qu'à disparaître — or un salon prévenu à onze heures remplit son créneau de quatorze heures trente, celui qui l'apprend à quatorze heures quarante-cinq a perdu son après-midi. Le dossier arrive donc en `cancelled` — elle a annulé, pas disparu, et l'écran du commerce doit lire ce qui s'est passé — et c'est un troisième événement de fiabilité, `cancelled_late`, qui porte la différence. Son poids est en configuration comme les autres ; l'écart avec celui de l'absence est l'incitation, et le réduire l'affaiblit.
 
 **La validation par le commerce est le comportement par défaut.** `business.requires_booking_approval` vaut vrai à la création, et pour tout commerce existant : donner une prestation à quelqu'un qu'on n'a pas regardé est la décision qui demande un accord explicite, pas l'inverse. Le commerce qui préfère laisser passer les réservations le déclare.
 
