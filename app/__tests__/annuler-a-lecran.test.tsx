@@ -51,7 +51,7 @@ async function monter(items: ReservationDuCreateur[]) {
   const api = new ApiClient({
     baseUrl: 'https://api.test',
     coffre: { lire: async () => null, ecrire: async () => {} },
-    fetchImpl: async (url: string, init?: RequestInit) => {
+    fetchImpl: (async (url: RequestInfo | URL, init?: RequestInit) => {
       const method = (init?.method ?? 'GET').toUpperCase();
       envois.push({ url: String(url), method });
       return {
@@ -59,7 +59,7 @@ async function monter(items: ReservationDuCreateur[]) {
         status: 200,
         json: async () => ({ items, compteurs: { confirmed: items.length } }),
       } as Response;
-    },
+    }) as typeof fetch,
   });
   const vue = await render(
     <I18nProvider initialLocale="en">
@@ -78,7 +78,7 @@ describe('annuler une réservation depuis le parcours', () => {
   it('le premier appui n’annule rien : il demande', async () => {
     const { annulations } = await monter([reservation()]);
 
-    fireEvent.press(await screen.findByTestId('annuler-r1'));
+    await fireEvent.press(await screen.findByTestId('annuler-r1'));
 
     // La confirmation est là…
     expect(await screen.findByTestId('confirmer-annulation-r1')).toBeTruthy();
@@ -89,8 +89,8 @@ describe('annuler une réservation depuis le parcours', () => {
   it('le second appui annule, et sur la bonne route', async () => {
     const { annulations } = await monter([reservation()]);
 
-    fireEvent.press(await screen.findByTestId('annuler-r1'));
-    fireEvent.press(await screen.findByTestId('annuler-oui-r1'));
+    await fireEvent.press(await screen.findByTestId('annuler-r1'));
+    await fireEvent.press(await screen.findByTestId('annuler-oui-r1'));
 
     await waitFor(() => expect(annulations()).toHaveLength(1));
     expect(annulations()[0].method).toBe('POST');
@@ -100,8 +100,8 @@ describe('annuler une réservation depuis le parcours', () => {
   it('renoncer referme la demande sans rien envoyer', async () => {
     const { annulations } = await monter([reservation()]);
 
-    fireEvent.press(await screen.findByTestId('annuler-r1'));
-    fireEvent.press(await screen.findByTestId('annuler-non-r1'));
+    await fireEvent.press(await screen.findByTestId('annuler-r1'));
+    await fireEvent.press(await screen.findByTestId('annuler-non-r1'));
 
     await waitFor(() => expect(screen.queryByTestId('confirmer-annulation-r1')).toBeNull());
     expect(annulations()).toEqual([]);
@@ -112,7 +112,7 @@ describe('annuler une réservation depuis le parcours', () => {
   it('sur une confirmée avec créneau, la phrase dit ce que ça coûte', async () => {
     await monter([reservation()]);
 
-    fireEvent.press(await screen.findByTestId('annuler-r1'));
+    await fireEvent.press(await screen.findByTestId('annuler-r1'));
 
     const avertissement = await screen.findByTestId('annuler-avertissement-r1');
     // La conséquence, en toutes lettres — pas « are you sure ».
@@ -123,7 +123,7 @@ describe('annuler une réservation depuis le parcours', () => {
   it('sur une place que le salon n’a pas encore acceptée, la phrase ne menace de rien', async () => {
     await monter([reservation({ status: 'awaiting_business', approval_expires_at: DANS_TROIS_HEURES })]);
 
-    fireEvent.press(await screen.findByTestId('annuler-r1'));
+    await fireEvent.press(await screen.findByTestId('annuler-r1'));
 
     expect(await screen.findByTestId('annuler-libre-r1')).toBeTruthy();
     expect(screen.queryByTestId('annuler-avertissement-r1')).toBeNull();

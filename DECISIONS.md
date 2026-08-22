@@ -8790,3 +8790,39 @@ doit une demi-vérité.
 tout court : elle attrapait les notifications au même titre qu'un réglage de
 couleurs, alors que l'un commande quelque chose et l'autre ne commandait rien.
 Elle vise maintenant le libellé.
+
+---
+
+## 2026-08-22 — L'annulation créateur : le diagramme tranche, pas l'horloge
+
+**L'écran ne recopie pas la fenêtre d'annulation libre, il lit la machine
+d'états.** La tentation était de comparer `starts_at` au réglage pour savoir si
+l'annulation coûte. Deux raisons de ne pas le faire, et la seconde est la
+bonne : `booking_free_cancellation_seconds` est un réglage, et le dépôt
+interdit d'écrire un délai en dur ; mais surtout, **le délai n'est pas ce qui
+décide**. `no_show` n'est atteignable que depuis `confirmed` — c'est une
+propriété du diagramme, vraie quelle que soit la valeur du réglage. Une place
+seulement tenue, ou une réservation que le salon n'a pas encore acceptée, ne
+peut pas mener à une pénalité même à une minute du rendez-vous.
+
+L'implémentation intuitive — « il y a un créneau et il approche, donc ça peut
+coûter » — est plausible et fausse, et c'est elle que le premier test écarte.
+
+**Ce que l'écran ne peut toujours pas dire est *quand*.** Sur une confirmée avec
+créneau, la pénalité dépend bien du seuil, et le seuil n'est pas servi. La
+phrase porte donc la conséquence sans l'heure. C'est moins utile que « libre
+jusqu'à 14 h 30 » et c'est ce qu'on sait ; `annulation_sans_frais_jusqu_a` est
+demandé, sur le modèle d'`absence_signalable_a`.
+
+**Deux appuis, et la conséquence entre les deux.** `cancelled` est terminal et
+la liste se parcourt au pouce : un bouton unique annulerait un rendez-vous par
+frôlement. La phrase est écrite pendant qu'on peut encore renoncer — l'apprendre
+par une pastille rouge le lendemain serait avoir tendu un piège.
+
+**Un défaut trouvé en chemin, prouvé et non déduit.** `annuler` vise `no_show`
+sans regarder son état de départ : depuis `awaiting_business` la transition est
+refusée, et avec les valeurs par défaut toute réservation en attente d'accord à
+moins de 24 h du rendez-vous ne s'annule pas du tout. Les deux tests existants
+confirmaient d'abord, donc aucun n'exerçait cet état — la forme la plus
+courante cachait la seule qui casse. Marqué `xfail(strict=True)` : la CI rougira
+le jour de la correction si le marqueur reste.
