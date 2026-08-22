@@ -285,6 +285,27 @@ function Echelle({
   const propres = (palier: PalierAccessible) =>
     palier.obstacles.filter((o) => !raisonsCommunes.has(o.raison));
 
+  /**
+   * Le palier ouvert le plus généreux, et lui seul.
+   *
+   * **La réponse à la question qu'on vient poser.** Ce n'est pas une somme :
+   * `offres_disponibles` compte les offres **de ce palier**, et une même
+   * prestation proposée à deux paliers y figure deux fois. Additionner les
+   * paliers ouverts annoncerait un catalogue plus grand que le vrai — le genre
+   * de nombre que personne ne vérifie parce qu'il reste plausible.
+   *
+   * Le plus généreux plutôt que le plus haut : c'est celui qui ouvre le plus,
+   * et c'est ce qu'on veut savoir. Nul quand rien n'est ouvert — le titre se
+   * tait alors, et l'échelle dit ce qui manque.
+   */
+  const meilleurOuvert = paliers
+    .filter((palier) => palier.accessible && palier.offres_disponibles > 0)
+    .reduce<PalierAccessible | null>(
+      (garde, palier) =>
+        garde === null || palier.offres_disponibles > garde.offres_disponibles ? palier : garde,
+      null,
+    );
+
   // Le premier fermé de l'échelle, et lui seul, est un objectif. Quand une
   // cause commune ferme tout, aucun ne l'est : le prochain geste est de
   // réparer le compte, pas de viser un palier.
@@ -309,9 +330,27 @@ function Echelle({
             {t('tiers.stillWaiting')}
           </Texte>
         </>
-      ) : (
-        <BandeauDePrincipe />
-      )}
+      ) : null}
+
+      {/* **Ce qu'on peut réserver, avant comment le système marche.** L'écran
+          s'ouvrait sur le principe — « plus le format engage, plus il ouvre » —
+          en bandeau d'encre avec trois barres qui montent. C'est une règle, et
+          une règle bien écrite : elle a fait lire l'écran comme la description
+          d'un mécanisme, deux campagnes de suite. La question qu'une créatrice
+          vient poser est « qu'est-ce que je peux réserver maintenant », et la
+          réponse tenait dans un chiffre au milieu d'un barreau.
+          Le principe n'est pas retiré, il descend : il explique l'échelle une
+          fois qu'on a vu ce qu'elle ouvre. */}
+      {!bloquant && meilleurOuvert ? (
+        <Apparition>
+          <Texte variante="type.screenTitle" testID="ce-qui-est-ouvert">
+            {t('tiers.ouvertMaintenant', {
+              count: meilleurOuvert.offres_disponibles,
+              palier: t(`parcours.format_${meilleurOuvert.content_format}`),
+            })}
+          </Texte>
+        </Apparition>
+      ) : null}
 
       {vue.is_new_creator ? (
         <Apparition rang={1}>
@@ -350,6 +389,10 @@ function Echelle({
           />
         </Apparition>
       ))}
+
+      {/* Le principe, après l'échelle : il explique ce qu'on vient de voir au
+          lieu de le précéder. */}
+      {!bloquant ? <BandeauDePrincipe /> : null}
 
       {/* Le compte porte sur tout BIND, pas sur le rayon : sans cette ligne,
           « 12 prestations » se lit comme « 12 autour de moi ». */}
@@ -566,6 +609,44 @@ export function BarreauDePalier({
     </View>
   );
 
+      {/* **La porte n'existait qu'en bureau, et c'est le défaut.** Le compte
+      est une porte — « douze prestations vous sont ouvertes » répond à la
+      question qu'on se pose en ouvrant l'application — mais
+      `large && porteOuverte` la retirait du téléphone, c'est-à-dire de
+      l'appareil où une créatrice lit cet écran. Le nombre s'affichait et ne
+      menait nulle part, exactement ce que l'écran 11c avait été écrit pour
+      corriger. */}
+  /**
+   * La porte, en bureau seulement — et ce n'est pas un oubli.
+   *
+   * Sur téléphone elle existe aussi, mais en pleine largeur au pied de la
+   * carte, sous un filet : la rangée d'échange y porte déjà le don et le
+   * compte, et une troisième colonne écraserait les deux. Deux emplacements
+   * pour un même geste, chacun dicté par la place disponible.
+   */
+  const porte = porteOuverte ? (
+    <Pressable
+      testID={`vers-prestations-${palier.tier_id}`}
+      accessibilityRole="button"
+      accessibilityLabel={t('tiers.seeServices', { count: palier.offres_disponibles })}
+      onPress={() => onVoirLesPrestations?.(palier)}
+      style={({ pressed }) => ({
+        minHeight: 40,
+        justifyContent: 'center',
+        alignItems: large ? undefined : 'center',
+        paddingHorizontal: 14,
+        borderRadius: radius['radius.lg'],
+        borderWidth: 1,
+        borderColor: c[bordureDeCarte],
+      opacity: pressed ? 0.7 : 1,
+    })}
+    >
+      <Texte variante="type.label" couleur={encre}>
+        {t('tiers.seeShort')}
+      </Texte>
+    </Pressable>
+  ) : null;
+
   const echange = (
     <View
       style={{
@@ -603,27 +684,8 @@ export function BarreauDePalier({
         />
       </View>
 
-      {large && porteOuverte ? (
-        <Pressable
-          testID={`vers-prestations-${palier.tier_id}`}
-          accessibilityRole="button"
-          accessibilityLabel={t('tiers.seeServices', { count: palier.offres_disponibles })}
-          onPress={() => onVoirLesPrestations?.(palier)}
-          style={({ pressed }) => ({
-            minHeight: 40,
-            justifyContent: 'center',
-            paddingHorizontal: 14,
-            borderRadius: radius['radius.lg'],
-            borderWidth: 1,
-            borderColor: c[bordureDeCarte],
-          opacity: pressed ? 0.7 : 1,
-        })}
-        >
-          <Texte variante="type.label" couleur={encre}>
-            {t('tiers.seeShort')}
-          </Texte>
-        </Pressable>
-      ) : null}
+      {large ? porte : null}
+
     </View>
   );
 

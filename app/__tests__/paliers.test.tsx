@@ -418,3 +418,117 @@ describe('sur grand écran', () => {
     expect(screen.queryByTestId('entete-paliers')).toBeNull();
   });
 });
+
+/**
+ * Ce que l'écran dit en premier.
+ *
+ * **C'est l'écran que l'utilisateur n'a pas compris à deux campagnes d'affilée**,
+ * et la cause n'était pas dans le détail : il s'ouvrait sur le principe — « plus
+ * le format engage, plus il ouvre » — en bandeau d'encre avec un diagramme. Une
+ * règle bien écrite, placée là où l'on cherche une réponse. La question qu'une
+ * créatrice vient poser est « qu'est-ce que je peux réserver maintenant », et la
+ * réponse était un chiffre au milieu d'un barreau.
+ */
+/**
+ * Les testID cherchés, dans l'ordre où l'arbre les rend.
+ *
+ * Sur l'arbre et non sur le texte du JSON : une chaîne recherchée par
+ * `indexOf` tombe sur la première occurrence, y compris dans un attribut
+ * d'accessibilité ou un commentaire, et l'ordre mesuré n'est alors pas celui
+ * du rendu.
+ */
+function ordreDesTestID(cherches: string[]): string[] {
+  const vus: string[] = [];
+  const parcourir = (noeud: unknown) => {
+    if (Array.isArray(noeud)) return noeud.forEach(parcourir);
+    if (!noeud || typeof noeud !== 'object') return;
+    const n = noeud as { props?: Record<string, unknown>; children?: unknown };
+    const id = n.props?.testID;
+    if (typeof id === 'string' && cherches.includes(id) && !vus.includes(id)) vus.push(id);
+    parcourir(n.children);
+  };
+  parcourir(screen.toJSON());
+  return vus;
+}
+
+describe('ce que l’écran répond avant d’expliquer', () => {
+  it('annonce ce qui est ouvert avant le principe', async () => {
+    await monter(
+      <PaliersScreen />,
+      vueDe([
+        palier('story', { offres_disponibles: 12 }),
+        palier('post', { accessible: false, obstacles: [PROCHE] }),
+      ]),
+    );
+
+    const ouvert = screen.getByTestId('ce-qui-est-ouvert');
+    expect(ouvert).toHaveTextContent(/12/);
+
+    // **L'ordre est l'assertion.** Les deux blocs existent dans les deux
+    // versions ; ce qui a changé est lequel vient en premier. Un test qui
+    // vérifierait seulement leur présence serait passé avant comme après.
+    expect(screen.getByTestId('bandeau-de-principe')).toBeTruthy();
+    expect(ordreDesTestID(['ce-qui-est-ouvert', 'bandeau-de-principe'])).toEqual([
+      'ce-qui-est-ouvert',
+      'bandeau-de-principe',
+    ]);
+  });
+
+  it('nomme le palier le plus généreux, et ne somme pas les paliers ouverts', async () => {
+    // **La faute que ce test existe pour attraper.** `offres_disponibles` compte
+    // les offres *de ce palier* : une même prestation proposée à deux paliers y
+    // figure deux fois. Additionner annoncerait 12 + 30 = 42 prestations, un
+    // nombre plus grand que le catalogue et parfaitement plausible.
+    await monter(
+      <PaliersScreen />,
+      vueDe([
+        palier('story', { offres_disponibles: 12 }),
+        palier('post', { offres_disponibles: 30 }),
+      ]),
+    );
+
+    const ouvert = screen.getByTestId('ce-qui-est-ouvert');
+    expect(ouvert).toHaveTextContent(/30/);
+    expect(ouvert).not.toHaveTextContent(/42/);
+  });
+
+  it('se tait quand rien n’est ouvert, au lieu d’annoncer zéro', async () => {
+    // « 0 prestations vous sont ouvertes » en titre d'écran est un accueil que
+    // le produit ne doit pas faire. L'échelle dit ce qui manque, elle suffit.
+    await monter(
+      <PaliersScreen />,
+      vueDe([
+        palier('story', { accessible: false, obstacles: [PROCHE] }),
+        palier('post', { accessible: false, obstacles: [LOIN] }),
+      ]),
+    );
+
+    expect(screen.queryByTestId('ce-qui-est-ouvert')).toBeNull();
+    // Et l'écran n'est pas muet pour autant : le principe reste.
+    expect(screen.getByTestId('bandeau-de-principe')).toBeTruthy();
+  });
+
+  it('ouvre la porte vers les prestations sur téléphone aussi', async () => {
+    // Elle était conditionnée à `large` : sur l'appareil où une créatrice lit
+    // cet écran, « douze prestations » ne menait nulle part. C'est exactement ce
+    // que l'écran 11c avait été écrit pour corriger.
+    const onVoirLesPrestations = jest.fn();
+    await monter(
+      <PaliersScreen onVoirLesPrestations={onVoirLesPrestations} />,
+      vueDe([palier('story', { offres_disponibles: 12 })]),
+    );
+
+    await fireEvent.press(screen.getByTestId('vers-prestations-instagram-story'));
+    expect(onVoirLesPrestations).toHaveBeenCalledTimes(1);
+  });
+
+  it('ne prétend pas ouvrir une porte sur un palier sans prestation', async () => {
+    // La divergence : même palier ouvert, même écran, et seul le compte change.
+    await monter(
+      <PaliersScreen onVoirLesPrestations={jest.fn()} />,
+      vueDe([palier('story', { offres_disponibles: 0 })]),
+    );
+
+    expect(screen.queryByTestId('vers-prestations-instagram-story')).toBeNull();
+  });
+});

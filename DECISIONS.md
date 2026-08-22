@@ -8167,24 +8167,47 @@ les confondre écrirait un chiffre faux dans l'un des deux.
 Sous-proposer la clôture est le bon défaut : sur-proposer fermerait un dossier
 où il fallait trancher.
 
-
 ---
 
-## 2026-08-21 — Deux totaux valent mieux qu'un tiret
+## 2026-08-20 — Les paliers : ce qu'on peut réserver, avant comment le système marche
 
-**Le tiret était la seule chose que l'écran disait du revenu dans le cas qu'il
-existe pour traiter.** `totaliser` additionnait tout et rendait « — » dès que
-deux devises se croisaient. Le refus était juste — aucun taux de change n'est
-stocké, et c'est le seul écran du produit qui montre de l'argent — mais la
-conclusion ne l'était pas : deux totaux séparés sont chacun vrais, et leur
-juxtaposition dit ce qu'aucun total combiné ne pourrait dire.
+**L'écran s'ouvrait sur une règle.** `tiers.principe` — « plus le format engage,
+plus il ouvre » — en bandeau d'encre, avec un diagramme de trois barres qui
+montent. C'est une bonne phrase, et c'est le problème : posée en tête, elle fait
+lire l'écran comme la description d'un mécanisme. La question qu'une créatrice
+vient poser est « qu'est-ce que je peux réserver maintenant », et la réponse
+était un chiffre au milieu d'un barreau, sous une légende « ce que j'obtiens ».
 
-**Le groupe est la devise ET la périodicité.** Additionner un mensuel et un
-annuel de la même devise donnerait un nombre qui n'est ni l'un ni l'autre — et
-qui aurait l'air juste, ce qui est le pire des chiffres faux. C'est le cas que la
-mutation éprouve, et le décor qui le fait diverger est deux plans en dollars dont
-un annuel.
+L'écran annonce désormais **ce qui est ouvert** en titre, et le principe descend
+sous l'échelle : il explique ce qu'on vient de voir au lieu de le précéder. Même
+renversement que l'annuaire du commerce le même jour, et pour la même raison —
+on répond d'abord, on explique ensuite.
 
-**Le plan annuel affiche son revenu tel qu'il est facturé.** Aucun mensuel n'est
-calculé pour lui : un chiffre divisé, posé à côté de deux prix mensuels réels, se
-lit comme un troisième prix.
+**Le titre nomme le palier le plus généreux, et ne somme rien.**
+`offres_disponibles` compte les offres **de ce palier** : une même prestation
+proposée à deux paliers y figure deux fois, et additionner les paliers ouverts
+annoncerait un catalogue plus grand que le vrai. Le genre de nombre que personne
+ne vérifie parce qu'il reste plausible. Un test l'interdit, et sa mutation —
+la somme — tombe.
+
+**Il se tait quand rien n'est ouvert.** « 0 prestations vous sont ouvertes » en
+titre d'écran est un accueil que le produit ne fait pas ; l'échelle dit ce qui
+manque, elle suffit.
+
+## Ce que la vérification a démenti
+
+**La matière est déjà celle d'Ambre.** L'écran a été porté en v1.0 : contour,
+teinte et aplat montent, la couleur de rôle a disparu, aucun rayon ni aucune
+couleur n'est écrit en dur. Il n'y avait pas d'ancien système à retirer.
+
+**Et la porte vers les prestations existait déjà sur téléphone.** J'ai lu
+`{large && porteOuverte}` sur la commande de bureau et conclu qu'elle manquait
+ailleurs ; j'ai composé une seconde porte, et le test a trouvé deux nœuds au même
+`testID`. Elle était plus bas dans la carte, en pleine largeur sous un filet —
+deux emplacements pour un même geste, chacun dicté par la place disponible. Ma
+correction est annulée, le commentaire du code dit maintenant que le bureau n'est
+pas le seul cas, et le test de la porte reste comme garde de non-régression.
+
+La bascule proche/total de la liste des prestations est en place elle aussi
+(`VUES = ['proche', 'tout']`), et la cause commune est bien annoncée une fois en
+tête et retirée de chaque barreau.
