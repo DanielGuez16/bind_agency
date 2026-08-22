@@ -16,6 +16,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
+import { mainsDeLaFiche } from '../src/screens/terrain/mains';
 import { bilanDeTournee } from '../src/screens/terrain/tournee';
 
 const FICHE = (extra: Record<string, unknown> = {}) => ({
@@ -133,5 +134,39 @@ describe('le bilan de la tournée', () => {
 
   it('et une liste absente ne fait pas tomber le bilan', () => {
     expect(bilanDeTournee(null)).toMatchObject({ preparees: 0, remises: 0 });
+  });
+});
+
+describe('qui a préparé, et qui a remis', () => {
+  const MAINS = (prepared: string | null, remis: string | null) =>
+    mainsDeLaFiche({ prepared_by: prepared, remis_par: remis });
+
+  it('la même main ne s’écrit qu’une fois', () => {
+    // **Le cas courant.** Écrire son adresse deux fois sur la même ligne
+    // n'ajoute rien et allonge une liste qu'on parcourt.
+    expect(MAINS('amelie@bind.example', 'amelie@bind.example')).toEqual({
+      preparee: 'amelie@bind.example',
+      remiseParUnAutre: null,
+    });
+  });
+
+  it('et deux mains différentes se disent toutes les deux', () => {
+    // **Le cas qui diverge de « n'affiche que le préparateur ».** Préparer
+    // quarante fiches au bureau et en remettre vingt en tournée sont deux
+    // gestes, et c'est là que la comparaison des méthodes commence.
+    expect(MAINS('amelie@bind.example', 'theo@bind.example')).toMatchObject({
+      preparee: 'amelie@bind.example',
+      remiseParUnAutre: 'theo@bind.example',
+    });
+  });
+
+  it('une fiche remise sans préparateur connu dit qui l’a remise', () => {
+    // C'est la seule main qu'on ait : la taire laisserait la ligne muette.
+    expect(MAINS(null, 'theo@bind.example').remiseParUnAutre).toBe('theo@bind.example');
+  });
+
+  it('et rien de tout cela ne fait tomber une fiche sans main', () => {
+    expect(MAINS(null, null)).toEqual({ preparee: null, remiseParUnAutre: null });
+    expect(mainsDeLaFiche({} as never)).toEqual({ preparee: null, remiseParUnAutre: null });
   });
 });
