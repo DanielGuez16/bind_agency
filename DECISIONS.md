@@ -8243,3 +8243,32 @@ PR écrit `#213` est un hexadécimal à trois chiffres valide : la garde le refu
 à raison — elle ne peut pas distinguer un renvoi d'une couleur. Les références
 s'écrivent donc sans dièse dans les sources ; `DECISIONS.md` et `TASKS.md` ne
 sont pas balayés et gardent la forme habituelle.
+
+---
+
+## 2026-08-21 — La tournée : ce qui se dérive, et ce qui ne s'invente pas
+
+**L'écart entre les deux voies est dérivable, et c'est le chiffre qui décide.**
+`/admin/prospects` rend la liste complète — pas de pagination — donc le taux
+d'activation par `channel` se calcule honnêtement côté écran. Un taux global
+mélangerait justement les deux méthodes qu'on cherche à comparer.
+
+**Un taux sur zéro remise n'existe pas.** « 0 % » se lit comme un échec ;
+l'absence de données n'en est pas un. Même règle que partout ailleurs dans ce
+produit : nul veut dire neutre, pas zéro.
+
+**Une fiche retirée compte dans les remises.** La visite a bien eu lieu, et
+l'oublier flatterait le taux d'activation — c'est-à-dire le chiffre sur lequel on
+décide de la méthode.
+
+**L'ordre des états va du plus définitif au plus ouvert.** Une fiche reprise dont
+le lien a expiré depuis reste reprise : l'expiration d'un lien déjà consommé ne
+dit rien, et afficher « expirée » sur un salon qui travaille depuis un mois
+enverrait quelqu'un le revisiter.
+
+**Deux des trois états de la planche ne sont pas connaissables**, et l'écran ne
+fait pas semblant. Rien n'enregistre qu'un lien a été ouvert : un lien jamais vu
+et un lien vu puis abandonné rendent la même ligne. Ce sont pourtant les deux cas
+où la conduite diffère — l'un se revisite, l'autre se relance. L'état `remis`
+couvre les deux sans prétendre les séparer ; écrire « jamais ouvert » sur cette
+base enverrait quelqu'un refaire une visite là où un message aurait suffi.
