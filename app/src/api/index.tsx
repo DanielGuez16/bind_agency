@@ -66,7 +66,6 @@ import type {
   FichePreparee,
   LienRemis,
   RepriseDuCompte,
-  ReperesDuVoisinage,
   StatutDuCommerce,
 } from './types';
 
