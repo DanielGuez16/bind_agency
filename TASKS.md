@@ -1690,6 +1690,26 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       d'aucune réservation — le prix est du reporting ici — mais il déplace le
       palier suggéré, qui se calcule sur le rang du prix dans le catalogue. Non
       offert en attendant, plutôt que tranché seul*
+- [x] **Couper les notifications de cet appareil**
+      *`revoquerUnTerminal` existait, documentée, appelant la bonne route — et
+      personne ne l'appelait. Les réglages portent maintenant l'interrupteur,
+      pour la créatrice comme pour le salon.*
+      *Révoquer ne suffisait pas : le jeton se réenregistre à chaque session, et
+      couper sans mémoriser le choix aurait fait un geste qui s'annule tout seul
+      au lancement suivant. Le refus est gardé sur l'appareil et relu avant tout
+      enregistrement. « Refusé ici » est distinct de « refusé par le système » :
+      les deux se lèvent à des endroits différents*
+- [ ] **Aucune route ne liste les terminaux d'un compte**
+      *`PUT /me/devices` et `DELETE /me/devices/{token}` existent, `GET` non.
+      Révoquer exige donc de **posséder** le jeton, qu'on n'a que sur l'appareil
+      lui-même : couper les notifications d'un **téléphone perdu** depuis un
+      autre appareil est impossible, et c'est précisément le cas qui motive
+      cette capacité.*
+      *L'écran le dit plutôt que de laisser croire — quelqu'un qui vient de
+      perdre son téléphone est la dernière personne à qui l'on doit une
+      demi-vérité. Il faudrait un `GET /me/devices` rendant l'appareil, sa
+      plateforme et sa dernière activité, plus une révocation par identifiant
+      et non par jeton*
 - [ ] **Neuf planches d'écrans portent encore la v1.0**
       *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
       passés en v3, dans la palette Ambre. Les autres suivent l'ordre du
