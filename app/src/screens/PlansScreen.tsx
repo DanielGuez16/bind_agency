@@ -33,14 +33,17 @@ import { View } from 'react-native';
 import { useApi, type PlanAdministrateur } from '../api';
 import {
   EmptyState,
+  Jauge,
   SkeletonLignes,
   TableHeader,
   TableRow,
   Texte,
   type Colonne,
 } from '../components';
+import { formatNumber } from '../format';
 import { useI18n } from '../i18n';
 import { Ecran } from './Ecran';
+import { dureeLisible, partsParCategorie } from './plans/duree';
 import { useRequete } from './useRequete';
 
 export function PlansScreen() {
@@ -57,6 +60,9 @@ export function PlansScreen() {
     { cle: 'prix', label: t('admin.plansPrix'), largeur: 110, chiffre: true },
     { cle: 'abonnes', label: t('admin.plansAbonnes'), largeur: 90, chiffre: true },
     { cle: 'actifs', label: t('admin.plansActifs'), largeur: 90, chiffre: true },
+    // **La colonne qui manquait le plus.** Sept mois contre onze à prix double
+    // dit que le second n'est pas trop cher, et aucun total ne le disait.
+    { cle: 'duree', label: t('admin.plansDuree'), largeur: 140 },
     { cle: 'mrr', label: t('admin.plansMrr'), largeur: 130, chiffre: true },
   ];
 
@@ -101,6 +107,7 @@ export function PlansScreen() {
                         ? t('admin.plansSansPreneur')
                         : String(plan.subscriptions_count),
                     actifs: String(plan.active_subscriptions_count),
+                    duree: libelleDeDuree(plan, t),
                     mrr: montant(plan.mrr_cents, plan.currency),
                   }}
                 />
@@ -120,6 +127,24 @@ export function PlansScreen() {
                 }}
               />
             </View>
+
+            {/* **Qui prend chaque plan.** Un prix unique pour un salon
+                d'ongles et un musée n'est pas un prix, c'est une moyenne — et
+                la moyenne se voit ici. C'est l'argument pour construire la
+                tarification par catégorie ; la modulation elle-même n'existe
+                pas, l'argument si. */}
+            {plans.some((plan) => (plan.abonnes_par_categorie ?? []).length > 0) ? (
+              <View style={{ gap: 12 }} testID="qui-prend-quoi">
+                <Texte variante="type.label" couleur="ink.soft">
+                  {t('admin.plansQuiPrend')}
+                </Texte>
+                {plans.map((plan) =>
+                  (plan.abonnes_par_categorie ?? []).length === 0 ? null : (
+                    <QuiPrendCePlan key={plan.plan_id} plan={plan} />
+                  ),
+                )}
+              </View>
+            ) : null}
 
             {/* **Un mensuel calculé n'est pas un prix mensuel.** Un plan
                 facturé à l'année porte un revenu mensuel qui est la division du
@@ -141,6 +166,92 @@ export function PlansScreen() {
         );
       }}
     </Ecran>
+  );
+}
+
+/**
+ * Ce que la colonne de durée écrit, ou son silence.
+ *
+ * **Le nombre ne va jamais seul.** « 7 mois » sorti de trois départs se lit
+ * comme un fait ; l'effectif à côté est ce qui empêche de le croire. Et quand
+ * les abonnements en cours dépassent les terminés, la médiane est une minorité
+ * qui parle pour tous : la colonne le dit plutôt que de la corriger.
+ */
+function libelleDeDuree(
+  plan: PlanAdministrateur,
+  t: (cle: string, p?: Record<string, unknown>) => string,
+): string {
+  const duree = dureeLisible(plan);
+  // **Silence et non tiret.** Un tiret dans une colonne de chiffres se lit
+  // comme une mesure manquante par accident ; ici il n'y a simplement pas
+  // encore d'abonnement terminé, ce qui est le cas normal d'un plan récent.
+  if (duree === null) return '';
+
+  const base = t('admin.plansDureeMois', { mois: duree.mois, sur: duree.sur });
+  // **La médiane courue n'apparaît que là où elle sert.** Deux médianes côte à
+  // côte en permanence feraient deux nombres à comparer sur chaque ligne ;
+  // celle-ci n'a d'intérêt que quand l'autre parle au nom d'une minorité.
+  if (!duree.minoritaire) return base;
+  return duree.enCoursMois === null
+    ? `${base} ${t('admin.plansDureeMinoritaire', { enCours: duree.enCours })}`
+    : `${base} ${t('admin.plansDureeMinoritaireCourue', {
+        enCours: duree.enCours,
+        mois: duree.enCoursMois,
+      })}`;
+}
+
+/**
+ * Qui prend ce plan, par catégorie.
+ *
+ * **L'écart entre la catégorie visée et celles qui souscrivent est l'argument.**
+ * Si une catégorie souscrit peu et part vite, le plan est trop cher pour elle ;
+ * si elle souscrit massivement et ne part jamais, il est trop bas. Une
+ * catégorie à zéro garde sa ligne — « ce plan n'a jamais séduit un salon
+ * d'ongles » est exactement ce qu'on vient lire, et une ligne retirée le
+ * tairait.
+ */
+function QuiPrendCePlan({ plan }: { plan: PlanAdministrateur }) {
+  const { t, locale } = useI18n();
+
+  return (
+    <View style={{ gap: 6 }} testID={`categories-${plan.plan_id}`}>
+      <Texte variante="type.caption" couleur="ink.soft">
+        {plan.name}
+      </Texte>
+      {partsParCategorie(plan).map((part) => (
+        <View
+          key={part.categorie}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}
+          testID={`categorie-${plan.plan_id}-${part.categorie}`}
+        >
+          <View style={{ width: 110 }}>
+            <Texte
+              variante="type.caption"
+              couleur={part.abonnes === 0 ? 'ink.mute' : 'ink.soft'}
+            >
+              {t(`categories.${part.categorie}`)}
+            </Texte>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Jauge fraction={part.fraction} />
+          </View>
+          <View style={{ width: 76 }}>
+            <Texte
+              variante="type.monoSmall"
+              couleur={part.abonnes === 0 ? 'ink.mute' : 'ink.default'}
+              align="right"
+            >
+              {part.abonnes === part.actifs
+                ? formatNumber(part.abonnes, locale)
+                : t('admin.plansCategorieRestants', {
+                    abonnes: formatNumber(part.abonnes, locale),
+                    actifs: formatNumber(part.actifs, locale),
+                  })}
+            </Texte>
+          </View>
+        </View>
+      ))}
+    </View>
   );
 }
 

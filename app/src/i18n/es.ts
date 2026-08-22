@@ -670,6 +670,12 @@ export const es: Catalogue = {
     plansPrix: 'Precio',
     plansAbonnes: 'Negocios',
     plansActifs: 'Activos',
+    plansDuree: 'Duración mediana',
+    plansDureeMois: '{{mois}} meses · sobre {{sur}} terminadas',
+    plansDureeMinoritaire: '· {{enCours}} siguen activas',
+    plansDureeMinoritaireCourue: '· {{enCours}} siguen activas, {{mois}} meses hasta ahora',
+    plansCategorieRestants: '{{abonnes}} · quedan {{actifs}}',
+    plansQuiPrend: 'Quién lo toma',
     plansMrr: 'Ingresos / mes',
     plansMrrNote:
       'Un plan anual cuenta como un doceavo de su precio cada mes, para que todas las filas sean comparables. Solo se cuentan las suscripciones activas.',

@@ -714,6 +714,12 @@ export const en = {
     plansPrix: 'Price',
     plansAbonnes: 'Businesses',
     plansActifs: 'Active',
+    plansDuree: 'Median tenure',
+    plansDureeMois: '{{mois}} mo · on {{sur}} ended',
+    plansDureeMinoritaire: '· {{enCours}} still running',
+    plansDureeMinoritaireCourue: '· {{enCours}} still running, {{mois}} mo so far',
+    plansCategorieRestants: '{{abonnes}} · {{actifs}} left',
+    plansQuiPrend: 'Who takes it',
     plansMrr: 'Revenue / month',
     // La règle, écrite sous le tableau : sans elle, « revenu par mois » sur
     // une ligne annuelle laisse deviner si c'est le prix ou son douzième.

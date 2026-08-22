@@ -8311,3 +8311,35 @@ passait sur les vignettes de la visionneuse de carte, où l'opacité de l'appui
 était écrasée deux lignes plus bas par celle du rang — les deux se multiplient
 maintenant. La garde exige donc un emploi, et la forme non déstructurée
 `(etat) => etat.pressed` reste admise.
+
+
+---
+
+## 2026-08-22 — La question tranchée en ne la tranchant pas
+
+**Je demandais un nombre, la session des routes en a servi quatre, et elle a eu
+raison.** Ma question était : les abonnements encore actifs comptent-ils dans la
+médiane ? Sa réponse est qu'aucune des deux options ne va seule — une durée
+terminée est un **fait**, une durée courue est un **minimum**, et prendre la
+médiane d'un mélange rend un nombre dont personne ne peut dire ce qu'il mesure.
+C'est la censure à droite, et le bon geste était de ne pas choisir.
+
+L'écran affiche donc « 7 mois · sur 12 terminés ». Le second nombre empêche de
+lire le premier comme un fait quand il sort de trois départs. Et quand les
+abonnements en cours dépassent les terminés, la ligne le dit : la médiane parle
+au nom d'une minorité, et le signaler vaut mieux que la corriger.
+
+**Aucune médiane de médianes sur la ligne de total.** Additionner ou moyenner des
+médianes ne rend pas la médiane de l'ensemble : la cellule reste vide.
+
+**L'échelle des barres vient de la catégorie la plus fournie, pas du total**, qui
+écraserait les quatre lignes d'un plan où une catégorie domine — et c'est
+précisément ce plan-là qu'on vient lire. **Une catégorie à zéro garde sa ligne**,
+parce que « ce plan n'a jamais séduit un salon d'ongles » est exactement ce que
+l'écran existe pour montrer.
+
+**Et `TASKS.md` a perdu trois entrées dans une résolution de conflit.** Vingt-sept
+lignes effacées sans rien à la place. Elles ont fini par être livrées, donc rien
+n'a manqué cette fois — mais ce fichier est le canal qui a livré quatre rondes de
+champs en deux jours, et une demande effacée est une demande qui ne revient pas.
+Un conflit sur ce fichier se résout en gardant les deux côtés.

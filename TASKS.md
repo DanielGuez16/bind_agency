@@ -1541,6 +1541,28 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       pas été transmise, et cette route dit lesquelles reviennent —
       `dossiers_touches` départage un motif difficile d'un motif
       incompréhensible. Aucun écran ne la lit encore*
+- [x] **Les plans : deux totaux, la durée médiane, et qui prend chaque plan**
+      *`totaliser` rendait « — » dès que deux devises se croisaient — le seul
+      chiffre d'argent de l'écran, dans le cas même qu'il existe pour traiter.
+      Un total par groupe de devise **et** de périodicité : additionner un
+      mensuel et un annuel de la même devise donnerait un nombre qui n'est ni
+      l'un ni l'autre, et qui aurait l'air juste.*
+      *La durée médiane arrive en quatre champs et non un, et c'est mieux que ce
+      que je demandais : une durée terminée est un fait, une durée courue est un
+      minimum, et la médiane d'un mélange ne mesure rien de nommable. L'écran
+      affiche « 7 mois · sur 12 terminés », et signale quand la médiane parle au
+      nom d'une minorité.*
+      *La répartition par catégorie porte combien restent à côté de combien ont
+      souscrit — c'est l'écart qui fait l'argument. Une catégorie à zéro garde sa
+      ligne : « ce plan n'a jamais séduit un salon d'ongles » est ce qu'on vient
+      lire. 1188 tests verts, 8 mutations sur les deux moitiés*
+- [ ] **`TASKS.md` a perdu trois entrées dans une résolution de conflit**
+      *#212 en a effacé vingt-sept lignes sans rien mettre à la place — les trois
+      demandes des plans, dont deux qui attendaient l'API. Elles ont fini par
+      être livrées, donc rien n'a été perdu cette fois ; mais ce fichier est le
+      canal qui a livré quatre rondes de champs aujourd'hui, et une demande
+      effacée est une demande qui ne revient pas. Un conflit sur ce fichier se
+      résout en **gardant les deux côtés**, jamais en prenant le sien*
 - [ ] **Neuf planches d'écrans portent encore la v1.0**
       *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
       passés en v3, dans la palette Ambre. Les autres suivent l'ordre du
