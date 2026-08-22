@@ -90,12 +90,16 @@ function Chrome({
         borderBottomColor: c[surEncre ? 'line.onDark' : 'line.default'],
       }}
     >
+      {/* Le bouton de fermeture répond, comme tout ce qui se presse. Il était
+          couvert par une dispense posée sur le fichier entier — écrite pour un
+          fond de visionneuse qui n'existe plus. */}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={t('common.fermer')}
         hitSlop={12}
         onPress={onFermer}
         testID="fermer-la-visionneuse"
+        style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
       >
         <Icone nom="croix" couleur={encre} taille={22} />
       </Pressable>
@@ -287,7 +291,7 @@ export function VisionneuseDeCarte({
                 accessibilityState={{ selected: rang === courante }}
                 onPress={() => setCourante(rang)}
                 testID={`vignette-de-carte-${rang}`}
-                style={{
+                style={({ pressed }) => ({
                   width: 40,
                   height: 52,
                   borderWidth: rang === courante ? 2 : 1,
@@ -295,8 +299,13 @@ export function VisionneuseDeCarte({
                   // La page courante est pleine, les autres en retrait. Une
                   // opacité plutôt qu'un voile : c'est la seule propriété
                   // animable du système, et rien ne se pose par-dessus.
-                  opacity: rang === courante ? 1 : 0.5,
-                }}
+                  //
+                  // **Les deux opacités se multiplient**, elles ne se
+                  // remplacent pas : posée en tête, celle de l'appui était
+                  // écrasée par celle du rang, et la vignette ne répondait
+                  // qu'à condition d'être déjà la page courante.
+                  opacity: (rang === courante ? 1 : 0.5) * (pressed ? 0.7 : 1),
+                })}
               >
                 <Image
                   source={{ uri: api.urlDeLaVignette(cle) ?? undefined }}
