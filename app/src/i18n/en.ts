@@ -75,7 +75,7 @@ export const en = {
     // Deux grandeurs, chacune nommée : neuf prestations chez un seul salon et
     // neuf chez six sont deux offres très différentes.
     prestationsDontProches: '{{count}} of them are within {{rayon}} km, at {{salons}} businesses.',
-    prestationsProches: 'Near you first',
+    prestationsProches: 'Nearby',
     prestationsToutes: 'All',
     seeShort: 'See them',
     principe: 'The more demanding the format you commit to, the more generous the services it opens.',
@@ -701,7 +701,7 @@ export const en = {
     // « Expected » ne disait pas de quoi : attendu de qui, et quoi au juste.
     // Ce sont des contreparties engagées dont la publication n'est pas encore
     // arrivée — le salon n'a rien à y faire, et c'est ce qu'il doit lire.
-    filtreAttendue: 'Awaiting their post',
+    filtreAttendue: 'Not posted',
     filtreApprouvee: 'Approved',
     creatricePartie: 'Creator has left BIND',
     approuver: 'Approve the publication',

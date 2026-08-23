@@ -25,15 +25,38 @@ import {
 import { View, type LayoutChangeEvent } from 'react-native';
 
 import { breakpoint } from '../theme';
+import { ECART_DES_COLONNES, placeDisponible } from './placeDisponible';
 
 export type Gabarit = {
   /** La largeur du conteneur, en points. Zéro avant la première mesure. */
   largeur: number;
+  /**
+   * Y a-t-il la place pour une seconde colonne de `besoin` points ?
+   *
+   * **`large` ne suffit pas, et rien ne composait entre 390 et 1512.** Le seuil
+   * `expanded` vaut 900 : à cette largeur exacte, la barre latérale déployée en
+   * prend 240 et il reste 660 pour le contenu. Une colonne latérale fixe de 440
+   * — le journal de la caisse — laissait alors **196 points** au pavé de code,
+   * c'est-à-dire moins que ce qui l'accompagne. Rien ne débordait : la colonne
+   * fixe tient sa largeur et c'est le corps qui se comprime, ce qui rend le
+   * défaut invisible à toute garde qui cherche un débordement.
+   *
+   * La question à poser n'est donc pas « l'écran est-il large » mais **« reste-t-il
+   * la place »**. Chaque écran connaît la largeur de sa seconde colonne ; il la
+   * donne, et cette fonction répond.
+   *
+   * **La barre est comptée déployée, toujours.** Son repli est une préférence
+   * d'appareil qui vit ailleurs, et la lire ici coupleraient la mesure à un
+   * réglage. Compter le pire fait scinder un peu plus tard qu'il n'aurait été
+   * possible — jamais plus tôt qu'il ne faut, ce qui est le seul sens dans
+   * lequel l'erreur est sans conséquence.
+   */
+  place: (besoin: number) => boolean;
   /** Au-delà du seuil « expanded » : barre latérale au lieu d'onglets. */
   large: boolean;
 };
 
-const COMPACT: Gabarit = { largeur: 0, large: false };
+const COMPACT: Gabarit = { largeur: 0, large: false, place: () => false };
 
 const Contexte = createContext<Gabarit>(COMPACT);
 
@@ -47,7 +70,13 @@ export function GabaritProvider({ children }: { children: ReactNode }) {
   const [largeur, setLargeur] = useState(0);
 
   const valeur = useMemo<Gabarit>(
-    () => ({ largeur, large: largeur >= breakpoint.expanded }),
+    () => ({
+      largeur,
+      large: largeur >= breakpoint.expanded,
+      // L'écart entre les deux colonnes est celui du système, et il compte : à
+      // vingt-quatre points près on scinde une colonne qui ne tient pas.
+      place: (besoin: number) => placeDisponible(largeur, besoin),
+    }),
     [largeur],
   );
 
@@ -80,8 +109,7 @@ export function useGabarit(): Gabarit {
  * nature a la sienne — et le vide à droite d'un détail commerce est voulu, pas
  * un défaut de remplissage.
  */
-/** L'écart entre la liste et le détail. `space.6`, comme partout ailleurs. */
-export const ECART_DES_COLONNES = 24;
+export { ECART_DES_COLONNES } from './placeDisponible';
 
 export type NatureDeContenu =
   | 'creator'

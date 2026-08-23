@@ -23,7 +23,15 @@ import { ThemeProvider } from '../src/theme';
 const mockGabarit = { large: false };
 jest.mock('../src/shell/gabarit', () => ({
   ...jest.requireActual('../src/shell/gabarit'),
-  useGabarit: () => ({ largeur: mockGabarit.large ? 1512 : 390, large: mockGabarit.large }),
+  // `place` vient de la règle elle-même : la recopier ici ferait un
+  // double qui dérive le jour où le seuil bouge.
+  useGabarit: () => ({
+    largeur: mockGabarit.large ? 1512 : 390,
+    large: mockGabarit.large,
+    place: (besoin: number) =>
+      (require('../src/shell/placeDisponible') as typeof import('../src/shell/placeDisponible'))
+        .placeDisponible(mockGabarit.large ? 1512 : 390, besoin),
+  }),
 }));
 
 beforeEach(() => {

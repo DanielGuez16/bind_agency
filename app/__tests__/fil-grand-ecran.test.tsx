@@ -21,7 +21,15 @@ let mockLargeur = 1120;
 
 jest.mock('../src/shell/gabarit', () => ({
   ...jest.requireActual('../src/shell/gabarit'),
-  useGabarit: () => ({ largeur: mockLargeur, large: true }),
+  // `place` vient de la règle elle-même : la recopier ici ferait un
+  // double qui dérive le jour où le seuil bouge.
+  useGabarit: () => ({
+    largeur: mockLargeur,
+    large: true,
+    place: (besoin: number) =>
+      (require('../src/shell/placeDisponible') as typeof import('../src/shell/placeDisponible'))
+        .placeDisponible(mockLargeur, besoin),
+  }),
 }));
 
 function commerce(id: string) {

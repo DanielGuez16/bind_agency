@@ -160,7 +160,12 @@ export function PaliersScreen({
 }) {
   const { api } = useApi();
   const { t, locale } = useI18n();
-  const { large } = useGabarit();
+  // **La place, et non la largeur.** La colonne des règles est fixe : sans la place, elle passe sous l'échelle.
+  // Au seuil de bascule il ne restait que quelques centaines de points
+  // au corps, sans que rien ne déborde — c'est la comparaison des deux
+  // colonnes qui dit le défaut, pas un dépassement.
+  const { place } = useGabarit();
+  const large = place(LARGEUR_DES_REGLES);
 
   // **Les comptes de proximité étaient nuls partout**, parce que personne ne
   // les demandait : le serveur les rend, l'écran les lit, et aucune coordonnée

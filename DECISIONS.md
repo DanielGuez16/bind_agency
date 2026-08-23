@@ -9536,3 +9536,99 @@ finiraient par diverger, et c'est celui que personne ne regarde qui dériverait.
 **Pas de crochet de fin de liste, et il n'en faut pas.** « Voir plus » est un
 appui explicite, donc il vit dans le pied et défile sous la dernière fiche —
 poser un `onEndReached` que rien n'exercerait serait du mécanisme sans emploi.
+## 2026-08-22 — Deux vérifications de Design : l'espagnol, et les largeurs entre les deux maquettes
+
+### Les libellés courts en espagnol
+
+`type.label` fait onze points en capitales avec 1,4 d'interlettrage, et
+`SegmentedTabs` le porte dans des cellules en `flex: 1`. Sur un téléphone de 390
+points avec trois onglets, chaque cellule offre **103 points utiles** — une
+douzaine de capitales.
+
+**La mesure a trouvé pire que la question posée.** Design demandait de vérifier
+l'espagnol ; « Awaiting their post » débordait **en anglais**, la langue des
+maquettes. Personne n'avait mesuré dans aucune des deux, et c'est moi qui l'avais
+rallongé — pour le rendre plus clair que « expected », ce qu'il est, mais à deux
+lignes.
+
+Deux libellés corrigés : « Not posted » / « Sin publicar », et « Nearby » /
+« Cerca ». Les onze autres tiennent, l'espagnol compris.
+
+**Rien n'était tronqué**, et c'est ce qui rendait le défaut invisible : la barre
+enroule. Le défaut n'est pas une perte de texte mais un onglet à deux lignes
+pendant que ses voisins en font une — qu'aucune garde cherchant un débordement
+n'aurait vu.
+
+### Les largeurs intermédiaires
+
+Rien n'avait été composé entre 390 et 1512. Le seuil `expanded` vaut 900 : à
+cette largeur, la barre latérale déployée prend 240 et il reste 660 au contenu.
+Une colonne latérale fixe de 440 — le journal de la caisse — laissait alors
+**196 points** au pavé de code, moins que ce qui l'accompagne. Les paliers
+laissaient 276 à l'échelle contre 360 à la colonne des règles : l'explication
+plus large que ce qu'elle explique.
+
+**Là non plus rien ne débordait** : la colonne fixe tient sa largeur, c'est le
+corps qui se comprime.
+
+La question à poser n'est donc pas « l'écran est-il large » mais **« reste-t-il
+la place »**. Chaque écran connaît la largeur de sa seconde colonne ; il la
+donne, `placeDisponible` répond. La barre est comptée **déployée, toujours** :
+son repli est une préférence d'appareil, et compter le pire fait scinder un peu
+plus tard qu'il n'aurait été possible — jamais plus tôt qu'il ne faut, seul sens
+dans lequel l'erreur est sans conséquence.
+
+## Trois défauts de garde trouvés en écrivant ces deux-là
+
+**Huit suites simulaient `useGabarit` avec un objet littéral.** Le jour où le
+gabarit a gagné une fonction, les huit ont rendu `undefined` et l'appel a levé.
+Recopier la règle dans chaque double aurait remplacé une panne franche par huit
+copies qui dérivent en silence — un double qui ne suit plus ce qu'il double
+éprouve un écran qui n'existe pas. La règle est donc extraite, et les doubles
+l'appellent.
+
+**Le seuil de 900 semblait redondant.** Avec des colonnes de 360 et 440,
+l'arithmétique refuse déjà seule sous le seuil : la mutation qui le retirait
+survivait. Une colonne étroite sépare les deux — 700 − 240 − 24 = 436, assez
+pour deux colonnes de 150, et pourtant on ne scinde pas.
+
+**Et la garde des libellés ne prouvait plus rien une fois les libellés
+corrigés.** L'anglais tenant partout, ne vérifier que lui passait au vert. Elle
+relève désormais ce qu'elle a visité, langue comprise, et le compare à ce qu'elle
+devait visiter : retirer l'espagnol de la boucle casse le relevé.
+
+---
+
+## 2026-08-22 — La carte du commerce : les deux règles tiennent, leurs gardes non
+
+L'écran n'avait pas été confronté à ses cadres depuis la bascule Ambre. **Les
+deux règles se vérifient, et toutes deux tiennent** — ce n'est pas ce qui
+manquait.
+
+**Le fond.** `bg.sunken` vaut `#0E0C09` après la bascule, `bg.page` `#F9F8F7` :
+la galerie est bien sur du sombre et la carte sur du clair. On regarde une photo
+sur du sombre — le fond disparaît et l'image tient seule ; on lit un texte sur du
+clair — une carte de salon est un document.
+
+**La sortie.** `FeuilleDeSortie` s'ouvre avant l'appui, nomme le domaine plutôt
+que l'adresse entière, et laisse rester.
+
+## Ce qui manquait, c'était ce qui les tient
+
+**La garde des fonds vérifiait qu'ils diffèrent, jamais lequel est lequel.**
+Intervertir les deux — la galerie sur du clair, la carte sur du sombre — passait
+sans un mot. C'est exactement ce qu'une bascule de palette peut faire : le
+produit est passé en Ambre par les jetons, et une garde qui ne teste que la
+différence ne dit rien du sens. Elle compare désormais les luminances relatives,
+et exige un écart franc — deux gris voisins satisferaient une comparaison stricte
+sans que rien ne se distingue à l'œil.
+
+**Et la garde de la sortie prouvait qu'on prévient, pas qu'on attend.** Un écran
+qui aurait ouvert le lien à l'appui **tout en** montrant la feuille passait :
+l'avertissement serait alors une annonce après coup, le navigateur étant déjà
+parti quand on la lit. `Linking.openURL` est maintenant espionné — rien ne part
+avant la confirmation, et l'adresse exacte part après.
+
+Deux mutations pour chacune, quatre chutes. Aucune de ces deux failles ne se
+serait vue en relisant l'écran : il était juste. C'est le motif qui a coûté trois
+campagnes à l'audience — un écran correct, des gardes qui ne le prouvaient pas.
