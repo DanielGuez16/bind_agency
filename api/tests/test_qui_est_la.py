@@ -19,6 +19,7 @@ sinon il ne prouve rien.
 
 import uuid
 from datetime import UTC, datetime, time, timedelta
+from zoneinfo import ZoneInfo
 
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -229,7 +230,14 @@ async def test_la_premiere_semaine_ignore_la_fenetre_demandee(session: AsyncSess
     # Un lundi, comme les étiquettes de `par_semaine` : les deux doivent tomber
     # sur le même jour de la semaine, sinon l'échelle commence à côté.
     assert rapport.premiere_semaine.weekday() == 0
-    assert abs((rapport.premiere_semaine - il_y_a_longtemps.date()).days) <= 6
+    # **La comparaison se fait dans le fuseau du salon, comme le calcul.**
+    # `_premiere_semaine` rend une date **locale** ; la confronter à la date UTC
+    # de la réservation les met d'accord vingt heures sur vingt-quatre et les
+    # sépare d'une semaine entière entre minuit et quatre heures UTC, quand la
+    # date locale est encore celle de la veille. Le test était donc rouge la
+    # nuit et vert le jour, sans rien dire de plus l'un que l'autre.
+    posee = il_y_a_longtemps.astimezone(ZoneInfo(decor["business"].timezone)).date()
+    assert abs((rapport.premiere_semaine - posee).days) <= 6
 
 
 # --------------------------------------------------------------------------
