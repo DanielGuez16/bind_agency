@@ -2045,6 +2045,26 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Toujours servi sur la réponse au `POST`. Demandé une seconde fois à
       `bind-agency-1a`, avec la forme : un `GET` indépendant du salon, parce que
       le compte doit vivre avant même qu'un salon soit choisi*
+- [x] **Les portraits demandent la vignette, et la pile du téléphone est virtualisée**
+      *`Image` décode avant de réduire : une photo occupe sa taille en pixels en
+      mémoire quel que soit le cadre. Vingt portraits d'origine tenaient leur
+      pleine taille dans des cadres de 132 points — le même changement sur le
+      mur a mesuré 10,5 Mo contre 1,5.*
+      *La clé nue n'était pas un arbitrage : la vignette d'avatar existait depuis
+      la veille et le repli de la route depuis huit jours quand la grille a été
+      écrite. C'était la forme juste dans le cas dangereux — l'aperçu flouté,
+      qui n'a pas de vignette — prise faute de séparer les deux cas.
+      `urlDuPortrait` les sépare.*
+      *Et « voir plus » empile vingt créatrices par appui : quatre-vingts
+      portraits montés d'un coup après quatre appuis. La pile passe en liste
+      virtualisée sous le seuil ; la grille reste un bloc au-dessus, parce que
+      trois colonnes en `flexWrap` ne sont pas une liste. 1391 tests,
+      4 mutations*
+- [ ] **La grille large n'est pas virtualisée, et personne ne l'a mesurée**
+      *`FlatList` porte `numColumns` et le contrat de `liste` n'en a pas la
+      notion. Ce sera une ligne le jour où quelqu'un mesure — et elle ne sera
+      pas plus chère plus tard, ce qui est une raison de ne pas la poser
+      maintenant : ce serait du contrat que personne n'éprouve*
 - [ ] **Neuf planches d'écrans portent encore la v1.0**
       *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
       passés en v3, dans la palette Ambre. Les autres suivent l'ordre du
