@@ -104,7 +104,13 @@ export function BasDuMur({
         {onRemonter ? (
           <Texte
             variante="type.body"
-            style={{ color: c['ink.faint'] }}
+            // **`ink.mute` et non `ink.faint`.** Ce libellé est pressable : il
+            // porte un geste, donc il se lit. `ink.faint` vaut 2,46:1 sur la
+            // page — le jeton l'écrit lui-même : « ne porte jamais de texte à
+            // lire », et « trois erreurs de contraste sur quatre, dans
+            // l'historique de ce projet, viennent d'un ink.faint employé comme
+            // couleur de texte ». Celle-ci était la quatrième.
+            style={{ color: c['ink.mute'] }}
             testID="sortie-remonter"
             onPress={onRemonter}
           >
