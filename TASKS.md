@@ -2060,7 +2060,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Elles ne sont pas dans une liste et ne poussent rien — l'écran est fait
       pour elles. Le fondu leur ferait du bien quand même, et il ne coûte qu'un
       remplacement*
-- [ ] **Le compte des reprises de l'appelant doit se lire avant l'appui**
+- [x] **Le compte des reprises de l'appelant se lit avant l'appui**
       *Toujours servi sur la réponse au `POST`. Demandé une seconde fois à
       `bind-agency-1a`, avec la forme : un `GET` indépendant du salon, parce que
       le compte doit vivre avant même qu'un salon soit choisi*
@@ -2084,6 +2084,17 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       notion. Ce sera une ligne le jour où quelqu'un mesure — et elle ne sera
       pas plus chère plus tard, ce qui est une raison de ne pas la poser
       maintenant : ce serait du contrat que personne n'éprouve*
+- [x] **Les quatre freins de la reprise tiennent**
+      *`mesReprisesRecentes` est branché : le compte se lit au-dessus du champ
+      de motif, pendant qu'on peut encore ne pas ouvrir. Lu après l'appui, il
+      retenait pour la fois suivante — c'est-à-dire qu'il faisait ce qu'un
+      journal fait, enregistrer sans empêcher.*
+      *Il ne refuse rien, et il ne bloque pas le formulaire : un seuil qui
+      refuserait se contournerait en attendant un jour. Et un compte absent
+      n'est pas un compte à zéro — rien plutôt qu'un chiffre faux, parce que
+      « ta première en sept jours » à quelqu'un qui en a ouvert quinze est
+      l'exact contraire de ce que cette phrase existe pour faire. 1411 tests,
+      3 mutations*
 - [ ] **Neuf planches d'écrans portent encore la v1.0**
       *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
       passés en v3, dans la palette Ambre. Les autres suivent l'ordre du

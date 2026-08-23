@@ -9682,3 +9682,33 @@ supplémentaire qu'on vient de s'en occuper.
 que tout va bien, la question n'est pas close — elle se déplace. Un écran juste
 dont rien ne prouve qu'il le reste est le motif qui a coûté trois campagnes à
 l'audience. Vérifier que la règle tient, c'est ensuite vérifier ce qui la tient.
+## 2026-08-23 — Le compte des reprises : le moment était le sujet, pas le nombre
+
+**Lu après l'appui, il retenait pour la fois suivante.** C'est-à-dire qu'il
+faisait ce qu'un journal fait — enregistrer sans empêcher —, ce que la planche
+écarte dès sa première phrase. Ce qui retient est de se comparer à soi-même
+**pendant qu'on écrit encore le motif**, quand on peut encore ne pas le faire.
+Le compte est donc au-dessus du champ, avant tout le reste.
+
+**Il ne refuse rien.** Un seuil qui refuserait se contournerait en attendant un
+jour, et transformerait une mesure honnête en formalité à franchir.
+
+**Et il ne bloque pas le formulaire.** Le compte est un miroir, pas une
+condition : si sa route tombe, la reprise s'ouvre quand même. Faire dépendre
+l'accès de support d'une route qui n'a rien à voir avec lui serait le rendre
+indisponible le jour où tout va mal — c'est-à-dire le jour où l'on a besoin
+d'entrer dans un compte.
+
+**Une mutation a survécu, et c'est le décor qui était en cause.** Brancher le
+bouton sur l'état du compte ne cassait rien : tous les décors répondaient, même
+mal, donc la requête arrivait toujours en `pret`. Ce qui distingue les deux
+implémentations est une route **qui échoue** — et c'est ce cas-là qui manquait.
+
+**Un compte absent n'est pas un compte à zéro.** Lire `undefined` comme « aucune
+reprise » annoncerait « ta première en sept jours » à quelqu'un qui en a ouvert
+quinze : l'exact contraire de ce que la phrase existe pour faire. Rien plutôt
+qu'un chiffre faux.
+
+**Zéro, en revanche, se dit.** Un écran qui se tait quand il n'y a rien à
+reprocher apprend que la phrase est un reproche ; la dire toujours en fait une
+mesure, ce qu'elle est.

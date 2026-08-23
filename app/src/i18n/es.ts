@@ -876,6 +876,10 @@ export const es: Catalogue = {
     spontaneeNote: 'Se marcará como no solicitada en su lista, para siempre.',
     ouvrir: 'Abrir y avisar a {{salon}}',
     ouverteTitre: 'Estás en {{salon}}',
+    compteAucune: 'Tu primer acceso en {{jours}} días.',
+    compteUne: 'Has abierto un acceso en los últimos {{jours}} días, en todos los salones.',
+    comptePlusieurs:
+      'Has abierto {{n}} accesos en los últimos {{jours}} días, en todos los salones.',
     compteDeLAppelant: 'Son {{n}} accesos que has abierto en {{jours}} días, en todos los salones.',
     ouverteRappel: '{{salon}} puede cerrarlo cuando quiera, desde su propia pantalla.',
   },

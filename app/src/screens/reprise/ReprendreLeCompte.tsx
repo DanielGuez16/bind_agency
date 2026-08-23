@@ -23,21 +23,34 @@
  * sans quoi toute reprise se présenterait comme sollicitée sans que personne ne
  * l'ait sollicitée.
  *
- * **Ce que cet écran ne peut pas encore faire, et c'est le frein principal.**
- * La planche veut que le compte des reprises de l'appelant se lise **au moment
- * de la demande** : « c'est ta quatrième ce mois-ci, tu en as fait une en
- * juillet ». Se comparer à soi-même est la seule comparaison qui change un
- * comportement sans accuser. Le compte est servi — mais sur la **réponse** à
- * l'ouverture, donc après. Il est donc rendu là où il arrive, ce qui retient
- * pour la suivante et non pour celle-ci. Demandé, voir `TASKS.md`.
+ * **Le compte se lit pendant qu'on écrit le motif.** Se comparer à soi-même est
+ * la seule comparaison qui change un comportement sans accuser — mais elle ne
+ * le change qu'au moment où l'on peut encore ne pas le faire. Lu après l'appui,
+ * il retenait pour la fois suivante, c'est-à-dire qu'il faisait ce qu'un
+ * journal fait : enregistrer sans empêcher.
+ *
+ * Il est donc au-dessus du champ, avant tout le reste, et il **ne refuse
+ * rien**. Un seuil qui refuserait se contournerait en attendant un jour, et
+ * transformerait une mesure honnête en formalité à franchir.
+ *
+ * **Et il ne bloque pas le formulaire.** Le compte est un miroir, pas une
+ * condition : s'il ne se charge pas, la reprise s'ouvre quand même. L'inverse
+ * ferait dépendre l'accès de support d'une route qui n'a rien à voir avec lui,
+ * et c'est le jour où tout va mal qu'on en a besoin.
  */
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import { useApi, type PorteeDeReprise, type RepriseOuverte } from '../../api';
+import {
+  useApi,
+  type CompteDesReprises,
+  type PorteeDeReprise,
+  type RepriseOuverte,
+} from '../../api';
 import { Button, Chip, StatusMessage, Texte, TextField } from '../../components';
 import { useI18n } from '../../i18n';
 import { radius, useColors } from '../../theme';
+import { useRequete } from '../useRequete';
 import { nomDeLEcran } from './portee';
 
 /** Les sept portées, dans l'ordre où un salon les reconnaît. */
@@ -83,6 +96,11 @@ export function ReprendreLeCompte({
   const [envoi, setEnvoi] = useState(false);
   const [echec, setEchec] = useState<string | null>(null);
   const [ouverte, setOuverte] = useState<RepriseOuverte | null>(null);
+
+  const compte = useRequete<CompteDesReprises>((signal) => api.mesReprisesRecentes(signal), {
+    estVide: () => false,
+  });
+  const phrase = compte.etat === 'pret' ? phraseDuCompte(compte.donnees, t) : null;
 
   const complet = motif.trim().length > 0 && portee.length > 0;
 
@@ -135,6 +153,13 @@ export function ReprendreLeCompte({
 
   return (
     <View style={{ gap: 14 }} testID="reprendre-le-compte">
+      {/* **Avant le motif, et avant tout le reste.** C'est le seul endroit où
+          ce nombre change quelque chose : après l'appui, il ne fait plus que
+          consigner. */}
+      {phrase ? (
+        <StatusMessage level="neutral" body={phrase} testID="compte-avant-l-appui" />
+      ) : null}
+
       <Texte variante="type.caption" couleur="ink.soft" testID="reprise-avertissement">
         {t('reprise.motLeMot', { salon: nomDuSalon })}
       </Texte>
@@ -223,4 +248,35 @@ export function ReprendreLeCompte({
       />
     </View>
   );
+}
+
+/**
+ * « C'est ta quatrième en sept jours. »
+ *
+ * **Trois branches écrites à la main.** `formaterLesNombres` rend `count` en
+ * chaîne pour le séparateur de milliers, et la pluralisation de la
+ * bibliothèque ne le voit alors plus comme un nombre : « 1 takeovers » est
+ * déjà passé ailleurs dans ce produit.
+ *
+ * **Zéro se dit aussi**, et ce n'est pas une politesse. Un écran qui se tait
+ * quand il n'y a rien à reprocher apprend que la phrase est un reproche ; la
+ * dire toujours en fait une mesure, ce qu'elle est.
+ */
+export function phraseDuCompte(
+  compte: Partial<CompteDesReprises> | null | undefined,
+  t: (cle: string, valeurs?: Record<string, string>) => string,
+): string | null {
+  // **Un compte absent n'est pas un compte à zéro.** Une réponse d'avant la
+  // route, un cache, un décor écrit sans elle : lire `undefined` comme « aucune
+  // reprise » annoncerait « ta première en sept jours » à quelqu'un qui en a
+  // ouvert quinze — l'exact contraire de ce que cette phrase existe pour faire.
+  // Rien plutôt qu'un chiffre faux : c'est un miroir, pas une condition.
+  const n = compte?.reprises_recentes_de_l_appelant;
+  const fenetre = compte?.fenetre_en_jours;
+  if (typeof n !== 'number' || typeof fenetre !== 'number') return null;
+
+  const jours = String(fenetre);
+  if (n === 0) return t('reprise.compteAucune', { jours });
+  if (n === 1) return t('reprise.compteUne', { jours });
+  return t('reprise.comptePlusieurs', { n: String(n), jours });
 }
