@@ -100,8 +100,10 @@ export function AnnuaireScreen({
   const { t, locale } = useI18n();
   // Lu ici et non dans le corps de rendu d'`Ecran` : ce corps est une fonction
   // appelée pendant le rendu d'un **autre** composant, et un hook y serait
-  // appelé hors de son propre composant.
+  // appelé hors de son propre composant. Le gabarit est lu ici pour la même
+  // raison, et il décide entre la grille et la pile virtualisée.
   const c = useColors();
+  const { large } = useGabarit();
 
   const requete = useRequete<AnnuaireDuCommerce>(
     (signal) => api.annuaireDesCreateurs(businessId, { limite: PAGE }, signal),
@@ -171,6 +173,90 @@ export function AnnuaireScreen({
     );
   }
 
+  /**
+   * Les trois morceaux de l'écran, construits une fois pour les deux chemins.
+   *
+   * **La grille et la pile montrent la même chose.** Ce qui change entre elles
+   * est la façon de poser les fiches, pas ce qu'elles portent — les écrire deux
+   * fois les ferait diverger, et c'est celle que personne ne regarde qui
+   * dériverait.
+   *
+   * Les éléments sont des **descripteurs** : la fonction de `FicheDeCreateur`
+   * ne s'exécute — et son portrait ne se monte — que lorsque le rendu décide
+   * d'afficher la rangée. Les construire en avance ne coûte que leur
+   * allocation.
+   */
+  const decouper = (annuaire: AnnuaireDuCommerce) => {
+    const createurs = [...annuaire.createurs, ...suite];
+    const reste = annuaire.total - createurs.length;
+
+    return {
+      entete: (
+        <View style={{ gap: 16 }}>
+          {/* **Le compte, avant la liste.** C'est le renversement de la v3 : à
+              deux mille créatrices un salon ne cherche pas, il ne connaît aucun
+              nom. */}
+          <Portee portee={annuaire.portee} />
+
+          {/* **L'ordre se dit, il ne se devine pas.** Une grille triée sans
+              l'annoncer se lit comme un ordre arbitraire, et le premier réflexe
+              est de chercher un moyen de la trier — qui n'existe pas, puisque le
+              seul ordre utile est déjà celui-là. */}
+          <Texte variante="type.label" couleur="ink.mute" testID="ordre-de-la-grille">
+            {t('annuaire.trieePar')}
+          </Texte>
+        </View>
+      ),
+      elements: createurs.map((createur) => ({
+        cle: createur.creator_id,
+        rendu: <FicheDeCreateur key={createur.creator_id} createur={createur} />,
+      })),
+      pied: (
+        /* **« 20 sur 128 » demande de connaître le total.** Une page pleine ne
+           dit pas s'il en reste, et une grille qui s'arrête sans le dire se lit
+           comme la fin de l'annuaire. */
+        <View style={{ gap: 8, alignItems: 'center' }}>
+          <Texte variante="type.caption" couleur="ink.mute" testID="compte-affiche">
+            {t('annuaire.affichees', {
+              combien: formatNumber(createurs.length, locale),
+              total: formatNumber(annuaire.total, locale),
+            })}
+          </Texte>
+          {reste > 0 ? (
+            <Pressable
+              testID="voir-plus"
+              accessibilityRole="button"
+              disabled={enCours}
+              onPress={() => {
+                setEnCours(true);
+                void api
+                  .annuaireDesCreateurs(businessId, {
+                    limite: PAGE,
+                    decalage: createurs.length,
+                  })
+                  .then((page) => setSuite((avant) => [...avant, ...page.createurs]))
+                  .finally(() => setEnCours(false));
+              }}
+              style={({ pressed }) => ({
+                opacity: pressed || enCours ? 0.7 : 1,
+                minHeight: 44,
+                justifyContent: 'center',
+                paddingHorizontal: 18,
+                borderRadius: radius['radius.pill'],
+                borderWidth: 1,
+                borderColor: c['line.ink'],
+              })}
+            >
+              <Texte variante="type.label">
+                {t(enCours ? 'annuaire.chargement' : 'annuaire.voirPlus')}
+              </Texte>
+            </Pressable>
+          ) : null}
+        </View>
+      ),
+    };
+  };
+
   return (
     <Ecran
       requete={requete}
@@ -178,6 +264,36 @@ export function AnnuaireScreen({
       nature="creator"
       squelette={<SkeletonLignes combien={6} testID="squelette-annuaire" />}
       testID="ecran-annuaire"
+      /**
+       * **Virtualisée sur le téléphone, bloc sur les grands écrans.**
+       *
+       * « Voir plus » empile vingt créatrices par appui : après quatre appuis,
+       * quatre-vingts portraits sont montés d'un coup. `Image` décode avant de
+       * réduire — la vignette réduit ce que chacun coûte, la virtualisation
+       * réduit combien en coûtent à la fois, et les deux se cumulent.
+       *
+       * **Au-dessus du seuil, la grille reste un bloc.** Trois colonnes en
+       * `flexWrap` ne sont pas une liste, et le contrat de `liste` rend un
+       * élément par rangée sans notion de colonnes. Le jour où quelqu'un mesure
+       * la grille large, `FlatList` porte déjà `numColumns` — ce sera une ligne,
+       * et elle ne sera pas plus chère plus tard.
+       *
+       * **Pas de crochet de fin de liste, et il n'en faut pas** : « voir plus »
+       * est un appui explicite, donc il vit dans `pied` et défile sous la
+       * dernière fiche.
+       */
+      liste={
+        large
+          ? undefined
+          : (annuaire) => {
+              const morceaux = decouper(annuaire);
+              return {
+                entete: morceaux.entete,
+                elements: morceaux.elements,
+                pied: morceaux.pied,
+              };
+            }
+      }
       vide={
         <EmptyState
           title={t('annuaire.videTitre')}
@@ -187,71 +303,18 @@ export function AnnuaireScreen({
       }
     >
       {(annuaire) => {
-        const createurs = [...annuaire.createurs, ...suite];
-        const reste = annuaire.total - createurs.length;
+        const morceaux = decouper(annuaire);
 
         return (
           <View style={{ gap: 16 }}>
-            {/* **Le compte, avant la liste.** C'est le renversement de la v3 : à
-                deux mille créatrices un salon ne cherche pas, il ne connaît
-                aucun nom. */}
-            <Portee portee={annuaire.portee} />
-
-            {/* **L'ordre se dit, il ne se devine pas.** Une grille triée sans
-                l'annoncer se lit comme un ordre arbitraire, et le premier
-                réflexe est de chercher un moyen de la trier — qui n'existe pas,
-                puisque le seul ordre utile est déjà celui-là. */}
-            <Texte variante="type.label" couleur="ink.mute" testID="ordre-de-la-grille">
-              {t('annuaire.trieePar')}
-            </Texte>
-
-            <Grille>
-              {createurs.map((createur) => (
-                <FicheDeCreateur key={createur.creator_id} createur={createur} />
-              ))}
-            </Grille>
-
-            {/* **« 20 sur 128 » demande de connaître le total.** Une page pleine
-                ne dit pas s'il en reste, et une grille qui s'arrête sans le dire
-                se lit comme la fin de l'annuaire. */}
-            <View style={{ gap: 8, alignItems: 'center' }}>
-              <Texte variante="type.caption" couleur="ink.mute" testID="compte-affiche">
-                {t('annuaire.affichees', {
-                  combien: formatNumber(createurs.length, locale),
-                  total: formatNumber(annuaire.total, locale),
-                })}
-              </Texte>
-              {reste > 0 ? (
-                <Pressable
-                  testID="voir-plus"
-                  accessibilityRole="button"
-                  disabled={enCours}
-                  onPress={() => {
-                    setEnCours(true);
-                    void api
-                      .annuaireDesCreateurs(businessId, {
-                        limite: PAGE,
-                        decalage: createurs.length,
-                      })
-                      .then((page) => setSuite((avant) => [...avant, ...page.createurs]))
-                      .finally(() => setEnCours(false));
-                  }}
-                  style={({ pressed }) => ({
-                    opacity: pressed || enCours ? 0.7 : 1,
-                    minHeight: 44,
-                    justifyContent: 'center',
-                    paddingHorizontal: 18,
-                    borderRadius: radius['radius.pill'],
-                    borderWidth: 1,
-                    borderColor: c['line.ink'],
-                  })}
-                >
-                  <Texte variante="type.label">
-                    {t(enCours ? 'annuaire.chargement' : 'annuaire.voirPlus')}
-                  </Texte>
-                </Pressable>
-              ) : null}
-            </View>
+            {morceaux.entete}
+            {/* **La grille reste un bloc au-dessus du seuil.** Trois colonnes
+                en `flexWrap` ne sont pas une liste : le contrat de `liste` rend
+                un élément par rangée et n'a aucune notion de colonnes. Changer
+                la disposition pour pouvoir virtualiser serait prendre le
+                problème par le mauvais bout. */}
+            <Grille>{morceaux.elements.map((element) => element.rendu)}</Grille>
+            {morceaux.pied}
           </View>
         );
       }}
