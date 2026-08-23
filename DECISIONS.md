@@ -9632,3 +9632,53 @@ avant la confirmation, et l'adresse exacte part après.
 Deux mutations pour chacune, quatre chutes. Aucune de ces deux failles ne se
 serait vue en relisant l'écran : il était juste. C'est le motif qui a coûté trois
 campagnes à l'audience — un écran correct, des gardes qui ne le prouvaient pas.
+
+---
+
+## 2026-08-22 — Vérifier une hypothèse trouve souvent autre chose que ce qu'elle visait
+
+Design a demandé de vérifier que les libellés courts tiennent **en espagnol** :
+les maquettes sont en anglais, `type.label` fait onze points en capitales, et
+l'espagnol est vingt à trente pour cent plus long. L'hypothèse était juste, la
+méthode aussi.
+
+**Le défaut était en anglais.** « Awaiting their post » débordait dans la langue
+des maquettes — celle qu'on regarde depuis des mois, sur des cadres composés à la
+main. Il avait été écrit une semaine plus tôt, en corrigeant un autre défaut, et
+personne n'avait mesuré dans aucune des deux langues.
+
+C'est la même chose plusieurs fois dans la même journée, et le compte vaut d'être
+posé :
+
+| Ce qu'on est allé vérifier | Ce qu'on a trouvé |
+|---|---|
+| Les libellés courts tiennent-ils en espagnol | Un libellé débordait **en anglais** |
+| La galerie et la carte de la fiche sont mal placées | Bien placées ; **aucune ne répondait au doigt** |
+| La carte du commerce a-t-elle raté la bascule Ambre | Les deux règles tenaient ; **leurs gardes non** |
+| L'écran de validation d'adresse manque-t-il | Il existe ; **le lien rend du JSON au navigateur** |
+| L'écran des paliers porte-t-il encore l'ancien système | Déjà en Ambre ; **il ouvrait sur un mécanisme** |
+| `rattacherLaFiche` n'a pas d'écran | L'écran existe ; **il ignorait la session** |
+
+Six fois, l'hypothèse a servi à faire regarder au bon endroit et s'est révélée
+fausse sur sa cause. **Aucune de ces six n'aurait été trouvée sans elle**, et
+aucune n'était ce qu'elle annonçait.
+
+## Pourquoi c'est une méthode et non une série de hasards
+
+**Une hypothèse fausse sur la cause est presque toujours juste sur le lieu.**
+Quelqu'un a senti que quelque chose clochait là — un écran incompris deux fois,
+un libellé qui paraît long, une porte qu'aucun testeur ne mentionne. Ce
+sentiment vient d'une observation réelle ; c'est son explication qui est une
+conjecture, parce qu'expliquer demande d'ouvrir le code et que remarquer ne le
+demande pas.
+
+**D'où la conduite** : aller au lieu, et **mesurer avant de corriger**. La
+tentation est d'appliquer la correction annoncée — raccourcir l'espagnol,
+déplacer la galerie, repasser la carte en Ambre. Elle produit du travail qui
+n'était pas nécessaire et laisse le vrai défaut en place, avec la conviction
+supplémentaire qu'on vient de s'en occuper.
+
+**Et le corollaire, qui a servi trois fois aujourd'hui** : quand la mesure dit
+que tout va bien, la question n'est pas close — elle se déplace. Un écran juste
+dont rien ne prouve qu'il le reste est le motif qui a coûté trois campagnes à
+l'audience. Vérifier que la règle tient, c'est ensuite vérifier ce qui la tient.
