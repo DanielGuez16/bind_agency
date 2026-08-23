@@ -955,6 +955,13 @@ export const en = {
     ouverteTitre: 'You are in {{salon}}',
     // Le compte se lit, il ne refuse rien. Un seuil qui refuserait se
     // contournerait en attendant un jour.
+    // **Lu pendant qu'on écrit le motif**, quand on peut encore ne pas le
+    // faire. Trois branches à la main : `formaterLesNombres` rend `count` en
+    // chaîne et la pluralisation de la bibliothèque ne part jamais.
+    compteAucune: 'Your first takeover in {{jours}} days.',
+    compteUne: 'You have opened one takeover in the last {{jours}} days, across all salons.',
+    comptePlusieurs:
+      'You have opened {{n}} takeovers in the last {{jours}} days, across all salons.',
     compteDeLAppelant: 'That is {{n}} takeovers you have opened in {{jours}} days, across all salons.',
     ouverteRappel: '{{salon}} can end it at any moment, from their own screen.',
   },

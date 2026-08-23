@@ -29,7 +29,9 @@ const OUVERTE = {
   fenetre_en_jours: 7,
 };
 
-async function monter() {
+const COMPTE = { reprises_recentes_de_l_appelant: 4, fenetre_en_jours: 7 };
+
+async function monter(compte: unknown = COMPTE) {
   const envois: { url: string; corps: Record<string, unknown> }[] = [];
   const api = new ApiClient({
     baseUrl: 'https://api.test',
@@ -38,6 +40,9 @@ async function monter() {
       if ((init?.method ?? 'GET').toUpperCase() === 'POST') {
         envois.push({ url: String(url), corps: JSON.parse(String(init?.body ?? '{}')) });
         return { ok: true, status: 201, json: async () => OUVERTE } as Response;
+      }
+      if (String(url).includes('/support-access/recent')) {
+        return { ok: true, status: 200, json: async () => compte } as Response;
       }
       return { ok: true, status: 200, json: async () => [] } as Response;
     }) as unknown as typeof fetch,
@@ -175,5 +180,81 @@ describe('le compte des reprises de l’appelant', () => {
     expect(compte).toHaveTextContent(/7 days/i);
     // Tous salons confondus : se comparer à soi-même, pas au salon.
     expect(compte).toHaveTextContent(/across all salons/i);
+  });
+});
+
+
+/**
+ * Le compte se lit pendant qu'on écrit le motif.
+ *
+ * **Le décor divergent est le moment, pas le nombre.** Une implémentation qui
+ * ne le montre qu'après l'ouverture rend le même chiffre, exact, bien
+ * présenté — et ne retient rien : lue une fois dedans, la phrase fait ce qu'un
+ * journal fait. Le test regarde donc l'écran **avant tout appui**.
+ */
+describe('le compte se lit avant l’appui', () => {
+  it('il est là pendant qu’on écrit le motif, sans avoir rien pressé', async () => {
+    await monter();
+
+    const dit = await screen.findByTestId('compte-avant-l-appui');
+    expect(dit).toHaveTextContent(/4 takeovers/i);
+    expect(dit).toHaveTextContent(/7 days/i);
+    // Se comparer à soi-même, pas au salon.
+    expect(dit).toHaveTextContent(/across all salons/i);
+    // Et le formulaire n'a pas encore servi.
+    expect(screen.getByTestId('champ-motif')).toBeTruthy();
+  });
+
+  it('et il ne refuse rien : le bouton ne dépend pas de lui', async () => {
+    // Un seuil qui refuserait se contournerait en attendant un jour, et
+    // transformerait une mesure honnête en formalité à franchir.
+    const { envois } = await monter({
+      reprises_recentes_de_l_appelant: 99,
+      fenetre_en_jours: 7,
+    });
+
+    await fireEvent.changeText(await screen.findByTestId('champ-motif'), 'x');
+    await fireEvent.press(await screen.findByTestId('portee-agenda'));
+    await fireEvent.press(await screen.findByTestId('ouvrir-la-reprise'));
+
+    await waitFor(() => expect(envois).toHaveLength(1));
+  });
+
+  it('« une seule » ne dit pas « 1 takeovers »', async () => {
+    await monter({ reprises_recentes_de_l_appelant: 1, fenetre_en_jours: 7 });
+
+    expect(await screen.findByTestId('compte-avant-l-appui')).toHaveTextContent(
+      /one takeover in the last 7 days/i,
+    );
+  });
+
+  it('et zéro se dit aussi, plutôt que de se taire', async () => {
+    // Un écran qui se tait quand il n'y a rien à reprocher apprend que la
+    // phrase est un reproche ; la dire toujours en fait une mesure.
+    await monter({ reprises_recentes_de_l_appelant: 0, fenetre_en_jours: 7 });
+
+    expect(await screen.findByTestId('compte-avant-l-appui')).toHaveTextContent(
+      /first takeover in 7 days/i,
+    );
+  });
+
+  it('un compte absent ne vaut pas zéro : rien ne s’affiche', async () => {
+    // **Le décor qui compte.** Lire `undefined` comme « aucune reprise »
+    // annoncerait « ta première en sept jours » à quelqu'un qui en a ouvert
+    // quinze — l'exact contraire de ce que cette phrase existe pour faire.
+    await monter({});
+
+    await waitFor(() => expect(screen.getByTestId('champ-motif')).toBeTruthy());
+    expect(screen.queryByTestId('compte-avant-l-appui')).toBeNull();
+  });
+
+  it('et le formulaire marche quand même : le compte est un miroir, pas une condition', async () => {
+    const { envois } = await monter({});
+
+    await fireEvent.changeText(await screen.findByTestId('champ-motif'), 'x');
+    await fireEvent.press(await screen.findByTestId('portee-agenda'));
+    await fireEvent.press(await screen.findByTestId('ouvrir-la-reprise'));
+
+    await waitFor(() => expect(envois).toHaveLength(1));
   });
 });
