@@ -1718,3 +1718,64 @@ async def test_sans_aucun_fichier_le_degrade_reste_le_repli_final(
     assert trouvee is False
     assert depot.prefixes == ["photos/genere/business"]
     assert "genere" in cle
+
+
+async def test_chaque_salon_ouvert_a_un_numero_de_couverture_verticale(
+    seed_conn: AsyncConnection,
+) -> None:
+    """**Le repli n'existe que si le salon a un numéro**, et c'est vérifiable
+    sans aucun fichier sur le disque.
+
+    C'est la moitié du mécanisme que l'intégration continue peut éprouver :
+    là-bas `assets/photos/` est vide, donc rien ne se replie sur rien. Ce qui
+    reste vrai partout, c'est qu'un salon ouvert doit être **nommé** dans la
+    table des couvertures verticales — sans quoi le jour où les photos sont là,
+    lui seul garde un dégradé, et personne ne le remarque puisque les dix-huit
+    autres sont beaux.
+    """
+    from app.seed_demo import couverture_portrait_du_commerce
+
+    noms = (
+        (
+            await seed_conn.execute(
+                sa.select(Business.name).where(Business.status == BusinessStatus.ACTIVE)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    portraits = couverture_portrait_du_commerce()
+
+    assert noms, "aucun commerce ouvert : le décor ne prouverait rien"
+    assert [nom for nom in noms if nom not in portraits] == []
+
+
+@pytest.mark.skipif(
+    not list((API_ROOT.parent / "assets" / "photos" / "couvertures-portrait").glob("*.jpg")),
+    reason="les photos ne sont pas versionnées : rien à éprouver sans elles",
+)
+async def test_aucun_salon_ouvert_ne_garde_une_couverture_generee(
+    seed_conn: AsyncConnection,
+) -> None:
+    """**Seize salons recevaient un dégradé, c'est-à-dire rien d'eux.**
+
+    Le préfixe porte la nature du contenu : `photos/genere/business/…` pour un
+    aplat, `photos/business/…` pour une photographie. Un salon ouvert dont la
+    couverture est un dégradé est un salon dont l'écran ne dit rien.
+
+    **Ce test ne tourne qu'ici**, et il le dit : les photos ne sont pas
+    versionnées, donc l'intégration continue n'a rien à regarder. C'est le seul
+    endroit où le câblage se voit de bout en bout — les trois tests du repli
+    au-dessus éprouvent le mécanisme, celui-ci éprouve qu'on l'a branché.
+    """
+    cles = (
+        await seed_conn.execute(
+            sa.select(Business.name, Business.cover_photo_key).where(
+                Business.status == BusinessStatus.ACTIVE
+            )
+        )
+    ).all()
+
+    assert cles, "aucun commerce ouvert : le décor ne prouverait rien"
+    generees = [nom for nom, cle in cles if cle and "genere" in cle]
+    assert generees == []
