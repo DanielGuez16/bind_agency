@@ -31,7 +31,7 @@ const OUVERTE = {
 
 const COMPTE = { reprises_recentes_de_l_appelant: 4, fenetre_en_jours: 7 };
 
-async function monter(compte: unknown = COMPTE) {
+async function monter(compte: unknown = COMPTE, compteEchoue = false) {
   const envois: { url: string; corps: Record<string, unknown> }[] = [];
   const api = new ApiClient({
     baseUrl: 'https://api.test',
@@ -42,6 +42,13 @@ async function monter(compte: unknown = COMPTE) {
         return { ok: true, status: 201, json: async () => OUVERTE } as Response;
       }
       if (String(url).includes('/support-access/recent')) {
+        if (compteEchoue) {
+          return {
+            ok: false,
+            status: 500,
+            json: async () => ({ detail: 'internal_error' }),
+          } as Response;
+        }
         return { ok: true, status: 200, json: async () => compte } as Response;
       }
       return { ok: true, status: 200, json: async () => [] } as Response;
@@ -256,5 +263,31 @@ describe('le compte se lit avant l’appui', () => {
     await fireEvent.press(await screen.findByTestId('ouvrir-la-reprise'));
 
     await waitFor(() => expect(envois).toHaveLength(1));
+  });
+
+  it('y compris quand la route du compte tombe', async () => {
+    /**
+     * **Le cas où la mutation avait survécu.** Un décor qui répond toujours,
+     * même mal, laisse la requête arriver en `pret` : brancher le bouton sur
+     * l'état du compte passait alors au vert. Ce qui distingue les deux
+     * implémentations est une route **qui échoue** — et c'est le jour où tout
+     * va mal qu'on a besoin d'entrer dans un compte.
+     *
+     * Faire dépendre l'accès de support d'une route qui n'a rien à voir avec
+     * lui est exactement ce qu'on ne veut pas.
+     */
+    const { envois } = await monter(COMPTE, true);
+
+    await fireEvent.changeText(await screen.findByTestId('champ-motif'), 'x');
+    await fireEvent.press(await screen.findByTestId('portee-agenda'));
+
+    const bouton = await screen.findByTestId('ouvrir-la-reprise');
+    expect(bouton.props.accessibilityState?.disabled).toBeFalsy();
+
+    await fireEvent.press(bouton);
+    await waitFor(() => expect(envois).toHaveLength(1));
+
+    // Et rien n'est affiché plutôt qu'un chiffre inventé.
+    expect(screen.queryByTestId('compte-avant-l-appui')).toBeNull();
   });
 });
