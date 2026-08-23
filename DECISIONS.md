@@ -9495,3 +9495,44 @@ dessus. C'est aussi ce que montent les tests qui n'ont pas quatre-vingts images.
 Les repères ont suivi : `le-mur` est porté par le défileur, qui tient désormais
 les rangées, et `etat-nominal` enveloppe le tout pour que la table des quatre
 états continue de voir le fil.
+
+---
+
+## 2026-08-22 — Les portraits : une limite du moment, pas un arbitrage
+
+**La clé nue n'a jamais été choisie contre la vignette**, et c'est l'historique
+qui le dit plutôt qu'un avis. Le repli de la route des médias date du 14 août,
+la vignette d'avatar du 21 au soir, la grille de l'annuaire du 22 au matin : les
+deux existaient quand le choix a été fait.
+
+La raison écrite ne couvre qu'un cas — « sans abonnement la clé porte déjà
+l'aperçu flouté, et la resuffixer ne rendrait rien ». C'est vrai de ce cas-là, et
+la clé nue est la forme juste pour lui. L'autre cas le payait, faute de pouvoir
+séparer les deux. `urlDuPortrait` les sépare, et c'est tout ce qu'elle fait.
+
+**Le suffixe aveugle ne casse rien, il gaspille.** `@apercu@vignette` n'est pas
+un 404 : la route voit la terminaison, la retire, trouve l'aperçu et sert la
+bonne image. Le coût est une lecture de dépôt perdue par portrait — vingt par
+ouverture d'annuaire, pour rendre exactement ce qu'une clé nue aurait rendu.
+
+**Le test qui défendait la clé nue encodait une limite, pas une décision.** Sa
+note de mutation — « c'est la terminaison qui distingue les deux » — parle de la
+solidité de l'assertion et non de la justesse de la clé. La terminaison reste ce
+que le test regarde ; seul ce qu'il attend sur le cas abonné a changé.
+
+**S'arrêter devant ce test était juste, et le retourner ensuite aussi.** Un test
+défendu par une note de mutation mérite qu'on cherche la raison avant de le
+renverser. Il n'y avait pas de raison : il y avait une date.
+
+**La pile du téléphone est virtualisée, la grille large reste un bloc.** Trois
+colonnes en `flexWrap` ne sont pas une liste, et le contrat de `liste` rend un
+élément par rangée sans notion de colonnes. Changer la disposition pour pouvoir
+virtualiser serait prendre le problème par le mauvais bout.
+
+Les deux chemins partagent la même fabrique de morceaux : ce qui change entre
+eux est la façon de poser les fiches, pas ce qu'elles portent. Deux corps
+finiraient par diverger, et c'est celui que personne ne regarde qui dériverait.
+
+**Pas de crochet de fin de liste, et il n'en faut pas.** « Voir plus » est un
+appui explicite, donc il vit dans le pied et défile sous la dernière fiche —
+poser un `onEndReached` que rien n'exercerait serait du mécanisme sans emploi.
