@@ -9712,3 +9712,40 @@ qu'un chiffre faux.
 **Zéro, en revanche, se dit.** Un écran qui se tait quand il n'y a rien à
 reprocher apprend que la phrase est un reproche ; la dire toujours en fait une
 mesure, ce qu'elle est.
+## 2026-08-23 — Le contraste se mesure, il ne se relit pas
+
+**La capacité était là et personne ne l'appelait.** `luminance()` et
+`contraste()` vivent dans le thème depuis longtemps, ils sont justes, et ils ne
+servaient qu'à calculer l'opacité minimale d'un voile de photo. Cinq erreurs de
+contraste ont été trouvées et corrigées à la main pendant ce temps.
+
+**Des paires déclarées, jamais un produit croisé.** Toutes les combinaisons
+possibles feraient tomber des paires que personne ne pose — une encre claire sur
+une surface claire — et une vérification qui se trompe est pire qu'une
+vérification absente : elle apprend à ignorer le rouge. Ce qui est dans la table
+est ce qui existe à l'écran, avec sa raison.
+
+**Les seuils ne sont pas tous à 4,5**, parce que le standard ne l'est pas : un
+grand texte et une bordure qui délimite un contrôle demandent 3:1, et un élément
+**inactif** n'est soumis à rien. Imposer un rapport à un bouton éteint
+effacerait la seule chose que sa couleur dit.
+
+**Ce que la garde ne fait pas est écrit dans son en-tête.** Elle mesure la
+palette, pas les écrans : savoir sur quel fond un texte est posé demanderait de
+calculer la mise en page. Une encre juste posée sur un fond qu'elle n'a pas le
+droit de toucher lui échappe — et c'est exactement le défaut qu'elle a laissé
+trouver à la main.
+
+Ce qu'elle rattrape à la place est la **forme** du défaut. `ink.faint` est un
+état, jamais une nuance de gris : écrit sans condition, c'est qu'on l'a pris
+pour une couleur. Les quatre erreurs de l'historique ont toutes cette forme, la
+quatrième ayant été trouvée en écrivant ce fichier — un libellé pressable à
+2,46:1.
+
+**Deux inscriptions honnêtes plutôt que deux corrections silencieuses.**
+`ink.mute` sur `bg.deep` vaut 4,36 : la paire existe, elle ne tient qu'au titre
+du grand texte, et le nombre est écrit sous les yeux de qui décidera. Les deux
+encres de voile ne sont pas dans la table : elles se posent sur une photo, donc
+sur rien de connu, et `opaciteMinimaleDuVoile` les mesure déjà dans deux autres
+fichiers — que la garde vérifie exister, pour que le renvoi ne devienne pas un
+tapis.

@@ -1661,6 +1661,31 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Le champ reste sur le `POST`, à jour, celle qu'on vient d'ouvrir
       comprise. 4 tests, 3 mutations. Demandé par la session qui tient l'écran
       d'administration ; le branchement lui revient.*
+- [x] **L'encre trop claire sur un fond qui a changé, mesurée pour la première fois**
+      ***La capacité était là, personne ne l'appelait.* `luminance()` et
+      `contraste()` existent depuis longtemps dans le thème, ils sont justes, et
+      ils ne servaient qu'à **une seule chose** : l'opacité minimale d'un voile
+      de photo. Design a reproduit cinq fois la même erreur et l'a corrigée cinq
+      fois, à la main.*
+      *Vingt-sept paires déclarées, chacune avec son seuil et sa raison. Les
+      seuils sont ceux du standard et ne sont pas tous à 4,5 : un grand texte et
+      une bordure de contrôle demandent 3, un élément **inactif** n'est soumis à
+      rien — son illisibilité est le message. Un produit croisé aurait fait
+      tomber des paires que personne ne pose, et une garde qui crie au loup
+      apprend à ignorer le rouge.*
+      ***Une quatrième erreur trouvée en l'écrivant.** `BasDuMur` posait
+      « repartir du haut » — un libellé **pressable** — en `ink.faint` sur la
+      page : 2,46:1. Le jeton l'écrit lui-même : « ne porte jamais de texte à
+      lire », et « trois erreurs de contraste sur quatre viennent d'un
+      `ink.faint` employé comme couleur de texte ». Corrigé en `ink.mute`.*
+      ***Et un chiffre à trancher par le dessin, pas par moi** : `ink.mute` sur
+      `bg.deep` vaut **4,36**. La paire existe — un encart gris porte des
+      légendes — et elle ne passe qu'au titre du grand texte. Inscrite avec son
+      nombre plutôt que corrigée seule.*
+      *Ce que la garde ne fait pas est écrit dans son en-tête : elle mesure la
+      palette, pas les écrans. Ce qu'elle rattrape à la place est la **forme**
+      du défaut — `ink.faint` est un état, jamais une couleur, donc il ne
+      s'écrit jamais sans condition. 32 tests, 5 mutations*
 - [ ] **Le bandeau ne devient pas une ligne de confirmation**
       *La planche veut qu'il devienne « vous êtes en ligne · 41 créatrices
       peuvent vous réserver », puis disparaisse au bout de sept jours. Deux
