@@ -52,6 +52,14 @@ const SANS_APPELANT: Record<string, string> = {
   // protège personne, et donnerait à croire que la porte reste ouverte tant
   // qu'on ne l'a pas pressé.
   fermerLaReprise: 'a-instruire',
+  // **Servie, et pas encore branchée.** L'écran d'administration existe et
+  // affiche déjà ce compte — mais sur la réponse à l'ouverture, donc après
+  // l'appui, ce que son propre commentaire signale comme moins que ce qu'il
+  // devrait faire. La route de lecture est là pour qu'il puisse le poser
+  // au-dessus du champ de motif, pendant qu'on peut encore ne pas ouvrir. Le
+  // branchement est de la composition, il appartient à la session qui tient
+  // cet écran.
+  mesReprisesRecentes: 'a-instruire',
 };
 
 const RAISONS = new Set(['contrat', 'technique', 'a-instruire']);

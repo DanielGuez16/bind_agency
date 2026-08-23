@@ -74,6 +74,14 @@
         ]
       }
     },
+    "/api/v1/admin/me/support-access/recent": {
+      "get": {
+        "operationId": "read_recent_support_accesses_api_v1_admin_me_support_access_recent_get",
+        "responses": [
+          "200"
+        ]
+      }
+    },
     "/api/v1/admin/plans": {
       "get": {
         "operationId": "list_plans_api_v1_admin_plans_get",
