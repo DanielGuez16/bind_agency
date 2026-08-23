@@ -1642,6 +1642,25 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Le bloc reste utile : il sert quand aucun quartier n'est déclaré — des
       salons réservables mais non situés — et dans les décors de test.
       1 test neuf, 4 mutations*
+- [x] **Le compte des reprises arrivait après l'appui**
+      *`GET /admin/me/support-access/recent`, sans identifiant de salon. Le même
+      nombre était déjà servi sur la réponse à l'ouverture — il n'était pas
+      faux, il était tardif : **lu après le geste, il retient pour la fois
+      suivante**, c'est-à-dire qu'il fait ce qu'un journal fait, et un journal
+      enregistre un abus sans l'empêcher.*
+      *Sans salon dans le chemin, parce que le compte doit vivre avant qu'un
+      salon soit choisi : l'écran le pose au-dessus du champ de motif, donc
+      avant tout le reste. Le poser sur la route qui liste les reprises d'un
+      salon aurait rendu un nombre tous salons confondus depuis une route qui
+      parle d'un salon.*
+      ***Les deux réponses partagent leurs champs, elles ne les recopient pas.**
+      `CompteDesReprises` côté serveur, et le même type côté app : l'écran les
+      lit à quelques secondes d'écart — une fois en ouvrant le formulaire, une
+      fois en le validant — et deux calculs indépendants finiraient par
+      diverger. Une mutation qui fait mentir l'un des deux tombe.*
+      *Le champ reste sur le `POST`, à jour, celle qu'on vient d'ouvrir
+      comprise. 4 tests, 3 mutations. Demandé par la session qui tient l'écran
+      d'administration ; le branchement lui revient.*
 - [ ] **Le bandeau ne devient pas une ligne de confirmation**
       *La planche veut qu'il devienne « vous êtes en ligne · 41 créatrices
       peuvent vous réserver », puis disparaisse au bout de sept jours. Deux

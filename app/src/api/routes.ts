@@ -169,6 +169,7 @@ export const routes = {
 
   // ---- reprise d'un compte commerce ----
   repriseAdmin: (businessId: string) => chemin(`/admin/businesses/${businessId}/support-access`),
+  mesReprisesRecentes: () => chemin('/admin/me/support-access/recent'),
   mesReprises: (businessId: string) => chemin(`/business/${businessId}/support-access`),
 } as const;
 
@@ -277,6 +278,7 @@ export const METHODES: Record<keyof typeof routes, ('GET' | 'POST' | 'PATCH' | '
     fichesPreparees: ['GET', 'POST'],
     lienDePriseEnMain: ['POST', 'DELETE'],
     repriseAdmin: ['GET', 'POST', 'DELETE'],
+    mesReprisesRecentes: ['GET'],
     mesReprises: ['GET', 'DELETE'],
     relancerLeJob: ['POST'],
   };

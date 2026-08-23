@@ -1547,7 +1547,21 @@ export type FichePreparee = {
  * qui refuserait se contournerait en attendant un jour, et transformerait une
  * mesure honnête en formalité à franchir.
  */
-export type RepriseOuverte = RepriseDuCompte & {
+export type RepriseOuverte = RepriseDuCompte & CompteDesReprises;
+
+/**
+ * Le même compte, **servi sur une lecture** et non seulement après l'appui.
+ *
+ * Lu après l'ouverture, il retient pour la fois suivante : il fait ce qu'un
+ * journal fait, et un journal enregistre un abus sans l'empêcher. Ce qui
+ * retient est de se comparer à soi-même pendant qu'on écrit encore le motif,
+ * quand on peut encore ne pas le faire.
+ *
+ * **Les deux réponses partagent ce type, elles ne le recopient pas.** L'écran
+ * les lit à quelques secondes d'écart — une fois en ouvrant le formulaire, une
+ * fois en le validant — et deux déclarations finiraient par diverger.
+ */
+export type CompteDesReprises = {
   /** Tous salons confondus, closes et échues comprises : on mesure le geste. */
   reprises_recentes_de_l_appelant: number;
   /** La largeur de la fenêtre. Un nombre sans sa période ne veut rien dire. */

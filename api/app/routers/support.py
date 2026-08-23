@@ -18,7 +18,12 @@ from app.core.dependencies import BusinessMembership, CurrentUser, SessionDep, r
 from app.core.errors import ErrorCode, api_error
 from app.models import Business
 from app.models.enums import UserRole
-from app.schemas.support import BusinessSupportAccessRead, RepriseDemandee, RepriseOuverte
+from app.schemas.support import (
+    BusinessSupportAccessRead,
+    CompteDesReprises,
+    RepriseDemandee,
+    RepriseOuverte,
+)
 from app.services import outbox
 from app.services import support as service
 
@@ -31,6 +36,15 @@ admin_router = APIRouter(
 #: Côté commerce. L'appartenance est exigée : c'est **sa** liste, et le
 #: résolveur ordinaire s'en charge.
 business_router = APIRouter(prefix="/business", tags=["support"])
+
+#: Ce que l'administration lit d'elle-même. **Sans identifiant de salon dans le
+#: chemin**, et c'est tout l'intérêt : le compte doit exister avant qu'un salon
+#: soit choisi, puisqu'il se lit pendant qu'on écrit encore le motif.
+admin_me_router = APIRouter(
+    prefix="/admin/me",
+    tags=["support"],
+    dependencies=[Depends(require_role(UserRole.ADMIN))],
+)
 
 _CODES = {
     service.NotAnAdmin: (status.HTTP_403_FORBIDDEN, ErrorCode.INSUFFICIENT_ROLE),
@@ -122,6 +136,34 @@ async def close_support_access(
     if acces is not None:
         await service.fermer(session, acces=acces, acteur=user)
         await session.commit()
+
+
+@admin_me_router.get("/support-access/recent", response_model=CompteDesReprises)
+async def read_recent_support_accesses(user: CurrentUser, session: SessionDep) -> CompteDesReprises:
+    """Combien de reprises l'appelant a ouvertes, **tous salons confondus**.
+
+    **Avant l'appui, et c'est toute la raison de cette route.** Le même nombre
+    est déjà rendu par l'ouverture ; lu là, il retient pour la fois suivante,
+    c'est-à-dire qu'il fait ce qu'un journal fait — et un journal enregistre un
+    abus, il ne l'empêche pas. Ce qui retient est de se comparer à soi-même
+    pendant qu'on écrit encore le motif, quand on peut encore ne pas le faire.
+
+    **Sans identifiant de salon**, parce que le compte doit vivre avant qu'un
+    salon soit choisi : l'écran le pose au-dessus du champ de motif, donc avant
+    tout le reste. Le poser sur la route qui liste les reprises d'un salon
+    aurait rendu un nombre tous salons confondus depuis une route qui parle
+    d'un salon, ce qui se lit mal.
+
+    Elle ne refuse rien et ne décide rien. Un seuil se contournerait en
+    attendant un jour, et transformerait une mesure honnête en formalité.
+    """
+    reglages = get_settings()
+    return CompteDesReprises(
+        reprises_recentes_de_l_appelant=await service.reprises_recentes(
+            session, admin_user_id=user.id
+        ),
+        fenetre_en_jours=reglages.support_access_recent_window_seconds // 86_400,
+    )
 
 
 @admin_router.get("/{business_id}/support-access", response_model=list[BusinessSupportAccessRead])

@@ -849,3 +849,124 @@ async def test_refermer_quand_il_n_y_a_rien_ne_se_plaint_pas(
     )
 
     assert reponse.status_code == 204, reponse.text
+
+
+# --------------------------------------------------------------------------
+# le compte, avant l'appui
+# --------------------------------------------------------------------------
+
+
+async def test_le_compte_se_lit_sans_avoir_choisi_de_salon(
+    session: AsyncSession, client: AsyncClient
+) -> None:
+    """**Toute la raison de cette route : le nombre avant le geste.**
+
+    Le même compte est déjà rendu par l'ouverture ; lu là, il retient pour la
+    fois suivante — c'est-à-dire qu'il fait ce qu'un journal fait, et un journal
+    enregistre un abus sans l'empêcher. Ce qui retient est de se comparer à
+    soi-même pendant qu'on écrit encore le motif.
+
+    **Le décor n'ouvre rien du tout après la lecture**, et c'est ce qui le rend
+    probant : aucun identifiant de salon n'entre dans la requête, et le nombre
+    est celui des reprises déjà faites ailleurs. Une route qui aurait besoin
+    d'un salon ne pourrait pas répondre ici.
+    """
+    chez_a, _ = await commerce_en_cours(session)
+    chez_b, _ = await commerce_en_cours(session)
+    admin = await administrateur(session)
+    for business in (chez_a, chez_b):
+        await service.ouvrir(
+            session, business=business, admin=admin, motif="un motif", portee=PORTEE
+        )
+    await session.commit()
+
+    reponse = await client.get(
+        f"{PREFIX}/admin/me/support-access/recent", headers=await _jetons(client, admin)
+    )
+
+    assert reponse.status_code == 200, reponse.text
+    assert reponse.json()["reprises_recentes_de_l_appelant"] == 2
+    assert reponse.json()["fenetre_en_jours"] == (
+        get_settings().support_access_recent_window_seconds // 86_400
+    )
+
+
+async def test_le_compte_est_celui_de_l_appelant_et_non_celui_de_tous(
+    session: AsyncSession, client: AsyncClient
+) -> None:
+    """**Se comparer à soi-même**, pas à la moyenne de l'équipe.
+
+    Le décor pose deux administrateurs, l'un avec trois reprises et l'autre avec
+    une. Un compte global rendrait quatre aux deux ; un compte par appelant rend
+    trois et un. Sans le second administrateur, les deux implémentations
+    rendraient le même nombre et rien ne serait éprouvé.
+    """
+    salons = [(await commerce_en_cours(session))[0] for _ in range(3)]
+    prolixe = await administrateur(session)
+    discret = await administrateur(session)
+    for business in salons:
+        await service.ouvrir(
+            session, business=business, admin=prolixe, motif="un motif", portee=PORTEE
+        )
+    await service.ouvrir(
+        session, business=salons[0], admin=discret, motif="un motif", portee=PORTEE
+    )
+    await session.commit()
+
+    vu_par_prolixe = await client.get(
+        f"{PREFIX}/admin/me/support-access/recent", headers=await _jetons(client, prolixe)
+    )
+    vu_par_discret = await client.get(
+        f"{PREFIX}/admin/me/support-access/recent", headers=await _jetons(client, discret)
+    )
+
+    assert vu_par_prolixe.json()["reprises_recentes_de_l_appelant"] == 3
+    assert vu_par_discret.json()["reprises_recentes_de_l_appelant"] == 1
+
+
+async def test_la_lecture_et_l_ouverture_disent_le_meme_nombre(
+    session: AsyncSession, client: AsyncClient
+) -> None:
+    """Les deux réponses partagent leurs champs, elles ne les recopient pas.
+
+    **L'écran lit les deux à quelques secondes d'écart** — une fois en ouvrant
+    le formulaire, une fois en le validant. Deux calculs indépendants
+    finiraient par diverger, et le gérant du produit lirait alors deux vérités
+    selon l'instant où il regarde. Le décor le vérifie sur la seule chose qui
+    change entre les deux lectures : la reprise qu'on vient d'ouvrir.
+    """
+    business, _ = await commerce_en_cours(session)
+    admin = await administrateur(session)
+    await session.commit()
+    entete = await _jetons(client, admin)
+
+    avant = await client.get(f"{PREFIX}/admin/me/support-access/recent", headers=entete)
+    assert avant.json()["reprises_recentes_de_l_appelant"] == 0
+
+    ouverture = await client.post(
+        f"{PREFIX}/admin/businesses/{business.id}/support-access",
+        headers=entete,
+        json={"reason": "un motif", "scope": ["fiche"]},
+    )
+    apres = await client.get(f"{PREFIX}/admin/me/support-access/recent", headers=entete)
+
+    # Celle qu'on vient d'ouvrir compte des deux côtés : la lire à zéro le jour
+    # de la première serait exact et inutile.
+    assert ouverture.json()["reprises_recentes_de_l_appelant"] == 1
+    assert apres.json()["reprises_recentes_de_l_appelant"] == 1
+    assert apres.json()["fenetre_en_jours"] == ouverture.json()["fenetre_en_jours"]
+
+
+async def test_seule_l_administration_lit_ce_compte(
+    session: AsyncSession, client: AsyncClient
+) -> None:
+    """Un gérant n'a rien à savoir du rythme de nos interventions ailleurs."""
+    _, proprietaire = await commerce_en_cours(session)
+    await session.commit()
+
+    reponse = await client.get(
+        f"{PREFIX}/admin/me/support-access/recent",
+        headers=await _jetons(client, proprietaire),
+    )
+
+    assert reponse.status_code == 403, reponse.text

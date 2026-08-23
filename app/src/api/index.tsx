@@ -66,6 +66,7 @@ import type {
   FichePreparee,
   LienRemis,
   PorteeDeReprise,
+  CompteDesReprises,
   RepriseDuCompte,
   RepriseOuverte,
   StatutDuCommerce,
@@ -605,6 +606,22 @@ export class Api {
       methode: 'POST',
       corps: { reason: motif, scope: portee, spontaneous: spontanee },
     });
+  }
+
+  /**
+   * Combien de reprises **l'appelant** a ouvertes, tous salons confondus.
+   *
+   * **Avant l'appui, et c'est toute la raison de cette route.** Le même nombre
+   * arrive sur la réponse à l'ouverture ; lu là, il retient pour la fois
+   * suivante — c'est-à-dire qu'il fait ce qu'un journal fait, et un journal
+   * enregistre un abus sans l'empêcher. Ce qui retient est de se comparer à
+   * soi-même pendant qu'on écrit encore le motif.
+   *
+   * Sans identifiant de salon : le compte doit vivre avant qu'un salon soit
+   * choisi, puisque l'écran le pose au-dessus du champ de motif.
+   */
+  mesReprisesRecentes(signal?: AbortSignal) {
+    return this.client.request<CompteDesReprises>(routes.mesReprisesRecentes(), { signal });
   }
 
   fermerLaReprise(businessId: string) {

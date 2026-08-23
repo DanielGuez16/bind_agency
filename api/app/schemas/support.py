@@ -67,17 +67,25 @@ class BusinessSupportAccessRead(BaseModel):
     ended_at: datetime | None
 
 
-class RepriseOuverte(BusinessSupportAccessRead):
-    """Ce que l'administration lit **d'elle-même** en ouvrant une reprise.
+class CompteDesReprises(BaseModel):
+    """Ce que l'administration lit **d'elle-même**, avant d'ouvrir quoi que ce soit.
 
     Une reprise se justifie une par une, et c'est précisément ce qui empêche
     d'en voir l'ensemble : celui qui ouvre la quinzième de la semaine a une
-    bonne raison pour celle-là aussi. Le compte est rendu ici pour cette seule
+    bonne raison pour celle-là aussi. Le compte est rendu pour cette seule
     raison — il ne refuse rien, il se lit.
 
     Un seuil qui refuserait serait pire : il se contournerait en attendant un
     jour, et transformerait une mesure honnête en formalité à franchir.
+
+    **Servi sur une lecture, et non seulement après l'ouverture.** Lu après
+    l'appui, il retient pour la fois suivante — c'est-à-dire qu'il fait ce
+    qu'un journal fait, et un journal n'empêche rien. Ce qui retient est de se
+    comparer à soi-même **pendant qu'on écrit encore le motif**, quand on peut
+    encore ne pas le faire.
     """
+
+    model_config = ConfigDict(from_attributes=True)
 
     #: Combien de reprises l'appelant a ouvertes sur la fenêtre, **tous salons
     #: confondus**. Closes et échues comprises : ce qu'on mesure est le geste,
@@ -87,3 +95,16 @@ class RepriseOuverte(BusinessSupportAccessRead):
     #: nombre sans sa période ne veut rien dire, et que la période est en
     #: configuration — la lire ici évite de la recopier ailleurs.
     fenetre_en_jours: int
+
+
+class RepriseOuverte(BusinessSupportAccessRead, CompteDesReprises):
+    """La reprise qu'on vient d'ouvrir, et le compte à jour.
+
+    **Les deux champs viennent de `CompteDesReprises` et non d'une copie.** La
+    route de lecture et cette réponse-ci disent le même nombre : les écrire deux
+    fois les ferait diverger le jour où l'un des deux gagne une nuance, et
+    l'écran lirait alors deux vérités selon l'instant où il regarde.
+
+    Le compte rendu ici inclut celle qu'on vient d'ouvrir. La lire à zéro le
+    jour de la première serait exact et inutile.
+    """
