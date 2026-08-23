@@ -14,6 +14,8 @@
  * carte sort de l'application. Un lien qui s'ouvre sans prévenir, au milieu d'un
  * parcours de réservation, fait perdre le fil à qui revient.
  */
+import { Linking } from 'react-native';
+
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import type { ReactElement, ReactNode } from 'react';
 
@@ -120,6 +122,22 @@ it('ouvre la carte en plein écran, en pleine résolution', async () => {
   expect(screen.getByTestId('page-de-carte-0').props.source.uri).not.toContain('@vignette');
 });
 
+/**
+ * Ce qui est parti vers l'extérieur, dans l'ordre.
+ *
+ * `Linking.openURL` est espionné plutôt que simulé : ce qu'on veut savoir n'est
+ * pas si le navigateur s'ouvre — le simulateur n'en a pas — mais **quand** on
+ * le lui demande. Vide tant que personne n'a confirmé.
+ */
+const ouvertures: string[] = [];
+
+beforeEach(() => {
+  ouvertures.length = 0;
+  jest.spyOn(Linking, 'openURL').mockImplementation(async (url: string) => {
+    ouvertures.push(url);
+  });
+});
+
 it('annonce la sortie de l’application quand le lien est seul', async () => {
   // La feuille dit trois choses dans cet ordre : où l'on va, ce qu'on y
   // trouvera, et ce qui ne se perd pas. La dernière est celle qui décide.
@@ -134,6 +152,15 @@ it('annonce la sortie de l’application quand le lien est seul', async () => {
   expect(screen.getByText(en.parcours.sortieRassure)).toBeTruthy();
   // **Le domaine, pas l'adresse entière** : c'est lui qui dit où l'on va.
   expect(screen.getByTestId('domaine-de-sortie')).toHaveTextContent('le-comptoir.example');
+
+  // **Elle prévient ET elle attend.** Sans cette assertion, un écran qui
+  // ouvrirait le lien à l'appui *tout en* montrant la feuille passerait :
+  // l'avertissement serait alors une annonce après coup, pas une question. Le
+  // navigateur est déjà parti quand on la lit.
+  expect(ouvertures).toEqual([]);
+
+  await fireEvent.press(screen.getByTestId('ouvrir-la-carte-en-ligne'));
+  expect(ouvertures).toEqual(['https://le-comptoir.example/fr/carte?src=bind']);
 });
 
 it('sépare les deux accès, et n’en montre que ceux qui existent', async () => {

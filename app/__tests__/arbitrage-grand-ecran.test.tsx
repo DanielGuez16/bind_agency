@@ -16,7 +16,15 @@ import { ThemeProvider } from '../src/theme';
 
 jest.mock('../src/shell/gabarit', () => ({
   ...jest.requireActual('../src/shell/gabarit'),
-  useGabarit: () => ({ largeur: 1512, large: true }),
+  // `place` vient de la règle elle-même : la recopier ici ferait un
+  // double qui dérive le jour où le seuil bouge.
+  useGabarit: () => ({
+    largeur: 1512,
+    large: true,
+    place: (besoin: number) =>
+      (require('../src/shell/placeDisponible') as typeof import('../src/shell/placeDisponible'))
+        .placeDisponible(1512, besoin),
+  }),
 }));
 
 const DANS_DEUX_JOURS = new Date(Date.now() + 48 * 3_600_000).toISOString();

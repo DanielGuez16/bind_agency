@@ -104,6 +104,15 @@ export const coffreAsyncStorage: CoffreDeJetons = {
  * qu'ils sont, pas celui du champ de requête : `autourDe` plutôt que
  * `longitude/latitude` séparés, `statuts` plutôt que `status` répété.
  */
+/**
+ * Le suffixe de l'aperçu flouté, tel que le serveur le range.
+ *
+ * Nommé plutôt qu'écrit dans une comparaison : `storage.SUFFIXE_APERCU` porte
+ * la même chaîne côté serveur, et une constante nue au milieu d'une méthode
+ * finirait par diverger de lui sans que rien ne le dise.
+ */
+const SUFFIXE_APERCU = '@apercu';
+
 export class Api {
   constructor(private readonly client: ApiClient) {}
 
@@ -701,6 +710,35 @@ export class Api {
    */
   urlDeLaVignette(cle: string | null): string | undefined {
     return cle ? this.client.urlComplete(routes.media(`${cle}@vignette`)) : undefined;
+  }
+
+  /**
+   * La vignette d'un portrait, **sauf quand la clé est déjà un aperçu flouté**.
+   *
+   * **Le gain n'est pas dans les octets.** `Image` décode avant de réduire :
+   * une photo occupe sa taille en pixels en mémoire quel que soit le cadre où
+   * on la pose. Vingt portraits d'origine dans des cadres de 132 points font
+   * accrocher le défilement avant même que le réseau soit en cause — le même
+   * changement sur le mur a mesuré 10,5 Mo contre 1,5.
+   *
+   * **Un aperçu ne se resuffixe pas**, et c'est la seule raison pour laquelle
+   * la clé partait nue. Le dépôt d'un avatar range trois clés — l'original, sa
+   * vignette et son aperçu flouté — mais il n'y a pas de vignette *de
+   * l'aperçu*. Demander `@apercu@vignette` ne casse rien : la route voit la
+   * terminaison, la retire, trouve l'aperçu et sert la bonne image. Elle
+   * **gaspille** une lecture de dépôt par portrait, vingt par ouverture
+   * d'annuaire, pour rendre exactement ce qu'une clé nue aurait rendu.
+   *
+   * **La clé nue n'a jamais été un arbitrage contre la vignette.** La chronologie
+   * le dit : le repli de la route date du 14 août, la vignette d'avatar du 21 au
+   * soir, et la grille de l'annuaire du 22 au matin. Les deux existaient quand
+   * le choix a été fait — c'était la forme juste dans le cas dangereux, prise
+   * faute de pouvoir séparer les deux cas. Les séparer est tout ce que cette
+   * méthode fait.
+   */
+  urlDuPortrait(cle: string | null): string | undefined {
+    if (!cle) return undefined;
+    return cle.endsWith(SUFFIXE_APERCU) ? this.urlDuMedia(cle) : this.urlDeLaVignette(cle);
   }
 
   /**
