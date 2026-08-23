@@ -78,7 +78,12 @@ export function RedemptionScreen({
 }) {
   const { t } = useI18n();
   const c = useColors();
-  const { large } = useGabarit();
+  // **La place, et non la largeur.** Le journal du jour est fixe : sans la place, le pavé de code n'a plus rien.
+  // Au seuil de bascule il ne restait que quelques centaines de points
+  // au corps, sans que rien ne déborde — c'est la comparaison des deux
+  // colonnes qui dit le défaut, pas un dépassement.
+  const { place } = useGabarit();
+  const large = place(LARGEUR_DU_JOURNAL);
   const { api } = useApi();
 
   const [etat, setEtat] = useState<Etat>({ state: 'saisie' });

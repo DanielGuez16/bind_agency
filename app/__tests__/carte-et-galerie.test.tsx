@@ -92,6 +92,35 @@ describe('on regarde une photo sur du sombre, on lit un texte sur du clair', () 
       couleurs[FOND_DES_VISIONNEUSES.carte],
     );
   });
+
+  it('et dans le bon sens : la photo sur du sombre, le texte sur du clair', () => {
+    // **Vérifier qu'ils diffèrent ne dit pas lequel est lequel.** Les
+    // intervertir — la galerie sur du clair, la carte sur du sombre — passait
+    // la garde précédente sans un mot, et c'est précisément ce qu'une bascule
+    // de palette peut faire : le produit est passé en Ambre par les jetons,
+    // sans que personne confronte cet écran à ses cadres.
+    //
+    // On regarde une photo sur du sombre — le fond disparaît et l'image tient
+    // seule. On lit un texte sur du clair — une carte de salon est un document,
+    // et un document sur fond noir se lit deux fois moins bien.
+    const clarte = (jeton: keyof typeof couleurs) => {
+      const hex = couleurs[jeton].replace('#', '');
+      const [r, v, b] = [0, 2, 4].map((i) => Number.parseInt(hex.slice(i, i + 2), 16) / 255);
+      // Pondération de la luminance relative : l'œil ne voit pas les trois
+      // canaux avec la même force, et une moyenne simple classerait mal deux
+      // teintes proches.
+      return 0.2126 * r + 0.7152 * v + 0.0722 * b;
+    };
+
+    expect(clarte(FOND_DES_VISIONNEUSES.galerie)).toBeLessThan(
+      clarte(FOND_DES_VISIONNEUSES.carte),
+    );
+    // Et l'écart est franc, pas un cheveu : deux gris voisins satisferaient la
+    // comparaison sans que rien ne se distingue à l'œil.
+    expect(
+      clarte(FOND_DES_VISIONNEUSES.carte) - clarte(FOND_DES_VISIONNEUSES.galerie),
+    ).toBeGreaterThan(0.5);
+  });
 });
 
 describe('une page de carte est toujours une photographie', () => {

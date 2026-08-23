@@ -18,7 +18,15 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 // n'a pas de sens sans tableau.
 jest.mock('../src/shell/gabarit', () => ({
   ...jest.requireActual('../src/shell/gabarit'),
-  useGabarit: () => ({ largeur: 1512, large: true }),
+  // `place` vient de la règle elle-même : la recopier ici ferait un
+  // double qui dérive le jour où le seuil bouge.
+  useGabarit: () => ({
+    largeur: 1512,
+    large: true,
+    place: (besoin: number) =>
+      (require('../src/shell/placeDisponible') as typeof import('../src/shell/placeDisponible'))
+        .placeDisponible(1512, besoin),
+  }),
 }));
 
 import { ApiClient, ApiProvider } from '../src/api';
