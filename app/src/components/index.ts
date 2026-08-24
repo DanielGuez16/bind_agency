@@ -39,6 +39,7 @@ export {
   type DataRowProps,
   type MediaFallbackProps,
 } from './Cards';
+export { Repliable } from './Repliable';
 export { StatusMessage, type Niveau, type StatusMessageProps } from './StatusMessage';
 export { TitreAccentue, type TitreAccentueProps } from './TitreAccentue';
 export { FiletSegmente, type FiletSegmenteProps } from './FiletSegmente';

@@ -54,6 +54,7 @@ import {
   Filet,
   Icone,
   LigneDeContrepartie,
+  Repliable,
   SkeletonLignes,
   StatusMessage,
   Texte,
@@ -82,6 +83,11 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
   // panneau s'ouvre alors sur ce qui attend une décision, et à défaut sur la
   // première ligne du jour.
   const [choisie, setChoisie] = useState<string | null>(null);
+  // **Repliées au départ, toutes les deux.** « Trop de texte, trop de choses
+  // pas claires » — troisième retour sur cet écran. Ce qui se lit chaque matin
+  // est ce qui demande un geste ; le reste s'ouvre quand on le cherche.
+  const [exceptionOuverte, setExceptionOuverte] = useState(false);
+  const [finiesOuvertes, setFiniesOuvertes] = useState(false);
 
   const requete = useRequete<JourneeDuCommerce & { activation: VueDActivation | null }>(
     async (signal) => {
@@ -332,9 +338,23 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
             {finies.length > 0 && (aTrancher.length > 0 || attendues.length > 0) ? (
               <Filet marge={4} />
             ) : null}
-            {/* Ce dont il n'y a plus rien à faire aujourd'hui : servi, annulé,
-                manqué. La nuance est sur la ligne. */}
-            {section(t('commerce.journeeFinies', { count: finies.length }), finies, 'finies')}
+            {/* **Ce dont il n'y a plus rien à faire se replie.** Servi, annulé,
+                manqué : la journée d'un salon plein finit avec plus de lignes
+                closes que d'ouvertes, et elles poussaient hors de l'écran
+                celles qui demandent quelque chose. Le compte reste en tête —
+                c'est lui qu'on lit — et la liste s'ouvre quand on cherche une
+                réservation précise. */}
+            {finies.length === 0 ? null : (
+              <Repliable
+                titre={t('commerce.finiesTitre')}
+                resume={t('commerce.journeeFinies', { count: finies.length })}
+                ouverte={finiesOuvertes}
+                onBasculer={() => setFiniesOuvertes((avant) => !avant)}
+                testID="section-finies"
+              >
+                {section('', finies, 'finies')}
+              </Repliable>
+            )}
           </View>
         );
 
@@ -359,14 +379,32 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
           />
         );
 
+        /**
+         * **L'exception se replie, parce qu'elle se décide et ne se lit pas.**
+         * Fermer un jour ou couper une place est un geste rare, pris en
+         * marchant ; dépliée chaque matin, elle occupe le haut de l'écran le
+         * plus ouvert du produit pour une chose qu'on ne fait presque jamais.
+         * Le résumé dit l'état du jour — c'est **ça** qui se lit tous les
+         * matins — et le geste est à un appui.
+         */
         const exception = aujourdhui ? (
-          <ExceptionDuJour
-            businessId={businessId}
-            jour={journee.jour.slice(0, 10)}
-            // Les postes réellement ouverts, tels que le serveur les a calculés.
-            postesEffectifs={journee.horaires?.[0]?.postes ?? null}
-            onFait={requete.recharger}
-          />
+          <Repliable
+            titre={t('commerce.exceptionTitre')}
+            resume={t('commerce.exceptionResume', {
+              count: journee.horaires?.[0]?.postes ?? 0,
+            })}
+            ouverte={exceptionOuverte}
+            onBasculer={() => setExceptionOuverte((avant) => !avant)}
+            testID="section-exception"
+          >
+            <ExceptionDuJour
+              businessId={businessId}
+              jour={journee.jour.slice(0, 10)}
+              // Les postes réellement ouverts, tels que le serveur les a calculés.
+              postesEffectifs={journee.horaires?.[0]?.postes ?? null}
+              onFait={requete.recharger}
+            />
+          </Repliable>
         ) : null;
 
         // En compact, une seule colonne : la liste, comme avant. Le détail y

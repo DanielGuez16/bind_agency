@@ -898,6 +898,12 @@ describe("ce que la bibliothèque n'a pas", () => {
       // ajout de la planche de l'attente : les deux autres règles retirent.
       'Photo.tsx',
       'PickupCode.tsx',
+      // La section repliable, arrivée avec le troisième retour sur la journée
+      // et le premier sur « Your place » : les deux disaient « trop de choses
+      // d'un coup », et un écran qui replie à la main le fait une fois puis
+      // dérive. Le résumé n'est pas un sous-titre — c'est un compte, et c'est
+      // lui qui permet de replier sans rien cacher qui décide.
+      'Repliable.tsx',
       'SegmentedTabs.tsx',
       'Skeleton.tsx',
       'SlotPicker.tsx',

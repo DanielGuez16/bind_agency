@@ -2454,7 +2454,11 @@ describe('la journée se coupe par ce qu’elle demande', () => {
     await monter(<JourneeScreen businessId="b1" />, clientDe({ '/bookings': journee }));
     await waitFor(() => expect(screen.getByTestId('planning')).toBeTruthy());
 
-    expect(screen.getByTestId('finies')).toBeTruthy();
+    // **Les finies se replient** depuis le troisième retour sur cet écran :
+    // il n'y a plus rien à y faire, et elles poussaient hors de l'écran les
+    // lignes qui demandent quelque chose. Le compte reste en tête.
+    await fireEvent.press(screen.getByTestId('section-finies-entete'));
+    await waitFor(() => expect(screen.getByTestId('finies')).toBeTruthy());
     // Les deux anciennes sections ont disparu, et non pas seulement changé de
     // nom : sans cette moitié, un écran qui rendrait les quatre passerait.
     expect(screen.queryByTestId('servies')).toBeNull();
