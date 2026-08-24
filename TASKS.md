@@ -1805,6 +1805,43 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       porte donc le geste, et une phrase le dit à l'endroit exact où la
       confusion a lieu — quand tout est vert et que rien ne s'est passé. Voir
       `DECISIONS.md`, 2026-08-23*
+- [x] **L'avis de favori : le premier message que personne n'a déclenché**
+      *Ce qui donne son sens au cœur. Sans lui, un favori ne sert qu'à
+      retrouver ce qu'on savait déjà.*
+      ***Un balayage, et non un crochet à l'écriture.** L'ouverture a deux
+      causes — le salon rouvre, ou la créatrice atteint le palier — et la
+      seconde n'a aucun point d'écriture : elle arrive par un relevé de
+      métriques, qui n'a aucune raison de savoir qui a mis quoi en favori.
+      Comparer l'état à celui d'avant attrape les deux, et n'en oubliera pas
+      une troisième.*
+      ***On annonce une transition, jamais un état** : `dernier_etat`, posé à
+      la création avec l'état du jour — un favori mis sur une prestation déjà
+      réservable ne déclenche rien — et réécrit à chaque passage, **y compris
+      à la fermeture**. Sans cette dernière écriture, une prestation qui
+      s'ouvre, se ferme et se rouvre n'est annoncée qu'une fois.*
+      ***Un genre et non deux.** Les deux causes disent la même chose au
+      lecteur : « tu peux la réserver ». Deux genres offriraient d'en couper un
+      et pas l'autre, ce qui n'a aucun sens — c'est l'argument déjà tenu pour
+      `closed_no_fault`, qui partage son genre avec la non-honoration.*
+      ***Le seul réglage du produit**, `app_user.favoris_me_previennent`, vrai
+      par défaut, **relu au moment de sortir** et non au dépôt : quelqu'un qui
+      coupe entre les deux est entendu, ce que la boîte d'envoi annonce depuis
+      le début en rangeant un identifiant plutôt qu'une adresse. Son écart a sa
+      propre raison — un refus ne se lit pas comme un compte injoignable.*
+      *6 tests, 5 mutations. Nom du champ repris de la session qui rendra
+      l'interrupteur, sur l'écran des favoris et non dans les réglages.*
+- [ ] **Le bandeau ne devient pas une ligne de confirmation**
+      *La planche veut qu'il devienne « vous êtes en ligne · 41 créatrices
+      peuvent vous réserver », puis disparaisse au bout de sept jours. Deux
+      choses manquent : une **date de publication** pour la règle des sept
+      jours, et la **portée locale sur la journée** — elle n'est servie que sur
+      les rapports. En attendant, le bandeau s'efface simplement*
+- [ ] **Publier reste un appel explicite, et la planche l'ignore**
+      *Elle écrit que le bandeau « s'efface au dernier point coché », ce qui
+      suppose une publication automatique. `activerLeCommerce` existe et rien ne
+      l'appelle tout seul : le bandeau porte donc le geste sous un nom qui n'est
+      pas « go live ». Si la publication doit devenir automatique, c'est une
+      décision serveur, pas un habillage*
 - [x] **La configuration passe à deux portes, et la pause a un toit**
       *`ActivationScreen` est supprimé, avec ses tests et ses onze chaînes
       devenues orphelines : le bandeau porte ce qui manque et la publication,

@@ -54,6 +54,7 @@ const UTILISATEUR: Utilisateur = {
   status: 'active',
   locale: 'en',
   email_verified_at: '2026-08-01T10:00:00Z',
+  favoris_me_previennent: true,
   deletion_effective_at: null,
 };
 

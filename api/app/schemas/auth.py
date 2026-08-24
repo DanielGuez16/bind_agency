@@ -55,9 +55,18 @@ class TokenPair(BaseModel):
 
 
 class UpdateMeRequest(BaseModel):
-    """Seule la langue est modifiable ici : le reste du profil relève des phases suivantes."""
+    """La langue, et le seul réglage de notification du produit."""
 
     locale: Locale
+    #: **La seule préférence de notification, et l'exception assumée.** Les
+    #: réglages par genre ont été retirés parce que chaque message répondait à
+    #: un geste : couper l'un revenait à demander qu'on ne réponde pas. L'avis
+    #: de favori est le premier qui n'attend aucun geste — il arrive un mardi
+    #: sans qu'on ait rien demandé — et c'est ce qui le rend réglable.
+    #:
+    #: Omis, il ne change rien : une application qui ne connaît pas encore ce
+    #: champ ne doit pas remettre le défaut en modifiant la langue.
+    favoris_me_previennent: bool | None = None
 
 
 class UserRead(BaseModel):
@@ -68,6 +77,9 @@ class UserRead(BaseModel):
     role: UserRole
     status: UserStatus
     locale: Locale
+    #: Vrai quand la créatrice accepte d'être prévenue qu'un favori s'ouvre.
+    #: Servi pour que l'écran puisse rendre l'interrupteur dans son état.
+    favoris_me_previennent: bool
     #: Quand l'adresse a été confirmée. **Nulle veut dire « pas encore »**, et
     #: l'écran doit le dire : sans elle, réserver et mettre un commerce en ligne
     #: sont refusés, et découvrir le refus au moment de réserver serait le pire

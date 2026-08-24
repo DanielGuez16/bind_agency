@@ -44,6 +44,23 @@ class CreatorFavorite(UUIDPrimaryKey, CreatedAt, Base):
         sa.ForeignKey("catalog_item.id", ondelete="CASCADE"), nullable=False
     )
 
+    #: L'état du favori au dernier passage du balayage — ou à sa pose.
+    #:
+    #: **C'est lui qui fait la différence entre un état et une transition.**
+    #: Prévenir « c'est réservable » à chaque passage enverrait le même message
+    #: toutes les heures ; ce qu'on veut dire est « ça vient de s'ouvrir », et
+    #: cela ne se lit que par comparaison avec la fois d'avant.
+    #:
+    #: Posé à la création avec l'état du jour : un favori mis sur une prestation
+    #: déjà réservable ne déclenche rien — elle vient de la voir.
+    #:
+    #: **Une chaîne et non l'énumération.** Les valeurs sont celles de
+    #: `EtatDuFavori`, mais la colonne n'a pas à refuser une valeur inconnue :
+    #: elle ne commande aucune règle, elle ne sert qu'à comparer avec la
+    #: prochaine lecture, et un état retiré du code laisserait des lignes que
+    #: la base refuserait de relire.
+    dernier_etat: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+
     __table_args__ = (
         # Le geste est un interrupteur : appuyer deux fois sur le cœur ne pose
         # pas deux favoris. La contrainte le dit en base, et le service s'en

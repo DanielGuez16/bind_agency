@@ -44,6 +44,10 @@ from app.services import notifications
 #: chercher une panne là où il n'y a qu'une préférence.
 ECARTE_INJOIGNABLE = "compte suspendu, anonymisé, ou genre refusé"
 ECARTE_SANS_ADRESSE = "aucune adresse"
+#: **Distinct de « injoignable ».** Un compte suspendu ne reçoit rien parce
+#: qu'il n'existe plus pour nous ; celui-ci a demandé à ne pas recevoir ce
+#: genre-là. Les confondre ferait lire un refus comme une panne de compte.
+ECARTE_REFUSE = "avis de favori refusé"
 ECARTE_SANS_TERMINAL = "aucun terminal actif"
 ECARTE_EPUISE = "trop de tentatives"
 
@@ -219,6 +223,14 @@ async def _emettre(
     utilisateur = await session.get(User, ligne.user_id)
     if utilisateur is None or utilisateur.status is not UserStatus.ACTIVE:
         return Issue.ECARTE, ECARTE_INJOIGNABLE
+
+    # **La seule préférence du produit, relue au moment de sortir.** Le modèle
+    # de la boîte l'annonce depuis le début : on range un identifiant et non une
+    # adresse précisément pour que la préférence et le statut se relisent à
+    # l'envoi. Quelqu'un qui coupe l'avis de favori entre le dépôt et le vidage
+    # doit être entendu — sans quoi il reçoit encore ce qu'il vient de refuser.
+    if ligne.kind is NotificationKind.FAVORITE_AVAILABLE and not utilisateur.favoris_me_previennent:
+        return Issue.ECARTE, ECARTE_REFUSE
 
     valeurs = notifications.valeurs_du_gabarit(utilisateur.locale, dict(ligne.values))
     sujet = notifications.rendre(f"{ligne.template_key}.subject", utilisateur.locale, **valeurs)

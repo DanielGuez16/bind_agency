@@ -30,7 +30,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Business, CatalogItem, CreatorFavorite, Tier, TierOffer
 from app.models.enums import BusinessStatus
-from app.services import eligibility
+from app.services import eligibility, outbox
 
 
 class FavoriteError(Exception):
@@ -103,7 +103,15 @@ async def ajouter(
     if existant is not None:
         return existant
 
-    favori = CreatorFavorite(creator_id=creator_id, catalog_item_id=catalog_item_id)
+    favori = CreatorFavorite(
+        creator_id=creator_id,
+        catalog_item_id=catalog_item_id,
+        # **L'état du jour, posé à la création.** Sans lui, le premier balayage
+        # verrait « rien connu → réservable » et enverrait un message pour une
+        # prestation qu'elle vient de regarder. Ce qu'on annonce est une
+        # ouverture, pas un état.
+        dernier_etat=(await etat_courant(session, creator_id=creator_id, article=article)).value,
+    )
     session.add(favori)
     try:
         # **Le point de sauvegarde n'est pas décoratif.** Deux appuis
@@ -151,6 +159,37 @@ async def identifiants(session: AsyncSession, *, creator_id: uuid.UUID) -> froze
                 CreatorFavorite.creator_id == creator_id
             )
         )
+    )
+
+
+async def etat_courant(
+    session: AsyncSession, *, creator_id: uuid.UUID, article: CatalogItem
+) -> EtatDuFavori:
+    """L'état d'une seule prestation pour une seule créatrice.
+
+    Écrite pour la pose du favori, qui n'a qu'un article à regarder. `lister`
+    ne l'appelle pas : elle en a cinquante et charge tout en trois requêtes —
+    l'appeler par article ferait cinquante fois le calcul d'éligibilité, qui
+    est le plus cher du produit.
+    """
+    salon = await session.get(Business, article.business_id)
+    paliers = set(
+        await session.scalars(
+            sa.select(TierOffer.tier_id)
+            .join(Tier, Tier.id == TierOffer.tier_id)
+            .where(
+                TierOffer.catalog_item_id == article.id,
+                TierOffer.is_active.is_(True),
+                Tier.is_active.is_(True),
+            )
+        )
+    )
+    verdict = await eligibility.evaluer_createur(session, creator_id)
+    return _etat(
+        article=article,
+        statut_du_salon=salon.status if salon else BusinessStatus.DRAFT,
+        paliers_de_l_article=paliers,
+        paliers_ouverts=verdict.paliers_accessibles,
     )
 
 
@@ -233,3 +272,62 @@ def _etat(
     if not (paliers_de_l_article & paliers_ouverts):
         return EtatDuFavori.HORS_PALIER
     return EtatDuFavori.RESERVABLE
+
+
+async def prevenir_les_ouvertures(session: AsyncSession, *, limite: int = 2000) -> int:
+    """Prévient chaque créatrice dont un favori vient de s'ouvrir. Rend le compte.
+
+    **Un balayage, et non un crochet à l'écriture.** Une prestation en favori
+    s'ouvre pour deux raisons : le salon la rouvre — ou rouvre l'offre à un
+    palier — et la créatrice atteint le palier. La seconde n'a aucun point
+    d'écriture qu'on puisse accrocher : elle arrive par un relevé de métriques,
+    qui n'a aucune raison de savoir qui a mis quoi en favori. Comparer l'état à
+    celui d'avant attrape les deux causes avec un seul mécanisme, et n'en
+    oubliera pas une troisième.
+
+    **On annonce une transition, jamais un état.** Prévenir « c'est réservable »
+    à chaque passage enverrait le même message toutes les heures. Ce qu'on veut
+    dire est « ça vient de s'ouvrir », et cela ne se lit que par comparaison
+    avec la fois d'avant — d'où `dernier_etat`, écrit à chaque passage même
+    quand il n'y a rien à annoncer.
+
+    **L'état est réécrit dans tous les cas, y compris à la fermeture.** Sans
+    cela, une prestation qui s'ouvre, se ferme et se rouvre ne serait annoncée
+    qu'une fois : le second retour trouverait `reservable` en mémoire et se
+    tairait, alors que c'est bien une réouverture.
+
+    Le refus de la créatrice n'est **pas lu ici** : il l'est au moment de
+    sortir, comme le statut du compte. Le déposer puis l'écarter coûte une
+    ligne de boîte d'envoi et garde la trace de ce qu'on aurait dit — et surtout
+    quelqu'un qui coupe l'avis entre le dépôt et l'envoi est entendu.
+    """
+    par_createur: dict[uuid.UUID, list[CreatorFavorite]] = {}
+    favoris = await session.scalars(
+        sa.select(CreatorFavorite).order_by(CreatorFavorite.created_at).limit(limite)
+    )
+    for favori in favoris:
+        par_createur.setdefault(favori.creator_id, []).append(favori)
+
+    annonces = 0
+    for creator_id, lignes in par_createur.items():
+        etats = {vu.catalog_item_id: vu for vu in await lister(session, creator_id=creator_id)}
+        for favori in lignes:
+            vu = etats.get(favori.catalog_item_id)
+            if vu is None:
+                continue
+            devenu = vu.etat.value
+            if devenu == favori.dernier_etat:
+                continue
+            if vu.etat is EtatDuFavori.RESERVABLE:
+                await outbox.deposer(
+                    session,
+                    user_id=creator_id,
+                    cle="favorite.available",
+                    prestation=vu.name,
+                    business=vu.business_name,
+                )
+                annonces += 1
+            favori.dernier_etat = devenu
+
+    await session.flush()
+    return annonces
