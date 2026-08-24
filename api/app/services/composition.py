@@ -101,7 +101,6 @@ async def etat_de_la_composition(
         )
     )
 
-
     return EtatDeLaComposition(
         business_id=business_id,
         prestations=prestations[0],

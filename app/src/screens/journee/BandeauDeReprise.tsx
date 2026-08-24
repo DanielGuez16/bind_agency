@@ -73,8 +73,15 @@ export function BandeauDeReprise({
   // aller-retour de moins sur l'écran le plus ouvert du produit, et un bandeau
   // qui n'apparaît plus une seconde après le reste de l'écran — celui-ci dit
   // une chose grave, et il la disait en sursaut.
+  //
+  // **Falsy, et non `=== null`.** Septième fois de la série : la nullité est
+  // portée par le contrat, l'absence par l'appelant. Une réponse d'avant le
+  // champ — un serveur pas encore déployé, un décor écrit sans lui — rend
+  // `undefined`, et `=== null` le laissait passer jusqu'à `reprise.ended_at`,
+  // qui jetait. Soixante-deux tests l'ont dit d'un coup, sur des décors qui ne
+  // parlent pas de reprise du tout.
   const reprise = servie;
-  if (reprise === null) return null;
+  if (!reprise) return null;
 
   // **L'échéance se juge encore ici.** Le serveur ne rend que les vivantes,
   // mais une reprise peut expirer pendant qu'on regarde la journée, et il ne
