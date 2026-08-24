@@ -30,15 +30,23 @@ import { tierTokens } from '../theme';
 const ECHELLE: ContentFormat[] = ['story', 'post', 'reel'];
 
 /**
- * Le nombre de prix en dessous duquel on ne propose rien.
+ * Le nombre de durées distinctes en dessous duquel on ne propose rien.
  *
  * Trois : c'est le minimum pour qu'un tiers inférieur, un milieu et un tiers
- * supérieur existent réellement. À deux, la « moitié la plus chère » est un
+ * supérieur existent réellement. À deux, la « moitié la plus longue » est un
  * seul article et la proposition ne dit rien du catalogue.
+ *
+ * **La durée a remplacé le prix le 2026-08-24.** Le produit ne montre jamais de
+ * montant et un commerce n'a aucune raison d'en saisir un ; la durée ordonne
+ * aussi bien — trente minutes contre quatre-vingt-dix dit ce que quarante
+ * dollars contre cent vingt disait — et elle est **obligatoire**, donc la
+ * suggestion ne dépend plus d'un champ qu'on peut laisser vide. Sa limite est
+ * connue : une prestation longue n'est pas toujours haut de gamme. Un prix ne
+ * l'était pas non plus.
  */
-export const PRIX_MINIMUM_POUR_PROPOSER = 3;
+export const DUREES_MINIMUM_POUR_PROPOSER = 3;
 
-export type PrestationChiffree = { id: string; price_cents: number };
+export type PrestationMesuree = { id: string; duration_minutes: number | null };
 
 /**
  * Le palier proposé pour chaque prestation, par identifiant.
@@ -50,21 +58,27 @@ export type PrestationChiffree = { id: string; price_cents: number };
  * ne plus croire aucun des deux.
  */
 export function propositionsDuCatalogue(
-  prestations: PrestationChiffree[],
+  prestations: PrestationMesuree[],
 ): Map<string, ContentFormat> {
   const proposees = new Map<string, ContentFormat>();
-  if (prestations.length < PRIX_MINIMUM_POUR_PROPOSER) return proposees;
+  // **Sans durée, pas de rang.** Le champ est obligatoire à la création, mais un
+  // catalogue ancien peut en porter sans : les écarter vaut mieux que les poser
+  // à zéro, ce qui les ferait toutes tomber dans le tiers bas.
+  const mesurees = prestations.filter(
+    (p): p is { id: string; duration_minutes: number } => p.duration_minutes != null,
+  );
+  if (mesurees.length < DUREES_MINIMUM_POUR_PROPOSER) return proposees;
 
-  const prix = [...new Set(prestations.map((p) => p.price_cents))].sort((a, b) => a - b);
-  // Moins de trois prix **distincts** : un catalogue à prix unique n'a pas de
-  // haut ni de bas, quel que soit le nombre de lignes.
-  if (prix.length < PRIX_MINIMUM_POUR_PROPOSER) return proposees;
+  const durees = [...new Set(mesurees.map((p) => p.duration_minutes))].sort((a, b) => a - b);
+  // Moins de trois durées **distinctes** : un catalogue à durée unique n'a pas
+  // de haut ni de bas, quel que soit le nombre de lignes.
+  if (durees.length < DUREES_MINIMUM_POUR_PROPOSER) return proposees;
 
-  for (const prestation of prestations) {
-    // Le rang du **prix**, pas celui de la ligne : c'est ce qui fait que deux
-    // prestations au même tarif reçoivent la même proposition.
-    const rang = prix.indexOf(prestation.price_cents);
-    const tiers = Math.min(ECHELLE.length - 1, Math.floor((rang * ECHELLE.length) / prix.length));
+  for (const prestation of mesurees) {
+    // Le rang de la **durée**, pas celui de la ligne : c'est ce qui fait que
+    // deux prestations de même durée reçoivent la même proposition.
+    const rang = durees.indexOf(prestation.duration_minutes);
+    const tiers = Math.min(ECHELLE.length - 1, Math.floor((rang * ECHELLE.length) / durees.length));
     proposees.set(prestation.id, ECHELLE[tiers]);
   }
   return proposees;
