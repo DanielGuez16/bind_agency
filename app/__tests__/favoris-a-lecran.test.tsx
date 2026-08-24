@@ -11,6 +11,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react-nativ
 
 import { ApiClient, ApiProvider, type Favori } from '../src/api';
 import { I18nProvider } from '../src/i18n';
+import { SessionProvider } from '../src/session';
 import { FavorisScreen } from '../src/screens/FavorisScreen';
 import { ThemeProvider } from '../src/theme';
 
@@ -30,7 +31,29 @@ function favori(extra: Partial<Favori> = {}): Favori {
   } as Favori;
 }
 
-async function monter(favoris: Favori[], surRetrait?: () => Response) {
+const UTILISATEUR = {
+  id: 'u1',
+  email: 'lea@exemple.test',
+  role: 'creator',
+  status: 'active',
+  locale: 'en',
+  favoris_me_previennent: true,
+};
+
+async function monter(
+  favoris: Favori[],
+  surRetrait?: () => Response,
+  avisActifs = true,
+  /**
+   * Le `PATCH` ne répond jamais.
+   *
+   * **C'est le seul décor qui sépare les deux implémentations.** Avec un double
+   * qui répond tout de suite, « basculer puis enregistrer » et « enregistrer
+   * puis basculer » rendent le même écran — la même leçon que sur le cœur du
+   * mur, apprise deux fois.
+   */
+  patchSansReponse = false,
+) {
   const appels: { url: string; methode: string }[] = [];
   const ouvertures: string[] = [];
   const api = new ApiClient({
@@ -49,12 +72,43 @@ async function monter(favoris: Favori[], surRetrait?: () => Response) {
   await render(
     <I18nProvider initialLocale="en">
       <ThemeProvider role="creator">
-        <ApiProvider client={api}>
-          <FavorisScreen
-            onRetour={() => {}}
-            onOuvrirLeCommerce={(id) => ouvertures.push(id)}
-          />
-        </ApiProvider>
+        <SessionProvider
+          baseUrl="https://api.test"
+          coffre={{
+            lire: async () => ({ access_token: 'a', refresh_token: 'r' }),
+            ecrire: async () => {},
+          }}
+          fetchImpl={
+            (async (url: RequestInfo | URL, init?: RequestInit) => {
+              const methode = (init?.method ?? 'GET').toUpperCase();
+              appels.push({ url: String(url), methode });
+              if (methode === 'PATCH') {
+                if (patchSansReponse) return new Promise<Response>(() => {});
+                // Le double rend ce que le serveur rendrait : la valeur qu'on
+                // vient de poser. Un double qui répète l'ancienne ferait
+                // revenir l'interrupteur et accuserait l'écran.
+                const corps = JSON.parse(String(init?.body ?? '{}'));
+                return {
+                  ok: true,
+                  status: 200,
+                  json: async () => ({ ...UTILISATEUR, ...corps }),
+                } as Response;
+              }
+              return {
+                ok: true,
+                status: 200,
+                json: async () => ({ ...UTILISATEUR, favoris_me_previennent: avisActifs }),
+              } as Response;
+            }) as unknown as typeof fetch
+          }
+        >
+          <ApiProvider client={api}>
+            <FavorisScreen
+              onRetour={() => {}}
+              onOuvrirLeCommerce={(id) => ouvertures.push(id)}
+            />
+          </ApiProvider>
+        </SessionProvider>
       </ThemeProvider>
     </I18nProvider>,
   );
@@ -148,5 +202,65 @@ describe('la liste se relit d’où l’on est', () => {
     expect(lecture?.url).toContain('/me/favorites');
     expect(lecture?.url).not.toContain('longitude');
     expect(lecture?.url).not.toContain('rayon');
+  });
+});
+
+
+/**
+ * Le seul réglage de notification du produit.
+ *
+ * **Le décor divergent est la liste vide.** Un interrupteur rendu partout donne
+ * un écran qui a l'air complet : il est là, il bascule, il enregistre. Ce qu'il
+ * fait alors est proposer de couper des avis dont on ne peut recevoir aucun —
+ * il n'y a rien de gardé. C'est le défaut de « profil et mise en ligne » sous
+ * une autre forme : un réglage dont le sujet n'est pas à l'écran.
+ */
+describe('l’avis de favori, et lui seul', () => {
+  it('vit au-dessus de la liste, pas dans les réglages', async () => {
+    await monter([favori()]);
+
+    expect(await screen.findByTestId('avis-de-favori')).toBeTruthy();
+    expect(screen.getByTestId('avis-de-favori-interrupteur').props.accessibilityState?.checked).toBe(true);
+  });
+
+  it('n’apparaît pas quand il n’y a rien de gardé', async () => {
+    // Il n'y a alors rien dont on puisse être prévenu, et un interrupteur qui
+    // ne gouverne rien apprend à ne plus lire les interrupteurs.
+    await monter([]);
+
+    await waitFor(() => expect(screen.getByTestId('favoris-vide')).toBeTruthy());
+    expect(screen.queryByTestId('avis-de-favori')).toBeNull();
+  });
+
+  it('un seul, jamais un par favori', async () => {
+    // Un par ligne recréerait, une case à la fois, le mur d'interrupteurs que
+    // le produit a retiré.
+    await monter([favori(), favori({ catalog_item_id: 'i2', name: 'Balayage' })]);
+
+    await waitFor(() => expect(screen.getByTestId('favori-i2')).toBeTruthy());
+    expect(screen.getAllByTestId('avis-de-favori')).toHaveLength(1);
+  });
+
+  it('bascule tout de suite, et enregistre', async () => {
+    const { appels } = await monter([favori()], undefined, true, true);
+
+    // **L'état est dans `accessibilityState.checked`.** Le composant est une
+    // `Pressable`, pas un `Switch` : il n'a pas de `value` sur son nœud, et
+    // c'est l'annonce d'accessibilité qui porte l'état — ce qui est le bon
+    // endroit, puisque c'est là qu'une lecture d'écran va le chercher.
+    await fireEvent.press(await screen.findByTestId('avis-de-favori-interrupteur'));
+
+    // Rendu avant la réponse : un interrupteur qui attend le réseau se presse
+    // deux fois, et le second appui annule le premier.
+    expect(screen.getByTestId('avis-de-favori-interrupteur').props.accessibilityState?.checked).toBe(false);
+    await waitFor(() =>
+      expect(appels.some((a) => a.methode === 'PATCH' && a.url.endsWith('/me'))).toBe(true),
+    );
+  });
+
+  it('et il part éteint quand il l’est', async () => {
+    await monter([favori()], undefined, false);
+
+    expect((await screen.findByTestId('avis-de-favori-interrupteur')).props.accessibilityState?.checked).toBe(false);
   });
 });

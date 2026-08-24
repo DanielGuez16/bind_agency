@@ -2320,7 +2320,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       entière ouvre le salon, y compris sur une prestation réservable — c'était
       réservé au bandeau des états bloqués, donc le cas le plus fréquent ne
       menait nulle part. 1482 tests, 3 mutations*
-- [ ] **L'interrupteur des notifications de favori attend son champ**
+- [x] **L'interrupteur des notifications de favori est posé**
       *Deux notifications arrivent — la prestation qui devient accessible, le
       salon qui rouvre — et ce sont **les premiers messages non transactionnels
       du produit**. La règle qui a retiré les préférences tient parce que tout

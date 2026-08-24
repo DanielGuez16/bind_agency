@@ -9991,3 +9991,38 @@ sur les rapports. Ce n'est pas un report en attendant les champs. **Une ligne
 qui affirmerait l'une ou l'autre à l'estime serait une confirmation fausse, et
 une confirmation fausse est pire que pas de confirmation** — elle est crue.
 Le bandeau s'efface simplement.
+
+---
+
+## 2026-08-24 — L'interrupteur posé, et un genre plutôt que deux
+
+Le champ est arrivé avec le nom demandé, sur `app_user` et non sur le profil
+créateur — la boîte d'envoi lit déjà l'utilisateur au moment de sortir, et
+l'anonymisation vide le profil en gardant le compte. Rien n'en change pour
+l'écran : le champ arrive sur `/me` comme la langue.
+
+**L'interrupteur est optimiste, comme les deux autres gestes de cet écran.** Un
+interrupteur qui attend le réseau se presse deux fois, et le second appui annule
+le premier.
+
+**Et le décor a dû être refait deux fois, pour la même raison qu'ailleurs.** Le
+double rendait toujours l'ancienne valeur, donc l'interrupteur revenait et le
+test accusait l'écran — un double qui ne se comporte pas comme le serveur
+n'éprouve pas le produit. Puis, une fois qu'il répétait la valeur posée,
+« basculer puis enregistrer » et « enregistrer puis basculer » rendaient le même
+écran : c'est la troisième fois cette semaine qu'une réponse **qui ne vient
+pas** est le seul décor qui sépare les deux.
+
+**Un genre de notification, pas deux, et l'argument est celui du dépôt.** La
+prestation qui devient accessible et le salon qui la rouvre disent la même chose
+au lecteur — « tu peux la réserver maintenant » — et appellent le même geste.
+Deux genres offriraient d'en couper un et pas l'autre, ce qui n'a pas de sens.
+C'est exactement ce qui avait été tenu pour `collaboration.closed_no_fault`,
+qui partage son genre avec la non-honoration. Invisible de l'écran, qui n'a
+qu'un interrupteur dans les deux cas.
+
+**Le refus se lit à la sortie, pas au dépôt.** La boîte range un identifiant et
+non une adresse précisément pour que la préférence se relise au moment d'envoyer
+— quelqu'un qui coupe l'avis entre les deux est entendu. Et l'écart porte sa
+propre raison, distincte de « compte injoignable » : un refus ne doit pas se
+lire comme une panne.
