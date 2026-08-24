@@ -508,9 +508,15 @@ function LigneDeReservation({
             .join(' · ')}
         </Texte>
         {/* Le palier **et** le réseau : la même prestation peut exister sur
-            deux comptes, et publier sur le mauvais ne compte pas. */}
+            deux comptes, et publier sur le mauvais ne compte pas.
+
+            **Le format passe par la traduction.** Il était rendu brut, et
+            l'anglais le cachait : `story` majusculé donne « STORY », c'est-à-
+            dire exactement ce que la bonne implémentation rend. En espagnol la
+            ligne affichait « STORY » là où le reste de l'écran dit
+            « historia ». Le réseau, lui, reste brut — c'est un nom propre. */}
         <Texte variante="type.monoSmall" couleur="ink.mute" testID={`palier-${reservation.booking_id}`}>
-          {`${reservation.content_format} · ${reservation.platform}`.toUpperCase()}
+          {`${t(`parcours.format_${reservation.content_format}`)} · ${reservation.platform}`.toUpperCase()}
         </Texte>
 
         {reservation.status === 'awaiting_business' ? (

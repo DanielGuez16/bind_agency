@@ -83,7 +83,7 @@ function contrepartie(statut: string, extra: Record<string, unknown> = {}) {
   };
 }
 
-async function monter(items: ReservationDuCreateur[]) {
+async function monter(items: ReservationDuCreateur[], locale: 'en' | 'es' = 'en') {
   const api = new ApiClient({
     baseUrl: 'https://api.test',
     coffre: { lire: async () => null, ecrire: async () => {} },
@@ -95,7 +95,7 @@ async function monter(items: ReservationDuCreateur[]) {
       }) as Response,
   });
   return await render(
-    <I18nProvider initialLocale="en">
+    <I18nProvider initialLocale={locale}>
       <ThemeProvider role="creator">
         <ApiProvider client={api}>
           <HistoriqueScreen onOuvrir={() => {}} />
@@ -186,6 +186,20 @@ describe('chaque ligne dit ce qu’elle attend de toi', () => {
     const badge = screen.getByTestId('palier-r1');
     expect(badge).toHaveTextContent(/STORY/);
     expect(badge).toHaveTextContent(/INSTAGRAM/);
+  });
+
+  it('et le format y est traduit, pas recopié', async () => {
+    // **Le cas où les deux implémentations divergent.** En anglais, `story`
+    // majusculé donne « STORY » — la valeur brute et la traduction rendent le
+    // même mot, et l'assertion au-dessus passe quelle que soit celle qu'on a
+    // écrite. L'espagnol les sépare : « historia » contre « story ». C'est
+    // donc là que le test se pose, et pas ailleurs.
+    await monter([reservation({ contrepartie: contrepartie('pending') as never })], 'es');
+    await waitFor(() => expect(screen.getByTestId('palier-r1')).toBeTruthy());
+
+    const badge = screen.getByTestId('palier-r1');
+    expect(badge).toHaveTextContent(/HISTORIA/);
+    expect(badge).not.toHaveTextContent(/STORY/);
   });
 
   it('la prestation passe devant le salon', async () => {
