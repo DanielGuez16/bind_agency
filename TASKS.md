@@ -950,8 +950,18 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       `jest --detectOpenHandles`, qui est le seul outil qui nomme un handle
       resté ouvert **et** son fichier. C'est la classe de défaut que la garde de
       durée ne peut pas attraper : le coût est dans le démontage, et Jest ne le
-      compte pas dans la durée du fichier. Fin : `--detectOpenHandles` sort
-      propre, et devient une étape de la CI*
+      compte pas dans la durée du fichier.*
+      ***Cherché, et voici ce qui est établi.** `--detectOpenHandles` sort
+      propre et ne nomme rien — mais il force le mode série, donc il ne voit
+      pas ce qu'on cherche : à `--maxWorkers=1` l'avertissement disparaît, à 2
+      il revient. Ce n'est donc pas un fichier. Les deux moitiés de la suite le
+      déclenchent chacune, ce qui écarte un coupable unique et désigne le socle
+      partagé ; la boucle du squelette a été relue et s'arrête bien à son
+      démontage.*
+      *L'outil qui nommerait le handle **change le mode d'exécution qui le
+      produit** — c'est ce qui rend ce défaut coûteux. Reste à bisecter le
+      socle plutôt que les fichiers : `setup`, les doubles de modules natifs,
+      `expo-notifications`*
 - [x] **Une garde de parité qui ne regardait jamais les appels**
       *La parité des traductions comparait les deux catalogues l'un à l'autre :
       elle attrapait une clé traduite d'un seul côté et laissait passer une clé
@@ -2261,7 +2271,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       agrégats du §6 quinquies ; et un cache local qui affiche la liste d'hier
       pendant qu'on charge celle d'aujourd'hui — ce dernier rendrait la règle 1
       vraie partout au lieu d'être vraie au second lancement*
-- [ ] **Deux images restent hors de `Photo` : la preuve et son envoi**
+- [x] **Toutes les images passent par `Photo`**
       *Elles ne sont pas dans une liste et ne poussent rien — l'écran est fait
       pour elles. Le fondu leur ferait du bien quand même, et il ne coûte qu'un
       remplacement*
@@ -2284,7 +2294,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       virtualisée sous le seuil ; la grille reste un bloc au-dessus, parce que
       trois colonnes en `flexWrap` ne sont pas une liste. 1391 tests,
       4 mutations*
-- [ ] **La grille large n'est pas virtualisée, et personne ne l'a mesurée**
+- [x] **La grille large est virtualisée, et la mesure a décidé**
       *`FlatList` porte `numColumns` et le contrat de `liste` n'en a pas la
       notion. Ce sera une ligne le jour où quelqu'un mesure — et elle ne sera
       pas plus chère plus tard, ce qui est une raison de ne pas la poser
@@ -2310,7 +2320,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       `overflow: hidden` plus la neutralisation de l'autoremplissage — par une
       transition différée, pour n'avoir aucune couleur de fond à deviner.
       1443 tests, 4 e2e, 3 mutations sur navigateur*
-- [ ] **L'accueil n'est mesuré qu'en anglais**
+- [x] **L'accueil est mesuré dans les deux langues**
       *L'espagnol est plus long et c'est lui qui décide de la hauteur réelle. La
       bascule de langue n'est pas atteignable depuis l'accueil : il faudrait
       soit un moyen de la forcer dans le build de test, soit un paramètre

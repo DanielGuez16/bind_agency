@@ -282,18 +282,24 @@ export function AnnuaireScreen({
        * est un appui explicite, donc il vit dans `pied` et défile sous la
        * dernière fiche.
        */
-      liste={
-        large
-          ? undefined
-          : (annuaire) => {
-              const morceaux = decouper(annuaire);
-              return {
-                entete: morceaux.entete,
-                elements: morceaux.elements,
-                pied: morceaux.pied,
-              };
-            }
-      }
+      liste={(annuaire) => {
+        const morceaux = decouper(annuaire);
+        return {
+          entete: morceaux.entete,
+          // **Une fiche par cellule, et la cellule prend sa part.** En bloc,
+          // chaque fiche portait sa largeur en pourcentage ; en grille
+          // virtualisée, c'est la liste qui répartit et l'élément n'a qu'à
+          // remplir ce qu'on lui donne.
+          elements: large
+            ? morceaux.elements.map((element) => ({
+                cle: element.cle,
+                rendu: <View style={{ flex: 1, minWidth: 0 }}>{element.rendu}</View>,
+              }))
+            : morceaux.elements,
+          pied: morceaux.pied,
+          colonnes: large ? COLONNES : undefined,
+        };
+      }}
       vide={
         <EmptyState
           title={t('annuaire.videTitre')}
@@ -302,17 +308,18 @@ export function AnnuaireScreen({
         />
       }
     >
+      {/* **Le bloc sert l'état d'erreur, et lui seul.** `liste` couvre les deux
+          gabarits ; ce corps-ci ne se rend que quand un rechargement échoue et
+          qu'on avait déjà quelque chose — une liste datée sous un bandeau, qui
+          n'a rien à virtualiser puisqu'on ne la parcourt pas, on la relit. */}
       {(annuaire) => {
         const morceaux = decouper(annuaire);
 
         return (
           <View style={{ gap: 16 }}>
             {morceaux.entete}
-            {/* **La grille reste un bloc au-dessus du seuil.** Trois colonnes
-                en `flexWrap` ne sont pas une liste : le contrat de `liste` rend
-                un élément par rangée et n'a aucune notion de colonnes. Changer
-                la disposition pour pouvoir virtualiser serait prendre le
-                problème par le mauvais bout. */}
+            {/* La même disposition qu'en liste, en bloc : trois colonnes en
+                `flexWrap` au-dessus du seuil, une pile en dessous. */}
             <Grille>{morceaux.elements.map((element) => element.rendu)}</Grille>
             {morceaux.pied}
           </View>
@@ -422,6 +429,15 @@ function Portee({ portee }: { portee: PorteeLocale }) {
  * l'enroulement donne sans calcul. La largeur en pourcentage tient la rangée
  * même quand la dernière est incomplète.
  */
+/**
+ * Trois colonnes au-dessus du seuil.
+ *
+ * Nommé plutôt qu'écrit deux fois : la grille en bloc et la grille virtualisée
+ * doivent tomber d'accord, et deux constantes finiraient par diverger — c'est
+ * la largeur des fiches qui changerait sans que la disposition suive.
+ */
+const COLONNES = 3;
+
 function Grille({ children }: { children: React.ReactNode }) {
   const { large } = useGabarit();
 
@@ -430,7 +446,7 @@ function Grille({ children }: { children: React.ReactNode }) {
   return (
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 14 }}>
       {React.Children.map(children, (enfant) => (
-        <View style={{ width: `${100 / 3}%`, flexGrow: 1, flexBasis: 260, maxWidth: 420 }}>
+        <View style={{ width: `${100 / COLONNES}%`, flexGrow: 1, flexBasis: 260, maxWidth: 420 }}>
           {enfant}
         </View>
       ))}
