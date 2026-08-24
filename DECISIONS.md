@@ -10006,6 +10006,22 @@ publication et la portée locale ne sont pas servies, la ligne ne s'écrit pas.*
 Elle nomme la condition, donc elle se périme d'elle-même — et personne n'a à se
 demander si la décision tient encore.
 
+**Mais une formulation ne se protège pas seule du temps, et l'autre moitié de la
+leçon est un geste.** La conversation qui a livré la ligne avait la demande
+directe de Daniel : sa livraison était juste. Ce qui a manqué est qu'elle a lu
+`TASKS.md` pour **sa tâche** et non pour **son sujet**, et n'a donc pas vu
+l'arbitrage rendu deux jours plus tôt.
+
+`CLAUDE.md` écrit déjà ce coût pour les entrées dupliquées — « une copie
+décochée d'une décision prise fait refaire un arbitrage déjà rendu ». Il vaut
+mot pour mot pour une entrée **renversée**, qui est pire : elle est cochée, donc
+elle a l'air à jour, et rien n'invite à la relire.
+
+Deux gestes, dans les deux sens : **chercher le sujet dans les deux fichiers
+avant de cocher**, et **nommer le renversement en une ligne dans le rapport**
+quand il y en a un. Ici, c'est le hasard qui a joué — je n'ai vu la
+contradiction que parce que la livraison m'avait nommé les fichiers touchés.
+
 ---
 
 ## 2026-08-24 — L'interrupteur posé, et un genre plutôt que deux
