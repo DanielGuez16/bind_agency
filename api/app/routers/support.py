@@ -11,7 +11,7 @@ import uuid
 from typing import Annotated
 
 import sqlalchemy as sa
-from fastapi import APIRouter, Depends, Path, status
+from fastapi import APIRouter, Depends, Path, Query, status
 
 from app.core.config import get_settings
 from app.core.dependencies import BusinessMembership, CurrentUser, SessionDep, require_role
@@ -20,6 +20,7 @@ from app.models import Business
 from app.models.enums import UserRole
 from app.schemas.support import (
     BusinessSupportAccessRead,
+    CommerceVuParLAdministration,
     CompteDesReprises,
     RepriseDemandee,
     RepriseOuverte,
@@ -136,6 +137,36 @@ async def close_support_access(
     if acces is not None:
         await service.fermer(session, acces=acces, acteur=user)
         await session.commit()
+
+
+@admin_router.get("", response_model=list[CommerceVuParLAdministration])
+async def list_businesses(
+    user: CurrentUser,
+    session: SessionDep,
+    recherche: Annotated[str | None, Query(max_length=120)] = None,
+    limite: Annotated[int, Query(ge=1, le=500)] = 100,
+) -> list[CommerceVuParLAdministration]:
+    """Les salons que l'administration peut reprendre.
+
+    **Le manque que cette route comble dépassait la mise en page.** L'écran de
+    reprise était greffé sur la fiche de tournée, faute d'un endroit où
+    l'administration ait un salon nommé sous les yeux — on ne pouvait donc
+    reprendre **que les salons venus du terrain**. Un salon inscrit tout seul,
+    ce que le produit veut rendre possible, était hors d'atteinte du support.
+
+    **Tous les états.** Un salon en inscription est celui qu'on vient débloquer,
+    un suspendu celui dont on vient comprendre pourquoi : ne lister que les
+    ouverts aurait écarté les deux cas qui motivent une reprise.
+
+    Lire cette liste n'ouvre rien. La reprise reste un geste explicite, motivé,
+    borné par une portée, et dont le salon est prévenu.
+    """
+    return [
+        CommerceVuParLAdministration.model_validate(commerce)
+        for commerce in await service.commerces(
+            session, admin_user_id=user.id, recherche=recherche, limite=limite
+        )
+    ]
 
 
 @admin_me_router.get("/support-access/recent", response_model=CompteDesReprises)

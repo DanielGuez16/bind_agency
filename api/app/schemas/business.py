@@ -186,6 +186,39 @@ class BusinessUpdate(BaseModel):
         return _check_timezone(value)
 
 
+class CommerceDeLAppartenance(BaseModel):
+    """Un commerce de la liste d'appartenance, avec ce qui fait choisir.
+
+    **Un schéma à part et non un champ de plus sur `BusinessRead`.** Le compte
+    des décisions n'a de sens que dans le sélecteur : sur la fiche d'un salon
+    qu'on regarde déjà, il répète ce que la journée affiche à côté. Le poser sur
+    le schéma commun l'aurait servi partout, y compris là où personne ne le lit.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    name: str
+    timezone: str
+    #: Le quartier et l'adresse : le sélecteur les lit pour distinguer deux
+    #: salons du même nom. **Ils étaient déjà servis** — les retirer en ajoutant
+    #: le compte aurait cassé la ligne du sélecteur sans qu'aucun test du
+    #: serveur ne le dise.
+    neighborhood: Neighborhood | None
+    address: str | None
+    #: Combien de réservations attendent une décision de ce salon.
+    #:
+    #: **C'est ce qui fait basculer un gérant qui ne savait pas qu'on
+    #: l'attendait.** Sans lui la liste reste utilisable et perd sa raison
+    #: d'être ouverte : deux noms de salons ne disent pas lequel a besoin de
+    #: vous ce matin.
+    #:
+    #: Le même compte que la file « à trancher » de la journée, et non un compte
+    #: du jour : une demande d'avant-hier attend toujours, et l'écarter du
+    #: compteur ferait disparaître précisément celle qui a le plus attendu.
+    decisions_en_attente: int
+
+
 class BusinessRead(BaseModel):
     id: uuid.UUID
     name: str

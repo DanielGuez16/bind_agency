@@ -19,13 +19,14 @@ from app.core.dependencies import (
 )
 from app.core.errors import ErrorCode, api_error
 from app.integrations.geocoding import Geocoder, get_geocoder
-from app.models import Business, BusinessMember
-from app.models.enums import UserRole
+from app.models import Booking, Business, BusinessMember
+from app.models.enums import BookingStatus, UserRole
 from app.schemas.activation import EtapeRead, VueDActivationRead
 from app.schemas.business import (
     BusinessCreate,
     BusinessRead,
     BusinessUpdate,
+    CommerceDeLAppartenance,
     CoordinatesPayload,
     EtatDeLaCompositionRead,
 )
@@ -70,8 +71,10 @@ async def lire_le_commerce(session: AsyncSession, business: Business) -> Busines
     )
 
 
-@mes_commerces_router.get("/me/businesses", response_model=list[BusinessRead])
-async def list_my_businesses(user: CurrentUser, session: SessionDep) -> list[BusinessRead]:
+@mes_commerces_router.get("/me/businesses", response_model=list[CommerceDeLAppartenance])
+async def list_my_businesses(
+    user: CurrentUser, session: SessionDep
+) -> list[CommerceDeLAppartenance]:
     """Les commerces dont l'appelant est membre.
 
     Sans elle, une application commerce ne peut rien afficher : tous les écrans
@@ -85,14 +88,53 @@ async def list_my_businesses(user: CurrentUser, session: SessionDep) -> list[Bus
 
     Aucune autre lecture n'est ouverte ici : c'est `/business/{id}` qui rend le
     détail, derrière le résolveur.
+
+    **Le compte des décisions en attente vient avec.** C'est ce qui fait
+    basculer un gérant qui ne savait pas qu'on l'attendait — deux noms de salons
+    ne disent pas lequel a besoin de lui ce matin. En une requête groupée et non
+    une par salon : la coquille appelle cette route à chaque ouverture, et c'est
+    elle qui retarde tout le reste.
     """
-    commerces = await session.scalars(
-        sa.select(Business)
-        .join(BusinessMember, BusinessMember.business_id == Business.id)
-        .where(BusinessMember.user_id == user.id)
-        .order_by(Business.name)
-    )
-    return [await lire_le_commerce(session, commerce) for commerce in commerces]
+    lignes = (
+        await session.execute(
+            sa.select(
+                Business.id,
+                Business.name,
+                Business.timezone,
+                Business.neighborhood,
+                Business.address,
+                sa.func.count(Booking.id).label("decisions"),
+            )
+            .join(BusinessMember, BusinessMember.business_id == Business.id)
+            .outerjoin(
+                Booking,
+                sa.and_(
+                    Booking.business_id == Business.id,
+                    Booking.status == BookingStatus.AWAITING_BUSINESS,
+                ),
+            )
+            .where(BusinessMember.user_id == user.id)
+            .group_by(
+                Business.id,
+                Business.name,
+                Business.timezone,
+                Business.neighborhood,
+                Business.address,
+            )
+            .order_by(Business.name)
+        )
+    ).all()
+    return [
+        CommerceDeLAppartenance(
+            id=identifiant,
+            name=nom,
+            timezone=fuseau,
+            neighborhood=quartier,
+            address=adresse,
+            decisions_en_attente=decisions,
+        )
+        for identifiant, nom, fuseau, quartier, adresse, decisions in lignes
+    ]
 
 
 @router.post(

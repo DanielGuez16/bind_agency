@@ -1,5 +1,14 @@
 {
   "paths": {
+    "/api/v1/admin/businesses": {
+      "get": {
+        "operationId": "list_businesses_api_v1_admin_businesses_get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/api/v1/admin/businesses/{business_id}/support-access": {
       "delete": {
         "operationId": "close_support_access_api_v1_admin_businesses__business_id__support_access_delete",

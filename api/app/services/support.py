@@ -22,6 +22,7 @@ c'est la seconde qui devrait gêner.
 
 import uuid
 from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
 import sqlalchemy as sa
@@ -313,4 +314,89 @@ async def historique(
             .order_by(BusinessSupportAccess.started_at.desc())
             .limit(max(1, min(limite, 500)))
         )
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class CommerceAReprendre:
+    """Un salon tel que l'administration le voit dans sa liste."""
+
+    business_id: uuid.UUID
+    name: str
+    category: str
+    neighborhood: str | None
+    status: str
+    reprise_en_cours: bool
+
+
+async def commerces(
+    session: AsyncSession,
+    *,
+    admin_user_id: uuid.UUID,
+    recherche: str | None = None,
+    limite: int = 100,
+    maintenant: datetime | None = None,
+) -> tuple[CommerceAReprendre, ...]:
+    """Les salons que l'administration peut reprendre, par nom.
+
+    **Pourquoi cette liste existe.** L'écran de reprise était greffé sur la
+    fiche de tournée, faute d'un endroit où l'administration ait un salon nommé
+    sous les yeux. La conséquence dépassait la mise en page : on ne pouvait
+    reprendre **que les salons venus du terrain**. Un salon inscrit tout seul —
+    ce que le produit veut rendre possible — était hors d'atteinte du support.
+
+    **Tous les états, et non les seuls actifs.** Un salon en inscription est
+    précisément celui qu'on vient débloquer, et un suspendu celui dont on vient
+    comprendre pourquoi. Ne lister que les ouverts aurait écarté les deux cas
+    qui motivent une reprise.
+
+    La recherche est sur le nom, sans accent ni casse : c'est ainsi qu'on
+    cherche un salon dont on a entendu le nom au téléphone.
+    """
+    conditions = []
+    if recherche and recherche.strip():
+        motif = f"%{recherche.strip()}%"
+        conditions.append(sa.func.unaccent(Business.name).ilike(sa.func.unaccent(motif)))
+
+    instant = maintenant or datetime.now(UTC)
+    ouverte = (
+        sa.select(sa.literal(1))
+        .select_from(BusinessSupportAccess)
+        .where(
+            BusinessSupportAccess.business_id == Business.id,
+            BusinessSupportAccess.admin_user_id == admin_user_id,
+            BusinessSupportAccess.ended_at.is_(None),
+            BusinessSupportAccess.expires_at > instant,
+        )
+        .exists()
+    )
+
+    lignes = (
+        await session.execute(
+            sa.select(
+                Business.id,
+                Business.name,
+                Business.category,
+                Business.neighborhood,
+                Business.status,
+                ouverte.label("reprise_en_cours"),
+            )
+            .where(*conditions)
+            .order_by(Business.name)
+            .limit(max(1, min(limite, 500)))
+        )
+    ).all()
+
+    return tuple(
+        CommerceAReprendre(
+            business_id=identifiant,
+            name=nom,
+            category=categorie.value if hasattr(categorie, "value") else str(categorie),
+            neighborhood=(
+                quartier.value if hasattr(quartier, "value") else quartier if quartier else None
+            ),
+            status=statut.value if hasattr(statut, "value") else str(statut),
+            reprise_en_cours=bool(reprise),
+        )
+        for identifiant, nom, categorie, quartier, statut, reprise in lignes
     )

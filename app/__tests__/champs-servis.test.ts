@@ -53,6 +53,13 @@ const TYPES = join(SRC, 'api', 'types.ts');
  *   table un tapis.
  */
 const NON_RENDUS: Record<string, string> = {
+  // **Le compte des décisions, servi et pas encore posé.** Le sélecteur de
+  // salon veut l'afficher sur chaque ligne — c'est ce qui fait basculer un
+  // gérant qui ne savait pas qu'on l'attendait. La ligne existe, le nombre
+  // n'y est pas encore : composition.
+  'CommerceDeLUtilisateur.decisions_en_attente': 'a-instruire',
+  // Même chose pour la liste d'administration, dont l'onglet n'existe pas.
+  'CommerceVuParLAdministration.reprise_en_cours': 'a-instruire',
   // --- a-instruire : servis, et la grille v3 ne les lit plus ---
   //
   // **Trois champs que le contrat commerce-scopé a rendus redondants.** La
