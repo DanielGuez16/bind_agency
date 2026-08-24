@@ -15,12 +15,13 @@
  * Wynwood doit se retrouver depuis Kendall. La brancher sur le rayon en ferait
  * une seconde version du fil, qui oublie ce qu'on lui a confié.
  */
-import { View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, View } from 'react-native';
 
 import { useApi, type EtatDuFavori, type Favori } from '../api';
 import { Icone, Photo, SkeletonLignes, StatusMessage, Texte } from '../components';
 import { useI18n } from '../i18n';
-import { elevationDeCarte, radius, useColors } from '../theme';
+import { elevationDeCarte, radius, size, useColors } from '../theme';
 import { Ecran } from './Ecran';
 import { useRequete } from './useRequete';
 
@@ -58,6 +59,26 @@ export function FavorisScreen({
     estVide: (favoris) => favoris.length === 0,
   });
 
+  /**
+   * Ce qu'on vient de retirer, avant que le serveur réponde.
+   *
+   * **Optimiste, comme le cœur du mur** : la ligne s'en va au doigt. Attendre
+   * le réseau pour un geste sans conséquence est ce qui fait dire « lent », et
+   * une ligne qui reste après un appui fait appuyer une seconde fois.
+   *
+   * **Elle revient si le serveur refuse.** Le retrait n'efface rien d'autre que
+   * l'intention de garder ; faire disparaître une ligne qu'on n'a pas su
+   * retirer serait mentir sur ce qu'on a fait.
+   */
+  const [retires, setRetires] = useState<string[]>([]);
+
+  function retirer(catalogItemId: string) {
+    setRetires((avant) => [...avant, catalogItemId]);
+    void api.retirerDesFavoris(catalogItemId).catch(() => {
+      setRetires((avant) => avant.filter((id) => id !== catalogItemId));
+    });
+  }
+
   return (
     <Ecran
       requete={requete}
@@ -80,13 +101,16 @@ export function FavorisScreen({
     >
       {(favoris) => (
         <View style={{ gap: 12 }}>
-          {favoris.map((favori) => (
-            <LigneDuFavori
-              key={favori.catalog_item_id}
-              favori={favori}
-              onOuvrir={() => onOuvrirLeCommerce(favori.business_id)}
-            />
-          ))}
+          {favoris
+            .filter((favori) => !retires.includes(favori.catalog_item_id))
+            .map((favori) => (
+              <LigneDuFavori
+                key={favori.catalog_item_id}
+                favori={favori}
+                onOuvrir={() => onOuvrirLeCommerce(favori.business_id)}
+                onRetirer={() => retirer(favori.catalog_item_id)}
+              />
+            ))}
         </View>
       )}
     </Ecran>
@@ -96,9 +120,11 @@ export function FavorisScreen({
 function LigneDuFavori({
   favori,
   onOuvrir,
+  onRetirer,
 }: {
   favori: Favori;
   onOuvrir: () => void;
+  onRetirer: () => void;
 }) {
   const { api } = useApi();
   const { t } = useI18n();
@@ -122,42 +148,80 @@ function LigneDuFavori({
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <Photo
-          uri={api.urlDeLaVignette(favori.photo_key)}
-          hauteur={VIGNETTE}
-          style={{ width: VIGNETTE, borderRadius: radius['radius.photo'] }}
-          testID={`favori-photo-${favori.catalog_item_id}`}
-        />
-        <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-          <Texte variante="type.bodyStrong">{favori.name}</Texte>
-          <Texte variante="type.caption" couleur="ink.soft">
-            {[
-              favori.business_name,
-              favori.duration_minutes === null
-                ? null
-                : t('favoris.duree', { n: String(favori.duration_minutes) }),
-            ]
-              .filter(Boolean)
-              .join(' · ')}
-          </Texte>
-        </View>
-        {/* Le cœur est plein : c'est la liste de ce qui est gardé, et chaque
-            ligne y est par définition. Il ne se presse pas ici — retirer se
-            fait là où l'on a posé, sur la carte du mur. */}
-        {/* `brand.700` : l'encre calibrée de la marque. `brand.500` est une
-            surface, et à 2,36:1 sur cette carte le cœur s'effacerait. */}
-        <Icone nom="coeur" couleur="brand.700" taille={20} rempli />
+        {/* **La ligne entière ouvre le salon.** C'était réservé au bandeau des
+            états non réservables : sur une prestation qu'on peut réserver — le
+            cas le plus fréquent — la liste ne menait nulle part. */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${favori.name} — ${favori.business_name}`}
+          onPress={onOuvrir}
+          style={({ pressed }) => ({
+            flex: 1,
+            minWidth: 0,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 12,
+            opacity: pressed ? 0.7 : 1,
+          })}
+        >
+          <Photo
+            uri={api.urlDeLaVignette(favori.photo_key)}
+            hauteur={VIGNETTE}
+            style={{ width: VIGNETTE, borderRadius: radius['radius.photo'] }}
+            testID={`favori-photo-${favori.catalog_item_id}`}
+          />
+          <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+            <Texte variante="type.bodyStrong">{favori.name}</Texte>
+            <Texte variante="type.caption" couleur="ink.soft">
+              {[
+                favori.business_name,
+                favori.duration_minutes === null
+                  ? null
+                  : t('favoris.duree', { n: String(favori.duration_minutes) }),
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+            </Texte>
+          </View>
+        </Pressable>
+
+        {/* **Le cœur se presse ici aussi, et il le fallait.** Il était
+            décoratif — « retirer se fait là où l'on a posé » — et c'était faux
+            pour la moitié de cette liste : un salon qui ne paraît plus n'est
+            dans aucun fil, donc son favori n'aurait jamais pu être retiré. Une
+            liste de choses gardées d'où l'on ne peut rien lâcher se remplit une
+            fois pour toutes.
+
+            **Il est frère de la ligne, pas son enfant.** Imbriqué, il gagnerait
+            l'appui — c'est la règle — mais la lecture d'écran annoncerait un
+            bouton dans un bouton, et la cible du cœur mangerait un coin de
+            celle de la ligne.
+
+            `brand.700` : `brand.500` est une surface, et à 2,36:1 le cœur
+            s'effacerait au moment où il doit signer. */}
+        <Pressable
+          testID={`favori-retirer-${favori.catalog_item_id}`}
+          accessibilityRole="button"
+          accessibilityState={{ selected: true }}
+          accessibilityLabel={t('favoris.retirer', { nom: favori.name })}
+          onPress={onRetirer}
+          hitSlop={8}
+          style={({ pressed }) => ({
+            width: size.touchMin,
+            height: size.touchMin,
+            alignItems: 'center',
+            justifyContent: 'center',
+            opacity: pressed ? 0.6 : 1,
+          })}
+        >
+          <Icone nom="coeur" couleur="brand.700" taille={20} rempli />
+        </Pressable>
       </View>
 
       {conduite ? (
         <StatusMessage
           level={conduite.niveau}
           body={t(conduite.cle, { salon: favori.business_name })}
-          action={
-            favori.etat === 'salon_indisponible'
-              ? undefined
-              : { label: t('favoris.voirLeSalon'), onPress: onOuvrir }
-          }
           testID={`favori-etat-${favori.catalog_item_id}`}
         />
       ) : null}
