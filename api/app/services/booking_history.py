@@ -35,6 +35,7 @@ from app.models import (
     AuditLog,
     Booking,
     Business,
+    BusinessSupportAccess,
     CapacityException,
     CapacityRule,
     CatalogItem,
@@ -56,7 +57,7 @@ from app.models.enums import (
 # dans `booking_states` — avec la même formule ; la première modification de
 # l'une aurait fait mentir l'écran sur ce que le serveur accepte, et le défaut
 # se serait lu comme un bouton ouvert qui se fait refuser.
-from app.services import availability, directory, eligibility
+from app.services import availability, directory, eligibility, support
 from app.services.audit import AuditedEntity
 from app.services.booking_states import fin_de_l_annulation_libre, ouverture_de_l_absence
 
@@ -265,6 +266,22 @@ class JourneeDuCommerce:
     #: l'horaire habituel un jour férié aménagé — et le salon lirait sur son
     #: propre écran qu'il est ouvert alors qu'il a fermé.
     horaires: tuple[availability.Fenetre, ...]
+    #: La reprise de compte qui court, s'il y en a une. Nulle presque toujours.
+    #:
+    #: **Une seule, et non l'historique.** Le bandeau demandait la liste des
+    #: reprises à part, et le commentaire qui le justifiait avait raison sur le
+    #: fond : la journée n'a pas à porter un historique qui ne la concerne pas,
+    #: et qu'elle rechargerait à chaque changement de jour. Une ligne ou nulle
+    #: ne pèse rien, et retire une requête de l'écran le plus ouvert du produit.
+    #:
+    #: L'historique reste sur `GET /business/{id}/support-access`, que l'écran
+    #: des réglages lit — c'est là qu'on veut savoir qui est entré en mars.
+    #:
+    #: **La plus récemment ouverte** quand deux administrateurs sont entrés : le
+    #: service ne refuse que la seconde du *même*. C'est celle que le bandeau
+    #: nomme, et l'écran garde sa propre règle d'échéance — une reprise peut
+    #: expirer pendant qu'on regarde l'écran, et le serveur ne le redira pas.
+    reprise_en_cours: BusinessSupportAccess | None
 
 
 def _colonnes_communes() -> tuple:
@@ -576,6 +593,14 @@ async def journee_du_commerce(
         a_trancher=tuple(_lire(ligne, comptes) for ligne in en_attente),
         items=tuple(_lire(ligne, comptes) for ligne in lignes),
         horaires=tuple(await _horaires_du_jour(session, business_id=business.id, jour=jour)),
+        # `[:1]` et non une requête à part : `toutes_en_cours` ordonne déjà par
+        # ouverture décroissante, et c'est la même fonction que le salon appelle
+        # pour refermer. Deux définitions de « la reprise qui court »
+        # divergeraient, et celle-ci porte un bandeau qu'on ne veut pas voir
+        # mentir.
+        reprise_en_cours=next(
+            iter(await support.toutes_en_cours(session, business_id=business.id)), None
+        ),
     )
 
 

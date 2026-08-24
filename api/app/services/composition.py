@@ -43,10 +43,35 @@ class EtatDeLaComposition:
     prestations_masquees: int
     #: Les jours de la semaine qui portent au moins une règle. Zéro à sept.
     jours_ouverts: int
-    #: L'instant de la dernière ouverture. Nul tant que le commerce n'a jamais
-    #: été mis en ligne — ce qui n'est pas la même chose qu'une mise en pause.
-    en_ligne_depuis: datetime | None
     status: BusinessStatus
+
+
+async def derniere_mise_en_ligne(session: AsyncSession, business_id: uuid.UUID) -> datetime | None:
+    """Quand ce commerce est passé en ligne pour la dernière fois.
+
+    **La dernière transition vers `active`, et non la première.** Un commerce
+    rouvert après une pause en a plusieurs, et c'est celle d'aujourd'hui qui
+    explique son état : « en ligne depuis mars » serait faux d'un salon qui a
+    fermé six semaines cet été.
+
+    Nulle tant qu'il n'a jamais été mis en ligne — ce qui n'est pas une mise en
+    pause, et l'écran ne doit pas les confondre.
+
+    Sortie de `etat_de_la_composition` parce que **la vue d'activation la
+    demande aussi**, et pour la même raison : c'est l'écran du matin qui la
+    montre, pas le menu de configuration. Deux copies de cette requête
+    divergeraient sur le `order_by`, qui est tout ce qu'elle a.
+    """
+    return await session.scalar(
+        sa.select(AuditLog.occurred_at)
+        .where(
+            AuditLog.entity_type == AuditedEntity.BUSINESS.value,
+            AuditLog.entity_id == business_id,
+            AuditLog.to_status == BusinessStatus.ACTIVE.value,
+        )
+        .order_by(AuditLog.occurred_at.desc())
+        .limit(1)
+    )
 
 
 async def etat_de_la_composition(
@@ -76,24 +101,11 @@ async def etat_de_la_composition(
         )
     )
 
-    # La **dernière** transition vers `active`. Un commerce rouvert après une
-    # pause en a plusieurs, et c'est celle d'aujourd'hui qui explique son état.
-    depuis = await session.scalar(
-        sa.select(AuditLog.occurred_at)
-        .where(
-            AuditLog.entity_type == AuditedEntity.BUSINESS.value,
-            AuditLog.entity_id == business_id,
-            AuditLog.to_status == BusinessStatus.ACTIVE.value,
-        )
-        .order_by(AuditLog.occurred_at.desc())
-        .limit(1)
-    )
 
     return EtatDeLaComposition(
         business_id=business_id,
         prestations=prestations[0],
         prestations_masquees=prestations[1],
         jours_ouverts=jours or 0,
-        en_ligne_depuis=depuis,
         status=business.status,
     )

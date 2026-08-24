@@ -41,7 +41,6 @@ async def test_un_commerce_neuf_n_a_rien_compose(session: AsyncSession) -> None:
     assert (etat.prestations, etat.jours_ouverts) == (0, 0)
     # **Nulle, pas une date d'inscription.** Jamais mis en ligne n'est pas la
     # même chose que mis en pause, et l'écran ne doit pas les confondre.
-    assert etat.en_ligne_depuis is None
     assert etat.status is BusinessStatus.ONBOARDING
 
 
@@ -119,23 +118,29 @@ async def test_deux_regles_le_meme_jour_n_ouvrent_qu_un_jour(session: AsyncSessi
 async def test_la_mise_en_ligne_est_la_derniere_pas_la_premiere(session: AsyncSession) -> None:
     """Un commerce rouvert après une pause a plusieurs transitions vers
     `active`. Afficher la première daterait sa mise en ligne d'avant sa pause,
-    ce qui est faux et se remarque."""
+    ce qui est faux et se remarque.
+
+    La date a quitté la composition pour la vue d'activation, où la journée la
+    charge déjà ; la règle, elle, n'a pas bougé, et c'est elle qu'on éprouve
+    ici — au plus près de la requête, sans passer par un schéma."""
     from app.services import business as business_service
 
     business, proprietaire = await commerce_en_cours(session)
     acteur = Actor.from_user(proprietaire)
 
     await business_service.activate_business(session, business=business, actor=acteur)
-    premiere = (await service.etat_de_la_composition(session, business.id)).en_ligne_depuis
+    premiere = await service.derniere_mise_en_ligne(session, business.id)
     assert premiere is not None
 
     await business_service.pause_business(session, business=business, actor=acteur)
     await business_service.activate_business(session, business=business, actor=acteur)
 
+    derniere = await service.derniere_mise_en_ligne(session, business.id)
+    assert derniere is not None
+    assert derniere > premiere, "la première ouverture est affichée"
+
     etat = await service.etat_de_la_composition(session, business.id)
     assert etat is not None
-    assert etat.en_ligne_depuis is not None
-    assert etat.en_ligne_depuis > premiere, "la première ouverture est affichée"
     assert etat.status is BusinessStatus.ACTIVE
 
 
@@ -157,7 +162,7 @@ async def test_la_route_rend_les_trois_nombres(client: AsyncClient, session: Asy
 
     assert reponse.status_code == 200
     corps = reponse.json()
-    for cle in ("prestations", "prestations_masquees", "jours_ouverts", "en_ligne_depuis"):
+    for cle in ("prestations", "prestations_masquees", "jours_ouverts"):
         assert cle in corps, f"{cle} se perd entre le service et la route"
 
 

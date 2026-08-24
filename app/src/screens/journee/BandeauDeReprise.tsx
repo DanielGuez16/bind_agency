@@ -43,16 +43,22 @@ import { Button, Texte } from '../../components';
 import { useI18n } from '../../i18n';
 import { formatDateTime } from '../../format';
 import { radius, useColors } from '../../theme';
-import { useRequete } from '../useRequete';
 import { nomDeLEcran } from '../reprise/portee';
-import { repriseEnCours } from './reprise';
+import { etatDeLaReprise } from './reprise';
 
 export function BandeauDeReprise({
   businessId,
   timezone,
+  reprise: servie,
+  recharger,
 }: {
   businessId: string;
   timezone: string;
+  /** Celle que la journée porte. Nulle presque toujours. */
+  reprise: RepriseDuCompte | null;
+  /** Relit la journée : c'est elle qui porte la reprise, donc c'est elle qui
+   *  doit rendre la porte close une fois refermée. */
+  recharger: () => void;
 }) {
   const { api, messageDErreur } = useApi();
   const { t, locale } = useI18n();
@@ -60,27 +66,28 @@ export function BandeauDeReprise({
   const [envoi, setEnvoi] = useState(false);
   const [echec, setEchec] = useState<string | null>(null);
 
-  // Sa propre requête, comme la pause du commerce : la journée n'a pas de
-  // raison de porter une donnée qui ne la concerne qu'à travers ce bandeau, et
-  // l'y ajouter la ferait recharger pour rien à chaque passage.
-  const requete = useRequete<RepriseDuCompte[]>(
-    (signal) => api.mesReprises(businessId, signal),
-    { estVide: () => false, dependances: [businessId] },
-  );
-
-  // Tant qu'on ne sait pas, rien. Un bandeau qui apparaît une seconde après le
-  // reste de l'écran fait sursauter, et celui-ci dit une chose grave.
-  if (requete.etat !== 'pret') return null;
-
-  const reprise = repriseEnCours(requete.donnees);
+  // **Plus de requête à lui.** Il en avait une, et le commentaire qui la
+  // défendait disait que la journée n'a pas à porter une donnée qui ne la
+  // concerne qu'à travers ce bandeau. C'était vrai de l'historique, qui reste
+  // aux réglages ; ça ne l'est pas d'une ligne ou rien. Ce qu'on gagne est un
+  // aller-retour de moins sur l'écran le plus ouvert du produit, et un bandeau
+  // qui n'apparaît plus une seconde après le reste de l'écran — celui-ci dit
+  // une chose grave, et il la disait en sursaut.
+  const reprise = servie;
   if (reprise === null) return null;
+
+  // **L'échéance se juge encore ici.** Le serveur ne rend que les vivantes,
+  // mais une reprise peut expirer pendant qu'on regarde la journée, et il ne
+  // le redira pas tant qu'on ne recharge pas. Retirer ce contrôle laisserait
+  // le bandeau allumé sur une porte déjà refermée par le temps.
+  if (etatDeLaReprise(reprise) !== 'en-cours') return null;
 
   async function refermer() {
     setEchec(null);
     setEnvoi(true);
     try {
       await api.refermerLaReprise(businessId);
-      requete.recharger();
+      recharger();
     } catch (erreur) {
       setEchec(messageDErreur(erreur));
     } finally {

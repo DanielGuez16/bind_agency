@@ -52,9 +52,15 @@ const JOURNEE = {
 
 async function monter(reprises: RepriseDuCompte[]) {
   const envois: { url: string; method: string }[] = [];
-  // La liste est relue après la fermeture : un 204 ne rend rien, et c'est la
-  // relecture qui éteint le bandeau. Un double qui rendrait toujours la même
-  // liste ferait passer une implémentation qui ne recharge pas.
+  // **La reprise arrive avec la journée**, et non par une requête à elle : le
+  // bandeau n'en fait plus. La journée est relue après la fermeture — un 204 ne
+  // rend rien, et c'est la relecture qui éteint le bandeau. Un double qui
+  // rendrait toujours la même journée ferait passer une implémentation qui ne
+  // recharge pas.
+  //
+  // Le décor prend une **liste** et n'en sert que la première, comme le
+  // serveur : c'est ce qui garde les tests des réglages — qui lisent
+  // l'historique — sur le même montage.
   let restantes = reprises;
   const api = new ApiClient({
     baseUrl: 'https://api.test',
@@ -69,7 +75,11 @@ async function monter(reprises: RepriseDuCompte[]) {
         }
         return { ok: true, status: 200, json: async () => restantes } as Response;
       }
-      return { ok: true, status: 200, json: async () => JOURNEE } as Response;
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ ...JOURNEE, reprise_en_cours: restantes[0] ?? null }),
+      } as Response;
     }) as unknown as typeof fetch,
   });
   Object.assign(globalThis, { __envoisDeLaJournee: envois });
@@ -269,6 +279,24 @@ describe('refermer depuis la journée', () => {
     await fireEvent.press(await screen.findByTestId('reprise-refermer-journee'));
 
     await waitFor(() => expect(screen.queryByTestId('bandeau-reprise')).toBeNull());
+  });
+
+  it('et il ne demande plus rien de son côté pour s’afficher', async () => {
+    // **Ce que la tranche a changé, et que rien d'autre n'attrape.** Le bandeau
+    // faisait sa propre requête ; elle coûtait un aller-retour sur l'écran le
+    // plus ouvert du produit pour une donnée absente dans la quasi-totalité des
+    // cas, et le faisait apparaître une seconde après le reste — en sursaut,
+    // pour dire une chose grave.
+    //
+    // Les autres tests de ce fichier passeraient à l'identique s'il la
+    // reprenait demain : ils vérifient ce qu'il affiche, pas ce qu'il demande.
+    await monter([reprise()]);
+    await screen.findByTestId('bandeau-reprise');
+
+    const lectures = envois().filter(
+      (e) => e.method === 'GET' && e.url.includes('/support-access'),
+    );
+    expect(lectures).toEqual([]);
   });
 
   it('la portée est écrite sur le bandeau, dans les mots de la liste', async () => {

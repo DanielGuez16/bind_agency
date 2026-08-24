@@ -19,6 +19,7 @@ from app.models.enums import (
     ContentFormat,
     Platform,
 )
+from app.schemas.support import BusinessSupportAccessRead
 
 
 class ContrepartieBreveRead(BaseModel):
@@ -193,3 +194,14 @@ class JourneeDuCommerceRead(BaseModel):
     #: dans aucune journée qu'on ouvre, et la créatrice attendrait une réponse
     #: que personne ne voit à donner.
     a_trancher: list[ReservationDuCommerceRead]
+    #: La reprise de compte qui court chez ce salon, s'il y en a une. Nulle
+    #: presque toujours.
+    #:
+    #: **Une ligne et non l'historique** : le bandeau la demandait à part, ce
+    #: qui coûtait une requête de plus sur l'écran le plus ouvert du produit
+    #: pour une donnée absente dans la quasi-totalité des cas. L'historique
+    #: reste sur `GET /business/{id}/support-access`, où les réglages le lisent.
+    #:
+    #: L'écran garde sa règle d'échéance : une reprise peut expirer pendant
+    #: qu'on regarde, et le serveur ne le redira pas.
+    reprise_en_cours: BusinessSupportAccessRead | None

@@ -256,9 +256,14 @@ class BusinessRead(BaseModel):
 class EtatDeLaCompositionRead(BaseModel):
     """Où en est la composition, pour le menu de configuration.
 
-    Trois nombres et une date, en une lecture. Les demander séparément ferait
-    trois requêtes pour un menu, dont l'une arriverait toujours en dernier — et
-    le menu se recomposerait sous les yeux de qui le lit.
+    Trois nombres en une lecture. Les demander séparément ferait trois requêtes
+    pour un menu, dont l'une arriverait toujours en dernier — et le menu se
+    recomposerait sous les yeux de qui le lit.
+
+    **La date de mise en ligne est partie sur la vue d'activation**, où la
+    journée la charge déjà. Elle vivait ici sans lecteur : le menu de
+    configuration n'est pas l'écran qui demande « depuis quand », et l'écran du
+    matin, si.
     """
 
     model_config = ConfigDict(from_attributes=True)
@@ -267,9 +272,6 @@ class EtatDeLaCompositionRead(BaseModel):
     prestations: int
     prestations_masquees: int
     jours_ouverts: int
-    #: Nulle tant que le commerce n'a jamais été mis en ligne. Ce n'est pas la
-    #: même chose qu'une mise en pause, et l'écran ne doit pas les confondre.
-    en_ligne_depuis: datetime | None
     status: BusinessStatus
 
 
