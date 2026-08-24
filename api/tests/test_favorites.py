@@ -98,6 +98,34 @@ async def test_un_favori_hors_de_portee_reste_et_le_dit(session: AsyncSession) -
     assert liste[0].etat is favorites.EtatDuFavori.HORS_PALIER
 
 
+async def test_une_prestation_qui_n_est_plus_offerte_nulle_part_est_fermee(
+    session: AsyncSession,
+) -> None:
+    """**Fermée par le salon, et non hors de portée d'elle.**
+
+    Le salon retire son unique offre sans archiver la prestation : l'article
+    reste disponible, mais il n'est proposé à aucun palier. Ce n'est pas un
+    problème de palier — il n'y a plus de palier du tout — et dire « hors
+    palier » l'enverrait en gravir un pour rien.
+
+    **Une mutation a survécu faute de ce décor.** Retirer la condition sur
+    l'absence d'offre laissait tomber ce cas dans « hors palier », et aucun test
+    ne s'en apercevait : tous mes décors gardaient au moins une offre active.
+    """
+    decor = await monter_le_decor(session)
+    await favorites.ajouter(
+        session, creator_id=decor["createur"].id, catalog_item_id=decor["item"].id
+    )
+    await session.execute(
+        sa.update(TierOffer).where(TierOffer.id == decor["offre"].id).values(is_active=False)
+    )
+    await session.flush()
+
+    liste = await favorites.lister(session, creator_id=decor["createur"].id)
+
+    assert liste[0].etat is favorites.EtatDuFavori.FERMEE
+
+
 async def test_une_prestation_fermee_pour_la_saison_reste_et_le_dit(
     session: AsyncSession,
 ) -> None:
