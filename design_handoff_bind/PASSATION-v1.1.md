@@ -88,8 +88,8 @@ horaires. **Une seule famille de texte : l'accent est une graisse.**
 | `bodyStrong` | 16 / 25 | 600 | 0 |
 | `caption` | 13 / 19 | 400 | 0 |
 | `label` | 11 / 14 | 600 | +1,4 px, capitales |
-| `mono` | 14 / 20 | 500 | +0,8 px |
-| `monoSmall` | 11 / 15 | 500 | +1,2 px |
+| `data` | 14 / 20 | 500 | +0,8 px |
+| `dataLabel` | 11 / 15 | 500 | +1,2 px |
 
 ### Le plancher du Didone n'existe plus
 

@@ -29,7 +29,7 @@ Bascule : `theme = role === 'merchant' ? 'light' : 'dark'`, surchargeable par l'
 - **Aucune troncature sur une action ni sur un statut.** L'ellipse est réservée aux noms propres (salon, créatrice) sur une seule ligne.
 - Les mots de palier ne s'abrègent jamais : `HISTORIA` et `PUBLICACIÓN` passent sur deux lignes dans les listes denses plutôt qu'en initiale, taille plancher 10 px.
 - Les rangées de chips sont en `flexWrap`, jamais en défilement horizontal : une option ne doit pas sortir de l'écran.
-- Les chiffres, codes, heures et durées restent en `type.mono` et ne se traduisent pas. Format d'heure sur 24 h dans les deux langues (cohérent avec la caisse) ; les dates suivent la locale.
+- Les chiffres, codes, heures et durées restent en `type.data` et ne se traduisent pas. Format d'heure sur 24 h dans les deux langues (cohérent avec la caisse) ; les dates suivent la locale.
 - Les libellés d'état admin (`manuel`, `actif`, `épuisé`) sont des chaînes traduites, mais les identifiants techniques et les codes d'erreur restent en anglais brut.
 - Textes de référence à tester en espagnol : « Confirmar reserva », « Mostrar código », « Solicitar un código nuevo », « Enviar mi comprobante », « Nueva presentación solicitada ».
 
