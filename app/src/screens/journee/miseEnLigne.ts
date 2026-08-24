@@ -13,8 +13,28 @@
  */
 import type { VueDActivation } from '../../api';
 
+/**
+ * Sept jours, et c'est le seul délai de ce module.
+ *
+ * Design l'écrit sur la planche : la confirmation s'efface au bout d'une
+ * semaine. Elle ne se compte pas en heures ouvrées ni en jours civils du
+ * commerce — c'est un âge, pas un rendez-vous.
+ */
+export const DUREE_DE_LA_CONFIRMATION_MS = 7 * 24 * 3_600_000;
+
 export type MiseEnLigne =
   | { forme: 'publie' }
+  /**
+   * En ligne depuis peu, et la ligne le dit encore.
+   *
+   * **Ce que la planche voulait, à moitié.** Elle écrit « you are live · 41
+   * creators nearby can book you », et cette seconde moitié n'est toujours pas
+   * servie — la portée locale ne vit que sur les rapports. La ligne s'arrête
+   * donc à ce qui est vrai : depuis quand. Affirmer un nombre de créatrices à
+   * l'estime serait une confirmation fausse, ce qui est pire que pas de
+   * confirmation ; ne pas l'écrire n'enlève rien à la date.
+   */
+  | { forme: 'confirme'; depuis: string }
   /**
    * Publié, et pourtant absent des murs.
    *
@@ -35,16 +55,18 @@ export type MiseEnLigne =
  * Ce que le bandeau a le droit de lire de la vue d'activation : **le statut et
  * les étapes, et rien d'autre**.
  *
- * La vue porte aussi la date de mise en ligne, que ce calcul n'a aucune raison
- * de consulter — « qu'est-ce qui retient la publication » ne dépend pas de
- * « depuis quand elle a eu lieu ». L'écrire dans le type plutôt que dans un
- * commentaire évite de remplir les décors d'un champ qui ne devrait rien y
- * changer, et rend visible le jour où quelqu'un voudra l'y faire entrer.
+ * La date de mise en ligne y est entrée le jour où elle a été servie, et elle
+ * ne sert qu'à une chose : décider si la confirmation a encore son âge. Elle
+ * ne pèse sur aucune des autres formes — « qu'est-ce qui retient la
+ * publication » ne dépend pas de « depuis quand elle a eu lieu ».
  */
-type CeQuiRetientLaPublication = Pick<VueDActivation, 'status' | 'etapes'>;
+type CeQuiRetientLaPublication = Pick<VueDActivation, 'status' | 'etapes' | 'en_ligne_depuis'>;
 
 export function miseEnLigne(
   vue: CeQuiRetientLaPublication | null | undefined,
+  /** L'instant de lecture. Passé en paramètre : un test qui fige l'horloge
+   *  globale fige aussi tout le reste de l'écran. */
+  maintenant: number = Date.now(),
 ): MiseEnLigne | null {
   // **Falsy, et non `=== null`.** Sixième fois de la série : la nullité est
   // portée par le contrat, l'absence par l'appelant. Sans état d'activation, on
@@ -62,9 +84,19 @@ export function miseEnLigne(
     .map((etape) => etape.cle);
 
   if (vue.status === 'active') {
-    return invisibles.length === 0
-      ? { forme: 'publie' }
-      : { forme: 'publie-mais-invisible', manquantes: invisibles };
+    if (invisibles.length > 0) {
+      return { forme: 'publie-mais-invisible', manquantes: invisibles };
+    }
+    // **La confirmation a un âge, et passé sept jours elle n'a plus rien à
+    // dire.** Une ligne qui reste après avoir été lue est la définition d'un
+    // bandeau dont on ne comprend plus l'objet. Sans date — un salon publié
+    // avant que le journal la porte — on retombe sur le silence, qui est ce
+    // que le bandeau faisait déjà.
+    const depuis = vue.en_ligne_depuis;
+    if (depuis === null || depuis === undefined) return { forme: 'publie' };
+    const age = maintenant - Date.parse(depuis);
+    if (Number.isNaN(age) || age > DUREE_DE_LA_CONFIRMATION_MS) return { forme: 'publie' };
+    return { forme: 'confirme', depuis };
   }
 
   const faites = vue.etapes.filter((etape) => etape.done).length;

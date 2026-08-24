@@ -888,6 +888,9 @@ describe('les surfaces de la v1.1', () => {
       'src/screens/creneau/Engagement.tsx',
       // Le bloc d'exception du jour : il se pose sur la journée comme une
       // carte, donc il porte l'ombre comme une carte.
+      // La ligne de confirmation des sept premiers jours : une surface posée
+      // sur la page, donc une carte.
+      'src/screens/journee/BandeauDeMiseEnLigne.tsx',
       'src/screens/journee/ExceptionDuJour.tsx',
       // Le panneau du contrat de la preuve v3 : ce que le commerce attend,
       // posé sur l'écran où l'on publie.

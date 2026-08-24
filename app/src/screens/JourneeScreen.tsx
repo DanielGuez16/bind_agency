@@ -352,6 +352,9 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
           <BandeauDeMiseEnLigne
             businessId={businessId}
             activation={journee.activation}
+            // Le fuseau du salon : une date de mise en ligne se lit là où le
+            // salon est, jamais dans le fuseau du téléphone.
+            timezone={journee.timezone}
             onPublie={requete.recharger}
           />
         );

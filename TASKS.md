@@ -2319,11 +2319,11 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       seuls parfois pas. Un repli aurait ajouté une seconde mise en page dont
       l'apparition dépend d'une donnée invisible, et le cas mixte n'y serait de
       toute façon pas entré*
-- [ ] **La journée demande une seconde requête pour son bandeau de reprise**
-      *`BandeauDeReprise` appelle `mesReprises` lui-même, sur l'écran le plus
-      ouvert du produit, pour une réponse presque toujours vide. Le replier dans
-      la charge de la journée — un objet nul, ou la reprise en cours — coûterait
-      une requête de moins par ouverture. Non bloquant*
+- [x] **La journée porte sa reprise, et la requête de plus a disparu**
+      *`BandeauDeReprise` appelait `mesReprises` lui-même, sur l'écran le plus
+      ouvert du produit, pour une réponse presque toujours vide.
+      `reprise_en_cours` est servi sur la journée depuis la #300, et le bandeau
+      le reçoit — une requête de moins par ouverture*
 - [x] **L'annulation v3 : passé la fenêtre, on arrête de parler du score**
       *La formulation était le sujet, pas le mécanisme. L'écran écrivait « votre
       score de fiabilité baisse » — exactement la phrase que Design interdit.
@@ -2564,6 +2564,13 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       aucun écran ne savait produire de clé. Elle est trouvable par son
       absence — cadre pointillé dans la liste, « needs a photo » en état.
       1522 tests, 4 mutations*
+- [x] **Les cartes de la fiche restent, la planche les voulait en lignes**
+      *Tranché : gardées. L'attendu avant réservation, le prochain créneau et
+      l'écart au seuil sont exactement ce qui fait décider, et une ligne de 64
+      points ne les montre pas. Design a composé la compacité en pensant à la
+      lisibilité de la liste, pas à ce qu'elle porte — ce qui reste de la
+      planche est pris : les deux ensembles nommés et comptés, le cœur par
+      ligne, et le bloc du compte à connecter*
 - [ ] **Les quatre colonnes de la liste des prestations**
       *La planche montre nom, durée, palier, état en colonnes, avec la
       contrepartie, l'écart au palier et la photo descendus dans un panneau
@@ -2589,20 +2596,17 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       qui finiraient par diverger. La définition est recopiée du serveur : le
       parent d'une gamme n'est pas une prestation, et la visibilité se lit sur
       `is_effectively_available`. 1519 tests, 2 mutations*
-- [ ] **`en_ligne_depuis` doit rejoindre `VueDActivation`**
-      *Le seul champ du résumé qui ne se dérive pas : il vient du journal
-      d'audit. La journée charge déjà `VueDActivation` dans le même
-      `Promise.all` — un champ de plus n'y coûte aucune requête, là où un second
-      appel sur l'écran le plus ouvert du produit serait le mauvais geste.*
-      ***Il ne rouvre pas à lui seul la ligne de confirmation**, et je l'avais
-      écrit trop vite. Cette ligne est tranchée : les deux données manquent, la
-      date **et** la portée locale, et « une ligne qui affirmerait l'une ou
-      l'autre à l'estime serait une confirmation fausse ». La date donne une
-      origine à la règle des sept jours, rien de plus — la phrase que la planche
-      veut écrire a besoin de la paire. Qui prend la date décide en même temps
-      de la portée, ou le bandeau reste ce qu'il est.*
-      *Demandé, avec la recommandation de retirer `compositionDuCommerce`
-      ensuite : elle existait pour un menu qui n'existe plus*
+- [x] **La confirmation des sept premiers jours, à moitié**
+      *`en_ligne_depuis` est servi, et il donne enfin une origine à la règle :
+      le bandeau d'encre devient une ligne de confirmation, qui s'efface au
+      bout de sept jours. Les deux côtés du seuil sont éprouvés — une
+      confirmation qui ne s'effacerait jamais est un bandeau dont on ne
+      comprend plus l'objet.*
+      *Ce qui manque encore est **la portée locale** — « 41 créatrices peuvent
+      vous réserver ». Elle ne vit que sur les rapports, et la journée ne va pas
+      chercher une seconde requête pour une demi-phrase. La ligne s'arrête donc
+      à ce qui est vrai : depuis quand. L'affirmer à l'estime serait une
+      confirmation fausse ; ne pas l'écrire n'enlève rien à la date. Demandé*
 - [ ] **Neuf planches d'écrans portent encore la v1.0**
       *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
       passés en v3, dans la palette Ambre. Les autres suivent l'ordre du

@@ -53,12 +53,6 @@ const TYPES = join(SRC, 'api', 'types.ts');
  *   table un tapis.
  */
 const NON_RENDUS: Record<string, string> = {
-  // **La date de mise en ligne, arrivée avant son lecteur.** Elle vivait sur
-  // `EtatDeLaComposition`, dont plus rien ne lit la réponse ; elle est ici
-  // parce que la journée charge déjà cette vue, donc elle ne coûte pas de
-  // requête. Le bandeau des sept premiers jours l'attend, avec la portée
-  // locale qui lui manque encore — voir TASKS.md.
-  'VueDActivation.en_ligne_depuis': 'a-instruire',
   // Les deux nombres du résumé de composition. Ils vivaient sous les portes de
   // « Your offer », que la v3.1 retire — deux entrées de rang égal dans la
   // barre latérale ne portent pas de compteur. Voir `compositionDuCommerce`

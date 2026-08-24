@@ -755,6 +755,7 @@ export const en = {
     miseEnLigneRestant: '{{count}} things left before creators see you',
     miseEnLigneRestantUn: 'One thing left before creators see you',
     miseEnLignePrete: 'Everything is ready. Creators are waiting.',
+    miseEnLigneConfirmee: 'You are live — since {{date}}',
     miseEnLigneInvisibleTitre: 'You are live, but creators still cannot find you',
     miseEnLignePublier: 'Make my salon visible',
     miseEnLigneVousChoisissez: 'Nothing goes out on its own. Your salon appears when you press this.',

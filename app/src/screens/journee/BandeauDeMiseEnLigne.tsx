@@ -42,8 +42,9 @@ import { View } from 'react-native';
 
 import { useApi, type VueDActivation } from '../../api';
 import { Button, Icone, StatusMessage, Texte } from '../../components';
+import { formatDate } from '../../format';
 import { useI18n } from '../../i18n';
-import { radius, useColors } from '../../theme';
+import { elevationDeCarte, radius, useColors } from '../../theme';
 import { miseEnLigne } from './miseEnLigne';
 
 /** Le libellé de chaque étape. La même table que l'écran qu'il remplace. */
@@ -59,15 +60,18 @@ const LIBELLES: Record<string, string> = {
 export function BandeauDeMiseEnLigne({
   businessId,
   activation,
+  timezone,
   onPublie,
 }: {
   businessId: string;
   /** L'état servi. Absent, le bandeau ne se rend pas : voir `miseEnLigne`. */
   activation: VueDActivation | null | undefined;
+  /** Le fuseau du salon, pour dater la confirmation là où elle a eu lieu. */
+  timezone: string;
   onPublie: () => void;
 }) {
   const { api, messageDErreur } = useApi();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const c = useColors();
   const etat = miseEnLigne(activation);
 
@@ -78,6 +82,46 @@ export function BandeauDeMiseEnLigne({
   // après avoir été remplie est la définition d'un écran dont on ne comprend
   // plus l'objet — mais « publié et invisible » n'est pas rempli.
   if (etat === null || etat.forme === 'publie') return null;
+
+  /**
+   * **La confirmation est une ligne, pas un bandeau.** Le pavé d'encre existe
+   * pour ce qui demande une action ; ici il n'y a rien à faire, et lui laisser
+   * la même surface ferait chercher le bouton. Elle s'efface d'elle-même au
+   * bout de sept jours — voir `miseEnLigne`.
+   *
+   * **Elle ne dit que la date.** La planche voulait « 41 créatrices peuvent
+   * vous réserver » avec ; la portée locale ne vit que sur les rapports, et
+   * l'affirmer à l'estime serait une confirmation fausse. Ce qui est écrit est
+   * vrai, et la moitié manquante est demandée.
+   */
+  if (etat.forme === 'confirme') {
+    return (
+      <View
+        testID="confirmation-mise-en-ligne"
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 10,
+          paddingVertical: 12,
+          paddingHorizontal: 16,
+          borderRadius: radius['radius.lg'],
+          backgroundColor: c['bg.surface'],
+          borderWidth: 1,
+          borderColor: c['line.default'],
+          // « Un coin sans ombre flotte au lieu de se poser » : la règle des
+          // rayons vaut des douze surfaces, pas d'une seule.
+          ...elevationDeCarte(),
+        }}
+      >
+        <Icone nom="coche" couleur="brand.700" taille={20} />
+        <Texte variante="type.body" style={{ flex: 1, minWidth: 0 }}>
+          {t('commerce.miseEnLigneConfirmee', {
+            date: formatDate(etat.depuis, locale, timezone),
+          })}
+        </Texte>
+      </View>
+    );
+  }
 
   async function publier() {
     setEchec(null);
