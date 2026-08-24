@@ -1683,6 +1683,16 @@ class _DepotDeTest:
         self.prefixes.append(prefixe)
         return f"{prefixe}/cle"
 
+    async def deposer_sous(self, contenu: bytes, *, cle: str) -> None:
+        """La vignette, rangée sous une clé dérivée.
+
+        **Elle n'entre pas dans `prefixes`**, et c'est ce qui garde les
+        assertions de ces tests lisibles : ce qu'elles comparent est la nature
+        de ce qui a été rangé — vraie photo ou dégradé — et la vignette suit
+        toujours son original, quelle que soit cette nature.
+        """
+        del contenu, cle
+
 
 async def _deposer(monkeypatch: pytest.MonkeyPatch, presents: dict[str, bytes], **kwargs):
     """Appelle le dépôt de photo en ne rendant réels que les chemins nommés."""

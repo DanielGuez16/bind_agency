@@ -100,7 +100,7 @@ async def deposer(contenu: bytes, *, prefixe: str) -> str:
     return await get_object_store().deposer(contenu, prefixe=prefixe)
 
 
-async def deposer_une_image(contenu: bytes, *, prefixe: str) -> str:
+async def deposer_une_image(contenu: bytes, *, prefixe: str, depot=None) -> str:
     """Range l'image **et sa vignette**, et rend la clé de l'original.
 
     **Au dépôt, jamais au service.** Une photo de prestation partait vers le fil
@@ -108,6 +108,12 @@ async def deposer_une_image(contenu: bytes, *, prefixe: str) -> str:
     cent cinquante points, à chaque affichage, pour tout le monde. Réduire une
     fois ici le paie une fois pour toutes ; réduire à la lecture demanderait un
     décodeur sur le chemin chaud, un cache, et une invalidation.
+
+    **`depot` n'existe que pour le semis**, qui range dans un dépôt qu'il tient
+    lui-même. Sans lui, le semis aurait dû refaire la réduction de son côté pour
+    garder son dépôt — c'est-à-dire tenir une seconde copie du traitement
+    d'image, qui diverge au premier réglage qu'on touche. Le défaut est le dépôt
+    du produit, et rien d'autre ne passe ce paramètre.
 
     **La vignette manquante n'échoue jamais.** Pillow absent, image illisible,
     dépôt qui refuse le second objet : dans les trois cas l'original est déjà
@@ -129,14 +135,15 @@ async def deposer_une_image(contenu: bytes, *, prefixe: str) -> str:
     # illisible ou un Pillow absent rangent l'original tel quel plutôt que de
     # perdre une photo que le commerce vient d'envoyer.
     borne = images.borner_l_original(contenu) or contenu
-    cle = await get_object_store().deposer(borne, prefixe=prefixe)
+    magasin = depot or get_object_store()
+    cle = await magasin.deposer(borne, prefixe=prefixe)
 
     reduite = images.vignette(borne)
     if reduite is None:
         return cle
 
     try:
-        await get_object_store().deposer_sous(reduite, cle=cle_de_vignette(cle))
+        await magasin.deposer_sous(reduite, cle=cle_de_vignette(cle))
     except ObjectStoreError:
         # L'original est rangé : c'est ce qui compte. La vignette se
         # reconstruira au prochain dépôt de la même image, et d'ici là la route

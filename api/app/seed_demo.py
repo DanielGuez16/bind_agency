@@ -270,11 +270,13 @@ async def _deposer_photo(
     for candidat in (chemin, *replis):
         reelle = photos_reelles.lire(candidat, taille=taille_reelle)
         if reelle is not None:
-            cle = await storage.deposer_une_image(reelle.contenu, prefixe=f"photos/{famille}")
+            cle = await storage.deposer_une_image(
+                reelle.contenu, prefixe=f"photos/{famille}", depot=depot
+            )
             return cle, True, len(reelle.contenu)
 
     degrade = image(graine, taille_generee)
-    cle = await storage.deposer_une_image(degrade, prefixe=f"photos/genere/{famille}")
+    cle = await storage.deposer_une_image(degrade, prefixe=f"photos/genere/{famille}", depot=depot)
     return cle, False, len(degrade)
 
 
