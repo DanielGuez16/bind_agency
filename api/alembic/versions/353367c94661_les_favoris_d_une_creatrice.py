@@ -1,8 +1,8 @@
 """les favoris d une creatrice
 
-Revision ID: a0a8ffc4936b
+Revision ID: 353367c94661
 Revises: e676b29e66b0
-Create Date: 2026-08-24 01:06:41.488345+00:00
+Create Date: 2026-08-24 01:27:42.505411+00:00
 
 """
 
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = "a0a8ffc4936b"
+revision: str = "353367c94661"
 down_revision: Union[str, Sequence[str], None] = "e676b29e66b0"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -46,7 +46,11 @@ def upgrade() -> None:
             ondelete="CASCADE",
         ),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_creator_favorite")),
-        sa.UniqueConstraint("creator_id", "catalog_item_id", name="un_seul_favori_par_prestation"),
+        sa.UniqueConstraint(
+            "creator_id",
+            "catalog_item_id",
+            name=op.f("uq_creator_favorite_creator_id_catalog_item_id"),
+        ),
     )
     op.create_index(
         "ix_creator_favorite_creator_id_created_at",

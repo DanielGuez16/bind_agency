@@ -33,6 +33,15 @@ Document de référence pour l'implémentation. Traduit la note de cadrage en mo
 
 `reliability_score` est **nullable et le reste** tant qu'aucun historique n'existe. C'est ce null qui déclenche le badge "Nouveau créateur" et le comportement neutre du moteur de paliers.
 
+**creator_favorite**
+`id, creator_id, catalog_item_id, created_at`
+
+**Le favori porte sur la prestation, jamais sur l'offre affichée.** Le fil rend une carte par `tier_offer` — le même article ouvert à deux paliers fait deux cartes, et les deux portent le même cœur. Mais un `tier_offer` meurt de deux façons qui ne disent rien de la prestation : le salon ferme ce palier-là et garde l'autre, ou **la créatrice perd le palier**. Le second est un changement chez elle, et un favori qui disparaît parce qu'on a baissé d'un palier pendant un mois est un favori qu'on n'ose plus poser. `catalog_item` ne meurt qu'à l'archivage, qui est définitif par construction : c'est la seule mort qui mérite d'emporter le favori.
+
+**Le salon n'est pas un favori.** Le geste est un cœur sur une carte du fil, et une carte du fil est une prestation. Une seconde cible doublerait la surface pour un geste que personne n'a demandé, et « j'ai un favori chez eux » répond déjà à la question.
+
+**La liste se lit hors du fil.** Le fil est borné par une position et un rayon : c'est son contrat. Un favori posé à Wynwood doit se relire depuis Kendall, sinon il ne sert qu'à l'endroit où on l'a posé. Une prestation devenue irréservable **reste dans la liste avec sa raison** — fermée, salon indisponible, hors palier — parce que les trois appellent trois conduites différentes et que la retirer sans un mot ferait croire à un mauvais appui.
+
 **social_account**
 `id, creator_id, platform (instagram | tiktok | snapchat | youtube), external_id, handle, access_token_encrypted, refresh_token_encrypted, token_expires_at, granted_scopes (jsonb), status (active | expired | revoked), connected_at, last_synced_at`
 
@@ -448,6 +457,9 @@ Regroupée par domaine, toutes les routes sous `/api/v1`.
 
 **Découverte**
 `GET /businesses` (filtres géo, catégorie, palier éligible), `GET /businesses/{id}`, `GET /businesses/{id}/offers`, `GET /businesses/{id}/availability`
+
+**Favoris**
+`GET /me/favorites`, `POST /me/favorites {catalog_item_id}`, `DELETE /me/favorites/{catalog_item_id}` — le `POST` et le `DELETE` sont des interrupteurs : répétés, ils ne font rien et ne se plaignent pas.
 
 **Réservation**
 `POST /bookings` (hold), `POST /bookings/{id}/confirm`, `POST /bookings/{id}/cancel`, `GET /bookings/{id}/code`

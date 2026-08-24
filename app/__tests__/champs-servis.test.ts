@@ -53,6 +53,11 @@ const TYPES = join(SRC, 'api', 'types.ts');
  *   table un tapis.
  */
 const NON_RENDUS: Record<string, string> = {
+  // **Le cœur du mur, servi et pas encore posé.** Le fil porte l'état du favori
+  // pour que quatre-vingts cartes n'aient pas à le demander une par une ; la
+  // carte qui l'affiche est de la composition, et il manque d'abord une icône
+  // de cœur au système — en dessiner une serait une décision de dessin.
+  'ItemDuFil.est_favori': 'a-instruire',
   // --- a-instruire : servis, et la grille v3 ne les lit plus ---
   //
   // **Trois champs que le contrat commerce-scopé a rendus redondants.** La

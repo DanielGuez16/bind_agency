@@ -48,7 +48,10 @@ class CreatorFavorite(UUIDPrimaryKey, CreatedAt, Base):
         # Le geste est un interrupteur : appuyer deux fois sur le cœur ne pose
         # pas deux favoris. La contrainte le dit en base, et le service s'en
         # sert pour rendre le second appui inoffensif plutôt que fautif.
-        sa.UniqueConstraint("creator_id", "catalog_item_id", name="un_seul_favori_par_prestation"),
+        # **Sans nom explicite** : la convention du dépôt le compose — `uq_` et
+        # les colonnes — et un nom écrit à la main sort de la règle que le
+        # schéma vérifie.
+        sa.UniqueConstraint("creator_id", "catalog_item_id"),
         # La liste se lit par créatrice, la plus récente d'abord.
         sa.Index("ix_creator_favorite_creator_id_created_at", "creator_id", "created_at"),
     )
