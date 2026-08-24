@@ -10652,3 +10652,34 @@ Le geste juste, quand on reporte : prendre les fichiers **un par un**, ou mieux,
 `git diff origin/main...autre-branche -- <chemins> | git apply`, qui n'apporte
 que l'écart. Et relire `git diff --stat origin/main` avant de commiter : un
 fichier qu'on n'a pas touché n'a rien à y faire.
+
+---
+
+## 2026-08-25 — Une charge processeur ne reproduit pas l'intermittence, une vraie suite oui
+
+L'intermittence de la suite `app` a été tranchée ailleurs : ce n'était pas une
+fuite mais une **marge d'attente** — `asyncUtilTimeout` au défaut d'usine d'une
+seconde, sur une machine dont les durées gonflaient d'un facteur vingt. La
+correction est en place et mesurée.
+
+Reste une observation qui n'entre pas dans cette explication et qui vaut d'être
+gardée, parce qu'elle **économise une piste** à qui la reprendra : la signature
+s'est produite une fois pendant que `pytest -n auto` tournait sur la même
+machine — dix fichiers rouges, des durées de 30 à 90 s, tout au vert au passage
+suivant à froid — et elle **ne se reproduit pas sous une charge processeur
+seule**. Vingt-quatre boucles occupées, la suite passe entière.
+
+Ce que ça élimine : si la charge y est pour quelque chose, ce n'est pas le
+processeur. Ce serait la mémoire ou les entrées-sorties, que la suite `api`
+consomme et qu'une boucle vide ne touche pas.
+
+Ce que ça n'établit pas : que la charge soit encore en cause du tout. La marge
+d'attente explique déjà tout ce qui a été observé, et une seconde cause n'est
+pas nécessaire pour rendre compte des faits. L'observation est ici comme une
+piste écartée, pas comme un diagnostic ouvert.
+
+**Et c'est pourquoi elle est ici plutôt que dans `TASKS.md`.** Y laisser
+« il faut bisecter cette famille » aurait fait refaire un arbitrage déjà rendu :
+le fichier des tâches porte du travail, celui-ci porte l'histoire — y compris
+les hypothèses qui se sont révélées fausses, qui sont précisément ce qu'on ne
+veut pas voir reprendre.
