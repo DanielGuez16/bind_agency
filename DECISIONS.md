@@ -10062,3 +10062,72 @@ chacune. `--detectOpenHandles` sort propre parce qu'il force le mode série,
 c'est-à-dire qu'il supprime la condition qu'on cherche. L'outil qui nommerait le
 handle change le mode d'exécution qui le produit — c'est ce qui rend ce défaut
 coûteux, et c'est consigné plutôt que laissé en « pas trouvé ».
+
+---
+
+## 2026-08-24 — `bg.sunken` est un fond sombre, et son nom dit le contraire
+
+Retour de campagne sur la journée du commerce : « au niveau de *today only,
+places today*, une zone noire apparaît avec un plus et un moins. Invisible sur
+fond noir, incompréhensible. »
+
+Le compteur de places n'avait rien perdu. `bg.sunken` est le plus sombre de la
+palette — plus sombre encore que `bg.inverse` — et le fichier de jetons le range
+explicitement dans le kit d'accommodation des deux écrans déclarés hors système.
+Mais « sunken » se lit « renfoncement », et un renfoncement se pose d'instinct
+sur une surface claire. **Le nom du jeton décrit son apparence dans un thème et
+pas son rôle**, et c'est ce qui l'a rendu piégeux.
+
+Huit surfaces s'y étaient trompées, et aucune ne rougissait :
+
+- le compteur de places de la journée — le défaut signalé ;
+- la piste d'une barre de progression des paliers : le vide peint en noir, si
+  bien que le remplissage se lisait comme le manque. **Même famille que les
+  barres par palier des rapports**, corrigées il y a des semaines ; celle-ci
+  était restée ;
+- un champ désactivé, noir avec son texte sombre dessus ;
+- les jours indisponibles et les créneaux pris du sélecteur, qui passaient au
+  plus appuyé de la grille alors qu'ils sont ce qu'on ne peut **pas** prendre —
+  la forme disait l'inverse de l'état ;
+- la ligne du salon courant dans la barre latérale, un bandeau noir ;
+- deux fonds de média, incohérents avec `media.placeholder` qui existe pour ça.
+
+Le renfoncement clair est `bg.deep`. Le fond d'un média est `media.placeholder`,
+qui en porte la valeur sous le nom de son usage — et c'est la leçon générale :
+**un jeton nommé par son rôle survit à un changement de palette, un jeton nommé
+par son apparence ne survit pas.** `bg.sunken` aurait dû s'appeler quelque chose
+comme `bg.onDark`.
+
+Une garde nomme désormais les fichiers autorisés à le peindre. Elle n'interdit
+pas — un écran sombre a le droit d'exister, la visionneuse en est un — elle
+exige que ce soit écrit, donc décidé.
+
+**Ce qu'aucun test ne pouvait voir.** Les contrastes sont éprouvés jeton par
+jeton, et chaque paire employée ici est conforme *dans son thème*. Ce qui manque
+est le croisement — quel fond avec quelle encre, dans quel fichier — et il ne se
+lit qu'à l'écran, ou par une liste tenue à la main.
+
+---
+
+## 2026-08-24 — Un geste se replie, un état reste
+
+L'écran du matin portait, avant la journée elle-même, une carte de cinq lignes
+et deux contrôles pour ajuster les places du jour. Tous les jours, y compris
+ceux où personne n'y touche.
+
+C'est la règle des réservations, transposée : **une liste répond à « qu'est-ce
+que je dois faire », pas à « comment on ajuste ».** La carte répondait à une
+question qu'on se pose rarement, en tête de l'écran qui répond à celle qu'on se
+pose chaque matin.
+
+Le partage se fait sur une distinction que le produit applique déjà au bandeau
+de mise en ligne : **un geste disparaît une fois rendu accessible, un état non
+résolu a le droit de rester.** Une exception posée — jour fermé, places coupées
+— est un état : le gérant doit le voir sans le chercher, sans quoi il se demande
+pourquoi sa journée est vide. Une journée qui suit la semaine type est le cas
+normal, et le cas normal n'occupe rien.
+
+**Et le test se pose sur `exceptionId`, pas sur une comparaison de nombres.** Un
+salon peut poser une exception qui rend le même compte que sa semaine type ; il
+l'a posée, elle existe, et la replier la rendrait introuvable. Une implémentation
+qui comparerait les deux nombres passerait tous les autres cas.

@@ -1128,3 +1128,55 @@ describe('les réserves de la v1.1', () => {
     expect(rapport(couleurs['brand.500'], couleurs['brand.600'])).toBeGreaterThan(1.2);
   });
 });
+
+/**
+ * `bg.sunken` est un fond **sombre**, et son nom dit le contraire.
+ *
+ * Il est le plus sombre de la palette, plus noir encore que `bg.inverse`. Le
+ * fichier de jetons le
+ * range dans le kit d'accommodation sombre, celui des deux écrans déclarés hors
+ * système ; mais « sunken » se lit « renfoncement », et un renfoncement se pose
+ * d'instinct sur une surface claire.
+ *
+ * **Huit surfaces s'y étaient trompées**, et aucune ne rougissait : le compteur
+ * de places de la journée devenait une zone noire à deux signes illisibles, la
+ * piste d'une barre de progression peignait le vide en noir et le
+ * remplissage se lisait à l'envers, un champ désactivé virait au noir avec son
+ * texte sombre dessus, les jours indisponibles du sélecteur de créneaux
+ * passaient en noir — c'est-à-dire au plus appuyé de la grille, quand ils sont
+ * ce qu'on ne peut pas prendre — et la ligne du salon courant, dans la barre
+ * latérale, était un bandeau noir.
+ *
+ * Le renfoncement clair est `bg.deep` ; le fond d'un média est
+ * `media.placeholder`, qui en porte la valeur sous le nom de son usage.
+ *
+ * **La garde nomme, elle n'interdit pas.** Un écran sombre a le droit d'exister
+ * — la visionneuse en est un, et le jeton est fait pour elle. Ce qu'elle exige
+ * est que ce soit écrit ici, donc décidé.
+ */
+describe('le creux qui n’en est pas un', () => {
+  const AUTORISES = [
+    // La visionneuse : c'est l'écran que le jeton sert, et le fichier de jetons
+    // le nomme — « screen.gallery — bg.sunken, chrome minimal ».
+    'src/screens/Visionneuses.tsx',
+    // La table des couleurs elle-même, qui doit bien le déclarer.
+    'src/theme/index.tsx',
+  ];
+
+  it('n’est peint que là où le fond est vraiment sombre', () => {
+    const fautifs = sources(RACINE)
+      .filter((chemin) =>
+        readFileSync(chemin, 'utf-8')
+          .split('\n')
+          // **La prose qui documente le piège le cite forcément.** Sans ce
+          // filtre, la note qui explique pourquoi `bg.deep` remplace
+          // `bg.sunken` ferait tomber la garde — et c'est la note qu'on
+          // retirerait, pas le défaut.
+          .filter((ligne) => !/^\s*(\/\/|\*|\/\*)/.test(ligne))
+          .some((ligne) => ligne.includes('bg.sunken')),
+      )
+      .map((chemin) => chemin.slice(chemin.indexOf('src/')));
+
+    expect(fautifs.sort()).toEqual([...AUTORISES].sort());
+  });
+});

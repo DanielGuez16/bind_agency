@@ -5,6 +5,14 @@
  * déjà prises.** C'est le seul endroit du système où une couleur d'alerte est
  * portée par un contrôle : le commerce qui réduit sa capacité doit voir tout de
  * suite qu'il passe sous ce qu'il a promis, avant d'enregistrer.
+ *
+ * **`bg.deep` et non `bg.sunken`.** Les deux se lisent « creux » ; un seul
+ * l'est sur fond clair. `bg.sunken` est le plus sombre de la palette, plus
+ * sombre encore que `bg.inverse` : il appartient au kit
+ * d'accommodation sombre, celui des deux écrans déclarés hors système, et le
+ * fichier de jetons le dit. Employé comme renfoncement il peint du noir : le
+ * contrôle devenait une zone noire à deux signes illisibles, posée sur une
+ * carte claire.
  */
 import { Pressable, View } from 'react-native';
 
@@ -32,7 +40,7 @@ export function Stepper({ label, value, min = 0, max = 99, onChange, testID }: S
         alignItems: 'center',
         justifyContent: 'space-between',
         borderRadius: radius['radius.sm'],
-        backgroundColor: c['bg.sunken'],
+        backgroundColor: c['bg.deep'],
         paddingHorizontal: 12,
         gap: 8,
       }}

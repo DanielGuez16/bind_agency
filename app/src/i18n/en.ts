@@ -723,6 +723,7 @@ export const en = {
     motifQualite: 'Unreadable',
     tentative: 'Attempt {{n}}',
     activationCompte: '{{faites}} of {{total}} steps',
+    exceptionAjuster: 'Adjust today only',
     exceptionAujourdhui: 'Today only',
     exceptionPlaces: 'Places today',
     exceptionDansLaSemaine: '{{places}} in your week',

@@ -115,7 +115,9 @@ export function SelecteurDeSalon({
               gap: 10,
               paddingHorizontal: 12,
               borderRadius: radius['radius.md'],
-              backgroundColor: courant ? c['bg.sunken'] : 'transparent',
+              // `bg.deep` : `bg.sunken` est le creux du kit sombre, et il
+              // peignait la ligne du salon courant en noir.
+              backgroundColor: courant ? c['bg.deep'] : 'transparent',
             })}
           >
             <View style={{ flex: 1, minWidth: 0 }}>

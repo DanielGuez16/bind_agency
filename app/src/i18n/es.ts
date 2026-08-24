@@ -654,6 +654,7 @@ export const es: Catalogue = {
     motifQualite: 'No se lee bien',
     tentative: 'Intento {{n}}',
     activationCompte: '{{faites}} de {{total}} pasos',
+    exceptionAjuster: 'Ajustar solo hoy',
     exceptionAujourdhui: 'Solo hoy',
     exceptionPlaces: 'Plazas hoy',
     exceptionDansLaSemaine: '{{places}} en tu semana',

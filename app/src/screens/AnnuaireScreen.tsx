@@ -524,7 +524,7 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
     >
       <View
         testID={`portrait-${createur.creator_id}`}
-        style={{ height: 132, backgroundColor: c['bg.sunken'] }}
+        style={{ height: 132, backgroundColor: c['media.placeholder'] }}
       >
         <Photo
           uri={portrait}
