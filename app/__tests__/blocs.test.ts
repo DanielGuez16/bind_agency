@@ -125,6 +125,8 @@ const BLOCS: Record<string, number> = {
   //
   // L'écran de code est blanc pur sur noir pur, sans marque ni orange.
   CodeScreen: 0,
+  // Un écran de travail du support, ouvert le jour où quelque chose ne va pas.
+  CommercesScreen: 0,
   // L'enveloppe des quatre états n'a pas de titre à elle.
   Ecran: 0,
 };

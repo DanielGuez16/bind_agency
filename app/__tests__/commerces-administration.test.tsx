@@ -105,7 +105,7 @@ describe('la liste des salons', () => {
     expect(screen.queryByTestId('reprendre-le-compte')).toBeNull();
 
     await act(async () => {
-      fireEvent.press(screen.getByTestId('reprendre-b1'));
+      await fireEvent.press(screen.getByTestId('reprendre-b1'));
     });
     await waitFor(() => expect(screen.getByTestId('reprendre-le-compte')).toBeTruthy());
   });
@@ -138,7 +138,7 @@ describe('la recherche', () => {
     await waitFor(() => expect(screen.getByTestId('commerce-b1')).toBeTruthy());
 
     await act(async () => {
-      fireEvent.changeText(screen.getByTestId('recherche-commerces'), 'wyn');
+      await fireEvent.changeText(screen.getByTestId('recherche-commerces'), 'wyn');
     });
     await waitFor(() => expect(screen.getByTestId('commerce-b9')).toBeTruthy());
 
@@ -153,7 +153,7 @@ describe('la recherche', () => {
     await waitFor(() => expect(screen.getByTestId('commerce-b1')).toBeTruthy());
 
     await act(async () => {
-      fireEvent.changeText(screen.getByTestId('recherche-commerces'), 'zzz');
+      await fireEvent.changeText(screen.getByTestId('recherche-commerces'), 'zzz');
     });
     await waitFor(() => expect(screen.getByTestId('etat-vide')).toBeTruthy());
 

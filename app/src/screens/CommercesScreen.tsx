@@ -168,13 +168,16 @@ function Ligne({
   return (
     <View
       testID={`commerce-${commerce.business_id}`}
+      /* **Une ligne, et non une carte.** Les trois marques d'une carte — fond
+         de surface, rayon de 18, filet — obligent à l'ombre, et cent cartes à
+         ombre dans une liste qu'on parcourt sont exactement le défaut qu'on
+         vient de corriger ailleurs. Ce qu'on fait ici est reconnaître un nom
+         parmi cent ; un filet en pied sépare, sans poser cent objets. */
       style={{
         gap: 12,
-        padding: 16,
-        borderRadius: radius['radius.lg'],
-        backgroundColor: c['bg.surface'],
-        borderWidth: 1,
-        borderColor: c['line.default'],
+        paddingVertical: 14,
+        borderBottomWidth: 1,
+        borderBottomColor: c['line.default'],
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
