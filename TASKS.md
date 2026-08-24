@@ -2210,6 +2210,15 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       soit un moyen de la forcer dans le build de test, soit un paramètre
       d'adresse. La marge prise en légende en tient lieu, ce qui n'est pas une
       garantie*
+- [x] **La ligne de l'audience menait nulle part**
+      *`navigate('paliers')` désignait un onglet qui n'a jamais existé — les
+      onglets du créateur sont `parcours`, `audience`, `reservations` et
+      `reglages`, et l'écran des paliers vit dans la pile du fil. L'appui
+      partait, le nom était ignoré, rien ne bougeait. C'était le seul chemin
+      vers les paliers depuis qu'ils ont quitté le fil.*
+      *Le `as never` a effacé la vérification qui l'aurait dit. Deux gardes :
+      une qui lit les noms visés — la cible imbriquée comprise — et une qui
+      appuie et regarde l'écran qui vient. 1447 tests, 2 mutations*
 - [ ] **Neuf planches d'écrans portent encore la v1.0**
       *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
       passés en v3, dans la palette Ambre. Les autres suivent l'ordre du
