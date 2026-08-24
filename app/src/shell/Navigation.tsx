@@ -40,6 +40,7 @@ import { AudienceScreen } from '../screens/AudienceScreen';
 import { FavorisScreen } from '../screens/FavorisScreen';
 import { FiabiliteScreen } from '../screens/FiabiliteScreen';
 import { CodeScreen } from '../screens/CodeScreen';
+import { presentationAuComptoir } from './presentationAuComptoir';
 import { CreneauxScreen } from '../screens/CreneauxScreen';
 import { FicheScreen } from '../screens/FicheScreen';
 import { FilScreen } from '../screens/FilScreen';
@@ -457,6 +458,11 @@ export function PileDesReservations() {
           <CodeScreen
             bookingId={route.params.bookingId}
             onRetour={() => navigation.goBack()}
+            /* **La couture existait, et personne ne la remplissait.** L'écran
+               appelle `activer` en prenant le focus et `desactiver` en le
+               perdant depuis toujours ; l'implémentation, elle, n'existait pas —
+               deux jetons à `true` et aucun module installé. */
+            presentationAuComptoir={presentationAuComptoir}
           />
         )}
       </PileReservations.Screen>
