@@ -407,6 +407,19 @@ export type CommerceDuFil = {
    */
   distance_metres: number;
   items: ItemDuFil[];
+  /**
+   * Combien de **prestations** ce salon lui ouvre — et non combien d'offres.
+   *
+   * Un article proposé au story et au reel par le même salon fait deux entrées
+   * dans `items` : deux contreparties distinctes, donc deux lignes légitimes,
+   * mais **une seule prestation**. `items.length` annoncerait donc « 4 » là où
+   * la carte du salon ne listera que trois noms.
+   *
+   * Servi et non déduit pour que les trois niveaux — total, quartier, salon —
+   * sortent de la même règle. Trois recopies de la même somme finissent par
+   * diverger, et c'est le genre d'écart qu'un testeur voit avant nous.
+   */
+  prestations_ouvertes: number;
 };
 
 /**
@@ -529,6 +542,17 @@ export type OffreDeLaFiche = {
   social_account_id: string | null;
   obstacles: Obstacle[];
   prochains_creneaux: string[];
+  /**
+   * Vrai quand la créatrice a mis **cette prestation** en favori.
+   *
+   * Sur `catalog_item_id`, pas sur l'offre : un article ouvert au story et au
+   * reel se garde une fois, et les deux lignes portent alors le même cœur.
+   *
+   * Servi ici parce que le fil sert désormais une carte par salon : le cœur ne
+   * se pose plus sur le mur, il se pose sur la fiche, et sans ce champ chaque
+   * cœur s'ouvrirait vide devant une prestation déjà gardée.
+   */
+  est_favori: boolean;
 };
 
 export type FichePublique = {

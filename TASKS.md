@@ -2392,6 +2392,26 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       article ouvert à deux paliers montre le même cœur. La liste des favoris
       garde les prestations devenues irréservables avec leur raison — quatre
       états, quatre conduites. 1465 tests, 3 mutations*
+- [x] **Le fil change de grain : une carte par salon, et le compte qui va avec**
+      *La route servait déjà le bon grain — `commerces[]` imbrique ses `items`,
+      et c'est `SectionsParQuartier` qui aplatit. Rien à regrouper côté serveur,
+      donc, mais un compte manquait et un autre était faux.*
+
+      *`prestations_ouvertes` sur chaque salon, **servi et non déduit** : une
+      carte de salon qui écrirait `items.length` compterait des offres. Un
+      article ouvert au story et au reel fait deux contreparties légitimes — et
+      une seule prestation ; la carte listerait deux fois le même nom.*
+
+      ***Le même défaut vivait déjà dans les totaux***, latent : `total_prestations`
+      et le compte par quartier faisaient `sum(len(c.items))`. Aucune créatrice
+      ne le voyait — le seul doublon du semis est à un palier TikTok que personne
+      n'atteint. Les trois niveaux passent maintenant par la même fonction.*
+
+      *Et `est_favori` sur les offres de la fiche : le cœur quitte le mur avec
+      l'ancien grain, il se pose sur la fiche, et sans ce champ il s'ouvrait
+      vide devant une prestation déjà gardée. Une seule lecture des favoris
+      pour toute la fiche, comme le fil le fait déjà.*
+
 - [ ] **La planche dit « le favori porte sur le salon », le contrat dit la prestation**
       *`ItemDuFil.est_favori` est posé sur l'article, `POST /me/favorites` prend
       un `catalog_item_id`, et `GET /me/favorites` rend des prestations avec
