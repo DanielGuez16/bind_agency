@@ -920,26 +920,43 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       `onVoirLesPrestations` mène à `PrestationsDuPalier`, sur une lecture non
       bornée par le rayon. Cette note disait encore « la navigation ne le passe
       toujours pas », six semaines après qu'elle le passe*
-- [ ] **La suite `app` force la sortie d'un worker, sur un arbre propre**
-      *« A worker process has failed to exit gracefully » sort à **chaque**
-      exécution, avant comme après la correction du fichier à 17 secondes : la
-      fuite est ailleurs et n'est pas identifiée. Elle est sans conséquence
-      visible — la suite passe — mais elle interdit d'exiger
-      `jest --detectOpenHandles`, qui est le seul outil qui nomme un handle
-      resté ouvert **et** son fichier. C'est la classe de défaut que la garde de
-      durée ne peut pas attraper : le coût est dans le démontage, et Jest ne le
-      compte pas dans la durée du fichier.*
-      ***Cherché, et voici ce qui est établi.** `--detectOpenHandles` sort
-      propre et ne nomme rien — mais il force le mode série, donc il ne voit
-      pas ce qu'on cherche : à `--maxWorkers=1` l'avertissement disparaît, à 2
-      il revient. Ce n'est donc pas un fichier. Les deux moitiés de la suite le
-      déclenchent chacune, ce qui écarte un coupable unique et désigne le socle
-      partagé ; la boucle du squelette a été relue et s'arrête bien à son
-      démontage.*
-      *L'outil qui nommerait le handle **change le mode d'exécution qui le
-      produit** — c'est ce qui rend ce défaut coûteux. Reste à bisecter le
-      socle plutôt que les fichiers : `setup`, les doubles de modules natifs,
-      `expo-notifications`*
+- [x] **Trois minuteurs tenaient le worker, et le diagnostic d'avant était faux**
+      *« A worker process has failed to exit gracefully » sortait à **chaque**
+      exécution, depuis assez longtemps pour qu'on ait cessé de le lire. La
+      suite passe : c'est ce qui le rend coûteux — tant qu'il sort toujours, il
+      ne dira rien le jour où une vraie fuite arrive.*
+      ***Ce qui avait empêché de le trouver était un raisonnement, pas un
+      outil.** L'enquête concluait « ce n'est pas un fichier » parce que
+      l'avertissement disparaît à `--maxWorkers=1`. À un worker, Jest s'exécute
+      **en bande**, dans le processus principal : il n'y a alors aucun worker
+      qui puisse échouer à sortir. La disparition ne disait rien du coupable,
+      elle disait qu'il n'y avait plus de worker — et `--detectOpenHandles`
+      force le même mode, donc il ne nommait rien parce qu'en bande il n'y avait
+      rien à nommer.*
+      *L'outil manquant est `--no-cache` : sans horodatage en cache, Jest ne
+      peut plus décider que la série sera courte et rapide, et il fait tourner
+      ses workers **même sur deux fichiers**. Chaque fichier passe alors seul
+      avec un fichier propre ; cinq sur cent deux ont répondu, de façon
+      reproductible.*
+      *Trois causes. `client.ts` posait son échéance sans `unref` : une écriture
+      dont la réponse n'arrive pas — le décor qui sépare l'optimiste de
+      l'attente — tenait un minuteur quinze secondes après la fin du test, et
+      rien n'annule un `POST`. `usePosition` n'éteignait pas le minuteur de sa
+      course une fois celle-ci jouée : dix secondes de plus après une position
+      arrivée en une milliseconde. `ContratDeLaPreuve` posait le retour du
+      bouton « copié » dans le geste plutôt que dans un effet — quitter l'écran
+      dans les deux secondes écrivait dans un composant démonté.*
+      *Et quatre décors rendaient `new Promise<Response>(() => {})`, qui ne
+      modélise pas un réseau lent mais un `fetch` qui ignore son signal. Le vrai
+      rejette quand on l'annule ; sans cela le `finally` du client n'est jamais
+      atteint et aucun test n'emprunte le chemin d'annulation.
+      `reponseQuiNArrivePas` ne répond pas davantage, il écoute `abort`.*
+      ***Non exigé en intégration continue, et c'est délibéré.** L'avertissement
+      dépend d'un budget de démontage de 500 ms sur un runner partagé : c'est le
+      profil exact de la garde de durée, retirée après quatre CI rouges et rien
+      trouvé d'autre qu'elle-même. Les trois causes sont tenues par des tests
+      unitaires, qui ne dépendent d'aucune machine, et la famille de décors par
+      une garde textuelle. 4 tests neufs plus 4 sur la garde, 5 mutations*
 - [x] **Une garde de parité qui ne regardait jamais les appels**
       *La parité des traductions comparait les deux catalogues l'un à l'autre :
       elle attrapait une clé traduite d'un seul côté et laissait passer une clé

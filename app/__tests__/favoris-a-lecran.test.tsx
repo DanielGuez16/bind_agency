@@ -14,6 +14,7 @@ import { I18nProvider } from '../src/i18n';
 import { SessionProvider } from '../src/session';
 import { FavorisScreen } from '../src/screens/FavorisScreen';
 import { ThemeProvider } from '../src/theme';
+import { reponseQuiNArrivePas } from '../test-support/reponseQuiNArrivePas';
 
 function favori(extra: Partial<Favori> = {}): Favori {
   return {
@@ -42,7 +43,7 @@ const UTILISATEUR = {
 
 async function monter(
   favoris: Favori[],
-  surRetrait?: () => Response,
+  surRetrait?: (init?: RequestInit) => Response | Promise<Response>,
   avisActifs = true,
   /**
    * Le `PATCH` ne répond jamais.
@@ -63,7 +64,7 @@ async function monter(
       const methode = (init?.method ?? 'GET').toUpperCase();
       appels.push({ url: String(url), methode });
       if (methode === 'DELETE') {
-        return surRetrait?.() ?? ({ ok: true, status: 204, json: async () => null } as Response);
+        return surRetrait?.(init) ?? ({ ok: true, status: 204, json: async () => null } as Response);
       }
       return { ok: true, status: 200, json: async () => favoris } as Response;
     }) as unknown as typeof fetch,
@@ -83,7 +84,7 @@ async function monter(
               const methode = (init?.method ?? 'GET').toUpperCase();
               appels.push({ url: String(url), methode });
               if (methode === 'PATCH') {
-                if (patchSansReponse) return new Promise<Response>(() => {});
+                if (patchSansReponse) return reponseQuiNArrivePas(init);
                 // Le double rend ce que le serveur rendrait : la valeur qu'on
                 // vient de poser. Un double qui répète l'ancienne ferait
                 // revenir l'interrupteur et accuserait l'écran.
@@ -161,7 +162,7 @@ describe('on peut lâcher ce qu’on a gardé', () => {
   it('la ligne s’en va au doigt, sans attendre le réseau', async () => {
     // Une promesse qui ne se résout jamais sépare l'optimiste de l'attente :
     // avec un double qui répond tout de suite, les deux rendent le même écran.
-    await monter([favori()], () => new Promise<Response>(() => {}) as unknown as Response);
+    await monter([favori()], (init) => reponseQuiNArrivePas(init));
 
     await fireEvent.press(await screen.findByTestId('favori-retirer-i1'));
 

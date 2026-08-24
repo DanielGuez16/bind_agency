@@ -39,12 +39,19 @@ import { HorairesScreen } from '../src/screens/HorairesScreen';
 import { PreuveScreen } from '../src/screens/PreuveScreen';
 import { ReportingScreen } from '../src/screens/ReportingScreen';
 import { ThemeProvider } from '../src/theme';
+import { reponseQuiNArrivePas } from '../test-support/reponseQuiNArrivePas';
 
-/** Ne répond jamais : l'écran reste en chargement aussi longtemps qu'on veut. */
+/**
+ * Ne répond jamais : l'écran reste en chargement aussi longtemps qu'on veut.
+ *
+ * Il écoute quand même l'annulation — voir `reponseQuiNArrivePas`. Sans elle,
+ * l'échéance du client pendait quinze secondes après la fin du test.
+ */
 const clientQuiNeRepondJamais = new ApiClient({
   baseUrl: 'https://api.test',
   coffre: { lire: async () => null, ecrire: async () => {} },
-  fetchImpl: () => new Promise<Response>(() => {}),
+  fetchImpl: ((_url: RequestInfo | URL, init?: RequestInit) =>
+    reponseQuiNArrivePas(init)) as unknown as typeof fetch,
 });
 
 const CAS = [

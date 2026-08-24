@@ -100,12 +100,22 @@ const EXPIRE = Symbol('expire');
  * Rien n'annule une demande d'autorisation ou un relevé en cours côté
  * plateforme ; prétendre le faire ajouterait un mensonge de plus. On cesse
  * simplement d'attendre, et l'écran reprend la main.
+ *
+ * **Mais le minuteur, lui, s'éteint.** Il ne servait plus dès que la course
+ * était jouée, et il restait pourtant en vol trente secondes : rien de visible
+ * à l'écran, et un processus qui ne peut pas se terminer tant qu'il pend. C'est
+ * ce qui faisait forcer la sortie d'un worker Jest à chaque exécution de la
+ * suite. Éteindre ne prétend rien annuler — la promesse d'origine continue
+ * exactement comme avant, personne ne l'attend plus.
  */
 function avantEcheance<T>(promesse: Promise<T>, delai: number): Promise<T | typeof EXPIRE> {
+  let minuteur: ReturnType<typeof setTimeout> | undefined;
   return Promise.race([
     promesse,
-    new Promise<typeof EXPIRE>((resoudre) => setTimeout(() => resoudre(EXPIRE), delai)),
-  ]);
+    new Promise<typeof EXPIRE>((resoudre) => {
+      minuteur = setTimeout(() => resoudre(EXPIRE), delai);
+    }),
+  ]).finally(() => clearTimeout(minuteur));
 }
 
 function ouReactiver(): OuReactiver {

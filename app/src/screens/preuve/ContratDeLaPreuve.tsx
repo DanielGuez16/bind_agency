@@ -28,7 +28,7 @@
  * de plus à l'appel. Voir `TASKS.md`.
  */
 import * as Presse from 'expo-clipboard';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
 import type { Collaboration } from '../../api';
@@ -170,7 +170,16 @@ function Ligne({
  * produit rien de visible — ni le presse-papier, ni l'écran — et un bouton qui
  * ne change pas laisse appuyer trois fois sans savoir si ça a marché. Deux
  * secondes suffisent : au-delà, on a déjà quitté l'application.
+ *
+ * **Et le retour est un effet, plus un minuteur posé dans le geste.** Posé là,
+ * rien ne l'éteignait : quitter l'écran dans les deux secondes écrivait dans un
+ * composant démonté, et le minuteur tenait le processus ouvert jusqu'au bout —
+ * c'est l'une des trois causes qui faisaient forcer la sortie d'un worker Jest
+ * à chaque exécution de la suite.
  */
+/** Combien de temps le bouton dit « copié » avant de redevenir un bouton. */
+const RETOUR_DU_BOUTON_MS = 2_000;
+
 function LigneCopiable({
   valeur,
   mono = false,
@@ -185,13 +194,18 @@ function LigneCopiable({
   const { color: c } = useTheme();
   const [copie, setCopie] = useState(false);
 
+  useEffect(() => {
+    if (!copie) return;
+    const minuteur = setTimeout(() => setCopie(false), RETOUR_DU_BOUTON_MS);
+    return () => clearTimeout(minuteur);
+  }, [copie]);
+
   async function copier() {
     await Presse.setStringAsync(valeur);
     // Le même cran que les autres gestes du parcours : léger, une fois. Une
     // copie réussie n'est pas une célébration.
     vibration.action();
     setCopie(true);
-    setTimeout(() => setCopie(false), 2000);
   }
 
   return (
