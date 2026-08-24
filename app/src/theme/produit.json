@@ -92,7 +92,7 @@
     "contrast": "21:1",
     "countdownUrgentPart": 0.34,
     "$countdownUrgentPart": "Une part de la cadence, et non un nombre de secondes. Dix secondes sur trente donnaient 0,33 : la valeur retenue reproduit exactement le comportement d'aujourd'hui. Le seuil absolu se retournait contre lui-même dès que le serveur changeait de cadence — à quinze secondes de rotation, le compte à rebours aurait été rouge les deux tiers du temps, et un signal d'urgence permanent cesse d'être un signal.",
-    "$nonBranches": "AUDIT DU 2026-08-24 : forceMaxBrightness et keepAwake ne sont branchés nulle part. Ni expo-brightness ni expo-keep-awake ne sont installés, et aucun écran ne les appelle. La règle 2 de rules.md les annonce pourtant — c'est le même défaut que l'avertissement sans glyphe, une règle écrite et vraie que rien n'exécute, à ceci près qu'ici elle n'est même pas implémentée. Les deux clés restent à true parce qu'elles disent l'intention ; les brancher demande deux dépendances natives, donc une décision de construction. Voir TASKS.md.",
+    "$branches": "BRANCHÉS le 2026-08-24. `shell/presentationAuComptoir.ts` tient l'écran éveillé et le met au maximum quand l'écran de code prend le focus, et **rend la luminosité d'avant** en le perdant — la moitié qu'on oublie, et dont l'absence laisse un téléphone à fond pour le reste de la journée. Chaque appel est enveloppé : c'est le seul écran dont la panne se voit devant quelqu'un, et un code lisible sur un écran qui s'éteint vaut mieux qu'une exception.",
     "forceMaxBrightness": true,
     "keepAwake": true,
     "manualChars": 6,
