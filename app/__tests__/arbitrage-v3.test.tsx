@@ -132,12 +132,19 @@ const DOSSIER_POUR_CLOTURE = (
 });
 
 describe('la file distingue les deux dossiers', () => {
-  async function monter(lignes: unknown[]) {
+  async function monter(lignes: unknown[], motifs: unknown[] = []) {
     const api = new ApiClient({
       baseUrl: 'https://api.test',
       coffre: { lire: async () => null, ecrire: async () => {} },
-      fetchImpl: (async () =>
-        ({ ok: true, status: 200, json: async () => lignes }) as Response) as unknown as typeof fetch,
+      // **Par chemin.** Répondre la file à l'agrégat des motifs lui donnerait
+      // des lignes dont le motif est absent, rendues sans que rien ne tombe.
+      fetchImpl: (async (url: unknown) =>
+        ({
+          ok: true,
+          status: 200,
+          json: async () =>
+            String(url).includes('motifs-qui-reviennent') ? motifs : lignes,
+        }) as Response) as unknown as typeof fetch,
     });
     return await render(
       <I18nProvider initialLocale="en">
@@ -230,7 +237,10 @@ describe('clore sans faute', () => {
       coffre: { lire: async () => null, ecrire: async () => {} },
       fetchImpl: (async (url: RequestInfo | URL, init?: RequestInit) => {
         if (init?.method === 'POST') envois.push(JSON.parse(String(init.body)));
-        return { ok: true, status: 200, json: async () => lignes } as Response;
+        // Par chemin : la file rendue à l'agrégat lui donnerait des lignes sans
+        // motif, affichées sans que rien ne tombe.
+        const corps = String(url).includes('motifs-qui-reviennent') ? [] : lignes;
+        return { ok: true, status: 200, json: async () => corps } as Response;
       }) as unknown as typeof fetch,
     });
     return await render(

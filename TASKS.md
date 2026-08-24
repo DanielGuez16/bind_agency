@@ -916,9 +916,10 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       encadré. Le champ existe depuis, pour les paliers fermés aussi, et son
       contrat dit « zéro est une réponse ». Rendre le vrai nombre vaut mieux
       qu'un tiret qui ne signalait qu'une donnée absente.*
-      *Reste **une seule chose** : « See the 34 services » est la porte du cadre
-      11c. `onVoirLesPrestations` existe sur l'écran, `porteOuverte` en dépend,
-      et la navigation ne le passe toujours pas. Les deux se prennent ensemble*
+      *La porte du cadre 11c — « See the 34 services » — a été livrée depuis :
+      `onVoirLesPrestations` mène à `PrestationsDuPalier`, sur une lecture non
+      bornée par le rayon. Cette note disait encore « la navigation ne le passe
+      toujours pas », six semaines après qu'elle le passe*
 - [ ] **La suite `app` force la sortie d'un worker, sur un arbre propre**
       *« A worker process has failed to exit gracefully » sort à **chaque**
       exécution, avant comme après la correction du fichier à 17 secondes : la
@@ -1895,13 +1896,27 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       dérivation est retirée : elle exigeait que **tous** les motifs soient
       identiques, le serveur compte la **suite** du dernier contre un seuil de
       configuration. « Format, mention, mention, mention » les faisait diverger.*
-- [ ] **Les motifs qui reviennent, une route servie sans lecteur**
-      *`GET /admin/collaborations/motifs-qui-reviennent` rend `{motif, dossiers,
-      dossiers_touches}` : elle compte les **dossiers** où un motif boucle, pas
-      les refus. Chaque « fermer sans faute » est le constat qu'une demande n'a
-      pas été transmise, et cette route dit lesquelles reviennent —
-      `dossiers_touches` départage un motif difficile d'un motif
-      incompréhensible. Aucun écran ne la lit encore*
+- [x] **Les motifs qui reviennent se lisent au pied de la file**
+      *`GET /admin/collaborations/motifs-qui-reviennent` était servie et
+      personne ne la lisait. Elle est maintenant au **pied** de l'arbitrage, et
+      pas en tête : la question ne se pose qu'après le travail, et en haut elle
+      repousserait la file — c'est-à-dire ce pour quoi on ouvre l'écran. Elle
+      paraît aussi sur la **file vide**, qui est le moment où elle se lit le
+      mieux : plus rien à trancher, et la question devient « pourquoi ces
+      trois-là reviennent-elles ».*
+      *Les deux nombres, et **aucun verdict**. Le rapport départage un motif
+      difficile d'un motif incompréhensible — la mention manquante sur cent
+      dossiers dont deux bouclent n'est pas la même chose que sur douze dont
+      dix — mais écrire « incompréhensible » à la place du lecteur demanderait
+      un seuil, et un seuil de plus dans un écran est un seuil que personne ne
+      relit. L'ordre du serveur ne se rejoue pas : retrier sur le rapport ferait
+      remonter un motif vu deux fois.*
+      *Les deux requêtes partent ensemble, et **l'agrégat est rattrapé** : cet
+      écran n'existe que pour débloquer des dossiers arrêtés, et le mettre en
+      erreur pour une statistique de pied de page laisserait quinze dossiers
+      bloqués. Deux décors répondaient encore la même forme à toutes les routes
+      — la file servie à l'agrégat lui donnait des lignes sans motif, affichées
+      sans que rien ne tombe. 7 tests, 7 mutations*
 - [x] **Les plans : deux totaux, la durée médiane, et qui prend chaque plan**
       *`totaliser` rendait « — » dès que deux devises se croisaient — le seul
       chiffre d'argent de l'écran, dans le cas même qu'il existe pour traiter.

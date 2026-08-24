@@ -24,11 +24,17 @@
  * **L'historique, et non le seul dernier motif.** Trois fois le même reproche
  * et trois reproches différents n'appellent pas la même décision : c'est la
  * répétition qui justifie l'escalade, et elle n'était nulle part.
+ *
+ * **Et au pied, ce que la file apprend sur nous.** L'écran tranchait dossier
+ * par dossier sans jamais dire lesquels de ces constats reviennent. Un motif
+ * qui boucle sur beaucoup de dossiers n'appelle pas un arbitrage de plus, il
+ * appelle une exigence réécrite. Au pied et non en tête : la question ne se
+ * pose qu'après le travail, et en haut elle repousserait la file.
  */
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { useApi, type IssueDArbitrage, type LigneDeFile } from '../api';
+import { useApi, type IssueDArbitrage, type LigneDeFile, type MotifQuiRevient } from '../api';
 import {
   Button,
   Chip,
@@ -56,17 +62,45 @@ import { PreuveSoumise } from './Preuve';
 import { MOTIFS, libelleDApprobation, libelleDuMotif, type MotifDeDecision } from './motifs';
 import { NOTE_MAXIMUM } from './PublicationsScreen';
 import { formeDuMalentendu, motDeLaForme } from './arbitrage/formeDuMalentendu';
+import { MotifsQuiReviennent } from './arbitrage/MotifsQuiReviennent';
 import { useRequete } from './useRequete';
 import { nomDuCreateur } from './nomDuCreateur';
+
+/** Ce que l'écran charge : la file, et ce qu'elle apprend sur nous. */
+type Arbitrage = { lignes: LigneDeFile[]; motifs: MotifQuiRevient[] };
 
 export function ArbitrageScreen() {
   const { api } = useApi();
   const { t } = useI18n();
 
   const { large } = useGabarit();
-  const requete = useRequete<LigneDeFile[]>((signal) => api.fileDArbitrage(signal), {
-    estVide: (lignes) => lignes.length === 0,
-  });
+  /**
+   * Les deux requêtes ensemble, et l'agrégat ne peut pas cacher la file.
+   *
+   * **Ensemble**, parce que deux `useRequete` feraient deux cycles d'attente
+   * sur un écran qui n'en montre qu'un : le second squelette apparaîtrait sous
+   * une file déjà lisible, ce que la règle des 400 ms existe pour éviter.
+   *
+   * **Et l'agrégat est rattrapé.** C'est le pied de page d'un écran dont le
+   * seul rôle est de débloquer des dossiers arrêtés : si `motifs-qui-reviennent`
+   * tombe, la file doit s'afficher quand même. Sans ce `catch`, un agrégat en
+   * panne mettrait l'écran entier en erreur et laisserait quinze dossiers
+   * bloqués pour une statistique.
+   */
+  const requete = useRequete<Arbitrage>(
+    async (signal) => {
+      const [lignes, motifs] = await Promise.all([
+        api.fileDArbitrage(signal),
+        api.motifsQuiReviennent(signal).catch(() => [] as MotifQuiRevient[]),
+      ]);
+      return { lignes, motifs };
+    },
+    { estVide: ({ lignes }) => lignes.length === 0 },
+  );
+
+  // Sur la file vide, l'état vide vient de l'écran et non des données : le pied
+  // s'y compose donc à la main, avec ce que la requête a rapporté.
+  const motifs = requete.etat === 'pret' ? requete.donnees.motifs : [];
 
   return (
     <Ecran
@@ -76,24 +110,33 @@ export function ArbitrageScreen() {
       squelette={<SkeletonLignes combien={5} testID="squelette-arbitrage" />}
       testID="ecran-arbitrage"
       vide={
-        <EmptyState
-          title={t('admin.arbitrageTitre')}
-          body={t('admin.arbitrageVide')}
-          testID="arbitrage-vide"
-        />
+        <View style={{ gap: 12 }}>
+          <EmptyState
+            title={t('admin.arbitrageTitre')}
+            body={t('admin.arbitrageVide')}
+            testID="arbitrage-vide"
+          />
+          {/* **Plus rien à trancher est le moment où la question se lit le
+              mieux.** Trois motifs qui bouclent sur une file vide disent que le
+              travail n'est pas fini, il a seulement changé d'endroit. */}
+          <MotifsQuiReviennent motifs={motifs} />
+        </View>
       }
     >
-      {(lignes) =>
-        large ? (
-          <TableDArbitrage lignes={lignes} onTranche={requete.recharger} />
-        ) : (
-          <View style={{ gap: 12 }}>
-            {lignes.map((ligne) => (
-              <Dossier key={ligne.collaboration_id} ligne={ligne} onTranche={requete.recharger} />
-            ))}
-          </View>
-        )
-      }
+      {({ lignes, motifs: quiReviennent }) => (
+        <View>
+          {large ? (
+            <TableDArbitrage lignes={lignes} onTranche={requete.recharger} />
+          ) : (
+            <View style={{ gap: 12 }}>
+              {lignes.map((ligne) => (
+                <Dossier key={ligne.collaboration_id} ligne={ligne} onTranche={requete.recharger} />
+              ))}
+            </View>
+          )}
+          <MotifsQuiReviennent motifs={quiReviennent} />
+        </View>
+      )}
     </Ecran>
   );
 }
