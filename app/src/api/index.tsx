@@ -827,6 +827,31 @@ export class Api {
    * « galerie pleine » pour une image trop lourde. Le serveur les sépare, le
    * client suit la même coupure.
    */
+  /**
+   * La photo d'une prestation : déposée, puis posée sur l'article.
+   *
+   * **Deux appels, et il en fallait deux.** Le dépôt rend une clé, le correctif
+   * la range sur l'article — `photo_key` était déclarée corrigeable depuis le
+   * début et aucun écran ne savait produire de clé. Une capacité déclarée que
+   * rien ne sait exercer n'est pas une capacité, c'est un champ.
+   *
+   * **La route de dépôt est celle de la galerie**, et c'est correct : elle
+   * range un fichier sous le préfixe du commerce et rend sa clé, sans rien
+   * décider de ce qu'on en fait. C'est la seconde moitié — poser la clé dans
+   * la galerie — que cette méthode ne fait pas.
+   */
+  async photographierUnItem(businessId: string, itemId: string, uri: string) {
+    const corps = new FormData();
+    corps.append('fichier', { uri, name: 'photo.jpg', type: 'image/jpeg' } as unknown as Blob);
+
+    const { storage_key } = await this.client.request<{ storage_key: string }>(
+      routes.televerserUnePhoto(businessId),
+      { methode: 'POST', corpsBrut: corps },
+    );
+
+    return this.modifierUnItem(businessId, itemId, { photo_key: storage_key });
+  }
+
   async ajouterUnePhoto(businessId: string, uri: string) {
     const corps = new FormData();
     // La forme attendue par React Native pour un fichier local. Le nom et le

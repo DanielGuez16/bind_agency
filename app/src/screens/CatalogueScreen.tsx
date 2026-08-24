@@ -20,6 +20,7 @@
  * un créneau. L'API l'accepte nulle pour les imports de carte à valider ; ce
  * formulaire, lui, la réclame.
  */
+import * as ImagePicker from 'expo-image-picker';
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
@@ -41,6 +42,7 @@ import {
   SegmentedTabs,
   SkeletonLignes,
   StatusMessage,
+  Photo,
   Stepper,
   Texte,
   TextField,
@@ -48,8 +50,6 @@ import {
   Toggle,
   vibration,
 } from '../components';
-import { CarteDuCommerce } from './CarteDuCommerce';
-import { GalerieDuCommerce } from './GalerieDuCommerce';
 import { useI18n } from '../i18n';
 import { gesteDeRetrait, suiteDuRefus } from './catalogue/corriger';
 import { radius, useColors } from '../theme';
@@ -68,12 +68,6 @@ type Composition = {
   items: ItemDuCatalogue[];
   offres: OffreDePalier[];
   paliers: PalierOffrable[];
-  photos: PhotoDuCommerce[];
-  /** La couverture actuelle, pour marquer la photo qui la porte. */
-  couverture: string | null;
-  /** Les pages de la carte. **Distinctes de la galerie** : voir `CarteDuCommerce`. */
-  pagesDeLaCarte: PageDeLaCarte[];
-  lienDeLaCarte: string | null;
 };
 
 const ONGLETS = ['toutes', 'ouvertes', 'fermees'] as const;
@@ -93,26 +87,15 @@ export function CatalogueScreen({
 
   const charger = useCallback(
     async (signal: AbortSignal): Promise<Composition> => {
-      // La galerie voyage avec le catalogue : les deux composent la même
-      // page, et deux requêtes séparées feraient apparaître les photos après
-      // les prestations, sous les yeux de qui les regarde.
-      const [items, offres, paliers, photos, pagesDeLaCarte, commerce] = await Promise.all([
+      // **Trois listes et plus six.** La galerie, la carte et la couverture
+      // sont parties avec le lieu : cet écran ne charge plus que ce qu'il rend,
+      // et trois requêtes de moins sur un écran qu'on ouvre en continu.
+      const [items, offres, paliers] = await Promise.all([
         api.itemsDuCatalogue(businessId, signal),
         api.offresDePalier(businessId, signal),
         api.paliersDuCommerce(businessId, signal),
-        api.photosDuCommerce(businessId, signal),
-        api.pagesDeLaCarte(businessId, signal),
-        api.commerce(businessId, signal),
       ]);
-      return {
-        items,
-        offres,
-        paliers,
-        photos,
-        couverture: commerce.cover_photo_key,
-        pagesDeLaCarte,
-        lienDeLaCarte: commerce.menu_url,
-      };
+      return { items, offres, paliers };
     },
     [api, businessId],
   );
@@ -124,12 +107,12 @@ export function CatalogueScreen({
     cache: { cle: `catalogue.${businessId}`, ageMax: AGES.contenu },
     // **Un catalogue vide n'est plus un écran vide.** La galerie vit ici : un
     // commerce qui n'a pas encore composé de prestation peut vouloir commencer
-    // par ses photos, et l'état vide lui retirerait la seule chose qu'il peut
-    // faire tout de suite.
-    // La carte compte comme la galerie : un commerce qui a déposé sa carte et
-    // rien d'autre a déjà fait quelque chose, et l'état vide le lui nierait.
-    estVide: (c) =>
-      c.items.length === 0 && c.photos.length === 0 && c.pagesDeLaCarte.length === 0,
+    // **Vide veut dire « aucune prestation », et rien d'autre.** La galerie et
+    // la carte comptaient ici tant qu'elles y vivaient : un commerce qui avait
+    // déposé ses photos n'était pas devant un écran vide. Elles sont sur le
+    // lieu maintenant, et cet écran ne parle plus que de prestations — le vide
+    // redevient ce qu'il dit.
+    estVide: (c) => c.items.length === 0,
     dependances: [businessId],
   });
 
@@ -299,35 +282,12 @@ function Groupes({
 
   return (
     <View style={{ gap: 16 }}>
-      {/* La galerie en tête. Elle est ce qu'un visiteur voit en premier de la
-          fiche, et un commerce qui compose sa page commence souvent par là —
-          la ranger sous les prestations la ferait chercher. */}
-      <GalerieDuCommerce
-        businessId={businessId}
-        photos={composition.photos}
-        couverture={composition.couverture}
-        onChange={onChange}
-      />
-      <Filet />
+      {/* **La galerie, la carte et les horaires ont quitté cet écran.** Ils
+          décrivent le lieu ; ce qui reste ici décrit ce qu'on y fait. C'est la
+          découpe par objet de la v3.1, et elle recoupe la fréquence : un lieu
+          se compose une fois, un catalogue vit en continu.
 
-      {/* **La carte suit la galerie, et ne s'y mêle pas.** La galerie montre le
-          lieu, la carte se consulte : deux dépôts distincts, parce qu'un
-          commerce qui les confondrait rendrait la sienne illisible. */}
-      <CarteDuCommerce
-        businessId={businessId}
-        pages={composition.pagesDeLaCarte}
-        lien={composition.lienDeLaCarte}
-        // **Ce que l'absence de carte retient.** Le catalogue les a déjà en
-        // main ; les faire relire à la carte serait un second appel pour une
-        // donnée qu'on tient, et deux listes qui finiraient par diverger.
-        bloquees={composition.items
-          .filter((item) => item.leaves_choice)
-          .map((item) => ({ id: item.id, name: item.name }))}
-        onChange={onChange}
-      />
-      <Filet />
-
-      {/* **Le filtre ne fait pas disparaître la galerie.** Elle vivait sous un
+          Ce qui suit
           court-circuit « aucun résultat dans ce filtre » : un commerce sans
           prestation — ou dont le filtre n'en retient aucune — perdait la seule
           chose qu'il pouvait faire tout de suite. */}
@@ -463,6 +423,17 @@ function CorrigerLaPrestation({
         onChangeText={setDescription}
         lignes={3}
         testID={`corriger-description-${item.id}`}
+      />
+
+      {/* **La photo se dépose enfin d'ici.** `photo_key` était déclarée
+          corrigeable depuis le début, la route de dépôt existait, et rien ne
+          les reliait : le champ se posait par correctif et aucun écran ne
+          savait produire de clé. Une capacité déclarée que rien ne sait
+          exercer n'est pas une capacité. */}
+      <PhotoDeLaPrestation
+        businessId={businessId}
+        item={item}
+        onChange={onFait}
       />
       {/* **Ce qui ne se corrige pas, dit là où on corrige.** Sans cette
           phrase, un gérant cherche la durée, ne la trouve pas, et conclut que
@@ -622,6 +593,11 @@ function LignePrestation({
   return (
     <View style={{ gap: 4 }} testID={`prestation-${item.id}`}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        {/* **La vignette, ou son absence.** Un cadre pointillé dit qu'il manque
+            une photo sans qu'aucun texte n'explique la fonction : le manque se
+            signale seul, et c'est ce qui rend la photo par prestation trouvable
+            sans la nommer. */}
+        <Vignette item={item} testID={`vignette-${item.id}`} />
         <View style={{ flex: 1, gap: 2 }}>
           <Texte variante="type.label">{item.name}</Texte>
           <Texte variante="type.caption" couleur="ink.soft">
@@ -643,6 +619,14 @@ function LignePrestation({
           {t('composition.fermeeParSonParent')}
         </Texte>
       ) : null}
+
+      {/* L'état, en toutes lettres et non seulement en cadre : le pointillé se
+          voit en parcourant, le mot se lit en s'arrêtant. */}
+      {item.photo_key ? null : (
+        <Texte variante="type.caption" couleur="ink.soft" testID={`photo-manque-${item.id}`}>
+          {t('composition.photoManque')}
+        </Texte>
+      )}
 
       {/* **Corriger et retirer, là où la prestation est.** Le catalogue se
           composait sans se corriger : une faute d'orthographe ou une photo
@@ -1055,5 +1039,154 @@ function CatalogueVide({
       actions={[{ label: t('composition.videAction'), onPress: () => setCompose(true) }]}
       testID="catalogue-vide"
     />
+  );
+}
+
+
+/**
+ * La photo d'une prestation, déposée depuis l'écran qui la compose.
+ *
+ * **Trouvable par son absence.** Une prestation sans photo montre un cadre
+ * pointillé, et c'est tout ce qui l'annonce : aucun texte n'explique la
+ * fonction, le manque se signale seul. Un intitulé « ajoutez une photo de
+ * prestation » aurait décrit une capacité au lieu de la rendre évidente.
+ *
+ * **Celle-ci, pas la couverture.** Le fil montre la photo de l'article quand
+ * elle existe et retombe sur la façade du salon sinon — quatre prestations
+ * différentes derrière la même devanture, ce qui est l'inversion de hiérarchie
+ * que la v3 a corrigée dans le texte et qui restait dans l'image.
+ */
+function PhotoDeLaPrestation({
+  businessId,
+  item,
+  onChange,
+}: {
+  businessId: string;
+  item: ItemDuCatalogue;
+  onChange: () => void;
+}) {
+  const { api, messageDErreur } = useApi();
+  const { t } = useI18n();
+  const c = useColors();
+  const [envoi, setEnvoi] = useState(false);
+  const [echec, setEchec] = useState<string | null>(null);
+
+  async function choisir() {
+    setEchec(null);
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      setEchec(t('composition.photoPermission'));
+      return;
+    }
+
+    const resultat = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.9,
+    });
+    const actif = resultat.canceled ? null : resultat.assets[0];
+    if (!actif) return;
+
+    setEnvoi(true);
+    try {
+      await api.photographierUnItem(businessId, item.id, actif.uri);
+      vibration.reussite();
+      onChange();
+    } catch (erreur) {
+      vibration.echec();
+      setEchec(messageDErreur(erreur));
+    } finally {
+      setEnvoi(false);
+    }
+  }
+
+  const url = api.urlDeLaVignette(item.photo_key);
+
+  return (
+    <View style={{ gap: 8 }} testID={`photo-de-${item.id}`}>
+      <Texte variante="type.label" couleur="ink.soft">
+        {t('composition.photoTitre')}
+      </Texte>
+
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={t(url ? 'composition.photoRemplacer' : 'composition.photoAjouter', {
+          nom: item.name,
+        })}
+        disabled={envoi}
+        onPress={() => void choisir()}
+        style={({ pressed }) => ({
+          width: 96,
+          height: 96,
+          borderRadius: radius['radius.photo'],
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
+          opacity: pressed || envoi ? 0.7 : 1,
+          // **Le cadre pointillé ne se rend que sur l'absence.** Posé sous la
+          // photo, il ne se verrait jamais ; posé à côté, il ferait deux
+          // emplacements pour une seule image.
+          ...(url
+            ? {}
+            : {
+                borderWidth: 2,
+                borderStyle: 'dashed' as const,
+                borderColor: c['line.strong'],
+              }),
+        })}
+        testID={`photo-choisir-${item.id}`}
+      >
+        {url ? (
+          <Photo uri={url} hauteur={96} style={{ width: 96 }} testID={`photo-vue-${item.id}`} />
+        ) : (
+          <Icone nom="image" couleur="ink.mute" taille={22} />
+        )}
+      </Pressable>
+
+      {echec ? <StatusMessage level="danger" body={echec} testID={`photo-echec-${item.id}`} /> : null}
+    </View>
+  );
+}
+
+
+/**
+ * La vignette d'une prestation dans la liste, ou le cadre qui dit son absence.
+ *
+ * **Quarante-huit points, et pas un bouton.** Elle situe la ligne du regard ;
+ * ce qui dépose vit dans le panneau de correction, où l'on s'est arrêté. Une
+ * cible de plus sur chaque ligne d'une liste qu'on parcourt au pouce ferait
+ * ouvrir la galerie du téléphone par frôlement.
+ */
+function Vignette({ item, testID }: { item: ItemDuCatalogue; testID: string }) {
+  const { api } = useApi();
+  const c = useColors();
+  const url = api.urlDeLaVignette(item.photo_key);
+
+  if (url) {
+    return (
+      <Photo
+        uri={url}
+        hauteur={48}
+        style={{ width: 48, borderRadius: radius['radius.md'] }}
+        testID={testID}
+      />
+    );
+  }
+
+  return (
+    <View
+      testID={testID}
+      style={{
+        width: 48,
+        height: 48,
+        borderRadius: radius['radius.md'],
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 2,
+        borderStyle: 'dashed',
+        borderColor: c['line.strong'],
+      }}
+    >
+      <Icone nom="image" couleur="ink.mute" taille={17} />
+    </View>
   );
 }

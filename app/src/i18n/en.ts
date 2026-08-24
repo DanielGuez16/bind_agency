@@ -1058,10 +1058,21 @@ export const en = {
     stockageSecurise: 'Device keychain',
     stockageWeb: 'Browser storage - development only',
   },
+  lieu: {
+    titre: 'Your place',
+  },
   composition: {
     fermerLOffre: 'Stop offering at this tier',
     rouvrirLOffre: 'Offer at this tier again',
     offreFermeeCorps: 'Not offered at this tier. Past bookings still show it — closing changes nothing behind you.',
+    photoTitre: 'Photo of this service',
+    photoAjouter: 'Add a photo of {{nom}}',
+    photoRemplacer: 'Replace the photo of {{nom}}',
+    photoPermission: 'BIND needs access to your photos. You can allow it in your phone settings.',
+    // **Le manque se signale seul.** Aucun texte n'explique la fonction : un
+    // cadre pointillé dans la liste, et cet état. Un intitulé « ajoutez une
+    // photo » aurait décrit une capacité au lieu de la rendre évidente.
+    photoManque: 'Needs a photo',
     corriger: 'Correct',
     retirerLaPrestation: 'Remove',
     remplacer: 'Change duration or tier',
@@ -1291,6 +1302,11 @@ export const en = {
     // l'avantage de ne prendre parti ni pour l'entrée ni pour la sortie.
     caisse: 'Register',
     reporting: 'Reports',
+    // **Deux entrées, et plus une porte qui en cache deux.** « Your offer »
+    // et ses onglets disparaissent : la découpe est par objet, et aucune des
+    // deux n'est un réglage de l'autre.
+    lieu: 'Your place',
+    prestations: 'Your services',
     configuration: 'Setup',
     arbitrage: 'Reviews',
     plans: 'Plans',

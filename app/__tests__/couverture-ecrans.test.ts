@@ -49,6 +49,10 @@ describe('couverture des écrans', () => {
     // d'attente. Le chargement et l'erreur sont ceux de la requête
     // d'appartenance, rendus par l'`Ecran` qui l'enveloppe ; le formulaire
     // lui-même ne charge rien.
-    expect(HORS_REGISTRE).toHaveLength(11);
+    // **Dix depuis la v3.1.** `ConfigurationScreen` a été retiré avec la table
+    // des matières de « Your offer » : deux entrées de rang égal dans la barre
+    // latérale ne se rangent pas sous une porte. Le nombre est écrit à la main
+    // pour que le retrait d'un écran soit un geste, pas un effet de bord.
+    expect(HORS_REGISTRE).toHaveLength(10);
   });
 });

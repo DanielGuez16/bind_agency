@@ -10225,3 +10225,43 @@ peignant ce qu'il se contentait d'expliquer — et la correction naturelle aurai
 été de retirer la note, c'est-à-dire de perdre l'explication pour sauver la
 garde. Les deux gardes de ce fichier retirent désormais les commentaires pour de
 bon.
+## 2026-08-24 — La configuration v3.1 : par objet, ce qui révèle la fréquence
+
+**Deux portes deviennent trois de rang égal.** La v3 séparait par fréquence — le
+geste rare d'un côté, le geste du matin sur la journée — et son seau « rare »
+contenait deux fréquences confondues : un lieu se compose **une fois**, un
+catalogue vit **en continu**. Séparer par objet révèle la fréquence que la
+maille précédente avait manquée. Ce n'est donc pas une troisième découpe, c'est
+la même appliquée jusqu'au bout.
+
+**Les horaires rejoignent la couverture**, et c'est la conséquence la moins
+évidente : des heures d'ouverture décrivent un endroit, pas une prestation. La
+page de l'offre se réduit une seconde fois sans rien perdre.
+
+**Le corps des horaires est extrait, pas dupliqué.** `HorairesScreen` garde sa
+coquille pour la pile du téléphone ; le lieu rend le même corps. Deux corps
+auraient fini par diverger, et c'est celui qu'on regarde le moins qui aurait
+dérivé.
+
+**L'état vide du catalogue redevient ce qu'il dit.** Tant que la galerie y
+vivait, un commerce qui avait déposé ses photos n'était pas devant un écran
+vide, et la condition portait les trois listes. L'écran ne parle plus que de
+prestations : « vide » veut dire « aucune prestation ».
+
+**La photo par prestation existait en base et nulle part ailleurs.**
+`photo_key` était déclarée corrigeable, la route de dépôt existait, et rien ne
+les reliait — aucun écran ne savait produire de clé. Une capacité déclarée que
+rien ne sait exercer n'est pas une capacité, c'est un champ ; c'est le pendant
+exact du champ accepté par un schéma et ignoré par un service.
+
+Elle est **trouvable par son absence** : un cadre pointillé dans la liste, et
+« needs a photo » en état. Aucun texte n'explique la fonction — un intitulé
+« ajoutez une photo de prestation » aurait décrit une capacité au lieu de la
+rendre évidente.
+
+**Ce que je n'ai pas fait, et pourquoi.** La planche montre un tableau à quatre
+colonnes avec panneau latéral, dessiné à 1512. Sur 390, quatre colonnes ne sont
+pas des colonnes — et c'est le format que le commerce utilise au comptoir. La
+vignette et l'état sont dans la liste, le reste était déjà dans le panneau de
+correction ; le tableau demande une décision de disposition qui n'est pas
+tranchée par la planche.

@@ -35,7 +35,6 @@ const RACINES = [
   'Historique',
   'Journee',
   'Caisse',
-  'Configuration',
   'Paliers',
   // `Annuaire` a gagné une pile : l'abonnement s'y empile depuis son refus.
   'Annuaire',

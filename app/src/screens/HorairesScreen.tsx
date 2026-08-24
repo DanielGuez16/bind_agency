@@ -50,7 +50,7 @@ const JOURS = [
   'composition.dimanche',
 ] as const;
 
-type Semaine = { regles: RegleDeCapacite[]; exceptions: ExceptionDeCapacite[] };
+export type Semaine = { regles: RegleDeCapacite[]; exceptions: ExceptionDeCapacite[] };
 
 export function HorairesScreen({
   businessId,
@@ -91,30 +91,11 @@ export function HorairesScreen({
       testID="ecran-horaires"
     >
       {(semaine) => (
-        <View style={{ gap: 16 }}>
-          <View style={{ gap: 8 }} testID="semaine">
-            <Texte variante="type.label">{t('composition.ouverture')}</Texte>
-            {JOURS.map((cle, jour) => (
-              <LigneDeJour
-                key={cle}
-                libelle={t(cle)}
-                jour={jour}
-                regle={semaine.regles.find((r) => r.weekday === jour) ?? null}
-                businessId={businessId}
-                onChange={requete.recharger}
-              />
-            ))}
-            <Texte variante="type.caption" couleur="ink.soft">
-              {t('composition.capaciteExplication')}
-            </Texte>
-          </View>
-
-          <Exceptions
-            exceptions={semaine.exceptions}
-            businessId={businessId}
-            onChange={requete.recharger}
-          />
-        </View>
+        <HorairesDuCommerce
+          semaine={semaine}
+          businessId={businessId}
+          onChange={requete.recharger}
+        />
       )}
     </Ecran>
   );
@@ -335,5 +316,55 @@ function Exceptions({
         testID="fermer-cette-date"
       />
     </View>
+  );
+}
+
+
+/**
+ * La semaine et ses exceptions, sans coquille.
+ *
+ * **Extrait pour que le lieu le porte.** Des heures d'ouverture décrivent un
+ * endroit : elles vivent maintenant sur l'écran du lieu, à côté de la
+ * couverture et de la carte. `HorairesScreen` reste pour la pile du téléphone,
+ * où chaque section est un écran ; les deux rendent le même corps, parce que
+ * deux corps finiraient par diverger et que c'est celui qu'on regarde le moins
+ * qui dériverait.
+ */
+export function HorairesDuCommerce({
+  semaine,
+  businessId,
+  onChange,
+}: {
+  semaine: Semaine;
+  businessId: string;
+  onChange: () => void;
+}) {
+  const { t } = useI18n();
+
+  return (
+        <View style={{ gap: 16 }}>
+          <View style={{ gap: 8 }} testID="semaine">
+            <Texte variante="type.label">{t('composition.ouverture')}</Texte>
+            {JOURS.map((cle, jour) => (
+              <LigneDeJour
+                key={cle}
+                libelle={t(cle)}
+                jour={jour}
+                regle={semaine.regles.find((r) => r.weekday === jour) ?? null}
+                businessId={businessId}
+                onChange={onChange}
+              />
+            ))}
+            <Texte variante="type.caption" couleur="ink.soft">
+              {t('composition.capaciteExplication')}
+            </Texte>
+          </View>
+
+          <Exceptions
+            exceptions={semaine.exceptions}
+            businessId={businessId}
+            onChange={onChange}
+          />
+        </View>
   );
 }
