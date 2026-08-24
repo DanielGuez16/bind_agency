@@ -1062,6 +1062,14 @@ export const en = {
     fermerLOffre: 'Stop offering at this tier',
     rouvrirLOffre: 'Offer at this tier again',
     offreFermeeCorps: 'Not offered at this tier. Past bookings still show it — closing changes nothing behind you.',
+    photoTitre: 'Photo of this service',
+    photoAjouter: 'Add a photo of {{nom}}',
+    photoRemplacer: 'Replace the photo of {{nom}}',
+    photoPermission: 'BIND needs access to your photos. You can allow it in your phone settings.',
+    // **Le manque se signale seul.** Aucun texte n'explique la fonction : un
+    // cadre pointillé dans la liste, et cet état. Un intitulé « ajoutez une
+    // photo » aurait décrit une capacité au lieu de la rendre évidente.
+    photoManque: 'Needs a photo',
     corriger: 'Correct',
     retirerLaPrestation: 'Remove',
     remplacer: 'Change duration or tier',
