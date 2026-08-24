@@ -43,8 +43,19 @@ function salon(extra: Record<string, unknown> = {}) {
   };
 }
 
-/** Ce que chaque appel a demandé, pour éprouver que la recherche part au serveur. */
-function clientDe(reponse: (recherche: string | null) => unknown[], demandes: string[] = []) {
+/**
+ * Ce que chaque appel a demandé, pour éprouver que la recherche part au serveur.
+ *
+ * `total` par défaut est le nombre de lignes rendues — le cas ordinaire, où la
+ * recherche tient sous la borne. Les tests du bord le posent au-dessus : c'est
+ * **le serveur** qui dit combien la recherche a trouvé, et l'écran ne peut plus
+ * le déduire de ce qu'il affiche.
+ */
+function clientDe(
+  reponse: (recherche: string | null) => unknown[],
+  demandes: string[] = [],
+  total?: number,
+) {
   return new ApiClient({
     baseUrl: 'https://api.test',
     coffre,
@@ -55,7 +66,12 @@ function clientDe(reponse: (recherche: string | null) => unknown[], demandes: st
       }
       const recherche = new URL(chemin, 'https://api.test').searchParams.get('recherche');
       demandes.push(recherche ?? '');
-      return { ok: true, status: 200, json: async () => reponse(recherche) } as Response;
+      const items = reponse(recherche);
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ items, total: total ?? items.length }),
+      } as Response;
     },
   });
 }
@@ -188,15 +204,22 @@ describe('le bord de la liste', () => {
     // donner de conduite : « resserrer le nom » est ce qui distingue un plafond
     // d'un cul-de-sac, sur un écran dont c'est justement la question.
     await monter(
-      clientDe(() =>
-        Array.from({ length: PLAFOND }, (_, i) => salon({ business_id: `b${i}` })),
+      clientDe(
+        () => Array.from({ length: PLAFOND }, (_, i) => salon({ business_id: `b${i}` })),
+        [],
+        742,
       ),
     );
     await waitFor(() => expect(screen.getByTestId('commerce-b0')).toBeTruthy());
 
+    // **Le total vient du serveur.** « 100 salons » était tout ce que l'écran
+    // pouvait dire d'une recherche qui en ramène sept cent quarante-deux, et
+    // c'est ce chiffre-là qui donne au plafond son sens : sans lui, la phrase
+    // dit qu'on tronque sans dire de combien.
     const compte = screen.getByTestId('compte-commerces');
     expect(compte).toHaveTextContent(fragment(String(PLAFOND)));
-    expect(compte).toHaveTextContent(/narrow the name/i);
+    expect(compte).toHaveTextContent(/742/);
+    expect(screen.getByTestId('plafond-commerces')).toHaveTextContent(/narrow the name/i);
   });
 
   it('et se tait quand elle ne l’est pas', async () => {
@@ -210,6 +233,7 @@ describe('le bord de la liste', () => {
     );
     await waitFor(() => expect(screen.getByTestId('commerce-b0')).toBeTruthy());
 
+    expect(screen.queryByTestId('plafond-commerces')).toBeNull();
     expect(screen.getByTestId('compte-commerces')).not.toHaveTextContent(/narrow the name/i);
   });
 });
