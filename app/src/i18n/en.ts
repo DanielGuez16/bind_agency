@@ -974,6 +974,11 @@ export const en = {
     videTitre: 'Nothing saved yet',
     videCorps: 'The heart on a service keeps it here — useful for what is not open to you yet.',
     duree: '{{n}} min',
+    // **Le seul réglage de notification du produit.** Tout le reste est
+    // transactionnel — déclenché par celui qui le reçoit. Celui-ci part trois
+    // semaines après un cœur posé, sans que personne n'ait rien demandé.
+    avisCorps: 'Tell me when something I saved opens up to me',
+    avisLabel: 'Notifications about saved services',
     retirer: 'Remove {{nom}} from saved',
     // **Quatre états, quatre conduites.** « Unavailable » les aurait tous
     // couverts et n'aurait rien dit : attendre la réouverture, monter d'un

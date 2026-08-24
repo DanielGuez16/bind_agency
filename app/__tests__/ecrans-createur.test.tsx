@@ -17,6 +17,7 @@ import type { ReactElement, ReactNode } from 'react';
 
 import { ApiClient, ApiProvider } from '../src/api';
 import { I18nProvider } from '../src/i18n';
+import { SessionProvider } from '../src/session';
 import { en } from '../src/i18n/en';
 import { ThemeProvider } from '../src/theme';
 import { AudienceScreen } from '../src/screens/AudienceScreen';
@@ -82,7 +83,22 @@ async function monter(noeud: ReactElement, client: ApiClient) {
     return (
       <I18nProvider initialLocale="en">
         <ThemeProvider role="creator">
-          <ApiProvider client={client}>{children}</ApiProvider>
+          {/* **La session, pour les écrans qui portent un réglage.** La liste
+              des favoris porte le seul interrupteur de notification du produit,
+              et sa valeur vit sur `/me` — un écran qui la garderait pour lui se
+              contredirait avec la coquille au premier rechargement. */}
+          <SessionProvider
+            baseUrl="https://api.test"
+            coffre={{ lire: async () => null, ecrire: async () => {} }}
+            fetchImpl={(() =>
+              Promise.resolve({
+                ok: true,
+                status: 200,
+                json: async () => ({}),
+              })) as unknown as typeof fetch}
+          >
+            <ApiProvider client={client}>{children}</ApiProvider>
+          </SessionProvider>
         </ThemeProvider>
       </I18nProvider>
     );
