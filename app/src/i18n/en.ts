@@ -1127,6 +1127,10 @@ export const en = {
     // photo » aurait décrit une capacité au lieu de la rendre évidente.
     photoManque: 'Needs a photo',
     corriger: 'Correct',
+    colonneNom: 'Service',
+    colonneDuree: 'Length',
+    colonnePalier: 'Tier',
+    colonneEtat: 'Open',
     retirerLaPrestation: 'Remove',
     remplacer: 'Change duration or tier',
     remplaceExplication:

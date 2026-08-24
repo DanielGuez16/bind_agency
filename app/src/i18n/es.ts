@@ -1007,6 +1007,10 @@ export const es: Catalogue = {
     photoPermission: 'BIND necesita acceso a tus fotos. Puedes permitirlo en los ajustes del teléfono.',
     photoManque: 'Falta una foto',
     corriger: 'Corregir',
+    colonneNom: 'Servicio',
+    colonneDuree: 'Duración',
+    colonnePalier: 'Nivel',
+    colonneEtat: 'Abierto',
     retirerLaPrestation: 'Quitar',
     remplacer: 'Cambiar duración o nivel',
     remplaceExplication:

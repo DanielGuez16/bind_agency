@@ -53,6 +53,7 @@ import {
 import { useI18n } from '../i18n';
 import { gesteDeRetrait, suiteDuRefus } from './catalogue/corriger';
 import { resumeDuCatalogue } from './catalogue/resume';
+import { useGabarit } from '../shell/gabarit';
 import { radius, useColors } from '../theme';
 import {
   ecartAuConseil,
@@ -73,6 +74,16 @@ type Composition = {
 
 const ONGLETS = ['toutes', 'ouvertes', 'fermees'] as const;
 type Onglet = (typeof ONGLETS)[number];
+
+/**
+ * Les quatre colonnes de la planche, et leurs largeurs.
+ *
+ * **Elles n'existent qu'au-delà du seuil.** La planche est dessinée à 1512 ;
+ * sur 390, quatre colonnes ne sont pas des colonnes. L'état prend ce qui reste
+ * parce que c'est un interrupteur : il se pose à droite, quelle que soit la
+ * largeur.
+ */
+const COLONNES = { nom: 260, duree: 96, palier: 96 } as const;
 
 export function CatalogueScreen({
   businessId,
@@ -215,6 +226,8 @@ function Groupes({
   onChange: () => void;
 }) {
   const { t } = useI18n();
+  const c = useColors();
+  const { large } = useGabarit();
 
   const visible = useCallback(
     (item: ItemDuCatalogue) =>
@@ -309,6 +322,47 @@ function Groupes({
         />
       ) : null}
 
+      {/* **Les quatre colonnes n'existent que là où la place existe.**
+          La planche est dessinée à 1512, où elles tiennent. Sur 390, quatre
+          colonnes ne sont pas des colonnes : le nom se tronque au troisième
+          mot et la durée passe sous le palier. La carte du comptoir reste
+          donc la carte, et la table ne s'ajoute qu'au-dessus du seuil —
+          deux compositions pour deux places, jamais une pour les deux. */}
+      {large ? (
+        <View
+          testID="entete-des-prestations"
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 12,
+            paddingBottom: 4,
+            borderBottomWidth: 1,
+            borderBottomColor: c['line.default'],
+          }}
+        >
+          <View style={{ width: COLONNES.nom }}>
+            <Texte variante="type.dataLabel" couleur="ink.soft">
+              {t('composition.colonneNom').toUpperCase()}
+            </Texte>
+          </View>
+          <View style={{ width: COLONNES.duree }}>
+            <Texte variante="type.dataLabel" couleur="ink.soft">
+              {t('composition.colonneDuree').toUpperCase()}
+            </Texte>
+          </View>
+          <View style={{ width: COLONNES.palier }}>
+            <Texte variante="type.dataLabel" couleur="ink.soft">
+              {t('composition.colonnePalier').toUpperCase()}
+            </Texte>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Texte variante="type.dataLabel" couleur="ink.soft" align="right">
+              {t('composition.colonneEtat').toUpperCase()}
+            </Texte>
+          </View>
+        </View>
+      ) : null}
+
       {groupes.rangees
         .filter((r) => r.items.length > 0)
         .map(({ palier, items }) => (
@@ -328,6 +382,7 @@ function Groupes({
                 propose={propositions.get(item.id)}
                 retenu={retenus.get(item.id)}
                 paliers={composition.paliers}
+                large={large}
                 // L'offre de **ce** palier : une prestation ouverte à deux
                 // paliers a deux offres, et fermer l'une ne ferme pas l'autre.
                 offre={composition.offres.find(
@@ -357,6 +412,7 @@ function Groupes({
               propose={propositions.get(item.id)}
               retenu={undefined}
               paliers={composition.paliers}
+              large={large}
             />
           ))}
         </View>
@@ -487,6 +543,7 @@ function LignePrestation({
   propose,
   retenu,
   paliers = [],
+  large = false,
   offre,
 }: {
   item: ItemDuCatalogue;
@@ -496,6 +553,8 @@ function LignePrestation({
   propose?: ContentFormat;
   /** Le plus exigeant des paliers réellement ouverts sur cette prestation. */
   retenu?: ContentFormat;
+  /** Au-delà du seuil, la ligne se range en colonnes. Voir `COLONNES`. */
+  large?: boolean;
   paliers?: PalierOffrable[];
   /**
    * L'offre de **ce** palier sur cette prestation, quand la ligne en est une.
@@ -608,14 +667,37 @@ function LignePrestation({
             signale seul, et c'est ce qui rend la photo par prestation trouvable
             sans la nommer. */}
         <Vignette item={item} testID={`vignette-${item.id}`} />
-        <View style={{ flex: 1, gap: 2 }}>
-          <Texte variante="type.label">{item.name}</Texte>
-          <Texte variante="type.caption" couleur="ink.soft">
-            {item.duration_minutes === null
-              ? t('composition.dureeManquante')
-              : t('composition.duree', { n: item.duration_minutes })}
-          </Texte>
-        </View>
+        {large ? (
+          <>
+            {/* Le nom et la durée se séparent : en carte ils s'empilent, en
+                table ils tiennent chacun leur colonne. */}
+            <View style={{ width: COLONNES.nom - 56 }}>
+              <Texte variante="type.label" ellipseSurNomPropre>
+                {item.name}
+              </Texte>
+            </View>
+            <View style={{ width: COLONNES.duree }}>
+              <Texte variante="type.caption" couleur="ink.soft">
+                {item.duration_minutes === null
+                  ? t('composition.dureeManquante')
+                  : t('composition.duree', { n: item.duration_minutes })}
+              </Texte>
+            </View>
+            <View style={{ width: COLONNES.palier }}>
+              {retenu ? <TierBadge tier={retenu} size="sm" /> : null}
+            </View>
+            <View style={{ flex: 1 }} />
+          </>
+        ) : (
+          <View style={{ flex: 1, gap: 2 }}>
+            <Texte variante="type.label">{item.name}</Texte>
+            <Texte variante="type.caption" couleur="ink.soft">
+              {item.duration_minutes === null
+                ? t('composition.dureeManquante')
+                : t('composition.duree', { n: item.duration_minutes })}
+            </Texte>
+          </View>
+        )}
         <Toggle
           value={item.is_available}
           disabled={envoi || parLeParent}

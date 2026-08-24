@@ -2648,14 +2648,18 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       lisibilité de la liste, pas à ce qu'elle porte — ce qui reste de la
       planche est pris : les deux ensembles nommés et comptés, le cœur par
       ligne, et le bloc du compte à connecter*
-- [ ] **Les quatre colonnes de la liste des prestations**
-      *La planche montre nom, durée, palier, état en colonnes, avec la
-      contrepartie, l'écart au palier et la photo descendus dans un panneau
-      latéral. Livré autrement : la vignette et l'état sont dans la liste, le
-      reste est déjà dans le panneau de correction. **Le tableau à quatre
-      colonnes n'existe pas** — et la planche est dessinée à 1512, où il tient.
-      Sur 390, quatre colonnes ne sont pas des colonnes : c'est la question à
-      trancher avant de le composer*
+- [x] **Les quatre colonnes, là où la place existe**
+      *La planche est dessinée à 1512, où elles tiennent. Sur 390, quatre
+      colonnes ne sont pas des colonnes : le nom se tronque au troisième mot et
+      la durée passe sous le palier. La carte du comptoir reste donc la carte,
+      et la table ne s'ajoute qu'au-dessus du seuil — deux compositions pour
+      deux places, jamais une pour les deux.*
+      *Nom, durée, palier, état, avec un en-tête posé une fois au-dessus de la
+      liste entière et non par groupe de palier : les prestations sans palier
+      sont dans la même table, et un en-tête par groupe en aurait fait
+      plusieurs. Le test monte les deux largeurs sur le même décor — n'éprouver
+      que la grande passerait avec une table posée partout, c'est-à-dire avec
+      ce qu'on a refusé de livrer*
 - [x] **La capacité reste au lieu**
       *Tranché, et l'argument retourne la question de Design. Un nombre de
       fauteuils est une propriété de l'endroit, et l'exception du jour existe
