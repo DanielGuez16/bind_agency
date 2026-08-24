@@ -1876,6 +1876,24 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       défaut qu'on venait de corriger sur les réservations. La reprise reste sur
       la fiche de tournée aussi — un administrateur debout dans un salon a déjà
       sa fiche ouverte. 9 tests, 4 mutations*
+- [x] **Le semis ne fabriquait aucune vignette, et le repli le cachait**
+      ***Cent deux images, zéro `@vignette`.* Le semis appelait le dépôt
+      d'objets directement au lieu de `deposer_une_image`, qui range les deux.
+      Le mur demande la vignette, ne la trouve jamais, et la route retombe sur
+      l'original — un repli qui existe pour de bonnes raisons et qui masquait
+      ici leur absence totale.*
+      ***Rien ne pouvait le dire.** L'image arrivait, l'écran était juste,
+      seulement lent. Mesuré en interrogeant la route : `…@vignette` rendait
+      l'original **octet pour octet**, 169 Ko de moyenne. Après correction,
+      18 Ko — un rapport de 9,2. Sur les quatre-vingts cartes d'un fil de vingt
+      salons : **13,2 Mo contre 1,4**.*
+      *Le cache, lui, était bon : `public, max-age=31536000, immutable`, vérifié
+      sur la réponse réelle, et l'URL ne porte ni jeton ni horodatage. L'appareil
+      garde ce qu'il a. Il gardait simplement des originaux.*
+      *`deposer_une_image` prend un dépôt facultatif, pour que le semis range
+      dans le sien sans refaire la réduction de son côté — une seconde copie du
+      traitement d'image diverge au premier réglage qu'on touche. 1 test,
+      2 mutations.*
 - [ ] **Le bandeau ne devient pas une ligne de confirmation**
       *La planche veut qu'il devienne « vous êtes en ligne · 41 créatrices
       peuvent vous réserver », puis disparaisse au bout de sept jours. Deux

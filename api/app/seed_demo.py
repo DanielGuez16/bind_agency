@@ -66,7 +66,7 @@ from app.schemas.collaboration import MotifDeDecision
 from app.services import auth as auth_service
 from app.services import availability as availability_service
 from app.services import booking as booking_service
-from app.services import booking_states, business_menu, eligibility
+from app.services import booking_states, business_menu, eligibility, storage
 from app.services import collaboration as collaboration_service
 from app.services import creator_profile as profile_service
 from app.services import metrics as metrics_service
@@ -243,6 +243,18 @@ async def _deposer_photo(
 ) -> tuple[str, bool, int]:
     """La vraie photo si elle est là, un dégradé sinon. Rend la clé, laquelle, et le poids.
 
+    **La vignette est rangée avec l'original, et elle ne l'était pas.** Le semis
+    appelait le dépôt d'objets directement ; `deposer_une_image` est ce qui
+    range les deux. Aucune image du jeu de démonstration n'avait donc de
+    vignette — cent deux fichiers, zéro `@vignette` — et le mur, qui la demande,
+    tombait à chaque fois sur le repli vers l'original : 169 Ko de moyenne au
+    lieu d'une quinzaine, pour quatre-vingts cartes.
+
+    Rien ne le disait. La route rend l'original quand la vignette manque, et ce
+    repli existe pour de bonnes raisons — il a sauvé les images déposées avant
+    que les vignettes existent. Ici il masquait leur absence totale : l'écran
+    était juste, seulement lent.
+
     **Le préfixe porte la nature du contenu.** `photos/genere/business/…` pour
     un dégradé, `photos/business/…` pour une vraie photo. La clé étant renvoyée
     telle quelle par l'API, un commerce qui n'a pas fourni sa couverture se
@@ -258,11 +270,13 @@ async def _deposer_photo(
     for candidat in (chemin, *replis):
         reelle = photos_reelles.lire(candidat, taille=taille_reelle)
         if reelle is not None:
-            cle = await depot.deposer(reelle.contenu, prefixe=f"photos/{famille}")
+            cle = await storage.deposer_une_image(
+                reelle.contenu, prefixe=f"photos/{famille}", depot=depot
+            )
             return cle, True, len(reelle.contenu)
 
     degrade = image(graine, taille_generee)
-    cle = await depot.deposer(degrade, prefixe=f"photos/genere/{famille}")
+    cle = await storage.deposer_une_image(degrade, prefixe=f"photos/genere/{famille}", depot=depot)
     return cle, False, len(degrade)
 
 
