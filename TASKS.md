@@ -1013,15 +1013,6 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       l'appelant manquait — une méthode d'API sans appelant, c'est-à-dire du
       code mort qui a l'air d'une fonctionnalité, et qui a tenu seize PR parce
       que chercher `no-show` dans le dépôt donnait quatre résultats rassurants*
-- [x] **Le commerce ne peut pas signaler une absence depuis l'application**
-      *Fait : `marquerAbsent` existe et la journée l'appelle.*
-      *Diagnostic corrigé : `absence_signalable_a` n'est pas un champ non
-      affiché, **c'est une route absente du client**. Le serveur a
-      `mark_no_show`, l'app ne l'appelle nulle part. Il faut l'entrée de route,
-      la méthode, et l'action sur la journée — ouverte par
-      `absence_signalable_a`, qui dit aussi à quelle heure elle s'ouvre, et
-      c'est le serveur qui refuse, jamais l'horloge du téléphone. Une tranche,
-      pas un rendu de champ*
 - [x] **Un plafond de durée sur chaque job de la CI**
       *Le pas `Navigateur` de la e2e est resté cinquante minutes puis vingt-cinq
       sans finir, sur deux exécutions consécutives, **sans échouer**. Le défaut
@@ -1894,18 +1885,6 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       dans le sien sans refaire la réduction de son côté — une seconde copie du
       traitement d'image diverge au premier réglage qu'on touche. 1 test,
       2 mutations.*
-- [ ] **Le bandeau ne devient pas une ligne de confirmation**
-      *La planche veut qu'il devienne « vous êtes en ligne · 41 créatrices
-      peuvent vous réserver », puis disparaisse au bout de sept jours. Deux
-      choses manquent : une **date de publication** pour la règle des sept
-      jours, et la **portée locale sur la journée** — elle n'est servie que sur
-      les rapports. En attendant, le bandeau s'efface simplement*
-- [ ] **Publier reste un appel explicite, et la planche l'ignore**
-      *Elle écrit que le bandeau « s'efface au dernier point coché », ce qui
-      suppose une publication automatique. `activerLeCommerce` existe et rien ne
-      l'appelle tout seul : le bandeau porte donc le geste sous un nom qui n'est
-      pas « go live ». Si la publication doit devenir automatique, c'est une
-      décision serveur, pas un habillage*
 - [x] **La configuration passe à deux portes, et la pause a un toit**
       *`ActivationScreen` est supprimé, avec ses tests et ses onze chaînes
       devenues orphelines : le bandeau porte ce qui manque et la publication,
@@ -2437,12 +2416,18 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       `is_effectively_available`. 1519 tests, 2 mutations*
 - [ ] **`en_ligne_depuis` doit rejoindre `VueDActivation`**
       *Le seul champ du résumé qui ne se dérive pas : il vient du journal
-      d'audit. La journée charge déjà `VueDActivation`, et le bandeau de mise
-      en ligne vit dessus — **la règle des sept jours attend cette date depuis
-      la v3**. Un second appel sur l'écran le plus ouvert du produit serait le
-      mauvais geste. Demandé, avec la recommandation de retirer
-      `compositionDuCommerce` ensuite : elle existait pour un menu qui n'existe
-      plus*
+      d'audit. La journée charge déjà `VueDActivation` dans le même
+      `Promise.all` — un champ de plus n'y coûte aucune requête, là où un second
+      appel sur l'écran le plus ouvert du produit serait le mauvais geste.*
+      ***Il ne rouvre pas à lui seul la ligne de confirmation**, et je l'avais
+      écrit trop vite. Cette ligne est tranchée : les deux données manquent, la
+      date **et** la portée locale, et « une ligne qui affirmerait l'une ou
+      l'autre à l'estime serait une confirmation fausse ». La date donne une
+      origine à la règle des sept jours, rien de plus — la phrase que la planche
+      veut écrire a besoin de la paire. Qui prend la date décide en même temps
+      de la portée, ou le bandeau reste ce qu'il est.*
+      *Demandé, avec la recommandation de retirer `compositionDuCommerce`
+      ensuite : elle existait pour un menu qui n'existe plus*
 - [ ] **Neuf planches d'écrans portent encore la v1.0**
       *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
       passés en v3, dans la palette Ambre. Les autres suivent l'ordre du

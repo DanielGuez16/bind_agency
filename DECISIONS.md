@@ -10302,3 +10302,32 @@ charge déjà et sur laquelle vit le bandeau de mise en ligne. **La règle des s
 jours l'attend depuis la v3** — c'était écrit dans `TASKS.md` le jour où le
 bandeau a été composé sans elle. Demandé plutôt qu'obtenu par un second appel
 sur l'écran le plus ouvert du produit.
+
+---
+
+## 2026-08-24 — Trois entrées dupliquées, et une décision que j'ai rouverte pour rien
+
+**`TASKS.md` portait trois blocs en double**, chacun dans la même forme : une
+version tranchée en haut, et la copie périmée d'origine plus bas. Deux d'entre
+elles étaient encore décochées alors que la décision était prise.
+
+C'est ce qui m'a fait écrire que la règle des sept jours « attend une date
+depuis la v3 ». Elle n'attend rien : elle est **tranchée**, et le texte de la
+version à jour dit pourquoi — les deux données manquent, la date de publication
+et la portée locale, et « une ligne qui affirmerait l'une ou l'autre à l'estime
+serait une confirmation fausse, ce qui est pire que l'absence de confirmation ».
+
+`en_ligne_depuis` donne donc une **origine** à la règle des sept jours, et rien
+de plus. La phrase que la planche veut écrire a besoin de la paire ; qui prend
+la date décide en même temps de la portée, ou le bandeau reste ce qu'il est.
+
+**Le fichier est le canal entre les conversations**, et c'est ce qui rend un
+doublon coûteux : une copie décochée d'une décision prise fait refaire un
+arbitrage déjà rendu. C'est exactement ce qui vient de m'arriver — j'ai lu la
+copie, pas l'originale.
+
+La cause est la même que celle déjà écrite dans `CLAUDE.md` pour les
+suppressions : `TASKS.md` est une liste, deux sessions y ajoutent, et une
+résolution qui garde les deux côtés duplique un bloc au lieu d'en perdre un.
+Garder les deux reste la bonne règle — mais un doublon se relit, et celui-ci a
+tenu assez longtemps pour tromper quelqu'un.
