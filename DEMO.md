@@ -44,11 +44,13 @@ Le développement local ne bouge pas : `make dev`, `make app`, `make seed`, la
 base sur le port 5434. C'est là qu'on développe ; l'environnement en ligne est
 là qu'on montre.
 
-**Deux attentes à connaître.** L'API s'endort après quinze minutes sans trafic :
-la première ouverture met environ une minute — l'écran reste sur son
-chargement — les suivantes sont immédiates. Et le projet Supabase se met en
-pause après sept jours sans activité ; un clic dans son tableau de bord le
-réveille.
+**Une attente à connaître.** Le projet Supabase se met en pause après sept
+jours sans activité ; un clic dans son tableau de bord le réveille.
+
+**L'API, elle, ne dort plus.** Elle est passée en `starter` : la campagne avait
+rapporté la lenteur comme premier grief, et la mesure a tranché — 17 ms de
+réseau, mais 171 ms de péage sur chaque requête et 1,9 s sur la connexion, du
+hachage sur un demi-processeur. Voir `render.yaml`.
 
 ### Remettre le jeu de données à zéro, à distance
 
@@ -111,11 +113,12 @@ curl -s --max-time 90 https://bind-agency.onrender.com/api/v1/health
 
 doit répondre `{"status":"ok","dependencies":{"database":"ok"},"failed":[]}`.
 
-**`--max-time 90`, et ce n'est pas une précaution de style.** Le service dort
-après une période sans trafic ; le premier appel le réveille et met près d'une
-minute. Sans délai large, `curl` rend une réponse **vide** — pas une erreur —
-et l'on croit le service mort alors qu'il démarre. Vérifié le 13/08/2026 : vide
-à 25 secondes, correct à 90.
+**`--max-time 90` reste, bien que le service ne dorme plus.** Il dormait, et le
+premier appel mettait près d'une minute à le réveiller ; sans délai large,
+`curl` rendait une réponse **vide** — pas une erreur — et l'on croyait le
+service mort alors qu'il démarrait. Vérifié le 13/08/2026 : vide à 25 secondes,
+correct à 90. Un déploiement redémarre le service pour les mêmes raisons, et le
+délai ne coûte rien quand la réponse arrive en 400 ms.
 
 ---
 
