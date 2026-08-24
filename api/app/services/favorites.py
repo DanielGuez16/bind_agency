@@ -29,7 +29,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Business, CatalogItem, CreatorFavorite, Tier, TierOffer
-from app.models.enums import BusinessStatus
+from app.models.enums import BusinessStatus, ContentFormat, Platform
 from app.services import eligibility, outbox
 
 
@@ -66,6 +66,30 @@ class EtatDuFavori(StrEnum):
 
 
 @dataclass(frozen=True, slots=True)
+class PalierDuFavori:
+    """Le palier qui ouvrirait **cette** prestation, et ce qui en sépare encore.
+
+    **Le plus proche parmi les siens, et non le plus proche tout court.** La vue
+    des paliers rend déjà « votre prochain palier » ; le réutiliser ici ferait
+    écrire « 18 000 abonnés, et il s'ouvre » d'un favori que ce palier n'ouvre
+    pas — c'est précisément la promesse que l'écran est construit pour ne pas
+    faire. Une prestation offerte au seul reel se juge sur le reel, même si le
+    story est plus proche.
+
+    `ecart` est nul quand l'obstacle n'est pas un nombre d'abonnés : un jeton
+    mort, un relevé trop vieux, une revue en cours. « Il vous manque 431 200
+    secondes » ne veut rien dire, et l'écran doit alors dire autre chose.
+    """
+
+    tier_id: uuid.UUID
+    platform: Platform
+    content_format: ContentFormat
+    #: Combien d'abonnés il reste à faire sur le réseau de ce palier. `None`
+    #: quand ce n'est pas ce qui bloque.
+    abonnes_manquants: int | None
+
+
+@dataclass(frozen=True, slots=True)
 class FavoriVu:
     """Un favori, avec ce qu'il faut pour le rendre et pour savoir s'il vit."""
 
@@ -79,6 +103,11 @@ class FavoriVu:
     currency: str
     photo_key: str | None
     etat: EtatDuFavori
+    #: Le palier qui l'ouvrirait. **Servi seulement quand l'état est
+    #: `hors_palier`** : c'est le seul cas où la question se pose, et le seul
+    #: état sur lequel la créatrice peut agir. Nul partout ailleurs — un salon
+    #: en pause ne se débloque pas en gagnant des abonnés.
+    palier_requis: PalierDuFavori | None
 
 
 async def ajouter(
@@ -239,15 +268,69 @@ async def lister(session: AsyncSession, *, creator_id: uuid.UUID) -> tuple[Favor
             price_cents=article.price_cents,
             currency=devise,
             photo_key=article.photo_key,
-            etat=_etat(
-                article=article,
-                statut_du_salon=statut,
-                paliers_de_l_article=paliers_par_article.get(article.id, set()),
-                paliers_ouverts=ouverts,
+            etat=(
+                etat := _etat(
+                    article=article,
+                    statut_du_salon=statut,
+                    paliers_de_l_article=paliers_par_article.get(article.id, set()),
+                    paliers_ouverts=ouverts,
+                )
+            ),
+            palier_requis=(
+                _palier_requis(verdict, paliers_par_article.get(article.id, set()))
+                if etat is EtatDuFavori.HORS_PALIER
+                else None
             ),
         )
         for article, business_id, business_name, statut, devise in lignes
     )
+
+
+def _palier_requis(
+    verdict: eligibility.Eligibilite, paliers_de_l_article: set[uuid.UUID]
+) -> PalierDuFavori | None:
+    """Le palier fermé le plus proche **parmi ceux de cette prestation**.
+
+    L'ordre est celui de la vue des paliers, et pour la même raison : d'abord le
+    moins d'obstacles, puis le plus petit écart d'abonnés. Deux comptes bloqués
+    pour des raisons différentes ne se comparent pas par leur nombre d'abonnés
+    seul — celui qui n'a qu'un relevé à attendre est plus proche que celui à qui
+    il manque dix mille abonnés.
+
+    Nul quand aucun accès fermé ne correspond : une prestation offerte à un
+    palier dont la créatrice n'a pas le réseau du tout n'a pas d'écart à
+    montrer, et inventer un chiffre vaudrait moins que se taire.
+    """
+    candidats = [
+        acces
+        for acces in verdict.acces
+        if acces.tier_id in paliers_de_l_article and not acces.accessible
+    ]
+    if not candidats:
+        return None
+
+    def rang(acces: eligibility.AccesPalier) -> tuple[int, int]:
+        manque = _abonnes_manquants(acces)
+        return (len(acces.obstacles), manque if manque is not None else 0)
+
+    proche = min(candidats, key=rang)
+    return PalierDuFavori(
+        tier_id=proche.tier_id,
+        platform=proche.platform,
+        content_format=proche.content_format,
+        abonnes_manquants=_abonnes_manquants(proche),
+    )
+
+
+def _abonnes_manquants(acces: eligibility.AccesPalier) -> int | None:
+    """L'écart d'abonnés, quand c'est lui qui bloque. Nul sinon."""
+    for obstacle in acces.obstacles:
+        if (
+            obstacle.raison is eligibility.RaisonRefus.NOT_ENOUGH_FOLLOWERS
+            and obstacle.ecart is not None
+        ):
+            return int(obstacle.ecart)
+    return None
 
 
 def _etat(

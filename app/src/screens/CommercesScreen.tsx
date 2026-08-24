@@ -29,7 +29,7 @@
 import { useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { useApi, type CommerceVuParLAdministration } from '../api';
+import { useApi, type CommerceVuParLAdministration, type ListeDesCommerces } from '../api';
 import {
   EmptyState,
   SkeletonLignes,
@@ -40,6 +40,7 @@ import {
   Texte,
   type Colonne,
 } from '../components';
+import { formatNumber } from '../format';
 import { useI18n } from '../i18n';
 import { motion, radius, useColors } from '../theme';
 import { Ecran } from './Ecran';
@@ -91,7 +92,7 @@ const COLONNES = (t: (cle: string) => string): Colonne[] => [
 
 export function CommercesScreen() {
   const { api } = useApi();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const c = useColors();
 
   /**
@@ -111,10 +112,10 @@ export function CommercesScreen() {
     return () => clearTimeout(minuteur);
   }, [saisie, recherche]);
 
-  const requete = useRequete<CommerceVuParLAdministration[]>(
+  const requete = useRequete<ListeDesCommerces>(
     (signal) => api.commercesAdmin(recherche || undefined, signal),
     {
-      estVide: (commerces) => commerces.length === 0,
+      estVide: (liste) => liste.items.length === 0,
       dependances: [recherche],
       // **Pas de cache.** Un état de salon change sous nos yeux le jour où on
       // vient le débloquer, et c'est ce jour-là qu'on ouvre cet écran.
@@ -146,7 +147,7 @@ export function CommercesScreen() {
         />
       }
     >
-      {(commerces) => (
+      {({ items: commerces, total }) => (
         <View style={{ gap: 14 }}>
           <View
             style={{
@@ -176,12 +177,26 @@ export function CommercesScreen() {
               il dit le plafond **avec son remède** — resserrer le nom plutôt
               que défiler. Sans le remède, la phrase constate une limite sans
               donner de conduite, et un salon au-delà du centième se lit comme
-              un salon qui n'existe pas. */}
+              un salon qui n'existe pas.
+
+              **Le total vient du serveur, jamais des lignes rendues.** « 100
+              salons » était tout ce que l'écran pouvait dire d'une recherche
+              qui en ramenait sept cent quarante-deux, et c'est ce chiffre-là
+              qui donne au plafond son sens : sans lui la phrase dit qu'on
+              tronque, sans dire de combien. */}
           <Texte variante="type.caption" couleur="ink.soft" testID="compte-commerces">
-            {commerces.length >= PLAFOND
-              ? t('admin.commercesPlafond', { count: PLAFOND })
+            {total > commerces.length
+              ? t('admin.commercesCompteSurTotal', {
+                  montres: formatNumber(commerces.length, locale),
+                  total: formatNumber(total, locale),
+                })
               : t('admin.commercesCompte', { count: commerces.length })}
           </Texte>
+          {total > commerces.length ? (
+            <Texte variante="type.caption" couleur="ink.soft" testID="plafond-commerces">
+              {t('admin.commercesPlafond', { count: PLAFOND })}
+            </Texte>
+          ) : null}
 
           {/* **Lire une ligne n'ouvre rien**, et c'est la propriété qui permet
               de rendre cette liste large. La dire vaut mieux que la faire

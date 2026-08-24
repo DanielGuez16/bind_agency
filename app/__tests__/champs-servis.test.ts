@@ -53,6 +53,20 @@ const TYPES = join(SRC, 'api', 'types.ts');
  *   table un tapis.
  */
 const NON_RENDUS: Record<string, string> = {
+  // **Les deux champs de la planche, servis avant leurs écrans.** La
+  // composition se fait dans l'autre conversation ; la route sert d'abord pour
+  // qu'aucun écran n'ait à les déduire — et c'est justement la déduction qui
+  // ferait la promesse fausse dans le cas du palier.
+  //
+  // `created_at` : la colonne « inscrit le » de la liste d'administration.
+  // `palier_requis` : « Reel tier · 18 000 abonnés, et il s'ouvre ». Sans lui
+  // l'écran écrit l'écart sans pouvoir dire qu'il ouvre *celui-là*, et c'est la
+  // seule promesse que cet écran est construit pour ne pas faire.
+  //
+  // Les lignes se retirent au premier lecteur : la garde les réclame elle-même.
+  'CommerceVuParLAdministration.created_at': 'a-instruire',
+  'Favori.palier_requis': 'a-instruire',
+  'PalierDuFavori.abonnes_manquants': 'a-instruire',
   // Les deux nombres du résumé de composition. Ils vivaient sous les portes de
   // « Your offer », que la v3.1 retire — deux entrées de rang égal dans la
   // barre latérale ne portent pas de compteur. Voir `compositionDuCommerce`

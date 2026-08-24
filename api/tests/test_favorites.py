@@ -656,3 +656,53 @@ async def test_la_fiche_porte_l_etat_du_coeur_ligne_par_ligne(
     par_article = {offre.catalog_item_id: offre.est_favori for offre in fiche.offres}
     assert par_article[decor["item"].id] is True
     assert par_article[autre.id] is False
+
+
+async def test_le_palier_requis_est_celui_de_la_prestation_pas_le_plus_proche(
+    session: AsyncSession,
+) -> None:
+    """**Le palier qui ouvre celui-ci, et non le prochain de la créatrice.**
+
+    Sans ce champ l'écran écrit « 7 000 abonnés » sans pouvoir dire que ça ouvre
+    *ce* favori — et avec le mauvais champ il l'écrirait en promettant une
+    ouverture qui n'aurait pas lieu. C'est la seule promesse que cet écran est
+    construit pour ne pas faire.
+
+    **Le décor est divergent par construction.** La prestation n'est offerte
+    qu'au reel — 10 000 abonnés — et la créatrice en a 3 000, ce qui lui laisse
+    le story grand ouvert. Une implémentation qui reprendrait « le prochain
+    palier » de la vue des paliers rendrait donc un palier que cette prestation
+    n'ouvre pas, et le test tombe. Sur une prestation offerte à tous les
+    paliers, les deux implémentations rendraient la même chose.
+    """
+    decor = await monter_le_decor(session, tier_id=REEL, followers=3_000)
+    await favorites.ajouter(
+        session, creator_id=decor["createur"].id, catalog_item_id=decor["item"].id
+    )
+    await session.flush()
+
+    favori = (await favorites.lister(session, creator_id=decor["createur"].id))[0]
+
+    assert favori.etat is favorites.EtatDuFavori.HORS_PALIER
+    assert favori.palier_requis is not None, "l'écran ne saurait pas quoi promettre"
+    assert favori.palier_requis.tier_id == REEL, (
+        "le palier rendu n'est pas celui qui ouvre cette prestation"
+    )
+    assert favori.palier_requis.abonnes_manquants == 7_000
+
+
+async def test_un_favori_reservable_ne_porte_aucun_palier_a_atteindre(
+    session: AsyncSession,
+) -> None:
+    """L'autre bord. Un champ toujours servi ferait écrire « encore 7 000
+    abonnés » sous une prestation qu'elle peut réserver aujourd'hui."""
+    decor = await monter_le_decor(session)
+    await favorites.ajouter(
+        session, creator_id=decor["createur"].id, catalog_item_id=decor["item"].id
+    )
+    await session.flush()
+
+    favori = (await favorites.lister(session, creator_id=decor["createur"].id))[0]
+
+    assert favori.etat is favorites.EtatDuFavori.RESERVABLE
+    assert favori.palier_requis is None
