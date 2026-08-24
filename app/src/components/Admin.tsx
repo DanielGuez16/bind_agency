@@ -11,7 +11,7 @@
  * `DecisionBar` demande un motif à chaque action qui n'est pas une approbation,
  * et ne peut pas être appelée sans.
  */
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 
 import { useRaccourcis } from '../shell/useRaccourcis';
@@ -67,22 +67,43 @@ export function TableRow({
   valeurs,
   actif,
   onPress,
+  fin,
   testID,
 }: {
   colonnes: Colonne[];
   valeurs: Record<string, string>;
   actif?: boolean;
   onPress?: () => void;
+  /**
+   * Ce que porte la fin de rangée, quand la valeur ne suffit pas.
+   *
+   * **Une fente plutôt qu'une seconde table.** L'annuaire d'administration
+   * pose un unique mot cliquable au bout de chaque ligne ; recopier la
+   * géométrie des colonnes à côté pour l'obtenir est exactement ainsi que deux
+   * tables finissent par ne plus s'aligner. La colonne correspondante se
+   * déclare dans `colonnes`, avec un libellé vide.
+   */
+  fin?: ReactNode;
   testID?: string;
 }) {
   const c = useColors();
+
+  /**
+   * **Sans geste, ce n'est pas un bouton.** La rangée était un `Pressable` de
+   * rôle « button » même sans `onPress` : un lecteur d'écran annonçait donc un
+   * bouton sur chaque ligne d'une table qui n'en portait aucun. C'est le
+   * contraire de la retenue qu'on cherche — la retenue s'obtient en n'offrant
+   * qu'une porte, pas en offrant une porte qui ne s'ouvre pas.
+   */
+  const Cadre = onPress ? Pressable : View;
+
   return (
-    <Pressable
+    <Cadre
       testID={testID}
-      accessibilityRole="button"
-      accessibilityState={{ selected: actif }}
-      onPress={onPress}
-      style={({ pressed }) => ({
+      {...(onPress
+        ? { accessibilityRole: 'button' as const, accessibilityState: { selected: actif }, onPress }
+        : {})}
+      style={({ pressed }: { pressed?: boolean }) => ({
         flexDirection: 'row',
         minHeight: 36,
         alignItems: 'center',
@@ -112,7 +133,8 @@ export function TableRow({
           </Texte>
         </View>
       ))}
-    </Pressable>
+      {fin}
+    </Cadre>
   );
 }
 

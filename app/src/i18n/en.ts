@@ -754,10 +754,16 @@ export const en = {
     commercesTitre: 'Salons',
     commercesRecherche: 'Search by name',
     commercesRecherchePlaceholder: 'Vela Nail Studio',
+    commercesColonneNom: 'Salon',
+    commercesColonneQuartier: 'Neighbourhood',
+    commercesColonneEtat: 'State',
+    commercesCompte: '{{count}} salons · this search',
+    commercesLireTitre: 'Reading a row opens nothing',
+    commercesLireCorps: 'A name, a neighbourhood and a state are all this screen shows. Seeing a salon’s bookings or catalogue needs a take-over — motivated, named, time-boxed, and listed to the salon.',
     commercesVideTitre: 'No salon',
     commercesVide: 'No salon has been created yet.',
     commercesVideRecherche: 'No salon matches this name. Try a shorter one.',
-    commercesPlafond: 'Showing the first {{count}}. Search by name to find the others.',
+    commercesPlafond: 'Showing the first {{count}}. Narrow the name rather than scroll — beyond that, a salon that exists reads as one that does not.',
     commerceDraft: 'Prepared on site',
     commerceOnboarding: 'Signing up',
     commerceActive: 'Open',
@@ -1005,6 +1011,13 @@ export const en = {
     // transactionnel — déclenché par celui qui le reçoit. Celui-ci part trois
     // semaines après un cœur posé, sans que personne n'ait rien demandé.
     avisCorps: 'Tell me when something I saved opens up to me',
+    // **La seule ligne de l'écran qui porte un geste**, et elle ne promet rien
+    // de neuf : le chiffre vient de la vue des paliers, celle que l'écran des
+    // paliers rend déjà. Elle situe, elle n'annonce pas.
+    ecartJusquAuPalier: '{{palier}} tier · {{ecart}} followers to go',
+    voirMesPaliers: 'See your tiers',
+    // Il compte ce à quoi il sert, donc il se justifie sans notice.
+    avisEnAttente: '{{count}} of these are waiting on something',
     avisLabel: 'Notifications about saved services',
     retirer: 'Remove {{nom}} from saved',
     // **Quatre états, quatre conduites.** « Unavailable » les aurait tous
