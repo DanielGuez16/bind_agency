@@ -210,6 +210,32 @@ export class ApiClient {
   }
 
   /**
+   * Vrai si ce mot de passe est bien celui du compte.
+   *
+   * **Le coffre n'est pas touché.** `connecter` range les jetons, ce qui
+   * ferait tourner la session en cours pour une simple vérification. Ici on ne
+   * garde rien : on demande au serveur s'il accepte, et on jette la réponse.
+   *
+   * **Par la route de connexion, faute de mieux.** La suppression de compte ne
+   * prend pas de corps ; c'est là qu'un mot de passe devrait être vérifié, et
+   * c'est demandé. En attendant, la seule vérification honnête disponible est
+   * celle-ci — un champ qui accepterait n'importe quoi aurait l'air d'un
+   * contrôle sans en être un, ce qui est pire qu'un champ absent.
+   */
+  async verifierLeMotDePasse(email: string, motDePasse: string): Promise<boolean> {
+    try {
+      await this.request<Jetons>(routes.connexion(), {
+        methode: 'POST',
+        corps: { email, password: motDePasse },
+        publique: true,
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * Ferme la session **localement quoi qu'il arrive**.
    *
    * Un serveur injoignable ne doit pas laisser quelqu'un connecté sur un

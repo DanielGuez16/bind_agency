@@ -1100,6 +1100,10 @@ export const en = {
     // ce qui reste, le delai de retour, ce qui bloque.
     supprimerCorps: 'Your account is anonymised, not erased. Reviews you took part in belong to the salons that wrote them, and the audit trail cannot be rewritten. You have thirty days to come back before it becomes final. A booking still open has to be honoured or cancelled first.',
     supprimerAction: 'Delete my account',
+    supprimerIdentifiant: 'Type your email to confirm',
+    supprimerMotDePasse: 'Your password',
+    supprimerMotDePasseFaux: 'That password is not right.',
+    supprimerRenoncer: 'Never mind',
     supprimerEnCoursTitre: 'Deletion under way',
     supprimerEnCoursCorps: 'Your account will be anonymised on {{quand}}. Until then nothing changes — you can keep booking, and you can still change your mind.',
     supprimerAnnuler: 'Keep my account',
