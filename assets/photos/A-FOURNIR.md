@@ -5,6 +5,14 @@ qu'un fichier n'est pas là, le semis fabrique un dégradé à sa place — rien
 casse, et il te dit à la fin lesquels manquent. Tu peux donc en déposer trois
 aujourd'hui et le reste demain.
 
+**Une couverture manquante retombe d'abord sur la photo verticale du salon.**
+`couvertures-portrait/NN.jpg` porte une photographie du bon sujet pour chacun
+des dix-neuf salons ouverts ; quand `commerces/<salon>/cover.jpg` n'existe pas,
+c'est elle qui sert, recadrée en 16:9. Le recadrage est franc — un 2:3 ramené en
+paysage perd le haut et le bas — donc une couverture dédiée reste meilleure, et
+elle est toujours réclamée ci-dessous. Mais une photo du bon commerce mal cadrée
+vaut mieux qu'un aplat qui n'est celle de personne.
+
 **Ce que tu as besoin de savoir avant de télécharger.**
 
 - Source recommandée : [Unsplash](https://unsplash.com), [Pexels](https://pexels.com).
