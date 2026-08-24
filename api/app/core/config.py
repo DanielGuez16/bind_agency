@@ -192,6 +192,17 @@ class Settings(BaseSettings):
     #: Rayon du fil, en mètres. Dix kilomètres : au-delà, un créateur de Miami
     #: ne se déplace pas pour un soin, et le fil se remplit de bruit.
     feed_radius_metres: int = 10_000
+    #: Combien de jours la ligne de confirmation de mise en ligne reste à
+    #: l'écran. Passé ce délai elle n'a plus rien à dire, et une ligne qui
+    #: demeure après avoir été lue est la définition d'un bandeau dont on ne
+    #: comprend plus l'objet.
+    #:
+    #: **Servi, et non écrit deux fois.** La règle vivait dans l'app seule ;
+    #: elle décide maintenant aussi si le serveur calcule la portée locale, et
+    #: deux copies d'un même délai finissent par diverger — le jour où elles le
+    #: font, l'écran montre « en ligne depuis 8 jours » sans le nombre qui
+    #: rassure, ce qui est le pire des deux états.
+    activation_confirmation_days: int = 7
     #: Les élargissements proposés quand le fil est maigre, en mètres.
     #:
     #: En configuration, comme tout seuil. Le fil ne les propose que s'ils sont

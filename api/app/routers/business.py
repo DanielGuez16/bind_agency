@@ -5,12 +5,14 @@ la découverte côté créateur, en phase 5 : les deux n'auront pas les mêmes r
 d'accès et n'ont rien à faire sur le même chemin.
 """
 
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 import sqlalchemy as sa
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.dependencies import (
     CurrentBusiness,
     CurrentUser,
@@ -20,7 +22,7 @@ from app.core.dependencies import (
 from app.core.errors import ErrorCode, api_error
 from app.integrations.geocoding import Geocoder, get_geocoder
 from app.models import Booking, Business, BusinessMember
-from app.models.enums import BookingStatus, UserRole
+from app.models.enums import BookingStatus, BusinessStatus, UserRole
 from app.schemas.activation import EtapeRead, VueDActivationRead
 from app.schemas.business import (
     BusinessCreate,
@@ -32,6 +34,7 @@ from app.schemas.business import (
 )
 from app.services import business as business_service
 from app.services import composition as composition_service
+from app.services import portee_locale
 from app.services.audit import Actor
 
 router = APIRouter(prefix="/business", tags=["business"])
@@ -192,12 +195,39 @@ async def activation_steps(business: CurrentBusiness, session: SessionDep) -> Vu
     répond à « depuis quand » là où le statut répond à « où en est-on ». Elle
     vivait sur la composition, dont plus rien ne lit la réponse ; la journée
     charge cette vue-ci, donc elle arrive sans requête de plus.
+
+    **La portée locale complète la phrase que la date commence.** « En ligne
+    depuis trois jours » est vrai et ne rassure personne ; « et 41 créatrices
+    peuvent vous réserver » est ce qu'un salon qui vient d'apparaître veut
+    savoir. Elle n'est calculée que dans la fenêtre de confirmation : quatre
+    requêtes et une boucle sur le quartier n'ont pas à se payer à chaque
+    ouverture de la journée pendant toute la vie du salon.
     """
     etapes = await business_service.etapes_activation(session, business=business)
+    depuis = await composition_service.derniere_mise_en_ligne(session, business.id)
+    jours = get_settings().activation_confirmation_days
+
+    # **Calculé seulement dans la fenêtre où il se lit.** La portée locale coûte
+    # quatre requêtes et une boucle sur le quartier ; les payer à chaque
+    # ouverture de la journée, pendant toute la vie du salon, pour une ligne qui
+    # disparaît au bout d'une semaine, serait le mauvais sens exact.
+    dans_la_fenetre = (
+        business.status is BusinessStatus.ACTIVE
+        and depuis is not None
+        and datetime.now(UTC) - depuis <= timedelta(days=jours)
+    )
+    portee = (
+        await portee_locale.autour_du_commerce(session, business=business)
+        if dans_la_fenetre
+        else None
+    )
+
     return VueDActivationRead(
         status=business.status,
         etapes=[EtapeRead.model_validate(etape) for etape in etapes],
-        en_ligne_depuis=await composition_service.derniere_mise_en_ligne(session, business.id),
+        en_ligne_depuis=depuis,
+        createurs_qui_peuvent_reserver=portee.peuvent_reserver if portee else None,
+        confirmation_jours=jours,
     )
 
 
