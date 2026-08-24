@@ -101,6 +101,8 @@ async def list_my_businesses(
                 Business.id,
                 Business.name,
                 Business.timezone,
+                Business.neighborhood,
+                Business.address,
                 sa.func.count(Booking.id).label("decisions"),
             )
             .join(BusinessMember, BusinessMember.business_id == Business.id)
@@ -112,15 +114,26 @@ async def list_my_businesses(
                 ),
             )
             .where(BusinessMember.user_id == user.id)
-            .group_by(Business.id, Business.name, Business.timezone)
+            .group_by(
+                Business.id,
+                Business.name,
+                Business.timezone,
+                Business.neighborhood,
+                Business.address,
+            )
             .order_by(Business.name)
         )
     ).all()
     return [
         CommerceDeLAppartenance(
-            id=identifiant, name=nom, timezone=fuseau, decisions_en_attente=decisions
+            id=identifiant,
+            name=nom,
+            timezone=fuseau,
+            neighborhood=quartier,
+            address=adresse,
+            decisions_en_attente=decisions,
         )
-        for identifiant, nom, fuseau, decisions in lignes
+        for identifiant, nom, fuseau, quartier, adresse, decisions in lignes
     ]
 
 

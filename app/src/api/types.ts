@@ -1472,6 +1472,38 @@ export type CommerceDeLUtilisateur = {
   /** Nul hors des quartiers ouverts : l'adresse prend alors le relais. */
   neighborhood: Neighborhood | null;
   address: string | null;
+  /**
+   * Combien de réservations attendent une décision de ce salon.
+   *
+   * **C'est ce qui fait basculer un gérant qui ne savait pas qu'on
+   * l'attendait.** Sans lui la liste reste utilisable et perd sa raison d'être
+   * ouverte : deux noms de salons ne disent pas lequel a besoin de vous ce
+   * matin.
+   *
+   * Le même compte que la file « à trancher » de la journée, et non un compte
+   * du jour : une demande d'avant-hier attend toujours, et l'écarter ferait
+   * disparaître précisément celle qui a le plus attendu.
+   */
+  decisions_en_attente: number;
+};
+
+/**
+ * Un salon dans la liste que l'administration parcourt pour en reprendre un.
+ *
+ * **De quoi choisir, et rien de plus.** Ce n'est pas la fiche du salon : elle
+ * se lit derrière une reprise ouverte. Ce qu'il faut ici est de reconnaître le
+ * bon parmi cent, et de savoir si on est déjà dedans.
+ */
+export type CommerceVuParLAdministration = {
+  business_id: string;
+  name: string;
+  category: BusinessCategory;
+  neighborhood: Neighborhood | null;
+  status: string;
+  /** Vrai quand **l'appelant** a une reprise vivante sur ce salon. Sur
+   *  l'appelant et non sur le salon : savoir qu'un collègue est entré ne change
+   *  pas ce que je peux faire. */
+  reprise_en_cours: boolean;
 };
 
 /** Une photo de la galerie d'un commerce. La clé, jamais une adresse. */

@@ -200,6 +200,12 @@ class CommerceDeLAppartenance(BaseModel):
     id: uuid.UUID
     name: str
     timezone: str
+    #: Le quartier et l'adresse : le sélecteur les lit pour distinguer deux
+    #: salons du même nom. **Ils étaient déjà servis** — les retirer en ajoutant
+    #: le compte aurait cassé la ligne du sélecteur sans qu'aucun test du
+    #: serveur ne le dise.
+    neighborhood: Neighborhood | None
+    address: str | None
     #: Combien de réservations attendent une décision de ce salon.
     #:
     #: **C'est ce qui fait basculer un gérant qui ne savait pas qu'on

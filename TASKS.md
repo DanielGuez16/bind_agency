@@ -1830,6 +1830,28 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       propre raison — un refus ne se lit pas comme un compte injoignable.*
       *6 tests, 5 mutations. Nom du champ repris de la session qui rendra
       l'interrupteur, sur l'écran des favoris et non dans les réglages.*
+- [x] **Deux listes qui manquaient : les décisions par salon, et les salons de l'administration**
+      *`decisions_en_attente` sur `/me/businesses`. C'est ce qui fait basculer
+      un gérant qui ne savait pas qu'on l'attendait — deux noms de salons ne
+      disent pas lequel a besoin de lui ce matin. En une requête groupée : la
+      coquille appelle cette route à chaque ouverture, et c'est elle qui
+      retarde tout le reste.*
+      *Un **schéma à part** et non un champ de plus sur `BusinessRead` : le
+      compte n'a de sens que dans le sélecteur, et sur la fiche d'un salon qu'on
+      regarde déjà il répète ce que la journée affiche à côté.*
+      ***Et j'ai failli casser le sélecteur en l'écrivant.** Le premier jet ne
+      servait que `id`, `name` et `timezone` — `neighborhood` et `address`
+      étaient déjà là, et le sélecteur les lit pour distinguer deux salons du
+      même nom. Aucun test du serveur ne l'aurait dit : c'est le contrat de
+      l'app qui l'a signalé.*
+      ***`GET /admin/businesses`.** Le manque dépassait la mise en page :
+      l'écran de reprise était greffé sur la fiche de tournée, donc on ne
+      pouvait reprendre **que les salons venus du terrain**. Un salon inscrit
+      tout seul — ce que le produit veut rendre possible — était hors d'atteinte
+      du support. Tous les états, parce que celui en inscription est celui qu'on
+      vient débloquer. `reprise_en_cours` est celle de **l'appelant** : savoir
+      qu'un collègue est entré ne change pas ce que je peux faire, et l'afficher
+      inviterait à se demander pourquoi lui plutôt que moi. 5 tests, 4 mutations*
 - [ ] **Le bandeau ne devient pas une ligne de confirmation**
       *La planche veut qu'il devienne « vous êtes en ligne · 41 créatrices
       peuvent vous réserver », puis disparaisse au bout de sept jours. Deux

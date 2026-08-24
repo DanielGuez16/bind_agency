@@ -66,6 +66,7 @@ import type {
   FichePreparee,
   LienRemis,
   PorteeDeReprise,
+  CommerceVuParLAdministration,
   CompteDesReprises,
   Favori,
   RepriseDuCompte,
@@ -649,6 +650,20 @@ export class Api {
   /** Retire le favori. Sans erreur s'il n'y en avait pas. */
   retirerDesFavoris(catalogItemId: string) {
     return this.client.request<void>(routes.unFavori(catalogItemId), { methode: 'DELETE' });
+  }
+
+  /**
+   * Les salons que l'administration peut reprendre.
+   *
+   * **Tous les états**, et non les seuls ouverts : un salon en inscription est
+   * celui qu'on vient débloquer, un suspendu celui dont on vient comprendre
+   * pourquoi. La recherche porte sur le nom, sans accent ni casse.
+   */
+  commercesAdmin(recherche?: string, signal?: AbortSignal) {
+    return this.client.request<CommerceVuParLAdministration[]>(
+      routes.commercesAdmin(),
+      { signal, query: recherche ? { recherche } : undefined },
+    );
   }
 
   mesReprisesRecentes(signal?: AbortSignal) {
