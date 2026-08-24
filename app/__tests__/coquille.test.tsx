@@ -623,7 +623,14 @@ describe('aiguillage par rôle', () => {
       '/support-access',
     ];
     const OBJETS: Record<string, unknown> = {
-      '/me/tiers': { creator_id: 'u1', is_new_creator: true, paliers: [] },
+      // **Le score vit dans la réponse des paliers**, et l'audience le lit :
+      // sans lui, l'écran lève avant d'atteindre la ligne qu'on éprouve.
+      '/me/tiers': {
+        creator_id: 'u1',
+        is_new_creator: true,
+        paliers: [],
+        fiabilite: { reliability_score: null, composantes: null },
+      },
       '/me/bookings': { items: [], compteurs: {} },
       '/businesses': { commerces: [], obstacles: [] },
       '/bookings': {
@@ -640,6 +647,26 @@ describe('aiguillage par rôle', () => {
       // objet vide, sur lequel l'écran appelait `.map` — la garde tombait sur
       // un défaut du double, pas du produit.
       '/creators': [],
+      // **L'audience doit porter un compte**, sans quoi l'écran rend son état
+      // vide et la ligne vers les paliers n'existe pas. Un double qui rend une
+      // liste vide partout monte un écran qui n'est pas celui qu'on éprouve.
+      '/me/audience': [
+        {
+          social_account_id: 's1',
+          platform: 'instagram',
+          handle: '@lea.mrl',
+          status: 'connected',
+          verification_status: 'approved',
+          followers_count: 4200,
+          following_count: 300,
+          media_count: 120,
+          avg_views: 900,
+          engagement_rate: '3.10',
+          captured_at: '2026-08-22T09:00:00Z',
+          reconnectable: false,
+          token_expires_at: null,
+        },
+      ],
     };
 
     const fetchImpl = (async (url: RequestInfo | URL) => {
@@ -652,10 +679,14 @@ describe('aiguillage par rôle', () => {
         return rendre([{ id: 'b1', name: 'Ocean Beauty Studio' }]);
       }
       if (chemin.endsWith('/me')) return rendre({ ...UTILISATEUR, role });
+      // **La table nommée avant le repli générique.** `/me/audience` est dans
+      // les deux : sans cet ordre, la liste vide gagnerait et le décor
+      // n'aurait aucun effet.
+      const trouve = Object.entries(OBJETS).find(([fragment]) => chemin.includes(fragment));
+      if (trouve) return rendre(trouve[1]);
       if (LISTES.some((fragment) => chemin.includes(fragment))) return rendre([]);
 
-      const trouve = Object.entries(OBJETS).find(([fragment]) => chemin.includes(fragment));
-      return rendre(trouve ? trouve[1] : {});
+      return rendre({});
     }) as unknown as typeof fetch;
 
     function AvecNavigation() {
@@ -676,6 +707,27 @@ describe('aiguillage par rôle', () => {
   function onglets(): string[] {
     return Object.values(en.onglets).filter((libelle) => screen.queryAllByText(libelle).length > 0);
   }
+
+  it('la ligne de l’audience mène vraiment aux paliers', async () => {
+    /**
+     * **Le seul chemin vers les paliers depuis qu'ils ont quitté le fil**, et
+     * il ne menait nulle part : `navigate('paliers')` désignait un onglet qui
+     * n'a jamais existé. L'appui partait, React Navigation ignorait le nom, et
+     * rien ne bougeait — ce qui se lit exactement comme un texte non cliquable.
+     *
+     * **La garde des noms ne suffit pas à elle seule.** Elle dit que la
+     * destination est déclarée quelque part ; elle ne dit pas qu'on y arrive.
+     * Celle-ci appuie et regarde l'écran qui vient.
+     */
+    await monterPour('creator');
+
+    await fireEvent.press(screen.getAllByText(en.onglets.audience)[0]);
+    await waitFor(() => expect(screen.getByTestId('ecran-audience')).toBeTruthy());
+
+    await fireEvent.press(await screen.findByTestId('voir-mes-paliers'));
+
+    await waitFor(() => expect(screen.getByTestId('ecran-paliers')).toBeTruthy());
+  });
 
   it('le créateur voit ses quatre onglets, et aucun autre', async () => {
     await monterPour('creator');

@@ -9792,3 +9792,36 @@ fois pour que la mesure porte sur ce qui tourne.
 et c'est lui qui décide de la hauteur réelle ; la bascule n'est pas atteignable
 depuis l'accueil. Écrit dans le test plutôt que sous-entendu — une garde qui
 laisserait croire qu'elle couvre les deux serait pire que celle-ci.
+
+---
+
+## 2026-08-24 — Une destination qui n'existait pas, et le `as never` qui l'a permis
+
+**`navigate('paliers')` désignait un onglet qui n'a jamais existé.** Les onglets
+du créateur sont `parcours`, `audience`, `reservations` et `reglages` ; l'écran
+des paliers vit dans la pile du fil, sous `Paliers`. L'appui partait, React
+Navigation ignorait le nom, et rien ne bougeait — ce qui se lit exactement comme
+un texte non cliquable.
+
+C'était **le seul chemin vers les paliers** depuis que la revue les a sortis du
+fil. Le commentaire qui accompagne l'onglet le disait déjà : « sans ce passage,
+la seule route vers les paliers serait l'état vide du fil, c'est-à-dire
+accessible aux seuls créateurs qui n'ont rien à réserver ». Le passage existait
+et ne passait nulle part.
+
+**Le `as never` est ce qui l'a rendu possible.** Il existe parce que le
+conteneur n'est pas typé sur une liste de routes ; il efface du même coup la
+seule vérification qui aurait dit que le nom était faux. Une garde qui lit les
+noms rend cette vérification sans reconstruire le typage.
+
+**Deux gardes, parce qu'elles ne disent pas la même chose.** Celle des noms lit
+la source et vérifie que toute destination visée est déclarée quelque part — la
+cible imbriquée comprise, car `navigate('parcours', { screen: 'Paliers' })` en
+nomme deux et les deux peuvent être fausses. Elle ne dit pas qu'on y arrive.
+Celle de la coquille appuie et regarde l'écran qui vient.
+
+**Le double de la coquille rendait une liste vide pour l'audience**, donc
+l'écran montait son état vide et la ligne n'existait pas. Un décor qui répond
+`[]` à tout monte un écran qui n'est pas celui qu'on éprouve — et la table
+nommée passe maintenant avant le repli générique, sans quoi le décor n'aurait
+aucun effet.
