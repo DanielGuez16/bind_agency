@@ -65,6 +65,7 @@ from app.seed import (
     SeedRefused,
     verifier_la_cible,
 )
+from app.services import availability as availability_service
 from tests.conftest import _maintenance_dsn
 
 #: Ce que le semis produit, **dérivé de lui** et non recopié.
@@ -1495,6 +1496,65 @@ async def test_le_creneau_choisi_est_toujours_du_jour_courant(
             assert creneau.astimezone(fuseau).date() == maintenant.date(), (
                 f"{business.name} à {heure} h : créneau hors de la journée courante"
             )
+
+
+async def test_quand_la_journee_est_finie_c_est_le_dernier_creneau_qui_est_pris(
+    seed_conn: AsyncConnection,
+) -> None:
+    """**Le plus récent, et non n'importe lequel du jour.**
+
+    À 22 h, une journée de salon est pleine de créneaux passés : en prendre un
+    de neuf heures du matin remplirait l'écran aussi bien, et montrerait un
+    rendez-vous vieux de treize heures là où on veut voir ce qui vient de se
+    passer.
+
+    Une mutation a survécu faute de ce test : remplacer `max` par `min` posait
+    la réservation à l'ouverture, et les huit autres tests restaient verts.
+    """
+    from app.seed_demo import prochain_creneau_reservable
+
+    factory = async_sessionmaker(bind=seed_conn, expire_on_commit=False)
+    async with factory() as session:
+        business = await session.scalar(
+            sa.select(Business).where(Business.status == BusinessStatus.ACTIVE).limit(1)
+        )
+        assert business is not None, "aucun commerce actif : le jeu de données est vide"
+        item_id = await session.scalar(
+            sa.select(TierOffer.catalog_item_id)
+            .join(CatalogItem, CatalogItem.id == TierOffer.catalog_item_id)
+            .where(
+                TierOffer.business_id == business.id,
+                CatalogItem.requires_booking.is_(True),
+            )
+            .limit(1)
+        )
+        assert item_id is not None
+
+        fuseau = ZoneInfo(business.timezone)
+        # 22 h : tous les salons de Miami sont fermés, donc la branche du passé
+        # est la seule qui puisse répondre.
+        maintenant = datetime.now(fuseau).replace(hour=22, minute=0, second=0, microsecond=0)
+        debut = datetime.combine(maintenant.date(), time.min, tzinfo=fuseau)
+
+        choix = await prochain_creneau_reservable(session, business, item_id, maintenant=maintenant)
+        assert choix is not None
+        creneau, _ = choix
+
+        tous = [
+            c.starts_at
+            for c in await availability_service.creneaux_libres(
+                session,
+                business_id=business.id,
+                catalog_item_id=item_id,
+                depuis=debut,
+                horizon=timedelta(days=1),
+            )
+            if c.starts_at < maintenant
+        ]
+        assert tous, "aucun créneau passé ce jour-là : le décor ne prouverait rien"
+        assert creneau == max(tous), (
+            f"{business.name} : créneau {creneau} choisi alors que {max(tous)} est plus récent"
+        )
 
 
 def test_un_modele_versionne_qui_porte_des_valeurs_arrete_tout(tmp_path: Path) -> None:
