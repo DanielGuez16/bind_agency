@@ -238,7 +238,10 @@ export function Jauge({
   const pourcentage = Math.min(100, Math.max(0, part * 100));
 
   return (
-    <View style={{ height: hauteur, backgroundColor: c['bg.sunken'], overflow: 'hidden' }}>
+    // La piste de la barre. `bg.sunken` la peignait en noir : le remplissage
+    // se lisait alors comme un vide, et la piste comme le remplissage. C'est
+    // la même famille que les barres par palier des rapports.
+    <View style={{ height: hauteur, backgroundColor: c['bg.deep'], overflow: 'hidden' }}>
       <View
         testID={testID}
         accessibilityLabel={`${Math.round(pourcentage)}%`}

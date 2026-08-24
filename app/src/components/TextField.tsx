@@ -111,7 +111,7 @@ export function TextField({
               ? c['line.ink']
               : c['line.default'],
           backgroundColor: disabled
-            ? c['bg.sunken']
+            ? c['bg.deep']
             : enErreur
               ? c['status.danger.surface']
               : 'transparent',

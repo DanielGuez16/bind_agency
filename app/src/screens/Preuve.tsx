@@ -90,7 +90,7 @@ export function PreuveSoumise({
           height: APERCU,
           borderRadius: radius['radius.lg'],
           overflow: 'hidden',
-          backgroundColor: c['bg.sunken'],
+          backgroundColor: c['media.placeholder'],
           alignItems: 'center',
           justifyContent: 'center',
         }}
