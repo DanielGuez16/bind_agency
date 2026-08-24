@@ -666,7 +666,15 @@ function LignePrestation({
             une photo sans qu'aucun texte n'explique la fonction : le manque se
             signale seul, et c'est ce qui rend la photo par prestation trouvable
             sans la nommer. */}
-        <Vignette item={item} testID={`vignette-${item.id}`} />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('composition.deposerUnePhoto')}
+          onPress={() => setCorrection(true)}
+          testID={`vignette-geste-${item.id}`}
+          style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+        >
+          <Vignette item={item} testID={`vignette-${item.id}`} />
+        </Pressable>
         {large ? (
           <>
             {/* Le nom et la durée se séparent : en carte ils s'empilent, en
@@ -712,8 +720,11 @@ function LignePrestation({
         </Texte>
       ) : null}
 
-      {/* L'état, en toutes lettres et non seulement en cadre : le pointillé se
-          voit en parcourant, le mot se lit en s'arrêtant. */}
+      {/* **Le cadre pointillé annonçait un geste et n'en portait aucun.** Il
+          disait « il manque une photo » sur une `View` inerte : le manque se
+          signalait, et rien ne menait au dépôt — un gérant concluait qu'aucun
+          endroit n'existait, ce qui était vrai à un appui près. La vignette est
+          maintenant le geste, et le mot reste pour qui parcourt sans s'arrêter. */}
       {item.photo_key ? null : (
         <Texte variante="type.caption" couleur="ink.soft" testID={`photo-manque-${item.id}`}>
           {t('composition.photoManque')}

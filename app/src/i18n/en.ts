@@ -1125,6 +1125,7 @@ export const en = {
     // **Le manque se signale seul.** Aucun texte n'explique la fonction : un
     // cadre pointillé dans la liste, et cet état. Un intitulé « ajoutez une
     // photo » aurait décrit une capacité au lieu de la rendre évidente.
+    deposerUnePhoto: 'Add a photo',
     photoManque: 'Needs a photo',
     corriger: 'Correct',
     colonneNom: 'Service',
