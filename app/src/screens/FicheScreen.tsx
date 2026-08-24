@@ -15,16 +15,17 @@
  * preuve serait les découvrir trop tard.
  */
 import type { ReactNode } from 'react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Linking, Modal, Pressable, View } from 'react-native';
 
-import { useApi, type FichePublique, type OffreDeLaFiche } from '../api';
+import { useApi, type FichePublique, type OffreDeLaFiche, type Platform } from '../api';
 import {
   Button,
   Icone,
   LigneDeContrepartie,
   MediaFallback,
   SkeletonFiche,
+  StatusMessage,
   Texte,
   type NomIcone,
 } from '../components';
@@ -36,8 +37,9 @@ import { urlImage } from './FilScreen';
 import { elevationDeCarte, elevationFlottante, radius, useTheme } from '../theme';
 import { Ecran } from './Ecran';
 import { EcartAuSeuil } from './PaliersScreen';
-import { nomDePlateforme } from './obstacle';
+import { glypheDePlateforme, nomDePlateforme } from './obstacle';
 import { AGES } from './cacheDesReponses';
+import { useFavorisEnVol } from './mur/favorisEnVol';
 import { useRequete } from './useRequete';
 import { VisionneuseDeCarte, VisionneuseDeGalerie } from './Visionneuses';
 
@@ -75,12 +77,30 @@ export function FicheScreen({
   businessId,
   onReserver,
   onRetour,
+  onConnecterUnReseau,
+  onFavoriBascule,
 }: {
   businessId: string;
   onReserver: (offre: OffreDeLaFiche, fiche: FichePublique) => void;
   /** Le retour de la pile. Sur le web il n'y a ni geste ni bouton système :
    * sans lui, on ne quitte l'écran qu'en changeant d'onglet. */
   onRetour?: () => void;
+  /**
+   * Brancher le réseau qui manque. Absent, le bloc reste un constat.
+   *
+   * **Ce n'est pas un refus, c'est ce qu'un compte de plus rapporterait.** Un
+   * palier fermé faute de compte se répare en deux minutes ; le dire sans
+   * offrir le geste laisse la créatrice chercher où.
+   */
+  onConnecterUnReseau?: () => void;
+  /**
+   * Un cœur vient de basculer. Le fil s'en sert pour redemander son compte.
+   *
+   * Il ne porte pas le sens du geste — ajout ou retrait — parce que le fil ne
+   * recopie pas le nombre : il le redemande. Deux vérités du même compte
+   * finiraient par diverger, et c'est celle qu'on regarde le moins qui ment.
+   */
+  onFavoriBascule?: () => void;
 }) {
   const { api } = useApi();
   const { t, locale } = useI18n();
@@ -102,6 +122,27 @@ export function FicheScreen({
    * rendre représentable serait s'engager à le gérer.
    */
   const [ouvert, setOuvert] = useState<'galerie' | 'carte' | 'sortie' | null>(null);
+
+  /**
+   * **Les cœurs de la fiche, optimistes.** C'est ici qu'ils vivent depuis la
+   * v4 : le favori porte sur la prestation, et la carte du fil en contient
+   * plusieurs. La table ne garde que l'écart avec ce que le serveur a servi —
+   * recopier les offres ferait deux vérités du même contenu.
+   *
+   * **Une même prestation ouverte à deux paliers fait deux lignes et un
+   * favori.** La table est donc indexée par `catalog_item_id` : toucher l'une
+   * remplit l'autre, ce qui est le comportement juste et ce que le serveur
+   * rendra au rechargement.
+   */
+  const favoris = useFavorisEnVol(
+    useMemo(
+      () => ({
+        mettre: (id: string) => api.mettreEnFavori(id).then(() => onFavoriBascule?.()),
+        retirer: (id: string) => api.retirerDesFavoris(id).then(() => onFavoriBascule?.()),
+      }),
+      [api, onFavoriBascule],
+    ),
+  );
 
   return (
     <Ecran
@@ -227,33 +268,73 @@ export function FicheScreen({
           </Modal>
 
           <View style={{ gap: 12 }}>
-            <Texte variante="type.section">{t('parcours.ficheOffres')}</Texte>
-            {/* **Les ouvertes d'abord, les fermées ensuite, séparées par un
-                titre.** Mêlées, une prestation fermée se lisait comme une
-                erreur d'affichage ; le séparateur dit ce qui commence, et la
-                règle du produit — visible ici, jamais dans le fil — cesse
-                d'être un mystère. */}
-            {ouvertes.map((offre) => (
-              <Offre
-                key={offre.tier_offer_id}
-                offre={offre}
-                // Le fuseau du salon : un « prochain créneau » se lit là où il
-                // a lieu, jamais dans le fuseau du téléphone.
-                timezone={fiche.timezone}
-                onReserver={() => onReserver(offre, fiche)}
+            {/* **Un cœur qui échoue le dit.** Le retour en arrière était muet :
+                le cœur se remplissait, revenait, et rien ne distinguait « je
+                n'ai pas su enregistrer » de « tu n'as pas appuyé ». C'est
+                exactement ce qui se lit comme « les favoris ne marchent
+                pas ». */}
+            {favoris.echec === null ? null : (
+              <StatusMessage
+                level="danger"
+                body={t('parcours.filFavoriEchec', { prestation: favoris.echec })}
+                testID="favori-non-enregistre"
               />
-            ))}
-            {fermees.length ? (
-              <SeparateurNomme texte={t('parcours.fichePasEncore')} testID="pas-encore-ouvert" />
+            )}
+
+            {/* **Deux ensembles nommés et comptés, plus un titre et un
+                séparateur.** Mêlées, une prestation fermée se lisait comme une
+                erreur d'affichage. Comptées, les deux répondent d'un coup à
+                « pourquoi trois ici et quatre là » : ce n'est pas le même
+                ensemble, et l'écran le dit avant qu'on le demande. */}
+            {ouvertes.length ? (
+              <SectionDOffres
+                titre={t('parcours.ficheOuvertes', {
+                  count: formatNumber(ouvertes.length, locale),
+                })}
+                teintee
+                testID="offres-ouvertes"
+              >
+                {ouvertes.map((offre) => (
+                  <Offre
+                    key={offre.tier_offer_id}
+                    offre={offre}
+                    // Le fuseau du salon : un « prochain créneau » se lit là
+                    // où il a lieu, jamais dans le fuseau du téléphone.
+                    timezone={fiche.timezone}
+                    favoris={favoris}
+                    onReserver={() => onReserver(offre, fiche)}
+                  />
+                ))}
+              </SectionDOffres>
             ) : null}
-            {fermees.map((offre) => (
-              <Offre
-                key={offre.tier_offer_id}
-                offre={offre}
-                timezone={fiche.timezone}
-                onReserver={() => onReserver(offre, fiche)}
-              />
-            ))}
+
+            {fermees.length ? (
+              <SectionDOffres
+                titre={t('parcours.fichePasEncoreCompte', {
+                  count: formatNumber(fermees.length, locale),
+                })}
+                testID="offres-fermees"
+              >
+                {/* **Ce qu'un compte connecté rapporterait, avant la liste.**
+                    Un palier fermé faute de compte n'est pas un refus : c'est
+                    deux réservations de plus, à deux minutes de distance. Le
+                    dire après la liste des fermées le noierait dans le
+                    constat. */}
+                <ComptesQuiOuvriraient
+                  offres={fermees}
+                  onConnecter={onConnecterUnReseau}
+                />
+                {fermees.map((offre) => (
+                  <Offre
+                    key={offre.tier_offer_id}
+                    offre={offre}
+                    timezone={fiche.timezone}
+                    favoris={favoris}
+                    onReserver={() => onReserver(offre, fiche)}
+                  />
+                ))}
+              </SectionDOffres>
+            ) : null}
           </View>
         </View>
         );
@@ -607,10 +688,25 @@ export function domaineDe(lien: string): string {
 function Offre({
   offre,
   timezone,
+  favoris,
   onReserver,
 }: {
   offre: OffreDeLaFiche;
   timezone: string;
+  /**
+   * Le cœur de cette ligne. **Sur les deux ensembles**, et c'est voulu :
+   * garder une prestation qu'on ne peut pas encore réserver est exactement le
+   * cas où l'avis de réouverture sert.
+   */
+  favoris: {
+    estFavori: (catalogItemId: string, servi: boolean) => boolean;
+    basculer: (
+      catalogItemId: string,
+      versFavori: boolean,
+      servi: boolean,
+      nom: string,
+    ) => void;
+  };
   onReserver: () => void;
 }) {
   const { color: c } = useTheme();
@@ -673,6 +769,7 @@ function Offre({
             replit={<MediaFallback monogramme={offre.name} height={VIGNETTE_DE_L_OFFRE} />}
           />
         </View>
+        <CoeurDeLOffre offre={offre} favoris={favoris} />
       </View>
 
       <View style={{ gap: 8 }}>
@@ -720,6 +817,192 @@ function Offre({
         <ObstacleDeLOffre offre={offre} />
       )}
     </View>
+  );
+}
+
+/**
+ * Un ensemble d'offres, nommé et **compté**.
+ *
+ * **Le compte est ce qui répare la plainte.** « Trois services ici, quatre
+ * là » n'était pas une erreur : le fil ne montre que ce qui se réserve, la
+ * fiche montre l'étagère entière. Un seul mot pour les deux ensembles laissait
+ * le lecteur conclure qu'un des deux mentait. Nommer et compter chacun répond
+ * avant qu'on demande.
+ *
+ * L'en-tête teinté désigne l'ensemble réservable — la seule teinte de cette
+ * liste. Le second en-tête est neutre : ce qui n'est pas encore ouvert ne se
+ * met pas en avant, il s'explique.
+ */
+function SectionDOffres({
+  titre,
+  teintee = false,
+  children,
+  testID,
+}: {
+  titre: string;
+  teintee?: boolean;
+  children: ReactNode;
+  testID: string;
+}) {
+  const { color: c } = useTheme();
+
+  return (
+    <View testID={testID} style={{ gap: 12 }}>
+      <View
+        style={{
+          borderRadius: radius['radius.md'],
+          backgroundColor: teintee ? c['brand.50'] : c['bg.inset'],
+          paddingVertical: 9,
+          paddingHorizontal: 14,
+        }}
+      >
+        <Texte
+          variante="type.label"
+          couleur={teintee ? 'brand.700' : 'ink.soft'}
+          testID={`${testID}-titre`}
+        >
+          {titre.toUpperCase()}
+        </Texte>
+      </View>
+      {children}
+    </View>
+  );
+}
+
+/**
+ * Ce qu'un compte de plus ouvrirait, avec son geste.
+ *
+ * **La plainte se retourne en argument.** Un testeur a lu « trois services »
+ * sur le fil et quatre sur la fiche : la quatrième était ouverte au palier
+ * TikTok, et elle n'a pas de compte TikTok. Ce n'est pas une erreur de compte,
+ * c'est une réservation qui l'attend de l'autre côté d'un branchement de deux
+ * minutes.
+ *
+ * **Groupé par plateforme, et compté.** « Connecte TikTok » sans nombre ne
+ * fait renoncer personne à renoncer ; « 2 services de plus » est ce qui décide.
+ * Une plateforme n'apparaît que si elle ouvrirait quelque chose — c'est la même
+ * règle que les pastilles de catégorie du fil, qu'on retire au lieu de griser.
+ *
+ * **Rien du tout quand rien ne tient à un compte.** Des abonnés qui manquent
+ * ne se branchent pas, et proposer un geste qui n'y peut rien serait pire que
+ * de se taire.
+ */
+function ComptesQuiOuvriraient({
+  offres,
+  onConnecter,
+}: {
+  offres: OffreDeLaFiche[];
+  onConnecter?: () => void;
+}) {
+  const { t, locale } = useI18n();
+  const { color: c } = useTheme();
+
+  const parPlateforme = new Map<Platform, number>();
+  for (const offre of offres) {
+    // **Seulement le compte manquant.** Une offre fermée pour des abonnés
+    // insuffisants *et* sans compte serait comptée ici alors qu'un branchement
+    // ne l'ouvrirait pas : on exige que ce soit le seul obstacle.
+    const raisons = new Set(offre.obstacles.map((obstacle) => obstacle.raison));
+    if (raisons.size !== 1 || !raisons.has('no_social_account')) continue;
+    parPlateforme.set(offre.platform, (parPlateforme.get(offre.platform) ?? 0) + 1);
+  }
+
+  if (parPlateforme.size === 0) return null;
+
+  return (
+    <View testID="comptes-qui-ouvriraient" style={{ gap: 10 }}>
+      {[...parPlateforme.entries()].map(([plateforme, combien]) => (
+        <View
+          key={plateforme}
+          testID={`connecter-${plateforme}`}
+          style={{
+            borderRadius: radius['radius.md'],
+            backgroundColor: c['bg.surface'],
+            borderWidth: 1,
+            borderColor: c['line.default'],
+            padding: 14,
+            gap: 10,
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            {glypheDePlateforme(plateforme) === null ? null : (
+              <Icone nom={glypheDePlateforme(plateforme)!} couleur="ink.default" taille={20} />
+            )}
+            <Texte variante="type.bodyStrong" style={{ flex: 1, minWidth: 0 }}>
+              {t('parcours.ficheCompteOuvrirait', {
+                count: formatNumber(combien, locale),
+                reseau: nomDePlateforme(plateforme),
+              })}
+            </Texte>
+          </View>
+          {onConnecter ? (
+            <Button
+              label={t('parcours.ficheConnecter', { reseau: nomDePlateforme(plateforme) })}
+              variant="secondary"
+              size="sm"
+              onPress={onConnecter}
+              testID={`connecter-${plateforme}-action`}
+            />
+          ) : null}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/**
+ * Le cœur d'une ligne de prestation. **L'interrupteur, et rien d'autre.**
+ *
+ * Il se colore et se remplit ; il ne porte aucun compte. Le compte appartient
+ * à la porte du fil, où il dit ce qu'on trouvera derrière — sur une ligne, il
+ * compterait un sous-ensemble d'une seule chose.
+ *
+ * **`brand.700` et non `brand.500`, et c'est mesuré** : 2,36:1 sur blanc pour
+ * le 500, sous les 3:1 qu'un élément graphique porteur d'information doit
+ * tenir. Or le remplissage est ici le seul signe qui distingue « gardé » de
+ * « pas gardé ».
+ *
+ * **La cible fait 36, dans une ligne que la carte entoure.** Plus petit, le
+ * doigt manque ; plus gros, il déborde sur le nom.
+ */
+function CoeurDeLOffre({
+  offre,
+  favoris,
+}: {
+  offre: OffreDeLaFiche;
+  favoris: {
+    estFavori: (catalogItemId: string, servi: boolean) => boolean;
+    basculer: (
+      catalogItemId: string,
+      versFavori: boolean,
+      servi: boolean,
+      nom: string,
+    ) => void;
+  };
+}) {
+  const { t } = useI18n();
+  const actif = favoris.estFavori(offre.catalog_item_id, offre.est_favori);
+
+  return (
+    <Pressable
+      testID={`offre-${offre.tier_offer_id}-coeur`}
+      accessibilityRole="switch"
+      accessibilityState={{ selected: actif }}
+      accessibilityLabel={t(actif ? 'favoris.retirer' : 'favoris.garder', { nom: offre.name })}
+      hitSlop={6}
+      onPress={() =>
+        favoris.basculer(offre.catalog_item_id, !actif, offre.est_favori, offre.name)
+      }
+      style={({ pressed }) => ({
+        width: 36,
+        height: 36,
+        alignItems: 'center',
+        justifyContent: 'center',
+        opacity: pressed ? 0.7 : 1,
+      })}
+    >
+      <Icone nom="coeur" couleur={actif ? 'brand.700' : 'ink.default'} taille={20} rempli={actif} />
+    </Pressable>
   );
 }
 

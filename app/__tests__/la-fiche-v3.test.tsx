@@ -60,6 +60,9 @@ const OFFRE = {
   accessible: true,
   social_account_id: 's1',
   obstacles: [],
+  // **Servi, et non omis.** Absent, l'état du cœur arrive `undefined` chez le
+  // geste, et le compte ne saurait plus dire si l'appui ajoute ou rétablit.
+  est_favori: false,
   prochains_creneaux: [dansNHeures(2), dansNHeures(5), dansNHeures(7)],
 };
 
@@ -313,26 +316,36 @@ describe('une prestation fermée reste lisible', () => {
     await vue.unmount();
   });
 
-  it('sépare les fermées des ouvertes par un titre qui dit ce qui commence', async () => {
-    // Mêlée aux autres, une prestation fermée se lisait comme une erreur
-    // d'affichage. Le montage porte les deux : avec une seule, le séparateur
-    // se rendrait ou non sans que ça prouve quoi que ce soit.
+  it('sépare les fermées des ouvertes en deux ensembles nommés et comptés', async () => {
+    // **Le compte est ce qui répare la plainte.** « Trois services ici, quatre
+    // là » n'était pas une erreur : le fil ne montre que ce qui se réserve, la
+    // fiche montre l'étagère entière. Un seul mot pour les deux ensembles
+    // laissait conclure qu'un des deux mentait.
+    //
+    // Le montage porte les deux : avec une seule offre, une section se rendrait
+    // ou non sans que ça prouve quoi que ce soit.
     const vue = await monter({
       ...FICHE,
       offres: [OFFRE, { ...FERMEE, tier_offer_id: 'o2' }],
     } as unknown as FichePublique);
-    await waitFor(() => expect(screen.getByTestId('pas-encore-ouvert')).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId('offres-fermees')).toBeTruthy());
 
+    expect(screen.getByTestId('offres-ouvertes-titre')).toHaveTextContent(/\b1\b/);
+    expect(screen.getByTestId('offres-fermees-titre')).toHaveTextContent(/\b1\b/);
     expect(screen.getByTestId('offre-o1')).toBeTruthy();
     expect(screen.getByTestId('offre-o2')).toBeTruthy();
     await vue.unmount();
   });
 
-  it('et pas de séparateur quand tout est ouvert', async () => {
+  it('et pas de second ensemble quand tout est ouvert', async () => {
     const vue = await monter();
     await waitFor(() => expect(screen.getByTestId('offre-o1')).toBeTruthy());
 
-    expect(screen.queryByTestId('pas-encore-ouvert')).toBeNull();
+    expect(screen.queryByTestId('offres-fermees')).toBeNull();
+    // L'ouvert, lui, s'annonce quand même : c'est le compte qui répond à
+    // « pourquoi trois ici et quatre là », et il vaut aussi quand rien ne
+    // manque.
+    expect(screen.getByTestId('offres-ouvertes-titre')).toHaveTextContent(/\b1\b/);
     await vue.unmount();
   });
 });

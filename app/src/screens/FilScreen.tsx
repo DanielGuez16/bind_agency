@@ -38,7 +38,7 @@
  * ici elle attend qu'on la pose. L'information ne disparaît pas, elle arrive au
  * moment où elle sert.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Pressable, View } from 'react-native';
 
 import { useApi, type BusinessCategory, type Fil } from '../api';
@@ -52,7 +52,6 @@ import type { EtatDePosition } from '../shell/usePosition';
 import { en } from '../i18n/en';
 import { Ecran } from './Ecran';
 import { BarreDuMur } from './mur/BarreDuMur';
-import { useFavorisEnVol } from './mur/favorisEnVol';
 import { EnTeteDuMur } from './mur/EnTeteDuMur';import { BasDuMur } from './mur/BasDuMur';
 import { MurEnChargement, SectionsParQuartier, useMur } from './mur/SectionsParQuartier';
 import { RaisonDuVide } from './RaisonDuVide';
@@ -101,6 +100,7 @@ export function FilScreen({
   onVoirMesPaliers,
   onVoirMesFavoris,
   onRemonterEnHaut,
+  versionDesFavoris = 0,
 }: {
   /** Nulle tant que l'autorisation n'est pas donnée. */
   position: Position | null;
@@ -124,6 +124,15 @@ export function FilScreen({
   onVoirMesPaliers?: () => void;
   /** Remonte le mur en tête. Absent, la sortie ne s'affiche pas. */
   onRemonterEnHaut?: () => void;
+  /**
+   * Change à chaque cœur basculé **ailleurs** — sur une fiche.
+   *
+   * Le compte de la porte est servi par le fil, et le navigateur garde cet
+   * écran monté sous celui qu'on ouvre : sans ce signal, il resterait celui du
+   * dernier chargement. Voir le crochet plus bas, qui ne redemande qu'au
+   * retour.
+   */
+  versionDesFavoris?: number;
 }) {
   const { api } = useApi();
   const { t, locale } = useI18n();
@@ -240,29 +249,33 @@ export function FilScreen({
    * qui rend la même chose et n'a rien à virtualiser.
    */
   /**
-   * **Les cœurs touchés, avant que le serveur réponde.** Le fil porte
-   * `est_favori` sur chaque article — quatre-vingts cartes ne peuvent pas
-   * demander l'état de leur cœur une par une — et cette table ne garde que
-   * l'écart, le temps que la réponse arrive.
+   * Le fil redemande son compte quand un cœur a bougé ailleurs.
+   *
+   * **Le cœur a quitté le fil en v4** : il porte sur la prestation, et une
+   * carte de salon en contient plusieurs. Il vit donc sur la fiche, ligne par
+   * ligne. Mais le compte de la porte reste ici, servi par le fil — et la pile
+   * garde cet écran monté sous celui qu'on ouvre, donc rien ne le rafraîchit au
+   * retour.
+   *
+   * **Une version plutôt qu'un écart recopié.** Garder un delta local ferait
+   * deux vérités du même nombre, et la seconde survivrait au rechargement en le
+   * contredisant. Ici on redemande, et le serveur reste seul à savoir.
+   *
+   * **Elle ne bouge qu'au retour**, et c'est la pile qui s'en charge : elle
+   * n'incrémente qu'en quittant une fiche où quelque chose a changé. Compter
+   * ici aurait demandé à cet écran de savoir s'il est au premier plan, donc de
+   * vivre dans un navigateur — ce qu'il n'exigeait pas, et ce qu'aucun de ses
+   * tests ne monte.
    */
-  const favoris = useFavorisEnVol(
-    useMemo(
-      () => ({
-        mettre: (id: string) => api.mettreEnFavori(id),
-        retirer: (id: string) => api.retirerDesFavoris(id),
-      }),
-      [api],
-    ),
-  );
-
-  // L'écart se referme quand le fil revient : le garder ferait resurgir un
-  // vieux geste sur une donnée neuve.
-  const { oublier } = favoris;
+  const { recharger } = requete;
+  const premierTour = useRef(versionDesFavoris);
   useEffect(() => {
-    if (requete.etat === 'pret') oublier();
-  }, [requete.etat, filPret, oublier]);
+    if (versionDesFavoris === premierTour.current) return;
+    premierTour.current = versionDesFavoris;
+    recharger();
+  }, [versionDesFavoris, recharger]);
 
-  const mur = useMur(filPret, categorie, onOuvrirLeCommerce, favoris);
+  const mur = useMur(filPret, categorie, onOuvrirLeCommerce);
 
   if (position === null) {
     // Ce qu'on dit et ce qu'on propose dépendent de **pourquoi** il n'y a pas
@@ -333,7 +346,6 @@ export function FilScreen({
       // Le prix se paie parce que la recherche rachète la ligne unique : une
       // catégorie hors champ serait un cul-de-sac si rien ne la trouvait.
       barre={
-        <>
         <BarreDuMur
           fil={filPret}
           categorie={categorie}
@@ -341,30 +353,11 @@ export function FilScreen({
           recherche={saisie}
           onRecherche={setSaisie}
           onVoirLesFavoris={onVoirMesFavoris}
-          // **Le total servi, corrigé de ce qui est en vol.** Le serveur le
-          // compte sur l'ensemble des favoris et non sur ce que le fil rend —
-          // un favori posé à Wynwood existe encore quand on lit depuis
-          // Kendall. L'écart rend l'appui visible tout de suite, sans quoi le
-          // compte n'arriverait qu'au rechargement suivant.
-          favorisGardes={Math.max(0, (filPret?.favoris_total ?? 0) + favoris.ecart)}
+          // **Le total servi, et rien de local.** Le serveur le compte sur
+          // l'ensemble des favoris et non sur ce que le fil rend — un favori
+          // posé à Wynwood existe encore quand on lit depuis Kendall.
+          favorisGardes={filPret?.favoris_total ?? 0}
         />
-        {/* **Un cœur qui échoue le dit.** Le retour en arrière était muet : le
-            cœur se remplissait, revenait, et rien ne distinguait « je n'ai pas
-            su enregistrer » de « tu n'as pas appuyé ». C'est exactement ce
-            qu'on lit comme « les favoris ne marchent pas » — le geste rate *et*
-            le produit se tait, donc il n'y a rien à réessayer et rien à
-            raconter. Dans la bande, parce qu'elle ne défile pas : un message
-            posé dans la liste part sous le doigt au premier glissement. */}
-        {favoris.echec === null ? null : (
-          <View style={{ paddingHorizontal: MARGE, paddingTop: 8 }}>
-            <StatusMessage
-              level="danger"
-              body={t('parcours.filFavoriEchec', { prestation: favoris.echec })}
-              testID="favori-non-enregistre"
-            />
-          </View>
-        )}
-        </>
       }
       /**
        * **Le mur est une liste, pas un bloc.** Il rendait toutes ses rangées
@@ -471,10 +464,6 @@ export function FilScreen({
             fil={fil}
             categorie={categorie}
             onOuvrir={onOuvrirLeCommerce}
-            // **Le bloc porte les mêmes cœurs que la liste.** Sans ce
-            // branchement, un fil dont aucun salon n'a déclaré de quartier —
-            // ce qui arrive — n'offrait aucun cœur du tout.
-            favoris={favoris}
           />
 
           <BasDuMur

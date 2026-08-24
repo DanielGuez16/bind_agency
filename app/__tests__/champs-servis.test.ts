@@ -53,16 +53,6 @@ const TYPES = join(SRC, 'api', 'types.ts');
  *   table un tapis.
  */
 const NON_RENDUS: Record<string, string> = {
-  // **Le compte de prestations du salon, servi avant que la carte existe.**
-  // Le mur rend aujourd'hui une carte par prestation et aplatit `commerces`
-  // en une liste d'articles (`SectionsParQuartier`), donc personne n'a de
-  // raison de lire un compte par salon. Il change de grain — une carte par
-  // salon — et la composition se fait ailleurs ; la route sert d'abord pour
-  // que l'écran n'ait pas à déduire ce compte de `items.length`, ce qui
-  // compterait des offres et non des prestations.
-  //
-  // La ligne se retire au premier lecteur : la garde le réclame elle-même.
-  'CommerceDuFil.prestations_ouvertes': 'a-instruire',
   // Les trois nombres du résumé de composition. Ils vivaient sous les portes de
   // « Your offer », que la v3.1 retire — deux entrées de rang égal dans la
   // barre latérale ne portent pas de compteur. Voir `compositionDuCommerce`

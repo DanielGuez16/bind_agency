@@ -122,14 +122,21 @@ export function BarreDuMur({
           ) : null}
         </View>
 
-        {/* **La porte vers les favoris, au bout de la barre.** Elle regarde
-            l'écran et non une prestation : c'est pour cela qu'elle est ici et
-            non sur une carte. Jamais pleine — un cœur plein dit « celui-ci est
-            gardé », et cette porte n'en garde aucun. */}
+        {/* **La porte vers les favoris, en pilule au bout de la barre.**
+            Elle regarde l'écran et non une prestation : c'est pour cela
+            qu'elle est ici, et c'est aussi pourquoi elle est le **seul** cœur
+            du fil depuis la v4. La carte de salon n'en porte plus — elle
+            contient quatre prestations, un cœur y désignerait quoi ?
+
+            **Rempli avec son compte, vide sans.** Le remplissage n'y dit pas
+            « celui-ci est gardé » comme sur une ligne de prestation : il dit
+            qu'il y a quelque chose derrière la porte. Sans favori, la porte
+            reste ouvrable et se tait — la liste vide explique mieux qu'une
+            pastille à zéro, qui apprend à ne plus regarder la pastille. */}
         <Pressable
           testID="voir-mes-favoris"
           accessibilityRole="button"
-          // **Le compte est dans le nom, pas seulement dans la pastille.** Un
+          // **Le compte est dans le nom, pas seulement dans la pilule.** Un
           // chiffre posé à côté d'une icône n'existe pas pour un lecteur
           // d'écran, et c'est justement l'information qui dit qu'il s'est passé
           // quelque chose.
@@ -140,48 +147,29 @@ export function BarreDuMur({
           }
           onPress={onVoirLesFavoris}
           style={({ pressed }) => ({
-            width: size.touchMin,
             height: size.touchMin,
+            borderRadius: radius['radius.pill'],
+            backgroundColor: c['bg.surface'],
+            borderWidth: 1,
+            borderColor: c['line.default'],
+            flexDirection: 'row',
             alignItems: 'center',
-            justifyContent: 'center',
+            gap: 7,
+            paddingHorizontal: favorisGardes > 0 ? 15 : 13,
             opacity: pressed ? 0.6 : 1,
           })}
         >
-          <Icone nom="coeur" couleur="ink.default" taille={22} />
-          {/* **Zéro ne s'écrit pas.** Une pastille à zéro apprend à ne plus
-              regarder la pastille, et c'est le seul endroit du fil qui dise
-              qu'un appui a été enregistré. Elle apparaît au premier favori,
-              c'est-à-dire au moment exact où elle a quelque chose à dire. */}
+          <Icone
+            nom="coeur"
+            couleur={favorisGardes > 0 ? 'brand.700' : 'ink.default'}
+            taille={22}
+            rempli={favorisGardes > 0}
+            testID="coeur-de-la-porte"
+          />
           {favorisGardes > 0 ? (
-            <View
-              testID="compte-des-favoris"
-              // Non lue à part : le nom du bouton la porte déjà, et un lecteur
-              // d'écran qui annoncerait « favoris, 1 » puis « 1 » répéterait.
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-              style={{
-                position: 'absolute',
-                top: 4,
-                right: 2,
-                minWidth: 16,
-                height: 16,
-                borderRadius: radius['radius.pill'],
-                paddingHorizontal: 4,
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: c['brand.700'],
-              }}
-            >
-              {/* **`ink.onDark` sur `brand.700`, et c'est mesuré : 4,82:1.**
-                  `ink.onBrand` — l'encre prévue pour l'orange de marque — n'y
-                  donne que 3,47:1, sous les 4,5:1 d'un texte. Elle est
-                  calibrée pour `brand.500`, qui est plus clair ; la pastille
-                  porte le 700 parce qu'elle est petite et doit tenir sur le
-                  papier. */}
-              <Texte variante="type.dataLabel" couleur="ink.onDark">
-                {formatNumber(favorisGardes, locale)}
-              </Texte>
-            </View>
+            <Texte variante="type.data" testID="compte-des-favoris">
+              {formatNumber(favorisGardes, locale)}
+            </Texte>
           ) : null}
         </Pressable>
       </View>

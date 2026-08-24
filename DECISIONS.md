@@ -10528,3 +10528,53 @@ personne ne passe, et un jeton de configuration à `true` qui n'a pas d'appelant
 La garde des routes sans appelant existe pour la même raison, un étage plus
 haut ; celle des champs servis aussi. Il manquait la même chose sur une couture
 interne.
+## 2026-08-24 — Deux sessions, la même trouvaille, une seule version gardée
+
+Le fil v4 rend une carte par salon, et cette carte annonce « 4 services open to
+you ». Le serveur comptait `sum(len(commerce.items))` — c'est-à-dire des
+**offres**. Une prestation ouverte à deux paliers accessibles y comptait deux
+fois.
+
+Tant que le mur rendait une carte par offre, les deux coïncidaient à l'écran et
+personne ne pouvait le voir. Au grain du salon, la somme des cartes aurait cessé
+d'égaler l'en-tête du quartier — et c'est exactement le genre d'écart qui se
+signale comme « le compte est faux », après quoi on cherche l'erreur là où il
+n'y en a pas.
+
+**`bind-agency-1a` et moi l'avons trouvé chacun de son côté, à une heure
+d'intervalle**, et sa version est meilleure : un champ `prestations_ouvertes`
+servi par salon, et les trois niveaux — salon, quartier, total — passant par la
+même fonction. La mienne dédoublonnait dans l'écran, ce qui aurait tenu
+aujourd'hui et menti le jour où la liste sera bornée.
+
+J'ai jeté la mienne. Deux calculs de la même chose finissent par diverger, et
+c'est celui qu'on regarde le moins qui ment — la règle vaut aussi entre deux
+sessions qui travaillent en parallèle. Ce qui l'a rendu peu coûteux est d'avoir
+annoncé ce que je touchais **avant** de pousser : le message est parti au début
+de la tranche, sa PR est arrivée pendant, et il n'a fallu qu'un rebase.
+
+**Le mot comptait autant que le nombre.** Un « service » est ce qu'on va faire
+faire, pas le palier par lequel on l'atteint.
+
+## 2026-08-24 — Le web ne démonte pas ce qu'on croit, quand on le croit
+
+Le compte de la porte des favoris est servi par le fil, et la pile garde cet
+écran monté sous la fiche : rien ne le rafraîchit au retour. La première
+version incrémentait un signal **au démontage de la fiche**, pour n'envoyer
+qu'une requête par visite plutôt qu'une par cœur pressé.
+
+Elle ne marchait pas, et aucun test unitaire ne pouvait le dire : ils pilotent
+la version à la main, donc ils éprouvaient le fil, jamais le moment où le signal
+part. C'est le parcours de bout en bout qui l'a montré — le compte restait à
+zéro après un retour.
+
+Deux choses en sortent. La première : **un signal accroché à un cycle de vie de
+navigation est un pari sur le navigateur**, et le pari se perd sur le web. Il
+part maintenant au geste ; une requête de fil par cœur pressé est le prix, et
+elle part pendant qu'on est ailleurs, sur un écran que rien ne redessine.
+
+La seconde tient au test lui-même : `page.goBack()` **sort de l'application**.
+La pile est atteinte par une navigation interne, il n'y a pas d'entrée
+d'historique derrière elle, et le navigateur remonte à la page d'avant —
+mesuré, il atterrit sur `about:blank`. Un parcours revient par le contrôle de
+l'écran, comme un lecteur.
