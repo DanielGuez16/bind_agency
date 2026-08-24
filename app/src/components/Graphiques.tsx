@@ -185,7 +185,7 @@ export function BarresParPalier({
               flex: 1,
               height: 10,
               justifyContent: 'center',
-              backgroundColor: c['bg.deep'],
+              backgroundColor: c['bg.inset'],
               borderRadius: radius['radius.pill'],
               overflow: 'hidden',
             }}

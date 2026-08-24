@@ -108,10 +108,10 @@ export function TextField({
           borderColor: enErreur
             ? c['status.danger.rule']
             : enFocus
-              ? c['line.ink']
+              ? c['line.solo']
               : c['line.default'],
           backgroundColor: disabled
-            ? c['bg.deep']
+            ? c['bg.inset']
             : enErreur
               ? c['status.danger.surface']
               : 'transparent',

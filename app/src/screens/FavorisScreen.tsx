@@ -280,7 +280,7 @@ function AvisDeFavori() {
         gap: 12,
         padding: 12,
         borderRadius: radius['radius.lg'],
-        backgroundColor: c['bg.deep'],
+        backgroundColor: c['bg.inset'],
       }}
     >
       <Texte variante="type.caption" couleur="ink.soft" style={{ flex: 1, minWidth: 0 }}>

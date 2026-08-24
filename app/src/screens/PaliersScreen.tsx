@@ -723,7 +723,7 @@ export function BarreauDePalier({
           borderWidth: etat === 'prochain' ? 2 : 1,
           // Le prochain palier porte deux pixels d'encre et non d'orange : un filet
           // orange de 2 px posé contre un bandeau orange ne se voyait plus.
-          borderColor: etat === 'prochain' ? c['line.ink'] : c[bordureDeCarte],
+          borderColor: etat === 'prochain' ? c['line.solo'] : c[bordureDeCarte],
           backgroundColor: c['bg.surface'],
           overflow: 'hidden',
           flexDirection: large ? 'row' : 'column',
@@ -834,7 +834,14 @@ function EtatDuPalier({
       testID={etat === 'enPause' ? 'etat-en-pause' : 'etat-lointain'}
       // Sur un aplat, le texte porte la couleur d'écriture du palier ; ailleurs
       // celle du thème. Un `text.secondary` sur l'aplat violet serait illisible.
-      couleur={etat === 'enPause' ? 'status.warning.text' : plein ? (`${teinte}.onTier` as ColorName) : 'ink.soft'}
+      //
+      // **Et « en pause » n'est pas un avertissement.** Il portait
+      // `status.warning.text`, sans glyphe — donc rien : l'avertissement d'Ambre
+      // est neutre en teinte et se distingue **par son glyphe**, décidé ainsi
+      // parce qu'un ambre dans un système ambre se lirait comme la marque. Sans
+      // glyphe, la teinte ne disait rien de plus que l'encre ordinaire, et elle
+      // annonçait un défaut là où le message dit « rien n'est perdu ».
+      couleur={etat === 'enPause' ? 'ink.default' : plein ? (`${teinte}.onTier` as ColorName) : 'ink.soft'}
     >
       {libelle}
     </Texte>

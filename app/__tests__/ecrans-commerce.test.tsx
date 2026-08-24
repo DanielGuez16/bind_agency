@@ -2729,8 +2729,8 @@ describe('la grille de l’annuaire', () => {
       const brut = screen.getByTestId(id).props.style;
       return Object.assign({}, ...(Array.isArray(brut) ? brut.flat(Infinity) : [brut]).filter(Boolean));
     };
-    expect(style('createur-ouverte').borderColor).toBe(couleurs['line.ink']);
-    expect(style('createur-fermee').borderColor).not.toBe(couleurs['line.ink']);
+    expect(style('createur-ouverte').borderColor).toBe(couleurs['line.solo']);
+    expect(style('createur-fermee').borderColor).not.toBe(couleurs['line.solo']);
   });
 
   it('dit combien sont affichées sur combien, et propose la suite', async () => {

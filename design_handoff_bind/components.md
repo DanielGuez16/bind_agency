@@ -51,7 +51,7 @@ Jamais dimensionné sur son texte, `fullWidth` par défaut, hauteur `size.button
 | --- | --- | --- | --- |
 | `primary` | `brand.500` | `ink.onBrand` | aucune |
 | `primary:pressed` | `brand.600` | `ink.onBrand` | aucune |
-| `secondary` | transparent | `ink.default` | 1,5 px `line.ink` |
+| `secondary` | transparent | `ink.default` | 1,5 px `line.solo` |
 | `disabled` | `bg.surface` | `ink.faint` | 1 px `line.default` |
 
 **Le libellé est en encre, jamais en blanc.** Encre sur `brand.500` : 7,77:1.
@@ -94,7 +94,7 @@ Le mot n'est jamais abrégé. Sur fond sombre, contour et teinte s'éclaircissen
 conservé.
 
 **Le libellé du badge fait 11 px.** À cette taille, aucune couleur sous 4,5:1
-n'est admise : `brand.700` sur `brand.100` passe, `brand.700` sur `bg.deep`
+n'est admise : `brand.700` sur `brand.100` passe, `brand.700` sur `bg.inset`
 (4,56:1) est à éviter, et l'aplat porte l'encre.
 
 ---
@@ -106,7 +106,7 @@ Structure inchangée. Trois substitutions par rapport à la v1.0 :
 - carte en `radius.lg`, bandeau de format en haut, coins supérieurs suivant la
   carte ;
 - la pastille `NEXT FOR YOU` reste `brand.500` à texte encre, en `radius.sm` ;
-- la bordure du prochain palier reste `line.ink` sur 2 px — un orange de 2 px sur
+- la bordure du prochain palier reste `line.solo` sur 2 px — un orange de 2 px sur
   un bandeau orange ne se voit pas, quelle que soit la rampe.
 
 La barre d'écart au seuil reste `brand.500` : elle ne porte aucun texte. Sous
@@ -162,7 +162,7 @@ répète pas sur un écran ouvert dix fois par jour.
 | Statut | Surface | Filet | Texte | Glyphe |
 | --- | --- | --- | --- | --- |
 | success | `status.success.surface` | `status.success.rule` | `status.success.text` | facultatif |
-| warning | `bg.deep` | `line.ink` | `ink.default` | **obligatoire** |
+| warning | `bg.inset` | `line.solo` | `ink.default` | **obligatoire** |
 | danger | `status.danger.surface` | `status.danger.rule` | `status.danger.text` | facultatif |
 
 **L'avertissement n'a pas de teinte, et la règle se renforce avec l'ambre.** Un
@@ -178,7 +178,7 @@ vision protanope, et le risque augmente en passant à l'ambre.
 ## 6. `TextField`
 
 `radius.md`, hauteur `size.field` (50). Repos 1 px `line.default`. **Focus 2 px
-`line.ink`** — sur un écran qui porte de l'orange, un focus orange se perd.
+`line.solo`** — sur un écran qui porte de l'orange, un focus orange se perd.
 Erreur 2 px `status.danger.rule`.
 
 ---
@@ -229,7 +229,7 @@ Largeurs et densités inchangées : 240 / 72, lignes de 44 ou 38.
 
 ## 10. `Galerie` et `EcranDeCode`
 
-Inchangés, et **explicitement hors système** : galerie sur `bg.sunken` en
+Inchangés, et **explicitement hors système** : galerie sur `bg.onDark` en
 `radius.xl`, écran de code en blanc pur sur noir pur, plein écran, sans marque,
 sans orange et sans rayon.
 

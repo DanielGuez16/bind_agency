@@ -395,7 +395,7 @@ function issueDe(reservation: ReservationDuCreateur): {
   }
   // Annulée, expirée : ni tenue ni manquée. La ranger en « non honorée »
   // l'inscrirait au passif d'une créatrice qui n'a rien fait de mal.
-  return { libelle: 'parcours.issueAnnulee', fond: 'bg.deep', encre: 'ink.soft' };
+  return { libelle: 'parcours.issueAnnulee', fond: 'bg.inset', encre: 'ink.soft' };
 }
 
 /**
@@ -449,7 +449,7 @@ function CarteDeReservation({
         // cumule : une ombre sous un filet fort les annule l'une l'autre et
         // rend la hiérarchie illisible.
         ...(surface === 'reprise'
-          ? { borderWidth: 1, borderColor: c['line.ink'] }
+          ? { borderWidth: 1, borderColor: c['line.solo'] }
           : surface === 'demande'
             ? elevationDeCarte()
             : { borderWidth: 1, borderColor: c['line.default'] }),
@@ -488,7 +488,7 @@ function LigneDeReservation({
         // n'y a pas de couleur ici : la matière suffit, et l'ambre serait lu
         // comme la marque.
         borderLeftWidth: 3,
-        borderLeftColor: attente === 'creatrice' ? c['line.ink'] : 'transparent',
+        borderLeftColor: attente === 'creatrice' ? c['line.solo'] : 'transparent',
         paddingLeft: 12,
       }}
     >

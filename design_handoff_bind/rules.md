@@ -44,7 +44,7 @@ Bascule : `theme = role === 'merchant' ? 'light' : 'dark'`, surchargeable par l'
 
 ## 5. Accessibilité
 - AA partout : 4,5:1 pour tout texte sous 24 px ou sous 18,66 px gras. L'écran de code est à 21:1.
-- `text.muted` clair vaut `#5A6463` (et non un gris plus clair) précisément pour tenir 4,5:1 sur `bg.surface`, `bg.canvas` et les vignettes `bg.sunken`.
+- `text.muted` clair vaut `#5A6463` (et non un gris plus clair) précisément pour tenir 4,5:1 sur `bg.surface`, `bg.canvas` et les vignettes `bg.onDark`.
 - Zone tactile minimale 44 × 44, y compris sur les touches du pavé de caisse (56) et les chips de créneau.
 - Aucune information portée par la couleur seule : les paliers ont mot + glyphe + matière, les états admin ont un libellé texte en plus de leur couleur.
 - Ordre de lecture VoiceOver / TalkBack : titre d'écran, statut ou délai en cours, contenu, actions. Le code de retrait s'annonce caractère par caractère (`accessibilityLabel` avec espaces).

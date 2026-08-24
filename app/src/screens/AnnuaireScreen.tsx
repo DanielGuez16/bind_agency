@@ -244,7 +244,7 @@ export function AnnuaireScreen({
                 paddingHorizontal: 18,
                 borderRadius: radius['radius.pill'],
                 borderWidth: 1,
-                borderColor: c['line.ink'],
+                borderColor: c['line.solo'],
               })}
             >
               <Texte variante="type.label">
@@ -518,7 +518,7 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
         backgroundColor: c['bg.surface'],
         overflow: 'hidden',
         borderWidth: createur.peut_reserver_ici ? 1.5 : 1,
-        borderColor: createur.peut_reserver_ici ? c['line.ink'] : c['line.default'],
+        borderColor: createur.peut_reserver_ici ? c['line.solo'] : c['line.default'],
         ...elevationDeCarte(),
       }}
     >

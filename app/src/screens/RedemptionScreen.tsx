@@ -452,7 +452,7 @@ function CeQueLeCodeOuvre() {
   return (
     <View
       testID="codes-de-ce-salon"
-      style={{ gap: 4, paddingLeft: 12, borderLeftWidth: 3, borderLeftColor: c['line.ink'] }}
+      style={{ gap: 4, paddingLeft: 12, borderLeftWidth: 3, borderLeftColor: c['line.solo'] }}
     >
       <Texte variante="type.body">{t('redemption.codesDeCeSalon')}</Texte>
       {autre ? (

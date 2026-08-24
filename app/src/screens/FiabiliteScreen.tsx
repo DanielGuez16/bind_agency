@@ -113,7 +113,7 @@ export function FiabiliteScreen({ onRetour }: { onRetour?: () => void }) {
                   gap: 4,
                   padding: 16,
                   borderRadius: radius['radius.md'],
-                  backgroundColor: c['bg.deep'],
+                  backgroundColor: c['bg.inset'],
                 }}
               >
                 <Texte variante="type.bodyStrong">{t('parcours.audiencePasEncoreDeScore')}</Texte>
@@ -171,7 +171,7 @@ export function FiabiliteScreen({ onRetour }: { onRetour?: () => void }) {
                 gap: 9,
                 padding: 16,
                 borderRadius: radius['radius.lg'],
-                backgroundColor: c['bg.deep'],
+                backgroundColor: c['bg.inset'],
               }}
             >
               <Texte variante="type.label">{t('parcours.scoreJamais')}</Texte>

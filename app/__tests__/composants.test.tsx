@@ -98,7 +98,7 @@ describe('Button', () => {
     await monter(<Button label="Abrir" size="sm" testID="b" />);
     // La taille demandée est 36 ; c'est la zone tactile qui l'emporte.
     expect(size.row).toBe(36);
-    expect(style(screen.getByTestId('b')).minHeight).toBe(size.hit);
+    expect(style(screen.getByTestId('b')).minHeight).toBe(size.touchMin);
   });
 
   it('remplace le libellé pendant le chargement sans changer la géométrie', async () => {

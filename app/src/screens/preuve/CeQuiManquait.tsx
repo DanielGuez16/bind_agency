@@ -76,7 +76,7 @@ export function CeQuiManquait({ contrepartie }: { contrepartie: Collaboration })
       testID="reprise-motif"
       style={{
         borderRadius: radius['radius.lg'],
-        backgroundColor: c['bg.deep'],
+        backgroundColor: c['bg.inset'],
         padding: 18,
         gap: 10,
       }}

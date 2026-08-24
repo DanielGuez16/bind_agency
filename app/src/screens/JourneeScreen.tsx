@@ -637,7 +637,7 @@ function ReseauxDeLaCreatrice({ reservation }: { reservation: ReservationDuComme
               paddingHorizontal: 16,
               borderRadius: radius['radius.pill'],
               borderWidth: rattache ? 1.5 : 1,
-              borderColor: rattache ? c['line.ink'] : c['line.default'],
+              borderColor: rattache ? c['line.solo'] : c['line.default'],
             }}
           >
             <Icone

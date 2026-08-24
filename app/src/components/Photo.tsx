@@ -7,7 +7,7 @@
  * une image rapide qui redimensionne sa carte fait sauter la liste entière.
  *
  * **La zone a donc sa hauteur définitive dès la première image**, et le fond
- * est un aplat `bg.deep` — pas un blanc, qui se confondrait avec la surface de
+ * est un aplat `bg.inset` — pas un blanc, qui se confondrait avec la surface de
  * la carte et donnerait à croire qu'il n'y a rien à attendre.
  *
  * **Opacité seule, jamais d'échelle ni de translation.** Une photo qui glisse
@@ -91,7 +91,7 @@ export function Photo({
           // reste derrière elle : une photo transparente ou plus étroite que sa
           // zone ne laisse pas voir la surface de la carte au travers.
           //
-          // `media.placeholder` et non `bg.deep`, dont il porte la valeur : le
+          // `media.placeholder` et non `bg.inset`, dont il porte la valeur : le
           // rôle nomme l'usage, et le jour où le fond des médias se distingue
           // du fond profond, il n'y a qu'un endroit à changer.
           backgroundColor: c['media.placeholder'],

@@ -106,7 +106,7 @@ export function BandeDeJours({
                   ? c['bg.inverse']
                   : ouvert
                     ? c['bg.surface']
-                    : c['bg.deep'],
+                    : c['bg.inset'],
                 // Le jour sans place n'a pas de filet : c'est ce qui le
                 // distingue d'un jour ouvert non choisi, sans le griser.
                 borderWidth: !choisi && ouvert ? 1 : 0,

@@ -29,7 +29,7 @@
  * en clair, et déclare **hors système** les deux seuls écrans qui restent
  * sombres — le code de retrait et la galerie plein écran, qui portent leurs
  * couleurs eux-mêmes. Ce qu'elle donne pour le sombre — `ink.onDark`,
- * `line.onDark`, `bg.sunken`, `scrim.badgeOnDark`, les variantes `onDark` des
+ * `line.onDark`, `bg.onDark`, `scrim.badgeOnDark`, les variantes `onDark` des
  * paliers — est un **kit d'accommodation** pour ces surfaces-là, pas une
  * seconde palette : il n'y a ni gris intermédiaires, ni statuts, ni états de
  * bordure. Reconstituer un thème sombre demandait d'inventer une dizaine de
@@ -130,13 +130,13 @@ const COULEURS = {
 
   'bg.page': brut.color.bg.page,
   'bg.surface': brut.color.bg.surface,
-  'bg.deep': brut.color.bg.deep,
+  'bg.inset': brut.color.bg.inset,
   'bg.inverse': brut.color.bg.inverse,
-  'bg.sunken': brut.color.bg.sunken,
+  'bg.onDark': brut.color.bg.onDark,
 
   'line.default': brut.color.line.default,
   'line.strong': brut.color.line.strong,
-  'line.ink': brut.color.line.ink,
+  'line.solo': brut.color.line.solo,
   'line.onDark': brut.color.line.onDark,
 
   'status.success.text': brut.color.status.success.text,
@@ -162,12 +162,12 @@ const COULEURS = {
   'ink.onScrimMuted': brut.color.line.strong,
 
   // Le gabarit d'une image absente, et la pulsation d'un squelette. Ce sont
-  // des surfaces creuses : `bg.deep` est exactement le cran de fond que la
+  // des surfaces creuses : `bg.inset` est exactement le cran de fond que la
   // v1.0 pose sous une surface, et le filet le raye.
-  'media.placeholder': brut.color.bg.deep,
+  'media.placeholder': brut.color.bg.inset,
   'media.placeholderStripe': brut.color.line.default,
   'media.placeholderText': brut.color.ink.mute,
-  'skeleton.base': brut.color.bg.deep,
+  'skeleton.base': brut.color.bg.inset,
 } as const;
 
 export type ColorTokens = typeof COULEURS;
@@ -654,7 +654,7 @@ function ombreDe(jeton: string, elevationAndroid: number) {
 
 /** Ce qui flotte au-dessus du contenu : feuille, menu, dialogue. */
 export function elevationFlottante() {
-  return ombreDe(brut.elevation.float, 12);
+  return ombreDe(brut.elevation.overlay, 12);
 }
 
 /**

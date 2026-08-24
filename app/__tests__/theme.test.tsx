@@ -14,10 +14,11 @@
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { join } from 'path';
 
-import { render, waitFor } from '@testing-library/react-native';
+import { render, screen, waitFor } from '@testing-library/react-native';
 import { Text } from 'react-native';
 
 import { I18nProvider } from '../src/i18n';
+import { StatusMessage } from '../src/components/StatusMessage';
 import { ReglesDesPaliers } from '../src/screens/ReglesDesPaliers';
 import { TitreAccentue } from '../src/components/TitreAccentue';
 
@@ -65,6 +66,24 @@ function sources(dossier: string, trouves: string[] = []): string[] {
     else if (/\.(ts|tsx)$/.test(entree)) trouves.push(chemin);
   }
   return trouves;
+}
+
+/**
+ * La source, commentaires retirés.
+ *
+ * **Un filtre ligne à ligne ne suffit pas**, et c'est le défaut qu'une garde de
+ * ce fichier vient d'avoir : la prose qui documente une règle cite forcément le
+ * jeton qu'elle encadre, et dans un commentaire de bloc les lignes **de suite**
+ * ne commencent ni par `//` ni par `*`. Le fichier était donc compté comme
+ * peignant ce qu'il se contentait d'expliquer — et la correction naturelle est
+ * de retirer la note, c'est-à-dire de perdre l'explication pour sauver la garde.
+ */
+function sansCommentaires(source: string): string {
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .split('\n')
+    .map((ligne) => ligne.replace(/\/\/.*$/, ''))
+    .join('\n');
 }
 
 function Sonde() {
@@ -1026,7 +1045,7 @@ describe('les surfaces de la v1.1', () => {
     // coin arrondi sans ombre flotte au lieu de se poser. Une seule valeur, et
     // jamais cumulée avec un filet fort.
     expect(Object.keys(tokens.elevation).filter((cle) => !cle.startsWith('$'))).toEqual([
-      'float',
+      'overlay',
       'card',
     ]);
 
@@ -1061,20 +1080,20 @@ describe('les réserves de la v1.1', () => {
   it('`ink.mute` passe sur la page et la surface, et échoue sur le creux', () => {
     // **La seule paire de la table qui passe sur deux fonds et tombe sur le
     // troisième.** C'est ce qui la rend dangereuse : elle marche partout où on
-    // l'essaie d'abord. Sur `bg.deep`, on descend à `ink.soft`.
+    // l'essaie d'abord. Sur `bg.inset`, on descend à `ink.soft`.
     expect(rapport(couleurs['ink.mute'], couleurs['bg.page'])).toBeGreaterThanOrEqual(4.5);
     expect(rapport(couleurs['ink.mute'], couleurs['bg.surface'])).toBeGreaterThanOrEqual(4.5);
-    expect(rapport(couleurs['ink.mute'], couleurs['bg.deep'])).toBeLessThan(4.5);
+    expect(rapport(couleurs['ink.mute'], couleurs['bg.inset'])).toBeLessThan(4.5);
 
     // Et le repli tient, sans quoi la réserve n'aurait pas d'issue.
-    expect(rapport(couleurs['ink.soft'], couleurs['bg.deep'])).toBeGreaterThanOrEqual(4.5);
+    expect(rapport(couleurs['ink.soft'], couleurs['bg.inset'])).toBeGreaterThanOrEqual(4.5);
   });
 
   it('`brand.700` passe de peu sur le creux, et pas assez pour 11 px', () => {
     // 4,56:1 — au-dessus du seuil, avec 1,3 % de marge. Admis en corps normal,
     // évité sous 13 px : c'est la réserve écrite, et elle vaut pour le badge de
     // palier comme pour l'étiquette.
-    const surCreux = rapport(couleurs['brand.700'], couleurs['bg.deep']);
+    const surCreux = rapport(couleurs['brand.700'], couleurs['bg.inset']);
     expect(surCreux).toBeGreaterThanOrEqual(4.5);
     expect(surCreux).toBeLessThan(5);
 
@@ -1104,7 +1123,7 @@ describe('les réserves de la v1.1', () => {
     // proches. Une mesure de saturation laisserait passer un ambre désaturé,
     // qui est exactement la façon dont la teinte reviendrait.
     expect(tokens.color.status.warning).toEqual({
-      surface: tokens.color.bg.deep,
+      surface: tokens.color.bg.inset,
       rule: tokens.color.ink.default,
       text: tokens.color.ink.default,
     });
@@ -1130,7 +1149,7 @@ describe('les réserves de la v1.1', () => {
 });
 
 /**
- * `bg.sunken` est un fond **sombre**, et son nom dit le contraire.
+ * `bg.onDark` est un fond **sombre**, et son nom dit le contraire.
  *
  * Il est le plus sombre de la palette, plus noir encore que `bg.inverse`. Le
  * fichier de jetons le
@@ -1147,7 +1166,7 @@ describe('les réserves de la v1.1', () => {
  * ce qu'on ne peut pas prendre — et la ligne du salon courant, dans la barre
  * latérale, était un bandeau noir.
  *
- * Le renfoncement clair est `bg.deep` ; le fond d'un média est
+ * Le renfoncement clair est `bg.inset` ; le fond d'un média est
  * `media.placeholder`, qui en porte la valeur sous le nom de son usage.
  *
  * **La garde nomme, elle n'interdit pas.** Un écran sombre a le droit d'exister
@@ -1157,7 +1176,7 @@ describe('les réserves de la v1.1', () => {
 describe('le creux qui n’en est pas un', () => {
   const AUTORISES = [
     // La visionneuse : c'est l'écran que le jeton sert, et le fichier de jetons
-    // le nomme — « screen.gallery — bg.sunken, chrome minimal ».
+    // le nomme — « screen.gallery — bg.onDark, chrome minimal ».
     'src/screens/Visionneuses.tsx',
     // La table des couleurs elle-même, qui doit bien le déclarer.
     'src/theme/index.tsx',
@@ -1165,18 +1184,116 @@ describe('le creux qui n’en est pas un', () => {
 
   it('n’est peint que là où le fond est vraiment sombre', () => {
     const fautifs = sources(RACINE)
-      .filter((chemin) =>
-        readFileSync(chemin, 'utf-8')
-          .split('\n')
-          // **La prose qui documente le piège le cite forcément.** Sans ce
-          // filtre, la note qui explique pourquoi `bg.deep` remplace
-          // `bg.sunken` ferait tomber la garde — et c'est la note qu'on
-          // retirerait, pas le défaut.
-          .filter((ligne) => !/^\s*(\/\/|\*|\/\*)/.test(ligne))
-          .some((ligne) => ligne.includes('bg.sunken')),
-      )
+      // La prose qui documente le piège le cite forcément : voir
+      // `sansCommentaires`, et pourquoi un filtre ligne à ligne ne suffit pas.
+      .filter((chemin) => sansCommentaires(readFileSync(chemin, 'utf-8')).includes('bg.onDark'))
       .map((chemin) => chemin.slice(chemin.indexOf('src/')));
 
     expect(fautifs.sort()).toEqual([...AUTORISES].sort());
+  });
+});
+
+/**
+ * L'avertissement se distingue par son glyphe, jamais par sa teinte.
+ *
+ * **C'est une décision, pas une palette qui aurait cessé d'honorer un rôle.**
+ * Un ambre dans un système ambre se lirait comme la marque : l'avertissement est
+ * donc neutre en couleur — ses trois valeurs sont exactement celles du neutre —
+ * et ce qui le distingue est un glyphe obligatoire.
+ *
+ * D'où le défaut particulier de ce jeton : **`status.warning` posé seul ne dit
+ * rien.** Il rend les mêmes pixels que `ink.default` sur `bg.inset`, et l'auteur
+ * croit avoir posé une alerte. Cinq endroits s'y étaient trompés — la pastille
+ * du sélecteur de salon, un état « en pause » qui annonçait un défaut là où le
+ * message dit « rien n'est perdu », deux motifs de refus dans des historiques,
+ * et un libellé de tâche.
+ *
+ * Trois verrous, parce qu'aucun ne suffit seul : le mécanisme qui rend le
+ * glyphe, la décision épinglée à ses valeurs, et l'inventaire de ce qui peint
+ * l'avertissement de sa propre main.
+ */
+describe('l’avertissement, neutre et glyphé', () => {
+  it('`StatusMessage` rend le glyphe de l’avertissement', async () => {
+    await render(
+      <I18nProvider initialLocale="en">
+        <ThemeProvider role="merchant">
+          <StatusMessage level="warning" body="attention" />
+        </ThemeProvider>
+      </I18nProvider>,
+    );
+
+    // `includeHiddenElements` : le glyphe est masqué au lecteur d'écran — le
+    // niveau est déjà annoncé par le rôle `alert` — mais il est bien rendu, et
+    // c'est ce qu'on éprouve.
+    expect(screen.getByTestId('glyphe-warning', { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  it('et le neutre n’en a pas', async () => {
+    // **Le cas où les deux implémentations divergent.** Un glyphe rendu à tous
+    // les niveaux passerait le test du dessus tout aussi bien, et ne
+    // distinguerait plus rien — or c'est la seule distinction qui reste, la
+    // couleur étant la même.
+    await render(
+      <I18nProvider initialLocale="en">
+        <ThemeProvider role="merchant">
+          <StatusMessage level="neutral" body="rien" />
+        </ThemeProvider>
+      </I18nProvider>,
+    );
+
+    expect(
+      screen.queryByTestId('glyphe-neutral', { includeHiddenElements: true }),
+    ).toBeNull();
+  });
+
+  it('les trois valeurs sont celles du neutre, et c’est voulu', () => {
+    // **La décision, épinglée.** Le jour où quelqu'un donne une teinte à
+    // l'avertissement, ce test tombe — et c'est ce qu'on veut : la règle du
+    // glyphe obligatoire ne se justifie que par l'absence de teinte, et la
+    // changer sans revoir l'autre laisserait une règle sans sa raison.
+    const couleurs = JSON.parse(readFileSync(join(RACINE, 'theme', 'tokens.json'), 'utf-8')).color;
+
+    expect(couleurs.status.warning.surface).toBe(couleurs.bg.inset);
+    expect(couleurs.status.warning.text).toBe(couleurs.ink.default);
+    expect(couleurs.status.warning.rule).toBe(couleurs.line.solo);
+
+    // Et les deux autres portent bien une teinte, sans quoi l'assertion du
+    // dessus se lirait comme « les statuts n'ont pas de couleur ».
+    expect(couleurs.status.success.text).not.toBe(couleurs.ink.default);
+    expect(couleurs.status.danger.text).not.toBe(couleurs.ink.default);
+  });
+
+  it('rien ne le peint de sa propre main sans porter un glyphe', () => {
+    // **L'inventaire.** `StatusMessage` garantit le glyphe par construction ;
+    // ailleurs, la garantie tient à la structure du fichier, et chaque entrée
+    // dit laquelle. Un fichier de plus oblige à répondre à la question, ce
+    // qu'aucune règle écrite dans une passation ne fait faire.
+    const GARANTS: Record<string, string> = {
+      // Le composant lui-même : sa table de glyphes est éprouvée ci-dessus.
+      'src/components/StatusMessage.tsx': 'sa table de niveaux',
+      // `Bloc` prend `icone` en propriété **obligatoire**, typée sur deux
+      // valeurs : on ne peut pas en poser un sans glyphe.
+      'src/screens/ReglesDesPaliers.tsx': 'la propriété `icone` de `Bloc`',
+      // Le type `Cas` porte `icone: NomIcone`, non optionnel.
+      'src/screens/RaisonDuVide.tsx': 'le champ `icone` du type `Cas`',
+      // Les deux rendent l'icône « alerte » à côté de la teinte.
+      'src/screens/CarteDuCommerce.tsx': 'une `Icone` alerte rendue à côté',
+      'src/screens/ArbitrageScreen.tsx': 'une `Icone` alerte rendue à côté',
+    };
+
+    const peintres = sources(RACINE)
+      .filter((chemin) => !chemin.includes(join('src', 'theme')))
+      .filter((chemin) => sansCommentaires(readFileSync(chemin, 'utf-8')).includes('status.warning'))
+      .map((chemin) => chemin.slice(chemin.indexOf('src/')));
+
+    expect(peintres.sort()).toEqual(Object.keys(GARANTS).sort());
+
+    // **Et le garant se vérifie, il ne se déclare pas.** Sans cette moitié,
+    // l'inventaire dirait seulement quels fichiers ont le droit — un
+    // avertissement ajouté sans glyphe dans un fichier déjà listé passerait.
+    for (const fichier of peintres) {
+      const source = readFileSync(join(RACINE, '..', fichier), 'utf-8');
+      expect([fichier, /icone|Icone|GLYPHE/.test(source)]).toEqual([fichier, true]);
+    }
   });
 });

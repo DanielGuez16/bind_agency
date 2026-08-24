@@ -6,8 +6,8 @@
  * portée par un contrôle : le commerce qui réduit sa capacité doit voir tout de
  * suite qu'il passe sous ce qu'il a promis, avant d'enregistrer.
  *
- * **`bg.deep` et non `bg.sunken`.** Les deux se lisent « creux » ; un seul
- * l'est sur fond clair. `bg.sunken` est le plus sombre de la palette, plus
+ * **`bg.inset` et non `bg.onDark`.** Les deux se lisent « creux » ; un seul
+ * l'est sur fond clair. `bg.onDark` est le plus sombre de la palette, plus
  * sombre encore que `bg.inverse` : il appartient au kit
  * d'accommodation sombre, celui des deux écrans déclarés hors système, et le
  * fichier de jetons le dit. Employé comme renfoncement il peint du noir : le
@@ -35,12 +35,12 @@ export function Stepper({ label, value, min = 0, max = 99, onChange, testID }: S
     <View
       testID={testID}
       style={{
-        height: size.hit,
+        height: size.touchMin,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         borderRadius: radius['radius.sm'],
-        backgroundColor: c['bg.deep'],
+        backgroundColor: c['bg.inset'],
         paddingHorizontal: 12,
         gap: 8,
       }}
