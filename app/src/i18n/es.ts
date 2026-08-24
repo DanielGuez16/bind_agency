@@ -932,7 +932,7 @@ export const es: Catalogue = {
     videCorps: 'El corazón de un servicio lo guarda aquí — útil para lo que todavía no se te abre.',
     duree: '{{n}} min',
     avisCorps: 'Avísame cuando algo que he guardado se me abra',
-    ecartJusquAuPalier: 'Nivel {{palier}} · faltan {{ecart}} seguidores',
+    ecartJusquAuPalier: 'Nivel {{palier}} · faltan {{ecart}} seguidores, y se abre',
     voirMesPaliers: 'Ver mis niveles',
     avisEnAttente: '{{count}} de estos esperan algo',
     avisLabel: 'Avisos sobre servicios guardados',

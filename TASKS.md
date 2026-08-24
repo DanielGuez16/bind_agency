@@ -1854,12 +1854,18 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       search » alors que la route rend une liste nue. Le total est celui de la
       recherche courante, pas du catalogue : c'est ce qui distingue « quatre
       résultats » de « quatre salons ».*
-      *`Favori` — **le palier requis par la prestation**. La planche écrit
-      « Reel tier · 18 000 followers to go, then it opens ». L'écart est déjà
-      chiffrable — il vient de `prochain_palier.obstacle.ecart`, un nombre publié
-      sur l'écran des paliers — mais rien ne dit si atteindre le prochain palier
-      ouvre **ce** favori-là. La ligne livrée s'arrête donc avant le « then it
-      opens », qui serait une promesse qu'on ne peut pas tenir.*
+      ***`Favori.palier_requis` est arrivé, et la ligne dit enfin « et il
+      s'ouvre ».** Elle prenait l'écart sur le prochain palier de la créatrice ;
+      les deux diffèrent dès qu'une prestation n'est offerte qu'à un palier
+      lointain, donc la promesse aurait pu être fausse et la phrase s'arrêtait
+      avant. Le palier de la prestation est maintenant sur la ligne.*
+      *Et une requête de moins : l'écran des favoris ne charge plus la vue des
+      paliers, qui n'existait que pour ce chiffre. C'était aussi la seule
+      lecture de cet écran qui acceptait une position — un favori posé à
+      Wynwood se relit depuis Kendall, et rien ne l'en empêche plus par
+      construction.*
+      *Reste `created_at` sur `GET /admin/businesses`, pour la colonne « inscrit
+      le » de la liste d'administration*
 
 - [x] **La luminosité et la veille de l'écran de code, branchées**
       *`rules.md` §2 les annonce — « luminosité forcée au maximum, veille
@@ -2533,13 +2539,13 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       pas lieu — la seule promesse que cet écran est construit pour ne pas
       faire. Sans lecteur pour l'instant, la composition se fait ailleurs.*
 
-- [ ] **La planche dit « le favori porte sur le salon », le contrat dit la prestation**
-      *`ItemDuFil.est_favori` est posé sur l'article, `POST /me/favorites` prend
+- [x] **Le favori porte sur la prestation — tranché définitivement**
+      *La planche s'aligne sur le contrat, pas l'inverse, et Design est prévenu.
+      `ItemDuFil.est_favori` est posé sur l'article, `POST /me/favorites` prend
       un `catalog_item_id`, et `GET /me/favorites` rend des prestations avec
-      leur état. La planche écrit l'inverse — « toutes les cartes d'un même
-      salon montrent le même cœur ». Livré au niveau de la prestation, qui est
-      le seul cohérent de bout en bout : garder un salon demanderait une autre
-      table et un autre écran. **Signalé, non tranché seul.***
+      leur état. Garder un salon aurait demandé une autre table et un autre
+      écran, pour un geste que personne n'a demandé — et « j'ai un favori chez
+      eux » répond déjà à la question*
 - [x] **Ce qu'un favori déclenche est décidé, et sa place aussi**
       *Faut-il prévenir quand une prestation s'ouvre au palier de la créatrice ?
       Ce serait la première notification sortante du produit, donc une décision

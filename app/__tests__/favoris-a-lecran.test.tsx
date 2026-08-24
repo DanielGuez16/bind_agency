@@ -28,6 +28,9 @@ function favori(extra: Partial<Favori> = {}): Favori {
     currency: 'USD',
     photo_key: 'photos/vela.jpg',
     etat: 'reservable',
+    // **Servi, et nul par défaut.** Le serveur ne le pose que sur
+    // `hors_palier` : c'est le seul état où la question se pose.
+    palier_requis: null,
     ...extra,
   } as Favori;
 }
@@ -246,19 +249,19 @@ describe('la liste se relit d’où l’on est', () => {
     // confié.
     const { appels } = await monter([favori()]);
 
-    // **La lecture nommée, et non la première venue.** L'écran fait deux GET
-    // depuis qu'il lit aussi les paliers pour chiffrer un écart ; prendre la
-    // première ferait porter l'assertion sur l'autre requête, et le jour où
-    // celle des favoris repartirait avec une position, personne ne le verrait.
+    // **La lecture nommée, et non la première venue** : le jour où celle des
+    // favoris repartirait avec une position, une assertion sur « la première »
+    // pourrait porter sur une autre requête.
     const lecture = appels.find((a) => a.methode === 'GET' && a.url.includes('/me/favorites'));
     expect(lecture).toBeDefined();
     expect(lecture?.url).not.toContain('longitude');
     expect(lecture?.url).not.toContain('rayon');
 
-    // Et celle des paliers non plus : elle accepte une position, l'écran ne
-    // lui en donne pas — un favori posé à Wynwood se relit depuis Kendall.
-    const paliers = appels.find((a) => a.methode === 'GET' && a.url.includes('/me/tiers'));
-    expect(paliers?.url).not.toContain('longitude');
+    // **Et les paliers ne se lisent plus du tout.** L'écran les demandait pour
+    // chiffrer un écart ; le palier requis est servi sur chaque favori depuis,
+    // donc la requête a disparu — et avec elle la seule de cet écran qui
+    // acceptait une position.
+    expect(appels.some((a) => a.url.includes('/me/tiers'))).toBe(false);
   });
 });
 
@@ -336,21 +339,30 @@ describe('l’avis de favori, et lui seul', () => {
  * distinction que ces tests tiennent.
  */
 describe('la seule ligne qui porte un geste', () => {
-  const PROCHAIN = {
-    prochain_palier: {
-      tier_id: 't3',
-      platform: 'instagram',
-      content_format: 'reel',
-      obstacle: { raison: 'not_enough_followers', requis: 50000, constate: 32000, ecart: 18000 },
-    },
+  /**
+   * **Le palier de la prestation, servi sur le favori.**
+   *
+   * Il ne se prend plus sur le prochain palier de la créatrice : les deux
+   * diffèrent dès qu'une prestation n'est offerte qu'à un palier lointain, et
+   * la ligne ne pouvait alors pas promettre que l'atteindre **ouvre celle-ci**.
+   */
+  const REQUIS = {
+    tier_id: 't3',
+    platform: 'instagram' as const,
+    content_format: 'reel' as const,
+    abonnes_manquants: 18000,
   };
 
-  it('chiffre l’écart et mène aux paliers', async () => {
-    const vue = await monter([favori({ etat: 'hors_palier' })], undefined, true, PROCHAIN);
+  it('chiffre l’écart, dit qu’il ouvre celui-là, et mène aux paliers', async () => {
+    const vue = await monter([favori({ etat: 'hors_palier', palier_requis: REQUIS })]);
     await waitFor(() => expect(screen.getByTestId('favori-ecart-i1')).toBeTruthy());
 
-    // Le chiffre vient de la vue des paliers, pas d'un calcul refait ici.
+    // Le chiffre vient du serveur, pas d'un calcul refait ici.
     expect(screen.getByTestId('favori-ecart-i1')).toHaveTextContent(/18,000/);
+    // **Et la promesse, qui était impossible avant.** Sans le palier de la
+    // prestation, la ligne s'arrêtait sur l'écart : atteindre le prochain
+    // palier de la créatrice n'ouvre pas forcément ce favori-là.
+    expect(screen.getByTestId('favori-ecart-i1')).toHaveTextContent(/then it opens/i);
 
     await act(async () => {
       await fireEvent.press(screen.getByTestId('favori-vers-paliers-i1'));
@@ -364,7 +376,7 @@ describe('la seule ligne qui porte un geste', () => {
     // bien — et poserait un bouton là où aucun canal ne va de la créatrice vers
     // un salon. Un bouton qui n'existe pas est pire qu'un fait nu.
     for (const etat of ['salon_indisponible', 'fermee'] as const) {
-      await monter([favori({ etat })], undefined, true, PROCHAIN);
+      await monter([favori({ etat, palier_requis: REQUIS })]);
       await waitFor(() => expect(screen.getByTestId('favori-etat-i1')).toBeTruthy());
 
       expect(screen.queryByTestId('favori-ecart-i1')).toBeNull();
@@ -373,12 +385,12 @@ describe('la seule ligne qui porte un geste', () => {
   });
 
   it('et se tait aussi quand l’écart n’est pas chiffrable', async () => {
-    // La règle des 60 % de l'écran des paliers : au-delà, le serveur ne chiffre
-    // pas, et cet écran n'a aucune raison d'en dire plus que celui dont il
-    // reprend le nombre.
-    await monter([favori({ etat: 'hors_palier' })], undefined, true, {
-      prochain_palier: { ...PROCHAIN.prochain_palier, obstacle: { raison: 'x', ecart: null } },
-    });
+    // Le serveur ne chiffre pas toujours : un jeton mort, un relevé trop
+    // vieux, une revue en cours. « Il vous manque 431 200 secondes » ne veut
+    // rien dire, et l'écran doit alors se taire plutôt qu'arrondir.
+    await monter([
+      favori({ etat: 'hors_palier', palier_requis: { ...REQUIS, abonnes_manquants: null } }),
+    ]);
     await waitFor(() => expect(screen.getByTestId('favori-etat-i1')).toBeTruthy());
 
     expect(screen.queryByTestId('favori-ecart-i1')).toBeNull();
