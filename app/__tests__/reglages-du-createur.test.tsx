@@ -93,7 +93,9 @@ const MOT_DE_PASSE = 'tourbillon-cactus-91-vermeil';
  * au test comme à la lectrice.
  */
 async function armerLaSuppression(motDePasse: string = MOT_DE_PASSE) {
-  await fireEvent.press(screen.getByTestId('ouvrir-la-suppression'));
+  if (screen.queryByTestId('ouvrir-la-suppression')) {
+    await fireEvent.press(screen.getByTestId('ouvrir-la-suppression'));
+  }
   await fireEvent.changeText(screen.getByTestId('suppression-identifiant'), UTILISATEUR.email ?? '');
   await fireEvent.changeText(screen.getByTestId('suppression-mot-de-passe'), motDePasse);
 }
@@ -237,6 +239,47 @@ describe('les réglages du créateur', () => {
     // `DELETE` sur la demande, pas un `POST` sur un chemin d'annulation : ce
     // qu'on retire est la ressource créée par le geste précédent.
     expect(methode).toBe('DELETE');
+  });
+
+  it('le bouton n’existe qu’une fois les deux champs justes', async () => {
+    // **Le sens inverse, et c'est lui qui porte la protection.** Sans cette
+    // moitié, un bouton rendu dès l'ouverture passerait tous les tests du
+    // dessus — c'est-à-dire exactement l'appui accidentel qu'on vient de
+    // retirer. Vérifié par mutation : sans elle, la garde survivait.
+    await poser();
+    await waitFor(() => expect(screen.getByTestId('ouvrir-la-suppression')).toBeTruthy());
+    await fireEvent.press(screen.getByTestId('ouvrir-la-suppression'));
+    expect(screen.queryByTestId('supprimer-mon-compte')).toBeNull();
+
+    // L'adresse seule ne suffit pas.
+    await fireEvent.changeText(
+      screen.getByTestId('suppression-identifiant'),
+      UTILISATEUR.email ?? '',
+    );
+    expect(screen.queryByTestId('supprimer-mon-compte')).toBeNull();
+
+    // Une autre adresse non plus, même avec le mot de passe.
+    await fireEvent.changeText(screen.getByTestId('suppression-identifiant'), 'autre@bind.example');
+    await fireEvent.changeText(screen.getByTestId('suppression-mot-de-passe'), MOT_DE_PASSE);
+    expect(screen.queryByTestId('supprimer-mon-compte')).toBeNull();
+
+    await armerLaSuppression();
+    expect(screen.getByTestId('supprimer-mon-compte')).toBeTruthy();
+  });
+
+  it('et un mot de passe faux le dit, sans rien supprimer', async () => {
+    let demandes = 0;
+    await poser(serveurDe({ '/me/deletion': () => { demandes += 1; return { status: 202, corps: moi }; } }));
+
+    await armerLaSuppression('pas-le-bon-mot-de-passe');
+    await fireEvent.press(screen.getByTestId('supprimer-mon-compte'));
+
+    await waitFor(() =>
+      expect(screen.getByTestId('suppression-echec')).toHaveTextContent(
+        en.reglages.supprimerMotDePasseFaux,
+      ),
+    );
+    expect(demandes).toBe(0);
   });
 
   it('dit combien de contreparties bloquent, en les comptant lui-même', async () => {
