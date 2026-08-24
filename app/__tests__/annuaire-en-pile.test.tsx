@@ -49,7 +49,7 @@ function annuaireDe(combien: number, total = 128) {
   };
 }
 
-async function monter(largeur: number) {
+async function monter(largeur: number, combien = 2) {
   const appels: string[] = [];
   const api = new ApiClient({
     baseUrl: 'https://api.test',
@@ -58,7 +58,7 @@ async function monter(largeur: number) {
       const chemin = String(url);
       appels.push(chemin);
       if (chemin.includes('/creators')) {
-        return { ok: true, status: 200, json: async () => annuaireDe(2) } as Response;
+        return { ok: true, status: 200, json: async () => annuaireDe(combien) } as Response;
       }
       return { ok: true, status: 200, json: async () => ({}) } as Response;
     }) as unknown as typeof fetch,
@@ -132,5 +132,41 @@ describe('le portrait demande la vignette', () => {
     expect(String(screen.getByTestId('photo-c1-image').props.source.uri)).toMatch(
       /lea1\.jpg@vignette$/,
     );
+  });
+});
+
+
+/**
+ * Ce que la virtualisation économise, mesuré.
+ *
+ * **`Image` décode avant de réduire** : une photo occupe sa taille en pixels en
+ * mémoire quel que soit le cadre où on la pose. Le nombre de portraits montés
+ * est donc la mesure — pas leur taille à l'écran, pas leur poids sur le réseau.
+ *
+ * **La grille large les montait tous.** Quatre-vingts créatrices : six montées
+ * sur le téléphone, quatre-vingts sur la grille, pour le même contenu. C'est
+ * treize fois le même coût sur l'écran qui a le plus de place et pas le plus de
+ * mémoire — et c'est ce chiffre qui a décidé d'ajouter les colonnes au
+ * contrat plutôt que de le laisser en attente d'un cas mesuré.
+ *
+ * La garde tient le chiffre plutôt que la disposition : elle tomberait aussi si
+ * quelqu'un remettait la grille en bloc, ce qui est le seul retour en arrière
+ * possible.
+ */
+describe('la mesure qui a décidé', () => {
+  const portraits = () => screen.queryAllByTestId(/^photo-c\d+-image$/).length;
+
+  it.each([
+    ['le téléphone', 390],
+    ['la grille large', breakpoint.expanded],
+  ])('%s ne monte pas les quatre-vingts portraits', async (_nom, largeur) => {
+    await monter(largeur, 80);
+
+    const montes = portraits();
+    expect(montes).toBeGreaterThan(0);
+    // Le seuil est large exprès : ce qui est éprouvé est qu'on virtualise, pas
+    // le réglage de fenêtre de `FlatList`, qui peut bouger sans que la règle
+    // change.
+    expect(montes).toBeLessThan(40);
   });
 });

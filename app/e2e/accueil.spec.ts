@@ -59,12 +59,11 @@ test("les promesses ne passent pas sous les boutons, sur un téléphone", async 
    * dedans — et celle-ci est restée verte pendant que l'écran était cassé en
    * campagne.
    *
-   * **Une seule langue, et il faut le savoir.** L'anglais est la seule que
-   * cette garde mesure — la bascule de langue n'est pas atteignable depuis
-   * l'accueil. L'espagnol est plus long et c'est lui qui décide de la hauteur
-   * réelle ; tant qu'on ne le mesure pas, la marge prise ici est ce qui en
-   * tient lieu. Écrit plutôt que sous-entendu : une garde qui laisserait
-   * croire qu'elle couvre les deux serait pire que celle-ci.
+   * **Les deux langues, et l'espagnol décide.** Il est plus long : un écran qui
+   * tient en anglais et déborde en espagnol est un écran qui déborde. La
+   * bascule n'est pas atteignable depuis l'accueil, mais elle n'a pas à
+   * l'être — `expo-localization` lit la langue du navigateur sur le web, et
+   * Playwright la pose. Le second cas est le même test sous `es-ES`.
    */
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
@@ -146,4 +145,51 @@ test('le champ découpe ce qu’il contient, et le navigateur ne le repeint pas'
     }),
   );
   expect(neutralise, 'rien ne neutralise le fond de l’autoremplissage').toBe(true);
+});
+
+test.describe('en espagnol, qui est plus long', () => {
+  test.use({ locale: 'es-ES' });
+
+  test('les promesses ne passent pas non plus sous les boutons', async ({ page }) => {
+    /**
+     * **C'est l'espagnol qui décide de la hauteur réelle.** L'anglais tenait
+     * déjà ; ce test existe parce que la traduction la plus longue est celle
+     * qui déborde, et qu'on ne la regarde pas en développant.
+     *
+     * La langue vient du contexte du navigateur, pas d'un réglage de
+     * l'application : `expo-localization` lit `navigator.language` sur le web,
+     * et c'est ce que `test.use({ locale })` pose.
+     */
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/');
+
+    const accueil = page.getByTestId('ecran-accueil');
+    await expect(accueil).toBeVisible();
+
+    // La garde regarde bien de l'espagnol : sans cela, une bascule de langue
+    // qui cesserait de fonctionner rendrait ce test identique au précédent.
+    await expect(accueil.getByTestId('porte-createur-promesse-0')).not.toHaveText(
+      /Nails, hair, facials/i,
+    );
+
+    const portes = [
+      { role: 'creator', carte: 'porte-createur' },
+      { role: 'business_member', carte: 'porte-commerce' },
+    ] as const;
+
+    for (const { role, carte: repere } of portes) {
+      const carte = accueil.getByTestId(repere);
+      const cadreDuBouton = await accueil.getByTestId(`choisir-${role}`).boundingBox();
+      expect(cadreDuBouton, `le bouton ${role} n'a pas de cadre`).not.toBeNull();
+
+      for (const rang of [0, 1, 2]) {
+        const cadre = await carte.getByTestId(`${repere}-promesse-${rang}`).boundingBox();
+        expect(cadre, `la promesse ${rang} de ${role} n'a pas de cadre`).not.toBeNull();
+        expect(
+          cadre!.y + cadre!.height,
+          `la promesse ${rang} de ${role} descend sous le haut du bouton`,
+        ).toBeLessThanOrEqual(cadreDuBouton!.y + 1);
+      }
+    }
+  });
 });

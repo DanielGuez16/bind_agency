@@ -103,6 +103,21 @@ export type EcranProps<T> = {
     /** Ce qui la suit. */
     pied?: ReactNode;
     /**
+     * Le nombre de colonnes, quand le contenu se pose en grille.
+     *
+     * **Mesuré avant d'être ajouté**, et le chiffre est net : sur quatre-vingts
+     * créatrices, la pile virtualisée du téléphone en monte six et la grille
+     * large les monte toutes les quatre-vingts. `Image` décode avant de
+     * réduire — c'est treize fois le même coût, sur l'écran qui a le plus de
+     * place et pas le plus de mémoire.
+     *
+     * **Il ne se change pas en vol.** React Native refuse un `numColumns` qui
+     * bouge sur une liste montée ; le défileur porte donc une clé qui en
+     * dépend, et traverser le seuil le remonte. C'est le seul moment où la
+     * liste repart de zéro, et il est déjà un changement de disposition.
+     */
+    colonnes?: number;
+    /**
      * Le repère du défileur, quand l'écran en avait déjà un pour son bloc.
      *
      * Le mur portait `le-mur` sur le conteneur qui tenait ses rangées ; en
@@ -376,7 +391,17 @@ export function Ecran<T>({
         // problème parce qu'il était l'enfant direct de la racine.
         <View testID="etat-nominal" style={{ flex: 1, minHeight: 0 }}>
         <FlatList
+          // **La clé porte le nombre de colonnes.** React Native refuse qu'il
+          // change sur une liste montée : sans cette clé, traverser le seuil
+          // lève au lieu de se reposer.
+          key={`colonnes-${enListe.colonnes ?? 1}`}
           testID={enListe.testID ?? 'corps-en-liste'}
+          numColumns={enListe.colonnes}
+          // L'écart entre colonnes appartient à la rangée, pas à l'élément :
+          // posé sur l'élément, il s'ajouterait au bord extérieur de la grille.
+          columnWrapperStyle={
+            enListe.colonnes && enListe.colonnes > 1 ? { gap: density.gap } : undefined
+          }
           data={enListe.elements}
           keyExtractor={(element) => element.cle}
           renderItem={({ item }) => <>{item.rendu}</>}

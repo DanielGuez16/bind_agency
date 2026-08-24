@@ -10026,3 +10026,39 @@ non une adresse précisément pour que la préférence se relise au moment d'env
 — quelqu'un qui coupe l'avis entre les deux est entendu. Et l'écart porte sa
 propre raison, distincte de « compte injoignable » : un refus ne doit pas se
 lire comme une panne.
+
+---
+
+## 2026-08-24 — La grille large, mesurée puis virtualisée
+
+**Le chiffre a décidé, comme annoncé.** Sur quatre-vingts créatrices : six
+portraits montés sur le téléphone, **quatre-vingts** sur la grille large, pour
+le même contenu. `Image` décode avant de réduire — c'est treize fois le même
+coût, sur l'écran qui a le plus de place et pas le plus de mémoire.
+
+`colonnes` entre donc au contrat de `liste`. Il ne se change pas en vol : React
+Native refuse un `numColumns` qui bouge sur une liste montée, et le défileur
+porte une clé qui en dépend — traverser le seuil le remonte, ce qui est déjà un
+changement de disposition.
+
+**Le bloc n'est pas mort pour autant** : il sert l'état d'erreur, où l'on rend
+des données datées sous un bandeau. Une liste qu'on relit plutôt qu'on ne
+parcourt n'a rien à virtualiser.
+
+**La mesure reste comme garde.** Elle tient le chiffre et non la disposition :
+elle tomberait aussi si quelqu'un remettait la grille en bloc, ce qui est le
+seul retour en arrière possible.
+
+**L'accueil se mesure maintenant dans les deux langues.** La bascule n'est pas
+atteignable depuis l'écran, mais elle n'a pas à l'être : `expo-localization` lit
+la langue du navigateur sur le web, et Playwright la pose. L'espagnol est plus
+long, et c'est lui qui décide de la hauteur réelle — les deux tombent sous la
+même mutation.
+
+**Et une enquête abandonnée, dont le résultat vaut d'être écrit.** Le worker qui
+ne sort pas proprement n'est pas un fichier : à un worker l'avertissement
+disparaît, à deux il revient, et les deux moitiés de la suite le déclenchent
+chacune. `--detectOpenHandles` sort propre parce qu'il force le mode série,
+c'est-à-dire qu'il supprime la condition qu'on cherche. L'outil qui nommerait le
+handle change le mode d'exécution qui le produit — c'est ce qui rend ce défaut
+coûteux, et c'est consigné plutôt que laissé en « pas trouvé ».
