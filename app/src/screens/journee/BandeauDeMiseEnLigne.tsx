@@ -16,15 +16,26 @@
  * coches qui diluent les deux qui restent. Le compte le dit — « 4 sur 6 » — et
  * l'énumération se réserve à ce qui manque.
  *
- * **Ce que la planche demande et que le serveur ne permet pas.** Elle veut que
- * le bandeau « s'efface au dernier point coché », puis devienne une ligne de
- * confirmation qui disparaît au bout de sept jours. Publier est un appel
- * explicite — `activerLeCommerce` — donc le dernier point coché ne publie pas :
- * il rend la publication *possible*. Le bandeau porte alors l'action, sans le
- * mot « go live » que la planche retire du produit. Et la ligne de confirmation
- * n'est pas rendue : elle demanderait une date de publication pour la règle des
- * sept jours, et la portée locale sur la journée pour écrire « 41 créatrices
- * peuvent vous réserver ». Ni l'une ni l'autre n'est servie. Voir `TASKS.md`.
+ * **Deux points de la planche sont tranchés contre elle, et pour de bon.**
+ *
+ * Elle veut que le bandeau « s'efface au dernier point coché ». Il ne s'efface
+ * pas : **le dernier point rend la publication possible, il ne la déclenche
+ * pas.** Un salon choisit le moment où il apparaît — c'est la seule décision
+ * du produit qui expose un commerce à des inconnus, et elle ne se prend pas
+ * par ricochet en cochant une case de capacité. Le bandeau porte donc l'action,
+ * sous un nom qui n'est pas « go live », et il **dit** que rien ne part tout
+ * seul : la confusion a lieu au moment exact où tout est vert et où rien ne
+ * s'est passé.
+ *
+ * Elle veut ensuite qu'il devienne une ligne de confirmation — « vous êtes en
+ * ligne · 41 créatrices peuvent vous réserver » — qui disparaît au bout de sept
+ * jours. **Il ne le devient pas.** Les deux données manquent : aucune date de
+ * publication n'est servie, donc la règle des sept jours n'a pas d'origine, et
+ * la portée locale ne vit que sur les rapports. Une ligne qui affirmerait l'une
+ * ou l'autre à l'estime serait une confirmation fausse, ce qui est pire que
+ * l'absence de confirmation. Le bandeau s'efface simplement.
+ *
+ * Voir `DECISIONS.md`, 2026-08-23.
  */
 import { useState } from 'react';
 import { View } from 'react-native';
@@ -149,16 +160,35 @@ export function BandeauDeMiseEnLigne({
       {echec ? <StatusMessage level="danger" body={echec} testID="echec-mise-en-ligne" /> : null}
 
       {etat.forme === 'prete' ? (
-        <View style={{ alignSelf: 'flex-start' }}>
+        <View style={{ gap: 10 }}>
+          {/* **Le dernier point coché ne publie pas, et l'écran le dit.** La
+              planche suppose que le bandeau « s'efface au dernier point
+              coché » ; c'est le seul endroit du produit où la confusion coûte
+              quelque chose, parce qu'elle a lieu au moment exact où tout est
+              vert et où rien ne s'est passé. Un salon qui croit être en ligne
+              ne le vérifie pas.
+
+              La phrase vient après le compte et avant le bouton : elle répond
+              à « pourquoi ne suis-je pas visible » juste avant d'offrir le
+              geste qui y répond. */}
+          <Texte
+            variante="type.caption"
+            couleur="ink.onDark"
+            testID="publication-explicite"
+          >
+            {t('commerce.miseEnLigneVousChoisissez')}
+          </Texte>
           {/* **Le geste reste, le mot part.** La planche retire « go live » du
               produit ; publier reste un appel explicite côté serveur, donc le
               bouton reste — sous un nom qui dit ce qui se passe. */}
+          <View style={{ alignSelf: 'flex-start' }}>
           <Button
             label={t('commerce.miseEnLignePublier')}
             loading={envoi}
             onPress={() => void publier()}
             testID="publier-le-commerce"
           />
+          </View>
         </View>
       ) : etat.forme === 'publie-mais-invisible' ? null : (
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>

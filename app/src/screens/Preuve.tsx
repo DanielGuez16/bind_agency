@@ -16,10 +16,10 @@
  * exactement la vérification qu'on lui demande de faire.
  */
 import { useEffect, useState } from 'react';
-import { Image, Linking, Pressable, View } from 'react-native';
+import { Linking, Pressable, View } from 'react-native';
 
 import { useApi, type DerniereSoumission } from '../api';
-import { Icone, SkeletonBox, StatusMessage, Texte } from '../components';
+import { Icone, Photo, SkeletonBox, StatusMessage, Texte } from '../components';
 import { useI18n } from '../i18n';
 import { radius, useTheme } from '../theme';
 
@@ -96,11 +96,15 @@ export function PreuveSoumise({
         }}
       >
         {vue.etat === 'chargement' ? <SkeletonBox width={200} height={APERCU} /> : null}
+        {/* **`Photo`, et non une `Image` posée à la main.** Même raison qu'à
+            l'envoi : le fondu, l'aplat des médias et le mouvement réduit
+            viennent du composant, pas de chaque écran. */}
         {vue.etat === 'pret' ? (
-          <Image
-            source={{ uri: vue.url }}
-            style={{ width: '100%', height: APERCU }}
-            resizeMode="contain"
+          <Photo
+            uri={vue.url}
+            hauteur={APERCU}
+            cadrage="contain"
+            style={{ width: '100%' }}
             testID="apercu-de-la-preuve"
           />
         ) : null}

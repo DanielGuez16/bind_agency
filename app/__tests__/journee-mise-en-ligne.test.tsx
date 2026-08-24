@@ -254,6 +254,38 @@ describe('le bandeau, à l’écran', () => {
     expect(screen.queryByTestId('publier-le-commerce')).toBeNull();
   });
 
+  it('tout est prêt, et le bandeau dit que rien ne part tout seul', async () => {
+    // **Le dernier point coché ne publie pas.** La planche suppose l'inverse,
+    // et c'est tranché : il rend la publication *possible*. Un salon choisit le
+    // moment où il apparaît — c'est la seule décision du produit qui l'expose à
+    // des inconnus, et elle ne se prend pas par ricochet en cochant une case de
+    // capacité.
+    //
+    // La confusion a lieu au moment exact où tout est vert et où rien ne s'est
+    // passé : c'est là que la phrase doit être, pas ailleurs.
+    await monter({ status: 'draft', etapes: [ETAPE('address', true)] });
+    await waitFor(() => expect(screen.getByTestId('publier-le-commerce')).toBeTruthy());
+
+    expect(screen.getByTestId('publication-explicite')).toHaveTextContent(
+      en.commerce.miseEnLigneVousChoisissez,
+    );
+  });
+
+  it('et il ne le dit pas tant qu’il reste des points', async () => {
+    // **Le cas où les deux implémentations divergent.** Rendre la phrase sans
+    // condition passerait le test au-dessus tout aussi bien. Elle répond à
+    // « pourquoi ne suis-je pas visible alors que tout est coché » : posée sur
+    // un bandeau incomplet, elle répond à une question qu'on ne se pose pas
+    // encore, et dilue les deux points qui restent.
+    await monter({
+      status: 'draft',
+      etapes: [ETAPE('address', true), ETAPE('coordinates', false)],
+    });
+    await waitFor(() => expect(screen.getByTestId('bandeau-mise-en-ligne')).toBeTruthy());
+
+    expect(screen.queryByTestId('publication-explicite')).toBeNull();
+  });
+
   it('et publié sans rien qui manque, il n’existe plus', async () => {
     // Une liste de tâches qui reste après avoir été remplie est la définition
     // d'un écran dont on ne comprend plus l'objet.
