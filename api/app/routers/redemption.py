@@ -21,7 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import CurrentUser, SessionDep, require_role
 from app.core.errors import ErrorCode, api_error
-from app.models import Booking, BusinessMember, CatalogItem, SocialAccount, User
+from app.models import Booking, Business, BusinessMember, CatalogItem, SocialAccount, User
 from app.models.enums import UserRole
 from app.schemas.redemption import (
     CodeAffiche,
@@ -100,9 +100,16 @@ async def read_code(
         # une réponse à moitié vide.
         raise api_error(status.HTTP_404_NOT_FOUND, ErrorCode.REDEMPTION_CODE_UNKNOWN)
 
+    # Chargé explicitement plutôt que par la relation : un accès paresseux sur
+    # une session asynchrone lève, et il lèverait ici seulement, au moment où
+    # quelqu'un est devant la caisse.
+    salon = await session.get(Business, booking.business_id)
+
     affiche = service.code_affiche(code)
     return CodeAffiche(
         booking_id=booking.id,
+        business_name=salon.name if salon else "",
+        business_address=salon.address if salon else None,
         payload=f"{code.id}:{affiche}",
         code=affiche,
         manual_code=service.secours_lisible(code.manual_code),

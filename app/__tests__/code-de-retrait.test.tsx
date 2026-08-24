@@ -47,13 +47,36 @@ function taillesDeTexte(noeud: unknown): { fontSize: number; lineHeight: number 
 }
 
 /** Un code par réservation, comme le serveur en rend. */
-const CODES: Record<string, { payload: string; code: string; manual_code: string }> = {
+const CODES: Record<
+  string,
+  {
+    payload: string;
+    code: string;
+    manual_code: string;
+    business_name: string;
+    business_address: string | null;
+  }
+> = {
   // `payload` porte l'identifiant du **code**, pas celui de la réservation.
   // C'est le serveur qui le forme, et c'est lui qu'on encode : les deux ne se
   // ressemblent pas, et c'est ce qui rend la confusion invisible à l'œil.
-  'reservation-a': { payload: 'code-a:111111', code: '111111', manual_code: 'AAA111' },
+  'reservation-a': {
+    payload: 'code-a:111111',
+    code: '111111',
+    manual_code: 'AAA111',
+    business_name: 'Studio Brickell',
+    business_address: '1200 Brickell Ave, Miami',
+  },
   // Le serveur rend le code de secours déjà groupé.
-  'reservation-b': { payload: 'code-b:222222', code: '222222', manual_code: 'BBB 222' },
+  // Sans adresse : le salon peut n'en avoir aucune servie, et l'écran doit
+  // alors se taire plutôt que rendre une ligne vide.
+  'reservation-b': {
+    payload: 'code-b:222222',
+    code: '222222',
+    manual_code: 'BBB 222',
+    business_name: 'Wynwood Nails',
+    business_address: null,
+  },
 };
 
 function client(compteur?: { appels: string[] }) {
@@ -324,5 +347,37 @@ describe('ce que le QR encode', () => {
     expect(screen.getByTestId('compte-a-rebours')).toBeTruthy();
     expect(screen.getByTestId('secours')).toHaveTextContent(/AAA 111/);
     expect(screen.getByText(en.parcours.codeSecoursAide)).toBeTruthy();
+  });
+});
+
+/**
+ * Où l'on va.
+ *
+ * L'écran ne disait rien du salon : ni son nom, ni son adresse. On y arrivait
+ * depuis une liste qui portait l'adresse sur chaque carte, où elle doublait la
+ * longueur d'une ligne pour un usage qui n'a lieu qu'ici — on ne cherche pas
+ * son chemin en parcourant une liste, on le cherche en partant.
+ *
+ * L'adresse a donc quitté la liste, et ces deux tests sont ce qui rend ce
+ * retrait tenable : sans eux, elle aurait simplement disparu du produit.
+ */
+describe('où l’on va', () => {
+  it('porte le salon et son adresse', async () => {
+    monter('reservation-a', client());
+    await waitFor(() => expect(screen.getByTestId('ou-aller')).toBeTruthy());
+
+    expect(screen.getByTestId('ou-aller')).toHaveTextContent(/Studio Brickell/);
+    expect(screen.getByTestId('adresse')).toHaveTextContent(/1200 Brickell Ave/);
+  });
+
+  it('et se tait quand le salon n’en a pas', async () => {
+    // **Le cas qui fait diverger les deux implémentations.** Rendre l'adresse
+    // sans condition passerait le test au-dessus tout aussi bien ; c'est ici
+    // qu'une ligne vide se verrait, et nulle part ailleurs.
+    monter('reservation-b', client());
+    await waitFor(() => expect(screen.getByTestId('ou-aller')).toBeTruthy());
+
+    expect(screen.getByTestId('ou-aller')).toHaveTextContent(/Wynwood Nails/);
+    expect(screen.queryByTestId('adresse')).toBeNull();
   });
 });

@@ -189,6 +189,25 @@ export function CodeScreen({
           >
             {t('parcours.codeTitre')}
           </Texte>
+          {/* **Le salon, et comment y aller.** L'écran ne disait rien de
+              l'endroit : on y arrivait depuis une liste qui portait l'adresse,
+              et cette adresse en est partie parce qu'elle y coûtait une ligne
+              sur chaque carte pour un usage qui n'a lieu qu'ici. */}
+          <View style={{ gap: 2 }} testID="ou-aller">
+            <Texte variante="type.bodyStrong" align="center" style={{ color: codeColors.fg }}>
+              {code.business_name}
+            </Texte>
+            {code.business_address ? (
+              <Texte
+                variante="type.caption"
+                align="center"
+                style={{ color: codeColors.fg, opacity: 0.7 }}
+                testID="adresse"
+              >
+                {code.business_address}
+              </Texte>
+            ) : null}
+          </View>
           {/* **Le nombre à six chiffres ne s'affiche plus.**
               Il ne se saisit pas, il ne désigne rien seul — il ne vaut qu'avec
               l'identifiant que porte le QR — et c'est précisément ce qui le

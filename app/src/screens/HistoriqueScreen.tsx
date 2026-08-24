@@ -500,12 +500,11 @@ function LigneDeReservation({
 
       <View style={{ flex: 1, gap: 4 }}>
         <Texte variante="type.bodyStrong">{reservation.item_name}</Texte>
+        {/* **L'adresse est partie sur l'écran du code.** Elle ne sert qu'à un
+            instant — celui où l'on y va — et cet instant n'a pas lieu dans une
+            liste. Ici elle doublait la longueur de chaque carte. */}
         <Texte variante="type.caption" couleur="ink.soft">
-          {/* **L'adresse, que le cadre 08a affiche et que l'écran taisait.**
-              Une réservation dont on ne sait pas où aller ne se tient pas. */}
-          {[reservation.business_name, reservation.business_address]
-            .filter(Boolean)
-            .join(' · ')}
+          {reservation.business_name}
         </Texte>
         {/* Le palier **et** le réseau : la même prestation peut exister sur
             deux comptes, et publier sur le mauvais ne compte pas.
@@ -553,16 +552,17 @@ function LigneDeReservation({
 
         {contrepartie ? (
           <>
-            {/* **L'échéance était servie et rendue nulle part.** Le statut
-                seul — « en attente de votre publication » — ne dit pas jusqu'à
-                quand, et c'est la seule chose qui décide s'il faut agir ce
-                soir ou la semaine prochaine. */}
-            {/* **Ce qui reste, avant la date à laquelle cela finit.** Le cadre
-                08b porte « 31 H LEFT » à côté du nom, et l'écran ne donnait
-                que la date d'échéance. Une date demande de compter ; un temps
-                restant se comprend sans calcul, et c'est lui qui décide si
-                l'on publie ce soir ou demain. La date reste dessous — elle
-                seule dit *quand*, à l'heure du salon. */}
+            {/* **Ce qui reste, et rien d'autre.** La carte portait aussi la
+                date d'échéance, l'arbitrage et le numéro de tentative : trois
+                lignes qui décrivent comment le dossier est instruit, quand
+                celle-ci dit s'il faut publier ce soir. Les trois vivent sur
+                l'écran de la contrepartie, à un appui, où la comparaison a un
+                sens ; ici elles coûtaient trois lignes sur chaque carte.
+
+                Sans capitales. Le mono capitales est l'étiquette du système —
+                il porte un format, un réseau. Une durée est une phrase, et les
+                capitales détruisent la silhouette des mots, c'est-à-dire ce
+                qui permet de balayer une liste sans la lire. */}
             {tempsRestant(contrepartie.deadline_at) ? (
               <Texte
                 variante="type.monoSmall"
@@ -570,45 +570,6 @@ function LigneDeReservation({
               >
                 {t('parcours.contrepartieReste', {
                   reste: tempsRestant(contrepartie.deadline_at),
-                }).toUpperCase()}
-              </Texte>
-            ) : null}
-            <Texte
-              variante="type.monoSmall"
-              couleur="ink.soft"
-              testID={`echeance-${reservation.booking_id}`}
-            >
-              {t('parcours.contrepartieEcheance', {
-                quand: formatDateTime(
-                  contrepartie.deadline_at,
-                  locale,
-                  reservation.business_timezone,
-                ),
-              }).toUpperCase()}
-            </Texte>
-            {/* La tentative, à partir de la seconde : « 2 sur 3 » dit ce qui
-                reste, et la troisième lève une revue humaine. */}
-            {/* **L'attente change de nature, et personne ne le disait.** Passé
-                en revue humaine, le dossier n'attend plus le salon mais un
-                arbitre : le délai n'a plus le même sens, et relancer le salon
-                ne sert à rien. Le champ était rendu depuis toujours. */}
-            {contrepartie.needs_human_review ? (
-              <Texte
-                variante="type.caption"
-                couleur="ink.soft"
-                testID={`en-arbitrage-${reservation.booking_id}`}
-              >
-                {t('parcours.contrepartieEnArbitrage')}
-              </Texte>
-            ) : null}
-            {contrepartie.attempts_count > 1 ? (
-              <Texte
-                variante="type.caption"
-                couleur="ink.soft"
-                testID={`tentative-${reservation.booking_id}`}
-              >
-                {t('parcours.contrepartieTentative', {
-                  n: String(contrepartie.attempts_count),
                 })}
               </Texte>
             ) : null}
