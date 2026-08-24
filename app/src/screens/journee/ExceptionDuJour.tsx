@@ -16,6 +16,19 @@
  * question que se pose un gérant avant d'appuyer, et ne pas y répondre fait
  * renoncer au geste ou le fait faire à tort.
  *
+ * **Repliée tant que rien n'est posé.** C'était une carte de cinq lignes et deux
+ * contrôles, en tête de l'écran le plus ouvert du produit, tous les jours — y
+ * compris les jours où personne ne touche à rien. Elle répondait à « comment
+ * ajuste-t-on aujourd'hui », question qu'on se pose rarement, en haut de l'écran
+ * qui répond à « qu'est-ce que je fais aujourd'hui ».
+ *
+ * La distinction est celle que le bandeau de mise en ligne applique déjà : **un
+ * geste disparaît une fois rendu accessible, un état non résolu reste**. Une
+ * exception posée — jour fermé, places coupées — est un état : le gérant doit le
+ * voir sans le chercher, sans quoi il se demande pourquoi sa journée est vide.
+ * Une journée qui suit la semaine type n'est pas un état, c'est le cas normal,
+ * et il n'a rien à occuper.
+ *
  * **Sa propre requête, et seulement pour aujourd'hui.** La semaine type ne
  * concerne pas la journée qu'on regarde ; la charger dans la requête principale
  * la ferait payer à chaque ouverture de l'écran le plus utilisé du produit,
@@ -48,6 +61,8 @@ export function ExceptionDuJour({
   const { t } = useI18n();
   const c = useColors();
   const [envoi, setEnvoi] = useState(false);
+  /** Ouverte à la demande, quand aucune exception n'est posée. */
+  const [deplie, setDeplie] = useState(false);
   const [echec, setEchec] = useState<string | null>(null);
 
   const requete = useRequete<{ regles: RegleDeCapacite[]; exceptions: ExceptionDeCapacite[] }>(
@@ -85,6 +100,27 @@ export function ExceptionDuJour({
     } finally {
       setEnvoi(false);
     }
+  }
+
+  // **Ce qui décide de la forme.** Une exception posée sur cette date est un
+  // état ; son absence est le cas normal. `exceptionId` et non une comparaison
+  // de nombres : un salon peut poser une exception qui rend le même compte que
+  // la semaine, et elle reste une exception qu'il a posée.
+  const posee = etat.ferme || etat.exceptionId !== null;
+
+  if (!posee && !deplie) {
+    return (
+      <View style={{ flexDirection: 'row' }}>
+        <Button
+          label={t('commerce.exceptionAjuster')}
+          variant="ghost"
+          size="sm"
+          fullWidth={false}
+          onPress={() => setDeplie(true)}
+          testID="ajuster-aujourdhui"
+        />
+      </View>
+    );
   }
 
   return (
