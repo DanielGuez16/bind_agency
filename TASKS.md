@@ -1709,6 +1709,29 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       puisqu'elles ne sont pas versionnées.*
       *Les photos de prestation restent générées : elles sont petites et le
       dégradé y passe.*
+- [x] **Les cinquante-deux dernières images du semis, trouvées sur Openverse**
+      ***102 fournies, 0 générée.** Le semis ne fabrique plus un seul dégradé :
+      cinquante photos de prestation et les deux pages de carte de La Mesa
+      Larga sont posées, au mot le plus proche du nom de la prestation —
+      « corte clásico » cherché comme *barber haircut*, « taller de pastelería »
+      comme *pastry baking class*.*
+      *Openverse n'a besoin d'aucune clé. **Un en-tête `User-Agent` accentué
+      fait répondre 403**, et le message ne dit rien de la cause : quarante-huit
+      recherches ont échoué d'affilée avant que la comparaison avec `curl` le
+      montre.*
+      *Deux règles tenues. Le grand côté est borné à 1200 px avant le dépôt.
+      Et **seules les licences qui permettent la modification** : `cc0`, `pdm`,
+      `by`, `by-sa`. `license_type=commercial` laissait passer `by-nd`, cinq
+      images sont arrivées ainsi, et recadrer est une œuvre dérivée — refaites.*
+      *Deux vérifications qui ont trouvé quelque chose : les dimensions
+      annoncées par l'API ne sont pas toujours celles du fichier — une page de
+      carte annoncée verticale est arrivée en 1200 × 900, que le semis aurait
+      recadrée en une bande — et les deux pages de carte étaient **la même
+      image**, ce qui ne montre pas ce qu'une carte de deux pages est.*
+      *`A-FOURNIR.md` porte les cinquante-deux avec leur auteur, leur licence et
+      leur source : ce sont des images de remplacement, elles sont justes de
+      sujet et de personne d'autre, et un lancement réel les remplace toutes.
+      Les dossiers des seize salons arrivent maintenant avec le dépôt.*
 - [ ] **Le bandeau ne devient pas une ligne de confirmation**
       *La planche veut qu'il devienne « vous êtes en ligne · 41 créatrices
       peuvent vous réserver », puis disparaisse au bout de sept jours. Deux
