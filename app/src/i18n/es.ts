@@ -1024,6 +1024,8 @@ export const es: Catalogue = {
     photoRemplacer: 'Cambiar la foto de {{nom}}',
     photoPermission: 'BIND necesita acceso a tus fotos. Puedes permitirlo en los ajustes del teléfono.',
     deposerUnePhoto: 'Añadir una foto',
+    photoEnvoiEnCours: 'Enviando tu foto…',
+    photoReessayer: 'Intentar de nuevo',
     photoManque: 'Falta una foto',
     corriger: 'Corregir',
     colonneNom: 'Servicio',
