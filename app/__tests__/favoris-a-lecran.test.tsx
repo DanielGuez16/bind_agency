@@ -28,6 +28,7 @@ function favori(extra: Partial<Favori> = {}): Favori {
     currency: 'USD',
     photo_key: 'photos/vela.jpg',
     etat: 'reservable',
+    palier_requis: null,
     ...extra,
   } as Favori;
 }
@@ -246,19 +247,13 @@ describe('la liste se relit d’où l’on est', () => {
     // confié.
     const { appels } = await monter([favori()]);
 
-    // **La lecture nommée, et non la première venue.** L'écran fait deux GET
-    // depuis qu'il lit aussi les paliers pour chiffrer un écart ; prendre la
-    // première ferait porter l'assertion sur l'autre requête, et le jour où
-    // celle des favoris repartirait avec une position, personne ne le verrait.
+    // **La lecture nommée, et non la première venue.** L'écran n'a plus qu'un
+    // GET depuis que le palier vient du favori lui-même, mais le nommer coûte
+    // un mot et survit au jour où il en aura deux.
     const lecture = appels.find((a) => a.methode === 'GET' && a.url.includes('/me/favorites'));
     expect(lecture).toBeDefined();
     expect(lecture?.url).not.toContain('longitude');
     expect(lecture?.url).not.toContain('rayon');
-
-    // Et celle des paliers non plus : elle accepte une position, l'écran ne
-    // lui en donne pas — un favori posé à Wynwood se relit depuis Kendall.
-    const paliers = appels.find((a) => a.methode === 'GET' && a.url.includes('/me/tiers'));
-    expect(paliers?.url).not.toContain('longitude');
   });
 });
 
@@ -336,21 +331,23 @@ describe('l’avis de favori, et lui seul', () => {
  * distinction que ces tests tiennent.
  */
 describe('la seule ligne qui porte un geste', () => {
-  const PROCHAIN = {
-    prochain_palier: {
-      tier_id: 't3',
-      platform: 'instagram',
-      content_format: 'reel',
-      obstacle: { raison: 'not_enough_followers', requis: 50000, constate: 32000, ecart: 18000 },
-    },
+  const PALIER = {
+    tier_id: 't3',
+    platform: 'instagram',
+    content_format: 'reel',
+    abonnes_manquants: 18000,
   };
 
-  it('chiffre l’écart et mène aux paliers', async () => {
-    const vue = await monter([favori({ etat: 'hors_palier' })], undefined, true, PROCHAIN);
+  it('chiffre l’écart, dit qu’il ouvre, et mène aux paliers', async () => {
+    // **« Et il s'ouvre » n'est écrit que parce que le champ est celui de cette
+    // prestation.** Avec le prochain palier de la créatrice, la phrase aurait
+    // été fausse dès qu'un article n'est offert qu'à un palier lointain.
+    const vue = await monter([favori({ etat: 'hors_palier', palier_requis: PALIER } as never)]);
     await waitFor(() => expect(screen.getByTestId('favori-ecart-i1')).toBeTruthy());
 
-    // Le chiffre vient de la vue des paliers, pas d'un calcul refait ici.
-    expect(screen.getByTestId('favori-ecart-i1')).toHaveTextContent(/18,000/);
+    const ligne = screen.getByTestId('favori-ecart-i1');
+    expect(ligne).toHaveTextContent(/18,000/);
+    expect(ligne).toHaveTextContent(/then it opens/i);
 
     await act(async () => {
       await fireEvent.press(screen.getByTestId('favori-vers-paliers-i1'));
@@ -358,30 +355,32 @@ describe('la seule ligne qui porte un geste', () => {
     expect(vue.paliersOuverts).toHaveLength(1);
   });
 
+  it('et ne chiffre pas ce qui n’est pas un compte d’abonnés', async () => {
+    // **Le cas où les deux implémentations divergent.** Un jeton mort, un relevé
+    // trop vieux, une revue en cours : le serveur ne chiffre pas, et une ligne
+    // qui écrirait « 0 abonnés » ou ne se rendrait pas laisserait la créatrice
+    // sans savoir de quel côté regarder. Elle ne chiffre pas, elle mène.
+    await monter([
+      favori({ etat: 'hors_palier', palier_requis: { ...PALIER, abonnes_manquants: null } } as never),
+    ]);
+    await waitFor(() => expect(screen.getByTestId('favori-ecart-i1')).toBeTruthy());
+
+    const ligne = screen.getByTestId('favori-ecart-i1');
+    expect(ligne).not.toHaveTextContent(/\d/);
+    expect(screen.getByTestId('favori-vers-paliers-i1')).toBeTruthy();
+  });
+
   it('et se tait quand le salon décide, pas elle', async () => {
-    // **Le cas où les deux implémentations divergent.** Rendre la ligne sur
-    // toute prestation non réservable passerait le test du dessus tout aussi
-    // bien — et poserait un bouton là où aucun canal ne va de la créatrice vers
-    // un salon. Un bouton qui n'existe pas est pire qu'un fait nu.
+    // Le serveur ne sert `palier_requis` que sur `hors_palier` : un salon en
+    // pause ne se débloque pas en gagnant des abonnés. La ligne suit le champ,
+    // elle ne rejuge pas l'état.
     for (const etat of ['salon_indisponible', 'fermee'] as const) {
-      await monter([favori({ etat })], undefined, true, PROCHAIN);
+      await monter([favori({ etat })]);
       await waitFor(() => expect(screen.getByTestId('favori-etat-i1')).toBeTruthy());
 
       expect(screen.queryByTestId('favori-ecart-i1')).toBeNull();
       expect(screen.queryByTestId('favori-vers-paliers-i1')).toBeNull();
     }
-  });
-
-  it('et se tait aussi quand l’écart n’est pas chiffrable', async () => {
-    // La règle des 60 % de l'écran des paliers : au-delà, le serveur ne chiffre
-    // pas, et cet écran n'a aucune raison d'en dire plus que celui dont il
-    // reprend le nombre.
-    await monter([favori({ etat: 'hors_palier' })], undefined, true, {
-      prochain_palier: { ...PROCHAIN.prochain_palier, obstacle: { raison: 'x', ecart: null } },
-    });
-    await waitFor(() => expect(screen.getByTestId('favori-etat-i1')).toBeTruthy());
-
-    expect(screen.queryByTestId('favori-ecart-i1')).toBeNull();
   });
 });
 

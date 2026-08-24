@@ -41,6 +41,7 @@ import {
   type Colonne,
 } from '../components';
 import { formatNumber } from '../format';
+import { formatDate } from '../format';
 import { useI18n } from '../i18n';
 import { motion, radius, useColors } from '../theme';
 import { Ecran } from './Ecran';
@@ -87,6 +88,10 @@ const COLONNES = (t: (cle: string) => string): Colonne[] => [
   { cle: 'nom', label: t('admin.commercesColonneNom'), largeur: 300 },
   { cle: 'quartier', label: t('admin.commercesColonneQuartier'), largeur: 170 },
   { cle: 'etat', label: t('admin.commercesColonneEtat'), largeur: 150 },
+  /* **La date d'inscription, pas celle de mise en ligne.** Ici on cherche un
+     salon, on ne juge pas son activité : c'est l'ancienneté du dossier qui aide
+     à reconnaître le bon parmi cent homonymes. */
+  { cle: 'inscrit', label: t('admin.commercesColonneInscrit'), largeur: 110, chiffre: true },
   { cle: 'action', label: '', largeur: LARGEUR_ACTION },
 ];
 
@@ -234,7 +239,7 @@ function Rangee({
   ouvert: boolean;
   onOuvrir: () => void;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const c = useColors();
 
   return (
@@ -246,6 +251,10 @@ function Rangee({
           nom: commerce.name,
           quartier: commerce.neighborhood ? t(`quartiers.${commerce.neighborhood}`) : '—',
           etat: t(ETATS[commerce.status] ?? 'etats.detailIndisponible'),
+          // UTC : une date d'inscription n'a pas d'heure qui compte, et la
+          // rendre sur le fuseau de la machine la ferait changer de jour selon
+          // l'endroit d'où l'administration regarde.
+          inscrit: formatDate(commerce.created_at, locale, 'UTC'),
         }}
         fin={
           <View style={{ width: LARGEUR_ACTION, alignItems: 'flex-end' }}>

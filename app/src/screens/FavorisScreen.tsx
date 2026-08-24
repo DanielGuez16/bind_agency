@@ -31,7 +31,7 @@
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { useApi, type EtatDuFavori, type Favori, type ProchainPalier, type VueDesPaliers } from '../api';
+import { useApi, type EtatDuFavori, type Favori } from '../api';
 import { Button, Icone, Photo, SkeletonLignes, StatusMessage, Texte, Toggle } from '../components';
 import { formatNumber } from '../format';
 import { useI18n } from '../i18n';
@@ -90,19 +90,6 @@ export function FavorisScreen({
 }) {
   const { api } = useApi();
   const { t } = useI18n();
-
-  /**
-   * Les paliers, pour la seule ligne qui chiffre.
-   *
-   * **Sa propre requête, et elle ne bloque rien.** Si elle échoue, la liste des
-   * favoris s'affiche entière : le chiffre est un repère, pas une condition. Le
-   * faire entrer dans la requête principale ferait payer les paliers à chaque
-   * ouverture, y compris quand aucun favori n'est hors palier.
-   */
-  const paliers = useRequete<VueDesPaliers>((signal) => api.mesPaliers({}, signal), {
-    estVide: () => false,
-  });
-  const prochain = paliers.etat === 'pret' ? paliers.donnees.prochain_palier : null;
 
   const requete = useRequete<Favori[]>((signal) => api.mesFavoris(signal), {
     estVide: (favoris) => favoris.length === 0,
@@ -178,7 +165,6 @@ export function FavorisScreen({
               <LigneDuFavori
                 key={favori.catalog_item_id}
                 favori={favori}
-                prochain={prochain}
                 onOuvrir={() => onOuvrirLeCommerce(favori.business_id)}
                 onRetirer={() => retirer(favori.catalog_item_id, favori.name)}
                 onVoirMesPaliers={onVoirMesPaliers}
@@ -192,14 +178,11 @@ export function FavorisScreen({
 
 function LigneDuFavori({
   favori,
-  prochain,
   onOuvrir,
   onRetirer,
   onVoirMesPaliers,
 }: {
   favori: Favori;
-  /** Le prochain palier de la créatrice, ou rien tant qu'on ne le sait pas. */
-  prochain: ProchainPalier | null;
   onOuvrir: () => void;
   onRetirer: () => void;
   onVoirMesPaliers: () => void;
@@ -218,8 +201,9 @@ function LigneDuFavori({
    * finissent par diverger. Nul quand le serveur ne le chiffre pas — la règle
    * des 60 % — et la ligne se tait alors plutôt que d'arrondir.
    */
-  const ecart =
-    prochain?.obstacle?.ecart == null ? null : formatNumber(Number(prochain.obstacle.ecart), locale);
+  const palier = favori.palier_requis;
+  const manquants =
+    palier?.abonnes_manquants == null ? null : formatNumber(palier.abonnes_manquants, locale);
 
   return (
     <View
@@ -324,13 +308,27 @@ function LigneDuFavori({
           Elle ne se rend pas non plus sans écart chiffrable : la règle des
           60 % de l'écran des paliers interdit d'annoncer un horizon quand le
           compte est loin, et cet écran n'a aucune raison d'en dire plus. */}
-      {favori.etat === 'hors_palier' && ecart !== null ? (
+      {palier ? (
         <View style={{ gap: 8, alignItems: 'flex-start' }}>
+          {/* **Le palier de cette prestation, et non le prochain de la
+              créatrice.** Les deux diffèrent dès qu'un article n'est offert
+              qu'à un palier lointain — et c'est ce champ-là qui permet d'écrire
+              « et il s'ouvre » sans mentir.
+
+              Deux phrases, parce que le blocage n'est pas toujours un compte
+              d'abonnés : un jeton mort, un relevé trop vieux ou une revue en
+              cours n'ont pas de nombre à afficher, et « il vous manque 431 200
+              secondes » ne veut rien dire. La seconde phrase ne chiffre pas,
+              elle mène — et l'écran des paliers, lui, sait pourquoi. */}
           <Texte variante="type.caption" testID={`favori-ecart-${favori.catalog_item_id}`}>
-            {t('favoris.ecartJusquAuPalier', {
-              palier: t(`parcours.format_${prochain?.content_format}`),
-              ecart,
-            })}
+            {manquants === null
+              ? t('favoris.palierSansChiffre', {
+                  palier: t(`parcours.format_${palier.content_format}`),
+                })
+              : t('favoris.ecartJusquAuPalier', {
+                  palier: t(`parcours.format_${palier.content_format}`),
+                  ecart: manquants,
+                })}
           </Texte>
           <Button
             label={t('favoris.voirMesPaliers')}
