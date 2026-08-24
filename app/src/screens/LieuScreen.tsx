@@ -16,8 +16,19 @@
  * séparation ; une carte décrit le lieu. Et le blocage qu'elle porte — une
  * prestation qui laisse un choix ne se publie pas sans elle — se lit alors
  * depuis les deux côtés, ce qui est correct puisqu'il tient aux deux.
+ *
+ * **Mais les trois ne se déplient plus ensemble.** « Trop de choses d'un
+ * coup », dit la campagne, et elle a raison sur ce point précis : une galerie,
+ * un dépôt de carte et sept lignes d'horaires ouverts en même temps font un
+ * écran qu'on parcourt au lieu de le lire. Trois sections repliées, une seule
+ * ouverte à la fois, et chacune **dit ce qu'elle contient avant qu'on
+ * l'ouvre** — c'est le compte qui remplace le contenu, pas un titre.
+ *
+ * **Repliées et non réparties.** Les trois décrivent le même objet, et les
+ * mettre sur trois écrans redonnerait les portes dont la v3.1 vient de réduire
+ * le nombre. Ce qui gênait est la hauteur, pas le voisinage.
  */
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import {
   useApi,
@@ -25,15 +36,16 @@ import {
   type PageDeLaCarte,
   type PhotoDuCommerce,
 } from '../api';
-import { Filet, SkeletonLignes } from '../components';
+import { Icone, SkeletonLignes, Texte } from '../components';
 import { useI18n } from '../i18n';
+import { useColors } from '../theme';
 import { CarteDuCommerce } from './CarteDuCommerce';
 import { GalerieDuCommerce } from './GalerieDuCommerce';
 import { HorairesDuCommerce, type Semaine } from './HorairesScreen';
 import { Ecran } from './Ecran';
 import { AGES } from './cacheDesReponses';
 import { useRequete } from './useRequete';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 
 /** Ce que le lieu charge d'un coup : les trois blocs composent la même page. */
 type Lieu = {
@@ -98,6 +110,15 @@ export function LieuScreen({
     cache: { cle: `lieu.${businessId}`, ageMax: AGES.contenu },
   });
 
+  /**
+   * La section ouverte, ou aucune.
+   *
+   * **Aucune au départ**, et c'est le sujet du retour : l'écran s'ouvrait avec
+   * ses trois blocs dépliés. Trois résumés tiennent en un écran et disent
+   * chacun ce qu'il y a derrière ; on ouvre ce qu'on vient faire.
+   */
+  const [ouverte, setOuverte] = useState<'photos' | 'carte' | 'horaires' | null>(null);
+
   return (
     <Ecran
       requete={requete}
@@ -107,42 +128,150 @@ export function LieuScreen({
       squelette={<SkeletonLignes combien={5} testID="squelette-lieu" />}
       testID="ecran-lieu"
     >
-      {(lieu) => (
-        <View style={{ gap: 16 }}>
+      {(lieu) => {
+        const bloquees = lieu.items
+          .filter((item) => item.leaves_choice)
+          .map((item) => ({ id: item.id, name: item.name }));
+        return (
+        <View style={{ gap: 4 }}>
           {/* La galerie en tête : c'est ce qu'un visiteur voit en premier de la
               fiche, et un commerce qui compose sa page commence souvent par là. */}
-          <GalerieDuCommerce
-            businessId={businessId}
-            photos={lieu.photos}
-            couverture={lieu.couverture}
-            onChange={requete.recharger}
-          />
-          <Filet />
+          <Repliable
+            titre={t('lieu.sectionPhotos')}
+            resume={t('lieu.photosCompte', { count: lieu.photos.length })}
+            ouverte={ouverte === 'photos'}
+            onBasculer={() => setOuverte(ouverte === 'photos' ? null : 'photos')}
+            testID="section-photos"
+          >
+            <GalerieDuCommerce
+              businessId={businessId}
+              photos={lieu.photos}
+              couverture={lieu.couverture}
+              onChange={requete.recharger}
+            />
+          </Repliable>
 
           {/* **La carte suit la galerie et ne s'y mêle pas.** La galerie montre
               le lieu, la carte se consulte : deux dépôts distincts, parce qu'un
               commerce qui les confondrait rendrait la sienne illisible. */}
-          <CarteDuCommerce
-            businessId={businessId}
-            pages={lieu.pagesDeLaCarte}
-            lien={lieu.lienDeLaCarte}
-            bloquees={lieu.items
-              .filter((item) => item.leaves_choice)
-              .map((item) => ({ id: item.id, name: item.name }))}
-            onChange={requete.recharger}
-          />
-          <Filet />
+          <Repliable
+            titre={t('lieu.sectionCarte')}
+            // **Le blocage passe dans le résumé.** Une prestation qui laisse un
+            // choix et ne se publie pas faute de carte est ce qu'on doit voir
+            // sans ouvrir : replier une section ne doit rien cacher qui décide.
+            resume={
+              bloquees.length > 0
+                ? t('lieu.carteBloque', { count: bloquees.length })
+                : t('lieu.carteCompte', { count: lieu.pagesDeLaCarte.length })
+            }
+            alerte={bloquees.length > 0}
+            ouverte={ouverte === 'carte'}
+            onBasculer={() => setOuverte(ouverte === 'carte' ? null : 'carte')}
+            testID="section-carte"
+          >
+            <CarteDuCommerce
+              businessId={businessId}
+              pages={lieu.pagesDeLaCarte}
+              lien={lieu.lienDeLaCarte}
+              bloquees={bloquees}
+              onChange={requete.recharger}
+            />
+          </Repliable>
 
           {/* **Les horaires, ici et plus dans l'offre.** Des heures d'ouverture
               décrivent un endroit : les ranger avec les prestations demandait
               de chercher l'ouverture du salon dans la page de son catalogue. */}
-          <HorairesDuCommerce
-            semaine={lieu.semaine}
-            businessId={businessId}
-            onChange={requete.recharger}
-          />
+          <Repliable
+            titre={t('lieu.sectionHoraires')}
+            // Les jours réellement ouverts, et non les sept lignes : une
+            // semaine à deux jours fermés n'ouvre pas sept jours.
+            resume={t('lieu.joursOuverts', {
+              count: new Set(lieu.semaine.regles.map((regle) => regle.weekday)).size,
+            })}
+            ouverte={ouverte === 'horaires'}
+            onBasculer={() => setOuverte(ouverte === 'horaires' ? null : 'horaires')}
+            testID="section-horaires"
+          >
+            <HorairesDuCommerce
+              semaine={lieu.semaine}
+              businessId={businessId}
+              onChange={requete.recharger}
+            />
+          </Repliable>
         </View>
-      )}
+        );
+      }}
     </Ecran>
+  );
+}
+
+/**
+ * Une section qui dit ce qu'elle contient avant qu'on l'ouvre.
+ *
+ * **Le résumé n'est pas un sous-titre.** Un titre nomme, un compte décide :
+ * « 12 photos » dit s'il faut ouvrir, « Photos » ne dit rien de plus que le
+ * titre. C'est ce qui permet de replier sans rien cacher d'utile.
+ *
+ * **Et une section qui retient quelque chose le dit en teinte.** Replier ne
+ * doit jamais faire disparaître un blocage : une prestation qui ne se publie
+ * pas faute de carte se voit fermé comme ouvert.
+ */
+function Repliable({
+  titre,
+  resume,
+  alerte = false,
+  ouverte,
+  onBasculer,
+  children,
+  testID,
+}: {
+  titre: string;
+  resume: string;
+  alerte?: boolean;
+  ouverte: boolean;
+  onBasculer: () => void;
+  children: React.ReactNode;
+  testID: string;
+}) {
+  const c = useColors();
+
+  return (
+    <View testID={testID}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: ouverte }}
+        accessibilityLabel={`${titre} — ${resume}`}
+        onPress={onBasculer}
+        testID={`${testID}-entete`}
+        style={({ pressed }) => ({
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 12,
+          paddingVertical: 14,
+          borderBottomWidth: 1,
+          borderBottomColor: c['line.default'],
+          opacity: pressed ? 0.7 : 1,
+        })}
+      >
+        <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+          <Texte variante="type.bodyStrong">{titre}</Texte>
+          <Texte
+            variante="type.caption"
+            // **Le mot, pas la teinte.** L'ambre ne se pose pas sans glyphe —
+            // c'est la règle du système — et « 3 services ne peuvent pas
+            // paraître sans elle » dit déjà tout ce qu'une couleur dirait, en
+            // plus précis. L'encre pleine suffit à le sortir du gris.
+            couleur={alerte ? 'ink.default' : 'ink.soft'}
+            testID={`${testID}-resume`}
+          >
+            {resume}
+          </Texte>
+        </View>
+        <View style={{ transform: [{ rotate: ouverte ? '90deg' : '0deg' }] }}>
+          <Icone nom="chevron" couleur="ink.soft" taille={20} />
+        </View>
+      </Pressable>
+      {ouverte ? <View style={{ paddingTop: 14 }}>{children}</View> : null}
+    </View>
   );
 }

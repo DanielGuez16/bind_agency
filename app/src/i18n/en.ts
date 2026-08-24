@@ -1116,6 +1116,13 @@ export const en = {
     stockageWeb: 'Browser storage - development only',
   },
   lieu: {
+    sectionPhotos: 'Photos of the place',
+    sectionCarte: 'Your menu',
+    sectionHoraires: 'Your week',
+    photosCompte: '{{count}} photos',
+    carteCompte: '{{count}} pages',
+    carteBloque: '{{count}} services cannot go live without it',
+    joursOuverts: 'Open {{count}} days a week',
     titre: 'Your place',
   },
   composition: {

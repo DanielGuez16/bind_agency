@@ -999,6 +999,13 @@ export const es: Catalogue = {
     stockageWeb: 'Almacenamiento del navegador - solo desarrollo',
   },
   lieu: {
+    sectionPhotos: 'Fotos del lugar',
+    sectionCarte: 'Tu carta',
+    sectionHoraires: 'Tu semana',
+    photosCompte: '{{count}} fotos',
+    carteCompte: '{{count}} páginas',
+    carteBloque: '{{count}} servicios no pueden publicarse sin ella',
+    joursOuverts: 'Abierto {{count}} días por semana',
     titre: 'Tu local',
   },
   composition: {
