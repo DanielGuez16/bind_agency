@@ -1818,6 +1818,22 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       propre raison — un refus ne se lit pas comme un compte injoignable.*
       *6 tests, 5 mutations. Nom du champ repris de la session qui rendra
       l'interrupteur, sur l'écran des favoris et non dans les réglages.*
+- [ ] **Trois champs pour les deux derniers écrans, demandés à la conversation des routes**
+      *Design a rendu la planche des deux derniers écrans le 2026-08-24, et
+      trois de ses colonnes ne sont pas servies. Aucune n'est bloquante : les
+      deux écrans sont livrés sans.*
+      *`GET /admin/businesses` — **`created_at`** du salon, pour la colonne
+      JOINED de la planche ; et un **total**, la planche écrit « 4 of 742 · this
+      search » alors que la route rend une liste nue. Le total est celui de la
+      recherche courante, pas du catalogue : c'est ce qui distingue « quatre
+      résultats » de « quatre salons ».*
+      *`Favori` — **le palier requis par la prestation**. La planche écrit
+      « Reel tier · 18 000 followers to go, then it opens ». L'écart est déjà
+      chiffrable — il vient de `prochain_palier.obstacle.ecart`, un nombre publié
+      sur l'écran des paliers — mais rien ne dit si atteindre le prochain palier
+      ouvre **ce** favori-là. La ligne livrée s'arrête donc avant le « then it
+      opens », qui serait une promesse qu'on ne peut pas tenir.*
+
 - [x] **La luminosité et la veille de l'écran de code, branchées**
       *`rules.md` §2 les annonce — « luminosité forcée au maximum, veille
       désactivée (`expo-keep-awake`), restauration à la sortie » — et

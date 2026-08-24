@@ -95,46 +95,62 @@ export function TableRow({
    * contraire de la retenue qu'on cherche — la retenue s'obtient en n'offrant
    * qu'une porte, pas en offrant une porte qui ne s'ouvre pas.
    */
-  const Cadre = onPress ? Pressable : View;
+  /**
+   * **Le style se calcule à part, et c'est obligatoire.** Un `View` ne résout
+   * pas une fonction de style : la lui passer laisse la fonction telle quelle,
+   * donc une rangée sans bordure, sans fond et sans hauteur — et rien ne lève.
+   * Seul le `Pressable` sait appeler la fonction pour connaître `pressed`.
+   */
+  const cellules = colonnes.map((colonne) => (
+    <View
+      key={colonne.cle}
+      style={{
+        width: colonne.largeur,
+        alignItems: colonne.chiffre ? 'flex-end' : 'flex-start',
+        paddingRight: colonne.chiffre ? GOUTTIERE : 0,
+      }}
+    >
+      <Texte
+        variante={colonne.chiffre ? 'type.data' : 'type.caption'}
+        ellipseSurNomPropre={!colonne.chiffre}
+      >
+        {valeurs[colonne.cle] ?? ''}
+      </Texte>
+    </View>
+  ));
+
+  const assiette = {
+    flexDirection: 'row' as const,
+    minHeight: 36,
+    alignItems: 'center' as const,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: c['line.default'],
+    backgroundColor: actif ? c['brand.50'] : 'transparent',
+    borderLeftWidth: 3,
+    borderLeftColor: actif ? c['brand.700'] : 'transparent',
+  };
+
+  if (!onPress) {
+    return (
+      <View testID={testID} style={assiette}>
+        {cellules}
+        {fin}
+      </View>
+    );
+  }
 
   return (
-    <Cadre
+    <Pressable
       testID={testID}
-      {...(onPress
-        ? { accessibilityRole: 'button' as const, accessibilityState: { selected: actif }, onPress }
-        : {})}
-      style={({ pressed }: { pressed?: boolean }) => ({
-        flexDirection: 'row',
-        minHeight: 36,
-        alignItems: 'center',
-        paddingHorizontal: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: c['line.default'],
-        backgroundColor: actif ? c['brand.50'] : 'transparent',
-        borderLeftWidth: 3,
-        borderLeftColor: actif ? c['brand.700'] : 'transparent',
-          opacity: pressed ? 0.7 : 1,
-        })}
+      accessibilityRole="button"
+      accessibilityState={{ selected: actif }}
+      onPress={onPress}
+      style={({ pressed }) => ({ ...assiette, opacity: pressed ? 0.7 : 1 })}
     >
-      {colonnes.map((colonne) => (
-        <View
-          key={colonne.cle}
-          style={{
-            width: colonne.largeur,
-            alignItems: colonne.chiffre ? 'flex-end' : 'flex-start',
-            paddingRight: colonne.chiffre ? GOUTTIERE : 0,
-          }}
-        >
-          <Texte
-            variante={colonne.chiffre ? 'type.data' : 'type.caption'}
-            ellipseSurNomPropre={!colonne.chiffre}
-          >
-            {valeurs[colonne.cle] ?? ''}
-          </Texte>
-        </View>
-      ))}
+      {cellules}
       {fin}
-    </Cadre>
+    </Pressable>
   );
 }
 
