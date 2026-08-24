@@ -1949,7 +1949,7 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       souscrit — c'est l'écart qui fait l'argument. Une catégorie à zéro garde sa
       ligne : « ce plan n'a jamais séduit un salon d'ongles » est ce qu'on vient
       lire. 1188 tests verts, 8 mutations sur les deux moitiés*
-- [ ] **Deux PR fusionnées en ont effacé d'autres, et la CI est restée verte**
+- [x] **Deux PR fusionnées en ont effacé d'autres, et la CI est restée verte**
       *#212 a retiré vingt-six lignes de `TASKS.md` ; #217 a supprimé 435 lignes
       de #215 — le bilan de tournée, ses deux modules, son test et ses six
       chaînes — quatre heures après sa fusion.*
@@ -1972,7 +1972,15 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       qui a suivi son écriture. La forme juste,
       `git diff --diff-filter=D --name-only origin/main...HEAD`, ne nomme que ce
       qui n'existe plus. Elle est dans `CLAUDE.md` avec la cause et le reset
-      juste ; cette ligne-ci prescrivait encore l'ancienne*
+      juste ; cette ligne-ci prescrivait encore l'ancienne.*
+      ***Et la CI le nomme désormais elle-même**, par le pas « Suppressions non
+      annoncées » : il annote sur l'onglet des fichiers, là où le relecteur est
+      déjà, et **n'interdit pas** — une suppression délibérée est un geste
+      normal, ce qui manquait était un endroit où la voir. Il compte bien « des
+      lignes retirées, aucune ajoutée », donc il criera parfois au loup ; c'est
+      sans coût sur une annotation, et ce serait le défaut qu'on connaît sur une
+      vérification requise. Fermée : la cause est comprise, le geste juste est
+      dans le fichier qu'on lit, et la CI le montre*
 
 - [x] **`prepared_by` manque sur la ligne de suivi**
       *La planche a une colonne « prepared by ». Sur une tournée à deux
