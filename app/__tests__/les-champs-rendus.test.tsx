@@ -66,39 +66,42 @@ async function monter(extra: Record<string, unknown> = {}) {
   );
 }
 
-describe('une réservation dit où aller', () => {
-  it('l’adresse est sur la ligne, à côté du salon', async () => {
-    // Le cadre 08a l'affiche — « 120 NE 41st St · 320 m » — et l'écran la
-    // taisait. Une réservation dont on ne sait pas où aller ne se tient pas.
-    await monter();
-    await waitFor(() => expect(screen.getByTestId('reservation-r1')).toBeTruthy());
-
-    expect(screen.getByText(/120 NE 41st St/)).toBeTruthy();
-  });
-});
-
-describe('l’attente qui change de nature', () => {
-  it('un dossier passé en arbitrage le dit', async () => {
-    // **Le plus important des cinq.** Passé en revue humaine, le dossier
-    // n'attend plus le salon mais un arbitre : le délai n'a plus le même sens,
-    // et relancer le salon ne sert à rien. Le champ était rendu depuis
-    // toujours et affiché nulle part.
+/**
+ * Deux des cinq ont changé d'écran, et ce fichier dit lesquels.
+ *
+ * L'adresse et l'arbitrage étaient rendus sur la ligne des réservations. La
+ * carte y portait huit à dix lignes, dont une seule en corps de texte, et le
+ * bouton qui ouvre le code de retrait arrivait après quatre lignes en
+ * capitales — au point qu'une campagne de test entière n'a pas trouvé où
+ * montrer son QR. Le chemin n'était pas rompu, il était noyé.
+ *
+ * Les deux champs sont donc partis là où la question se pose :
+ *
+ * - **`business_address`** sur l'écran du code, éprouvée par
+ *   `code-de-retrait` (`ou-aller`, et le cas sans adresse). On ne cherche pas
+ *   son chemin en parcourant une liste, on le cherche en partant.
+ * - **`needs_human_review`** sur l'écran de la contrepartie, éprouvé par
+ *   `la-preuve-v3` (`en-arbitrage`, et son inverse).
+ *
+ * Le contrat de ce fichier n'a pas changé — un champ servi doit arriver à
+ * l'œil quelque part. Ce qui a changé est *où*, et il faut que ce soit écrit
+ * ici : la garde ne vaut que si l'on sait où chercher ce qu'elle ne couvre
+ * plus. Le test ci-dessous tient l'autre moitié, celle qu'aucun des deux
+ * fichiers d'écran ne peut voir depuis chez lui — que la liste s'en est bien
+ * délestée.
+ */
+describe('et la liste s’en est délestée', () => {
+  it('ne porte plus ni l’adresse ni l’arbitrage', async () => {
     await monter({
       contrepartie: { ...RESERVATION.contrepartie, needs_human_review: true },
     });
-    await waitFor(() => expect(screen.getByTestId('en-arbitrage-r1')).toBeTruthy());
-
-    expect(screen.getByTestId('en-arbitrage-r1')).toHaveTextContent(
-      en.parcours.contrepartieEnArbitrage,
-    );
-  });
-
-  it('et une contrepartie ordinaire ne le dit pas', async () => {
-    // Le sens inverse : une mention permanente ne distinguerait plus rien, et
-    // c'est justement la distinction qui est l'information.
-    await monter();
     await waitFor(() => expect(screen.getByTestId('reservation-r1')).toBeTruthy());
 
+    expect(screen.queryByText(/120 NE 41st St/)).toBeNull();
     expect(screen.queryByTestId('en-arbitrage-r1')).toBeNull();
+
+    // **Et le salon reste**, sinon la ligne ne dirait plus chez qui l'on va.
+    // Sans cette assertion, retirer les deux *et* le nom passerait au vert.
+    expect(screen.getByText(/Vela Nail Studio/)).toBeTruthy();
   });
 });

@@ -38,7 +38,7 @@
  * ici elle attend qu'on la pose. L'information ne disparaît pas, elle arrive au
  * moment où elle sert.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Animated, Pressable, View } from 'react-native';
 
 import { useApi, type BusinessCategory, type Fil } from '../api';
@@ -46,13 +46,14 @@ import { Icone, StatusMessage, Texte } from '../components';
 import { useEnfoncement } from '../components/Mouvement';
 import { useI18n } from '../i18n';
 import { formatNumber } from '../format';
-import { size } from '../theme';
+import { motion, size } from '../theme';
 import { messageDePosition } from '../shell/messageDePosition';
 import type { EtatDePosition } from '../shell/usePosition';
 import { en } from '../i18n/en';
 import { Ecran } from './Ecran';
-import { EnTeteDuMur } from './mur/EnTeteDuMur';
-import { BasDuMur } from './mur/BasDuMur';
+import { BarreDuMur } from './mur/BarreDuMur';
+import { useFavorisEnVol } from './mur/favorisEnVol';
+import { EnTeteDuMur } from './mur/EnTeteDuMur';import { BasDuMur } from './mur/BasDuMur';
 import { MurEnChargement, SectionsParQuartier, useMur } from './mur/SectionsParQuartier';
 import { RaisonDuVide } from './RaisonDuVide';
 import { messageDObstacle } from './obstacle';
@@ -98,6 +99,7 @@ export function FilScreen({
   onConnecterUnReseau,
   onVoirMonAudience,
   onVoirMesPaliers,
+  onVoirMesFavoris,
   onRemonterEnHaut,
 }: {
   /** Nulle tant que l'autorisation n'est pas donnée. */
@@ -109,6 +111,13 @@ export function FilScreen({
    */
   etatDeLaPosition?: EtatDePosition;
   onDemanderLaPosition: () => void;
+  /**
+   * La liste des prestations mises de côté.
+   *
+   * **Le cœur sans liste est un geste sans destination.** Poser un favori qu'on
+   * ne peut pas relire n'est pas une capacité, c'est un bouton qui s'allume.
+   */
+  onVoirMesFavoris: () => void;
   onOuvrirLeCommerce: (businessId: string) => void;
   onConnecterUnReseau?: () => void;
   onVoirMonAudience?: () => void;
@@ -129,6 +138,27 @@ export function FilScreen({
    * un schéma et ignoré par un service.
    */
   const [categorie, setCategorie] = useState<BusinessCategory | null>(null);
+
+  /**
+   * Ce qu'on tape, et ce qu'on demande.
+   *
+   * **Deux états et non un.** Le champ suit la frappe au caractère près ; la
+   * requête ne part qu'après une pause. Les lier ferait une requête par touche
+   * — huit pour « massage » — et la dernière réponse n'arriverait pas
+   * forcément en dernier.
+   *
+   * Le délai est celui d'un état qui change sur place. Il ne se règle pas ici :
+   * `motion.etat` porte la même valeur pour tout ce qui répond à un geste sans
+   * changer d'écran.
+   */
+  const [saisie, setSaisie] = useState('');
+  const [recherche, setRecherche] = useState('');
+
+  useEffect(() => {
+    if (saisie === recherche) return;
+    const minuteur = setTimeout(() => setRecherche(saisie), motion.etat);
+    return () => clearTimeout(minuteur);
+  }, [saisie, recherche]);
 
   /**
    * **La demande part à l'arrivée, et il n'y a plus qu'une question.**
@@ -156,10 +186,18 @@ export function FilScreen({
 
   const requete = useRequete<Fil>(
     (signal) =>
-      api.fil(position!, { rayonMetres: rayonKm * 1000, categorie: categorie ?? undefined }, signal),
+      api.fil(
+        position!,
+        {
+          rayonMetres: rayonKm * 1000,
+          categorie: categorie ?? undefined,
+          recherche: recherche || undefined,
+        },
+        signal,
+      ),
     {
       estVide: (fil) => fil.commerces.length === 0,
-      dependances: [position?.longitude, position?.latitude, rayonKm, categorie],
+      dependances: [position?.longitude, position?.latitude, rayonKm, categorie, recherche],
       // Sans position, on ne lance rien : une requête sans coordonnées ne
       // renverrait pas « rien près de toi », elle renverrait une erreur de
       // validation que l'écran traduirait mal.
@@ -169,10 +207,13 @@ export function FilScreen({
       // la position, elle, bouge de quelques mètres à chaque relevé, et la
       // mettre dans la clé donnerait un cache qui ne se relit jamais. Un fil
       // d'il y a six heures pris trois rues plus loin reste le bon fil.
-      cache: {
-        cle: `fil.${rayonKm}.${categorie ?? 'toutes'}`,
-        ageMax: AGES.contenu,
-      },
+      // **La recherche ne va pas au cache.** Elle est une question qu'on pose
+      // une fois, pas un réglage qu'on retrouve : relire au lancement le fil de
+      // « massage » tapé la veille montrerait un mur amputé sans dire pourquoi.
+      // Le cache entier tombe pendant qu'on cherche, plutôt qu'une clé de plus.
+      cache: recherche
+        ? undefined
+        : { cle: `fil.${rayonKm}.${categorie ?? 'toutes'}`, ageMax: AGES.contenu },
     },
   );
 
@@ -198,7 +239,30 @@ export function FilScreen({
    * réservables mais non situés. L'écran retombe alors sur le rendu en bloc,
    * qui rend la même chose et n'a rien à virtualiser.
    */
-  const mur = useMur(filPret, categorie, onOuvrirLeCommerce);
+  /**
+   * **Les cœurs touchés, avant que le serveur réponde.** Le fil porte
+   * `est_favori` sur chaque article — quatre-vingts cartes ne peuvent pas
+   * demander l'état de leur cœur une par une — et cette table ne garde que
+   * l'écart, le temps que la réponse arrive.
+   */
+  const favoris = useFavorisEnVol(
+    useMemo(
+      () => ({
+        mettre: (id: string) => api.mettreEnFavori(id),
+        retirer: (id: string) => api.retirerDesFavoris(id),
+      }),
+      [api],
+    ),
+  );
+
+  // L'écart se referme quand le fil revient : le garder ferait resurgir un
+  // vieux geste sur une donnée neuve.
+  const { oublier } = favoris;
+  useEffect(() => {
+    if (requete.etat === 'pret') oublier();
+  }, [requete.etat, filPret, oublier]);
+
+  const mur = useMur(filPret, categorie, onOuvrirLeCommerce, favoris);
 
   if (position === null) {
     // Ce qu'on dit et ce qu'on propose dépendent de **pourquoi** il n'y a pas
@@ -264,6 +328,20 @@ export function FilScreen({
     <Ecran
       requete={requete}
       testID="ecran-fil"
+      // **Les deux barres restent, et c'est ce qu'elles coûtent.** Cent quatre
+      // points sur sept cent vingt-huit, un septième de l'écran en permanence.
+      // Le prix se paie parce que la recherche rachète la ligne unique : une
+      // catégorie hors champ serait un cul-de-sac si rien ne la trouvait.
+      barre={
+        <BarreDuMur
+          fil={filPret}
+          categorie={categorie}
+          onCategorie={setCategorie}
+          recherche={saisie}
+          onRecherche={setSaisie}
+          onVoirLesFavoris={onVoirMesFavoris}
+        />
+      }
       /**
        * **Le mur est une liste, pas un bloc.** Il rendait toutes ses rangées
        * d'un coup — quatre-vingts `Image` montées à la première image sur un
@@ -329,7 +407,7 @@ export function FilScreen({
       // l'état vide aussi — c'est de là qu'on relâche un filtre trop étroit.
       entete={
         <View style={{ paddingHorizontal: MARGE }}>
-          <EnTeteDuMur fil={filPret} categorie={categorie} onCategorie={setCategorie} />
+          <EnTeteDuMur fil={filPret} categorie={categorie} />
         </View>
       }
       vide={

@@ -372,6 +372,11 @@ export const en = {
     // ouvre, c'est ici que ça se voit.
     filMarche: 'Miami',
     filMarcheEtCompte: '{{marche}} · {{count}} services',
+    filRechercher: 'Salon, service, neighbourhood',
+    filEffacerLaRecherche: 'Clear',
+    filVoirMesFavoris: 'Saved',
+    filMettreEnFavori: 'Save this service',
+    filRetirerDesFavoris: 'Remove from saved',
     filDecouvrir: 'Discover',
     // Deux phrases distinctes et non une à trou : « 6 nail services » place la
     // catégorie avant le nom commun, ce que l'espagnol n'ordonne pas ainsi.
@@ -512,8 +517,7 @@ export const en = {
     format_story: 'story',
     format_post: 'post',
     format_reel: 'reel',
-    contrepartieEcheance: 'Due {{quand}}',
-    contrepartieTentative: 'Attempt {{n}} of 3',
+    contrepartieEnArbitrage: 'A reviewer has taken this over — the salon is no longer the one deciding.',
     contrepartieRienAFaire: 'The salon is checking it — nothing to do on your side.',
     action_code: 'Show code',
     action_preuve: 'Send your post',
@@ -552,7 +556,6 @@ export const en = {
     preuve_attestee_aide: 'The platform could not confirm this one — a story past 24 hours, most often. The salon reviews it as usual.',
     preuve_ecart: 'Does not match yet',
     preuve_ecart_aide: 'The platform checked and found this:',
-    contrepartieEnArbitrage: 'A reviewer has taken this over — the salon is no longer the one deciding.',
     preuveAdresse: 'Link to your post',
     preuveAdresseAide:
       'Paste the link to the post. The business opens it to check that it is live — with only a screenshot, they have to take your word for it.',
@@ -964,6 +967,19 @@ export const en = {
       'You have opened {{n}} takeovers in the last {{jours}} days, across all salons.',
     compteDeLAppelant: 'That is {{n}} takeovers you have opened in {{jours}} days, across all salons.',
     ouverteRappel: '{{salon}} can end it at any moment, from their own screen.',
+  },
+  favoris: {
+    titre: 'Saved',
+    videTitre: 'Nothing saved yet',
+    videCorps: 'The heart on a service keeps it here — useful for what is not open to you yet.',
+    duree: '{{n}} min',
+    voirLeSalon: 'See the salon',
+    // **Quatre états, quatre conduites.** « Unavailable » les aurait tous
+    // couverts et n'aurait rien dit : attendre la réouverture, monter d'un
+    // palier et choisir autre chose ne sont pas le même geste.
+    etatFermee: '{{salon}} has closed this one for now. It can reopen.',
+    etatSalonIndisponible: '{{salon}} is not listed at the moment.',
+    etatHorsPalier: 'This one is offered at a tier you do not open yet.',
   },
   reglages: {
     reprisesTitre: 'When BIND entered your account',

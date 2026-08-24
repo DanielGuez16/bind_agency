@@ -9825,3 +9825,99 @@ l'écran montait son état vide et la ligne n'existait pas. Un décor qui répon
 `[]` à tout monte un écran qui n'est pas celui qu'on éprouve — et la table
 nommée passe maintenant avant le repli générique, sans quoi le décor n'aurait
 aucun effet.
+
+---
+
+## 2026-08-23 — Les capitales sont une étiquette, jamais un porteur de phrase
+
+Une campagne de test entière n'a pas trouvé où montrer son QR au commerce. Le
+retour disait « le chemin a disparu avec la refonte ». Il n'avait pas disparu :
+onglet « à venir » par défaut, `confirmed` dedans, filet d'encre, bouton,
+écran, QR — tout était en place, et une garde le prouve maintenant depuis la
+liste et non depuis l'écran seul.
+
+Ce qui manquait était la **lisibilité du chemin**. La carte portait huit à dix
+lignes, dont **une seule en corps de texte** — le nom de la prestation. Le reste
+était en caption ou en mono capitales, et le bouton qui ouvre le code arrivait
+en septième position, après quatre lignes en majuscules.
+
+**Le volume n'était pas le défaut principal, la casse l'était.** Les capitales
+détruisent la silhouette des mots, c'est-à-dire exactement ce qui permet de
+balayer une liste sans la lire. Une durée, une date, une phrase mises en
+majuscules obligent à épeler. Le mono capitales du système est l'étiquette : un
+format, un réseau, un nom de mois — court, et lu comme un repère, pas comme une
+information.
+
+La règle vaut au-delà de cet écran, et trois autres endroits l'enfreignaient :
+la date d'une reprise dans les réglages, et dans le bandeau de reprise une
+phrase entière avec sa liste d'écrans puis deux dates d'affilée. Corrigés.
+
+**Le corollaire de composition** : une liste répond à « qu'est-ce que je dois
+faire », pas à « comment mon dossier est instruit ». L'échéance, l'arbitrage et
+le numéro de tentative décrivaient l'instruction ; ils vivent sur l'écran de la
+contrepartie, où la comparaison a un sens. Sur la liste ils coûtaient trois
+lignes par carte pour une question qu'on n'y pose pas.
+
+**Et le corollaire de vérification** : un champ qu'on retire d'un écran doit
+être cherché ailleurs avant, pas après. L'adresse a failli disparaître du
+produit — elle n'était rendue que sur cette liste, et l'écran du code, où l'on
+part réellement, ne disait **rien** du salon, pas même son nom. Le schéma servi
+ne le portait pas non plus. « Elle est déjà là-bas » se vérifie ; ici c'était
+faux, et le retrait sans la vérification aurait fait perdre l'adresse.
+
+**Le rapport entre les deux retours était un seul défaut.** « Impossible de
+trouver où afficher le QR » et « il y a trop de texte » ne sont pas deux
+observations : le chemin n'était pas rompu, il était noyé. Une composition trop
+chargée ne se signale pas comme un défaut de composition — elle se signale
+comme une fonction manquante.
+## 2026-08-24 — Le fil v3.1 : la ligne unique paie la barre de recherche
+
+**La recherche était servie et n'avait aucun bouton.** La route du fil accepte
+`recherche` depuis des jours ; l'écran n'avait pas de quoi la remplir, donc une
+capacité entière du produit n'existait pour personne.
+
+**Les catégories passent sur une ligne défilante.** Deux lignes avec « All »
+détaché prenaient 86 points ; une ligne de pilules en prend 34, et les 52 rendus
+paient la barre à 48. Le chrome ne grandit pas, il se réorganise — ce qui
+grandit est ce qui reste **collé**, et c'est le prix demandé.
+
+Ce que la ligne unique perd est la garantie de tout voir : les deux dernières
+catégories sont hors champ. C'est la recherche qui rachète le défilement, pas
+l'inverse — une option cachée serait un cul-de-sac si rien d'autre ne la
+trouvait.
+
+**La bande collante vit dans les quatre états**, et c'est le vide qui l'impose :
+un filtre qui ne rend rien doit avoir une sortie. Ma première écriture la
+réservait à l'état nominal, et un test existant l'a dit tout de suite — il
+gardait précisément cette règle.
+
+**Le cœur est optimiste, et la mutation a d'abord survécu.** Avec un double qui
+répond tout de suite, « remplir puis appeler » et « appeler puis remplir »
+rendent le même écran. Une promesse qui ne se résout jamais sépare les deux : le
+décor qui manquait est une réponse **qui ne vient pas**.
+
+Le retour en arrière **oublie** au lieu de poser l'inverse : écrire
+`!versFavori` écraserait un second appui parti entre-temps ; retirer la
+dérogation rend la main à ce que le serveur dit, qui est la seule chose qu'on
+sache encore.
+
+**`brand.700` et non `brand.500` pour le cœur plein, et c'est mesuré.** La
+planche demande l'orange de marque ; sur le voile blanc il donne 2,36:1, sous
+les 3:1 qu'un élément graphique porteur d'information doit tenir. Or le
+remplissage est **le seul signe** qui distingue « gardé » — le rendre à peine
+visible revient à ne pas le rendre. `brand.700` est l'encre calibrée de la
+marque, 5,29:1, déjà portée par les autres glyphes orange du produit.
+
+**Le remplissage est une exception nommée**, avec sa garde. Le jeu d'icônes
+n'avait pas de plein et son en-tête le dit ; le cœur y déroge parce que son état
+*est* son remplissage. Une exception sans garde devient une porte : rien
+n'empêcherait de poser `rempli` sur la coche ou l'alerte, et le jeu perdrait en
+trois écrans ce que son en-tête promet.
+
+**Une contradiction signalée et non tranchée.** La planche écrit « le favori
+porte sur le salon, pas sur la prestation » ; le contrat livré fait l'inverse —
+`est_favori` sur l'article, `POST` avec un `catalog_item_id`, et une liste de
+prestations. Livré au niveau de la prestation, qui est le seul cohérent de bout
+en bout. Feindre le niveau salon au-dessus d'une API d'articles aurait demandé
+de deviner quels articles appartiennent au même cœur, et se serait trompé au
+premier écart.

@@ -117,18 +117,25 @@ export function BandeauDeReprise({
           <Texte variante="type.monoSmall" couleur="ink.onDark" testID="reprise-portee-journee">
             {/* Les mêmes mots que la liste des réglages, par le même
                 aiguillage : deux jeux pour les mêmes écrans finiraient par se
-                contredire, et c'est le gérant qui lirait la contradiction. */}
+                contredire, et c'est le gérant qui lirait la contradiction.
+
+                **Sans capitales.** Celle-ci portait une phrase entière, liste
+                d'écrans comprise ; celle du dessous, deux dates. Les capitales
+                détruisent la silhouette des mots, donc ce qui permet de lire
+                sans épeler — et le bandeau d'une reprise est justement ce qu'on
+                lit vite. Le mono capitales désigne une étiquette, pas une
+                phrase. */}
             {t('commerce.repriseOuvre', {
               ecrans: (reprise.scope ?? [])
                 .map((ecran) => nomDeLEcran(ecran, t))
                 .join(t('reglages.porteeSeparateur')),
-            }).toUpperCase()}
+            })}
           </Texte>
           <Texte variante="type.monoSmall" couleur="ink.onDark" testID="reprise-quand">
             {t('commerce.repriseDepuisJusqua', {
               debut: formatDateTime(reprise.started_at, locale, timezone),
               fin: formatDateTime(reprise.expires_at, locale, timezone),
-            }).toUpperCase()}
+            })}
           </Texte>
         </View>
 

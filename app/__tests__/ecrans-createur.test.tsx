@@ -20,6 +20,7 @@ import { I18nProvider } from '../src/i18n';
 import { en } from '../src/i18n/en';
 import { ThemeProvider } from '../src/theme';
 import { AudienceScreen } from '../src/screens/AudienceScreen';
+import { FavorisScreen } from '../src/screens/FavorisScreen';
 import { FiabiliteScreen } from '../src/screens/FiabiliteScreen';
 import { CreneauxScreen } from '../src/screens/CreneauxScreen';
 import { FicheScreen } from '../src/screens/FicheScreen';
@@ -291,6 +292,20 @@ const COMPTEURS_VIDES = {
  * Ajouter un écran ici est le seul geste demandé : le test des quatre états
  * s'applique tout seul, et un écran oublié dans le registre se voit au compte.
  */
+/** Un favori réservable : l'état qui ne dit rien, parce qu'il n'y a rien à dire. */
+const FAVORI = {
+  catalog_item_id: 'i1',
+  business_id: 'b1',
+  business_name: 'Vela Nail Studio',
+  name: 'Gel manicure',
+  description: null,
+  duration_minutes: 45,
+  price_cents: 4000,
+  currency: 'USD',
+  photo_key: 'photos/vela.jpg',
+  etat: 'reservable',
+};
+
 const ECRANS = [
   {
     nom: 'audience',
@@ -311,6 +326,14 @@ const ECRANS = [
     // score absent n'est pas un écran vide, c'est un tiret et la phrase qui dit
     // que cela ne coûte rien.
     vide: null,
+  },
+  {
+    // Ce que le cœur ouvre. Une seule route, sans coordonnées : un favori posé
+    // à Wynwood doit se relire depuis Kendall.
+    nom: 'favoris',
+    noeud: <FavorisScreen onRetour={() => {}} onOuvrirLeCommerce={() => {}} />,
+    plein: { '/me/favorites': [FAVORI] },
+    vide: { '/me/favorites': [] },
   },
   {
     nom: 'paliers',
@@ -347,6 +370,7 @@ const ECRANS = [
       <FilScreen
         position={{ longitude: -80.13, latitude: 25.79 }}
         onDemanderLaPosition={jest.fn()}
+        onVoirMesFavoris={() => {}}
         onOuvrirLeCommerce={jest.fn()}
       />
     ),
@@ -477,6 +501,7 @@ describe('quatre états', () => {
 const FICHIERS: Record<string, string> = {
   audience: 'AudienceScreen.tsx',
   fiabilite: 'FiabiliteScreen.tsx',
+  favoris: 'FavorisScreen.tsx',
   paliers: 'PaliersScreen.tsx',
   'prestations du palier': 'PrestationsDuPalierScreen.tsx',
   regles: 'ReglesScreen.tsx',

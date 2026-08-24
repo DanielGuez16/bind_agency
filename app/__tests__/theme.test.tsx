@@ -847,6 +847,9 @@ describe('les surfaces de la v1.1', () => {
       // une correction de rendu, c'est une correction d'inventaire.
       'src/screens/ConfigurationScreen.tsx',
       'src/screens/CreneauxScreen.tsx',
+      // La liste des favoris : chaque ligne se pose sur la page comme une
+      // carte, donc elle porte l'ombre comme une carte.
+      'src/screens/FavorisScreen.tsx',
       'src/screens/FiabiliteScreen.tsx',
       'src/screens/FicheScreen.tsx',
       'src/screens/HistoriqueScreen.tsx',

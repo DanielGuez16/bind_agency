@@ -77,6 +77,7 @@ async function monter(fil: Partial<Fil>, onVoirMesPaliers?: () => void) {
           <FilScreen
             position={{ longitude: -80.19, latitude: 25.76 }}
             onDemanderLaPosition={() => {}}
+            onVoirMesFavoris={() => {}}
             onOuvrirLeCommerce={() => {}}
             onVoirMesPaliers={onVoirMesPaliers}
           />

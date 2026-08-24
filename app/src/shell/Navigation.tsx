@@ -37,6 +37,7 @@ import { AbonnementScreen } from '../screens/AbonnementScreen';
 import { AnnuaireScreen } from '../screens/AnnuaireScreen';
 import { ArbitrageScreen } from '../screens/ArbitrageScreen';
 import { AudienceScreen } from '../screens/AudienceScreen';
+import { FavorisScreen } from '../screens/FavorisScreen';
 import { FiabiliteScreen } from '../screens/FiabiliteScreen';
 import { CodeScreen } from '../screens/CodeScreen';
 import { CreneauxScreen } from '../screens/CreneauxScreen';
@@ -80,6 +81,12 @@ export type PileCreateurParams = {
    * d'une ligne du fil et y revient.
    */
   Paliers: undefined;
+  /**
+   * **Ce que le cœur ouvre.** Même raison que les paliers : le geste naît sur
+   * une carte du mur, et la liste explique ce geste. Un onglet la rangerait
+   * loin de la question — et la barre du bas en a trois, pas quatre.
+   */
+  Favoris: undefined;
   /**
    * Les prestations d'un palier. Le palier voyage en paramètre plutôt que
    * d'être relu : l'écran d'où l'on vient l'a déjà, et le redemander ferait
@@ -306,6 +313,10 @@ function ParcoursCreateur({
             // Dans la pile, plus vers un onglet : c'est ce déplacement qui
             // fait de l'écran une explication au lieu d'une destination.
             onVoirMesPaliers={() => navigation.navigate('Paliers')}
+            // **La liste vit dans la pile du fil**, comme les paliers : le cœur
+            // se pose sur une carte du mur, et ce qu'il ouvre explique cette
+            // carte. Un onglet de plus rangerait la réponse loin de la question.
+            onVoirMesFavoris={() => navigation.navigate('Favoris')}
             onDemanderLaPosition={demander}
             onOuvrirLeCommerce={(businessId) => navigation.navigate('Fiche', { businessId })}
           />
@@ -325,6 +336,18 @@ function ParcoursCreateur({
       {/* **Les paliers s'ouvrent d'ici, et nulle part ailleurs.** L'écran
           explique le nombre que le fil annonce ; le sortir de cette pile le
           remettrait à distance de la question qu'il répond. */}
+      {/* **Les favoris vivent dans la pile du fil**, comme les paliers. Le cœur
+          se pose sur une carte du mur, et ce qu'il ouvre explique cette carte :
+          un onglet de plus rangerait la réponse loin de la question. */}
+      <PileCreateur.Screen name="Favoris">
+        {({ navigation }) => (
+          <FavorisScreen
+            onRetour={() => navigation.goBack()}
+            onOuvrirLeCommerce={(businessId) => navigation.navigate('Fiche', { businessId })}
+          />
+        )}
+      </PileCreateur.Screen>
+
       <PileCreateur.Screen name="Paliers">
         {({ navigation }) => (
           <PaliersScreen
@@ -395,7 +418,16 @@ function ParcoursCreateur({
  * la navigation évite d'avoir à s'en remettre à un seul verrou pour la règle
  * « un code, une réservation ».
  */
-function PileDesReservations() {
+/**
+ * La pile des réservations, **exportée pour être éprouvée de bout en bout**.
+ *
+ * Le code de retrait est la seule chose à montrer au comptoir : sans lui aucune
+ * prestation ne se consomme. Son chemin part de la liste, traverse `destination`
+ * et aboutit à un écran de la pile — trois pièces dont chacune était gardée
+ * séparément, et dont la jonction ne l'était pas. Une refonte qui déplace la
+ * liste laisse les trois vertes et le parcours mort.
+ */
+export function PileDesReservations() {
   return (
     <PileReservations.Navigator screenOptions={OPTIONS_DE_PILE}>
       <PileReservations.Screen name="Historique">

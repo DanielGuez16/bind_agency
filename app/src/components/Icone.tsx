@@ -17,6 +17,16 @@
  * **Un tracé par icône, plus de cercles à part.** Les cercles vivaient dans une
  * table parallèle, ce qui obligeait à lire deux endroits pour savoir à quoi
  * ressemble un glyphe. Un arc s'écrit dans un chemin.
+ *
+ * **Une exception au « jamais de remplissage », et une seule.** Le cœur des
+ * favoris porte son état dans son remplissage : un cœur en contour et un cœur
+ * plein ne sont pas deux icônes, ce sont les deux états d'une même. Le rendre
+ * par deux glyphes obligerait à choisir dehors ce que l'icône sait déjà, et
+ * une pastille ou une teinte de trait diraient « sélectionné » là où le geste
+ * dit « gardé ».
+ *
+ * `rempli` reste faux partout ailleurs : la règle tient pour tout le reste du
+ * jeu, et ce n'est pas une porte ouverte à un second glyphe plein.
  */
 import Svg, { Path } from 'react-native-svg';
 
@@ -26,6 +36,8 @@ export type NomIcone =
   | 'chevron'
   | 'croix'
   | 'coche'
+  | 'coeur'
+  | 'loupe'
   | 'horloge'
   | 'lieu'
   | 'appareil-photo'
@@ -77,6 +89,13 @@ const CHEMINS: Record<NomIcone, string> = {
   chevron: 'M9.5 5.5L16 12l-6.5 6.5',
   croix: 'M6 6l12 12M18 6L6 18',
   coche: 'M4.5 12.5l5 5L19.5 7',
+  // **Le cœur, fourni par Design : le jeu n'en avait pas.** Un seul tracé
+  // fermé, symétrique, qui se remplit sans changer de forme — c'est ce qui
+  // permet aux deux états d'être la même icône.
+  coeur:
+    'M12 20.3C6.6 16.5 3.6 13.1 3.6 9.7A4.9 4.9 0 0 1 12 6.7a4.9 4.9 0 0 1 8.4 3c0 3.4-3 6.8-8.4 10.6z',
+  // Le disque et son manche, dans le même chemin que le reste du jeu.
+  loupe: 'M10.8 18.1a7.3 7.3 0 100-14.6 7.3 7.3 0 000 14.6zM16.1 16.1l4.4 4.4',
   // Cadran et aiguilles, en un seul tracé fermé puis rouvert.
   horloge: 'M12 21a9 9 0 100-18 9 9 0 000 18zM12 7.5V12l3.2 2',
   lieu: 'M12 21.5c4.4-4.6 6.6-8.2 6.6-11a6.6 6.6 0 10-13.2 0c0 2.8 2.2 6.4 6.6 11zM12 12.6a2.6 2.6 0 100-5.2 2.6 2.6 0 000 5.2z',
@@ -127,6 +146,7 @@ export function Icone({
   couleur = 'ink.default',
   teinte,
   taille = size.icon,
+  rempli = false,
   testID,
 }: {
   nom: NomIcone;
@@ -140,6 +160,14 @@ export function Icone({
   teinte?: string;
   /** Vingt-quatre par défaut. Plus grande sur un état vide, qui a de la place. */
   taille?: number;
+  /**
+   * Le glyphe est plein plutôt que tracé.
+   *
+   * Réservé au cœur, dont l'état **est** le remplissage. Ailleurs le jeu n'a
+   * pas de plein, et ce n'est pas un réglage à découvrir : c'est une exception
+   * nommée, écrite dans l'en-tête du module.
+   */
+  rempli?: boolean;
   testID?: string;
 }) {
   const c = useColors();
@@ -157,6 +185,9 @@ export function Icone({
     >
       <Path
         d={CHEMINS[nom]}
+        // Plein : le trait reste, de la même couleur. Sans lui, le glyphe
+        // maigrit d'un demi-point au remplissage et le cœur paraît sauter.
+        fill={rempli ? trait : 'none'}
         stroke={trait}
         strokeWidth={(size.iconStroke * taille) / size.icon}
         strokeLinecap="round"

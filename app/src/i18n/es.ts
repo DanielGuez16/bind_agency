@@ -347,6 +347,11 @@ export const es: Catalogue = {
     murToutesLesCategories: 'Todo',
     filMarche: 'Miami',
     filMarcheEtCompte: '{{marche}} · {{count}} servicios',
+    filRechercher: 'Salón, servicio, barrio',
+    filEffacerLaRecherche: 'Borrar',
+    filVoirMesFavoris: 'Guardados',
+    filMettreEnFavori: 'Guardar este servicio',
+    filRetirerDesFavoris: 'Quitar de guardados',
     filDecouvrir: 'Descubrir',
     // « servicios de uñas » et non « uñas servicios » : la catégorie suit le
     // nom commun en espagnol. C'est pour cela que les deux phrases sont deux
@@ -461,8 +466,7 @@ export const es: Catalogue = {
     format_story: 'historia',
     format_post: 'publicación',
     format_reel: 'reel',
-    contrepartieEcheance: 'Antes del {{quand}}',
-    contrepartieTentative: 'Intento {{n}} de 3',
+    contrepartieEnArbitrage: 'Un árbitro se ha hecho cargo — el local ya no decide.',
     contrepartieRienAFaire: 'El local lo está revisando — nada que hacer de tu lado.',
     action_code: 'Ver código',
     action_preuve: 'Enviar tu publicación',
@@ -498,7 +502,6 @@ export const es: Catalogue = {
     preuve_attestee_aide: 'La plataforma no ha podido confirmarla — una historia de más de 24 horas, casi siempre. El salón la revisa como de costumbre.',
     preuve_ecart: 'Todavía no coincide',
     preuve_ecart_aide: 'La plataforma lo comprobó y encontró esto:',
-    contrepartieEnArbitrage: 'Un árbitro se ha hecho cargo — el local ya no decide.',
     preuveAdresse: 'Enlace a tu publicación',
     preuveAdresseAide:
       'Pega el enlace de la publicación. El negocio lo abre para comprobar que sigue en línea — con una captura sola, tiene que creerte.',
@@ -882,6 +885,16 @@ export const es: Catalogue = {
       'Has abierto {{n}} accesos en los últimos {{jours}} días, en todos los salones.',
     compteDeLAppelant: 'Son {{n}} accesos que has abierto en {{jours}} días, en todos los salones.',
     ouverteRappel: '{{salon}} puede cerrarlo cuando quiera, desde su propia pantalla.',
+  },
+  favoris: {
+    titre: 'Guardados',
+    videTitre: 'Aún no has guardado nada',
+    videCorps: 'El corazón de un servicio lo guarda aquí — útil para lo que todavía no se te abre.',
+    duree: '{{n}} min',
+    voirLeSalon: 'Ver el salón',
+    etatFermee: '{{salon}} lo ha cerrado por ahora. Puede reabrir.',
+    etatSalonIndisponible: '{{salon}} no aparece en este momento.',
+    etatHorsPalier: 'Este se ofrece en un nivel que aún no abres.',
   },
   reglages: {
     reprisesTitre: 'Cuando BIND entró en tu cuenta',

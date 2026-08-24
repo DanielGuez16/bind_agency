@@ -72,18 +72,32 @@ function reservation(extra: Partial<ReservationDuCreateur> = {}): ReservationDuC
   } as unknown as ReservationDuCreateur;
 }
 
+/**
+ * Une échéance **relative**, pas une date écrite.
+ *
+ * Elle était figée au 16 août 2026. La date est passée, `tempsRestant` a rendu
+ * `null`, et la ligne « il reste 31 h » a cessé d'être rendue — sans qu'un seul
+ * test rougisse, parce que celui qui existait lisait la ligne d'échéance, elle
+ * inconditionnelle. Le décor a pourri en silence et personne n'a pu le voir.
+ *
+ * C'est la même faute que le `valid_until` figé de l'an dernier. Un décor qui
+ * porte une date écrite en dur ne dit pas la même chose selon le jour où on le
+ * lit, et un test dont le verdict dépend du calendrier ne prouve rien.
+ */
+const DANS_31_H = () => new Date(Date.now() + 31 * 3_600_000).toISOString();
+
 function contrepartie(statut: string, extra: Record<string, unknown> = {}) {
   return {
     collaboration_id: 'k1',
     status: statut,
-    deadline_at: '2026-08-16T14:30:00Z',
+    deadline_at: DANS_31_H(),
     attempts_count: 1,
     needs_human_review: false,
     ...extra,
   };
 }
 
-async function monter(items: ReservationDuCreateur[]) {
+async function monter(items: ReservationDuCreateur[], locale: 'en' | 'es' = 'en') {
   const api = new ApiClient({
     baseUrl: 'https://api.test',
     coffre: { lire: async () => null, ecrire: async () => {} },
@@ -95,7 +109,7 @@ async function monter(items: ReservationDuCreateur[]) {
       }) as Response,
   });
   return await render(
-    <I18nProvider initialLocale="en">
+    <I18nProvider initialLocale={locale}>
       <ThemeProvider role="creator">
         <ApiProvider client={api}>
           <HistoriqueScreen onOuvrir={() => {}} />
@@ -154,27 +168,46 @@ describe('chaque ligne dit ce qu’elle attend de toi', () => {
     expect(screen.getByTestId('reservation-r1').props.accessibilityRole).toBeUndefined();
   });
 
-  it('l’échéance s’affiche, elle était servie et rendue nulle part', async () => {
-    // Le statut seul ne dit pas jusqu'à quand, et c'est la seule chose qui
-    // décide s'il faut agir ce soir ou la semaine prochaine.
-    await monter([reservation({ contrepartie: contrepartie('pending') as never })]);
-    await waitFor(() => expect(screen.getByTestId('echeance-r1')).toBeTruthy());
+  it('la carte se tait sur l’instruction du dossier', async () => {
+    // **Ce que la liste ne porte plus, et pourquoi.** L'échéance, l'arbitrage
+    // et le numéro de tentative décrivent comment le dossier est instruit ; la
+    // liste répond à « qu'est-ce que je dois faire ». Trois lignes sur chaque
+    // carte pour une question qu'on ne pose pas ici.
+    //
+    // Aucune n'est perdue : l'échéance est éprouvée sur l'écran de la
+    // contrepartie par `la-preuve-v3` (`contrat-echeance`), l'arbitrage et la
+    // tentative par `la-reprise`. Ce test dit où elles ne sont **pas**, et le
+    // retrait n'a de sens que parce que les autres disent où elles sont.
+    await monter([
+      reservation({
+        contrepartie: contrepartie('resubmit_requested', {
+          attempts_count: 2,
+          needs_human_review: true,
+        }) as never,
+      }),
+    ]);
+    await waitFor(() => expect(screen.getByTestId('reservation-r1')).toBeTruthy());
 
-    expect(screen.getByTestId('echeance-r1')).toHaveTextContent(/16/);
-  });
-
-  it('la tentative n’apparaît qu’à partir de la seconde', async () => {
-    // « Tentative 1 sur 3 » sur une première publication annonce un échec
-    // qui n'a pas eu lieu.
-    await monter([reservation({ contrepartie: contrepartie('pending') as never })]);
-    await waitFor(() => expect(screen.getByTestId('agir-r1')).toBeTruthy());
+    expect(screen.queryByTestId('echeance-r1')).toBeNull();
+    expect(screen.queryByTestId('en-arbitrage-r1')).toBeNull();
     expect(screen.queryByTestId('tentative-r1')).toBeNull();
 
-    await monter([
-      reservation({ contrepartie: contrepartie('resubmit_requested', { attempts_count: 2 }) as never }),
-    ]);
-    await waitFor(() => expect(screen.getByTestId('tentative-r1')).toBeTruthy());
-    expect(screen.getByTestId('tentative-r1')).toHaveTextContent(/\b2\b/);
+    // **Le décor porte les trois causes en même temps.** Une contrepartie
+    // `pending` à première tentative ne rendrait aucune des trois de toute
+    // façon : le test passerait au vert sans que rien n'ait été retiré, et
+    // c'est exactement l'implémentation qu'on vient d'écarter.
+  });
+
+  it('mais elle garde ce qui reste, qui décide du geste', async () => {
+    // Le retrait s'arrête là. « 31 h » dit s'il faut publier ce soir ; c'est
+    // une décision, pas une instruction de dossier.
+    await monter([reservation({ contrepartie: contrepartie('pending') as never })]);
+    await waitFor(() => expect(screen.getByTestId('reste-r1')).toBeTruthy());
+
+    // **Sans capitales.** Elles détruisent la silhouette des mots, donc ce qui
+    // permet de balayer une liste sans la lire.
+    const reste = screen.getByTestId('reste-r1');
+    expect(reste).not.toHaveTextContent(/LEFT|RESTE|QUEDAN/);
   });
 
   it('le badge porte le palier et le réseau', async () => {
@@ -186,6 +219,20 @@ describe('chaque ligne dit ce qu’elle attend de toi', () => {
     const badge = screen.getByTestId('palier-r1');
     expect(badge).toHaveTextContent(/STORY/);
     expect(badge).toHaveTextContent(/INSTAGRAM/);
+  });
+
+  it('et le format y est traduit, pas recopié', async () => {
+    // **Le cas où les deux implémentations divergent.** En anglais, `story`
+    // majusculé donne « STORY » — la valeur brute et la traduction rendent le
+    // même mot, et l'assertion au-dessus passe quelle que soit celle qu'on a
+    // écrite. L'espagnol les sépare : « historia » contre « story ». C'est
+    // donc là que le test se pose, et pas ailleurs.
+    await monter([reservation({ contrepartie: contrepartie('pending') as never })], 'es');
+    await waitFor(() => expect(screen.getByTestId('palier-r1')).toBeTruthy());
+
+    const badge = screen.getByTestId('palier-r1');
+    expect(badge).toHaveTextContent(/HISTORIA/);
+    expect(badge).not.toHaveTextContent(/STORY/);
   });
 
   it('la prestation passe devant le salon', async () => {

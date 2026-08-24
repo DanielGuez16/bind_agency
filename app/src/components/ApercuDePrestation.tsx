@@ -30,9 +30,11 @@
  */
 import { Pressable, View } from 'react-native';
 
+import { useI18n } from '../i18n';
 import { radius, useColors } from '../theme';
 import { useEnfoncement } from './Mouvement';
 import { MediaFallback } from './Cards';
+import { Icone } from './Icone';
 import { Photo } from './Photo';
 import { Texte } from './Texte';
 
@@ -66,6 +68,15 @@ export type ApercuDePrestationProps = {
   /** L'image du salon. Absente : le repli au monogramme, jamais un trou. */
   photo?: string | null;
   onPress?: () => void;
+  /**
+   * Le cœur, et son état.
+   *
+   * **Absent quand `onFavori` l'est** : une carte hors du mur — un aperçu dans
+   * une fiche, dans un récapitulatif — n'a rien à garder de côté, et un cœur
+   * qui ne répond pas est pire qu'un cœur absent.
+   */
+  estFavori?: boolean;
+  onFavori?: () => void;
   testID?: string;
 };
 
@@ -76,6 +87,8 @@ export function ApercuDePrestation({
   contrepartie,
   photo,
   onPress,
+  estFavori = false,
+  onFavori,
   testID,
 }: ApercuDePrestationProps) {
   const c = useColors();
@@ -105,13 +118,22 @@ export function ApercuDePrestation({
       {/* **La hauteur est connue avant l'image.** C'était déjà le cas ici ; ce
           qui manquait est le fondu — une photo qui apparaît d'un coup est un
           clignotement, quelle que soit sa vitesse. */}
-      <Photo
-        uri={photo}
-        hauteur={IMAGE_DE_L_APERCU}
-        style={{ borderRadius: radius['radius.photo'] }}
-        testID={testID ? `${testID}-photo` : undefined}
-        replit={<MediaFallback monogramme={salon} height={IMAGE_DE_L_APERCU} />}
-      />
+      <View>
+        <Photo
+          uri={photo}
+          hauteur={IMAGE_DE_L_APERCU}
+          style={{ borderRadius: radius['radius.photo'] }}
+          testID={testID ? `${testID}-photo` : undefined}
+          replit={<MediaFallback monogramme={salon} height={IMAGE_DE_L_APERCU} />}
+        />
+        {onFavori ? (
+          <CoeurDeLaCarte
+            actif={estFavori}
+            onPress={onFavori}
+            testID={testID ? `${testID}-coeur` : undefined}
+          />
+        ) : null}
+      </View>
 
       <View style={{ gap: 4 }}>
         <Texte
@@ -165,6 +187,75 @@ export function ApercuDePrestation({
           ) : null}
         </View>
       </View>
+    </Pressable>
+  );
+}
+
+
+/**
+ * Le cœur, posé sur la photo.
+ *
+ * **Chercher et garder ne se posent pas au même endroit.** La recherche est une
+ * barre : elle s'adresse à l'écran entier. Le cœur est sur l'objet, et il ne
+ * s'adresse qu'à lui. Aucun des deux n'emprunte la forme de l'autre.
+ *
+ * **Trente-deux points, sous la cible de quarante-quatre**, et c'est admis pour
+ * deux raisons qui tiennent ensemble : la zone tactile déborde le dessin de six
+ * points de chaque côté, et la carte entière reste pressable autour — rater le
+ * cœur ouvre la fiche, ce qui n'est pas une erreur destructrice.
+ *
+ * **Le voile blanc existe déjà** pour les pastilles de photo : le cœur
+ * n'introduit aucune surface nouvelle.
+ */
+function CoeurDeLaCarte({
+  actif,
+  onPress,
+  testID,
+}: {
+  actif: boolean;
+  onPress: () => void;
+  testID?: string;
+}) {
+  const { t } = useI18n();
+  const c = useColors();
+
+  return (
+    <Pressable
+      testID={testID}
+      accessibilityRole="button"
+      // L'état, pas seulement l'action : une lecture d'écran doit pouvoir dire
+      // si la prestation est gardée en ce moment.
+      accessibilityState={{ selected: actif }}
+      accessibilityLabel={t(actif ? 'parcours.filRetirerDesFavoris' : 'parcours.filMettreEnFavori')}
+      onPress={onPress}
+      hitSlop={6}
+      style={({ pressed }) => ({
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        width: 32,
+        height: 32,
+        borderRadius: radius['radius.pill'],
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: c['scrim.badge'],
+        opacity: pressed ? 0.7 : 1,
+      })}
+    >
+      {/* **`brand.700` et non `brand.500`, et c'est mesuré.** La planche
+          demande l'orange de marque ; sur le voile blanc de la pastille il
+          donne 2,36:1, sous les 3:1 qu'un élément graphique porteur
+          d'information doit tenir. Or le remplissage est ici **le seul signe**
+          qui distingue « gardé » de « pas gardé » : le rendre à peine visible
+          revient à ne pas le rendre. `brand.700` est l'encre calibrée de la
+          marque — 5,29:1 — et c'est déjà elle que portent les autres glyphes
+          orange du produit. */}
+      <Icone
+        nom="coeur"
+        couleur={actif ? 'brand.700' : 'ink.default'}
+        taille={18}
+        rempli={actif}
+      />
     </Pressable>
   );
 }

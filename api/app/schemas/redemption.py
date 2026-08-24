@@ -12,6 +12,12 @@ class CodeAffiche(BaseModel):
     """Ce que le créateur montre. Le secret n'en fait évidemment pas partie."""
 
     booking_id: uuid.UUID
+    #: **Où l'on va.** L'adresse vivait sur la liste des réservations, où elle
+    #: doublait la longueur de chaque carte pour un usage qui n'y a pas lieu :
+    #: on ne cherche pas son chemin en parcourant une liste, on le cherche en
+    #: partant. Cet écran est celui du départ, et il ne disait rien du salon.
+    business_name: str
+    business_address: str | None
     #: La charge du QR : `identifiant:chiffres`. Rendue prête à encoder plutôt
     #: que laissée à composer côté app — deux façons de la former finiraient par
     #: diverger, et c'est le scanner qui refuserait sans dire pourquoi.
