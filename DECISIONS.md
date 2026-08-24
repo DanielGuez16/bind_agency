@@ -10265,3 +10265,40 @@ pas des colonnes — et c'est le format que le commerce utilise au comptoir. La
 vignette et l'état sont dans la liste, le reste était déjà dans le panneau de
 correction ; le tableau demande une décision de disposition qui n'est pas
 tranchée par la planche.
+
+---
+
+## 2026-08-24 — La capacité reste au lieu, et le résumé se répartit
+
+**La capacité est une propriété de l'endroit.** Design la range avec les
+horaires tout en notant qu'elle se règle à la fréquence d'un catalogue, et
+laisse la question ouverte : si elle bouge souvent, elle appartiendrait à la
+journée.
+
+L'arbitrage retourne la question. Un nombre de fauteuils décrit le lieu, et
+l'exception du jour existe déjà pour les écarts. **Si la capacité déclarée
+bougeait souvent, ce serait le signe qu'elle est fausse, pas qu'elle est au
+mauvais endroit** — la fréquence mesurerait une erreur de déclaration, pas un
+besoin de déplacement.
+
+**Le résumé de composition ne méritait pas un endroit mais trois.** Il disait à
+un salon ce qui manque avant qu'il apparaisse ; sa table des matières est
+partie, sa fonction reste.
+
+Deux de ses trois nombres se comptent dans les écrans qui tiennent déjà la
+matière : les prestations dans la liste des prestations, les jours ouverts sur
+le lieu. Un appel pour un nombre qu'on peut compter serait un second appel pour
+une donnée qu'on a en main, et deux comptes qui finiraient par diverger.
+
+**La définition est recopiée du serveur, pas réinventée.** Le parent d'une gamme
+n'est pas une prestation — il ne se réserve pas et ne s'affiche jamais seul — et
+la visibilité se lit sur `is_effectively_available` : une variante dont le
+parent est fermé n'apparaît nulle part quel que soit son propre interrupteur.
+C'est le cas qu'on croit ouvert, et c'est la seconde mutation.
+
+**Le troisième nombre n'est pas dérivable.** `en_ligne_depuis` vient du journal
+d'audit, et il a un endroit tout trouvé : `VueDActivation`, que la journée
+charge déjà et sur laquelle vit le bandeau de mise en ligne. **La règle des sept
+jours l'attend depuis la v3** — c'était écrit dans `TASKS.md` le jour où le
+bandeau a été composé sans elle. Demandé plutôt qu'obtenu par un second appel
+sur l'écran le plus ouvert du produit.

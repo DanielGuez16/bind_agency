@@ -52,6 +52,7 @@ import {
 } from '../components';
 import { useI18n } from '../i18n';
 import { gesteDeRetrait, suiteDuRefus } from './catalogue/corriger';
+import { resumeDuCatalogue } from './catalogue/resume';
 import { radius, useColors } from '../theme';
 import {
   ecartAuConseil,
@@ -135,8 +136,17 @@ export function CatalogueScreen({
     >
       {(composition) => (
         <View style={{ gap: 12 }}>
+          {/* **Ce que le salon a composé, et ce que les créatrices en voient.**
+              C'était la fonction du résumé de composition, sous la table des
+              matières que la v3.1 retire : dire ce qui manque avant qu'un salon
+              apparaisse. « Douze dont trois éteintes » n'est pas la même
+              composition que « douze visibles », et c'est la moitié qu'on
+              oublie. */}
           <Texte variante="type.caption" couleur="ink.soft" testID="resume-du-catalogue">
-            {t('composition.catalogueResume', { n: composition.items.length })}
+            {t('composition.catalogueResume', {
+              n: String(resumeDuCatalogue(composition.items).prestations),
+              visibles: String(resumeDuCatalogue(composition.items).visibles),
+            })}
           </Texte>
 
           {compose ? (
