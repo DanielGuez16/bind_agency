@@ -395,7 +395,16 @@ function ParcoursCreateur({
  * la navigation évite d'avoir à s'en remettre à un seul verrou pour la règle
  * « un code, une réservation ».
  */
-function PileDesReservations() {
+/**
+ * La pile des réservations, **exportée pour être éprouvée de bout en bout**.
+ *
+ * Le code de retrait est la seule chose à montrer au comptoir : sans lui aucune
+ * prestation ne se consomme. Son chemin part de la liste, traverse `destination`
+ * et aboutit à un écran de la pile — trois pièces dont chacune était gardée
+ * séparément, et dont la jonction ne l'était pas. Une refonte qui déplace la
+ * liste laisse les trois vertes et le parcours mort.
+ */
+export function PileDesReservations() {
   return (
     <PileReservations.Navigator screenOptions={OPTIONS_DE_PILE}>
       <PileReservations.Screen name="Historique">
