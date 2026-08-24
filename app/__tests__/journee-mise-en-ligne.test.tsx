@@ -187,6 +187,49 @@ describe('le bandeau, à l’écran', () => {
     );
   }
 
+  /**
+   * **Trois branches écrites à la main, donc trois cas.** `count` traverse le
+   * formateur de nombres, qui le rend en chaîne pour le séparateur de
+   * milliers : i18n-js ne le voit plus comme un nombre et sa pluralisation ne
+   * se déclenche pas. Un seul cas laisserait deux branches sans épreuve.
+   */
+  const IL_Y_A_TROIS_JOURS = new Date(Date.now() - 3 * 24 * 3_600_000).toISOString();
+  const publie = (peuvent: number | null) => ({
+    status: 'active',
+    en_ligne_depuis: IL_Y_A_TROIS_JOURS,
+    etapes: [ETAPE('address', true)],
+    createurs_qui_peuvent_reserver: peuvent,
+    confirmation_jours: 7,
+  });
+
+  it('écrit la portée à côté de la date', async () => {
+    await monter(publie(41));
+
+    expect(await screen.findByTestId('confirmation-mise-en-ligne')).toHaveTextContent(
+      /41 creators can book you/i,
+    );
+  });
+
+  it('et au singulier quand il n’y en a qu’une, jamais « 1 creators »', async () => {
+    await monter(publie(1));
+
+    expect(await screen.findByTestId('confirmation-mise-en-ligne')).toHaveTextContent(
+      /1 creator can book you/i,
+    );
+  });
+
+  it('mais se tait sur zéro, plutôt que d’écrire « 0 creators can book you »', async () => {
+    // **Zéro se lit comme l'absence.** Sur la ligne qui doit rassurer un salon
+    // qui vient d'apparaître, ce serait la pire phrase du produit — et la date
+    // seule reste vraie. Le décor diverge de « toujours écrire le nombre ».
+    await monter(publie(0));
+
+    const ligne = await screen.findByTestId('confirmation-mise-en-ligne');
+    expect(ligne).not.toHaveTextContent(/can book you/i);
+    // Et elle ne disparaît pas pour autant : « vous êtes en ligne » reste vrai.
+    expect(ligne).toHaveTextContent(/you are live/i);
+  });
+
   it('nomme ce qui manque, et compte ce qui est fait', async () => {
     await monter({
       status: 'draft',
