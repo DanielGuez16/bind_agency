@@ -27,6 +27,8 @@
   "collaboration.resubmit.subject": "Un paso más para {business}",
   "collaboration.unfulfilled.body": "Hola {creator}:\n\nEl plazo de {item} en {business} venció sin una prueba aceptada. Esto afecta a tu puntuación de fiabilidad.\n",
   "collaboration.unfulfilled.subject": "Tu colaboración con {business} no se ha cumplido",
+  "favorite.available.body": "Buenas noticias.\n\n{prestation} en {business} — uno de tus servicios guardados — vuelve a poder reservarse. Abre BIND para coger un hueco.\n\nPuedes desactivar estos avisos en tus ajustes; nada más de lo que enviamos cambia.",
+  "favorite.available.subject": "{prestation} ya está disponible para ti",
   "handover.invitation.body": "Hola:\n\nHemos preparado la página de {business} en BIND — dirección, horarios y servicios ya están cargados.\n\nAbre el enlace para revisarla, crear tu cuenta y publicarla. Nada es visible para los creadores hasta que lo hagas.\n\n{url}\n\nEl enlace funciona una sola vez y caduca el {expiration}.\n",
   "handover.invitation.subject": "{business} ya está listo en BIND",
   "subscription.ended.body": "Hola:\n\nEl periodo de prueba de {business} ha terminado, así que tus ofertas ya no aparecen en el muro de los creadores.\n\nNo se ha borrado nada: tu catálogo, tus horarios y tu historial siguen intactos, y **las reservas ya hechas se respetarán**. Suscríbete desde la aplicación para volver.\n",

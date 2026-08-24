@@ -535,6 +535,12 @@ class Settings(BaseSettings):
     #: intervention, pas celui d'une journée. **Une reprise qu'on oublie de
     #: fermer redevient un accès permanent** — c'est précisément ce que ce
     #: dispositif refuse, et c'est ce délai qui l'en empêche.
+    #: Période du balayage qui prévient d'un favori devenu réservable. Un quart
+    #: d'heure : c'est un avis, pas une place à prendre — le créneau se réserve
+    #: encore une heure plus tard — et un passage plus fréquent relirait
+    #: l'éligibilité de chaque créatrice pour ne rien trouver.
+    favorite_sweep_interval_seconds: int = 900
+
     support_access_ttl_seconds: int = 2 * 3600
 
     #: La fenêtre glissante sur laquelle on compte les reprises d'un même

@@ -11,6 +11,8 @@ raison.** La retirer sans un mot ferait croire à un mauvais appui, et les quatr
 états appellent quatre conduites différentes.
 """
 
+import uuid
+
 import pytest
 import sqlalchemy as sa
 from httpx import AsyncClient
@@ -18,11 +20,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.models import Business, CatalogItem, CreatorFavorite, TierOffer
-from app.models.enums import BusinessStatus, SuspensionReason
+from app.models.enums import BusinessStatus, NotificationKind, SuspensionReason
 from app.schemas.tier_offers import TierOfferCreate
 from app.services import favorites
 from app.services import tier_offers as tier_offer_service
 from tests.test_booking_create import REEL, monter_le_decor
+from tests.test_outbox import FauxCourriel, FauxPush
 
 PREFIX = get_settings().api_v1_prefix
 
@@ -343,3 +346,209 @@ async def test_l_anonymisation_emporte_les_favoris(session: AsyncSession) -> Non
         .where(CreatorFavorite.creator_id == decor["createur"].id)
     )
     assert reste == 0
+
+
+# --------------------------------------------------------------------------
+# l'avis d'ouverture : le premier message que personne n'a déclenché
+# --------------------------------------------------------------------------
+
+
+async def _messages_de_favori(session: AsyncSession, creator_id: uuid.UUID) -> list:
+    """Les avis déposés, **un par annonce**.
+
+    La boîte d'envoi dépose sur deux canaux : un avis fait deux lignes, et
+    compter les lignes ferait lire « deux avis » là où il n'y en a qu'un. On
+    ne garde que le courriel — le compte devient celui des annonces, qui est
+    ce que ces tests parlent de.
+    """
+    from app.models import OutboundMessage
+    from app.models.enums import MessageChannel
+
+    return list(
+        await session.scalars(
+            sa.select(OutboundMessage).where(
+                OutboundMessage.user_id == creator_id,
+                OutboundMessage.template_key == "favorite.available",
+                OutboundMessage.channel == MessageChannel.EMAIL,
+            )
+        )
+    )
+
+
+async def test_un_favori_qui_s_ouvre_depose_un_avis(session: AsyncSession) -> None:
+    """**Ce qui donne son sens au cœur.**
+
+    Elle met en favori une prestation qu'elle ne peut pas encore réserver ; le
+    salon rouvre l'offre, et le produit le lui dit. Sans cet avis, le cœur ne
+    sert qu'à retrouver ce qu'on savait déjà.
+
+    Le décor part de `hors_palier` et non de rien : c'est la transition qu'on
+    annonce, pas l'état. Un favori posé sur une prestation déjà réservable ne
+    doit rien déclencher — elle vient de la voir.
+    """
+    decor = await monter_le_decor(session)
+    await session.execute(
+        sa.update(TierOffer).where(TierOffer.id == decor["offre"].id).values(is_active=False)
+    )
+    await session.flush()
+    await favorites.ajouter(
+        session, creator_id=decor["createur"].id, catalog_item_id=decor["item"].id
+    )
+
+    # Rien tant que rien ne bouge.
+    await favorites.prevenir_les_ouvertures(session)
+    assert await _messages_de_favori(session, decor["createur"].id) == []
+
+    # Le salon rouvre.
+    await session.execute(
+        sa.update(TierOffer).where(TierOffer.id == decor["offre"].id).values(is_active=True)
+    )
+    await session.flush()
+    annonces = await favorites.prevenir_les_ouvertures(session)
+
+    assert annonces == 1
+    messages = await _messages_de_favori(session, decor["createur"].id)
+    assert messages, "aucun avis déposé alors que la prestation vient de s'ouvrir"
+    assert messages[0].kind is NotificationKind.FAVORITE_AVAILABLE
+    assert messages[0].values["prestation"] == decor["item"].name
+
+
+async def test_un_favori_deja_reservable_ne_previent_de_rien(session: AsyncSession) -> None:
+    """**On annonce une ouverture, jamais un état.**
+
+    Sans l'état posé à la création, le premier balayage lirait « rien connu →
+    réservable » et enverrait un message pour une prestation qu'elle vient de
+    regarder. C'est le décor qui sépare les deux implémentations : ici, rien n'a
+    changé entre la pose et le balayage.
+    """
+    decor = await monter_le_decor(session)
+    await favorites.ajouter(
+        session, creator_id=decor["createur"].id, catalog_item_id=decor["item"].id
+    )
+
+    assert await favorites.prevenir_les_ouvertures(session) == 0
+    assert await _messages_de_favori(session, decor["createur"].id) == []
+
+
+async def test_le_meme_favori_ne_previent_pas_deux_fois(session: AsyncSession) -> None:
+    """Deux passages du balayage, un seul avis : c'est une transition.
+
+    Sans le second passage, une implémentation qui annonce l'état à chaque
+    tour rendrait le même verdict que la bonne — et enverrait le message
+    toutes les quinze minutes en production.
+    """
+    decor = await monter_le_decor(session)
+    await session.execute(
+        sa.update(TierOffer).where(TierOffer.id == decor["offre"].id).values(is_active=False)
+    )
+    await session.flush()
+    await favorites.ajouter(
+        session, creator_id=decor["createur"].id, catalog_item_id=decor["item"].id
+    )
+    await favorites.prevenir_les_ouvertures(session)
+    await session.execute(
+        sa.update(TierOffer).where(TierOffer.id == decor["offre"].id).values(is_active=True)
+    )
+    await session.flush()
+
+    await favorites.prevenir_les_ouvertures(session)
+    await favorites.prevenir_les_ouvertures(session)
+
+    assert len(await _messages_de_favori(session, decor["createur"].id)) == 1
+
+
+async def test_une_refermeture_puis_une_reouverture_previennent_de_nouveau(
+    session: AsyncSession,
+) -> None:
+    """**L'état se réécrit aussi à la fermeture, et c'est ce qui rend la
+    seconde ouverture annonçable.**
+
+    Sans cette écriture-là, une prestation qui s'ouvre, se ferme et se rouvre
+    ne serait annoncée qu'une fois : le second retour trouverait `reservable`
+    en mémoire et se tairait. Le décor fait le cycle complet, seul montage où
+    les deux implémentations divergent.
+    """
+    decor = await monter_le_decor(session)
+    offre_id = decor["offre"].id
+
+    async def basculer(actif: bool) -> None:
+        await session.execute(
+            sa.update(TierOffer).where(TierOffer.id == offre_id).values(is_active=actif)
+        )
+        await session.flush()
+        await favorites.prevenir_les_ouvertures(session)
+
+    await basculer(False)
+    await favorites.ajouter(
+        session, creator_id=decor["createur"].id, catalog_item_id=decor["item"].id
+    )
+    await basculer(True)
+    await basculer(False)
+    await basculer(True)
+
+    assert len(await _messages_de_favori(session, decor["createur"].id)) == 2
+
+
+async def test_le_refus_ecarte_l_avis_au_moment_de_sortir(session: AsyncSession) -> None:
+    """**La seule préférence du produit, et elle se relit à l'envoi.**
+
+    Le message est déposé quand même : quelqu'un qui coupe l'avis entre le dépôt
+    et le vidage doit être entendu, et c'est ce que la boîte d'envoi annonce
+    depuis le début en rangeant un identifiant plutôt qu'une adresse. Ce qui est
+    éprouvé ici est l'écart au moment de sortir, avec sa raison — distincte de
+    « compte injoignable », qu'un refus ne doit pas se lire.
+    """
+    from app.services import outbox
+
+    decor = await monter_le_decor(session)
+    decor["createur"].favoris_me_previennent = False
+    await session.execute(
+        sa.update(TierOffer).where(TierOffer.id == decor["offre"].id).values(is_active=False)
+    )
+    await session.flush()
+    await favorites.ajouter(
+        session, creator_id=decor["createur"].id, catalog_item_id=decor["item"].id
+    )
+    await favorites.prevenir_les_ouvertures(session)
+    await session.execute(
+        sa.update(TierOffer).where(TierOffer.id == decor["offre"].id).values(is_active=True)
+    )
+    await session.flush()
+    await favorites.prevenir_les_ouvertures(session)
+
+    deposes = await _messages_de_favori(session, decor["createur"].id)
+    assert deposes, "l'avis doit être déposé : le refus se lit à l'envoi, pas au dépôt"
+
+    await outbox.vider(session, email_sender=FauxCourriel(), push_sender=FauxPush())
+    await session.flush()
+    for message in deposes:
+        await session.refresh(message)
+        assert message.sent_at is None
+        assert message.skipped_reason == outbox.ECARTE_REFUSE
+
+
+async def test_sans_refus_l_avis_part(session: AsyncSession) -> None:
+    """Le sens inverse, et il compte autant : un écart qui écarterait tout
+    passerait le test précédent sans rien garantir."""
+    from app.services import outbox
+
+    decor = await monter_le_decor(session)
+    await session.execute(
+        sa.update(TierOffer).where(TierOffer.id == decor["offre"].id).values(is_active=False)
+    )
+    await session.flush()
+    await favorites.ajouter(
+        session, creator_id=decor["createur"].id, catalog_item_id=decor["item"].id
+    )
+    await favorites.prevenir_les_ouvertures(session)
+    await session.execute(
+        sa.update(TierOffer).where(TierOffer.id == decor["offre"].id).values(is_active=True)
+    )
+    await session.flush()
+    await favorites.prevenir_les_ouvertures(session)
+
+    await outbox.vider(session, email_sender=FauxCourriel(), push_sender=FauxPush())
+    await session.flush()
+    for message in await _messages_de_favori(session, decor["createur"].id):
+        await session.refresh(message)
+        assert message.skipped_reason != outbox.ECARTE_REFUSE

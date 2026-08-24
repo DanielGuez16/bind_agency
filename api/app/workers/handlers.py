@@ -32,6 +32,7 @@ from app.services import (
     account_deletion,
     booking_states,
     collaboration,
+    favorites,
     grace,
     notifications,
     outbox,
@@ -185,6 +186,22 @@ async def appliquer_les_suppressions(session: AsyncSession, *, account, provider
     """
     await account_deletion.appliquer_les_echeances(session)
     return Fait(prochain=timedelta(seconds=get_settings().account_deletion_sweep_interval_seconds))
+
+
+async def prevenir_les_favoris_ouverts(session: AsyncSession, *, account, provider) -> Issue:
+    """Prévient les créatrices dont un favori vient de devenir réservable.
+
+    **Un balayage plutôt qu'un crochet**, parce que l'ouverture a deux causes et
+    qu'une seule a un point d'écriture : le salon rouvre la prestation, ou la
+    créatrice atteint le palier. La seconde arrive par un relevé de métriques,
+    qui n'a aucune raison de savoir qui a mis quoi en favori.
+
+    Les messages sont **déposés**, pas envoyés : un envoi raté ici ferait
+    échouer la passe entière et priverait d'avis tous les favoris qui suivent.
+    """
+    del account, provider
+    await favorites.prevenir_les_ouvertures(session)
+    return Fait(prochain=timedelta(seconds=get_settings().favorite_sweep_interval_seconds))
 
 
 async def rappeler_les_echeances(session: AsyncSession, *, account, provider) -> Issue:
@@ -361,6 +378,7 @@ TRAITEMENTS = {
     JobType.BOOKING_HOLD_SWEEP: expirer_les_gardes,
     JobType.COLLABORATION_DEADLINE_SWEEP: expirer_les_echeances,
     JobType.ACCOUNT_DELETION_SWEEP: appliquer_les_suppressions,
+    JobType.FAVORITE_AVAILABILITY_SWEEP: prevenir_les_favoris_ouverts,
     JobType.COLLABORATION_REMINDER_SWEEP: rappeler_les_echeances,
     JobType.LINK_CLICK_PURGE_SWEEP: purger_les_clics,
     JobType.SUBSCRIPTION_GRACE_SWEEP: balayer_les_periodes_de_grace,
@@ -377,6 +395,7 @@ SANS_CIBLE = frozenset(
         JobType.LINK_CLICK_PURGE_SWEEP,
         JobType.SUBSCRIPTION_GRACE_SWEEP,
         JobType.OUTBOX_SWEEP,
+        JobType.FAVORITE_AVAILABILITY_SWEEP,
     }
 )
 

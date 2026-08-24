@@ -33,6 +33,21 @@ class User(UUIDPrimaryKey, CreatedAt, Base):
     role: Mapped[UserRole] = mapped_column(enum_column(UserRole, "user_role"), nullable=False)
     email: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     phone: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    #: **La seule préférence de notification du produit, et l'exception à la
+    #: règle qui les a toutes retirées.**
+    #:
+    #: Les réglages par genre sont partis parce que chaque message répondait à
+    #: un geste : une décision de réservation, une preuve refusée, une adresse à
+    #: confirmer. Couper l'un revenait à demander qu'on ne réponde pas.
+    #:
+    #: Celui-ci est le premier qui n'attend aucun geste. Une prestation mise en
+    #: favori s'ouvre un mardi, sans qu'on ait rien demandé ce jour-là — c'est
+    #: la définition de ce qu'on doit pouvoir couper. Le défaut est `true` : le
+    #: cœur a été posé pour ça, et c'est le refus qui se déclare.
+    favoris_me_previennent: Mapped[bool] = mapped_column(
+        sa.Boolean, nullable=False, server_default=sa.text("true")
+    )
+
     #: Le nom sous lequel une personne se présente **à quelqu'un d'en face**.
     #: Un identifiant technique ne nomme personne : un gérant qui lit qu'on est
     #: entré chez lui doit pouvoir dire qui, et « 8f3c-… » ne se retient ni ne

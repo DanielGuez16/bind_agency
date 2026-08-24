@@ -356,6 +356,13 @@ class JobType(StrEnum):
     #: Applique les suppressions de compte dont le délai est écoulé. Balayage
     #: global : trente jours séparent la demande de l'effet, et un job par
     #: compte tiendrait une ligne un mois pour un seul réveil.
+    #: Le balayage qui compare l'état de chaque favori à celui de la dernière
+    #: fois, et prévient quand il devient réservable. **Un balayage et non un
+    #: crochet** : la prestation s'ouvre pour deux raisons — le salon la rouvre,
+    #: ou la créatrice atteint le palier — et la seconde n'a pas de point
+    #: d'écriture. Un relevé de métriques qui fait monter d'un palier n'a aucune
+    #: raison de savoir qui a mis quoi en favori.
+    FAVORITE_AVAILABILITY_SWEEP = "favorite_availability_sweep"
     ACCOUNT_DELETION_SWEEP = "account_deletion_sweep"
 
 
@@ -493,6 +500,12 @@ class NotificationKind(StrEnum):
     #: peut demander compte : c'est cette notification qui fait la différence
     #: entre un accès déclaré et un accès qu'on découvre.
     SUPPORT_ACCESS_STARTED = "support_access_started"
+    #: **Côté créatrice, et le seul qui ne suive aucun geste d'elle.** Une
+    #: prestation mise en favori s'ouvre : son palier l'atteint enfin, ou le
+    #: salon la rouvre. Tous les autres genres répondent à quelque chose qu'on
+    #: vient de faire — celui-ci arrive sans qu'on ait rien demandé ce jour-là,
+    #: et c'est ce qui le rend réglable quand les autres ne le sont pas.
+    FAVORITE_AVAILABLE = "favorite_available"
 
 
 class PorteeDeReprise(StrEnum):

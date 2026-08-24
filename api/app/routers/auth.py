@@ -170,8 +170,16 @@ async def read_me(user: CurrentUser) -> UserRead:
 
 @router.patch("/me", response_model=UserRead)
 async def update_me(payload: UpdateMeRequest, user: CurrentUser, session: SessionDep) -> UserRead:
-    """La langue du compte : celle dans laquelle le serveur s'adressera à lui."""
+    """La langue du compte, et le seul réglage de notification du produit.
+
+    **Le réglage est omissible, et son absence ne change rien.** Une application
+    qui ne connaît pas encore ce champ modifie la langue sans remettre le défaut
+    au passage — sinon quelqu'un qui a coupé les avis de favori les retrouverait
+    en changeant de langue depuis une version un peu ancienne.
+    """
     user.locale = payload.locale
+    if payload.favoris_me_previennent is not None:
+        user.favoris_me_previennent = payload.favoris_me_previennent
     await session.commit()
     return UserRead.model_validate(user)
 

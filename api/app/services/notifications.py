@@ -69,6 +69,7 @@ GENRE_PAR_CLE: dict[str, NotificationKind] = {
     # ce qui n'a aucun sens — et surtout, celui qu'il couperait serait la bonne
     # nouvelle des deux.
     "collaboration.closed_no_fault": NotificationKind.COLLABORATION_UNFULFILLED,
+    "favorite.available": NotificationKind.FAVORITE_AVAILABLE,
     "subscription.graceEnding": NotificationKind.SUBSCRIPTION_GRACE_ENDING,
     "subscription.ended": NotificationKind.SUBSCRIPTION_ENDED,
     "support.accessOpened": NotificationKind.SUPPORT_ACCESS_STARTED,
