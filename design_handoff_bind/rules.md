@@ -1,23 +1,49 @@
 # Règles qui ne se lisent pas sur une maquette
 
-## 1. Thème clair et thème sombre
-Un seul jeu de noms, deux valeurs. Ce qui change :
-- **Profondeur** : en sombre, la hiérarchie passe par `bg.surface` → `bg.raised` + `border.default` ; les ombres sont quasi invisibles et ne portent aucun sens. En clair, `elevation.1` (ombre teintée) est admise sur les cartes créateur ; côté commerce tout reste à plat sur bordure pour ne pas alourdir des listes longues.
-- **`role.merchant`** se décline : `#F5A524` en sombre, `#9A5F04` en clair. Le jeton ne se copie pas d'un thème à l'autre — l'ocre clair du sombre est illisible sur blanc.
-- **`accent.default`** vaut `#35DBC0` en sombre (texte `accent.onAccent` presque noir) et `#0A7364` en clair (texte blanc). Le contraste tient AA dans les deux sens, y compris sur un libellé de 15 px en gras.
-- **`badge.scrim`** passe d'un noir à 90 % à un blanc à 92 %.
-- **Placeholders d'image** : trois jetons distincts par thème (`media.placeholder`, `media.placeholderStripe`, `media.placeholderText`) — les rayures doivent rester perceptibles sans devenir un motif visible.
+## 1. Une seule palette, et deux écrans hors système
 
-Ce qui ne change jamais : la typographie, l'échelle d'espacement, les rayons, la densité par rôle, la structure des composants, les libellés.
+*Section refaite le 2026-08-24, côté produit. Elle décrivait une bascule
+clair/sombre retirée depuis, et nommait six jetons qui n'existent plus —
+bg.raised, role.merchant, accent.default, badge.scrim,
+media.placeholderStripe, elevation.1. Le retrait avait été écrit dans la
+copie de travail de `tokens.json` et jamais propagé ici ; la note l'accompagne
+désormais des deux côtés.*
 
-Bascule : `theme = role === 'merchant' ? 'light' : 'dark'`, surchargeable par l'utilisateur dans les réglages, persistée localement. Le changement de thème est instantané, sans animation de couleur.
+La v1.1 ne livre **qu'une palette**, claire, pour les trois rôles. Il n'y a pas
+de second thème, et pas de réglage pour en changer : `userOverride` désignait
+une bascule vers quelque chose qui n'existait pas, et **un interrupteur qui ne
+commande rien est pire que son absence** — il fait douter de ceux qui commandent
+quelque chose. Il est retiré des jetons comme il l'a été de l'écran de réglages.
+
+Ce qu'on prenait pour la moitié sombre est un **kit d'accommodation**, pas une
+seconde palette : `ink.onDark`, `line.onDark`, `bg.onDark`, `scrim.badgeOnDark`
+et les variantes `onDark` des paliers. Il sert les deux écrans déclarés hors
+système, et eux seuls :
+
+- **le code de retrait** — `#FFFFFF` sur `#000000`, plein écran, sans marque ;
+- **la visionneuse** — `bg.onDark`, chrome minimal.
+
+`bg.onDark` s'appelait bg.sunken jusqu'au 2026-08-24. Le nom disait un
+renfoncement, la valeur est le fond le plus sombre de la palette, et huit
+surfaces claires l'avaient employé comme un creux : elles rendaient du noir.
+
+Ce qui ne change jamais : la typographie, l'échelle d'espacement, les rayons, la
+densité par rôle, la structure des composants, les libellés.
 
 ## 2. L'écran de code de retrait ne suit aucun thème
 - Toujours `#FFFFFF` sur `#000000` (`code.fg` / `code.bg`), 21:1. Aucun gris sur un élément porteur, aucune opacité, aucune ombre, aucun rayon sur le bloc de code.
-- Code de **six chiffres**, dérivé côté serveur et **renouvelé tout seul toutes les 30 secondes**. Chiffres en `type.code` (mono 76), lisibles à 1,20 m dans un salon très éclairé ou en plein soleil.
+- Code de **six chiffres**, dérivé côté serveur et **renouvelé tout seul toutes les 30 secondes**.
+- *Corrigé le 2026-08-24 : les six chiffres ne s'affichent plus.* Ils ne se
+  saisissent pas et ne désignent rien seuls — ils ne valent qu'avec
+  l'identifiant que porte le QR — et c'est précisément leur forme qui les
+  faisait confondre avec le code de secours, qui se dicte : un commerçant a
+  essayé de les taper. Une légende sous les chiffres n'y suffisait pas. Ce qui
+  reste à montrer est que le code est **vivant**, et le décompte le dit sans
+  ressembler à une saisie. `type.code` (mono 76) reste déclaré pour le jour où
+  un écran doit à nouveau montrer un code en grand.
 - **Aucun bouton de renouvellement.** Le code tourne de lui-même : en proposer un donnerait à croire qu'il faut agir, et laisserait quelqu'un attendre devant un écran qui se met déjà à jour.
 - Un **code de secours de six caractères** accompagne toujours les chiffres, sur l'alphabet sans O, 0, I ni 1, groupé trois par trois (`4H2 9KX`). Il se dicte au téléphone et se saisit au comptoir quand la caméra ne lit rien. Il ne tourne pas ; ce qui le protège est d'être lié à une réservation, à usage unique, à durée courte et limité en tentatives.
-- Compte à rebours **en chiffres** (mono 46), jamais en anneau de progression : un anneau ne se lit pas de loin. Il compte les secondes qui restent avant la rotation suivante. Sous 10 s, le compteur passe en bloc inversé — le seuil de 60 s valait pour un code qui expirait, pas pour un code qui tourne.
+- Compte à rebours **en chiffres** (mono 46), jamais en anneau de progression : un anneau ne se lit pas de loin. Il compte les secondes qui restent avant la rotation suivante. Sous **un tiers de la rotation** (`code.countdownUrgentPart`, 0,34), le compteur passe en bloc inversé — soit 10 s sur une rotation de 30. *Corrigé le 2026-08-24 : la règle disait « sous 10 s ».* Un nombre de secondes fixe se désaccorde le jour où le serveur change de cadence : le compteur virerait au rouge en permanence, ou jamais. Le seuil de 60 s d'avant valait pour un code qui expirait, pas pour un code qui tourne.
 - Le QR reste affiché en permanence : il porte l'identifiant du code et les chiffres du moment, et se régénère à chaque rotation.
 - Il n'existe pas d'état « expiré » sur cet écran : un code périmé est remplacé par le suivant. Ce qui expire est le **droit de consommer**, et cela se dit sur l'écran de réservation, pas ici.
 - À l'ouverture : luminosité forcée au maximum, veille désactivée (`expo-keep-awake`), thème système ignoré. Restauration à la sortie.
@@ -25,7 +51,14 @@ Bascule : `theme = role === 'merchant' ? 'light' : 'dark'`, surchargeable par l'
 - Le rendu n'utilise ni marge négative ni décalage calculé : la barre de biffure est un enfant absolu d'un conteneur de la hauteur exacte de la ligne de chiffres.
 
 ## 3. Espagnol : libellés jusqu'à +30 %
-- Aucun bouton n'est dimensionné sur son texte : `fullWidth` ou `flex: 1`. Deux lignes autorisées sur un libellé d'action, hauteur minimale 48, `textAlign: 'center'`.
+- Aucun bouton **qui occupe une largeur** n'est dimensionné sur son texte :
+  `fullWidth` ou `flex: 1`. Deux lignes autorisées sur un libellé d'action,
+  hauteur minimale 48, `textAlign: 'center'`.
+- *Exception nommée le 2026-08-24* : **la pilule d'action d'une carte se
+  dimensionne sur son texte** (`fullWidth={false}` dans une rangée). Le bouton
+  du système est déjà une pilule ; étiré sur toute la carte il cesse d'en être
+  une. La règle du dessus reste entière pour les boutons de pied d'écran et de
+  feuille, qui sont ceux que l'espagnol fait déborder.
 - **Aucune troncature sur une action ni sur un statut.** L'ellipse est réservée aux noms propres (salon, créatrice) sur une seule ligne.
 - Les mots de palier ne s'abrègent jamais : `HISTORIA` et `PUBLICACIÓN` passent sur deux lignes dans les listes denses plutôt qu'en initiale, taille plancher 10 px.
 - Les rangées de chips sont en `flexWrap`, jamais en défilement horizontal : une option ne doit pas sortir de l'écran.
@@ -44,7 +77,10 @@ Bascule : `theme = role === 'merchant' ? 'light' : 'dark'`, surchargeable par l'
 
 ## 5. Accessibilité
 - AA partout : 4,5:1 pour tout texte sous 24 px ou sous 18,66 px gras. L'écran de code est à 21:1.
-- `text.muted` clair vaut `#5A6463` (et non un gris plus clair) précisément pour tenir 4,5:1 sur `bg.surface`, `bg.canvas` et les vignettes `bg.onDark`.
+- `ink.mute` vaut `#796D5B` : 4,77:1 sur `bg.page` et 5,06:1 sur `bg.surface`.
+  Il **ne passe pas** sur `bg.inset`, où il tombe à 4,36:1 — sur un fond creux,
+  descendre à `ink.soft`. *Corrigé le 2026-08-24 : la règle nommait
+  text.muted à `#5A6463` et bg.canvas, trois noms qui n'existent pas.*
 - Zone tactile minimale 44 × 44, y compris sur les touches du pavé de caisse (56) et les chips de créneau.
 - Aucune information portée par la couleur seule : les paliers ont mot + glyphe + matière, les états admin ont un libellé texte en plus de leur couleur.
 - Ordre de lecture VoiceOver / TalkBack : titre d'écran, statut ou délai en cours, contenu, actions. Le code de retrait s'annonce caractère par caractère (`accessibilityLabel` avec espaces).
@@ -66,7 +102,11 @@ Bascule : `theme = role === 'merchant' ? 'light' : 'dark'`, surchargeable par l'
 - Admin : chaque écran affiche sa fraîcheur de données et bloque les décisions plutôt que d'agir sur des données périmées.
 
 ## 8. Grand écran (build web)
-- Créateur : contenu centré, largeur maximale 760 ; cartes en `flexWrap`, 2 puis 3 par ligne.
+- Créateur : contenu centré, largeur maximale **1120** (`contentMaxCreator`) ;
+  cartes en `flexWrap`, 2 puis 3 par ligne. *Corrigé le 2026-08-24 : la règle
+  disait 760 quand `tokens.json` déclare 1120 depuis la v1.1 — deux documents
+  de la même passation se contredisaient, et c'est le jeton qui fait foi
+  puisque c'est lui que le produit lit.*
 - Commerce : au-delà de 900 de large, liste de 400 + panneau détail en `flexDirection: 'row'`, jamais plus de deux colonnes. Barre de caisse fixée en haut.
 - Admin : conçu pour 1360, tables à colonnes fixes, défilement virtuel, panneau détail de 400 à 470.
 - Le seuil est mesuré sur la largeur du conteneur (`useWindowDimensions` / `onLayout`), pas via des media queries.
