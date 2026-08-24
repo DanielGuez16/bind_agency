@@ -1510,51 +1510,82 @@ async def test_quand_la_journee_est_finie_c_est_le_dernier_creneau_qui_est_pris(
 
     Une mutation a survécu faute de ce test : remplacer `max` par `min` posait
     la réservation à l'ouverture, et les huit autres tests restaient verts.
+
+    **Le décor a menti deux fois, et de la même façon.** Il prenait un salon par
+    `limit(1)` sans ordre — donc un salon différent selon l'humeur de Postgres —
+    et posait l'heure à 22 h en affirmant qu'« à 22 h tous les salons de Miami
+    sont fermés ». C'est faux depuis que le semis a des bars : Brickell Highball
+    sert encore, la branche du futur répond, et le test tombait en intégration
+    continue là où il passait ici. Vert sur ma machine, rouge sur la leur, sans
+    qu'une ligne de produit ait bougé.
+
+    Il parcourt donc **tous** les salons, et l'heure ne se suppose plus : elle
+    se pose après le dernier créneau du jour de chacun, ce qui rend la journée
+    finie par construction plutôt que par hypothèse.
     """
     from app.seed_demo import prochain_creneau_reservable
 
     factory = async_sessionmaker(bind=seed_conn, expire_on_commit=False)
     async with factory() as session:
-        business = await session.scalar(
-            sa.select(Business).where(Business.status == BusinessStatus.ACTIVE).limit(1)
-        )
-        assert business is not None, "aucun commerce actif : le jeu de données est vide"
-        item_id = await session.scalar(
-            sa.select(TierOffer.catalog_item_id)
-            .join(CatalogItem, CatalogItem.id == TierOffer.catalog_item_id)
-            .where(
-                TierOffer.business_id == business.id,
-                CatalogItem.requires_booking.is_(True),
+        commerces = (
+            await session.scalars(
+                sa.select(Business)
+                .where(Business.status == BusinessStatus.ACTIVE)
+                .order_by(Business.name)
             )
-            .limit(1)
-        )
-        assert item_id is not None
+        ).all()
+        assert commerces, "aucun commerce actif : le jeu de données est vide"
 
-        fuseau = ZoneInfo(business.timezone)
-        # 22 h : tous les salons de Miami sont fermés, donc la branche du passé
-        # est la seule qui puisse répondre.
-        maintenant = datetime.now(fuseau).replace(hour=22, minute=0, second=0, microsecond=0)
-        debut = datetime.combine(maintenant.date(), time.min, tzinfo=fuseau)
-
-        choix = await prochain_creneau_reservable(session, business, item_id, maintenant=maintenant)
-        assert choix is not None
-        creneau, _ = choix
-
-        tous = [
-            c.starts_at
-            for c in await availability_service.creneaux_libres(
-                session,
-                business_id=business.id,
-                catalog_item_id=item_id,
-                depuis=debut,
-                horizon=timedelta(days=1),
+        eprouves = 0
+        for business in commerces:
+            item_id = await session.scalar(
+                sa.select(TierOffer.catalog_item_id)
+                .join(CatalogItem, CatalogItem.id == TierOffer.catalog_item_id)
+                .where(
+                    TierOffer.business_id == business.id,
+                    CatalogItem.requires_booking.is_(True),
+                )
+                .order_by(TierOffer.catalog_item_id)
+                .limit(1)
             )
-            if c.starts_at < maintenant
-        ]
-        assert tous, "aucun créneau passé ce jour-là : le décor ne prouverait rien"
-        assert creneau == max(tous), (
-            f"{business.name} : créneau {creneau} choisi alors que {max(tous)} est plus récent"
-        )
+            if item_id is None:
+                continue
+
+            fuseau = ZoneInfo(business.timezone)
+            debut = datetime.combine(datetime.now(fuseau).date(), time.min, tzinfo=fuseau)
+            tous = [
+                c.starts_at
+                for c in await availability_service.creneaux_libres(
+                    session,
+                    business_id=business.id,
+                    catalog_item_id=item_id,
+                    depuis=debut,
+                    horizon=timedelta(days=1),
+                )
+            ]
+            if not tous:
+                continue  # fermé ce jour-là : la fonction rend `None`, éprouvé ailleurs
+
+            # **Une minute après le dernier créneau du jour**, et non une heure
+            # décidée d'avance. La journée est alors finie chez ce salon quoi
+            # qu'il vende, et la branche du passé est la seule qui puisse
+            # répondre — un bar ouvert à 22 h prenait l'autre.
+            maintenant = max(tous) + timedelta(minutes=1)
+            passes = [c for c in tous if c < maintenant]
+            assert passes, "aucun créneau passé ce jour-là : le décor ne prouverait rien"
+
+            choix = await prochain_creneau_reservable(
+                session, business, item_id, maintenant=maintenant
+            )
+            assert choix is not None, f"{business.name} : aucun créneau rendu"
+            creneau, _ = choix
+            assert creneau == max(passes), (
+                f"{business.name} : créneau {creneau} choisi alors que "
+                f"{max(passes)} est plus récent"
+            )
+            eprouves += 1
+
+        assert eprouves, "aucun salon n'avait de créneau aujourd'hui : le décor ne prouve rien"
 
 
 def test_un_modele_versionne_qui_porte_des_valeurs_arrete_tout(tmp_path: Path) -> None:
