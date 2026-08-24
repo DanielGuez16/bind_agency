@@ -213,11 +213,12 @@ it('atterrit sur la liste des réservations, pas sur le code', async () => {
   await monterLeParcours();
 
   // `salon-…` et identifiant du commerce : le fil rend une carte par salon
-  // depuis la v4. Le testID a changé quatre fois — `commerce-b1`, `salon-b1`,
-  // `apercu-o1`, et `salon-b1` de nouveau — et le parcours qu'il éprouve, lui,
-  // n'a jamais bougé. C'est bien ce que ce test vérifie.
-  await waitFor(() => expect(screen.getByTestId('salon-b1')).toBeTruthy());
-  await fireEvent.press(screen.getByTestId('salon-b1'));
+  // Le testID a changé cinq fois — `commerce-b1`, `salon-b1`, `apercu-o1`,
+  // `salon-b1`, et maintenant `apercu-<article>` : le fil v5 rend une carte par
+  // prestation, en rangées de catégorie. Le parcours qu'il ouvre, lui, n'a
+  // jamais bougé, et c'est bien ce que ce test vérifie.
+  await waitFor(() => expect(screen.getAllByTestId(/-apercu-/)[0]).toBeTruthy());
+  await fireEvent.press(screen.getAllByTestId(/-apercu-/)[0]);
 
   await waitFor(() => expect(screen.getByTestId('offre-o1')).toBeTruthy());
   await fireEvent.press(screen.getByText(en.parcours.reserver));

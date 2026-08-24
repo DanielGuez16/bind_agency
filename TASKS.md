@@ -2454,6 +2454,31 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       poussaient hors de l'écran celles qui attendent un geste. Les deux gardent
       leur compte en tête, qui est ce qu'on lit. Le composant est extrait :
       un écran qui replie à la main le fait une fois puis dérive*
+- [x] **Le fil v5 : des rangées par catégorie, et des cartes qu'on voit**
+      *« On ne voit rien » était une **mesure**, pas une impression : une grille
+      de deux sur 354 points donne des colonnes de 171, et une photo de 100 y
+      fait un letterbox de 1,71:1 sur des images qui arrivent en 4:3. Un quart
+      du cadrage jeté, dix-sept mille pixels rendus. Une carte de 280 porte un
+      4:3 entier — 3,4 fois la surface, sans recadrage.*
+      ***Et le quartier redevient une étiquette.** Il avait été fait colonne
+      vertébrale du fil alors que la fondatrice l'avait écarté au démarchage :
+      il filtre trop fort comme axe, et Miami est une ville de voiture. Il vit
+      dans la ligne d'attribution, avec le salon et la distance. La même
+      décision règle les deux reproches — la rangée donne la largeur **et**
+      l'axe.*
+      *« Le plus près de toi » ouvre le fil sans filtrer, puis les catégories
+      précisent. Chaque rangée porte son compte **servi** : douze dans le rayon,
+      deux à l'écran — le dériver des cartes chargées ferait croire le fil
+      exhaustif, ce qui est le défaut que la v4 venait de fermer.*
+      *Ce qui a traversé les trois fils reste intact : la prestation porte le
+      titre, le salon est l'attribution, et « +3 more here » dit ce qui est
+      ouvert chez lui — c'est la seule différence avec la v0.5, qui nommait une
+      prestation sans mener à un lieu. 1600 tests, 3 mutations*
+- [x] **La suppression côté commerce dit que les réservations sont honorées**
+      *Une phrase de plus, et elle ferme une porte : les créneaux déjà acceptés
+      sont honorés avant l'effacement, comme à l'échéance d'un abonnement. Sans
+      elle, supprimer son compte serait le moyen le plus rapide de se défaire
+      d'une journée chargée*
 - [ ] **Ce qui raccourcirait vraiment l'attente tient maintenant au serveur**
       *Design le dit sans détour : ces règles rendent l'attente lisible, elles
       ne la raccourcissent pas. Des trois choses qui la raccourciraient, **la
