@@ -1058,6 +1058,9 @@ export const en = {
     stockageSecurise: 'Device keychain',
     stockageWeb: 'Browser storage - development only',
   },
+  lieu: {
+    titre: 'Your place',
+  },
   composition: {
     fermerLOffre: 'Stop offering at this tier',
     rouvrirLOffre: 'Offer at this tier again',
@@ -1299,6 +1302,11 @@ export const en = {
     // l'avantage de ne prendre parti ni pour l'entrée ni pour la sortie.
     caisse: 'Register',
     reporting: 'Reports',
+    // **Deux entrées, et plus une porte qui en cache deux.** « Your offer »
+    // et ses onglets disparaissent : la découpe est par objet, et aucune des
+    // deux n'est un réglage de l'autre.
+    lieu: 'Your place',
+    prestations: 'Your services',
     configuration: 'Setup',
     arbitrage: 'Reviews',
     plans: 'Plans',

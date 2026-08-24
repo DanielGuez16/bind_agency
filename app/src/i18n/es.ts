@@ -960,6 +960,9 @@ export const es: Catalogue = {
     stockageSecurise: 'Llavero del dispositivo',
     stockageWeb: 'Almacenamiento del navegador - solo desarrollo',
   },
+  lieu: {
+    titre: 'Tu local',
+  },
   composition: {
     fermerLOffre: 'Dejar de ofrecer en este nivel',
     rouvrirLOffre: 'Volver a ofrecer en este nivel',
@@ -1175,6 +1178,8 @@ export const es: Catalogue = {
     publications: 'Publicaciones',
     caisse: 'Caja',
     reporting: 'Informes',
+    lieu: 'Tu local',
+    prestations: 'Tus servicios',
     configuration: 'Configuración',
     arbitrage: 'Revisiones',
     plans: 'Planes',

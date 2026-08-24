@@ -22,6 +22,7 @@ import { AbonnementScreen } from '../src/screens/AbonnementScreen';
 import { AnnuaireScreen } from '../src/screens/AnnuaireScreen';
 import { CatalogueScreen } from '../src/screens/CatalogueScreen';
 import { HorairesScreen } from '../src/screens/HorairesScreen';
+import { LieuScreen } from '../src/screens/LieuScreen';
 import { JourneeScreen } from '../src/screens/JourneeScreen';
 import { PlansScreen } from '../src/screens/PlansScreen';
 import { NOTE_MAXIMUM, PublicationsScreen } from '../src/screens/PublicationsScreen';
@@ -473,6 +474,26 @@ const ECRANS = [
     },
   },
   {
+    // Le lieu : galerie, carte et horaires, en une requête. Jamais vide — un
+    // lieu sans photo est un lieu à composer, et chaque bloc dit lui-même ce
+    // qui lui manque ; un vide global effacerait les trois endroits où agir.
+    nom: 'lieu',
+    noeud: <LieuScreen businessId="b1" />,
+    role: 'merchant' as Role,
+    // **L'ordre compte** : le double prend la première entrée qui correspond,
+    // et `/business/b1` mord sur toutes les routes du commerce. Le préfixe va
+    // donc en dernier, après ce qu'il contient.
+    plein: {
+      '/photos': [],
+      '/menu': [],
+      '/catalog-items': [],
+      '/capacity-rules': [REGLE],
+      '/capacity-exceptions': [],
+      '/business/b1': { cover_photo_key: null, menu_url: null },
+    },
+    vide: null,
+  },
+  {
     nom: 'horaires',
     noeud: <HorairesScreen businessId="b1" />,
     role: 'merchant' as Role,
@@ -520,34 +541,29 @@ describe('catalogue', () => {
     '/business/b1': { cover_photo_key: null, menu_url: null },
   };
 
-  it('porte la galerie en tête, avant les prestations', async () => {
-    // Elle est ce qu'un visiteur voit en premier de la fiche, et un commerce
-    // qui compose sa page commence souvent par là. La ranger sous les
-    // prestations la ferait chercher.
+  it('n’a plus la galerie : elle décrit le lieu', async () => {
+    // **La découpe par objet.** La galerie, la carte et les horaires décrivent
+    // l'endroit ; ce qui reste ici décrit ce qu'on y fait. Les deux tests qui
+    // vivaient ici sont partis avec elle, sur `LieuScreen`.
     await monter(<CatalogueScreen businessId="b1" />, clientDe(CATALOGUE), 'merchant');
-    await waitFor(() => expect(screen.getByTestId('galerie-du-commerce')).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId('ecran-catalogue')).toBeTruthy());
 
-    expect(screen.getByTestId('ajouter-une-photo')).toBeTruthy();
+    expect(screen.queryByTestId('galerie-du-commerce')).toBeNull();
+    expect(screen.queryByTestId('carte-du-commerce')).toBeNull();
   });
 
-  it('reste utilisable quand le catalogue est vide mais pas la galerie', async () => {
-    // Un commerce qui n'a pas encore composé de prestation peut vouloir
-    // commencer par ses photos ; l'état vide lui retirerait la seule chose
-    // qu'il peut faire tout de suite.
+  it('et son état vide dit « aucune prestation », plus « rien du tout »', async () => {
+    // Tant que la galerie vivait ici, un commerce qui avait déposé ses photos
+    // n'était pas devant un écran vide et la condition portait les trois.
+    // Maintenant que l'écran ne parle que de prestations, le vide redevient ce
+    // qu'il dit.
     await monter(
       <CatalogueScreen businessId="b1" />,
-      clientDe({
-        ...CATALOGUE,
-        '/catalog-items': [],
-        '/photos': [
-          { id: 'p1', storage_key: 'photos/commerces/b1/a.jpg', position: 0, alt_text: null },
-        ],
-      }),
+      clientDe({ ...CATALOGUE, '/catalog-items': [] }),
       'merchant',
     );
 
-    await waitFor(() => expect(screen.getByTestId('photo-p1')).toBeTruthy());
-    expect(screen.queryByTestId('etat-vide')).toBeNull();
+    await waitFor(() => expect(screen.getByTestId('etat-vide')).toBeTruthy());
   });
 
   it('groupe par palier, et nomme ce qui n’en a aucun', async () => {
@@ -758,6 +774,7 @@ describe('quatre états', () => {
       commerces: 'CommercesScreen.tsx',
   catalogue: 'CatalogueScreen.tsx',
       horaires: 'HorairesScreen.tsx',
+      lieu: 'LieuScreen.tsx',
     };
     expect(ECRANS.map((e) => fichiers[e.nom]).sort()).toEqual([...ECRANS_COMMERCE].sort());
   });

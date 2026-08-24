@@ -50,8 +50,6 @@ import {
   Toggle,
   vibration,
 } from '../components';
-import { CarteDuCommerce } from './CarteDuCommerce';
-import { GalerieDuCommerce } from './GalerieDuCommerce';
 import { useI18n } from '../i18n';
 import { gesteDeRetrait, suiteDuRefus } from './catalogue/corriger';
 import { radius, useColors } from '../theme';
@@ -70,12 +68,6 @@ type Composition = {
   items: ItemDuCatalogue[];
   offres: OffreDePalier[];
   paliers: PalierOffrable[];
-  photos: PhotoDuCommerce[];
-  /** La couverture actuelle, pour marquer la photo qui la porte. */
-  couverture: string | null;
-  /** Les pages de la carte. **Distinctes de la galerie** : voir `CarteDuCommerce`. */
-  pagesDeLaCarte: PageDeLaCarte[];
-  lienDeLaCarte: string | null;
 };
 
 const ONGLETS = ['toutes', 'ouvertes', 'fermees'] as const;
@@ -95,26 +87,15 @@ export function CatalogueScreen({
 
   const charger = useCallback(
     async (signal: AbortSignal): Promise<Composition> => {
-      // La galerie voyage avec le catalogue : les deux composent la même
-      // page, et deux requêtes séparées feraient apparaître les photos après
-      // les prestations, sous les yeux de qui les regarde.
-      const [items, offres, paliers, photos, pagesDeLaCarte, commerce] = await Promise.all([
+      // **Trois listes et plus six.** La galerie, la carte et la couverture
+      // sont parties avec le lieu : cet écran ne charge plus que ce qu'il rend,
+      // et trois requêtes de moins sur un écran qu'on ouvre en continu.
+      const [items, offres, paliers] = await Promise.all([
         api.itemsDuCatalogue(businessId, signal),
         api.offresDePalier(businessId, signal),
         api.paliersDuCommerce(businessId, signal),
-        api.photosDuCommerce(businessId, signal),
-        api.pagesDeLaCarte(businessId, signal),
-        api.commerce(businessId, signal),
       ]);
-      return {
-        items,
-        offres,
-        paliers,
-        photos,
-        couverture: commerce.cover_photo_key,
-        pagesDeLaCarte,
-        lienDeLaCarte: commerce.menu_url,
-      };
+      return { items, offres, paliers };
     },
     [api, businessId],
   );
@@ -126,12 +107,12 @@ export function CatalogueScreen({
     cache: { cle: `catalogue.${businessId}`, ageMax: AGES.contenu },
     // **Un catalogue vide n'est plus un écran vide.** La galerie vit ici : un
     // commerce qui n'a pas encore composé de prestation peut vouloir commencer
-    // par ses photos, et l'état vide lui retirerait la seule chose qu'il peut
-    // faire tout de suite.
-    // La carte compte comme la galerie : un commerce qui a déposé sa carte et
-    // rien d'autre a déjà fait quelque chose, et l'état vide le lui nierait.
-    estVide: (c) =>
-      c.items.length === 0 && c.photos.length === 0 && c.pagesDeLaCarte.length === 0,
+    // **Vide veut dire « aucune prestation », et rien d'autre.** La galerie et
+    // la carte comptaient ici tant qu'elles y vivaient : un commerce qui avait
+    // déposé ses photos n'était pas devant un écran vide. Elles sont sur le
+    // lieu maintenant, et cet écran ne parle plus que de prestations — le vide
+    // redevient ce qu'il dit.
+    estVide: (c) => c.items.length === 0,
     dependances: [businessId],
   });
 
@@ -301,35 +282,12 @@ function Groupes({
 
   return (
     <View style={{ gap: 16 }}>
-      {/* La galerie en tête. Elle est ce qu'un visiteur voit en premier de la
-          fiche, et un commerce qui compose sa page commence souvent par là —
-          la ranger sous les prestations la ferait chercher. */}
-      <GalerieDuCommerce
-        businessId={businessId}
-        photos={composition.photos}
-        couverture={composition.couverture}
-        onChange={onChange}
-      />
-      <Filet />
+      {/* **La galerie, la carte et les horaires ont quitté cet écran.** Ils
+          décrivent le lieu ; ce qui reste ici décrit ce qu'on y fait. C'est la
+          découpe par objet de la v3.1, et elle recoupe la fréquence : un lieu
+          se compose une fois, un catalogue vit en continu.
 
-      {/* **La carte suit la galerie, et ne s'y mêle pas.** La galerie montre le
-          lieu, la carte se consulte : deux dépôts distincts, parce qu'un
-          commerce qui les confondrait rendrait la sienne illisible. */}
-      <CarteDuCommerce
-        businessId={businessId}
-        pages={composition.pagesDeLaCarte}
-        lien={composition.lienDeLaCarte}
-        // **Ce que l'absence de carte retient.** Le catalogue les a déjà en
-        // main ; les faire relire à la carte serait un second appel pour une
-        // donnée qu'on tient, et deux listes qui finiraient par diverger.
-        bloquees={composition.items
-          .filter((item) => item.leaves_choice)
-          .map((item) => ({ id: item.id, name: item.name }))}
-        onChange={onChange}
-      />
-      <Filet />
-
-      {/* **Le filtre ne fait pas disparaître la galerie.** Elle vivait sous un
+          Ce qui suit
           court-circuit « aucun résultat dans ce filtre » : un commerce sans
           prestation — ou dont le filtre n'en retient aucune — perdait la seule
           chose qu'il pouvait faire tout de suite. */}

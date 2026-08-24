@@ -2399,6 +2399,31 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Non dessiné faute de champ : un interrupteur qui ne commande rien est
       pire que son absence. Demandé à `bind-agency-1a` — un booléen vrai par
       défaut, plus les deux genres dans `NotificationKind`*
+- [x] **La configuration v3.1 : deux portes de rang égal, et la photo qui se dépose**
+      *« Your offer » et ses deux onglets disparaissent. La découpe est par
+      objet — ce qui décrit l'endroit, ce qui décrit ce qu'on y fait — et elle
+      recoupe la fréquence : un lieu se compose une fois, un catalogue vit en
+      continu. Les horaires rejoignent la couverture et la carte, parce que des
+      heures d'ouverture décrivent un endroit.*
+      *Et la photo par prestation se dépose enfin. `photo_key` était déclarée
+      corrigeable, la route de dépôt existait, **et rien ne les reliait** :
+      aucun écran ne savait produire de clé. Elle est trouvable par son
+      absence — cadre pointillé dans la liste, « needs a photo » en état.
+      1522 tests, 4 mutations*
+- [ ] **Les quatre colonnes de la liste des prestations**
+      *La planche montre nom, durée, palier, état en colonnes, avec la
+      contrepartie, l'écart au palier et la photo descendus dans un panneau
+      latéral. Livré autrement : la vignette et l'état sont dans la liste, le
+      reste est déjà dans le panneau de correction. **Le tableau à quatre
+      colonnes n'existe pas** — et la planche est dessinée à 1512, où il tient.
+      Sur 390, quatre colonnes ne sont pas des colonnes : c'est la question à
+      trancher avant de le composer*
+- [ ] **La capacité : au lieu ou à la journée**
+      *Design la range avec les horaires — « deux créatrices à la fois » est un
+      nombre de fauteuils, donc du lieu — mais note qu'elle se règle à la
+      fréquence d'un catalogue, et que l'exception du jour la modifie déjà
+      depuis la journée. Si l'usage montre qu'elle bouge souvent, elle
+      appartient à la journée. À mesurer, pas à trancher d'avis*
 - [ ] **Neuf planches d'écrans portent encore la v1.0**
       *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
       passés en v3, dans la palette Ambre. Les autres suivent l'ordre du

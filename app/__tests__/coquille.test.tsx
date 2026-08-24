@@ -622,6 +622,16 @@ describe('aiguillage par rôle', () => {
       '/admin/',
       '/collaborations',
       '/support-access',
+      // Le lieu et les prestations chargent des listes : sans elles, le repli
+      // générique rend un objet vide et l'écran lève sur un `.filter` — un
+      // défaut du double, pas du produit. Troisième fois dans ce fichier.
+      '/catalog-items',
+      '/photos',
+      '/menu',
+      '/tiers',
+      '/tier-offers',
+      '/capacity-rules',
+      '/capacity-exceptions',
     ];
     const OBJETS: Record<string, unknown> = {
       // **Le score vit dans la réponse des paliers**, et l'audience le lit :
@@ -776,7 +786,10 @@ describe('aiguillage par rôle', () => {
         en.onglets.caisse,
         en.onglets.publications,
         en.onglets.reporting,
-        en.onglets.configuration,
+        // **Deux entrées de rang égal**, et plus une porte qui en cache deux :
+        // le lieu et ce qu'on y fait ne sont pas l'un le réglage de l'autre.
+        en.onglets.lieu,
+        en.onglets.prestations,
         en.onglets.reglages,
       ]),
     );

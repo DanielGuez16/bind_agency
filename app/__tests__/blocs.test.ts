@@ -75,6 +75,7 @@ const BLOCS: Record<string, number> = {
   PublicationsScreen: 0,
   CatalogueScreen: 0,
   HorairesScreen: 0,
+  LieuScreen: 0,
   ConfigurationScreen: 0,
   // La création d'un commerce est un formulaire, pas un seuil : la marque n'y
   // présente rien, elle enregistre des faits.

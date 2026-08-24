@@ -54,8 +54,8 @@ import { TerrainScreen } from '../screens/TerrainScreen';
 import { PreuveScreen } from '../screens/PreuveScreen';
 import { PublicationsScreen } from '../screens/PublicationsScreen';
 import { CatalogueScreen } from '../screens/CatalogueScreen';
-import { CompositionDuCommerce, ConfigurationScreen } from '../screens/ConfigurationScreen';
 import { HorairesScreen } from '../screens/HorairesScreen';
+import { LieuScreen } from '../screens/LieuScreen';
 import { CameraScanner } from '../screens/CameraScanner';
 import { RedemptionScreen } from '../screens/RedemptionScreen';
 import { ReglagesScreen } from '../screens/ReglagesScreen';
@@ -599,51 +599,6 @@ function ParcoursCommerce({ businessId }: { businessId: string }) {
   );
 }
 
-/**
- * La configuration : une entrée, trois écrans.
- *
- * Une pile et non trois onglets — la barre en a déjà cinq, et ce sont des
- * écrans qu'on ouvre le premier jour puis une fois par saison. Chacun rend son
- * propre retour : sur le web il n'y a pas de geste de balayage, et sans lui on
- * ne quitte l'écran qu'en changeant d'onglet.
- */
-function PileDeConfiguration({ businessId }: { businessId: string }) {
-  const { large } = useGabarit();
-
-  // **Sur grand écran, la table des matières n'existe pas.** Trois cartes au
-  // milieu du vide dont le seul rôle est de mener ailleurs, c'est un clic et
-  // une page dépensés pour un menu. Le menu devient une colonne, la section
-  // vit à côté, et la pile n'a plus lieu d'être : il n'y a rien à empiler.
-  if (large) return <CompositionDuCommerce businessId={businessId} />;
-
-  return (
-    <PileConfiguration.Navigator screenOptions={OPTIONS_DE_PILE}>
-      <PileConfiguration.Screen name="Configuration">
-        {({ navigation }) => (
-          <ConfigurationScreen
-            onOuvrir={(porte) =>
-              navigation.navigate(porte === 'catalogue' ? 'Catalogue' : 'Horaires')
-            }
-          />
-        )}
-      </PileConfiguration.Screen>
-
-      <PileConfiguration.Screen name="Catalogue">
-        {({ navigation }) => (
-          <CatalogueScreen businessId={businessId} onRetour={() => navigation.goBack()} />
-        )}
-      </PileConfiguration.Screen>
-
-      <PileConfiguration.Screen name="Horaires">
-        {({ navigation }) => (
-          <HorairesScreen businessId={businessId} onRetour={() => navigation.goBack()} />
-        )}
-      </PileConfiguration.Screen>
-
-    </PileConfiguration.Navigator>
-  );
-}
-
 /** L'annuaire, et l'abonnement qu'on atteint depuis son refus. */
 function PileDeLAnnuaire({ businessId }: { businessId: string }) {
   return (
@@ -738,8 +693,16 @@ function OngletsDuCommerceChoisi() {
       <Onglets.Screen name="annuaire" options={onglet(t('onglets.annuaire'), 'personne')}>
         {() => <PileDeLAnnuaire businessId={businessId} />}
       </Onglets.Screen>
-      <Onglets.Screen name="configuration" options={onglet(t('onglets.configuration'), 'coche')}>
-        {() => <PileDeConfiguration businessId={businessId} />}
+      {/* **Deux entrées de rang égal, et plus une porte qui en cache deux.**
+          La découpe est par objet — ce qui décrit l'endroit, ce qui décrit ce
+          qu'on y fait — et elle recoupe la fréquence : un lieu se compose une
+          fois, un catalogue vit en continu. Aucune des deux n'est un réglage de
+          l'autre, donc aucune ne se range sous l'autre. */}
+      <Onglets.Screen name="lieu" options={onglet(t('onglets.lieu'), 'lieu')}>
+        {() => <LieuScreen businessId={businessId} />}
+      </Onglets.Screen>
+      <Onglets.Screen name="prestations" options={onglet(t('onglets.prestations'), 'coche')}>
+        {() => <CatalogueScreen businessId={businessId} />}
       </Onglets.Screen>
       <Onglets.Screen
         name="reglages"
