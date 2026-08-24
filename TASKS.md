@@ -1791,18 +1791,20 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Quatorze ont un petit côté entre 640 et 798 px, donc légèrement agrandies
       au recadrage en 800 × 800. Visible de près, sans importance pour ce
       qu'elles servent à montrer.*
-- [ ] **Le bandeau ne devient pas une ligne de confirmation**
-      *La planche veut qu'il devienne « vous êtes en ligne · 41 créatrices
-      peuvent vous réserver », puis disparaisse au bout de sept jours. Deux
-      choses manquent : une **date de publication** pour la règle des sept
-      jours, et la **portée locale sur la journée** — elle n'est servie que sur
-      les rapports. En attendant, le bandeau s'efface simplement*
-- [ ] **Publier reste un appel explicite, et la planche l'ignore**
-      *Elle écrit que le bandeau « s'efface au dernier point coché », ce qui
-      suppose une publication automatique. `activerLeCommerce` existe et rien ne
-      l'appelle tout seul : le bandeau porte donc le geste sous un nom qui n'est
-      pas « go live ». Si la publication doit devenir automatique, c'est une
-      décision serveur, pas un habillage*
+- [x] **Le bandeau ne devient pas une ligne de confirmation — tranché**
+      *La planche voulait « vous êtes en ligne · 41 créatrices peuvent vous
+      réserver », puis une disparition au bout de sept jours. Les deux données
+      manquent : aucune **date de publication** n'est servie, donc la règle des
+      sept jours n'a pas d'origine, et la **portée locale** ne vit que sur les
+      rapports. Ce n'est pas un report : une ligne qui affirmerait l'une ou
+      l'autre à l'estime serait une confirmation fausse, ce qui est pire que
+      l'absence de confirmation. Le bandeau s'efface simplement*
+- [x] **Publier reste un appel explicite — tranché, et l'écran le dit**
+      *Le dernier point coché rend la publication **possible**, il ne la
+      déclenche pas : un salon choisit le moment où il apparaît. Le bandeau
+      porte donc le geste, et une phrase le dit à l'endroit exact où la
+      confusion a lieu — quand tout est vert et que rien ne s'est passé. Voir
+      `DECISIONS.md`, 2026-08-23*
 - [x] **La configuration passe à deux portes, et la pause a un toit**
       *`ActivationScreen` est supprimé, avec ses tests et ses onze chaînes
       devenues orphelines : le bandeau porte ce qui manque et la publication,

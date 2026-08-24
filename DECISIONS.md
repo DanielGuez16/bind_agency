@@ -9958,3 +9958,36 @@ avec pour raison que « retirer se fait là où l'on a posé ». C'était faux p
 moitié des lignes : un salon qui ne paraît plus n'est dans aucun fil, donc son
 favori n'aurait jamais eu d'endroit où être retiré — la liste se serait remplie
 une fois pour toutes, et c'est l'état où elle doit le plus servir.
+## 2026-08-23 — La publication d'un commerce reste un geste, jamais un effet de bord
+
+La planche de la mise en ligne suppose que le bandeau « s'efface au dernier
+point coché » : cocher la dernière condition publierait le salon. C'est
+tranché contre elle. **Le dernier point rend la publication possible, il ne la
+déclenche pas.**
+
+La raison n'est pas technique — `activerLeCommerce` pourrait être appelé tout
+seul. Elle est que publier est la seule décision du produit qui expose un
+commerce à des inconnus : son nom, son adresse, ses prestations, ses créneaux.
+Une décision de cette nature ne se prend pas par ricochet en cochant une case
+de capacité. Un salon choisit le moment où il apparaît, et ce moment lui
+appartient — il peut avoir une raison de le retarder que le produit ne connaît
+pas.
+
+**Et l'écran doit le dire, sinon la règle est invisible.** La confusion a lieu
+à un instant précis : tout est vert, et rien ne s'est passé. Un gérant qui
+croit être en ligne ne le vérifie pas — il attend des réservations qui ne
+viendront jamais. La phrase vit donc sur l'état « prêt » seulement, entre le
+compte et le bouton : elle répond à « pourquoi ne suis-je pas visible » juste
+avant d'offrir le geste qui y répond. Sur un bandeau incomplet elle
+répondrait à une question qu'on ne se pose pas encore, et diluerait les points
+qui restent.
+
+**Le corollaire, tranché en même temps** : le bandeau ne devient pas non plus
+une ligne de confirmation après publication. La planche la veut — « vous êtes
+en ligne · 41 créatrices peuvent vous réserver », effacée au bout de sept
+jours. Les deux données manquent : aucune date de publication n'est servie,
+donc la règle des sept jours n'a pas d'origine, et la portée locale ne vit que
+sur les rapports. Ce n'est pas un report en attendant les champs. **Une ligne
+qui affirmerait l'une ou l'autre à l'estime serait une confirmation fausse, et
+une confirmation fausse est pire que pas de confirmation** — elle est crue.
+Le bandeau s'efface simplement.
