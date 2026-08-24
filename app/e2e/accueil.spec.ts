@@ -49,3 +49,93 @@ test("l'écran tient sans défiler sur un téléphone", async ({ page }) => {
   );
   expect(deborde, "l'accueil déborde de la hauteur de l'écran").toBe(false);
 });
+
+test("les promesses ne passent pas sous les boutons, sur un téléphone", async ({ page }) => {
+  /**
+   * **Le défaut que le test voisin ne pouvait pas voir.** Il mesure le
+   * défilement du document, et le document ne défile pas : le texte des puces
+   * déborde *à l'intérieur* de la carte et se dessine par-dessus le bouton.
+   * Une garde qui mesure la page entière ne dit rien de ce qui se chevauche
+   * dedans — et celle-ci est restée verte pendant que l'écran était cassé en
+   * campagne.
+   *
+   * **Une seule langue, et il faut le savoir.** L'anglais est la seule que
+   * cette garde mesure — la bascule de langue n'est pas atteignable depuis
+   * l'accueil. L'espagnol est plus long et c'est lui qui décide de la hauteur
+   * réelle ; tant qu'on ne le mesure pas, la marge prise ici est ce qui en
+   * tient lieu. Écrit plutôt que sous-entendu : une garde qui laisserait
+   * croire qu'elle couvre les deux serait pire que celle-ci.
+   */
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+
+  const accueil = page.getByTestId('ecran-accueil');
+  await expect(accueil).toBeVisible();
+
+  const portes = [
+    { role: 'creator', carte: 'porte-createur' },
+    { role: 'business_member', carte: 'porte-commerce' },
+  ] as const;
+
+  for (const { role, carte: repere } of portes) {
+    const carte = accueil.getByTestId(repere);
+    const bouton = accueil.getByTestId(`choisir-${role}`);
+
+    const cadreDuBouton = await bouton.boundingBox();
+    expect(cadreDuBouton, `le bouton ${role} n'a pas de cadre`).not.toBeNull();
+
+    // Chaque ligne de promesse, comparée au haut du bouton. Un chevauchement
+    // d'un seul point est déjà le défaut : c'est ce que l'œil voit.
+    for (const rang of [0, 1, 2]) {
+      const promesse = carte.getByTestId(`${repere}-promesse-${rang}`);
+      const cadre = await promesse.boundingBox();
+      expect(cadre, `la promesse ${rang} de ${role} n'a pas de cadre`).not.toBeNull();
+      expect(
+        cadre!.y + cadre!.height,
+        `la promesse ${rang} de ${role} descend sous le haut du bouton`,
+      ).toBeLessThanOrEqual(cadreDuBouton!.y + 1);
+    }
+  }
+});
+
+test('le champ découpe ce qu’il contient, et le navigateur ne le repeint pas', async ({
+  page,
+}) => {
+  /**
+   * **Trois symptômes, un seul défaut.** « Carré, il sort des bords, fond
+   * jaune » : l'`input` est un enfant carré qui porte son propre fond, le
+   * conteneur arrondi ne le découpait pas, et l'autoremplissage lui peignait un
+   * aplat que le champ n'a jamais demandé.
+   *
+   * Les deux moitiés se vérifient séparément — le découpage tient sur toutes
+   * les plateformes, la neutralisation n'existe que sur le web.
+   */
+  await page.goto('/');
+  await page.getByTestId('choisir-creator').click();
+
+  const champ = page.getByTestId('champ-email');
+  await expect(champ).toBeVisible();
+
+  // Le conteneur découpe : sans cela, aucun enfant n'est tenu par le rayon.
+  const decoupe = await champ.evaluate((noeud) => {
+    const parent = noeud.parentElement!;
+    const style = getComputedStyle(parent);
+    return { overflow: style.overflow, rayon: style.borderRadius };
+  });
+  expect(decoupe.overflow, 'le champ ne découpe pas ce qu’il contient').toBe('hidden');
+  expect(decoupe.rayon, 'le champ n’est plus arrondi').not.toBe('0px');
+
+  // Et la règle qui empêche le jaune est bien dans le document.
+  const neutralise = await page.evaluate(() =>
+    [...document.styleSheets].some((feuille) => {
+      try {
+        return [...feuille.cssRules].some((regle) =>
+          regle.cssText.includes('-webkit-autofill'),
+        );
+      } catch {
+        return false;
+      }
+    }),
+  );
+  expect(neutralise, 'rien ne neutralise le fond de l’autoremplissage').toBe(true);
+});

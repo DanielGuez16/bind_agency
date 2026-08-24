@@ -23,6 +23,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ApiProvider, useApi } from './src/api';
 import { I18nProvider } from './src/i18n';
+import { poserLesStylesWeb } from './src/shell/stylesWeb';
 import { AuthScreen } from './src/screens/AuthScreen';
 import { PriseEnMainScreen } from './src/screens/PriseEnMainScreen';
 import { SessionProvider, coffreSecurise, themeDuRole, useSession } from './src/session';
@@ -203,6 +204,12 @@ function ConfigurationManquante() {
     </View>
   );
 }
+
+// **Une seule fois, au chargement du module.** Ce que le navigateur ajoute au
+// champ — le fond de l'autoremplissage — ne s'exprime qu'en feuille de style, et
+// il vaut pour tous les champs du produit. Le poser dans un effet le referait à
+// chaque montage de la racine ; il n'y a rien à défaire ni à suivre.
+poserLesStylesWeb();
 
 export default function App() {
   /**

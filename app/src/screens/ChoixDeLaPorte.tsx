@@ -158,7 +158,7 @@ export function ChoixDeLaPorte({
             </View>
 
             <View style={{ gap: spacing['space.3'], flex: 1 }}>
-              {porte.points.map((point) => (
+              {porte.points.map((point, rang) => (
                 <View key={point} style={{ flexDirection: 'row', gap: spacing['space.2'] }}>
                   {/* La coche est en teinte et non en sourd : elle est le seul
                       signe qui relie les trois lignes, et une coche grise sur
@@ -166,7 +166,24 @@ export function ChoixDeLaPorte({
                   <View style={{ marginTop: 4 }}>
                     <Icone nom="coche" couleur="brand.700" taille={17} />
                   </View>
-                  <Texte couleur="ink.soft" style={{ flex: 1 }}>
+                  {/* **En légende sous le seuil, en corps au-dessus.** Mesuré
+                      sur 390 × 844 : en corps, les trois promesses du créateur
+                      descendaient 68 points sous le haut du bouton et se
+                      dessinaient par-dessus. La colonne fait 171 points — dix-
+                      neuf caractères par ligne en corps de 16 — et c'est elle
+                      qui décide, pas la longueur du texte.
+
+                      Ce n'est pas une réduction pour faire tenir : c'est le
+                      rôle que ce texte a déjà partout ailleurs dans le
+                      produit, une ligne d'appui sous un titre de 22. Sur un
+                      grand écran la colonne est large, la contrainte n'existe
+                      pas, et le corps reste. */}
+                  <Texte
+                    variante={large ? 'type.body' : 'type.caption'}
+                    couleur="ink.soft"
+                    style={{ flex: 1 }}
+                    testID={`${porte.testID}-promesse-${rang}`}
+                  >
                     {point}
                   </Texte>
                 </View>
