@@ -161,7 +161,7 @@ describe('un obstacle inconnu se dit sans s’inventer', () => {
  * asynchrone, ce qu'aucun test de rendu ne rencontre par hasard.
  */
 describe('mouvement réduit : le squelette se pose à 0,7', () => {
-  function opaciteDe(vue: ReturnType<typeof render>): unknown {
+  function opaciteDe(vue: Awaited<ReturnType<typeof render>>): unknown {
     const style = vue.getByTestId('squelette', { includeHiddenElements: true }).props.style;
     const plat = Array.isArray(style) ? Object.assign({}, ...style) : style;
     // La valeur animée porte son état courant ; c'est lui qu'on lit, pas la
