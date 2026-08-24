@@ -2423,6 +2423,37 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       de réussite à retirer, et une garde à écrire pour qu'ils ne reviennent
       pas — c'est une règle qui retire, donc elle se défait toute seule si rien
       ne la tient*
+- [x] **La suppression se tape, et le pavé cramoisi s'en va**
+      *La campagne renverse l'arbitrage, et son argument est meilleur que le
+      nôtre : on avait retiré la boîte de confirmation parce que trente jours
+      la rendaient inutile. Le délai reste vrai — **mais il protège de la
+      mauvaise décision, pas du mauvais appui**. Et un bloc encadré, teinté,
+      plus haut que tout le reste de l'écran attire la main autant qu'il
+      l'avertit.*
+      *Le geste redevient une ligne parmi les autres ; ce qui vient après
+      protège. Adresse et mot de passe retapés — le mot de passe est
+      **vraiment vérifié**, par la route de connexion, sans toucher au coffre :
+      un champ qui accepterait n'importe quoi aurait l'air d'un contrôle sans
+      en être un. La suppression ne prend pas de corps ; c'est là que la
+      vérification devrait vivre, et c'est demandé.*
+      *Le bouton est **retiré** tant que les deux champs ne concordent pas,
+      jamais grisé. Et la confirmation ne se referme qu'à la réussite : un refus
+      laisserait sinon le message au-dessus d'un bouton disparu. 2 mutations*
+- [x] **« Your place » se replie, et la journée avec**
+      *Trois sections repliées, une seule ouverte à la fois, et chacune **dit
+      ce qu'elle contient avant qu'on l'ouvre** — c'est le compte qui remplace
+      le contenu, pas un titre. Repliées et non réparties : les trois décrivent
+      le même objet, et trois écrans redonneraient les portes que la v3.1 vient
+      de retirer. Ce qui gênait est la hauteur, pas le voisinage.*
+      *Le blocage de la carte passe **dans le résumé** : replier ne doit rien
+      cacher qui décide, et une prestation qui ne se publie pas faute de carte
+      se voit fermé comme ouvert.*
+      ***Et la journée, troisième retour.** Deux replis, choisis pour ce qu'ils
+      ne demandent pas : l'exception, qui se décide en marchant et ne se lit
+      pas tous les matins, et les lignes finies — servi, annulé, manqué — qui
+      poussaient hors de l'écran celles qui attendent un geste. Les deux gardent
+      leur compte en tête, qui est ce qu'on lit. Le composant est extrait :
+      un écran qui replie à la main le fait une fois puis dérive*
 - [ ] **Ce qui raccourcirait vraiment l'attente tient maintenant au serveur**
       *Design le dit sans détour : ces règles rendent l'attente lisible, elles
       ne la raccourcissent pas. Des trois choses qui la raccourciraient, **la
