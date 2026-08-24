@@ -899,19 +899,6 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Trois tables exhaustives ont fait tomber la suite à l'arrivée de l'écran —
       blocs orange, couverture, squelettes — et une quatrième a exigé ses quatre
       états. C'est exactement ce pour quoi elles existent.*
-- [ ] **Quatorze champs servis et rendus nulle part, à instruire un par un**
-      *Trouvés par la garde en une minute, et inscrits dans sa table sous
-      `a-instruire` — ce ne sont pas des exemptions, ce sont des constats en
-      attente de décision. Quelques-uns sautent aux yeux :
-      `ReservationDuCreateur.business_address`, que le cadre 08a affiche
-      pourtant — « 120 NE 41st St · 320 m » — et que je n'ai pas rendu en le
-      composant ; `Preuve.raisons_de_non_verification`, qui dit pourquoi une
-      preuve n'a pas été retenue ; `Reporting.deplacements_pour_rien`, dont la
-      tâche entière a été construite ; `CodeDeRetrait.rotation_seconds`, quand
-      l'écran de code compte probablement trente secondes en dur ;
-      `needs_human_review` sur trois types, c'est-à-dire l'escalade de la
-      troisième tentative, invisible partout. Chacun se tranche : rendu, ou
-      passé en `contrat` avec sa raison*
 - [x] **`Lot 1 v1.1` · 02 · les paliers : déjà passé, et le registre le surestimait**
       *Confronté cadre par cadre, et il n'y avait presque rien à faire — pour
       une raison qui vaut d'être écrite : **le cadre 02 est la planche
@@ -932,16 +919,6 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Reste **une seule chose** : « See the 34 services » est la porte du cadre
       11c. `onVoirLesPrestations` existe sur l'écran, `porteOuverte` en dépend,
       et la navigation ne le passe toujours pas. Les deux se prennent ensemble*
-- [x] **`pytest -n auto`, avec une base par worker**
-      *Mesuré : le job `api` prend 754 s, dont **704 dans `pytest` seul** —
-      l'installation en fait 22, le reste est du bruit. C'est 93 % du job et
-      78 % de l'attente d'une exécution complète. Mais ce n'est pas un drapeau
-      à ajouter : les tests partagent une seule base `bind_test`, et le dépôt
-      éprouve explicitement les verrous consultatifs et le comportement
-      transactionnel. Des workers `xdist` demandent une base par worker, et
-      chaque test de concurrence doit être relu un par un. **Reporté
-      délibérément** : rendre douteux exactement les tests qu'on ne peut pas se
-      permettre de douter serait payer trop cher pour dix minutes*
 - [ ] **La suite `app` force la sortie d'un worker, sur un arbre propre**
       *« A worker process has failed to exit gracefully » sort à **chaque**
       exécution, avant comme après la correction du fichier à 17 secondes : la
@@ -1005,14 +982,6 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       `needs_human_review: true`, donc tous les tests de décision du commerce
       s'exerçaient sur le cas où il ne doit plus décider. 3 tests neufs plus 2
       repris, 6 mutations vérifiées*
-- [x] **Le commerce ne peut pas signaler une absence depuis l'application**
-      *Fait, et repris plus haut sous « Le commerce peut enfin constater une
-      absence ». Le diagnostic était juste sur la conséquence et faux sur la
-      cause : l'entrée de route `marquerAbsent` **et sa méthode de client**
-      existaient depuis la #115, documentées et appelant le bon chemin. Seul
-      l'appelant manquait — une méthode d'API sans appelant, c'est-à-dire du
-      code mort qui a l'air d'une fonctionnalité, et qui a tenu seize PR parce
-      que chercher `no-show` dans le dépôt donnait quatre résultats rassurants*
 - [x] **Un plafond de durée sur chaque job de la CI**
       *Le pas `Navigateur` de la e2e est resté cinquante minutes puis vingt-cinq
       sans finir, sur deux exécutions consécutives, **sans échouer**. Le défaut
@@ -2215,16 +2184,6 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       interdit, il est écrit — le serveur n'a pas de valeur « tout », demander
       tout c'est cocher les sept, et le gérant lit les sept. 1340 tests,
       5 mutations*
-- [ ] **Le compte des reprises de l'appelant arrive après l'ouverture, pas avant**
-      *`reprises_recentes_de_l_appelant` est servi sur la **réponse** au `POST`.
-      La planche le veut au moment de la demande : « c'est ta quatrième ce
-      mois-ci, tu en as fait une en juillet ». Se comparer à soi-même est la
-      seule comparaison qui change un comportement sans accuser — et lu après
-      coup, il retient pour la suivante, pas pour celle-ci. C'est exactement le
-      journal que Design écarte : il enregistre, il n'empêche pas.*
-      *Il faudrait le même compte sur une lecture, avant l'appui — un `GET` sur
-      la reprise, ou le champ posé sur la liste d'administration. Demandé à
-      `bind-agency-1a`*
 - [ ] **Rien ne liste les commerces côté administration**
       *L'écran de reprise est monté sur la fiche de tournée assumée, faute
       d'autre endroit où l'administration ait un salon nommé sous les yeux. La

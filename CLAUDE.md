@@ -268,6 +268,27 @@ aucune n'a de raison d'écraser l'autre. C'est le canal par lequel les demandes 
 champs passent d'une conversation à l'autre — une demande effacée ne revient pas,
 et personne ne s'aperçoit de son absence.
 
+**Mais une décision tranchée *remplace* sa version antérieure, elle ne s'ajoute
+pas dessous.** Garder les deux côtés vaut pour deux entrées différentes. Quand
+les deux portent **la même** entrée à deux stades — le problème posé, puis la
+décision rendue — la version périmée reste sous sa remplaçante, et c'est celle-là
+qu'on lit : elle est plus haut dans le fichier une fois sur deux, et elle est
+souvent restée décochée.
+
+Le coût n'est pas cosmétique. Ce fichier est le canal entre quatre
+conversations : **une copie décochée d'une décision prise fait refaire un
+arbitrage déjà rendu.** Mesuré deux fois — trois blocs dupliqués découverts d'un
+coup, dont la règle des sept jours du bandeau de mise en ligne, tranchée depuis
+des jours et rouverte pour rien parce que la copie lue disait « en attendant ».
+
+Donc : en cochant une entrée, chercher la version qu'elle remplace et la
+retirer. Le titre suffit à la trouver — c'est ce que la garde
+`tasks-sans-doublons` fait, et elle tombe sur une jumelle avant qu'on la
+fusionne. Ce qui mérite d'être gardé de la version d'avant — un diagnostic qui
+s'est révélé faux, une cause qu'on a mis longtemps à voir — va dans
+`DECISIONS.md`, dont c'est le rôle. `TASKS.md` porte du travail, pas son
+histoire.
+
 **Un garde-fou qui coûte plus que ce qu'il protège se retire.** La garde de
 durée en est l'exemple, et elle a été retirée : quatre CI rouges en une soirée,
 deux heures d'attente, et rien trouvé d'autre qu'elle-même. D'abord calibrée sur
