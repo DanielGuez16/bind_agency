@@ -1145,6 +1145,8 @@ export const en = {
     // photo » aurait décrit une capacité au lieu de la rendre évidente.
     deposerUnePhoto: 'Add a photo',
     photoManque: 'Needs a photo',
+    photoEnvoiEnCours: 'Sending your photo…',
+    photoReessayer: 'Try sending again',
     corriger: 'Correct',
     colonneNom: 'Service',
     colonneDuree: 'Length',
