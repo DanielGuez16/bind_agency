@@ -811,3 +811,35 @@ async def test_couper_les_rappels_ne_coupe_pas_la_non_honoration(
         )
         for message in envoye.messages
     )
+
+
+async def test_soumettre_ne_consomme_aucune_tentative(session: AsyncSession) -> None:
+    """**Les trois essais existent pour un contenu insuffisant, pas pour un réseau
+    absent.**
+
+    Un envoi qui échoue n'atteint jamais le serveur, donc ne peut rien compter —
+    mais une soumission qui *aboutit* ne compte rien non plus, et c'est la moitié
+    qu'aucun test ne tenait. `attempts_count` ne monte que lorsqu'un salon ou un
+    arbitre juge le contenu insuffisant : déplacer l'incrément vers la soumission
+    ferait perdre une tentative à quelqu'un qui n'a rien fait de mal, et
+    l'arbitrage verrait un troisième essai qui n'en est pas un.
+    """
+    ligne, s = await contrepartie(session)
+
+    await proof_service.soumettre(
+        session, collaboration=ligne, capture=capture(), actor=Actor.from_user(s["createur"])
+    )
+
+    assert ligne.status is CollaborationStatus.SUBMITTED
+    assert ligne.attempts_count == 0
+    assert ligne.needs_human_review is False
+
+    # Et le sens inverse : c'est bien le refus qui compte, sans quoi
+    # l'assertion du dessus serait vraie d'un compteur qui ne monte jamais.
+    await service.demander_une_nouvelle_soumission(
+        session,
+        collaboration=ligne,
+        actor=Actor.from_user(s["caissier"]),
+        reason="insufficient_content",
+    )
+    assert ligne.attempts_count == 1
