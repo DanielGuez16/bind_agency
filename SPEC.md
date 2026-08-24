@@ -34,11 +34,15 @@ Document de référence pour l'implémentation. Traduit la note de cadrage en mo
 `reliability_score` est **nullable et le reste** tant qu'aucun historique n'existe. C'est ce null qui déclenche le badge "Nouveau créateur" et le comportement neutre du moteur de paliers.
 
 **creator_favorite**
-`id, creator_id, catalog_item_id, created_at`
+`id, creator_id, catalog_item_id, dernier_etat, created_at`
 
 **Le favori porte sur la prestation, jamais sur l'offre affichée.** Le fil rend une carte par `tier_offer` — le même article ouvert à deux paliers fait deux cartes, et les deux portent le même cœur. Mais un `tier_offer` meurt de deux façons qui ne disent rien de la prestation : le salon ferme ce palier-là et garde l'autre, ou **la créatrice perd le palier**. Le second est un changement chez elle, et un favori qui disparaît parce qu'on a baissé d'un palier pendant un mois est un favori qu'on n'ose plus poser. `catalog_item` ne meurt qu'à l'archivage, qui est définitif par construction : c'est la seule mort qui mérite d'emporter le favori.
 
 **Le salon n'est pas un favori.** Le geste est un cœur sur une carte du fil, et une carte du fil est une prestation. Une seconde cible doublerait la surface pour un geste que personne n'a demandé, et « j'ai un favori chez eux » répond déjà à la question.
+
+**Le favori prévient quand il s'ouvre, et c'est ce qui lui donne son sens.** Une créatrice met de côté une prestation qu'elle ne peut pas encore réserver ; le produit doit lui dire quand elle s'ouvre — parce que son palier l'atteint, ou parce que le salon la rouvre. Un balayage compare l'état de chaque favori à celui du passage précédent et annonce la **transition** vers `reservable`, jamais l'état : les deux causes n'ont pas de point d'écriture commun — un relevé de métriques qui fait monter d'un palier n'a aucune raison de savoir qui a mis quoi en favori — et annoncer l'état enverrait le même message toutes les quinze minutes. `dernier_etat` est réécrit à chaque passage, y compris à la fermeture, sans quoi une prestation qui s'ouvre, se ferme et se rouvre ne serait annoncée qu'une fois.
+
+**C'est le seul message réglable du produit, et la seule exception à la règle qui a retiré les préférences.** Celles-ci sont parties parce que tout ce que le produit dit répond à un geste : refuser un avis de décision revient à refuser de savoir ce qu'on a soi-même déclenché. L'avis de favori est le premier qui n'attend aucun geste — on a posé un cœur il y a trois semaines, et un salon rouvre un mardi. `app_user.favoris_me_previennent` est vrai par défaut : le cœur a été posé pour ça, et c'est le refus qui se déclare. Il est **relu au moment de sortir**, pas au dépôt, pour que quelqu'un qui coupe entre les deux soit entendu.
 
 **La liste se lit hors du fil.** Le fil est borné par une position et un rayon : c'est son contrat. Un favori posé à Wynwood doit se relire depuis Kendall, sinon il ne sert qu'à l'endroit où on l'a posé. Une prestation devenue irréservable **reste dans la liste avec sa raison** — fermée, salon indisponible, hors palier — parce que les trois appellent trois conduites différentes et que la retirer sans un mot ferait croire à un mauvais appui.
 

@@ -45,6 +45,7 @@ function compte(verifie: boolean): Utilisateur {
     status: 'active',
     locale: 'en',
     email_verified_at: verifie ? '2026-08-01T10:00:00Z' : null,
+  favoris_me_previennent: true,
   deletion_effective_at: null,
   };
 }

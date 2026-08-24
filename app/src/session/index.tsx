@@ -79,6 +79,18 @@ export type Utilisateur = {
    */
   email_verified_at: string | null;
   /**
+   * **La seule préférence de notification du produit.**
+   *
+   * Les réglages par genre ont été retirés parce que chaque message répondait
+   * à un geste : couper l'un revenait à demander qu'on ne réponde pas. L'avis
+   * de favori est le premier qui n'attend aucun geste — on a posé un cœur il y
+   * a trois semaines, et un salon rouvre un mardi.
+   *
+   * Vrai par défaut : le cœur a été posé pour ça, et c'est le refus qui se
+   * déclare. Sur la session parce qu'il vit sur `/me`, avec le reste du compte.
+   */
+  favoris_me_previennent: boolean;
+  /**
    * Quand la suppression demandée prendra effet, nulle si aucune ne court.
    *
    * **L'échéance et non le temps restant.** Elle ne bouge pas ; un écran
@@ -155,6 +167,8 @@ type SessionValue = EtatDeSession & {
   demanderLaSuppression: () => Promise<void>;
   /** Le retour, pendant le délai. Même règle : l'erreur remonte. */
   annulerLaSuppression: () => Promise<void>;
+  /** Bascule le seul réglage de notification du produit — l'avis de favori. */
+  reglerLesAvisDeFavori: (actif: boolean) => Promise<void>;
   deconnecter: () => Promise<void>;
   /** Le client, déjà porteur du coffre. Les écrans passent par `useApi`. */
   client: ApiClient;
@@ -331,6 +345,26 @@ export function SessionProvider({
     await relireLeCompte();
   }, [client, relireLeCompte]);
 
+  /**
+   * Bascule le seul réglage de notification du produit.
+   *
+   * Sur la session et non sur un écran : la valeur vit sur `/me`, et un écran
+   * qui la garderait pour lui se contredirait avec la coquille au premier
+   * rechargement.
+   */
+  const reglerLesAvisDeFavori = useCallback(
+    async (actif: boolean) => {
+      const utilisateur = await client.request<Utilisateur>(routes.moi(), {
+        methode: 'PATCH',
+        corps: { locale: etat.etat === 'connecte' ? etat.utilisateur.locale : 'en', favoris_me_previennent: actif },
+      });
+      setEtat((precedent) =>
+        precedent.etat === 'connecte' ? { etat: 'connecte', utilisateur } : precedent,
+      );
+    },
+    [client, etat],
+  );
+
   const deconnecter = useCallback(async () => {
     await client.deconnecter();
     // **Les réponses en cache partent avec la session.** Ce sont des données
@@ -356,6 +390,7 @@ export function SessionProvider({
       renvoyerLaVerification,
       demanderLaSuppression,
       annulerLaSuppression,
+      reglerLesAvisDeFavori,
     }),
     [
       etat,
