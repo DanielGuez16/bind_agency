@@ -1962,12 +1962,17 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       large. La forme juste est
       `git reset --soft "$(git merge-base HEAD origin/main)"`.*
       *Rien ne l'a signalé, et rien ne pouvait : **un test supprimé ne rougit
-      pas**, il disparaît avec le code qu'il éprouvait. Une vérification avant
-      de pousser attrape les trois cas :*
-      *`git show --numstat HEAD | awk '$1==0 && $2>0 {print $3}'` — un fichier en
-      pure suppression dans une PR qui prétend ajouter est presque toujours un
-      accident. Trouvée par `bind-agency-1b`, qui a inventorié ses onze PR après
-      le signalement*
+      pas**, il disparaît avec le code qu'il éprouvait. Trouvée par
+      `bind-agency-1b`, qui a inventorié ses onze PR après le signalement.*
+      ***La vérification écrite ici était fausse**, et elle a survécu à sa
+      correction. `git show --numstat HEAD | awk '$1==0 && $2>0'` attrape aussi
+      bien un fichier supprimé qu'un commit qui **ne fait que retirer des
+      lignes** — un nettoyage de table de garde, une clé de traduction devenue
+      orpheline — et elle a crié au loup sur deux commits légitimes dans l'heure
+      qui a suivi son écriture. La forme juste,
+      `git diff --diff-filter=D --name-only origin/main...HEAD`, ne nomme que ce
+      qui n'existe plus. Elle est dans `CLAUDE.md` avec la cause et le reset
+      juste ; cette ligne-ci prescrivait encore l'ancienne*
 
 - [x] **`prepared_by` manque sur la ligne de suivi**
       *La planche a une colonne « prepared by ». Sur une tournée à deux
@@ -2216,12 +2221,6 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       interdit, il est écrit — le serveur n'a pas de valeur « tout », demander
       tout c'est cocher les sept, et le gérant lit les sept. 1340 tests,
       5 mutations*
-- [ ] **Rien ne liste les commerces côté administration**
-      *L'écran de reprise est monté sur la fiche de tournée assumée, faute
-      d'autre endroit où l'administration ait un salon nommé sous les yeux. La
-      place est mauvaise et se dit dans le code : un administrateur qui cherche
-      à débloquer un salon ne pense pas « tournée ». La planche dessine un
-      onglet « Accounts » ; aucune route ne permet de le composer*
 - [x] **L'attente : le seuil, et la photo qui ne pousse plus rien**
       *« Lent » veut dire « je ne sais pas si ça marche ». Les quatre durées
       sont des jetons — appui 100, état 160, fondu 220, seuil 400 — et aucune
@@ -2251,14 +2250,17 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       de réussite à retirer, et une garde à écrire pour qu'ils ne reviennent
       pas — c'est une règle qui retire, donc elle se défait toute seule si rien
       ne la tient*
-- [ ] **Ce qui raccourcirait vraiment l'attente, et qui n'est pas de composition**
+- [ ] **Ce qui raccourcirait vraiment l'attente tient maintenant au serveur**
       *Design le dit sans détour : ces règles rendent l'attente lisible, elles
-      ne la raccourcissent pas. Trois choses la raccourciraient — les dérivées
-      d'image servies à la taille d'affichage plutôt qu'en pleine résolution,
-      qui sont probablement l'essentiel de la lenteur réelle du fil ; les
-      agrégats du §6 quinquies ; et un cache local qui affiche la liste d'hier
-      pendant qu'on charge celle d'aujourd'hui — ce dernier rendrait la règle 1
-      vraie partout au lieu d'être vraie au second lancement*
+      ne la raccourcissent pas. Des trois choses qui la raccourciraient, **la
+      troisième est faite** — `cacheDesReponses` pose la dernière réponse avant
+      que le réseau réponde, et la règle 1 est vraie dès le premier lancement
+      sur les sept routes inscrites, le fil compris. Ce qui n'y entre jamais est
+      écrit à côté : tout ce qui décide d'un geste.*
+      *Restent les deux qui ne sont pas de composition : les dérivées d'image
+      servies à la taille d'affichage plutôt qu'en pleine résolution — sans
+      doute l'essentiel de la lenteur réelle du fil — et les agrégats du
+      §6 quinquies*
 - [x] **Toutes les images passent par `Photo`**
       *Elles ne sont pas dans une liste et ne poussent rien — l'écran est fait
       pour elles. Le fondu leur ferait du bien quand même, et il ne coûte qu'un
