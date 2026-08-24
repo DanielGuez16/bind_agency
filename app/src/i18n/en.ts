@@ -756,6 +756,13 @@ export const en = {
     miseEnLigneRestantUn: 'One thing left before creators see you',
     miseEnLignePrete: 'Everything is ready. Creators are waiting.',
     miseEnLigneConfirmee: 'You are live — since {{date}}',
+    // **Deux clés plutôt qu'un pluriel de bibliothèque**, comme le titre de
+    // la journée : `count` traverse le formateur de nombres, i18n-js ne le
+    // voit plus comme un nombre, et sa pluralisation ne se déclenche pas.
+    miseEnLigneConfirmeeUne: 'You are live — since {{date}} · 1 creator can book you',
+    miseEnLigneConfirmeePlusieurs:
+      'You are live — since {{date}} · {{count}} creators can book you',
+
     miseEnLigneInvisibleTitre: 'You are live, but creators still cannot find you',
     miseEnLignePublier: 'Make my salon visible',
     miseEnLigneVousChoisissez: 'Nothing goes out on its own. Your salon appears when you press this.',

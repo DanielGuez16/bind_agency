@@ -677,6 +677,10 @@ export const es: Catalogue = {
     miseEnLigneRestantUn: 'Falta una cosa para que las creadoras te vean',
     miseEnLignePrete: 'Todo está listo. Las creadoras esperan.',
     miseEnLigneConfirmee: 'Estás en línea — desde el {{date}}',
+    miseEnLigneConfirmeeUne: 'Estás en línea — desde el {{date}} · 1 creadora puede reservarte',
+    miseEnLigneConfirmeePlusieurs:
+      'Estás en línea — desde el {{date}} · {{count}} creadoras pueden reservarte',
+
     miseEnLigneInvisibleTitre: 'Estás en línea, pero las creadoras aún no te encuentran',
     miseEnLignePublier: 'Hacer visible mi salón',
     miseEnLigneVousChoisissez: 'Nada se publica solo. Tu salón aparece cuando pulsas aquí.',

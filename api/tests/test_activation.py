@@ -20,7 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.integrations.geocoding import ManualGeocoder
-from app.models import Business, CatalogItem, TierOffer
+from app.models import Business, BusinessMember, CatalogItem, TierOffer, User
 from app.models.enums import BusinessCategory, BusinessStatus, UserRole
 from app.schemas.business import BusinessCreate, CoordinatesPayload
 from app.schemas.capacity import CapacityRuleCreate
@@ -33,6 +33,7 @@ from app.services import composition as composition_service
 from app.services import tier_offers as tier_offer_service
 from app.services.audit import Actor
 from tests.conftest import inscrire_verifie
+from tests.test_booking_create import monter_le_decor
 from tests.test_feed import STORY
 
 PREFIX = get_settings().api_v1_prefix
@@ -299,3 +300,69 @@ async def test_la_vue_date_la_mise_en_ligne_et_c_est_la_derniere(
 
     neuf = await vue(proprietaire_de_jamais.email, jamais.id)
     assert neuf["en_ligne_depuis"] is None, "un commerce jamais ouvert porte une date"
+
+
+async def test_la_portee_locale_accompagne_la_date_puis_s_arrete(
+    client: AsyncClient, session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """**Ce qui complète « en ligne depuis trois jours ».**
+
+    La date seule est vraie et ne rassure personne. « Et 41 créatrices peuvent
+    vous réserver » est ce qu'un salon qui vient d'apparaître veut savoir.
+
+    **Le même salon, lu sous deux fenêtres.** C'est le seul montage qui fait
+    diverger « toujours servir » de « servir dans la fenêtre » : sur un salon
+    publié aujourd'hui les deux rendent le même nombre, et vieillir sa mise en
+    ligne est impossible — le journal d'audit refuse les `UPDATE`, ce qui est
+    une garde du produit qu'on ne contourne pas pour faire joli. C'est donc la
+    fenêtre qui bouge.
+
+    Le nombre servi doit être **non nul** : une portée qui rendrait zéro partout
+    passerait aussi bien un décor qui se contente de « pas nul ».
+    """
+    from tests.test_qui_est_la import TOUT_PRES, _createur_situe
+
+    decor = await monter_le_decor(session)
+    business = decor["business"]
+    # Une créatrice **située** : la portée ne compte que celles dont on connaît
+    # la position, et `monter_le_decor` n'en pose aucune. Sans elle le compte
+    # vaut zéro, et « zéro » passerait un décor qui se contente de « pas nul ».
+    await _createur_situe(session, ou=TOUT_PRES)
+    proprietaire_id = await session.scalar(
+        sa.select(BusinessMember.user_id).where(BusinessMember.business_id == business.id).limit(1)
+    )
+    proprietaire = await session.get(User, proprietaire_id)
+    assert proprietaire is not None
+    await session.commit()
+
+    jetons = (
+        await client.post(
+            f"{PREFIX}/auth/login",
+            json={"email": proprietaire.email, "password": MOT_DE_PASSE},
+        )
+    ).json()
+    entetes = {"Authorization": f"Bearer {jetons['access_token']}"}
+
+    async def vue() -> dict:
+        reponse = await client.get(f"{PREFIX}/business/{business.id}/activation", headers=entetes)
+        assert reponse.status_code == 200, reponse.text
+        return reponse.json()
+
+    dedans = await vue()
+    assert dedans["confirmation_jours"] == get_settings().activation_confirmation_days
+    assert dedans["createurs_qui_peuvent_reserver"] is not None, "la portée n'est pas servie"
+    assert dedans["createurs_qui_peuvent_reserver"] >= 1, (
+        "le décor pose une créatrice éligible : zéro voudrait dire qu'on ne compte rien"
+    )
+
+    # La fenêtre se referme. Rien d'autre ne change — même salon, même
+    # créatrice, même mise en ligne.
+    fermee = get_settings().model_copy(update={"activation_confirmation_days": 0})
+    monkeypatch.setattr("app.routers.business.get_settings", lambda: fermee)
+
+    dehors = await vue()
+    assert dehors["confirmation_jours"] == 0
+    assert dehors["createurs_qui_peuvent_reserver"] is None, (
+        "hors fenêtre, le nombre est servi — et donc calculé pour rien"
+    )
+    assert dehors["en_ligne_depuis"] is not None, "la date, elle, reste"

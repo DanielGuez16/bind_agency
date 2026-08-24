@@ -1101,6 +1101,31 @@ export type VueDActivation = {
    * l'écran du matin qui la montre.
    */
   en_ligne_depuis: string | null;
+  /**
+   * Combien de créatrices peuvent réserver chez lui, aujourd'hui.
+   *
+   * **C'est ce qui rassure un salon qui vient d'apparaître.** « En ligne depuis
+   * trois jours » est vrai et ne dit rien ; « et 41 créatrices peuvent vous
+   * réserver » est la moitié de la phrase qui manquait.
+   *
+   * **Nul hors de la fenêtre de confirmation**, et alors pas même calculé :
+   * quatre requêtes et une boucle sur le quartier, sur l'écran le plus ouvert
+   * du produit, pour une ligne que personne ne regarde plus. Le délai est
+   * `confirmation_jours`, juste en dessous.
+   *
+   * Nul aussi tant que le salon n'est pas en ligne : la question ne se pose pas
+   * avant d'avoir paru.
+   */
+  createurs_qui_peuvent_reserver: number | null;
+  /**
+   * Combien de jours la ligne de confirmation reste à l'écran.
+   *
+   * **Servi parce que c'est ce délai qui décide du champ au-dessus.** La règle
+   * vivait ici seule, en dur ; deux copies d'un même délai finissent par
+   * diverger, et le jour où elles le font l'écran montre « en ligne depuis
+   * 8 jours » sans le nombre qui rassure — le pire des deux états.
+   */
+  confirmation_jours: number;
 };
 
 /**

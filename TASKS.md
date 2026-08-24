@@ -2555,6 +2555,34 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       pas lieu — la seule promesse que cet écran est construit pour ne pas
       faire. Sans lecteur pour l'instant, la composition se fait ailleurs.*
 
+- [x] **La portée locale complète la ligne de confirmation**
+      *« En ligne depuis trois jours » était vrai et ne rassurait personne. Il
+      manquait « et 41 créatrices peuvent vous réserver », qui est ce qu'un
+      salon qui vient d'apparaître veut savoir. Servi sur la vue d'activation,
+      que la journée charge déjà — pas de seconde requête pour une demi-phrase.*
+
+      ***Calculé seulement dans la fenêtre où il se lit.** La portée coûte
+      quatre requêtes et une boucle sur le quartier ; les payer à chaque
+      ouverture de la journée, pendant toute la vie du salon, pour une ligne qui
+      disparaît au bout d'une semaine, serait le mauvais sens exact. Hors
+      fenêtre le champ est nul, et rien n'est calculé.*
+
+      ***Le délai est servi avec.** `ACTIVATION_CONFIRMATION_DAYS`, sept par
+      défaut. La règle des sept jours vivait en dur dans l'app, et elle décide
+      désormais aussi côté serveur si la portée est calculée : deux copies d'un
+      même délai finissent par diverger, et le jour où elles le font l'écran
+      montre « depuis 8 jours » sans le nombre qui rassure — le pire des deux
+      états.*
+
+      ***Zéro se tait.** « 0 créatrice peut vous réserver » sur la ligne qui doit
+      rassurer serait la pire phrase du produit ; la date seule reste vraie.
+      Trois branches écrites à la main, comme le titre de la journée — `count`
+      traverse le formateur de nombres et la pluralisation d'i18n-js ne se
+      déclenche plus.*
+
+- [ ] **La planche dit « le favori porte sur le salon », le contrat dit la prestation**
+      *`ItemDuFil.est_favori` est posé sur l'article, `POST /me/favorites` prend
+
 - [x] **Le favori porte sur la prestation — tranché définitivement**
       *La planche s'aligne sur le contrat, pas l'inverse, et Design est prévenu.
       `ItemDuFil.est_favori` est posé sur l'article, `POST /me/favorites` prend
