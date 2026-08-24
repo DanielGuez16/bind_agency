@@ -20,7 +20,7 @@
  * défileur, elle serait passée. Un défaut qui n'apparaît que sous le seuil de
  * largeur est exactement ce qu'aucun test de rendu ne voit.
  */
-import { render, screen, waitFor } from '@testing-library/react-native';
+import { render, screen, waitFor, within } from '@testing-library/react-native';
 
 import { ApiClient, ApiProvider } from '../src/api';
 import { I18nProvider } from '../src/i18n';
@@ -38,13 +38,35 @@ const FIL = {
       cover_portrait_key: null,
       neighborhood: 'wynwood',
       distance_metres: 320,
-      items: [],
+      prestations_ouvertes: 1,
+      // **Une prestation, et non une liste vide.** Le fil rend des cartes de
+      // prestation depuis la v5 : un commerce sans article ne pose aucune
+      // carte, et le mur n'existe alors pas.
+      items: [
+        {
+          tier_offer_id: 'o1',
+          catalog_item_id: 'i1',
+          tier_id: 't1',
+          social_account_id: 's1',
+          name: 'Gel manicure',
+          description: null,
+          price_cents: 4500,
+          currency: 'USD',
+          duration_minutes: 45,
+          requires_booking: true,
+          photo_key: null,
+          platform: 'instagram',
+          content_format: 'story',
+          value_ratio: null,
+          est_favori: false,
+        },
+      ],
     },
   ],
   obstacles: [],
   rayon_metres: 15_000,
   total_prestations: 1,
-  categories: [],
+  categories: [{ categorie: 'beauty', commerces: 1, prestations: 1 }],
   rayons: [],
   quartiers: [{ quartier: 'wynwood', commerces: 1, prestations: 1, distance_metres: 320 }],
   prochain_palier: null,
@@ -125,24 +147,26 @@ describe('le fil rend ses marges, et les repose lui-même', () => {
     }
   });
 
+  /** Le titre de la première rangée, qui est le premier texte du mur. */
+  const dansLaRangee = () => within(screen.getByTestId('rangee-proches')).getByText(/Closest/);
+
   it('mais le texte du fil garde la sienne', async () => {
     // La contrepartie du fond perdu : les blocs de texte portent leur marge,
     // et elle se voit là où elle est. Sans elle, le nom du quartier commencerait
     // au ras du verre.
     //
-    // **La cible a changé avec la v3.** Le test lisait « douze prestations vous
-    // sont ouvertes », qui a quitté le fil pour Audience. Le repère est
-    // maintenant la tête de section, qui est le premier texte du mur — et c'est
-    // un meilleur repère : cette ligne-là est **dans** le mur, alors que
-    // l'ancienne était au-dessus de lui. C'est la marge du mur qu'on veut
-    // éprouver, pas celle d'un bloc posé avant.
+    // **La cible a changé deux fois.** Le test lisait « douze prestations vous
+    // sont ouvertes », parti vers Audience ; puis la tête de quartier, partie
+    // avec le mur vertical. Le repère est maintenant le titre d'une rangée,
+    // qui est le premier texte du mur — et c'est le bon : cette ligne-là est
+    // **dans** le mur, alors que la première était au-dessus de lui.
     await monter({ ok: true, corps: FIL });
-    await waitFor(() => expect(screen.getByTestId('quartier-ouvert-nom')).toBeTruthy());
+    await waitFor(() => expect(dansLaRangee()).toBeTruthy());
 
     let marge = 0;
     for (
       let noeud: ReturnType<typeof screen.getByTestId> | null =
-        screen.getByTestId('quartier-ouvert-nom');
+        dansLaRangee();
       noeud;
       noeud = noeud.parent
     ) {
