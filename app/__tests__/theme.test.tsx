@@ -864,7 +864,6 @@ describe('les surfaces de la v1.1', () => {
       // garde aux styles fonction : leurs cartes sont pressables, donc elles
       // lui échappaient. Elles portaient l'ombre depuis toujours ; ce n'est pas
       // une correction de rendu, c'est une correction d'inventaire.
-      'src/screens/ConfigurationScreen.tsx',
       'src/screens/CreneauxScreen.tsx',
       // La liste des favoris : chaque ligne se pose sur la page comme une
       // carte, donc elle porte l'ombre comme une carte.

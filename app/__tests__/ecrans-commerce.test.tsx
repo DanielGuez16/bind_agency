@@ -541,6 +541,33 @@ describe('catalogue', () => {
     '/business/b1': { cover_photo_key: null, menu_url: null },
   };
 
+  it('le lieu porte les trois blocs, dont les horaires', async () => {
+    /**
+     * **La conséquence la moins évidente de la découpe.** Des heures
+     * d'ouverture décrivent un endroit, pas une prestation : « Your week »
+     * quitte la page de l'offre. Sans cette garde, les retirer du lieu ne
+     * casse rien — c'est ce qu'une mutation a montré, et c'est le trou qu'elle
+     * a nommé.
+     */
+    await monter(
+      <LieuScreen businessId="b1" />,
+      clientDe({
+        '/photos': [],
+        '/menu': [],
+        '/catalog-items': [],
+        '/capacity-rules': [REGLE],
+        '/capacity-exceptions': [],
+        '/business/b1': { cover_photo_key: null, menu_url: null },
+      }),
+      'merchant',
+    );
+
+    await waitFor(() => expect(screen.getByTestId('galerie-du-commerce')).toBeTruthy());
+    expect(screen.getByTestId('carte-du-commerce')).toBeTruthy();
+    // Les sept jours, qui sont ce que les horaires rendent.
+    expect(screen.getByTestId('semaine')).toBeTruthy();
+  });
+
   it('n’a plus la galerie : elle décrit le lieu', async () => {
     // **La découpe par objet.** La galerie, la carte et les horaires décrivent
     // l'endroit ; ce qui reste ici décrit ce qu'on y fait. Les deux tests qui
@@ -772,7 +799,7 @@ describe('quatre états', () => {
       annuaire: 'AnnuaireScreen.tsx',
       terrain: 'TerrainScreen.tsx',
       commerces: 'CommercesScreen.tsx',
-  catalogue: 'CatalogueScreen.tsx',
+      catalogue: 'CatalogueScreen.tsx',
       horaires: 'HorairesScreen.tsx',
       lieu: 'LieuScreen.tsx',
     };

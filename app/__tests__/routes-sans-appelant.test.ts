@@ -45,6 +45,12 @@ const CLIENT = join(SRC, 'api', 'index.tsx');
  * ferait de cette table le tapis qu'elle existe pour retirer.
  */
 const SANS_APPELANT: Record<string, string> = {
+  // **Le résumé de composition a perdu son écran.** Il alimentait la table des
+  // matières de « Your offer » — trois nombres sous trois portes — et la v3.1
+  // retire cette table : deux entrées de rang égal dans la barre latérale ne
+  // portent pas de compteur. La route reste, et ce qu'elle rend est bon ; ce
+  // qui manque est un endroit où le lire. Voir `TASKS.md`.
+  compositionDuCommerce: 'a-instruire',
   // **La fermeture côté administration n'a pas d'écran, et c'est voulu.** Le
   // salon referme depuis chez lui, en un appui, et c'est le seul geste qui
   // compte. L'administration se retire en quittant : la reprise s'éteint à son
