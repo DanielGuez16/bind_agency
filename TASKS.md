@@ -2166,6 +2166,22 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       « ta première en sept jours » à quelqu'un qui en a ouvert quinze est
       l'exact contraire de ce que cette phrase existe pour faire. 1411 tests,
       3 mutations*
+- [x] **Deux défauts de campagne : l'accueil coupé, le champ repeint**
+      *Les promesses descendaient 68 points sous le bouton et se dessinaient
+      par-dessus — la garde e2e mesurait le défilement du document, qui ne
+      défilait pas. Elle mesure maintenant le chevauchement, et elle tombe sur
+      l'ancien code.*
+      *Le champ : `TextInput` est un `input` sur le web, un enfant carré qui
+      porte son propre fond, et le conteneur arrondi ne découpait pas.
+      `overflow: hidden` plus la neutralisation de l'autoremplissage — par une
+      transition différée, pour n'avoir aucune couleur de fond à deviner.
+      1443 tests, 4 e2e, 3 mutations sur navigateur*
+- [ ] **L'accueil n'est mesuré qu'en anglais**
+      *L'espagnol est plus long et c'est lui qui décide de la hauteur réelle. La
+      bascule de langue n'est pas atteignable depuis l'accueil : il faudrait
+      soit un moyen de la forcer dans le build de test, soit un paramètre
+      d'adresse. La marge prise en légende en tient lieu, ce qui n'est pas une
+      garantie*
 - [ ] **Neuf planches d'écrans portent encore la v1.0**
       *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
       passés en v3, dans la palette Ambre. Les autres suivent l'ordre du

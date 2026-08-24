@@ -111,9 +111,15 @@ test('le champ découpe ce qu’il contient, et le navigateur ne le repeint pas'
    * les plateformes, la neutralisation n'existe que sur le web.
    */
   await page.goto('/');
-  await page.getByTestId('choisir-creator').click();
 
-  const champ = page.getByTestId('champ-email');
+  // Depuis l'écran et non depuis la page : sur le web, les autres écrans
+  // restent montés dans le document, et un sélecteur global finit par trouver
+  // le bon nom sur le mauvais écran.
+  const accueil = page.getByTestId('ecran-accueil');
+  await accueil.getByTestId('choisir-creator').click();
+
+  const auth = page.getByTestId('ecran-auth');
+  const champ = auth.getByTestId('champ-email');
   await expect(champ).toBeVisible();
 
   // Le conteneur découpe : sans cela, aucun enfant n'est tenu par le rayon.
@@ -127,12 +133,14 @@ test('le champ découpe ce qu’il contient, et le navigateur ne le repeint pas'
 
   // Et la règle qui empêche le jaune est bien dans le document.
   const neutralise = await page.evaluate(() =>
-    [...document.styleSheets].some((feuille) => {
+    Array.from(document.styleSheets).some((feuille) => {
       try {
-        return [...feuille.cssRules].some((regle) =>
+        return Array.from(feuille.cssRules).some((regle) =>
           regle.cssText.includes('-webkit-autofill'),
         );
       } catch {
+        // Une feuille d'une autre origine refuse ses règles : ce n'est pas la
+        // nôtre, et la lire n'apprendrait rien.
         return false;
       }
     }),

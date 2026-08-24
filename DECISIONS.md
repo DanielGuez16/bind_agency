@@ -9749,3 +9749,46 @@ encres de voile ne sont pas dans la table : elles se posent sur une photo, donc
 sur rien de connu, et `opaciteMinimaleDuVoile` les mesure déjà dans deux autres
 fichiers — que la garde vérifie exister, pour que le renvoi ne devienne pas un
 tapis.
+
+---
+
+## 2026-08-23 — Deux défauts de campagne, et une garde qui mesurait à côté
+
+**L'accueil débordait de 68 points, mesurés.** Les trois promesses du créateur
+descendaient sous le haut du bouton et se dessinaient par-dessus. La garde de
+bout en bout existait pourtant : elle mesurait `scrollHeight` du document, et le
+document ne défilait pas — le débordement était **à l'intérieur** de la carte.
+Une garde qui mesure la page entière ne dit rien de ce qui se chevauche dedans,
+et celle-là est restée verte pendant que l'écran était cassé en campagne.
+
+Ce qui décide n'est pas la longueur du texte, c'est la colonne : 171 points,
+dix-neuf caractères par ligne en corps de 16. Les promesses passent donc en
+légende sous le seuil, et gardent le corps au-dessus, où la contrainte n'existe
+pas. Ce n'est pas une réduction pour faire tenir — c'est le rôle que ce texte a
+déjà partout ailleurs, une ligne d'appui sous un titre de 22.
+
+**Le champ : trois symptômes, un seul défaut.** « Carré, il sort des bords, fond
+jaune » décrit une seule chose. Sur le web, `TextInput` est un `input` — un
+enfant carré qui porte son propre fond. Le rayon vit sur le conteneur, qui ne
+découpait pas, et l'autoremplissage rendait ce fond visible aux quatre coins.
+
+Les deux moitiés se réparent séparément et il fallait les deux. `overflow:
+hidden` sur le conteneur vaut sur toutes les plateformes et tient **tout** ce
+qu'un enfant pourrait peindre, pas seulement ce qu'on avait prévu.
+
+**La transition longue plutôt qu'une couleur.** L'astuce courante contre
+l'autoremplissage est une ombre intérieure de la couleur du fond — mais elle
+demande de connaître ce fond, et un champ posé tantôt sur `bg.surface`, tantôt
+sur `bg.page`, la ferait mentir sur l'un des deux. Différer la transition
+indéfiniment empêche la peinture d'arriver quel que soit ce qu'il y a derrière :
+on ne corrige pas la couleur, on l'empêche.
+
+**Les trois corrections sont vérifiées sur un vrai navigateur**, pas sur une
+lecture du code : un défaut de disposition ne se prouve pas en `jest`, qui ne
+pose rien. Chacune a été cassée à son tour, et la construction refaite à chaque
+fois pour que la mesure porte sur ce qui tourne.
+
+**La garde ne mesure qu'une langue, et elle le dit.** L'espagnol est plus long
+et c'est lui qui décide de la hauteur réelle ; la bascule n'est pas atteignable
+depuis l'accueil. Écrit dans le test plutôt que sous-entendu — une garde qui
+laisserait croire qu'elle couvre les deux serait pire que celle-ci.
