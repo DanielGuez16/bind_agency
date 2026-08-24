@@ -461,8 +461,7 @@ export const es: Catalogue = {
     format_story: 'historia',
     format_post: 'publicación',
     format_reel: 'reel',
-    contrepartieEcheance: 'Antes del {{quand}}',
-    contrepartieTentative: 'Intento {{n}} de 3',
+    contrepartieEnArbitrage: 'Un árbitro se ha hecho cargo — el local ya no decide.',
     contrepartieRienAFaire: 'El local lo está revisando — nada que hacer de tu lado.',
     action_code: 'Ver código',
     action_preuve: 'Enviar tu publicación',
@@ -498,7 +497,6 @@ export const es: Catalogue = {
     preuve_attestee_aide: 'La plataforma no ha podido confirmarla — una historia de más de 24 horas, casi siempre. El salón la revisa como de costumbre.',
     preuve_ecart: 'Todavía no coincide',
     preuve_ecart_aide: 'La plataforma lo comprobó y encontró esto:',
-    contrepartieEnArbitrage: 'Un árbitro se ha hecho cargo — el local ya no decide.',
     preuveAdresse: 'Enlace a tu publicación',
     preuveAdresseAide:
       'Pega el enlace de la publicación. El negocio lo abre para comprobar que sigue en línea — con una captura sola, tiene que creerte.',

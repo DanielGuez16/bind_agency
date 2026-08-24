@@ -162,3 +162,34 @@ describe('ce qui n’est pas servi ne s’invente pas', () => {
     await vue.unmount();
   });
 });
+
+/**
+ * L'arbitrage, qui vivait aussi sur la liste des réservations.
+ *
+ * La carte le portait, et l'a perdu : elle décrit ce qu'il y a à faire, pas
+ * comment le dossier est instruit. Le fait n'est pas perdu pour autant — il est
+ * ici, sur l'écran où l'on vient voir où en est la contrepartie, et ce test est
+ * ce qui rend le retrait tenable.
+ */
+describe('l’attente qui change de nature', () => {
+  it('un dossier passé en arbitrage le dit', async () => {
+    // Passé en revue humaine, le dossier n'attend plus le salon mais un
+    // arbitre : le délai n'a plus le même sens, et relancer le salon ne sert
+    // à rien.
+    await monter({ ...CONTREPARTIE, needs_human_review: true } as unknown as Collaboration);
+    await waitFor(() => expect(screen.getByTestId('en-arbitrage')).toBeTruthy());
+
+    expect(screen.getByTestId('en-arbitrage')).toHaveTextContent(
+      en.parcours.contrepartieEnArbitrage,
+    );
+  });
+
+  it('et une contrepartie ordinaire ne le dit pas', async () => {
+    // Le sens inverse : une mention permanente ne distinguerait plus rien, et
+    // c'est justement la distinction qui est l'information.
+    await monter();
+    await waitFor(() => expect(screen.getByTestId('contrat-de-la-preuve')).toBeTruthy());
+
+    expect(screen.queryByTestId('en-arbitrage')).toBeNull();
+  });
+});

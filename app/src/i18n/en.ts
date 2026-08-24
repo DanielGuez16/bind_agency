@@ -512,8 +512,7 @@ export const en = {
     format_story: 'story',
     format_post: 'post',
     format_reel: 'reel',
-    contrepartieEcheance: 'Due {{quand}}',
-    contrepartieTentative: 'Attempt {{n}} of 3',
+    contrepartieEnArbitrage: 'A reviewer has taken this over — the salon is no longer the one deciding.',
     contrepartieRienAFaire: 'The salon is checking it — nothing to do on your side.',
     action_code: 'Show code',
     action_preuve: 'Send your post',
@@ -552,7 +551,6 @@ export const en = {
     preuve_attestee_aide: 'The platform could not confirm this one — a story past 24 hours, most often. The salon reviews it as usual.',
     preuve_ecart: 'Does not match yet',
     preuve_ecart_aide: 'The platform checked and found this:',
-    contrepartieEnArbitrage: 'A reviewer has taken this over — the salon is no longer the one deciding.',
     preuveAdresse: 'Link to your post',
     preuveAdresseAide:
       'Paste the link to the post. The business opens it to check that it is live — with only a screenshot, they have to take your word for it.',

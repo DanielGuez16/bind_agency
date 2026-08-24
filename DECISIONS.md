@@ -9825,3 +9825,48 @@ l'écran montait son état vide et la ligne n'existait pas. Un décor qui répon
 `[]` à tout monte un écran qui n'est pas celui qu'on éprouve — et la table
 nommée passe maintenant avant le repli générique, sans quoi le décor n'aurait
 aucun effet.
+
+---
+
+## 2026-08-23 — Les capitales sont une étiquette, jamais un porteur de phrase
+
+Une campagne de test entière n'a pas trouvé où montrer son QR au commerce. Le
+retour disait « le chemin a disparu avec la refonte ». Il n'avait pas disparu :
+onglet « à venir » par défaut, `confirmed` dedans, filet d'encre, bouton,
+écran, QR — tout était en place, et une garde le prouve maintenant depuis la
+liste et non depuis l'écran seul.
+
+Ce qui manquait était la **lisibilité du chemin**. La carte portait huit à dix
+lignes, dont **une seule en corps de texte** — le nom de la prestation. Le reste
+était en caption ou en mono capitales, et le bouton qui ouvre le code arrivait
+en septième position, après quatre lignes en majuscules.
+
+**Le volume n'était pas le défaut principal, la casse l'était.** Les capitales
+détruisent la silhouette des mots, c'est-à-dire exactement ce qui permet de
+balayer une liste sans la lire. Une durée, une date, une phrase mises en
+majuscules obligent à épeler. Le mono capitales du système est l'étiquette : un
+format, un réseau, un nom de mois — court, et lu comme un repère, pas comme une
+information.
+
+La règle vaut au-delà de cet écran, et trois autres endroits l'enfreignaient :
+la date d'une reprise dans les réglages, et dans le bandeau de reprise une
+phrase entière avec sa liste d'écrans puis deux dates d'affilée. Corrigés.
+
+**Le corollaire de composition** : une liste répond à « qu'est-ce que je dois
+faire », pas à « comment mon dossier est instruit ». L'échéance, l'arbitrage et
+le numéro de tentative décrivaient l'instruction ; ils vivent sur l'écran de la
+contrepartie, où la comparaison a un sens. Sur la liste ils coûtaient trois
+lignes par carte pour une question qu'on n'y pose pas.
+
+**Et le corollaire de vérification** : un champ qu'on retire d'un écran doit
+être cherché ailleurs avant, pas après. L'adresse a failli disparaître du
+produit — elle n'était rendue que sur cette liste, et l'écran du code, où l'on
+part réellement, ne disait **rien** du salon, pas même son nom. Le schéma servi
+ne le portait pas non plus. « Elle est déjà là-bas » se vérifie ; ici c'était
+faux, et le retrait sans la vérification aurait fait perdre l'adresse.
+
+**Le rapport entre les deux retours était un seul défaut.** « Impossible de
+trouver où afficher le QR » et « il y a trop de texte » ne sont pas deux
+observations : le chemin n'était pas rompu, il était noyé. Une composition trop
+chargée ne se signale pas comme un défaut de composition — elle se signale
+comme une fonction manquante.

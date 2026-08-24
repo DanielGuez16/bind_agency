@@ -16,7 +16,7 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from app.core.config import get_settings
-from app.models import Booking, BusinessMember, RedemptionCode
+from app.models import Booking, Business, BusinessMember, RedemptionCode
 from app.models.enums import BookingStatus, BusinessMemberRole, UserRole
 from app.services import booking_states
 from app.services import redemption as service
@@ -339,3 +339,36 @@ async def test_deux_caisses_qui_scannent_au_meme_instant(engine: AsyncEngine) ->
                 {"c": s["createur"].id},
             )
             await menage.execute(sa.text("DELETE FROM business WHERE id = :b"), {"b": business_id})
+
+
+async def test_le_code_dit_ou_aller(client: AsyncClient, session: AsyncSession) -> None:
+    """Le salon et son adresse voyagent avec le code.
+
+    L'adresse vivait sur la liste des réservations, où elle doublait la
+    longueur de chaque carte pour un usage qui n'y a pas lieu : on ne cherche
+    pas son chemin en parcourant une liste, on le cherche en partant. Elle en
+    est partie, et cet écran est celui du départ — sans ces deux champs, elle
+    aurait disparu du produit.
+
+    Les valeurs sont **lues en base**, pas écrites dans le test. Une réponse
+    qui recopierait le nom du créateur, ou qui rendrait une constante, passerait
+    une assertion littérale sans rien servir de juste.
+    """
+    s = await scene(session)
+    await session.commit()
+
+    attendu = await session.get(Business, s["business"].id)
+    assert attendu is not None
+
+    montre = await client.get(
+        f"{PREFIX}/bookings/{s['booking'].id}/code",
+        headers=await entetes(client, s["createur"]),
+    )
+    assert montre.status_code == 200, montre.text
+    affiche = montre.json()
+
+    assert affiche["business_name"] == attendu.name
+    assert affiche["business_address"] == attendu.address
+    # Et ce n'est pas le créateur : les deux noms se ressemblent assez, dans un
+    # décor engendré, pour qu'une confusion passe inaperçue.
+    assert affiche["business_name"] != s["createur"].email

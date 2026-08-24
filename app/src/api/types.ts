@@ -624,6 +624,12 @@ export type CodeDeRetrait = {
   /** Les chiffres tournants, pour l'affichage seul : ils ne s'identifient pas
    * sans le code qui les porte, et ne se saisissent donc pas à la caisse. */
   code: string;
+  /** **Où l'on va.** L'adresse vivait sur la liste des réservations, où elle
+   * doublait la longueur de chaque carte pour un usage qui n'y a pas lieu : on
+   * ne cherche pas son chemin en parcourant une liste, on le cherche en
+   * partant. C'est ici qu'on part. */
+  business_name: string;
+  business_address: string | null;
   manual_code: string;
   seconds_remaining: number;
   rotation_seconds: number;
