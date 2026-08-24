@@ -55,7 +55,7 @@ export function CodeScreen({
   bookingId,
   onRetour,
   /** Injectés pour les tests, et pour le web où ils n'existent pas. */
-  garderEveille,
+  presentationAuComptoir,
 }: {
   bookingId: string;
   /**
@@ -66,7 +66,17 @@ export function CodeScreen({
    * la surface elle-même, dans ses deux couleurs.
    */
   onRetour?: () => void;
-  garderEveille?: { activer: () => void; desactiver: () => void };
+  /**
+   * Ce que l'appareil fait pendant qu'on présente le code : veille désactivée,
+   * luminosité au maximum, et **les deux rendus en sortant**.
+   *
+   * Injecté plutôt qu'importé : c'est ce qui permet de l'éprouver sans
+   * plateforme, et de ne rien allumer dans les écrans qui montent celui-ci
+   * pour une autre raison. Le nom dit la situation et non l'un des deux
+   * réglages — il s'appelait `garderEveille` et n'en couvrait donc que la
+   * moitié.
+   */
+  presentationAuComptoir?: { activer: () => void; desactiver: () => void };
 }) {
   const { api, messageDErreur } = useApi();
   const { t } = useI18n();
@@ -123,9 +133,9 @@ export function CodeScreen({
 
   useEffect(() => {
     if (!visible) return;
-    garderEveille?.activer();
-    return () => garderEveille?.desactiver();
-  }, [garderEveille, visible]);
+    presentationAuComptoir?.activer();
+    return () => presentationAuComptoir?.desactiver();
+  }, [presentationAuComptoir, visible]);
 
   useEffect(() => {
     if (!visible) return;

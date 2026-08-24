@@ -18,6 +18,7 @@ import { AccessibilityInfo } from 'react-native';
 import { render, waitFor } from '@testing-library/react-native';
 
 import { SkeletonBox } from '../src/components/Skeleton';
+import { motion } from '../src/theme';
 import { en } from '../src/i18n/en';
 import { messageDObstacle } from '../src/screens/obstacle';
 
@@ -184,5 +185,61 @@ describe('mouvement réduit : le squelette se pose à 0,7', () => {
 
     const vue = await render(<SkeletonBox height={12} testID="squelette" />);
     await waitFor(() => expect(opaciteDe(vue)).not.toBe(0.7));
+  });
+});
+
+/**
+ * §4 — « Durées : 120 ms, 200 ms, 320 ms. »
+ *
+ * **Cinq durées étaient écrites en dur**, dont trois hors du vocabulaire
+ * déclaré : 90 et 1000 dans l'écran de chargement, 4000 deux fois sur le halo du
+ * code, et 800 sur l'anneau du bouton. Cette dernière est le cas exemplaire —
+ * elle est **déclarée dans la passation** (« anneau de 15 px en rotation
+ * continue 800 ms ») et le composant la recopiait : une valeur décidée par le
+ * système, réécrite à la main là où elle sert.
+ *
+ * Ce n'était pas une décision de composition mais une règle déjà tranchée qu'on
+ * n'appliquait pas.
+ *
+ * **La garde n'impose pas une liste de valeurs**, ce qui figerait une boucle de
+ * respiration au même rythme qu'une transition d'écran. Elle impose qu'une durée
+ * porte un **nom** — jeton du système, ou constante nommée dans son fichier. Un
+ * nom oblige à dire ce qu'on chronomètre, et c'est là que se voit la valeur qui
+ * n'aurait pas dû être choisie ici.
+ */
+describe('aucune durée d’animation n’est écrite en dur', () => {
+  it('elles portent toutes un nom', () => {
+    const fautives = sources(RACINE)
+      .flatMap((chemin) =>
+        sansCommentaires(readFileSync(chemin, 'utf-8'))
+          .split('\n')
+          .map((ligne, rang) => ({ chemin, rang: rang + 1, ligne }))
+          .filter(({ ligne }) => /duration:\s*\d/.test(ligne)),
+      )
+      .map(({ chemin, rang, ligne }) => `${chemin.slice(chemin.indexOf('src/'))}:${rang} → ${ligne.trim()}`);
+
+    expect(fautives).toEqual([]);
+  });
+
+  it('et il y en a, sans quoi la garde ne garderait rien', () => {
+    // **Le sens inverse.** « Aucune durée littérale » est vrai d'un produit qui
+    // n'anime rien. Ce qu'on veut est qu'il en déclare, et qu'aucune ne soit
+    // anonyme.
+    const nommees = sources(RACINE).flatMap((chemin) =>
+      sansCommentaires(readFileSync(chemin, 'utf-8'))
+        .split('\n')
+        .filter((ligne) => /duration:\s*[A-Za-z_]/.test(ligne)),
+    );
+
+    expect(nommees.length).toBeGreaterThanOrEqual(10);
+  });
+
+  it('et la valeur que la passation déclare vient du jeton', () => {
+    // L'anneau du bouton : 800 ms est écrit dans la passation, donc il vit dans
+    // les jetons et nulle part ailleurs.
+    expect(motion.anneau).toBe(800);
+    expect(readFileSync(join(RACINE, 'components', 'Button.tsx'), 'utf-8')).toContain(
+      'duration: motion.anneau',
+    );
   });
 });

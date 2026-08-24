@@ -47,6 +47,10 @@ export const PLAFOND_MS = 800;
 /** Les quatre temps de la direction A, tels que la planche les pose. */
 const LETTRES_DEBUT = 120;
 const LETTRES_DUREE = 140;
+/** L'apparition du point, plus vive que sa chute : il arrive, il ne se pose pas. */
+const POINT_APPARITION = 90;
+/** Un aller de la barre indéterminée. C'est une boucle, pas une transition. */
+const COURSE_DUREE = 1000;
 const POINT_DEBUT = 260;
 const POINT_DUREE = 300;
 
@@ -102,7 +106,7 @@ export function Chargement({ testID = 'ecran-chargement' }: { testID?: string })
           // cadre avant de tomber, il arrive.
           Animated.timing(opaciteDuPoint, {
             toValue: 1,
-            duration: 90,
+            duration: POINT_APPARITION,
             useNativeDriver: true,
           }),
           Animated.timing(chuteDuPoint, {
@@ -191,7 +195,7 @@ export function FiletDAttente({ testID = 'filet-d-attente' }: { testID?: string 
     const boucle = Animated.loop(
       Animated.timing(course, {
         toValue: 1,
-        duration: 1000,
+        duration: COURSE_DUREE,
         easing: Easing.inOut(Easing.quad),
         useNativeDriver: true,
       }),
