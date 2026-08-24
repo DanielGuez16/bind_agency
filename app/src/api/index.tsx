@@ -13,6 +13,7 @@
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import { Platform } from 'react-native';
 
 import { useI18n } from '../i18n';
 import { translateErrorCode } from '../i18n/errors';
@@ -115,6 +116,40 @@ export const coffreAsyncStorage: CoffreDeJetons = {
  * finirait par diverger de lui sans que rien ne le dise.
  */
 const SUFFIXE_APERCU = '@apercu';
+
+/**
+ * Un fichier local, sous la forme que la plateforme sait envoyer.
+ *
+ * **React Native et le web n'ont pas le même `FormData`.** En natif, on lui
+ * passe `{ uri, name, type }` et le pont construit la partie multipart. Sur le
+ * web, `FormData.append` suit la spécification : tout ce qui n'est ni `Blob` ni
+ * `File` est **converti en chaîne**. L'objet part donc littéralement en
+ * `"[object Object]"`, le serveur reçoit un champ texte là où il attend un
+ * fichier, et répond `validation_failed` — « Some information is missing or
+ * incorrect », qui ne dit rien de la cause.
+ *
+ * Mesuré contre le serveur de démonstration : champ en texte →
+ * `{"detail":"validation_failed","fields":[{"loc":["body","fichier"]}]}` ;
+ * vrai fichier → `{"storage_key":"…"}`.
+ *
+ * **Les quatre chemins de téléversement du produit étaient morts sur le web** —
+ * galerie du lieu, photo de prestation, page de carte, et la capture de preuve,
+ * qui est le geste par lequel une créatrice tient sa contrepartie. C'est ce
+ * dernier qui rend le défaut grave : la démonstration tourne sur le build web.
+ *
+ * Sur le web, l'`uri` d'une image choisie est une adresse `blob:` ou `data:`
+ * que `fetch` sait relire — il n'y a pas de disque à traverser.
+ */
+async function fichierAEnvoyer(uri: string, nom: string): Promise<Blob | { uri: string; name: string; type: string }> {
+  if (Platform.OS !== 'web') return { uri, name: nom, type: 'image/jpeg' };
+
+  const reponse = await fetch(uri);
+  const donnees = await reponse.blob();
+  // **Le nom voyage dans la troisième partie de `append`.** Sans lui, le
+  // navigateur envoie `blob` comme nom de fichier ; le serveur lit les premiers
+  // octets et ne s'y fie pas, mais un journal illisible coûte une enquête.
+  return new File([donnees], nom, { type: donnees.type || 'image/jpeg' });
+}
 
 export class Api {
   constructor(private readonly client: ApiClient) {}
@@ -392,16 +427,11 @@ export class Api {
    * s'encode pas en JSON sans la faire grossir d'un tiers, sur un réseau qui
    * est souvent celui d'un salon.
    */
-  televerserUneCapture(uri: string) {
+  async televerserUneCapture(uri: string) {
     const corps = new FormData();
-    // La forme attendue par React Native pour un fichier local. Le nom et le
-    // type sont indicatifs : le serveur lit les premiers octets, il ne les
-    // croit pas.
-    corps.append('fichier', {
-      uri,
-      name: 'capture.jpg',
-      type: 'image/jpeg',
-    } as unknown as Blob);
+    // Le nom et le type sont indicatifs : le serveur lit les premiers octets,
+    // il ne les croit pas. Voir `fichierAEnvoyer` pour ce qui distingue le web.
+    corps.append('fichier', (await fichierAEnvoyer(uri, 'capture.jpg')) as Blob);
 
     return this.client.request<{ screenshot_key: string }>(routes.televerserUneCapture(), {
       methode: 'POST',
@@ -848,7 +878,7 @@ export class Api {
    */
   async photographierUnItem(businessId: string, itemId: string, uri: string) {
     const corps = new FormData();
-    corps.append('fichier', { uri, name: 'photo.jpg', type: 'image/jpeg' } as unknown as Blob);
+    corps.append('fichier', (await fichierAEnvoyer(uri, 'photo.jpg')) as Blob);
 
     const { storage_key } = await this.client.request<{ storage_key: string }>(
       routes.televerserUnePhoto(businessId),
@@ -860,9 +890,9 @@ export class Api {
 
   async ajouterUnePhoto(businessId: string, uri: string) {
     const corps = new FormData();
-    // La forme attendue par React Native pour un fichier local. Le nom et le
-    // type sont indicatifs : le serveur lit les premiers octets.
-    corps.append('fichier', { uri, name: 'photo.jpg', type: 'image/jpeg' } as unknown as Blob);
+    // Le nom et le type sont indicatifs : le serveur lit les premiers octets.
+    // Voir `fichierAEnvoyer` pour ce qui distingue le web du natif.
+    corps.append('fichier', (await fichierAEnvoyer(uri, 'photo.jpg')) as Blob);
 
     const { storage_key } = await this.client.request<{ storage_key: string }>(
       routes.televerserUnePhoto(businessId),
@@ -903,7 +933,7 @@ export class Api {
   /** Dépose la page, puis l'ajoute à la carte. Deux appels, comme la galerie. */
   async ajouterUnePageDeCarte(businessId: string, uri: string) {
     const corps = new FormData();
-    corps.append('fichier', { uri, name: 'carte.jpg', type: 'image/jpeg' } as unknown as Blob);
+    corps.append('fichier', (await fichierAEnvoyer(uri, 'carte.jpg')) as Blob);
 
     const { storage_key } = await this.client.request<{ storage_key: string }>(
       routes.televerserUnePageDeCarte(businessId),

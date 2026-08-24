@@ -306,7 +306,11 @@ renseignée.
 
 ## 3. Les comptes
 
-Mot de passe unique pour tous : **`bind-donnees-de-depart-2026`**
+Mot de passe unique pour tous : **`orchidee-cuivre-2026`**
+
+> Il vient de `MOT_DE_PASSE` dans `api/app/seed_demo.py`. Ce fichier en a
+> annoncé un autre pendant un temps, et une démonstration commence par une
+> connexion : le mot de passe faux était la première chose qu'on voyait.
 
 Le domaine `bind.example` est réservé par la RFC 2606 — personne ne le possède,
 et il passe la validation d'adresse.
