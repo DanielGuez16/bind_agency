@@ -388,6 +388,9 @@ export const en = {
     murServicesOuverts: '{{salons}} salons · {{count}} services open to you in {{quartier}}',
     murServicesDeCategorie: '{{salons}} salons · {{count}} {{categorie}} services in {{quartier}}',
     murAutresQuartiers: 'Other neighbourhoods',
+    murLePlusPres: 'Closest to you',
+    murToutVoir: 'All {{count}}',
+    murEncoreIci: '+{{count}} more here',
     // **Le quartier est nommé dans la phrase de la carte aussi.** Un compte
     // posé sur une carte de salon se lit bien comme celui du salon ; mais dans
     // « Ailleurs à Miami », il n'y a plus de quartier au-dessus, et la variante
@@ -1102,6 +1105,7 @@ export const en = {
     // Les trois regles, dans l'ordre ou elles comptent pour qui decide :
     // ce qui reste, le delai de retour, ce qui bloque.
     supprimerCorps: 'Your account is anonymised, not erased. Reviews you took part in belong to the salons that wrote them, and the audit trail cannot be rewritten. You have thirty days to come back before it becomes final. A booking still open has to be honoured or cancelled first.',
+    supprimerHonorees: 'Bookings you have already accepted are honoured before anything is erased. Deleting your account does not cancel them.',
     supprimerAction: 'Delete my account',
     supprimerIdentifiant: 'Type your email to confirm',
     supprimerMotDePasse: 'Your password',

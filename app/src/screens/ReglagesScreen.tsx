@@ -284,6 +284,8 @@ function BlocDeSuppression() {
   };
 
   const email = (session.etat === 'connecte' ? session.utilisateur.email : null) ?? '';
+  const commercant =
+    session.etat === 'connecte' && session.utilisateur.role === 'business_member';
   const [ouvert, setOuvert] = useState(false);
   const [identifiant, setIdentifiant] = useState('');
   const [motDePasse, setMotDePasse] = useState('');
@@ -373,6 +375,17 @@ function BlocDeSuppression() {
           <Texte variante="type.caption" couleur="ink.soft" testID="suppression-consequences">
             {t('reglages.supprimerCorps')}
           </Texte>
+          {/* **Côté commerce, une phrase de plus, et elle ferme une porte.**
+              Les réservations acceptées sont honorées avant l'effacement, comme
+              à l'échéance d'un abonnement : un salon ne peut pas annuler par ce
+              geste les créneaux qu'il a promis. Sans elle, supprimer son compte
+              serait le moyen le plus rapide de se défaire d'une journée
+              chargée. */}
+          {commercant ? (
+            <Texte variante="type.caption" couleur="ink.soft" testID="suppression-honorees">
+              {t('reglages.supprimerHonorees')}
+            </Texte>
+          ) : null}
           <TextField
             label={t('reglages.supprimerIdentifiant')}
             value={identifiant}

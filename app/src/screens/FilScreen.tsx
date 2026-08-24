@@ -275,7 +275,7 @@ export function FilScreen({
     recharger();
   }, [versionDesFavoris, recharger]);
 
-  const mur = useMur(filPret, categorie, onOuvrirLeCommerce);
+  const mur = useMur(filPret, categorie, onOuvrirLeCommerce, setCategorie);
 
   if (position === null) {
     // Ce qu'on dit et ce qu'on propose dépendent de **pourquoi** il n'y a pas

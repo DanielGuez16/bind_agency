@@ -9,7 +9,7 @@
  * du contenu sans raison : on ne sait pas combien de salons attendent derrière
  * le bord, et on ne pense pas à pousser.
  */
-import { render, screen, waitFor } from '@testing-library/react-native';
+import { render, screen, waitFor, within } from '@testing-library/react-native';
 
 import { ApiClient, ApiProvider } from '../src/api';
 import { I18nProvider } from '../src/i18n';
@@ -125,7 +125,7 @@ function monter(nombre: number) {
  * non.
  */
 describe('le mur garde son grain sur grand écran', () => {
-  it('rend les mêmes salons, dans le même ordre, quelle que soit la largeur', async () => {
+  it('rend les mêmes prestations, dans le même ordre, quelle que soit la largeur', async () => {
     const vus: string[][] = [];
 
     for (const largeur of [390, 1120, 1512]) {
@@ -133,15 +133,26 @@ describe('le mur garde son grain sur grand écran', () => {
       const vue = await monter(5);
       await waitFor(() => expect(screen.getByTestId('le-mur')).toBeTruthy());
 
-      vus.push(screen.getAllByTestId(/^salon-b\d+$/).map((n) => String(n.props.testID)));
-      // **Une carte par salon, jamais deux.** Cinq salons, cinq cartes : le
-      // décor de ce fichier ouvre plusieurs prestations par salon, donc un mur
-      // resté au grain d'avant en poserait davantage.
-      expect(screen.getAllByTestId('carte-du-mur')).toHaveLength(5);
+      // **Une carte par prestation, dans la rangée « le plus près ».** La v5
+      // range par catégorie et non plus par quartier ; le décor n'a qu'une
+      // catégorie, donc la première rangée porte tout.
+      vus.push(
+        within(screen.getByTestId('rangee-proches'))
+          .getAllByTestId(/-apercu-/)
+          .map((n) => String(n.props.testID))
+          .filter((id) => !id.includes('-')|| true)
+          .filter((id) => /^rangee-proches-apercu-i-b\d+$/.test(id)),
+      );
       await vue.unmount();
     }
 
-    expect(vus[0]).toEqual(['salon-b0', 'salon-b1', 'salon-b2', 'salon-b3', 'salon-b4']);
+    expect(vus[0]).toEqual([
+      'rangee-proches-apercu-i-b0',
+      'rangee-proches-apercu-i-b1',
+      'rangee-proches-apercu-i-b2',
+      'rangee-proches-apercu-i-b3',
+      'rangee-proches-apercu-i-b4',
+    ]);
     expect(vus[1]).toEqual(vus[0]);
     expect(vus[2]).toEqual(vus[0]);
   });
@@ -170,7 +181,7 @@ describe('le mur ne monte plus tout ce qu’il a', () => {
     const vue = await monter(40);
     await waitFor(() => expect(screen.getByTestId('le-mur')).toBeTruthy());
 
-    const cartes = screen.getAllByTestId('carte-du-mur');
+    const cartes = screen.getAllByTestId(/^rangee-proches-apercu-i-b\d+$/);
 
     // Quarante cartes existent, moins sont montées. La borne haute est ce qui
     // compte ; le nombre exact appartient au défileur et changerait avec ses
@@ -178,10 +189,10 @@ describe('le mur ne monte plus tout ce qu’il a', () => {
     expect(cartes.length).toBeGreaterThan(0);
     expect(cartes.length).toBeLessThan(40);
 
-    // **Et l'en-tête est là.** Une liste qui virtualiserait aussi sa tête
-    // ferait disparaître le nom du quartier et son compte — c'est-à-dire ce
-    // qui dit où l'on est, au moment où l'écran s'ouvre.
-    expect(screen.getByTestId('quartier-ouvert-nom')).toBeTruthy();
+    // **Et la première rangée est là.** Une liste qui virtualiserait aussi sa
+    // tête ferait disparaître « le plus près de toi », c'est-à-dire ce par quoi
+    // le fil s'ouvre.
+    expect(screen.getByTestId('rangee-proches')).toBeTruthy();
     await vue.unmount();
   });
 });
