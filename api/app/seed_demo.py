@@ -239,6 +239,7 @@ async def _deposer_photo(
     graine: str,
     taille_generee: tuple[int, int],
     famille: str,
+    replis: tuple[str, ...] = (),
 ) -> tuple[str, bool, int]:
     """La vraie photo si elle est là, un dégradé sinon. Rend la clé, laquelle, et le poids.
 
@@ -247,11 +248,18 @@ async def _deposer_photo(
     telle quelle par l'API, un commerce qui n'a pas fourni sa couverture se
     reconnaît dans n'importe quelle réponse, sans qu'aucun écran ait à porter
     un repère de développement qu'on oublierait d'enlever.
+
+    **`replis` nomme les fichiers à essayer ensuite**, dans l'ordre. Une photo
+    du bon sujet, même cadrée pour un autre format, vaut mieux qu'un dégradé :
+    le dégradé ne dit rien du salon, et c'est précisément ce qu'une couverture
+    doit dire. Le premier chemin reste celui qu'on réclame dans `A-FOURNIR.md`
+    — un repli est une consolation, pas une réponse à la demande.
     """
-    reelle = photos_reelles.lire(chemin, taille=taille_reelle)
-    if reelle is not None:
-        cle = await depot.deposer(reelle.contenu, prefixe=f"photos/{famille}")
-        return cle, True, len(reelle.contenu)
+    for candidat in (chemin, *replis):
+        reelle = photos_reelles.lire(candidat, taille=taille_reelle)
+        if reelle is not None:
+            cle = await depot.deposer(reelle.contenu, prefixe=f"photos/{famille}")
+            return cle, True, len(reelle.contenu)
 
     degrade = image(graine, taille_generee)
     cle = await depot.deposer(degrade, prefixe=f"photos/genere/{famille}")
@@ -304,6 +312,17 @@ async def poser_les_photos(session: AsyncSession) -> ResumePhotos:
         # fichier absent devient un dégradé, et `A-FOURNIR.md` le réclame.
         dossier = DOSSIER_DU_COMMERCE.get(business.name) or _dossier_derive(business.name)
         chemin = f"commerces/{dossier}/cover.jpg"
+        # **La couverture verticale sert de repli, et elle en a le droit.** Elle
+        # a été déposée pour un mur qui n'existe plus : vingt photographies
+        # réelles, une par salon, choisies sur le sujet — le barbier chez le
+        # barbier, la poterie chez le potier. Seize salons n'ont aucun fichier
+        # en paysage et recevaient donc un dégradé, c'est-à-dire une couverture
+        # qui ne dit rien d'eux.
+        #
+        # Le recadrage est franc : un 2:3 ramené en 16:9 perd le haut et le bas.
+        # Il garde le sujet, qui est au centre, et une photo du bon commerce
+        # mal cadrée vaut mieux qu'un aplat qui n'est celle de personne.
+        numero_de_repli = portraits.get(business.name)
         business.cover_photo_key, trouvee, poids = await _deposer_photo(
             depot,
             chemin=chemin,
@@ -311,6 +330,11 @@ async def poser_les_photos(session: AsyncSession) -> ResumePhotos:
             graine=business.name,
             taille_generee=COUVERTURE,
             famille="business",
+            replis=(
+                (f"couvertures-portrait/{numero_de_repli}.jpg",)
+                if numero_de_repli is not None
+                else ()
+            ),
         )
         compter(trouvee, chemin, poids)
 
@@ -321,7 +345,7 @@ async def poser_les_photos(session: AsyncSession) -> ResumePhotos:
         # dépôt borne le grand côté à 2000, donc un 1600 × 2000 traverse sans
         # rien perdre. Un salon sans couverture verticale garde la sienne en
         # paysage — c'est l'app qui retombe dessus.
-        numero = portraits.get(business.name)
+        numero = numero_de_repli
         if numero is not None:
             portrait = f"couvertures-portrait/{numero}.jpg"
             business.cover_portrait_key, trouvee, poids = await _deposer_photo(

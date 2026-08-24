@@ -1601,3 +1601,181 @@ async def test_havana_glow_reste_vierge(seed_conn: AsyncConnection) -> None:
             sa.select(sa.func.count()).select_from(table).where(colonne == havana)
         )
         assert combien == 0, f"{table.__name__} : {combien} ligne(s) sur le salon vierge"
+
+
+# --------------------------------------------------------------------------
+# le repli d'une couverture sur la photo verticale
+# --------------------------------------------------------------------------
+
+
+class _DepotDeTest:
+    """Un dépôt qui retient le préfixe sous lequel on lui donne un objet.
+
+    C'est le préfixe qui porte la nature du contenu — `photos/business/` pour
+    une vraie photo, `photos/genere/business/` pour un dégradé — donc c'est lui
+    qu'il faut lire pour savoir laquelle des deux est partie.
+    """
+
+    def __init__(self) -> None:
+        self.prefixes: list[str] = []
+
+    async def deposer(self, contenu: bytes, *, prefixe: str) -> str:
+        del contenu
+        self.prefixes.append(prefixe)
+        return f"{prefixe}/cle"
+
+
+async def _deposer(monkeypatch: pytest.MonkeyPatch, presents: dict[str, bytes], **kwargs):
+    """Appelle le dépôt de photo en ne rendant réels que les chemins nommés."""
+    from app import seed_demo
+    from app.integrations import photos_reelles
+
+    def lire(chemin: str, *, taille):
+        del taille
+        contenu = presents.get(chemin)
+        if contenu is None:
+            return None
+        return photos_reelles.PhotoReelle(chemin=chemin, contenu=contenu, redimensionnee=True)
+
+    monkeypatch.setattr(seed_demo.photos_reelles, "lire", lire)
+    depot = _DepotDeTest()
+    resultat = await seed_demo._deposer_photo(
+        depot,
+        chemin="commerces/un-salon/cover.jpg",
+        taille_reelle=(1200, 675),
+        graine="un salon",
+        taille_generee=(1200, 675),
+        famille="business",
+        **kwargs,
+    )
+    return depot, resultat
+
+
+async def test_une_couverture_absente_retombe_sur_la_photo_verticale(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """**Seize salons recevaient un dégradé, c'est-à-dire rien d'eux.**
+
+    Vingt photographies verticales dorment dans `assets/photos/` — une par
+    salon, choisies sur le sujet — déposées pour un mur qui n'existe plus. Le
+    repli les rend au seul champ que les écrans lisent.
+
+    **Le décor sépare les deux implémentations sur le préfixe**, et non sur la
+    présence d'une clé : un dégradé produit une clé lui aussi, et l'assertion
+    « une clé existe » passerait des deux côtés. C'est `photos/business` contre
+    `photos/genere/business` qui dit laquelle est partie.
+    """
+    depot, (cle, trouvee, _) = await _deposer(
+        monkeypatch,
+        {"couvertures-portrait/07.jpg": b"la vraie photo"},
+        replis=("couvertures-portrait/07.jpg",),
+    )
+
+    assert trouvee is True
+    assert depot.prefixes == ["photos/business"]
+    assert "genere" not in cle
+
+
+async def test_la_couverture_dediee_passe_avant_le_repli(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """**Un repli est une consolation, pas un choix.**
+
+    Le décor pose **les deux** fichiers : c'est le seul montage où l'ordre se
+    voit. Avec le seul repli présent, une implémentation qui l'essaierait en
+    premier rendrait le même verdict que la bonne.
+    """
+    depot, (_, trouvee, poids) = await _deposer(
+        monkeypatch,
+        {
+            "commerces/un-salon/cover.jpg": b"la couverture dediee",
+            "couvertures-portrait/07.jpg": b"le repli",
+        },
+        replis=("couvertures-portrait/07.jpg",),
+    )
+
+    assert trouvee is True
+    assert depot.prefixes == ["photos/business"]
+    # Le poids est celui du fichier retenu : c'est ce qui dit lequel des deux
+    # est parti, là où le préfixe ne distingue que réel de généré.
+    assert poids == len(b"la couverture dediee")
+
+
+async def test_sans_aucun_fichier_le_degrade_reste_le_repli_final(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """**Le cas de l'intégration continue, et il doit continuer de tenir.**
+
+    Les fichiers ne sont pas versionnés : là-bas, ni la couverture ni la photo
+    verticale n'existent. Le semis ne s'arrête pas pour ça — il pose un dégradé
+    et le dit. Un repli qui lèverait sur un fichier absent casserait la seule
+    exécution qui tourne à chaque fusion.
+    """
+    depot, (cle, trouvee, _) = await _deposer(
+        monkeypatch, {}, replis=("couvertures-portrait/07.jpg",)
+    )
+
+    assert trouvee is False
+    assert depot.prefixes == ["photos/genere/business"]
+    assert "genere" in cle
+
+
+async def test_chaque_salon_ouvert_a_un_numero_de_couverture_verticale(
+    seed_conn: AsyncConnection,
+) -> None:
+    """**Le repli n'existe que si le salon a un numéro**, et c'est vérifiable
+    sans aucun fichier sur le disque.
+
+    C'est la moitié du mécanisme que l'intégration continue peut éprouver :
+    là-bas `assets/photos/` est vide, donc rien ne se replie sur rien. Ce qui
+    reste vrai partout, c'est qu'un salon ouvert doit être **nommé** dans la
+    table des couvertures verticales — sans quoi le jour où les photos sont là,
+    lui seul garde un dégradé, et personne ne le remarque puisque les dix-huit
+    autres sont beaux.
+    """
+    from app.seed_demo import couverture_portrait_du_commerce
+
+    noms = (
+        (
+            await seed_conn.execute(
+                sa.select(Business.name).where(Business.status == BusinessStatus.ACTIVE)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    portraits = couverture_portrait_du_commerce()
+
+    assert noms, "aucun commerce ouvert : le décor ne prouverait rien"
+    assert [nom for nom in noms if nom not in portraits] == []
+
+
+@pytest.mark.skipif(
+    not list((API_ROOT.parent / "assets" / "photos" / "couvertures-portrait").glob("*.jpg")),
+    reason="les photos ne sont pas versionnées : rien à éprouver sans elles",
+)
+async def test_aucun_salon_ouvert_ne_garde_une_couverture_generee(
+    seed_conn: AsyncConnection,
+) -> None:
+    """**Seize salons recevaient un dégradé, c'est-à-dire rien d'eux.**
+
+    Le préfixe porte la nature du contenu : `photos/genere/business/…` pour un
+    aplat, `photos/business/…` pour une photographie. Un salon ouvert dont la
+    couverture est un dégradé est un salon dont l'écran ne dit rien.
+
+    **Ce test ne tourne qu'ici**, et il le dit : les photos ne sont pas
+    versionnées, donc l'intégration continue n'a rien à regarder. C'est le seul
+    endroit où le câblage se voit de bout en bout — les trois tests du repli
+    au-dessus éprouvent le mécanisme, celui-ci éprouve qu'on l'a branché.
+    """
+    cles = (
+        await seed_conn.execute(
+            sa.select(Business.name, Business.cover_photo_key).where(
+                Business.status == BusinessStatus.ACTIVE
+            )
+        )
+    ).all()
+
+    assert cles, "aucun commerce ouvert : le décor ne prouverait rien"
+    generees = [nom for nom, cle in cles if cle and "genere" in cle]
+    assert generees == []

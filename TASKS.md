@@ -1686,6 +1686,29 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       palette, pas les écrans. Ce qu'elle rattrape à la place est la **forme**
       du défaut — `ink.faint` est un état, jamais une couleur, donc il ne
       s'écrit jamais sans condition. 32 tests, 5 mutations*
+- [x] **Seize salons du semis n'avaient aucun visage**
+      *Mesuré avant et après, sur une base jetable pour ne toucher à celle de
+      personne : **34 photos réelles sur 102** avant, **50 sur 102** après. Les
+      seize couvertures manquantes étaient les seize salons du marché ; les
+      trois écrits à la main avaient les leurs.*
+      *Les vingt photographies verticales dormaient dans `assets/photos/`,
+      déposées pour un mur qui ne les lit plus. Elles sont déjà appariées au
+      sujet — le barbier chez le barbier, la poterie chez le potier, les vingt
+      dans l'ordre du prompt qui les a produites — et **dix-neuf des vingt
+      étaient déjà nommées** dans `MARCHE` et dans la table écrite à la main.
+      Il ne manquait que de les rendre au seul champ que les écrans lisent.*
+      *`_deposer_photo` prend une liste de replis, essayés dans l'ordre. Le
+      premier chemin reste celui que `A-FOURNIR.md` réclame : un repli est une
+      consolation, pas une réponse à la demande. Le recadrage est franc — un 2:3
+      ramené en 16:9 perd le haut et le bas — et une photo du bon commerce mal
+      cadrée vaut mieux qu'un aplat qui n'est celle de personne.*
+      *5 tests, 3 mutations. La troisième — le semis qui cesse de passer le
+      numéro — a **survécu** au premier jet : les trois premiers tests
+      éprouvaient le mécanisme et pas son branchement. Le test qui la rattrape
+      lit les clés du jeu posé et se saute quand les photos ne sont pas là,
+      puisqu'elles ne sont pas versionnées.*
+      *Les photos de prestation restent générées : elles sont petites et le
+      dégradé y passe.*
 - [ ] **Le bandeau ne devient pas une ligne de confirmation**
       *La planche veut qu'il devienne « vous êtes en ligne · 41 créatrices
       peuvent vous réserver », puis disparaisse au bout de sept jours. Deux
