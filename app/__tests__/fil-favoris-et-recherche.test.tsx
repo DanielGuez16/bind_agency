@@ -63,7 +63,10 @@ function fil(extra: Partial<Fil> = {}, commerces = [salon(1), salon(2)]) {
   } as unknown as Fil;
 }
 
-async function monter(donnees: Fil = fil(), surFavori?: () => Response) {
+async function monter(
+  donnees: Fil = fil(),
+  surFavori?: () => Response | Promise<Response>,
+) {
   const appels: { url: string; methode: string }[] = [];
   const api = new ApiClient({
     baseUrl: 'https://api.test',
@@ -158,23 +161,26 @@ describe('la recherche existait et n’avait aucun bouton', () => {
 });
 
 describe('le cœur se remplit avant la réponse', () => {
-  it('l’appui est optimiste, et il part quand même', async () => {
-    const { appels } = await monter();
+  it('rempli avant la réponse, et non après', async () => {
+    /**
+     * **Le décor divergent est une réponse qui ne vient pas.** Avec un double
+     * qui répond tout de suite, « remplir puis appeler » et « appeler puis
+     * remplir » rendent le même écran — la mutation qui attendait la réponse a
+     * d'abord survécu ici. Une promesse qui ne se résout jamais sépare les
+     * deux : l'optimiste remplit, l'autre ne remplit jamais.
+     *
+     * Attendre le réseau pour un geste sans conséquence est ce qui fait dire
+     * « lent », et un écran qui ne bouge pas fait appuyer une seconde fois.
+     */
+    const { appels } = await monter(fil(), () => new Promise<Response>(() => {}));
 
     const coeur = await screen.findByTestId('apercu-o1-coeur');
     expect(coeur.props.accessibilityState?.selected).toBe(false);
 
     await fireEvent.press(coeur);
 
-    // **Rempli tout de suite.** Attendre le réseau pour un geste sans
-    // conséquence est ce qui fait dire « lent » — et un écran qui ne bouge pas
-    // fait appuyer une seconde fois.
     expect(screen.getByTestId('apercu-o1-coeur').props.accessibilityState?.selected).toBe(true);
-    await waitFor(() =>
-      expect(appels.some((a) => a.methode === 'POST' && a.url.includes('/me/favorites'))).toBe(
-        true,
-      ),
-    );
+    expect(appels.some((a) => a.methode === 'POST' && a.url.includes('/me/favorites'))).toBe(true);
   });
 
   it('et il revient en arrière si le serveur refuse', async () => {

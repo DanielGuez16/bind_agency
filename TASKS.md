@@ -2219,6 +2219,28 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Le `as never` a effacé la vérification qui l'aurait dit. Deux gardes :
       une qui lit les noms visés — la cible imbriquée comprise — et une qui
       appuie et regarde l'écran qui vient. 1447 tests, 2 mutations*
+- [x] **Le fil v3.1 : chercher, et garder**
+      *La recherche était servie depuis des jours et n'avait aucun bouton. Les
+      catégories passent sur une ligne défilante de pilules — 86 points rendus
+      à 34 — et les 52 rendus paient la barre. Les deux barres restent collées :
+      104 points sur 728, le prix demandé.*
+      *Le cœur est optimiste et sans annonce : le remplissage **est** la
+      confirmation. Il porte sur l'article et non sur l'offre, donc le même
+      article ouvert à deux paliers montre le même cœur. La liste des favoris
+      garde les prestations devenues irréservables avec leur raison — quatre
+      états, quatre conduites. 1465 tests, 3 mutations*
+- [ ] **La planche dit « le favori porte sur le salon », le contrat dit la prestation**
+      *`ItemDuFil.est_favori` est posé sur l'article, `POST /me/favorites` prend
+      un `catalog_item_id`, et `GET /me/favorites` rend des prestations avec
+      leur état. La planche écrit l'inverse — « toutes les cartes d'un même
+      salon montrent le même cœur ». Livré au niveau de la prestation, qui est
+      le seul cohérent de bout en bout : garder un salon demanderait une autre
+      table et un autre écran. **Signalé, non tranché seul.***
+- [ ] **Ce qu'un favori déclenche n'est pas décidé**
+      *Faut-il prévenir quand une prestation s'ouvre au palier de la créatrice ?
+      Ce serait la première notification sortante du produit, donc une décision
+      de fond — et Design note que le cœur perd la moitié de son intérêt sans
+      elle*
 - [ ] **Neuf planches d'écrans portent encore la v1.0**
       *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
       passés en v3, dans la palette Ambre. Les autres suivent l'ordre du
