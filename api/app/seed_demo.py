@@ -648,6 +648,14 @@ async def _accepter_si_besoin(session, booking, *, membre_id) -> None:
     """
     if booking.status is not BookingStatus.AWAITING_BUSINESS:
         return
+    # **Une heure dépassée ne s'accepte pas, et le semis n'y fait pas exception.**
+    # `trancher` lève `CreneauDepasse` — un accord ne rattrape pas une heure
+    # passée — et c'est une garde du produit, pas un obstacle à contourner pour
+    # remplir un écran. La réservation reste en attente : c'est l'état vrai
+    # d'un rendez-vous que le salon n'a pas tranché à temps, et la journée
+    # l'affiche comme tel.
+    if booking.starts_at is not None and booking.starts_at <= datetime.now(UTC):
+        return
     await booking_states.trancher(
         session,
         booking=booking,
@@ -1004,13 +1012,20 @@ async def _une_reservation_aujourd_hui(
     une ligne de la journée, et un écran vide la rendait inaccessible. Aucun
     code ne pouvait être validé, la boucle du produit ne se fermait jamais.
 
-    **Le créneau vient de la disponibilité réelle, jamais posé, et toujours à
-    venir.** Quand la journée est finie — semé à 22 h, dans un salon fermé
-    depuis longtemps — la réservation se pose au prochain créneau plutôt que
-    d'échouer, et le résumé le dit.
+    **Le créneau vient de la disponibilité réelle, jamais posé, et toujours du
+    jour courant.** Il tombait au lendemain quand la journée était finie : semé
+    à 22 h, dix-neuf réservations sur vingt partaient demain, et l'écran
+    « Aujourd'hui » — le premier qu'on ouvre en démonstration — était vide à
+    l'heure où on le montre.
+
+    Quand la journée est derrière nous, la réservation se pose sur un créneau
+    **déjà passé du même jour**. Ce n'est pas un artifice : c'est ce qu'une
+    journée de salon contient à 22 h. Chez un salon qui valide, elle y reste en
+    attente — une heure dépassée ne s'accepte pas, et cette garde-là ne se
+    contourne pas pour faire joli.
     """
     posees = 0
-    reportees = 0
+    passees = 0
 
     actifs = (
         await session.scalars(sa.select(Business).where(Business.status == BusinessStatus.ACTIVE))
@@ -1038,10 +1053,11 @@ async def _une_reservation_aujourd_hui(
             session, business, offre.catalog_item_id, maintenant=datetime.now(UTC)
         )
         if choix is None:
-            print(f"  aucune place à venir chez {business.name} : ses horaires font foi")
+            print(f"  aucun créneau aujourd'hui chez {business.name} : ses horaires font foi")
             continue
 
-        creneau, aujourd_hui = choix
+        creneau, _ = choix
+        depassee = creneau < datetime.now(UTC)
 
         try:
             booking = await booking_service.creer(
@@ -1059,18 +1075,23 @@ async def _une_reservation_aujourd_hui(
 
         await confirmer(booking, createur.id)
         posees += 1
-        if not aujourd_hui:
-            reportees += 1
+        if depassee:
+            # **L'accord du commerce n'a pas pu passer, et c'est voulu.** Une
+            # heure dépassée ne s'accepte pas : `trancher` lève, et `confirmer`
+            # l'a laissée en attente chez les salons qui valident. La ligne est
+            # dans la journée, dans un état que le produit fabrique vraiment.
+            passees += 1
             quand = creneau.astimezone(ZoneInfo(business.timezone))
             print(
-                f"  plus de place aujourd'hui chez {business.name} : "
-                f"réservation posée au prochain créneau, le {quand:%d/%m à %H:%M}"
+                f"  journée déjà finie chez {business.name} : "
+                f"réservation posée à {quand:%H:%M}, plus tôt aujourd'hui"
             )
 
-    if reportees:
+    if passees:
         print(
-            f"  {reportees} réservation(s) reportée(s) au prochain créneau : "
-            "semé après la fermeture, la journée du jour est derrière nous"
+            f"  {passees} réservation(s) posée(s) dans le passé du jour : semé après la "
+            "fermeture. Elles sont dans la journée courante, et celles des salons qui "
+            "valident y restent en attente — une heure dépassée ne s'accepte pas."
         )
 
     return posees
@@ -1085,32 +1106,59 @@ async def prochain_creneau_reservable(
 ) -> tuple[datetime, bool] | None:
     """Le prochain créneau libre, et s'il tombe encore aujourd'hui.
 
-    **Toujours à venir.** Le choix se faisait en deux passes : ce qui reste à
-    partir de maintenant, puis — à défaut — ce qui existait depuis l'ouverture.
-    Cette seconde passe rendait un créneau déjà passé, que la réservation
-    acceptait et que l'acceptation par le commerce refusait, à juste titre
-    (`CreneauDepasse`). Le semis s'arrêtait au milieu de son écriture, et
-    seulement à certaines heures : avant midi il n'y avait rien à rattraper,
-    donc rien à casser.
+    **La journée courante d'abord, même derrière nous.** Le choix ne regardait
+    qu'en avant : semé à 22 h, tous les salons de Miami sont fermés, et
+    dix-neuf réservations sur vingt tombaient au lendemain. L'écran
+    « Aujourd'hui » — le premier qu'on ouvre en démonstration — était donc vide
+    à l'heure où on le montre.
 
-    **Et jamais un échec quand la journée est finie.** Semé à 22 h, un salon
-    fermé depuis longtemps n'a plus rien aujourd'hui ; rendre `None` là
-    priverait la démonstration de toute réservation dans ce salon. On rend le
-    prochain créneau, quel que soit son jour, et l'appelant le dit.
+    On prend maintenant le prochain créneau **du jour**, et à défaut le dernier
+    créneau **déjà passé du même jour**. Une réservation dans le passé proche
+    n'est pas un artifice : c'est ce qu'une journée de salon contient à 22 h.
+
+    **Ce qu'un créneau passé empêche, et ce qu'il n'empêche pas.** La
+    réservation se crée et la créatrice la confirme ; seul l'accord du commerce
+    refuse une heure dépassée, à juste titre — `trancher` lève `CreneauDepasse`,
+    et c'est une garde du produit qu'on ne contourne pas pour faire joli. Chez
+    un salon en validation, la ligne reste donc en attente : c'est un état vrai,
+    que la journée affiche, et qui montre exactement ce qui arrive quand on ne
+    tranche pas à temps.
+
+    **Jamais de repli sur demain.** Un salon sans le moindre créneau
+    aujourd'hui — fermé ce jour-là — rend `None`, et l'appelant le dit. Poser
+    une réservation au lendemain remplissait une journée que personne ne
+    regarde en démonstration.
 
     `maintenant` est un argument et non `datetime.now()` : c'est ce qui permet
     d'éprouver le choix à six heures du matin comme à minuit moins une, sans
     attendre l'heure qu'il faut.
     """
-    creneau = await _premier_creneau(session, business.id, catalog_item_id, depuis=maintenant)
-    if creneau is None:
-        return None
-
     fuseau = ZoneInfo(business.timezone)
-    fin_du_jour = datetime.combine(
-        maintenant.astimezone(fuseau).date(), time.min, tzinfo=fuseau
-    ) + timedelta(days=1)
-    return creneau, creneau < fin_du_jour
+    debut_du_jour = datetime.combine(maintenant.astimezone(fuseau).date(), time.min, tzinfo=fuseau)
+    fin_du_jour = debut_du_jour + timedelta(days=1)
+
+    a_venir = await _premier_creneau(session, business.id, catalog_item_id, depuis=maintenant)
+    if a_venir is not None and a_venir < fin_du_jour:
+        return a_venir, True
+
+    # La journée est finie chez ce salon : on redescend à ce qu'elle contenait.
+    # `limite` n'est pas posée — il faut le **dernier** créneau d'avant
+    # maintenant, donc les parcourir tous, et une journée en fait quelques
+    # dizaines.
+    passes = [
+        creneau.starts_at
+        for creneau in await availability_service.creneaux_libres(
+            session,
+            business_id=business.id,
+            catalog_item_id=catalog_item_id,
+            depuis=debut_du_jour,
+            horizon=fin_du_jour - debut_du_jour,
+        )
+        if creneau.starts_at < maintenant
+    ]
+    if not passes:
+        return None
+    return max(passes), True
 
 
 async def _mener(

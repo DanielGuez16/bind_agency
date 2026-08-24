@@ -1353,7 +1353,10 @@ def test_le_refus_du_garde_est_une_reponse_et_non_une_trace(
 #: d'ouverture : semé un samedi soir, un salon ouvert du mardi au samedi ne
 #: rouvre que trois jours plus tard. Sept jours couvrent le pire cas sans
 #: laisser passer une date lointaine.
-FENETRE_DU_PROCHAIN_CRENEAU = timedelta(days=7)
+#: La journée du commerce, dans son fuseau. Le semis promet cette fenêtre-là et
+#: aucune autre : « le prochain créneau ouvrable » laissait partir au lendemain
+#: tout salon déjà fermé, c'est-à-dire tous après 20 h.
+DAY = timedelta(days=1)
 
 
 async def test_chaque_commerce_ouvert_a_une_reservation_a_venir(
@@ -1367,19 +1370,19 @@ async def test_chaque_commerce_ouvert_a_une_reservation_a_venir(
     inutilisable : la caisse ne s'atteignait que depuis une ligne de la journée,
     et aucun code ne pouvait être validé.
 
-    **Ce que le semis promet, c'est le prochain créneau ouvrable** — aujourd'hui
-    si la journée le permet, le prochain jour d'ouverture sinon. Ce test exigeait
-    « aujourd'hui », ce que le produit ne promet pas : passé la dernière heure
-    réservable d'un salon, il n'y a plus de place et le semis reporte, comme il
-    le doit. Le test passait donc en journée et tombait le soir — et il n'a été
-    trouvé que parce qu'une intégration continue a tourné à 17 h 50 heure de
-    Miami. Une assertion qui dépend de l'heure qu'il est ne protège que
-    certaines heures.
+    **Ce que le semis promet est la journée courante, à toute heure.** Il
+    promettait « le prochain créneau ouvrable », donc le lendemain dès qu'un
+    salon avait fermé : semé à 22 h, dix-neuf réservations sur vingt partaient
+    demain et l'écran du comptoir était vide à l'heure où on le montre.
 
-    Ce qu'il vérifie donc, et qui est vrai à toute heure : **chaque commerce
-    ouvert a une réservation confirmée**, elle n'est **jamais derrière nous**, et
-    elle est **proche**. La première condition attrape le défaut d'origine — plus
-    aucune réservation nulle part — que les deux autres ne remplacent pas.
+    Il pose donc maintenant le créneau du jour, **quitte à le prendre derrière
+    nous**. Ce que ce test vérifie, et qui est vrai à toute heure : chaque
+    commerce ouvert a **une réservation dans sa journée courante**.
+
+    **Et non « confirmée ».** Une heure dépassée ne s'accepte pas — `trancher`
+    lève `CreneauDepasse`, à juste titre — donc chez un salon qui valide, une
+    réservation posée dans le passé du jour reste en attente. Exiger `confirmed`
+    reviendrait à exiger que le semis contourne une garde du produit.
     """
     commerces = (
         await seed_conn.execute(
@@ -1397,30 +1400,28 @@ async def test_chaque_commerce_ouvert_a_une_reservation_a_venir(
         # comptoir la montre encore.
         debut = datetime.combine(datetime.now(zone).date(), time.min, tzinfo=zone)
 
+        # **Tous les états, et c'est le point.** Chercher les `confirmed`
+        # excluait celles qu'un salon en validation n'a pas pu accepter parce
+        # que l'heure était passée — c'est-à-dire précisément celles que ce
+        # changement pose, et l'écran du comptoir les affiche.
         creneaux = (
             (
                 await seed_conn.execute(
-                    sa.select(Booking.starts_at).where(
-                        Booking.business_id == business_id,
-                        Booking.status == BookingStatus.CONFIRMED,
-                    )
+                    sa.select(Booking.starts_at).where(Booking.business_id == business_id)
                 )
             )
             .scalars()
             .all()
         )
 
-        assert creneaux, f"{nom} n'a aucune réservation confirmée"
+        assert creneaux, f"{nom} n'a aucune réservation"
 
-        # Au moins une au prochain créneau ouvrable : aujourd'hui, ou le jour
-        # d'ouverture suivant. Ni derrière nous, ni dans trois semaines.
-        a_venir = [
-            quand
-            for quand in creneaux
-            if debut <= quand.astimezone(zone) < debut + FENETRE_DU_PROCHAIN_CRENEAU
+        du_jour = [
+            quand for quand in creneaux if quand is not None and debut <= quand < debut + DAY
         ]
-        assert a_venir, (
-            f"{nom} n'a aucune réservation confirmée à venir : {[str(quand) for quand in creneaux]}"
+        assert du_jour, (
+            f"{nom} n'a aucune réservation dans sa journée courante : "
+            f"{[str(quand) for quand in creneaux]}"
         )
 
 
@@ -1430,21 +1431,22 @@ async def test_chaque_commerce_ouvert_a_une_reservation_a_venir(
 HEURES = (0, 6, 9, 11, 13, 17, 20, 22, 23)
 
 
-async def test_le_creneau_choisi_n_est_jamais_derriere_nous(
+async def test_le_creneau_choisi_est_toujours_du_jour_courant(
     seed_conn: AsyncConnection,
 ) -> None:
-    """Le défaut ne se voyait qu'à certaines heures, donc jamais en intégration.
+    """La journée courante à neuf heures différentes, dont trois où tout est fermé.
 
-    Le choix se faisait en deux passes : ce qui reste à partir de maintenant,
-    puis — à défaut — ce qui existait depuis l'ouverture. La seconde rendait un
-    créneau déjà passé ; la réservation l'acceptait, l'acceptation par le
-    commerce le refusait (`CreneauDepasse`), et le semis s'arrêtait au milieu de
-    son écriture. Avant midi il n'y avait rien à rattraper, donc rien à casser :
-    un test lancé le matin passait, et la commande échouait le soir.
+    **L'heure est un paramètre, et c'est ce qui rend ce test utile.** Le défaut
+    d'origine — un créneau choisi dans le passé que l'accord du commerce
+    refusait — ne se voyait qu'après midi : un test lancé le matin passait, et la
+    commande échouait le soir. Le parcours des heures a été gardé quand la
+    promesse a changé, parce que c'est lui qui l'éprouve.
 
-    Même piège que la réservation posée à « maintenant moins trois heures », qui
-    basculait sur la veille avant 3 h. L'heure est donc un paramètre, et le test
-    la parcourt au lieu de subir celle du moment.
+    Ce qui est vérifié maintenant est l'inverse de ce qu'il vérifiait : le
+    créneau est **toujours du jour courant**, y compris à minuit, à 22 h et à
+    23 h, où tous les salons de Miami sont fermés depuis longtemps. Un créneau
+    derrière nous y est le bon résultat, et le seul qui remplisse l'écran du
+    comptoir à l'heure où on le montre.
     """
     from app.seed_demo import prochain_creneau_reservable
 
@@ -1482,20 +1484,17 @@ async def test_le_creneau_choisi_n_est_jamais_derriere_nous(
                 session, business, item_id, maintenant=maintenant
             )
             assert choix is not None, (
-                f"{business.name} n'a aucun créneau à venir à {heure} h : "
+                f"{business.name} n'a aucun créneau ce jour-là à {heure} h : "
                 "la démonstration n'aurait aucune réservation dans ce salon"
             )
 
-            creneau, aujourd_hui = choix
-            # La propriété qui manquait, et la seule qui compte : jamais
-            # derrière nous. Un créneau passé se réserve encore et ne
-            # s'accepte plus.
-            assert creneau >= maintenant, (
-                f"{business.name} à {heure} h : créneau choisi dans le passé"
+            creneau, _ = choix
+            # **La propriété qui compte désormais : le jour, pas le sens.** Un
+            # créneau derrière nous est le bon résultat quand la journée est
+            # finie — c'est ce qu'une journée de salon contient à 22 h.
+            assert creneau.astimezone(fuseau).date() == maintenant.date(), (
+                f"{business.name} à {heure} h : créneau hors de la journée courante"
             )
-            # Et le drapeau dit la vérité sur le jour, celui du commerce.
-            attendu = creneau.astimezone(fuseau).date() == maintenant.date()
-            assert aujourd_hui is attendu
 
 
 def test_un_modele_versionne_qui_porte_des_valeurs_arrete_tout(tmp_path: Path) -> None:
