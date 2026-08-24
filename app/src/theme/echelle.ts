@@ -114,9 +114,30 @@ const variantes = (source: object, prefixe: string) =>
  * repères chiffrés — portent déjà leur préfixe : elles appartiennent au
  * produit et non à la marque, et l'écrire dans leur clé le rappelle.
  */
+const DU_SOCLE = variantes(brut.type, 'type.');
+const DU_PRODUIT = variantes(produitBrut.type, '');
+
+/**
+ * Les noms que les deux couches se disputent, s'il y en a.
+ *
+ * **`Object.fromEntries` garde le dernier, et le produit est étalé en dernier.**
+ * Une clé du produit qui porterait le nom d'une clé du socle l'écraserait donc
+ * **en silence** : même variante, autre taille, autre graisse, et aucun test ne
+ * bouge — le nom existe toujours, il ne désigne simplement plus la même chose.
+ *
+ * C'est un défaut plus grave qu'un nom mal choisi, parce qu'il ne se voit sur
+ * aucun écran isolé : il faut ouvrir les deux fichiers de jetons côte à côte, ce
+ * que personne ne fait. Il est exporté plutôt que levé — une exception au
+ * chargement ferait tomber l'application entière sur une faute qui appartient à
+ * la construction, et le moment de la dire est l'intégration continue.
+ */
+export const collisionsDeCouches: string[] = DU_SOCLE.map(([nom]) => nom).filter((nom) =>
+  DU_PRODUIT.some(([autre]) => autre === nom),
+);
+
 export const typography: Record<string, EchelleTypo> = Object.fromEntries([
-  ...variantes(brut.type, 'type.'),
-  ...variantes(produitBrut.type, ''),
+  ...DU_SOCLE,
+  ...DU_PRODUIT,
 ]);
 
 export type Variante = keyof typeof typography;

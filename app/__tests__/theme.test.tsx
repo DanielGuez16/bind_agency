@@ -30,6 +30,7 @@ import {
   matiereDeRole,
   produit,
   tokens,
+  collisionsDeCouches,
   typography,
   useTheme,
   type ColorName,
@@ -1294,5 +1295,35 @@ describe('l’avertissement, neutre et glyphé', () => {
       const source = readFileSync(join(RACINE, '..', fichier), 'utf-8');
       expect([fichier, /icone|Icone|GLYPHE/.test(source)]).toEqual([fichier, true]);
     }
+  });
+});
+
+/**
+ * Deux couches, un seul espace de noms.
+ *
+ * L'échelle typographique est une table plate : le socle préfixé `type.`, et le
+ * produit dont les clés portent déjà leur préfixe. Ce sont donc des **frères**,
+ * pas deux niveaux — et `Object.fromEntries` garde le dernier.
+ *
+ * **Une clé du produit qui porterait le nom d'une clé du socle l'écraserait en
+ * silence.** Même variante appelée, autre taille, autre graisse, et rien ne
+ * tombe : le nom existe toujours, il ne désigne simplement plus la même chose.
+ * C'est un défaut d'un genre particulier — il ne se voit sur aucun écran isolé,
+ * il faut ouvrir les deux fichiers de jetons côte à côte, ce que personne ne
+ * fait. Il survivra au lot qui l'a fait remarquer, d'où cette garde.
+ */
+describe('les deux couches de l’échelle', () => {
+  it('ne se disputent aucun nom', () => {
+    expect(collisionsDeCouches).toEqual([]);
+  });
+
+  it('et la table porte bien les deux, sans quoi la garde ne garderait rien', () => {
+    // **Le sens inverse.** Une garde sur un tableau vide passe aussi quand les
+    // deux couches sont vides, ou quand l'une n'est plus lue du tout : c'est
+    // exactement l'implémentation qu'on redoute — un `variantes()` qui rendrait
+    // `[]` sur le produit ferait taire la collision **et** perdrait quatre
+    // variantes, sans un seul rouge.
+    expect(typography['type.body']).toBeDefined();
+    expect(typography['type.code']).toBeDefined();
   });
 });
