@@ -11,7 +11,7 @@
  * `DecisionBar` demande un motif à chaque action qui n'est pas une approbation,
  * et ne peut pas être appelée sans.
  */
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 
 import { useRaccourcis } from '../shell/useRaccourcis';
@@ -67,51 +67,89 @@ export function TableRow({
   valeurs,
   actif,
   onPress,
+  fin,
   testID,
 }: {
   colonnes: Colonne[];
   valeurs: Record<string, string>;
   actif?: boolean;
   onPress?: () => void;
+  /**
+   * Ce que porte la fin de rangée, quand la valeur ne suffit pas.
+   *
+   * **Une fente plutôt qu'une seconde table.** L'annuaire d'administration
+   * pose un unique mot cliquable au bout de chaque ligne ; recopier la
+   * géométrie des colonnes à côté pour l'obtenir est exactement ainsi que deux
+   * tables finissent par ne plus s'aligner. La colonne correspondante se
+   * déclare dans `colonnes`, avec un libellé vide.
+   */
+  fin?: ReactNode;
   testID?: string;
 }) {
   const c = useColors();
+
+  /**
+   * **Sans geste, ce n'est pas un bouton.** La rangée était un `Pressable` de
+   * rôle « button » même sans `onPress` : un lecteur d'écran annonçait donc un
+   * bouton sur chaque ligne d'une table qui n'en portait aucun. C'est le
+   * contraire de la retenue qu'on cherche — la retenue s'obtient en n'offrant
+   * qu'une porte, pas en offrant une porte qui ne s'ouvre pas.
+   */
+  /**
+   * **Le style se calcule à part, et c'est obligatoire.** Un `View` ne résout
+   * pas une fonction de style : la lui passer laisse la fonction telle quelle,
+   * donc une rangée sans bordure, sans fond et sans hauteur — et rien ne lève.
+   * Seul le `Pressable` sait appeler la fonction pour connaître `pressed`.
+   */
+  const cellules = colonnes.map((colonne) => (
+    <View
+      key={colonne.cle}
+      style={{
+        width: colonne.largeur,
+        alignItems: colonne.chiffre ? 'flex-end' : 'flex-start',
+        paddingRight: colonne.chiffre ? GOUTTIERE : 0,
+      }}
+    >
+      <Texte
+        variante={colonne.chiffre ? 'type.data' : 'type.caption'}
+        ellipseSurNomPropre={!colonne.chiffre}
+      >
+        {valeurs[colonne.cle] ?? ''}
+      </Texte>
+    </View>
+  ));
+
+  const assiette = {
+    flexDirection: 'row' as const,
+    minHeight: 36,
+    alignItems: 'center' as const,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: c['line.default'],
+    backgroundColor: actif ? c['brand.50'] : 'transparent',
+    borderLeftWidth: 3,
+    borderLeftColor: actif ? c['brand.700'] : 'transparent',
+  };
+
+  if (!onPress) {
+    return (
+      <View testID={testID} style={assiette}>
+        {cellules}
+        {fin}
+      </View>
+    );
+  }
+
   return (
     <Pressable
       testID={testID}
       accessibilityRole="button"
       accessibilityState={{ selected: actif }}
       onPress={onPress}
-      style={({ pressed }) => ({
-        flexDirection: 'row',
-        minHeight: 36,
-        alignItems: 'center',
-        paddingHorizontal: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: c['line.default'],
-        backgroundColor: actif ? c['brand.50'] : 'transparent',
-        borderLeftWidth: 3,
-        borderLeftColor: actif ? c['brand.700'] : 'transparent',
-          opacity: pressed ? 0.7 : 1,
-        })}
+      style={({ pressed }) => ({ ...assiette, opacity: pressed ? 0.7 : 1 })}
     >
-      {colonnes.map((colonne) => (
-        <View
-          key={colonne.cle}
-          style={{
-            width: colonne.largeur,
-            alignItems: colonne.chiffre ? 'flex-end' : 'flex-start',
-            paddingRight: colonne.chiffre ? GOUTTIERE : 0,
-          }}
-        >
-          <Texte
-            variante={colonne.chiffre ? 'type.data' : 'type.caption'}
-            ellipseSurNomPropre={!colonne.chiffre}
-          >
-            {valeurs[colonne.cle] ?? ''}
-          </Texte>
-        </View>
-      ))}
+      {cellules}
+      {fin}
     </Pressable>
   );
 }

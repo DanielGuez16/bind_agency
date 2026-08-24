@@ -27,16 +27,18 @@
  * la faute que la liste existe pour empêcher, et elle serait invisible.
  */
 import { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { useApi, type CommerceVuParLAdministration } from '../api';
 import {
-  Button,
   EmptyState,
   SkeletonLignes,
   StatusMessage,
+  TableHeader,
+  TableRow,
   TextField,
   Texte,
+  type Colonne,
 } from '../components';
 import { useI18n } from '../i18n';
 import { motion, radius, useColors } from '../theme';
@@ -53,6 +55,14 @@ import { useRequete } from './useRequete';
  */
 export const PLAFOND = 100;
 
+/**
+ * La largeur du dernier bloc, celui qui porte le seul mot cliquable.
+ *
+ * Partagée par l'en-tête et la rangée : la colonne vide de l'un et la fente de
+ * l'autre lisent la même valeur, et ne peuvent donc pas se désaligner.
+ */
+const LARGEUR_ACTION = 104;
+
 /** Le libellé d'un état, quel qu'il soit. */
 const ETATS: Record<string, string> = {
   draft: 'admin.commerceDraft',
@@ -61,9 +71,28 @@ const ETATS: Record<string, string> = {
   suspended: 'admin.commerceSuspended',
 };
 
+/**
+ * Quatre faits, et rien de plus.
+ *
+ * Ce n'est pas la fiche du salon : elle existe et se lit derrière une reprise
+ * ouverte. Ce qu'il faut ici est de reconnaître le bon parmi cent — un nom, un
+ * quartier, un état — et de savoir si on est déjà dedans.
+ *
+ * La dernière colonne n'a pas de libellé : elle tient la place du seul mot
+ * cliquable de la rangée, et un en-tête au-dessus d'un lien le ferait lire
+ * comme une donnée.
+ */
+const COLONNES = (t: (cle: string) => string): Colonne[] => [
+  { cle: 'nom', label: t('admin.commercesColonneNom'), largeur: 300 },
+  { cle: 'quartier', label: t('admin.commercesColonneQuartier'), largeur: 170 },
+  { cle: 'etat', label: t('admin.commercesColonneEtat'), largeur: 150 },
+  { cle: 'action', label: '', largeur: LARGEUR_ACTION },
+];
+
 export function CommercesScreen() {
   const { api } = useApi();
   const { t } = useI18n();
+  const c = useColors();
 
   /**
    * La saisie et la question, séparées.
@@ -118,116 +147,129 @@ export function CommercesScreen() {
       }
     >
       {(commerces) => (
-        <View style={{ gap: 8 }}>
-          {commerces.map((commerce) => (
-            <Ligne
-              key={commerce.business_id}
-              commerce={commerce}
-              ouvert={ouvert === commerce.business_id}
-              onOuvrir={() =>
-                setOuvert(ouvert === commerce.business_id ? null : commerce.business_id)
-              }
-            />
-          ))}
+        <View style={{ gap: 14 }}>
+          <View
+            style={{
+              borderRadius: radius['radius.lg'],
+              borderWidth: 1,
+              borderColor: c['line.default'],
+              backgroundColor: c['bg.surface'],
+              overflow: 'hidden',
+            }}
+          >
+            <TableHeader colonnes={COLONNES(t)} testID="entete-commerces" />
+            {commerces.map((commerce) => (
+              <Rangee
+                key={commerce.business_id}
+                commerce={commerce}
+                colonnes={COLONNES(t)}
+                ouvert={ouvert === commerce.business_id}
+                onOuvrir={() =>
+                  setOuvert(ouvert === commerce.business_id ? null : commerce.business_id)
+                }
+              />
+            ))}
+          </View>
 
-          {/* **Le bord de la liste, dit.** Sans cette ligne, un salon au-delà
-              du centième se lit comme un salon qui n'existe pas — et c'est
-              précisément ce qu'on vient vérifier ici. */}
-          {commerces.length >= PLAFOND ? (
-            <StatusMessage
-              level="neutral"
-              body={t('admin.commercesPlafond', { count: PLAFOND })}
-              testID="plafond-commerces"
-            />
-          ) : null}
+          {/* **Le compte de la recherche, sous la liste.** Il dit d'abord
+              combien de lignes on regarde ; et quand la liste touche son bord,
+              il dit le plafond **avec son remède** — resserrer le nom plutôt
+              que défiler. Sans le remède, la phrase constate une limite sans
+              donner de conduite, et un salon au-delà du centième se lit comme
+              un salon qui n'existe pas. */}
+          <Texte variante="type.caption" couleur="ink.soft" testID="compte-commerces">
+            {commerces.length >= PLAFOND
+              ? t('admin.commercesPlafond', { count: PLAFOND })
+              : t('admin.commercesCompte', { count: commerces.length })}
+          </Texte>
+
+          {/* **Lire une ligne n'ouvre rien**, et c'est la propriété qui permet
+              de rendre cette liste large. La dire vaut mieux que la faire
+              deviner : un administrateur qui croit pouvoir consulter cherche où
+              cliquer, et c'est ce doute qui use la retenue. */}
+          <StatusMessage
+            level="neutral"
+            title={t('admin.commercesLireTitre')}
+            body={t('admin.commercesLireCorps')}
+            testID="lire-n-ouvre-rien"
+          />
         </View>
       )}
     </Ecran>
   );
 }
 
-function Ligne({
+/**
+ * Une rangée : quatre faits, et un seul mot cliquable.
+ *
+ * **La retenue s'obtient en n'offrant qu'une porte, pas en avertissant.** Aucune
+ * ligne ne s'ouvre — ni la rangée, ni le nom, ni l'état. Ce qui existe est
+ * « reprendre », qui coûte un motif écrit à la main et que le salon lira mot
+ * pour mot. Un écran qui laisserait consulter puis dirait « attention » aurait
+ * déjà laissé consulter.
+ */
+function Rangee({
   commerce,
+  colonnes,
   ouvert,
   onOuvrir,
 }: {
   commerce: CommerceVuParLAdministration;
+  colonnes: Colonne[];
   ouvert: boolean;
   onOuvrir: () => void;
 }) {
   const { t } = useI18n();
   const c = useColors();
 
-  const situe = [
-    commerce.neighborhood ? t(`quartiers.${commerce.neighborhood}`) : null,
-    t(ETATS[commerce.status] ?? 'etats.detailIndisponible'),
-  ]
-    .filter(Boolean)
-    .join(' · ');
-
   return (
-    <View
-      testID={`commerce-${commerce.business_id}`}
-      /* **Une ligne, et non une carte.** Les trois marques d'une carte — fond
-         de surface, rayon de 18, filet — obligent à l'ombre, et cent cartes à
-         ombre dans une liste qu'on parcourt sont exactement le défaut qu'on
-         vient de corriger ailleurs. Ce qu'on fait ici est reconnaître un nom
-         parmi cent ; un filet en pied sépare, sans poser cent objets. */
-      style={{
-        gap: 12,
-        paddingVertical: 14,
-        borderBottomWidth: 1,
-        borderBottomColor: c['line.default'],
-      }}
-    >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Texte variante="type.bodyStrong" ellipseSurNomPropre>
-            {commerce.name}
-          </Texte>
-          <Texte variante="type.caption" couleur="ink.soft">
-            {situe}
-          </Texte>
-        </View>
-
-        {/* **« Tu es déjà dedans », et rien sur les collègues.** Le champ est
-            vrai pour l'appelant seul : savoir qu'un autre est entré ne change
-            pas ce que je peux faire, et l'afficher inviterait à se demander
-            pourquoi lui plutôt que moi. Ce qu'il empêche est d'ouvrir une
-            seconde reprise sur un salon où l'on est déjà. */}
-        {commerce.reprise_en_cours ? (
-          <View
-            testID={`reprise-en-cours-${commerce.business_id}`}
-            style={{
-              paddingHorizontal: 8,
-              paddingVertical: 3,
-              borderRadius: radius['radius.sm'],
-              backgroundColor: c['status.success.surface'],
-            }}
-          >
-            <Texte variante="type.dataLabel" couleur="status.success.text">
-              {t('admin.commerceRepriseEnCours')}
-            </Texte>
+    <View>
+      <TableRow
+        testID={`commerce-${commerce.business_id}`}
+        colonnes={colonnes}
+        valeurs={{
+          nom: commerce.name,
+          quartier: commerce.neighborhood ? t(`quartiers.${commerce.neighborhood}`) : '—',
+          etat: t(ETATS[commerce.status] ?? 'etats.detailIndisponible'),
+        }}
+        fin={
+          <View style={{ width: LARGEUR_ACTION, alignItems: 'flex-end' }}>
+            {commerce.reprise_en_cours ? (
+              /* **« Tu es déjà dedans », et rien sur les collègues.** Le champ
+                 est vrai pour l'appelant seul : savoir qu'un autre est entré ne
+                 change pas ce que je peux faire, et l'afficher inviterait à se
+                 demander pourquoi lui plutôt que moi. */
+              <Texte
+                variante="type.dataLabel"
+                couleur="status.success.text"
+                testID={`reprise-en-cours-${commerce.business_id}`}
+              >
+                {t('admin.commerceRepriseEnCours')}
+              </Texte>
+            ) : (
+              <Pressable
+                accessibilityRole="button"
+                onPress={onOuvrir}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                testID={`reprendre-${commerce.business_id}`}
+                style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+              >
+                <Texte variante="type.caption" couleur="brand.700" style={{ fontWeight: '600' }}>
+                  {ouvert ? t('admin.commerceFermer') : t('reprise.entrer')}
+                </Texte>
+              </Pressable>
+            )}
           </View>
-        ) : (
-          <View style={{ flexDirection: 'row' }}>
-            <Button
-              label={ouvert ? t('admin.commerceFermer') : t('reprise.entrer')}
-              size="sm"
-              variant="ghost"
-              fullWidth={false}
-              onPress={onOuvrir}
-              testID={`reprendre-${commerce.business_id}`}
-            />
-          </View>
-        )}
-      </View>
+        }
+      />
 
-      {/* Le formulaire, sous la ligne qu'il concerne. Le même qu'à la tournée :
+      {/* Le formulaire, sous la rangée qu'il concerne. Le même qu'à la tournée :
           deux formulaires de reprise finiraient par ne plus dire la même chose
           au salon, et c'est le motif mot pour mot qui fait tout le mécanisme. */}
       {ouvert && !commerce.reprise_en_cours ? (
-        <ReprendreLeCompte businessId={commerce.business_id} nomDuSalon={commerce.name} />
+        <View style={{ padding: 16, backgroundColor: c['bg.inset'] }}>
+          <ReprendreLeCompte businessId={commerce.business_id} nomDuSalon={commerce.name} />
+        </View>
       ) : null}
     </View>
   );

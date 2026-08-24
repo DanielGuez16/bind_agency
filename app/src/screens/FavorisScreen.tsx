@@ -31,8 +31,9 @@
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { useApi, type EtatDuFavori, type Favori } from '../api';
-import { Icone, Photo, SkeletonLignes, StatusMessage, Texte, Toggle } from '../components';
+import { useApi, type EtatDuFavori, type Favori, type ProchainPalier, type VueDesPaliers } from '../api';
+import { Button, Icone, Photo, SkeletonLignes, StatusMessage, Texte, Toggle } from '../components';
+import { formatNumber } from '../format';
 import { useI18n } from '../i18n';
 import { useSession } from '../session';
 import { elevationDeCarte, radius, size, useColors } from '../theme';
@@ -59,15 +60,49 @@ const CONDUITES: Record<EtatDuFavori, { cle: string; niveau: 'neutral' | 'warnin
   hors_palier: { cle: 'favoris.etatHorsPalier', niveau: 'warning' },
 };
 
+/**
+ * L'écart, quand il est mesurable, et le seul geste qui existe.
+ *
+ * **Une liste suffit, à une ligne près.** Porter le projet d'une créatrice
+ * demanderait un objectif, une progression et une date estimée — et le produit
+ * refuse déjà de projeter un délai sur l'écran des paliers, où la règle des
+ * 60 % l'interdit. Un écran de favoris qui promettrait mieux serait la seule
+ * page du produit à annoncer un avenir.
+ *
+ * Mais une liste plate laisse la créatrice sans savoir **de quel côté** vient
+ * le déblocage. Une seule des trois raisons dépend d'elle — le palier monte
+ * avec son audience — et les deux autres ne dépendent que du salon. C'est
+ * pourquoi la distinction se voit : sur une seule des trois lignes il y a
+ * quelque chose à faire, et cette ligne-là chiffre l'écart et mène aux paliers.
+ *
+ * **Le chiffre est déjà publié ailleurs.** Il vient de la vue des paliers, la
+ * même que l'écran des paliers rend : la ligne ne promet donc rien de neuf,
+ * elle **situe**.
+ */
 export function FavorisScreen({
   onRetour,
   onOuvrirLeCommerce,
+  onVoirMesPaliers,
 }: {
   onRetour: () => void;
   onOuvrirLeCommerce: (businessId: string) => void;
+  onVoirMesPaliers: () => void;
 }) {
   const { api } = useApi();
   const { t } = useI18n();
+
+  /**
+   * Les paliers, pour la seule ligne qui chiffre.
+   *
+   * **Sa propre requête, et elle ne bloque rien.** Si elle échoue, la liste des
+   * favoris s'affiche entière : le chiffre est un repère, pas une condition. Le
+   * faire entrer dans la requête principale ferait payer les paliers à chaque
+   * ouverture, y compris quand aucun favori n'est hors palier.
+   */
+  const paliers = useRequete<VueDesPaliers>((signal) => api.mesPaliers({}, signal), {
+    estVide: () => false,
+  });
+  const prochain = paliers.etat === 'pret' ? paliers.donnees.prochain_palier : null;
 
   const requete = useRequete<Favori[]>((signal) => api.mesFavoris(signal), {
     estVide: (favoris) => favoris.length === 0,
@@ -134,15 +169,19 @@ export function FavorisScreen({
               testID="favori-non-retire"
             />
           )}
-          <AvisDeFavori />
+          <AvisDeFavori
+            enAttente={favoris.filter((favori) => favori.etat !== 'reservable').length}
+          />
           {favoris
             .filter((favori) => !retires.includes(favori.catalog_item_id))
             .map((favori) => (
               <LigneDuFavori
                 key={favori.catalog_item_id}
                 favori={favori}
+                prochain={prochain}
                 onOuvrir={() => onOuvrirLeCommerce(favori.business_id)}
                 onRetirer={() => retirer(favori.catalog_item_id, favori.name)}
+                onVoirMesPaliers={onVoirMesPaliers}
               />
             ))}
         </View>
@@ -153,18 +192,34 @@ export function FavorisScreen({
 
 function LigneDuFavori({
   favori,
+  prochain,
   onOuvrir,
   onRetirer,
+  onVoirMesPaliers,
 }: {
   favori: Favori;
+  /** Le prochain palier de la créatrice, ou rien tant qu'on ne le sait pas. */
+  prochain: ProchainPalier | null;
   onOuvrir: () => void;
   onRetirer: () => void;
+  onVoirMesPaliers: () => void;
 }) {
   const { api } = useApi();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const c = useColors();
 
   const conduite = CONDUITES[favori.etat] ?? null;
+
+  /**
+   * L'écart, ou rien.
+   *
+   * **`ecart` et non `requis` moins `constate`.** Le serveur le calcule déjà, et
+   * refaire la soustraction ici ferait deux calculs de la même chose, qui
+   * finissent par diverger. Nul quand le serveur ne le chiffre pas — la règle
+   * des 60 % — et la ligne se tait alors plutôt que d'arrondir.
+   */
+  const ecart =
+    prochain?.obstacle?.ecart == null ? null : formatNumber(Number(prochain.obstacle.ecart), locale);
 
   return (
     <View
@@ -259,6 +314,34 @@ function LigneDuFavori({
           testID={`favori-etat-${favori.catalog_item_id}`}
         />
       ) : null}
+
+      {/* **La seule ligne de l'écran qui porte un geste.** Elle ne se rend que
+          sur `hors_palier` : c'est la seule des trois raisons qui dépende de la
+          créatrice. « Le salon n'est pas listé » et « l'offre est fermée » ne
+          portent aucun bouton, parce qu'aucun canal ne va d'elle vers un salon
+          — et un bouton qui n'existe pas est pire qu'un fait nu.
+
+          Elle ne se rend pas non plus sans écart chiffrable : la règle des
+          60 % de l'écran des paliers interdit d'annoncer un horizon quand le
+          compte est loin, et cet écran n'a aucune raison d'en dire plus. */}
+      {favori.etat === 'hors_palier' && ecart !== null ? (
+        <View style={{ gap: 8, alignItems: 'flex-start' }}>
+          <Texte variante="type.caption" testID={`favori-ecart-${favori.catalog_item_id}`}>
+            {t('favoris.ecartJusquAuPalier', {
+              palier: t(`parcours.format_${prochain?.content_format}`),
+              ecart,
+            })}
+          </Texte>
+          <Button
+            label={t('favoris.voirMesPaliers')}
+            size="sm"
+            variant="secondary"
+            fullWidth={false}
+            onPress={onVoirMesPaliers}
+            testID={`favori-vers-paliers-${favori.catalog_item_id}`}
+          />
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -275,7 +358,7 @@ function LigneDuFavori({
  * attend le réseau se presse deux fois, et le second appui annule le premier.
  * Il revient si le serveur refuse.
  */
-function AvisDeFavori() {
+function AvisDeFavori({ enAttente }: { enAttente: number }) {
   const { t } = useI18n();
   const session = useSession();
   const c = useColors();
@@ -302,9 +385,19 @@ function AvisDeFavori() {
         backgroundColor: c['bg.inset'],
       }}
     >
-      <Texte variante="type.caption" couleur="ink.soft" style={{ flex: 1, minWidth: 0 }}>
-        {t('favoris.avisCorps')}
-      </Texte>
+      <View style={{ flex: 1, minWidth: 0, gap: 1 }}>
+        <Texte variante="type.bodyStrong">{t('favoris.avisCorps')}</Texte>
+        {/* **Il compte ce à quoi il sert, donc il se justifie sans notice.**
+            Un interrupteur qui annonce ce qu'il fera pour trois lignes précises
+            de la liste qu'on regarde n'a pas besoin qu'on explique à quoi il
+            sert. Et à zéro, il se tait plutôt que d'écrire « 0 » — le compte
+            n'est là que pour dire qu'il y a de quoi attendre. */}
+        {enAttente > 0 ? (
+          <Texte variante="type.caption" couleur="ink.soft" testID="avis-compte">
+            {t('favoris.avisEnAttente', { count: enAttente })}
+          </Texte>
+        ) : null}
+      </View>
       <Toggle
         value={actif}
         accessibilityLabel={t('favoris.avisLabel')}

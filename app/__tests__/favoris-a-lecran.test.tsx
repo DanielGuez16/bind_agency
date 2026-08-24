@@ -7,7 +7,7 @@
  * un salon qui ne paraît plus n'est dans aucun fil, donc son favori n'aurait
  * **jamais** pu être retiré, et la liste se remplit une fois pour toutes.
  */
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
 import { ApiClient, ApiProvider, type Favori } from '../src/api';
 import { I18nProvider } from '../src/i18n';
@@ -46,6 +46,15 @@ async function monter(
   surRetrait?: (init?: RequestInit) => Response | Promise<Response>,
   avisActifs = true,
   /**
+   * La vue des paliers, d'où vient le chiffre de la seule ligne qui agit.
+   *
+   * Sans prochain palier par défaut : c'est l'état le plus fréquent — une
+   * créatrice au sommet, ou dont l'écart n'est pas chiffrable — et le décor
+   * doit partir de là, sans quoi chaque test hériterait d'une ligne d'écart
+   * qu'il n'a pas demandée.
+   */
+  paliers: unknown = { prochain_palier: null },
+  /**
    * Le `PATCH` ne répond jamais.
    *
    * **C'est le seul décor qui sépare les deux implémentations.** Avec un double
@@ -57,6 +66,7 @@ async function monter(
 ) {
   const appels: { url: string; methode: string }[] = [];
   const ouvertures: string[] = [];
+  const paliersOuverts: number[] = [];
   const api = new ApiClient({
     baseUrl: 'https://api.test',
     coffre: { lire: async () => null, ecrire: async () => {} },
@@ -65,6 +75,14 @@ async function monter(
       appels.push({ url: String(url), methode });
       if (methode === 'DELETE') {
         return surRetrait?.(init) ?? ({ ok: true, status: 204, json: async () => null } as Response);
+      }
+      // **La table nommée avant le repli.** L'écran lit aussi les paliers, pour
+      // chiffrer l'écart de la seule ligne qui porte un geste. Sans cette
+      // branche, `/me/tiers` recevait la liste des favoris — un tableau, donc
+      // `prochain_palier` valait `undefined`, donc la ligne ne se rendait
+      // jamais et personne ne l'aurait vu.
+      if (String(url).includes('/me/tiers')) {
+        return { ok: true, status: 200, json: async () => paliers } as Response;
       }
       return { ok: true, status: 200, json: async () => favoris } as Response;
     }) as unknown as typeof fetch,
@@ -107,13 +125,14 @@ async function monter(
             <FavorisScreen
               onRetour={() => {}}
               onOuvrirLeCommerce={(id) => ouvertures.push(id)}
+              onVoirMesPaliers={() => paliersOuverts.push(1)}
             />
           </ApiProvider>
         </SessionProvider>
       </ThemeProvider>
     </I18nProvider>,
   );
-  return { appels, ouvertures };
+  return { appels, ouvertures, paliersOuverts };
 }
 
 describe('une prestation qui n’est plus réservable reste, avec sa raison', () => {
@@ -227,10 +246,19 @@ describe('la liste se relit d’où l’on est', () => {
     // confié.
     const { appels } = await monter([favori()]);
 
-    const lecture = appels.find((a) => a.methode === 'GET');
-    expect(lecture?.url).toContain('/me/favorites');
+    // **La lecture nommée, et non la première venue.** L'écran fait deux GET
+    // depuis qu'il lit aussi les paliers pour chiffrer un écart ; prendre la
+    // première ferait porter l'assertion sur l'autre requête, et le jour où
+    // celle des favoris repartirait avec une position, personne ne le verrait.
+    const lecture = appels.find((a) => a.methode === 'GET' && a.url.includes('/me/favorites'));
+    expect(lecture).toBeDefined();
     expect(lecture?.url).not.toContain('longitude');
     expect(lecture?.url).not.toContain('rayon');
+
+    // Et celle des paliers non plus : elle accepte une position, l'écran ne
+    // lui en donne pas — un favori posé à Wynwood se relit depuis Kendall.
+    const paliers = appels.find((a) => a.methode === 'GET' && a.url.includes('/me/tiers'));
+    expect(paliers?.url).not.toContain('longitude');
   });
 });
 
@@ -291,5 +319,91 @@ describe('l’avis de favori, et lui seul', () => {
     await monter([favori()], undefined, false);
 
     expect((await screen.findByTestId('avis-de-favori-interrupteur')).props.accessibilityState?.checked).toBe(false);
+  });
+});
+
+/**
+ * Une liste suffit, à une ligne près.
+ *
+ * **Porter le projet d'une créatrice demanderait un objectif et une date**, et
+ * le produit refuse déjà de projeter un délai sur l'écran des paliers, où la
+ * règle des 60 % l'interdit. Un écran de favoris qui promettrait mieux serait
+ * la seule page du produit à annoncer un avenir.
+ *
+ * Mais une liste plate laisse sans savoir **de quel côté** vient le déblocage.
+ * Une seule des trois raisons dépend de la créatrice — le palier monte avec son
+ * audience — et les deux autres ne dépendent que du salon. C'est cette
+ * distinction que ces tests tiennent.
+ */
+describe('la seule ligne qui porte un geste', () => {
+  const PROCHAIN = {
+    prochain_palier: {
+      tier_id: 't3',
+      platform: 'instagram',
+      content_format: 'reel',
+      obstacle: { raison: 'not_enough_followers', requis: 50000, constate: 32000, ecart: 18000 },
+    },
+  };
+
+  it('chiffre l’écart et mène aux paliers', async () => {
+    const vue = await monter([favori({ etat: 'hors_palier' })], undefined, true, PROCHAIN);
+    await waitFor(() => expect(screen.getByTestId('favori-ecart-i1')).toBeTruthy());
+
+    // Le chiffre vient de la vue des paliers, pas d'un calcul refait ici.
+    expect(screen.getByTestId('favori-ecart-i1')).toHaveTextContent(/18,000/);
+
+    await act(async () => {
+      await fireEvent.press(screen.getByTestId('favori-vers-paliers-i1'));
+    });
+    expect(vue.paliersOuverts).toHaveLength(1);
+  });
+
+  it('et se tait quand le salon décide, pas elle', async () => {
+    // **Le cas où les deux implémentations divergent.** Rendre la ligne sur
+    // toute prestation non réservable passerait le test du dessus tout aussi
+    // bien — et poserait un bouton là où aucun canal ne va de la créatrice vers
+    // un salon. Un bouton qui n'existe pas est pire qu'un fait nu.
+    for (const etat of ['salon_indisponible', 'fermee'] as const) {
+      await monter([favori({ etat })], undefined, true, PROCHAIN);
+      await waitFor(() => expect(screen.getByTestId('favori-etat-i1')).toBeTruthy());
+
+      expect(screen.queryByTestId('favori-ecart-i1')).toBeNull();
+      expect(screen.queryByTestId('favori-vers-paliers-i1')).toBeNull();
+    }
+  });
+
+  it('et se tait aussi quand l’écart n’est pas chiffrable', async () => {
+    // La règle des 60 % de l'écran des paliers : au-delà, le serveur ne chiffre
+    // pas, et cet écran n'a aucune raison d'en dire plus que celui dont il
+    // reprend le nombre.
+    await monter([favori({ etat: 'hors_palier' })], undefined, true, {
+      prochain_palier: { ...PROCHAIN.prochain_palier, obstacle: { raison: 'x', ecart: null } },
+    });
+    await waitFor(() => expect(screen.getByTestId('favori-etat-i1')).toBeTruthy());
+
+    expect(screen.queryByTestId('favori-ecart-i1')).toBeNull();
+  });
+});
+
+describe('l’interrupteur compte ce à quoi il sert', () => {
+  it('dit combien attendent', async () => {
+    await monter([
+      favori({ catalog_item_id: 'i1', etat: 'hors_palier' }),
+      favori({ catalog_item_id: 'i2', etat: 'fermee' }),
+      favori({ catalog_item_id: 'i3', etat: 'reservable' }),
+    ]);
+    await waitFor(() => expect(screen.getByTestId('avis-compte')).toBeTruthy());
+
+    expect(screen.getByTestId('avis-compte')).toHaveTextContent(/\b2\b/);
+  });
+
+  it('et se tait à zéro plutôt que d’écrire « 0 »', async () => {
+    // **Le cas qui fait diverger.** Un compte rendu sans condition passerait le
+    // test du dessus. « 0 en attente » sur une liste entièrement réservable est
+    // du bruit : le compte n'est là que pour dire qu'il y a de quoi attendre.
+    await monter([favori({ etat: 'reservable' })]);
+    await waitFor(() => expect(screen.getByTestId('avis-de-favori-interrupteur')).toBeTruthy());
+
+    expect(screen.queryByTestId('avis-compte')).toBeNull();
   });
 });

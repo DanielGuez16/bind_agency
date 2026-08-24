@@ -110,6 +110,25 @@ describe('la liste des salons', () => {
     await waitFor(() => expect(screen.getByTestId('reprendre-le-compte')).toBeTruthy());
   });
 
+  it('n’ouvre aucune ligne, et ne propose qu’un mot', async () => {
+    // **La retenue s'obtient en n'offrant qu'une porte, pas en avertissant.**
+    // Un écran qui laisserait consulter puis dirait « attention » aurait déjà
+    // laissé consulter. Ce qui existe est « reprendre », qui coûte un motif
+    // écrit à la main et que le salon lira mot pour mot.
+    //
+    // La rangée n'est donc pas pressable — et ne s'annonce pas comme telle : un
+    // `Pressable` de rôle « button » sans geste fait dire à un lecteur d'écran
+    // qu'il y a un bouton sur chaque ligne d'une table qui n'en porte aucun.
+    await monter(clientDe(() => [salon()]));
+    await waitFor(() => expect(screen.getByTestId('commerce-b1')).toBeTruthy());
+
+    expect(screen.getByTestId('commerce-b1').props.accessibilityRole).toBeUndefined();
+    expect(screen.getByTestId('commerce-b1').props.onPress).toBeUndefined();
+
+    // Et le seul geste de la rangée est celui-là.
+    expect(screen.getByTestId('reprendre-b1')).toBeTruthy();
+  });
+
   it('dit qu’on est déjà dedans, et ne propose pas d’y entrer deux fois', async () => {
     // Le champ est vrai pour **l'appelant** : savoir qu'un collègue est entré
     // ne change pas ce que je peux faire. Ce qu'il empêche est d'ouvrir une
@@ -163,15 +182,21 @@ describe('la recherche', () => {
 });
 
 describe('le bord de la liste', () => {
-  it('se dit quand elle est pleine', async () => {
+  it('se dit avec son remède', async () => {
     // **Sans cette ligne, un salon au-delà du centième se lit comme un salon
-    // qui n'existe pas** — et c'est précisément ce qu'on vient vérifier ici.
+    // qui n'existe pas.** Et sans son remède elle constate une limite sans
+    // donner de conduite : « resserrer le nom » est ce qui distingue un plafond
+    // d'un cul-de-sac, sur un écran dont c'est justement la question.
     await monter(
       clientDe(() =>
         Array.from({ length: PLAFOND }, (_, i) => salon({ business_id: `b${i}` })),
       ),
     );
-    await waitFor(() => expect(screen.getByTestId('plafond-commerces')).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId('commerce-b0')).toBeTruthy());
+
+    const compte = screen.getByTestId('compte-commerces');
+    expect(compte).toHaveTextContent(fragment(String(PLAFOND)));
+    expect(compte).toHaveTextContent(/narrow the name/i);
   });
 
   it('et se tait quand elle ne l’est pas', async () => {
@@ -185,6 +210,6 @@ describe('le bord de la liste', () => {
     );
     await waitFor(() => expect(screen.getByTestId('commerce-b0')).toBeTruthy());
 
-    expect(screen.queryByTestId('plafond-commerces')).toBeNull();
+    expect(screen.getByTestId('compte-commerces')).not.toHaveTextContent(/narrow the name/i);
   });
 });

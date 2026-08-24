@@ -10494,3 +10494,37 @@ rendu le signalement invérifiable pendant une heure : la route était éprouvé
 par pytest, l'écran par des doubles Jest, et la jonction par personne. Un double
 répond ce qu'on lui fait dire — le chemin de la route, la forme du corps envoyé
 et la relecture sont exactement ce qu'il rend invisible.
+
+---
+
+## 2026-08-24 — Un code qui a l'air de faire quelque chose est plus dur à trouver qu'un code absent
+
+En branchant la veille et la luminosité de l'écran de code, la couture était
+déjà là : `CodeScreen` appelait `activer()` en prenant le focus et
+`desactiver()` en le perdant, depuis des semaines. Une propriété, un `useEffect`,
+un nettoyage au démontage — tout ce qu'on écrit quand on fait la chose. Seule
+l'implémentation n'existait pas : la propriété était optionnelle, aucun appelant
+ne la remplissait, et les deux modules n'étaient pas installés.
+
+**C'est ce qui explique que le défaut ait survécu si longtemps.** Une relecture
+de `CodeScreen` montre un écran qui garde l'appareil éveillé. Une recherche du
+mot « keepAwake » le trouve, avec un jeton à `true` à côté. Rien ne dit que la
+chaîne s'arrête au dernier maillon — sauf à suivre la propriété jusqu'à son
+appelant, ce que personne ne fait sur du code qui a l'air complet.
+
+Un manque franc se cherche : l'écran n'aurait rien appelé, et la question
+« où est-ce fait ? » n'aurait trouvé aucune réponse. Une couture vide répond à
+la question par un endroit qui a la bonne forme.
+
+**La leçon générale.** Les trois états ne se valent pas :
+
+1. **Absent** — se cherche, et se trouve.
+2. **Présent et non gardé** — marche, et peut casser.
+3. **Déclaré et non implémenté** — ne marche pas, et se lit comme si.
+
+Le troisième est le pire, et c'est celui qu'aucune relecture n'attrape. Deux
+signes le trahissent, et les deux étaient là : une propriété optionnelle que
+personne ne passe, et un jeton de configuration à `true` qui n'a pas d'appelant.
+La garde des routes sans appelant existe pour la même raison, un étage plus
+haut ; celle des champs servis aussi. Il manquait la même chose sur une couture
+interne.

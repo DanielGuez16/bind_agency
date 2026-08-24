@@ -347,7 +347,7 @@ const ECRANS = [
     // Ce que le cœur ouvre. Une seule route, sans coordonnées : un favori posé
     // à Wynwood doit se relire depuis Kendall.
     nom: 'favoris',
-    noeud: <FavorisScreen onRetour={() => {}} onOuvrirLeCommerce={() => {}} />,
+    noeud: <FavorisScreen onRetour={() => {}} onOuvrirLeCommerce={() => {}} onVoirMesPaliers={() => {}} />,
     plein: { '/me/favorites': [FAVORI] },
     vide: { '/me/favorites': [] },
   },

@@ -346,6 +346,7 @@ function ParcoursCreateur({
           <FavorisScreen
             onRetour={() => navigation.goBack()}
             onOuvrirLeCommerce={(businessId) => navigation.navigate('Fiche', { businessId })}
+            onVoirMesPaliers={() => navigation.navigate('Paliers')}
           />
         )}
       </PileCreateur.Screen>
