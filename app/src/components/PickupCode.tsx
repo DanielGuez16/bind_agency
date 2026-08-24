@@ -267,6 +267,12 @@ export function PickupCodeSurface({
  * **En blanc à très faible opacité, pas en couleur.** L'écran du code ignore le
  * thème et tient son contraste de 21:1 ; y poser une teinte le romprait.
  */
+/**
+ * Une demi-respiration du halo. Longue exprès : sur un écran qu'on tend à
+ * quelqu'un, un battement rapide se lit comme une alerte.
+ */
+const HALO_DEMI_SOUFFLE = 4000;
+
 function Halo() {
   const reduit = useMouvementReduit();
   const souffle = useRef(new Animated.Value(0)).current;
@@ -277,13 +283,13 @@ function Halo() {
       Animated.sequence([
         Animated.timing(souffle, {
           toValue: 1,
-          duration: 4000,
+          duration: HALO_DEMI_SOUFFLE,
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
         }),
         Animated.timing(souffle, {
           toValue: 0,
-          duration: 4000,
+          duration: HALO_DEMI_SOUFFLE,
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
         }),

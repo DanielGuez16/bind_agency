@@ -24,7 +24,7 @@
 import { useEffect, useRef } from 'react';
 import { Animated, Easing, Pressable, View, type ViewStyle } from 'react-native';
 
-import { radius, size, useColors } from '../theme';
+import { motion, radius, size, useColors } from '../theme';
 import { useEnfoncement } from './Mouvement';
 import { Texte } from './Texte';
 
@@ -168,7 +168,7 @@ function Anneau({ couleur }: { couleur: string }) {
     const boucle = Animated.loop(
       Animated.timing(tour, {
         toValue: 1,
-        duration: 800,
+        duration: motion.anneau,
         easing: Easing.linear,
         useNativeDriver: true,
       }),

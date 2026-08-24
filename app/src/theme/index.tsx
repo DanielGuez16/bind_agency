@@ -251,6 +251,7 @@ export const motion = {
   etat: produit.motion.etat,
   fondu: produit.motion.fondu,
   seuilDAttente: produit.motion.seuilDAttente,
+  anneau: produitBrut.motion.anneau,
   skeletonLoop: produitBrut.motion.skeletonLoop,
   easing: produitBrut.motion.easing,
 } as const;

@@ -187,6 +187,8 @@
   },
   "motion": {
     "$pourquoi": "tokens.json donne les trois durées de la marque et la liste des propriétés animables. Ce qui est ici appartient à l'écriture des états, pas à la marque : la pulsation du squelette, et les quatre durées de l'attente. **Elles disent quand on montre, pas comment on décore** — deux des trois règles de l'attente retirent quelque chose.",
+    "$anneau": "800 ms, un tour complet. La règle 4 de rules.md la déclare — « anneau de 15 px en rotation continue 800 ms » — et le bouton l'écrivait en dur : une valeur décidée par le système, recopiée dans un composant.",
+    "anneau": 800,
     "skeletonLoop": 1400,
     "easing": "ease-out",
     "appui": 100,
