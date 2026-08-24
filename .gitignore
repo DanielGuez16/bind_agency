@@ -61,3 +61,6 @@ design_handoff_bind/logo/trace-*.svg
 design_handoff_bind/logo/d-*.txt
 app/test-results/
 app/playwright-report/
+
+# Résultats de Playwright : produits à chaque exécution, jamais versionnés.
+test-results/
