@@ -2242,20 +2242,56 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       et l'état servi voyage avec le geste : sans lui, revenir sur son propre
       appui compterait comme un retrait de plus. Zéro ne s'écrit pas.
       1560 tests app, 1795 tests api, 7 mutations*
-- [ ] **Un salon sans quartier déclaré n'apparaît nulle part**
-      *Trouvé en éprouvant les cœurs, et sans rapport avec eux. `useMur` filtre
-      les prestations par quartier ouvert ; sans quartier, il rend `null`, et
-      les deux chemins du fil — la liste virtualisée et le bloc — s'arrêtent
-      là. Un fil de deux salons réservables dont aucun n'a déclaré de quartier
-      rend **zéro carte et aucun état vide** : une barre de recherche au-dessus
-      d'un mur blanc. Vérifié.*
-      *Le serveur connaît le cas — le contrat de `quartiers` dit « vide quand
-      aucun salon rendu n'a déclaré de quartier » — et `estVide` ne se
-      déclenche pas, puisque des commerces sont bien rendus.*
-      *La correction est de composition, donc elle se demande : une section
-      « ailleurs » en fin de mur, ou le repli sur une liste à plat quand aucun
-      quartier n'est déclaré. Les deux changent ce que l'écran promet ; je ne
-      tranche pas seul*
+- [x] **Le fil v4 : une carte par salon, et le cœur passe sur la fiche**
+      *« On voit trois services alors qu'il y en a beaucoup plus. » Le compte
+      était juste des deux côtés — le fil ne montre que ce qui se réserve, la
+      fiche montre l'étagère entière — et c'est la **composition** qui le
+      faisait lire comme un défaut : un salon apparaissait autant de fois qu'il
+      avait de prestations ouvertes.*
+      *La carte de salon ne l'annonce pas, elle le **montre** : deux prestations
+      nommées avec leur palier, puis « and 2 more inside ». Une phrase de plus
+      était précisément ce qui produisait l'incompréhension ; une carte qui
+      contient deux lignes visibles ne peut pas être prise pour une seule chose.*
+      ***Le compte est servi, et il vient de `bind-agency-1a`.* On a trouvé la
+      même chose chacun de son côté à une heure d'intervalle — `prestations`
+      comptait des **offres**, donc une prestation ouverte à deux paliers
+      accessibles comptait deux fois, et la somme des cartes aurait cessé
+      d'égaler l'en-tête du quartier. Sa version est meilleure : un champ
+      `prestations_ouvertes` par salon, et les trois niveaux passant par la même
+      fonction. J'ai jeté la mienne et lu la sienne — deux calculs de la même
+      chose finissent par diverger, et c'est celui qu'on regarde le moins qui
+      ment.*
+      ***Le quartier est nommé dans les deux phrases.** « 3 services open to
+      you » se lisait comme un total de ville ; le nom posé sur la ligne du
+      dessus ne suffisait pas, parce que c'est la phrase qu'on lit. L'en-tête
+      porte « 2 salons · 3 services open to you in Wynwood », la carte « 4
+      services open to you in Wynwood » — et sa variante courte sous
+      « Ailleurs », où il n'y a pas de quartier à nommer.*
+      *Le cœur quitte le fil : il porte sur la prestation, et une carte de salon
+      en contient plusieurs. Il vit sur la fiche, **sur les deux ensembles** —
+      garder ce qu'on ne peut pas encore réserver est le cas qui justifie l'avis
+      de réouverture. `est_favori` est servi par offre ; deux offres du même
+      article portent le même cœur. Le seul cœur du fil est la porte, en
+      pilule : remplie avec son compte, vide sans.*
+      *Le compte de la porte reste servi et n'est jamais recopié : la pile
+      prévient le fil qu'un cœur a bougé, et le fil redemande. **Au geste et non
+      au démontage** — la première version attendait la sortie de la fiche, et
+      le parcours de bout en bout a montré qu'elle ne marchait pas sur le web.*
+      *Et la fiche sépare les deux ensembles, chacun compté : « 4 open to you »,
+      « 3 not open to you yet ». Le second porte ce qu'un compte connecté
+      rapporterait, avec son nombre, son réseau et son bouton — la plainte
+      devient l'argument. 1589 tests app, 16 e2e, 10 mutations*
+- [x] **Un salon sans quartier déclaré n'apparaît maintenant quelque part**
+      *`useMur` filtrait par quartier ouvert ; sans quartier, il rendait `null`
+      et les deux chemins du mur s'arrêtaient là. Un fil de salons non situés
+      rendait **zéro carte et aucun état vide** — une barre de recherche
+      au-dessus d'un mur blanc.*
+      *Une section « Ailleurs à Miami » en fin de mur, triée par distance,
+      plutôt qu'un repli sur liste plate : le cas courant est **mixte**, pas
+      binaire — les salons démarchés portent un quartier, ceux qui s'inscrivent
+      seuls parfois pas. Un repli aurait ajouté une seconde mise en page dont
+      l'apparition dépend d'une donnée invisible, et le cas mixte n'y serait de
+      toute façon pas entré*
 - [ ] **La journée demande une seconde requête pour son bandeau de reprise**
       *`BandeauDeReprise` appelle `mesReprises` lui-même, sur l'écran le plus
       ouvert du produit, pour une réponse presque toujours vide. Le replier dans

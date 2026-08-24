@@ -106,6 +106,9 @@ const COMMERCE_DU_FIL = {
   cover_photo_key: null,
   cover_portrait_key: null,
   distance_metres: 320,
+  // Servi, et compté par article distinct : un compte posé à `items.length`
+  // referait ici la faute que la route a corrigée.
+  prestations_ouvertes: 1,
   items: [{ ...OFFRE }],
 };
 
@@ -209,12 +212,12 @@ async function monterLeParcours() {
 it('atterrit sur la liste des réservations, pas sur le code', async () => {
   await monterLeParcours();
 
-  // `apercu-…` et clé de l'offre : le fil rend des prestations, pas des
-  // salons. Le testID a changé trois fois — `commerce-b1`, puis `salon-b1`,
-  // maintenant `apercu-o1` — et le parcours qu'il éprouve, lui, n'a jamais
-  // bougé. C'est bien ce que ce test vérifie.
-  await waitFor(() => expect(screen.getByTestId('apercu-o1')).toBeTruthy());
-  await fireEvent.press(screen.getByTestId('apercu-o1'));
+  // `salon-…` et identifiant du commerce : le fil rend une carte par salon
+  // depuis la v4. Le testID a changé quatre fois — `commerce-b1`, `salon-b1`,
+  // `apercu-o1`, et `salon-b1` de nouveau — et le parcours qu'il éprouve, lui,
+  // n'a jamais bougé. C'est bien ce que ce test vérifie.
+  await waitFor(() => expect(screen.getByTestId('salon-b1')).toBeTruthy());
+  await fireEvent.press(screen.getByTestId('salon-b1'));
 
   await waitFor(() => expect(screen.getByTestId('offre-o1')).toBeTruthy());
   await fireEvent.press(screen.getByText(en.parcours.reserver));

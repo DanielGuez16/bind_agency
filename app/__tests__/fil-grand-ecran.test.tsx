@@ -45,6 +45,10 @@ function commerce(id: string) {
     cover_photo_key: null,
     cover_portrait_key: null,
     distance_metres: 420,
+    // **Servi, et compté comme le serveur le compte** : par article distinct,
+    // jamais par offre. Le poser à `items.length` referait dans le décor la
+    // faute que la route a corrigée, et le test la validerait.
+    prestations_ouvertes: 1,
     items: [
       {
         tier_offer_id: `o-${id}`,
@@ -107,58 +111,39 @@ function monter(nombre: number) {
 }
 
 /**
- * **Deux colonnes, à toutes les largeurs.**
+ * **Une carte par salon, à toutes les largeurs.**
  *
- * La v3 range le mur en grille de deux, et Design écrit pourquoi pas trois : à
- * trois, la colonne tombe à 111 points et « Brow lamination » passe sur trois
- * lignes. C'est un arbitrage sur la lisibilité d'un nom de prestation, pas sur
- * la place disponible — il ne se relâche donc pas parce que l'écran s'élargit.
+ * La v4 change le grain : le mur rendait une carte par prestation, en grille de
+ * deux, et un salon y apparaissait autant de fois qu'il avait de prestations
+ * ouvertes. Il rend maintenant une carte par salon, pleine largeur, qui nomme
+ * deux prestations et compte le reste.
  *
- * Le fichier a porté trois compositions successives : une grille de cartes de
- * trois à quatre, puis un mur de six formats, maintenant la grille de deux. Ce
- * qui survit d'une à l'autre est la question, et elle est bonne : est-ce que le
- * grand écran change la composition ? La réponse a toujours été non.
+ * Le fichier a porté quatre compositions successives : une grille de cartes de
+ * trois à quatre, un mur de six formats, la grille de deux, et cette liste de
+ * salons. Ce qui survit d'une à l'autre est la question, et elle est bonne :
+ * est-ce que le grand écran change la composition ? La réponse a toujours été
+ * non.
  */
-describe('le mur garde ses deux colonnes sur grand écran', () => {
-  it('rend les mêmes aperçus, dans le même ordre, quelle que soit la largeur', async () => {
+describe('le mur garde son grain sur grand écran', () => {
+  it('rend les mêmes salons, dans le même ordre, quelle que soit la largeur', async () => {
     const vus: string[][] = [];
-    const parRangee: number[][] = [];
 
     for (const largeur of [390, 1120, 1512]) {
       mockLargeur = largeur;
       const vue = await monter(5);
       await waitFor(() => expect(screen.getByTestId('le-mur')).toBeTruthy());
 
-      vus.push(screen.getAllByTestId(/^apercu-o-b\d+$/).map((n) => String(n.props.testID)));
-
-      // Le nombre d'aperçus par rangée, rangée par rangée. C'est la seule
-      // mesure qui distingue « deux colonnes » de « autant que ça rentre » —
-      // compter les aperçus de l'écran donnerait cinq dans les deux cas.
-      //
-      // **Compté sur les rangées rendues, et non sur les enfants d'un
-      // conteneur.** Le mur est une liste virtualisée depuis qu'il montait
-      // quatre-vingts images d'un coup : ses rangées sont posées une à une par
-      // le défileur, et il n'y a plus de nœud dont elles soient les enfants.
-      // Le décor tient en cinq prestations, donc tout est rendu.
-      parRangee.push(
-        screen
-          .getAllByTestId('rangee-du-mur')
-          .map(
-            (rangee) =>
-              (rangee.props.children as unknown[]).flat().filter(Boolean).length,
-          ),
-      );
+      vus.push(screen.getAllByTestId(/^salon-b\d+$/).map((n) => String(n.props.testID)));
+      // **Une carte par salon, jamais deux.** Cinq salons, cinq cartes : le
+      // décor de ce fichier ouvre plusieurs prestations par salon, donc un mur
+      // resté au grain d'avant en poserait davantage.
+      expect(screen.getAllByTestId('carte-du-mur')).toHaveLength(5);
       await vue.unmount();
     }
 
-    // Cinq prestations : deux, deux, et une seule accompagnée de sa colonne
-    // vide — c'est elle qui empêche le dernier aperçu de s'étaler.
-    expect(vus[0]).toEqual(['apercu-o-b0', 'apercu-o-b1', 'apercu-o-b2', 'apercu-o-b3', 'apercu-o-b4']);
+    expect(vus[0]).toEqual(['salon-b0', 'salon-b1', 'salon-b2', 'salon-b3', 'salon-b4']);
     expect(vus[1]).toEqual(vus[0]);
     expect(vus[2]).toEqual(vus[0]);
-    expect(parRangee[0]).toEqual([2, 2, 2]);
-    expect(parRangee[1]).toEqual(parRangee[0]);
-    expect(parRangee[2]).toEqual(parRangee[0]);
   });
 });
 
@@ -174,23 +159,24 @@ describe('le mur garde ses deux colonnes sur grand écran', () => {
  * le plafond suivant, et il ne se voyait pas dans les octets.
  *
  * **Le décor est ce qui sépare les deux implémentations.** Quarante salons font
- * vingt rangées ; en bloc elles sont toutes rendues, en liste seules celles que
- * le défileur juge utiles le sont. Avec cinq salons — le décor des autres tests
- * ici — les deux rendraient exactement la même chose, et le test ne dirait rien.
+ * quarante cartes ; en bloc elles sont toutes rendues, en liste seules celles
+ * que le défileur juge utiles le sont. Avec cinq salons — le décor des autres
+ * tests ici — les deux rendraient exactement la même chose, et le test ne
+ * dirait rien.
  */
 describe('le mur ne monte plus tout ce qu’il a', () => {
-  it('ne rend qu’une partie des rangées, et l’en-tête quand même', async () => {
+  it('ne rend qu’une partie des cartes, et l’en-tête quand même', async () => {
     mockLargeur = 390;
     const vue = await monter(40);
     await waitFor(() => expect(screen.getByTestId('le-mur')).toBeTruthy());
 
-    const rangees = screen.getAllByTestId('rangee-du-mur');
+    const cartes = screen.getAllByTestId('carte-du-mur');
 
-    // Vingt rangées existent, moins sont montées. La borne haute est ce qui
+    // Quarante cartes existent, moins sont montées. La borne haute est ce qui
     // compte ; le nombre exact appartient au défileur et changerait avec ses
     // réglages, l'asséner ferait un test qui casse sans rien apprendre.
-    expect(rangees.length).toBeGreaterThan(0);
-    expect(rangees.length).toBeLessThan(20);
+    expect(cartes.length).toBeGreaterThan(0);
+    expect(cartes.length).toBeLessThan(40);
 
     // **Et l'en-tête est là.** Une liste qui virtualiserait aussi sa tête
     // ferait disparaître le nom du quartier et son compte — c'est-à-dire ce

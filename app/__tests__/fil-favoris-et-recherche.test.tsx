@@ -13,7 +13,6 @@ import { ApiClient, ApiProvider, type Fil } from '../src/api';
 import { I18nProvider } from '../src/i18n';
 import { FilScreen } from '../src/screens/FilScreen';
 import { motion, ThemeProvider } from '../src/theme';
-import { reponseQuiNArrivePas } from '../test-support/reponseQuiNArrivePas';
 
 function salon(rang: number, estFavori = false) {
   return {
@@ -25,6 +24,10 @@ function salon(rang: number, estFavori = false) {
     cover_portrait_key: null,
     neighborhood: 'wynwood',
     distance_metres: 100 * rang,
+    // **Servi, et compté comme le serveur le compte** : par article distinct,
+    // jamais par offre. Le poser à `items.length` referait dans le décor la
+    // faute que la route a corrigée, et le test la validerait.
+    prestations_ouvertes: 1,
     items: [
       {
         tier_offer_id: `o${rang}`,
@@ -64,10 +67,7 @@ function fil(extra: Partial<Fil> = {}, commerces = [salon(1), salon(2)]) {
   } as unknown as Fil;
 }
 
-async function monter(
-  donnees: Fil = fil(),
-  surFavori?: (init?: RequestInit) => Response | Promise<Response>,
-) {
+async function monter(donnees: Fil = fil()) {
   const appels: { url: string; methode: string }[] = [];
   const api = new ApiClient({
     baseUrl: 'https://api.test',
@@ -75,11 +75,6 @@ async function monter(
     fetchImpl: (async (url: RequestInfo | URL, init?: RequestInit) => {
       const methode = (init?.method ?? 'GET').toUpperCase();
       appels.push({ url: String(url), methode });
-      if (String(url).includes('/me/favorites')) {
-        return (
-          surFavori?.(init) ?? ({ ok: true, status: 204, json: async () => null } as Response)
-        );
-      }
       return { ok: true, status: 200, json: async () => donnees } as Response;
     }) as unknown as typeof fetch,
   });
@@ -158,80 +153,5 @@ describe('la recherche existait et n’avait aucun bouton', () => {
     await fireEvent.press(screen.getByTestId('voir-mes-favoris'));
 
     expect(ouvertures).toEqual(['favoris']);
-  });
-});
-
-describe('le cœur se remplit avant la réponse', () => {
-  it('rempli avant la réponse, et non après', async () => {
-    /**
-     * **Le décor divergent est une réponse qui ne vient pas.** Avec un double
-     * qui répond tout de suite, « remplir puis appeler » et « appeler puis
-     * remplir » rendent le même écran — la mutation qui attendait la réponse a
-     * d'abord survécu ici. Une promesse qui ne se résout jamais sépare les
-     * deux : l'optimiste remplit, l'autre ne remplit jamais.
-     *
-     * Attendre le réseau pour un geste sans conséquence est ce qui fait dire
-     * « lent », et un écran qui ne bouge pas fait appuyer une seconde fois.
-     */
-    const { appels } = await monter(fil(), (init) => reponseQuiNArrivePas(init));
-
-    const coeur = await screen.findByTestId('apercu-o1-coeur');
-    expect(coeur.props.accessibilityState?.selected).toBe(false);
-
-    await fireEvent.press(coeur);
-
-    expect(screen.getByTestId('apercu-o1-coeur').props.accessibilityState?.selected).toBe(true);
-    expect(appels.some((a) => a.methode === 'POST' && a.url.includes('/me/favorites'))).toBe(true);
-  });
-
-  it('et il revient en arrière si le serveur refuse', async () => {
-    const { appels } = await monter(fil(), () => ({
-      ok: false,
-      status: 500,
-      json: async () => ({ detail: 'internal_error' }),
-    }) as Response);
-
-    await fireEvent.press(await screen.findByTestId('apercu-o1-coeur'));
-
-    // **L'état intermédiaire n'est pas observable ici**, et ce n'est pas un
-    // trou : l'appui et le refus tombent dans le même vidage, donc le cœur est
-    // rempli puis rendu avant que le test reprenne la main. Que le
-    // remplissage précède la réponse est éprouvé par le test voisin, sur un
-    // appel qui réussit ; celui-ci éprouve le retour.
-    //
-    // La dérogation s'efface : ce qui reste est ce que le serveur dit.
-    await waitFor(() =>
-      expect(screen.getByTestId('apercu-o1-coeur').props.accessibilityState?.selected).toBe(
-        false,
-      ),
-    );
-    expect(appels.some((a) => a.methode === 'POST')).toBe(true);
-  });
-
-  it('un cœur déjà plein se retire, et par la route qui retire', async () => {
-    const { appels } = await monter(fil({}, [salon(1, true), salon(2)]));
-
-    const coeur = await screen.findByTestId('apercu-o1-coeur');
-    expect(coeur.props.accessibilityState?.selected).toBe(true);
-
-    await fireEvent.press(coeur);
-
-    expect(screen.getByTestId('apercu-o1-coeur').props.accessibilityState?.selected).toBe(false);
-    await waitFor(() =>
-      expect(appels.some((a) => a.methode === 'DELETE' && a.url.includes('/me/favorites/i1'))).toBe(
-        true,
-      ),
-    );
-  });
-
-  it('rien ne s’annonce : le cœur qui se remplit est la confirmation', async () => {
-    // Pas de bandeau « ajouté aux favoris », pas de compteur ailleurs. C'est la
-    // règle 3 de l'attente : un résultat qui apparaît **est** la confirmation.
-    await monter();
-
-    await fireEvent.press(await screen.findByTestId('apercu-o1-coeur'));
-
-    expect(screen.queryByText(/saved/i)).toBeNull();
-    expect(screen.queryByText(/added/i)).toBeNull();
   });
 });

@@ -21,16 +21,17 @@ test('réserver un créneau, puis retrouver son code', async ({ page }) => {
   // produit, qui ne demande rien au démarrage.
   await expect(page.getByTestId('ecran-fil')).toBeVisible();
   await accorderLaPosition(page);
-  // `apercu-` : le fil rend des prestations, pas des salons. Le préfixe a
-  // changé trois fois — `commerce-`, `salon-`, maintenant `apercu-` — et le
-  // parcours qu'il ouvre n'a jamais bougé, ce que ce test éprouve.
+  // `salon-` : le fil rend une carte par salon depuis la v4. Le préfixe a
+  // changé quatre fois — `commerce-`, `salon-`, `apercu-`, `salon-` de
+  // nouveau — et le parcours qu'il ouvre n'a jamais bougé, ce que ce test
+  // éprouve.
   //
   // **Le mur est rangé par quartier**, et seule la section du plus proche est
-  // déroulée : le premier aperçu visible en est donc un du quartier ouvert, ce
-  // qui est exactement ce qu'une créatrice appuierait.
-  const prestation = page.getByTestId('ecran-fil').locator('[data-testid^="apercu-"]').first();
-  await expect(prestation, 'le fil est vide : aucune prestation à réserver').toBeVisible();
-  await prestation.click();
+  // déroulée : la première carte visible est donc du quartier ouvert, ce qui
+  // est exactement ce qu'une créatrice appuierait.
+  const salon = page.getByTestId('ecran-fil').locator('[data-testid^="salon-"]').first();
+  await expect(salon, 'le fil est vide : aucun salon à ouvrir').toBeVisible();
+  await salon.click();
 
   // La fiche, et la première offre ouverte.
   await expect(page.getByTestId('ecran-fiche')).toBeVisible();

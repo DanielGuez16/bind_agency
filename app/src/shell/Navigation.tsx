@@ -17,6 +17,7 @@
  * l'utilisateur — et tant qu'il n'y en a pas, l'onglet dit quoi faire plutôt
  * que d'afficher une erreur.
  */
+import { useState } from 'react';
 import {
   NavigationContainer,
   DefaultTheme,
@@ -301,6 +302,29 @@ function ParcoursCreateur({
 }) {
   const { position, etat, demander } = usePosition();
 
+  /**
+   * Combien de fois un cœur a basculé depuis l'ouverture de la pile.
+   *
+   * **Un signal, pas un compte.** Le fil sert le nombre de favoris, et il ne se
+   * recharge pas de lui-même quand on revient d'une fiche : la pile garde
+   * l'écran monté dessous. Ce compteur lui dit qu'il y a lieu de redemander —
+   * il ne lui dit pas quoi, parce que deux vérités du même nombre finissent par
+   * diverger et que c'est celle qu'on regarde le moins qui ment.
+   *
+   * **Il monte à l'appui, et non au démontage de la fiche.** La première
+   * version attendait la sortie, pour n'envoyer qu'une requête par visite. Elle
+   * ne marchait pas : sur le web, revenir en arrière ne démonte pas la fiche au
+   * moment où on le croit, et le compte restait celui du dernier chargement —
+   * trouvé par le parcours de bout en bout, invisible aux tests unitaires, qui
+   * pilotent la version à la main. Une requête de fil par cœur pressé est le
+   * prix, et il est modeste : elle part pendant qu'on est ailleurs, sur un
+   * écran que rien ne redessine.
+   *
+   * Il vit ici et non dans le fil : c'est la pile qui relie les deux écrans, et
+   * le fil ne sait rien de la fiche.
+   */
+  const [versionDesFavoris, setVersionDesFavoris] = useState(0);
+
   return (
     <PileCreateur.Navigator screenOptions={OPTIONS_DE_PILE}>
       <PileCreateur.Screen name="Fil">
@@ -321,6 +345,7 @@ function ParcoursCreateur({
             onVoirMesFavoris={() => navigation.navigate('Favoris')}
             onDemanderLaPosition={demander}
             onOuvrirLeCommerce={(businessId) => navigation.navigate('Fiche', { businessId })}
+            versionDesFavoris={versionDesFavoris}
           />
         )}
       </PileCreateur.Screen>
@@ -331,6 +356,10 @@ function ParcoursCreateur({
             businessId={route.params.businessId}
             onRetour={() => navigation.goBack()}
             onReserver={(offre, fiche) => navigation.navigate('Creneaux', { fiche, offre })}
+            onConnecterUnReseau={onConnecterUnReseau}
+            // Le cœur a quitté le fil : il vit ici, ligne par ligne. Le fil
+            // n'en garde que le compte, et redemande quand celui-ci a bougé.
+            onFavoriBascule={() => setVersionDesFavoris((tour: number) => tour + 1)}
           />
         )}
       </PileCreateur.Screen>

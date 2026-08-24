@@ -385,9 +385,18 @@ export const en = {
     filDecouvrir: 'Discover',
     // Deux phrases distinctes et non une à trou : « 6 nail services » place la
     // catégorie avant le nom commun, ce que l'espagnol n'ordonne pas ainsi.
-    murServicesOuverts: '{{count}} services open to you',
-    murServicesDeCategorie: '{{count}} {{categorie}} services',
+    murServicesOuverts: '{{salons}} salons · {{count}} services open to you in {{quartier}}',
+    murServicesDeCategorie: '{{salons}} salons · {{count}} {{categorie}} services in {{quartier}}',
     murAutresQuartiers: 'Other neighbourhoods',
+    // **Le quartier est nommé dans la phrase de la carte aussi.** Un compte
+    // posé sur une carte de salon se lit bien comme celui du salon ; mais dans
+    // « Ailleurs à Miami », il n'y a plus de quartier au-dessus, et la variante
+    // courte est alors la seule juste.
+    carteServicesOuvertsAu: '{{count}} services open to you in {{quartier}}',
+    carteServicesOuverts: '{{count}} services open to you',
+    carteEtEncore: 'and {{count}} more inside',
+    murAilleurs: 'Elsewhere in Miami',
+    murAilleursCorps: '{{count}} salons that have not said which neighbourhood they are in',
     // Les rangées par quartier. La carte d'os ferme une rangée courte et dit
     // ce qu'il y a plus loin : sans elle, une rangée de deux cartes ressemble
     // à un chargement qui a échoué.
@@ -417,6 +426,13 @@ export const en = {
     ficheDuree: '{{count}} minutes',
     fichePhotosCompte: '{{count}} photos',
     fichePasEncore: 'Not open to you yet',
+    ficheOuvertes: '{{count}} open to you',
+    fichePasEncoreCompte: '{{count}} not open to you yet',
+    // **Ce n'est plus un refus, c'est deux réservations de plus.** Le nombre
+    // porte l'argument : « connecte TikTok » sans lui ne fait renoncer
+    // personne à renoncer.
+    ficheCompteOuvrirait: '{{count}} more services if you connect {{reseau}}',
+    ficheConnecter: 'Connect {{reseau}}',
     ficheAussiLibre: 'Free at {{heures}} too',
     // Quatre repères pour un créneau, et non une phrase à trou : l'ordre
     // des mots n'est pas le même d'une langue à l'autre, et « demain » ne
@@ -1019,6 +1035,7 @@ export const en = {
     // Il compte ce à quoi il sert, donc il se justifie sans notice.
     avisEnAttente: '{{count}} of these are waiting on something',
     avisLabel: 'Notifications about saved services',
+    garder: 'Save {{nom}}',
     retirer: 'Remove {{nom}} from saved',
     // **Quatre états, quatre conduites.** « Unavailable » les aurait tous
     // couverts et n'aurait rien dit : attendre la réouverture, monter d'un

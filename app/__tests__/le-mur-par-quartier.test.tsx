@@ -54,6 +54,12 @@ function commerce(id: string, nom: string, quartier: string, items: unknown[]) {
     cover_portrait_key: null,
     distance_metres: 420,
     items,
+    // **Servi, et compté comme le serveur le compte** : par article distinct,
+    // jamais par offre. Le poser à `items.length` dans le décor referait ici la
+    // faute que la route a corrigée, et le test la validerait.
+    prestations_ouvertes: new Set(
+      (items as { catalog_item_id: string }[]).map((item) => item.catalog_item_id),
+    ).size,
   };
 }
 
@@ -85,11 +91,7 @@ const FIL = {
   prochain_palier: null,
 } as unknown as Fil;
 
-async function monter(
-  fil: Fil = FIL,
-  categorie: 'beauty' | null = null,
-  favoris?: Parameters<typeof SectionsParQuartier>[0]['favoris'],
-) {
+async function monter(fil: Fil = FIL, categorie: 'beauty' | null = null) {
   const api = new ApiClient({
     baseUrl: 'https://api.test',
     coffre: { lire: async () => null, ecrire: async () => {} },
@@ -100,12 +102,7 @@ async function monter(
     <I18nProvider initialLocale="en">
       <ThemeProvider role="creator">
         <ApiProvider client={api}>
-          <SectionsParQuartier
-            fil={fil}
-            categorie={categorie}
-            onOuvrir={() => {}}
-            favoris={favoris}
-          />
+          <SectionsParQuartier fil={fil} categorie={categorie} onOuvrir={() => {}} />
         </ApiProvider>
       </ThemeProvider>
     </I18nProvider>,
@@ -128,33 +125,62 @@ describe('le quartier le plus proche est ouvert', () => {
     await vue.unmount();
   });
 
-  it('l’unité rendue est la prestation, pas le salon', async () => {
+  it('l’unité rendue est le salon, et la carte montre ce qu’il contient', async () => {
     // **Le montage est celui qui sépare les deux implémentations.** Vela ouvre
-    // deux prestations : un mur qui rendrait un aperçu par salon en montrerait
-    // deux au lieu de trois, et porterait « Vela Nail Studio » en titre au lieu
-    // de « Gel manicure ». C'est l'inversion que la revue signale.
+    // deux prestations : un mur resté au grain d'avant poserait trois cartes
+    // pour deux salons, et « Gel manicure » y serait un titre au lieu d'une
+    // ligne. C'est l'inversion que la v4 défait — un salon apparaissait autant
+    // de fois qu'il avait de prestations ouvertes.
     const vue = await monter();
-    await waitFor(() => expect(screen.getByTestId('apercu-o1')).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId('salon-b1')).toBeTruthy());
 
-    expect(screen.getByTestId('apercu-o1-nom')).toHaveTextContent('Gel manicure');
-    expect(screen.getByTestId('apercu-o2-nom')).toHaveTextContent('Classic pedicure');
-    expect(screen.getByTestId('apercu-o3-nom')).toHaveTextContent('Signature facial');
-    // Le salon est en attribution sur les deux prestations qu'il ouvre.
-    expect(screen.getByTestId('apercu-o1-attribution')).toHaveTextContent(/Vela Nail Studio/);
-    expect(screen.getByTestId('apercu-o2-attribution')).toHaveTextContent(/Vela Nail Studio/);
+    expect(screen.getAllByTestId('carte-du-mur')).toHaveLength(2);
+    expect(screen.getByTestId('salon-b1-nom')).toHaveTextContent(/Vela Nail Studio/);
+    // **Et la carte nomme son contenu.** Sans ces deux lignes, elle se lirait
+    // comme une seule chose — l'ambiguïté que l'inversion avait fermée, et
+    // qu'une phrase de plus ne referme pas.
+    expect(screen.getByTestId('salon-b1-ligne-i-o1')).toHaveTextContent(/Gel manicure/);
+    expect(screen.getByTestId('salon-b1-ligne-i-o2')).toHaveTextContent(/Classic pedicure/);
+    expect(screen.getByTestId('salon-b2-nom')).toHaveTextContent(/Casa Bruma Spa/);
     // Et rien du quartier voisin n'est rendu tant qu'il n'est pas ouvert.
-    expect(screen.queryByTestId('apercu-o4')).toBeNull();
+    expect(screen.queryByTestId('salon-b3')).toBeNull();
     await vue.unmount();
   });
 
-  it('la rangée impaire garde sa colonne vide', async () => {
-    // Trois prestations : la seconde rangée n'en porte qu'une. Sans la colonne
-    // vide, ce dernier aperçu s'étale sur toute la largeur et son image double
-    // de hauteur — une mise en avant que personne n'a décidée.
-    const vue = await monter();
-    await waitFor(() => expect(screen.getByTestId('apercu-o3')).toBeTruthy());
+  it('la même prestation ouverte à deux paliers ne fait qu’une ligne', async () => {
+    // **Le décor qui sépare les deux implémentations, et il manquait.** Sans
+    // lui, une carte qui ne dédoublonne pas rend exactement la même chose :
+    // tous les décors du fichier donnent un article par offre. Ici, deux
+    // offres partagent leur article — un mur qui listerait les offres écrirait
+    // « Gel manicure » deux fois, sous deux badges, et compterait deux
+    // services là où le serveur en compte un.
+    const deuxPaliers = {
+      ...commerce('b1', 'Vela Nail Studio', 'wynwood', [
+        { ...item('o1', 'Gel manicure', 45, 'story'), catalog_item_id: 'i-partage' },
+        { ...item('o2', 'Gel manicure', 45, 'post'), catalog_item_id: 'i-partage' },
+      ]),
+    };
+    const vue = await monter({
+      ...FIL,
+      commerces: [deuxPaliers],
+      quartiers: [{ quartier: 'wynwood', commerces: 1, prestations: 1, distance_metres: 320 }],
+    } as unknown as Fil);
+    await waitFor(() => expect(screen.getByTestId('salon-b1')).toBeTruthy());
 
-    expect(screen.getAllByTestId('colonne-vide')).toHaveLength(1);
+    expect(screen.getByTestId('salon-b1-compte')).toHaveTextContent(/\b1\b/);
+    expect(screen.getAllByTestId(/^salon-b1-ligne-/)).toHaveLength(1);
+    await vue.unmount();
+  });
+
+  it('elle compte ce qu’elle montre, et annonce ce qu’elle cache', async () => {
+    // Vela ouvre deux prestations : tout est nommé, rien à annoncer. Le
+    // décompte du reste n'apparaît qu'au-delà de deux — écrire « and 0 more »
+    // ferait chercher ce qui n'est pas caché.
+    const vue = await monter();
+    await waitFor(() => expect(screen.getByTestId('salon-b1')).toBeTruthy());
+
+    expect(screen.getByTestId('salon-b1-compte')).toHaveTextContent(/\b2\b/);
+    expect(screen.queryByTestId('salon-b1-reste')).toBeNull();
     await vue.unmount();
   });
 });
@@ -186,7 +212,7 @@ describe('les autres quartiers sont des carrés, et ils s’ouvrent', () => {
     await waitFor(() =>
       expect(screen.getByTestId('quartier-ouvert-nom')).toHaveTextContent(en.quartiers.brickell),
     );
-    expect(screen.getByTestId('apercu-o4-nom')).toHaveTextContent('Brow lamination');
+    expect(screen.getByTestId('salon-b3-nom')).toHaveTextContent(/Aurora Brow Bar/);
     // Wynwood est refermé : il n'a plus d'aperçus, et il est devenu un carré.
     expect(screen.queryByTestId('apercu-o1')).toBeNull();
     expect(screen.getByTestId('carre-wynwood')).toBeTruthy();
@@ -204,8 +230,21 @@ describe('le compte de la section nomme la catégorie quand il y en a une', () =
     const sans = await monter(FIL, null);
     await waitFor(() => expect(screen.getByTestId('quartier-ouvert-compte')).toBeTruthy());
     expect(screen.getByTestId('quartier-ouvert-compte')).toHaveTextContent(
-      en.parcours.murServicesOuverts.replace('{{count}}', '3'),
+      en.parcours.murServicesOuverts
+        .replace('{{salons}}', '2')
+        .replace('{{count}}', '3')
+        .replace('{{quartier}}', en.quartiers.wynwood),
     );
+    // **Et la phrase nomme le quartier, quoi qu'elle dise par ailleurs.** Le
+    // test du dessus recopie le gabarit : il passerait le jour où celui-ci
+    // perdrait `{{quartier}}`, ce qui est exactement le défaut signalé — un
+    // testeur a lu « 3 services open to you » comme un total de ville. Vérifié
+    // par mutation : sans cette ligne, retirer le quartier du gabarit ne
+    // faisait rien tomber.
+    expect(screen.getByTestId('quartier-ouvert-compte')).toHaveTextContent(
+      new RegExp(en.quartiers.wynwood),
+    );
+    expect(screen.getByTestId('quartier-ouvert-compte')).toHaveTextContent(/\b2\b/);
     // Et pas l'autre phrase : sans cette moitié, un composant qui rendrait
     // toujours la forme catégorisée passerait le premier cas dès que le libellé
     // de la catégorie serait vide.
@@ -218,8 +257,10 @@ describe('le compte de la section nomme la catégorie quand il y en a une', () =
     await waitFor(() => expect(screen.getByTestId('quartier-ouvert-compte')).toBeTruthy());
     expect(screen.getByTestId('quartier-ouvert-compte')).toHaveTextContent(
       en.parcours.murServicesDeCategorie
+        .replace('{{salons}}', '2')
         .replace('{{count}}', '3')
-        .replace('{{categorie}}', en.categories.beauty),
+        .replace('{{categorie}}', en.categories.beauty)
+        .replace('{{quartier}}', en.quartiers.wynwood),
     );
     await avec.unmount();
   });
@@ -274,14 +315,18 @@ const FIL_AVEC_PHOTOS = {
 } as unknown as Fil;
 
 describe('le mur ne tire jamais un original', () => {
-  it('demande la vignette pour la photo d’une prestation', async () => {
+  it('demande la vignette pour la couverture d’une carte de salon', async () => {
+    // **La carte montre le lieu, plus la prestation.** Le grain a changé en
+    // v4 : la couverture du salon remplace la photo de la première prestation,
+    // parce que la carte contient maintenant plusieurs prestations et qu'en
+    // illustrer une seule mettrait en avant celle que personne n'a choisie.
     const vue = await monter(FIL_AVEC_PHOTOS);
     // Le composant `Photo` porte le cadre, et son `Image` le suffixe `-image` :
     // c'est celle-là qui tient l'adresse réellement demandée.
-    await waitFor(() => expect(screen.getByTestId('apercu-o1-photo-image')).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId('salon-b1-photo-image')).toBeTruthy());
 
-    const uri = String(screen.getByTestId('apercu-o1-photo-image').props.source.uri);
-    expect(uri).toContain(CLE_PRESTATION);
+    const uri = String(screen.getByTestId('salon-b1-photo-image').props.source.uri);
+    expect(uri).toContain(CLE_COUVERTURE);
     // **L'assertion qui sépare les deux implémentations.** `toContain(cle)`
     // seule passerait avec l'original, puisque les deux URL portent la clé :
     // c'est le suffixe qui dit laquelle des deux dérivées part sur le réseau.
@@ -313,35 +358,103 @@ describe('le mur ne tire jamais un original', () => {
  * branchement ne se rend pas. Un second rendu amputé du premier est une
  * version que personne ne regarde et que personne ne teste.
  */
-describe('le bloc porte les cœurs, comme la liste', () => {
-  it('rend le cœur quand le branchement est là, et le geste porte l’état servi', async () => {
-    const appuis: unknown[][] = [];
-    const vue = await monter(FIL, null, {
-      estFavori: (_id, servi) => servi,
-      basculer: (...arguments_) => appuis.push(arguments_),
-    });
-    await waitFor(() => expect(screen.getByTestId('quartier-ouvert')).toBeTruthy());
+describe('le mur ne porte plus de cœur', () => {
+  it('aucune carte de salon n’en rend un', async () => {
+    // **Le cœur a quitté le fil en v4.** Une carte de salon contient plusieurs
+    // prestations : un cœur y désignerait quoi ? Le favori porte sur la
+    // prestation, donc il vit sur la fiche, ligne par ligne — et le seul cœur
+    // du fil est la porte de la barre de recherche, qui porte le compte.
+    const vue = await monter();
+    await waitFor(() => expect(screen.getByTestId('salon-b1')).toBeTruthy());
 
-    const coeur = screen.getByTestId('apercu-o1-coeur');
-    await fireEvent.press(coeur);
+    expect(screen.queryAllByTestId(/-coeur$/)).toHaveLength(0);
+    await vue.unmount();
+  });
+});
 
-    // **L'état servi et le nom voyagent avec le geste**, et c'est ce que le
-    // compte de la porte paie : sans l'état d'origine, un second appui qui
-    // ramène le cœur à sa valeur servie compterait comme un retrait de plus.
-    expect(appuis).toHaveLength(1);
-    expect(appuis[0][0]).toBe('i-o1');
-    expect(appuis[0][1]).toBe(true);
-    expect(appuis[0][2]).toBe(false);
+/**
+ * « Ailleurs à Miami », en fin de mur.
+ *
+ * **Ce que ça répare.** `useMur` filtre les prestations par quartier ouvert ;
+ * sans quartier déclaré, un salon n'apparaissait **nulle part** — et l'écran ne
+ * montrait pas non plus son état vide, puisque des commerces étaient bien
+ * rendus. Un fil de deux salons réservables sans quartier donnait une barre de
+ * recherche au-dessus d'un mur blanc.
+ *
+ * **Une section nommée plutôt qu'un repli sur liste plate.** Le cas courant est
+ * mixte, pas binaire : les salons démarchés portent un quartier, ceux qui
+ * s'inscrivent seuls parfois pas. Un repli aurait ajouté une seconde mise en
+ * page dont l'apparition dépend d'une donnée invisible, et le cas mixte n'y
+ * serait de toute façon pas entré.
+ */
+describe('les salons sans quartier ont leur section', () => {
+  const SANS_QUARTIER = {
+    ...commerce('b9', 'Panaderia del Sol', 'wynwood', [item('o9', 'Cortado tasting', 20, 'story')]),
+    neighborhood: null,
+    distance_metres: 4200,
+  };
+  const PLUS_PROCHE = {
+    ...commerce('b8', 'Objet Concept Store', 'wynwood', [item('o8', 'Styling hour', 45, 'story')]),
+    neighborhood: null,
+    distance_metres: 900,
+  };
+
+  it('elle vient après le quartier ouvert, et trie par distance', async () => {
+    // **Le décor est mixte, et c'est le seul qui sépare les deux
+    // implémentations.** Avec des salons tous situés, un mur qui oublierait les
+    // non situés rendrait exactement la même chose.
+    const vue = await monter({
+      ...FIL,
+      commerces: [...FIL.commerces, SANS_QUARTIER, PLUS_PROCHE],
+    } as unknown as Fil);
+    await waitFor(() => expect(screen.getByTestId('ailleurs-en-ville')).toBeTruthy());
+
+    const ordre = screen
+      .getAllByTestId(/^salon-b\d+$/)
+      .map((n) => String(n.props.testID));
+    // Le quartier ouvert d'abord, puis les non situés, du plus proche au plus
+    // lointain — 900 m avant 4,2 km, alors que le serveur les rend dans
+    // l'autre ordre.
+    expect(ordre).toEqual(['salon-b1', 'salon-b2', 'salon-b8', 'salon-b9']);
+    expect(screen.getByTestId('ailleurs-compte')).toHaveTextContent(/\b2\b/);
     await vue.unmount();
   });
 
-  it('et sans branchement, aucun cœur — jamais un cœur qui ne répond pas', async () => {
-    // Le sens inverse : un cœur rendu hors du mur ne mènerait nulle part, et
-    // un cœur qui ne répond pas est pire qu'un cœur absent.
-    const vue = await monter();
-    await waitFor(() => expect(screen.getByTestId('quartier-ouvert')).toBeTruthy());
+  it('et leur carte ne nomme aucun quartier, puisqu’ils n’en ont pas', async () => {
+    // La phrase du compte tombe sur sa variante courte. Écrire « in Wynwood »
+    // sur un salon qui n'a rien déclaré serait inventer une adresse.
+    const vue = await monter({
+      ...FIL,
+      commerces: [...FIL.commerces, PLUS_PROCHE],
+    } as unknown as Fil);
+    await waitFor(() => expect(screen.getByTestId('salon-b8')).toBeTruthy());
 
-    expect(screen.queryByTestId('apercu-o1-coeur')).toBeNull();
+    // La phrase est en capitales à l'écran : on compare sans la casse, sinon
+    // le test mesurerait le `toUpperCase` et non le quartier.
+    expect(screen.getByTestId('salon-b8-compte')).not.toHaveTextContent(
+      new RegExp(en.quartiers.wynwood, 'i'),
+    );
+    // Celle d'un salon situé, elle, le nomme — sans cette moitié, un écran qui
+    // n'écrirait jamais le quartier passerait le test du dessus.
+    expect(screen.getByTestId('salon-b1-compte')).toHaveTextContent(
+      new RegExp(en.quartiers.wynwood, 'i'),
+    );
+    await vue.unmount();
+  });
+
+  it('et le mur existe même quand aucun salon n’est situé', async () => {
+    // **Le défaut, dans sa forme pure.** Zéro carte et aucun état vide : le
+    // mur s'arrêtait à `null` parce qu'il n'avait pas de quartier à ouvrir.
+    const vue = await monter({
+      ...FIL,
+      commerces: [SANS_QUARTIER, PLUS_PROCHE],
+      quartiers: [],
+    } as unknown as Fil);
+    await waitFor(() => expect(screen.getByTestId('ailleurs-en-ville')).toBeTruthy());
+
+    expect(screen.getAllByTestId('carte-du-mur')).toHaveLength(2);
+    // Et pas d'en-tête de quartier : il n'y en a aucun à nommer.
+    expect(screen.queryByTestId('quartier-ouvert-nom')).toBeNull();
     await vue.unmount();
   });
 });

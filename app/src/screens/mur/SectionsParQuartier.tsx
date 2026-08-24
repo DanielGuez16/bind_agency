@@ -36,12 +36,8 @@ import {
   type Fil,
   type Neighborhood,
 } from '../../api';
-import {
-  ApercuDePrestation,
-  CASE_DU_BADGE,
-  IMAGE_DE_L_APERCU,
-  Texte,
-} from '../../components';
+import { CASE_DU_BADGE, IMAGE_DE_L_APERCU, Texte } from '../../components';
+import { CarteDeSalon, type PrestationDeLaCarte } from './CarteDeSalon';
 import { Photo } from '../../components';
 import { useEnfoncement } from '../../components/Mouvement';
 import { formatNumber } from '../../format';
@@ -60,31 +56,35 @@ const VIGNETTE_OUVERTE = 44;
 const VIGNETTE_DU_CARRE = 52;
 
 /**
- * Une prestation à rendre, aplatie depuis un commerce.
+ * Un salon à rendre, avec ce qu'il contient.
+ *
+ * **Le grain a changé en v4 : une carte par salon, plus une par prestation.**
+ * Un salon apparaissait autant de fois qu'il avait de prestations ouvertes, et
+ * la fiche en révélait d'autres — « on voit trois services alors qu'il y en a
+ * beaucoup plus ». Le compte était juste des deux côtés ; c'est la composition
+ * qui le faisait lire comme un défaut.
  *
  * **Aplatir ici et non au serveur.** Le fil sert des commerces avec leurs
- * items, ce dont la fiche a besoin telle quelle ; l'écran en tire des
- * prestations parce que c'est ce qu'il montre. Demander une seconde forme au
- * serveur aurait fait deux vérités du même contenu.
+ * items, ce dont la fiche a besoin telle quelle ; l'écran en tire ce qu'il
+ * montre. Demander une seconde forme au serveur aurait fait deux vérités du
+ * même contenu.
  */
-type Prestation = {
-  cle: string;
-  nom: string;
-  salon: string;
+type SalonDuMur = {
   businessId: string;
-  /**
-   * L'article, distinct de la clé de l'aperçu.
-   *
-   * `cle` porte l'offre de palier : le même article ouvert à deux paliers fait
-   * deux cartes. Le favori, lui, porte sur **l'article** — les deux cartes
-   * montrent donc le même cœur, et le toucher sur l'une remplit l'autre. C'est
-   * la prestation qu'on met de côté, pas le palier par lequel on l'atteint.
-   */
-  catalogItemId: string;
-  estFavori: boolean;
-  dureeMinutes: number | null;
-  contrepartie: string | null;
+  nom: string;
+  quartier: Neighborhood | null;
+  distanceMetres: number;
   photo: string | null;
+  /**
+   * Combien de prestations lui sont ouvertes, **servi**.
+   *
+   * Pas `prestations.length` : la carte n'en nomme que deux, et le serveur
+   * compte sur l'ensemble. Pas `items.length` non plus, qui compterait des
+   * offres — un article ouvert au story et au reel fait deux contreparties
+   * légitimes et une seule prestation.
+   */
+  ouvertes: number;
+  prestations: PrestationDeLaCarte[];
 };
 
 /**
@@ -120,55 +120,49 @@ function media(
   return api.urlDeLaVignette(cle) ?? null;
 }
 
-/** Les prestations d'un quartier, dans l'ordre où le serveur les rend. */
-function prestationsDe(
+/**
+ * Les salons d'un lot, avec leurs prestations **dédoublonnées**.
+ *
+ * **Le même article ouvert à deux paliers accessibles fait deux offres et une
+ * seule prestation.** Le mur d'avant en tirait deux cartes, ce qui était voulu
+ * à ce grain-là ; une carte de salon qui listerait deux fois « Gel manicure »
+ * sous deux badges se lirait comme un doublon. On garde la première offre
+ * rencontrée, donc l'ordre du serveur.
+ *
+ * **Le compte, lui, ne se déduit pas d'ici.** `prestations_ouvertes` est servi,
+ * et c'est ce qui garantit que la somme des cartes égale l'en-tête du quartier :
+ * les deux passent par la même fonction côté serveur. Le compter sur ce que la
+ * carte a reçu marcherait aujourd'hui et mentirait le jour où la liste sera
+ * bornée.
+ */
+function salonsDe(
   commerces: CommerceDuFil[],
-  quartier: Neighborhood,
   urlDuMedia: (cle: string | null) => string | null,
-): Prestation[] {
-  return commerces
-    .filter((commerce) => commerce.neighborhood === quartier)
-    .flatMap((commerce) =>
-      commerce.items.map((item) => ({
-        // `tier_offer_id` et non le couple salon + article : le même article
-        // peut être ouvert par deux paliers, et deux aperçus légitimes
-        // partageraient alors une clé. React n'en rendrait qu'un.
-        cle: item.tier_offer_id,
-        nom: item.name,
-        salon: commerce.name,
-        businessId: commerce.business_id,
+): SalonDuMur[] {
+  return commerces.map((commerce) => {
+    const vues = new Set<string>();
+    const prestations: PrestationDeLaCarte[] = [];
+    for (const item of commerce.items) {
+      if (vues.has(item.catalog_item_id)) continue;
+      vues.add(item.catalog_item_id);
+      prestations.push({
         catalogItemId: item.catalog_item_id,
-        estFavori: item.est_favori,
-        dureeMinutes: item.duration_minutes,
+        nom: item.name,
         contrepartie: item.content_format,
-        // La photo de la prestation d'abord, la couverture du salon en repli.
-        // C'est la prestation qu'on montre : servir la façade du salon pour
-        // quatre prestations différentes referait, en image, l'inversion de
-        // hiérarchie qu'on vient de corriger dans le texte.
-        photo: urlDuMedia(item.photo_key ?? commerce.cover_photo_key),
-      })),
-    );
-}
-
-/** De quoi rendre un cœur et le brancher. */
-export type ActionsDeFavori = {
-  /** Vrai si l'article est gardé, en tenant compte des appuis en vol. */
-  estFavori: (catalogItemId: string, servi: boolean) => boolean;
-  basculer: (
-    catalogItemId: string,
-    versFavori: boolean,
-    servi: boolean,
-    nom: string,
-  ) => void;
-};
-
-/** Les rangées de deux, la dernière éventuellement incomplète. */
-function enRangeesDeDeux<T>(elements: T[]): T[][] {
-  const rangees: T[][] = [];
-  for (let rang = 0; rang < elements.length; rang += 2) {
-    rangees.push(elements.slice(rang, rang + 2));
-  }
-  return rangees;
+      });
+    }
+    return {
+      businessId: commerce.business_id,
+      nom: commerce.name,
+      quartier: commerce.neighborhood,
+      distanceMetres: commerce.distance_metres,
+      ouvertes: commerce.prestations_ouvertes,
+      // La couverture du salon, et non la photo d'une prestation : la carte
+      // montre le lieu, et ce qu'on y fait est écrit en dessous.
+      photo: urlDuMedia(commerce.cover_photo_key),
+      prestations,
+    };
+  });
 }
 
 /**
@@ -194,10 +188,9 @@ export function useMur(
   fil: Fil | null,
   categorie: BusinessCategory | null,
   onOuvrir: (businessId: string) => void,
-  favoris?: ActionsDeFavori,
 ): { entete: React.ReactNode; elements: { cle: string; rendu: React.ReactNode }[]; pied: React.ReactNode } | null {
   const { api } = useApi();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const c = useColors();
 
   // **Le quartier ouvert est un état, pas une dérivation.** Le serveur rend la
@@ -216,89 +209,113 @@ export function useMur(
     fil?.quartiers[0]?.quartier ??
     null;
 
-  if (fil === null || quartierOuvert === null) return null;
-
-  const compteOuvert = fil.quartiers.find((compte) => compte.quartier === quartierOuvert);
-  const prestations = prestationsDe(fil.commerces, quartierOuvert, (cle) => media(api, cle));
-  const autres = fil.quartiers.filter((compte) => compte.quartier !== quartierOuvert);
-
-  const entete = (
-    <EnTeteDeSection
-      quartier={quartierOuvert}
-      prestations={compteOuvert?.prestations ?? 0}
-      categorie={categorie}
-      photo={media(
-        api,
-        fil.commerces.find((commerce) => commerce.neighborhood === quartierOuvert)
-          ?.cover_photo_key ?? null,
-      )}
-    />
-  );
+  if (fil === null) return null;
 
   /**
-   * Une rangée par élément, et **la rangée porte ses marges**.
+   * Les salons qu'aucun quartier ne situe, du plus proche au plus lointain.
    *
-   * En bloc, le conteneur pouvait les poser pour toutes ; en liste, il n'y a
-   * pas de conteneur — chaque rangée est posée seule par le défileur. Les
-   * mettre sur la rangée est donc la seule écriture qui rende la même chose des
-   * deux côtés, et c'est ce qui permet aux deux chemins de partager exactement
-   * ces éléments-ci plutôt que d'en avoir chacun une version.
+   * **Ils n'apparaissaient nulle part**, et le mur ne le disait pas : le fil
+   * d'une créatrice dont aucun salon n'a déclaré de quartier rendait zéro carte
+   * et aucun état vide — une barre de recherche au-dessus d'un mur blanc. Le
+   * cas est courant et **mixte** : les salons démarchés portent un quartier,
+   * ceux qui s'inscrivent seuls parfois pas.
+   *
+   * Une section nommée en fin de mur plutôt qu'un repli sur liste plate : un
+   * repli ajouterait une seconde mise en page dont l'apparition dépendrait
+   * d'une donnée invisible, et le cas mixte n'y entrerait de toute façon pas.
    */
-  const elements = enRangeesDeDeux(prestations).map((rangee) => ({
-    cle: rangee.map((prestation) => prestation.cle).join('+'),
-    rendu: (
-      <View
-        key={rangee.map((prestation) => prestation.cle).join('+')}
-        testID="rangee-du-mur"
-        style={{
-          flexDirection: 'row',
-          gap: GOUTTIERE,
-          paddingHorizontal: MARGE_DU_MUR,
-          paddingBottom: INTERLIGNE,
-        }}
-      >
-        {rangee.map((prestation) => (
-          <ApercuDePrestation
-            key={prestation.cle}
-            nom={prestation.nom}
-            salon={prestation.salon}
-            dureeMinutes={prestation.dureeMinutes}
-            contrepartie={prestation.contrepartie}
-            photo={prestation.photo}
-            onPress={() => onOuvrir(prestation.businessId)}
-            estFavori={favoris?.estFavori(prestation.catalogItemId, prestation.estFavori)}
-            // Sans le branchement, pas de cœur : une carte hors du mur n'a
-            // rien à garder de côté, et un cœur qui ne répond pas est pire
-            // qu'un cœur absent.
-            onFavori={
-              favoris
-                ? () =>
-                    favoris.basculer(
-                      prestation.catalogItemId,
-                      !favoris.estFavori(prestation.catalogItemId, prestation.estFavori),
-                      // **L'état servi voyage avec le geste.** Le compte de la
-                      // porte est un écart par rapport au total du serveur :
-                      // sans lui, un second appui qui ramène le cœur à sa
-                      // valeur servie compterait comme un retrait de plus.
-                      prestation.estFavori,
-                      prestation.nom,
-                    )
-                : undefined
-            }
-            testID={`apercu-${prestation.cle}`}
-          />
-        ))}
-        {/* **La rangée impaire porte une colonne vide.** Sans elle, le dernier
-            aperçu s'étale sur toute la largeur et son image passe de 100 à 210
-            points de haut : la grille se termine sur une image deux fois plus
-            grande que les autres, ce qui se lit comme une mise en avant que
-            personne n'a décidée. */}
-        {rangee.length === 1 ? (
-          <View testID="colonne-vide" style={{ flex: 1, minWidth: 0 }} />
-        ) : null}
-      </View>
-    ),
-  }));
+  const ailleurs = salonsDe(
+    fil.commerces.filter((commerce) => commerce.neighborhood === null),
+    (cle) => media(api, cle),
+  ).sort((a, b) => a.distanceMetres - b.distanceMetres);
+
+  if (quartierOuvert === null && ailleurs.length === 0) return null;
+
+  const compteOuvert = fil.quartiers.find((compte) => compte.quartier === quartierOuvert);
+  const salons =
+    quartierOuvert === null
+      ? []
+      : salonsDe(
+          fil.commerces.filter((commerce) => commerce.neighborhood === quartierOuvert),
+          (cle) => media(api, cle),
+        );
+  const autres = fil.quartiers.filter((compte) => compte.quartier !== quartierOuvert);
+
+  const entete =
+    quartierOuvert === null ? null : (
+      <EnTeteDeSection
+        quartier={quartierOuvert}
+        salons={compteOuvert?.commerces ?? 0}
+        prestations={compteOuvert?.prestations ?? 0}
+        categorie={categorie}
+        photo={media(
+          api,
+          fil.commerces.find((commerce) => commerce.neighborhood === quartierOuvert)
+            ?.cover_photo_key ?? null,
+        )}
+      />
+    );
+
+  /**
+   * Un élément par salon, et **l'élément porte ses marges**.
+   *
+   * En bloc, le conteneur pouvait les poser pour tous ; en liste, il n'y a pas
+   * de conteneur — chaque carte est posée seule par le défileur. Les mettre sur
+   * la carte est donc la seule écriture qui rende la même chose des deux côtés.
+   */
+  const carte = (salon: SalonDuMur) => (
+    <View
+      key={salon.businessId}
+      testID="carte-du-mur"
+      style={{ paddingHorizontal: MARGE_DU_MUR, paddingBottom: INTERLIGNE }}
+    >
+      <CarteDeSalon
+        nom={salon.nom}
+        quartierNomme={salon.quartier === null ? null : t(`quartiers.${salon.quartier}`)}
+        distanceMetres={salon.distanceMetres}
+        photo={salon.photo}
+        ouvertes={salon.ouvertes}
+        prestations={salon.prestations}
+        onPress={() => onOuvrir(salon.businessId)}
+        testID={`salon-${salon.businessId}`}
+      />
+    </View>
+  );
+
+  const elements = [
+    ...salons.map((salon) => ({ cle: salon.businessId, rendu: carte(salon) })),
+    // **La section des non situés vit dans les éléments, pas dans le pied.**
+    // Le pied porte la navigation entre quartiers ; ceci est du contenu, et le
+    // ranger là le sortirait de la liste virtualisée au moment précis où une
+    // ville en compterait beaucoup.
+    ...(ailleurs.length === 0
+      ? []
+      : [
+          {
+            cle: 'ailleurs',
+            rendu: (
+              <View
+                key="ailleurs"
+                testID="ailleurs-en-ville"
+                style={{
+                  paddingHorizontal: MARGE_DU_MUR,
+                  paddingTop: quartierOuvert === null ? 10 : 6,
+                  paddingBottom: 10,
+                  gap: 2,
+                }}
+              >
+                <Texte variante="type.titreDApercu">{t('parcours.murAilleurs')}</Texte>
+                <Texte variante="type.caption" couleur="ink.soft" testID="ailleurs-compte">
+                  {t('parcours.murAilleursCorps', {
+                    count: formatNumber(ailleurs.length, locale),
+                  })}
+                </Texte>
+              </View>
+            ),
+          },
+          ...ailleurs.map((salon) => ({ cle: salon.businessId, rendu: carte(salon) })),
+        ]),
+  ];
 
   const pied =
     autres.length > 0 ? (
@@ -360,23 +377,13 @@ export function SectionsParQuartier({
   fil,
   categorie,
   onOuvrir,
-  favoris,
 }: {
   fil: Fil;
   /** La catégorie en vigueur, qui nomme le compte de la section. */
   categorie: BusinessCategory | null;
   onOuvrir: (businessId: string) => void;
-  /**
-   * **Le bloc porte les mêmes cœurs que la liste.** Il ne les passait pas, et
-   * `useMur` ne rend pas de cœur sans branchement : sur un fil dont aucun
-   * salon n'a déclaré de quartier — ce qui arrive — l'écran retombe ici, et il
-   * n'y avait alors **aucun cœur du tout**. Deux rendus du même mur doivent
-   * offrir les mêmes gestes, sinon le second est une version amputée que
-   * personne ne teste.
-   */
-  favoris?: ActionsDeFavori;
 }) {
-  const mur = useMur(fil, categorie, onOuvrir, favoris);
+  const mur = useMur(fil, categorie, onOuvrir);
   if (mur === null) return null;
 
   return (
@@ -400,11 +407,14 @@ export function SectionsParQuartier({
  */
 function EnTeteDeSection({
   quartier,
+  salons,
   prestations,
   categorie,
   photo,
 }: {
   quartier: Neighborhood;
+  /** Combien de salons ce quartier porte, dans le fil rendu. */
+  salons: number;
   prestations: number;
   /** La catégorie en vigueur, qui nomme le compte. `null` : toutes. */
   categorie: BusinessCategory | null;
@@ -412,6 +422,10 @@ function EnTeteDeSection({
 }) {
   const { t, locale } = useI18n();
   const c = useColors();
+  // Résolu une fois : le nom sert au titre et à la phrase, et une clé composée
+  // écrite trois fois élargit d'autant ce que la garde des traductions ne peut
+  // pas résoudre.
+  const nomDuQuartier = t(`quartiers.${quartier}`);
 
   return (
     <View
@@ -440,19 +454,32 @@ function EnTeteDeSection({
       </View>
       <View style={{ flex: 1, minWidth: 0, gap: 1 }}>
         <Texte variante="type.titreDApercu" testID="quartier-ouvert-nom">
-          {t(`quartiers.${quartier}`)}
+          {nomDuQuartier}
         </Texte>
         {/* **Deux clés, pas une phrase à trous.** « 18 services open to you »
             et « 6 nail services » ne sont pas la même phrase avec un mot en
             plus : la seconde place la catégorie avant le nom commun, ce que
             l'espagnol n'ordonne pas comme l'anglais. Les composer aurait donné
-            une traduction juste dans une langue et bancale dans l'autre. */}
+            une traduction juste dans une langue et bancale dans l'autre.
+ 
+            **Et le quartier est nommé dans la phrase, pas seulement au-dessus.**
+            Un testeur a lu « 3 services open to you » comme un total de ville
+            alors que c'était le compte du quartier ouvert ; le nom posé sur la
+            ligne du dessus ne suffisait pas, parce que c'est la phrase qu'on
+            lit. Le compte des salons vient avec, pour la même raison : il donne
+            à la phrase une portée qu'aucun chiffre seul n'a. */}
         <Texte variante="type.caption" couleur="ink.soft" testID="quartier-ouvert-compte">
           {categorie === null
-            ? t('parcours.murServicesOuverts', { count: formatNumber(prestations, locale) })
+            ? t('parcours.murServicesOuverts', {
+                salons: formatNumber(salons, locale),
+                count: formatNumber(prestations, locale),
+                quartier: nomDuQuartier,
+              })
             : t('parcours.murServicesDeCategorie', {
+                salons: formatNumber(salons, locale),
                 count: formatNumber(prestations, locale),
                 categorie: t(`categories.${categorie}`),
+                quartier: nomDuQuartier,
               })}
         </Texte>
       </View>

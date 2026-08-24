@@ -128,6 +128,20 @@ export function messageDObstacle(
 }
 
 
+/**
+ * Le glyphe d'une plateforme, ou `null`.
+ *
+ * **`null` plutôt qu'un repli.** Snapchat n'a pas de glyphe dans la
+ * bibliothèque — son accès partenaire n'est pas obtenu, et son palier est
+ * inactif. Lui poser l'icône d'une autre marque serait mentir sur le réseau à
+ * brancher ; l'appelant laisse la place vide, ce qui ne dit rien de faux.
+ */
+export function glypheDePlateforme(platform: string): 'instagram' | 'tiktok' | null {
+  if (platform === 'instagram') return 'instagram';
+  if (platform === 'tiktok') return 'tiktok';
+  return null;
+}
+
 /** Le nom d'usage d'une plateforme. Jamais traduit : c'est une marque. */
 export function nomDePlateforme(platform: string): string {
   const noms: Record<string, string> = {
