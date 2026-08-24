@@ -8,20 +8,20 @@
  *
  * Rien n'est écrit en base. Ce qui est éprouvé ici, ce sont les trois façons
  * dont un conseil peut mentir : proposer sans distribution à lire, séparer deux
- * prix identiques, et se tromper de sens sur l'écart.
+ * durées identiques, et se tromper de sens sur l'écart.
  */
 import {
-  PRIX_MINIMUM_POUR_PROPOSER,
+  DUREES_MINIMUM_POUR_PROPOSER,
   ecartAuConseil,
   motDuPalier,
   palierRetenu,
   propositionsDuCatalogue,
 } from '../src/screens/propositionDePalier';
 
-const prix = (id: string, price_cents: number) => ({ id, price_cents });
+const prix = (id: string, duration_minutes: number) => ({ id, duration_minutes });
 
 describe('la proposition', () => {
-  it('situe chaque prestation par son rang, pas par une somme absolue', () => {
+  it('situe chaque prestation par son rang, pas par une valeur absolue', () => {
     const proposees = propositionsDuCatalogue([
       prix('a', 2_000),
       prix('b', 5_000),
@@ -33,7 +33,7 @@ describe('la proposition', () => {
     expect(proposees.get('c')).toBe('reel');
   });
 
-  it('donne le même palier à deux prix identiques', () => {
+  it('donne le même palier à deux durées identiques', () => {
     // Sans cette précaution, deux manucures à 45 dollars tomberaient de part et
     // d'autre d'une frontière selon leur ordre d'arrivée en base — et le
     // commerce lirait deux conseils contradictoires sur deux lignes identiques.
@@ -47,7 +47,7 @@ describe('la proposition', () => {
     expect(proposees.get('a')).toBe(proposees.get('b'));
   });
 
-  it('ne propose rien sous trois prix distincts', () => {
+  it('ne propose rien sous trois durées distinctes', () => {
     // Il n'y a pas de distribution à lire dans deux prix, et conseiller quand
     // même reviendrait à inventer.
     expect(propositionsDuCatalogue([prix('a', 1_000), prix('b', 9_000)]).size).toBe(0);
@@ -55,7 +55,7 @@ describe('la proposition', () => {
     // échelle, c'est le nombre de prix **différents** qui la fait.
     const memePrix = Array.from({ length: 10 }, (_, i) => prix(String(i), 5_000));
     expect(propositionsDuCatalogue(memePrix).size).toBe(0);
-    expect(PRIX_MINIMUM_POUR_PROPOSER).toBe(3);
+    expect(DUREES_MINIMUM_POUR_PROPOSER).toBe(3);
   });
 
   it('couvre les trois paliers sur un catalogue réaliste', () => {

@@ -678,7 +678,6 @@ describe('catalogue', () => {
 
     await fireEvent.press(screen.getByText(en.composition.videAction));
     await fireEvent.changeText(screen.getByTestId('champ-nom'), 'Deep massage');
-    await fireEvent.changeText(screen.getByTestId('champ-prix'), '90');
     await fireEvent.press(screen.getByTestId('publier-la-prestation'));
 
     await waitFor(() => expect(envois).toHaveLength(2));
@@ -1543,11 +1542,11 @@ describe('les rapports, après la campagne 2', () => {
 // --------------------------------------------------------------------------
 
 describe('le conseil de palier', () => {
-  /** Trois prix distincts : le minimum pour qu'une distribution existe. */
+  /** Trois durées distinctes : le minimum pour qu'une distribution existe. */
   const CATALOGUE = [
-    { ...ITEM, id: 'bas', name: 'Pose vernis', price_cents: 2_000 },
-    { ...ITEM, id: 'milieu', name: 'Manucure', price_cents: 5_000 },
-    { ...ITEM, id: 'haut', name: 'Soin complet', price_cents: 12_000 },
+    { ...ITEM, id: 'bas', name: 'Pose vernis', duration_minutes: 20 },
+    { ...ITEM, id: 'milieu', name: 'Manucure', duration_minutes: 45 },
+    { ...ITEM, id: 'haut', name: 'Soin complet', duration_minutes: 120 },
   ];
   const TROIS_PALIERS = [
     { ...PALIER, id: 't1', content_format: 'story', min_followers: 1_000 },

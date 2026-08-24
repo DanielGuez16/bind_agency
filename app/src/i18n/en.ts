@@ -1228,7 +1228,6 @@ export const en = {
     ouvrirLaPrestation: 'Open {{nom}} to creators',
     fermeeParSonParent: 'Closed because its parent service is closed',
     champNom: 'Name',
-    champPrix: 'Price',
     champDuree: 'Duration, minutes',
     champPalier: 'Tier asked for',
     consequenceDuPalier: 'Only creators with {{n}}+ followers can book it. A higher tier means fewer of them.',
