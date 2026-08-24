@@ -1779,7 +1779,11 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Quatorze ont un petit côté entre 640 et 798 px, donc légèrement agrandies
       au recadrage en 800 × 800. Visible de près, sans importance pour ce
       qu'elles servent à montrer.*
-- [x] **Le bandeau ne devient pas une ligne de confirmation — tranché**
+- [x] **Le bandeau ne devient pas une ligne de confirmation — tranché, puis renversé**
+      ***Renversé le 2026-08-24 par les #308 et #310** : les deux données sont
+      servies, la ligne est composée. La condition était juste, sa formulation
+      était trop large — « ce n'est pas un report » disait « jamais » là où il
+      fallait dire « pas avec ce qu'on a ». Voir `DECISIONS.md`.*
       *La planche voulait « vous êtes en ligne · 41 créatrices peuvent vous
       réserver », puis une disparition au bout de sept jours. Les deux données
       manquent : aucune **date de publication** n'est servie, donc la règle des

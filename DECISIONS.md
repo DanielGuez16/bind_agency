@@ -9987,10 +9987,24 @@ une ligne de confirmation après publication. La planche la veut — « vous êt
 en ligne · 41 créatrices peuvent vous réserver », effacée au bout de sept
 jours. Les deux données manquent : aucune date de publication n'est servie,
 donc la règle des sept jours n'a pas d'origine, et la portée locale ne vit que
-sur les rapports. Ce n'est pas un report en attendant les champs. **Une ligne
-qui affirmerait l'une ou l'autre à l'estime serait une confirmation fausse, et
-une confirmation fausse est pire que pas de confirmation** — elle est crue.
-Le bandeau s'efface simplement.
+sur les rapports. **Une ligne qui affirmerait l'une ou l'autre à l'estime serait
+une confirmation fausse, et une confirmation fausse est pire que pas de
+confirmation** — elle est crue. Le bandeau s'efface simplement.
+
+**RENVERSÉ LE 2026-08-24, et la raison survit au renversement.** Les deux
+données sont servies depuis les #308 et #310 — `en_ligne_depuis`,
+`createurs_qui_peuvent_reserver` et `confirmation_jours` — et la ligne de
+confirmation est composée. Ce qui était vrai reste vrai : elle ne devait pas
+s'écrire *à l'estime*. Ce qui était faux est la phrase « ce n'est pas un report
+en attendant les champs » — c'en était un, et je l'avais écrit comme une
+décision définitive parce que rien n'était en cours pour les servir.
+
+**La leçon est celle de l'audit du même jour, retournée contre moi.** Un
+document qui dit « jamais » quand il veut dire « pas avec ce qu'on a » est faux
+dès que ce qu'on a change. La formule juste était : *tant que la date de
+publication et la portée locale ne sont pas servies, la ligne ne s'écrit pas.*
+Elle nomme la condition, donc elle se périme d'elle-même — et personne n'a à se
+demander si la décision tient encore.
 
 ---
 
