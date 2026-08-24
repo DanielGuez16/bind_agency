@@ -14,9 +14,23 @@
  * décision rendue — garder les deux laisse la version périmée sous sa
  * remplaçante, et c'est celle-là qu'on lit.
  *
- * **La garde lit les titres, pas les corps.** Deux entrées peuvent partager un
- * paragraphe sans être la même chose ; ce qui les identifie est ce qu'elles
- * annoncent.
+ * **Ce que cette garde couvre, et ce qu'elle ne couvre pas.** Elle attrape la
+ * forme la plus fréquente — le titre repris presque mot pour mot, souvent avec
+ * « — tranché » ajouté au bout. Elle **n'attrape pas** une version reformulée :
+ * « le compte arrive après l'ouverture » et « le compte se lit avant l'appui »
+ * sont la même entrée à deux stades, et ne partagent que la moitié de leurs
+ * mots.
+ *
+ * Ce n'est pas un réglage à monter. Mesuré sur les six paires réellement
+ * trouvées et les quatre paires légitimes du fichier : les deux familles se
+ * **chevauchent** entre 0,45 et 1,0 d'un côté, 0,5 et 0,6 de l'autre. Aucun
+ * seuil ne les sépare — descendre attraperait « niveau 1 » et « niveau 2 », ce
+ * qui apprendrait à ignorer le rouge.
+ *
+ * La garde tient donc une forme, et le dernier test écrit noir sur blanc celle
+ * qu'elle laisse passer, pour que personne ne croie la question réglée. Ce qui
+ * couvre le reste est le geste, écrit dans `CLAUDE.md` : en cochant une entrée,
+ * chercher la version qu'elle remplace.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -97,6 +111,21 @@ describe('TASKS.md ne dit pas deux fois la même chose', () => {
     const perimee = cle('Le bandeau ne devient pas une ligne de confirmation');
     const tranchee = cle('Le bandeau ne devient pas une ligne de confirmation — tranché');
     expect(ressemblance(perimee, tranchee)).toBeGreaterThanOrEqual(0.9);
+  });
+
+  it('elle ne voit pas une version reformulée, et c’est écrit', () => {
+    /**
+     * **La limite, éprouvée plutôt que sous-entendue.** Ces deux titres sont la
+     * même entrée à deux stades — le problème posé, puis la décision rendue —
+     * et c'est exactement la paire qui a coûté une demi-heure. Ils ne partagent
+     * que la moitié de leurs mots.
+     *
+     * Le test l'affirme au lieu de le taire : le jour où quelqu'un croit que
+     * cette garde couvre tout, cette ligne le détrompe.
+     */
+    const perimee = cle("Le compte des reprises de l'appelant arrive après l'ouverture, pas avant");
+    const tranchee = cle("Le compte des reprises de l'appelant se lit avant l'appui");
+    expect(ressemblance(perimee, tranchee)).toBeLessThan(0.9);
   });
 
   it('mais laisse passer deux tâches que seul un mot distingue', () => {

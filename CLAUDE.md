@@ -281,13 +281,20 @@ arbitrage déjà rendu.** Mesuré deux fois — trois blocs dupliqués découver
 coup, dont la règle des sept jours du bandeau de mise en ligne, tranchée depuis
 des jours et rouverte pour rien parce que la copie lue disait « en attendant ».
 
-Donc : en cochant une entrée, chercher la version qu'elle remplace et la
-retirer. Le titre suffit à la trouver — c'est ce que la garde
-`tasks-sans-doublons` fait, et elle tombe sur une jumelle avant qu'on la
-fusionne. Ce qui mérite d'être gardé de la version d'avant — un diagnostic qui
+Donc : **en cochant une entrée, chercher la version qu'elle remplace et la
+retirer.** Ce qui mérite d'être gardé de la version d'avant — un diagnostic qui
 s'est révélé faux, une cause qu'on a mis longtemps à voir — va dans
 `DECISIONS.md`, dont c'est le rôle. `TASKS.md` porte du travail, pas son
 histoire.
+
+Une garde, `tasks-sans-doublons`, attrape la forme la plus fréquente : le titre
+repris presque mot pour mot, souvent avec « — tranché » ajouté au bout. **Elle
+n'attrape pas une version reformulée**, et c'est mesuré plutôt que supposé : sur
+les six paires réellement trouvées et les quatre paires légitimes du fichier,
+les deux familles se chevauchent — aucun seuil ne les sépare, et descendre
+attraperait « niveau 1 » et « niveau 2 ». Le geste ci-dessus reste donc la
+seule chose qui couvre le reste ; la garde ramasse ce qu'elle peut et son
+dernier test écrit noir sur blanc ce qu'elle laisse passer.
 
 **Un garde-fou qui coûte plus que ce qu'il protège se retire.** La garde de
 durée en est l'exemple, et elle a été retirée : quatre CI rouges en une soirée,
