@@ -110,11 +110,11 @@ function Chrome({
           dessus, il se lirait comme un titre de la carte elle-même, et BIND
           n'écrit rien sur la carte d'un commerce. */}
       {detail ? (
-        <Texte variante="type.monoSmall" couleur={sourd} testID="nom-de-la-page">
+        <Texte variante="type.dataLabel" couleur={sourd} testID="nom-de-la-page">
           {detail}
         </Texte>
       ) : null}
-      <Texte variante="type.monoSmall" couleur={encre} testID="position-dans-la-visionneuse">
+      <Texte variante="type.dataLabel" couleur={encre} testID="position-dans-la-visionneuse">
         {position}
       </Texte>
     </View>

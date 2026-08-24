@@ -92,6 +92,7 @@ export function voileDEncre(opacite: number): string {
 
 export { nomDeFonte, pileDeFontes, policesAcharger, type Graisse, type Voix } from './polices';
 export {
+  collisionsDeCouches,
   familles,
   typography,
   type EchelleTypo,

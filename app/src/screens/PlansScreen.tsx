@@ -240,7 +240,7 @@ function QuiPrendCePlan({ plan }: { plan: PlanAdministrateur }) {
           </View>
           <View style={{ width: 76 }}>
             <Texte
-              variante="type.monoSmall"
+              variante="type.dataLabel"
               couleur={part.abonnes === 0 ? 'ink.mute' : 'ink.default'}
               align="right"
             >

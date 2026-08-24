@@ -151,7 +151,7 @@ export function SelecteurDeSalon({
                   backgroundColor: c['brand.100'],
                 }}
               >
-                <Texte variante="type.monoSmall" couleur="brand.900">
+                <Texte variante="type.dataLabel" couleur="brand.900">
                   {t('commerce.selecteurDecisions', { count: salon.decisions_en_attente })}
                 </Texte>
               </View>

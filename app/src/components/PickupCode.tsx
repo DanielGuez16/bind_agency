@@ -188,7 +188,7 @@ export function ManualCode({
         {label}
       </Texte>
       <Texte
-        variante="type.mono"
+        variante="type.data"
         accessibilityLabel={nu.split('').join(' ')}
         style={{
           fontSize: SECOURS_TAILLE,

@@ -290,7 +290,7 @@ export function CarteDuCommerce({
         onPress={() => void choisirEtEnvoyer()}
         testID="ajouter-une-page"
       />
-      <Texte variante="type.monoSmall" couleur="ink.mute" testID="compte-des-pages">
+      <Texte variante="type.dataLabel" couleur="ink.mute" testID="compte-des-pages">
         {`${pages.length} / ${PAGES_AU_MAXIMUM}`}
       </Texte>
 
@@ -302,7 +302,7 @@ export function CarteDuCommerce({
         style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 4 }}
       >
         <View style={{ flex: 1, height: 1, backgroundColor: c['line.strong'] }} />
-        <Texte variante="type.monoSmall" couleur="ink.default">
+        <Texte variante="type.dataLabel" couleur="ink.default">
           {t('composition.carteLUnOuLAutre')}
         </Texte>
         <View style={{ flex: 1, height: 1, backgroundColor: c['line.strong'] }} />

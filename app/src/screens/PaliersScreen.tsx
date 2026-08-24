@@ -499,7 +499,7 @@ function BandeauDePrincipe() {
                     borderColor: m.bordure === 'transparent' ? 'transparent' : c[m.bordure],
                   }}
                 />
-                <Texte variante="type.monoSmall" couleur={m.texte} style={{ fontSize: 10 }}>
+                <Texte variante="type.dataLabel" couleur={m.texte} style={{ fontSize: 10 }}>
                   {tierTokens[palier].label[locale] ?? tierTokens[palier].label.en}
                 </Texte>
               </View>
@@ -820,7 +820,7 @@ function EtatDuPalier({
           backgroundColor: c['brand.500'],
         }}
       >
-        <Texte variante="type.monoSmall" couleur="ink.onBrand" style={{ fontSize: 10 }}>
+        <Texte variante="type.dataLabel" couleur="ink.onBrand" style={{ fontSize: 10 }}>
           {t('tiers.nextForYou')}
         </Texte>
       </View>
@@ -934,7 +934,7 @@ export function EcartAuSeuil({
             </Texte>
           )
         ) : null}
-        <Texte variante="type.mono" style={{ fontSize: 13 }}>
+        <Texte variante="type.data" style={{ fontSize: 13 }}>
           {valeur}
         </Texte>
       </View>

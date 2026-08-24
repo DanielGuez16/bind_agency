@@ -10331,3 +10331,73 @@ suppressions : `TASKS.md` est une liste, deux sessions y ajoutent, et une
 résolution qui garde les deux côtés duplique un bloc au lieu d'en perdre un.
 Garder les deux reste la bonne règle — mais un doublon se relit, et celui-ci a
 tenu assez longtemps pour tromper quelqu'un.
+## 2026-08-24 — La famille mono fusionne vers ses noms de rôle
+
+Quatre jetons nommés par leur fonte, quatre nommés par leur rôle, dans **une
+seule table plate** : le socle préfixé `type.`, le produit portant déjà son
+préfixe. Ce sont des frères, pas deux niveaux.
+
+| avant | après | ce qu'il sert |
+|---|---|---|
+| `type.monoDisplay` | `type.figure` | le nombre qu'un écran met en avant |
+| `type.monoFigure` | `type.figureSmall` | le nombre d'une ligne ou d'une carte |
+| `type.mono` | `type.data` | une valeur lue exactement — date, identifiant, jauge |
+| `type.monoSmall` | `type.dataLabel` | l'étiquette qui porte une donnée |
+
+Les deux doublons du produit — `type.figure` à 44 px, `type.figureSmall` à 29 —
+sont retirés au profit de l'échelle du socle. **Le socle gagne parce qu'il est
+le contrat de Design** : retirer de son côté aurait demandé son accord, alors
+que les doublons étaient à nous. Le produit garde `code` et `countdown`, qui
+n'ont pas d'équivalent.
+
+Le dernier couple règle une hésitation payée sur les réservations :
+`type.label` (11 px, sans, capitales) porte des **mots**, `type.dataLabel`
+(11 px, mono) porte une **donnée**. Le nom le dit désormais.
+
+**Ce que la fusion a révélé, et qui valait plus qu'elle.** Le *même* score de
+fiabilité était rendu par deux jetons : `monoDisplay` sur son écran de détail,
+`figure` dans les règles des paliers. Deux écrans, un nombre, deux graisses. Ni
+l'un ni l'autre n'était fautif isolément ; il fallait ouvrir les deux fichiers
+de jetons côte à côte, ou les deux écrans, et personne ne fait ni l'un ni
+l'autre.
+
+---
+
+## 2026-08-24 — Deux couches qui se masquent en silence
+
+`Object.fromEntries` garde le dernier, et le produit est étalé en dernier. Une
+clé du produit portant le nom d'une clé du socle **l'écrase sans rien dire** :
+même variante appelée, autre taille, autre graisse, et aucun test ne bouge — le
+nom existe toujours, il ne désigne simplement plus la même chose.
+
+C'est un défaut plus grave que le nommage qui l'a fait remarquer, et il lui
+survit : il ne se voit sur aucun écran isolé. Une garde le nomme désormais, et
+elle a deux moitiés — la seconde parce qu'« aucun nom disputé » est vrai d'une
+famille **vide**, et qu'un `variantes()` qui rendrait `[]` sur le produit ferait
+taire la collision tout en perdant quatre variantes, sans un seul rouge.
+
+**Cette seconde moitié a servi dans l'heure qui a suivi son écriture**, et pas
+pour ce qu'elle visait. La garde de l'échelle des chiffres comparait la famille
+à `familles.mono`, qui porte le **nom de la fonte** quand `fontFamily` porte le
+**rôle** : la famille ressortait vide, et la règle passait au vert sur zéro
+jeton. En la réparant, un défaut vivant est apparu.
+
+**Les deux couches épellent la famille différemment.** La passation nomme la
+fonte — « IBM Plex Mono » — parce qu'elle décrit un système ; le produit nomme
+le rôle — « mono » — parce qu'il en consomme un. La fonction qui décide du rôle
+ne connaissait que la première : **`type.code` et `type.countdown` sortaient en
+sans**, c'est-à-dire le code de retrait montré au comptoir et son décompte. La
+passation le spécifiait pourtant noir sur blanc — « Chiffres en `type.code`
+(mono 76), lisibles à 1,20 m ».
+
+Rien ne pouvait le dire : l'alphabet du code écarte déjà les caractères qui se
+confondent, et un chiffre en sans reste un chiffre. C'est le même mode de panne
+que l'avertissement sans glyphe — une règle écrite dans la passation, vraie,
+et que rien n'exécutait.
+
+**La règle qui l'aurait attrapé, et qui garde maintenant l'échelle : dans le
+monospacé, la taille désigne le rôle.** Le corps a `body` et `bodyStrong` à
+16 px, le titre a sa variante accentuée — ce sont des paires voulues, une
+graisse distinguant deux emplois du même rang. Les chiffres n'ont pas de paires :
+chaque cran est un usage, du code à six chiffres jusqu'à l'étiquette qui porte
+une date.

@@ -66,7 +66,15 @@ function approcheEnPoints(tracking: string | undefined, taille: number): number 
  * titres du corps, c'est cette fonction qui change, pas douze variantes.
  */
 function roleDe(nom: string, brute: VarianteBrute): RoleDeFonte {
-  if (brute.family === brut.font.mono) return 'mono';
+  // **Les deux couches épellent la famille différemment, et il faut les deux.**
+  // La passation nomme la fonte — « IBM Plex Mono » — parce qu'elle décrit un
+  // système ; le produit nomme le rôle — « mono » — parce qu'il en consomme un.
+  // La comparaison ne connaissait que la première : `type.code` et
+  // `type.countdown`, c'est-à-dire **le code montré au comptoir et son
+  // décompte**, sortaient en sans. Rien ne pouvait le dire — l'alphabet du code
+  // écarte déjà les caractères qui se confondent, et un chiffre en sans reste
+  // un chiffre.
+  if (brute.family === brut.font.mono || brute.family === 'mono') return 'mono';
   return nom.startsWith('display') || nom.startsWith('heading') ? 'display' : 'sans';
 }
 
@@ -114,9 +122,30 @@ const variantes = (source: object, prefixe: string) =>
  * repères chiffrés — portent déjà leur préfixe : elles appartiennent au
  * produit et non à la marque, et l'écrire dans leur clé le rappelle.
  */
+const DU_SOCLE = variantes(brut.type, 'type.');
+const DU_PRODUIT = variantes(produitBrut.type, '');
+
+/**
+ * Les noms que les deux couches se disputent, s'il y en a.
+ *
+ * **`Object.fromEntries` garde le dernier, et le produit est étalé en dernier.**
+ * Une clé du produit qui porterait le nom d'une clé du socle l'écraserait donc
+ * **en silence** : même variante, autre taille, autre graisse, et aucun test ne
+ * bouge — le nom existe toujours, il ne désigne simplement plus la même chose.
+ *
+ * C'est un défaut plus grave qu'un nom mal choisi, parce qu'il ne se voit sur
+ * aucun écran isolé : il faut ouvrir les deux fichiers de jetons côte à côte, ce
+ * que personne ne fait. Il est exporté plutôt que levé — une exception au
+ * chargement ferait tomber l'application entière sur une faute qui appartient à
+ * la construction, et le moment de la dire est l'intégration continue.
+ */
+export const collisionsDeCouches: string[] = DU_SOCLE.map(([nom]) => nom).filter((nom) =>
+  DU_PRODUIT.some(([autre]) => autre === nom),
+);
+
 export const typography: Record<string, EchelleTypo> = Object.fromEntries([
-  ...variantes(brut.type, 'type.'),
-  ...variantes(produitBrut.type, ''),
+  ...DU_SOCLE,
+  ...DU_PRODUIT,
 ]);
 
 export type Variante = keyof typeof typography;

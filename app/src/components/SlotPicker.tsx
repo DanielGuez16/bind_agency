@@ -71,7 +71,7 @@ export function DayPicker({
               {jour.jourCourt}
             </Texte>
             <Texte
-              variante="type.mono"
+              variante="type.data"
               couleur={choisi ? 'ink.onDark' : jour.disponible ? 'ink.default' : 'ink.faint'}
             >
               {jour.numero}
@@ -133,7 +133,7 @@ export function SlotPicker({
         })}
           >
             <Texte
-              variante="type.mono"
+              variante="type.data"
               couleur={creneau.pris ? 'ink.faint' : 'ink.default'}
               style={{ fontSize: 15 }}
             >

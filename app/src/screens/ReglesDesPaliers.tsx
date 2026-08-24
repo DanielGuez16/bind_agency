@@ -54,7 +54,7 @@ export function ReglesDesPaliers({
         {[t('tiers.rulesUpOne'), t('tiers.rulesUpTwo'), t('tiers.rulesUpThree')].map(
           (ligne, index) => (
             <View key={ligne} style={{ flexDirection: 'row', gap: 10 }}>
-              <Texte variante="type.mono" couleur="ink.mute" style={{ width: 14, fontSize: 12 }}>
+              <Texte variante="type.data" couleur="ink.mute" style={{ width: 14, fontSize: 12 }}>
                 {String(index + 1)}
               </Texte>
               <Texte variante="type.label" style={{ flex: 1, fontWeight: '400' }}>
@@ -129,7 +129,7 @@ function BlocDeFiabilite({ fiabilite }: { fiabilite: FiabiliteDuCreateur | null 
                 <Texte variante="type.figure" testID="score-de-fiabilite">
                   {String(Math.round(score))}
                 </Texte>
-                <Texte variante="type.mono" couleur="ink.mute">
+                <Texte variante="type.data" couleur="ink.mute">
                   {t('tiers.reliabilityOutOf')}
                 </Texte>
               </View>

@@ -298,7 +298,7 @@ export function useMur(
           gap: 8,
         }}
       >
-        <Texte variante="type.monoSmall" couleur="ink.soft">
+        <Texte variante="type.dataLabel" couleur="ink.soft">
           {t('parcours.murAutresQuartiers').toUpperCase()}
         </Texte>
         {/* **Ils défilent, ils ne s'entassent pas.** Tous rendus d'un coup sur
@@ -493,7 +493,7 @@ function CarreDeQuartier({
             paddingVertical: 2,
           }}
         >
-          <Texte variante="type.monoSmall">{formatNumber(prestations, locale)}</Texte>
+          <Texte variante="type.dataLabel">{formatNumber(prestations, locale)}</Texte>
         </View>
       </View>
       <Texte variante="type.caption" ellipseSurNomPropre>

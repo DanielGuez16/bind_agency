@@ -70,7 +70,7 @@ export function BarresParPeriode({
             valeurs oblige à survoler, ce qu'un doigt ne fait pas. */}
         <View style={{ height: HAUTEUR, justifyContent: 'space-between' }}>
           {Array.from({ length: REPERES }, (_, rang) => (
-            <Texte key={rang} variante="type.mono" couleur="ink.mute" style={{ fontSize: 11 }}>
+            <Texte key={rang} variante="type.data" couleur="ink.mute" style={{ fontSize: 11 }}>
               {Math.round((sommet * (REPERES - 1 - rang)) / (REPERES - 1))}
             </Texte>
           ))}
@@ -123,7 +123,7 @@ export function BarresParPeriode({
         {series.map((point) => (
           <Texte
             key={point.etiquette}
-            variante="type.mono"
+            variante="type.data"
             couleur="ink.mute"
             align="center"
             style={{ flex: 1, fontSize: 11 }}
@@ -201,7 +201,7 @@ export function BarresParPalier({
               }}
             />
           </View>
-          <Texte variante="type.mono" style={{ width: 36 }} align="right">
+          <Texte variante="type.data" style={{ width: 36 }} align="right">
             {ligne.valeur}
           </Texte>
         </View>

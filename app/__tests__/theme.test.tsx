@@ -30,6 +30,7 @@ import {
   matiereDeRole,
   produit,
   tokens,
+  collisionsDeCouches,
   typography,
   useTheme,
   type ColorName,
@@ -1294,5 +1295,94 @@ describe('l’avertissement, neutre et glyphé', () => {
       const source = readFileSync(join(RACINE, '..', fichier), 'utf-8');
       expect([fichier, /icone|Icone|GLYPHE/.test(source)]).toEqual([fichier, true]);
     }
+  });
+});
+
+/**
+ * Deux couches, un seul espace de noms.
+ *
+ * L'échelle typographique est une table plate : le socle préfixé `type.`, et le
+ * produit dont les clés portent déjà leur préfixe. Ce sont donc des **frères**,
+ * pas deux niveaux — et `Object.fromEntries` garde le dernier.
+ *
+ * **Une clé du produit qui porterait le nom d'une clé du socle l'écraserait en
+ * silence.** Même variante appelée, autre taille, autre graisse, et rien ne
+ * tombe : le nom existe toujours, il ne désigne simplement plus la même chose.
+ * C'est un défaut d'un genre particulier — il ne se voit sur aucun écran isolé,
+ * il faut ouvrir les deux fichiers de jetons côte à côte, ce que personne ne
+ * fait. Il survivra au lot qui l'a fait remarquer, d'où cette garde.
+ */
+describe('les deux couches de l’échelle', () => {
+  it('ne se disputent aucun nom', () => {
+    expect(collisionsDeCouches).toEqual([]);
+  });
+
+  it('et la table porte bien les deux, sans quoi la garde ne garderait rien', () => {
+    // **Le sens inverse.** Une garde sur un tableau vide passe aussi quand les
+    // deux couches sont vides, ou quand l'une n'est plus lue du tout : c'est
+    // exactement l'implémentation qu'on redoute — un `variantes()` qui rendrait
+    // `[]` sur le produit ferait taire la collision **et** perdrait quatre
+    // variantes, sans un seul rouge.
+    expect(typography['type.body']).toBeDefined();
+    expect(typography['type.code']).toBeDefined();
+  });
+});
+
+/**
+ * L'échelle des chiffres est une échelle, pas un tas.
+ *
+ * **Deux jetons portaient la même taille sans que rien ne le dise.** Le socle
+ * déclarait `monoDisplay` à 44 px, le produit `figure` à 44 px aussi, l'un en
+ * poids 500 et l'autre en 600 — et le *même* score de fiabilité était rendu par
+ * l'un sur son écran de détail, par l'autre dans les règles des paliers. Deux
+ * écrans, un nombre, deux graisses.
+ *
+ * Rien ne pouvait le voir : chaque jeton était conforme, chaque écran cohérent
+ * avec lui-même. Il fallait ouvrir les deux fichiers de jetons côte à côte, ou
+ * les deux écrans, et personne ne fait ni l'un ni l'autre.
+ *
+ * D'où la règle, qui vaut pour cette famille et pas pour les autres : **dans le
+ * monospacé, la taille désigne le rôle.** Le corps a `body` et `bodyStrong` à
+ * 16 px, le titre a sa variante accentuée — ce sont des paires voulues, une
+ * graisse distinguant deux emplois du même rang. Les chiffres n'ont pas de
+ * paires : chaque cran est un usage, du code à six chiffres qu'on montre au
+ * comptoir jusqu'à l'étiquette qui porte une date.
+ */
+describe('l’échelle des chiffres', () => {
+  it('n’a qu’un jeton par taille', () => {
+    const parTaille = new Map<number, string[]>();
+
+    for (const [nom, echelle] of Object.entries(typography)) {
+      if (echelle.fontFamily !== 'mono') continue;
+      parTaille.set(echelle.fontSize, [...(parTaille.get(echelle.fontSize) ?? []), nom]);
+    }
+
+    const partages = [...parTaille.entries()]
+      .filter(([, noms]) => noms.length > 1)
+      .map(([taille, noms]) => `${taille} px : ${noms.sort().join(', ')}`);
+
+    expect(partages).toEqual([]);
+  });
+
+  it('et elle est bien peuplée, sans quoi la règle ne dirait rien', () => {
+    // **Le sens inverse.** « Aucune taille partagée » est vrai d'une famille
+    // vide, et le serait aussi le jour où quelqu'un change la fonte du
+    // monospacé sans changer les jetons : la garde passerait au vert en ayant
+    // cessé de regarder quoi que ce soit.
+    const chiffres = Object.entries(typography).filter(
+      ([, echelle]) => echelle.fontFamily === 'mono',
+    );
+
+    expect(chiffres.length).toBeGreaterThanOrEqual(6);
+
+    // **Et les deux couches y sont.** C'est cette moitié qui a payé : la
+    // première version comparait à `familles.mono`, qui porte le nom de la
+    // fonte et non le rôle — la famille ressortait vide, la règle du dessus
+    // passait au vert sur zéro jeton. En la réparant, le vrai défaut est
+    // apparu : `type.code` et `type.countdown` sortaient en sans, parce que la
+    // passation épelle « IBM Plex Mono » là où le produit écrit « mono ».
+    const noms = chiffres.map(([nom]) => nom);
+    expect(noms).toContain('type.dataLabel'); // socle
+    expect(noms).toContain('type.code'); // produit
   });
 });

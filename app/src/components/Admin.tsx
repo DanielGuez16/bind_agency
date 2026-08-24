@@ -105,7 +105,7 @@ export function TableRow({
           }}
         >
           <Texte
-            variante={colonne.chiffre ? 'type.mono' : 'type.caption'}
+            variante={colonne.chiffre ? 'type.data' : 'type.caption'}
             ellipseSurNomPropre={!colonne.chiffre}
           >
             {valeurs[colonne.cle] ?? ''}
@@ -133,7 +133,7 @@ export function KeyHint({ touche }: { touche: string }) {
         backgroundColor: c['bg.surface'],
       }}
     >
-      <Texte variante="type.mono" couleur="ink.soft" style={{ fontSize: 10 }}>
+      <Texte variante="type.data" couleur="ink.soft" style={{ fontSize: 10 }}>
         {touche}
       </Texte>
     </View>
@@ -177,7 +177,7 @@ export function DetailPanel({
         }}
       >
         <Texte variante="type.label">{titre}</Texte>
-        <Texte variante="type.mono" couleur="ink.mute" style={{ fontSize: 11 }}>
+        <Texte variante="type.data" couleur="ink.mute" style={{ fontSize: 11 }}>
           {identifiant}
         </Texte>
       </View>

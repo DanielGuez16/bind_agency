@@ -281,7 +281,7 @@ export function TerrainScreen() {
                 />
               </View>
               {/* En clair sous le code : un écran qui ne scanne pas se dicte. */}
-              <Texte variante="type.mono" testID="adresse-du-lien">
+              <Texte variante="type.data" testID="adresse-du-lien">
                 {lien.url}
               </Texte>
               <Texte variante="type.caption" couleur="ink.mute">

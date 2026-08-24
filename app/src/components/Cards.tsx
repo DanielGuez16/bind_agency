@@ -151,7 +151,7 @@ export function MediaFallback({
 export type DataRowProps = {
   label: string;
   value: string;
-  /** Les chiffres passent en `type.mono` : ils s'alignent d'une ligne à l'autre. */
+  /** Les chiffres passent en `type.data` : ils s'alignent d'une ligne à l'autre. */
   chiffre?: boolean;
   testID?: string;
 };
@@ -176,7 +176,7 @@ export function DataRow({ label, value, chiffre, testID }: DataRowProps) {
       <Texte variante="type.caption" couleur="ink.soft" style={{ flexShrink: 1 }}>
         {label}
       </Texte>
-      <Texte variante={chiffre ? 'type.mono' : 'type.body'} align="right" style={{ flexShrink: 1 }}>
+      <Texte variante={chiffre ? 'type.data' : 'type.body'} align="right" style={{ flexShrink: 1 }}>
         {value}
       </Texte>
     </View>

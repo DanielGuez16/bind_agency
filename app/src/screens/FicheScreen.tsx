@@ -436,7 +436,7 @@ function SeparateurNomme({ texte, testID }: { texte: string; testID: string }) {
       style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 4 }}
     >
       <View style={{ flex: 1, height: 1, backgroundColor: c['line.default'] }} />
-      <Texte variante="type.monoSmall" couleur="ink.mute">
+      <Texte variante="type.dataLabel" couleur="ink.mute">
         {texte.toUpperCase()}
       </Texte>
       <View style={{ flex: 1, height: 1, backgroundColor: c['line.default'] }} />
@@ -539,7 +539,7 @@ function FeuilleDeSortie({
       <Texte couleur="ink.soft">{t('parcours.sortieCorps', { nom })}</Texte>
 
       <View style={{ backgroundColor: c['bg.inset'], padding: 14 }}>
-        <Texte variante="type.mono" ellipseSurNomPropre testID="domaine-de-sortie">
+        <Texte variante="type.data" ellipseSurNomPropre testID="domaine-de-sortie">
           {domaineDe(lien)}
         </Texte>
       </View>

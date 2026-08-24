@@ -122,7 +122,7 @@ export function BandeauDeMiseEnLigne({
           {/* Le compte n'a de sens qu'avant la publication : après, ce n'est
               plus une progression, c'est un manque. */}
           {etat.forme !== 'publie-mais-invisible' ? (
-            <Texte variante="type.monoSmall" couleur="ink.onDark" testID="compte-mise-en-ligne">
+            <Texte variante="type.dataLabel" couleur="ink.onDark" testID="compte-mise-en-ligne">
               {t('commerce.activationCompte', { faites: etat.faites, total: etat.total })}
             </Texte>
           ) : null}

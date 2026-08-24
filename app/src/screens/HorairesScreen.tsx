@@ -168,7 +168,7 @@ function LigneDeJour({
         <Texte variante="type.label">{libelle}</Texte>
         <View style={{ flex: 1 }}>
           {regle ? (
-            <Texte variante="type.mono" couleur="ink.soft" testID={`horaires-${jour}`}>
+            <Texte variante="type.data" couleur="ink.soft" testID={`horaires-${jour}`}>
               {regle.start_time.slice(0, 5)} – {regle.end_time.slice(0, 5)} ·{' '}
               {t('composition.postes', { n: regle.concurrent_slots })}
             </Texte>
@@ -278,7 +278,7 @@ function Exceptions({
             style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}
             testID={`exception-${exception.id}`}
           >
-            <Texte variante="type.mono" style={{ flex: 1 }}>
+            <Texte variante="type.data" style={{ flex: 1 }}>
               {formatJour(exception.date, locale)} · {t('composition.ferme')}
             </Texte>
             <Button

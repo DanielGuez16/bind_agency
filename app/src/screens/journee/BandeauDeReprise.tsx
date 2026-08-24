@@ -114,7 +114,7 @@ export function BandeauDeReprise({
           {/* **La portée avant l'heure.** « Ce qui est ouvert » se lit avant
               « jusqu'à quand » : un gérant qui apprend qu'on est chez lui
               demande d'abord jusqu'où, pas jusqu'à quand. */}
-          <Texte variante="type.monoSmall" couleur="ink.onDark" testID="reprise-portee-journee">
+          <Texte variante="type.dataLabel" couleur="ink.onDark" testID="reprise-portee-journee">
             {/* Les mêmes mots que la liste des réglages, par le même
                 aiguillage : deux jeux pour les mêmes écrans finiraient par se
                 contredire, et c'est le gérant qui lirait la contradiction.
@@ -131,7 +131,7 @@ export function BandeauDeReprise({
                 .join(t('reglages.porteeSeparateur')),
             })}
           </Texte>
-          <Texte variante="type.monoSmall" couleur="ink.onDark" testID="reprise-quand">
+          <Texte variante="type.dataLabel" couleur="ink.onDark" testID="reprise-quand">
             {t('commerce.repriseDepuisJusqua', {
               debut: formatDateTime(reprise.started_at, locale, timezone),
               fin: formatDateTime(reprise.expires_at, locale, timezone),

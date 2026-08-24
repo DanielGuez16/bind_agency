@@ -214,7 +214,7 @@ export function PremiersPas({
           }}
         >
           <View style={{ gap: 2 }}>
-            <Texte variante="type.monoFigure" testID="portee-createurs">
+            <Texte variante="type.figureSmall" testID="portee-createurs">
               {formatNumber(portee.createurs, locale)}
             </Texte>
             <Texte variante="type.caption" couleur="ink.soft">

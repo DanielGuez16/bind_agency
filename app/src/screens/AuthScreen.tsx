@@ -246,7 +246,7 @@ export function AuthScreen({ motif }: { motif: MotifDeSortie | null }) {
               la saisie commencée : « 0 / 12 » devant un champ vide sonne comme
               un reproche avant d'avoir rien fait. */}
           {inscription && motDePasse.length > 0 && reste > 0 ? (
-            <Texte variante="type.mono" couleur="ink.mute" testID="jauge">
+            <Texte variante="type.data" couleur="ink.mute" testID="jauge">
               {t('auth.jauge', { saisi: motDePasse.length, requis: CARACTERES_REQUIS })}
             </Texte>
           ) : null}

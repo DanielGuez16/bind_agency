@@ -208,7 +208,7 @@ function LigneCopiable({
       }}
     >
       <Texte
-        variante={mono ? 'type.mono' : 'type.body'}
+        variante={mono ? 'type.data' : 'type.body'}
         style={{ flex: 1 }}
         ellipseSurNomPropre
       >

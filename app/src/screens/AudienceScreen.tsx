@@ -279,7 +279,7 @@ function CarteDuCompte({
         <View style={{ flex: 1, minWidth: 0 }}>
           <Texte variante="type.bodyStrong">{nomDePlateforme(compte.platform)}</Texte>
           {compte.handle ? (
-            <Texte variante="type.mono" couleur="ink.mute" ellipseSurNomPropre>
+            <Texte variante="type.data" couleur="ink.mute" ellipseSurNomPropre>
               {compte.handle}
             </Texte>
           ) : null}
@@ -367,7 +367,7 @@ function CarteDuCompte({
               courant. Et le tiret est la valeur quand il n'y a pas de relevé,
               donc il se lit — ink.mute, jamais ink.faint. */}
           <Texte
-            variante="type.monoFigure"
+            variante="type.figureSmall"
             couleur={etat === 'a-jour' ? 'ink.default' : 'ink.mute'}
             testID="abonnes"
           >
@@ -480,7 +480,7 @@ function CarteDuCompte({
           {controle.signaux.map((signal) => (
             <SignalAcquis key={signal.signal} signal={signal} locale={locale} />
           ))}
-          <Texte variante="type.monoSmall" couleur="ink.mute" testID="jour-du-controle">
+          <Texte variante="type.dataLabel" couleur="ink.mute" testID="jour-du-controle">
             {t('parcours.audienceJourN', { n: String(joursDepuis(controle.started_at)) })}
           </Texte>
         </View>
@@ -538,7 +538,7 @@ function Mesure({
       <Texte variante="type.label" couleur="ink.mute">
         {etiquette}
       </Texte>
-      <Texte variante="type.mono">{valeur}</Texte>
+      <Texte variante="type.data">{valeur}</Texte>
     </View>
   );
 }
@@ -630,7 +630,7 @@ function CarteDuScore({
           </Texte>
         </View>
         <Texte
-          variante="type.monoFigure"
+          variante="type.figureSmall"
           couleur={lisible ? 'ink.default' : 'ink.mute'}
           testID="score-de-fiabilite"
         >
