@@ -630,6 +630,11 @@ export class Api {
   // ---- favoris ----
 
   /** La liste des prestations mises de côté, la plus récente d'abord. */
+  /** Vrai si ce mot de passe est bien celui du compte. Ne touche pas au coffre. */
+  verifierLeMotDePasse(email: string, motDePasse: string) {
+    return this.client.verifierLeMotDePasse(email, motDePasse);
+  }
+
   mesFavoris(signal?: AbortSignal) {
     return this.client.request<Favori[]>(routes.mesFavoris(), { signal });
   }

@@ -342,6 +342,14 @@ it('distingue ce qui est derrière de ce qui reste à faire', async () => {
   try {
     await monter();
 
+    // Les lignes finies sont repliées depuis le troisième retour sur cet écran.
+
+    if (screen.queryByTestId('section-finies-entete')) {
+
+      await fireEvent.press(screen.getByTestId('section-finies-entete'));
+
+    }
+
     expect(screen.getByTestId('statut-confirmee-1')).toHaveTextContent(
       en.commerce.statut_no_show,
     );

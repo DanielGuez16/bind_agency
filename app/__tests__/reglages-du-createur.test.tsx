@@ -66,11 +66,38 @@ function serveurDe(
       const { status, corps } = trouve[1](init);
       return { ok: status >= 200 && status < 300, status, json: async () => corps } as Response;
     }
+    // **La vérification du mot de passe passe par la connexion.** La
+    // suppression ne prend pas de corps ; c'est la seule vérification honnête
+    // disponible, et le décor doit donc la servir.
+    if (chemin.includes('/auth/login')) {
+      const corps = JSON.parse(String(init?.body ?? '{}'));
+      return corps.password === MOT_DE_PASSE
+        ? ({ ok: true, status: 200, json: async () => ({ access_token: 'a2', refresh_token: 'r2' }) } as Response)
+        : ({ ok: false, status: 401, json: async () => ({ detail: 'invalid_credentials' }) } as Response);
+    }
     if (chemin.includes('/me')) {
       return { ok: true, status: 200, json: async () => moi } as Response;
     }
     throw new TypeError(`route non simulée : ${chemin}`);
   }) as unknown as typeof fetch;
+}
+
+const MOT_DE_PASSE = 'tourbillon-cactus-91-vermeil';
+
+/**
+ * Ouvre la confirmation et la remplit.
+ *
+ * **Le geste n'est plus un appui.** La campagne dit qu'on craint d'appuyer sans
+ * le vouloir, pas de ne pas pouvoir revenir : retaper son adresse et son mot de
+ * passe ne se fait pas par accident, et c'est ce que ces trois lignes coûtent
+ * au test comme à la lectrice.
+ */
+async function armerLaSuppression(motDePasse: string = MOT_DE_PASSE) {
+  if (screen.queryByTestId('ouvrir-la-suppression')) {
+    await fireEvent.press(screen.getByTestId('ouvrir-la-suppression'));
+  }
+  await fireEvent.changeText(screen.getByTestId('suppression-identifiant'), UTILISATEUR.email ?? '');
+  await fireEvent.changeText(screen.getByTestId('suppression-mot-de-passe'), motDePasse);
 }
 
 /** Une réservation réduite à ce que le comptage lit : le statut de sa contrepartie. */
@@ -144,8 +171,16 @@ describe('les réglages du créateur', () => {
 
     const cramoisi = couleurs['status.danger.rule'];
 
-    // Le bloc porte la nature de la décision.
-    expect(styleAplati(screen.getByTestId('bloc-suppression')).borderColor).toBe(cramoisi);
+    // **Le cramoisi a quitté le bloc pour le bouton.** Le pavé encadré et
+    // teinté attirait la main autant qu'il l'avertissait, et la campagne dit
+    // que le risque est d'appuyer sans le vouloir. La nature de la décision se
+    // porte maintenant là où on appuie, et seulement une fois la confirmation
+    // ouverte.
+    await armerLaSuppression();
+    expect(styleAplati(screen.getByTestId('supprimer-mon-compte'))).toMatchObject({});
+    expect(JSON.stringify(styleAplati(screen.getByTestId('supprimer-mon-compte')))).toContain(
+      cramoisi,
+    );
 
     // La déconnexion ne la porte pas — nulle part dans ses styles. Chercher
     // seulement `borderColor` laisserait passer un fond ou un texte cramoisi,
@@ -169,6 +204,7 @@ describe('les réglages du créateur', () => {
       }),
     );
 
+    await armerLaSuppression();
     await fireEvent.press(screen.getByTestId('supprimer-mon-compte'));
 
     // Le bouton de suppression cède la place au retour : le bloc n'est plus
@@ -199,10 +235,51 @@ describe('les réglages du créateur', () => {
     await waitFor(() => expect(screen.getByTestId('annuler-la-suppression')).toBeTruthy());
     await fireEvent.press(screen.getByTestId('annuler-la-suppression'));
 
-    await waitFor(() => expect(screen.getByTestId('supprimer-mon-compte')).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId('ouvrir-la-suppression')).toBeTruthy());
     // `DELETE` sur la demande, pas un `POST` sur un chemin d'annulation : ce
     // qu'on retire est la ressource créée par le geste précédent.
     expect(methode).toBe('DELETE');
+  });
+
+  it('le bouton n’existe qu’une fois les deux champs justes', async () => {
+    // **Le sens inverse, et c'est lui qui porte la protection.** Sans cette
+    // moitié, un bouton rendu dès l'ouverture passerait tous les tests du
+    // dessus — c'est-à-dire exactement l'appui accidentel qu'on vient de
+    // retirer. Vérifié par mutation : sans elle, la garde survivait.
+    await poser();
+    await waitFor(() => expect(screen.getByTestId('ouvrir-la-suppression')).toBeTruthy());
+    await fireEvent.press(screen.getByTestId('ouvrir-la-suppression'));
+    expect(screen.queryByTestId('supprimer-mon-compte')).toBeNull();
+
+    // L'adresse seule ne suffit pas.
+    await fireEvent.changeText(
+      screen.getByTestId('suppression-identifiant'),
+      UTILISATEUR.email ?? '',
+    );
+    expect(screen.queryByTestId('supprimer-mon-compte')).toBeNull();
+
+    // Une autre adresse non plus, même avec le mot de passe.
+    await fireEvent.changeText(screen.getByTestId('suppression-identifiant'), 'autre@bind.example');
+    await fireEvent.changeText(screen.getByTestId('suppression-mot-de-passe'), MOT_DE_PASSE);
+    expect(screen.queryByTestId('supprimer-mon-compte')).toBeNull();
+
+    await armerLaSuppression();
+    expect(screen.getByTestId('supprimer-mon-compte')).toBeTruthy();
+  });
+
+  it('et un mot de passe faux le dit, sans rien supprimer', async () => {
+    let demandes = 0;
+    await poser(serveurDe({ '/me/deletion': () => { demandes += 1; return { status: 202, corps: moi }; } }));
+
+    await armerLaSuppression('pas-le-bon-mot-de-passe');
+    await fireEvent.press(screen.getByTestId('supprimer-mon-compte'));
+
+    await waitFor(() =>
+      expect(screen.getByTestId('suppression-echec')).toHaveTextContent(
+        en.reglages.supprimerMotDePasseFaux,
+      ),
+    );
+    expect(demandes).toBe(0);
   });
 
   it('dit combien de contreparties bloquent, en les comptant lui-même', async () => {
@@ -231,6 +308,8 @@ describe('les réglages du créateur', () => {
       }),
     );
 
+    await armerLaSuppression();
+
     await fireEvent.press(screen.getByTestId('supprimer-mon-compte'));
 
     await waitFor(() =>
@@ -258,6 +337,8 @@ describe('les réglages du créateur', () => {
         '/me/bookings': () => ({ status: 500, corps: { detail: 'internal_error' } }),
       }),
     );
+
+    await armerLaSuppression();
 
     await fireEvent.press(screen.getByTestId('supprimer-mon-compte'));
 

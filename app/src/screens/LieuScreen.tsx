@@ -16,6 +16,17 @@
  * séparation ; une carte décrit le lieu. Et le blocage qu'elle porte — une
  * prestation qui laisse un choix ne se publie pas sans elle — se lit alors
  * depuis les deux côtés, ce qui est correct puisqu'il tient aux deux.
+ *
+ * **Mais les trois ne se déplient plus ensemble.** « Trop de choses d'un
+ * coup », dit la campagne, et elle a raison sur ce point précis : une galerie,
+ * un dépôt de carte et sept lignes d'horaires ouverts en même temps font un
+ * écran qu'on parcourt au lieu de le lire. Trois sections repliées, une seule
+ * ouverte à la fois, et chacune **dit ce qu'elle contient avant qu'on
+ * l'ouvre** — c'est le compte qui remplace le contenu, pas un titre.
+ *
+ * **Repliées et non réparties.** Les trois décrivent le même objet, et les
+ * mettre sur trois écrans redonnerait les portes dont la v3.1 vient de réduire
+ * le nombre. Ce qui gênait est la hauteur, pas le voisinage.
  */
 import { View } from 'react-native';
 
@@ -25,7 +36,7 @@ import {
   type PageDeLaCarte,
   type PhotoDuCommerce,
 } from '../api';
-import { Filet, SkeletonLignes } from '../components';
+import { Repliable, SkeletonLignes } from '../components';
 import { useI18n } from '../i18n';
 import { CarteDuCommerce } from './CarteDuCommerce';
 import { GalerieDuCommerce } from './GalerieDuCommerce';
@@ -33,7 +44,7 @@ import { HorairesDuCommerce, type Semaine } from './HorairesScreen';
 import { Ecran } from './Ecran';
 import { AGES } from './cacheDesReponses';
 import { useRequete } from './useRequete';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 
 /** Ce que le lieu charge d'un coup : les trois blocs composent la même page. */
 type Lieu = {
@@ -98,6 +109,15 @@ export function LieuScreen({
     cache: { cle: `lieu.${businessId}`, ageMax: AGES.contenu },
   });
 
+  /**
+   * La section ouverte, ou aucune.
+   *
+   * **Aucune au départ**, et c'est le sujet du retour : l'écran s'ouvrait avec
+   * ses trois blocs dépliés. Trois résumés tiennent en un écran et disent
+   * chacun ce qu'il y a derrière ; on ouvre ce qu'on vient faire.
+   */
+  const [ouverte, setOuverte] = useState<'photos' | 'carte' | 'horaires' | null>(null);
+
   return (
     <Ecran
       requete={requete}
@@ -107,42 +127,79 @@ export function LieuScreen({
       squelette={<SkeletonLignes combien={5} testID="squelette-lieu" />}
       testID="ecran-lieu"
     >
-      {(lieu) => (
-        <View style={{ gap: 16 }}>
+      {(lieu) => {
+        const bloquees = lieu.items
+          .filter((item) => item.leaves_choice)
+          .map((item) => ({ id: item.id, name: item.name }));
+        return (
+        <View style={{ gap: 4 }}>
           {/* La galerie en tête : c'est ce qu'un visiteur voit en premier de la
               fiche, et un commerce qui compose sa page commence souvent par là. */}
-          <GalerieDuCommerce
-            businessId={businessId}
-            photos={lieu.photos}
-            couverture={lieu.couverture}
-            onChange={requete.recharger}
-          />
-          <Filet />
+          <Repliable
+            titre={t('lieu.sectionPhotos')}
+            resume={t('lieu.photosCompte', { count: lieu.photos.length })}
+            ouverte={ouverte === 'photos'}
+            onBasculer={() => setOuverte(ouverte === 'photos' ? null : 'photos')}
+            testID="section-photos"
+          >
+            <GalerieDuCommerce
+              businessId={businessId}
+              photos={lieu.photos}
+              couverture={lieu.couverture}
+              onChange={requete.recharger}
+            />
+          </Repliable>
 
           {/* **La carte suit la galerie et ne s'y mêle pas.** La galerie montre
               le lieu, la carte se consulte : deux dépôts distincts, parce qu'un
               commerce qui les confondrait rendrait la sienne illisible. */}
-          <CarteDuCommerce
-            businessId={businessId}
-            pages={lieu.pagesDeLaCarte}
-            lien={lieu.lienDeLaCarte}
-            bloquees={lieu.items
-              .filter((item) => item.leaves_choice)
-              .map((item) => ({ id: item.id, name: item.name }))}
-            onChange={requete.recharger}
-          />
-          <Filet />
+          <Repliable
+            titre={t('lieu.sectionCarte')}
+            // **Le blocage passe dans le résumé.** Une prestation qui laisse un
+            // choix et ne se publie pas faute de carte est ce qu'on doit voir
+            // sans ouvrir : replier une section ne doit rien cacher qui décide.
+            resume={
+              bloquees.length > 0
+                ? t('lieu.carteBloque', { count: bloquees.length })
+                : t('lieu.carteCompte', { count: lieu.pagesDeLaCarte.length })
+            }
+            alerte={bloquees.length > 0}
+            ouverte={ouverte === 'carte'}
+            onBasculer={() => setOuverte(ouverte === 'carte' ? null : 'carte')}
+            testID="section-carte"
+          >
+            <CarteDuCommerce
+              businessId={businessId}
+              pages={lieu.pagesDeLaCarte}
+              lien={lieu.lienDeLaCarte}
+              bloquees={bloquees}
+              onChange={requete.recharger}
+            />
+          </Repliable>
 
           {/* **Les horaires, ici et plus dans l'offre.** Des heures d'ouverture
               décrivent un endroit : les ranger avec les prestations demandait
               de chercher l'ouverture du salon dans la page de son catalogue. */}
-          <HorairesDuCommerce
-            semaine={lieu.semaine}
-            businessId={businessId}
-            onChange={requete.recharger}
-          />
+          <Repliable
+            titre={t('lieu.sectionHoraires')}
+            // Les jours réellement ouverts, et non les sept lignes : une
+            // semaine à deux jours fermés n'ouvre pas sept jours.
+            resume={t('lieu.joursOuverts', {
+              count: new Set(lieu.semaine.regles.map((regle) => regle.weekday)).size,
+            })}
+            ouverte={ouverte === 'horaires'}
+            onBasculer={() => setOuverte(ouverte === 'horaires' ? null : 'horaires')}
+            testID="section-horaires"
+          >
+            <HorairesDuCommerce
+              semaine={lieu.semaine}
+              businessId={businessId}
+              onChange={requete.recharger}
+            />
+          </Repliable>
         </View>
-      )}
+        );
+      }}
     </Ecran>
   );
 }

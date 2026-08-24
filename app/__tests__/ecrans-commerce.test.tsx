@@ -554,6 +554,10 @@ describe('catalogue', () => {
      * quitte la page de l'offre. Sans cette garde, les retirer du lieu ne
      * casse rien — c'est ce qu'une mutation a montré, et c'est le trou qu'elle
      * a nommé.
+     *
+     * **Les trois sont repliées à l'ouverture**, depuis que la campagne a dit
+     * « trop de choses d'un coup » : on les ouvre une par une, et c'est aussi
+     * ce que ce test éprouve maintenant — trois en-têtes, trois contenus.
      */
     await monter(
       <LieuScreen businessId="b1" />,
@@ -568,8 +572,20 @@ describe('catalogue', () => {
       'merchant',
     );
 
-    await waitFor(() => expect(screen.getByTestId('galerie-du-commerce')).toBeTruthy());
+    // Les trois en-têtes sont là d'emblée, et rien d'autre.
+    await waitFor(() => expect(screen.getByTestId('section-photos-entete')).toBeTruthy());
+    expect(screen.queryByTestId('galerie-du-commerce')).toBeNull();
+
+    await fireEvent.press(screen.getByTestId('section-photos-entete'));
+    expect(screen.getByTestId('galerie-du-commerce')).toBeTruthy();
+
+    await fireEvent.press(screen.getByTestId('section-carte-entete'));
     expect(screen.getByTestId('carte-du-commerce')).toBeTruthy();
+    // **Une seule ouverte à la fois** : c'est ce qui borne la hauteur, et sans
+    // cette ligne trois sections dépliables rendraient le même écran qu'avant.
+    expect(screen.queryByTestId('galerie-du-commerce')).toBeNull();
+
+    await fireEvent.press(screen.getByTestId('section-horaires-entete'));
     // Les sept jours, qui sont ce que les horaires rendent.
     expect(screen.getByTestId('semaine')).toBeTruthy();
   });
@@ -2438,7 +2454,11 @@ describe('la journée se coupe par ce qu’elle demande', () => {
     await monter(<JourneeScreen businessId="b1" />, clientDe({ '/bookings': journee }));
     await waitFor(() => expect(screen.getByTestId('planning')).toBeTruthy());
 
-    expect(screen.getByTestId('finies')).toBeTruthy();
+    // **Les finies se replient** depuis le troisième retour sur cet écran :
+    // il n'y a plus rien à y faire, et elles poussaient hors de l'écran les
+    // lignes qui demandent quelque chose. Le compte reste en tête.
+    await fireEvent.press(screen.getByTestId('section-finies-entete'));
+    await waitFor(() => expect(screen.getByTestId('finies')).toBeTruthy());
     // Les deux anciennes sections ont disparu, et non pas seulement changé de
     // nom : sans cette moitié, un écran qui rendrait les quatre passerait.
     expect(screen.queryByTestId('servies')).toBeNull();

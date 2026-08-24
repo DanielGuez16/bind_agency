@@ -46,7 +46,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 
 import { ApiError, useApi } from '../api';
-import { Button, Chip, DataRow, Filet, RangeeDeChips, Texte } from '../components';
+import { Button, Chip, DataRow, Filet, RangeeDeChips, Texte, TextField } from '../components';
 import { formatDate } from '../format';
 import { useI18n, type SupportedLocale } from '../i18n';
 import { trousseauDisponible, useSession } from '../session';
@@ -259,7 +259,7 @@ function BlocDeSuppression() {
     }
   };
 
-  const agir = async (quoi: 'demander' | 'annuler') => {
+  const agir = async (quoi: 'demander' | 'annuler'): Promise<boolean> => {
     setEchec(null);
     setEnCours(true);
     try {
@@ -276,42 +276,58 @@ function BlocDeSuppression() {
             ? t('reglages.supprimerBloqueUne')
             : t('reglages.supprimerBloque', { count: restantes }),
       );
+      return false;
     } finally {
       setEnCours(false);
     }
+    return true;
   };
 
-  return (
-    <View
-      testID="bloc-suppression"
-      style={{
-        borderWidth: 1,
-        borderColor: c['status.danger.rule'],
-        backgroundColor: c['status.danger.surface'],
-        padding: 14,
-        gap: 10,
-      }}
-    >
-      <Texte variante="type.bodyStrong" couleur="status.danger.text">
-        {t(echeance ? 'reglages.supprimerEnCoursTitre' : 'reglages.supprimerTitre')}
-      </Texte>
+  const email = (session.etat === 'connecte' ? session.utilisateur.email : null) ?? '';
+  const [ouvert, setOuvert] = useState(false);
+  const [identifiant, setIdentifiant] = useState('');
+  const [motDePasse, setMotDePasse] = useState('');
 
-      <Texte variante="type.caption" couleur="ink.soft" testID="suppression-consequences">
-        {echeance
-          ? t('reglages.supprimerEnCoursCorps', {
-              // **Le fuseau de l'appareil, et non celui d'un commerce.** La
-              // règle du produit convertit sur le fuseau du salon parce que
-              // tout le reste s'y passe ; cette échéance-ci n'appartient à
-              // aucun salon, elle appartient au compte. La lire à Miami quand
-              // on est à Madrid ferait tomber la date un jour à côté.
-              quand: formatDate(echeance, locale, FUSEAU_DE_L_APPAREIL),
-            })
-          : t('reglages.supprimerCorps')}
-      </Texte>
+  // **Insensible à la casse et aux bords.** Une adresse se retape, pas se
+  // recopie : exiger la casse exacte ferait échouer quelqu'un qui a bien tapé
+  // son adresse, et ce n'est pas ce qu'on vérifie.
+  const identifiantJuste = identifiant.trim().toLowerCase() === email.trim().toLowerCase();
 
-      {echeance ? (
-        // Le retour est neutre : c'est la commande qui **ne** supprime pas, et
-        // la peindre en cramoisi mettrait la même alarme sur les deux gestes.
+  const confirmer = async () => {
+    setEchec(null);
+    setEnCours(true);
+    try {
+      if (!(await api.verifierLeMotDePasse(email, motDePasse))) {
+        setEchec(t('reglages.supprimerMotDePasseFaux'));
+        return;
+      }
+    } finally {
+      setEnCours(false);
+    }
+    // **La confirmation ne se referme qu'à la réussite.** Un refus — des
+    // contreparties encore ouvertes — laisserait sinon le message d'échec
+    // au-dessus d'un bouton disparu, et il faudrait tout retaper pour
+    // réessayer.
+    if (await agir('demander')) {
+      setOuvert(false);
+      setIdentifiant('');
+      setMotDePasse('');
+    }
+  };
+
+  // **Une demande en cours n'est pas une variante de l'autre état.** Le compte
+  // est toujours actif, tout marche encore, et le retour est le geste qui *ne*
+  // supprime pas : il reste neutre, visible, sans rien à retaper.
+  if (echeance) {
+    return (
+      <View testID="bloc-suppression" style={{ gap: 8 }}>
+        <Texte variante="type.caption" couleur="ink.soft" testID="suppression-consequences">
+          {t('reglages.supprimerEnCoursCorps', {
+            // **Le fuseau de l'appareil, et non celui d'un commerce.** Cette
+            // échéance n'appartient à aucun salon, elle appartient au compte.
+            quand: formatDate(echeance, locale, FUSEAU_DE_L_APPAREIL),
+          })}
+        </Texte>
         <Button
           label={t('reglages.supprimerAnnuler')}
           variant="secondary"
@@ -319,15 +335,92 @@ function BlocDeSuppression() {
           onPress={() => void agir('annuler')}
           testID="annuler-la-suppression"
         />
-      ) : (
+        {echec ? (
+          <Texte variante="type.caption" couleur="status.danger.text" testID="suppression-echec">
+            {echec}
+          </Texte>
+        ) : null}
+      </View>
+    );
+  }
+
+  return (
+    <View testID="bloc-suppression" style={{ gap: 10 }}>
+      {/* **Une ligne, plus un pavé cramoisi.** La campagne ne dit pas qu'on
+          craint de ne pas pouvoir revenir — trente jours répondent à ça — elle
+          dit qu'on craint d'appuyer sans le vouloir. Un bloc encadré, teinté et
+          plus haut que tout le reste de l'écran attire la main autant qu'il
+          l'avertit. Le geste redevient une ligne parmi les autres, et c'est ce
+          qui vient après qui protège. */}
+      {ouvert ? null : (
         <Button
           label={t('reglages.supprimerAction')}
-          variant="danger"
-          loading={enCours}
-          onPress={() => void agir('demander')}
-          testID="supprimer-mon-compte"
+          variant="ghost"
+          size="sm"
+          fullWidth={false}
+          onPress={() => setOuvert(true)}
+          testID="ouvrir-la-suppression"
         />
       )}
+
+      {/* **La confirmation se tape, elle ne se coche pas.** C'est le
+          renversement de l'arbitrage d'avant : on avait retiré la boîte parce
+          que le délai la rendait inutile, et le délai reste vrai — mais il
+          protège de la mauvaise décision, pas du mauvais appui. Retaper son
+          adresse et son mot de passe ne se fait pas par accident. */}
+      {ouvert ? (
+        <View style={{ gap: 10 }} testID="confirmer-la-suppression">
+          <Texte variante="type.caption" couleur="ink.soft" testID="suppression-consequences">
+            {t('reglages.supprimerCorps')}
+          </Texte>
+          <TextField
+            label={t('reglages.supprimerIdentifiant')}
+            value={identifiant}
+            onChangeText={setIdentifiant}
+            testID="suppression-identifiant"
+          />
+          <TextField
+            label={t('reglages.supprimerMotDePasse')}
+            value={motDePasse}
+            onChangeText={setMotDePasse}
+            secret
+            labelRevelation={{
+              montrer: t('auth.montrerLeMotDePasse'),
+              masquer: t('auth.masquerLeMotDePasse'),
+            }}
+            testID="suppression-mot-de-passe"
+          />
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {/* **Retiré tant que les deux champs ne concordent pas, jamais
+                grisé** : c'est la règle du dépôt, et un bouton grisé demande de
+                deviner ce qui le débloque. */}
+            {identifiantJuste && motDePasse.length > 0 ? (
+              <Button
+                label={t('reglages.supprimerAction')}
+                variant="danger"
+                size="sm"
+                fullWidth={false}
+                loading={enCours}
+                onPress={() => void confirmer()}
+                testID="supprimer-mon-compte"
+              />
+            ) : null}
+            <Button
+              label={t('reglages.supprimerRenoncer')}
+              variant="ghost"
+              size="sm"
+              fullWidth={false}
+              onPress={() => {
+                setOuvert(false);
+                setEchec(null);
+                setIdentifiant('');
+                setMotDePasse('');
+              }}
+              testID="renoncer-a-la-suppression"
+            />
+          </View>
+        </View>
+      ) : null}
 
       {echec ? (
         <Texte variante="type.caption" couleur="status.danger.text" testID="suppression-echec">
