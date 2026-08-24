@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 /**
  * Les cœurs qu'on vient de toucher, avant que le serveur réponde.
@@ -19,21 +19,55 @@ import { useCallback, useState } from 'react';
  * jour, la dérogation devient inutile — la garder ferait resurgir un vieux
  * geste sur une donnée neuve. `oublier` est appelé par l'écran quand la
  * requête repart.
+ *
+ * **Et un échec se dit.** Le retour en arrière était muet : le cœur se
+ * remplissait, revenait, et rien ne distinguait « je n'ai pas su enregistrer »
+ * de « tu n'as pas appuyé ». C'est exactement ce qu'on lit comme « les favoris
+ * ne marchent pas » — le geste échoue *et* le produit se tait, donc il n'y a
+ * rien à raconter au support et rien à réessayer. `echec` porte le nom de la
+ * prestation, parce qu'un message qui ne nomme rien laisse chercher laquelle.
  */
 export function useFavorisEnVol(actions: {
   mettre: (catalogItemId: string) => Promise<unknown>;
   retirer: (catalogItemId: string) => Promise<unknown>;
 }) {
-  const [enVol, setEnVol] = useState<Record<string, boolean>>({});
+  /**
+   * Ce qui a été touché : où l'on va, et d'où l'on venait.
+   *
+   * **Les deux, et non le seul « où l'on va ».** Le compte de la porte est un
+   * écart par rapport au total servi ; sans l'état d'origine, un second appui
+   * qui ramène le cœur à sa valeur servie compterait comme un retrait de plus.
+   */
+  const [enVol, setEnVol] = useState<Record<string, { vers: boolean; servi: boolean }>>({});
+  const [echec, setEchec] = useState<string | null>(null);
 
   const estFavori = useCallback(
-    (catalogItemId: string, servi: boolean) => enVol[catalogItemId] ?? servi,
+    (catalogItemId: string, servi: boolean) => enVol[catalogItemId]?.vers ?? servi,
+    [enVol],
+  );
+
+  /**
+   * De combien le total servi a bougé, en tenant compte des appuis en vol.
+   *
+   * Seules les dérogations qui **diffèrent** de l'état servi comptent : revenir
+   * sur son propre appui ne retranche rien au total, il annule sa propre
+   * addition.
+   */
+  const ecart = useMemo(
+    () =>
+      Object.values(enVol).reduce(
+        (somme, { vers, servi }) => somme + (vers === servi ? 0 : vers ? 1 : -1),
+        0,
+      ),
     [enVol],
   );
 
   const basculer = useCallback(
-    (catalogItemId: string, versFavori: boolean) => {
-      setEnVol((avant) => ({ ...avant, [catalogItemId]: versFavori }));
+    (catalogItemId: string, versFavori: boolean, servi: boolean, nom: string) => {
+      // Un nouvel appui est une nouvelle tentative : l'échec d'avant n'a plus
+      // à rester à l'écran pendant qu'on retente.
+      setEchec(null);
+      setEnVol((avant) => ({ ...avant, [catalogItemId]: { vers: versFavori, servi } }));
 
       const appel = versFavori ? actions.mettre : actions.retirer;
       void appel(catalogItemId).catch(() => {
@@ -46,6 +80,7 @@ export function useFavorisEnVol(actions: {
           delete suite[catalogItemId];
           return suite;
         });
+        setEchec(nom);
       });
     },
     [actions],
@@ -53,5 +88,5 @@ export function useFavorisEnVol(actions: {
 
   const oublier = useCallback(() => setEnVol({}), []);
 
-  return { estFavori, basculer, oublier };
+  return { estFavori, basculer, oublier, ecart, echec };
 }

@@ -10461,3 +10461,36 @@ fois sur trois.
 de 500 ms sur un runner partagé, ce qui est le profil exact de la garde de durée
 retirée après quatre CI rouges. Les trois causes sont tenues par des tests
 unitaires, qui ne dépendent d'aucune machine.
+
+---
+
+## 2026-08-24 — Un geste optimiste qui échoue doit parler
+
+Le signalement disait « les favoris ne marchent pas ». Le mécanisme, lui,
+marchait : `POST` accepté, ligne en base, fil relu à `est_favori: true`, liste
+rendue — vérifié dans un navigateur contre une vraie base.
+
+Ce qui manquait est le pendant de l'appui optimiste, et on ne l'avait écrit qu'à
+moitié. Remplir le cœur avant la réponse est juste : attendre le réseau pour un
+geste sans conséquence est ce qui fait dire « lent ». Mais **le retour en
+arrière était muet**, et un retour muet est indiscernable d'un appui qui n'a
+jamais été enregistré. C'est la forme la plus coûteuse d'un échec : il ne laisse
+rien à réessayer, rien à raconter, et il se conclut en « ça ne marche pas ».
+
+La règle qui en sort, et qui vaut partout où l'on écrit avant de savoir : **un
+geste optimiste porte deux retours, pas un.** Celui qui montre qu'on a compris,
+et celui qui dit qu'on n'a pas su. Le second nomme ce qui a échoué — une liste
+de douze favoris ne dit pas d'elle-même lequel n'est pas parti.
+
+**Et le compte vient du serveur.** `favoris_total` est servi par le fil, qui
+charge déjà l'ensemble des favoris pour poser `est_favori` : il ne coûte ni
+requête ni jointure. Le dériver des cartes rendues aurait été faux de deux
+façons — il aurait oublié les favoris hors du rayon, et il aurait changé en
+marchant. Un chiffre qui bouge sans qu'on ait rien fait est pire qu'un chiffre
+absent.
+
+**Aucun parcours de bout en bout ne couvrait les favoris**, et c'est ce qui a
+rendu le signalement invérifiable pendant une heure : la route était éprouvée
+par pytest, l'écran par des doubles Jest, et la jonction par personne. Un double
+répond ce qu'on lui fait dire — le chemin de la route, la forme du corps envoyé
+et la relecture sont exactement ce qu'il rend invisible.

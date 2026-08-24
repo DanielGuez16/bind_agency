@@ -375,6 +375,11 @@ export const en = {
     filRechercher: 'Salon, service, neighbourhood',
     filEffacerLaRecherche: 'Clear',
     filVoirMesFavoris: 'Saved',
+    filVoirMesFavorisCompte: 'Saved services — {{count}} so far',
+    // **Le geste rate, et le produit le dit.** Sans cette ligne, un cœur qui
+    // revient en arrière ne se distingue pas d'un cœur sur lequel on a mal
+    // appuyé — c'est ce qui se lit comme « les favoris ne marchent pas ».
+    filFavoriEchec: 'We couldn’t save {{prestation}}. Tap the heart again.',
     filMettreEnFavori: 'Save this service',
     filRetirerDesFavoris: 'Remove from saved',
     filDecouvrir: 'Discover',
@@ -993,6 +998,7 @@ export const en = {
   favoris: {
     titre: 'Saved',
     videTitre: 'Nothing saved yet',
+    retraitEchec: 'We couldn’t remove {{prestation}}. Tap again to retry.',
     videCorps: 'The heart on a service keeps it here — useful for what is not open to you yet.',
     duree: '{{n}} min',
     // **Le seul réglage de notification du produit.** Tout le reste est

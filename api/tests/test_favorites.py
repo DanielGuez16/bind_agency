@@ -281,6 +281,64 @@ async def test_le_fil_porte_l_etat_du_coeur(session: AsyncSession, client: Async
     assert par_article[str(autre.id)] is False
 
 
+async def test_le_compte_des_favoris_ne_se_borne_pas_au_fil(
+    session: AsyncSession, client: AsyncClient
+) -> None:
+    """**Le compte porte sur tout ce qu'elle garde, pas sur ce que le fil rend.**
+
+    La porte des favoris mène à la liste entière ; un compte borné par le rayon
+    mettrait un chiffre faux juste à côté d'elle — et il changerait en marchant,
+    ce qui est la pire façon de se tromper.
+
+    **Le décor sépare les deux implémentations, et c'est le seul qui le fasse.**
+    Il met en favori une prestation que le fil ne rendra pas — elle n'est
+    ouverte qu'au reel, que cette créatrice n'atteint pas — et laisse dans le
+    fil une prestation qui n'est pas en favori. Un compte dérivé des articles
+    rendus répondrait zéro ; le bon répond un.
+    """
+    from app.schemas.catalog import CatalogItemCreate
+    from app.services import catalog as catalog_service
+
+    decor = await monter_le_decor(session)
+
+    # Celle qu'elle garde : offerte au seul palier qu'elle n'ouvre pas, donc
+    # absente du fil.
+    gardee = await catalog_service.create_item(
+        session,
+        business=decor["business"],
+        payload=CatalogItemCreate(
+            name="Hors de son palier",
+            price_cents=9000,
+            duration_minutes=45,
+            requires_booking=True,
+        ),
+    )
+    await tier_offer_service.create_offer(
+        session,
+        business_id=decor["business"].id,
+        payload=TierOfferCreate(tier_id=REEL, catalog_item_id=gardee.id),
+    )
+    await favorites.ajouter(session, creator_id=decor["createur"].id, catalog_item_id=gardee.id)
+    await session.commit()
+
+    reponse = await client.get(
+        f"{PREFIX}/businesses",
+        params={"longitude": -80.1918, "latitude": 25.7617},
+        headers=await _jetons(client, decor["createur"].email),
+    )
+
+    assert reponse.status_code == 200, reponse.text
+    corps = reponse.json()
+    rendus = [item for commerce in corps["commerces"] for item in commerce["items"]]
+    # Le fil rend bien quelque chose, et ce n'est pas ce qu'elle garde : sans
+    # ces deux constats, le compte de un serait vrai par accident.
+    assert rendus, "le décor doit rendre un fil non vide, sinon il ne sépare rien"
+    assert str(gardee.id) not in {item["catalog_item_id"] for item in rendus}
+    assert not any(item["est_favori"] for item in rendus)
+
+    assert corps["favoris_total"] == 1
+
+
 async def test_les_favoris_d_une_creatrice_ne_sont_qu_a_elle(
     session: AsyncSession, client: AsyncClient
 ) -> None:

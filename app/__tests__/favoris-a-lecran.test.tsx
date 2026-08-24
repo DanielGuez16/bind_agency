@@ -183,6 +183,34 @@ describe('on peut lâcher ce qu’on a gardé', () => {
     await waitFor(() => expect(screen.getByTestId('favori-i1')).toBeTruthy());
   });
 
+  it('et elle le dit, en nommant la prestation', async () => {
+    // **Le retour en arrière était muet.** La ligne s'en allait, revenait, et
+    // rien ne disait pourquoi — ce qui se lit comme un écran qui refuse le
+    // geste, et fait appuyer une seconde fois. Le nom, parce qu'une liste de
+    // douze favoris ne dit pas d'elle-même lequel n'est pas parti.
+    await monter([favori()], () => ({
+      ok: false,
+      status: 500,
+      json: async () => ({ detail: 'internal_error' }),
+    }) as Response);
+
+    await fireEvent.press(await screen.findByTestId('favori-retirer-i1'));
+
+    await waitFor(() => expect(screen.getByTestId('favori-non-retire')).toBeTruthy());
+    expect(screen.getByTestId('favori-non-retire')).toHaveTextContent(/Gel manicure/);
+  });
+
+  it('et rien ne s’affiche quand le retrait passe', async () => {
+    // Sans ce sens, une bande affichée en permanence passerait le test du
+    // dessus sans rien éprouver.
+    await monter([favori()]);
+
+    await fireEvent.press(await screen.findByTestId('favori-retirer-i1'));
+
+    await waitFor(() => expect(screen.queryByTestId('favori-i1')).toBeNull());
+    expect(screen.queryByTestId('favori-non-retire')).toBeNull();
+  });
+
   it('la ligne entière ouvre le salon, y compris sur une réservable', async () => {
     const { ouvertures } = await monter([favori()]);
 

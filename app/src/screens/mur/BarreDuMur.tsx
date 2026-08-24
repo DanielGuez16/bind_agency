@@ -26,6 +26,7 @@ import { Pressable, ScrollView, TextInput, View } from 'react-native';
 
 import type { BusinessCategory, Fil } from '../../api';
 import { Icone, Texte } from '../../components';
+import { formatNumber } from '../../format';
 import { useI18n } from '../../i18n';
 import { radius, size, useColors } from '../../theme';
 
@@ -36,6 +37,7 @@ export function BarreDuMur({
   recherche,
   onRecherche,
   onVoirLesFavoris,
+  favorisGardes = 0,
 }: {
   /** Nul tant que le fil n'a pas répondu : la barre se rend quand même. */
   fil: Fil | null;
@@ -44,8 +46,16 @@ export function BarreDuMur({
   recherche: string;
   onRecherche: (texte: string) => void;
   onVoirLesFavoris: () => void;
+  /**
+   * Combien de prestations sont gardées, **en tout**.
+   *
+   * Servi par le fil et non compté sur ce qu'il rend : la porte mène à la liste
+   * entière, et un compte borné par le rayon changerait en marchant. Zéro
+   * n'écrit rien — voir plus bas.
+   */
+  favorisGardes?: number;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const c = useColors();
 
   // `fil === null` et non `fil?.` : le serveur rend toujours `categories`, et
@@ -119,7 +129,15 @@ export function BarreDuMur({
         <Pressable
           testID="voir-mes-favoris"
           accessibilityRole="button"
-          accessibilityLabel={t('parcours.filVoirMesFavoris')}
+          // **Le compte est dans le nom, pas seulement dans la pastille.** Un
+          // chiffre posé à côté d'une icône n'existe pas pour un lecteur
+          // d'écran, et c'est justement l'information qui dit qu'il s'est passé
+          // quelque chose.
+          accessibilityLabel={
+            favorisGardes > 0
+              ? t('parcours.filVoirMesFavorisCompte', { count: favorisGardes })
+              : t('parcours.filVoirMesFavoris')
+          }
           onPress={onVoirLesFavoris}
           style={({ pressed }) => ({
             width: size.touchMin,
@@ -130,6 +148,41 @@ export function BarreDuMur({
           })}
         >
           <Icone nom="coeur" couleur="ink.default" taille={22} />
+          {/* **Zéro ne s'écrit pas.** Une pastille à zéro apprend à ne plus
+              regarder la pastille, et c'est le seul endroit du fil qui dise
+              qu'un appui a été enregistré. Elle apparaît au premier favori,
+              c'est-à-dire au moment exact où elle a quelque chose à dire. */}
+          {favorisGardes > 0 ? (
+            <View
+              testID="compte-des-favoris"
+              // Non lue à part : le nom du bouton la porte déjà, et un lecteur
+              // d'écran qui annoncerait « favoris, 1 » puis « 1 » répéterait.
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+              style={{
+                position: 'absolute',
+                top: 4,
+                right: 2,
+                minWidth: 16,
+                height: 16,
+                borderRadius: radius['radius.pill'],
+                paddingHorizontal: 4,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: c['brand.700'],
+              }}
+            >
+              {/* **`ink.onDark` sur `brand.700`, et c'est mesuré : 4,82:1.**
+                  `ink.onBrand` — l'encre prévue pour l'orange de marque — n'y
+                  donne que 3,47:1, sous les 4,5:1 d'un texte. Elle est
+                  calibrée pour `brand.500`, qui est plus clair ; la pastille
+                  porte le 700 parce qu'elle est petite et doit tenir sur le
+                  papier. */}
+              <Texte variante="type.dataLabel" couleur="ink.onDark">
+                {formatNumber(favorisGardes, locale)}
+              </Texte>
+            </View>
+          ) : null}
         </Pressable>
       </View>
 

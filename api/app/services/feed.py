@@ -246,6 +246,18 @@ class Fil:
     #: Les quartiers représentés dans le fil rendu, du plus proche au plus
     #: lointain. Vide quand aucun salon rendu n'a déclaré de quartier.
     quartiers: tuple[CompteParQuartier, ...]
+    #: Combien de prestations la créatrice garde de côté, **en tout**.
+    #:
+    #: **Pas un compte du fil rendu.** Un favori posé à Wynwood existe encore
+    #: quand on lit le fil depuis Kendall : le compter sur ce que le fil renvoie
+    #: donnerait un nombre qui change de quartier en quartier, c'est-à-dire un
+    #: chiffre faux à côté d'une porte qui, elle, mène à la liste entière.
+    #:
+    #: Servi ici et non par une route de plus parce qu'il ne coûte rien : le
+    #: fil charge déjà l'ensemble des favoris pour poser `est_favori` sur
+    #: chaque article. C'est sa taille, et c'est le seul écran qui affiche
+    #: cette porte.
+    favoris_total: int
     #: Le palier le plus proche, et ce qu'il ouvrirait. `None` quand tout est
     #: ouvert, qu'aucun n'est atteignable, ou qu'il n'ouvrirait aucun salon.
 
@@ -341,6 +353,10 @@ async def fil_du_createur(
             categories=(),
             rayons=(),
             quartiers=(),
+            # **Compté même ici.** Un fil vide n'est pas une créatrice sans
+            # favoris : celle qui n'a pas encore de palier ouvert en a peut-être
+            # posé, et c'est justement l'écran où la porte doit rester juste.
+            favoris_total=len(favoris),
         )
 
     paliers_ouverts = {tier_id for _, tier_id in accessibles}
@@ -540,6 +556,7 @@ async def fil_du_createur(
         categories=categories,
         rayons=rayons,
         quartiers=_compter_par_quartier(commerces),
+        favoris_total=len(favoris),
     )
 
 

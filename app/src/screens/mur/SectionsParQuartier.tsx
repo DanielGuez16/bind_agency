@@ -150,6 +150,18 @@ function prestationsDe(
     );
 }
 
+/** De quoi rendre un cœur et le brancher. */
+export type ActionsDeFavori = {
+  /** Vrai si l'article est gardé, en tenant compte des appuis en vol. */
+  estFavori: (catalogItemId: string, servi: boolean) => boolean;
+  basculer: (
+    catalogItemId: string,
+    versFavori: boolean,
+    servi: boolean,
+    nom: string,
+  ) => void;
+};
+
 /** Les rangées de deux, la dernière éventuellement incomplète. */
 function enRangeesDeDeux<T>(elements: T[]): T[][] {
   const rangees: T[][] = [];
@@ -182,11 +194,7 @@ export function useMur(
   fil: Fil | null,
   categorie: BusinessCategory | null,
   onOuvrir: (businessId: string) => void,
-  favoris?: {
-    /** Vrai si l'article est gardé, en tenant compte des appuis en vol. */
-    estFavori: (catalogItemId: string, servi: boolean) => boolean;
-    basculer: (catalogItemId: string, versFavori: boolean) => void;
-  },
+  favoris?: ActionsDeFavori,
 ): { entete: React.ReactNode; elements: { cle: string; rendu: React.ReactNode }[]; pied: React.ReactNode } | null {
   const { api } = useApi();
   const { t } = useI18n();
@@ -268,6 +276,12 @@ export function useMur(
                     favoris.basculer(
                       prestation.catalogItemId,
                       !favoris.estFavori(prestation.catalogItemId, prestation.estFavori),
+                      // **L'état servi voyage avec le geste.** Le compte de la
+                      // porte est un écart par rapport au total du serveur :
+                      // sans lui, un second appui qui ramène le cœur à sa
+                      // valeur servie compterait comme un retrait de plus.
+                      prestation.estFavori,
+                      prestation.nom,
                     )
                 : undefined
             }
@@ -346,13 +360,23 @@ export function SectionsParQuartier({
   fil,
   categorie,
   onOuvrir,
+  favoris,
 }: {
   fil: Fil;
   /** La catégorie en vigueur, qui nomme le compte de la section. */
   categorie: BusinessCategory | null;
   onOuvrir: (businessId: string) => void;
+  /**
+   * **Le bloc porte les mêmes cœurs que la liste.** Il ne les passait pas, et
+   * `useMur` ne rend pas de cœur sans branchement : sur un fil dont aucun
+   * salon n'a déclaré de quartier — ce qui arrive — l'écran retombe ici, et il
+   * n'y avait alors **aucun cœur du tout**. Deux rendus du même mur doivent
+   * offrir les mêmes gestes, sinon le second est une version amputée que
+   * personne ne teste.
+   */
+  favoris?: ActionsDeFavori;
 }) {
-  const mur = useMur(fil, categorie, onOuvrir);
+  const mur = useMur(fil, categorie, onOuvrir, favoris);
   if (mur === null) return null;
 
   return (

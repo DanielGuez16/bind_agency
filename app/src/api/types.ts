@@ -481,6 +481,20 @@ export type Fil = {
   /** Les quartiers du fil rendu, du plus proche au plus lointain. */
   quartiers: CompteParQuartier[];
   /**
+   * Combien de prestations sont gardées de côté, **en tout**.
+   *
+   * **Pas un compte du fil rendu.** Un favori posé à Wynwood existe encore
+   * quand on lit le fil depuis Kendall : le dériver des articles reçus
+   * donnerait un nombre qui change de quartier en quartier, juste à côté d'une
+   * porte qui, elle, mène à la liste entière.
+   *
+   * Servi par le fil et non par une route de plus : le serveur charge déjà
+   * l'ensemble des favoris pour poser `est_favori` sur chaque article, donc
+   * c'est sa taille — aucune requête, aucune jointure de plus. Et c'est le
+   * seul écran qui affiche cette porte.
+   */
+  favoris_total: number;
+  /**
    * Le palier le plus proche d'être atteint, et ce qu'il ouvrirait.
    *
    * `null` quand tout est ouvert, qu'aucun n'est atteignable, ou qu'il

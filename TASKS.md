@@ -2200,6 +2200,42 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       d'hier reste à 480, plus lourde que nécessaire et parfaitement correcte.
       Un balayage du dépôt coûterait plus que le gain, qui se réalise de
       lui-même à mesure que les photos se remplacent. 2 tests, 2 mutations*
+- [x] **Le cœur marchait, et rien ne le disait**
+      *Signalé comme « les favoris ne marchent pas ». Éprouvé bout à bout, dans
+      un vrai navigateur, sur un vrai bundle, contre une vraie API et une vraie
+      base : **le mécanisme est juste**. L'appui part en `POST /me/favorites`,
+      le serveur répond 204, la ligne est en base, le fil relu porte
+      `est_favori: true`, et la liste la rend. Un parcours de bout en bout le
+      tient désormais — il n'y en avait aucun sur les favoris, et c'est ce qui
+      rendait le signalement invérifiable.*
+      ***Ce qui manquait était le retour, et il manquait deux fois.** Sur le
+      fil, un appui réussi ne changeait rien de visible hors de la carte
+      touchée. Et un appui **raté** ne changeait rien du tout : le cœur se
+      remplissait, revenait, et le produit se taisait — les deux se lisent
+      « il ne s'est rien passé », et l'échec ne laisse alors rien à réessayer.
+      Le retour en arrière est maintenant accompagné d'une phrase qui nomme la
+      prestation, sur le fil comme sur la liste.*
+      *Le compte sur la porte vient du **serveur** : `favoris_total` sur le fil,
+      gratuit — le fil charge déjà l'ensemble des favoris pour poser
+      `est_favori`. Le dériver des cartes rendues aurait oublié les favoris hors
+      du rayon et **changé en marchant**. Il bouge à l'appui, avant la réponse,
+      et l'état servi voyage avec le geste : sans lui, revenir sur son propre
+      appui compterait comme un retrait de plus. Zéro ne s'écrit pas.
+      1560 tests app, 1795 tests api, 7 mutations*
+- [ ] **Un salon sans quartier déclaré n'apparaît nulle part**
+      *Trouvé en éprouvant les cœurs, et sans rapport avec eux. `useMur` filtre
+      les prestations par quartier ouvert ; sans quartier, il rend `null`, et
+      les deux chemins du fil — la liste virtualisée et le bloc — s'arrêtent
+      là. Un fil de deux salons réservables dont aucun n'a déclaré de quartier
+      rend **zéro carte et aucun état vide** : une barre de recherche au-dessus
+      d'un mur blanc. Vérifié.*
+      *Le serveur connaît le cas — le contrat de `quartiers` dit « vide quand
+      aucun salon rendu n'a déclaré de quartier » — et `estVide` ne se
+      déclenche pas, puisque des commerces sont bien rendus.*
+      *La correction est de composition, donc elle se demande : une section
+      « ailleurs » en fin de mur, ou le repli sur une liste à plat quand aucun
+      quartier n'est déclaré. Les deux changent ce que l'écran promet ; je ne
+      tranche pas seul*
 - [ ] **La journée demande une seconde requête pour son bandeau de reprise**
       *`BandeauDeReprise` appelle `mesReprises` lui-même, sur l'écran le plus
       ouvert du produit, pour une réponse presque toujours vide. Le replier dans

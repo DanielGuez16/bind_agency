@@ -125,6 +125,10 @@ class FilRead(BaseModel):
     rayons: list[CompteParRayonRead]
     #: Les quartiers du fil rendu, du plus proche au plus lointain.
     quartiers: list[CompteParQuartierRead]
+    #: Combien de prestations la créatrice garde de côté, **en tout** — pas
+    #: dans le rayon courant. La porte des favoris mène à la liste entière ;
+    #: un compte borné par le fil mettrait un chiffre faux à côté d'elle.
+    favoris_total: int
     #: Le palier le plus proche, et ce qu'il ouvrirait. `null` quand tout est
     #: ouvert, qu'aucun n'est atteignable, ou qu'il n'ouvrirait aucun salon.
 
