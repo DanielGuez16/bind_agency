@@ -10131,3 +10131,97 @@ normal, et le cas normal n'occupe rien.
 salon peut poser une exception qui rend le même compte que sa semaine type ; il
 l'a posée, elle existe, et la replier la rendrait introuvable. Une implémentation
 qui comparerait les deux nombres passerait tous les autres cas.
+
+---
+
+## 2026-08-24 — Un rang survit à une palette, une valeur non
+
+La règle du jeton nommé par son rôle demandait une correction, et la correction
+vaut mieux que la règle : **ce n'est pas le mot visuel qui tue, c'est le mot
+absolu.**
+
+`ink.soft`, `ink.mute`, `ink.faint`, `line.default` et `line.strong`, `bg.inverse`
+sont tous des mots d'apparence, et tous survivent — parce qu'ils décrivent un
+**rang** ou une **relation**, pas une valeur. « Le plus discret des encres »
+reste vrai dans n'importe quelle palette ; « l'inverse de la page » aussi.
+« Enfoncé » ne reste vrai que dans celle où on l'a écrit.
+
+Le test à passer sur un nom de jeton est donc : *reste-t-il vrai si la palette
+s'inverse ?*
+
+Cinq noms ne le passaient pas, et sont renommés :
+
+| avant | après | ce qu'il nommait |
+|---|---|---|
+| `bg.deep` | `bg.inset` | le creux, sur surface claire |
+| `bg.sunken` | `bg.onDark` | le fond des écrans sombres |
+| `line.ink` | `line.solo` | le filet qui sépare sans surface |
+| `elevation.float` | `elevation.overlay` | l'ombre d'un calque au-dessus |
+
+`bg.deep` et `bg.sunken` étaient le vrai piège : deux quasi-synonymes aux **deux
+extrémités** de l'échelle de clarté. Huit surfaces s'y étaient trompées.
+
+`size.hit` et `size.listRow` sont retirés — le premier doublait `size.touchMin`
+à la même valeur, le second n'était lu nulle part.
+
+**Le renommage touche la passation, et c'est voulu.** Une garde vérifie que
+toute valeur énoncée par Design est celle de l'app ; un nom qui change d'un côté
+seulement crée exactement la seconde vérité qu'elle interdit. Les documents
+**archivés** de la v1.0 ne sont pas réécrits, ni l'export `.dc.html` de l'outil
+de Design : ils enregistrent un état passé, et le réécrire serait un mensonge
+d'un autre genre.
+
+**La famille `mono` attend.** `type.mono`, `monoSmall`, `monoDisplay`,
+`monoFigure` sont nommés par leur fonte — et `type.monoSmall` fait 11 px, comme
+`type.label`, pour le même travail. La couche produit porte déjà `type.figure`
+(44 px) à côté de `type.monoFigure` (32 px) du socle : deux jetons pour « un
+nombre », l'un par rôle, l'autre par fonte. Soixante-trois appels sur deux
+couches : c'est une tranche à part.
+
+---
+
+## 2026-08-24 — L'avertissement se distingue par son glyphe, pas par sa teinte
+
+`status.warning` porte exactement les valeurs du neutre : sa surface est
+`bg.inset`, son encre `ink.default`, son filet `line.solo`. Ce n'est pas une
+palette qui aurait cessé d'honorer un rôle — **c'est une décision de Design** :
+un ambre dans un système ambre se lirait comme la marque. L'avertissement est
+donc neutre en couleur, et ce qui le distingue est un **glyphe obligatoire**.
+
+D'où son mode de panne, qui lui est propre : **`status.warning` posé seul ne dit
+rien.** Il rend les mêmes pixels que l'encre ordinaire, et l'auteur croit avoir
+posé une alerte. Cinq endroits s'y étaient trompés — la pastille du sélecteur de
+salon, un état « en pause » qui annonçait un défaut là où le message dit « rien
+n'est perdu », deux motifs de refus dans des historiques, un libellé de tâche.
+Aucun n'a été trouvé par relecture : le rendu est identique dans les deux cas,
+et c'est le nom du jeton, pas l'écran, qui portait la fausse promesse.
+
+Ce qui manquait n'était donc pas une teinte, mais la garde. Elle a trois verrous,
+et aucun ne suffit seul :
+
+1. **Le mécanisme** — `StatusMessage` rend le glyphe de l'avertissement, et le
+   neutre n'en a pas. C'est la seule distinction qui reste ; un glyphe rendu à
+   tous les niveaux passerait le premier test et ne distinguerait plus rien.
+2. **La décision, épinglée** — les trois valeurs sont comparées aux neutres. Le
+   jour où quelqu'un donne une teinte à l'avertissement, le test tombe : la
+   règle du glyphe ne se justifie que par l'absence de teinte, et changer l'une
+   sans revoir l'autre laisserait une règle sans sa raison.
+3. **L'inventaire** — cinq fichiers peignent l'avertissement de leur propre
+   main, et chacun déclare **ce qui** garantit son glyphe : la propriété `icone`
+   obligatoire de `Bloc`, le champ `icone` du type `Cas`, une `Icone` alerte
+   rendue à côté. Le garant se vérifie, il ne se déclare pas : sans cette
+   moitié, un avertissement ajouté sans glyphe dans un fichier déjà listé
+   passerait.
+
+**Et une pastille qui appelle n'est pas une pastille qui alerte.** Le compte de
+décisions du sélecteur portait `status.warning` : un salon qui attend n'est pas
+en défaut. Il passe au pâle de la marque — attirer l'œil sans accuser, dans le
+registre qui sert déjà à marquer la ligne active.
+
+**Le défaut de la garde, trouvé en l'écrivant.** Son premier jet filtrait les
+commentaires ligne à ligne, et dans un bloc `{/* … */}` les lignes **de suite**
+ne commencent ni par `//` ni par `*`. Le fichier était donc compté comme
+peignant ce qu'il se contentait d'expliquer — et la correction naturelle aurait
+été de retirer la note, c'est-à-dire de perdre l'explication pour sauver la
+garde. Les deux gardes de ce fichier retirent désormais les commentaires pour de
+bon.
