@@ -1818,6 +1818,33 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       propre raison — un refus ne se lit pas comme un compte injoignable.*
       *6 tests, 5 mutations. Nom du champ repris de la session qui rendra
       l'interrupteur, sur l'écran des favoris et non dans les réglages.*
+- [ ] **Quatre intermittences dans une session, toujours sur des tests qui montent la coquille**
+      *Motif inscrit le 2026-08-24, à ne pas prendre tout de suite. Quatre
+      échecs sur des passages de la suite complète, tous non reproductibles :
+      chaque fichier repasse en isolation et au passage suivant, sans rien
+      changer.*
+      *Les fichiers : `attente`, `chargement-v3`, `coquille` (31 s sur le
+      passage qui échoue), et le test de la photo qui n'agrandit pas sa carte.
+      Deux traits communs — ils montent une coquille ou un écran entier, et ils
+      attendent un minuteur. Le symptôme est toujours un `waitFor` qui expire,
+      jamais une assertion fausse.*
+      ***Possiblement la même cause que la fuite de worker diagnostiquée le même
+      jour par l'autre conversation.** Elle a nommé trois causes, dont une qui
+      colle : quatre décors rendaient `new Promise<Response>(() => {})`, qui ne
+      modélise pas un réseau lent mais un `fetch` qui ignore son signal — le
+      `finally` du client n'est jamais atteint, et rien ne se démonte. Un
+      composant qui n'a pas fini de se démonter et un `waitFor` qui expire sous
+      charge sont deux façons de voir le même événement qui n'arrive pas.*
+      *Ce qu'il faudra vérifier avant de conclure : est-ce que les quatre
+      fichiers d'ici recoupent les cinq qu'elle a nommés. Si oui, la correction
+      est déjà écrite et il n'y a qu'à l'étendre ; si non, ce sont deux familles
+      et il faut bisecter comme elle l'a fait — avec `--no-cache`, sans quoi
+      Jest s'exécute en bande et le défaut disparaît avec le mode qui le
+      produit.*
+      ***La CI n'a pas encore rougi**, et c'est ce qui rend l'entrée utile : son
+      runner est plus lent que la machine de développement, donc l'écart de
+      charge y est plus grand, pas plus petit.*
+
 - [ ] **Trois champs pour les deux derniers écrans, demandés à la conversation des routes**
       *Design a rendu la planche des deux derniers écrans le 2026-08-24, et
       trois de ses colonnes ne sont pas servies. Aucune n'est bloquante : les
