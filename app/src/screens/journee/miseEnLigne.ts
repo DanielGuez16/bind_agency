@@ -31,7 +31,21 @@ export type MiseEnLigne =
   /** Tout est fait, la publication reste à demander. */
   | { forme: 'prete'; faites: number; total: number };
 
-export function miseEnLigne(vue: VueDActivation | null | undefined): MiseEnLigne | null {
+/**
+ * Ce que le bandeau a le droit de lire de la vue d'activation : **le statut et
+ * les étapes, et rien d'autre**.
+ *
+ * La vue porte aussi la date de mise en ligne, que ce calcul n'a aucune raison
+ * de consulter — « qu'est-ce qui retient la publication » ne dépend pas de
+ * « depuis quand elle a eu lieu ». L'écrire dans le type plutôt que dans un
+ * commentaire évite de remplir les décors d'un champ qui ne devrait rien y
+ * changer, et rend visible le jour où quelqu'un voudra l'y faire entrer.
+ */
+type CeQuiRetientLaPublication = Pick<VueDActivation, 'status' | 'etapes'>;
+
+export function miseEnLigne(
+  vue: CeQuiRetientLaPublication | null | undefined,
+): MiseEnLigne | null {
   // **Falsy, et non `=== null`.** Sixième fois de la série : la nullité est
   // portée par le contrat, l'absence par l'appelant. Sans état d'activation, on
   // ne sait pas si le salon est publié — et un bandeau posé au hasard vaut

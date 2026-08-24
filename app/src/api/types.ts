@@ -848,6 +848,20 @@ export type JourneeDuCommerce = {
    * sous-ligne aurait annoncé « de 00:00 à 00:00 ».
    */
   horaires: PlageDuJour[];
+  /**
+   * La reprise de compte qui court chez ce salon. **Nulle presque toujours.**
+   *
+   * Une ligne et non l'historique : le bandeau la demandait par une requête à
+   * lui, ce qui coûtait un aller-retour de plus sur l'écran le plus ouvert du
+   * produit pour une donnée absente dans la quasi-totalité des cas.
+   * L'historique reste sur `mesReprises`, que les réglages lisent — c'est là
+   * qu'on veut savoir qui est entré en mars.
+   *
+   * **L'écran garde sa règle d'échéance.** Le serveur ne rend que les
+   * vivantes, mais une reprise peut expirer pendant qu'on regarde la journée,
+   * et il ne le redira pas — `etatDeLaReprise` reste le juge à l'affichage.
+   */
+  reprise_en_cours: RepriseDuCompte | null;
 };
 
 // --------------------------------------------------------------------------
@@ -1051,6 +1065,19 @@ export type StatutDuCommerce = 'draft' | 'onboarding' | 'active' | 'suspended';
 export type VueDActivation = {
   status: StatutDuCommerce;
   etapes: EtapeActivation[];
+  /**
+   * Depuis quand ce commerce est en ligne, en ISO. **Nulle tant qu'il ne l'a
+   * jamais été**, ce qui n'est pas une mise en pause — et l'écran ne doit pas
+   * les confondre.
+   *
+   * **La dernière mise en ligne, pas la première.** Un salon rouvert après six
+   * semaines de pause n'est pas en ligne depuis mars.
+   *
+   * Ici plutôt que sur la composition, où elle vivait sans lecteur : la journée
+   * charge déjà cette vue, donc la date arrive sans requête de plus, et c'est
+   * l'écran du matin qui la montre.
+   */
+  en_ligne_depuis: string | null;
 };
 
 /**
@@ -1415,7 +1442,6 @@ export type EtatDeLaComposition = {
   prestations: number;
   prestations_masquees: number;
   jours_ouverts: number;
-  en_ligne_depuis: string | null;
   status: 'onboarding' | 'active' | 'paused' | 'suspended';
 };
 

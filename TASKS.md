@@ -2468,6 +2468,28 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       vide devant une prestation déjà gardée. Une seule lecture des favoris
       pour toute la fiche, comme le fil le fait déjà.*
 
+- [x] **La journée sait ce qu'elle porte : la reprise en cours, et depuis quand le salon est en ligne**
+      *Deux points que l'autre conversation renvoyait, tous deux sur l'écran du
+      matin. Aucun ne demandait un calcul neuf : les deux données existaient et
+      arrivaient mal.*
+
+      *`reprise_en_cours` dans la charge de la journée. Le bandeau faisait sa
+      propre requête, et le commentaire qui la défendait avait raison sur le
+      fond — la journée n'a pas à porter un historique qui ne la concerne pas.
+      C'est vrai de l'historique ; ça ne l'est pas d'**une ligne ou nulle**. On
+      retire donc un aller-retour de l'écran le plus ouvert du produit, pour une
+      donnée absente dans la quasi-totalité des cas, et le bandeau cesse
+      d'apparaître une seconde après le reste — il dit une chose grave, il la
+      disait en sursaut. L'historique reste sur `support-access` pour les
+      réglages, et l'écran garde sa règle d'échéance : une reprise peut expirer
+      pendant qu'on regarde, et le serveur ne le redira pas.*
+
+      *`en_ligne_depuis` **déplacée** de la composition vers la vue
+      d'activation. Elle vivait sur une route dont plus rien ne lit la réponse ;
+      la journée charge déjà la vue d'activation, donc la date y arrive sans
+      requête de plus. Sans lecteur pour l'instant — le bandeau des sept
+      premiers jours l'attend, avec la portée locale qui lui manque encore.*
+
 - [ ] **La planche dit « le favori porte sur le salon », le contrat dit la prestation**
       *`ItemDuFil.est_favori` est posé sur l'article, `POST /me/favorites` prend
       un `catalog_item_id`, et `GET /me/favorites` rend des prestations avec

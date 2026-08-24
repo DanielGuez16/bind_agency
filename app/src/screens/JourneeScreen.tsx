@@ -124,7 +124,12 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
   // entre dans un compte pour débloquer une configuration, pas un jour chargé.
   // Le laisser dans le corps l'aurait éteint le seul jour qui compte.
   const repriseEnCours = chargee ? (
-    <BandeauDeReprise businessId={businessId} timezone={chargee.timezone} />
+    <BandeauDeReprise
+      businessId={businessId}
+      timezone={chargee.timezone}
+      reprise={chargee.reprise_en_cours}
+      recharger={requete.recharger}
+    />
   ) : null;
 
   return (

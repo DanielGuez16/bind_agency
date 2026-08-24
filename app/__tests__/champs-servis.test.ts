@@ -53,13 +53,18 @@ const TYPES = join(SRC, 'api', 'types.ts');
  *   table un tapis.
  */
 const NON_RENDUS: Record<string, string> = {
-  // Les trois nombres du résumé de composition. Ils vivaient sous les portes de
+  // **La date de mise en ligne, arrivée avant son lecteur.** Elle vivait sur
+  // `EtatDeLaComposition`, dont plus rien ne lit la réponse ; elle est ici
+  // parce que la journée charge déjà cette vue, donc elle ne coûte pas de
+  // requête. Le bandeau des sept premiers jours l'attend, avec la portée
+  // locale qui lui manque encore — voir TASKS.md.
+  'VueDActivation.en_ligne_depuis': 'a-instruire',
+  // Les deux nombres du résumé de composition. Ils vivaient sous les portes de
   // « Your offer », que la v3.1 retire — deux entrées de rang égal dans la
   // barre latérale ne portent pas de compteur. Voir `compositionDuCommerce`
   // dans la table voisine, et `TASKS.md`.
   'EtatDeLaComposition.prestations_masquees': 'a-instruire',
   'EtatDeLaComposition.jours_ouverts': 'a-instruire',
-  'EtatDeLaComposition.en_ligne_depuis': 'a-instruire',
   // --- a-instruire : servis, et la grille v3 ne les lit plus ---
   //
   // **Trois champs que le contrat commerce-scopé a rendus redondants.** La

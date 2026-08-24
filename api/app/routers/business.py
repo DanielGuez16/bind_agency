@@ -187,11 +187,17 @@ async def activation_steps(business: CurrentBusiness, session: SessionDep) -> Vu
     Le statut accompagne les étapes parce que les deux répondent à la même
     question. Sans lui, l'écran voyait six étapes faites et proposait d'ouvrir
     un commerce ouvert depuis des semaines.
+
+    Et la date de mise en ligne pour la même raison, à un mot près : elle
+    répond à « depuis quand » là où le statut répond à « où en est-on ». Elle
+    vivait sur la composition, dont plus rien ne lit la réponse ; la journée
+    charge cette vue-ci, donc elle arrive sans requête de plus.
     """
     etapes = await business_service.etapes_activation(session, business=business)
     return VueDActivationRead(
         status=business.status,
         etapes=[EtapeRead.model_validate(etape) for etape in etapes],
+        en_ligne_depuis=await composition_service.derniere_mise_en_ligne(session, business.id),
     )
 
 

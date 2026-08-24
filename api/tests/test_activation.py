@@ -11,7 +11,7 @@ sur **cette** étape-là — pas sur une autre, pas sur un message générique.
 """
 
 import uuid
-from datetime import time
+from datetime import datetime, time
 
 import pytest
 import sqlalchemy as sa
@@ -29,6 +29,7 @@ from app.schemas.tier_offers import TierOfferCreate
 from app.services import business as service
 from app.services import capacity as capacity_service
 from app.services import catalog as catalog_service
+from app.services import composition as composition_service
 from app.services import tier_offers as tier_offer_service
 from app.services.audit import Actor
 from tests.conftest import inscrire_verifie
@@ -243,3 +244,58 @@ async def test_la_route_exige_l_appartenance(client: AsyncClient, session: Async
     # Pas de pourcentage : « 2 étapes sur 4 » se comprend, « 50 % » ne dit pas
     # laquelle manque.
     assert all(set(e) == {"cle", "done", "blocking"} for e in etapes)
+
+
+async def test_la_vue_date_la_mise_en_ligne_et_c_est_la_derniere(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """**Depuis quand, et non depuis la première fois.**
+
+    La date vivait sur la composition, dont plus rien ne lit la réponse. La
+    journée charge cette vue-ci : elle arrive donc sans requête de plus, sur
+    l'écran du matin — le seul où un salon en ligne depuis huit jours a des
+    questions qu'un salon en ligne depuis huit mois n'a plus.
+
+    Le décor ouvre, met en pause, **puis rouvre**. C'est le seul montage où
+    « la dernière » et « la première » divergent : sur un commerce ouvert une
+    seule fois les deux implémentations rendent la même date, et le test ne
+    prouverait rien.
+
+    Le commerce jamais ouvert tient l'autre bord. Sans lui, une vue qui rendrait
+    n'importe quelle date passerait — et « jamais en ligne » n'est pas « en
+    pause », que l'écran ne doit surtout pas confondre.
+    """
+    business, proprietaire = await commerce_en_cours(session)
+    acteur = Actor.from_user(proprietaire)
+
+    await service.activate_business(session, business=business, actor=acteur)
+    premiere = await composition_service.derniere_mise_en_ligne(session, business.id)
+    assert premiere is not None
+    await service.pause_business(session, business=business, actor=acteur)
+    await service.activate_business(session, business=business, actor=acteur)
+
+    jamais, proprietaire_de_jamais = await commerce_en_cours(session)
+    await session.commit()
+
+    async def vue(email: str, business_id) -> dict:
+        jetons = (
+            await client.post(
+                f"{PREFIX}/auth/login",
+                json={"email": email, "password": MOT_DE_PASSE},
+            )
+        ).json()
+        reponse = await client.get(
+            f"{PREFIX}/business/{business_id}/activation",
+            headers={"Authorization": f"Bearer {jetons['access_token']}"},
+        )
+        assert reponse.status_code == 200, reponse.text
+        return reponse.json()
+
+    rouvert = await vue(proprietaire.email, business.id)
+    assert rouvert["en_ligne_depuis"] is not None, "la date ne traverse pas le schéma"
+    assert datetime.fromisoformat(rouvert["en_ligne_depuis"]) > premiere, (
+        "la première ouverture est affichée, celle d'avant la pause"
+    )
+
+    neuf = await vue(proprietaire_de_jamais.email, jamais.id)
+    assert neuf["en_ligne_depuis"] is None, "un commerce jamais ouvert porte une date"

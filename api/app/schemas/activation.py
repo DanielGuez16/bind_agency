@@ -1,5 +1,7 @@
 """Schémas des étapes d'activation d'un commerce."""
 
+from datetime import datetime
+
 from pydantic import BaseModel, ConfigDict
 
 from app.models.enums import BusinessStatus
@@ -32,3 +34,12 @@ class VueDActivationRead(BaseModel):
 
     status: BusinessStatus
     etapes: list[EtapeRead]
+    #: Depuis quand ce commerce est en ligne. **Nulle tant qu'il ne l'a jamais
+    #: été**, ce qui n'est pas une mise en pause — l'écran ne doit pas les
+    #: confondre.
+    #:
+    #: Ici plutôt que sur la composition, où elle vivait sans lecteur : la
+    #: journée charge déjà cette vue, donc la date arrive sans requête de plus.
+    #: Un salon en ligne depuis huit jours n'a pas les mêmes questions qu'un
+    #: salon en ligne depuis huit mois, et c'est l'écran du matin qui le voit.
+    en_ligne_depuis: datetime | None

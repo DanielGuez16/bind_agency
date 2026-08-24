@@ -679,3 +679,115 @@ async def test_le_motif_ne_coute_pas_une_requete_par_ligne(session: AsyncSession
     motifs = await service._derniers_motifs(session, [ligne.id, None, ligne.id])
     assert motifs == {ligne.id: "mention_missing"}
     assert await service._derniers_motifs(session, [None]) == {}
+
+
+async def test_la_journee_porte_la_reprise_qui_court_et_elle_seule(session: AsyncSession) -> None:
+    """**Le bandeau de reprise n'a plus sa propre requête.**
+
+    Il la demandait à part, ce qui coûtait un aller-retour sur l'écran le plus
+    ouvert du produit pour une donnée absente dans la quasi-totalité des cas.
+    Une ligne ou nulle ne pèse rien.
+
+    **Les deux mortes sont les plus récentes, et c'est tout le décor.** Une
+    première version les posait avant la vivante : une implémentation qui lit la
+    table sans les conditions de vie rendait alors la bonne ligne quand même, et
+    la mutation a survécu. Écrites dans cet ordre-ci, les quatre implémentations
+    qu'on redoute divergent chacune :
+
+    ========================= ==========================================
+    ce que rendrait…          …et pourquoi c'est faux
+    ========================= ==========================================
+    la plus récente tout court `échue` : le salon lit qu'on est chez lui
+                               alors que la porte s'est éteinte seule
+    la plus ancienne vivante   `ancienne` : nomme quelqu'un entré avant
+    rien du tout               le bandeau ne s'allume jamais
+    n'importe laquelle         une chance sur quatre d'avoir raison
+    ========================= ==========================================
+
+    Deux vivantes parce que le service ne refuse que la seconde du **même**
+    administrateur : rien n'interdit à deux personnes d'être entrées, et c'est
+    la dernière arrivée que le bandeau nomme.
+    """
+    from app.models import BusinessSupportAccess
+    from app.models.enums import PorteeDeReprise
+    from app.services import support
+    from tests.test_support_access import administrateur
+
+    decor = await monter_le_decor(session)
+    business = decor["business"]
+    jour = datetime.now(ZoneInfo(business.timezone)).date()
+
+    async def ouvrir(motif: str, *, il_y_a: timedelta, expire_il_y_a: timedelta | None = None):
+        """Ouvre une reprise, puis la fait vieillir.
+
+        `ouvrir` accepte un `maintenant`, mais il ne sert qu'à son propre
+        contrôle : `started_at` est écrit par `clock_timestamp()` côté Postgres,
+        donc naître vieux est impossible — la contrainte `expire_apres_ouverture`
+        refuse une échéance antérieure à une ouverture restée au présent. On
+        fait donc passer le temps après coup, ce qu'aucun mécanisme du produit
+        ne sait faire.
+        """
+        acces = await support.ouvrir(
+            session,
+            business=business,
+            admin=await administrateur(session),
+            motif=motif,
+            portee=[PorteeDeReprise.FICHE],
+        )
+        naissance = acces.started_at - il_y_a
+        await session.execute(
+            sa.update(BusinessSupportAccess)
+            .where(BusinessSupportAccess.id == acces.id)
+            .values(
+                started_at=naissance,
+                **(
+                    {"expires_at": acces.started_at - expire_il_y_a}
+                    if expire_il_y_a is not None
+                    else {}
+                ),
+            )
+        )
+        await session.refresh(acces)
+        return acces
+
+    ancienne = await ouvrir("entrée en premier", il_y_a=timedelta(hours=3))
+    recente = await ouvrir("entrée en dernier", il_y_a=timedelta(hours=2))
+    refermee = await ouvrir("celle qu'on a refermée", il_y_a=timedelta(hours=1))
+    await support.fermer(session, acces=refermee, acteur=await administrateur(session))
+    echue = await ouvrir(
+        "celle qui s'est éteinte toute seule",
+        il_y_a=timedelta(minutes=30),
+        expire_il_y_a=timedelta(minutes=10),
+    )
+    await session.flush()
+
+    # Le décor dit-il ce qu'il prétend dire ? Sans ces quatre lignes, une
+    # fabrique qui daterait mal laisserait le test vert en n'éprouvant rien.
+    maintenant = datetime.now(UTC)
+    assert ancienne.started_at < recente.started_at < refermee.started_at < echue.started_at, (
+        "les mortes doivent être les plus récentes, sinon lire la table sans "
+        "les conditions de vie rend la bonne ligne par accident"
+    )
+    assert ancienne.expires_at > maintenant and recente.expires_at > maintenant
+    assert echue.expires_at < maintenant, "le décor n'a pas expiré ce qu'il annonce"
+    assert echue.ended_at is None, "une reprise échue n'est pas une reprise fermée"
+    assert refermee.ended_at is not None
+
+    journee = await service.journee_du_commerce(session, business=business, jour=jour)
+
+    assert journee.reprise_en_cours is not None, "le bandeau ne saurait rien"
+    assert journee.reprise_en_cours.id == recente.id, (
+        f"reprise « {journee.reprise_en_cours.reason} » portée au lieu de « {recente.reason} »"
+    )
+
+
+async def test_sans_reprise_la_journee_le_dit_par_une_absence(session: AsyncSession) -> None:
+    """L'autre bord. Un champ qui porterait toujours une ligne allumerait le
+    bandeau chez les milliers de salons où personne n'est jamais entré — et
+    c'est le bandeau le plus grave du produit."""
+    decor = await monter_le_decor(session)
+    jour = datetime.now(ZoneInfo(decor["business"].timezone)).date()
+
+    journee = await service.journee_du_commerce(session, business=decor["business"], jour=jour)
+
+    assert journee.reprise_en_cours is None
