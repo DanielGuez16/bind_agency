@@ -34,7 +34,15 @@ export type MiseEnLigne =
    * l'estime serait une confirmation fausse, ce qui est pire que pas de
    * confirmation ; ne pas l'écrire n'enlève rien à la date.
    */
-  | { forme: 'confirme'; depuis: string }
+  | {
+      forme: 'confirme';
+      depuis: string;
+      /** Combien de créatrices peuvent réserver. **Nul quand le serveur ne l'a
+       *  pas servi** — une réponse d'avant le champ. La ligne dit alors la date
+       *  seule, ce qu'elle faisait déjà : la moitié vraie vaut mieux que la
+       *  moitié inventée. */
+      peuvent: number | null;
+    }
   /**
    * Publié, et pourtant absent des murs.
    *
@@ -60,7 +68,16 @@ export type MiseEnLigne =
  * ne pèse sur aucune des autres formes — « qu'est-ce qui retient la
  * publication » ne dépend pas de « depuis quand elle a eu lieu ».
  */
-type CeQuiRetientLaPublication = Pick<VueDActivation, 'status' | 'etapes' | 'en_ligne_depuis'>;
+type CeQuiRetientLaPublication = Pick<
+  VueDActivation,
+  'status' | 'etapes' | 'en_ligne_depuis'
+> &
+  // **Optionnels, et c'est ce que le calcul suppose.** Une réponse d'avant ces
+  // deux champs — un serveur pas encore déployé — doit encore produire une
+  // ligne : la date seule, ce qu'elle disait déjà. Les rendre obligatoires
+  // forcerait les décors à les poser, et masquerait le seul cas où l'absence
+  // change quelque chose.
+  Partial<Pick<VueDActivation, 'createurs_qui_peuvent_reserver' | 'confirmation_jours'>>;
 
 export function miseEnLigne(
   vue: CeQuiRetientLaPublication | null | undefined,
@@ -95,8 +112,16 @@ export function miseEnLigne(
     const depuis = vue.en_ligne_depuis;
     if (depuis === null || depuis === undefined) return { forme: 'publie' };
     const age = maintenant - Date.parse(depuis);
-    if (Number.isNaN(age) || age > DUREE_DE_LA_CONFIRMATION_MS) return { forme: 'publie' };
-    return { forme: 'confirme', depuis };
+    // **Le délai vient du serveur, qui s'en sert aussi.** Il décide là-bas si la
+    // portée locale est calculée ; deux copies d'un même délai finissent par
+    // diverger, et le jour où elles le font la ligne montre « depuis 8 jours »
+    // sans le nombre qui rassure — le pire des deux états. Le repli sur la
+    // constante couvre une réponse d'avant le champ.
+    const fenetre = vue.confirmation_jours
+      ? vue.confirmation_jours * 24 * 3_600_000
+      : DUREE_DE_LA_CONFIRMATION_MS;
+    if (Number.isNaN(age) || age > fenetre) return { forme: 'publie' };
+    return { forme: 'confirme', depuis, peuvent: vue.createurs_qui_peuvent_reserver ?? null };
   }
 
   const faites = vue.etapes.filter((etape) => etape.done).length;

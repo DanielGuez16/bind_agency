@@ -89,10 +89,16 @@ export function BandeauDeMiseEnLigne({
    * la même surface ferait chercher le bouton. Elle s'efface d'elle-même au
    * bout de sept jours — voir `miseEnLigne`.
    *
-   * **Elle ne dit que la date.** La planche voulait « 41 créatrices peuvent
-   * vous réserver » avec ; la portée locale ne vit que sur les rapports, et
-   * l'affirmer à l'estime serait une confirmation fausse. Ce qui est écrit est
-   * vrai, et la moitié manquante est demandée.
+   * **La date, et le nombre qui la complète.** « En ligne depuis trois jours »
+   * est vrai et ne rassure personne ; « et 41 créatrices peuvent vous
+   * réserver » est ce qu'un salon qui vient d'apparaître veut savoir. La portée
+   * ne vivait que sur les rapports ; elle arrive maintenant avec la vue
+   * d'activation, que la journée charge déjà — et le serveur ne la calcule que
+   * dans la fenêtre où cette ligne se lit.
+   *
+   * **Sans le nombre, la ligne dit la date seule**, ce qu'elle faisait déjà :
+   * une réponse d'avant le champ ne doit pas la faire disparaître, et la moitié
+   * vraie vaut mieux que la moitié inventée.
    */
   if (etat.forme === 'confirme') {
     return (
@@ -115,9 +121,27 @@ export function BandeauDeMiseEnLigne({
       >
         <Icone nom="coche" couleur="brand.700" taille={20} />
         <Texte variante="type.body" style={{ flex: 1, minWidth: 0 }}>
-          {t('commerce.miseEnLigneConfirmee', {
-            date: formatDate(etat.depuis, locale, timezone),
-          })}
+          {/* **Trois branches écrites à la main.** `count` traverse le
+              formateur de nombres, qui le rend en chaîne pour le séparateur de
+              milliers : i18n-js ne le voit plus comme un nombre et sa
+              pluralisation ne se déclenche pas. Le choix se fait donc ici, où
+              il se lit — même raison que le titre de la journée.
+
+              Zéro se lit comme l'absence : « 0 créatrice peut vous réserver »
+              sur la ligne qui doit rassurer serait la pire des phrases, et la
+              date seule reste vraie. */}
+          {etat.peuvent === null || etat.peuvent === 0
+            ? t('commerce.miseEnLigneConfirmee', {
+                date: formatDate(etat.depuis, locale, timezone),
+              })
+            : etat.peuvent === 1
+              ? t('commerce.miseEnLigneConfirmeeUne', {
+                  date: formatDate(etat.depuis, locale, timezone),
+                })
+              : t('commerce.miseEnLigneConfirmeePlusieurs', {
+                  date: formatDate(etat.depuis, locale, timezone),
+                  count: etat.peuvent,
+                })}
         </Texte>
       </View>
     );

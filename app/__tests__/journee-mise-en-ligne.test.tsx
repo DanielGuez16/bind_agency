@@ -327,8 +327,32 @@ describe('en ligne depuis peu', () => {
     expect(miseEnLigne(PUBLIE(IL_Y_A(3)), MAINTENANT)).toEqual({
       forme: 'confirme',
       depuis: IL_Y_A(3),
+      // Le décor n'a pas de portée : une réponse d'avant le champ, et la ligne
+      // dit alors la date seule.
+      peuvent: null,
     });
     expect(miseEnLigne(PUBLIE(IL_Y_A(8)), MAINTENANT)).toEqual({ forme: 'publie' });
+  });
+
+  it('et la fenêtre vient du serveur, pas de la constante locale', () => {
+    // **Le cas qui fait diverger les deux règles.** Sept jours en dur et
+    // « ce que le serveur dit » rendent le même verdict tant qu'ils sont
+    // d'accord ; ils ne le sont plus ici, et c'est le serveur qui tranche —
+    // c'est lui qui décide, du même délai, s'il calcule la portée locale.
+    const large = { ...PUBLIE(IL_Y_A(8)), confirmation_jours: 30 };
+    expect(miseEnLigne(large, MAINTENANT)).toMatchObject({ forme: 'confirme' });
+
+    const etroite = { ...PUBLIE(IL_Y_A(3)), confirmation_jours: 1 };
+    expect(miseEnLigne(etroite, MAINTENANT)).toEqual({ forme: 'publie' });
+  });
+
+  it('et la portée locale accompagne la date quand elle est servie', () => {
+    const avec = { ...PUBLIE(IL_Y_A(3)), createurs_qui_peuvent_reserver: 41 };
+    expect(miseEnLigne(avec, MAINTENANT)).toEqual({
+      forme: 'confirme',
+      depuis: IL_Y_A(3),
+      peuvent: 41,
+    });
   });
 
   it('et sans date, elle ne s’invente pas', () => {
