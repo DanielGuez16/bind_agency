@@ -16,6 +16,7 @@ from app.core.config import get_settings
 from app.integrations.geocoding import Coordinates, ManualGeocoder
 from app.models import AuditLog, Business, BusinessMember
 from app.models.enums import ActorKind, BusinessMemberRole, BusinessStatus, Neighborhood, UserRole
+from app.services import booking_states
 from app.services import business as business_service
 
 PREFIX = get_settings().api_v1_prefix
@@ -544,3 +545,43 @@ async def test_chaque_quartier_de_la_liste_est_accepte_par_la_base(client: Async
         )
         assert cree.status_code == 201, f"{quartier.value} refusé : {cree.text}"
         assert cree.json()["neighborhood"] == quartier.value
+
+
+async def test_la_liste_d_appartenance_porte_le_compte_des_decisions(
+    session: AsyncSession, client: AsyncClient
+) -> None:
+    """**Ce qui fait basculer un gérant qui ne savait pas qu'on l'attendait.**
+
+    Deux noms de salons ne disent pas lequel a besoin de lui ce matin. Le décor
+    pose donc **deux** salons et une seule décision en attente : avec un seul,
+    un compte global rendrait le même verdict qu'un compte par salon.
+    """
+    from tests.test_booking_create import monter_le_decor, premier_creneau, reserver
+
+    decor = await monter_le_decor(session, requires_booking_approval=True)
+    autre = await monter_le_decor(session)
+    membre = decor["proprietaire"]
+    await session.execute(
+        sa.insert(BusinessMember).values(
+            business_id=autre["business"].id, user_id=membre.id, role=BusinessMemberRole.OWNER
+        )
+    )
+    booking = await reserver(session, decor, starts_at=await premier_creneau(session, decor))
+    await booking_states.confirmer(session, booking=booking, creator_id=decor["createur"].id)
+    await session.commit()
+
+    jetons = (
+        await client.post(
+            f"{PREFIX}/auth/login",
+            json={"email": membre.email, "password": "tourbillon-cactus-91-vermeil"},
+        )
+    ).json()
+    reponse = await client.get(
+        f"{PREFIX}/me/businesses",
+        headers={"Authorization": f"Bearer {jetons['access_token']}"},
+    )
+
+    assert reponse.status_code == 200, reponse.text
+    par_salon = {ligne["id"]: ligne["decisions_en_attente"] for ligne in reponse.json()}
+    assert par_salon[str(decor["business"].id)] == 1
+    assert par_salon[str(autre["business"].id)] == 0

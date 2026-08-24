@@ -108,3 +108,28 @@ class RepriseOuverte(BusinessSupportAccessRead, CompteDesReprises):
     Le compte rendu ici inclut celle qu'on vient d'ouvrir. La lire à zéro le
     jour de la première serait exact et inutile.
     """
+
+
+class CommerceVuParLAdministration(BaseModel):
+    """Un salon dans la liste que l'administration parcourt pour en reprendre un.
+
+    **De quoi choisir, et rien de plus.** Ce n'est pas la fiche du salon : elle
+    existe et se lit derrière une reprise ouverte. Ce qu'il faut ici est de
+    reconnaître le bon parmi cent — un nom, un quartier, un état — et de savoir
+    si on est déjà dedans.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    business_id: uuid.UUID
+    name: str
+    category: str
+    neighborhood: str | None
+    status: str
+    #: Vrai quand **l'appelant** a une reprise vivante sur ce salon.
+    #:
+    #: Sur l'appelant et non sur le salon : savoir qu'un collègue est entré ne
+    #: change pas ce que je peux faire, et l'afficher inviterait à se demander
+    #: pourquoi lui plutôt que moi. Ce que l'écran doit dire est « tu es déjà
+    #: dedans », pour ne pas proposer d'ouvrir une seconde fois.
+    reprise_en_cours: bool

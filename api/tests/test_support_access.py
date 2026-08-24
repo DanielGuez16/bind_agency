@@ -22,7 +22,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncSession
 
 from app.core.config import get_settings
-from app.models import AuditLog, BusinessSupportAccess, User
+from app.models import AuditLog, Business, BusinessSupportAccess, User
 from app.models.enums import ActorKind, PorteeDeReprise, UserRole
 from app.services import support as service
 from tests.conftest import inscrire_verifie
@@ -967,6 +967,96 @@ async def test_seule_l_administration_lit_ce_compte(
     reponse = await client.get(
         f"{PREFIX}/admin/me/support-access/recent",
         headers=await _jetons(client, proprietaire),
+    )
+
+    assert reponse.status_code == 403, reponse.text
+
+
+# --------------------------------------------------------------------------
+# la liste que l'administration parcourt
+# --------------------------------------------------------------------------
+
+
+async def test_l_administration_voit_les_salons_qui_ne_viennent_pas_du_terrain(
+    session: AsyncSession, client: AsyncClient
+) -> None:
+    """**Le manque dépassait la mise en page.**
+
+    L'écran de reprise était greffé sur la fiche de tournée : on ne pouvait
+    reprendre que les salons **venus du terrain**. Un salon inscrit tout seul —
+    ce que le produit veut rendre possible — était hors d'atteinte du support.
+
+    Le décor en pose un qui n'a aucune fiche de tournée, ce qui est le cas de
+    tous ceux montés par `commerce_en_cours`. Sans cette route, il n'apparaît
+    nulle part côté administration.
+    """
+    business, _ = await commerce_en_cours(session)
+    admin = await administrateur(session)
+    await session.commit()
+
+    reponse = await client.get(f"{PREFIX}/admin/businesses", headers=await _jetons(client, admin))
+
+    assert reponse.status_code == 200, reponse.text
+    identifiants = [ligne["business_id"] for ligne in reponse.json()]
+    assert str(business.id) in identifiants
+
+
+async def test_la_liste_dit_ou_l_appelant_est_deja_entre(
+    session: AsyncSession, client: AsyncClient
+) -> None:
+    """**Sur l'appelant, et non sur le salon.**
+
+    Le décor pose deux salons et une reprise sur un seul : c'est le seul
+    montage où « je suis dedans » se distingue de « quelqu'un est dedans ».
+    Savoir qu'un collègue est entré ne change pas ce que je peux faire, et
+    l'afficher inviterait à se demander pourquoi lui plutôt que moi.
+    """
+    chez_a, _ = await commerce_en_cours(session)
+    chez_b, _ = await commerce_en_cours(session)
+    admin = await administrateur(session)
+    collegue = await administrateur(session)
+    await service.ouvrir(session, business=chez_a, admin=admin, motif="un motif", portee=PORTEE)
+    await service.ouvrir(session, business=chez_b, admin=collegue, motif="un motif", portee=PORTEE)
+    await session.commit()
+
+    reponse = await client.get(f"{PREFIX}/admin/businesses", headers=await _jetons(client, admin))
+
+    par_salon = {ligne["business_id"]: ligne["reprise_en_cours"] for ligne in reponse.json()}
+    assert par_salon[str(chez_a.id)] is True
+    assert par_salon[str(chez_b.id)] is False
+
+
+async def test_la_recherche_trouve_sans_accent_ni_casse(
+    session: AsyncSession, client: AsyncClient
+) -> None:
+    """C'est ainsi qu'on cherche un salon dont on a entendu le nom au téléphone."""
+    business, _ = await commerce_en_cours(session)
+    await session.execute(
+        sa.update(Business).where(Business.id == business.id).values(name="Panadería del Sol")
+    )
+    admin = await administrateur(session)
+    await session.commit()
+
+    reponse = await client.get(
+        f"{PREFIX}/admin/businesses",
+        params={"recherche": "panaderia"},
+        headers=await _jetons(client, admin),
+    )
+
+    assert reponse.status_code == 200, reponse.text
+    assert [ligne["name"] for ligne in reponse.json()] == ["Panadería del Sol"]
+
+
+async def test_un_salon_ne_lit_pas_la_liste_des_salons(
+    session: AsyncSession, client: AsyncClient
+) -> None:
+    """Elle nomme tous les commerces du produit : ce n'est pas une liste que
+    le voisin consulte."""
+    _, proprietaire = await commerce_en_cours(session)
+    await session.commit()
+
+    reponse = await client.get(
+        f"{PREFIX}/admin/businesses", headers=await _jetons(client, proprietaire)
     )
 
     assert reponse.status_code == 403, reponse.text
