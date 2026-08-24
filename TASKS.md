@@ -1835,12 +1835,23 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       `finally` du client n'est jamais atteint, et rien ne se démonte. Un
       composant qui n'a pas fini de se démonter et un `waitFor` qui expire sous
       charge sont deux façons de voir le même événement qui n'arrive pas.*
-      *Ce qu'il faudra vérifier avant de conclure : est-ce que les quatre
-      fichiers d'ici recoupent les cinq qu'elle a nommés. Si oui, la correction
-      est déjà écrite et il n'y a qu'à l'étendre ; si non, ce sont deux familles
-      et il faut bisecter comme elle l'a fait — avec `--no-cache`, sans quoi
-      Jest s'exécute en bande et le défaut disparaît avec le mode qui le
-      produit.*
+      ***Vérifié, et ce sont deux familles.** Les cinq fichiers de la fuite de
+      worker étaient `favoris-a-lecran`, `fil-favoris-et-recherche`,
+      `la-preuve-v3`, `position` et `squelettes` : **aucun recoupement** avec
+      les quatre d'ici. Et la cause qu'on soupçonnait est déjà éteinte — la
+      garde `le-double-qui-ignore-son-signal` interdit
+      `new Promise<Response>(() => {})` dans tout le dépôt et passe au vert,
+      donc il n'en reste aucun. Il faut bisecter cette famille-ci pour
+      elle-même, avec `--no-cache` : sans lui Jest s'exécute en bande et le
+      défaut disparaît avec le mode qui le produit.*
+      ***Une observation à verser au dossier, et sa limite.** La même signature
+      s'est produite une fois pendant que la suite `pytest -n auto` tournait sur
+      la même machine : dix fichiers rouges, des durées de 30 à 90 s, et tout
+      au vert au passage suivant à froid. Mais elle **ne se reproduit pas** sous
+      une charge processeur seule — vingt-quatre boucles occupées, la suite
+      passe entière. Si c'est la charge, ce n'est donc pas le processeur : ce
+      serait la mémoire ou les entrées-sorties, ce que la suite `api` consomme
+      et qu'une boucle vide ne touche pas.*
       ***La CI n'a pas encore rougi**, et c'est ce qui rend l'entrée utile : son
       runner est plus lent que la machine de développement, donc l'écart de
       charge y est plus grand, pas plus petit.*
