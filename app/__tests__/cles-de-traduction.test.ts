@@ -93,7 +93,9 @@ describe('les clés de traduction', () => {
     // Elles ne se résolvent pas sans exécuter le code. Les dénombrer force à
     // constater leur nombre plutôt qu'à ignorer leur existence : si elles se
     // multipliaient, la garde couvrirait de moins en moins sans le dire.
-    expect(composees).toBeLessThan(40);
+    // Passé à 42 le 2026-08-24 : la ligne des favoris compose le nom du
+    // palier requis, deux fois — avec le chiffre et sans lui.
+    expect(composees).toBeLessThan(42);
   });
 });
 

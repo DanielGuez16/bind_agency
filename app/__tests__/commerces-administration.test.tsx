@@ -39,6 +39,10 @@ function salon(extra: Record<string, unknown> = {}) {
     neighborhood: 'wynwood',
     status: 'active',
     reprise_en_cours: false,
+    // **Une date écrite, et sans danger ici.** La règle des décors interdit les
+    // dates figées quand le verdict dépend du calendrier ; une date
+    // d'inscription n'a aucun seuil — elle se rend, elle ne se compare pas.
+    created_at: '2026-08-12T09:00:00Z',
     ...extra,
   };
 }

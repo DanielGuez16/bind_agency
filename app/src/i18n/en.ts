@@ -774,6 +774,7 @@ export const en = {
     commercesColonneNom: 'Salon',
     commercesColonneQuartier: 'Neighbourhood',
     commercesColonneEtat: 'State',
+    commercesColonneInscrit: 'Joined',
     commercesCompte: '{{count}} salons · this search',
     commercesCompteSurTotal: '{{montres}} of {{total}} · this search',
     commercesLireTitre: 'Reading a row opens nothing',
@@ -1032,7 +1033,8 @@ export const en = {
     // **La seule ligne de l'écran qui porte un geste**, et elle ne promet rien
     // de neuf : le chiffre vient de la vue des paliers, celle que l'écran des
     // paliers rend déjà. Elle situe, elle n'annonce pas.
-    ecartJusquAuPalier: '{{palier}} tier · {{ecart}} followers to go',
+    ecartJusquAuPalier: '{{palier}} tier · {{ecart}} followers to go, then it opens',
+    palierSansChiffre: '{{palier}} tier · something else is in the way',
     voirMesPaliers: 'See your tiers',
     // Il compte ce à quoi il sert, donc il se justifie sans notice.
     avisEnAttente: '{{count}} of these are waiting on something',
