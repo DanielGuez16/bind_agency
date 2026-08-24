@@ -9921,3 +9921,40 @@ prestations. Livré au niveau de la prestation, qui est le seul cohérent de bou
 en bout. Feindre le niveau salon au-dessus d'une API d'articles aurait demandé
 de deviner quels articles appartiennent au même cœur, et se serait trompé au
 premier écart.
+
+---
+
+## 2026-08-24 — Le premier message que personne n'a demandé
+
+**Deux notifications de favori arrivent, et elles ne ressemblent à rien de ce
+que le produit envoie.** La règle qui a retiré les préférences par genre tient
+parce que **tout ce que le produit dit aujourd'hui est transactionnel** : une
+réservation qu'on a faite, une publication qu'on a envoyée, une décision qu'on
+attend. Refuser ces messages-là revient à refuser de savoir ce qu'on a
+soi-même déclenché — c'est pourquoi un mur d'interrupteurs ne servait à
+personne.
+
+Ces deux-là partent trois semaines après un cœur posé, un mardi, sans que
+personne n'ait rien demandé. C'est la première fois que le produit parle de
+lui-même, et c'est le genre de message dont l'absence de refus se paie en
+désinstallations.
+
+**L'interrupteur vit sur l'écran des favoris.** Dans les réglages, il serait un
+interrupteur dont le sujet n'est pas à l'écran — exactement le défaut
+diagnostiqué sur « profil et mise en ligne », un onglet dont on ne comprenait
+pas l'objet. Sur la liste, il est au-dessus de la chose qu'il gouverne, et il
+n'apparaît pas quand elle est vide : il n'y a alors rien dont on puisse être
+prévenu.
+
+**Un seul, pas un par favori.** Un par ligne recréerait le mur qu'on vient de
+retirer, une case à la fois.
+
+**Il n'est pas dessiné**, et c'est la même règle que partout ailleurs : un
+interrupteur qui ne commande rien est pire que son absence. La place est
+décidée et consignée ; le champ est demandé.
+
+**Et la liste se lâche autant qu'elle se garde.** Le cœur y était décoratif,
+avec pour raison que « retirer se fait là où l'on a posé ». C'était faux pour la
+moitié des lignes : un salon qui ne paraît plus n'est dans aucun fil, donc son
+favori n'aurait jamais eu d'endroit où être retiré — la liste se serait remplie
+une fois pour toutes, et c'est l'état où elle doit le plus servir.

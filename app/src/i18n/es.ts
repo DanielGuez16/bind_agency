@@ -891,7 +891,7 @@ export const es: Catalogue = {
     videTitre: 'Aún no has guardado nada',
     videCorps: 'El corazón de un servicio lo guarda aquí — útil para lo que todavía no se te abre.',
     duree: '{{n}} min',
-    voirLeSalon: 'Ver el salón',
+    retirer: 'Quitar {{nom}} de guardados',
     etatFermee: '{{salon}} lo ha cerrado por ahora. Puede reabrir.',
     etatSalonIndisponible: '{{salon}} no aparece en este momento.',
     etatHorsPalier: 'Este se ofrece en un nivel que aún no abres.',

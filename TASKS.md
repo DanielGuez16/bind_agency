@@ -2267,11 +2267,35 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       salon montrent le même cœur ». Livré au niveau de la prestation, qui est
       le seul cohérent de bout en bout : garder un salon demanderait une autre
       table et un autre écran. **Signalé, non tranché seul.***
-- [ ] **Ce qu'un favori déclenche n'est pas décidé**
+- [x] **Ce qu'un favori déclenche est décidé, et sa place aussi**
       *Faut-il prévenir quand une prestation s'ouvre au palier de la créatrice ?
       Ce serait la première notification sortante du produit, donc une décision
       de fond — et Design note que le cœur perd la moitié de son intérêt sans
       elle*
+- [x] **La liste des favoris se lâche autant qu'elle se garde**
+      *Le cœur y était décoratif — « retirer se fait là où l'on a posé » — et
+      c'était faux pour la moitié de la liste : un salon qui ne paraît plus
+      n'est dans aucun fil, donc son favori n'aurait **jamais** eu d'endroit où
+      être retiré. La liste se serait remplie une fois pour toutes.*
+      *Le retrait est optimiste et revient si le serveur refuse. Et la ligne
+      entière ouvre le salon, y compris sur une prestation réservable — c'était
+      réservé au bandeau des états bloqués, donc le cas le plus fréquent ne
+      menait nulle part. 1482 tests, 3 mutations*
+- [ ] **L'interrupteur des notifications de favori attend son champ**
+      *Deux notifications arrivent — la prestation qui devient accessible, le
+      salon qui rouvre — et ce sont **les premiers messages non transactionnels
+      du produit**. La règle qui a retiré les préférences tient parce que tout
+      ce que le produit dit est déclenché par celui qui le reçoit ; ces deux-là
+      partent trois semaines après un cœur posé, sans que personne n'ait rien
+      demandé.*
+      *La place est décidée : **un seul interrupteur, sur l'écran des favoris**,
+      au-dessus de ce qu'il gouverne, absent quand la liste est vide. Pas dans
+      les réglages — un interrupteur dont le sujet n'est pas à l'écran est le
+      défaut diagnostiqué sur « profil et mise en ligne ». Pas un par favori —
+      ce serait le mur qu'on vient de retirer, une case à la fois.*
+      *Non dessiné faute de champ : un interrupteur qui ne commande rien est
+      pire que son absence. Demandé à `bind-agency-1a` — un booléen vrai par
+      défaut, plus les deux genres dans `NotificationKind`*
 - [ ] **Neuf planches d'écrans portent encore la v1.0**
       *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
       passés en v3, dans la palette Ambre. Les autres suivent l'ordre du

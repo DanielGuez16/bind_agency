@@ -973,7 +973,7 @@ export const en = {
     videTitre: 'Nothing saved yet',
     videCorps: 'The heart on a service keeps it here — useful for what is not open to you yet.',
     duree: '{{n}} min',
-    voirLeSalon: 'See the salon',
+    retirer: 'Remove {{nom}} from saved',
     // **Quatre états, quatre conduites.** « Unavailable » les aurait tous
     // couverts et n'aurait rien dit : attendre la réouverture, monter d'un
     // palier et choisir autre chose ne sont pas le même geste.
