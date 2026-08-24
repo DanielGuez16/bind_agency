@@ -1822,78 +1822,38 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       propre raison — un refus ne se lit pas comme un compte injoignable.*
       *6 tests, 5 mutations. Nom du champ repris de la session qui rendra
       l'interrupteur, sur l'écran des favoris et non dans les réglages.*
-- [ ] **Quatre intermittences dans une session, toujours sur des tests qui montent la coquille**
-      *Motif inscrit le 2026-08-24, à ne pas prendre tout de suite. Quatre
-      échecs sur des passages de la suite complète, tous non reproductibles :
-      chaque fichier repasse en isolation et au passage suivant, sans rien
-      changer.*
-      *Les fichiers : `attente`, `chargement-v3`, `coquille` (31 s sur le
-      passage qui échoue), et le test de la photo qui n'agrandit pas sa carte.
-      Deux traits communs — ils montent une coquille ou un écran entier, et ils
-      attendent un minuteur. Le symptôme est toujours un `waitFor` qui expire,
-      jamais une assertion fausse.*
-      ***Possiblement la même cause que la fuite de worker diagnostiquée le même
-      jour par l'autre conversation.** Elle a nommé trois causes, dont une qui
-      colle : quatre décors rendaient `new Promise<Response>(() => {})`, qui ne
-      modélise pas un réseau lent mais un `fetch` qui ignore son signal — le
-      `finally` du client n'est jamais atteint, et rien ne se démonte. Un
-      composant qui n'a pas fini de se démonter et un `waitFor` qui expire sous
-      charge sont deux façons de voir le même événement qui n'arrive pas.*
-      ***Recoupement vérifié le 2026-08-24 : ce sont DEUX FAMILLES.** Les quatre
-      échecs ne font que trois fichiers — la photo et le filet vivent tous deux
-      dans `attente`. Passés un par un avec sa commande exacte
-      (`--ci --maxWorkers=2 --no-cache <candidat> format.test.ts`), trois fois
-      chacun : **0/3 avertissement de worker sur les trois**, et 3/3 passages
-      verts. Ils ne fuient pas. Sa correction ne s'étend donc pas ici.*
-      ***Et son levier de reproduction ne vaut pas pour ce symptôme.**
-      `--no-cache` force le mode worker, ce qui révèle une fuite ; le symptôme
-      d'ici est un `waitFor` qui expire quand la machine est chargée — deux
-      workers sur trois fichiers, c'est précisément la charge la plus basse
-      possible. Le levier est donc la **charge**, pas le mode : ces trois
-      fichiers ne tombent qu'au milieu de la suite entière, et jamais seuls.*
-      ***Le bruit de la mesure a la même nature que le défaut mesuré.** Au
-      premier passage, `attente` a donné un avertissement de worker **et** un
-      échec ; les six suivants l'ont démenti. Un seul passage aurait conclu au
-      recoupement et envoyé étendre une correction sans rapport. Sur ce genre de
-      défaut, une mesure unique ne vaut rien — c'est trois passages ou aucun.*
-      *Ne pas bisecter maintenant : la CI est verte, et le coût réel est une
-      relance occasionnelle. Reste à bisecter le jour où ça change, avec un
-      autre outil : faire tourner la suite complète
-      en boucle et relever ce qui tombe, ou instrumenter les `waitFor` de ces
-      trois fichiers pour savoir ce qu'ils attendent quand ils expirent. Un
-      premier soupçon à écarter en priorité : les trois montent une coquille ou
-      un écran entier, donc beaucoup de requêtes en vol — si l'une d'elles ne se
-      règle jamais, le test ne tient que par la marge du minuteur, et la charge
-      la mange.*
-      ***Et si c'est la charge, ce n'est pas le processeur.** Mesuré depuis
-      l'autre conversation : la suite complète passe entière sous
-      vingt-quatre boucles occupées sur dix cœurs, deux fois de suite. En
-      revanche la signature s'est bien produite une fois pendant que
-      `pytest -n auto` tournait sur la même machine — dix fichiers rouges, des
-      durées de 30 à 90 s, tout au vert au passage suivant à froid. Ce que la
-      suite `api` consomme et qu'une boucle vide ne touche pas est la mémoire et
-      les entrées-sorties : c'est de ce côté qu'il faut chercher, et une boucle
-      de `yes` ne reproduira jamais rien.*
-      ***La CI n'a pas encore rougi**, et c'est ce qui rend l'entrée utile : son
-      runner est plus lent que la machine de développement, donc l'écart de
-      charge y est plus grand, pas plus petit.*
-
-- [ ] **Trois champs pour les deux derniers écrans, demandés à la conversation des routes**
-      *Design a rendu la planche des deux derniers écrans le 2026-08-24, et
-      trois de ses colonnes ne sont pas servies. Aucune n'est bloquante : les
-      deux écrans sont livrés sans.*
-      *`GET /admin/businesses` — **`created_at`** du salon, pour la colonne
-      JOINED de la planche ; et un **total**, la planche écrit « 4 of 742 · this
-      search » alors que la route rend une liste nue. Le total est celui de la
-      recherche courante, pas du catalogue : c'est ce qui distingue « quatre
-      résultats » de « quatre salons ».*
-      *`Favori` — **le palier requis par la prestation**. La planche écrit
-      « Reel tier · 18 000 followers to go, then it opens ». L'écart est déjà
-      chiffrable — il vient de `prochain_palier.obstacle.ecart`, un nombre publié
-      sur l'écran des paliers — mais rien ne dit si atteindre le prochain palier
-      ouvre **ce** favori-là. La ligne livrée s'arrête donc avant le « then it
-      opens », qui serait une promesse qu'on ne peut pas tenir.*
-
+- [x] **L'intermittence était la marge, pas les fichiers**
+      *Ce qui tranche est que **les deux ensembles observés ne se recoupent
+      pas** : quatre fichiers d'un côté — `attente`, `chargement-v3`,
+      `coquille`, la photo — et deux de l'autre, `apres-la-reservation` et
+      `chemin-du-code`. Aucun commun. Si c'était une fuite, ce serait toujours
+      les mêmes.*
+      *Reproduit : douze passages de la suite entière, un rouge, deux fichiers
+      dedans, **leurs durées gonflées à dix-neuf et trente et une secondes** là
+      où ils en mettent une. Ce n'est pas un test qui bloque, c'est toute
+      l'exécution qui ralentit — et le défaut d'usine de `waitFor`, une seconde,
+      n'y survit pas.*
+      *`asyncUtilTimeout` passe à cinq secondes. **Ça ne coûte rien** : `waitFor`
+      rend la main dès que la condition tient, donc une suite verte ne met pas
+      une milliseconde de plus ; seul un test qui échoue vraiment met quatre
+      secondes de plus à le dire, une fois. Et pas davantage, sans quoi un test
+      réellement bloqué se confondrait avec un test lent — le même défaut dans
+      l'autre sens.*
+      *Douze passages après, tous verts. **Douze contre douze ne prouve pas** —
+      un défaut d'un sur douze demanderait bien plus de tirages — et l'argument
+      ne repose pas là-dessus : il repose sur les deux ensembles disjoints et
+      sur le facteur vingt des durées. Un test garde le réglage par ce qu'il
+      fait plutôt que par sa valeur, parce que le retirer ne fait rien tomber
+      tant que la machine n'est pas chargée. 1 mutation*
+- [x] **Les trois champs des deux derniers écrans sont servis et lus**
+      *`GET /admin/businesses` porte `created_at` — la colonne « inscrit le » —
+      et un **total**, celui de la recherche courante et non du catalogue : «
+      4 of 742 · this search » distingue quatre résultats de quatre salons.
+      `Favori.palier_requis` porte le palier **de la prestation**, ce qui permet
+      d'écrire « et il s'ouvre » sans mentir : le prochain palier de la
+      créatrice n'ouvre pas forcément ce favori-là.*
+      *Les trois lignes ont quitté `champs-servis` au premier lecteur, comme la
+      garde le réclame*
 - [x] **La luminosité et la veille de l'écran de code, branchées**
       *`rules.md` §2 les annonce — « luminosité forcée au maximum, veille
       désactivée (`expo-keep-awake`), restauration à la sortie » — et
@@ -2646,9 +2606,6 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       Trois branches écrites à la main, comme le titre de la journée — `count`
       traverse le formateur de nombres et la pluralisation d'i18n-js ne se
       déclenche plus.*
-
-- [ ] **La planche dit « le favori porte sur le salon », le contrat dit la prestation**
-      *`ItemDuFil.est_favori` est posé sur l'article, `POST /me/favorites` prend
 
 - [x] **Le favori porte sur la prestation — tranché définitivement**
       *La planche s'aligne sur le contrat, pas l'inverse, et Design est prévenu.

@@ -1,3 +1,30 @@
+/**
+ * La marge des attentes asynchrones, et pourquoi elle est là.
+ *
+ * **Le symptôme :** un fichier rouge par-ci par-là sur la suite complète,
+ * jamais le même, jamais reproductible en isolation, toujours un `waitFor` qui
+ * expire — jamais une assertion fausse. Deux conversations l'ont vu, sur deux
+ * ensembles de fichiers **sans aucun recoupement** : quatre d'un côté, deux de
+ * l'autre. C'est ce qui tranche — si c'était une fuite, ce serait toujours les
+ * mêmes.
+ *
+ * **Mesuré :** douze passages de la suite entière, un seul rouge, deux fichiers
+ * dedans, et leurs durées gonflées — dix-neuf et trente et une secondes là où
+ * ils en mettent une. Ce n'est pas un test qui bloque, c'est toute l'exécution
+ * qui ralentit, et le défaut d'usine d'une seconde ne survit pas à ça.
+ *
+ * **Ce que ça ne coûte pas :** `waitFor` rend la main dès que la condition
+ * tient. Une suite verte ne met pas une milliseconde de plus ; seul un test qui
+ * échoue vraiment met quatre secondes de plus à le dire, une fois.
+ *
+ * **Et pourquoi pas plus haut :** au-delà, un test réellement bloqué se
+ * confondrait avec un test lent, ce qui est le défaut qu'on vient de retirer,
+ * dans l'autre sens.
+ */
+const { configure } = require('@testing-library/react-native');
+
+configure({ asyncUtilTimeout: 5_000 });
+
 // AsyncStorage n'existe pas hors appareil : la bibliothèque fournit son propre
 // double, c'est celui-là qu'il faut brancher plutôt que d'en écrire un.
 jest.mock('@react-native-async-storage/async-storage', () =>
