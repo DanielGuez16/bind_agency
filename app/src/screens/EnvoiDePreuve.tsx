@@ -66,12 +66,12 @@ const LONGUEUR_DE_LA_NOTE = 500;
 
 /** La borne du serveur sur `source_url`, recopiée — un test compare les deux. */
 const LONGUEUR_DE_L_ADRESSE = 1000;
-import { Image, Linking, View } from 'react-native';
+import { Linking, View } from 'react-native';
 
 import * as ImagePicker from 'expo-image-picker';
 
 import { useApi, type Collaboration } from '../api';
-import { Button, StatusMessage, TextField, Texte, vibration } from '../components';
+import { Button, Photo, StatusMessage, TextField, Texte, vibration } from '../components';
 import { useI18n } from '../i18n';
 import { radius, useTheme } from '../theme';
 
@@ -220,22 +220,20 @@ export function EnvoiDePreuve({
 
   return (
     <View style={{ gap: 12 }} testID="envoi-de-preuve">
+      {/* **`Photo`, et non une `Image` posée à la main.** Les deux aperçus de
+          la preuve — celui-ci et celui de la preuve envoyée — montaient leur
+          image d'un coup, à pleine opacité, sur un aplat qui n'était pas celui
+          des médias. Le composant apporte le fondu, l'aplat `media.placeholder`
+          et le respect du mouvement réduit ; sans lui, chaque écran refaisait
+          ces trois choses de son côté, et aucun ne les refaisait pareil. */}
       {media ? (
-        <View
-          style={{
-            height: APERCU,
-            borderRadius: radius['radius.lg'],
-            overflow: 'hidden',
-            backgroundColor: c['bg.sunken'],
-          }}
-        >
-          <Image
-            source={{ uri: media.uri }}
-            style={{ width: '100%', height: APERCU }}
-            resizeMode="contain"
-            testID="apercu-du-choix"
-          />
-        </View>
+        <Photo
+          uri={media.uri}
+          hauteur={APERCU}
+          cadrage="contain"
+          style={{ borderRadius: radius['radius.lg'] }}
+          testID="apercu-du-choix"
+        />
       ) : null}
 
       {vue.etat === 'echec' ? (

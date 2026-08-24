@@ -734,6 +734,7 @@ export const en = {
     miseEnLignePrete: 'Everything is ready. Creators are waiting.',
     miseEnLigneInvisibleTitre: 'You are live, but creators still cannot find you',
     miseEnLignePublier: 'Make my salon visible',
+    miseEnLigneVousChoisissez: 'Nothing goes out on its own. Your salon appears when you press this.',
     miseEnLigneInvisible: 'You are not visible in any feed until the points above are done.',
     etapeAddress: 'Address',
     etapeCoordinates: 'Map position',

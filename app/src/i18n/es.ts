@@ -665,6 +665,7 @@ export const es: Catalogue = {
     miseEnLignePrete: 'Todo está listo. Las creadoras esperan.',
     miseEnLigneInvisibleTitre: 'Estás en línea, pero las creadoras aún no te encuentran',
     miseEnLignePublier: 'Hacer visible mi salón',
+    miseEnLigneVousChoisissez: 'Nada se publica solo. Tu salón aparece cuando pulsas aquí.',
     miseEnLigneInvisible: 'No apareces en ningún muro hasta completar los puntos de arriba.',
     etapeAddress: 'Dirección',
     etapeCoordinates: 'Ubicación en el mapa',

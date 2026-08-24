@@ -985,6 +985,9 @@ describe('arbitrage', () => {
     await waitFor(() => expect(screen.getByTestId('dossier-k1')).toBeTruthy());
 
     await waitFor(() => expect(screen.getByTestId('apercu-de-la-preuve')).toBeTruthy());
+    // Même raison qu'à l'envoi : `Photo` expose son image interne sous
+    // `<testID>-image`, ce qu'une `Image` posée à la main ne produit pas.
+    expect(screen.getByTestId('apercu-de-la-preuve-image')).toBeTruthy();
     expect(screen.getByTestId('ouvrir-la-publication')).toBeTruthy();
   });
 

@@ -97,6 +97,12 @@ it('montre l’image avant de l’envoyer', async () => {
   });
 
   await waitFor(() => expect(screen.getByTestId('apercu-du-choix')).toBeTruthy());
+  // **Et c'est `Photo` qui le rend**, pas une `Image` posée à la main : le
+  // composant expose son image interne sous `<testID>-image`, ce qu'un rendu
+  // manuel ne produit pas. Sans lui, l'aperçu montait d'un coup, à pleine
+  // opacité, sur un aplat qui n'était pas celui des médias — et chaque écran
+  // refaisait ces trois choses de son côté, jamais pareil.
+  expect(screen.getByTestId('apercu-du-choix-image')).toBeTruthy();
   expect(screen.getByTestId('confirmer-l-envoi')).toBeTruthy();
   // Rien n'est parti tant qu'on n'a pas confirmé.
   expect(envois).toHaveLength(0);
