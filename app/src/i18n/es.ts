@@ -1031,7 +1031,7 @@ export const es: Catalogue = {
     etatJamaisEnLigne: 'Todavía no está en línea',
     etatEnPause: 'Retirado del listado',
     catalogueTitre: 'Catálogo',
-    catalogueResume: '{{n}} servicios',
+    catalogueResume: '{{n}} servicios · {{visibles}} visibles para las creadoras',
     ajouterUnePrestation: 'Añadir un servicio',
     filtreToutes: 'Todos',
     filtreOuvertes: 'Abiertos',

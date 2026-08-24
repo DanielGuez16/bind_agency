@@ -1142,7 +1142,7 @@ export const en = {
     etatJamaisEnLigne: 'Not live yet',
     etatEnPause: 'Withdrawn from the feed',
     catalogueTitre: 'Catalogue',
-    catalogueResume: '{{n}} services',
+    catalogueResume: '{{n}} services · {{visibles}} open to creators',
     ajouterUnePrestation: 'Add a service',
     filtreToutes: 'All',
     filtreOuvertes: 'Open',

@@ -2418,12 +2418,31 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       colonnes n'existe pas** — et la planche est dessinée à 1512, où il tient.
       Sur 390, quatre colonnes ne sont pas des colonnes : c'est la question à
       trancher avant de le composer*
-- [ ] **La capacité : au lieu ou à la journée**
-      *Design la range avec les horaires — « deux créatrices à la fois » est un
-      nombre de fauteuils, donc du lieu — mais note qu'elle se règle à la
-      fréquence d'un catalogue, et que l'exception du jour la modifie déjà
-      depuis la journée. Si l'usage montre qu'elle bouge souvent, elle
-      appartient à la journée. À mesurer, pas à trancher d'avis*
+- [x] **La capacité reste au lieu**
+      *Tranché, et l'argument retourne la question de Design. Un nombre de
+      fauteuils est une propriété de l'endroit, et l'exception du jour existe
+      pour les écarts. **Si elle bougeait souvent, ce serait le signe que le
+      nombre déclaré est faux, pas qu'il est au mauvais endroit** — la
+      fréquence mesurerait alors une erreur de déclaration, pas un besoin de
+      déplacement*
+- [x] **Le résumé de composition a retrouvé sa fonction, en trois endroits**
+      *Il disait à un salon ce qui manque avant qu'il apparaisse — « douze dont
+      trois éteintes n'est pas la même composition que douze visibles, et c'est
+      la moitié qu'on oublie ». La fonction se pose au pied de la liste qu'elle
+      compte : « 8 services · 5 open to creators ».*
+      *Deux de ses trois nombres se comptent dans l'écran qui tient déjà les
+      articles — un appel pour un nombre qu'on peut compter serait deux comptes
+      qui finiraient par diverger. La définition est recopiée du serveur : le
+      parent d'une gamme n'est pas une prestation, et la visibilité se lit sur
+      `is_effectively_available`. 1519 tests, 2 mutations*
+- [ ] **`en_ligne_depuis` doit rejoindre `VueDActivation`**
+      *Le seul champ du résumé qui ne se dérive pas : il vient du journal
+      d'audit. La journée charge déjà `VueDActivation`, et le bandeau de mise
+      en ligne vit dessus — **la règle des sept jours attend cette date depuis
+      la v3**. Un second appel sur l'écran le plus ouvert du produit serait le
+      mauvais geste. Demandé, avec la recommandation de retirer
+      `compositionDuCommerce` ensuite : elle existait pour un menu qui n'existe
+      plus*
 - [ ] **Neuf planches d'écrans portent encore la v1.0**
       *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
       passés en v3, dans la palette Ambre. Les autres suivent l'ordre du
