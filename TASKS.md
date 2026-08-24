@@ -1818,6 +1818,19 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       propre raison — un refus ne se lit pas comme un compte injoignable.*
       *6 tests, 5 mutations. Nom du champ repris de la session qui rendra
       l'interrupteur, sur l'écran des favoris et non dans les réglages.*
+- [ ] **La luminosité et la veille de l'écran de code ne sont pas branchées**
+      *`rules.md` §2 les annonce — « luminosité forcée au maximum, veille
+      désactivée (`expo-keep-awake`), restauration à la sortie » — et
+      `produit.json` les déclare à `true`. **Aucune des deux n'est implémentée** :
+      ni `expo-keep-awake` ni `expo-brightness` n'est installé, et aucun écran ne
+      les appelle. Trouvé par l'audit du 2026-08-24.*
+      *C'est le même défaut que l'avertissement sans glyphe — une règle écrite et
+      vraie que rien n'exécute — à ceci près qu'ici elle n'est pas seulement non
+      gardée, elle est absente. Le coût est réel : un écran qui s'éteint pendant
+      qu'on présente son code au comptoir, et un code illisible en plein soleil.*
+      *Deux dépendances natives : c'est une décision de construction, pas un
+      habillage. Les jetons portent une note en attendant.*
+
 - [x] **Deux listes qui manquaient : les décisions par salon, et les salons de l'administration**
       *`decisions_en_attente` sur `/me/businesses`. C'est ce qui fait basculer
       un gérant qui ne savait pas qu'on l'attendait — deux noms de salons ne
