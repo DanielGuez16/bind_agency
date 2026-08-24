@@ -52,14 +52,6 @@ const SANS_APPELANT: Record<string, string> = {
   // protège personne, et donnerait à croire que la porte reste ouverte tant
   // qu'on ne l'a pas pressé.
   fermerLaReprise: 'a-instruire',
-  // **Les favoris : le contrat est là, le geste ne l'est pas.** Le cœur se pose
-  // sur la carte du mur et la liste demande son écran — les deux sont de la
-  // composition. Et il manque une décision de dessin avant tout code : le
-  // système d'icônes n'a pas de cœur, ni plein ni vide, et en inventer un
-  // serait poser une marque dans un alphabet qui en a un.
-  mesFavoris: 'a-instruire',
-  mettreEnFavori: 'a-instruire',
-  retirerDesFavoris: 'a-instruire',
 };
 
 const RAISONS = new Set(['contrat', 'technique', 'a-instruire']);

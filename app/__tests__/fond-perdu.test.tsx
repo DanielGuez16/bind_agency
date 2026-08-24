@@ -96,6 +96,7 @@ async function monter(reponse: { ok: boolean; corps: unknown }) {
           <FilScreen
             position={{ longitude: -80.19, latitude: 25.76 }}
             onDemanderLaPosition={() => {}}
+            onVoirMesFavoris={() => {}}
             onOuvrirLeCommerce={() => {}}
           />
         </ApiProvider>

@@ -112,6 +112,15 @@ export type EcranProps<T> = {
      */
     testID?: string;
   };
+  /**
+   * Une bande qui ne défile pas, entre la barre de titre et le contenu.
+   *
+   * Pour ce qui commande le contenu et doit rester atteignable pendant qu'on
+   * le parcourt — une recherche, un filtre. Rendue dans les quatre états : un
+   * filtre qui ne rend rien doit avoir une sortie, et une bande qui apparaît et
+   * disparaît au fil des états est un clignotement.
+   */
+  barre?: ReactNode;
   /** Le squelette. À défaut, trois cartes à la géométrie du contenu. */
   squelette?: ReactNode;
   /** L'état vide. Jamais un cul-de-sac : chaque issue annonce son gain. */
@@ -146,6 +155,7 @@ export function Ecran<T>({
   nature,
   children,
   liste,
+  barre,
   squelette,
   vide,
   bordAbord = false,
@@ -339,6 +349,21 @@ export function Ecran<T>({
           fraicheur={fraicheur}
         />
       ) : null}
+      {/* **Ce qui reste collé pendant qu'on défile.** Posé au-dessus du
+          défileur plutôt que dans son en-tête : `ListHeaderComponent` s'en va
+          avec le contenu, et les rendre collants par `stickyHeaderIndices`
+          obligerait à ranger du chrome dans les données. Une bande fixe est ce
+          que c'est.
+
+          **Elle vit dans les quatre états**, et c'est le vide qui l'impose :
+          un filtre qui ne rend rien doit avoir une sortie, et cette barre est
+          la seule. La faire tomber avec le contenu enfermerait dans le filtre
+          exactement quand on veut en sortir.
+
+          Les trois autres suivent pour une raison plus simple : une bande qui
+          apparaît et disparaît au fil des états est le clignotement que la
+          règle 1 de l'attente existe pour empêcher. */}
+      {barre ? <View testID="barre-collante">{barre}</View> : null}
       {enListe ? (
         // **L'état nominal garde son repère.** Il ne tient pas sur le défileur,
         // qui porte déjà celui de l'écran ; et sans lui, la table des quatre

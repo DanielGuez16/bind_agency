@@ -98,6 +98,7 @@ const BLOCS: Record<string, number> = {
   AudienceScreen: 0,
   // Le score en détail : que de l'explication, et deux garanties. Aucune
   // matière de marque n'a rien à y faire.
+  FavorisScreen: 0,
   FiabiliteScreen: 0,
   // La liste de ce qu'un palier ouvre : de l'information, pas une
   // présentation de la marque. Le badge de palier y porte la seule matière.

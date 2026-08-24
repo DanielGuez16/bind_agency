@@ -219,7 +219,7 @@ export class Api {
 
   fil(
     autourDe: { longitude: number; latitude: number },
-    options: { rayonMetres?: number; categorie?: string } = {},
+    options: { rayonMetres?: number; categorie?: string; recherche?: string } = {},
     signal?: AbortSignal,
   ) {
     return this.client.request<Fil>(routes.fil(), {
@@ -228,6 +228,10 @@ export class Api {
         latitude: autourDe.latitude,
         rayon_metres: options.rayonMetres,
         categorie: options.categorie,
+        // **Servie depuis des jours, et sans aucun bouton.** La route accepte
+        // `recherche` ; l'écran n'avait pas de quoi la remplir, donc une
+        // capacité entière du produit n'existait pour personne.
+        recherche: options.recherche?.trim() || undefined,
       },
       signal,
     });

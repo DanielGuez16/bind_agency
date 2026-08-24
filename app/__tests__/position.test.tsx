@@ -353,6 +353,7 @@ describe('le fil demande la position en arrivant', () => {
             position={null}
             etatDeLaPosition={etat}
             onDemanderLaPosition={demander}
+            onVoirMesFavoris={() => {}}
             onOuvrirLeCommerce={() => {}}
           />
         </ApiProvider>
