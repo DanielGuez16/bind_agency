@@ -115,6 +115,12 @@ export function TextField({
             : enErreur
               ? c['status.danger.surface']
               : 'transparent',
+          // **Rien ne se peint hors du rayon.** Sur le web, l'`input` est un
+          // enfant carré qui porte son propre fond : l'autoremplissage le
+          // rendait visible aux quatre coins, débordant d'un champ qu'on croyait
+          // arrondi. Le rayon vit sur ce conteneur, donc c'est lui qui découpe —
+          // et il découpe tout, pas seulement ce qu'on avait prévu.
+          overflow: 'hidden',
           justifyContent: lignes ? 'flex-start' : 'center',
           // La bascule vit dans la bordure, à droite du texte : posée
           // au-dessus, elle recouvrirait la fin de la saisie.
