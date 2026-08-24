@@ -695,8 +695,20 @@ async def test_un_favori_reservable_ne_porte_aucun_palier_a_atteindre(
     session: AsyncSession,
 ) -> None:
     """L'autre bord. Un champ toujours servi ferait écrire « encore 7 000
-    abonnés » sous une prestation qu'elle peut réserver aujourd'hui."""
+    abonnés » sous une prestation qu'elle peut réserver aujourd'hui.
+
+    **La prestation est ouverte au story et au reel**, et c'est ce qui fait
+    diverger le décor : elle atteint le story, donc le favori est réservable, et
+    il reste un palier fermé à rendre pour qui ne regarderait pas l'état. Sans
+    la seconde offre, « toujours servir » et « servir sur hors_palier seulement »
+    rendaient tous les deux `None`, et la mutation survivait.
+    """
     decor = await monter_le_decor(session)
+    await tier_offer_service.create_offer(
+        session,
+        business_id=decor["business"].id,
+        payload=TierOfferCreate(tier_id=REEL, catalog_item_id=decor["item"].id),
+    )
     await favorites.ajouter(
         session, creator_id=decor["createur"].id, catalog_item_id=decor["item"].id
     )
