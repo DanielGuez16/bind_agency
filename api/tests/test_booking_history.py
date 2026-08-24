@@ -688,17 +688,25 @@ async def test_la_journee_porte_la_reprise_qui_court_et_elle_seule(session: Asyn
     ouvert du produit pour une donnée absente dans la quasi-totalité des cas.
     Une ligne ou nulle ne pèse rien.
 
-    Le décor pose **quatre** reprises, dont deux mortes. C'est ce qui le rend
-    divergent : sur un salon qui n'en a qu'une, « la plus récente vivante », « la
-    première venue » et « la dernière écrite » rendent la même ligne, et le test
-    ne prouverait rien.
+    **Les deux mortes sont les plus récentes, et c'est tout le décor.** Une
+    première version les posait avant la vivante : une implémentation qui lit la
+    table sans les conditions de vie rendait alors la bonne ligne quand même, et
+    la mutation a survécu. Écrites dans cet ordre-ci, les quatre implémentations
+    qu'on redoute divergent chacune :
 
-    - une refermée, une échue : une implémentation qui lirait la table sans les
-      deux conditions de vie rendrait l'une d'elles, et le salon lirait qu'on
-      est chez lui alors que personne n'y est ;
-    - deux vivantes de deux administrateurs — le service ne refuse que la
-      seconde du *même* — dont c'est **la plus récemment ouverte** qui porte le
-      bandeau. Prendre l'autre nommerait quelqu'un qui est entré avant.
+    ========================= ==========================================
+    ce que rendrait…          …et pourquoi c'est faux
+    ========================= ==========================================
+    la plus récente tout court `échue` : le salon lit qu'on est chez lui
+                               alors que la porte s'est éteinte seule
+    la plus ancienne vivante   `ancienne` : nomme quelqu'un entré avant
+    rien du tout               le bandeau ne s'allume jamais
+    n'importe laquelle         une chance sur quatre d'avoir raison
+    ========================= ==========================================
+
+    Deux vivantes parce que le service ne refuse que la seconde du **même**
+    administrateur : rien n'interdit à deux personnes d'être entrées, et c'est
+    la dernière arrivée que le bandeau nomme.
     """
     from app.models import BusinessSupportAccess
     from app.models.enums import PorteeDeReprise
@@ -709,53 +717,61 @@ async def test_la_journee_porte_la_reprise_qui_court_et_elle_seule(session: Asyn
     business = decor["business"]
     jour = datetime.now(ZoneInfo(business.timezone)).date()
 
-    async def ouvrir(motif: str):
-        return await support.ouvrir(
+    async def ouvrir(motif: str, *, il_y_a: timedelta, expire_il_y_a: timedelta | None = None):
+        """Ouvre une reprise, puis la fait vieillir.
+
+        `ouvrir` accepte un `maintenant`, mais il ne sert qu'à son propre
+        contrôle : `started_at` est écrit par `clock_timestamp()` côté Postgres,
+        donc naître vieux est impossible — la contrainte `expire_apres_ouverture`
+        refuse une échéance antérieure à une ouverture restée au présent. On
+        fait donc passer le temps après coup, ce qu'aucun mécanisme du produit
+        ne sait faire.
+        """
+        acces = await support.ouvrir(
             session,
             business=business,
             admin=await administrateur(session),
             motif=motif,
             portee=[PorteeDeReprise.FICHE],
         )
-
-    async def vieillir(acces, *, de: timedelta, echue: bool = False) -> None:
-        """Recule une reprise dans le temps, ouverture **et** terme.
-
-        `ouvrir` accepte un `maintenant`, mais il ne sert qu'à son propre
-        contrôle : `started_at` est écrit par `clock_timestamp()` côté Postgres,
-        donc naître vieux est impossible — la contrainte
-        `expire_apres_ouverture` refuse une échéance antérieure à une ouverture
-        qui, elle, reste à l'instant présent. On fait donc passer le temps
-        après coup, ce qu'aucun mécanisme du produit ne sait faire.
-        """
+        naissance = acces.started_at - il_y_a
         await session.execute(
             sa.update(BusinessSupportAccess)
             .where(BusinessSupportAccess.id == acces.id)
             .values(
-                started_at=acces.started_at - de,
-                **({"expires_at": acces.started_at - de + timedelta(days=1)} if echue else {}),
+                started_at=naissance,
+                **(
+                    {"expires_at": acces.started_at - expire_il_y_a}
+                    if expire_il_y_a is not None
+                    else {}
+                ),
             )
         )
         await session.refresh(acces)
+        return acces
 
-    refermee = await ouvrir("celle qu'on a refermée")
+    ancienne = await ouvrir("entrée en premier", il_y_a=timedelta(hours=3))
+    recente = await ouvrir("entrée en dernier", il_y_a=timedelta(hours=2))
+    refermee = await ouvrir("celle qu'on a refermée", il_y_a=timedelta(hours=1))
     await support.fermer(session, acces=refermee, acteur=await administrateur(session))
-
-    echue = await ouvrir("celle qui s'est éteinte toute seule")
-    await vieillir(echue, de=timedelta(days=30), echue=True)
-    assert echue.expires_at < datetime.now(UTC), "le décor n'a pas expiré ce qu'il annonce"
-    assert echue.ended_at is None, "une reprise échue n'est pas une reprise fermée"
-
-    ancienne = await ouvrir("entrée en premier")
-    await vieillir(ancienne, de=timedelta(hours=2))
-    assert ancienne.expires_at > datetime.now(UTC), "la plus ancienne doit rester vivante"
-
-    recente = await ouvrir("entrée en dernier")
-    await session.flush()
-    assert ancienne.started_at < recente.started_at, (
-        "les deux vivantes sont nées dans le même ordre que leur nom : sinon "
-        "le décor ne dit plus laquelle le bandeau doit nommer"
+    echue = await ouvrir(
+        "celle qui s'est éteinte toute seule",
+        il_y_a=timedelta(minutes=30),
+        expire_il_y_a=timedelta(minutes=10),
     )
+    await session.flush()
+
+    # Le décor dit-il ce qu'il prétend dire ? Sans ces quatre lignes, une
+    # fabrique qui daterait mal laisserait le test vert en n'éprouvant rien.
+    maintenant = datetime.now(UTC)
+    assert ancienne.started_at < recente.started_at < refermee.started_at < echue.started_at, (
+        "les mortes doivent être les plus récentes, sinon lire la table sans "
+        "les conditions de vie rend la bonne ligne par accident"
+    )
+    assert ancienne.expires_at > maintenant and recente.expires_at > maintenant
+    assert echue.expires_at < maintenant, "le décor n'a pas expiré ce qu'il annonce"
+    assert echue.ended_at is None, "une reprise échue n'est pas une reprise fermée"
+    assert refermee.ended_at is not None
 
     journee = await service.journee_du_commerce(session, business=business, jour=jour)
 
