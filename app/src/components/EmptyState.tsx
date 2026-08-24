@@ -122,7 +122,7 @@ export function EmptyState({
               <Texte variante="type.caption" couleur="ink.soft">
                 {repere.label}
               </Texte>
-              <Texte variante="type.mono">{repere.valeur}</Texte>
+              <Texte variante="type.data">{repere.valeur}</Texte>
             </View>
           ))}
         </View>

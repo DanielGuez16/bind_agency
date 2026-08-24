@@ -180,7 +180,7 @@ export function ApercuDePrestation({
                   veut. La teinte était l'intention, la valeur était le défaut —
                   et c'est la quatrième réserve de contraste de cette direction,
                   mesurée et non relue. */}
-              <Texte variante="type.monoSmall" couleur="brand.900">
+              <Texte variante="type.dataLabel" couleur="brand.900">
                 {contrepartie.toUpperCase()}
               </Texte>
             </View>

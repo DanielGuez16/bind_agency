@@ -938,7 +938,7 @@ function CarteDeDemande({
         <Texte variante="type.bodyStrong" style={{ flex: 1 }} ellipseSurNomPropre>
           {reservation.item_name}
         </Texte>
-        <Texte variante="type.mono">
+        <Texte variante="type.data">
           {reservation.starts_at
             ? formatDateTime(reservation.starts_at, locale, timezone)
             : t('commerce.journeeSansCreneau')}
@@ -1017,7 +1017,7 @@ function Ligne({
           on parcourt cette colonne pour savoir *ce qui* arrive et quand, et le
           nom sert à reconnaître qui entre, pas à trouver la ligne. */}
       <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 14 }}>
-        <Texte variante="type.mono" couleur={passe ? 'ink.mute' : 'ink.default'}>
+        <Texte variante="type.data" couleur={passe ? 'ink.mute' : 'ink.default'}>
           {heureDe(reservation, timezone, t('commerce.journeeSansCreneau'), locale)}
         </Texte>
         <Texte variante="type.body" style={{ flex: 1 }} ellipseSurNomPropre>

@@ -20,20 +20,6 @@
       "lineHeight": 52,
       "letterSpacing": 0
     },
-    "type.figure": {
-      "family": "mono",
-      "weight": 600,
-      "size": 44,
-      "lineHeight": 48,
-      "letterSpacing": 0.4
-    },
-    "type.figureSmall": {
-      "family": "mono",
-      "weight": 600,
-      "size": 29,
-      "lineHeight": 32,
-      "letterSpacing": 0.4
-    },
     "type.titreDApercu": {
       "family": "sans",
       "weight": 700,

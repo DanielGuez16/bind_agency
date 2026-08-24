@@ -62,7 +62,7 @@ export function EnTeteDuMur({
             suffit : le nombre total de prestations de la ville ne se compare à
             rien et ne se retient pas. Filtré, il dit ce que le filtre ouvre,
             et c'est la seule question qu'on se pose à ce moment-là. */}
-        <Texte variante="type.monoSmall" couleur="ink.soft" testID="entete-marche">
+        <Texte variante="type.dataLabel" couleur="ink.soft" testID="entete-marche">
           {(fil === null || categorie === null
             ? t('parcours.filMarche')
             : t('parcours.filMarcheEtCompte', {

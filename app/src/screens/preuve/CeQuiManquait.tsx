@@ -102,7 +102,7 @@ export function CeQuiManquait({ contrepartie }: { contrepartie: Collaboration })
           gap: 4,
         }}
       >
-        <Texte variante="type.monoSmall" couleur="ink.mute">
+        <Texte variante="type.dataLabel" couleur="ink.mute">
           {t('parcours.repriseCeQuiManquait').toUpperCase()}
         </Texte>
         <Texte variante="type.bodyStrong">{manque}</Texte>

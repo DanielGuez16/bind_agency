@@ -83,7 +83,7 @@ export function FiabiliteScreen({ onRetour }: { onRetour?: () => void }) {
               {/* Le chiffre sujet de l'écran : c'est exactement l'emploi de
                   monoDisplay, et il n'existait pas avant cette planche. */}
               <Texte
-                variante="type.monoDisplay"
+                variante="type.figure"
                 couleur={lisible ? 'ink.default' : 'ink.mute'}
                 testID="score-en-grand"
               >

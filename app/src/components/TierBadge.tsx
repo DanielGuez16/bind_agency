@@ -78,7 +78,7 @@ export function TierBadge({ tier, size = 'md', onPhoto, testID }: TierBadgeProps
     >
       <Glyphe tier={tier} />
       <Texte
-        variante="type.mono"
+        variante="type.data"
         couleur={m.texte}
         style={{ fontSize: size === 'sm' ? 10 : 11, letterSpacing: 0.66 }}
       >

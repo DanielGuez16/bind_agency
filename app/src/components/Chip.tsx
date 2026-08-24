@@ -61,7 +61,7 @@ export function Chip({ label, compte, selected = false, onPress, testID }: ChipP
       </Texte>
       {compte === undefined ? null : (
         <Texte
-          variante="type.monoSmall"
+          variante="type.dataLabel"
           couleur={selected ? 'ink.onDark' : 'ink.mute'}
           testID={testID ? `${testID}-compte` : undefined}
         >

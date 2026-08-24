@@ -170,7 +170,7 @@ export function AbonnementScreen({
                       <Texte variante="type.bodyStrong" style={{ flex: 1 }}>
                         {plan.name}
                       </Texte>
-                      <Texte variante="type.mono" testID={`prix-${plan.id}`}>
+                      <Texte variante="type.data" testID={`prix-${plan.id}`}>
                         {montant(plan.price_cents, plan.currency, locale)}
                       </Texte>
                     </View>

@@ -244,7 +244,7 @@ export function HistoriqueScreen({
             ? grouperParMois(vue.items, locale).map((groupe) => (
                 <View key={groupe.mois} style={{ gap: 0 }} testID={`mois-${groupe.mois}`}>
                   <Texte
-                    variante="type.monoSmall"
+                    variante="type.dataLabel"
                     couleur="ink.mute"
                     style={{ paddingBottom: 10 }}
                   >
@@ -270,7 +270,7 @@ export function HistoriqueScreen({
                 if (lignes.length === 0) return null;
                 return (
                   <View key={qui} style={{ gap: 11 }} testID={`section-${qui}`}>
-                    <Texte variante="type.monoSmall" couleur="ink.mute">
+                    <Texte variante="type.dataLabel" couleur="ink.mute">
                       {t(qui === 'moi' ? 'parcours.sectionMontreTonCode' : 'parcours.sectionLeSalonDecide')}
                     </Texte>
                     {lignes.map((reservation, rang) => (
@@ -340,7 +340,7 @@ function LigneNue({ reservation }: { reservation: ReservationDuCreateur }) {
       }}
     >
       <Texte
-        variante="type.monoSmall"
+        variante="type.dataLabel"
         couleur="ink.mute"
         style={{ width: 26 }}
         testID={`quand-${reservation.booking_id}`}
@@ -364,7 +364,7 @@ function LigneNue({ reservation }: { reservation: ReservationDuCreateur }) {
           backgroundColor: c[issue.fond],
         }}
       >
-        <Texte variante="type.monoSmall" couleur={issue.encre}>
+        <Texte variante="type.dataLabel" couleur={issue.encre}>
           {t(issue.libelle).toUpperCase()}
         </Texte>
       </View>
@@ -493,7 +493,7 @@ function LigneDeReservation({
       }}
     >
       <View style={{ width: 52, gap: 2 }} testID={`quand-${reservation.booking_id}`}>
-        <Texte variante="type.monoSmall" couleur="ink.mute">
+        <Texte variante="type.dataLabel" couleur="ink.mute">
           {formatDateTime(quand, locale, reservation.business_timezone)}
         </Texte>
       </View>
@@ -514,7 +514,7 @@ function LigneDeReservation({
             dire exactement ce que la bonne implémentation rend. En espagnol la
             ligne affichait « STORY » là où le reste de l'écran dit
             « historia ». Le réseau, lui, reste brut — c'est un nom propre. */}
-        <Texte variante="type.monoSmall" couleur="ink.mute" testID={`palier-${reservation.booking_id}`}>
+        <Texte variante="type.dataLabel" couleur="ink.mute" testID={`palier-${reservation.booking_id}`}>
           {`${t(`parcours.format_${reservation.content_format}`)} · ${reservation.platform}`.toUpperCase()}
         </Texte>
 
@@ -565,7 +565,7 @@ function LigneDeReservation({
                 qui permet de balayer une liste sans la lire. */}
             {tempsRestant(contrepartie.deadline_at) ? (
               <Texte
-                variante="type.monoSmall"
+                variante="type.dataLabel"
                 testID={`reste-${reservation.booking_id}`}
               >
                 {t('parcours.contrepartieReste', {

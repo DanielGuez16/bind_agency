@@ -141,7 +141,7 @@ export function GalerieDuCommerce({
             <View style={{ flex: 1, gap: 2 }}>
               {estCouverture ? (
                 <Texte
-                  variante="type.monoSmall"
+                  variante="type.dataLabel"
                   couleur="brand.700"
                   testID={`couverture-${photo.id}`}
                 >

@@ -109,7 +109,7 @@ export function CodeInput({
               const caractere = value[i];
               if (caractere) {
                 return (
-                  <Texte key={i} variante="type.mono" style={{ fontSize: 40, lineHeight: 46 }}>
+                  <Texte key={i} variante="type.data" style={{ fontSize: 40, lineHeight: 46 }}>
                     {caractere}
                   </Texte>
                 );
@@ -168,7 +168,7 @@ function Touche({
         opacity: pressed ? 0.7 : 1,
       })}
     >
-      <Texte variante="type.mono" style={{ fontSize: large ? 15 : 20 }}>
+      <Texte variante="type.data" style={{ fontSize: large ? 15 : 20 }}>
         {label}
       </Texte>
     </Pressable>

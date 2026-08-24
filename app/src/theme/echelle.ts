@@ -66,7 +66,15 @@ function approcheEnPoints(tracking: string | undefined, taille: number): number 
  * titres du corps, c'est cette fonction qui change, pas douze variantes.
  */
 function roleDe(nom: string, brute: VarianteBrute): RoleDeFonte {
-  if (brute.family === brut.font.mono) return 'mono';
+  // **Les deux couches épellent la famille différemment, et il faut les deux.**
+  // La passation nomme la fonte — « IBM Plex Mono » — parce qu'elle décrit un
+  // système ; le produit nomme le rôle — « mono » — parce qu'il en consomme un.
+  // La comparaison ne connaissait que la première : `type.code` et
+  // `type.countdown`, c'est-à-dire **le code montré au comptoir et son
+  // décompte**, sortaient en sans. Rien ne pouvait le dire — l'alphabet du code
+  // écarte déjà les caractères qui se confondent, et un chiffre en sans reste
+  // un chiffre.
+  if (brute.family === brut.font.mono || brute.family === 'mono') return 'mono';
   return nom.startsWith('display') || nom.startsWith('heading') ? 'display' : 'sans';
 }
 

@@ -580,7 +580,7 @@ function Dossier({ ligne, onTranche }: { ligne: LigneDeFile; onTranche: () => vo
                 key={`${tentative.demandee_le}-${rang}`}
                 style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}
               >
-                <Texte variante="type.mono" couleur="ink.mute">
+                <Texte variante="type.data" couleur="ink.mute">
                   {rang + 1}
                 </Texte>
                 {/* **Un motif passé n'avertit pas, il raconte.** Il portait

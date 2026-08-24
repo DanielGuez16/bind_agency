@@ -58,7 +58,7 @@ export function BandeDeJours({
           gap: 12,
         }}
       >
-        <Texte variante="type.monoSmall" couleur="ink.mute" testID="mois-de-la-bande">
+        <Texte variante="type.dataLabel" couleur="ink.mute" testID="mois-de-la-bande">
           {mois.toUpperCase()}
         </Texte>
         {onToutesLesDates ? (
@@ -115,7 +115,7 @@ export function BandeDeJours({
               })}
             >
               <Texte
-                variante="type.monoSmall"
+                variante="type.dataLabel"
                 couleur={choisi ? 'ink.faint' : ouvert ? 'ink.mute' : 'ink.soft'}
               >
                 {nomDeJour(jour.jour, locale).toUpperCase()}
@@ -127,7 +127,7 @@ export function BandeDeJours({
                 {formatNumber(quantieme(jour.jour), locale)}
               </Texte>
               <Texte
-                variante="type.monoSmall"
+                variante="type.dataLabel"
                 couleur={choisi ? 'ink.faint' : ouvert ? 'brand.700' : 'ink.soft'}
                 testID={`jour-${jour.jour}-etat`}
               >

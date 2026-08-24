@@ -542,7 +542,7 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
               se lirait comme une absence de proximité ; la ligne se tait. */}
           {createur.distance_metres !== null ? (
             <Texte
-              variante="type.monoSmall"
+              variante="type.dataLabel"
               couleur="ink.mute"
               testID={`distance-${createur.creator_id}`}
             >
@@ -570,7 +570,7 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
           {compte ? (
             <>
               <Icone nom={compte.platform === 'tiktok' ? 'tiktok' : 'instagram'} taille={18} />
-              <Texte variante="type.monoSmall" style={{ flex: 1 }}>
+              <Texte variante="type.dataLabel" style={{ flex: 1 }}>
                 {compte.followers === null
                   ? nomDePlateforme(compte.platform)
                   : formatNumber(compte.followers, locale)}

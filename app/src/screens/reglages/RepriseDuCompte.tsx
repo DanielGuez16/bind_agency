@@ -97,7 +97,7 @@ export function RepriseDuCompte() {
                 de lire sans épeler. Le mono capitales du système désigne une
                 étiquette — un format, un réseau, un mois — et rien de plus
                 long. */}
-              <Texte variante="type.monoSmall" couleur="ink.mute">
+              <Texte variante="type.dataLabel" couleur="ink.mute">
                 {formatDateTime(reprise.started_at, locale, timezone)}
               </Texte>
               {/* **Le nom d'abord, et le fait qu'on soit venu tout seul.** Un

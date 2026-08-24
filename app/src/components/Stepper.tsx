@@ -45,7 +45,7 @@ export function Stepper({ label, value, min = 0, max = 99, onChange, testID }: S
         gap: 8,
       }}
     >
-      <Texte variante="type.mono">{label ? `${label} · ${value}` : String(value)}</Texte>
+      <Texte variante="type.data">{label ? `${label} · ${value}` : String(value)}</Texte>
       <View style={{ flexDirection: 'row', gap: 6 }}>
         <Touche signe="−" actif={value > min} onPress={() => onChange(value - 1)} />
         <Touche signe="+" actif={value < max} onPress={() => onChange(value + 1)} />
@@ -143,7 +143,7 @@ export function RangeeDeValeurs({
         })}
           >
             <Texte
-              variante="type.mono"
+              variante="type.data"
               couleur={choisi && sousLeSeuil ? 'status.danger.text' : 'ink.default'}
             >
               {v}

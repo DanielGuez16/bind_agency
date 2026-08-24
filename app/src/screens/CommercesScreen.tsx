@@ -205,7 +205,7 @@ function Ligne({
               backgroundColor: c['status.success.surface'],
             }}
           >
-            <Texte variante="type.monoSmall" couleur="status.success.text">
+            <Texte variante="type.dataLabel" couleur="status.success.text">
               {t('admin.commerceRepriseEnCours')}
             </Texte>
           </View>

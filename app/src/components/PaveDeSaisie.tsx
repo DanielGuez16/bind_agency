@@ -79,7 +79,7 @@ export function PaveDeSaisie({
             opacity: desactive ? 0.4 : pressed ? 0.7 : 1,
         })}
         >
-          <Texte variante="type.mono" style={{ fontSize: 22 }}>
+          <Texte variante="type.data" style={{ fontSize: 22 }}>
             {caractere}
           </Texte>
         </Pressable>
