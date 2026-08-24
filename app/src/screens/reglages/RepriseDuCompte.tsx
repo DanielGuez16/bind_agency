@@ -92,8 +92,13 @@ export function RepriseDuCompte() {
           const etat = etatDeLaReprise(reprise);
           return (
             <View key={reprise.id} style={{ gap: 3 }} testID={`reprise-${reprise.id}`}>
+              {/* **Sans capitales : c'est une phrase, pas une étiquette.** Les
+                capitales détruisent la silhouette des mots, donc ce qui permet
+                de lire sans épeler. Le mono capitales du système désigne une
+                étiquette — un format, un réseau, un mois — et rien de plus
+                long. */}
               <Texte variante="type.monoSmall" couleur="ink.mute">
-                {formatDateTime(reprise.started_at, locale, timezone).toUpperCase()}
+                {formatDateTime(reprise.started_at, locale, timezone)}
               </Texte>
               {/* **Le nom d'abord, et le fait qu'on soit venu tout seul.** Un
                   gérant qui relit doit pouvoir dire qui, et savoir s'il avait

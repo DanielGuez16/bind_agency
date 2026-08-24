@@ -281,4 +281,23 @@ describe('refermer depuis la journée', () => {
     expect(portee).toHaveTextContent(/the day's bookings/i);
     expect(portee).toHaveTextContent(/your services/i);
   });
+
+  it('et le bandeau ne crie pas', async () => {
+    // **L'assertion au-dessus est insensible à la casse**, donc elle passait
+    // aussi bien sur « OPEN NOW: THE DAY'S BOOKINGS, YOUR SERVICES » — ce que
+    // le bandeau affichait vraiment. Décor et défaut rendaient le même verdict.
+    //
+    // Les capitales détruisent la silhouette des mots, donc ce qui permet de
+    // lire sans épeler, et un bandeau de reprise est justement ce qu'on lit
+    // vite. Le mono capitales du système désigne une étiquette — un format, un
+    // réseau, un mois — pas une phrase, et pas deux dates.
+    await monter([reprise({ scope: ['agenda', 'catalogue'] as never })]);
+
+    const portee = await screen.findByTestId('reprise-portee-journee');
+    expect(portee).toHaveTextContent(/Open now/);
+    expect(portee).not.toHaveTextContent(/OPEN NOW/);
+
+    const quand = screen.getByTestId('reprise-quand');
+    expect(quand).not.toHaveTextContent(/STARTED/);
+  });
 });
