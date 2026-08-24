@@ -191,6 +191,44 @@ class LocalObjectStore:
 PREFIXES_PUBLICS = ("photos/",)
 
 
+#: Les signatures reconnues à l'écriture. **Déduites des octets, jamais de la
+#: clé** : la clé est une empreinte, elle ne porte pas d'extension, et se fier à
+#: une extension fournie par l'appelant permettrait de faire servir un script
+#: comme une image.
+_SIGNATURES = (
+    (b"\x89PNG\r\n\x1a\n", "image/png"),
+    (b"\xff\xd8\xff", "image/jpeg"),
+    (b"RIFF", "image/webp"),
+)
+
+#: MP4, dont la signature ne commence pas au premier octet : les quatre premiers
+#: portent la taille de la boîte, `ftyp` vient ensuite.
+_SIGNATURE_MP4 = (4, b"ftyp", "video/mp4")
+
+
+def type_du_contenu(contenu: bytes) -> str:
+    """Le type MIME de ces octets, ou le type générique.
+
+    **Posé à l'écriture depuis que les images se servent en direct.** Tant que
+    la route relayait le fichier, elle déduisait le type à chaque lecture et le
+    stockage pouvait l'ignorer. Un lien direct rend ce que le dépôt a enregistré
+    : sans ce type, tout partait en `application/octet-stream`, et aucun
+    navigateur n'affiche une image sous ce type-là.
+
+    Le défaut a déjà été payé une fois, sur la vidéo d'accueil : le fichier
+    était bien servi, aucun lecteur ne le jouait.
+    """
+    for signature, type_media in _SIGNATURES:
+        if contenu.startswith(signature):
+            return type_media
+
+    debut, signature, type_media = _SIGNATURE_MP4
+    if contenu[debut : debut + len(signature)] == signature:
+        return type_media
+
+    return "application/octet-stream"
+
+
 def compartiment_de(prefixe: str, *, public: str, prive: str) -> str:
     """Où range-t-on ce préfixe.
 
@@ -257,7 +295,12 @@ class S3ObjectStore:
         compartiment = self.compartiment(prefixe)
         try:
             async with self._client() as s3:
-                await s3.put_object(Bucket=compartiment, Key=cle, Body=contenu)
+                await s3.put_object(
+                    Bucket=compartiment,
+                    Key=cle,
+                    Body=contenu,
+                    ContentType=type_du_contenu(contenu),
+                )
         except Exception as error:
             # Enveloppé : l'appelant traite un dépôt manqué, il n'a pas à
             # connaître les exceptions de `botocore`. Mais il emporte ce que le
@@ -273,7 +316,12 @@ class S3ObjectStore:
         compartiment = self.compartiment(cle)
         try:
             async with self._client() as s3:
-                await s3.put_object(Bucket=compartiment, Key=cle, Body=contenu)
+                await s3.put_object(
+                    Bucket=compartiment,
+                    Key=cle,
+                    Body=contenu,
+                    ContentType=type_du_contenu(contenu),
+                )
         except Exception as error:
             raise ObjectStoreError(
                 "dépôt S3 refusé : "

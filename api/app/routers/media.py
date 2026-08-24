@@ -27,6 +27,7 @@ cela.
 from typing import Annotated
 
 from fastapi import APIRouter, Path, Response, status
+from fastapi.responses import RedirectResponse
 
 from app.core.errors import ErrorCode, api_error
 from app.integrations.object_store import ObjectStoreError, get_object_store
@@ -72,6 +73,33 @@ async def read_media(cle: Annotated[str, Path()]) -> Response:
         # 404 et non 403 : dire « existe mais interdit » apprendrait qu'une
         # preuve porte cette clé, ce qui est déjà trop.
         raise api_error(status.HTTP_404_NOT_FOUND, ErrorCode.NOT_FOUND)
+
+    # **La redirection, quand l'hébergeur a une adresse publique.**
+    #
+    # Mesuré : 1 090 ms par image au-dessus du plancher de l'API, pour 16 Ko.
+    # Ce n'était ni du SQL ni des octets — c'était cette route qui allait
+    # chercher le fichier chez l'hébergeur et le relayait. Vingt images par
+    # écran de fil, et c'est ce qui restait de la lenteur après le processeur.
+    #
+    # **La garde de préfixe reste l'unique goulot**, et c'est ce qui rend la
+    # bascule sûre : la ligne ci-dessus a déjà refusé tout ce qui n'est pas
+    # `photos/`, et `url_publique` la repose depuis la liste du dépôt. Aucune
+    # clé de preuve ne peut donc recevoir d'adresse directe, ni ici ni ailleurs.
+    #
+    # **308 et non 302** : permanente et cachable, donc le navigateur ne
+    # repasse pas par nous à la visite suivante. La clé est une empreinte du
+    # contenu — la cible ne changera jamais sous la même clé.
+    #
+    # Le repli de vignette ci-dessous ne s'applique pas : une image d'avant les
+    # dérivées n'a pas d'objet `@vignette`, et l'hébergeur rendra 404. C'est le
+    # repli d'image de l'app qui répond alors, et le semis les régénère.
+    directe = storage.url_publique(cle)
+    if directe is not None:
+        return RedirectResponse(
+            directe,
+            status_code=status.HTTP_308_PERMANENT_REDIRECT,
+            headers={"Cache-Control": "public, max-age=31536000, immutable"},
+        )
 
     try:
         contenu = await get_object_store().lire(cle)

@@ -191,6 +191,18 @@ class Settings(BaseSettings):
     booking_horizon_days: int = 30
     #: Rayon du fil, en mètres. Dix kilomètres : au-delà, un créateur de Miami
     #: ne se déplace pas pour un soin, et le fil se remplit de bruit.
+    #: L'adresse publique du compartiment d'objets, sans barre finale. Quand
+    #: elle est posée, `GET /media/{cle}` **redirige** au lieu de relayer.
+    #:
+    #: **Mesuré avant de le faire** : 1 090 ms par image au-dessus du plancher,
+    #: pour 16 Ko. Ce n'était ni du SQL ni des octets — c'était l'API qui allait
+    #: chercher le fichier chez l'hébergeur et le renvoyait. Vingt images par
+    #: écran de fil.
+    #:
+    #: Vide en développement et dans les tests : la route relaie alors comme
+    #: avant, ce qui garde un dépôt local utilisable sans rien exposer.
+    object_store_public_base_url: str | None = None
+
     feed_radius_metres: int = 10_000
     #: Combien de jours la ligne de confirmation de mise en ligne reste à
     #: l'écran. Passé ce délai elle n'a plus rien à dire, et une ligne qui

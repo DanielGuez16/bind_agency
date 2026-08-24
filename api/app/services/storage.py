@@ -23,7 +23,8 @@ import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.integrations import images, media_fetch
+from app.core.config import get_settings
+from app.integrations import images, media_fetch, object_store
 from app.integrations.object_store import ObjectStoreError, get_object_store
 from app.integrations.providers import fournisseur_de
 from app.integrations.social import SocialProviderError
@@ -57,6 +58,25 @@ def cle_de_vignette(cle: str) -> str:
 #: le droit de la voir : exactement ce que l'aperçu existe pour empêcher. Deux
 #: suffixes distincts, donc, et un repli qui n'attrape que le premier.
 SUFFIXE_APERCU = "@apercu"
+
+
+def url_publique(cle: str) -> str | None:
+    """L'adresse directe de cet objet chez l'hébergeur, ou `None`.
+
+    **La garde de préfixe est ici, et elle est la même que celle du dépôt.**
+    `object_store.PREFIXES_PUBLICS` décide de ce qui part dans le compartiment
+    public ; réécrire la liste ferait deux vérités, et le jour où elles
+    divergeraient une clé privée recevrait une adresse publique — qui ne
+    marcherait pas, ou pire, marcherait.
+
+    `None` quand aucune adresse n'est configurée : le développement local et les
+    tests tournent sur un dépôt de fichiers, et la route relaie alors comme
+    avant.
+    """
+    base = get_settings().object_store_public_base_url
+    if base is None or not cle.startswith(object_store.PREFIXES_PUBLICS):
+        return None
+    return f"{base.rstrip('/')}/{cle}"
 
 
 def cle_d_apercu(cle: str) -> str:
