@@ -26,6 +26,12 @@ class OffreDeLaFicheRead(BaseModel):
     #: La prestation laisse-t-elle un choix au créateur. Vrai : il choisira sur
     #: place, et c'est la carte qui lui dit quoi.
     leaves_choice: bool
+    #: Vrai quand la créatrice a mis **cette prestation** en favori. Le cœur vit
+    #: ligne par ligne sur la fiche : le favori porte sur la prestation, et la
+    #: carte du fil est devenue celle du salon. Sur `catalog_item_id` et non sur
+    #: l'offre — le même article à deux paliers fait deux lignes, et les deux
+    #: portent le même cœur.
+    est_favori: bool
     platform: Platform
     content_format: ContentFormat
     #: Ce que le commerce attend dans la publication. Rappelé **avant** la

@@ -21,6 +21,7 @@ montrés : là-bas un palier fermé oriente, ici il encombre.
 """
 
 import uuid
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import timedelta
 from decimal import Decimal
@@ -168,6 +169,30 @@ class CommerceDuFil:
     cover_photo_key: str | None
     distance_metres: float
     items: tuple[ItemDuFil, ...]
+    #: Combien de prestations ce salon lui ouvre. **Servi et non déduit.**
+    #:
+    #: Il vaut `len(items)` aujourd'hui, et c'est précisément pourquoi il est
+    #: écrit : le jour où la carte du fil devient le salon, `items` n'aura plus
+    #: de lecteur et partira — quatre-vingts charges utiles pour vingt cartes,
+    #: 49 Ko sur les 55 de la réponse. Le compte, lui, reste ce que la carte
+    #: annonce, et il ne doit pas partir avec.
+    prestations_ouvertes: int
+
+
+def _prestations_distinctes(commerces: Iterable["CommerceDuFil"]) -> int:
+    """Combien de **prestations** — et non combien d'offres.
+
+    **Une prestation ouverte à deux paliers accessibles est une prestation.**
+    Le fil rend une ligne par offre : un article proposé au story et au reel
+    par le même salon en fait deux, et les compter tous deux annonçait « 18
+    services » là où il y en a dix-sept. Au grain du salon, la carte le
+    listerait deux fois sous le même nom.
+
+    **Écrit une fois pour les trois niveaux.** Le total, le quartier et le
+    salon doivent s'accorder : trois recopies de la même somme finissent par
+    diverger, et c'est le genre d'écart qu'un testeur trouve avant nous.
+    """
+    return len({item.catalog_item_id for commerce in commerces for item in commerce.items})
 
 
 @dataclass(frozen=True, slots=True)
@@ -541,6 +566,7 @@ async def fil_du_createur(
             cover_photo_key=entetes[business_id].couverture,
             distance_metres=round(entetes[business_id].distance, 1),
             items=tuple(items),
+            prestations_ouvertes=len({item.catalog_item_id for item in items}),
         )
         for business_id, items in par_commerce.items()
     )
@@ -552,7 +578,7 @@ async def fil_du_createur(
         # second, sinon il croit avoir tout vu.
         obstacles=_obstacles_les_plus_proches(verdict),
         rayon_metres=rayon,
-        total_prestations=sum(len(commerce.items) for commerce in commerces),
+        total_prestations=_prestations_distinctes(commerces),
         categories=categories,
         rayons=rayons,
         quartiers=_compter_par_quartier(commerces),
@@ -580,7 +606,7 @@ def _compter_par_quartier(commerces: tuple[CommerceDuFil, ...]) -> tuple[CompteP
                 CompteParQuartier(
                     quartier=quartier,
                     commerces=len(lot),
-                    prestations=sum(len(c.items) for c in lot),
+                    prestations=_prestations_distinctes(lot),
                     distance_metres=min(c.distance_metres for c in lot),
                 )
                 for quartier, lot in groupes.items()
