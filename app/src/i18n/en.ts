@@ -1147,6 +1147,8 @@ export const en = {
     photoEnvoiEnCours: 'Sending your photo…',
     photoReessayer: 'Try sending again',
     photoManque: 'Needs a photo',
+    photoEnvoiEnCours: 'Sending your photo…',
+    photoReessayer: 'Try sending again',
     corriger: 'Correct',
     colonneNom: 'Service',
     colonneDuree: 'Length',

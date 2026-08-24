@@ -10,15 +10,26 @@
 # est supprimée, ce qui en fait le mauvais endroit pour une démonstration censée
 # durer.
 #
-# **Le palier gratuit endort le service** après quinze minutes sans trafic, et
-# met environ une minute à repartir. C'est le compromis retenu. Passer en
-# `starter` est un changement de cette ligne et rien d'autre.
+# **Le service est en `starter`, et c'est une mesure qui l'a décidé.** Sur le
+# palier gratuit, la campagne a rapporté la lenteur comme premier grief. Le
+# réseau n'y était pour rien — 17 ms de connexion TCP+TLS. Ce qui coûtait :
+#
+#   - **171 ms de péage sur chaque requête**, avant toute logique, mesurés sur
+#     une 404 qui ne touche pas la base. C'est le demi-processeur ;
+#   - **1,9 s sur `POST /auth/login`**, du hachage de mot de passe calibré pour
+#     un processeur entier et exécuté sur la moitié. C'était le premier écran ;
+#   - la mise en veille au bout de quinze minutes, une minute pour repartir —
+#     donc systématique devant qui ouvre l'application sans prévenir.
+#
+# Ce que `starter` ne corrige pas : les **~195 ms par aller-retour vers la
+# base**, qui viennent de la distance entre ce service et Supabase. Autre
+# levier, autre décision.
 
 services:
   - type: web
     name: bind-api-demo
     runtime: docker
-    plan: free
+    plan: starter
     region: oregon
     rootDir: api
     dockerfilePath: ./Dockerfile

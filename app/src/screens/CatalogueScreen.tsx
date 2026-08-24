@@ -1170,6 +1170,7 @@ function PhotoDeLaPrestation({
   const c = useColors();
   const [envoi, setEnvoi] = useState(false);
   const [echec, setEchec] = useState<string | null>(null);
+  const [aRenvoyer, setARenvoyer] = useState<string | null>(null);
 
   async function choisir() {
     setEchec(null);
@@ -1186,10 +1187,24 @@ function PhotoDeLaPrestation({
     const actif = resultat.canceled ? null : resultat.assets[0];
     if (!actif) return;
 
+    await envoyer(actif.uri);
+  }
+
+  /**
+   * L'envoi, séparé du choix.
+   *
+   * **Le fichier choisi était une variable locale** : un envoi qui échouait
+   * laissait un message et rien d'autre, et réessayer voulait dire rouvrir la
+   * galerie. C'est le cas que le défaut de téléversement rendait certain.
+   */
+  async function envoyer(uri: string) {
+    setARenvoyer(uri);
     setEnvoi(true);
+    setEchec(null);
     try {
-      await api.photographierUnItem(businessId, item.id, actif.uri);
+      await api.photographierUnItem(businessId, item.id, uri);
       vibration.reussite();
+      setARenvoyer(null);
       onChange();
     } catch (erreur) {
       vibration.echec();
@@ -1206,6 +1221,24 @@ function PhotoDeLaPrestation({
       <Texte variante="type.label" couleur="ink.soft">
         {t('composition.photoTitre')}
       </Texte>
+
+      {envoi ? (
+        <Texte variante="type.caption" couleur="ink.soft" testID={`envoi-en-cours-${item.id}`}>
+          {t('composition.photoEnvoiEnCours')}
+        </Texte>
+      ) : null}
+      {echec && aRenvoyer ? (
+        <View style={{ flexDirection: 'row' }}>
+          <Button
+            label={t('composition.photoReessayer')}
+            size="sm"
+            variant="secondary"
+            fullWidth={false}
+            onPress={() => void envoyer(aRenvoyer)}
+            testID={`reessayer-l-envoi-${item.id}`}
+          />
+        </View>
+      ) : null}
 
       <Pressable
         accessibilityRole="button"

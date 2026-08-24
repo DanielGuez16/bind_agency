@@ -1027,6 +1027,8 @@ export const es: Catalogue = {
     photoEnvoiEnCours: 'Enviando tu foto…',
     photoReessayer: 'Intentar de nuevo',
     photoManque: 'Falta una foto',
+    photoEnvoiEnCours: 'Enviando tu foto…',
+    photoReessayer: 'Intentar de nuevo',
     corriger: 'Corregir',
     colonneNom: 'Servicio',
     colonneDuree: 'Duración',
