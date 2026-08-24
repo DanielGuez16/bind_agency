@@ -1851,7 +1851,14 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       workers sur trois fichiers, c'est précisément la charge la plus basse
       possible. Le levier est donc la **charge**, pas le mode : ces trois
       fichiers ne tombent qu'au milieu de la suite entière, et jamais seuls.*
-      *Reste à bisecter, avec un autre outil : faire tourner la suite complète
+      ***Le bruit de la mesure a la même nature que le défaut mesuré.** Au
+      premier passage, `attente` a donné un avertissement de worker **et** un
+      échec ; les six suivants l'ont démenti. Un seul passage aurait conclu au
+      recoupement et envoyé étendre une correction sans rapport. Sur ce genre de
+      défaut, une mesure unique ne vaut rien — c'est trois passages ou aucun.*
+      *Ne pas bisecter maintenant : la CI est verte, et le coût réel est une
+      relance occasionnelle. Reste à bisecter le jour où ça change, avec un
+      autre outil : faire tourner la suite complète
       en boucle et relever ce qui tombe, ou instrumenter les `waitFor` de ces
       trois fichiers pour savoir ce qu'ils attendent quand ils expirent. Un
       premier soupçon à écarter en priorité : les trois montent une coquille ou
