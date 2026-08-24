@@ -22,7 +22,7 @@
  * motif.
  */
 import { useCallback, useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { useApi, type ExceptionDeCapacite, type RegleDeCapacite } from '../api';
 import {
@@ -35,8 +35,29 @@ import {
   vibration,
 } from '../components';
 import { useI18n } from '../i18n';
-import { formatJour } from '../format';
+import { radius, size, useColors } from '../theme';
+import { formatDate, formatJour } from '../format';
 import { Ecran } from './Ecran';
+
+/**
+ * Les trente prochains jours, date civile en ISO.
+ *
+ * Trente parce qu'une fermeture se décide à quelques semaines : au-delà, la
+ * grille devient un calendrier, et un calendrier demande un composant que le
+ * système n'a pas.
+ */
+const PROCHAINS_JOURS = (): string[] =>
+  Array.from({ length: 30 }, (_, i) => {
+    const jour = new Date(Date.now() + i * 24 * 3_600_000);
+    return jour.toISOString().slice(0, 10);
+  });
+
+/** Le nom court du jour, pour que la grille dise autre chose qu'un numéro. */
+const nomDeJour = (jour: string, locale: string): string =>
+  new Intl.DateTimeFormat(locale, { weekday: 'short', timeZone: 'UTC' }).format(
+    new Date(`${jour}T12:00:00Z`),
+  );
+
 import { useRequete } from './useRequete';
 
 /** Lundi en tête, comme la contrainte de base : 0 = lundi. */
@@ -243,6 +264,7 @@ function Exceptions({
 }) {
   const { api, messageDErreur } = useApi();
   const { t, locale } = useI18n();
+  const c = useColors();
   const [date, setDate] = useState('');
   const [echec, setEchec] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
@@ -294,13 +316,48 @@ function Exceptions({
         ))
       )}
 
-      <TextField
-        label={t('composition.champDateDeFermeture')}
-        helpText={t('composition.formatDeDate')}
-        value={date}
-        onChangeText={setDate}
-        testID="champ-date-de-fermeture"
-      />
+      {/* **Une date se choisit, elle ne s'épelle pas.** C'était un champ de
+          texte avec un format en légende : on y tapait un jour dans une syntaxe
+          à retenir, sans savoir quel jour de la semaine on fermait, et une
+          faute de frappe fermait une autre date que celle qu'on visait.
+
+          En grille qui se replie, jamais en défilement horizontal : une date
+          qui sort de l'écran est une date qu'on ne choisira pas. */}
+      <Texte variante="type.label" couleur="ink.soft">
+        {t('composition.champDateDeFermeture')}
+      </Texte>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }} testID="choix-de-la-date">
+        {PROCHAINS_JOURS().map((jour) => {
+          const choisi = jour === date;
+          return (
+            <Pressable
+              key={jour}
+              accessibilityRole="button"
+              accessibilityState={{ selected: choisi }}
+              accessibilityLabel={formatDate(`${jour}T12:00:00Z`, locale, 'UTC')}
+              onPress={() => setDate(choisi ? '' : jour)}
+              testID={`jour-${jour}`}
+              style={({ pressed }) => ({
+                minHeight: size.touchMin,
+                minWidth: 52,
+                alignItems: 'center',
+                justifyContent: 'center',
+                paddingHorizontal: 10,
+                borderRadius: radius['radius.sm'],
+                borderWidth: choisi ? 2 : 1,
+                borderColor: choisi ? c['brand.700'] : c['line.default'],
+                backgroundColor: choisi ? c['brand.50'] : 'transparent',
+                opacity: pressed ? 0.7 : 1,
+              })}
+            >
+              <Texte variante="type.dataLabel" couleur="ink.soft">
+                {nomDeJour(jour, locale)}
+              </Texte>
+              <Texte variante="type.data">{jour.slice(8)}</Texte>
+            </Pressable>
+          );
+        })}
+      </View>
       {/* Ce que fermer fait, et ce que fermer ne fait pas. Un commerce qui
           croirait annuler ses réservations en fermant sa journée se tairait
           auprès de créatrices qui viendront quand même. */}
