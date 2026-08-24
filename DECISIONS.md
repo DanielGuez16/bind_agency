@@ -10401,3 +10401,31 @@ monospacé, la taille désigne le rôle.** Le corps a `body` et `bodyStrong` à
 graisse distinguant deux emplois du même rang. Les chiffres n'ont pas de paires :
 chaque cran est un usage, du code à six chiffres jusqu'à l'étiquette qui porte
 une date.
+
+---
+
+## 2026-08-24 — Une décision tranchée remplace sa version antérieure
+
+**Quatre doublons de plus, dont deux décochés.** Après les trois premiers, un
+balayage complet en a trouvé quatre autres : la version périmée restée sous sa
+remplaçante. Deux étaient encore décochées — « quatorze champs à instruire » et
+« le compte des reprises arrive après l'ouverture » — alors que les deux
+décisions étaient rendues.
+
+La règle est maintenant dans `CLAUDE.md`, à côté de celle qui la produit :
+garder les deux côtés vaut pour deux entrées **différentes** ; quand les deux
+portent la même à deux stades, la tranchée remplace. Ce qui vaut d'être gardé de
+la version d'avant va dans ce fichier-ci, dont c'est le rôle.
+
+**Et la garde ne couvre qu'une forme, ce qui est écrit partout où on la lit.**
+Elle attrape le titre repris presque mot pour mot — deux des sept paires. Elle
+ne voit pas une version reformulée, et ce n'est pas un seuil à baisser : mesuré
+sur les six paires trouvées et les quatre paires légitimes, **les deux familles
+se chevauchent**, 0,45 à 1,0 contre 0,5 à 0,6. Descendre attraperait « niveau
+1 » et « niveau 2 ».
+
+Un dernier test affirme donc explicitement ce qu'elle laisse passer, en nommant
+la paire qui a coûté la demi-heure. Une garde bornée qui dit sa borne n'est pas
+la garde partielle que `CLAUDE.md` proscrit : celle-là manque la forme pour
+laquelle elle a été écrite et fait croire la question réglée. Celle-ci couvre sa
+forme entièrement, et écrit le reste au lieu de le suggérer.
