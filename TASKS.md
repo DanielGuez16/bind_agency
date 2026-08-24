@@ -1878,22 +1878,15 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       runner est plus lent que la machine de développement, donc l'écart de
       charge y est plus grand, pas plus petit.*
 
-- [ ] **Trois champs pour les deux derniers écrans, demandés à la conversation des routes**
-      *Design a rendu la planche des deux derniers écrans le 2026-08-24, et
-      trois de ses colonnes ne sont pas servies. Aucune n'est bloquante : les
-      deux écrans sont livrés sans.*
-      *`GET /admin/businesses` — **`created_at`** du salon, pour la colonne
-      JOINED de la planche ; et un **total**, la planche écrit « 4 of 742 · this
-      search » alors que la route rend une liste nue. Le total est celui de la
-      recherche courante, pas du catalogue : c'est ce qui distingue « quatre
-      résultats » de « quatre salons ».*
-      *`Favori` — **le palier requis par la prestation**. La planche écrit
-      « Reel tier · 18 000 followers to go, then it opens ». L'écart est déjà
-      chiffrable — il vient de `prochain_palier.obstacle.ecart`, un nombre publié
-      sur l'écran des paliers — mais rien ne dit si atteindre le prochain palier
-      ouvre **ce** favori-là. La ligne livrée s'arrête donc avant le « then it
-      opens », qui serait une promesse qu'on ne peut pas tenir.*
-
+- [x] **Les trois champs des deux derniers écrans sont servis et lus**
+      *`GET /admin/businesses` porte `created_at` — la colonne « inscrit le » —
+      et un **total**, celui de la recherche courante et non du catalogue : «
+      4 of 742 · this search » distingue quatre résultats de quatre salons.
+      `Favori.palier_requis` porte le palier **de la prestation**, ce qui permet
+      d'écrire « et il s'ouvre » sans mentir : le prochain palier de la
+      créatrice n'ouvre pas forcément ce favori-là.*
+      *Les trois lignes ont quitté `champs-servis` au premier lecteur, comme la
+      garde le réclame*
 - [x] **La luminosité et la veille de l'écran de code, branchées**
       *`rules.md` §2 les annonce — « luminosité forcée au maximum, veille
       désactivée (`expo-keep-awake`), restauration à la sortie » — et
@@ -2646,9 +2639,6 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       Trois branches écrites à la main, comme le titre de la journée — `count`
       traverse le formateur de nombres et la pluralisation d'i18n-js ne se
       déclenche plus.*
-
-- [ ] **La planche dit « le favori porte sur le salon », le contrat dit la prestation**
-      *`ItemDuFil.est_favori` est posé sur l'article, `POST /me/favorites` prend
 
 - [x] **Le favori porte sur la prestation — tranché définitivement**
       *La planche s'aligne sur le contrat, pas l'inverse, et Design est prévenu.
