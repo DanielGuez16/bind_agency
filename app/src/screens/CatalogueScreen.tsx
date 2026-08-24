@@ -240,13 +240,13 @@ function Groupes({
    * Le palier proposé pour chaque prestation.
    *
    * Calculé sur le catalogue **entier**, une fois : la proposition dépend de la
-   * position d'un prix parmi les autres, donc la calculer ligne par ligne
+   * position d'une durée parmi les autres, donc la calculer ligne par ligne
    * reviendrait à la recalculer autant de fois qu'il y a de lignes, avec le
    * même résultat.
    *
-   * Les parents de gamme sont écartés : ils ne se réservent pas, leur prix est
-   * nul ou décoratif, et les laisser dans la distribution tirerait tous les
-   * rangs vers le haut.
+   * Les parents de gamme sont écartés : ils ne se réservent pas, leur durée est
+   * nulle ou décorative, et les laisser dans la distribution fausserait tous
+   * les rangs.
    */
   const propositions = useMemo(() => {
     // **Un parent se reconnaît à ce qu'il a des enfants**, jamais à son propre
@@ -259,7 +259,7 @@ function Groupes({
     return propositionsDuCatalogue(
       composition.items
         .filter((item) => !parents.has(item.id))
-        .map((item) => ({ id: item.id, price_cents: item.price_cents })),
+        .map((item) => ({ id: item.id, duration_minutes: item.duration_minutes })),
     );
   }, [composition.items]);
 
@@ -549,7 +549,7 @@ function LignePrestation({
   item: ItemDuCatalogue;
   businessId: string;
   onChange: () => void;
-  /** Ce que la plateforme aurait fait. Absent sous trois prix distincts. */
+  /** Ce que la plateforme aurait fait. Absent sous trois durées distinctes. */
   propose?: ContentFormat;
   /** Le plus exigeant des paliers réellement ouverts sur cette prestation. */
   retenu?: ContentFormat;
@@ -872,7 +872,7 @@ function LignePrestation({
         />
       ) : null}
       {/* **Le conseil, et jamais la décision.** La plateforme dit ce qu'elle
-          aurait fait à partir du prix et de la place de cette prestation dans
+          aurait fait à partir de la durée et de la place de cette prestation dans
           le catalogue ; rien ne bascule, rien n'est écrit. Un commerce qui
           s'écarte lit ce que cela lui coûte, et s'écarte quand même s'il le
           veut — c'est son catalogue. */}
@@ -984,15 +984,19 @@ function NouvellePrestation({
   const { t } = useI18n();
   const [nom, setNom] = useState(remplace?.name ?? '');
   const [duree, setDuree] = useState(remplace?.duration_minutes ?? 45);
-  const [prix, setPrix] = useState(
-    remplace ? String(remplace.price_cents / 100) : '',
-  );
+  /**
+   * **Le prix a quitté l'écran le 2026-08-24.** Le produit ne montre jamais de
+   * montant — le créateur ne reçoit pas d'argent, et le prix n'est qu'une donnée
+   * de reporting — donc un commerce n'a aucune raison d'en saisir un. Ce que le
+   * serveur exige encore part à zéro : la suggestion de palier, seul usage
+   * qu'en faisait l'écran, se calcule maintenant sur la durée.
+   */
+  const prixEnCentimes = 0;
   const [palierId, setPalierId] = useState<string | null>(paliers[0]?.id ?? null);
   const [echec, setEchec] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
 
-  const prixEnCentimes = Math.round(Number(prix.replace(',', '.')) * 100);
-  const complet = nom.trim().length > 0 && Number.isFinite(prixEnCentimes) && prixEnCentimes >= 0;
+  const complet = nom.trim().length > 0;
 
   async function publier() {
     setEchec(null);
@@ -1039,13 +1043,6 @@ function NouvellePrestation({
         value={nom}
         onChangeText={setNom}
         testID="champ-nom"
-      />
-      <TextField
-        label={t('composition.champPrix')}
-        value={prix}
-        onChangeText={setPrix}
-        keyboard="numeric"
-        testID="champ-prix"
       />
       <Stepper
         label={t('composition.champDuree')}

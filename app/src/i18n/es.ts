@@ -1098,7 +1098,6 @@ export const es: Catalogue = {
     ouvrirLaPrestation: 'Abrir {{nom}} a las creadoras',
     fermeeParSonParent: 'Cerrado porque su servicio principal está cerrado',
     champNom: 'Nombre',
-    champPrix: 'Precio',
     champDuree: 'Duración, minutos',
     champPalier: 'Nivel exigido',
     consequenceDuPalier: 'Solo las creadoras con {{n}}+ seguidores pueden reservarlo. Un nivel más alto significa menos creadoras.',
