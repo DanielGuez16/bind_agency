@@ -30,7 +30,7 @@ const ETAPE = (cle: EtapeActivation['cle'], done: boolean, blocking = true): Eta
 
 describe('ce qui manque avant que les créatrices voient le salon', () => {
   it('publié : plus rien à dire', () => {
-    expect(miseEnLigne({ status: 'active', etapes: [ETAPE('address', true)] })).toEqual({
+    expect(miseEnLigne({ status: 'active', en_ligne_depuis: null, etapes: [ETAPE('address', true)] })).toEqual({
       forme: 'publie',
     });
   });
@@ -42,6 +42,7 @@ describe('ce qui manque avant que les créatrices voient le salon', () => {
     // retient pas.
     const etat = miseEnLigne({
       status: 'draft',
+      en_ligne_depuis: null,
       etapes: [
         ETAPE('address', true),
         ETAPE('catalog_item', true),
@@ -59,6 +60,7 @@ describe('ce qui manque avant que les créatrices voient le salon', () => {
     // bloquantes annoncerait « 4 sur 4 » à un salon qui a encore deux points.
     const etat = miseEnLigne({
       status: 'draft',
+      en_ligne_depuis: null,
       etapes: [
         ETAPE('address', true),
         ETAPE('catalog_item', false),
@@ -175,7 +177,8 @@ describe('le bandeau, à l’écran', () => {
           <ApiProvider client={api}>
             <BandeauDeMiseEnLigne
               businessId="b1"
-              activation={activation as never}
+              timezone="America/New_York"
+          activation={activation as never}
               onPublie={() => {}}
             />
           </ApiProvider>
@@ -187,6 +190,7 @@ describe('le bandeau, à l’écran', () => {
   it('nomme ce qui manque, et compte ce qui est fait', async () => {
     await monter({
       status: 'draft',
+      en_ligne_depuis: null,
       etapes: [
         ETAPE('address', true),
         ETAPE('catalog_item', true),
@@ -211,6 +215,7 @@ describe('le bandeau, à l’écran', () => {
     // trois manques la phrase serait fausse.
     await monter({
       status: 'draft',
+      en_ligne_depuis: null,
       etapes: [ETAPE('address', false), ETAPE('coordinates', false), ETAPE('cover_photo', false)],
     });
     await waitFor(() => expect(screen.getByTestId('bandeau-mise-en-ligne')).toBeTruthy());
@@ -221,7 +226,7 @@ describe('le bandeau, à l’écran', () => {
   it('tout étant fait, il porte le geste — sans le mot « go live »', async () => {
     // Publier reste un appel explicite côté serveur : le dernier point coché ne
     // publie pas, il rend la publication possible.
-    await monter({ status: 'draft', etapes: [ETAPE('address', true)] });
+    await monter({ status: 'draft', en_ligne_depuis: null, etapes: [ETAPE('address', true)] });
     await waitFor(() => expect(screen.getByTestId('publier-le-commerce')).toBeTruthy());
 
     expect(screen.queryByText(/go live/i)).toBeNull();
@@ -230,7 +235,7 @@ describe('le bandeau, à l’écran', () => {
   it('compte les étapes, sans pourcentage', async () => {
     // Un compte, pas un pourcentage : « 67 % » ne dit pas ce qu'il reste à
     // faire, et il reste toujours quelque chose à faire.
-    await monter({ status: 'draft', etapes: [ETAPE('address', true), ETAPE('coordinates', false)] });
+    await monter({ status: 'draft', en_ligne_depuis: null, etapes: [ETAPE('address', true), ETAPE('coordinates', false)] });
     await waitFor(() => expect(screen.getByTestId('compte-mise-en-ligne')).toBeTruthy());
 
     expect(screen.queryByText(/%/)).toBeNull();
@@ -243,6 +248,7 @@ describe('le bandeau, à l’écran', () => {
     // aucun mur, et rien d'autre ne le lui dirait.
     await monter({
       status: 'active',
+      en_ligne_depuis: null,
       etapes: [ETAPE('address', true), ETAPE('cover_photo', false, false)],
     });
     await waitFor(() => expect(screen.getByTestId('bandeau-mise-en-ligne')).toBeTruthy());
@@ -263,7 +269,7 @@ describe('le bandeau, à l’écran', () => {
     //
     // La confusion a lieu au moment exact où tout est vert et où rien ne s'est
     // passé : c'est là que la phrase doit être, pas ailleurs.
-    await monter({ status: 'draft', etapes: [ETAPE('address', true)] });
+    await monter({ status: 'draft', en_ligne_depuis: null, etapes: [ETAPE('address', true)] });
     await waitFor(() => expect(screen.getByTestId('publier-le-commerce')).toBeTruthy());
 
     expect(screen.getByTestId('publication-explicite')).toHaveTextContent(
@@ -279,6 +285,7 @@ describe('le bandeau, à l’écran', () => {
     // encore, et dilue les deux points qui restent.
     await monter({
       status: 'draft',
+      en_ligne_depuis: null,
       etapes: [ETAPE('address', true), ETAPE('coordinates', false)],
     });
     await waitFor(() => expect(screen.getByTestId('bandeau-mise-en-ligne')).toBeTruthy());
@@ -289,7 +296,44 @@ describe('le bandeau, à l’écran', () => {
   it('et publié sans rien qui manque, il n’existe plus', async () => {
     // Une liste de tâches qui reste après avoir été remplie est la définition
     // d'un écran dont on ne comprend plus l'objet.
-    await monter({ status: 'active', etapes: [ETAPE('address', true)] });
+    await monter({ status: 'active', en_ligne_depuis: null, etapes: [ETAPE('address', true)] });
     await waitFor(() => expect(screen.queryByTestId('bandeau-mise-en-ligne')).toBeNull());
+  });
+});
+
+/**
+ * La confirmation des sept premiers jours.
+ *
+ * **La date est servie depuis peu**, et c'est elle qui donne une origine à la
+ * règle. Ce que la planche voulait avec — « 41 créatrices peuvent vous
+ * réserver » — n'est toujours pas servi ; la ligne s'arrête donc à ce qui est
+ * vrai.
+ */
+describe('en ligne depuis peu', () => {
+  const IL_Y_A = (jours: number) =>
+    new Date(Date.parse('2026-08-24T12:00:00Z') - jours * 24 * 3_600_000).toISOString();
+  const MAINTENANT = Date.parse('2026-08-24T12:00:00Z');
+  const PUBLIE = (depuis: string | null) => ({
+    status: 'active' as const,
+    en_ligne_depuis: depuis,
+    etapes: [ETAPE('address', true)],
+  });
+
+  it('se confirme pendant sept jours, et se tait ensuite', () => {
+    // **Les deux côtés du seuil, sur le même décor.** Un test qui n'éprouve
+    // que le dedans passerait avec une confirmation qui ne s'efface jamais —
+    // et une ligne qui reste après avoir été lue est un bandeau dont on ne
+    // comprend plus l'objet.
+    expect(miseEnLigne(PUBLIE(IL_Y_A(3)), MAINTENANT)).toEqual({
+      forme: 'confirme',
+      depuis: IL_Y_A(3),
+    });
+    expect(miseEnLigne(PUBLIE(IL_Y_A(8)), MAINTENANT)).toEqual({ forme: 'publie' });
+  });
+
+  it('et sans date, elle ne s’invente pas', () => {
+    // Un salon publié avant que le journal porte la date : le bandeau retombe
+    // sur le silence, qui est ce qu'il faisait déjà.
+    expect(miseEnLigne(PUBLIE(null), MAINTENANT)).toEqual({ forme: 'publie' });
   });
 });
