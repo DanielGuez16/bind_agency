@@ -333,6 +333,7 @@ export function FilScreen({
       // Le prix se paie parce que la recherche rachète la ligne unique : une
       // catégorie hors champ serait un cul-de-sac si rien ne la trouvait.
       barre={
+        <>
         <BarreDuMur
           fil={filPret}
           categorie={categorie}
@@ -340,7 +341,30 @@ export function FilScreen({
           recherche={saisie}
           onRecherche={setSaisie}
           onVoirLesFavoris={onVoirMesFavoris}
+          // **Le total servi, corrigé de ce qui est en vol.** Le serveur le
+          // compte sur l'ensemble des favoris et non sur ce que le fil rend —
+          // un favori posé à Wynwood existe encore quand on lit depuis
+          // Kendall. L'écart rend l'appui visible tout de suite, sans quoi le
+          // compte n'arriverait qu'au rechargement suivant.
+          favorisGardes={Math.max(0, (filPret?.favoris_total ?? 0) + favoris.ecart)}
         />
+        {/* **Un cœur qui échoue le dit.** Le retour en arrière était muet : le
+            cœur se remplissait, revenait, et rien ne distinguait « je n'ai pas
+            su enregistrer » de « tu n'as pas appuyé ». C'est exactement ce
+            qu'on lit comme « les favoris ne marchent pas » — le geste rate *et*
+            le produit se tait, donc il n'y a rien à réessayer et rien à
+            raconter. Dans la bande, parce qu'elle ne défile pas : un message
+            posé dans la liste part sous le doigt au premier glissement. */}
+        {favoris.echec === null ? null : (
+          <View style={{ paddingHorizontal: MARGE, paddingTop: 8 }}>
+            <StatusMessage
+              level="danger"
+              body={t('parcours.filFavoriEchec', { prestation: favoris.echec })}
+              testID="favori-non-enregistre"
+            />
+          </View>
+        )}
+        </>
       }
       /**
        * **Le mur est une liste, pas un bloc.** Il rendait toutes ses rangées
@@ -447,6 +471,10 @@ export function FilScreen({
             fil={fil}
             categorie={categorie}
             onOuvrir={onOuvrirLeCommerce}
+            // **Le bloc porte les mêmes cœurs que la liste.** Sans ce
+            // branchement, un fil dont aucun salon n'a déclaré de quartier —
+            // ce qui arrive — n'offrait aucun cœur du tout.
+            favoris={favoris}
           />
 
           <BasDuMur

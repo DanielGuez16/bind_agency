@@ -85,11 +85,21 @@ export function FavorisScreen({
    * retirer serait mentir sur ce qu'on a fait.
    */
   const [retires, setRetires] = useState<string[]>([]);
+  /**
+   * Ce qu'on n'a pas su retirer, nommé.
+   *
+   * **Le retour en arrière était muet.** La ligne s'en allait, revenait, et
+   * rien ne disait pourquoi — ce qui se lit comme un écran qui refuse le
+   * geste. Une ligne qui revient sans un mot fait appuyer une seconde fois.
+   */
+  const [echec, setEchec] = useState<string | null>(null);
 
-  function retirer(catalogItemId: string) {
+  function retirer(catalogItemId: string, nom: string) {
+    setEchec(null);
     setRetires((avant) => [...avant, catalogItemId]);
     void api.retirerDesFavoris(catalogItemId).catch(() => {
       setRetires((avant) => avant.filter((id) => id !== catalogItemId));
+      setEchec(nom);
     });
   }
 
@@ -115,6 +125,15 @@ export function FavorisScreen({
     >
       {(favoris) => (
         <View style={{ gap: 12 }}>
+          {/* Ce qu'on n'a pas su retirer, nommé — au-dessus de la liste, là où
+              la ligne vient de réapparaître. */}
+          {echec === null ? null : (
+            <StatusMessage
+              level="danger"
+              body={t('favoris.retraitEchec', { prestation: echec })}
+              testID="favori-non-retire"
+            />
+          )}
           <AvisDeFavori />
           {favoris
             .filter((favori) => !retires.includes(favori.catalog_item_id))
@@ -123,7 +142,7 @@ export function FavorisScreen({
                 key={favori.catalog_item_id}
                 favori={favori}
                 onOuvrir={() => onOuvrirLeCommerce(favori.business_id)}
-                onRetirer={() => retirer(favori.catalog_item_id)}
+                onRetirer={() => retirer(favori.catalog_item_id, favori.name)}
               />
             ))}
         </View>

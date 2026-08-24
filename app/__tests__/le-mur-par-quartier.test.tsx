@@ -20,7 +20,7 @@ import { en } from '../src/i18n/en';
 import { SectionsParQuartier } from '../src/screens/mur/SectionsParQuartier';
 import { ThemeProvider } from '../src/theme';
 
-function item(id: string, nom: string, duree: number | null, format: string) {
+function item(id: string, nom: string, duree: number | null, format: string, estFavori = false) {
   return {
     tier_offer_id: id,
     catalog_item_id: `i-${id}`,
@@ -36,6 +36,10 @@ function item(id: string, nom: string, duree: number | null, format: string) {
     platform: 'instagram',
     content_format: format,
     value_ratio: null,
+    // **Servi, et non omis.** Absent, l'état du cœur arrive `undefined` chez
+    // le geste, et le compte de la porte ne saurait plus dire si l'appui
+    // ajoute ou rétablit. Le serveur le rend toujours ; le décor aussi.
+    est_favori: estFavori,
   };
 }
 
@@ -81,7 +85,11 @@ const FIL = {
   prochain_palier: null,
 } as unknown as Fil;
 
-async function monter(fil: Fil = FIL, categorie: 'beauty' | null = null) {
+async function monter(
+  fil: Fil = FIL,
+  categorie: 'beauty' | null = null,
+  favoris?: Parameters<typeof SectionsParQuartier>[0]['favoris'],
+) {
   const api = new ApiClient({
     baseUrl: 'https://api.test',
     coffre: { lire: async () => null, ecrire: async () => {} },
@@ -92,7 +100,12 @@ async function monter(fil: Fil = FIL, categorie: 'beauty' | null = null) {
     <I18nProvider initialLocale="en">
       <ThemeProvider role="creator">
         <ApiProvider client={api}>
-          <SectionsParQuartier fil={fil} categorie={categorie} onOuvrir={() => {}} />
+          <SectionsParQuartier
+            fil={fil}
+            categorie={categorie}
+            onOuvrir={() => {}}
+            favoris={favoris}
+          />
         </ApiProvider>
       </ThemeProvider>
     </I18nProvider>,
@@ -287,6 +300,48 @@ describe('le mur ne tire jamais un original', () => {
 
     expect(uri).toContain(CLE_COUVERTURE);
     expect(uri).toContain('@vignette');
+    await vue.unmount();
+  });
+});
+
+/**
+ * **Les deux rendus du mur offrent les mêmes gestes.**
+ *
+ * Le mur existe en deux formes : une liste virtualisée, montée par `FilScreen`,
+ * et ce bloc, qui partage le même crochet. Le bloc ne recevait pas le
+ * branchement des favoris — donc pas de cœur du tout, puisqu'un cœur sans
+ * branchement ne se rend pas. Un second rendu amputé du premier est une
+ * version que personne ne regarde et que personne ne teste.
+ */
+describe('le bloc porte les cœurs, comme la liste', () => {
+  it('rend le cœur quand le branchement est là, et le geste porte l’état servi', async () => {
+    const appuis: unknown[][] = [];
+    const vue = await monter(FIL, null, {
+      estFavori: (_id, servi) => servi,
+      basculer: (...arguments_) => appuis.push(arguments_),
+    });
+    await waitFor(() => expect(screen.getByTestId('quartier-ouvert')).toBeTruthy());
+
+    const coeur = screen.getByTestId('apercu-o1-coeur');
+    await fireEvent.press(coeur);
+
+    // **L'état servi et le nom voyagent avec le geste**, et c'est ce que le
+    // compte de la porte paie : sans l'état d'origine, un second appui qui
+    // ramène le cœur à sa valeur servie compterait comme un retrait de plus.
+    expect(appuis).toHaveLength(1);
+    expect(appuis[0][0]).toBe('i-o1');
+    expect(appuis[0][1]).toBe(true);
+    expect(appuis[0][2]).toBe(false);
+    await vue.unmount();
+  });
+
+  it('et sans branchement, aucun cœur — jamais un cœur qui ne répond pas', async () => {
+    // Le sens inverse : un cœur rendu hors du mur ne mènerait nulle part, et
+    // un cœur qui ne répond pas est pire qu'un cœur absent.
+    const vue = await monter();
+    await waitFor(() => expect(screen.getByTestId('quartier-ouvert')).toBeTruthy());
+
+    expect(screen.queryByTestId('apercu-o1-coeur')).toBeNull();
     await vue.unmount();
   });
 });

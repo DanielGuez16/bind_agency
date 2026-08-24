@@ -350,6 +350,8 @@ export const es: Catalogue = {
     filRechercher: 'Salón, servicio, barrio',
     filEffacerLaRecherche: 'Borrar',
     filVoirMesFavoris: 'Guardados',
+    filVoirMesFavorisCompte: 'Servicios guardados — {{count}} por ahora',
+    filFavoriEchec: 'No pudimos guardar {{prestation}}. Toca el corazón otra vez.',
     filMettreEnFavori: 'Guardar este servicio',
     filRetirerDesFavoris: 'Quitar de guardados',
     filDecouvrir: 'Descubrir',
@@ -909,6 +911,7 @@ export const es: Catalogue = {
   favoris: {
     titre: 'Guardados',
     videTitre: 'Aún no has guardado nada',
+    retraitEchec: 'No pudimos quitar {{prestation}}. Toca otra vez para reintentar.',
     videCorps: 'El corazón de un servicio lo guarda aquí — útil para lo que todavía no se te abre.',
     duree: '{{n}} min',
     avisCorps: 'Avísame cuando algo que he guardado se me abra',
