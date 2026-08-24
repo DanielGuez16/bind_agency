@@ -1862,6 +1862,20 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       vient débloquer. `reprise_en_cours` est celle de **l'appelant** : savoir
       qu'un collègue est entré ne change pas ce que je peux faire, et l'afficher
       inviterait à se demander pourquoi lui plutôt que moi. 5 tests, 4 mutations*
+- [x] **Les deux écrans qui vont avec, composés**
+      *Le sélecteur porte le compte sur chaque ligne, et **zéro ne s'écrit
+      pas** : une colonne de zéros apprend à ne plus la regarder. La ligne ne
+      dit pas « aujourd'hui » non plus — le nombre servi est celui de la file
+      « à trancher », et une demande d'avant-hier attend toujours.*
+      *L'onglet « salons » liste tous les états, cherche par nom **au serveur**
+      — un filtre local ne verrait que les cent premiers, donc mentirait
+      exactement là où il sert — et **dit son plafond** : sans cette ligne, un
+      salon au-delà du centième se lit comme un salon qui n'existe pas.*
+      *Une ligne, pas une carte : les trois marques d'une carte obligent à
+      l'ombre, et cent cartes à ombre dans une liste qu'on parcourt sont le
+      défaut qu'on venait de corriger sur les réservations. La reprise reste sur
+      la fiche de tournée aussi — un administrateur debout dans un salon a déjà
+      sa fiche ouverte. 9 tests, 4 mutations*
 - [ ] **Le bandeau ne devient pas une ligne de confirmation**
       *La planche veut qu'il devienne « vous êtes en ligne · 41 créatrices
       peuvent vous réserver », puis disparaisse au bout de sept jours. Deux

@@ -633,6 +633,14 @@ describe('aiguillage par rôle', () => {
         fiabilite: { reliability_score: null, composantes: null },
       },
       '/me/bookings': { items: [], compteurs: {} },
+      // **Avant `/businesses`, et c'est tout le sujet.** La table se lit par
+      // fragment, dans l'ordre d'insertion : `/admin/businesses` contient
+      // `/businesses`, donc le fragment le plus court gagnait et rendait un
+      // objet là où l'écran attend une liste. Le repli générique n'y pouvait
+      // rien — il n'était jamais atteint. Le même piège que `/me/audience`,
+      // d'un cran plus bas : ce n'est pas la table contre le repli, c'est un
+      // fragment de la table contre un autre.
+      '/admin/businesses': [],
       '/businesses': { commerces: [], obstacles: [] },
       '/bookings': {
         jour: '2026-08-08',

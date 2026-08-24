@@ -27,6 +27,7 @@ export const ECRANS_COMMERCE = [
   'AbonnementScreen.tsx',
   'AnnuaireScreen.tsx',
   'CatalogueScreen.tsx',
+  'CommercesScreen.tsx',
   'HorairesScreen.tsx',
   'ArbitrageScreen.tsx',
   'JourneeScreen.tsx',

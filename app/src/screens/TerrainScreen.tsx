@@ -473,10 +473,12 @@ function LigneDeFiche({
           les yeux. Avant la prise en main, il n'y a pas de compte à reprendre :
           la fiche n'a pas d'utilisateur, et il n'y a personne à prévenir.
 
-          **La place est provisoire et se dit.** Un administrateur qui cherche à
-          débloquer un salon ne pense pas « tournée » ; il faudrait un écran de
-          comptes, qu'aucune route ne permet de composer — rien ne liste les
-          commerces côté administration. Voir `TASKS.md`. */}
+          **La place n'est plus la seule.** L'onglet « salons » liste désormais
+          tous les commerces, quel que soit leur état, et porte le même
+          formulaire : un salon inscrit tout seul était hors d'atteinte du
+          support tant que la reprise ne vivait qu'ici. Celle-ci reste, parce
+          qu'un administrateur debout dans un salon a déjà sa fiche ouverte et
+          n'a pas à la rechercher par son nom. */}
       {etat === 'claimed' ? (
         reprise ? (
           <ReprendreLeCompte businessId={fiche.business_id} nomDuSalon={fiche.name} />

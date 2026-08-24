@@ -26,6 +26,7 @@ import { JourneeScreen } from '../src/screens/JourneeScreen';
 import { PlansScreen } from '../src/screens/PlansScreen';
 import { NOTE_MAXIMUM, PublicationsScreen } from '../src/screens/PublicationsScreen';
 import { ReportingScreen } from '../src/screens/ReportingScreen';
+import { CommercesScreen } from '../src/screens/CommercesScreen';
 import { TerrainScreen } from '../src/screens/TerrainScreen';
 import { ECRANS_COMMERCE } from '../test-support/registre-ecrans';
 
@@ -400,6 +401,26 @@ const ECRANS = [
     vide: { '/collaborations': [] },
   },
   {
+    // La liste des salons du support. Elle vit dans le registre commerce avec
+    // les autres écrans d'administration — arbitrage, plans, terrain.
+    nom: 'commerces',
+    noeud: <CommercesScreen />,
+    role: 'admin' as Role,
+    plein: {
+      '/admin/businesses': [
+        {
+          business_id: 'b1',
+          name: 'Vela Nail Studio',
+          category: 'beauty',
+          neighborhood: 'wynwood',
+          status: 'active',
+          reprise_en_cours: false,
+        },
+      ],
+    },
+    vide: { '/admin/businesses': [] },
+  },
+  {
     nom: 'terrain',
     noeud: <TerrainScreen />,
     role: 'merchant' as Role,
@@ -734,6 +755,7 @@ describe('quatre états', () => {
       abonnement: 'AbonnementScreen.tsx',
       annuaire: 'AnnuaireScreen.tsx',
       terrain: 'TerrainScreen.tsx',
+      commerces: 'CommercesScreen.tsx',
   catalogue: 'CatalogueScreen.tsx',
       horaires: 'HorairesScreen.tsx',
     };

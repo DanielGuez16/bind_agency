@@ -19,6 +19,17 @@
  *
  * **L'adresse est la seconde ligne**, et non une décoration : c'est ce qui
  * distingue deux salons d'un même quartier, cas que rien n'interdit.
+ *
+ * **Et chaque ligne porte ce qui l'attend.** Un gérant qui ouvre cette liste
+ * cherche rarement « l'autre salon » ; il cherche celui qui a besoin de lui, et
+ * deux noms ne le disent pas. Le nombre est le même que la file « à trancher »
+ * de la journée — donc pas un compte du jour : une demande d'avant-hier attend
+ * toujours, et l'écarter ferait disparaître précisément celle qui a le plus
+ * attendu. C'est aussi pourquoi la ligne ne dit pas « aujourd'hui ».
+ *
+ * **Zéro ne s'écrit pas.** Un « 0 » sur chaque ligne est le cas normal, et une
+ * colonne de zéros apprend à ne plus regarder la colonne. La marque n'apparaît
+ * que là où quelqu'un attend.
  */
 import { Pressable, View } from 'react-native';
 
@@ -31,6 +42,18 @@ export type SalonAChoisir = {
   name: string;
   neighborhood?: string | null;
   address?: string | null;
+  /**
+   * Combien de réservations attendent une décision de ce salon.
+   *
+   * **C'est ce qui fait basculer un gérant qui ne savait pas qu'on
+   * l'attendait.** Deux noms de salons ne disent pas lequel a besoin de lui ce
+   * matin ; sans ce nombre la liste reste utilisable et perd sa raison d'être
+   * ouverte.
+   *
+   * Facultatif : le sélecteur sert aussi là où le compte n'est pas servi, et
+   * une ligne sans compte vaut mieux qu'une ligne qui en invente un.
+   */
+  decisions_en_attente?: number;
 };
 
 /**
@@ -105,6 +128,24 @@ export function SelecteurDeSalon({
                 </Texte>
               ) : null}
             </View>
+            {/* **Avant la coche**, parce que la coche dit où l'on est et que
+                le compte dit où aller : l'ordre de lecture suit celui de la
+                décision. */}
+            {salon.decisions_en_attente ? (
+              <View
+                testID={`decisions-${salon.id}`}
+                style={{
+                  paddingHorizontal: 8,
+                  paddingVertical: 2,
+                  borderRadius: radius['radius.sm'],
+                  backgroundColor: c['status.warning.surface'],
+                }}
+              >
+                <Texte variante="type.monoSmall" couleur="status.warning.text">
+                  {t('commerce.selecteurDecisions', { count: salon.decisions_en_attente })}
+                </Texte>
+              </View>
+            ) : null}
             {courant ? (
               <Icone nom="coche" taille={16} testID={`salon-courant-${salon.id}`} />
             ) : null}

@@ -49,6 +49,7 @@ import { PaliersScreen, RAYON_DES_PALIERS_KM } from '../screens/PaliersScreen';
 import { PrestationsDuPalierScreen } from '../screens/PrestationsDuPalierScreen';
 import { ReglesScreen } from '../screens/ReglesScreen';
 import { PlansScreen } from '../screens/PlansScreen';
+import { CommercesScreen } from '../screens/CommercesScreen';
 import { TerrainScreen } from '../screens/TerrainScreen';
 import { PreuveScreen } from '../screens/PreuveScreen';
 import { PublicationsScreen } from '../screens/PublicationsScreen';
@@ -764,6 +765,15 @@ function OngletsAdmin() {
         name="arbitrage"
         component={ArbitrageScreen}
         options={onglet(t('onglets.arbitrage'), 'liste')}
+      />
+      {/* **Les salons, deuxième et non dernier.** C'est l'entrée du travail de
+          support : reconnaître le bon salon parmi cent, puis décider d'y
+          entrer. Les plans sont de la configuration, qu'on ouvre une fois par
+          trimestre. */}
+      <Onglets.Screen
+        name="commerces"
+        component={CommercesScreen}
+        options={onglet(t('onglets.commerces'), 'lieu')}
       />
       <Onglets.Screen
         name="plans"

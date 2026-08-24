@@ -174,6 +174,48 @@ describe('le sélecteur', () => {
  * **Le quartier, et non le nom.** Deux salons d'une enseigne portent le même
  * nom ; c'est le quartier qui dit lequel, donc c'est lui qui titre.
  */
+describe('ce qui attend sur chaque ligne', () => {
+  it('porte le compte des décisions, là où il y en a', async () => {
+    // **C'est ce qui fait basculer un gérant qui ne savait pas qu'on
+    // l'attendait.** Deux salons du même nom, dans deux quartiers : le nom ne
+    // dit pas lequel a besoin de lui ce matin, et le quartier non plus.
+    await render(
+      <Cadre
+        commerces={[
+          { ...OCEAN, decisions_en_attente: 5 },
+          { ...WYNWOOD, decisions_en_attente: 0 },
+        ]}
+      >
+        <Controle />
+        <Sonde nom="a" />
+      </Cadre>,
+    );
+    await waitFor(() => expect(screen.getByTestId('selecteur-de-salon')).toBeTruthy());
+
+    expect(screen.getByTestId('decisions-b1')).toHaveTextContent(/\b5\b/);
+
+    // **Zéro ne s'écrit pas.** C'est le cas normal, et une colonne de zéros
+    // apprend à ne plus regarder la colonne. Sans cette moitié, une marque
+    // rendue sans condition passerait l'assertion du dessus.
+    expect(screen.queryByTestId('decisions-b2')).toBeNull();
+  });
+
+  it('et ne dit pas « aujourd’hui »', async () => {
+    // Le nombre servi est celui de la file « à trancher », pas un compte du
+    // jour : une demande d'avant-hier attend toujours. Écrire « aujourd'hui »
+    // serait faux sur la seule ligne qui compte — celle qui a le plus attendu.
+    await render(
+      <Cadre commerces={[{ ...OCEAN, decisions_en_attente: 5 }, WYNWOOD]}>
+        <Controle />
+        <Sonde nom="a" />
+      </Cadre>,
+    );
+    await waitFor(() => expect(screen.getByTestId('decisions-b1')).toBeTruthy());
+
+    expect(screen.getByTestId('decisions-b1')).not.toHaveTextContent(/today|hoy|aujourd/i);
+  });
+});
+
 describe('l’identité d’un salon dans la liste', () => {
   const t = (cle: string) => (cle === 'quartiers.wynwood' ? 'Wynwood' : cle);
 
