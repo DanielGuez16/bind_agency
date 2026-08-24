@@ -17,7 +17,13 @@ from datetime import UTC, datetime
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import CreatorProfile, SocialAccount, SocialMetricsSnapshot, User
+from app.models import (
+    CreatorFavorite,
+    CreatorProfile,
+    SocialAccount,
+    SocialMetricsSnapshot,
+    User,
+)
 from app.models.enums import ActorKind, SocialAccountStatus, UserStatus
 from app.services import auth as auth_service
 from app.services import push as push_service
@@ -51,6 +57,21 @@ async def anonymize_account(session: AsyncSession, *, user: User, actor: Actor) 
     # existent parce que la première peut être oubliée sur un chemin nouveau.
     await push_service.revoquer_les_terminaux(session, user_id=user.id)
     await _strip_social_accounts(session, user.id, actor)
+    # **Les favoris partent avec le compte, et ici plutôt qu'avec les réseaux.**
+    # Ce sont des préférences personnelles : elles ne prouvent rien, personne ne
+    # les relira, et une créatrice partie ne doit rien laisser qui dise ce
+    # qu'elle regardait.
+    #
+    # Posé d'abord dans `_strip_social_accounts`, qui rend la main quand il n'y
+    # a aucun compte social — une créatrice qui n'en a jamais connecté aurait
+    # gardé les siens, c'est-à-dire précisément celle dont le compte contient le
+    # moins de choses par ailleurs.
+    #
+    # La clé étrangère les emporterait à la **suppression** d'une ligne
+    # `app_user` ; une anonymisation ne supprime pas cette ligne, donc rien ne
+    # le ferait à sa place.
+    await session.execute(sa.delete(CreatorFavorite).where(CreatorFavorite.creator_id == user.id))
+
     await _strip_creator_profile(session, user.id)
     await _strip_account(session, user, actor)
 

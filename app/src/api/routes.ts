@@ -170,6 +170,8 @@ export const routes = {
   // ---- reprise d'un compte commerce ----
   repriseAdmin: (businessId: string) => chemin(`/admin/businesses/${businessId}/support-access`),
   mesReprisesRecentes: () => chemin('/admin/me/support-access/recent'),
+  mesFavoris: () => chemin('/me/favorites'),
+  unFavori: (catalogItemId: string) => chemin(`/me/favorites/${catalogItemId}`),
   mesReprises: (businessId: string) => chemin(`/business/${businessId}/support-access`),
 } as const;
 
@@ -279,6 +281,8 @@ export const METHODES: Record<keyof typeof routes, ('GET' | 'POST' | 'PATCH' | '
     lienDePriseEnMain: ['POST', 'DELETE'],
     repriseAdmin: ['GET', 'POST', 'DELETE'],
     mesReprisesRecentes: ['GET'],
+    mesFavoris: ['GET', 'POST'],
+    unFavori: ['DELETE'],
     mesReprises: ['GET', 'DELETE'],
     relancerLeJob: ['POST'],
   };

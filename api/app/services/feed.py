@@ -42,7 +42,7 @@ from app.models.enums import (
     Neighborhood,
     Platform,
 )
-from app.services import availability, eligibility
+from app.services import availability, eligibility, favorites
 
 
 @dataclass(frozen=True, slots=True)
@@ -65,6 +65,16 @@ class ItemDuFil:
     #: utilisé pour masquer : le commerce compose ce qu'il veut, le créateur
     #: sait ce qu'il accepte.
     value_ratio: Decimal | None
+    #: Vrai quand la créatrice a mis **cette prestation** en favori.
+    #:
+    #: Porté par le fil et non demandé carte par carte : un fil de vingt salons
+    #: rend quatre-vingts cartes, et quatre-vingts requêtes pour savoir si un
+    #: cœur est plein coûteraient plus que tout le reste de l'écran.
+    #:
+    #: Sur `catalog_item_id` et non sur l'offre : le même article ouvert à deux
+    #: paliers fait deux cartes, et les deux portent le même cœur — c'est la
+    #: prestation qu'on met de côté, pas le palier par lequel on l'atteint.
+    est_favori: bool = False
 
 
 class FenetreDeDisponibilite(StrEnum):
@@ -309,6 +319,10 @@ async def fil_du_createur(
     balayage = max((rayon, *elargissements))
 
     verdict = await eligibility.evaluer_createur(session, creator_id)
+    # Les prestations déjà en favori, en un seul aller. Le cœur de chaque carte
+    # se lit dedans : le demander carte par carte ferait quatre-vingts requêtes
+    # sur l'écran le plus ouvert du produit.
+    favoris = await favorites.identifiants(session, creator_id=creator_id)
     accessibles = verdict.couples_accessibles
 
     if not accessibles:
@@ -497,6 +511,7 @@ async def fil_du_createur(
                 platform=ligne.platform,
                 content_format=ligne.content_format,
                 value_ratio=ratio_de_valeur(ligne.price_cents, ligne.value_ratio_hint),
+                est_favori=ligne.catalog_item_id in favoris,
             )
         )
 

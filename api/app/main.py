@@ -38,6 +38,7 @@ from app.routers import (
     creator_directory,
     creator_profile,
     creator_tiers,
+    favorites,
     feed,
     handover,
     health,
@@ -202,6 +203,7 @@ def create_app() -> FastAPI:
     application.include_router(notifications.router, prefix=settings.api_v1_prefix)
     application.include_router(handover.admin_router, prefix=settings.api_v1_prefix)
     application.include_router(handover.public_router, prefix=settings.api_v1_prefix)
+    application.include_router(favorites.router, prefix=settings.api_v1_prefix)
     application.include_router(support.admin_router, prefix=settings.api_v1_prefix)
     application.include_router(support.admin_me_router, prefix=settings.api_v1_prefix)
     application.include_router(support.business_router, prefix=settings.api_v1_prefix)

@@ -343,6 +343,46 @@ export type ItemDuFil = {
   platform: Platform;
   content_format: ContentFormat;
   value_ratio: string | null;
+  /** Vrai quand la créatrice a mis **cette prestation** en favori. Porté par
+   *  le fil : quatre-vingts cartes ne peuvent pas demander l'état de leur cœur
+   *  une par une. Le même article ouvert à deux paliers fait deux cartes, et
+   *  les deux portent le même cœur. */
+  est_favori: boolean;
+};
+
+/**
+ * Ce qu'on peut faire d'un favori aujourd'hui.
+ *
+ * **Quatre états parce qu'ils appellent quatre conduites.** « Indisponible »
+ * les aurait tous couverts et n'aurait rien dit : attendre septembre, monter
+ * d'un palier et choisir autre chose ne sont pas le même geste.
+ */
+export type EtatDuFavori = 'reservable' | 'fermee' | 'salon_indisponible' | 'hors_palier';
+
+/**
+ * Une prestation qu'une créatrice garde sous la main.
+ *
+ * **Le favori porte sur la prestation, pas sur l'offre affichée.** Une offre
+ * meurt quand le salon ferme ce palier-là, ou quand la créatrice le perd — le
+ * second est un changement chez elle, et un favori qui disparaît pour ça est un
+ * favori qu'on n'ose plus poser.
+ *
+ * **La liste ne se lit pas dans le fil.** Le fil est borné par une position et
+ * un rayon ; un favori posé à Wynwood se relit depuis Kendall.
+ */
+export type Favori = {
+  catalog_item_id: string;
+  business_id: string;
+  business_name: string;
+  name: string;
+  description: string | null;
+  duration_minutes: number | null;
+  price_cents: number;
+  currency: string;
+  photo_key: string | null;
+  /** **Une prestation qui n'est plus réservable reste dans la liste.** La
+   *  retirer sans un mot ferait croire à un mauvais appui. */
+  etat: EtatDuFavori;
 };
 
 export type CommerceDuFil = {
