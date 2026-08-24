@@ -94,6 +94,7 @@ function monter(nombre: number) {
           <FilScreen
             position={{ longitude: -80.19, latitude: 25.76 }}
             onDemanderLaPosition={() => {}}
+            onVoirMesFavoris={() => {}}
             onOuvrirLeCommerce={() => {}}
             onConnecterUnReseau={() => {}}
             onVoirMonAudience={() => {}}
@@ -242,6 +243,7 @@ describe('le fil traverse la bascule de la position', () => {
             <FilScreen
               position={position}
               onDemanderLaPosition={() => {}}
+              onVoirMesFavoris={() => {}}
               onOuvrirLeCommerce={() => {}}
               onConnecterUnReseau={() => {}}
               onVoirMonAudience={() => {}}

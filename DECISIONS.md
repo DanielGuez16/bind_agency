@@ -9870,3 +9870,54 @@ trouver où afficher le QR » et « il y a trop de texte » ne sont pas deux
 observations : le chemin n'était pas rompu, il était noyé. Une composition trop
 chargée ne se signale pas comme un défaut de composition — elle se signale
 comme une fonction manquante.
+## 2026-08-24 — Le fil v3.1 : la ligne unique paie la barre de recherche
+
+**La recherche était servie et n'avait aucun bouton.** La route du fil accepte
+`recherche` depuis des jours ; l'écran n'avait pas de quoi la remplir, donc une
+capacité entière du produit n'existait pour personne.
+
+**Les catégories passent sur une ligne défilante.** Deux lignes avec « All »
+détaché prenaient 86 points ; une ligne de pilules en prend 34, et les 52 rendus
+paient la barre à 48. Le chrome ne grandit pas, il se réorganise — ce qui
+grandit est ce qui reste **collé**, et c'est le prix demandé.
+
+Ce que la ligne unique perd est la garantie de tout voir : les deux dernières
+catégories sont hors champ. C'est la recherche qui rachète le défilement, pas
+l'inverse — une option cachée serait un cul-de-sac si rien d'autre ne la
+trouvait.
+
+**La bande collante vit dans les quatre états**, et c'est le vide qui l'impose :
+un filtre qui ne rend rien doit avoir une sortie. Ma première écriture la
+réservait à l'état nominal, et un test existant l'a dit tout de suite — il
+gardait précisément cette règle.
+
+**Le cœur est optimiste, et la mutation a d'abord survécu.** Avec un double qui
+répond tout de suite, « remplir puis appeler » et « appeler puis remplir »
+rendent le même écran. Une promesse qui ne se résout jamais sépare les deux : le
+décor qui manquait est une réponse **qui ne vient pas**.
+
+Le retour en arrière **oublie** au lieu de poser l'inverse : écrire
+`!versFavori` écraserait un second appui parti entre-temps ; retirer la
+dérogation rend la main à ce que le serveur dit, qui est la seule chose qu'on
+sache encore.
+
+**`brand.700` et non `brand.500` pour le cœur plein, et c'est mesuré.** La
+planche demande l'orange de marque ; sur le voile blanc il donne 2,36:1, sous
+les 3:1 qu'un élément graphique porteur d'information doit tenir. Or le
+remplissage est **le seul signe** qui distingue « gardé » — le rendre à peine
+visible revient à ne pas le rendre. `brand.700` est l'encre calibrée de la
+marque, 5,29:1, déjà portée par les autres glyphes orange du produit.
+
+**Le remplissage est une exception nommée**, avec sa garde. Le jeu d'icônes
+n'avait pas de plein et son en-tête le dit ; le cœur y déroge parce que son état
+*est* son remplissage. Une exception sans garde devient une porte : rien
+n'empêcherait de poser `rempli` sur la coche ou l'alerte, et le jeu perdrait en
+trois écrans ce que son en-tête promet.
+
+**Une contradiction signalée et non tranchée.** La planche écrit « le favori
+porte sur le salon, pas sur la prestation » ; le contrat livré fait l'inverse —
+`est_favori` sur l'article, `POST` avec un `catalog_item_id`, et une liste de
+prestations. Livré au niveau de la prestation, qui est le seul cohérent de bout
+en bout. Feindre le niveau salon au-dessus d'une API d'articles aurait demandé
+de deviner quels articles appartiennent au même cœur, et se serait trompé au
+premier écart.

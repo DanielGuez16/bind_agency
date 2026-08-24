@@ -347,6 +347,11 @@ export const es: Catalogue = {
     murToutesLesCategories: 'Todo',
     filMarche: 'Miami',
     filMarcheEtCompte: '{{marche}} · {{count}} servicios',
+    filRechercher: 'Salón, servicio, barrio',
+    filEffacerLaRecherche: 'Borrar',
+    filVoirMesFavoris: 'Guardados',
+    filMettreEnFavori: 'Guardar este servicio',
+    filRetirerDesFavoris: 'Quitar de guardados',
     filDecouvrir: 'Descubrir',
     // « servicios de uñas » et non « uñas servicios » : la catégorie suit le
     // nom commun en espagnol. C'est pour cela que les deux phrases sont deux
@@ -880,6 +885,16 @@ export const es: Catalogue = {
       'Has abierto {{n}} accesos en los últimos {{jours}} días, en todos los salones.',
     compteDeLAppelant: 'Son {{n}} accesos que has abierto en {{jours}} días, en todos los salones.',
     ouverteRappel: '{{salon}} puede cerrarlo cuando quiera, desde su propia pantalla.',
+  },
+  favoris: {
+    titre: 'Guardados',
+    videTitre: 'Aún no has guardado nada',
+    videCorps: 'El corazón de un servicio lo guarda aquí — útil para lo que todavía no se te abre.',
+    duree: '{{n}} min',
+    voirLeSalon: 'Ver el salón',
+    etatFermee: '{{salon}} lo ha cerrado por ahora. Puede reabrir.',
+    etatSalonIndisponible: '{{salon}} no aparece en este momento.',
+    etatHorsPalier: 'Este se ofrece en un nivel que aún no abres.',
   },
   reglages: {
     reprisesTitre: 'Cuando BIND entró en tu cuenta',

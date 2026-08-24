@@ -1,11 +1,14 @@
 /**
  * L'en-tête du fil : le marché, ce qu'on regarde, et par quoi le trancher.
  *
- * **Les catégories sont du texte souligné, sans pastille.** C'est la navigation
- * des sites de vêtements, et la revue la demandait : une rangée de pastilles
- * pèse autant que le contenu qu'elle filtre. Le soulignement est **serré sous
- * le mot** et non ancré au bas de la bande — sur deux lignes, un soulignement
- * de bande flotterait à trente points du mot qu'il désigne.
+ * **Les catégories ont quitté cet en-tête.** Elles étaient du texte souligné
+ * sur deux lignes, ici, et elles défilaient avec le contenu. La v3.1 les met en
+ * une ligne de pilules qui reste collée — c'est `BarreDuMur` qui les porte, et
+ * ce qui reste ici ne bouge plus : le marché, et ce qu'on regarde.
+ *
+ * La catégorie en vigueur reste connue de cet en-tête, parce qu'elle **nomme le
+ * titre** : « Discover » sans filtre, le nom de la catégorie sinon. C'est une
+ * lecture, pas une commande.
  *
  * **Aucun défilement horizontal.** Les six catégories tiennent sur deux lignes
  * en `flexWrap`. Une rangée qui défile cache ses dernières options derrière un
@@ -43,22 +46,14 @@ const SOUS_LE_MOT = 4;
 export function EnTeteDuMur({
   fil,
   categorie,
-  onCategorie,
 }: {
   /** Nul tant que le fil n'a pas répondu : l'en-tête se rend quand même. */
   fil: Fil | null;
-  /** La catégorie en vigueur. `null` : toutes. */
+  /** La catégorie en vigueur. `null` : toutes. Elle nomme le titre. */
   categorie: BusinessCategory | null;
-  onCategorie: (categorie: BusinessCategory | null) => void;
 }) {
   const { t, locale } = useI18n();
   const c = useColors();
-
-  // `fil === null` et non `fil?.` : le serveur rend toujours `categories`, et
-  // un repli sur l'absence du champ masquerait un montage de test qui fabrique
-  // une réponse que le serveur ne produit pas — ce qui s'est déjà produit cinq
-  // fois sur ce même écran.
-  const categories = fil === null ? [] : fil.categories;
 
   return (
     <View testID="entete-du-mur">
@@ -83,53 +78,6 @@ export function EnTeteDuMur({
         </Texte>
       </View>
 
-      {/* Sous deux catégories il n'y a pas de choix à offrir : « All » et
-          l'unique entrée rendent le même mur. La bande entière tombe, y compris
-          « All », qui ne se retire alors de quoi que ce soit. */}
-      {categories.length < 2 ? null : (
-        <View
-          testID="entete-categories"
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 12,
-            paddingBottom: 6,
-            borderBottomWidth: 1,
-            borderBottomColor: c['line.default'],
-          }}
-        >
-          <MotDeNavigation
-            label={t('parcours.murToutesLesCategories')}
-            actif={categorie === null}
-            onPress={() => onCategorie(null)}
-            testID="categorie-toutes"
-          />
-          {/* Le filet qui détache l'issue des six catégories. Il ne descend pas
-              jusqu'au filet du bas : c'est un séparateur entre deux mots, pas
-              une colonne. */}
-          <View
-            testID="filet-de-l-issue"
-            style={{ width: 1, height: 14, backgroundColor: c['line.strong'] }}
-          />
-          <View style={{ flex: 1, minWidth: 0, flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
-            {categories.map((compte) => (
-              <View key={compte.categorie} style={{ marginRight: 10 }}>
-                <MotDeNavigation
-                  label={t(`categories.${compte.categorie}`)}
-                  actif={categorie === compte.categorie}
-                  // Réappuyer sur la catégorie en vigueur la retire : le geste
-                  // qui a filtré est celui qu'on refait pour défiltrer, et il
-                  // n'y a rien à chercher ailleurs.
-                  onPress={() =>
-                    onCategorie(categorie === compte.categorie ? null : compte.categorie)
-                  }
-                  testID={`categorie-${compte.categorie}`}
-                />
-              </View>
-            ))}
-          </View>
-        </View>
-      )}
     </View>
   );
 }

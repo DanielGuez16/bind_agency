@@ -95,6 +95,7 @@ async function monter(donnees: Fil = fil()) {
           <FilScreen
             position={{ longitude: -80.19, latitude: 25.76 }}
             onDemanderLaPosition={() => {}}
+            onVoirMesFavoris={() => {}}
             onOuvrirLeCommerce={() => {}}
           />
         </ApiProvider>
@@ -153,7 +154,7 @@ describe('ce que l’en-tête dit', () => {
     // Sans filtre, aucun compte : le total d'une ville ne se compare à rien.
     expect(screen.getByTestId('entete-marche')).not.toHaveTextContent(/\d/);
 
-    await fireEvent.press(screen.getByTestId('categorie-beauty-mot'));
+    await fireEvent.press(screen.getByTestId('categorie-beauty'));
     await waitFor(() =>
       expect(screen.getByTestId('entete-titre')).toHaveTextContent(en.categories.beauty),
     );
@@ -185,6 +186,7 @@ describe('ce que l’en-tête dit', () => {
             <FilScreen
               position={{ longitude: -80.19, latitude: 25.76 }}
               onDemanderLaPosition={() => {}}
+              onVoirMesFavoris={() => {}}
               onOuvrirLeCommerce={() => {}}
             />
           </ApiProvider>
@@ -206,29 +208,29 @@ describe('ce que l’en-tête dit', () => {
     await waitFor(() => expect(screen.getByTestId('etat-nominal')).toBeTruthy());
   });
 
-  it('les catégories sont du texte, et une seule porte le soulignement', async () => {
-    // **Les comptes par catégorie ont disparu avec les pastilles.** Une
-    // pastille chiffrée pèse autant que le contenu qu'elle filtre, et c'est ce
-    // que la revue signalait. Ce qui reste dit lequel des sept mots est en
-    // vigueur, et rien d'autre : la graisse et le soulignement.
+  it('une seule pilule est pleine à la fois', async () => {
+    // **Le soulignement est devenu une pilule pleine.** Sur une ligne qui
+    // défile, un soulignement se perd au bord du champ ; une pilule pleine se
+    // reconnaît à moitié sortie. Ce qu'il dit n'a pas changé : lequel des sept
+    // est en vigueur, et rien d'autre — aucun compte n'y revient.
     //
-    // Le test vérifie **l'unicité** et pas seulement la présence : deux mots
-    // soulignés à la fois est l'état que produirait une comparaison fautive, et
-    // « le bon est souligné » ne l'attraperait pas.
+    // Le test vérifie **l'unicité** et pas seulement la présence : deux pilules
+    // pleines à la fois est l'état que produirait une comparaison fautive, et
+    // « la bonne est pleine » ne l'attraperait pas.
     await monter();
     await waitFor(() => expect(screen.getByTestId('categorie-beauty')).toBeTruthy());
 
-    const souligne = (id: string) =>
-      Number(screen.getByTestId(id).props.style?.borderBottomWidth ?? 0) > 0;
+    const choisie = (id: string) =>
+      screen.getByTestId(id).props.accessibilityState?.selected === true;
 
-    expect(souligne('categorie-toutes')).toBe(true);
-    expect(souligne('categorie-beauty')).toBe(false);
-    expect(souligne('categorie-fitness')).toBe(false);
+    expect(choisie('categorie-toutes')).toBe(true);
+    expect(choisie('categorie-beauty')).toBe(false);
+    expect(choisie('categorie-fitness')).toBe(false);
 
-    await fireEvent.press(screen.getByTestId('categorie-beauty-mot'));
-    await waitFor(() => expect(souligne('categorie-beauty')).toBe(true));
-    expect(souligne('categorie-toutes')).toBe(false);
-    expect(souligne('categorie-fitness')).toBe(false);
+    await fireEvent.press(screen.getByTestId('categorie-beauty'));
+    await waitFor(() => expect(choisie('categorie-beauty')).toBe(true));
+    expect(choisie('categorie-toutes')).toBe(false);
+    expect(choisie('categorie-fitness')).toBe(false);
 
     // Et aucun compte nulle part : c'est ce qu'on a retiré.
     expect(screen.queryByTestId('categorie-beauty-compte')).toBeNull();
@@ -240,7 +242,7 @@ describe('ce que l’en-tête dit', () => {
     await monter(fil({ categories: [{ categorie: 'beauty', commerces: 5, prestations: 9 }] as Fil['categories'] }));
     await waitFor(() => expect(screen.getByTestId('entete-du-mur')).toBeTruthy());
 
-    expect(screen.queryByTestId('entete-categories')).toBeNull();
+    expect(screen.queryByTestId('bande-des-categories')).toBeNull();
     expect(screen.queryByTestId('categorie-toutes')).toBeNull();
   });
 

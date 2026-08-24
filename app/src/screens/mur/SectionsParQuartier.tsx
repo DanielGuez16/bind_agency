@@ -27,7 +27,7 @@
  * illisible. On aurait densifié l'écran en cassant la correction qu'il porte.
  */
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import {
   useApi,
@@ -72,6 +72,16 @@ type Prestation = {
   nom: string;
   salon: string;
   businessId: string;
+  /**
+   * L'article, distinct de la clé de l'aperçu.
+   *
+   * `cle` porte l'offre de palier : le même article ouvert à deux paliers fait
+   * deux cartes. Le favori, lui, porte sur **l'article** — les deux cartes
+   * montrent donc le même cœur, et le toucher sur l'une remplit l'autre. C'est
+   * la prestation qu'on met de côté, pas le palier par lequel on l'atteint.
+   */
+  catalogItemId: string;
+  estFavori: boolean;
   dureeMinutes: number | null;
   contrepartie: string | null;
   photo: string | null;
@@ -127,6 +137,8 @@ function prestationsDe(
         nom: item.name,
         salon: commerce.name,
         businessId: commerce.business_id,
+        catalogItemId: item.catalog_item_id,
+        estFavori: item.est_favori,
         dureeMinutes: item.duration_minutes,
         contrepartie: item.content_format,
         // La photo de la prestation d'abord, la couverture du salon en repli.
@@ -170,6 +182,11 @@ export function useMur(
   fil: Fil | null,
   categorie: BusinessCategory | null,
   onOuvrir: (businessId: string) => void,
+  favoris?: {
+    /** Vrai si l'article est gardé, en tenant compte des appuis en vol. */
+    estFavori: (catalogItemId: string, servi: boolean) => boolean;
+    basculer: (catalogItemId: string, versFavori: boolean) => void;
+  },
 ): { entete: React.ReactNode; elements: { cle: string; rendu: React.ReactNode }[]; pied: React.ReactNode } | null {
   const { api } = useApi();
   const { t } = useI18n();
@@ -241,6 +258,19 @@ export function useMur(
             contrepartie={prestation.contrepartie}
             photo={prestation.photo}
             onPress={() => onOuvrir(prestation.businessId)}
+            estFavori={favoris?.estFavori(prestation.catalogItemId, prestation.estFavori)}
+            // Sans le branchement, pas de cœur : une carte hors du mur n'a
+            // rien à garder de côté, et un cœur qui ne répond pas est pire
+            // qu'un cœur absent.
+            onFavori={
+              favoris
+                ? () =>
+                    favoris.basculer(
+                      prestation.catalogItemId,
+                      !favoris.estFavori(prestation.catalogItemId, prestation.estFavori),
+                    )
+                : undefined
+            }
             testID={`apercu-${prestation.cle}`}
           />
         ))}
@@ -271,7 +301,17 @@ export function useMur(
         <Texte variante="type.monoSmall" couleur="ink.soft">
           {t('parcours.murAutresQuartiers').toUpperCase()}
         </Texte>
-        <View style={{ flexDirection: 'row', gap: 10 }}>
+        {/* **Ils défilent, ils ne s'entassent pas.** Tous rendus d'un coup sur
+            une rangée fixe, les quatrième et cinquième quartiers se serraient
+            jusqu'à couper leur nom — un nom de quartier tronqué ne désigne plus
+            rien. Ils gardent maintenant leur largeur et sortent du champ, le
+            suivant en amorce : c'est du contenu, et `rules.md` §3 réserve
+            précisément cette dérogation au contenu. */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ flexDirection: 'row', gap: 10, paddingRight: MARGE_DU_MUR }}
+        >
           {autres.map((compte) => (
             <CarreDeQuartier
               key={compte.quartier}
@@ -285,7 +325,7 @@ export function useMur(
               onPress={() => setOuvert(compte.quartier)}
             />
           ))}
-        </View>
+        </ScrollView>
       </View>
     ) : null;
 
