@@ -52,11 +52,6 @@ const SANS_APPELANT: Record<string, string> = {
   // protège personne, et donnerait à croire que la porte reste ouverte tant
   // qu'on ne l'a pas pressé.
   fermerLaReprise: 'a-instruire',
-  // **La liste des salons de l'administration.** Servie pour que l'écran de
-  // reprise cesse d'être greffé sur la fiche de tournée — on ne pouvait
-  // reprendre que les salons venus du terrain. L'onglet qui la rendra est de la
-  // composition, et il n'existe pas encore.
-  commercesAdmin: 'a-instruire',
 };
 
 const RAISONS = new Set(['contrat', 'technique', 'a-instruire']);
