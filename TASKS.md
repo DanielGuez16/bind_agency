@@ -2517,6 +2517,22 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       requête de plus. Sans lecteur pour l'instant — le bandeau des sept
       premiers jours l'attend, avec la portée locale qui lui manque encore.*
 
+- [x] **Les deux champs que la planche réclamait : le total de la recherche, et le palier du favori**
+      *`GET /admin/businesses` devient une enveloppe `{items, total}` et porte
+      `created_at`. Une liste nue ne pouvait porter aucun total, et l'écran
+      borne à cent : sans le compte, « 4 sur 742 » ne s'écrit pas et le plafond
+      dit qu'on tronque sans dire de combien. Le total est celui de la recherche
+      courante — compté sans la borne, sur les mêmes conditions ; compter les
+      lignes rendues redirait « 100 » dès qu'on dépasse, ce qui est exactement
+      le nombre qu'il ne faut pas croire. L'écran d'administration le lit déjà.*
+
+      *`palier_requis` sur un favori, servi seulement quand l'état est
+      `hors_palier`. **Le palier de cette prestation, pas le prochain de la
+      créatrice** : les deux diffèrent dès qu'un article n'est offert qu'à un
+      palier lointain, et écrire l'autre promettrait une ouverture qui n'aurait
+      pas lieu — la seule promesse que cet écran est construit pour ne pas
+      faire. Sans lecteur pour l'instant, la composition se fait ailleurs.*
+
 - [ ] **La planche dit « le favori porte sur le salon », le contrat dit la prestation**
       *`ItemDuFil.est_favori` est posé sur l'article, `POST /me/favorites` prend
       un `catalog_item_id`, et `GET /me/favorites` rend des prestations avec

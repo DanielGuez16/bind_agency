@@ -775,6 +775,7 @@ export const en = {
     commercesColonneQuartier: 'Neighbourhood',
     commercesColonneEtat: 'State',
     commercesCompte: '{{count}} salons · this search',
+    commercesCompteSurTotal: '{{montres}} of {{total}} · this search',
     commercesLireTitre: 'Reading a row opens nothing',
     commercesLireCorps: 'A name, a neighbourhood and a state are all this screen shows. Seeing a salon’s bookings or catalogue needs a take-over — motivated, named, time-boxed, and listed to the salon.',
     commercesVideTitre: 'No salon',

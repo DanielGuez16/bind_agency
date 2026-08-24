@@ -133,3 +133,25 @@ class CommerceVuParLAdministration(BaseModel):
     #: pourquoi lui plutôt que moi. Ce que l'écran doit dire est « tu es déjà
     #: dedans », pour ne pas proposer d'ouvrir une seconde fois.
     reprise_en_cours: bool
+    #: Depuis quand ce salon est inscrit. **La date de création, et non celle de
+    #: mise en ligne** : ici on cherche un salon, on ne juge pas son activité, et
+    #: c'est l'ancienneté du dossier qui aide à reconnaître le bon parmi cent.
+    created_at: datetime
+
+
+class ListeDesCommercesRead(BaseModel):
+    """La liste, **et combien la recherche en a trouvé**.
+
+    Une liste nue ne pouvait porter aucun total, et l'écran affiche un plafond
+    de cent : sans le compte, « 4 sur 742 » ne s'écrit pas, et rien ne dit à
+    l'administration que sa recherche a ramené davantage que ce qu'elle lit.
+    C'est le remède du plafond, pas une décoration.
+
+    **Le total est celui de la recherche courante**, pas celui du catalogue : un
+    nombre qui ne bougerait pas en tapant ne dirait rien de ce qu'on cherche.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    items: list[CommerceVuParLAdministration]
+    total: int

@@ -997,7 +997,7 @@ async def test_l_administration_voit_les_salons_qui_ne_viennent_pas_du_terrain(
     reponse = await client.get(f"{PREFIX}/admin/businesses", headers=await _jetons(client, admin))
 
     assert reponse.status_code == 200, reponse.text
-    identifiants = [ligne["business_id"] for ligne in reponse.json()]
+    identifiants = [ligne["business_id"] for ligne in reponse.json()["items"]]
     assert str(business.id) in identifiants
 
 
@@ -1021,7 +1021,9 @@ async def test_la_liste_dit_ou_l_appelant_est_deja_entre(
 
     reponse = await client.get(f"{PREFIX}/admin/businesses", headers=await _jetons(client, admin))
 
-    par_salon = {ligne["business_id"]: ligne["reprise_en_cours"] for ligne in reponse.json()}
+    par_salon = {
+        ligne["business_id"]: ligne["reprise_en_cours"] for ligne in reponse.json()["items"]
+    }
     assert par_salon[str(chez_a.id)] is True
     assert par_salon[str(chez_b.id)] is False
 
@@ -1044,7 +1046,7 @@ async def test_la_recherche_trouve_sans_accent_ni_casse(
     )
 
     assert reponse.status_code == 200, reponse.text
-    assert [ligne["name"] for ligne in reponse.json()] == ["Panadería del Sol"]
+    assert [ligne["name"] for ligne in reponse.json()["items"]] == ["Panadería del Sol"]
 
 
 async def test_un_salon_ne_lit_pas_la_liste_des_salons(
@@ -1060,3 +1062,45 @@ async def test_un_salon_ne_lit_pas_la_liste_des_salons(
     )
 
     assert reponse.status_code == 403, reponse.text
+
+
+async def test_le_total_est_celui_de_la_recherche_et_deborde_la_borne(
+    session: AsyncSession, client: AsyncClient
+) -> None:
+    """**Le remède du plafond de cent.**
+
+    Sans le total, « 4 sur 742 » ne s'écrit pas, et rien ne dit à
+    l'administration que sa recherche a ramené davantage que ce qu'elle lit.
+
+    Le décor pose **trois** salons et demande `limite=1`. C'est le seul montage
+    où les trois implémentations qu'on redoute divergent : compter les lignes
+    rendues dirait 1, compter le catalogue entier ignorerait la recherche, et
+    seul « compter la recherche sans la borne » dit 3.
+
+    Le nom cherché est unique au décor : la base de test porte d'autres salons,
+    et un total du catalogue passerait un décor qui ne filtre pas.
+    """
+    marque = f"Zibeline{uuid.uuid4().hex[:8]}"
+    for i in range(3):
+        business, _ = await commerce_en_cours(session)
+        business.name = f"{marque} {i}"
+    autre, _ = await commerce_en_cours(session)
+    autre.name = f"Hors recherche {uuid.uuid4().hex[:6]}"
+    admin = await administrateur(session)
+    await session.commit()
+
+    reponse = await client.get(
+        f"{PREFIX}/admin/businesses",
+        params={"recherche": marque, "limite": 1},
+        headers=await _jetons(client, admin),
+    )
+
+    assert reponse.status_code == 200, reponse.text
+    corps = reponse.json()
+    assert len(corps["items"]) == 1, "la borne n'est plus appliquée"
+    assert corps["total"] == 3, (
+        "le total doit compter la recherche entière, ni les lignes rendues ni le catalogue"
+    )
+    # La date d'inscription accompagne chaque ligne : c'est l'ancienneté du
+    # dossier qui aide à reconnaître le bon salon parmi cent.
+    assert corps["items"][0]["created_at"] is not None

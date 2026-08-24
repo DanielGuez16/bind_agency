@@ -696,6 +696,7 @@ export const es: Catalogue = {
     commercesColonneQuartier: 'Barrio',
     commercesColonneEtat: 'Estado',
     commercesCompte: '{{count}} salones · esta búsqueda',
+    commercesCompteSurTotal: '{{montres}} de {{total}} · esta búsqueda',
     commercesLireTitre: 'Leer una fila no abre nada',
     commercesLireCorps: 'Un nombre, un barrio y un estado: esta pantalla no muestra más. Ver las reservas o el catálogo de un salón exige una toma de control — motivada, con nombre, limitada en el tiempo, y listada al salón.',
     commercesVideTitre: 'Ningún salón',

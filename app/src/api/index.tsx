@@ -67,7 +67,7 @@ import type {
   FichePreparee,
   LienRemis,
   PorteeDeReprise,
-  CommerceVuParLAdministration,
+  ListeDesCommerces,
   CompteDesReprises,
   Favori,
   RepriseDuCompte,
@@ -661,7 +661,7 @@ export class Api {
    * pourquoi. La recherche porte sur le nom, sans accent ni casse.
    */
   commercesAdmin(recherche?: string, signal?: AbortSignal) {
-    return this.client.request<CommerceVuParLAdministration[]>(
+    return this.client.request<ListeDesCommerces>(
       routes.commercesAdmin(),
       { signal, query: recherche ? { recherche } : undefined },
     );

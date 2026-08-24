@@ -22,6 +22,7 @@ from app.schemas.support import (
     BusinessSupportAccessRead,
     CommerceVuParLAdministration,
     CompteDesReprises,
+    ListeDesCommercesRead,
     RepriseDemandee,
     RepriseOuverte,
 )
@@ -139,13 +140,13 @@ async def close_support_access(
         await session.commit()
 
 
-@admin_router.get("", response_model=list[CommerceVuParLAdministration])
+@admin_router.get("", response_model=ListeDesCommercesRead)
 async def list_businesses(
     user: CurrentUser,
     session: SessionDep,
     recherche: Annotated[str | None, Query(max_length=120)] = None,
     limite: Annotated[int, Query(ge=1, le=500)] = 100,
-) -> list[CommerceVuParLAdministration]:
+) -> ListeDesCommercesRead:
     """Les salons que l'administration peut reprendre.
 
     **Le manque que cette route comble dépassait la mise en page.** L'écran de
@@ -161,12 +162,13 @@ async def list_businesses(
     Lire cette liste n'ouvre rien. La reprise reste un geste explicite, motivé,
     borné par une portée, et dont le salon est prévenu.
     """
-    return [
-        CommerceVuParLAdministration.model_validate(commerce)
-        for commerce in await service.commerces(
-            session, admin_user_id=user.id, recherche=recherche, limite=limite
-        )
-    ]
+    liste = await service.commerces(
+        session, admin_user_id=user.id, recherche=recherche, limite=limite
+    )
+    return ListeDesCommercesRead(
+        items=[CommerceVuParLAdministration.model_validate(c) for c in liste.items],
+        total=liste.total,
+    )
 
 
 @admin_me_router.get("/support-access/recent", response_model=CompteDesReprises)

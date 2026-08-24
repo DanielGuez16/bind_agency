@@ -383,6 +383,29 @@ export type Favori = {
   /** **Une prestation qui n'est plus réservable reste dans la liste.** La
    *  retirer sans un mot ferait croire à un mauvais appui. */
   etat: EtatDuFavori;
+  /**
+   * Le palier qui ouvrirait cette prestation. **Servi seulement quand `etat`
+   * vaut `hors_palier`** : c'est le seul cas où la question se pose, et le seul
+   * état sur lequel la créatrice peut agir — un salon en pause ne se débloque
+   * pas en gagnant des abonnés.
+   *
+   * **Celui de la prestation, et non le prochain de la créatrice.** Les deux
+   * diffèrent dès qu'une prestation n'est offerte qu'à un palier lointain, et
+   * écrire l'autre promettrait une ouverture qui n'aurait pas lieu.
+   */
+  palier_requis: PalierDuFavori | null;
+};
+
+/** Le palier qui ouvrirait un favori, et ce qui en sépare encore. */
+export type PalierDuFavori = {
+  tier_id: string;
+  platform: Platform;
+  content_format: ContentFormat;
+  /** Combien d'abonnés il reste à faire sur le réseau de ce palier. **Nul quand
+   *  ce n'est pas ce qui bloque** — un jeton mort, un relevé trop vieux, une
+   *  revue en cours : « il vous manque 431 200 secondes » ne veut rien dire, et
+   *  l'écran doit alors dire autre chose. */
+  abonnes_manquants: number | null;
 };
 
 export type CommerceDuFil = {
@@ -1592,6 +1615,26 @@ export type CommerceVuParLAdministration = {
    *  l'appelant et non sur le salon : savoir qu'un collègue est entré ne change
    *  pas ce que je peux faire. */
   reprise_en_cours: boolean;
+  /** Depuis quand ce salon est inscrit, en ISO. **La date de création, et non
+   *  celle de mise en ligne** : ici on cherche un salon, on ne juge pas son
+   *  activité, et c'est l'ancienneté du dossier qui aide à reconnaître le bon
+   *  parmi cent. */
+  created_at: string;
+};
+
+/**
+ * La liste, **et combien la recherche en a trouvé**.
+ *
+ * Une liste nue ne pouvait porter aucun total, et l'écran affiche un plafond de
+ * cent : sans le compte, « 4 sur 742 » ne s'écrit pas, et rien ne dit à
+ * l'administration que sa recherche a ramené davantage que ce qu'elle lit.
+ *
+ * **Le total est celui de la recherche courante**, pas celui du catalogue : un
+ * nombre qui ne bougerait pas en tapant ne dirait rien de ce qu'on cherche.
+ */
+export type ListeDesCommerces = {
+  items: CommerceVuParLAdministration[];
+  total: number;
 };
 
 /** Une photo de la galerie d'un commerce. La clé, jamais une adresse. */

@@ -408,18 +408,24 @@ const ECRANS = [
     noeud: <CommercesScreen />,
     role: 'admin' as Role,
     plein: {
-      '/admin/businesses': [
-        {
-          business_id: 'b1',
-          name: 'Vela Nail Studio',
-          category: 'beauty',
-          neighborhood: 'wynwood',
-          status: 'active',
-          reprise_en_cours: false,
-        },
-      ],
+      // **Une enveloppe, plus une liste nue** : la route porte le total de la
+      // recherche, sans lequel « 4 sur 742 » ne s'écrit pas.
+      '/admin/businesses': {
+        items: [
+          {
+            business_id: 'b1',
+            name: 'Vela Nail Studio',
+            category: 'beauty',
+            neighborhood: 'wynwood',
+            status: 'active',
+            reprise_en_cours: false,
+            created_at: '2026-03-14T15:00:00Z',
+          },
+        ],
+        total: 1,
+      },
     },
-    vide: { '/admin/businesses': [] },
+    vide: { '/admin/businesses': { items: [], total: 0 } },
   },
   {
     nom: 'terrain',

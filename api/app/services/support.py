@@ -327,6 +327,28 @@ class CommerceAReprendre:
     neighborhood: str | None
     status: str
     reprise_en_cours: bool
+    #: Depuis quand ce salon est inscrit. **La date de création, et non celle de
+    #: mise en ligne** : ici on cherche un salon, on ne juge pas son activité, et
+    #: c'est l'ancienneté du dossier qui aide à reconnaître le bon parmi cent.
+    created_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class ListeDesCommerces:
+    """La liste, **et combien la recherche en a trouvé**.
+
+    Une liste nue ne pouvait pas porter de total, et l'écran affiche un plafond
+    de cent : sans le compte, « 4 sur 742 » ne s'écrit pas, et rien ne dit à
+    l'administration que sa recherche a ramené davantage que ce qu'elle lit.
+    C'est le remède du plafond, pas une décoration.
+
+    **Le total est celui de la recherche courante**, pas celui du catalogue. Un
+    nombre qui ne bougerait pas en tapant ne dirait rien de ce qu'on est en
+    train de chercher.
+    """
+
+    items: tuple[CommerceAReprendre, ...]
+    total: int
 
 
 async def commerces(
@@ -336,7 +358,7 @@ async def commerces(
     recherche: str | None = None,
     limite: int = 100,
     maintenant: datetime | None = None,
-) -> tuple[CommerceAReprendre, ...]:
+) -> ListeDesCommerces:
     """Les salons que l'administration peut reprendre, par nom.
 
     **Pourquoi cette liste existe.** L'écran de reprise était greffé sur la
@@ -380,6 +402,7 @@ async def commerces(
                 Business.neighborhood,
                 Business.status,
                 ouverte.label("reprise_en_cours"),
+                Business.created_at,
             )
             .where(*conditions)
             .order_by(Business.name)
@@ -387,16 +410,27 @@ async def commerces(
         )
     ).all()
 
-    return tuple(
-        CommerceAReprendre(
-            business_id=identifiant,
-            name=nom,
-            category=categorie.value if hasattr(categorie, "value") else str(categorie),
-            neighborhood=(
-                quartier.value if hasattr(quartier, "value") else quartier if quartier else None
-            ),
-            status=statut.value if hasattr(statut, "value") else str(statut),
-            reprise_en_cours=bool(reprise),
-        )
-        for identifiant, nom, categorie, quartier, statut, reprise in lignes
+    # **Compté à part, sur les mêmes conditions et sans la borne.** Compter les
+    # lignes rendues redirait « 100 » dès que la recherche dépasse le plafond,
+    # ce qui est exactement le nombre que l'écran ne doit pas croire.
+    total = await session.scalar(
+        sa.select(sa.func.count()).select_from(Business).where(*conditions)
+    )
+
+    return ListeDesCommerces(
+        total=total or 0,
+        items=tuple(
+            CommerceAReprendre(
+                business_id=identifiant,
+                name=nom,
+                category=categorie.value if hasattr(categorie, "value") else str(categorie),
+                neighborhood=(
+                    quartier.value if hasattr(quartier, "value") else quartier if quartier else None
+                ),
+                status=statut.value if hasattr(statut, "value") else str(statut),
+                reprise_en_cours=bool(reprise),
+                created_at=cree_le,
+            )
+            for identifiant, nom, categorie, quartier, statut, reprise, cree_le in lignes
+        ),
     )
