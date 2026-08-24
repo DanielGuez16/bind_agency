@@ -34,7 +34,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Business, CapacityRule, CatalogItem, Tier, TierOffer
 from app.models.enums import BusinessCategory, BusinessStatus, ContentFormat, Platform
-from app.services import availability, business_menu, business_photos, eligibility
+from app.services import availability, business_menu, business_photos, eligibility, favorites
 from app.services.feed import ratio_de_valeur
 
 #: Assez pour écrire « prochaine place mardi 14 h », pas assez pour composer un
@@ -86,6 +86,18 @@ class OffreDeLaFiche:
     #: fenêtre de validité. Vide aussi sur un item complet, ce qui n'est pas la
     #: même chose et se distingue par `requires_booking`.
     prochains_creneaux: tuple[datetime, ...]
+    #: Vrai quand la créatrice a mis **cette prestation** en favori.
+    #:
+    #: Le cœur vit désormais ici, ligne par ligne : le favori porte sur la
+    #: prestation, et la carte du fil est devenue celle du salon. Sans ce
+    #: champ, chaque cœur s'ouvrirait vide et une prestation déjà gardée se
+    #: présenterait comme non gardée.
+    #:
+    #: **Sur `catalog_item_id`, pas sur l'offre.** Le même article proposé à
+    #: deux paliers fait deux lignes sur la fiche, et les deux portent le même
+    #: cœur — c'est la prestation qu'on met de côté, pas le palier par lequel
+    #: on l'atteint.
+    est_favori: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -183,6 +195,9 @@ async def fiche(
         raise BusinessNotPublic(business_id)
 
     verdict = await eligibility.evaluer_createur(session, creator_id)
+    # Les prestations déjà en favori, en un seul aller — comme sur le fil. Les
+    # demander ligne par ligne ferait une requête par offre pour un cœur.
+    favoris = await favorites.identifiants(session, creator_id=creator_id)
     compte_par_palier = {tier_id: compte for compte, tier_id in verdict.couples_accessibles}
     # Un palier peut être évalué pour plusieurs comptes sociaux : ses
     # obstacles sont donc rassemblés, puis dédoublonnés par raison comme dans
@@ -269,6 +284,7 @@ async def fiche(
                 accessible=accessible,
                 social_account_id=compte,
                 obstacles=() if accessible else _obstacles_de(obstacles_par_palier, ligne.tier_id),
+                est_favori=ligne.catalog_item_id in favoris,
                 prochains_creneaux=creneaux,
             )
         )

@@ -959,3 +959,60 @@ async def _reserver_sans_servir(session: AsyncSession, business) -> None:
             starts_at=creneaux[0].starts_at if creneaux else None,
         ),
     )
+
+
+async def test_une_prestation_ouverte_a_deux_paliers_ne_compte_qu_une_fois(
+    session: AsyncSession,
+) -> None:
+    """**Le fil rend une ligne par offre ; il annonce des prestations.**
+
+    Un salon qui propose le même article au story et au reel en fait deux
+    lignes — deux offres légitimes, avec deux contreparties différentes — mais
+    une seule prestation. Les compter toutes deux annonçait « 4 services » là
+    où il y en a trois, et au grain du salon la carte listerait le même nom
+    deux fois.
+
+    **Le décor est celui où les deux implémentations divergent** : la créatrice
+    atteint **les deux** paliers. Avec un seul accessible, la seconde offre ne
+    passe pas le tamis du fil et le double compte ne se produit jamais — c'est
+    exactement pourquoi le jeu de démonstration ne le montrait pas : son
+    doublon est sur un palier TikTok que personne n'atteint.
+    """
+    from app.models.enums import ReliabilityEventType
+    from app.services import reliability
+    from tests.test_booking_create import monter_le_decor
+
+    decor = await monter_le_decor(session, tier_id=STORY, followers=60_000)
+    # **Le reel demande deux collaborations tenues**, pas seulement des
+    # abonnés. Elles viennent du mécanisme du produit : les poser à la main
+    # masquerait l'absence de ce mécanisme et rendrait le décor inutile comme
+    # test.
+    for _ in range(2):
+        await reliability.enregistrer(
+            session,
+            creator_id=decor["createur"].id,
+            type_=ReliabilityEventType.COLLAB_COMPLETED,
+        )
+    # Le même article, une seconde fois, au reel — que ce décor ouvre aussi.
+    await tier_offer_service.create_offer(
+        session,
+        business_id=decor["business"].id,
+        payload=TierOfferCreate(tier_id=REEL, catalog_item_id=decor["item"].id),
+    )
+    await session.flush()
+
+    fil = await service.fil_du_createur(
+        session,
+        creator_id=decor["createur"].id,
+        autour_de=Coordinates(longitude=-80.1918, latitude=25.7617),
+    )
+
+    salon = next(c for c in fil.commerces if c.business_id == decor["business"].id)
+    assert len(salon.items) == 2, (
+        "les deux offres doivent être rendues : ce sont deux contreparties"
+    )
+    assert salon.prestations_ouvertes == 1
+    assert fil.total_prestations == 1
+    quartier = next((q for q in fil.quartiers if q.quartier == salon.neighborhood), None)
+    if quartier is not None:
+        assert quartier.prestations == 1

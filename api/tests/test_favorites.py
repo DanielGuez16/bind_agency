@@ -610,3 +610,49 @@ async def test_sans_refus_l_avis_part(session: AsyncSession) -> None:
     for message in await _messages_de_favori(session, decor["createur"].id):
         await session.refresh(message)
         assert message.skipped_reason != outbox.ECARTE_REFUSE
+
+
+async def test_la_fiche_porte_l_etat_du_coeur_ligne_par_ligne(
+    session: AsyncSession, client: AsyncClient
+) -> None:
+    """**Le cœur vit sur la fiche depuis que la carte du fil est le salon.**
+
+    Sans ce champ, chaque cœur s'ouvrirait vide et une prestation déjà gardée
+    se présenterait comme non gardée.
+
+    Le décor pose deux prestations et n'en met qu'une en favori : c'est le seul
+    montage où une fiche qui rendrait `true` partout — ou `false` partout — se
+    distingue de celle qui lit l'ensemble.
+    """
+    from app.schemas.catalog import CatalogItemCreate
+    from app.services import business_public
+    from app.services import catalog as catalog_service
+
+    decor = await monter_le_decor(session)
+    autre = await catalog_service.create_item(
+        session,
+        business=decor["business"],
+        payload=CatalogItemCreate(
+            name="Une autre prestation",
+            price_cents=4000,
+            duration_minutes=30,
+            requires_booking=True,
+        ),
+    )
+    await tier_offer_service.create_offer(
+        session,
+        business_id=decor["business"].id,
+        payload=TierOfferCreate(tier_id=decor["offre"].tier_id, catalog_item_id=autre.id),
+    )
+    await favorites.ajouter(
+        session, creator_id=decor["createur"].id, catalog_item_id=decor["item"].id
+    )
+    await session.flush()
+
+    fiche = await business_public.fiche(
+        session, business_id=decor["business"].id, creator_id=decor["createur"].id
+    )
+
+    par_article = {offre.catalog_item_id: offre.est_favori for offre in fiche.offres}
+    assert par_article[decor["item"].id] is True
+    assert par_article[autre.id] is False

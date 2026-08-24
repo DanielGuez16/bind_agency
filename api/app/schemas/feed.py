@@ -62,6 +62,10 @@ class CommerceDuFilRead(BaseModel):
     cover_photo_key: str | None
     distance_metres: float
     items: list[ItemDuFilRead]
+    #: Combien de prestations ce salon ouvre à cette créatrice. Servi et non
+    #: déduit de `items` : le jour où la carte du fil devient le salon, `items`
+    #: perd son lecteur et part — le compte, lui, est ce que la carte annonce.
+    prestations_ouvertes: int
 
 
 class CompteParCategorieRead(BaseModel):
