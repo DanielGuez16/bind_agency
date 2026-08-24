@@ -222,3 +222,78 @@ le seul cas pour lequel il existe.
 **La gamme « Coloration » d'Ocean Beauty.** C'est un en-tête qui regroupe trois
 variantes, il ne s'affiche jamais seul. Une photo posée dessus n'apparaîtrait
 sur aucun écran.
+
+## 7. Les images de remplacement, et ce qu'elles remplacent
+
+**Cinquante-deux fichiers de ce dossier ne sont pas des photos du produit.** Ce
+sont des images libres, trouvées sur [Openverse](https://openverse.org) au mot
+le plus proche du nom de la prestation, posées pour que la démonstration ne
+montre plus de dégradés. Elles sont justes de sujet et de personne d'autre : un
+lancement réel les remplace toutes.
+
+**Ce qui a été appliqué en les posant.** Le grand côté est borné à 1200 px avant
+le dépôt — c'est le semis qui recadre ensuite, en 800 × 800 pour une prestation
+et en 1200 × 1600 pour une page de carte. Seules les licences qui **permettent
+la modification** ont été retenues : `cc0`, `pdm`, `by`, `by-sa`. `by-nd`
+l'interdit, et cinq images sont arrivées sous cette licence au premier jet
+avant que le filtre soit resserré — recadrer est une œuvre dérivée.
+
+**Ce que l'attribution demande.** `by` et `by-sa` exigent de créditer l'auteur
+partout où l'image paraît. Aucune de ces images ne doit donc sortir de la
+démonstration telle quelle : le tableau ci-dessous existe pour qu'on sache
+laquelle retirer, pas pour qu'on s'en serve.
+
+| Fichier | Mot-clé | Auteur | Licence | Source |
+| --- | --- | --- | --- | --- |
+| `cartes/la-mesa-larga/1.jpg` | menu restaurant | Major Nelson | [by 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/49503033361@N01/5094523675) |
+| `cartes/la-mesa-larga/2.jpg` | menu restaurant | Yahoo Inc | [by 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/99527366@N00/2866362153) |
+| `commerces/bayside-play-loft/prestations/birthday-hour.jpg` | children birthday party | lilli2de | [by-sa 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/37621034@N02/7191144670) |
+| `commerces/bayside-play-loft/prestations/day-pass.jpg` | indoor playground children | echoforsberg | [by 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/7876691@N03/2458069165) |
+| `commerces/brickell-highball/prestations/signature-cocktail.jpg` | cocktail glass bar | inconnu | [cc0 1.0](https://creativecommons.org/licenses/) | [voir](https://www.rawpixel.com/image/5907784/photo-image-public-domain-person-glass) |
+| `commerces/brickell-highball/prestations/tasting-flight.jpg` | whiskey glasses | PersonalCreations.com | [by 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/127294011@N07/18495546988) |
+| `commerces/calle-ocho-barber-co/prestations/afeitado.jpg` | barber shave razor | photosteve101 | [by 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/42931449@N07/5506706668) |
+| `commerces/calle-ocho-barber-co/prestations/corte-clasico.jpg` | barber haircut | striatic | [by 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/34427466731@N01/3128036) |
+| `commerces/calle-ocho-barber-co/prestations/corte-y-barba.jpg` | beard trim barber | www.korigami.vn + Zalo 0915804875 | [pdm 1.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/51796957@N03/31754883492) |
+| `commerces/clay-co-studio/prestations/hand-building-class.jpg` | hand building clay pottery | John Atherton | [by-sa 2.0](https://creativecommons.org/licenses/) | [voir](https://commons.wikimedia.org/w/index.php?curid=31625823) |
+| `commerces/clay-co-studio/prestations/open-studio-hour.jpg` | pottery studio | mikecogh | [by-sa 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/89165847@N00/16416132221) |
+| `commerces/clay-co-studio/prestations/wheel-throwing.jpg` | potter wheel throwing | Mertbiol | [cc0 1.0](https://creativecommons.org/licenses/) | [voir](https://commons.wikimedia.org/w/index.php?curid=174919507) |
+| `commerces/coconut-grove-yoga/prestations/restorative-class.jpg` | yoga mat studio | GoToVan | [by 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/47022937@N03/4440274580) |
+| `commerces/coconut-grove-yoga/prestations/vinyasa-class.jpg` | yoga class | Evan-Lovely | [by 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/70797980@N00/2469723809) |
+| `commerces/edgewater-coffee-house/prestations/affogato.jpg` | affogato coffee ice cream | bigiain | [by 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/17353820@N00/304710490) |
+| `commerces/edgewater-coffee-house/prestations/cold-brew.jpg` | cold brew coffee | gruntzooki | [by-sa 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/37996580417@N01/15019603429) |
+| `commerces/edgewater-coffee-house/prestations/flat-white.jpg` | flat white coffee cup | adactio | [by 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/74105777@N00/437599219) |
+| `commerces/edgewater-coffee-house/prestations/latte-art-class.jpg` | latte art | Phil Denton | [by-sa 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/37475039@N04/8301075175) |
+| `commerces/fleur-de-biscayne/prestations/arrangement-workshop.jpg` | flower arranging workshop | Bellafaye Garden | [by 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/51796626@N03/6935209400) |
+| `commerces/fleur-de-biscayne/prestations/seasonal-bouquet.jpg` | flower bouquet | Scott 97006 | [by 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/29487672@N07/14754355764) |
+| `commerces/gables-pilates-room/prestations/bono-de-tres-clases.jpg` | pilates studio | socialwoodlands | [by 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/49980602@N03/5424892878) |
+| `commerces/gables-pilates-room/prestations/clase-en-grupo.jpg` | pilates group class | lynnsta | [by 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/43117949@N00/531346222) |
+| `commerces/gables-pilates-room/prestations/evaluacion-postural.jpg` | posture assessment | NavyMedicine | [pdm 1.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/61270229@N05/49898229486) |
+| `commerces/gables-pilates-room/prestations/reformer-privado.jpg` | pilates reformer | kristin sloan | [by 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/51035674629@N01/24102487039) |
+| `commerces/galeria-sur/prestations/entrada-general.jpg` | art gallery | See-ming Lee (SML) | [by-sa 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/48973657@N00/3909016366) |
+| `commerces/galeria-sur/prestations/visita-guiada.jpg` | gallery guided tour | austinevan | [by 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/19762676@N00/7907783102) |
+| `commerces/la-mesa-larga/prestations/menu-del-dia.jpg` | restaurant dish plate | D-Stanley | [by 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/79721788@N00/5282834559) |
+| `commerces/la-mesa-larga/prestations/postre-del-dia.jpg` | dessert plate | avlxyz | [by-sa 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/10559879@N00/2590052550) |
+| `commerces/libreria-aurora/prestations/cafe-y-libro.jpg` | book and coffee | rick | [by 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/35034361412@N01/348178429) |
+| `commerces/libreria-aurora/prestations/club-de-lectura.jpg` | book club reading | LindaH | [by 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/25747180@N00/27184780512) |
+| `commerces/libreria-aurora/prestations/envoltura-de-regalo.jpg` | gift wrapping paper | Berries.com | [by 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/126560659@N06/16768144762) |
+| `commerces/libreria-aurora/prestations/firma-de-autor.jpg` | book signing | John 'Pathfinder' Lester | [by 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/40615055@N00/200378575) |
+| `commerces/libreria-aurora/prestations/recomendacion-personal.jpg` | bookshop shelves | gadl | [by-sa 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/24183489@N00/263033307) |
+| `commerces/libreria-aurora/prestations/taller-de-escritura.jpg` | writing workshop notebook | Mike Cardus Organization Development | [by 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/8646749@N07/7596944322) |
+| `commerces/midtown-brunch-club/prestations/brunch-plate.jpg` | brunch plate | Daniela | [cc0 1.0](https://creativecommons.org/licenses/) | [voir](https://wordpress.org/photos/photo/11967d5dea/) |
+| `commerces/midtown-brunch-club/prestations/fresh-juice.jpg` | fresh orange juice glass | b.frahm | [by 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/20918261@N00/3582787072) |
+| `commerces/midtown-brunch-club/prestations/pancake-stack.jpg` | pancakes stack | maeyow | [by 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/43584526@N06/21030872833) |
+| `commerces/objet-concept-store/prestations/alteration.jpg` | sewing tailor alteration | EdwinAlden.1995 | [by-sa 4.0](https://creativecommons.org/licenses/) | [voir](https://commons.wikimedia.org/w/index.php?curid=174859545) |
+| `commerces/objet-concept-store/prestations/gift-wrapping.jpg` | gift wrapping | origamiguy1971 | [by 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/94246383@N00/3660453711) |
+| `commerces/objet-concept-store/prestations/personal-shopping.jpg` | clothing store rack | cajsa.lilliehook | [by-sa 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/14514578@N08/23819743562) |
+| `commerces/objet-concept-store/prestations/scent-bar.jpg` | perfume bottles | Vetiver Aromatics | [by-sa 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/64483003@N02/6782333397) |
+| `commerces/objet-concept-store/prestations/styling-session.jpg` | fashion styling clothes | centuryblack9 | [pdm 1.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/135504457@N06/26965889226) |
+| `commerces/panaderia-del-sol/prestations/cafe-con-leche.jpg` | cafe con leche coffee | jacilluch | [by-sa 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/70626035@N00/6322927758) |
+| `commerces/panaderia-del-sol/prestations/pastelito-de-guayaba.jpg` | guava pastry | PLeia2 | [by 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/64684255@N00/20324492515) |
+| `commerces/panaderia-del-sol/prestations/taller-de-pasteleria.jpg` | pastry baking class | COD Newsroom | [by 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/41431665@N07/8578142150) |
+| `commerces/verre-skin-studio/prestations/deep-cleanse.jpg` | facial cleansing skincare | Naomi King | [by 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/22141297@N06/7796400432) |
+| `commerces/verre-skin-studio/prestations/led-add-on.jpg` | led face mask | origami joel | [by-sa 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/84144593@N00/1450105750) |
+| `commerces/verre-skin-studio/prestations/peel.jpg` | facial peel treatment | TheGirlsNY | [by-sa 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/55768440@N00/2972459403) |
+| `commerces/verre-skin-studio/prestations/signature-facial.jpg` | facial treatment spa | Zenspa1 | [by 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/93609956@N05/9865582355) |
+| `commerces/wynwood-strength/prestations/assessment.jpg` | fitness assessment | Biswarup Ganguly | [by 3.0](https://creativecommons.org/licenses/) | [voir](https://commons.wikimedia.org/w/index.php?curid=47821627) |
+| `commerces/wynwood-strength/prestations/drop-in-session.jpg` | gym equipment | Surge Lifestyle | [by-sa 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/94822773@N08/8669789428) |
+| `commerces/wynwood-strength/prestations/personal-training.jpg` | personal trainer | katieklimek | [by 2.0](https://creativecommons.org/licenses/) | [voir](https://www.flickr.com/photos/67599239@N07/6163863614) |
