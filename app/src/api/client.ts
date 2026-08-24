@@ -267,6 +267,26 @@ export class ApiClient {
       motif = 'echeance';
       horloge.abort();
     }, this.delaiMs);
+    /**
+     * **L'échéance ne retient pas le processus.**
+     *
+     * Elle existe pour couper une requête qui traîne, jamais pour tenir une
+     * boucle d'événements ouverte. La différence ne se voit pas dans
+     * l'application — il y a toujours autre chose qui la tient — mais elle se
+     * voit sous Node : une requête qui n'aboutit pas garde son minuteur en vol
+     * jusqu'au bout du délai, et le worker Jest qui l'héberge ne peut pas
+     * sortir. C'était l'une des trois causes de « A worker process has failed
+     * to exit gracefully », à chaque exécution de la suite.
+     *
+     * L'annulation, elle, éteint déjà le minuteur par le `finally` — mais rien
+     * n'annule une écriture : un `POST` dont la réponse n'arrive pas n'est lié
+     * à aucun démontage d'écran, et c'est exactement le décor qui sépare
+     * l'optimiste de l'attente.
+     *
+     * `unref` n'existe ni sur le web ni en React Native, où le minuteur est un
+     * nombre. L'appel est donc facultatif, et sans effet là-bas.
+     */
+    (echeance as unknown as { unref?: () => void }).unref?.();
     // Le signal de l'appelant et celui du délai doivent tous deux pouvoir
     // annuler : un écran quitté pendant un chargement ne doit pas attendre
     // quinze secondes de plus.

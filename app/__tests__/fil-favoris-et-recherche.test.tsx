@@ -13,6 +13,7 @@ import { ApiClient, ApiProvider, type Fil } from '../src/api';
 import { I18nProvider } from '../src/i18n';
 import { FilScreen } from '../src/screens/FilScreen';
 import { motion, ThemeProvider } from '../src/theme';
+import { reponseQuiNArrivePas } from '../test-support/reponseQuiNArrivePas';
 
 function salon(rang: number, estFavori = false) {
   return {
@@ -65,7 +66,7 @@ function fil(extra: Partial<Fil> = {}, commerces = [salon(1), salon(2)]) {
 
 async function monter(
   donnees: Fil = fil(),
-  surFavori?: () => Response | Promise<Response>,
+  surFavori?: (init?: RequestInit) => Response | Promise<Response>,
 ) {
   const appels: { url: string; methode: string }[] = [];
   const api = new ApiClient({
@@ -76,7 +77,7 @@ async function monter(
       appels.push({ url: String(url), methode });
       if (String(url).includes('/me/favorites')) {
         return (
-          surFavori?.() ?? ({ ok: true, status: 204, json: async () => null } as Response)
+          surFavori?.(init) ?? ({ ok: true, status: 204, json: async () => null } as Response)
         );
       }
       return { ok: true, status: 200, json: async () => donnees } as Response;
@@ -172,7 +173,7 @@ describe('le cœur se remplit avant la réponse', () => {
      * Attendre le réseau pour un geste sans conséquence est ce qui fait dire
      * « lent », et un écran qui ne bouge pas fait appuyer une seconde fois.
      */
-    const { appels } = await monter(fil(), () => new Promise<Response>(() => {}));
+    const { appels } = await monter(fil(), (init) => reponseQuiNArrivePas(init));
 
     const coeur = await screen.findByTestId('apercu-o1-coeur');
     expect(coeur.props.accessibilityState?.selected).toBe(false);

@@ -10429,3 +10429,35 @@ la paire qui a coûté la demi-heure. Une garde bornée qui dit sa borne n'est p
 la garde partielle que `CLAUDE.md` proscrit : celle-là manque la forme pour
 laquelle elle a été écrite et fait croire la question réglée. Celle-ci couvre sa
 forme entièrement, et écrit le reste au lieu de le suggérer.
+
+---
+
+## 2026-08-24 — `--maxWorkers=1` ne prouve rien sur une fuite de worker
+
+Le raisonnement qui a coûté l'enquête précédente vaut d'être écrit, parce qu'il
+paraît juste : « l'avertissement disparaît à un worker, donc ce n'est pas un
+fichier ». À un worker, Jest s'exécute **en bande**, dans le processus
+principal. Il n'y a plus de worker, donc plus rien qui puisse échouer à sortir.
+La disparition ne dit rien du coupable.
+
+`--detectOpenHandles` force le même mode, pour la même raison : il ne nommait
+rien parce qu'en bande il n'y avait rien à nommer. **L'outil qui nomme le défaut
+change le mode d'exécution qui le produit** — c'est ce qui rend cette classe de
+défaut coûteuse, et c'est aussi ce qui la rend introuvable par relecture.
+
+Ce qui force le mode worker sur deux fichiers est `--no-cache`. La décision de
+Jest tient à `tests.length <= 20 && timings.length > 0 && areFastTests` : sans
+horodatage en cache, la deuxième condition tombe et les workers tournent. La
+bisection devient alors mécanique — chaque fichier avec un fichier propre :
+
+```
+npx jest --ci --maxWorkers=2 --no-cache __tests__/<candidat> __tests__/format.test.ts
+```
+
+Cent deux exécutions, huit minutes, cinq fichiers nommés, reproductibles trois
+fois sur trois.
+
+**Et l'avertissement n'est pas exigé en CI.** Il dépend d'un budget de démontage
+de 500 ms sur un runner partagé, ce qui est le profil exact de la garde de durée
+retirée après quatre CI rouges. Les trois causes sont tenues par des tests
+unitaires, qui ne dépendent d'aucune machine.
