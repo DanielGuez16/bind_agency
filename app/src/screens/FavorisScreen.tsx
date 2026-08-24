@@ -14,13 +14,27 @@
  * **Aucune coordonnée.** La liste se relit d'où l'on est : un favori posé à
  * Wynwood doit se retrouver depuis Kendall. La brancher sur le rayon en ferait
  * une seconde version du fil, qui oublie ce qu'on lui a confié.
+ *
+ * **Et l'unique réglage de notification du produit vit ici.** C'est une
+ * exception à la règle qui a retiré les préférences, et elle tient à la nature
+ * du message : tout ce que le produit dit ailleurs est déclenché par celui qui
+ * le reçoit — une réservation qu'il a faite, une publication qu'il a envoyée.
+ * L'avis de favori part trois semaines après un cœur posé, un mardi, sans que
+ * personne n'ait rien demandé. C'est le premier message non transactionnel, et
+ * le genre dont l'absence de refus se paie en désinstallations.
+ *
+ * **Ici et non dans les réglages** : là-bas, son sujet ne serait pas à l'écran,
+ * ce qui est le défaut diagnostiqué sur « profil et mise en ligne ». Ici, il
+ * est au-dessus de ce qu'il gouverne — et il n'apparaît pas quand la liste est
+ * vide, puisqu'il n'y a alors rien dont on puisse être prévenu.
  */
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { useApi, type EtatDuFavori, type Favori } from '../api';
-import { Icone, Photo, SkeletonLignes, StatusMessage, Texte } from '../components';
+import { Icone, Photo, SkeletonLignes, StatusMessage, Texte, Toggle } from '../components';
 import { useI18n } from '../i18n';
+import { useSession } from '../session';
 import { elevationDeCarte, radius, size, useColors } from '../theme';
 import { Ecran } from './Ecran';
 import { useRequete } from './useRequete';
@@ -101,6 +115,7 @@ export function FavorisScreen({
     >
       {(favoris) => (
         <View style={{ gap: 12 }}>
+          <AvisDeFavori />
           {favoris
             .filter((favori) => !retires.includes(favori.catalog_item_id))
             .map((favori) => (
@@ -225,6 +240,67 @@ function LigneDuFavori({
           testID={`favori-etat-${favori.catalog_item_id}`}
         />
       ) : null}
+    </View>
+  );
+}
+
+
+/**
+ * L'unique interrupteur de notification du produit.
+ *
+ * **Un seul, et pas un par favori.** Un par ligne recréerait, une case à la
+ * fois, le mur d'interrupteurs que le produit a retiré — et personne n'a jamais
+ * réglé quoi que ce soit dans un mur d'interrupteurs.
+ *
+ * **Optimiste, comme les deux autres gestes de cet écran.** Un interrupteur qui
+ * attend le réseau se presse deux fois, et le second appui annule le premier.
+ * Il revient si le serveur refuse.
+ */
+function AvisDeFavori() {
+  const { t } = useI18n();
+  const session = useSession();
+  const c = useColors();
+
+  const servi =
+    session.etat === 'connecte' ? session.utilisateur.favoris_me_previennent : null;
+  const [enVol, setEnVol] = useState<boolean | null>(null);
+
+  // **Rien tant qu'on ne sait pas.** Un interrupteur qui part à faux puis
+  // bascule tout seul une seconde plus tard fait douter de ce qu'on a réglé.
+  if (servi === null) return null;
+
+  const actif = enVol ?? servi;
+
+  return (
+    <View
+      testID="avis-de-favori"
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        padding: 12,
+        borderRadius: radius['radius.lg'],
+        backgroundColor: c['bg.deep'],
+      }}
+    >
+      <Texte variante="type.caption" couleur="ink.soft" style={{ flex: 1, minWidth: 0 }}>
+        {t('favoris.avisCorps')}
+      </Texte>
+      <Toggle
+        value={actif}
+        accessibilityLabel={t('favoris.avisLabel')}
+        onChange={(valeur) => {
+          setEnVol(valeur);
+          void session
+            .reglerLesAvisDeFavori(valeur)
+            // La réponse remet l'utilisateur à jour : la dérogation n'a plus
+            // rien à dire, et la garder ferait resurgir un vieux geste sur une
+            // donnée neuve.
+            .then(() => setEnVol(null))
+            .catch(() => setEnVol(null));
+        }}
+        testID="avis-de-favori-interrupteur"
+      />
     </View>
   );
 }
