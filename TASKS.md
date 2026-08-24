@@ -1854,6 +1854,15 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       un écran entier, donc beaucoup de requêtes en vol — si l'une d'elles ne se
       règle jamais, le test ne tient que par la marge du minuteur, et la charge
       la mange.*
+      ***Et si c'est la charge, ce n'est pas le processeur.** Mesuré depuis
+      l'autre conversation : la suite complète passe entière sous
+      vingt-quatre boucles occupées sur dix cœurs, deux fois de suite. En
+      revanche la signature s'est bien produite une fois pendant que
+      `pytest -n auto` tournait sur la même machine — dix fichiers rouges, des
+      durées de 30 à 90 s, tout au vert au passage suivant à froid. Ce que la
+      suite `api` consomme et qu'une boucle vide ne touche pas est la mémoire et
+      les entrées-sorties : c'est de ce côté qu'il faut chercher, et une boucle
+      de `yes` ne reproduira jamais rien.*
       ***La CI n'a pas encore rougi**, et c'est ce qui rend l'entrée utile : son
       runner est plus lent que la machine de développement, donc l'écart de
       charge y est plus grand, pas plus petit.*
@@ -2546,13 +2555,13 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       pas lieu — la seule promesse que cet écran est construit pour ne pas
       faire. Sans lecteur pour l'instant, la composition se fait ailleurs.*
 
-- [ ] **La planche dit « le favori porte sur le salon », le contrat dit la prestation**
-      *`ItemDuFil.est_favori` est posé sur l'article, `POST /me/favorites` prend
+- [x] **Le favori porte sur la prestation — tranché définitivement**
+      *La planche s'aligne sur le contrat, pas l'inverse, et Design est prévenu.
+      `ItemDuFil.est_favori` est posé sur l'article, `POST /me/favorites` prend
       un `catalog_item_id`, et `GET /me/favorites` rend des prestations avec
-      leur état. La planche écrit l'inverse — « toutes les cartes d'un même
-      salon montrent le même cœur ». Livré au niveau de la prestation, qui est
-      le seul cohérent de bout en bout : garder un salon demanderait une autre
-      table et un autre écran. **Signalé, non tranché seul.***
+      leur état. Garder un salon aurait demandé une autre table et un autre
+      écran, pour un geste que personne n'a demandé — et « j'ai un favori chez
+      eux » répond déjà à la question*
 - [x] **Ce qu'un favori déclenche est décidé, et sa place aussi**
       *Faut-il prévenir quand une prestation s'ouvre au palier de la créatrice ?
       Ce serait la première notification sortante du produit, donc une décision
