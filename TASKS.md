@@ -1835,12 +1835,25 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       `finally` du client n'est jamais atteint, et rien ne se démonte. Un
       composant qui n'a pas fini de se démonter et un `waitFor` qui expire sous
       charge sont deux façons de voir le même événement qui n'arrive pas.*
-      *Ce qu'il faudra vérifier avant de conclure : est-ce que les quatre
-      fichiers d'ici recoupent les cinq qu'elle a nommés. Si oui, la correction
-      est déjà écrite et il n'y a qu'à l'étendre ; si non, ce sont deux familles
-      et il faut bisecter comme elle l'a fait — avec `--no-cache`, sans quoi
-      Jest s'exécute en bande et le défaut disparaît avec le mode qui le
-      produit.*
+      ***Recoupement vérifié le 2026-08-24 : ce sont DEUX FAMILLES.** Les quatre
+      échecs ne font que trois fichiers — la photo et le filet vivent tous deux
+      dans `attente`. Passés un par un avec sa commande exacte
+      (`--ci --maxWorkers=2 --no-cache <candidat> format.test.ts`), trois fois
+      chacun : **0/3 avertissement de worker sur les trois**, et 3/3 passages
+      verts. Ils ne fuient pas. Sa correction ne s'étend donc pas ici.*
+      ***Et son levier de reproduction ne vaut pas pour ce symptôme.**
+      `--no-cache` force le mode worker, ce qui révèle une fuite ; le symptôme
+      d'ici est un `waitFor` qui expire quand la machine est chargée — deux
+      workers sur trois fichiers, c'est précisément la charge la plus basse
+      possible. Le levier est donc la **charge**, pas le mode : ces trois
+      fichiers ne tombent qu'au milieu de la suite entière, et jamais seuls.*
+      *Reste à bisecter, avec un autre outil : faire tourner la suite complète
+      en boucle et relever ce qui tombe, ou instrumenter les `waitFor` de ces
+      trois fichiers pour savoir ce qu'ils attendent quand ils expirent. Un
+      premier soupçon à écarter en priorité : les trois montent une coquille ou
+      un écran entier, donc beaucoup de requêtes en vol — si l'une d'elles ne se
+      règle jamais, le test ne tient que par la marge du minuteur, et la charge
+      la mange.*
       ***La CI n'a pas encore rougi**, et c'est ce qui rend l'entrée utile : son
       runner est plus lent que la machine de développement, donc l'écart de
       charge y est plus grand, pas plus petit.*
