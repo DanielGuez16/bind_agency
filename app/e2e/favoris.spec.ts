@@ -37,7 +37,7 @@ test('le cœur enregistre, et la liste le relit', async ({ page }) => {
   await expect(fil.locator('[data-testid$="-coeur"]')).toHaveCount(0);
 
   // On ouvre un salon, et c'est là que le cœur se pose.
-  await fil.locator('[data-testid^="salon-"]').first().click();
+  await fil.locator('[data-testid*="-apercu-"]').first().click();
 
   const fiche = page.getByTestId('ecran-fiche');
   await expect(fiche).toBeVisible();
