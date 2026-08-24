@@ -804,7 +804,24 @@ export function Navigation({
           prenom={prenom}
           onConnecterUnReseau={() => conteneur.navigate('audience' as never)}
           onVoirMonAudience={() => conteneur.navigate('audience' as never)}
-          onVoirMesPaliers={() => conteneur.navigate('paliers' as never)}
+          // **`paliers` n'a jamais existé.** Les onglets du créateur sont
+          // `parcours`, `audience`, `reservations` et `reglages` ; l'écran des
+          // paliers vit dans la pile du fil, sous `Paliers`. L'appui partait,
+          // React Navigation ignorait le nom, et rien ne bougeait — ce qui se
+          // lit comme un texte non cliquable. C'était le seul chemin vers les
+          // paliers depuis qu'ils ont quitté le fil.
+          //
+          // Le `as never` est ce qui l'a rendu possible : il existe parce que
+          // le conteneur n'est pas typé sur une liste de routes, et il efface
+          // du même coup la vérification qui aurait dit que le nom était faux.
+          onVoirMesPaliers={() =>
+            (
+              conteneur.navigate as unknown as (
+                onglet: string,
+                cible: { screen: string },
+              ) => void
+            )('parcours', { screen: 'Paliers' })
+          }
         />
       ) : role === 'business_member' ? (
         <OngletsCommerce />

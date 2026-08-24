@@ -67,6 +67,7 @@ import type {
   LienRemis,
   PorteeDeReprise,
   CompteDesReprises,
+  Favori,
   RepriseDuCompte,
   RepriseOuverte,
   StatutDuCommerce,
@@ -620,6 +621,32 @@ export class Api {
    * Sans identifiant de salon : le compte doit vivre avant qu'un salon soit
    * choisi, puisque l'écran le pose au-dessus du champ de motif.
    */
+  // ---- favoris ----
+
+  /** La liste des prestations mises de côté, la plus récente d'abord. */
+  mesFavoris(signal?: AbortSignal) {
+    return this.client.request<Favori[]>(routes.mesFavoris(), { signal });
+  }
+
+  /**
+   * Pose le favori. **Le second appui ne fait rien et ne se plaint pas.**
+   *
+   * Le cœur est un interrupteur : un 409 au second appui obligerait l'écran à
+   * traiter comme une erreur ce qui est le résultat voulu — la prestation est
+   * en favori.
+   */
+  mettreEnFavori(catalogItemId: string) {
+    return this.client.request<void>(routes.mesFavoris(), {
+      methode: 'POST',
+      corps: { catalog_item_id: catalogItemId },
+    });
+  }
+
+  /** Retire le favori. Sans erreur s'il n'y en avait pas. */
+  retirerDesFavoris(catalogItemId: string) {
+    return this.client.request<void>(routes.unFavori(catalogItemId), { methode: 'DELETE' });
+  }
+
   mesReprisesRecentes(signal?: AbortSignal) {
     return this.client.request<CompteDesReprises>(routes.mesReprisesRecentes(), { signal });
   }

@@ -20,6 +20,7 @@ from app.models.catalog import CatalogItem, MenuImport
 from app.models.collaboration import Collaboration, Proof
 from app.models.config_journal import ConfigurationChange
 from app.models.email_verification import EmailVerification
+from app.models.favorites import CreatorFavorite
 from app.models.handover import BusinessHandover
 from app.models.identity import CreatorProfile, SocialAccount, SocialMetricsSnapshot, User
 from app.models.jobs import Job
@@ -33,6 +34,7 @@ from app.models.tracking import CollaborationLink, LinkClick, LinkClickSalt
 from app.models.venue_report import VenueReport
 
 __all__ = [
+    "CreatorFavorite",
     "AuditLog",
     "Base",
     "Booking",

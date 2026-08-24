@@ -974,6 +974,30 @@
         ]
       }
     },
+    "/api/v1/me/favorites": {
+      "get": {
+        "operationId": "read_favorites_api_v1_me_favorites_get",
+        "responses": [
+          "200"
+        ]
+      },
+      "post": {
+        "operationId": "add_favorite_api_v1_me_favorites_post",
+        "responses": [
+          "204",
+          "422"
+        ]
+      }
+    },
+    "/api/v1/me/favorites/{catalog_item_id}": {
+      "delete": {
+        "operationId": "remove_favorite_api_v1_me_favorites__catalog_item_id__delete",
+        "responses": [
+          "204",
+          "422"
+        ]
+      }
+    },
     "/api/v1/me/link-clicks": {
       "get": {
         "operationId": "read_my_audience_api_v1_me_link_clicks_get",

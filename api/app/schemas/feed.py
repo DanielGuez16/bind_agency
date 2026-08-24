@@ -42,6 +42,12 @@ class ItemDuFilRead(BaseModel):
     platform: Platform
     content_format: ContentFormat
     value_ratio: Decimal | None
+    #: Vrai quand la créatrice a mis **cette prestation** en favori. Porté par
+    #: le fil : quatre-vingts cartes ne peuvent pas demander l'état de leur
+    #: cœur une par une. Le même article ouvert à deux paliers fait deux cartes,
+    #: et les deux portent le même cœur — c'est la prestation qu'on met de côté,
+    #: pas le palier par lequel on l'atteint.
+    est_favori: bool
 
 
 class CommerceDuFilRead(BaseModel):

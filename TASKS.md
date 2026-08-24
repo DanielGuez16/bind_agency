@@ -1732,6 +1732,34 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       leur source : ce sont des images de remplacement, elles sont justes de
       sujet et de personne d'autre, et un lancement réel les remplace toutes.
       Les dossiers des seize salons arrivent maintenant avec le dépôt.*
+- [x] **Les favoris : le cœur tient à la prestation, pas à l'offre**
+      ***La décision, et le modèle la tranche contre l'évidence.** Le mur rend
+      une carte par `tier_offer` — c'est ce qu'on voit, ce serait donc ce qu'on
+      épingle. Mais un `tier_offer` meurt de deux façons qui ne disent rien de
+      la prestation : le salon ferme ce palier-là et garde l'autre, ou **la
+      créatrice perd le palier**. Le second est un changement chez elle, et un
+      favori qui disparaît parce qu'on a baissé d'un palier pendant un mois est
+      un favori qu'on n'ose plus poser. `catalog_item` ne meurt qu'à
+      l'archivage, définitif par construction : la seule mort qui le mérite.*
+      ***Le salon n'est pas une seconde cible.** Le geste est un cœur sur une
+      carte du fil, et une carte du fil est une prestation.*
+      ***La liste se lit hors du fil**, et c'est l'autre décision. Le fil est
+      borné par une position et un rayon ; un favori posé à Wynwood doit se
+      relire depuis Kendall. En faire un filtre du fil en aurait fait une liste
+      qui ne s'ouvre qu'à l'endroit où on l'a remplie.*
+      *Une prestation devenue irréservable **reste, avec sa raison** — fermée,
+      salon indisponible, hors palier : trois conduites différentes, et la
+      retirer sans un mot ferait croire à un mauvais appui. Le fil porte
+      `est_favori` : quatre-vingts cartes ne demandent pas leur cœur une par
+      une. L'anonymisation les emporte, et pas depuis le vidage des réseaux
+      sociaux — celui-ci rend la main quand il n'y en a aucun, donc une
+      créatrice sans réseau connecté aurait gardé les siens.*
+      *12 tests, 6 mutations. La première a **survécu** : aucun décor n'avait de
+      prestation offerte nulle part, si bien que « fermée par le salon » et
+      « hors de ta portée » ne divergeaient sur aucun cas.*
+      *Reste à composer : le cœur sur la carte et l'écran de la liste. Il manque
+      d'abord une **icône de cœur** au système — en dessiner une serait poser
+      une marque dans un alphabet qui en a un.*
 - [ ] **Le bandeau ne devient pas une ligne de confirmation**
       *La planche veut qu'il devienne « vous êtes en ligne · 41 créatrices
       peuvent vous réserver », puis disparaisse au bout de sept jours. Deux
@@ -2182,6 +2210,15 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       soit un moyen de la forcer dans le build de test, soit un paramètre
       d'adresse. La marge prise en légende en tient lieu, ce qui n'est pas une
       garantie*
+- [x] **La ligne de l'audience menait nulle part**
+      *`navigate('paliers')` désignait un onglet qui n'a jamais existé — les
+      onglets du créateur sont `parcours`, `audience`, `reservations` et
+      `reglages`, et l'écran des paliers vit dans la pile du fil. L'appui
+      partait, le nom était ignoré, rien ne bougeait. C'était le seul chemin
+      vers les paliers depuis qu'ils ont quitté le fil.*
+      *Le `as never` a effacé la vérification qui l'aurait dit. Deux gardes :
+      une qui lit les noms visés — la cible imbriquée comprise — et une qui
+      appuie et regarde l'écran qui vient. 1447 tests, 2 mutations*
 - [ ] **Neuf planches d'écrans portent encore la v1.0**
       *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
       passés en v3, dans la palette Ambre. Les autres suivent l'ordre du
