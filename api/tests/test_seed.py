@@ -1838,3 +1838,66 @@ async def test_aucun_salon_ouvert_ne_garde_une_couverture_generee(
     assert cles, "aucun commerce ouvert : le décor ne prouverait rien"
     generees = [nom for nom, cle in cles if cle and "genere" in cle]
     assert generees == []
+
+
+class _DepotQuiRetientLesCles:
+    """Un dépôt d'objets qui note tout ce qu'on lui range, sous sa clé."""
+
+    def __init__(self) -> None:
+        self.objets: dict[str, bytes] = {}
+
+    async def deposer(self, contenu: bytes, *, prefixe: str) -> str:
+        cle = f"{prefixe}/{len(self.objets)}"
+        self.objets[cle] = contenu
+        return cle
+
+    async def deposer_sous(self, contenu: bytes, *, cle: str) -> None:
+        self.objets[cle] = contenu
+
+    async def lire(self, cle: str) -> bytes | None:
+        return self.objets.get(cle)
+
+
+async def test_le_semis_range_la_vignette_avec_l_original(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """**Cent deux images, zéro vignette — et rien ne le disait.**
+
+    Le semis appelait le dépôt d'objets directement au lieu de
+    `deposer_une_image`, qui range les deux. Aucune image du jeu de
+    démonstration n'avait donc de vignette, et le mur — qui la demande —
+    tombait à chaque fois sur le repli vers l'original : 169 Ko de moyenne au
+    lieu de 18, pour quatre-vingts cartes. Treize mégaoctets contre un et demi.
+
+    **Le repli masquait l'absence.** La route rend l'original quand la vignette
+    manque, et ce repli existe pour de bonnes raisons — il a sauvé les images
+    déposées avant que les vignettes existent. Ici, l'écran était juste,
+    seulement lent : aucun test ne pouvait le voir, puisque l'image arrivait.
+
+    Le décor éprouve **les deux chemins**, la vraie photo et le dégradé : le
+    second est le seul qui existe en intégration continue, et c'est celui qu'on
+    aurait laissé sans vignette sans y penser.
+    """
+    from app import seed_demo
+    from app.services import storage
+
+    depot = _DepotQuiRetientLesCles()
+    monkeypatch.setattr(storage, "get_object_store", lambda: depot)
+
+    # Le dégradé : le chemin de l'intégration continue, où aucun fichier n'existe.
+    cle, trouvee, _ = await seed_demo._deposer_photo(
+        depot,
+        chemin="commerces/inexistant/cover.jpg",
+        taille_reelle=(1200, 675),
+        graine="un salon",
+        taille_generee=(1200, 675),
+        famille="business",
+    )
+
+    assert trouvee is False
+    assert storage.cle_de_vignette(cle) in depot.objets, (
+        "le dégradé est rangé sans vignette : le mur retombera sur l'original"
+    )
+    # Et elle pèse moins : une vignette qui rendrait l'original octet pour octet
+    # passerait l'assertion précédente sans rien faire gagner.
+    assert len(depot.objets[storage.cle_de_vignette(cle)]) < len(depot.objets[cle])
