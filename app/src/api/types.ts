@@ -930,6 +930,30 @@ export type LigneDeFile = {
   meme_motif_repete: boolean;
 };
 
+/**
+ * Un motif qui boucle, et sur combien de dossiers.
+ *
+ * **Un signal sur le produit, pas sur les créatrices.** Chaque « fermer sans
+ * faute » est le constat qu'une demande n'a pas été transmise. Un motif opposé
+ * trois fois de suite sur un dossier dit que cette demande-là n'a pas été
+ * comprise ; le même motif dans ce cas sur beaucoup de dossiers dit qu'une
+ * exigence est mal formulée quelque part — dans le libellé d'un palier, dans
+ * la fiche d'un salon, ou dans le vocabulaire fermé lui-même.
+ *
+ * **Deux nombres, et c'est le rapport qui fait l'argument.** `dossiers` compte
+ * ceux où le motif s'est répété jusqu'au seuil, `dossiers_touches` tous ceux
+ * où il a été opposé au moins une fois. « La mention manque » sur cent
+ * dossiers dont deux bouclent est un motif difficile ; sur douze dossiers dont
+ * dix bouclent, c'est un motif incompréhensible, et ce n'est pas le même
+ * travail qui l'éteint.
+ */
+export type MotifQuiRevient = {
+  /** Un code du vocabulaire fermé — ou, pour les plus anciens, une phrase. */
+  motif: string;
+  dossiers: number;
+  dossiers_touches: number;
+};
+
 /** Une demande de nouvelle soumission, telle que le journal l'a écrite. */
 export type Tentative = {
   /** Un code du vocabulaire fermé — ou, pour les plus anciennes, une phrase. */

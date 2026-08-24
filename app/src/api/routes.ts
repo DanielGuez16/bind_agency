@@ -146,6 +146,7 @@ export const routes = {
   deciderVerification: (compteId: string) =>
     chemin(`/admin/social-accounts/${compteId}/verification`),
   fileDArbitrage: () => chemin('/admin/collaborations/review'),
+  motifsQuiReviennent: () => chemin('/admin/collaborations/motifs-qui-reviennent'),
   arbitrer: (collaborationId: string) =>
     chemin(`/admin/collaborations/${collaborationId}/decision`),
   paliersAdmin: () => chemin('/admin/tiers'),
@@ -269,6 +270,7 @@ export const METHODES: Record<keyof typeof routes, ('GET' | 'POST' | 'PATCH' | '
     fileDeVerification: ['GET'],
     deciderVerification: ['POST'],
     fileDArbitrage: ['GET'],
+    motifsQuiReviennent: ['GET'],
     arbitrer: ['POST'],
     paliersAdmin: ['GET', 'POST'],
     palierAdmin: ['GET', 'PATCH', 'DELETE'],

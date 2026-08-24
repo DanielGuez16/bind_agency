@@ -62,8 +62,13 @@ function monter(espion?: (chemin: string) => void) {
     baseUrl: 'https://api.test',
     coffre: { lire: async () => null, ecrire: async () => {} },
     fetchImpl: async (url) => {
-      espion?.(String(url));
-      return { ok: true, status: 200, json: async () => FILE } as Response;
+      const chemin = String(url);
+      espion?.(chemin);
+      // **Le décor répond par chemin, jamais la même forme à tout.** L'écran
+      // charge deux routes ; rendre la file à l'agrégat lui donnerait des
+      // lignes sans motif, et l'écran les afficherait sans que rien ne tombe.
+      const corps = chemin.includes('motifs-qui-reviennent') ? [] : FILE;
+      return { ok: true, status: 200, json: async () => corps } as Response;
     },
   });
 

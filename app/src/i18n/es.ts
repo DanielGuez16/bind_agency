@@ -700,6 +700,10 @@ export const es: Catalogue = {
     plansDevisesMelees: 'Los planes tienen monedas distintas, así que no se suman.',
     plansInactif: 'Retirado',
     filtreTous: 'Todos',
+    motifsQuiReviennentTitre: 'Lo que vuelve una y otra vez',
+    motifsQuiReviennentAide:
+      'Cada «cerrar sin falta» es una petición que nunca llegó a la creadora en palabras sobre las que pudiera actuar. Estos son los motivos que más se repiten: piden una redacción nueva, no un arbitraje más.',
+    motifBoucle: '{{dossiers}} en bucle · {{touches}} señalados',
     formeMeme: 'mismo',
     formeMemeChose: 'Se pidió lo mismo {{n}} veces',
     formeChosesDifferentes: 'Se pidieron {{n}} cosas distintas',

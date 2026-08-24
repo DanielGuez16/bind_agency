@@ -41,6 +41,7 @@ import type {
   IssueDArbitrage,
   JourneeDuCommerce,
   LigneDeFile,
+  MotifQuiRevient,
   PlanAdministrateur,
   PlanSouscriptible,
   PlateformeConnectable,
@@ -1153,6 +1154,18 @@ export class Api {
 
   fileDArbitrage(signal?: AbortSignal) {
     return this.client.request<LigneDeFile[]>(routes.fileDArbitrage(), { signal });
+  }
+
+  /**
+   * Les motifs qui bouclent, du plus fréquent au moins fréquent.
+   *
+   * **L'ordre vient du serveur et ne se rejoue pas ici.** Il trie sur le
+   * nombre de dossiers qui bouclent ; retrier sur le rapport à
+   * `dossiers_touches` ferait remonter un motif vu deux fois, ce qui est du
+   * bruit et non un signal.
+   */
+  motifsQuiReviennent(signal?: AbortSignal) {
+    return this.client.request<MotifQuiRevient[]>(routes.motifsQuiReviennent(), { signal });
   }
 
   arbitrer(

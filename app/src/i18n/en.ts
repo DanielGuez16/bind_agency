@@ -769,6 +769,12 @@ export const en = {
     plansDevisesMelees: 'Plans are priced in several currencies, so they do not add up.',
     plansInactif: 'Withdrawn',
     filtreTous: 'All',
+    motifsQuiReviennentTitre: 'What keeps coming back',
+    motifsQuiReviennentAide:
+      'Every “close, no fault” is a request that never reached the creator in words they could act on. These are the reasons that loop the most — they call for a wording rewritten, not one more arbitration.',
+    // Deux nombres et aucun verdict : le rapport se lit sans arithmétique, et
+    // écrire « incompréhensible » à la place du lecteur demanderait un seuil.
+    motifBoucle: '{{dossiers}} looping · {{touches}} raised',
     formeMeme: 'same',
     formeMemeChose: 'The same thing was asked {{n}} times',
     formeChosesDifferentes: '{{n}} different things were asked',
