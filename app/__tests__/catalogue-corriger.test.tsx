@@ -10,6 +10,12 @@
  * peut mentir : une prestation réservée qui disparaîtrait laisserait douze
  * réservations pointer vers rien.
  */
+let mockLarge = false;
+jest.mock('../src/shell/gabarit', () => ({
+  ...jest.requireActual('../src/shell/gabarit'),
+  useGabarit: () => ({ largeur: mockLarge ? 1512 : 390, large: mockLarge, place: () => mockLarge }),
+}));
+
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
 import { ApiClient, ApiProvider } from '../src/api';
@@ -479,5 +485,53 @@ describe('fermer une offre', () => {
       expect(envois.some((e) => e.url.includes('/activation'))).toBe(true),
     );
     expect(envois.find((e) => e.url.includes('/activation'))?.corps).toEqual({ is_active: true });
+  });
+});
+
+/**
+ * Les quatre colonnes, et **seulement là où la place existe**.
+ *
+ * La planche est dessinée à 1512. Sur 390, quatre colonnes ne sont pas des
+ * colonnes : le nom se tronque au troisième mot et la durée passe sous le
+ * palier. La carte du comptoir reste donc la carte.
+ */
+describe('la table des prestations', () => {
+  async function monterLarge(large: boolean) {
+    // Le gabarit vient d'un contexte que la coquille pose ; le double le pose
+    // à la place, plutôt que de mesurer une fenêtre qui n'existe pas en test.
+    mockLarge = large;
+    const api = new ApiClient({
+      baseUrl: 'https://api.test',
+      coffre: { lire: async () => null, ecrire: async () => {} },
+      fetchImpl: (async (url: RequestInfo | URL) =>
+        ({
+          ok: true,
+          status: 200,
+          json: async () => (String(url).includes('/catalog-items') ? [ITEM] : []),
+        }) as Response) as unknown as typeof fetch,
+    });
+    return await render(
+      <I18nProvider initialLocale="en">
+        <ThemeProvider role="merchant">
+          <ApiProvider client={api}>
+            <CatalogueScreen businessId="b1" />
+          </ApiProvider>
+        </ThemeProvider>
+      </I18nProvider>,
+    );
+  }
+
+  it('paraît au-delà du seuil, et pas en dessous', async () => {
+    // **Les deux largeurs, sur le même décor.** Un test qui n'éprouve que la
+    // grande passerait avec une table posée partout — c'est-à-dire avec ce
+    // qu'on a refusé de livrer.
+    const grand = await monterLarge(true);
+    await waitFor(() => expect(screen.getByTestId('entete-des-prestations')).toBeTruthy());
+    await grand.unmount();
+
+    const petit = await monterLarge(false);
+    await waitFor(() => expect(screen.getByTestId('prestation-i1')).toBeTruthy());
+    expect(screen.queryByTestId('entete-des-prestations')).toBeNull();
+    await petit.unmount();
   });
 });

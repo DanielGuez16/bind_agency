@@ -209,6 +209,30 @@ gh api repos/DanielGuez16/bind_agency/branches/main/protection \
   --jq .required_status_checks.contexts
 ```
 
+**Un champ qui « arrive par l'autre conversation » se compose à deux, et on se
+le dit avant d'écrire.** Trois collisions dans une seule session : le compte de
+prestations du fil, la ligne « et il s'ouvre » des favoris, et la réponse sur
+les deux familles d'intermittence. Les trois fois, les deux conversations ont
+trouvé la même chose à moins d'une heure d'écart ; les trois fois, une des deux
+versions a été jetée après avoir été écrite, testée et poussée.
+
+Ce n'est pas une série de coïncidences, c'est la conséquence mécanique d'une
+demande de champ : celui qui le sert sait à quoi il sert, donc il sait aussi
+composer l'écran qui le lit — et il le fait, parce que le champ sans lecteur est
+précisément ce que les gardes du dépôt lui reprochent.
+
+**On s'annonce déjà, et c'est ce qui a rendu chaque tri immédiat.** Ce qui
+manque n'est pas l'annonce, c'est son moment : elle part quand le travail est
+fini. La question tient en une ligne et se pose **avant** d'ouvrir l'éditeur :
+
+> ce champ arrive de chez toi — qui compose l'écran ?
+
+Une réponse coûte deux minutes ; une collision coûte une tranche entière. Et
+quand elle a déjà eu lieu, la règle est simple et ne se discute pas : **on garde
+la version fusionnée**, on lit ce qu'elle fait, et on jette la sienne. Deux
+calculs de la même chose finissent par diverger, et c'est vrai entre deux
+sessions comme à l'intérieur d'une seule.
+
 **Commiter avant de muter, sans exception.** L'exercice de mutation restaure
 son sabotage par `git checkout` ; sur du travail non commité, la commande efface
 le travail lui-même. C'est arrivé deux fois dans la même journée — cinq
