@@ -1760,6 +1760,37 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Reste à composer : le cœur sur la carte et l'écran de la liste. Il manque
       d'abord une **icône de cœur** au système — en dessiner une serait poser
       une marque dans un alphabet qui en a un.*
+- [x] **Le semis semait après la fermeture, et la journée du jour était vide**
+      *Dix-neuf réservations sur vingt partaient au lendemain : le choix du
+      créneau ne regardait qu'en avant, et semé à 22 h tous les salons de Miami
+      sont fermés. L'écran « Aujourd'hui » — le premier qu'on ouvre en
+      démonstration — était donc vide à l'heure où on le montre.*
+      *Le semis prend maintenant le prochain créneau **du jour**, et à défaut le
+      **dernier déjà passé du même jour**. Mesuré : 19 salons sur 19 ont une
+      ligne aujourd'hui, contre 1 avant.*
+      ***Ce qu'un créneau passé empêche, et qu'on ne contourne pas.** Une heure
+      dépassée ne s'accepte pas — `trancher` lève `CreneauDepasse` — donc chez
+      un salon qui valide, la ligne reste en attente. C'est un état vrai, que la
+      journée affiche, et qui montre ce qui arrive quand on ne tranche pas à
+      temps. Le semis ne force rien.*
+      *Deux tests portaient l'ancienne promesse : « une réservation confirmée »
+      et « jamais derrière nous ». Réécrits sur la nouvelle — une réservation
+      **dans la journée courante**, à toute heure. Une mutation a survécu : rien
+      n'épinglait « le dernier » créneau passé plutôt que n'importe lequel, et
+      `min` au lieu de `max` posait le rendez-vous à l'ouverture. 3 mutations*
+- [x] **Les 46 images sous attribution : l'obligation supprimée, pas documentée**
+      ***Ce que `by` et `by-sa` exigent suit l'image, pas la page de crédits.***
+      *Créditer partout où l'image paraît vaut dans l'application, mais aussi
+      dans une capture collée à une planche, un message envoyé à un salon, une
+      URL publique. Une page de crédits aurait suffi en droit et se serait
+      détachée au premier partage.*
+      *Mesuré avant de choisir : 9 mots-clés sur 10 ont des résultats en `cc0`
+      ou `pdm`. Les 52 sont donc reprises sous ces deux licences — domaine
+      public ou renonciation — et **plus une seule n'exige d'attribution**. Deux
+      recherches, dix minutes, et la question n'existe plus.*
+      *Quatorze ont un petit côté entre 640 et 798 px, donc légèrement agrandies
+      au recadrage en 800 × 800. Visible de près, sans importance pour ce
+      qu'elles servent à montrer.*
 - [ ] **Le bandeau ne devient pas une ligne de confirmation**
       *La planche veut qu'il devienne « vous êtes en ligne · 41 créatrices
       peuvent vous réserver », puis disparaisse au bout de sept jours. Deux
