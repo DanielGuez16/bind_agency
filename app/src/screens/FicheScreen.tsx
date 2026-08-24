@@ -412,7 +412,7 @@ function Etiquette({ texte, testID }: { texte: string; testID?: string }) {
       testID={testID}
       style={{
         borderRadius: radius['radius.sm'],
-        backgroundColor: c['bg.deep'],
+        backgroundColor: c['bg.inset'],
         paddingHorizontal: 11,
         paddingVertical: 6,
       }}
@@ -538,7 +538,7 @@ function FeuilleDeSortie({
       </View>
       <Texte couleur="ink.soft">{t('parcours.sortieCorps', { nom })}</Texte>
 
-      <View style={{ backgroundColor: c['bg.deep'], padding: 14 }}>
+      <View style={{ backgroundColor: c['bg.inset'], padding: 14 }}>
         <Texte variante="type.mono" ellipseSurNomPropre testID="domaine-de-sortie">
           {domaineDe(lien)}
         </Texte>
@@ -864,7 +864,7 @@ function ObstacleDeLOffre({ offre }: { offre: OffreDeLaFiche }) {
       testID="offre-fermee"
       style={{
         borderRadius: radius['radius.md'],
-        backgroundColor: c['bg.deep'],
+        backgroundColor: c['bg.inset'],
         padding: 14,
         gap: 9,
       }}

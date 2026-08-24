@@ -221,7 +221,7 @@ function LigneCopiable({
         testID={`${testID}-copier`}
         style={{
           borderRadius: radius['radius.sm'],
-          backgroundColor: c['bg.deep'],
+          backgroundColor: c['bg.inset'],
           paddingHorizontal: 11,
           paddingVertical: 6,
           overflow: 'hidden',

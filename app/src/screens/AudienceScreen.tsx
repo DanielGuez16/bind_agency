@@ -301,7 +301,7 @@ function CarteDuCompte({
             gap: 7,
             padding: 16,
             borderRadius: radius['radius.md'],
-            backgroundColor: c['bg.deep'],
+            backgroundColor: c['bg.inset'],
           }}
         >
           <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
@@ -511,7 +511,7 @@ function Pastille({ etat, testID }: { etat: EtatDuCompte; testID: string }) {
       testID={testID}
       style={{
         borderRadius: radius['radius.sm'],
-        backgroundColor: vivant ? c['status.success.surface'] : c['bg.deep'],
+        backgroundColor: vivant ? c['status.success.surface'] : c['bg.inset'],
         paddingHorizontal: 10,
         paddingVertical: 5,
       }}
@@ -648,7 +648,7 @@ function CarteDuScore({
             padding: 12,
             paddingHorizontal: 14,
             borderRadius: radius['radius.md'],
-            backgroundColor: c['bg.deep'],
+            backgroundColor: c['bg.inset'],
           }}
         >
           <Texte variante="type.bodyStrong">{t('parcours.audiencePasEncoreDeScore')}</Texte>
@@ -771,7 +771,7 @@ function ARattacher({
               // les obligerait toutes deux à porter l'ombre. Le neutre en
               // retrait dit la même chose sans rien contredire : ce qui est
               // posé et blanc est à vous, ce qui est creusé ne l'est pas encore.
-              backgroundColor: c['bg.deep'],
+              backgroundColor: c['bg.inset'],
             }}
             testID={`ligne-${reseau}`}
           >

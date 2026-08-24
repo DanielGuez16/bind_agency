@@ -583,9 +583,14 @@ function Dossier({ ligne, onTranche }: { ligne: LigneDeFile; onTranche: () => vo
                 <Texte variante="type.mono" couleur="ink.mute">
                   {rang + 1}
                 </Texte>
+                {/* **Un motif passé n'avertit pas, il raconte.** Il portait
+                    `status.warning.text`, sans glyphe — donc rien, la teinte de
+                    l'avertissement étant neutre : ce qui le distingue est son
+                    glyphe, et un glyphe sur chaque ligne d'un historique serait
+                    du bruit. */}
                 <Texte
                   variante="type.caption"
-                  couleur="status.warning.text"
+                  couleur="ink.default"
                   style={{ flex: 1 }}
                   testID={rang === ligne.tentatives.length - 1 ? 'dernier-motif' : undefined}
                 >

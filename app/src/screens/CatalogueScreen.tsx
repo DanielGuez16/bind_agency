@@ -818,7 +818,7 @@ function LignePrestation({
               padding: 12,
               paddingHorizontal: 14,
               borderRadius: radius['radius.md'],
-              backgroundColor: c['bg.deep'],
+              backgroundColor: c['bg.inset'],
             }}
           >
             <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 9 }}>

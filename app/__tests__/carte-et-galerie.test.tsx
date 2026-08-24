@@ -69,7 +69,7 @@ describe('on regarde une photo sur du sombre, on lit un texte sur du clair', () 
     await waitFor(() => expect(screen.getByTestId('visionneuse-de-galerie')).toBeTruthy());
 
     expect(style(screen.getByTestId('visionneuse-de-galerie')).backgroundColor).toBe(
-      couleurs['bg.sunken'],
+      couleurs['bg.onDark'],
     );
   });
 

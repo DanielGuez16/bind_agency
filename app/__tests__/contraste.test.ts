@@ -96,15 +96,15 @@ const PAIRES: Paire[] = [
   // --- les trois encres qui portent du texte, sur les trois surfaces claires
   { encre: 'ink.default', fond: 'bg.page', seuil: TEXTE, raison: 'le corps de texte' },
   { encre: 'ink.default', fond: 'bg.surface', seuil: TEXTE, raison: 'le corps sur une carte' },
-  { encre: 'ink.default', fond: 'bg.deep', seuil: TEXTE, raison: 'le corps sur un encart' },
+  { encre: 'ink.default', fond: 'bg.inset', seuil: TEXTE, raison: 'le corps sur un encart' },
   { encre: 'ink.soft', fond: 'bg.page', seuil: TEXTE, raison: 'la seconde ligne' },
   { encre: 'ink.soft', fond: 'bg.surface', seuil: TEXTE, raison: 'la seconde ligne sur une carte' },
-  { encre: 'ink.soft', fond: 'bg.deep', seuil: TEXTE, raison: 'la seconde ligne sur un encart' },
+  { encre: 'ink.soft', fond: 'bg.inset', seuil: TEXTE, raison: 'la seconde ligne sur un encart' },
   { encre: 'ink.mute', fond: 'bg.page', seuil: TEXTE, raison: 'la légende, et le minimum du 11 px' },
   { encre: 'ink.mute', fond: 'bg.surface', seuil: TEXTE, raison: 'la légende sur une carte' },
   {
     encre: 'ink.mute',
-    fond: 'bg.deep',
+    fond: 'bg.inset',
     // **4,36 mesuré, et c'est sous le seuil du texte ordinaire.** La paire
     // existe — un encart gris porte des légendes — et elle ne passe qu'au titre
     // du grand texte. Écrit ici plutôt que corrigé seul : changer une valeur de
@@ -132,7 +132,7 @@ const PAIRES: Paire[] = [
 
   // --- ce qui se pose sur du sombre
   { encre: 'ink.onDark', fond: 'bg.inverse', seuil: TEXTE, raison: 'le texte des surfaces sombres' },
-  { encre: 'ink.onDark', fond: 'bg.sunken', seuil: TEXTE, raison: 'le texte du fond le plus sombre' },
+  { encre: 'ink.onDark', fond: 'bg.onDark', seuil: TEXTE, raison: 'le texte du fond le plus sombre' },
   {
     encre: 'ink.faint',
     fond: 'bg.inverse',
@@ -158,13 +158,13 @@ const PAIRES: Paire[] = [
   },
 
   // --- ce qui délimite sans porter de texte
-  { encre: 'line.ink', fond: 'bg.surface', seuil: CONTOUR, raison: 'le contour qui engage' },
+  { encre: 'line.solo', fond: 'bg.surface', seuil: CONTOUR, raison: 'le contour qui engage' },
   {
     encre: 'line.default',
     fond: 'bg.surface',
     // 1,29 : un filet de séparation n'est pas un contrôle, et le critère ne
     // s'applique qu'à ce qui délimite quelque chose d'actionnable. Le contour
-    // qui engage est `line.ink`, mesuré juste au-dessus.
+    // qui engage est `line.solo`, mesuré juste au-dessus.
     seuil: INACTIF,
     raison: 'filet de séparation, décoratif : rien ne se lit ni ne se presse dessus',
   },

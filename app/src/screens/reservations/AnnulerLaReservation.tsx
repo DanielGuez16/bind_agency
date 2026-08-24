@@ -191,9 +191,9 @@ export function AnnulerLaReservation({
                 padding: 16,
                 paddingLeft: 13,
                 borderRadius: radius['radius.lg'],
-                backgroundColor: c['bg.deep'],
+                backgroundColor: c['bg.inset'],
                 borderLeftWidth: 3,
-                borderLeftColor: c['line.ink'],
+                borderLeftColor: c['line.solo'],
               }}
             >
               <Texte variante="type.bodyStrong">{t('parcours.annulerVautMieux')}</Texte>

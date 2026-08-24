@@ -505,7 +505,7 @@ describe('ce que la carte peint', () => {
     const carteReprise = styleDe(screen.getByTestId('reservation-reprise'));
     const cartePremiere = styleDe(screen.getByTestId('reservation-premiere'));
 
-    expect(carteReprise.borderColor).toBe(couleurs['line.ink']);
+    expect(carteReprise.borderColor).toBe(couleurs['line.solo']);
     // **Et l'ombre ne s'y ajoute pas.** Un filet fort sous une ombre les annule
     // l'une l'autre : c'est la règle qui vaut déjà entre l'ombre et le filet
     // clair, et le test la tient pour le troisième traitement aussi.
@@ -513,7 +513,7 @@ describe('ce que la carte peint', () => {
 
     // La divergence, sans laquelle le test ne dit rien : la première demande
     // garde l'ombre et n'a pas de contour d'encre.
-    expect(cartePremiere.borderColor).not.toBe(couleurs['line.ink']);
+    expect(cartePremiere.borderColor).not.toBe(couleurs['line.solo']);
     expect(cartePremiere.shadowOpacity ?? 0).toBeGreaterThan(0);
   });
 

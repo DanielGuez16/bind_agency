@@ -23,7 +23,7 @@ const HAUTEUR = 8;
 
 export function Jauge({
   fraction,
-  piste = 'bg.deep',
+  piste = 'bg.inset',
   testID,
 }: {
   /** De zéro à un. Bornée ici plutôt que chez l'appelant : une valeur aberrante

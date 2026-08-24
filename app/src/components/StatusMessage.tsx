@@ -14,7 +14,7 @@
  * obligatoire.** C'est la conséquence la plus lourde de la direction v1.0, et
  * elle est volontaire. Un ambre d'avertissement dans un système orange est
  * indiscernable de la marque : l'utilisateur lit une mise en avant, pas une
- * alerte. L'avertissement devient donc neutre et emphatique — fond `bg.deep`,
+ * alerte. L'avertissement devient donc neutre et emphatique — fond `bg.inset`,
  * encre, filet d'encre — et le glyphe est le **seul marqueur qui lui reste**.
  *
  * Un avertissement sans glyphe est un bug, pas un choix. La règle est portée

@@ -521,7 +521,7 @@ function PrestationsOuvertes({
       onPressIn={enfoncement.onPressIn}
       onPressOut={enfoncement.onPressOut}
       testID="prestations-ouvertes"
-      style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: size.hit }}
+      style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: size.touchMin }}
     >
       <Texte variante="type.body" style={{ flex: 1 }}>
         {phrase}

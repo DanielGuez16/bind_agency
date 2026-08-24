@@ -96,7 +96,7 @@ export function Button({
   // entre deux actions de même niveau.
   const bordure: Record<ButtonVariant, string | undefined> = {
     primary: undefined,
-    secondary: c['line.ink'],
+    secondary: c['line.solo'],
     ghost: undefined,
     danger: c['status.danger.rule'],
   };
@@ -125,7 +125,7 @@ export function Button({
       style={({ pressed }): ViewStyle => ({
         // La hauteur minimale de zone tactile prime sur la taille demandée :
         // un bouton `sm` de 36 reste pressable sur 44.
-        minHeight: Math.max(HAUTEURS[taille], size.hit),
+        minHeight: Math.max(HAUTEURS[taille], size.touchMin),
         paddingHorizontal: 16,
         paddingVertical: 8,
         borderRadius: radius['radius.pill'],

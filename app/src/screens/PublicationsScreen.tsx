@@ -286,8 +286,12 @@ function Controle({
         </View>
       ) : null}
 
+      {/* `ink.default` : le motif de la dernière tentative se lit, il n'alerte
+          pas. Ce qui distingue une reprise d'un premier envoi est le mot —
+          « tentative 2 » — pas une teinte, et l'avertissement d'Ambre se
+          distingue par son glyphe, qui n'aurait rien à faire ici. */}
       {ligne.dernier_motif ? (
-        <Texte variante="type.caption" couleur="status.warning.text" testID="dernier-motif">
+        <Texte variante="type.caption" couleur="ink.default" testID="dernier-motif">
           {t('commerce.tentative', { n: ligne.attempts_count })} ·{' '}
           {libelleDuMotif(t, ligne.dernier_motif)}
         </Texte>

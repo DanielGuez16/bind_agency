@@ -2,7 +2,7 @@
  * Les deux visionneuses plein écran, et ce qui les sépare.
  *
  * **Une carte se lit, une galerie se regarde.** C'est toute la règle du lot 4,
- * et elle tient dans une couleur de fond : la galerie reste sur `bg.sunken`,
+ * et elle tient dans une couleur de fond : la galerie reste sur `bg.onDark`,
  * la carte s'ouvre sur `bg.page`. On regarde une photo sur du sombre, où rien
  * ne dispute la lumière à l'image ; on lit un texte sur du clair, parce qu'une
  * page de carte est faite d'encre sur du papier et qu'un fond noir autour la
@@ -50,7 +50,7 @@ import { radius, useColors } from '../theme';
  */
 export const FOND_DES_VISIONNEUSES = {
   /** On regarde une photo sur du sombre. */
-  galerie: 'bg.sunken',
+  galerie: 'bg.onDark',
   /** On lit un texte sur du clair. */
   carte: 'bg.page',
 } as const;
@@ -295,7 +295,7 @@ export function VisionneuseDeCarte({
                   width: 40,
                   height: 52,
                   borderWidth: rang === courante ? 2 : 1,
-                  borderColor: c[rang === courante ? 'line.ink' : 'line.strong'],
+                  borderColor: c[rang === courante ? 'line.solo' : 'line.strong'],
                   // La page courante est pleine, les autres en retrait. Une
                   // opacité plutôt qu'un voile : c'est la seule propriété
                   // animable du système, et rien ne se pose par-dessus.

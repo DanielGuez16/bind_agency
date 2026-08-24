@@ -133,8 +133,10 @@ export function MediaFallback({
       <Texte variante="type.section" couleur="media.placeholderText">
         {monogramme.slice(0, 2).toUpperCase()}
       </Texte>
+      {/* Un libellé de tâche n'est pas une alerte : il portait la teinte
+          d'avertissement, qui ne distingue rien sans son glyphe. */}
       {commeTache && labelTache ? (
-        <Texte variante="type.caption" couleur="status.warning.text">
+        <Texte variante="type.caption" couleur="ink.soft">
           {labelTache}
         </Texte>
       ) : null}

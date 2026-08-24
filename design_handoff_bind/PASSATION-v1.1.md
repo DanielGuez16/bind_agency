@@ -154,12 +154,12 @@ qui les a laissées diverger en v1.0.
 | écart `500` → `600` | 1,4:1 | Appui visible |
 | `brand.700` sur `bg.surface` | 5,3:1 | Texte orange, toute taille |
 | `brand.700` sur `bg.page` | 5,0:1 | Texte orange, toute taille |
-| `brand.700` sur `bg.deep` | 4,6:1 | Passe de peu — éviter sous 13 px |
+| `brand.700` sur `bg.inset` | 4,6:1 | Passe de peu — éviter sous 13 px |
 | `brand.500` sur `bg.surface` | 2,4:1 | **Interdit en texte** |
 | `ink.default` sur `bg.page` | 17,3:1 | — |
 | `ink.soft` sur `bg.page` | 9,9:1 | Corps long |
 | `ink.mute` sur `bg.page` | 4,8:1 | Passe |
-| `ink.mute` sur `bg.deep` | 4,4:1 | **Échoue** — descendre à `ink.soft` |
+| `ink.mute` sur `bg.inset` | 4,4:1 | **Échoue** — descendre à `ink.soft` |
 | `ink.faint` sur `bg.page` | 2,5:1 | **Jamais de texte à lire** |
 | `ink.onDark` sur `bg.inverse` | 16,7:1 | — |
 | `brand.400` sur `bg.inverse` | 9,2:1 | La marque sur sombre |
@@ -176,7 +176,7 @@ ensemble, sans compromis à documenter.
 lire — son seul emploi légitime est le libellé d'un champ désactivé, où
 l'illisibilité *est* le message. Trois erreurs de contraste sur quatre, dans
 l'historique de ce projet, viennent d'un `ink.faint` employé comme couleur de
-texte. Et `ink.mute` échoue sur `bg.deep` : c'est le seul couple de la table qui
+texte. Et `ink.mute` échoue sur `bg.inset` : c'est le seul couple de la table qui
 passe sur deux surfaces et échoue sur la troisième.
 
 ## 6. Ce qui est à refaire, et dans quel ordre
@@ -220,5 +220,5 @@ Les règles de produit, qui n'ont jamais dépendu de la palette :
   espagnol, clés symétriques.
 
 L'écran de code de retrait et la galerie restent **hors système** : blanc pur sur
-noir pur pour le premier, `bg.sunken` pour la seconde, sans marque, sans orange et
+noir pur pour le premier, `bg.onDark` pour la seconde, sans marque, sans orange et
 sans rayon.

@@ -115,9 +115,9 @@ export function SelecteurDeSalon({
               gap: 10,
               paddingHorizontal: 12,
               borderRadius: radius['radius.md'],
-              // `bg.deep` : `bg.sunken` est le creux du kit sombre, et il
+              // `bg.inset` : `bg.onDark` est le creux du kit sombre, et il
               // peignait la ligne du salon courant en noir.
-              backgroundColor: courant ? c['bg.deep'] : 'transparent',
+              backgroundColor: courant ? c['bg.inset'] : 'transparent',
             })}
           >
             <View style={{ flex: 1, minWidth: 0 }}>
@@ -132,7 +132,15 @@ export function SelecteurDeSalon({
             </View>
             {/* **Avant la coche**, parce que la coche dit où l'on est et que
                 le compte dit où aller : l'ordre de lecture suit celui de la
-                décision. */}
+                décision.
+
+                **Le registre de la marque, et non celui de l'avertissement.**
+                La pastille portait `status.warning` : un salon qui attend n'est
+                pas en défaut, et l'avertissement d'Ambre annonce un problème
+                — par son glyphe, puisque sa teinte est neutre. Il n'y avait
+                donc ni la couleur qu'on croyait poser, ni le sens qu'on voulait
+                dire. Le pâle de la marque attire l'œil sans accuser, et c'est
+                déjà le registre de la ligne active. */}
             {salon.decisions_en_attente ? (
               <View
                 testID={`decisions-${salon.id}`}
@@ -140,10 +148,10 @@ export function SelecteurDeSalon({
                   paddingHorizontal: 8,
                   paddingVertical: 2,
                   borderRadius: radius['radius.sm'],
-                  backgroundColor: c['status.warning.surface'],
+                  backgroundColor: c['brand.100'],
                 }}
               >
-                <Texte variante="type.monoSmall" couleur="status.warning.text">
+                <Texte variante="type.monoSmall" couleur="brand.900">
                   {t('commerce.selecteurDecisions', { count: salon.decisions_en_attente })}
                 </Texte>
               </View>

@@ -60,7 +60,7 @@ export function DayPicker({
                 ? c['bg.inverse']
                 : jour.disponible
                   ? 'transparent'
-                  : c['bg.deep'],
+                  : c['bg.inset'],
           opacity: pressed ? 0.7 : 1,
         })}
           >
@@ -127,7 +127,7 @@ export function SlotPicker({
               backgroundColor: choisi
                 ? c['brand.50']
                 : creneau.pris
-                  ? c['bg.deep']
+                  ? c['bg.inset']
                   : 'transparent',
           opacity: pressed ? 0.7 : 1,
         })}

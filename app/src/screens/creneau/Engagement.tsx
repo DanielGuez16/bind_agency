@@ -114,7 +114,7 @@ export function Engagement({
         testID="si-vous-ne-venez-pas"
         style={{
           borderRadius: radius['radius.lg'],
-          backgroundColor: c['bg.deep'],
+          backgroundColor: c['bg.inset'],
           padding: 16,
           gap: 9,
         }}
