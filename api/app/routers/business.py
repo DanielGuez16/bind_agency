@@ -228,6 +228,16 @@ async def activation_steps(business: CurrentBusiness, session: SessionDep) -> Vu
         en_ligne_depuis=depuis,
         createurs_qui_peuvent_reserver=portee.peuvent_reserver if portee else None,
         confirmation_jours=jours,
+        # Le motif vient de la colonne, pas du journal : lire un état courant
+        # dans un journal d'événements est ce qui a déjà coûté cher ici, et la
+        # contrainte de la table garantit qu'il accompagne exactement l'état
+        # suspendu. La date, elle, ne peut venir que du journal.
+        suspension_motif=business.suspended_reason,
+        suspendu_depuis=(
+            await composition_service.derniere_suspension(session, business.id)
+            if business.status is BusinessStatus.SUSPENDED
+            else None
+        ),
     )
 
 

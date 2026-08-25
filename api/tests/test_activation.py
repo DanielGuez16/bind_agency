@@ -366,3 +366,63 @@ async def test_la_portee_locale_accompagne_la_date_puis_s_arrete(
         "hors fenêtre, le nombre est servi — et donc calculé pour rien"
     )
     assert dehors["en_ligne_depuis"] is not None, "la date, elle, reste"
+
+
+async def test_la_vue_dit_pourquoi_le_salon_est_hors_du_fil_et_depuis_quand(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """**Le seul champ de cet écran qui évite un message au support.**
+
+    Sans lui, un salon hors du fil lit une sortie sans cause et écrit pour la
+    demander. Les deux valeurs que le produit sait produire se disent sans
+    détour : il s'est mis en pause, ou il n'a pas payé.
+
+    **Le décor met en pause, rouvre, puis remet en pause.** C'est le seul
+    montage où « la dernière sortie » et « la première » divergent — sur un
+    salon sorti une seule fois, les deux rendent la même date et le test ne
+    prouverait rien. Et le salon actif tient l'autre bord : une vue qui
+    rendrait toujours un motif ferait afficher un bandeau de suspension à qui
+    est en ligne.
+    """
+    business, proprietaire = await commerce_en_cours(session)
+    acteur = Actor.from_user(proprietaire)
+
+    await service.activate_business(session, business=business, actor=acteur)
+    await service.pause_business(session, business=business, actor=acteur)
+    premiere = await composition_service.derniere_suspension(session, business.id)
+    assert premiere is not None
+
+    await service.activate_business(session, business=business, actor=acteur)
+    en_ligne, _ = business, None
+    await session.flush()
+
+    jetons = (
+        await client.post(
+            f"{PREFIX}/auth/login",
+            json={"email": proprietaire.email, "password": MOT_DE_PASSE},
+        )
+    ).json()
+    entetes = {"Authorization": f"Bearer {jetons['access_token']}"}
+
+    async def vue() -> dict:
+        reponse = await client.get(f"{PREFIX}/business/{business.id}/activation", headers=entetes)
+        assert reponse.status_code == 200, reponse.text
+        return reponse.json()
+
+    # En ligne : aucun motif, aucune date. La contrainte de la table garantit le
+    # premier, l'écran a besoin que le second suive.
+    await session.commit()
+    revenu = await vue()
+    assert revenu["suspension_motif"] is None, "un salon en ligne porte un motif de sortie"
+    assert revenu["suspendu_depuis"] is None
+
+    # Ressorti : le motif et la **dernière** sortie.
+    await service.pause_business(session, business=en_ligne, actor=acteur)
+    await session.commit()
+
+    dehors = await vue()
+    assert dehors["suspension_motif"] == "paused_by_business"
+    assert dehors["suspendu_depuis"] is not None, "la date ne traverse pas le schéma"
+    assert datetime.fromisoformat(dehors["suspendu_depuis"]) > premiere, (
+        "la première sortie est affichée, celle d'avant la réouverture"
+    )

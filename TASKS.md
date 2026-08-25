@@ -2843,13 +2843,36 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       c'est le seul trou des vingt-six, ce qui est aussi la mesure de ce que le
       rapprochement valait*
 
-- [ ] **Le motif de suspension, servi sur la vue d'activation**
-      *Le bandeau du salon suspendu dit ce qui reste dû mais pas pourquoi il est
-      suspendu, alors que la planche 14c le porte en toutes lettres : « Motif :
-      trois retraits refusés au comptoir ». Sans lui le salon lit une sanction
-      sans cause et écrit au support pour la demander — c'est le seul champ de
-      l'écran qui évite un message. `VueDActivation` ne rend que `status` ;
-      il y faut le motif et la date de la décision*
+- [x] **Le motif de suspension, servi sur la vue d'activation**
+      *`suspension_motif` et `suspendu_depuis` sur `VueDActivationRead`. Un code
+      de liste fermée, jamais du texte : l'écran le traduit, et une phrase rendue
+      par l'API ne passerait aucune garde de traduction. Les deux nuls hors
+      suspension — la contrainte de la table le garantit pour le motif.*
+
+      *Le motif vient de la **colonne**, la date du **journal**. Lire un état
+      courant dans un journal d'événements est ce qui a déjà coûté cher ici ;
+      mais une date de transition ne vit nulle part ailleurs.*
+
+- [ ] **La suspension punitive : une décision produit qui n'a jamais été prise**
+      *Non pas un travail en attente — **une décision qui n'existe pas**, et la
+      distinction porte tout. La planche 14c de Design écrit « Motif : trois
+      retraits refusés au comptoir » ; ce motif n'a ni valeur dans
+      `SuspensionReason`, ni mécanisme qui l'écrirait, ni arbitrage sur ce qui
+      le déclencherait. Trois retraits refusés dans quel intervalle, refusés par
+      qui, avec quel recours — rien de tout cela n'a été tranché.*
+
+      *`SuspensionReason` porte deux valeurs et elles ne sont **pas**
+      punitives : `paused_by_business` — le salon s'est retiré lui-même — et
+      `grace_expired` — l'abonnement n'a pas été payé. Les deux se disent sans
+      détour, et elles ne se lèvent pas de la même façon : la première par le
+      salon, la seconde en payant. C'est cette différence qui évite le message
+      au support.*
+
+      *Servir un motif punitif sous l'une de ces deux valeurs serait pire que le
+      silence actuel : le salon lirait une sanction là où il a fait un choix ou
+      oublié une facture. **Ce qui est à faire n'est pas un champ, c'est un
+      arbitrage** — et tant qu'il n'est pas rendu, l'écran dit ce qui est vrai.
+      Tranché le 2026-08-25.*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire
 
 ---
