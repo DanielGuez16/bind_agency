@@ -79,17 +79,29 @@ describe('le manifeste', () => {
     expect(parUsage).toEqual(['192x192 any', '512x512 any', '512x512 maskable']);
   });
 
-  it.each([
-    ['/icone-192.png', 192],
-    ['/icone-512.png', 512],
-    ['/icone-masquable-512.png', 512],
-  ])('%s existe et fait bien la taille annoncée', (src, cote) => {
+  it('chaque icône fait la taille que le manifeste lui prête', () => {
     // **Le cas qui motive ce test.** Une icône déclarée 512 et livrée 192
     // s'installe : le système l'agrandit, et la marque est floue sur l'écran
     // d'accueil. Rien d'autre ne le dit — ni le build, ni le navigateur.
-    const fichier = src.replace(/^\//, '');
-    expect(existsSync(join(PUBLIC, fichier))).toBe(true);
-    expect(dimensions(fichier)).toEqual({ largeur: cote, hauteur: cote });
+    //
+    // **Et c'est le manifeste qui doit être le sujet, pas les fichiers.** La
+    // première version de ce test listait les trois paires à la main : elle a
+    // survécu à la mutation qui fait pointer l'entrée « 512x512 » vers le
+    // fichier de 192, c'est-à-dire au défaut exact qu'elle prétendait attraper.
+    // Elle vérifiait que trois fichiers ont la bonne taille — ce que personne
+    // ne remettait en cause — pendant que la déclaration mentait à côté.
+    const mesures = manifeste.icons.map((icone) => {
+      const fichier = icone.src.replace(/^\//, '');
+      expect(existsSync(join(PUBLIC, fichier))).toBe(true);
+      const { largeur, hauteur } = dimensions(fichier);
+      return `${icone.src} ${largeur}x${hauteur} (annoncé ${icone.sizes})`;
+    });
+
+    expect(mesures).toEqual([
+      '/icone-192.png 192x192 (annoncé 192x192)',
+      '/icone-512.png 512x512 (annoncé 512x512)',
+      '/icone-masquable-512.png 512x512 (annoncé 512x512)',
+    ]);
   });
 
   it('et chaque icône déclarée est un fichier du dépôt, pas une adresse', () => {
