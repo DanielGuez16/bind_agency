@@ -137,6 +137,13 @@ export function PreuveScreen({
             choisit ? (
               <EnvoiDePreuve
                 collaborationId={collaborationId}
+                // **Ce qui a été compté, et le plafond.** Un échec réseau n'en
+                // fait pas partie : l'écran écrit « toujours 1 sur 3 » parce
+                // que c'est la seule phrase qu'on ne peut pas déduire de ce
+                // qu'il montre.
+                tentatives={contrepartie.attempts_count}
+                echeance={contrepartie.deadline_at}
+                timezone={FUSEAU_DU_PRODUIT}
                 onEnvoye={() => {
                   setChoisit(false);
                   requete.recharger();

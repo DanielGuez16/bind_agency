@@ -2439,6 +2439,35 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       sont honorés avant l'effacement, comme à l'échéance d'un abonnement. Sans
       elle, supprimer son compte serait le moyen le plus rapide de se défaire
       d'une journée chargée*
+- [x] **L'état d'échec de l'envoi de preuve**
+      *Le cas était **certain** — le téléversement était cassé en web sur tout le
+      produit — et il n'existait pas : un bandeau cramoisi portant le message du
+      client, et rien d'autre.*
+      ***Un échec réseau n'est pas une erreur de la créatrice**, et c'est
+      l'écran qui doit le dire : c'est lui qui décide entre réessayer et
+      abandonner. Rien ne se vide, rien ne se compte, rien ne devient rouge. Un
+      formulaire efface et recommence ; ici il n'y a rien à corriger.*
+      *La phrase qu'on ne peut pas déduire de l'écran est écrite : « toujours 1
+      sur 3 ». Les trois essais existent pour un contenu insuffisant, pas pour
+      un réseau absent — les confondre ferait perdre un essai à quelqu'un qui
+      n'a rien fait, et l'arbitrage verrait un troisième essai qui n'en est pas
+      un. Vérifié côté serveur par l'autre conversation.*
+      ***L'échéance porte l'urgence, jamais le bandeau.** Le même échec est
+      anodin à deux jours et pressant à six heures : la ligne sous le bouton
+      change, le ton non. Douze heures est le seuil, parce qu'au-delà il reste
+      une nuit — « demain matin » est une réponse, « dans six heures » n'en est
+      pas une.*
+      *Et l'aperçu dit qu'il ne recadre pas : une capture avec ses barres
+      système est une preuve valable, et exiger un cadrage propre ferait échouer
+      des preuves honnêtes. Le refus de permission garde son cramoisi — celui-là
+      **est** une chose à corriger, et il porte sa propre issue. 1 mutation, qui
+      a d'abord survécu : le glyphe est décoratif, donc invisible aux requêtes
+      par défaut, et l'assertion passait quel que soit le niveau*
+      ***Deux choses signalées.** `max_attempts` n'est pas servi sur la
+      contrepartie : le plafond est recopié dans l'écran, et cette ligne mentira
+      au premier ajustement — demandé. Et l'échec pendant que l'application est
+      fermée n'est pas composé : si l'envoi part en arrière-plan et rate,
+      personne ne voit cet écran. C'est une décision de mécanisme*
 - [ ] **Ce qui raccourcirait vraiment l'attente tient maintenant au serveur**
       *Design le dit sans détour : ces règles rendent l'attente lisible, elles
       ne la raccourcissent pas. Des trois choses qui la raccourciraient, **la
@@ -2701,13 +2730,39 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       chercher une seconde requête pour une demi-phrase. La ligne s'arrête donc
       à ce qui est vrai : depuis quand. L'affirmer à l'estime serait une
       confirmation fausse ; ne pas l'écrire n'enlève rien à la date. Demandé*
-- [ ] **Neuf planches d'écrans portent encore la v1.0**
-      *Le fil, la fiche, le créneau, la preuve, l'accueil et l'audience sont
-      passés en v3, dans la palette Ambre. Les autres suivent l'ordre du
-      `PASSATION-v1.1.md` §6, qui limite le travail perdu : la fiche de
-      journée du commerce d'abord,
-      les rapports et l'annuaire ; l'arbitrage et les plans ; les écrans de
-      marque. C'est du travail de Design, pas du produit*
+- [x] **Les planches v1.0 confrontées cadre par cadre, et trois trous nommés**
+      *La question posée n'était pas « faut-il les redessiner » — c'est du
+      travail de Design — mais **« les écrans ont-ils été confrontés à leurs
+      cadres »**. C'est le motif qui a coûté trois campagnes à l'audience, et
+      celui qui avait laissé `Lot 1 v1.1` sans entrée nulle part.*
+      *Les quatre planches v1.0 portent **55 cadres**. Le registre, lui, n'a
+      jamais tenu qu'un état **par planche** — « Passée » en bloc — et c'est
+      exactement la lecture qui surestime ou sous-estime, comme le cadre 02 l'a
+      montré. Confrontés un par un : la plupart sont dépassés par une planche v3
+      qui a eu, elle, sa confrontation — le fil (cinq fois), la fiche, le
+      créneau, la preuve, l'accueil, l'audience, la journée, le catalogue, les
+      horaires, la caisse, les publications, l'activation, l'arbitrage, les
+      plans.*
+      ***Trois cadres ne sont dépassés par aucune planche v3 et n'existent dans
+      aucun écran :***
+      *— **05d, le créneau pris pendant qu'on choisissait.** « 14:30 vient
+      d'être pris · Encore libre aujourd'hui · 16:00, 17:15 · Confirmer pour
+      16:00 ». Aujourd'hui, ce cas rend le message d'erreur générique du client
+      et laisse la créatrice devant une liste qu'elle doit relire. C'est le seul
+      des trois qui coûte une réservation.*
+      *— **07d, l'envoi de preuve en cours, avec son pourcentage** — et une
+      phrase que la v3.1 cherchait : « L'envoi continue si tu quittes l'écran.
+      Tu peux fermer l'app. » La v3.1 pose la question de l'échec en
+      arrière-plan comme ouverte ; **la v1.0 y avait déjà répondu**, et c'est
+      une décision de mécanisme qui attendait qu'on relise la planche.*
+      *— **14c, le commerce suspendu et ce qu'il doit encore.** « Motif : trois
+      retraits refusés au comptoir · Ce qui reste dû · Réservations à honorer ».
+      Le produit sait suspendre ; il ne montre nulle part ce qui reste dû. C'est
+      la même règle que la phrase ajoutée à la suppression cette semaine — les
+      réservations acceptées sont honorées — et elle n'a pas d'écran.*
+      *Les trois sont de la composition, et deux dépendent d'un arbitrage : ce
+      qu'on propose quand un créneau tombe, et si l'envoi part en arrière-plan.
+      Je ne les prends pas seul*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire
 
 ---

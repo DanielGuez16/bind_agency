@@ -89,6 +89,33 @@ export const POIDS_MAXIMAL = 8 * 1024 * 1024;
 
 type Choisi = { uri: string; taille: number | null };
 
+/**
+ * Le seuil au-delà duquel l'échéance change la conduite, et non le ton.
+ *
+ * **Douze heures**, parce que c'est la borne au-delà de laquelle il reste une
+ * nuit : « demain matin » est une réponse, « dans six heures » n'en est pas
+ * une. Le nombre est ici et pas dans une phrase de traduction — c'est une règle
+ * du produit, pas un mot.
+ */
+const HEURES_QUI_PRESSENT = 12;
+
+/**
+ * Le plafond d'essais, recopié du serveur — `collaboration_max_attempts`.
+ *
+ * Il n'est pas servi sur la contrepartie ; le recopier est le seul moyen
+ * d'écrire « toujours 1 sur 3 », et c'est la phrase qui porte toute la règle.
+ * Le jour où le seuil bouge, cette ligne ment : demandé au contrat.
+ */
+const MAX_TENTATIVES = 3;
+
+function presseParLEcheance(echeance: string, maintenant: number = Date.now()): boolean {
+  const reste = Date.parse(echeance) - maintenant;
+  // **Une échéance illisible ne presse pas.** Sans date, on ne sait rien ; en
+  // déduire l'urgence ferait pousser quelqu'un qui a tout son temps.
+  if (Number.isNaN(reste)) return false;
+  return reste <= HEURES_QUI_PRESSENT * 3_600_000;
+}
+
 type Etat =
   | { etat: 'repos' }
   | { etat: 'choisi'; media: Choisi }
@@ -105,9 +132,17 @@ type Etat =
 
 export function EnvoiDePreuve({
   collaborationId,
+  tentatives,
+  echeance,
+  timezone,
   onEnvoye,
 }: {
   collaborationId: string;
+  /** Combien d'essais ont déjà été **comptés**. Un échec réseau n'en est pas un. */
+  tentatives: number;
+  /** L'échéance de publication. C'est elle qui porte l'urgence, jamais l'échec. */
+  echeance: string;
+  timezone: string;
   onEnvoye: () => void;
 }) {
   const { api, messageDErreur } = useApi();
@@ -243,21 +278,57 @@ export function EnvoiDePreuve({
           testID="apercu-du-choix"
         />
       ) : null}
+      {/* **Tranché : l'aperçu ne recadre jamais.** Une capture avec les barres
+          système est une preuve valable — ce qui compte est qu'on voie la
+          publication, la mention et le lieu. Exiger un cadrage propre ferait
+          échouer des preuves honnêtes, et ferait de cet écran un contrôle de
+          forme là où il ne vérifie qu'un fait. `contain` le montre entier, et
+          cette ligne le dit plutôt que de le laisser deviner. */}
+      {media ? (
+        <Texte variante="type.caption" couleur="ink.soft" testID="apercu-entier">
+          {t('parcours.preuveApercuEntier')}
+        </Texte>
+      ) : null}
 
       {vue.etat === 'echec' ? (
         <View style={{ gap: 8 }}>
-          <StatusMessage level="danger" body={vue.message} testID="echec-envoi" />
-          {/* La seule issue d'un refus de permission. Présente seulement quand
-              c'en est un : un bouton vers les réglages après une panne réseau
-              enverrait chercher au mauvais endroit. */}
+          {/* **Un échec réseau n'est pas une erreur de la créatrice, et c'est
+              l'écran qui doit le dire.** Il décide entre réessayer et
+              abandonner, et tout le reste en découle : rien ne se vide, rien ne
+              se compte, rien ne devient rouge. Un formulaire efface et
+              recommence ; ici il n'y a rien à corriger.
+
+              **Neutre et non cramoisi**, donc — un rouge dirait qu'elle a mal
+              fait quelque chose. L'urgence, elle, est portée par l'échéance, en
+              bas : le même échec est anodin à deux jours et pressant à six
+              heures.
+
+              Le refus de permission garde son message tel quel : celui-là *est*
+              une chose à corriger, et il porte sa propre issue. */}
           {vue.media === null ? (
-            <Button
-              label={t('parcours.preuveOuvrirReglages')}
-              variant="secondary"
-              onPress={() => void Linking.openSettings()}
-              testID="ouvrir-les-reglages"
+            <>
+              <StatusMessage level="danger" body={vue.message} testID="echec-envoi" />
+              {/* La seule issue d'un refus de permission. Présente seulement
+                  quand c'en est un : un bouton vers les réglages après une
+                  panne réseau enverrait chercher au mauvais endroit. */}
+              <Button
+                label={t('parcours.preuveOuvrirReglages')}
+                variant="secondary"
+                onPress={() => void Linking.openSettings()}
+                testID="ouvrir-les-reglages"
+              />
+            </>
+          ) : (
+            <StatusMessage
+              level="neutral"
+              title={t('parcours.preuveEchecTitre')}
+              body={`${t('parcours.preuveEchecCorps')}\n\n${t('parcours.preuveEchecTentative', {
+                n: tentatives + 1,
+                total: MAX_TENTATIVES,
+              })}`}
+              testID="echec-envoi"
             />
-          ) : null}
+          )}
         </View>
       ) : null}
 
@@ -346,12 +417,24 @@ export function EnvoiDePreuve({
 
       {media && vue.etat !== 'rendu' ? (
         <Button
-          label={t('parcours.preuveEnvoyerCelle_ci')}
+          label={t(vue.etat === 'echec' ? 'parcours.preuveReessayer' : 'parcours.preuveEnvoyerCelle_ci')}
           size="lg"
           loading={vue.etat === 'envoi'}
           onPress={() => void envoyer()}
           testID="confirmer-l-envoi"
         />
+      ) : null}
+
+      {/* **C'est l'échéance qui porte l'urgence, et elle seule.** Le même échec
+          est anodin à deux jours et pressant à six heures ; la conduite change
+          avec elle, pas le ton du bandeau. Elle se lit sous le bouton parce que
+          c'est là qu'on décide de réessayer maintenant ou plus tard. */}
+      {media && vue.etat !== 'rendu' ? (
+        <Texte variante="type.caption" couleur="ink.soft" testID="echeance-de-l-envoi">
+          {presseParLEcheance(echeance)
+            ? t('parcours.preuveEcheanceProche')
+            : t('parcours.preuveEcheanceTient')}
+        </Texte>
       ) : null}
 
       <Texte variante="type.caption" couleur="ink.soft">

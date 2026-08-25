@@ -10608,3 +10608,47 @@ La pile est atteinte par une navigation interne, il n'y a pas d'entrée
 d'historique derrière elle, et le navigateur remonte à la page d'avant —
 mesuré, il atterrit sur `about:blank`. Un parcours revient par le contrôle de
 l'écran, comme un lecteur.
+
+---
+
+## 2026-08-24 — Un troisième mode de perte : la version d'avant
+
+Deux façons de perdre du travail étaient déjà écrites dans `CLAUDE.md` : le
+fichier **effacé**, que `git diff --diff-filter=D` nomme, et le `git reset
+--soft origin/main` suivi d'un `git add -A`, qui enregistre le retrait de tout
+ce qui a été fusionné entre-temps.
+
+En voici une troisième, rencontrée en reportant une tranche sur une branche
+propre :
+
+```
+git checkout -B ma-branche origin/main
+git checkout autre-branche -- app/src app/__tests__
+```
+
+Le second `checkout` ne prend pas *mes* modifications, il prend **l'arbre entier
+de l'autre branche** pour ces chemins. Tout fichier que `origin/main` a reçu
+depuis que cette branche a divergé revient à sa version d'avant. Quatre fichiers
+d'une PR fusionnée une heure plus tôt ont ainsi été ramenés en arrière.
+
+**Et la garde ne pouvait pas le voir.** `--diff-filter=D` ne nomme que ce qui
+n'existe plus ; ici tout existe, avec le bon nom, la bonne taille, et un contenu
+plus ancien. Ce n'est pas une suppression, c'est une régression — le seul des
+trois modes qui laisse l'arbre complet.
+
+**Ce qui l'a rattrapé est une garde qui ne visait pas ça.** Les clés de
+traduction ont réclamé deux clés appelées par les écrans de l'autre PR et
+devenues introuvables, parce que mon `en.ts` était celui d'avant. Ni les types,
+ni les tests des écrans concernés — ils étaient revenus en arrière **ensemble**,
+donc cohérents entre eux.
+
+C'est la leçon qui vaut d'être gardée : **une régression cohérente ne se voit
+que depuis un point de vue qu'elle n'a pas emporté.** La garde des clés a
+survécu parce qu'elle vit dans un fichier que je n'avais pas repris — et c'est
+pour la même raison que les gardes transverses du dépôt valent plus cher que
+les tests d'écran.
+
+Le geste juste, quand on reporte : prendre les fichiers **un par un**, ou mieux,
+`git diff origin/main...autre-branche -- <chemins> | git apply`, qui n'apporte
+que l'écart. Et relire `git diff --stat origin/main` avant de commiter : un
+fichier qu'on n'a pas touché n'a rien à y faire.

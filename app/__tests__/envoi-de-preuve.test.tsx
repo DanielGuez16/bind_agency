@@ -9,7 +9,10 @@
  * l'écran est utilisable dans un salon, avec un réseau moyen et une photothèque
  * pleine.
  */
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
+
+/** Une échéance qui ne presse pas : deux jours. */
+const DANS_DEUX_JOURS = new Date(Date.now() + 48 * 3_600_000).toISOString();
 
 import { ApiClient, ApiProvider } from '../src/api';
 import { I18nProvider } from '../src/i18n';
@@ -65,7 +68,13 @@ async function monter(onEnvoye = jest.fn(), echoue = false) {
     <I18nProvider initialLocale="en">
       <ThemeProvider role="creator">
         <ApiProvider client={client(echoue)}>
-          <EnvoiDePreuve collaborationId="k1" onEnvoye={onEnvoye} />
+          <EnvoiDePreuve
+            collaborationId="k1"
+            tentatives={0}
+            echeance={DANS_DEUX_JOURS}
+            timezone="America/New_York"
+            onEnvoye={onEnvoye}
+          />
         </ApiProvider>
       </ThemeProvider>
     </I18nProvider>,
@@ -231,7 +240,13 @@ async function monterAvecEspion(recueil: EnvoiComplet[]) {
     <I18nProvider initialLocale="en">
       <ThemeProvider role="creator">
         <ApiProvider client={api}>
-          <EnvoiDePreuve collaborationId="k1" onEnvoye={jest.fn()} />
+          <EnvoiDePreuve
+            collaborationId="k1"
+            tentatives={0}
+            echeance={DANS_DEUX_JOURS}
+            timezone="America/New_York"
+            onEnvoye={jest.fn()}
+          />
         </ApiProvider>
       </ThemeProvider>
     </I18nProvider>,
@@ -354,7 +369,13 @@ async function soumettreEtLire(preuve: Record<string, unknown>) {
     <I18nProvider initialLocale="en">
       <ThemeProvider role="creator">
         <ApiProvider client={api}>
-          <EnvoiDePreuve collaborationId="k1" onEnvoye={onEnvoye} />
+          <EnvoiDePreuve
+            collaborationId="k1"
+            tentatives={0}
+            echeance={DANS_DEUX_JOURS}
+            timezone="America/New_York"
+            onEnvoye={onEnvoye}
+          />
         </ApiProvider>
       </ThemeProvider>
     </I18nProvider>,
@@ -369,3 +390,53 @@ async function soumettreEtLire(preuve: Record<string, unknown>) {
   );
   return onEnvoye;
 }
+
+/**
+ * L'état d'échec : rien ne se vide, rien ne se compte, rien ne devient rouge.
+ *
+ * **Un échec réseau n'est pas une erreur de la créatrice**, et c'est l'écran
+ * qui doit le dire — il décide entre réessayer et abandonner. Le cas était
+ * certain, puisque le téléversement était cassé en web sur tout le produit, et
+ * il n'existait pas.
+ */
+describe('l’envoi a échoué', () => {
+  it('garde tout, ne compte rien, et ne peint rien en rouge', async () => {
+    // **Le décor divergent est un envoi qui rate avec un média choisi.** Un
+    // refus de permission échoue aussi, et *celui-là* est une chose à
+    // corriger : les confondre remettrait le cramoisi sur la panne.
+    mockResultat = CHOISI;
+    await monter(jest.fn(), true);
+
+    await act(async () => {
+      await fireEvent.press(screen.getByTestId('choisir-dans-la-galerie'));
+    });
+    await act(async () => {
+      await fireEvent.press(screen.getByTestId('confirmer-l-envoi'));
+    });
+
+    await waitFor(() => expect(screen.getByTestId('echec-envoi')).toBeTruthy());
+    const bandeau = screen.getByTestId('echec-envoi');
+
+    // **Neutre, jamais cramoisi.** Un rouge dirait qu'elle a mal fait quelque
+    // chose ; l'urgence est portée par l'échéance, pas par le ton.
+    // L'icône est décorative, donc hors des requêtes par défaut : sans
+    // `includeHiddenElements`, cette ligne passe quel que soit le niveau — et
+    // c'est ce qu'une mutation a montré.
+    expect(
+      within(bandeau).queryByTestId('glyphe-danger', { includeHiddenElements: true }),
+    ).toBeNull();
+    // (Un bandeau neutre ne porte aucun glyphe : la règle du système réserve
+    // le pictogramme à l'ambre, où il remplace la teinte.)
+    // La phrase qu'on ne peut pas déduire de l'écran : la tentative ne compte
+    // pas. Sans elle, la créatrice croit avoir brûlé un essai sur une panne.
+    expect(bandeau).toHaveTextContent(/still 1 of 3/i);
+
+    // Et le média est toujours là, avec le bouton : réessayer ne veut pas dire
+    // rouvrir la galerie et retrouver la bonne image.
+    expect(screen.getByTestId('apercu-du-choix')).toBeTruthy();
+    expect(screen.getByTestId('confirmer-l-envoi')).toBeTruthy();
+    expect(screen.getByTestId('echeance-de-l-envoi')).toHaveTextContent(
+      new RegExp(en.parcours.preuveEcheanceTient),
+    );
+  });
+});
