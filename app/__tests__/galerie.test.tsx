@@ -10,6 +10,7 @@
  * envoyer un ordre partiel que le serveur refusera, et offrir une flèche à la
  * photo qui ne peut pas bouger.
  */
+import * as ImagePicker from 'expo-image-picker';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
 import { Api, ApiClient, ApiProvider, type PhotoDuCommerce } from '../src/api';
@@ -151,5 +152,66 @@ describe('ajouter une photo', () => {
     expect(envois[0].chemin).toContain('/photos/uploads');
     expect(envois[1].chemin).toMatch(/\/photos$/);
     expect(envois[1].methode).toBe('POST');
+  });
+});
+
+/**
+ * Un envoi qui échoue garde le fichier.
+ *
+ * **C'est le cas que le défaut de téléversement rendait certain**, et celui qui
+ * décide si une créatrice réessaie ou abandonne. Le fichier choisi était une
+ * variable locale : elle mourait avec la fonction, l'écran affichait un message,
+ * et réessayer voulait dire rouvrir la galerie et retrouver la bonne image.
+ */
+jest.mock('expo-image-picker', () => ({
+  requestMediaLibraryPermissionsAsync: jest.fn(async () => ({ granted: true })),
+  launchImageLibraryAsync: jest.fn(async () => ({
+    canceled: false,
+    assets: [{ uri: 'file:///choisie.jpg' }],
+  })),
+}));
+
+describe('un envoi qui échoue', () => {
+  function clientQuiRefuse(envois: Envoi[], refuser: { encore: boolean }) {
+    return new ApiClient({
+      baseUrl: 'https://api.test',
+      coffre: { lire: async () => null, ecrire: async () => {} },
+      fetchImpl: async (url, init) => {
+        envois.push({ chemin: String(url), methode: init?.method, corps: null });
+        if (refuser.encore) {
+          return { ok: false, status: 503, json: async () => ({ detail: 'nope' }) } as Response;
+        }
+        return { ok: true, status: 200, json: async () => ({ storage_key: 'k' }) } as Response;
+      },
+    });
+  }
+
+  it('garde le fichier, et le renvoie sans rouvrir la galerie', async () => {
+    const envois: Envoi[] = [];
+    const refuser = { encore: true };
+    await render(
+      <I18nProvider initialLocale="en">
+        <ThemeProvider role="merchant">
+          <ApiProvider client={clientQuiRefuse(envois, refuser)}>
+            <GalerieDuCommerce businessId="b1" photos={PHOTOS} couverture={null} onChange={jest.fn()} />
+          </ApiProvider>
+        </ThemeProvider>
+      </I18nProvider>,
+    );
+
+    await fireEvent.press(screen.getByTestId('ajouter-une-photo'));
+    await waitFor(() => expect(screen.getByTestId('reessayer-l-envoi')).toBeTruthy());
+
+    // **Le second envoi ne rouvre pas le sélecteur.** C'est toute la question :
+    // une créatrice qui doit retrouver son image dans une galerie de mille
+    // photos abandonne, et le message d'erreur n'y change rien.
+    refuser.encore = false;
+    const ouverturesAvant = (ImagePicker.launchImageLibraryAsync as jest.Mock).mock.calls.length;
+    await fireEvent.press(screen.getByTestId('reessayer-l-envoi'));
+
+    await waitFor(() => expect(screen.queryByTestId('reessayer-l-envoi')).toBeNull());
+    expect((ImagePicker.launchImageLibraryAsync as jest.Mock).mock.calls.length).toBe(
+      ouverturesAvant,
+    );
   });
 });

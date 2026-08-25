@@ -44,7 +44,7 @@
  * devoir aussi photographier huit pages, et abandonne.
  */
 import * as ImagePicker from 'expo-image-picker';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { useApi, type PageDeLaCarte } from '../api';
@@ -81,17 +81,24 @@ export function CarteDuCommerce({
   const c = useColors();
   const [echec, setEchec] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
+  /** Le fichier choisi, gardé tant qu'il n'est pas parti : réessayer n'a pas à
+   *  rouvrir la galerie et à retrouver la bonne image parmi mille. */
+  const [aRenvoyer, setARenvoyer] = useState<string | null>(null);
+  /** L'échec du tour en cours — `echec` n'est à jour qu'au rendu suivant. */
+  const echecCourant = useRef(false);
   const [saisie, setSaisie] = useState(lien ?? '');
 
   async function agir(action: () => Promise<unknown>) {
     setEnvoi(true);
     setEchec(null);
+    echecCourant.current = false;
     vibration.action();
     try {
       await action();
       onChange();
     } catch (erreur) {
       vibration.echec();
+      echecCourant.current = true;
       setEchec(messageDErreur(erreur));
     } finally {
       setEnvoi(false);
@@ -118,7 +125,16 @@ export function CarteDuCommerce({
     const choisie = resultat.canceled ? null : resultat.assets[0];
     if (!choisie) return;
 
-    await agir(() => api.ajouterUnePageDeCarte(businessId, choisie.uri));
+    await envoyer(choisie.uri);
+  }
+
+  async function envoyer(uri: string) {
+    setARenvoyer(uri);
+    try {
+      await agir(() => api.ajouterUnePageDeCarte(businessId, uri));
+    } finally {
+      setARenvoyer((garde) => (echecCourant.current ? garde : null));
+    }
   }
 
   /** Échange deux rangs et envoie l'ordre complet, que le serveur exige. */
@@ -197,7 +213,27 @@ export function CarteDuCommerce({
         </View>
       ) : null}
 
+      {/* Un envoi de page prend des secondes sur le réseau d'un salon, et le
+          bouton n'était que désactivé — rien ne bougeait. */}
+      {envoi ? (
+        <Texte variante="type.caption" couleur="ink.soft" testID="envoi-en-cours">
+          {t('composition.photoEnvoiEnCours')}
+        </Texte>
+      ) : null}
       {echec ? <StatusMessage level="danger" body={echec} testID="echec-carte" /> : null}
+      {/* **L'échec garde le fichier.** */}
+      {echec && aRenvoyer ? (
+        <View style={{ flexDirection: 'row' }}>
+          <Button
+            label={t('composition.photoReessayer')}
+            size="sm"
+            variant="secondary"
+            fullWidth={false}
+            onPress={() => void envoyer(aRenvoyer)}
+            testID="reessayer-l-envoi"
+          />
+        </View>
+      ) : null}
 
       {pages.length === 0 ? (
         <Texte variante="type.caption" couleur="ink.mute" testID="carte-vide">
