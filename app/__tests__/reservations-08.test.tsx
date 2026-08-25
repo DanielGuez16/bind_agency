@@ -541,3 +541,89 @@ describe('ce que la carte peint', () => {
     expect(styleDe(rangee as never).flexDirection).toBe('row');
   });
 });
+
+
+/**
+ * Le titre de l'onglet en cours est le verbe, et il ne l'était pas.
+ *
+ * **`verbeDeLaContrepartie` était calculé, testé, et jamais rendu.** Il ne
+ * servait qu'à choisir une surface ; la carte affichait la prestation, quand la
+ * question de cet onglet est « qu'est-ce qu'on attend de moi ». C'est la
+ * décision centrale de la planche v3 pour cet onglet, et elle n'était pas à
+ * l'écran.
+ *
+ * **Le décor divergent est celui qui reste sur la prestation** — et il a fallu
+ * une mutation pour le trouver juste. La première version opposait les deux
+ * onglets, ce qui ne prouvait rien : une réservation « à venir » n'a jamais de
+ * contrepartie, donc les deux implémentations rendaient le même verdict et
+ * « je rends le verbe partout » survivait. Ce qui décide vraiment est la
+ * **présence d'une contrepartie**, et c'est sur elle que le cas diverge.
+ */
+describe('le titre est le verbe, et seulement là où c’est la question', () => {
+  const EN_COURS = (statut: string) =>
+    reservation({
+      booking_id: 'r-verbe',
+      status: 'consumed',
+      contrepartie: contrepartie(statut) as never,
+    });
+
+  it('une contrepartie à publier titre le geste, la prestation passe dessous', async () => {
+    await monter([EN_COURS('pending')]);
+    await fireEvent.press(screen.getByLabelText(new RegExp(en.parcours.ongletEnCours)));
+
+    const carte = await screen.findByTestId('reservation-r-verbe');
+    expect(
+      within(carte).getByText(
+        en.parcours.verbe_publier.replace('{{format}}', en.parcours.format_story),
+      ),
+    ).toBeTruthy();
+    expect(
+      within(carte).getByText(
+        en.parcours.verbePour
+          .replace('{{prestation}}', 'Gel manicure')
+          .replace('{{salon}}', 'Vela Nail Studio'),
+      ),
+    ).toBeTruthy();
+  });
+
+  it('une reprise ne dit pas « publie », elle dit « corrige »', async () => {
+    await monter([EN_COURS('resubmit_requested')]);
+    await fireEvent.press(screen.getByLabelText(new RegExp(en.parcours.ongletEnCours)));
+
+    const carte = await screen.findByTestId('reservation-r-verbe');
+    expect(
+      within(carte).getByText(
+        en.parcours.verbe_corriger.replace('{{format}}', en.parcours.format_story),
+      ),
+    ).toBeTruthy();
+  });
+
+  it('sans contrepartie, le titre reste la prestation : on vient, on ne publie pas', async () => {
+    await monter([
+      reservation({ booking_id: 'r-venir', status: 'confirmed', contrepartie: null }),
+    ]);
+    await fireEvent.press(screen.getByLabelText(new RegExp(en.parcours.ongletAVenir)));
+
+    const carte = await screen.findByTestId('reservation-r-venir');
+    expect(within(carte).getByText('Gel manicure')).toBeTruthy();
+    expect(within(carte).queryByTestId('verbe-r-venir')).toBeNull();
+  });
+
+  it('une contrepartie approuvée n’attend plus rien, donc plus de verbe', async () => {
+    // Le second cas où le verbe doit se taire, et il n'est pas le même : ici la
+    // contrepartie **existe**. Sans lui, « il y a une contrepartie donc il y a
+    // un verbe » passerait, et une collaboration close annoncerait un geste.
+    await monter([
+      reservation({
+        booking_id: 'r-clos',
+        status: 'consumed',
+        contrepartie: contrepartie('approved') as never,
+      }),
+    ]);
+    await fireEvent.press(screen.getByLabelText(new RegExp(en.parcours.ongletEnCours)));
+
+    const carte = await screen.findByTestId('reservation-r-clos');
+    expect(within(carte).getByText('Gel manicure')).toBeTruthy();
+    expect(within(carte).queryByTestId('verbe-r-clos')).toBeNull();
+  });
+});
