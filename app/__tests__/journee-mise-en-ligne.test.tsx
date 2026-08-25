@@ -417,7 +417,7 @@ describe('suspendu', () => {
   const SUSPENDU = {
     status: 'suspended' as const,
     en_ligne_depuis: null,
-    etapes: [ETAPE('address', true), ETAPE('cover', false)],
+    etapes: [ETAPE('address', true), ETAPE('cover_photo', false)],
   };
 
   it('n’est pas une publication en attente, et dit ce qui reste dû', () => {

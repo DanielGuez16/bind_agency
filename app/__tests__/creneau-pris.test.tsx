@@ -115,3 +115,32 @@ it('propose les heures encore libres du même jour, sans faire relire la liste',
   // Et ce n'est pas un échec cramoisi : personne n'a mal fait quoi que ce soit.
   expect(screen.queryByTestId('echec-reservation')).toBeNull();
 });
+
+const PANNE = () =>
+  ({
+    ok: false,
+    status: 500,
+    json: async () => ({ detail: 'internal_error' }),
+  }) as Response;
+
+/**
+ * **Le cas divergent, et il est venu d'une mutation qui a survécu.** Sans lui,
+ * « proposer les heures voisines quand le créneau est pris » et « les proposer
+ * à n'importe quel échec » rendaient le même verdict — le test tenait sur la
+ * seule forme qu'il avait vue. Une panne réseau n'est pas un créneau pris :
+ * reproposer une heure y ferait retomber dans la même panne.
+ */
+it('ne propose rien sur une panne : ce n’est pas le créneau qui manque', async () => {
+  await monter(PANNE);
+  await waitFor(() => expect(screen.getByLabelText('14:00')).toBeTruthy());
+
+  await act(async () => {
+    await fireEvent.press(screen.getByLabelText('14:00'));
+  });
+  await act(async () => {
+    await fireEvent.press(screen.getByTestId('confirmer'));
+  });
+
+  await waitFor(() => expect(screen.getByTestId('echec-reservation')).toBeTruthy());
+  expect(screen.queryByTestId('creneau-pris')).toBeNull();
+});
