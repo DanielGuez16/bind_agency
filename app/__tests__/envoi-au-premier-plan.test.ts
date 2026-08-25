@@ -21,13 +21,20 @@ function poserAppState() {
   return (etat: string) => ecouteurs.forEach((e) => e(etat));
 }
 
-afterEach(() => jest.restoreAllMocks());
+afterEach(() => {
+  jest.restoreAllMocks();
+  // **`currentState` est une propriété, pas un accesseur** : `restoreAllMocks`
+  // ne la rend pas. Un test qui la laisse à `background` fait refuser tous les
+  // envois des suivants, et leur `waitFor` expire sans dire pourquoi — deux
+  // tests sont tombés là-dessus avant que cette ligne existe.
+  (AppState as { currentState: string }).currentState = 'active';
+});
 
 it('coupe l’envoi quand l’application quitte le premier plan, et garde le fichier', async () => {
   const changer = poserAppState();
   const vue = await renderHook(() => useEnvoiDeFichier());
 
-  let signalVu: AbortSignal | null = null;
+  let signalVu: AbortSignal | undefined;
   const envoi = vue.result.current
       .envoyer('file:///photo.jpg', (_, signal) => {
         signalVu = signal;
@@ -71,5 +78,64 @@ it('et ne part pas du tout depuis l’arrière-plan', async () => {
 
   expect(appels).toHaveLength(0);
   expect(vue.result.current.interrompu).toBe(true);
+  expect(vue.result.current.aRenvoyer).toBe('file:///photo.jpg');
+});
+
+it('reprend au retour quand la montée n’était pas finie', async () => {
+  // **Quitter une seconde pour vérifier sa story est le geste exact** qu'une
+  // créatrice fait à ce moment-là. Rester en échec produirait la panne qu'on
+  // venait d'éviter.
+  const changer = poserAppState();
+  const vue = await renderHook(() => useEnvoiDeFichier());
+
+  const departs: number[] = [];
+  const premier = vue.result.current
+    .envoyer('file:///photo.jpg', (progression, signal) => {
+      departs.push(1);
+      progression(0.4);
+      return new Promise((_r, rejeter) =>
+        signal.addEventListener('abort', () => rejeter(new Error('coupé'))),
+      );
+    })
+    .catch(() => {});
+
+  await waitFor(() => expect(vue.result.current.enVol).toBe(true));
+  await act(async () => {
+    changer('background');
+    await premier;
+  });
+  expect(departs).toHaveLength(1);
+
+  await act(async () => changer('active'));
+  await waitFor(() => expect(departs).toHaveLength(2));
+});
+
+it('et ne reprend pas quand les octets sont déjà partis', async () => {
+  // **Le cas où les deux implémentations divergent.** Reprendre toujours
+  // ajouterait une seconde photo à la galerie : les trois chemins du commerce
+  // déposent puis rattachent, et une coupure après la montée a pu laisser le
+  // rattachement partir. Le bouton reste, et c'est la créatrice qui tranche.
+  const changer = poserAppState();
+  const vue = await renderHook(() => useEnvoiDeFichier());
+
+  const departs: number[] = [];
+  const premier = vue.result.current
+    .envoyer('file:///photo.jpg', (progression, signal) => {
+      departs.push(1);
+      progression(1);
+      return new Promise((_r, rejeter) =>
+        signal.addEventListener('abort', () => rejeter(new Error('coupé'))),
+      );
+    })
+    .catch(() => {});
+
+  await waitFor(() => expect(vue.result.current.enVol).toBe(true));
+  await act(async () => {
+    changer('background');
+    await premier;
+  });
+  await act(async () => changer('active'));
+
+  expect(departs).toHaveLength(1);
   expect(vue.result.current.aRenvoyer).toBe('file:///photo.jpg');
 });

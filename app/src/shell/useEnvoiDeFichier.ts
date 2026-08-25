@@ -18,6 +18,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
+type Action = (progression: (part: number) => void, signal: AbortSignal) => Promise<unknown>;
+
 export type EtatDEnvoi = {
   /** Vrai pendant que ça monte. */
   enVol: boolean;
@@ -40,6 +42,18 @@ const AU_REPOS: EtatDEnvoi = { enVol: false, part: null, aRenvoyer: null, interr
 export function useEnvoiDeFichier() {
   const [etat, setEtat] = useState<EtatDEnvoi>(AU_REPOS);
   const enCours = useRef<AbortController | null>(null);
+  /** Le dernier envoi, pour le reprendre au retour sans rouvrir la galerie. */
+  const dernier = useRef<{ uri: string; action: Action } | null>(null);
+  /**
+   * Vrai dès que les octets sont tous partis.
+   *
+   * **C'est ce qui décide si la reprise est automatique.** Un envoi coupé
+   * pendant la montée n'a rien laissé au serveur : le reprendre ne coûte que
+   * des octets. Coupé **après**, le fichier est déposé et le rattachement a pu
+   * partir — reprendre ajouterait une seconde photo à la galerie. On garde
+   * alors le bouton, et c'est la créatrice qui tranche.
+   */
+  const monteeFinie = useRef(false);
 
   /**
    * **Couper au départ du premier plan.**
@@ -50,7 +64,19 @@ export function useEnvoiDeFichier() {
    */
   useEffect(() => {
     const abonnement = AppState.addEventListener('change', (etatDeLApp) => {
-      if (etatDeLApp === 'active') return;
+      if (etatDeLApp === 'active') {
+        // **La reprise au retour, et c'est le geste qu'on attend.** Quitter
+        // l'application une seconde pour vérifier sa story est exactement ce
+        // qu'une créatrice fait à ce moment-là : rester en échec produirait la
+        // panne qu'on venait d'éviter.
+        //
+        // Seulement si la montée n'était pas finie : au-delà, le fichier est
+        // déjà chez le serveur, le rattachement a pu partir, et reprendre
+        // ajouterait un doublon. Le bouton reste, et c'est elle qui tranche.
+        const aReprendre = dernier.current;
+        if (aReprendre && !monteeFinie.current) void lancer(aReprendre.uri, aReprendre.action);
+        return;
+      }
       if (!enCours.current) return;
       enCours.current.abort();
       enCours.current = null;
@@ -59,8 +85,8 @@ export function useEnvoiDeFichier() {
     return () => abonnement.remove();
   }, []);
 
-  const envoyer = useCallback(
-    async (uri: string, action: (progression: (part: number) => void, signal: AbortSignal) => Promise<unknown>) => {
+  const lancer = useCallback(
+    async (uri: string, action: Action) => {
       // **Rien ne part hors du premier plan.** Le crochet coupe ce qui est en
       // vol ; refuser de démarrer ferme l'autre moitié — un geste posé pendant
       // que l'application se range n'a personne pour en lire l'issue.
@@ -75,13 +101,17 @@ export function useEnvoiDeFichier() {
 
       const controleur = new AbortController();
       enCours.current = controleur;
+      dernier.current = { uri, action };
+      monteeFinie.current = false;
       setEtat({ enVol: true, part: null, aRenvoyer: uri, interrompu: false });
 
       try {
         await action((part) => {
           if (controleur.signal.aborted) return;
+          if (part >= 1) monteeFinie.current = true;
           setEtat((precedent) => (precedent.enVol ? { ...precedent, part } : precedent));
         }, controleur.signal);
+        dernier.current = null;
         setEtat(AU_REPOS);
         return true;
       } catch (erreur) {
@@ -100,7 +130,10 @@ export function useEnvoiDeFichier() {
     [],
   );
 
-  const oublier = useCallback(() => setEtat(AU_REPOS), []);
+  const oublier = useCallback(() => {
+    dernier.current = null;
+    setEtat(AU_REPOS);
+  }, []);
 
-  return { ...etat, envoyer, oublier };
+  return { ...etat, envoyer: lancer, oublier };
 }
