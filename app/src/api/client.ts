@@ -84,6 +84,20 @@ export type OptionsDeRequete = {
    * un `FormData` casse la frontière que la plateforme y écrit.
    */
   corpsBrut?: BodyInit;
+  /**
+   * Ce qui est parti, sur ce qu'il y a à envoyer, entre 0 et 1.
+   *
+   * **Présente, elle change de transport.** `fetch` ne rapporte rien de la
+   * montée d'un corps ; seul `XMLHttpRequest` émet `upload.onprogress`. Le
+   * chemin JSON reste sur `fetch` — il n'a rien à rapporter, et une seconde
+   * implémentation pour tout le produit serait deux comportements à tenir.
+   *
+   * Le seul endroit du produit où l'attente est assez longue pour qu'un filet
+   * qui parcourt mente sur ce qui se passe : une photo sur le réseau d'un salon
+   * prend des secondes, et un filet qui boucle dit « ça travaille » sans dire
+   * si l'on est au début ou à la fin.
+   */
+  progression?: (part: number) => void;
   query?: Record<string, string | number | boolean | undefined | null | string[]>;
   /** Une route publique n'attache pas de jeton et ne déclenche pas de rotation. */
   publique?: boolean;
@@ -123,6 +137,18 @@ export type ConfigurationDuClient = {
   delaiMs?: number;
   /** Injectable pour les tests. Par défaut, le `fetch` global. */
   fetchImpl?: typeof fetch;
+  /**
+   * Le transport des envois de fichier, quand une progression est demandée.
+   *
+   * **Injectable pour la même raison que `fetchImpl`.** Le chemin `XMLHttpRequest`
+   * ne passe pas par `fetch` — c'est tout son intérêt — donc un double qui ne
+   * remplace que `fetch` n'intercepte plus rien des quatre téléversements, et
+   * les tests attendent une réponse qui ne vient jamais. Le défaut ne se voit
+   * qu'à l'expiration d'un `waitFor`, ce qui ne dit pas la cause.
+   *
+   * Par défaut, l'envoi réel. En test, on passe le même double que `fetchImpl`.
+   */
+  envoiImpl?: (options: OptionsDEnvoi) => Promise<Response>;
 };
 
 export class ApiClient {
@@ -131,6 +157,7 @@ export class ApiClient {
   private readonly surSessionPerdue?: () => void;
   private readonly delaiMs: number;
   private readonly fetchImpl: typeof fetch;
+  private readonly envoiImpl: (options: OptionsDEnvoi) => Promise<Response>;
 
   /** La rotation en cours, partagée par tous les appels qui prennent un 401. */
   private rotation: Promise<Rotation> | null = null;
@@ -150,6 +177,24 @@ export class ApiClient {
     // voyait qu'en web, et se présentait comme une panne réseau.
     const global = config.fetchImpl ?? globalThis.fetch;
     this.fetchImpl = (...args) => global(...args);
+    // **Le repli est `fetch`, pas une erreur.** Un environnement sans
+    // `XMLHttpRequest` — Node nu, un rendu serveur — doit envoyer le fichier
+    // quand même : il perdra la progression, pas la photo.
+    // **Un double de `fetch` remplace tout le réseau, envois compris.** Sans
+    // cela, un test qui injecte `fetchImpl` verrait ses trois requêtes JSON
+    // interceptées et son téléversement partir pour de bon — la panne se lit
+    // alors comme un `waitFor` qui expire, qui ne dit rien de la cause.
+    this.envoiImpl =
+      config.envoiImpl ??
+      (config.fetchImpl || typeof XMLHttpRequest === 'undefined'
+        ? (o) =>
+            this.fetchImpl(o.url, {
+              method: o.methode,
+              headers: o.entetes,
+              body: o.corps,
+              signal: o.signal,
+            })
+        : envoyerAvecProgression);
   }
 
   /**
@@ -328,6 +373,16 @@ export class ApiClient {
     if (options.signal?.aborted) relais();
 
     try {
+      if (options.progression && options.corpsBrut !== undefined) {
+        return await this.envoiImpl({
+          url: this.url(chemin, options.query),
+          methode: options.methode ?? 'POST',
+          entetes,
+          corps: options.corpsBrut,
+          signal: horloge.signal,
+          progression: options.progression,
+        });
+      }
       return await this.fetchImpl(this.url(chemin, options.query), {
         method: options.methode ?? 'GET',
         headers: entetes,
@@ -444,4 +499,73 @@ export class ApiClient {
       return { quoi: 'injoignable', cause };
     }
   }
+}
+
+/**
+ * Un envoi de fichier qui dit où il en est.
+ *
+ * **`XMLHttpRequest` et non `fetch`, et seulement ici.** `fetch` n'expose
+ * aucune progression de montée : son `ReadableStream` descend, jamais l'inverse.
+ * XHR reste le seul transport du web à émettre `upload.onprogress`, et React
+ * Native l'implémente aussi.
+ *
+ * **La réponse est imitée, pas construite.** Le client ne lit que `ok`, `status`
+ * et `json()` : rendre autre chose serait promettre une `Response` qui n'en est
+ * pas une, et le jour où quelqu'un lirait `headers` il trouverait `undefined`
+ * sans savoir pourquoi.
+ *
+ * **`lengthComputable` n'est pas garanti.** Un serveur derrière un proxy qui
+ * réécrit la taille, ou un corps dont la plateforme ne connaît pas la longueur,
+ * n'en donne aucune. On ne rapporte alors rien plutôt qu'un nombre inventé :
+ * l'écran garde son « ça travaille », qui est vrai, au lieu d'une barre qui
+ * avance au hasard.
+ */
+export type OptionsDEnvoi = {
+  url: string;
+  methode: string;
+  entetes: Record<string, string>;
+  corps: BodyInit;
+  signal: AbortSignal;
+  progression: (part: number) => void;
+};
+
+function envoyerAvecProgression(options: OptionsDEnvoi): Promise<Response> {
+  return new Promise((resoudre, rejeter) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open(options.methode, options.url);
+    for (const [nom, valeur] of Object.entries(options.entetes)) {
+      xhr.setRequestHeader(nom, valeur);
+    }
+
+    xhr.upload.onprogress = (evenement) => {
+      if (!evenement.lengthComputable || evenement.total === 0) return;
+      options.progression(Math.min(1, evenement.loaded / evenement.total));
+    };
+
+    xhr.onload = () => {
+      const texte = xhr.responseText;
+      resoudre({
+        ok: xhr.status >= 200 && xhr.status < 300,
+        status: xhr.status,
+        json: async () => (texte ? JSON.parse(texte) : null),
+      } as Response);
+    };
+
+    // **Trois façons de ne pas aboutir, une seule erreur.** Le client au-dessus
+    // sait déjà distinguer l'annulation de l'échéance par son propre motif ;
+    // lui rendre trois erreurs distinctes ferait deux tables à tenir.
+    xhr.onerror = () => rejeter(new Error('réseau'));
+    xhr.ontimeout = () => rejeter(new Error('réseau'));
+    xhr.onabort = () => rejeter(new Error('annulé'));
+
+    const couper = () => xhr.abort();
+    if (options.signal.aborted) {
+      couper();
+      return;
+    }
+    options.signal.addEventListener('abort', couper);
+    xhr.onloadend = () => options.signal.removeEventListener('abort', couper);
+
+    xhr.send(options.corps);
+  });
 }

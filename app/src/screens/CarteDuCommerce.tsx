@@ -51,6 +51,7 @@ import { useApi, type PageDeLaCarte } from '../api';
 import { Button, Icone, StatusMessage, TextField, Texte, vibration } from '../components';
 import { Photo } from '../components';
 import { useI18n } from '../i18n';
+import { useEnvoiDeFichier } from '../shell/useEnvoiDeFichier';
 import { elevationDeCarte, radius, useColors } from '../theme';
 
 /** Huit pages au plus. La borne est du serveur ; l'écran la dit avant de la subir. */
@@ -81,9 +82,8 @@ export function CarteDuCommerce({
   const c = useColors();
   const [echec, setEchec] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
-  /** Le fichier choisi, gardé tant qu'il n'est pas parti : réessayer n'a pas à
-   *  rouvrir la galerie et à retrouver la bonne image parmi mille. */
-  const [aRenvoyer, setARenvoyer] = useState<string | null>(null);
+  /** La progression, le premier plan, et le fichier gardé — voir le crochet. */
+  const envoiDeFichier = useEnvoiDeFichier();
   /** L'échec du tour en cours — `echec` n'est à jour qu'au rendu suivant. */
   const echecCourant = useRef(false);
   const [saisie, setSaisie] = useState(lien ?? '');
@@ -128,12 +128,18 @@ export function CarteDuCommerce({
     await envoyer(choisie.uri);
   }
 
+  /** Sans passer par `agir` : il avale l'erreur, et le crochet conclurait au succès. */
   async function envoyer(uri: string) {
-    setARenvoyer(uri);
+    setEchec(null);
+    vibration.action();
     try {
-      await agir(() => api.ajouterUnePageDeCarte(businessId, uri));
-    } finally {
-      setARenvoyer((garde) => (echecCourant.current ? garde : null));
+      await envoiDeFichier.envoyer(uri, async (progression) => {
+        await api.ajouterUnePageDeCarte(businessId, uri, progression);
+        onChange();
+      });
+    } catch (erreur) {
+      vibration.echec();
+      setEchec(messageDErreur(erreur));
     }
   }
 
@@ -215,21 +221,30 @@ export function CarteDuCommerce({
 
       {/* Un envoi de page prend des secondes sur le réseau d'un salon, et le
           bouton n'était que désactivé — rien ne bougeait. */}
-      {envoi ? (
+      {envoiDeFichier.enVol ? (
         <Texte variante="type.caption" couleur="ink.soft" testID="envoi-en-cours">
-          {t('composition.photoEnvoiEnCours')}
+          {envoiDeFichier.part === null
+            ? t('composition.photoEnvoiEnCours')
+            : t('composition.photoEnvoiPart', { part: Math.round(envoiDeFichier.part * 100) })}
         </Texte>
+      ) : null}
+      {envoiDeFichier.interrompu ? (
+        <StatusMessage
+          level="neutral"
+          body={t('composition.photoEnvoiInterrompu')}
+          testID="envoi-interrompu"
+        />
       ) : null}
       {echec ? <StatusMessage level="danger" body={echec} testID="echec-carte" /> : null}
       {/* **L'échec garde le fichier.** */}
-      {echec && aRenvoyer ? (
+      {(echec || envoiDeFichier.interrompu) && envoiDeFichier.aRenvoyer ? (
         <View style={{ flexDirection: 'row' }}>
           <Button
             label={t('composition.photoReessayer')}
             size="sm"
             variant="secondary"
             fullWidth={false}
-            onPress={() => void envoyer(aRenvoyer)}
+            onPress={() => void envoyer(envoiDeFichier.aRenvoyer as string)}
             testID="reessayer-l-envoi"
           />
         </View>

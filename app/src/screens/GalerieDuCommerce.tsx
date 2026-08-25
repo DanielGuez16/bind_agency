@@ -25,6 +25,7 @@ import { useApi, type PhotoDuCommerce } from '../api';
 import { Button, Icone, StatusMessage, Texte, vibration } from '../components';
 import { Photo } from '../components';
 import { useI18n } from '../i18n';
+import { useEnvoiDeFichier } from '../shell/useEnvoiDeFichier';
 import { radius, useColors } from '../theme';
 
 export function GalerieDuCommerce({
@@ -53,7 +54,7 @@ export function GalerieDuCommerce({
    * le défaut de téléversement rendait certain, et celui qui décide si l'on
    * réessaie ou si l'on abandonne.
    */
-  const [aRenvoyer, setARenvoyer] = useState<string | null>(null);
+  const envoiDeFichier = useEnvoiDeFichier();
 
   /** L'échec du tour en cours, lisible tout de suite — `echec` ne l'est qu'au rendu suivant. */
   const echecCourant = useRef(false);
@@ -100,14 +101,25 @@ export function GalerieDuCommerce({
     await envoyer(choisie.uri);
   }
 
+  /**
+   * L'envoi, sans passer par `agir`.
+   *
+   * **`agir` avale l'erreur pour la poser à l'écran** — c'est ce qu'on veut des
+   * autres gestes, et c'est exactement ce qu'il ne faut pas ici : le crochet
+   * conclurait au succès et effacerait le fichier gardé. L'échec doit remonter
+   * jusqu'à lui pour qu'il sache qu'il n'y a pas eu d'issue.
+   */
   async function envoyer(uri: string) {
-    setARenvoyer(uri);
+    setEchec(null);
+    vibration.action();
     try {
-      await agir(() => api.ajouterUnePhoto(businessId, uri));
-    } finally {
-      // Gardé tant que l'envoi n'a pas abouti : c'est ce qui rend le réessai
-      // possible sans rouvrir la galerie.
-      setARenvoyer((garde) => (echecCourant.current ? garde : null));
+      await envoiDeFichier.envoyer(uri, async (progression) => {
+        await api.ajouterUnePhoto(businessId, uri, progression);
+        onChange();
+      });
+    } catch (erreur) {
+      vibration.echec();
+      setEchec(messageDErreur(erreur));
     }
   }
 
@@ -249,21 +261,34 @@ export function GalerieDuCommerce({
           Pas de pourcentage : `fetch` n'en donne aucun, et une barre qui
           avancerait sans mesure serait une invention. Ce qui se dit est que ça
           travaille. */}
-      {envoi ? (
+      {envoiDeFichier.enVol ? (
         <Texte variante="type.caption" couleur="ink.soft" testID="envoi-en-cours">
-          {t('composition.photoEnvoiEnCours')}
+          {envoiDeFichier.part === null
+            ? t('composition.photoEnvoiEnCours')
+            : t('composition.photoEnvoiPart', { part: Math.round(envoiDeFichier.part * 100) })}
         </Texte>
       ) : null}
 
+      {/* **Interrompu n'est pas échoué.** C'est l'application qui a quitté le
+          premier plan, pas le réseau qui a manqué : le dire autrement enverrait
+          chercher une panne qui n'existe pas. */}
+      {envoiDeFichier.interrompu ? (
+        <StatusMessage
+          level="neutral"
+          body={t('composition.photoEnvoiInterrompu')}
+          testID="envoi-interrompu"
+        />
+      ) : null}
+
       {/* **L'échec garde le fichier.** Réessayer n'a pas à rouvrir la galerie. */}
-      {echec && aRenvoyer ? (
+      {(echec || envoiDeFichier.interrompu) && envoiDeFichier.aRenvoyer ? (
         <View style={{ flexDirection: 'row' }}>
           <Button
             label={t('composition.photoReessayer')}
             size="sm"
             variant="secondary"
             fullWidth={false}
-            onPress={() => void envoyer(aRenvoyer)}
+            onPress={() => void envoyer(envoiDeFichier.aRenvoyer as string)}
             testID="reessayer-l-envoi"
           />
         </View>
