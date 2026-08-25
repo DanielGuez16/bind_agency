@@ -373,7 +373,10 @@ export function CreneauxScreen({
               loading={envoi}
               disabled={!pretAReserver}
               fullWidth={false}
-              onPress={reserver}
+              // **Enveloppé, et ce n'est pas cosmétique.** `reserver` prend
+              // désormais un créneau facultatif : passé directement, `onPress`
+              // lui donnerait l'événement de presse comme heure.
+              onPress={() => void reserver()}
               testID="confirmer"
             />
           </View>
