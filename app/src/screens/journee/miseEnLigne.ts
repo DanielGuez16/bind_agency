@@ -11,7 +11,7 @@
  * publication. Un état n'a pas besoin d'un nom, il a besoin d'être vu au bon
  * moment.
  */
-import type { VueDActivation } from '../../api';
+import type { SuspensionReason, VueDActivation } from '../../api';
 
 /**
  * Sept jours, et c'est le seul délai de ce module.
@@ -36,7 +36,20 @@ export type MiseEnLigne =
    * même règle que la suppression de compte — supprimer ou être suspendu
    * n'annule pas des créneaux promis — et elle n'avait d'écran nulle part.
    */
-  | { forme: 'suspendu' }
+  | {
+      forme: 'suspendu';
+      /**
+       * Pourquoi, quand le serveur le dit. **Nul reste un cas rendu**, et pas
+       * un bloc vide : la contrainte de table garantit le motif sur un salon
+       * suspendu, mais une garde de base ne traverse pas un cache
+       * d'application — ce bandeau se rend sur une réponse qui a pu dormir.
+       */
+      motif: SuspensionReason | null;
+      /** Depuis quand, en ISO. La **dernière** sortie : un salon qui s'est mis
+       * en pause deux étés de suite en a deux, et c'est celle d'aujourd'hui qui
+       * explique son état. */
+      depuis: string | null;
+    }
   /**
    * En ligne depuis peu, et la ligne le dit encore.
    *
@@ -90,7 +103,18 @@ type CeQuiRetientLaPublication = Pick<
   // ligne : la date seule, ce qu'elle disait déjà. Les rendre obligatoires
   // forcerait les décors à les poser, et masquerait le seul cas où l'absence
   // change quelque chose.
-  Partial<Pick<VueDActivation, 'createurs_qui_peuvent_reserver' | 'confirmation_jours'>>;
+  Partial<
+    Pick<
+      VueDActivation,
+      | 'createurs_qui_peuvent_reserver'
+      | 'confirmation_jours'
+      // Le motif et sa date suivent la même règle, et pour la même raison :
+      // une réponse plus vieille qu'eux doit continuer de rendre le bandeau
+      // sans motif, qui est exactement ce qu'il rendait hier.
+      | 'suspension_motif'
+      | 'suspendu_depuis'
+    >
+  >;
 
 export function miseEnLigne(
   vue: CeQuiRetientLaPublication | null | undefined,
@@ -115,7 +139,18 @@ export function miseEnLigne(
 
   // **Avant tout le reste.** Un salon suspendu n'a pas d'étape à cocher : la
   // question « qu'est-ce qui retient la publication » ne se pose plus.
-  if (vue.status === 'suspended') return { forme: 'suspendu' };
+  if (vue.status === 'suspended') {
+    return {
+      forme: 'suspendu',
+      // **Le motif vient de la colonne, la date du journal**, et les deux ne
+      // s'unifient pas : lire un état courant dans un journal d'événements a
+      // déjà coûté cher ici. Une date de transition, elle, ne vit nulle part
+      // ailleurs. Qui verra deux sources pour un même bloc voudra les
+      // rapprocher — c'est ce qu'il ne faut pas faire.
+      motif: vue.suspension_motif ?? null,
+      depuis: vue.suspendu_depuis ?? null,
+    };
+  }
 
   if (vue.status === 'active') {
     if (invisibles.length > 0) {

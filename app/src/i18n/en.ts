@@ -775,6 +775,12 @@ export const en = {
     miseEnLignePrete: 'Everything is ready. Creators are waiting.',
     miseEnLigneConfirmee: 'You are live — since {{date}}',
     suspenduTitre: 'Your account is suspended',
+    suspenduTitrePause: 'You are paused',
+    suspenduTitreGrace: 'Your subscription has lapsed',
+    suspenduPause: 'You took yourself out of the feed, and you are the one who puts yourself back. Nothing you built is lost.',
+    suspenduGrace: 'The grace period ended without a subscription. Subscribing puts you back in the feed.',
+    suspenduSansMotif: 'Creators cannot see you right now.',
+    suspenduDepuis: 'Since {{date}}',
     suspenduAHonorer: 'You are not visible to creators, and the {{count}} bookings you accepted for today still hold. Being suspended does not cancel them.',
     suspenduRienAujourdhui: 'You are not visible to creators. Bookings you already accepted still hold — being suspended does not cancel them.',
     // **Deux clés plutôt qu'un pluriel de bibliothèque**, comme le titre de

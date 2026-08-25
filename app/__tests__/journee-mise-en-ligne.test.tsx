@@ -418,12 +418,48 @@ describe('suspendu', () => {
     status: 'suspended' as const,
     en_ligne_depuis: null,
     etapes: [ETAPE('address', true), ETAPE('cover_photo', false)],
+    suspension_motif: 'paused_by_business' as const,
+    suspendu_depuis: '2026-08-20T14:00:00Z',
   };
 
   it('n’est pas une publication en attente, et dit ce qui reste dû', () => {
     // **Le décor divergent porte une étape non faite.** Sans elle, « suspendu »
     // et « prêt » rendraient la même chose, et le test passerait sur un calcul
     // qui ne regarde toujours que « actif ou non ».
-    expect(miseEnLigne(SUSPENDU)).toEqual({ forme: 'suspendu' });
+    expect(miseEnLigne(SUSPENDU)).toEqual({
+      forme: 'suspendu',
+      motif: 'paused_by_business',
+      depuis: '2026-08-20T14:00:00Z',
+    });
+  });
+});
+
+
+/**
+ * Le motif porte la sortie, et les deux ne se lèvent pas de la même façon.
+ *
+ * **Le décor divergent est celui du serveur qui n'a pas encore les champs.**
+ * Sans lui, « je lis le motif » et « je suppose la pause » rendraient le même
+ * verdict — la pause est la valeur qu'on croise le plus, et un écran qui la
+ * poserait par défaut passerait tous les cas qu'on aurait pensé à écrire.
+ */
+describe('pourquoi le salon est dehors', () => {
+  const BASE = {
+    status: 'suspended' as const,
+    en_ligne_depuis: null,
+    etapes: [ETAPE('address', true)],
+  };
+
+  it('la grâce expirée n’est pas une pause', () => {
+    expect(
+      miseEnLigne({ ...BASE, suspension_motif: 'grace_expired', suspendu_depuis: null }),
+    ).toEqual({ forme: 'suspendu', motif: 'grace_expired', depuis: null });
+  });
+
+  it('une réponse d’avant les deux champs rend quand même un bandeau', () => {
+    // Le cache d'application garde des réponses des heures durant : la
+    // contrainte de table garantit le motif côté serveur, elle ne garantit rien
+    // de ce que l'écran tient en main.
+    expect(miseEnLigne(BASE)).toEqual({ forme: 'suspendu', motif: null, depuis: null });
   });
 });
