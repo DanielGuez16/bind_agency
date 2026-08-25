@@ -791,3 +791,45 @@ async def test_sans_reprise_la_journee_le_dit_par_une_absence(session: AsyncSess
     journee = await service.journee_du_commerce(session, business=decor["business"], jour=jour)
 
     assert journee.reprise_en_cours is None
+
+
+async def test_la_contrepartie_sert_le_plafond_plutot_que_de_le_laisser_recopier(
+    session: AsyncSession, monkeypatch
+) -> None:
+    """**« Essai 2 sur 3 », et le 3 vient du serveur.**
+
+    Le plafond vit en configuration pour qu'on puisse l'ajuster ; recopié dans
+    l'écran, il mentirait au premier ajustement — et personne ne verrait la
+    différence avant qu'une créatrice compte ses essais.
+
+    Le décor **change le réglage**, et c'est la seule façon de diverger : avec
+    la valeur par défaut, un champ servi depuis la configuration et un 3 écrit
+    en dur rendent le même nombre.
+    """
+    from app.core.config import get_settings
+    from tests.test_collaboration import contrepartie
+
+    ligne, decor = await contrepartie(session)
+    assert ligne is not None, "le décor ne produit aucune contrepartie"
+    await session.flush()
+
+    reglages = get_settings().model_copy(update={"collaboration_max_attempts": 7})
+    monkeypatch.setattr("app.services.booking_history.get_settings", lambda: reglages)
+
+    # **Le jour de la réservation, pas celui de la machine.** Le décor pose son
+    # créneau où il veut ; lire « aujourd'hui » rendait une journée vide, et le
+    # test tombait sur son propre montage plutôt que sur le champ.
+    fuseau = ZoneInfo(decor["business"].timezone)
+    journee = await service.journee_du_commerce(
+        session,
+        business=decor["business"],
+        jour=decor["booking"].starts_at.astimezone(fuseau).date(),
+    )
+
+    contreparties = [
+        ligne_du_jour.contrepartie
+        for ligne_du_jour in journee.items
+        if ligne_du_jour.contrepartie is not None
+    ]
+    assert contreparties, "le décor ne produit aucune contrepartie : il ne prouve rien"
+    assert contreparties[0].max_attempts == 7

@@ -31,6 +31,11 @@ from zoneinfo import ZoneInfo
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
+# **La règle vient d'un seul endroit.** Elle était écrite deux fois — ici et
+# dans `booking_states` — avec la même formule ; la première modification de
+# l'une aurait fait mentir l'écran sur ce que le serveur accepte, et le défaut
+# se serait lu comme un bouton ouvert qui se fait refuser.
+from app.core.config import get_settings
 from app.models import (
     AuditLog,
     Booking,
@@ -52,11 +57,6 @@ from app.models.enums import (
     ContentFormat,
     Platform,
 )
-
-# **La règle vient d'un seul endroit.** Elle était écrite deux fois — ici et
-# dans `booking_states` — avec la même formule ; la première modification de
-# l'une aurait fait mentir l'écran sur ce que le serveur accepte, et le défaut
-# se serait lu comme un bouton ouvert qui se fait refuser.
 from app.services import availability, directory, eligibility, support
 from app.services.audit import AuditedEntity
 from app.services.booking_states import fin_de_l_annulation_libre, ouverture_de_l_absence
@@ -106,6 +106,10 @@ class LigneDeContrepartie:
     status: CollaborationStatus
     deadline_at: datetime
     attempts_count: int
+    #: Le plafond d'essais, **servi et non recopié**. L'écran écrit « essai 2
+    #: sur 3 » ; le 3 en dur mentirait au premier ajustement, et il vit en
+    #: configuration précisément pour qu'on puisse l'ajuster.
+    max_attempts: int
     needs_human_review: bool
     #: Ce que le salon a reproché à la dernière soumission. **Nul quand rien
     #: n'a été refusé.**
@@ -346,6 +350,7 @@ def _contrepartie(ligne, motifs: dict[uuid.UUID, str] | None = None) -> LigneDeC
         status=ligne.collaboration_status,
         deadline_at=ligne.deadline_at,
         attempts_count=ligne.attempts_count,
+        max_attempts=get_settings().collaboration_max_attempts,
         needs_human_review=ligne.needs_human_review,
         dernier_motif=(motifs or {}).get(ligne.collaboration_id),
     )

@@ -610,6 +610,7 @@ export const en = {
     repriseActionFormat: 'Send it again in the format they asked for.',
     repriseActionQualite: 'Send a sharper capture.',
     repriseTentative: 'Attempt {{n}}',
+    repriseTentativeSurPlafond: 'Attempt {{n}} of {{plafond}}',
     historiqueTitre: 'Your bookings',
     historiqueVide: 'Nothing here yet.',
     ongletAVenir: 'Upcoming',
