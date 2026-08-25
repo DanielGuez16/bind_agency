@@ -18,11 +18,11 @@
  * même donnée.
  */
 import * as ImagePicker from 'expo-image-picker';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { useApi, type PhotoDuCommerce } from '../api';
-import { Icone, StatusMessage, Texte, vibration } from '../components';
+import { Button, Icone, StatusMessage, Texte, vibration } from '../components';
 import { Photo } from '../components';
 import { useI18n } from '../i18n';
 import { radius, useColors } from '../theme';
@@ -44,16 +44,31 @@ export function GalerieDuCommerce({
   const c = useColors();
   const [echec, setEchec] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
+  /**
+   * Le fichier choisi, gardé jusqu'à ce qu'il parte.
+   *
+   * **C'était une variable locale qui mourait avec la fonction.** Un envoi qui
+   * échouait laissait un message et rien d'autre : le fichier était perdu, et
+   * réessayer voulait dire rouvrir la galerie et le retrouver. C'est le cas que
+   * le défaut de téléversement rendait certain, et celui qui décide si l'on
+   * réessaie ou si l'on abandonne.
+   */
+  const [aRenvoyer, setARenvoyer] = useState<string | null>(null);
+
+  /** L'échec du tour en cours, lisible tout de suite — `echec` ne l'est qu'au rendu suivant. */
+  const echecCourant = useRef(false);
 
   async function agir(action: () => Promise<unknown>) {
     setEnvoi(true);
     setEchec(null);
+    echecCourant.current = false;
     vibration.action();
     try {
       await action();
       onChange();
     } catch (erreur) {
       vibration.echec();
+      echecCourant.current = true;
       setEchec(messageDErreur(erreur));
     } finally {
       setEnvoi(false);
@@ -82,7 +97,18 @@ export function GalerieDuCommerce({
     const choisie = resultat.canceled ? null : resultat.assets[0];
     if (!choisie) return;
 
-    await agir(() => api.ajouterUnePhoto(businessId, choisie.uri));
+    await envoyer(choisie.uri);
+  }
+
+  async function envoyer(uri: string) {
+    setARenvoyer(uri);
+    try {
+      await agir(() => api.ajouterUnePhoto(businessId, uri));
+    } finally {
+      // Gardé tant que l'envoi n'a pas abouti : c'est ce qui rend le réessai
+      // possible sans rouvrir la galerie.
+      setARenvoyer((garde) => (echecCourant.current ? garde : null));
+    }
   }
 
   /** Échange deux rangs et envoie l'ordre complet. */
@@ -215,6 +241,34 @@ export function GalerieDuCommerce({
       {/* Ajouter est en pied, après ce qui existe : la galerie se lit avant
           de s'allonger, et un bouton en tête ferait passer l'ajout pour le
           geste principal d'un écran qui sert surtout à ordonner. */}
+      {/* **Un envoi de photo prend des secondes, pas des millisecondes.** Le
+          seuil des 400 ms suppose une réponse ; sur le réseau d'un salon il n'y
+          en a pas avant plusieurs secondes, et le bouton n'était que désactivé
+          — rien ne bougeait, et l'on conclut que l'appui n'a pas pris.
+
+          Pas de pourcentage : `fetch` n'en donne aucun, et une barre qui
+          avancerait sans mesure serait une invention. Ce qui se dit est que ça
+          travaille. */}
+      {envoi ? (
+        <Texte variante="type.caption" couleur="ink.soft" testID="envoi-en-cours">
+          {t('composition.photoEnvoiEnCours')}
+        </Texte>
+      ) : null}
+
+      {/* **L'échec garde le fichier.** Réessayer n'a pas à rouvrir la galerie. */}
+      {echec && aRenvoyer ? (
+        <View style={{ flexDirection: 'row' }}>
+          <Button
+            label={t('composition.photoReessayer')}
+            size="sm"
+            variant="secondary"
+            fullWidth={false}
+            onPress={() => void envoyer(aRenvoyer)}
+            testID="reessayer-l-envoi"
+          />
+        </View>
+      ) : null}
+
       <Pressable
         accessibilityRole="button"
         disabled={envoi}

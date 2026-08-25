@@ -1144,9 +1144,9 @@ export const en = {
     // cadre pointillé dans la liste, et cet état. Un intitulé « ajoutez une
     // photo » aurait décrit une capacité au lieu de la rendre évidente.
     deposerUnePhoto: 'Add a photo',
-    photoManque: 'Needs a photo',
     photoEnvoiEnCours: 'Sending your photo…',
     photoReessayer: 'Try sending again',
+    photoManque: 'Needs a photo',
     corriger: 'Correct',
     colonneNom: 'Service',
     colonneDuree: 'Length',
