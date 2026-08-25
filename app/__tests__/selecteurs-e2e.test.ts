@@ -40,6 +40,16 @@ const AUTORISES = [
   // La navigation et les gestes de la page, qui n'appartiennent à aucun écran.
   /^page\.goto\(/,
   /^page\.locator\('video'\)/,
+  // **L'en-tête du document et le script du bundle.** Ils n'appartiennent à
+  // aucun écran — ils existent avant que le premier soit monté, et c'est
+  // justement ce qu'on éprouve d'eux : que le manifeste soit annoncé, que ce
+  // qu'iOS demande y soit, et que le gabarit n'ait pas mangé le bundle. Les
+  // porter par un écran serait faux au sens propre.
+  //
+  // La forme est étroite exprès : trois noms de balise, et un attribut. Un
+  // `[data-testid=…]` ne passe pas par là, donc la règle qui compte — un
+  // identifiant se cherche dans son écran — reste entière.
+  /^page\.locator\('(link|meta|script)\[/,
 ];
 
 /** Les appels à `page.` qui commencent une chaîne de sélection. */

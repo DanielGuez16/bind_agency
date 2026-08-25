@@ -240,6 +240,23 @@ describe('les fichiers de la marque', () => {
     expect(traînards).toEqual([]);
   });
 
+  it('et aucune image ne traîne à la racine du site non plus', () => {
+    // **Le même piège, sur le dossier qui part en ligne.** `public/` est
+    // recopié tel quel à la racine du build : une icône oubliée y est *servie*,
+    // et un manifeste ou une convention peut la réclamer des mois plus tard.
+    // C'est ainsi qu'une marque périmée attend son tour — l'ancien monogramme
+    // vert a traversé un changement complet de système par ce chemin.
+    //
+    // Ici le filtre porte sur l'extension et non sur un préfixe : un fichier de
+    // marque n'a aucune raison de s'appeler `marque-` pour être une image, et
+    // c'est le préfixe qui laissait passer les orphelins la première fois.
+    const connus = new Set(TOUS.map(([nom]) => nom));
+    const traînards = readdirSync(PUBLIC).filter(
+      (nom) => /\.(png|ico|svg|jpg|jpeg|webp)$/i.test(nom) && !connus.has(nom),
+    );
+    expect(traînards).toEqual([]);
+  });
+
   it('l’icône d’application est carrée, et assez grande pour les magasins', () => {
     const { largeur, hauteur } = dimensions('icon.png');
     expect(largeur).toBe(hauteur);
