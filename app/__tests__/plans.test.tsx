@@ -35,14 +35,14 @@ function plan(over: Record<string, unknown> = {}) {
   };
 }
 
-async function monter(plans: unknown[]) {
+async function monter(plans: unknown[], locale: 'en' | 'es' = 'en') {
   const api = new ApiClient({
     baseUrl: 'https://api.test',
     coffre: { lire: async () => null, ecrire: async () => {} },
     fetchImpl: async () => ({ ok: true, status: 200, json: async () => plans }) as Response,
   });
   return render(
-    <I18nProvider initialLocale="en">
+    <I18nProvider initialLocale={locale}>
       <ThemeProvider role="admin">
         <ApiProvider client={api}>
           <PlansScreen />
@@ -75,7 +75,10 @@ describe('l’écran des plans', () => {
     await monter([plan(), plan({ plan_id: 'p2', mrr_cents: 8_908, subscriptions_count: 1, active_subscriptions_count: 1 })]);
     await waitFor(() => expect(screen.getByTestId('totaux')).toBeTruthy());
 
-    expect(within(screen.getByTestId('total-mrr')).getByText('287.08 USD')).toBeTruthy();
+    // **Le montant que l'utilisateur voit, pas celui que le code compose.**
+    // L'écrire avec `formatMoney` prouverait seulement que la fonction s'appelle
+    // elle-même ; le littéral prouve la sortie.
+    expect(within(screen.getByTestId('total-mrr')).getByText('$287.08')).toBeTruthy();
     expect(within(screen.getByTestId('total-abonnes')).getByText('3')).toBeTruthy();
   });
 
@@ -85,7 +88,25 @@ describe('l’écran des plans', () => {
     await monter([plan()]);
     await waitFor(() => expect(screen.getByTestId('plans-total')).toBeTruthy());
 
-    expect(within(screen.getByTestId('plans-total')).getByText('198.00 USD')).toBeTruthy();
+    expect(within(screen.getByTestId('plans-total')).getByText('$198.00')).toBeTruthy();
+  });
+
+  /**
+   * **Le seul écran du produit qui montre des montants, et il les composait à
+   * la main.** `${(cents / 100).toFixed(2)} ${devise}` rend « 198.00 USD » dans
+   * toutes les langues : point décimal et code de devise, alors que le reste de
+   * l'écran passe à la virgule en espagnol. `formatMoney` existait dans
+   * `format.ts`, avec `Intl` et la langue — et personne ne l'appelait.
+   *
+   * **Le décor divergent est la langue**, pas le nombre : en anglais les deux
+   * implémentations rendent des chaînes différentes mais également plausibles,
+   * et seul l'espagnol montre que l'une des deux ne regarde pas la langue.
+   */
+  it('en espagnol, le montant est espagnol', async () => {
+    await monter([plan()], 'es');
+    await waitFor(() => expect(screen.getByTestId('plans-total')).toBeTruthy());
+
+    expect(within(screen.getByTestId('plans-total')).getByText('198,00 US$')).toBeTruthy();
   });
 
   it('n’additionne pas deux devises, et le dit', async () => {

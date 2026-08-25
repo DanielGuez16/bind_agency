@@ -40,8 +40,8 @@ import {
   Texte,
   type Colonne,
 } from '../components';
-import { formatNumber } from '../format';
-import { useI18n } from '../i18n';
+import { formatMoney, formatNumber } from '../format';
+import { useI18n, type SupportedLocale } from '../i18n';
 import { Ecran } from './Ecran';
 import { dureeLisible, partsParCategorie } from './plans/duree';
 import { AGES } from './cacheDesReponses';
@@ -49,7 +49,7 @@ import { useRequete } from './useRequete';
 
 export function PlansScreen() {
   const { api } = useApi();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   const requete = useRequete<PlanAdministrateur[]>((signal) => api.plans(signal), {
     estVide: (plans) => plans.length === 0,
@@ -101,7 +101,7 @@ export function PlansScreen() {
                       plan.billing_interval === 'yearly'
                         ? t('admin.plansAnnuel')
                         : t('admin.plansMensuel'),
-                    prix: montant(plan.price_cents, plan.currency),
+                    prix: montant(plan.price_cents, plan.currency, locale),
                     // **Zéro se dit en mots.** « 0 » dans une colonne de
                     // chiffres se lit comme une mesure ; un plan que personne
                     // n'a pris est une information d'une autre nature.
@@ -111,7 +111,7 @@ export function PlansScreen() {
                         : String(plan.subscriptions_count),
                     actifs: String(plan.active_subscriptions_count),
                     duree: libelleDeDuree(plan, t),
-                    mrr: montant(plan.mrr_cents, plan.currency),
+                    mrr: montant(plan.mrr_cents, plan.currency, locale),
                   }}
                 />
               ))}
@@ -126,7 +126,7 @@ export function PlansScreen() {
                   prix: '',
                   abonnes: String(totaux.abonnes),
                   actifs: String(totaux.actifs),
-                  mrr: totaux.devise ? montant(totaux.mrrCents, totaux.devise) : '—',
+                  mrr: totaux.devise ? montant(totaux.mrrCents, totaux.devise, locale) : '—',
                 }}
               />
             </View>
@@ -265,8 +265,19 @@ function QuiPrendCePlan({ plan }: { plan: PlanAdministrateur }) {
  * montants restent des entiers partout dans le produit, parce qu'un flottant
  * finit toujours par perdre un centime.
  */
-function montant(cents: number, devise: string): string {
-  return `${(cents / 100).toFixed(2)} ${devise}`;
+/**
+ * **Le formateur du produit, pas une seconde copie.** Cette fonction rendait
+ * `1234.50 USD` à la main : point décimal et code de devise, quelle que soit la
+ * langue. C'est faux en espagnol, où l'écran affiche par ailleurs des virgules
+ * — et cet écran est le **seul du produit qui montre des montants**, donc le
+ * seul endroit où l'erreur pouvait se voir.
+ *
+ * `formatMoney` existait dans `format.ts`, avec `Intl` et la langue, et
+ * **personne ne l'appelait**. Deux traitements du même sujet dont un seul est
+ * branché : c'est le cas où la copie qui sert est celle qui a tort.
+ */
+function montant(cents: number, devise: string, locale: SupportedLocale): string {
+  return formatMoney(cents, devise, locale);
 }
 
 /** Ce que l'écran additionne, et la devise commune s'il y en a une. */
@@ -298,7 +309,7 @@ export function totaliser(plans: PlanAdministrateur[]): Totaux {
  * qu'on lise le détail.
  */
 function Totaux({ totaux }: { totaux: Totaux }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   return (
     <View
@@ -307,7 +318,7 @@ function Totaux({ totaux }: { totaux: Totaux }) {
     >
       <View style={{ width: 260, gap: 2 }} testID="total-mrr">
         <Texte variante="type.figure">
-          {totaux.devise ? montant(totaux.mrrCents, totaux.devise) : '—'}
+          {totaux.devise ? montant(totaux.mrrCents, totaux.devise, locale) : '—'}
         </Texte>
         <Texte variante="type.caption" couleur="ink.soft">
           {t('admin.plansMrrTotal')}
