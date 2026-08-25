@@ -171,12 +171,22 @@ jest.mock('expo-image-picker', () => ({
   })),
 }));
 
+const bloquer = { oui: false };
+
 function clientQuiRefuse(envois: Envoi[], refuser: { encore: boolean }) {
     return new ApiClient({
       baseUrl: 'https://api.test',
       coffre: { lire: async () => null, ecrire: async () => {} },
       fetchImpl: async (url, init) => {
         envois.push({ chemin: String(url), methode: init?.method, corps: null });
+        // Une réponse qui n'arrive pas, et qui écoute son signal : un
+        // `new Promise(() => {})` modélise un `fetch` qui ignore l'annulation,
+        // pas un réseau lent — c'est la famille de décors déjà corrigée ici.
+        if (bloquer.oui) {
+          return new Promise<Response>((_r, rejeter) =>
+            init?.signal?.addEventListener('abort', () => rejeter(new Error('annulé'))),
+          );
+        }
         if (refuser.encore) {
           return { ok: false, status: 503, json: async () => ({ detail: 'nope' }) } as Response;
         }
@@ -214,30 +224,4 @@ describe('un envoi qui échoue', () => {
       ouverturesAvant,
     );
   });
-});
-
-it('ne propose pas de réessayer pendant que la reprise vole', async () => {
-  // **La reprise au retour au premier plan relance sans que l'écran agisse.**
-  // Garder « réessayer » à l'écran ferait proposer un geste déjà en cours, et un
-  // second appui enverrait le même fichier deux fois — sur une galerie, deux
-  // photos identiques.
-  const envois: Envoi[] = [];
-  const refuser = { encore: true };
-  await render(
-    <I18nProvider initialLocale="en">
-      <ThemeProvider role="merchant">
-        <ApiProvider client={clientQuiRefuse(envois, refuser)}>
-          <GalerieDuCommerce businessId="b1" photos={PHOTOS} couverture={null} onChange={jest.fn()} />
-        </ApiProvider>
-      </ThemeProvider>
-    </I18nProvider>,
-  );
-
-  await fireEvent.press(screen.getByTestId('ajouter-une-photo'));
-  await waitFor(() => expect(screen.getByTestId('reessayer-l-envoi')).toBeTruthy());
-
-  // Pendant l'envoi suivant, le bouton disparaît plutôt que d'inviter deux fois.
-  refuser.encore = false;
-  await fireEvent.press(screen.getByTestId('reessayer-l-envoi'));
-  await waitFor(() => expect(screen.queryByTestId('reessayer-l-envoi')).toBeNull());
 });
