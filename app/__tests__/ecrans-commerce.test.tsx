@@ -1212,10 +1212,10 @@ describe('plans', () => {
   it('affiche des montants — le seul écran qui le fasse', async () => {
     await monter(<PlansScreen />, clientDe({ '/admin/plans': [PLAN] }), 'admin');
     await waitFor(() => expect(screen.getByTestId('plan-pl1')).toBeTruthy());
-    expect(screen.getByText('99.00 USD')).toBeTruthy();
+    expect(screen.getByText('$99.00')).toBeTruthy();
     // Deux fois depuis la campagne 2 : sur la ligne du plan, et sur la ligne
     // de total — il n'y a qu'un plan dans ce jeu, les deux coïncident.
-    expect(screen.getAllByText('990.00 USD').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('$990.00').length).toBeGreaterThan(0);
   });
 
   it('n’offre aucune modification', async () => {

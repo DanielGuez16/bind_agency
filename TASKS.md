@@ -2895,6 +2895,36 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       salon suspendu aura — qui a échoué en timeout et fait trouver le reste.
       Deux mutations, les deux tombent*
 
+- [x] **Le seul écran qui montre des montants les composait à la main**
+      *Trouvé en balayant la famille que la planche des réservations avait
+      révélée : du code qui a l'air de faire quelque chose. `PlansScreen`
+      formatait ses montants avec `${(cents / 100).toFixed(2)} ${devise}` —
+      « 198.00 USD » dans toutes les langues, point décimal et code de devise,
+      alors que le reste de l'écran passe à la virgule en espagnol. Et
+      `formatMoney` existait dans `format.ts`, avec `Intl` et la langue, sans
+      **aucun appelant**.*
+      *Deux traitements du même sujet dont un seul est branché, et c'est celui
+      qui a tort : le cas est plus vicieux que la simple duplication, parce que
+      la copie correcte ne peut pas dériver — elle ne sert pas.*
+      *Le décor divergent est la **langue**, pas le nombre. En anglais les deux
+      implémentations rendent des chaînes différentes et également plausibles ;
+      seul l'espagnol montre laquelle ne regarde pas la langue. Et l'assertion
+      porte le littéral que l'utilisateur voit — l'écrire avec `formatMoney`
+      n'aurait prouvé que l'auto-cohérence de la fonction*
+
+- [ ] **`catalogue/corriger.ts` déclare une règle que personne ne consulte**
+      *Même balayage. Le module nomme `CORRIGEABLES` — nom, description, photo —
+      et `DEMANDENT_UNE_AUTRE` — durée, nature, réservabilité — avec une note
+      soignée, et il est **testé**. Aucun écran ne l'importe : `CatalogueScreen`
+      réimplémente la même coupure en ligne, un formulaire pour les trois
+      premiers et `remplacerUnItem` pour les autres.*
+      *Le produit se comporte bien aujourd'hui, et c'est ce qui rend l'entrée
+      facile à repousser. Ce qui coûtera est le jour où la règle bouge : deux
+      copies, dont une seule tenue par des tests, et c'est **l'autre** qui
+      décide de ce que voit le salon. À trancher plutôt qu'à laisser : ou
+      l'écran lit le module, ou le module reconnaît qu'il documente une règle
+      descendue dans la route et cesse de se présenter comme la source*
+
 - [ ] **La suspension punitive : une décision produit qui n'a jamais été prise**
       *Non pas un travail en attente — **une décision qui n'existe pas**, et la
       distinction porte tout. La planche 14c de Design écrit « Motif : trois
@@ -2938,6 +2968,27 @@ redessiné ».
 **Reportée sans raison écrite veut dire perdue.** La raison et ce qui débloque
 tiennent sur la ligne, sinon le report n'est qu'un oubli qu'on a eu l'air de
 décider.
+
+**Un trou dans le registre est une question, pas un verdict.** Une planche sans
+ligne n'a pas prouvé qu'elle n'a pas été passée : elle a prouvé que personne n'a
+écrit la ligne. Ce sont deux choses différentes, et les confondre coûte plus
+cher que le trou — on annonce un écran à refaire, on rouvre un travail rendu, et
+on fait perdre à quelqu'un la journée qu'il aurait passée ailleurs.
+
+C'est arrivé ici, sur `Creator - Les reservations v3`. Aucune entrée ne la
+nommait, j'ai conclu « jamais confrontée », et c'était faux : la confrontation
+était dans le code — `sectionAVenir`, `surfaceDe`, les cadres 08b et 08c cités
+en commentaire — et dans un fichier de tests entier. **Ce qui manquait était la
+ligne, pas le travail.**
+
+Le geste est donc toujours le même et il coûte dix minutes : **avant d'annoncer
+un trou, aller voir l'écran.** Chercher les noms de la planche dans le code et
+dans les tests, pas seulement dans ce fichier. Un registre dit ce qui a été
+inscrit ; seul le dépôt dit ce qui a été fait.
+
+Et ce n'est pas un argument contre le registre — sans lui, personne n'aurait
+regardé cet écran du tout. C'est un argument sur la façon de le lire : il
+désigne où chercher, il ne conclut pas à la place de qui cherche.
 
 **Et deux planches peuvent se recouvrir.** Le cadre 02 de `Lot 1 v1.1` est la
 planche `Tiers v0.7` restylée — il le dit en sous-titre — et le registre l'avait
