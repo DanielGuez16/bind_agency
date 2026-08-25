@@ -696,7 +696,7 @@ export const es: Catalogue = {
     miseEnLignePrete: 'Todo está listo. Las creadoras esperan.',
     miseEnLigneConfirmee: 'Estás en línea — desde el {{date}}',
     suspenduTitre: 'Tu cuenta está suspendida',
-    suspenduAHonorer: 'No eres visible para las creadoras, y las {{count}} reservas que ya aceptaste siguen en pie. Estar suspendido no las cancela.',
+    suspenduAHonorer: 'No eres visible para las creadoras, y las {{count}} reservas que aceptaste para hoy siguen en pie. Estar suspendido no las cancela.',
     suspenduRienAujourdhui: 'No eres visible para las creadoras. Las reservas que ya aceptaste siguen en pie — estar suspendido no las cancela.',
     miseEnLigneConfirmeeUne: 'Estás en línea — desde el {{date}} · 1 creadora puede reservarte',
     miseEnLigneConfirmeePlusieurs:

@@ -63,7 +63,10 @@ const JOURNEE = {
   a_trancher: [],
 };
 
-async function monter(journee: Record<string, unknown>) {
+async function monter(
+  journee: Record<string, unknown>,
+  activation: Record<string, unknown> | null = null,
+) {
   const api = new ApiClient({
     baseUrl: 'https://api.test',
     coffre: { lire: async () => null, ecrire: async () => {} },
@@ -74,6 +77,9 @@ async function monter(journee: Record<string, unknown>) {
       // se voie. Chaque chemin rend maintenant sa forme.
       if (String(url).includes('/support-access')) {
         return { ok: true, status: 200, json: async () => [] } as Response;
+      }
+      if (String(url).includes('/activation')) {
+        return { ok: true, status: 200, json: async () => activation } as Response;
       }
       return { ok: true, status: 200, json: async () => journee } as Response;
     }) as unknown as typeof fetch,
@@ -232,3 +238,59 @@ describe('les horaires du jour, et ce que « vide » veut dire', () => {
 
 });
 
+
+
+/**
+ * Le salon suspendu, et ce qu'il doit **réellement**.
+ *
+ * **La phrase et le nombre se contredisaient.** Le bandeau recevait les
+ * réservations du jour *plus* la file à trancher, sous une phrase qui dit
+ * « les N réservations que vous avez acceptées » — c'est-à-dire qu'il comptait
+ * des demandes que le salon n'a justement pas encore acceptées. Le décor
+ * ci-dessous les fait diverger : rien d'accepté, trois demandes en attente. La
+ * somme dit trois, la vérité dit zéro.
+ *
+ * Les deux ne se somment d'ailleurs pas : la file vient du serveur et porte des
+ * décisions pour après-demain, la journée ne connaît qu'un jour.
+ */
+describe('le salon suspendu ne compte que ce qu’il a accepté', () => {
+  const SUSPENDU = {
+    status: 'suspended',
+    en_ligne_depuis: null,
+    etapes: [{ cle: 'address', done: true, blocking: true }],
+  };
+
+  it('trois demandes en attente et rien d’accepté : il n’annonce aucun dû', async () => {
+    await monter(
+      {
+        ...JOURNEE,
+        items: [],
+        a_trancher: [
+          RESERVATION('d-1', 'awaiting_business'),
+          RESERVATION('d-2', 'awaiting_business'),
+          RESERVATION('d-3', 'awaiting_business'),
+        ],
+      },
+      SUSPENDU,
+    );
+
+    const bandeau = await screen.findByTestId('bandeau-suspendu');
+    expect(within(bandeau).getByText(en.commerce.suspenduRienAujourdhui)).toBeTruthy();
+  });
+
+  it('une réservation acceptée aujourd’hui : c’est elle qu’il annonce', async () => {
+    await monter(
+      {
+        ...JOURNEE,
+        items: [RESERVATION('b-1', 'confirmed')],
+        a_trancher: [RESERVATION('d-1', 'awaiting_business')],
+      },
+      SUSPENDU,
+    );
+
+    const bandeau = await screen.findByTestId('bandeau-suspendu');
+    expect(
+      within(bandeau).getByText(en.commerce.suspenduAHonorer.replace('{{count}}', '1')),
+    ).toBeTruthy();
+  });
+});

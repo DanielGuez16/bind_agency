@@ -2800,6 +2800,31 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       message d'échec et ne propose rien — a été écrit après, et il tombe sur la
       mutation.*
 
+- [x] **Le compte du salon suspendu disait le contraire de sa phrase**
+      *Livré hier, et faux d'un jour. Le bandeau recevait les réservations du
+      jour **plus** la file à trancher, sous une phrase qui dit « les N
+      réservations que vous avez déjà acceptées » : un salon sans aucune
+      réservation et trois demandes en attente lisait qu'il en avait accepté
+      trois. Les deux ne se somment d'ailleurs pas — la file vient du serveur et
+      porte des décisions pour après-demain, la journée ne connaît qu'un jour.*
+      *La phrase nomme maintenant le jour, et le compte ne prend que ce qui a
+      été accepté. Le cas divergent — rien d'accepté, trois demandes — tombe sur
+      l'ancien câblage ; il fallait le monter sur l'écran et non sur le bandeau,
+      parce que le défaut était au point d'appel et qu'un test du composant seul
+      l'aurait manqué en beauté*
+
+- [ ] **Le registre des planches n'a plus de ligne depuis la génération v1.1**
+      *Douze planches y figurent, la dernière est `Lot 1 v1.1`, et toute la
+      génération v3 est passée depuis sans y entrer. Elle est tracée en entrées
+      cochées, c'est-à-dire là où on cherche du travail et non l'état d'une
+      planche. La règle du registre ne garde donc plus rien depuis douze
+      planches — et c'est la panne qu'il existe pour empêcher, six
+      spécifications perdues faute de la liste. Bloqué sur une seule chose : le
+      **nom exact** de chaque planche, que le dépôt n'écrit nulle part et que le
+      projet Design n'a pas rendu lisible depuis cette session. Il ne s'invente
+      pas — un registre à noms approximatifs ferait croire la planche inscrite.
+      Détail dans la section du registre*
+
 - [ ] **Le motif de suspension, servi sur la vue d'activation**
       *Le bandeau du salon suspendu dit ce qui reste dû mais pas pourquoi il est
       suspendu, alors que la planche 14c le porte en toutes lettres : « Motif :
@@ -2851,6 +2876,33 @@ autre : l'état se lit par cadre quand un cadre a déjà sa propre planche.
 | `BIND Creator - Fil v2` | **Partiellement passée, et le reste est sans objet.** La direction 1b — les rangées par quartier — est branchée là où Design l'a elle-même placée : ce que montre une catégorie choisie (#141). La direction 1a a été remplacée par `Le mur v2.1`. |
 | `BIND Creator - Le mur v2.1` | **Passée, et ses cinq réserves sont tranchées** (#131, #132, #140, #141, #145). Trois écarts à la planche sont assumés et écrits : le quartier de la position n'est pas nommé — rien ne sait le résoudre ; le titre de quartier reste à 34 contre 28 sur la planche — la raison a changé sans que la décision change : c'était le plancher du Didone, tombé avec lui en v1.1, c'est maintenant que la planche est une v1.0 non rééditée ; et les catégories sont les six du modèle, celles de la planche datant du produit mono-catégorie. Deux étaient des défauts et sont corrigés : le rayon se règle de nouveau dans les deux sens, et le mur va à fond perdu. |
 | `BIND Creator - Lot 1 v1.1` | **Passée.** Le cadre 01, l'audience (#149) — l'écran nommé deux fois comme le plus faible du produit — et le cadre 08, les réservations (#150), sont confrontés à leurs planches. Le cadre 02 l'était déjà : c'est `Tiers v0.7` restylée, livrée sous sa propre tâche, et le registre le surestimait en lisant la planche en bloc. Son fil a été remplacé par le mur, et son cadre 03b a servi à composer le filtre par catégorie. **Reste la porte du cadre 11c**, que 02a ouvre et que la navigation ne passe pas. |
+
+
+**Le registre s'arrête à la génération v1.1, et douze planches sont passées
+depuis.** Le tableau ci-dessus nomme douze planches ; la dernière entrée y est
+`Lot 1 v1.1`. Toute la génération v3 — le fil et ses cinq formes, la fiche, le
+créneau, la preuve, l'accueil, l'audience, la journée, le catalogue, les
+horaires, la caisse, les publications, l'activation, l'arbitrage, les plans, les
+réglages du créateur, le mode terrain, l'écran de chargement, la configuration
+du commerce — **n'a pas de ligne d'état**. Elle est bien tracée, mais en entrées
+cochées dans le corps du fichier, c'est-à-dire à l'endroit où on cherche du
+travail à faire et non l'état d'une planche.
+
+Ce n'est pas cosmétique : c'est exactement la panne que ce registre existe pour
+empêcher, et sa première phrase en donne le prix — six spécifications perdues
+en route faute de cette liste. La règle du haut — « aucune nouvelle planche
+n'est prise tant que la précédente n'est pas entièrement passée » — ne s'applique
+pas à ce qui n'y figure pas ; elle n'a donc plus rien gardé depuis douze
+planches. Et le mode d'échec s'est déjà produit à l'intérieur de ce registre :
+l'état tenu **par planche** plutôt que par cadre a surestimé `Lot 1 v1.1`, et
+c'est ce qui a laissé trois cadres v1.0 sans écran pendant des semaines.
+
+**Ce qui manque pour le combler est le nom exact de chaque planche**, et il ne
+s'invente pas : le dépôt ne les écrit nulle part — il dit « la planche v3 », pas
+son titre — et le projet Design n'est pas lisible depuis une session sans
+autorisation du connecteur. Un registre à noms approximatifs serait pire que le
+trou : on croirait la planche inscrite et on ne la retrouverait pas. Les titres
+se relèvent dans le projet Design, une fois, et les lignes s'écrivent avec.
 
 **Ce que cette liste a trouvé en étant écrite :** `Lot 1 v1.1` était la seule
 planche sans entrée nulle part, alors que les lots 2, 3 et 4 en avaient chacun
