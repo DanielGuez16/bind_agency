@@ -457,7 +457,6 @@ function CarteDeReservation({
     >
       <LigneDeReservation
         reservation={reservation}
-        onglet={onglet}
         onOuvrir={onOuvrir}
         onRelire={onRelire}
       />
@@ -467,13 +466,10 @@ function CarteDeReservation({
 
 function LigneDeReservation({
   reservation,
-  onglet,
   onOuvrir,
   onRelire,
 }: {
   reservation: ReservationDuCreateur;
-  /** L'onglet décide du titre : le verbe en cours, la prestation ailleurs. */
-  onglet: string;
   onOuvrir: (reservation: ReservationDuCreateur) => void;
   onRelire: () => void;
 }) {
@@ -492,12 +488,18 @@ function LigneDeReservation({
    * d'échec des champs servis sans lecteur, transposé à l'intérieur de l'app :
    * le calcul est juste, et il ne sort pas.
    *
-   * **Nul hors de l'onglet en cours, et ce n'est pas une économie.** Sur « à
-   * venir » la question est « qu'est-ce que je vais recevoir », et la prestation
-   * y est la bonne réponse ; sur « en cours » elle devient « qu'est-ce qu'on
-   * attend de moi », à quoi une prestation ne répond pas.
+   * **La contrepartie décide, pas l'onglet.** La première version portait
+   * `onglet === 'en-cours'` par-dessus, ce qui paraissait plus sûr et ne
+   * l'était pas : les onglets se découpent sur le statut — « à venir » tient
+   * `held`, `awaiting_business` et `confirmed` — et une contrepartie ne naît
+   * qu'à la consommation. La condition était donc **inatteignable**, et une
+   * mutation qui la retirait laissait tous les tests verts. Une branche qu'aucun
+   * test ne peut fixer finit par être « corrigée » de travers.
+   *
+   * Sans contrepartie, pas de verbe : sur « à venir » la question est « qu'est-ce
+   * que je vais recevoir », et la prestation y est la bonne réponse.
    */
-  const verbe = onglet === 'en-cours' ? verbeDeLaContrepartie(reservation) : null;
+  const verbe = verbeDeLaContrepartie(reservation);
 
   return (
     <View

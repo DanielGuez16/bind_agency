@@ -552,10 +552,12 @@ describe('ce que la carte peint', () => {
  * décision centrale de la planche v3 pour cet onglet, et elle n'était pas à
  * l'écran.
  *
- * **Le décor divergent est celui qui reste sur la prestation.** Une carte de
- * l'onglet « à venir » doit continuer de titrer « Gel manicure » : sans ce
- * cas, « je rends le verbe partout » passerait, et l'onglet des rendez-vous
- * annoncerait un geste là où il n'y a qu'à venir.
+ * **Le décor divergent est celui qui reste sur la prestation** — et il a fallu
+ * une mutation pour le trouver juste. La première version opposait les deux
+ * onglets, ce qui ne prouvait rien : une réservation « à venir » n'a jamais de
+ * contrepartie, donc les deux implémentations rendaient le même verdict et
+ * « je rends le verbe partout » survivait. Ce qui décide vraiment est la
+ * **présence d'une contrepartie**, et c'est sur elle que le cas diverge.
  */
 describe('le titre est le verbe, et seulement là où c’est la question', () => {
   const EN_COURS = (statut: string) =>
@@ -596,7 +598,7 @@ describe('le titre est le verbe, et seulement là où c’est la question', () =
     ).toBeTruthy();
   });
 
-  it('sur « à venir », le titre reste la prestation : on vient, on ne publie pas', async () => {
+  it('sans contrepartie, le titre reste la prestation : on vient, on ne publie pas', async () => {
     await monter([
       reservation({ booking_id: 'r-venir', status: 'confirmed', contrepartie: null }),
     ]);
@@ -605,5 +607,23 @@ describe('le titre est le verbe, et seulement là où c’est la question', () =
     const carte = await screen.findByTestId('reservation-r-venir');
     expect(within(carte).getByText('Gel manicure')).toBeTruthy();
     expect(within(carte).queryByTestId('verbe-r-venir')).toBeNull();
+  });
+
+  it('une contrepartie approuvée n’attend plus rien, donc plus de verbe', async () => {
+    // Le second cas où le verbe doit se taire, et il n'est pas le même : ici la
+    // contrepartie **existe**. Sans lui, « il y a une contrepartie donc il y a
+    // un verbe » passerait, et une collaboration close annoncerait un geste.
+    await monter([
+      reservation({
+        booking_id: 'r-clos',
+        status: 'consumed',
+        contrepartie: contrepartie('approved') as never,
+      }),
+    ]);
+    await fireEvent.press(screen.getByLabelText(new RegExp(en.parcours.ongletEnCours)));
+
+    const carte = await screen.findByTestId('reservation-r-clos');
+    expect(within(carte).getByText('Gel manicure')).toBeTruthy();
+    expect(within(carte).queryByTestId('verbe-r-clos')).toBeNull();
   });
 });
