@@ -378,7 +378,9 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
             // Ce qui reste à recevoir aujourd'hui, compté sur la journée que
             // l'écran tient déjà : une suspension n'annule pas ce qui a été
             // accepté, et c'est là qu'on le lit.
-            aHonorer={attendues.length + aTrancher.length}
+            // Ce qui est dû, et rien d'autre : une demande en attente n'est
+            // pas une réservation acceptée, et elle ne se compte pas ici.
+            aHonorer={attendues.length}
             onPublie={requete.recharger}
           />
         );

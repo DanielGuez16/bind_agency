@@ -775,7 +775,7 @@ export const en = {
     miseEnLignePrete: 'Everything is ready. Creators are waiting.',
     miseEnLigneConfirmee: 'You are live — since {{date}}',
     suspenduTitre: 'Your account is suspended',
-    suspenduAHonorer: 'You are not visible to creators, and the {{count}} bookings you already accepted still hold. Being suspended does not cancel them.',
+    suspenduAHonorer: 'You are not visible to creators, and the {{count}} bookings you accepted for today still hold. Being suspended does not cancel them.',
     suspenduRienAujourdhui: 'You are not visible to creators. Bookings you already accepted still hold — being suspended does not cancel them.',
     // **Deux clés plutôt qu'un pluriel de bibliothèque**, comme le titre de
     // la journée : `count` traverse le formateur de nombres, i18n-js ne le

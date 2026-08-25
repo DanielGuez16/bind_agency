@@ -70,10 +70,17 @@ export function BandeauDeMiseEnLigne({
   /** Le fuseau du salon, pour dater la confirmation là où elle a eu lieu. */
   timezone: string;
   /**
-   * Combien de réservations restent à honorer aujourd'hui.
+   * Combien de réservations **déjà acceptées** restent à servir aujourd'hui.
    *
    * Compté sur la journée que l'écran tient déjà : un appel pour un nombre
    * qu'on peut compter ferait deux comptes qui finiraient par diverger.
+   *
+   * **Il portait aussi la file à trancher, et la phrase disait le contraire.**
+   * « Les N réservations que vous avez déjà acceptées » comptait des demandes
+   * que le salon n'a justement pas encore acceptées — un salon sans aucune
+   * réservation et trois demandes en attente lisait qu'il en avait accepté
+   * trois. Les deux ne se somment d'ailleurs pas : la file vient du serveur et
+   * porte des décisions pour après-demain, la journée ne connaît qu'un jour.
    */
   aHonorer: number;
   onPublie: () => void;
