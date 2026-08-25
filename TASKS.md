@@ -2828,20 +2828,34 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       avec leur raison écrite ; six n'ont pas de ligne chez Design parce
       qu'elles sont arrivées après sa dernière mise à jour*
 
-- [ ] **`Creator - Les reservations v3` n'a jamais été confrontée**
-      *Tranchée par Design le 20 août — « une ligne dit ce qu'elle attend ; le
-      détail n'arrive qu'au moment d'agir » — et aucune entrée de ce fichier ne
-      la confronte. L'écran a été touché depuis : le bouton qui cessait de
-      s'étirer, la reprise en contour d'encre. C'est du repeint.*
-      *Sa dernière confrontation réelle est le cadre 08 de `Lot 1 v1.1`,
-      c'est-à-dire une planche v1.0 — et « repeinte n'est pas passée » est
-      précisément la règle que ce registre écrit en tête. Le mode d'échec ne
-      laisse aucun écran laid derrière lui : ni un test, ni une revue, ni une
-      capture ne le signalent. C'est mot pour mot ce qui a coûté trois campagnes
-      à l'audience.*
-      *Trouvé en rapprochant l'index de Design du registre, et par rien d'autre :
-      c'est le seul trou des vingt-six, ce qui est aussi la mesure de ce que le
-      rapprochement valait*
+- [x] **`Creator - Les reservations v3`, confrontée — et ma propre alerte corrigée**
+      ***Je l'avais annoncée « jamais confrontée », et c'était faux.*** *La
+      confrontation a bien eu lieu : `sectionAVenir`, `verbeDeLaContrepartie`,
+      `surfaceDe`, les cadres 08b et 08c cités dans le code, et un fichier de
+      tests entier — `reservations-08.test.tsx`. Ce qui manquait était l'entrée
+      dans ce fichier, pas le travail. J'avais conclu de l'absence d'entrée à
+      l'absence de travail, ce qui est exactement le raisonnement que le
+      registre est censé rendre inutile.*
+      *La leçon n'est pas « le registre ne sert à rien » — sans lui je n'aurais
+      rien regardé. Elle est qu'un registre dit **ce qui a été inscrit**, jamais
+      ce qui a été fait, et qu'un trou dans le registre est une question, pas un
+      verdict. Le vérifier a coûté dix minutes ; l'annoncer sans vérifier
+      aurait fait refaire un écran entier.*
+      ***Et il y avait bien un écart, plus petit et plus intéressant.*** *La
+      décision centrale de la planche pour l'onglet en cours — « le titre est le
+      verbe », « Post a story » plutôt que « Gel manicure » — était **calculée
+      et jamais rendue**. `verbeDeLaContrepartie` existait, était testé, et ne
+      servait qu'à choisir une surface ; sa propre note décrivait pourtant un
+      affichage qui n'existait nulle part. C'est le mode d'échec des champs
+      servis sans lecteur, transposé à l'intérieur de l'app.*
+      *Trois mutations, et **la première a survécu** : j'avais gardé le verbe
+      derrière `onglet === 'en-cours'`, ce qui paraissait plus sûr. Les onglets
+      se découpent sur le statut — « à venir » tient `held`,
+      `awaiting_business` et `confirmed` — et une contrepartie ne naît qu'à la
+      consommation : la condition était **inatteignable**, et la retirer laissait
+      tout vert. Ce qui décide est la présence d'une contrepartie, et les deux
+      cas où le verbe doit se taire ne sont pas le même — pas de contrepartie,
+      et une contrepartie close. Les deux écrits, les deux tombent*
 
 - [x] **Le motif de suspension, servi sur la vue d'activation**
       *`suspension_motif` et `suspendu_depuis` sur `VueDActivationRead`. Un code
@@ -2966,7 +2980,7 @@ ce qui en a été construit.
 | `BIND Creator - Le fil v5` | — | **Passée.** Rangées par catégorie, cartes qu'on voit. C'est la forme en vigueur. |
 | `BIND Creator - La fiche v3` | 08-19 | **Passée**, deux écarts écrits : pas d'étiquette d'horaires faute d'un champ servi, et les glyphes du jeu existant. |
 | `BIND Creator - Le creneau v3` | 08-19 | **Passée.** Bande de quatorze jours ; `revolu` ajouté en cours de route. Le cadre 05d de la v1.0 — le créneau pris pendant qu'on choisissait — repris depuis. |
-| `BIND Creator - Les reservations v3` | 08-20 | **Non confrontée.** Voir ci-dessous : c'est le seul trou que ce rapprochement a trouvé. |
+| `BIND Creator - Les reservations v3` | 08-20 | **Passée**, et confrontée cadre par cadre depuis. Les trois onglets, les deux sections nommées de « à venir », la grammaire des quatre surfaces, l'historique en lignes nues avec le mois en séparateur. Un écart trouvé et corrigé : le verbe de l'onglet en cours était calculé et jamais rendu. |
 | `BIND Creator - La preuve v3` | 08-20 | **Passée.** Trois champs, et une horloge qui n'est pas celle du téléphone. |
 | `BIND Creator - La preuve v3.1` | — | **Passée.** L'échec d'envoi : un échec réseau n'est pas une faute de la créatrice, et la tentative ne compte pas. Son cadre 07d de la v1.0 — l'envoi qui continue en arrière-plan — **explicitement refusé**, raison écrite plus haut. |
 | `BIND Creator - L accueil v3` | 08-20 | **Passée.** Le premier écran, repris en dernier. |
