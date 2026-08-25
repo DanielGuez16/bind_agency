@@ -180,6 +180,28 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
       vide={
         <>
         {repriseEnCours}
+        {/**
+          * **Le bandeau se rend aussi ici, et c'est le cas qui le demande le
+          * plus.** Il vivait dans les enfants seuls, donc uniquement sur une
+          * journée qui a quelque chose dedans — or les deux états qu'il
+          * annonce vident la journée par construction : un salon pas encore
+          * publié n'est dans aucun fil et ne reçoit rien, un salon suspendu en
+          * est sorti. « Il reste deux points avant que les créatrices vous
+          * voient » ne s'affichait donc jamais au salon qui n'était pas
+          * publié, et la suspension ne se lisait nulle part.
+          *
+          * `aHonorer` vaut zéro sans le calculer : vide veut dire aucun
+          * rendez-vous **et** aucune demande, donc rien à honorer aujourd'hui.
+          */}
+        {chargee ? (
+          <BandeauDeMiseEnLigne
+            businessId={businessId}
+            activation={chargee.activation}
+            timezone={chargee.timezone}
+            aHonorer={0}
+            onPublie={requete.recharger}
+          />
+        ) : null}
         {/* **Plus de cercle.** Il ne disait rien et occupait la place du titre.
             Une journée sans rendez-vous est une information, pas une page qui
             n'a pas chargé — et c'est le titre qui doit le dire. */}

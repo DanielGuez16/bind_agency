@@ -294,3 +294,63 @@ describe('le salon suspendu ne compte que ce qu’il a accepté', () => {
     ).toBeTruthy();
   });
 });
+
+
+/**
+ * Les deux motifs ne disent pas la même sortie.
+ *
+ * **C'est là tout l'intérêt du champ** : une pause se lève par le salon
+ * lui-même, une grâce en payant. Un bandeau qui rendrait la même phrase aux
+ * deux ne vaudrait pas le champ qu'il lit — et le salon écrirait au support
+ * pour demander comment il en sort.
+ */
+describe('pourquoi le salon est dehors, à l’écran', () => {
+  const SUSPENDU = (motif: string) => ({
+    status: 'suspended',
+    en_ligne_depuis: null,
+    etapes: [{ cle: 'address', done: true, blocking: true }],
+    suspension_motif: motif,
+    suspendu_depuis: '2026-08-20T14:00:00Z',
+  });
+
+  it('une pause volontaire ne s’annonce pas comme une sanction', async () => {
+    await monter(JOURNEE, SUSPENDU('paused_by_business'));
+    const bandeau = await screen.findByTestId('bandeau-suspendu');
+    expect(within(bandeau).getByText(en.commerce.suspenduTitrePause)).toBeTruthy();
+    expect(within(bandeau).getByText(en.commerce.suspenduPause)).toBeTruthy();
+  });
+
+  it('une grâce expirée dit qu’on en sort en payant', async () => {
+    await monter(JOURNEE, SUSPENDU('grace_expired'));
+    const bandeau = await screen.findByTestId('bandeau-suspendu');
+    expect(within(bandeau).getByText(en.commerce.suspenduTitreGrace)).toBeTruthy();
+    expect(within(bandeau).getByText(en.commerce.suspenduGrace)).toBeTruthy();
+  });
+});
+
+
+/**
+ * Le bandeau sur une journée vide, qui est la seule qu'il aura.
+ *
+ * **Les deux états qu'il annonce vident la journée par construction** : un
+ * salon pas encore publié n'est dans aucun fil et ne reçoit rien. Le bandeau ne
+ * vivait que dans les enfants de l'écran, donc jamais dans l'état vide — « il
+ * reste deux points avant que les créatrices vous voient » ne s'affichait
+ * jamais au salon qui n'était précisément pas publié.
+ *
+ * Le décor diverge de celui qui passait : journée vide **et** salon non publié.
+ * Avec une journée pleine, les deux implémentations rendent la même chose.
+ */
+it('un salon pas encore publié le lit sur une journée vide', async () => {
+  await monter(JOURNEE, {
+    status: 'draft',
+    en_ligne_depuis: null,
+    etapes: [
+      { cle: 'address', done: true, blocking: true },
+      { cle: 'cover_photo', done: false, blocking: true },
+    ],
+  });
+
+  expect(await screen.findByTestId('journee-vide')).toBeTruthy();
+  expect(screen.getByTestId('bandeau-mise-en-ligne')).toBeTruthy();
+});

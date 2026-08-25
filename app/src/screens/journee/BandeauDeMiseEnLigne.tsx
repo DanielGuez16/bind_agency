@@ -122,16 +122,49 @@ export function BandeauDeMiseEnLigne({
           backgroundColor: c['bg.inverse'],
         }}
       >
+        {/**
+          * **Le titre ne dit « suspendu » à personne qui s'est retiré
+          * lui-même.** Un salon en pause volontaire lisant « votre compte est
+          * suspendu » lit une sanction, et c'est précisément le message au
+          * support qu'on cherchait à éviter. Le mot général ne reste que sur
+          * le cas où le motif manque.
+          */}
         <Texte variante="type.section" couleur="ink.onDark">
-          {t('commerce.suspenduTitre')}
+          {etat.motif === 'paused_by_business'
+            ? t('commerce.suspenduTitrePause')
+            : etat.motif === 'grace_expired'
+              ? t('commerce.suspenduTitreGrace')
+              : t('commerce.suspenduTitre')}
         </Texte>
+        {/**
+          * **Comment on en sort, et c'est tout l'intérêt du motif.** Une pause
+          * se lève par le salon lui-même, une grâce en payant : celui qui ne
+          * dit pas comment sortir de l'état est celui qui fait écrire au
+          * support. Motif nul — un cache qui a dormi, rien d'autre — la phrase
+          * neutre dit au moins l'état.
+          */}
+        <Texte variante="type.body" couleur="ink.onDark">
+          {etat.motif === 'paused_by_business'
+            ? t('commerce.suspenduPause')
+            : etat.motif === 'grace_expired'
+              ? t('commerce.suspenduGrace')
+              : t('commerce.suspenduSansMotif')}
+        </Texte>
+        {/* La transition, pas une durée : « depuis le 3 » et non « depuis
+            deux mois ». Un salon qui s'est mis en pause deux étés de suite a
+            deux sorties, et c'est la dernière qui explique son état. */}
+        {etat.depuis ? (
+          <Texte variante="type.caption" couleur="ink.onDark">
+            {t('commerce.suspenduDepuis', {
+              date: formatDate(etat.depuis, locale, timezone),
+            })}
+          </Texte>
+        ) : null}
         <Texte variante="type.body" couleur="ink.onDark">
           {aHonorer > 0
             ? t('commerce.suspenduAHonorer', { count: aHonorer })
             : t('commerce.suspenduRienAujourdhui')}
         </Texte>
-        {/* Le motif n'est pas servi. Une suspension sans motif se subit ;
-            l'inventer serait pire. Demandé — voir `TASKS.md`. */}
       </View>
     );
   }
