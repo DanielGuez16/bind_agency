@@ -152,7 +152,11 @@ class FauxClientS3:
         self.appels.append({"operation": operation, "params": Params, "expire": ExpiresIn})
         return f"https://exemple.test/{Params['Bucket']}/{Params['Key']}?signature=xxx"
 
-    async def put_object(self, *, Bucket, Key, Body):  # noqa: N803
+    async def put_object(self, *, Bucket, Key, Body, ContentType=None):  # noqa: N803
+        # `ContentType` est accepté et retenu : le dépôt le pose depuis que les
+        # images se servent en direct, et un double qui le refuserait ferait
+        # échouer l'écriture pour une raison qui n'existe pas en production.
+        self.dernier_type = ContentType
         self.appels.append({"operation": "put", "params": {"Bucket": Bucket, "Key": Key}})
 
 
@@ -308,7 +312,11 @@ class FauxClientQuiRefuse(FauxClientS3):
         super().__init__()
         self.erreur = erreur
 
-    async def put_object(self, *, Bucket, Key, Body):  # noqa: N803
+    async def put_object(self, *, Bucket, Key, Body, ContentType=None):  # noqa: N803
+        # `ContentType` est accepté et retenu : le dépôt le pose depuis que les
+        # images se servent en direct, et un double qui le refuserait ferait
+        # échouer l'écriture pour une raison qui n'existe pas en production.
+        self.dernier_type = ContentType
         raise self.erreur
 
     async def get_object(self, *, Bucket, Key):  # noqa: N803
@@ -373,3 +381,27 @@ async def test_une_vraie_panne_de_lecture_ne_passe_pas_pour_une_absence() -> Non
         await depot.lire("photos/business/2026-01-01/illisible")
 
     assert "http=500" in str(panne.value)
+
+
+@pytest.mark.anyio
+async def test_le_type_du_contenu_part_avec_l_ecriture() -> None:
+    """**Ce que le dépôt enregistre est ce que le lien direct rendra.**
+
+    Tant que la route relayait le fichier, elle déduisait le type à chaque
+    lecture et le stockage pouvait l'ignorer. Depuis la redirection, c'est le
+    type posé ici qui décide si un navigateur affiche l'image ou propose de la
+    télécharger.
+
+    Le décor dépose un PNG **et** un JPEG : un dépôt qui poserait un type
+    constant — `image/jpeg` pour tout, ou le générique — passerait un test à un
+    seul format. Ce sont deux écritures qui divergent, pas une.
+    """
+    faux = FauxClientS3()
+    magasin = depot()
+    magasin._client = lambda: faux  # type: ignore[method-assign]
+
+    await magasin.deposer(b"\x89PNG\r\n\x1a\n des octets", prefixe="photos/item")
+    assert faux.dernier_type == "image/png"
+
+    await magasin.deposer(b"\xff\xd8\xff\xe0 des octets", prefixe="photos/item")
+    assert faux.dernier_type == "image/jpeg"
