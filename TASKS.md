@@ -2813,17 +2813,35 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       parce que le défaut était au point d'appel et qu'un test du composant seul
       l'aurait manqué en beauté*
 
-- [ ] **Le registre des planches n'a plus de ligne depuis la génération v1.1**
-      *Douze planches y figurent, la dernière est `Lot 1 v1.1`, et toute la
-      génération v3 est passée depuis sans y entrer. Elle est tracée en entrées
-      cochées, c'est-à-dire là où on cherche du travail et non l'état d'une
-      planche. La règle du registre ne garde donc plus rien depuis douze
-      planches — et c'est la panne qu'il existe pour empêcher, six
-      spécifications perdues faute de la liste. Bloqué sur une seule chose : le
-      **nom exact** de chaque planche, que le dépôt n'écrit nulle part et que le
-      projet Design n'a pas rendu lisible depuis cette session. Il ne s'invente
-      pas — un registre à noms approximatifs ferait croire la planche inscrite.
-      Détail dans la section du registre*
+- [x] **Le registre des planches, à jour de la génération v3**
+      *Vingt-six lignes ajoutées, titres relevés dans le projet Design plutôt
+      que devinés. Le registre s'arrêtait à `Lot 1 v1.1` : toute la génération
+      Ambre était passée sans y entrer, tracée en entrées cochées — c'est-à-dire
+      là où on cherche du travail, pas l'état d'une planche. La règle du haut ne
+      gardait donc plus rien depuis douze planches.*
+      *Design tient son propre index, `INDEX-planches.md`, qui date chaque
+      planche et dit ce qu'elle a **tranché** ; il se termine en disant que le
+      rapprochement avec ce qui a été **construit** appartient au dépôt. Les deux
+      documents se répondent, et c'est l'écart qui se voit.*
+      *L'écart, une fois le rapprochement fait, tient en un nom — voir l'entrée
+      ci-dessous. Vingt-cinq planches sur vingt-six sont passées ou reportées
+      avec leur raison écrite ; six n'ont pas de ligne chez Design parce
+      qu'elles sont arrivées après sa dernière mise à jour*
+
+- [ ] **`Creator - Les reservations v3` n'a jamais été confrontée**
+      *Tranchée par Design le 20 août — « une ligne dit ce qu'elle attend ; le
+      détail n'arrive qu'au moment d'agir » — et aucune entrée de ce fichier ne
+      la confronte. L'écran a été touché depuis : le bouton qui cessait de
+      s'étirer, la reprise en contour d'encre. C'est du repeint.*
+      *Sa dernière confrontation réelle est le cadre 08 de `Lot 1 v1.1`,
+      c'est-à-dire une planche v1.0 — et « repeinte n'est pas passée » est
+      précisément la règle que ce registre écrit en tête. Le mode d'échec ne
+      laisse aucun écran laid derrière lui : ni un test, ni une revue, ni une
+      capture ne le signalent. C'est mot pour mot ce qui a coûté trois campagnes
+      à l'audience.*
+      *Trouvé en rapprochant l'index de Design du registre, et par rien d'autre :
+      c'est le seul trou des vingt-six, ce qui est aussi la mesure de ce que le
+      rapprochement valait*
 
 - [x] **Le motif de suspension, servi sur la vue d'activation**
       *`suspension_motif` et `suspendu_depuis` sur `VueDActivationRead`. Un code
@@ -2901,31 +2919,62 @@ autre : l'état se lit par cadre quand un cadre a déjà sa propre planche.
 | `BIND Creator - Lot 1 v1.1` | **Passée.** Le cadre 01, l'audience (#149) — l'écran nommé deux fois comme le plus faible du produit — et le cadre 08, les réservations (#150), sont confrontés à leurs planches. Le cadre 02 l'était déjà : c'est `Tiers v0.7` restylée, livrée sous sa propre tâche, et le registre le surestimait en lisant la planche en bloc. Son fil a été remplacé par le mur, et son cadre 03b a servi à composer le filtre par catégorie. **Reste la porte du cadre 11c**, que 02a ouvre et que la navigation ne passe pas. |
 
 
-**Le registre s'arrête à la génération v1.1, et douze planches sont passées
-depuis.** Le tableau ci-dessus nomme douze planches ; la dernière entrée y est
-`Lot 1 v1.1`. Toute la génération v3 — le fil et ses cinq formes, la fiche, le
-créneau, la preuve, l'accueil, l'audience, la journée, le catalogue, les
-horaires, la caisse, les publications, l'activation, l'arbitrage, les plans, les
-réglages du créateur, le mode terrain, l'écran de chargement, la configuration
-du commerce — **n'a pas de ligne d'état**. Elle est bien tracée, mais en entrées
-cochées dans le corps du fichier, c'est-à-dire à l'endroit où on cherche du
-travail à faire et non l'état d'une planche.
+### La génération v3
 
-Ce n'est pas cosmétique : c'est exactement la panne que ce registre existe pour
-empêcher, et sa première phrase en donne le prix — six spécifications perdues
-en route faute de cette liste. La règle du haut — « aucune nouvelle planche
-n'est prise tant que la précédente n'est pas entièrement passée » — ne s'applique
-pas à ce qui n'y figure pas ; elle n'a donc plus rien gardé depuis douze
-planches. Et le mode d'échec s'est déjà produit à l'intérieur de ce registre :
-l'état tenu **par planche** plutôt que par cadre a surestimé `Lot 1 v1.1`, et
-c'est ce qui a laissé trois cadres v1.0 sans écran pendant des semaines.
+**Les titres viennent du projet Design, les états viennent d'ici.** Design tient
+son propre index — `design_handoff_bind/INDEX-planches.md` — qui date chaque
+planche et dit **ce qu'elle a tranché**. Il se termine par la phrase qui partage
+le travail : *« Il ne dit pas si une planche a été implémentée, seulement si elle
+a été tranchée. Le rapprochement entre les deux appartient au dépôt, pas ici. »*
+C'est ce tableau. La colonne de droite ne répète donc pas la décision, elle dit
+ce qui en a été construit.
 
-**Ce qui manque pour le combler est le nom exact de chaque planche**, et il ne
-s'invente pas : le dépôt ne les écrit nulle part — il dit « la planche v3 », pas
-son titre — et le projet Design n'est pas lisible depuis une session sans
-autorisation du connecteur. Un registre à noms approximatifs serait pire que le
-trou : on croirait la planche inscrite et on ne la retrouverait pas. Les titres
-se relèvent dans le projet Design, une fois, et les lignes s'écrivent avec.
+| Planche | Tranché | Ce que le dépôt en a fait |
+| --- | --- | --- |
+| `BIND Palette et typographie v3` | 08-18 | **Passée.** La direction Ambre : jetons, typographie, formes. |
+| `BIND Creator - Le fil v3` | 08-19 | **Dépassée** par la v5, après v3.1 et v4. |
+| `BIND Creator - Le fil v3.1` | — | **Passée**, puis dépassée : chercher, et garder. |
+| `BIND Creator - Le fil v4` | — | **Passée**, puis dépassée : une carte par salon, le cœur passe sur la fiche. |
+| `BIND Creator - Le fil v5` | — | **Passée.** Rangées par catégorie, cartes qu'on voit. C'est la forme en vigueur. |
+| `BIND Creator - La fiche v3` | 08-19 | **Passée**, deux écarts écrits : pas d'étiquette d'horaires faute d'un champ servi, et les glyphes du jeu existant. |
+| `BIND Creator - Le creneau v3` | 08-19 | **Passée.** Bande de quatorze jours ; `revolu` ajouté en cours de route. Le cadre 05d de la v1.0 — le créneau pris pendant qu'on choisissait — repris depuis. |
+| `BIND Creator - Les reservations v3` | 08-20 | **Non confrontée.** Voir ci-dessous : c'est le seul trou que ce rapprochement a trouvé. |
+| `BIND Creator - La preuve v3` | 08-20 | **Passée.** Trois champs, et une horloge qui n'est pas celle du téléphone. |
+| `BIND Creator - La preuve v3.1` | — | **Passée.** L'échec d'envoi : un échec réseau n'est pas une faute de la créatrice, et la tentative ne compte pas. Son cadre 07d de la v1.0 — l'envoi qui continue en arrière-plan — **explicitement refusé**, raison écrite plus haut. |
+| `BIND Creator - L accueil v3` | 08-20 | **Passée.** Le premier écran, repris en dernier. |
+| `BIND Creator - L audience v3` | 08-20 | **Passée.** L'écran nommé le plus faible du produit sur trois campagnes. |
+| `BIND Creator - L annulation v3` | 08-22 | **Passée.** Passé la fenêtre, on arrête de parler du score. |
+| `BIND Merchant - La journee v3` | 08-21 | **Passée**, en trois retours. La mise en ligne y est devenue un état et l'exception y est remontée. |
+| `BIND Merchant - Les rapports v3` | 08-21 | **Passée.** À zéro donnée, l'écran change de nature. |
+| `BIND Merchant - L annuaire v3` | 08-21 | **Partiellement passée**, reste reporté avec sa raison — les trois filtres de la planche n'existent pas sur la route, et les poser côté écran filtrerait une page au lieu d'une liste. Section dédiée plus bas. |
+| `BIND Merchant - La configuration v3` | 08-21 | **Passée.** Deux gestes et un état ; le mot « go live » a quitté le produit. |
+| `BIND Merchant - La configuration v3.1` | — | **Passée.** Deux portes de rang égal, et la photo qui se dépose. |
+| `BIND Merchant - L abonnement v3` | 08-22 | **Passée.** Quatre routes complètes qui n'avaient aucun écran ; la grâce se dit en trois intensités. |
+| `BIND Merchant - Le selecteur de salon v3` | 08-22 | **Passée.** Un gérant qui a deux salons peut ouvrir le second. |
+| `BIND Admin - L arbitrage v3` | 08-21 | **Passée**, quatrième issue comprise : clore sans faute, sans aucun événement de fiabilité. |
+| `BIND Admin - Les plans v3` | 08-21 | **Passée.** La largeur va à la durée médiane et à la catégorie. |
+| `BIND Admin - La reprise et les appareils v3` | 08-22 | **Passée pour la reprise** — quatre freins, portée bornée, le salon met dehors depuis la journée. **La moitié « appareils » est reportée avec sa raison** : `GET /me/devices` n'existe pas et la révocation exigeait de posséder le jeton qu'on n'a que sur l'appareil perdu — un cercle, rompu depuis par l'identifiant opaque. |
+| `BIND Terrain - La tournee v3` | 08-22 | **Passée**, suivi de tournée compris — le chiffre décisif est l'écart entre les deux voies de remise, pas le taux d'activation. **Un écart écrit** : `HandoverChannel` n'a pas de valeur pour le SMS alors que la planche propose « by text ». |
+| `BIND Marque - Le chargement v3` | 08-22 | **Passée**, direction A : le point qui tombe et cale les lettres, plafond de 800 ms qui n'est pas une cible. |
+| `BIND Systeme - L attente v3` | 08-22 | **Partiellement passée.** Les règles de composition sont faites, cache compris. Ce qui raccourcirait vraiment l'attente tient au serveur — entrée ouverte plus haut. |
+| `BIND Les deux derniers ecrans v3` | — | **Passée.** L'écran d'administration des salons — quatre colonnes, plafond de cent lignes écrit avec son remède, et « Take over » pour seul mot cliquable — et les favoris avec leur veille d'ouverture. |
+
+**Six planches n'ont pas de ligne dans l'index de Design**, et ce n'est pas une
+négligence de sa part : `Le fil v3.1`, `v4`, `v5`, `La preuve v3.1`,
+`La configuration v3.1` et `Les deux derniers ecrans v3` sont des révisions de
+point ou des planches arrivées après sa dernière mise à jour, le 22 août. Elles
+sont datées ici par ce qu'elles ont remplacé.
+
+**Et le rapprochement a trouvé exactement un trou.** `Creator - Les reservations
+v3` a été tranchée le 20 août — *« une ligne dit ce qu'elle attend ; le détail
+n'arrive qu'au moment d'agir »* — et **aucune entrée de ce fichier ne la
+confronte**. L'écran a bien été touché depuis : le bouton qui cessait de
+s'étirer, la reprise en contour d'encre. C'est du repeint, pas une
+confrontation, et c'est le mode d'échec que ce registre nomme lui-même le plus
+discret : il ne laisse **aucun écran laid derrière lui**. La dernière
+confrontation réelle de cet écran est le cadre 08 de `Lot 1 v1.1`, c'est-à-dire
+une planche v1.0. C'est mot pour mot ce qui a coûté trois campagnes à l'audience.
+
 
 **Ce que cette liste a trouvé en étant écrite :** `Lot 1 v1.1` était la seule
 planche sans entrée nulle part, alors que les lots 2, 3 et 4 en avaient chacun
