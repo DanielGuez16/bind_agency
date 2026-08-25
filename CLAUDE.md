@@ -241,6 +241,20 @@ seulement parce qu'une garde restait rouge. Une mutation se prépare donc en deu
 temps : on commite ce qu'on vient d'écrire, **puis** on casse. Le `git checkout`
 retrouve alors exactement ce qu'on voulait retrouver.
 
+**Et commiter avant de changer de branche, pour la même raison.** Le travail non
+commité suit la bascule ; un `git checkout <branche> -- <chemin>` fait ensuite ce
+qu'il dit — il prend le fichier de **l'autre branche**, et ce qu'on venait
+d'écrire n'existe plus nulle part. Mesuré une fois de plus le jour où cette ligne
+a été ajoutée : un registre de vingt-six planches, effacé en ouvrant la branche
+qui devait le porter, et refait de mémoire.
+
+La règle qui tient n'est pas « se souvenir du piège » — le mode de perte était
+déjà écrit dans `DECISIONS.md`, en détail, par la personne qui l'a refait. Se
+souvenir demande d'y penser au moment exact où l'on ne pense qu'à autre chose. La
+règle est mécanique et se pose au même endroit que celle du dessus : **on commite
+ce qu'on vient d'écrire, puis on bouge.** Un commit de plus ne coûte rien ; il se
+recompose au moment de pousser.
+
 **La suite complète une fois, avant de pousser. Pas douze.** Elle coûte sept
 minutes ; la lancer à chaque étape d'une tranche en coûtait une heure et demie,
 la moitié du temps total mesuré sur une session. Pendant le travail, les
