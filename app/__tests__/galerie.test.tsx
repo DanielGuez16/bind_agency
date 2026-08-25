@@ -171,21 +171,31 @@ jest.mock('expo-image-picker', () => ({
   })),
 }));
 
-describe('un envoi qui échoue', () => {
-  function clientQuiRefuse(envois: Envoi[], refuser: { encore: boolean }) {
+const bloquer = { oui: false };
+
+function clientQuiRefuse(envois: Envoi[], refuser: { encore: boolean }) {
     return new ApiClient({
       baseUrl: 'https://api.test',
       coffre: { lire: async () => null, ecrire: async () => {} },
       fetchImpl: async (url, init) => {
         envois.push({ chemin: String(url), methode: init?.method, corps: null });
+        // Une réponse qui n'arrive pas, et qui écoute son signal : un
+        // `new Promise(() => {})` modélise un `fetch` qui ignore l'annulation,
+        // pas un réseau lent — c'est la famille de décors déjà corrigée ici.
+        if (bloquer.oui) {
+          return new Promise<Response>((_r, rejeter) =>
+            init?.signal?.addEventListener('abort', () => rejeter(new Error('annulé'))),
+          );
+        }
         if (refuser.encore) {
           return { ok: false, status: 503, json: async () => ({ detail: 'nope' }) } as Response;
         }
         return { ok: true, status: 200, json: async () => ({ storage_key: 'k' }) } as Response;
       },
     });
-  }
+}
 
+describe('un envoi qui échoue', () => {
   it('garde le fichier, et le renvoie sans rouvrir la galerie', async () => {
     const envois: Envoi[] = [];
     const refuser = { encore: true };

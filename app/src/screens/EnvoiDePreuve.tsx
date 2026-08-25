@@ -457,9 +457,17 @@ export function EnvoiDePreuve({
 
       {media && vue.etat !== 'rendu' ? (
         <Button
-          label={t(vue.etat === 'echec' ? 'parcours.preuveReessayer' : 'parcours.preuveEnvoyerCelle_ci')}
+          /* **L'état d'envoi vient du crochet autant que de `vue`.** La reprise
+             au retour au premier plan relance sans passer par `envoyer` : sans
+             cette lecture, l'écran resterait sur « réessayer » pendant qu'un
+             envoi vole, et un second appui enverrait la capture deux fois. */
+          label={t(
+            vue.etat === 'echec' && !envoiDeFichier.enVol
+              ? 'parcours.preuveReessayer'
+              : 'parcours.preuveEnvoyerCelle_ci',
+          )}
           size="lg"
-          loading={vue.etat === 'envoi'}
+          loading={vue.etat === 'envoi' || envoiDeFichier.enVol}
           onPress={() => void envoyer()}
           testID="confirmer-l-envoi"
         />

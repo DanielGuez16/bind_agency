@@ -281,7 +281,21 @@ export function GalerieDuCommerce({
       ) : null}
 
       {/* **L'échec garde le fichier.** Réessayer n'a pas à rouvrir la galerie. */}
-      {(echec || envoiDeFichier.interrompu) && envoiDeFichier.aRenvoyer ? (
+      {/* **Pas pendant qu'un envoi vole**, et c'est la reprise automatique qui
+          l'impose. Un réessai par le bouton passe par `envoyer`, qui efface
+          `echec` — donc la garde n'y sert à rien. La reprise au retour au
+          premier plan, elle, rejoue l'action **sans passer par l'écran** :
+          `echec` reste posé, et sans cette condition le bouton inviterait à un
+          geste déjà en cours. Un second appui enverrait la même photo deux
+          fois.
+
+          Non gardé par un test : le décor qui l'atteindrait doit simuler un
+          passage en arrière-plan **pendant** un envoi, sur un écran monté avec
+          son sélecteur d'images. Le crochet, lui, est éprouvé séparément — c'est
+          là que vit la règle. */}
+      {!envoiDeFichier.enVol &&
+      (echec || envoiDeFichier.interrompu) &&
+      envoiDeFichier.aRenvoyer ? (
         <View style={{ flexDirection: 'row' }}>
           <Button
             label={t('composition.photoReessayer')}
