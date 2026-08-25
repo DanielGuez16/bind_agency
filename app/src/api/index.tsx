@@ -427,7 +427,7 @@ export class Api {
    * s'encode pas en JSON sans la faire grossir d'un tiers, sur un réseau qui
    * est souvent celui d'un salon.
    */
-  async televerserUneCapture(uri: string) {
+  async televerserUneCapture(uri: string, progression?: (part: number) => void) {
     const corps = new FormData();
     // Le nom et le type sont indicatifs : le serveur lit les premiers octets,
     // il ne les croit pas. Voir `fichierAEnvoyer` pour ce qui distingue le web.
@@ -436,6 +436,7 @@ export class Api {
     return this.client.request<{ screenshot_key: string }>(routes.televerserUneCapture(), {
       methode: 'POST',
       corpsBrut: corps,
+      progression,
     });
   }
 
@@ -876,19 +877,19 @@ export class Api {
    * décider de ce qu'on en fait. C'est la seconde moitié — poser la clé dans
    * la galerie — que cette méthode ne fait pas.
    */
-  async photographierUnItem(businessId: string, itemId: string, uri: string) {
+  async photographierUnItem(businessId: string, itemId: string, uri: string, progression?: (part: number) => void) {
     const corps = new FormData();
     corps.append('fichier', (await fichierAEnvoyer(uri, 'photo.jpg')) as Blob);
 
     const { storage_key } = await this.client.request<{ storage_key: string }>(
       routes.televerserUnePhoto(businessId),
-      { methode: 'POST', corpsBrut: corps },
+      { methode: 'POST', corpsBrut: corps, progression },
     );
 
     return this.modifierUnItem(businessId, itemId, { photo_key: storage_key });
   }
 
-  async ajouterUnePhoto(businessId: string, uri: string) {
+  async ajouterUnePhoto(businessId: string, uri: string, progression?: (part: number) => void) {
     const corps = new FormData();
     // Le nom et le type sont indicatifs : le serveur lit les premiers octets.
     // Voir `fichierAEnvoyer` pour ce qui distingue le web du natif.
@@ -896,7 +897,7 @@ export class Api {
 
     const { storage_key } = await this.client.request<{ storage_key: string }>(
       routes.televerserUnePhoto(businessId),
-      { methode: 'POST', corpsBrut: corps },
+      { methode: 'POST', corpsBrut: corps, progression },
     );
 
     return this.client.request<PhotoDuCommerce>(routes.photosDuCommerce(businessId), {
@@ -931,13 +932,13 @@ export class Api {
   }
 
   /** Dépose la page, puis l'ajoute à la carte. Deux appels, comme la galerie. */
-  async ajouterUnePageDeCarte(businessId: string, uri: string) {
+  async ajouterUnePageDeCarte(businessId: string, uri: string, progression?: (part: number) => void) {
     const corps = new FormData();
     corps.append('fichier', (await fichierAEnvoyer(uri, 'carte.jpg')) as Blob);
 
     const { storage_key } = await this.client.request<{ storage_key: string }>(
       routes.televerserUnePageDeCarte(businessId),
-      { methode: 'POST', corpsBrut: corps },
+      { methode: 'POST', corpsBrut: corps, progression },
     );
 
     return this.client.request<PageDeLaCarte>(routes.carteDuCommerce(businessId), {

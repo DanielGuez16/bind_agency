@@ -149,6 +149,14 @@ export function EnvoiDePreuve({
   const { t } = useI18n();
   const { color: c } = useTheme();
   const [vue, setVue] = useState<Etat>({ etat: 'repos' });
+  /**
+   * Ce qui est monté, entre 0 et 1, ou nul quand la plateforme ne mesure pas.
+   *
+   * **La capture est le plus lourd des quatre envois du produit**, et le seul
+   * dont l'issue engage une contrepartie : un filet qui parcourt y dit « ça
+   * travaille » sans dire si l'on en est au début ou à la fin.
+   */
+  const [part, setPart] = useState<number | null>(null);
   const [note, setNote] = useState('');
   /**
    * **L'adresse de la publication, et elle n'était demandée nulle part.**
@@ -327,7 +335,11 @@ export function EnvoiDePreuve({
       {vue.etat === 'envoi' ? (
         <StatusMessage
           level="neutral"
-          body={t('parcours.preuveEnvoiEnCours')}
+          body={
+            part === null
+              ? t('parcours.preuveEnvoiEnCours')
+              : t('composition.photoEnvoiPart', { part: Math.round(part * 100) })
+          }
           testID="envoi-en-cours"
         />
       ) : null}

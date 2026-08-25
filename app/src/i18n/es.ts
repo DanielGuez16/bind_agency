@@ -1033,6 +1033,8 @@ export const es: Catalogue = {
     photoPermission: 'BIND necesita acceso a tus fotos. Puedes permitirlo en los ajustes del teléfono.',
     deposerUnePhoto: 'Añadir una foto',
     photoEnvoiEnCours: 'Enviando tu foto…',
+    photoEnvoiPart: 'Enviando… {{part}} %',
+    photoEnvoiInterrompu: 'El envío se detuvo al salir de la app. Tu foto sigue aquí.',
     photoReessayer: 'Intentar de nuevo',
     photoManque: 'Falta una foto',
     corriger: 'Corregir',
