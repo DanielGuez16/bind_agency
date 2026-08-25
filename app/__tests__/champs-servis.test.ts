@@ -53,6 +53,14 @@ const TYPES = join(SRC, 'api', 'types.ts');
  *   table un tapis.
  */
 const NON_RENDUS: Record<string, string> = {
+  // **Le motif de sortie du fil et sa date, servis avant leur ligne.** Le
+  // bandeau du salon suspendu se compose dans l'autre conversation ; sans ces
+  // deux champs il dit ce qui reste dû sans dire pourquoi, et le salon écrit au
+  // support pour le demander.
+  //
+  // Les lignes se retirent au premier lecteur : la garde les réclame elle-même.
+  'VueDActivation.suspension_motif': 'a-instruire',
+  'VueDActivation.suspendu_depuis': 'a-instruire',
   // **Les deux champs de la planche, servis avant leurs écrans.** La
   // composition se fait dans l'autre conversation ; la route sert d'abord pour
   // qu'aucun écran n'ait à les déduire — et c'est justement la déduction qui

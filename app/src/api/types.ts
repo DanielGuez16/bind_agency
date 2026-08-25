@@ -1143,7 +1143,38 @@ export type VueDActivation = {
    * 8 jours » sans le nombre qui rassure — le pire des deux états.
    */
   confirmation_jours: number;
+  /**
+   * Pourquoi ce commerce est hors du fil. **Nul quand il n'y est pas** — la
+   * contrainte de la table le garantit côté serveur.
+   *
+   * **Deux valeurs, et elles n'appellent pas la même phrase** : une pause
+   * volontaire se lève par le salon lui-même, une grâce expirée se lève en
+   * payant. C'est cette différence qui évite un message au support, et c'est
+   * pour elle que le champ vaut d'être servi.
+   *
+   * **Un code, jamais du texte.** L'écran le traduit ; une phrase rendue par
+   * l'API ne passerait pas la garde des traductions.
+   *
+   * **La suspension punitive n'est pas dans cette liste et n'y sera pas sans
+   * arbitrage.** La planche 14c écrit « trois retraits refusés au comptoir » ;
+   * ce motif n'a ni valeur, ni mécanisme, ni décision. Voir `TASKS.md`.
+   */
+  suspension_motif: SuspensionReason | null;
+  /**
+   * Depuis quand il est hors du fil, en ISO. **La dernière sortie**, comme
+   * `en_ligne_depuis` est la dernière entrée.
+   *
+   * Nulle hors suspension. L'écran ne la lit que sur un salon suspendu : c'est
+   * `status` qui dit s'il est dehors, celle-ci dit seulement depuis quand.
+   */
+  suspendu_depuis: string | null;
 };
+
+/**
+ * Pourquoi un commerce a quitté le fil. **Deux raisons, et elles ne se
+ * rattrapent pas de la même façon.**
+ */
+export type SuspensionReason = 'paused_by_business' | 'grace_expired';
 
 /**
  * Qui a souscrit un plan, par catégorie de commerce.

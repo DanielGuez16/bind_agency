@@ -62,12 +62,38 @@ async def derniere_mise_en_ligne(session: AsyncSession, business_id: uuid.UUID) 
     montre, pas le menu de configuration. Deux copies de cette requête
     divergeraient sur le `order_by`, qui est tout ce qu'elle a.
     """
+    return await _derniere_transition(session, business_id, vers=BusinessStatus.ACTIVE)
+
+
+async def derniere_suspension(session: AsyncSession, business_id: uuid.UUID) -> datetime | None:
+    """Quand ce commerce est passé hors du fil pour la dernière fois.
+
+    **La dernière, comme pour la mise en ligne, et pour la même raison** : un
+    salon qui s'est mis en pause deux étés de suite en a deux, et c'est celle
+    d'aujourd'hui qui explique son état.
+
+    Nulle quand il n'a jamais quitté le fil. Elle n'est pas nulle pour autant
+    quand il est revenu : c'est `status` qui dit s'il est dehors, cette date dit
+    seulement depuis quand — l'écran ne la lit que sur un salon suspendu.
+    """
+    return await _derniere_transition(session, business_id, vers=BusinessStatus.SUSPENDED)
+
+
+async def _derniere_transition(
+    session: AsyncSession, business_id: uuid.UUID, *, vers: BusinessStatus
+) -> datetime | None:
+    """Le dernier passage vers cet état, dans le journal.
+
+    Une seule requête pour les deux dates : elles ne diffèrent que par l'état
+    visé, et deux copies divergeraient sur le `order_by` — qui est tout ce
+    qu'elles ont.
+    """
     return await session.scalar(
         sa.select(AuditLog.occurred_at)
         .where(
             AuditLog.entity_type == AuditedEntity.BUSINESS.value,
             AuditLog.entity_id == business_id,
-            AuditLog.to_status == BusinessStatus.ACTIVE.value,
+            AuditLog.to_status == vers.value,
         )
         .order_by(AuditLog.occurred_at.desc())
         .limit(1)
