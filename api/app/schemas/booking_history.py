@@ -29,6 +29,12 @@ class ContrepartieBreveRead(BaseModel):
     status: CollaborationStatus
     deadline_at: datetime
     attempts_count: int
+    #: Le plafond d'essais, **servi et non recopié**. L'écran écrit « essai 2
+    #: sur 3 » ; le 3 en dur mentirait au premier ajustement, et il vit en
+    #: configuration (`collaboration_max_attempts`) précisément pour qu'on
+    #: puisse l'ajuster. La collaboration complète le sert déjà — la brève ne
+    #: le servait pas, et c'est elle que la liste des réservations lit.
+    max_attempts: int
     #: Ce que le salon a reproché à la dernière soumission. Nul quand rien n'a
     #: été refusé. Sans lui, une créatrice invitée à resoumettre renvoie la même
     #: chose et se fait refuser une seconde fois.

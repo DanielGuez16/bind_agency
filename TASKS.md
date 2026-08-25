@@ -2859,7 +2859,12 @@ barrière avant le réseau, et c'est là qu'il faut la poser.
       eu d'écran. Le nom du salon est déjà dans la barre latérale, c'est là que
       le choix se pose*
 
-- [ ] **Le compte de décisions du jour, par salon**
+- [x] **Le compte de décisions du jour, par salon** — *livré, l'entrée avait survécu*
+      *`CommerceDeLAppartenance.decisions_en_attente` est servi sur
+      `/me/businesses` et vérifié en production. La #278 l'a posé ; cette entrée
+      est restée décochée dessous, et une entrée décochée sous un travail rendu
+      fait refaire ce travail. Voir la règle du geste dans `DECISIONS.md` :
+      chercher le **sujet**, pas seulement sa tâche.*
       *La liste du sélecteur porte « 5 aujourd'hui » sur chaque ligne, et c'est
       ce qui fait basculer un gérant qui ne savait pas qu'on l'attendait. Sans
       lui la liste reste utilisable et perd sa raison d'être ouverte. La donnée

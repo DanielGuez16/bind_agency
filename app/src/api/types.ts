@@ -701,6 +701,14 @@ export type ContrepartieBreve = {
   status: CollaborationStatus;
   deadline_at: string;
   attempts_count: number;
+  /**
+   * Le plafond d'essais. **Servi, jamais recopié.**
+   *
+   * L'écran écrit « essai 2 sur 3 » ; le 3 en dur mentirait au premier
+   * ajustement, et il vit en configuration côté serveur précisément pour qu'on
+   * puisse l'ajuster.
+   */
+  max_attempts: number;
   needs_human_review: boolean;
 };
 
@@ -923,6 +931,15 @@ export type Collaboration = {
   deadline_at: string;
   status: CollaborationStatus;
   attempts_count: number;
+  /**
+   * Le plafond d'essais. **Servi depuis longtemps, déclaré seulement
+   * maintenant** — l'écran écrivait « essai 2 » faute de le voir dans le
+   * contrat, et un commentaire affirmait qu'il n'était pas servi.
+   *
+   * Il vit en configuration pour qu'on puisse l'ajuster ; le recopier dans
+   * l'écran mentirait au premier ajustement.
+   */
+  max_attempts: number;
   needs_human_review: boolean;
   approved_at: string | null;
   /**

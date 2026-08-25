@@ -113,13 +113,25 @@ export function CeQuiManquait({ contrepartie }: { contrepartie: Collaboration })
         ) : null}
       </View>
 
-      {/* **Le rang de la tentative, sans son plafond.** La planche écrit
-          « attempt 2 of 3 » ; le plafond est un seuil de configuration, il
-          n'est pas servi, et l'écrire en dur dans l'écran est précisément ce
-          que le dépôt interdit. Le rang seul reste vrai. Voir `TASKS.md`. */}
+      {/* **Le rang de la tentative, et son plafond quand il est servi.**
+          La planche écrit « attempt 2 of 3 ». Ce commentaire disait que le
+          plafond n'était pas servi : il l'était déjà ici — `Collaboration`
+          porte `max_attempts` —, et la phrase est restée après que le champ
+          soit arrivé. Le rang seul restait vrai, il était seulement incomplet.
+
+          **Toujours servi, jamais recopié.** Le plafond vit en configuration
+          pour qu'on puisse l'ajuster ; un 3 écrit ici mentirait au premier
+          ajustement, et personne ne le verrait avant qu'une créatrice compte
+          ses essais. Le repli sur le rang seul couvre une réponse d'avant le
+          champ — mieux vaut une phrase incomplète qu'un plafond inventé. */}
       {contrepartie.attempts_count > 0 ? (
         <Texte variante="type.caption" couleur="ink.soft" testID="reprise-tentative">
-          {t('parcours.repriseTentative', { n: contrepartie.attempts_count + 1 })}
+          {contrepartie.max_attempts
+            ? t('parcours.repriseTentativeSurPlafond', {
+                n: contrepartie.attempts_count + 1,
+                plafond: contrepartie.max_attempts,
+              })
+            : t('parcours.repriseTentative', { n: contrepartie.attempts_count + 1 })}
         </Texte>
       ) : null}
     </View>

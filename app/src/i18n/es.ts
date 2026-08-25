@@ -546,6 +546,7 @@ export const es: Catalogue = {
     repriseActionFormat: 'Vuelve a enviarlo en el formato que pidieron.',
     repriseActionQualite: 'Envía una captura más nítida.',
     repriseTentative: 'Intento {{n}}',
+    repriseTentativeSurPlafond: 'Intento {{n}} de {{plafond}}',
     historiqueTitre: 'Tus reservas',
     historiqueVide: 'Todavía no hay nada.',
     ongletAVenir: 'Próximas',
