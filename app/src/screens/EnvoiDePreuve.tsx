@@ -73,6 +73,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useApi, type Collaboration } from '../api';
 import { Button, Photo, StatusMessage, TextField, Texte, vibration } from '../components';
 import { useI18n } from '../i18n';
+import { useEnvoiDeFichier } from '../shell/useEnvoiDeFichier';
 import { radius, useTheme } from '../theme';
 
 /** La hauteur de l'aperçu. Assez pour juger ce qu'on s'apprête à envoyer. */
@@ -156,7 +157,7 @@ export function EnvoiDePreuve({
    * dont l'issue engage une contrepartie : un filet qui parcourt y dit « ça
    * travaille » sans dire si l'on en est au début ou à la fin.
    */
-  const [part, setPart] = useState<number | null>(null);
+  const envoiDeFichier = useEnvoiDeFichier();
   const [note, setNote] = useState('');
   /**
    * **L'adresse de la publication, et elle n'était demandée nulle part.**
@@ -227,12 +228,41 @@ export function EnvoiDePreuve({
     setVue({ etat: 'echec', media: null, message: t(cle) });
   }
 
+  /**
+   * L'envoi de la capture, sous la même règle que les trois autres chemins.
+   *
+   * **C'est celui-ci qui comptait le plus, et il était le dernier sans.** Un
+   * envoi de capture qui part en arrière-plan et échoue laisse une créatrice
+   * ranger son téléphone en pensant sa contrepartie tenue — elle l'apprend au
+   * délai dépassé, quand il n'y a plus rien à faire. Les trois chemins du
+   * commerce avaient la règle ; le seul dont l'issue engage quelqu'un ne
+   * l'avait pas.
+   *
+   * **Toute la suite passe par le crochet, dépôt et soumission ensemble.** La
+   * reprise automatique ne se déclenche que si la montée n'était pas finie —
+   * donc avant que la clé existe, donc avant qu'une soumission ait pu partir.
+   * Rejouer l'ensemble ne peut alors rien produire en double.
+   */
   async function envoyer() {
     if (!media) return;
-    setVue({ etat: 'envoi', media });
+    const capture = media;
+    setVue({ etat: 'envoi', media: capture });
     vibration.action();
     try {
-      const { screenshot_key } = await api.televerserUneCapture(media.uri);
+      await envoiDeFichier.envoyer(capture.uri, (progression) =>
+        deposerEtSoumettre(capture, progression),
+      );
+    } catch (erreur) {
+      setVue({ etat: 'echec', media: capture, message: messageDErreur(erreur) });
+      vibration.echec();
+    }
+  }
+
+  async function deposerEtSoumettre(
+    capture: { uri: string; taille: number | null },
+    progression: (part: number) => void,
+  ) {
+    const { screenshot_key } = await api.televerserUneCapture(capture.uri, progression);
       // La note part avec la soumission, jamais séparément : envoyée après,
       // elle arriverait sur un dossier déjà refusé, et le commerce l'aurait
       // lue une fois sa décision prise.
@@ -251,14 +281,10 @@ export function EnvoiDePreuve({
       // pas du tout — ferait de l'incitation une phrase sans suite.
       setVue({
         etat: 'rendu',
-        media,
+        media: capture,
         verifiee: verdictDe(contrepartie),
         raisons: raisonsDe(contrepartie),
       });
-    } catch (erreur) {
-      vibration.echec();
-      setVue({ etat: 'echec', media, message: messageDErreur(erreur) });
-    }
   }
 
   return (
@@ -332,13 +358,27 @@ export function EnvoiDePreuve({
         </View>
       ) : null}
 
+      {/* **Interrompu n'est pas échoué.** L'application a quitté le premier
+          plan — souvent pour aller vérifier la story qu'on est en train de
+          prouver — et la capture est toujours là. Le crochet la reprend seul si
+          la montée n'était pas finie. */}
+      {envoiDeFichier.interrompu ? (
+        <StatusMessage
+          level="neutral"
+          body={t('composition.photoEnvoiInterrompu')}
+          testID="envoi-interrompu"
+        />
+      ) : null}
+
       {vue.etat === 'envoi' ? (
         <StatusMessage
           level="neutral"
           body={
-            part === null
+            envoiDeFichier.part === null
               ? t('parcours.preuveEnvoiEnCours')
-              : t('composition.photoEnvoiPart', { part: Math.round(part * 100) })
+              : t('composition.photoEnvoiPart', {
+                  part: Math.round(envoiDeFichier.part * 100),
+                })
           }
           testID="envoi-en-cours"
         />
