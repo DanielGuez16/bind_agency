@@ -171,8 +171,7 @@ jest.mock('expo-image-picker', () => ({
   })),
 }));
 
-describe('un envoi qui échoue', () => {
-  function clientQuiRefuse(envois: Envoi[], refuser: { encore: boolean }) {
+function clientQuiRefuse(envois: Envoi[], refuser: { encore: boolean }) {
     return new ApiClient({
       baseUrl: 'https://api.test',
       coffre: { lire: async () => null, ecrire: async () => {} },
@@ -184,8 +183,9 @@ describe('un envoi qui échoue', () => {
         return { ok: true, status: 200, json: async () => ({ storage_key: 'k' }) } as Response;
       },
     });
-  }
+}
 
+describe('un envoi qui échoue', () => {
   it('garde le fichier, et le renvoie sans rouvrir la galerie', async () => {
     const envois: Envoi[] = [];
     const refuser = { encore: true };
@@ -214,4 +214,30 @@ describe('un envoi qui échoue', () => {
       ouverturesAvant,
     );
   });
+});
+
+it('ne propose pas de réessayer pendant que la reprise vole', async () => {
+  // **La reprise au retour au premier plan relance sans que l'écran agisse.**
+  // Garder « réessayer » à l'écran ferait proposer un geste déjà en cours, et un
+  // second appui enverrait le même fichier deux fois — sur une galerie, deux
+  // photos identiques.
+  const envois: Envoi[] = [];
+  const refuser = { encore: true };
+  await render(
+    <I18nProvider initialLocale="en">
+      <ThemeProvider role="merchant">
+        <ApiProvider client={clientQuiRefuse(envois, refuser)}>
+          <GalerieDuCommerce businessId="b1" photos={PHOTOS} couverture={null} onChange={jest.fn()} />
+        </ApiProvider>
+      </ThemeProvider>
+    </I18nProvider>,
+  );
+
+  await fireEvent.press(screen.getByTestId('ajouter-une-photo'));
+  await waitFor(() => expect(screen.getByTestId('reessayer-l-envoi')).toBeTruthy());
+
+  // Pendant l'envoi suivant, le bouton disparaît plutôt que d'inviter deux fois.
+  refuser.encore = false;
+  await fireEvent.press(screen.getByTestId('reessayer-l-envoi'));
+  await waitFor(() => expect(screen.queryByTestId('reessayer-l-envoi')).toBeNull());
 });

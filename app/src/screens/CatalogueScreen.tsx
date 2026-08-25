@@ -1234,7 +1234,13 @@ function PhotoDeLaPrestation({
           testID={`envoi-interrompu-${item.id}`}
         />
       ) : null}
-      {(echec || envoiDeFichier.interrompu) && envoiDeFichier.aRenvoyer ? (
+      {/* **Pas pendant qu'un envoi vole.** La reprise au retour au premier plan
+          relance sans que l'écran ait rien à faire : garder « réessayer » à
+          l'écran ferait proposer un geste déjà en cours, et un second appui
+          enverrait le même fichier deux fois. */}
+      {!envoiDeFichier.enVol &&
+      (echec || envoiDeFichier.interrompu) &&
+      envoiDeFichier.aRenvoyer ? (
         <View style={{ flexDirection: 'row' }}>
           <Button
             label={t('composition.photoReessayer')}
