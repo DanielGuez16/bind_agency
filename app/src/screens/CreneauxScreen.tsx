@@ -29,6 +29,7 @@ import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
 import {
+  ApiError,
   useApi,
   type Creneau as CreneauApi,
   type FichePublique,
@@ -99,6 +100,17 @@ export function CreneauxScreen({
   const [feuilleOuverte, setFeuilleOuverte] = useState(false);
   const [envoi, setEnvoi] = useState(false);
   const [echec, setEchec] = useState<string | null>(null);
+  /**
+   * Le créneau qui vient d'être pris, quand c'est ce qui a échoué.
+   *
+   * **Le cas le plus coûteux du parcours, et il rendait un message.** La
+   * créatrice venait de choisir ; on lui répondait « ce créneau vient d'être
+   * pris » et on la renvoyait relire toute la liste — c'est-à-dire refaire
+   * le choix qu'elle venait de faire, depuis le début. L'écran propose
+   * maintenant **les heures encore libres du même jour** : le choix se refait
+   * au plus près de celui qui vient de tomber.
+   */
+  const [pris, setPris] = useState<string | null>(null);
 
   /**
    * **Deux lectures, et elles ne demandent pas la même chose.** La bande veut
@@ -148,13 +160,15 @@ export function CreneauxScreen({
    */
   function choisir(cle: string | undefined) {
     vibration.action();
+    setPris(null);
     setChoisi(cle);
   }
 
-  async function reserver() {
+  async function reserver(creneau: string | undefined = choisi) {
     if (!offre.social_account_id) return;
     setEnvoi(true);
     setEchec(null);
+    setPris(null);
     // Le seul geste de tout le parcours qui engage la créatrice auprès d'un
     // salon : il se sent, et son issue se sent aussi.
     vibration.action();
@@ -162,14 +176,22 @@ export function CreneauxScreen({
       const booking = await api.reserver({
         tier_offer_id: offre.tier_offer_id,
         social_account_id: offre.social_account_id,
-        starts_at: offre.requires_booking ? choisi : null,
+        starts_at: offre.requires_booking ? creneau : null,
       });
       await api.confirmerLaReservation(booking.id);
       vibration.reussite();
       onReserve(booking.id);
     } catch (erreur) {
       vibration.echec();
-      setEchec(messageDErreur(erreur));
+      // **Le créneau pris se traite, il ne se subit pas.** Les autres échecs
+      // gardent leur message : un palier fermé, un compte social absent ne se
+      // réparent pas en choisissant une autre heure, et proposer des heures y
+      // enverrait au mauvais endroit.
+      if (erreur instanceof ApiError && erreur.code === 'booking_slot_unavailable' && creneau) {
+        setPris(creneau);
+      } else {
+        setEchec(messageDErreur(erreur));
+      }
       // La place a peut-être été prise pendant l'hésitation : on relit.
       setChoisi(undefined);
       requete.recharger();
@@ -246,6 +268,47 @@ export function CreneauxScreen({
                 nomDuSalon={fiche.name}
                 timezone={fiche.timezone}
               />
+            ) : null}
+
+            {/* **Le créneau pris, et ce qui reste au plus près.** La créatrice
+                vient de choisir : la renvoyer relire toute la liste lui demande
+                de refaire ce qu'elle vient de faire. On nomme l'heure tombée,
+                puis on propose celles qui restent **le même jour** — et on
+                s'arrête à trois : au-delà, c'est la liste, qui est juste
+                dessous.
+
+                Neutre et non cramoisi : personne n'a mal fait quoi que ce
+                soit, quelqu'un est simplement passé avant. */}
+            {pris ? (
+              <View style={{ gap: 8 }} testID="creneau-pris">
+                <StatusMessage
+                  level="neutral"
+                  title={t('parcours.creneauPris', {
+                    heure: formatHeure(pris, locale, fiche.timezone),
+                  })}
+                  body={
+                    duJour.length > 0
+                      ? t('parcours.creneauPrisRestants')
+                      : t('parcours.creneauPrisPlusRien')
+                  }
+                />
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                  {duJour.slice(0, 3).map((autre) => (
+                    <Button
+                      key={autre.starts_at}
+                      label={t('parcours.creneauConfirmerPour', {
+                        heure: formatHeure(autre.starts_at, locale, fiche.timezone),
+                      })}
+                      size="sm"
+                      variant="secondary"
+                      fullWidth={false}
+                      loading={envoi}
+                      onPress={() => void reserver(autre.starts_at)}
+                      testID={`reprendre-${autre.starts_at}`}
+                    />
+                  ))}
+                </View>
+              </View>
             ) : null}
 
             {echec ? (

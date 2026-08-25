@@ -178,6 +178,7 @@ describe('le bandeau, à l’écran', () => {
             <BandeauDeMiseEnLigne
               businessId="b1"
               timezone="America/New_York"
+          aHonorer={0}
           activation={activation as never}
               onPublie={() => {}}
             />

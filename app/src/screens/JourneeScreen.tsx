@@ -375,6 +375,10 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
             // Le fuseau du salon : une date de mise en ligne se lit là où le
             // salon est, jamais dans le fuseau du téléphone.
             timezone={journee.timezone}
+            // Ce qui reste à recevoir aujourd'hui, compté sur la journée que
+            // l'écran tient déjà : une suspension n'annule pas ce qui a été
+            // accepté, et c'est là qu'on le lit.
+            aHonorer={attendues.length + aTrancher.length}
             onPublie={requete.recharger}
           />
         );

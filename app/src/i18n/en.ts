@@ -454,6 +454,10 @@ export const en = {
     ficheMention: 'a mention of {{mention}}',
     ficheLieu: 'a location tag',
     creneauxTitre: 'Pick a time',
+    creneauPris: '{{heure}} was just taken.',
+    creneauPrisRestants: 'Someone booked it before you. These are still free today.',
+    creneauPrisPlusRien: 'Someone booked it before you, and nothing else is free today. The other days are just below.',
+    creneauConfirmerPour: 'Confirm {{heure}}',
     creneauxChoisirPourContinuer: 'Pick a day with room to continue',
     creneauxEngagementTitre: 'What you commit to',
     creneauxEngagementCiter: 'Tag and mention {{quoi}}',
@@ -770,6 +774,9 @@ export const en = {
     miseEnLigneRestantUn: 'One thing left before creators see you',
     miseEnLignePrete: 'Everything is ready. Creators are waiting.',
     miseEnLigneConfirmee: 'You are live — since {{date}}',
+    suspenduTitre: 'Your account is suspended',
+    suspenduAHonorer: 'You are not visible to creators, and the {{count}} bookings you already accepted still hold. Being suspended does not cancel them.',
+    suspenduRienAujourdhui: 'You are not visible to creators. Bookings you already accepted still hold — being suspended does not cancel them.',
     // **Deux clés plutôt qu'un pluriel de bibliothèque**, comme le titre de
     // la journée : `count` traverse le formateur de nombres, i18n-js ne le
     // voit plus comme un nombre, et sa pluralisation ne se déclenche pas.
