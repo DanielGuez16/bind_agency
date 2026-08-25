@@ -91,6 +91,25 @@ const PALETTE = [jetons.color.ink.default, '#FFFFFF', jetons.logo.signature];
 const ANDROID = { cote: 432, zoneSure: 288 };
 
 /**
+ * Deux couches aplaties en une image.
+ *
+ * Android compose lui-même son fond et son signe ; le manifeste web ne connaît
+ * qu'un fichier par icône, donc la composition se fait ici. Seuls les pixels
+ * pleinement opaques du dessus écrasent le dessous — le dessin de la marque
+ * n'a pas de demi-teintes, c'est ce que la grille garantit.
+ */
+function fusion(dessous, dessus) {
+  for (let i = 0; i < dessous.data.length; i += 4) {
+    if (dessus.data[i + 3] === 255) {
+      dessous.data[i] = dessus.data[i];
+      dessous.data[i + 1] = dessus.data[i + 1];
+      dessous.data[i + 2] = dessus.data[i + 2];
+    }
+  }
+  return dessous;
+}
+
+/**
  * Ce que chaque fichier est, et **à quelle taille il est vu**.
  *
  * `afficheA` n'est pas la résolution du fichier : c'est ce que l'utilisateur en
@@ -100,6 +119,17 @@ const ANDROID = { cote: 432, zoneSure: 288 };
 const FICHIERS = [
   { nom: 'favicon.ico', ou: 'public', afficheA: 16, pourquoi: "l'onglet du navigateur" },
   { nom: 'apple-touch-icon.png', ou: 'public', afficheA: 60, pourquoi: "l'écran d'accueil d'iOS" },
+  // Les trois icônes que le manifeste déclare. Android en demande deux tailles
+  // — 192 pour l'écran d'accueil, 512 pour l'écran de lancement et le
+  // sélecteur — et une masquable, qu'il rogne à la forme du lanceur.
+  { nom: 'icone-192.png', ou: 'public', afficheA: 60, pourquoi: "l'écran d'accueil d'Android" },
+  { nom: 'icone-512.png', ou: 'public', afficheA: 60, pourquoi: "l'écran de lancement d'Android" },
+  {
+    nom: 'icone-masquable-512.png',
+    ou: 'public',
+    afficheA: 60,
+    pourquoi: 'le lanceur qui rogne à sa forme',
+  },
   { nom: 'icon.png', ou: 'assets', afficheA: 60, pourquoi: "la tuile d'application" },
   // Les trois couches d'Android. Le fond est un aplat : le signe vit dans la
   // couche de premier plan, et le masque du constructeur n'entame que lui.
@@ -121,6 +151,30 @@ console.log('  public/favicon.ico            16 · 32 · 48');
 // plutôt qu'un lissage, au prix d'un demi-pixel.
 await writeFile(join(PUBLIC, 'apple-touch-icon.png'), enPng(180));
 console.log('  public/apple-touch-icon.png   180');
+
+/**
+ * Les icônes du manifeste web.
+ *
+ * **Deux tailles pleines et une masquable, et la différence n'est pas
+ * cosmétique.** Une icône `any` est posée telle quelle : la tuile va donc à
+ * fond perdu, comme le favicon. Une icône `maskable` est **rognée** par le
+ * lanceur à la forme qu'il a choisie — cercle, écusson, goutte — et tout ce qui
+ * dépasse disparaît. Le signe y est donc ramené dans la zone sûre, exactement
+ * comme sur les couches d'Android, et le fond continue jusqu'aux bords pour que
+ * le masque morde de l'encre et jamais du vide.
+ *
+ * **La même zone sûre que le lanceur natif**, et non les 80 % que le format web
+ * autorise : les deux icônes représentent la même application sur le même
+ * appareil, et deux marges différentes se verraient au moment où l'on remplace
+ * l'une par l'autre.
+ */
+await writeFile(join(PUBLIC, 'icone-192.png'), enPng(192));
+await writeFile(join(PUBLIC, 'icone-512.png'), enPng(512));
+await writeFile(
+  join(PUBLIC, 'icone-masquable-512.png'),
+  PNG.sync.write(fusion(aplat(512, TUILE), couche(512, Math.round(512 * (ANDROID.zoneSure / ANDROID.cote))))),
+);
+console.log('  public/icone-*.png            192 · 512 · masquable 512');
 
 // La tuile d'application. 1024 vaut soixante-quatre pixels par unité.
 await writeFile(join(SORTIE, 'icon.png'), enPng(1024));

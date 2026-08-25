@@ -2912,6 +2912,59 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       porte le littéral que l'utilisateur voit — l'écrire avec `formatMoney`
       n'aurait prouvé que l'auto-cohérence de la fonction*
 
+- [x] **L'application web s'installe sur un écran d'accueil**
+      *La distribution de la démonstration passe par le web — le compte Apple
+      attend l'entité légale — donc l'installation est le premier contact de
+      Rebecca avec le produit. Manifeste, trois icônes, plein écran, et le nom
+      sous l'icône.*
+      ***Le gabarit HTML est vérifié avant d'être écrit, et c'était nécessaire.***
+      *Deux comportements possibles ne se distinguent pas de l'extérieur :
+      `public/index.html` peut être un **modèle** où Expo injecte le script du
+      bundle, ou un fichier **recopié tel quel** qui masquerait la page générée —
+      auquel cas l'application ne démarre plus du tout, sans erreur. Mesuré sur
+      un export réel : c'est un modèle. Un test e2e le tient désormais, parce
+      qu'une version d'Expo peut changer d'avis et que l'échec est muet.*
+      ***Les icônes sont dessinées, pas réduites**, par la chaîne existante :
+      192 et 512 à fond perdu pour l'usage `any`, et une masquable à 512 dont le
+      signe rentre dans la **même zone sûre** que les couches d'Android — deux
+      marges différentes pour la même application se verraient au moment où le
+      lanceur remplace l'une par l'autre.*
+      ***Le fond du document passe à l'encre**, et c'est ce qui tient le
+      lancement. Le premier rendu arrive après un bundle d'un mégaoctet et demi ;
+      avant lui on voit le document nu, blanc par défaut — donc un éclair blanc
+      juste avant un écran de chargement à l'encre, à chaque ouverture. Trois
+      couleurs doivent coïncider : celle du manifeste, celle du document, celle
+      de l'écran de chargement.*
+      ***La barre d'état reste opaque**, délibérément. `black-translucent` ferait
+      passer la page sous l'heure et la batterie, ce qui demande
+      `viewport-fit=cover` et des marges lues dans `env(safe-area-inset-*)` : le
+      produit lit déjà ses marges, mais ce qu'elles valent dans une application
+      web installée n'a pas été mesuré sur un téléphone. Un test tient les deux
+      ensemble — qui passera au translucide apprendra là qu'il doit poser le
+      `viewport-fit`.*
+      ***Un défaut trouvé en écrivant les tests : l'écran de chargement de la
+      marque n'avait aucun test qu'il soit rendu.*** *`Chargement` était éprouvé,
+      `App` ne l'était pas — la première chose que voit un utilisateur, à chaque
+      ouverture, ne tenait que par relecture. Et la première version du test
+      courait après un écran d'une frame : sur cette machine les polices et le
+      trousseau répondent d'un coup. Il retient maintenant les polices, ce qui
+      **rend observable la condition réelle** d'un téléphone plutôt que d'en
+      fabriquer une.*
+      *Cinq mutations. **La quatrième a survécu** : mon test des tailles listait
+      les trois paires à la main, donc il vérifiait que trois fichiers ont la
+      bonne taille — ce que personne ne contestait — pendant que la déclaration
+      pouvait mentir à côté. Faire pointer l'entrée « 512x512 » vers le fichier
+      de 192, c'est-à-dire le défaut exact qu'il annonçait, le laissait vert. Le
+      manifeste est devenu le sujet du test, et la mutation tombe.*
+      *La garde des sélecteurs e2e a refusé les miens, à raison : ils visent
+      l'en-tête du document, qu'aucun écran ne peut porter. Catégorie déclarée
+      avec sa raison plutôt que contournée, et étroite — trois noms de balise et
+      un attribut, un `data-testid` n'y passe pas.*
+      ***Ce qui reste à regarder sur un téléphone**, et qu'aucun test ne peut
+      rendre : qu'iOS propose bien « Sur l'écran d'accueil », et qu'ouvrir depuis
+      là ne ramène pas la barre de Safari. Tout ce dont ces deux choses dépendent
+      est éprouvé ; les deux faits eux-mêmes demandent un appareil*
+
 - [ ] **`catalogue/corriger.ts` déclare une règle que personne ne consulte**
       *Même balayage. Le module nomme `CORRIGEABLES` — nom, description, photo —
       et `DEMANDENT_UNE_AUTRE` — durée, nature, réservabilité — avec une note

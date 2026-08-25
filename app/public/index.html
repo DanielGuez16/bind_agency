@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<!--
+  Le gabarit du site, et non une page copiée à côté.
+
+  **Expo l'utilise comme modèle et y injecte le script du bundle.** Vérifié sur
+  un export réel avant d'écrire ce fichier, parce que les deux comportements
+  possibles ne se distinguent pas de l'extérieur : si `public/index.html` était
+  recopié tel quel, il masquerait la page générée et l'application ne
+  démarrerait plus du tout — le mode d'échec exact que le favicon avait déjà
+  produit ici. Un test le vérifie sur le build, pas sur l'intention.
+
+  Ce que ce fichier ajoute au gabarit d'Expo tient en deux choses : le lien vers
+  le manifeste, qu'aucune convention ne peut découvrir, et ce qu'iOS demande
+  encore par balise. Le reste — la réinitialisation de react-native-web, le
+  `#root` — est repris tel quel du gabarit généré : le retirer casserait la mise
+  en page.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>BIND</title>
+
+    <!--
+      **Le manifeste ne se trouve pas par convention.** Le favicon et
+      l'icône d'iOS, si : les navigateurs demandent `/favicon.ico` et
+      `/apple-touch-icon.png` d'eux-mêmes, et c'est pourquoi le gabarit généré
+      suffisait jusqu'ici. Rien ne va chercher un manifeste qu'aucune balise
+      n'annonce, et sans lui il n'y a pas d'installation du tout.
+    -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!--
+      **Ce qu'iOS demande en plus du manifeste.** Safari ne lit `display`
+      qu'à partir d'iOS 16.4 ; avant, seule cette balise obtient le plein écran.
+      Les deux coexistent sans se contredire — l'ancienne est ignorée là où la
+      nouvelle est comprise.
+    -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+
+    <!--
+      **`default`, et c'est un choix prudent.** `black-translucent` fait passer
+      la page *sous* la barre d'état : il faudrait alors `viewport-fit=cover` et
+      des marges lues dans `env(safe-area-inset-*)`, sans quoi le haut de chaque
+      écran disparaît sous l'heure et la batterie. Le produit lit déjà ses
+      marges par `useSafeAreaInsets`, mais ce que celles-ci valent dans une
+      application web installée n'a pas été mesuré sur un vrai téléphone. Ici la
+      barre reste opaque et la page commence dessous : rien n'est caché.
+    -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="BIND" />
+
+    <!--
+      La teinte que le système pose autour de l'application. `bg.page`, parce
+      que c'est la surface qui touche la barre d'état une fois l'application
+      ouverte — l'encre du manifeste, elle, ne sert qu'à l'écran de lancement.
+    -->
+    <meta name="theme-color" content="#F9F8F7" />
+
+    <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
+    <style id="expo-reset">
+      /* These styles make the body full-height */
+      html,
+      body {
+        height: 100%;
+      }
+      /* These styles disable body scrolling if you are using <ScrollView> */
+      body {
+        overflow: hidden;
+      }
+      /* These styles make the root element full-height */
+      #root {
+        display: flex;
+        height: 100%;
+        flex: 1;
+      }
+      /*
+        **L'encre sous l'application, et c'est ce qui tient l'écran de
+        chargement.** Le premier rendu arrive après le bundle ; sans cette
+        ligne, l'intervalle est blanc, et une application lancée depuis l'écran
+        d'accueil s'ouvre sur un éclair blanc avant l'encre. C'est la même
+        couleur que `background_color` du manifeste et que le fond de l'écran de
+        chargement : les trois doivent coïncider, un test le vérifie.
+      */
+      body {
+        background-color: #17140f;
+      }
+    </style>
+  </head>
+
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+  </body>
+</html>

@@ -126,6 +126,27 @@
       "marque": "compacte"
     },
     {
+      "nom": "icone-192.png",
+      "ou": "public",
+      "afficheA": 60,
+      "pourquoi": "l'écran d'accueil d'Android",
+      "marque": "compacte"
+    },
+    {
+      "nom": "icone-512.png",
+      "ou": "public",
+      "afficheA": 60,
+      "pourquoi": "l'écran de lancement d'Android",
+      "marque": "compacte"
+    },
+    {
+      "nom": "icone-masquable-512.png",
+      "ou": "public",
+      "afficheA": 60,
+      "pourquoi": "le lanceur qui rogne à sa forme",
+      "marque": "compacte"
+    },
+    {
       "nom": "icon.png",
       "ou": "assets",
       "afficheA": 60,
