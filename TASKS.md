@@ -2853,6 +2853,34 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       courant dans un journal d'événements est ce qui a déjà coûté cher ici ;
       mais une date de transition ne vit nulle part ailleurs.*
 
+- [x] **Le bandeau dit pourquoi le salon est dehors — et il ne se montrait à personne**
+      *Les deux champs servis par l'autre conversation, composés ici.
+      `paused_by_business` et `grace_expired` : deux titres, deux phrases. Le
+      titre général ne reste que sur le motif absent, parce qu'un salon en pause
+      volontaire qui lit « votre compte est suspendu » lit une sanction — et
+      c'est exactement le message au support qu'on cherchait à éviter. Une pause
+      se lève par le salon lui-même, une grâce en payant : le champ ne vaut que
+      par cette différence.*
+      *Deux cas divergents. Une réponse **d'avant** les deux champs rend encore
+      un bandeau, sans motif : la contrainte de table garantit le motif côté
+      serveur, mais une garde de base ne traverse pas un cache d'application, et
+      ce bandeau se rend sur une réponse qui a pu dormir. Et la grâce n'est pas
+      la pause : sans ce cas, un écran qui poserait la pause par défaut passerait
+      tous les autres.*
+      ***Le vrai défaut est apparu en écrivant le test, et il est plus vieux que
+      cette tranche.*** *Le bandeau ne vivait que dans les enfants de l'écran,
+      donc jamais dans l'état vide — or les deux états qu'il annonce **vident la
+      journée par construction** : un salon pas encore publié n'est dans aucun
+      fil et ne reçoit rien, un salon suspendu en est sorti. « Il reste deux
+      points avant que les créatrices vous voient » ne s'affichait donc jamais
+      au salon qui n'était pas publié. L'écran le plus regardé du produit
+      cachait sa seule consigne à ceux à qui elle s'adresse.*
+      *Rien ne pouvait le dire : le décor de tous les tests du bandeau portait
+      une journée pleine, où les deux implémentations rendent le même verdict.
+      C'est le test de la pause — journée vide, puisque c'est la seule qu'un
+      salon suspendu aura — qui a échoué en timeout et fait trouver le reste.
+      Deux mutations, les deux tombent*
+
 - [ ] **La suspension punitive : une décision produit qui n'a jamais été prise**
       *Non pas un travail en attente — **une décision qui n'existe pas**, et la
       distinction porte tout. La planche 14c de Design écrit « Motif : trois
