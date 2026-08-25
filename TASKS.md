@@ -2439,6 +2439,35 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       sont honorés avant l'effacement, comme à l'échéance d'un abonnement. Sans
       elle, supprimer son compte serait le moyen le plus rapide de se défaire
       d'une journée chargée*
+- [x] **L'état d'échec de l'envoi de preuve**
+      *Le cas était **certain** — le téléversement était cassé en web sur tout le
+      produit — et il n'existait pas : un bandeau cramoisi portant le message du
+      client, et rien d'autre.*
+      ***Un échec réseau n'est pas une erreur de la créatrice**, et c'est
+      l'écran qui doit le dire : c'est lui qui décide entre réessayer et
+      abandonner. Rien ne se vide, rien ne se compte, rien ne devient rouge. Un
+      formulaire efface et recommence ; ici il n'y a rien à corriger.*
+      *La phrase qu'on ne peut pas déduire de l'écran est écrite : « toujours 1
+      sur 3 ». Les trois essais existent pour un contenu insuffisant, pas pour
+      un réseau absent — les confondre ferait perdre un essai à quelqu'un qui
+      n'a rien fait, et l'arbitrage verrait un troisième essai qui n'en est pas
+      un. Vérifié côté serveur par l'autre conversation.*
+      ***L'échéance porte l'urgence, jamais le bandeau.** Le même échec est
+      anodin à deux jours et pressant à six heures : la ligne sous le bouton
+      change, le ton non. Douze heures est le seuil, parce qu'au-delà il reste
+      une nuit — « demain matin » est une réponse, « dans six heures » n'en est
+      pas une.*
+      *Et l'aperçu dit qu'il ne recadre pas : une capture avec ses barres
+      système est une preuve valable, et exiger un cadrage propre ferait échouer
+      des preuves honnêtes. Le refus de permission garde son cramoisi — celui-là
+      **est** une chose à corriger, et il porte sa propre issue. 1 mutation, qui
+      a d'abord survécu : le glyphe est décoratif, donc invisible aux requêtes
+      par défaut, et l'assertion passait quel que soit le niveau*
+      ***Deux choses signalées.** `max_attempts` n'est pas servi sur la
+      contrepartie : le plafond est recopié dans l'écran, et cette ligne mentira
+      au premier ajustement — demandé. Et l'échec pendant que l'application est
+      fermée n'est pas composé : si l'envoi part en arrière-plan et rate,
+      personne ne voit cet écran. C'est une décision de mécanisme*
 - [ ] **Ce qui raccourcirait vraiment l'attente tient maintenant au serveur**
       *Design le dit sans détour : ces règles rendent l'attente lisible, elles
       ne la raccourcissent pas. Des trois choses qui la raccourciraient, **la
