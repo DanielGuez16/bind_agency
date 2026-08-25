@@ -178,6 +178,7 @@ describe('le bandeau, à l’écran', () => {
             <BandeauDeMiseEnLigne
               businessId="b1"
               timezone="America/New_York"
+          aHonorer={0}
           activation={activation as never}
               onPublie={() => {}}
             />
@@ -402,5 +403,27 @@ describe('en ligne depuis peu', () => {
     // Un salon publié avant que le journal porte la date : le bandeau retombe
     // sur le silence, qui est ce qu'il faisait déjà.
     expect(miseEnLigne(PUBLIE(null), MAINTENANT)).toEqual({ forme: 'publie' });
+  });
+});
+
+/**
+ * Le commerce suspendu, et ce qu'il doit encore.
+ *
+ * **L'écran disait « il reste deux points avant que les créatrices vous
+ * voient » à un salon suspendu.** Cocher les deux n'aurait rien changé : ce qui
+ * retient n'est pas la composition, c'est une décision prise sur lui.
+ */
+describe('suspendu', () => {
+  const SUSPENDU = {
+    status: 'suspended' as const,
+    en_ligne_depuis: null,
+    etapes: [ETAPE('address', true), ETAPE('cover_photo', false)],
+  };
+
+  it('n’est pas une publication en attente, et dit ce qui reste dû', () => {
+    // **Le décor divergent porte une étape non faite.** Sans elle, « suspendu »
+    // et « prêt » rendraient la même chose, et le test passerait sur un calcul
+    // qui ne regarde toujours que « actif ou non ».
+    expect(miseEnLigne(SUSPENDU)).toEqual({ forme: 'suspendu' });
   });
 });

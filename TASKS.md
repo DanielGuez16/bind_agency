@@ -2762,7 +2762,51 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       réservations acceptées sont honorées — et elle n'a pas d'écran.*
       *Les trois sont de la composition, et deux dépendent d'un arbitrage : ce
       qu'on propose quand un créneau tombe, et si l'envoi part en arrière-plan.
-      Je ne les prends pas seul*
+      **Tranché : 05d et 14c pris, 07d refusé** — voir l'entrée suivante*
+
+- [x] **Les deux cadres orphelins qui restaient, et le troisième refusé**
+      *05d et 14c livrés, 07d écarté. Le refus est la partie qui compte, et il
+      est écrit ici parce que rien d'autre ne le dira : un cadre non pris
+      ressemble en tout point à un cadre oublié, et la planche v1.0 le
+      redemandera dans six mois.*
+      ***07d, l'envoi qui continue si on quitte l'écran — refusé.*** *« Une
+      décision plus récente le contredit : l'envoi ne part qu'au premier plan,
+      parce qu'un envoi en arrière-plan qui échoue laisse quelqu'un croire qu'il
+      a fini. La v1.0 répondait sans avoir vu le cas d'échec. » La planche
+      n'avait pas tort au moment où elle a été dessinée ; elle a été écrite
+      avant que l'échec existe, et une réponse donnée avant la question ne vaut
+      que tant que la question ne change pas.*
+      ***05d, le créneau pris pendant qu'on choisissait.*** *Le seul des trois
+      qui coûtait une réservation. L'échec `booking_slot_unavailable` rendait le
+      message générique du client, et renvoyait la créatrice relire la liste
+      entière — c'est-à-dire refaire depuis le début le choix qu'elle venait de
+      faire. L'écran propose désormais les trois premières heures encore libres
+      **du même jour**, en neutre et non en cramoisi : personne n'a mal fait
+      quoi que ce soit. Et il dit « plus rien aujourd'hui » quand il ne reste
+      rien, plutôt que de rendre un bloc vide.*
+      ***14c, le commerce suspendu.*** *`miseEnLigne` traitait `suspended`
+      comme une composition inachevée : le salon lisait « deux points avant que
+      les créatrices vous voient », et cocher les deux n'aurait rien changé — ce
+      qui le retient est une décision prise sur lui. Le bandeau d'encre dit
+      maintenant la suspension et **ce qui reste dû**, sur la même règle que la
+      phrase de la suppression : les réservations acceptées sont honorées. Le
+      **motif** de la suspension n'est pas servi — `VueDActivation` ne porte que
+      `status` — il est demandé plus bas.*
+      *Deux mutations. La seconde a survécu et c'est elle qui a appris quelque
+      chose : le test ne montrait que le créneau pris, si bien que « proposer
+      des heures quand le créneau tombe » et « en proposer à **n'importe quel**
+      échec » rendaient le même verdict. Une panne réseau y aurait proposé une
+      heure qui retombe dans la même panne. Le cas divergent — une 500 garde le
+      message d'échec et ne propose rien — a été écrit après, et il tombe sur la
+      mutation.*
+
+- [ ] **Le motif de suspension, servi sur la vue d'activation**
+      *Le bandeau du salon suspendu dit ce qui reste dû mais pas pourquoi il est
+      suspendu, alors que la planche 14c le porte en toutes lettres : « Motif :
+      trois retraits refusés au comptoir ». Sans lui le salon lit une sanction
+      sans cause et écrit au support pour la demander — c'est le seul champ de
+      l'écran qui évite un message. `VueDActivation` ne rend que `status` ;
+      il y faut le motif et la date de la décision*
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire
 
 ---

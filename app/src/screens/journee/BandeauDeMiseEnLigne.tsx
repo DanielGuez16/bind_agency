@@ -61,6 +61,7 @@ export function BandeauDeMiseEnLigne({
   businessId,
   activation,
   timezone,
+  aHonorer,
   onPublie,
 }: {
   businessId: string;
@@ -68,6 +69,13 @@ export function BandeauDeMiseEnLigne({
   activation: VueDActivation | null | undefined;
   /** Le fuseau du salon, pour dater la confirmation là où elle a eu lieu. */
   timezone: string;
+  /**
+   * Combien de réservations restent à honorer aujourd'hui.
+   *
+   * Compté sur la journée que l'écran tient déjà : un appel pour un nombre
+   * qu'on peut compter ferait deux comptes qui finiraient par diverger.
+   */
+  aHonorer: number;
   onPublie: () => void;
 }) {
   const { api, messageDErreur } = useApi();
@@ -82,6 +90,44 @@ export function BandeauDeMiseEnLigne({
   // après avoir été remplie est la définition d'un écran dont on ne comprend
   // plus l'objet — mais « publié et invisible » n'est pas rempli.
   if (etat === null || etat.forme === 'publie') return null;
+
+  /**
+   * **Suspendu, et ce qui reste dû.**
+   *
+   * L'écran annonçait « il reste deux points avant que les créatrices vous
+   * voient » à un salon suspendu : cocher les deux n'aurait rien changé, ce
+   * qui retient est une décision prise sur lui.
+   *
+   * **Et ce qu'il a accepté tient.** Une suspension n'annule pas des créneaux
+   * promis, exactement comme une suppression de compte — c'est la règle que la
+   * phrase des réglages écrit déjà pour l'autre cas, et elle n'avait d'écran
+   * nulle part. Le compte du jour est là parce que c'est ce qu'on doit lire en
+   * ouvrant : il reste une personne à recevoir, suspendu ou non.
+   */
+  if (etat.forme === 'suspendu') {
+    return (
+      <View
+        testID="bandeau-suspendu"
+        style={{
+          gap: 8,
+          padding: 20,
+          borderRadius: radius['radius.lg'],
+          backgroundColor: c['bg.inverse'],
+        }}
+      >
+        <Texte variante="type.section" couleur="ink.onDark">
+          {t('commerce.suspenduTitre')}
+        </Texte>
+        <Texte variante="type.body" couleur="ink.onDark">
+          {aHonorer > 0
+            ? t('commerce.suspenduAHonorer', { count: aHonorer })
+            : t('commerce.suspenduRienAujourdhui')}
+        </Texte>
+        {/* Le motif n'est pas servi. Une suspension sans motif se subit ;
+            l'inventer serait pire. Demandé — voir `TASKS.md`. */}
+      </View>
+    );
+  }
 
   /**
    * **La confirmation est une ligne, pas un bandeau.** Le pavé d'encre existe

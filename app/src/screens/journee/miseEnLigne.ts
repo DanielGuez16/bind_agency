@@ -25,6 +25,19 @@ export const DUREE_DE_LA_CONFIRMATION_MS = 7 * 24 * 3_600_000;
 export type MiseEnLigne =
   | { forme: 'publie' }
   /**
+   * Suspendu — et **ce n'est pas une publication en attente**.
+   *
+   * L'écran disait « il reste deux points avant que les créatrices vous
+   * voient » à un salon suspendu, parce que le calcul ne regardait que
+   * « actif ou non ». Cocher les deux points n'aurait rien changé : ce qui
+   * retient n'est pas la composition, c'est une décision prise sur lui.
+   *
+   * Et un salon suspendu **doit encore honorer ce qu'il a accepté**. C'est la
+   * même règle que la suppression de compte — supprimer ou être suspendu
+   * n'annule pas des créneaux promis — et elle n'avait d'écran nulle part.
+   */
+  | { forme: 'suspendu' }
+  /**
    * En ligne depuis peu, et la ligne le dit encore.
    *
    * **Ce que la planche voulait, à moitié.** Elle écrit « you are live · 41
@@ -99,6 +112,10 @@ export function miseEnLigne(
   const invisibles = vue.etapes
     .filter((etape) => !etape.blocking && !etape.done)
     .map((etape) => etape.cle);
+
+  // **Avant tout le reste.** Un salon suspendu n'a pas d'étape à cocher : la
+  // question « qu'est-ce qui retient la publication » ne se pose plus.
+  if (vue.status === 'suspended') return { forme: 'suspendu' };
 
   if (vue.status === 'active') {
     if (invisibles.length > 0) {
