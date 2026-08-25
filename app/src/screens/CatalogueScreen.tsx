@@ -51,6 +51,7 @@ import {
   vibration,
 } from '../components';
 import { useI18n } from '../i18n';
+import { useEnvoiDeFichier } from '../shell/useEnvoiDeFichier';
 import { gesteDeRetrait, suiteDuRefus } from './catalogue/corriger';
 import { resumeDuCatalogue } from './catalogue/resume';
 import { useGabarit } from '../shell/gabarit';
@@ -1170,7 +1171,7 @@ function PhotoDeLaPrestation({
   const c = useColors();
   const [envoi, setEnvoi] = useState(false);
   const [echec, setEchec] = useState<string | null>(null);
-  const [aRenvoyer, setARenvoyer] = useState<string | null>(null);
+  const envoiDeFichier = useEnvoiDeFichier();
 
   async function choisir() {
     setEchec(null);
@@ -1198,19 +1199,16 @@ function PhotoDeLaPrestation({
    * galerie. C'est le cas que le défaut de téléversement rendait certain.
    */
   async function envoyer(uri: string) {
-    setARenvoyer(uri);
-    setEnvoi(true);
     setEchec(null);
     try {
-      await api.photographierUnItem(businessId, item.id, uri);
-      vibration.reussite();
-      setARenvoyer(null);
-      onChange();
+      await envoiDeFichier.envoyer(uri, async (progression) => {
+        await api.photographierUnItem(businessId, item.id, uri, progression);
+        vibration.reussite();
+        onChange();
+      });
     } catch (erreur) {
       vibration.echec();
       setEchec(messageDErreur(erreur));
-    } finally {
-      setEnvoi(false);
     }
   }
 
@@ -1222,19 +1220,28 @@ function PhotoDeLaPrestation({
         {t('composition.photoTitre')}
       </Texte>
 
-      {envoi ? (
+      {envoiDeFichier.enVol ? (
         <Texte variante="type.caption" couleur="ink.soft" testID={`envoi-en-cours-${item.id}`}>
-          {t('composition.photoEnvoiEnCours')}
+          {envoiDeFichier.part === null
+            ? t('composition.photoEnvoiEnCours')
+            : t('composition.photoEnvoiPart', { part: Math.round(envoiDeFichier.part * 100) })}
         </Texte>
       ) : null}
-      {echec && aRenvoyer ? (
+      {envoiDeFichier.interrompu ? (
+        <StatusMessage
+          level="neutral"
+          body={t('composition.photoEnvoiInterrompu')}
+          testID={`envoi-interrompu-${item.id}`}
+        />
+      ) : null}
+      {(echec || envoiDeFichier.interrompu) && envoiDeFichier.aRenvoyer ? (
         <View style={{ flexDirection: 'row' }}>
           <Button
             label={t('composition.photoReessayer')}
             size="sm"
             variant="secondary"
             fullWidth={false}
-            onPress={() => void envoyer(aRenvoyer)}
+            onPress={() => void envoyer(envoiDeFichier.aRenvoyer as string)}
             testID={`reessayer-l-envoi-${item.id}`}
           />
         </View>

@@ -1152,6 +1152,8 @@ export const en = {
     // photo » aurait décrit une capacité au lieu de la rendre évidente.
     deposerUnePhoto: 'Add a photo',
     photoEnvoiEnCours: 'Sending your photo…',
+    photoEnvoiPart: 'Sending… {{part}}%',
+    photoEnvoiInterrompu: 'Sending stopped when you left the app. Your photo is still here.',
     photoReessayer: 'Try sending again',
     photoManque: 'Needs a photo',
     corriger: 'Correct',
