@@ -457,6 +457,7 @@ function CarteDeReservation({
     >
       <LigneDeReservation
         reservation={reservation}
+        onglet={onglet}
         onOuvrir={onOuvrir}
         onRelire={onRelire}
       />
@@ -466,10 +467,13 @@ function CarteDeReservation({
 
 function LigneDeReservation({
   reservation,
+  onglet,
   onOuvrir,
   onRelire,
 }: {
   reservation: ReservationDuCreateur;
+  /** L'onglet décide du titre : le verbe en cours, la prestation ailleurs. */
+  onglet: string;
   onOuvrir: (reservation: ReservationDuCreateur) => void;
   onRelire: () => void;
 }) {
@@ -478,6 +482,22 @@ function LigneDeReservation({
   const attente = attenteDe(reservation);
   const contrepartie = reservation.contrepartie;
   const quand = reservation.starts_at ?? reservation.valid_until;
+  /**
+   * **Le verbe, et seulement là où il répond à la question posée.**
+   *
+   * `verbeDeLaContrepartie` existait, était testé, et **personne ne le
+   * rendait** : il ne servait qu'à choisir une surface. Sa propre note décrit
+   * pourtant un affichage — « "Post a story" le dit en trois mots, et "Gel
+   * manicure · Vela Nail Studio" vient dessous, en petit ». C'est le mode
+   * d'échec des champs servis sans lecteur, transposé à l'intérieur de l'app :
+   * le calcul est juste, et il ne sort pas.
+   *
+   * **Nul hors de l'onglet en cours, et ce n'est pas une économie.** Sur « à
+   * venir » la question est « qu'est-ce que je vais recevoir », et la prestation
+   * y est la bonne réponse ; sur « en cours » elle devient « qu'est-ce qu'on
+   * attend de moi », à quoi une prestation ne répond pas.
+   */
+  const verbe = onglet === 'en-cours' ? verbeDeLaContrepartie(reservation) : null;
 
   return (
     <View
@@ -499,12 +519,25 @@ function LigneDeReservation({
       </View>
 
       <View style={{ flex: 1, gap: 4 }}>
-        <Texte variante="type.bodyStrong">{reservation.item_name}</Texte>
+        {verbe ? (
+          <Texte variante="type.bodyStrong" testID={`verbe-${reservation.booking_id}`}>
+            {t(`parcours.verbe_${verbe}`, {
+              format: t(`parcours.format_${reservation.content_format}`),
+            })}
+          </Texte>
+        ) : (
+          <Texte variante="type.bodyStrong">{reservation.item_name}</Texte>
+        )}
         {/* **L'adresse est partie sur l'écran du code.** Elle ne sert qu'à un
             instant — celui où l'on y va — et cet instant n'a pas lieu dans une
             liste. Ici elle doublait la longueur de chaque carte. */}
         <Texte variante="type.caption" couleur="ink.soft">
-          {reservation.business_name}
+          {verbe
+            ? t('parcours.verbePour', {
+                prestation: reservation.item_name,
+                salon: reservation.business_name,
+              })
+            : reservation.business_name}
         </Texte>
         {/* Le palier **et** le réseau : la même prestation peut exister sur
             deux comptes, et publier sur le mauvais ne compte pas.

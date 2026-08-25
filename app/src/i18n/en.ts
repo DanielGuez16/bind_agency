@@ -508,6 +508,10 @@ export const en = {
     confirmer: 'Confirm booking',
     // L'échéance et la tentative : servies depuis toujours, rendues nulle part.
     contrepartieReste: '{{reste}} left',
+    verbe_publier: 'Post your {{format}}',
+    verbe_corriger: 'Fix your {{format}}',
+    verbe_controle: 'Under review',
+    verbePour: 'For {{prestation}} · {{salon}}',
     sectionMontreTonCode: 'SHOW YOUR CODE',
     sectionLeSalonDecide: 'WAITING FOR THE SALON',
     // **Annuler, en deux appuis, et la conséquence entre les deux.**

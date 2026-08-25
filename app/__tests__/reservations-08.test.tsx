@@ -541,3 +541,69 @@ describe('ce que la carte peint', () => {
     expect(styleDe(rangee as never).flexDirection).toBe('row');
   });
 });
+
+
+/**
+ * Le titre de l'onglet en cours est le verbe, et il ne l'était pas.
+ *
+ * **`verbeDeLaContrepartie` était calculé, testé, et jamais rendu.** Il ne
+ * servait qu'à choisir une surface ; la carte affichait la prestation, quand la
+ * question de cet onglet est « qu'est-ce qu'on attend de moi ». C'est la
+ * décision centrale de la planche v3 pour cet onglet, et elle n'était pas à
+ * l'écran.
+ *
+ * **Le décor divergent est celui qui reste sur la prestation.** Une carte de
+ * l'onglet « à venir » doit continuer de titrer « Gel manicure » : sans ce
+ * cas, « je rends le verbe partout » passerait, et l'onglet des rendez-vous
+ * annoncerait un geste là où il n'y a qu'à venir.
+ */
+describe('le titre est le verbe, et seulement là où c’est la question', () => {
+  const EN_COURS = (statut: string) =>
+    reservation({
+      booking_id: 'r-verbe',
+      status: 'consumed',
+      contrepartie: contrepartie(statut) as never,
+    });
+
+  it('une contrepartie à publier titre le geste, la prestation passe dessous', async () => {
+    await monter([EN_COURS('pending')]);
+    await fireEvent.press(screen.getByLabelText(new RegExp(en.parcours.ongletEnCours)));
+
+    const carte = await screen.findByTestId('reservation-r-verbe');
+    expect(
+      within(carte).getByText(
+        en.parcours.verbe_publier.replace('{{format}}', en.parcours.format_story),
+      ),
+    ).toBeTruthy();
+    expect(
+      within(carte).getByText(
+        en.parcours.verbePour
+          .replace('{{prestation}}', 'Gel manicure')
+          .replace('{{salon}}', 'Vela Nail Studio'),
+      ),
+    ).toBeTruthy();
+  });
+
+  it('une reprise ne dit pas « publie », elle dit « corrige »', async () => {
+    await monter([EN_COURS('resubmit_requested')]);
+    await fireEvent.press(screen.getByLabelText(new RegExp(en.parcours.ongletEnCours)));
+
+    const carte = await screen.findByTestId('reservation-r-verbe');
+    expect(
+      within(carte).getByText(
+        en.parcours.verbe_corriger.replace('{{format}}', en.parcours.format_story),
+      ),
+    ).toBeTruthy();
+  });
+
+  it('sur « à venir », le titre reste la prestation : on vient, on ne publie pas', async () => {
+    await monter([
+      reservation({ booking_id: 'r-venir', status: 'confirmed', contrepartie: null }),
+    ]);
+    await fireEvent.press(screen.getByLabelText(new RegExp(en.parcours.ongletAVenir)));
+
+    const carte = await screen.findByTestId('reservation-r-venir');
+    expect(within(carte).getByText('Gel manicure')).toBeTruthy();
+    expect(within(carte).queryByTestId('verbe-r-venir')).toBeNull();
+  });
+});
