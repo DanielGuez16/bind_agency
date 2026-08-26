@@ -2999,6 +2999,72 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       contredit plus.*
       *Deux tests, deux mutations, les deux tombent. Aucune garde neuve*
 
+- [x] **La navigation v6 : quatre onglets en bas, huit lignes au bureau**
+      ***Le défaut le plus grave de la campagne, et sa cause n'était pas le
+      nombre.*** *Les huit onglets viennent de la coquille de bureau, où une
+      barre latérale de 240 points les porte sans effort ; transposés en bas
+      d'un iPhone ils font des cibles de quarante-huit points. Ce qui manquait
+      est un **tri** — et c'est celui de la fréquence, le même que la
+      configuration emploie déjà. En bas ce qui porte une échéance : une
+      décision à rendre, un code à valider, un délai de publication qui court.
+      Sous « More » ce qu'on a composé une fois et qu'on relit parfois.*
+      *Le compte justifie la place : un onglet sans compte n'appelle jamais. La
+      journée porte `decisions_en_attente`, déjà servi et déjà lu par le
+      sélecteur de salon. **Zéro ne se rend pas** — une pastille à zéro dit
+      « rien » en occupant la place de « quelque chose ».*
+      *Les quatre écrans rangés **quittent la barre, pas la navigation** : ils
+      restent des destinations déclarées, et le menu y mène. Le bureau garde ses
+      huit lignes : même donnée, deux mises en forme, comme le sélecteur de
+      salon qui est un bouton partout et un mur à la caisse.*
+      ***Le menu informe au lieu de rediriger.*** *Chaque ligne porte son
+      état — « 6 open · 2 need a photo » — parce qu'un menu qui ne fait que
+      rediriger oblige à ouvrir un écran pour apprendre qu'il n'y avait rien à y
+      faire. Deux requêtes sur un écran qu'on ouvre rarement, aux mêmes sources
+      que les écrans concernés : les recalculer ici en ferait deux comptes qui
+      finiraient par diverger.*
+      ***Un écart écrit : `liste` et non le « + » de la planche.*** *Un plus sur
+      une barre d'onglets se lit « ajouter », juste à côté d'une caisse où l'on
+      ajoute effectivement quelque chose.*
+      ***Le bandeau « vous êtes en ligne » part — quatrième reprise.*** *Il
+      confirmait un état permanent à quelqu'un qui ouvre l'écran pour agir, et
+      occupait le tiers haut de l'écran le plus ouvert du produit. Avec lui
+      partent la fenêtre de sept jours, ses trois branches de pluriel, et
+      `BandeauDeMiseEnLigne` sort de l'inventaire des cartes — c'était la seule
+      surface qu'il portait. `createurs_qui_peuvent_reserver` et
+      `confirmation_jours` ne sont plus lus : déclarés en `contrat`, et le
+      serveur peut cesser de calculer une portée qui coûte quatre requêtes pour
+      une ligne qui n'existe plus. Demandé plus bas.*
+      ***La phrase de la preuve reprend sa formulation d'origine.*** *Ce qui
+      compte est ce qu'on gagne à envoyer vite, pas comment une story
+      fonctionne ; et « vous la prenez » répond à la question réellement posée —
+      c'est à qui de faire la capture.*
+      ***Trois mutations, deux ont survécu et les deux ont appris quelque
+      chose.*** *La ligne du menu n'était pas un `Pressable` : elle posait
+      `onStartShouldSetResponder` à la main, donc elle répondait au doigt sans
+      retour visuel et ne répondait à rien sous test. Le menu ne menait nulle
+      part, et seule la garde qui **appuie pour de bon** l'a dit. Et
+      l'assertion des onglets du commerce tolérait les autres — remettre les
+      huit en bas la laissait verte, c'est-à-dire qu'elle ne gardait rien contre
+      le défaut qu'on venait de corriger. C'est l'ensemble qui est la règle*
+
+- [ ] **Le compte des preuves en attente, pour la pastille de l'onglet**
+      *La planche v6 pose un compte sur les trois premiers onglets — « les trois
+      portent un compte, et c'est ce qui justifie leur place ». La journée a le
+      sien ; les publications n'en ont aucun de servi. Le calculer côté écran
+      demanderait à la coquille de charger la file des publications à chaque
+      ouverture de l'application, pour un nombre qui existe déjà côté serveur.
+      Ce qu'il faut : le nombre de preuves qui attendent une décision du salon,
+      sur `/me/businesses` à côté de `decisions_en_attente` — même endroit, même
+      raison, et une seule requête pour les deux*
+
+- [ ] **La portée locale et le délai de confirmation peuvent cesser d'être calculés**
+      *`createurs_qui_peuvent_reserver` coûte quatre requêtes et une boucle sur
+      le quartier, et `confirmation_jours` décide de la fenêtre où elle est
+      calculée. Les deux existaient pour le bandeau « vous êtes en ligne », que
+      Design vient de retirer. Ils sont déclarés en `contrat` côté app pour que
+      la garde ne mente pas ; côté serveur, c'est du calcul dont plus personne
+      ne lit le résultat*
+
 - [ ] **`catalogue/corriger.ts` déclare une règle que personne ne consulte**
       *Même balayage. Le module nomme `CORRIGEABLES` — nom, description, photo —
       et `DEMANDENT_UNE_AUTRE` — durée, nature, réservabilité — avec une note
