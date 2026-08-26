@@ -58,6 +58,7 @@ import { PublicationsScreen } from '../screens/PublicationsScreen';
 import { CatalogueScreen } from '../screens/CatalogueScreen';
 import { HorairesScreen } from '../screens/HorairesScreen';
 import { LieuScreen } from '../screens/LieuScreen';
+import { MenuDuCommerce } from '../screens/MenuDuCommerce';
 import { CameraScanner } from '../screens/CameraScanner';
 import { RedemptionScreen } from '../screens/RedemptionScreen';
 import { ReglagesScreen } from '../screens/ReglagesScreen';
@@ -258,11 +259,28 @@ const OPTIONS_DE_PILE = {
  * bibliothèque — cinq flèches identiques, qui ne distinguent rien. L'icône est
  * ici et pas dans l'écran : c'est une propriété de la navigation.
  */
-function onglet(titre: string, icone: NomIcone) {
+function onglet(titre: string, icone: NomIcone, compte?: number) {
   return {
     title: titre,
     tabBarIcon: ({ color }: { color: string }) => <IconeDOnglet nom={icone} actif={color} />,
+    // **Le compte est ce qui justifie la place d'un onglet.** Un onglet sans
+    // compte n'appelle jamais : il attend qu'on pense à lui. Zéro ne se rend
+    // pas — une pastille à zéro dit « rien » en occupant la place de « quelque
+    // chose », et on apprend à ne plus la regarder.
+    tabBarBadge: compte && compte > 0 ? compte : undefined,
   };
+}
+
+/**
+ * Un écran joignable, mais pas depuis la barre.
+ *
+ * Il reste une destination à part entière — la navigation y mène, l'adresse
+ * web fonctionne — il ne prend simplement pas un quart de la barre du bas. Sur
+ * un téléphone, c'est ce qui sépare les quatre écrans du quotidien des quatre
+ * qu'on ouvre deux fois par mois.
+ */
+function ongletHorsBarre(titre: string, icone: NomIcone) {
+  return { ...onglet(titre, icone), tabBarItemStyle: { display: 'none' as const } };
 }
 
 /**
@@ -676,6 +694,25 @@ function OngletsDuCommerceChoisi() {
   const { t } = useI18n();
   const { businessId, nom, commerces, choisir, ecranDAttente } = useMonCommerce();
   const options = useOptionsDOnglets();
+  /**
+   * **Quatre onglets sur un téléphone, huit sur un bureau.**
+   *
+   * Les huit viennent de la coquille de bureau, où une barre latérale de 240
+   * points les porte sans effort ; transposées telles quelles en bas d'un
+   * iPhone, elles font des cibles de 48 points de large. Le défaut n'est pas le
+   * nombre, c'est qu'aucun tri ne les séparait.
+   *
+   * Le tri est celui de la **fréquence**, le même que la configuration emploie
+   * déjà : en bas ce qu'un salon touche chaque jour et qui porte une échéance —
+   * une décision à rendre, un code à valider, un délai de publication qui court
+   * — et sous « More » ce qu'il a composé une fois et relit parfois.
+   *
+   * C'est la même donnée en deux mises en forme, comme le sélecteur de salon
+   * qui est un bouton partout et un mur à la caisse. Les quatre écrans rangés
+   * restent des destinations : ils quittent la barre, pas la navigation.
+   */
+  const { large } = useGabarit();
+  const compteDuJour = commerces.find((salon) => salon.id === businessId)?.decisions_en_attente;
   // Le sélecteur vit là où le nom vit déjà. Il ne se rend qu'à partir de deux
   // salons — la barre décide, parce qu'elle seule sait si elle est repliée.
   const barreLaterale = useBarreLaterale(nom, { salons: commerces, choisi: businessId, onChoisir: choisir });
@@ -703,7 +740,10 @@ function OngletsDuCommerceChoisi() {
 
   return (
     <Onglets.Navigator screenOptions={options} tabBar={barreLaterale}>
-      <Onglets.Screen name="journee" options={onglet(t('onglets.journee'), 'calendrier')}>
+      <Onglets.Screen
+        name="journee"
+        options={onglet(t('onglets.journee'), 'calendrier', compteDuJour)}
+      >
         {() => <ParcoursCommerce businessId={businessId} />}
       </Onglets.Screen>
       {/* **La caisse est un onglet, pas un écran enfoui.** Elle n'était
@@ -717,7 +757,27 @@ function OngletsDuCommerceChoisi() {
       <Onglets.Screen name="publications" options={onglet(t('onglets.publications'), 'image')}>
         {() => <PublicationsScreen businessId={businessId} />}
       </Onglets.Screen>
-      <Onglets.Screen name="reporting" options={onglet(t('onglets.reporting'), 'rapport')}>
+      {/* **Le quatrième onglet du téléphone, et rien sur le bureau.** Il ne
+          porte aucun écran de plus : il groupe ceux que la barre vient de
+          libérer, et chaque ligne y porte son état — le menu informe au lieu de
+          rediriger. */}
+      {/* **`liste` et non le « + » de la planche, et c'est un écart écrit.** Un
+          plus sur une barre d'onglets se lit « ajouter », juste à côté d'une
+          caisse où l'on ajoute effectivement quelque chose. Le glyphe de liste
+          dit « il y en a d'autres », ce que l'onglet fait. */}
+      {large ? null : (
+        <Onglets.Screen name="menu" options={onglet(t('onglets.menu'), 'liste')}>
+          {() => <MenuDuCommerce businessId={businessId} />}
+        </Onglets.Screen>
+      )}
+      <Onglets.Screen
+        name="reporting"
+        options={
+          large
+            ? onglet(t('onglets.reporting'), 'rapport')
+            : ongletHorsBarre(t('onglets.reporting'), 'rapport')
+        }
+      >
         {() => <ReportingScreen businessId={businessId} />}
       </Onglets.Screen>
       {/* **L'annuaire est ce que l'abonnement achète**, donc il est au premier
@@ -726,7 +786,14 @@ function OngletsDuCommerceChoisi() {
           commerce, deux de plus que ce que `Icone` recommande — la barre
           latérale de bureau les tient sans effort, la barre du bas est
           serrée. À arbitrer avec Design si un huitième se présente. */}
-      <Onglets.Screen name="annuaire" options={onglet(t('onglets.annuaire'), 'personne')}>
+      <Onglets.Screen
+        name="annuaire"
+        options={
+          large
+            ? onglet(t('onglets.annuaire'), 'personne')
+            : ongletHorsBarre(t('onglets.annuaire'), 'personne')
+        }
+      >
         {() => <PileDeLAnnuaire businessId={businessId} />}
       </Onglets.Screen>
       {/* **Deux entrées de rang égal, et plus une porte qui en cache deux.**
@@ -734,16 +801,34 @@ function OngletsDuCommerceChoisi() {
           qu'on y fait — et elle recoupe la fréquence : un lieu se compose une
           fois, un catalogue vit en continu. Aucune des deux n'est un réglage de
           l'autre, donc aucune ne se range sous l'autre. */}
-      <Onglets.Screen name="lieu" options={onglet(t('onglets.lieu'), 'lieu')}>
+      <Onglets.Screen
+        name="lieu"
+        options={
+          large
+            ? onglet(t('onglets.lieu'), 'lieu')
+            : ongletHorsBarre(t('onglets.lieu'), 'lieu')
+        }
+      >
         {() => <LieuScreen businessId={businessId} />}
       </Onglets.Screen>
-      <Onglets.Screen name="prestations" options={onglet(t('onglets.prestations'), 'coche')}>
+      <Onglets.Screen
+        name="prestations"
+        options={
+          large
+            ? onglet(t('onglets.prestations'), 'coche')
+            : ongletHorsBarre(t('onglets.prestations'), 'coche')
+        }
+      >
         {() => <CatalogueScreen businessId={businessId} />}
       </Onglets.Screen>
       <Onglets.Screen
         name="reglages"
         component={ReglagesScreen}
-        options={onglet(t('onglets.reglages'), 'reglages')}
+        options={
+          large
+            ? onglet(t('onglets.reglages'), 'reglages')
+            : ongletHorsBarre(t('onglets.reglages'), 'reglages')
+        }
       />
     </Onglets.Navigator>
   );

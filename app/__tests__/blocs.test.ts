@@ -76,6 +76,9 @@ const BLOCS: Record<string, number> = {
   CatalogueScreen: 0,
   HorairesScreen: 0,
   LieuScreen: 0,
+  // Le menu du téléphone : quatre destinations et leur état. Aucune marque —
+  // c'est une table des matières, pas une page de titre.
+  MenuDuCommerce: 0,
   // La création d'un commerce est un formulaire, pas un seuil : la marque n'y
   // présente rien, elle enregistre des faits.
   CreationDuCommerceScreen: 0,

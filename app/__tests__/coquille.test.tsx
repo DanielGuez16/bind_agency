@@ -719,7 +719,13 @@ describe('aiguillage par rôle', () => {
         <AvecNavigation />
       </Cadre>,
     );
-    await waitFor(() => expect(screen.getByText(en.onglets.reglages)).toBeTruthy());
+    // **Le premier onglet du rôle, et non « Settings ».** Celui-ci était le
+    // repère commode tant que les trois rôles le portaient en barre ; le
+    // commerce ne l'y a plus sur un téléphone — quatre onglets en bas, le reste
+    // sous « More » — et l'attente expirait sur une absence qui est le nouveau
+    // comportement voulu.
+    const premier = role === 'creator' ? en.onglets.fil : role === 'admin' ? en.onglets.arbitrage : en.onglets.journee;
+    await waitFor(() => expect(screen.getAllByText(premier).length).toBeGreaterThan(0));
   }
 
   /** Les libellés d'onglets présents à l'écran. */
@@ -777,6 +783,11 @@ describe('aiguillage par rôle', () => {
     await monterPour('business_member');
     const vus = onglets();
 
+    // **Quatre en barre, et quatre sous le menu.** Les huit venaient de la
+    // barre latérale de bureau, où 240 points les portent sans effort ;
+    // transposées en bas d'un iPhone elles font des cibles de 48. Le tri est
+    // celui de la fréquence : ce qui porte une échéance reste en bas, ce qu'on
+    // a composé une fois passe sous « More ».
     expect(vus).toEqual(
       expect.arrayContaining([
         en.onglets.journee,
@@ -785,12 +796,7 @@ describe('aiguillage par rôle', () => {
         // ne pouvait valider aucun code.
         en.onglets.caisse,
         en.onglets.publications,
-        en.onglets.reporting,
-        // **Deux entrées de rang égal**, et plus une porte qui en cache deux :
-        // le lieu et ce qu'on y fait ne sont pas l'un le réglage de l'autre.
-        en.onglets.lieu,
-        en.onglets.prestations,
-        en.onglets.reglages,
+        en.onglets.menu,
       ]),
     );
     for (const interdit of [en.onglets.paliers, en.onglets.audience, en.onglets.arbitrage]) {
@@ -904,12 +910,38 @@ describe('aiguillage par rôle', () => {
   it('les réglages sont joignables depuis les trois rôles', async () => {
     // C'est le seul chemin vers la déconnexion : l'oublier dans un arbre
     // enfermerait quelqu'un dans une session qu'il ne peut pas quitter.
-    for (const role of ['creator', 'business_member', 'admin'] as const) {
+    for (const role of ['creator', 'admin'] as const) {
       const rendu = await monterPour(role);
       expect(screen.queryAllByText(en.onglets.reglages).length).toBeGreaterThan(0);
       void rendu;
     }
+
   });
+
+  /**
+   * **Le commerce y arrive par le menu, et il faut le prouver en appuyant.**
+   *
+   * Un écran retiré de la barre reste une destination — c'est exactement ce
+   * qu'on peut casser sans qu'aucune autre garde ne bouge, puisque le nom reste
+   * déclaré et que la garde des destinations se contente de le trouver. Et les
+   * réglages sont le seul chemin vers la déconnexion : les perdre enfermerait
+   * un gérant dans une session qu'il ne peut pas quitter.
+   *
+   * Son propre `it` plutôt que la suite du précédent : trois montages de la
+   * coquille entière dans un même test dépassaient le budget de cinq secondes,
+   * et un test qui expire ne dit pas ce qu'il éprouvait.
+   */
+  it('et le commerce les atteint par le menu, où ils sont rangés', async () => {
+    await monterPour('business_member');
+    await fireEvent.press(screen.getAllByText(en.onglets.menu)[0]);
+    // eslint-disable-next-line no-console
+    await fireEvent.press(await screen.findByTestId('menu-reglages'));
+    await waitFor(() => expect(screen.getByTestId('ecran-reglages')).toBeTruthy());
+    // Quinze secondes, écrites parce que ce test monte la coquille entière puis
+    // traverse deux écrans : le budget d'usine de cinq expirait avant la fin du
+    // parcours, sur une machine chargée, et un test qui expire ne dit pas ce
+    // qu'il éprouvait.
+  }, 15_000);
 });
 
 // --------------------------------------------------------------------------

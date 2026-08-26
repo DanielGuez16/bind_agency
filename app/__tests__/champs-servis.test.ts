@@ -53,6 +53,18 @@ const TYPES = join(SRC, 'api', 'types.ts');
  *   table un tapis.
  */
 const NON_RENDUS: Record<string, string> = {
+  // **Les deux champs du bandeau « vous êtes en ligne », que Design a retiré.**
+  // Ils existaient pour lui seul : la portée locale disait « et 41 créatrices
+  // peuvent vous réserver », le délai décidait de la fenêtre où la ligne se lit
+  // — et il décide aussi, côté serveur, si la portée est calculée du tout.
+  //
+  // Le bandeau part à la quatrième reprise de la journée : il confirmait un état
+  // permanent à quelqu'un qui ouvre l'écran pour agir. Plus personne ne les lit
+  // ici, et ce n'est pas une dette — c'est une décision de composition. Reste
+  // qu'un calcul de portée coûte quatre requêtes au serveur pour une ligne qui
+  // n'existe plus : demandé à l'autre conversation, voir `TASKS.md`.
+  'VueDActivation.createurs_qui_peuvent_reserver': 'contrat',
+  'VueDActivation.confirmation_jours': 'contrat',
   // **Les deux champs de la planche, servis avant leurs écrans.** La
   // composition se fait dans l'autre conversation ; la route sert d'abord pour
   // qu'aucun écran n'ait à les déduire — et c'est justement la déduction qui

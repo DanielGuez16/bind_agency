@@ -13,15 +13,6 @@
  */
 import type { SuspensionReason, VueDActivation } from '../../api';
 
-/**
- * Sept jours, et c'est le seul délai de ce module.
- *
- * Design l'écrit sur la planche : la confirmation s'efface au bout d'une
- * semaine. Elle ne se compte pas en heures ouvrées ni en jours civils du
- * commerce — c'est un âge, pas un rendez-vous.
- */
-export const DUREE_DE_LA_CONFIRMATION_MS = 7 * 24 * 3_600_000;
-
 export type MiseEnLigne =
   | { forme: 'publie' }
   /**
@@ -49,25 +40,6 @@ export type MiseEnLigne =
        * en pause deux étés de suite en a deux, et c'est celle d'aujourd'hui qui
        * explique son état. */
       depuis: string | null;
-    }
-  /**
-   * En ligne depuis peu, et la ligne le dit encore.
-   *
-   * **Ce que la planche voulait, à moitié.** Elle écrit « you are live · 41
-   * creators nearby can book you », et cette seconde moitié n'est toujours pas
-   * servie — la portée locale ne vit que sur les rapports. La ligne s'arrête
-   * donc à ce qui est vrai : depuis quand. Affirmer un nombre de créatrices à
-   * l'estime serait une confirmation fausse, ce qui est pire que pas de
-   * confirmation ; ne pas l'écrire n'enlève rien à la date.
-   */
-  | {
-      forme: 'confirme';
-      depuis: string;
-      /** Combien de créatrices peuvent réserver. **Nul quand le serveur ne l'a
-       *  pas servi** — une réponse d'avant le champ. La ligne dit alors la date
-       *  seule, ce qu'elle faisait déjà : la moitié vraie vaut mieux que la
-       *  moitié inventée. */
-      peuvent: number | null;
     }
   /**
    * Publié, et pourtant absent des murs.
@@ -106,8 +78,6 @@ type CeQuiRetientLaPublication = Pick<
   Partial<
     Pick<
       VueDActivation,
-      | 'createurs_qui_peuvent_reserver'
-      | 'confirmation_jours'
       // Le motif et sa date suivent la même règle, et pour la même raison :
       // une réponse plus vieille qu'eux doit continuer de rendre le bandeau
       // sans motif, qui est exactement ce qu'il rendait hier.
@@ -156,24 +126,21 @@ export function miseEnLigne(
     if (invisibles.length > 0) {
       return { forme: 'publie-mais-invisible', manquantes: invisibles };
     }
-    // **La confirmation a un âge, et passé sept jours elle n'a plus rien à
-    // dire.** Une ligne qui reste après avoir été lue est la définition d'un
-    // bandeau dont on ne comprend plus l'objet. Sans date — un salon publié
-    // avant que le journal la porte — on retombe sur le silence, qui est ce
-    // que le bandeau faisait déjà.
-    const depuis = vue.en_ligne_depuis;
-    if (depuis === null || depuis === undefined) return { forme: 'publie' };
-    const age = maintenant - Date.parse(depuis);
-    // **Le délai vient du serveur, qui s'en sert aussi.** Il décide là-bas si la
-    // portée locale est calculée ; deux copies d'un même délai finissent par
-    // diverger, et le jour où elles le font la ligne montre « depuis 8 jours »
-    // sans le nombre qui rassure — le pire des deux états. Le repli sur la
-    // constante couvre une réponse d'avant le champ.
-    const fenetre = vue.confirmation_jours
-      ? vue.confirmation_jours * 24 * 3_600_000
-      : DUREE_DE_LA_CONFIRMATION_MS;
-    if (Number.isNaN(age) || age > fenetre) return { forme: 'publie' };
-    return { forme: 'confirme', depuis, peuvent: vue.createurs_qui_peuvent_reserver ?? null };
+    /**
+     * **Publié et complet : rien.** Quatrième reprise de cet écran, et c'est le
+     * bandeau « vous êtes en ligne » qui part.
+     *
+     * Il tenait sept jours après la publication, et son défaut n'était pas sa
+     * durée : il **confirmait un état permanent à quelqu'un qui ouvre l'écran
+     * pour agir**, en occupant le tiers haut de l'écran le plus ouvert du
+     * produit. Un salon publié l'est ; le lui redire chaque matin ne lui apprend
+     * rien et repousse plus bas ce qui, lui, attend une décision.
+     *
+     * Ce que la fenêtre décidait — `confirmation_jours`, la portée locale —
+     * n'est plus lu par personne ici ; les deux champs restent servis et sont
+     * déclarés comme tels.
+     */
+    return { forme: 'publie' };
   }
 
   const faites = vue.etapes.filter((etape) => etape.done).length;
