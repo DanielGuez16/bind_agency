@@ -18,6 +18,7 @@ import { ApiClient, ApiProvider, type EtapeActivation } from '../src/api';
 import { I18nProvider } from '../src/i18n';
 import { en } from '../src/i18n/en';
 import { BandeauDeMiseEnLigne } from '../src/screens/journee/BandeauDeMiseEnLigne';
+import { ExceptionDuJour } from '../src/screens/journee/ExceptionDuJour';
 import { placesDuJour } from '../src/screens/journee/exception';
 import { miseEnLigne } from '../src/screens/journee/miseEnLigne';
 import { ThemeProvider } from '../src/theme';
@@ -461,5 +462,63 @@ describe('pourquoi le salon est dehors', () => {
     // contrainte de table garantit le motif côté serveur, elle ne garantit rien
     // de ce que l'écran tient en main.
     expect(miseEnLigne(BASE)).toEqual({ forme: 'suspendu', motif: null, depuis: null });
+  });
+});
+
+
+/**
+ * Le repliable de l'exception ne s'ouvre jamais sur rien.
+ *
+ * **La flèche tournait et ne dépliait rien.** Deux causes, et la même forme :
+ * `ExceptionDuJour` rendait `null` pendant ses deux requêtes — et il ne se
+ * monte qu'au moment où l'on ouvre, donc c'était le cas normal du premier
+ * appui — puis `null` encore quand `placesDuJour` ne trouve aucune règle pour
+ * ce jour, c'est-à-dire sur un jour fermé dans la semaine type. La seconde ne
+ * se résout pas en attendant : le bloc restait vide pour toujours.
+ *
+ * **Le décor divergent est un jour fermé**, pas un jour vide : sur un jour
+ * ouvert les deux implémentations rendent la même chose.
+ */
+describe('l’exception du jour, quand il n’y a rien à couper', () => {
+  async function monter(regles: unknown[]) {
+    const api = new ApiClient({
+      baseUrl: 'https://api.test',
+      coffre: { lire: async () => null, ecrire: async () => {} },
+      fetchImpl: (async (url: RequestInfo | URL) => ({
+        ok: true,
+        status: 200,
+        json: async () => (String(url).includes('capacity-exceptions') ? [] : regles),
+      })) as unknown as typeof fetch,
+    });
+    return await render(
+      <I18nProvider initialLocale="en">
+        <ThemeProvider role="merchant">
+          <ApiProvider client={api}>
+            <ExceptionDuJour
+              businessId="b1"
+              // Un mardi.
+              jour="2026-08-18"
+              postesEffectifs={2}
+              onFait={() => {}}
+            />
+          </ApiProvider>
+        </ThemeProvider>
+      </I18nProvider>,
+    );
+  }
+
+  it('un jour fermé dans la semaine type le dit, au lieu de s’ouvrir sur le vide', async () => {
+    // Aucune règle pour le mardi : le salon est fermé ce jour-là.
+    await monter([{ weekday: 3, opens_at: '09:00', closes_at: '19:00', postes: 2 }]);
+    await waitFor(() =>
+      expect(screen.getByTestId('exception-sans-objet')).toBeTruthy(),
+    );
+    expect(screen.getByText(en.commerce.exceptionJourFerme)).toBeTruthy();
+  });
+
+  it('et un jour ouvert propose bien le geste', async () => {
+    await monter([{ weekday: 2, opens_at: '09:00', closes_at: '19:00', postes: 2 }]);
+    await waitFor(() => expect(screen.getByTestId('ajuster-aujourdhui')).toBeTruthy());
+    expect(screen.queryByTestId('exception-sans-objet')).toBeNull();
   });
 });

@@ -34,7 +34,7 @@ import {
 } from '../components';
 import { elevationDeCarte, radius, useColors, type ColorName } from '../theme';
 import { useI18n, type SupportedLocale } from '../i18n';
-import { formatDateTime, formatMois, formatQuantieme } from '../format';
+import { formatDateTime, formatMois, formatQuantieme, repereDuCreneau } from '../format';
 import { AnnulerLaReservation } from './reservations/AnnulerLaReservation';
 import { Ecran } from './Ecran';
 import { useRequete } from './useRequete';
@@ -500,6 +500,7 @@ function LigneDeReservation({
    * que je vais recevoir », et la prestation y est la bonne réponse.
    */
   const verbe = verbeDeLaContrepartie(reservation);
+  const repere = repereDuCreneau(quand, locale, reservation.business_timezone);
 
   return (
     <View
@@ -514,12 +515,6 @@ function LigneDeReservation({
         paddingLeft: 12,
       }}
     >
-      <View style={{ width: 52, gap: 2 }} testID={`quand-${reservation.booking_id}`}>
-        <Texte variante="type.dataLabel" couleur="ink.mute">
-          {formatDateTime(quand, locale, reservation.business_timezone)}
-        </Texte>
-      </View>
-
       <View style={{ flex: 1, gap: 4 }}>
         {verbe ? (
           <Texte variante="type.bodyStrong" testID={`verbe-${reservation.booking_id}`}>
@@ -549,6 +544,28 @@ function LigneDeReservation({
             dire exactement ce que la bonne implémentation rend. En espagnol la
             ligne affichait « STORY » là où le reste de l'écran dit
             « historia ». Le réseau, lui, reste brut — c'est un nom propre. */}
+        {/**
+          * **Le moment, en clair et sur une ligne.**
+          *
+          * Il vivait dans une colonne de cinquante-deux points à gauche de la
+          * carte, où `formatDateTime` rend « Aug 26, 2026 at 2:30 PM » : chaque
+          * mot y passait à la ligne, et la date se lisait en colonne — « Aug /
+          * 26, / 2026 / At / 2:30 / PM ». La largeur convient au quantième seul
+          * de l'historique, qui tient en deux chiffres ; elle ne convient à
+          * rien d'autre.
+          *
+          * **Un repère plutôt qu'une date**, tant qu'il en existe un :
+          * « aujourd'hui à 14:30 » se lit sans compter, « Aug 26, 2026 » demande
+          * de se situer. Au-delà d'une semaine la date brute est la réponse
+          * honnête, et c'est ce que `repereDuCreneau` rend déjà — la fiche s'en
+          * sert pour la même raison.
+          */}
+        <Texte variante="type.bodyStrong" testID={`quand-${reservation.booking_id}`}>
+          {t(`parcours.moment_${repere.quand}`, {
+            jour: repere.libelle,
+            heure: repere.heure,
+          })}
+        </Texte>
         <Texte variante="type.dataLabel" couleur="ink.mute" testID={`palier-${reservation.booking_id}`}>
           {`${t(`parcours.format_${reservation.content_format}`)} · ${reservation.platform}`.toUpperCase()}
         </Texte>
