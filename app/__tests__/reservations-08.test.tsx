@@ -627,3 +627,37 @@ describe('le titre est le verbe, et seulement là où c’est la question', () =
     expect(within(carte).queryByTestId('verbe-r-clos')).toBeNull();
   });
 });
+
+
+/**
+ * Le moment, sur une ligne.
+ *
+ * **Il vivait dans une colonne de cinquante-deux points**, où « Aug 26, 2026 at
+ * 2:30 PM » passait à la ligne à chaque mot : la date se lisait en colonne,
+ * « Aug / 26, / 2026 / At / 2:30 / PM ». La largeur convient au quantième seul
+ * de l'historique — deux chiffres — et à rien d'autre.
+ *
+ * Ce test ne mesure pas une largeur : il vérifie que le moment est **un seul
+ * texte**, ce qu'aucune colonne étroite ne peut casser puisqu'il n'y en a plus.
+ */
+it('dit le moment en une ligne, et en repère plutôt qu’en date', async () => {
+  // **Demain à midi chez le salon, calculé et non approximé.** « dans 26 h »
+  // tombe après-demain quand on l'écrit le soir : le repère se compte en jours
+  // civils du fuseau du salon, pas en heures.
+  const aNewYork = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/New_York',
+    dateStyle: 'short',
+  }).format(new Date());
+  const [a, m, j] = aNewYork.split('-').map(Number);
+  const demainMidi = new Date(Date.UTC(a, m - 1, j + 1, 16, 0, 0)).toISOString();
+
+  await monter([
+    reservation({ booking_id: 'r-quand', status: 'confirmed', starts_at: demainMidi }),
+  ]);
+  await fireEvent.press(screen.getByLabelText(new RegExp(en.parcours.ongletAVenir)));
+
+  const quand = await screen.findByTestId('quand-r-quand');
+  // « Demain à … » : le repère se lit sans compter, la date brute demande de
+  // se situer. Le mot du jour vient de la langue, l'heure du fuseau du salon.
+  expect(quand).toHaveTextContent(/^Tomorrow at \d/);
+});

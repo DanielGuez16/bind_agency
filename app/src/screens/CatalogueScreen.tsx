@@ -367,7 +367,7 @@ function Groupes({
       {groupes.rangees
         .filter((r) => r.items.length > 0)
         .map(({ palier, items }) => (
-          <View key={palier.id} style={{ gap: 8 }} testID={`palier-${palier.id}`}>
+          <View key={palier.id} style={{ gap: large ? 0 : 8 }} testID={`palier-${palier.id}`}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <TierBadge tier={palier.content_format} />
               <Texte variante="type.caption" couleur="ink.soft">
@@ -395,7 +395,7 @@ function Groupes({
         ))}
 
       {groupes.orphelines.length > 0 ? (
-        <View style={{ gap: 8 }} testID="sans-palier">
+        <View style={{ gap: large ? 0 : 8 }} testID="sans-palier">
           <Texte variante="type.label">{t('composition.sansPalierTitre')}</Texte>
           {/* Dit, et non deviné : une prestation sans palier n'apparaît dans
               aucun fil, et rien à l'écran ne le laissait supposer. */}
@@ -661,7 +661,42 @@ function LignePrestation({
     paliers.find((palier) => palier.content_format === format)?.min_followers ?? 0;
 
   return (
-    <View style={{ gap: 4 }} testID={`prestation-${item.id}`}>
+    /**
+     * **Chaque prestation est un objet, et rien ne le disait.** Les lignes se
+     * suivaient sans surface ni filet : sur les deux formats, dix prestations
+     * faisaient un seul bloc gris où le nom de l'une touchait la durée de la
+     * suivante. Troisième retour sur cet écran, et c'est la même cause à chaque
+     * fois — la ligne portait tout ce qu'il faut *dans* une prestation, et rien
+     * qui la sépare de sa voisine.
+     *
+     * **Deux traitements, parce qu'il y a deux formats et deux lectures.** Au
+     * comptoir on lit une prestation à la fois : elle prend une carte à filet,
+     * qui est le traitement du système pour ce qui informe. En table on lit une
+     * colonne : les rangées se touchent et un filet les sépare, comme sous
+     * l'en-tête. Poser des cartes en table ferait des îlots là où l'œil suit
+     * une colonne, et des filets au comptoir ne suffiraient pas — une ligne
+     * dépliée y déborde sur trois blocs.
+     */
+    <View
+      testID={`prestation-${item.id}`}
+      style={
+        large
+          ? {
+              gap: 4,
+              paddingVertical: 10,
+              borderTopWidth: 1,
+              borderTopColor: c['line.default'],
+            }
+          : {
+              gap: 4,
+              padding: 12,
+              borderRadius: radius['radius.md'],
+              backgroundColor: c['bg.surface'],
+              borderWidth: 1,
+              borderColor: c['line.default'],
+            }
+      }
+    >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         {/* **La vignette, ou son absence.** Un cadre pointillé dit qu'il manque
             une photo sans qu'aucun texte n'explique la fonction : le manque se

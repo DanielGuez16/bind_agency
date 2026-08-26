@@ -112,7 +112,8 @@ describe('la première rangée n’est pas une catégorie', () => {
     await waitFor(() => expect(screen.getByTestId('rangee-proches')).toBeTruthy());
 
     const proches = within(screen.getByTestId('rangee-proches'));
-    expect(proches.getAllByTestId(/^rangee-proches-apercu-i-o\d+$/)).toHaveLength(3);
+    // Une carte par salon, non par prestation : Vela en ouvre deux et n'en fait qu'une.
+    expect(proches.getAllByTestId(/^rangee-proches-apercu-b\d+$/)).toHaveLength(2);
     // Son compte est celui du fil entier, servi.
     expect(screen.getByTestId('rangee-proches-compte')).toHaveTextContent(/\b3\b/);
     await vue.unmount();
@@ -127,44 +128,51 @@ describe('la première rangée n’est pas une catégorie', () => {
     // qui est rendu écrirait « 2 » et ferait croire que le fil est exhaustif.
     expect(screen.getByTestId('rangee-beauty-compte')).toHaveTextContent(/\b12\b/);
     expect(
-      within(screen.getByTestId('rangee-beauty')).getAllByTestId(/^rangee-beauty-apercu-i-o\d+$/),
-    ).toHaveLength(2);
+      within(screen.getByTestId('rangee-beauty')).getAllByTestId(/^rangee-beauty-apercu-b\d+$/),
+    ).toHaveLength(1);
     expect(screen.getByTestId('rangee-fitness-compte')).toHaveTextContent(/\b5\b/);
     await vue.unmount();
   });
 });
 
 describe('la carte, et ce qui a traversé les trois fils', () => {
-  it('la prestation porte le titre, le salon et le quartier l’attribution', async () => {
+  it('le salon porte le titre, et la carte nomme deux prestations', async () => {
     // **L'acquis qu'on ne rejoue pas.** Un mur qui remettrait le salon en titre
     // reproduirait le « je vois un lieu » de la revue ; et le quartier, qui
     // rangeait le fil en v4, est redevenu une étiquette de cette ligne-là.
     const vue = await monter();
-    await waitFor(() => expect(screen.getByTestId('rangee-proches-apercu-i-o1-nom')).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId('rangee-proches-apercu-b1-nom')).toBeTruthy());
 
-    expect(screen.getByTestId('rangee-proches-apercu-i-o1-nom')).toHaveTextContent(/Gel manicure/);
-    const attribution = screen.getByTestId('rangee-proches-apercu-i-o1-attribution');
-    expect(attribution).toHaveTextContent(/Vela Nail Studio/);
-    expect(attribution).toHaveTextContent(new RegExp(en.quartiers.wynwood));
-    expect(attribution).toHaveTextContent(/320/);
+    // **Le grain a changé avec la v5.** La carte est celle du salon : c'est lui
+    // qui porte le titre, et les prestations descendent en lignes nommées.
+    expect(screen.getByTestId('rangee-proches-apercu-b1-nom')).toHaveTextContent(
+      /Vela Nail Studio/,
+    );
+    expect(screen.getByTestId('rangee-proches-apercu-b1-ligne-i-o1')).toHaveTextContent(
+      /Gel manicure/,
+    );
+    const attribution = screen.getByTestId('rangee-proches-apercu-b1-compte');
+    expect(attribution).toHaveTextContent(new RegExp(en.quartiers.wynwood, 'i'));
     await vue.unmount();
   });
 
-  it('et « +1 more here » vient du compte servi, jamais des cartes', async () => {
+  it('et le compte des prestations vient du serveur, jamais des lignes', async () => {
     // **C'est ce qui sauve la carte de la v0.5.** Elle nomme une prestation et
     // mène à un lieu : sans ce compte, on croirait que le salon n'offre que
     // celle-là. Vela ouvre deux prestations, donc une de plus que celle-ci.
     const vue = await monter();
-    await waitFor(() => expect(screen.getByTestId('rangee-proches-apercu-i-o1-autres')).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId('rangee-proches-apercu-b1-compte')).toBeTruthy());
 
-    expect(screen.getByTestId('rangee-proches-apercu-i-o1-autres')).toHaveTextContent(/\b1\b/);
+    // Vela ouvre deux prestations : le compte le dit, et la carte les nomme
+    // toutes deux — donc aucun reste. Le nombre vient de `prestations_ouvertes`.
+    expect(screen.getByTestId('rangee-proches-apercu-b1-compte')).toHaveTextContent(/\b2\b/);
     // **Et zéro ne s'écrit pas.** Wynwood Strength n'ouvre que celle-ci ;
     // « +0 more here » ferait chercher ce qui n'existe pas.
-    expect(screen.queryByTestId('rangee-proches-apercu-i-o3-autres')).toBeNull();
+    expect(screen.queryByTestId('rangee-proches-apercu-b1-reste')).toBeNull();
     await vue.unmount();
   });
 
-  it('la même prestation ouverte à deux paliers ne fait qu’une carte', async () => {
+  it('la même prestation ouverte à deux paliers ne fait qu’une ligne', async () => {
     // **Le décor qui sépare les deux implémentations** : deux offres partagent
     // leur article. Un mur qui listerait les offres poserait deux cartes du
     // même nom sous deux badges, ce qui se lit comme un doublon.
@@ -178,9 +186,11 @@ describe('la carte, et ce qui a traversé les trois fils', () => {
     } as unknown as Fil);
     await waitFor(() => expect(screen.getByTestId('rangee-proches')).toBeTruthy());
 
+    // Une carte de salon, et **une seule ligne** pour l'article partagé : deux
+    // lignes du même nom sous deux badges se lisent comme un doublon.
     expect(
       within(screen.getByTestId('rangee-proches')).getAllByTestId(
-        /^rangee-proches-apercu-i-partage$/,
+        /^rangee-proches-apercu-b1-ligne-i-partage$/,
       ),
     ).toHaveLength(1);
     await vue.unmount();
@@ -190,14 +200,16 @@ describe('la carte, et ce qui a traversé les trois fils', () => {
     const vue = await monter({
       ...FIL,
       commerces: [
-        commerce('b1', 'Vela Nail Studio', 'beauty', [
-          item('o1', 'Gel manicure', 'story', CLE_PRESTATION),
-        ]),
+        // **La clé vit sur le salon**, puisque la carte est celle du salon : la
+        // photo d'un article ne dit rien du lieu où l'on entre.
+        commerce('b1', 'Vela Nail Studio', 'beauty', [item('o1', 'Gel manicure')], {
+          cover_photo_key: CLE_PRESTATION,
+        }),
       ],
     } as unknown as Fil);
-    await waitFor(() => expect(screen.getByTestId('rangee-proches-apercu-i-o1-photo-image')).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId('rangee-proches-apercu-b1-photo-image')).toBeTruthy());
 
-    const uri = String(screen.getByTestId('rangee-proches-apercu-i-o1-photo-image').props.source.uri);
+    const uri = String(screen.getByTestId('rangee-proches-apercu-b1-photo-image').props.source.uri);
     expect(uri).toContain(CLE_PRESTATION);
     // **L'assertion qui sépare les deux implémentations** : les deux URL
     // portent la clé, c'est le suffixe qui dit laquelle part sur le réseau.

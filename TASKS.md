@@ -2965,6 +2965,40 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       là ne ramène pas la barre de Safari. Tout ce dont ces deux choses dépendent
       est éprouvé ; les deux faits eux-mêmes demandent un appareil*
 
+- [x] **Trois défauts de composition, avant la démonstration**
+      ***Le catalogue, troisième retour, et la même cause à chaque fois.*** *Les
+      prestations ne se distinguaient pas les unes des autres : la ligne portait
+      tout ce qu'il faut **dans** une prestation, et rien qui la sépare de sa
+      voisine — pas de surface, pas de filet, seulement un `gap` de huit. Dix
+      prestations faisaient un bloc gris où le nom de l'une touchait la durée de
+      la suivante. Deux traitements, parce qu'il y a deux formats et deux
+      lectures : au comptoir une carte à filet, qui est le traitement du système
+      pour ce qui informe ; en table des rangées jointives séparées d'un filet,
+      comme sous l'en-tête. Des cartes en table feraient des îlots là où l'œil
+      suit une colonne ; des filets au comptoir ne suffiraient pas, une ligne
+      dépliée y déborde sur trois blocs.*
+      ***La date des réservations s'empilait, et la cause tenait en un
+      nombre.*** *Le moment vivait dans une colonne de cinquante-deux points, où
+      `formatDateTime` rend « Aug 26, 2026 at 2:30 PM » : chaque mot passait à
+      la ligne. Cette largeur est celle du quantième seul de l'historique — deux
+      chiffres — et elle a été reprise pour une carte qui porte une phrase. Le
+      moment remonte dans la colonne principale, sur une ligne, et en **repère**
+      plutôt qu'en date : `repereDuCreneau` existait et la fiche s'en sert déjà
+      pour la même raison — « demain à 14:30 » se lit sans compter.*
+      ***La flèche de « aujourd'hui seulement » ne dépliait rien, deux fois.***
+      *`ExceptionDuJour` rendait `null` pendant ses deux requêtes — et il ne se
+      monte qu'au moment où l'on ouvre, donc c'était le cas normal du premier
+      appui — puis `null` encore quand aucune règle ne couvre ce jour,
+      c'est-à-dire sur un jour fermé dans la semaine type. La seconde ne se
+      résout pas en attendant : le bloc restait vide pour toujours, et c'est ce
+      qu'on voyait. Les deux disent maintenant ce qu'elles sont, et la phrase du
+      jour fermé renvoie à la semaine type — c'est là que le jour se rouvre.*
+      ***Et « rien à faire » sous « 5 faits aujourd'hui ».*** *Le titre du
+      repliable des terminées portait un jugement d'état là où il devait nommer
+      un contenu. « Servi et clos » sur cinq lignes servies et closes ne se
+      contredit plus.*
+      *Deux tests, deux mutations, les deux tombent. Aucune garde neuve*
+
 - [ ] **`catalogue/corriger.ts` déclare une règle que personne ne consulte**
       *Même balayage. Le module nomme `CORRIGEABLES` — nom, description, photo —
       et `DEMANDENT_UNE_AUTRE` — durée, nature, réservabilité — avec une note

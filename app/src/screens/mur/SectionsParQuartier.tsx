@@ -36,6 +36,7 @@ import {
   type ItemDuFil,
 } from '../../api';
 import { CASE_DU_BADGE, Texte } from '../../components';
+import { CarteDeSalon, type PrestationDeLaCarte } from './CarteDeSalon';
 import { CarteDuFil, LARGEUR_DE_LA_CARTE, PHOTO_DE_LA_CARTE } from './CarteDuFil';
 import { formatNumber } from '../../format';
 import { useI18n } from '../../i18n';
@@ -116,6 +117,62 @@ export function prestationsDuFil(
   });
 }
 
+/**
+ * Les salons d'une rangée, une carte chacun.
+ *
+ * **Le mur montait les prestations à plat, et la v5 demande le salon.** Le signe
+ * qui le trahissait : chaque carte portait « et 2 autres à l'intérieur » au
+ * grain de la prestation, donc trois cartes du même salon répétaient la même
+ * phrase pour des prestations posées juste à côté.
+ *
+ * La carte n'en nomme que deux et compte le reste ; le compte vient du serveur,
+ * par la même fonction que l'en-tête du quartier — c'est ce qui fait que la
+ * somme des cartes égale ce que le quartier annonce.
+ */
+export function salonsDuFil(
+  commerces: CommerceDuFil[],
+  urlDuMedia: (cle: string | null) => string | null,
+  nomDuQuartier: (quartier: string) => string,
+): SalonDuFil[] {
+  return commerces.map((commerce) => {
+    const vues = new Set<string>();
+    const prestations: PrestationDeLaCarte[] = [];
+    for (const item of commerce.items) {
+      if (vues.has(item.catalog_item_id)) continue;
+      vues.add(item.catalog_item_id);
+      prestations.push({
+        catalogItemId: item.catalog_item_id,
+        nom: item.name,
+        contrepartie: item.content_format,
+      });
+    }
+    return {
+      cle: commerce.business_id,
+      businessId: commerce.business_id,
+      nom: commerce.name,
+      categorie: commerce.category,
+      quartierNomme:
+        commerce.neighborhood === null ? null : nomDuQuartier(commerce.neighborhood),
+      distanceMetres: commerce.distance_metres,
+      photo: urlDuMedia(commerce.cover_photo_key),
+      ouvertes: commerce.prestations_ouvertes,
+      prestations,
+    };
+  });
+}
+
+export type SalonDuFil = {
+  cle: string;
+  businessId: string;
+  nom: string;
+  categorie: BusinessCategory;
+  quartierNomme: string | null;
+  distanceMetres: number;
+  photo: string | null;
+  ouvertes: number;
+  prestations: PrestationDeLaCarte[];
+};
+
 /** Combien de cartes une rangée porte au plus. Au-delà, « tout voir ». */
 const CARTES_PAR_RANGEE = 10;
 
@@ -137,7 +194,7 @@ export function useMur(
 
   if (fil === null) return null;
 
-  const toutes = prestationsDuFil(
+  const toutes = salonsDuFil(
     fil.commerces,
     (cle) => media(api, cle),
     (quartier) => t(`quartiers.${quartier}`),
@@ -147,7 +204,7 @@ export function useMur(
   const rangee = (
     cle: string,
     titre: string,
-    prestations: PrestationDuFil[],
+    prestations: SalonDuFil[],
     total: number,
     onTout?: () => void,
   ) => ({
@@ -208,7 +265,7 @@ function RangeeDuFil({
 }: {
   titre: string;
   total: string;
-  prestations: PrestationDuFil[];
+  prestations: SalonDuFil[];
   onOuvrir: (businessId: string) => void;
   onTout?: () => void;
   testID: string;
@@ -258,15 +315,20 @@ function RangeeDuFil({
           paddingHorizontal: MARGE_DU_MUR,
         }}
       >
-        {prestations.map((prestation) => (
-          <CarteDuFil
-            key={prestation.cle}
-            prestation={prestation}
-            onPress={() => onOuvrir(prestation.businessId)}
-            // **Le testID porte la rangée.** La même prestation paraît dans
-            // « le plus près » et dans sa catégorie : sans ce préfixe, deux
-            // nœuds partagent un identifiant et toute requête devient ambiguë.
-            testID={`${testID}-apercu-${prestation.cle}`}
+        {prestations.map((salon) => (
+          <CarteDeSalon
+            key={salon.cle}
+            nom={salon.nom}
+            quartierNomme={salon.quartierNomme}
+            distanceMetres={salon.distanceMetres}
+            photo={salon.photo}
+            ouvertes={salon.ouvertes}
+            prestations={salon.prestations}
+            onPress={() => onOuvrir(salon.businessId)}
+            // **Le testID porte la rangée.** Le même salon paraît dans « le
+            // plus près » et dans sa catégorie : sans ce préfixe, deux nœuds
+            // partagent un identifiant et toute requête devient ambiguë.
+            testID={`${testID}-apercu-${salon.cle}`}
           />
         ))}
       </ScrollView>

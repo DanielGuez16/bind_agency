@@ -141,17 +141,17 @@ describe('le mur garde son grain sur grand écran', () => {
           .getAllByTestId(/-apercu-/)
           .map((n) => String(n.props.testID))
           .filter((id) => !id.includes('-')|| true)
-          .filter((id) => /^rangee-proches-apercu-i-b\d+$/.test(id)),
+          .filter((id) => /^rangee-proches-apercu-b\d+$/.test(id)),
       );
       await vue.unmount();
     }
 
     expect(vus[0]).toEqual([
-      'rangee-proches-apercu-i-b0',
-      'rangee-proches-apercu-i-b1',
-      'rangee-proches-apercu-i-b2',
-      'rangee-proches-apercu-i-b3',
-      'rangee-proches-apercu-i-b4',
+      'rangee-proches-apercu-b0',
+      'rangee-proches-apercu-b1',
+      'rangee-proches-apercu-b2',
+      'rangee-proches-apercu-b3',
+      'rangee-proches-apercu-b4',
     ]);
     expect(vus[1]).toEqual(vus[0]);
     expect(vus[2]).toEqual(vus[0]);
@@ -181,7 +181,7 @@ describe('le mur ne monte plus tout ce qu’il a', () => {
     const vue = await monter(40);
     await waitFor(() => expect(screen.getByTestId('le-mur')).toBeTruthy());
 
-    const cartes = screen.getAllByTestId(/^rangee-proches-apercu-i-b\d+$/);
+    const cartes = screen.getAllByTestId(/^rangee-proches-apercu-b\d+$/);
 
     // Quarante cartes existent, moins sont montées. La borne haute est ce qui
     // compte ; le nombre exact appartient au défileur et changerait avec ses
