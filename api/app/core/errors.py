@@ -65,6 +65,7 @@ class ErrorCode(StrEnum):
     BUSINESS_NOT_ACTIVE = "business_not_active"
     BUSINESS_MISSING_ADDRESS = "business_missing_address"
     BUSINESS_MISSING_COORDINATES = "business_missing_coordinates"
+    BUSINESS_MISSING_COVER_PHOTO = "business_missing_cover_photo"
     #: Une fiche préparée sur le terrain que personne n'a encore assumée : elle
     #: n'a pas de propriétaire, et l'ouvrir publierait un salon que nul ne
     #: revendique.

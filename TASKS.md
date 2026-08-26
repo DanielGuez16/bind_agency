@@ -3098,23 +3098,37 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       oublié une facture. **Ce qui est à faire n'est pas un champ, c'est un
       arbitrage** — et tant qu'il n'est pas rendu, l'écran dit ce qui est vrai.
       Tranché le 2026-08-25.*
-- [ ] **Un salon neuf sans couverture tombe sur le repli générique**
-      *La carte du fil au grain salon tire sa vignette de `cover_photo_key`.
-      C'est le bon arbitrage — la photo d'une prestation ne dit rien du lieu où
-      l'on entre —, mais l'ancienne composition retombait sur `photo_key` d'un
-      article, donc elle montrait toujours quelque chose.*
+- [x] **Un salon neuf sans couverture ne paraît plus : la couverture bloque**
+      *La carte du fil au grain salon tire sa vignette de `cover_photo_key`,
+      sans repli. Des deux issues, celle qui a été tranchée est la seconde : un
+      salon ne paraît pas dans un fil sans photo de couverture, au même titre
+      qu'il n'y paraît pas sans adresse. Servir la photo d'un article l'aurait
+      fait paraître derrière un soin, ce qui ne dit rien du lieu où l'on entre.*
 
-      ***Invisible en démonstration, et par construction plutôt que par
-      chance** : `_deposer_photo` rend toujours une clé, un dégradé engendré à
-      défaut de vraie photo, et la boucle ne sert que les salons actifs — le
-      salon volontairement vierge ne paraît sur aucun mur. Vérifié, pas supposé.*
+      ***Trois conditions bloquantes désormais**, contre deux. `MissingCoverPhoto`,
+      son code d'erreur et ses deux traductions. Les décors de huit fichiers
+      posent maintenant une couverture — c'est la conséquence honnête de la
+      règle, et les tests de la condition la retirent explicitement.*
 
-      *La régression est pour un salon qui s'inscrit et ne dépose pas de
-      couverture : il paraît sur le fil derrière un repli générique là où il
-      montrait une de ses prestations. Deux issues — le serveur sert une
-      couverture de repli tirée du premier article, ou l'écran d'activation
-      rend la couverture bloquante. La seconde change ce qu'un salon doit faire
-      avant de paraître, donc elle se tranche, elle ne se choisit pas.*
+- [x] **Le compte des preuves en attente, par salon**
+      *La pastille du troisième onglet. `preuves_en_attente` sur
+      `/me/businesses`, à côté du compte des décisions. Le calculer côté écran
+      ferait charger la file entière à chaque ouverture du sélecteur, pour n'en
+      garder qu'un nombre.*
+
+      ***Une sous-requête corrélée, jamais une seconde jointure** : deux
+      `outerjoin` comptés ensemble se multiplient — trois réservations et deux
+      preuves donneraient six de chaque. Et les deux statuts comptés sont lus
+      depuis le service, pas recopiés : deux définitions d'une même file
+      divergeraient, et c'est la pastille qui mentirait.*
+
+- [x] **La portée locale ne se calcule plus sur la journée**
+      *La ligne de confirmation de mise en ligne a été retirée de l'écran — elle
+      confirmait un état permanent à quelqu'un qui ouvre l'écran pour agir.
+      Quatre requêtes et une boucle sur le quartier partaient à chaque ouverture
+      de la journée pour une phrase que plus personne ne lit.
+      `createurs_qui_peuvent_reserver` et `confirmation_jours` sont retirés de la
+      vue d'activation ; la portée reste servie par l'annuaire, qui en a l'usage.*
 
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire
 

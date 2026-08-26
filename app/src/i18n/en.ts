@@ -1501,6 +1501,8 @@ export const en = {
     business_already_active: 'This business is already active.',
     business_missing_address: 'Add the business address before going live.',
     business_missing_coordinates: 'Add the business location before going live.',
+    business_missing_cover_photo:
+      'Add a cover photo before going live — it is what creators see of your place.',
     business_not_claimed:
       'Nobody owns this page yet. It goes live once the salon takes it over.',
     handover_invalid: 'This link is no longer valid. Ask for a new one.',

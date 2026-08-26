@@ -217,6 +217,16 @@ class CommerceDeLAppartenance(BaseModel):
     #: du jour : une demande d'avant-hier attend toujours, et l'écarter du
     #: compteur ferait disparaître précisément celle qui a le plus attendu.
     decisions_en_attente: int
+    #: Combien de preuves attendent le contrôle du commerce. **La pastille du
+    #: troisième onglet.**
+    #:
+    #: Servie et non déduite : la calculer côté écran ferait charger la file
+    #: entière à chaque ouverture du sélecteur, pour n'en garder qu'un nombre.
+    #:
+    #: Les deux statuts comptés sont ceux de l'onglet « à contrôler », lus
+    #: depuis le service. Deux définitions d'une même file divergeraient, et
+    #: c'est la pastille qui mentirait.
+    preuves_en_attente: int
 
 
 class BusinessRead(BaseModel):

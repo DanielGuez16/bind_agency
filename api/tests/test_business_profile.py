@@ -585,3 +585,90 @@ async def test_la_liste_d_appartenance_porte_le_compte_des_decisions(
     par_salon = {ligne["id"]: ligne["decisions_en_attente"] for ligne in reponse.json()}
     assert par_salon[str(decor["business"].id)] == 1
     assert par_salon[str(autre["business"].id)] == 0
+
+
+async def test_la_liste_d_appartenance_porte_aussi_le_compte_des_preuves(
+    session: AsyncSession, client: AsyncClient
+) -> None:
+    """**La pastille du troisième onglet, sans charger la file.**
+
+    La calculer côté écran ferait charger la file entière à chaque ouverture du
+    sélecteur, pour n'en garder qu'un nombre.
+
+    **Le décor pose une décision en attente et une preuve, sur deux salons
+    différents**, et c'est ce qui le rend divergent : les deux comptes vivent
+    dans la même requête, et une seconde jointure — au lieu d'une sous-requête
+    corrélée — les multiplierait l'un par l'autre. Un décor qui ne poserait
+    qu'un seul des deux rendrait le même verdict dans les deux cas.
+    """
+    from app.services import proof as proof_service
+    from app.services import redemption
+    from app.services.audit import Actor
+    from tests.test_booking_create import monter_le_decor, premier_creneau, reserver
+    from tests.test_collaboration import capture, contrepartie
+
+    # Un salon qui attend une décision, et rien d'autre.
+    decisions = await monter_le_decor(session, requires_booking_approval=True)
+    booking = await reserver(
+        session, decisions, starts_at=await premier_creneau(session, decisions)
+    )
+    await booking_states.confirmer(session, booking=booking, creator_id=decisions["createur"].id)
+
+    # Un salon qui attend un contrôle de preuve, et rien d'autre.
+    ligne, preuves = await contrepartie(session)
+    await proof_service.soumettre(
+        session,
+        collaboration=ligne,
+        capture=capture(),
+        actor=Actor.from_user(preuves["createur"]),
+    )
+
+    # **Une seconde contrepartie sur le même salon, qui n'attend pas le
+    # commerce.** Sans elle, compter toutes les contreparties et ne compter que
+    # celles à contrôler rendent le même 1 : les deux implémentations ne
+    # divergent qu'à partir de deux lignes d'états différents. Celle-ci reste en
+    # `pending` — c'est la créatrice qui doit publier, pas le salon qui doit
+    # contrôler.
+    seconde = await reserver(session, preuves, starts_at=await premier_creneau(session, preuves))
+    await booking_states.confirmer(session, booking=seconde, creator_id=preuves["createur"].id)
+    await redemption.marquer_consomme(
+        session,
+        redemption_code_id=(await redemption.code_du_booking(session, booking=seconde)).id,
+        par_user_id=preuves["caissier"].id,
+    )
+    await booking_states.consommer(
+        session, booking=seconde, actor=Actor.from_user(preuves["caissier"])
+    )
+    await session.flush()
+
+    membre = decisions["proprietaire"]
+    await session.execute(
+        sa.insert(BusinessMember).values(
+            business_id=preuves["business"].id,
+            user_id=membre.id,
+            role=BusinessMemberRole.OWNER,
+        )
+    )
+    await session.commit()
+
+    jetons = (
+        await client.post(
+            f"{PREFIX}/auth/login",
+            json={"email": membre.email, "password": "tourbillon-cactus-91-vermeil"},
+        )
+    ).json()
+    reponse = await client.get(
+        f"{PREFIX}/me/businesses",
+        headers={"Authorization": f"Bearer {jetons['access_token']}"},
+    )
+
+    assert reponse.status_code == 200, reponse.text
+    par_salon = {ligne_lue["id"]: ligne_lue for ligne_lue in reponse.json()}
+
+    celui_des_preuves = par_salon[str(preuves["business"].id)]
+    assert celui_des_preuves["preuves_en_attente"] == 1
+    assert celui_des_preuves["decisions_en_attente"] == 0, "les deux comptes se confondent"
+
+    celui_des_decisions = par_salon[str(decisions["business"].id)]
+    assert celui_des_decisions["decisions_en_attente"] == 1
+    assert celui_des_decisions["preuves_en_attente"] == 0, "les deux comptes se confondent"
