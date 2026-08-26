@@ -572,6 +572,18 @@ class FiltreDeContrepartie(StrEnum):
     APPROUVEE = "approved"
 
 
+def statuts_a_controler() -> frozenset[CollaborationStatus]:
+    """Ce qui attend une décision du commerce.
+
+    Exposé pour la pastille du troisième onglet, qui compte la même chose que
+    ce que l'onglet montre. Recopier les deux statuts là-bas ferait deux
+    définitions d'une même file, et c'est la pastille qui mentirait — un chiffre
+    qui n'ouvre pas sur ce qu'il annonce use la confiance plus vite qu'un
+    chiffre absent.
+    """
+    return _STATUTS_DU_FILTRE[FiltreDeContrepartie.A_CONTROLER]
+
+
 _STATUTS_DU_FILTRE: dict[FiltreDeContrepartie, frozenset[CollaborationStatus]] = {
     FiltreDeContrepartie.A_CONTROLER: frozenset(
         {CollaborationStatus.SUBMITTED, CollaborationStatus.UNDER_REVIEW}

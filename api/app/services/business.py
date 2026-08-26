@@ -61,6 +61,15 @@ class MissingCoordinates(BusinessError):
     pass
 
 
+class MissingCoverPhoto(BusinessError):
+    """Un salon sans couverture ne paraît pas dans un fil.
+
+    Le fil rend une carte par salon et tire sa vignette de `cover_photo_key`,
+    sans repli. L'autre issue — servir la photo d'un article — l'aurait fait
+    paraître derrière un soin, ce qui ne dit rien du lieu où l'on entre.
+    """
+
+
 def point(coordinates: Coordinates) -> WKTElement:
     return WKTElement(coordinates.as_wkt(), srid=SRID)
 
@@ -321,11 +330,19 @@ class Etape:
 _REFUS_PAR_ETAPE = {
     EtapeActivation.ADRESSE: MissingAddress,
     EtapeActivation.COORDONNEES: MissingCoordinates,
+    EtapeActivation.PHOTO_DE_COUVERTURE: MissingCoverPhoto,
 }
 
 
 async def etapes_activation(session: AsyncSession, *, business: Business) -> tuple[Etape, ...]:
     """Ce qui reste à faire, dans l'ordre où on le fait.
+
+    **Trois bloquantes, et la troisième est récente.** L'adresse et les
+    coordonnées ont toujours refusé l'activation ; la photo de couverture les a
+    rejointes quand le fil est passé à une carte par salon. Sa vignette vient de
+    `cover_photo_key` sans repli — un salon sans couverture paraissait derrière
+    un dégradé générique, et servir la photo d'un article l'aurait fait paraître
+    derrière un soin, ce qui ne dit rien du lieu où l'on entre.
 
     Les trois dernières ne bloquent pas l'activation mais décident de la
     visibilité : un commerce actif sans offre de palier, sans item disponible
@@ -356,10 +373,16 @@ async def etapes_activation(session: AsyncSession, *, business: Business) -> tup
     return (
         Etape(EtapeActivation.ADRESSE, business.address is not None, blocking=True),
         Etape(EtapeActivation.COORDONNEES, business.geo is not None, blocking=True),
+        # **Bloquante depuis que le fil rend une carte par salon.** La vignette
+        # vient de `cover_photo_key`, sans repli : un salon sans couverture
+        # paraissait derrière un dégradé générique. L'autre issue — servir la
+        # photo d'un article — le ferait paraître derrière un soin, ce qui ne
+        # dit rien du lieu où l'on entre. Un salon ne paraît donc pas sans
+        # couverture, au même titre que sans adresse.
         Etape(
             EtapeActivation.PHOTO_DE_COUVERTURE,
             business.cover_photo_key is not None,
-            blocking=False,
+            blocking=True,
         ),
         Etape(EtapeActivation.CATALOGUE, bool(a_un_item), blocking=False),
         Etape(EtapeActivation.OFFRE_DE_PALIER, bool(a_une_offre), blocking=False),

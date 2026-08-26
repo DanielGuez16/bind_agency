@@ -5,14 +5,12 @@ la découverte côté créateur, en phase 5 : les deux n'auront pas les mêmes r
 d'accès et n'ont rien à faire sur le même chemin.
 """
 
-from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 import sqlalchemy as sa
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import get_settings
 from app.core.dependencies import (
     CurrentBusiness,
     CurrentUser,
@@ -21,7 +19,7 @@ from app.core.dependencies import (
 )
 from app.core.errors import ErrorCode, api_error
 from app.integrations.geocoding import Geocoder, get_geocoder
-from app.models import Booking, Business, BusinessMember
+from app.models import Booking, Business, BusinessMember, Collaboration
 from app.models.enums import BookingStatus, BusinessStatus, UserRole
 from app.schemas.activation import EtapeRead, VueDActivationRead
 from app.schemas.business import (
@@ -33,8 +31,8 @@ from app.schemas.business import (
     EtatDeLaCompositionRead,
 )
 from app.services import business as business_service
+from app.services import collaboration as collaboration_service
 from app.services import composition as composition_service
-from app.services import portee_locale
 from app.services.audit import Actor
 
 router = APIRouter(prefix="/business", tags=["business"])
@@ -98,6 +96,24 @@ async def list_my_businesses(
     une par salon : la coquille appelle cette route à chaque ouverture, et c'est
     elle qui retarde tout le reste.
     """
+    # Ce que le commerce doit contrôler : une preuve est arrivée. Les deux
+    # statuts sont ceux de l'onglet « à contrôler » du commerce, lus depuis le
+    # service plutôt que recopiés — deux définitions de la même file
+    # divergeraient, et c'est la pastille qui mentirait.
+    preuves_en_attente = (
+        sa.select(sa.func.count())
+        .select_from(Collaboration)
+        .join(Booking, Booking.id == Collaboration.booking_id)
+        .where(
+            Booking.business_id == Business.id,
+            Collaboration.status.in_(
+                collaboration_service.statuts_a_controler(),
+            ),
+        )
+        .correlate(Business)
+        .scalar_subquery()
+    )
+
     lignes = (
         await session.execute(
             sa.select(
@@ -107,6 +123,11 @@ async def list_my_businesses(
                 Business.neighborhood,
                 Business.address,
                 sa.func.count(Booking.id).label("decisions"),
+                # **Une sous-requête corrélée, et non une seconde jointure.**
+                # Deux `outerjoin` comptés ensemble se multiplient : trois
+                # réservations et deux preuves donneraient six de chaque. C'est
+                # le genre d'erreur qu'un décor à une ligne ne voit pas.
+                preuves_en_attente.label("preuves"),
             )
             .join(BusinessMember, BusinessMember.business_id == Business.id)
             .outerjoin(
@@ -135,8 +156,9 @@ async def list_my_businesses(
             neighborhood=quartier,
             address=adresse,
             decisions_en_attente=decisions,
+            preuves_en_attente=preuves,
         )
-        for identifiant, nom, fuseau, quartier, adresse, decisions in lignes
+        for identifiant, nom, fuseau, quartier, adresse, decisions, preuves in lignes
     ]
 
 
@@ -196,38 +218,20 @@ async def activation_steps(business: CurrentBusiness, session: SessionDep) -> Vu
     vivait sur la composition, dont plus rien ne lit la réponse ; la journée
     charge cette vue-ci, donc elle arrive sans requête de plus.
 
-    **La portée locale complète la phrase que la date commence.** « En ligne
-    depuis trois jours » est vrai et ne rassure personne ; « et 41 créatrices
-    peuvent vous réserver » est ce qu'un salon qui vient d'apparaître veut
-    savoir. Elle n'est calculée que dans la fenêtre de confirmation : quatre
-    requêtes et une boucle sur le quartier n'ont pas à se payer à chaque
-    ouverture de la journée pendant toute la vie du salon.
+    **La portée locale n'est plus calculée ici.** Elle complétait la ligne de
+    confirmation de mise en ligne, que l'écran a retirée : le bandeau
+    confirmait un état permanent à quelqu'un qui ouvre l'écran pour agir. Quatre
+    requêtes et une boucle sur le quartier, à chaque ouverture de la journée,
+    pour une phrase que plus personne ne lit. Elle reste servie par l'annuaire,
+    qui en a l'usage.
     """
     etapes = await business_service.etapes_activation(session, business=business)
     depuis = await composition_service.derniere_mise_en_ligne(session, business.id)
-    jours = get_settings().activation_confirmation_days
-
-    # **Calculé seulement dans la fenêtre où il se lit.** La portée locale coûte
-    # quatre requêtes et une boucle sur le quartier ; les payer à chaque
-    # ouverture de la journée, pendant toute la vie du salon, pour une ligne qui
-    # disparaît au bout d'une semaine, serait le mauvais sens exact.
-    dans_la_fenetre = (
-        business.status is BusinessStatus.ACTIVE
-        and depuis is not None
-        and datetime.now(UTC) - depuis <= timedelta(days=jours)
-    )
-    portee = (
-        await portee_locale.autour_du_commerce(session, business=business)
-        if dans_la_fenetre
-        else None
-    )
 
     return VueDActivationRead(
         status=business.status,
         etapes=[EtapeRead.model_validate(etape) for etape in etapes],
         en_ligne_depuis=depuis,
-        createurs_qui_peuvent_reserver=portee.peuvent_reserver if portee else None,
-        confirmation_jours=jours,
         # Le motif vient de la colonne, pas du journal : lire un état courant
         # dans un journal d'événements est ce qui a déjà coûté cher ici, et la
         # contrainte de la table garantit qu'il accompagne exactement l'état
@@ -301,6 +305,10 @@ async def activate(
     except business_service.MissingCoordinates as error:
         raise api_error(
             status.HTTP_422_UNPROCESSABLE_CONTENT, ErrorCode.BUSINESS_MISSING_COORDINATES
+        ) from error
+    except business_service.MissingCoverPhoto as error:
+        raise api_error(
+            status.HTTP_422_UNPROCESSABLE_CONTENT, ErrorCode.BUSINESS_MISSING_COVER_PHOTO
         ) from error
 
     await session.commit()

@@ -186,8 +186,15 @@ async def test_les_photos_traversent_jusqu_au_fil(session: AsyncSession) -> None
 
 
 async def test_le_fil_supporte_l_absence_de_photo(session: AsyncSession) -> None:
-    """Le pendant : un commerce fraîchement inscrit apparaît quand même."""
-    b = await commerce(session, longitude=-80.1305, latitude=25.7907)
+    """Le pendant : un commerce sans image apparaît quand même.
+
+    **Une donnée d'avant la règle, pas un commerce qu'on pourrait créer
+    aujourd'hui.** La couverture bloque désormais l'activation ; le fil doit
+    pourtant tolérer une clé nulle, parce que les salons activés avant cette
+    règle existent toujours en base. Le décor la pose donc à `None` sans passer
+    par l'activation.
+    """
+    b = await commerce(session, longitude=-80.1305, latitude=25.7907, cover_photo_key=None)
     await offre(session, b)
     user, _ = await createur(session)
 

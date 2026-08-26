@@ -1335,6 +1335,8 @@ export const es: Catalogue = {
     business_already_active: 'Este negocio ya está activo.',
     business_missing_address: 'Añade la dirección del negocio antes de activarlo.',
     business_missing_coordinates: 'Añade la ubicación del negocio antes de activarlo.',
+    business_missing_cover_photo:
+      'Añade una foto de portada antes de publicar: es lo que los creadores ven de tu local.',
     business_not_claimed:
       'Todavía nadie es dueño de esta ficha. Se publica cuando el salón la asume.',
     handover_invalid: 'Este enlace ya no es válido. Pide uno nuevo.',

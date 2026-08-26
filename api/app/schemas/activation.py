@@ -43,21 +43,6 @@ class VueDActivationRead(BaseModel):
     #: Un salon en ligne depuis huit jours n'a pas les mêmes questions qu'un
     #: salon en ligne depuis huit mois, et c'est l'écran du matin qui le voit.
     en_ligne_depuis: datetime | None
-    #: Combien de créatrices peuvent réserver chez lui, aujourd'hui.
-    #:
-    #: **C'est ce qui rassure un salon qui vient d'apparaître.** « En ligne
-    #: depuis trois jours » est vrai et ne dit rien ; « et 41 créatrices peuvent
-    #: vous réserver » est la moitié de la phrase qui manquait.
-    #:
-    #: **Nul hors de la fenêtre de confirmation**, et alors pas même calculé :
-    #: quatre requêtes et une boucle sur le quartier, sur l'écran le plus ouvert
-    #: du produit, pour une ligne que personne ne regarde plus. Le délai est
-    #: `confirmation_jours`, servi juste en dessous pour que la règle ait une
-    #: seule origine.
-    #:
-    #: Nul aussi quand le salon n'est pas en ligne : la question ne se pose pas
-    #: avant d'avoir paru.
-    createurs_qui_peuvent_reserver: int | None
     #: Pourquoi ce commerce est hors du fil. **Nul quand il n'y est pas** — la
     #: contrainte de la table le garantit : `(status = 'suspended') =
     #: (suspended_reason IS NOT NULL)`.
@@ -85,7 +70,3 @@ class VueDActivationRead(BaseModel):
     #: revenu — c'est `status` qui dit s'il est dehors, celle-ci dit depuis
     #: quand, et l'écran ne la lit que sur un salon suspendu.
     suspendu_depuis: datetime | None
-    #: Combien de jours la ligne de confirmation reste à l'écran. Servi parce
-    #: que **c'est ce délai qui décide du champ au-dessus** : la règle vivait
-    #: dans l'app seule, et deux copies d'un même délai finissent par diverger.
-    confirmation_jours: int

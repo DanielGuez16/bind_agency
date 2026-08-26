@@ -53,6 +53,24 @@ from app.services import tier_offers as tier_offer_service
 from app.services.audit import Actor
 
 
+async def _declarer_la_couverture(business) -> None:
+    """Pose la clé de couverture avant l'activation.
+
+    **La couverture bloque l'activation** depuis que le fil rend une carte par
+    salon : un salon sans elle paraissait derrière un dégradé générique. Le
+    semis créait ses commerces, les activait, et ne déposait leurs images
+    qu'ensuite — donc il se refusait lui-même.
+
+    La clé est déterministe et pointe où `seed_demo` déposera le fichier ; la
+    phase des images la réécrit avec ce qu'elle a réellement déposé, vraie photo
+    ou dégradé engendré. **Ce n'est pas un contournement de la règle** : un
+    salon du semis a bien une couverture, elle arrive simplement en deux temps
+    parce que les images se déposent après la base.
+    """
+    if business.cover_photo_key is None:
+        business.cover_photo_key = f"photos/commerces/{business.id}/couverture"
+
+
 async def _inscrire_verifie(session, **kwargs):
     """Un compte du jeu de démonstration, **adresse confirmée par le vrai chemin**.
 
@@ -577,6 +595,7 @@ async def _semer_un_salon(
         [(plateforme, format_, items[rang]) for plateforme, format_, rang in fiche.offres],
     )
 
+    await _declarer_la_couverture(business)
     await business_service.activate_business(
         session, business=business, actor=Actor.from_user(owner)
     )
@@ -674,6 +693,7 @@ async def _ocean_beauty(session: AsyncSession, owner: User) -> tuple[int, int, i
         ],
     )
 
+    await _declarer_la_couverture(business)
     await business_service.activate_business(
         session, business=business, actor=Actor.from_user(owner)
     )
@@ -761,6 +781,7 @@ async def _wynwood_nails(session: AsyncSession, owner: User) -> tuple[int, int, 
         ],
     )
 
+    await _declarer_la_couverture(business)
     await business_service.activate_business(
         session, business=business, actor=Actor.from_user(owner)
     )
@@ -842,6 +863,7 @@ async def _brickell_spa(session: AsyncSession, owner: User) -> tuple[int, int, i
         ],
     )
 
+    await _declarer_la_couverture(business)
     await business_service.activate_business(
         session, business=business, actor=Actor.from_user(owner)
     )

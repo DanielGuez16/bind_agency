@@ -622,6 +622,10 @@ class TestValidationParLeCommerce:
                 address="1234 Ocean Dr",
                 coordinates=CoordinatesPayload(longitude=-80.1918, latitude=25.7617),
                 timezone="America/New_York",
+                # La couverture bloque l'activation depuis que le fil rend une carte
+                # par salon : un décor qui active sans elle se ferait refuser pour une
+                # raison qu'il n'éprouve pas.
+                cover_photo_key="photos/commerces/decor/couverture",
             ),
             creator=proprietaire,
             geocoder=ManualGeocoder(),
