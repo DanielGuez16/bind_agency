@@ -1032,7 +1032,7 @@ export const es: Catalogue = {
   },
   lieu: {
     sectionPhotos: 'Fotos del lugar',
-    sectionCarte: 'Tu carta',
+    sectionCarte: 'Entre qué elige una creadora',
     sectionHoraires: 'Tu semana',
     photosCompte: '{{count}} fotos',
     carteCompte: '{{count}} páginas',
@@ -1078,7 +1078,7 @@ export const es: Catalogue = {
     carteBloqueTitre: '{{count}} prestaciones aún no se pueden publicar',
     carteBloqueCorps: 'Dejan elegir a la creadora, así que necesita leer tu carta antes de reservar. Añade páginas o un enlace y se abren.',
     carteLUnOuLAutre: 'Basta con una de las dos',
-    carteVide: 'Ninguna página todavía. Fotografíala, o pega el enlace abajo: con una de las dos basta.',
+    carteVide: 'Nada aquí todavía. Solo lo necesitan las prestaciones que dejan elegir — una carta, una lista de tratamientos, una de salas. Fotografíala, o pega el enlace abajo.',
     carteAjouter: 'Añadir una página',
     cartePermission: 'El acceso a las fotos está desactivado. Actívalo en los ajustes del teléfono para añadir una página.',
     cartePage: 'Página {{rang}}',
