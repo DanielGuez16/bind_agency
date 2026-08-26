@@ -47,6 +47,10 @@ async def commerce(session: AsyncSession, **overrides):
         address="1234 Ocean Dr, Miami Beach FL",
         coordinates=CoordinatesPayload(longitude=-80.1918, latitude=25.7617),
         timezone="America/New_York",
+        # La couverture bloque l'activation depuis que le fil rend une carte
+        # par salon : un décor qui active sans elle se ferait refuser pour une
+        # raison qu'il n'éprouve pas.
+        cover_photo_key="photos/commerces/decor/couverture",
         **overrides,
     )
     b = await business_service.create_business(

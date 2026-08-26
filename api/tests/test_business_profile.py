@@ -33,6 +33,9 @@ def payload_commerce(**overrides) -> dict:
         "address": ADRESSE,
         "coordinates": MIAMI,
         "timezone": "America/New_York",
+        # La couverture bloque l'activation depuis que le fil rend une carte par
+        # salon. Les tests de cette condition-là la retirent explicitement.
+        "cover_photo_key": "photos/commerces/decor/couverture",
     } | overrides
 
 

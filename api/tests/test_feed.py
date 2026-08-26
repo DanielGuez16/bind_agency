@@ -58,6 +58,14 @@ POST = uuid.UUID("a0ee68db-f167-4af3-ba72-e3149469da4a")  # instagram/post
 
 
 async def commerce(session: AsyncSession, *, longitude: float, latitude: float, **overrides):
+    """Un commerce actif, avec ses horaires.
+
+    `cover_photo_key=None` rend un salon actif **sans** couverture : une donnée
+    d'avant la règle qui la rend bloquante, pas un commerce qu'on pourrait créer
+    aujourd'hui. Elle est retirée après l'activation, puisque l'activation la
+    refuserait — c'est ce qui rend ce cas fidèle à ce qui existe en base.
+    """
+    sans_couverture = overrides.pop("cover_photo_key", "") is None
     proprietaire = await inscrire_verifie(
         session,
         email=f"{uuid.uuid4()}@example.com",
@@ -71,6 +79,10 @@ async def commerce(session: AsyncSession, *, longitude: float, latitude: float, 
         address="1234 Ocean Dr, Miami Beach FL",
         coordinates=CoordinatesPayload(longitude=longitude, latitude=latitude),
         timezone="America/New_York",
+        # La couverture bloque l'activation depuis que le fil rend une carte
+        # par salon : un décor qui active sans elle se ferait refuser pour une
+        # raison qu'il n'éprouve pas.
+        cover_photo_key="photos/commerces/decor/couverture",
         **overrides,
     )
     b = await business_service.create_business(
@@ -79,6 +91,9 @@ async def commerce(session: AsyncSession, *, longitude: float, latitude: float, 
     await business_service.activate_business(
         session, business=b, actor=Actor.from_user(proprietaire)
     )
+    if sans_couverture:
+        b.cover_photo_key = None
+        await session.flush()
     # Ouvert tous les jours, largement : ce fichier n'éprouve pas la capacité.
     for jour in range(7):
         await capacity_service.create_rule(
@@ -330,6 +345,7 @@ async def test_un_commerce_en_onboarding_n_apparait_pas(session: AsyncSession) -
             address="1234 Ocean Dr",
             coordinates=CoordinatesPayload(longitude=-80.1305, latitude=25.7907),
             timezone="America/New_York",
+            cover_photo_key="photos/commerces/decor/couverture",
         ),
         creator=proprietaire,
         geocoder=ManualGeocoder(),
