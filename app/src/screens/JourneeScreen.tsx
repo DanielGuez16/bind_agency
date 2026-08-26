@@ -555,8 +555,7 @@ function Detail({
   const { color: c } = useTheme();
 
   const heure = heureDe(reservation, timezone, t('commerce.journeeSansCreneau'), locale);
-  const gestes =
-    reservation.status === 'awaiting_business' || reservation.status === 'confirmed';
+  const gestes = aDesGestes(reservation.status);
 
   return (
     <View style={{ gap: 20 }} testID="detail-de-la-ligne">
@@ -754,6 +753,29 @@ function ReseauxDeLaCreatrice({ reservation }: { reservation: ReservationDuComme
       })}
     </View>
   );
+}
+
+/**
+ * Les deux états qui appellent un geste, **et jamais une liste de ceux qui n'en
+ * appellent pas.**
+ *
+ * La carte du petit écran écrivait `status !== 'consumed'` : une liste noire
+ * d'un seul élément, alors que `BookingStatus` en compte quatre autres qui sont
+ * terminaux — `cancelled`, `no_show`, `expired`, `held`. Sur ceux-là, `Gestes`
+ * ne reconnaissait pas `confirmed`, retombait sur le bloc de décision, et le
+ * salon lisait « accorder / refuser » sur une réservation déjà annulée ou dont
+ * l'absence était constatée.
+ *
+ * Le serveur refuse, donc rien de faux ne s'enregistrait ; le défaut était de
+ * faire appuyer pour apprendre que le bouton ne servait à rien — ce que ce
+ * fichier dit ailleurs vouloir éviter.
+ *
+ * **Le panneau du grand écran avait déjà la bonne forme**, et c'est la même
+ * fonction qui sert aux deux : deux listes pour une seule règle divergent au
+ * premier état ajouté, et c'est exactement ce qui vient d'arriver.
+ */
+export function aDesGestes(status: ReservationDuCommerce['status']): boolean {
+  return status === 'awaiting_business' || status === 'confirmed';
 }
 
 /**
@@ -1117,7 +1139,7 @@ function Ligne({
           {t(`commerce.statut_${reservation.status}`)}
         </Texte>
       </View>
-      {avecGestes && reservation.status !== 'consumed' ? (
+      {avecGestes && aDesGestes(reservation.status) ? (
         <View style={{ paddingTop: 6 }}>
           <Gestes reservation={reservation} timezone={timezone} onFait={onFait} />
         </View>

@@ -2998,6 +2998,24 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       oublié une facture. **Ce qui est à faire n'est pas un champ, c'est un
       arbitrage** — et tant qu'il n'est pas rendu, l'écran dit ce qui est vrai.
       Tranché le 2026-08-25.*
+- [ ] **Un salon neuf sans couverture tombe sur le repli générique**
+      *La carte du fil au grain salon tire sa vignette de `cover_photo_key`.
+      C'est le bon arbitrage — la photo d'une prestation ne dit rien du lieu où
+      l'on entre —, mais l'ancienne composition retombait sur `photo_key` d'un
+      article, donc elle montrait toujours quelque chose.*
+
+      ***Invisible en démonstration, et par construction plutôt que par
+      chance** : `_deposer_photo` rend toujours une clé, un dégradé engendré à
+      défaut de vraie photo, et la boucle ne sert que les salons actifs — le
+      salon volontairement vierge ne paraît sur aucun mur. Vérifié, pas supposé.*
+
+      *La régression est pour un salon qui s'inscrit et ne dépose pas de
+      couverture : il paraît sur le fil derrière un repli générique là où il
+      montrait une de ses prestations. Deux issues — le serveur sert une
+      couverture de repli tirée du premier article, ou l'écran d'activation
+      rend la couverture bloquante. La seconde change ce qu'un salon doit faire
+      avant de paraître, donc elle se tranche, elle ne se choisit pas.*
+
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire
 
 ---

@@ -1223,3 +1223,61 @@ async def test_annuler_pendant_que_le_salon_reflechit_et_pres_de_l_heure(
         )
     )
     assert evenements == []
+
+
+async def test_le_salon_est_prevenu_quand_une_reservation_attend_sa_decision(
+    session: AsyncSession,
+) -> None:
+    """**Sans ce message, la demande expire au bout de vingt-quatre heures.**
+
+    Le salon ne savait qu'une réservation attendait sa décision qu'en ouvrant
+    l'application. Le genre `booking.toReview` et ses gabarits existaient depuis
+    longtemps ; personne ne les émettait.
+
+    **Le décor monte un salon à validation et un salon sans**, et c'est ce qui
+    le rend divergent : une émission posée sans condition passerait un test qui
+    n'éprouve que le premier, et le salon qui confirme tout seul recevrait un
+    message pour une décision qu'il n'a pas à prendre.
+    """
+    from app.models import BusinessMember, OutboundMessage
+    from app.routers.booking_states import _prevenir_le_salon
+
+    async def messages_du_salon(business_id) -> list[str]:
+        membres = list(
+            await session.scalars(
+                sa.select(BusinessMember.user_id).where(BusinessMember.business_id == business_id)
+            )
+        )
+        assert membres, "le décor n'a aucun membre : personne à prévenir"
+        return list(
+            await session.scalars(
+                sa.select(OutboundMessage.template_key).where(OutboundMessage.user_id.in_(membres))
+            )
+        )
+
+    a_valider = await monter_le_decor(session, requires_booking_approval=True)
+    reserv = await reserver(session, a_valider, starts_at=await premier_creneau(session, a_valider))
+    await service.confirmer(session, booking=reserv, creator_id=a_valider["createur"].id)
+    await session.flush()
+    assert reserv.status is BookingStatus.AWAITING_BUSINESS, "le décor ne fait pas attendre"
+
+    await _prevenir_le_salon(session, reserv)
+    await session.flush()
+
+    assert "booking.toReview" in await messages_du_salon(a_valider["business"].id), (
+        "le salon n'apprend pas qu'on attend sa décision"
+    )
+
+    # L'autre bord : celui qui confirme tout de suite n'a rien à trancher.
+    direct = await monter_le_decor(session)
+    tout_droit = await reserver(session, direct, starts_at=await premier_creneau(session, direct))
+    await service.confirmer(session, booking=tout_droit, creator_id=direct["createur"].id)
+    await session.flush()
+    assert tout_droit.status is BookingStatus.CONFIRMED, "le second décor attend aussi"
+
+    await _prevenir_le_salon(session, tout_droit)
+    await session.flush()
+
+    assert "booking.toReview" not in await messages_du_salon(direct["business"].id), (
+        "un salon qui confirme tout seul reçoit un message pour rien"
+    )
