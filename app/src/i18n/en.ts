@@ -589,7 +589,13 @@ export const en = {
     preuvePermissionGalerie: 'BIND cannot open your photos. Allow access in your phone settings, then come back.',
     preuvePermissionCamera: 'BIND cannot open your camera. Allow access in your phone settings, then come back.',
     preuveOuvrirReglages: 'Open settings',
-    preuveVite: 'Submit within 24 hours of posting and Instagram confirms it for you — the salon sees a verified publication. After that, it is your word and a screenshot.',
+    // **La formulation d'origine, rétablie.** Ce qui compte est ce qu'on gagne
+    // à envoyer vite, pas comment une story fonctionne — la version
+    // intermédiaire expliquait le mécanisme et laissait la créatrice décider
+    // sans savoir ce que ça lui coûte d'attendre.
+    preuveViteTitre: 'Send it within 24 hours and Instagram confirms it for you',
+    preuveVite:
+      'After that your story is gone from Instagram, and all we have is your screenshot and your word. The salon accepts either — the first is just easier for both of you.',
     // **Trois états, et l'écran n'en rendait que deux.** Nul veut dire « la
     // question ne s'est pas posée », faux « elle s'est posée et la réponse est
     // non ». Les confondre faisait croire à une vérification passée.
@@ -604,7 +610,11 @@ export const en = {
       'Paste the link to the post. The business opens it to check that it is live — with only a screenshot, they have to take your word for it.',
     preuveNote: 'Anything to add?',
     preuveNoteAide: 'Optional. The salon reads this with your proof — useful if something did not go to plan.',
-    preuveCommentFaire: 'A screenshot of your published post. Stories are captured by hand — they disappear after 24 h and have no stable link.',
+    // « Vous la prenez » répond à la question réellement posée — c'est à qui de
+    // faire la capture — là où « les stories se capturent à la main » décrivait
+    // une propriété d'Instagram.
+    preuveCommentFaire:
+      'You take it, from your own story. Shown whole — we never crop it.',
     preuveEnControle: 'We are checking your proof.',
     preuveANouveau: 'A new submission was requested.',
     preuveNonHonoree: 'This counterpart was not fulfilled.',
@@ -716,6 +726,14 @@ export const en = {
     preuveLieu: 'A location tag',
     aTrancher: '{{count}} waiting for your decision',
     selecteurDecisions: '{{count}} waiting',
+    menuVotreOffre: 'YOUR OFFER',
+    menuEnArriere: 'LOOKING BACK',
+    menuLieuEtat: 'Photos, address, hours, seats',
+    menuPrestationsEtat: '{{ouvertes}} open',
+    menuPrestationsEtatPhoto: '{{ouvertes}} open · {{sans}} need a photo',
+    menuRapportsEtat: '{{prestations}} services given, {{publications}} posts',
+    menuRapportsVide: 'Nothing to report yet',
+    menuAnnuaireEtat: 'Who can book you, and how close they are',
     decisionAvant: 'Decide before {{quand}}',
     decisionAvantAide: 'After that it expires on its own and the slot goes back to your calendar.',
     decisionSiElleNePubliePas: 'If the creator doesn’t post what they agreed to, their reliability score drops — and that score is what opens or closes tiers for them, at your place and everywhere else on BIND. And if what they post isn’t right, you can ask them to send it again before we settle it.',
@@ -783,7 +801,6 @@ export const en = {
     miseEnLigneRestant: '{{count}} things left before creators see you',
     miseEnLigneRestantUn: 'One thing left before creators see you',
     miseEnLignePrete: 'Everything is ready. Creators are waiting.',
-    miseEnLigneConfirmee: 'You are live — since {{date}}',
     suspenduTitre: 'Your account is suspended',
     suspenduTitrePause: 'You are paused',
     suspenduTitreGrace: 'Your subscription has lapsed',
@@ -796,9 +813,6 @@ export const en = {
     // **Deux clés plutôt qu'un pluriel de bibliothèque**, comme le titre de
     // la journée : `count` traverse le formateur de nombres, i18n-js ne le
     // voit plus comme un nombre, et sa pluralisation ne se déclenche pas.
-    miseEnLigneConfirmeeUne: 'You are live — since {{date}} · 1 creator can book you',
-    miseEnLigneConfirmeePlusieurs:
-      'You are live — since {{date}} · {{count}} creators can book you',
 
     miseEnLigneInvisibleTitre: 'You are live, but creators still cannot find you',
     miseEnLignePublier: 'Make my salon visible',
@@ -1412,6 +1426,7 @@ export const en = {
     // l'avantage de ne prendre parti ni pour l'entrée ni pour la sortie.
     caisse: 'Register',
     reporting: 'Reports',
+    menu: 'More',
     // **Deux entrées, et plus une porte qui en cache deux.** « Your offer »
     // et ses onglets disparaissent : la découpe est par objet, et aucune des
     // deux n'est un réglage de l'autre.

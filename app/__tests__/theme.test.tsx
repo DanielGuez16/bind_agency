@@ -876,6 +876,10 @@ describe('les surfaces de la v1.1', () => {
       // relief que la campagne 2 avait retiré à toute la colonne : une demande
       // se soupèse, le planning se parcourt.
       'src/screens/JourneeScreen.tsx',
+      // Les groupes du menu du commerce. La planche v6 les dessine en filet
+      // seul ; ils portent les trois marques d'une carte et se posent sur la
+      // page, donc ils portent l'ombre — même arbitrage que l'audience v3.
+      'src/screens/MenuDuCommerce.tsx',
       'src/screens/PaliersScreen.tsx',
       'src/screens/PriseEnMainScreen.tsx',
       'src/screens/PublicationsScreen.tsx',
@@ -890,7 +894,11 @@ describe('les surfaces de la v1.1', () => {
       // carte, donc il porte l'ombre comme une carte.
       // La ligne de confirmation des sept premiers jours : une surface posée
       // sur la page, donc une carte.
-      'src/screens/journee/BandeauDeMiseEnLigne.tsx',
+      // **`BandeauDeMiseEnLigne` sort de l'inventaire**, et c'est le bandeau
+      // « vous êtes en ligne » qui l'y tenait : lui seul portait une carte. Il
+      // part à la quatrième reprise de la journée. Ce qui reste — ce qui manque
+      // avant publication, la suspension — est un bloc d'encre pleine, qui n'est
+      // pas une carte et n'a jamais porté d'ombre.
       'src/screens/journee/ExceptionDuJour.tsx',
       // Le panneau du contrat de la preuve v3 : ce que le commerce attend,
       // posé sur l'écran où l'on publie.

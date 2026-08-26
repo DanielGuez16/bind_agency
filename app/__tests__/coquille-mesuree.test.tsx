@@ -160,10 +160,16 @@ describe('la coquille, mesurée', () => {
     // une barre latérale en grand, une barre d'onglets en petit, jamais rien.
     await monterLaCoquille();
 
+    // **La journée, et non plus les réglages.** Le repère était commode tant
+    // que « Settings » figurait dans la barre à toute largeur ; sur un
+    // téléphone le commerce ne garde que quatre onglets et range les réglages
+    // sous « More ». Ce que ce test éprouve n'a pas changé — qu'il existe
+    // toujours un moyen de changer d'écran — mais il faut le mesurer sur une
+    // destination qui reste en barre des deux côtés du seuil.
     for (const largeur of [390, breakpoint.expanded - 1, breakpoint.expanded, 1512]) {
       await mesurer(largeur);
       await waitFor(() =>
-        expect(screen.queryAllByText(en.onglets.reglages).length).toBeGreaterThan(0),
+        expect(screen.queryAllByText(en.onglets.journee).length).toBeGreaterThan(0),
       );
     }
   });

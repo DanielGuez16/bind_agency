@@ -425,6 +425,7 @@ export function EnvoiDePreuve({
       {media && vue.etat !== 'rendu' ? (
         <StatusMessage
           level="neutral"
+          title={t('parcours.preuveViteTitre')}
           body={t('parcours.preuveVite')}
           testID="incitation-a-soumettre-vite"
         />
