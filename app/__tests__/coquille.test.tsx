@@ -788,8 +788,13 @@ describe('aiguillage par rôle', () => {
     // transposées en bas d'un iPhone elles font des cibles de 48. Le tri est
     // celui de la fréquence : ce qui porte une échéance reste en bas, ce qu'on
     // a composé une fois passe sous « More ».
-    expect(vus).toEqual(
-      expect.arrayContaining([
+    // **Exactement quatre, et non « au moins ces quatre-là ».** La première
+    // version de cette assertion tolérait les autres : remettre les huit en bas
+    // d'un iPhone la laissait verte, c'est-à-dire qu'elle ne gardait rien
+    // contre le défaut le plus grave de la campagne. C'est l'ensemble qui est
+    // la règle, pas la présence de chacun.
+    expect([...vus].sort()).toEqual(
+      [
         en.onglets.journee,
         // La caisse est un onglet, et non un écran atteint depuis une ligne de
         // réservation : une journée vide la rendait inaccessible, et le salon
@@ -797,7 +802,7 @@ describe('aiguillage par rôle', () => {
         en.onglets.caisse,
         en.onglets.publications,
         en.onglets.menu,
-      ]),
+      ].sort(),
     );
     for (const interdit of [en.onglets.paliers, en.onglets.audience, en.onglets.arbitrage]) {
       expect(vus).not.toContain(interdit);
