@@ -17,14 +17,15 @@ import logging
 import uuid
 from typing import Annotated
 
+import sqlalchemy as sa
 from fastapi import APIRouter, Depends, Path, status
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.dependencies import CurrentUser, SessionDep, require_role
 from app.core.errors import ErrorCode, api_error
 from app.core.membership import MembershipFor
-from app.models import Booking
-from app.models.enums import UserRole
+from app.models import Booking, Business, CatalogItem
+from app.models.enums import BookingStatus, UserRole
 from app.schemas.booking import BookingRead
 from app.services import booking_states as service
 from app.services import notifications, outbox
@@ -107,8 +108,72 @@ async def confirm(
     except service.BookingStateError as error:
         raise _traduire(error) from error
 
+    # **Le salon apprend qu'on l'attend, dans la même transaction.** Sans ce
+    # message, il ne savait qu'une réservation attendait sa décision qu'en
+    # ouvrant l'application — et la demande expire au bout de vingt-quatre
+    # heures. Le genre `booking.toReview` et ses gabarits existaient depuis
+    # longtemps ; personne ne les émettait.
+    #
+    # **Seulement quand il doit trancher.** Un salon qui confirme
+    # automatiquement n'a rien à décider, et lui écrire à chaque réservation
+    # ferait du message une notification d'agrément — celle qu'on coupe, et qui
+    # emporterait alors les vraies.
+    await _prevenir_le_salon(session, reservation)
+
     await session.commit()
     return BookingRead.model_validate(reservation)
+
+
+async def _prevenir_le_salon(session, reservation: Booking) -> None:
+    """Dépose l'annonce pour **chaque membre** du salon, avant le commit.
+
+    **Ne fait rien quand le salon n'a pas à décider.** La condition vit ici et
+    non chez l'appelant : elle fait partie de la règle d'envoi, et la laisser
+    dehors ferait qu'un second appelant l'oublierait. Un commerce qui confirme
+    automatiquement n'a rien à trancher, et lui écrire à chaque réservation
+    ferait de ce message une notification d'agrément — celle qu'on coupe, et qui
+    emporterait alors les vraies.
+
+    Par membre et non par salon : un commerce n'a pas d'adresse, ce sont des
+    personnes qui la relèvent, et celle qui tient le comptoir n'est pas toujours
+    celle qui a créé le compte. Même forme que l'annonce d'une reprise de
+    compte, qui a tranché la question la première.
+
+    Ou le message et la réservation existent tous les deux, ou aucun : un
+    processus qui meurt entre les deux ne peut plus laisser une demande
+    attendre une décision que personne n'a su devoir prendre.
+    """
+    from app.models import BusinessMember
+
+    if reservation.status is not BookingStatus.AWAITING_BUSINESS:
+        return
+
+    ligne = (
+        await session.execute(
+            sa.select(Business.name, CatalogItem.name)
+            .select_from(Booking)
+            .join(Business, Business.id == Booking.business_id)
+            .join(CatalogItem, CatalogItem.id == Booking.catalog_item_id)
+            .where(Booking.id == reservation.id)
+        )
+    ).one_or_none()
+    if ligne is None:
+        return
+    nom_du_salon, nom_de_l_item = ligne
+
+    membres = await session.scalars(
+        sa.select(BusinessMember.user_id).where(
+            BusinessMember.business_id == reservation.business_id
+        )
+    )
+    for user_id in membres:
+        await outbox.deposer(
+            session,
+            user_id=user_id,
+            cle="booking.toReview",
+            business=nom_du_salon,
+            item=nom_de_l_item,
+        )
 
 
 @router.post(

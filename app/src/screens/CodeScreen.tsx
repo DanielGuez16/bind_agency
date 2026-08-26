@@ -51,6 +51,46 @@ import {
 import { useI18n } from '../i18n';
 import { codeColors } from '../theme';
 
+/**
+ * Quand le code affiché cessera d'être valable.
+ *
+ * **Chaînée sur la précédente, pas reprise du réseau.** La rotation est calée
+ * côté serveur sur une horloge globale — `timestamp % rotation` —, donc
+ * `seconds_remaining` dit le reste de la fenêtre **au moment où la requête
+ * atterrit**. Avec une seconde et demie d'aller-retour, une relecture faite à
+ * l'expiration rend 28 : le compte à rebours repartait de 28, puis de 29, puis
+ * de 30 selon le réseau. C'est ce « pas toujours trente » qui a été signalé.
+ *
+ * En ajoutant la cadence à l'échéance précédente, le décompte repart de la
+ * cadence entière quoi qu'ait duré l'appel — et il reste calé sur la même
+ * grille que le serveur, puisque la première échéance vient de lui.
+ *
+ * Trois cas rendent la main au serveur :
+ *
+ * - **la première lecture**, qui n'a pas de précédente et doit tomber au milieu
+ *   de la fenêtre en cours si c'est là qu'on ouvre l'écran ;
+ * - **un changement de réservation**, dont la fenêtre n'a aucun rapport ;
+ * - **une échéance chaînée déjà dépassée** — écran resté en arrière-plan, appel
+ *   très lent. La chaîner encore ferait tourner le décompte dans le passé.
+ *
+ * Une seconde au minimum : un serveur qui rendrait zéro ferait redemander en
+ * boucle serrée, ce qui ne se voit pas en test.
+ */
+export function prochaineEcheance(
+  precedent: { bookingId: string; expireA: number } | null,
+  frais: { seconds_remaining: number; rotation_seconds: number },
+  bookingId: string,
+  maintenant: number = Date.now(),
+): number {
+  const chainee =
+    precedent !== null && precedent.bookingId === bookingId
+      ? precedent.expireA + frais.rotation_seconds * 1000
+      : null;
+
+  if (chainee !== null && chainee > maintenant) return chainee;
+  return maintenant + Math.max(1, frais.seconds_remaining) * 1000;
+}
+
 export function CodeScreen({
   bookingId,
   onRetour,
@@ -113,14 +153,10 @@ export function CodeScreen({
     try {
       const frais = await api.codeDeRetrait(bookingId);
       setEchec(null);
-      setAffiche({
-        bookingId,
-        code: frais,
-        // Une seconde au minimum : un serveur qui rendrait zéro ferait
-        // redemander en boucle serrée, ce qui ne se voit pas en test.
-        expireA: Date.now() + Math.max(1, frais.seconds_remaining) * 1000,
+      setAffiche((precedent) => {
+        const expireA = prochaineEcheance(precedent, frais, bookingId);
+        return { bookingId, code: frais, expireA };
       });
-      setRestant(frais.seconds_remaining);
     } catch (erreur) {
       // Hors ligne, un code déjà affiché reste valide côté salon jusqu'à sa
       // rotation : on ne l'efface pas. Le message n'est rendu que s'il n'y a
@@ -144,11 +180,21 @@ export function CodeScreen({
     // d'une autre réservation, où `courant` redevient nul.
     if (courant === null || Date.now() >= courant.expireA) void relire();
 
-    const battement = setInterval(() => {
-      if (courant === null) return;
+    // **Une fois tout de suite, puis chaque seconde.** Le décompte se lisait
+    // autrefois de la réponse du serveur, donc il s'affichait dès qu'elle
+    // arrivait ; depuis qu'il se calcule de l'échéance, attendre le premier
+    // battement laisserait un zéro à l'écran pendant une seconde entière — au
+    // moment précis où le code vient de changer.
+    const afficher = () => {
+      if (courant === null) return 0;
       const reste = Math.max(0, Math.ceil((courant.expireA - Date.now()) / 1000));
       setRestant(reste);
-      if (reste === 0) void relire();
+      return reste;
+    };
+    afficher();
+
+    const battement = setInterval(() => {
+      if (afficher() === 0) void relire();
     }, 1000);
 
     return () => clearInterval(battement);
