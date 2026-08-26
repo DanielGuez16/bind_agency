@@ -1149,7 +1149,7 @@ export const en = {
   },
   lieu: {
     sectionPhotos: 'Photos of the place',
-    sectionCarte: 'Your menu',
+    sectionCarte: 'What a creator chooses from',
     sectionHoraires: 'Your week',
     photosCompte: '{{count}} photos',
     carteCompte: '{{count}} pages',
@@ -1208,7 +1208,7 @@ export const en = {
     carteBloqueTitre: '{{count}} services cannot be published yet',
     carteBloqueCorps: 'They let the creator choose, so they need to read your menu before booking. Add pages or a link and they open.',
     carteLUnOuLAutre: 'Either one is enough',
-    carteVide: 'No menu page yet. Photograph it, or paste the link below — either one is enough.',
+    carteVide: 'Nothing here yet. Only services that leave a choice need it — a menu, a treatment list, a room list. Photograph it, or paste the link below.',
     carteAjouter: 'Add a menu page',
     cartePermission: 'Photo access is off. Turn it on in your phone settings to add a page.',
     cartePage: 'Page {{rang}}',

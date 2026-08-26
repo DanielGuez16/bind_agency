@@ -30,6 +30,9 @@ import { formatNumber } from '../../format';
 import { useI18n } from '../../i18n';
 import { radius, size, useColors } from '../../theme';
 
+/** La marge latérale de l'écran, celle que le reste du fil respecte. */
+const MARGE = 16;
+
 export function BarreDuMur({
   fil,
   categorie,
@@ -68,13 +71,26 @@ export function BarreDuMur({
       testID="barre-du-mur"
       style={{
         gap: 10,
+        // **Le haut manquait.** La zone sûre est posée par la coquille, mais la
+        // bande venait s'y coller sans respirer : sur un appareil à encoche, le
+        // champ de recherche touchait le bord de l'écran.
+        paddingTop: 10,
         paddingBottom: 10,
         backgroundColor: c['bg.page'],
         borderBottomWidth: 1,
         borderBottomColor: c['line.default'],
       }}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+      {/* La marge latérale vit sur la rangée et non sur la bande : la ligne des
+          catégories défile d'un bord à l'autre et la perdrait. */}
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 10,
+          paddingHorizontal: MARGE,
+        }}
+      >
         <View
           style={{
             flex: 1,
@@ -184,7 +200,15 @@ export function BarreDuMur({
           showsHorizontalScrollIndicator={false}
           // Le contenu défile, le conteneur ne grandit pas : c'est ce qui tient
           // les 34 points quel que soit le nombre de catégories ouvertes.
-          contentContainerStyle={{ flexDirection: 'row', gap: 8, paddingRight: 16 }}
+          // **Le retrait à gauche manquait**, et la première pilule touchait le
+          // bord. Il est dans le contenu et non sur le conteneur : sur le
+          // conteneur, il rognerait la zone qui défile.
+          contentContainerStyle={{
+            flexDirection: 'row',
+            gap: 8,
+            paddingLeft: MARGE,
+            paddingRight: 16,
+          }}
         >
           <Pilule
             label={t('parcours.murToutesLesCategories')}
