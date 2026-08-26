@@ -76,9 +76,22 @@ export function ExceptionDuJour({
     { estVide: () => false, dependances: [businessId, jour] },
   );
 
-  // Rien tant qu'on ne sait pas : un bloc d'action posé sur une inconnue ferait
-  // couper une place qu'on croit connaître.
-  if (requete.etat !== 'pret') return null;
+  /**
+   * **Rien tant qu'on ne sait pas, mais pas *rien du tout*.**
+   *
+   * Le bloc d'action reste interdit sur une inconnue — le poser ferait couper
+   * une place qu'on croit connaître. Mais ce composant est le contenu d'un
+   * repliable : il ne se monte qu'au moment où l'on ouvre, et ses deux requêtes
+   * partent alors. Rendre `null` pendant ce temps donnait une flèche qui tourne
+   * et ne déplie rien — on rappuie, ça se referme, et le geste paraît mort.
+   */
+  if (requete.etat !== 'pret') {
+    return (
+      <Texte variante="type.caption" couleur="ink.mute" testID="exception-en-chargement">
+        {t('commerce.exceptionChargement')}
+      </Texte>
+    );
+  }
 
   const etat = placesDuJour({
     jour,
@@ -86,7 +99,24 @@ export function ExceptionDuJour({
     exceptions: requete.donnees.exceptions,
     postesEffectifs,
   });
-  if (etat === null) return null;
+  /**
+   * **Un jour fermé dans la semaine type n'a rien à couper, et il faut le
+   * dire.** `placesDuJour` rend `null` quand aucune règle ne couvre ce jour :
+   * c'est le cas normal d'un salon fermé le dimanche, pas une anomalie. Le bloc
+   * s'ouvrait alors sur le vide, définitivement — la deuxième moitié du même
+   * défaut que ci-dessus, et la plus tenace, parce qu'elle ne se résout pas en
+   * attendant.
+   *
+   * La phrase renvoie à la semaine type : c'est là que le jour se rouvre, et
+   * l'exception n'a pas à savoir le faire.
+   */
+  if (etat === null) {
+    return (
+      <Texte variante="type.caption" couleur="ink.mute" testID="exception-sans-objet">
+        {t('commerce.exceptionJourFerme')}
+      </Texte>
+    );
+  }
 
   async function agir(geste: () => Promise<unknown>) {
     setEchec(null);
