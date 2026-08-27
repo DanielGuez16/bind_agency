@@ -998,6 +998,17 @@ function CoeurDeLOffre({
       // et les prenait tous : l'attribut n'existait pas, donc le filtre ne
       // filtrait rien. Un test qui n'a pas su lire l'état a dit la même chose
       // qu'un lecteur d'écran qui ne l'entend pas.
+      //
+      // **Et `accessibilityState` ne suffisait pas non plus.** Cette version de
+      // React Native Web ne le lit **pas du tout** : `createDOMProps` n'en
+      // contient aucune mention, il lit `aria-checked` en propriété de premier
+      // rang. Passer de `selected` à `checked` dans l'objet ne changeait donc
+      // rien — le DOM ne portait toujours aucun attribut.
+      //
+      // Les deux sont posées : `aria-checked` pour le web, où elle est la seule
+      // lue, et `accessibilityState` pour le natif, qui ne connaît qu'elle.
+      // Vingt fichiers du dépôt utilisent la seconde seule ; voir `TASKS.md`.
+      aria-checked={actif}
       accessibilityState={{ checked: actif }}
       accessibilityLabel={t(actif ? 'favoris.retirer' : 'favoris.garder', { nom: offre.name })}
       hitSlop={6}

@@ -228,6 +228,9 @@ function CoeurDeLaCarte({
       // attribut que React Native Web sache rendre, donc l'état n'était annoncé
       // nulle part. Un cœur est un interrupteur ; il en a le rôle et l'état.
       accessibilityRole="switch"
+      // `aria-checked` pour le web — la seule que cette version de React Native
+      // Web lise — et `accessibilityState` pour le natif, qui ne connaît qu'elle.
+      aria-checked={actif}
       accessibilityState={{ checked: actif }}
       accessibilityLabel={t(actif ? 'parcours.filRetirerDesFavoris' : 'parcours.filMettreEnFavori')}
       onPress={onPress}
