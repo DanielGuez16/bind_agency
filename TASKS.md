@@ -3130,6 +3130,41 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       `createurs_qui_peuvent_reserver` et `confirmation_jours` sont retirés de la
       vue d'activation ; la portée reste servie par l'annuaire, qui en a l'usage.*
 
+- [x] **Le jeu de démonstration raconte quelque chose**
+      *Il montrait une journée pauvre : une ligne par salon, des demandes
+      posées derrière nous qu'aucun bouton ne pouvait trancher, une série
+      hebdomadaire plate, aucun favori, et un écran de tournée vide.*
+
+      ***La journée.** Une carte par état plutôt qu'une ligne : consommées,
+      confirmées, à trancher, annulée, absence. Ce qui a « déjà eu lieu » est
+      mené sur les créneaux de **demain** — journée toujours entière — puis
+      reposé sur les heures d'aujourd'hui. Les mener sur aujourd'hui liait la
+      composition à l'heure du semis : à 18 h il ne restait que trois créneaux,
+      tous partaient au passé, et l'écran n'avait plus rien à trancher.*
+
+      ***Les demandes à trancher sont posées devant nous, jamais derrière.**
+      `trancher` refuse une heure dépassée — c'est une garde du produit — donc
+      une demande posée le matin s'affichait « à trancher » et refusait les deux
+      boutons. Un écran sur lequel on ne peut rien est pire qu'un écran vide, et
+      un test l'interdit désormais.*
+
+      ***Les créatrices ont une histoire.** `marquer_les_etats_de_compte` passe
+      après les parcours : Nina a eu un compte qui marchait avant que son jeton
+      meure. L'ordre inverse lui interdisait de réserver, et son écran de paliers
+      montrait un obstacle sur quelqu'un qui n'avait jamais rien fait.*
+
+      ***Les rapports montent.** Un parcours par semaine donnait douze barres
+      identiques. Le volume croît — et il croît pour de vrai, ce sont des
+      parcours menés par les services.*
+
+      ***Les favoris, dont un hors palier.** L'irréservable s'obtient en retirant
+      l'offre du palier, jamais en posant un état.*
+
+      ***La tournée porte ses quatre stades et ses deux voies.** Elle était vide
+      faute de `HANDOVER_BASE_URL`, qui n'a jamais été configurée nulle part —
+      ni dans `.env.example`, ni chez Render. Les deux la déclarent maintenant,
+      et le semis l'annonce plutôt que d'échouer quand elle manque.*
+
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire
 
 ---

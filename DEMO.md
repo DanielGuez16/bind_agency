@@ -47,6 +47,12 @@ là qu'on montre.
 **Une attente à connaître.** Le projet Supabase se met en pause après sept
 jours sans activité ; un clic dans son tableau de bord le réveille.
 
+**Une variable à poser pour la tournée.** `HANDOVER_BASE_URL` est l'adresse
+publique où s'ouvre un lien de prise en main. Sans elle, `emettre` refuse — un
+lien sans adresse ne mène nulle part — et le jeu de données ne pose **aucune**
+fiche de terrain : l'écran de tournée reste vide, ce qui a été le cas jusqu'ici.
+Le semis le dit à voix haute plutôt que d'échouer.
+
 **L'API, elle, ne dort plus.** Elle est passée en `starter` : la campagne avait
 rapporté la lenteur comme premier grief, et la mesure a tranché — 17 ms de
 réseau, mais 171 ms de péage sur chaque requête et 1,9 s sur la connexion, du
