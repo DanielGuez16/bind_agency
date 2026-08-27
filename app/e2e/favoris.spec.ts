@@ -50,7 +50,15 @@ test('le cœur enregistre, et la liste le relit', async ({ page }) => {
 
   const fiche = page.getByTestId('ecran-fiche');
   await expect(fiche).toBeVisible();
-  const coeur = fiche.locator('[data-testid$="-coeur"]').first();
+  // **Un cœur qui n'est pas déjà posé**, et c'est ce qui rend le test stable.
+  // Le jeu de démonstration garde des prestations pour cette créatrice ; en
+  // prenant le premier cœur venu, on tombait sur l'un d'eux et l'appui le
+  // **retirait** — la pastille descendait de un là où le test en attendait un
+  // de plus. Le cœur porte son état : `accessibilityState.selected` devient
+  // `aria-checked` sur le web, et c'est lui qui départage.
+  const coeur = fiche
+    .locator('[data-testid$="-coeur"]:not([aria-checked="true"]):not([aria-selected="true"])')
+    .first();
   await expect(coeur).toBeVisible();
   await coeur.click();
 
