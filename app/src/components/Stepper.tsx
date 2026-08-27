@@ -18,6 +18,7 @@ import { Pressable, View } from 'react-native';
 
 import { radius, size, useColors } from '../theme';
 import { Texte } from './Texte';
+import { etatAccessible } from './etatAccessible';
 
 export type StepperProps = {
   label?: string;
@@ -68,7 +69,7 @@ function Touche({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={signe === '+' ? 'plus' : 'minus'}
-      accessibilityState={{ disabled: !actif }}
+      {...etatAccessible({ disabled: !actif })}
       disabled={!actif}
       onPress={onPress}
       // 32 de haut mais 44 de zone tactile : `hitSlop` élargit sans changer la
@@ -119,7 +120,7 @@ export function RangeeDeValeurs({
           <Pressable
             key={v}
             accessibilityRole="button"
-            accessibilityState={{ selected: choisi }}
+            {...etatAccessible({ selected: choisi })}
             accessibilityLabel={String(v)}
             onPress={() => onChange(v)}
             style={({ pressed }) => ({

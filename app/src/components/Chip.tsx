@@ -11,6 +11,7 @@ import { useI18n } from '../i18n';
 import { formatNumber } from '../format';
 import { radius, useColors } from '../theme';
 import { Texte } from './Texte';
+import { etatAccessible } from './etatAccessible';
 
 export type ChipProps = {
   label: string;
@@ -78,7 +79,7 @@ export function Chip({ label, compte, selected = false, onPress, testID }: ChipP
           style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
       testID={testID}
       accessibilityRole="button"
-      accessibilityState={{ selected }}
+      {...etatAccessible({ selected })}
       accessibilityLabel={annonce}
       onPress={onPress}
       hitSlop={{ top: 6, bottom: 6, left: 0, right: 0 }}

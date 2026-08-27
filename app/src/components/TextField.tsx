@@ -26,6 +26,7 @@ import { Pressable, TextInput, View, type KeyboardTypeOptions } from 'react-nati
 import { radius, size, useColors } from '../theme';
 import { Icone } from './Icone';
 import { Texte } from './Texte';
+import { etatAccessible } from './etatAccessible';
 
 export type TextFieldProps = {
   label: string;
@@ -174,7 +175,7 @@ export function TextField({
             accessibilityLabel={
               revele ? labelRevelation?.masquer : labelRevelation?.montrer
             }
-            accessibilityState={{ selected: revele }}
+            {...etatAccessible({ selected: revele })}
             disabled={disabled}
             onPress={() => setRevele((avant) => !avant)}
             // Quarante-quatre : la cible tactile minimale. L'icône fait 20,

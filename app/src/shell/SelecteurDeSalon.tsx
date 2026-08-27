@@ -36,6 +36,7 @@ import { Pressable, View } from 'react-native';
 import { Filet, Icone, Texte } from '../components';
 import { useI18n } from '../i18n';
 import { radius, useColors } from '../theme';
+import { etatAccessible } from '../components/etatAccessible';
 
 export type SalonAChoisir = {
   id: string;
@@ -104,7 +105,7 @@ export function SelecteurDeSalon({
           <Pressable
             key={salon.id}
             accessibilityRole="button"
-            accessibilityState={{ selected: courant }}
+            {...etatAccessible({ selected: courant })}
             onPress={() => onChoisir(salon.id)}
             testID={`salon-${salon.id}`}
             style={({ pressed }) => ({

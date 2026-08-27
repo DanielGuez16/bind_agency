@@ -4,6 +4,7 @@ import { Pressable, View } from 'react-native';
 import { Icone } from './Icone';
 import { Texte } from './Texte';
 import { useColors } from '../theme';
+import { etatAccessible } from './etatAccessible';
 
 /**
  * Une section qui dit ce qu'elle contient avant qu'on l'ouvre.
@@ -39,7 +40,7 @@ export function Repliable({
     <View testID={testID}>
       <Pressable
         accessibilityRole="button"
-        accessibilityState={{ expanded: ouverte }}
+        {...etatAccessible({ expanded: ouverte })}
         accessibilityLabel={`${titre} — ${resume}`}
         onPress={onBasculer}
         testID={`${testID}-entete`}

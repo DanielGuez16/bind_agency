@@ -3165,30 +3165,25 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       ni dans `.env.example`, ni chez Render. Les deux la déclarent maintenant,
       et le semis l'annonce plutôt que d'échouer quand elle manque.*
 
-- [ ] **`accessibilityState` n'est lu par personne sur le web — vingt fichiers**
-      *Mesuré dans `node_modules`, pas supposé : `createDOMProps` de cette
-      version de React Native Web ne contient **aucune** mention de
-      `accessibilityState`. Il lit `aria-checked`, `aria-selected`,
-      `aria-expanded` en propriétés de premier rang. Tout ce que le dépôt
-      annonce par `accessibilityState` n'arrive donc jamais au DOM.*
+- [x] **`accessibilityState` n'est lu par personne sur le web — les vingt sont faits**
+      *Mesuré dans `node_modules` plutôt que supposé : `createDOMProps` de cette
+      version de React Native Web n'en contient **aucune** mention. Tout ce que
+      l'application annonçait ainsi — **tous les gestes à deux états** — n'arrivait
+      jamais au DOM. Sur natif rien n'était cassé, donc le défaut ne se voyait
+      que là où l'application est montrée.*
 
-      ***Ce que cela coûte.** Un interrupteur qui n'annonce pas son état se lit
-      « garder en favori » sans qu'on sache si c'est fait. C'est le cas de tous
-      les gestes à deux états de l'application web : le cœur, le `Toggle`, les
-      sélections de l'arbitrage. Sur mobile natif rien n'est cassé — c'est la
-      seule propriété que React Native y connaît —, donc le défaut ne se voit
-      que là où la démonstration a lieu.*
+      *`etatAccessible()` pose les deux à un seul endroit : l'objet pour le
+      natif, les attributs `aria-*` pour le web. Vingt sites y passent, `Toggle`
+      compris. Le refaire à chaque appel, c'est en oublier un — et un état oublié
+      ne se voit pas, il s'entend chez quelqu'un qui n'est pas là pour le dire.*
 
-      ***Deux cœurs sont corrigés**, en posant les deux propriétés : `aria-*`
-      pour le web, `accessibilityState` pour le natif. Les dix-huit autres
-      fichiers restent, et la question de fond est s'il faut un composant qui
-      pose les deux plutôt que de le refaire à chaque endroit.*
+      ***`false` est une réponse**, et c'est le cas qui fait diverger le décor :
+      « non coché » n'est pas « pas de case ». Une implémentation qui ne poserait
+      l'attribut que sur une valeur vraie passerait un test écrit sur `true`.*
 
-      ***Trouvé par un parcours de bout en bout**, pas par relecture : il
-      cherchait un cœur non posé et les prenait tous, parce que l'attribut
-      n'existait pas. Les tests unitaires, eux, lisaient `props.accessibilityState`
-      — la valeur telle qu'écrite, jamais telle que rendue —, donc ils passaient
-      des deux côtés d'un défaut réel.*
+      *La leçon est dans `DECISIONS.md` : un test unitaire qui lit une propriété
+      telle qu'écrite ne prouve rien du rendu, et seul un parcours qui regarde le
+      DOM peut le voir.*
 
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire
 

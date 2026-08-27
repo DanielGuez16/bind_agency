@@ -27,6 +27,7 @@ import { Animated, Easing, Pressable, View, type ViewStyle } from 'react-native'
 import { motion, radius, size, useColors } from '../theme';
 import { useEnfoncement } from './Mouvement';
 import { Texte } from './Texte';
+import { etatAccessible } from './etatAccessible';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 export type ButtonSize = 'sm' | 'md' | 'lg';
@@ -117,7 +118,7 @@ export function Button({
       testID={testID}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
-      accessibilityState={{ disabled: inerte, busy: loading }}
+      {...etatAccessible({ disabled: inerte, busy: loading })}
       disabled={inerte}
       onPress={onPress}
       onPressIn={enfoncement.onPressIn}

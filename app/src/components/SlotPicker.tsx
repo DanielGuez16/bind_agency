@@ -12,6 +12,7 @@ import { Pressable, View } from 'react-native';
 
 import { radius, useColors } from '../theme';
 import { Texte } from './Texte';
+import { etatAccessible } from './etatAccessible';
 
 export type Jour = {
   cle: string;
@@ -43,7 +44,7 @@ export function DayPicker({
           <Pressable
             key={jour.cle}
             accessibilityRole="button"
-            accessibilityState={{ selected: choisi, disabled: !jour.disponible }}
+            {...etatAccessible({ selected: choisi, disabled: !jour.disponible })}
             accessibilityLabel={`${jour.jourCourt} ${jour.numero}`}
             disabled={!jour.disponible}
             onPress={() => onChange(jour.cle)}
@@ -111,7 +112,7 @@ export function SlotPicker({
           <Pressable
             key={creneau.cle}
             accessibilityRole="button"
-            accessibilityState={{ selected: choisi, disabled: creneau.pris }}
+            {...etatAccessible({ selected: choisi, disabled: creneau.pris })}
             accessibilityLabel={creneau.heure}
             // Pris : visible, mais pas pressable. Le masquer effacerait le
             // rythme du salon.

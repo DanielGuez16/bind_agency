@@ -9,6 +9,7 @@ import { useEffect, useRef } from 'react';
 import { Animated, Pressable } from 'react-native';
 
 import { motion, radius, useColors } from '../theme';
+import { etatAccessible } from './etatAccessible';
 
 export type ToggleProps = {
   value: boolean;
@@ -41,7 +42,7 @@ export function Toggle({
       testID={testID}
       accessibilityRole="switch"
       accessibilityLabel={accessibilityLabel}
-      accessibilityState={{ checked: value, disabled }}
+      {...etatAccessible({ checked: value, disabled })}
       disabled={disabled}
       onPress={() => onChange(!value)}
       hitSlop={{ top: 11, bottom: 11, left: 0, right: 0 }}

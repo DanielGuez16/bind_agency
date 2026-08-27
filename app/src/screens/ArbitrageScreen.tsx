@@ -65,6 +65,7 @@ import { formeDuMalentendu, motDeLaForme } from './arbitrage/formeDuMalentendu';
 import { MotifsQuiReviennent } from './arbitrage/MotifsQuiReviennent';
 import { useRequete } from './useRequete';
 import { nomDuCreateur } from './nomDuCreateur';
+import { etatAccessible } from '../components/etatAccessible';
 
 /** Ce que l'écran charge : la file, et ce qu'elle apprend sur nous. */
 type Arbitrage = { lignes: LigneDeFile[]; motifs: MotifQuiRevient[] };
@@ -313,7 +314,7 @@ function TableDArbitrage({
             <Pressable
               testID={`cocher-${ligne.collaboration_id}`}
               accessibilityRole="checkbox"
-              accessibilityState={{ checked: selection.includes(ligne.collaboration_id) }}
+              {...etatAccessible({ checked: selection.includes(ligne.collaboration_id) })}
               hitSlop={8}
               onPress={() =>
                 setSelection((precedente) =>

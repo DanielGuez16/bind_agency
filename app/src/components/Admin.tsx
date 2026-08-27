@@ -18,6 +18,7 @@ import { useRaccourcis } from '../shell/useRaccourcis';
 
 import { breakpoint, radius, useColors } from '../theme';
 import { Texte } from './Texte';
+import { etatAccessible } from './etatAccessible';
 
 export type Colonne = {
   cle: string;
@@ -144,7 +145,7 @@ export function TableRow({
     <Pressable
       testID={testID}
       accessibilityRole="button"
-      accessibilityState={{ selected: actif }}
+      {...etatAccessible({ selected: actif })}
       onPress={onPress}
       style={({ pressed }) => ({ ...assiette, opacity: pressed ? 0.7 : 1 })}
     >

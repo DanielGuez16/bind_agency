@@ -39,6 +39,7 @@ import { useSession } from '../session';
 import { elevationDeCarte, radius, size, useColors } from '../theme';
 import { Ecran } from './Ecran';
 import { useRequete } from './useRequete';
+import { etatAccessible } from '../components/etatAccessible';
 
 /** La hauteur de la vignette. Connue avant l'image, comme partout ailleurs. */
 const VIGNETTE = 72;
@@ -275,7 +276,7 @@ function LigneDuFavori({
         <Pressable
           testID={`favori-retirer-${favori.catalog_item_id}`}
           accessibilityRole="button"
-          accessibilityState={{ selected: true }}
+          {...etatAccessible({ selected: true })}
           accessibilityLabel={t('favoris.retirer', { nom: favori.name })}
           onPress={onRetirer}
           hitSlop={8}
