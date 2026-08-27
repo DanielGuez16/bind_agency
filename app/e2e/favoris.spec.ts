@@ -30,9 +30,18 @@ test('le cœur enregistre, et la liste le relit', async ({ page }) => {
   const fil = page.getByTestId('ecran-fil');
   await expect(fil.getByTestId('le-mur')).toBeVisible();
 
-  // **La porte ne porte aucun compte au départ.** Sans ce constat, le « 1 » du
-  // dessous serait vrai d'une pastille affichée en permanence.
-  await expect(fil.getByTestId('compte-des-favoris')).toHaveCount(0);
+  // **Le compte de départ est relevé, pas supposé nul.** Il l'était : le jeu de
+  // démonstration ne posait aucun favori, et le test lisait « 0 » puis « 1 ».
+  // Le jeu en pose maintenant — la liste des favoris montrait son état vide là
+  // où elle doit montrer ses quatre états, dont celui qui n'est plus à portée.
+  //
+  // Un écart vaut mieux qu'une valeur absolue de toute façon : il éprouve la
+  // même chose — la pastille a bougé de un — sans dépendre de ce que le jeu
+  // contient. Le `+1` du dessous reste donc faux d'une pastille affichée en
+  // permanence, qui est ce que ce constat protège.
+  const porte = fil.getByTestId('compte-des-favoris');
+  const depart = (await porte.count()) ? Number(await porte.textContent()) : 0;
+
   // Et aucune carte de salon ne porte de cœur : il a quitté le fil.
   await expect(fil.locator('[data-testid$="-coeur"]')).toHaveCount(0);
 
@@ -58,7 +67,7 @@ test('le cœur enregistre, et la liste le relit', async ({ page }) => {
   // **Le compte du fil s'est mis à jour**, et il vient du serveur : la pile
   // garde le fil monté dessous, donc sans le signal il resterait celui du
   // dernier chargement.
-  await expect(fil.getByTestId('compte-des-favoris')).toHaveText('1');
+  await expect(porte).toHaveText(String(depart + 1));
 
   await fil.getByTestId('voir-mes-favoris').click();
 
