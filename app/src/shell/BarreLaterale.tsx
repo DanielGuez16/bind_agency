@@ -55,6 +55,7 @@ import { useI18n } from '../i18n';
 import { breakpoint, radius, spacing, useColors, useTheme } from '../theme';
 import { useRepli } from './preferenceDeRepli';
 import { SelecteurDeSalon, type SalonAChoisir } from './SelecteurDeSalon';
+import { etatAccessible } from '../components/etatAccessible';
 
 /** La hauteur d'une ligne de navigation. L'administration est plus dense. */
 const HAUTEUR_DE_LIGNE = { creator: 44, merchant: 44, admin: 38 } as const;
@@ -192,7 +193,7 @@ export function BarreLaterale({
           choisissable ? (
             <Pressable
               accessibilityRole="button"
-              accessibilityState={{ expanded: deplie }}
+              {...etatAccessible({ expanded: deplie })}
               onPress={() => setDeplie((ouvert) => !ouvert)}
               testID="changer-de-salon"
               style={({ pressed }) => ({
@@ -256,7 +257,7 @@ export function BarreLaterale({
               key={route.key}
               testID={`ligne-${route.name}`}
               accessibilityRole='tab'
-              accessibilityState={{ selected: actif }}
+              {...etatAccessible({ selected: actif })}
               // Replié, le libellé n'est plus à l'écran : il doit rester dans
               // l'arbre d'accessibilité, sans quoi le rail devient une colonne
               // de pictogrammes muets pour un lecteur d'écran.

@@ -19,6 +19,7 @@ import { useI18n } from '../../i18n';
 import { radius, useColors } from '../../theme';
 import type { JourDeDisponibilite } from '../../api';
 import { etatDuJour } from './bande';
+import { etatAccessible } from '../../components/etatAccessible';
 
 /** La largeur d'un jour, relevée sur la planche. */
 export const LARGEUR_DU_JOUR = 64;
@@ -93,7 +94,7 @@ export function BandeDeJours({
               key={jour.jour}
               testID={`jour-${jour.jour}`}
               accessibilityRole="button"
-              accessibilityState={{ selected: choisi }}
+              {...etatAccessible({ selected: choisi })}
               accessibilityLabel={`${nomDeJour(jour.jour, locale)} ${quantieme(jour.jour)}`}
               onPress={() => onChoisir(jour.jour)}
               style={({ pressed }) => ({

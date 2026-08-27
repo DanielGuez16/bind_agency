@@ -12,6 +12,7 @@ import { Pressable, View } from 'react-native';
 
 import { radius, useColors } from '../theme';
 import { Texte } from './Texte';
+import { etatAccessible } from './etatAccessible';
 
 export type SegmentedTabsProps = {
   items: { label: string; count?: number }[];
@@ -42,7 +43,7 @@ export function SegmentedTabs({ items, index, onChange, testID }: SegmentedTabsP
           <Pressable
             key={item.label}
             accessibilityRole="tab"
-            accessibilityState={{ selected: actif }}
+            {...etatAccessible({ selected: actif })}
             accessibilityLabel={libelle}
             onPress={() => onChange(i)}
             style={({ pressed }) => ({

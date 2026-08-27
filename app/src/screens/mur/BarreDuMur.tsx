@@ -29,6 +29,7 @@ import { Icone, Texte } from '../../components';
 import { formatNumber } from '../../format';
 import { useI18n } from '../../i18n';
 import { radius, size, useColors } from '../../theme';
+import { etatAccessible } from '../../components/etatAccessible';
 
 /** La marge latérale de l'écran, celle que le reste du fil respecte. */
 const MARGE = 16;
@@ -259,7 +260,7 @@ function Pilule({
     <Pressable
       testID={testID}
       accessibilityRole="button"
-      accessibilityState={{ selected: actif }}
+      {...etatAccessible({ selected: actif })}
       onPress={onPress}
       style={({ pressed }) => ({
         height: 34,

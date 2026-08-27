@@ -41,6 +41,7 @@ import { useApi } from '../api';
 import { Button, Icone, Texte } from '../components';
 import { useI18n } from '../i18n';
 import { radius, useColors } from '../theme';
+import { etatAccessible } from '../components/etatAccessible';
 
 /**
  * Le fond de chaque visionneuse.
@@ -288,7 +289,7 @@ export function VisionneuseDeCarte({
                 key={cle}
                 accessibilityRole="button"
                 accessibilityLabel={t('parcours.cartePage', { rang: rang + 1 })}
-                accessibilityState={{ selected: rang === courante }}
+                {...etatAccessible({ selected: rang === courante })}
                 onPress={() => setCourante(rang)}
                 testID={`vignette-de-carte-${rang}`}
                 style={({ pressed }) => ({

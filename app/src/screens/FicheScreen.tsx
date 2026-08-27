@@ -42,6 +42,7 @@ import { AGES } from './cacheDesReponses';
 import { useFavorisEnVol } from './mur/favorisEnVol';
 import { useRequete } from './useRequete';
 import { VisionneuseDeCarte, VisionneuseDeGalerie } from './Visionneuses';
+import { etatAccessible } from '../components/etatAccessible';
 
 /**
  * La vignette d'une prestation : 64 points, comme la planche.
@@ -1008,8 +1009,7 @@ function CoeurDeLOffre({
       // Les deux sont posées : `aria-checked` pour le web, où elle est la seule
       // lue, et `accessibilityState` pour le natif, qui ne connaît qu'elle.
       // Vingt fichiers du dépôt utilisent la seconde seule ; voir `TASKS.md`.
-      aria-checked={actif}
-      accessibilityState={{ checked: actif }}
+      {...etatAccessible({ checked: actif })}
       accessibilityLabel={t(actif ? 'favoris.retirer' : 'favoris.garder', { nom: offre.name })}
       hitSlop={6}
       onPress={() =>

@@ -65,6 +65,7 @@ import {
 import { Ecran } from './Ecran';
 import { AGES } from './cacheDesReponses';
 import { useRequete } from './useRequete';
+import { etatAccessible } from '../components/etatAccessible';
 
 /** Ce que l'écran charge d'un coup : les trois listes se lisent ensemble. */
 type Composition = {
@@ -1098,7 +1099,7 @@ function NouvellePrestation({
             <Pressable
               key={palier.id}
               accessibilityRole="button"
-              accessibilityState={{ selected: palier.id === palierId }}
+              {...etatAccessible({ selected: palier.id === palierId })}
               onPress={() => setPalierId(palier.id)}
               style={({ pressed }) => ({
                 // Le palier non choisi est déjà pâle ; l'appui le pâlit

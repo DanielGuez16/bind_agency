@@ -59,6 +59,7 @@ const nomDeJour = (jour: string, locale: string): string =>
   );
 
 import { useRequete } from './useRequete';
+import { etatAccessible } from '../components/etatAccessible';
 
 /** Lundi en tête, comme la contrainte de base : 0 = lundi. */
 const JOURS = [
@@ -333,7 +334,7 @@ function Exceptions({
             <Pressable
               key={jour}
               accessibilityRole="button"
-              accessibilityState={{ selected: choisi }}
+              {...etatAccessible({ selected: choisi })}
               accessibilityLabel={formatDate(`${jour}T12:00:00Z`, locale, 'UTC')}
               onPress={() => setDate(choisi ? '' : jour)}
               testID={`jour-${jour}`}
