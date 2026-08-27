@@ -987,7 +987,18 @@ function CoeurDeLOffre({
     <Pressable
       testID={`offre-${offre.tier_offer_id}-coeur`}
       accessibilityRole="switch"
-      accessibilityState={{ selected: actif }}
+      // **`checked`, et non `selected`.** Un interrupteur annonce son état par
+      // `checked` — c'est ce que fait `Toggle`, le composant du dépôt qui porte
+      // le même rôle. Avec `selected`, React Native ne rend aucun attribut
+      // utilisable : un lecteur d'écran annonçait « garder en favori » sans
+      // jamais dire si le cœur était posé ou non, sur le seul geste de cet
+      // écran qui a deux états.
+      //
+      // Trouvé par un parcours de bout en bout qui cherchait un cœur non posé
+      // et les prenait tous : l'attribut n'existait pas, donc le filtre ne
+      // filtrait rien. Un test qui n'a pas su lire l'état a dit la même chose
+      // qu'un lecteur d'écran qui ne l'entend pas.
+      accessibilityState={{ checked: actif }}
       accessibilityLabel={t(actif ? 'favoris.retirer' : 'favoris.garder', { nom: offre.name })}
       hitSlop={6}
       onPress={() =>

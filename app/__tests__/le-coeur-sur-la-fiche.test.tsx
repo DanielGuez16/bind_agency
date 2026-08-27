@@ -134,11 +134,17 @@ describe('le cœur se remplit avant la réponse', () => {
     const { appels } = await monter({ surFavori: (init) => reponseQuiNArrivePas(init) });
 
     const coeur = await screen.findByTestId('offre-o1-coeur');
-    expect(coeur.props.accessibilityState?.selected).toBe(false);
+    // **`checked`, parce que le cœur se déclare `switch`.** Il annonçait
+    // `selected`, que React Native ne rend en aucun attribut pour ce rôle : un
+    // lecteur d'écran lisait « garder en favori » sans jamais dire si le cœur
+    // était posé. Ce test lisait `selected` lui aussi, donc il passait — il
+    // vérifiait la même valeur fausse des deux côtés.
+    expect(coeur.props.accessibilityRole).toBe('switch');
+    expect(coeur.props.accessibilityState?.checked).toBe(false);
 
     await fireEvent.press(coeur);
 
-    expect(screen.getByTestId('offre-o1-coeur').props.accessibilityState?.selected).toBe(true);
+    expect(screen.getByTestId('offre-o1-coeur').props.accessibilityState?.checked).toBe(true);
     expect(appels.some((a) => a.methode === 'POST' && a.url.includes('/me/favorites'))).toBe(true);
   });
 
@@ -151,7 +157,7 @@ describe('le cœur se remplit avant la réponse', () => {
     await fireEvent.press(await screen.findByTestId('offre-o1-coeur'));
 
     await waitFor(() =>
-      expect(screen.getByTestId('offre-o1-coeur').props.accessibilityState?.selected).toBe(false),
+      expect(screen.getByTestId('offre-o1-coeur').props.accessibilityState?.checked).toBe(false),
     );
     expect(appels.some((a) => a.methode === 'POST')).toBe(true);
   });
@@ -174,11 +180,11 @@ describe('le cœur se remplit avant la réponse', () => {
     const { appels } = await monter({ offres: [{ ...OFFRE, est_favori: true }] });
 
     const coeur = await screen.findByTestId('offre-o1-coeur');
-    expect(coeur.props.accessibilityState?.selected).toBe(true);
+    expect(coeur.props.accessibilityState?.checked).toBe(true);
 
     await fireEvent.press(coeur);
 
-    expect(screen.getByTestId('offre-o1-coeur').props.accessibilityState?.selected).toBe(false);
+    expect(screen.getByTestId('offre-o1-coeur').props.accessibilityState?.checked).toBe(false);
     await waitFor(() =>
       expect(appels.some((a) => a.methode === 'DELETE' && a.url.includes('/me/favorites/i1'))).toBe(
         true,
@@ -220,7 +226,7 @@ describe('le cœur vit aussi sur ce qui n’est pas encore ouvert', () => {
     await waitFor(() => expect(screen.getByTestId('offre-o9-coeur')).toBeTruthy());
     await fireEvent.press(screen.getByTestId('offre-o9-coeur'));
 
-    expect(screen.getByTestId('offre-o9-coeur').props.accessibilityState?.selected).toBe(true);
+    expect(screen.getByTestId('offre-o9-coeur').props.accessibilityState?.checked).toBe(true);
     await waitFor(() =>
       expect(appels.some((a) => a.methode === 'POST' && a.url.includes('/me/favorites'))).toBe(true),
     );

@@ -1207,7 +1207,15 @@ async def _la_journee_de_chaque_salon(
         ]
         heures_passees = _repartir(passes, ampleur)
         menes_sur = _repartir(creneaux_de_demain, len(heures_passees))
-        attendues = _repartir(a_venir, ampleur)
+
+        # **Ce qui attend se prend sur demain quand aujourd'hui est fini.** La
+        # file « à trancher » de la journée porte les décisions **toutes dates
+        # confondues** — une demande pour demain s'y lit et s'y tranche. Sans ce
+        # repli, un jeu semé après la fermeture n'avait aucune décision à rendre,
+        # et l'écran perdait ce qui fait sa raison d'être. Les créneaux de demain
+        # servent après ceux qu'on a déjà pris pour le passé.
+        restants = [c for c in creneaux_de_demain if c not in menes_sur]
+        attendues = _repartir(a_venir, ampleur) or _repartir(restants, ampleur)
 
         posees += await _poser_ce_qui_a_eu_lieu(
             session,
@@ -1619,6 +1627,16 @@ async def poser_les_favoris(session: AsyncSession, createurs: dict) -> int:
     # **Celui qui n'est plus à portée.** Le salon retire l'offre du palier par
     # lequel l'article était ouvert : c'est un geste que le produit permet, et
     # c'est lui qui produit l'état — jamais une valeur posée sur le favori.
+    #
+    # **L'état obtenu est `fermee`, pas `hors_palier`**, et la nuance compte :
+    # retirer toutes les offres d'un article, c'est le salon qui le ferme, et
+    # `_etat` le dit dans cet ordre-là. `hors_palier` demanderait un article
+    # encore offert, à un palier que la créatrice n'atteint pas — le jeu en
+    # produit par ailleurs, chez les salons qui ne composent qu'en haut.
+    #
+    # Les deux disent « gardée, plus réservable » et appellent deux conduites
+    # différentes : attendre la réouverture, ou monter d'un palier. C'est ce que
+    # la liste doit montrer, et elle montre les deux.
     a_fermer = (await articles_de(WYNWOOD, 2))[-1:]
     for article in a_fermer:
         await favorites_service.ajouter(
@@ -1630,7 +1648,7 @@ async def poser_les_favoris(session: AsyncSession, createurs: dict) -> int:
             .where(TierOffer.catalog_item_id == article.id)
             .values(is_active=False)
         )
-        print(f"  favori devenu hors palier : « {article.name} », offre retirée par le salon")
+        print(f"  favori devenu irréservable : « {article.name} », offre retirée par le salon")
 
     await session.flush()
     return poses
