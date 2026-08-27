@@ -10683,3 +10683,49 @@ piste écartée, pas comme un diagnostic ouvert.
 le fichier des tâches porte du travail, celui-ci porte l'histoire — y compris
 les hypothèses qui se sont révélées fausses, qui sont précisément ce qu'on ne
 veut pas voir reprendre.
+
+---
+
+## 2026-08-27 — Un test unitaire ne voit pas un défaut de rendu
+
+`accessibilityState` n'était lu par personne sur le web. Mesuré dans
+`node_modules` plutôt que supposé : `createDOMProps` de cette version de React
+Native Web n'en contient **aucune mention**, il lit `aria-checked`,
+`aria-selected`, `aria-expanded`, `aria-disabled`, `aria-busy` en propriétés de
+premier rang et ignore l'objet.
+
+Vingt endroits l'employaient — **tous les gestes à deux états de l'application**.
+Le cœur d'un favori, le `Toggle`, les onglets, les jours d'un créneau, les
+sélections de l'arbitrage. Sur le web, un lecteur d'écran lisait « garder en
+favori » sans jamais dire si c'était fait. Sur mobile natif rien n'était cassé :
+`accessibilityState` y est la seule propriété que React Native connaisse, donc le
+défaut ne se voyait que là où l'application est réellement montrée.
+
+**Ce qui n'a pas pu le voir.** Les tests unitaires du cœur lisaient
+`props.accessibilityState` : la valeur **telle qu'écrite**, jamais telle que
+rendue. Ils affirmaient `selected === false`, puis `selected === true` après
+l'appui, et ils passaient — des deux côtés d'un état que personne n'entendait.
+Aucune relecture ne les aurait dénoncés : ils vérifient exactement ce qu'ils
+disent vérifier. C'est le sujet qui était faux, pas l'assertion.
+
+La règle qui en sort : **un test qui lit une propriété telle qu'écrite ne prouve
+rien du rendu.** Il vaut pour ce que le composant décide, jamais pour ce qui
+arrive à l'écran ou au lecteur d'écran. Entre les deux il y a une bibliothèque,
+et elle a le droit d'ignorer ce qu'on lui passe.
+
+**Ce qui l'a vu, et par accident.** Un parcours de bout en bout cherchait un cœur
+non encore posé — `[aria-checked="false"]` — et les prenait tous, parce que
+l'attribut n'existait pas. Le filtre ne filtrait rien, l'appui retirait un favori
+au lieu d'en poser un, et le compteur descendait au lieu de monter. Il a fallu
+trois corrections successives pour comprendre : `selected` → `checked` dans
+l'objet, puis le second composant, puis la lecture de `node_modules` qui a montré
+que l'objet entier était ignoré. Les deux premières n'ont rien changé, et c'est
+ce qui a fini par désigner la vraie cause.
+
+Trois heures. Ce qui les aurait évitées est de regarder le DOM une fois, au lieu
+de croire trois fois que la propriété était mal nommée.
+
+**Le remède est un composant, pas une discipline.** `etatAccessible()` pose les
+deux — l'objet pour le natif, les attributs pour le web — à un seul endroit. Le
+refaire à chaque appel, c'est en oublier un ; et un état oublié ne se voit pas,
+il s'entend chez quelqu'un qui n'est pas là pour le dire.
