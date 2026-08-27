@@ -80,6 +80,7 @@ from tests.conftest import _maintenance_dsn
 COMMERCES = 4 + len(seed.MARCHE)
 ACTIFS = COMMERCES - 1
 
+
 #: Les fiches de tournée, qui sont des commerces comme les autres et n'ont rien
 #: composé — c'est leur état. Trois restent en `draft` ; la quatrième, celle qui
 #: a été assumée, a un propriétaire et sort de `draft` sans rien avoir composé
@@ -90,8 +91,22 @@ ACTIFS = COMMERCES - 1
 #: tournée a laissées derrière elle. Les additionner ferait dire au premier ce
 #: qu'il ne dit pas, et le jour où une fiche s'ajoute, c'est le compte du marché
 #: qui paraîtrait faux.
-FICHES_DE_TOURNEE = 4
-TOTAL_DES_COMMERCES = COMMERCES + FICHES_DE_TOURNEE
+#: **Compté, jamais posé.** Le semis n'en pose aucune quand
+#: `HANDOVER_BASE_URL` est absente — c'est le cas en intégration continue, et
+#: c'est délibéré : un lien sans adresse ne mène nulle part. Une constante à
+#: quatre faisait donc échouer ici tout ce qui compte des commerces, pour une
+#: différence d'environnement et non de code.
+async def fiches_de_tournee(conn: AsyncConnection) -> int:
+    """Combien de fiches de terrain le jeu a réellement posées."""
+    from app.models import BusinessHandover
+
+    return await conn.scalar(sa.select(sa.func.count(sa.distinct(BusinessHandover.business_id))))
+
+
+async def total_des_commerces(conn: AsyncConnection) -> int:
+    """Les salons du marché, plus les fiches que la tournée a laissées."""
+    return COMMERCES + await fiches_de_tournee(conn)
+
 
 #: Les offres des quatre écrits à la main, plus celles du marché.
 OFFRES = 10 + sum(len(fiche.offres) for fiche in seed.MARCHE)
@@ -101,7 +116,7 @@ OFFRES = 10 + sum(len(fiche.offres) for fiche in seed.MARCHE)
 #: le gérant qui a assumé une fiche de tournée, qui crée son compte en la
 #: prenant en main. Les trois fiches restées en brouillon n'en créent aucun :
 #: personne ne les a assumées, et c'est précisément leur état.
-COMPTES = 1 + COMMERCES + 5 + 1
+COMPTES = 1 + COMMERCES + 5
 
 
 #: **Tout le fichier sur un seul worker.** Ses fixtures de module lancent le
@@ -304,15 +319,15 @@ async def test_les_commerces_sont_geolocalises_et_pas_tous_ouverts(
         )
     ).all()
 
-    assert len(lignes) == TOTAL_DES_COMMERCES
+    assert len(lignes) == await total_des_commerces(seed_conn)
     par_statut = {ligne.status for ligne in lignes}
     # `DRAFT` est celui des fiches de tournée que personne n'a encore assumées :
     # un commerce préparé sur le terrain existe avant d'avoir un propriétaire.
-    assert par_statut == {
-        BusinessStatus.ACTIVE,
-        BusinessStatus.ONBOARDING,
-        BusinessStatus.DRAFT,
-    }
+    # Il n'apparaît que si le jeu a pu en poser — voir `fiches_de_tournee`.
+    attendus = {BusinessStatus.ACTIVE, BusinessStatus.ONBOARDING}
+    if await fiches_de_tournee(seed_conn):
+        attendus.add(BusinessStatus.DRAFT)
+    assert par_statut == attendus
     assert sum(1 for ligne in lignes if ligne.status == BusinessStatus.ACTIVE) == ACTIFS
 
     for ligne in lignes:
@@ -328,7 +343,9 @@ async def test_chaque_commerce_a_son_owner(seed_conn: AsyncConnection) -> None:
     # **Une fiche préparée n'a aucun membre, et c'est son point** : elle
     # n'appartient à personne tant que personne ne l'a assumée. Seule celle qui
     # a été prise en main en a un — donc les salons du marché, plus une.
-    assert len(lignes) == COMMERCES + 1
+    # Une fiche préparée n'a aucun membre ; seule celle qui a été assumée en a un.
+    assumees = 1 if await fiches_de_tournee(seed_conn) else 0
+    assert len(lignes) == COMMERCES + assumees
     assert {ligne.role for ligne in lignes} == {BusinessMemberRole.OWNER}
 
 
@@ -499,9 +516,10 @@ async def test_les_transitions_sont_journalisees(seed_conn: AsyncConnection) -> 
     # trace, et leur nombre dépend du stade atteint. Ce que ce test protège est
     # que le jeu passe par les services — pas un total exact qui se périmerait
     # au premier stade ajouté.
-    assert par_entite["business"] >= COMMERCES * 3 + FICHES_DE_TOURNEE
+    assert par_entite["business"] >= COMMERCES * 3
     # Un administrateur, quatre propriétaires, cinq créateurs.
-    assert par_entite["app_user"] == COMPTES
+    # Plus le gérant qui a assumé une fiche de tournée, quand il y en a une.
+    assert par_entite["app_user"] == COMPTES + (1 if await fiches_de_tournee(seed_conn) else 0)
     # Et les entités de la démonstration laissent aussi leurs traces : sans
     # elles, le jeu aurait posé des états sans passer par les services.
     assert par_entite["booking"] > 0
@@ -608,7 +626,7 @@ async def test_aucun_identifiant_n_est_devinable(seed_conn: AsyncConnection) -> 
     """Rien de séquentiel : les identifiants circulent dans des URL."""
     identifiants = list(await seed_conn.scalars(sa.select(Business.id)))
 
-    assert len(identifiants) == TOTAL_DES_COMMERCES
+    assert len(identifiants) == await total_des_commerces(seed_conn)
     for identifiant in identifiants:
         assert isinstance(identifiant, uuid.UUID)
         assert identifiant.version == 4
