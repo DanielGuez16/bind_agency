@@ -80,10 +80,42 @@ from tests.conftest import _maintenance_dsn
 COMMERCES = 4 + len(seed.MARCHE)
 ACTIFS = COMMERCES - 1
 
+
+#: Les fiches de tournée, qui sont des commerces comme les autres et n'ont rien
+#: composé — c'est leur état. Trois restent en `draft` ; la quatrième, celle qui
+#: a été assumée, a un propriétaire et sort de `draft` sans rien avoir composé
+#: pour autant.
+#:
+#: **Comptées à part, jamais fondues dans `COMMERCES`.** Les deux nombres disent
+#: deux choses : combien de salons le marché porte, et combien de fiches la
+#: tournée a laissées derrière elle. Les additionner ferait dire au premier ce
+#: qu'il ne dit pas, et le jour où une fiche s'ajoute, c'est le compte du marché
+#: qui paraîtrait faux.
+#: **Compté, jamais posé.** Le semis n'en pose aucune quand
+#: `HANDOVER_BASE_URL` est absente — c'est le cas en intégration continue, et
+#: c'est délibéré : un lien sans adresse ne mène nulle part. Une constante à
+#: quatre faisait donc échouer ici tout ce qui compte des commerces, pour une
+#: différence d'environnement et non de code.
+async def fiches_de_tournee(conn: AsyncConnection) -> int:
+    """Combien de fiches de terrain le jeu a réellement posées."""
+    from app.models import BusinessHandover
+
+    return await conn.scalar(sa.select(sa.func.count(sa.distinct(BusinessHandover.business_id))))
+
+
+async def total_des_commerces(conn: AsyncConnection) -> int:
+    """Les salons du marché, plus les fiches que la tournée a laissées."""
+    return COMMERCES + await fiches_de_tournee(conn)
+
+
 #: Les offres des quatre écrits à la main, plus celles du marché.
 OFFRES = 10 + sum(len(fiche.offres) for fiche in seed.MARCHE)
 
 #: Un administrateur, un propriétaire par commerce, cinq créateurs.
+#: Un administrateur, un propriétaire par salon du marché, cinq créatrices — et
+#: le gérant qui a assumé une fiche de tournée, qui crée son compte en la
+#: prenant en main. Les trois fiches restées en brouillon n'en créent aucun :
+#: personne ne les a assumées, et c'est précisément leur état.
 COMPTES = 1 + COMMERCES + 5
 
 
@@ -287,9 +319,15 @@ async def test_les_commerces_sont_geolocalises_et_pas_tous_ouverts(
         )
     ).all()
 
-    assert len(lignes) == COMMERCES
+    assert len(lignes) == await total_des_commerces(seed_conn)
     par_statut = {ligne.status for ligne in lignes}
-    assert par_statut == {BusinessStatus.ACTIVE, BusinessStatus.ONBOARDING}
+    # `DRAFT` est celui des fiches de tournée que personne n'a encore assumées :
+    # un commerce préparé sur le terrain existe avant d'avoir un propriétaire.
+    # Il n'apparaît que si le jeu a pu en poser — voir `fiches_de_tournee`.
+    attendus = {BusinessStatus.ACTIVE, BusinessStatus.ONBOARDING}
+    if await fiches_de_tournee(seed_conn):
+        attendus.add(BusinessStatus.DRAFT)
+    assert par_statut == attendus
     assert sum(1 for ligne in lignes if ligne.status == BusinessStatus.ACTIVE) == ACTIFS
 
     for ligne in lignes:
@@ -302,7 +340,12 @@ async def test_chaque_commerce_a_son_owner(seed_conn: AsyncConnection) -> None:
         await seed_conn.execute(sa.select(BusinessMember.business_id, BusinessMember.role))
     ).all()
 
-    assert len(lignes) == COMMERCES
+    # **Une fiche préparée n'a aucun membre, et c'est son point** : elle
+    # n'appartient à personne tant que personne ne l'a assumée. Seule celle qui
+    # a été prise en main en a un — donc les salons du marché, plus une.
+    # Une fiche préparée n'a aucun membre ; seule celle qui a été assumée en a un.
+    assumees = 1 if await fiches_de_tournee(seed_conn) else 0
+    assert len(lignes) == COMMERCES + assumees
     assert {ligne.role for ligne in lignes} == {BusinessMemberRole.OWNER}
 
 
@@ -468,9 +511,15 @@ async def test_les_transitions_sont_journalisees(seed_conn: AsyncConnection) -> 
     # d'abord : le jeu de données les active avant de les abonner, comme un
     # vrai salon le ferait. Souscrire referme l'échéance sans effacer la trace
     # de son ouverture — le journal dit ce qui s'est passé, pas ce qui reste.
-    assert par_entite["business"] == COMMERCES * 3
+    # **Au moins trois par salon du marché**, et davantage depuis les fiches de
+    # tournée : préparer, ouvrir, bloquer et assumer laissent chacune leur
+    # trace, et leur nombre dépend du stade atteint. Ce que ce test protège est
+    # que le jeu passe par les services — pas un total exact qui se périmerait
+    # au premier stade ajouté.
+    assert par_entite["business"] >= COMMERCES * 3
     # Un administrateur, quatre propriétaires, cinq créateurs.
-    assert par_entite["app_user"] == COMPTES
+    # Plus le gérant qui a assumé une fiche de tournée, quand il y en a une.
+    assert par_entite["app_user"] == COMPTES + (1 if await fiches_de_tournee(seed_conn) else 0)
     # Et les entités de la démonstration laissent aussi leurs traces : sans
     # elles, le jeu aurait posé des états sans passer par les services.
     assert par_entite["booking"] > 0
@@ -577,7 +626,7 @@ async def test_aucun_identifiant_n_est_devinable(seed_conn: AsyncConnection) -> 
     """Rien de séquentiel : les identifiants circulent dans des URL."""
     identifiants = list(await seed_conn.scalars(sa.select(Business.id)))
 
-    assert len(identifiants) == COMMERCES
+    assert len(identifiants) == await total_des_commerces(seed_conn)
     for identifiant in identifiants:
         assert isinstance(identifiant, uuid.UUID)
         assert identifiant.version == 4
@@ -899,7 +948,17 @@ async def test_un_commerce_n_a_rien_compose(seed_conn: AsyncConnection) -> None:
         .all()
     )
 
-    assert len(en_cours) == 1
+    # **Nommé plutôt que compté.** Une fiche de tournée assumée sort de `draft`
+    # et arrive elle aussi en `onboarding` sans rien avoir composé — ce qui est
+    # vrai et n'est pas le sujet. Le sujet est le salon du marché qui s'est
+    # inscrit et n'a rien fait, et c'est lui qu'on vérifie.
+    noms = list(
+        await seed_conn.scalars(
+            sa.select(Business.name).where(Business.status == BusinessStatus.ONBOARDING)
+        )
+    )
+    assert "Havana Glow" in noms, noms
+    assert len(en_cours) >= 1
     sans_offre = await seed_conn.scalar(
         sa.select(sa.func.count())
         .select_from(TierOffer)
@@ -1942,3 +2001,162 @@ async def test_le_semis_range_la_vignette_avec_l_original(
     # Et elle pèse moins : une vignette qui rendrait l'original octet pour octet
     # passerait l'assertion précédente sans rien faire gagner.
     assert len(depot.objets[storage.cle_de_vignette(cle)]) < len(depot.objets[cle])
+
+
+async def test_la_journee_du_salon_d_ouverture_porte_plusieurs_etats(
+    seed_conn: AsyncConnection,
+) -> None:
+    """**Une journée, pas une ligne.**
+
+    L'écran « Aujourd'hui » du salon qu'on ouvre en démonstration montrait une
+    réservation : exact, et illisible — on n'y voyait ni ce qui venait
+    d'arriver, ni ce qui restait à trancher, ni ce qui était déjà fait.
+
+    Le seuil porte sur le **nombre d'états distincts** et non sur le nombre de
+    lignes : dix réservations toutes consommées feraient une journée pleine et
+    muette.
+
+    **Trois et non quatre**, parce que la composition suit l'heure du semis. Un
+    jeu posé à neuf heures a peu de passé, un jeu posé à vingt heures peu
+    d'avenir — et c'est vrai des deux côtés. Ce qui est garanti quelle que soit
+    l'heure est une journée qui a eu lieu, une qui continue, et de quoi trancher
+    ; exiger un quatrième état ferait rougir la suite selon le moment où on la
+    lance, ce qui est le pire des tests.
+    """
+    factory = async_sessionmaker(bind=seed_conn, expire_on_commit=False)
+    async with factory() as session:
+        salon = await session.scalar(
+            sa.select(Business).where(Business.name == "Ocean Beauty Studio")
+        )
+        assert salon is not None, "le salon d'ouverture a disparu du jeu"
+
+        etats = dict(
+            (
+                await session.execute(
+                    sa.select(Booking.status, sa.func.count())
+                    .where(
+                        Booking.business_id == salon.id,
+                        Booking.starts_at >= sa.func.date_trunc("day", sa.func.now()),
+                        Booking.starts_at
+                        < sa.func.date_trunc("day", sa.func.now()) + sa.text("interval '1 day'"),
+                    )
+                    .group_by(Booking.status)
+                )
+            ).all()
+        )
+
+        assert len(etats) >= 3, f"journée trop uniforme : {etats}"
+        assert sum(etats.values()) >= 5, f"journée trop courte : {etats}"
+        assert etats.get(BookingStatus.CONSUMED, 0) >= 1, "rien n'a eu lieu ce matin"
+
+
+async def test_aucune_demande_a_trancher_n_est_posee_dans_le_passe(
+    seed_conn: AsyncConnection,
+) -> None:
+    """**Un bouton qui refuse est pire qu'un écran vide.**
+
+    Le produit refuse d'accorder une demande dont l'heure est dépassée —
+    `trancher` lève `CreneauDepasse`, et c'est une garde. Semé après la
+    fermeture, l'ancien jeu posait ses demandes derrière nous : elles
+    s'affichaient « à trancher » et aucun des deux boutons ne fonctionnait.
+
+    Ce que ce test protège n'est donc pas une préférence d'affichage, c'est
+    qu'on puisse **faire** quelque chose de ce que la démonstration montre.
+    """
+    factory = async_sessionmaker(bind=seed_conn, expire_on_commit=False)
+    async with factory() as session:
+        passees = (
+            await session.execute(
+                sa.select(Business.name, Booking.starts_at)
+                .join(Business, Business.id == Booking.business_id)
+                .where(
+                    Booking.status == BookingStatus.AWAITING_BUSINESS,
+                    Booking.starts_at.is_not(None),
+                    Booking.starts_at < sa.func.now(),
+                )
+            )
+        ).all()
+
+        assert not passees, (
+            "des demandes attendent une décision sur une heure dépassée, "
+            f"que le produit refusera : {[(n, str(q)) for n, q in passees]}"
+        )
+
+
+async def test_le_jeu_pose_des_favoris_dont_un_hors_palier(seed_conn: AsyncConnection) -> None:
+    """**La liste des favoris montrait son état vide.** Ce qu'elle doit montrer
+    est ce qui appelle une conduite : la prestation gardée qui n'est plus à
+    portée, avec le palier qui la rouvrirait.
+
+    L'irréservable est produit en **retirant l'offre**, jamais en posant un
+    état : c'est le mécanisme du produit qui le fabrique.
+    """
+    from app.models import CreatorFavorite
+    from app.services import favorites as favorites_service
+
+    factory = async_sessionmaker(bind=seed_conn, expire_on_commit=False)
+    async with factory() as session:
+        proprietaires = list(
+            await session.scalars(sa.select(sa.distinct(CreatorFavorite.creator_id)))
+        )
+        assert len(proprietaires) >= 2, "les favoris n'appartiennent qu'à une créatrice"
+
+        etats: set = set()
+        for createur_id in proprietaires:
+            for favori in await favorites_service.lister(session, creator_id=createur_id):
+                etats.add(favori.etat)
+
+        assert favorites_service.EtatDuFavori.RESERVABLE in etats, "aucun favori réservable"
+        # **Gardée et plus réservable**, sous l'une des deux formes que le jeu
+        # sait produire : le salon l'a fermée, ou elle est passée hors du palier.
+        # Les deux appellent deux conduites — attendre la réouverture, ou monter
+        # d'un palier — et c'est cette distinction que la liste doit montrer.
+        # Exiger `hors_palier` seul aurait fait passer un jeu qui n'en produit
+        # aucun des deux le jour où le décor change de salon.
+        plus_reservable = {
+            favorites_service.EtatDuFavori.FERMEE,
+            favorites_service.EtatDuFavori.HORS_PALIER,
+        }
+        assert etats & plus_reservable, f"aucun favori devenu irréservable : {etats}"
+
+
+async def test_la_tournee_porte_les_quatre_stades_et_les_deux_voies(
+    seed_conn: AsyncConnection,
+) -> None:
+    """**L'écran de la fondatrice était vide**, faute de `HANDOVER_BASE_URL`.
+
+    Les quatre stades appellent quatre conduites — revisiter, relancer, rien, et
+    la visite qui a abouti. Et les **deux voies** doivent exister ensemble : un
+    taux d'activation par voie ne compare deux méthodes que si les deux sont là,
+    sinon il compare une méthode à rien.
+    """
+    from app.core.config import get_settings
+    from app.models import BusinessHandover
+
+    if get_settings().handover_base_url is None:
+        pytest.skip("HANDOVER_BASE_URL absente : le jeu n'a pas pu poser de fiche")
+
+    factory = async_sessionmaker(bind=seed_conn, expire_on_commit=False)
+    async with factory() as session:
+        lignes = (
+            await session.execute(
+                sa.select(
+                    BusinessHandover.channel,
+                    BusinessHandover.opened_at,
+                    BusinessHandover.used_at,
+                    BusinessHandover.blocked_at,
+                )
+            )
+        ).all()
+        assert lignes, "aucune fiche de terrain"
+
+        def stade(ouverte, utilisee, bloquee) -> str:
+            if utilisee:
+                return "activee"
+            if bloquee:
+                return "bloquee"
+            return "ouverte" if ouverte else "preparee"
+
+        stades = {stade(o, u, b) for _, o, u, b in lignes}
+        assert stades == {"preparee", "ouverte", "bloquee", "activee"}, stades
+        assert len({canal for canal, *_ in lignes}) == 2, "une seule voie de remise"

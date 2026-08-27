@@ -96,3 +96,9 @@ services:
       # explicitement. Sans elle, la commande refuse de tourner ici.
       - key: SEED_DATABASE_NAME
         sync: false
+
+      # L'adresse publique où s'ouvre un lien de prise en main. Sans elle,
+      # `emettre` refuse — un lien sans adresse ne mène nulle part — et l'écran
+      # de tournée reste vide, ce qui a été le cas jusqu'ici.
+      - key: HANDOVER_BASE_URL
+        sync: false

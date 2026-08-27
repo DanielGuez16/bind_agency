@@ -222,10 +222,16 @@ function CoeurDeLaCarte({
   return (
     <Pressable
       testID={testID}
-      accessibilityRole="button"
-      // L'état, pas seulement l'action : une lecture d'écran doit pouvoir dire
-      // si la prestation est gardée en ce moment.
-      accessibilityState={{ selected: actif }}
+      // **`switch` et `checked`, comme le `Toggle` du dépôt.** L'intention
+      // était juste — « l'état, pas seulement l'action » — mais le couple
+      // choisi ne la tenait pas : `selected` sur un `button` ne produit aucun
+      // attribut que React Native Web sache rendre, donc l'état n'était annoncé
+      // nulle part. Un cœur est un interrupteur ; il en a le rôle et l'état.
+      accessibilityRole="switch"
+      // `aria-checked` pour le web — la seule que cette version de React Native
+      // Web lise — et `accessibilityState` pour le natif, qui ne connaît qu'elle.
+      aria-checked={actif}
+      accessibilityState={{ checked: actif }}
       accessibilityLabel={t(actif ? 'parcours.filRetirerDesFavoris' : 'parcours.filMettreEnFavori')}
       onPress={onPress}
       hitSlop={6}

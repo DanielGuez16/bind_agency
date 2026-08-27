@@ -103,6 +103,8 @@ class ResumeDemo:
     createurs: int
     reservations: int
     contreparties: int
+    favoris: int
+    fiches: int
     jobs: int
     photos: "ResumePhotos"
     plans: int
@@ -570,6 +572,12 @@ async def creer_les_createurs(session: AsyncSession) -> dict[str, tuple[User, So
 async def marquer_les_etats_de_compte(session: AsyncSession, createurs: dict) -> None:
     """Les deux états qu'aucun service ne sait produire à la demande.
 
+    **Appelée après les parcours.** Elle l'était avant, et Nina ne pouvait alors
+    rien réserver : son compte était déjà expiré au moment où le jeu composait
+    l'historique. Son écran de paliers montrait donc un obstacle — jeton mort,
+    relevé vieux de trois semaines — sur une créatrice qui n'avait jamais rien
+    fait, ce qui ne se lit pas. Un compte se dégrade après avoir vécu.
+
     `needs_review` est normalement prononcé par le contrôle de cohérence quand
     un signal manque, et il l'est effectivement pour `sofia` — on le vérifie
     plutôt que de le poser. L'expiration du jeton, elle, se constate : le
@@ -677,6 +685,39 @@ async def _accepter_si_besoin(session, booking, *, membre_id) -> None:
         user_id=membre_id,
         accepte=True,
     )
+
+
+async def _deplacer_le_creneau(session: AsyncSession, booking: Booking, vers: datetime) -> None:
+    """Repose une réservation menée à son terme sur une heure déjà passée.
+
+    **La seule façon de fabriquer une journée qui a eu lieu.** Le produit refuse
+    d'accorder une demande dont l'heure est dépassée — `trancher` lève
+    `CreneauDepasse` — et c'est une garde qu'on ne contourne pas. Une
+    réservation posée directement sur un créneau du matin restait donc « en
+    attente » chez tout salon qui valide : la journée montrait dix-neuf lignes
+    à trancher dont aucune ne se tranchait.
+
+    Le parcours est donc mené **sur un créneau à venir**, par les services et
+    dans l'ordre — confirmer, accorder, marquer le code, consommer — puis la
+    ligne est reposée sur l'heure qu'elle aurait dû avoir. Ce qui bouge est
+    l'horodatage, jamais un statut : l'état obtenu est celui que le produit a
+    fabriqué, et il l'a fabriqué à l'endroit où le produit l'autorise.
+
+    Sœur de `_reculer`, qui vieillit la création. Celle-ci déplace le rendez-vous.
+    """
+    if booking.starts_at is None:
+        return
+    # **Les deux bornes, du même écart.** `ck_booking_ends_at_follows_duration`
+    # lie la fin au début et à la durée de la prestation : déplacer le seul
+    # début fait une réservation de sept heures, et la base la refuse — ce qui
+    # est exactement ce qu'on attend d'une contrainte.
+    ecart = vers - booking.starts_at
+    await session.execute(
+        sa.update(Booking)
+        .where(Booking.id == booking.id)
+        .values(starts_at=vers, ends_at=booking.ends_at + ecart)
+    )
+    await session.refresh(booking)
 
 
 async def _reculer(session: AsyncSession, booking: Booking, de: timedelta) -> None:
@@ -902,9 +943,15 @@ async def composer_les_parcours(session: AsyncSession, createurs: dict) -> tuple
     # Le score final est le même — il se recalcule sur tous les événements — et
     # c'est bien le produit qui a tranché, pas le semis qui l'a contourné.
     issues = (
-        # Le trimestre écoulé : de quoi remplir la série hebdomadaire.
+        # **Le trimestre écoulé, en courbe plutôt qu'en plateau.** Un parcours
+        # par semaine donnait une série de 1 : les rapports montraient douze
+        # barres identiques, ce qui ne dit rien d'une progression. Le volume
+        # monte donc — un ou deux au début, trois à quatre récemment — et il
+        # monte **pour de vrai** : ce sont des parcours réellement menés, pas un
+        # chiffre posé sur une courbe.
         ("approuvee", timedelta(weeks=11, days=2), "confirmee", OCEAN),
         ("approuvee", timedelta(weeks=10), "confirmee", WYNWOOD),
+        ("approuvee", timedelta(weeks=10, days=4), "confirmee", BRICKELL),
         ("approuvee", timedelta(weeks=9, days=1), "confirmee", BRICKELL),
         # Des réussites pour « plafonnée » **avant** ses issues dégradées.
         # Sans elles, son score touchait le plancher — zéro sur cent — et la
@@ -926,9 +973,21 @@ async def composer_les_parcours(session: AsyncSession, createurs: dict) -> tuple
         ("approuvee", timedelta(weeks=3), "confirmee", BRICKELL),
         ("deuxieme_tentative", timedelta(weeks=2, days=1), "plafonnee", OCEAN),
         ("non_honoree", timedelta(weeks=6, days=2), "plafonnee", BRICKELL),
+        # Les trois dernières semaines montent : c'est la pente que les
+        # rapports doivent montrer.
+        ("approuvee", timedelta(weeks=2, days=5), "confirmee", WYNWOOD),
+        ("approuvee", timedelta(weeks=2, days=2), "confirmee", OCEAN),
+        ("approuvee", timedelta(weeks=1, days=5), "confirmee", OCEAN),
+        ("approuvee", timedelta(weeks=1, days=4), "confirmee", BRICKELL),
+        ("approuvee", timedelta(weeks=1), "confirmee", WYNWOOD),
         # La semaine en cours, celle qu'on regarde pendant la démonstration.
+        # **Les quatre stades y sont tous**, et récents : l'arbitrage le plus
+        # frais datait de neuf jours, ce qui se lit comme une file abandonnée.
         ("approuvee", timedelta(days=6), "confirmee", WYNWOOD),
+        ("approuvee", timedelta(days=5), "confirmee", BRICKELL),
         ("approuvee", timedelta(days=4), "confirmee", OCEAN),
+        ("revue_humaine", timedelta(days=2), "plafonnee", OCEAN),
+        ("deuxieme_tentative", timedelta(days=3), "confirmee", WYNWOOD),
         ("attendue", timedelta(days=1), "confirmee", BRICKELL),
         ("soumise", timedelta(hours=6), "confirmee", WYNWOOD),
         # **Une preuve à contrôler chez OCEAN, et c'est le point.** Il n'y en
@@ -939,6 +998,17 @@ async def composer_les_parcours(session: AsyncSession, createurs: dict) -> tuple
         # l'abonnement pris par rang : le jeu de données place ailleurs l'état
         # que l'écran de démonstration doit montrer.
         ("soumise", timedelta(hours=3), "confirmee", OCEAN),
+        # **Une histoire pour celles dont l'obstacle doit se lire.** Nina a un
+        # jeton mort et un relevé de trois semaines ; sans passé, son écran de
+        # paliers montrait un refus sur une créatrice qui n'avait jamais rien
+        # fait — un obstacle sans histoire ne s'explique pas. Deux
+        # collaborations tenues, avant que son compte se dégrade : c'est la
+        # chronologie réelle, et `marquer_les_etats_de_compte` passe après.
+        ("approuvee", timedelta(weeks=6), "expiree", WYNWOOD),
+        ("approuvee", timedelta(weeks=4, days=2), "expiree", OCEAN),
+        # Sofia est en revue de cohérence, pas en faute : une collaboration
+        # tenue le dit mieux qu'un écran vide.
+        ("approuvee", timedelta(weeks=5, days=4), "en_controle", BRICKELL),
     )
     for issue, age, qui, commerce in issues:
         createur, compte = createurs[qui]
@@ -995,54 +1065,62 @@ async def composer_les_parcours(session: AsyncSession, createurs: dict) -> tuple
         reservations += 1
 
     # --- une journée qui existe, dans chaque salon ------------------------
-    reservations += await _une_reservation_aujourd_hui(
+    reservations += await _la_journee_de_chaque_salon(
         session,
-        createur=confirmee,
-        compte=compte_confirmee,
+        createurs=createurs,
         confirmer=confirmer_jusqu_au_bout,
+        caissier_de=caissier_de,
     )
 
     await session.flush()
     return reservations, contreparties
 
 
-async def _une_reservation_aujourd_hui(
+async def _la_journee_de_chaque_salon(
     session: AsyncSession,
     *,
-    createur: User,
-    compte: SocialAccount,
+    createurs: dict,
     confirmer,
+    caissier_de,
 ) -> int:
-    """Au moins une réservation confirmée aujourd'hui, dans **chaque** salon actif.
+    """Une journée qui se raconte, dans **chaque** salon actif.
 
-    Sans elle, l'écran « Aujourd'hui » du commerce disait « rien de réservé »
-    sur un jeu de données fraîchement semé — ce qui était exact et inutilisable.
-    Les réservations tombaient sur le premier créneau libre à partir de
-    maintenant, donc presque toujours demain, et toutes sur le même salon :
-    `offre_pour` n'en rendait qu'une seule, la mieux classée. Trois salons sur
-    quatre n'avaient jamais eu la moindre ligne.
+    **Ce que remplaçait une seule ligne.** L'écran « Aujourd'hui » montrait une
+    réservation par salon : exact, et illisible comme démonstration — on n'y
+    voit ni ce qui vient d'arriver, ni ce qui reste à trancher, ni ce qui est
+    déjà fait. Une journée de salon n'est pas une ligne.
 
-    La conséquence dépassait l'affichage : la caisse ne s'atteignait que depuis
-    une ligne de la journée, et un écran vide la rendait inaccessible. Aucun
-    code ne pouvait être validé, la boucle du produit ne se fermait jamais.
+    **Ce qu'elle contient maintenant**, dans l'ordre des créneaux réels du jour :
 
-    **Le créneau vient de la disponibilité réelle, jamais posé, et toujours du
-    jour courant.** Il tombait au lendemain quand la journée était finie : semé
-    à 22 h, dix-neuf réservations sur vingt partaient demain, et l'écran
-    « Aujourd'hui » — le premier qu'on ouvre en démonstration — était vide à
-    l'heure où on le montre.
+    - les créneaux **déjà passés** portent ce qui a eu lieu — des prestations
+      consommées au comptoir, et une annulation ;
+    - les créneaux **à venir** portent ce qui attend — des confirmées, et chez
+      un salon qui valide, des demandes **à trancher**.
 
-    Quand la journée est derrière nous, la réservation se pose sur un créneau
-    **déjà passé du même jour**. Ce n'est pas un artifice : c'est ce qu'une
-    journée de salon contient à 22 h. Chez un salon qui valide, elle y reste en
-    attente — une heure dépassée ne s'accepte pas, et cette garde-là ne se
-    contourne pas pour faire joli.
+    **Les décisions se posent sur l'avenir, jamais sur le passé.** Une demande
+    dont l'heure est dépassée ne s'accepte pas — `trancher` lève
+    `CreneauDepasse`, et c'est une garde du produit. Semé à 22 h, l'ancien jeu
+    posait ses demandes derrière nous : elles s'affichaient « à trancher » et
+    aucun bouton ne fonctionnait. La journée montrait un écran sur lequel on ne
+    peut rien faire, ce qui est pire qu'un écran vide.
+
+    **Le salon d'ouverture est plus fourni que les autres.** C'est celui qu'on
+    montre ; les trois autres portent de quoi ne pas être vides, sans faire
+    croire que tous les salons de Miami sont pleins.
+
+    **Les créneaux viennent de la disponibilité, jamais posés.** Le nombre de
+    lignes s'adapte donc à ce que le salon ouvre vraiment : un salon qui ferme
+    tôt en porte moins, et c'est vrai.
     """
     posees = 0
-    passees = 0
+    maintenant = datetime.now(UTC)
 
     actifs = (
-        await session.scalars(sa.select(Business).where(Business.status == BusinessStatus.ACTIVE))
+        await session.scalars(
+            sa.select(Business)
+            .where(Business.status == BusinessStatus.ACTIVE)
+            .order_by(Business.name)
+        )
     ).all()
 
     for business in actifs:
@@ -1063,16 +1141,131 @@ async def _une_reservation_aujourd_hui(
         if offre is None:
             continue
 
-        choix = await prochain_creneau_reservable(
-            session, business, offre.catalog_item_id, maintenant=datetime.now(UTC)
+        fuseau = ZoneInfo(business.timezone)
+        debut_du_jour = datetime.combine(
+            maintenant.astimezone(fuseau).date(), time.min, tzinfo=fuseau
         )
-        if choix is None:
+        creneaux = [
+            c.starts_at
+            for c in await availability_service.creneaux_libres(
+                session,
+                business_id=business.id,
+                catalog_item_id=offre.catalog_item_id,
+                depuis=debut_du_jour,
+                horizon=timedelta(days=1),
+            )
+        ]
+        if not creneaux:
             print(f"  aucun créneau aujourd'hui chez {business.name} : ses horaires font foi")
             continue
 
-        creneau, _ = choix
-        depassee = creneau < datetime.now(UTC)
+        passes = [c for c in creneaux if c < maintenant]
+        a_venir = [c for c in creneaux if c >= maintenant]
+        if not passes and not a_venir:
+            print(f"  aucun créneau aujourd'hui chez {business.name}")
+            continue
 
+        # Le salon d'ouverture porte la journée qu'on montre ; les autres, de
+        # quoi ne pas être vides. `ampleur` s'applique aux deux moitiés.
+        ampleur = 4 if business.name == OCEAN else 1
+
+        # **Le passé, étalé plutôt que groupé.** Prendre les premiers créneaux
+        # mettrait tout à l'ouverture ; on prélève à intervalle régulier pour
+        # que la journée se lise comme une journée.
+        def _repartir(source: list[datetime], combien: int) -> list[datetime]:
+            if not source or combien <= 0:
+                return []
+            combien = min(combien, len(source))
+            pas = max(1, len(source) // combien)
+            return source[::pas][:combien]
+
+        # **Les deux moitiés se servent dans les créneaux à venir.** Ce qui a
+        # « déjà eu lieu » est mené devant nous puis reposé sur une heure du
+        # matin : le produit refuse d'accorder une heure dépassée, et c'est
+        # cette garde qui laissait la journée pleine de demandes intranchables.
+        # **Ce qui a déjà eu lieu se mène sur les créneaux de demain.**
+        #
+        # Les mener sur ceux d'aujourd'hui liait la journée à l'heure du semis :
+        # semé à 18 h il ne restait que trois créneaux, les trois partaient en
+        # « déjà eu lieu », et l'écran n'avait plus rien à trancher. Semé à 9 h
+        # l'inverse. Une démonstration ne peut pas dépendre de l'heure à
+        # laquelle on la prépare.
+        #
+        # Demain a toujours une journée entière. Les lignes y sont menées à leur
+        # terme puis reposées sur les heures d'aujourd'hui — voir
+        # `_deplacer_le_creneau`, et la garde qu'il contourne sans la casser.
+        demain = debut_du_jour + timedelta(days=1)
+        creneaux_de_demain = [
+            c.starts_at
+            for c in await availability_service.creneaux_libres(
+                session,
+                business_id=business.id,
+                catalog_item_id=offre.catalog_item_id,
+                depuis=demain,
+                horizon=timedelta(days=1),
+            )
+        ]
+        heures_passees = _repartir(passes, ampleur)
+        menes_sur = _repartir(creneaux_de_demain, len(heures_passees))
+
+        # **Ce qui attend se prend sur demain quand aujourd'hui est fini.** La
+        # file « à trancher » de la journée porte les décisions **toutes dates
+        # confondues** — une demande pour demain s'y lit et s'y tranche. Sans ce
+        # repli, un jeu semé après la fermeture n'avait aucune décision à rendre,
+        # et l'écran perdait ce qui fait sa raison d'être. Les créneaux de demain
+        # servent après ceux qu'on a déjà pris pour le passé.
+        restants = [c for c in creneaux_de_demain if c not in menes_sur]
+        attendues = _repartir(a_venir, ampleur) or _repartir(restants, ampleur)
+
+        posees += await _poser_ce_qui_a_eu_lieu(
+            session,
+            business=business,
+            offre=offre,
+            menes_sur=menes_sur,
+            reposes_sur=heures_passees,
+            createurs=createurs,
+            confirmer=confirmer,
+            caissier_de=caissier_de,
+        )
+        posees += await _poser_les_a_venir(
+            session,
+            business=business,
+            offre=offre,
+            creneaux=attendues,
+            createurs=createurs,
+            confirmer=confirmer,
+        )
+
+    return posees
+
+
+async def _poser_ce_qui_a_eu_lieu(
+    session: AsyncSession,
+    *,
+    business: Business,
+    offre: TierOffer,
+    menes_sur: list[datetime],
+    reposes_sur: list[datetime],
+    createurs: dict,
+    confirmer,
+    caissier_de,
+) -> int:
+    """Ce que la journée a déjà vu : des prestations servies, et une annulation.
+
+    La consommation passe par le comptoir — code marqué, puis `consommer` —,
+    donc chaque ligne ouvre une contrepartie réelle. C'est ce qui alimente
+    l'onglet des publications sans rien y poser à la main.
+
+    **Menée sur un créneau à venir, puis reposée sur l'heure qu'elle aurait
+    eue.** Voir `_deplacer_le_creneau` : le produit refuse d'accorder une heure
+    dépassée, donc une ligne posée directement dans le matin resterait « à
+    trancher » et ne se trancherait pas.
+    """
+    posees = 0
+    roulement = [createurs["confirmee"], createurs["plafonnee"]]
+
+    for rang, creneau in enumerate(menes_sur):
+        createur, compte = roulement[rang % len(roulement)]
         try:
             booking = await booking_service.creer(
                 session,
@@ -1084,29 +1277,75 @@ async def _une_reservation_aujourd_hui(
                 ),
             )
         except booking_service.BookingError as erreur:
-            print(f"  journée du jour écartée chez {business.name} ({type(erreur).__name__})")
+            print(f"  journée écartée chez {business.name} ({type(erreur).__name__})")
             continue
 
         await confirmer(booking, createur.id)
         posees += 1
-        if depassee:
-            # **L'accord du commerce n'a pas pu passer, et c'est voulu.** Une
-            # heure dépassée ne s'accepte pas : `trancher` lève, et `confirmer`
-            # l'a laissée en attente chez les salons qui valident. La ligne est
-            # dans la journée, dans un état que le produit fabrique vraiment.
-            passees += 1
-            quand = creneau.astimezone(ZoneInfo(business.timezone))
-            print(
-                f"  journée déjà finie chez {business.name} : "
-                f"réservation posée à {quand:%H:%M}, plus tôt aujourd'hui"
-            )
 
-    if passees:
-        print(
-            f"  {passees} réservation(s) posée(s) dans le passé du jour : semé après la "
-            "fermeture. Elles sont dans la journée courante, et celles des salons qui "
-            "valident y restent en attente — une heure dépassée ne s'accepte pas."
-        )
+        # **La dernière du matin est annulée**, et une seule : une journée sans
+        # aucune annulation ne montre pas comment elle se lit, deux de suite
+        # feraient croire à un salon qu'on fuit.
+        if rang == len(menes_sur) - 1 and len(menes_sur) > 1:
+            await booking_states.annuler(session, booking=booking, creator_id=createur.id)
+        else:
+            code = await redemption_service.code_du_booking(session, booking=booking)
+            caissier = await caissier_de(business.id)
+            if code is not None:
+                await redemption_service.marquer_consomme(
+                    session, redemption_code_id=code.id, par_user_id=caissier.user_id
+                )
+                await booking_states.consommer(session, booking=booking, actor=caissier)
+
+        await _deplacer_le_creneau(session, booking, vers=reposes_sur[rang])
+
+    return posees
+
+
+async def _poser_les_a_venir(
+    session: AsyncSession,
+    *,
+    business: Business,
+    offre: TierOffer,
+    creneaux: list[datetime],
+    createurs: dict,
+    confirmer,
+) -> int:
+    """Ce qui attend : des confirmées, et chez un salon qui valide, des
+    décisions à rendre.
+
+    **Sur des créneaux à venir, et c'est tout le point.** Une demande dont
+    l'heure est passée s'affiche « à trancher » et refuse les deux boutons ;
+    posée devant nous, elle se tranche vraiment pendant la démonstration.
+    """
+    posees = 0
+    roulement = [createurs["confirmee"], createurs["plafonnee"]]
+
+    for rang, creneau in enumerate(creneaux):
+        createur, compte = roulement[rang % len(roulement)]
+        try:
+            booking = await booking_service.creer(
+                session,
+                creator_id=createur.id,
+                demande=booking_service.DemandeDeReservation(
+                    tier_offer_id=offre.id,
+                    social_account_id=compte.id,
+                    starts_at=creneau,
+                ),
+            )
+        except booking_service.BookingError as erreur:
+            print(f"  créneau à venir écarté chez {business.name} ({type(erreur).__name__})")
+            continue
+
+        # **La première reste à trancher chez un salon qui valide.** On confirme
+        # côté créatrice — ce qui la met en attente du commerce — et on n'accorde
+        # pas. Chez un salon sans validation, la même confirmation la place
+        # directement en `confirmed` : c'est le produit qui décide, pas le semis.
+        if rang == 0 and business.requires_booking_approval:
+            await booking_states.confirmer(session, booking=booking, creator_id=createur.id)
+        else:
+            await confirmer(booking, createur.id)
+        posees += 1
 
     return posees
 
@@ -1336,6 +1575,185 @@ async def recalculer_les_scores(session: AsyncSession, createurs: dict) -> None:
         )
 
 
+async def poser_les_favoris(session: AsyncSession, createurs: dict) -> int:
+    """Des cœurs posés, dont un devenu irréservable.
+
+    **Une liste de favoris vide ne montre pas l'écran**, elle montre son état
+    vide — qui existe déjà ailleurs dans le jeu. Ce que la liste doit montrer,
+    ce sont ses quatre états et surtout celui qui appelle une conduite : la
+    prestation gardée qui n'est plus à portée.
+
+    **L'irréservable s'obtient en retirant l'offre**, pas en posant un état. Le
+    salon ferme le palier par lequel la prestation était ouverte ; le favori
+    reste, et l'écran le rend `hors_palier` avec le palier qui le rouvrirait.
+    C'est le mécanisme du produit qui produit l'état, comme partout ailleurs.
+
+    Deux créatrices, parce qu'une liste qui n'appartient qu'à une seule ne dit
+    pas si l'écran lit bien celle qui regarde.
+    """
+    from app.services import favorites as favorites_service
+
+    confirmee, _ = createurs["confirmee"]
+    plafonnee, _ = createurs["plafonnee"]
+
+    async def articles_de(nom_du_salon: str, combien: int) -> list[CatalogItem]:
+        return list(
+            await session.scalars(
+                sa.select(CatalogItem)
+                .join(Business, Business.id == CatalogItem.business_id)
+                .join(TierOffer, TierOffer.catalog_item_id == CatalogItem.id)
+                .where(
+                    Business.name == nom_du_salon,
+                    CatalogItem.is_available.is_(True),
+                    CatalogItem.archived_at.is_(None),
+                    TierOffer.is_active.is_(True),
+                )
+                .order_by(CatalogItem.created_at)
+                .distinct()
+                .limit(combien)
+            )
+        )
+
+    poses = 0
+    for salon, combien, qui in (
+        (OCEAN, 2, confirmee),
+        (BRICKELL, 1, confirmee),
+        (WYNWOOD, 1, plafonnee),
+    ):
+        for article in await articles_de(salon, combien):
+            await favorites_service.ajouter(session, creator_id=qui.id, catalog_item_id=article.id)
+            poses += 1
+
+    # **Celui qui n'est plus à portée.** Le salon retire l'offre du palier par
+    # lequel l'article était ouvert : c'est un geste que le produit permet, et
+    # c'est lui qui produit l'état — jamais une valeur posée sur le favori.
+    #
+    # **L'état obtenu est `fermee`, pas `hors_palier`**, et la nuance compte :
+    # retirer toutes les offres d'un article, c'est le salon qui le ferme, et
+    # `_etat` le dit dans cet ordre-là. `hors_palier` demanderait un article
+    # encore offert, à un palier que la créatrice n'atteint pas — le jeu en
+    # produit par ailleurs, chez les salons qui ne composent qu'en haut.
+    #
+    # Les deux disent « gardée, plus réservable » et appellent deux conduites
+    # différentes : attendre la réouverture, ou monter d'un palier. C'est ce que
+    # la liste doit montrer, et elle montre les deux.
+    a_fermer = (await articles_de(WYNWOOD, 2))[-1:]
+    for article in a_fermer:
+        await favorites_service.ajouter(
+            session, creator_id=confirmee.id, catalog_item_id=article.id
+        )
+        poses += 1
+        await session.execute(
+            sa.update(TierOffer)
+            .where(TierOffer.catalog_item_id == article.id)
+            .values(is_active=False)
+        )
+        print(f"  favori devenu irréservable : « {article.name} », offre retirée par le salon")
+
+    await session.flush()
+    return poses
+
+
+async def poser_les_fiches_de_terrain(session: AsyncSession) -> int:
+    """Des fiches à tous les stades, et les deux voies de remise.
+
+    **C'est l'écran de la fondatrice**, celui qu'elle ouvre après une tournée.
+    Il était vide : aucune fiche, donc aucun des quatre états, et surtout aucune
+    comparaison entre les deux méthodes de remise.
+
+    Les quatre stades, et ce que chacun demande comme geste :
+
+    - **préparée, jamais ouverte** — le lien n'a pas été suivi. Revisiter ;
+    - **ouverte, non activée** — le salon a regardé et n'a pas franchi le pas.
+      Relancer, et c'est l'état qui coûte le plus cher à ignorer ;
+    - **bloquée** — quelqu'un a buté sur l'engagement. Rien à relancer ;
+    - **activée** — le salon a son compte, la visite a abouti.
+
+    **Les deux canaux, pour que l'écart se voie.** Le QR se scanne devant le
+    décideur présent ; le lien par courriel part quand le propriétaire n'est pas
+    là. Un taux d'activation par voie ne compare deux méthodes que si les deux
+    existent — sinon il compare une méthode à rien.
+
+    Tout passe par les services : préparer, émettre, ouvrir, bloquer, prendre en
+    main. Poser les colonnes à la main sauterait précisément la mécanique que
+    cet écran sert à surveiller.
+    """
+    from app.core.config import get_settings
+    from app.integrations.geocoding import ManualGeocoder
+    from app.models import BusinessHandover
+    from app.models.enums import HandoverChannel
+    from app.schemas.business import BusinessCreate, CoordinatesPayload
+    from app.services import handover as handover_service
+
+    if get_settings().handover_base_url is None:
+        # **Elle n'a jamais été posée, et c'est pourquoi cet écran était vide.**
+        # Le lien de prise en main a besoin d'une adresse publique ; sans elle,
+        # `emettre` refuse — à juste titre, un lien sans adresse ne mène nulle
+        # part. Le semis le dit et continue plutôt que de tomber : le reste du
+        # jeu ne dépend pas de cette variable.
+        print(
+            "  HANDOVER_BASE_URL absente : aucune fiche de terrain. "
+            "L'écran de tournée restera vide — voir .env.example."
+        )
+        return 0
+
+    admin = await session.scalar(sa.select(User).where(User.role == UserRole.ADMIN).limit(1))
+    if admin is None:
+        print("  aucun administrateur : pas de fiche de terrain")
+        return 0
+
+    fiches = (
+        ("Sunset Nails Bar", HandoverChannel.QR, "preparee", None),
+        ("Little Havana Barbers", HandoverChannel.EMAIL, "ouverte", "hola@havana.example"),
+        ("Coral Way Massage", HandoverChannel.EMAIL, "bloquee", "info@coralway.example"),
+        ("Design District Spa", HandoverChannel.QR, "activee", None),
+    )
+
+    posees = 0
+    for rang, (nom, canal, stade, destination) in enumerate(fiches):
+        fiche = await handover_service.preparer_la_fiche(
+            session,
+            payload=BusinessCreate(
+                name=nom,
+                category=BusinessCategory.BEAUTY,
+                currency="USD",
+                address=f"{700 + rang * 11} Coral Way, Miami FL",
+                coordinates=CoordinatesPayload(longitude=-80.24 + rang / 100, latitude=25.75),
+                timezone="America/New_York",
+            ),
+            prepare_par=admin,
+            geocoder=ManualGeocoder(),
+        )
+        lien = await handover_service.emettre(
+            session, business=fiche, emis_par=admin, canal=canal, destination=destination
+        )
+        posees += 1
+        remise = await session.get(BusinessHandover, lien.handover_id)
+        assert remise is not None
+
+        if stade == "preparee":
+            continue
+
+        await handover_service.marquer_ouvert(session, handover=remise)
+        if stade == "ouverte":
+            continue
+
+        if stade == "bloquee":
+            await handover_service.marquer_bloque(session, handover=remise)
+            continue
+
+        await handover_service.prendre_en_main(
+            session,
+            handover=remise,
+            email=f"terrain{rang}@bind.example",
+            password=MOT_DE_PASSE,
+            terms_version=get_settings().terms_version,
+        )
+
+    await session.flush()
+    return posees
+
+
 async def poser_les_jobs(session: AsyncSession) -> int:
     """Des jobs, dont un épuisé, pour que le back office ne soit pas vide.
 
@@ -1518,11 +1936,18 @@ async def enrichir(session: AsyncSession) -> ResumeDemo:
     plans = await poser_les_plans(session)
 
     createurs = await creer_les_createurs(session)
-    await marquer_les_etats_de_compte(session, createurs)
 
     reservations, contreparties = await composer_les_parcours(session, createurs)
+    # **Après les parcours, et c'est la chronologie réelle.** Nina a eu un compte
+    # qui marchait avant que son jeton meure ; l'ordre inverse lui interdisait de
+    # réserver quoi que ce soit, et son écran de paliers montrait une créatrice
+    # sans aucune histoire — un obstacle sans passé ne s'explique pas. La
+    # dégradation se constate donc sur un compte qui a vécu.
+    await marquer_les_etats_de_compte(session, createurs)
     await recalculer_les_scores(session, createurs)
     await vieillir_un_releve(session, createurs)
+    favoris = await poser_les_favoris(session, createurs)
+    fiches = await poser_les_fiches_de_terrain(session)
     jobs = await poser_les_jobs(session)
     abonnements = await abonner_les_commerces(session)
 
@@ -1530,6 +1955,8 @@ async def enrichir(session: AsyncSession) -> ResumeDemo:
         createurs=len(createurs),
         reservations=reservations,
         contreparties=contreparties,
+        favoris=favoris,
+        fiches=fiches,
         jobs=jobs,
         photos=photos,
         plans=plans,

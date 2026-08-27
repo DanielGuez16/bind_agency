@@ -132,6 +132,8 @@ class Resume:
     createurs: int
     reservations: int
     contreparties: int
+    favoris: int
+    fiches: int
     jobs: int
     photos: ResumePhotos
     plans: int
@@ -1117,6 +1119,8 @@ async def populate() -> Resume:
             createurs=demo.createurs,
             reservations=demo.reservations,
             contreparties=demo.contreparties,
+            favoris=demo.favoris,
+            fiches=demo.fiches,
             jobs=demo.jobs,
             photos=demo.photos,
             plans=demo.plans,
@@ -1247,7 +1251,8 @@ def main() -> int:
         f"{resume.commerces} commerces, {resume.items} items, {resume.plages} plages, "
         f"{resume.exceptions} exceptions, {resume.offres} offres, "
         f"{resume.createurs} créateurs, {resume.reservations} réservations, "
-        f"{resume.contreparties} contreparties, {resume.jobs} jobs, "
+        f"{resume.contreparties} contreparties, {resume.favoris} favoris, "
+        f"{resume.fiches} fiches de terrain, {resume.jobs} jobs, "
         f"{resume.photos.total} photos, {resume.plans} plans, {resume.abonnements} abonnements."
     )
     print(f"Mot de passe de tous les comptes : {MOT_DE_PASSE}")
