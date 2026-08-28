@@ -260,9 +260,9 @@ describe('la journée, après la campagne 2', () => {
     // avant.
     await monter(JOURNEE_COMPLETE);
     await waitFor(() => expect(screen.getByTestId('demande-b-3')).toBeTruthy());
-    // `b-4` est une ligne finie, et les finies sont repliées depuis le
-    // troisième retour sur cet écran.
-    await fireEvent.press(screen.getByTestId('section-finies-entete'));
+    // `b-4` est une ligne finie, et le clos a quitté l'écran à la cinquième
+    // reprise : il s'ouvre depuis le compte de l'en-tête.
+    await fireEvent.press(screen.getByTestId('compte-des-finies'));
 
     const aplati = (style: unknown): Record<string, unknown> =>
       Array.isArray(style)
@@ -291,9 +291,10 @@ describe('la journée, après la campagne 2', () => {
     // Une place déjà servie n'appelle plus rien du comptoir. Un bloc vide
     // laisse chercher le bouton qu'on croit avoir manqué.
     await monter(JOURNEE_COMPLETE);
-    // Les lignes finies sont repliées depuis le troisième retour sur cet écran.
-    await waitFor(() => expect(screen.getByTestId('section-finies-entete')).toBeTruthy());
-    await fireEvent.press(screen.getByTestId('section-finies-entete'));
+    // Les lignes finies ont quitté l'écran à la cinquième reprise : elles
+    // s'ouvrent depuis le compte de l'en-tête.
+    await waitFor(() => expect(screen.getByTestId('compte-des-finies')).toBeTruthy());
+    await fireEvent.press(screen.getByTestId('compte-des-finies'));
     await waitFor(() => expect(screen.getByTestId('ligne-b-4')).toBeTruthy());
 
     await fireEvent.press(screen.getByTestId('ligne-b-4'));

@@ -159,8 +159,18 @@ export function surfaceDe(
   return verbeDeLaContrepartie(reservation) === 'corriger' ? 'reprise' : 'demande';
 }
 
-/** Les trois onglets, et les statuts que chacun couvre. */
+/**
+ * Les trois onglets, et les statuts que chacun couvre.
+ *
+ * **L'ordre est celui de ce qu'on doit faire, pas celui du cycle de vie.** Une
+ * prestation consommée dont la contrepartie n'est pas envoyée est la seule
+ * chose de cet écran qui court contre une échéance ; elle passe donc devant un
+ * rendez-vous de la semaine prochaine, qui n'attend rien de personne. Le cycle
+ * de vie mettait « à venir » en tête parce que c'est le début de l'histoire —
+ * une raison de modèle, pas une raison de lecteur.
+ */
 const ONGLETS: { cle: string; libelle: string; statuts: BookingStatus[] }[] = [
+  { cle: 'en-cours', libelle: 'parcours.ongletEnCours', statuts: ['consumed'] },
   {
     cle: 'a-venir',
     libelle: 'parcours.ongletAVenir',
@@ -169,7 +179,6 @@ const ONGLETS: { cle: string; libelle: string; statuts: BookingStatus[] }[] = [
     // où on le cherche, pendant les quelques heures qui comptent.
     statuts: ['held', 'awaiting_business', 'confirmed'],
   },
-  { cle: 'en-cours', libelle: 'parcours.ongletEnCours', statuts: ['consumed'] },
   {
     cle: 'terminees',
     libelle: 'parcours.ongletTerminees',
@@ -500,6 +509,15 @@ function LigneDeReservation({
    * que je vais recevoir », et la prestation y est la bonne réponse.
    */
   const verbe = verbeDeLaContrepartie(reservation);
+  /**
+   * **Le code de retrait est un geste, donc un titre.**
+   *
+   * « Montre ton code » est la seule chose que la créatrice ait à faire d'une
+   * réservation confirmée, et la ligne titrait la prestation — ce que c'est,
+   * quand la question est ce qu'on attend d'elle. Même renversement que pour la
+   * contrepartie, et le dernier écran à ne pas l'appliquer.
+   */
+  const gesteDuCode = !verbe && destination(reservation) === 'code';
   const repere = repereDuCreneau(quand, locale, reservation.business_timezone);
 
   return (
@@ -522,6 +540,10 @@ function LigneDeReservation({
               format: t(`parcours.format_${reservation.content_format}`),
             })}
           </Texte>
+        ) : gesteDuCode ? (
+          <Texte variante="type.bodyStrong" testID={`verbe-${reservation.booking_id}`}>
+            {t('parcours.verbe_code')}
+          </Texte>
         ) : (
           <Texte variante="type.bodyStrong">{reservation.item_name}</Texte>
         )}
@@ -529,7 +551,7 @@ function LigneDeReservation({
             instant — celui où l'on y va — et cet instant n'a pas lieu dans une
             liste. Ici elle doublait la longueur de chaque carte. */}
         <Texte variante="type.caption" couleur="ink.soft">
-          {verbe
+          {verbe || gesteDuCode
             ? t('parcours.verbePour', {
                 prestation: reservation.item_name,
                 salon: reservation.business_name,

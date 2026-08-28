@@ -19,6 +19,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react-nativ
 
 import { ApiClient, ApiProvider } from '../src/api';
 import { I18nProvider } from '../src/i18n';
+import { en } from '../src/i18n/en';
 import { PileDesReservations } from '../src/shell/Navigation';
 import { ThemeProvider } from '../src/theme';
 
@@ -105,6 +106,10 @@ async function monter(items: unknown[]) {
 describe('le code de retrait est atteignable depuis la liste', () => {
   it('la ligne d’une réservation confirmée porte le geste, sous le bon titre', async () => {
     await monter([CONFIRMEE]);
+    // **L'onglet ouvert n'est plus « à venir ».** Depuis la v7 les onglets
+    // suivent l'ordre de ce qu'on doit faire : ce qui court contre une échéance
+    // passe devant un rendez-vous de la semaine prochaine.
+    await fireEvent.press(screen.getByLabelText(new RegExp(en.parcours.ongletAVenir)));
     await waitFor(() => expect(screen.getByTestId('reservation-r1')).toBeTruthy());
 
     // Sous « montrez votre code », et non sous « le salon décide » : le titre

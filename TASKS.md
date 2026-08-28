@@ -3065,6 +3065,42 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       la garde ne mente pas ; côté serveur, c'est du calcul dont plus personne
       ne lit le résultat*
 
+- [x] **Retirer plutôt que ranger : la journée, cinquième reprise, et les réservations**
+      ***Le diagnostic qui manquait aux quatre précédentes.*** *Quatre passes
+      avaient rangé les mêmes blocs — sections, densité, bandeau, graisses — et
+      aucune n'avait demandé ce que cet écran **n'a pas à porter**. Un écran
+      d'action qui contient un réglage, un historique et un profil ne se
+      dédensifie pas : il se vide.*
+      ***Les prestations servies quittent la journée.*** *Elles sont closes,
+      personne n'agit dessus, et la journée d'un salon plein finit avec plus de
+      lignes closes que d'ouvertes. Il en reste un compte dans l'en-tête, qui
+      ouvre la liste. Deux blocs se comparent d'un regard, trois se lisent — et
+      c'est là tout le sujet.*
+      ***La capacité du jour rejoint la semaine type, et sa flèche part avec.***
+      *C'est elle que la flèche prétendait déplier, corrigée deux fois sans
+      succès : elle ne dépliait pas mal, **elle n'avait rien à faire là**. Un
+      contrôle de réglage posé sur un écran d'action ne peut pas s'expliquer.
+      Elle vit maintenant sous le lieu, à côté de la règle générale qu'elle
+      dépasse et dans laquelle elle écrit déjà.*
+      ***L'audience de la créatrice y était déjà à sa place**, vérifié plutôt
+      que supposé : `ReseauxDeLaCreatrice` n'a qu'un appelant, le détail qu'on
+      ouvre pour décider. La ligne de liste ne portait que le pseudonyme et
+      l'heure limite.*
+      ***Les réservations, même diagnostic.*** *Cinq faits justes de même poids
+      — prestation, salon, heure, échéance, palier — dont aucun prioritaire. Le
+      titre devient le geste, et le code de retrait en est un : « montre ton
+      code » était la seule chose qu'une réservation confirmée demande, et la
+      ligne titrait la prestation. Les onglets suivent l'ordre de ce qu'on doit
+      faire : ce qui court contre une échéance passe devant un rendez-vous de la
+      semaine prochaine, qui n'attend rien de personne.*
+      ***Un écart écrit sur le libellé.*** *La planche dit « Waiting on you » ;
+      la garde des libellés courts le refuse — 103 points par cellule sur trois
+      onglets. « To do » dit la même chose et tient.*
+      *Deux mutations, les deux tombent. Un décor corrigé au passage : « confirmée
+      sans contrepartie » servait de cas « sans geste », alors que c'est
+      précisément le cas qui en a un depuis cette passe. Le vrai cas sans geste
+      est celui où l'on attend quelqu'un d'autre*
+
 - [ ] **`catalogue/corriger.ts` déclare une règle que personne ne consulte**
       *Même balayage. Le module nomme `CORRIGEABLES` — nom, description, photo —
       et `DEMANDENT_UNE_AUTRE` — durée, nature, réservabilité — avec une note

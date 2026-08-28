@@ -692,7 +692,7 @@ function OngletsCommerce() {
 
 function OngletsDuCommerceChoisi() {
   const { t } = useI18n();
-  const { businessId, nom, commerces, choisir, ecranDAttente } = useMonCommerce();
+  const { businessId, nom, commerces, choisir, ecranDAttente, timezone } = useMonCommerce();
   const options = useOptionsDOnglets();
   /**
    * **Quatre onglets sur un téléphone, huit sur un bureau.**
@@ -809,7 +809,7 @@ function OngletsDuCommerceChoisi() {
             : ongletHorsBarre(t('onglets.lieu'), 'lieu')
         }
       >
-        {() => <LieuScreen businessId={businessId} />}
+        {() => <LieuScreen businessId={businessId} timezone={timezone ?? undefined} />}
       </Onglets.Screen>
       <Onglets.Screen
         name="prestations"
