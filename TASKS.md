@@ -3136,6 +3136,42 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       précisément ; ce qu'une planche montre et qu'un brief ne dit pas — un
       espacement, un ordre de blocs — n'a donc pas été confronté*
 
+- [x] **La v8 confrontée à la planche, et une seule chose à reprendre**
+      *La planche n'a pas pu être lue — le connecteur Design a perdu son
+      autorisation en cours de session, et `/design-login` demande un terminal
+      interactif. Daniel a donc décrit les quatre points qu'elle porte et que le
+      brief ne disait pas ; ils se vérifiaient sans accès.*
+      ***Sur cinq points, le produit gagne sur trois**, et c'est le résultat qui
+      compte le plus de cette passe :*
+      *— **L'audience ne revient pas.** La planche la remettait sur la ligne
+      d'attribution, que la v7 avait retirée deux jours plus tôt. Cause
+      identifiée par Design lui-même : en refaisant la carte pour corriger la
+      typographie, il en a retapé le contenu depuis une version antérieure —
+      **le défaut de la planche repeinte, appliqué à une planche**. Signalé
+      plutôt que tranché seul, et c'est ce qui l'a fait voir.*
+      *— **La graisse 700 à seize points n'existe pas** dans l'échelle : le
+      titre reste en 600.*
+      *— **L'ambre et sa condition restent.** La planche demandait une emphase
+      permanente sur le mot d'heure ; une emphase permanente cesse d'être une
+      emphase.*
+      *— Les gestes restent dans la liste sur téléphone : ils n'ont nulle part
+      ailleurs à aller en 390 points, et « depuis la fiche » vaut pour le
+      bureau. La ligne en retard n'a pas de bouton pour une autre raison —
+      l'absence ne s'ouvre qu'à vingt minutes puis réellement à quatre heures,
+      ce n'est pas une décision à prendre en passant.*
+      *— L'heure du rendez-vous devait entrer dans le titre **parce que**
+      l'audience occupait la ligne d'attribution. L'audience partie, elle y
+      retrouve sa place : rien à faire.*
+      ***La seule reprise : une date est une phrase.*** *La sous-ligne du jour
+      se composait comme un tampon — point médian entre le jour et les heures,
+      tiret entre les bornes, zéros de tête : « Wednesday 26 August ·
+      09:00–19:00 ». Aucun de ces trois signes n'est mono, et l'ensemble se
+      lisait pourtant comme une donnée : **c'est la ponctuation qui porte la
+      grammaire, pas seulement la fonte**. Une virgule, le mot de liaison de la
+      langue, et pas de zéro de tête.*
+      *Le mot vient de la langue et non du code : « to » et « a » ne se
+      devinent pas d'un tiret. Une mutation, elle tombe*
+
 - [ ] **`catalogue/corriger.ts` déclare une règle que personne ne consulte**
       *Même balayage. Le module nomme `CORRIGEABLES` — nom, description, photo —
       et `DEMANDENT_UNE_AUTRE` — durée, nature, réservabilité — avec une note
