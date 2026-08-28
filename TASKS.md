@@ -3185,6 +3185,26 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       telle qu'écrite ne prouve rien du rendu, et seul un parcours qui regarde le
       DOM peut le voir.*
 
+- [ ] **Deux tests du semis tombent après l'heure de fermeture**
+      *`test_chaque_commerce_ouvert_a_une_reservation_a_venir` et
+      `test_la_journee_du_salon_d_ouverture_porte_plusieurs_etats` échouent quand
+      la suite tourne à vingt et une heures locales. **Vérifié sur `main`**, sans
+      aucune modification : ce n'est pas une régression, c'est l'heure.*
+
+      *La cause est la même pour les deux : passé la fermeture, les créneaux
+      libres du jour sont épuisés, la composition bascule sur demain, et la
+      journée courante reste vide. Le semis a raison — un salon fermé n'a plus
+      de créneau —, ce sont les tests qui affirment une propriété que le produit
+      ne tient pas à toute heure.*
+
+      *Deux issues. Composer les lignes « déjà eu lieu » à partir des **horaires**
+      du salon plutôt que de ses créneaux libres, ce qui rend la journée
+      indépendante du remplissage — essayé, et cela déplaçait une demande à
+      trancher dans le passé, ce qu'un autre test interdit à juste titre. Ou
+      admettre que ces deux propriétés ne valent qu'aux heures d'ouverture et le
+      dire dans les tests. La seconde est plus honnête ; la première est plus
+      utile à la démonstration. À trancher.*
+
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire
 
 ---

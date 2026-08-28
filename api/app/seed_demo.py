@@ -20,6 +20,7 @@ réservations passées en octobre, et la démonstration commence par une
 explication.
 """
 
+import asyncio
 import re
 import unicodedata
 import uuid
@@ -33,7 +34,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.integrations import photos_reelles
 from app.integrations.demo_images import COUVERTURE, PRESTATION, image
-from app.integrations.object_store import get_object_store
+from app.integrations.object_store import ObjectStoreError, get_object_store
 from app.integrations.social_demo import DemoSocialProvider
 from app.models import (
     Booking,
@@ -271,15 +272,66 @@ async def _deposer_photo(
     """
     for candidat in (chemin, *replis):
         reelle = photos_reelles.lire(candidat, taille=taille_reelle)
-        if reelle is not None:
-            cle = await storage.deposer_une_image(
-                reelle.contenu, prefixe=f"photos/{famille}", depot=depot
-            )
+        if reelle is None:
+            continue
+        cle = await _deposer_en_reessayant(
+            depot, reelle.contenu, prefixe=f"photos/{famille}", quoi=candidat
+        )
+        if cle is not None:
             return cle, True, len(reelle.contenu)
+        # Le dépôt a refusé la vraie photo trois fois : on descend au dégradé
+        # plutôt que d'abandonner le semis entier. Les autres candidats ne
+        # valent pas d'être essayés — ce n'est pas le fichier qui pose
+        # problème, c'est l'écriture.
+        break
 
     degrade = image(graine, taille_generee)
-    cle = await storage.deposer_une_image(degrade, prefixe=f"photos/genere/{famille}", depot=depot)
+    cle = await _deposer_en_reessayant(
+        depot, degrade, prefixe=f"photos/genere/{famille}", quoi=f"dégradé de {chemin}"
+    )
+    if cle is None:
+        # Le dégradé non plus : là, le dépôt est réellement hors service et
+        # continuer produirait un jeu sans aucune image. On laisse remonter.
+        raise ObjectStoreError(f"dépôt d'objets injoignable : {chemin} et son dégradé refusés")
     return cle, False, len(degrade)
+
+
+#: Combien de fois réessayer une écriture refusée, et combien attendre entre.
+#:
+#: **Trois essais parce qu'un seul a coûté un semis.** Mesuré : un `PutObject`
+#: rendu en 400 avec un message vide, sur une couverture, après quatre minutes
+#: de migrations — et le second lancement est passé sur le même fichier. Le refus
+#: était donc transitoire, et il a fait perdre l'ensemble.
+#:
+#: L'attente croît — une seconde, puis deux — parce qu'un dépôt qui vient de
+#: refuser refuse encore dans la seconde qui suit.
+_ESSAIS_DE_DEPOT = 3
+_ATTENTE_ENTRE_ESSAIS = 1.0
+
+
+async def _deposer_en_reessayant(depot, contenu: bytes, *, prefixe: str, quoi: str) -> str | None:
+    """Dépose, en réessayant. Rend la clé, ou `None` après le dernier refus.
+
+    **Une photo manquante ne vaut pas un semis perdu.** Le jeu de démonstration
+    se pose en une fois et coûte plusieurs minutes de migrations ; tout jeter
+    pour une écriture refusée transforme un incident d'une seconde en un
+    après-midi. Le semis dit ce qu'il n'a pas pu écrire, et continue.
+
+    **Ce que cette indulgence ne couvre pas** : un dépôt réellement hors
+    service. Si même le dégradé est refusé, l'appelant laisse remonter — un jeu
+    sans aucune image n'est pas un jeu dégradé, c'est un jeu faux, et il vaut
+    mieux s'en apercevoir tout de suite.
+    """
+    for essai in range(1, _ESSAIS_DE_DEPOT + 1):
+        try:
+            return await storage.deposer_une_image(contenu, prefixe=prefixe, depot=depot)
+        except ObjectStoreError as erreur:
+            if essai == _ESSAIS_DE_DEPOT:
+                print(f"  dépôt refusé {essai} fois pour {quoi} : {erreur}")
+                return None
+            print(f"  dépôt refusé pour {quoi} (essai {essai}) : {erreur} — on réessaie")
+            await asyncio.sleep(_ATTENTE_ENTRE_ESSAIS * essai)
+    return None
 
 
 async def poser_les_photos(session: AsyncSession) -> ResumePhotos:
@@ -564,7 +616,15 @@ async def creer_les_createurs(session: AsyncSession) -> dict[str, tuple[User, So
         followers=31_000,
         prenom="Nina",
         nom="Costa",
-        token_ttl=timedelta(days=-2),
+        # **Le jeton est vivant ici, et meurt plus bas.** Il naissait périmé,
+        # ce qui interdisait à Nina de réserver quoi que ce soit : son écran de
+        # paliers montrait un obstacle — jeton mort, relevé de trois semaines —
+        # sur une créatrice qui n'avait jamais rien fait, et un obstacle sans
+        # passé ne s'explique pas.
+        #
+        # C'est aussi la chronologie vraie : une autorisation expire, elle ne
+        # naît pas expirée. `marquer_les_etats_de_compte` la fait mourir après
+        # les parcours, comme il pose déjà le statut du compte.
     )
     return createurs
 
@@ -586,10 +646,17 @@ async def marquer_les_etats_de_compte(session: AsyncSession, createurs: dict) ->
     l'applique directement, faute de pouvoir attendre son passage.
     """
     _, compte_expire = createurs["expiree"]
+    # **Le jeton meurt ici, et pas à la naissance.** Les deux écritures vont
+    # ensemble : un compte dont le statut dit « expiré » et dont l'échéance est
+    # dans deux mois se lit comme une incohérence, et c'est l'échéance que
+    # l'écran affiche sous l'obstacle.
     await session.execute(
         sa.update(SocialAccount)
         .where(SocialAccount.id == compte_expire.id)
-        .values(status=SocialAccountStatus.EXPIRED)
+        .values(
+            status=SocialAccountStatus.EXPIRED,
+            token_expires_at=datetime.now(UTC) - timedelta(days=2),
+        )
     )
 
     _, compte_controle = createurs["en_controle"]
@@ -1004,11 +1071,24 @@ async def composer_les_parcours(session: AsyncSession, createurs: dict) -> tuple
         # fait — un obstacle sans histoire ne s'explique pas. Deux
         # collaborations tenues, avant que son compte se dégrade : c'est la
         # chronologie réelle, et `marquer_les_etats_de_compte` passe après.
-        ("approuvee", timedelta(weeks=6), "expiree", WYNWOOD),
+        # **Chez Brickell et Ocean, jamais chez Wynwood.** Nina a trente et un
+        # mille abonnés et aucune collaboration achevée : seuls les paliers
+        # d'entrée lui sont ouverts, et Wynwood ne compose qu'en haut. Le semis
+        # ne force pas le passage — il place le parcours là où le produit
+        # l'autorise, et l'écart s'était vu à voix haute.
+        ("approuvee", timedelta(weeks=6), "expiree", BRICKELL),
         ("approuvee", timedelta(weeks=4, days=2), "expiree", OCEAN),
-        # Sofia est en revue de cohérence, pas en faute : une collaboration
-        # tenue le dit mieux qu'un écran vide.
-        ("approuvee", timedelta(weeks=5, days=4), "en_controle", BRICKELL),
+        # **Sofia n'a aucun parcours, et c'est voulu.** Son compte est en revue
+        # de cohérence dès sa création — le contrôle relève lui-même le signal
+        # de volume manquant —, et `NEEDS_REVIEW` ferme tous les paliers. Elle
+        # ne peut donc rien réserver, et c'est exactement son histoire : un
+        # compte qui attend avant d'avoir rien pu faire. Lui en fabriquer un
+        # demanderait de la créer saine puis de la faire passer en revue, ce
+        # qui inventerait un ordre que le produit ne produit pas.
+        #
+        # Un essai a été écarté à voix haute par le semis — « aucune offre
+        # ouverte à en_controle chez Brickell Spa » — et c'était le semis qui
+        # avait raison.
     )
     for issue, age, qui, commerce in issues:
         createur, compte = createurs[qui]
@@ -1124,21 +1204,39 @@ async def _la_journee_de_chaque_salon(
     ).all()
 
     for business in actifs:
-        offre = await session.scalar(
-            sa.select(TierOffer)
-            .join(Tier, Tier.id == TierOffer.tier_id)
-            .join(CatalogItem, CatalogItem.id == TierOffer.catalog_item_id)
-            .where(
-                TierOffer.business_id == business.id,
-                TierOffer.is_active.is_(True),
-                Tier.is_active.is_(True),
-                CatalogItem.requires_booking.is_(True),
-                CatalogItem.is_available.is_(True),
+        # **Une offre que la créatrice peut réellement réserver.** La requête
+        # prenait le palier le plus bas que le salon compose, sans regarder si
+        # elle y accède : chez un salon qui ne compose qu'en haut, toutes les
+        # réservations étaient refusées et sa journée restait vide — les
+        # créneaux du lendemain se lisaient encore libres, ce qui a mis sur la
+        # piste. C'est le produit qui a raison ; le jeu s'y plie.
+        createur_du_salon, compte_du_salon = createurs["confirmee"]
+        verdict = await eligibility.evaluer_createur(session, createur_du_salon.id)
+        ouverts = verdict.paliers_accessibles
+        offre = (
+            await session.scalar(
+                sa.select(TierOffer)
+                .join(Tier, Tier.id == TierOffer.tier_id)
+                .join(CatalogItem, CatalogItem.id == TierOffer.catalog_item_id)
+                .where(
+                    TierOffer.business_id == business.id,
+                    TierOffer.is_active.is_(True),
+                    Tier.is_active.is_(True),
+                    TierOffer.tier_id.in_(ouverts),
+                    CatalogItem.requires_booking.is_(True),
+                    CatalogItem.is_available.is_(True),
+                )
+                .order_by(Tier.display_order, TierOffer.created_at)
+                .limit(1)
             )
-            .order_by(Tier.display_order, TierOffer.created_at)
-            .limit(1)
+            if ouverts
+            else None
         )
         if offre is None:
+            print(
+                f"  journée non composée chez {business.name} : aucune offre "
+                "réservable par la créatrice du jeu"
+            )
             continue
 
         fuseau = ZoneInfo(business.timezone)
@@ -1161,9 +1259,6 @@ async def _la_journee_de_chaque_salon(
 
         passes = [c for c in creneaux if c < maintenant]
         a_venir = [c for c in creneaux if c >= maintenant]
-        if not passes and not a_venir:
-            print(f"  aucun créneau aujourd'hui chez {business.name}")
-            continue
 
         # Le salon d'ouverture porte la journée qu'on montre ; les autres, de
         # quoi ne pas être vides. `ampleur` s'applique aux deux moitiés.
@@ -1195,6 +1290,10 @@ async def _la_journee_de_chaque_salon(
         # terme puis reposées sur les heures d'aujourd'hui — voir
         # `_deplacer_le_creneau`, et la garde qu'il contourne sans la casser.
         demain = debut_du_jour + timedelta(days=1)
+        if not passes and not a_venir:
+            print(f"  aucun créneau aujourd'hui chez {business.name}")
+            continue
+
         creneaux_de_demain = [
             c.starts_at
             for c in await availability_service.creneaux_libres(
