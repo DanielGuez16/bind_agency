@@ -70,7 +70,6 @@ import { Ecran } from './Ecran';
 import { nomDePlateforme } from './obstacle';
 import { BandeauDeMiseEnLigne } from './journee/BandeauDeMiseEnLigne';
 import { BandeauDeReprise } from './journee/BandeauDeReprise';
-import { ExceptionDuJour } from './journee/ExceptionDuJour';
 import { horairesDuJour, jourEnToutesLettres, limiteTombeAujourdhui } from './journee/entete';
 import { useRequete } from './useRequete';
 
