@@ -82,6 +82,13 @@ test('une réservation confirmée mène à son code', async ({ page }) => {
   // décision de composition et il changera encore ; l'action, elle, est ce que
   // le parcours éprouve. Et il part de l'écran plutôt que de la page, comme le
   // reste de cette suite depuis #137.
+  // **L'onglet d'abord, depuis la v7.** Les onglets suivent l'ordre de ce qu'on
+  // doit faire : celui qui s'ouvre porte les contreparties à envoyer, dont le
+  // geste mène à l'écran de preuve. Une réservation confirmée vit sous
+  // « Upcoming », et prendre le premier geste de l'écran ouvrait donc le bon
+  // bouton d'un autre parcours — un test vert qui aurait éprouvé autre chose.
+  await page.getByTestId('ecran-historique').getByText('Upcoming', { exact: true }).click();
+
   const ouvrable = page
     .getByTestId('ecran-historique')
     .locator('[data-testid^="agir-"]')
