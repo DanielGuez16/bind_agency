@@ -87,7 +87,9 @@ test('une réservation confirmée mène à son code', async ({ page }) => {
   // geste mène à l'écran de preuve. Une réservation confirmée vit sous
   // « Upcoming », et prendre le premier geste de l'écran ouvrait donc le bon
   // bouton d'un autre parcours — un test vert qui aurait éprouvé autre chose.
-  await page.getByTestId('ecran-historique').getByText('Upcoming', { exact: true }).click();
+  // Par le rôle et non par le texte : l'onglet affiche « Upcoming · 3 », son
+  // compte compris, et un libellé exact n'y trouvait rien.
+  await page.getByRole('tab', { name: /Upcoming/ }).click();
 
   const ouvrable = page
     .getByTestId('ecran-historique')
