@@ -316,7 +316,9 @@ describe('la sous-ligne dit le jour, puis les horaires', () => {
     });
     await waitFor(() => expect(screen.getByTestId('sous-titre')).toBeTruthy());
 
-    expect(screen.getByTestId('sous-titre')).toHaveTextContent(/09:00–19:00/);
+    // La ligne se lit en phrase depuis la v8 : une virgule après le jour, le
+    // mot de la langue entre les bornes, et pas de zéro de tête.
+    expect(screen.getByTestId('sous-titre')).toHaveTextContent(/, 9:00 to 19:00$/);
     expect(screen.getByTestId('sous-titre')).not.toHaveTextContent(/00:00/);
   });
 

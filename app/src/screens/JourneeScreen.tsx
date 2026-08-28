@@ -158,6 +158,16 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
       // annoncerait « de 00:00 à 00:00 ». Les horaires vivent sur une autre
       // ressource, et les chercher ici coûterait une seconde requête à l'écran
       // le plus ouvert du produit pour une ligne qui situe. Voir `TASKS.md`.
+      /**
+       * **Une date est une phrase, pas une estampille.**
+       *
+       * Cette ligne se composait comme un tampon : un point médian entre le
+       * jour et les heures, un tiret entre les bornes, des zéros de tête —
+       * « Wednesday 26 August · 09:00–19:00 ». Aucun de ces trois signes n'est
+       * mono, et pourtant l'ensemble se lit comme une donnée : c'est la
+       * ponctuation qui porte la grammaire, pas seulement la fonte. La virgule
+       * et le mot de liaison la rendent à la langue.
+       */
       sousTitre={
         chargee
           ? [
@@ -167,11 +177,13 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
               // `debut` et `fin` de la journée passaient pour des heures
               // d'ouverture : ce sont les bornes de la journée comptée, et les
               // écrire aurait annoncé « de 00:00 à 00:00 ».
-              horairesDuJour(chargee.horaires) ??
+              horairesDuJour(chargee.horaires, (debut, fin) =>
+                t('commerce.horairesDe', { debut, fin }),
+              ) ??
                 // Fermé se dit : un jour creux ne se lit pas pareil selon qu'on
                 // était fermé ou que personne n'est venu.
                 t('commerce.journeeFerme'),
-            ].join(' · ')
+            ].join(', ')
           : null
       }
       nature="merchantListeDetail"

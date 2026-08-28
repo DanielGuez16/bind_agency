@@ -74,16 +74,26 @@ export function limiteTombeAujourdhui(
  * **Aucune conversion.** Les heures arrivent déjà locales : les passer par un
  * fuseau les décalerait une seconde fois.
  */
-export function horairesDuJour(plages: PlageDuJour[]): string | null {
+export function horairesDuJour(
+  plages: PlageDuJour[],
+  /** Le mot qui joint les deux bornes : « à », « to ». Il vient de la langue. */
+  entreLesBornes: (debut: string, fin: string) => string,
+): string | null {
   // **Falsy, et non `length === 0`.** Cinquième fois de la journée que la même
   // distinction se paie : la nullité est portée par le contrat, l'absence par
   // l'appelant. Un décor ou une réponse d'avant le champ le laisse absent, et
   // « pas d'horaires » est alors la bonne réponse — pas une chute.
   if (!plages || plages.length === 0) return null;
-  return plages.map((plage) => `${heureNue(plage.debut)}–${heureNue(plage.fin)}`).join(', ');
+  return plages.map((plage) => entreLesBornes(heureNue(plage.debut), heureNue(plage.fin))).join(', ');
 }
 
-/** « 09:00:00 » devient « 09:00 ». Les secondes ne disent rien d'une ouverture. */
+/**
+ * « 09:00:00 » devient « 9:00 ».
+ *
+ * Les secondes ne disent rien d'une ouverture, et le zéro de tête non plus :
+ * il vient des tampons horaires, où l'alignement des colonnes le réclame. Dans
+ * une phrase il ne sert qu'à faire ressembler une heure à une donnée.
+ */
 function heureNue(heure: string): string {
-  return heure.slice(0, 5);
+  return heure.slice(0, 5).replace(/^0/, '');
 }
