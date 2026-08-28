@@ -31,6 +31,26 @@ import { join } from 'node:path';
 import { en } from '../src/i18n/en';
 import { es } from '../src/i18n/es';
 
+/**
+ * **Ce que cette garde ne voit pas, et pourquoi elle ne le verra pas.**
+ *
+ * Elle attrape les clés **appelées et absentes** : un `t('…')` qui ne résout
+ * rien, ce qui affiche une chaîne technique en clair à la place d'un titre.
+ * Elle ne voit **jamais l'inverse** — une clé déclarée que plus personne
+ * n'appelle reste dans les deux catalogues sans qu'un test bouge.
+ *
+ * **C'est une limite connue, pas un trou à combler.** Le second sens coûterait
+ * plus cher et rendrait moins : il faudrait résoudre les clés composées, que le
+ * produit construit à une quarantaine d'endroits et qu'aucune analyse statique
+ * ne suit ; et son verdict porterait sur du texte mort, qui ne se voit pas à
+ * l'écran. Une clé orpheline pèse deux lignes ; une clé manquante s'affiche
+ * dans une phrase.
+ *
+ * Les orphelines se retirent donc à la main, quand un lot les rend telles.
+ * `murAutresQuartiers` l'a été le 2026-08-28 : elle nommait la section
+ * « Ailleurs à Miami » du mur à axe de quartier, disparu avec le fil v5, et
+ * elle a survécu deux refontes sans que rien ne la signale.
+ */
 const SRC = join(__dirname, '..', 'src');
 
 /** Les deux catalogues, par leur nom et leur chemin. */
