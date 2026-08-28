@@ -345,6 +345,32 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
             testID="colonne-liste"
             style={{ gap: 16, width: large ? breakpoint.listWidthMerchant : undefined }}
           >
+            {/**
+              * **Le clos n'est plus une nature de l'écran, c'est un compte.**
+              *
+              * Cinquième reprise de cet écran, et la première qui retire au
+              * lieu de ranger. Les prestations servies sont closes : personne
+              * n'agit dessus, et elles occupaient la moitié basse chaque matin
+              * — la journée d'un salon plein finit avec plus de lignes closes
+              * que d'ouvertes. Un salon vérifie ce qu'il a fait une fois par
+              * semaine, pas à neuf heures.
+              *
+              * **Deux blocs se comparent d'un regard, trois se lisent**, et
+              * c'est là tout le sujet : ce qui attend une décision, ce qui
+              * arrive aujourd'hui. Le reste tient dans un bouton de l'en-tête.
+              */}
+            {finies.length === 0 ? null : (
+              <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
+                <Button
+                  label={t('commerce.journeeFinies', { count: finies.length })}
+                  variant="secondary"
+                  size="sm"
+                  fullWidth={false}
+                  onPress={() => setFiniesOuvertes((avant) => !avant)}
+                  testID="compte-des-finies"
+                />
+              </View>
+            )}
             {/* Ce que personne d'autre ne peut faire, et rien d'autre en tête. */}
             {section(
               t('commerce.aTrancher', { count: aTrancher.length }),
@@ -357,26 +383,16 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
               attendues,
               'planning',
             )}
-            {finies.length > 0 && (aTrancher.length > 0 || attendues.length > 0) ? (
-              <Filet marge={4} />
+            {/* Ouvert depuis l'en-tête, et seulement quand on le demande : ce
+                qui est clos ne se lit pas le matin, il se cherche. */}
+            {finiesOuvertes && finies.length > 0 ? (
+              <>
+                <Filet marge={4} />
+                <View testID="section-finies">
+                  {section(t('commerce.finiesTitre'), finies, 'finies')}
+                </View>
+              </>
             ) : null}
-            {/* **Ce dont il n'y a plus rien à faire se replie.** Servi, annulé,
-                manqué : la journée d'un salon plein finit avec plus de lignes
-                closes que d'ouvertes, et elles poussaient hors de l'écran
-                celles qui demandent quelque chose. Le compte reste en tête —
-                c'est lui qu'on lit — et la liste s'ouvre quand on cherche une
-                réservation précise. */}
-            {finies.length === 0 ? null : (
-              <Repliable
-                titre={t('commerce.finiesTitre')}
-                resume={t('commerce.journeeFinies', { count: finies.length })}
-                ouverte={finiesOuvertes}
-                onBasculer={() => setFiniesOuvertes((avant) => !avant)}
-                testID="section-finies"
-              >
-                {section('', finies, 'finies')}
-              </Repliable>
-            )}
           </View>
         );
 
@@ -408,32 +424,15 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
         );
 
         /**
-         * **L'exception se replie, parce qu'elle se décide et ne se lit pas.**
-         * Fermer un jour ou couper une place est un geste rare, pris en
-         * marchant ; dépliée chaque matin, elle occupe le haut de l'écran le
-         * plus ouvert du produit pour une chose qu'on ne fait presque jamais.
-         * Le résumé dit l'état du jour — c'est **ça** qui se lit tous les
-         * matins — et le geste est à un appui.
+         * **La capacité du jour a quitté cet écran, et sa flèche avec.**
+         *
+         * « Aujourd'hui seulement, X places » est une exception d'agenda, pas
+         * une décision du matin : sa place est avec la semaine type qu'elle
+         * modifie, sous « More ». Un contrôle de réglage posé sur un écran
+         * d'action ne peut pas s'expliquer — d'où deux corrections de la flèche
+         * et le même retour à chaque fois. Elle ne dépliait pas mal, elle
+         * n'avait rien à faire là.
          */
-        const exception = aujourdhui ? (
-          <Repliable
-            titre={t('commerce.exceptionTitre')}
-            resume={t('commerce.exceptionResume', {
-              count: journee.horaires?.[0]?.postes ?? 0,
-            })}
-            ouverte={exceptionOuverte}
-            onBasculer={() => setExceptionOuverte((avant) => !avant)}
-            testID="section-exception"
-          >
-            <ExceptionDuJour
-              businessId={businessId}
-              jour={journee.jour.slice(0, 10)}
-              // Les postes réellement ouverts, tels que le serveur les a calculés.
-              postesEffectifs={journee.horaires?.[0]?.postes ?? null}
-              onFait={requete.recharger}
-            />
-          </Repliable>
-        ) : null;
 
         // En compact, une seule colonne : la liste, comme avant. Le détail y
         // vit déjà dans la ligne elle-même, et une seconde colonne de 720 ne
@@ -443,7 +442,6 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
             <View style={{ gap: 16 }}>
               {repriseEnCours}
               {bandeau}
-              {exception}
               {colonneListe}
             </View>
           );
@@ -455,7 +453,6 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
             {bandeau}
             <View style={{ flexDirection: 'row', gap: ECART_DES_COLONNES }}>
               <View style={{ gap: 16, width: breakpoint.listWidthMerchant }}>
-                {exception}
                 {colonneListe}
               </View>
             <View style={{ flex: 1, maxWidth: breakpoint.contentMaxMerchant }}>

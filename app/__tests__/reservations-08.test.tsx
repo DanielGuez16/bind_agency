@@ -598,15 +598,34 @@ describe('le titre est le verbe, et seulement là où c’est la question', () =
     ).toBeTruthy();
   });
 
-  it('sans contrepartie, le titre reste la prestation : on vient, on ne publie pas', async () => {
+  it('quand rien n’est attendu d’elle, le titre reste la prestation', async () => {
+    // **Le salon n'a pas encore répondu : il n'y a aucun geste à titrer.** Le
+    // décor disait « confirmée sans contrepartie », ce qui n'est pas un cas
+    // sans geste — une réservation confirmée attend qu'on montre son code, et
+    // c'est justement le titre qu'elle porte depuis la v7. Le vrai cas sans
+    // geste est celui où l'on attend quelqu'un d'autre.
     await monter([
-      reservation({ booking_id: 'r-venir', status: 'confirmed', contrepartie: null }),
+      reservation({
+        booking_id: 'r-venir',
+        status: 'awaiting_business',
+        contrepartie: null,
+      }),
     ]);
     await fireEvent.press(screen.getByLabelText(new RegExp(en.parcours.ongletAVenir)));
 
     const carte = await screen.findByTestId('reservation-r-venir');
     expect(within(carte).getByText('Gel manicure')).toBeTruthy();
     expect(within(carte).queryByTestId('verbe-r-venir')).toBeNull();
+  });
+
+  it('et une réservation confirmée titre le geste : montrer son code', async () => {
+    await monter([
+      reservation({ booking_id: 'r-code', status: 'confirmed', contrepartie: null }),
+    ]);
+    await fireEvent.press(screen.getByLabelText(new RegExp(en.parcours.ongletAVenir)));
+
+    const carte = await screen.findByTestId('reservation-r-code');
+    expect(within(carte).getByText(en.parcours.verbe_code)).toBeTruthy();
   });
 
   it('une contrepartie approuvée n’attend plus rien, donc plus de verbe', async () => {

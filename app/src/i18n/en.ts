@@ -511,6 +511,7 @@ export const en = {
     verbe_publier: 'Post your {{format}}',
     verbe_corriger: 'Fix your {{format}}',
     verbe_controle: 'Under review',
+    verbe_code: 'Show your code',
     verbePour: 'For {{prestation}} · {{salon}}',
     moment_aujourdhui: 'Today at {{heure}}',
     moment_demain: 'Tomorrow at {{heure}}',
@@ -636,7 +637,7 @@ export const en = {
     historiqueTitre: 'Your bookings',
     historiqueVide: 'Nothing here yet.',
     ongletAVenir: 'Upcoming',
-    ongletEnCours: 'In progress',
+    ongletEnCours: 'To do',
     ongletTerminees: 'Done',
   },
   roles: {
