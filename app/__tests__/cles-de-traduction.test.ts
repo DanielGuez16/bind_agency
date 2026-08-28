@@ -33,6 +33,12 @@ import { es } from '../src/i18n/es';
 
 const SRC = join(__dirname, '..', 'src');
 
+/** Les deux catalogues, par leur nom et leur chemin. */
+const CATALOGUES = [
+  ['anglais', join(SRC, 'i18n', 'en.ts')],
+  ['espagnol', join(SRC, 'i18n', 'es.ts')],
+] as const;
+
 /** Toutes les sources, la coquille et les écrans compris. */
 function sources(): string[] {
   const trouves: string[] = [];
@@ -176,5 +182,63 @@ describe('les libellés ne genrent personne', () => {
     // la garde refuserait la moitié du catalogue et se ferait désactiver.
     expect(attrape('Share the other booking')).toBe(false);
     expect(attrape('Here is where they check in')).toBe(false);
+  });
+});
+
+/**
+ * Aucun tiret cadratin dans un texte du produit.
+ *
+ * **Il lit bien à l'œil d'un rédacteur et mal à l'écran.** Sur une ligne de
+ * onze pixels, il occupe la largeur d'un mot court sans en porter aucun ; sur
+ * deux langues, il tombe à des endroits différents parce que l'espagnol ne
+ * coupe pas ses phrases là où l'anglais les coupe ; et là où il sert, une autre
+ * ponctuation sert mieux — un deux-points annonce, une virgule enchaîne, un
+ * point sépare.
+ *
+ * **Ni le tiret simple à sa place**, qui serait le même défaut en plus petit :
+ * un signe qui remplace une ponctuation au lieu d'en être une. La garde attrape
+ * les deux, plus le demi-cadratin qu'un éditeur substitue parfois seul.
+ *
+ * Elle ne lit que les **valeurs** : un commentaire du catalogue explique la
+ * règle et cite forcément ce qu'elle interdit.
+ */
+describe('la ponctuation des textes', () => {
+  const INTERDITS = [
+    ['—', 'cadratin'],
+    ['–', 'demi-cadratin'],
+    [' - ', 'tiret simple entre espaces'],
+  ] as const;
+
+  it.each(CATALOGUES)('%s n’emploie aucun tiret à la place d’une ponctuation', (nom, chemin) => {
+    const fautives: string[] = [];
+
+    for (const ligne of readFileSync(chemin, 'utf-8').split('\n')) {
+      const valeur = /^\s+[a-zA-Z_][a-zA-Z0-9_]*: '(.*)',$/.exec(ligne);
+      if (!valeur) continue;
+      for (const [signe, quoi] of INTERDITS) {
+        if (valeur[1].includes(signe)) fautives.push(`${quoi} : ${ligne.trim().slice(0, 70)}`);
+      }
+    }
+
+    expect(fautives).toEqual([]);
+  });
+
+  it('et la garde reconnaît les trois formes', () => {
+    // **Éprouvée sur ce qu'elle doit attraper**, pas sur les catalogues du jour :
+    // ceux-ci sont propres, et un test qui ne lit que du propre ne prouve pas
+    // qu'il sait reconnaître le faux.
+    const echantillon = [
+      "    a: 'un texte — coupé',",
+      "    b: 'un texte – coupé',",
+      "    c: 'un texte - coupé',",
+      "    d: 'un texte, propre',",
+      "    e: 'un demi-cadratin nommé sans être posé',",
+    ];
+    const pris = echantillon.filter((ligne) => {
+      const valeur = /^\s+[a-zA-Z_][a-zA-Z0-9_]*: '(.*)',$/.exec(ligne);
+      return valeur && INTERDITS.some(([signe]) => valeur[1].includes(signe));
+    });
+
+    expect(pris).toHaveLength(3);
   });
 });
