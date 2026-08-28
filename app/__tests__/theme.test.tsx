@@ -1027,6 +1027,30 @@ describe('les surfaces de la v1.1', () => {
     expect(dedans.shadowOpacity ?? dedans.boxShadow).toBeUndefined();
   });
 
+  it('aucun serrage négatif sous 22 points', () => {
+    // **Un serrage tient un grand chiffre ensemble ; petit, il ferme des
+    // contreformes déjà compactes.** Deux captures d'iPhone l'ont montré mieux
+    // qu'aucune relecture. Il reste sur le display et les titres, où la taille
+    // lui donne de quoi mordre — et 22 est la borne, `section` la garde.
+    //
+    // La règle est ici parce qu'elle s'efface autrement sans qu'on la voie :
+    // une approche se repose pas à pas, échelon par échelon, et c'est ainsi que
+    // les règles de ce système ont déjà disparu une fois.
+    const jetons = JSON.parse(readFileSync(join(RACINE, 'theme', 'tokens.json'), 'utf-8'));
+    const produit = JSON.parse(readFileSync(join(RACINE, 'theme', 'produit.json'), 'utf-8'));
+
+    const fautifs: string[] = [];
+    for (const [nom, pas] of Object.entries({ ...jetons.type, ...produit.type })) {
+      const echelon = pas as { size?: number; tracking?: string };
+      if (echelon.size === undefined || echelon.tracking === undefined) continue;
+      const em = /^(-?[\d.]+)em$/.exec(echelon.tracking);
+      if (em && Number(em[1]) < 0 && echelon.size < 22) {
+        fautifs.push(`${nom} — ${echelon.size} px, ${echelon.tracking}`);
+      }
+    }
+    expect(fautifs).toEqual([]);
+  });
+
   it('aucun rayon écrit en dur dans une source', () => {
     // Les 6, 8, 12 et 16 de la v0.4 disparaissent. Un `borderRadius: 12` oublié
     // dans un coin est le genre de détail qu'on ne voit qu'en comparant deux
