@@ -3101,6 +3101,41 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       précisément le cas qui en a un depuis cette passe. Le vrai cas sans geste
       est celui où l'on attend quelqu'un d'autre*
 
+- [x] **Un seul traitement : la carte de décision, et le serrage sous 22 points**
+      ***Quatre grammaires typographiques pour trois faits.*** *La carte portait
+      un titre en sans, une date en mono sur une seconde colonne, un corps en
+      sans, et une paire glyphe-valeur pour l'échéance : l'œil changeait de mode
+      quatre fois pour lire trois choses. Deux captures d'iPhone l'ont montré
+      mieux qu'aucune relecture.*
+      ***Et la répétition en découlait**, ce qui est la partie intéressante :
+      l'heure limite était écrite deux fois parce qu'en mono, isolée d'un verbe,
+      elle ne se lit pas comme une échéance mais comme une donnée de plus. Ce
+      n'était pas un oubli, c'était la conséquence d'un traitement incapable de
+      dire ce qu'il portait. Une colonne, deux graisses, chaque fait une fois, et
+      l'échéance dans la phrase qui l'explique.*
+      ***Les dates deviennent relatives.*** *« Aug 30, 2026 at 2:00 PM » demande
+      de se situer dans un calendrier ; « demain à 14:00 » se lit.
+      `repereDuCreneau` tranchait déjà pour la fiche et pour les réservations de
+      la créatrice — le produit ne compte pas les jours de deux façons. Au-delà
+      d'une semaine la date brute revient, parce qu'il n'y a plus de repère
+      humain.*
+      ***Le serrage de −0,015 em quitte les tailles sous 22 points.*** *Il tient
+      un grand chiffre ensemble ; petit, il ferme des contreformes déjà
+      compactes. Il reste sur le display et les titres, où la taille lui donne de
+      quoi mordre, et `section` garde le sien — 22 est la borne. Un seul échelon
+      était concerné, `type.titreDApercu` à seize points, lu par les trois
+      titres de carte de liste.*
+      *Deux mutations. **La seconde a survécu** : rien ne tenait la règle qu'on
+      venait de poser, et une approche se repose échelon par échelon sans qu'on
+      le voie — c'est ainsi que les règles de ce système ont déjà disparu une
+      fois. Une assertion de plus dans l'inventaire de type existant, pas un
+      fichier de garde neuf.*
+      ***Une réserve sur la méthode**, écrite parce qu'elle change ce qui a été
+      vérifié : le MCP de Design a perdu son autorisation et la planche v8 n'a
+      pas pu être lue. Les trois changements viennent du brief, qui les nomme
+      précisément ; ce qu'une planche montre et qu'un brief ne dit pas — un
+      espacement, un ordre de blocs — n'a donc pas été confronté*
+
 - [ ] **`catalogue/corriger.ts` déclare une règle que personne ne consulte**
       *Même balayage. Le module nomme `CORRIGEABLES` — nom, description, photo —
       et `DEMANDENT_UNE_AUTRE` — durée, nature, réservabilité — avec une note

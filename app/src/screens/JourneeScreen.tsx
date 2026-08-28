@@ -62,7 +62,7 @@ import {
   TierBadge,
   vibration,
 } from '../components';
-import { formatDateTime, formatHeure, formatNumber, jourCivil } from '../format';
+import { formatDateTime, formatHeure, formatNumber, jourCivil, repereDuCreneau } from '../format';
 import { useI18n, type SupportedLocale } from '../i18n';
 import { breakpoint, elevationDeCarte, radius, size, useTheme, type ColorName } from '../theme';
 import { ECART_DES_COLONNES, useGabarit } from '../shell/gabarit';
@@ -501,6 +501,28 @@ function heureDe(
  */
 function nomDe(reservation: ReservationDuCommerce) {
   return reservation.creator_handle ?? '';
+}
+
+/**
+ * Un moment qu'on lit sans calculer.
+ *
+ * « Aug 30, 2026 at 2:00 PM » demande de se situer dans un calendrier ;
+ * « dimanche à 14:00 » se lit. Au-delà d'une semaine — et en arrière — la date
+ * brute redevient la réponse honnête, et c'est `repereDuCreneau` qui tranche :
+ * la même règle que la fiche et que les réservations de la créatrice, pour que
+ * le produit ne compte pas les jours de deux façons.
+ */
+function momentRelatif(
+  iso: string,
+  locale: SupportedLocale,
+  timezone: string,
+  t: (cle: string, valeurs?: Record<string, unknown>) => string,
+): string {
+  const repere = repereDuCreneau(iso, locale, timezone);
+  return t(`commerce.moment_${repere.quand}`, {
+    jour: repere.libelle,
+    heure: repere.heure,
+  });
 }
 
 /**
@@ -1027,41 +1049,53 @@ function CarteDeDemande({
         ...elevationDeCarte(),
       }}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 12 }}>
-        <Texte variante="type.bodyStrong" style={{ flex: 1 }} ellipseSurNomPropre>
-          {reservation.item_name}
-        </Texte>
-        <Texte variante="type.data">
-          {reservation.starts_at
-            ? formatDateTime(reservation.starts_at, locale, timezone)
-            : t('commerce.journeeSansCreneau')}
-        </Texte>
-      </View>
-
-      <Texte variante="type.caption" couleur="ink.soft" ellipseSurNomPropre>
-        {reservation.creator_handle ?? nomDe(reservation)}
+      {/**
+        * **Une colonne, deux graisses, chaque fait une fois.**
+        *
+        * Cette carte portait **quatre grammaires typographiques pour trois
+        * faits** : un titre en sans, une date en mono sur une seconde colonne,
+        * un corps en sans, et une paire glyphe-valeur pour l'échéance. L'œil
+        * changeait de mode quatre fois pour lire trois choses, et deux captures
+        * d'iPhone l'ont montré mieux qu'aucune relecture.
+        *
+        * **La répétition en découlait.** L'heure limite était écrite deux fois
+        * — une fois en mono à droite, une fois dans sa phrase — parce qu'en
+        * mono, isolée d'un verbe, elle ne se lit pas comme une échéance mais
+        * comme une donnée de plus. Ce n'était pas un oubli : c'était la
+        * conséquence d'un traitement qui ne pouvait pas dire ce qu'il portait.
+        */}
+      <Texte variante="type.bodyStrong" ellipseSurNomPropre>
+        {reservation.item_name}
       </Texte>
 
-      {/* **La limite, écrite en heure et jamais en règle.** Elle est double
+      {/* Le pseudonyme et le moment sur la même ligne : deux repères pour
+          situer, aucun geste. */}
+      <Texte variante="type.caption" couleur="ink.soft" ellipseSurNomPropre>
+        {[
+          reservation.creator_handle ?? nomDe(reservation),
+          reservation.starts_at
+            ? momentRelatif(reservation.starts_at, locale, timezone, t)
+            : t('commerce.journeeSansCreneau'),
+        ].join(' · ')}
+      </Texte>
+
+      {/* **L'échéance entre dans la phrase qui l'explique.** Elle est double
           côté serveur — vingt-quatre heures, ou l'heure du créneau si elle
           arrive avant — et l'écran n'a pas à l'expliquer : ce qui sert est
-          l'instant, pas la façon dont il a été obtenu. */}
+          l'instant, pas la façon dont il a été obtenu. Ce qui a changé est
+          qu'elle n'est plus une valeur posée à côté d'un glyphe : la graisse
+          suffit à la faire ressortir quand elle presse, et le glyphe faisait
+          une quatrième grammaire pour un fait qui en avait déjà une. */}
       {reservation.approval_expires_at ? (
-        <View
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+        <Texte
+          variante={urgente ? 'type.captionStrong' : 'type.caption'}
+          couleur={urgente ? 'brand.700' : 'ink.soft'}
           testID={`limite-${reservation.booking_id}`}
         >
-          <Icone nom="horloge" couleur={urgente ? 'brand.700' : 'ink.mute'} taille={16} />
-          <Texte
-            variante={urgente ? 'type.captionStrong' : 'type.caption'}
-            couleur={urgente ? 'brand.700' : 'ink.soft'}
-            style={{ flex: 1 }}
-          >
-            {t('commerce.repondreAvant', {
-              quand: formatDateTime(reservation.approval_expires_at, locale, timezone),
-            })}
-          </Texte>
-        </View>
+          {t('commerce.repondreAvant', {
+            quand: formatHeure(reservation.approval_expires_at, locale, timezone),
+          })}
+        </Texte>
       ) : null}
 
       {avecGestes ? (

@@ -25,7 +25,7 @@
       "weight": 700,
       "size": 16,
       "lineHeight": 22,
-      "tracking": "-0.01em"
+      "tracking": "0"
     },
     "type.navigation": {
       "family": "sans",
@@ -61,7 +61,7 @@
       "weight": 600,
       "tracking": "0"
     },
-    "$titreDApercu": "Ajoutée par le fil v3. C'est le titre d'un objet à l'intérieur d'une liste — le nom d'une prestation dans la grille, le nom d'un quartier en tête de sa section. L'échelle de marque n'a rien entre `bodyStrong` (16/25, graisse 600, sans approche) et `section` (22/28) : le premier ne se distingue pas de son attribution à treize points, et le second ne tient pas sur une colonne de 171 px. La planche v3 la dessine à 16/22, graisse 700, approche -0.01em, et c'est un titre de liste et non un corps de texte — l'interligne serré est ce qui le sépare de la ligne suivante.",
+    "$titreDApercu": "Ajoutée par le fil v3. C'est le titre d'un objet à l'intérieur d'une liste — le nom d'une prestation dans la grille, le nom d'un quartier en tête de sa section. L'échelle de marque n'a rien entre `bodyStrong` (16/25, graisse 600, sans approche) et `section` (22/28) : le premier ne se distingue pas de son attribution à treize points, et le second ne tient pas sur une colonne de 171 px. La planche v3 la dessinait à 16/22, graisse 700, approche -0.01em ; **l'approche négative est retirée en v8**. Un serrage tient un grand chiffre ensemble ; à seize points il ferme des contreformes déjà compactes, et deux captures d'iPhone l'ont montré mieux qu'aucune relecture. Il reste sur le display et les titres, où la taille lui donne de quoi mordre. Ce qui sépare ce titre de la ligne suivante est l'interligne serré, pas l'approche.",
     "$navigation": "Les deux graisses de la bande de catégories du fil v3, 13/19 comme `caption` mais en 500 et 700. La bande est de la navigation en texte et non des pastilles : c'est la graisse qui dit lequel des sept mots est en vigueur, puisqu'il n'y a plus de fond pour le dire. `caption` en 400 ne se distingue pas assez de son voisin actif à cette taille — essayé, la bande se lisait comme sept mots identiques. Deux variantes et non une : un mot inactif qui emprunterait `caption` mélangerait la navigation et le corps de texte, et le jour où l'un bouge l'autre suivrait sans raison.",
     "$porte": "L'intitulé d'une porte de l'accueil v3, empilé sur deux lignes. Ni `section` (22/28, graisse 700) ni `heading` : l'interligne descend à 26 pour que CREATOR et ACCOUNT se lisent comme un seul bloc et non comme deux lignes d'un paragraphe, et la graisse monte à 800 — c'est un intitulé, pas un titre de section. Deux colonnes de 171 points ne portent pas « CREATOR ACCOUNT » sur une ligne au-delà de 13 points ; c'est l'empilement qui autorise les 22, et l'interligne serré qui le rend lisible comme un mot composé.",
     "$captionStrong": "La légende appuyée. L'échelle de la passation n'a que `caption` en 400 et `bodyStrong` en 16 : entre les deux, rien. La journée du commerce en a besoin sur une seule phrase — la limite de réponse qui tombe aujourd'hui — où la graisse fait la moitié du travail et l'ambre l'autre. Passer à `bodyStrong` grossirait la ligne au point de concurrencer le nom de la prestation, qui est le sujet de la carte."
