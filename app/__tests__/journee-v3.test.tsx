@@ -244,20 +244,29 @@ describe('la carte de demande porte les trois faits qui décident', () => {
 });
 
 describe('les horaires du jour, et ce que « vide » veut dire', () => {
-  it('deux plages se lisent d’affilée, sans secondes', () => {
+  /** Le mot de liaison vient de la langue ; ici on l'écrit pour lire le reste. */
+  const de = (debut: string, fin: string) => `${debut} to ${fin}`;
+
+  it('deux plages se lisent d’affilée, sans secondes ni zéro de tête', () => {
+    // **Une date est une phrase.** Le tiret et le zéro de tête viennent des
+    // tampons horaires, où l'alignement des colonnes les réclame ; dans une
+    // ligne de texte ils ne font que déguiser une heure en donnée.
     expect(
-      horairesDuJour([
-        { debut: '09:00:00', fin: '12:30:00', postes: 2 },
-        { debut: '14:00:00', fin: '19:00:00', postes: 2 },
-      ]),
-    ).toBe('09:00–12:30, 14:00–19:00');
+      horairesDuJour(
+        [
+          { debut: '09:00:00', fin: '12:30:00', postes: 2 },
+          { debut: '14:00:00', fin: '19:00:00', postes: 2 },
+        ],
+        de,
+      ),
+    ).toBe('9:00 to 12:30, 14:00 to 19:00');
   });
 
   it('et fermé se dit, au lieu de se taire', () => {
     // **Le cas qui diverge de « rends la chaîne vide ».** Une journée sans
     // réservation ne se lit pas pareil selon qu'on était fermé ou que personne
     // n'est venu, et c'est la question qu'un gérant se pose un jour creux.
-    expect(horairesDuJour([])).toBeNull();
+    expect(horairesDuJour([], de)).toBeNull();
   });
 
 });

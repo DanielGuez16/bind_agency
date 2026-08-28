@@ -702,6 +702,7 @@ export const en = {
     exceptionResume: '{{count}} places open today',
     finiesTitre: 'Served and closed',
     journeeFerme: 'closed',
+    horairesDe: '{{debut}} to {{fin}}',
     reseauAvecAbonnes: '{{reseau}} · {{abonnes}} followers',
     reseauAbsent: 'No {{reseau}}',
     repondreAvant: 'Answer before {{quand}}',

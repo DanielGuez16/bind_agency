@@ -619,6 +619,7 @@ export const es: Catalogue = {
     exceptionResume: '{{count}} plazas abiertas hoy',
     finiesTitre: 'Atendidas y cerradas',
     journeeFerme: 'cerrado',
+    horairesDe: '{{debut}} a {{fin}}',
     reseauAvecAbonnes: '{{reseau}} · {{abonnes}} seguidores',
     reseauAbsent: 'Sin {{reseau}}',
     repondreAvant: 'Responde antes del {{quand}}',
