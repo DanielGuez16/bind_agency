@@ -342,11 +342,12 @@ it('distingue ce qui est derrière de ce qui reste à faire', async () => {
   try {
     await monter();
 
-    // Les lignes finies sont repliées depuis le troisième retour sur cet écran.
+    // Les lignes finies ont quitté l'écran à la cinquième reprise : elles
+    // s'ouvrent depuis le compte de l'en-tête.
 
-    if (screen.queryByTestId('section-finies-entete')) {
+    if (screen.queryByTestId('compte-des-finies')) {
 
-      await fireEvent.press(screen.getByTestId('section-finies-entete'));
+      await fireEvent.press(screen.getByTestId('compte-des-finies'));
 
     }
 

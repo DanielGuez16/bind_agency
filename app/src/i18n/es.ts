@@ -465,6 +465,7 @@ export const es: Catalogue = {
     verbe_publier: 'Publica tu {{format}}',
     verbe_corriger: 'Corrige tu {{format}}',
     verbe_controle: 'En revisión',
+    verbe_code: 'Muestra tu código',
     verbePour: 'Para {{prestation}} · {{salon}}',
     moment_aujourdhui: 'Hoy a las {{heure}}',
     moment_demain: 'Mañana a las {{heure}}',
@@ -565,7 +566,7 @@ export const es: Catalogue = {
     historiqueTitre: 'Tus reservas',
     historiqueVide: 'Todavía no hay nada.',
     ongletAVenir: 'Próximas',
-    ongletEnCours: 'En curso',
+    ongletEnCours: 'Por hacer',
     ongletTerminees: 'Hechas',
   },
   roles: {

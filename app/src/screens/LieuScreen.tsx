@@ -38,10 +38,12 @@ import {
 } from '../api';
 import { Repliable, SkeletonLignes } from '../components';
 import { useI18n } from '../i18n';
+import { jourCivil } from '../format';
 import { CarteDuCommerce } from './CarteDuCommerce';
 import { GalerieDuCommerce } from './GalerieDuCommerce';
 import { HorairesDuCommerce, type Semaine } from './HorairesScreen';
 import { Ecran } from './Ecran';
+import { ExceptionDuJour } from './journee/ExceptionDuJour';
 import { AGES } from './cacheDesReponses';
 import { useRequete } from './useRequete';
 import { useCallback, useState } from 'react';
@@ -67,9 +69,21 @@ type Lieu = {
 
 export function LieuScreen({
   businessId,
+  /**
+   * Le fuseau du salon, pour dater « aujourd'hui » là où le salon est.
+   *
+   * **Passé en propriété plutôt que lu dans le contexte.** L'écran se monte
+   * seul dans les tests ; y appeler `useMonCommerce` le ferait lever hors de la
+   * coquille, et un écran qui ne se rend qu'en place est un écran qu'on
+   * n'éprouve plus. UTC en repli : à Miami cela décale d'un jour après 20 h,
+   * ce qui est visible et se corrige, là où une exception posée sur la mauvaise
+   * date ne se verrait pas.
+   */
+  timezone = 'UTC',
   onRetour,
 }: {
   businessId: string;
+  timezone?: string;
   onRetour?: () => void;
 }) {
   const { api } = useApi();
@@ -191,11 +205,34 @@ export function LieuScreen({
             onBasculer={() => setOuverte(ouverte === 'horaires' ? null : 'horaires')}
             testID="section-horaires"
           >
-            <HorairesDuCommerce
-              semaine={lieu.semaine}
-              businessId={businessId}
-              onChange={requete.recharger}
-            />
+            {/**
+              * **L'exception du jour vit avec la semaine qu'elle modifie.**
+              *
+              * Elle occupait le haut de la journée du commerce, où sa flèche a
+              * été corrigée deux fois sans succès. Le diagnostic manquait : ce
+              * n'était pas un contrôle mal réglé mais un **réglage posé sur un
+              * écran d'action**, et cela ne peut pas s'expliquer. « Aujourd'hui
+              * seulement, X places » est une exception d'agenda ; sa place est
+              * à côté de la règle générale qu'elle dépasse, et elle écrit
+              * d'ailleurs dans la même donnée.
+              *
+              * `postesEffectifs` à nul : le composant relit la semaine
+              * lui-même. Lui passer un nombre d'ici en ferait deux sources
+              * pour un même compte.
+              */}
+            <View style={{ gap: 20 }}>
+              <ExceptionDuJour
+                businessId={businessId}
+                jour={jourCivil(new Date(), timezone ?? 'UTC')}
+                postesEffectifs={null}
+                onFait={requete.recharger}
+              />
+              <HorairesDuCommerce
+                semaine={lieu.semaine}
+                businessId={businessId}
+                onChange={requete.recharger}
+              />
+            </View>
           </Repliable>
         </View>
         );

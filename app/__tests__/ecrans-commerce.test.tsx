@@ -2453,10 +2453,12 @@ describe('la journée se coupe par ce qu’elle demande', () => {
     await monter(<JourneeScreen businessId="b1" />, clientDe({ '/bookings': journee }));
     await waitFor(() => expect(screen.getByTestId('planning')).toBeTruthy());
 
-    // **Les finies se replient** depuis le troisième retour sur cet écran :
-    // il n'y a plus rien à y faire, et elles poussaient hors de l'écran les
-    // lignes qui demandent quelque chose. Le compte reste en tête.
-    await fireEvent.press(screen.getByTestId('section-finies-entete'));
+    // **Le clos a quitté l'écran à la cinquième reprise**, et il n'y est plus
+    // replié : c'est un compte dans l'en-tête, qui ouvre la liste quand on la
+    // cherche. Replier gardait trois natures à lire ; retirer en laisse deux,
+    // qui se comparent d'un regard.
+    expect(screen.queryByTestId('finies')).toBeNull();
+    await fireEvent.press(screen.getByTestId('compte-des-finies'));
     await waitFor(() => expect(screen.getByTestId('finies')).toBeTruthy());
     // Les deux anciennes sections ont disparu, et non pas seulement changé de
     // nom : sans cette moitié, un écran qui rendrait les quatre passerait.
