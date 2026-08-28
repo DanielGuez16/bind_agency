@@ -191,6 +191,16 @@ describe('la barre de titre compte, elle ne nomme plus', () => {
   });
 });
 
+/** Demain à midi dans le fuseau du salon, en jours civils et non en heures. */
+function demainMidi(): string {
+  const aNewYork = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/New_York',
+    dateStyle: 'short',
+  }).format(new Date());
+  const [a, m, j] = aNewYork.split('-').map(Number);
+  return new Date(Date.UTC(a, m - 1, j + 1, 16, 0, 0)).toISOString();
+}
+
 describe('la carte de demande porte les trois faits qui décident', () => {
   it('la prestation, le moment, la personne, et la limite', async () => {
     await monter({
@@ -198,15 +208,29 @@ describe('la carte de demande porte les trois faits qui décident', () => {
       a_trancher: [
         RESERVATION('d-1', 'awaiting_business', {
           approval_expires_at: '2026-08-20T22:00:00Z',
+          // **Demain chez le salon, calculé.** Le décor portait une date figée
+          // à dix jours de l'exécution : le repère y rend la date brute, ce qui
+          // est le bon comportement — au-delà d'une semaine il n'y a pas de
+          // repère humain — mais éprouve alors le repli et non la règle.
+          starts_at: demainMidi(),
         }),
       ],
     });
     await waitFor(() => expect(screen.getByTestId('demande-d-1')).toBeTruthy());
 
+    // **Une colonne, deux graisses, chaque fait une fois.** Le pseudonyme et
+    // le moment tiennent sur la même ligne depuis la v8 : la carte portait
+    // quatre grammaires typographiques pour trois faits, et l'heure limite y
+    // était écrite deux fois parce qu'en mono, isolée d'un verbe, elle ne se
+    // lisait pas comme une échéance.
     const carte = within(screen.getByTestId('demande-d-1'));
     expect(carte.getByText('Gel manicure')).toBeTruthy();
-    expect(carte.getByText('@lea.mrl')).toBeTruthy();
+    expect(carte.getByText(/@lea\.mrl · /)).toBeTruthy();
     expect(carte.getByTestId('limite-d-1')).toBeTruthy();
+
+    // Et le moment se lit sans calculer : « Aug 30, 2026 at 2:00 PM » demandait
+    // de se situer dans un calendrier pour lire un rendez-vous de demain.
+    expect(carte.getByText(/· tomorrow at /)).toBeTruthy();
   });
 
   it('et sans limite servie, la ligne de limite ne s’invente pas', async () => {
