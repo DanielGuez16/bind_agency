@@ -10729,3 +10729,38 @@ de croire trois fois que la propriété était mal nommée.
 deux — l'objet pour le natif, les attributs pour le web — à un seul endroit. Le
 refaire à chaque appel, c'est en oublier un ; et un état oublié ne se voit pas,
 il s'entend chez quelqu'un qui n'est pas là pour le dire.
+
+
+---
+
+## 2026-08-29 — Un refus en cachait un autre, et le second attendait le premier
+
+L'import de carte annonçait le PDF depuis la phase 9. Deux choses l'en
+empêchaient, et **la seconde n'était visible que parce que la première la
+couvrait** : la route de dépôt refusait les PDF sur leur signature, donc aucun
+PDF n'atteignait jamais l'extracteur, qui les aurait envoyés au modèle dans un
+bloc `image` — refusé par l'API pour `application/pdf`.
+
+Corriger le dépôt seul aurait donc déplacé le refus d'un cran, d'un 415 lisible
+vers une erreur de modèle qui ne dit rien. **Un défaut masqué par un autre ne se
+corrige pas à moitié :** en levant une garde, on cherche ce qu'elle protégeait.
+
+Ce qui l'a laissé passer est instructif. Les tests du service passent
+`mime_type="application/pdf"` partout — le critère de fin de tâche disait « un
+PDF de salon en anglais et un en espagnol » — mais avec un extracteur double, et
+en appelant `service.creer` directement. **Le seul endroit qui décide du format
+est la route, et aucun test ne la traversait avec des octets.** Un décor qui
+nomme le cas sans emprunter le chemin où il se joue ne l'éprouve pas ; il en
+donne le sentiment, ce qui est pire, et le critère de fin a été coché dessus.
+
+## 2026-08-29 — Le prix lu vaut mieux que le prix saisi, et ne se montre pas
+
+La composition a perdu son champ de prix le 2026-08-24 : le produit ne montre
+aucun montant, et `price_cents` part à zéro. L'écran de relecture, lui, demandait
+encore « Price in cents » — le seul montant du produit, sur le seul écran qui en
+portait un, dans l'unité la moins lisible qui soit.
+
+**Le prix extrait est conservé et transmis, jamais affiché ni saisi.** C'est la
+lecture juste de la règle : le prix est une donnée de reporting, donc il n'a pas
+à disparaître — il a à ne pas être un champ. Et ce que l'extraction lit vaut
+mieux, comme donnée, que le zéro qu'enregistre la composition à la main.

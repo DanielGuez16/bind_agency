@@ -227,9 +227,21 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
 ## Phase 9 — Import de carte
 
 - [x] Téléversement et extraction structurée
-      *Fin : un PDF de salon en anglais et un en espagnol produisent une charge exploitable*
+      *Fin : un PDF de salon en anglais et un en espagnol produisent une charge
+      exploitable. **Le critère était faux jusqu'au 2026-08-29** : la route de
+      dépôt n'acceptait que JPEG, PNG et WEBP, et l'extracteur envoyait tout au
+      modèle en bloc `image`, que l'API refuse pour un PDF. Les tests du service
+      passaient bien `application/pdf`, mais avec un extracteur double et sans
+      jamais traverser la route qui regarde les octets — le seul endroit où le
+      format se décide*
 - [x] Écran de relecture et correction, saisie des durées
       *Fin : aucun item n'est créé sans validation explicite du commerce*
+- [x] Le chemin depuis l'écran jusqu'à la relecture
+      *Fin : « les prestations » offre l'import à côté de la composition à la
+      main, deux sources — la pellicule et les fichiers — et la relecture
+      s'ouvre sur ce que le modèle a lu. Le mécanisme était complet et sans
+      appelant depuis la phase 9 ; le prix a quitté l'écran, il est lu et
+      transmis sans être montré ni saisi*
 
 ---
 
