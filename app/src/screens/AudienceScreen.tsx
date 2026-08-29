@@ -278,8 +278,12 @@ function CarteDuCompte({
         <Icone nom={compte.platform === 'tiktok' ? 'tiktok' : 'instagram'} taille={26} />
         <View style={{ flex: 1, minWidth: 0 }}>
           <Texte variante="type.bodyStrong">{nomDePlateforme(compte.platform)}</Texte>
+          {/* **Un pseudonyme n'est pas un code.** Il était en mono, comme un
+              identifiant qu'on lit caractère par caractère pour le recopier ;
+              « @casabruma » se lit d'un mot. Même défaut que les dates en mono,
+              et même correction. */}
           {compte.handle ? (
-            <Texte variante="type.data" couleur="ink.mute" ellipseSurNomPropre>
+            <Texte variante="type.caption" couleur="ink.mute" ellipseSurNomPropre>
               {compte.handle}
             </Texte>
           ) : null}
