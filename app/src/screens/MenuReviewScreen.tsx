@@ -11,30 +11,34 @@
  * annoncée au client, pas celle que le commerce bloque. Les deux diffèrent
  * souvent d'un quart d'heure de remise en état.
  *
+ * **Le prix est lu et transmis, jamais montré ni saisi.** L'écran demandait un
+ * « prix en centimes » — le seul montant du produit, sur le seul écran qui en
+ * portait un, et dans l'unité la moins lisible qui soit. Le prix a quitté la
+ * composition le 2026-08-24 : le créateur ne reçoit pas d'argent, et le prix
+ * n'est qu'une donnée de reporting. Ce que l'extraction lit vaut mieux que le
+ * zéro que la composition à la main enregistre ; ça ne fait pas de lui une
+ * chose à relire.
+ *
  * Les lignes de faible confiance sont signalées. Tout relire avec la même
  * attention revient à ne rien relire.
  */
 import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { View } from 'react-native';
 
+import { useApi, type LigneExtraite } from '../api';
+import { Button, StatusMessage, TextField, Texte, Toggle } from '../components';
 import { useI18n } from '../i18n';
-import { errorCodeFromResponse, translateErrorCode } from '../i18n/errors';
-
-const DEFAULT_API_URL = process.env.EXPO_PUBLIC_API_URL;
+import { elevationDeCarte, radius, useColors } from '../theme';
 
 /** En dessous, la ligne est signalée à la relecture. */
 export const CONFIANCE_BASSE = 0.7;
 
-export type LigneExtraite = {
-  name: string;
-  price_cents: number;
-  description: string | null;
-  confidence: string;
-};
+export type { LigneExtraite };
 
 type LigneRevue = {
   name: string;
-  price_cents: string;
+  /** Lu sur la carte, transmis tel quel. Voir l'en-tête : il ne se relit pas. */
+  price_cents: number;
   duration_minutes: string;
   requires_booking: boolean;
   retenue: boolean;
@@ -44,7 +48,7 @@ type LigneRevue = {
 function depuis(ligne: LigneExtraite): LigneRevue {
   return {
     name: ligne.name,
-    price_cents: String(ligne.price_cents),
+    price_cents: ligne.price_cents,
     // Volontairement vide : l'extraction ne la fournit pas, et la préremplir
     // avec un chiffre plausible ferait valider une durée que personne n'a
     // choisie.
@@ -56,25 +60,27 @@ function depuis(ligne: LigneExtraite): LigneRevue {
 }
 
 export function MenuReviewScreen({
-  apiUrl = DEFAULT_API_URL,
-  accessToken,
   businessId,
   importId,
   lignesExtraites,
+  onRetour,
+  onValide,
 }: {
-  apiUrl?: string;
-  accessToken: string;
   businessId: string;
   importId: string;
   lignesExtraites: LigneExtraite[];
+  onRetour?: () => void;
+  onValide?: () => void;
 }) {
+  const { api, messageDErreur } = useApi();
   const { t } = useI18n();
+  const c = useColors();
   const [lignes, setLignes] = useState<LigneRevue[]>(() => lignesExtraites.map(depuis));
   const [etat, setEtat] = useState<
     | { state: 'saisie' }
     | { state: 'envoi' }
     | { state: 'fait'; count: number }
-    | { state: 'refuse'; code: string | null }
+    | { state: 'refuse'; message: string }
   >({ state: 'saisie' });
 
   const modifier = useCallback((index: number, champ: Partial<LigneRevue>) => {
@@ -86,133 +92,145 @@ export function MenuReviewScreen({
   const valider = useCallback(async () => {
     setEtat({ state: 'envoi' });
     try {
-      const reponse = await fetch(
-        `${apiUrl}/business/${businessId}/menu-imports/${importId}/validate`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
-          body: JSON.stringify({
-            lignes: lignes.map((ligne) => ({
-              name: ligne.name,
-              price_cents: Number(ligne.price_cents) || 0,
-              duration_minutes: ligne.duration_minutes ? Number(ligne.duration_minutes) : null,
-              requires_booking: ligne.requires_booking,
-              retenue: ligne.retenue,
-            })),
-          }),
-        },
+      const resultat = await api.validerLaCarteRelue(
+        businessId,
+        importId,
+        lignes.map((ligne) => ({
+          name: ligne.name,
+          price_cents: ligne.price_cents,
+          duration_minutes: ligne.duration_minutes ? Number(ligne.duration_minutes) : null,
+          requires_booking: ligne.requires_booking,
+          retenue: ligne.retenue,
+        })),
       );
-      const corps = await reponse.json();
-      setEtat(
-        reponse.ok
-          ? { state: 'fait', count: corps.items_crees }
-          : { state: 'refuse', code: errorCodeFromResponse(corps) },
-      );
-    } catch {
-      setEtat({ state: 'refuse', code: null });
+      setEtat({ state: 'fait', count: resultat.items_crees });
+      onValide?.();
+    } catch (erreur) {
+      setEtat({ state: 'refuse', message: messageDErreur(erreur) });
     }
-  }, [apiUrl, accessToken, businessId, importId, lignes]);
+  }, [api, businessId, importId, lignes, messageDErreur, onValide]);
 
   if (lignesExtraites.length === 0) {
     return (
-      <View style={styles.page}>
-        <Text style={styles.titre}>{t('menuImport.title')}</Text>
-        <Text>{t('menuImport.empty')}</Text>
+      <View style={{ gap: 12 }} testID="relecture-de-la-carte">
+        <Texte variante="type.heading">{t('menuImport.title')}</Texte>
+        <Texte couleur="ink.soft" testID="carte-illisible">
+          {t('menuImport.empty')}
+        </Texte>
+        {onRetour ? (
+          <Button
+            label={t('menuImport.retour')}
+            variant="secondary"
+            onPress={onRetour}
+            testID="quitter-la-relecture"
+          />
+        ) : null}
       </View>
     );
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.page}>
-      <Text style={styles.titre}>{t('menuImport.title')}</Text>
-      <Text style={styles.aide}>{t('menuImport.intro')}</Text>
+    <View style={{ gap: 16 }} testID="relecture-de-la-carte">
+      <Texte variante="type.heading">{t('menuImport.title')}</Texte>
+      <Texte variante="type.caption" couleur="ink.soft">
+        {t('menuImport.intro')}
+      </Texte>
 
       {lignes.map((ligne, index) => (
-        <View key={`${ligne.name}-${index}`} style={styles.carte}>
+        <View
+          key={`${ligne.name}-${index}`}
+          testID={`ligne-lue-${index}`}
+          style={{
+            padding: 16,
+            gap: 12,
+            borderRadius: radius['radius.lg'],
+            backgroundColor: c['bg.surface'],
+            ...elevationDeCarte(),
+          }}
+        >
           {ligne.confidence < CONFIANCE_BASSE ? (
-            <Text style={styles.alerte}>{t('menuImport.lowConfidence')}</Text>
+            <StatusMessage
+              level="warning"
+              body={t('menuImport.lowConfidence')}
+              testID={`confiance-basse-${index}`}
+            />
           ) : null}
 
-          <Text style={styles.libelle}>{t('menuImport.nameLabel')}</Text>
-          <TextInput
-            accessibilityLabel={`${t('menuImport.nameLabel')} ${index + 1}`}
+          <TextField
+            label={t('menuImport.nameLabel')}
             value={ligne.name}
             onChangeText={(valeur) => modifier(index, { name: valeur })}
-            style={styles.champ}
+            testID={`nom-lu-${index}`}
           />
 
-          <Text style={styles.libelle}>{t('menuImport.priceLabel')}</Text>
-          <TextInput
-            accessibilityLabel={`${t('menuImport.priceLabel')} ${index + 1}`}
-            value={ligne.price_cents}
-            onChangeText={(valeur) => modifier(index, { price_cents: valeur })}
-            keyboardType="number-pad"
-            style={styles.champ}
-          />
-
-          <View style={styles.ligne}>
-            <Text>{t('menuImport.bookable')}</Text>
-            <Switch
-              accessibilityLabel={`${t('menuImport.bookable')} ${index + 1}`}
+          <View style={RANGEE}>
+            <Texte style={{ flexShrink: 1 }}>{t('menuImport.bookable')}</Texte>
+            <Toggle
               value={ligne.requires_booking}
-              onValueChange={(valeur) => modifier(index, { requires_booking: valeur })}
+              onChange={(valeur) => modifier(index, { requires_booking: valeur })}
+              accessibilityLabel={t('menuImport.bookable')}
+              testID={`reservable-${index}`}
             />
           </View>
 
           {ligne.requires_booking ? (
-            <>
-              <Text style={styles.libelle}>{t('menuImport.durationLabel')}</Text>
-              <TextInput
-                accessibilityLabel={`${t('menuImport.durationLabel')} ${index + 1}`}
-                value={ligne.duration_minutes}
-                onChangeText={(valeur) => modifier(index, { duration_minutes: valeur })}
-                keyboardType="number-pad"
-                style={styles.champ}
-              />
-              <Text style={styles.aide}>{t('menuImport.durationHint')}</Text>
-            </>
+            <TextField
+              label={t('menuImport.durationLabel')}
+              value={ligne.duration_minutes}
+              onChangeText={(valeur) => modifier(index, { duration_minutes: valeur })}
+              keyboard="numeric"
+              helpText={t('menuImport.durationHint')}
+              testID={`duree-lue-${index}`}
+            />
           ) : null}
 
-          <View style={styles.ligne}>
-            <Text>{ligne.retenue ? t('menuImport.keep') : t('menuImport.drop')}</Text>
-            <Switch
-              accessibilityLabel={`${t('menuImport.keep')} ${index + 1}`}
+          <View style={RANGEE}>
+            <Texte style={{ flexShrink: 1 }}>
+              {ligne.retenue ? t('menuImport.keep') : t('menuImport.drop')}
+            </Texte>
+            <Toggle
               value={ligne.retenue}
-              onValueChange={(valeur) => modifier(index, { retenue: valeur })}
+              onChange={(valeur) => modifier(index, { retenue: valeur })}
+              accessibilityLabel={t('menuImport.keep')}
+              testID={`garder-${index}`}
             />
           </View>
         </View>
       ))}
 
       {etat.state === 'refuse' ? (
-        <Text style={styles.erreur}>{translateErrorCode(t, etat.code)}</Text>
+        <StatusMessage level="danger" body={etat.message} testID="refus-de-la-carte" />
       ) : null}
 
       {etat.state === 'fait' ? (
-        <Text style={styles.fait}>{t('menuImport.validated', { count: etat.count })}</Text>
+        <Texte couleur="status.success.text" testID="carte-validee">
+          {t('menuImport.validated', { count: String(etat.count) })}
+        </Texte>
       ) : (
-        <Pressable
-          accessibilityRole="button"
+        <Button
+          label={t('menuImport.validate')}
           onPress={valider}
-          style={({ pressed }) => [styles.bouton, { opacity: pressed ? 0.7 : 1 }]}
-        >
-          <Text>{t('menuImport.validate')}</Text>
-        </Pressable>
+          disabled={etat.state === 'envoi'}
+          testID="valider-la-carte"
+        />
       )}
-    </ScrollView>
+
+      {onRetour ? (
+        <Button
+          label={t('menuImport.retour')}
+          variant="secondary"
+          onPress={onRetour}
+          testID="quitter-la-relecture"
+        />
+      ) : null}
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  page: { padding: 24, gap: 16 },
-  titre: { fontSize: 22, fontWeight: '600' },
-  aide: { fontSize: 13, color: '#555' },
-  carte: { padding: 16, borderRadius: 8, borderWidth: 1, borderColor: '#ddd', gap: 8 },
-  alerte: { color: '#8a6d00', fontWeight: '600' },
-  libelle: { fontWeight: '600' },
-  champ: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 10 },
-  ligne: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  bouton: { padding: 14, borderRadius: 8, backgroundColor: '#dde', alignItems: 'center' },
-  erreur: { color: '#a11' },
-  fait: { color: '#136c3a', fontWeight: '600' },
-});
+/** Un libellé et sa bascule, alignés sur les deux bords. */
+const RANGEE = {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: 12,
+} as const;
