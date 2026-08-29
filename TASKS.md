@@ -3172,6 +3172,43 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Le mot vient de la langue et non du code : « to » et « a » ne se
       devinent pas d'un tiret. Une mutation, elle tombe*
 
+- [x] **L'administration reçoit sa passe de composition**
+      *Jamais faite jusqu'ici. La planche n'a pas pu être lue — le connecteur
+      Design est sans autorisation depuis deux jours — et le brief nommait les
+      corrections assez précisément pour s'en passer.*
+      ***L'ambre revient à la navigation seule.*** *La rangée choisie de la table
+      d'administration était peinte en `brand.50` : sur une file de quinze
+      lignes, la couleur de marque cessait de dire « ici » pour dire « une ligne
+      parmi d'autres ». Elle passe en matière — `bg.inset` et filet `line.solo`
+      — qui dit la même chose sans dépenser la seule couleur dont la navigation
+      dispose. Même raison pour la case cochée, qui est de l'ornement répété par
+      rangée, pour les dix jauges des plans — un écran qui se lit et n'offre
+      aucun geste — et pour les onze « Take over » de l'annuaire des salons, qui
+      faisaient de la reprise la colonne de l'écran au lieu de son exception.*
+      *Ce qui **garde** son ambre : le lien qui ouvre les notes de l'arbitrage.
+      Un lien est un geste, pas de l'ornement, et c'est la seule action du
+      panneau.*
+      ***Une phrase déguisée en étiquette.*** *« Ce qui s'ouvre, et rien
+      d'autre » était en capitales espacées de onze points sur la reprise de
+      compte : une étiquette n'a pas de verbe, et une phrase qui en prend le
+      costume se lit deux fois — une fois pour la déchiffrer, une fois pour la
+      comprendre. Elle passait de surcroît sous le seuil de contraste, que onze
+      points en `ink.soft` ne tiennent pas.*
+      ***Les poignées quittent le mono.*** *Un pseudonyme n'est pas un code lu
+      caractère par caractère ; « @casabruma » se lit d'un mot. Même défaut que
+      les dates en mono, corrigé la semaine dernière, et même correction.*
+      ***La question ouverte se répond depuis le code, et la réponse est
+      rassurante.*** *Design s'inquiétait de « 48 nœuds en mono contre 4 en
+      sans » sur le panneau d'arbitrage. Le panneau construit en porte **un** —
+      le rang d'une tentative. Les quarante-huit sont ceux de la maquette, pas
+      du produit : la densité qu'il redoutait n'existe pas ici, et il n'y a donc
+      pas de colonne à retirer.*
+      *Deux mutations, toutes deux survivantes au premier tour — rien ne tenait
+      la règle qu'on venait de poser. Une assertion de plus dans l'inventaire de
+      type existant, portant sur la **table partagée** et non sur les écrans qui
+      l'emploient : c'est là que les quinze occurrences naissent, et un lien
+      d'action doit pouvoir garder son ambre*
+
 - [ ] **`catalogue/corriger.ts` déclare une règle que personne ne consulte**
       *Même balayage. Le module nomme `CORRIGEABLES` — nom, description, photo —
       et `DEMANDENT_UNE_AUTRE` — durée, nature, réservabilité — avec une note

@@ -127,9 +127,19 @@ export function TableRow({
     paddingHorizontal: 12,
     borderBottomWidth: 1,
     borderBottomColor: c['line.default'],
-    backgroundColor: actif ? c['brand.50'] : 'transparent',
+    /**
+     * **La rangée choisie se dit en matière, pas en couleur.**
+     *
+     * L'arbitrage porte une table de quinze lignes : peinte en ambre, la
+     * sélection y mettait onze occurrences de la couleur de marque sur un seul
+     * écran, et l'orange cessait de signifier « ici » pour signifier « une
+     * ligne parmi d'autres ». Le creux et le filet d'encre disent la même
+     * chose — celle-ci est ouverte — sans dépenser la seule couleur dont le
+     * produit se sert pour désigner où l'on est.
+     */
+    backgroundColor: actif ? c['bg.inset'] : 'transparent',
     borderLeftWidth: 3,
-    borderLeftColor: actif ? c['brand.700'] : 'transparent',
+    borderLeftColor: actif ? c['line.solo'] : 'transparent',
   };
 
   if (!onPress) {

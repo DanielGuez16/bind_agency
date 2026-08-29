@@ -278,7 +278,11 @@ function Rangee({
                 testID={`reprendre-${commerce.business_id}`}
                 style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
               >
-                <Texte variante="type.caption" couleur="brand.700" style={{ fontWeight: '600' }}>
+                {/* **En encre, et c'est la même règle que la rangée.** Onze
+                    « Take over » en ambre faisaient de la reprise la colonne de
+                    l'écran au lieu de son exception — or la retenue s'obtient
+                    en n'offrant qu'une porte, pas en la peignant. */}
+                <Texte variante="type.caption" couleur="ink.default" style={{ fontWeight: '600' }}>
                   {ouvert ? t('admin.commerceFermer') : t('reprise.entrer')}
                 </Texte>
               </Pressable>

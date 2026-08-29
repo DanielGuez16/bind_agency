@@ -236,7 +236,10 @@ function QuiPrendCePlan({ plan }: { plan: PlanAdministrateur }) {
             </Texte>
           </View>
           <View style={{ flex: 1 }}>
-            <Jauge fraction={part.fraction} />
+            {/* **En encre : cet écran n'offre aucun geste.** Dix barres de
+                marque y faisaient de la couleur de navigation une texture de
+                fond, et la table des plans se lit — elle ne se décide pas. */}
+            <Jauge fraction={part.fraction} teinte="ink.default" />
           </View>
           <View style={{ width: 76 }}>
             <Texte
