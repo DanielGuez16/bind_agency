@@ -197,7 +197,7 @@ describe('l’onglet d’attente du commerce', () => {
     const envois: { chemin: string; methode: string; corps: unknown }[] = [];
     await monter(<OngletDAttente />, clientEspion({ '/me/businesses': [] as unknown[] }, envois));
 
-    await waitFor(() => expect(screen.getByTestId('creation-du-commerce')).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId('ecran-creation-du-commerce')).toBeTruthy());
     expect(screen.getByTestId('creer-le-commerce')).toBeTruthy();
   });
 
@@ -227,7 +227,7 @@ describe('l’onglet d’attente du commerce', () => {
     });
 
     await monter(<OngletDAttente />, client);
-    await waitFor(() => expect(screen.getByTestId('creation-du-commerce')).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId('ecran-creation-du-commerce')).toBeTruthy());
 
     await fireEvent.changeText(screen.getByTestId('champ-nom-du-commerce'), 'Ocean');
     await fireEvent.press(screen.getByTestId('creer-le-commerce'));
@@ -240,7 +240,7 @@ describe('l’onglet d’attente du commerce', () => {
       ).toHaveLength(2),
     );
     // Et le formulaire cède la place : la requête n'est plus vide.
-    await waitFor(() => expect(screen.queryByTestId('creation-du-commerce')).toBeNull());
+    await waitFor(() => expect(screen.queryByTestId('ecran-creation-du-commerce')).toBeNull());
   });
 });
 
