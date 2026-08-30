@@ -194,6 +194,12 @@ export function RedemptionScreen({
 
   return (
     <ScrollView
+      // **Le nom de l'écran, et il manquait.** La caisse ne passe pas par
+      // `Ecran` — elle n'a pas de requête à quatre états — donc personne ne le
+      // lui avait donné. Un parcours qui veut l'éprouver n'avait que des
+      // contrôles isolés à viser, et ne pouvait pas dire « je suis à la
+      // caisse » : c'est exactement ce que la garde des sélecteurs demande.
+      testID="ecran-caisse"
       style={{ flex: 1, backgroundColor: c['bg.page'] }}
       contentContainerStyle={{ padding: spacing['space.6'], gap: spacing['space.4'] }}
     >

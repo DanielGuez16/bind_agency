@@ -123,7 +123,7 @@ export function MenuReviewScreen({
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.page}>
+    <ScrollView testID="ecran-revue-de-carte" contentContainerStyle={styles.page}>
       <Text style={styles.titre}>{t('menuImport.title')}</Text>
       <Text style={styles.aide}>{t('menuImport.intro')}</Text>
 

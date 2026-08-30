@@ -3209,6 +3209,23 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       l'emploient : c'est là que les quinze occurrences naissent, et un lien
       d'action doit pouvoir garder son ambre*
 
+- [x] **Chaque écran porte son nom, et cinq ne l'avaient pas**
+      *Trouvé en parcourant le produit à la main, et par rien d'autre. Un
+      parcours de bout en bout se porte par l'écran qu'il éprouve — c'est ce que
+      la garde des sélecteurs exige — et un écran sans `testID` ne peut pas être
+      visé du tout : l'exploration a dû cibler des contrôles isolés dans la page
+      entière, ce qui mesure l'existence d'un bouton et non celle de la page.
+      Deux parcours ont échoué sur cette absence, et j'ai d'abord pris l'échec
+      pour un défaut du produit.*
+      *La caisse et le mode terrain n'en avaient aucun — l'une parce qu'elle ne
+      passe pas par `Ecran`, faute de requête à quatre états. La garde en a
+      révélé trois autres : la santé, la création d'un commerce — qui portait
+      un nom sans le préfixe — et **la revue de carte, qui n'avait aucun
+      identifiant du tout**, ce qui explique qu'aucun parcours n'ait jamais
+      atteint l'import automatique.*
+      *L'assertion vit dans la couverture des écrans, dont c'est déjà le sujet.
+      Une mutation, elle tombe*
+
 - [ ] **`catalogue/corriger.ts` déclare une règle que personne ne consulte**
       *Même balayage. Le module nomme `CORRIGEABLES` — nom, description, photo —
       et `DEMANDENT_UNE_AUTRE` — durée, nature, réservabilité — avec une note
