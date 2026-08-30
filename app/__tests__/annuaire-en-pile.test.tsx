@@ -13,6 +13,7 @@
  * dans le contrat, volontairement : « voir plus » est un appui explicite.
  */
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 
 import { ApiClient, ApiProvider } from '../src/api';
 import { I18nProvider } from '../src/i18n';
@@ -89,6 +90,13 @@ describe('sur le téléphone, la pile est virtualisée', () => {
 
     // L'entête : la portée et l'ordre, qui défilent avec la liste.
     expect(screen.getByTestId('ordre-de-la-grille')).toBeTruthy();
+    // **Et l'ordre est du texte, pas une étiquette.** « Sorted by access, then
+    // distance » énonce une règle de tri : trente et un signes, au-delà de la
+    // borne de la passation. On éprouve la casse rendue plutôt que le nom du
+    // jeton — c'est ce que l'œil reçoit.
+    expect(
+      StyleSheet.flatten(screen.getByTestId('ordre-de-la-grille').props.style).textTransform,
+    ).not.toBe('uppercase');
     // Les fiches.
     expect(screen.getByTestId('createur-c1')).toBeTruthy();
     expect(screen.getByTestId('createur-c2')).toBeTruthy();

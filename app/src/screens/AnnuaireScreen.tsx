@@ -202,7 +202,13 @@ export function AnnuaireScreen({
               l'annoncer se lit comme un ordre arbitraire, et le premier réflexe
               est de chercher un moyen de la trier — qui n'existe pas, puisque le
               seul ordre utile est déjà celui-là. */}
-          <Texte variante="type.label" couleur="ink.mute" testID="ordre-de-la-grille">
+          {/* **Décrire un ordre demande un verbe, donc une phrase.** « Sorted
+              by access, then distance » compte trente et un signes : au-delà de
+              vingt-quatre, la passation (§13 ter) dit que ce n'est plus une
+              étiquette mais du texte. Une étiquette nomme une catégorie ; ceci
+              énonce une règle de tri, et les capitales espacées le faisaient
+              lire deux fois. */}
+          <Texte variante="type.caption" couleur="ink.soft" testID="ordre-de-la-grille">
             {t('annuaire.trieePar')}
           </Texte>
         </View>
