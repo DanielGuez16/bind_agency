@@ -16,7 +16,7 @@ import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import { Platform } from 'react-native';
 
 import { useI18n } from '../i18n';
-import { translateErrorCode } from '../i18n/errors';
+import { messageDeRefus } from '../i18n/errors';
 import { ApiClient, ApiError, NetworkError, type CoffreDeJetons, type Jetons } from './client';
 import { routes } from './routes';
 import type {
@@ -1252,7 +1252,7 @@ export function ApiProvider({
         // Une panne de transport n'est pas une erreur d'API : la phrase à dire
         // n'est pas la même, et « réessaie » n'a de sens que dans ce cas-là.
         if (erreur instanceof NetworkError) return t('errors.network');
-        if (erreur instanceof ApiError) return translateErrorCode(t, erreur.code);
+        if (erreur instanceof ApiError) return messageDeRefus(t, erreur.code, erreur.champs);
         return t('errors.generic');
       },
     }),

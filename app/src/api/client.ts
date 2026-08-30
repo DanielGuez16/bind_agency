@@ -21,7 +21,7 @@
  * il rend des données ou lève. Ce qu'on fait d'un `authentication_required` est
  * une décision d'application, pas de transport.
  */
-import { errorCodeFromResponse } from '../i18n/errors';
+import { champsEnCause, errorCodeFromResponse } from '../i18n/errors';
 import { routes } from './routes';
 
 export const DELAI_MS = 15_000;
@@ -31,13 +31,23 @@ export class ApiError extends Error {
   readonly status: number;
   /** Le code du catalogue fermé, ou `null` si la réponse n'en portait pas. */
   readonly code: string | null;
+  /**
+   * Les champs que le serveur met en cause, quand il en nomme.
+   *
+   * **Il en nommait, et personne ne les lisait.** Un refus de validation arrive
+   * avec `fields: [{ loc: ['body', 'email'] }]` ; l'écran affichait « Some
+   * information is missing or incorrect » et laissait chercher lequel. C'est le
+   * seul refus du produit dont la cause est connue et n'était pas dite.
+   */
+  readonly champs: string[];
 
-  constructor(status: number, code: string | null) {
+  constructor(status: number, code: string | null, champs: string[] = []) {
     // Le message technique ne s'affiche pas : il sert aux traces et aux tests.
     super(`api ${status}${code ? ` ${code}` : ''}`);
     this.name = 'ApiError';
     this.status = status;
     this.code = code;
+    this.champs = champs;
   }
 }
 
@@ -462,7 +472,7 @@ export class ApiClient {
       // Une erreur sans corps JSON reste une erreur : le code sera nul et
       // l'écran affichera le message générique.
     }
-    return new ApiError(reponse.status, errorCodeFromResponse(corps));
+    return new ApiError(reponse.status, errorCodeFromResponse(corps), champsEnCause(corps));
   }
 
   /** Une seule rotation vivante à la fois, partagée. */
