@@ -3226,6 +3226,32 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *L'assertion vit dans la couverture des écrans, dont c'est déjà le sujet.
       Une mutation, elle tombe*
 
+- [x] **L'étiquette des plans joignait deux faits par un point médian**
+      *« Read only · monthly figures computed server-side » : quarante-sept
+      signes en capitales espacées de onze points, et le point médian y servait
+      de **conjonction** — ce qu'un séparateur ne sait pas faire. Il range côte
+      à côte, il ne relie pas, et l'œil doit fabriquer lui-même le lien que la
+      phrase aurait porté.*
+      *La règle de la passation, §13 ter : une étiquette fait moins de
+      vingt-quatre signes ; au-delà c'est du texte, et il s'écrit comme une
+      phrase. Restent des étiquettes les têtes de colonnes, les états d'un ou
+      deux mots, les intertitres.*
+      *Une mutation, et elle a survécu au premier tour — rien ne tenait la
+      règle. L'assertion vit dans le test de l'écran, et elle éprouve la **casse
+      rendue** plutôt que le nom du jeton : c'est ce que l'œil reçoit, et un
+      jeton peut changer de nom sans que la règle change*
+
+- [ ] **Deux autres étiquettes dépassent les vingt-quatre signes**
+      *Relevées en balayant les clés rendues en `type.label`, non traitées parce
+      que la demande portait sur celle des plans. `annuaire.trieePar` — « Sorted
+      by access, then distance », 31 signes — décrit un ordre, c'est une phrase.
+      `reglages.reprisesTitre` — « When BIND entered your account », 30 signes —
+      est un intertitre, donc peut-être légitime au titre de l'exception ; c'est
+      à trancher, pas à supposer.*
+      *Le balayage est approximatif : il apparie un `type.label` à la clé de
+      traduction la plus proche dans le fichier, ce qui ramène du corps de texte
+      voisin. Les deux ci-dessus ont été vérifiées à la main, les autres non*
+
 - [ ] **`catalogue/corriger.ts` déclare une règle que personne ne consulte**
       *Même balayage. Le module nomme `CORRIGEABLES` — nom, description, photo —
       et `DEMANDENT_UNE_AUTRE` — durée, nature, réservabilité — avec une note

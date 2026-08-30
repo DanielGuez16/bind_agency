@@ -808,7 +808,7 @@ export const es: Catalogue = {
     issueCloreSansFaute: 'Cerrar sin falta',
     issueCloreSansFauteAide: 'El local conserva el servicio tal como se dio y su fiabilidad no se toca. Úsalo cuando la petición nunca llegó a entenderse.',
     issueSurDossier: '{{issue}}: {{createur}}, {{prestation}}, {{commerce}}',
-    plansLectureSeule: 'Solo lectura · cifras mensuales calculadas en el servidor',
+    plansLectureSeule: 'Cifras mensuales calculadas en el servidor, solo lectura.',
     plansNoteAnnuel: 'Un plan anual se factura una vez al año. Su cifra mensual es la división que hace el servidor: no es un precio y no debe leerse como tal.',
     plansTitre: 'Planes de suscripción',
     plansVide: 'Ningún plan todavía.',
