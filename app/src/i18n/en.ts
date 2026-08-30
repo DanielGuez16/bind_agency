@@ -901,7 +901,7 @@ export const en = {
     // Ce que la barre annonce à l'oreille : trois boutons identiques d'un
     // dossier à l'autre ne se distinguent que par ce qu'ils nomment.
     issueSurDossier: '{{issue}}: {{createur}}, {{prestation}}, {{commerce}}',
-    plansLectureSeule: 'Read only · monthly figures computed server-side',
+    plansLectureSeule: 'Monthly figures computed server-side, read only.',
     plansNoteAnnuel: 'A yearly plan bills once a year. Its monthly figure is the server’s own division: it is not a price, and it must not be read as one.',
     plansTitre: 'Subscription plans',
     plansVide: 'No plan yet.',

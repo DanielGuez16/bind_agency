@@ -82,7 +82,20 @@ export function PlansScreen() {
 
         return (
           <View style={{ gap: 20 }}>
-            <Texte variante="type.label" couleur="ink.mute" testID="lecture-seule">
+            {/**
+              * **Deux faits joints par un point médian ne font pas une
+              * étiquette.** « Read only · monthly figures computed
+              * server-side » comptait quarante-sept signes en capitales
+              * espacées de onze points : le point médian y servait de
+              * conjonction, ce qu'un séparateur ne sait pas faire — il range
+              * côte à côte, il ne relie pas.
+              *
+              * La règle de la passation, §13 ter : une étiquette fait moins de
+              * vingt-quatre signes ; au-delà c'est du texte, et il s'écrit
+              * comme une phrase. Restent des étiquettes les têtes de colonnes,
+              * les états d'un ou deux mots, les intertitres.
+              */}
+            <Texte variante="type.caption" couleur="ink.soft" testID="lecture-seule">
               {t('admin.plansLectureSeule')}
             </Texte>
 
