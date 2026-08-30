@@ -65,6 +65,7 @@ from app.seed import (
     SeedRefused,
     verifier_la_cible,
 )
+from app.services import availability as availability_service
 from tests.conftest import _maintenance_dsn
 
 #: Ce que le semis produit, **dérivé de lui** et non recopié.
@@ -1474,6 +1475,33 @@ async def test_chaque_commerce_ouvert_a_une_reservation_a_venir(
         )
 
         assert creneaux, f"{nom} n'a aucune réservation"
+
+        # **Un salon fermé aujourd'hui n'a pas de journée, et c'est vrai.**
+        # Wynwood ferme le dimanche : lui demander une réservation ce jour-là
+        # revenait à exiger du semis qu'il en pose une quand le salon n'ouvre
+        # pas — le produit refuserait, à juste titre. Le test tombait donc un
+        # jour sur sept, sans qu'aucun code soit en cause.
+        #
+        # La question porte sur les salons qui **ouvrent** aujourd'hui, ce que
+        # `fenetres_du_jour` seule sait dire — l'exception d'un jour férié
+        # remplace la règle hebdomadaire, et la lire depuis les règles seules
+        # rendrait ouvert un salon aménagé fermé.
+        # Par une session : sur une connexion nue, `scalars` d'un `select(Modele)`
+        # rend la première colonne — l'identifiant — et non l'objet.
+        async with async_sessionmaker(bind=seed_conn, expire_on_commit=False)() as lecture:
+            regles = list(
+                await lecture.scalars(
+                    sa.select(CapacityRule).where(CapacityRule.business_id == business_id)
+                )
+            )
+            exception = await lecture.scalar(
+                sa.select(CapacityException).where(
+                    CapacityException.business_id == business_id,
+                    CapacityException.date == debut.date(),
+                )
+            )
+        if not availability_service.fenetres_du_jour(debut.date(), regles, exception):
+            continue
 
         du_jour = [
             quand for quand in creneaux if quand is not None and debut <= quand < debut + DAY

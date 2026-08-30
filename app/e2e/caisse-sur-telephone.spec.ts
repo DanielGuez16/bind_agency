@@ -29,16 +29,17 @@ test('la caisse porte son champ de code sur un téléphone', async ({ page }) =>
 
   await page.getByText('Register', { exact: true }).first().click();
 
-  await expect(page.getByTestId('entete-caisse')).toBeVisible();
+  const caisse = page.getByTestId('ecran-caisse');
+  await expect(caisse.getByTestId('entete-caisse')).toBeVisible();
 
   // **Ce que l'en-tête ne prouve pas.** Il se rendait, lui : il est au-dessus
   // du bloc effondré. C'est ce qui suit qui manquait, et c'est ce qui sert.
-  await expect(page.getByTestId('onglets-caisse')).toBeVisible();
-  await expect(page.getByTestId('champ-code')).toBeVisible();
-  await expect(page.getByTestId('valider-code')).toBeVisible();
+  await expect(caisse.getByTestId('onglets-caisse')).toBeVisible();
+  await expect(caisse.getByTestId('champ-code')).toBeVisible();
+  await expect(caisse.getByTestId('valider-code')).toBeVisible();
 
   // Et le bloc a une hauteur réelle : « visible » au sens de Playwright exige
   // déjà une boîte non vide, mais le dire ici nomme ce qui était faux.
-  const boite = await page.getByTestId('champ-code').boundingBox();
+  const boite = await caisse.getByTestId('champ-code').boundingBox();
   expect(boite?.height ?? 0).toBeGreaterThan(0);
 });
