@@ -245,9 +245,7 @@ async def test_l_emission_refuse_sans_adresse_configuree(
     monkeypatch.setattr("app.services.handover.get_settings", lambda: reglages)
 
     with pytest.raises(service.HandoverError):
-        await service.emettre(
-            session, business=business, emis_par=admin, canal=HandoverChannel.QR
-        )
+        await service.emettre(session, business=business, emis_par=admin, canal=HandoverChannel.QR)
 
 
 async def test_on_n_emet_pas_de_lien_sur_un_commerce_deja_pris(session: AsyncSession) -> None:
