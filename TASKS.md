@@ -3440,38 +3440,37 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       que des clés uniques, contrairement aux quatre autres défauts de la même
       campagne. L'intermittence désigne une forme de données particulière.*
 
-- [ ] **Wynwood a une journée vide tard le soir, et c'est un vrai manque**
-      *Le test `test_chaque_commerce_ouvert_a_une_reservation_a_venir` demande
-      désormais ce que l'écran du comptoir montre — `items` **ou** `a_trancher`,
-      la file portant les décisions toutes dates confondues. C'est le bon sujet
-      et il est vrai à toute heure ; c'est le semis qui ne le tient pas.*
+- [x] **Wynwood avait une journée vide tard le soir : un poste, un lendemain plein**
+      *Trouvé sous horloge décalée, en cent secondes au lieu d'une nuit d'attente.*
 
-      ***Mesuré à 23 h 54 locale*** : Wynwood est ouvert ce jour-là — la journée
-      rend `horaires=[10:00–19:00]` — et pourtant `items` et `a_trancher` sont
-      vides, ses sept réservations toutes datées du lendemain.*
+      *La composition menait ses lignes « déjà eu lieu » sur un créneau du
+      **lendemain** avant de les reposer sur une heure d'aujourd'hui. Wynwood a
+      **un seul poste** et une journée courte : passé la fermeture, les parcours
+      d'historique tombent tous sur le lendemain — c'est le premier jour où ils
+      peuvent tomber — et le remplissent. La composition ne trouvait alors aucun
+      créneau pour y mener ses lignes. Mesuré à 23 h 20 : `demain=0`, donc zéro
+      ligne posée, ni journée ni décision.*
 
-      ***Ce qui est écarté, mesuré et non supposé** : le salon n'est pas fermé ;
-      aucune réservation n'est refusée — la sortie du premier passage ne porte
-      aucune ligne d'écart ; et `_heures_deja_passees` devrait rendre neuf heures
-      pour une fenêtre 10–19 à 23 h 54. Le parcours « mené sur demain puis
-      reposé aujourd'hui » ne repose donc pas, et je n'ai pas trouvé pourquoi.*
+      *L'horizon passe du lendemain seul à **une semaine**. Le créneau n'est
+      qu'un véhicule — ce qui a eu lieu est reposé sur aujourd'hui juste après —
+      donc le chercher plus loin ne change rien à ce que l'écran montre, et donne
+      au semis de quoi travailler chez les salons les plus contraints : ceux,
+      précisément, qu'une démonstration ne doit pas laisser vides.*
 
-      ***Ce qu'il faut pour finir**, et le chemin est déjà défriché — mesures de
-      `bind-agency-1b`, pour que personne ne le refasse :*
+- [ ] **`unfulfilled` disparaît du jeu entre 23 h et minuit**
+      *Troisième défaut de la même famille, **préexistant** — vérifié sur
+      `origin/main` nu sous horloge décalée. `test_les_contreparties_couvrent_leurs_etats`
+      exige les cinq états d'une contrepartie ; à 23 h 20 il n'en trouve que
+      quatre, `unfulfilled` manque.*
 
-      *La sortie du **premier** passage a été capturée, et elle ne contient
-      **aucune** ligne d'écart : ni « réservation écartée », ni « parcours
-      écarté », ni « journée écartée ». **Ne cherchez donc pas un refus, il n'y
-      en a pas.** Ce qui reste comme hypothèse est que le semis choisit un autre
-      jour sans rien signaler — un silence par construction, pas un rejet.*
+      *Il n'a rien à voir avec la journée : `unfulfilled` s'obtient en reculant
+      l'échéance d'une contrepartie et en laissant le balayage la fermer. Reste
+      à voir ce que l'heure y change — l'échéance reculée tombe-t-elle du bon
+      côté du balayage tard le soir.*
 
-      *Pour la capturer : `resume_du_semis` lit le **second** passage, muet
-      puisqu'il repart d'une base pleine. Il faut stocker `premier` dans
-      `_SORTIES` au sein de la fixture `jeu_pose`, à côté de
-      `_SORTIES["resume"]` — trois lignes — et lancer avec **`-n0`** : sous
-      xdist les `print` sont avalés, ce qui a fait croire deux fois que la
-      sortie était vide alors que le test ne s'exécutait pas comme on le
-      pensait.*
+      *Il n'a jamais été vu parce qu'il ne l'est qu'une heure sur vingt-quatre.
+      C'est l'horloge décalable qui l'a rendu visible, et c'est exactement ce
+      qu'elle est là pour faire.*
 
 - [ ] **Une horloge décalable, pour tout ce qui dépend de `now()`**
       *`brew install libfaketime`, puis `faketime '2026-08-31 23:20:00' pytest …`

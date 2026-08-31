@@ -194,6 +194,12 @@ def jeu_pose(base_jetable: str) -> str:
 
     # La sortie du second passage, gardée pour les tests de résumé.
     _SORTIES["resume"] = second
+    # **Et celle du premier, qui ne dit pas la même chose.** Le second repart
+    # d'une base pleine : il ne rejoue rien, donc tout ce qui est conditionnel au
+    # travail réellement fait — les lignes d'écart, ce que le semis n'a pas pu
+    # composer — n'y figure pas. Un test qui s'appuierait sur le résumé pour
+    # vérifier qu'un écart est signalé passerait au vert sans rien voir.
+    _SORTIES["premier"] = premier
     return base_jetable
 
 
@@ -212,6 +218,18 @@ def resume_du_semis(jeu_pose: str) -> subprocess.CompletedProcess:
     la même commande sur la même base.
     """
     return _SORTIES["resume"]
+
+
+@pytest.fixture(scope="module")
+def premier_passage_du_semis(jeu_pose: str) -> subprocess.CompletedProcess:
+    """La sortie du **premier** passage, celle qui dit ce que le semis a écarté.
+
+    Distincte de `resume_du_semis` et le commentaire de celui-ci était trop
+    large : « la même commande sur la même base » est vrai des totaux, faux de
+    tout ce que le semis n'a pas pu composer. Le second passage repart d'une
+    base pleine et se tait.
+    """
+    return _SORTIES["premier"]
 
 
 @pytest.fixture
