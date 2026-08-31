@@ -3412,6 +3412,56 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       a fini par tomber, faute de créneau libre à minuit — il disait vrai sur du
       code que personne n'exécute.*
 
+- [x] **Cinq défauts qui ne se voient qu'en natif**
+      *Tous invisibles sur le web, et pour la même raison de fond : le navigateur
+      pardonne ce que Yoga et React Native refusent.*
+
+      ***Trois n'en font qu'un.** `grouperParMois` ne fusionnait que les groupes
+      voisins ; le serveur range les réservations sans créneau en dernier, et
+      leur `valid_until` retombe dans un mois déjà vu. Deux sections de même clé,
+      un avertissement sur le web, un écran grisé en natif — « à venir » et
+      « terminées » vidés, et le bouton du code de retrait avec eux, puisqu'il
+      vit dans cet écran.*
+
+      ***Le champ de mot de passe** : `height: '100%'` contre un parent qui n'a
+      qu'un `minHeight`. Le navigateur retombe sur la ligne flex, Yoga n'a rien
+      contre quoi calculer.*
+
+      ***Accorder une réservation** : `key={compte.platform}`, alors que rien
+      n'interdit deux comptes sur la même plateforme.*
+
+- [ ] **La fiche d'un salon grise « parfois », sous Expo Go seulement**
+      *Signalé en vérification de bout en bout. **En attente d'une occurrence
+      documentée** — le message de console au moment où ça grise, ou le nom du
+      salon. Sans l'un des deux il n'y a rien à chercher qu'à l'aveugle.*
+
+      *Ce qu'on sait : le mécanisme est `FrontiereDErreur`, qui grise sur toute
+      erreur de rendu. Et ce n'est **pas** une clé dupliquée — `FicheScreen` n'a
+      que des clés uniques, contrairement aux quatre autres défauts de la même
+      campagne. L'intermittence désigne une forme de données particulière.*
+
+- [ ] **Wynwood a une journée vide tard le soir, et c'est un vrai manque**
+      *Le test `test_chaque_commerce_ouvert_a_une_reservation_a_venir` demande
+      désormais ce que l'écran du comptoir montre — `items` **ou** `a_trancher`,
+      la file portant les décisions toutes dates confondues. C'est le bon sujet
+      et il est vrai à toute heure ; c'est le semis qui ne le tient pas.*
+
+      ***Mesuré à 23 h 54 locale*** : Wynwood est ouvert ce jour-là — la journée
+      rend `horaires=[10:00–19:00]` — et pourtant `items` et `a_trancher` sont
+      vides, ses sept réservations toutes datées du lendemain.*
+
+      ***Ce qui est écarté, mesuré et non supposé** : le salon n'est pas fermé ;
+      aucune réservation n'est refusée — la sortie du premier passage ne porte
+      aucune ligne d'écart ; et `_heures_deja_passees` devrait rendre neuf heures
+      pour une fenêtre 10–19 à 23 h 54. Le parcours « mené sur demain puis
+      reposé aujourd'hui » ne repose donc pas, et je n'ai pas trouvé pourquoi.*
+
+      ***Ce qu'il faut pour finir** : instrumenter le semis — sa sortie ne
+      remonte pas, il tourne dans un sous-processus et `resume_du_semis` lit le
+      **second** passage, muet par construction puisqu'il repart d'une base
+      pleine. C'est cette mesure-là qui manque, et elle prend une minute une
+      fois qu'on sait qu'il faut lire le premier.*
+
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire
 
 ---

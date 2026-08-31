@@ -1310,6 +1310,19 @@ export const es: Catalogue = {
     erreurCorps: 'No pudimos mostrar esta pantalla. Puedes volver e intentarlo de nuevo.',
     erreurAction: 'Volver al inicio',
   },
+  /** Los campos que un rechazo de validación puede nombrar. */
+  champs: {
+    email: 'correo electrónico',
+    password: 'contraseña',
+    fichier: 'archivo',
+    name: 'nombre',
+    address: 'dirección',
+    phone: 'teléfono',
+    price_cents: 'precio',
+    duration_minutes: 'duración',
+    reason: 'motivo',
+    starts_at: 'franja horaria',
+  },
   errors: {
     network: 'No pudimos cargarlo ahora mismo. Espera un momento e inténtalo de nuevo.',
     generic: 'Algo ha salido mal. Inténtalo de nuevo.',
@@ -1348,6 +1361,7 @@ export const es: Catalogue = {
     venue_report_not_pending: 'Este informe ya fue resuelto.',
     not_a_member: 'No perteneces a este negocio.',
     validation_failed: 'Falta información o es incorrecta.',
+    validation_failed_champs: 'Revisa esto: {{champs}}.',
     business_not_found: 'Este negocio no está disponible.',
     business_not_active:
       'Este negocio no está abierto, así que no puede pausarse.',
