@@ -229,15 +229,25 @@ async def test_l_emission_refuse_sans_adresse_configuree(
     que le gérant gardera."""
     business, admin = await preparee(session)
 
-    get_settings.cache_clear()
-    monkeypatch.delenv("HANDOVER_BASE_URL", raising=False)
-    try:
-        with pytest.raises(service.HandoverError):
-            await service.emettre(
-                session, business=business, emis_par=admin, canal=HandoverChannel.QR
-            )
-    finally:
-        get_settings.cache_clear()
+    # **On surcharge le réglage, pas la variable d'environnement.**
+    #
+    # `monkeypatch.delenv` vidait `os.environ`, ce qui n'empêche pas
+    # pydantic-settings de relire le fichier `.env` : le test ne passait donc
+    # que sur une machine dont le fichier ne porte pas `HANDOVER_BASE_URL` —
+    # c'est-à-dire vert partout **parce que** personne ne configurait la
+    # variable qu'il éprouve. Le jour où quelqu'un la renseigne, et le mode
+    # terrain en a besoin pour exister, ce test tombe sans qu'aucun code n'ait
+    # bougé.
+    #
+    # La forme employée partout ailleurs dans cette suite remplace le résolveur
+    # dans le module éprouvé : elle ne dépend ni du fichier ni du cache.
+    reglages = get_settings().model_copy(update={"handover_base_url": None})
+    monkeypatch.setattr("app.services.handover.get_settings", lambda: reglages)
+
+    with pytest.raises(service.HandoverError):
+        await service.emettre(
+            session, business=business, emis_par=admin, canal=HandoverChannel.QR
+        )
 
 
 async def test_on_n_emet_pas_de_lien_sur_un_commerce_deja_pris(session: AsyncSession) -> None:
