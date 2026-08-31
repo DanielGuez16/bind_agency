@@ -54,6 +54,7 @@ import {
   Filet,
   Icone,
   LigneDeContrepartie,
+  Photo,
   Repliable,
   SkeletonLignes,
   StatusMessage,
@@ -1051,6 +1052,7 @@ function CarteDeDemande({
 }) {
   const { t, locale } = useI18n();
   const { color: c } = useTheme();
+  const { api } = useApi();
   const urgente = limiteTombeAujourdhui(reservation.approval_expires_at, timezone);
 
   return (
@@ -1087,16 +1089,62 @@ function CarteDeDemande({
         {reservation.item_name}
       </Texte>
 
-      {/* Le pseudonyme et le moment sur la même ligne : deux repères pour
-          situer, aucun geste. */}
-      <Texte variante="type.caption" couleur="ink.soft" ellipseSurNomPropre>
-        {[
-          reservation.creator_handle ?? nomDe(reservation),
-          reservation.starts_at
-            ? momentRelatif(reservation.starts_at, locale, timezone, t)
-            : t('commerce.journeeSansCreneau'),
-        ].join(' · ')}
-      </Texte>
+      {/**
+        * **Un visage et un lien, pas seulement un identifiant.**
+        *
+        * Le salon décide d'accorder une prestation **à quelqu'un**, et la carte
+        * ne portait qu'un pseudonyme. La photo et l'adresse du profil existaient
+        * déjà — servies à l'annuaire, jamais à la décision — ce qui revenait à
+        * montrer la personne à qui n'a rien à trancher et à la cacher à qui doit.
+        *
+        * **Ce n'est pas le retour de l'audience.** Les chiffres — abonnés,
+        * collaborations, ponctualité — restent sur la fiche qu'on ouvre : ils
+        * pèsent une décision et se lisent posément. Un visage et un lien disent
+        * qui, pas combien, et c'est ce que la ligne demandait.
+        */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        {reservation.creator_avatar_key ? (
+          <View
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: radius['radius.pill'],
+              overflow: 'hidden',
+              backgroundColor: c['media.placeholder'],
+            }}
+          >
+            <Photo
+              uri={api.urlDuPortrait(reservation.creator_avatar_key)}
+              style={{ flex: 1 }}
+              testID={`visage-${reservation.booking_id}`}
+            />
+          </View>
+        ) : null}
+        <Texte
+          variante="type.caption"
+          couleur="ink.soft"
+          style={{ flex: 1, minWidth: 0 }}
+          ellipseSurNomPropre
+        >
+          {[
+            reservation.creator_handle ?? nomDe(reservation),
+            reservation.starts_at
+              ? momentRelatif(reservation.starts_at, locale, timezone, t)
+              : t('commerce.journeeSansCreneau'),
+          ].join(' · ')}
+        </Texte>
+        {reservation.creator_profil_url ? (
+          <Pressable
+            accessibilityRole="link"
+            accessibilityLabel={t('commerce.voirLeProfil')}
+            onPress={() => void Linking.openURL(reservation.creator_profil_url as string)}
+            testID={`profil-${reservation.booking_id}`}
+            style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+          >
+            <Icone nom="sortie" couleur="ink.soft" taille={16} />
+          </Pressable>
+        ) : null}
+      </View>
 
       {/* **L'échéance entre dans la phrase qui l'explique.** Elle est double
           côté serveur — vingt-quatre heures, ou l'heure du créneau si elle

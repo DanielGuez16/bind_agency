@@ -212,6 +212,15 @@ class ReservationDuCommerce:
     #: — mieux qu'un lien qui mène à une page d'erreur, que le salon lirait
     #: comme un compte supprimé.
     creator_profil_url: str | None
+    #: Le visage que le salon voit, **par sa clé** — servi par `GET /media/{cle}`
+    #: et jamais l'adresse de la plateforme, qui expire. Nul quand la créatrice
+    #: n'en a pas ; l'écran rend alors le pseudonyme seul.
+    #:
+    #: La colonne existait et ne sortait que par l'annuaire : un salon qui
+    #: décide d'accorder voyait un identifiant, quand la même donnée lui était
+    #: rendue ailleurs. Décider d'une personne sans jamais la voir est
+    #: précisément ce que ce champ corrige.
+    creator_avatar_key: str | None
     item_name: str
     duration_minutes: int | None
     platform: Platform
@@ -508,6 +517,7 @@ def _lire(ligne, comptes=None) -> ReservationDuCommerce:
         creator_handle=ligne.handle,
         creator_partie=ligne.anonymized_at is not None,
         creator_profil_url=directory.lien_public(ligne.platform, ligne.handle),
+        creator_avatar_key=ligne.avatar_key,
         item_name=ligne.item_name,
         duration_minutes=ligne.duration_minutes,
         platform=ligne.platform,
@@ -540,6 +550,7 @@ async def journee_du_commerce(
             CreatorProfile.user_id.label("creator_id"),
             CreatorProfile.anonymized_at,
             SocialAccount.handle,
+            SocialAccount.avatar_key,
         )
         .join(CreatorProfile, CreatorProfile.user_id == Booking.creator_id)
         .join(SocialAccount, SocialAccount.id == Booking.social_account_id)
@@ -571,6 +582,7 @@ async def journee_du_commerce(
                     CreatorProfile.user_id.label("creator_id"),
                     CreatorProfile.anonymized_at,
                     SocialAccount.handle,
+                    SocialAccount.avatar_key,
                 )
                 .join(CreatorProfile, CreatorProfile.user_id == Booking.creator_id)
                 .join(SocialAccount, SocialAccount.id == Booking.social_account_id)
