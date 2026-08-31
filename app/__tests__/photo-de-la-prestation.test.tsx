@@ -134,3 +134,35 @@ describe('la photo se dépose vraiment', () => {
     expect(JSON.parse(correctif!.corps)).toEqual({ photo_key: 'photos/b1/abc.jpg' });
   });
 });
+
+describe('la photo se pose dès la création', () => {
+  it('part avec le formulaire, en un seul appel', async () => {
+    // **Elle ne se déposait qu'après.** Le dépôt corrige l'article, donc il
+    // réclame un identifiant : à la création il n'y en a pas. Un salon
+    // publiait, retrouvait sa prestation dans la liste, l'ouvrait, et déposait
+    // la photo — cinq gestes pour une image qu'il avait sous la main au premier.
+    const { envois } = await monter();
+    await waitFor(() => expect(screen.getByTestId('ajouter-une-prestation')).toBeTruthy());
+    await fireEvent.press(screen.getByTestId('ajouter-une-prestation'));
+
+    await fireEvent.changeText(screen.getByTestId('champ-nom'), 'Balayage');
+    await fireEvent.press(screen.getByTestId('photo-a-la-creation'));
+    await waitFor(() => expect(screen.getByTestId('photo-choisie')).toBeTruthy());
+
+    await fireEvent.press(screen.getByTestId('publier-la-prestation'));
+
+    // **Le décor divergent est le nombre d'écritures.** Une implémentation qui
+    // crée puis corrige rendrait le même écran ; à la moindre panne entre les
+    // deux, elle laisse une prestation sans sa photo et personne pour le savoir.
+    await waitFor(() =>
+      expect(envois.some((e) => e.url.includes('/catalog-items') && e.methode === 'POST')).toBe(
+        true,
+      ),
+    );
+    const creation = envois.find(
+      (e) => e.url.includes('/catalog-items') && e.methode === 'POST',
+    );
+    expect(JSON.parse(creation?.corps ?? '{}').photo_key).toBe('photos/b1/abc.jpg');
+    expect(envois.filter((e) => e.methode === 'PATCH')).toEqual([]);
+  });
+});

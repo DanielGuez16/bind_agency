@@ -142,7 +142,6 @@ const NON_RENDUS: Record<string, string> = {
   // Les six premiers sont du contrat pur. Les deux suivants sont des choix de
   // composition, tranchés par Daniel plutôt que subis.
   'ReservationDuCreateur.business_category': 'contrat',
-  'ReservationDuCreateur.item_photo_key': 'contrat',
   'AudienceDuCompte.following_count': 'contrat',
   // Le cadre 01c ne montre que les abonnés, l'engagement et les vues : un
   // nombre de publications ne dit rien à une créatrice sur ce qu'elle peut
@@ -261,7 +260,12 @@ describe('un champ servi est rendu, ou sa raison est écrite', () => {
      * comme non rendus, et le jour où l'un d'eux est vraiment posé, c'est sa
      * ligne qu'on retire — à la main, en le sachant.
      */
-    const HOMONYMES = new Set(['created_at']);
+    // **`item_photo_key` a rejoint la liste le jour où un écran l'a rendue.**
+    // Les publications du créateur montrent la photo de la prestation ; la
+    // vérification porte le même nom de champ et n'est rendue nulle part. Sans
+    // cette exception, sa ligne passerait pour périmée et se retirerait — c'est
+    // la garde qui s'effacerait elle-même.
+    const HOMONYMES = new Set(['created_at', 'item_photo_key']);
 
     const perimees = Object.keys(NON_RENDUS).filter(
       (clef) =>
