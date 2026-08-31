@@ -40,6 +40,12 @@ test('la caisse porte son champ de code sur un téléphone', async ({ page }) =>
   // **Ce que l'en-tête ne prouve pas.** Il se rendait, lui : il est au-dessus
   // du bloc effondré. C'est ce qui suit qui manquait, et c'est ce qui sert.
   await expect(caisse.getByTestId('onglets-caisse')).toBeVisible();
+
+  // **Le scan est l'onglet par défaut**, et c'est voulu : l'ordre dit quel
+  // chemin est le principal. Le champ de saisie n'existe donc qu'après cette
+  // bascule — ce n'est pas le défaut qu'on éprouve, c'est le dessin de l'écran.
+  await caisse.getByText('Type it', { exact: true }).click();
+
   await expect(caisse.getByTestId('champ-code')).toBeVisible();
   await expect(caisse.getByTestId('valider-code')).toBeVisible();
 
