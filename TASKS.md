@@ -3241,16 +3241,18 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       rendue** plutôt que le nom du jeton : c'est ce que l'œil reçoit, et un
       jeton peut changer de nom sans que la règle change*
 
-- [ ] **Deux autres étiquettes dépassent les vingt-quatre signes**
-      *Relevées en balayant les clés rendues en `type.label`, non traitées parce
-      que la demande portait sur celle des plans. `annuaire.trieePar` — « Sorted
-      by access, then distance », 31 signes — décrit un ordre, c'est une phrase.
-      `reglages.reprisesTitre` — « When BIND entered your account », 30 signes —
-      est un intertitre, donc peut-être légitime au titre de l'exception ; c'est
-      à trancher, pas à supposer.*
-      *Le balayage est approximatif : il apparie un `type.label` à la clé de
-      traduction la plus proche dans le fichier, ce qui ramène du corps de texte
-      voisin. Les deux ci-dessus ont été vérifiées à la main, les autres non*
+- [x] **Les deux autres étiquettes, tranchées : une passe, l'autre reste**
+      *`annuaire.trieePar` — « Sorted by access, then distance », 31 signes —
+      **passe en texte**. Décrire un ordre demande un verbe : ce n'est pas une
+      catégorie, c'est une règle de tri, et les capitales espacées la faisaient
+      lire deux fois.*
+      *`reglages.reprisesTitre` — « When BIND entered your account », 30 signes —
+      **reste une étiquette**. C'est un titre de section et non un fait à lire :
+      l'exception de la passation s'applique, et la borne de vingt-quatre signes
+      ne vaut que pour ce qui se lit comme une information.*
+      *La distinction est celle qui compte, et elle ne se déduit pas de la
+      longueur : deux chaînes de trente signes, deux traitements opposés. Une
+      mutation sur celle qui change, elle tombe*
 
 - [ ] **`catalogue/corriger.ts` déclare une règle que personne ne consulte**
       *Même balayage. Le module nomme `CORRIGEABLES` — nom, description, photo —
