@@ -124,6 +124,12 @@ class FichePublique:
     address: str | None
     timezone: str
     phone: str | None
+    #: Où le salon se montre ailleurs, quand il l'a renseigné. Rendus tels
+    #: qu'écrits : ce sont des adresses que le salon donne, pas des liens
+    #: dérivés d'un pseudonyme.
+    instagram_url: str | None
+    tiktok_url: str | None
+    website_url: str | None
     cover_photo_key: str | None
     #: La galerie, dans l'ordre choisi par le commerce. Distincte de la
     #: couverture : celle-ci est l'image de la carte du fil, calibrée pour
@@ -296,6 +302,9 @@ async def fiche(
         address=business.address,
         timezone=business.timezone,
         phone=business.phone,
+        instagram_url=business.instagram_url,
+        tiktok_url=business.tiktok_url,
+        website_url=business.website_url,
         cover_photo_key=business.cover_photo_key,
         photos=tuple(
             photo.storage_key for photo in await business_photos.lister(session, business.id)

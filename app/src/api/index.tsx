@@ -843,9 +843,21 @@ export class Api {
     });
   }
 
-  /** Le commerce lui-même. Lu ici pour sa couverture, qui marque la galerie. */
+  /**
+   * Le commerce lui-même, dans ce que le lieu en compose.
+   *
+   * Le type est étroit exprès : la route rend la fiche entière, et déclarer
+   * ici tout ce qu'elle porte ferait croire que l'écran s'en sert. On ajoute
+   * un champ quand un écran le lit.
+   */
   commerce(businessId: string, signal?: AbortSignal) {
-    return this.client.request<{ cover_photo_key: string | null; menu_url: string | null }>(
+    return this.client.request<{
+      cover_photo_key: string | null;
+      menu_url: string | null;
+      instagram_url: string | null;
+      tiktok_url: string | null;
+      website_url: string | null;
+    }>(
       routes.commerce(businessId),
       {
       signal,
@@ -992,6 +1004,24 @@ export class Api {
     return this.client.request<unknown>(routes.modifierLeCommerce(businessId), {
       methode: 'PATCH',
       corps: { menu_url: url },
+    });
+  }
+
+  /**
+   * Les trois liens publics du salon, ensemble.
+   *
+   * **Un seul appel pour les trois** : ils se saisissent sur le même écran et
+   * s'enregistrent d'un geste. Trois appels feraient trois écritures dont deux
+   * pourraient échouer, et l'écran ne saurait plus ce qui est enregistré.
+   * `null` retire un lien, comme partout ailleurs sur cette route.
+   */
+  definirLesLiensPublics(
+    businessId: string,
+    liens: { instagram_url: string | null; tiktok_url: string | null; website_url: string | null },
+  ) {
+    return this.client.request<unknown>(routes.modifierLeCommerce(businessId), {
+      methode: 'PATCH',
+      corps: liens,
     });
   }
 

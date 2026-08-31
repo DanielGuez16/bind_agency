@@ -134,6 +134,9 @@ async def create_business(
         currency=payload.currency,
         cover_photo_key=payload.cover_photo_key,
         menu_url=payload.menu_url,
+        instagram_url=payload.instagram_url,
+        tiktok_url=payload.tiktok_url,
+        website_url=payload.website_url,
         status=BusinessStatus.ONBOARDING,
     )
     session.add(business)
@@ -195,6 +198,12 @@ async def update_business(
         "phone",
         "cover_photo_key",
         "menu_url",
+        # Les trois liens publics. Dans la liste blanche comme le reste : un
+        # champ accepté par le schéma et ignoré par le service rend un 200 à
+        # qui croit avoir enregistré.
+        "instagram_url",
+        "tiktok_url",
+        "website_url",
     ):
         if name in fields:
             setattr(business, name, fields[name])

@@ -99,6 +99,23 @@ class Business(UUIDPrimaryKey, CreatedAt, Base):
     #: la règle d'ouverture d'offre vérifie.
     menu_url: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
 
+    #: Où le salon se montre ailleurs. Les trois sont facultatifs et
+    #: indépendants : un salon peut n'avoir qu'Instagram, ou qu'un site.
+    #:
+    #: **Trois colonnes et non une table de liens.** Une table permettrait
+    #: n'importe quel réseau, ce que personne n'a demandé, et ferait payer une
+    #: jointure à chaque fiche pour trois champs qui ne bougent jamais. Le jour
+    #: où un quatrième réseau compte, c'est une colonne de plus — pas une
+    #: migration de données.
+    #:
+    #: **Aucune n'est dérivée d'un pseudonyme.** Le lien du profil d'une
+    #: créatrice, lui, se calcule (`directory.lien_public`) parce que le
+    #: pseudonyme et la plateforme le déterminent. Ici le salon donne l'adresse
+    #: qu'il veut montrer, qui peut être une page de marque et non un compte.
+    instagram_url: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    tiktok_url: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    website_url: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+
     status: Mapped[BusinessStatus] = mapped_column(
         enum_column(BusinessStatus, "business_status"),
         nullable=False,
