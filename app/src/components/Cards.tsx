@@ -30,7 +30,7 @@
  * que c'est quelqu'un qui peut la faire qui la lit.
  */
 import type { ReactNode } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { useColors } from '../theme';
@@ -153,14 +153,26 @@ export type DataRowProps = {
   value: string;
   /** Les chiffres passent en `type.data` : ils s'alignent d'une ligne à l'autre. */
   chiffre?: boolean;
+  /**
+   * Où la ligne mène, quand elle mène quelque part.
+   *
+   * **Absent, la rangée reste une `View` et ne s'annonce pas comme un bouton.**
+   * Un `Pressable` de rôle « button » sans geste fait dire à un lecteur d'écran
+   * qu'il y a un bouton sur chaque ligne d'une liste qui n'en porte aucun.
+   */
+  onPress?: () => void;
   testID?: string;
 };
 
-export function DataRow({ label, value, chiffre, testID }: DataRowProps) {
+export function DataRow({ label, value, chiffre, onPress, testID }: DataRowProps) {
   const c = useColors();
+  const Cadre = onPress ? Pressable : View;
   return (
-    <View
+    <Cadre
       testID={testID}
+      {...(onPress
+        ? { onPress, accessibilityRole: 'button' as const, accessibilityLabel: `${label}, ${value}` }
+        : {})}
       style={{
         minHeight: 44,
         flexDirection: 'row',
@@ -179,6 +191,6 @@ export function DataRow({ label, value, chiffre, testID }: DataRowProps) {
       <Texte variante={chiffre ? 'type.data' : 'type.body'} align="right" style={{ flexShrink: 1 }}>
         {value}
       </Texte>
-    </View>
+    </Cadre>
   );
 }

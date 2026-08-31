@@ -431,6 +431,12 @@ function ParcoursCreateur({
             // liste entière et tait la moitié de sa phrase.
             position={position}
             onRetour={() => navigation.goBack()}
+            // **Vers la fiche, et non vers la prestation seule.** Une
+            // prestation ne se réserve pas hors de son salon : il faut ses
+            // horaires, ses places et son adresse. La fiche les porte déjà.
+            onOuvrirLaPrestation={(offre) =>
+              navigation.navigate('Fiche', { businessId: offre.business_id })
+            }
           />
         )}
       </PileCreateur.Screen>

@@ -43,6 +43,7 @@ export function PrestationsDuPalierScreen({
   position,
   rayonKm,
   onRetour,
+  onOuvrirLaPrestation,
 }: {
   palier: PalierAccessible;
   /** Nulle : le serveur ne rend aucune distance, et la bascule disparaît. */
@@ -50,6 +51,8 @@ export function PrestationsDuPalierScreen({
   /** Celui sur lequel les comptes de proximité ont été faits. La phrase le dit. */
   rayonKm: number;
   onRetour: () => void;
+  /** La fiche du salon qui la propose : c'est là qu'elle se réserve. */
+  onOuvrirLaPrestation?: (offre: OffreDuPalier) => void;
 }) {
   const { api } = useApi();
   const { t, locale } = useI18n();
@@ -135,6 +138,13 @@ export function PrestationsDuPalierScreen({
               <DataRow
                 key={offre.tier_offer_id}
                 testID={`prestation-${offre.tier_offer_id}`}
+                // **Une liste qui nomme une prestation et n'y mène pas est un
+                // cul-de-sac.** C'est l'écran qui répond à « qu'est-ce que ce
+                // palier m'ouvre » : y lire un nom sans pouvoir l'ouvrir oblige
+                // à retourner au fil et à chercher le salon par son nom.
+                onPress={
+                  onOuvrirLaPrestation ? () => onOuvrirLaPrestation(offre) : undefined
+                }
                 label={offre.nom}
                 value={[
                   offre.nom_du_commerce,

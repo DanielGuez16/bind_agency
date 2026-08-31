@@ -58,9 +58,12 @@ const OFFRES = [
   ...o,
 }));
 
+const ouvertes: string[] = [];
+
 async function monter(
   { position = { longitude: -80.19, latitude: 25.76 }, ...extra }: Record<string, unknown> = {},
 ) {
+  ouvertes.length = 0;
   const appels: string[] = [];
   const api = new ApiClient({
     baseUrl: 'https://api.test',
@@ -79,6 +82,7 @@ async function monter(
             position={position as never}
             rayonKm={15}
             onRetour={() => {}}
+            onOuvrirLaPrestation={(offre) => ouvertes.push(offre.business_id)}
           />
         </ApiProvider>
       </ThemeProvider>
@@ -180,5 +184,23 @@ describe('ce que l’écran demande au serveur', () => {
       .getAllByTestId(/^prestation-/)
       .map((n) => String(n.props.testID));
     expect(rendus).toEqual(['prestation-o1', 'prestation-o2', 'prestation-o3']);
+  });
+});
+
+
+describe('la liste mène quelque part', () => {
+  it('ouvre le salon qui propose la prestation', async () => {
+    // **Une liste qui nomme sans mener est un cul-de-sac.** C'est l'écran qui
+    // répond à « qu'est-ce que ce palier m'ouvre » : y lire un nom sans pouvoir
+    // l'ouvrir oblige à retourner au fil et à chercher le salon de mémoire.
+    await monter();
+    const rangee = await screen.findByTestId(`prestation-${OFFRES[0].tier_offer_id}`);
+
+    await fireEvent.press(rangee);
+
+    // Le salon, et non la prestation seule : elle ne se réserve pas hors de ses
+    // horaires, de ses places et de son adresse, que la fiche porte déjà.
+    expect(ouvertes).toEqual([OFFRES[0].business_id]);
+    expect(rangee.props.accessibilityRole).toBe('button');
   });
 });
