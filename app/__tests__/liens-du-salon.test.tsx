@@ -9,12 +9,15 @@ import { render, screen } from '@testing-library/react-native';
 
 import { I18nProvider } from '../src/i18n';
 import { LesLiensDuSalon } from '../src/screens/fiche/LesLiensDuSalon';
+import type { LiensPublics } from '../src/screens/lieu/LesLiensPublics';
 import { aEnvoyer } from '../src/screens/lieu/LesLiensPublics';
 import { ThemeProvider } from '../src/theme';
 
-const RIEN = { instagram_url: null, tiktok_url: null, website_url: null };
+// Typé, et non inféré : sans annotation TypeScript déduit `null` pur de chaque
+// champ, et l'étalement qui pose une adresse ne compile plus.
+const RIEN: LiensPublics = { instagram_url: null, tiktok_url: null, website_url: null };
 
-async function monter(liens: typeof RIEN) {
+async function monter(liens: LiensPublics) {
   return await render(
     <I18nProvider initialLocale="en">
       <ThemeProvider role="creator">
