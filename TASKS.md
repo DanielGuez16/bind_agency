@@ -3254,6 +3254,16 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       longueur : deux chaînes de trente signes, deux traitements opposés. Une
       mutation sur celle qui change, elle tombe*
 
+- [x] **La liste d'un palier mène au salon**
+      *Elle nomme des prestations réservables — c'est tout son sujet — et
+      n'ouvrait rien. Il fallait retenir le nom du salon, revenir au fil et l'y
+      chercher, pour arriver à une fiche qui vit **dans la même pile**. Il n'y
+      avait qu'à relier : `OffreDuPalier` porte déjà `business_id`.*
+      *La rangée était un `DataRow`, composant d'affichage ; elle est enveloppée
+      d'un `Pressable` plutôt que de rendre `DataRow` pressable — un composant
+      qui montre n'a pas à savoir qu'on peut le toucher. Une mutation, elle
+      tombe*
+
 - [ ] **`catalogue/corriger.ts` déclare une règle que personne ne consulte**
       *Même balayage. Le module nomme `CORRIGEABLES` — nom, description, photo —
       et `DEMANDENT_UNE_AUTRE` — durée, nature, réservabilité — avec une note

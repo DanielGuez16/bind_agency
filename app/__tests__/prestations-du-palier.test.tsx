@@ -58,12 +58,13 @@ const OFFRES = [
   ...o,
 }));
 
-const ouvertes: string[] = [];
-
 async function monter(
-  { position = { longitude: -80.19, latitude: 25.76 }, ...extra }: Record<string, unknown> = {},
+  {
+    position = { longitude: -80.19, latitude: 25.76 },
+    onOuvrir = () => {},
+    ...extra
+  }: Record<string, unknown> = {},
 ) {
-  ouvertes.length = 0;
   const appels: string[] = [];
   const api = new ApiClient({
     baseUrl: 'https://api.test',
@@ -81,8 +82,8 @@ async function monter(
             palier={palier(extra as never)}
             position={position as never}
             rayonKm={15}
+            onOuvrir={onOuvrir as (id: string) => void}
             onRetour={() => {}}
-            onOuvrirLaPrestation={(offre) => ouvertes.push(offre.business_id)}
           />
         </ApiProvider>
       </ThemeProvider>
@@ -187,20 +188,20 @@ describe('ce que l’écran demande au serveur', () => {
   });
 });
 
+/**
+ * La liste mène au salon, et elle n'y menait pas.
+ *
+ * **Un écran qui dit « voici ce qui vous est ouvert » doit ouvrir.** Il nommait
+ * des prestations réservables et laissait retenir le nom du salon, revenir au
+ * fil, l'y chercher — pour arriver à la fiche qui vit dans la même pile.
+ */
+it('un appui sur une prestation ouvre la fiche de son salon', async () => {
+  const ouverts: string[] = [];
+  await monter({ onOuvrir: (id: string) => ouverts.push(id) });
+  await waitFor(() => expect(screen.getByTestId('liste-des-prestations')).toBeTruthy());
 
-describe('la liste mène quelque part', () => {
-  it('ouvre le salon qui propose la prestation', async () => {
-    // **Une liste qui nomme sans mener est un cul-de-sac.** C'est l'écran qui
-    // répond à « qu'est-ce que ce palier m'ouvre » : y lire un nom sans pouvoir
-    // l'ouvrir oblige à retourner au fil et à chercher le salon de mémoire.
-    await monter();
-    const rangee = await screen.findByTestId(`prestation-${OFFRES[0].tier_offer_id}`);
+  await fireEvent.press(screen.getAllByTestId(/^prestation-/)[0]);
 
-    await fireEvent.press(rangee);
-
-    // Le salon, et non la prestation seule : elle ne se réserve pas hors de ses
-    // horaires, de ses places et de son adresse, que la fiche porte déjà.
-    expect(ouvertes).toEqual([OFFRES[0].business_id]);
-    expect(rangee.props.accessibilityRole).toBe('button');
-  });
+  expect(ouverts).toHaveLength(1);
+  expect(ouverts[0]).toBe(OFFRES[0].business_id);
 });

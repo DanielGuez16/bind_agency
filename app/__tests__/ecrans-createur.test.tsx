@@ -426,6 +426,7 @@ const ECRANS = [
         palier={PALIER as never}
         position={{ longitude: -80.19, latitude: 25.76 }}
         rayonKm={15}
+          onOuvrir={() => {}}
         onRetour={() => {}}
       />
     ),
