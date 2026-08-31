@@ -24,8 +24,13 @@ import { expect, test } from '@playwright/test';
 import { LARGEURS, seConnecter } from './socle';
 
 test('la caisse porte son champ de code sur un téléphone', async ({ page }) => {
-  await page.setViewportSize(LARGEURS.telephone);
+  // **On se connecte large, puis on rétrécit.** `seConnecter` attend
+  // « Settings » pour savoir que la navigation est montée ; en largeur de
+  // téléphone ce libellé passe dans le menu « More » et l'attente expire. Ce
+  // qu'on éprouve ici est la caisse à l'étroit, pas la connexion : la réduire
+  // après coup donne exactement le même rendu de l'écran visé.
   await seConnecter(page, 'ocean@bind.example');
+  await page.setViewportSize(LARGEURS.telephone);
 
   await page.getByText('Register', { exact: true }).first().click();
 
