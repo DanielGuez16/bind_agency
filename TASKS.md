@@ -3299,6 +3299,22 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       ni du cache. Deux vérifications plutôt qu'une — le service qui cesse de
       refuser le fait tomber, et la variable retirée du `.env` le laisse vert.
       Les deux configurations, le même verdict, ce qui est tout le sujet*
+- [x] **La demande en attente dit à qui le salon accorde**
+      *Elle ne portait qu'un pseudonyme. La photo et l'adresse du profil étaient
+      **déjà servies à l'annuaire** et jamais à la décision : on montrait la
+      personne à qui n'a rien à trancher, et on la cachait à qui doit. Le lien
+      existait même sur le type (`creator_profil_url`) sans que la carte le lise.*
+      *Aucune migration : `SocialAccount.avatar_key` existe depuis l'ouverture de
+      l'annuaire, et la requête de la file joignait déjà la table. Deux lignes de
+      `select`, un champ de schéma, un de type.*
+      ***Ce n'est pas le retour de l'audience**, retirée de la ligne en v7. Les
+      chiffres — abonnés, collaborations, ponctualité — restent sur la fiche
+      qu'on ouvre : ils pèsent une décision et se lisent posément. Un visage et
+      un lien disent **qui**, pas combien.*
+      *Le décor divergent est la créatrice sans avatar : sans lui, « je rends le
+      visage » et « je rends toujours un cadre » donnent le même verdict, et une
+      demande sans photo afficherait un rond vide qu'on lit comme un chargement.
+      Une mutation, elle tombe*
 
 - [ ] **`catalogue/corriger.ts` déclare une règle que personne ne consulte**
       *Même balayage. Le module nomme `CORRIGEABLES` — nom, description, photo —
