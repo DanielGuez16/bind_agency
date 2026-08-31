@@ -47,7 +47,12 @@ export async function seConnecter(page: Page, email: string): Promise<void> {
   // **On attend la navigation, pas la coquille.** `zone-sure` apparaît avant
   // que les onglets soient montés : s'arrêter là faisait lire un écran encore
   // vide, et le test échouait sur une absence qui n'en était pas une.
-  await expect(page.getByText('Settings', { exact: true }).first()).toBeVisible();
+  // **« Profile » et non « Settings ».** L'onglet des réglages a disparu de la
+  // barre du créateur : l'audience et les réglages sont devenus un profil, et
+  // les réglages s'ouvrent par l'engrenage qui s'y pose. Attendre un libellé
+  // qui n'existe plus aurait fait échouer la connexion elle-même, sur toutes
+  // les campagnes à la fois.
+  await expect(page.getByText('Profile', { exact: true }).first()).toBeVisible();
 }
 
 /**
@@ -62,7 +67,16 @@ export async function ongletsVisibles(page: Page): Promise<string[]> {
   // ici n'aurait fait échouer aucun test — la liste est une liste de candidats,
   // un candidat introuvable est simplement absent — et la couverture aurait
   // baissé en silence. C'est la façon la moins visible de casser un test.
-  const candidats = ['Nearby', 'Tiers', 'Bookings', 'Audience', 'Settings', 'Today', 'Register'];
+  const candidats = [
+    'Nearby',
+    'Tiers',
+    'Bookings',
+    'Profile',
+    'Audience',
+    'Settings',
+    'Today',
+    'Register',
+  ];
   const vus: string[] = [];
   for (const libelle of candidats) {
     if (await page.getByText(libelle, { exact: true }).first().isVisible().catch(() => false)) {
