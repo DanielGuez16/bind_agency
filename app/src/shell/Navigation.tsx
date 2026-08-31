@@ -430,6 +430,9 @@ function ParcoursCreateur({
             // d'où l'on est, pas d'où l'on habite. Nulle, l'écran rend la
             // liste entière et tait la moitié de sa phrase.
             position={position}
+            // La fiche vit dans la même pile : la liste qui nomme une
+            // prestation réservable mène à l'endroit où on la réserve.
+            onOuvrir={(businessId) => navigation.navigate('Fiche', { businessId })}
             onRetour={() => navigation.goBack()}
           />
         )}
