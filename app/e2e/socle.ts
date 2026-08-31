@@ -47,12 +47,18 @@ export async function seConnecter(page: Page, email: string): Promise<void> {
   // **On attend la navigation, pas la coquille.** `zone-sure` apparaît avant
   // que les onglets soient montés : s'arrêter là faisait lire un écran encore
   // vide, et le test échouait sur une absence qui n'en était pas une.
-  // **« Profile » et non « Settings ».** L'onglet des réglages a disparu de la
-  // barre du créateur : l'audience et les réglages sont devenus un profil, et
-  // les réglages s'ouvrent par l'engrenage qui s'y pose. Attendre un libellé
-  // qui n'existe plus aurait fait échouer la connexion elle-même, sur toutes
-  // les campagnes à la fois.
-  await expect(page.getByText('Profile', { exact: true }).first()).toBeVisible();
+  //
+  // **Et on attend un onglet que les deux rôles portent.** Cette fonction sert
+  // la créatrice et le commerce, ce que le libellé attendu doit refléter :
+  // « Settings » a cessé d'exister chez la créatrice quand la barre est passée
+  // à trois onglets, et le remplacer par « Profile » a déplacé le trou au lieu
+  // de le boucher — le commerce n'a pas de profil, et c'est la connexion
+  // elle-même qui a échoué, dans un fichier qui n'a rien à voir.
+  //
+  // L'alternative couvre les deux barres sans supposer laquelle on ouvre. Un
+  // libellé propre à un rôle n'a pas sa place dans un socle partagé : le
+  // premier appelant de l'autre rôle le découvre, et il le découvre loin.
+  await expect(page.getByText(/^(Profile|Settings)$/).first()).toBeVisible();
 }
 
 /**
