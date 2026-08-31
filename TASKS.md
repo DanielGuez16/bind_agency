@@ -3456,11 +3456,38 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       pour une fenêtre 10–19 à 23 h 54. Le parcours « mené sur demain puis
       reposé aujourd'hui » ne repose donc pas, et je n'ai pas trouvé pourquoi.*
 
-      ***Ce qu'il faut pour finir** : instrumenter le semis — sa sortie ne
-      remonte pas, il tourne dans un sous-processus et `resume_du_semis` lit le
-      **second** passage, muet par construction puisqu'il repart d'une base
-      pleine. C'est cette mesure-là qui manque, et elle prend une minute une
-      fois qu'on sait qu'il faut lire le premier.*
+      ***Ce qu'il faut pour finir**, et le chemin est déjà défriché — mesures de
+      `bind-agency-1b`, pour que personne ne le refasse :*
+
+      *La sortie du **premier** passage a été capturée, et elle ne contient
+      **aucune** ligne d'écart : ni « réservation écartée », ni « parcours
+      écarté », ni « journée écartée ». **Ne cherchez donc pas un refus, il n'y
+      en a pas.** Ce qui reste comme hypothèse est que le semis choisit un autre
+      jour sans rien signaler — un silence par construction, pas un rejet.*
+
+      *Pour la capturer : `resume_du_semis` lit le **second** passage, muet
+      puisqu'il repart d'une base pleine. Il faut stocker `premier` dans
+      `_SORTIES` au sein de la fixture `jeu_pose`, à côté de
+      `_SORTIES["resume"]` — trois lignes — et lancer avec **`-n0`** : sous
+      xdist les `print` sont avalés, ce qui a fait croire deux fois que la
+      sortie était vide alors que le test ne s'exécutait pas comme on le
+      pensait.*
+
+- [ ] **Une horloge décalable, pour tout ce qui dépend de `now()`**
+      *`brew install libfaketime`, puis `faketime '2026-08-31 23:20:00' pytest …`
+      décale l'horloge du processus **et de ses sous-processus** — donc le semis
+      et le test ensemble, ce qui est la seule forme utile ici : le test lit une
+      base composée par le semis à l'heure réelle du semis, et décaler l'un sans
+      l'autre ferait un décor rigoureux qui n'éprouve rien.*
+
+      ***Ce que ça débloque, au-delà d'un test.** Le test du semis n'était rouge
+      qu'entre 23 h et minuit heure de Miami : vert vingt-trois heures sur
+      vingt-quatre. Une correction poussée en dehors de cette fenêtre obtient un
+      vert qui ne prouve rien — c'est arrivé, des deux côtés, le même soir. Tout
+      ce qui dépend de `now()` a la même fenêtre aveugle.*
+
+      *Une minute d'installation, sur la machine de Daniel et avec son accord :
+      ce n'est pas une dépendance du produit, c'est un outil de poste.*
 
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire
 
