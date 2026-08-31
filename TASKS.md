@@ -3457,20 +3457,28 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       au semis de quoi travailler chez les salons les plus contraints : ceux,
       précisément, qu'une démonstration ne doit pas laisser vides.*
 
-- [ ] **`unfulfilled` disparaît du jeu entre 23 h et minuit**
-      *Troisième défaut de la même famille, **préexistant** — vérifié sur
-      `origin/main` nu sous horloge décalée. `test_les_contreparties_couvrent_leurs_etats`
-      exige les cinq états d'une contrepartie ; à 23 h 20 il n'en trouve que
-      quatre, `unfulfilled` manque.*
+- [x] **`unfulfilled` sous horloge décalée : un artefact de l'outil, pas un défaut**
+      *Il manquait à `test_les_contreparties_couvrent_leurs_etats` à 23 h 20, et
+      il manquait aussi sur `origin/main` nu — j'en avais conclu un troisième
+      défaut préexistant. **C'en était un de l'outil.***
 
-      *Il n'a rien à voir avec la journée : `unfulfilled` s'obtient en reculant
-      l'échéance d'une contrepartie et en laissant le balayage la fermer. Reste
-      à voir ce que l'heure y change — l'échéance reculée tombe-t-elle du bon
-      côté du balayage tard le soir.*
+      *`_mener` pose `deadline_at = datetime.now(UTC) - 2 h`, avec l'horloge du
+      **processus**. `expirer_les_echeances` filtre sur `clock_timestamp()`,
+      l'horloge de **Postgres**. `faketime` décale la première et pas la seconde :
+      l'échéance « reculée » tombe alors dans le futur de la base, le balayage ne
+      voit rien, et l'état n'existe pas. Les deux horloges s'accordent en
+      réalité — il n'y a rien à corriger dans le produit.*
 
-      *Il n'a jamais été vu parce qu'il ne l'est qu'une heure sur vingt-quatre.
-      C'est l'horloge décalable qui l'a rendu visible, et c'est exactement ce
-      qu'elle est là pour faire.*
+      ***La limite de l'outil, et il faut la connaître avant de l'utiliser.**
+      `faketime` ne décale que les processus. Tout ce qui compare une valeur
+      écrite en Python à `now()` ou `clock_timestamp()` côté base traverse une
+      frontière que l'outil ne franchit pas, et rend un verdict qui ne veut rien
+      dire. Ce qu'il éprouve valablement : ce qui se décide **entièrement** en
+      Python — la composition de la journée, les bornes d'un écran, le choix d'un
+      créneau. C'est ce qui a servi à trouver le manque de Wynwood.*
+
+      *Coût de l'ignorer : une correction inventée pour un état qui n'a jamais
+      manqué. Évité de justesse en lisant la requête du balayage.*
 
 - [ ] **Une horloge décalable, pour tout ce qui dépend de `now()`**
       *`brew install libfaketime`, puis `faketime '2026-08-31 23:20:00' pytest …`
