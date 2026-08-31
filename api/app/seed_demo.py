@@ -1293,7 +1293,23 @@ async def _la_journee_de_chaque_salon(
                 business_id=business.id,
                 catalog_item_id=offre.catalog_item_id,
                 depuis=demain,
-                horizon=timedelta(days=1),
+                # **Une semaine, et non le lendemain seul.**
+                #
+                # Un salon à un poste et à journée courte a son lendemain déjà
+                # plein : les parcours d'historique l'occupent, puisque après la
+                # fermeture c'est le premier jour où ils peuvent tomber. La
+                # composition de la journée ne trouvait alors **aucun** créneau
+                # pour y mener ses lignes, et le salon restait sans rien — ni
+                # ligne du jour, ni décision. Mesuré sur Wynwood à 23 h 20 :
+                # zéro créneau libre demain, donc zéro ligne posée.
+                #
+                # Le créneau du lendemain n'est qu'un véhicule : ce qui a « déjà
+                # eu lieu » est reposé sur une heure d'aujourd'hui juste après.
+                # Le chercher plus loin ne change donc rien à ce que l'écran
+                # montre, et donne au semis de quoi travailler chez les salons
+                # les plus contraints — ceux, précisément, qu'une démonstration
+                # ne doit pas laisser vides.
+                horizon=timedelta(days=7),
             )
         ]
         heures_passees = _repartir(
