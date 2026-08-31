@@ -59,7 +59,11 @@ const OFFRES = [
 }));
 
 async function monter(
-  { position = { longitude: -80.19, latitude: 25.76 }, ...extra }: Record<string, unknown> = {},
+  {
+    position = { longitude: -80.19, latitude: 25.76 },
+    onOuvrir = () => {},
+    ...extra
+  }: Record<string, unknown> = {},
 ) {
   const appels: string[] = [];
   const api = new ApiClient({
@@ -78,6 +82,7 @@ async function monter(
             palier={palier(extra as never)}
             position={position as never}
             rayonKm={15}
+            onOuvrir={onOuvrir as (id: string) => void}
             onRetour={() => {}}
           />
         </ApiProvider>
@@ -181,4 +186,22 @@ describe('ce que l’écran demande au serveur', () => {
       .map((n) => String(n.props.testID));
     expect(rendus).toEqual(['prestation-o1', 'prestation-o2', 'prestation-o3']);
   });
+});
+
+/**
+ * La liste mène au salon, et elle n'y menait pas.
+ *
+ * **Un écran qui dit « voici ce qui vous est ouvert » doit ouvrir.** Il nommait
+ * des prestations réservables et laissait retenir le nom du salon, revenir au
+ * fil, l'y chercher — pour arriver à la fiche qui vit dans la même pile.
+ */
+it('un appui sur une prestation ouvre la fiche de son salon', async () => {
+  const ouverts: string[] = [];
+  await monter({ onOuvrir: (id: string) => ouverts.push(id) });
+  await waitFor(() => expect(screen.getByTestId('liste-des-prestations')).toBeTruthy());
+
+  await fireEvent.press(screen.getAllByTestId(/^prestation-/)[0]);
+
+  expect(ouverts).toHaveLength(1);
+  expect(ouverts[0]).toBe(OFFRES[0].business_id);
 });

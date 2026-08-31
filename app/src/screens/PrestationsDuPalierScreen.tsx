@@ -25,7 +25,7 @@
  * l'axe des rangées du fil : le même des deux côtés.
  */
 import { useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { useApi, type OffreDuPalier, type PalierAccessible } from '../api';
 import { DataRow, SegmentedTabs, SkeletonLignes, Texte, TierBadge } from '../components';
@@ -42,6 +42,7 @@ export function PrestationsDuPalierScreen({
   palier,
   position,
   rayonKm,
+  onOuvrir,
   onRetour,
 }: {
   palier: PalierAccessible;
@@ -49,6 +50,16 @@ export function PrestationsDuPalierScreen({
   position: { longitude: number; latitude: number } | null;
   /** Celui sur lequel les comptes de proximité ont été faits. La phrase le dit. */
   rayonKm: number;
+  /**
+   * Ouvre la fiche du salon qui porte la prestation.
+   *
+   * **La liste ne menait nulle part.** Elle nomme des prestations réservables
+   * — c'est tout son sujet — et il fallait retenir le nom du salon, revenir au
+   * fil, et l'y chercher. Un écran qui dit « voici ce qui vous est ouvert »
+   * doit ouvrir : la fiche et cet écran vivent dans la même pile, il n'y avait
+   * qu'à relier.
+   */
+  onOuvrir: (businessId: string) => void;
   onRetour: () => void;
 }) {
   const { api } = useApi();
@@ -132,17 +143,24 @@ export function PrestationsDuPalierScreen({
         return (
           <View style={{ gap: 12 }} testID="liste-des-prestations">
             {visibles.map((offre) => (
-              <DataRow
+              <Pressable
                 key={offre.tier_offer_id}
+                accessibilityRole="button"
+                accessibilityLabel={`${offre.nom} — ${offre.nom_du_commerce}`}
+                onPress={() => onOuvrir(offre.business_id)}
                 testID={`prestation-${offre.tier_offer_id}`}
-                label={offre.nom}
-                value={[
-                  offre.nom_du_commerce,
-                  offre.neighborhood ? t(`quartiers.${offre.neighborhood}`) : null,
-                ]
-                  .filter(Boolean)
-                  .join(' · ')}
-              />
+                style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+              >
+                <DataRow
+                  label={offre.nom}
+                  value={[
+                    offre.nom_du_commerce,
+                    offre.neighborhood ? t(`quartiers.${offre.neighborhood}`) : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                />
+              </Pressable>
             ))}
           </View>
         );
