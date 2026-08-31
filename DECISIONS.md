@@ -10763,3 +10763,34 @@ derrière nous, les états de la journée se réduisent à `consumed` et un test
 en exige trois tombe. Il ne tombe pas un jour sur sept, il tombe tous les
 soirs — et il repasse au vert seul le lendemain matin, ce qui est la pire forme
 du défaut : il guérit avant d'être compris.
+
+---
+
+## 2026-08-31 — Une horloge décalée ne franchit pas la frontière du processus
+
+`libfaketime` a payé le jour de son installation : il a trouvé en cent secondes
+un manque du semis qui demandait sinon d'attendre 23 h — la journée de Wynwood,
+vide le soir faute d'un créneau libre le lendemain chez un salon à un poste.
+
+**Et il a failli en inventer un.** À 23 h 20 simulées, l'état `unfulfilled`
+disparaissait du jeu de données, sur la branche comme sur `main` nu. Tout
+désignait un troisième défaut préexistant, de la même famille que les deux
+autres : vrai une heure sur vingt-quatre, invisible le reste du temps.
+
+Il n'y en avait aucun. `_mener` pose l'échéance avec `datetime.now(UTC)` —
+l'horloge du **processus** — et `expirer_les_echeances` filtre sur
+`clock_timestamp()`, l'horloge de **Postgres**. `faketime` décale la première et
+pas la seconde : l'échéance reculée de deux heures tombait dans le futur de la
+base, le balayage ne voyait rien, et l'état n'existait pas. En réalité les deux
+horloges s'accordent, et l'état est bien produit.
+
+**La règle qui en sort.** Une horloge décalée n'éprouve valablement que ce qui se
+décide **entièrement dans le processus** : la composition d'une journée, les
+bornes d'un écran, le choix d'un créneau. Dès qu'une valeur écrite en Python est
+comparée à `now()` ou `clock_timestamp()` côté base, elle traverse une frontière
+que l'outil ne franchit pas, et le verdict ne veut plus rien dire — ni le rouge,
+ni le vert.
+
+Ce qui a évité la correction inutile est d'être allé lire la requête du balayage
+avant d'écrire quoi que ce soit. Le réflexe coûte une minute : **avant de croire
+un rouge sous horloge décalée, demander quelle horloge décide.**
