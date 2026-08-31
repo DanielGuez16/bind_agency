@@ -384,6 +384,9 @@ function ParcoursCreateur({
         {({ navigation, route }) => (
           <FicheScreen
             businessId={route.params.businessId}
+            // La position vient de la coquille, comme pour le fil et les
+            // paliers : on lit d'où l'on est, pas d'où l'on habite.
+            position={position}
             onRetour={() => navigation.goBack()}
             onReserver={(offre, fiche) => navigation.navigate('Creneaux', { fiche, offre })}
             onConnecterUnReseau={onConnecterUnReseau}

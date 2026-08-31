@@ -35,6 +35,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Business, CapacityRule, CatalogItem, Tier, TierOffer
 from app.models.enums import BusinessCategory, BusinessStatus, ContentFormat, Platform
 from app.services import availability, business_menu, business_photos, eligibility, favorites
+from app.services import business as business_service
 from app.services.feed import ratio_de_valeur
 
 #: Assez pour écrire « prochaine place mardi 14 h », pas assez pour composer un
@@ -122,6 +123,17 @@ class FichePublique:
     name: str
     category: BusinessCategory
     address: str | None
+    #: Où le lieu se trouve, pour qui veut savoir s'il peut y aller à pied.
+    #:
+    #: **Le fil dit une distance, la fiche ne disait rien.** On choisissait une
+    #: prestation depuis une carte qui portait « 190 m », puis on ouvrait un
+    #: écran où le lieu redevenait une adresse à lire. Les deux coordonnées
+    #: rendent la question calculable là où elle se pose.
+    #:
+    #: Nulles quand le géocodage n'a rien résolu : l'adresse reste, et l'écran
+    #: n'affiche alors ni distance ni renvoi vers un plan.
+    longitude: float | None
+    latitude: float | None
     timezone: str
     phone: str | None
     #: Où le salon se montre ailleurs, quand il l'a renseigné. Rendus tels
@@ -199,6 +211,10 @@ async def fiche(
     )
     if business is None:
         raise BusinessNotPublic(business_id)
+
+    # `geo` est un binaire opaque côté Python : la lecture passe par le service
+    # qui la fait déjà pour la création, plutôt qu'une seconde façon de la lire.
+    point = await business_service.coordinates_of(session, business)
 
     verdict = await eligibility.evaluer_createur(session, creator_id)
     # Les prestations déjà en favori, en un seul aller — comme sur le fil. Les
@@ -300,6 +316,8 @@ async def fiche(
         name=business.name,
         category=business.category,
         address=business.address,
+        longitude=None if point is None else point.longitude,
+        latitude=None if point is None else point.latitude,
         timezone=business.timezone,
         phone=business.phone,
         instagram_url=business.instagram_url,
