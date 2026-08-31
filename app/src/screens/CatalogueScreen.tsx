@@ -1144,6 +1144,7 @@ function NouvellePrestation({
             nom: nom.trim(),
           })}
           onPress={() => void choisirLaPhoto()}
+          style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
           testID="photo-a-la-creation"
         >
           {photo ? (
