@@ -3440,6 +3440,28 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       que des clés uniques, contrairement aux quatre autres défauts de la même
       campagne. L'intermittence désigne une forme de données particulière.*
 
+- [ ] **Wynwood a une journée vide tard le soir, et c'est un vrai manque**
+      *Le test `test_chaque_commerce_ouvert_a_une_reservation_a_venir` demande
+      désormais ce que l'écran du comptoir montre — `items` **ou** `a_trancher`,
+      la file portant les décisions toutes dates confondues. C'est le bon sujet
+      et il est vrai à toute heure ; c'est le semis qui ne le tient pas.*
+
+      ***Mesuré à 23 h 54 locale*** : Wynwood est ouvert ce jour-là — la journée
+      rend `horaires=[10:00–19:00]` — et pourtant `items` et `a_trancher` sont
+      vides, ses sept réservations toutes datées du lendemain.*
+
+      ***Ce qui est écarté, mesuré et non supposé** : le salon n'est pas fermé ;
+      aucune réservation n'est refusée — la sortie du premier passage ne porte
+      aucune ligne d'écart ; et `_heures_deja_passees` devrait rendre neuf heures
+      pour une fenêtre 10–19 à 23 h 54. Le parcours « mené sur demain puis
+      reposé aujourd'hui » ne repose donc pas, et je n'ai pas trouvé pourquoi.*
+
+      ***Ce qu'il faut pour finir** : instrumenter le semis — sa sortie ne
+      remonte pas, il tourne dans un sous-processus et `resume_du_semis` lit le
+      **second** passage, muet par construction puisqu'il repart d'une base
+      pleine. C'est cette mesure-là qui manque, et elle prend une minute une
+      fois qu'on sait qu'il faut lire le premier.*
+
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire
 
 ---

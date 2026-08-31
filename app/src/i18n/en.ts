@@ -1450,6 +1450,19 @@ export const en = {
     erreurCorps: 'This screen could not be shown. You can go back and try again.',
     erreurAction: 'Back to start',
   },
+  /** Les champs qu'un refus de validation peut nommer. */
+  champs: {
+    email: 'email address',
+    password: 'password',
+    fichier: 'file',
+    name: 'name',
+    address: 'address',
+    phone: 'phone number',
+    price_cents: 'price',
+    duration_minutes: 'duration',
+    reason: 'reason',
+    starts_at: 'time slot',
+  },
   errors: {
     generic: 'Something went wrong. Please try again.',
     // Pas un code de l'API : une panne de transport, où rien n'est parti
@@ -1501,6 +1514,7 @@ export const en = {
     venue_report_not_pending: 'This report has already been decided.',
     not_a_member: 'You do not belong to this business.',
     validation_failed: 'Some information is missing or incorrect.',
+    validation_failed_champs: 'Check this: {{champs}}.',
     business_not_found: 'This business is not available.',
     business_not_active:
       'This business is not open, so it cannot be paused.',

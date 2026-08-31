@@ -229,7 +229,21 @@ export function RedemptionScreen({
           le tiers gauche et le reste était vide : la passation prévoyait ce
           panneau, il n'avait jamais été posé. */}
       <View style={{ flexDirection: large ? 'row' : 'column', gap: spacing['space.6'] }}>
-      <View style={{ flex: 1, minWidth: 0, gap: spacing['space.4'] }}>
+      {/* **`flex: 1` seulement en rangée.** Dans une rangée il vaut une
+          largeur — la caisse prend la place que le journal laisse. Dans une
+          colonne il vaut une **hauteur**, et une hauteur en `flex` à
+          l'intérieur d'un `ScrollView` s'effondre à zéro : le conteneur n'en a
+          aucune à distribuer.
+
+          C'est ce qui vidait l'onglet « Register » sur mobile. L'en-tête et les
+          onglets se rendaient — ils sont au-dessus —, et tout ce qui suit
+          tombait dans un bloc de zéro point de haut : ni champ de code, ni
+          scanner, ni pavé. Aucune erreur en console, parce qu'il n'y a pas
+          d'erreur : la mise en page a fait exactement ce qu'on lui demandait.
+
+          Le même défaut avait vidé le mur, pour une autre cause. Celui-ci est
+          le plus coûteux : c'est l'écran le plus utilisé d'un comptoir. */}
+      <View style={large ? { flex: 1, minWidth: 0, gap: spacing['space.4'] } : { gap: spacing['space.4'] }}>
 
       {/* Le scan d'abord, et sélectionné par défaut. L'ordre n'est pas
           cosmétique : c'est lui qui dit quel chemin est le principal. */}
