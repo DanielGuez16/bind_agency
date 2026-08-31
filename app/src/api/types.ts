@@ -585,6 +585,16 @@ export type FichePublique = {
   address: string | null;
   timezone: string;
   phone: string | null;
+  /**
+   * Où le salon se montre ailleurs, quand il l'a renseigné.
+   *
+   * **Rendus tels qu'écrits.** Ce sont des adresses que le salon donne, pas des
+   * liens dérivés d'un pseudonyme comme celui d'une créatrice : la page d'une
+   * marque n'est pas toujours un compte, et la deviner rendrait un lien mort.
+   */
+  instagram_url: string | null;
+  tiktok_url: string | null;
+  website_url: string | null;
   cover_photo_key: string | null;
   /** La galerie, dans l'ordre choisi par le commerce. Elle montre le lieu. */
   photos: string[];

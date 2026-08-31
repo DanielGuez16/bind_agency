@@ -43,6 +43,7 @@ import { CarteDuCommerce } from './CarteDuCommerce';
 import { GalerieDuCommerce } from './GalerieDuCommerce';
 import { HorairesDuCommerce, type Semaine } from './HorairesScreen';
 import { Ecran } from './Ecran';
+import { LesLiensPublics, type LiensPublics } from './lieu/LesLiensPublics';
 import { ExceptionDuJour } from './journee/ExceptionDuJour';
 import { AGES } from './cacheDesReponses';
 import { useRequete } from './useRequete';
@@ -53,6 +54,8 @@ type Lieu = {
   photos: PhotoDuCommerce[];
   couverture: string | null;
   pagesDeLaCarte: PageDeLaCarte[];
+  /** Les trois adresses publiques, telles que le salon les a écrites. */
+  liens: LiensPublics;
   lienDeLaCarte: string | null;
   /**
    * Les prestations qui laissent un choix, et que l'absence de carte bloque.
@@ -107,6 +110,11 @@ export function LieuScreen({
         couverture: commerce.cover_photo_key,
         pagesDeLaCarte,
         lienDeLaCarte: commerce.menu_url,
+        liens: {
+          instagram_url: commerce.instagram_url,
+          tiktok_url: commerce.tiktok_url,
+          website_url: commerce.website_url,
+        },
         items,
         semaine: { regles, exceptions },
       };
@@ -130,7 +138,7 @@ export function LieuScreen({
    * ses trois blocs dépliés. Trois résumés tiennent en un écran et disent
    * chacun ce qu'il y a derrière ; on ouvre ce qu'on vient faire.
    */
-  const [ouverte, setOuverte] = useState<'photos' | 'carte' | 'horaires' | null>(null);
+  const [ouverte, setOuverte] = useState<'photos' | 'carte' | 'horaires' | 'liens' | null>(null);
 
   return (
     <Ecran
@@ -233,6 +241,28 @@ export function LieuScreen({
                 onChange={requete.recharger}
               />
             </View>
+          </Repliable>
+
+          {/* **Où le salon se montre ailleurs.** Trois adresses facultatives,
+              posées avec ce qui décrit le lieu et non dans les réglages du
+              compte : un lien Instagram décrit la vitrine, comme l'adresse et
+              les photos, quand les réglages ne portent que ce qui engage le
+              compte lui-même. */}
+          <Repliable
+            titre={t('lieu.sectionLiens')}
+            resume={t('lieu.liensResume', {
+              count: [lieu.liens.instagram_url, lieu.liens.tiktok_url, lieu.liens.website_url]
+                .filter(Boolean).length,
+            })}
+            ouverte={ouverte === 'liens'}
+            onBasculer={() => setOuverte(ouverte === 'liens' ? null : 'liens')}
+            testID="section-liens"
+          >
+            <LesLiensPublics
+              businessId={businessId}
+              liens={lieu.liens}
+              onChange={requete.recharger}
+            />
           </Repliable>
         </View>
         );
