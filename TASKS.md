@@ -3264,6 +3264,42 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       qui montre n'a pas à savoir qu'on peut le toucher. Une mutation, elle
       tombe*
 
+- [x] **Les trois liens publics du salon**
+      *Instagram, TikTok, site web : facultatifs, indépendants, et « aucun » est
+      un état normal — ils n'entrent dans aucune étape qui retient la
+      publication. Trois colonnes plutôt qu'une table de liens : une table
+      permettrait n'importe quel réseau, ce que personne n'a demandé, et ferait
+      payer une jointure à chaque fiche pour trois champs qui ne bougent jamais.*
+      ***Sur « votre lieu », pas dans les réglages.*** *La demande disait
+      « réglages », mais `ReglagesScreen` écrit noir sur blanc qu'il ne porte que
+      ce qui engage le compte — pause, suppression, déconnexion — et que la
+      composition du commerce vit ailleurs. Un lien Instagram décrit la vitrine,
+      exactement comme l'adresse et les photos.*
+      ***Rien n'est deviné.*** *Le lien du profil d'une créatrice se calcule de
+      son pseudonyme et de sa plateforme ; celui d'un salon, non — la page d'une
+      marque n'est pas toujours un compte, et la fabriquer rendrait un lien mort
+      que le salon découvrirait par un créateur.*
+      *Le cas divergent est la chaîne vide : sans conversion en `null`, vider un
+      champ enverrait `""`, la fiche rendrait un lien vers nulle part, et le
+      salon croirait l'avoir retiré. Une mutation, elle tombe*
+
+- [x] **`test_l_emission_refuse_sans_adresse_configuree` lisait le `.env` de la machine**
+      *Trouvé en lançant la suite complète avec `HANDOVER_BASE_URL` renseignée —
+      je l'avais posée pour explorer le mode terrain, qui reste invisible sans
+      elle. Le test faisait `monkeypatch.delenv`, ce qui vide `os.environ` mais
+      **n'empêche pas pydantic-settings de relire le fichier `.env`**.*
+      ***Vert partout, et pour la mauvaise raison.*** *C'est la famille nommée
+      dans `CLAUDE.md` — « un test de configuration qui lisait le `.env` de la
+      machine » — mais retournée, et donc plus difficile à voir : il passait
+      **parce que** personne ne configurait la variable qu'il éprouve. Le
+      premier poste à faire marcher le mode terrain le faisait tomber sans
+      qu'aucun code n'ait bougé.*
+      *Il surcharge maintenant le **réglage** et non la variable, par la forme
+      employée partout ailleurs dans cette suite : elle ne dépend ni du fichier
+      ni du cache. Deux vérifications plutôt qu'une — le service qui cesse de
+      refuser le fait tomber, et la variable retirée du `.env` le laisse vert.
+      Les deux configurations, le même verdict, ce qui est tout le sujet*
+
 - [ ] **`catalogue/corriger.ts` déclare une règle que personne ne consulte**
       *Même balayage. Le module nomme `CORRIGEABLES` — nom, description, photo —
       et `DEMANDENT_UNE_AUTRE` — durée, nature, réservabilité — avec une note
