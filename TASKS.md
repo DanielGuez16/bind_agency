@@ -3264,6 +3264,43 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       qui montre n'a pas à savoir qu'on peut le toucher. Une mutation, elle
       tombe*
 
+- [x] **Les trois liens publics du salon**
+      *Instagram, TikTok, site web : facultatifs, indépendants, et « aucun » est
+      un état normal — ils n'entrent dans aucune étape qui retient la
+      publication. Trois colonnes plutôt qu'une table de liens : une table
+      permettrait n'importe quel réseau, ce que personne n'a demandé, et ferait
+      payer une jointure à chaque fiche pour trois champs qui ne bougent jamais.*
+      ***Sur « votre lieu », pas dans les réglages.*** *La demande disait
+      « réglages », mais `ReglagesScreen` écrit noir sur blanc qu'il ne porte que
+      ce qui engage le compte — pause, suppression, déconnexion — et que la
+      composition du commerce vit ailleurs. Un lien Instagram décrit la vitrine,
+      exactement comme l'adresse et les photos.*
+      ***Rien n'est deviné.*** *Le lien du profil d'une créatrice se calcule de
+      son pseudonyme et de sa plateforme ; celui d'un salon, non — la page d'une
+      marque n'est pas toujours un compte, et la fabriquer rendrait un lien mort
+      que le salon découvrirait par un créateur.*
+      *Le cas divergent est la chaîne vide : sans conversion en `null`, vider un
+      champ enverrait `""`, la fiche rendrait un lien vers nulle part, et le
+      salon croirait l'avoir retiré. Une mutation, elle tombe*
+
+- [ ] **`test_l_emission_refuse_sans_adresse_configuree` lit le `.env` de la machine**
+      *Trouvé en lançant la suite complète avec `HANDOVER_BASE_URL` renseignée —
+      je l'avais posée pour explorer le mode terrain, qui reste invisible sans
+      elle. Le test fait `monkeypatch.delenv("HANDOVER_BASE_URL")`, ce qui vide
+      `os.environ` mais **n'empêche pas pydantic-settings de relire le fichier
+      `.env`**. Il ne passe donc que sur une machine dont le fichier ne porte pas
+      la variable, et c'est le cas de toutes jusqu'ici — ce qui explique aussi
+      qu'aucune fiche de terrain n'apparaisse jamais au semis.*
+      *C'est la famille nommée dans `CLAUDE.md` : « un test de configuration qui
+      lisait le `.env` de la machine, vert sur le poste qui portait les
+      identifiants et rouge en intégration continue ». Ici c'est l'inverse, et
+      donc pire : il est vert partout **parce que** personne ne configure la
+      variable qu'il éprouve.*
+      *Le geste juste est de surcharger le réglage plutôt que la variable
+      d'environnement. Non corrigé ici : `tests/` est tenu par une autre
+      conversation cette semaine, et deux mains sur le même fichier de test est
+      exactement ce qu'on vient d'éviter ailleurs*
+
 - [ ] **`catalogue/corriger.ts` déclare une règle que personne ne consulte**
       *Même balayage. Le module nomme `CORRIGEABLES` — nom, description, photo —
       et `DEMANDENT_UNE_AUTRE` — durée, nature, réservabilité — avec une note
