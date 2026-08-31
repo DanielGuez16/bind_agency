@@ -54,6 +54,8 @@ import { PlansScreen } from '../screens/PlansScreen';
 import { CommercesScreen } from '../screens/CommercesScreen';
 import { TerrainScreen } from '../screens/TerrainScreen';
 import { PreuveScreen } from '../screens/PreuveScreen';
+import { MesPublicationsScreen } from '../screens/MesPublicationsScreen';
+import { ProfilScreen } from '../screens/ProfilScreen';
 import { PublicationsScreen } from '../screens/PublicationsScreen';
 import { CatalogueScreen } from '../screens/CatalogueScreen';
 import { HorairesScreen } from '../screens/HorairesScreen';
@@ -125,7 +127,17 @@ export type PileReservationsParams = {
  * en a déjà deux.
  */
 export type PileAudienceParams = {
+  Profil: undefined;
   Audience: undefined;
+  MesPublications: undefined;
+  /**
+   * Les favoris, seconde porte.
+   *
+   * Le nom diffère de celui de la pile du fil : deux écrans du même nom dans
+   * deux piles se confondent au retour, et l'un se retrouve empilé sur l'autre.
+   */
+  FavorisDuProfil: undefined;
+  Reglages: undefined;
   Fiabilite: undefined;
 };
 
@@ -533,17 +545,63 @@ export function PileDesReservations() {
   );
 }
 
-/** L'audience, et le score qu'on ouvre depuis elle. */
-function PileDeLAudience({ onVoirMesPaliers }: { onVoirMesPaliers: () => void }) {
+/**
+ * Le profil, et ce qui s'ouvre depuis lui.
+ *
+ * **Deux onglets sont devenus un.** L'audience et les réglages occupaient
+ * chacun une place sur une barre qui en portait quatre, et ce sont les deux
+ * qu'on ouvrait le moins : on consulte ses chiffres de temps en temps, on
+ * change un réglage deux fois par an. La barre passe à trois — le fil, les
+ * réservations, le profil — et les cibles y gagnent la place que quatre
+ * onglets leur prenaient sur un iPhone.
+ *
+ * **Les favoris gardent leurs deux portes, et c'est délibéré.** Ils vivent
+ * dans la pile du fil parce que le cœur se pose sur une carte du mur et que ce
+ * qu'il ouvre explique cette carte. Le profil est l'autre question — « ce que
+ * j'ai mis de côté » — et elle mérite sa porte. Un même écran, deux chemins :
+ * ce n'est pas une duplication, c'est deux questions qui aboutissent au même
+ * endroit.
+ */
+function PileDuProfil({ onVoirMesPaliers }: { onVoirMesPaliers: () => void }) {
   return (
     <PileAudience.Navigator screenOptions={OPTIONS_DE_PILE}>
+      <PileAudience.Screen name="Profil">
+        {({ navigation }) => (
+          <ProfilScreen
+            onReglages={() => navigation.navigate('Reglages')}
+            onMesPublications={() => navigation.navigate('MesPublications')}
+            onFavoris={() => navigation.navigate('FavorisDuProfil')}
+            onMonAudience={() => navigation.navigate('Audience')}
+          />
+        )}
+      </PileAudience.Screen>
       <PileAudience.Screen name="Audience">
         {({ navigation }) => (
           <AudienceScreen
             onVoirMesPaliers={onVoirMesPaliers}
             onVoirLeScore={() => navigation.navigate('Fiabilite')}
+            onRetour={() => navigation.goBack()}
           />
         )}
+      </PileAudience.Screen>
+      <PileAudience.Screen name="MesPublications">
+        {({ navigation }) => <MesPublicationsScreen onRetour={() => navigation.goBack()} />}
+      </PileAudience.Screen>
+      <PileAudience.Screen name="FavorisDuProfil">
+        {({ navigation }) => (
+          <FavorisScreen
+            onRetour={() => navigation.goBack()}
+            // **Le salon s'ouvre dans la pile du fil, pas ici.** La fiche mène
+            // à la réservation, et la réservation appartient au parcours : la
+            // rendre depuis le profil enfermerait quelqu'un dans une pile qui
+            // n'a pas de suite.
+            onOuvrirLeCommerce={() => {}}
+            onVoirMesPaliers={onVoirMesPaliers}
+          />
+        )}
+      </PileAudience.Screen>
+      <PileAudience.Screen name="Reglages">
+        {({ navigation }) => <ReglagesScreen onRetour={() => navigation.goBack()} />}
       </PileAudience.Screen>
       <PileAudience.Screen name="Fiabilite">
         {({ navigation }) => <FiabiliteScreen onRetour={() => navigation.goBack()} />}
@@ -605,14 +663,9 @@ function OngletsCreateur({
           ouvrent une prestation, sont déjà sur cet écran. Sans ce passage, la
           seule route vers les paliers serait l'état vide du fil — c'est-à-dire
           accessible aux seuls créateurs qui n'ont rien à réserver. */}
-      <Onglets.Screen name="audience" options={onglet(t('onglets.audience'), 'personne')}>
-        {() => <PileDeLAudience onVoirMesPaliers={onVoirMesPaliers} />}
+      <Onglets.Screen name="profil" options={onglet(t('onglets.profil'), 'personne')}>
+        {() => <PileDuProfil onVoirMesPaliers={onVoirMesPaliers} />}
       </Onglets.Screen>
-      <Onglets.Screen
-        name="reglages"
-        component={ReglagesScreen}
-        options={onglet(t('onglets.reglages'), 'reglages')}
-      />
     </Onglets.Navigator>
   );
 }
@@ -925,8 +978,20 @@ export function Navigation({
       {role === 'creator' ? (
         <OngletsCreateur
           prenom={prenom}
-          onConnecterUnReseau={() => conteneur.navigate('audience' as never)}
-          onVoirMonAudience={() => conteneur.navigate('audience' as never)}
+          // **Vers l'audience, à travers le profil.** L'onglet ne s'appelle
+          // plus « audience » : il porte le profil, et l'audience est l'écran
+          // qu'on y ouvre. Naviguer vers l'onglet seul déposerait quelqu'un sur
+          // le profil en lui laissant chercher ce qu'il venait voir.
+          onConnecterUnReseau={() =>
+            (conteneur.navigate as (n: string, p?: object) => void)('profil', {
+              screen: 'Audience',
+            })
+          }
+          onVoirMonAudience={() =>
+            (conteneur.navigate as (n: string, p?: object) => void)('profil', {
+              screen: 'Audience',
+            })
+          }
           // **`paliers` n'a jamais existé.** Les onglets du créateur sont
           // `parcours`, `audience`, `reservations` et `reglages` ; l'écran des
           // paliers vit dans la pile du fil, sous `Paliers`. L'appui partait,

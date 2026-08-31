@@ -256,6 +256,14 @@ export type AudienceDuCompte = {
   social_account_id: string;
   platform: Platform;
   handle: string | null;
+  /**
+   * La photo du compte, **par sa clé** — servie par `GET /media/{cle}`.
+   *
+   * Servie aux salons depuis l'ouverture de l'annuaire, et jamais à la
+   * créatrice elle-même alors que c'est la même colonne : son profil ne pouvait
+   * pas montrer le visage qu'un salon voyait pourtant d'elle.
+   */
+  avatar_key: string | null;
   status: SocialAccountStatus;
   verification_status: VerificationStatus;
   followers_count: number | null;

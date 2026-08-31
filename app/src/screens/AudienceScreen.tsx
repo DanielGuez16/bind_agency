@@ -110,7 +110,13 @@ function joursDepuis(debut: string): number {
 export function AudienceScreen({
   onVoirMesPaliers,
   onVoirLeScore,
-}: { onVoirMesPaliers?: () => void; onVoirLeScore?: () => void } = {}) {
+  onRetour,
+}: {
+  onVoirMesPaliers?: () => void;
+  onVoirLeScore?: () => void;
+  /** L'écran n'est plus un onglet : sans retour, on n'en sort qu'en changeant d'onglet. */
+  onRetour?: () => void;
+} = {}) {
   const { api, messageDErreur } = useApi();
   const { t } = useI18n();
   const c = useColors();
@@ -145,6 +151,7 @@ export function AudienceScreen({
     <Ecran
       requete={requete}
       titre={t('parcours.audienceTitre')}
+      onRetour={onRetour}
       squelette={<SkeletonLignes combien={5} testID="squelette-audience" />}
       testID="ecran-audience"
       vide={

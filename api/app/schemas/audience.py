@@ -22,6 +22,14 @@ class AudienceDuCompteRead(BaseModel):
     social_account_id: uuid.UUID
     platform: Platform
     handle: str | None
+    #: La photo du compte, **par sa clé** — servie par `GET /media/{cle}`, jamais
+    #: l'adresse de la plateforme, qui expire.
+    #:
+    #: Elle était servie aux salons depuis l'ouverture de l'annuaire et jamais à
+    #: la créatrice elle-même, alors que c'est la même colonne. Son écran de
+    #: profil ne pouvait donc pas montrer son visage, ce qu'un salon voyait
+    #: pourtant d'elle.
+    avatar_key: str | None
     status: SocialAccountStatus
     verification_status: VerificationStatus
     followers_count: int | None

@@ -208,6 +208,18 @@ export const en = {
     creator: 'Creator',
     validUntil: 'Valid until',
   },
+  profil: {
+    titre: 'Profile',
+    ouvrirLesReglages: 'Settings',
+    sansPseudonyme: 'Your profile',
+    abonnes: '{{n}} followers',
+    mesPublications: 'My posts',
+    favoris: 'Favourites',
+    monAudience: 'My audience',
+    publicationsVideTitre: 'No posts yet',
+    publicationsVideCorps:
+      'A post appears here once the business has accepted your proof. Book a service to start.',
+  },
   menuImport: {
     title: 'Review your menu',
     intro:
@@ -1422,6 +1434,7 @@ export const en = {
     fil: 'Nearby',
     reservations: 'Bookings',
     audience: 'Audience',
+    profil: 'Profile',
     reglages: 'Settings',
     journee: 'Today',
     publications: 'Publications',
