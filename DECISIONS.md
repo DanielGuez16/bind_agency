@@ -10729,3 +10729,37 @@ de croire trois fois que la propriété était mal nommée.
 deux — l'objet pour le natif, les attributs pour le web — à un seul endroit. Le
 refaire à chaque appel, c'est en oublier un ; et un état oublié ne se voit pas,
 il s'entend chez quelqu'un qui n'est pas là pour le dire.
+
+---
+
+## 2026-08-30 — Le second passage d'un semis est muet, et on lisait sa sortie
+
+`resume_du_semis` relançait la commande de semis pour lire son résumé ; une
+optimisation lui a fait lire la sortie du **second** passage, avec le
+commentaire « qui dit exactement la même chose puisque c'est la même commande
+sur la même base ». Cinquante secondes gagnées, et c'est vrai du résumé.
+
+**C'est faux de tout ce qui est conditionnel au travail réellement fait.** Le
+second passage repart d'une base que le premier a remplie : il ne repose rien,
+donc il n'écarte rien, donc il ne dit rien de ce qu'il a écarté. Les lignes
+« réservation écartée », « parcours écarté », « journée écartée chez … » sont
+absentes de sa sortie — non parce que rien n'a été écarté, mais parce que rien
+n'a été tenté.
+
+Ce que ça a coûté : deux conversations ont cherché pendant une soirée pourquoi
+un salon n'avait aucune réservation du jour, l'une et l'autre en lisant une
+sortie vide et en concluant « le semis n'écarte rien ». La sortie du premier
+passage a répondu en une minute — et la réponse était qu'en effet rien n'est
+écarté, mais on ne pouvait pas le savoir de là.
+
+**Un test qui s'appuierait dessus pour vérifier qu'un écart est signalé
+passerait au vert sans rien voir.** C'est la même famille que la garde de
+traduction qui ne voit pas les orphelines, à ceci près que la limite n'est pas
+écrite : le commentaire affirme l'équivalence au lieu de la borner.
+
+Et le défaut cherché ce soir-là était ailleurs, dans une variable que personne
+ne regardait : **l'heure.** À 23 h à Miami, tous les créneaux du jour sont
+derrière nous, les états de la journée se réduisent à `consumed` et un test qui
+en exige trois tombe. Il ne tombe pas un jour sur sept, il tombe tous les
+soirs — et il repasse au vert seul le lendemain matin, ce qui est la pire forme
+du défaut : il guérit avant d'être compris.

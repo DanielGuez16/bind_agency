@@ -38,9 +38,11 @@ const RACINES = [
   'Paliers',
   // `Annuaire` a gagné une pile : l'abonnement s'y empile depuis son refus.
   'Annuaire',
-  // `Audience` a gagné une pile avec la v3 : le score s'y empile, mais
-  // l'audience reste la racine de son onglet.
-  'Audience',
+  // **La racine de cet onglet est le profil depuis la fusion.** L'audience et
+  // les réglages y étaient deux onglets ; ils sont devenus deux écrans qu'on
+  // ouvre depuis le profil, et l'audience a donc gagné le retour qu'une racine
+  // n'a pas besoin d'avoir.
+  'Profil',
 ];
 
 /** Les écrans déclarés dans une pile, et le bloc JSX qui les monte. */

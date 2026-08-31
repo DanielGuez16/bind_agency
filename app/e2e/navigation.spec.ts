@@ -27,7 +27,12 @@ for (const [nom, taille] of Object.entries(LARGEURS)) {
     expect(onglets.length, `aucune navigation visible en ${nom}`).toBeGreaterThan(2);
     // Et elle mène quelque part : un libellé affiché sans cible serait un
     // décor. On presse, et l'écran change.
-    await page.getByText('Settings', { exact: true }).first().click();
+    // **Deux appuis depuis la fusion, et le second est le vrai sujet.**
+    // Les réglages ne sont plus un onglet : le profil les porte derrière un
+    // engrenage. Un test qui s'arrêterait au profil ne dirait plus si
+    // l'engrenage mène quelque part, et c'est précisément le chemin neuf.
+    await page.getByText('Profile', { exact: true }).first().click();
+    await page.getByTestId('ecran-profil').getByTestId('ouvrir-les-reglages').click();
     await expect(page.getByTestId('ecran-reglages')).toBeVisible();
   });
 }

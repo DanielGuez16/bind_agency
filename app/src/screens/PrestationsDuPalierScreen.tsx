@@ -146,7 +146,7 @@ export function PrestationsDuPalierScreen({
               <Pressable
                 key={offre.tier_offer_id}
                 accessibilityRole="button"
-                accessibilityLabel={`${offre.nom} — ${offre.nom_du_commerce}`}
+                accessibilityLabel={`${offre.nom}, ${offre.nom_du_commerce}`}
                 onPress={() => onOuvrir(offre.business_id)}
                 testID={`prestation-${offre.tier_offer_id}`}
                 style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}

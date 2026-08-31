@@ -37,6 +37,9 @@ class AudienceDuCompte:
     social_account_id: uuid.UUID
     platform: Platform
     handle: str | None
+    #: La photo du compte, par sa clé. La même colonne que l'annuaire sert aux
+    #: salons, et qui ne revenait pas à qui elle appartient.
+    avatar_key: str | None
     status: SocialAccountStatus
     verification_status: VerificationStatus
     #: Nuls tant qu'aucun relevé n'existe. « Pas encore mesuré », et non zéro :
@@ -118,6 +121,9 @@ async def audience(session: AsyncSession, *, creator_id: uuid.UUID) -> tuple[Aud
                 SocialAccount.id,
                 SocialAccount.platform,
                 SocialAccount.handle,
+                # La même colonne que l'annuaire sert aux salons. Elle ne
+                # revenait pas à qui elle appartient.
+                SocialAccount.avatar_key,
                 SocialAccount.status,
                 SocialAccount.verification_status,
                 releve.c.followers_count,
@@ -140,6 +146,7 @@ async def audience(session: AsyncSession, *, creator_id: uuid.UUID) -> tuple[Aud
             social_account_id=ligne.id,
             platform=ligne.platform,
             handle=ligne.handle,
+            avatar_key=ligne.avatar_key,
             status=ligne.status,
             verification_status=ligne.verification_status,
             followers_count=ligne.followers_count,

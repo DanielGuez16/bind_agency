@@ -746,7 +746,12 @@ describe('aiguillage par rôle', () => {
      */
     await monterPour('creator');
 
-    await fireEvent.press(screen.getAllByText(en.onglets.audience)[0]);
+    await fireEvent.press(screen.getAllByText(en.onglets.profil)[0]);
+    // **L'audience est descendue d'un cran, et le chemin s'allonge d'un appui.**
+    // C'est le prix de la barre à trois onglets, et il se paie sur l'écran qu'on
+    // ouvre le moins.
+    await waitFor(() => expect(screen.getByTestId('ecran-profil')).toBeTruthy());
+    await fireEvent.press(await screen.findByTestId('vers-mon-audience'));
     await waitFor(() => expect(screen.getByTestId('ecran-audience')).toBeTruthy());
 
     await fireEvent.press(await screen.findByTestId('voir-mes-paliers'));
@@ -754,21 +759,20 @@ describe('aiguillage par rôle', () => {
     await waitFor(() => expect(screen.getByTestId('ecran-paliers')).toBeTruthy());
   });
 
-  it('le créateur voit ses quatre onglets, et aucun autre', async () => {
+  it('le créateur voit ses trois onglets, et aucun autre', async () => {
     await monterPour('creator');
     const vus = onglets();
 
-    // **Quatre, et non plus cinq.** Les paliers ont quitté la barre : un onglet
-    // répond à une question qu'on se pose en ouvrant l'application, et « quel
-    // est mon palier » n'en est pas une. Ce qu'on veut savoir, c'est ce qu'on
-    // peut réserver — le fil répond, et les paliers l'expliquent depuis une
-    // ligne du fil.
-    expect(vus).toEqual([
-      en.onglets.fil,
-      en.onglets.reservations,
-      en.onglets.audience,
-      en.onglets.reglages,
-    ]);
+    // **Trois, et non plus quatre.** Les paliers avaient déjà quitté la barre :
+    // un onglet répond à une question qu'on se pose en ouvrant l'application, et
+    // « quel est mon palier » n'en est pas une. L'audience et les réglages n'en
+    // sont pas non plus — on consulte ses chiffres de temps en temps, on change
+    // un réglage deux fois par an. Les deux onglets qui prenaient le plus de
+    // place étaient les deux qu'on ouvrait le moins ; ils sont devenus le
+    // profil, et l'engrenage qui s'y pose.
+    expect(vus).toEqual([en.onglets.fil, en.onglets.reservations, en.onglets.profil]);
+    expect(vus).not.toContain(en.onglets.audience);
+    expect(vus).not.toContain(en.onglets.reglages);
     // Écrit en égalité stricte et non en « contient » : la version d'avant
     // laissait passer un onglet de plus sans rien dire, ce qui est exactement
     // la faute qu'on vient de corriger à la main.
@@ -915,7 +919,17 @@ describe('aiguillage par rôle', () => {
   it('les réglages sont joignables depuis les trois rôles', async () => {
     // C'est le seul chemin vers la déconnexion : l'oublier dans un arbre
     // enfermerait quelqu'un dans une session qu'il ne peut pas quitter.
-    for (const role of ['creator', 'admin'] as const) {
+    // **Le créateur les atteint par l'engrenage du profil, pas par un onglet.**
+    // La règle qui compte n'est pas « un onglet existe », c'est « on y arrive » :
+    // c'est ce que la version d'avant vérifiait par un raccourci, et le
+    // raccourci a cessé d'être vrai avant la règle.
+    await monterPour('creator');
+    await fireEvent.press(screen.getAllByText(en.onglets.profil)[0]);
+    await waitFor(() => expect(screen.getByTestId('ecran-profil')).toBeTruthy());
+    await fireEvent.press(await screen.findByTestId('ouvrir-les-reglages'));
+    await waitFor(() => expect(screen.getByTestId('ecran-reglages')).toBeTruthy());
+
+    for (const role of ['admin'] as const) {
       const rendu = await monterPour(role);
       expect(screen.queryAllByText(en.onglets.reglages).length).toBeGreaterThan(0);
       void rendu;

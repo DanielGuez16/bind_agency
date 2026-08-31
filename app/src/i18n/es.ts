@@ -201,6 +201,18 @@ export const es: Catalogue = {
     creator: 'Creador',
     validUntil: 'Válido hasta',
   },
+  profil: {
+    titre: 'Perfil',
+    ouvrirLesReglages: 'Ajustes',
+    sansPseudonyme: 'Tu perfil',
+    abonnes: '{{n}} seguidores',
+    mesPublications: 'Mis publicaciones',
+    favoris: 'Favoritos',
+    monAudience: 'Mi audiencia',
+    publicationsVideTitre: 'Todavía no hay publicaciones',
+    publicationsVideCorps:
+      'Una publicación aparece aquí cuando el comercio acepta tu prueba. Reserva un servicio para empezar.',
+  },
   menuImport: {
     title: 'Revisa tu carta',
     intro:
@@ -1277,6 +1289,7 @@ export const es: Catalogue = {
     fil: 'Cerca',
     reservations: 'Reservas',
     audience: 'Audiencia',
+    profil: 'Perfil',
     reglages: 'Ajustes',
     journee: 'Hoy',
     publications: 'Publicaciones',

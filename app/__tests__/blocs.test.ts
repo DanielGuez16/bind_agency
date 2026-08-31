@@ -87,6 +87,10 @@ const BLOCS: Record<string, number> = {
   ReportingScreen: 0,
   PlansScreen: 0,
   MenuReviewScreen: 0,
+  // Le profil nomme la personne : c'est une identité, pas un seuil. Aucun bloc
+  // plein, et les publications sont une liste de faits.
+  ProfilScreen: 0,
+  MesPublicationsScreen: 0,
   CameraScanner: 0,
 
   // --- parcours créateur : la découverte et la fiche ne se signent pas

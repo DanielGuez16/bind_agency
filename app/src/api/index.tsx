@@ -877,6 +877,29 @@ export class Api {
    * décider de ce qu'on en fait. C'est la seconde moitié — poser la clé dans
    * la galerie — que cette méthode ne fait pas.
    */
+  /**
+   * Dépose une photo de prestation et rend sa clé, sans rien y attacher.
+   *
+   * **Pour la prestation qui n'existe pas encore.** `photographierUnItem`
+   * dépose puis corrige l'article, ce qui demande un identifiant : à la
+   * création il n'y en a pas. La clé se garde donc, et part avec le reste du
+   * formulaire — un seul appel écrit la prestation, photo comprise.
+   */
+  async televerserUnePhotoDePrestation(
+    businessId: string,
+    uri: string,
+    progression?: (part: number) => void,
+  ) {
+    const corps = new FormData();
+    corps.append('fichier', (await fichierAEnvoyer(uri, 'photo.jpg')) as Blob);
+
+    const { storage_key } = await this.client.request<{ storage_key: string }>(
+      routes.televerserUnePhoto(businessId),
+      { methode: 'POST', corpsBrut: corps, progression },
+    );
+    return storage_key;
+  }
+
   async photographierUnItem(businessId: string, itemId: string, uri: string, progression?: (part: number) => void) {
     const corps = new FormData();
     corps.append('fichier', (await fichierAEnvoyer(uri, 'photo.jpg')) as Blob);
