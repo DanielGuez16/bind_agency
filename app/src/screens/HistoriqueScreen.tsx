@@ -63,8 +63,19 @@ export function grouperParMois(
     // 1er août à Miami ne bascule pas en juillet parce qu'on la lit d'ailleurs.
     const mois = formatMois(quand, locale, item.business_timezone).toUpperCase();
 
-    const dernier = groupes.at(-1);
-    if (dernier?.mois === mois) dernier.items.push(item);
+    // **Le mois retrouvé, où qu'il soit, et pas seulement le dernier.**
+    //
+    // Ne fusionner que le voisin supposait que la liste soit triée par date.
+    // Elle ne l'est pas : le serveur range les réservations sans créneau en
+    // dernier — `nullslast` —, et leur `valid_until` retombe souvent dans un
+    // mois déjà passé. La liste faisait donc AOÛT, SEPTEMBRE, puis AOÛT de
+    // nouveau, et deux `<View key={groupe.mois}>` portaient la même clé.
+    //
+    // **Sur le web cela ne fait qu'un avertissement ; en natif l'écran se
+    // grise.** C'est ce qui a vidé « à venir » et « terminées ». Une seule
+    // section par mois, dans l'ordre où le mois apparaît d'abord.
+    const existant = groupes.find((groupe) => groupe.mois === mois);
+    if (existant) existant.items.push(item);
     else groupes.push({ mois, items: [item] });
   }
 

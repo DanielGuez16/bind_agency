@@ -3402,6 +3402,34 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       a fini par tomber, faute de créneau libre à minuit — il disait vrai sur du
       code que personne n'exécute.*
 
+- [x] **Cinq défauts qui ne se voient qu'en natif**
+      *Tous invisibles sur le web, et pour la même raison de fond : le navigateur
+      pardonne ce que Yoga et React Native refusent.*
+
+      ***Trois n'en font qu'un.** `grouperParMois` ne fusionnait que les groupes
+      voisins ; le serveur range les réservations sans créneau en dernier, et
+      leur `valid_until` retombe dans un mois déjà vu. Deux sections de même clé,
+      un avertissement sur le web, un écran grisé en natif — « à venir » et
+      « terminées » vidés, et le bouton du code de retrait avec eux, puisqu'il
+      vit dans cet écran.*
+
+      ***Le champ de mot de passe** : `height: '100%'` contre un parent qui n'a
+      qu'un `minHeight`. Le navigateur retombe sur la ligne flex, Yoga n'a rien
+      contre quoi calculer.*
+
+      ***Accorder une réservation** : `key={compte.platform}`, alors que rien
+      n'interdit deux comptes sur la même plateforme.*
+
+- [ ] **La fiche d'un salon grise « parfois », sous Expo Go seulement**
+      *Signalé en vérification de bout en bout. **En attente d'une occurrence
+      documentée** — le message de console au moment où ça grise, ou le nom du
+      salon. Sans l'un des deux il n'y a rien à chercher qu'à l'aveugle.*
+
+      *Ce qu'on sait : le mécanisme est `FrontiereDErreur`, qui grise sur toute
+      erreur de rendu. Et ce n'est **pas** une clé dupliquée — `FicheScreen` n'a
+      que des clés uniques, contrairement aux quatre autres défauts de la même
+      campagne. L'intermittence désigne une forme de données particulière.*
+
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire
 
 ---

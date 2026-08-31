@@ -726,7 +726,12 @@ function ReseauxDeLaCreatrice({ reservation }: { reservation: ReservationDuComme
       style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingTop: 2 }}
       testID={`reseaux-${reservation.booking_id}`}
     >
-      {comptes.map((compte) => {
+      {/* **La clé porte le pseudonyme, pas seulement la plateforme.** Rien
+          n'interdit à une créatrice d'avoir deux comptes Instagram, et deux
+          entrées de même plateforme portaient alors la même clé. Sur le web
+          React s'en plaint et continue ; en natif le rendu de la liste casse et
+          l'écran se grise — ce qui arrivait en accordant une demande. */}
+      {comptes.map((compte, rang) => {
         const rattache = compte.handle !== null;
         const mene = rattache && reservation.creator_profil_url !== null
           && compte.platform === reservation.platform;
@@ -767,7 +772,7 @@ function ReseauxDeLaCreatrice({ reservation }: { reservation: ReservationDuComme
 
         return mene ? (
           <Pressable
-            key={compte.platform}
+            key={`${compte.platform}-${compte.handle ?? rang}`}
             accessibilityRole="link"
             onPress={() => void Linking.openURL(reservation.creator_profil_url as string)}
             testID={`profil-${reservation.booking_id}`}
@@ -776,7 +781,10 @@ function ReseauxDeLaCreatrice({ reservation }: { reservation: ReservationDuComme
             {corps}
           </Pressable>
         ) : (
-          <View key={compte.platform} testID={`reseau-${compte.platform}`}>
+          <View
+            key={`${compte.platform}-${compte.handle ?? rang}`}
+            testID={`reseau-${compte.platform}`}
+          >
             {corps}
           </View>
         );
