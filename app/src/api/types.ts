@@ -846,6 +846,16 @@ export type ReservationDuCommerce = {
    * connue — on n'affiche alors aucun lien plutôt qu'un lien mort.
    */
   creator_profil_url: string | null;
+  /**
+   * Le visage que le salon voit, **par sa clé** — servi par `GET /media/{cle}`
+   * et jamais l'adresse de la plateforme, qui expire.
+   *
+   * La colonne existait et ne sortait que par l'annuaire : un salon qui décide
+   * d'accorder voyait un identifiant, quand la même donnée lui était rendue
+   * ailleurs. Décider d'une personne sans jamais la voir est ce que ce champ
+   * corrige. Nul quand la créatrice n'en a pas ; le pseudonyme reste alors seul.
+   */
+  creator_avatar_key: string | null;
   item_name: string;
   duration_minutes: number | null;
   platform: Platform;

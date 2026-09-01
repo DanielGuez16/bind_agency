@@ -142,6 +142,15 @@ class ReservationDuCommerceRead(BaseModel):
     #: C'est la première chose qu'un salon cherche avant d'accorder : un
     #: pseudonyme sans lien oblige à le recopier dans une barre d'adresse.
     creator_profil_url: str | None
+    #: Le visage que le salon voit, **par sa clé** — servi par `GET /media/{cle}`
+    #: et jamais l'adresse de la plateforme, qui expire. Nul quand la créatrice
+    #: n'en a pas ; l'écran rend alors le pseudonyme seul.
+    #:
+    #: La colonne existait et ne sortait que par l'annuaire : un salon qui
+    #: décide d'accorder voyait un identifiant, quand la même donnée lui était
+    #: rendue ailleurs. Décider d'une personne sans jamais la voir est
+    #: précisément ce que ce champ corrige.
+    creator_avatar_key: str | None
     item_name: str
     duration_minutes: int | None
     platform: Platform

@@ -634,6 +634,7 @@ export const es: Catalogue = {
     reseauAvecAbonnes: '{{reseau}} · {{abonnes}} seguidores',
     reseauAbsent: 'Sin {{reseau}}',
     repondreAvant: 'Responde antes del {{quand}}',
+    voirLeProfil: 'Abrir el perfil',
     journeeServies: '{{count}} atendidas',
     journeeCloses: '{{count}} cerradas',
     journeePlanning: 'Hoy',

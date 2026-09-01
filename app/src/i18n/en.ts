@@ -717,6 +717,7 @@ export const en = {
     reseauAvecAbonnes: '{{reseau}} · {{abonnes}} followers',
     reseauAbsent: 'No {{reseau}}',
     repondreAvant: 'Answer before {{quand}}',
+    voirLeProfil: 'Open the profile',
     journeeServies: '{{count}} served',
     journeeCloses: '{{count}} closed',
     journeePlanning: 'Today',
