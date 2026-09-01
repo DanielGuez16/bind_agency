@@ -36,6 +36,7 @@ import { useI18n } from '../i18n';
 import { urlImage } from './FilScreen';
 import { elevationDeCarte, elevationFlottante, radius, useTheme } from '../theme';
 import { Ecran } from './Ecran';
+import { OuEstLeLieu } from './fiche/OuEstLeLieu';
 import { EcartAuSeuil } from './PaliersScreen';
 import { glypheDePlateforme, nomDePlateforme } from './obstacle';
 import { AGES } from './cacheDesReponses';
@@ -76,12 +77,20 @@ const HAUTEUR_DE_COUVERTURE = 270;
 
 export function FicheScreen({
   businessId,
+  position = null,
   onReserver,
   onRetour,
   onConnecterUnReseau,
   onFavoriBascule,
 }: {
   businessId: string;
+  /**
+   * Où est la créatrice, pour dire la distance.
+   *
+   * Nulle tant qu'elle n'a pas partagé sa position, et l'écran le dit plutôt
+   * que de la réclamer : le fil l'a déjà demandée là où elle sert.
+   */
+  position?: { longitude: number; latitude: number } | null;
   onReserver: (offre: OffreDeLaFiche, fiche: FichePublique) => void;
   /** Le retour de la pile. Sur le web il n'y a ni geste ni bouton système :
    * sans lui, on ne quitte l'écran qu'en changeant d'onglet. */
@@ -213,6 +222,21 @@ export function FicheScreen({
             fiche={fiche}
             onOuvrirLaCarte={() => setOuvert('carte')}
             onSortirVersLeLien={() => setOuvert('sortie')}
+          />
+
+          {/* **Où c'est, juste après ce que c'est.** Le fil annonçait « 190 m »
+              et la fiche laissait le lieu redevenir une adresse à lire. La
+              question se pose ici, entre l'identité et le choix d'une
+              prestation : y aller à pied ou non change ce qu'on réserve. */}
+          <OuEstLeLieu
+            nom={fiche.name}
+            adresse={fiche.address}
+            lieu={
+              fiche.longitude !== null && fiche.latitude !== null
+                ? { longitude: fiche.longitude, latitude: fiche.latitude }
+                : null
+            }
+            position={position}
           />
 
           {/* **Les deux visionneuses sont plein écran, par-dessus la fiche.**

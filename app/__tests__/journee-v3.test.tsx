@@ -387,3 +387,42 @@ it('un salon pas encore publié le lit sur une journée vide', async () => {
   expect(await screen.findByTestId('journee-vide')).toBeTruthy();
   expect(screen.getByTestId('bandeau-mise-en-ligne')).toBeTruthy();
 });
+
+/**
+ * Le salon voit à qui il accorde.
+ *
+ * **La carte ne portait qu'un pseudonyme.** La photo et l'adresse du profil
+ * étaient servies à l'annuaire et jamais à la décision : on montrait la
+ * personne à qui n'a rien à trancher, et on la cachait à qui doit.
+ *
+ * **Le décor divergent est la créatrice sans avatar** : sans lui, « je rends le
+ * visage » et « je rends toujours un cadre » donnent le même verdict, et une
+ * demande sans photo afficherait un rond vide qui se lit comme un chargement.
+ */
+describe('la demande dit qui, pas seulement quoi', () => {
+  const AVEC = { creator_avatar_key: 'k-avatar', creator_profil_url: 'https://instagram.com/lea' };
+
+  it('porte le visage et le lien quand ils sont servis', async () => {
+    await monter({ ...JOURNEE, a_trancher: [RESERVATION('d-1', 'awaiting_business', AVEC)] });
+    await waitFor(() => expect(screen.getByTestId('demande-d-1')).toBeTruthy());
+
+    expect(screen.getByTestId('visage-d-1')).toBeTruthy();
+    expect(screen.getByTestId('profil-d-1')).toBeTruthy();
+  });
+
+  it('et n’invente ni cadre ni lien quand ils manquent', async () => {
+    await monter({
+      ...JOURNEE,
+      a_trancher: [
+        RESERVATION('d-2', 'awaiting_business', {
+          creator_avatar_key: null,
+          creator_profil_url: null,
+        }),
+      ],
+    });
+    await waitFor(() => expect(screen.getByTestId('demande-d-2')).toBeTruthy());
+
+    expect(screen.queryByTestId('visage-d-2')).toBeNull();
+    expect(screen.queryByTestId('profil-d-2')).toBeNull();
+  });
+});

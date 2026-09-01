@@ -889,6 +889,9 @@ describe('les surfaces de la v1.1', () => {
       // la règle des rayons est catégorique, et un écart par écran est
       // exactement ce que l'inventaire existe pour empêcher.
       'src/screens/creneau/Engagement.tsx',
+      // Le bloc « où c'est » de la fiche : il se pose sur la page comme une
+      // carte, donc il porte l'ombre comme une carte.
+      'src/screens/fiche/OuEstLeLieu.tsx',
       // Le bloc d'exception du jour : il se pose sur la journée comme une
       // carte, donc il porte l'ombre comme une carte.
       // La ligne de confirmation des sept premiers jours : une surface posée

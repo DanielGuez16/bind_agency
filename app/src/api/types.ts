@@ -591,6 +591,16 @@ export type FichePublique = {
   name: string;
   category: BusinessCategory;
   address: string | null;
+  /**
+   * Où le lieu se trouve.
+   *
+   * **Le fil dit une distance, la fiche ne disait rien.** On choisissait depuis
+   * une carte qui portait « 190 m », puis on ouvrait un écran où le lieu
+   * redevenait une adresse à lire. Nulles quand le géocodage n'a rien résolu :
+   * l'adresse reste, et rien ne s'invente.
+   */
+  longitude: number | null;
+  latitude: number | null;
   timezone: string;
   phone: string | null;
   /**
@@ -846,6 +856,16 @@ export type ReservationDuCommerce = {
    * connue — on n'affiche alors aucun lien plutôt qu'un lien mort.
    */
   creator_profil_url: string | null;
+  /**
+   * Le visage que le salon voit, **par sa clé** — servi par `GET /media/{cle}`
+   * et jamais l'adresse de la plateforme, qui expire.
+   *
+   * La colonne existait et ne sortait que par l'annuaire : un salon qui décide
+   * d'accorder voyait un identifiant, quand la même donnée lui était rendue
+   * ailleurs. Décider d'une personne sans jamais la voir est ce que ce champ
+   * corrige. Nul quand la créatrice n'en a pas ; le pseudonyme reste alors seul.
+   */
+  creator_avatar_key: string | null;
   item_name: string;
   duration_minutes: number | null;
   platform: Platform;

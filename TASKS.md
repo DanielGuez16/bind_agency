@@ -3311,6 +3311,53 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       ni du cache. Deux vérifications plutôt qu'une — le service qui cesse de
       refuser le fait tomber, et la variable retirée du `.env` le laisse vert.
       Les deux configurations, le même verdict, ce qui est tout le sujet*
+- [x] **La demande en attente dit à qui le salon accorde**
+      *Elle ne portait qu'un pseudonyme. La photo et l'adresse du profil étaient
+      **déjà servies à l'annuaire** et jamais à la décision : on montrait la
+      personne à qui n'a rien à trancher, et on la cachait à qui doit. Le lien
+      existait même sur le type (`creator_profil_url`) sans que la carte le lise.*
+      *Aucune migration : `SocialAccount.avatar_key` existe depuis l'ouverture de
+      l'annuaire, et la requête de la file joignait déjà la table. Deux lignes de
+      `select`, un champ de schéma, un de type.*
+      ***Ce n'est pas le retour de l'audience**, retirée de la ligne en v7. Les
+      chiffres — abonnés, collaborations, ponctualité — restent sur la fiche
+      qu'on ouvre : ils pèsent une décision et se lisent posément. Un visage et
+      un lien disent **qui**, pas combien.*
+      *Le décor divergent est la créatrice sans avatar : sans lui, « je rends le
+      visage » et « je rends toujours un cadre » donnent le même verdict, et une
+      demande sans photo afficherait un rond vide qu'on lit comme un chargement.
+      Une mutation, elle tombe*
+- [x] **La fiche dit où c'est, et y emmène**
+      *Le fil annonçait « 190 m » sur chaque carte, et la fiche laissait le lieu
+      redevenir une adresse à lire : on choisissait depuis un chiffre, puis on
+      le perdait à l'écran suivant. Les coordonnées sont servies sur la fiche
+      publique — la colonne PostGIS existait, `coordinates_of` la relisait déjà
+      pour la création — et la distance se calcule côté écran parce qu'elle
+      dépend d'où l'on est **à l'instant où l'on regarde** : la demander au
+      serveur la figerait à la position du chargement.*
+      ***Ce n'est pas une carte à tuiles, et c'est une décision que je ne prends
+      pas seul.*** *Une vraie carte demande un fournisseur, une clé et une
+      facturation à l'appel. Ce qui est livrable sans rien signer répond déjà aux
+      deux questions de cet écran — est-ce loin, emmène-moi — la seconde en
+      passant la main au plan du téléphone, qui fait l'itinéraire mieux qu'une
+      vignette. Voir l'entrée suivante.*
+      *À vol d'oiseau, et l'écran le dit : un itinéraire est toujours plus long,
+      mais l'ordre de grandeur suffit à trancher entre « à pied » et « en
+      voiture ». Le repère du test est un degré de latitude, 111 km partout sur
+      le globe — deux points de Miami rendraient un nombre invérifiable.*
+      *Une mutation, elle tombe*
+
+- [ ] **La carte à tuiles de la fiche : un fournisseur à choisir**
+      *Le point 3 demandait « une carte avec la position de l'utilisateur et
+      celle du commerce ». Ce qui est livré donne la distance et le renvoi vers
+      le plan du téléphone ; il manque l'image.*
+      *Trois choses à trancher avec celui qui paie : le fournisseur de tuiles,
+      la clé, et la facturation à l'appel. La forme technique, elle, est déjà
+      décidée par le dépôt : le proxy passerait par la route des médias, comme
+      les photos, pour que la clé ne quitte jamais le serveur — et le mode sans
+      fournisseur existe déjà en modèle, c'est `GEOCODING_PROVIDER=manual`.*
+      *Rien n'est bloqué en attendant : les coordonnées sont servies, et une
+      carte n'aurait plus qu'à les lire*
 
 - [ ] **`catalogue/corriger.ts` déclare une règle que personne ne consulte**
       *Même balayage. Le module nomme `CORRIGEABLES` — nom, description, photo —
