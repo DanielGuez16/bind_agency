@@ -46,12 +46,18 @@ import { radius, useColors } from '../theme';
  * n'était jamais vue. Le point tombait sur un écran déjà remplacé. Une entrée
  * qui ne joue qu'en cas de lenteur n'est pas une entrée, c'est un symptôme.
  *
- * **C'est le seul nombre à toucher pour régler l'ouverture.** Les quatre temps
- * ci-dessous s'y rapportent et le plafond se calcule dessus : le monter suffit
- * à allonger l'entrée sans rien décaler d'autre. Les deux allongements déjà
- * faits sont passés par lui — 560, puis 760, puis 1800.
+ * **Deux durées, et elles ne se règlent pas ensemble.** Le *mouvement* est
+ * borné à 760 ms par la planche — au-delà, la chute du point devient un
+ * personnage avec un poids et un caractère, donc une mascotte. L'*écran*, lui,
+ * est libre : le logotype complet attend, immobile, sans rien animer. Deux
+ * secondes perçues sont donc 760 de mouvement et 1 240 de repos.
+ *
+ * **C'est le seul nombre à toucher pour régler l'ouverture**, et il n'entre
+ * jamais dans les temps du mouvement : le monter allonge le repos, rien
+ * d'autre. L'animation ne retient donc jamais la main, puisqu'elle est finie
+ * bien avant.
  */
-export const DUREE_DE_L_OUVERTURE = 1800;
+export const DUREE_DE_L_OUVERTURE = 2000;
 
 /**
  * Le plafond : au-delà, l'attente prend le relais.
@@ -100,43 +106,51 @@ export function useOuvertureTenue(): boolean {
 }
 
 /**
- * Les quatre temps de la direction A.
+ * Les quatre temps de la direction A, **tels que la planche les pose**.
  *
- * **L'allongement ne va pas dans la chute, et c'est la planche qui l'interdit.**
- * Elle chiffre le défaut des deux côtés : « à 400 ms ça devient sec, à 700 ms ça
- * devient une mascotte ». Un point qui tombe lentement cesse d'être une
- * signature pour devenir un personnage — exactement ce que la direction A
- * cherche à éviter en refusant le rebond. La chute reste donc sous la borne, et
- * ce qui s'allonge est ce qui l'entoure : le noir d'avant, la respiration entre
- * les lettres et le point, et le repos après.
+ * 0 encre pleine · 120 les lettres montent · 260 le point entre par le haut ·
+ * 420 il descend · 760 il cale à sa place, et le logotype attend sans bouger.
+ *
+ * **Rien ici ne s'allonge quand l'ouverture s'allonge**, et c'est la
+ * clarification qui a corrigé une erreur de ma part : j'avais étiré ces temps
+ * pour tenir 1 800 ms, ce qui portait la chute à 620 et la poussait vers la
+ * mascotte que la direction A refuse. Les deux durées sont indépendantes — le
+ * mouvement finit à 760, l'écran dure ce qu'il faut.
  */
-const LETTRES_DEBUT = 200;
-const LETTRES_DUREE = 320;
+const LETTRES_DEBUT = 120;
+const LETTRES_DUREE = 140;
 /** L'apparition du point, plus vive que sa chute : il arrive, il ne se pose pas. */
-const POINT_APPARITION = 140;
+const POINT_APPARITION = 90;
 /** Un aller de la barre indéterminée. C'est une boucle, pas une transition. */
 const COURSE_DUREE = 1000;
 /**
- * Le point part longtemps après que les lettres se sont posées.
+ * Le point entre quand les lettres viennent de se poser, et tombe jusqu'à 760.
  *
- * Les lettres finissent à 520 ; le point n'entre qu'à 720. Ces deux cents
- * millièmes de silence sont ce qui le fait **arriver** au lieu d'accompagner —
- * c'est le seul instant de la direction A où quelque chose manque à l'écran, et
- * c'est lui qui fait remarquer le point quand il vient le combler.
+ * Cinq cents millièmes de chute : sous la borne des sept cents que la planche
+ * chiffre, au-dessus des quatre cents où elle devient sèche.
  */
-const POINT_DEBUT = 720;
-const POINT_DUREE = 620;
+const POINT_DEBUT = 260;
+const POINT_DUREE = 500;
+
+/**
+ * Quand le mouvement s'arrête. **Borné par la planche, pas par l'écran.**
+ *
+ * Au-delà de 760, la chute devient un personnage. Une garde tient les deux :
+ * ce nombre ne bouge pas, et le repos reste positif quoi qu'on règle au-dessus.
+ */
+export const MOUVEMENT = POINT_DEBUT + POINT_DUREE;
 
 /**
  * Ce qui reste une fois le point calé : la marque posée, immobile.
  *
- * **Ce n'est pas du temps mort, c'est la moitié de l'idée.** « Une marque se
- * pose, et elle peut se poser trente fois sans lasser parce qu'elle n'a rien à
- * raconter » : ce qu'on retient d'un logotype n'est pas son entrée, c'est
- * l'image complète qu'on a eu le temps de regarder. Une animation qui s'achève
- * et disparaît dans le même souffle ne laisse rien.
+ * **Ce n'est pas du temps mort, c'est la moitié de l'idée**, et c'est là que
+ * passe tout allongement. « Une marque se pose, et elle peut se poser trente
+ * fois sans lasser parce qu'elle n'a rien à raconter » : ce qu'on retient d'un
+ * logotype n'est pas son entrée, c'est l'image complète qu'on a eu le temps de
+ * regarder. Mille deux cent quarante millièmes ici, contre sept cent soixante
+ * de mouvement.
  */
-export const REPOS = DUREE_DE_L_OUVERTURE - (POINT_DEBUT + POINT_DUREE);
+export const REPOS = DUREE_DE_L_OUVERTURE - MOUVEMENT;
 
 /** La hauteur du logotype sur cet écran, et la course du point. */
 const TAILLE = 34;

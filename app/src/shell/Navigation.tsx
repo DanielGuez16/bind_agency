@@ -26,7 +26,7 @@ import {
 } from '@react-navigation/native';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { BottomTabBar, createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import type { FichePublique, OffreDeLaFiche, PalierAccessible } from '../api';
@@ -66,6 +66,7 @@ import { RedemptionScreen } from '../screens/RedemptionScreen';
 import { ReglagesScreen } from '../screens/ReglagesScreen';
 import { ReportingScreen } from '../screens/ReportingScreen';
 import { BarreLaterale, type ContexteDeBarre } from './BarreLaterale';
+import { indexAllume } from './ongletAllume';
 import { useGabarit } from './gabarit';
 import { usePosition } from './usePosition';
 import { CommerceProvider, useMonCommerce } from './useMonCommerce';
@@ -196,10 +197,32 @@ const Onglets = createBottomTabNavigator();
  */
 function useBarreLaterale(intitule?: string | null, salon?: ContexteDeBarre) {
   const { large } = useGabarit();
-  if (!large) return undefined;
+  if (!large) return BarreDuBas;
   return (props: BottomTabBarProps) => (
     <BarreLaterale {...props} intitule={intitule} {...salon} />
   );
+}
+
+/**
+ * La barre du bas de la bibliothèque, avec l'onglet allumé par son groupeur.
+ *
+ * **C'est ici que le défaut se voyait.** Les écrans rangés sous « More » sont
+ * des onglets masqués : la bibliothèque allume par index, l'index focalisé
+ * désignait un onglet qu'elle ne dessine pas, et la barre n'allumait donc plus
+ * rien. Sur « Your place », les quatre pastilles étaient éteintes.
+ *
+ * **Un état réécrit plutôt qu'une barre réécrite.** Refaire le rendu pour
+ * changer une comparaison aurait recopié la disposition, les pastilles, les
+ * marges sûres et l'accessibilité — quatre choses justes qu'on n'a aucune
+ * raison de reprendre. On ne change que ce qui décide.
+ */
+function BarreDuBas(props: BottomTabBarProps) {
+  const allume = indexAllume(
+    props.state.routes,
+    props.state.index,
+    (route) => props.descriptors[route.key]?.options,
+  );
+  return <BottomTabBar {...props} state={{ ...props.state, index: allume }} />;
 }
 
 function useOptionsDOnglets(intitule?: string | null) {
