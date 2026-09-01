@@ -16,6 +16,7 @@ import {
   Chargement,
   DUREE_DE_L_OUVERTURE,
   FiletDAttente,
+  MOUVEMENT,
   PLAFOND_MS,
   REPOS,
 } from '../src/shell/Chargement';
@@ -126,6 +127,17 @@ describe('l’attente ne ressemble pas à la marque', () => {
      */
     expect(PLAFOND_MS).toBeGreaterThan(DUREE_DE_L_OUVERTURE);
     expect(REPOS).toBeGreaterThan(0);
+
+    /**
+     * **Et le mouvement ne suit pas l'écran, c'est le défaut que j'ai fait.**
+     *
+     * Pour tenir 1 800 ms j'avais étiré les temps de la direction A, ce qui
+     * portait la chute à 620 — vers la mascotte que la planche interdit. Les
+     * deux durées sont indépendantes : allonger l'ouverture allonge le repos,
+     * jamais la chute. Rien d'autre ne le dirait, l'écran rendant aussi bien
+     * dans les deux cas.
+     */
+    expect(MOUVEMENT).toBe(760);
   });
 
   it('le filet ne porte pas le logotype, et le logotype ne boucle pas', async () => {
