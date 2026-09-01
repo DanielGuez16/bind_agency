@@ -67,9 +67,14 @@ import { useRequete } from './useRequete';
 
 export function ReportingScreen({
   businessId,
+  onRetour,
+  retourVers,
   onOuvrirLaComposition,
 }: {
   businessId: string;
+  onRetour?: () => void;
+  /** Le nom de la destination du retour. Voir `BarreDeTitre`. */
+  retourVers?: string;
   onOuvrirLaComposition?: (porte: PorteDeComposition) => void;
 }) {
   const { api } = useApi();
@@ -114,6 +119,8 @@ export function ReportingScreen({
   return (
     <Ecran
       requete={requete}
+      onRetour={onRetour}
+      retourVers={retourVers}
       titre={t('reporting.titre')}
       squelette={<SkeletonLignes combien={7} testID="squelette-reporting" />}
       testID="ecran-reporting"

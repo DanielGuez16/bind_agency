@@ -69,7 +69,7 @@ import { useI18n, type SupportedLocale } from '../i18n';
 import { breakpoint, elevationDeCarte, radius, size, useTheme, type ColorName } from '../theme';
 import { ECART_DES_COLONNES, useGabarit } from '../shell/gabarit';
 import { BandeDesJours } from './journee/BandeDesJours';
-import { JOURS_DE_LA_BANDE } from './journee/bande';
+import { JOURS_DE_LA_BANDE, decisionsDuJour } from './journee/bande';
 import { Ecran } from './Ecran';
 import { nomDePlateforme } from './obstacle';
 import { BandeauDeMiseEnLigne } from './journee/BandeauDeMiseEnLigne';
@@ -139,7 +139,17 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
   // hors des quatre états — c'est ce qui empêche la page de sauter à chaque
   // rafraîchissement — et un titre calculé dans le corps n'y arriverait jamais.
   const chargee = requete.etat === 'pret' ? requete.donnees : null;
-  const enAttente = chargee?.a_trancher.length ?? 0;
+  // **Le titre compte ce que la liste montre, pas ce que le serveur envoie.**
+  // La file arrive toutes dates confondues ; le titre disait donc « 3 » sur un
+  // jour qui en porte une. Le même partage que la liste, au même endroit.
+  const enAttente = chargee
+    ? decisionsDuJour(
+        chargee.a_trancher,
+        (jourChoisi ?? chargee.jour).slice(0, 10),
+        chargee.timezone,
+        jourCivil(new Date(), chargee.timezone),
+      ).length
+    : 0;
 
   // **Le bandeau de reprise se pose hors des quatre états**, comme le titre.
   // Une journée sans rendez-vous rend l'état vide, qui ne rend pas ses enfants
@@ -261,7 +271,12 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
         // La file vient du serveur, pas d'un filtre sur la journée : une
         // décision à prendre pour après-demain n'est dans aucune journée qu'on
         // ouvre, et la filtrer ici l'aurait laissée invisible.
-        const aTrancher = journee.a_trancher;
+        const aTrancher = decisionsDuJour(
+          journee.a_trancher,
+          journee.jour.slice(0, 10),
+          journee.timezone,
+          jourCivil(new Date(), journee.timezone),
+        );
         const planning = journee.items.filter((r) => r.status !== 'awaiting_business');
 
         /**
@@ -1047,22 +1062,15 @@ function Gestes({
               salon, pas un compte à rebours : sur vingt-quatre heures, « avant
               mardi 10 h » se retient, « dans 21 h 14 min » demande de refaire
               le calcul et oblige l'écran à battre la seconde pour rien. */}
-          {/* **Un fait, une ligne.** C'étaient deux phrases concurrentes : la
-              conséquence — « après quoi elle expire d'elle-même » — était
-              rendue en valeur, donc plus grosse que l'échéance qu'elle
-              commente. Elles fusionnent, et la hiérarchie se règle d'elle-même
-              parce qu'il n'y a plus deux choses à hiérarchiser. */}
-          {reservation.approval_expires_at ? (
-            <Texte
-              variante="type.body"
-              couleur="ink.soft"
-              testID={`echeance-decision-${reservation.booking_id}`}
-            >
-              {t('commerce.repondreAvant', {
-                quand: formatDateTime(reservation.approval_expires_at, locale, timezone),
-              })}
-            </Texte>
-          ) : null}
+          {/* **Une seule occurrence, et c'est celle de la ligne.** La fusion
+              des deux phrases a laissé la même phrase à deux endroits de la
+              même carte : ici en date entière, plus haut à l'heure. La carte
+              dépliée la disait donc deux fois, dans deux formats.
+
+              Celle qui reste est celle du haut — `limite-…` : elle est sous la
+              ligne du créateur, là où la planche la met, et elle porte la
+              graisse d'urgence. Celle-ci n'ajoutait que la date, qui est déjà
+              dans l'en-tête de la journée qu'on lit. */}
           <Button
             label={t('commerce.accorder')}
             loading={envoi}

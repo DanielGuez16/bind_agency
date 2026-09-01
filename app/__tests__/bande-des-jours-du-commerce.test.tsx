@@ -41,7 +41,11 @@ const FILE = [0, 1, 2].map((n) => ({
   booking_id: `attente-${n}`,
   business_id: 'b1',
   status: 'awaiting_business',
-  starts_at: '2026-09-01T18:00:00Z',
+  // **Deux jours, et c'est ce qui fait diverger les deux implémentations.**
+  // Une file entièrement posée sur le même jour rendrait le même verdict
+  // qu'on filtre ou non : le test n'aurait rien éprouvé. Les deux premières
+  // tombent le 1er, la troisième le 2.
+  starts_at: n < 2 ? '2026-09-01T18:00:00Z' : '2026-09-02T18:00:00Z',
   ends_at: '2026-09-01T18:45:00Z',
   valid_until: '2026-09-08T00:00:00Z',
   created_at: '2026-08-30T09:00:00Z',
@@ -159,4 +163,31 @@ it('marque le jour choisi, et un seul', async () => {
     expect(choisies).toHaveLength(1);
     expect(String(choisies[0].props.testID)).toBe('jour-2026-09-05');
   });
+});
+
+it('montre les décisions du jour choisi, et non celles d’aujourd’hui', async () => {
+  // **Le défaut remonté par Daniel.** La file est servie toutes dates
+  // confondues — c'était juste avant la bande : sans elle, filtrer aurait fait
+  // disparaître une demande pour après-demain. La bande lève cette condition,
+  // et ce qui restait était pire : la barre annonçait deux décisions mardi, on
+  // ouvrait mardi, et la même liste s'affichait quel que soit le jour.
+  await monter();
+
+  expect(screen.getByTestId('ligne-attente-0')).toBeTruthy();
+  expect(screen.getByTestId('ligne-attente-1')).toBeTruthy();
+  expect(screen.queryByTestId('ligne-attente-2')).toBeNull();
+
+  await fireEvent.press(screen.getByTestId('jour-2026-09-02'));
+
+  await waitFor(() => expect(screen.getByTestId('ligne-attente-2')).toBeTruthy());
+  expect(screen.queryByTestId('ligne-attente-0')).toBeNull();
+});
+
+it('ne dit la phrase de l’échéance qu’une fois', async () => {
+  // La fusion des deux phrases concurrentes en a laissé une seule — mais la
+  // même, à deux endroits de la même carte et dans deux formats.
+  await monter();
+
+  expect(screen.getByTestId('limite-attente-0')).toBeTruthy();
+  expect(screen.queryByTestId('echeance-decision-attente-0')).toBeNull();
 });
