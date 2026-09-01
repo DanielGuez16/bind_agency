@@ -206,7 +206,10 @@ function LigneDeJour({
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <Texte variante="type.label" couleur={regle ? 'ink.default' : 'ink.mute'}>
+        {/* **Le jour se lit à seize points, pas à onze en capitales.**
+            `type.label` est la voix d'une étiquette de colonne — « DAY » —, pas
+            celle d'une valeur. Le nom du jour *est* la donnée de la ligne. */}
+        <Texte variante="type.bodyStrong" couleur={regle ? 'ink.default' : 'ink.mute'}>
           {libelle}
         </Texte>
         <View style={{ flex: 1 }}>
@@ -216,10 +219,23 @@ function LigneDeJour({
                personnes : deux natures qui ne se lisent pas d'un trait, et le
                point laissait croire à une suite. */
             <View testID={`horaires-${jour}`}>
-              <Texte variante="type.data" couleur="ink.soft">
-                {regle.start_time.slice(0, 5)} – {regle.end_time.slice(0, 5)}
+              {/* **L'amplitude sort du mono, et le tiret devient un mot.**
+                  Le jeton mono revendique « chiffres, codes, seuils, horaires »,
+                  et c'est ce qui a fait ranger une amplitude ici. Mais une
+                  amplitude n'est pas un horaire isolé : c'est une phrase brève
+                  entre deux heures, et le demi-cadratin la donnait à lire comme
+                  une plage de tableau. « 09:00 to 19:00 » se lit ; « 09:00 –
+                  19:00 » en mono se déchiffre.
+                  Ce qui reste en mono le reste exprès : le fuseau, qui est un
+                  identifiant technique, et les capacités, qui sont des nombres
+                  nus qu'on aligne. */}
+              <Texte variante="type.body" couleur="ink.default">
+                {t('commerce.horairesDe', {
+                  debut: regle.start_time.slice(0, 5),
+                  fin: regle.end_time.slice(0, 5),
+                })}
               </Texte>
-              <Texte variante="type.caption" couleur="ink.soft" testID={`postes-${jour}`}>
+              <Texte variante="type.body" couleur="ink.soft" testID={`postes-${jour}`}>
                 {regle.concurrent_slots === 1
                   ? t('composition.postesUn')
                   : t('composition.postes', { n: regle.concurrent_slots })}
@@ -228,7 +244,7 @@ function LigneDeJour({
           ) : (
             /* Écrit, jamais absent : une ligne manquante ne dit pas si le jour
                est fermé ou si le commerce n'a rien rempli. */
-            <Texte variante="type.caption" couleur="ink.mute" testID={`ferme-${jour}`}>
+            <Texte variante="type.body" couleur="ink.mute" testID={`ferme-${jour}`}>
               {t('composition.ferme')}
             </Texte>
           )}
