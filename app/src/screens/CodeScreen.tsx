@@ -237,58 +237,27 @@ export function CodeScreen({
         </View>
       ) : (
         <View testID="etat-nominal" style={{ gap: 24 }}>
-          <Texte
-            variante="type.caption"
-            align="center"
-            style={{ color: codeColors.fg }}
-            testID="titre-code"
-          >
-            {t('parcours.codeTitre')}
-          </Texte>
-          {/* **Le salon, et comment y aller.** L'écran ne disait rien de
-              l'endroit : on y arrivait depuis une liste qui portait l'adresse,
-              et cette adresse en est partie parce qu'elle y coûtait une ligne
-              sur chaque carte pour un usage qui n'a lieu qu'ici. */}
-          <View style={{ gap: 2 }} testID="ou-aller">
-            <Texte variante="type.bodyStrong" align="center" style={{ color: codeColors.fg }}>
-              {code.business_name}
-            </Texte>
-            {code.business_address ? (
-              <Texte
-                variante="type.caption"
-                align="center"
-                style={{ color: codeColors.fg, opacity: 0.7 }}
-                testID="adresse"
-              >
-                {code.business_address}
-              </Texte>
-            ) : null}
-          </View>
-          {/* **Le nombre à six chiffres ne s'affiche plus.**
-              Il ne se saisit pas, il ne désigne rien seul — il ne vaut qu'avec
-              l'identifiant que porte le QR — et c'est précisément ce qui le
-              faisait confondre avec le code de secours, qui se dicte : un
-              commerçant a essayé de le taper. Une légende sous les chiffres ne
-              suffisait pas ; ce qui trompe, c'est la forme, pas l'absence
-              d'explication.
+          {/* **Le QR et le code, rien d'autre.** Pas de titre, pas de nom de
+              salon, pas d'adresse, pas de décompte : l'écran s'ouvre depuis une
+              réservation, donc le contexte est déjà su, et ce qu'on y fait tient
+              en un geste — le tendre.
 
-              Le QR le porte déjà. Ce qui reste à montrer, c'est que le code est
-              **vivant** — et le décompte le dit sans ressembler à une saisie. */}
-          <Countdown
-            secondes={restant}
-            libelle={t('parcours.codeRotation')}
-            annonce={t('parcours.codeRotationAnnonce', { secondes: restant })}
-            testID="compte-a-rebours"
-          />
+              **Le décompte part aussi, et c'est tenable pour une raison qui
+              n'est pas esthétique** : le code tourne côté serveur. L'écran n'a
+              donc rien à promettre sur sa durée — ce qu'il montre reste valable
+              tant qu'il est affiché. Si un code expirait pendant qu'on le tend,
+              ce serait un défaut de mécanisme, pas d'affichage.
+
+              **La rotation, elle, reste.** C'est le battement au-dessus qui la
+              pilote ; retirer l'affichage du reste ne retire pas ce qui
+              renouvelle le code, et confondre les deux rendrait un QR mort au
+              bout d'une minute. */}
           {/* `code.payload` et non une composition locale : l'identifiant est
               celui du code, pas celui de la réservation, et l'API le forme
               déjà. Deux façons de l'assembler finissent par diverger — c'est
               arrivé, et le QR était refusé sans que rien ne le dise. */}
           <QrBlock contenu={code.payload} testID="qr" />
           <ManualCode code={code.manual_code} label={t('parcours.codeSecours')} testID="secours" />
-          <Texte variante="type.caption" align="center" style={{ color: codeColors.fg }}>
-            {t('parcours.codeSecoursAide')}
-          </Texte>
         </View>
       )}
     </PickupCodeSurface>

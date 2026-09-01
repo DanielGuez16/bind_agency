@@ -97,7 +97,11 @@ function contrepartie(statut: string, extra: Record<string, unknown> = {}) {
   };
 }
 
-async function monter(items: ReservationDuCreateur[], locale: 'en' | 'es' = 'en') {
+async function monter(
+  items: ReservationDuCreateur[],
+  locale: 'en' | 'es' = 'en',
+  onglet?: string,
+) {
   const api = new ApiClient({
     baseUrl: 'https://api.test',
     coffre: { lire: async () => null, ecrire: async () => {} },
@@ -112,7 +116,7 @@ async function monter(items: ReservationDuCreateur[], locale: 'en' | 'es' = 'en'
     <I18nProvider initialLocale={locale}>
       <ThemeProvider role="creator">
         <ApiProvider client={api}>
-          <HistoriqueScreen onOuvrir={() => {}} />
+          <HistoriqueScreen onOuvrir={() => {}} ongletDemande={onglet} />
         </ApiProvider>
       </ThemeProvider>
     </I18nProvider>,
@@ -208,17 +212,22 @@ describe('chaque ligne dit ce qu’elle attend de toi', () => {
     // permet de balayer une liste sans la lire.
     const reste = screen.getByTestId('reste-r1');
     expect(reste).not.toHaveTextContent(/LEFT|RESTE|QUEDAN/);
+    expect(reste).toHaveTextContent(/left/i);
   });
 
-  it('le badge porte le palier et le réseau', async () => {
-    // La même prestation peut exister sur deux comptes : « one story » ne dit
-    // pas sur lequel publier, et publier sur le mauvais ne compte pas.
+  it('le format ouvre la carte, et le réseau y est un glyphe', async () => {
+    // **La v10 met le réseau et le format en tête.** Un coup d'œil suffit alors
+    // à savoir où et quoi avant de lire le nom. Le réseau devient un glyphe :
+    // la même prestation peut exister sur deux comptes, et un logo se reconnaît
+    // plus vite qu'un mot en capitales.
     await monter([reservation({ contrepartie: contrepartie('pending') as never })]);
     await waitFor(() => expect(screen.getByTestId('palier-r1')).toBeTruthy());
 
     const badge = screen.getByTestId('palier-r1');
-    expect(badge).toHaveTextContent(/STORY/);
-    expect(badge).toHaveTextContent(/INSTAGRAM/);
+    expect(badge).toHaveTextContent(/story/i);
+    // **Plus de capitales espacées, et plus de mono.** Elles détruisent la
+    // silhouette des mots — ce qui permet de balayer une liste sans la lire.
+    expect(badge).not.toHaveTextContent(/STORY/);
   });
 
   it('et le format y est traduit, pas recopié', async () => {
@@ -231,8 +240,8 @@ describe('chaque ligne dit ce qu’elle attend de toi', () => {
     await waitFor(() => expect(screen.getByTestId('palier-r1')).toBeTruthy());
 
     const badge = screen.getByTestId('palier-r1');
-    expect(badge).toHaveTextContent(/HISTORIA/);
-    expect(badge).not.toHaveTextContent(/STORY/);
+    expect(badge).toHaveTextContent(/historia/i);
+    expect(badge).not.toHaveTextContent(/story/i);
   });
 
   it('la prestation passe devant le salon', async () => {
@@ -377,33 +386,25 @@ describe('les mois, isolés', () => {
   });
 });
 
-describe('08c · les terminées, groupées', () => {
-  it('pose un intertitre par mois sur les terminées', async () => {
-    await monter([
-      reservation({ booking_id: 'a', status: 'cancelled', starts_at: '2026-08-08T14:00:00Z' }),
-      reservation({ booking_id: 'b', status: 'cancelled', starts_at: '2026-07-28T14:00:00Z' }),
-    ]);
-    await waitFor(() => expect(screen.getByTestId('onglets')).toBeTruthy());
-
-    await fireEvent.press(screen.getByLabelText(new RegExp(en.parcours.ongletTerminees)));
-
-    expect(screen.getByTestId('mois-AUGUST 2026')).toBeTruthy();
-    expect(screen.getByTestId('mois-JULY 2026')).toBeTruthy();
-  });
-
-  it('ne groupe pas les deux autres onglets', async () => {
-    // Ils portent deux ou trois lignes : un intertitre y coûterait plus qu'il
-    // ne rend, et découperait une liste qui se lit d'un coup.
-    await monter([reservation({ status: 'consumed' })]);
+describe('08c · les terminées, la même carte que les deux autres', () => {
+  /**
+   * **Le groupement par mois et le quantième partent avec la v10.** « Personne
+   * ne cite une collaboration par son rang » : la date remplace l'échéance à sa
+   * place dans la carte, et l'état accepté prend celle de l'action. Trois
+   * onglets, une carte, et l'histoire cesse d'avoir une grammaire à elle.
+   */
+  it('ne groupe plus, et porte l’état à la place de l’action', async () => {
+    const finie = reservation({ booking_id: 'r-finie', status: 'cancelled' });
+    await monter([finie], 'en', 'terminees');
     await waitFor(() => expect(screen.getByTestId('onglets')).toBeTruthy());
 
     expect(screen.queryByTestId(/^mois-/)).toBeNull();
+    expect(screen.getByTestId('etat-r-finie')).toHaveTextContent(en.parcours.reservationAcceptee);
+    // Et aucune action : il n'y a plus rien à faire, et un bouton gris se
+    // presse quand même sans répondre.
+    expect(screen.queryByTestId('agir-r-finie')).toBeNull();
   });
 });
-
-// --------------------------------------------------------------------------
-// v3 · deux niveaux, trois verbes, une grammaire
-// --------------------------------------------------------------------------
 
 describe('à venir · deux sections nommées par leur verbe', () => {
   it('sépare ce qu’on attend de moi de ce qu’on attend du salon', () => {
@@ -488,7 +489,14 @@ describe('ce que la carte peint', () => {
     return Object.assign({}, ...pile.filter(Boolean));
   };
 
-  it('borde d’encre la reprise, et laisse l’ombre à la première demande', async () => {
+  it('peint la même carte dans les trois onglets', async () => {
+    /**
+     * **La grammaire à trois surfaces part avec la v10.** Une carte à ombre
+     * demandait, un contour d'encre reprochait, un filet informait : trois
+     * traitements pour une liste où c'est désormais la ligne du haut qui dit
+     * l'état — rien à venir, l'échéance en cours d'envoi, l'acceptation une
+     * fois fini. Le fond ne porte plus l'information, donc il ne varie plus.
+     */
     const reprise = reservation({
       booking_id: 'reprise',
       status: 'consumed',
@@ -505,15 +513,12 @@ describe('ce que la carte peint', () => {
     const carteReprise = styleDe(screen.getByTestId('reservation-reprise'));
     const cartePremiere = styleDe(screen.getByTestId('reservation-premiere'));
 
-    expect(carteReprise.borderColor).toBe(couleurs['line.solo']);
-    // **Et l'ombre ne s'y ajoute pas.** Un filet fort sous une ombre les annule
-    // l'une l'autre : c'est la règle qui vaut déjà entre l'ombre et le filet
-    // clair, et le test la tient pour le troisième traitement aussi.
-    expect(carteReprise.shadowOpacity ?? 0).toBe(0);
-
-    // La divergence, sans laquelle le test ne dit rien : la première demande
-    // garde l'ombre et n'a pas de contour d'encre.
-    expect(cartePremiere.borderColor).not.toBe(couleurs['line.solo']);
+    expect(carteReprise.borderColor).toBe(cartePremiere.borderColor);
+    expect(carteReprise.borderColor).not.toBe(couleurs['line.solo']);
+    // « Un coin de 18 px sans ombre flotte au lieu de se poser » : les deux la
+    // portent, et l'égalité seule ne le dirait pas — deux cartes sans ombre
+    // sont égales elles aussi.
+    expect(carteReprise.shadowOpacity ?? 0).toBeGreaterThan(0);
     expect(cartePremiere.shadowOpacity ?? 0).toBeGreaterThan(0);
   });
 
@@ -559,7 +564,7 @@ describe('ce que la carte peint', () => {
  * « je rends le verbe partout » survivait. Ce qui décide vraiment est la
  * **présence d'une contrepartie**, et c'est sur elle que le cas diverge.
  */
-describe('le titre est le verbe, et seulement là où c’est la question', () => {
+describe('le titre est la prestation, et le format ouvre la carte', () => {
   const EN_COURS = (statut: string) =>
     reservation({
       booking_id: 'r-verbe',
@@ -567,116 +572,33 @@ describe('le titre est le verbe, et seulement là où c’est la question', () =
       contrepartie: contrepartie(statut) as never,
     });
 
-  it('une contrepartie à publier titre le geste, la prestation passe dessous', async () => {
-    await monter([EN_COURS('pending')]);
-    await fireEvent.press(screen.getByLabelText(new RegExp(en.parcours.ongletEnCours)));
-
-    const carte = await screen.findByTestId('reservation-r-verbe');
-    expect(
-      within(carte).getByText(
-        en.parcours.verbe_publier.replace('{{format}}', en.parcours.format_story),
-      ),
-    ).toBeTruthy();
-    expect(
-      within(carte).getByText(
-        en.parcours.verbePour
-          .replace('{{prestation}}', 'Gel manicure')
-          .replace('{{salon}}', 'Vela Nail Studio'),
-      ),
-    ).toBeTruthy();
-  });
-
-  it('une reprise ne dit pas « publie », elle dit « corrige »', async () => {
+  /**
+   * **Le verbe quitte le titre avec la v10.** Il y avait été mis parce que la
+   * carte ne disait pas ce qu'on attendait ; ce rôle passe à la ligne du haut —
+   * le glyphe du réseau et le format — et à la pilule d'action, qui nomme le
+   * geste là où on le fait. Le titre redevient ce qu'on cherche dans dix
+   * lignes : ce qu'on a réservé.
+   *
+   * **Le cas divergent est la reprise.** Une carte sans contrepartie rendrait
+   * la prestation dans les deux implémentations ; c'est ici que « je titre le
+   * verbe » se verrait encore.
+   */
+  it('titre la prestation même quand une reprise est demandée', async () => {
     await monter([EN_COURS('resubmit_requested')]);
-    await fireEvent.press(screen.getByLabelText(new RegExp(en.parcours.ongletEnCours)));
 
     const carte = await screen.findByTestId('reservation-r-verbe');
-    expect(
-      within(carte).getByText(
-        en.parcours.verbe_corriger.replace('{{format}}', en.parcours.format_story),
-      ),
-    ).toBeTruthy();
-  });
-
-  it('quand rien n’est attendu d’elle, le titre reste la prestation', async () => {
-    // **Le salon n'a pas encore répondu : il n'y a aucun geste à titrer.** Le
-    // décor disait « confirmée sans contrepartie », ce qui n'est pas un cas
-    // sans geste — une réservation confirmée attend qu'on montre son code, et
-    // c'est justement le titre qu'elle porte depuis la v7. Le vrai cas sans
-    // geste est celui où l'on attend quelqu'un d'autre.
-    await monter([
-      reservation({
-        booking_id: 'r-venir',
-        status: 'awaiting_business',
-        contrepartie: null,
-      }),
-    ]);
-    await fireEvent.press(screen.getByLabelText(new RegExp(en.parcours.ongletAVenir)));
-
-    const carte = await screen.findByTestId('reservation-r-venir');
     expect(within(carte).getByText('Gel manicure')).toBeTruthy();
-    expect(within(carte).queryByTestId('verbe-r-venir')).toBeNull();
+    expect(within(carte).queryByTestId('verbe-r-verbe')).toBeNull();
+    // Le format ouvre la carte, et c'est lui qui dit ce qu'on doit rendre.
+    expect(within(carte).getByTestId('palier-r-verbe')).toHaveTextContent(/story/i);
   });
 
-  it('et une réservation confirmée titre le geste : montrer son code', async () => {
-    await monter([
-      reservation({ booking_id: 'r-code', status: 'confirmed', contrepartie: null }),
-    ]);
-    await fireEvent.press(screen.getByLabelText(new RegExp(en.parcours.ongletAVenir)));
+  it('et l’action nomme le geste, là où on le fait', async () => {
+    await monter([EN_COURS('resubmit_requested')]);
 
-    const carte = await screen.findByTestId('reservation-r-code');
-    expect(within(carte).getByText(en.parcours.verbe_code)).toBeTruthy();
+    const carte = await screen.findByTestId('reservation-r-verbe');
+    expect(within(carte).getByTestId('agir-r-verbe')).toHaveTextContent(
+      en.parcours.action_preuve,
+    );
   });
-
-  it('une contrepartie approuvée n’attend plus rien, donc plus de verbe', async () => {
-    // Le second cas où le verbe doit se taire, et il n'est pas le même : ici la
-    // contrepartie **existe**. Sans lui, « il y a une contrepartie donc il y a
-    // un verbe » passerait, et une collaboration close annoncerait un geste.
-    await monter([
-      reservation({
-        booking_id: 'r-clos',
-        status: 'consumed',
-        contrepartie: contrepartie('approved') as never,
-      }),
-    ]);
-    await fireEvent.press(screen.getByLabelText(new RegExp(en.parcours.ongletEnCours)));
-
-    const carte = await screen.findByTestId('reservation-r-clos');
-    expect(within(carte).getByText('Gel manicure')).toBeTruthy();
-    expect(within(carte).queryByTestId('verbe-r-clos')).toBeNull();
-  });
-});
-
-
-/**
- * Le moment, sur une ligne.
- *
- * **Il vivait dans une colonne de cinquante-deux points**, où « Aug 26, 2026 at
- * 2:30 PM » passait à la ligne à chaque mot : la date se lisait en colonne,
- * « Aug / 26, / 2026 / At / 2:30 / PM ». La largeur convient au quantième seul
- * de l'historique — deux chiffres — et à rien d'autre.
- *
- * Ce test ne mesure pas une largeur : il vérifie que le moment est **un seul
- * texte**, ce qu'aucune colonne étroite ne peut casser puisqu'il n'y en a plus.
- */
-it('dit le moment en une ligne, et en repère plutôt qu’en date', async () => {
-  // **Demain à midi chez le salon, calculé et non approximé.** « dans 26 h »
-  // tombe après-demain quand on l'écrit le soir : le repère se compte en jours
-  // civils du fuseau du salon, pas en heures.
-  const aNewYork = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'America/New_York',
-    dateStyle: 'short',
-  }).format(new Date());
-  const [a, m, j] = aNewYork.split('-').map(Number);
-  const demainMidi = new Date(Date.UTC(a, m - 1, j + 1, 16, 0, 0)).toISOString();
-
-  await monter([
-    reservation({ booking_id: 'r-quand', status: 'confirmed', starts_at: demainMidi }),
-  ]);
-  await fireEvent.press(screen.getByLabelText(new RegExp(en.parcours.ongletAVenir)));
-
-  const quand = await screen.findByTestId('quand-r-quand');
-  // « Demain à … » : le repère se lit sans compter, la date brute demande de
-  // se situer. Le mot du jour vient de la langue, l'heure du fuseau du salon.
-  expect(quand).toHaveTextContent(/^Tomorrow at \d/);
 });

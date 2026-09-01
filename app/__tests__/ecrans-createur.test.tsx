@@ -762,14 +762,17 @@ describe('historique', () => {
       clientDe({
         '/me/bookings': {
           items: [RESERVATION],
-          compteurs: { ...COMPTEURS_VIDES, confirmed: 1, held: 2, cancelled: 4 },
+          compteurs: { ...COMPTEURS_VIDES, confirmed: 1, held: 2, cancelled: 4, consumed: 2 },
         },
       }),
     );
     await waitFor(() => expect(screen.getByTestId('onglets')).toBeTruthy());
-    // « À venir » couvre held + confirmed : 3, et non 1 comme le dirait la page.
-    expect(screen.getByText(`${en.parcours.ongletAVenir} · 3`)).toBeTruthy();
-    expect(screen.getByText(`${en.parcours.ongletTerminees} · 4`)).toBeTruthy();
+    // **Un seul onglet porte un compte depuis la v10.** Un chiffre sur un
+    // onglet est un appel permanent : il demande qu'on s'en occupe, et il le
+    // demande sans fin sur ce qui est fini. Seul l'envoi attend quelque chose.
+    expect(screen.getByText(`${en.parcours.ongletEnCours} · 2`)).toBeTruthy();
+    expect(screen.getByText(en.parcours.ongletAVenir)).toBeTruthy();
+    expect(screen.getByText(en.parcours.ongletTerminees)).toBeTruthy();
   });
 
   it("dit jusqu'à quand le salon peut répondre", async () => {
@@ -800,7 +803,11 @@ describe('historique', () => {
     // 13 h UTC, soit 9 h à New York : le fuseau du salon, pas celui d'ici.
     // Une chaîne nue serait comparée au texte entier ; l'expression régulière
     // cherche bien l'heure convertie à l'intérieur du message.
-    expect(message).toHaveTextContent(/9:00\s*AM/);
+    // **L'heure limite a quitté la carte avec la v10.** La ligne du haut porte
+    // l'état, la carte porte trois faits ; l'échéance du salon en aurait fait un
+    // quatrième, sur l'onglet qui n'attend rien de vous. Elle reste servie et
+    // se lit là où l'on peut agir dessus.
+    expect(message).not.toHaveTextContent(/9:00\s*AM/);
     // `toHaveTextContent` compare une **chaîne** au texte entier : passer la
     // phrase telle quelle échouerait alors même qu'elle est bien là, puisque
     // l'échéance s'y ajoute. En expression régulière, c'est une recherche.
