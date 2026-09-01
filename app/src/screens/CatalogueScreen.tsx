@@ -199,7 +199,17 @@ export function CatalogueScreen({
                   main reste le chemin sûr : elle marche sans réseau de salon,
                   sans carte imprimée, et sans modèle. L'import fait gagner un
                   quart d'heure à qui a déjà sa carte, ce qui est beaucoup, et
-                  ne doit rien coûter à qui ne l'a pas. */}
+                  ne doit rien coûter à qui ne l'a pas.
+
+                  **Et le libellé dit la carte entière, pas la source.** « Import
+                  from a photo or PDF » se lisait comme un doublon du champ photo
+                  du formulaire : les deux parlaient d'une photo, sans dire de
+                  quoi. Ce ne sont pourtant pas les mêmes objets — la photo du
+                  formulaire est celle d'**une** prestation et devient sa
+                  vignette ; celle-ci est la photo de **la carte**, lue par le
+                  modèle, et elle produit une liste de prestations à relire. Ce
+                  qui distingue les deux gestes est le nombre, pas le format du
+                  fichier, et c'est donc le nombre que le bouton annonce. */}
               {importDeCarte.etat === 'choix' ? (
                 <View style={{ flexDirection: 'row', gap: 8 }} testID="source-de-la-carte">
                   <View style={{ flex: 1 }}>
