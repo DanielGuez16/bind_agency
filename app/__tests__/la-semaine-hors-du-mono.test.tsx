@@ -30,7 +30,14 @@ const SEMAINE = {
   exceptions: [],
 };
 
-const MONO = 'IBM Plex Mono';
+/**
+ * **Le nom rendu, pas le nom du jeton.** `tokens.json` dit « IBM Plex Mono » ;
+ * ce qui arrive sur le nœud est `IBMPlexMono_500`, la police chargée. Comparer
+ * au nom du jeton rendait toute assertion vraie d'office — la première version
+ * de ce test a survécu à sa propre mutation pour cette raison, et n'éprouvait
+ * rien.
+ */
+const estMono = (f: unknown) => String(f).startsWith('IBMPlexMono');
 
 /** La famille effectivement posée sur un nœud, styles empilés compris. */
 function famille(noeud: { props: { style?: unknown } }): unknown {
@@ -65,7 +72,7 @@ it('dit l’amplitude avec un mot, hors du mono', async () => {
   const ligne = within(screen.getByTestId('horaires-1'));
   const amplitude = ligne.getByText('09:00 to 19:00');
   expect(amplitude).toBeTruthy();
-  expect(famille(amplitude)).not.toBe(MONO);
+  expect(estMono(famille(amplitude))).toBe(false);
 });
 
 it('déplace le nœud, il ne vide pas le jeton', async () => {
@@ -80,10 +87,10 @@ it('déplace le nœud, il ne vide pas le jeton', async () => {
   // écrit la capacité en phrase — « 2 creators at once » — là où la planche
   // pose un nombre seul dans un pas-à-pas. Deux mises en page, une seule règle.
   expect(produit).toBeTruthy();
-  expect(tokens.type.data.family).toBe(MONO);
-  expect(tokens.type.dataLabel.family).toBe(MONO);
+  expect(tokens.type.data.family).toBe('IBM Plex Mono');
+  expect(tokens.type.dataLabel.family).toBe('IBM Plex Mono');
 
   await monter();
   const postes = screen.getByTestId('postes-1');
-  expect(famille(postes)).not.toBe(MONO);
+  expect(estMono(famille(postes))).toBe(false);
 });
