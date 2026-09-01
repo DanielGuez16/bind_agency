@@ -629,11 +629,17 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
               accessibilityRole="link"
               onPress={() => void Linking.openURL(c.profil_url as string)}
               testID={`profil-${createur.creator_id}-${c.platform}`}
+              // **Toute la largeur, et 76 points de haut.** La cible ne
+              // prenait que le mot et son glyphe ; la ligne désigne déjà la
+              // même chose. Le glyphe redevient une marque qui annonce la
+              // sortie, il cesse d'être la cible.
               style={({ pressed }) => ({
                 opacity: pressed ? 0.7 : 1,
                 flexDirection: 'row',
                 alignItems: 'center',
+                alignSelf: 'stretch',
                 gap: 6,
+                minHeight: 76,
               })}
             >
               <Texte variante="type.caption" couleur="brand.700">

@@ -37,7 +37,7 @@
  * faire. Un seul registre à gauche, marqué par une pastille et non par un
  * relief ; les gestes et le contexte à droite, où il y a la place de les poser.
  */
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Linking, Pressable, View } from 'react-native';
 
 import {
@@ -795,6 +795,48 @@ function ReseauxDeLaCreatrice({ reservation }: { reservation: ReservationDuComme
 }
 
 /**
+ * La ligne du créateur : une cible de 64 points, ou rien du tout.
+ *
+ * **Sans profil à ouvrir, ce n'est pas un lien** — et ce n'est alors pas
+ * pressable non plus. Rendre la ligne touchable partout et ne rien faire de
+ * l'appui serait pire que le glyphe minuscule qu'on retire : on apprendrait à
+ * appuyer, et une fois sur deux il ne se passerait rien.
+ */
+function LigneDuCreateur({
+  url,
+  libelle,
+  testID,
+  children,
+}: {
+  url: string | null;
+  libelle: string;
+  testID: string;
+  children: ReactNode;
+}) {
+  const rangee = {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 10,
+    // 64 points : la hauteur que la planche v11 donne à cette ligne.
+    minHeight: 64,
+  };
+
+  if (url === null) return <View style={rangee}>{children}</View>;
+
+  return (
+    <Pressable
+      accessibilityRole="link"
+      accessibilityLabel={libelle}
+      onPress={() => void Linking.openURL(url)}
+      testID={testID}
+      style={({ pressed }) => ({ ...rangee, opacity: pressed ? 0.7 : 1 })}
+    >
+      {children}
+    </Pressable>
+  );
+}
+
+/**
  * Les deux états qui appellent un geste, **et jamais une liste de ceux qui n'en
  * appellent pas.**
  *
@@ -967,14 +1009,21 @@ function Gestes({
               salon, pas un compte à rebours : sur vingt-quatre heures, « avant
               mardi 10 h » se retient, « dans 21 h 14 min » demande de refaire
               le calcul et oblige l'écran à battre la seconde pour rien. */}
+          {/* **Un fait, une ligne.** C'étaient deux phrases concurrentes : la
+              conséquence — « après quoi elle expire d'elle-même » — était
+              rendue en valeur, donc plus grosse que l'échéance qu'elle
+              commente. Elles fusionnent, et la hiérarchie se règle d'elle-même
+              parce qu'il n'y a plus deux choses à hiérarchiser. */}
           {reservation.approval_expires_at ? (
-            <DataRow
-              label={t('commerce.decisionAvant', {
+            <Texte
+              variante="type.body"
+              couleur="ink.soft"
+              testID={`echeance-decision-${reservation.booking_id}`}
+            >
+              {t('commerce.repondreAvant', {
                 quand: formatDateTime(reservation.approval_expires_at, locale, timezone),
               })}
-              value={t('commerce.decisionAvantAide')}
-              testID={`echeance-decision-${reservation.booking_id}`}
-            />
+            </Texte>
           ) : null}
           <Button
             label={t('commerce.accorder')}
@@ -1109,7 +1158,18 @@ function CarteDeDemande({
         * pèsent une décision et se lisent posément. Un visage et un lien disent
         * qui, pas combien, et c'est ce que la ligne demandait.
         */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+      {/* **La ligne entière est la cible, et le glyphe n'est plus qu'une
+          marque.** Le lien ne prenait que le glyphe de sortie : seize points de
+          côté, là où la ligne désigne déjà exactement la même chose et fait
+          358 points de large. Un lien de dix-sept pixels n'est pas un lien.
+
+          La ligne reste rendue à l'identique quand il n'y a pas de profil à
+          ouvrir — l'enveloppe change, pas la composition. */}
+      <LigneDuCreateur
+        url={reservation.creator_profil_url}
+        libelle={t('commerce.voirLeProfil')}
+        testID={`profil-${reservation.booking_id}`}
+      >
         {reservation.creator_avatar_key ? (
           <View
             style={{
@@ -1141,17 +1201,9 @@ function CarteDeDemande({
           ].join(' · ')}
         </Texte>
         {reservation.creator_profil_url ? (
-          <Pressable
-            accessibilityRole="link"
-            accessibilityLabel={t('commerce.voirLeProfil')}
-            onPress={() => void Linking.openURL(reservation.creator_profil_url as string)}
-            testID={`profil-${reservation.booking_id}`}
-            style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
-          >
-            <Icone nom="sortie" couleur="ink.soft" taille={16} />
-          </Pressable>
+          <Icone nom="sortie" couleur="ink.soft" taille={16} />
         ) : null}
-      </View>
+      </LigneDuCreateur>
 
       {/* **L'échéance entre dans la phrase qui l'explique.** Elle est double
           côté serveur — vingt-quatre heures, ou l'heure du créneau si elle

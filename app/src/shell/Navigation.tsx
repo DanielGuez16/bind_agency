@@ -911,7 +911,17 @@ function OngletsDuCommerceChoisi() {
             : ongletHorsBarre(t('onglets.lieu'), 'lieu')
         }
       >
-        {() => <LieuScreen businessId={businessId} timezone={timezone ?? undefined} />}
+        {({ navigation }) => (
+          <LieuScreen
+            businessId={businessId}
+            timezone={timezone ?? undefined}
+            // **Le retour n'existe que sur téléphone.** Sur bureau, cet écran
+            // est un onglet de premier rang : y poser « revenir au menu »
+            // nommerait une destination qui n'est pas dans la barre.
+            onRetour={large ? undefined : () => navigation.navigate('menu' as never)}
+            retourVers={large ? undefined : t('onglets.menu')}
+          />
+        )}
       </Onglets.Screen>
       <Onglets.Screen
         name="prestations"
@@ -921,7 +931,13 @@ function OngletsDuCommerceChoisi() {
             : ongletHorsBarre(t('onglets.prestations'), 'coche')
         }
       >
-        {() => <CatalogueScreen businessId={businessId} />}
+        {({ navigation }) => (
+          <CatalogueScreen
+            businessId={businessId}
+            onRetour={large ? undefined : () => navigation.navigate('menu' as never)}
+            retourVers={large ? undefined : t('onglets.menu')}
+          />
+        )}
       </Onglets.Screen>
       <Onglets.Screen
         name="reglages"

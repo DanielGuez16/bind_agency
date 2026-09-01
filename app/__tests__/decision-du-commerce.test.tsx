@@ -412,8 +412,15 @@ it("dit jusqu'à quand la décision reste possible", async () => {
    */
   await monter();
 
-  expect(screen.getByTestId('echeance-decision-attente-1')).toBeTruthy();
-  expect(screen.getByText(en.commerce.decisionAvantAide)).toBeTruthy();
+  // **Une seule phrase depuis la v11.** C'en était deux, et la conséquence
+  // était rendue plus grosse que l'échéance qu'elle commente. Le test lisait
+  // la seconde ; il lit maintenant la fondue, et vérifie qu'elle porte bien
+  // les deux faits — le quand, et ce qu'il arrive après.
+  const ligne = screen.getByTestId('echeance-decision-attente-1');
+  expect(ligne).toBeTruthy();
+  const dite = String(ligne.props.children);
+  expect(dite).toContain('or the slot reopens');
+  expect(dite).toMatch(/\d/);
 });
 
 it("dit au commerce ce qu'il risque à donner sans contrepartie immédiate", async () => {

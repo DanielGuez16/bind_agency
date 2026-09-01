@@ -68,6 +68,8 @@ export type EcranProps<T> = {
    * qu'en changeant d'onglet, et le geste de balayage n'existe pas sur le web.
    */
   onRetour?: () => void;
+  /** Le nom de la destination du retour. Voir `BarreDeTitre`. */
+  retourVers?: string;
   /** « il y a 2 h ». Rendue dans la barre de titre, sur grand écran. */
   fraicheur?: string | null;
   /**
@@ -166,6 +168,7 @@ export function Ecran<T>({
   sousTitre,
   entete,
   onRetour,
+  retourVers,
   fraicheur,
   nature,
   children,
@@ -361,6 +364,7 @@ export function Ecran<T>({
           titre={titre ?? ''}
           sousTitre={sousTitre}
           onRetour={onRetour}
+          retourVers={retourVers}
           fraicheur={fraicheur}
         />
       ) : null}
