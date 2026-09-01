@@ -158,7 +158,18 @@ export function LieuScreen({
           {/* La galerie en tête : c'est ce qu'un visiteur voit en premier de la
               fiche, et un commerce qui compose sa page commence souvent par là. */}
           <Repliable
-            titre={t('lieu.sectionPhotos')}
+            /* **Le titre suit le contenu, comme son résumé le fait déjà.**
+               « Photos of the place » au-dessus d'une seule image se lit comme
+               un défaut : le titre décrivait la capacité de la section, le
+               lecteur y lit ce qu'elle contient. Le résumé juste en dessous
+               distinguait déjà les deux cas — le titre ne le faisait pas, et
+               les deux lignes se contredisaient à un mot près.
+
+               Le pluriel reste pour zéro : la section est alors vide, et c'est
+               bien ce qu'on peut y mettre qu'elle annonce. */
+            titre={
+              lieu.photos.length === 1 ? t('lieu.sectionPhotoUne') : t('lieu.sectionPhotos')
+            }
             resume={
               lieu.photos.length === 1
                 ? t('lieu.photosCompteUne')

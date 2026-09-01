@@ -1199,6 +1199,7 @@ export const en = {
   },
   lieu: {
     sectionPhotos: 'Photos of the place',
+    sectionPhotoUne: 'Photo of the place',
     sectionCarte: 'What a creator chooses from',
     sectionHoraires: 'Your week',
     sectionLiens: 'Where you are online',
