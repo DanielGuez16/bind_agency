@@ -37,15 +37,6 @@ import { useMouvementReduit } from '../components/Mouvement';
 import { radius, useColors } from '../theme';
 
 /**
- * Le plafond : au-delà, l'attente prend le relais.
- *
- * **Il n'a pas bougé, et c'est lui qui borne tout le reste.** L'entrée peut
- * s'étendre tant qu'elle finit avant : une animation qui dépasse le plafond
- * retiendrait la main, et c'est exactement ce qu'on ne veut pas.
- */
-export const PLAFOND_MS = 800;
-
-/**
  * Ce que l'ouverture dure, et **elle est tenue à chaque lancement**.
  *
  * **C'était un plafond, c'est maintenant un plancher**, et le renversement est
@@ -55,18 +46,37 @@ export const PLAFOND_MS = 800;
  * n'était jamais vue. Le point tombait sur un écran déjà remplacé. Une entrée
  * qui ne joue qu'en cas de lenteur n'est pas une entrée, c'est un symptôme.
  *
- * **760 et non 800.** Le plafond reste au-dessus : l'entrée finit avant que
- * l'attente ait quoi que ce soit à dire, donc les deux ne se croisent jamais.
+ * **C'est le seul nombre à toucher pour régler l'ouverture.** Les quatre temps
+ * ci-dessous s'y rapportent et le plafond se calcule dessus : le monter suffit
+ * à allonger l'entrée sans rien décaler d'autre. Les deux allongements déjà
+ * faits sont passés par lui — 560, puis 760, puis 1800.
  */
-export const DUREE_DE_L_OUVERTURE = 760;
+export const DUREE_DE_L_OUVERTURE = 1800;
+
+/**
+ * Le plafond : au-delà, l'attente prend le relais.
+ *
+ * **Il suit l'ouverture, il ne la borne plus.** Tant que l'entrée était plus
+ * courte que lui, le fixer à 800 tenait ; l'ouverture allongée le traverserait,
+ * et le filet d'attente se poserait **pendant** l'animation — c'est-à-dire que
+ * chaque lancement normal dirait « ça rame ». Il vaut donc l'ouverture plus une
+ * marge, et il ne se règle pas séparément.
+ *
+ * **Six cents millièmes de marge**, parce que le filet répond à une seule
+ * question : « est-ce que ça avance encore ». Trop près de l'ouverture il
+ * clignote sur des lancements sains ; trop loin, il arrive après qu'on a
+ * renoncé.
+ */
+export const MARGE_AVANT_ATTENTE = 600;
+export const PLAFOND_MS = DUREE_DE_L_OUVERTURE + MARGE_AVANT_ATTENTE;
 
 /**
  * L'instant du lancement, figé au chargement du module.
  *
  * **Mesuré une fois, pas à chaque montage.** L'écran de chargement est monté
  * deux fois par ouverture — les fontes, puis le rétablissement de la session —
- * et un plancher compté depuis le montage les additionnerait : une seconde et
- * demie pour une ouverture qui en demande sept cent soixante millièmes.
+ * et un plancher compté depuis le montage les additionnerait : l'ouverture
+ * durerait le double de ce qu'elle annonce.
  */
 const LANCEMENT = Date.now();
 
@@ -89,21 +99,44 @@ export function useOuvertureTenue(): boolean {
   return tenue;
 }
 
-/** Les quatre temps de la direction A, tels que la planche les pose. */
-const LETTRES_DEBUT = 120;
-const LETTRES_DUREE = 140;
+/**
+ * Les quatre temps de la direction A.
+ *
+ * **L'allongement ne va pas dans la chute, et c'est la planche qui l'interdit.**
+ * Elle chiffre le défaut des deux côtés : « à 400 ms ça devient sec, à 700 ms ça
+ * devient une mascotte ». Un point qui tombe lentement cesse d'être une
+ * signature pour devenir un personnage — exactement ce que la direction A
+ * cherche à éviter en refusant le rebond. La chute reste donc sous la borne, et
+ * ce qui s'allonge est ce qui l'entoure : le noir d'avant, la respiration entre
+ * les lettres et le point, et le repos après.
+ */
+const LETTRES_DEBUT = 200;
+const LETTRES_DUREE = 320;
 /** L'apparition du point, plus vive que sa chute : il arrive, il ne se pose pas. */
-const POINT_APPARITION = 90;
+const POINT_APPARITION = 140;
 /** Un aller de la barre indéterminée. C'est une boucle, pas une transition. */
 const COURSE_DUREE = 1000;
 /**
- * Le point part après que les lettres se sont posées, et sa chute tient le
- * reste : 360 + 400 font les 760 de l'ouverture. Les lettres finissent à 260,
- * donc elles ont une respiration de cent millièmes avant que le point arrive —
- * c'est ce qui fait qu'il *arrive* au lieu d'accompagner.
+ * Le point part longtemps après que les lettres se sont posées.
+ *
+ * Les lettres finissent à 520 ; le point n'entre qu'à 720. Ces deux cents
+ * millièmes de silence sont ce qui le fait **arriver** au lieu d'accompagner —
+ * c'est le seul instant de la direction A où quelque chose manque à l'écran, et
+ * c'est lui qui fait remarquer le point quand il vient le combler.
  */
-const POINT_DEBUT = 360;
-const POINT_DUREE = 400;
+const POINT_DEBUT = 720;
+const POINT_DUREE = 620;
+
+/**
+ * Ce qui reste une fois le point calé : la marque posée, immobile.
+ *
+ * **Ce n'est pas du temps mort, c'est la moitié de l'idée.** « Une marque se
+ * pose, et elle peut se poser trente fois sans lasser parce qu'elle n'a rien à
+ * raconter » : ce qu'on retient d'un logotype n'est pas son entrée, c'est
+ * l'image complète qu'on a eu le temps de regarder. Une animation qui s'achève
+ * et disparaît dans le même souffle ne laisse rien.
+ */
+export const REPOS = DUREE_DE_L_OUVERTURE - (POINT_DEBUT + POINT_DUREE);
 
 /** La hauteur du logotype sur cet écran, et la course du point. */
 const TAILLE = 34;

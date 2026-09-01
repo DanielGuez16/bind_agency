@@ -12,7 +12,13 @@
  */
 import { act, render, screen } from '@testing-library/react-native';
 
-import { Chargement, FiletDAttente, PLAFOND_MS } from '../src/shell/Chargement';
+import {
+  Chargement,
+  DUREE_DE_L_OUVERTURE,
+  FiletDAttente,
+  PLAFOND_MS,
+  REPOS,
+} from '../src/shell/Chargement';
 import { ThemeProvider } from '../src/theme';
 
 async function monter(noeud: React.ReactElement) {
@@ -103,6 +109,23 @@ describe('l’attente ne ressemble pas à la marque', () => {
     } finally {
       jest.useRealTimers();
     }
+  });
+
+  it('et il ne se pose jamais pendant l’ouverture', () => {
+    /**
+     * **Le seul défaut que l'allongement peut produire, et il est silencieux.**
+     * L'ouverture est tenue à chaque lancement ; le filet d'attente dit « ça
+     * traîne ». Si le plafond tombe sous la durée de l'ouverture, le filet
+     * paraît **pendant** l'animation — c'est-à-dire que chaque lancement sain
+     * annonce une panne. Rien ne le signalerait : l'écran rend, les tests
+     * passent, et seul l'œil sur un vrai lancement le verrait.
+     *
+     * **Et l'animation doit finir avant le plancher**, sinon la marque est
+     * remplacée en pleine chute — le défaut exact que l'allongement corrige,
+     * qu'un plancher trop court réintroduirait sans bruit.
+     */
+    expect(PLAFOND_MS).toBeGreaterThan(DUREE_DE_L_OUVERTURE);
+    expect(REPOS).toBeGreaterThan(0);
   });
 
   it('le filet ne porte pas le logotype, et le logotype ne boucle pas', async () => {
