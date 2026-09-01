@@ -112,12 +112,10 @@ describe('le code de retrait est atteignable depuis la liste', () => {
     await fireEvent.press(screen.getByLabelText(new RegExp(en.parcours.ongletAVenir)));
     await waitFor(() => expect(screen.getByTestId('reservation-r1')).toBeTruthy());
 
-    // Sous « montrez votre code », et non sous « le salon décide » : le titre
-    // de section est ce qui fait chercher au bon endroit.
-    expect(screen.getByTestId('section-moi')).toContainElement(
-      screen.getByTestId('reservation-r1'),
-    );
-    expect(screen.getByTestId('agir-r1')).toBeTruthy();
+    // **Les deux sections de « à venir » partent avec la v10** : une carte dit
+    // elle-même ce qu'elle attend, par sa ligne du haut et par sa pilule. Ce
+    // qui reste à vérifier est que le geste est là, et qu'il nomme le code.
+    expect(screen.getByTestId('agir-r1')).toHaveTextContent(en.parcours.action_code);
   });
 
   it('et l’appui mène à l’écran du code', async () => {

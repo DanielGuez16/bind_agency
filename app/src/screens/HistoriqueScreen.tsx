@@ -27,6 +27,7 @@ import {
   Apparition,
   EmptyState,
   Button,
+  Icone,
   SegmentedTabs,
   SkeletonLignes,
   StatusMessage,
@@ -35,6 +36,7 @@ import {
 import { elevationDeCarte, radius, useColors, type ColorName } from '../theme';
 import { useI18n, type SupportedLocale } from '../i18n';
 import { formatDateTime, formatMois, formatQuantieme, repereDuCreneau } from '../format';
+import { glypheDePlateforme } from './obstacle';
 import { AnnulerLaReservation } from './reservations/AnnulerLaReservation';
 import { Ecran } from './Ecran';
 import { useRequete } from './useRequete';
@@ -181,7 +183,6 @@ export function surfaceDe(
  * une raison de modèle, pas une raison de lecteur.
  */
 const ONGLETS: { cle: string; libelle: string; statuts: BookingStatus[] }[] = [
-  { cle: 'en-cours', libelle: 'parcours.ongletEnCours', statuts: ['consumed'] },
   {
     cle: 'a-venir',
     libelle: 'parcours.ongletAVenir',
@@ -189,6 +190,11 @@ const ONGLETS: { cle: string; libelle: string; statuts: BookingStatus[] }[] = [
     // rendez-vous existe. Le ranger ailleurs le ferait disparaître de l'onglet
     // où on le cherche, pendant les quelques heures qui comptent.
     statuts: ['held', 'awaiting_business', 'confirmed'],
+  },
+  {
+    cle: 'en-cours',
+    libelle: 'parcours.ongletEnCours',
+    statuts: ['consumed'],
   },
   {
     cle: 'terminees',
@@ -201,17 +207,26 @@ const ONGLETS: { cle: string; libelle: string; statuts: BookingStatus[] }[] = [
 ];
 
 /**
- * L'onglet nommé, ou le premier.
+ * **Le seul onglet qui porte un compte.** Un chiffre sur un onglet est un appel
+ * permanent : il demande qu'on s'en occupe, et il le demande sans fin sur ce
+ * qui est fini. « À venir » se parcourt, « terminées » se consulte ; seul
+ * l'envoi attend quelque chose de vous.
+ */
+const ONGLET_QUI_COMPTE = 'en-cours';
+
+/**
+ * L'index d'un onglet, **et le défaut est l'envoi**.
  *
- * **Un nom inconnu retombe sur le premier plutôt que d'échouer.** L'appelant
- * est une route, et une route survit aux renommages d'onglets : la faire
- * planter parce qu'une clé a changé de nom casserait l'arrivée après une
- * réservation, c'est-à-dire le geste le plus engageant du parcours, pour une
- * raison qui n'a rien à voir avec le lecteur.
+ * **La v10 range les onglets dans l'ordre du temps** — ce qui vient, ce qui
+ * attend de moi, ce qui est fini — et « à envoyer » n'est donc plus le premier.
+ * Le défaut ne suit pas ce déplacement : l'ordre de lecture et l'onglet
+ * d'arrivée répondent à deux questions différentes, et retomber sur zéro aurait
+ * ouvert l'écran sur une liste qui n'attend personne. C'est aussi le seul
+ * onglet qui porte un compte, pour la même raison.
  */
 function indexDOnglet(cle: string | undefined): number {
   const trouve = ONGLETS.findIndex((onglet) => onglet.cle === cle);
-  return trouve === -1 ? 0 : trouve;
+  return trouve === -1 ? ONGLETS.findIndex((onglet) => onglet.cle === ONGLET_QUI_COMPTE) : trouve;
 }
 
 export function HistoriqueScreen({
@@ -279,7 +294,7 @@ export function HistoriqueScreen({
           ? requete.donnees.compteurs
           : null;
     return ONGLETS.map((onglet) =>
-      source === null
+      source === null || onglet.cle !== ONGLET_QUI_COMPTE
         ? undefined
         : onglet.statuts.reduce((total, statut) => total + (source[statut] ?? 0), 0),
     );
@@ -305,79 +320,25 @@ export function HistoriqueScreen({
       {(vue) => (
         <View style={{ gap: 12 }}>
           <Onglets index={index} onChange={setIndex} compteurs={compteurs} />
-          {/* **Seul l'onglet des terminées est groupé** (cadre 08c). Les deux
-              autres portent deux ou trois lignes : un intertitre y coûterait
-              plus qu'il ne rend, et découperait une liste qui se lit d'un
-              coup. */}
-          {/* **Terminées : des lignes nues.** Le « moche » venait d'un
-              traitement d'action appliqué à de l'histoire — des cartes à ombre
-              pour une liste qui ne demande rien. Le quantième à gauche, le mois
-              en séparateur, le résultat en pastille : un historique se balaie,
-              il ne se lit pas. */}
-          {ONGLETS[index].cle === 'terminees'
-            ? grouperParMois(vue.items, locale).map((groupe) => (
-                <View key={groupe.mois} style={{ gap: 0 }} testID={`mois-${groupe.mois}`}>
-                  <Texte
-                    variante="type.dataLabel"
-                    couleur="ink.mute"
-                    style={{ paddingBottom: 10 }}
-                  >
-                    {groupe.mois}
-                  </Texte>
-                  {groupe.items.map((reservation, rang) => (
-                    <Apparition key={reservation.booking_id} rang={rang}>
-                      <LigneNue reservation={reservation} />
-                    </Apparition>
-                  ))}
-                </View>
-              ))
-            : null}
-
-          {/* **À venir : deux sections nommées par leur verbe.** L'onglet
-              mêlait les réservations acceptées, où il faut venir, et celles qui
-              attendent la décision du salon, où il faut attendre. Deux verbes
-              dans une liste unique, et l'on ne savait pas en la parcourant s'il
-              y avait quelque chose à faire. */}
-          {ONGLETS[index].cle === 'a-venir'
-            ? (['moi', 'salon'] as const).map((qui) => {
-                const lignes = vue.items.filter((r) => sectionAVenir(r) === qui);
-                if (lignes.length === 0) return null;
-                return (
-                  <View key={qui} style={{ gap: 11 }} testID={`section-${qui}`}>
-                    <Texte variante="type.dataLabel" couleur="ink.mute">
-                      {t(qui === 'moi' ? 'parcours.sectionMontreTonCode' : 'parcours.sectionLeSalonDecide')}
-                    </Texte>
-                    {lignes.map((reservation, rang) => (
-                      <Apparition key={reservation.booking_id} rang={rang}>
-                        <CarteDeReservation
-                          reservation={reservation}
-                          onglet="a-venir"
-                          onOuvrir={onOuvrir}
-                          onRelire={requete.recharger}
-                        />
-                      </Apparition>
-                    ))}
-                  </View>
-                );
-              })
-            : null}
-          {ONGLETS[index].cle !== 'en-cours' ? null : vue.items.map((reservation, rang) => {
-            // **Pressable exactement quand la ligne attend un geste.** Une
-            // ligne en contrôle ouvrait l'écran de preuve alors qu'elle dit
-            // « rien à faire de votre côté » : la ligne et son texte se
-            // contredisaient, et c'est le texte qui a raison.
-            const ouvrable = attenteDe(reservation) === 'creatrice';
-            return (
-              <Apparition key={reservation.booking_id} rang={rang}>
+          {/* **Le libellé nomme le geste, la ligne nomme la situation.** Aucun
+              libellé de deux mots ne peut dire « tu as déjà publié, il reste à
+              le prouver » : « à faire » couvrait publier, corriger et attendre,
+              et « to send » seul ne dit pas qu'on a déjà publié. */}
+          {ONGLETS[index].cle === ONGLET_QUI_COMPTE ? (
+            <Texte variante="type.body" couleur="ink.soft" testID="aide-a-envoyer">
+              {t('parcours.ongletAEnvoyerAide')}
+            </Texte>
+          ) : null}
+          {vue.items.map((reservation, rang) => (
+            <Apparition key={reservation.booking_id} rang={rang}>
               <CarteDeReservation
                 reservation={reservation}
-                onglet="en-cours"
+                onglet={ONGLETS[index].cle}
                 onOuvrir={onOuvrir}
                 onRelire={requete.recharger}
               />
-              </Apparition>
-            );
-          })}
+            </Apparition>
+          ))}
         </View>
       )}
     </Ecran>
@@ -485,6 +446,28 @@ function issueDe(reservation: ReservationDuCreateur): {
  * **Le badge porte le palier et le réseau**, parce que la même prestation peut
  * exister sur deux comptes — « one story » ne dit pas sur lequel publier.
  */
+/**
+ * Une réservation, dans les trois onglets. **Une seule carte, trois variantes.**
+ *
+ * **Le réseau et le format ouvrent la carte**, sur la ligne qui portait
+ * l'échéance. Un coup d'œil suffit alors à savoir *où* et *quoi* avant de lire
+ * le nom — c'est la question qu'on se pose d'abord dans une liste où la même
+ * prestation peut exister sur deux comptes.
+ *
+ * **La droite de cette ligne dit l'état, et il change avec l'onglet** : rien à
+ * venir, l'échéance en cours d'envoi, l'acceptation une fois fini. Trois choses
+ * qui répondent à la même question — *où j'en suis* — donc une seule place.
+ *
+ * **Une action par carte, en pilule fine à droite.** Le bouton pleine largeur
+ * mangeait la largeur du nom et faisait de chaque carte un appel. La carte sans
+ * action n'en porte aucune, plutôt qu'un bouton gris : un bouton gris se presse
+ * quand même, et ne répond pas.
+ *
+ * **Aucune ligne sous 16 px, et plus de mono.** Une durée et une date sont des
+ * phrases ; `type.data` en faisait des données de système, et les capitales
+ * espacées détruisent la silhouette des mots — c'est-à-dire ce qui permet de
+ * balayer une liste sans la lire.
+ */
 function CarteDeReservation({
   reservation,
   onglet,
@@ -492,266 +475,165 @@ function CarteDeReservation({
   onRelire,
 }: {
   reservation: ReservationDuCreateur;
-  /** Décide la surface : une carte demande ou informe selon son onglet. */
   onglet: string;
   onOuvrir: (reservation: ReservationDuCreateur) => void;
   /** Relit la liste : une réservation annulée quitte l'onglet « à venir ». */
   onRelire: () => void;
 }) {
+  const { t, locale } = useI18n();
   const c = useColors();
-  const surface = surfaceDe(reservation, onglet);
+  const attente = attenteDe(reservation);
+  const agit = attente === 'creatrice';
+  const contrepartie = reservation.contrepartie;
+  const reste = contrepartie ? tempsRestant(contrepartie.deadline_at) : null;
+  const glyphe = glypheDePlateforme(reservation.platform);
+  const repere = repereDuCreneau(
+    reservation.starts_at ?? reservation.valid_until,
+    locale,
+    reservation.business_timezone,
+  );
 
-  const ouvrable = attenteDe(reservation) === 'creatrice';
+  /**
+   * L'attribution, et **le moment n'y entre que s'il vaut encore quelque
+   * chose**. À venir il situe le rendez-vous, terminé il date le souvenir ; en
+   * cours d'envoi c'est l'échéance qui compte, et redire le créneau passé
+   * ferait deux temps dans une carte qui n'en a qu'un.
+   */
+  const attribution =
+    onglet === ONGLET_QUI_COMPTE
+      ? reservation.business_name
+      : t('parcours.verbePour', {
+          prestation: t(`parcours.moment_${repere.quand}`, {
+            jour: repere.libelle,
+            heure: repere.heure,
+          }),
+          salon: reservation.business_name,
+        });
 
   return (
     <Pressable
       testID={`reservation-${reservation.booking_id}`}
-      accessibilityRole={ouvrable ? 'button' : undefined}
-      accessibilityLabel={ouvrable ? reservation.business_name : undefined}
+      accessibilityRole={agit ? 'button' : undefined}
+      accessibilityLabel={agit ? reservation.business_name : undefined}
       // Pressable seulement quand il y a quelque chose derrière : une carte qui
       // répond au doigt sans rien ouvrir apprend à ne plus essayer.
-      disabled={!ouvrable}
+      disabled={!agit}
       onPress={() => onOuvrir(reservation)}
       style={({ pressed }) => ({
         opacity: pressed ? 0.7 : 1,
         borderRadius: radius['radius.lg'],
         backgroundColor: c['bg.surface'],
+        borderWidth: 1,
+        borderColor: c['line.default'],
         padding: 16,
-        // **La grammaire, posée ici et nulle part ailleurs.** Une carte à ombre
-        // demande quelque chose, un contour d'encre dit qu'on lui reproche
-        // quelque chose, une carte à filet informe. Aucun des trois ne se
-        // cumule : une ombre sous un filet fort les annule l'une l'autre et
-        // rend la hiérarchie illisible.
-        ...(surface === 'reprise'
-          ? { borderWidth: 1, borderColor: c['line.solo'] }
-          : surface === 'demande'
-            ? elevationDeCarte()
-            : { borderWidth: 1, borderColor: c['line.default'] }),
+        gap: 11,
+        // « Un coin de 18 px sans ombre flotte au lieu de se poser » : la règle
+        // vaut des douze surfaces du produit, et la planche la dessine à plat
+        // parce qu'une planche est plate.
+        ...elevationDeCarte(),
       })}
     >
-      <LigneDeReservation
-        reservation={reservation}
-        onOuvrir={onOuvrir}
-        onRelire={onRelire}
-      />
-    </Pressable>
-  );
-}
-
-function LigneDeReservation({
-  reservation,
-  onOuvrir,
-  onRelire,
-}: {
-  reservation: ReservationDuCreateur;
-  onOuvrir: (reservation: ReservationDuCreateur) => void;
-  onRelire: () => void;
-}) {
-  const { t, locale } = useI18n();
-  const c = useColors();
-  const attente = attenteDe(reservation);
-  const contrepartie = reservation.contrepartie;
-  const quand = reservation.starts_at ?? reservation.valid_until;
-  /**
-   * **Le verbe, et seulement là où il répond à la question posée.**
-   *
-   * `verbeDeLaContrepartie` existait, était testé, et **personne ne le
-   * rendait** : il ne servait qu'à choisir une surface. Sa propre note décrit
-   * pourtant un affichage — « "Post a story" le dit en trois mots, et "Gel
-   * manicure · Vela Nail Studio" vient dessous, en petit ». C'est le mode
-   * d'échec des champs servis sans lecteur, transposé à l'intérieur de l'app :
-   * le calcul est juste, et il ne sort pas.
-   *
-   * **La contrepartie décide, pas l'onglet.** La première version portait
-   * `onglet === 'en-cours'` par-dessus, ce qui paraissait plus sûr et ne
-   * l'était pas : les onglets se découpent sur le statut — « à venir » tient
-   * `held`, `awaiting_business` et `confirmed` — et une contrepartie ne naît
-   * qu'à la consommation. La condition était donc **inatteignable**, et une
-   * mutation qui la retirait laissait tous les tests verts. Une branche qu'aucun
-   * test ne peut fixer finit par être « corrigée » de travers.
-   *
-   * Sans contrepartie, pas de verbe : sur « à venir » la question est « qu'est-ce
-   * que je vais recevoir », et la prestation y est la bonne réponse.
-   */
-  const verbe = verbeDeLaContrepartie(reservation);
-  /**
-   * **Le code de retrait est un geste, donc un titre.**
-   *
-   * « Montre ton code » est la seule chose que la créatrice ait à faire d'une
-   * réservation confirmée, et la ligne titrait la prestation — ce que c'est,
-   * quand la question est ce qu'on attend d'elle. Même renversement que pour la
-   * contrepartie, et le dernier écran à ne pas l'appliquer.
-   */
-  const gesteDuCode = !verbe && destination(reservation) === 'code';
-  const repere = repereDuCreneau(quand, locale, reservation.business_timezone);
-
-  return (
-    <View
-      style={{
-        flexDirection: 'row',
-        gap: 12,
-        // **Le filet d'encre à gauche des lignes qui attendent un geste.** Il
-        // n'y a pas de couleur ici : la matière suffit, et l'ambre serait lu
-        // comme la marque.
-        borderLeftWidth: 3,
-        borderLeftColor: attente === 'creatrice' ? c['line.solo'] : 'transparent',
-        paddingLeft: 12,
-      }}
-    >
-      <View style={{ flex: 1, gap: 4 }}>
-        {verbe ? (
-          <Texte variante="type.bodyStrong" testID={`verbe-${reservation.booking_id}`}>
-            {t(`parcours.verbe_${verbe}`, {
-              format: t(`parcours.format_${reservation.content_format}`),
-            })}
-          </Texte>
-        ) : gesteDuCode ? (
-          <Texte variante="type.bodyStrong" testID={`verbe-${reservation.booking_id}`}>
-            {t('parcours.verbe_code')}
-          </Texte>
-        ) : (
-          <Texte variante="type.bodyStrong">{reservation.item_name}</Texte>
-        )}
-        {/* **L'adresse est partie sur l'écran du code.** Elle ne sert qu'à un
-            instant — celui où l'on y va — et cet instant n'a pas lieu dans une
-            liste. Ici elle doublait la longueur de chaque carte. */}
-        <Texte variante="type.caption" couleur="ink.soft">
-          {verbe || gesteDuCode
-            ? t('parcours.verbePour', {
-                prestation: reservation.item_name,
-                salon: reservation.business_name,
-              })
-            : reservation.business_name}
-        </Texte>
-        {/* Le palier **et** le réseau : la même prestation peut exister sur
-            deux comptes, et publier sur le mauvais ne compte pas.
-
-            **Le format passe par la traduction.** Il était rendu brut, et
-            l'anglais le cachait : `story` majusculé donne « STORY », c'est-à-
-            dire exactement ce que la bonne implémentation rend. En espagnol la
-            ligne affichait « STORY » là où le reste de l'écran dit
-            « historia ». Le réseau, lui, reste brut — c'est un nom propre. */}
-        {/**
-          * **Le moment, en clair et sur une ligne.**
-          *
-          * Il vivait dans une colonne de cinquante-deux points à gauche de la
-          * carte, où `formatDateTime` rend « Aug 26, 2026 at 2:30 PM » : chaque
-          * mot y passait à la ligne, et la date se lisait en colonne — « Aug /
-          * 26, / 2026 / At / 2:30 / PM ». La largeur convient au quantième seul
-          * de l'historique, qui tient en deux chiffres ; elle ne convient à
-          * rien d'autre.
-          *
-          * **Un repère plutôt qu'une date**, tant qu'il en existe un :
-          * « aujourd'hui à 14:30 » se lit sans compter, « Aug 26, 2026 » demande
-          * de se situer. Au-delà d'une semaine la date brute est la réponse
-          * honnête, et c'est ce que `repereDuCreneau` rend déjà — la fiche s'en
-          * sert pour la même raison.
-          */}
-        <Texte variante="type.bodyStrong" testID={`quand-${reservation.booking_id}`}>
-          {t(`parcours.moment_${repere.quand}`, {
-            jour: repere.libelle,
-            heure: repere.heure,
-          })}
-        </Texte>
-        <Texte variante="type.dataLabel" couleur="ink.mute" testID={`palier-${reservation.booking_id}`}>
-          {`${t(`parcours.format_${reservation.content_format}`)} · ${reservation.platform}`.toUpperCase()}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
+        {glyphe ? <Icone nom={glyphe} couleur="ink.default" taille={18} /> : null}
+        <Texte
+          variante="type.body"
+          couleur="ink.soft"
+          style={{ flex: 1, minWidth: 0 }}
+          testID={`palier-${reservation.booking_id}`}
+        >
+          {t(`parcours.format_${reservation.content_format}`)}
         </Texte>
 
-        {reservation.status === 'awaiting_business' ? (
-          <StatusMessage
-            level="neutral"
-            body={
-              reservation.approval_expires_at
-                ? `${t('parcours.enAttenteDuSalon')} ${t('parcours.enAttenteJusquA', {
-                    quand: formatDateTime(
-                      reservation.approval_expires_at,
-                      locale,
-                      reservation.business_timezone,
-                    ),
-                  })}`
-                : t('parcours.enAttenteDuSalon')
-            }
-            testID={`en-attente-${reservation.booking_id}`}
-          />
-        ) : null}
-
-        {/* **Un droit périmé se dit, il ne se tait pas.** Une réservation
-            confirmée que personne n'a servie garde son statut pour toujours :
-            la ligne restait identique à celle d'un rendez-vous à venir, avec
-            son bouton, et le code répondait par une erreur. La dire close vaut
-            mieux qu'un bouton qui ne mène nulle part — et mieux qu'un silence,
-            qui laisserait chercher où est passé le bouton. */}
-        {reservation.status === 'confirmed' && !droitEncoreValide(reservation) ? (
-          <StatusMessage
-            level="neutral"
-            body={t('parcours.droitPerime')}
-            testID={`droit-perime-${reservation.booking_id}`}
-          />
-        ) : null}
-
-        {contrepartie ? (
-          <>
-            {/* **Ce qui reste, et rien d'autre.** La carte portait aussi la
-                date d'échéance, l'arbitrage et le numéro de tentative : trois
-                lignes qui décrivent comment le dossier est instruit, quand
-                celle-ci dit s'il faut publier ce soir. Les trois vivent sur
-                l'écran de la contrepartie, à un appui, où la comparaison a un
-                sens ; ici elles coûtaient trois lignes sur chaque carte.
-
-                Sans capitales. Le mono capitales est l'étiquette du système —
-                il porte un format, un réseau. Une durée est une phrase, et les
-                capitales détruisent la silhouette des mots, c'est-à-dire ce
-                qui permet de balayer une liste sans la lire. */}
-            {tempsRestant(contrepartie.deadline_at) ? (
-              <Texte
-                variante="type.dataLabel"
-                testID={`reste-${reservation.booking_id}`}
-              >
-                {t('parcours.contrepartieReste', {
-                  reste: tempsRestant(contrepartie.deadline_at),
-                })}
-              </Texte>
-            ) : null}
-          </>
-        ) : null}
-
-        {/* **Le seul onglet qui agit porte son bouton ici.** Une ligne en
-            contrôle le dit en mots plutôt que de griser une action : un bouton
-            gris se presse quand même, et ne répond pas. */}
-        {attente === 'creatrice' ? (
-          // **`fullWidth={false}`, dans une rangée.** Le bouton du système est
-          // déjà une pilule ; il s'étirait sur toute la carte parce que
-          // `fullWidth` vaut `true` par défaut et que personne ne l'avait dit
-          // non. Même correction qu'à la fiche. La rangée est nécessaire : en
-          // colonne, `alignSelf` non posé retombe sur l'étirement du parent, et
-          // le bouton reprendrait toute la largeur sans que le `false` se voie.
-          <View style={{ flexDirection: 'row' }}>
-            <Button
-              label={t(`parcours.action_${destination(reservation)}`)}
-              onPress={() => onOuvrir(reservation)}
-              fullWidth={false}
-              testID={`agir-${reservation.booking_id}`}
-            />
+        {/* L'échéance, là où l'onglet la rend utile : pendant l'envoi. */}
+        {onglet === ONGLET_QUI_COMPTE && reste ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Icone nom="horloge" couleur="brand.700" taille={15} />
+            <Texte
+              variante="type.bodyStrong"
+              couleur="brand.700"
+              testID={`reste-${reservation.booking_id}`}
+            >
+              {t('parcours.contrepartieReste', { reste })}
+            </Texte>
           </View>
-        ) : attente === 'controle' ? (
-          <Texte
-            variante="type.caption"
-            couleur="ink.soft"
-            testID={`rien-a-faire-${reservation.booking_id}`}
-          >
-            {t('parcours.contrepartieRienAFaire')}
-          </Texte>
         ) : null}
 
-        {/* **Annuler est le geste qu'on ne peut pas faire depuis le salon.**
-            Il vivait dans le client d'API sans écran : la seule sortie d'une
-            réservation qu'on ne peut plus honorer était de ne pas venir, ce
-            que le produit compte comme une absence. Le composant se tait de
-            lui-même sur les états terminaux — il n'y a pas de condition à
-            écrire ici, et en écrire une la ferait diverger du diagramme. */}
-        <AnnulerLaReservation reservation={reservation} onAnnulee={onRelire} />
+        {/* Terminé, l'état prend la place de l'action : il n'y a plus rien à
+            faire, et c'est ce qu'on vient vérifier. */}
+        {onglet === 'terminees' ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Icone nom="coche" couleur="status.success.text" taille={17} />
+            <Texte
+              variante="type.body"
+              couleur="status.success.text"
+              testID={`etat-${reservation.booking_id}`}
+            >
+              {t('parcours.reservationAcceptee')}
+            </Texte>
+          </View>
+        ) : null}
       </View>
-    </View>
+
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+        <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+          <Texte variante="type.titreDApercu" ellipseSurNomPropre>
+            {reservation.item_name}
+          </Texte>
+          <Texte
+            variante="type.body"
+            couleur="ink.soft"
+            ellipseSurNomPropre
+            testID={`quand-${reservation.booking_id}`}
+          >
+            {attribution}
+          </Texte>
+        </View>
+        {agit ? (
+          <Button
+            label={t(`parcours.action_${destination(reservation)}`)}
+            onPress={() => onOuvrir(reservation)}
+            fullWidth={false}
+            testID={`agir-${reservation.booking_id}`}
+          />
+        ) : null}
+      </View>
+
+      {/* **Ce qui n'est pas une action reste écrit, jamais grisé.** Une ligne
+          en contrôle, un droit périmé, une demande que le salon n'a pas encore
+          tranchée : trois situations où il n'y a rien à faire, et où se taire
+          ferait chercher le bouton disparu. */}
+      {attente === 'controle' ? (
+        <Texte
+          variante="type.body"
+          couleur="ink.soft"
+          testID={`rien-a-faire-${reservation.booking_id}`}
+        >
+          {t('parcours.contrepartieRienAFaire')}
+        </Texte>
+      ) : null}
+
+      {reservation.status === 'awaiting_business' ? (
+        <StatusMessage
+          level="neutral"
+          body={t('parcours.enAttenteDuSalon')}
+          testID={`en-attente-${reservation.booking_id}`}
+        />
+      ) : null}
+
+      {reservation.status === 'confirmed' && !droitEncoreValide(reservation) ? (
+        <StatusMessage
+          level="neutral"
+          body={t('parcours.droitPerime')}
+          testID={`droit-perime-${reservation.booking_id}`}
+        />
+      ) : null}
+
+      {/* **Annuler est le geste qu'on ne peut pas faire depuis le salon.** Le
+          composant se tait de lui-même sur les états terminaux — il n'y a pas
+          de condition à écrire ici, et en écrire une la ferait diverger du
+          diagramme. */}
+      <AnnulerLaReservation reservation={reservation} onAnnulee={onRelire} />
+    </Pressable>
   );
 }
 
