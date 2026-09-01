@@ -46,6 +46,7 @@ from app.models import (
     CatalogItem,
     Collaboration,
     CreatorProfile,
+    Proof,
     SocialAccount,
     Tier,
     TierOffer,
@@ -111,6 +112,17 @@ class LigneDeContrepartie:
     #: configuration précisément pour qu'on puisse l'ajuster.
     max_attempts: int
     needs_human_review: bool
+    #: La publication elle-même : son identifiant de preuve, son adresse
+    #: d'origine, et si un objet est archivé.
+    #:
+    #: **Sans eux, « mes publications » illustrait chaque ligne avec la photo du
+    #: service au catalogue du salon** — c'est-à-dire l'image d'autrui à la
+    #: place de la sienne. Les trois existaient depuis la phase 7, sur la table
+    #: `proof` ; ils ne descendaient simplement pas jusqu'à l'écran qui existe
+    #: pour les montrer.
+    proof_id: uuid.UUID | None
+    post_url: str | None
+    post_a_une_image: bool
     #: Ce que le salon a reproché à la dernière soumission. **Nul quand rien
     #: n'a été refusé.**
     #:
@@ -343,7 +355,11 @@ def _jointures_communes(requete):
     )
 
 
-def _contrepartie(ligne, motifs: dict[uuid.UUID, str] | None = None) -> LigneDeContrepartie | None:
+def _contrepartie(
+    ligne,
+    motifs: dict[uuid.UUID, str] | None = None,
+    publications: dict[uuid.UUID, tuple[uuid.UUID, str | None, bool]] | None = None,
+) -> LigneDeContrepartie | None:
     """`motifs` nul veut dire **« pas chargés »**, jamais « aucun refus ».
 
     La journée du commerce ne les charge pas, et c'est délibéré : le salon est
@@ -362,7 +378,58 @@ def _contrepartie(ligne, motifs: dict[uuid.UUID, str] | None = None) -> LigneDeC
         max_attempts=get_settings().collaboration_max_attempts,
         needs_human_review=ligne.needs_human_review,
         dernier_motif=(motifs or {}).get(ligne.collaboration_id),
+        # **Nul quand rien n'a été soumis**, ce qui est le cas ordinaire d'une
+        # contrepartie encore due. Trois nuls plutôt qu'un objet vide : l'écran
+        # distingue « pas encore publié » de « publié sans image archivée ».
+        **_publication((publications or {}).get(ligne.collaboration_id)),
     )
+
+
+def _publication(trouvee: tuple[uuid.UUID, str | None, bool] | None) -> dict:
+    if trouvee is None:
+        return {"proof_id": None, "post_url": None, "post_a_une_image": False}
+    proof_id, post_url, a_une_image = trouvee
+    return {"proof_id": proof_id, "post_url": post_url, "post_a_une_image": a_une_image}
+
+
+async def _dernieres_publications(
+    session: AsyncSession, collaboration_ids: list[uuid.UUID | None]
+) -> dict[uuid.UUID, tuple[uuid.UUID, str | None, bool]]:
+    """La **dernière** soumission de chaque dossier : preuve, adresse, objet.
+
+    **Un seul aller-retour**, comme les motifs, et pour la même raison : une
+    requête par ligne sur un écran qui en affiche vingt.
+
+    **La dernière et non l'acceptée.** Un dossier approuvé n'a qu'une soumission
+    qui compte, et c'est la dernière ; un dossier refusé n'en a pas d'acceptée du
+    tout, et c'est encore la dernière qu'on veut montrer — c'est celle qu'on
+    corrige. Trié par `submitted_at`, qui est en `clock_timestamp()` : deux
+    soumissions d'une même transaction s'ordonnent quand même.
+    """
+    ids = [identifiant for identifiant in collaboration_ids if identifiant is not None]
+    if not ids:
+        return {}
+
+    publications: dict[uuid.UUID, tuple[uuid.UUID, str | None, bool]] = {}
+    # Du plus ancien au plus récent : la dernière écriture pour un dossier
+    # écrase les précédentes, et c'est celle-là qu'on garde.
+    for collaboration_id, proof_id, source_url, media_key, screenshot_key in await session.execute(
+        sa.select(
+            Proof.collaboration_id,
+            Proof.id,
+            Proof.source_url,
+            Proof.media_key,
+            Proof.screenshot_key,
+        )
+        .where(Proof.collaboration_id.in_(ids))
+        .order_by(Proof.submitted_at)
+    ):
+        publications[collaboration_id] = (
+            proof_id,
+            source_url,
+            bool(media_key or screenshot_key),
+        )
+    return publications
 
 
 async def _derniers_motifs(
@@ -445,7 +512,9 @@ async def historique_du_createur(
     # **Un seul aller-retour pour toute la page.** Le motif se lit dans le
     # journal d'audit ; le demander par ligne ferait une requête par
     # réservation, sur un écran qui en affiche vingt.
-    motifs = await _derniers_motifs(session, [ligne.collaboration_id for ligne in lignes])
+    identifiants = [ligne.collaboration_id for ligne in lignes]
+    motifs = await _derniers_motifs(session, identifiants)
+    publications = await _dernieres_publications(session, identifiants)
 
     compteurs = dict.fromkeys(BookingStatus, 0)
     for status, nombre in await session.execute(
@@ -479,7 +548,7 @@ async def historique_du_createur(
                 duration_minutes=ligne.duration_minutes,
                 platform=ligne.platform,
                 content_format=ligne.content_format,
-                contrepartie=_contrepartie(ligne, motifs),
+                contrepartie=_contrepartie(ligne, motifs, publications),
             )
             for ligne in lignes
         ),

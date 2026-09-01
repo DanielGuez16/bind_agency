@@ -40,6 +40,16 @@ class ContrepartieBreveRead(BaseModel):
     #: chose et se fait refuser une seconde fois.
     dernier_motif: str | None
     needs_human_review: bool
+    #: La publication elle-même. **Nuls tant que rien n'a été soumis.**
+    #:
+    #: Sans eux, « mes publications » illustrait chaque ligne avec la photo du
+    #: service au catalogue du salon — l'image d'autrui à la place de la sienne.
+    #: `post_a_une_image` distingue « publié sans objet archivé » de « pas
+    #: encore publié » : l'écran ne demande un droit de lecture que dans le
+    #: premier cas.
+    proof_id: uuid.UUID | None = None
+    post_url: str | None = None
+    post_a_une_image: bool = False
 
 
 class ReservationDuCreateurRead(BaseModel):

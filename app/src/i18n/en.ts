@@ -214,6 +214,7 @@ export const en = {
     sansPseudonyme: 'Your profile',
     abonnes: '{{n}} followers',
     mesPublications: 'My posts',
+    publicationOuvrir: 'Open the post for {{prestation}}',
     favoris: 'Favourites',
     monAudience: 'My audience',
     publicationsVideTitre: 'No posts yet',
@@ -406,12 +407,11 @@ export const en = {
     murLePlusPres: 'Closest to you',
     murToutVoir: 'All {{count}}',
     murEncoreIci: '+{{count}} more here',
-    // **Le quartier est nommé dans la phrase de la carte aussi.** Un compte
-    // posé sur une carte de salon se lit bien comme celui du salon ; mais dans
-    // « Ailleurs à Miami », il n'y a plus de quartier au-dessus, et la variante
-    // courte est alors la seule juste.
-    carteServicesOuvertsAu: '{{count}} services open to you in {{quartier}}',
+    // **Sans le quartier.** Il est déjà écrit deux lignes plus haut, dans la
+    // ligne du salon ; répété ici, il faisait lire le compte comme un total du
+    // quartier.
     carteServicesOuverts: '{{count}} services open to you',
+    carteServiceOuvertUn: 'One service open to you',
     carteEtEncore: 'and {{count}} more inside',
     // Les rangées par quartier. La carte d'os ferme une rangée courte et dit
     // ce qu'il y a plus loin : sans elle, une rangée de deux cartes ressemble

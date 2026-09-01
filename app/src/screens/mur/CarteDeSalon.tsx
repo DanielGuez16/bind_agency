@@ -1,5 +1,17 @@
 /**
- * Une carte par salon, et elle montre ce qu'elle contient.
+ * Un salon du fil : une photo, et ce qu'il contient écrit dessous.
+ *
+ * **La photo n'est plus dans une carte, elle *est* l'objet.** Un cadre blanc
+ * bordé autour d'une image, dans un fil de photos, encadre ce qui n'a pas
+ * besoin de l'être : il ajoute une seconde silhouette rectangulaire autour de
+ * la première, et c'est celle du cadre qu'on voit d'abord. Rectangle arrondi de
+ * 16, rien autour, le texte dessous sans fond ni filet ni ombre.
+ *
+ * **Et la photo passe de 96 à 210 points.** Une bande de 96 en tête d'une boîte
+ * de texte est une vignette d'illustration ; c'est le texte qui domine. Le
+ * squelette du mur annonçait d'ailleurs 280 × 210 depuis le début — la carte et
+ * son chargement se contredisaient à chaque ouverture, et c'est le chargement
+ * qui avait raison.
  *
  * **Le grain du fil change, et c'est ce que la v4 corrige.** Un salon
  * apparaissait autant de fois qu'il avait de prestations ouvertes, et la fiche
@@ -25,11 +37,11 @@
  * fiche, ligne par ligne. Le seul cœur du fil est la porte de la barre de
  * recherche, et c'est elle qui porte le compte.
  *
- * **Le quartier est nommé dans la phrase du compte.** « 4 services open to
- * you » seul se lit comme un total, et c'est la phrase qu'on lit — le nom du
- * quartier posé au-dessus ne suffit pas. Sans quartier déclaré, la phrase
- * tombe sur sa variante courte : la section « Ailleurs à Miami » porte alors
- * la portée.
+ * **Le quartier a quitté la phrase du compte.** « 4 services open to you in
+ * Brickell » disait deux choses d'un trait, dont une déjà écrite deux lignes
+ * plus haut, dans la ligne du salon. Le quartier situe le lieu ; le compte dit
+ * ce qui est ouvert. Les mêler faisait lire le compte comme un total *du
+ * quartier* — l'exact contresens qu'on cherchait à éviter.
  */
 import { Pressable, View } from 'react-native';
 
@@ -39,8 +51,16 @@ import { formatDistance, formatNumber } from '../../format';
 import { useI18n } from '../../i18n';
 import { radius, useColors } from '../../theme';
 
-/** La hauteur de la couverture. La planche l'écrit, et elle ne se calcule pas. */
-export const COUVERTURE_DE_LA_CARTE = 96;
+/**
+ * La largeur d'une carte, et la hauteur de son 4:3.
+ *
+ * **280 par 210, et c'est une mesure.** Les photos arrivent en 4:3 ; une bande
+ * de 96 en jetait plus de la moitié. Ces deux valeurs vivaient dans un
+ * composant que plus rien ne rendait, d'où le squelette les lisait — elles
+ * reviennent ici, où la carte les applique enfin.
+ */
+export const LARGEUR_DE_LA_CARTE = 280;
+export const PHOTO_DE_LA_CARTE = 210;
 
 /**
  * Combien de prestations la carte nomme avant de compter le reste.
@@ -103,9 +123,9 @@ export function CarteDeSalon({
     .join(' · ');
   const compte = formatNumber(ouvertes, locale);
   const ouverts =
-    quartierNomme === null
-      ? t('parcours.carteServicesOuverts', { count: compte })
-      : t('parcours.carteServicesOuvertsAu', { count: compte, quartier: quartierNomme });
+    ouvertes === 1
+      ? t('parcours.carteServiceOuvertUn')
+      : t('parcours.carteServicesOuverts', { count: compte });
   const restants = ouvertes - PRESTATIONS_NOMMEES;
 
   return (
@@ -118,42 +138,47 @@ export function CarteDeSalon({
       onPress={onPress}
       onPressIn={enfoncement.onPressIn}
       onPressOut={enfoncement.onPressOut}
-      style={{
-        borderRadius: radius['radius.lg'],
-        backgroundColor: c['bg.surface'],
-        borderWidth: 1,
-        borderColor: c['line.default'],
-        overflow: 'hidden',
-      }}
+      style={{ width: LARGEUR_DE_LA_CARTE, gap: 10 }}
     >
-      {/* La hauteur est connue avant l'image : ce qui arrive fond, il ne
-          pousse rien. */}
-      <Photo
-        uri={photo}
-        hauteur={COUVERTURE_DE_LA_CARTE}
-        testID={testID ? `${testID}-photo` : undefined}
-        replit={<MediaFallback monogramme={nom} height={COUVERTURE_DE_LA_CARTE} />}
-      />
+      {/* L'arrondi de la photo, celui de toute image du système — et non celui
+          de la carte, puisqu'il n'y a plus de carte. La hauteur est connue
+          avant l'image : ce qui arrive fond, il ne pousse rien. */}
+      <View
+        style={{
+          borderRadius: radius['radius.photo'],
+          overflow: 'hidden',
+          backgroundColor: c['media.placeholder'],
+        }}
+      >
+        <Photo
+          uri={photo}
+          hauteur={PHOTO_DE_LA_CARTE}
+          testID={testID ? `${testID}-photo` : undefined}
+          replit={<MediaFallback monogramme={nom} height={PHOTO_DE_LA_CARTE} />}
+        />
+      </View>
 
-      <View style={{ paddingHorizontal: 16, paddingTop: 13, flexDirection: 'row', gap: 12 }}>
+      <View style={{ flexDirection: 'row', gap: 12 }}>
         <View style={{ flex: 1, minWidth: 0, gap: 1 }}>
           <Texte variante="type.titreDApercu" ellipseSurNomPropre testID={testID ? `${testID}-nom` : undefined}>
             {nom}
           </Texte>
-          <Texte variante="type.caption" couleur="ink.soft">
+          <Texte
+            variante="type.caption"
+            couleur="ink.soft"
+            testID={testID ? `${testID}-situation` : undefined}
+          >
             {situation}
           </Texte>
         </View>
         <Icone nom="chevron" couleur="ink.soft" taille={20} />
       </View>
 
-      <View style={{ paddingHorizontal: 16, paddingTop: 11, paddingBottom: 6 }}>
-        <Texte variante="type.label" couleur="brand.700" testID={testID ? `${testID}-compte` : undefined}>
-          {ouverts.toUpperCase()}
-        </Texte>
-      </View>
+      <Texte variante="type.label" couleur="brand.700" testID={testID ? `${testID}-compte` : undefined}>
+        {ouverts.toUpperCase()}
+      </Texte>
 
-      <View style={{ paddingHorizontal: 16, paddingBottom: 14, gap: 7 }}>
+      <View style={{ gap: 7 }}>
         {prestations.slice(0, PRESTATIONS_NOMMEES).map((prestation) => (
           <View
             key={prestation.catalogItemId}

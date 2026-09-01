@@ -17,9 +17,21 @@ nom et l'hôte, et elle ne marche que là où l'on signe — le développement l
 écrit sur disque et ne signe rien. Un jeton émis par l'API marche dans les deux
 cas, ne dit rien du stockage, et se révoque en changeant une clé.
 
-**Qui a le droit.** Le commerce concerné, et l'administration. Personne d'autre,
-et surtout pas la créatrice qui l'a envoyée : elle sait ce qu'elle a publié,
-lui rouvrir l'objet archivé n'ajoute rien et élargit la surface.
+**Qui a le droit.** Le commerce concerné, l'administration, et **la créatrice
+qui l'a envoyée**.
+
+**Ce dernier point renverse la règle d'avant, et la raison compte.** Il était
+écrit ici que la créatrice n'avait pas à rouvrir l'objet archivé — « elle sait
+ce qu'elle a publié ». C'était vrai d'une preuve prise isolément et faux du
+produit : l'écran « mes publications » existe précisément pour lui montrer ce
+qu'elle a publié, et il affichait la photo du **service au catalogue du salon**
+faute d'avoir accès à l'image du post. Une liste de publications illustrée par
+les photos d'autrui n'est pas une liste de publications.
+
+**L'élargissement est borné à sa propre publication.** La créatrice lit la
+preuve de la collaboration dont elle est l'auteure, jamais une autre : c'est la
+réservation qui porte le créateur, et c'est elle qu'on interroge — pas un
+identifiant fourni par l'appelant.
 """
 
 import uuid
@@ -46,6 +58,17 @@ class ProofNotFound(Exception):
 async def _a_le_droit(session: AsyncSession, *, proof: Proof, user: User) -> bool:
     if user.role is UserRole.ADMIN:
         return True
+
+    if user.role is UserRole.CREATOR:
+        # **Sa publication, et seulement la sienne.** Le créateur se lit sur la
+        # réservation que porte la collaboration ; le comparer à l'appelant est
+        # la seule chose qui distingue « ma preuve » de « une preuve ».
+        creator_id = await session.scalar(
+            sa.select(Booking.creator_id)
+            .join(Collaboration, Collaboration.booking_id == Booking.id)
+            .where(Collaboration.id == proof.collaboration_id)
+        )
+        return creator_id == user.id
 
     if user.role is not UserRole.BUSINESS_MEMBER:
         return False

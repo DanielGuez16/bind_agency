@@ -140,19 +140,47 @@ async def test_un_autre_commerce_n_obtient_rien(client: AsyncClient, session: As
     assert reponse.status_code == 404
 
 
-async def test_la_creatrice_qui_l_a_envoyee_n_y_revient_pas(
+async def test_la_creatrice_revient_sur_sa_publication(
     client: AsyncClient, session: AsyncSession
 ) -> None:
-    """Elle sait ce qu'elle a publié.
+    """**Renversement de la règle d'avant, et la raison compte.**
 
-    Lui rouvrir l'objet archivé n'ajoute rien et élargit la surface de ce qui
-    est lisible.
+    Il était écrit qu'elle n'avait pas à rouvrir l'objet archivé — « elle sait
+    ce qu'elle a publié ». C'était vrai d'une preuve isolée et faux du produit :
+    l'écran « mes publications » existe pour lui montrer ce qu'elle a publié, et
+    il affichait la photo du **service au catalogue du salon** faute d'accès à
+    l'image du post.
     """
     s = await scene(session)
 
-    reponse = await client.get(
+    droit = await client.get(
         f"{PREFIX}/proofs/{s['preuve'].id}/access",
         headers=await entetes(client, s["createur"]),
+    )
+    assert droit.status_code == 200, droit.text
+
+    # Le droit ouvre réellement l'objet : un 200 sur l'émission ne prouve rien
+    # de la lecture, et c'est cette moitié-là qui compte pour l'écran.
+    reponse = await client.get(droit.json()["url"])
+    assert reponse.status_code == 200, reponse.text
+    assert reponse.headers["content-type"].startswith("image/")
+
+
+async def test_une_autre_creatrice_n_obtient_rien(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """**L'autre moitié, et sans elle la première ne garde rien.**
+
+    Un test qui ne montrerait que l'accès accordé passerait aussi bien sur un
+    droit ouvert à tous les créateurs. L'élargissement porte sur *sa* publication
+    — la réservation dit qui l'a faite, et c'est elle qu'on interroge.
+    """
+    s = await scene(session)
+    autre = await scene(session)
+
+    reponse = await client.get(
+        f"{PREFIX}/proofs/{s['preuve'].id}/access",
+        headers=await entetes(client, autre["createur"]),
     )
 
     assert reponse.status_code == 404
