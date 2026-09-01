@@ -446,9 +446,18 @@ it("dit jusqu'à quand la décision reste possible", async () => {
   // était rendue plus grosse que l'échéance qu'elle commente. Le test lisait
   // la seconde ; il lit maintenant la fondue, et vérifie qu'elle porte bien
   // les deux faits — le quand, et ce qu'il arrive après.
+  // **La phrase est en trois nœuds depuis la v11** : « Answer before », l'heure
+  // en gras, puis la conséquence. On la relit donc à plat plutôt que par
+  // `props.children`, qui ne rendrait que le tableau.
   const ligne = screen.getByTestId('limite-attente-1');
-  expect(ligne).toBeTruthy();
-  const dite = String(ligne.props.children);
+  const aPlat = (noeud: unknown): string => {
+    if (typeof noeud === 'string') return noeud;
+    if (Array.isArray(noeud)) return noeud.map(aPlat).join('');
+    const enfants = (noeud as { props?: { children?: unknown } })?.props?.children;
+    return enfants === undefined ? '' : aPlat(enfants);
+  };
+  const dite = aPlat(ligne);
+  expect(dite).toContain('Answer before');
   expect(dite).toContain('or the slot reopens');
   expect(dite).toMatch(/\d/);
 });

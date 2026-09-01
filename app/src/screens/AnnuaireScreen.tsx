@@ -43,6 +43,7 @@ import {
   EmptyState,
   Filet,
   Icone,
+  PiluleDeProfil,
   SkeletonLignes,
   StatusMessage,
   Texte,
@@ -638,21 +639,30 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
               testID={`profil-${createur.creator_id}-${c.platform}`}
               // **Toute la largeur, et 76 points de haut.** La cible ne
               // prenait que le mot et son glyphe ; la ligne désigne déjà la
-              // même chose. Le glyphe redevient une marque qui annonce la
-              // sortie, il cesse d'être la cible.
+              // même chose.
+              //
+              // Ce que la ligne porte est une **pilule**, pas du texte étiré :
+              // c'est l'étiquette visible de la ligne, à la forme que la
+              // planche donne aux deux écrans. Le libellé long reste, mais à
+              // la voix — « Open their Instagram » dit où l'on va, « Profile »
+              // suffit à l'œil quand le logo est à côté.
+              accessibilityLabel={t('annuaire.voirLeProfil', {
+                reseau: nomDePlateforme(c.platform),
+              })}
               style={({ pressed }) => ({
                 opacity: pressed ? 0.7 : 1,
                 flexDirection: 'row',
                 alignItems: 'center',
+                justifyContent: 'flex-end',
                 alignSelf: 'stretch',
-                gap: 6,
                 minHeight: 76,
               })}
             >
-              <Texte variante="type.caption" couleur="brand.700">
-                {t('annuaire.voirLeProfil', { reseau: nomDePlateforme(c.platform) })}
-              </Texte>
-              <Icone nom="sortie" taille={13} couleur="brand.700" />
+              <PiluleDeProfil
+                plateforme={c.platform}
+                libelle={t('common.profil')}
+                testID={`pilule-${createur.creator_id}-${c.platform}`}
+              />
             </Pressable>
           ))}
 

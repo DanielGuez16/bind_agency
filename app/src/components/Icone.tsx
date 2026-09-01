@@ -28,7 +28,7 @@
  * `rempli` reste faux partout ailleurs : la règle tient pour tout le reste du
  * jeu, et ce n'est pas une porte ouverte à un second glyphe plein.
  */
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { size, useColors, type ColorName } from '../theme';
 
@@ -85,7 +85,7 @@ export type NomIcone =
   | 'instagram'
   | 'tiktok';
 
-const CHEMINS: Record<NomIcone, string> = {
+const CHEMINS: Record<Exclude<NomIcone, 'instagram'>, string> = {
   chevron: 'M9.5 5.5L16 12l-6.5 6.5',
   croix: 'M6 6l12 12M18 6L6 18',
   coche: 'M4.5 12.5l5 5L19.5 7',
@@ -132,14 +132,34 @@ const CHEMINS: Record<NomIcone, string> = {
   // Un cadre échancré et une flèche qui en sort. L'échancrure est ce qui fait
   // lire « sortir » plutôt que « agrandir ».
   sortie: 'M10 4.5H5.5v15h15V15M14 4.5h5.5V10M19 5L11 13',
-  // Le cadre arrondi, l'objectif, et le témoin. Le témoin est un arc de 0,6 de
-  // rayon : à 2 de trait il se remplit tout seul, ce qui est exactement ce
-  // qu'on veut d'un point dans un jeu sans remplissage.
-  instagram:
-    'M8.4 3h7.2a5.4 5.4 0 015.4 5.4v7.2a5.4 5.4 0 01-5.4 5.4H8.4A5.4 5.4 0 013 15.6V8.4A5.4 5.4 0 018.4 3zM12 7.8a4.2 4.2 0 110 8.4 4.2 4.2 0 010-8.4zM17.4 6.1a.6.6 0 110 1.2.6.6 0 010-1.2z',
+  // **Instagram n'est pas un chemin, et c'est pourquoi il n'est pas ici.**
+  // Il se dessine en trois éléments — voir `INSTAGRAM` plus bas. Ce qui vivait
+  // à cette clé était un tracé recomposé de mémoire : un cadre en arcs au lieu
+  // d'un rectangle arrondi, et un témoin en arc de 0,6 de rayon qui se
+  // remplissait par l'épaisseur du trait au lieu d'être plein. Rien à
+  // l'affichage ne signalait l'invention. `assets/primitives.json` existe
+  // précisément pour ça, et sa première règle est de copier le tracé sans le
+  // retaper.
   // La hampe, sa boucle, et le drapeau qui s'en détache.
   tiktok: 'M14.2 3v10.9a3.6 3.6 0 11-3-3.55M14.2 3.4c.5 2.3 2.1 3.9 4.6 4.2',
 };
+
+/**
+ * Instagram : trois éléments, pas un chemin unique.
+ *
+ * Copié tel quel de `design_handoff_bind/assets/primitives.json`. Le petit
+ * cercle est **rempli**, pas tracé — et son rayon passe à 1,15 à 16 points et
+ * moins, comme la primitive le note.
+ */
+function Instagram({ trait, taille, epaisseur }: { trait: string; taille: number; epaisseur: number }) {
+  return (
+    <>
+      <Rect x="3" y="3" width="18" height="18" rx="5.4" stroke={trait} strokeWidth={epaisseur} />
+      <Circle cx="12" cy="12" r="4.2" stroke={trait} strokeWidth={epaisseur} />
+      <Circle cx="17.4" cy="6.7" r={taille <= 16 ? 1.15 : 1.3} fill={trait} />
+    </>
+  );
+}
 
 export function Icone({
   nom,
@@ -183,6 +203,13 @@ export function Icone({
       // icône annoncée deux fois double la lecture d'écran sans rien ajouter.
       accessibilityElementsHidden
     >
+      {nom === 'instagram' ? (
+        <Instagram
+          trait={trait}
+          taille={taille}
+          epaisseur={(size.iconStroke * taille) / size.icon}
+        />
+      ) : (
       <Path
         d={CHEMINS[nom]}
         // Plein : le trait reste, de la même couleur. Sans lui, le glyphe
@@ -193,6 +220,7 @@ export function Icone({
         strokeLinecap="round"
         strokeLinejoin="round"
       />
+      )}
     </Svg>
   );
 }
