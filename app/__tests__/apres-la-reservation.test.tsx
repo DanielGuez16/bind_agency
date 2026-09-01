@@ -172,7 +172,19 @@ function serveur() {
       });
     }
     if (chemin.includes('/me/bookings')) {
-      return rendre({ items: [RESERVATION_EN_ATTENTE], compteurs: { awaiting_business: 1 } });
+      // **Le filtre est honoré, et c'est ce qui donne sa valeur au test.**
+      // Rendre la réservation quel que soit l'onglet demandé ferait un décor
+      // qu'une implémentation fautive produirait aussi bien : la ligne serait
+      // là sur « en cours » comme sur « à venir », et l'assertion passerait
+      // sans rien éprouver. Le vrai serveur filtre ; le montage aussi.
+      const demandes = new URL(chemin, 'https://api.test').searchParams.getAll('status');
+      const porte = demandes.includes(RESERVATION_EN_ATTENTE.status);
+      return rendre({
+        items: porte ? [RESERVATION_EN_ATTENTE] : [],
+        // Les compteurs portent sur tout l'historique, quel que soit l'onglet
+        // lu : ils ne suivent pas le filtre.
+        compteurs: { awaiting_business: 1 },
+      });
     }
     if (chemin.includes('/bookings') && options?.method === 'POST') {
       return rendre({ id: 'r1', status: 'held' });
@@ -235,4 +247,24 @@ it('atterrit sur la liste des réservations, pas sur le code', async () => {
   // c'est de là qu'on rouvrira le code le jour venu.
   await waitFor(() => expect(screen.getByTestId('ecran-historique')).toBeTruthy());
   expect(screen.queryByTestId('ecran-code')).toBeNull();
+
+  // **Et sur l'onglet qui la contient.** La liste s'ouvre sur « en cours » par
+  // défaut, où une réservation neuve n'est jamais : elle est en `held` ou
+  // `awaiting_business`. On atterrissait donc sur un onglet vide juste après
+  // le geste le plus engageant du parcours.
+  await waitFor(() => expect(screen.getByText('Gel nails')).toBeTruthy());
+  expect(screen.queryByTestId('onglet-vide')).toBeNull();
+
+  // L'onglet retenu se lit sur son état accessible, les deux formes : `aria-`
+  // sur le web, `accessibilityState` en natif. C'est ce que pose
+  // `etatAccessible`, et c'est la seule marque de sélection qui traverse.
+  const onglets = within(screen.getByTestId('onglets')).getAllByRole('tab');
+  const choisis = onglets.filter(
+    (onglet) =>
+      onglet.props['aria-selected'] === true ||
+      onglet.props.accessibilityState?.selected === true,
+  );
+  expect(choisis).toHaveLength(1);
+  // Le libellé porte le compteur — « Upcoming · 1 ».
+  expect(String(choisis[0].props.accessibilityLabel)).toContain(en.parcours.ongletAVenir);
 });
