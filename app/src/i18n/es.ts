@@ -521,6 +521,9 @@ export const es: Catalogue = {
     codeIndisponible: 'Ningún código de retiro ahora mismo',
     droitPerime:
       'Esta reserva ha caducado. La prestación no se recogió a tiempo, así que no hay código que mostrar. Vuelve a reservarla cuando quieras.',
+    codeRotation: 'Nuevo código en',
+    codeRotationAnnonce:
+      'Nuevo código en {{secondes}} segundos. El de abajo no cambia.',
     codeSecours: 'O dicta este',
     codeSecoursAide: 'Este es el código que hay que dictar si el escaneo falla.',
     preuveTitre: 'Envía tu comprobante',

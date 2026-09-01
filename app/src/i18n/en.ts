@@ -584,6 +584,9 @@ export const en = {
     codeIndisponible: 'No pickup code right now',
     droitPerime:
       'This booking has run out. The service was not taken in time, so there is no code to show. Book it again when you are ready.',
+    codeRotation: 'New code in',
+    codeRotationAnnonce:
+      'New code in {{secondes}} seconds. The one below stays the same.',
     codeSecours: 'Or read this out',
     codeSecoursAide: 'This is the code to read out if the scan fails.',
     preuveTitre: 'Send your proof',
