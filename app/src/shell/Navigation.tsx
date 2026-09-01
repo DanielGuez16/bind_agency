@@ -756,7 +756,15 @@ function ParcoursCommerce({ businessId }: { businessId: string }) {
 }
 
 /** L'annuaire, et l'abonnement qu'on atteint depuis son refus. */
-function PileDeLAnnuaire({ businessId }: { businessId: string }) {
+function PileDeLAnnuaire({
+  businessId,
+  onRetour,
+  retourVers,
+}: {
+  businessId: string;
+  onRetour?: () => void;
+  retourVers?: string;
+}) {
   return (
     <PileAnnuaire.Navigator screenOptions={OPTIONS_DE_PILE}>
       <PileAnnuaire.Screen name="Annuaire">
@@ -764,6 +772,8 @@ function PileDeLAnnuaire({ businessId }: { businessId: string }) {
           <AnnuaireScreen
             businessId={businessId}
             onVoirLAbonnement={() => navigation.navigate('Abonnement')}
+            onRetour={onRetour}
+            retourVers={retourVers}
           />
         )}
       </PileAnnuaire.Screen>
@@ -880,7 +890,13 @@ function OngletsDuCommerceChoisi() {
             : ongletHorsBarre(t('onglets.reporting'), 'rapport')
         }
       >
-        {() => <ReportingScreen businessId={businessId} />}
+        {({ navigation }) => (
+          <ReportingScreen
+            businessId={businessId}
+            onRetour={large ? undefined : () => navigation.navigate('menu' as never)}
+            retourVers={large ? undefined : t('onglets.menu')}
+          />
+        )}
       </Onglets.Screen>
       {/* **L'annuaire est ce que l'abonnement achète**, donc il est au premier
           niveau : le ranger derrière un autre écran reviendrait à cacher la
@@ -896,7 +912,13 @@ function OngletsDuCommerceChoisi() {
             : ongletHorsBarre(t('onglets.annuaire'), 'personne')
         }
       >
-        {() => <PileDeLAnnuaire businessId={businessId} />}
+        {({ navigation }) => (
+          <PileDeLAnnuaire
+            businessId={businessId}
+            onRetour={large ? undefined : () => navigation.navigate('menu' as never)}
+            retourVers={large ? undefined : t('onglets.menu')}
+          />
+        )}
       </Onglets.Screen>
       {/* **Deux entrées de rang égal, et plus une porte qui en cache deux.**
           La découpe est par objet — ce qui décrit l'endroit, ce qui décrit ce

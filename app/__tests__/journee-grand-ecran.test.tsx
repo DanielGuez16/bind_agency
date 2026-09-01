@@ -200,6 +200,14 @@ const DANS_UNE_HEURE = new Date(Date.now() + 3_600_000).toISOString();
 
 const JOURNEE_COMPLETE = {
   ...JOURNEE,
+  // **Le jour suit la demande qu'on pose.** Elle est à `DANS_UNE_HEURE`,
+  // c'est-à-dire aujourd'hui, pendant que `JOURNEE` annonce le 10 août. Le
+  // décor n'a jamais été cohérent ; rien ne le disait tant que l'écran montrait
+  // la file entière quel que soit le jour.
+  jour: new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/New_York',
+    dateStyle: 'short',
+  }).format(new Date(DANS_UNE_HEURE)),
   a_trancher: [
     {
       ...JOURNEE.items[0],

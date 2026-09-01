@@ -203,8 +203,16 @@ function demainMidi(): string {
 
 describe('la carte de demande porte les trois faits qui décident', () => {
   it('la prestation, le moment, la personne, et la limite', async () => {
+    const demain = demainMidi();
     await monter({
       ...JOURNEE,
+      // **La journée montrée est celle du créneau posé.** Le cas veut un
+      // rendez-vous de demain, pour éprouver le repère relatif ; il faut donc
+      // ouvrir demain. Le décor annonçait le 18 août et posait demain.
+      jour: new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/New_York',
+        dateStyle: 'short',
+      }).format(new Date(demain)),
       a_trancher: [
         RESERVATION('d-1', 'awaiting_business', {
           approval_expires_at: '2026-08-20T22:00:00Z',
@@ -212,7 +220,7 @@ describe('la carte de demande porte les trois faits qui décident', () => {
           // à dix jours de l'exécution : le repère y rend la date brute, ce qui
           // est le bon comportement — au-delà d'une semaine il n'y a pas de
           // repère humain — mais éprouve alors le repli et non la règle.
-          starts_at: demainMidi(),
+          starts_at: demain,
         }),
       ],
     });

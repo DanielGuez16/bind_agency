@@ -80,9 +80,14 @@ const DEJA_SU = 0;
 
 export function AnnuaireScreen({
   businessId,
+  onRetour,
+  retourVers,
   onVoirLAbonnement,
 }: {
   businessId: string;
+  onRetour?: () => void;
+  /** Le nom de la destination du retour. Voir `BarreDeTitre`. */
+  retourVers?: string;
   /**
    * Le chemin vers l'abonnement, depuis le mur qui le réclame.
    *
@@ -145,7 +150,9 @@ export function AnnuaireScreen({
           vuA: DEJA_SU,
           recharger: requete.recharger,
         }}
-        titre={t('annuaire.titre')}
+        onRetour={onRetour}
+      retourVers={retourVers}
+      titre={t('annuaire.titre')}
         nature="creator"
         testID="ecran-annuaire"
       >

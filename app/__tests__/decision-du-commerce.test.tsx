@@ -118,6 +118,36 @@ const SANS_CRENEAU = {
 };
 
 /**
+ * Le jour que le serveur rendra, **calculé et non figé**.
+ *
+ * Le décor posait `jour: '2026-08-08'` pendant que ses réservations sont
+ * relatives à maintenant : la journée annoncée n'a jamais correspondu à ce
+ * qu'elle portait. Rien ne le disait tant que l'écran montrait la file entière
+ * quel que soit le jour ; depuis que la liste suit le jour qu'on lit, un décor
+ * incohérent se voit — et c'est le décor qui avait tort.
+ */
+const enNewYork = (quand: Date) =>
+  new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/New_York',
+    dateStyle: 'short',
+  }).format(quand);
+
+const JOUR_DU_DECOR = enNewYork(new Date());
+
+/**
+ * Le jour que le serveur annonce **suit la file qu'il rend**.
+ *
+ * Un cas pose une demande dont le créneau est la semaine prochaine, pour
+ * éprouver que c'est l'échéance de réponse et non le créneau qui ferme la
+ * décision. Il faut donc que la journée montrée soit celle de ce créneau,
+ * sinon le décor demande d'afficher une carte sur un jour qui ne la porte pas.
+ */
+const jourDeLaFile = () => {
+  const premier = fileDuJour.find((r) => r.starts_at);
+  return premier?.starts_at ? enNewYork(new Date(premier.starts_at)) : JOUR_DU_DECOR;
+};
+
+/**
  * La file que le serveur rendra au prochain montage.
  *
  * Une variable plutôt qu'un filtre figé : certains cas ont besoin d'une demande
@@ -148,7 +178,7 @@ function client() {
         ok: true,
         status: 200,
         json: async () => ({
-          jour: '2026-08-08',
+          jour: jourDeLaFile(),
           timezone: 'America/New_York',
           debut: '2026-08-08T12:00:00Z',
           fin: '2026-08-09T00:00:00Z',
@@ -374,7 +404,7 @@ it('donne un vrai état vide à une journée sans rendez-vous', async () => {
         ok: true,
         status: 200,
         json: async () => ({
-          jour: '2026-08-09',
+          jour: jourDeLaFile(),
           timezone: 'America/New_York',
           debut: '',
           fin: '',
@@ -416,7 +446,7 @@ it("dit jusqu'à quand la décision reste possible", async () => {
   // était rendue plus grosse que l'échéance qu'elle commente. Le test lisait
   // la seconde ; il lit maintenant la fondue, et vérifie qu'elle porte bien
   // les deux faits — le quand, et ce qu'il arrive après.
-  const ligne = screen.getByTestId('echeance-decision-attente-1');
+  const ligne = screen.getByTestId('limite-attente-1');
   expect(ligne).toBeTruthy();
   const dite = String(ligne.props.children);
   expect(dite).toContain('or the slot reopens');

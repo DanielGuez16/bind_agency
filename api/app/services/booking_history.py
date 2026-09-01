@@ -788,11 +788,17 @@ async def decisions_par_jour(
     décisions. Une demande dont le créneau est vendredi se compte sur vendredi,
     et le total de la bande n'est donc pas la longueur de la file.
 
-    **Les demandes sans créneau daté ne sont pas comptées.** Les droits à
-    fenêtre de validité ne tombent aucun jour : ils n'ont pas de barre. Ils ne
-    sont pas perdus pour autant — la file d'arbitrage de la journée les porte,
-    toutes dates confondues. Un champ qui les compterait à part était servi ici
-    et lu nulle part, ce que le dépôt appelle un défaut plutôt qu'une avance.
+    **Les demandes sans créneau daté se comptent le jour même, et seulement
+    là.** Elles ne tombent aucun jour — un droit à fenêtre de validité se
+    présente n'importe quand — donc aucune date ne les réclame. Les répéter sur
+    les sept barres ferait sept fois le même rappel ; les taire les rendrait
+    introuvables depuis que la liste du jour suit le jour qu'on lit. Le jour
+    même est le seul où le geste est immédiat, et c'est la vue par défaut.
+
+    L'écran partage exactement cette règle — `decisionsDuJour` — de sorte que la
+    barre et la liste ne puissent pas se contredire. C'est le défaut qu'on
+    corrige : la barre annonçait deux décisions mardi, et mardi montrait la file
+    entière.
 
     **Le découpage est dans le fuseau du commerce.** Un salon de Miami dont une
     demande tombe à 21 h le lundi la verrait comptée mardi si l'on découpait en
@@ -838,12 +844,24 @@ async def decisions_par_jour(
         )
     }
 
+    # Le jour même chez le commerce : c'est la seule barre qui porte les
+    # demandes sans créneau.
+    ce_jour = aujourd_hui(business)
+    sans_date = await session.scalar(
+        sa.select(sa.func.count()).where(
+            Booking.business_id == business.id,
+            Booking.status == BookingStatus.AWAITING_BUSINESS,
+            Booking.starts_at.is_(None),
+        )
+    )
+
     return BandeDeDecisions(
         timezone=business.timezone,
         jours=[
             JourDeDecisions(
                 jour=jour,
-                decisions=int(comptes.get(jour, 0)),
+                decisions=int(comptes.get(jour, 0))
+                + (int(sans_date or 0) if jour == ce_jour else 0),
                 ouvert=bool(availability.fenetres_du_jour(jour, regles, exceptions.get(jour))),
             )
             for jour in fenetre
