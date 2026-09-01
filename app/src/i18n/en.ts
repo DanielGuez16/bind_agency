@@ -1305,7 +1305,7 @@ export const en = {
     catalogueTitre: 'Catalogue',
     catalogueResume: '{{n}} services · {{visibles}} open to creators',
     ajouterUnePrestation: 'Add a service',
-    importerUneCarte: 'Import my whole menu at once',
+    importerUneCarte: 'Import all my services at once',
     importCartePhoto: 'A photo',
     importCarteFichier: 'A file',
     importCarteEnCours: 'Sending your menu',

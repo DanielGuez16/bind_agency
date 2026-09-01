@@ -201,15 +201,24 @@ export function CatalogueScreen({
                   quart d'heure à qui a déjà sa carte, ce qui est beaucoup, et
                   ne doit rien coûter à qui ne l'a pas.
 
-                  **Et le libellé dit la carte entière, pas la source.** « Import
+                  **Et le libellé dit le nombre, jamais le métier.** « Import
                   from a photo or PDF » se lisait comme un doublon du champ photo
                   du formulaire : les deux parlaient d'une photo, sans dire de
                   quoi. Ce ne sont pourtant pas les mêmes objets — la photo du
                   formulaire est celle d'**une** prestation et devient sa
-                  vignette ; celle-ci est la photo de **la carte**, lue par le
-                  modèle, et elle produit une liste de prestations à relire. Ce
-                  qui distingue les deux gestes est le nombre, pas le format du
-                  fichier, et c'est donc le nombre que le bouton annonce. */}
+                  vignette ; celle-ci est la photo de **la liste entière**, lue
+                  par le modèle, et elle produit des prestations à relire. Ce qui
+                  distingue les deux gestes est le nombre, pas le format du
+                  fichier.
+
+                  **« Menu » a été essayé et retiré le jour même.** Le mot dit le
+                  nombre, ce qui était le progrès cherché, mais il dit aussi la
+                  restauration : un coiffeur y lisait une fonction qui n'était
+                  pas pour lui. Or c'est exactement l'inverse — la route a été
+                  écrite pour la fondatrice photographiant sa carte de salon au
+                  mur, le lancement est en beauté, et le jeu de démonstration
+                  n'a pas un seul restaurant. Le vocabulaire du produit est
+                  « prestation » partout ailleurs ; il l'est ici aussi. */}
               {importDeCarte.etat === 'choix' ? (
                 <View style={{ flexDirection: 'row', gap: 8 }} testID="source-de-la-carte">
                   <View style={{ flex: 1 }}>
