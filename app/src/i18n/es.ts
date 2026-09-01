@@ -1170,7 +1170,7 @@ export const es: Catalogue = {
     catalogueTitre: 'Catálogo',
     catalogueResume: '{{n}} servicios · {{visibles}} visibles para las creadoras',
     ajouterUnePrestation: 'Añadir un servicio',
-    importerUneCarte: 'Importar toda mi carta de una vez',
+    importerUneCarte: 'Importar todos mis servicios de una vez',
     importCartePhoto: 'Una foto',
     importCarteFichier: 'Un archivo',
     importCarteEnCours: 'Enviando tu carta',

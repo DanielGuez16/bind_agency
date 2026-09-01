@@ -144,11 +144,25 @@ export function CatalogueScreen({
       squelette={<SkeletonLignes combien={6} testID="squelette-catalogue" />}
       testID="ecran-catalogue"
       vide={
-        <CatalogueVide
-          businessId={businessId}
-          onPublie={requete.recharger}
-          paliers={requete.etat === 'pret' ? requete.donnees.paliers : []}
-        />
+        importDeCarte.aRelire ? (
+          <MenuReviewScreen
+            businessId={businessId}
+            importId={importDeCarte.aRelire.importId}
+            lignesExtraites={importDeCarte.aRelire.lignes}
+            onRetour={importDeCarte.fermer}
+            onValide={() => {
+              importDeCarte.fermer();
+              requete.recharger();
+            }}
+          />
+        ) : (
+          <CatalogueVide
+            businessId={businessId}
+            onPublie={requete.recharger}
+            paliers={requete.etat === 'pret' ? requete.donnees.paliers : []}
+            importDeCarte={importDeCarte}
+          />
+        )
       }
     >
       {(composition) =>
@@ -189,74 +203,11 @@ export function CatalogueScreen({
               onAnnuler={() => setCompose(false)}
             />
           ) : (
-            <View style={{ gap: 8 }}>
-              <Button
-                label={t('composition.ajouterUnePrestation')}
-                onPress={() => setCompose(true)}
-                testID="ajouter-une-prestation"
-              />
-              {/* **Une option, jamais un remplacement.** La composition à la
-                  main reste le chemin sûr : elle marche sans réseau de salon,
-                  sans carte imprimée, et sans modèle. L'import fait gagner un
-                  quart d'heure à qui a déjà sa carte, ce qui est beaucoup, et
-                  ne doit rien coûter à qui ne l'a pas.
-
-                  **Et le libellé dit la carte entière, pas la source.** « Import
-                  from a photo or PDF » se lisait comme un doublon du champ photo
-                  du formulaire : les deux parlaient d'une photo, sans dire de
-                  quoi. Ce ne sont pourtant pas les mêmes objets — la photo du
-                  formulaire est celle d'**une** prestation et devient sa
-                  vignette ; celle-ci est la photo de **la carte**, lue par le
-                  modèle, et elle produit une liste de prestations à relire. Ce
-                  qui distingue les deux gestes est le nombre, pas le format du
-                  fichier, et c'est donc le nombre que le bouton annonce. */}
-              {importDeCarte.etat === 'choix' ? (
-                <View style={{ flexDirection: 'row', gap: 8 }} testID="source-de-la-carte">
-                  <View style={{ flex: 1 }}>
-                    <Button
-                      label={t('composition.importCartePhoto')}
-                      variant="secondary"
-                      onPress={importDeCarte.depuisLaPellicule}
-                      testID="carte-depuis-la-pellicule"
-                    />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Button
-                      label={t('composition.importCarteFichier')}
-                      variant="secondary"
-                      onPress={importDeCarte.depuisLesFichiers}
-                      testID="carte-depuis-les-fichiers"
-                    />
-                  </View>
-                </View>
-              ) : (
-                <Button
-                  label={t('composition.importerUneCarte')}
-                  variant="secondary"
-                  onPress={importDeCarte.choisir}
-                  disabled={importDeCarte.etat !== 'repos'}
-                  testID="importer-une-carte"
-                />
-              )}
-              {importDeCarte.etat === 'envoi' || importDeCarte.etat === 'lecture' ? (
-                <StatusMessage
-                  level="neutral"
-                  body={t(
-                    importDeCarte.etat === 'envoi'
-                      ? 'composition.importCarteEnCours'
-                      : 'composition.importCarteLecture',
-                  )}
-                  testID="import-carte-en-cours"
-                />
-              ) : null}
-              {importDeCarte.echec ? (
-                <StatusMessage
-                  level="danger"
-                  body={importDeCarte.echec}
-                  testID="import-carte-echec"
-                />
-              ) : null}
-            </View>
+            <Button
+              label={t('composition.ajouterUnePrestation')}
+              onPress={() => setCompose(true)}
+              testID="ajouter-une-prestation"
+            />
           )}
 
           <SegmentedTabs
@@ -1313,10 +1264,12 @@ function CatalogueVide({
   businessId,
   paliers,
   onPublie,
+  importDeCarte,
 }: {
   businessId: string;
   paliers: PalierOffrable[];
   onPublie: () => void;
+  importDeCarte: ReturnType<typeof useImportDeCarte>;
 }) {
   const { t } = useI18n();
   const [compose, setCompose] = useState(false);
@@ -1333,12 +1286,83 @@ function CatalogueVide({
   }
 
   return (
-    <EmptyState
-      title={t('composition.videTitre')}
-      body={t('composition.videCorps')}
-      actions={[{ label: t('composition.videAction'), onPress: () => setCompose(true) }]}
-      testID="catalogue-vide"
-    />
+    <View style={{ gap: 12 }}>
+      <EmptyState
+        title={t('composition.videTitre')}
+        body={t('composition.videCorps')}
+        actions={[{ label: t('composition.videAction'), onPress: () => setCompose(true) }]}
+        testID="catalogue-vide"
+      />
+      {/* **L'import vit ici, et nulle part ailleurs.** Il était posé sous le
+          bouton de composition, sur la liste déjà pleine : un second bouton
+          dont un salon ne comprenait pas la fonction, à l'endroit où il vient
+          ajouter **une** prestation. Un coiffeur y lisait quelque chose qui
+          n'était pas pour lui — le mot « menu » n'a été que la moitié du
+          défaut, l'autre moitié était l'endroit.
+
+          Sur l'écran vide, la fonction n'a plus besoin d'être expliquée : c'est
+          le moment où l'on cherche par où commencer, et « tout d'un coup »
+          répond exactement à la question qu'on se pose devant vingt prestations
+          à ressaisir. Le gain se comprend sans notice, ce qu'aucun libellé
+          n'obtenait sur la liste pleine. */}
+      <ImportDeLaCarte importDeCarte={importDeCarte} />
+    </View>
+  );
+}
+
+/** Le geste d'import, et ce qu'il dit pendant qu'il travaille. */
+function ImportDeLaCarte({
+  importDeCarte,
+}: {
+  importDeCarte: ReturnType<typeof useImportDeCarte>;
+}) {
+  const { t } = useI18n();
+
+  return (
+    <View style={{ gap: 8 }} testID="import-de-la-carte">
+      {importDeCarte.etat === 'choix' ? (
+        <View style={{ flexDirection: 'row', gap: 8 }} testID="source-de-la-carte">
+          <View style={{ flex: 1 }}>
+            <Button
+              label={t('composition.importCartePhoto')}
+              variant="secondary"
+              onPress={importDeCarte.depuisLaPellicule}
+              testID="carte-depuis-la-pellicule"
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Button
+              label={t('composition.importCarteFichier')}
+              variant="secondary"
+              onPress={importDeCarte.depuisLesFichiers}
+              testID="carte-depuis-les-fichiers"
+            />
+          </View>
+        </View>
+      ) : (
+        <Button
+          label={t('composition.importerUneCarte')}
+          variant="secondary"
+          onPress={importDeCarte.choisir}
+          disabled={importDeCarte.etat !== 'repos'}
+          testID="importer-une-carte"
+        />
+      )}
+      {importDeCarte.etat === 'envoi' || importDeCarte.etat === 'lecture' ? (
+        <StatusMessage
+          level="neutral"
+          body={t(
+            importDeCarte.etat === 'envoi'
+              ? 'composition.importCarteEnCours'
+              : 'composition.importCarteLecture',
+          )}
+          testID="import-carte-en-cours"
+        />
+      ) : null}
+      {importDeCarte.echec ? (
+        <StatusMessage level="danger" body={importDeCarte.echec} testID="import-carte-echec" />
+      ) : null}
+    </View>
   );
 }
 

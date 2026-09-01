@@ -62,7 +62,15 @@ const LUES = [
   { name: 'Ligne floue', price_cents: 100, description: null, confidence: '0.3' },
 ];
 
-async function monter({ lignes = LUES }: { lignes?: typeof LUES } = {}) {
+async function monter({
+  lignes = LUES,
+  // **Vide par défaut, et c'est là que l'import vit.** Il était sous le bouton
+  // de composition, sur la liste déjà pleine : un second bouton dont un salon
+  // ne comprenait pas la fonction, à l'endroit où il vient ajouter **une**
+  // prestation. Sur l'écran vide, « tout d'un coup » répond à la question qu'on
+  // se pose devant vingt prestations à ressaisir.
+  deja = [] as unknown[],
+}: { lignes?: typeof LUES; deja?: unknown[] } = {}) {
   const envois: string[] = [];
   const api = new ApiClient({
     baseUrl: 'https://api.test',
@@ -88,12 +96,8 @@ async function monter({ lignes = LUES }: { lignes?: typeof LUES } = {}) {
       if (chemin.endsWith('/validate')) {
         return { ok: true, status: 200, json: async () => ({ items_crees: 2 }) } as Response;
       }
-      // **Une prestation, et c'est ce qui met l'écran dans son état normal.**
-      // Un catalogue vide rend l'état vide, qui ne porte ni le bouton de
-      // composition ni celui d'import : le test s'y serait éprouvé sur un écran
-      // que le salon ne voit qu'une fois.
       if (chemin.includes('/catalog-items')) {
-        return { ok: true, status: 200, json: async () => [DEJA] } as Response;
+        return { ok: true, status: 200, json: async () => deja } as Response;
       }
       return { ok: true, status: 200, json: async () => [] } as Response;
     }) as unknown as typeof fetch,
@@ -112,17 +116,29 @@ async function monter({ lignes = LUES }: { lignes?: typeof LUES } = {}) {
 }
 
 describe('importer une carte depuis les prestations', () => {
-  it('offre l’import à côté de la composition à la main, jamais à sa place', async () => {
+  it('vit sur l’écran vide, à côté de la composition à la main', async () => {
     // **Une option, et l'ordre le dit.** La composition à la main marche sans
-    // réseau, sans carte imprimée et sans modèle : elle reste le premier
-    // bouton. Un import qui la remplacerait ferait dépendre le premier
+    // réseau, sans carte imprimée et sans modèle : elle reste la première
+    // action. Un import qui la remplacerait ferait dépendre le premier
     // catalogue d'un salon de la lisibilité de sa carte.
     await monter();
-    await waitFor(() => expect(screen.getByTestId('ajouter-une-prestation')).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId('catalogue-vide')).toBeTruthy());
 
     expect(screen.getByTestId('importer-une-carte')).toHaveTextContent(
       en.composition.importerUneCarte,
     );
+  });
+
+  it('et disparaît dès que le catalogue en porte une', async () => {
+    // **Le cas qui fait diverger les deux implémentations.** Laisser le bouton
+    // partout passerait le test du dessus tout aussi bien ; c'est ici qu'un
+    // coiffeur venu ajouter *une* prestation retrouvait un second bouton dont
+    // il ne comprenait pas la fonction.
+    await monter({ deja: [DEJA] });
+    await waitFor(() => expect(screen.getByTestId('ajouter-une-prestation')).toBeTruthy());
+
+    expect(screen.queryByTestId('importer-une-carte')).toBeNull();
+    expect(screen.queryByTestId('import-de-la-carte')).toBeNull();
   });
 
   it('dépose, fait lire, et ouvre la relecture', async () => {
@@ -200,6 +216,6 @@ describe('importer une carte depuis les prestations', () => {
     await waitFor(() => expect(screen.getByTestId('carte-illisible')).toBeTruthy());
 
     await fireEvent.press(screen.getByTestId('quitter-la-relecture'));
-    await waitFor(() => expect(screen.getByTestId('ajouter-une-prestation')).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId('catalogue-vide')).toBeTruthy());
   });
 });
