@@ -276,11 +276,8 @@ export function CodeScreen({
               **vivant** — et le décompte le dit sans ressembler à une saisie. */}
           <Countdown
             secondes={restant}
-            // **`rotation_seconds` était servi et lu nulle part.** Sans lui, le
-            // seuil d'urgence était un nombre de secondes fixe : le serveur
-            // pouvait changer de cadence et le compte à rebours virer au rouge
-            // en permanence, ou jamais.
-            rotationSecondes={code.rotation_seconds}
+            libelle={t('parcours.codeRotation')}
+            annonce={t('parcours.codeRotationAnnonce', { secondes: restant })}
             testID="compte-a-rebours"
           />
           {/* `code.payload` et non une composition locale : l'identifiant est

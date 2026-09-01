@@ -26,7 +26,7 @@ import {
 } from '@react-navigation/native';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { BottomTabBar, createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import type { FichePublique, OffreDeLaFiche, PalierAccessible } from '../api';
@@ -66,6 +66,7 @@ import { RedemptionScreen } from '../screens/RedemptionScreen';
 import { ReglagesScreen } from '../screens/ReglagesScreen';
 import { ReportingScreen } from '../screens/ReportingScreen';
 import { BarreLaterale, type ContexteDeBarre } from './BarreLaterale';
+import { indexAllume } from './ongletAllume';
 import { useGabarit } from './gabarit';
 import { usePosition } from './usePosition';
 import { CommerceProvider, useMonCommerce } from './useMonCommerce';
@@ -112,7 +113,11 @@ export type PileCreateurParams = {
  * confirmation bascule d'onglet.
  */
 export type PileReservationsParams = {
-  Historique: undefined;
+  /**
+   * `onglet` : la clé de l'onglet sur lequel s'ouvrir, quand on arrive
+   * d'ailleurs. Absente, l'écran garde son défaut.
+   */
+  Historique: { onglet?: string } | undefined;
   Code: { bookingId: string };
   Preuve: { collaborationId: string };
 };
@@ -196,10 +201,32 @@ const Onglets = createBottomTabNavigator();
  */
 function useBarreLaterale(intitule?: string | null, salon?: ContexteDeBarre) {
   const { large } = useGabarit();
-  if (!large) return undefined;
+  if (!large) return BarreDuBas;
   return (props: BottomTabBarProps) => (
     <BarreLaterale {...props} intitule={intitule} {...salon} />
   );
+}
+
+/**
+ * La barre du bas de la bibliothèque, avec l'onglet allumé par son groupeur.
+ *
+ * **C'est ici que le défaut se voyait.** Les écrans rangés sous « More » sont
+ * des onglets masqués : la bibliothèque allume par index, l'index focalisé
+ * désignait un onglet qu'elle ne dessine pas, et la barre n'allumait donc plus
+ * rien. Sur « Your place », les quatre pastilles étaient éteintes.
+ *
+ * **Un état réécrit plutôt qu'une barre réécrite.** Refaire le rendu pour
+ * changer une comparaison aurait recopié la disposition, les pastilles, les
+ * marges sûres et l'accessibilité — quatre choses justes qu'on n'a aucune
+ * raison de reprendre. On ne change que ce qui décide.
+ */
+function BarreDuBas(props: BottomTabBarProps) {
+  const allume = indexAllume(
+    props.state.routes,
+    props.state.index,
+    (route) => props.descriptors[route.key]?.options,
+  );
+  return <BottomTabBar {...props} state={{ ...props.state, index: allume }} />;
 }
 
 function useOptionsDOnglets(intitule?: string | null) {
@@ -499,8 +526,10 @@ export function PileDesReservations() {
   return (
     <PileReservations.Navigator screenOptions={OPTIONS_DE_PILE}>
       <PileReservations.Screen name="Historique">
-        {({ navigation }) => (
+        {({ navigation, route }) => (
           <HistoriqueScreen
+            ongletDemande={route.params?.onglet}
+            onOngletApplique={() => navigation.setParams({ onglet: undefined })}
             // **Le code redevient atteignable.** Il ne l'était
             // qu'immédiatement après la confirmation : fermer l'application le
             // faisait perdre jusqu'au rendez-vous, alors que c'est la seule
@@ -647,7 +676,21 @@ function OngletsCreateur({
             // La liste est la bonne arrivée : elle confirme que la place est
             // prise, elle porte la date, et c'est de là qu'on rouvre le code le
             // jour venu.
-            onReserve={() => navigation.navigate('reservations', { screen: 'Historique' })}
+            //
+            // **Et sur l'onglet « à venir ».** La liste s'ouvre sur « en cours »
+            // par défaut — l'ordre des onglets est celui de ce qu'on doit
+            // faire — mais une réservation qu'on vient de prendre est en
+            // `held` ou `awaiting_business`, jamais en `consumed`. On
+            // atterrissait donc sur un onglet qui ne contenait pas ce qu'on
+            // venait de faire, et souvent vide : pour un créateur qui réserve
+            // sa première prestation, l'écran de confirmation était un état
+            // vide.
+            onReserve={() =>
+              navigation.navigate('reservations', {
+                screen: 'Historique',
+                params: { onglet: 'a-venir' },
+              })
+            }
           />
         )}
       </Onglets.Screen>

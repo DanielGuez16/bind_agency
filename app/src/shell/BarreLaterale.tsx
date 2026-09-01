@@ -55,6 +55,7 @@ import { useI18n } from '../i18n';
 import { breakpoint, radius, spacing, useColors, useTheme } from '../theme';
 import { useRepli } from './preferenceDeRepli';
 import { SelecteurDeSalon, type SalonAChoisir } from './SelecteurDeSalon';
+import { indexAllume } from './ongletAllume';
 import { etatAccessible } from '../components/etatAccessible';
 
 /** La hauteur d'une ligne de navigation. L'administration est plus dense. */
@@ -107,6 +108,7 @@ export function BarreLaterale({
    * déclencherait, ce qui n'est pas la même chose et se cumule.
    */
   const surLaCaisse = state.routes[state.index]?.name === 'caisse';
+  const allume = indexAllume(state.routes, state.index, (route) => descriptors[route.key]?.options);
   const choisissable = salons.length > 1 && Boolean(onChoisir) && !surLaCaisse;
   /**
    * La ligne dont l'étiquette est visible, avec de quoi la placer.
@@ -249,7 +251,11 @@ export function BarreLaterale({
       >
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];
-          const actif = state.index === index;
+          // **Allumé par le groupeur, pas par la seule route focalisée.** La
+          // barre latérale montre tout aujourd'hui, donc les deux coïncident ;
+          // la règle est ici quand même pour que l'ajout d'un écran masqué ne
+          // l'éteigne pas en silence, comme cela s'est produit en bas.
+          const actif = allume === index;
           const libelle = options.title ?? route.name;
 
           return (

@@ -738,6 +738,21 @@ export type ContrepartieBreve = {
    */
   max_attempts: number;
   needs_human_review: boolean;
+  /**
+   * La publication elle-même. **Nuls tant que rien n'a été soumis.**
+   *
+   * Sans eux, « mes publications » illustrait chaque ligne avec la photo du
+   * service au catalogue du salon — l'image d'autrui à la place de la sienne.
+   */
+  proof_id: string | null;
+  post_url: string | null;
+  /**
+   * Vrai quand un objet est archivé. Il distingue « publié sans image » de
+   * « pas encore publié » : l'écran ne demande un droit de lecture que dans le
+   * premier cas, et une demande sur un dossier sans objet rendrait un 404 qui
+   * s'afficherait comme une panne.
+   */
+  post_a_une_image: boolean;
 };
 
 export type ReservationDuCreateur = {

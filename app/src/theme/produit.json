@@ -90,8 +90,6 @@
     "fg": "#FFFFFF",
     "bg": "#000000",
     "contrast": "21:1",
-    "countdownUrgentPart": 0.34,
-    "$countdownUrgentPart": "Une part de la cadence, et non un nombre de secondes. Dix secondes sur trente donnaient 0,33 : la valeur retenue reproduit exactement le comportement d'aujourd'hui. Le seuil absolu se retournait contre lui-même dès que le serveur changeait de cadence — à quinze secondes de rotation, le compte à rebours aurait été rouge les deux tiers du temps, et un signal d'urgence permanent cesse d'être un signal.",
     "$branches": "BRANCHÉS le 2026-08-24. `shell/presentationAuComptoir.ts` tient l'écran éveillé et le met au maximum quand l'écran de code prend le focus, et **rend la luminosité d'avant** en le perdant — la moitié qu'on oublie, et dont l'absence laisse un téléphone à fond pour le reste de la journée. Chaque appel est enveloppé : c'est le seul écran dont la panne se voit devant quelqu'un, et un code lisible sur un écran qui s'éteint vaut mieux qu'une exception.",
     "forceMaxBrightness": true,
     "keepAwake": true,

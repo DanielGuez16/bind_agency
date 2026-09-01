@@ -207,6 +207,7 @@ export const es: Catalogue = {
     sansPseudonyme: 'Tu perfil',
     abonnes: '{{n}} seguidores',
     mesPublications: 'Mis publicaciones',
+    publicationOuvrir: 'Abrir la publicación de {{prestation}}',
     favoris: 'Favoritos',
     monAudience: 'Mi audiencia',
     publicationsVideTitre: 'Todavía no hay publicaciones',
@@ -376,8 +377,8 @@ export const es: Catalogue = {
     murLePlusPres: 'Lo más cerca de ti',
     murToutVoir: 'Ver los {{count}}',
     murEncoreIci: '+{{count}} más aquí',
-    carteServicesOuvertsAu: '{{count}} servicios abiertos para ti en {{quartier}}',
     carteServicesOuverts: '{{count}} servicios abiertos para ti',
+    carteServiceOuvertUn: 'Un servicio abierto para ti',
     carteEtEncore: 'y {{count}} más dentro',
     rangeeAilleurs: 'En otros barrios',
     rangeeSuite: '{{count}} más, un poco más lejos.',
@@ -520,6 +521,9 @@ export const es: Catalogue = {
     codeIndisponible: 'Ningún código de retiro ahora mismo',
     droitPerime:
       'Esta reserva ha caducado. La prestación no se recogió a tiempo, así que no hay código que mostrar. Vuelve a reservarla cuando quieras.',
+    codeRotation: 'Nuevo código en',
+    codeRotationAnnonce:
+      'Nuevo código en {{secondes}} segundos. El de abajo no cambia.',
     codeSecours: 'O dicta este',
     codeSecoursAide: 'Este es el código que hay que dictar si el escaneo falla.',
     preuveTitre: 'Envía tu comprobante',

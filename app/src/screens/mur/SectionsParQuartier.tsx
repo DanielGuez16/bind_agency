@@ -36,8 +36,12 @@ import {
   type ItemDuFil,
 } from '../../api';
 import { CASE_DU_BADGE, Texte } from '../../components';
-import { CarteDeSalon, type PrestationDeLaCarte } from './CarteDeSalon';
-import { CarteDuFil, LARGEUR_DE_LA_CARTE, PHOTO_DE_LA_CARTE } from './CarteDuFil';
+import {
+  CarteDeSalon,
+  LARGEUR_DE_LA_CARTE,
+  PHOTO_DE_LA_CARTE,
+  type PrestationDeLaCarte,
+} from './CarteDeSalon';
 import { formatNumber } from '../../format';
 import { useI18n } from '../../i18n';
 import { radius, useColors } from '../../theme';

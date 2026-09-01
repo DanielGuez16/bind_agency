@@ -37,38 +37,27 @@ import { useMouvementReduit } from '../components/Mouvement';
 import { radius, useColors } from '../theme';
 
 /**
- * Ce que l'ouverture dure, et **elle est tenue à chaque lancement**.
+ * Le plafond de l'écran, repos compris. **Un plafond, plus un plancher.**
  *
- * **C'était un plafond, c'est maintenant un plancher**, et le renversement est
- * délibéré. La règle d'avant — « si l'application est prête à 300 ms, l'écran
- * part à 300 ms » — était juste sur le papier et fausse à l'usage : la session
- * se rétablit en quelques dizaines de millisecondes, si bien que la marque
- * n'était jamais vue. Le point tombait sur un écran déjà remplacé. Une entrée
- * qui ne joue qu'en cas de lenteur n'est pas une entrée, c'est un symptôme.
+ * **Ce qui se perçoit est le mouvement, jamais le repos**, et c'est la cause
+ * que Design a fini par trouver. Un écran où plus rien ne bouge n'est pas perçu
+ * comme *durant*, il est perçu comme *fini* : la mémoire estime une séquence à
+ * sa densité d'événements, pas à son temps d'horloge. 760 ms de mouvement
+ * suivis de 1 240 d'immobilité se souvenaient comme 760, et le repos ajouté se
+ * lisait comme une attente.
  *
- * **C'est le seul nombre à toucher pour régler l'ouverture.** Les quatre temps
- * ci-dessous s'y rapportent et le plafond se calcule dessus : le monter suffit
- * à allonger l'entrée sans rien décaler d'autre. Les deux allongements déjà
- * faits sont passés par lui — 560, puis 760, puis 1800.
+ * **J'avais donc allongé la seule chose qui ne se voit pas.** Deux fois : en
+ * étirant les temps du mouvement au-delà de leur borne, puis en gonflant le
+ * repos. Le mouvement est réétalé à sa place — l'entrée des lettres ralentie de
+ * moitié, la chute portée à 660 sous le plafond de 700, plus un fondu de sortie
+ * qui est du mouvement lui aussi.
+ *
+ * **Et le repos redevient ce qu'il est : de la marge.** Si l'application est
+ * prête avant, l'écran part avant — le repos se coupe, jamais le mouvement.
+ * C'est pourquoi ce nombre est un plafond et `MOUVEMENT` un plancher, ce qui
+ * renverse une seconde fois le sens de cette constante.
  */
-export const DUREE_DE_L_OUVERTURE = 1800;
-
-/**
- * Le plafond : au-delà, l'attente prend le relais.
- *
- * **Il suit l'ouverture, il ne la borne plus.** Tant que l'entrée était plus
- * courte que lui, le fixer à 800 tenait ; l'ouverture allongée le traverserait,
- * et le filet d'attente se poserait **pendant** l'animation — c'est-à-dire que
- * chaque lancement normal dirait « ça rame ». Il vaut donc l'ouverture plus une
- * marge, et il ne se règle pas séparément.
- *
- * **Six cents millièmes de marge**, parce que le filet répond à une seule
- * question : « est-ce que ça avance encore ». Trop près de l'ouverture il
- * clignote sur des lancements sains ; trop loin, il arrive après qu'on a
- * renoncé.
- */
-export const MARGE_AVANT_ATTENTE = 600;
-export const PLAFOND_MS = DUREE_DE_L_OUVERTURE + MARGE_AVANT_ATTENTE;
+export const DUREE_DE_L_OUVERTURE = 2400;
 
 /**
  * L'instant du lancement, figé au chargement du module.
@@ -81,62 +70,116 @@ export const PLAFOND_MS = DUREE_DE_L_OUVERTURE + MARGE_AVANT_ATTENTE;
 const LANCEMENT = Date.now();
 
 /**
- * Vrai quand l'ouverture a eu son temps.
+ * Vrai quand l'écran de marque peut céder la place.
  *
- * Rendu à l'appelant plutôt qu'appliqué ici : c'est la coquille qui décide de
- * ce qu'elle montre, l'écran de chargement ne se retient pas lui-même.
+ * **Deux bornes, dans cet ordre, et l'ordre est la règle.** Le mouvement va au
+ * bout, toujours : il est ce qu'on perçoit, l'interrompre revient à n'avoir rien
+ * joué. Au-delà, il ne reste que du repos, et le repos se coupe dès que
+ * l'application est prête. Elle ne l'est pas au bout de `DUREE_DE_L_OUVERTURE` :
+ * on part quand même, l'attente prend le relais et ne ressemble pas à la marque.
+ *
+ * `pret` est rendu par l'appelant : la coquille sait ce qu'elle attend — ses
+ * fontes, sa session — et l'écran de chargement n'a pas à le deviner.
  */
-export function useOuvertureTenue(): boolean {
-  const [tenue, setTenue] = useState(() => Date.now() - LANCEMENT >= DUREE_DE_L_OUVERTURE);
+export function useOuvertureTenue(pret: boolean): boolean {
+  const [tenue, setTenue] = useState(false);
 
   useEffect(() => {
     if (tenue) return;
-    const reste = DUREE_DE_L_OUVERTURE - (Date.now() - LANCEMENT);
-    const minuterie = setTimeout(() => setTenue(true), Math.max(0, reste));
+    const ecoule = Date.now() - LANCEMENT;
+    if (peutCeder(ecoule, pret)) {
+      setTenue(true);
+      return;
+    }
+    const minuterie = setTimeout(() => setTenue(true), prochainRendezVous(ecoule));
     return () => clearTimeout(minuterie);
-  }, [tenue]);
+  }, [pret, tenue]);
 
   return tenue;
 }
 
 /**
- * Les quatre temps de la direction A.
+ * La règle, seule et sans horloge. **Deux bornes, dans cet ordre.**
  *
- * **L'allongement ne va pas dans la chute, et c'est la planche qui l'interdit.**
- * Elle chiffre le défaut des deux côtés : « à 400 ms ça devient sec, à 700 ms ça
- * devient une mascotte ». Un point qui tombe lentement cesse d'être une
- * signature pour devenir un personnage — exactement ce que la direction A
- * cherche à éviter en refusant le rebond. La chute reste donc sous la borne, et
- * ce qui s'allonge est ce qui l'entoure : le noir d'avant, la respiration entre
- * les lettres et le point, et le repos après.
+ * Extraite du crochet parce que c'est elle qu'on veut éprouver : une ouverture
+ * qui rendrait la main trop tôt ressemble à une ouverture rapide, pas à une
+ * animation coupée, et rien à l'écran ne les distingue. Montée, elle
+ * demanderait de figer l'instant du lancement — qui l'est à l'import, donc
+ * après plusieurs secondes de temps réel en suite de tests.
  */
-const LETTRES_DEBUT = 200;
-const LETTRES_DUREE = 320;
-/** L'apparition du point, plus vive que sa chute : il arrive, il ne se pose pas. */
-const POINT_APPARITION = 140;
-/** Un aller de la barre indéterminée. C'est une boucle, pas une transition. */
-const COURSE_DUREE = 1000;
-/**
- * Le point part longtemps après que les lettres se sont posées.
- *
- * Les lettres finissent à 520 ; le point n'entre qu'à 720. Ces deux cents
- * millièmes de silence sont ce qui le fait **arriver** au lieu d'accompagner —
- * c'est le seul instant de la direction A où quelque chose manque à l'écran, et
- * c'est lui qui fait remarquer le point quand il vient le combler.
- */
-const POINT_DEBUT = 720;
-const POINT_DUREE = 620;
+export function peutCeder(ecoule: number, pret: boolean): boolean {
+  // Le mouvement va au bout, toujours : il est ce qu'on perçoit, l'interrompre
+  // revient à n'avoir rien joué.
+  if (ecoule < MOUVEMENT) return false;
+  // Au-delà il ne reste que du repos, et le repos se coupe dès qu'il n'y a plus
+  // rien à attendre. Au bout du plafond on part de toute façon, et l'attente
+  // prend le relais — elle ne ressemble pas à la marque.
+  return pret || ecoule >= DUREE_DE_L_OUVERTURE;
+}
+
+/** Quand se reposer la question, au plus tôt. */
+function prochainRendezVous(ecoule: number): number {
+  return ecoule < MOUVEMENT ? MOUVEMENT - ecoule : DUREE_DE_L_OUVERTURE - ecoule;
+}
 
 /**
- * Ce qui reste une fois le point calé : la marque posée, immobile.
+ * Les temps de la direction A, **réétalés par la planche**.
  *
- * **Ce n'est pas du temps mort, c'est la moitié de l'idée.** « Une marque se
- * pose, et elle peut se poser trente fois sans lasser parce qu'elle n'a rien à
- * raconter » : ce qu'on retient d'un logotype n'est pas son entrée, c'est
- * l'image complète qu'on a eu le temps de regarder. Une animation qui s'achève
- * et disparaît dans le même souffle ne laisse rien.
+ * 0 encre pleine · 240 les lettres montent · 520 elles sont posées, le point
+ * entre par le haut · il descend · 1 180 il cale à sa place · puis le fondu de
+ * sortie, qui est du mouvement et compte dans le perçu.
+ *
+ * **L'entrée est ralentie de moitié et la chute portée à 660.** Elle occupait
+ * 500 ms sur les 760 du mouvement d'avant, et n'était donc pas au bout de sa
+ * marge : 660 reste sous le plafond de 700 qui la sépare d'une mascotte, et
+ * au-dessus des 400 où elle devient sèche.
  */
-export const REPOS = DUREE_DE_L_OUVERTURE - (POINT_DEBUT + POINT_DUREE);
+const LETTRES_DEBUT = 240;
+const LETTRES_DUREE = 280;
+/** L'apparition du point, plus vive que sa chute : il arrive, il ne se pose pas. */
+const POINT_APPARITION = 180;
+/** Un aller de la barre indéterminée. C'est une boucle, pas une transition. */
+const COURSE_DUREE = 1000;
+const POINT_DEBUT = 520;
+const POINT_DUREE = 660;
+
+/**
+ * Le fondu de sortie. **C'est du mouvement, et il compte dans le perçu.**
+ *
+ * Une marque qui disparaît d'un coup se termine sans se terminer : la coupure
+ * franche est le seul instant de la séquence qu'on ne peut pas attribuer à la
+ * marque, donc le seul qui ne lui profite pas.
+ */
+export const FONDU_DE_SORTIE = 320;
+
+/**
+ * Quand le mouvement s'arrête, fondu compris : **1 500 ms**.
+ *
+ * **C'est le plancher de l'écran, et la seule durée qui se ressent.** Contre
+ * 760 auparavant : la durée perçue double sans qu'on touche au repos. Une garde
+ * le tient — il ne suit pas `DUREE_DE_L_OUVERTURE`, et il ne la dépasse pas.
+ */
+export const MOUVEMENT = POINT_DEBUT + POINT_DUREE + FONDU_DE_SORTIE;
+
+/**
+ * Le plafond : au-delà, l'attente prend le relais.
+ *
+ * **Il vaut le mouvement, exactement.** L'entrée se pose et s'arrête ; si l'on
+ * est encore là, c'est que ça traîne, et c'est le filet qui le dit — jamais la
+ * marque, qui ne boucle pas. Le placer plus loin laisserait un écran noir muet
+ * entre la fin du fondu et lui.
+ */
+export const PLAFOND_MS = MOUVEMENT;
+
+/**
+ * La marge au-dessus du mouvement : **du repos, et rien de plus**.
+ *
+ * Il ne se joue que si l'application n'est pas prête, et il se coupe dès
+ * qu'elle l'est. On ne le compte plus comme de la durée — il ne s'en perçoit
+ * rien — mais il reste borné : neuf cents millièmes, au-delà desquels on part
+ * de toute façon.
+ */
+export const REPOS = DUREE_DE_L_OUVERTURE - MOUVEMENT;
 
 /** La hauteur du logotype sur cet écran, et la course du point. */
 const TAILLE = 34;
@@ -169,6 +212,11 @@ export function Chargement({ testID = 'ecran-chargement' }: { testID?: string })
   const opaciteDesLettres = useRef(new Animated.Value(reduit ? 1 : 0)).current;
   const chuteDuPoint = useRef(new Animated.Value(reduit ? 0 : -CHUTE)).current;
   const opaciteDuPoint = useRef(new Animated.Value(reduit ? 1 : 0)).current;
+  // **La troisième valeur, et elle sort au lieu d'entrer.** Le fondu de sortie
+  // est du mouvement : il compte dans ce qu'on perçoit de la marque, et une
+  // coupure franche serait le seul instant de la séquence qui ne lui profite
+  // pas.
+  const sortie = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     if (reduit) return;
@@ -204,11 +252,22 @@ export function Chargement({ testID = 'ecran-chargement' }: { testID?: string })
           }),
         ]),
       ]),
+      // Le fondu enchaîne sur la chute, sans attendre : le repos, quand il a
+      // lieu, se joue **après** le mouvement — c'est la marge, pas la marque.
+      Animated.sequence([
+        Animated.delay(POINT_DEBUT + POINT_DUREE),
+        Animated.timing(sortie, {
+          toValue: 0,
+          duration: FONDU_DE_SORTIE,
+          easing: Easing.in(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]),
     ]);
 
     entree.start();
     return () => entree.stop();
-  }, [reduit, opaciteDesLettres, opaciteDuPoint, chuteDuPoint]);
+  }, [reduit, opaciteDesLettres, opaciteDuPoint, chuteDuPoint, sortie]);
 
   return (
     <View
@@ -227,7 +286,7 @@ export function Chargement({ testID = 'ecran-chargement' }: { testID?: string })
           posée en absolu sur la première : même `viewBox`, même repère, donc
           même place. C'est la superposition qui fait l'alignement, et rien
           d'autre ne le décide. */}
-      <View testID={`${testID}-marque`}>
+      <Animated.View testID={`${testID}-marque`} style={{ opacity: sortie }}>
         <Animated.View style={{ opacity: opaciteDesLettres }}>
           <Marque taille={TAILLE} variante="blanc" partie="lettres" testID={`${testID}-lettres`} />
         </Animated.View>
@@ -242,7 +301,7 @@ export function Chargement({ testID = 'ecran-chargement' }: { testID?: string })
         >
           <Marque taille={TAILLE} variante="blanc" partie="point" testID={`${testID}-point`} />
         </Animated.View>
-      </View>
+      </Animated.View>
 
       {/* **Après le plafond seulement.** Le montrer d'emblée ferait de chaque
           ouverture une attente, y compris celles de trois cents
