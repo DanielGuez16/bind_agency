@@ -14,7 +14,7 @@
  * où il a lieu ; l'afficher dans le fuseau du téléphone ferait rater des
  * rendez-vous à quiconque voyage.
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import {
@@ -200,14 +200,68 @@ const ONGLETS: { cle: string; libelle: string; statuts: BookingStatus[] }[] = [
   },
 ];
 
+/**
+ * L'onglet nommé, ou le premier.
+ *
+ * **Un nom inconnu retombe sur le premier plutôt que d'échouer.** L'appelant
+ * est une route, et une route survit aux renommages d'onglets : la faire
+ * planter parce qu'une clé a changé de nom casserait l'arrivée après une
+ * réservation, c'est-à-dire le geste le plus engageant du parcours, pour une
+ * raison qui n'a rien à voir avec le lecteur.
+ */
+function indexDOnglet(cle: string | undefined): number {
+  const trouve = ONGLETS.findIndex((onglet) => onglet.cle === cle);
+  return trouve === -1 ? 0 : trouve;
+}
+
 export function HistoriqueScreen({
   onOuvrir,
+  ongletDemande,
+  onOngletApplique,
 }: {
   onOuvrir: (reservation: ReservationDuCreateur) => void;
+  /**
+   * L'onglet sur lequel s'ouvrir, quand on arrive d'ailleurs.
+   *
+   * **Le défaut reste « en cours », et ce n'est pas une omission.** L'ordre des
+   * onglets est celui de ce qu'on doit faire : une prestation consommée dont la
+   * contrepartie n'est pas envoyée court contre une échéance, un rendez-vous de
+   * la semaine prochaine n'attend personne. Ce classement vaut pour qui ouvre
+   * l'onglet des réservations de lui-même.
+   *
+   * Il ne vaut pas pour qui vient de réserver. Celui-là cherche **la place
+   * qu'il vient de prendre**, et elle est en `held` ou `awaiting_business` —
+   * c'est-à-dire dans « à venir », jamais dans « en cours ». Il atterrissait
+   * donc sur un onglet qui ne contenait pas ce qu'il venait de faire, souvent
+   * vide, juste après le geste le plus engageant du parcours.
+   */
+  ongletDemande?: string;
+  /**
+   * Dit à la route que la demande est consommée.
+   *
+   * Sans cela, le paramètre resterait posé : quelqu'un qui réserve, passe à
+   * « terminées », puis réserve de nouveau verrait la seconde demande ignorée —
+   * la valeur n'aurait pas changé, et rien ne se déclencherait.
+   */
+  onOngletApplique?: () => void;
 }) {
   const { api } = useApi();
   const { t, locale } = useI18n();
-  const [index, setIndex] = useState(0);
+  const [index, setIndex] = useState(() => indexDOnglet(ongletDemande));
+
+  // Par une référence, pour que l'effet ne dépende que de la demande : la
+  // fonction est écrite à l'appel et change d'identité à chaque rendu.
+  const appliquer = useRef(onOngletApplique);
+  appliquer.current = onOngletApplique;
+
+  // **Et non le seul état initial.** Les onglets du bas gardent leurs écrans
+  // montés : qui a déjà ouvert ses réservations une fois y revient sur un
+  // composant vivant, dont l'état initial a été calculé il y a longtemps.
+  useEffect(() => {
+    if (ongletDemande === undefined) return;
+    setIndex(indexDOnglet(ongletDemande));
+    appliquer.current?.();
+  }, [ongletDemande]);
 
   const statuts = ONGLETS[index].statuts;
   const requete = useRequete<HistoriqueDuCreateur>(
