@@ -17,7 +17,7 @@ async function monter(props: Partial<React.ComponentProps<typeof OuEstLeLieu>> =
   return await render(
     <I18nProvider initialLocale="en">
       <ThemeProvider role="creator">
-        <OuEstLeLieu nom="Vela Nail Studio" adresse="120 NE 41st St" lieu={SALON} position={null} {...props} />
+        <OuEstLeLieu nom="Vela Nail Studio" lieu={SALON} position={null} {...props} />
       </ThemeProvider>
     </I18nProvider>,
   );
