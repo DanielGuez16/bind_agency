@@ -16,6 +16,82 @@ export function errorCodeFromResponse(body: unknown): string | null {
   return typeof detail === 'string' ? detail : null;
 }
 
+/**
+ * Les champs que le serveur nomme dans un refus de validation.
+ *
+ * **Une table explicite, et un repli sur le silence.** Le serveur rend le nom
+ * technique du champ — `email`, `fichier`, `starts_at` —, qui est le sien et pas
+ * celui de l'écran. `fichier` dans une phrase anglaise ne se lit pas, et
+ * `starts_at` encore moins.
+ *
+ * On ne nomme donc le champ que lorsqu'on sait le nommer. Un champ absent de
+ * cette table retombe sur la phrase générique, qui est exactement ce que l'écran
+ * disait déjà — le message ne devient jamais pire qu'avant, il devient parfois
+ * meilleur.
+ *
+ * Les clés sont écrites en toutes lettres pour que la garde des traductions les
+ * voie : une clé composée à l'exécution, elle ne la résout pas.
+ */
+const CHAMPS_NOMMES: Record<string, string> = {
+  email: 'champs.email',
+  password: 'champs.password',
+  fichier: 'champs.fichier',
+  name: 'champs.name',
+  address: 'champs.address',
+  phone: 'champs.phone',
+  price_cents: 'champs.price_cents',
+  duration_minutes: 'champs.duration_minutes',
+  reason: 'champs.reason',
+  motif: 'champs.reason',
+  starts_at: 'champs.starts_at',
+};
+
+/**
+ * Les champs en cause d'un refus, tels que le serveur les nomme.
+ *
+ * La forme est celle de FastAPI : `fields: [{ loc: ['body', 'email'] }]`. On
+ * garde le **dernier** segment — `body` dit d'où vient le champ, pas lequel il
+ * est — et on écarte les doublons, un même champ pouvant être refusé deux fois.
+ */
+export function champsEnCause(body: unknown): string[] {
+  if (typeof body !== 'object' || body === null) return [];
+  const fields = (body as { fields?: unknown }).fields;
+  if (!Array.isArray(fields)) return [];
+
+  const noms: string[] = [];
+  for (const champ of fields) {
+    const loc = (champ as { loc?: unknown })?.loc;
+    if (!Array.isArray(loc) || loc.length === 0) continue;
+    const dernier = loc[loc.length - 1];
+    if (typeof dernier === 'string' && dernier !== 'body' && !noms.includes(dernier)) {
+      noms.push(dernier);
+    }
+  }
+  return noms;
+}
+
+/**
+ * La phrase d'un refus, en nommant le champ quand c'est possible.
+ *
+ * **Sans le champ, la phrase ne dit pas quoi corriger.** Le serveur répond
+ * `validation_failed` avec `loc: [body, email]` ; l'écran affichait « Some
+ * information is missing or incorrect » et laissait chercher. C'est le seul
+ * refus du produit dont la cause est connue et n'était pas dite.
+ */
+export function messageDeRefus(
+  t: (key: string, valeurs?: Record<string, unknown>) => string,
+  code: string | null | undefined,
+  champs: string[],
+): string {
+  const nommables = champs.map((c) => CHAMPS_NOMMES[c]).filter((cle): cle is string => !!cle);
+  if (code !== 'validation_failed' || nommables.length === 0) {
+    return t(errorMessageKey(code));
+  }
+  return t('errors.validation_failed_champs', {
+    champs: nommables.map((cle) => t(cle)).join(', '),
+  });
+}
+
 export function errorMessageKey(code: string | null | undefined): string {
   return code && CODES_CONNUS.has(code) && code !== 'generic' ? `errors.${code}` : 'errors.generic';
 }

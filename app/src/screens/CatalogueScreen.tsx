@@ -1032,8 +1032,51 @@ function NouvellePrestation({
   const [palierId, setPalierId] = useState<string | null>(paliers[0]?.id ?? null);
   const [echec, setEchec] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
+  /** L'image choisie, et sa clé une fois déposée. `cle` nulle = dépôt en vol. */
+  const [photo, setPhoto] = useState<{ uri: string; cle: string | null } | null>(null);
+  const c = useColors();
 
   const complet = nom.trim().length > 0;
+
+  /**
+   * La photo, déposée avant que la prestation existe.
+   *
+   * **Elle ne se déposait qu'après.** Le dépôt corrige l'article, donc il
+   * réclame un identifiant : à la création il n'y en a pas, et le formulaire
+   * n'offrait rien. Un salon composait sa prestation, la publiait, la
+   * retrouvait dans la liste, l'ouvrait, et déposait la photo — cinq gestes
+   * pour une chose qu'il avait sous la main au premier.
+   *
+   * La clé est gardée et part avec le reste : **un seul appel écrit la
+   * prestation, photo comprise.** Deux appels laisseraient, à la moindre
+   * panne, une prestation sans sa photo et personne pour le savoir.
+   */
+  async function choisirLaPhoto() {
+    setEchec(null);
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      setEchec(t('composition.photoPermission'));
+      return;
+    }
+    const resultat = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.9,
+    });
+    if (resultat.canceled) return;
+
+    const uri = resultat.assets[0].uri;
+    setPhoto({ uri, cle: null });
+    try {
+      const cle = await api.televerserUnePhotoDePrestation(businessId, uri);
+      setPhoto({ uri, cle });
+    } catch (erreur) {
+      // **La photo échoue seule, la prestation reste publiable.** Bloquer la
+      // publication sur un dépôt raté ferait perdre le formulaire entier pour
+      // une image qu'on peut poser après.
+      setPhoto(null);
+      setEchec(messageDErreur(erreur));
+    }
+  }
 
   async function publier() {
     setEchec(null);
@@ -1043,6 +1086,9 @@ function NouvellePrestation({
         name: nom.trim(),
         price_cents: prixEnCentimes,
         duration_minutes: duree,
+        // Nulle tant que le dépôt n'a pas rendu sa clé : publier avec une clé
+        // à moitié écrite vaudrait moins que publier sans photo.
+        ...(photo?.cle ? { photo_key: photo.cle } : {}),
       };
       // Remplacer, et non créer puis archiver en deux appels : le serveur fait
       // les deux dans la même transaction. En deux temps, une panne entre les
@@ -1089,6 +1135,43 @@ function NouvellePrestation({
         onChange={setDuree}
         testID="champ-duree"
       />
+
+      <View style={{ gap: 6 }}>
+        <Texte variante="type.label">{t('composition.photoTitre')}</Texte>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t(photo ? 'composition.photoRemplacer' : 'composition.photoAjouter', {
+            nom: nom.trim(),
+          })}
+          onPress={() => void choisirLaPhoto()}
+          style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+          testID="photo-a-la-creation"
+        >
+          {photo ? (
+            <Photo uri={photo.uri} hauteur={96} style={{ width: 96 }} testID="photo-choisie" />
+          ) : (
+            <View
+              style={{
+                width: 96,
+                height: 96,
+                borderRadius: radius['radius.photo'],
+                borderWidth: 1,
+                borderStyle: 'dashed',
+                borderColor: c['line.default'],
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Icone nom="appareil-photo" taille={20} couleur="ink.soft" />
+            </View>
+          )}
+        </Pressable>
+        {photo && !photo.cle ? (
+          <Texte variante="type.caption" couleur="ink.soft" testID="photo-en-envoi">
+            {t('composition.photoEnvoiEnCours')}
+          </Texte>
+        ) : null}
+      </View>
 
       <View style={{ gap: 6 }}>
         <Texte variante="type.label">{t('composition.champPalier')}</Texte>

@@ -47,7 +47,18 @@ export async function seConnecter(page: Page, email: string): Promise<void> {
   // **On attend la navigation, pas la coquille.** `zone-sure` apparaît avant
   // que les onglets soient montés : s'arrêter là faisait lire un écran encore
   // vide, et le test échouait sur une absence qui n'en était pas une.
-  await expect(page.getByText('Settings', { exact: true }).first()).toBeVisible();
+  //
+  // **Et on attend un onglet que les deux rôles portent.** Cette fonction sert
+  // la créatrice et le commerce, ce que le libellé attendu doit refléter :
+  // « Settings » a cessé d'exister chez la créatrice quand la barre est passée
+  // à trois onglets, et le remplacer par « Profile » a déplacé le trou au lieu
+  // de le boucher — le commerce n'a pas de profil, et c'est la connexion
+  // elle-même qui a échoué, dans un fichier qui n'a rien à voir.
+  //
+  // L'alternative couvre les deux barres sans supposer laquelle on ouvre. Un
+  // libellé propre à un rôle n'a pas sa place dans un socle partagé : le
+  // premier appelant de l'autre rôle le découvre, et il le découvre loin.
+  await expect(page.getByText(/^(Profile|Settings)$/).first()).toBeVisible();
 }
 
 /**
@@ -62,7 +73,16 @@ export async function ongletsVisibles(page: Page): Promise<string[]> {
   // ici n'aurait fait échouer aucun test — la liste est une liste de candidats,
   // un candidat introuvable est simplement absent — et la couverture aurait
   // baissé en silence. C'est la façon la moins visible de casser un test.
-  const candidats = ['Nearby', 'Tiers', 'Bookings', 'Audience', 'Settings', 'Today', 'Register'];
+  const candidats = [
+    'Nearby',
+    'Tiers',
+    'Bookings',
+    'Profile',
+    'Audience',
+    'Settings',
+    'Today',
+    'Register',
+  ];
   const vus: string[] = [];
   for (const libelle of candidats) {
     if (await page.getByText(libelle, { exact: true }).first().isVisible().catch(() => false)) {

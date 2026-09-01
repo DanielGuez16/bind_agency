@@ -328,11 +328,15 @@ function TableDArbitrage({
                 height: 18,
                 borderRadius: radius['radius.lg'],
                 borderWidth: 1,
+                // **En encre, comme la rangée.** Une case cochée par ligne est
+                // de l'ornement répété, pas de la navigation : quinze lignes
+                // sélectionnées faisaient quinze marques d'ambre sur un écran
+                // où l'ambre ne doit dire qu'une chose, où l'on est.
                 borderColor: selection.includes(ligne.collaboration_id)
-                  ? c['brand.700']
+                  ? c['line.solo']
                   : c['line.default'],
                 backgroundColor: selection.includes(ligne.collaboration_id)
-                  ? c['brand.700']
+                  ? c['ink.default']
                   : 'transparent',
           opacity: pressed ? 0.7 : 1,
         })}

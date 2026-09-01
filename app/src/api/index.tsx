@@ -16,7 +16,7 @@ import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import { Platform } from 'react-native';
 
 import { useI18n } from '../i18n';
-import { translateErrorCode } from '../i18n/errors';
+import { messageDeRefus } from '../i18n/errors';
 import { ApiClient, ApiError, NetworkError, type CoffreDeJetons, type Jetons } from './client';
 import { routes } from './routes';
 import type {
@@ -843,9 +843,21 @@ export class Api {
     });
   }
 
-  /** Le commerce lui-même. Lu ici pour sa couverture, qui marque la galerie. */
+  /**
+   * Le commerce lui-même, dans ce que le lieu en compose.
+   *
+   * Le type est étroit exprès : la route rend la fiche entière, et déclarer
+   * ici tout ce qu'elle porte ferait croire que l'écran s'en sert. On ajoute
+   * un champ quand un écran le lit.
+   */
   commerce(businessId: string, signal?: AbortSignal) {
-    return this.client.request<{ cover_photo_key: string | null; menu_url: string | null }>(
+    return this.client.request<{
+      cover_photo_key: string | null;
+      menu_url: string | null;
+      instagram_url: string | null;
+      tiktok_url: string | null;
+      website_url: string | null;
+    }>(
       routes.commerce(businessId),
       {
       signal,
@@ -877,6 +889,29 @@ export class Api {
    * décider de ce qu'on en fait. C'est la seconde moitié — poser la clé dans
    * la galerie — que cette méthode ne fait pas.
    */
+  /**
+   * Dépose une photo de prestation et rend sa clé, sans rien y attacher.
+   *
+   * **Pour la prestation qui n'existe pas encore.** `photographierUnItem`
+   * dépose puis corrige l'article, ce qui demande un identifiant : à la
+   * création il n'y en a pas. La clé se garde donc, et part avec le reste du
+   * formulaire — un seul appel écrit la prestation, photo comprise.
+   */
+  async televerserUnePhotoDePrestation(
+    businessId: string,
+    uri: string,
+    progression?: (part: number) => void,
+  ) {
+    const corps = new FormData();
+    corps.append('fichier', (await fichierAEnvoyer(uri, 'photo.jpg')) as Blob);
+
+    const { storage_key } = await this.client.request<{ storage_key: string }>(
+      routes.televerserUnePhoto(businessId),
+      { methode: 'POST', corpsBrut: corps, progression },
+    );
+    return storage_key;
+  }
+
   async photographierUnItem(businessId: string, itemId: string, uri: string, progression?: (part: number) => void) {
     const corps = new FormData();
     corps.append('fichier', (await fichierAEnvoyer(uri, 'photo.jpg')) as Blob);
@@ -969,6 +1004,24 @@ export class Api {
     return this.client.request<unknown>(routes.modifierLeCommerce(businessId), {
       methode: 'PATCH',
       corps: { menu_url: url },
+    });
+  }
+
+  /**
+   * Les trois liens publics du salon, ensemble.
+   *
+   * **Un seul appel pour les trois** : ils se saisissent sur le même écran et
+   * s'enregistrent d'un geste. Trois appels feraient trois écritures dont deux
+   * pourraient échouer, et l'écran ne saurait plus ce qui est enregistré.
+   * `null` retire un lien, comme partout ailleurs sur cette route.
+   */
+  definirLesLiensPublics(
+    businessId: string,
+    liens: { instagram_url: string | null; tiktok_url: string | null; website_url: string | null },
+  ) {
+    return this.client.request<unknown>(routes.modifierLeCommerce(businessId), {
+      methode: 'PATCH',
+      corps: liens,
     });
   }
 
@@ -1252,7 +1305,7 @@ export function ApiProvider({
         // Une panne de transport n'est pas une erreur d'API : la phrase à dire
         // n'est pas la même, et « réessaie » n'a de sens que dans ce cas-là.
         if (erreur instanceof NetworkError) return t('errors.network');
-        if (erreur instanceof ApiError) return translateErrorCode(t, erreur.code);
+        if (erreur instanceof ApiError) return messageDeRefus(t, erreur.code, erreur.champs);
         return t('errors.generic');
       },
     }),

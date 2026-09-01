@@ -104,7 +104,7 @@ export function CreationDuCommerceScreen({ onCree }: CreationDuCommerceProps) {
     // Pas de titre ici : `Ecran` le porte déjà, dans la barre de titre en grand
     // écran et en tête de flux en compact. L'écrire aussi donnerait « Create
     // your business » au-dessus de « Create your business ».
-    <View testID="creation-du-commerce" style={{ gap: 16 }}>
+    <View testID="ecran-creation-du-commerce" style={{ gap: 16 }}>
       <Texte variante="type.body" couleur="ink.soft">
         {t('creationCommerce.corps')}
       </Texte>

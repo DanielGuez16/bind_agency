@@ -82,7 +82,20 @@ export function PlansScreen() {
 
         return (
           <View style={{ gap: 20 }}>
-            <Texte variante="type.label" couleur="ink.mute" testID="lecture-seule">
+            {/**
+              * **Deux faits joints par un point médian ne font pas une
+              * étiquette.** « Read only · monthly figures computed
+              * server-side » comptait quarante-sept signes en capitales
+              * espacées de onze points : le point médian y servait de
+              * conjonction, ce qu'un séparateur ne sait pas faire — il range
+              * côte à côte, il ne relie pas.
+              *
+              * La règle de la passation, §13 ter : une étiquette fait moins de
+              * vingt-quatre signes ; au-delà c'est du texte, et il s'écrit
+              * comme une phrase. Restent des étiquettes les têtes de colonnes,
+              * les états d'un ou deux mots, les intertitres.
+              */}
+            <Texte variante="type.caption" couleur="ink.soft" testID="lecture-seule">
               {t('admin.plansLectureSeule')}
             </Texte>
 
@@ -236,7 +249,10 @@ function QuiPrendCePlan({ plan }: { plan: PlanAdministrateur }) {
             </Texte>
           </View>
           <View style={{ flex: 1 }}>
-            <Jauge fraction={part.fraction} />
+            {/* **En encre : cet écran n'offre aucun geste.** Dix barres de
+                marque y faisaient de la couleur de navigation une texture de
+                fond, et la table des plans se lit — elle ne se décide pas. */}
+            <Jauge fraction={part.fraction} teinte="ink.default" />
           </View>
           <View style={{ width: 76 }}>
             <Texte

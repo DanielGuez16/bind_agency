@@ -3172,6 +3172,134 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       *Le mot vient de la langue et non du code : « to » et « a » ne se
       devinent pas d'un tiret. Une mutation, elle tombe*
 
+- [x] **L'administration reçoit sa passe de composition**
+      *Jamais faite jusqu'ici. La planche n'a pas pu être lue — le connecteur
+      Design est sans autorisation depuis deux jours — et le brief nommait les
+      corrections assez précisément pour s'en passer.*
+      ***L'ambre revient à la navigation seule.*** *La rangée choisie de la table
+      d'administration était peinte en `brand.50` : sur une file de quinze
+      lignes, la couleur de marque cessait de dire « ici » pour dire « une ligne
+      parmi d'autres ». Elle passe en matière — `bg.inset` et filet `line.solo`
+      — qui dit la même chose sans dépenser la seule couleur dont la navigation
+      dispose. Même raison pour la case cochée, qui est de l'ornement répété par
+      rangée, pour les dix jauges des plans — un écran qui se lit et n'offre
+      aucun geste — et pour les onze « Take over » de l'annuaire des salons, qui
+      faisaient de la reprise la colonne de l'écran au lieu de son exception.*
+      *Ce qui **garde** son ambre : le lien qui ouvre les notes de l'arbitrage.
+      Un lien est un geste, pas de l'ornement, et c'est la seule action du
+      panneau.*
+      ***Une phrase déguisée en étiquette.*** *« Ce qui s'ouvre, et rien
+      d'autre » était en capitales espacées de onze points sur la reprise de
+      compte : une étiquette n'a pas de verbe, et une phrase qui en prend le
+      costume se lit deux fois — une fois pour la déchiffrer, une fois pour la
+      comprendre. Elle passait de surcroît sous le seuil de contraste, que onze
+      points en `ink.soft` ne tiennent pas.*
+      ***Les poignées quittent le mono.*** *Un pseudonyme n'est pas un code lu
+      caractère par caractère ; « @casabruma » se lit d'un mot. Même défaut que
+      les dates en mono, corrigé la semaine dernière, et même correction.*
+      ***La question ouverte se répond depuis le code, et la réponse est
+      rassurante.*** *Design s'inquiétait de « 48 nœuds en mono contre 4 en
+      sans » sur le panneau d'arbitrage. Le panneau construit en porte **un** —
+      le rang d'une tentative. Les quarante-huit sont ceux de la maquette, pas
+      du produit : la densité qu'il redoutait n'existe pas ici, et il n'y a donc
+      pas de colonne à retirer.*
+      *Deux mutations, toutes deux survivantes au premier tour — rien ne tenait
+      la règle qu'on venait de poser. Une assertion de plus dans l'inventaire de
+      type existant, portant sur la **table partagée** et non sur les écrans qui
+      l'emploient : c'est là que les quinze occurrences naissent, et un lien
+      d'action doit pouvoir garder son ambre*
+
+- [x] **Chaque écran porte son nom, et cinq ne l'avaient pas**
+      *Trouvé en parcourant le produit à la main, et par rien d'autre. Un
+      parcours de bout en bout se porte par l'écran qu'il éprouve — c'est ce que
+      la garde des sélecteurs exige — et un écran sans `testID` ne peut pas être
+      visé du tout : l'exploration a dû cibler des contrôles isolés dans la page
+      entière, ce qui mesure l'existence d'un bouton et non celle de la page.
+      Deux parcours ont échoué sur cette absence, et j'ai d'abord pris l'échec
+      pour un défaut du produit.*
+      *La caisse et le mode terrain n'en avaient aucun — l'une parce qu'elle ne
+      passe pas par `Ecran`, faute de requête à quatre états. La garde en a
+      révélé trois autres : la santé, la création d'un commerce — qui portait
+      un nom sans le préfixe — et **la revue de carte, qui n'avait aucun
+      identifiant du tout**, ce qui explique qu'aucun parcours n'ait jamais
+      atteint l'import automatique.*
+      *L'assertion vit dans la couverture des écrans, dont c'est déjà le sujet.
+      Une mutation, elle tombe*
+
+- [x] **L'étiquette des plans joignait deux faits par un point médian**
+      *« Read only · monthly figures computed server-side » : quarante-sept
+      signes en capitales espacées de onze points, et le point médian y servait
+      de **conjonction** — ce qu'un séparateur ne sait pas faire. Il range côte
+      à côte, il ne relie pas, et l'œil doit fabriquer lui-même le lien que la
+      phrase aurait porté.*
+      *La règle de la passation, §13 ter : une étiquette fait moins de
+      vingt-quatre signes ; au-delà c'est du texte, et il s'écrit comme une
+      phrase. Restent des étiquettes les têtes de colonnes, les états d'un ou
+      deux mots, les intertitres.*
+      *Une mutation, et elle a survécu au premier tour — rien ne tenait la
+      règle. L'assertion vit dans le test de l'écran, et elle éprouve la **casse
+      rendue** plutôt que le nom du jeton : c'est ce que l'œil reçoit, et un
+      jeton peut changer de nom sans que la règle change*
+
+- [x] **Les deux autres étiquettes, tranchées : une passe, l'autre reste**
+      *`annuaire.trieePar` — « Sorted by access, then distance », 31 signes —
+      **passe en texte**. Décrire un ordre demande un verbe : ce n'est pas une
+      catégorie, c'est une règle de tri, et les capitales espacées la faisaient
+      lire deux fois.*
+      *`reglages.reprisesTitre` — « When BIND entered your account », 30 signes —
+      **reste une étiquette**. C'est un titre de section et non un fait à lire :
+      l'exception de la passation s'applique, et la borne de vingt-quatre signes
+      ne vaut que pour ce qui se lit comme une information.*
+      *La distinction est celle qui compte, et elle ne se déduit pas de la
+      longueur : deux chaînes de trente signes, deux traitements opposés. Une
+      mutation sur celle qui change, elle tombe*
+
+- [x] **La liste d'un palier mène au salon**
+      *Elle nomme des prestations réservables — c'est tout son sujet — et
+      n'ouvrait rien. Il fallait retenir le nom du salon, revenir au fil et l'y
+      chercher, pour arriver à une fiche qui vit **dans la même pile**. Il n'y
+      avait qu'à relier : `OffreDuPalier` porte déjà `business_id`.*
+      *La rangée était un `DataRow`, composant d'affichage ; elle est enveloppée
+      d'un `Pressable` plutôt que de rendre `DataRow` pressable — un composant
+      qui montre n'a pas à savoir qu'on peut le toucher. Une mutation, elle
+      tombe*
+
+- [x] **Les trois liens publics du salon**
+      *Instagram, TikTok, site web : facultatifs, indépendants, et « aucun » est
+      un état normal — ils n'entrent dans aucune étape qui retient la
+      publication. Trois colonnes plutôt qu'une table de liens : une table
+      permettrait n'importe quel réseau, ce que personne n'a demandé, et ferait
+      payer une jointure à chaque fiche pour trois champs qui ne bougent jamais.*
+      ***Sur « votre lieu », pas dans les réglages.*** *La demande disait
+      « réglages », mais `ReglagesScreen` écrit noir sur blanc qu'il ne porte que
+      ce qui engage le compte — pause, suppression, déconnexion — et que la
+      composition du commerce vit ailleurs. Un lien Instagram décrit la vitrine,
+      exactement comme l'adresse et les photos.*
+      ***Rien n'est deviné.*** *Le lien du profil d'une créatrice se calcule de
+      son pseudonyme et de sa plateforme ; celui d'un salon, non — la page d'une
+      marque n'est pas toujours un compte, et la fabriquer rendrait un lien mort
+      que le salon découvrirait par un créateur.*
+      *Le cas divergent est la chaîne vide : sans conversion en `null`, vider un
+      champ enverrait `""`, la fiche rendrait un lien vers nulle part, et le
+      salon croirait l'avoir retiré. Une mutation, elle tombe*
+
+- [x] **`test_l_emission_refuse_sans_adresse_configuree` lisait le `.env` de la machine**
+      *Trouvé en lançant la suite complète avec `HANDOVER_BASE_URL` renseignée —
+      je l'avais posée pour explorer le mode terrain, qui reste invisible sans
+      elle. Le test faisait `monkeypatch.delenv`, ce qui vide `os.environ` mais
+      **n'empêche pas pydantic-settings de relire le fichier `.env`**.*
+      ***Vert partout, et pour la mauvaise raison.*** *C'est la famille nommée
+      dans `CLAUDE.md` — « un test de configuration qui lisait le `.env` de la
+      machine » — mais retournée, et donc plus difficile à voir : il passait
+      **parce que** personne ne configurait la variable qu'il éprouve. Le
+      premier poste à faire marcher le mode terrain le faisait tomber sans
+      qu'aucun code n'ait bougé.*
+      *Il surcharge maintenant le **réglage** et non la variable, par la forme
+      employée partout ailleurs dans cette suite : elle ne dépend ni du fichier
+      ni du cache. Deux vérifications plutôt qu'une — le service qui cesse de
+      refuser le fait tomber, et la variable retirée du `.env` le laisse vert.
+      Les deux configurations, le même verdict, ce qui est tout le sujet*
+
 - [ ] **`catalogue/corriger.ts` déclare une règle que personne ne consulte**
       *Même balayage. Le module nomme `CORRIGEABLES` — nom, description, photo —
       et `DEMANDENT_UNE_AUTRE` — durée, nature, réservabilité — avec une note
@@ -3319,6 +3447,90 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       entière, et ses tests éprouvaient donc du code mort. C'est l'un d'eux qui
       a fini par tomber, faute de créneau libre à minuit — il disait vrai sur du
       code que personne n'exécute.*
+
+- [x] **Cinq défauts qui ne se voient qu'en natif**
+      *Tous invisibles sur le web, et pour la même raison de fond : le navigateur
+      pardonne ce que Yoga et React Native refusent.*
+
+      ***Trois n'en font qu'un.** `grouperParMois` ne fusionnait que les groupes
+      voisins ; le serveur range les réservations sans créneau en dernier, et
+      leur `valid_until` retombe dans un mois déjà vu. Deux sections de même clé,
+      un avertissement sur le web, un écran grisé en natif — « à venir » et
+      « terminées » vidés, et le bouton du code de retrait avec eux, puisqu'il
+      vit dans cet écran.*
+
+      ***Le champ de mot de passe** : `height: '100%'` contre un parent qui n'a
+      qu'un `minHeight`. Le navigateur retombe sur la ligne flex, Yoga n'a rien
+      contre quoi calculer.*
+
+      ***Accorder une réservation** : `key={compte.platform}`, alors que rien
+      n'interdit deux comptes sur la même plateforme.*
+
+- [ ] **La fiche d'un salon grise « parfois », sous Expo Go seulement**
+      *Signalé en vérification de bout en bout. **En attente d'une occurrence
+      documentée** — le message de console au moment où ça grise, ou le nom du
+      salon. Sans l'un des deux il n'y a rien à chercher qu'à l'aveugle.*
+
+      *Ce qu'on sait : le mécanisme est `FrontiereDErreur`, qui grise sur toute
+      erreur de rendu. Et ce n'est **pas** une clé dupliquée — `FicheScreen` n'a
+      que des clés uniques, contrairement aux quatre autres défauts de la même
+      campagne. L'intermittence désigne une forme de données particulière.*
+
+- [x] **Wynwood avait une journée vide tard le soir : un poste, un lendemain plein**
+      *Trouvé sous horloge décalée, en cent secondes au lieu d'une nuit d'attente.*
+
+      *La composition menait ses lignes « déjà eu lieu » sur un créneau du
+      **lendemain** avant de les reposer sur une heure d'aujourd'hui. Wynwood a
+      **un seul poste** et une journée courte : passé la fermeture, les parcours
+      d'historique tombent tous sur le lendemain — c'est le premier jour où ils
+      peuvent tomber — et le remplissent. La composition ne trouvait alors aucun
+      créneau pour y mener ses lignes. Mesuré à 23 h 20 : `demain=0`, donc zéro
+      ligne posée, ni journée ni décision.*
+
+      *L'horizon passe du lendemain seul à **une semaine**. Le créneau n'est
+      qu'un véhicule — ce qui a eu lieu est reposé sur aujourd'hui juste après —
+      donc le chercher plus loin ne change rien à ce que l'écran montre, et donne
+      au semis de quoi travailler chez les salons les plus contraints : ceux,
+      précisément, qu'une démonstration ne doit pas laisser vides.*
+
+- [x] **`unfulfilled` sous horloge décalée : un artefact de l'outil, pas un défaut**
+      *Il manquait à `test_les_contreparties_couvrent_leurs_etats` à 23 h 20, et
+      il manquait aussi sur `origin/main` nu — j'en avais conclu un troisième
+      défaut préexistant. **C'en était un de l'outil.***
+
+      *`_mener` pose `deadline_at = datetime.now(UTC) - 2 h`, avec l'horloge du
+      **processus**. `expirer_les_echeances` filtre sur `clock_timestamp()`,
+      l'horloge de **Postgres**. `faketime` décale la première et pas la seconde :
+      l'échéance « reculée » tombe alors dans le futur de la base, le balayage ne
+      voit rien, et l'état n'existe pas. Les deux horloges s'accordent en
+      réalité — il n'y a rien à corriger dans le produit.*
+
+      ***La limite de l'outil, et il faut la connaître avant de l'utiliser.**
+      `faketime` ne décale que les processus. Tout ce qui compare une valeur
+      écrite en Python à `now()` ou `clock_timestamp()` côté base traverse une
+      frontière que l'outil ne franchit pas, et rend un verdict qui ne veut rien
+      dire. Ce qu'il éprouve valablement : ce qui se décide **entièrement** en
+      Python — la composition de la journée, les bornes d'un écran, le choix d'un
+      créneau. C'est ce qui a servi à trouver le manque de Wynwood.*
+
+      *Coût de l'ignorer : une correction inventée pour un état qui n'a jamais
+      manqué. Évité de justesse en lisant la requête du balayage.*
+
+- [ ] **Une horloge décalable, pour tout ce qui dépend de `now()`**
+      *`brew install libfaketime`, puis `faketime '2026-08-31 23:20:00' pytest …`
+      décale l'horloge du processus **et de ses sous-processus** — donc le semis
+      et le test ensemble, ce qui est la seule forme utile ici : le test lit une
+      base composée par le semis à l'heure réelle du semis, et décaler l'un sans
+      l'autre ferait un décor rigoureux qui n'éprouve rien.*
+
+      ***Ce que ça débloque, au-delà d'un test.** Le test du semis n'était rouge
+      qu'entre 23 h et minuit heure de Miami : vert vingt-trois heures sur
+      vingt-quatre. Une correction poussée en dehors de cette fenêtre obtient un
+      vert qui ne prouve rien — c'est arrivé, des deux côtés, le même soir. Tout
+      ce qui dépend de `now()` a la même fenêtre aveugle.*
+
+      *Une minute d'installation, sur la machine de Daniel et avec son accord :
+      ce n'est pas une dépendance du produit, c'est un outil de poste.*
 
 - [ ] Intégration Snapchat, à l'obtention de l'accès partenaire
 

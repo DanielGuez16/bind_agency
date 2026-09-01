@@ -46,7 +46,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 
 import { ApiError, useApi } from '../api';
-import { Button, Chip, DataRow, Filet, RangeeDeChips, Texte, TextField } from '../components';
+import { Button, Chip, DataRow, Filet, Icone, RangeeDeChips, Texte, TextField } from '../components';
 import { formatDate } from '../format';
 import { useI18n, type SupportedLocale } from '../i18n';
 import { trousseauDisponible, useSession } from '../session';
@@ -62,7 +62,7 @@ import { PauseDuCommerce } from './reglages/PauseDuCommerce';
 import { RepriseDuCompte } from './reglages/RepriseDuCompte';
 import { compterOuRien, PAGE } from './reglages/suppression';
 
-export function ReglagesScreen() {
+export function ReglagesScreen({ onRetour }: { onRetour?: () => void } = {}) {
   const { t, locale, setLocale } = useI18n();
   const { color: c, density } = useTheme();
   const session = useSession();
@@ -80,6 +80,27 @@ export function ReglagesScreen() {
       style={{ flex: 1, backgroundColor: c['bg.page'] }}
       contentContainerStyle={{ padding: density.screenPadding, gap: 28 }}
     >
+      {onRetour ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('common.retour')}
+          onPress={onRetour}
+          style={({ pressed }) => ({
+            minHeight: 44,
+            justifyContent: 'center',
+            opacity: pressed ? 0.7 : 1,
+          })}
+          hitSlop={12}
+          testID="retour-des-reglages"
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <Icone nom="retour" couleur="ink.soft" taille={18} />
+            <Texte variante="type.label" couleur="ink.soft">
+              {t('common.retour')}
+            </Texte>
+          </View>
+        </Pressable>
+      ) : null}
       <Texte variante="type.screenTitle">{t('reglages.titre')}</Texte>
 
       {/* **Le compte n'est pas un réglage**, c'est ce qui dit dans quel compte

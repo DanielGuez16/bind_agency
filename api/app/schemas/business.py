@@ -121,6 +121,12 @@ class BusinessCreate(BaseModel):
     #: Envoyer `null` la retire. Alternative ou complément aux pages déposées :
     #: l'un ou l'autre suffit à ouvrir une offre à choix.
     menu_url: str | None = Field(default=None, max_length=1000)
+    #: Où le salon se montre ailleurs. Les trois sont facultatifs et
+    #: indépendants ; aucun n'est dérivé d'un pseudonyme, le salon donne
+    #: l'adresse qu'il veut montrer.
+    instagram_url: str | None = Field(default=None, max_length=1000)
+    tiktok_url: str | None = Field(default=None, max_length=1000)
+    website_url: str | None = Field(default=None, max_length=1000)
 
     @field_validator("currency")
     @classmethod
@@ -179,6 +185,12 @@ class BusinessUpdate(BaseModel):
     #: Envoyer `null` la retire. Alternative ou complément aux pages déposées :
     #: l'un ou l'autre suffit à ouvrir une offre à choix.
     menu_url: str | None = Field(default=None, max_length=1000)
+    #: Où le salon se montre ailleurs. Les trois sont facultatifs et
+    #: indépendants ; aucun n'est dérivé d'un pseudonyme, le salon donne
+    #: l'adresse qu'il veut montrer.
+    instagram_url: str | None = Field(default=None, max_length=1000)
+    tiktok_url: str | None = Field(default=None, max_length=1000)
+    website_url: str | None = Field(default=None, max_length=1000)
 
     @field_validator("timezone")
     @classmethod
@@ -242,6 +254,9 @@ class BusinessRead(BaseModel):
     currency: str
     cover_photo_key: str | None
     menu_url: str | None
+    instagram_url: str | None
+    tiktok_url: str | None
+    website_url: str | None
     status: BusinessStatus
     #: Quand la période de grâce se ferme, et le salon quitte le fil.
     #:

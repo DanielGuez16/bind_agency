@@ -24,6 +24,16 @@ const HAUTEUR = 8;
 export function Jauge({
   fraction,
   piste = 'bg.inset',
+  /**
+   * La matière de la part remplie.
+   *
+   * **L'ambre par défaut, l'encre là où l'écran n'offre aucun geste.** Une
+   * barre de marque sur un écran d'action désigne ce qui avance vers quelque
+   * chose ; répétée dix fois sur une table de lecture, elle ne désigne plus
+   * rien et prend à la navigation la seule couleur dont elle dispose pour dire
+   * « vous êtes ici ».
+   */
+  teinte = 'brand.500',
   testID,
 }: {
   /** De zéro à un. Bornée ici plutôt que chez l'appelant : une valeur aberrante
@@ -31,6 +41,7 @@ export function Jauge({
    * s'oublier une fois. */
   fraction: number;
   piste?: ColorName;
+  teinte?: ColorName;
   testID?: string;
 }) {
   const c = useColors();
@@ -52,7 +63,7 @@ export function Jauge({
           width: `${Math.round(part * 100)}%`,
           height: HAUTEUR,
           borderRadius: radius['radius.pill'],
-          backgroundColor: c['brand.500'],
+          backgroundColor: c[teinte],
         }}
       />
     </View>

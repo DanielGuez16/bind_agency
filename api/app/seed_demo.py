@@ -1193,21 +1193,43 @@ async def _la_journee_de_chaque_salon(
     ).all()
 
     for business in actifs:
-        offre = await session.scalar(
-            sa.select(TierOffer)
-            .join(Tier, Tier.id == TierOffer.tier_id)
-            .join(CatalogItem, CatalogItem.id == TierOffer.catalog_item_id)
-            .where(
-                TierOffer.business_id == business.id,
-                TierOffer.is_active.is_(True),
-                Tier.is_active.is_(True),
-                CatalogItem.requires_booking.is_(True),
-                CatalogItem.is_available.is_(True),
+        # **Une offre que la créatrice peut réellement réserver, et les deux sont
+        # essayées.** La requête prenait le palier le plus bas que le salon
+        # compose, sans regarder si quelqu'un y accède : chez Wynwood, qui ne
+        # compose qu'en haut, toutes les réservations étaient refusées et sa
+        # journée restait vide. Rebecca n'y ouvre rien ; la seconde créatrice du
+        # jeu, si. C'est le produit qui décide, et le semis s'y plie.
+        offre = None
+        roulement: list = []
+        for nom in ("confirmee", "plafonnee"):
+            candidate, _ = createurs[nom]
+            verdict = await eligibility.evaluer_createur(session, candidate.id)
+            ouverts = verdict.paliers_accessibles
+            if not ouverts:
+                continue
+            offre = await session.scalar(
+                sa.select(TierOffer)
+                .join(Tier, Tier.id == TierOffer.tier_id)
+                .join(CatalogItem, CatalogItem.id == TierOffer.catalog_item_id)
+                .where(
+                    TierOffer.business_id == business.id,
+                    TierOffer.is_active.is_(True),
+                    Tier.is_active.is_(True),
+                    TierOffer.tier_id.in_(ouverts),
+                    CatalogItem.requires_booking.is_(True),
+                    CatalogItem.is_available.is_(True),
+                )
+                .order_by(Tier.display_order, TierOffer.created_at)
+                .limit(1)
             )
-            .order_by(Tier.display_order, TierOffer.created_at)
-            .limit(1)
-        )
+            if offre is not None:
+                roulement = [createurs[nom]]
+                break
         if offre is None:
+            print(
+                f"  journée non composée chez {business.name} : aucune offre "
+                "réservable par les créatrices du jeu"
+            )
             continue
 
         fuseau = ZoneInfo(business.timezone)
@@ -1271,7 +1293,23 @@ async def _la_journee_de_chaque_salon(
                 business_id=business.id,
                 catalog_item_id=offre.catalog_item_id,
                 depuis=demain,
-                horizon=timedelta(days=1),
+                # **Une semaine, et non le lendemain seul.**
+                #
+                # Un salon à un poste et à journée courte a son lendemain déjà
+                # plein : les parcours d'historique l'occupent, puisque après la
+                # fermeture c'est le premier jour où ils peuvent tomber. La
+                # composition de la journée ne trouvait alors **aucun** créneau
+                # pour y mener ses lignes, et le salon restait sans rien — ni
+                # ligne du jour, ni décision. Mesuré sur Wynwood à 23 h 20 :
+                # zéro créneau libre demain, donc zéro ligne posée.
+                #
+                # Le créneau du lendemain n'est qu'un véhicule : ce qui a « déjà
+                # eu lieu » est reposé sur une heure d'aujourd'hui juste après.
+                # Le chercher plus loin ne change donc rien à ce que l'écran
+                # montre, et donne au semis de quoi travailler chez les salons
+                # les plus contraints — ceux, précisément, qu'une démonstration
+                # ne doit pas laisser vides.
+                horizon=timedelta(days=7),
             )
         ]
         heures_passees = _repartir(
@@ -1295,7 +1333,7 @@ async def _la_journee_de_chaque_salon(
             offre=offre,
             menes_sur=menes_sur,
             reposes_sur=heures_passees,
-            createurs=createurs,
+            roulement=roulement,
             confirmer=confirmer,
             caissier_de=caissier_de,
         )
@@ -1304,7 +1342,7 @@ async def _la_journee_de_chaque_salon(
             business=business,
             offre=offre,
             creneaux=attendues,
-            createurs=createurs,
+            roulement=roulement,
             confirmer=confirmer,
         )
 
@@ -1373,7 +1411,7 @@ async def _poser_ce_qui_a_eu_lieu(
     offre: TierOffer,
     menes_sur: list[datetime],
     reposes_sur: list[datetime],
-    createurs: dict,
+    roulement: list,
     confirmer,
     caissier_de,
 ) -> int:
@@ -1389,7 +1427,6 @@ async def _poser_ce_qui_a_eu_lieu(
     trancher » et ne se trancherait pas.
     """
     posees = 0
-    roulement = [createurs["confirmee"], createurs["plafonnee"]]
 
     for rang, creneau in enumerate(menes_sur):
         createur, compte = roulement[rang % len(roulement)]
@@ -1441,7 +1478,7 @@ async def _poser_les_a_venir(
     business: Business,
     offre: TierOffer,
     creneaux: list[datetime],
-    createurs: dict,
+    roulement: list,
     confirmer,
 ) -> int:
     """Ce qui attend : des confirmées, et chez un salon qui valide, des
@@ -1452,7 +1489,6 @@ async def _poser_les_a_venir(
     posée devant nous, elle se tranche vraiment pendant la démonstration.
     """
     posees = 0
-    roulement = [createurs["confirmee"], createurs["plafonnee"]]
 
     for rang, creneau in enumerate(creneaux):
         createur, compte = roulement[rang % len(roulement)]

@@ -106,7 +106,10 @@ export function HealthScreen({ apiUrl }: { apiUrl?: string | null }) {
   }, [sonder]);
 
   return (
-    <View style={{ gap: 12 }} testID="diagnostic-connexion">
+    // `ecran-sante` remplace `diagnostic-connexion` : le nœud est le même —
+    // la racine de l'écran — et personne ne visait l'ancien nom. Un écran se
+    // nomme par ce qu'il est, pas par le premier bloc qu'il porte.
+    <View style={{ gap: 12 }} testID="ecran-sante">
       <DataRow label={t('health.address')} value={adresse ?? '—'} />
 
       {sonde.etat === 'encours' ? (

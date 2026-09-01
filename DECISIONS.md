@@ -10757,3 +10757,65 @@ lot les rend telles.
 C'est la même règle que sur les jetons et sur la passation, prise par l'autre
 bout : une garde qui ne dit pas où elle s'arrête fait croire la question réglée
 partout où elle passe.
+## 2026-08-30 — Le second passage d'un semis est muet, et on lisait sa sortie
+
+`resume_du_semis` relançait la commande de semis pour lire son résumé ; une
+optimisation lui a fait lire la sortie du **second** passage, avec le
+commentaire « qui dit exactement la même chose puisque c'est la même commande
+sur la même base ». Cinquante secondes gagnées, et c'est vrai du résumé.
+
+**C'est faux de tout ce qui est conditionnel au travail réellement fait.** Le
+second passage repart d'une base que le premier a remplie : il ne repose rien,
+donc il n'écarte rien, donc il ne dit rien de ce qu'il a écarté. Les lignes
+« réservation écartée », « parcours écarté », « journée écartée chez … » sont
+absentes de sa sortie — non parce que rien n'a été écarté, mais parce que rien
+n'a été tenté.
+
+Ce que ça a coûté : deux conversations ont cherché pendant une soirée pourquoi
+un salon n'avait aucune réservation du jour, l'une et l'autre en lisant une
+sortie vide et en concluant « le semis n'écarte rien ». La sortie du premier
+passage a répondu en une minute — et la réponse était qu'en effet rien n'est
+écarté, mais on ne pouvait pas le savoir de là.
+
+**Un test qui s'appuierait dessus pour vérifier qu'un écart est signalé
+passerait au vert sans rien voir.** C'est la même famille que la garde de
+traduction qui ne voit pas les orphelines, à ceci près que la limite n'est pas
+écrite : le commentaire affirme l'équivalence au lieu de la borner.
+
+Et le défaut cherché ce soir-là était ailleurs, dans une variable que personne
+ne regardait : **l'heure.** À 23 h à Miami, tous les créneaux du jour sont
+derrière nous, les états de la journée se réduisent à `consumed` et un test qui
+en exige trois tombe. Il ne tombe pas un jour sur sept, il tombe tous les
+soirs — et il repasse au vert seul le lendemain matin, ce qui est la pire forme
+du défaut : il guérit avant d'être compris.
+
+---
+
+## 2026-08-31 — Une horloge décalée ne franchit pas la frontière du processus
+
+`libfaketime` a payé le jour de son installation : il a trouvé en cent secondes
+un manque du semis qui demandait sinon d'attendre 23 h — la journée de Wynwood,
+vide le soir faute d'un créneau libre le lendemain chez un salon à un poste.
+
+**Et il a failli en inventer un.** À 23 h 20 simulées, l'état `unfulfilled`
+disparaissait du jeu de données, sur la branche comme sur `main` nu. Tout
+désignait un troisième défaut préexistant, de la même famille que les deux
+autres : vrai une heure sur vingt-quatre, invisible le reste du temps.
+
+Il n'y en avait aucun. `_mener` pose l'échéance avec `datetime.now(UTC)` —
+l'horloge du **processus** — et `expirer_les_echeances` filtre sur
+`clock_timestamp()`, l'horloge de **Postgres**. `faketime` décale la première et
+pas la seconde : l'échéance reculée de deux heures tombait dans le futur de la
+base, le balayage ne voyait rien, et l'état n'existait pas. En réalité les deux
+horloges s'accordent, et l'état est bien produit.
+
+**La règle qui en sort.** Une horloge décalée n'éprouve valablement que ce qui se
+décide **entièrement dans le processus** : la composition d'une journée, les
+bornes d'un écran, le choix d'un créneau. Dès qu'une valeur écrite en Python est
+comparée à `now()` ou `clock_timestamp()` côté base, elle traverse une frontière
+que l'outil ne franchit pas, et le verdict ne veut plus rien dire — ni le rouge,
+ni le vert.
+
+Ce qui a évité la correction inutile est d'être allé lire la requête du balayage
+avant d'écrire quoi que ce soit. Le réflexe coûte une minute : **avant de croire
+un rouge sous horloge décalée, demander quelle horloge décide.**

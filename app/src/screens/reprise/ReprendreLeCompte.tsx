@@ -175,7 +175,13 @@ export function ReprendreLeCompte({
       />
 
       <View style={{ gap: 8 }}>
-        <Texte variante="type.label" couleur="ink.soft">
+        {/* **Une phrase, donc du texte.** « Ce qui s'ouvre, et rien d'autre »
+            était en capitales espacées de onze points : une étiquette n'a pas
+            de verbe, et une phrase qui en prend le costume se lit deux fois —
+            une fois pour la déchiffrer, une fois pour la comprendre. Elle
+            passait de surcroît sous le seuil de contraste, que onze points en
+            `ink.soft` ne tiennent pas. */}
+        <Texte variante="type.caption" couleur="ink.soft">
           {t('reprise.porteeTitre')}
         </Texte>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
