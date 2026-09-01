@@ -1,10 +1,19 @@
 /**
- * Où se trouve le salon, et comment y aller.
+ * Comment y aller. **Une action, plus un bloc.**
  *
- * **Le fil dit une distance, la fiche ne disait rien.** On choisissait une
- * prestation depuis une carte qui portait « 190 m », puis on ouvrait un écran
- * où le lieu redevenait une adresse à lire — et il fallait la recopier
- * ailleurs pour savoir si l'on pouvait y aller à pied.
+ * **L'adresse est écrite une fois, en tête de la fiche.** Ce bloc s'intitulait
+ * « Where it is » et la répétait à trois lignes d'elle-même, précédée d'un
+ * titre qui annonçait ce que le lecteur venait de lire. Chacune des trois
+ * lignes était juste ; ensemble elles disaient une seule chose trois fois.
+ *
+ * **Ce qui reste est le geste, et lui seul l'agrandit.** Un lien de treize
+ * points au bas d'un bloc est une note de fin ; c'est pourtant la seule chose
+ * qu'on vienne y faire — partir. Il prend donc toute la largeur, un glyphe
+ * cerclé, deux lignes, et une cible d'un seul tenant.
+ *
+ * **La distance reste, parce qu'elle n'est écrite nulle part ailleurs.** Elle
+ * dépend d'où l'on est à l'instant où l'on regarde ; l'adresse, elle, situe une
+ * fois qu'on a décidé. Le nombre décide, donc il accompagne le geste.
  *
  * **Ce bloc n'est pas une carte à tuiles, et c'est une décision.** Une vraie
  * carte demande un fournisseur, une clé et une facturation à l'appel : trois
@@ -67,13 +76,11 @@ export function adresseDuPlan(
 
 export function OuEstLeLieu({
   nom,
-  adresse,
   lieu,
   position,
   testID = 'ou-est-le-lieu',
 }: {
   nom: string;
-  adresse: string | null;
   /** Nul quand le géocodage n'a rien résolu : le bloc se tait alors. */
   lieu: { longitude: number; latitude: number } | null;
   /** Nulle tant que la créatrice n'a pas partagé sa position. */
@@ -91,59 +98,63 @@ export function OuEstLeLieu({
   const metres = position === null ? null : distanceAVolDOiseau(position, lieu);
 
   return (
-    <View
+    <Pressable
       testID={testID}
-      style={{
-        gap: 8,
+      accessibilityRole="link"
+      accessibilityLabel={t('parcours.ouEstLeLieuOuvrir')}
+      onPress={() => void Linking.openURL(adresseDuPlan(lieu, nom))}
+      style={({ pressed }) => ({
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 14,
+        // **La cible est la carte entière.** Un lien au bas d'un bloc demande
+        // de viser treize points de texte ; ici la ligne se presse d'un bout à
+        // l'autre, ce qui est aussi ce que sa hauteur promet.
         padding: 16,
         borderRadius: radius['radius.lg'],
         backgroundColor: c['bg.surface'],
         borderWidth: 1,
         borderColor: c['line.default'],
+        opacity: pressed ? 0.7 : 1,
         // « Un coin de 18 px sans ombre flotte au lieu de se poser » : la règle
         // vaut des douze surfaces, pas d'une seule.
         ...elevationDeCarte(),
-      }}
+      })}
     >
-      <Texte variante="type.bodyStrong">{t('parcours.ouEstLeLieuTitre')}</Texte>
-
-      {/* **La distance d'abord, parce que c'est elle qui décide.** L'adresse
-          situe une fois qu'on a décidé d'y aller ; le nombre décide. Absente
-          tant que la position n'est pas partagée, et on ne la réclame pas
-          ici : le fil l'a déjà demandée là où elle sert. */}
-      {metres === null ? (
-        <Texte variante="type.caption" couleur="ink.soft" testID={`${testID}-sans-position`}>
-          {t('parcours.ouEstLeLieuSansPosition')}
-        </Texte>
-      ) : (
-        <Texte variante="type.caption" couleur="ink.soft" testID={`${testID}-distance`}>
-          {t('parcours.ouEstLeLieuDistance', { distance: formatDistance(metres, locale) })}
-        </Texte>
-      )}
-
-      {adresse ? (
-        <Texte variante="type.caption" couleur="ink.soft">
-          {adresse}
-        </Texte>
-      ) : null}
-
-      <Pressable
-        accessibilityRole="link"
-        accessibilityLabel={t('parcours.ouEstLeLieuOuvrir')}
-        onPress={() => void Linking.openURL(adresseDuPlan(lieu, nom))}
-        testID={`${testID}-ouvrir`}
-        style={({ pressed }) => ({
-          flexDirection: 'row',
+      {/* Le glyphe cerclé, en teinte de marque : c'est la seule chose de la
+          fiche qui fasse sortir du produit, et elle a droit à sa pastille. */}
+      <View
+        style={{
+          width: 44,
+          height: 44,
+          borderRadius: radius['radius.pill'],
+          backgroundColor: c['brand.50'],
           alignItems: 'center',
-          gap: 8,
-          opacity: pressed ? 0.7 : 1,
-        })}
+          justifyContent: 'center',
+        }}
       >
-        <Icone nom="lieu" couleur="brand.700" taille={16} />
-        <Texte variante="type.caption" couleur="brand.700">
-          {t('parcours.ouEstLeLieuOuvrir')}
-        </Texte>
-      </Pressable>
-    </View>
+        <Icone nom="lieu" couleur="brand.700" taille={20} />
+      </View>
+
+      <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+        <Texte variante="type.bodyStrong">{t('parcours.ouEstLeLieuOuvrir')}</Texte>
+        {/* **La distance en second, et jamais inventée.** Absente tant que la
+            position n'est pas partagée, et on ne la réclame pas ici : le fil
+            l'a déjà demandée là où elle sert. */}
+        {metres === null ? (
+          <Texte variante="type.body" couleur="ink.soft" testID={`${testID}-sans-position`}>
+            {t('parcours.ouEstLeLieuSansPosition')}
+          </Texte>
+        ) : (
+          <Texte variante="type.body" couleur="ink.soft" testID={`${testID}-distance`}>
+            {t('parcours.ouEstLeLieuDistance', { distance: formatDistance(metres, locale) })}
+          </Texte>
+        )}
+      </View>
+
+      {/* Le glyphe de sortie, et non un chevron : la différence se voit avant
+          l'appui, pas après — cela quitte le produit. */}
+      <Icone nom="sortie" couleur="ink.soft" taille={18} />
+    </Pressable>
   );
 }

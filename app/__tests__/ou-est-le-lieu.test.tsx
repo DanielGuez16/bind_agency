@@ -17,7 +17,7 @@ async function monter(props: Partial<React.ComponentProps<typeof OuEstLeLieu>> =
   return await render(
     <I18nProvider initialLocale="en">
       <ThemeProvider role="creator">
-        <OuEstLeLieu nom="Vela Nail Studio" adresse="120 NE 41st St" lieu={SALON} position={null} {...props} />
+        <OuEstLeLieu nom="Vela Nail Studio" lieu={SALON} position={null} {...props} />
       </ThemeProvider>
     </I18nProvider>,
   );
@@ -55,6 +55,20 @@ describe('le bloc « où c’est »', () => {
   it('et rend la distance dès que la position est connue', async () => {
     await monter({ position: { longitude: -80.1918, latitude: 25.7707 } });
     expect(screen.getByTestId('ou-est-le-lieu-distance')).toHaveTextContent(/1\.0 km|1 km|990 m/);
+  });
+});
+
+describe('l’adresse ne s’y écrit plus', () => {
+  it('ne répète pas ce que la tête de fiche a déjà dit', async () => {
+    // **Le bloc s'intitulait « Where it is » et répétait l'adresse à trois
+    // lignes d'elle-même**, sous un titre qui annonçait ce qu'on venait de
+    // lire. Ce qui reste est le geste : partir. Les deux sens sont ici — sans
+    // la seconde assertion, un bloc entièrement vide passerait aussi.
+    const vue = await monter({ position: { longitude: -80.19, latitude: 25.76 } });
+
+    expect(screen.queryByText(/120 NE 41st/)).toBeNull();
+    expect(screen.getByTestId('ou-est-le-lieu-distance')).toBeTruthy();
+    await vue.unmount();
   });
 });
 
