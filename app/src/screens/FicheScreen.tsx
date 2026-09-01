@@ -282,7 +282,6 @@ export function FicheScreen({
               prestation : y aller à pied ou non change ce qu'on réserve. */}
           <OuEstLeLieu
             nom={fiche.name}
-            adresse={fiche.address}
             lieu={
               fiche.longitude !== null && fiche.latitude !== null
                 ? { longitude: fiche.longitude, latitude: fiche.latitude }
