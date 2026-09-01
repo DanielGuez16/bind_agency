@@ -46,7 +46,6 @@ import {
   SkeletonLignes,
   StatusMessage,
   Texte,
-  TierBadge,
 } from '../components';
 import { Photo } from '../components';
 import { formatDistance, formatNumber } from '../format';
@@ -473,11 +472,27 @@ function Grille({ children }: { children: React.ReactNode }) {
  * c'est le second critère du tri, et le lire à côté du premier fait comprendre
  * l'ordre de la grille sans qu'on l'explique.
  *
- * **Ce qu'elle ouvre ici, et rien de ce qu'elle ouvre ailleurs.** Le badge
- * porte `palier_accessible`, servi par le serveur pour ce salon. Une créatrice
- * qui n'ouvre rien ici garde sa carte entière — elle n'est pas atténuée, le tri
- * l'a déjà mise en fin de liste, et l'effacer reviendrait à cacher la moitié du
- * marché que l'abonnement fait voir.
+ * **Ce qu'elle ouvre ici, et rien de ce qu'elle ouvre ailleurs.** Le serveur
+ * sert `palier_accessible` pour ce salon, et non l'éligibilité de la créatrice
+ * contre tous les paliers du produit — une version antérieure faisait cela, et
+ * répondait « elle se qualifie quelque part », ce qu'un salon ne peut ni
+ * utiliser ni avoir à connaître.
+ *
+ * **Mais la donnée juste s'écrivait avec le mauvais mot.** La carte portait un
+ * `TierBadge` marqué « post », et le mot est celui du système de paliers, qui
+ * appartient à l'autre côté du produit. Un gérant lit « post » sur une fiche et
+ * comprend « son palier est post » : la valeur désignait son propre catalogue,
+ * la lecture désignait une personne. C'est ce qui est arrivé, en campagne, et
+ * c'est le seul défaut qu'il y avait — la donnée n'a pas bougé, le mot si.
+ *
+ * La carte dit maintenant ce que le salon peut en faire : « elle peut réserver
+ * chez vous », ou ce qu'il n'a pas ouvert pour elle. C'est aussi exactement le
+ * premier critère du tri, donc la phrase explique l'ordre de la liste, ce que
+ * le badge ne faisait qu'indirectement.
+ *
+ * Une créatrice qui n'ouvre rien ici garde sa carte entière — elle n'est pas
+ * atténuée, le tri l'a déjà mise en fin de liste, et l'effacer reviendrait à
+ * cacher la moitié du marché que l'abonnement fait voir.
  */
 function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
   const { api } = useApi();
@@ -583,12 +598,14 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
               </Texte>
             </>
           ) : null}
-          {createur.palier_accessible ? (
-            <TierBadge
-              tier={createur.palier_accessible.content_format}
-              size="sm"
-              testID={`palier-${createur.creator_id}`}
-            />
+          {createur.peut_reserver_ici ? (
+            <Texte
+              variante="type.caption"
+              couleur="ink.soft"
+              testID={`peut-reserver-${createur.creator_id}`}
+            >
+              {t('annuaire.paliersOuverts')}
+            </Texte>
           ) : null}
         </View>
 

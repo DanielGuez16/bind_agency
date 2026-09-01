@@ -2047,7 +2047,7 @@ describe('l’annuaire des créateurs', () => {
     expect(screen.getByTestId('photo-c1')).toBeTruthy();
   });
 
-  it('montre les paliers ouverts, qui portent l’information à sa place', async () => {
+  it('dit ce que le salon peut en faire, jamais le palier de la créatrice', async () => {
     await monter(
       <AnnuaireScreen businessId="b1" />,
       clientDe({ '/creators': annuaireDe([CREATEUR_DE_L_ANNUAIRE]) }),
@@ -2055,13 +2055,23 @@ describe('l’annuaire des créateurs', () => {
     );
     await waitFor(() => expect(screen.getByTestId('createur-c1')).toBeTruthy());
 
-    // **Un seul badge, et c'est le palier accessible chez ce salon.** L'écran
-    // listait les formats qu'elle ouvre — trois badges pour dire une chose —
-    // alors que le serveur rend désormais `palier_accessible`, le meilleur
-    // palier qu'elle ouvre **ici**. La liste répondait « elle se qualifie
-    // quelque part », dont un salon ne peut rien faire.
-    expect(screen.getByTestId('palier-c1')).toHaveTextContent(/STORY/);
-    expect(screen.getByTestId('createur-c1')).not.toHaveTextContent(/REEL/);
+    // **Le mot du système de paliers ne traverse pas vers le commerce.**
+    // La carte portait un badge marqué « STORY » : la valeur désignait le
+    // catalogue du salon — le meilleur palier qu'elle ouvre **ici** — mais le
+    // mot désignait une personne, et c'est ainsi qu'il a été lu en campagne.
+    // La phrase dit maintenant ce que le salon peut en faire, ce qui est aussi
+    // le premier critère du tri.
+    expect(screen.getByTestId('peut-reserver-c1')).toHaveTextContent(
+      en.annuaire.paliersOuverts,
+    );
+
+    // **Le décor porte un palier accessible**, sinon ce test passerait sur une
+    // fiche qui n'en a jamais eu et n'éprouverait rien : c'est le cas où les
+    // deux implémentations divergent.
+    expect(CREATEUR_DE_L_ANNUAIRE.palier_accessible).not.toBeNull();
+    for (const mot of [/STORY/, /POST/, /REEL/]) {
+      expect(screen.getByTestId('createur-c1')).not.toHaveTextContent(mot);
+    }
   });
 
   it('dit qu’aucun palier n’est ouvert sans en faire un reproche', async () => {
