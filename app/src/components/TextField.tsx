@@ -181,7 +181,17 @@ export function TextField({
             // Quarante-quatre : la cible tactile minimale. L'icône fait 20,
             // et une cible dimensionnée sur elle se rate une fois sur trois.
             hitSlop={12}
-            style={({ pressed }) => ({ paddingHorizontal: 12, height: '100%', justifyContent: 'center',
+            // **`alignSelf: 'stretch'`, jamais `height: '100%'`.** Une hauteur
+            // en pourcentage se résout contre un parent qui n'en a pas :
+            // le conteneur du champ porte un `minHeight`, pas une hauteur. Sur
+            // le web le navigateur retombe sur la ligne flex et cela passe ;
+            // en natif Yoga n'a rien contre quoi calculer, et le champ de mot
+            // de passe — le seul qui porte ce bouton — devenait un rectangle
+            // bien plus haut que celui de l'adresse, juste à côté.
+            //
+            // `stretch` dit la même intention sans pourcentage : occuper toute
+            // la hauteur de la rangée, quelle qu'elle soit.
+            style={({ pressed }) => ({ paddingHorizontal: 12, alignSelf: 'stretch', justifyContent: 'center',
               opacity: pressed ? 0.7 : 1,
             })}
           >

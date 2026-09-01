@@ -61,7 +61,16 @@ densité par rôle, la structure des composants, les libellés.
   feuille, qui sont ceux que l'espagnol fait déborder.
 - **Aucune troncature sur une action ni sur un statut.** L'ellipse est réservée aux noms propres (salon, créatrice) sur une seule ligne.
 - Les mots de palier ne s'abrègent jamais : `HISTORIA` et `PUBLICACIÓN` passent sur deux lignes dans les listes denses plutôt qu'en initiale, taille plancher 10 px.
-- Les rangées de chips sont en `flexWrap`, jamais en défilement horizontal : une option ne doit pas sortir de l'écran.
+- Les rangées de chips **dont il faut voir l'ensemble** sont en `flexWrap` : une
+  option qu'on ne peut pas comparer aux autres ne se choisit pas, et celle qui
+  sort de l'écran n'existe pas pour qui ne défile pas.
+- *Amendé le 2026-08-28 : le défilement horizontal est admis pour une ligne de
+  **filtres non exclusifs**.* La règle visait les choix qui s'excluent — un
+  palier, un format, une durée — où l'on décide en comparant. Six catégories
+  qu'on parcourt ne sont pas dans ce cas : aucune n'écarte les autres, la
+  première porte « tout », et la ligne se relit d'un geste. La question n'est
+  donc pas la forme du défilement, c'est **si l'ensemble doit se voir d'un
+  coup** ; là où oui, `flexWrap` reste la règle.
 - Les chiffres, codes, heures et durées restent en `type.data` et ne se traduisent pas. Format d'heure sur 24 h dans les deux langues (cohérent avec la caisse) ; les dates suivent la locale.
 - Les libellés d'état admin (`manuel`, `actif`, `épuisé`) sont des chaînes traduites, mais les identifiants techniques et les codes d'erreur restent en anglais brut.
 - Textes de référence à tester en espagnol : « Confirmar reserva », « Mostrar código », « Solicitar un código nuevo », « Enviar mi comprobante », « Nueva presentación solicitada ».

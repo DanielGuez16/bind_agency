@@ -110,7 +110,13 @@ function joursDepuis(debut: string): number {
 export function AudienceScreen({
   onVoirMesPaliers,
   onVoirLeScore,
-}: { onVoirMesPaliers?: () => void; onVoirLeScore?: () => void } = {}) {
+  onRetour,
+}: {
+  onVoirMesPaliers?: () => void;
+  onVoirLeScore?: () => void;
+  /** L'écran n'est plus un onglet : sans retour, on n'en sort qu'en changeant d'onglet. */
+  onRetour?: () => void;
+} = {}) {
   const { api, messageDErreur } = useApi();
   const { t } = useI18n();
   const c = useColors();
@@ -145,6 +151,7 @@ export function AudienceScreen({
     <Ecran
       requete={requete}
       titre={t('parcours.audienceTitre')}
+      onRetour={onRetour}
       squelette={<SkeletonLignes combien={5} testID="squelette-audience" />}
       testID="ecran-audience"
       vide={
@@ -278,8 +285,12 @@ function CarteDuCompte({
         <Icone nom={compte.platform === 'tiktok' ? 'tiktok' : 'instagram'} taille={26} />
         <View style={{ flex: 1, minWidth: 0 }}>
           <Texte variante="type.bodyStrong">{nomDePlateforme(compte.platform)}</Texte>
+          {/* **Un pseudonyme n'est pas un code.** Il était en mono, comme un
+              identifiant qu'on lit caractère par caractère pour le recopier ;
+              « @casabruma » se lit d'un mot. Même défaut que les dates en mono,
+              et même correction. */}
           {compte.handle ? (
-            <Texte variante="type.data" couleur="ink.mute" ellipseSurNomPropre>
+            <Texte variante="type.caption" couleur="ink.mute" ellipseSurNomPropre>
               {compte.handle}
             </Texte>
           ) : null}

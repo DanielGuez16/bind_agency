@@ -132,7 +132,7 @@ describe('importer une carte depuis les prestations', () => {
     await fireEvent.press(screen.getByTestId('importer-une-carte'));
     await fireEvent.press(screen.getByTestId('carte-depuis-la-pellicule'));
 
-    await waitFor(() => expect(screen.getByTestId('relecture-de-la-carte')).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId('ecran-revue-de-carte')).toBeTruthy());
 
     // **Les trois appels, dans l'ordre.** S'arrêter au dépôt rendrait un écran
     // qui n'a l'air de rien manquer.
@@ -159,7 +159,7 @@ describe('importer une carte depuis les prestations', () => {
     await fireEvent.press(screen.getByTestId('importer-une-carte'));
     await fireEvent.press(screen.getByTestId('carte-depuis-les-fichiers'));
 
-    await waitFor(() => expect(screen.getByTestId('relecture-de-la-carte')).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId('ecran-revue-de-carte')).toBeTruthy());
 
     const picker = require('expo-document-picker') as { getDocumentAsync: jest.Mock };
     expect(picker.getDocumentAsync).toHaveBeenCalled();
@@ -175,7 +175,7 @@ describe('importer une carte depuis les prestations', () => {
 
     await fireEvent.press(screen.getByTestId('importer-une-carte'));
     await fireEvent.press(screen.getByTestId('carte-depuis-la-pellicule'));
-    await waitFor(() => expect(screen.getByTestId('relecture-de-la-carte')).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId('ecran-revue-de-carte')).toBeTruthy());
 
     expect(envois.some((e) => e.includes('/validate'))).toBe(false);
     expect(envois.some((e) => e.includes('/catalog-items'))).toBe(false);

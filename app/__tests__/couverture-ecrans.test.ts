@@ -5,7 +5,7 @@
  * un écran écrit sans entrée au registre passerait entre les mailles, et c'est
  * exactement l'écran qu'on écrit vite qui en aurait le plus besoin.
  */
-import { readdirSync } from 'fs';
+import { readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 
 import { ECRANS_COMMERCE, ECRANS_CREATEUR, HORS_REGISTRE } from '../test-support/registre-ecrans';
@@ -54,5 +54,22 @@ describe('couverture des écrans', () => {
     // latérale ne se rangent pas sous une porte. Le nombre est écrit à la main
     // pour que le retrait d'un écran soit un geste, pas un effet de bord.
     expect(HORS_REGISTRE).toHaveLength(10);
+  });
+
+  it('chaque écran porte son nom, pour qu’un parcours puisse s’y porter', () => {
+    // **Un écran sans `testID` ne peut pas être éprouvé de bout en bout.** La
+    // garde des sélecteurs exige qu'un parcours parte de l'écran ; celui qui
+    // n'en porte pas oblige à viser des contrôles isolés dans la page entière,
+    // ce qui mesure l'existence d'un bouton et non celle de la page.
+    //
+    // Trouvé en explorant le produit à la main, et par rien d'autre : le mode
+    // terrain et la caisse n'en avaient aucun, et les deux parcours qui
+    // devaient les traverser ont échoué sur une absence qu'on prenait pour un
+    // défaut du produit.
+    const sansNom = fichiers.filter((fichier) => {
+      const source = readFileSync(join(__dirname, '..', 'src', 'screens', fichier), 'utf-8');
+      return !/testID="ecran-[a-z-]+"/.test(source);
+    });
+    expect(sansNom).toEqual([]);
   });
 });

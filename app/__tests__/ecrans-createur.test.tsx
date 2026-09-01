@@ -27,6 +27,8 @@ import { CreneauxScreen } from '../src/screens/CreneauxScreen';
 import { FicheScreen } from '../src/screens/FicheScreen';
 import { FilScreen } from '../src/screens/FilScreen';
 import { HistoriqueScreen } from '../src/screens/HistoriqueScreen';
+import { MesPublicationsScreen } from '../src/screens/MesPublicationsScreen';
+import { ProfilScreen } from '../src/screens/ProfilScreen';
 import { PaliersScreen } from '../src/screens/PaliersScreen';
 import { PrestationsDuPalierScreen } from '../src/screens/PrestationsDuPalierScreen';
 import { ReglesScreen } from '../src/screens/ReglesScreen';
@@ -322,7 +324,67 @@ const FAVORI = {
   etat: 'reservable',
 };
 
+/** Une réservation dont la contrepartie a été acceptée : une publication. */
+const RESERVATION_PUBLIEE = {
+  booking_id: 'b-pub',
+  status: 'redeemed',
+  starts_at: '2026-08-02T14:00:00Z',
+  ends_at: null,
+  valid_until: '2027-01-01T00:00:00Z',
+  approval_expires_at: null,
+  annulation_sans_frais_jusqu_a: null,
+  created_at: '2026-08-01T00:00:00Z',
+  business_id: 'biz-1',
+  business_name: 'Vela Nail Studio',
+  business_category: 'beauty',
+  business_address: null,
+  business_timezone: 'America/New_York',
+  business_cover_photo_key: null,
+  item_name: 'Gel manicure',
+  item_photo_key: 'photos/vela.jpg',
+  duration_minutes: 45,
+  platform: 'instagram',
+  content_format: 'post',
+  // **`approved`, et c'est tout le décor.** Une preuve soumise et en cours de
+  // contrôle n'est pas une publication : la compter ferait dire à quelqu'un
+  // qu'il a tenu un engagement que le salon peut encore refuser.
+  contrepartie: {
+    collaboration_id: 'c1',
+    status: 'approved',
+    deadline_at: '2026-08-05T00:00:00Z',
+    attempts_count: 1,
+    max_attempts: 3,
+    needs_human_review: false,
+  },
+};
+
 const ECRANS = [
+  {
+    // Le profil, racine de l'onglet depuis la fusion. Il lit l'audience pour
+    // son visage et son pseudonyme, et rien d'autre : les destinations qu'il
+    // offre ne demandent aucun chiffre pour s'afficher.
+    nom: 'profil',
+    noeud: (
+      <ProfilScreen
+        onReglages={() => {}}
+        onMesPublications={() => {}}
+        onFavoris={() => {}}
+        onMonAudience={() => {}}
+      />
+    ),
+    plein: { '/me/audience': [COMPTE] },
+    // **Pas d'état vide, et c'est une décision.** Une créatrice sans réseau
+    // rattaché a quand même un profil : ses favoris et ses réglages vivent ici.
+    // Rendre le vide fermerait la porte des réglages à qui n'a pas encore
+    // branché de compte.
+    vide: null,
+  },
+  {
+    nom: 'mes publications',
+    noeud: <MesPublicationsScreen onRetour={() => {}} />,
+    plein: { '/me/bookings': { items: [RESERVATION_PUBLIEE], compteurs: {} } },
+    vide: { '/me/bookings': { items: [], compteurs: {} } },
+  },
   {
     nom: 'audience',
     noeud: <AudienceScreen />,
@@ -364,6 +426,7 @@ const ECRANS = [
         palier={PALIER as never}
         position={{ longitude: -80.19, latitude: 25.76 }}
         rayonKm={15}
+          onOuvrir={() => {}}
         onRetour={() => {}}
       />
     ),
@@ -515,6 +578,8 @@ describe('quatre états', () => {
 
 /** Le fichier de chaque entrée du registre. */
 const FICHIERS: Record<string, string> = {
+  profil: 'ProfilScreen.tsx',
+  'mes publications': 'MesPublicationsScreen.tsx',
   audience: 'AudienceScreen.tsx',
   fiabilite: 'FiabiliteScreen.tsx',
   favoris: 'FavorisScreen.tsx',

@@ -112,7 +112,7 @@ export function MenuReviewScreen({
 
   if (lignesExtraites.length === 0) {
     return (
-      <View style={{ gap: 12 }} testID="relecture-de-la-carte">
+      <View style={{ gap: 12 }} testID="ecran-revue-de-carte">
         <Texte variante="type.heading">{t('menuImport.title')}</Texte>
         <Texte couleur="ink.soft" testID="carte-illisible">
           {t('menuImport.empty')}
@@ -130,7 +130,7 @@ export function MenuReviewScreen({
   }
 
   return (
-    <View style={{ gap: 16 }} testID="relecture-de-la-carte">
+    <View style={{ gap: 16 }} testID="ecran-revue-de-carte">
       <Texte variante="type.heading">{t('menuImport.title')}</Texte>
       <Texte variante="type.caption" couleur="ink.soft">
         {t('menuImport.intro')}

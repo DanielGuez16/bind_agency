@@ -1026,6 +1026,20 @@ describe('les surfaces de la v1.1', () => {
     expect(dedans.shadowOpacity ?? dedans.boxShadow).toBeUndefined();
   });
 
+  it('la table d’administration ne peint aucune marque', () => {
+    // **L'ambre ne dit qu'une chose : où l'on est.** Une table de quinze lignes
+    // qui peint sa rangée choisie en `brand.50` met quinze occurrences
+    // possibles de la couleur de navigation sur un écran — et l'orange cesse
+    // alors de signifier « ici » pour signifier « une ligne parmi d'autres ».
+    // Le creux et le filet d'encre disent la même chose sans la dépenser.
+    //
+    // La règle porte sur la **table partagée** et non sur les écrans qui
+    // l'emploient : un lien d'action y garde son ambre, parce qu'un lien est
+    // un geste et non de l'ornement répété par rangée.
+    const table = readFileSync(join(RACINE, 'components', 'Admin.tsx'), 'utf-8');
+    expect(table.match(/brand\.[0-9]+/g) ?? []).toEqual([]);
+  });
+
   it('aucun serrage négatif sous 22 points', () => {
     // **Un serrage tient un grand chiffre ensemble ; petit, il ferme des
     // contreformes déjà compactes.** Deux captures d'iPhone l'ont montré mieux

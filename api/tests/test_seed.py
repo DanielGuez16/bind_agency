@@ -12,6 +12,7 @@ import os
 import subprocess
 import sys
 import uuid
+from collections import Counter
 from datetime import UTC, datetime, time, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -65,6 +66,7 @@ from app.seed import (
     SeedRefused,
     verifier_la_cible,
 )
+from app.services import booking_history
 from tests.conftest import _maintenance_dsn
 
 #: Ce que le semis produit, **dérivé de lui** et non recopié.
@@ -192,6 +194,12 @@ def jeu_pose(base_jetable: str) -> str:
 
     # La sortie du second passage, gardée pour les tests de résumé.
     _SORTIES["resume"] = second
+    # **Et celle du premier, qui ne dit pas la même chose.** Le second repart
+    # d'une base pleine : il ne rejoue rien, donc tout ce qui est conditionnel au
+    # travail réellement fait — les lignes d'écart, ce que le semis n'a pas pu
+    # composer — n'y figure pas. Un test qui s'appuierait sur le résumé pour
+    # vérifier qu'un écart est signalé passerait au vert sans rien voir.
+    _SORTIES["premier"] = premier
     return base_jetable
 
 
@@ -210,6 +218,18 @@ def resume_du_semis(jeu_pose: str) -> subprocess.CompletedProcess:
     la même commande sur la même base.
     """
     return _SORTIES["resume"]
+
+
+@pytest.fixture(scope="module")
+def premier_passage_du_semis(jeu_pose: str) -> subprocess.CompletedProcess:
+    """La sortie du **premier** passage, celle qui dit ce que le semis a écarté.
+
+    Distincte de `resume_du_semis` et le commentaire de celui-ci était trop
+    large : « la même commande sur la même base » est vrai des totaux, faux de
+    tout ce que le semis n'a pas pu composer. Le second passage repart d'une
+    base pleine et se tait.
+    """
+    return _SORTIES["premier"]
 
 
 @pytest.fixture
@@ -1475,12 +1495,32 @@ async def test_chaque_commerce_ouvert_a_une_reservation_a_venir(
 
         assert creneaux, f"{nom} n'a aucune réservation"
 
-        du_jour = [
-            quand for quand in creneaux if quand is not None and debut <= quand < debut + DAY
-        ]
-        assert du_jour, (
-            f"{nom} n'a aucune réservation dans sa journée courante : "
-            f"{[str(quand) for quand in creneaux]}"
+        # **Ce que l'écran montre, et non ce que la colonne dit.**
+        #
+        # Le test comptait les réservations dont le créneau tombe aujourd'hui.
+        # La journée en rend davantage : `a_trancher` porte les décisions
+        # **toutes dates confondues**, parce qu'une demande pour après-demain
+        # n'apparaîtrait dans aucune journée qu'on ouvre et attendrait une
+        # réponse que personne ne voit à donner.
+        #
+        # Passé la fermeture, le semis pose ses décisions sur demain — à juste
+        # titre : une heure dépassée ne s'accorde pas, `trancher` lève. Elles
+        # sortaient donc du compte alors qu'elles sont à l'écran, et le test
+        # tombait **tous les soirs**, guérissant seul le lendemain matin. C'est
+        # la pire forme du défaut : il disparaît avant qu'on l'ait compris.
+        #
+        # Une hypothèse écartée en chemin, mesurée plutôt que supposée : aucun
+        # salon n'est fermé un jour de la semaine — les dix-neuf portent des
+        # règles pour les sept jours. La variable était l'heure, jamais le jour.
+        async with async_sessionmaker(bind=seed_conn, expire_on_commit=False)() as lecture:
+            salon = await lecture.get(Business, business_id)
+            assert salon is not None
+            journee = await booking_history.journee_du_commerce(
+                session=lecture, business=salon, jour=debut.date()
+            )
+
+        assert journee.items or journee.a_trancher, (
+            f"{nom} n'a rien à l'écran du comptoir : {[str(quand) for quand in creneaux]}"
         )
 
 
@@ -1810,23 +1850,30 @@ async def test_le_semis_range_la_vignette_avec_l_original(
 async def test_la_journee_du_salon_d_ouverture_porte_plusieurs_etats(
     seed_conn: AsyncConnection,
 ) -> None:
-    """**Une journée, pas une ligne.**
+    """**Une journée, pas une ligne — et à toute heure.**
 
     L'écran « Aujourd'hui » du salon qu'on ouvre en démonstration montrait une
     réservation : exact, et illisible — on n'y voyait ni ce qui venait
     d'arriver, ni ce qui restait à trancher, ni ce qui était déjà fait.
 
-    Le seuil porte sur le **nombre d'états distincts** et non sur le nombre de
+    **Ce test comptait autre chose que ce que l'écran montre**, et c'est ce qui
+    le faisait tomber tous les soirs. Il interrogeait les réservations dont le
+    créneau tombe aujourd'hui ; la journée rend aussi `a_trancher`, **toutes
+    dates confondues** — une demande pour demain s'y lit et s'y tranche. Passé
+    la fermeture, le semis pose ses décisions sur demain, à juste titre : une
+    heure dépassée ne s'accorde pas. Elles disparaissaient donc du compte alors
+    qu'elles sont à l'écran.
+
+    Le compte porte maintenant sur `items + a_trancher`, c'est-à-dire sur ce que
+    le commerce a réellement sous les yeux. La propriété devient vraie à toute
+    heure sans rien céder : elle est plus exigeante qu'avant, pas moins.
+
+    **Le seuil porte sur le nombre d'états distincts**, jamais sur le nombre de
     lignes : dix réservations toutes consommées feraient une journée pleine et
     muette.
-
-    **Trois et non quatre**, parce que la composition suit l'heure du semis. Un
-    jeu posé à neuf heures a peu de passé, un jeu posé à vingt heures peu
-    d'avenir — et c'est vrai des deux côtés. Ce qui est garanti quelle que soit
-    l'heure est une journée qui a eu lieu, une qui continue, et de quoi trancher
-    ; exiger un quatrième état ferait rougir la suite selon le moment où on la
-    lance, ce qui est le pire des tests.
     """
+    from app.services import booking_history
+
     factory = async_sessionmaker(bind=seed_conn, expire_on_commit=False)
     async with factory() as session:
         salon = await session.scalar(
@@ -1834,24 +1881,22 @@ async def test_la_journee_du_salon_d_ouverture_porte_plusieurs_etats(
         )
         assert salon is not None, "le salon d'ouverture a disparu du jeu"
 
-        etats = dict(
-            (
-                await session.execute(
-                    sa.select(Booking.status, sa.func.count())
-                    .where(
-                        Booking.business_id == salon.id,
-                        Booking.starts_at >= sa.func.date_trunc("day", sa.func.now()),
-                        Booking.starts_at
-                        < sa.func.date_trunc("day", sa.func.now()) + sa.text("interval '1 day'"),
-                    )
-                    .group_by(Booking.status)
-                )
-            ).all()
+        journee = await booking_history.journee_du_commerce(
+            session,
+            business=salon,
+            jour=datetime.now(ZoneInfo(salon.timezone)).date(),
         )
+        lignes = [*journee.items, *journee.a_trancher]
+        etats = Counter(ligne.status for ligne in lignes)
 
-        assert len(etats) >= 3, f"journée trop uniforme : {etats}"
-        assert sum(etats.values()) >= 5, f"journée trop courte : {etats}"
-        assert etats.get(BookingStatus.CONSUMED, 0) >= 1, "rien n'a eu lieu ce matin"
+        assert len(etats) >= 3, f"journée trop uniforme : {dict(etats)}"
+        assert len(lignes) >= 5, f"journée trop courte : {dict(etats)}"
+
+        # **Toujours quelque chose à trancher**, quelle que soit l'heure. C'est
+        # la raison d'être de cet écran : un commerce l'ouvre pour décider. Le
+        # semis bascule sur demain après la fermeture plutôt que de poser une
+        # demande sur une heure dépassée, qui refuserait les deux boutons.
+        assert journee.a_trancher, "aucune décision à rendre : l'écran perd son objet"
 
 
 async def test_aucune_demande_a_trancher_n_est_posee_dans_le_passe(

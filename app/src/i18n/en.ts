@@ -208,6 +208,18 @@ export const en = {
     creator: 'Creator',
     validUntil: 'Valid until',
   },
+  profil: {
+    titre: 'Profile',
+    ouvrirLesReglages: 'Settings',
+    sansPseudonyme: 'Your profile',
+    abonnes: '{{n}} followers',
+    mesPublications: 'My posts',
+    favoris: 'Favourites',
+    monAudience: 'My audience',
+    publicationsVideTitre: 'No posts yet',
+    publicationsVideCorps:
+      'A post appears here once the business has accepted your proof. Book a service to start.',
+  },
   menuImport: {
     title: 'Review your menu',
     intro:
@@ -902,7 +914,7 @@ export const en = {
     // Ce que la barre annonce à l'oreille : trois boutons identiques d'un
     // dossier à l'autre ne se distinguent que par ce qu'ils nomment.
     issueSurDossier: '{{issue}}: {{createur}}, {{prestation}}, {{commerce}}',
-    plansLectureSeule: 'Read only · monthly figures computed server-side',
+    plansLectureSeule: 'Monthly figures computed server-side, read only.',
     plansNoteAnnuel: 'A yearly plan bills once a year. Its monthly figure is the server’s own division: it is not a price, and it must not be read as one.',
     plansTitre: 'Subscription plans',
     plansVide: 'No plan yet.',
@@ -1178,6 +1190,11 @@ export const en = {
     sectionPhotos: 'Photos of the place',
     sectionCarte: 'What a creator chooses from',
     sectionHoraires: 'Your week',
+    sectionLiens: 'Where you are online',
+    liensResume: '{{count}} of 3 filled in',
+    lienInstagram: 'Instagram',
+    lienTiktok: 'TikTok',
+    lienSite: 'Website',
     photosCompte: '{{count}} photos',
     carteCompte: '{{count}} pages',
     carteBloque: '{{count}} services cannot go live without it',
@@ -1430,6 +1447,7 @@ export const en = {
     fil: 'Nearby',
     reservations: 'Bookings',
     audience: 'Audience',
+    profil: 'Profile',
     reglages: 'Settings',
     journee: 'Today',
     publications: 'Publications',
@@ -1457,6 +1475,19 @@ export const en = {
     erreurTitre: 'Something broke',
     erreurCorps: 'This screen could not be shown. You can go back and try again.',
     erreurAction: 'Back to start',
+  },
+  /** Les champs qu'un refus de validation peut nommer. */
+  champs: {
+    email: 'email address',
+    password: 'password',
+    fichier: 'file',
+    name: 'name',
+    address: 'address',
+    phone: 'phone number',
+    price_cents: 'price',
+    duration_minutes: 'duration',
+    reason: 'reason',
+    starts_at: 'time slot',
   },
   errors: {
     generic: 'Something went wrong. Please try again.',
@@ -1509,6 +1540,7 @@ export const en = {
     venue_report_not_pending: 'This report has already been decided.',
     not_a_member: 'You do not belong to this business.',
     validation_failed: 'Some information is missing or incorrect.',
+    validation_failed_champs: 'Check this: {{champs}}.',
     business_not_found: 'This business is not available.',
     business_not_active:
       'This business is not open, so it cannot be paused.',

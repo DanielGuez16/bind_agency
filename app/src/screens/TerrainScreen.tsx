@@ -231,6 +231,12 @@ export function TerrainScreen() {
     <Ecran
       requete={requete}
       titre={t('terrain.titre')}
+      // **Le nom de l'écran, et il manquait.** Un parcours de bout en bout se
+      // porte par l'écran qu'il éprouve — la garde des sélecteurs l'exige — et
+      // sans ce nom il ne pouvait pas s'y porter du tout : l'exploration a dû
+      // viser des champs isolés, donc mesurer l'existence d'un contrôle plutôt
+      // que celle de la page qui le contient.
+      testID="ecran-terrain"
       squelette={<SkeletonLignes combien={5} testID="squelette-terrain" />}
       vide={
         <View style={{ gap: 20 }}>

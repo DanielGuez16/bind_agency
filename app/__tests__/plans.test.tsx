@@ -10,6 +10,7 @@
  * l'argent, et un total faux y est pire qu'un total absent.
  */
 import { render, screen, waitFor, within } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 
 import { ApiClient, ApiProvider } from '../src/api';
 import { I18nProvider } from '../src/i18n';
@@ -107,6 +108,19 @@ describe('l’écran des plans', () => {
     await waitFor(() => expect(screen.getByTestId('plans-total')).toBeTruthy());
 
     expect(within(screen.getByTestId('plans-total')).getByText('198,00 US$')).toBeTruthy();
+  });
+
+  it('la ligne de lecture seule est du texte, pas une étiquette', async () => {
+    // **Deux faits joints par un point médian ne font pas une étiquette.** Elle
+    // comptait quarante-sept signes en capitales espacées ; la règle de la
+    // passation (§13 ter) borne une étiquette à vingt-quatre signes, au-delà
+    // c'est du texte. On éprouve la casse rendue plutôt que le nom du jeton :
+    // c'est ce que l'œil reçoit, et un jeton peut changer de nom.
+    await monter([plan()]);
+    await waitFor(() => expect(screen.getByTestId('lecture-seule')).toBeTruthy());
+
+    const style = StyleSheet.flatten(screen.getByTestId('lecture-seule').props.style);
+    expect(style.textTransform).not.toBe('uppercase');
   });
 
   it('n’additionne pas deux devises, et le dit', async () => {
