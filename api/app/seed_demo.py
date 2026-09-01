@@ -134,6 +134,26 @@ class ResumeDemo:
 #: et c'est délibéré : il porte le cas « zéro historique », celui de tout salon
 #: qui vient de s'inscrire. Un jeu de données où chaque écran est plein ne
 #: laisse jamais voir ce que voit un nouveau venu.
+# **Une demande à trancher se pose loin devant, pas juste devant.**
+#
+# `>= maintenant` suffisait à l'écriture et ne suffisait pas à la lecture : un
+# créneau à la prochaine heure ronde est à venir quand le semis l'écrit, et
+# derrière nous quand on le regarde. Le produit refuse alors d'accorder une
+# heure dépassée — `trancher` lève `CreneauDepasse` — et la file du jour
+# devient intranchable, tous ses boutons morts.
+#
+# Ce n'est pas une fenêtre horaire comme les deux défauts précédents, c'est une
+# course, et elle n'a aucun motif : elle tombe à chaque exécution qui enjambe
+# une heure ronde. Mesurée sur l'intégration continue — quinze salons portant
+# une demande à 16 h 00, l'assertion passée à 16 h 00 min 10 s.
+#
+# La marge appartient donc au semis et non au test : « une demande en attente
+# sur une heure dépassée est un défaut du jeu » est vrai, et l'assouplir
+# rendrait vraie une propriété fausse. Deux heures, parce que ce qu'on protège
+# est la durée d'une démonstration, pas celle d'une suite de tests : commencée
+# à 15 h 50, elle doit encore pouvoir trancher à 17 h.
+MARGE_DE_DECISION = timedelta(hours=2)
+
 OCEAN = "Ocean Beauty Studio"
 WYNWOOD = "Wynwood Nails & Care"
 BRICKELL = "Brickell Spa Collective"
@@ -1251,7 +1271,7 @@ async def _la_journee_de_chaque_salon(
             continue
 
         passes = [c for c in creneaux if c < maintenant]
-        a_venir = [c for c in creneaux if c >= maintenant]
+        a_venir = [c for c in creneaux if c >= maintenant + MARGE_DE_DECISION]
         if not passes and not a_venir:
             print(f"  aucun créneau aujourd'hui chez {business.name}")
             continue

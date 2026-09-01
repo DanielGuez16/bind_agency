@@ -1911,6 +1911,16 @@ async def test_aucune_demande_a_trancher_n_est_posee_dans_le_passe(
 
     Ce que ce test protège n'est donc pas une préférence d'affichage, c'est
     qu'on puisse **faire** quelque chose de ce que la démonstration montre.
+
+    **Et une marge, plutôt que « pas dans le passé ».** Écrit contre
+    `now()` seul, ce test se mesurait lui-même : le semis choisissait un
+    créneau encore devant lui, la suite tournait cinq minutes, et le créneau
+    passait derrière pendant la vérification. Quinze salons à 16 h 00, une
+    assertion à 16 h 00 min 10 s — dix secondes, et une intégration continue
+    rouge une fois sur douze, sans motif que personne ne pourrait nommer.
+    Exiger une heure d'avance ôte la course **et** dit la bonne chose : ce
+    qu'on protège est qu'une demande reste tranchable le temps qu'on la
+    regarde, pas à la seconde où on l'écrit.
     """
     factory = async_sessionmaker(bind=seed_conn, expire_on_commit=False)
     async with factory() as session:
@@ -1921,14 +1931,15 @@ async def test_aucune_demande_a_trancher_n_est_posee_dans_le_passe(
                 .where(
                     Booking.status == BookingStatus.AWAITING_BUSINESS,
                     Booking.starts_at.is_not(None),
-                    Booking.starts_at < sa.func.now(),
+                    Booking.starts_at < sa.func.now() + timedelta(hours=1),
                 )
             )
         ).all()
 
         assert not passees, (
-            "des demandes attendent une décision sur une heure dépassée, "
-            f"que le produit refusera : {[(n, str(q)) for n, q in passees]}"
+            "des demandes attendent une décision sur une heure trop proche : "
+            "le produit refusera dès qu'elle sera dépassée, et elle le sera "
+            f"pendant la démonstration : {[(n, str(q)) for n, q in passees]}"
         )
 
 
