@@ -1073,6 +1073,7 @@ export const es: Catalogue = {
   },
   lieu: {
     sectionPhotos: 'Fotos del lugar',
+    sectionPhotoUne: 'Foto del lugar',
     sectionCarte: 'Entre qué elige una creadora',
     sectionHoraires: 'Tu semana',
     sectionLiens: 'Dónde estás en línea',

@@ -2876,3 +2876,60 @@ describe('la grille de l’annuaire', () => {
     expect(screen.queryByTestId('voir-plus')).toBeNull();
   });
 });
+
+describe('le titre de la galerie suit ce qu’elle contient', () => {
+  /**
+   * **Le titre décrivait la capacité, le lecteur y lit le contenu.**
+   * « Photos of the place » au-dessus d'une seule image se lit comme un
+   * défaut — et le résumé posé juste en dessous disait déjà « One photo »,
+   * si bien que les deux lignes se contredisaient à un mot près.
+   */
+  function lieuAvec(photos: unknown[]) {
+    return clientDe({
+      '/photos': photos,
+      '/menu': [],
+      '/catalog-items': [{ ...ITEM, leaves_choice: false }],
+      '/capacity-rules': [REGLE],
+      '/capacity-exceptions': [],
+      '/business/b1': { cover_photo_key: null, menu_url: null },
+    });
+  }
+
+  const PHOTO = (id: string) => ({ id, storage_key: `photos/b1/${id}.jpg`, position: 0 });
+
+  it('dit une photo quand il n’y en a qu’une', async () => {
+    await monter(<LieuScreen businessId="b1" />, lieuAvec([PHOTO('p1')]), 'merchant');
+
+    await waitFor(() => expect(screen.getByTestId('section-photos-entete')).toBeTruthy());
+    // **Un fragment, pas le texte entier.** L'en-tête porte le titre *et* son
+    // résumé : `toHaveTextContent` avec une chaîne compare tout, et l'assertion
+    // échouerait sur « Photo of the placeOne photo » alors que le mot cherché y
+    // est. Le piège se paie deux fois — à l'écrire, puis à croire que l'écran ne
+    // rend rien.
+    expect(screen.getByTestId('section-photos-entete')).toHaveTextContent(
+      /Photo of the place/,
+    );
+  });
+
+  it('et le pluriel dès la seconde', async () => {
+    // **Le cas qui fait diverger les deux implémentations.** Un titre figé au
+    // singulier passerait le test du dessus tout aussi bien ; c'est ici qu'il
+    // écrirait « Photo of the place » sur une section qui en porte douze.
+    await monter(
+      <LieuScreen businessId="b1" />,
+      lieuAvec([PHOTO('p1'), PHOTO('p2')]),
+      'merchant',
+    );
+
+    await waitFor(() => expect(screen.getByTestId('section-photos-entete')).toBeTruthy());
+    expect(screen.getByTestId('section-photos-entete')).toHaveTextContent(/Photos of the place/);
+  });
+
+  it('et le pluriel aussi quand la section est vide', async () => {
+    // Zéro n'est pas un : la section vide annonce ce qu'on peut y mettre.
+    await monter(<LieuScreen businessId="b1" />, lieuAvec([]), 'merchant');
+
+    await waitFor(() => expect(screen.getByTestId('section-photos-entete')).toBeTruthy());
+    expect(screen.getByTestId('section-photos-entete')).toHaveTextContent(/Photos of the place/);
+  });
+});
