@@ -151,8 +151,17 @@ describe('la carte, et ce qui a traversé les trois fils', () => {
     expect(screen.getByTestId('rangee-proches-apercu-b1-ligne-i-o1')).toHaveTextContent(
       /Gel manicure/,
     );
-    const attribution = screen.getByTestId('rangee-proches-apercu-b1-compte');
-    expect(attribution).toHaveTextContent(new RegExp(en.quartiers.wynwood, 'i'));
+    // **Le quartier est dans la ligne du salon, et plus dans le compte.**
+    // « 2 services open to you in Wynwood » disait deux choses d'un trait, dont
+    // une déjà écrite juste au-dessus — et cela faisait lire le compte comme un
+    // total du quartier. Les deux sens sont éprouvés : sans la seconde
+    // assertion, remettre le quartier dans la phrase repasserait au vert.
+    expect(screen.getByTestId('rangee-proches-apercu-b1-situation')).toHaveTextContent(
+      new RegExp(en.quartiers.wynwood, 'i'),
+    );
+    expect(screen.getByTestId('rangee-proches-apercu-b1-compte')).not.toHaveTextContent(
+      new RegExp(en.quartiers.wynwood, 'i'),
+    );
     await vue.unmount();
   });
 
