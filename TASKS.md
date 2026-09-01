@@ -3805,3 +3805,67 @@ barrière avant le réseau, et c'est là qu'il faut la poser.
       `/me/businesses` ne rend que l'appartenance. Le porter là plutôt que
       d'ouvrir une requête par salon depuis l'écran : deux salons feraient deux
       appels, dix en feraient dix*
+
+- [x] **`Dix retours v9` · quatre écrans recomposés, deux corrections directes**
+      *La planche répond à dix retours et n'en compose que quatre : les deux
+      premiers sont des corrections appliquées dans les planches elles-mêmes, le
+      septième est un défaut du produit et non de la conception, le huitième est
+      une règle.*
+
+      ***L'ouverture était un plafond, elle devient un plancher**, et c'est le
+      seul renversement de la passe. La règle d'avant — « si l'application est
+      prête à 300 ms, l'écran part à 300 ms » — était juste sur le papier et
+      fausse à l'usage : les fontes et le trousseau se lisent en quelques
+      dizaines de millisecondes, si bien que le point tombait sur un écran déjà
+      remplacé. Une entrée qu'on ne voit qu'en cas de lenteur n'est pas une
+      entrée, c'est un symptôme. Tenue à 760, sous le plafond de 800 qui, lui,
+      n'a pas bougé.*
+
+      ***« Miami » n'informait personne.** Le fil est local par construction :
+      tout ce qu'il montre est à Miami. L'en-tête ne porte donc plus rien sans
+      filtre, et le compte seul une fois filtré. `murAilleurs` et
+      `murAilleursCorps` partent avec — orphelines depuis le fil v5, et la garde
+      des clés ne voit pas ce sens-là.*
+
+      ***La photo du fil n'est plus dans une carte, elle est l'objet.** Un cadre
+      blanc bordé autour d'une image ajoute une seconde silhouette autour de la
+      première, et c'est celle du cadre qu'on voit. Rectangle arrondi de 16,
+      rien autour, le texte dessous sans fond ; un filet d'un point sous chaque
+      rangée remplace douze contours — mais pas sous la dernière, un séparateur
+      ne ferme pas une liste.*
+
+      ***La fiche : image de 330 qui se dissout dans la page sur 130.** Une
+      photo qui s'arrête net découpe l'écran en deux, et le nom du salon tombe
+      juste sous la coupure. La couverture passe à fond perdu, le corps pose sa
+      marge un cran plus bas. La flèche est seule dans sa pastille — et **elle
+      survit à une fiche sans photo**, faute de quoi l'écran de pile qui n'a pas
+      de couverture n'aurait plus d'issue du tout sur le web. La contrepartie
+      rentre dans le bloc du service, sous un filet : séparée par un simple
+      écart, elle flottait entre deux prestations.*
+
+      ***La décision : une seule graisse forte, rien sous seize points.** Le
+      rangement de la v8 avait laissé les deux lignes de contexte en légende —
+      trois faits, deux tailles, dont une trop petite pour ce qui décide. Le nom
+      prend la graisse de section, tout le reste passe au corps.*
+
+      ***Le pluriel figé a survécu jusqu'à la campagne, et la planche dit
+      pourquoi** : les seuls comptes qu'elle compose sont 12, 3 et 2, tous
+      pluriels. Aucune planche ne compose un salon à une seule photo, donc le
+      singulier n'a jamais été exercé en conception. Huit libellés reçoivent
+      leur branche — photos, pages, jours ouverts, prestations bloquées, capacité,
+      compte du fil.*
+
+      ***La carte du menu ne se demande qu'à qui a quelque chose à faire
+      choisir.** Le critère est le drapeau de la prestation, jamais la catégorie
+      du commerce : un spa à formules en a besoin, un salon aux prestations
+      fixes n'en a aucun usage — et lui en réclamer une crée une tâche qui ne se
+      termine jamais. La section reste visible si une carte existe déjà, sinon un
+      commerce qui retire son dernier choix perdrait l'accès aux pages déposées.*
+
+      ***`2 at a time` ne disait pas deux quoi.** Deviennent « 2 creators at
+      once », l'explication remonte au-dessus de la colonne qu'elle explique, et
+      les jours fermés gardent leur ligne en fond retiré — les retirer ferait une
+      semaine à cinq lignes où l'on chercherait le jeudi.*
+
+      *Deux mutations vérifiées sur les gardes neuves — le champ de la carte, et
+      le retour de la fiche sans photo — plus une sur le retrait de « Miami ».*

@@ -106,7 +106,11 @@ async function monter(fiche: FichePublique = FICHE) {
     <I18nProvider initialLocale="en">
       <ThemeProvider role="creator">
         <ApiProvider client={clientDe(fiche)}>
-          <FicheScreen businessId="b1" onReserver={() => {}} />
+          {/* **Le retour est branché, sinon rien ne le rend.** La pastille
+              n'existe que si l'écran a d'où revenir — sans ce montage, le test
+              qui vérifie qu'une fiche sans photo garde son issue vérifierait
+              seulement que l'écran ne rend pas de retour, ce qu'il fait déjà. */}
+          <FicheScreen businessId="b1" onReserver={() => {}} onRetour={() => {}} />
         </ApiProvider>
       </ThemeProvider>
     </I18nProvider>,
@@ -374,8 +378,8 @@ describe('la galerie et la carte cessent d’être invisibles', () => {
   });
 
   it('et pas de couverture du tout quand il n’y a aucune image', async () => {
-    // Un aplat gris de 270 points en tête d'une fiche est une absence qui prend
-    // plus de place que ce qu'elle remplace.
+    // Un aplat gris en tête d'une fiche est une absence qui prend plus de place
+    // que ce qu'elle remplace.
     const vue = await monter({
       ...FICHE,
       cover_photo_key: null,
@@ -385,6 +389,11 @@ describe('la galerie et la carte cessent d’être invisibles', () => {
 
     expect(screen.queryByTestId('couverture')).toBeNull();
     expect(screen.queryByTestId('acces-galerie')).toBeNull();
+    // **Et le retour survit à la couverture qui l'accueille.** La pastille est
+    // posée sur l'image ; sans image elle revient dans le flux, faute de quoi
+    // cette fiche-là ne se quitterait qu'en changeant d'onglet — sur le web il
+    // n'y a ni geste ni bouton système.
+    expect(screen.getByTestId('retour')).toBeTruthy();
     await vue.unmount();
   });
 });

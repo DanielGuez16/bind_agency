@@ -144,6 +144,7 @@ function LigneDeJour({
 }) {
   const { api, messageDErreur } = useApi();
   const { t } = useI18n();
+  const c = useColors();
   const [ouvert, setOuvert] = useState(false);
   const [echec, setEchec] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
@@ -185,15 +186,45 @@ function LigneDeJour({
     );
 
   return (
-    <View style={{ gap: 6 }} testID={`jour-${jour}`}>
+    <View
+      testID={`jour-${jour}`}
+      style={{
+        gap: 6,
+        // **Le jour fermé garde sa ligne, en fond retiré.** Le retirer ferait
+        // une semaine à cinq lignes où l'on chercherait le jeudi ; le laisser
+        // au même plan que les autres ferait sept jours ouverts. Le fond dit
+        // « cette ligne existe et ne porte rien », ce qu'aucun mot ne dit aussi
+        // vite.
+        ...(regle
+          ? null
+          : {
+              backgroundColor: c['bg.inset'],
+              borderRadius: radius['radius.md'],
+              paddingHorizontal: 10,
+              paddingVertical: 6,
+            }),
+      }}
+    >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <Texte variante="type.label">{libelle}</Texte>
+        <Texte variante="type.label" couleur={regle ? 'ink.default' : 'ink.mute'}>
+          {libelle}
+        </Texte>
         <View style={{ flex: 1 }}>
           {regle ? (
-            <Texte variante="type.data" couleur="ink.soft" testID={`horaires-${jour}`}>
-              {regle.start_time.slice(0, 5)} – {regle.end_time.slice(0, 5)} ·{' '}
-              {t('composition.postes', { n: regle.concurrent_slots })}
-            </Texte>
+            /* **Deux faits, deux lignes.** « 10:00 – 19:00 · 2 at a time »
+               joignait par un point médian une plage horaire et un compte de
+               personnes : deux natures qui ne se lisent pas d'un trait, et le
+               point laissait croire à une suite. */
+            <View testID={`horaires-${jour}`}>
+              <Texte variante="type.data" couleur="ink.soft">
+                {regle.start_time.slice(0, 5)} – {regle.end_time.slice(0, 5)}
+              </Texte>
+              <Texte variante="type.caption" couleur="ink.soft" testID={`postes-${jour}`}>
+                {regle.concurrent_slots === 1
+                  ? t('composition.postesUn')
+                  : t('composition.postes', { n: regle.concurrent_slots })}
+              </Texte>
+            </View>
           ) : (
             /* Écrit, jamais absent : une ligne manquante ne dit pas si le jour
                est fermé ou si le commerce n'a rien rempli. */
@@ -403,6 +434,14 @@ export function HorairesDuCommerce({
         <View style={{ gap: 16 }}>
           <View style={{ gap: 8 }} testID="semaine">
             <Texte variante="type.label">{t('composition.ouverture')}</Texte>
+            {/* **L'explication précède la colonne qu'elle explique.** Posée
+                sous les sept jours, elle arrivait après qu'on avait lu sept
+                fois un nombre sans savoir ce qu'il comptait — et « 2 » se
+                devine mal quand il peut désigner des créneaux, des postes ou
+                des heures. */}
+            <Texte variante="type.caption" couleur="ink.soft" testID="capacite-explication">
+              {t('composition.capaciteExplication')}
+            </Texte>
             {JOURS.map((cle, jour) => (
               <LigneDeJour
                 key={cle}
@@ -413,9 +452,6 @@ export function HorairesDuCommerce({
                 onChange={onChange}
               />
             ))}
-            <Texte variante="type.caption" couleur="ink.soft">
-              {t('composition.capaciteExplication')}
-            </Texte>
           </View>
 
           <Exceptions

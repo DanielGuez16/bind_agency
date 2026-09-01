@@ -383,8 +383,11 @@ export const en = {
     // entière ; ce n'est pas le quartier où l'on est, que rien ne sait
     // résoudre. Une clé et non une constante : le jour où un second marché
     // ouvre, c'est ici que ça se voit.
-    filMarche: 'Miami',
-    filMarcheEtCompte: '{{marche}} · {{count}} services',
+    // **Sans le nom de la ville.** Le fil est local par construction : tout ce
+    // qu'il montre est à Miami, donc l'écrire n'informe personne. Reste le
+    // compte, qui dit ce que le filtre ouvre.
+    filCompte: '{{count}} services',
+    filCompteUn: 'One service',
     filRechercher: 'Salon, service, neighbourhood',
     filEffacerLaRecherche: 'Clear',
     filVoirMesFavoris: 'Saved',
@@ -410,8 +413,6 @@ export const en = {
     carteServicesOuvertsAu: '{{count}} services open to you in {{quartier}}',
     carteServicesOuverts: '{{count}} services open to you',
     carteEtEncore: 'and {{count}} more inside',
-    murAilleurs: 'Elsewhere in Miami',
-    murAilleursCorps: '{{count}} salons that have not said which neighbourhood they are in',
     // Les rangées par quartier. La carte d'os ferme une rangée courte et dit
     // ce qu'il y a plus loin : sans elle, une rangée de deux cartes ressemble
     // à un chargement qui a échoué.
@@ -440,6 +441,7 @@ export const en = {
     ficheOuvertJusqua: 'Open until {{heure}}',
     ficheDuree: '{{count}} minutes',
     fichePhotosCompte: '{{count}} photos',
+    fichePhotosCompteUne: 'One photo',
     fichePasEncore: 'Not open to you yet',
     ficheOuvertes: '{{count}} open to you',
     fichePasEncoreCompte: '{{count}} not open to you yet',
@@ -510,8 +512,10 @@ export const en = {
     galerieTitre: 'Photos',
     cartePage: 'Page {{rang}}',
     fichePhotosDetail: '{{count}} · the room and the plates',
+    fichePhotosDetailUne: 'One photo · the room and the plates',
     ficheCarte: 'Menu',
     ficheCartePages: '{{count}} pages · read before you book',
+    ficheCartePagesUne: 'One page · read before you book',
     ficheCarteSurLeurSite: 'On their website',
     offreLaisseUnChoix: 'You choose from the menu',
     sortieTitre: 'You will leave BIND',
@@ -1200,9 +1204,13 @@ export const en = {
     lienTiktok: 'TikTok',
     lienSite: 'Website',
     photosCompte: '{{count}} photos',
+    photosCompteUne: 'One photo',
     carteCompte: '{{count}} pages',
+    carteCompteUne: 'One page',
     carteBloque: '{{count}} services cannot go live without it',
+    carteBloqueUn: 'One service cannot go live without it',
     joursOuverts: 'Open {{count}} days a week',
+    joursOuvertsUn: 'Open one day a week',
     titre: 'Your place',
   },
   composition: {
@@ -1325,12 +1333,16 @@ export const en = {
     videAction: 'Add my first service',
     horairesTitre: 'Hours and capacity',
     ouverture: 'Opening',
-    capaciteExplication: 'How many creators you take at the same time. Separate from your usual client diary.',
+    capaciteExplication: 'When you are open, and how many creators you can take at once. Separate from your usual client diary.',
     modifier: 'Edit',
     enregistrer: 'Save',
     ferme: 'Closed',
     fermerCeJour: 'Close this day',
-    postes: '{{n}} at a time',
+    // **« Créateurs », et non « à la fois ».** « 2 at a time » ne disait pas
+    // deux quoi : des créneaux, des postes, des heures. Le nom du compté est
+    // ce qui manquait, et il tient dans le libellé.
+    postes: '{{n}} creators at once',
+    postesUn: 'One creator at once',
     champDebut: 'Opens at, HH:MM',
     champFin: 'Closes at, HH:MM',
     champPostes: 'Creators at a time',

@@ -1,5 +1,16 @@
 /**
- * Une carte du fil : une prestation, son salon, et ce qu'il ouvre en plus.
+ * Une prestation du fil : une photo, son nom, son salon, et ce qu'il ouvre.
+ *
+ * **La photo n'est plus dans une carte, elle *est* l'objet.** Un cadre blanc
+ * bordé autour d'une image dans un fil de photos encadre ce qui n'a pas besoin
+ * de l'être : il ajoute une seconde silhouette rectangulaire autour de la
+ * première, et c'est celle du cadre qu'on voit d'abord. Rectangle arrondi de
+ * 16, rien autour, le texte dessous sans fond ni filet ni ombre — ce qui reste
+ * est l'image et sa légende, ce que le fil est censé montrer.
+ *
+ * **Ce qui sépare les rangées est un filet, pas un contour par carte.** Une
+ * ligne fine sous la dernière rangée d'une section suffit à dire où l'une
+ * finit ; douze contours pour dire la même chose font douze objets.
  *
  * **280 par 210, et c'est une mesure.** Les photos arrivent en 4:3 ; une
  * colonne de 171 avec une image de 100 en jetait un quart et n'en rendait que
@@ -58,22 +69,25 @@ export function CarteDuFil({
       onPress={onPress}
       onPressIn={enfoncement.onPressIn}
       onPressOut={enfoncement.onPressOut}
-      style={{
-        width: LARGEUR_DE_LA_CARTE,
-        borderRadius: radius['radius.lg'],
-        backgroundColor: c['bg.surface'],
-        borderWidth: 1,
-        borderColor: c['line.default'],
-        overflow: 'hidden',
-      }}
+      style={{ width: LARGEUR_DE_LA_CARTE, gap: 10 }}
     >
-      <Photo
-        uri={prestation.photo}
-        hauteur={PHOTO_DE_LA_CARTE}
-        testID={testID ? `${testID}-photo` : undefined}
-        replit={<MediaFallback monogramme={prestation.salon} height={PHOTO_DE_LA_CARTE} />}
-      />
-      <View style={{ padding: 15, paddingTop: 13, gap: 4 }}>
+      {/* L'arrondi de la photo, celui de toute image du système — et non celui
+          de la carte, puisqu'il n'y a plus de carte. */}
+      <View
+        style={{
+          borderRadius: radius['radius.photo'],
+          overflow: 'hidden',
+          backgroundColor: c['media.placeholder'],
+        }}
+      >
+        <Photo
+          uri={prestation.photo}
+          hauteur={PHOTO_DE_LA_CARTE}
+          testID={testID ? `${testID}-photo` : undefined}
+          replit={<MediaFallback monogramme={prestation.salon} height={PHOTO_DE_LA_CARTE} />}
+        />
+      </View>
+      <View style={{ gap: 5 }}>
         <Texte
           variante="type.titreDApercu"
           ellipseSurNomPropre
