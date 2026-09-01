@@ -230,6 +230,13 @@ export function FicheScreen({
           />
 
           <View style={{ paddingHorizontal: margeDeLaFiche, gap: 18 }}>
+            {/* **Sans couverture, la pastille revient dans le flux.** Elle vit
+                sur l'image quand il y en a une ; un salon sans photo n'en a
+                pas, et une fiche sans retour ne se quitte qu'en changeant
+                d'onglet. */}
+            {onRetour && !sourceDeCouverture(api, fiche) ? (
+              <PastilleDeRetour onRetour={onRetour} flottante={false} />
+            ) : null}
           <View style={{ gap: 10 }}>
             <View style={{ gap: 3 }}>
               <Texte variante="type.screenTitle" ellipseSurNomPropre>
@@ -480,6 +487,56 @@ function AccesALaCarte({
 }
 
 /**
+ * Le retour, seul dans sa pastille.
+ *
+ * **La flèche y est seule, et rien d'autre n'y entre.** Elle voyageait avec le
+ * mot « Back » au-dessus du titre : sur un écran dont le premier objet est une
+ * photo pleine largeur, cette ligne repoussait l'image d'un cran et lui retirait
+ * son entrée. Un libellé ferait grandir la pastille en bouton, et un bouton posé
+ * sur une photo se lit comme une action *sur la photo*.
+ *
+ * **Elle existe aussi sans image, et c'est la moitié qui compte.** Un salon qui
+ * n'a pas de photo n'a pas de couverture ; une pastille qui ne vivrait que sur
+ * l'image laisserait cette fiche-là sans issue — un écran de pile ne se quitte
+ * pas autrement sur le web, où il n'y a ni geste ni bouton système.
+ */
+function PastilleDeRetour({
+  onRetour,
+  flottante,
+}: {
+  onRetour: () => void;
+  /** Posée sur l'image quand il y en a une, dans le flux sinon. */
+  flottante: boolean;
+}) {
+  const { t } = useI18n();
+  const { color: c } = useTheme();
+
+  return (
+    <Pressable
+      testID="retour"
+      accessibilityRole="button"
+      accessibilityLabel={t('common.retour')}
+      onPress={onRetour}
+      hitSlop={12}
+      style={({ pressed }) => ({
+        ...(flottante ? { position: 'absolute', top: 16, left: 18 } : { alignSelf: 'flex-start' }),
+        width: PASTILLE_DE_RETOUR,
+        height: PASTILLE_DE_RETOUR,
+        borderRadius: radius['radius.pill'],
+        alignItems: 'center',
+        justifyContent: 'center',
+        // Le voile de badge sur l'image — le jeton de ce qui se pose sur un
+        // cadrage dont on ne sait rien. Dans le flux il n'y a rien à voiler.
+        backgroundColor: flottante ? c['scrim.badge'] : 'transparent',
+        opacity: pressed ? 0.7 : 1,
+      })}
+    >
+      <Icone nom="retour" couleur="ink.default" taille={20} />
+    </Pressable>
+  );
+}
+
+/**
  * La couverture, et le compte de photos posé dessus.
  *
  * **La galerie n'avait pas été mentionnée dans la revue**, et c'était le signe
@@ -492,6 +549,26 @@ function AccesALaCarte({
  * fiche serait une absence qui prend plus de place que ce qu'elle remplace ;
  * l'identité remonte alors d'elle-même.
  */
+/**
+ * L'image de couverture, résolue — ou rien.
+ *
+ * **Une seule règle, lue à deux endroits.** La couverture s'efface sans photo,
+ * et le corps doit alors reprendre le retour. Deux conditions écrites
+ * séparément finiraient par diverger — et la fiche qui perdrait son issue
+ * serait précisément celle que personne ne compose pour l'essayer : un salon
+ * sans photo.
+ *
+ * **La première photo de la galerie sert de couverture par défaut.** Sans ce
+ * repli, un salon qui a douze photos et pas de couverture déclarée perdait
+ * l'entrée de sa galerie tout entière.
+ */
+function sourceDeCouverture(
+  api: ReturnType<typeof useApi>['api'],
+  fiche: FichePublique,
+): { uri: string } | null {
+  return urlImage(api.urlDuMedia(fiche.cover_photo_key ?? fiche.photos[0] ?? null)) ?? null;
+}
+
 function Couverture({
   fiche,
   onOuvrirLaGalerie,
@@ -516,12 +593,7 @@ function Couverture({
   const { t, locale } = useI18n();
   const { color: c } = useTheme();
 
-  // **La première photo de la galerie sert de couverture par défaut.** Sans ce
-  // repli, un salon qui a douze photos et pas de couverture déclarée perdait
-  // l'entrée de sa galerie tout entière : elle vit maintenant sur l'image, et
-  // sans image il n'y a plus de porte. La première photo est une photo du lieu
-  // — c'est ce que la galerie contient — donc elle tient ce rôle sans mentir.
-  const source = urlImage(api.urlDuMedia(fiche.cover_photo_key ?? fiche.photos[0] ?? null));
+  const source = sourceDeCouverture(api, fiche);
   if (!source) return null;
 
   const compte = fiche.photos.length;
@@ -551,32 +623,7 @@ function Couverture({
         }}
       />
 
-      {onRetour ? (
-        <Pressable
-          testID="retour"
-          accessibilityRole="button"
-          accessibilityLabel={t('common.retour')}
-          onPress={onRetour}
-          hitSlop={12}
-          style={({ pressed }) => ({
-            position: 'absolute',
-            top: 16,
-            left: 18,
-            width: PASTILLE_DE_RETOUR,
-            height: PASTILLE_DE_RETOUR,
-            borderRadius: radius['radius.pill'],
-            alignItems: 'center',
-            justifyContent: 'center',
-            // Le voile de badge : le jeton de ce qui se pose sur une image dont
-            // on ne sait rien. La flèche y garde son contraste sur un cadrage
-            // clair comme sur un cadrage sombre.
-            backgroundColor: c['scrim.badge'],
-            opacity: pressed ? 0.7 : 1,
-          })}
-        >
-          <Icone nom="retour" couleur="ink.default" taille={20} />
-        </Pressable>
-      ) : null}
+      {onRetour ? <PastilleDeRetour onRetour={onRetour} flottante /> : null}
 
       {compte > 0 ? (
         <Pressable
