@@ -106,24 +106,6 @@ async function monter() {
       </ThemeProvider>
     </I18nProvider>,
   );
-  await waitFor(() => expect(screen.getByTestId('ecran-journee')).toBeTruthy());
-  // eslint-disable-next-line no-console
-  console.log(
-    'IDS',
-    screen
-      .toJSON &&
-      JSON.stringify(
-        screen.root ? [] : [],
-      ),
-  );
-  const tous: string[] = [];
-  const parcourir = (n: any) => {
-    if (!n || typeof n !== 'object') return;
-    if (n.props?.testID) tous.push(String(n.props.testID));
-    (n.children ?? []).forEach(parcourir);
-  };
-  parcourir(screen.toJSON());
-  console.log('TESTIDS', JSON.stringify(tous));
   await waitFor(() => expect(screen.getByTestId('bande-des-jours')).toBeTruthy());
   return vue;
 }

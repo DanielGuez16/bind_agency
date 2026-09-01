@@ -484,6 +484,7 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
         if (!large) {
           return (
             <View style={{ gap: 16 }}>
+              {bandeDesJours}
               {repriseEnCours}
               {bandeau}
               {colonneListe}
