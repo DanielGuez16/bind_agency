@@ -769,7 +769,6 @@ class JourDeDecisions:
 class BandeDeDecisions:
     timezone: str
     jours: list[JourDeDecisions]
-    sans_date: int
 
 
 async def decisions_par_jour(
@@ -788,6 +787,12 @@ async def decisions_par_jour(
     personne ne la tranche. La bande répond à une autre question : *où* sont les
     décisions. Une demande dont le créneau est vendredi se compte sur vendredi,
     et le total de la bande n'est donc pas la longueur de la file.
+
+    **Les demandes sans créneau daté ne sont pas comptées.** Les droits à
+    fenêtre de validité ne tombent aucun jour : ils n'ont pas de barre. Ils ne
+    sont pas perdus pour autant — la file d'arbitrage de la journée les porte,
+    toutes dates confondues. Un champ qui les compterait à part était servi ici
+    et lu nulle part, ce que le dépôt appelle un défaut plutôt qu'une avance.
 
     **Le découpage est dans le fuseau du commerce.** Un salon de Miami dont une
     demande tombe à 21 h le lundi la verrait comptée mardi si l'on découpait en
@@ -818,16 +823,6 @@ async def decisions_par_jour(
         ).all()
     )
 
-    # Les droits à fenêtre de validité ne tombent aucun jour : ils sont hors
-    # bande, et comptés à part plutôt que tus.
-    sans_date = await session.scalar(
-        sa.select(sa.func.count()).where(
-            Booking.business_id == business.id,
-            Booking.status == BookingStatus.AWAITING_BUSINESS,
-            Booking.starts_at.is_(None),
-        )
-    )
-
     regles = list(
         await session.scalars(
             sa.select(CapacityRule).where(CapacityRule.business_id == business.id)
@@ -853,5 +848,4 @@ async def decisions_par_jour(
             )
             for jour in fenetre
         ],
-        sans_date=int(sans_date or 0),
     )

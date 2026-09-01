@@ -1979,9 +1979,4 @@ export type JourDeDecisions = {
 export type BandeDeDecisions = {
   timezone: string;
   jours: JourDeDecisions[];
-  /**
-   * Les demandes sans créneau daté — les droits à fenêtre de validité. Elles ne
-   * tombent aucun jour, donc elles ne sont sur aucune barre.
-   */
-  sans_date: number;
 };

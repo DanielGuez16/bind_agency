@@ -257,8 +257,3 @@ class BandeDeDecisionsRead(BaseModel):
 
     timezone: str
     jours: list[JourDeDecisionsRead]
-    #: Ce qui attend une décision **sans créneau daté** — les droits à fenêtre
-    #: de validité. Ils ne tombent aucun jour en particulier, donc ils ne sont
-    #: sur aucune barre ; les taire ferait un total qui ne se retrouve nulle
-    #: part.
-    sans_date: int

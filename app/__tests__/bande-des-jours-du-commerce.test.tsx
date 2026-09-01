@@ -73,7 +73,7 @@ function client() {
 
       // L'ordre compte : « /bookings/par-jour » contient « /bookings ».
       if (chemin.includes('/bookings/par-jour')) {
-        return rendre({ timezone: 'America/New_York', jours: BANDE, sans_date: 0 });
+        return rendre({ timezone: 'America/New_York', jours: BANDE });
       }
       if (chemin.includes('/support-access')) return rendre([]);
       if (chemin.includes('/bookings')) {
