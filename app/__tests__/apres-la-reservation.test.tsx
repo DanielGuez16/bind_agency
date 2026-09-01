@@ -221,6 +221,33 @@ async function monterLeParcours() {
   );
 }
 
+/** Le parcours, du fil au geste de confirmation. */
+async function reserverDepuisLeFil() {
+  await waitFor(() => expect(screen.getAllByTestId(/-apercu-/)[0]).toBeTruthy());
+  await fireEvent.press(screen.getAllByTestId(/-apercu-/)[0]);
+
+  await waitFor(() => expect(screen.getByTestId('offre-o1')).toBeTruthy());
+  await fireEvent.press(screen.getByText(en.parcours.reserver));
+
+  await waitFor(() => expect(screen.getByTestId('ecran-creneaux')).toBeTruthy());
+  const groupe = screen.getByTestId('matin');
+  await fireEvent.press(within(groupe).getAllByRole('button')[0]);
+  await waitFor(() => expect(screen.getByTestId('confirmer')).toBeTruthy());
+  await fireEvent.press(screen.getByTestId('confirmer'));
+}
+
+/** L'onglet retenu, par son libellé — compteur compris. */
+function ongletRetenu(): string {
+  const onglets = within(screen.getByTestId('onglets')).getAllByRole('tab');
+  const choisis = onglets.filter(
+    (onglet) =>
+      onglet.props['aria-selected'] === true ||
+      onglet.props.accessibilityState?.selected === true,
+  );
+  expect(choisis).toHaveLength(1);
+  return String(choisis[0].props.accessibilityLabel);
+}
+
 it('atterrit sur la liste des réservations, pas sur le code', async () => {
   await monterLeParcours();
 
@@ -258,13 +285,28 @@ it('atterrit sur la liste des réservations, pas sur le code', async () => {
   // L'onglet retenu se lit sur son état accessible, les deux formes : `aria-`
   // sur le web, `accessibilityState` en natif. C'est ce que pose
   // `etatAccessible`, et c'est la seule marque de sélection qui traverse.
-  const onglets = within(screen.getByTestId('onglets')).getAllByRole('tab');
-  const choisis = onglets.filter(
-    (onglet) =>
-      onglet.props['aria-selected'] === true ||
-      onglet.props.accessibilityState?.selected === true,
-  );
-  expect(choisis).toHaveLength(1);
   // Le libellé porte le compteur — « Upcoming · 1 ».
-  expect(String(choisis[0].props.accessibilityLabel)).toContain(en.parcours.ongletAVenir);
+  expect(ongletRetenu()).toContain(en.parcours.ongletAVenir);
+});
+
+it('y atterrit aussi quand la liste a déjà été ouverte', async () => {
+  // **Le cas courant, et celui qu'un état initial seul ne couvre pas.** Les
+  // onglets du bas gardent leurs écrans montés : qui a consulté ses
+  // réservations une fois y revient sur un composant vivant, dont l'état
+  // initial a été calculé à la première visite. Une implémentation qui ne
+  // ferait que choisir l'onglet au montage passerait le test d'à côté — c'est
+  // par ici qu'elle tombe.
+  await monterLeParcours();
+
+  // On passe par les réservations d'abord : l'écran se monte, sur « en cours ».
+  await fireEvent.press(screen.getByText(en.onglets.reservations));
+  await waitFor(() => expect(screen.getByTestId('ecran-historique')).toBeTruthy());
+  expect(ongletRetenu()).toContain(en.parcours.ongletEnCours);
+
+  await fireEvent.press(screen.getByText(en.onglets.fil));
+  await reserverDepuisLeFil();
+
+  await waitFor(() => expect(screen.getByTestId('ecran-historique')).toBeTruthy());
+  await waitFor(() => expect(ongletRetenu()).toContain(en.parcours.ongletAVenir));
+  expect(screen.getByText('Gel nails')).toBeTruthy();
 });
