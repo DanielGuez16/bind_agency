@@ -152,8 +152,8 @@ export function AnnuaireScreen({
           recharger: requete.recharger,
         }}
         onRetour={onRetour}
-      retourVers={retourVers}
-      titre={t('annuaire.titre')}
+        retourVers={retourVers}
+        titre={t('annuaire.titre')}
         nature="creator"
         testID="ecran-annuaire"
       >
@@ -273,6 +273,8 @@ export function AnnuaireScreen({
   return (
     <Ecran
       requete={requete}
+      onRetour={onRetour}
+      retourVers={retourVers}
       titre={t('annuaire.titre')}
       nature="creator"
       squelette={<SkeletonLignes combien={6} testID="squelette-annuaire" />}

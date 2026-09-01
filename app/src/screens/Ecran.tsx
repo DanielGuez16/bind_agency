@@ -291,7 +291,7 @@ export function Ecran<T>({
         <Pressable
           onPress={onRetour}
           accessibilityRole="button"
-          accessibilityLabel={t('common.retour')}
+          accessibilityLabel={retourVers ?? t('common.retour')}
           hitSlop={12}
           style={({ pressed }) => ({
             flexDirection: 'row',
@@ -304,8 +304,18 @@ export function Ecran<T>({
           testID="retour"
         >
           <Icone nom="retour" couleur="ink.soft" taille={18} />
-          <Texte variante="type.label" couleur="ink.soft">
-            {t('common.retour')}
+          {/* **Le nom de la destination, quand on le connaît.** Ce retour-ci
+              est celui du téléphone — `BarreDeTitre` n'existe qu'en grand —,
+              donc c'est le seul que voit quelqu'un sur son appareil. Lui avoir
+              appris à nommer la destination en haut et pas ici revenait à ne
+              l'apprendre à personne : « Back » disait qu'on peut revenir, pas
+              où. */}
+          <Texte
+            variante="type.label"
+            couleur="ink.soft"
+            testID={retourVers ? 'retour-vers' : undefined}
+          >
+            {retourVers ?? t('common.retour')}
           </Texte>
         </Pressable>
       ) : null}

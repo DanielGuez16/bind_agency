@@ -70,7 +70,7 @@ async function monter(largeur: number, combien = 2) {
       <ThemeProvider role="merchant">
         <GabaritProvider>
           <ApiProvider client={api}>
-            <AnnuaireScreen businessId="b1" />
+            <AnnuaireScreen businessId="b1" onRetour={() => {}} retourVers="More" />
           </ApiProvider>
         </GabaritProvider>
       </ThemeProvider>
@@ -177,4 +177,18 @@ describe('la mesure qui a décidé', () => {
     // change.
     expect(montes).toBeLessThan(40);
   });
+});
+
+it('porte le retour nommé sur l’écran qu’on voit, pas sur le mur', async () => {
+  // **Le défaut que rien n'attrapait.** `AnnuaireScreen` rend deux `Ecran` :
+  // le mur d'abonnement, et l'annuaire. La prop avait été posée sur le premier
+  // — celui qu'on ne voit qu'en l'absence d'abonnement —, donc la flèche
+  // existait dans le code et nulle part à l'écran.
+  //
+  // Le décor a un abonnement : c'est l'annuaire qui se rend, et c'est là que
+  // la question se pose. Sur le mur, le test d'à côté n'aurait rien prouvé.
+  await monter(390);
+
+  expect(screen.getByTestId('retour')).toBeTruthy();
+  expect(screen.getByTestId('retour-vers')).toHaveTextContent('More');
 });
