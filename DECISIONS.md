@@ -10732,6 +10732,31 @@ il s'entend chez quelqu'un qui n'est pas là pour le dire.
 
 ---
 
+## 2026-08-28 — Une garde dit ce qu'elle ne voit pas, ou elle fait croire qu'elle voit tout
+
+La garde des traductions attrape les clés **appelées et absentes** : un `t('…')`
+qui ne résout rien affiche une chaîne technique en clair à la place d'un titre,
+et c'est arrivé deux fois dans la même journée.
+
+Elle ne voit **jamais l'inverse**. Une clé déclarée que plus personne n'appelle
+reste dans les deux catalogues sans qu'un test bouge — `murAutresQuartiers` a
+survécu deux refontes du fil ainsi, et c'est un audit du guide produit qui l'a
+trouvée, pas la suite.
+
+**Et le second sens ne sera pas construit.** Il coûterait plus cher : il faudrait
+résoudre les clés composées, qu'une quarantaine d'appels construisent et qu'aucune
+analyse statique ne suit. Il rendrait moins : son verdict porte sur du texte
+mort. Une clé orpheline pèse deux lignes ; une clé manquante s'affiche dans une
+phrase, à un testeur, en pleine campagne.
+
+**Ce qui se fait à la place tient en une ligne écrite dans la garde**, à
+l'endroit où quelqu'un la consulte : la limite est nommée, avec sa raison et
+avec le geste qui la remplace — les orphelines se retirent à la main, quand un
+lot les rend telles.
+
+C'est la même règle que sur les jetons et sur la passation, prise par l'autre
+bout : une garde qui ne dit pas où elle s'arrête fait croire la question réglée
+partout où elle passe.
 ## 2026-08-30 — Le second passage d'un semis est muet, et on lisait sa sortie
 
 `resume_du_semis` relançait la commande de semis pour lire son résumé ; une
