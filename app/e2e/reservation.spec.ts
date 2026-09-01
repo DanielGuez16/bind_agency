@@ -112,5 +112,10 @@ test('une réservation confirmée mène à son code', async ({ page }) => {
   const code = page.getByTestId('ecran-code');
   await expect(code.getByTestId('qr')).toBeVisible();
   await expect(code.getByTestId('secours')).toBeVisible();
-  await expect(code.getByTestId('compte-a-rebours')).toBeVisible();
+  // **Et rien d'autre : le décompte est parti avec le reste du chrome.** Le
+  // code tourne côté serveur, donc l'écran n'a rien à promettre sur sa durée.
+  // L'assertion négative est ce qui rend le retrait tenable de bout en bout —
+  // sans elle, remettre le décompte ne ferait rougir personne.
+  await expect(code.getByTestId('compte-a-rebours')).toHaveCount(0);
+  await expect(code.getByTestId('ou-aller')).toHaveCount(0);
 });

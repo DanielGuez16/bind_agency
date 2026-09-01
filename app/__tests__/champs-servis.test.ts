@@ -157,6 +157,13 @@ const NON_RENDUS: Record<string, string> = {
   // La date en bloc mono tient le rôle de repère sur la ligne ; une vignette de
   // salon par ligne alourdirait une liste qu'on parcourt.
   'ReservationDuCreateur.business_cover_photo_key': 'contrat',
+  // **L'adresse est écrite une fois, sur la fiche, à côté de « Maps ».** Elle
+  // vivait aussi sur l'écran du code — d'où on ne consulte pas une adresse : on
+  // y est déjà, le téléphone tendu — et le bloc « Where it is » de la fiche la
+  // répétait à trois lignes d'elle-même. La v10 retire les deux répétitions ;
+  // c'est `FichePublique.address` qui la porte, et elle seule.
+  'CodeDeRetrait.business_address': 'contrat',
+  'ReservationDuCreateur.business_address': 'contrat',
 
   // --- à instruire : trois, ouvertes par le fil v3 ---
   //

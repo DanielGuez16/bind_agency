@@ -327,7 +327,7 @@ describe('ce que le QR encode', () => {
     expect(encode).not.toContain('reservation-a');
   });
 
-  it('n’affiche plus les six chiffres, et garde le décompte', async () => {
+  it('n’affiche plus les six chiffres, ni le décompte', async () => {
     // **Le défaut réparé.** Deux codes se ressemblaient : le nombre tournant,
     // qui ne se saisit pas et ne désigne rien seul, et le code de secours, qui
     // se dicte. Un commerçant a essayé de taper le premier. Une légende sous
@@ -342,42 +342,35 @@ describe('ce que le QR encode', () => {
     expect(screen.queryByText('111111')).toBeNull();
     expect(screen.queryByText(/1\s*1\s*1\s*1\s*1\s*1/)).toBeNull();
 
-    // Ce qui reste : le décompte, qui dit que le code est vivant sans
-    // ressembler à une saisie, et le seul code qui se dicte.
-    expect(screen.getByTestId('compte-a-rebours')).toBeTruthy();
+    // **Le décompte part avec le reste, et c'est tenable pour une raison qui
+    // n'est pas esthétique** : le code tourne côté serveur, donc l'écran n'a
+    // rien à promettre sur sa durée. Ce qu'il montre reste valable tant qu'il
+    // est affiché.
+    expect(screen.queryByTestId('compte-a-rebours')).toBeNull();
+    // Ce qui reste : le QR, et le seul code qui se dicte.
     expect(screen.getByTestId('secours')).toHaveTextContent(/AAA 111/);
-    expect(screen.getByText(en.parcours.codeSecoursAide)).toBeTruthy();
   });
 });
 
 /**
- * Où l'on va.
+ * **Show code se vide entièrement.**
  *
- * L'écran ne disait rien du salon : ni son nom, ni son adresse. On y arrivait
- * depuis une liste qui portait l'adresse sur chaque carte, où elle doublait la
- * longueur d'une ligne pour un usage qui n'a lieu qu'ici — on ne cherche pas
- * son chemin en parcourant une liste, on le cherche en partant.
+ * Pas de titre, pas de nom de salon, pas d'adresse : l'écran s'ouvre depuis une
+ * réservation, donc le contexte est déjà su, et ce qu'on y fait tient en un
+ * geste — le tendre. On ne consulte pas une adresse depuis cet écran ; on y est
+ * déjà, le téléphone à la main.
  *
- * L'adresse a donc quitté la liste, et ces deux tests sont ce qui rend ce
- * retrait tenable : sans eux, elle aurait simplement disparu du produit.
+ * **Les deux sens sont éprouvés.** Le QR et le code de secours doivent rester,
+ * sans quoi ce test passerait aussi bien sur un écran vide.
  */
 describe('où l’on va', () => {
-  it('porte le salon et son adresse', async () => {
-    monter('reservation-a', client());
-    await waitFor(() => expect(screen.getByTestId('ou-aller')).toBeTruthy());
+  it('ne porte ni salon, ni adresse, ni titre', async () => {
+    await monter('reservation-a', client());
+    await waitFor(() => expect(screen.getByTestId('etat-nominal')).toBeTruthy());
 
-    expect(screen.getByTestId('ou-aller')).toHaveTextContent(/Studio Brickell/);
-    expect(screen.getByTestId('adresse')).toHaveTextContent(/1200 Brickell Ave/);
-  });
-
-  it('et se tait quand le salon n’en a pas', async () => {
-    // **Le cas qui fait diverger les deux implémentations.** Rendre l'adresse
-    // sans condition passerait le test au-dessus tout aussi bien ; c'est ici
-    // qu'une ligne vide se verrait, et nulle part ailleurs.
-    monter('reservation-b', client());
-    await waitFor(() => expect(screen.getByTestId('ou-aller')).toBeTruthy());
-
-    expect(screen.getByTestId('ou-aller')).toHaveTextContent(/Wynwood Nails/);
+    expect(screen.queryByTestId('ou-aller')).toBeNull();
     expect(screen.queryByTestId('adresse')).toBeNull();
+    expect(screen.queryByTestId('titre-code')).toBeNull();
+    expect(screen.getByTestId('secours')).toBeTruthy();
   });
 });
