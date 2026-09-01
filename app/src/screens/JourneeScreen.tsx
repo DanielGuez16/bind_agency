@@ -55,6 +55,7 @@ import {
   Filet,
   Icone,
   LigneDeContrepartie,
+  PiluleDeProfil,
   Photo,
   Repliable,
   SkeletonLignes,
@@ -685,7 +686,15 @@ function Detail({
         <Texte variante="type.label" couleur="ink.soft">
           {t('commerce.contrepartieAttendue')}
         </Texte>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        {/* **Le glyphe ouvre la ligne, le format la suit en mots.** L'icône
+            situe — sur quel réseau —, le mot précise — quelle forme, et sous
+            quel délai. Écrit seul, « Story within 48 h » demandait de retenir
+            de quel réseau parlait la carte. */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
+          <Icone
+            nom={reservation.platform === 'tiktok' ? 'tiktok' : 'instagram'}
+            taille={18}
+          />
           <TierBadge tier={reservation.content_format} />
           <LigneDeContrepartie tier={reservation.content_format} />
         </View>
@@ -1247,7 +1256,11 @@ function CarteDeDemande({
           ].join(' · ')}
         </Texte>
         {reservation.creator_profil_url ? (
-          <Icone nom="sortie" couleur="ink.soft" taille={16} />
+          <PiluleDeProfil
+            plateforme={reservation.platform}
+            libelle={t('common.profil')}
+            testID={`pilule-${reservation.booking_id}`}
+          />
         ) : null}
       </LigneDuCreateur>
 
@@ -1260,13 +1273,19 @@ function CarteDeDemande({
           une quatrième grammaire pour un fait qui en avait déjà une. */}
       {reservation.approval_expires_at ? (
         <Texte
-          variante={urgente ? 'type.bodyStrong' : 'type.body'}
+          variante="type.body"
           couleur={urgente ? 'brand.700' : 'ink.soft'}
           testID={`limite-${reservation.booking_id}`}
         >
-          {t('commerce.repondreAvant', {
-            quand: formatHeure(reservation.approval_expires_at, locale, timezone),
-          })}
+          {/* **L'heure porte la graisse, pas la phrase entière.** La planche
+              met « noon » en gras dans une phrase régulière : c'est le seul
+              fait qu'on relit, et le mettre en gras d'un bout à l'autre
+              revenait à ne rien souligner. */}
+          {t('commerce.repondreAvantDebut')}
+          <Texte variante="type.bodyStrong" couleur={urgente ? 'brand.700' : 'ink.default'}>
+            {formatHeure(reservation.approval_expires_at, locale, timezone)}
+          </Texte>
+          {t('commerce.repondreAvantFin')}
         </Texte>
       ) : null}
 

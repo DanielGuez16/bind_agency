@@ -7,6 +7,7 @@
  * famille.
  */
 export { Texte, type TexteProps, type Variante } from './Texte';
+export { PiluleDeProfil, HAUTEUR_DE_PILULE } from './PiluleDeProfil';
 export { Button, type ButtonProps, type ButtonSize, type ButtonVariant } from './Button';
 export { TextField, type TextFieldProps } from './TextField';
 export { RangeeDeValeurs, Stepper, type RangeeDeValeursProps, type StepperProps } from './Stepper';

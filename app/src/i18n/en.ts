@@ -11,6 +11,8 @@
  */
 export const en = {
   common: {
+    /** Le mot de la pilule de sortie, sur la carte de décision et l'annuaire. */
+    profil: 'Profile',
     annuler: 'Cancel',
     retour: 'Back',
     appName: 'BIND',
@@ -730,7 +732,8 @@ export const en = {
     horairesDe: '{{debut}} to {{fin}}',
     reseauAvecAbonnes: '{{reseau}} · {{abonnes}} followers',
     reseauAbsent: 'No {{reseau}}',
-    repondreAvant: 'Answer before {{quand}}, or the slot reopens.',
+    repondreAvantDebut: 'Answer before ',
+    repondreAvantFin: ', or the slot reopens.',
     voirLeProfil: 'Open the profile',
     journeeServies: '{{count}} served',
     journeeCloses: '{{count}} closed',

@@ -8,6 +8,8 @@ import type { Catalogue } from './en';
 
 export const es: Catalogue = {
   common: {
+    /** Le mot de la pilule de sortie, sur la carte de décision et l'annuaire. */
+    profil: 'Perfil',
     annuler: 'Cancelar',
     retour: 'Atrás',
     appName: 'BIND',
@@ -645,7 +647,8 @@ export const es: Catalogue = {
     horairesDe: '{{debut}} a {{fin}}',
     reseauAvecAbonnes: '{{reseau}} · {{abonnes}} seguidores',
     reseauAbsent: 'Sin {{reseau}}',
-    repondreAvant: 'Responde antes de {{quand}}, o el hueco se libera.',
+    repondreAvantDebut: 'Responde antes de ',
+    repondreAvantFin: ', o el hueco se libera.',
     voirLeProfil: 'Abrir el perfil',
     journeeServies: '{{count}} atendidas',
     journeeCloses: '{{count}} cerradas',

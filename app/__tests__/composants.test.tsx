@@ -918,6 +918,11 @@ describe("ce que la bibliothèque n'a pas", () => {
       // ajout de la planche de l'attente : les deux autres règles retirent.
       'Photo.tsx',
       'PickupCode.tsx',
+      // La pilule qui nomme la sortie : logo du réseau et mot, 44 points, bord
+      // de 1,5. Une seule forme pour deux écrans — la carte de décision et
+      // l'annuaire — parce que la planche v11 leur donne la même : deux copies
+      // auraient divergé au premier ajustement.
+      'PiluleDeProfil.tsx',
       // La section repliable, arrivée avec le troisième retour sur la journée
       // et le premier sur « Your place » : les deux disaient « trop de choses
       // d'un coup », et un écran qui replie à la main le fait une fois puis
