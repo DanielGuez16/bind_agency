@@ -238,10 +238,16 @@ export default function App() {
    * millisecondes : l'écran de marque paraissait donc et repartait avant que
    * le point ait fini de tomber. Une entrée qu'on ne voit qu'en cas de lenteur
    * n'installe rien du tout.
+   *
+   * **Le mouvement est tenu, le repos ne l'est pas.** La préparation lui est
+   * passée : le crochet garde l'écran jusqu'au bout de l'animation quoi qu'il
+   * arrive, puis rend la main dès qu'il n'y a plus rien à attendre. Le seul
+   * test de `policesPretes` vit donc là — le garder aussi en dessous ferait
+   * deux conditions pour une seule chose.
    */
-  const ouvertureTenue = useOuvertureTenue();
+  const ouvertureTenue = useOuvertureTenue(policesPretes || Boolean(echecDesPolices));
 
-  if (!ouvertureTenue || (!policesPretes && !echecDesPolices)) {
+  if (!ouvertureTenue) {
     return (
       <SafeAreaProvider>
         <Patience />

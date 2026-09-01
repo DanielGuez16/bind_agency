@@ -16,8 +16,10 @@ import {
   Chargement,
   DUREE_DE_L_OUVERTURE,
   FiletDAttente,
+  FONDU_DE_SORTIE,
   MOUVEMENT,
   PLAFOND_MS,
+  peutCeder,
   REPOS,
 } from '../src/shell/Chargement';
 import { ThemeProvider } from '../src/theme';
@@ -125,8 +127,14 @@ describe('l’attente ne ressemble pas à la marque', () => {
      * remplacée en pleine chute — le défaut exact que l'allongement corrige,
      * qu'un plancher trop court réintroduirait sans bruit.
      */
-    expect(PLAFOND_MS).toBeGreaterThan(DUREE_DE_L_OUVERTURE);
+    // Le filet ne se pose jamais pendant le mouvement : il dirait « ça rame »
+    // sur un lancement sain. Il vaut le mouvement, donc il le suit sans le
+    // traverser.
+    expect(PLAFOND_MS).toBe(MOUVEMENT);
+    // Le repos reste de la marge, jamais une dette : un plafond sous le
+    // plancher ferait partir l'écran avant la fin de l'animation.
     expect(REPOS).toBeGreaterThan(0);
+    expect(DUREE_DE_L_OUVERTURE).toBeGreaterThan(MOUVEMENT);
 
     /**
      * **Et le mouvement ne suit pas l'écran, c'est le défaut que j'ai fait.**
@@ -137,7 +145,10 @@ describe('l’attente ne ressemble pas à la marque', () => {
      * jamais la chute. Rien d'autre ne le dirait, l'écran rendant aussi bien
      * dans les deux cas.
      */
-    expect(MOUVEMENT).toBe(760);
+    expect(MOUVEMENT).toBe(1500);
+    // Le fondu est dedans : il est du mouvement, et l'en sortir referait
+    // l'erreur d'avant — compter comme durée ce qui ne se perçoit pas.
+    expect(MOUVEMENT).toBeGreaterThan(FONDU_DE_SORTIE);
   });
 
   it('le filet ne porte pas le logotype, et le logotype ne boucle pas', async () => {
@@ -148,5 +159,28 @@ describe('l’attente ne ressemble pas à la marque', () => {
 
     expect(screen.queryByTestId('ecran-chargement-lettres-lettres')).toBeNull();
     expect(aplati(screen.getByTestId('filet-d-attente').props.style).height).toBe(2);
+  });
+});
+
+describe('le repos se coupe, le mouvement jamais', () => {
+  /**
+   * **L'ordre des deux bornes est toute la règle**, et rien à l'écran ne le
+   * dirait : une ouverture qui rendrait la main trop tôt ressemble à une
+   * ouverture rapide, pas à une animation coupée.
+   */
+  it('prête d’emblée, l’écran tient quand même tout le mouvement', () => {
+    // C'est le cas de tous les lancements réels : les fontes et le trousseau se
+    // lisent en quelques dizaines de millisecondes.
+    expect(peutCeder(0, true)).toBe(false);
+    expect(peutCeder(MOUVEMENT - 1, true)).toBe(false);
+    expect(peutCeder(MOUVEMENT, true)).toBe(true);
+  });
+
+  it('et pas prête, elle attend le repos, puis part de toute façon', () => {
+    expect(peutCeder(MOUVEMENT, false)).toBe(false);
+    expect(peutCeder(DUREE_DE_L_OUVERTURE - 1, false)).toBe(false);
+    // Au plafond on part quand même : l'attente prend le relais, et elle ne
+    // ressemble pas à la marque.
+    expect(peutCeder(DUREE_DE_L_OUVERTURE, false)).toBe(true);
   });
 });
