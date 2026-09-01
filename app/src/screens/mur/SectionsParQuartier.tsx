@@ -207,22 +207,9 @@ export function useMur(
     prestations: SalonDuFil[],
     total: number,
     onTout?: () => void,
-  ) => ({
-    cle,
-    rendu: (
-      <RangeeDuFil
-        key={cle}
-        titre={titre}
-        total={formatNumber(total, locale)}
-        prestations={prestations.slice(0, CARTES_PAR_RANGEE)}
-        onOuvrir={onOuvrir}
-        onTout={onTout}
-        testID={`rangee-${cle}`}
-      />
-    ),
-  });
+  ) => ({ cle, titre, prestations, total: formatNumber(total, locale), onTout });
 
-  const elements = [
+  const rangees = [
     // **La première rangée n'est pas une catégorie.** « Le plus près de toi »
     // ouvre le fil sans rien filtrer : tout afficher, puis préciser. C'est
     // l'ordre que la campagne réclame, et il se lit dans la composition.
@@ -239,11 +226,29 @@ export function useMur(
           compte.prestations,
           onCategorie ? () => onCategorie(compte.categorie) : undefined,
         ),
-      )
-      // Une rangée sans carte ne se rend pas : le compte du serveur couvre le
-      // rayon entier, la rangée ne montre que ce qui est chargé.
-      .filter((element) => (element.rendu as { props: { prestations: unknown[] } }).props.prestations.length > 0),
-  ];
+      ),
+    // Une rangée sans carte ne se rend pas : le compte du serveur couvre le
+    // rayon entier, la rangée ne montre que ce qui est chargé.
+  ].filter((element) => element.prestations.length > 0);
+
+  const elements = rangees.map((element, index) => ({
+    cle: element.cle,
+    rendu: (
+      <RangeeDuFil
+        key={element.cle}
+        titre={element.titre}
+        total={element.total}
+        prestations={element.prestations.slice(0, CARTES_PAR_RANGEE)}
+        onOuvrir={onOuvrir}
+        onTout={element.onTout}
+        // **Le filet sépare, donc il ne ferme pas.** Sous la dernière rangée il
+        // ne distingue plus rien de rien : il tracerait un trait au-dessus du
+        // vide, juste avant la barre d'onglets.
+        avecFilet={index < rangees.length - 1}
+        testID={`rangee-${element.cle}`}
+      />
+    ),
+  }));
 
   return { entete: null, elements, pied: null };
 }
@@ -261,6 +266,7 @@ function RangeeDuFil({
   prestations,
   onOuvrir,
   onTout,
+  avecFilet,
   testID,
 }: {
   titre: string;
@@ -268,12 +274,28 @@ function RangeeDuFil({
   prestations: SalonDuFil[];
   onOuvrir: (businessId: string) => void;
   onTout?: () => void;
+  /** Faux sur la dernière rangée : un séparateur ne ferme pas une liste. */
+  avecFilet: boolean;
   testID: string;
 }) {
   const { t } = useI18n();
+  const c = useColors();
 
   return (
-    <View testID={testID} style={{ gap: 10, paddingBottom: 20 }}>
+    <View
+      testID={testID}
+      style={{
+        gap: 10,
+        paddingBottom: 20,
+        // **Ce qui sépare deux rangées, maintenant que les cartes n'ont plus de
+        // contour.** Un filet d'un point sous le dernier rang dit où la section
+        // finit ; c'était le cadre de chaque carte qui le disait avant, à douze
+        // exemplaires pour une seule information.
+        borderBottomWidth: avecFilet ? 1 : 0,
+        borderBottomColor: c['line.default'],
+        marginBottom: avecFilet ? 20 : 0,
+      }}
+    >
       <View
         style={{
           paddingHorizontal: MARGE_DU_MUR,

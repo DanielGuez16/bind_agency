@@ -37,7 +37,7 @@ import { adresseDeLApi } from './src/shell/adresseDeLApi';
 import { jetonDePriseEnMain, oublierLeJeton } from './src/shell/jetonDePriseEnMain';
 import { GabaritProvider } from './src/shell/gabarit';
 import { useNotificationsPush } from './src/shell/useNotificationsPush';
-import { Chargement } from './src/shell/Chargement';
+import { Chargement, useOuvertureTenue } from './src/shell/Chargement';
 import { ZoneSure } from './src/shell/ZoneSure';
 import { ThemeProvider, policesAcharger } from './src/theme';
 
@@ -231,7 +231,17 @@ export default function App() {
    */
   const [policesPretes, echecDesPolices] = useFonts(policesAcharger());
 
-  if (!policesPretes && !echecDesPolices) {
+  /**
+   * **L'ouverture est tenue, elle n'est plus subie.**
+   *
+   * Les fontes et le trousseau se lisent en quelques dizaines de
+   * millisecondes : l'écran de marque paraissait donc et repartait avant que
+   * le point ait fini de tomber. Une entrée qu'on ne voit qu'en cas de lenteur
+   * n'installe rien du tout.
+   */
+  const ouvertureTenue = useOuvertureTenue();
+
+  if (!ouvertureTenue || (!policesPretes && !echecDesPolices)) {
     return (
       <SafeAreaProvider>
         <Patience />

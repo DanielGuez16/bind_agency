@@ -106,23 +106,22 @@ async function monter(donnees: Fil = fil()) {
 }
 
 describe('ce que l’en-tête dit', () => {
-  it('nomme le marché et non le lieu où l’on est', async () => {
+  it('ne nomme ni la ville ni le lieu où l’on est', async () => {
     // **La règle tient, et la v3 en déplace la frontière d'un cran.** On ne
     // nomme toujours pas le quartier **où l'on est** : rien ne sait le
     // résoudre — pas de géocodage inverse, et la ville du profil dit où l'on
     // habite. Le quartier du salon le plus proche avait été rendu à sa place,
     // et c'était plausible, invérifiable de l'autre côté, donc jamais relevé.
     //
-    // Ce que la v3 écrit est le **marché** : BIND ouvre à Miami, entière. Ce
-    // n'est pas une position résolue, c'est une donnée du produit — et
-    // l'en-tête ne prétend donc rien savoir de l'endroit où se trouve la
-    // personne. Le mur, lui, nomme les quartiers en tête de ses sections :
-    // ceux-là sont ceux **des salons**, et le serveur les déclare.
+    // **Et le marché non plus ne s'écrit plus.** L'en-tête portait « MIAMI »,
+    // ce qui était vrai et n'informait personne : le fil est local par
+    // construction, donc tout ce qu'il montre est à Miami. Ce qui reste est le
+    // titre, et le compte une fois filtré.
     //
     // Le montage porte deux quartiers nommables : sans eux, ce test passerait
     // sans rien vérifier.
     await monter();
-    await waitFor(() => expect(screen.getByTestId('entete-marche')).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId('entete-titre')).toBeTruthy());
 
     // **Sur le nœud qui porte le texte, et par `queryByText` pour l'absence.**
     // `toHaveTextContent` sur le conteneur de l'en-tête rend une chaîne vide —
@@ -130,9 +129,7 @@ describe('ce que l’en-tête dit', () => {
     // sans rien lire. Le défaut était déjà là avant la v3 : un test qui
     // n'interroge rien ne tombe jamais. `queryByText` cherche dans tout l'arbre
     // rendu, ce qui est précisément ce qu'on veut dire par « nulle part ».
-    expect(screen.getByTestId('entete-marche')).toHaveTextContent(
-      en.parcours.filMarche.toUpperCase(),
-    );
+    expect(screen.queryByText('Miami')).toBeNull();
     // **Borné à l'en-tête, et c'est la moitié utile de la règle.** Le mur
     // nomme ses quartiers en tête de section — ceux des salons, que le serveur
     // déclare — et le chercher dans tout l'écran ferait tomber ce test sur la
@@ -151,8 +148,9 @@ describe('ce que l’en-tête dit', () => {
     await monter();
     await waitFor(() => expect(screen.getByTestId('categorie-beauty')).toBeTruthy());
     expect(screen.getByTestId('entete-titre')).toHaveTextContent(en.parcours.filDecouvrir);
-    // Sans filtre, aucun compte : le total d'une ville ne se compare à rien.
-    expect(screen.getByTestId('entete-marche')).not.toHaveTextContent(/\d/);
+    // Sans filtre, aucune ligne du tout : le total d'une ville ne se compare à
+    // rien, et il ne restait rien d'autre à écrire là une fois « Miami » parti.
+    expect(screen.queryByTestId('entete-marche')).toBeNull();
 
     await fireEvent.press(screen.getByTestId('categorie-beauty'));
     await waitFor(() =>
@@ -195,13 +193,11 @@ describe('ce que l’en-tête dit', () => {
     );
 
     await waitFor(() => expect(screen.getByTestId('etat-chargement')).toBeTruthy());
-    // **Ce qui ne dépend pas de la donnée est déjà là.** Le marché et le titre
-    // sont connus avant le premier appel ; le compte, lui, n'apparaît qu'avec
-    // la réponse et seulement une fois filtré. Le logotype a quitté l'en-tête
-    // avec la v3 : la planche pose le titre à sa place.
-    expect(screen.getByTestId('entete-marche')).toHaveTextContent(
-      en.parcours.filMarche.toUpperCase(),
-    );
+    // **Ce qui ne dépend pas de la donnée est déjà là.** Le titre est connu
+    // avant le premier appel ; le compte, lui, n'apparaît qu'avec la réponse
+    // et seulement une fois filtré. Le logotype a quitté l'en-tête avec la v3,
+    // le nom de la ville avec la v9 : reste le titre.
+    expect(screen.queryByTestId('entete-marche')).toBeNull();
     expect(screen.getByTestId('entete-titre')).toHaveTextContent(en.parcours.filDecouvrir);
 
     relacher({ ok: true, status: 200, json: async () => fil() } as Response);

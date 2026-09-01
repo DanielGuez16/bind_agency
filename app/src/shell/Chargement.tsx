@@ -37,12 +37,57 @@ import { useMouvementReduit } from '../components/Mouvement';
 import { radius, useColors } from '../theme';
 
 /**
- * Le plafond, et **c'est un plafond, pas une cible**.
+ * Le plafond : au-delà, l'attente prend le relais.
  *
- * Si l'application est prête à 300 ms, l'écran part à 300 ms : une animation qui
- * retient la main pour finir sa phrase est une animation qui vole du temps.
+ * **Il n'a pas bougé, et c'est lui qui borne tout le reste.** L'entrée peut
+ * s'étendre tant qu'elle finit avant : une animation qui dépasse le plafond
+ * retiendrait la main, et c'est exactement ce qu'on ne veut pas.
  */
 export const PLAFOND_MS = 800;
+
+/**
+ * Ce que l'ouverture dure, et **elle est tenue à chaque lancement**.
+ *
+ * **C'était un plafond, c'est maintenant un plancher**, et le renversement est
+ * délibéré. La règle d'avant — « si l'application est prête à 300 ms, l'écran
+ * part à 300 ms » — était juste sur le papier et fausse à l'usage : la session
+ * se rétablit en quelques dizaines de millisecondes, si bien que la marque
+ * n'était jamais vue. Le point tombait sur un écran déjà remplacé. Une entrée
+ * qui ne joue qu'en cas de lenteur n'est pas une entrée, c'est un symptôme.
+ *
+ * **760 et non 800.** Le plafond reste au-dessus : l'entrée finit avant que
+ * l'attente ait quoi que ce soit à dire, donc les deux ne se croisent jamais.
+ */
+export const DUREE_DE_L_OUVERTURE = 760;
+
+/**
+ * L'instant du lancement, figé au chargement du module.
+ *
+ * **Mesuré une fois, pas à chaque montage.** L'écran de chargement est monté
+ * deux fois par ouverture — les fontes, puis le rétablissement de la session —
+ * et un plancher compté depuis le montage les additionnerait : une seconde et
+ * demie pour une ouverture qui en demande sept cent soixante millièmes.
+ */
+const LANCEMENT = Date.now();
+
+/**
+ * Vrai quand l'ouverture a eu son temps.
+ *
+ * Rendu à l'appelant plutôt qu'appliqué ici : c'est la coquille qui décide de
+ * ce qu'elle montre, l'écran de chargement ne se retient pas lui-même.
+ */
+export function useOuvertureTenue(): boolean {
+  const [tenue, setTenue] = useState(() => Date.now() - LANCEMENT >= DUREE_DE_L_OUVERTURE);
+
+  useEffect(() => {
+    if (tenue) return;
+    const reste = DUREE_DE_L_OUVERTURE - (Date.now() - LANCEMENT);
+    const minuterie = setTimeout(() => setTenue(true), Math.max(0, reste));
+    return () => clearTimeout(minuterie);
+  }, [tenue]);
+
+  return tenue;
+}
 
 /** Les quatre temps de la direction A, tels que la planche les pose. */
 const LETTRES_DEBUT = 120;
@@ -51,8 +96,14 @@ const LETTRES_DUREE = 140;
 const POINT_APPARITION = 90;
 /** Un aller de la barre indéterminée. C'est une boucle, pas une transition. */
 const COURSE_DUREE = 1000;
-const POINT_DEBUT = 260;
-const POINT_DUREE = 300;
+/**
+ * Le point part après que les lettres se sont posées, et sa chute tient le
+ * reste : 360 + 400 font les 760 de l'ouverture. Les lettres finissent à 260,
+ * donc elles ont une respiration de cent millièmes avant que le point arrive —
+ * c'est ce qui fait qu'il *arrive* au lieu d'accompagner.
+ */
+const POINT_DEBUT = 360;
+const POINT_DUREE = 400;
 
 /** La hauteur du logotype sur cet écran, et la course du point. */
 const TAILLE = 34;

@@ -159,7 +159,11 @@ export function LieuScreen({
               fiche, et un commerce qui compose sa page commence souvent par là. */}
           <Repliable
             titre={t('lieu.sectionPhotos')}
-            resume={t('lieu.photosCompte', { count: lieu.photos.length })}
+            resume={
+              lieu.photos.length === 1
+                ? t('lieu.photosCompteUne')
+                : t('lieu.photosCompte', { count: lieu.photos.length })
+            }
             ouverte={ouverte === 'photos'}
             onBasculer={() => setOuverte(ouverte === 'photos' ? null : 'photos')}
             testID="section-photos"
@@ -174,16 +178,33 @@ export function LieuScreen({
 
           {/* **La carte suit la galerie et ne s'y mêle pas.** La galerie montre
               le lieu, la carte se consulte : deux dépôts distincts, parce qu'un
-              commerce qui les confondrait rendrait la sienne illisible. */}
+              commerce qui les confondrait rendrait la sienne illisible.
+
+              **Et elle n'apparaît que si une prestation laisse un choix.** Le
+              critère est le drapeau porté par la prestation, jamais la
+              catégorie du commerce : un spa à formules a besoin d'une carte,
+              un restaurant à menu unique n'en a aucun usage. Demander une
+              carte à qui n'a rien à faire choisir crée une tâche qui ne se
+              termine jamais.
+
+              **Sauf si une carte existe déjà**, et cette réserve n'est pas
+              cosmétique : un commerce qui retire le dernier choix de son
+              catalogue perdrait sinon l'accès aux pages qu'il a déposées, sans
+              pouvoir les retirer ni les corriger. */}
+          {bloquees.length > 0 || lieu.pagesDeLaCarte.length > 0 || Boolean(lieu.lienDeLaCarte) ? (
           <Repliable
             titre={t('lieu.sectionCarte')}
             // **Le blocage passe dans le résumé.** Une prestation qui laisse un
             // choix et ne se publie pas faute de carte est ce qu'on doit voir
             // sans ouvrir : replier une section ne doit rien cacher qui décide.
             resume={
-              bloquees.length > 0
-                ? t('lieu.carteBloque', { count: bloquees.length })
-                : t('lieu.carteCompte', { count: lieu.pagesDeLaCarte.length })
+              bloquees.length === 1
+                ? t('lieu.carteBloqueUn')
+                : bloquees.length > 1
+                  ? t('lieu.carteBloque', { count: bloquees.length })
+                  : lieu.pagesDeLaCarte.length === 1
+                    ? t('lieu.carteCompteUne')
+                    : t('lieu.carteCompte', { count: lieu.pagesDeLaCarte.length })
             }
             alerte={bloquees.length > 0}
             ouverte={ouverte === 'carte'}
@@ -198,6 +219,7 @@ export function LieuScreen({
               onChange={requete.recharger}
             />
           </Repliable>
+          ) : null}
 
           {/* **Les horaires, ici et plus dans l'offre.** Des heures d'ouverture
               décrivent un endroit : les ranger avec les prestations demandait
@@ -206,9 +228,13 @@ export function LieuScreen({
             titre={t('lieu.sectionHoraires')}
             // Les jours réellement ouverts, et non les sept lignes : une
             // semaine à deux jours fermés n'ouvre pas sept jours.
-            resume={t('lieu.joursOuverts', {
-              count: new Set(lieu.semaine.regles.map((regle) => regle.weekday)).size,
-            })}
+            resume={
+              new Set(lieu.semaine.regles.map((regle) => regle.weekday)).size === 1
+                ? t('lieu.joursOuvertsUn')
+                : t('lieu.joursOuverts', {
+                    count: new Set(lieu.semaine.regles.map((regle) => regle.weekday)).size,
+                  })
+            }
             ouverte={ouverte === 'horaires'}
             onBasculer={() => setOuverte(ouverte === 'horaires' ? null : 'horaires')}
             testID="section-horaires"

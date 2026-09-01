@@ -16,6 +16,7 @@
  */
 import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Linking, Modal, Pressable, View } from 'react-native';
 
 import { useApi, type FichePublique, type OffreDeLaFiche, type Platform } from '../api';
@@ -36,6 +37,7 @@ import { useI18n } from '../i18n';
 import { urlImage } from './FilScreen';
 import { elevationDeCarte, elevationFlottante, radius, useTheme } from '../theme';
 import { Ecran } from './Ecran';
+import { useGabarit } from '../shell/gabarit';
 import { OuEstLeLieu } from './fiche/OuEstLeLieu';
 import { EcartAuSeuil } from './PaliersScreen';
 import { glypheDePlateforme, nomDePlateforme } from './obstacle';
@@ -73,7 +75,24 @@ const OPACITE_FERMEE = 0.6;
 const AUTRES_CRENEAUX = 2;
 
 /** La hauteur de la couverture, relevée sur la planche. */
-const HAUTEUR_DE_COUVERTURE = 270;
+const HAUTEUR_DE_COUVERTURE = 330;
+
+/**
+ * Sur quelle hauteur l'image se dissout dans la page.
+ *
+ * **Sans bord dur, et c'est tout le point.** Une photo qui s'arrête net sur un
+ * trait horizontal découpe l'écran en deux : au-dessus une image, en dessous
+ * une page, et le nom du salon tombe juste sous la coupure. Le dégradé rend la
+ * frontière introuvable — l'image devient le haut de la page au lieu d'être un
+ * bandeau posé dessus.
+ *
+ * **Cent trente points sur trois cent trente**, soit un gros tiers : moins,
+ * la transition redevient une bande visible ; plus, elle mange le cadrage.
+ */
+const DISSOLUTION_DE_LA_COUVERTURE = 130;
+
+/** La pastille du retour, posée sur l'image. */
+const PASTILLE_DE_RETOUR = 40;
 
 export function FicheScreen({
   businessId,
@@ -154,9 +173,27 @@ export function FicheScreen({
     ),
   );
 
+  /**
+   * La marge que le corps pose, puisque l'écran est à fond perdu.
+   *
+   * Lue aux mêmes jetons qu'`Ecran` : deux valeurs écrites à la main
+   * finiraient par diverger, et la couverture se décalerait d'un point du
+   * texte qu'elle surplombe.
+   */
+  const { large } = useGabarit();
+  const { density } = useTheme();
+  const margeDeLaFiche = large ? density.screenPaddingLarge : density.screenPadding;
+
   return (
     <Ecran
-      onRetour={onRetour} requete={requete} squelette={<SkeletonFiche testID="squelette-fiche" />} testID="ecran-fiche">
+      requete={requete}
+      // **À fond perdu, pour la couverture et pour elle seule.** Le corps pose
+      // sa marge lui-même, un cran plus bas ; c'est la règle d'`Ecran` — il
+      // marge ce qu'il compose, l'appelant marge ce qu'il fournit.
+      bordAbord
+      squelette={<SkeletonFiche testID="squelette-fiche" />}
+      testID="ecran-fiche"
+    >
       {(fiche) => {
         // Le serveur rend les offres dans son ordre ; on ne le rejoue pas, on
         // le partitionne. Un tri refait ici déciderait quelle prestation passe
@@ -179,12 +216,20 @@ export function FicheScreen({
               n'avait pas été mentionnée dans la revue, et c'était le signe
               qu'elle ne se voyait pas : une ligne « 12 photos » sous l'adresse
               se lit comme une rubrique, un compte posé sur l'image se lit comme
-              la promesse que l'objet en cache onze autres. */}
+              la promesse que l'objet en cache onze autres.
+
+              **Hors de la marge, et elle est la seule.** Une image qui s'arrête
+              à dix-huit points de chaque bord est une vignette ; ce que la
+              planche compose est une image qui *est* le haut de l'écran, et sa
+              dissolution n'a de sens que si elle va d'un bord à l'autre. Tout
+              ce qui la suit reprend la marge, posée ici — voir `bordAbord`. */}
           <Couverture
             fiche={fiche}
             onOuvrirLaGalerie={() => setOuvert('galerie')}
+            onRetour={onRetour}
           />
 
+          <View style={{ paddingHorizontal: margeDeLaFiche, gap: 18 }}>
           <View style={{ gap: 10 }}>
             <View style={{ gap: 3 }}>
               <Texte variante="type.screenTitle" ellipseSurNomPropre>
@@ -361,6 +406,7 @@ export function FicheScreen({
               </SectionDOffres>
             ) : null}
           </View>
+          </View>
         </View>
         );
       }}
@@ -419,11 +465,13 @@ function AccesALaCarte({
       sortie={!aDesPages}
       titre={t('parcours.ficheCarte')}
       detail={
-        aDesPages
-          ? t('parcours.ficheCartePages', {
-              count: formatNumber(fiche.menu_pages.length, locale),
-            })
-          : t('parcours.ficheCarteSurLeurSite')
+        !aDesPages
+          ? t('parcours.ficheCarteSurLeurSite')
+          : fiche.menu_pages.length === 1
+            ? t('parcours.ficheCartePagesUne')
+            : t('parcours.ficheCartePages', {
+                count: formatNumber(fiche.menu_pages.length, locale),
+              })
       }
       onPress={aDesPages ? onOuvrirLaCarte : onSortirVersLeLien}
       testID="acces-carte"
@@ -447,9 +495,22 @@ function AccesALaCarte({
 function Couverture({
   fiche,
   onOuvrirLaGalerie,
+  onRetour,
 }: {
   fiche: FichePublique;
   onOuvrirLaGalerie: () => void;
+  /**
+   * Le retour, posé **sur** l'image.
+   *
+   * **La flèche est seule dans sa pastille.** Elle voyageait avec le mot
+   * « Back » au-dessus du titre, dans le flux : sur un écran dont le premier
+   * objet est une photo pleine largeur, une ligne de texte au-dessus repousse
+   * l'image d'un cran et lui retire son entrée. La pastille est ronde, la
+   * flèche y est seule, et rien d'autre n'y entre — un libellé la ferait
+   * grandir en bouton, et un bouton posé sur une photo se lit comme une action
+   * *sur la photo*.
+   */
+  onRetour?: () => void;
 }) {
   const { api } = useApi();
   const { t, locale } = useI18n();
@@ -471,13 +532,61 @@ function Couverture({
           fiche entière de sauter. Il manquait le fondu — sur la plus grande
           image du produit, une apparition d'un coup se voit le plus. */}
       <Photo uri={source.uri} style={{ flex: 1 }} testID="couverture-photo" />
+
+      {/* **La dissolution, et non un bord.** Du transparent vers la couleur de
+          la page : l'image finit sans qu'on puisse dire où. `pointerEvents` à
+          « none » parce qu'elle recouvre le bas de la photo, et une nappe qui
+          arrête l'appui rendrait la pastille des photos inatteignable sur sa
+          moitié haute. */}
+      <LinearGradient
+        testID="couverture-dissolution"
+        pointerEvents="none"
+        colors={[`${c['bg.page']}00`, c['bg.page']]}
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: DISSOLUTION_DE_LA_COUVERTURE,
+        }}
+      />
+
+      {onRetour ? (
+        <Pressable
+          testID="retour"
+          accessibilityRole="button"
+          accessibilityLabel={t('common.retour')}
+          onPress={onRetour}
+          hitSlop={12}
+          style={({ pressed }) => ({
+            position: 'absolute',
+            top: 16,
+            left: 18,
+            width: PASTILLE_DE_RETOUR,
+            height: PASTILLE_DE_RETOUR,
+            borderRadius: radius['radius.pill'],
+            alignItems: 'center',
+            justifyContent: 'center',
+            // Le voile de badge : le jeton de ce qui se pose sur une image dont
+            // on ne sait rien. La flèche y garde son contraste sur un cadrage
+            // clair comme sur un cadrage sombre.
+            backgroundColor: c['scrim.badge'],
+            opacity: pressed ? 0.7 : 1,
+          })}
+        >
+          <Icone nom="retour" couleur="ink.default" taille={20} />
+        </Pressable>
+      ) : null}
+
       {compte > 0 ? (
         <Pressable
           testID="acces-galerie"
           accessibilityRole="button"
-          accessibilityLabel={t('parcours.fichePhotosDetail', {
-            count: formatNumber(compte, locale),
-          })}
+          accessibilityLabel={
+            compte === 1
+              ? t('parcours.fichePhotosDetailUne')
+              : t('parcours.fichePhotosDetail', { count: formatNumber(compte, locale) })
+          }
           onPress={onOuvrirLaGalerie}
           // **La seule porte vers la galerie, et elle ne répondait pas.** Une
           // pastille posée sur une photo ressemble déjà à une étiquette ; sans
@@ -502,7 +611,9 @@ function Couverture({
         >
           <Icone nom="image" couleur="ink.default" taille={16} />
           <Texte variante="type.label">
-            {t('parcours.fichePhotosCompte', { count: formatNumber(compte, locale) })}
+            {compte === 1
+              ? t('parcours.fichePhotosCompteUne')
+              : t('parcours.fichePhotosCompte', { count: formatNumber(compte, locale) })}
           </Texte>
         </Pressable>
       ) : null}
@@ -797,7 +908,22 @@ function Offre({
         <CoeurDeLOffre offre={offre} favoris={favoris} />
       </View>
 
-      <View style={{ gap: 8 }}>
+      {/* **Ce qu'on donne est dans le bloc du service, sous un filet.**
+          Séparée du nom par un simple écart, la contrepartie flottait entre
+          deux prestations : on ne savait plus laquelle des deux elle
+          concernait. Le filet la rattache — au-dessus ce qu'on prend, en
+          dessous ce qu'on rend, et les deux sont la même carte.
+
+          Un filet et non un second bloc : ce sont deux moitiés d'un contrat,
+          pas deux objets. */}
+      <View
+        style={{
+          gap: 8,
+          paddingTop: 12,
+          borderTopWidth: 1,
+          borderTopColor: c['line.default'],
+        }}
+      >
         {/* **Ce que je donne.** Le palier en gras dans la phrase, le réseau par
             sa marque : c'est la correction entière du badge codé. */}
         <LigneAGlyphe glyphe="paliers" testID="ligne-contrepartie">

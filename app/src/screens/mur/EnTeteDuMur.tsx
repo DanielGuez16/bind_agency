@@ -58,19 +58,25 @@ export function EnTeteDuMur({
   return (
     <View testID="entete-du-mur">
       <View style={{ paddingBottom: 16, gap: 2 }}>
-        {/* **Le compte n'apparaît qu'une fois filtré.** Sans filtre, « MIAMI »
-            suffit : le nombre total de prestations de la ville ne se compare à
-            rien et ne se retient pas. Filtré, il dit ce que le filtre ouvre,
-            et c'est la seule question qu'on se pose à ce moment-là. */}
-        <Texte variante="type.dataLabel" couleur="ink.soft" testID="entete-marche">
-          {(fil === null || categorie === null
-            ? t('parcours.filMarche')
-            : t('parcours.filMarcheEtCompte', {
-                marche: t('parcours.filMarche'),
-                count: formatNumber(fil.total_prestations, locale),
-              })
-          ).toUpperCase()}
-        </Texte>
+        {/* **Le nom de la ville est parti, et il n'informait personne.** Le fil
+            est local par construction : tout ce qu'il montre est à Miami, donc
+            l'écrire au-dessus ne distingue rien de rien. Ce qui restait utile
+            est le compte, et lui seul — il dit ce que le filtre ouvre, et c'est
+            la question qu'on se pose à ce moment-là.
+
+            **Donc rien du tout sans filtre.** Le total des prestations de la
+            ville ne se compare à rien et ne se retient pas ; une ligne qui le
+            porterait ferait un sur-titre pour ne rien dire. */}
+        {fil === null || categorie === null ? null : (
+          <Texte variante="type.dataLabel" couleur="ink.soft" testID="entete-marche">
+            {(fil.total_prestations === 1
+              ? t('parcours.filCompteUn')
+              : t('parcours.filCompte', {
+                  count: formatNumber(fil.total_prestations, locale),
+                })
+            ).toUpperCase()}
+          </Texte>
+        )}
         <Texte variante="type.screenTitle" testID="entete-titre">
           {categorie === null
             ? t('parcours.filDecouvrir')

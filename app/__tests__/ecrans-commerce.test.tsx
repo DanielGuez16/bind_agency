@@ -564,7 +564,13 @@ describe('catalogue', () => {
       clientDe({
         '/photos': [],
         '/menu': [],
-        '/catalog-items': [],
+        // **Une prestation qui laisse un choix, et c'est elle qui ouvre la
+        // section de la carte.** Sans elle, la carte ne se compose plus du
+        // tout : le décor d'avant — catalogue vide, aucune page, aucun lien —
+        // décrivait un commerce qui n'a rien à faire choisir, donc rien à
+        // faire lire. Il rendait ce test vert sur une section qui n'a plus
+        // lieu d'être.
+        '/catalog-items': [{ ...ITEM, leaves_choice: true }],
         '/capacity-rules': [REGLE],
         '/capacity-exceptions': [],
         '/business/b1': { cover_photo_key: null, menu_url: null },
@@ -588,6 +594,36 @@ describe('catalogue', () => {
     await fireEvent.press(screen.getByTestId('section-horaires-entete'));
     // Les sept jours, qui sont ce que les horaires rendent.
     expect(screen.getByTestId('semaine')).toBeTruthy();
+  });
+
+  it('la carte ne se demande qu’à qui a quelque chose à faire choisir', async () => {
+    /**
+     * **Le critère est le drapeau de la prestation, jamais la catégorie du
+     * commerce.** Un spa à formules a besoin d'une carte ; un salon dont
+     * chaque prestation est nommée et fixe n'en a aucun usage, et lui en
+     * réclamer une crée une tâche qui ne se termine jamais.
+     *
+     * **Les deux sens, sur le même décor à un champ près.** C'est la seule
+     * façon de le prouver : un test qui ne montrerait que le cas vide passerait
+     * aussi bien sur une section retirée pour de bon.
+     */
+    await monter(
+      <LieuScreen businessId="b1" />,
+      clientDe({
+        '/photos': [],
+        '/menu': [],
+        '/catalog-items': [{ ...ITEM, leaves_choice: false }],
+        '/capacity-rules': [REGLE],
+        '/capacity-exceptions': [],
+        '/business/b1': { cover_photo_key: null, menu_url: null },
+      }),
+      'merchant',
+    );
+
+    await waitFor(() => expect(screen.getByTestId('section-photos-entete')).toBeTruthy());
+    expect(screen.queryByTestId('section-carte-entete')).toBeNull();
+    // Les deux autres restent : ce n'est pas l'écran qui a disparu.
+    expect(screen.getByTestId('section-horaires-entete')).toBeTruthy();
   });
 
   it('n’a plus la galerie : elle décrit le lieu', async () => {

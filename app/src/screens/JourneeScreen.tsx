@@ -1084,8 +1084,15 @@ function CarteDeDemande({
         * mono, isolée d'un verbe, elle ne se lit pas comme une échéance mais
         * comme une donnée de plus. Ce n'était pas un oubli : c'était la
         * conséquence d'un traitement qui ne pouvait pas dire ce qu'il portait.
+        *
+        * **Une seule graisse forte, et rien sous seize points.** Le rangement
+        * précédent avait laissé les deux lignes de contexte en légende : la
+        * carte tenait donc trois faits en deux tailles, dont une trop petite
+        * pour ce qui décide. Le nom prend la graisse de section, tout le reste
+        * passe au corps — c'est la hiérarchie entière, et elle tient en deux
+        * niveaux.
         */}
-      <Texte variante="type.bodyStrong" ellipseSurNomPropre>
+      <Texte variante="type.section" ellipseSurNomPropre>
         {reservation.item_name}
       </Texte>
 
@@ -1121,7 +1128,7 @@ function CarteDeDemande({
           </View>
         ) : null}
         <Texte
-          variante="type.caption"
+          variante="type.body"
           couleur="ink.soft"
           style={{ flex: 1, minWidth: 0 }}
           ellipseSurNomPropre
@@ -1155,7 +1162,7 @@ function CarteDeDemande({
           une quatrième grammaire pour un fait qui en avait déjà une. */}
       {reservation.approval_expires_at ? (
         <Texte
-          variante={urgente ? 'type.captionStrong' : 'type.caption'}
+          variante={urgente ? 'type.bodyStrong' : 'type.body'}
           couleur={urgente ? 'brand.700' : 'ink.soft'}
           testID={`limite-${reservation.booking_id}`}
         >
