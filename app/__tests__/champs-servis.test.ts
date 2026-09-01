@@ -141,6 +141,13 @@ const NON_RENDUS: Record<string, string> = {
   //
   // Les six premiers sont du contrat pur. Les deux suivants sont des choix de
   // composition, tranchés par Daniel plutôt que subis.
+  // **Servi et volontairement tu.** Le serveur rend le meilleur palier que la
+  // créatrice ouvre **chez ce salon** — une donnée du catalogue du salon, pas
+  // d'elle. Mais son `content_format` s'écrit « post », qui est le mot du
+  // système de paliers : un gérant lisait « post » sur une fiche et comprenait
+  // « son palier est post ». La carte dit maintenant ce qu'il peut en faire.
+  // Le champ reste servi parce que le tri s'appuie dessus côté serveur.
+  'CreateurDeLAnnuaire.palier_accessible': 'contrat',
   'ReservationDuCreateur.business_category': 'contrat',
   'AudienceDuCompte.following_count': 'contrat',
   // Le cadre 01c ne montre que les abonnés, l'engagement et les vues : un
