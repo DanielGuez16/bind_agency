@@ -2285,8 +2285,8 @@ describe('aucun montant sur un écran de lecture', () => {
       "le prix que le salon tape lui-même sur sa propre carte. Il est une donnée " +
       "de reporting interne, jamais un avoir, et jamais montré à une créatrice.",
     'MenuReviewScreen.tsx':
-      "la relecture d'une carte importée : les prix extraits se corrigent avant " +
-      "de créer les items.",
+      "la relecture d'une carte importée transporte le prix lu jusqu'au serveur, " +
+      "sans jamais le montrer ni le faire saisir. Il n'y est plus un champ.",
   };
 
   const { readdirSync, readFileSync } = require('fs') as typeof import('fs');

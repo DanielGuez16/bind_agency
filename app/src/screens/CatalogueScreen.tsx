@@ -20,6 +20,7 @@
  * un créneau. L'API l'accepte nulle pour les imports de carte à valider ; ce
  * formulaire, lui, la réclame.
  */
+import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
@@ -33,6 +34,7 @@ import {
   type ContentFormat,
   type PageDeLaCarte,
   type PhotoDuCommerce,
+  type LigneExtraite,
 } from '../api';
 import {
   Button,
@@ -51,6 +53,7 @@ import {
   vibration,
 } from '../components';
 import { useI18n } from '../i18n';
+import { MenuReviewScreen } from './MenuReviewScreen';
 import { useEnvoiDeFichier } from '../shell/useEnvoiDeFichier';
 import { gesteDeRetrait, suiteDuRefus } from './catalogue/corriger';
 import { resumeDuCatalogue } from './catalogue/resume';
@@ -98,6 +101,7 @@ export function CatalogueScreen({
   const { t } = useI18n();
   const [onglet, setOnglet] = useState<Onglet>('toutes');
   const [compose, setCompose] = useState(false);
+  const importDeCarte = useImportDeCarte(businessId);
 
   const charger = useCallback(
     async (signal: AbortSignal): Promise<Composition> => {
@@ -147,7 +151,19 @@ export function CatalogueScreen({
         />
       }
     >
-      {(composition) => (
+      {(composition) =>
+        importDeCarte.aRelire ? (
+          <MenuReviewScreen
+            businessId={businessId}
+            importId={importDeCarte.aRelire.importId}
+            lignesExtraites={importDeCarte.aRelire.lignes}
+            onRetour={importDeCarte.fermer}
+            onValide={() => {
+              importDeCarte.fermer();
+              requete.recharger();
+            }}
+          />
+        ) : (
         <View style={{ gap: 12 }}>
           {/* **Ce que le salon a composé, et ce que les créatrices en voient.**
               C'était la fonction du résumé de composition, sous la table des
@@ -173,11 +189,64 @@ export function CatalogueScreen({
               onAnnuler={() => setCompose(false)}
             />
           ) : (
-            <Button
-              label={t('composition.ajouterUnePrestation')}
-              onPress={() => setCompose(true)}
-              testID="ajouter-une-prestation"
-            />
+            <View style={{ gap: 8 }}>
+              <Button
+                label={t('composition.ajouterUnePrestation')}
+                onPress={() => setCompose(true)}
+                testID="ajouter-une-prestation"
+              />
+              {/* **Une option, jamais un remplacement.** La composition à la
+                  main reste le chemin sûr : elle marche sans réseau de salon,
+                  sans carte imprimée, et sans modèle. L'import fait gagner un
+                  quart d'heure à qui a déjà sa carte, ce qui est beaucoup, et
+                  ne doit rien coûter à qui ne l'a pas. */}
+              {importDeCarte.etat === 'choix' ? (
+                <View style={{ flexDirection: 'row', gap: 8 }} testID="source-de-la-carte">
+                  <View style={{ flex: 1 }}>
+                    <Button
+                      label={t('composition.importCartePhoto')}
+                      variant="secondary"
+                      onPress={importDeCarte.depuisLaPellicule}
+                      testID="carte-depuis-la-pellicule"
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Button
+                      label={t('composition.importCarteFichier')}
+                      variant="secondary"
+                      onPress={importDeCarte.depuisLesFichiers}
+                      testID="carte-depuis-les-fichiers"
+                    />
+                  </View>
+                </View>
+              ) : (
+                <Button
+                  label={t('composition.importerUneCarte')}
+                  variant="secondary"
+                  onPress={importDeCarte.choisir}
+                  disabled={importDeCarte.etat !== 'repos'}
+                  testID="importer-une-carte"
+                />
+              )}
+              {importDeCarte.etat === 'envoi' || importDeCarte.etat === 'lecture' ? (
+                <StatusMessage
+                  level="neutral"
+                  body={t(
+                    importDeCarte.etat === 'envoi'
+                      ? 'composition.importCarteEnCours'
+                      : 'composition.importCarteLecture',
+                  )}
+                  testID="import-carte-en-cours"
+                />
+              ) : null}
+              {importDeCarte.echec ? (
+                <StatusMessage
+                  level="danger"
+                  body={importDeCarte.echec}
+                  testID="import-carte-echec"
+                />
+              ) : null}
+            </View>
           )}
 
           <SegmentedTabs
@@ -204,7 +273,8 @@ export function CatalogueScreen({
             onChange={requete.recharger}
           />
         </View>
-      )}
+        )
+      }
     </Ecran>
   );
 }
@@ -1454,4 +1524,99 @@ function Vignette({ item, testID }: { item: ItemDuCatalogue; testID: string }) {
       <Icone nom="image" couleur="ink.mute" taille={17} />
     </View>
   );
+}
+
+/**
+ * Le chemin depuis l'écran jusqu'à la relecture d'une carte.
+ *
+ * **Le mécanisme existait en entier, et rien ne l'appelait.** Le dépôt,
+ * l'extraction, la relecture et la validation étaient écrits, testés et servis
+ * depuis la phase 9 ; l'écran de relecture n'avait aucun appelant. Un salon qui
+ * arrivait avec sa carte la ressaisissait ligne par ligne.
+ *
+ * **Trois appels, et le troisième est long.** Le dépôt et l'ouverture de
+ * l'import se font en un geste ; la lecture par le modèle prend des secondes et
+ * a donc son propre état, dit à l'écran. Confondre les deux ferait passer une
+ * coupure de réseau pour une carte illisible, ce qui envoie chercher la panne
+ * du mauvais côté.
+ *
+ * **Deux sources, parce que l'iPhone en a deux.** Une carte photographiée au
+ * mur est dans les photos ; une carte qu'un graphiste a composée est un fichier.
+ * Le sélecteur d'images ne rend pas de PDF, et le sélecteur de fichiers ne
+ * montre pas la pellicule. Un seul bouton qui n'ouvrirait qu'un des deux ferait
+ * chercher dans le mauvais endroit la moitié du temps.
+ */
+type EtatDImport = 'repos' | 'choix' | 'envoi' | 'lecture';
+
+function useImportDeCarte(businessId: string) {
+  const { api, messageDErreur } = useApi();
+  const { t } = useI18n();
+  const [etat, setEtat] = useState<EtatDImport>('repos');
+  const [echec, setEchec] = useState<string | null>(null);
+  const [aRelire, setARelire] = useState<{ importId: string; lignes: LigneExtraite[] } | null>(null);
+
+  const lire = useCallback(
+    async (uri: string, type: string) => {
+      setEchec(null);
+      setEtat('envoi');
+      try {
+        const importe = await api.deposerUneCarteAImporter(businessId, uri, type);
+        setEtat('lecture');
+        const lu = await api.lireLaCarte(businessId, importe.id);
+        setARelire({ importId: lu.id, lignes: lu.lignes });
+        setEtat('repos');
+      } catch (erreur) {
+        vibration.echec();
+        setEchec(messageDErreur(erreur));
+        setEtat('repos');
+      }
+    },
+    [api, businessId, messageDErreur],
+  );
+
+  const depuisLaPellicule = useCallback(async () => {
+    setEchec(null);
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      setEchec(t('composition.importCartePermission'));
+      setEtat('repos');
+      return;
+    }
+    const resultat = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.9 });
+    if (resultat.canceled) {
+      setEtat('repos');
+      return;
+    }
+    await lire(resultat.assets[0].uri, resultat.assets[0].mimeType ?? 'image/jpeg');
+  }, [lire, t]);
+
+  const depuisLesFichiers = useCallback(async () => {
+    setEchec(null);
+    const resultat = await DocumentPicker.getDocumentAsync({
+      type: ['application/pdf', 'image/*'],
+      copyToCacheDirectory: true,
+    });
+    if (resultat.canceled) {
+      setEtat('repos');
+      return;
+    }
+    await lire(resultat.assets[0].uri, resultat.assets[0].mimeType ?? 'application/pdf');
+  }, [lire]);
+
+  return {
+    etat,
+    echec,
+    aRelire,
+    choisir: useCallback(() => {
+      setEchec(null);
+      setEtat('choix');
+    }, []),
+    depuisLaPellicule,
+    depuisLesFichiers,
+    fermer: useCallback(() => {
+      setARelire(null);
+      setEchec(null);
+      setEtat('repos');
+    }, []),
+  };
 }

@@ -41,6 +41,7 @@ les confondre, c'est reprendre la photo trois fois d'une carte qui était bien
 cadrée.
 """
 
+import base64
 import json
 from dataclasses import dataclass, field
 from decimal import Decimal
@@ -117,6 +118,26 @@ ligne absente de la carte. Ne devine aucune durée. Si un prix est illisible,
 baisse la confiance plutôt que d'inventer un chiffre."""
 
 
+def _bloc(contenu: bytes, mime_type: str) -> dict:
+    """Le contenu, dans le bloc que son type demande.
+
+    **Une image et un PDF ne voyagent pas de la même façon.** L'API refuse un
+    `application/pdf` envoyé en bloc `image`, et c'est ce qui arrivait : la route
+    de dépôt rejetait les PDF avant d'en croiser un, donc le défaut restait sous
+    le refus qui le cachait. Le jour où le dépôt les a acceptés, le premier PDF
+    serait parti au modèle dans le mauvais bloc.
+    """
+    genre = "document" if mime_type == "application/pdf" else "image"
+    return {
+        "type": genre,
+        "source": {
+            "type": "base64",
+            "media_type": mime_type,
+            "data": base64.b64encode(contenu).decode(),
+        },
+    }
+
+
 class VisionExtractor:
     """Modèle vision d'Anthropic, derrière l'interface.
 
@@ -138,8 +159,6 @@ class VisionExtractor:
         self._delai = httpx.Timeout(settings.menu_extraction_timeout_seconds)
 
     async def extraire(self, contenu: bytes, *, mime_type: str) -> Extraction:
-        import base64
-
         try:
             reponse = await self._client.post(
                 ANTHROPIC,
@@ -159,14 +178,7 @@ class VisionExtractor:
                         {
                             "role": "user",
                             "content": [
-                                {
-                                    "type": "image",
-                                    "source": {
-                                        "type": "base64",
-                                        "media_type": mime_type,
-                                        "data": base64.b64encode(contenu).decode(),
-                                    },
-                                },
+                                _bloc(contenu, mime_type),
                                 {"type": "text", "text": INSTRUCTION},
                             ],
                         }

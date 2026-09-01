@@ -79,16 +79,23 @@ async def create_import(
 
 
 #: Les signatures acceptées, et **le type déclaré n'est pas consulté** : il vient
-#: de l'appelant, donc il ne prouve rien. Ce sont aussi les trois formats qu'un
-#: modèle vision sait lire — envoyer autre chose reviendrait à payer un appel
-#: pour un refus.
-SIGNATURES: tuple[bytes, ...] = (b"\xff\xd8\xff", b"\x89PNG\r\n\x1a\n", b"RIFF")
+#: de l'appelant, donc il ne prouve rien. Ce sont aussi les formats qu'un modèle
+#: sait lire — envoyer autre chose reviendrait à payer un appel pour un refus.
+#:
+#: **Le PDF y manquait, et c'est la moitié des cartes.** Un salon qui a fait
+#: faire sa carte en a un ; il photographiait son écran pour contourner un refus
+#: que rien n'expliquait. `TASKS.md` cochait pourtant « un PDF de salon en
+#: anglais et un en espagnol » comme critère de fin : les tests du service
+#: passent bien `application/pdf`, mais avec un extracteur double et sans jamais
+#: traverser cette route — la seule qui regarde les octets.
+SIGNATURES: tuple[bytes, ...] = (b"\xff\xd8\xff", b"\x89PNG\r\n\x1a\n", b"RIFF", b"%PDF-")
 
 #: Le type qu'on déclare au modèle, déduit de la signature et non de l'appelant.
 TYPE_PAR_SIGNATURE = {
     b"\xff\xd8\xff": "image/jpeg",
     b"\x89PNG\r\n\x1a\n": "image/png",
     b"RIFF": "image/webp",
+    b"%PDF-": "application/pdf",
 }
 
 TRANCHE = 64 * 1024

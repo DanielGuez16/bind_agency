@@ -54,11 +54,7 @@ const TOLERES = ['src/theme/index.tsx', 'src/theme/tokens.json', 'src/theme/prod
  * un test vérifie sa taille, pour qu'une dette nommée ne se mette pas à
  * grossir tranquillement.
  */
-const A_MIGRER = [
-  'src/screens/CameraScanner.tsx',
-  'src/screens/MenuReviewScreen.tsx',
-  'src/screens/RedemptionScreen.tsx',
-];
+const A_MIGRER = ['src/screens/CameraScanner.tsx', 'src/screens/RedemptionScreen.tsx'];
 
 function sources(dossier: string, trouves: string[] = []): string[] {
   for (const entree of readdirSync(dossier)) {
@@ -446,7 +442,7 @@ describe('couleurs en dur', () => {
     // ajoute un, et si quelqu'un en migre un sans mettre la liste à jour, ce
     // qui laisserait une tolérance ouverte sur un fichier qui n'en a plus
     // besoin.
-    expect(A_MIGRER).toHaveLength(3);
+    expect(A_MIGRER).toHaveLength(2);
 
     for (const relatif of A_MIGRER) {
       expect(() => readFileSync(join(RACINE, '..', relatif), 'utf-8')).not.toThrow();
@@ -880,6 +876,9 @@ describe('les surfaces de la v1.1', () => {
       // seul ; ils portent les trois marques d'une carte et se posent sur la
       // page, donc ils portent l'ombre — même arbitrage que l'audience v3.
       'src/screens/MenuDuCommerce.tsx',
+      // La relecture d'une carte importée : une ligne lue est une carte, et
+      // elle l'est devenue en quittant les couleurs écrites à la main.
+      'src/screens/MenuReviewScreen.tsx',
       'src/screens/PaliersScreen.tsx',
       'src/screens/PriseEnMainScreen.tsx',
       'src/screens/PublicationsScreen.tsx',

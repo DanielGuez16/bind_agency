@@ -104,6 +104,19 @@ export const routes = {
   ordreDeLaCarte: (businessId: string) => chemin(`/business/${businessId}/menu/order`),
   retirerUnePageDeCarte: (businessId: string, pageId: string) =>
     chemin(`/business/${businessId}/menu/${pageId}`),
+  // ---- import de carte ----
+  //
+  // **Quatre gestes, et le dernier est le seul qui écrit.** Le dépôt enregistre
+  // le fichier, la création ouvre l'import, l'extraction propose, la validation
+  // crée les prestations. Séparés parce qu'ils échouent pour des raisons
+  // différentes : un réseau, un format, un modèle, une durée manquante.
+  televerserUneCarteAImporter: (businessId: string) =>
+    chemin(`/business/${businessId}/menu-imports/uploads`),
+  importsDeCarte: (businessId: string) => chemin(`/business/${businessId}/menu-imports`),
+  extraireLaCarte: (businessId: string, importId: string) =>
+    chemin(`/business/${businessId}/menu-imports/${importId}/extract`),
+  validerLaCarte: (businessId: string, importId: string) =>
+    chemin(`/business/${businessId}/menu-imports/${importId}/validate`),
   televerserUnePhoto: (businessId: string) => chemin(`/business/${businessId}/photos/uploads`),
   ordreDesPhotos: (businessId: string) => chemin(`/business/${businessId}/photos/order`),
   retirerUnePhoto: (businessId: string, photoId: string) =>
@@ -241,6 +254,10 @@ export const METHODES: Record<keyof typeof routes, ('GET' | 'POST' | 'PATCH' | '
     televerserUnePageDeCarte: ['POST'],
     ordreDeLaCarte: ['PUT'],
     retirerUnePageDeCarte: ['DELETE'],
+    televerserUneCarteAImporter: ['POST'],
+    importsDeCarte: ['POST'],
+    extraireLaCarte: ['POST'],
+    validerLaCarte: ['POST'],
     televerserUnePhoto: ['POST'],
     ordreDesPhotos: ['PUT'],
     retirerUnePhoto: ['DELETE'],

@@ -1901,3 +1901,44 @@ export type RepriseDuCompte = {
    *  reprise fermée, et les deux ne se lisent pas pareil. */
   ended_at: string | null;
 };
+
+/**
+ * Une ligne lue sur une carte. **Pas encore une prestation.**
+ *
+ * `duration_minutes` n'y figure pas, et c'est le serveur qui le décide : une
+ * carte affiche des prix, jamais des temps de poste. La saisir est le travail
+ * de la relecture, et un champ prérempli d'un chiffre plausible ferait valider
+ * une durée que personne n'a choisie.
+ */
+export type LigneExtraite = {
+  name: string;
+  price_cents: number;
+  description: string | null;
+  /** Entre 0 et 1, rendue en chaîne par le serveur. Ordonne l'attention, ne décide rien. */
+  confidence: string;
+};
+
+export type ImportDeCarte = {
+  id: string;
+  business_id: string;
+  status: string;
+  mime_type: string;
+  currency: string | null;
+  lignes: LigneExtraite[];
+  created_at: string;
+};
+
+// `confiance_moyenne` et `reviewed_at` sont servis et volontairement absents
+// ici : la confiance se lit **par ligne**, qui est ce qu'on relit, et une
+// moyenne ferait juger l'ensemble sur un chiffre qui ne désigne aucune ligne.
+// La date de relecture appartient au serveur, qui ordonne les imports ; l'écran
+// n'en montre qu'un, celui qu'on vient d'ouvrir.
+
+/** Ce que la relecture renvoie : les lignes corrigées, gardées ou écartées. */
+export type LigneRevue = {
+  name: string;
+  price_cents: number;
+  duration_minutes: number | null;
+  requires_booking: boolean;
+  retenue: boolean;
+};

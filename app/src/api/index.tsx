@@ -22,6 +22,8 @@ import { routes } from './routes';
 import type {
   Abonnement,
   AudienceDuCompte,
+  ImportDeCarte,
+  LigneRevue,
   AutorisationDemarree,
   Booking,
   BusinessCategory,
@@ -140,15 +142,22 @@ const SUFFIXE_APERCU = '@apercu';
  * Sur le web, l'`uri` d'une image choisie est une adresse `blob:` ou `data:`
  * que `fetch` sait relire — il n'y a pas de disque à traverser.
  */
-async function fichierAEnvoyer(uri: string, nom: string): Promise<Blob | { uri: string; name: string; type: string }> {
-  if (Platform.OS !== 'web') return { uri, name: nom, type: 'image/jpeg' };
+async function fichierAEnvoyer(
+  uri: string,
+  nom: string,
+  // **Déclaré, jamais cru.** Le serveur lit les premiers octets et ne se fie pas
+  // à ce champ. Il sert au journal : un PDF annoncé `image/jpeg` fait chercher
+  // une panne d'image là où il n'y en a pas.
+  type = 'image/jpeg',
+): Promise<Blob | { uri: string; name: string; type: string }> {
+  if (Platform.OS !== 'web') return { uri, name: nom, type };
 
   const reponse = await fetch(uri);
   const donnees = await reponse.blob();
   // **Le nom voyage dans la troisième partie de `append`.** Sans lui, le
   // navigateur envoie `blob` comme nom de fichier ; le serveur lit les premiers
   // octets et ne s'y fie pas, mais un journal illisible coûte une enquête.
-  return new File([donnees], nom, { type: donnees.type || 'image/jpeg' });
+  return new File([donnees], nom, { type: donnees.type || type });
 }
 
 export class Api {
@@ -922,6 +931,59 @@ export class Api {
     );
 
     return this.modifierUnItem(businessId, itemId, { photo_key: storage_key });
+  }
+
+  // ---- import de carte ----
+
+  /**
+   * Dépose la carte et ouvre l'import. **Rien n'est lu à ce stade.**
+   *
+   * Deux appels et non un : le dépôt échoue pour des raisons de réseau et de
+   * format, l'ouverture pour des raisons de commerce. Les confondre ferait dire
+   * « carte illisible » à une coupure de réseau.
+   */
+  async deposerUneCarteAImporter(
+    businessId: string,
+    uri: string,
+    typeDeclare: string,
+    progression?: (part: number) => void,
+  ) {
+    const corps = new FormData();
+    const nom = typeDeclare === 'application/pdf' ? 'carte.pdf' : 'carte.jpg';
+    corps.append('fichier', (await fichierAEnvoyer(uri, nom, typeDeclare)) as Blob);
+
+    const { file_key, mime_type } = await this.client.request<{
+      file_key: string;
+      mime_type: string;
+    }>(routes.televerserUneCarteAImporter(businessId), {
+      methode: 'POST',
+      corpsBrut: corps,
+      progression,
+    });
+
+    // **Le type vient du serveur, pas de nous.** Il l'a déduit des octets ; le
+    // nôtre vient du sélecteur de fichiers, qui répète ce que le système
+    // annonce. Renvoyer le nôtre ferait lire un PDF comme une image.
+    return this.client.request<ImportDeCarte>(routes.importsDeCarte(businessId), {
+      methode: 'POST',
+      corps: { file_key, mime_type },
+    });
+  }
+
+  /** Lit la carte et rend ce qu'elle propose. **Ne crée aucune prestation.** */
+  lireLaCarte(businessId: string, importId: string, signal?: AbortSignal) {
+    return this.client.request<ImportDeCarte>(routes.extraireLaCarte(businessId, importId), {
+      methode: 'POST',
+      signal,
+    });
+  }
+
+  /** Le seul geste qui touche au catalogue. */
+  validerLaCarteRelue(businessId: string, importId: string, lignes: LigneRevue[]) {
+    return this.client.request<{ import_id: string; status: string; items_crees: number }>(
+      routes.validerLaCarte(businessId, importId),
+      { methode: 'POST', corps: { lignes } },
+    );
   }
 
   async ajouterUnePhoto(businessId: string, uri: string, progression?: (part: number) => void) {
