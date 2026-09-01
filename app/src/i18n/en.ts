@@ -720,6 +720,7 @@ export const en = {
     journeeDecisions: '{{count}} requests need your answer',
     journeeDecisionUne: 'One request needs your answer',
     journeeRienAAnswer: 'Nothing needs your answer',
+    jourAvecDecisions: '{{jour}}, {{count}} to answer',
     journeeFinies: '{{count}} done today',
     exceptionTitre: 'Just today',
     exceptionResume: '{{count}} places open today',
@@ -1466,7 +1467,7 @@ export const en = {
     audience: 'Audience',
     profil: 'Profile',
     reglages: 'Settings',
-    journee: 'Today',
+    journee: 'Your days',
     publications: 'Publications',
     // **« Checkout » disait le contraire de ce que l'écran fait.** En anglais
     // de commerce, c'est le moment où l'on paie et où l'on part ; ici c'est
