@@ -310,3 +310,25 @@ it('y atterrit aussi quand la liste a déjà été ouverte', async () => {
   await waitFor(() => expect(ongletRetenu()).toContain(en.parcours.ongletAVenir));
   expect(screen.getByText('Gel nails')).toBeTruthy();
 });
+
+it('y atterrit encore à la deuxième réservation', async () => {
+  // **La demande doit se consommer, sinon la seconde est ignorée.** Le
+  // paramètre de route resterait posé sur « à venir » ; quelqu'un qui réserve,
+  // passe à « terminées », puis réserve de nouveau ne verrait rien bouger —
+  // la valeur n'aurait pas change, et l'effet ne se redéclencherait pas.
+  //
+  // Sans ce cas, retirer la consommation ne fait tomber aucun test : mesuré.
+  await monterLeParcours();
+
+  await reserverDepuisLeFil();
+  await waitFor(() => expect(ongletRetenu()).toContain(en.parcours.ongletAVenir));
+
+  // On change d'onglet à la main : c'est ce que la seconde arrivée doit défaire.
+  await fireEvent.press(screen.getByLabelText(new RegExp(en.parcours.ongletTerminees)));
+  await waitFor(() => expect(ongletRetenu()).toContain(en.parcours.ongletTerminees));
+
+  await fireEvent.press(screen.getByText(en.onglets.fil));
+  await reserverDepuisLeFil();
+
+  await waitFor(() => expect(ongletRetenu()).toContain(en.parcours.ongletAVenir));
+});
