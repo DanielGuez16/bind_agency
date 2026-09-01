@@ -87,11 +87,29 @@ export function CodeGlyphs({ code, testID }: { code: string; testID?: string }) 
 }
 
 /**
- * Les secondes avant la rotation suivante, en chiffres.
+ * Les secondes avant la rotation suivante, en chiffres, sous un libellé qui dit
+ * ce qui arrive à zéro.
  *
  * Jamais en anneau de progression : un anneau ne se lit pas de loin, et c'est
- * de loin que cet écran est regardé. Sous 10 s, le bloc s'inverse — le seuil de
- * 60 s valait pour un code qui expirait, pas pour un code qui tourne.
+ * de loin que cet écran est regardé.
+ *
+ * **Aucun état d'urgence, et c'est une correction.** Le bloc s'inversait sous
+ * un tiers de la rotation. Or à zéro **il ne se passe rien** : l'écran recharge
+ * seul, le QR devient un autre QR, et le scan marche à l'identique. On avait
+ * donc mis une alarme sur la seule chose de cet écran qui ne demande aucune
+ * action — un créateur au comptoir voyait un nombre nu virer au négatif et
+ * descendre vers zéro, ce qui se lit comme « dépêche-toi » ou « ça va casser ».
+ *
+ * Le décompte garde une raison d'être, et une seule : **prouver au commerçant
+ * que l'écran est vivant**, et non une capture prise la semaine dernière. La
+ * rotation existe précisément pour qu'une capture ne vaille rien trente
+ * secondes plus tard. C'est un signal de fraîcheur, pas un délai à tenir.
+ *
+ * **Le libellé n'est pas un ornement.** Le nombre était nu, et il chapeautait
+ * deux codes aux durées de vie opposées : le QR qui tourne, et le code de
+ * secours juste dessous qui ne bouge jamais. Rien ne disait auquel il
+ * s'appliquait, et un commerçant à qui l'on dicte le second pendant que le
+ * nombre descend a toutes les raisons de croire qu'il faut se presser.
  *
  * **Chaque seconde bat.** Un léger retrait puis retour d'échelle : de loin, on
  * voit que le compte tourne sans avoir à lire le chiffre. C'est une
@@ -100,21 +118,24 @@ export function CodeGlyphs({ code, testID }: { code: string; testID?: string }) 
  */
 export function Countdown({
   secondes,
-  rotationSecondes,
+  libelle,
+  annonce,
   testID,
 }: {
   secondes: number;
+  /** « Nouveau code dans », traduit par l'écran. Le nombre le suit. */
+  libelle: string;
   /**
-   * La cadence du serveur, pour situer les secondes qui restent.
+   * La phrase entière, secondes comprises, pour qui n'a que la voix.
    *
-   * **L'urgence est une part, pas un nombre de secondes.** Dix secondes sur
-   * trente alertent ; dix secondes sur quinze seraient rouges les deux tiers du
-   * temps, et un signal permanent cesse d'être un signal.
+   * `accessibilityLabel` portait `String(secondes)` : un lecteur d'écran
+   * annonçait « 20 », « 19 », « 18 », chaque seconde, sans jamais dire de quoi.
+   * Le libellé visible ne suffit pas à le réparer — il est rendu à côté, dans
+   * un autre nœud, et rien ne lie les deux à l'oreille.
    */
-  rotationSecondes: number;
+  annonce: string;
   testID?: string;
 }) {
-  const urgent = secondes / Math.max(1, rotationSecondes) < CONFIG.countdownUrgentPart;
   const reduit = useMouvementReduit();
   const battement = useRef(new Animated.Value(1)).current;
 
@@ -141,15 +162,21 @@ export function Countdown({
     <Animated.View style={{ transform: [{ scale: battement }], alignSelf: 'center' }}>
     <View
       testID={testID}
-      accessibilityLabel={String(secondes)}
+      accessibilityLabel={annonce}
       style={{
         alignSelf: 'center',
         paddingHorizontal: 14,
         paddingVertical: 4,
-        backgroundColor: urgent ? fg : bg,
+        backgroundColor: bg,
       }}
     >
-      <Texte variante="type.countdown" style={{ color: urgent ? bg : fg }}>
+      {/* Le libellé est rendu ici et non par l'écran : séparés, ils finiraient
+          par se retrouver de part et d'autre du QR au premier remaniement, et
+          le nombre redeviendrait nu. */}
+      <Texte variante="type.caption" align="center" style={{ color: fg, opacity: 0.7 }}>
+        {libelle}
+      </Texte>
+      <Texte variante="type.countdown" align="center" style={{ color: fg }}>
         {secondes}
       </Texte>
     </View>

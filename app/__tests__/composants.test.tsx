@@ -486,23 +486,43 @@ describe('code de retrait', () => {
     expect(couleur(enClair)).toBe(codeColors.fg);
   });
 
-  it("s'inverse au dernier tiers, pas à un nombre de secondes", async () => {
-    // Le seuil de 60 s valait pour un code qui expirait. Celui-ci tourne — et
-    // **l'urgence est une part de la cadence, pas un nombre de secondes** : à
-    // trente secondes de rotation, le comportement est exactement celui d'hier.
-    const onze = await monter(<Countdown secondes={11} rotationSecondes={30} testID="c" />);
-    expect(style(screen.getByTestId('c')).backgroundColor).toBe(codeColors.bg);
-    await onze.unmount();
+  it("ne s'inverse jamais, quel que soit le nombre de secondes", async () => {
+    // **Le décor est choisi là où l'ancienne implémentation divergeait.** Neuf
+    // secondes inversaient le bloc — c'était sous le tiers d'une rotation de
+    // trente. Vérifier à onze secondes aurait rendu le même verdict avant et
+    // après, et n'aurait donc rien éprouvé.
+    //
+    // Ce qu'on protège : à zéro il ne se passe rien. L'écran recharge seul, le
+    // QR devient un autre QR, le scan est identique. Une alarme sur un
+    // non-événement fait douter au comptoir, devant quelqu'un.
+    for (const secondes of [29, 9, 1, 0]) {
+      const vue = await monter(
+        <Countdown secondes={secondes} libelle="New code in" annonce="…" testID="c" />,
+      );
+      expect(style(screen.getByTestId('c')).backgroundColor).toBe(codeColors.bg);
+      await vue.unmount();
+    }
+  });
 
-    const neuf = await monter(<Countdown secondes={9} rotationSecondes={30} testID="c" />);
-    expect(style(screen.getByTestId('c')).backgroundColor).toBe(codeColors.fg);
-    await neuf.unmount();
+  it('dit ce qui arrive à zéro, à l’œil comme à la voix', async () => {
+    // Le nombre était nu, et il chapeautait deux codes aux durées de vie
+    // opposées — le QR qui tourne, le code de secours dessous qui ne bouge
+    // jamais. Et `accessibilityLabel` portait `String(secondes)` : « 12 »,
+    // chaque seconde, sans jamais dire de quoi.
+    await monter(
+      <Countdown
+        secondes={12}
+        libelle="New code in"
+        annonce="New code in 12 seconds. The one below stays the same."
+        testID="c"
+      />,
+    );
 
-    // **Et le seuil suit le serveur.** Neuf secondes sur quinze sont plus de la
-    // moitié du tour : rouge en permanence, un signal d'urgence permanent
-    // cesse d'être un signal. Le seuil absolu se retournait exactement ainsi.
-    await monter(<Countdown secondes={9} rotationSecondes={15} testID="c" />);
-    expect(style(screen.getByTestId('c')).backgroundColor).toBe(codeColors.bg);
+    expect(screen.getByText('New code in')).toBeTruthy();
+    expect(screen.getByText('12')).toBeTruthy();
+    expect(screen.getByTestId('c').props.accessibilityLabel).toBe(
+      'New code in 12 seconds. The one below stays the same.',
+    );
   });
 
   it('groupe le code de secours trois par trois', async () => {
