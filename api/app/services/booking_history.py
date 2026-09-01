@@ -756,3 +756,102 @@ async def _horaires_du_jour(
         )
     )
     return availability.fenetres_du_jour(jour, regles, exception)
+
+
+@dataclass(frozen=True, slots=True)
+class JourDeDecisions:
+    jour: date
+    decisions: int
+    ouvert: bool
+
+
+@dataclass(frozen=True, slots=True)
+class BandeDeDecisions:
+    timezone: str
+    jours: list[JourDeDecisions]
+    sans_date: int
+
+
+async def decisions_par_jour(
+    session: AsyncSession, *, business: Business, depuis: date, jours: int
+) -> BandeDeDecisions:
+    """La bande de jours du comptoir : combien de décisions tombent chaque jour.
+
+    **Une requête et non sept.** L'écran dessine la semaine avant qu'on ouvre un
+    jour ; la demander jour par jour ferait sept parcours des mêmes lignes pour
+    l'écran le plus ouvert du produit. C'est la même raison qui a donné
+    `/availability/summary` à la bande de créneaux du créateur.
+
+    **Le compte est celui du créneau, pas celui de la file.** La file
+    d'arbitrage de la journée porte tout, toutes dates confondues, et c'est
+    voulu — une demande pour après-demain doit se voir aujourd'hui, sans quoi
+    personne ne la tranche. La bande répond à une autre question : *où* sont les
+    décisions. Une demande dont le créneau est vendredi se compte sur vendredi,
+    et le total de la bande n'est donc pas la longueur de la file.
+
+    **Le découpage est dans le fuseau du commerce.** Un salon de Miami dont une
+    demande tombe à 21 h le lundi la verrait comptée mardi si l'on découpait en
+    UTC — et c'est le lundi qu'il ferme.
+    """
+    fuseau = ZoneInfo(business.timezone)
+    fenetre = [depuis + timedelta(days=n) for n in range(jours)]
+    debut = datetime.combine(fenetre[0], time.min, tzinfo=fuseau)
+    fin = datetime.combine(fenetre[-1] + timedelta(days=1), time.min, tzinfo=fuseau)
+
+    # `AT TIME ZONE` : la date locale se calcule en base, sinon il faudrait
+    # rapatrier chaque ligne pour la reclasser en Python.
+    jour_local = sa.func.date(sa.func.timezone(business.timezone, Booking.starts_at))
+
+    comptes = dict(
+        (
+            await session.execute(
+                sa.select(jour_local, sa.func.count())
+                .where(
+                    Booking.business_id == business.id,
+                    Booking.status == BookingStatus.AWAITING_BUSINESS,
+                    Booking.starts_at.is_not(None),
+                    Booking.starts_at >= debut,
+                    Booking.starts_at < fin,
+                )
+                .group_by(jour_local)
+            )
+        ).all()
+    )
+
+    # Les droits à fenêtre de validité ne tombent aucun jour : ils sont hors
+    # bande, et comptés à part plutôt que tus.
+    sans_date = await session.scalar(
+        sa.select(sa.func.count()).where(
+            Booking.business_id == business.id,
+            Booking.status == BookingStatus.AWAITING_BUSINESS,
+            Booking.starts_at.is_(None),
+        )
+    )
+
+    regles = list(
+        await session.scalars(
+            sa.select(CapacityRule).where(CapacityRule.business_id == business.id)
+        )
+    )
+    exceptions = {
+        exception.date: exception
+        for exception in await session.scalars(
+            sa.select(CapacityException).where(
+                CapacityException.business_id == business.id,
+                CapacityException.date.in_(fenetre),
+            )
+        )
+    }
+
+    return BandeDeDecisions(
+        timezone=business.timezone,
+        jours=[
+            JourDeDecisions(
+                jour=jour,
+                decisions=int(comptes.get(jour, 0)),
+                ouvert=bool(availability.fenetres_du_jour(jour, regles, exceptions.get(jour))),
+            )
+            for jour in fenetre
+        ],
+        sans_date=int(sans_date or 0),
+    )

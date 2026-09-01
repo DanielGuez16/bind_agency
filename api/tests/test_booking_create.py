@@ -63,6 +63,8 @@ async def monter_le_decor(
     followers: int = 24_000,
     avec_nom: bool = True,
     requires_booking_approval: bool = False,
+    timezone: str = "America/New_York",
+    coordinates: tuple[float, float] = (-80.1918, 25.7617),
 ) -> dict:
     """Un commerce ouvert, un item offert, un créateur éligible."""
     proprietaire = await inscrire_verifie(
@@ -78,8 +80,13 @@ async def monter_le_decor(
             category=BusinessCategory.BEAUTY,
             currency="USD",
             address="1234 Ocean Dr",
-            coordinates=CoordinatesPayload(longitude=-80.1918, latitude=25.7617),
-            timezone="America/New_York",
+            coordinates=CoordinatesPayload(longitude=coordinates[0], latitude=coordinates[1]),
+            # **Le fuseau est un paramètre depuis la bande de jours.** Un salon
+            # de Miami n'ouvre jamais après vingt heures locales, c'est-à-dire
+            # jamais après minuit UTC : aucun décor new-yorkais ne peut donc
+            # faire diverger un découpage local d'un découpage serveur, et un
+            # test du fuseau y serait vert quoi qu'on écrive.
+            timezone=timezone,
             # La couverture bloque l'activation depuis que le fil rend une carte
             # par salon : sans elle, tout décor qui active se ferait refuser
             # pour une raison qu'il n'éprouve pas.

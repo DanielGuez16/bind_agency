@@ -12,7 +12,11 @@ from fastapi import APIRouter, Depends, Query
 
 from app.core.dependencies import CurrentBusiness, CurrentUser, SessionDep, require_role
 from app.models.enums import BookingStatus, UserRole
-from app.schemas.booking_history import HistoriqueDuCreateurRead, JourneeDuCommerceRead
+from app.schemas.booking_history import (
+    BandeDeDecisionsRead,
+    HistoriqueDuCreateurRead,
+    JourneeDuCommerceRead,
+)
 from app.services import booking_history as service
 
 creator_router = APIRouter(
@@ -67,3 +71,28 @@ async def read_day(
         jour=jour or service.aujourd_hui(business),
     )
     return JourneeDuCommerceRead.model_validate(journee)
+
+
+@business_router.get("/{business_id}/bookings/par-jour", response_model=BandeDeDecisionsRead)
+async def read_decisions_par_jour(
+    business: CurrentBusiness,
+    session: SessionDep,
+    depuis: Annotated[date | None, Query()] = None,
+    jours: Annotated[int, Query(ge=1, le=31)] = 7,
+) -> BandeDeDecisionsRead:
+    """La bande de jours : combien de décisions tombent chaque jour.
+
+    **En un appel.** L'écran dessine la semaine avant qu'on ouvre un jour ; sept
+    appels à la journée entière rapporteraient sept fois les réservations pour
+    n'en garder que le compte.
+
+    Sans `depuis`, la bande commence aujourd'hui — chez le commerce, pas chez le
+    serveur.
+    """
+    bande = await service.decisions_par_jour(
+        session,
+        business=business,
+        depuis=depuis or service.aujourd_hui(business),
+        jours=jours,
+    )
+    return BandeDeDecisionsRead.model_validate(bande)
