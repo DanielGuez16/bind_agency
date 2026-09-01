@@ -69,6 +69,10 @@ class FichePubliqueRead(BaseModel):
     name: str
     category: BusinessCategory
     address: str | None
+    #: Où le lieu se trouve. Nulles quand le géocodage n'a rien résolu ; le
+    #: client n'affiche alors ni distance ni renvoi vers un plan.
+    longitude: float | None
+    latitude: float | None
     timezone: str
     phone: str | None
     #: Où le salon se montre ailleurs, quand il l'a renseigné. Rendus tels

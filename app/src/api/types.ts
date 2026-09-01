@@ -591,6 +591,16 @@ export type FichePublique = {
   name: string;
   category: BusinessCategory;
   address: string | null;
+  /**
+   * Où le lieu se trouve.
+   *
+   * **Le fil dit une distance, la fiche ne disait rien.** On choisissait depuis
+   * une carte qui portait « 190 m », puis on ouvrait un écran où le lieu
+   * redevenait une adresse à lire. Nulles quand le géocodage n'a rien résolu :
+   * l'adresse reste, et rien ne s'invente.
+   */
+  longitude: number | null;
+  latitude: number | null;
   timezone: string;
   phone: string | null;
   /**
