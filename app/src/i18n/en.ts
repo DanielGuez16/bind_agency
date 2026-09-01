@@ -400,7 +400,6 @@ export const en = {
     // catégorie avant le nom commun, ce que l'espagnol n'ordonne pas ainsi.
     murServicesOuverts: '{{salons}} salons · {{count}} services open to you in {{quartier}}',
     murServicesDeCategorie: '{{salons}} salons · {{count}} {{categorie}} services in {{quartier}}',
-    murAutresQuartiers: 'Other neighbourhoods',
     murLePlusPres: 'Closest to you',
     murToutVoir: 'All {{count}}',
     murEncoreIci: '+{{count}} more here',

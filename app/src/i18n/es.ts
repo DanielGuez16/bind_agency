@@ -373,7 +373,6 @@ export const es: Catalogue = {
     // clés et non une seule avec un mot en plus.
     murServicesOuverts: '{{salons}} salones · {{count}} servicios abiertos para ti en {{quartier}}',
     murServicesDeCategorie: '{{salons}} salones · {{count}} servicios de {{categorie}} en {{quartier}}',
-    murAutresQuartiers: 'Otros barrios',
     murLePlusPres: 'Lo más cerca de ti',
     murToutVoir: 'Ver los {{count}}',
     murEncoreIci: '+{{count}} más aquí',
