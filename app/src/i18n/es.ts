@@ -1165,7 +1165,7 @@ export const es: Catalogue = {
     catalogueTitre: 'Catálogo',
     catalogueResume: '{{n}} servicios · {{visibles}} visibles para las creadoras',
     ajouterUnePrestation: 'Añadir un servicio',
-    importerUneCarte: 'Importar desde una foto o un PDF',
+    importerUneCarte: 'Importar toda mi carta de una vez',
     importCartePhoto: 'Una foto',
     importCarteFichier: 'Un archivo',
     importCarteEnCours: 'Enviando tu carta',
