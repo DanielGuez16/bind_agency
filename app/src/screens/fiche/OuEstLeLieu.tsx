@@ -67,13 +67,11 @@ export function adresseDuPlan(
 
 export function OuEstLeLieu({
   nom,
-  adresse,
   lieu,
   position,
   testID = 'ou-est-le-lieu',
 }: {
   nom: string;
-  adresse: string | null;
   /** Nul quand le géocodage n'a rien résolu : le bloc se tait alors. */
   lieu: { longitude: number; latitude: number } | null;
   /** Nulle tant que la créatrice n'a pas partagé sa position. */
@@ -105,28 +103,30 @@ export function OuEstLeLieu({
         ...elevationDeCarte(),
       }}
     >
-      <Texte variante="type.bodyStrong">{t('parcours.ouEstLeLieuTitre')}</Texte>
+      {/* **Ni titre, ni adresse : les deux étaient déjà lus.** Le bloc
+          s'annonçait « Where it is » et recopiait l'adresse que l'en-tête de la
+          fiche porte trois lignes plus haut. Une carte de plus à lire pour
+          apprendre ce qu'on venait d'apprendre, et le seul geste qu'elle offrait
+          — y aller — était la plus petite chose dedans.
 
-      {/* **La distance d'abord, parce que c'est elle qui décide.** L'adresse
-          situe une fois qu'on a décidé d'y aller ; le nombre décide. Absente
-          tant que la position n'est pas partagée, et on ne la réclame pas
-          ici : le fil l'a déjà demandée là où elle sert. */}
+          Ce qui reste est ce que l'en-tête ne dit pas : à quelle distance, et
+          la porte pour s'y rendre. */}
       {metres === null ? (
         <Texte variante="type.caption" couleur="ink.soft" testID={`${testID}-sans-position`}>
           {t('parcours.ouEstLeLieuSansPosition')}
         </Texte>
       ) : (
-        <Texte variante="type.caption" couleur="ink.soft" testID={`${testID}-distance`}>
+        <Texte variante="type.bodyStrong" testID={`${testID}-distance`}>
           {t('parcours.ouEstLeLieuDistance', { distance: formatDistance(metres, locale) })}
         </Texte>
       )}
 
-      {adresse ? (
-        <Texte variante="type.caption" couleur="ink.soft">
-          {adresse}
-        </Texte>
-      ) : null}
-
+      {/* **Le geste occupe la largeur, parce que c'est le seul.** Il était une
+          ligne de légende de seize points sous deux répétitions : la plus
+          petite chose du bloc était la seule à faire quelque chose. Il fait
+          maintenant quarante-huit points de haut, pleine largeur, sur un aplat
+          de marque — la cible d'un pouce, sur l'écran qu'on regarde en
+          marchant. */}
       <Pressable
         accessibilityRole="link"
         accessibilityLabel={t('parcours.ouEstLeLieuOuvrir')}
@@ -135,12 +135,17 @@ export function OuEstLeLieu({
         style={({ pressed }) => ({
           flexDirection: 'row',
           alignItems: 'center',
+          justifyContent: 'center',
           gap: 8,
+          minHeight: 48,
+          paddingHorizontal: 16,
+          borderRadius: radius['radius.md'],
+          backgroundColor: c['brand.100'],
           opacity: pressed ? 0.7 : 1,
         })}
       >
-        <Icone nom="lieu" couleur="brand.700" taille={16} />
-        <Texte variante="type.caption" couleur="brand.700">
+        <Icone nom="lieu" couleur="brand.900" taille={20} />
+        <Texte variante="type.bodyStrong" couleur="brand.900">
           {t('parcours.ouEstLeLieuOuvrir')}
         </Texte>
       </Pressable>

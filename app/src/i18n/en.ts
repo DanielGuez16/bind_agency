@@ -458,7 +458,6 @@ export const en = {
     ficheProchainDemain: 'Next tomorrow at ',
     ficheProchainJour: 'Next {{jour}} at ',
     ficheProchainDate: 'Next {{jour}} at ',
-    ouEstLeLieuTitre: 'Where it is',
     ouEstLeLieuDistance: '{{distance}} away, as the crow flies',
     ouEstLeLieuSansPosition: 'Share your location and this says how far it is.',
     ouEstLeLieuOuvrir: 'Open in Maps',
