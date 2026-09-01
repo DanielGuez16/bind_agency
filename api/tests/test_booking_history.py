@@ -12,7 +12,7 @@ sauterait chaque soir.
 """
 
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import sqlalchemy as sa
@@ -22,6 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.models import Booking, BusinessMember, TierOffer
 from app.models.enums import BookingStatus, BusinessMemberRole, UserRole
+from app.services import availability as service_dispo
 from app.services import booking_history as service
 from app.services import booking_states
 from tests.conftest import inscrire_verifie
@@ -833,3 +834,119 @@ async def test_la_contrepartie_sert_le_plafond_plutot_que_de_le_laisser_recopier
     ]
     assert contreparties, "le décor ne produit aucune contrepartie : il ne prouve rien"
     assert contreparties[0].max_attempts == 7
+
+
+# --------------------------------------------------------------------------
+# la bande de jours
+# --------------------------------------------------------------------------
+
+
+async def _en_attente_sur(session: AsyncSession, decor: dict, *, starts_at: datetime | None):
+    """Une demande qui attend le commerce, obtenue en la produisant.
+
+    Le statut n'est pas posé à la main : il vient de `confirmer` sur un salon
+    qui valide. Une valeur posée masquerait l'absence du mécanisme.
+    """
+    booking = await reserver(session, decor, starts_at=starts_at)
+    await booking_states.confirmer(session, booking=booking, creator_id=decor["createur"].id)
+    assert booking.status is BookingStatus.AWAITING_BUSINESS
+    return booking
+
+
+async def test_la_bande_compte_chaque_demande_sur_le_jour_de_son_creneau(
+    session: AsyncSession,
+) -> None:
+    """**Le jour du créneau, pas le jour de la lecture.**
+
+    C'est tout l'intérêt de la bande : la file d'arbitrage porte déjà tout,
+    toutes dates confondues. Ce qu'elle n'a jamais dit, c'est *où* sont les
+    décisions. Une implémentation qui recopierait la longueur de la file sur
+    chaque barre passerait un test qui ne compte qu'un seul jour — ici les deux
+    jours portent des comptes différents, et ils divergent.
+    """
+    decor = await monter_le_decor(session, postes=4, requires_booking_approval=True)
+    fuseau = ZoneInfo("America/New_York")
+
+    creneaux = await service_dispo.creneaux_libres(
+        session,
+        business_id=decor["business"].id,
+        catalog_item_id=decor["offre"].catalog_item_id,
+        depuis=datetime.now(UTC),
+        horizon=timedelta(days=7),
+    )
+    par_jour: dict[date, list[datetime]] = {}
+    for creneau in creneaux:
+        par_jour.setdefault(creneau.starts_at.astimezone(fuseau).date(), []).append(
+            creneau.starts_at
+        )
+    deux = [jour for jour, heures in sorted(par_jour.items()) if len(heures) >= 2][:2]
+    assert len(deux) == 2, "le décor doit offrir deux jours à au moins deux créneaux"
+
+    premier, second = deux
+    await _en_attente_sur(session, decor, starts_at=par_jour[premier][0])
+    await _en_attente_sur(session, decor, starts_at=par_jour[second][0])
+    await _en_attente_sur(session, decor, starts_at=par_jour[second][1])
+
+    bande = await service.decisions_par_jour(
+        session, business=decor["business"], depuis=premier, jours=7
+    )
+
+    comptes = {jour.jour: jour.decisions for jour in bande.jours}
+    assert comptes[premier] == 1
+    assert comptes[second] == 2
+    # Et le reste de la semaine est à zéro : une bande qui recopierait le total
+    # partout passerait les deux lignes du dessus.
+    assert sum(comptes.values()) == 3
+
+
+async def test_la_bande_decoupe_les_jours_dans_le_fuseau_du_commerce(
+    session: AsyncSession,
+) -> None:
+    """**Vingt et une heures à Miami sont le lendemain en UTC.**
+
+    C'est le décor qui fait diverger les deux implémentations : découpé sur
+    l'horloge du serveur, ce créneau se compterait sur le jour suivant. Un
+    créneau de midi ne dirait rien — les deux découpages rendraient le même
+    verdict, et le test n'aurait rien éprouvé.
+    """
+    # **Anchorage, et non Miami.** Un salon de Miami n'ouvre jamais après vingt
+    # heures locales, donc jamais après minuit UTC : le décor new-yorkais rend
+    # le même verdict avec les deux découpages, et le test serait vert quoi
+    # qu'on écrive. À Anchorage — UTC−8 en septembre — un créneau de fin
+    # d'après-midi est déjà le lendemain sur l'horloge du serveur.
+    decor = await monter_le_decor(
+        session,
+        postes=2,
+        requires_booking_approval=True,
+        timezone="America/Anchorage",
+        coordinates=(-149.9003, 61.2181),
+    )
+    fuseau = ZoneInfo("America/Anchorage")
+
+    creneaux = await service_dispo.creneaux_libres(
+        session,
+        business_id=decor["business"].id,
+        catalog_item_id=decor["offre"].catalog_item_id,
+        depuis=datetime.now(UTC),
+        horizon=timedelta(days=7),
+    )
+    tard = next(
+        (
+            c.starts_at
+            for c in creneaux
+            if c.starts_at.astimezone(fuseau).date() != c.starts_at.astimezone(UTC).date()
+        ),
+        None,
+    )
+    assert tard is not None, "le décor doit offrir un créneau qui enjambe minuit UTC"
+
+    veille = tard.astimezone(fuseau).date()
+    await _en_attente_sur(session, decor, starts_at=tard)
+
+    bande = await service.decisions_par_jour(
+        session, business=decor["business"], depuis=veille, jours=2
+    )
+
+    comptes = {jour.jour: jour.decisions for jour in bande.jours}
+    assert comptes[veille] == 1
+    assert comptes[veille + timedelta(days=1)] == 0

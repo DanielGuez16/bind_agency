@@ -93,9 +93,12 @@ const COLONNES = { nom: 260, duree: 96, palier: 96 } as const;
 export function CatalogueScreen({
   businessId,
   onRetour,
+  retourVers,
 }: {
   businessId: string;
   onRetour?: () => void;
+  /** Le nom de la destination du retour. Voir `BarreDeTitre`. */
+  retourVers?: string;
 }) {
   const { api } = useApi();
   const { t } = useI18n();
@@ -139,6 +142,7 @@ export function CatalogueScreen({
       requete={requete}
       titre={t('composition.catalogueTitre')}
       onRetour={onRetour}
+      retourVers={retourVers}
       // Rendu dans la colonne du menu de configuration, qui borne déjà.
       nature="section"
       squelette={<SkeletonLignes combien={6} testID="squelette-catalogue" />}

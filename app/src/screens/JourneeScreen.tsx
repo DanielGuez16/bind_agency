@@ -37,10 +37,11 @@
  * faire. Un seul registre à gauche, marqué par une pastille et non par un
  * relief ; les gestes et le contexte à droite, où il y a la place de les poser.
  */
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Linking, Pressable, View } from 'react-native';
 
 import {
+  type JourDeDecisions,
   useApi,
   type JourneeDuCommerce,
   type ReservationDuCommerce,
@@ -67,6 +68,8 @@ import { formatDateTime, formatHeure, formatNumber, jourCivil, repereDuCreneau }
 import { useI18n, type SupportedLocale } from '../i18n';
 import { breakpoint, elevationDeCarte, radius, size, useTheme, type ColorName } from '../theme';
 import { ECART_DES_COLONNES, useGabarit } from '../shell/gabarit';
+import { BandeDesJours } from './journee/BandeDesJours';
+import { JOURS_DE_LA_BANDE } from './journee/bande';
 import { Ecran } from './Ecran';
 import { nomDePlateforme } from './obstacle';
 import { BandeauDeMiseEnLigne } from './journee/BandeauDeMiseEnLigne';
@@ -86,13 +89,20 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
   // **Repliées au départ, toutes les deux.** « Trop de texte, trop de choses
   // pas claires » — troisième retour sur cet écran. Ce qui se lit chaque matin
   // est ce qui demande un geste ; le reste s'ouvre quand on le cherche.
+  // **Le jour que la bande a choisi.** Le prop reste la valeur d'ouverture —
+  // une route peut viser un jour précis — mais la bande en change ensuite sans
+  // repasser par la navigation : c'est un choix de lecture, pas un déplacement.
+  const [jourChoisi, setJourChoisi] = useState<string | null>(jour ?? null);
+
   const [exceptionOuverte, setExceptionOuverte] = useState(false);
   const [finiesOuvertes, setFiniesOuvertes] = useState(false);
 
-  const requete = useRequete<JourneeDuCommerce & { activation: VueDActivation | null }>(
+  const requete = useRequete<
+    JourneeDuCommerce & { activation: VueDActivation | null; bande: JourDeDecisions[] }
+  >(
     async (signal) => {
-      const [journee, activation] = await Promise.all([
-        api.journeeDuCommerce(businessId, jour, signal),
+      const [journee, activation, bande] = await Promise.all([
+        api.journeeDuCommerce(businessId, jourChoisi ?? undefined, signal),
         // **L'état de publication, avec la journée.** Il ne concerne pas la
         // journée et c'est pourtant ici qu'il doit se voir : c'est l'écran du
         // matin, et un salon invisible n'a aucune raison d'aller le chercher
@@ -102,8 +112,15 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
         // pas empêcher la journée de s'afficher. Le bandeau se tait alors,
         // ce qui est le bon défaut — voir `miseEnLigne`.
         api.etapesDActivation(businessId, signal).catch(() => null),
+        // **Avec la journée, et non à part.** Le compte d'un jour change dès
+        // qu'on accorde ou refuse : le demander dans le même passage fait que
+        // la bande se corrige au moment exact où la file se vide.
+        //
+        // Un échec ne remonte pas, comme pour l'activation : la bande absente
+        // ne doit pas emporter la journée, qui est ce qu'on vient lire.
+        api.decisionsParJour(businessId, JOURS_DE_LA_BANDE, signal).catch(() => null),
       ]);
-      return { ...journee, activation };
+      return { ...journee, activation, bande: bande?.jours ?? [] };
     },
     {
       // **Vide veut dire « rien du tout », et les demandes en font partie.**
@@ -113,7 +130,7 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
       // aujourd'hui et deux demandes en attente voyait donc « aucun
       // rendez-vous » — la seule chose urgente du produit, invisible.
       estVide: (journee) => journee.items.length === 0 && journee.a_trancher.length === 0,
-      dependances: [businessId, jour],
+      dependances: [businessId, jourChoisi],
     },
   );
 
@@ -129,6 +146,20 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
   // — et c'est précisément le jour où une reprise est la plus probable : on
   // entre dans un compte pour débloquer une configuration, pas un jour chargé.
   // Le laisser dans le corps l'aurait éteint le seul jour qui compte.
+  // **La bande se pose hors des quatre états, comme le titre.** Un jour sans
+  // rendez-vous rend l'état vide, qui ne rend pas ses enfants — et c'est
+  // précisément le jour où elle sert le plus : elle dit où sont les décisions
+  // quand celui qu'on regarde n'en a aucune. Sans cela, le seul geste possible
+  // depuis un jour creux serait de repartir.
+  const bandeDesJours =
+    chargee && chargee.bande.length > 0 ? (
+      <BandeDesJours
+        jours={chargee.bande}
+        selection={jourChoisi ?? chargee.jour.slice(0, 10)}
+        onChoisir={setJourChoisi}
+      />
+    ) : null;
+
   const repriseEnCours = chargee ? (
     <BandeauDeReprise
       businessId={businessId}
@@ -191,6 +222,7 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
       testID="ecran-journee"
       vide={
         <>
+        {bandeDesJours}
         {repriseEnCours}
         {/**
           * **Le bandeau se rend aussi ici, et c'est le cas qui le demande le
@@ -452,6 +484,7 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
         if (!large) {
           return (
             <View style={{ gap: 16 }}>
+              {bandeDesJours}
               {repriseEnCours}
               {bandeau}
               {colonneListe}
@@ -461,6 +494,11 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
 
         return (
           <View style={{ gap: 16 }}>
+            {/* **La bande en tête, avant tout le reste.** C'est elle qui dit ce
+                qu'on lit : le jour ouvert reste nommé au-dessus de sa liste, et
+                sans elle on ne saurait plus, deux gestes plus loin, de quel
+                jour on regarde les décisions. */}
+            {bandeDesJours}
             {repriseEnCours}
             {bandeau}
             <View style={{ flexDirection: 'row', gap: ECART_DES_COLONNES }}>
@@ -795,6 +833,48 @@ function ReseauxDeLaCreatrice({ reservation }: { reservation: ReservationDuComme
 }
 
 /**
+ * La ligne du créateur : une cible de 64 points, ou rien du tout.
+ *
+ * **Sans profil à ouvrir, ce n'est pas un lien** — et ce n'est alors pas
+ * pressable non plus. Rendre la ligne touchable partout et ne rien faire de
+ * l'appui serait pire que le glyphe minuscule qu'on retire : on apprendrait à
+ * appuyer, et une fois sur deux il ne se passerait rien.
+ */
+function LigneDuCreateur({
+  url,
+  libelle,
+  testID,
+  children,
+}: {
+  url: string | null;
+  libelle: string;
+  testID: string;
+  children: ReactNode;
+}) {
+  const rangee = {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 10,
+    // 64 points : la hauteur que la planche v11 donne à cette ligne.
+    minHeight: 64,
+  };
+
+  if (url === null) return <View style={rangee}>{children}</View>;
+
+  return (
+    <Pressable
+      accessibilityRole="link"
+      accessibilityLabel={libelle}
+      onPress={() => void Linking.openURL(url)}
+      testID={testID}
+      style={({ pressed }) => ({ ...rangee, opacity: pressed ? 0.7 : 1 })}
+    >
+      {children}
+    </Pressable>
+  );
+}
+
+/**
  * Les deux états qui appellent un geste, **et jamais une liste de ceux qui n'en
  * appellent pas.**
  *
@@ -967,14 +1047,21 @@ function Gestes({
               salon, pas un compte à rebours : sur vingt-quatre heures, « avant
               mardi 10 h » se retient, « dans 21 h 14 min » demande de refaire
               le calcul et oblige l'écran à battre la seconde pour rien. */}
+          {/* **Un fait, une ligne.** C'étaient deux phrases concurrentes : la
+              conséquence — « après quoi elle expire d'elle-même » — était
+              rendue en valeur, donc plus grosse que l'échéance qu'elle
+              commente. Elles fusionnent, et la hiérarchie se règle d'elle-même
+              parce qu'il n'y a plus deux choses à hiérarchiser. */}
           {reservation.approval_expires_at ? (
-            <DataRow
-              label={t('commerce.decisionAvant', {
+            <Texte
+              variante="type.body"
+              couleur="ink.soft"
+              testID={`echeance-decision-${reservation.booking_id}`}
+            >
+              {t('commerce.repondreAvant', {
                 quand: formatDateTime(reservation.approval_expires_at, locale, timezone),
               })}
-              value={t('commerce.decisionAvantAide')}
-              testID={`echeance-decision-${reservation.booking_id}`}
-            />
+            </Texte>
           ) : null}
           <Button
             label={t('commerce.accorder')}
@@ -1109,7 +1196,18 @@ function CarteDeDemande({
         * pèsent une décision et se lisent posément. Un visage et un lien disent
         * qui, pas combien, et c'est ce que la ligne demandait.
         */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+      {/* **La ligne entière est la cible, et le glyphe n'est plus qu'une
+          marque.** Le lien ne prenait que le glyphe de sortie : seize points de
+          côté, là où la ligne désigne déjà exactement la même chose et fait
+          358 points de large. Un lien de dix-sept pixels n'est pas un lien.
+
+          La ligne reste rendue à l'identique quand il n'y a pas de profil à
+          ouvrir — l'enveloppe change, pas la composition. */}
+      <LigneDuCreateur
+        url={reservation.creator_profil_url}
+        libelle={t('commerce.voirLeProfil')}
+        testID={`profil-${reservation.booking_id}`}
+      >
         {reservation.creator_avatar_key ? (
           <View
             style={{
@@ -1141,17 +1239,9 @@ function CarteDeDemande({
           ].join(' · ')}
         </Texte>
         {reservation.creator_profil_url ? (
-          <Pressable
-            accessibilityRole="link"
-            accessibilityLabel={t('commerce.voirLeProfil')}
-            onPress={() => void Linking.openURL(reservation.creator_profil_url as string)}
-            testID={`profil-${reservation.booking_id}`}
-            style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
-          >
-            <Icone nom="sortie" couleur="ink.soft" taille={16} />
-          </Pressable>
+          <Icone nom="sortie" couleur="ink.soft" taille={16} />
         ) : null}
-      </View>
+      </LigneDuCreateur>
 
       {/* **L'échéance entre dans la phrase qui l'explique.** Elle est double
           côté serveur — vingt-quatre heures, ou l'heure du créneau si elle

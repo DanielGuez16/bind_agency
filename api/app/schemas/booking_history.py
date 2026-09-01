@@ -230,3 +230,30 @@ class JourneeDuCommerceRead(BaseModel):
     #: L'écran garde sa règle d'échéance : une reprise peut expirer pendant
     #: qu'on regarde, et le serveur ne le redira pas.
     reprise_en_cours: BusinessSupportAccessRead | None
+
+
+class JourDeDecisionsRead(BaseModel):
+    """Un jour de la bande, et ce qu'il porte à trancher."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    jour: date
+    #: Combien de décisions tombent ce jour-là.
+    #:
+    #: **Le compte est celui des créneaux, pas celui de la file.** La file
+    #: d'arbitrage de l'écran de journée porte tout, toutes dates confondues —
+    #: c'est voulu, une demande pour après-demain doit se voir. La bande répond
+    #: à une autre question : *où* sont les décisions. Une demande pour vendredi
+    #: se compte sur vendredi.
+    decisions: int
+    #: Vrai si le commerce ouvre ce jour-là, exceptions comprises. **Un jour
+    #: fermé sans décision ne se lit pas comme un jour ouvert sans décision** :
+    #: le premier est normal, le second est un creux.
+    ouvert: bool
+
+
+class BandeDeDecisionsRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    timezone: str
+    jours: list[JourDeDecisionsRead]

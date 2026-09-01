@@ -42,6 +42,15 @@ export type BarreDeTitreProps = {
   /** Rendu tel quel — « il y a 2 h ». Jamais une date brute. */
   fraicheur?: string | null;
   onRetour?: () => void;
+  /**
+   * Le nom de l'endroit où le retour ramène.
+   *
+   * Absent, le glyphe reste seul — c'est le cas d'une pile où l'on sait d'où
+   * l'on vient parce qu'on vient d'y être. Il se nomme quand la sous-page est
+   * atteinte depuis un menu, où le retour ramène ailleurs que dans le fil de
+   * lecture.
+   */
+  retourVers?: string;
   /** Deux au plus. Au-delà, le nom de l'écran se noie. */
   actions?: ReactNode;
   testID?: string;
@@ -52,6 +61,7 @@ export function BarreDeTitre({
   sousTitre,
   fraicheur,
   onRetour,
+  retourVers,
   actions,
   testID = 'barre-de-titre',
 }: BarreDeTitreProps) {
@@ -81,7 +91,10 @@ export function BarreDeTitre({
         <Pressable
           testID="retour"
           accessibilityRole="button"
-          accessibilityLabel={t('common.retour')}
+          // **Le libellé nomme la destination quand on la connaît.** « Back »
+          // dit qu'on peut revenir ; il ne dit pas où. Sur une sous-page
+          // atteinte depuis un menu, c'est la seconde question qu'on se pose.
+          accessibilityLabel={retourVers ?? t('common.retour')}
           hitSlop={12}
           onPress={onRetour}
           style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 4,
@@ -89,6 +102,11 @@ export function BarreDeTitre({
           })}
         >
           <Icone nom="retour" couleur="ink.soft" taille={18} />
+          {retourVers ? (
+            <Texte variante="type.body" couleur="ink.soft" testID="retour-vers">
+              {retourVers}
+            </Texte>
+          ) : null}
         </Pressable>
       ) : null}
 

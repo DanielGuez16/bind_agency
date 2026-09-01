@@ -84,10 +84,13 @@ export function LieuScreen({
    */
   timezone = 'UTC',
   onRetour,
+  retourVers,
 }: {
   businessId: string;
   timezone?: string;
   onRetour?: () => void;
+  /** Le nom de la destination du retour. Voir `BarreDeTitre`. */
+  retourVers?: string;
 }) {
   const { api } = useApi();
   const { t } = useI18n();
@@ -146,6 +149,7 @@ export function LieuScreen({
       titre={t('lieu.titre')}
       nature="merchant"
       onRetour={onRetour}
+      retourVers={retourVers}
       squelette={<SkeletonLignes combien={5} testID="squelette-lieu" />}
       testID="ecran-lieu"
     >

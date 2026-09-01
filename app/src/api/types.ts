@@ -1957,3 +1957,26 @@ export type LigneRevue = {
   requires_booking: boolean;
   retenue: boolean;
 };
+
+/** Un jour de la bande du comptoir, et ce qu'il porte à trancher. */
+export type JourDeDecisions = {
+  /** La date **locale** du commerce, « 2026-09-01 ». */
+  jour: string;
+  /**
+   * Combien de décisions tombent ce jour-là.
+   *
+   * **Le compte est celui des créneaux, pas celui de la file.** La file
+   * d'arbitrage porte tout, toutes dates confondues — une demande pour
+   * après-demain doit se voir aujourd'hui. La bande répond à l'autre question :
+   * *où* sont les décisions. Le total de la bande n'est donc pas la longueur de
+   * la file, et ce n'est pas un défaut.
+   */
+  decisions: number;
+  /** Le salon ouvre-t-il ce jour-là, exceptions comprises. */
+  ouvert: boolean;
+};
+
+export type BandeDeDecisions = {
+  timezone: string;
+  jours: JourDeDecisions[];
+};

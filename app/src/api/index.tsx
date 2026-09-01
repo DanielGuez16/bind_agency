@@ -42,6 +42,7 @@ import type {
   FiltreDeContrepartie,
   HistoriqueDuCreateur,
   IssueDArbitrage,
+  BandeDeDecisions,
   JourneeDuCommerce,
   LigneDeFile,
   MotifQuiRevient,
@@ -491,6 +492,19 @@ export class Api {
   journeeDuCommerce(businessId: string, jour?: string, signal?: AbortSignal) {
     return this.client.request<JourneeDuCommerce>(routes.journeeDuCommerce(businessId), {
       query: { jour },
+      signal,
+    });
+  }
+
+  /**
+   * La bande de sept jours, en un appel.
+   *
+   * Sept appels à `journeeDuCommerce` rapporteraient sept fois les
+   * réservations pour n'en garder que le compte.
+   */
+  decisionsParJour(businessId: string, jours?: number, signal?: AbortSignal) {
+    return this.client.request<BandeDeDecisions>(routes.decisionsParJour(businessId), {
+      query: { jours },
       signal,
     });
   }

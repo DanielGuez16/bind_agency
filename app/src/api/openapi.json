@@ -389,6 +389,15 @@
         ]
       }
     },
+    "/api/v1/business/{business_id}/bookings/par-jour": {
+      "get": {
+        "operationId": "read_decisions_par_jour_api_v1_business__business_id__bookings_par_jour_get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/api/v1/business/{business_id}/capacity-exceptions": {
       "get": {
         "operationId": "list_exceptions_api_v1_business__business_id__capacity_exceptions_get",
