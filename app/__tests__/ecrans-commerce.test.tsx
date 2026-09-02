@@ -750,15 +750,12 @@ describe('horaires et capacité', () => {
       expect(screen.getByTestId(`jour-${jour}`)).toBeTruthy();
     }
     expect(screen.getByTestId('horaires-0')).toHaveTextContent(/10:00/);
-    // **Le jour ouvert porte son nombre de fauteuils**, en colonne et nu : le
-    // mot est dit une fois dans l'en-tête, plus sept fois dans les lignes.
-    expect(screen.getByTestId('postes-0')).toHaveTextContent('2');
+    // **La capacité a quitté la ligne avec la v13.** L'exposer sur chaque jour
+    // demandait de tenir deux idées par rangée ; elle se règle en ouvrant le
+    // jour, où la phrase peut être entière. La colonne part donc avec elle.
+    expect(screen.queryByTestId('postes-0')).toBeNull();
     for (let jour = 1; jour < 7; jour += 1) {
       expect(screen.getByTestId(`ferme-${jour}`)).toHaveTextContent(en.composition.ferme);
-      // **Et le jour fermé laisse sa cellule vide.** « Closed » le dit déjà ;
-      // un zéro y serait un signe à interpréter — un salon qui garde zéro
-      // fauteuil un jour où il ouvre n'est pas la même chose qu'un salon fermé.
-      expect(screen.getByTestId(`postes-${jour}`)).toHaveTextContent('');
     }
   });
 
@@ -1802,12 +1799,10 @@ describe('l’annuaire des créateurs', () => {
     expect(screen.queryByText(/\/\s*100/)).toBeNull();
     expect(screen.queryByText(/rating|score|rank/i)).toBeNull();
 
-    // Et la divergence qui donne sa valeur au test : l'écran **parle** bien,
-    // il ne se tait pas partout. L'absence de contact, elle, est écrite —
-    // parce qu'un salon la cherche, là où personne ne cherche une note.
-    expect(screen.getByTestId('pas-de-contact-c1')).toHaveTextContent(
-      en.annuaire.pasDeContact,
-    );
+    // Et la divergence qui donne sa valeur au test : l'écran **parle** bien, il
+    // ne se tait pas partout. La ligne situe la créatrice, ce qu'aucune note ne
+    // ferait — c'est la seule chose qu'elle dit d'elle.
+    expect(screen.getByTestId('ville-c1')).toBeTruthy();
   });
 
   it('commence par le compte, avant toute liste', async () => {
@@ -1915,9 +1910,14 @@ describe('l’annuaire des créateurs', () => {
       }),
       'merchant',
     );
-    await waitFor(() => expect(screen.getByTestId('sans-palier-c1')).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId('createur-c1')).toBeTruthy());
 
-    expect(screen.getByTestId('sans-palier-c1')).toHaveTextContent(en.annuaire.aucunPalier);
+    // **Dit dans le libellé de la ligne depuis la v13.** La grille est passée
+    // en lignes de 76 : une phrase par rangée y ferait trois lignes de texte
+    // pour six créatrices. Elle reste dite, et se place du côté du salon.
+    expect(screen.getByTestId('createur-c1').props.accessibilityLabel).toContain(
+      en.annuaire.aucunPalier,
+    );
 
     // Les deux phrases se placent du côté du salon. C'est l'assertion qui
     // tombe si l'on revient à « No tier open right now » : elle est vraie de la
@@ -1956,7 +1956,9 @@ describe('l’annuaire des créateurs', () => {
     );
     await waitFor(() => expect(screen.getByTestId('createur-c1')).toBeTruthy());
 
-    const lien = screen.getByTestId('profil-c1-instagram');
+    // **La ligne entière est la cible depuis la v13**, et rien d'autre dedans
+    // ne l'est : les deux glyphes de droite sont des marques.
+    const lien = screen.getByTestId('createur-c1');
     expect(lien.props.accessibilityRole).toBe('link');
   });
 
@@ -1974,9 +1976,9 @@ describe('l’annuaire des créateurs', () => {
     );
     await waitFor(() => expect(screen.getByTestId('createur-c1')).toBeTruthy());
 
-    // Le pseudonyme reste lisible, il ne devient simplement pas pressable.
+    // La ligne reste lisible, elle ne devient simplement pas pressable.
     expect(screen.getByText('lea.mrl')).toBeTruthy();
-    expect(screen.queryByTestId('profil-c1-instagram')).toBeNull();
+    expect(screen.getByTestId('createur-c1').props.accessibilityRole).toBeUndefined();
   });
 
   it('montre le portrait, et garde son cadre quand il n’y en a pas', async () => {
@@ -2068,7 +2070,10 @@ describe('l’annuaire des créateurs', () => {
     // mot désignait une personne, et c'est ainsi qu'il a été lu en campagne.
     // La phrase dit maintenant ce que le salon peut en faire, ce qui est aussi
     // le premier critère du tri.
-    expect(screen.getByTestId('peut-reserver-c1')).toHaveTextContent(
+    // **Dit, et non peint.** La v13 passe la grille en lignes : l'anneau
+    // d'encre porte le critère à l'œil, et le libellé le dit en toutes lettres
+    // — un état qui ne reposerait que sur la couleur ne se lit pas.
+    expect(screen.getByTestId('createur-c1').props.accessibilityLabel).toContain(
       en.annuaire.paliersOuverts,
     );
 
@@ -2100,7 +2105,11 @@ describe('l’annuaire des créateurs', () => {
       }),
       'merchant',
     );
-    await waitFor(() => expect(screen.getByTestId('sans-palier-c1')).toBeTruthy());
+    await waitFor(() =>
+      expect(screen.getByTestId('createur-c1').props.accessibilityLabel).toContain(
+        en.annuaire.aucunPalier,
+      ),
+    );
   });
 
   it('explique l’abonnement au lieu de proposer de réessayer', async () => {
@@ -2453,7 +2462,12 @@ describe('l’annuaire est en lecture seule', () => {
     expect({
       onPress: combien(/onPress=/g),
       sorties: combien(/Linking\.openURL/g),
-      liens: combien(/accessibilityRole="link"/g),
+      // **Les deux écritures du rôle.** La forme littérale et la forme
+      // conditionnelle — `{profil ? 'link' : undefined}` — disent la même
+      // chose ; ne reconnaître que la première ferait rougir la garde sur une
+      // ligne qui ne prétend mener quelque part que lorsqu'elle le peut, ce
+      // qui est précisément ce qu'on lui demande.
+      liens: combien(/accessibilityRole=(?:"link"|\{[^}]*'link'[^}]*\})/g),
     }).toEqual({
       onPress: combien(/onPress=/g),
       sorties: combien(/onPress=/g),
@@ -2805,8 +2819,12 @@ describe('la grille de l’annuaire', () => {
     );
     await waitFor(() => expect(screen.getByTestId('createur-situee')).toBeTruthy());
 
-    expect(screen.getByTestId('distance-situee')).toHaveTextContent('320 m');
-    expect(screen.queryByTestId('distance-inconnue')).toBeNull();
+    // La distance a rejoint la ville dans une seule situation : « Wynwood,
+    // 320 m ». Nulle, elle se tait — un tiret se lirait comme « loin ».
+    expect(screen.getByTestId('ville-situee')).toHaveTextContent(/320\s*m/);
+    // Et la divergence : sans distance, la ligne ne porte que la ville. Un
+    // tiret ou un vide s'y liraient comme « loin », ce qu'on ne sait pas.
+    expect(screen.getByTestId('ville-inconnue')).not.toHaveTextContent(/\d/);
   });
 
   it('situe la créatrice : la ville avec la distance', async () => {
@@ -2822,17 +2840,20 @@ describe('la grille de l’annuaire', () => {
       <AnnuaireScreen businessId="b1" />,
       clientDe({
         '/creators': annuaireDe([
-          creatrice('situee', { city: 'Wynwood' }),
-          creatrice('apatride', { city: null }),
+          creatrice('situee', { city: 'Wynwood', distance_metres: 320 }),
+          creatrice('apatride', { city: null, distance_metres: null }),
         ]),
       }),
       'merchant',
     );
     await waitFor(() => expect(screen.getByTestId('createur-situee')).toBeTruthy());
 
-    expect(screen.getByTestId('ville-situee')).toHaveTextContent('Wynwood');
-    // La divergence : sans ville, la ligne ne se rend pas — plutôt qu'un vide
-    // qui décalerait la carte d'à côté.
+    expect(screen.getByTestId('ville-situee')).toHaveTextContent(/Wynwood/);
+    // La divergence : sans ville, la situation tombe sur la distance seule.
+    // Elle ne se tait que si les deux manquent — un vide décalerait la ligne
+    // d'à côté, et une ville inconnue n'est pas une distance inconnue.
+    // La divergence : sans ville **ni** distance, la ligne se tait. Un vide
+    // décalerait la ligne d'à côté, et « on ne sait pas » n'est pas « loin ».
     expect(screen.queryByTestId('ville-apatride')).toBeNull();
   });
 
@@ -2853,8 +2874,12 @@ describe('la grille de l’annuaire', () => {
       const brut = screen.getByTestId(id).props.style;
       return Object.assign({}, ...(Array.isArray(brut) ? brut.flat(Infinity) : [brut]).filter(Boolean));
     };
-    expect(style('createur-ouverte').borderColor).toBe(couleurs['line.solo']);
-    expect(style('createur-fermee').borderColor).not.toBe(couleurs['line.solo']);
+    // **L'anneau de l'avatar porte l'encre depuis la v13**, la carte ayant
+    // laissé la place à une ligne. Ce qu'il marque n'a pas changé : celle qui
+    // peut réserver ici, et elle seule.
+    expect(style('portrait-ouverte').borderWidth).toBeGreaterThan(0);
+    expect(style('portrait-ouverte').borderColor).toBe(couleurs['line.solo']);
+    expect(style('portrait-fermee').borderWidth).toBe(0);
   });
 
   it('dit combien sont affichées sur combien, et propose la suite', async () => {

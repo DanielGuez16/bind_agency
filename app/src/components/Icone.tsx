@@ -88,12 +88,12 @@ export type NomIcone =
 const CHEMINS: Record<Exclude<NomIcone, 'instagram'>, string> = {
   chevron: 'M9.5 5.5L16 12l-6.5 6.5',
   croix: 'M6 6l12 12M18 6L6 18',
-  coche: 'M4.5 12.5l5 5L19.5 7',
+  coche: 'M5 12.5l4.5 4.5L19 7.5',
   // **Le cœur, fourni par Design : le jeu n'en avait pas.** Un seul tracé
   // fermé, symétrique, qui se remplit sans changer de forme — c'est ce qui
   // permet aux deux états d'être la même icône.
   coeur:
-    'M12 20.3C6.6 16.5 3.6 13.1 3.6 9.7A4.9 4.9 0 0 1 12 6.7a4.9 4.9 0 0 1 8.4 3c0 3.4-3 6.8-8.4 10.6z',
+    'M12 20C6.2 15.4 4 12.7 4 10.1A4.4 4.4 0 0112 7.6A4.4 4.4 0 0120 10.1C20 12.7 17.8 15.4 12 20Z',
   // Le disque et son manche, dans le même chemin que le reste du jeu.
   loupe: 'M10.8 18.1a7.3 7.3 0 100-14.6 7.3 7.3 0 000 14.6zM16.1 16.1l4.4 4.4',
   // Cadran et aiguilles, en un seul tracé fermé puis rouvert.
@@ -120,7 +120,7 @@ const CHEMINS: Record<Exclude<NomIcone, 'instagram'>, string> = {
   // La même flèche, retournée : le retour et l'avance se répondent.
   monte: 'M12 19.5V5M6 11l6-6 6 6',
   descend: 'M12 4.5V19M6 13l6 6 6-6',
-  retour: 'M19.5 12h-15M10.5 6l-6 6 6 6',
+  retour: 'M4.5 12h15M13.5 6l6 6-6 6',
   oeil: 'M2.5 12S6.2 5.5 12 5.5 21.5 12 21.5 12 17.8 18.5 12 18.5 2.5 12 2.5 12zM12 14.8a2.8 2.8 0 100-5.6 2.8 2.8 0 000 5.6z',
   'oeil-barre':
     'M9.9 5.8A8.8 8.8 0 0112 5.5c5.8 0 9.5 6.5 9.5 6.5a17 17 0 01-2.9 3.6M6.4 7.7A17 17 0 002.5 12S6.2 18.5 12 18.5c1 0 2-.2 2.9-.5M10 10a2.8 2.8 0 004 4M4 4l16 16',
@@ -141,7 +141,7 @@ const CHEMINS: Record<Exclude<NomIcone, 'instagram'>, string> = {
   // précisément pour ça, et sa première règle est de copier le tracé sans le
   // retaper.
   // La hampe, sa boucle, et le drapeau qui s'en détache.
-  tiktok: 'M14.2 3v10.9a3.6 3.6 0 11-3-3.55M14.2 3.4c.5 2.3 2.1 3.9 4.6 4.2',
+  tiktok: 'M14.2 3v10.9a3.6 3.6 0 11-3-3.55 M14.2 3.4c.5 2.3 2.1 3.9 4.6 4.2',
 };
 
 /**

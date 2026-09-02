@@ -304,7 +304,7 @@ Une ligne par retrait, la version qui l'a décidé, et la raison en une phrase.
 | Le serrage négatif sous 22 px | v8, partout | Il tient un display de 44 px ; à 22 et moins il ferme des contreformes déjà compactes. |
 | Les tirets cadratins | v8, partout | Remplacés **par le sens** : virgule pour une apposition, point pour deux phrases. Jamais par un point médian, qui est le séparateur de champs. |
 | Le tiret dans une cellule vide | v12, commerce | Un signe à interpréter, en `ink.faint` à 2,46:1. La cellule reste vide quand une autre colonne porte déjà le fait. |
-| Le chevron sur chaque ligne d'un tableau | v12, commerce | La rangée entière s'ouvre : sept chevrons répètent sept fois la même promesse. |
+| Le chevron **comme promesse** sur chaque ligne d'un tableau | v12, commerce | Sept chevrons répétaient sept fois la même promesse. Il revient en v13 comme **marque** et non comme cible : la rangée entière reste la seule zone cliquable, et rien d'autre dedans ne l'est. Même partage que le glyphe `sortie`. |
 | « MIAMI » sous le titre du fil | v9, créateur | Le fil est local par construction ; le nom de la ville n'informe personne. |
 | La vidéo de fond de l'accueil | v3, créateur | Quatre états à tenir pour un fond qui ne fait pas arriver plus vite au fil. |
 | Le bloc noir de la connexion de bureau | v3, créateur | Il expliquait le produit à la seule personne qui a déjà un compte. |
