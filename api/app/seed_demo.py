@@ -1293,6 +1293,19 @@ async def _la_journee_de_chaque_salon(
         # donc toute fenêtre de sept jours en contient trois ou quatre.
         ampleur_des_decisions = 8 if business.name == OCEAN else 4
 
+        #: **Combien de décisions par journée retenue.**
+        #:
+        #: Le stock s'épuise à l'usage — une décision tranchée ne se retranche
+        #: pas — et une démonstration qui se répète sur plusieurs jours vidait
+        #: la file au troisième passage. Mesuré avant : neuf dossiers chez le
+        #: salon d'ouverture, quatre chez les autres.
+        #:
+        #: Trois et deux, ce qui porte le salon d'ouverture à vingt-quatre et
+        #: les autres à huit : de quoi trancher plusieurs fois par session sur
+        #: trois ou quatre sessions, sans rien changer à l'étalement ni aux
+        #: échéances, qui suivent le créneau.
+        densite_des_decisions = 3 if business.name == OCEAN else 2
+
         # **Le passé, étalé plutôt que groupé.** Prendre les premiers créneaux
         # mettrait tout à l'ouverture ; on prélève à intervalle régulier pour
         # que la journée se lise comme une journée.
@@ -1382,7 +1395,12 @@ async def _la_journee_de_chaque_salon(
         # Un jour de plus que de décisions : la dernière journée porte un
         # rendez-vous confirmé, sans quoi un salon qui valide n'aurait que des
         # demandes en attente et aucun planning à venir.
-        attendues = _un_par_jour(a_venir + restants, fuseau, ampleur_des_decisions + 1)
+        attendues = _un_par_jour(
+            a_venir + restants,
+            fuseau,
+            ampleur_des_decisions + 1,
+            par_jour=densite_des_decisions,
+        )
 
         posees += await _poser_ce_qui_a_eu_lieu(
             session,
@@ -1401,13 +1419,15 @@ async def _la_journee_de_chaque_salon(
             creneaux=attendues,
             roulement=roulement,
             confirmer=confirmer,
-            a_trancher=ampleur_des_decisions,
+            a_trancher=ampleur_des_decisions * densite_des_decisions,
         )
 
     return posees
 
 
-def _un_par_jour(creneaux: list[datetime], fuseau: ZoneInfo, combien: int) -> list[datetime]:
+def _un_par_jour(
+    creneaux: list[datetime], fuseau: ZoneInfo, combien: int, par_jour: int = 1
+) -> list[datetime]:
     """Un créneau par jour civil, sur les `combien` premiers jours qui en ont.
 
     **Un par jour, et non les `combien` premiers.** Prendre les premiers
@@ -1419,13 +1439,22 @@ def _un_par_jour(creneaux: list[datetime], fuseau: ZoneInfo, combien: int) -> li
     tombe le lendemain en UTC, et le classer sur la date brute le poserait un
     jour trop loin.
     """
-    par_jour: dict[date, datetime] = {}
+    du_jour: dict[date, list[datetime]] = {}
     for creneau in sorted(creneaux):
-        par_jour.setdefault(creneau.astimezone(fuseau).date(), creneau)
+        du_jour.setdefault(creneau.astimezone(fuseau).date(), []).append(creneau)
 
-    jours = sorted(par_jour)
+    jours = sorted(du_jour)
+
+    # **Plusieurs par jour, et non un seul.** Le stock s'épuise à l'usage : une
+    # décision tranchée ne se retranche pas, et une démonstration qui se répète
+    # sur plusieurs jours vidait la file au troisième passage. Ce qui change est
+    # la densité d'une journée, pas l'étalement — les jours retenus restent les
+    # mêmes, et la correction de la quinzaine tient.
+    def prises(jour: date) -> list[datetime]:
+        return du_jour[jour][:par_jour]
+
     if combien >= len(jours):
-        return [par_jour[jour] for jour in jours]
+        return [creneau for jour in jours for creneau in prises(jour)]
 
     # **Étalés sur toute la fenêtre, et non pris au début.** Prendre les
     # `combien` premiers jours remplissait la première semaine et laissait la
@@ -1433,9 +1462,9 @@ def _un_par_jour(creneaux: list[datetime], fuseau: ZoneInfo, combien: int) -> li
     # bande de sept jours sans un seul chiffre. Le pas couvre du premier jour au
     # dernier, bornes comprises.
     if combien == 1:
-        return [par_jour[jours[0]]]
+        return prises(jours[0])
     pas = (len(jours) - 1) / (combien - 1)
-    return [par_jour[jours[round(rang * pas)]] for rang in range(combien)]
+    return [creneau for rang in range(combien) for creneau in prises(jours[round(rang * pas)])]
 
 
 async def _heures_deja_passees(
