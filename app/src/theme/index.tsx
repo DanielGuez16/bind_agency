@@ -405,7 +405,15 @@ const MATIERE_DE_PALIER: Record<Palier, MatiereDePalier> = {
     surface: 'brand.100',
     bordure: 'brand.500',
     epaisseur: 1, // components.md §2
-    texte: 'brand.700',
+    // **`brand.900` et non `brand.700`, et c'est mesuré.** Le libellé du badge
+    // fait 11 px : sous cette taille aucune couleur en deçà de 4,5:1 n'est
+    // admise, et `brand.700` sur `brand.100` donne 4,19:1. `components.md` §2
+    // l'affirmait juste sans l'avoir mesuré, et l'a corrigé le 2026-08-21 ; la
+    // copie du dépôt étant restée en retard de cinq sections, le produit a
+    // porté le défaut depuis. `brand.900` donne 8,84:1 et reste dans la famille
+    // brune de la rampe. Assombrir le fond n'était pas l'issue : `brand.700`
+    // sur `brand.200` est pire, à 3,38:1.
+    texte: 'brand.900',
     glyphePlein: 'brand.700',
     glypheVide: 'brand.200',
     barresPleines: 2,

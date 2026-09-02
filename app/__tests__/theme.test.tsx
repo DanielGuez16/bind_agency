@@ -373,7 +373,13 @@ describe('jetons', () => {
     // vérifie la rendrait d'accord avec eux quoi qu'ils disent.
     const attendu: Record<Palier, { surface: string; texte: string; barres: number }> = {
       story: { surface: 'bg.surface', texte: 'brand.700', barres: 1 },
-      post: { surface: 'brand.100', texte: 'brand.700', barres: 2 },
+      // **`brand.900` depuis la correction du 2026-08-21.** La section
+      // affirmait que « `brand.700` sur `brand.100` passe » sans l'avoir
+      // mesuré : le couple donne 4,19:1 à 11 px. Le voisin d'à côté le savait
+      // déjà — « passe de peu sur le creux, et pas assez pour 11 px » — et la
+      // table des paliers ne l'avait pas suivi, la copie du document dans le
+      // dépôt étant restée en retard de cinq sections.
+      post: { surface: 'brand.100', texte: 'brand.900', barres: 2 },
       reel: { surface: 'brand.500', texte: 'ink.onBrand', barres: 3 },
     };
 
