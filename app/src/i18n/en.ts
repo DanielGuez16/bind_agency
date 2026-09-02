@@ -1046,7 +1046,6 @@ export const en = {
     porteRoleCreateur: 'Creator',
     porteRoleCommerce: 'Business',
     porteCompte: 'Account',
-    dejaInscrit: 'Already with us?',
     role: 'I am',
     roleCreator: 'A creator',
     roleMerchant: 'A business',
