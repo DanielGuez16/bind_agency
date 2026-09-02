@@ -1340,16 +1340,14 @@ export const en = {
     videAction: 'Add my first service',
     horairesTitre: 'Hours and capacity',
     ouverture: 'Opening',
-    capaciteExplication: 'When you are open, and how many creators you can take at once. Separate from your usual client diary.',
+    colonneJour: 'Day',
+    colonneOuvert: 'Open',
+    colonneFauteuils: 'Chairs',
+    capaciteExplication: 'How many chairs you keep for creators, day by day.',
     modifier: 'Edit',
     enregistrer: 'Save',
     ferme: 'Closed',
     fermerCeJour: 'Close this day',
-    // **« Créateurs », et non « à la fois ».** « 2 at a time » ne disait pas
-    // deux quoi : des créneaux, des postes, des heures. Le nom du compté est
-    // ce qui manquait, et il tient dans le libellé.
-    postes: '{{n}} creators at once',
-    postesUn: 'One creator at once',
     champDebut: 'Opens at, HH:MM',
     champFin: 'Closes at, HH:MM',
     champPostes: 'Creators at a time',

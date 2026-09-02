@@ -129,6 +129,32 @@ export function HorairesScreen({
  * Fermée veut dire « aucune règle ce jour-là ». C'est la même chose en base, et
  * c'est ce que la disponibilité lit — il n'y a pas d'autre façon de le dire.
  */
+/**
+ * Les deux largeurs fixes du tableau, **mesurées et non données**.
+ *
+ * Un tableau ne se compose pas en posant des largeurs : il se compose sur la
+ * plus longue valeur de chaque colonne, dans les deux langues. « Wednesday »
+ * demande 93 points et 92 les coupait ; « miércoles » en demande davantage.
+ * La colonne du milieu prend ce qui reste — c'est elle qui porte la valeur la
+ * plus variable.
+ *
+ * **Mesurer plutôt que tronquer, et c'est aussi ce que le dépôt exige.**
+ * `numberOfLines` est réservé aux noms propres : ni un jour ni une amplitude
+ * n'en est un. La planche demande « sans retour » ; la largeur juste le donne
+ * sans rien couper, une ellipse l'aurait donné en perdant la fin du mot.
+ */
+const LARGEUR_DU_JOUR = 104;
+const LARGEUR_DES_FAUTEUILS = 48;
+
+/**
+ * Les chiffres alignés en colonne. **Sur les valeurs, jamais sur le jeton.**
+ *
+ * Redéfinir `type.data` pour aligner ce tableau emporterait les codes de
+ * retrait, les seuils et les dates d'exception — un test le refuse, et il a
+ * raison.
+ */
+const TABULAIRE = { fontVariant: ['tabular-nums' as const] };
+
 function LigneDeJour({
   libelle,
   jour,
@@ -186,61 +212,61 @@ function LigneDeJour({
     );
 
   return (
-    <View
-      testID={`jour-${jour}`}
-      style={{
-        gap: 6,
-        // **Le jour fermé garde sa ligne, en fond retiré.** Le retirer ferait
-        // une semaine à cinq lignes où l'on chercherait le jeudi ; le laisser
-        // au même plan que les autres ferait sept jours ouverts. Le fond dit
-        // « cette ligne existe et ne porte rien », ce qu'aucun mot ne dit aussi
-        // vite.
-        ...(regle
-          ? null
-          : {
-              backgroundColor: c['bg.inset'],
-              borderRadius: radius['radius.md'],
-              paddingHorizontal: 10,
-              paddingVertical: 6,
-            }),
-      }}
-    >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        {/* **Le jour se lit à seize points, pas à onze en capitales.**
-            `type.label` est la voix d'une étiquette de colonne — « DAY » —, pas
-            celle d'une valeur. Le nom du jour *est* la donnée de la ligne. */}
-        <Texte variante="type.bodyStrong" couleur={regle ? 'ink.default' : 'ink.mute'}>
+    <View testID={`jour-${jour}`}>
+      {/* **Une rangée de tableau, et le chevron est parti.** La rangée entière
+          s'ouvre : sept chevrons répétaient sept fois la même promesse, et les
+          trente-deux points rendus donnent à la colonne des heures de quoi ne
+          pas se couper.
+
+          **Le fond retiré des jours fermés part aussi.** Il disait « cette
+          ligne existe et ne porte rien » quand la ligne était seule au monde ;
+          dans un tableau, la cellule de fauteuils vide le dit déjà, et deux
+          signes pour un fait en font un à interpréter. */}
+      <Pressable
+        onPress={() => setOuvert(!ouvert)}
+        testID={`modifier-${jour}`}
+        accessibilityRole="button"
+        accessibilityLabel={libelle}
+        style={({ pressed }) => ({
+          minHeight: 60,
+          paddingHorizontal: 16,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 12,
+          borderBottomWidth: 1,
+          borderBottomColor: c['line.default'],
+          opacity: pressed ? 0.7 : 1,
+        })}
+      >
+        {/* **104 points, mesurés et non donnés.** Un tableau ne se compose pas
+            en posant des largeurs : il se compose sur la plus longue valeur de
+            chaque colonne, dans les deux langues. « Wednesday » en demande 93,
+            « miércoles » davantage — 92 les coupait tous les deux. */}
+        <Texte
+          variante="type.bodyStrong"
+          couleur={regle ? 'ink.default' : 'ink.mute'}
+          style={{ width: LARGEUR_DU_JOUR }}
+        >
           {libelle}
         </Texte>
-        <View style={{ flex: 1 }}>
+
+        <View style={{ flex: 1, minWidth: 0 }}>
           {regle ? (
-            /* **Deux faits, deux lignes.** « 10:00 – 19:00 · 2 at a time »
-               joignait par un point médian une plage horaire et un compte de
-               personnes : deux natures qui ne se lisent pas d'un trait, et le
-               point laissait croire à une suite. */
-            <View testID={`horaires-${jour}`}>
-              {/* **L'amplitude sort du mono, et le tiret devient un mot.**
-                  Le jeton mono revendique « chiffres, codes, seuils, horaires »,
-                  et c'est ce qui a fait ranger une amplitude ici. Mais une
-                  amplitude n'est pas un horaire isolé : c'est une phrase brève
-                  entre deux heures, et le demi-cadratin la donnait à lire comme
-                  une plage de tableau. « 09:00 to 19:00 » se lit ; « 09:00 –
-                  19:00 » en mono se déchiffre.
-                  Ce qui reste en mono le reste exprès : le fuseau, qui est un
-                  identifiant technique, et les capacités, qui sont des nombres
-                  nus qu'on aligne. */}
-              <Texte variante="type.body" couleur="ink.default">
-                {t('commerce.horairesDe', {
-                  debut: regle.start_time.slice(0, 5),
-                  fin: regle.end_time.slice(0, 5),
-                })}
-              </Texte>
-              <Texte variante="type.body" couleur="ink.soft" testID={`postes-${jour}`}>
-                {regle.concurrent_slots === 1
-                  ? t('composition.postesUn')
-                  : t('composition.postes', { n: regle.concurrent_slots })}
-              </Texte>
-            </View>
+            /* **L'amplitude en chiffres tabulaires et sans retour**, pour que
+               les sept mesurent pareil et qu'aucune ne passe à la ligne. Elle
+               reste hors du mono : une amplitude est une phrase brève entre
+               deux heures, pas un identifiant. */
+            <Texte
+              variante="type.body"
+              couleur="ink.default"
+              style={TABULAIRE}
+              testID={`horaires-${jour}`}
+            >
+              {t('commerce.horairesDe', {
+                debut: regle.start_time.slice(0, 5),
+                fin: regle.end_time.slice(0, 5),
+              })}
+            </Texte>
           ) : (
             /* Écrit, jamais absent : une ligne manquante ne dit pas si le jour
                est fermé ou si le commerce n'a rien rempli. */
@@ -249,14 +275,26 @@ function LigneDeJour({
             </Texte>
           )}
         </View>
-        <Button
-          label={ouvert ? t('common.annuler') : t('composition.modifier')}
-          variant="secondary"
-          size="sm"
-          onPress={() => setOuvert(!ouvert)}
-          testID={`modifier-${jour}`}
-        />
-      </View>
+
+        {/* **La capacité reste, et change de mot.** Sans elle, un salon ne peut
+            pas dire qu'il prend deux créatrices le mardi et quatre le samedi, et
+            le produit accepterait des réservations qu'il ne peut pas honorer.
+            C'est la seule donnée de cet écran qui le protège plutôt que de le
+            décrire. Le défaut était la formulation — « creators at once »
+            nommait un concept d'ingénieur, « chairs » nomme un objet qu'un salon
+            voit dans sa pièce — et le mot passe dans l'en-tête, donc il est dit
+            une fois au lieu de sept.
+
+            **Un jour fermé laisse sa cellule vide** : « Closed » le dit déjà. */}
+        <Texte
+          variante="type.bodyStrong"
+          align="right"
+          style={{ width: LARGEUR_DES_FAUTEUILS, ...TABULAIRE }}
+          testID={`postes-${jour}`}
+        >
+          {regle ? String(regle.concurrent_slots) : ''}
+        </Texte>
+      </Pressable>
 
       {ouvert ? (
         <View style={{ gap: 8, paddingLeft: 12 }} testID={`edition-${jour}`}>
@@ -445,19 +483,48 @@ export function HorairesDuCommerce({
   onChange: () => void;
 }) {
   const { t } = useI18n();
+  const c = useColors();
 
   return (
         <View style={{ gap: 16 }}>
           <View style={{ gap: 8 }} testID="semaine">
-            <Texte variante="type.label">{t('composition.ouverture')}</Texte>
-            {/* **L'explication précède la colonne qu'elle explique.** Posée
-                sous les sept jours, elle arrivait après qu'on avait lu sept
-                fois un nombre sans savoir ce qu'il comptait — et « 2 » se
-                devine mal quand il peut désigner des créneaux, des postes ou
-                des heures. */}
+            {/* **L'en-tête porte les trois concepts une fois.** Les sept
+                lignes répétaient six fois la définition d'une colonne : « 2
+                creators at once » portait à la fois la valeur et son
+                explication. Dit en tête, le mot ne se redit pas. */}
             <Texte variante="type.caption" couleur="ink.soft" testID="capacite-explication">
               {t('composition.capaciteExplication')}
             </Texte>
+            <View
+              testID="entete-du-tableau"
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 12,
+                height: 40,
+                paddingHorizontal: 16,
+                backgroundColor: c['bg.page'],
+                // Un filet plus marqué que celui des rangées : c'est lui qui
+                // sépare les libellés des valeurs.
+                borderBottomWidth: 1,
+                borderBottomColor: c['line.strong'],
+              }}
+            >
+              <Texte variante="type.label" couleur="ink.soft" style={{ width: LARGEUR_DU_JOUR }}>
+                {t('composition.colonneJour').toUpperCase()}
+              </Texte>
+              <Texte variante="type.label" couleur="ink.soft" style={{ flex: 1, minWidth: 0 }}>
+                {t('composition.colonneOuvert').toUpperCase()}
+              </Texte>
+              <Texte
+                variante="type.label"
+                couleur="ink.soft"
+                align="right"
+                style={{ width: LARGEUR_DES_FAUTEUILS }}
+              >
+                {t('composition.colonneFauteuils').toUpperCase()}
+              </Texte>
+            </View>
             {JOURS.map((cle, jour) => (
               <LigneDeJour
                 key={cle}

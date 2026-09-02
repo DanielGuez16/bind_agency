@@ -432,8 +432,13 @@ export function JourneeScreen({ businessId, jour }: { businessId: string; jour?:
               </View>
             )}
             {/* Ce que personne d'autre ne peut faire, et rien d'autre en tête. */}
+            {/* **L'étiquette ne garde que la date.** Elle joignait le compte
+                de dossiers à ce qu'elle nommait — deux faits sur une capitale
+                espacée, la famille que `components.md` §13 ter interdit — et le
+                compte est déjà sur la pastille du jour dans la bande. Dix-neuf
+                signes, trois mots. */}
             {section(
-              t('commerce.aTrancher', { count: aTrancher.length }),
+              jourEnToutesLettres(journee.jour, locale).toUpperCase(),
               aTrancher,
               'a-trancher',
               'carte',
@@ -1200,6 +1205,21 @@ function CarteDeDemande({
         {reservation.item_name}
       </Texte>
 
+      {/* **Le rendez-vous prend sa propre ligne, et c'est ce qui le rend
+          lisible.** Il partageait la ligne du pseudonyme, joint par un point
+          médian : deux faits de natures différentes dans une largeur qu'ils se
+          disputaient, donc le premier des deux se tronquait — et c'était
+          l'heure, sur un écran où l'on décide d'un rendez-vous.
+
+          **Entre le service et l'échéance, pas sous le nom.** Un gérant lit
+          quoi, quand, avant quand : c'est l'ordre de la décision, et il n'est
+          pas celui du modèle. */}
+      <Texte variante="type.bodyStrong" testID={`moment-${reservation.booking_id}`}>
+        {reservation.starts_at
+          ? momentRelatif(reservation.starts_at, locale, timezone, t)
+          : t('commerce.journeeSansCreneau')}
+      </Texte>
+
       {/**
         * **Un visage et un lien, pas seulement un identifiant.**
         *
@@ -1248,12 +1268,7 @@ function CarteDeDemande({
           style={{ flex: 1, minWidth: 0 }}
           ellipseSurNomPropre
         >
-          {[
-            reservation.creator_handle ?? nomDe(reservation),
-            reservation.starts_at
-              ? momentRelatif(reservation.starts_at, locale, timezone, t)
-              : t('commerce.journeeSansCreneau'),
-          ].join(' · ')}
+          {reservation.creator_handle ?? nomDe(reservation)}
         </Texte>
         {reservation.creator_profil_url ? (
           <PiluleDeProfil
