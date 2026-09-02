@@ -18,6 +18,8 @@ import {
   FiletDAttente,
   FONDU_DE_SORTIE,
   MOUVEMENT,
+  POINT_DUREE,
+  CHUTE_MAXIMALE,
   PLAFOND_MS,
   peutCeder,
   REPOS,
@@ -145,7 +147,19 @@ describe('l’attente ne ressemble pas à la marque', () => {
      * jamais la chute. Rien d'autre ne le dirait, l'écran rendant aussi bien
      * dans les deux cas.
      */
-    expect(MOUVEMENT).toBe(1500);
+    // **La garde épinglait le total, et ce n'était pas ce qu'elle protégeait.**
+    // `MOUVEMENT` a valu 760, puis 1 500, maintenant 2 960 : chaque allongement
+    // demandé la faisait tomber, et la remonter d'un cran ne vérifiait plus
+    // rien — un nombre qu'on réaligne sur le code est un commentaire, pas une
+    // garde.
+    //
+    // Ce que le défaut d'origine avait fait est précis : pour tenir une durée
+    // d'écran, la chute du point était passée à 620, vers la mascotte que la
+    // planche interdit. C'est **cela** qu'on surveille, et cela seul.
+    expect(POINT_DUREE).toBeLessThanOrEqual(CHUTE_MAXIMALE);
+    // Et le mouvement reste ce qui porte l'écran : allonger l'ouverture sans
+    // allonger ce qui bouge est l'erreur qu'on a faite deux fois.
+    expect(MOUVEMENT).toBeGreaterThan(POINT_DUREE * 2);
     // Le fondu est dedans : il est du mouvement, et l'en sortir referait
     // l'erreur d'avant — compter comme durée ce qui ne se perçoit pas.
     expect(MOUVEMENT).toBeGreaterThan(FONDU_DE_SORTIE);
