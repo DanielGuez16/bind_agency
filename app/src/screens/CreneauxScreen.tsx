@@ -123,6 +123,18 @@ export function CreneauxScreen({
    */
   const requete = useRequete<{ bande: JourDeDisponibilite[]; creneaux: CreneauApi[] }>(
     async (signal) => {
+      // **Un droit sans créneau ne demande pas de créneaux.** Les deux routes
+      // refusent un item qui ne se réserve pas — `catalog_item_not_bookable`,
+      // 409 — et c'est un refus juste : il n'y a pas d'heures à calculer pour
+      // une prestation qu'on prend sur une fenêtre de validité.
+      //
+      // L'écran savait déjà traiter ce cas — `starts_at` nul à la réservation,
+      // et le bouton prêt sans heure choisie — mais il demandait quand même les
+      // heures d'abord, et le refus le mettait en erreur avant d'y arriver. Le
+      // parcours entier était donc mort pour tout item non réservable, chez
+      // n'importe quel salon.
+      if (!offre.requires_booking) return { bande: [], creneaux: [] };
+
       const [bande, creneaux] = await Promise.all([
         api.resumeDeLaBande(fiche.business_id, offre.catalog_item_id, JOURS_DE_LA_BANDE, signal),
         api.disponibilite(fiche.business_id, offre.catalog_item_id, signal, JOURS_DE_LA_BANDE),
@@ -131,7 +143,14 @@ export function CreneauxScreen({
     },
     // **Vide veut dire « cet item ne se propose plus »**, jamais « aucune
     // place ». La bande rend toujours ses quatorze journées, fermées comprises.
-    { estVide: ({ bande }) => bande.length === 0, dependances: [offre.catalog_item_id] },
+    {
+      // **Vide veut dire « cet item ne se propose plus »**, jamais « aucune
+      // place ». La bande rend toujours ses quatorze journées, fermées
+      // comprises — sauf pour un droit sans créneau, qui n'en a aucune et n'est
+      // pas vide pour autant : c'est précisément ce qu'on vient prendre.
+      estVide: ({ bande }) => offre.requires_booking && bande.length === 0,
+      dependances: [offre.catalog_item_id],
+    },
   );
 
   const jours = requete.etat === 'pret' ? requete.donnees.bande : [];

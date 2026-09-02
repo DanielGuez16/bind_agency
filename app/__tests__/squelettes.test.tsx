@@ -95,7 +95,11 @@ const CAS = [
     role: 'creator',
     squelette: 'squelette-creneaux',
     forme: 'une grille de créneaux',
-    noeud: <CreneauxScreen fiche={{ id: 'b1', name: 'X' } as never} offre={{ name: 'Y' } as never} onReserve={jest.fn()} />,
+    // **`requires_booking` est posé, et il le faut.** Absent, il vaut `false`,
+    // et l'écran ne demande alors aucune heure — un droit sans créneau n'en a
+    // pas à charger, donc il n'a pas de squelette. Le décor éprouvait le
+    // chargement d'un item qui, tel qu'il était écrit, n'en avait aucun.
+    noeud: <CreneauxScreen fiche={{ id: 'b1', name: 'X' } as never} offre={{ name: 'Y', requires_booking: true } as never} onReserve={jest.fn()} />,
   },
 ] as const;
 

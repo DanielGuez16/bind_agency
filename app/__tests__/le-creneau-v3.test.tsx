@@ -77,24 +77,41 @@ const FICHE = {
   offres: [OFFRE],
 } as unknown as FichePublique;
 
-async function monter(bande = BANDE) {
+/** Les chemins demandés, pour savoir ce que l'écran va chercher. */
+let demandes: string[] = [];
+
+async function monter(bande = BANDE, offre = OFFRE) {
+  demandes = [];
   const api = new ApiClient({
     baseUrl: 'https://api.test',
     coffre: { lire: async () => null, ecrire: async () => {} },
-    fetchImpl: (async (url: RequestInfo | URL) =>
-      ({
+    fetchImpl: (async (url: RequestInfo | URL) => {
+      const chemin = String(url);
+      demandes.push(chemin);
+      // **Le serveur refuse, comme le vrai.** Les deux routes de disponibilité
+      // rendent 409 `catalog_item_not_bookable` sur un item qui ne se réserve
+      // pas : un montage qui répondrait 200 à tout laisserait passer
+      // exactement le défaut qu'on éprouve.
+      if (!offre.requires_booking && chemin.includes('/availability')) {
+        return {
+          ok: false,
+          status: 409,
+          json: async () => ({ detail: 'catalog_item_not_bookable' }),
+        } as Response;
+      }
+      return {
         ok: true,
         status: 200,
-        json: async () =>
-          String(url).includes('/availability/summary') ? bande : CRENEAUX,
-      }) as Response) as unknown as typeof fetch,
+        json: async () => (chemin.includes('/availability/summary') ? bande : CRENEAUX),
+      } as Response;
+    }) as unknown as typeof fetch,
   });
 
   return render(
     <I18nProvider initialLocale="en">
       <ThemeProvider role="creator">
         <ApiProvider client={api}>
-          <CreneauxScreen fiche={FICHE} offre={OFFRE} onReserve={() => {}} />
+          <CreneauxScreen fiche={FICHE} offre={offre} onReserve={() => {}} />
         </ApiProvider>
       </ThemeProvider>
     </I18nProvider>,
@@ -259,5 +276,38 @@ describe('l’engagement est écrit avant d’être pris', () => {
     await waitFor(() => expect(screen.getByTestId('si-vous-ne-venez-pas')).toBeTruthy());
     expect(screen.getByTestId('si-vous-ne-venez-pas')).toHaveTextContent(/24/);
     await vue.unmount();
+  });
+});
+
+describe('un droit sans créneau ne demande pas de créneaux', () => {
+  it('n’appelle aucune route de disponibilité, et l’écran vit', async () => {
+    /**
+     * **Le défaut, et il touchait tout item non réservable, chez n'importe quel
+     * salon.** `create_offer` dit en toutes lettres qu'un item sans réservation
+     * se propose comme un autre — le créateur obtient un droit valable sur une
+     * fenêtre au lieu d'un créneau. La fiche montrait donc « Réserver », et cet
+     * écran demandait quand même les heures : les deux routes rendent 409
+     * `catalog_item_not_bookable`, et le parcours mourait avant d'arriver au
+     * geste qu'il savait pourtant faire — `starts_at` nul, bouton prêt sans
+     * heure choisie.
+     *
+     * Ce n'était pas un défaut du jeu de démonstration : la contrainte
+     * `duration_matches_requires_booking` garantit qu'un 409 ne peut dire
+     * qu'une chose, « cet item ne se réserve pas », et c'est un état légitime.
+     */
+    await monter(BANDE, { ...OFFRE, requires_booking: false });
+
+    await waitFor(() => expect(screen.getByTestId('ecran-creneaux')).toBeTruthy());
+    expect(demandes.filter((c) => c.includes('/availability'))).toEqual([]);
+    // L'écran reste utilisable : le geste est prêt sans heure à choisir.
+    expect(screen.getByTestId('confirmer')).toBeTruthy();
+  });
+
+  it('les demande toujours quand l’item se réserve', async () => {
+    // Le pendant, sans quoi couper l'appel pour tout le monde passerait aussi.
+    await monter();
+
+    await waitFor(() => expect(screen.getByTestId('ecran-creneaux')).toBeTruthy());
+    expect(demandes.some((c) => c.includes('/availability'))).toBe(true);
   });
 });
