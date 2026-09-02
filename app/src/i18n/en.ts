@@ -747,7 +747,6 @@ export const en = {
     journeeRienAFaire: 'Nothing to do here. The counterpart runs on its own from now on.',
     decisionDepassee: 'The time has passed. This booking can no longer be accepted: it expires on its own. You can still say what happened.',
     activationMettreEnPause: 'Pause my business',
-    pauseTitre: 'Your storefront',
     pauseCorps: 'Pausing hides you from every feed. Bookings already made are kept, and you can come back whenever you want.',
     pauseRepriseCorps: 'You are paused. Creators cannot see you or book you.',
     pauseReprendre: 'Show my salon again',
@@ -1135,7 +1134,7 @@ export const en = {
     etatHorsPalier: 'This one is offered at a tier you do not open yet.',
   },
   reglages: {
-    abonnementTitre: 'Subscription',
+    sectionCommerce: 'Your business',
     abonnementLigne: 'Your plan, billing and cancellation',
     reprisesTitre: 'When BIND entered your account',
     reprisesAide:
