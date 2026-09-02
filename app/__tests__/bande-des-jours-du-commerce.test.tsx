@@ -19,7 +19,14 @@ import { ThemeProvider } from '../src/theme';
 
 const coffre = { lire: async () => ({ access_token: 'a', refresh_token: 'r' }), ecrire: async () => {} };
 
-/** Les sept jours que le serveur rendra. Deux en portent, cinq n'en portent pas. */
+/**
+ * Les jours que le serveur rendra. Deux en portent, le reste non.
+ *
+ * **Le 3 et le 4 divergent, et c'est tout l'intérêt du décor.** Les deux sont à
+ * zéro décision ; l'un est ouvert, l'autre fermé. Une implémentation qui
+ * poserait « 0 » partout, ou « closed » partout, rendrait le même verdict sur
+ * l'un des deux — il faut les deux cases pour qu'aucune ne puisse être devinée.
+ */
 const BANDE = [
   { jour: '2026-09-01', decisions: 2, ouvert: true },
   { jour: '2026-09-02', decisions: 1, ouvert: true },
@@ -130,11 +137,35 @@ it('porte le compte du jour, et non la longueur de la file', async () => {
 it('montre le jour sans décision sans qu’on l’ouvre', async () => {
   await monter();
 
-  // **La case existe, et elle est vide.** Un jour calme qui disparaîtrait de la
-  // bande se lirait comme un jour qu'on n'a pas encore chargé ; un « 0 » sur
-  // chaque jour ferait sept chiffres à lire pour en retenir deux.
-  expect(screen.getByTestId('jour-2026-09-03')).toBeTruthy();
-  expect(screen.getByTestId('jour-2026-09-03-decisions')).not.toHaveTextContent('0');
+  /**
+   * **Un zéro, et non plus une case vide — l'arbitrage a été renversé.**
+   *
+   * Cette assertion disait `not.toHaveTextContent('0')`, sur l'argument qu'un
+   * chiffre par jour ferait « sept chiffres à lire pour en retenir deux ». Il
+   * valait pour une bande de sept cases tenant toutes à l'écran.
+   *
+   * La bande en porte quatorze et défile. Une case vide ne se distingue alors
+   * plus d'une case pas encore arrivée, et c'est le doute que le chiffre lève.
+   */
+  expect(screen.getByTestId('jour-2026-09-03-decisions')).toHaveTextContent('0');
+});
+
+it('dit « fermé » sur un jour fermé, plutôt qu’un zéro qui se lirait « calme »', async () => {
+  await monter();
+
+  // Le 4 est fermé et à zéro, comme le 3 est ouvert et à zéro. Les deux cases
+  // ne disent pas la même chose : « aucune demande » n'est pas « pas ouvert ».
+  expect(screen.getByTestId('jour-2026-09-04-decisions')).toHaveTextContent('CLOSED');
+  expect(screen.getByTestId('jour-2026-09-04-decisions')).not.toHaveTextContent('0');
+});
+
+it('demande quatorze jours au serveur, pas sept', async () => {
+  await monter();
+
+  // La constante d'écran est ce que la bande dessine **et** ce qu'elle demande :
+  // les laisser diverger rendrait sept cases sur une piste de quatorze.
+  const parJour = demandes.find((chemin) => chemin.includes('/bookings/par-jour'));
+  expect(parJour).toContain('jours=14');
 });
 
 it('recharge la journée du jour choisi', async () => {
