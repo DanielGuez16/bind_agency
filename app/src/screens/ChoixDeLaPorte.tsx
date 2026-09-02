@@ -117,7 +117,7 @@ export function ChoixDeLaPorte({
           728 points : deux cartes empilées n'y tiennent pas, deux cartes à
           côté oui. C'est ce qui supprime le défilement d'un écran dont le seul
           travail est de faire choisir un rôle. */}
-      <View style={{ flex: 1, flexDirection: 'row', gap: spacing['space.3'] }}>
+      <View style={{ flexDirection: 'row', gap: spacing['space.3'] }}>
         {portes.map((porte) => (
           <View
             key={porte.role}
@@ -154,24 +154,28 @@ export function ChoixDeLaPorte({
               </Texte>
             </View>
 
-            {/* **Les trois promesses par porte sont parties, et le retour
-                était « on ne voit rien ».** Chaque carte portait une étiquette,
-                une promesse, **trois phrases** de douze à quinze mots et un
-                bouton : une cinquantaine de mots par porte, sur l'écran qui a
-                deux secondes pour dire ce qu'est BIND. Le texte s'était mis à
-                défendre le produit au lieu de le nommer.
+            {/* **Une ligne, et c'est ce que la carte disait déjà.** Chaque
+                porte portait, sous son intitulé, **trois phrases** de douze à
+                quinze mots : une cinquantaine de mots par carte, sur l'écran qui
+                a deux secondes pour dire ce qu'est BIND. Elles sont parties.
 
-                La règle de cet écran n'a jamais changé : deux portes, des
-                intitulés courts, gros, un seul aplat orange, et ça tient sans
-                défiler. Ce qui reste dit qui vous êtes et ce que vous y faites.
-                Le reste appartient aux écrans d'inscription, où quelqu'un a
-                décidé de lire.
+                **Et la promesse d'une ligne n'était rendue nulle part.** Le
+                champ existait dans l'objet depuis toujours, personne ne
+                l'affichait — la carte montrait l'intitulé, les trois phrases,
+                le bouton. En retirant les phrases sans rendre la promesse, il
+                ne restait qu'un titre et un bouton séparés par un vide de
+                quatre cents points : « on ne voit rien » était devenu vrai
+                autrement.
 
-                Un détail emporté avec elles, et il valait à lui seul la coupe :
-                la troisième ligne du commerce annonçait « no subscription »
-                alors que l'abonnement du commerce est le seul revenu du
-                produit. */}
-            <View style={{ flex: 1 }} />
+                C'est elle qui dit ce qu'on fait ici. Le reste appartient aux
+                écrans d'inscription, où quelqu'un a décidé de lire. */}
+            <Texte
+              variante="type.body"
+              couleur="ink.soft"
+              testID={`${porte.testID}-promesse`}
+            >
+              {porte.promesse}
+            </Texte>
 
             {/* **Un seul aplat orange pour deux portes de poids égal.** Le rôle
                 créateur est celui qu'on attend en masse ; la porte commerce a
@@ -200,7 +204,10 @@ export function ChoixDeLaPorte({
           paddingVertical: spacing['space.3'],
         }}
       >
-        <Texte couleur="ink.mute">{t('auth.dejaInscrit')}</Texte>
+        {/* **Une seule fois « already ».** La ligne portait « Already with
+            us? » suivi de « Already have an account? Sign in » : deux fois la
+            même question, dont une sans réponse. Le lien porte la question et
+            le geste, ce qui suffit. */}
         <Texte
           variante="type.bodyStrong"
           couleur="brand.700"

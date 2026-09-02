@@ -949,7 +949,6 @@ export const es: Catalogue = {
     porteRoleCreateur: 'Creador',
     porteRoleCommerce: 'Negocio',
     porteCompte: 'Cuenta',
-    dejaInscrit: '¿Ya estás con nosotros?',
     role: 'Soy',
     roleCreator: 'Creadora de contenido',
     roleMerchant: 'Un negocio',

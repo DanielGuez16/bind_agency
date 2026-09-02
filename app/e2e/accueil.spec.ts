@@ -83,11 +83,12 @@ test("les promesses ne passent pas sous les boutons, sur un téléphone", async 
     const cadreDuBouton = await bouton.boundingBox();
     expect(cadreDuBouton, `le bouton ${role} n'a pas de cadre`).not.toBeNull();
 
-    // **L'intitulé, comparé au haut du bouton.** Les trois lignes de promesse
-    // ont été retirées — « on ne voit rien » — et la garde suit ce qui reste :
-    // le rôle est le seul texte de la carte, et il ne doit pas passer sous le
-    // bouton. Un chevauchement d'un seul point est déjà le défaut.
-    const role_ = carte.getByTestId(`${repere}-role`);
+    // **La promesse, comparée au haut du bouton.** C'est le dernier texte de
+    // la carte, donc celui qui déborderait le premier — les trois phrases
+    // qu'elle remplace ont été retirées, et viser le rôle ne mesurait plus
+    // rien : il est en haut, il ne peut pas passer sous le bouton. Un
+    // chevauchement d'un seul point est déjà le défaut.
+    const role_ = carte.getByTestId(`${repere}-promesse`);
     const cadre = await role_.boundingBox();
     expect(cadre, `l'intitulé de ${role} n'a pas de cadre`).not.toBeNull();
     expect(
@@ -170,7 +171,11 @@ test.describe('en espagnol, qui est plus long', () => {
     // qui cesserait de fonctionner rendrait ce test identique au précédent.
     // La garde regarde bien de l'espagnol : l'intitulé du rôle est le texte qui
     // reste sur la carte, et « A creator » n'y a plus sa place.
-    await expect(accueil.getByTestId('porte-createur-role')).not.toHaveText(/A creator/i);
+    // La garde regarde bien de l'espagnol : la promesse est le texte de la
+    // carte, et sa version anglaise n'y a plus sa place.
+    await expect(accueil.getByTestId('porte-createur-promesse')).not.toHaveText(
+      /Book the salon/i,
+    );
 
     const portes = [
       { role: 'creator', carte: 'porte-createur' },
@@ -182,7 +187,7 @@ test.describe('en espagnol, qui est plus long', () => {
       const cadreDuBouton = await accueil.getByTestId(`choisir-${role}`).boundingBox();
       expect(cadreDuBouton, `le bouton ${role} n'a pas de cadre`).not.toBeNull();
 
-      const cadre = await carte.getByTestId(`${repere}-role`).boundingBox();
+      const cadre = await carte.getByTestId(`${repere}-promesse`).boundingBox();
       expect(cadre, `l'intitulé de ${role} n'a pas de cadre`).not.toBeNull();
       expect(
         cadre!.y + cadre!.height,
