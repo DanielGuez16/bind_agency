@@ -77,11 +77,36 @@ async def subscribe(
     session: SessionDep,
     provider: ProviderDep,
 ) -> AbonnementRead:
+    """Souscrit, ou **bascule** quand un abonnement court déjà.
+
+    **Une seule route, parce que c'est un seul geste pour qui l'exerce.** Le
+    commerce désigne la formule qu'il veut ; qu'il en ait une ou non ne change
+    pas son intention, et lui demander de résilier d'abord l'obligeait à
+    accepter de n'avoir plus rien pour espérer avoir autre chose.
+
+    `AlreadySubscribed` ne peut donc plus sortir d'ici. Ce qui reste refusé est
+    la formule **déjà en cours** — il n'y a rien à faire, et rouvrir sur le même
+    plan couperait la facturation pour rien.
+    """
     try:
-        ouvert = await service.souscrire(
-            session, business=business, plan_id=payload.plan_id, actor=user, provider=provider
+        deja = await service.courant(session, business_id=business.id)
+        ouvert = await (
+            service.changer_de_formule(
+                session, business=business, plan_id=payload.plan_id, actor=user, provider=provider
+            )
+            if deja is not None
+            else service.souscrire(
+                session, business=business, plan_id=payload.plan_id, actor=user, provider=provider
+            )
         )
-    except service.AlreadySubscribed as error:
+    except service.MemeFormule as error:
+        raise api_error(status.HTTP_409_CONFLICT, ErrorCode.SUBSCRIPTION_SAME_PLAN) from error
+    except service.PlanHorsCategorie as error:
+        raise api_error(
+            status.HTTP_409_CONFLICT, ErrorCode.SUBSCRIPTION_PLAN_WRONG_CATEGORY
+        ) from error
+    except service.NotSubscribed as error:
+        # Course : l'abonnement a disparu entre la lecture et l'écriture.
         raise api_error(status.HTTP_409_CONFLICT, ErrorCode.SUBSCRIPTION_ALREADY_ACTIVE) from error
     except service.PlanNotFound as error:
         raise api_error(status.HTTP_404_NOT_FOUND, ErrorCode.SUBSCRIPTION_PLAN_NOT_FOUND) from error

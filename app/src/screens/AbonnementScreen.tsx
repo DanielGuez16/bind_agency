@@ -156,12 +156,22 @@ export function AbonnementScreen({
               </View>
             ) : null}
 
-            {/* Les plans, quand il y a un choix à faire. Un commerce en cours
-                d'abonnement n'a pas à relire la grille : il l'a déjà choisie. */}
-            {etat === 'actif' ? null : (
+            {/* **La grille se rend aussi à un abonné, et c'est un renversement.**
+                Elle disait « un commerce en cours d'abonnement n'a pas à relire
+                la grille : il l'a déjà choisie ». C'était vrai tant que changer
+                était impossible — mais alors la seule sortie était de résilier
+                d'abord, c'est-à-dire d'accepter de n'avoir plus rien pour
+                espérer avoir autre chose. Une friction qui fait perdre en cours
+                de route, et qu'aucune application professionnelle n'impose.
+
+                Le serveur bascule désormais en une transaction ; l'écran peut
+                donc proposer les autres formules sans offrir de bouton qui
+                refuse. Celle qu'on a déjà n'en porte pas : il n'y a rien à y
+                faire, et le serveur la refuserait. */}
+            {(
               <View style={{ gap: 12 }} testID="plans-souscriptibles">
                 <Texte variante="type.label" couleur="ink.soft">
-                  {t('abonnement.choisirUnPlan')}
+                  {t(etat === 'actif' ? 'abonnement.changerDePlan' : 'abonnement.choisirUnPlan')}
                 </Texte>
                 {vue.plans.map((plan) => (
                   <View
@@ -192,14 +202,32 @@ export function AbonnementScreen({
                           : 'abonnement.parMois',
                       )}
                     </Texte>
-                    <View style={{ alignSelf: 'flex-start', flexDirection: 'row', gap: 8 }}>
-                      <Button
-                        label={t('abonnement.souscrire')}
-                        loading={envoi === plan.id}
-                        onPress={() => void agir(plan.id, () => api.souscrire(businessId, plan.id))}
-                        testID={`souscrire-${plan.id}`}
-                      />
-                    </View>
+                    {/* **La formule en cours ne porte pas de bouton.** Le
+                        serveur refuse de rouvrir dessus — cela couperait la
+                        facturation pour rien — et un bouton qui part chercher
+                        un refus est pire qu'une absence de bouton. */}
+                    {plan.id === vue.abonnement?.plan_id ? (
+                      <Texte
+                        variante="type.caption"
+                        couleur="ink.mute"
+                        testID={`formule-actuelle-${plan.id}`}
+                      >
+                        {t('abonnement.formuleActuelle')}
+                      </Texte>
+                    ) : (
+                      <View style={{ alignSelf: 'flex-start', flexDirection: 'row', gap: 8 }}>
+                        <Button
+                          label={t(
+                            etat === 'actif' ? 'abonnement.basculer' : 'abonnement.souscrire',
+                          )}
+                          loading={envoi === plan.id}
+                          onPress={() =>
+                            void agir(plan.id, () => api.souscrire(businessId, plan.id))
+                          }
+                          testID={`souscrire-${plan.id}`}
+                        />
+                      </View>
+                    )}
                   </View>
                 ))}
               </View>

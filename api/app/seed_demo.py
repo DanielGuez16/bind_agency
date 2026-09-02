@@ -2090,8 +2090,14 @@ async def abonner_les_commerces(session: AsyncSession) -> int:
     #:
     #: Les autres n'en ont pas, et c'est voulu — l'écran des plans doit montrer
     #: un plan que personne n'a pris.
+    #: **Le second se choisit dans une catégorie qui a des plans.** Il était
+    #: pris au premier venu, et c'est ce qui abonnait un salon d'activité
+    #: familiale à un plan de beauté — la seule catégorie tarifée. Le prendre
+    #: au hasard revenait à parier qu'il serait de la bonne, et le pari était
+    #: perdu.
+    categories_tarifees = {p.category for p in plans}
     abonnes = [b for b in actifs if b.name == OCEAN]
-    abonnes += [b for b in actifs if b.name != OCEAN][:1]
+    abonnes += [b for b in actifs if b.name != OCEAN and b.category in categories_tarifees][:1]
 
     provider = get_billing_provider()
     poses = 0
@@ -2105,10 +2111,21 @@ async def abonner_les_commerces(session: AsyncSession) -> int:
         if acteur is None:
             continue
 
+        # **Un plan de la catégorie du salon, et non le suivant de la liste.**
+        # Le tirage au rang abonnait un salon d'activité familiale à un plan de
+        # beauté : c'est ce que la production portait — « Bayside Play Loft,
+        # family_activity, plan Studio » — et rien ne le disait. `GET /plans`
+        # filtre pourtant sur la catégorie depuis toujours ; le semis écrivait
+        # ce que l'écran n'aurait jamais proposé.
+        de_sa_categorie = [p for p in plans if p.category == business.category]
+        if not de_sa_categorie:
+            print(f"  aucun plan pour la catégorie de {business.name} : abonnement écarté")
+            continue
+
         await subscription_service.souscrire(
             session,
             business=business,
-            plan_id=plans[rang % len(plans)].id,
+            plan_id=de_sa_categorie[rang % len(de_sa_categorie)].id,
             actor=acteur,
             provider=provider,
         )

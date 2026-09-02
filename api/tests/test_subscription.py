@@ -325,3 +325,94 @@ async def test_un_createur_n_atteint_pas_l_abonnement(
 
     assert reponse.status_code == 403
     assert reponse.json()["detail"] == "insufficient_role"
+
+
+# --------------------------------------------------------------------------
+# changer de formule
+# --------------------------------------------------------------------------
+
+
+async def test_changer_de_formule_bascule_en_une_seule_transaction(
+    session: AsyncSession,
+) -> None:
+    """**Le trou qu'on comble : voir les formules sans pouvoir en changer.**
+
+    `souscrire` refusait tant qu'un abonnement courait, et la seule sortie était
+    de résilier d'abord — c'est-à-dire d'accepter de n'avoir plus rien pour
+    espérer avoir autre chose.
+
+    Le décor pose **deux** plans de prix différents : une bascule qui rouvrirait
+    sur le même plan passerait un décor à un seul, et c'est précisément ce
+    qu'on ne veut pas.
+    """
+    business, proprietaire = await commerce_en_cours(session)
+    essentiel = await _plan(session, name="Essentiel", price_cents=9_900)
+    studio = await _plan(session, name="Studio", price_cents=19_900)
+    fournisseur = FournisseurQuiNote("active")
+
+    await service.souscrire(
+        session, business=business, plan_id=essentiel.id, actor=proprietaire, provider=fournisseur
+    )
+
+    ouvert = await service.changer_de_formule(
+        session, business=business, plan_id=studio.id, actor=proprietaire, provider=fournisseur
+    )
+
+    assert ouvert.subscription.plan_id == studio.id
+    # Un seul abonnement occupe la place, et c'est le neuf.
+    courant = await service.courant(session, business_id=business.id)
+    assert courant is not None
+    assert courant.plan_id == studio.id
+    # L'ancien est clos, pas effacé : c'est une trace de facturation.
+    lignes = (
+        await session.execute(
+            sa.select(Subscription.plan_id, Subscription.status).where(
+                Subscription.business_id == business.id
+            )
+        )
+    ).all()
+    assert len(lignes) == 2
+    assert {p for p, _ in lignes} == {essentiel.id, studio.id}
+
+
+async def test_changer_pour_la_meme_formule_ne_coupe_rien(session: AsyncSession) -> None:
+    """**Le pendant, et il porte le test.** Sans lui, une bascule qui
+    résilierait puis rouvrirait sur le même plan passerait le cas d'à côté — en
+    coupant la facturation pour rien."""
+    business, proprietaire = await commerce_en_cours(session)
+    plan = await _plan(session)
+    fournisseur = FournisseurQuiNote("active")
+
+    await service.souscrire(
+        session, business=business, plan_id=plan.id, actor=proprietaire, provider=fournisseur
+    )
+
+    with pytest.raises(service.MemeFormule):
+        await service.changer_de_formule(
+            session, business=business, plan_id=plan.id, actor=proprietaire, provider=fournisseur
+        )
+
+    # Et l'abonnement d'origine n'a pas bougé : le refus est arrivé avant.
+    courant = await service.courant(session, business_id=business.id)
+    assert courant is not None
+    assert courant.status is SubscriptionStatus.ACTIVE
+
+
+async def test_un_plan_d_une_autre_categorie_est_refuse(session: AsyncSession) -> None:
+    """**La règle existait, servie et non appliquée.** `GET /plans` filtre sur
+    la catégorie du commerce ; rien ne l'éprouvait à l'écriture, donc un
+    `plan_id` d'une autre catégorie passait. Une règle qui ne tient que par ce
+    que l'écran propose n'est pas une règle.
+    """
+    business, proprietaire = await commerce_en_cours(session)
+    ailleurs = await _plan(session, category=BusinessCategory.FAMILY_ACTIVITY)
+    fournisseur = FournisseurQuiNote("active")
+
+    with pytest.raises(service.PlanHorsCategorie):
+        await service.souscrire(
+            session,
+            business=business,
+            plan_id=ailleurs.id,
+            actor=proprietaire,
+            provider=fournisseur,
+        )

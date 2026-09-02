@@ -124,6 +124,9 @@ export const es: Catalogue = {
     titre: 'Tu suscripción',
     ceQueCaOuvre: 'Ver a las creadoras a tu alrededor',
     ceQueCaOuvreAide: 'La suscripción abre el directorio: quién está cerca, cuál es su audiencia y qué servicios tuyos ya puede reservar. Sin ella solo ves a las creadoras que ya te han reservado.',
+    changerDePlan: 'Cambia de plan',
+    basculer: 'Cambiar a este plan',
+    formuleActuelle: 'Tu plan actual',
     choisirUnPlan: 'Elige un plan',
     souscrire: 'Suscribirse',
     parMois: 'al mes',
@@ -1491,6 +1494,8 @@ export const es: Catalogue = {
     subscription_already_active: 'Este negocio ya tiene una suscripción activa.',
     subscription_not_active: 'Este negocio no tiene ninguna suscripción activa.',
     subscription_plan_not_found: 'No encontramos ese plan.',
+    subscription_same_plan: 'Ya tienes ese plan.',
+    subscription_plan_wrong_category: 'Ese plan es para otro tipo de negocio.',
     subscription_plan_inactive: 'Ese plan ya no está disponible.',
     billing_provider_unavailable: 'No pudimos conectar con la pasarela de pago. Inténtalo de nuevo.',
     collaboration_not_in_review:

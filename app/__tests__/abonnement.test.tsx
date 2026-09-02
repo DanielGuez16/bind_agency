@@ -125,14 +125,26 @@ describe('l’écran', () => {
     await waitFor(() => expect(screen.getByTestId('paiement-sort-du-produit')).toBeTruthy());
   });
 
-  it('un abonnement en cours ne propose pas de resouscrire', async () => {
-    // **Sans cette moitié, la garde passerait sur un écran qui listerait les
-    // plans quoi qu'il arrive** — et un commerce qui paie déjà pourrait en
-    // prendre un second.
+  it('un abonnement en cours ne propose pas de reprendre le sien', async () => {
+    /**
+     * **Renversé le 2026-09-02, et la moitié qui comptait reste.** Ce test
+     * exigeait que la grille disparaisse entièrement pour un abonné — « il l'a
+     * déjà choisie ». C'était vrai tant que changer de formule était
+     * impossible : la seule sortie était de résilier d'abord, c'est-à-dire
+     * d'accepter de n'avoir plus rien pour espérer avoir autre chose.
+     *
+     * Le serveur bascule maintenant en une transaction. La grille se rend donc
+     * aussi à un abonné — ce que fait toute application qui vend un
+     * abonnement — et ce qui reste garanti est ce que la règle protégeait
+     * réellement : **on ne peut pas reprendre celui qu'on a déjà**, ce que le
+     * serveur refuse et qu'un bouton irait chercher pour rien.
+     */
     await monter({ '/subscription': ABO(), '/plans': [PLAN] });
     await waitFor(() => expect(screen.getByTestId('abonnement-actif')).toBeTruthy());
 
-    expect(screen.queryByTestId('plans-souscriptibles')).toBeNull();
+    expect(screen.getByTestId('plans-souscriptibles')).toBeTruthy();
+    expect(screen.queryByTestId('souscrire-p1')).toBeNull();
+    expect(screen.getByTestId('formule-actuelle-p1')).toBeTruthy();
     expect(screen.getByTestId('resilier')).toBeTruthy();
   });
 
