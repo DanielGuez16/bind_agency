@@ -21,7 +21,7 @@
  * geste — l'annulation individuelle passe par la ligne concernée, avec un
  * motif.
  */
-import { useCallback, useState } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { useApi, type ExceptionDeCapacite, type RegleDeCapacite } from '../api';
@@ -36,7 +36,7 @@ import {
   vibration,
 } from '../components';
 import { useI18n } from '../i18n';
-import { radius, size, useColors } from '../theme';
+import { radius, size, useColors, type ColorName } from '../theme';
 import { formatDate, formatJour } from '../format';
 import { Ecran } from './Ecran';
 
@@ -164,6 +164,99 @@ const HAUTEUR_DE_RANGEE = 60;
  */
 const TABULAIRE = { fontVariant: ['tabular-nums' as const] };
 
+/**
+ * Une rangée du tableau, la seule.
+ *
+ * **Troisième signalement sur la même divergence, donc la cause n'était pas une
+ * valeur.** La semaine et les exceptions décrivaient chacune leur rangée, avec
+ * les mêmes six mesures recopiées de part et d'autre — hauteur, marges,
+ * intervalle, filet, largeur de la colonne des jours, graisse du libellé.
+ * Chaque planche qui en corrigeait une laissait l'autre derrière, et la
+ * troisième fois la question n'est plus « quelle mesure est fausse » mais
+ * « pourquoi y a-t-il deux endroits où elle peut l'être ».
+ *
+ * Il n'y en a plus qu'un. Ce qui distingue les deux tables est leur intertitre
+ * et ce qu'elles mettent dans leurs cellules, jamais leur grammaire.
+ *
+ * **La rangée porte la forme, l'appelant porte le contenu.** `valeur` et `fin`
+ * sont des nœuds : la semaine y met une amplitude en chiffres tabulaires, les
+ * exceptions une date fermée et un bouton de retrait. Faire descendre ces
+ * cas-là dans la rangée l'aurait rendue paramétrable, c'est-à-dire divergente
+ * par un autre chemin.
+ */
+function RangeeDuTableau({
+  libelle,
+  libelleCouleur = 'ink.default',
+  valeur,
+  fin,
+  retire = false,
+  onPress,
+  accessibilityLabel,
+  testID,
+}: {
+  libelle: string;
+  libelleCouleur?: ColorName;
+  valeur?: ReactNode;
+  fin?: ReactNode;
+  /** Le fond retiré du jour fermé, qui dit « cette ligne existe et ne porte rien ». */
+  retire?: boolean;
+  onPress?: () => void;
+  accessibilityLabel?: string;
+  testID?: string;
+}) {
+  const c = useColors();
+
+  const forme = {
+    minHeight: HAUTEUR_DE_RANGEE,
+    paddingHorizontal: 16,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: c['line.default'],
+    ...(retire ? { backgroundColor: c['bg.page'] } : null),
+  };
+
+  const corps = (
+    <>
+      {/* **104 points, mesurés et non donnés.** Un tableau se compose sur la
+          plus longue valeur de chaque colonne, dans les deux langues :
+          « Wednesday » en demande 93, « miércoles » davantage. La même largeur
+          sert aux exceptions — c'est ce qui fait des deux tables une seule
+          grammaire, et c'est maintenant la même ligne de code. */}
+      <Texte
+        variante="type.bodyStrong"
+        couleur={libelleCouleur}
+        style={{ width: LARGEUR_DU_JOUR }}
+      >
+        {libelle}
+      </Texte>
+      <View style={{ flex: 1, minWidth: 0 }}>{valeur}</View>
+      {fin}
+    </>
+  );
+
+  if (!onPress) {
+    return (
+      <View style={forme} testID={testID}>
+        {corps}
+      </View>
+    );
+  }
+
+  return (
+    <Pressable
+      onPress={onPress}
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? libelle}
+      style={({ pressed }) => ({ ...forme, opacity: pressed ? 0.7 : 1 })}
+    >
+      {corps}
+    </Pressable>
+  );
+}
+
 function LigneDeJour({
   libelle,
   jour,
@@ -179,7 +272,6 @@ function LigneDeJour({
 }) {
   const { api, messageDErreur } = useApi();
   const { t } = useI18n();
-  const c = useColors();
   const [ouvert, setOuvert] = useState(false);
   const [echec, setEchec] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
@@ -222,51 +314,20 @@ function LigneDeJour({
 
   return (
     <View testID={`jour-${jour}`}>
-      {/* **Une rangée de tableau, et le chevron est parti.** La rangée entière
-          s'ouvre : sept chevrons répétaient sept fois la même promesse, et les
-          trente-deux points rendus donnent à la colonne des heures de quoi ne
-          pas se couper.
+      {/* **Une rangée de tableau, et la rangée entière s'ouvre.** Sept chevrons
+          répétaient sept fois la même promesse ; celui qui reste est une
+          marque, pas une cible — rien d'autre dans la rangée n'est cliquable.
 
-          **Le fond retiré des jours fermés part aussi.** Il disait « cette
-          ligne existe et ne porte rien » quand la ligne était seule au monde ;
-          dans un tableau, la cellule de fauteuils vide le dit déjà, et deux
-          signes pour un fait en font un à interpréter. */}
-      <Pressable
+          **Le jour fermé garde sa ligne, en fond retiré.** Le retirer ferait
+          une semaine à cinq lignes où l'on chercherait le jeudi. */}
+      <RangeeDuTableau
+        libelle={libelle}
+        libelleCouleur={regle ? 'ink.default' : 'ink.mute'}
+        retire={!regle}
         onPress={() => setOuvert(!ouvert)}
         testID={`modifier-${jour}`}
-        accessibilityRole="button"
-        accessibilityLabel={libelle}
-        style={({ pressed }) => ({
-          minHeight: HAUTEUR_DE_RANGEE,
-          paddingHorizontal: 16,
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 14,
-          borderBottomWidth: 1,
-          borderBottomColor: c['line.default'],
-          // **Le jour fermé garde sa ligne, en fond retiré.** Le retirer ferait
-          // une semaine à cinq lignes où l'on chercherait le jeudi. Le fond
-          // était superflu tant qu'une cellule vide le disait déjà ; la colonne
-          // des fauteuils partie, il redevient le seul signe.
-          ...(regle ? null : { backgroundColor: c['bg.page'] }),
-          opacity: pressed ? 0.7 : 1,
-        })}
-      >
-        {/* **104 points, mesurés et non donnés.** Un tableau se compose sur la
-            plus longue valeur de chaque colonne, dans les deux langues :
-            « Wednesday » en demande 93, « miércoles » davantage. La même
-            largeur sert aux exceptions — c'est ce qui fait des deux tables une
-            seule grammaire. */}
-        <Texte
-          variante="type.bodyStrong"
-          couleur={regle ? 'ink.default' : 'ink.mute'}
-          style={{ width: LARGEUR_DU_JOUR }}
-        >
-          {libelle}
-        </Texte>
-
-        <View style={{ flex: 1, minWidth: 0 }}>
-          {regle ? (
+        valeur={
+          regle ? (
             /* **L'amplitude en chiffres tabulaires**, pour que les sept mesurent
                pareil. Elle reste hors du mono : une amplitude est une phrase
                brève entre deux heures, pas un identifiant.
@@ -291,17 +352,10 @@ function LigneDeJour({
             <Texte variante="type.body" couleur="ink.mute" testID={`ferme-${jour}`}>
               {t('composition.ferme')}
             </Texte>
-          )}
-        </View>
-
-        {/* **Une marque, pas une cible.** La v12 l'avait retiré parce que sept
-            chevrons répétaient sept fois la même promesse ; ce qu'elle visait
-            est la redondance de promesse, et elle ne revient pas : la rangée
-            entière reste la seule zone cliquable, rien d'autre dedans ne l'est.
-            C'est le mot que `primitives.json` emploie pour le glyphe de sortie,
-            et le motif déjà admis pour la pilule de profil. */}
-        <Icone nom="chevron" couleur="ink.soft" taille={20} />
-      </Pressable>
+          )
+        }
+        fin={<Icone nom="chevron" couleur="ink.soft" taille={20} />}
+      />
 
       {ouvert ? (
         <View style={{ gap: 8, paddingLeft: 12 }} testID={`edition-${jour}`}>
@@ -359,6 +413,7 @@ function Exceptions({
   const { t, locale } = useI18n();
   const c = useColors();
   const [date, setDate] = useState('');
+  const [ajout, setAjout] = useState(false);
   const [echec, setEchec] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
 
@@ -369,6 +424,9 @@ function Exceptions({
       await action();
       vibration.action();
       setDate('');
+      // Le panneau se referme sur une date fermée : la rangée qu'on vient de
+      // créer est juste au-dessus, et un panneau resté ouvert la cacherait.
+      setAjout(false);
       onChange();
     } catch (erreur) {
       vibration.echec();
@@ -390,99 +448,140 @@ function Exceptions({
         </Texte>
       ) : (
         exceptions.map((exception) => (
-          <View
+          <RangeeDuTableau
             key={exception.id}
-            style={{
-              minHeight: HAUTEUR_DE_RANGEE,
-              paddingHorizontal: 16,
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 14,
-              borderBottomWidth: 1,
-              borderBottomColor: c['line.default'],
-            }}
             testID={`exception-${exception.id}`}
-          >
-            {/* **La même colonne de 104, la même graisse, la même hauteur.**
-                Les deux tables disent un jour et ce qui s'y passe ; elles
-                portaient deux échelles, et le mono faisait de la date une
-                donnée là où c'est une phrase. Ce qui les distingue est leur
-                intertitre, pas leur typographie. */}
-            <Texte variante="type.bodyStrong" style={{ width: LARGEUR_DU_JOUR }}>
-              {formatJour(exception.date, locale)}
-            </Texte>
-            <Texte variante="type.body" couleur="ink.mute" style={{ flex: 1, minWidth: 0 }}>
-              {t('composition.ferme')}
-            </Texte>
-            <Button
-              label={t('composition.retirer')}
-              variant="secondary"
-              size="sm"
-              onPress={() =>
-                void agir(() => api.supprimerUneException(businessId, exception.id))
-              }
-              testID={`retirer-${exception.id}`}
-            />
-          </View>
+            libelle={formatJour(exception.date, locale)}
+            valeur={
+              /**
+               * **Ce que l'exception fait, et non « fermé » quoi qu'elle fasse.**
+               *
+               * `is_closed`, `start_time` et `end_time` sont servis depuis
+               * toujours et cette cellule écrivait « Closed » sur les trois :
+               * une journée qui ouvrait à 14 h se lisait fermée, et l'on
+               * refusait des créatrices que le salon avait décidé d'accueillir.
+               *
+               * Un champ servi que personne ne lit est un défaut, pas une
+               * omission — celui qui l'a réglé croit l'avoir enregistré.
+               */
+              exception.is_closed || !exception.start_time || !exception.end_time ? (
+                <Texte
+                  variante="type.body"
+                  couleur="ink.mute"
+                  testID={`exception-${exception.id}-fermee`}
+                >
+                  {t('composition.fermeToutLeJour')}
+                </Texte>
+              ) : (
+                /* La même amplitude, la même graisse et les mêmes chiffres
+                   tabulaires que la semaine au-dessus : c'est en la lisant
+                   contre sa ligne de semaine qu'on voit ce qui change. */
+                <Texte
+                  variante="type.body"
+                  couleur="ink.default"
+                  style={TABULAIRE}
+                  testID={`exception-${exception.id}-horaires`}
+                >
+                  {t('commerce.horairesDe', {
+                    debut: exception.start_time.slice(0, 5),
+                    fin: exception.end_time.slice(0, 5),
+                  })}
+                </Texte>
+              )
+            }
+            fin={
+              <Button
+                label={t('composition.retirer')}
+                variant="secondary"
+                size="sm"
+                onPress={() =>
+                  void agir(() => api.supprimerUneException(businessId, exception.id))
+                }
+                testID={`retirer-${exception.id}`}
+              />
+            }
+          />
         ))
       )}
 
-      {/* **Une date se choisit, elle ne s'épelle pas.** C'était un champ de
-          texte avec un format en légende : on y tapait un jour dans une syntaxe
-          à retenir, sans savoir quel jour de la semaine on fermait, et une
-          faute de frappe fermait une autre date que celle qu'on visait.
-
-          En grille qui se replie, jamais en défilement horizontal : une date
-          qui sort de l'écran est une date qu'on ne choisira pas. */}
-      <Texte variante="type.label" couleur="ink.soft">
-        {t('composition.champDateDeFermeture')}
-      </Texte>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }} testID="choix-de-la-date">
-        {PROCHAINS_JOURS().map((jour) => {
-          const choisi = jour === date;
-          return (
-            <Pressable
-              key={jour}
-              accessibilityRole="button"
-              {...etatAccessible({ selected: choisi })}
-              accessibilityLabel={formatDate(`${jour}T12:00:00Z`, locale, 'UTC')}
-              onPress={() => setDate(choisi ? '' : jour)}
-              testID={`jour-${jour}`}
-              style={({ pressed }) => ({
-                minHeight: size.touchMin,
-                minWidth: 52,
-                alignItems: 'center',
-                justifyContent: 'center',
-                paddingHorizontal: 10,
-                borderRadius: radius['radius.sm'],
-                borderWidth: choisi ? 2 : 1,
-                borderColor: choisi ? c['brand.700'] : c['line.default'],
-                backgroundColor: choisi ? c['brand.50'] : 'transparent',
-                opacity: pressed ? 0.7 : 1,
-              })}
-            >
-              <Texte variante="type.dataLabel" couleur="ink.soft">
-                {nomDeJour(jour, locale)}
-              </Texte>
-              <Texte variante="type.data">{jour.slice(8)}</Texte>
-            </Pressable>
-          );
-        })}
-      </View>
-      {/* Ce que fermer fait, et ce que fermer ne fait pas. Un commerce qui
-          croirait annuler ses réservations en fermant sa journée se tairait
-          auprès de créatrices qui viendront quand même. */}
-      <Texte variante="type.caption" couleur="ink.soft">
-        {t('composition.fermerNAnnuleRien')}
-      </Texte>
-      {echec ? <StatusMessage level="danger" body={echec} testID="echec-exception" /> : null}
-      <Button
-        label={t('composition.fermerCetteDate')}
-        loading={envoi}
-        disabled={!/^\d{4}-\d{2}-\d{2}$/.test(date)}
-        onPress={() => void agir(() => api.fermerUneJournee(businessId, date))}
-        testID="fermer-cette-date"
+      {/**
+        * **Un ajout n'est pas un bouton flottant, c'est la dernière ligne de la
+        * liste qu'il allonge.**
+        *
+        * Le choix de la date et son bouton vivaient sous la table, en blocs
+        * libres : on lisait deux exceptions, puis une grille de quantièmes qui
+        * ne se rattachait visiblement à rien. Posé en rangée, l'ajout est au
+        * même endroit que ce qu'il produit, et dans la même grammaire — c'est
+        * la rangée de la semaine et celle des exceptions, la troisième fois.
+        */}
+      <RangeeDuTableau
+        libelle={t('composition.ajouterUneDate')}
+        libelleCouleur="brand.700"
+        onPress={() => setAjout(!ajout)}
+        testID="ajouter-une-date"
+        fin={<Icone nom="chevron" couleur="ink.soft" taille={20} />}
       />
+
+      {ajout ? (
+        <View style={{ gap: 8, paddingLeft: 12 }} testID="ajout-d-une-date">
+          {/* **Une date se choisit, elle ne s'épelle pas.** C'était un champ de
+              texte avec un format en légende : on y tapait un jour dans une syntaxe
+              à retenir, sans savoir quel jour de la semaine on fermait, et une
+              faute de frappe fermait une autre date que celle qu'on visait.
+
+              En grille qui se replie, jamais en défilement horizontal : une date
+              qui sort de l'écran est une date qu'on ne choisira pas. */}
+          <Texte variante="type.label" couleur="ink.soft">
+            {t('composition.champDateDeFermeture')}
+          </Texte>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }} testID="choix-de-la-date">
+            {PROCHAINS_JOURS().map((jour) => {
+              const choisi = jour === date;
+              return (
+                <Pressable
+                  key={jour}
+                  accessibilityRole="button"
+                  {...etatAccessible({ selected: choisi })}
+                  accessibilityLabel={formatDate(`${jour}T12:00:00Z`, locale, 'UTC')}
+                  onPress={() => setDate(choisi ? '' : jour)}
+                  testID={`jour-${jour}`}
+                  style={({ pressed }) => ({
+                    minHeight: size.touchMin,
+                    minWidth: 52,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    paddingHorizontal: 10,
+                    borderRadius: radius['radius.sm'],
+                    borderWidth: choisi ? 2 : 1,
+                    borderColor: choisi ? c['brand.700'] : c['line.default'],
+                    backgroundColor: choisi ? c['brand.50'] : 'transparent',
+                    opacity: pressed ? 0.7 : 1,
+                  })}
+                >
+                  <Texte variante="type.dataLabel" couleur="ink.soft">
+                    {nomDeJour(jour, locale)}
+                  </Texte>
+                  <Texte variante="type.data">{jour.slice(8)}</Texte>
+                </Pressable>
+              );
+            })}
+          </View>
+          {/* Ce que fermer fait, et ce que fermer ne fait pas. Un commerce qui
+              croirait annuler ses réservations en fermant sa journée se tairait
+              auprès de créatrices qui viendront quand même. */}
+          <Texte variante="type.caption" couleur="ink.soft">
+            {t('composition.fermerNAnnuleRien')}
+          </Texte>
+          {echec ? <StatusMessage level="danger" body={echec} testID="echec-exception" /> : null}
+          <Button
+            label={t('composition.fermerCetteDate')}
+            loading={envoi}
+            disabled={!/^\d{4}-\d{2}-\d{2}$/.test(date)}
+            onPress={() => void agir(() => api.fermerUneJournee(businessId, date))}
+            testID="fermer-cette-date"
+          />
+        </View>
+      ) : null}
     </View>
   );
 }

@@ -1361,6 +1361,8 @@ export const en = {
     champDateDeFermeture: 'Date to close',
     formatDeDate: 'YYYY-MM-DD',
     fermerNAnnuleRien: 'Closing a day removes the remaining places. Bookings already taken are honoured. Cancelling one goes through its own line, with a reason.',
+    fermeToutLeJour: 'Closed all day',
+    ajouterUneDate: 'Add a date',
     fermerCetteDate: 'Close that day',
     titre: 'Configuration',
     entreeCatalogue: 'Catalogue',

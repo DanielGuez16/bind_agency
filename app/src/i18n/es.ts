@@ -1222,6 +1222,8 @@ export const es: Catalogue = {
     champDateDeFermeture: 'Fecha a cerrar',
     formatDeDate: 'AAAA-MM-DD',
     fermerNAnnuleRien: 'Cerrar un día quita las plazas restantes. Las reservas ya tomadas se mantienen. Cancelar una pasa por su propia línea, con un motivo.',
+    fermeToutLeJour: 'Cerrado todo el día',
+    ajouterUneDate: 'Añadir una fecha',
     fermerCetteDate: 'Cerrar ese día',
     titre: 'Configuración',
     entreeCatalogue: 'Catálogo',
