@@ -13,6 +13,7 @@
  */
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
+import { AbonnementScreen } from '../src/screens/AbonnementScreen';
 import { ReglagesScreen } from '../src/screens/ReglagesScreen';
 import { I18nProvider } from '../src/i18n';
 import { ThemeProvider } from '../src/theme';
@@ -62,4 +63,51 @@ it('et ne la rend pas là où il n’y a rien à ouvrir', async () => {
 
   expect(screen.queryByTestId('ouvrir-l-abonnement')).toBeNull();
   expect(screen.queryByTestId('abonnement-depuis-les-reglages')).toBeNull();
+});
+
+/** Ce que le serveur rend a Ocean : trois formules, et l'une souscrite. */
+const PLANS = [
+  { id: 'p1', name: 'Essentiel', price_cents: 9900, currency: 'USD', billing_interval: 'monthly', features: {} },
+  { id: 'p2', name: 'Studio', price_cents: 19900, currency: 'USD', billing_interval: 'monthly', features: {} },
+];
+const ABONNEMENT = { id: 'a1', plan_id: 'p1', status: 'active', current_period_end: null, checkout_url: null };
+
+it('nomme et chiffre la formule en cours', async () => {
+  /**
+   * **L'écran servait « actif » et un bouton d'arrêt, rien d'autre.** Le plan
+   * et son prix étaient dans la même réponse depuis toujours — `plan_id` d'un
+   * côté, la grille de l'autre — et personne ne les rapprochait : un commerce
+   * ne pouvait pas lire ce qu'il payait sur l'écran de ce qu'il paie.
+   *
+   * Le décor porte **deux** formules et n'en souscrit qu'une : un écran qui
+   * afficherait la première de la liste passerait un décor à un seul plan.
+   */
+  await render(
+    <I18nProvider initialLocale="en">
+      <ThemeProvider role="merchant">
+        <ApiProvider
+          client={
+            new ApiClient({
+              baseUrl: 'https://api.test',
+              coffre: { lire: async () => null, ecrire: async () => {} },
+              fetchImpl: (async (url: RequestInfo | URL) => ({
+                ok: true,
+                status: 200,
+                json: async () =>
+                  String(url).includes('/plans') ? PLANS : ABONNEMENT,
+              })) as never,
+            })
+          }
+        >
+          <AbonnementScreen businessId="b1" />
+        </ApiProvider>
+      </ThemeProvider>
+    </I18nProvider>,
+  );
+
+  await waitFor(() => expect(screen.getByTestId('abonnement-actif')).toBeTruthy());
+  expect(screen.getByTestId('formule-nom')).toHaveTextContent('Essentiel');
+  expect(screen.getByTestId('formule-prix')).toHaveTextContent('$99.00');
+  // Et pas celle qu'on n'a pas prise.
+  expect(screen.getByTestId('formule-nom')).not.toHaveTextContent('Studio');
 });
