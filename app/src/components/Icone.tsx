@@ -172,6 +172,22 @@ const ROTATION: Partial<Record<NomIcone, number>> = {
   retour: 180,
 };
 
+/**
+ * L'épaisseur propre à un glyphe, quand elle s'écarte de `size.iconStroke`.
+ *
+ * **Un seul écart, et il est raisonné.** Les primitives donnent 2,4 à la coche,
+ * avec sa raison écrite : « à 17 px, une coche en 2 paraît molle à côté d'un
+ * texte en 600 ». Une coche accompagne presque toujours un libellé gras — fait,
+ * accepté, honoré — et c'est la seule du jeu dans ce cas.
+ *
+ * Trouvé en élargissant la garde à tous les champs de la primitive, juste après
+ * la rotation manquante du retour. Même famille, même cause : **on ne copie pas
+ * un glyphe, on copie un tracé**, et le reste de l'objet se perd en silence.
+ */
+const EPAISSEUR: Partial<Record<NomIcone, number>> = {
+  coche: 2.4,
+};
+
 export function Icone({
   nom,
   couleur = 'ink.default',
@@ -241,7 +257,7 @@ export function Icone({
         // maigrit d'un demi-point au remplissage et le cœur paraît sauter.
         fill={rempli ? trait : 'none'}
         stroke={trait}
-        strokeWidth={(size.iconStroke * taille) / size.icon}
+        strokeWidth={((EPAISSEUR[nom] ?? size.iconStroke) * taille) / size.icon}
         strokeLinecap="round"
         strokeLinejoin="round"
       />

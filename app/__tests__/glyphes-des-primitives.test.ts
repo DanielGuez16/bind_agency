@@ -11,6 +11,7 @@
  * centième ne se voit sur aucun écran et se voit ici, ce qui est exactement le
  * partage qu'on veut : l'œil ne peut pas tenir cette règle, une comparaison si.
  */
+import { size } from '../src/theme';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -36,6 +37,21 @@ function rotationsDuProduit(): Record<string, number> {
   if (!bloc) return {};
   return Object.fromEntries(
     [...bloc[1].matchAll(/(\w+):\s*(\d+)/g)].map((m) => [m[1], Number(m[2])]),
+  );
+}
+
+/**
+ * Les épaisseurs propres déclarées par le produit.
+ *
+ * Lues dans la source pour la même raison que les rotations : c'est ce que le
+ * produit **dessine** qu'on veut comparer, et un tableau recopié dans le test
+ * dirait seulement que je sais recopier.
+ */
+function epaisseursDuProduit(): Record<string, number> {
+  const bloc = /const EPAISSEUR[^=]*=\s*\{([^}]*)\}/s.exec(SOURCE);
+  if (!bloc) return {};
+  return Object.fromEntries(
+    [...bloc[1].matchAll(/(\w+):\s*([\d.]+)/g)].map((m) => [m[1], Number(m[2])]),
   );
 }
 
@@ -91,6 +107,40 @@ describe('les glyphes sont copiés, jamais retapés', () => {
     // diffère font deux glyphes différents — c'est le cas de `fleche` et
     // `retour`, dont le `d` est le même.
     expect(rotationsDuProduit()[nom] ?? 0).toBe(rotationAttendue(clef));
+  });
+
+  it('le trait et le cadre sont ceux des primitives, pour tous', () => {
+    /**
+     * **Une garde qui ne compare qu'un champ n'éprouve que ce champ.**
+     *
+     * C'est la leçon du retour, et elle vaut au-delà de lui : la primitive
+     * porte `d`, `transform`, `strokeWidth` et `viewBox`, et deux glyphes
+     * peuvent partager le tracé en différant sur le reste. Les comparer tous
+     * coûte ces quelques lignes et ferme la famille entière.
+     *
+     * Le trait et le cadre sont communs — `size.iconStroke` sur une grille de
+     * 24 — donc ils se vérifient une fois pour toutes plutôt que par glyphe.
+     */
+    // Le cadre est commun à tout le jeu — c'est ce qui rend les tracés
+    // interchangeables — donc il se vérifie pour tous.
+    for (const [, clef] of CORRESPONDANCE) {
+      const p = PRIMITIVES[clef] as { viewBox?: string };
+      expect({ clef, cadre: p.viewBox }).toEqual({ clef, cadre: '0 0 24 24' });
+    }
+    expect(SOURCE).toContain('viewBox="0 0 24 24"');
+
+    // L'épaisseur, elle, ne l'est pas : la coche est à 2,4 avec sa raison
+    // écrite. Le produit doit donc rendre CE trait-là, glyphe par glyphe.
+    const rendu = Object.fromEntries(
+      CORRESPONDANCE.map(([nom]) => [nom, epaisseursDuProduit()[nom] ?? size.iconStroke]),
+    );
+    const voulu = Object.fromEntries(
+      CORRESPONDANCE.map(([nom, clef]) => [
+        nom,
+        (PRIMITIVES[clef] as { strokeWidth?: number }).strokeWidth,
+      ]),
+    );
+    expect(rendu).toEqual(voulu);
   });
 
   it('et au moins un glyphe tourne, sinon la garde ne compare rien', () => {
