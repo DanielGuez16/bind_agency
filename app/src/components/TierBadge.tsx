@@ -31,7 +31,7 @@
 import { View } from 'react-native';
 
 import { matiereDePalier, radius, tierTokens, useColors, type Palier } from '../theme';
-import { useI18n } from '../i18n';
+import { useI18n, type SupportedLocale } from '../i18n';
 import { Texte } from './Texte';
 
 export type { Palier };
@@ -46,12 +46,28 @@ export type TierBadgeProps = {
 
 const HAUTEURS_DE_BARRE = [6, 9, 12];
 
+/**
+ * Le mot du palier, dans la langue lue.
+ *
+ * **Écrit ici parce qu'il l'était déjà deux fois.** Et parce qu'un troisième
+ * appelant l'a recomposé de travers : l'écran d'arbitrage rendait
+ * `palier.toUpperCase()`, ce qui donne « STORY », « POST », « REEL » — juste en
+ * anglais par coïncidence, le libellé anglais étant la clé en majuscules, et
+ * faux en espagnol où le jeton dit « PUBLICACIÓN ». Rien ne pouvait le dire :
+ * la chaîne n'est pas dans les catalogues de traduction, elle est dans
+ * `produit.json`.
+ */
+export function motDuPalier(palier: Palier, locale: SupportedLocale): string {
+  const config = tierTokens[palier];
+  return config.label[locale] ?? config.label.en;
+}
+
 export function TierBadge({ tier, size = 'md', onPhoto, testID }: TierBadgeProps) {
   const c = useColors();
   const { locale } = useI18n();
   const config = tierTokens[tier];
   const m = matiereDePalier(tier);
-  const mot = config.label[locale] ?? config.label.en;
+  const mot = motDuPalier(tier, locale);
 
   // Sur une photo, le contour et la teinte perdent leur fond : ce qui est
   // derrière est quelconque. Le voile de badge le leur rend. L'aplat, lui, est

@@ -210,5 +210,17 @@ export function BarresParPalier({
   );
 }
 
-/** Les trois paliers, dans l'ordre des jetons. Jamais dans celui de la base. */
-export const PALIERS: Palier[] = Object.keys(tierTokens) as Palier[];
+/**
+ * Les trois paliers, dans l'ordre des jetons. Jamais dans celui de la base.
+ *
+ * **`tier.order` et non `Object.keys`.** La section porte aussi de la
+ * documentation — `$pourquoi`, `$delai` — et deux entrées qui ne sont pas des
+ * paliers : `order`, la liste elle-même, et `rules`, les règles de dessin.
+ * `Object.keys` les rendait toutes, et l'écran d'arbitrage affichait sept
+ * filtres dont « $POURQUOI », « ORDER », « RULES » et « $DELAI ».
+ *
+ * La liste ordonnée existait à côté depuis le début : c'est exactement ce que
+ * `order` est. La lire coûte le même caractère que de deviner les clés, et le
+ * `$` du dépôt marque déjà ce qui n'est pas une donnée.
+ */
+export const PALIERS: Palier[] = tierTokens.order as Palier[];
