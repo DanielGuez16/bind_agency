@@ -662,7 +662,6 @@ export const es: Catalogue = {
     journeeRienAFaire: 'Nada que hacer aquí. La contrapartida sigue su curso.',
     decisionDepassee: 'La hora ya pasó. Esta reserva ya no puede aceptarse: caduca sola. Aún puedes decir qué ocurrió.',
     activationMettreEnPause: 'Pausar mi negocio',
-    pauseTitre: 'Tu escaparate',
     pauseCorps: 'Al pausar dejas de aparecer en los muros. Las reservas ya hechas se mantienen y puedes volver cuando quieras.',
     pauseRepriseCorps: 'Estás en pausa. Las creadoras no pueden verte ni reservarte.',
     pauseReprendre: 'Volver a mostrar mi salón',
@@ -1019,7 +1018,7 @@ export const es: Catalogue = {
     etatHorsPalier: 'Este se ofrece en un nivel que aún no abres.',
   },
   reglages: {
-    abonnementTitre: 'Suscripción',
+    sectionCommerce: 'Tu negocio',
     abonnementLigne: 'Tu plan, la facturación y la baja',
     reprisesTitre: 'Cuando BIND entró en tu cuenta',
     reprisesAide:
@@ -1222,6 +1221,8 @@ export const es: Catalogue = {
     champDateDeFermeture: 'Fecha a cerrar',
     formatDeDate: 'AAAA-MM-DD',
     fermerNAnnuleRien: 'Cerrar un día quita las plazas restantes. Las reservas ya tomadas se mantienen. Cancelar una pasa por su propia línea, con un motivo.',
+    fermeToutLeJour: 'Cerrado todo el día',
+    ajouterUneDate: 'Añadir una fecha',
     fermerCetteDate: 'Cerrar ese día',
     titre: 'Configuración',
     entreeCatalogue: 'Catálogo',

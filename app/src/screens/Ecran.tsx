@@ -39,7 +39,7 @@ import { formatDate } from '../format';
 import { BarreDeTitre } from '../shell/BarreDeTitre';
 import { useGabarit, largeurMaximale, type NatureDeContenu } from '../shell/gabarit';
 import { useApi } from '../api';
-import { useTheme } from '../theme';
+import { size, spacing, useTheme } from '../theme';
 import type { Requete } from './useRequete';
 
 export type EcranProps<T> = {
@@ -294,29 +294,27 @@ export function Ecran<T>({
           accessibilityLabel={retourVers ?? t('common.retour')}
           hitSlop={12}
           style={({ pressed }) => ({
-            flexDirection: 'row',
+            // La cible garde ses 44 points : c'est elle qu'on vise, pas le
+            // glyphe de 18 qui l'occupe.
+            minWidth: size.touchMin,
+            minHeight: size.touchMin,
             alignItems: 'center',
-            gap: 4,
+            justifyContent: 'center',
             alignSelf: 'flex-start',
-            marginHorizontal: bordAbord ? margeLaterale : 0,
+            marginHorizontal: bordAbord ? margeLaterale - spacing['space.3'] : -spacing['space.3'],
             opacity: pressed ? 0.7 : 1,
           })}
           testID="retour"
         >
+          {/* **La flèche seule, et le mot part.** Ce retour-ci est celui du
+              téléphone — `BarreDeTitre` n'existe qu'en grand —, donc c'est le
+              seul que voit quelqu'un sur son appareil, et il écrivait « More »
+              en haut de chaque sous-page d'un menu qu'on venait de quitter.
+
+              Ce que le mot apportait ne disparaît pas : il passe dans
+              `accessibilityLabel`, où il répond à « où revient-on » pour qui
+              n'a pas l'écran sous les yeux. C'est là qu'il manquait vraiment. */}
           <Icone nom="retour" couleur="ink.soft" taille={18} />
-          {/* **Le nom de la destination, quand on le connaît.** Ce retour-ci
-              est celui du téléphone — `BarreDeTitre` n'existe qu'en grand —,
-              donc c'est le seul que voit quelqu'un sur son appareil. Lui avoir
-              appris à nommer la destination en haut et pas ici revenait à ne
-              l'apprendre à personne : « Back » disait qu'on peut revenir, pas
-              où. */}
-          <Texte
-            variante="type.label"
-            couleur="ink.soft"
-            testID={retourVers ? 'retour-vers' : undefined}
-          >
-            {retourVers ?? t('common.retour')}
-          </Texte>
         </Pressable>
       ) : null}
       {/* **Le titre ne s'écrit pas deux fois.** En grand il vit dans la barre

@@ -24,7 +24,7 @@ import { Pressable, View } from 'react-native';
 import { Icone } from '../components';
 import { Texte } from '../components/Texte';
 import { useI18n } from '../i18n';
-import { breakpoint, spacing, useColors } from '../theme';
+import { breakpoint, size, spacing, useColors } from '../theme';
 
 export type BarreDeTitreProps = {
   titre: string;
@@ -91,22 +91,28 @@ export function BarreDeTitre({
         <Pressable
           testID="retour"
           accessibilityRole="button"
-          // **Le libellé nomme la destination quand on la connaît.** « Back »
-          // dit qu'on peut revenir ; il ne dit pas où. Sur une sous-page
-          // atteinte depuis un menu, c'est la seconde question qu'on se pose.
+          // **La destination reste dans l'annonce, elle quitte l'écran.**
+          // « Back » dit qu'on peut revenir sans dire où ; le nom répondait à
+          // cette seconde question, et le répétait sur chaque sous-page d'un
+          // menu qu'on venait de quitter. La flèche le dit déjà à qui voit
+          // l'écran — elle ne le dit pas à qui l'écoute, donc le libellé
+          // accessible garde la destination.
           accessibilityLabel={retourVers ?? t('common.retour')}
           hitSlop={12}
           onPress={onRetour}
-          style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 4,
+          style={({ pressed }) => ({
+            // **La cible ne rétrécit pas avec le libellé.** La flèche seule
+            // fait 18 points ; c'est la zone qui doit rester atteignable, pas
+            // le glyphe qui doit grossir.
+            minWidth: size.touchMin,
+            minHeight: size.touchMin,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginLeft: -spacing['space.3'],
             opacity: pressed ? 0.7 : 1,
           })}
         >
           <Icone nom="retour" couleur="ink.soft" taille={18} />
-          {retourVers ? (
-            <Texte variante="type.body" couleur="ink.soft" testID="retour-vers">
-              {retourVers}
-            </Texte>
-          ) : null}
         </Pressable>
       ) : null}
 

@@ -10942,3 +10942,52 @@ leçon est la même que sur le semis : *une observation juste, une cause
 inventée*. « Quarante fichiers modifiés » se lit comme « quarante fichiers de
 travail » et ce n'est pas la même chose. La question à poser avant l'alarme est
 `git diff origin/main --stat`, jamais `git status`.
+
+## 2026-09-02 — La bande du comptoir passe de sept à quatorze jours
+
+**Tranché en v11, renversé en v14.** L'entrée d'origine disait sept, avec sa
+raison : « la créatrice cherche quand elle peut venir et regarde loin, le salon
+regarde ce qu'il a à faire et sa semaine est l'horizon de son travail ; quatorze
+barres de décisions demanderaient de défiler pour atteindre le seul jour qui
+presse ».
+
+L'argument valait tant que le jour qui presse pouvait être **plus loin que la
+piste**. Il ne l'est pas : la bande s'ouvre sur le premier jour, et les suivants
+ne se gagnent qu'en défilant vers l'avant. Allonger n'éloigne donc rien de ce
+qu'on regardait déjà.
+
+Ce que sept coûtait, en revanche, n'avait pas été vu : **un créateur réserve à
+quinze jours.** La moitié de ce qu'un salon avait accepté tombait hors de sa
+propre bande — la demande existait, la file la servait, et aucune case ne la
+portait.
+
+**Et le zéro remis n'est pas un aller-retour d'humeur.** Le « 0 » d'un jour sans
+décision avait été retiré parce que sept chiffres à lire pour en retenir deux
+noient la bande. À quatorze cases sur une piste qui défile, une case vide ne se
+distingue plus d'une case pas encore chargée : ce n'est pas le retrait qui était
+faux, c'est la longueur de la bande qui a changé la question. La table des
+retraits de `components.md` le porte sous cette forme — barré, « remis en v14 »,
+avec les deux raisons — parce qu'une table qui dirait seulement « retiré puis
+remis » ne se relit pas.
+
+## 2026-09-02 — Un glyphe se copie en entier, pas par son tracé
+
+**La flèche de retour a pointé à droite sur tout le produit.** `retour` est
+`fleche` retournée : `primitives.json` porte le **même** champ `d` pour les deux
+et un `transform: rotate(180deg)` sur l'une. J'ai copié le tracé sans le champ.
+
+Ce qui rend le cas instructif est que **ma propre garde est passée au vert** :
+écrite pour vérifier que les glyphes ne sont pas retapés de mémoire, elle
+comparait `d` et rien d'autre. Design a commis exactement la même erreur dans
+son lecteur de primitives, le même jour, sans concertation.
+
+`bind-agency-1a` en a tiré la formulation qui reste : **une garde qui ne compare
+qu'un champ d'un objet à plusieurs champs n'éprouve que ce champ.** Élargie à
+`d`, `transform`, `viewBox` et `strokeWidth`, elle a trouvé le défaut suivant
+dans la minute — `coche` porte `strokeWidth: 2.4`, avec sa raison écrite dans la
+primitive, et le produit traçait tout à `size.iconStroke`. Personne ne l'avait
+lue parce que personne ne lisait ce champ.
+
+Même famille que les cinq jetons inexistants de `components.md` : **un document
+juste que rien ne confronte au produit cesse d'être juste.** Ici il l'était
+depuis le début ; c'est le lecteur qui n'en lisait qu'un quart.

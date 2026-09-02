@@ -62,10 +62,12 @@ export function PauseDuCommerce() {
 
   return (
     <View style={{ gap: 10 }} testID="pause-du-commerce">
-      <Texte variante="type.label" couleur="ink.soft">
-        {t('commerce.pauseTitre')}
-      </Texte>
-      {/* Ce que la pause fait, et surtout ce qu'elle ne fait pas : c'est la
+      {/* **L'intertitre est parti, il est celui de la section.** « Your
+          storefront » au-dessus de la seule pause en faisait un rang à part,
+          à côté d'un « Subscription » de même taille : deux titres pour deux
+          gestes que le salon lit comme un seul sujet, son commerce.
+
+          Ce que la pause fait, et surtout ce qu'elle ne fait pas : c'est la
           question qu'on se pose avant d'appuyer, et ne pas y répondre fait
           renoncer au geste ou le fait faire à tort. */}
       <Texte variante="type.caption" couleur="ink.soft" testID="pause-consequences">
