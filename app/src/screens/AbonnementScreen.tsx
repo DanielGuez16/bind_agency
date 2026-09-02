@@ -39,9 +39,12 @@ type Vue = { abonnement: Abonnement | null; plans: PlanSouscriptible[] };
 export function AbonnementScreen({
   businessId,
   onRetour,
+  retourVers,
 }: {
   businessId: string;
   onRetour?: () => void;
+  /** Le nom de la destination du retour. Voir `BarreDeTitre`. */
+  retourVers?: string;
 }) {
   const { api, messageDErreur } = useApi();
   const { t, locale } = useI18n();
@@ -81,6 +84,7 @@ export function AbonnementScreen({
     <Ecran
       requete={requete}
       onRetour={onRetour}
+      retourVers={retourVers}
       titre={t('abonnement.titre')}
       nature="merchant"
       squelette={<SkeletonLignes combien={4} testID="squelette-abonnement" />}

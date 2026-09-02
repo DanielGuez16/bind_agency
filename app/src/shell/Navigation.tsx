@@ -161,6 +161,11 @@ export type PileCommerceParams = {
  * plutôt que d'ouvrir un huitième onglet — la barre du commerce en compte déjà
  * deux de plus que ce que le système recommande.
  */
+export type PileReglagesParams = {
+  Reglages: undefined;
+  Abonnement: undefined;
+};
+
 export type PileAnnuaireParams = {
   Annuaire: undefined;
   Abonnement: undefined;
@@ -178,6 +183,7 @@ const PileCommerce = createNativeStackNavigator<PileCommerceParams>();
 const PileConfiguration = createNativeStackNavigator<PileConfigurationParams>();
 const PileAudience = createNativeStackNavigator<PileAudienceParams>();
 const PileAnnuaire = createNativeStackNavigator<PileAnnuaireParams>();
+const PileReglages = createNativeStackNavigator<PileReglagesParams>();
 const Onglets = createBottomTabNavigator();
 
 /**
@@ -755,6 +761,37 @@ function ParcoursCommerce({ businessId }: { businessId: string }) {
   );
 }
 
+/**
+ * Les réglages du commerce, et l'abonnement qu'ils ouvrent.
+ *
+ * **Une pile plutôt qu'un écran seul.** L'abonnement n'était atteignable que
+ * par le mur de l'annuaire, lequel ne s'affiche qu'à un salon **sans**
+ * abonnement : un salon abonné ne pouvait ni voir sa formule, ni en changer,
+ * ni résilier. Les réglages sont l'endroit où on le cherche, et il y mène
+ * maintenant.
+ */
+function PileDesReglagesDuCommerce({ businessId }: { businessId: string }) {
+  const { t } = useI18n();
+  return (
+    <PileReglages.Navigator screenOptions={OPTIONS_DE_PILE}>
+      <PileReglages.Screen name="Reglages">
+        {({ navigation }) => (
+          <ReglagesScreen onVoirLAbonnement={() => navigation.navigate('Abonnement')} />
+        )}
+      </PileReglages.Screen>
+      <PileReglages.Screen name="Abonnement">
+        {({ navigation }) => (
+          <AbonnementScreen
+            businessId={businessId}
+            onRetour={() => navigation.goBack()}
+            retourVers={t('onglets.reglages')}
+          />
+        )}
+      </PileReglages.Screen>
+    </PileReglages.Navigator>
+  );
+}
+
 /** L'annuaire, et l'abonnement qu'on atteint depuis son refus. */
 function PileDeLAnnuaire({
   businessId,
@@ -841,6 +878,10 @@ function OngletsDuCommerceChoisi() {
         <Onglets.Screen name="attente" options={onglet(t('onglets.demarrer'), 'coche')}>
           {() => ecranDAttente}
         </Onglets.Screen>
+        {/* **Pas d'abonnement ici, et ce n'est pas un oubli.** Ce montage est
+            celui d'un compte dont le commerce n'existe pas encore :
+            `businessId` est nul, et il n'y a pas de formule à montrer avant
+            qu'il y ait un salon à abonner. */}
         <Onglets.Screen
           name="reglages"
           component={ReglagesScreen}
@@ -963,13 +1004,14 @@ function OngletsDuCommerceChoisi() {
       </Onglets.Screen>
       <Onglets.Screen
         name="reglages"
-        component={ReglagesScreen}
         options={
           large
             ? onglet(t('onglets.reglages'), 'reglages')
             : ongletHorsBarre(t('onglets.reglages'), 'reglages')
         }
-      />
+      >
+        {() => <PileDesReglagesDuCommerce businessId={businessId} />}
+      </Onglets.Screen>
     </Onglets.Navigator>
   );
 }

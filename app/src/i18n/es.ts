@@ -1023,6 +1023,8 @@ export const es: Catalogue = {
     etatHorsPalier: 'Este se ofrece en un nivel que aún no abres.',
   },
   reglages: {
+    abonnementTitre: 'Suscripción',
+    abonnementLigne: 'Tu plan, la facturación y la baja',
     reprisesTitre: 'Cuando BIND entró en tu cuenta',
     reprisesAide:
       'Cada vez que alguien de BIND abrió tu cuenta, con el motivo que escribió. De esta lista no se borra nada.',
