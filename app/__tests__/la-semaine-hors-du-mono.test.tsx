@@ -69,9 +69,10 @@ async function monter() {
 it('dit l’amplitude avec un mot, hors du mono', async () => {
   await monter();
 
-  const ligne = within(screen.getByTestId('horaires-1'));
-  const amplitude = ligne.getByText('09:00 to 19:00');
-  expect(amplitude).toBeTruthy();
+  // **Le nœud porte le repère depuis que la ligne est une rangée de tableau** :
+  // il n'y a plus de conteneur à ouvrir, la cellule *est* le texte.
+  const amplitude = screen.getByTestId('horaires-1');
+  expect(amplitude).toHaveTextContent('09:00 to 19:00');
   expect(estMono(famille(amplitude))).toBe(false);
 });
 
@@ -82,10 +83,10 @@ it('déplace le nœud, il ne vide pas le jeton', async () => {
   // les seuils et les dates d'exception. La correction devait déplacer un nœud,
   // pas vider une voix.
   //
-  // Le fuseau et les capacités nues que la planche garde en mono ne se
-  // vérifient pas ici : l'app n'affiche pas le fuseau dans ce cadre, et elle
-  // écrit la capacité en phrase — « 2 creators at once » — là où la planche
-  // pose un nombre seul dans un pas-à-pas. Deux mises en page, une seule règle.
+  // Le fuseau ne se vérifie pas ici : l'app ne l'affiche pas dans ce cadre. La
+  // capacité, elle, est désormais un nombre nu dans sa colonne — comme la
+  // planche le pose — et elle reste hors du mono : ce sont les chiffres
+  // tabulaires qui l'alignent, pas un changement de famille.
   expect(produit).toBeTruthy();
   expect(tokens.type.data.family).toBe('IBM Plex Mono');
   expect(tokens.type.dataLabel.family).toBe('IBM Plex Mono');

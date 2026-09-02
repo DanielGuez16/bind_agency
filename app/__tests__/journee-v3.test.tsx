@@ -226,19 +226,25 @@ describe('la carte de demande porte les trois faits qui décident', () => {
     });
     await waitFor(() => expect(screen.getByTestId('demande-d-1')).toBeTruthy());
 
-    // **Une colonne, deux graisses, chaque fait une fois.** Le pseudonyme et
-    // le moment tiennent sur la même ligne depuis la v8 : la carte portait
-    // quatre grammaires typographiques pour trois faits, et l'heure limite y
-    // était écrite deux fois parce qu'en mono, isolée d'un verbe, elle ne se
-    // lisait pas comme une échéance.
+    // **Le rendez-vous a sa propre ligne depuis la v12**, entre le service et
+    // l'échéance : un gérant lit quoi, quand, avant quand. Il partageait celle
+    // du pseudonyme, joint par un point médian, et se tronquait — c'était
+    // l'heure qui disparaissait, sur l'écran où l'on décide d'un rendez-vous.
+    //
+    // **Les deux sens.** Sans la seconde assertion, remettre le moment dans la
+    // ligne du créateur passerait encore : la première ne dit que sa présence
+    // quelque part dans la carte.
     const carte = within(screen.getByTestId('demande-d-1'));
     expect(carte.getByText('Gel manicure')).toBeTruthy();
-    expect(carte.getByText(/@lea\.mrl · /)).toBeTruthy();
+    expect(carte.getByTestId('moment-d-1')).toBeTruthy();
+    expect(carte.getByText('@lea.mrl')).toBeTruthy();
+    expect(carte.queryByText(/@lea\.mrl · /)).toBeNull();
     expect(carte.getByTestId('limite-d-1')).toBeTruthy();
 
     // Et le moment se lit sans calculer : « Aug 30, 2026 at 2:00 PM » demandait
-    // de se situer dans un calendrier pour lire un rendez-vous de demain.
-    expect(carte.getByText(/· tomorrow at /)).toBeTruthy();
+    // de se situer dans un calendrier pour lire un rendez-vous de demain. Le
+    // point médian est parti avec la ligne partagée.
+    expect(carte.getByTestId('moment-d-1')).toHaveTextContent(/tomorrow at /);
   });
 
   it('et sans limite servie, la ligne de limite ne s’invente pas', async () => {
