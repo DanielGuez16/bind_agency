@@ -1,7 +1,11 @@
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
 # dependencies
-node_modules/
+# **Sans la barre oblique, pour attraper aussi un lien symbolique.**
+# `node_modules/` ne vise que les répertoires ; un lien vers le dossier
+# d'un autre clone est un blob pour git, et il a été commité — un chemin
+# absolu de la machine d'un développeur s'est retrouvé sur `main`.
+node_modules
 
 # Expo
 .expo/
