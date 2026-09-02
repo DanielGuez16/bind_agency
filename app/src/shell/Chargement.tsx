@@ -56,8 +56,20 @@ import { radius, useColors } from '../theme';
  * prête avant, l'écran part avant — le repos se coupe, jamais le mouvement.
  * C'est pourquoi ce nombre est un plafond et `MOUVEMENT` un plancher, ce qui
  * renverse une seconde fois le sens de cette constante.
+ *
+ * **Porté de 2 400 à 4 800 le 2026-09-01, et ce que cela change est étroit.**
+ * L'ouverture restait jugée trop courte. Mais ce plafond ne se joue que si
+ * l'application **n'est pas prête** : prête, l'écran cède à `MOUVEMENT`, et
+ * `peutCeder(MOUVEMENT, true)` le dit noir sur blanc. Le doubler allonge donc
+ * l'ouverture d'un démarrage lent, jamais celle d'un démarrage tiède.
+ *
+ * Ce qui se ressent reste le mouvement, et il est borné ailleurs : la chute du
+ * point tient sous les 700 ms qui la séparent d'une mascotte. Rallonger le
+ * ressenti demanderait donc de reprendre le mouvement avec Design, pas de
+ * pousser ce nombre — et c'est pour cela qu'il est écrit ici plutôt que
+ * découvert deux fois.
  */
-export const DUREE_DE_L_OUVERTURE = 2400;
+export const DUREE_DE_L_OUVERTURE = 4800;
 
 /**
  * L'instant du lancement, figé au chargement du module.
@@ -176,8 +188,9 @@ export const PLAFOND_MS = MOUVEMENT;
  *
  * Il ne se joue que si l'application n'est pas prête, et il se coupe dès
  * qu'elle l'est. On ne le compte plus comme de la durée — il ne s'en perçoit
- * rien — mais il reste borné : neuf cents millièmes, au-delà desquels on part
- * de toute façon.
+ * rien — mais il reste borné : trois secondes trois, au-delà desquelles on part
+ * de toute façon. **Dérivé, jamais écrit à la main** : le plafond bouge, la
+ * marge suit, et les deux ne peuvent pas se contredire.
  */
 export const REPOS = DUREE_DE_L_OUVERTURE - MOUVEMENT;
 
