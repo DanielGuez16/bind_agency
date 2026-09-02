@@ -8,7 +8,7 @@
  * la même chose : la première question doit être laquelle des deux, et la
  * réponse doit s'accompagner de ce qu'elle engage.
  *
- * **Trois points concrets par porte, pas un argumentaire.** Ce qu'on ouvre, ce
+ * **Une porte se nomme, elle ne se plaide pas.** Ce qu'on ouvre, ce
  * qu'on donne, ce qu'on ne donne pas. « Aucune commission, aucun abonnement »
  * en dit plus long à un salon que n'importe quelle promesse d'audience.
  *
@@ -40,7 +40,6 @@ type Porte = {
   teinte: ColorName;
   etiquette: string;
   promesse: string;
-  points: string[];
   action: string;
   testID: string;
 };
@@ -69,7 +68,6 @@ export function ChoixDeLaPorte({
       teinte: 'brand.700',
       etiquette: t('auth.roleCreator'),
       promesse: t('auth.porteCreateur'),
-      points: [t('auth.porteCreateurA'), t('auth.porteCreateurB'), t('auth.porteCreateurC')],
       action: t('auth.porteCreateurAction'),
       testID: 'porte-createur',
     },
@@ -78,7 +76,6 @@ export function ChoixDeLaPorte({
       teinte: 'ink.mute',
       etiquette: t('auth.roleMerchant'),
       promesse: t('auth.porteCommerce'),
-      points: [t('auth.porteCommerceA'), t('auth.porteCommerceB'), t('auth.porteCommerceC')],
       action: t('auth.porteCommerceAction'),
       testID: 'porte-commerce',
     },
@@ -157,38 +154,24 @@ export function ChoixDeLaPorte({
               </Texte>
             </View>
 
-            <View style={{ gap: spacing['space.3'], flex: 1 }}>
-              {porte.points.map((point, rang) => (
-                <View key={point} style={{ flexDirection: 'row', gap: spacing['space.2'] }}>
-                  {/* La coche est en teinte et non en sourd : elle est le seul
-                      signe qui relie les trois lignes, et une coche grise sur
-                      une colonne de 171 points disparaît. */}
-                  <View style={{ marginTop: 4 }}>
-                    <Icone nom="coche" couleur="brand.700" taille={17} />
-                  </View>
-                  {/* **En légende sous le seuil, en corps au-dessus.** Mesuré
-                      sur 390 × 844 : en corps, les trois promesses du créateur
-                      descendaient 68 points sous le haut du bouton et se
-                      dessinaient par-dessus. La colonne fait 171 points — dix-
-                      neuf caractères par ligne en corps de 16 — et c'est elle
-                      qui décide, pas la longueur du texte.
+            {/* **Les trois promesses par porte sont parties, et le retour
+                était « on ne voit rien ».** Chaque carte portait une étiquette,
+                une promesse, **trois phrases** de douze à quinze mots et un
+                bouton : une cinquantaine de mots par porte, sur l'écran qui a
+                deux secondes pour dire ce qu'est BIND. Le texte s'était mis à
+                défendre le produit au lieu de le nommer.
 
-                      Ce n'est pas une réduction pour faire tenir : c'est le
-                      rôle que ce texte a déjà partout ailleurs dans le
-                      produit, une ligne d'appui sous un titre de 22. Sur un
-                      grand écran la colonne est large, la contrainte n'existe
-                      pas, et le corps reste. */}
-                  <Texte
-                    variante={large ? 'type.body' : 'type.caption'}
-                    couleur="ink.soft"
-                    style={{ flex: 1 }}
-                    testID={`${porte.testID}-promesse-${rang}`}
-                  >
-                    {point}
-                  </Texte>
-                </View>
-              ))}
-            </View>
+                La règle de cet écran n'a jamais changé : deux portes, des
+                intitulés courts, gros, un seul aplat orange, et ça tient sans
+                défiler. Ce qui reste dit qui vous êtes et ce que vous y faites.
+                Le reste appartient aux écrans d'inscription, où quelqu'un a
+                décidé de lire.
+
+                Un détail emporté avec elles, et il valait à lui seul la coupe :
+                la troisième ligne du commerce annonçait « no subscription »
+                alors que l'abonnement du commerce est le seul revenu du
+                produit. */}
+            <View style={{ flex: 1 }} />
 
             {/* **Un seul aplat orange pour deux portes de poids égal.** Le rôle
                 créateur est celui qu'on attend en masse ; la porte commerce a

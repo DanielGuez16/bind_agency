@@ -83,17 +83,17 @@ test("les promesses ne passent pas sous les boutons, sur un téléphone", async 
     const cadreDuBouton = await bouton.boundingBox();
     expect(cadreDuBouton, `le bouton ${role} n'a pas de cadre`).not.toBeNull();
 
-    // Chaque ligne de promesse, comparée au haut du bouton. Un chevauchement
-    // d'un seul point est déjà le défaut : c'est ce que l'œil voit.
-    for (const rang of [0, 1, 2]) {
-      const promesse = carte.getByTestId(`${repere}-promesse-${rang}`);
-      const cadre = await promesse.boundingBox();
-      expect(cadre, `la promesse ${rang} de ${role} n'a pas de cadre`).not.toBeNull();
-      expect(
-        cadre!.y + cadre!.height,
-        `la promesse ${rang} de ${role} descend sous le haut du bouton`,
-      ).toBeLessThanOrEqual(cadreDuBouton!.y + 1);
-    }
+    // **L'intitulé, comparé au haut du bouton.** Les trois lignes de promesse
+    // ont été retirées — « on ne voit rien » — et la garde suit ce qui reste :
+    // le rôle est le seul texte de la carte, et il ne doit pas passer sous le
+    // bouton. Un chevauchement d'un seul point est déjà le défaut.
+    const role_ = carte.getByTestId(`${repere}-role`);
+    const cadre = await role_.boundingBox();
+    expect(cadre, `l'intitulé de ${role} n'a pas de cadre`).not.toBeNull();
+    expect(
+      cadre!.y + cadre!.height,
+      `l'intitulé de ${role} descend sous le haut du bouton`,
+    ).toBeLessThanOrEqual(cadreDuBouton!.y + 1);
   }
 });
 
@@ -168,9 +168,9 @@ test.describe('en espagnol, qui est plus long', () => {
 
     // La garde regarde bien de l'espagnol : sans cela, une bascule de langue
     // qui cesserait de fonctionner rendrait ce test identique au précédent.
-    await expect(accueil.getByTestId('porte-createur-promesse-0')).not.toHaveText(
-      /Nails, hair, facials/i,
-    );
+    // La garde regarde bien de l'espagnol : l'intitulé du rôle est le texte qui
+    // reste sur la carte, et « A creator » n'y a plus sa place.
+    await expect(accueil.getByTestId('porte-createur-role')).not.toHaveText(/A creator/i);
 
     const portes = [
       { role: 'creator', carte: 'porte-createur' },
@@ -182,14 +182,12 @@ test.describe('en espagnol, qui est plus long', () => {
       const cadreDuBouton = await accueil.getByTestId(`choisir-${role}`).boundingBox();
       expect(cadreDuBouton, `le bouton ${role} n'a pas de cadre`).not.toBeNull();
 
-      for (const rang of [0, 1, 2]) {
-        const cadre = await carte.getByTestId(`${repere}-promesse-${rang}`).boundingBox();
-        expect(cadre, `la promesse ${rang} de ${role} n'a pas de cadre`).not.toBeNull();
-        expect(
-          cadre!.y + cadre!.height,
-          `la promesse ${rang} de ${role} descend sous le haut du bouton`,
-        ).toBeLessThanOrEqual(cadreDuBouton!.y + 1);
-      }
+      const cadre = await carte.getByTestId(`${repere}-role`).boundingBox();
+      expect(cadre, `l'intitulé de ${role} n'a pas de cadre`).not.toBeNull();
+      expect(
+        cadre!.y + cadre!.height,
+        `l'intitulé de ${role} descend sous le haut du bouton`,
+      ).toBeLessThanOrEqual(cadreDuBouton!.y + 1);
     }
   });
 });
