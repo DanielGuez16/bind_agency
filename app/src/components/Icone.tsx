@@ -161,6 +161,17 @@ function Instagram({ trait, taille, epaisseur }: { trait: string; taille: number
   );
 }
 
+/**
+ * Les glyphes qui portent une rotation, **et elle vient des primitives**.
+ *
+ * Le fichier de primitives pose un champ `transform` à côté du tracé ; le
+ * dériver ici en degrés est la seule traduction, la valeur reste la sienne.
+ * Un glyphe absent de cette table ne tourne pas.
+ */
+const ROTATION: Partial<Record<NomIcone, number>> = {
+  retour: 180,
+};
+
 export function Icone({
   nom,
   couleur = 'ink.default',
@@ -212,6 +223,20 @@ export function Icone({
       ) : (
       <Path
         d={CHEMINS[nom]}
+        /**
+         * **La rotation fait partie du glyphe, pas de son emploi.**
+         *
+         * `retour` est « la flèche de l'avancée, retournée » : les primitives
+         * portent le même tracé que `fleche` **plus** un `transform`. En
+         * copiant le tracé sans le champ, j'ai rendu une flèche de retour qui
+         * pointait à droite sur tout le produit — et ma propre garde est passée
+         * au vert, puisqu'elle ne comparait que `d`.
+         *
+         * Design a fait exactement la même erreur dans son lecteur de
+         * primitives, le même jour : un fichier de primitives ne sert à rien si
+         * celui qui le lit en ignore un champ.
+         */
+        transform={ROTATION[nom] ? `rotate(${ROTATION[nom]} 12 12)` : undefined}
         // Plein : le trait reste, de la même couleur. Sans lui, le glyphe
         // maigrit d'un demi-point au remplissage et le cœur paraît sauter.
         fill={rempli ? trait : 'none'}

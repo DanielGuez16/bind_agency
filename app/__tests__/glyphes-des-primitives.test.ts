@@ -21,6 +21,31 @@ const PRIMITIVES = JSON.parse(
 
 const SOURCE = readFileSync(join(RACINE, 'app', 'src', 'components', 'Icone.tsx'), 'utf-8');
 
+/**
+ * Les rotations déclarées par le produit, en degrés.
+ *
+ * **Le champ `transform` fait partie du glyphe**, et ne pas le lire est la
+ * façon exacte dont cette garde a laissé passer un défaut le jour où elle est
+ * née : `retour` est « la flèche de l'avancée, retournée », donc son tracé est
+ * celui de `fleche` et c'est la rotation qui fait la différence. Copié sans
+ * elle, le retour pointait à droite sur tout le produit — et la comparaison des
+ * seuls tracés restait verte.
+ */
+function rotationsDuProduit(): Record<string, number> {
+  const bloc = /const ROTATION[^=]*=\s*\{([^}]*)\}/s.exec(SOURCE);
+  if (!bloc) return {};
+  return Object.fromEntries(
+    [...bloc[1].matchAll(/(\w+):\s*(\d+)/g)].map((m) => [m[1], Number(m[2])]),
+  );
+}
+
+/** Les degrés que la primitive prescrit, ou zéro. */
+function rotationAttendue(clef: string): number {
+  const brut = (PRIMITIVES[clef] as { transform?: string }).transform;
+  const degres = brut ? /rotate\((-?\d+)/.exec(brut) : null;
+  return degres ? Number(degres[1]) : 0;
+}
+
 /** Le nom du glyphe dans le produit, et sa clé dans les primitives. */
 const CORRESPONDANCE: [string, string][] = [
   ['chevron', 'chevron'],
@@ -59,5 +84,20 @@ describe('les glyphes sont copiés, jamais retapés', () => {
     const attendu = Array.isArray(declare) ? declare.join(' ') : declare;
 
     expect(produit[nom]).toBe(attendu);
+  });
+
+  it.each(CORRESPONDANCE)('%s tourne comme sa primitive le dit', (nom, clef) => {
+    // **L'autre moitié du glyphe.** Deux tracés identiques et une rotation qui
+    // diffère font deux glyphes différents — c'est le cas de `fleche` et
+    // `retour`, dont le `d` est le même.
+    expect(rotationsDuProduit()[nom] ?? 0).toBe(rotationAttendue(clef));
+  });
+
+  it('et au moins un glyphe tourne, sinon la garde ne compare rien', () => {
+    // Sans ce compte, une table de rotations vide passerait les cas ci-dessus
+    // pour tout glyphe dont la primitive n'en porte pas — c'est-à-dire presque
+    // tous, ce qui rendrait la comparaison verte à vide.
+    expect(Object.keys(rotationsDuProduit()).length).toBeGreaterThan(0);
+    expect(rotationAttendue('retour')).toBe(180);
   });
 });
