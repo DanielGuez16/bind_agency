@@ -1280,13 +1280,18 @@ async def _la_journee_de_chaque_salon(
         # quoi ne pas être vides. `ampleur` s'applique aux deux moitiés.
         ampleur = 4 if business.name == OCEAN else 1
 
-        # **Combien de jours de la semaine portent une décision.**
+        # **Combien de jours portent une décision, sur la quinzaine.**
         #
         # Distinct de `ampleur`, qui règle la densité d'une journée : ici c'est
-        # l'étalement. Le salon d'ouverture en porte quatre — de quoi lire une
-        # bande d'un coup d'œil —, les autres deux, assez pour qu'aucun ne
-        # s'ouvre sur une semaine à une seule barre.
-        ampleur_des_decisions = 4 if business.name == OCEAN else 2
+        # l'étalement. Doublé pour que la démonstration tienne deux semaines —
+        # « Your days » montre sept jours **glissants**, donc un jeu concentré
+        # sur la première semaine laisse un écran vide au huitième jour, sans
+        # que rien ne prévienne.
+        #
+        # Répartis sur toute la fenêtre et non sur ses premiers jours : voir
+        # `_un_par_jour`. Huit sur quinze donnent une décision un jour sur deux,
+        # donc toute fenêtre de sept jours en contient trois ou quatre.
+        ampleur_des_decisions = 8 if business.name == OCEAN else 4
 
         # **Le passé, étalé plutôt que groupé.** Prendre les premiers créneaux
         # mettrait tout à l'ouverture ; on prélève à intervalle régulier pour
@@ -1337,7 +1342,12 @@ async def _la_journee_de_chaque_salon(
                 # montre, et donne au semis de quoi travailler chez les salons
                 # les plus contraints — ceux, précisément, qu'une démonstration
                 # ne doit pas laisser vides.
-                horizon=timedelta(days=7),
+                # **Quinze jours, pour que la bande tienne deux semaines.**
+                # Sept suffisaient tant que la démonstration se faisait le jour
+                # du semis ; « Your days » en montre sept glissants, donc au
+                # huitième jour la fenêtre ne voyait plus que du vide. Le
+                # quinzième est là pour que le quatorzième soit atteignable.
+                horizon=timedelta(days=15),
             )
         ]
         heures_passees = _repartir(
@@ -1412,7 +1422,20 @@ def _un_par_jour(creneaux: list[datetime], fuseau: ZoneInfo, combien: int) -> li
     par_jour: dict[date, datetime] = {}
     for creneau in sorted(creneaux):
         par_jour.setdefault(creneau.astimezone(fuseau).date(), creneau)
-    return [par_jour[jour] for jour in sorted(par_jour)[:combien]]
+
+    jours = sorted(par_jour)
+    if combien >= len(jours):
+        return [par_jour[jour] for jour in jours]
+
+    # **Étalés sur toute la fenêtre, et non pris au début.** Prendre les
+    # `combien` premiers jours remplissait la première semaine et laissait la
+    # seconde vide : une démonstration ouverte au huitième jour trouvait une
+    # bande de sept jours sans un seul chiffre. Le pas couvre du premier jour au
+    # dernier, bornes comprises.
+    if combien == 1:
+        return [par_jour[jours[0]]]
+    pas = (len(jours) - 1) / (combien - 1)
+    return [par_jour[jours[round(rang * pas)]] for rang in range(combien)]
 
 
 async def _heures_deja_passees(
