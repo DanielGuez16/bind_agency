@@ -111,3 +111,44 @@ it('nomme et chiffre la formule en cours', async () => {
   // Et pas celle qu'on n'a pas prise.
   expect(screen.getByTestId('formule-nom')).not.toHaveTextContent('Studio');
 });
+
+it('propose les autres formules à un abonné, et pas la sienne', async () => {
+  /**
+   * **Le renversement.** L'écran masquait la grille à un abonné — « il l'a déjà
+   * choisie » —, ce qui était vrai tant que changer était impossible : la seule
+   * sortie était de résilier d'abord, donc d'accepter de n'avoir plus rien pour
+   * espérer avoir autre chose.
+   *
+   * Le décor souscrit **la première** des deux formules : un écran qui
+   * masquerait la dernière de la liste, ou qui les montrerait toutes, passerait
+   * un décor à un seul plan.
+   */
+  await render(
+    <I18nProvider initialLocale="en">
+      <ThemeProvider role="merchant">
+        <ApiProvider
+          client={
+            new ApiClient({
+              baseUrl: 'https://api.test',
+              coffre: { lire: async () => null, ecrire: async () => {} },
+              fetchImpl: (async (url: RequestInfo | URL) => ({
+                ok: true,
+                status: 200,
+                json: async () => (String(url).includes('/plans') ? PLANS : ABONNEMENT),
+              })) as never,
+            })
+          }
+        >
+          <AbonnementScreen businessId="b1" />
+        </ApiProvider>
+      </ThemeProvider>
+    </I18nProvider>,
+  );
+
+  await waitFor(() => expect(screen.getByTestId('plans-souscriptibles')).toBeTruthy());
+  // L'autre formule s'offre…
+  expect(screen.getByTestId('souscrire-p2')).toBeTruthy();
+  // …et celle qu'on a déjà ne porte pas de bouton, qui partirait chercher un refus.
+  expect(screen.queryByTestId('souscrire-p1')).toBeNull();
+  expect(screen.getByTestId('formule-actuelle-p1')).toBeTruthy();
+});

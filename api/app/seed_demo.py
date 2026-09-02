@@ -2090,8 +2090,14 @@ async def abonner_les_commerces(session: AsyncSession) -> int:
     #:
     #: Les autres n'en ont pas, et c'est voulu — l'écran des plans doit montrer
     #: un plan que personne n'a pris.
+    #: **Le second se choisit dans une catégorie qui a des plans.** Il était
+    #: pris au premier venu, et c'est ce qui abonnait un salon d'activité
+    #: familiale à un plan de beauté — la seule catégorie tarifée. Le prendre
+    #: au hasard revenait à parier qu'il serait de la bonne, et le pari était
+    #: perdu.
+    categories_tarifees = {p.category for p in plans}
     abonnes = [b for b in actifs if b.name == OCEAN]
-    abonnes += [b for b in actifs if b.name != OCEAN][:1]
+    abonnes += [b for b in actifs if b.name != OCEAN and b.category in categories_tarifees][:1]
 
     provider = get_billing_provider()
     poses = 0
