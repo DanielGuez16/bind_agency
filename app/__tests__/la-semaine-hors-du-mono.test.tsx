@@ -91,7 +91,10 @@ it('déplace le nœud, il ne vide pas le jeton', async () => {
   expect(tokens.type.data.family).toBe('IBM Plex Mono');
   expect(tokens.type.dataLabel.family).toBe('IBM Plex Mono');
 
+  // **La capacité a quitté la rangée en v13** : elle se règle en ouvrant le
+  // jour. Ce qui reste à éprouver du mono sur cette table est la date des
+  // exceptions, qui y était et n'y est plus — elle dit un jour, pas un code.
   await monter();
-  const postes = screen.getByTestId('postes-1');
-  expect(estMono(famille(postes))).toBe(false);
+  const jour = screen.getByTestId('horaires-1');
+  expect(estMono(famille(jour))).toBe(false);
 });

@@ -29,6 +29,7 @@ import {
   Button,
   SkeletonLignes,
   StatusMessage,
+  Icone,
   Stepper,
   Texte,
   TextField,
@@ -144,7 +145,15 @@ export function HorairesScreen({
  * sans rien couper, une ellipse l'aurait donné en perdant la fin du mot.
  */
 const LARGEUR_DU_JOUR = 104;
-const LARGEUR_DES_FAUTEUILS = 48;
+
+/**
+ * La hauteur d'une rangée, **la même dans les deux tables**.
+ *
+ * Les horaires et les exceptions disent la même chose — un jour, et ce qui s'y
+ * passe — et portaient deux échelles. Ce qui les distingue est leur intertitre,
+ * pas leur typographie.
+ */
+const HAUTEUR_DE_RANGEE = 60;
 
 /**
  * Les chiffres alignés en colonne. **Sur les valeurs, jamais sur le jeton.**
@@ -228,20 +237,26 @@ function LigneDeJour({
         accessibilityRole="button"
         accessibilityLabel={libelle}
         style={({ pressed }) => ({
-          minHeight: 60,
+          minHeight: HAUTEUR_DE_RANGEE,
           paddingHorizontal: 16,
           flexDirection: 'row',
           alignItems: 'center',
-          gap: 12,
+          gap: 14,
           borderBottomWidth: 1,
           borderBottomColor: c['line.default'],
+          // **Le jour fermé garde sa ligne, en fond retiré.** Le retirer ferait
+          // une semaine à cinq lignes où l'on chercherait le jeudi. Le fond
+          // était superflu tant qu'une cellule vide le disait déjà ; la colonne
+          // des fauteuils partie, il redevient le seul signe.
+          ...(regle ? null : { backgroundColor: c['bg.page'] }),
           opacity: pressed ? 0.7 : 1,
         })}
       >
-        {/* **104 points, mesurés et non donnés.** Un tableau ne se compose pas
-            en posant des largeurs : il se compose sur la plus longue valeur de
-            chaque colonne, dans les deux langues. « Wednesday » en demande 93,
-            « miércoles » davantage — 92 les coupait tous les deux. */}
+        {/* **104 points, mesurés et non donnés.** Un tableau se compose sur la
+            plus longue valeur de chaque colonne, dans les deux langues :
+            « Wednesday » en demande 93, « miércoles » davantage. La même
+            largeur sert aux exceptions — c'est ce qui fait des deux tables une
+            seule grammaire. */}
         <Texte
           variante="type.bodyStrong"
           couleur={regle ? 'ink.default' : 'ink.mute'}
@@ -252,10 +267,13 @@ function LigneDeJour({
 
         <View style={{ flex: 1, minWidth: 0 }}>
           {regle ? (
-            /* **L'amplitude en chiffres tabulaires et sans retour**, pour que
-               les sept mesurent pareil et qu'aucune ne passe à la ligne. Elle
-               reste hors du mono : une amplitude est une phrase brève entre
-               deux heures, pas un identifiant. */
+            /* **L'amplitude en chiffres tabulaires**, pour que les sept mesurent
+               pareil. Elle reste hors du mono : une amplitude est une phrase
+               brève entre deux heures, pas un identifiant.
+
+               **Et la capacité n'y est plus.** L'exposer sur chaque ligne
+               demandait de tenir deux idées par jour ; elle se règle en ouvrant
+               le jour, où la phrase peut être entière. */
             <Texte
               variante="type.body"
               couleur="ink.default"
@@ -276,24 +294,13 @@ function LigneDeJour({
           )}
         </View>
 
-        {/* **La capacité reste, et change de mot.** Sans elle, un salon ne peut
-            pas dire qu'il prend deux créatrices le mardi et quatre le samedi, et
-            le produit accepterait des réservations qu'il ne peut pas honorer.
-            C'est la seule donnée de cet écran qui le protège plutôt que de le
-            décrire. Le défaut était la formulation — « creators at once »
-            nommait un concept d'ingénieur, « chairs » nomme un objet qu'un salon
-            voit dans sa pièce — et le mot passe dans l'en-tête, donc il est dit
-            une fois au lieu de sept.
-
-            **Un jour fermé laisse sa cellule vide** : « Closed » le dit déjà. */}
-        <Texte
-          variante="type.bodyStrong"
-          align="right"
-          style={{ width: LARGEUR_DES_FAUTEUILS, ...TABULAIRE }}
-          testID={`postes-${jour}`}
-        >
-          {regle ? String(regle.concurrent_slots) : ''}
-        </Texte>
+        {/* **Une marque, pas une cible.** La v12 l'avait retiré parce que sept
+            chevrons répétaient sept fois la même promesse ; ce qu'elle visait
+            est la redondance de promesse, et elle ne revient pas : la rangée
+            entière reste la seule zone cliquable, rien d'autre dedans ne l'est.
+            C'est le mot que `primitives.json` emploie pour le glyphe de sortie,
+            et le motif déjà admis pour la pilule de profil. */}
+        <Icone nom="chevron" couleur="ink.soft" taille={20} />
       </Pressable>
 
       {ouvert ? (
@@ -373,7 +380,9 @@ function Exceptions({
 
   return (
     <View style={{ gap: 8 }} testID="exceptions">
-      <Texte variante="type.label">{t('composition.exceptions')}</Texte>
+      <Texte variante="type.label" couleur="ink.soft">
+        {t('composition.exceptions').toUpperCase()}
+      </Texte>
 
       {exceptions.length === 0 ? (
         <Texte variante="type.caption" couleur="ink.mute" testID="aucune-exception">
@@ -383,11 +392,27 @@ function Exceptions({
         exceptions.map((exception) => (
           <View
             key={exception.id}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}
+            style={{
+              minHeight: HAUTEUR_DE_RANGEE,
+              paddingHorizontal: 16,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 14,
+              borderBottomWidth: 1,
+              borderBottomColor: c['line.default'],
+            }}
             testID={`exception-${exception.id}`}
           >
-            <Texte variante="type.data" style={{ flex: 1 }}>
-              {formatJour(exception.date, locale)} · {t('composition.ferme')}
+            {/* **La même colonne de 104, la même graisse, la même hauteur.**
+                Les deux tables disent un jour et ce qui s'y passe ; elles
+                portaient deux échelles, et le mono faisait de la date une
+                donnée là où c'est une phrase. Ce qui les distingue est leur
+                intertitre, pas leur typographie. */}
+            <Texte variante="type.bodyStrong" style={{ width: LARGEUR_DU_JOUR }}>
+              {formatJour(exception.date, locale)}
+            </Texte>
+            <Texte variante="type.body" couleur="ink.mute" style={{ flex: 1, minWidth: 0 }}>
+              {t('composition.ferme')}
             </Texte>
             <Button
               label={t('composition.retirer')}
@@ -492,20 +517,21 @@ export function HorairesDuCommerce({
                 lignes répétaient six fois la définition d'une colonne : « 2
                 creators at once » portait à la fois la valeur et son
                 explication. Dit en tête, le mot ne se redit pas. */}
-            <Texte variante="type.caption" couleur="ink.soft" testID="capacite-explication">
+            <Texte variante="type.body" couleur="ink.soft" testID="capacite-explication">
               {t('composition.capaciteExplication')}
+            </Texte>
+            <Texte variante="type.label" couleur="ink.soft">
+              {t('composition.sectionChaqueSemaine').toUpperCase()}
             </Texte>
             <View
               testID="entete-du-tableau"
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                gap: 12,
+                gap: 14,
                 height: 40,
                 paddingHorizontal: 16,
                 backgroundColor: c['bg.page'],
-                // Un filet plus marqué que celui des rangées : c'est lui qui
-                // sépare les libellés des valeurs.
                 borderBottomWidth: 1,
                 borderBottomColor: c['line.strong'],
               }}
@@ -515,14 +541,6 @@ export function HorairesDuCommerce({
               </Texte>
               <Texte variante="type.label" couleur="ink.soft" style={{ flex: 1, minWidth: 0 }}>
                 {t('composition.colonneOuvert').toUpperCase()}
-              </Texte>
-              <Texte
-                variante="type.label"
-                couleur="ink.soft"
-                align="right"
-                style={{ width: LARGEUR_DES_FAUTEUILS }}
-              >
-                {t('composition.colonneFauteuils').toUpperCase()}
               </Texte>
             </View>
             {JOURS.map((cle, jour) => (

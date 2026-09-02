@@ -836,7 +836,6 @@ describe('les surfaces de la v1.1', () => {
       // La carte d'un plan souscriptible : elle se pose sur la page comme
       // une carte, donc elle porte l'ombre comme une carte.
       'src/screens/AbonnementScreen.tsx',
-      'src/screens/AnnuaireScreen.tsx',
       // **Les deux surfaces de l'audience v3, et une contradiction tranchée
       // ici.** La planche oppose « une carte à ombre » pour un compte
       // connecté à « une ligne à filet » pour un compte à connecter, la forme

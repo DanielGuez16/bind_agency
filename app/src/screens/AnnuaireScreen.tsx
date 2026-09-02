@@ -504,6 +504,9 @@ function Grille({ children }: { children: React.ReactNode }) {
  * atténuée, le tri l'a déjà mise en fin de liste, et l'effacer reviendrait à
  * cacher la moitié du marché que l'abonnement fait voir.
  */
+/** Le côté de l'avatar, rond : une photo de profil arrive ronde. */
+const AVATAR = 56;
+
 function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
   const { api } = useApi();
   const { t, locale } = useI18n();
@@ -523,163 +526,120 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
     createur.comptes.find((compte) => compte.avatar_key)?.avatar_key ?? null,
   );
 
-  const compte = createur.comptes.find((c) => c.followers !== null) ?? createur.comptes[0];
+  /**
+   * Le compte qui mène quelque part, et le seul geste de la ligne.
+   *
+   * **Aucun compte d'abonnés.** La table des retraits l'a tranché en v9 :
+   * l'audience appartient à la fiche qu'on ouvre pour décider, pas à une liste
+   * qu'on parcourt. Ce qui sert ici est de savoir *sur quel réseau* et *où ça
+   * mène*.
+   */
+  const profil = createur.comptes.find((compte) => compte.profil_url) ?? null;
+
+  // « Wynwood, 320 m » : la virgule et non le point médian, qui est le
+  // séparateur de champs — la ville et la distance forment une seule situation.
+  const situation = [
+    createur.city,
+    createur.distance_metres === null ? null : formatDistance(createur.distance_metres, locale),
+  ]
+    .filter(Boolean)
+    .join(', ');
 
   return (
-    // **Le contour d'encre dit « celle-ci peut réserver chez vous ».** C'est le
-    // seul trait de la grille, et il porte le premier critère du tri — la même
-    // grammaire qu'aux réservations, où l'encre marque ce qui engage. Les
-    // autres gardent le filet clair : présentes, pas mises en avant.
-    //
-    // L'ombre suit la règle du système : « un coin de 18 px sans ombre flotte
-    // au lieu de se poser », passation §2. La planche dessine les cartes à
-    // plat ; le produit ne le fait nulle part ailleurs, et une grille qui
-    // flotte au milieu d'écrans qui se posent se remarque plus que la fidélité.
-    //
-    // **Les commentaires sont ici et non dans le bloc de style, et ce n'est pas
-    // cosmétique.** L'inventaire des cartes lit un bloc sur neuf cents
-    // caractères ; quatre lignes de prose à l'intérieur ont suffi à faire
-    // sortir cette carte de l'inventaire — sans erreur, sans avertissement, la
-    // garde cessant simplement de la voir. Le trou est documenté dans
-    // `TASKS.md` ; en attendant, la prose reste dehors.
-    <View
+    /**
+     * **Une ligne, et l'avatar y est rond.** Une photo de profil arrive ronde ;
+     * la poser dans un cadre carré de 132 la recadrait en la coupant — la
+     * composition imposait une forme au lieu de la recevoir. Un cercle de 56 en
+     * tête de ligne la reçoit entière, et six créatrices tiennent là où deux
+     * cartes tenaient.
+     *
+     * **La ligne entière est la cible, et rien d'autre dedans ne l'est.** Le
+     * geste de cet écran est unique — aller voir son travail chez elle — et
+     * c'est ce qui permet aux deux glyphes de droite de n'être que des marques.
+     */
+    <Pressable
       testID={`createur-${createur.creator_id}`}
-      style={{
-        borderRadius: radius['radius.lg'],
-        backgroundColor: c['bg.surface'],
-        overflow: 'hidden',
-        borderWidth: createur.peut_reserver_ici ? 1.5 : 1,
-        borderColor: createur.peut_reserver_ici ? c['line.solo'] : c['line.default'],
-        ...elevationDeCarte(),
-      }}
+      accessibilityRole={profil ? 'link' : undefined}
+      /**
+       * **Ce que le salon peut en faire, dit et non peint.**
+       *
+       * L'anneau d'encre porte le premier critère du tri à l'œil ; seul, il
+       * ferait reposer un état sur la couleur, ce que le produit refuse
+       * ailleurs. Le libellé le dit donc en toutes lettres — et il dit ce que
+       * *le salon* peut en faire, jamais le palier de la créatrice, qui est un
+       * fait de son compte et non de cette relation.
+       */
+      accessibilityLabel={[
+        nom,
+        situation,
+        t(createur.peut_reserver_ici ? 'annuaire.paliersOuverts' : 'annuaire.aucunPalier'),
+        profil ? t('annuaire.voirLeProfil', { reseau: nomDePlateforme(profil.platform) }) : null,
+      ]
+        .filter(Boolean)
+        .join(' — ')}
+      disabled={!profil}
+      onPress={() => profil && void Linking.openURL(profil.profil_url as string)}
+      style={({ pressed }) => ({
+        opacity: pressed ? 0.7 : 1,
+        minHeight: 76,
+        paddingVertical: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 14,
+        borderBottomWidth: 1,
+        borderBottomColor: c['line.default'],
+      })}
     >
+      {/* **Le cercle porte le premier critère du tri.** Le contour d'encre
+          disait « celle-ci peut réserver chez vous » sur la carte ; il tient le
+          même rôle sur l'anneau, sans coûter une ligne de texte par rangée. */}
       <View
         testID={`portrait-${createur.creator_id}`}
-        style={{ height: 132, backgroundColor: c['media.placeholder'] }}
+        style={{
+          width: AVATAR,
+          height: AVATAR,
+          borderRadius: radius['radius.pill'],
+          overflow: 'hidden',
+          backgroundColor: c['media.placeholder'],
+          borderWidth: createur.peut_reserver_ici ? 2 : 0,
+          borderColor: c['line.solo'],
+        }}
       >
-        <Photo
-          uri={portrait}
-          style={{ flex: 1 }}
-          testID={`photo-${createur.creator_id}`}
-        />
+        <Photo uri={portrait} style={{ flex: 1 }} testID={`photo-${createur.creator_id}`} />
       </View>
 
-      <View style={{ padding: 14, gap: 8 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 10 }}>
-          <Texte variante="type.bodyStrong" style={{ flex: 1, minWidth: 0 }} ellipseSurNomPropre>
-            {nom}
-          </Texte>
-          {/* **Nulle veut dire « on ne sait pas », jamais « loin ».** Un tiret
-              se lirait comme une absence de proximité ; la ligne se tait. */}
-          {createur.distance_metres !== null ? (
-            <Texte
-              variante="type.dataLabel"
-              couleur="ink.mute"
-              testID={`distance-${createur.creator_id}`}
-            >
-              {formatDistance(createur.distance_metres, locale)}
-            </Texte>
-          ) : null}
-        </View>
-
-        {/* **La ville avec la distance, comme la planche les pose.** « Wynwood ·
-            320 m » situe ; la distance seule ne dit pas de quel côté. Elle
-            manquait de ma première grille, et c'est la garde des champs servis
-            qui l'a dit — un champ que le serveur rend et que l'écran cesse de
-            lire est un défaut, pas une simplification. */}
-        {createur.city ? (
+      <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+        <Texte variante="type.bodyStrong" ellipseSurNomPropre>
+          {nom}
+        </Texte>
+        {/* **La ville avec la distance, jointes par une virgule.** « Wynwood »
+            situe, « 320 m » mesure : la distance seule ne dit pas de quel côté.
+            Nulle veut dire « on ne sait pas », jamais « loin » — la ligne se
+            tait alors plutôt que d'écrire un tiret. */}
+        {situation ? (
           <Texte
-            variante="type.caption"
+            variante="type.body"
             couleur="ink.soft"
+            ellipseSurNomPropre
             testID={`ville-${createur.creator_id}`}
           >
-            {createur.city}
+            {situation}
           </Texte>
         ) : null}
-
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
-          {compte ? (
-            <>
-              <Icone nom={compte.platform === 'tiktok' ? 'tiktok' : 'instagram'} taille={18} />
-              <Texte variante="type.dataLabel" style={{ flex: 1 }}>
-                {compte.followers === null
-                  ? nomDePlateforme(compte.platform)
-                  : formatNumber(compte.followers, locale)}
-              </Texte>
-            </>
-          ) : null}
-          {createur.peut_reserver_ici ? (
-            <Texte
-              variante="type.caption"
-              couleur="ink.soft"
-              testID={`peut-reserver-${createur.creator_id}`}
-            >
-              {t('annuaire.paliersOuverts')}
-            </Texte>
-          ) : null}
-        </View>
-
-        {createur.peut_reserver_ici ? null : (
-          <Texte
-            variante="type.caption"
-            couleur="ink.mute"
-            testID={`sans-palier-${createur.creator_id}`}
-          >
-            {t('annuaire.aucunPalier')}
-          </Texte>
-        )}
-
-        {/* Le pseudonyme mène au profil public : le seul geste de l'écran, et
-            il sort du produit — on va voir son travail chez elle. */}
-        {createur.comptes
-          .filter((c) => c.profil_url)
-          .map((c) => (
-            <Pressable
-              key={`${c.platform}-${c.handle}`}
-              accessibilityRole="link"
-              onPress={() => void Linking.openURL(c.profil_url as string)}
-              testID={`profil-${createur.creator_id}-${c.platform}`}
-              // **Toute la largeur, et 76 points de haut.** La cible ne
-              // prenait que le mot et son glyphe ; la ligne désigne déjà la
-              // même chose.
-              //
-              // Ce que la ligne porte est une **pilule**, pas du texte étiré :
-              // c'est l'étiquette visible de la ligne, à la forme que la
-              // planche donne aux deux écrans. Le libellé long reste, mais à
-              // la voix — « Open their Instagram » dit où l'on va, « Profile »
-              // suffit à l'œil quand le logo est à côté.
-              accessibilityLabel={t('annuaire.voirLeProfil', {
-                reseau: nomDePlateforme(c.platform),
-              })}
-              style={({ pressed }) => ({
-                opacity: pressed ? 0.7 : 1,
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'flex-end',
-                alignSelf: 'stretch',
-                minHeight: 76,
-              })}
-            >
-              <PiluleDeProfil
-                plateforme={c.platform}
-                libelle={t('common.profil')}
-                testID={`pilule-${createur.creator_id}-${c.platform}`}
-              />
-            </Pressable>
-          ))}
-
-        {/* **L'absence de contact se dit.** Un salon cherchera ce bouton — tous
-            les annuaires qu'il connaît en ont un — et ne rien dire le laisse
-            conclure au défaut. C'est l'inverse du score, qu'on tait justement
-            parce que personne ne le cherche. */}
-        <Texte
-          variante="type.caption"
-          couleur="ink.mute"
-          testID={`pas-de-contact-${createur.creator_id}`}
-        >
-          {t('annuaire.pasDeContact')}
-        </Texte>
       </View>
-    </View>
+
+      {/* **De quel réseau, puis où ça mène** : c'est l'ordre de lecture, et les
+          deux sont des marques. La cible est la rangée. */}
+      {profil ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <Icone
+            nom={profil.platform === 'tiktok' ? 'tiktok' : 'instagram'}
+            couleur="ink.default"
+            taille={20}
+          />
+          <Icone nom="sortie" couleur="ink.soft" taille={18} />
+        </View>
+      ) : null}
+    </Pressable>
   );
 }
