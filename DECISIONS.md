@@ -10871,6 +10871,17 @@ yeux au moment de trancher, où il encombrerait sans servir.
 **Ce qui rouvrirait la question** : une demande explicite venue de l'usage — un
 salon qui refuse ou accepte à l'aveugle et le dit. Pas une planche.
 
+**Et ce que rouvrir coûterait, précisé par `bind-agency-aa` après coup.** Le
+chiffre n'est pas seulement absent de l'écran, il est absent du **contrat** :
+`ReservationDuCommerce` porte vingt champs et aucun compteur d'audience —
+`creator_id`, `creator_handle`, `creator_partie`, `creator_profil_url`,
+`creator_avatar_key`, c'est-à-dire *qui* et rien d'autre. Le redessiner demande
+donc une route et un agrégat **avant la première ligne d'écran**, et c'est une
+raison de plus de ne pas le rouvrir sur une planche.
+
+Ce qui existe déjà est le chemin : la pilule « Profile » ouvre la fiche depuis la
+carte, en un geste, et les chiffres y sont.
+
 **Mais le vrai enseignement n'est pas l'arbitrage, c'est où il vivait.** Il
 n'existait que dans un commentaire de `JourneeScreen`, au-dessus du bloc
 concerné. Ni `DECISIONS.md`, ni la passation. Personne qui compose une planche ne
