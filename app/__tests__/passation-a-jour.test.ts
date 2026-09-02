@@ -80,6 +80,26 @@ function jetonsLivres(): Set<string> {
   return tous;
 }
 
+/**
+ * Le document, **moins la table des retraits**.
+ *
+ * **Une section dont le rôle est de nommer ce qui n'existe plus.** « 13 sexies.
+ * Retiré » liste un retrait par ligne avec la version qui l'a décidé, et deux
+ * de ces lignes sont des jetons supprimés — `size.listRow`, `userOverride`. Les
+ * citer y est le sujet, pas une erreur : la garde y crierait sur la seule
+ * section qui a le droit de les nommer.
+ *
+ * **La coupe s'arrête au titre suivant**, et non à la fin du fichier : une
+ * exclusion qui déborderait avalerait le reste du document, et la garde
+ * passerait au vert en n'inspectant plus rien. Le cas ci-dessous l'éprouve.
+ */
+export function horsTableDesRetraits(source: string): string {
+  const debut = source.indexOf('## 13 sexies. Retiré');
+  if (debut === -1) return source;
+  const suivant = source.indexOf('\n## ', debut + 1);
+  return suivant === -1 ? source.slice(0, debut) : source.slice(0, debut) + source.slice(suivant);
+}
+
 /** Les noms de jeton qu'un document cite entre accents graves. */
 function jetonsCites(source: string): string[] {
   const cites = [...source.matchAll(/`([A-Za-z][A-Za-z0-9]*(?:\.[A-Za-z0-9]+)+)`/g)].map(
@@ -92,7 +112,7 @@ describe('la passation nomme des jetons qui existent', () => {
   const livres = jetonsLivres();
 
   it.each(COURANTS)('%s ne cite aucun jeton disparu', (fichier) => {
-    const source = readFileSync(join(PASSATION, fichier), 'utf-8');
+    const source = horsTableDesRetraits(readFileSync(join(PASSATION, fichier), 'utf-8'));
 
     const fantomes = [...new Set(jetonsCites(source))].filter((nom) => !livres.has(nom));
 
@@ -129,5 +149,27 @@ describe('la passation nomme des jetons qui existent', () => {
     expect(jetonsCites('Les chips sont en `flexWrap`, et l’écran garde `expo-keep-awake`.')).toEqual(
       [],
     );
+  });
+});
+
+describe('la table des retraits est écartée, et elle seule', () => {
+  const DOC = [
+    '## 13 sexies. Retiré',
+    '| `size.listRow` | v1.1 | Deux jetons pour la même hauteur. |',
+    '',
+    '## 14. Interdits, inchangés',
+    'Le focus reste `line.fantome`.',
+    '',
+  ].join('\n');
+
+  it('laisse passer un jeton mort cité comme retiré', () => {
+    expect(horsTableDesRetraits(DOC)).not.toContain('size.listRow');
+  });
+
+  it('et garde tout ce qui suit, sinon elle n’inspecterait plus rien', () => {
+    // **Le sens qui compte.** Une coupe qui irait jusqu'à la fin du fichier
+    // ferait passer la garde au vert en vidant ce qu'elle lit — le mode d'échec
+    // que ce dépôt a déjà rencontré ailleurs, et qu'aucune relecture n'attrape.
+    expect(horsTableDesRetraits(DOC)).toContain('line.fantome');
   });
 });

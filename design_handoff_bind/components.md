@@ -280,6 +280,47 @@ la marque doit y apparaître, elle porte son cartouche d'encre.
 
 ---
 
+## 13 sexies. Retiré
+
+**Ce document dit ce que le système ajoute ; cette section dit ce qu'il a enlevé.**
+Cinq régressions en une soirée ont eu la même cause : une planche neuve repart
+d'une carte antérieure et réintroduit un élément qu'une passe suivante avait
+retiré. Un retrait ne laisse aucune trace dans le fichier qu'il vide, donc il
+faut le lire ici avant de recomposer un écran existant.
+
+Une ligne par retrait, la version qui l'a décidé, et la raison en une phrase.
+
+| Retiré | Où | Pourquoi |
+| --- | --- | --- |
+| Le compte d'abonnés sur une carte de décision | v9, commerce | Un visage et un lien disent **qui**, pas combien. L'audience appartient à la fiche qu'on ouvre pour décider. |
+| L'audience sur une ligne de liste | v7, commerce | Utile en agissant, inutile en parcourant. Le détail n'apparaît qu'au moment d'agir. |
+| Le bandeau « vous êtes en ligne » | v6, journée | Il confirmait un état permanent à quelqu'un qui ouvre l'écran pour agir, et occupait le tiers haut. |
+| L'historique du jour sur la journée | v7, commerce | Servi derrière un compte dans l'en-tête : ce qui est clos n'a pas à peser sur ce qui attend. |
+| La capacité du jour sur la journée | v7, commerce | Descendue sous `More`, avec la semaine type qu'elle modifie. La flèche qui la dépliait part avec elle. |
+| Les comptes sur les onglets de réservations | v10, créateur | Un chiffre sur un onglet est un appel permanent ; seul « to send » en mérite un, et la ligne d'aide le porte. |
+| La pastille « 1 saved » sur une carte de salon | v4, créateur | Une carte de salon contient quatre prestations : un cœur ou un compte y désignerait quoi ? |
+| Le point orange sur la porte des favoris | v3.1, créateur | Un point nu sur une porte se lit « non lu », donc il annonçait une notification non décidée. |
+| Le mono sur les dates et les durées | v8, partout | Une date est une phrase et se lit d'un bloc. `type.data` porte un code, un décompte, un seuil. |
+| Le serrage négatif sous 22 px | v8, partout | Il tient un display de 44 px ; à 22 et moins il ferme des contreformes déjà compactes. |
+| Les tirets cadratins | v8, partout | Remplacés **par le sens** : virgule pour une apposition, point pour deux phrases. Jamais par un point médian, qui est le séparateur de champs. |
+| Le tiret dans une cellule vide | v12, commerce | Un signe à interpréter, en `ink.faint` à 2,46:1. La cellule reste vide quand une autre colonne porte déjà le fait. |
+| Le chevron sur chaque ligne d'un tableau | v12, commerce | La rangée entière s'ouvre : sept chevrons répètent sept fois la même promesse. |
+| « MIAMI » sous le titre du fil | v9, créateur | Le fil est local par construction ; le nom de la ville n'informe personne. |
+| La vidéo de fond de l'accueil | v3, créateur | Quatre états à tenir pour un fond qui ne fait pas arriver plus vite au fil. |
+| Le bloc noir de la connexion de bureau | v3, créateur | Il expliquait le produit à la seule personne qui a déjà un compte. |
+| La signature « AGENCY » et « CRÉATEUR DE LIEN » | v1.0, marque | Le logotype seul suffit, et la seconde est en français quand BIND parle anglais et espagnol. |
+| Le sélecteur de période à zéro donnée | v3, rapports | Il n'y a aucune période à comparer. |
+| La recherche par pseudonyme dans l'annuaire | v3, commerce | Un salon ne connaît aucun pseudonyme : le champ ne sert qu'à qui sait déjà quoi taper. |
+| La suspension punitive | v0.7, produit | Le score de fiabilité couvre le cas, gradué et réversible, là où une suspension est binaire et engage des droits. |
+| `tiers.valueHint` | v0.7, créateur | Une valeur monétaire présentée à un créateur. |
+| `color.role.*`, `color.accent.*`, `color.tier.*` | v1.0, jetons | Trois jeux de teintes pour trois rôles : la matière encode le palier, la couleur ne le double pas. |
+| `userOverride` sur le thème | v1.1, jetons | Un interrupteur vers un second thème qui n'existe pas. |
+| `size.listRow` | v1.1, jetons | Deux jetons pour la même hauteur. |
+
+**Avant de recomposer un écran existant, lire cette table.** Un élément qui y
+figure ne revient que par une décision explicite qui l'y remplace, jamais par un
+copier-coller d'une planche antérieure.
+
 ## 14. Interdits, inchangés
 
 Deux graphiques autorisés et deux seulement (barres, évolution dans le temps).
