@@ -111,6 +111,13 @@ export function AbonnementScreen({
             {etat === 'actif' ? (
               <EtatCourant
                 abonnement={vue.abonnement as Abonnement}
+                // **La formule en cours, nommée et chiffrée.** L'écran servait
+                // « actif » et un bouton de résiliation, sans jamais dire quelle
+                // formule ni à quel prix : un commerce ne pouvait pas lire ce
+                // qu'il payait sur l'écran de ce qu'il paie. Le plan est dans la
+                // même réponse depuis toujours — `plan_id` d'un côté, la grille
+                // de l'autre — et personne ne les rapprochait.
+                plan={vue.plans.find((p) => p.id === vue.abonnement?.plan_id) ?? null}
                 onResilier={() =>
                   void agir('resilier', () => api.resilier(businessId))
                 }
@@ -222,10 +229,13 @@ export function AbonnementScreen({
 /** L'abonnement en cours : ce qu'il couvre, et comment on l'arrête. */
 function EtatCourant({
   abonnement,
+  plan,
   onResilier,
   envoi,
 }: {
   abonnement: Abonnement;
+  /** La formule en cours, ou nulle si la grille ne la porte plus. */
+  plan: PlanSouscriptible | null;
   onResilier: () => void;
   envoi: boolean;
 }) {
@@ -233,6 +243,29 @@ function EtatCourant({
 
   return (
     <View style={{ gap: 10 }} testID="abonnement-actif">
+      {/* **Le nom et le prix avant l'état.** « Actif » ne dit pas ce qu'on paie
+          ; c'est la première question qu'on se pose en ouvrant cet écran, et
+          c'était la seule à laquelle il ne répondait pas.
+
+          Nul quand la grille ne porte plus la formule — un plan retiré du
+          catalogue laisse ses abonnés en place, et taire la ligne vaut mieux
+          que d'écrire un nom inventé. */}
+      {plan ? (
+        <View
+          testID="formule-en-cours"
+          style={{ flexDirection: 'row', alignItems: 'baseline', gap: 12 }}
+        >
+          <Texte variante="type.bodyStrong" style={{ flex: 1 }} testID="formule-nom">
+            {plan.name}
+          </Texte>
+          <Texte variante="type.data" testID="formule-prix">
+            {montant(plan.price_cents, plan.currency, locale)}
+          </Texte>
+          <Texte variante="type.caption" couleur="ink.mute">
+            {t(plan.billing_interval === 'yearly' ? 'abonnement.parAn' : 'abonnement.parMois')}
+          </Texte>
+        </View>
+      ) : null}
       <StatusMessage
         level="neutral"
         title={t('abonnement.actifTitre')}
