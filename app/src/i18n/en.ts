@@ -1652,6 +1652,8 @@ export const en = {
     subscription_already_active: 'This business already has an active subscription.',
     subscription_not_active: 'This business has no active subscription.',
     subscription_plan_not_found: 'We could not find that plan.',
+    subscription_same_plan: 'You are already on that plan.',
+    subscription_plan_wrong_category: 'That plan is for another kind of business.',
     subscription_plan_inactive: 'That plan is no longer available.',
     billing_provider_unavailable: 'We could not reach our payment provider. Please try again.',
     collaboration_not_in_review:

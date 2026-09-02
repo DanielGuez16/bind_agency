@@ -2105,10 +2105,21 @@ async def abonner_les_commerces(session: AsyncSession) -> int:
         if acteur is None:
             continue
 
+        # **Un plan de la catégorie du salon, et non le suivant de la liste.**
+        # Le tirage au rang abonnait un salon d'activité familiale à un plan de
+        # beauté : c'est ce que la production portait — « Bayside Play Loft,
+        # family_activity, plan Studio » — et rien ne le disait. `GET /plans`
+        # filtre pourtant sur la catégorie depuis toujours ; le semis écrivait
+        # ce que l'écran n'aurait jamais proposé.
+        de_sa_categorie = [p for p in plans if p.category == business.category]
+        if not de_sa_categorie:
+            print(f"  aucun plan pour la catégorie de {business.name} : abonnement écarté")
+            continue
+
         await subscription_service.souscrire(
             session,
             business=business,
-            plan_id=plans[rang % len(plans)].id,
+            plan_id=de_sa_categorie[rang % len(de_sa_categorie)].id,
             actor=acteur,
             provider=provider,
         )

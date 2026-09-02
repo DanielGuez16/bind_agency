@@ -1491,6 +1491,8 @@ export const es: Catalogue = {
     subscription_already_active: 'Este negocio ya tiene una suscripción activa.',
     subscription_not_active: 'Este negocio no tiene ninguna suscripción activa.',
     subscription_plan_not_found: 'No encontramos ese plan.',
+    subscription_same_plan: 'Ya tienes ese plan.',
+    subscription_plan_wrong_category: 'Ese plan es para otro tipo de negocio.',
     subscription_plan_inactive: 'Ese plan ya no está disponible.',
     billing_provider_unavailable: 'No pudimos conectar con la pasarela de pago. Inténtalo de nuevo.',
     collaboration_not_in_review:
