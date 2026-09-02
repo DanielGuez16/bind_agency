@@ -257,7 +257,7 @@ describe('la ponctuation des textes', () => {
       const valeur = valeurDeLaLigne(ligne);
       if (valeur === null) continue;
       for (const [signe, quoi] of INTERDITS) {
-        if (valeur[1].includes(signe)) fautives.push(`${quoi} : ${ligne.trim().slice(0, 70)}`);
+        if (valeur.includes(signe)) fautives.push(`${quoi} : ${ligne.trim().slice(0, 70)}`);
       }
     }
 
