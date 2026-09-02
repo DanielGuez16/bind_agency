@@ -10898,3 +10898,47 @@ et l'arbitrage ici, daté et avec ce qui le rouvrirait.
 ajouter la ligne, parce qu'il a lu le commentaire en passant. C'est de la chance,
 pas un mécanisme. Le prochain aurait servi le champ, ce qui est un agrégat de
 plus côté serveur, et l'aurait retiré après.
+
+---
+
+## 2026-09-02 — Un arbre de travail par session, parce que la règle du commit ne protège pas celui qui ne peut pas commiter
+
+Deux conversations ont travaillé dans le même clone sans le savoir. L'une a
+voulu changer de branche, git a refusé — des fichiers modifiés auraient été
+écrasés — elle a fait `git stash -u` sans regarder, et elle a emporté quarante
+fichiers qui n'étaient pas les siens.
+
+**Ce mode de perte n'est pas celui déjà écrit ici.** Celui du journal demande de
+se tromper de commande : basculer avec du travail en cours, ou faire un
+`git checkout <branche> -- <chemin>` qui prend le fichier de l'autre branche.
+Celui-ci ne demande rien. Aucune des deux sessions ne commet d'erreur : l'une
+bascule sur sa propre branche, ce qui est son droit ; l'autre perd, sans jamais
+avoir été prévenue qu'elle partageait un dossier.
+
+Et le garde-fou habituel ne s'applique pas. « Commiter avant de bouger » suppose
+qu'on puisse commiter et qu'on sache qu'il faut le faire ; ici la victime ne
+voit pas venir la bascule, et il lui arrive de ne pas avoir la main sur git du
+tout — c'était le cas ce soir-là dans une troisième session.
+
+**Le geste qui l'évite tient en une ligne, et il est gratuit :**
+
+```
+git worktree add -b <branche> <chemin> origin/main
+ln -s <clone>/app/node_modules <chemin>/app/node_modules
+```
+
+Un arbre par session. Le lien symbolique évite de réinstaller les dépendances,
+qui sont la seule chose qui coûterait du temps. Deux minutes en tout, et le
+partage de dossier cesse d'exister comme risque.
+
+**Ce qui a rendu l'incident lisible plutôt que silencieux**, et qui mérite
+d'être noté à part : le compte de quarante fichiers ne voulait rien dire. Ils
+étaient l'écart avec un commit vieux de quelques heures, pas du travail neuf —
+comparé à `origin/main`, le même arbre ne différait que sur sept fichiers, et
+**en moins**. Il était en retard, pas en avance.
+
+Trois sessions ont été réveillées pour un travail qui n'a jamais existé. La
+leçon est la même que sur le semis : *une observation juste, une cause
+inventée*. « Quarante fichiers modifiés » se lit comme « quarante fichiers de
+travail » et ce n'est pas la même chose. La question à poser avant l'alarme est
+`git diff origin/main --stat`, jamais `git status`.
