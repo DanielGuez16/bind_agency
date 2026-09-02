@@ -146,14 +146,47 @@ function prochainRendezVous(ecoule: number): number {
  * marge : 660 reste sous le plafond de 700 qui la sépare d'une mascotte, et
  * au-dessus des 400 où elle devient sèche.
  */
-const LETTRES_DEBUT = 240;
-const LETTRES_DUREE = 280;
+const LETTRES_DEBUT = 400;
+/**
+ * **La montée des lettres est le levier, et le seul qui reste.**
+ *
+ * Ce qui se perçoit est le mouvement ; le repos ne se souvient pas. Pour
+ * allonger le ressenti il faut donc allonger ce qui bouge — et la chute du
+ * point est plafonnée à 700 par Design, au-delà desquels elle devient une
+ * mascotte. Restent l'entrée des lettres et le fondu de sortie, qui sont du
+ * mouvement sans être *le point*.
+ *
+ * De 280 à 1 500. C'est lent, et c'est voulu : une marque qui se pose prend le
+ * temps de se poser. Le point, lui, garde exactement sa vivacité — il arrive
+ * sur des lettres déjà en place, et le contraste entre les deux est ce qui
+ * fait la signature.
+ */
+const LETTRES_DUREE = 1500;
 /** L'apparition du point, plus vive que sa chute : il arrive, il ne se pose pas. */
 const POINT_APPARITION = 180;
 /** Un aller de la barre indéterminée. C'est une boucle, pas une transition. */
 const COURSE_DUREE = 1000;
-const POINT_DEBUT = 520;
-const POINT_DUREE = 660;
+/** Après les lettres, jamais pendant : le point se pose sur une marque finie. */
+const POINT_DEBUT = LETTRES_DEBUT + LETTRES_DUREE;
+/**
+ * La chute. **Intouchée, et c'est la contrainte qui tient tout.**
+ *
+ * 660 reste sous le plafond de 700 qui la sépare d'une mascotte. Une tentative
+ * passée l'avait poussée à 620 en étirant la séquence entière pour tenir une
+ * durée d'écran — la garde qui épinglait `MOUVEMENT` à 1 500 est née de là.
+ * Elle épinglait le total ; ce qu'elle protégeait était ce nombre-ci, et c'est
+ * lui qu'elle surveille désormais.
+ */
+export const POINT_DUREE = 660;
+
+/**
+ * Le plafond de la chute, écrit plutôt que sous-entendu.
+ *
+ * Design le donne à 700–760 ; on retient la borne basse. Il est exporté pour
+ * qu'une garde puisse l'éprouver : c'est le seul nombre de ce fichier qui ne se
+ * négocie pas contre une durée d'écran, et il s'est fait pousser une fois.
+ */
+export const CHUTE_MAXIMALE = 700;
 
 /**
  * Le fondu de sortie. **C'est du mouvement, et il compte dans le perçu.**
@@ -162,14 +195,19 @@ const POINT_DUREE = 660;
  * franche est le seul instant de la séquence qu'on ne peut pas attribuer à la
  * marque, donc le seul qui ne lui profite pas.
  */
-export const FONDU_DE_SORTIE = 320;
+export const FONDU_DE_SORTIE = 800;
 
 /**
- * Quand le mouvement s'arrête, fondu compris : **1 500 ms**.
+ * Quand le mouvement s'arrête, fondu compris : **2 960 ms**.
  *
- * **C'est le plancher de l'écran, et la seule durée qui se ressent.** Contre
- * 760 auparavant : la durée perçue double sans qu'on touche au repos. Une garde
- * le tient — il ne suit pas `DUREE_DE_L_OUVERTURE`, et il ne la dépasse pas.
+ * **C'est le plancher de l'écran, et la seule durée qui se ressent.** 760 à
+ * l'origine, puis 1 500, maintenant 2 960 — et à chaque fois la même leçon : on
+ * n'allonge une ouverture qu'en allongeant ce qui bouge. Le repos ajouté se
+ * souvient comme une attente, pas comme une marque.
+ *
+ * **La chute du point n'a pas bougé d'un millième** entre ces trois valeurs.
+ * C'est la contrainte de Design, et elle est le seul nombre de ce fichier qui
+ * ne se négocie pas contre une durée d'écran.
  */
 export const MOUVEMENT = POINT_DEBUT + POINT_DUREE + FONDU_DE_SORTIE;
 
