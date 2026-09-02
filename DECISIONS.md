@@ -10853,3 +10853,37 @@ ni le vert.
 Ce qui a évité la correction inutile est d'être allé lire la requête du balayage
 avant d'écrire quoi que ce soit. Le réflexe coûte une minute : **avant de croire
 un rouge sous horloge décalée, demander quelle horloge décide.**
+
+
+## 2026-09-01 — La carte de décision ne compte pas les abonnés, et la raison n'était nulle part
+
+La planche v12 dessinait « 7 600 followers » sous le pseudonyme, dans le bloc du
+créateur de la carte de décision. La v9 avait tranché l'inverse : un visage et un
+lien disent **qui**, pas **combien**. Daniel confirme la v9.
+
+**La raison tient toujours, et c'est elle qui décide.** On décide d'un
+rendez-vous sur qui et quand. Le nombre d'abonnés, le compte de collaborations
+et la ponctualité pèsent une décision et se lisent posément — ils restent sur la
+fiche du créateur, qu'un lien de la carte ouvre en un geste. Rebecca peut donc
+toujours évaluer un volume avant d'accepter ; elle ne l'a simplement pas sous les
+yeux au moment de trancher, où il encombrerait sans servir.
+
+**Ce qui rouvrirait la question** : une demande explicite venue de l'usage — un
+salon qui refuse ou accepte à l'aveugle et le dit. Pas une planche.
+
+**Mais le vrai enseignement n'est pas l'arbitrage, c'est où il vivait.** Il
+n'existait que dans un commentaire de `JourneeScreen`, au-dessus du bloc
+concerné. Ni `DECISIONS.md`, ni la passation. Personne qui compose une planche ne
+lit un commentaire de code — donc rien ne pouvait empêcher la v12 de le
+reproposer, et rien n'aurait empêché une v13.
+
+C'est exactement le mécanisme que `CLAUDE.md` décrit pour la règle des PR en
+conflit : *une règle rangée là où on ne la cherche pas ne protège personne*. La
+règle est donc allée dans la passation, section 6, à côté des autres règles de
+décision — c'est-à-dire dans le document que Design lit **avant** de dessiner —
+et l'arbitrage ici, daté et avec ce qui le rouvrirait.
+
+**Le coût évité se mesure** : `bind-agency-aa` a composé la v12 entière sans
+ajouter la ligne, parce qu'il a lu le commentaire en passant. C'est de la chance,
+pas un mécanisme. Le prochain aurait servi le champ, ce qui est un agrégat de
+plus côté serveur, et l'aurait retiré après.
