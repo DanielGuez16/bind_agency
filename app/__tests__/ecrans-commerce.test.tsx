@@ -750,8 +750,15 @@ describe('horaires et capacité', () => {
       expect(screen.getByTestId(`jour-${jour}`)).toBeTruthy();
     }
     expect(screen.getByTestId('horaires-0')).toHaveTextContent(/10:00/);
+    // **Le jour ouvert porte son nombre de fauteuils**, en colonne et nu : le
+    // mot est dit une fois dans l'en-tête, plus sept fois dans les lignes.
+    expect(screen.getByTestId('postes-0')).toHaveTextContent('2');
     for (let jour = 1; jour < 7; jour += 1) {
       expect(screen.getByTestId(`ferme-${jour}`)).toHaveTextContent(en.composition.ferme);
+      // **Et le jour fermé laisse sa cellule vide.** « Closed » le dit déjà ;
+      // un zéro y serait un signe à interpréter — un salon qui garde zéro
+      // fauteuil un jour où il ouvre n'est pas la même chose qu'un salon fermé.
+      expect(screen.getByTestId(`postes-${jour}`)).toHaveTextContent('');
     }
   });
 
