@@ -121,6 +121,7 @@ const DOIVENT_AVOIR_LEUR_SQUELETTE = [
   'FilScreen.tsx',
   'AbonnementScreen.tsx',
   'AnnuaireScreen.tsx',
+  'CreateursAdminScreen.tsx',
   'ProfilScreen.tsx',
   'MesPublicationsScreen.tsx',
   'ArbitrageScreen.tsx',

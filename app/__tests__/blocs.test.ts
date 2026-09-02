@@ -83,6 +83,8 @@ const BLOCS: Record<string, number> = {
   // présente rien, elle enregistre des faits.
   CreationDuCommerceScreen: 0,
   AnnuaireScreen: 0,
+  // L'annuaire de l'administration : une liste de personnes, aucun seuil.
+  CreateursAdminScreen: 0,
   TerrainScreen: 0,
   ReportingScreen: 0,
   PlansScreen: 0,

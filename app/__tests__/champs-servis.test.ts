@@ -279,7 +279,11 @@ describe('un champ servi est rendu, ou sa raison est écrite', () => {
     // vérification porte le même nom de champ et n'est rendue nulle part. Sans
     // cette exception, sa ligne passerait pour périmée et se retirerait — c'est
     // la garde qui s'effacerait elle-même.
-    const HOMONYMES = new Set(['created_at', 'item_photo_key']);
+    // `audience_totale` a rejoint la liste avec l'annuaire de
+    // l'administration, qui la rend. Celui du commerce porte le même nom de
+    // champ et ne le rend pas — sa ligne passerait pour périmée et se
+    // retirerait, c'est-à-dire que la garde s'effacerait elle-même.
+    const HOMONYMES = new Set(['created_at', 'item_photo_key', 'audience_totale']);
 
     const perimees = Object.keys(NON_RENDUS).filter(
       (clef) =>
