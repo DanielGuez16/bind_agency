@@ -13,7 +13,7 @@ import subprocess
 import sys
 import uuid
 from collections import Counter
-from datetime import UTC, datetime, time, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -2020,3 +2020,47 @@ async def test_la_tournee_porte_les_quatre_stades_et_les_deux_voies(
         stades = {stade(o, u, b) for _, o, u, b in lignes}
         assert stades == {"preparee", "ouverte", "bloquee", "activee"}, stades
         assert len({canal for canal, *_ in lignes}) == 2, "une seule voie de remise"
+
+
+async def test_les_decisions_s_etalent_sur_la_semaine(seed_conn: AsyncConnection) -> None:
+    """**Une bande de sept jours qui n'en peuple qu'un ne démontre rien.**
+
+    Le semis posait une décision par salon, toutes sur la même journée : la
+    première des créneaux à venir. Les deux cas donnaient le même écran plat —
+    semé le matin, tout sur aujourd'hui ; semé le soir, tout sur demain, et la
+    bande s'ouvrait sur un jour vide.
+
+    Ce qu'on éprouve est donc l'**étalement**, pas le nombre : un jeu qui
+    poserait deux fois plus de décisions au même endroit passerait un test de
+    volume et raterait celui-ci.
+    """
+    fuseau_par_salon = dict(
+        (await seed_conn.execute(sa.select(Business.id, Business.timezone))).all()
+    )
+
+    jours_par_salon: dict[uuid.UUID, set[date]] = {}
+    for business_id, starts_at in (
+        await seed_conn.execute(
+            sa.select(Booking.business_id, Booking.starts_at).where(
+                Booking.status == BookingStatus.AWAITING_BUSINESS,
+                Booking.starts_at.is_not(None),
+            )
+        )
+    ).all():
+        fuseau = ZoneInfo(fuseau_par_salon[business_id])
+        jours_par_salon.setdefault(business_id, set()).add(starts_at.astimezone(fuseau).date())
+
+    assert jours_par_salon, "aucune décision à trancher dans le jeu"
+
+    # **Chaque salon qui décide en porte sur plusieurs jours.** Un seul suffirait
+    # à remplir la file d'arbitrage, et c'est précisément ce qui masquait le
+    # défaut : la file était pleine, la bande vide.
+    a_un_seul_jour = [b for b, jours in jours_par_salon.items() if len(jours) < 2]
+    assert not a_un_seul_jour, (
+        f"{len(a_un_seul_jour)} salon(s) posent toutes leurs décisions sur un seul jour"
+    )
+
+    # Et l'ensemble couvre plus de deux journées distinctes : deux salons qui
+    # porteraient chacun les deux mêmes jours laisseraient la semaine plate.
+    toutes = {jour for jours in jours_par_salon.values() for jour in jours}
+    assert len(toutes) >= 3, f"la semaine ne porte que {len(toutes)} journée(s) de décisions"

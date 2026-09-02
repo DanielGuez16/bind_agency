@@ -25,7 +25,7 @@ import re
 import unicodedata
 import uuid
 from dataclasses import dataclass
-from datetime import UTC, datetime, time, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 import httpx
@@ -1280,6 +1280,14 @@ async def _la_journee_de_chaque_salon(
         # quoi ne pas être vides. `ampleur` s'applique aux deux moitiés.
         ampleur = 4 if business.name == OCEAN else 1
 
+        # **Combien de jours de la semaine portent une décision.**
+        #
+        # Distinct de `ampleur`, qui règle la densité d'une journée : ici c'est
+        # l'étalement. Le salon d'ouverture en porte quatre — de quoi lire une
+        # bande d'un coup d'œil —, les autres deux, assez pour qu'aucun ne
+        # s'ouvre sur une semaine à une seule barre.
+        ampleur_des_decisions = 4 if business.name == OCEAN else 2
+
         # **Le passé, étalé plutôt que groupé.** Prendre les premiers créneaux
         # mettrait tout à l'ouverture ; on prélève à intervalle régulier pour
         # que la journée se lise comme une journée.
@@ -1345,7 +1353,26 @@ async def _la_journee_de_chaque_salon(
         # et l'écran perdait ce qui fait sa raison d'être. Les créneaux de demain
         # servent après ceux qu'on a déjà pris pour le passé.
         restants = [c for c in creneaux_de_demain if c not in menes_sur]
-        attendues = _repartir(a_venir, ampleur) or _repartir(restants, ampleur)
+
+        # **Les décisions s'étalent sur la semaine, pas sur un seul jour.**
+        #
+        # `_repartir` prélevait dans **une** liste : les créneaux du jour s'ils
+        # restaient, sinon ceux d'après. Les deux cas donnaient le même écran —
+        # toutes les demandes sur une seule barre, et six vides à côté.
+        #
+        # Mesuré sur un semis à 23 h 30 : dix-sept salons sur dix-huit posaient
+        # leur unique décision sur demain, aucun sur aujourd'hui. La bande de
+        # sept jours ouvrait donc sur un jour vide, et ne montrait qu'un seul
+        # chiffre. Semé à dix heures, c'était l'inverse et tout aussi plat :
+        # tout sur aujourd'hui.
+        #
+        # Ce que la bande sert à voir est *où* sont les décisions. Un jeu qui
+        # les met toutes au même endroit ne démontre pas la fonctionnalité, il
+        # la contredit.
+        # Un jour de plus que de décisions : la dernière journée porte un
+        # rendez-vous confirmé, sans quoi un salon qui valide n'aurait que des
+        # demandes en attente et aucun planning à venir.
+        attendues = _un_par_jour(a_venir + restants, fuseau, ampleur_des_decisions + 1)
 
         posees += await _poser_ce_qui_a_eu_lieu(
             session,
@@ -1364,9 +1391,28 @@ async def _la_journee_de_chaque_salon(
             creneaux=attendues,
             roulement=roulement,
             confirmer=confirmer,
+            a_trancher=ampleur_des_decisions,
         )
 
     return posees
+
+
+def _un_par_jour(creneaux: list[datetime], fuseau: ZoneInfo, combien: int) -> list[datetime]:
+    """Un créneau par jour civil, sur les `combien` premiers jours qui en ont.
+
+    **Un par jour, et non les `combien` premiers.** Prendre les premiers
+    créneaux met tout sur la première journée ouverte : c'est exactement ce que
+    faisait `_repartir` sur une liste triée, et ce que la bande de sept jours
+    rend visible.
+
+    Le découpage est dans le fuseau du commerce — un créneau de 23 h à Miami
+    tombe le lendemain en UTC, et le classer sur la date brute le poserait un
+    jour trop loin.
+    """
+    par_jour: dict[date, datetime] = {}
+    for creneau in sorted(creneaux):
+        par_jour.setdefault(creneau.astimezone(fuseau).date(), creneau)
+    return [par_jour[jour] for jour in sorted(par_jour)[:combien]]
 
 
 async def _heures_deja_passees(
@@ -1500,6 +1546,7 @@ async def _poser_les_a_venir(
     creneaux: list[datetime],
     roulement: list,
     confirmer,
+    a_trancher: int,
 ) -> int:
     """Ce qui attend : des confirmées, et chez un salon qui valide, des
     décisions à rendre.
@@ -1526,11 +1573,18 @@ async def _poser_les_a_venir(
             print(f"  créneau à venir écarté chez {business.name} ({type(erreur).__name__})")
             continue
 
-        # **La première reste à trancher chez un salon qui valide.** On confirme
-        # côté créatrice — ce qui la met en attente du commerce — et on n'accorde
-        # pas. Chez un salon sans validation, la même confirmation la place
-        # directement en `confirmed` : c'est le produit qui décide, pas le semis.
-        if rang == 0 and business.requires_booking_approval:
+        # **Les premières restent à trancher chez un salon qui valide.** On
+        # confirme côté créatrice — ce qui les met en attente du commerce — et
+        # on n'accorde pas. Chez un salon sans validation, la même confirmation
+        # les place directement en `confirmed` : c'est le produit qui décide,
+        # pas le semis.
+        #
+        # **Plusieurs, et non la première seule.** `attendues` porte désormais
+        # un créneau par jour ; n'en faire trancher qu'un mettait toutes les
+        # décisions du salon sur une seule barre de la bande de sept jours, et
+        # les six autres restaient vides. Le nombre vient de l'appelant, qui
+        # sait combien de jours il veut peupler.
+        if rang < a_trancher and business.requires_booking_approval:
             await booking_states.confirmer(session, booking=booking, creator_id=createur.id)
         else:
             await confirmer(booking, createur.id)
