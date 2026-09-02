@@ -82,7 +82,7 @@ et c'est ce qui les rend portables d'une direction à l'autre. `radius.sm`.
 | Palier | Matière | Surface | Bordure | Texte | Barres pleines |
 | --- | --- | --- | --- | --- | --- |
 | Story | contour | `bg.surface` | 1,5 px `brand.700` | `brand.700` | 1 / 3 |
-| Post | teinte | `brand.100` | 1 px `brand.500` | `brand.700` | 2 / 3 |
+| Post | teinte | `brand.100` | 1 px `brand.500` | `brand.900` | 2 / 3 |
 | Reel | aplat | `brand.500` | aucune | `ink.onBrand` | 3 / 3 |
 
 Trois marqueurs redondants obligatoires ensemble : le mot, le glyphe à trois
@@ -94,8 +94,19 @@ Le mot n'est jamais abrégé. Sur fond sombre, contour et teinte s'éclaircissen
 conservé.
 
 **Le libellé du badge fait 11 px.** À cette taille, aucune couleur sous 4,5:1
-n'est admise : `brand.700` sur `brand.100` passe, `brand.700` sur `bg.inset`
-(4,56:1) est à éviter, et l'aplat porte l'encre.
+n'est admise, et c'est ce qui fixe la couleur de chaque matière.
+
+> **Corrigé le 2026-08-21.** Cette section affirmait que « `brand.700` sur
+> `brand.100` passe ». C'est **faux** : mesuré, le couple donne **4,19:1** à
+> 11 px. Le libellé du badge teinte est donc `brand.900`, à **8,84:1**, qui reste
+> dans la famille brune de la rampe. Assombrir le fond n'était pas l'issue —
+> `brand.700` sur `brand.200` est pire, à 3,38:1. Les deux autres matières
+> étaient justes : contour `brand.700` sur `bg.surface` 5,29, aplat
+> `ink.default` sur `brand.500` 7,77. C'est le seul couple du système qui
+> portait une affirmation non mesurée, et il est resté faux deux versions.
+
+`brand.700` sur `bg.inset` (4,56:1) reste à éviter sous 13 px, et l'aplat porte
+l'encre.
 
 ---
 
@@ -279,6 +290,83 @@ la marque doit y apparaître, elle porte son cartouche d'encre.
 | `tiers.valueHint` | Reste supprimé : valeur monétaire côté créateur. |
 
 ---
+
+## 13 bis. Une carte porte un seul traitement
+
+Cinq reprises de la journée du commerce ont fini sur ce défaut, et il vaut pour
+toute carte du produit.
+
+**Le défaut :** une carte de décision portait un titre en sans, une date en mono,
+un corps en sans, et une paire étiquette-valeur alignée sur une seconde colonne.
+Quatre grammaires typographiques sur 322 px de large, donc quatre changements de
+mode pour lire trois faits. Le verdict des tests était « fouillis », et c'était
+une mesure.
+
+**Trois règles en sortent :**
+
+1. **Une colonne.** Aucune paire étiquette-valeur sur une carte étroite : deux
+   colonnes y creusent une rivière au milieu. L'échéance entre dans la phrase qui
+   l'explique, en gras dans le texte.
+2. **Deux graisses au plus par carte** — 700 pour le titre, 400 pour le reste, 600
+   pour le mot qui porte l'échéance. Pas de troisième famille.
+3. **Un fait, une fois.** Un fait qui change de traitement cesse d'être reconnu
+   comme le même fait : c'est ce qui fait écrire une heure limite deux fois, en
+   croyant la dire une seule.
+
+**Le titre porte ce qu'on cherche d'abord**, pas le nom de l'objet : « Gel
+manicure, Sunday at 2pm » et non « Gel manicure » avec l'heure ailleurs.
+
+## 13 ter. Une étiquette n'est pas une phrase
+
+`type.label` et `type.dataLabel` sont des **capitales espacées de 11 px**. Cette
+forme se lit par reconnaissance, pas par lecture : l'œil identifie un mot connu et
+passe. Au-delà de quelques mots, elle force un déchiffrage lettre par lettre.
+
+**La règle : moins de vingt-quatre signes, et jamais plus de quatre mots.** Au-delà,
+c'est du texte, donc `bodyStrong` ou `body`.
+
+Trois familles de violations, toutes rencontrées :
+
+1. **Une phrase déguisée en étiquette** — « WHY · CAMILLE READS THIS, WORD FOR
+   WORD », « THE LOCATION TAG IS MISSING », « READ ONLY, MONTHLY FIGURES COMPUTED
+   SERVER-SIDE ». Elles se lisent mal et échouent souvent le seuil de couleur à
+   11 px.
+2. **Un titre de section en étiquette** — « NOW YOURS TO SET ». Un titre porte le
+   sens d'un bloc, il ne l'annote pas.
+3. **Deux faits dans une étiquette** — « STATE · 11 MOST RECENT OF 34 », « AS OF
+   21 AUG · 240 SUBSCRIPTIONS ». Le point médian y sert de conjonction, ce qui est
+   son second emploi interdit.
+
+**Ce qui reste légitime** : les têtes de colonnes d'un tableau (`BUSINESS`,
+`EXPECTED`, `TIER`), un état d'un ou deux mots (`READ ONLY`, `LIVE`, `DRAFT`), et
+les intertitres d'une planche de présentation, qui ne sont pas du produit.
+
+## 13 quater. Un champ conditionnel suit la donnée, pas la catégorie
+
+Le champ « carte du menu » apparaissait pour tout commerce. Le réflexe serait de le
+lier à la catégorie — restaurant oui, salon non — et ce serait faux : un spa qui
+propose « une formule au choix » en a besoin, un restaurant à menu unique n'en a
+aucun usage.
+
+**Il suit le drapeau « laisse un choix » de l'item de catalogue**, celui déjà
+demandé au lot 4. Aucune prestation à choix, aucun champ. Et le libellé nomme ce
+qu'il sert : « ce que la créatrice pourra choisir », jamais « carte du menu ».
+
+La règle se généralise : **un champ conditionnel se lie à la donnée qui le rend
+nécessaire**, jamais à une catégorie qui la corrèle.
+
+## 13 quinquies. Un onglet reste actif sur toute sa section
+
+Un onglet de barre basse désigne une **section**, pas un écran. `More` reste donc
+coloré tant qu'on est dans « Your place », « Your services », « Reports » ou
+« Creators » — pas seulement sur le menu lui-même.
+
+Sans cela, entrer dans une sous-page éteint la barre entière : plus aucun onglet
+n'est actif, et l'utilisateur ne sait plus d'où il vient ni ce que le retour
+ramène. C'est le même principe que le sélecteur de salon, où le contexte reste
+visible pendant qu'on agit.
+
+Vaut pour les quatre onglets des trois rôles, et pour la barre latérale de bureau.
 
 ## 13 sexies. Retiré
 
