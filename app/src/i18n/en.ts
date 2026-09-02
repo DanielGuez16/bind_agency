@@ -1139,6 +1139,8 @@ export const en = {
     etatHorsPalier: 'This one is offered at a tier you do not open yet.',
   },
   reglages: {
+    abonnementTitre: 'Subscription',
+    abonnementLigne: 'Your plan, billing and cancellation',
     reprisesTitre: 'When BIND entered your account',
     reprisesAide:
       'Every time someone from BIND opened your account, with the reason they wrote. Nothing is removed from this list.',

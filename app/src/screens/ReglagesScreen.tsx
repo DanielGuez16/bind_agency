@@ -62,7 +62,21 @@ import { PauseDuCommerce } from './reglages/PauseDuCommerce';
 import { RepriseDuCompte } from './reglages/RepriseDuCompte';
 import { compterOuRien, PAGE } from './reglages/suppression';
 
-export function ReglagesScreen({ onRetour }: { onRetour?: () => void } = {}) {
+export function ReglagesScreen({
+  onRetour,
+  onVoirLAbonnement,
+}: {
+  onRetour?: () => void;
+  /**
+   * L'entrée vers l'abonnement, quand l'écran est monté côté commerce.
+   *
+   * **Absente, la section ne se rend pas.** Un créateur n'a pas d'abonnement,
+   * et un administrateur n'a pas le sien à gérer ici : la section n'aurait
+   * alors rien à ouvrir. C'est la navigation qui décide, parce que c'est elle
+   * qui sait dans quelle pile l'écran se trouve.
+   */
+  onVoirLAbonnement?: () => void;
+} = {}) {
   const { t, locale, setLocale } = useI18n();
   const { color: c, density } = useTheme();
   const session = useSession();
@@ -122,6 +136,40 @@ export function ReglagesScreen({ onRetour }: { onRetour?: () => void } = {}) {
           seconde adresse doit pouvoir l'ouvrir depuis l'appareil qu'il a en
           main, et c'est le comptoir qui décide lequel. */}
       <SelecteurDeSalonDeCeCompte />
+
+      {/* **L'abonnement est un réglage du commerce, et il n'était atteignable
+          que par un refus.** L'écran existait et fonctionnait depuis le
+          2026-08-24 ; sa seule entrée était le mur de l'annuaire, qui ne
+          s'affiche qu'à un salon **sans** abonnement. Un salon abonné ne
+          pouvait donc ni voir sa formule, ni en changer, ni résilier — la
+          moitié des gestes que l'écran sait faire n'avait aucun chemin.
+
+          C'est la même famille que la carte du fil : construit, branché, et
+          derrière une porte que personne n'ouvre. */}
+      {onVoirLAbonnement ? (
+        <View style={{ gap: 10 }} testID="abonnement-depuis-les-reglages">
+          <Texte variante="type.label" couleur="ink.soft">
+            {t('reglages.abonnementTitre')}
+          </Texte>
+          <Pressable
+            accessibilityRole="button"
+            onPress={onVoirLAbonnement}
+            testID="ouvrir-l-abonnement"
+            style={({ pressed }) => ({
+              minHeight: 60,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 12,
+              opacity: pressed ? 0.7 : 1,
+            })}
+          >
+            <Texte variante="type.body" style={{ flex: 1 }}>
+              {t('reglages.abonnementLigne')}
+            </Texte>
+            <Icone nom="sortie" couleur="ink.soft" taille={16} />
+          </Pressable>
+        </View>
+      ) : null}
 
       <View style={{ gap: 10 }} testID="preferences">
         <Texte variante="type.label" couleur="ink.soft">

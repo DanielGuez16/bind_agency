@@ -43,6 +43,13 @@ const RACINES = [
   // ouvre depuis le profil, et l'audience a donc gagné le retour qu'une racine
   // n'a pas besoin d'avoir.
   'Profil',
+  // **Les réglages du commerce ont gagné une pile**, pour la même raison que
+  // l'annuaire : l'abonnement s'y empile. Il existait depuis des semaines et
+  // n'était atteignable que par le mur de l'annuaire — lequel ne s'affiche
+  // qu'à un salon *sans* abonnement, donc jamais à celui qui voudrait changer
+  // de formule ou résilier. La racine reste une racine : c'est l'onglet, il
+  // n'y a rien derrière.
+  'Reglages',
 ];
 
 /** Les écrans déclarés dans une pile, et le bloc JSX qui les monte. */
