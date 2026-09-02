@@ -3869,3 +3869,77 @@ barrière avant le réseau, et c'est là qu'il faut la poser.
 
       *Deux mutations vérifiées sur les gardes neuves — le champ de la carte, et
       le retour de la fiche sans photo — plus une sur le retrait de « Miami ».*
+
+- [x] **`Quatre points v14` · la bande à quatorze, une seule rangée, la flèche seule**
+      *Quatre points sur le commerce, plus une régression du produit corrigée
+      avant tout le reste et sortie seule (#408).*
+
+      ***La flèche de retour pointait à droite sur tout le produit.** `retour`
+      est `fleche` retournée : les primitives portent le même `d` et un champ
+      `transform: rotate(180deg)`. J'ai copié le tracé sans le champ, et ma
+      propre garde est passée au vert puisqu'elle ne comparait que `d`. Design a
+      fait exactement la même erreur dans son lecteur de primitives le même
+      jour — un fichier de primitives ne sert à rien si celui qui le lit en
+      ignore un champ.*
+
+      ***Élargie à tous les champs, la garde a trouvé le suivant dans la
+      foulée** : `coche` porte `strokeWidth: 2.4` avec sa raison écrite — « à
+      17 px, une coche en 2 paraît molle à côté d'un texte en 600 » — et le
+      produit traçait tout à `size.iconStroke`. Une garde qui ne compare qu'un
+      champ d'un objet à plusieurs champs n'éprouve que ce champ.*
+
+      ***La bande du comptoir passe de sept à quatorze jours, et l'entrée qui
+      disait sept est retirée.** Sa raison — « le salon regarde ce qu'il a à
+      faire, sa semaine est l'horizon de son travail » — valait tant que le jour
+      qui presse était plus loin que la piste. Il ne l'est plus : la bande
+      s'ouvre sur le premier. Et un créateur réserve à quinze jours, donc la
+      moitié de ce qu'un salon avait accepté tombait hors de sa propre bande.
+      Rien à changer côté serveur, l'agrégat prend le nombre de jours en
+      paramètre et accepte jusqu'à trente et un.*
+
+      ***Le « 0 » d'un jour calme est remis, et c'est un renversement assumé.**
+      Il avait été retiré en v11 : sept chiffres à lire pour en retenir deux. À
+      quatorze cases sur une piste qui défile, une case vide ne se distingue
+      plus d'une case pas encore chargée. En `ink.mute`, jamais `ink.faint` —
+      2,46:1 sur la page, réservé à ce qui ne doit pas être lu. Un jour fermé
+      dit « fermé » plutôt qu'un zéro qui se lirait « calme ».*
+
+      ***Troisième signalement de divergence sur `Your week`, donc la cause
+      n'était pas une valeur.** La semaine et les exceptions décrivaient chacune
+      leur rangée, avec les mêmes six mesures recopiées : chaque planche qui en
+      corrigeait une laissait l'autre derrière. Il n'y a plus qu'une
+      `RangeeDuTableau`, et le test ne compare pas des valeurs attendues mais
+      **les deux rangées entre elles** — il reste vrai quand la planche suivante
+      change la hauteur, et rouge le jour où une seule des deux tables change.*
+
+      ***Un champ servi que personne ne lisait, trouvé en composant.** La table
+      des exceptions écrivait « fermé » sur toute exception sans regarder
+      `is_closed`, `start_time` ni `end_time` : une journée qui ouvrait à 14 h se
+      lisait fermée, et le salon refusait des créatrices qu'il avait décidé
+      d'accueillir. Le décor porte les deux cas, parce qu'avec une seule
+      exception fermée l'implémentation fautive rend le même verdict que la
+      bonne.*
+
+      ***« Add a date » devient la dernière rangée de la table qu'elle
+      allonge**, et la mise en garde « fermer n'annule rien » la suit dans le
+      panneau — devant celui qui ferme un jour, plutôt qu'au-dessus de tous ceux
+      qui n'en ferment pas.*
+
+      ***Le mot à côté de la flèche part, sur les trois rôles.** Il vivait à
+      quatre endroits : la barre de titre, l'en-tête défilante d'`Ecran`, les
+      réglages, et il écrivait « Back » ou « More » — le nom de l'endroit qu'on
+      venait de quitter, répété en haut de chaque page qu'on y ouvrait. La
+      destination reste dans `accessibilityLabel`, où elle répond à « où
+      revient-on » pour qui n'a pas l'écran sous les yeux. La cible garde ses 44
+      points : c'est elle qu'on vise, pas le glyphe de 18 qui l'occupe.*
+
+      ***Deux actions de même rang, donc deux boutons de même forme.** La
+      formule portait son intertitre et une rangée pressable à chevron de
+      sortie, la pause portait le sien et un bouton. Un seul intertitre « Your
+      business », deux boutons secondaires, et le glyphe `sortie` retiré : il
+      dit « ce lien quitte l'application » et l'abonnement est un écran du
+      produit.*
+
+      *Neuf mutations vérifiées — deux glyphes, trois sur la bande, trois sur la
+      semaine, deux sur le retour et la section. Quatre entrées ajoutées à la
+      table des retraits, dont une remise en v14 écrite comme telle.*
