@@ -223,6 +223,27 @@ describe('les libellés ne genrent personne', () => {
  * règle et cite forcément ce qu'elle interdit.
  */
 describe('la ponctuation des textes', () => {
+  /**
+   * Le texte d'une ligne de catalogue, **quelle que soit sa forme**.
+   *
+   * **Une garde partielle est pire qu'aucune**, et celle-ci l'était. Elle ne
+   * reconnaissait que `cle: 'valeur',` d'un seul tenant ; or une phrase longue
+   * passe à la ligne, et sa valeur se retrouve **seule** sur la suivante, sans
+   * clé devant. C'est la forme la plus courante des textes qui contiennent un
+   * cadratin — ce sont les longs — et vingt-trois y ont survécu des mois, sur
+   * une règle que la table des retraits de `components.md` porte depuis la v8.
+   *
+   * Les deux formes sont donc lues : celle qui porte sa clé, et celle qui n'est
+   * qu'une valeur. Le cas de garde ci-dessous éprouve la seconde, qui est celle
+   * qui manquait.
+   */
+  const valeurDeLaLigne = (ligne: string): string | null => {
+    const avecCle = /^\s+[a-zA-Z_][a-zA-Z0-9_]*: '(.*)',?$/.exec(ligne);
+    if (avecCle) return avecCle[1];
+    const seule = /^\s+'(.*)',?$/.exec(ligne);
+    return seule ? seule[1] : null;
+  };
+
   const INTERDITS = [
     ['—', 'cadratin'],
     ['–', 'demi-cadratin'],
@@ -233,10 +254,10 @@ describe('la ponctuation des textes', () => {
     const fautives: string[] = [];
 
     for (const ligne of readFileSync(chemin, 'utf-8').split('\n')) {
-      const valeur = /^\s+[a-zA-Z_][a-zA-Z0-9_]*: '(.*)',$/.exec(ligne);
-      if (!valeur) continue;
+      const valeur = valeurDeLaLigne(ligne);
+      if (valeur === null) continue;
       for (const [signe, quoi] of INTERDITS) {
-        if (valeur[1].includes(signe)) fautives.push(`${quoi} : ${ligne.trim().slice(0, 70)}`);
+        if (valeur.includes(signe)) fautives.push(`${quoi} : ${ligne.trim().slice(0, 70)}`);
       }
     }
 
@@ -253,12 +274,17 @@ describe('la ponctuation des textes', () => {
       "    c: 'un texte - coupé',",
       "    d: 'un texte, propre',",
       "    e: 'un demi-cadratin nommé sans être posé',",
+      // **La forme qui manquait, et par laquelle les vingt-trois sont passés.**
+      // Une phrase longue déborde : sa clé reste au-dessus, et la valeur se
+      // retrouve seule. Sans cette ligne, l'élargissement de la garde pourrait
+      // être défait sans que rien ne rougisse.
+      "      'une phrase longue qui déborde — et se coupe',",
     ];
     const pris = echantillon.filter((ligne) => {
-      const valeur = /^\s+[a-zA-Z_][a-zA-Z0-9_]*: '(.*)',$/.exec(ligne);
-      return valeur && INTERDITS.some(([signe]) => valeur[1].includes(signe));
+      const valeur = valeurDeLaLigne(ligne);
+      return valeur !== null && INTERDITS.some(([signe]) => valeur.includes(signe));
     });
 
-    expect(pris).toHaveLength(3);
+    expect(pris).toHaveLength(4);
   });
 });

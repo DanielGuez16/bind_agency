@@ -437,7 +437,7 @@ export const en = {
     filPositionIndisponible:
       'Your device didn’t return a location. Check that location services are on, then try again.',
     filPositionSansReponse:
-      'We are still waiting for an answer. If your browser is asking, choose “Allow” — otherwise try again.',
+      'We are still waiting for an answer. If your browser is asking, choose “Allow”. Otherwise, try again.',
     filReessayer: 'Try again',
     ficheOffres: 'What they offer',
     ficheOuvertJusqua: 'Open until {{heure}}',
@@ -557,7 +557,7 @@ export const en = {
     annulerFenetreClose: 'Free cancellation ended at {{heure}}',
     annulerTitre: 'Cancel {{quand}}?',
     annulerCommeUneAbsence:
-      'It counts as an absence, like not showing up would — but {{salon}} can still give your slot to someone else.',
+      'It counts as an absence, like not showing up would, but {{salon}} can still give your slot to someone else.',
     annulerRienARetenir:
       'The slot goes back to {{salon}}, and nothing is held against you.',
     annulerVautMieux: 'Telling them now is worth more than not coming',
@@ -620,7 +620,7 @@ export const en = {
     // sans savoir ce que ça lui coûte d'attendre.
     preuveViteTitre: 'Send it within 24 hours and Instagram confirms it for you',
     preuveVite:
-      'After that your story is gone from Instagram, and all we have is your screenshot and your word. The salon accepts either — the first is just easier for both of you.',
+      'After that your story is gone from Instagram, and all we have is your screenshot and your word. The salon accepts either. The first is just easier for both of you.',
     // **Trois états, et l'écran n'en rendait que deux.** Nul veut dire « la
     // question ne s'est pas posée », faux « elle s'est posée et la réponse est
     // non ». Les confondre faisait croire à une vérification passée.
@@ -632,14 +632,14 @@ export const en = {
     preuve_ecart_aide: 'The platform checked and found this:',
     preuveAdresse: 'Link to your post',
     preuveAdresseAide:
-      'Paste the link to the post. The business opens it to check that it is live — with only a screenshot, they have to take your word for it.',
+      'Paste the link to the post. The business opens it to check that it is live. With only a screenshot, they have to take your word for it.',
     preuveNote: 'Anything to add?',
     preuveNoteAide: 'Optional. The salon reads this with your proof, useful if something did not go to plan.',
     // « Vous la prenez » répond à la question réellement posée — c'est à qui de
     // faire la capture — là où « les stories se capturent à la main » décrivait
     // une propriété d'Instagram.
     preuveCommentFaire:
-      'You take it, from your own story. Shown whole — we never crop it.',
+      'You take it, from your own story. Shown whole. We never crop it.',
     preuveEnControle: 'We are checking your proof.',
     preuveANouveau: 'A new submission was requested.',
     preuveNonHonoree: 'This counterpart was not fulfilled.',
@@ -892,7 +892,7 @@ export const en = {
     filtreTous: 'All',
     motifsQuiReviennentTitre: 'What keeps coming back',
     motifsQuiReviennentAide:
-      'Every “close, no fault” is a request that never reached the creator in words they could act on. These are the reasons that loop the most — they call for a wording rewritten, not one more arbitration.',
+      'Every “close, no fault” is a request that never reached the creator in words they could act on. These are the reasons that loop the most. They call for a wording rewritten, not one more arbitration.',
     // Deux nombres et aucun verdict : le rapport se lit sans arithmétique, et
     // écrire « incompréhensible » à la place du lecteur demanderait un seuil.
     motifBoucle: '{{dossiers}} looping · {{touches}} raised',
@@ -1019,7 +1019,7 @@ export const en = {
   verification: {
     titre: 'Confirm your email address',
     corps:
-      'We sent a link to {{email}}. Until you open it, you can browse but you cannot book — and a business cannot go live.',
+      'We sent a link to {{email}}. Until you open it, you can browse but you cannot book, and a business cannot go live.',
     renvoyer: 'Send the link again',
     renvoyerEncore: 'Send another one',
     envoiEnCours: 'Sending',
@@ -1245,7 +1245,7 @@ export const en = {
     retirerLaPrestation: 'Remove',
     remplacer: 'Change duration or tier',
     remplaceExplication:
-      'This creates a new service and archives “{{nom}}”. Bookings already made keep citing the one they had. Pick the tier again — the old offer does not carry over, because nobody agreed to it on these terms.',
+      'This creates a new service and archives “{{nom}}”. Bookings already made keep citing the one they had. Pick the tier again. The old offer does not carry over, because nobody agreed to it on these terms.',
     // **Le nombre, dans le bouton.** « Archive » ne se décide pas ; « archive,
     // 12 bookings cite this service » se décide. Les trois branches sont
     // écrites à la main : `formaterLesNombres` rend `count` en chaîne, et la
@@ -1384,13 +1384,13 @@ export const en = {
     chargement: 'Opening your page…',
     lienMort: 'This link no longer works',
     lienMortAide:
-      'It may have expired, or already been used. Ask BIND for a new one — nothing you did is lost.',
+      'It may have expired, or already been used. Ask BIND for a new one. Nothing you did is lost.',
     preparePourVous: 'Prepared for you',
     prestationsPretes: '{{prestations}} services read from your price list are already in.',
     prestationsAVenir: 'You will add your services after taking over. Nothing was read for you.',
     plagesPretes: '{{plages}} opening blocks are already in.',
     introduction:
-      'Create your account to take this page over. You decide when it goes live to creators — nothing is visible until you do.',
+      'Create your account to take this page over. You decide when it goes live to creators. Nothing is visible until you do.',
     aideMotDePasse: 'At least {{minimum}} characters.',
     conditions: 'I accept the BIND terms (version {{version}})',
     assumer: 'Take over this page',
@@ -1430,7 +1430,7 @@ export const en = {
     titre: 'Field signups',
     videTitre: 'No page prepared yet',
     videCorps:
-      'Prepare a page while you are in the salon — name, address, phone. The manager finishes it from their own phone.',
+      'Prepare a page while you are in the salon. Name, address, phone. The manager finishes it from their own phone.',
     avancement: 'Fields filled in',
     preparer: 'Prepare a page',
     nom: 'Salon name',
@@ -1526,7 +1526,7 @@ export const en = {
     invalid_refresh_token: 'Your session has expired. Please sign in again.',
     email_already_used: 'This email address is already registered.',
     email_not_verified:
-      'Confirm your email address first. We sent you a link — you can ask for a new one from your settings.',
+      'Confirm your email address first. We sent you a link. You can ask for a new one from your settings.',
     email_verification_invalid:
       'This link no longer works. Ask for a new one and open it within 24 hours.',
     email_already_verified: 'Your address is already confirmed.',
@@ -1569,7 +1569,7 @@ export const en = {
     business_missing_address: 'Add the business address before going live.',
     business_missing_coordinates: 'Add the business location before going live.',
     business_missing_cover_photo:
-      'Add a cover photo before going live — it is what creators see of your place.',
+      'Add a cover photo before going live. It is what creators see of your place.',
     business_not_claimed:
       'Nobody owns this page yet. It goes live once the salon takes it over.',
     handover_invalid: 'This link is no longer valid. Ask for a new one.',
@@ -1586,7 +1586,7 @@ export const en = {
       'This item does not use time slots. It is valid for a period instead.',
     catalog_item_not_found: 'This item is not in your catalogue.',
     catalog_item_already_archived:
-      'This service has already been archived. An archive cannot be reopened — create a new service instead.',
+      'This service has already been archived. An archive cannot be reopened. Create a new service instead.',
     catalog_item_has_bookings: 'This item has bookings and cannot be deleted. Turn it off instead.',
     catalog_item_locked_by_bookings:
       'This item already has bookings, so its type and duration can no longer change. Create a new item instead.',
