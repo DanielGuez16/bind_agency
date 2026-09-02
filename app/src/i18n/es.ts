@@ -497,7 +497,7 @@ export const es: Catalogue = {
     annulerFenetreClose: 'La anulación sin coste terminó a las {{heure}}',
     annulerTitre: '¿Anular {{quand}}?',
     annulerCommeUneAbsence:
-      'Cuenta como una ausencia, igual que no presentarse — pero {{salon}} todavía puede dar tu plaza a otra persona.',
+      'Cuenta como una ausencia, igual que no presentarse, pero {{salon}} todavía puede dar tu plaza a otra persona.',
     annulerRienARetenir: 'La plaza vuelve a {{salon}} y no se te reprocha nada.',
     annulerVautMieux: 'Avisarles ahora vale más que no presentarse',
     annulerCaLeurLaisse: 'Les deja {{duree}} para llenarla.',
@@ -553,7 +553,7 @@ export const es: Catalogue = {
     preuveOuvrirReglages: 'Abrir ajustes',
     preuveViteTitre: 'Envíala en menos de 24 horas e Instagram la confirma por ti',
     preuveVite:
-      'Después tu historia ya no está en Instagram, y solo nos queda tu captura y tu palabra. El salón acepta ambas — la primera es más fácil para las dos.',
+      'Después tu historia ya no está en Instagram, y solo nos queda tu captura y tu palabra. El salón acepta ambas. La primera es más fácil para las dos.',
     preuve_verifiee: 'Verificada por la plataforma',
     preuve_verifiee_aide: 'Instagram ha confirmado la cuenta, el formato y la hora. El salón lo ve.',
     preuve_attestee: 'Atestiguada, no verificada',
@@ -562,11 +562,11 @@ export const es: Catalogue = {
     preuve_ecart_aide: 'La plataforma lo comprobó y encontró esto:',
     preuveAdresse: 'Enlace a tu publicación',
     preuveAdresseAide:
-      'Pega el enlace de la publicación. El negocio lo abre para comprobar que sigue en línea — con una captura sola, tiene que creerte.',
+      'Pega el enlace de la publicación. El negocio lo abre para comprobar que sigue en línea. Con una captura sola, tiene que creerte.',
     preuveNote: '¿Algo que añadir?',
     preuveNoteAide: 'Opcional. El salón lo lee junto a tu prueba, útil si algo no salió según lo previsto.',
     preuveCommentFaire:
-      'La tomas tú, de tu propia historia. Se muestra entera — nunca la recortamos.',
+      'La tomas tú, de tu propia historia. Se muestra entera. Nunca la recortamos.',
     preuveEnControle: 'Estamos revisando tu comprobante.',
     preuveANouveau: 'Se solicitó una nueva presentación.',
     preuveNonHonoree: 'Esta contraparte no se cumplió.',
@@ -922,7 +922,7 @@ export const es: Catalogue = {
   verification: {
     titre: 'Confirma tu correo electrónico',
     corps:
-      'Enviamos un enlace a {{email}}. Hasta que lo abras puedes mirar, pero no reservar — y un negocio no puede publicarse.',
+      'Enviamos un enlace a {{email}}. Hasta que lo abras puedes mirar, pero no reservar, y un negocio no puede publicarse.',
     renvoyer: 'Enviar el enlace de nuevo',
     renvoyerEncore: 'Enviar otro',
     envoiEnCours: 'Enviando',
@@ -1116,7 +1116,7 @@ export const es: Catalogue = {
     retirerLaPrestation: 'Quitar',
     remplacer: 'Cambiar duración o nivel',
     remplaceExplication:
-      'Esto crea un servicio nuevo y archiva «{{nom}}». Las reservas ya hechas siguen citando el que tuvieron. Elige el nivel otra vez — la oferta anterior no se traslada, porque nadie la aceptó en estos términos.',
+      'Esto crea un servicio nuevo y archiva «{{nom}}». Las reservas ya hechas siguen citando el que tuvieron. Elige el nivel otra vez. La oferta anterior no se traslada, porque nadie la aceptó en estos términos.',
     archiverAvecReservations: 'Archivar · {{n}} reservas la citan',
     archiverUneReservation: 'Archivar · 1 reserva la cita',
     archivee: 'Archivada. Sigue siendo legible desde las reservas que la citan.',
@@ -1283,7 +1283,7 @@ export const es: Catalogue = {
     titre: 'Altas sobre el terreno',
     videTitre: 'Ninguna ficha preparada',
     videCorps:
-      'Prepara una ficha mientras estás en el salón — nombre, dirección, teléfono. El responsable la termina desde su propio móvil.',
+      'Prepara una ficha mientras estás en el salón. Nombre, dirección, teléfono. El responsable la termina desde su propio móvil.',
     avancement: 'Campos rellenados',
     preparer: 'Preparar una ficha',
     nom: 'Nombre del salón',
@@ -1364,7 +1364,7 @@ export const es: Catalogue = {
     invalid_refresh_token: 'Tu sesión ha caducado. Vuelve a iniciar sesión.',
     email_already_used: 'Este correo electrónico ya está registrado.',
     email_not_verified:
-      'Confirma tu dirección de correo primero. Te enviamos un enlace — puedes pedir otro desde tus ajustes.',
+      'Confirma tu dirección de correo primero. Te enviamos un enlace. Puedes pedir otro desde tus ajustes.',
     email_verification_invalid:
       'Este enlace ya no funciona. Pide otro y ábrelo antes de 24 horas.',
     email_already_verified: 'Tu dirección ya está confirmada.',
@@ -1418,7 +1418,7 @@ export const es: Catalogue = {
       'Este artículo no usa franjas horarias. Es válido durante un periodo.',
     catalog_item_not_found: 'Este artículo no está en tu catálogo.',
     catalog_item_already_archived:
-      'Esta prestación ya está archivada. Un archivo no se reabre — crea una prestación nueva.',
+      'Esta prestación ya está archivada. Un archivo no se reabre. Crea una prestación nueva.',
     catalog_item_has_bookings:
       'Este artículo tiene reservas y no se puede eliminar. Desactívalo en su lugar.',
     catalog_item_locked_by_bookings:
