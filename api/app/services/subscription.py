@@ -68,6 +68,25 @@ class NotSubscribed(SubscriptionError):
     pass
 
 
+class MemeFormule(SubscriptionError):
+    """Le plan demandé est celui qui court déjà.
+
+    Distingué d'un changement : il n'y a rien à faire, et résilier pour rouvrir
+    sur le même plan couperait la facturation pour rien.
+    """
+
+
+class PlanHorsCategorie(SubscriptionError):
+    """Le plan appartient à une autre catégorie que le commerce.
+
+    **La règle existait, servie et non appliquée.** `GET /plans` filtre sur la
+    catégorie — « proposer à un salon le plan d'un musée lui demanderait de
+    comprendre une tarification qui ne le concerne pas » — mais rien ne
+    l'éprouvait à l'écriture : un `plan_id` d'une autre catégorie passait. Une
+    règle qui ne tient que par ce que l'écran propose n'est pas une règle.
+    """
+
+
 @dataclass(frozen=True, slots=True)
 class AbonnementOuvert:
     subscription: Subscription
@@ -108,6 +127,8 @@ async def souscrire(
         raise PlanNotFound(str(plan_id))
     if not plan.is_active:
         raise PlanInactive(str(plan_id))
+    if plan.category != business.category:
+        raise PlanHorsCategorie(str(plan_id))
 
     client = await provider.creer_le_client(business_id=str(business.id), email=actor.email or "")
     distant = await provider.ouvrir_un_abonnement(
@@ -154,6 +175,53 @@ async def souscrire(
 
     await grace.rendre_la_visibilite(session, business=business, actor=actor)
     return AbonnementOuvert(subscription=ligne, checkout_url=distant.checkout_url)
+
+
+async def changer_de_formule(
+    session: AsyncSession,
+    *,
+    business: Business,
+    plan_id: uuid.UUID,
+    actor: User,
+    provider: BillingProvider,
+) -> AbonnementOuvert:
+    """Bascule d'un plan à l'autre, **en un geste et une transaction.**
+
+    **Ce que ça remplace.** `souscrire` refusait tant qu'un abonnement courait,
+    et la seule sortie était de résilier d'abord — c'est-à-dire d'accepter de
+    n'avoir plus rien pour espérer avoir autre chose. Le trou était complet
+    depuis que l'écran est atteignable : voir les formules sans pouvoir changer.
+
+    **Résiliation puis ouverture, dans la même transaction.** Les deux écritures
+    tiennent ou tombent ensemble : un échec du fournisseur à l'ouverture laisse
+    l'ancien abonnement en place, il ne laisse pas le commerce à découvert.
+    L'ordre des deux lignes est garanti par `clock_timestamp()` sur `started_at`
+    et `ended_at`, posé pour exactement ce cas.
+
+    **Les refus du plan viennent avant qu'on touche à l'existant** : un plan
+    inconnu, retiré ou d'une autre catégorie ne doit pas coûter la résiliation
+    de celui qui marchait.
+    """
+    ligne = await courant(session, business_id=business.id)
+    if ligne is None:
+        raise NotSubscribed(str(business.id))
+    if ligne.plan_id == plan_id:
+        raise MemeFormule(str(plan_id))
+
+    plan = await session.get(SubscriptionPlan, plan_id)
+    if plan is None:
+        raise PlanNotFound(str(plan_id))
+    if not plan.is_active:
+        raise PlanInactive(str(plan_id))
+    if plan.category != business.category:
+        raise PlanHorsCategorie(str(plan_id))
+
+    await resilier(session, business=business, actor=actor, provider=provider)
+    # `courant` rend nul désormais : `canceled` n'occupe pas la place, et
+    # `souscrire` retrouve son chemin nominal sans qu'on ait à le dédoubler.
+    return await souscrire(
+        session, business=business, plan_id=plan_id, actor=actor, provider=provider
+    )
 
 
 async def resilier(

@@ -201,6 +201,8 @@ class ErrorCode(StrEnum):
     SUBSCRIPTION_NOT_ACTIVE = "subscription_not_active"
     SUBSCRIPTION_PLAN_NOT_FOUND = "subscription_plan_not_found"
     SUBSCRIPTION_PLAN_INACTIVE = "subscription_plan_inactive"
+    SUBSCRIPTION_SAME_PLAN = "subscription_same_plan"
+    SUBSCRIPTION_PLAN_WRONG_CATEGORY = "subscription_plan_wrong_category"
     BILLING_PROVIDER_UNAVAILABLE = "billing_provider_unavailable"
 
     # Import de carte
