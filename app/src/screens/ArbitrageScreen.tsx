@@ -43,6 +43,7 @@ import {
   EmptyState,
   Icone,
   PALIERS,
+  motDuPalier,
   RangeeDeChips,
   SkeletonLignes,
   StatusMessage,
@@ -191,7 +192,7 @@ function TableDArbitrage({
   lignes: LigneDeFile[];
   onTranche: () => void;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { api } = useApi();
   const c = useColors();
   const [ouvert, setOuvert] = useState<string | null>(null);
@@ -291,10 +292,16 @@ function TableDArbitrage({
             selected={memeMotif}
             testID="filtre-meme-motif"
           />
+          {/* **Le mot du jeton, pas la clé en capitales.** `palier.toUpperCase()`
+              rendait « STORY », « POST », « REEL » — juste en anglais par
+              coïncidence, puisque le libellé anglais est la clé en majuscules.
+              En espagnol il écrivait « POST » là où le jeton dit
+              « PUBLICACIÓN », et rien ne pouvait le dire : la chaîne n'est pas
+              dans les catalogues, elle est dans `produit.json`. */}
           {PALIERS.map((palier) => (
             <Chip
               key={palier}
-              label={palier.toUpperCase()}
+              label={motDuPalier(palier, locale)}
               onPress={() => setFormat(palier)}
               selected={format === palier}
               testID={`filtre-${palier}`}

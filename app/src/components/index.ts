@@ -28,7 +28,7 @@ export {
 } from './Graphiques';
 export { Apparition, Fondu, useAttenteVisible, useEnfoncement, useMouvementReduit, useRecomposition, vibration } from './Mouvement';
 export { EnTeteDEcran, Filet, prenomDe, type Compteur } from './EnTete';
-export { LigneDeContrepartie, TierBadge, type Palier, type TierBadgeProps } from './TierBadge';
+export { LigneDeContrepartie, TierBadge, motDuPalier, type Palier, type TierBadgeProps } from './TierBadge';
 export { BadgesDeProfil, chipDeComportement, type BadgeDeProfil } from './Badges';
 export { ApercuDePrestation, CASE_DU_BADGE, IMAGE_DE_L_APERCU } from './ApercuDePrestation';
 export type { ApercuDePrestationProps } from './ApercuDePrestation';
