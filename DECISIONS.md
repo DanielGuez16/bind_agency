@@ -11158,3 +11158,42 @@ paramètre optionnel sur `GET /businesses` : les schémas existants portent
 tous `distance_metres` en champ obligatoire, et le rendre nullable aurait
 propagé le changement à l'annuaire, la carte de suggestion et l'écran des
 paliers pour un besoin qui ne les concerne pas.
+
+## 2026-09-03 — Notifications sur le web : ne rien demander qu'on ne puisse utiliser
+
+**Deux mensonges, une seule cause.** `useNotificationsPush` gardait son entrée
+par `Device.isDevice`, en affirmant en commentaire que c'était « le seul test
+fiable » pour exclure le web. `expo-device` rend pourtant `isDevice: true`
+**en dur** sur tout navigateur : la garde ne fermait jamais.
+
+En production sur le web, une vraie fenêtre « Autoriser les notifications ? »
+s'ouvrait donc juste après la connexion, sans qu'aucun écran ne l'ait
+annoncée — ce que l'en-tête du module interdit explicitement par ailleurs
+(« rien n'est demandé au premier écran »). Et même accordée, l'enregistrement
+échouait : `getExpoPushTokenAsync` exige `notification.vapidPublicKey` dans
+`app.json`, absente de ce dépôt.
+
+**Le second mensonge était plus discret que le premier.** L'interrupteur des
+réglages se dessinait sur `!refusees` seul. Sans rien en mémoire — le cas de
+tout navigateur — il s'affichait « activé » **au premier rendu, avant toute
+interaction**. Et `basculer` jetait le résultat de `enregistrerCeTerminal`
+avant de poser « activé » quoi qu'il arrive.
+
+**La correction pose la vraie question plutôt que de rafistoler la garde.**
+`pushDisponible()` demande « un jeton est-il obtenable ici » : `Device.isDevice`
+en natif, où il est juste, et la présence de la clé VAPID sur le web, lue **là
+où `expo-notifications` la lit** — un drapeau à nous aurait fait deux vérités,
+et c'est la nôtre qui aurait vieilli le jour où la clé arriverait.
+
+**Pourquoi aucun test ne pouvait l'attraper.** Tous mockaient `expo-device`
+avec `isDevice: true` en pensant décrire un téléphone — ce qui est exactement
+ce que le web renvoie. Le décor du bug et celui du cas nominal étaient le
+même, et c'est la forme que `CLAUDE.md` décrit : un décor qu'une
+implémentation fautive produirait à l'identique ne prouve rien. Les tests
+neufs éprouvent la plateforme, pas le mock.
+
+**Ce qui reste ouvert et ne l'est pas par accident** : les notifications push
+web resteront indisponibles tant que la clé VAPID n'est pas configurée. C'est
+un choix en attente de la décision Expo/EAS, pas un renoncement — le jour où
+la clé est posée dans `app.json`, `pushDisponible()` rend vrai sans qu'on
+touche à une ligne.
