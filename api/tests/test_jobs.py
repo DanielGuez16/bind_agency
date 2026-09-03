@@ -14,6 +14,7 @@ import asyncio
 import uuid
 from datetime import UTC, datetime, timedelta
 
+import httpx
 import pytest
 import sqlalchemy as sa
 from httpx import AsyncClient
@@ -802,6 +803,46 @@ async def test_un_traitement_qui_leve_n_arrete_pas_le_passage(session: AsyncSess
         assert bilan.reussis == 1
     finally:
         handlers_module.TRAITEMENTS[JobType.LINK_CLICK_PURGE_SWEEP] = ancien
+
+
+async def test_get_sender_avec_resend_exige_un_client(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """**La cause précise du blocage de production.**
+
+    `vider_la_boite_d_envoi` appelait `get_sender()` sans argument. Avec
+    `EMAIL_PROVIDER=resend`, cet appel lève systématiquement — la fonction le
+    dit dans son propre corps, « un client HTTP est requis » — et la levée
+    n'était rattrapée nulle part avant la correction de `runner._traiter`.
+    """
+    from app.integrations.email import get_sender
+
+    monkeypatch.setattr(get_settings(), "email_provider", "resend")
+
+    with pytest.raises(ConfigurationError, match="client HTTP"):
+        get_sender()
+
+    # Le pendant : avec un client, l'appel aboutit — c'est tout ce que
+    # `vider_la_boite_d_envoi` avait à faire, et ne faisait pas.
+    async with httpx.AsyncClient() as client:
+        get_sender(client)
+
+
+async def test_vider_la_boite_ne_leve_pas_avec_resend(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """**Le vrai appelant, pas seulement `get_sender()` isolé.**
+
+    Le test précédent prouve le contrat de `get_sender()` ; celui-ci prouve que
+    `vider_la_boite_d_envoi` le respecte. Une correction qui n'aurait touché
+    que l'un des deux laisserait l'autre faux, sans qu'aucun test ne le dise.
+    """
+    monkeypatch.setattr(get_settings(), "email_provider", "resend")
+    monkeypatch.setattr(get_settings(), "email_from", "demo@bind.example")
+
+    issue = await handlers.vider_la_boite_d_envoi(session, account=None, provider=None)
+
+    assert isinstance(issue, handlers.Fait)
 
 
 async def test_un_type_de_job_sans_traitement_est_epuise_pas_ignore(
