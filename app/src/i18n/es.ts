@@ -810,6 +810,9 @@ export const es: Catalogue = {
     lireLesNotes: 'Leer las {{n}} notas',
     replierLesNotes: 'Ocultar las notas',
     formeMelange: 'distintos',
+    filtreTousFormats: 'Todos los formatos',
+    filtreToutesFormes: 'Todos los motivos',
+    filtreMotifsDifferents: 'Motivos distintos',
     filtreMemeMotif: 'Mismo motivo',
     dossiersEnAttente: '{{count}} en espera',
     dossiersUnSeul: '1 en espera',
@@ -1278,7 +1281,7 @@ export const es: Catalogue = {
     ensuite: 'Crearlo no te pone en línea. Tú eliges cuándo, una vez que estén tus servicios y horarios.',
   },
   terrain: {
-    titre: 'Altas sobre el terreno',
+    titre: 'Altas de prospección',
     videTitre: 'Ninguna ficha preparada',
     videCorps:
       'Prepara una ficha mientras estás en el salón. Nombre, dirección, teléfono. El responsable la termina desde su propio móvil.',
@@ -1333,7 +1336,7 @@ export const es: Catalogue = {
     plans: 'Planes',
     commerces: 'Salones',
     verifications: 'Cuentas',
-    terrain: 'Terreno',
+    terrain: 'Prospección',
   },
   global: {
     erreurTitre: 'Algo se rompió',

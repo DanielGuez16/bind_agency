@@ -198,7 +198,25 @@ function TableDArbitrage({
   const [ouvert, setOuvert] = useState<string | null>(null);
   const [selection, setSelection] = useState<string[]>([]);
   const [format, setFormat] = useState<string | null>(null);
-  const [memeMotif, setMemeMotif] = useState(false);
+  /**
+   * La forme retenue, ou toutes.
+   *
+   * **Deux axes indépendants, et non un interrupteur à côté d'une liste.**
+   * « Même motif » était un booléen posé près des formats : les deux se
+   * cumulaient sans que rien ne le dise, et « Tous » ne remettait à zéro que le
+   * format — l'interrupteur restait allumé sous une étiquette qui annonçait
+   * l'inverse.
+   *
+   * Chaque axe a donc son « toutes », et chacun est exclusif chez lui. Ils se
+   * combinent toujours, mais cette fois l'écran le montre.
+   *
+   * **Et « motifs différents » apparaît**, que `motDeLaForme` calculait depuis
+   * toujours sans qu'aucun filtre l'offre. C'est pourtant la décision opposée :
+   * trois refus pour le même motif disent que la demande n'a jamais été
+   * comprise, trois motifs différents disent l'inverse. L'arbitre ne pouvait
+   * isoler que la première moitié.
+   */
+  const [forme, setForme] = useState<'meme' | 'melange' | null>(null);
   const [enCours, setEnCours] = useState(false);
 
   // Filtré à l'écran, sur ce qui est déjà chargé : la file d'arbitrage tient
@@ -209,7 +227,7 @@ function TableDArbitrage({
     // **Le filtre porte sur la forme, pas sur le nombre.** C'est la seule
     // distinction qui change l'arbitre à convoquer, et la file d'un jour chargé
     // mélange les deux sans qu'on puisse les séparer de l'œil.
-    if (memeMotif && motDeLaForme(formeDuMalentendu(ligne)) !== 'meme') return false;
+    if (forme && motDeLaForme(formeDuMalentendu(ligne)) !== forme) return false;
     return true;
   });
 
@@ -274,23 +292,13 @@ function TableDArbitrage({
             }
             testID="compteur-de-file"
           />
-          {/* Un filtre par format. Trois dossiers ne se trient pas, trente
-              si — et c'est la file d'un jour chargé. */}
+          {/* **Premier axe : le format.** Trois dossiers ne se trient pas,
+              trente si — et c'est la file d'un jour chargé. */}
           <Chip
-            label={t('admin.filtreTous')}
+            label={t('admin.filtreTousFormats')}
             onPress={() => setFormat(null)}
             selected={format === null}
             testID="filtre-tous"
-          />
-          {/* **La forme du malentendu, en filtre.** Une file de trente dossiers
-              mêle ceux que le produit a ratés et ceux où la créatrice n'a pas
-              suivi : ce ne sont pas les mêmes décisions, et les séparer d'un
-              appui vaut mieux que de les lire un par un. */}
-          <Chip
-            label={t('admin.filtreMemeMotif')}
-            onPress={() => setMemeMotif((avant) => !avant)}
-            selected={memeMotif}
-            testID="filtre-meme-motif"
           />
           {/* **Le mot du jeton, pas la clé en capitales.** `palier.toUpperCase()`
               rendait « STORY », « POST », « REEL » — juste en anglais par
@@ -307,6 +315,29 @@ function TableDArbitrage({
               testID={`filtre-${palier}`}
             />
           ))}
+
+          {/* **Second axe : la forme du malentendu.** Une file de trente
+              dossiers mêle ceux que le produit a ratés et ceux où la créatrice
+              n'a pas suivi : ce ne sont pas les mêmes décisions, et les séparer
+              d'un appui vaut mieux que de les lire un par un. */}
+          <Chip
+            label={t('admin.filtreToutesFormes')}
+            onPress={() => setForme(null)}
+            selected={forme === null}
+            testID="filtre-toutes-formes"
+          />
+          <Chip
+            label={t('admin.filtreMemeMotif')}
+            onPress={() => setForme('meme')}
+            selected={forme === 'meme'}
+            testID="filtre-meme-motif"
+          />
+          <Chip
+            label={t('admin.filtreMotifsDifferents')}
+            onPress={() => setForme('melange')}
+            selected={forme === 'melange'}
+            testID="filtre-motifs-differents"
+          />
         </Toolbar>
 
         <TableHeader colonnes={COLONNES} testID="entete-de-file" />

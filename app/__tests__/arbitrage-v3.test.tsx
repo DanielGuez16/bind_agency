@@ -211,6 +211,51 @@ describe('la file distingue les deux dossiers', () => {
     expect(screen.queryByTestId('ligne-k2')).toBeNull();
   });
 
+  it('isole aussi les motifs différents, que rien n’offrait', async () => {
+    // **La décision opposée, et elle n'avait pas de filtre.** `motDeLaForme`
+    // rendait `melange` depuis toujours ; l'écran ne proposait que « même
+    // motif », donc l'arbitre pouvait isoler la moitié qui dit « la demande n'a
+    // jamais été comprise » et pas celle qui dit l'inverse.
+    await monter([
+      DOSSIER('k1', ['missing_mention', 'missing_mention', 'missing_mention'], true),
+      DOSSIER('k2', ['missing_mention', 'missing_location', 'wrong_format']),
+    ]);
+    await waitFor(() => expect(screen.getByTestId('ligne-k2')).toBeTruthy());
+
+    await fireEvent.press(screen.getByTestId('filtre-motifs-differents'));
+
+    expect(screen.getByTestId('ligne-k2')).toBeTruthy();
+    expect(screen.queryByTestId('ligne-k1')).toBeNull();
+  });
+
+  it('les deux axes se remettent à zéro chacun chez soi', async () => {
+    /**
+     * **Le défaut de cadrage.** « Même motif » était un interrupteur posé près
+     * des formats : « Tous » ne remettait à zéro que le format, et
+     * l'interrupteur restait allumé sous une étiquette qui annonçait l'inverse.
+     *
+     * Le décor a **deux** dossiers de formes opposées : un axe qui ne filtrerait
+     * rien passerait un décor à un seul.
+     */
+    await monter([
+      DOSSIER('k1', ['missing_mention', 'missing_mention', 'missing_mention'], true),
+      DOSSIER('k2', ['missing_mention', 'missing_location', 'wrong_format']),
+    ]);
+    await waitFor(() => expect(screen.getByTestId('ligne-k2')).toBeTruthy());
+
+    await fireEvent.press(screen.getByTestId('filtre-meme-motif'));
+    expect(screen.queryByTestId('ligne-k2')).toBeNull();
+
+    // Le « tous » des formats ne touche pas l'axe des motifs…
+    await fireEvent.press(screen.getByTestId('filtre-tous'));
+    expect(screen.queryByTestId('ligne-k2')).toBeNull();
+
+    // …et celui des motifs le rend, sans avoir à deviner lequel des deux agit.
+    await fireEvent.press(screen.getByTestId('filtre-toutes-formes'));
+    expect(screen.getByTestId('ligne-k1')).toBeTruthy();
+    expect(screen.getByTestId('ligne-k2')).toBeTruthy();
+  });
+
   it('le dossier nomme la forme en une phrase, avant tout journal', async () => {
     // Une phrase de six mots au lieu d'un journal, et elle suffit à savoir de
     // quel côté est l'incompréhension.

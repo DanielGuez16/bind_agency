@@ -903,6 +903,9 @@ export const en = {
     lireLesNotes: 'Read the {{n}} notes',
     replierLesNotes: 'Hide the notes',
     formeMelange: 'mixed',
+    filtreTousFormats: 'All formats',
+    filtreToutesFormes: 'All reasons',
+    filtreMotifsDifferents: 'Mixed reasons',
     filtreMemeMotif: 'Same reason',
     dossiersEnAttente: '{{count}} waiting',
     dossiersUnSeul: '1 waiting',
@@ -1425,7 +1428,7 @@ export const en = {
     ensuite: 'Creating it does not put you online. You choose when, once your services and hours are in.',
   },
   terrain: {
-    titre: 'Field signups',
+    titre: 'Outreach signups',
     videTitre: 'No page prepared yet',
     videCorps:
       'Prepare a page while you are in the salon. Name, address, phone. The manager finishes it from their own phone.',
@@ -1488,7 +1491,7 @@ export const en = {
     plans: 'Plans',
     commerces: 'Salons',
     verifications: 'Accounts',
-    terrain: 'Field',
+    terrain: 'Outreach',
   },
   global: {
     erreurTitre: 'Something broke',
