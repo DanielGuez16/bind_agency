@@ -42,6 +42,7 @@ import type {
   VueDActivation,
   FichePublique,
   Fil,
+  FilPopulaire,
   FiltreDeContrepartie,
   HistoriqueDuCreateur,
   IssueDArbitrage,
@@ -285,6 +286,15 @@ export class Api {
       },
       signal,
     });
+  }
+
+  /**
+   * Le fil de secours : sans coordonnées, trié par popularité. Voir
+   * `routes.filPopulaire` — l'écran l'appelle quand la position est refusée,
+   * indisponible, ou sans réponse, plutôt que de bloquer entièrement.
+   */
+  filPopulaire(signal?: AbortSignal) {
+    return this.client.request<FilPopulaire>(routes.filPopulaire(), { signal });
   }
 
   fichePublique(businessId: string, signal?: AbortSignal) {

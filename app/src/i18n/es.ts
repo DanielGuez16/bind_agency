@@ -394,7 +394,13 @@ export const es: Catalogue = {
     filPositionEnCours: 'Obteniendo tu ubicación…',
     filPositionRefusee:
       'La ubicación está desactivada para BIND, así que no podemos ordenar por distancia.',
-    filReactiverNavigateur:
+    filReactiverIosSafariWeb:
+      'Toca el icono «Aa» a la izquierda de la barra de direcciones, luego Ajustes del sitio web, y pon Ubicación en «Permitir». El ajuste general de Localización del iPhone puede estar activado aunque Safari recuerde un rechazo anterior para este sitio en concreto: son dos interruptores distintos, y es este el que hay que revisar.',
+    filReactiverIosAutreWeb:
+      'Abre los ajustes de sitio de este navegador para BIND, normalmente desde el icono junto a la barra de direcciones, y pon Ubicación en «Permitir». El ajuste general de Localización del iPhone puede estar activado aunque este navegador recuerde un rechazo anterior para este sitio en concreto: son dos interruptores distintos, y es este el que hay que revisar.',
+    filReactiverAndroidWeb:
+      'Toca el icono del candado a la izquierda de la barra de direcciones, luego Permisos, y pon Ubicación en «Permitir».',
+    filReactiverDesktopWeb:
       'Haz clic en el candado a la izquierda de la barra de direcciones, pon Ubicación en «Permitir» y recarga la página.',
     filReactiverIos:
       'Abre Ajustes › Privacidad y seguridad › Localización › BIND y elige «Al usar la app».',
@@ -405,6 +411,10 @@ export const es: Catalogue = {
     filPositionSansReponse:
       'Seguimos esperando una respuesta. Si tu navegador te lo está pidiendo, elige «Permitir»; si no, vuelve a intentarlo.',
     filReessayer: 'Reintentar',
+    filCopierLesInstructions: 'Copiar las instrucciones',
+    filInstructionsCopiees: 'Copiado',
+    filPopulaireTitre: 'Popular ahora mismo',
+    filPopulaireSousTitre: 'Ordenado por popularidad: la ubicación está desactivada',
     ficheOffres: 'Lo que ofrecen',
     ficheOuvertJusqua: 'Abierto hasta las {{heure}}',
     ficheDuree: '{{count}} minutos',

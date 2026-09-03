@@ -257,7 +257,7 @@ describe('ce que l’écran dit de chaque état', () => {
     }
 
     // Le refus porte les deux : le chemin d'abord, le bouton ensuite.
-    const refus = messageDePosition({ etat: 'refusee', ouReactiver: 'navigateur' });
+    const refus = messageDePosition({ etat: 'refusee', ouReactiver: 'web_desktop' });
     expect(refus?.ouReactiver).not.toBeNull();
     expect(refus?.action?.cle).toBe('parcours.filReessayer');
   });
@@ -279,14 +279,16 @@ describe('ce que l’écran dit de chaque état', () => {
   });
 
   it('dit où réactiver, et l’endroit dépend de la plateforme', () => {
-    // « Dans les réglages » n'aide personne : le chemin est nommé, et il n'est
-    // pas le même dans un navigateur, sur iOS et sur Android.
-    const chemins = (['navigateur', 'ios', 'android'] as const).map(
-      (ou) => messageDePosition({ etat: 'refusee', ouReactiver: ou })?.ouReactiver,
-    );
+    // **Six, et non trois.** « navigateur » traitait Safari mobile et Chrome
+    // de bureau pareil, et leur rendait le même texte — un cadenas que
+    // Safari iOS n'a pas. Les quatre variantes web doivent donc rendre
+    // quatre textes distincts entre elles, en plus des deux natives.
+    const chemins = (
+      ['web_ios_safari', 'web_ios_autre', 'web_android', 'web_desktop', 'ios', 'android'] as const
+    ).map((ou) => messageDePosition({ etat: 'refusee', ouReactiver: ou })?.ouReactiver);
 
     expect(chemins.every((chemin) => chemin !== null && chemin !== undefined)).toBe(true);
-    expect(new Set(chemins).size).toBe(3);
+    expect(new Set(chemins).size).toBe(6);
   });
 
   it('sépare « on vous attend » de « votre appareil n’a rien rendu »', () => {
@@ -317,10 +319,40 @@ describe('ce que l’écran dit de chaque état', () => {
     lire.mockResolvedValue(autorisation({ status: 'denied', canAskAgain: false }));
 
     const original = Platform.OS;
+    const agentOriginal = navigator.userAgent;
+
+    // **Le cas de Rebecca, nommé.** `Platform.OS === 'web'` seul rendait
+    // `'navigateur'` pour Safari iPhone comme pour un ordinateur de bureau —
+    // c'est tout l'audit. Ici l'agent utilisateur est un vrai Safari iOS, et
+    // le résultat doit porter la variante iOS, pas la générique.
     Object.defineProperty(Platform, 'OS', { value: 'web', configurable: true });
-    const surLeWeb = await presser();
-    await waitFor(() => expect(surLeWeb.result.current.etat.etat).toBe('refusee'));
-    expect(surLeWeb.result.current.etat).toEqual({ etat: 'refusee', ouReactiver: 'navigateur' });
+    Object.defineProperty(navigator, 'userAgent', {
+      value:
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1',
+      configurable: true,
+    });
+    const surSafariIOS = await presser();
+    await waitFor(() => expect(surSafariIOS.result.current.etat.etat).toBe('refusee'));
+    expect(surSafariIOS.result.current.etat).toEqual({
+      etat: 'refusee',
+      ouReactiver: 'web_ios_safari',
+    });
+
+    // Le même iPhone, mais Chrome plutôt que Safari : un réglage de site
+    // ailleurs, donc une variante différente.
+    Object.defineProperty(navigator, 'userAgent', {
+      value:
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/128.0 Mobile/15E148 Safari/604.1',
+      configurable: true,
+    });
+    const surChromeIOS = await presser();
+    await waitFor(() => expect(surChromeIOS.result.current.etat.etat).toBe('refusee'));
+    expect(surChromeIOS.result.current.etat).toEqual({
+      etat: 'refusee',
+      ouReactiver: 'web_ios_autre',
+    });
+
+    Object.defineProperty(navigator, 'userAgent', { value: agentOriginal, configurable: true });
 
     Object.defineProperty(Platform, 'OS', { value: 'ios', configurable: true });
     const suriOS = await presser();
@@ -380,7 +412,7 @@ describe('le fil demande la position en arrivant', () => {
      */
     for (const etat of [
       { etat: 'en_cours' },
-      { etat: 'refusee', ouReactiver: 'navigateur' },
+      { etat: 'refusee', ouReactiver: 'web_desktop' },
       { etat: 'indisponible' },
       { etat: 'sans_reponse' },
     ] as EtatDePosition[]) {

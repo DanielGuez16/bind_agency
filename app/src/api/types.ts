@@ -547,6 +547,26 @@ export type Fil = {
    */
 };
 
+/**
+ * Un salon du fil sans position. Pas de `distance_metres` : il n'y en a pas
+ * à rendre sans position pour la calculer, voir `FilPopulaire`.
+ */
+export type SalonPopulaire = {
+  business_id: string;
+  nom: string;
+  category: BusinessCategory;
+  neighborhood: Neighborhood | null;
+  prestations: number;
+};
+
+/**
+ * Le fil de secours quand la position est refusée, indisponible, ou sans
+ * réponse — trié par popularité plutôt que bloquer l'écran.
+ */
+export type FilPopulaire = {
+  salons: SalonPopulaire[];
+};
+
 export type OffreDeLaFiche = {
   tier_offer_id: string;
   catalog_item_id: string;
