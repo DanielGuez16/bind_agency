@@ -36,8 +36,8 @@ from app.models.enums import (
     NotificationKind,
     UserStatus,
 )
+from app.services import email_render, notifications
 from app.services import jobs as jobs_service
-from app.services import notifications
 
 #: Pourquoi un message n'est jamais parti. Nommés, parce qu'on les relira dans
 #: une file d'administration : « rien n'est parti » sans raison enverrait
@@ -239,11 +239,15 @@ async def _emettre(
     if ligne.channel is MessageChannel.EMAIL:
         if not utilisateur.email:
             return Issue.ECARTE, ECARTE_SANS_ADRESSE
+        corps_html = email_render.rendre_html(
+            ligne.template_key, utilisateur.locale, sujet=sujet, valeurs=valeurs
+        )
         await email_sender.envoyer(
             Message(
                 destinataire=utilisateur.email,
                 sujet=sujet,
                 corps=corps,
+                corps_html=corps_html,
                 locale=utilisateur.locale,
             )
         )

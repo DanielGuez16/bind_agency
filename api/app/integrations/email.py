@@ -37,6 +37,10 @@ class Message:
     sujet: str
     corps: str
     locale: Locale
+    #: Le même message, mis en forme par `app.services.email_render`. `None`
+    #: reste possible — un appelant qui n'a pas encore de gabarit HTML pour ce
+    #: message envoie du texte seul, jamais une exception.
+    corps_html: str | None = None
 
 
 @runtime_checkable
@@ -81,16 +85,24 @@ class ResendSender:
         self._delai = httpx.Timeout(settings.email_timeout_seconds)
 
     async def envoyer(self, message: Message) -> None:
+        charge = {
+            "from": self._expediteur,
+            "to": [message.destinataire],
+            "subject": message.sujet,
+            "text": message.corps,
+        }
+        # **Les deux, quand le gabarit HTML existe.** Le texte reste dans
+        # tous les cas : un client qui ne rend pas le HTML — un lecteur
+        # d'écran, un filtre d'entreprise — retombe dessus, et Resend l'exige
+        # de toute façon comme repli.
+        if message.corps_html is not None:
+            charge["html"] = message.corps_html
+
         try:
             reponse = await self._client.post(
                 RESEND,
                 headers={"Authorization": f"Bearer {self._cle}"},
-                json={
-                    "from": self._expediteur,
-                    "to": [message.destinataire],
-                    "subject": message.sujet,
-                    "text": message.corps,
-                },
+                json=charge,
                 timeout=self._delai,
             )
         except httpx.HTTPError as error:
