@@ -243,9 +243,17 @@ export function FicheScreen({
                 {fiche.name}
               </Texte>
               {fiche.address ? (
-                <Texte variante="type.body" couleur="ink.soft">
-                  {fiche.address}
-                </Texte>
+                // **Une épingle, et l'adresse entière.** L'adresse n'était
+                // déjà tronquée nulle part — pas ici, pas ailleurs dans le
+                // parcours créatrice, sweep fait — il ne lui manquait que le
+                // repère visuel qui la distingue d'une ligne de texte
+                // ordinaire.
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Icone nom="lieu" couleur="ink.soft" taille={16} />
+                  <Texte variante="type.body" couleur="ink.soft" style={{ flexShrink: 1 }}>
+                    {fiche.address}
+                  </Texte>
+                </View>
               ) : null}
             </View>
             {/* **Les deux étiquettes de la planche, dont l'horaire.** Il

@@ -122,7 +122,10 @@ describe('journée du comptoir, grand écran', () => {
     // alors occupés par « choisissez une réservation à gauche », et c'est ce
     // qu'un commerçant voyait chaque matin.
     await monter();
-    await waitFor(() => expect(screen.getAllByText('Gel manicure').length).toBeGreaterThan(0));
+    // La ligne du planning porte désormais la durée avec le nom (R2.6).
+    await waitFor(() =>
+      expect(screen.getAllByText('Gel manicure · 45 min').length).toBeGreaterThan(0),
+    );
 
     expect(screen.getByTestId('detail-de-la-ligne')).toHaveTextContent(/Gel manicure/);
     expect(screen.queryByTestId('aucune-ligne-ouverte')).toBeNull();
@@ -134,7 +137,10 @@ describe('journée du comptoir, grand écran', () => {
       ...JOURNEE,
       a_trancher: [{ ...JOURNEE.items[1], booking_id: 'b-9', item_name: 'Balayage' }],
     });
-    await waitFor(() => expect(screen.getAllByText('Gel manicure').length).toBeGreaterThan(0));
+    // La ligne du planning porte désormais la durée avec le nom (R2.6).
+    await waitFor(() =>
+      expect(screen.getAllByText('Gel manicure · 45 min').length).toBeGreaterThan(0),
+    );
 
     expect(screen.getByTestId('detail-de-la-ligne')).toHaveTextContent(/Balayage/);
   });
