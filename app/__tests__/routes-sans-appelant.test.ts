@@ -37,12 +37,17 @@ const CLIENT = join(SRC, 'api', 'index.tsx');
 /**
  * Les méthodes sans appelant, chacune avec sa raison.
  *
- * **Toutes sous `a-instruire`, et c'est le constat honnête.** Ce ne sont pas
- * des exemptions : ce sont treize capacités que le produit sait demander au
- * serveur et qu'aucun écran n'offre. Plusieurs appartiennent à des tâches
- * cochées — la reprise de compte, l'abonnement, les repères du voisinage, la
- * modification du catalogue. Les ranger sous « contrat » sans les instruire
- * ferait de cette table le tapis qu'elle existe pour retirer.
+ * **Sous `a-instruire`, et c'est le constat honnête.** Ce n'est pas une
+ * exemption : c'est une capacité que le produit sait demander au serveur et
+ * qu'aucun écran n'offre. La ranger sous « contrat » sans l'instruire ferait
+ * de cette table le tapis qu'elle existe pour retirer.
+ *
+ * **`fermerLaReprise` en est sortie ce soir**, avec sa propre raison écrite
+ * ici avant : « l'administration se retire en quittant, un bouton ne protège
+ * personne ». L'audit a demandé le contraire — un geste explicite pour
+ * refermer son propre accès, plutôt qu'une porte qui reste ouverte tant que
+ * personne ne l'a remarqué — et la table suit, comme elle est censée le
+ * faire.
  */
 const SANS_APPELANT: Record<string, string> = {
   // **Le résumé de composition a perdu son écran.** Il alimentait la table des
@@ -51,13 +56,6 @@ const SANS_APPELANT: Record<string, string> = {
   // portent pas de compteur. La route reste, et ce qu'elle rend est bon ; ce
   // qui manque est un endroit où le lire. Voir `TASKS.md`.
   compositionDuCommerce: 'a-instruire',
-  // **La fermeture côté administration n'a pas d'écran, et c'est voulu.** Le
-  // salon referme depuis chez lui, en un appui, et c'est le seul geste qui
-  // compte. L'administration se retire en quittant : la reprise s'éteint à son
-  // plafond. Un bouton « je m'en vais » du côté de celui qui est entré ne
-  // protège personne, et donnerait à croire que la porte reste ouverte tant
-  // qu'on ne l'a pas pressé.
-  fermerLaReprise: 'a-instruire',
 };
 
 const RAISONS = new Set(['contrat', 'technique', 'a-instruire']);

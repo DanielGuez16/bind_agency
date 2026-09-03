@@ -3943,3 +3943,36 @@ barrière avant le réseau, et c'est là qu'il faut la poser.
       *Neuf mutations vérifiées — deux glyphes, trois sur la bande, trois sur la
       semaine, deux sur le retour et la section. Quatre entrées ajoutées à la
       table des retraits, dont une remise en v14 écrite comme telle.*
+
+- [x] **La reprise mène quelque part, et se referme depuis là où on l'a ouverte**
+      *Trouvé par l'audit fonctionnel de l'administration : le parcours de
+      reprise s'arrêtait net après l'ouverture. `ReprendreLeCompte` savait
+      ouvrir un accès et le disait ; aucun écran ne menait ensuite au commerce
+      repris, et `fermerLaReprise()` — le geste de l'administration sur son
+      propre accès — n'était appelé nulle part côté client bien qu'il existe
+      depuis le début.*
+
+      ***`OngletsAdmin` tient la bascule, comme le commerce sans salon tient déjà
+      la sienne.** Une reprise en cours remplace sa barre d'onglets par un
+      nouvel `EcranDeReprise`, qui rejoue les écrans marchands
+      (`ecransDuCommerce`, extrait de `OngletsDuCommerceChoisi`) sur le
+      `businessId` de la reprise — possible sans toucher un seul écran marchand,
+      puisque chacun prenait déjà `businessId` en prop explicite. Un bandeau
+      porte le motif et la portée à l'ouverture, et le bouton « Close my
+      access » — absent jusqu'ici — appelle enfin `fermerLaReprise()`.*
+
+      ***Le réglage du commerce reste hors de la reprise, et c'est volontaire.**
+      Les sections de pause et d'historique de `ReglagesScreen` sont gardées sur
+      le rôle de la session connectée, pas sur celui qu'on visite ; les montrer
+      sous une reprise aurait rendu un écran amputé sans le dire.
+      `ecransDuCommerce` ne porte donc pas « reglages ».*
+
+      ***`fermerLaReprise` sort de `SANS_APPELANT`**, où sa raison disait
+      l'inverse de ce qu'on vient de construire. L'audit a demandé
+      explicitement le contraire, et la table suit — voir `DECISIONS.md`.*
+
+      *`CommercesScreen.tsx` et `TerrainScreen.tsx` relaient l'entrée par un
+      `onEntrerEnReprise` optionnel : sans détail pour une reprise déjà
+      ouverte, avec le motif et la portée pour une reprise qu'on vient
+      d'ouvrir. 6 tests neufs, 6 mutations vérifiées — chacune restaurée avant
+      la suivante, rien laissé en place.*
