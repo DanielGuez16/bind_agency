@@ -25,13 +25,14 @@
  * chiffre faux d'une manière que personne ne verrait.
  */
 import { useCallback, useState } from 'react';
-import { Linking, Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
 import { useApi, type AnnuaireAdmin, type CreateurAdmin } from '../api';
 import {
   BandeDeChiffres,
   Chiffre,
   Icone,
+  LienExterne,
   Photo,
   SkeletonLignes,
   StatusMessage,
@@ -75,6 +76,12 @@ export function CreateursAdminScreen() {
       requete={requete}
       titre={t('admin.createursTitre')}
       sousTitre={t('admin.createursSousTitre')}
+      // **Sept colonnes font 924 points, le repli `merchant` en offrait 672.**
+      // Le palier se coupait, le score de fiabilité et le lien vers le profil
+      // ne s'affichaient pas du tout — rendus, mais hors du cadre, qui est en
+      // `overflow: 'hidden'` sans défilement horizontal. C'est pour ça que les
+      // liens Instagram « ne marchaient pas » : ils n'étaient pas atteignables.
+      nature="reports"
       squelette={<SkeletonLignes combien={8} testID="squelette-createurs" />}
       testID="ecran-createurs-admin"
       vide={
@@ -327,35 +334,41 @@ function LigneDeCreateur({
             couleur="ink.soft"
             testID={`reseau-${createur.creator_id}`}
           />
-        ) : (
-          <Texte variante="type.body" couleur="ink.mute">
-            {t('admin.createursSansReseau')}
-          </Texte>
-        ),
+        ) : /* **Vide, et non « No network connected » une seconde fois.** La
+              phrase tient déjà dans la colonne du nom, qui est celle qui
+              nomme ; répétée dans une colonne de glyphes large de quatre-vingts
+              points, elle passait sur trois lignes et donnait à cette rangée
+              trois fois la hauteur des autres — une table dont les rangées ne
+              s'alignent plus cesse d'être une table.
+
+              C'est déjà ce que fait la colonne voisine : `audience` rend une
+              chaîne vide quand aucun compte n'est rattaché, pour cette raison
+              exacte. */
+        null,
         /* **Le seul geste de la ligne, et il quitte l'application.** La fiche
            publique vit sur la plateforme ; le produit n'a pas d'écran de
            créatrice côté administration, et en inventer un demanderait de
            décider ce qu'on y montre — ce que la planche ne tranche pas. */
         profil: lien ? (
-          <Pressable
-            accessibilityRole="link"
+          /* **Une vraie ancre, et pas un `Pressable` de rôle « link ».** Le
+             clic marchait déjà ; ce qui manquait est tout le reste de ce qu'un
+             lien est — l'ouvrir dans un onglet, copier son adresse, voir où il
+             mène avant d'appuyer. Sur cet écran c'est le seul geste offert, et
+             on l'utilise en série : ouvrir cinq profils sans perdre la liste
+             est précisément ce que le clic-milieu sert à faire. */
+          <LienExterne
+            url={lien}
             accessibilityLabel={t('admin.createursOuvrirLeProfil', {
               pseudonyme: tete?.handle ?? '',
             })}
-            onPress={() => void Linking.openURL(lien)}
             testID={`profil-${createur.creator_id}`}
-            style={({ pressed }) => ({
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 6,
-              opacity: pressed ? 0.6 : 1,
-            })}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
           >
             <Texte variante="type.body" couleur="ink.default" style={{ fontWeight: '600' }}>
               {t('admin.createursOuvrir')}
             </Texte>
             <Icone nom="sortie" taille={14} couleur="ink.soft" />
-          </Pressable>
+          </LienExterne>
         ) : null,
       }}
     />

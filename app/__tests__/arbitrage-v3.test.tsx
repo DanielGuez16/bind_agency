@@ -413,3 +413,51 @@ describe('clore sans faute', () => {
     expect(screen.getByTestId('ligne-k1')).toHaveTextContent(/4 · same/);
   });
 });
+
+describe('la file tient dans la place que sa nature lui réserve', () => {
+  /**
+   * **Le débord ne se voyait pas, et ne pouvait pas se voir.** L'écran
+   * déclarait `reports` — 1120 points — mais le panneau de détail en prend 440
+   * fixes : la file héritait de 608 pour une table de 760, et « Reasons » et
+   * « Flagged » tombaient sous un `overflow: 'hidden'` sans défilement. Aucune
+   * garde ne pouvait l'attraper, parce que rien ne dépasse : c'est la colonne
+   * souple qui se comprime.
+   *
+   * La borne `adminListeDetail` porte donc la largeur de la file en dur, et
+   * cette assertion est ce qui l'empêche de mentir. Elle échoue si l'on
+   * élargit une colonne sans reprendre la borne — c'est-à-dire au moment
+   * exact où le défaut reviendrait.
+   */
+  it('la borne de sa nature porte la somme réelle des colonnes', () => {
+    const { COLONNES } = require('../src/screens/ArbitrageScreen') as {
+      COLONNES: { largeur: number }[];
+    };
+    const { largeurMaximale, ECART_DES_COLONNES } =
+      require('../src/shell/gabarit') as typeof import('../src/shell/gabarit');
+    const { breakpoint } = require('../src/theme') as typeof import('../src/theme');
+
+    /** Les six colonnes, plus les douze points que `TableRow` pose de chaque côté. */
+    const largeurDeLaFile = COLONNES.reduce((somme, c) => somme + c.largeur, 0) + 24;
+
+    const borne = largeurMaximale('adminListeDetail', true);
+    expect(borne).toBeDefined();
+
+    /**
+     * Ce qui reste vraiment à la file, **marges de l'écran comprises**.
+     *
+     * La première version de cette ligne les oubliait. Elle passait au vert
+     * pendant que « Flagged » restait coupée dans le navigateur : le calcul
+     * était juste par rapport à lui-même, et faux par rapport à ce que fait
+     * `Ecran`, qui pose `screenPaddingLarge` de chaque côté *à l'intérieur* de
+     * la borne. Un décor qui reproduit l'erreur qu'il doit attraper ne prouve
+     * rien — c'est le navigateur qui a rendu le verdict.
+     */
+    const { density } = require('../src/theme') as typeof import('../src/theme');
+    const pourLaFile =
+      (borne as number) -
+      2 * density.creator.screenPaddingLarge -
+      breakpoint.detailPanelAdmin -
+      ECART_DES_COLONNES;
+    expect(pourLaFile).toBeGreaterThanOrEqual(largeurDeLaFile);
+  });
+});

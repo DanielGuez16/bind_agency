@@ -942,6 +942,13 @@ describe("ce que la bibliothèque n'a pas", () => {
       // teinte de marque : deux jauges écrites sur place auraient demandé
       // d'exempter le fichier entier de cette garde-là.
       'Jauge.tsx',
+      // Le lien qui sort du produit, et qui est une vraie ancre sur le web.
+      // Écrit sur place, il donnait un `<div role="link">` : le clic marchait,
+      // et rien de ce qui fait un lien — l'ouvrir dans un onglet, copier son
+      // adresse, voir où il mène. La famille existe parce que onze écrans
+      // posent ce geste, et qu'un `Platform.OS` recopié onze fois n'est corrigé
+      // qu'une fois sur onze.
+      'LienExterne.tsx',
       'Logo.tsx',
       'Mouvement.tsx',
       'PaveDeSaisie.tsx',
