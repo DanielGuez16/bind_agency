@@ -155,6 +155,7 @@ export function TableRow({
   colonnes,
   valeurs,
   natures,
+  rendus,
   actif,
   onPress,
   fin,
@@ -164,6 +165,15 @@ export function TableRow({
   valeurs: Record<string, string>;
   /** La nature de chaque cellule déclarée `etat`. */
   natures?: Record<string, NatureDEtat>;
+  /**
+   * Ce qu'une cellule porte quand ce n'est pas du texte.
+   *
+   * **La rangée garde sa géométrie, l'appelant fournit le contenu.** Un glyphe
+   * de plateforme ou une pastille ne se dit pas en chaîne ; les faire entrer
+   * dans `valeurs` aurait demandé à la rangée de savoir les reconnaître, et
+   * c'est ainsi qu'une fonction partagée redevient cinq fonctions.
+   */
+  rendus?: Record<string, ReactNode>;
   actif?: boolean;
   onPress?: () => void;
   /**
@@ -214,7 +224,9 @@ export function TableRow({
           ne se lit pas mieux qu'une donnée cassée, et les deux colonnes
           fautives ont été élargies là où elles sont déclarées. Ceci est le
           filet qui empêche la prochaine de casser la grille en silence. */}
-      {colonne.etat && natures?.[colonne.cle] ? (
+      {rendus?.[colonne.cle] !== undefined ? (
+        rendus[colonne.cle]
+      ) : colonne.etat && natures?.[colonne.cle] ? (
         <Cartouche
           libelle={valeurs[colonne.cle] ?? ''}
           nature={natures[colonne.cle]}

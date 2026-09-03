@@ -2723,6 +2723,66 @@ describe('le mode terrain dit son avancement sans l’écrire', () => {
   });
 });
 
+describe('le score de fiabilité vit sur l’annuaire admin, et nulle part ailleurs', () => {
+  const reseau = (handle: string) => [
+    {
+      platform: 'instagram',
+      handle,
+      followers: 12_400,
+      avatar_key: null,
+      profil_url: `https://instagram.com/${handle}`,
+    },
+  ];
+
+  it('écrit le score de celle qui en a un, et « aucun relevé » pour l’autre', async () => {
+    /**
+     * **Deux créatrices qui divergent sur le seul champ éprouvé.**
+     *
+     * Avec une seule, un écran qui écrirait toujours « No record » et un écran
+     * qui écrirait toujours un nombre rendraient le même verdict. Le couple est
+     * exactement celui que la règle distingue : `null` signifie **neutre**,
+     * jamais zéro — la condition de score est ignorée, pas échouée.
+     *
+     * Écrire « 0 » classerait la créatrice la plus récente au dernier rang
+     * d'une colonne de notes, et c'est un arbitre qui la lirait.
+     */
+    await monter(
+      <CreateursAdminScreen />,
+      clientDe({
+        '/admin/creators': [
+          { creator_id: 'c1', city: 'Miami', reseaux: reseau('notee'), audience_totale: 12_400, reliability_score: '86.00' },
+          { creator_id: 'c2', city: 'Miami', reseaux: reseau('neuve'), audience_totale: 12_400, reliability_score: null },
+        ],
+      }),
+      'admin',
+    );
+    await waitFor(() => expect(screen.getByTestId('createur-c1')).toBeTruthy());
+
+    expect(screen.getByTestId('createur-c1')).toHaveTextContent(/86/);
+    expect(screen.getByTestId('createur-c2')).toHaveTextContent(
+      new RegExp(en.admin.createursSansScore),
+    );
+    // Et surtout pas un zéro, qui se lirait comme la pire note de la liste.
+    expect(screen.getByTestId('createur-c2')).not.toHaveTextContent(/\b0\b/);
+  });
+
+  it('dit pourquoi le chiffre vit ici, parce que c’est une promesse', async () => {
+    // Une colonne de notes sur des personnes appelle immédiatement « qui
+    // d'autre la voit ». La réponse est personne, et elle se dit à l'écran.
+    await monter(
+      <CreateursAdminScreen />,
+      clientDe({
+        '/admin/creators': [
+          { creator_id: 'c1', city: 'Miami', reseaux: reseau('notee'), audience_totale: 12_400, reliability_score: '86.00' },
+        ],
+      }),
+      'admin',
+    );
+    await waitFor(() => expect(screen.getByTestId('fiabilite-vit-ici')).toBeTruthy());
+    expect(screen.getByTestId('fiabilite-vit-ici')).toHaveTextContent(/never sees this number/);
+  });
+});
+
 describe('la tournée se lit en table, et ses gestes vivent dans le panneau', () => {
   /**
    * **Deux fiches qui divergent sur tout ce que la table sert à comparer.**

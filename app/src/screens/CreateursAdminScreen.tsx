@@ -18,10 +18,20 @@
  * chaque chiffre serait faux d'une manière invisible.
  */
 import { useCallback, useState } from 'react';
-import { View } from 'react-native';
+import { Linking, Pressable, View } from 'react-native';
 
 import { useApi, type CreateurAdmin } from '../api';
-import { Icone, Photo, SkeletonLignes, TextField, Texte } from '../components';
+import {
+  Icone,
+  Photo,
+  SkeletonLignes,
+  StatusMessage,
+  TableHeader,
+  TableRow,
+  TextField,
+  Texte,
+  type Colonne,
+} from '../components';
 import { formatNumber } from '../format';
 import { useI18n } from '../i18n';
 import { radius, useColors } from '../theme';
@@ -32,6 +42,7 @@ import { motion } from '../theme';
 export function CreateursAdminScreen() {
   const { api } = useApi();
   const { t, locale } = useI18n();
+  const c = useColors();
   const [recherche, setRecherche] = useState('');
   const [demande, setDemande] = useState('');
 
@@ -73,11 +84,31 @@ export function CreateursAdminScreen() {
             {t('admin.createursCompte', { n: String(createurs.length) })}
           </Texte>
 
-          <View>
+          <View
+            style={{
+              borderRadius: radius['radius.lg'],
+              borderWidth: 1,
+              borderColor: c['line.default'],
+              backgroundColor: c['bg.surface'],
+              overflow: 'hidden',
+            }}
+          >
+            <TableHeader colonnes={COLONNES(t)} testID="entete-createurs" />
             {createurs.map((createur) => (
               <LigneDeCreateur key={createur.creator_id} createur={createur} locale={locale} />
             ))}
           </View>
+
+          {/* **La phrase qui dit pourquoi le chiffre vit ici.** Sans elle,
+              l'administration lit une note sur des personnes sans savoir ce
+              qu'elle engage — et la première question qu'on se pose devant une
+              colonne pareille est « qui d'autre la voit ». La réponse est
+              personne, et c'est une promesse qui se dit. */}
+          <StatusMessage
+            level="neutral"
+            body={t('admin.createursFiabiliteRaison')}
+            testID="fiabilite-vit-ici"
+          />
         </View>
       )}
     </Ecran>
@@ -102,6 +133,27 @@ function BarreDeRecherche({
   );
 }
 
+/**
+ * Les colonnes de la planche, dans son ordre.
+ *
+ * **Il manque « TIER », et l'inventer aurait été pire que l'omettre.** La
+ * planche dessine le palier qu'une créatrice ouvre. Il se calcule contre tous
+ * les paliers du produit — c'est faisable — mais le service qui le fait est
+ * `evaluer_createur`, trois requêtes **par créatrice** : cent lignes en
+ * demanderaient trois cents. Il faut une requête d'ensemble côté serveur, et
+ * elle n'existe pas. Une colonne remplie à l'estime aurait été fausse d'une
+ * manière que personne ne voit, ce que l'en-tête de cette route interdit déjà
+ * pour la distance.
+ */
+const COLONNES = (t: (cle: string) => string): Colonne[] => [
+  { cle: 'pseudonyme', label: t('admin.createursColonneCreatrice'), largeur: 260 },
+  { cle: 'ville', label: t('admin.createursColonneVille'), largeur: 180 },
+  { cle: 'reseau', label: t('admin.createursColonneReseau'), largeur: 90 },
+  { cle: 'audience', label: t('admin.createursColonneAudience'), largeur: 120, chiffre: true },
+  { cle: 'fiabilite', label: t('admin.createursColonneFiabilite'), largeur: 120, chiffre: true },
+  { cle: 'profil', label: '', largeur: 130 },
+];
+
 /** Une créatrice : sa photo, son pseudonyme, ses réseaux, son volume. */
 function LigneDeCreateur({
   createur,
@@ -120,62 +172,110 @@ function LigneDeCreateur({
     (a, b) => (b.followers ?? -1) - (a.followers ?? -1),
   )[0];
   const portrait = tete?.avatar_key ? api.urlDuPortrait(tete.avatar_key) : null;
+  const lien = tete?.profil_url ?? null;
 
   return (
-    <View
+    <TableRow
       testID={`createur-${createur.creator_id}`}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-        minHeight: 60,
-        paddingVertical: 8,
-        borderBottomWidth: 1,
-        borderBottomColor: c['line.default'],
+      colonnes={COLONNES(t)}
+      valeurs={{
+        pseudonyme: tete?.handle ?? t('admin.createursSansReseau'),
+        // La ville telle qu'elle est déclarée, et le mot quand elle ne l'est
+        // pas : un tiret dans une colonne de mots est un signe à interpréter.
+        ville: createur.city ?? t('admin.createursSansVille'),
+        audience:
+          createur.reseaux.length > 0 ? formatNumber(createur.audience_totale, locale) : '',
+        /**
+         * **« Aucun relevé » et non « 0 ».**
+         *
+         * `null` signifie neutre dans le moteur de paliers, pas zéro : la
+         * condition de score est *ignorée*, pas échouée. Écrire zéro
+         * classerait la créatrice la plus récente au dernier rang d'une
+         * colonne de notes, ce qui est exactement la lecture que la règle
+         * interdit — et sur cet écran-là, c'est un arbitre qui la ferait.
+         */
+        fiabilite: createur.reliability_score
+          ? formatNumber(Math.round(Number(createur.reliability_score)), locale)
+          : t('admin.createursSansScore'),
       }}
-    >
-      {portrait ? (
-        <Photo
-          uri={portrait}
-          hauteur={40}
-          style={{ width: 40, borderRadius: radius['radius.pill'] }}
-          testID={`portrait-${createur.creator_id}`}
-        />
-      ) : (
-        // Un rond vide plutôt qu'une initiale : un pseudonyme n'a pas
-        // d'initiale qui veuille dire quelque chose.
-        <View
-          testID={`portrait-absent-${createur.creator_id}`}
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: radius['radius.pill'],
-            backgroundColor: c['bg.inset'],
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Icone nom="personne" taille={18} couleur="ink.soft" />
-        </View>
-      )}
-
-      <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-        <Texte variante="type.body" testID={`pseudonyme-${createur.creator_id}`}>
-          {tete?.handle ?? t('admin.createursSansReseau')}
-        </Texte>
-        <Texte variante="type.caption" couleur="ink.soft">
-          {[
-            createur.city,
-            createur.reseaux.length > 0
-              ? t('admin.createursAbonnes', {
-                  n: formatNumber(createur.audience_totale, locale),
-                })
-              : null,
-          ]
-            .filter(Boolean)
-            .join(' · ')}
-        </Texte>
-      </View>
-    </View>
+      rendus={{
+        // Le portrait accompagne le pseudonyme : c'est la cellule qui nomme.
+        pseudonyme: (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+            {portrait ? (
+              <Photo
+                uri={portrait}
+                hauteur={28}
+                style={{ width: 28, borderRadius: radius['radius.pill'] }}
+                testID={`portrait-${createur.creator_id}`}
+              />
+            ) : (
+              // Un rond vide plutôt qu'une initiale : un pseudonyme n'a pas
+              // d'initiale qui veuille dire quelque chose.
+              <View
+                testID={`portrait-absent-${createur.creator_id}`}
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: radius['radius.pill'],
+                  backgroundColor: c['bg.inset'],
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Icone nom="personne" taille={14} couleur="ink.soft" />
+              </View>
+            )}
+            <Texte
+              variante="type.bodyStrong"
+              ellipseSurNomPropre
+              testID={`pseudonyme-${createur.creator_id}`}
+            >
+              {tete?.handle ?? t('admin.createursSansReseau')}
+            </Texte>
+          </View>
+        ),
+        /* **Le glyphe de la plateforme, copié des primitives.** Le nom du
+           réseau écrit en toutes lettres prendrait la largeur d'une colonne de
+           texte pour dire ce qu'un logo dit d'un coup d'œil. */
+        reseau: tete ? (
+          <Icone
+            nom={tete.platform === 'tiktok' ? 'tiktok' : 'instagram'}
+            taille={18}
+            couleur="ink.soft"
+            testID={`reseau-${createur.creator_id}`}
+          />
+        ) : (
+          <Texte variante="type.body" couleur="ink.mute">
+            {t('admin.createursSansReseau')}
+          </Texte>
+        ),
+        /* **Le seul geste de la ligne, et il quitte l'application.** La fiche
+           publique vit sur la plateforme ; le produit n'a pas d'écran de
+           créatrice côté administration, et en inventer un demanderait de
+           décider ce qu'on y montre — ce que la planche ne tranche pas. */
+        profil: lien ? (
+          <Pressable
+            accessibilityRole="link"
+            accessibilityLabel={t('admin.createursOuvrirLeProfil', {
+              pseudonyme: tete?.handle ?? '',
+            })}
+            onPress={() => void Linking.openURL(lien)}
+            testID={`profil-${createur.creator_id}`}
+            style={({ pressed }) => ({
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 6,
+              opacity: pressed ? 0.6 : 1,
+            })}
+          >
+            <Texte variante="type.body" couleur="ink.default" style={{ fontWeight: '600' }}>
+              {t('admin.createursOuvrir')}
+            </Texte>
+            <Icone nom="sortie" taille={14} couleur="ink.soft" />
+          </Pressable>
+        ) : null,
+      }}
+    />
   );
 }
