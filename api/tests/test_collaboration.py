@@ -874,9 +874,7 @@ class TestLaReservationSeFermeAvecSaContrepartie:
 
         assert s["booking"].status is BookingStatus.CLOSED
 
-    async def test_un_dossier_non_honore_ferme_la_reservation(
-        self, session: AsyncSession
-    ) -> None:
+    async def test_un_dossier_non_honore_ferme_la_reservation(self, session: AsyncSession) -> None:
         """**L'issue malheureuse ferme aussi.** Ne fermer que sur l'approbation
         laisserait « à envoyer » réclamer un geste sur un dossier que plus rien
         ne peut rattraper — c'est-à-dire précisément le chiffre qui ne

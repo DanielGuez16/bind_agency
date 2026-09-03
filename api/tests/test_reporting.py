@@ -330,9 +330,7 @@ class TestUneReservationCloseResteUnePrestationServie:
         assert booking.status is BookingStatus.CLOSED
         return booking
 
-    async def test_elle_compte_toujours_dans_les_consommations(
-        self, session: AsyncSession
-    ) -> None:
+    async def test_elle_compte_toujours_dans_les_consommations(self, session: AsyncSession) -> None:
         decor = await monter_le_decor(session, postes=5)
         await self._servie_puis_close(session, decor)
 
@@ -340,9 +338,7 @@ class TestUneReservationCloseResteUnePrestationServie:
 
         assert vue.consommations == 1
 
-    async def test_elle_compte_toujours_dans_la_valeur_offerte(
-        self, session: AsyncSession
-    ) -> None:
+    async def test_elle_compte_toujours_dans_la_valeur_offerte(self, session: AsyncSession) -> None:
         """**Le chiffre qui compte le plus pour le salon.** C'est ce qu'il a
         donné ; le voir baisser parce qu'un dossier s'est bien terminé serait
         exactement le contraire de la vérité."""
