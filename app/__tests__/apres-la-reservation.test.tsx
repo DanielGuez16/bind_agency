@@ -279,7 +279,8 @@ it('atterrit sur la liste des réservations, pas sur le code', async () => {
   // défaut, où une réservation neuve n'est jamais : elle est en `held` ou
   // `awaiting_business`. On atterrissait donc sur un onglet vide juste après
   // le geste le plus engageant du parcours.
-  await waitFor(() => expect(screen.getByText('Gel nails')).toBeTruthy());
+  // Le nom porte désormais la durée sur la même ligne (R2.6).
+  await waitFor(() => expect(screen.getByText('Gel nails · 45 min')).toBeTruthy());
   expect(screen.queryByTestId('onglet-vide')).toBeNull();
 
   // L'onglet retenu se lit sur son état accessible, les deux formes : `aria-`
@@ -308,7 +309,8 @@ it('y atterrit aussi quand la liste a déjà été ouverte', async () => {
 
   await waitFor(() => expect(screen.getByTestId('ecran-historique')).toBeTruthy());
   await waitFor(() => expect(ongletRetenu()).toContain(en.parcours.ongletAVenir));
-  expect(screen.getByText('Gel nails')).toBeTruthy();
+  // Le nom porte désormais la durée sur la même ligne (R2.6).
+  expect(screen.getByText('Gel nails · 45 min')).toBeTruthy();
 });
 
 it('y atterrit encore à la deuxième réservation', async () => {
