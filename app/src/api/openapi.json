@@ -842,6 +842,14 @@
         ]
       }
     },
+    "/api/v1/businesses/populaire": {
+      "get": {
+        "operationId": "read_feed_populaire_api_v1_businesses_populaire_get",
+        "responses": [
+          "200"
+        ]
+      }
+    },
     "/api/v1/businesses/suggestions": {
       "get": {
         "operationId": "read_suggestions_api_v1_businesses_suggestions_get",

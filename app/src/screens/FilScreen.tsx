@@ -39,7 +39,7 @@
  * moment où elle sert.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Pressable, View } from 'react-native';
+import { Animated, Pressable, ScrollView, View } from 'react-native';
 
 import { useApi, type BusinessCategory, type Fil } from '../api';
 import { Icone, StatusMessage, Texte } from '../components';
@@ -57,6 +57,8 @@ import { MurEnChargement, SectionsParQuartier, useMur } from './mur/SectionsParQ
 import { RaisonDuVide } from './RaisonDuVide';
 import { messageDObstacle } from './obstacle';
 import { AGES } from './cacheDesReponses';
+import { BlocPositionRefusee } from './fil/BlocPositionRefusee';
+import { SectionFilPopulaire } from './fil/SectionFilPopulaire';
 import { useRequete } from './useRequete';
 
 const CODES_CONNUS = new Set(Object.keys(en.errors));
@@ -278,36 +280,57 @@ export function FilScreen({
   const mur = useMur(filPret, categorie, onOuvrirLeCommerce, setCategorie);
 
   if (position === null) {
-    // Ce qu'on dit et ce qu'on propose dépendent de **pourquoi** il n'y a pas
-    // de position. Le même message pour tous laissait un bouton « Share my
-    // location » qui, après un refus, ne produisait plus rien : le système ne
-    // repose pas la question, et presser à nouveau n'ouvre aucune fenêtre.
-    // Jamais nul ici : `messageDePosition` ne rend `null` que sur `accordee`,
-    // qui porte une position et ne passe donc pas par cette branche.
-    const message = messageDePosition(etatDeLaPosition) ?? {
-      corps: 'parcours.filPositionEnCours',
-      ouReactiver: null,
-      action: null,
-    };
+    // **Un refus bloqué a plus à proposer qu'un message et un bouton** — le
+    // schéma « Aa » de Safari, la copie des instructions, voir
+    // `BlocPositionRefusee`. Les autres états (en cours, indisponible, sans
+    // réponse) gardent le panneau simple : rien de plus à leur ajouter.
+    //
+    // **Et un état bloqué n'est plus un écran vide.** `jamais_demandee` et
+    // `en_cours` ne durent qu'un rendu — la demande part ou tourne déjà, une
+    // liste en dessous ne ferait qu'un aller-retour réseau perdu. Les trois
+    // autres peuvent durer, et c'est là qu'un fil vide se lisait comme un
+    // produit cassé : `SectionFilPopulaire` montre ce qu'une position
+    // n'était pas nécessaire pour trouver.
+    const bloque =
+      etatDeLaPosition.etat === 'refusee' ||
+      etatDeLaPosition.etat === 'indisponible' ||
+      etatDeLaPosition.etat === 'sans_reponse';
+
     return (
-      <View testID="ecran-fil" style={{ flex: 1, padding: 20, gap: 12 }}>
-        <StatusMessage
-          level="neutral"
-          // Le chemin exact vers le réglage suit le constat, dans le même
-          // corps : `StatusMessage` n'a pas de troisième niveau, et lui en
-          // ajouter un pour un seul écran ferait diverger la bibliothèque.
-          body={[message.corps, message.ouReactiver]
-            .filter((cle): cle is string => cle !== null)
-            .map((cle) => t(cle))
-            .join('\n\n')}
-          action={
-            message.action
-              ? { label: t(message.action.cle), onPress: onDemanderLaPosition }
-              : undefined
-          }
-          testID="fil-sans-position"
-        />
-      </View>
+      <ScrollView testID="ecran-fil" contentContainerStyle={{ padding: 20, gap: 20 }}>
+        {etatDeLaPosition.etat === 'refusee' ? (
+          <BlocPositionRefusee etat={etatDeLaPosition} onReessayer={onDemanderLaPosition} />
+        ) : (
+          (() => {
+            // Jamais nul ici : `messageDePosition` ne rend `null` que sur
+            // `accordee`, qui porte une position et ne passe donc pas par
+            // cette branche.
+            const message = messageDePosition(etatDeLaPosition) ?? {
+              corps: 'parcours.filPositionEnCours',
+              ouReactiver: null,
+              action: null,
+            };
+            return (
+              <StatusMessage
+                level="neutral"
+                body={[message.corps, message.ouReactiver]
+                  .filter((cle): cle is string => cle !== null)
+                  .map((cle) => t(cle))
+                  .join('\n\n')}
+                action={
+                  message.action
+                    ? { label: t(message.action.cle), onPress: onDemanderLaPosition }
+                    : undefined
+                }
+                testID="fil-sans-position"
+              />
+            );
+          })()
+        )}
+        {bloque ? (
+          <SectionFilPopulaire onOuvrirLeCommerce={onOuvrirLeCommerce} testID="fil-populaire" />
+        ) : null}
+      </ScrollView>
     );
   }
 

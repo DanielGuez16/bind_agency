@@ -52,10 +52,26 @@ import * as Location from 'expo-location';
 import { useCallback, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 
+import { plateformeWebCourante } from './plateformeWeb';
+
 export type Position = { longitude: number; latitude: number };
 
-/** Où l'on va rendre une autorisation qu'on a refusée. */
-export type OuReactiver = 'navigateur' | 'ios' | 'android';
+/**
+ * Où l'on va rendre une autorisation qu'on a refusée.
+ *
+ * **Quatre variantes web, et non une seule.** `'navigateur'` traitait Safari
+ * mobile et Chrome de bureau pareil, et leur rendait le même texte —
+ * l'icône d'un cadenas que Safari iOS n'a pas. `ios` et `android` restent :
+ * ce sont les valeurs de l'app native, dont `expo-location` sait déjà
+ * ouvrir les vrais réglages du système.
+ */
+export type OuReactiver =
+  | 'web_ios_safari'
+  | 'web_ios_autre'
+  | 'web_android'
+  | 'web_desktop'
+  | 'ios'
+  | 'android';
 
 export type EtatDePosition =
   /** Jamais demandée. Le seul état où la demande ouvrira une fenêtre. */
@@ -119,7 +135,18 @@ function avantEcheance<T>(promesse: Promise<T>, delai: number): Promise<T | type
 }
 
 function ouReactiver(): OuReactiver {
-  if (Platform.OS === 'web') return 'navigateur';
+  if (Platform.OS === 'web') {
+    switch (plateformeWebCourante()) {
+      case 'ios_safari':
+        return 'web_ios_safari';
+      case 'ios_autre':
+        return 'web_ios_autre';
+      case 'android':
+        return 'web_android';
+      case 'desktop':
+        return 'web_desktop';
+    }
+  }
   return Platform.OS === 'ios' ? 'ios' : 'android';
 }
 
