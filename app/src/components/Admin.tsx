@@ -37,7 +37,7 @@ export function TableHeader({ colonnes, testID }: { colonnes: Colonne[]; testID?
       testID={testID}
       style={{
         flexDirection: 'row',
-        height: 30,
+        height: 34,
         alignItems: 'center',
         paddingHorizontal: 12,
         borderBottomWidth: 1,
@@ -51,10 +51,16 @@ export function TableHeader({ colonnes, testID }: { colonnes: Colonne[]; testID?
           style={{
             width: colonne.largeur,
             alignItems: colonne.chiffre ? 'flex-end' : 'flex-start',
-            paddingRight: colonne.chiffre ? GOUTTIERE : 0,
+            // **La gouttière vaut pour toutes les colonnes.** Elle n'existait
+            // qu'à droite des chiffres, au motif qu'elle les désignait : deux
+            // colonnes de texte voisines se touchaient donc. Ce qui désigne une
+            // colonne de chiffres est son alignement à droite ; le creux, lui,
+            // empêche une valeur de se lire comme appartenant à la colonne
+            // suivante, et ce besoin est le même pour du texte.
+            paddingRight: GOUTTIERE,
           }}
         >
-          <Texte variante="type.caption" couleur="ink.mute">
+          <Texte variante="type.caption" couleur="ink.mute" ellipseSurNomPropre>
             {colonne.label}
           </Texte>
         </View>
@@ -108,13 +114,22 @@ export function TableRow({
       style={{
         width: colonne.largeur,
         alignItems: colonne.chiffre ? 'flex-end' : 'flex-start',
-        paddingRight: colonne.chiffre ? GOUTTIERE : 0,
+        paddingRight: GOUTTIERE,
       }}
     >
-      <Texte
-        variante={colonne.chiffre ? 'type.data' : 'type.caption'}
-        ellipseSurNomPropre={!colonne.chiffre}
-      >
+      {/* **Une cellule ne passe jamais à la ligne.** `ellipseSurNomPropre`
+          n'était posé que sur les colonnes de texte : une valeur trop longue
+          dans une colonne de chiffres cassait la rangée en deux ou trois
+          lignes — « Sep 2, » au-dessus de « 2026 », « Not taken » au-dessus de
+          « yet ». Une table dont les rangées n'ont pas la même hauteur cesse
+          d'être une table : l'œil ne suit plus une colonne, il déchiffre des
+          blocs.
+
+          Le remède de fond est la largeur, pas l'ellipse — une donnée coupée
+          ne se lit pas mieux qu'une donnée cassée, et les deux colonnes
+          fautives ont été élargies là où elles sont déclarées. Ceci est le
+          filet qui empêche la prochaine de casser la grille en silence. */}
+      <Texte variante={colonne.chiffre ? 'type.data' : 'type.caption'} ellipseSurNomPropre>
         {valeurs[colonne.cle] ?? ''}
       </Texte>
     </View>
@@ -122,7 +137,7 @@ export function TableRow({
 
   const assiette = {
     flexDirection: 'row' as const,
-    minHeight: 36,
+    minHeight: 44,
     alignItems: 'center' as const,
     paddingHorizontal: 12,
     borderBottomWidth: 1,

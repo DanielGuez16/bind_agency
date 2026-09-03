@@ -30,7 +30,15 @@
  * qui boucle sur beaucoup de dossiers n'appelle pas un arbitrage de plus, il
  * appelle une exigence réécrite. Au pied et non en tête : la question ne se
  * pose qu'après le travail, et en haut elle repousserait la file.
- */
+ *
+ * **« Contrepartie » est le mot du produit, pas celui de l'écran.** Le titre
+ * disait « Counterparts under review », et un administrateur qui ouvre cet
+ * onglet ne cherche pas une contrepartie : il cherche une publication qu'un
+ * salon et une créatrice n'ont pas su trancher entre eux. Le mot juste est
+ * celui de la chose examinée — une publication —, et l'état est « en revue ».
+ *
+ * Le mot « arbitrage » reste dans le code et dans l'onglet : c'est le geste,
+ * et il est exact. Ce qui changeait est le nom de ce qu'on regarde. */
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 

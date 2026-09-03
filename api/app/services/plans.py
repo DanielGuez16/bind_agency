@@ -24,13 +24,30 @@ import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Business, Subscription, SubscriptionPlan
-from app.models.enums import BillingInterval, BusinessCategory, SubscriptionStatus
+from app.models.enums import (
+    BillingInterval,
+    BusinessCategory,
+    Neighborhood,
+    SubscriptionStatus,
+)
 
 #: Ce qui compte comme du revenu récurrent. `past_due` en fait partie : la
 #: facture n'est pas encaissée mais l'abonnement court toujours, et le sortir
 #: du total ferait apparaître une chute de revenu là où il n'y a qu'un
 #: prélèvement en retard.
 ACTIFS = frozenset({SubscriptionStatus.ACTIVE, SubscriptionStatus.PAST_DUE})
+
+
+@dataclass(frozen=True, slots=True)
+class Abonne:
+    """Un salon abonné à un plan. Le statut est celui de l'abonnement."""
+
+    business_id: uuid.UUID
+    name: str
+    neighborhood: Neighborhood | None
+    category: BusinessCategory
+    status: SubscriptionStatus
+    since: datetime
 
 
 @dataclass(frozen=True, slots=True)
@@ -246,3 +263,43 @@ async def _abonnes_par_categorie(
             AbonnesParCategorie(categorie=categorie, abonnes=total, abonnes_actifs=actifs)
         )
     return par_plan
+
+
+async def abonnes_du_plan(session: AsyncSession, *, plan_id: uuid.UUID) -> tuple[Abonne, ...]:
+    """Les salons abonnés à un plan, du plus ancien au plus récent.
+
+    **Tous statuts confondus, et c'est le point.** Un salon parti a autant à
+    dire sur un prix qu'un salon resté : ne rendre que les actifs ferait lire
+    « douze abonnés » sur un plan qui en a perdu huit, et c'est exactement le
+    chiffre qui manquerait pour décider. Le statut voyage avec chaque ligne.
+
+    **Le plus ancien d'abord.** L'écran répond à « ce prix tient-il dans la
+    durée » ; l'ancienneté est donc l'axe, pas le nom.
+    """
+    lignes = (
+        await session.execute(
+            sa.select(
+                Business.id,
+                Business.name,
+                Business.neighborhood,
+                Business.category,
+                Subscription.status,
+                Subscription.created_at,
+            )
+            .join(Subscription, Subscription.business_id == Business.id)
+            .where(Subscription.plan_id == plan_id)
+            .order_by(Subscription.created_at, Business.name)
+        )
+    ).all()
+
+    return tuple(
+        Abonne(
+            business_id=ligne.id,
+            name=ligne.name,
+            neighborhood=ligne.neighborhood,
+            category=ligne.category,
+            status=ligne.status,
+            since=ligne.created_at,
+        )
+        for ligne in lignes
+    )

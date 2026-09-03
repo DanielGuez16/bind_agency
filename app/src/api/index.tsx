@@ -20,8 +20,10 @@ import { messageDeRefus } from '../i18n/errors';
 import { ApiClient, ApiError, NetworkError, type CoffreDeJetons, type Jetons } from './client';
 import { routes } from './routes';
 import type {
+  AbonneDuPlan,
   Abonnement,
   AudienceDuCompte,
+  CreateurAdmin,
   ImportDeCarte,
   LigneRevue,
   AutorisationDemarree,
@@ -945,6 +947,19 @@ export class Api {
     );
 
     return this.modifierUnItem(businessId, itemId, { photo_key: storage_key });
+  }
+
+  // ---- administration ----
+
+  createursAdmin(recherche: string | null, signal?: AbortSignal) {
+    return this.client.request<CreateurAdmin[]>(routes.createursAdmin(), {
+      query: { recherche: recherche || undefined },
+      signal,
+    });
+  }
+
+  abonnesDuPlan(planId: string, signal?: AbortSignal) {
+    return this.client.request<AbonneDuPlan[]>(routes.abonnesDuPlan(planId), { signal });
   }
 
   // ---- import de carte ----

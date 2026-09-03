@@ -91,7 +91,18 @@ const COLONNES = (t: (cle: string) => string): Colonne[] => [
   /* **La date d'inscription, pas celle de mise en ligne.** Ici on cherche un
      salon, on ne juge pas son activité : c'est l'ancienneté du dossier qui aide
      à reconnaître le bon parmi cent homonymes. */
-  { cle: 'inscrit', label: t('admin.commercesColonneInscrit'), largeur: 110, chiffre: true },
+  // **La date n'est pas un chiffre, et `chiffre` la mettait en mono.** La
+  // colonne était déclarée `chiffre: true` pour l'aligner à droite ; l'effet de
+  // bord est que `TableRow` la rend en `type.data`, c'est-à-dire dans la
+  // famille monospace. Une date en mono à côté de trois colonnes en sans, c'est
+  // la police non homogène qu'on voit sans savoir la nommer — et c'est la règle
+  // typographique du dépôt prise à revers : mono pour un code ou un décompte,
+  // jamais pour une date.
+  // **140 et non 110.** `formatDate` rend une date « moyenne » — « Sep 2, 2026 »
+  // — que 110 points ne portent pas : elle se cassait en « Sep 2, » au-dessus de
+  // « 2026 », et la rangée prenait deux hauteurs. Élargir vaut mieux
+  // qu'ellipser : une date coupée ne se lit pas mieux qu'une date cassée.
+  { cle: 'inscrit', label: t('admin.commercesColonneInscrit'), largeur: 140 },
   { cle: 'action', label: '', largeur: LARGEUR_ACTION },
 ];
 

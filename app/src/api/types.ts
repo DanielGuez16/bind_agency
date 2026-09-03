@@ -1980,3 +1980,39 @@ export type BandeDeDecisions = {
   timezone: string;
   jours: JourDeDecisions[];
 };
+
+/** Un réseau rattaché, tel que l'administration le lit. */
+export type ReseauDuCreateur = {
+  platform: Platform;
+  handle: string | null;
+  /** Nul quand aucun relevé n'existe. Zéro serait un chiffre, et faux. */
+  followers: number | null;
+  /** La photo par sa clé, servie par `GET /media/{cle}`. */
+  avatar_key: string | null;
+  profil_url: string | null;
+};
+
+/**
+ * Une créatrice vue par l'administration.
+ *
+ * **Ni état civil, ni score.** La première règle vient de l'annuaire du
+ * commerce ; la seconde aussi, et pour une raison qui ne dépend pas du rôle de
+ * celui qui regarde : un classement de personnes par note ne devient pas
+ * acceptable parce qu'un administrateur le lit.
+ */
+export type CreateurAdmin = {
+  creator_id: string;
+  city: string | null;
+  reseaux: ReseauDuCreateur[];
+  audience_totale: number;
+};
+
+/** Un salon abonné à un plan. Le statut est celui de l'abonnement, pas du salon. */
+export type AbonneDuPlan = {
+  business_id: string;
+  name: string;
+  neighborhood: Neighborhood | null;
+  category: BusinessCategory;
+  status: string;
+  since: string;
+};
