@@ -725,6 +725,38 @@ async def test_une_plateforme_non_configuree_n_arrete_pas_le_passage(
             await menage.execute(sa.text("DELETE FROM app_user WHERE id = :u"), {"u": creator_id})
 
 
+async def test_un_balayage_ne_demande_aucun_fournisseur(session: AsyncSession) -> None:
+    """**Le défaut trouvé le 2026-09-03, en production.**
+
+    Le passage construisait un `SocialProvider` pour *tout* job, y compris les
+    balayages globaux — dont la cible est la sentinelle, dont le `platform`
+    n'est qu'un champ non lu pour que l'objet existe. Construire ce fournisseur
+    vérifie sa configuration : les huit balayages échouaient donc à ce seul
+    appel, avant même d'atteindre leur propre traitement, qui n'en a besoin nulle
+    part — vérifié sur les huit, pas supposé.
+
+    C'est resté caché tant qu'un défaut antérieur (`SANS_CIBLE` incomplet)
+    détruisait ces mêmes jobs plus tôt dans la boucle ; le corriger a découvert
+    celui-ci dessous.
+    """
+
+    def refuse(platform):
+        raise ConfigurationError("application Instagram non configurée")
+
+    await session.execute(
+        sa.insert(Job).values(job_type=JobType.OUTBOX_SWEEP, target_id=scheduler.SENTINELLE)
+    )
+    await session.flush()
+
+    sessions = async_sessionmaker(session.bind, expire_on_commit=False)
+    bilan = await runner.executer(sessions, fournisseur_pour=refuse, maximum=1)
+
+    # Réussi, et non reporté : la configuration Instagram n'a jamais été en
+    # cause pour ce job.
+    assert bilan.reussis == 1
+    assert bilan.reportes == 0
+
+
 async def test_un_type_de_job_sans_traitement_est_epuise_pas_ignore(
     session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
