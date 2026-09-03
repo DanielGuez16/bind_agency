@@ -118,9 +118,15 @@ services:
   # erreur de passage plutôt que de s'arrêter jusqu'au prochain déploiement.
   #
   # **Les mêmes variables que le web, moins celles qui ne le regardent pas.**
-  # Pas de `CORS_ORIGINS` — il ne répond à personne. Pas de
-  # `SEED_DATABASE_NAME` — il ne sème pas. Mais `EMAIL_PROVIDER` et sa clé, qui
-  # sont sa raison d'être.
+  # Pas de `CORS_ORIGINS` — il ne répond à personne. Mais `EMAIL_PROVIDER` et sa
+  # clé, qui sont sa raison d'être.
+  #
+  # **`SEED_DATABASE_NAME` est ici depuis que le semis peut se replanter tout
+  # seul.** Elle ne sème pas par elle-même : c'est
+  # `DEMO_RESEED_INTERVAL_SECONDS` qui décide, et il vaut zéro. Elle est là pour
+  # que le refus vienne du bon endroit — sans elle, activer le semis
+  # échouerait sur « SEED_DATABASE_NAME doit nommer explicitement la base »
+  # plutôt que sur une décision.
   - type: worker
     name: bind-worker-demo
     runtime: docker
@@ -182,4 +188,27 @@ services:
       - key: TOKEN_ENCRYPTION_KEY
         sync: false
       - key: HANDOVER_BASE_URL
+        sync: false
+
+      # --- le semis automatique ---------------------------------------------
+      #
+      # **Une fois par nuit, à quatre heures du matin heure de Miami.** Ce semis
+      # fait table rase avant d'écrire : il efface les réservations en cours,
+      # les favoris posés, les comptes créés depuis la veille, et l'application
+      # ne répond plus rien d'utile la minute qu'il dure. Il n'y a pas de semis
+      # partiel — `reset_schema` supprime toutes les tables. C'est ce qui rend
+      # l'heure importante : à quatre heures, personne ne teste.
+      #
+      # **Une heure et non une période**, parce qu'une période tombe à une heure
+      # différente chaque jour et finit par tomber en pleine démonstration.
+      #
+      # Une nuit suffit depuis que le jeu de données éloigne lui-même l'échéance
+      # de ses dossiers d'arbitrage : la file ne se vide plus douze heures après
+      # le semis, elle tient jusqu'au suivant.
+      - key: DEMO_RESEED_HOUR
+        value: 4
+
+      # La base que le semis accepte de détruire. Voir plus haut : elle rend
+      # possible un refus utile, elle ne déclenche rien.
+      - key: SEED_DATABASE_NAME
         sync: false

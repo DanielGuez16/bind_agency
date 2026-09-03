@@ -241,6 +241,23 @@ class Settings(BaseSettings):
     #: déposé part dans la demi-minute, et la base ne voit qu'un aller-retour
     #: par tour quand la file est vide.
     worker_loop_seconds: int = 30
+    #: Heure locale du semis automatique de démonstration, sur le fuseau de
+    #: Miami. **`None` veut dire jamais, et c'est le défaut** : ce semis fait
+    #: table rase avant d'écrire, il efface donc tout ce qu'un visiteur a fait
+    #: depuis la veille, et l'application ne répond plus rien d'utile la minute
+    #: qu'il dure. L'activer est une décision, pas un réglage de confort — d'où
+    #: le défaut inerte plutôt qu'une valeur « raisonnable » qu'un environnement
+    #: neuf emporterait sans le savoir.
+    #:
+    #: **Une heure de nuit, et non une période.** Une période fait tomber le
+    #: semis à une heure différente chaque jour, donc tôt ou tard en pleine
+    #: démonstration. Quatre ou cinq heures du matin à Miami est le moment où
+    #: la minute d'indisponibilité et la déconnexion ne coûtent rien.
+    #:
+    #: Un semis par nuit suffit depuis que le jeu de données éloigne lui-même
+    #: l'échéance de ses dossiers d'arbitrage : la file ne se vide plus douze
+    #: heures après le semis, elle tient jusqu'au suivant.
+    demo_reseed_hour: int | None = Field(default=None, ge=0, le=23)
     booking_approval_seconds: int = 86_400
     #: Fenêtre de validité d'un droit sans créneau. Le créateur se présente
     #: quand il veut avant l'échéance.
