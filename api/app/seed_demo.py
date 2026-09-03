@@ -1050,7 +1050,16 @@ async def composer_les_parcours(session: AsyncSession, createurs: dict) -> tuple
         # parcours là où le produit l'autorise, et le dit.
         ("revue_humaine", timedelta(weeks=4, days=3), "plafonnee", BRICKELL),
         ("approuvee", timedelta(weeks=5), "confirmee", OCEAN),
-        ("revue_humaine", timedelta(weeks=1, days=2), "plafonnee", BRICKELL),
+        # **Le même motif trois fois, et non trois motifs différents.** Les
+        # autres revues de plafonnée opposent trois reproches distincts — le
+        # décor du filtre « mixed reasons ». Sans une ligne à part où les trois
+        # dernières demandes portent le même motif, `meme_motif_repete` ne se
+        # lève jamais et « fermer sans faute » — la quatrième issue, la seule
+        # qui n'accuse pas — n'est démontrable dans aucun reseed. Une
+        # conversion et non un ajout : `recalculer_les_scores` vérifie que
+        # plafonnée ne touche pas le plancher, et un cinquième dossier dégradé
+        # l'y aurait poussée.
+        ("revue_humaine_meme_motif", timedelta(weeks=1, days=2), "plafonnee", BRICKELL),
         ("approuvee", timedelta(weeks=3), "confirmee", BRICKELL),
         ("deuxieme_tentative", timedelta(weeks=2, days=1), "plafonnee", OCEAN),
         ("non_honoree", timedelta(weeks=6, days=2), "plafonnee", BRICKELL),
@@ -1068,11 +1077,6 @@ async def composer_les_parcours(session: AsyncSession, createurs: dict) -> tuple
         ("approuvee", timedelta(days=5), "confirmee", BRICKELL),
         ("approuvee", timedelta(days=4), "confirmee", OCEAN),
         ("revue_humaine", timedelta(days=2), "plafonnee", OCEAN),
-        # **Le même motif trois fois, distinct du dossier ci-dessus.** Sans lui,
-        # aucune ligne du jeu de données ne lève `meme_motif_repete`, et
-        # « fermer sans faute » — la quatrième issue, la seule qui n'accuse
-        # pas — n'est démontrable dans aucun reseed.
-        ("revue_humaine_meme_motif", timedelta(hours=20), "plafonnee", BRICKELL),
         ("deuxieme_tentative", timedelta(days=3), "confirmee", WYNWOOD),
         ("attendue", timedelta(days=1), "confirmee", BRICKELL),
         ("soumise", timedelta(hours=6), "confirmee", WYNWOOD),
