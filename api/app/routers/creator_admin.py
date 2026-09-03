@@ -7,12 +7,21 @@ abonnement vivant. Un administrateur n'a ni salon, ni rayon, ni abonnement — l
 servir cette route demanderait d'inventer un salon de référence, dont chaque
 chiffre rendu serait faux d'une manière qu'on ne verrait pas.
 
-**Ce qu'elle rend, et ce qu'elle ne rend pas.** Le pseudonyme, la photo, les
-réseaux rattachés, le volume, la ville. Pas de score de fiabilité, pas de
-compteur de collaborations : la règle qui les tient hors de l'annuaire du
-commerce ne vient pas du rôle de celui qui regarde, elle vient de ce qu'un
-classement de personnes par note produit. L'administration a ses écrans pour
-juger un dossier — l'arbitrage — et ils jugent un dossier, pas une personne.
+**Ce qu'elle rend.** Le pseudonyme, la photo, les réseaux rattachés, le volume,
+la ville, et **le score de fiabilité** — le seul chiffre qu'un commerce ne voit
+jamais. Cette ligne disait l'inverse, et l'argument portait sur le *classement*
+d'une liste, non sur la donnée : cet annuaire n'ordonne pas par note, il la pose
+sur la ligne d'une personne qu'on est venu chercher par son pseudonyme. Ce que
+la règle protège reste entier — un salon ne le lit pas, et le palier accessible
+lui suffit puisqu'un score dégradé plafonne mécaniquement.
+
+**Le volume vient du dernier relevé, pas du compte.** `SocialAccount` ne porte
+aucun `followers_count` : il vit sur `SocialMetricsSnapshot`, une table en ajout
+seul dont on prend la ligne la plus récente. La requête le lisait sur le compte
+et levait donc à chaque appel — l'écran ne s'est jamais affiché. La sous-requête
+est celle d'`eligibility`, partagée par trois autres lectures : deux façons de
+dire « le dernier relevé » finiraient par donner deux chiffres différents pour
+la même créatrice sur deux écrans.
 """
 
 import uuid
@@ -25,6 +34,7 @@ from app.core.dependencies import SessionDep, require_role
 from app.models import CreatorProfile, SocialAccount, User
 from app.models.enums import SocialAccountStatus, UserRole, UserStatus
 from app.schemas.creator_admin import CreateurAdminRead, ReseauDuCreateurRead
+from app.services import eligibility
 from app.services.directory import lien_public
 
 router = APIRouter(
@@ -50,14 +60,19 @@ async def list_creators(
     pseudonyme et sa photo ; le laisser dans la liste afficherait une ligne
     vide que personne ne peut relier à quoi que ce soit.
     """
+    releve = eligibility._dernier_releve()
     comptes = (
         sa.select(
             SocialAccount.creator_id,
             SocialAccount.platform,
             SocialAccount.handle,
             SocialAccount.avatar_key,
-            SocialAccount.followers_count,
+            releve.c.followers_count,
         )
+        # **En jointure externe** : un compte rattaché ce matin n'a pas encore
+        # de relevé, et l'exclure ferait disparaître de l'annuaire la créatrice
+        # qui vient d'arriver — précisément celle qu'on y cherche.
+        .join(releve, releve.c.social_account_id == SocialAccount.id, isouter=True)
         .where(SocialAccount.status == SocialAccountStatus.ACTIVE)
         .subquery()
     )
@@ -66,6 +81,7 @@ async def list_creators(
         sa.select(
             User.id,
             CreatorProfile.city,
+            CreatorProfile.reliability_score,
             comptes.c.platform,
             comptes.c.handle,
             comptes.c.avatar_key,
@@ -88,7 +104,13 @@ async def list_creators(
     for ligne in (await session.execute(requete)).all():
         vu = groupes.setdefault(
             ligne.id,
-            {"creator_id": ligne.id, "city": ligne.city, "reseaux": [], "audience_totale": 0},
+            {
+                "creator_id": ligne.id,
+                "city": ligne.city,
+                "reliability_score": ligne.reliability_score,
+                "reseaux": [],
+                "audience_totale": 0,
+            },
         )
         if ligne.platform is None:
             continue

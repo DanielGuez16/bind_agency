@@ -1995,16 +1995,38 @@ export type ReseauDuCreateur = {
 /**
  * Une créatrice vue par l'administration.
  *
- * **Ni état civil, ni score.** La première règle vient de l'annuaire du
- * commerce ; la seconde aussi, et pour une raison qui ne dépend pas du rôle de
- * celui qui regarde : un classement de personnes par note ne devient pas
- * acceptable parce qu'un administrateur le lit.
+ * **Pas d'état civil.** La règle vient de l'annuaire du commerce : le
+ * pseudonyme est l'identité de ces écrans, et le nom civil arrive à la
+ * réservation, quand une créatrice a choisi ce salon.
+ *
+ * **Le score, lui, est ici — et cette ligne disait le contraire.** Elle
+ * affirmait qu'« un classement de personnes par note ne devient pas acceptable
+ * parce qu'un administrateur le lit ». L'argument portait sur le *classement*
+ * et la conclusion l'a étendu à la *donnée* : cet annuaire n'ordonne pas par
+ * score, il l'affiche sur la ligne d'une personne qu'on est venu chercher par
+ * son pseudonyme. Ce que la règle protège reste entier — **un commerce ne voit
+ * jamais ce nombre**, et le palier accessible lui suffit puisqu'un score
+ * dégradé plafonne mécaniquement.
  */
 export type CreateurAdmin = {
   creator_id: string;
   city: string | null;
   reseaux: ReseauDuCreateur[];
   audience_totale: number;
+  /**
+   * Le score de fiabilité, **et il n'existe que sur cet écran**.
+   *
+   * Un commerce ne le voit jamais : ce qui rend ce silence tenable est que le
+   * palier accessible *est* le signal, puisqu'un score dégradé plafonne
+   * mécaniquement. L'administration arbitre des dossiers, et lui refuser le
+   * seul chiffre qui dit si une créatrice tient ses engagements reviendrait à
+   * lui faire trancher sans le savoir.
+   *
+   * **Nul veut dire neutre, jamais zéro** — la règle du moteur de paliers vaut
+   * à l'affichage : une créatrice sans historique n'a pas un mauvais score,
+   * elle n'en a pas.
+   */
+  reliability_score: string | null;
 };
 
 /** Un salon abonné à un plan. Le statut est celui de l'abonnement, pas du salon. */
