@@ -495,3 +495,32 @@ describe('la galerie et la carte se voient, et répondent', () => {
     }
   });
 });
+
+describe('où le salon se montre ailleurs', () => {
+  it('rend ses liens sur la fiche, et se tait quand il n’en a aucun', async () => {
+    // **Le composant existait, testé isolément, et n'était monté nulle part.**
+    // Le salon renseignait ses liens, le serveur les servait sur cette fiche,
+    // et aucun écran ne les lisait — c'est le câblage qui manquait, pas la
+    // brique. Ce test le tient : il monte l'écran, pas le composant.
+    //
+    // **Les deux cas dans le même test, parce que c'est leur écart qui
+    // compte.** Une fiche avec liens, seule, passerait aussi bien sur un écran
+    // qui les rendrait toujours — y compris vides, ce que le composant existe
+    // précisément pour éviter.
+    const avec = await monter({
+      ...FICHE,
+      instagram_url: 'https://instagram.com/vela',
+      website_url: 'https://vela.example',
+    } as unknown as FichePublique);
+    await waitFor(() => expect(screen.getByTestId('liens-du-salon')).toBeTruthy());
+    expect(screen.getByTestId('liens-du-salon-instagram')).toBeTruthy();
+    expect(screen.getByTestId('liens-du-salon-site')).toBeTruthy();
+    // Le TikTok n'est pas renseigné : sa ligne n'existe pas plutôt que d'être vide.
+    expect(screen.queryByTestId('liens-du-salon-tiktok')).toBeNull();
+    await avec.unmount();
+
+    await monter();
+    await waitFor(() => expect(screen.getByTestId('ecran-fiche')).toBeTruthy());
+    expect(screen.queryByTestId('liens-du-salon')).toBeNull();
+  });
+});
