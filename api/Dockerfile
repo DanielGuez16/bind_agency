@@ -71,4 +71,18 @@ EXPOSE 8010
 #
 # `sh -c` : `PORT` doit être développé au démarrage, pas figé à la
 # construction.
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]
+# **`SERVICE_ROLE` décide, et non la commande passée au conteneur.** Le service
+# de fond était déclaré avec un `dockerCommand` ; déployé, il n'a jamais exécuté
+# un seul job. Mesuré : huit balayages recréés à la main survivaient une minute
+# et demie sans qu'un passage les touche, et zéro message quittait la boîte —
+# donc le processus ne tournait pas, ou tournait l'API.
+#
+# Une surcharge de commande se perd : elle vit dans le tableau de bord, pas dans
+# l'image, et un service créé à la main plutôt que par le blueprint n'en a
+# aucune. Une variable d'environnement, elle, se copie avec les autres — ce
+# qu'on fait déjà — et l'image sait alors ce qu'elle est.
+#
+# `exec` dans les deux branches : sans lui, `sh` reste le processus 1 et
+# ne transmet pas les signaux — l'hébergeur tue le conteneur au lieu de le
+# laisser s'arrêter.
+CMD ["sh", "-c", "if [ \"$SERVICE_ROLE\" = worker ]; then exec python -m app.workers boucle; else alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT}; fi"]
