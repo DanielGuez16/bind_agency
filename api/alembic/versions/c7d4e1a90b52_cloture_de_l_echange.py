@@ -1,7 +1,7 @@
 """la reservation se ferme quand sa contrepartie est tranchee
 
 Revision ID: c7d4e1a90b52
-Revises: 59427812e134
+Revises: 0dd636498adf
 Create Date: 2026-09-04 09:12:44.201883+00:00
 
 Écrite à la main, sur le modèle de `b9802e6028a8` qui a ajouté
@@ -25,7 +25,7 @@ from collections.abc import Sequence
 from alembic import op
 
 revision: str = "c7d4e1a90b52"
-down_revision: str | Sequence[str] | None = "59427812e134"
+down_revision: str | Sequence[str] | None = "0dd636498adf"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
