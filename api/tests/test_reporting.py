@@ -22,11 +22,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.models import Booking, BusinessMember, Collaboration
 from app.models.enums import BookingStatus, BusinessMemberRole, CollaborationStatus, UserRole
-from app.services import booking_states
+from app.services import availability, booking_states
+from app.services import collaboration as collaboration_service
+from app.services import proof as proof_service
 from app.services import reporting as service
 from app.services.audit import Actor
 from tests.conftest import inscrire_verifie
 from tests.test_booking_create import monter_le_decor, premier_creneau, reserver
+from tests.test_collaboration import capture
 
 PREFIX = get_settings().api_v1_prefix
 MOT_DE_PASSE = "tourbillon-cactus-91-vermeil"
@@ -279,3 +282,91 @@ async def test_le_reporting_est_isole_entre_commerces(
     accepte = await client.get(f"{PREFIX}/business/{b['business'].id}/reporting", headers=entetes)
     assert accepte.status_code == 200, accepte.text
     assert accepte.json()["reservations"] == 0
+
+
+# --------------------------------------------------------------------------
+# La clôture ne retire rien de ce que le salon a donné
+# --------------------------------------------------------------------------
+
+
+class TestUneReservationCloseResteUnePrestationServie:
+    """`consumed` n'est plus le seul état d'une prestation livrée.
+
+    **Le risque que cette classe couvre est silencieux, et c'est le pire.** Huit
+    requêtes du rapport écrivaient `status == CONSUMED` pour dire « le salon a
+    donné cette prestation ». Depuis qu'une réservation sort de `consumed` quand
+    sa publication est tranchée, cette égalité fait **disparaître du rapport
+    chaque échange qui se termine** : le salon voit fondre ce qu'il croit avoir
+    donné, sans erreur nulle part, au fur et à mesure que ses dossiers se
+    ferment. Un chiffre juste hier et faux aujourd'hui, que rien ne signale.
+
+    Vérifié par mutation : en retirant `CLOSED` de `STATUTS_SERVIS`, les
+    soixante-douze tests de rapport, de fil et de disponibilité restaient tous
+    verts. Aucun ne passait par une réservation close, parce qu'aucune n'existait
+    avant.
+    """
+
+    async def _servie_puis_close(self, session: AsyncSession, decor: dict) -> Booking:
+        """Le parcours entier, par les services : servie, publiée, approuvée.
+
+        Rien n'est posé à la main — surtout pas le statut. Une réservation
+        marquée `closed` directement prouverait que la requête lit ce statut,
+        pas que le produit y mène.
+        """
+        booking = await _consommer(session, decor)
+        contrepartie = await session.scalar(
+            sa.select(Collaboration).where(Collaboration.booking_id == booking.id)
+        )
+        membre = await _membre(session, decor["business"])
+        await proof_service.soumettre(
+            session,
+            collaboration=contrepartie,
+            capture=capture(),
+            actor=Actor.from_user(decor["createur"]),
+        )
+        await collaboration_service.approuver(
+            session, collaboration=contrepartie, actor=Actor.from_user(membre)
+        )
+        assert booking.status is BookingStatus.CLOSED
+        return booking
+
+    async def test_elle_compte_toujours_dans_les_consommations(
+        self, session: AsyncSession
+    ) -> None:
+        decor = await monter_le_decor(session, postes=5)
+        await self._servie_puis_close(session, decor)
+
+        vue = await service.pour_le_commerce(session, business=decor["business"])
+
+        assert vue.consommations == 1
+
+    async def test_elle_compte_toujours_dans_la_valeur_offerte(
+        self, session: AsyncSession
+    ) -> None:
+        """**Le chiffre qui compte le plus pour le salon.** C'est ce qu'il a
+        donné ; le voir baisser parce qu'un dossier s'est bien terminé serait
+        exactement le contraire de la vérité."""
+        decor = await monter_le_decor(session, postes=5)
+        await self._servie_puis_close(session, decor)
+
+        vue = await service.pour_le_commerce(session, business=decor["business"])
+
+        assert vue.valeur_offerte_cents == 8000
+
+    async def test_le_detail_par_item_la_compte_aussi(self, session: AsyncSession) -> None:
+        """Le rapport global et le détail par prestation sont deux requêtes
+        distinctes : l'une corrigée et l'autre non passerait le test d'à côté."""
+        decor = await monter_le_decor(session, postes=5)
+        await self._servie_puis_close(session, decor)
+
+        vue = await service.pour_le_commerce(session, business=decor["business"])
+
+        (ligne,) = vue.par_item
+        assert (ligne.reservations, ligne.consommations) == (1, 1)
+        assert ligne.valeur_offerte_cents == 8000
+
+    async def test_elle_occupe_toujours_son_creneau(self, session: AsyncSession) -> None:
+        """**Sinon la place se revend.** Une réservation servie tient son
+        créneau ; l'en retirer parce que sa publication a été acceptée rouvrirait
+        à la réservation des heures déjà honorées."""
+        assert BookingStatus.CLOSED in availability.STATUTS_OCCUPANTS
