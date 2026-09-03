@@ -96,4 +96,11 @@ class AbonneDuPlanRead(BaseModel):
     status: SubscriptionStatus
     #: Depuis quand il paie ce plan. Le tri s'y appuie : le plus ancien
     #: d'abord, parce que c'est lui qui dit si le prix tient dans la durée.
-    since: datetime
+    #:
+    #: **Nul, et ce n'est pas une absence à deviner.** `subscription.started_at`
+    #: est nulle sur les lignes antérieures à cette colonne — la même règle que
+    #: `duree_mediane_*` applique déjà en l'excluant du calcul. Ici on ne peut
+    #: pas exclure la ligne : un salon qui paie reste un salon qui paie, même
+    #: sans qu'on sache depuis quand. L'écran écrit alors « depuis quand
+    #: inconnu » plutôt qu'une date inventée.
+    since: datetime | None
