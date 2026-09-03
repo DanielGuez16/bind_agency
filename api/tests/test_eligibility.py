@@ -472,3 +472,100 @@ async def test_toujours_trois_requetes(
 
     assert len(executees) == 3, "\n---\n".join(executees)
     assert len({acces.social_account_id for acces in resultat.acces}) == comptes
+
+
+# --------------------------------------------------------------------------
+# le lot — l'administration pose la question sur cent créatrices, pas une
+# --------------------------------------------------------------------------
+
+
+async def test_evaluer_createurs_distingue_deux_createurs_dans_le_meme_lot(
+    session: AsyncSession, conn: AsyncConnection
+) -> None:
+    """**Le test qui compte : deux créatrices qui divergent, dans le même appel.**
+
+    Avec une seule créatrice par appel, une implémentation qui mélangerait les
+    comptes de l'une avec les paliers de l'autre — ou qui appliquerait à tout
+    le lot les comptes du premier créateur lu — rendrait quand même le bon
+    verdict : il n'y a personne avec qui se tromper. Il faut donc deux
+    créatrices dans **le même lot**, dont l'une ouvre un palier et l'autre
+    aucun, pour qu'un mélange entre les deux se voie.
+    """
+    ouvre = await _createur_complet(conn, followers=50_000)
+    ferme = await _createur_complet(conn, followers=100)
+
+    resultat = await eligibility.evaluer_createurs(session, [ouvre, ferme])
+
+    assert resultat[ouvre].paliers_accessibles, "les 50 000 abonnés auraient dû ouvrir un palier"
+    assert not resultat[ferme].paliers_accessibles, "cent abonnés ne devraient rien ouvrir"
+    assert set(resultat) == {ouvre, ferme}
+
+
+@pytest.mark.parametrize("createurs", [1, 5], ids=["une créatrice", "cinq créatrices"])
+async def test_evaluer_createurs_trois_requetes_quel_que_soit_le_nombre(
+    session: AsyncSession, conn: AsyncConnection, engine, createurs: int
+) -> None:
+    """**Le chantier lui-même : trois requêtes, jamais trois cents.**
+
+    `evaluer_createur` appelée en boucle sur cent créatrices coûterait trois
+    cents allers-retours à la base — l'écran de tête de l'administration
+    n'ouvrirait jamais. La propriété tenue ici est l'indépendance au nombre de
+    créatrices : c'est en comparant une créatrice et cinq pour le même total
+    qu'on prouve qu'aucune boucle sur `evaluer_createur` ne s'est glissée dans
+    `evaluer_createurs`.
+    """
+    ids = [await _createur_complet(conn, followers=50_000) for _ in range(createurs)]
+
+    executees: list[str] = []
+
+    def compter(conn_, cursor, statement, parameters, context, executemany):  # noqa: ARG001
+        if statement.lstrip().upper().startswith("SELECT"):
+            executees.append(statement)
+
+    sa.event.listen(engine.sync_engine, "before_cursor_execute", compter)
+    try:
+        resultat = await eligibility.evaluer_createurs(session, ids)
+    finally:
+        sa.event.remove(engine.sync_engine, "before_cursor_execute", compter)
+
+    assert len(executees) == 3, "\n---\n".join(executees)
+    assert len(resultat) == createurs
+
+
+async def test_evaluer_createurs_ensemble_vide_ne_lit_rien(session: AsyncSession, engine) -> None:
+    """Sans créatrice, un dictionnaire vide et **aucune requête** — pas une
+    exception, pas une requête à liste vide qui coûterait quand même trois
+    allers-retours pour ne rien apprendre."""
+    executees: list[str] = []
+
+    def compter(conn_, cursor, statement, parameters, context, executemany):  # noqa: ARG001
+        executees.append(statement)
+
+    sa.event.listen(engine.sync_engine, "before_cursor_execute", compter)
+    try:
+        resultat = await eligibility.evaluer_createurs(session, [])
+    finally:
+        sa.event.remove(engine.sync_engine, "before_cursor_execute", compter)
+
+    assert resultat == {}
+    assert executees == []
+
+
+async def test_evaluer_createurs_garde_une_creatrice_sans_profil(
+    session: AsyncSession, conn: AsyncConnection
+) -> None:
+    """**Le pendant, dans un lot, de `test_un_createur_sans_profil_ne_leve_pas`.**
+
+    Une créatrice sans ligne de profil n'a pas de couple à évaluer — ce n'est
+    pas un refus, c'est une absence de matière. La faire disparaître du
+    dictionnaire serait pire qu'une éligibilité vide : l'appelant qui indexe
+    par identifiant, comme le fait l'écran, lèverait une `KeyError` sur une
+    personne qui existe pourtant dans la liste qu'il vient de recevoir.
+    """
+    reelle = await _createur_complet(conn, followers=50_000)
+    sans_profil = uuid.uuid4()
+
+    resultat = await eligibility.evaluer_createurs(session, [reelle, sans_profil])
+
+    assert resultat[reelle].paliers_accessibles
+    assert resultat[sans_profil].acces == ()
