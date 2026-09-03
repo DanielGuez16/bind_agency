@@ -54,6 +54,7 @@ import { Ecran } from './Ecran';
 import { BarreDuMur } from './mur/BarreDuMur';
 import { EnTeteDuMur } from './mur/EnTeteDuMur';import { BasDuMur } from './mur/BasDuMur';
 import { MurEnChargement, SectionsParQuartier, useMur } from './mur/SectionsParQuartier';
+import { useFavorisEnVol } from './mur/favorisEnVol';
 import { RaisonDuVide } from './RaisonDuVide';
 import { messageDObstacle } from './obstacle';
 import { AGES } from './cacheDesReponses';
@@ -138,6 +139,21 @@ export function FilScreen({
 }) {
   const { api } = useApi();
   const { t, locale } = useI18n();
+  /**
+   * **Le même mécanisme que la fiche, un cran plus haut.** Le cœur du salon
+   * garde plusieurs prestations d'un geste ; ce qui décide laquelle est déjà
+   * gardée, en tenant compte d'un appui encore en vol, ne change pas d'un
+   * écran à l'autre.
+   */
+  const favoris = useFavorisEnVol(
+    useMemo(
+      () => ({
+        mettre: (id: string) => api.mettreEnFavori(id),
+        retirer: (id: string) => api.retirerDesFavoris(id),
+      }),
+      [api],
+    ),
+  );
   const [rayonKm, setRayonKm] = useState(RAYON_DE_DEPART_KM);
   /**
    * La catégorie choisie dans l'en-tête. `null` : toutes.
@@ -277,7 +293,7 @@ export function FilScreen({
     recharger();
   }, [versionDesFavoris, recharger]);
 
-  const mur = useMur(filPret, categorie, onOuvrirLeCommerce, setCategorie);
+  const mur = useMur(filPret, categorie, onOuvrirLeCommerce, setCategorie, favoris);
 
   if (position === null) {
     // **Un refus bloqué a plus à proposer qu'un message et un bouton** — le
@@ -376,10 +392,13 @@ export function FilScreen({
           recherche={saisie}
           onRecherche={setSaisie}
           onVoirLesFavoris={onVoirMesFavoris}
-          // **Le total servi, et rien de local.** Le serveur le compte sur
-          // l'ensemble des favoris et non sur ce que le fil rend — un favori
-          // posé à Wynwood existe encore quand on lit depuis Kendall.
-          favorisGardes={filPret?.favoris_total ?? 0}
+          // **Le total servi, corrigé par ce qui est encore en vol.** Le
+          // serveur compte sur l'ensemble des favoris, pas sur ce que le fil
+          // rend — un favori posé à Wynwood existe encore lu depuis Kendall.
+          // Mais un cœur qu'on vient de toucher sur une carte ne l'a pas
+          // encore mis à jour : sans l'écart, la porte resterait au chiffre
+          // du dernier chargement jusqu'au prochain.
+          favorisGardes={(filPret?.favoris_total ?? 0) + favoris.ecart}
         />
       }
       /**
@@ -446,8 +465,19 @@ export function FilScreen({
       // Il est rendu hors des quatre états : le mur en chargement le garde,
       // l'état vide aussi — c'est de là qu'on relâche un filtre trop étroit.
       entete={
-        <View style={{ paddingHorizontal: MARGE }}>
+        <View style={{ paddingHorizontal: MARGE, gap: 12 }}>
           <EnTeteDuMur fil={filPret} categorie={categorie} />
+          {/* **Le même silence à corriger qu'à la fiche.** Un cœur de carte
+              qui échoue se remplit, revient en arrière, et sans ce message
+              rien ne distingue « je n'ai pas su enregistrer » de « tu n'as
+              pas appuyé ». */}
+          {favoris.echec === null ? null : (
+            <StatusMessage
+              level="danger"
+              body={t('parcours.filFavoriEchec', { prestation: favoris.echec })}
+              testID="favori-non-enregistre"
+            />
+          )}
         </View>
       }
       vide={
@@ -486,6 +516,7 @@ export function FilScreen({
           <SectionsParQuartier
             fil={fil}
             categorie={categorie}
+            favoris={favoris}
             onOuvrir={onOuvrirLeCommerce}
           />
 

@@ -417,6 +417,19 @@ export const en = {
     carteServicesOuverts: '{{count}} services open to you',
     carteServiceOuvertUn: 'One service open to you',
     carteEtEncore: 'and {{count}} more inside',
+    // **Toutes, jamais une seule.** `favoris.garder`/`favoris.retirer`
+    // nomment une prestation ; ce cœur-ci en garde plusieurs d'un geste, et
+    // la phrase le dit — sans quoi un lecteur d'écran annoncerait « save
+    // Gel manicure » en en gardant quatre.
+    //
+    // **Et le singulier existe**, comme `carteServiceOuvertUn` à côté : un
+    // salon qui n'ouvre qu'une prestation lirait « 1 services », la même
+    // faute que celle déjà corrigée juste au-dessus pour le compte de la
+    // carte.
+    carteCoeurGarder: 'Save all {{count}} services from {{nom}}',
+    carteCoeurGarderUn: 'Save this service from {{nom}}',
+    carteCoeurRetirer: 'Remove all {{count}} services from {{nom}} from saved',
+    carteCoeurRetirerUn: 'Remove this service from {{nom}} from saved',
     // Les rangées par quartier. La carte d'os ferme une rangée courte et dit
     // ce qu'il y a plus loin : sans elle, une rangée de deux cartes ressemble
     // à un chargement qui a échoué.

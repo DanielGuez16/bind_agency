@@ -134,10 +134,16 @@ describe('le compte sur la porte des favoris', () => {
 
     await waitFor(() => expect(pastille()!).toBeTruthy());
     expect(pastille()).toHaveTextContent(/^3$/);
-    // **Et aucune carte ne porte de cœur.** Le compte de la porte ne se
-    // dérive donc d'aucun signe présent à l'écran : c'est la seule source, et
-    // c'est ce que ce test fixe.
-    expect(screen.queryAllByTestId(/-coeur$/)).toHaveLength(0);
+    // **Et les deux cœurs visibles sont vides.** Depuis que le cœur du salon
+    // existe sur la carte (v5), il ne peut plus être *absent* de l'écran — le
+    // décor le prouve autrement : aucun des deux salons chargés n'est
+    // favori, et pourtant la porte affiche trois. Le compte ne se dérive
+    // donc d'aucun signe présent à l'écran, coché ou non : c'est le serveur,
+    // et lui seul, qui le sait.
+    for (const coeur of screen.queryAllByTestId(/-coeur$/)) {
+      expect(coeur.props.accessibilityState.checked).toBe(false);
+    }
+    expect(screen.queryAllByTestId(/-coeur$/).length).toBeGreaterThan(0);
   });
 
   it('et zéro ne s’écrit pas', async () => {
@@ -149,10 +155,11 @@ describe('le compte sur la porte des favoris', () => {
   });
 
   it('il se relit quand un cœur a bougé ailleurs', async () => {
-    // **Le cœur a quitté le fil en v4** : il vit sur la fiche, ligne par ligne.
-    // Le compte, lui, reste ici — et la pile garde cet écran monté sous celui
-    // qu'on ouvre, donc rien ne le rafraîchirait au retour. La version est le
-    // signal ; le serveur reste seul à savoir le nombre.
+    // **Le favori se garde ligne par ligne sur la fiche**, et depuis la v5
+    // aussi d'un geste depuis la carte du fil — mais le compte, lui, reste
+    // ici. La pile garde cet écran monté sous celui qu'on ouvre, donc rien ne
+    // le rafraîchirait au retour d'une fiche. La version est le signal ; le
+    // serveur reste seul à savoir le nombre.
     let servi = 2;
     const vue = await monter({ donneesVariables: () => fil({ favoris_total: servi }) });
     await waitFor(() => expect(pastille()).toHaveTextContent(/^2$/));

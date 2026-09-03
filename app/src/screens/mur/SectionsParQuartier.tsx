@@ -40,6 +40,7 @@ import {
   CarteDeSalon,
   LARGEUR_DE_LA_CARTE,
   PHOTO_DE_LA_CARTE,
+  type FavorisDeLaCarte,
   type PrestationDeLaCarte,
 } from './CarteDeSalon';
 import { formatNumber } from '../../format';
@@ -148,6 +149,7 @@ export function salonsDuFil(
         catalogItemId: item.catalog_item_id,
         nom: item.name,
         contrepartie: item.content_format,
+        estFavori: item.est_favori,
       });
     }
     return {
@@ -181,6 +183,18 @@ export type SalonDuFil = {
 const CARTES_PAR_RANGEE = 10;
 
 /**
+ * Le favori sans son appelant, pour un montage qui n'en a pas besoin.
+ *
+ * Sans lui, chaque test qui monte le mur sans favoris devrait en fournir un
+ * factice — c'est ce que `SectionsParQuartier` fait déjà pour les écrans qui
+ * la montent telle quelle.
+ */
+const FAVORIS_NEUTRES: FavorisDeLaCarte = {
+  estFavori: (_catalogItemId, servi) => servi,
+  basculer: () => {},
+};
+
+/**
  * Le fil en rangées, pour que chacune puisse défiler seule.
  *
  * Un crochet et non des composants : la catégorie choisie est un état, et le
@@ -192,6 +206,7 @@ export function useMur(
   categorie: BusinessCategory | null,
   onOuvrir: (businessId: string) => void,
   onCategorie?: (categorie: BusinessCategory) => void,
+  favoris: FavorisDeLaCarte = FAVORIS_NEUTRES,
 ): { entete: React.ReactNode; elements: { cle: string; rendu: React.ReactNode }[]; pied: React.ReactNode } | null {
   const { api, } = useApi();
   const { t, locale } = useI18n();
@@ -243,6 +258,7 @@ export function useMur(
         titre={element.titre}
         total={element.total}
         prestations={element.prestations.slice(0, CARTES_PAR_RANGEE)}
+        favoris={favoris}
         onOuvrir={onOuvrir}
         onTout={element.onTout}
         // **Le filet sépare, donc il ne ferme pas.** Sous la dernière rangée il
@@ -268,6 +284,7 @@ function RangeeDuFil({
   titre,
   total,
   prestations,
+  favoris,
   onOuvrir,
   onTout,
   avecFilet,
@@ -276,6 +293,7 @@ function RangeeDuFil({
   titre: string;
   total: string;
   prestations: SalonDuFil[];
+  favoris: FavorisDeLaCarte;
   onOuvrir: (businessId: string) => void;
   onTout?: () => void;
   /** Faux sur la dernière rangée : un séparateur ne ferme pas une liste. */
@@ -350,6 +368,7 @@ function RangeeDuFil({
             photo={salon.photo}
             ouvertes={salon.ouvertes}
             prestations={salon.prestations}
+            favoris={favoris}
             onPress={() => onOuvrir(salon.businessId)}
             // **Le testID porte la rangée.** Le même salon paraît dans « le
             // plus près » et dans sa catégorie : sans ce préfixe, deux nœuds
@@ -371,13 +390,16 @@ function RangeeDuFil({
 export function SectionsParQuartier({
   fil,
   categorie,
+  favoris,
   onOuvrir,
 }: {
   fil: Fil;
   categorie: BusinessCategory | null;
+  /** Absent : le cœur du salon lit le fil servi, et ne bascule rien. */
+  favoris?: FavorisDeLaCarte;
   onOuvrir: (businessId: string) => void;
 }) {
-  const mur = useMur(fil, categorie, onOuvrir);
+  const mur = useMur(fil, categorie, onOuvrir, undefined, favoris);
   if (mur === null) return null;
 
   return (

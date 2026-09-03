@@ -207,14 +207,23 @@ export function ApercuDePrestation({
  *
  * **Le voile blanc existe déjà** pour les pastilles de photo : le cœur
  * n'introduit aucune surface nouvelle.
+ *
+ * **Exportée pour un second appelant.** La carte de salon du fil (v5) pose ce
+ * même cœur au niveau du salon — un raccourci qui garde toutes ses prestations
+ * en un geste, pas une prestation seule — et `label` existe pour cela : la
+ * phrase par défaut nomme un service unique, ce qui devient faux dès qu'on
+ * en garde plusieurs à la fois.
  */
-function CoeurDeLaCarte({
+export function CoeurDeLaCarte({
   actif,
   onPress,
+  label,
   testID,
 }: {
   actif: boolean;
   onPress: () => void;
+  /** Remplace la phrase par défaut, écrite pour un cœur à une seule offre. */
+  label?: string;
   testID?: string;
 }) {
   const { t } = useI18n();
@@ -230,7 +239,9 @@ function CoeurDeLaCarte({
       // nulle part. Un cœur est un interrupteur ; il en a le rôle et l'état.
       accessibilityRole="switch"
       {...etatAccessible({ checked: actif })}
-      accessibilityLabel={t(actif ? 'parcours.filRetirerDesFavoris' : 'parcours.filMettreEnFavori')}
+      accessibilityLabel={
+        label ?? t(actif ? 'parcours.filRetirerDesFavoris' : 'parcours.filMettreEnFavori')
+      }
       onPress={onPress}
       hitSlop={6}
       style={({ pressed }) => ({

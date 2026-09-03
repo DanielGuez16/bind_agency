@@ -32,10 +32,25 @@
  * premier rang parce qu'il est le contenant, pas parce que ce qu'on y fait
  * redevient secondaire.
  *
- * **Aucun cœur ici.** La carte contient quatre prestations : un cœur y
- * désignerait quoi ? Le favori porte sur la prestation, donc il vit sur la
- * fiche, ligne par ligne. Le seul cœur du fil est la porte de la barre de
- * recherche, et c'est elle qui porte le compte.
+ * **Un cœur y est revenu, et c'est un renversement assumé.** « La carte
+ * contient quatre prestations, un cœur y désignerait quoi ? » disait la
+ * version précédente de ce commentaire, en écartant le cœur du salon pour de
+ * bon. Il ne désigne plus une prestation : il en garde plusieurs d'un geste —
+ * les deux nommées et le reste, pas seulement ce que la carte montre. La
+ * question qui bloquait n'a pas trouvé de réponse, elle a changé de sens :
+ * ce cœur-ci n'a jamais prétendu garder *une* prestation.
+ *
+ * **Rempli seulement quand tout est gardé.** Un salon dont trois prestations
+ * sur quatre sont en favori se lit comme « pas encore fait », pas comme
+ * « à moitié fait » — il n'existe pas de cœur mi-plein dans le système, et en
+ * inventer un pour ce seul endroit aurait ajouté une troisième lecture au
+ * même glyphe. Appuyer dessus complète ce qui manque ; appuyer dessus quand
+ * tout est déjà gardé retire tout, symétriquement.
+ *
+ * **`CoeurDeLaCarte` est la même brique qu'ailleurs**, exportée depuis
+ * `ApercuDePrestation.tsx` plutôt que recopiée : même dessin, même rôle
+ * `switch`, même annonce d'état. Seule la phrase change, parce qu'elle nomme
+ * plusieurs services et non un seul.
  *
  * **Le quartier a quitté la phrase du compte.** « 4 services open to you in
  * Brickell » disait deux choses d'un trait, dont une déjà écrite deux lignes
@@ -46,7 +61,15 @@
 import { Pressable, View } from 'react-native';
 
 import type { ContentFormat } from '../../api';
-import { Icone, MediaFallback, Photo, Texte, TierBadge, useEnfoncement } from '../../components';
+import {
+  CoeurDeLaCarte,
+  Icone,
+  MediaFallback,
+  Photo,
+  Texte,
+  TierBadge,
+  useEnfoncement,
+} from '../../components';
 import { formatDistance, formatNumber } from '../../format';
 import { useI18n } from '../../i18n';
 import { radius, useColors } from '../../theme';
@@ -77,6 +100,21 @@ export type PrestationDeLaCarte = {
   nom: string;
   /** Le palier par lequel elle est ouverte. `null` quand aucun ne le nomme. */
   contrepartie: ContentFormat | null;
+  /** Servie par le fil, jamais recalculée : c'est la même vérité que la fiche. */
+  estFavori: boolean;
+};
+
+/**
+ * Ce que le cœur du salon a besoin de savoir faire, et rien de plus.
+ *
+ * **La même forme que `favoris` sur `CoeurDeLOffre`**, dans `FicheScreen.tsx` —
+ * c'est directement le retour de `useFavorisEnVol`, sans adaptateur : deux
+ * cœurs qui liraient la bascule différemment finiraient par la lire faux l'un
+ * des deux.
+ */
+export type FavorisDeLaCarte = {
+  estFavori: (catalogItemId: string, servi: boolean) => boolean;
+  basculer: (catalogItemId: string, versFavori: boolean, servi: boolean, nom: string) => void;
 };
 
 export function CarteDeSalon({
@@ -86,6 +124,7 @@ export function CarteDeSalon({
   photo,
   ouvertes,
   prestations,
+  favoris,
   onPress,
   testID,
 }: {
@@ -111,6 +150,7 @@ export function CarteDeSalon({
   ouvertes: number;
   /** Les prestations à nommer, **dédoublonnées et dans l'ordre du serveur**. */
   prestations: readonly PrestationDeLaCarte[];
+  favoris: FavorisDeLaCarte;
   onPress: () => void;
   testID?: string;
 }) {
@@ -127,6 +167,44 @@ export function CarteDeSalon({
       ? t('parcours.carteServiceOuvertUn')
       : t('parcours.carteServicesOuverts', { count: compte });
   const restants = ouvertes - PRESTATIONS_NOMMEES;
+
+  /**
+   * **Toutes, ou pas encore toutes.** Un salon sans prestation chargée ne
+   * peut pas être « déjà gardé » — `every` sur un tableau vide rendrait vrai,
+   * et un cœur plein sur une carte sans ligne mentirait sur ce qu'il promet.
+   */
+  const tousGardes =
+    prestations.length > 0 &&
+    prestations.every((prestation) => favoris.estFavori(prestation.catalogItemId, prestation.estFavori));
+
+  /**
+   * **Un geste, jusqu'à `prestations.length` appels — jamais plus qu'il ne
+   * faut.** Rebasculer une prestation déjà dans l'état visé la reposterait
+   * pour rien : `estFavori` dit où elle en est déjà, en tenant compte d'un
+   * appui encore en vol.
+   */
+  function basculerToutes() {
+    const cible = !tousGardes;
+    for (const prestation of prestations) {
+      if (favoris.estFavori(prestation.catalogItemId, prestation.estFavori) !== cible) {
+        favoris.basculer(prestation.catalogItemId, cible, prestation.estFavori, prestation.nom);
+      }
+    }
+  }
+
+  // **Le singulier existe, comme pour le compte de la carte.** Un salon
+  // n'ouvrant qu'une prestation garderait « 1 services » sans lui — la même
+  // faute que `carteServiceOuvertUn` corrige déjà pour le compte.
+  const libelleDuCoeur = t(
+    prestations.length === 1
+      ? tousGardes
+        ? 'parcours.carteCoeurRetirerUn'
+        : 'parcours.carteCoeurGarderUn'
+      : tousGardes
+        ? 'parcours.carteCoeurRetirer'
+        : 'parcours.carteCoeurGarder',
+    { nom, count: formatNumber(prestations.length, locale) },
+  );
 
   return (
     <Pressable
@@ -155,6 +233,16 @@ export function CarteDeSalon({
           hauteur={PHOTO_DE_LA_CARTE}
           testID={testID ? `${testID}-photo` : undefined}
           replit={<MediaFallback monogramme={nom} height={PHOTO_DE_LA_CARTE} />}
+        />
+        {/* **Un cœur, pas quatre.** Il garde toutes les prestations du salon
+            d'un geste — les deux nommées ci-dessous et le reste qu'on ne voit
+            pas — plutôt qu'un cœur par ligne, qui redemanderait d'ouvrir la
+            fiche pour finir ce que la carte prétend déjà faire. */}
+        <CoeurDeLaCarte
+          actif={tousGardes}
+          onPress={basculerToutes}
+          label={libelleDuCoeur}
+          testID={testID ? `${testID}-coeur` : undefined}
         />
       </View>
 

@@ -30,7 +30,7 @@ export { Apparition, Fondu, useAttenteVisible, useEnfoncement, useMouvementRedui
 export { EnTeteDEcran, Filet, prenomDe, type Compteur } from './EnTete';
 export { LigneDeContrepartie, TierBadge, motDuPalier, type Palier, type TierBadgeProps } from './TierBadge';
 export { BadgesDeProfil, chipDeComportement, type BadgeDeProfil } from './Badges';
-export { ApercuDePrestation, CASE_DU_BADGE, IMAGE_DE_L_APERCU } from './ApercuDePrestation';
+export { ApercuDePrestation, CASE_DU_BADGE, CoeurDeLaCarte, IMAGE_DE_L_APERCU } from './ApercuDePrestation';
 export type { ApercuDePrestationProps } from './ApercuDePrestation';
 export {
   DataRow,
