@@ -1568,17 +1568,21 @@ async def test_un_dossier_repete_le_meme_motif_trois_fois(seed_conn: AsyncConnec
 
     for dossier_id in dossiers:
         trois_derniers = (
-            await seed_conn.execute(
-                sa.select(AuditLog.reason)
-                .where(
-                    AuditLog.entity_type == "collaboration",
-                    AuditLog.entity_id == dossier_id,
-                    AuditLog.to_status == CollaborationStatus.RESUBMIT_REQUESTED.value,
+            (
+                await seed_conn.execute(
+                    sa.select(AuditLog.reason)
+                    .where(
+                        AuditLog.entity_type == "collaboration",
+                        AuditLog.entity_id == dossier_id,
+                        AuditLog.to_status == CollaborationStatus.RESUBMIT_REQUESTED.value,
+                    )
+                    .order_by(AuditLog.occurred_at.desc())
+                    .limit(3)
                 )
-                .order_by(AuditLog.occurred_at.desc())
-                .limit(3)
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         if len(trois_derniers) == 3 and len(set(trois_derniers)) == 1:
             return
 
