@@ -7,21 +7,30 @@
  * lire le dossier en arbitrage — et une ligne par personne est ce qui se
  * parcourt le plus vite.
  *
- * **Ni état civil, ni score, et ce n'est pas une commodité.** La règle qui les
- * tient hors de l'annuaire du commerce ne vient pas du rôle de celui qui
- * regarde : elle vient de ce qu'un classement de personnes par note produit.
- * L'administration a l'écran d'arbitrage pour juger, et il juge **un dossier**.
+ * **Ni état civil, et ce n'est pas une commodité.** Le pseudonyme est
+ * l'identité de ces écrans ; le nom civil arrive à la réservation, quand une
+ * créatrice a choisi ce salon.
  *
- * **Aucune distance, aucun palier accessible.** Les deux existent sur l'annuaire
- * du commerce parce qu'ils se calculent depuis un salon. Un administrateur n'en
- * a pas : les rendre ici demanderait d'inventer un salon de référence, dont
- * chaque chiffre serait faux d'une manière invisible.
+ * **Le score et le palier accessible sont servis, et cette phrase disait
+ * l'inverse pour les deux.** Le score, parce que l'argument portait sur le
+ * classement d'une liste et non sur la donnée elle-même — voir le commentaire
+ * de `CreateurAdmin.reliability_score`. Le palier, parce qu'« aucun » disait
+ * en fait « pas encore » : le calcul ne demandait pas de salon de référence,
+ * seulement une requête d'ensemble qui n'existait pas — voir
+ * `eligibility.evaluer_createurs`, trois requêtes pour toute la population,
+ * plutôt que trois par créatrice.
+ *
+ * **Aucune distance, en revanche, et ça tient.** Elle se calcule depuis un
+ * salon ; un administrateur n'en a pas, et lui en inventer un rendrait un
+ * chiffre faux d'une manière que personne ne verrait.
  */
 import { useCallback, useState } from 'react';
 import { Linking, Pressable, View } from 'react-native';
 
 import { useApi, type AnnuaireAdmin, type CreateurAdmin } from '../api';
 import {
+  BandeDeChiffres,
+  Chiffre,
   Icone,
   Photo,
   SkeletonLignes,
@@ -30,6 +39,7 @@ import {
   TableRow,
   TextField,
   Texte,
+  TierBadge,
   type Colonne,
 } from '../components';
 import { formatNumber } from '../format';
@@ -80,13 +90,62 @@ export function CreateursAdminScreen() {
         <View style={{ gap: 12 }}>
           <BarreDeRecherche valeur={recherche} onChange={differer} />
 
-          {/* **Le total, et non le compte des lignes rendues.** La liste
-              s'arrête à cent : écrire sa longueur ferait dire « 100 créateurs »
-              à un produit qui en a cent vingt-huit, et le plafond dirait qu'on
-              tronque sans dire de combien. */}
-          <Texte variante="type.caption" couleur="ink.soft" testID="compte-createurs">
-            {t('admin.createursCompte', { n: String(annuaire.total) })}
-          </Texte>
+          {/* **Les cinq nombres de tête, mesurés sur la planche.** Ils portent
+              sur la recherche entière — `annuaire.total` et non
+              `items.length` — sans quoi le plafond de la liste ferait dire
+              « 41 sur cent » à une population qui en compte cent vingt-huit.
+              La légende de la sous-titre disait déjà le total seul ; la bande
+              le remplace plutôt que de le répéter à côté. */}
+          <BandeDeChiffres testID="chiffres-createurs">
+            <Chiffre
+              valeur={formatNumber(annuaire.total, locale)}
+              legende={t('admin.createursSurBind')}
+              testID="chiffre-total"
+            />
+            <Chiffre
+              valeur={formatNumber(annuaire.peut_reserver, locale)}
+              legende={t('admin.createursPeuventReserver')}
+              testID="chiffre-peut-reserver"
+            />
+            <Chiffre
+              valeur={formatNumber(annuaire.arrivees_cette_semaine, locale)}
+              legende={t('admin.createursArriveesCetteSemaine')}
+              testID="chiffre-arrivees"
+            />
+            <Chiffre
+              // **Zéro effectif, zéro chiffre — jamais un zéro qui se lirait
+              // « la moins fiable ».** `fiabilite_mediane` est nulle tant
+              // qu'aucun score n'existe, exactement pour la même raison que
+              // le score lui-même : nul veut dire neutre.
+              valeur={
+                annuaire.fiabilite_mediane
+                  ? formatNumber(Math.round(Number(annuaire.fiabilite_mediane)), locale)
+                  : t('admin.createursSansScore')
+              }
+              legende={t('admin.createursFiabiliteMedianeLegende')}
+              // **L'effectif ne s'écrit pas dans le cartouche, il se dit.**
+              // La planche pose « 86 » seul ; « 86 sorti de trois scores »
+              // n'est pas « 86 sorti de cent vingt-huit », et c'est
+              // exactement ce que `createurs_avec_score` distingue. Le
+              // taire à l'écran suit la planche, le taire à la voix
+              // laisserait perdre l'avertissement que les deux médianes
+              // d'abonnement portent déjà.
+              accessibilityLabel={t('admin.createursFiabiliteMedianeAvecEffectif', {
+                valeur: annuaire.fiabilite_mediane
+                  ? formatNumber(Math.round(Number(annuaire.fiabilite_mediane)), locale)
+                  : t('admin.createursSansScore'),
+                effectif: formatNumber(annuaire.createurs_avec_score, locale),
+              })}
+              dernier
+              testID="chiffre-fiabilite-mediane"
+            />
+          </BandeDeChiffres>
+
+          {annuaire.total > annuaire.items.length ? (
+            <Texte variante="type.caption" couleur="ink.soft" testID="plafond-createurs">
+              {t('admin.createursPlafond', { count: annuaire.items.length })}
+            </Texte>
+          ) : null}
 
           <View
             style={{
@@ -138,23 +197,21 @@ function BarreDeRecherche({
 }
 
 /**
- * Les colonnes de la planche, dans son ordre.
+ * Les sept colonnes de la planche, dans son ordre — TIER compris.
  *
- * **Il manque « TIER », et l'inventer aurait été pire que l'omettre.** La
- * planche dessine le palier qu'une créatrice ouvre. Il se calcule contre tous
- * les paliers du produit — c'est faisable — mais le service qui le fait est
- * `evaluer_createur`, trois requêtes **par créatrice** : cent lignes en
- * demanderaient trois cents. Il faut une requête d'ensemble côté serveur, et
- * elle n'existe pas. Une colonne remplie à l'estime aurait été fausse d'une
- * manière que personne ne voit, ce que l'en-tête de cette route interdit déjà
- * pour la distance.
+ * **Elle manquait, et l'absence était nommée plutôt que masquée.** La colonne
+ * demandait de calculer le palier de cent créatrices contre tous les paliers
+ * du produit ; `evaluer_createur` coûtait trois requêtes **par créatrice**,
+ * donc trois cents pour la page. `eligibility.evaluer_createurs` le rend en
+ * trois requêtes pour l'ensemble — le chantier que ce manque appelait, fait.
  */
 const COLONNES = (t: (cle: string) => string): Colonne[] => [
-  { cle: 'pseudonyme', label: t('admin.createursColonneCreatrice'), largeur: 260 },
-  { cle: 'ville', label: t('admin.createursColonneVille'), largeur: 180 },
-  { cle: 'reseau', label: t('admin.createursColonneReseau'), largeur: 90 },
-  { cle: 'audience', label: t('admin.createursColonneAudience'), largeur: 120, chiffre: true },
-  { cle: 'fiabilite', label: t('admin.createursColonneFiabilite'), largeur: 120, chiffre: true },
+  { cle: 'pseudonyme', label: t('admin.createursColonneCreatrice'), largeur: 240 },
+  { cle: 'ville', label: t('admin.createursColonneVille'), largeur: 160 },
+  { cle: 'reseau', label: t('admin.createursColonneReseau'), largeur: 80 },
+  { cle: 'audience', label: t('admin.createursColonneAudience'), largeur: 100, chiffre: true },
+  { cle: 'tier', label: t('admin.createursColonneTier'), largeur: 90 },
+  { cle: 'fiabilite', label: t('admin.createursColonneFiabilite'), largeur: 100, chiffre: true },
   { cle: 'profil', label: '', largeur: 130 },
 ];
 
@@ -203,6 +260,27 @@ function LigneDeCreateur({
           : t('admin.createursSansScore'),
       }}
       rendus={{
+        /* **Le badge à trois marqueurs, comme sur Reviews.** Nul quand elle
+           n'ouvre aucun palier — aucun compte vérifié, aucun relevé récent,
+           ou aucun format à sa portée. Le mot plutôt qu'un tiret : les
+           autres colonnes de texte écrivent déjà en mots ce qu'elles n'ont
+           pas, et un tiret dans une colonne de badges se lirait comme un
+           signe à interpréter plutôt que comme une absence nommée. */
+        tier: createur.tier ? (
+          <TierBadge
+            tier={createur.tier.content_format}
+            size="sm"
+            testID={`tier-${createur.creator_id}`}
+          />
+        ) : (
+          <Texte
+            variante="type.body"
+            couleur="ink.mute"
+            testID={`tier-${createur.creator_id}`}
+          >
+            {t('admin.createursSansPalier')}
+          </Texte>
+        ),
         // Le portrait accompagne le pseudonyme : c'est la cellule qui nomme.
         pseudonyme: (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>

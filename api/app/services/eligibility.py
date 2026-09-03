@@ -20,6 +20,7 @@ qui ne le concerne pas.
 """
 
 import uuid
+from collections import defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -352,68 +353,15 @@ def _dernier_releve() -> sa.Subquery:
     )
 
 
-async def evaluer_createur(
-    session: AsyncSession, creator_id: uuid.UUID, *, maintenant: datetime | None = None
-) -> Eligibilite:
-    """Trois requêtes, quel que soit le nombre de comptes du créateur.
+async def _paliers_actifs(session: AsyncSession) -> list[PalierEvalue]:
+    """Les paliers actifs du produit, tous confondus.
 
-    Le résultat n'est pas mis en cache, et c'est délibéré : il dépend de l'âge
-    des relevés, donc du moment. Le mettre en cache ressusciterait exactement les
-    chiffres périmés que la fraîcheur cherche à écarter.
+    **Une seule fonction, deux appelants.** `evaluer_createur` et
+    `evaluer_createurs` en avaient chacun une copie avant ce module : la même
+    requête tapée deux fois, qui aurait divergé le jour où l'une des deux
+    aurait été corrigée sans l'autre.
     """
-    settings = get_settings()
-    maintenant = maintenant or datetime.now(UTC)
-
-    profil = (
-        await session.execute(
-            sa.select(
-                CreatorProfile.user_id,
-                CreatorProfile.reliability_score,
-                CreatorProfile.completed_collabs_count,
-            ).where(CreatorProfile.user_id == creator_id)
-        )
-    ).one_or_none()
-
-    if profil is None:
-        return Eligibilite(creator_id=creator_id, acces=())
-
-    createur = CreateurEvalue(
-        creator_id=profil.user_id,
-        reliability_score=profil.reliability_score,
-        completed_collabs=profil.completed_collabs_count,
-    )
-
-    releve = _dernier_releve()
-    comptes = [
-        CompteEvalue(
-            social_account_id=ligne.id,
-            platform=ligne.platform,
-            status=ligne.status,
-            verification_status=ligne.verification_status,
-            followers=ligne.followers_count,
-            captured_at=ligne.captured_at,
-            connected_at=ligne.connected_at,
-            token_expires_at=ligne.token_expires_at,
-        )
-        for ligne in (
-            await session.execute(
-                sa.select(
-                    SocialAccount.id,
-                    SocialAccount.platform,
-                    SocialAccount.status,
-                    SocialAccount.verification_status,
-                    SocialAccount.connected_at,
-                    SocialAccount.token_expires_at,
-                    releve.c.followers_count,
-                    releve.c.captured_at,
-                )
-                .outerjoin(releve, releve.c.social_account_id == SocialAccount.id)
-                .where(SocialAccount.creator_id == creator_id)
-            )
-        ).all()
-    ]
-
-    paliers = [
+    return [
         PalierEvalue(
             tier_id=ligne.id,
             platform=ligne.platform,
@@ -436,13 +384,119 @@ async def evaluer_createur(
         ).all()
     ]
 
-    return evaluer(
-        createur,
-        comptes,
-        paliers,
-        maintenant=maintenant,
-        age_max=timedelta(seconds=settings.metrics_max_age_seconds),
-    )
+
+async def evaluer_createur(
+    session: AsyncSession, creator_id: uuid.UUID, *, maintenant: datetime | None = None
+) -> Eligibilite:
+    """L'éligibilité d'une seule créatrice.
+
+    **Un cas particulier de `evaluer_createurs`, et rien de plus.** Les deux
+    versions exécutaient la même requête de profil, la même jointure de comptes,
+    la même liste de paliers ; les tenir séparées aurait fait deux endroits où
+    la règle peut diverger le jour où l'une des deux change. Celle-ci reste
+    nommée et documentée à part parce que c'est la forme qu'un appelant qui ne
+    pense qu'à une créatrice — une fiche, une inscription qui vient de créer son
+    profil — doit trouver en premier.
+    """
+    resultat = await evaluer_createurs(session, (creator_id,), maintenant=maintenant)
+    return resultat[creator_id]
+
+
+async def evaluer_createurs(
+    session: AsyncSession, creator_ids: Iterable[uuid.UUID], *, maintenant: datetime | None = None
+) -> dict[uuid.UUID, Eligibilite]:
+    """La même règle, pour un ensemble de créatrices — en trois requêtes, pas
+    trois requêtes par créatrice.
+
+    **C'est la question que l'administration pose, et elle ne se pose jamais
+    sur une seule personne.** « Combien, parmi cent, peuvent réserver quelque
+    part aujourd'hui » demanderait trois cents allers-retours à la base avec
+    `evaluer_createur` appelée en boucle — un compte d'onglet qui coûterait plus
+    cher à charger que l'écran entier qu'il annonce.
+
+    Le principe est celui de `_dernier_releve()` : lire une fois ce qui ne
+    dépend pas de la personne — ici, l'ensemble des paliers actifs et
+    l'ensemble des comptes sociaux des créatrices demandées — puis appeler la
+    fonction pure `evaluer` une fois par créatrice, en mémoire, sans requête
+    supplémentaire. La règle d'éligibilité elle-même ne bouge pas d'une ligne :
+    c'est la même `evaluer()`, sur les mêmes formes de données.
+
+    **Une créatrice sans profil rend une éligibilité vide**, exactement comme
+    `evaluer_createur` : il n'y a pas de couple à évaluer, ce n'est pas un refus.
+    """
+    ids = tuple(dict.fromkeys(creator_ids))
+    if not ids:
+        return {}
+
+    settings = get_settings()
+    maintenant = maintenant or datetime.now(UTC)
+    age_max = timedelta(seconds=settings.metrics_max_age_seconds)
+
+    profils: dict[uuid.UUID, CreateurEvalue] = {
+        ligne.user_id: CreateurEvalue(
+            creator_id=ligne.user_id,
+            reliability_score=ligne.reliability_score,
+            completed_collabs=ligne.completed_collabs_count,
+        )
+        for ligne in (
+            await session.execute(
+                sa.select(
+                    CreatorProfile.user_id,
+                    CreatorProfile.reliability_score,
+                    CreatorProfile.completed_collabs_count,
+                ).where(CreatorProfile.user_id.in_(ids))
+            )
+        ).all()
+    }
+
+    releve = _dernier_releve()
+    comptes_par_createur: dict[uuid.UUID, list[CompteEvalue]] = defaultdict(list)
+    for ligne in (
+        await session.execute(
+            sa.select(
+                SocialAccount.creator_id,
+                SocialAccount.id,
+                SocialAccount.platform,
+                SocialAccount.status,
+                SocialAccount.verification_status,
+                SocialAccount.connected_at,
+                SocialAccount.token_expires_at,
+                releve.c.followers_count,
+                releve.c.captured_at,
+            )
+            .outerjoin(releve, releve.c.social_account_id == SocialAccount.id)
+            .where(SocialAccount.creator_id.in_(ids))
+        )
+    ).all():
+        comptes_par_createur[ligne.creator_id].append(
+            CompteEvalue(
+                social_account_id=ligne.id,
+                platform=ligne.platform,
+                status=ligne.status,
+                verification_status=ligne.verification_status,
+                followers=ligne.followers_count,
+                captured_at=ligne.captured_at,
+                connected_at=ligne.connected_at,
+                token_expires_at=ligne.token_expires_at,
+            )
+        )
+
+    paliers = await _paliers_actifs(session)
+
+    return {
+        creator_id: (
+            evaluer(
+                profils[creator_id],
+                comptes_par_createur.get(creator_id, ()),
+                paliers,
+                maintenant=maintenant,
+                age_max=age_max,
+            )
+            if creator_id in profils
+            else Eligibilite(creator_id=creator_id, acces=())
+        )
+        for creator_id in ids
+    }
 
 
 def dedoublonner(obstacles: Iterable[Obstacle]) -> tuple[Obstacle, ...]:

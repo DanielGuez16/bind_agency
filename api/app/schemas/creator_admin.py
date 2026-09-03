@@ -5,7 +5,26 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict
 
-from app.models.enums import Platform
+from app.models.enums import ContentFormat, Platform
+
+
+class PalierAccessibleRead(BaseModel):
+    """Le palier le plus exigeant qu'elle ouvre, n'importe où sur le produit.
+
+    **Le même principe que `PalierAccessibleIciRead` de l'annuaire du
+    commerce, sans le salon.** Là-bas, les paliers évalués sont ceux qu'**un**
+    salon offre ; ici, ce sont tous les paliers actifs du produit, toutes
+    plateformes confondues — il n'y a pas de salon pour restreindre la
+    question. Un nom distinct plutôt qu'une réutilisation : les deux répondent
+    à des questions différentes, et les confondre ferait lire « ce qu'elle
+    ouvre ici » sur un écran qui n'a pas de « ici ».
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    tier_id: uuid.UUID
+    platform: Platform
+    content_format: ContentFormat
 
 
 class ReseauDuCreateurRead(BaseModel):
@@ -57,6 +76,14 @@ class CreateurAdminRead(BaseModel):
     #: pas un mauvais score, elle n'en a pas. Rendre zéro la ferait lire comme
     #: la moins fiable de la liste alors qu'elle est seulement la plus récente.
     reliability_score: Decimal | None
+    #: **Absent tant que le lot d'éligibilité n'a pas tourné, jamais faux.**
+    #:
+    #: Calculé contre tous les paliers actifs du produit — `evaluer_createurs`,
+    #: trois requêtes pour l'ensemble de la population, pas trois cents. Nul
+    #: quand elle n'ouvre aucun palier ou qu'elle n'a aucun compte social : les
+    #: deux se lisent pareil ici, la ligne « aucun réseau » du pseudonyme dit
+    #: déjà laquelle des deux c'est.
+    tier: PalierAccessibleRead | None
 
 
 class AnnuaireAdminRead(BaseModel):
@@ -93,3 +120,10 @@ class AnnuaireAdminRead(BaseModel):
     #: de trois scores n'est pas « 86 » sorti de cent vingt-huit ; c'est
     #: l'arbitrage déjà rendu sur les deux médianes d'abonnement.
     createurs_avec_score: int
+    #: **Combien, sur cette recherche, ouvrent au moins un palier.**
+    #:
+    #: Le nombre qui manquait pour dire si la population sait déjà réserver ou
+    #: si elle attend son premier compte social vérifié. Coûtait trois cents
+    #: requêtes évalué créatrice par créatrice ; `evaluer_createurs` le rend en
+    #: trois, sur l'ensemble.
+    peut_reserver: int

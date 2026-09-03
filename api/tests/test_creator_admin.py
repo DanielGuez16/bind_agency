@@ -26,7 +26,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncSession
 
 from app.core.config import get_settings
 from app.models import SocialMetricsSnapshot
-from app.models.enums import ReliabilityEventType, UserRole
+from app.models.enums import ReliabilityEventType, UserRole, VerificationStatus
 from app.services import reliability
 from tests.conftest import inscrire_verifie
 from tests.factories import new_creator, new_social_account
@@ -238,3 +238,67 @@ async def test_la_mediane_ignore_les_scores_absents(
     # zéro dans le calcul l'aurait tirée vers le bas.
     assert corps["fiabilite_mediane"] is not None
     assert float(corps["fiabilite_mediane"]) > 70
+
+
+@pytest.mark.anyio
+async def test_le_palier_accessible_et_le_compte_qui_peuvent_reserver(
+    session: AsyncSession, conn: AsyncConnection, client: AsyncClient
+) -> None:
+    """**Le lot d'éligibilité, vu depuis la route — deux créatrices qui divergent.**
+
+    Avec une seule créatrice, un `tier` toujours nul et un `tier` toujours
+    rempli rendraient le même verdict — il n'y a personne avec qui se
+    tromper. Il faut une créatrice vérifiée avec un relevé récent, et une
+    créatrice sans relevé ni vérification, pour que la colonne et le compte de
+    tête se distinguent réellement.
+
+    **Et la créatrice qui ouvre doit en ouvrir deux, pas un.** Avec un seul
+    palier accessible, `min` et `max` rendent le même verdict — c'est
+    exactement le décor qui aurait laissé passer le pire des deux en silence.
+    Une collaboration achevée ouvre la story **et** le post ; la réel reste
+    fermée, faute de la seconde. Le test n'est concluant que si l'assertion
+    porte sur le post, jamais sur la story qu'un `min` aurait rendue aussi.
+
+    Aucun champ posé à la main sur `reliability_score` ni sur les caches : la
+    créatrice qui ouvre y arrive par ses vraies conditions — un compte
+    **vérifié**, un relevé **récent**, une collaboration déjà honorée. La
+    créatrice fermée garde les défauts de colonne du modèle (`needs_review`,
+    aucun relevé), ce qu'elle est jusqu'à preuve du contraire.
+    """
+    ouvre = await new_creator(conn, completed_collabs_count=1)
+    compte = await new_social_account(
+        conn, ouvre, handle="ouvre_deux_paliers", verification_status=VerificationStatus.VERIFIED
+    )
+    session.add(
+        SocialMetricsSnapshot(
+            social_account_id=compte,
+            captured_at=datetime.now(UTC),
+            followers_count=50_000,
+            following_count=300,
+            media_count=210,
+            raw_payload={},
+        )
+    )
+    ferme = await new_creator(conn)
+    # Compte par défaut : `needs_review`, aucun relevé. Fermé sans qu'on ait
+    # besoin de le forcer — c'est l'état d'un compte qui vient d'être rattaché.
+    await new_social_account(conn, ferme, handle="rien_n_ouvre")
+    await session.commit()
+
+    jeton = await jeton_administrateur(session, client)
+    reponse = await client.get(
+        f"{PREFIX}/admin/creators", headers={"Authorization": f"Bearer {jeton}"}
+    )
+    assert reponse.status_code == 200, reponse.text
+    corps = reponse.json()
+
+    par_id = {ligne["creator_id"]: ligne for ligne in corps["items"]}
+
+    # Story et post s'ouvrent tous deux ; c'est post, le plus exigeant des
+    # deux, que la route doit rendre — pas story, que `min` rendrait aussi.
+    assert par_id[str(ouvre)]["tier"] is not None
+    assert par_id[str(ouvre)]["tier"]["content_format"] == "post"
+    assert par_id[str(ferme)]["tier"] is None
+
+    # Et le compte de tête suit exactement : une créatrice ouvre, l'autre non.
+    assert corps["peut_reserver"] == 1

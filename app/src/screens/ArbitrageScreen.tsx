@@ -59,6 +59,7 @@ import {
   TableRow,
   Texte,
   TextField,
+  TierBadge,
   Toolbar,
   type Colonne,
 } from '../components';
@@ -397,9 +398,23 @@ function TableDArbitrage({
               commerce: ligne.business_name,
               createur: nomDuCreateur(ligne, t, '—'),
               prestation: ligne.item_name,
-              palier: ligne.required_format.toUpperCase(),
               tentatives: colonneDesMotifs(ligne, t),
               echeance: quandRestant(ligne.deadline_at),
+            }}
+            rendus={{
+              // **Le badge à trois marqueurs, pas la clé en capitales.** La
+              // colonne rendait `required_format.toUpperCase()` — un mot brut
+              // qui portait le bon texte par coïncidence de casse, et qui
+              // aurait dit « POST » en espagnol au lieu de « PUBLICACIÓN ».
+              // `TierBadge` est déjà la matière du produit pour ce palier ; la
+              // planche v15 dessine exactement ce badge ici.
+              palier: (
+                <TierBadge
+                  tier={ligne.required_format}
+                  size="sm"
+                  testID={`palier-${ligne.collaboration_id}`}
+                />
+              ),
             }}
           />
             </View>
