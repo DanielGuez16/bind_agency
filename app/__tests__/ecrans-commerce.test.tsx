@@ -1425,6 +1425,87 @@ describe('plans', () => {
       expect(screen.queryByText(mot)).toBeNull();
     }
   });
+
+  describe('qui paie ce plan', () => {
+    it('écrit la date connue, et « date unknown » pour l’abonnement sans date', async () => {
+      /**
+       * **La route `GET /admin/plans/{id}/businesses` levait à chaque appel**
+       * — `Subscription.created_at` n'existe pas, la vraie colonne est
+       * `started_at`. L'écran avalait l'échec (`.catch(() => [])`) et
+       * affichait « aucun abonné », ce qui est faux dès qu'un plan en a un.
+       *
+       * **Deux abonnés qui divergent sur le seul champ éprouvé.** L'un porte
+       * une date, l'autre non — le cas réel d'un abonnement antérieur à la
+       * colonne. Avec un seul abonné, un écran qui écrirait toujours une date
+       * ou toujours « inconnu » rendrait le même verdict.
+       */
+      await monter(
+        <PlansScreen />,
+        clientDe({
+          '/admin/plans/pl1/businesses': [
+            {
+              business_id: 'b1',
+              name: 'Ocean Beauty Studio',
+              neighborhood: null,
+              category: 'beauty',
+              status: 'active',
+              since: '2026-03-01T00:00:00Z',
+            },
+            {
+              business_id: 'b2',
+              name: 'Bayside Play Loft',
+              neighborhood: null,
+              category: 'beauty',
+              status: 'active',
+              since: null,
+            },
+          ],
+          '/admin/plans': [PLAN],
+        }),
+        'admin',
+      );
+      await waitFor(() => expect(screen.getByTestId('plan-pl1')).toBeTruthy());
+      await fireEvent.press(screen.getByTestId('plan-pl1'));
+      await waitFor(() => expect(screen.getByTestId('abonne-b1')).toBeTruthy());
+
+      expect(screen.getByTestId('abonne-b1')).toHaveTextContent(/2026/);
+      expect(screen.getByTestId('abonne-b2')).toHaveTextContent(new RegExp(en.admin.abonneDepuisInconnu));
+      expect(screen.getByTestId('abonne-b2')).not.toHaveTextContent(/2026/);
+    });
+
+    it('affiche un vrai message d’erreur, pas un panneau vide qui ment', async () => {
+      /**
+       * **Le décor qui distingue l'ancien comportement du nouveau.** Une
+       * panne sur la route des abonnés doit se voir — l'ancien `.catch`
+       * rendait exactement le même panneau qu'un plan sans preneur, et c'est
+       * précisément la confusion qu'on éprouve ici.
+       */
+      const client = new ApiClient({
+        baseUrl: 'https://api.test',
+        coffre,
+        fetchImpl: async (url) => {
+          const chemin = String(url);
+          if (chemin.includes('/admin/plans/pl1/businesses')) {
+            return { ok: false, status: 500, json: async () => ({ detail: 'internal_error' }) } as Response;
+          }
+          if (chemin.includes('/admin/plans')) {
+            return { ok: true, status: 200, json: async () => [PLAN] } as Response;
+          }
+          throw new Error(`route non simulée : ${chemin}`);
+        },
+      });
+
+      await monter(<PlansScreen />, client, 'admin');
+      await waitFor(() => expect(screen.getByTestId('plan-pl1')).toBeTruthy());
+      await fireEvent.press(screen.getByTestId('plan-pl1'));
+
+      await waitFor(() => expect(screen.getByTestId('abonnes-echec')).toBeTruthy());
+      // Et surtout pas le panneau « aucun abonné », qui dirait le contraire
+      // de ce qui s'est produit.
+      expect(screen.queryByTestId('abonnes-vide')).toBeNull();
+      expect(screen.getByText(en.common.retry)).toBeTruthy();
+    });
+  });
 });
 
 

@@ -770,6 +770,7 @@ export const es: Catalogue = {
   },
   admin: {
     abonnesTitre: 'Quién paga este plan',
+    abonneDepuisInconnu: 'Fecha desconocida',
     abonnesVide: 'Ningún comercio ha tomado este plan todavía.',
     abonnesColonneNom: 'Comercio',
     abonnesColonneQuartier: 'Barrio',
