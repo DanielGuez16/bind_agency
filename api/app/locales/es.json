@@ -17,6 +17,8 @@
   "booking.when": " el {quand}",
   "collaboration.approved.body": "Buen trabajo. {business} aceptó tu publicación de {item}.",
   "collaboration.approved.subject": "Tu publicación fue aprobada",
+  "collaboration.closed_no_fault.body": "Hola {creator}:\n\nHemos cerrado tu colaboración de {item} en {business}. No hay nada en tu contra: tras varios intentos, lo que se pedía no estaba lo bastante claro, y eso es cosa nuestra.\n\nTu puntuación de fiabilidad no cambia, y puedes reservar de nuevo cuando quieras.\n\n— BIND",
+  "collaboration.closed_no_fault.subject": "Tu colaboración con {business} se ha cerrado",
   "collaboration.opened.body": "Hola {creator}:\n\nHas canjeado {item} en {business}. Ahora publica un {format} y envíanos la prueba antes del {deadline}.\n\n{requirements}\nAbre la app para enviar tu prueba.\n",
   "collaboration.opened.subject": "Tu colaboración con {business} ha empezado",
   "collaboration.reminder.body": "Hola {creator}:\n\nTu prueba de {item} en {business} vence el {deadline}. Las stories desaparecen a las 24 horas, así que envíala mientras tu publicación siga en línea.\n",
