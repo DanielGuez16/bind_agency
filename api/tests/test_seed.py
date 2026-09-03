@@ -1033,6 +1033,51 @@ async def test_des_plans_d_abonnement_existent(seed_conn: AsyncConnection) -> No
     assert intervalles == {BillingInterval.MONTHLY, BillingInterval.YEARLY}
 
 
+async def test_une_deuxieme_categorie_de_plans_existe(seed_conn: AsyncConnection) -> None:
+    """La tarification par catégorie existe en base depuis le début ; un seul
+    jeu de plans, tous en beauté, ne le montrait pas.
+
+    Un commerce d'une autre catégorie n'avait littéralement rien à souscrire —
+    `GET /business/{id}/plans` filtre sur la catégorie du commerce, et
+    renvoyait une liste vide pour vingt pour cent du marché du jeu de
+    données. Nommée plutôt que comptée, pour la même raison que le salon de
+    démonstration abonné plus bas : « au moins deux catégories » repasserait
+    au vert si la seconde n'était pas `family_activity`.
+    """
+    from app.models.enums import BusinessCategory
+
+    categories = set(
+        (await seed_conn.execute(sa.select(SubscriptionPlan.category).distinct())).scalars().all()
+    )
+    assert BusinessCategory.FAMILY_ACTIVITY in categories, f"catégories : {categories}"
+
+
+async def test_bayside_play_loft_est_abonne_a_un_plan_de_sa_categorie(
+    seed_conn: AsyncConnection,
+) -> None:
+    """Le second commerce abonné du jeu se choisit par catégorie tarifée, pas
+    au hasard — voir `abonner_les_commerces`. Bayside Play Loft est le premier
+    commerce éligible dans l'ordre alphabétique une fois `family_activity`
+    tarifée ; ce test le nomme pour ne pas retomber dans le défaut d'origine,
+    où un salon d'activité familiale s'abonnait à un plan de beauté.
+    """
+    from app.models import Subscription
+
+    ligne = (
+        await seed_conn.execute(
+            sa.select(Business.category, SubscriptionPlan.category)
+            .select_from(Business)
+            .join(Subscription, Subscription.business_id == Business.id)
+            .join(SubscriptionPlan, SubscriptionPlan.id == Subscription.plan_id)
+            .where(Business.name == "Bayside Play Loft", Subscription.status == "active")
+        )
+    ).first()
+
+    assert ligne is not None, "Bayside Play Loft n'est abonné à rien"
+    categorie_du_commerce, categorie_du_plan = ligne
+    assert categorie_du_commerce == categorie_du_plan == "family_activity"
+
+
 async def test_le_salon_de_la_demonstration_a_une_preuve_a_controler(
     seed_conn: AsyncConnection,
 ) -> None:
