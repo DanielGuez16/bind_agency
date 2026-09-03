@@ -102,7 +102,6 @@ export const es: Catalogue = {
     newCreatorHelp: 'Aún no tienes historial, así que tus niveles se basan solo en tu audiencia.',
     minFollowers: '{{count}} seguidores',
     empty: 'No hay ningún nivel disponible por ahora.',
-    missingFollowers: 'Te faltan {{count}} seguidores',
     rulesEntry: 'Cómo funcionan los niveles',
     rulesEntryHelp: 'Qué te hace subir, qué te hace bajar y qué significa la fiabilidad.',
     rulesUp: 'Qué abre un nivel',

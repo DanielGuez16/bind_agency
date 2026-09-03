@@ -109,7 +109,6 @@ export const en = {
     newCreatorHelp: 'You have no track record yet, so your tiers are based on your audience alone.',
     minFollowers: '{{count}} followers',
     empty: 'No tier is available right now.',
-    missingFollowers: '{{count}} more followers to go',
     rulesEntry: 'How tiers work',
     rulesEntryHelp: 'What lifts you, what sets you back, and what reliability means.',
     rulesUp: 'What opens a tier',
