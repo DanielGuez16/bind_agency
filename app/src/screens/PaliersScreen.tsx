@@ -389,6 +389,16 @@ function Echelle({
         />
       ) : null}
 
+      {/* **Une plateforme sans palier ne rendait rien du tout.** L'onglet se
+          sélectionnait, l'échelle disparaissait, et l'écran se lisait comme
+          une panne. La clé existait, traduite dans les deux langues, et
+          n'était appelée nulle part. */}
+      {paliers.length === 0 ? (
+        <Texte variante="type.body" couleur="ink.soft" testID="paliers-vide">
+          {t('tiers.empty')}
+        </Texte>
+      ) : null}
+
       {paliers.map((palier, rang) => (
         <Apparition key={palier.tier_id} rang={rang + 2}>
           <BarreauDePalier
@@ -750,6 +760,40 @@ export function BarreauDePalier({
                   teinte={encre}
                 />
               ))}
+            </View>
+          ) : null}
+
+          {/* **« En pause » était le seul état sans détail concret**, et
+              c'était structurel : cet état est *défini* comme celui où le
+              palier n'a aucun obstacle propre, donc le bloc du dessus ne s'y
+              affiche jamais. Les trois autres états portent leurs écarts
+              chiffrés ; celui-ci laissait « Paused, not lost » répondre seul à
+              « accès limité ? une seule prestation ? niveau insuffisant ? ».
+
+              Ce qu'on écrit ici répond aux trois : le seuil que ce palier
+              demande — **et que la créatrice tient déjà**, sans quoi il aurait
+              un obstacle propre et ne serait pas en pause — puis ce qu'il
+              ouvre, au singulier près. Rien sur ce qui manque : la cause est
+              commune à tous les paliers, elle est nommée une fois en tête
+              d'écran, et la répéter sur chaque barre en ferait un reproche. */}
+          {etat === 'enPause' ? (
+            <View
+              testID={`en-pause-detail-${palier.tier_id}`}
+              style={{ paddingHorizontal: large ? 16 : 14, paddingBottom: large ? 16 : 14, gap: 10 }}
+            >
+              <Filet />
+              <Texte variante="type.label" couleur="ink.soft" testID={`en-pause-acquis-${palier.tier_id}`}>
+                {t('tiers.minFollowers', { count: formatNumber(palier.min_followers, locale) })}
+              </Texte>
+              <Texte variante="type.body" testID={`en-pause-ouvre-${palier.tier_id}`}>
+                {palier.offres_disponibles === 0
+                  ? t('tiers.opensNone')
+                  : palier.offres_disponibles === 1
+                    ? t('tiers.opensOne')
+                    : t('tiers.opens', {
+                        count: formatNumber(palier.offres_disponibles, locale),
+                      })}
+              </Texte>
             </View>
           ) : null}
 
