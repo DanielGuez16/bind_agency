@@ -2066,12 +2066,22 @@ async def poser_les_jobs(session: AsyncSession) -> int:
 
 
 async def poser_les_plans(session: AsyncSession) -> int:
-    """Trois plans, dont un annuel : l'écran d'administration a besoin des deux
-    intervalles pour que la mensualisation se voie."""
+    """Trois plans en beauté, dont un annuel : l'écran d'administration a besoin
+    des deux intervalles pour que la mensualisation se voie.
+
+    **Et deux en activité familiale.** La tarification par catégorie existe en
+    base — `SubscriptionPlan.category` — depuis le début, mais un seul jeu de
+    plans, tous en beauté, ne la démontre pas : un commerce d'une autre
+    catégorie n'avait littéralement rien à souscrire, et l'argument chiffré de
+    `abonnes_par_categorie` — comparer ce qu'une catégorie paie à ce qu'elle
+    souscrit réellement — n'avait qu'une seule ligne à montrer.
+    """
     plans = (
         ("Essentiel", BusinessCategory.BEAUTY, 9_900, BillingInterval.MONTHLY),
         ("Studio", BusinessCategory.BEAUTY, 19_900, BillingInterval.MONTHLY),
         ("Essentiel annuel", BusinessCategory.BEAUTY, 106_900, BillingInterval.YEARLY),
+        ("Essentiel", BusinessCategory.FAMILY_ACTIVITY, 8_900, BillingInterval.MONTHLY),
+        ("Studio", BusinessCategory.FAMILY_ACTIVITY, 16_900, BillingInterval.MONTHLY),
     )
     for nom, categorie, prix, intervalle in plans:
         session.add(
