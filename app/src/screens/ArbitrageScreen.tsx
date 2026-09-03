@@ -674,7 +674,13 @@ function Dossier({ ligne, onTranche }: { ligne: LigneDeFile; onTranche: () => vo
                 key={`${tentative.demandee_le}-${rang}`}
                 style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}
               >
-                <Texte variante="type.data" couleur="ink.mute">
+                {/* **Un rang n'est pas un identifiant.** Il était en mono,
+                    c'est-à-dire dans la famille qui dit « lis-moi caractère par
+                    caractère » ; sur « 1, 2, 3 » cela ne sert à rien et cela
+                    coûte une quatrième police dans un panneau qui en porte déjà
+                    trois. Le panneau ne garde de mono que l'identifiant du
+                    dossier, qui se recopie. */}
+                <Texte variante="type.body" couleur="ink.mute">
                   {rang + 1}
                 </Texte>
                 {/* **Un motif passé n'avertit pas, il raconte.** Il portait

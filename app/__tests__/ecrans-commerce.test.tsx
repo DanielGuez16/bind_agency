@@ -2723,6 +2723,92 @@ describe('le mode terrain dit son avancement sans l’écrire', () => {
   });
 });
 
+describe('la tournée se lit en table, et ses gestes vivent dans le panneau', () => {
+  /**
+   * **Deux fiches qui divergent sur tout ce que la table sert à comparer.**
+   *
+   * Une seule fiche ne prouverait rien : une implémentation qui écrirait la
+   * même voie, le même état et la même attente sur toutes les lignes rendrait
+   * exactement le même verdict. Il faut donc une fiche remise en main et
+   * activée, et une fiche envoyée par lien et jamais ouverte — c'est le couple
+   * dont l'écart est la seule raison d'être de cet écran.
+   */
+  const ACTIVEE = {
+    ...FICHE_PREPAREE,
+    business_id: 'p1',
+    name: 'Studio Lume',
+    status: 'active' as const,
+    prepared_at: '2026-08-10T12:00:00Z',
+    issued_at: '2026-08-10T12:00:00Z',
+    used_at: '2026-08-10T16:00:00Z',
+    channel: 'qr' as const,
+    etat: 'claimed' as const,
+    prepared_by: 'amelie@bind.agency',
+    remis_par: 'amelie@bind.agency',
+  };
+  const JAMAIS_OUVERTE = {
+    ...FICHE_PREPAREE,
+    business_id: 'p2',
+    name: 'Aurora Brow Bar',
+    prepared_at: '2026-08-09T12:00:00Z',
+    issued_at: '2026-08-09T12:00:00Z',
+    used_at: null,
+    channel: 'email' as const,
+    etat: 'never_opened' as const,
+    prepared_by: 'amelie@bind.agency',
+    remis_par: 'theo@bind.agency',
+  };
+
+  it('donne à chaque fiche sa voie, son état et son attente, et elles diffèrent', async () => {
+    await monter(
+      <TerrainScreen />,
+      clientDe({ '/admin/prospects': [ACTIVEE, JAMAIS_OUVERTE] }),
+      'merchant',
+    );
+    await waitFor(() => expect(screen.getByTestId('fiche-p1')).toBeTruthy());
+
+    // La voie de remise sépare les deux, et c'est l'écart que l'écran mesure.
+    expect(screen.getByTestId('fiche-p1')).toHaveTextContent(/In person/);
+    expect(screen.getByTestId('fiche-p2')).toHaveTextContent(/By email/);
+
+    // **L'état est un cartouche, pas un mot dans une cellule.** Le testID est
+    // celui que `TableRow` compose pour une colonne déclarée `etat`.
+    expect(screen.getByTestId('fiche-p1-etat')).toHaveTextContent('Taken over');
+    expect(screen.getByTestId('fiche-p2-etat')).toHaveTextContent('Link never opened');
+
+    // L'attente d'une fiche activée est une durée close ; celle d'une fiche
+    // qui court se dit autrement. Les confondre ferait lire « 4 h » sur une
+    // fiche que personne n'a jamais ouverte.
+    expect(screen.getByTestId('fiche-p1')).toHaveTextContent(/4 h/);
+    expect(screen.getByTestId('fiche-p2')).toHaveTextContent(/so far/);
+  });
+
+  it('n’expose aucun geste dans la rangée, et les rend tous en l’ouvrant', async () => {
+    await monter(
+      <TerrainScreen />,
+      clientDe({ '/admin/prospects': [JAMAIS_OUVERTE] }),
+      'merchant',
+    );
+    await waitFor(() => expect(screen.getByTestId('fiche-p2')).toBeTruthy());
+
+    // **Fermée, la table ne porte que des faits.** Trois boutons par ligne
+    // feraient d'une table de comparaison une table de décision.
+    expect(screen.queryByTestId('emettre-p2')).toBeNull();
+    expect(screen.queryByTestId('revoquer-p2')).toBeNull();
+
+    await fireEvent.press(screen.getByTestId('fiche-p2'));
+
+    // Ouverte, elle porte les mêmes gestes qu'avant la table — aucun n'a été
+    // perdu au passage, ce qui est la seule chose qu'une recomposition doit
+    // garantir.
+    expect(screen.getByTestId('panneau-p2')).toBeTruthy();
+    expect(screen.getByTestId('emettre-p2')).toBeTruthy();
+    expect(screen.getByTestId('revoquer-p2')).toBeTruthy();
+    // La seconde main paraît, parce que c'en est une autre.
+    expect(screen.getByTestId('remise-par-p2')).toBeTruthy();
+  });
+});
+
 describe('un dossier qu’un arbitre a en main', () => {
   it('ne se décide plus au comptoir, et le dit', async () => {
     // **Deux décisions pouvaient partir sur le même dossier** : celle du salon

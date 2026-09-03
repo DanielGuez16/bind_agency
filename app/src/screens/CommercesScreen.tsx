@@ -292,7 +292,7 @@ function Rangee({
                  change pas ce que je peux faire, et l'afficher inviterait à se
                  demander pourquoi lui plutôt que moi. */
               <Texte
-                variante="type.dataLabel"
+                variante="type.label"
                 couleur="status.success.text"
                 testID={`reprise-en-cours-${commerce.business_id}`}
               >
