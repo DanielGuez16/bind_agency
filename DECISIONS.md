@@ -11043,3 +11043,55 @@ explicitement le contraire — un geste distinct pour refermer son propre accès
 — et c'est la décision qui tient maintenant. Trouvé seulement parce que la
 suite complète tourne avant de pousser : cette garde ne touche ni
 `Navigation.tsx` ni les écrans modifiés, rien ne l'aurait signalée autrement.
+
+---
+
+## 2026-09-03 — Le pool de connexions se déclare, et le fil créateur ne s'accélère pas plus loin
+
+Un test de charge (20 puis 50 requêtes simultanées, trois routes) a montré le
+fil créateur environ deux fois plus lent que la journée commerce et
+l'arbitrage admin, sans aucune erreur. Deux corrections en ont découlé, et
+l'une des deux n'a pas eu lieu — pour une raison qui mérite d'être écrite,
+plutôt que de laisser croire à un oubli.
+
+**Le pool de connexions était implicite.** `create_async_engine` ne déclarait
+ni `pool_size` ni `max_overflow` : SQLAlchemy appliquait ses valeurs par
+défaut (5 + 10 = 15), invisibles à la lecture du code. Il est maintenant à
+10 + 10 = 20, explicite et commenté. Le déploiement tourne un seul processus
+`uvicorn` sans `--workers` : ce pool n'est jamais partagé entre plusieurs
+travailleurs, et vingt donne une marge mesurée plutôt que devinée — cinquante
+requêtes simultanées passaient déjà sous la valeur par défaut, sans attente
+observée. Rester modeste plutôt que de viser large : la production passe par
+le *session pooler* de Supabase, pas une connexion directe, et une limite qui
+lui appartient échoue de façon plus opaque qu'un dépassement de pool qu'on
+contrôle.
+
+**L'hypothèse sur le fil créateur était fausse, vérifiée plutôt que corrigée
+à l'aveugle.** Elle supposait une distance calculée en Python après coup.
+Elle est calculée en SQL depuis longtemps — `ST_Distance` sur une colonne
+`Geography`, avec un index `GIST` dédié (`ix_business_geo`). Un profilage
+direct du service, hors HTTP, confirme que son propre calcul prend
+11,7 ms en moyenne pour retourner quinze commerces — rapide, et la majeure
+partie de ce temps est de l'attente réseau vers Postgres, pas du calcul.
+
+**Ce qui explique le reste, une fois le pool élargi.** Réévalué dans les
+mêmes conditions, le fil créateur reste le plus lent des trois — moins
+qu'avant (moyenne divisée par presque deux, p95 amélioré d'un quart), mais
+toujours nettement devant les deux autres. Ce n'est pas une anomalie : c'est
+la route qui fait le plus de travail réel par appel. Elle balaie
+délibérément le rayon le plus large des options d'élargissement — pas le
+rayon demandé — pour que « élargir à 25 km · 9 salons » ne mente jamais ; et
+elle vérifie la disponibilité en cinq requêtes groupées, batching qui a déjà
+remplacé cent vingt et une requêtes individuelles lors d'une correction
+précédente. Les deux sont documentées comme volontaires dans `feed.py`, pas
+comme une dette.
+
+**La mise en cache n'a pas été ajoutée, et ce n'est pas un oubli.** Elle
+aurait réduit le travail répété sans toucher au reste, mais elle va à
+l'encontre d'une règle déjà écrite : « la disponibilité se calcule à la volée,
+on ne matérialise pas de lignes de créneaux ». Un résultat de fil mis en
+cache quelques secondes est exactement ce que cette règle refuse, sous une
+autre forme — une réponse qui prétend être fraîche et ne l'est plus. La
+question n'est pas technique, elle est produit : accepter une fenêtre de
+staleness volontaire sur cet écran précis demande une décision, pas une
+optimisation glissée dans une correction de charge.
