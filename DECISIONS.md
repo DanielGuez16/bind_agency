@@ -11248,3 +11248,23 @@ vérifiaient que l'onglet des terminées montre la publication ; retirer `closed
 de la liste de statuts de l'onglet les laissait tous verts, parce que le montage
 répond les mêmes lignes quelle que soit la requête. Il a fallu un test qui
 observe l'URL appelée — le seul endroit où cette liste est observable.
+
+**Et le rebase a trouvé ce qu'aucune suite n'aurait vu.** Pendant ce travail,
+une autre conversation a fusionné « My posts : le filtre part au serveur »
+(#437), qui fait demander au serveur les seules réservations `consumed` — avec
+en commentaire la justification exacte : *« vérifié en base, aucune contrepartie
+approuvée ne porte un autre statut de réservation »*. C'était vrai le jour où
+elle l'a écrit.
+
+La clôture le rend faux : une publication approuvée porte désormais `closed`.
+Les deux changements sont justes séparément, et leur rencontre **vide l'écran
+des publications en entier** — toutes, tout le temps, sans erreur nulle part.
+Ni la suite de #437 ni la mienne ne pouvaient le voir : chacune était verte sur
+sa propre branche, et le conflit git ne portait que sur les lignes voisines du
+crochet extrait, pas sur le filtre.
+
+Ce qui l'a attrapé est d'avoir lu ce que la version fusionnée *fait* avant de
+résoudre, plutôt que de choisir un côté. La règle du dépôt dit déjà « on garde
+la version fusionnée » ; ce cas ajoute qu'il faut la **lire**, parce qu'une
+hypothèse vraie à l'écriture peut avoir cessé de l'être entre-temps — et que la
+phrase qui la porte est un commentaire, que rien n'exécute.
