@@ -41,7 +41,7 @@ export function SchemaAaSafari({ testID }: { testID?: string }) {
           style={{
             width: 26,
             height: 26,
-            borderRadius: 13,
+            borderRadius: radius['radius.pill'],
             alignItems: 'center',
             justifyContent: 'center',
             backgroundColor: c['bg.inset'],
