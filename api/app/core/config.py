@@ -301,6 +301,12 @@ class Settings(BaseSettings):
     #: n'arrive pas vaut un rappel qui n'existe pas.
     email_from: str | None = None
     email_timeout_seconds: float = 10.0
+    #: L'adresse postale du pied de page. **Vide par défaut, et c'est un choix
+    #: en attente, pas un renoncement** : la planche Design la posait comme un
+    #: repère à remplir avant l'envoi, Daniel préfère n'y rien mettre pour
+    #: l'instant. Tant qu'elle est vide, la ligne d'adresse ne s'affiche pas du
+    #: tout — jamais un repère vide qui se lirait comme une adresse manquante.
+    email_postal_address: str = ""
     #: Avance du rappel d'échéance. Six heures : assez tôt pour agir, assez tard
     #: pour que la publication soit encore en ligne.
     collaboration_reminder_lead_seconds: int = 21_600
