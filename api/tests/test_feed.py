@@ -1061,17 +1061,15 @@ async def test_le_fil_populaire_classe_par_consommations_et_ignore_la_distance(
 async def test_le_fil_populaire_respecte_les_paliers_comme_le_fil_geolocalise(
     session: AsyncSession,
 ) -> None:
-    """Le même tamis que `fil_du_createur` : sans compte social, aucun palier
-    n'est accessible, et le fil de secours ne doit pas en montrer plus que
-    celui qu'une position aurait rendu."""
+    """**Le même décor que `test_un_palier_inaccessible_n_apparait_pas`.** Le
+    seul commerce du jeu n'offre qu'au palier reel ; à 3 100 abonnés, au-dessus
+    du story mais en dessous du reel, la créatrice ne l'atteint pas. Un salon
+    qui n'apparaît que grâce à un palier fermé serait une invite à réserver ce
+    qu'elle ne peut pas prendre — pire qu'une liste plus courte.
+    """
     b = await commerce(session, longitude=-80.1301, latitude=25.7908)
-    await offre(session, b)
-    user = await inscrire_verifie(
-        session,
-        email=f"{uuid.uuid4()}@example.com",
-        password="tourbillon-cactus-91-vermeil",
-        role=UserRole.CREATOR,
-    )
+    await offre(session, b, tier_id=REEL)
+    user, _ = await createur(session, followers=3_100)
 
     resultat = await service.fil_populaire_du_createur(session, creator_id=user.id)
 
