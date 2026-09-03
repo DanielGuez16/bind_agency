@@ -961,11 +961,41 @@ describe('aiguillage par rôle', () => {
     // parcours, sur une machine chargée, et un test qui expire ne dit pas ce
     // qu'il éprouvait.
   }, 15_000);
+
+  describe('le compte d’administration ne se supprime pas', () => {
+      it('l’écran ne propose pas la suppression à un administrateur', async () => {
+      // **Le pendant visible d'un refus serveur.** `POST /me/deletion` rend 403
+      // pour ce rôle ; montrer le bloc quand même ferait cliquer sur un geste
+      // qu'on sait refusé, ce qui est la pire des deux moitiés.
+      await monterPour('admin');
+      await fireEvent.press(screen.getAllByText(en.onglets.reglages)[0]);
+      await waitFor(() => expect(screen.getByTestId('ecran-reglages')).toBeTruthy());
+
+      expect(screen.queryByTestId('bloc-suppression')).toBeNull();
+      // Et ce qui reste utile reste : la langue et la sortie.
+      expect(screen.getByTestId('preferences')).toBeTruthy();
+      expect(screen.getByTestId('se-deconnecter')).toBeTruthy();
+  });
+
+      it('mais une créatrice la garde', async () => {
+      // **Le cas divergent.** Retirer le bloc pour tout le monde passerait le
+      // test du dessus tout aussi bien ; c'est ici qu'on verrait qu'on vient de
+      // retirer un droit à celles qui l'ont.
+      await monterPour('creator');
+      await fireEvent.press(screen.getAllByText(en.onglets.profil)[0]);
+      await waitFor(() => expect(screen.getByTestId('ecran-profil')).toBeTruthy());
+      await fireEvent.press(await screen.findByTestId('ouvrir-les-reglages'));
+      await waitFor(() => expect(screen.getByTestId('ecran-reglages')).toBeTruthy());
+
+      expect(screen.getByTestId('bloc-suppression')).toBeTruthy();
+  });
+  });
 });
 
 // --------------------------------------------------------------------------
 // zone sûre
 // --------------------------------------------------------------------------
+
 
 describe('zone sûre', () => {
   /**

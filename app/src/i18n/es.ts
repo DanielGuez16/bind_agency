@@ -1369,6 +1369,8 @@ export const es: Catalogue = {
     deletion_already_requested:
       'Tu cuenta ya está programada para eliminarse. Puedes cancelarlo desde tus ajustes.',
     deletion_not_requested: 'No hay ninguna eliminación en curso en esta cuenta.',
+    deletion_forbidden_for_role:
+      'Una cuenta de administración no se elimina desde aquí. Pídelo a otro administrador.',
     deletion_blocked_by_collaboration:
       'Todavía debes una publicación. Publícala, o deja que el negocio cierre la contrapartida, y vuelve a intentarlo.',
     password_too_short: 'Usa al menos 12 caracteres.',

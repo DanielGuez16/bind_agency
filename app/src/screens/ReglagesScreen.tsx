@@ -225,7 +225,17 @@ export function ReglagesScreen({
           testID="se-deconnecter"
         />
 
-        <BlocDeSuppression />
+        {/* **Pas pour un administrateur, et le serveur le refuse aussi.**
+            Le compte d'administration n'a aucune des conditions qui retiennent
+            les autres — ni contrepartie, ni réservation — donc la demande
+            passait, et l'anonymisation emportait trente jours plus tard le seul
+            compte capable d'arbitrer, de reprendre un salon et de fixer un prix.
+
+            Masquer le bloc retire le geste à qui le cherchait, pas à qui
+            connaît la route : `POST /me/deletion` rend maintenant un 403 pour
+            ce rôle. Ce qui est ici ne fait que cesser de montrer une porte
+            fermée ailleurs. */}
+        {role === 'admin' ? null : <BlocDeSuppression />}
       </View>
 
       {/* Le pied. Technique, discret, et porteur du geste qui ouvre le
