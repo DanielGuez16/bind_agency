@@ -47,7 +47,9 @@ class Abonne:
     neighborhood: Neighborhood | None
     category: BusinessCategory
     status: SubscriptionStatus
-    since: datetime
+    #: Nulle sur les lignes antérieures à `started_at`. Voir la même remarque
+    #: sur `AbonneDuPlanRead.since`.
+    since: datetime | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -274,7 +276,16 @@ async def abonnes_du_plan(session: AsyncSession, *, plan_id: uuid.UUID) -> tuple
     chiffre qui manquerait pour décider. Le statut voyage avec chaque ligne.
 
     **Le plus ancien d'abord.** L'écran répond à « ce prix tient-il dans la
-    durée » ; l'ancienneté est donc l'axe, pas le nom.
+    durée » ; l'ancienneté est donc l'axe, pas le nom. Postgres range les nulles
+    en dernier sur un tri croissant sans qu'on ait à le demander : un salon dont
+    on ne sait pas depuis quand il paie tombe donc après les dates connues,
+    plutôt que de se mêler à elles au hasard de l'index.
+
+    **`Subscription` n'a pas de `created_at`.** La requête le lisait ainsi et
+    levait à chaque appel — l'écran n'a jamais pu ouvrir la liste des abonnés
+    d'un plan. La colonne réelle est `started_at`, et elle est nullable : les
+    abonnements antérieurs à son ajout n'ont pas de date, ce que
+    `AbonneDuPlanRead.since` porte maintenant.
     """
     lignes = (
         await session.execute(
@@ -284,11 +295,11 @@ async def abonnes_du_plan(session: AsyncSession, *, plan_id: uuid.UUID) -> tuple
                 Business.neighborhood,
                 Business.category,
                 Subscription.status,
-                Subscription.created_at,
+                Subscription.started_at,
             )
             .join(Subscription, Subscription.business_id == Business.id)
             .where(Subscription.plan_id == plan_id)
-            .order_by(Subscription.created_at, Business.name)
+            .order_by(Subscription.started_at, Business.name)
         )
     ).all()
 
@@ -299,7 +310,7 @@ async def abonnes_du_plan(session: AsyncSession, *, plan_id: uuid.UUID) -> tuple
             neighborhood=ligne.neighborhood,
             category=ligne.category,
             status=ligne.status,
-            since=ligne.created_at,
+            since=ligne.started_at,
         )
         for ligne in lignes
     )

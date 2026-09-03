@@ -6,6 +6,7 @@ fermée à tout le monde sauf l'administrateur.
 """
 
 import uuid
+from datetime import UTC, datetime
 
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -164,3 +165,72 @@ async def test_la_route_est_reservee_aux_administrateurs(
     )
     assert accepte.status_code == 200, accepte.text
     assert accepte.json()[0]["price_cents"] == 9900
+
+
+# --------------------------------------------------------------------------
+# qui paie ce plan
+# --------------------------------------------------------------------------
+
+
+async def test_la_liste_des_abonnes_repond_et_distingue_les_dates(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """**La route levait à chaque appel, et rien ne le disait.**
+
+    Elle lisait `Subscription.created_at`, un attribut qui n'existe pas : la
+    colonne réelle est `started_at`. La liste des abonnés d'un plan n'a donc
+    jamais pu s'ouvrir, et aucun test ne le couvrait — c'est exactement pour
+    cela qu'il a fallu un audit plutôt qu'une relecture pour le trouver.
+
+    **Deux abonnés qui divergent sur le seul champ éprouvé.** L'un a une date
+    d'ouverture connue, l'autre non — la ligne d'avant que `started_at`
+    existe, que rien ne peut produire autrement qu'en la posant ainsi. Avec un
+    seul abonné, une implémentation qui rendrait toujours `null` pour `since`
+    et une qui rendrait toujours une date donneraient le même verdict.
+    """
+    ligne_plan = await plan(session)
+    connu = await commerce(session)
+    session.add(
+        Subscription(
+            business_id=connu.id,
+            plan_id=ligne_plan.id,
+            status=SubscriptionStatus.ACTIVE,
+            started_at=datetime(2026, 3, 1, tzinfo=UTC),
+        )
+    )
+    inconnu = await commerce(session)
+    # **Aucune date, et c'est la ligne héritée d'avant la colonne.** Le
+    # mécanisme du produit ne peut pas produire cet état autrement : une
+    # souscription réelle pose toujours son ouverture. C'est délibérément la
+    # seule ligne de ce fichier qui ne passe pas par un service pour l'obtenir.
+    session.add(
+        Subscription(
+            business_id=inconnu.id,
+            plan_id=ligne_plan.id,
+            status=SubscriptionStatus.ACTIVE,
+            started_at=None,
+        )
+    )
+    admin = await inscrire_verifie(
+        session,
+        email=f"{uuid.uuid4()}@example.com",
+        password=MOT_DE_PASSE,
+        role=UserRole.ADMIN,
+    )
+    await session.commit()
+
+    jetons = (
+        await client.post(
+            f"{PREFIX}/auth/login", json={"email": admin.email, "password": MOT_DE_PASSE}
+        )
+    ).json()
+    reponse = await client.get(
+        f"{PREFIX}/admin/plans/{ligne_plan.id}/businesses",
+        headers={"Authorization": f"Bearer {jetons['access_token']}"},
+    )
+    assert reponse.status_code == 200, reponse.text
+
+    par_id = {ligne["business_id"]: ligne for ligne in reponse.json()}
+    assert par_id[str(connu.id)]["since"] is not None
+    assert par_id[str(connu.id)]["since"].startswith("2026-03-01")
+    assert par_id[str(inconnu.id)]["since"] is None

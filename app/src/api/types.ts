@@ -2058,7 +2058,14 @@ export type AbonneDuPlan = {
   neighborhood: Neighborhood | null;
   category: BusinessCategory;
   status: string;
-  since: string;
+  /**
+   * Nulle sur les abonnements antérieurs à la colonne qui la porte.
+   *
+   * `subscription.started_at` n'existe que depuis peu ; les lignes plus
+   * anciennes n'ont pas de date, ce que le serveur dit plutôt que d'en deviner
+   * une. L'écran écrit alors « depuis quand inconnu » à la place d'une date.
+   */
+  since: string | null;
 };
 
 /**

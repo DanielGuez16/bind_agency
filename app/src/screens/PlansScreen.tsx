@@ -28,7 +28,7 @@
  * faux est pire qu'un total absent, surtout sur le seul écran du produit qui
  * affiche de l'argent.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { View } from 'react-native';
 
 import { useApi, type AbonneDuPlan, type PlanAdministrateur } from '../api';
@@ -37,6 +37,7 @@ import {
   Jauge,
   DetailPanel,
   SkeletonLignes,
+  StatusMessage,
   TableHeader,
   TableRow,
   Texte,
@@ -384,18 +385,22 @@ function Totaux({ totaux }: { totaux: Totaux }) {
  * n'est pas.
  */
 function AbonnesDuPlan({ planId }: { planId: string }) {
-  const { api } = useApi();
+  const { api, messageDErreur } = useApi();
   const { t, locale } = useI18n();
-  const [abonnes, setAbonnes] = useState<AbonneDuPlan[] | null>(null);
 
-  const charger = useCallback(async () => {
-    setAbonnes(await api.abonnesDuPlan(planId).catch(() => []));
-  }, [api, planId]);
-
-  useEffect(() => {
-    setAbonnes(null);
-    void charger();
-  }, [charger]);
+  /**
+   * **`useRequete`, et non un `useState` avec un `.catch` qui avale.**
+   *
+   * La route levait à chaque appel — un nom de colonne qui n'existait pas —
+   * et `.catch(() => [])` transformait cette panne en « aucun abonné » :
+   * l'administration lisait un plan sans preneur là où il en avait un, sans
+   * qu'aucune ligne ne le dise. Un panneau qui n'a pas les quatre états d'un
+   * écran n'est pas fini ; celui-ci ne les avait pas.
+   */
+  const requete = useRequete<AbonneDuPlan[]>(
+    (signal) => api.abonnesDuPlan(planId, signal),
+    { estVide: (liste) => liste.length === 0, dependances: [planId] },
+  );
 
   const colonnes: Colonne[] = [
     { cle: 'nom', label: t('admin.abonnesColonneNom'), largeur: 220 },
@@ -411,17 +416,36 @@ function AbonnesDuPlan({ planId }: { planId: string }) {
       identifiant={`plan_${planId.slice(0, 8)}`}
       testID="abonnes-du-plan"
     >
-      <View style={{ padding: 12 }}>
-        {abonnes === null ? (
+      <View style={{ padding: 12, gap: 10 }}>
+        {requete.etat === 'chargement' ? (
           <SkeletonLignes combien={3} testID="squelette-abonnes" />
-        ) : abonnes.length === 0 ? (
+        ) : requete.etat === 'erreur' ? (
+          // **Un vrai message, visible, avec de quoi réessayer.** C'est
+          // exactement ce que le `.catch` silencieux remplaçait par un
+          // panneau vide : une panne devenait indiscernable d'un plan sans
+          // abonné, et personne n'était prévenu qu'elle s'était produite.
+          //
+          // **`action`, pas un bouton posé à côté.** Cet écran n'a droit à
+          // aucune action éditoriale — la modification touche Stripe — et une
+          // garde compte les boutons de son propre fichier pour le tenir. Un
+          // bouton de relance après une panne technique n'en est pas une,
+          // mais il n'a pas à le prouver caractère par caractère :
+          // `StatusMessage` le rend depuis son propre fichier, comme le fait
+          // déjà `Ecran` pour l'échec de la liste des plans elle-même.
+          <StatusMessage
+            level="danger"
+            body={messageDErreur(requete.erreur)}
+            action={{ label: t('common.retry'), onPress: requete.recharger, variant: 'secondary' }}
+            testID="abonnes-echec"
+          />
+        ) : requete.vide ? (
           <Texte variante="type.caption" couleur="ink.soft" testID="abonnes-vide">
             {t('admin.abonnesVide')}
           </Texte>
         ) : (
           <View>
             <TableHeader colonnes={colonnes} />
-            {abonnes.map((abonne) => (
+            {requete.donnees.map((abonne) => (
               <TableRow
                 key={abonne.business_id}
                 testID={`abonne-${abonne.business_id}`}
@@ -430,7 +454,12 @@ function AbonnesDuPlan({ planId }: { planId: string }) {
                   nom: abonne.name,
                   quartier: abonne.neighborhood ? t(`quartiers.${abonne.neighborhood}`) : '',
                   etat: t(`admin.abonnementEtat_${abonne.status}`),
-                  depuis: formatDate(abonne.since, locale, 'UTC'),
+                  // **Nul se dit en mots, jamais en date inventée.** Un
+                  // abonnement antérieur à `started_at` n'a pas de date connue
+                  // — ce n'est pas zéro, ce n'est pas aujourd'hui.
+                  depuis: abonne.since
+                    ? formatDate(abonne.since, locale, 'UTC')
+                    : t('admin.abonneDepuisInconnu'),
                 }}
               />
             ))}
