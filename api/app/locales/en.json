@@ -5,7 +5,6 @@
   "account.verification.page.invalid.body": "It may already have been used, or a newer one may have replaced it. If your address is still unconfirmed, ask for a new link from the app.",
   "account.verification.page.invalid.title": "This link no longer works",
   "account.verification.subject": "Confirm your email address",
-  "account.welcome.subject": "Welcome to BIND",
   "booking.approved.body": "Hi {creator},\n\n{business} has confirmed your booking for {item}{quand_phrase}.\n\nOpen the app to see your pickup code. Show it at the counter.\n",
   "booking.approved.subject": "{business} confirmed your booking",
   "booking.cancelledByBusiness.body": "Hi {creator},\n\n{business} has had to cancel your booking for {item}{quand_phrase}.\n\nWhat they said: {motif}\n\nThis is on their side, not yours: your reliability score is untouched. The slot is free again if they reopen it.\n",

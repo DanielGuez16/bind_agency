@@ -5,7 +5,6 @@
   "account.verification.page.invalid.body": "Puede que ya se haya usado, o que otro más reciente lo haya sustituido. Si tu dirección sigue sin confirmar, pide un enlace nuevo desde la aplicación.",
   "account.verification.page.invalid.title": "Este enlace ya no funciona",
   "account.verification.subject": "Confirma tu dirección de correo",
-  "account.welcome.subject": "Te damos la bienvenida a BIND",
   "booking.approved.body": "Hola {creator}:\n\n{business} confirmó tu reserva de {item}{quand_phrase}.\n\nAbre la app para ver tu código de retiro. Muéstralo en el mostrador.\n",
   "booking.approved.subject": "{business} confirmó tu reserva",
   "booking.cancelledByBusiness.body": "Hola {creator}:\n\n{business} tuvo que cancelar tu reserva de {item}{quand_phrase}.\n\nLo que indicaron: {motif}\n\nEsto viene de su lado, no del tuyo: tu puntuación de fiabilidad queda intacta. El horario vuelve a estar libre si lo reabren.\n",

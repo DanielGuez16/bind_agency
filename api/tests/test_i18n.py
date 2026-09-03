@@ -128,10 +128,13 @@ def test_les_catalogues_serveur_ont_exactement_les_memes_cles() -> None:
 
 @pytest.mark.parametrize(
     ("locale", "attendu"),
-    [(Locale.EN, "Welcome to BIND"), (Locale.ES, "Te damos la bienvenida a BIND")],
+    [
+        (Locale.EN, "Confirm your email address"),
+        (Locale.ES, "Confirma tu dirección de correo"),
+    ],
 )
 def test_le_message_est_rendu_dans_la_langue_demandee(locale: Locale, attendu: str) -> None:
-    assert translate("account.welcome.subject", locale=locale) == attendu
+    assert translate("account.verification.subject", locale=locale) == attendu
 
 
 def test_une_cle_inconnue_leve_plutot_que_de_rendre_une_chaine_vide() -> None:
@@ -142,7 +145,7 @@ def test_une_cle_inconnue_leve_plutot_que_de_rendre_une_chaine_vide() -> None:
 def test_la_langue_est_celle_du_destinataire_pas_celle_de_l_appelant() -> None:
     destinataire = User(role=UserRole.CREATOR, email="es@example.com", locale=Locale.ES)
 
-    assert translate_for(destinataire, "account.welcome.subject").startswith("Te damos")
+    assert translate_for(destinataire, "account.verification.subject").startswith("Confirma")
 
 
 def test_toutes_les_cles_du_catalogue_sont_exposees() -> None:
@@ -166,7 +169,7 @@ def test_toutes_les_cles_du_catalogue_sont_exposees() -> None:
     assert catalogues, "aucun catalogue trouvé : le test ne vérifierait rien"
     assert available_keys() == set.intersection(*catalogues)
     assert available_keys() == set.union(*catalogues), "les langues divergent"
-    assert "account.welcome.subject" in available_keys()
+    assert "account.verification.subject" in available_keys()
 
 
 # --------------------------------------------------------------------------
