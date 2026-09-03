@@ -116,6 +116,7 @@ export function LieuScreen({
         liens: {
           instagram_url: commerce.instagram_url,
           tiktok_url: commerce.tiktok_url,
+          facebook_url: commerce.facebook_url,
           website_url: commerce.website_url,
         },
         items,
@@ -292,7 +293,12 @@ export function LieuScreen({
           <Repliable
             titre={t('lieu.sectionLiens')}
             resume={t('lieu.liensResume', {
-              count: [lieu.liens.instagram_url, lieu.liens.tiktok_url, lieu.liens.website_url]
+              count: [
+                lieu.liens.instagram_url,
+                lieu.liens.tiktok_url,
+                lieu.liens.facebook_url,
+                lieu.liens.website_url,
+              ]
                 .filter(Boolean).length,
             })}
             ouverte={ouverte === 'liens'}

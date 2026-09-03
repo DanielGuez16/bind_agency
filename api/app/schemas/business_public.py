@@ -80,6 +80,7 @@ class FichePubliqueRead(BaseModel):
     #: dérivés d'un pseudonyme.
     instagram_url: str | None
     tiktok_url: str | None
+    facebook_url: str | None
     website_url: str | None
     cover_photo_key: str | None
     #: Les clés de la galerie, dans l'ordre du commerce. Jamais des adresses.

@@ -26,6 +26,7 @@ import { useI18n } from '../../i18n';
 export type LiensPublics = {
   instagram_url: string | null;
   tiktok_url: string | null;
+  facebook_url: string | null;
   website_url: string | null;
 };
 
@@ -44,6 +45,7 @@ export function aEnvoyer(saisi: LiensPublics): LiensPublics {
   return {
     instagram_url: nettoyer(saisi.instagram_url),
     tiktok_url: nettoyer(saisi.tiktok_url),
+    facebook_url: nettoyer(saisi.facebook_url),
     website_url: nettoyer(saisi.website_url),
   };
 }
@@ -66,6 +68,7 @@ export function LesLiensPublics({
   const change =
     aEnvoyer(saisi).instagram_url !== liens.instagram_url ||
     aEnvoyer(saisi).tiktok_url !== liens.tiktok_url ||
+    aEnvoyer(saisi).facebook_url !== liens.facebook_url ||
     aEnvoyer(saisi).website_url !== liens.website_url;
 
   async function enregistrer() {
@@ -96,6 +99,13 @@ export function LesLiensPublics({
         onChangeText={(v) => setSaisi((avant) => ({ ...avant, tiktok_url: v }))}
         placeholder="https://tiktok.com/@…"
         testID="champ-tiktok"
+      />
+      <TextField
+        label={t('lieu.lienFacebook')}
+        value={saisi.facebook_url ?? ''}
+        onChangeText={(v) => setSaisi((avant) => ({ ...avant, facebook_url: v }))}
+        placeholder="https://facebook.com/…"
+        testID="champ-facebook"
       />
       <TextField
         label={t('lieu.lienSite')}

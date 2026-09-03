@@ -166,6 +166,15 @@ class ReservationDuCreateur:
     business_address: str | None
     business_timezone: str
     business_cover_photo_key: str | None
+    #: **Où le salon se montre ailleurs.** Servis ici et pas seulement sur la
+    #: fiche : le glyphe de la carte dit la plateforme de la *contrepartie* —
+    #: où la créatrice va publier — et non les comptes du salon. Les deux se
+    #: ressemblent et ne disent pas la même chose ; sans ces liens, la carte
+    #: n'offrait aucun moyen d'aller voir le salon avant de s'engager.
+    business_instagram_url: str | None
+    business_tiktok_url: str | None
+    business_facebook_url: str | None
+    business_website_url: str | None
     item_name: str
     item_photo_key: str | None
     duration_minutes: int | None
@@ -494,6 +503,10 @@ async def historique_du_createur(
             Business.address.label("business_address"),
             Business.timezone.label("business_timezone"),
             Business.cover_photo_key.label("business_cover_photo_key"),
+            Business.instagram_url.label("business_instagram_url"),
+            Business.tiktok_url.label("business_tiktok_url"),
+            Business.facebook_url.label("business_facebook_url"),
+            Business.website_url.label("business_website_url"),
         ).join(Business, Business.id == Booking.business_id)
     ).where(
         Booking.creator_id == creator_id,
@@ -543,6 +556,10 @@ async def historique_du_createur(
                 business_address=ligne.business_address,
                 business_timezone=ligne.business_timezone,
                 business_cover_photo_key=ligne.business_cover_photo_key,
+                business_instagram_url=ligne.business_instagram_url,
+                business_tiktok_url=ligne.business_tiktok_url,
+                business_facebook_url=ligne.business_facebook_url,
+                business_website_url=ligne.business_website_url,
                 item_name=ligne.item_name,
                 item_photo_key=ligne.item_photo_key,
                 duration_minutes=ligne.duration_minutes,

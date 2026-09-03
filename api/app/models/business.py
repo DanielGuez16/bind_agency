@@ -114,6 +114,16 @@ class Business(UUIDPrimaryKey, CreatedAt, Base):
     #: qu'il veut montrer, qui peut être une page de marque et non un compte.
     instagram_url: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     tiktok_url: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    #: **Le quatrième réseau, et c'est exactement ce que la remarque ci-dessus
+    #: annonçait.** Une colonne de plus, pas une migration de données.
+    #:
+    #: **Un lien, jamais une plateforme de publication.** `Platform` désigne là
+    #: où une créatrice publie et où l'on vérifie — `SPEC.md` §4 : « le palier
+    #: est défini par le couple plateforme + format », et chaque plateforme doit
+    #: implémenter les quatre opérations d'un fournisseur. Rien de tout cela
+    #: n'existe pour Facebook, et l'y ajouter ouvrirait un palier qu'aucune
+    #: preuve ne pourrait vérifier. Ici, c'est l'adresse que le salon montre.
+    facebook_url: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     website_url: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
 
     status: Mapped[BusinessStatus] = mapped_column(

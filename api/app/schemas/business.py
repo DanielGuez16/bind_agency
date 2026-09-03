@@ -126,6 +126,7 @@ class BusinessCreate(BaseModel):
     #: l'adresse qu'il veut montrer.
     instagram_url: str | None = Field(default=None, max_length=1000)
     tiktok_url: str | None = Field(default=None, max_length=1000)
+    facebook_url: str | None = Field(default=None, max_length=1000)
     website_url: str | None = Field(default=None, max_length=1000)
 
     @field_validator("currency")
@@ -190,6 +191,7 @@ class BusinessUpdate(BaseModel):
     #: l'adresse qu'il veut montrer.
     instagram_url: str | None = Field(default=None, max_length=1000)
     tiktok_url: str | None = Field(default=None, max_length=1000)
+    facebook_url: str | None = Field(default=None, max_length=1000)
     website_url: str | None = Field(default=None, max_length=1000)
 
     @field_validator("timezone")
@@ -256,6 +258,7 @@ class BusinessRead(BaseModel):
     menu_url: str | None
     instagram_url: str | None
     tiktok_url: str | None
+    facebook_url: str | None
     website_url: str | None
     status: BusinessStatus
     #: Quand la période de grâce se ferme, et le salon quitte le fil.
