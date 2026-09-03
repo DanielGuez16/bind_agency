@@ -93,18 +93,34 @@ async def _traiter(
         await job_service.deplanifier(session, target_id=job.target_id)
         return bilan.plus(retires=1)
 
-    try:
-        provider = fournisseur_pour(compte.platform)
-    except ConfigurationError as error:
-        # Une plateforme non configurée fait échouer *son* job, pas le passage
-        # entier. Laisser remonter arrêtait la boucle au premier compte
-        # concerné et annulait sa transaction : aucun autre job n'était traité,
-        # et rien n'en gardait la trace. C'est un échec reportable — la
-        # configuration peut arriver entre deux passages.
-        statut = await job_service.echouer(session, job, erreur=str(error))
-        return bilan.plus(epuises=1 if statut is JobStatus.EXHAUSTED else 0, reportes=1)
+    # **Un balayage global n'a rien à voir avec un réseau social, et ne doit
+    # rien lui demander.** Sa cible est la sentinelle — voir `handlers.cible` —
+    # dont le `platform` n'est qu'un champ non lu pour que l'objet existe. Avant
+    # cette ligne, l'exécuteur construisait quand même un `InstagramProvider`
+    # pour ce champ non lu, et sa construction **vérifie sa configuration** :
+    # sans Instagram configuré, les huit balayages échouaient à ce seul appel,
+    # avant même d'atteindre leur propre traitement — qui n'en avait besoin
+    # nulle part. C'est resté caché tant qu'un défaut antérieur détruisait ces
+    # mêmes jobs plus tôt dans la boucle ; le corriger a découvert celui-ci.
+    #
+    # Aucun des huit traitements de `handlers.SANS_CIBLE` ne lit `provider` —
+    # vérifié sur les huit, pas supposé. Ils gardent le paramètre pour la même
+    # signature que les jobs par compte, et n'en font rien.
+    if job.job_type in handlers.SANS_CIBLE:
+        issue = await traitement(session, account=compte, provider=None)
+    else:
+        try:
+            provider = fournisseur_pour(compte.platform)
+        except ConfigurationError as error:
+            # Une plateforme non configurée fait échouer *son* job, pas le
+            # passage entier. Laisser remonter arrêtait la boucle au premier
+            # compte concerné et annulait sa transaction : aucun autre job
+            # n'était traité, et rien n'en gardait la trace. C'est un échec
+            # reportable — la configuration peut arriver entre deux passages.
+            statut = await job_service.echouer(session, job, erreur=str(error))
+            return bilan.plus(epuises=1 if statut is JobStatus.EXHAUSTED else 0, reportes=1)
 
-    issue = await traitement(session, account=compte, provider=provider)
+        issue = await traitement(session, account=compte, provider=provider)
 
     match issue:
         case handlers.Fait(prochain=prochain):
